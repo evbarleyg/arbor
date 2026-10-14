@@ -21,7 +21,8 @@ lint:
 public-check:
 	@python3 scripts/public-check.py
 
-# Has git run that check by itself before every push from this clone and its worktrees. Once per clone.
+# Has git run that check by itself before every push from this clone and its worktrees, and looks through the clone for history
+# that is not this repository's. The first thing to do in a clone.
 hooks:
 	@./scripts/git-hooks/install.sh
 

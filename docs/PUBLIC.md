@@ -34,6 +34,7 @@ the commits were made.
 
 | When | How |
 |---|---|
+| When a clone is new, and whenever an agent's session starts in it | `make hooks` ends with `scripts/public-clone.py`, see below. `.claude/hooks/session-start.sh` runs it in every Claude Code session |
 | Before every push, by itself | `make hooks`, once per clone. Git then runs the check, in every worktree and on every branch, older ones too, and gives up the push if it finds something or cannot tell |
 | Before a push, by hand | `make public-check` |
 | Before posting a pull request's body, an issue or a comment | `scripts/public-check.py --text body.md`, or pipe the text in |
@@ -43,6 +44,22 @@ the commits were made.
 
 It prints the place, the rule, what to write instead, and the line with the find between » and «. In GitHub Actions, whose
 logs are as public as the rest, everything found is blanked out, in file and branch names too.
+
+## The clone itself
+
+A clone is not always what it seems. A machine that is handed a prepared or cached copy, or a folder in use since before the
+repository was public, can hold branches, stashes and loose commits from somewhere else, under names that look right.
+`git status` shows none of it. `scripts/public-clone.py` goes by where history begins: everything here goes back to the first
+public commit. It reads the whole graph once, as it is and not as `git replace` or grafts make it look, and then looks at every
+ref and every stash, at what `HEAD`, `FETCH_HEAD`, `MERGE_HEAD` and their like point at (in linked worktrees too), at the reflogs
+entry by entry, at commits nothing points at any more, and at objects borrowed from another repository. It also says when
+commits made here would carry an address that is no no-reply address.
+
+By itself it changes nothing: deleting is for whoever knows what the thing is. `scripts/public-clone.py --remove` then takes out
+what it listed as foreign through and through, and only that: those refs, those stashes, those reflog entries. Good stashes
+and your own reflog stay. It ends with `git gc --prune=now`, which also drops commits of your own that no branch, stash or
+reflog holds, so nothing else may be using the clone meanwhile. A branch of yours that something foreign was merged into it
+never touches: it says what to do by hand. When in doubt, a fresh clone of the public repository is always clean.
 
 ## What is posted
 

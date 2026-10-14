@@ -259,9 +259,11 @@ class Checker:
 
 # MARK: git
 
-def git(*arguments, cwd=None, check=True):
-    result = subprocess.run(["git", "-c", "core.quotepath=off", *arguments], cwd=cwd, capture_output=True, text=True,
-                            errors="replace", check=False)
+def git(*arguments, cwd=None, check=True, said=None):
+    """git's output; with check=False its exit code too. `said` goes to its standard input."""
+    # History as it is, not as `git replace` makes it look: a push sends the real objects.
+    result = subprocess.run(["git", "-c", "core.quotepath=off", *arguments], cwd=cwd, capture_output=True, text=True, input=said,
+                            errors="replace", check=False, env=dict(os.environ, GIT_NO_REPLACE_OBJECTS="1"))
     if check and result.returncode != 0:
         raise Unclear(f"git {' '.join(arguments[:3])}…: {result.stderr.strip()[:300]}")
     return result.stdout if check else (result.returncode, result.stdout)
@@ -271,6 +273,9 @@ def history_problems(head, cwd=None):
     """Why `head` may not be pushed, going by where its history begins."""
     if git("rev-parse", "--is-shallow-repository", cwd=cwd).strip() == "true":
         raise Unclear("this clone is shallow, so nobody can tell where its history begins: git fetch --unshallow origin")
+    grafts = os.path.join(cwd or ".", git("rev-parse", "--git-common-dir", cwd=cwd).strip(), "info", "grafts")
+    if os.path.exists(grafts):
+        raise Unclear(f"{grafts} makes history look other than it is, so nobody can tell where it begins: remove the file")
     roots = git("rev-list", "--max-parents=0", head, cwd=cwd).split()
     foreign = [root for root in roots if root != ROOT_COMMIT]
     way_out = "Start again from origin's branch (git checkout -b <name> origin/swarm/trunk) and bring the work over as a patch you have read"

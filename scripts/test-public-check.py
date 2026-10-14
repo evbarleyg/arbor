@@ -493,6 +493,22 @@ def check_history():
         code, _, output = repository.run("--pre-push", **more)
         row("pre-push: to a remote nothing is known of, the first public commit is still not new", (code, "(1 new commit)" in output), (0, True))
 
+    def made_to_look_sound(r):
+        elsewhere(r)
+        foreign_root = r.git("rev-list", "--max-parents=0", "HEAD")
+        r.git("replace", "--graft", foreign_root, r.root)
+    with tempfile.TemporaryDirectory() as folder:
+        repository = Repository(folder)
+        made_to_look_sound(repository)
+        code, _, output = repository.run()
+        row("history from elsewhere that `git replace` makes look sound", (code, "does not descend" in output), (1, True))
+
+    def grafted(r):
+        elsewhere(r)
+        with open(os.path.join(r.path, ".git", "info", "grafts"), "w", encoding="utf-8") as handle:
+            handle.write(f"{r.git('rev-list', '--max-parents=0', 'HEAD')} {r.root}\n")
+    situation("the same by the older way, a file of grafts: it cannot tell", (2, []), grafted)
+
     def shallow(r):
         clean(r)
         r.git("push", "--quiet", "origin", "fix/something")
@@ -630,7 +646,8 @@ def check_hook():
         # This repository has no scripts/public-check.py, like a branch from before there was one, so the hook falls back on the
         # copy the installer kept. That copy knows the real first commit, so every history made here is foreign to it.
         install = os.path.join(HERE, "git-hooks", "install.sh")
-        subprocess.run([install], cwd=repository.path, env=repository.environment, capture_output=True, check=True)
+        first = subprocess.run([install], cwd=repository.path, env=repository.environment, capture_output=True, text=True, check=False)
+        row("make hooks: it goes on to look through the clone, and of this one it cannot tell", (first.returncode, "public-clone: cannot tell" in first.stdout), (2, True))
         repository.write("docs/x.md", "fine\n")
         repository.commit()
         done = subprocess.run(["git", "push", "origin", "fix/something"], cwd=repository.path, env=repository.environment,
@@ -640,7 +657,7 @@ def check_hook():
         row("make hooks: git calls the hook, and a refusal stops the push",
             (done.returncode != 0, "does not descend" in done.stdout + done.stderr, there), (True, True, False))
         again = subprocess.run([install], cwd=repository.path, env=repository.environment, capture_output=True, check=False).returncode
-        row("make hooks: a second time renews it", again, 0)
+        row("make hooks: a second time renews it", again, 2)
         hook = os.path.join(repository.path, ".git", "hooks", "pre-push")
         with open(hook, "w", encoding="utf-8") as handle:
             handle.write("#!/bin/sh\necho mine\n")
