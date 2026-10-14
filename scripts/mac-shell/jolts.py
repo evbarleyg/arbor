@@ -28,13 +28,15 @@ The script says what it is doing in marks (lib-day.sh writes them):
   text <n> <words…>        what the person does, for the report
   finding <n> <rule> <FAIL|ODD> <words…>      something the script itself found out during the step
   end <n> [key=value…]     things have settled, and this should hold:
+    act=<kind>             what kind of thing the person did (docs/VIABLE.md lists the kinds), for the count
     moves=<ids>|any|none   the windows the step may move (default none)
+    yields=<ids>           these float, and may move too if they lay where one of `moves=` is at the end: it took their place
     drags=<id>             the person drags this one: while the button is down it goes where the pointer goes
     front=<id>             it ends in front of every other window, its app in front, wholly in view
     leaves=<ids>|any       these may leave the screen (closed, hidden, minimized, another Space)
     comes=<ids>            these are on the screen at the end
     own=<ids>|all          where these are now is where the person wants them: the size to give back later
-    restores=<ids>|all     these have their own sizes back; places=1: their places too
+    restores=<ids>|all     these have their own sizes back; places=1: their places too, as after Float All and Quit
     everything=1           no window may be out of view
     returns=<n>            every window is where it was at the end of step n
     floating=<ids>         for the report: these float, so no arrangement explains a move of theirs
@@ -52,6 +54,8 @@ import sys
 EPISODE_GAP = 250
 # Points a window may travel beyond the straight road, per coordinate, before it counts as having gone elsewhere first.
 EXCESS = 6
+# A step during which the sampler saw nothing for longer than this is not judged: it says nothing either way.
+BLIND = 250
 # Points that are no move at all: apps round sizes, and Retina screens deal in halves.
 SAME = 2
 RULES = [
@@ -293,6 +297,12 @@ def judge(step, world, by_number, own):
     dragged = ids(wants.get("drags", ""))
     may_leave = wants.get("leaves", "")
     kin = {world.pids.get(window) for window in named | dragged}
+    if end:
+        taken = [end["frames"][window] for window in named | dragged if window in end["frames"]]
+        for window in ids(wants.get("yields", "")):
+            trace = step.traces.get(window)
+            if trace and trace[0][1] and any(shared(trace[0][1], frame) > 0 for frame in taken):
+                named.add(window)
 
     for window, trace in sorted(step.traces.items()):
         if window in dragged:
@@ -372,7 +382,7 @@ def judge(step, world, by_number, own):
         if differs(own[window][2:], frames[window][2:]):
             step.find("5", "FAIL", window, f"is {words(frames[window])}; its own size was {words(own[window])}")
         elif wants.get("places") == "1" and differs(own[window][:2], frames[window][:2]):
-            step.find("5", "ODD", window, f"has its size back but not its place: {words(frames[window])}, it was at {words(own[window])}")
+            step.find("5", "FAIL", window, f"has its size back but not its place: {words(frames[window])}, it was at {words(own[window])}")
 
     if wants.get("everything") == "1" and display:
         for window, frame in sorted(frames.items()):
@@ -399,9 +409,13 @@ def judge(step, world, by_number, own):
 # MARK: The report
 
 
+def judged(step):
+    return step.at_end is not None and step.wants.get("judge") != "no" and max(step.late_samples, default=0) <= BLIND
+
+
 def checked(step, rule):
     wants = step.wants
-    if wants.get("judge") == "no":
+    if not judged(step):
         return False
     return {
         "2": wants.get("moves", "none") != "any" or "returns" in wants,
@@ -420,7 +434,9 @@ def fails(step, rule=None):
 def report(world, steps, account):
     out = []
     broken = sum(1 for step in steps if fails(step))
-    out.append(f"{len(steps)} steps, {broken} with a rule broken. The sampler: {account or 'it was cut off'}.")
+    count = sum(1 for step in steps if judged(step))
+    seconds = (steps[-1].ended or steps[-1].began) - steps[0].began if steps else 0
+    out.append(f"{len(steps)} steps in {seconds // 1000} s, {count} of them judged, {broken} with a rule broken. The sampler: {account or 'it was cut off'}.")
     out.append("")
     out.append("## Per rule")
     out.append("")
@@ -485,6 +501,10 @@ def as_json(world, steps, account):
                 "slug": step.slug,
                 "chapter": step.chapter,
                 "text": step.text,
+                "act": step.wants.get("act", ""),
+                "judged": judged(step),
+                "began": step.began,
+                "milliseconds": (step.ended or step.began) - step.began,
                 "moved": {str(window): list(value) for window, value in step.moved.items()},
                 "findings": [
                     dict(finding, window=world.name(finding["window"]) if finding["window"] is not None else None)
@@ -599,6 +619,11 @@ def self_test():
     expect("an unnamed window moves and comes back", start + [
         "2000 M begin 2 dock", "2100 W 2 20 0 600 100 400 300 Two", "2150 W 2 20 0 500 100 400 300 Two", "3000 M end 2 moves=1"],
         [("2", "FAIL")])
+    expect("a floating window gives way to the one that is docked where it lay", start + [
+        "2000 M begin 2 dock", "2100 W 1 10 0 400 30 600 700 One", "2110 W 2 20 0 0 100 400 300 Two", "3000 M end 2 moves=1 yields=2"], [])
+    expect("a floating window that lay elsewhere has nothing to give way to", start + [
+        "2000 M begin 2 dock", "2100 W 1 10 0 0 30 450 700 One", "2110 W 2 20 0 550 100 400 300 Two", "3000 M end 2 moves=1 yields=2"],
+        [("2", "FAIL")])
     expect("Arbor's own panels are no windows", start + [
         "2000 M begin 2 dock", "2100 W 9 99 0 10 10 50 50 Arbor", "3000 M end 2"], [])
     expect("two moves", start + [
@@ -627,7 +652,7 @@ def self_test():
         "4000 M begin 3 quit", "4100 W 1 10 0 100 100 500 700 One", "5000 M end 3 moves=any restores=all"], [("5", "FAIL")])
     expect("the size comes back, the place does not", docked + [
         "4000 M begin 3 quit", "4100 W 1 10 0 120 100 400 300 One", "5000 M end 3 moves=any restores=all places=1"],
-        [("5", "ODD")])
+        [("5", "FAIL")])
     expect("everything comes back", docked + [
         "4000 M begin 3 quit", "4100 W 1 10 0 100 100 400 300 One", "5000 M end 3 moves=any restores=all places=1 everything=1"], [])
     expect("a window stays out of view", docked + [
@@ -667,7 +692,13 @@ def self_test():
     for needle in ("| 2 | dock |", "one ×1 (1, 0 ms)", "samples 10"):
         if needle not in text:
             failures.append(f"the report lacks {needle!r}")
-    json.dumps(as_json(world, steps, account))
+    told = as_json(world, steps, account)
+    json.dumps(told)
+    if [(step["act"], step["judged"]) for step in told["steps"]] != [("", True), ("", True)]:
+        failures.append("the JSON does not say which steps were judged")
+    _, blind, _ = play(start + ["2000 M begin 2 dock", "2400 L 400", "3000 M end 2 act=dock-key"])
+    if judged(blind[1]) or not judged(blind[0]):
+        failures.append("a step during which the sampler was blind for 400 ms must not be judged")
     with tempfile.TemporaryDirectory() as folder:
         samples, log = os.path.join(folder, "samples.log"), os.path.join(folder, "arbor.log")
         with open(samples, "w", encoding="utf-8") as handle:
