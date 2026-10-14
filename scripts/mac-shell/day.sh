@@ -184,7 +184,8 @@ if with_arbor; then
     act "drag-$ND-out" "drags $ND out of the arrangement onto the Desktop and lets go"
     drag_window "$D" "$((x + w / 2))" "$((y + h / 3))"
     want "$ND floats" eventually is floating "$D"
-    acted drags="$D" moves=docked front="$D" restores="$D"
+    # Its own size again, and where it was dropped is its own place from now on.
+    acted drags="$D" moves=docked front="$D" restores="$D" own="$D"
   fi
   brief | sed 's/^/    /'
 fi
