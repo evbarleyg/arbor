@@ -137,12 +137,21 @@ began=$SECONDS
 copy_sources || exit 1
 
 if [ "${1:-}" = --self-test ]; then
-  "$here/mutants.py" --list | while IFS=$'\t' read -r name stories; do
+  rm -f self-test-failed
+  "$here/mutants.py" --list | while IFS=$'\t' read -r -a fields; do
+    name=${fields[0]}
     take_over
-    "$here/mutants.py" --apply "$name" "$work/src" || { echo "✘ $name: the change no longer fits the sources; look at scripts/mac-on-linux/mutants.py"; echo failed >> self-test-failed; continue; }
-    build "$work/mutant" || { echo "✘ $name: the changed copy does not build"; echo failed >> self-test-failed; continue; }
-    # shellcheck disable=SC2086
-    if "$work/mutant" --quiet --expect-red $stories; then echo "✔ $name: the stories notice"; else echo "✘ $name: no story notices"; echo failed >> self-test-failed; fi
+    if ! "$here/mutants.py" --apply "$name" "$work/src"; then
+      echo "✘ $name: the change no longer fits the sources; look at scripts/mac-on-linux/mutants.py"
+    elif ! build "$work/mutant"; then
+      echo "✘ $name: the changed copy does not build"
+    elif ! "$work/mutant" --quiet --expect-red "${fields[@]:1}"; then
+      echo "✘ $name: no story notices (${fields[*]:1})"
+    else
+      echo "✔ without the cure the story goes red: $name"
+      continue
+    fi
+    touch self-test-failed
   done
   take_over
   if [ -e self-test-failed ]; then rm -f self-test-failed; exit 1; fi
