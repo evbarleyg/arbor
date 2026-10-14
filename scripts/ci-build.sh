@@ -13,13 +13,18 @@ set -uo pipefail
 stale=()
 for tool in pointer curtain vdisplay; do
   for source in "scripts/mac-shell/$tool".*; do
-    [ -x ".build/mac-shell/$tool" ] && [ ".build/mac-shell/$tool" -nt "$source" ] || stale+=("$tool")
+    [ -x ".build/mac-shell/$tool" ] && [ ".build/mac-shell/$tool" -nt "$source" ] && continue
+    stale+=("$tool")
+    # A compiler that fails leaves what was there, and lib.sh asks only whether a tool is there.
+    rm -f ".build/mac-shell/$tool"
   done
 done
 if [ ${#stale[@]} -gt 0 ]; then
   ( scripts/mac-shell/compile-tools.sh "${stale[@]}"; rm -f mac-shell/build-*.log; rmdir mac-shell 2>/dev/null ) &
 fi
-swift build "$@"
-code=$?
+# Kept beside the build: scripts/mac-shell/compile.sh is asked for the warnings, and its own build finds nothing left to compile.
+mkdir -p .build
+swift build "$@" 2>&1 | tee .build/ci-build.log
+code=${PIPESTATUS[0]}
 wait
 exit "$code"

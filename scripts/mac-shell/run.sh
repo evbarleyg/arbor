@@ -53,6 +53,9 @@ for candidate in swarm/trunk main; do
 done
 # Neither has the shared set-up yet: as it was before there was one.
 home=${home:-$ref}
+if [ "$home" != "$ref" ] && ! git diff --quiet "origin/$home" HEAD -- .github/workflows/mac-shell.yml .github/actions 'scripts/ci-*' 2>/dev/null; then
+  echo "run.sh: note: the workflow and its set-up are $home's, not this branch's, which differ (MAC_SHELL_WORKFLOW_REF=$ref runs these)" >&2
+fi
 
 slug() { printf '%s' "$1" | tr -c 'A-Za-z0-9_-' '-' | cut -c "1-$2"; }
 name=$(slug "$(basename "$script" .sh)" 16)

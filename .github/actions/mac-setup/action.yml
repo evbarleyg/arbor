@@ -46,6 +46,8 @@ runs:
     - name: The toolchain an earlier job installed
       id: toolchain
       uses: actions/cache/restore@v4
+      env:
+        SEGMENT_DOWNLOAD_TIMEOUT_MINS: 2 # a download that stalls is given up, and the Mac goes on without
       with:
         path: |
           ~/.swiftly
@@ -55,10 +57,12 @@ runs:
     - name: The Swift release the project is built with
       id: install
       shell: bash
+      env:
+        WHOLE: ${{ steps.toolchain.outputs.cache-hit }}
       run: |
-        # What was put back is used only if it answers with the right version. Anything else is thrown away and installed afresh.
+        # What was put back is used only if all of it came and it answers with the right version. Anything else is thrown away and installed afresh.
         kept=$("$HOME/.swiftly/bin/swift" --version 2>&1 | sed -nE 's/.*Swift version ([0-9]+\.[0-9]+).*/\1/p' | head -1) || true
-        if [ "$kept" = 6.4 ]; then
+        if [ "$WHOLE" = true ] && [ "$kept" = 6.4 ]; then
           echo "using the Swift $kept an earlier job installed"
           echo "$HOME/.swiftly/bin" >> "$GITHUB_PATH"
           exit 0
@@ -87,12 +91,19 @@ runs:
       env:
         KIND: ${{ inputs.build-cache }}
       run: |
-        "$GITHUB_ACTION_PATH/../../../scripts/ci-build-key.sh" "$KIND" | tee -a "$GITHUB_OUTPUT"
+        # Whatever goes wrong with a cache costs the cache, never the job.
+        if key=$("$GITHUB_ACTION_PATH/../../../scripts/ci-build-key.sh" "$KIND"); then
+          echo "$key" | tee -a "$GITHUB_OUTPUT"
+        else
+          echo "::warning title=build cache::no name for this build, so no cache"
+        fi
 
     - name: The build folder of an earlier job
       id: build
-      if: inputs.build-cache != 'none'
+      if: steps.key.outputs.key != ''
       uses: actions/cache/restore@v4
+      env:
+        SEGMENT_DOWNLOAD_TIMEOUT_MINS: 2
       with:
         path: .build
         key: ${{ steps.key.outputs.key }}
@@ -100,17 +111,22 @@ runs:
 
     - name: Only what has changed is built again
       id: found
-      if: inputs.build-cache != 'none'
+      if: steps.key.outputs.key != ''
       shell: bash
       env:
         FOUND: ${{ steps.build.outputs.cache-matched-key }}
         ENOUGH: ${{ steps.key.outputs.enough }}
       run: |
         keep=true
+        if [ -n "$FOUND" ] && ! "$GITHUB_ACTION_PATH/../../../scripts/ci-mtimes.py" restore; then
+          echo "::warning title=build cache::could not tell what has changed since $FOUND was built"
+          FOUND=""
+        fi
         if [ -z "$FOUND" ]; then
+          # Also what a restore that broke off half way has left.
+          rm -rf .build
           say="none: this job builds from nothing"
         else
-          "$GITHUB_ACTION_PATH/../../../scripts/ci-mtimes.py" restore
           # shellcheck disable=SC2254  # a pattern, and meant as one
           case "$FOUND" in
             $ENOUGH) keep=false; say="of these very sources ($FOUND)" ;;

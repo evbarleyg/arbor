@@ -1088,7 +1088,12 @@ def check_ci_mtimes():
         for name in names:
             write(f"Sources/A/{name}.swift", f"let a = 1 // {name}\n", then)
         write("docs/prose.md", "prose\n", then)
-        os.makedirs(os.path.join(folder, ".build"))
+        for name in ["same", "changed", "gone"]:
+            write(f"scripts/mac-shell/{name}.swift", f"// {name}\n", then)
+        write("scripts/mac-shell/other.m", "// other\n", then)
+        # Built an hour from now, by the clock of the Mac they were built on: no time stamp will show that they are stale.
+        for name in ["same", "changed", "gone", "other", "of no source at all"]:
+            write(f".build/mac-shell/{name}", "a tool\n", int(time.time()) + 3600)
         git("add", "--all")
         git("commit", "--quiet", "--message", "built")
         row("ci-mtimes.py: record", run("record").returncode, 0)
@@ -1101,6 +1106,10 @@ def check_ci_mtimes():
         write("Sources/A/new.swift", "let b = 1\n", checkout)
         write("docs/prose.md", "prose\n", checkout)
         os.remove(os.path.join(folder, "Sources/A/gone.swift"))
+        os.remove(os.path.join(folder, "scripts/mac-shell/gone.swift"))
+        write("scripts/mac-shell/same.swift", "// same\n", checkout)
+        write("scripts/mac-shell/other.m", "// other\n", checkout)
+        write("scripts/mac-shell/changed.swift", "does not even compile\n", checkout)
         git("add", "--all")
         git("commit", "--quiet", "--message", "next")
         # The index still says what was committed. What lies in the folder is what gets compiled.
@@ -1113,6 +1122,8 @@ def check_ci_mtimes():
         for name in ["changed", "same length", "new", "edited after the checkout"]:
             row(f"ci-mtimes.py: {name}: counts as changed, and as newer than anything in the cache", stamp(f"Sources/A/{name}.swift") >= built, True)
         row("ci-mtimes.py: what no build reads is left alone", stamp("docs/prose.md"), checkout)
+        row("ci-mtimes.py: only the helper tools whose source is what they were made of are left, whatever the clocks say",
+            sorted(os.listdir(os.path.join(folder, ".build/mac-shell"))), ["other", "same"])
 
         for what, damage in [("missing", None), ("cut off", "0123\t"), ("not a note at all", "\x00\x01 nonsense\n")]:
             os.utime(os.path.join(folder, "Sources/A/same.swift"), (checkout, checkout))
@@ -1121,13 +1132,35 @@ def check_ci_mtimes():
             if damage is not None:
                 with open(os.path.join(folder, ".build/ci-mtimes.tsv"), "w", encoding="utf-8") as handle:
                     handle.write(damage)
-            row(f"ci-mtimes.py: the note is {what}: every file counts as changed, and that is no failure",
-                (run("restore").returncode, stamp("Sources/A/same.swift") > checkout), (0, True))
+            write(".build/mac-shell/same", "a tool\n", checkout)
+            row(f"ci-mtimes.py: the note is {what}: every file counts as changed, no helper tool stays, and that is no failure",
+                (run("restore").returncode, stamp("Sources/A/same.swift") > checkout, os.listdir(os.path.join(folder, ".build/mac-shell"))), (0, True, []))
         with open(os.path.join(folder, ".build/ci-mtimes.tsv"), "w", encoding="utf-8") as handle:
             handle.write(f"built\t{(int(time.time()) + 3600) * 10 ** 9}\t\n")
         run("restore")
         row("ci-mtimes.py: the clock of the Mac that built was an hour ahead: still newer", stamp("Sources/A/changed.swift") > time.time() + 3599, True)
+        run("record")
+        with open(os.path.join(folder, ".build/ci-mtimes.tsv"), encoding="utf-8") as handle:
+            row("ci-mtimes.py: a build upon that one is no older than it", int(handle.readline().split("\t")[1]) // 10 ** 9 > time.time() + 3590, True)
         row("ci-mtimes.py: no such word", run("forget").returncode != 0, True)
+
+        # ci-build.sh, with stand-ins for the compilers: swift build passes, and no helper tool compiles any more.
+        for name in ["pointer", "curtain"]:
+            write(f"scripts/mac-shell/{name}.swift", "does not compile\n", checkout)
+            write(f".build/mac-shell/{name}", "the cached tool\n", then)
+            os.chmod(os.path.join(folder, f".build/mac-shell/{name}"), 0o755)
+        write("scripts/mac-shell/vdisplay.m", "fine\n", then)
+        write(".build/mac-shell/vdisplay", "the cached tool\n", checkout)
+        os.chmod(os.path.join(folder, ".build/mac-shell/vdisplay"), 0o755)
+        write("Package.swift", "", then)
+        write("scripts/mac-shell/compile-tools.sh", "#!/bin/sh\nmkdir -p mac-shell\nexit $#\n", then)
+        write("bin/swift", "#!/bin/sh\necho Build complete\n", then)
+        for path in ["scripts/mac-shell/compile-tools.sh", "bin/swift"]:
+            os.chmod(os.path.join(folder, path), 0o755)
+        built = subprocess.run([BASH, os.path.join(HERE, "ci-build.sh")], cwd=folder, capture_output=True, text=True, check=False,
+                               env={**os.environ, "PATH": os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"]})
+        row("ci-build.sh: a helper tool that no longer compiles is gone, not replaced by the cached one; one that is current stays",
+            (built.returncode, sorted(os.listdir(os.path.join(folder, ".build/mac-shell")))), (0, ["vdisplay"]))
 
 
 def check_fuzz_launch():

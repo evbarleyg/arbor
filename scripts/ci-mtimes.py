@@ -16,10 +16,15 @@ after this one checked out, and `arbor_is_current` would take its helper tool, b
 that is gone is for SwiftPM to notice: the list of a target's files is part of its build plan. If the note is missing or damaged no file
 gets an earlier time stamp, and everything is built.
 
+The helper tools in .build/mac-shell are not SwiftPM's, and nothing but "is it there, and newer than its source" decides about them. So a tool
+whose source differs, is new or is gone is deleted outright. No clock has a say in that, and a source that no longer compiles leaves no tool
+behind, as it would after a build from nothing, instead of the cached one, which works.
+
 For CI only: on a person's machine the time stamps are right as they are.
 """
 
 import os
+import re
 import subprocess
 import sys
 import time
@@ -27,6 +32,7 @@ import time
 NOTE = os.path.join(".build", "ci-mtimes.tsv")
 # Everything a build or a Mac shell script compiles.
 COMPILED = ["Package.swift", "Sources", "Tests", "scripts/mac-shell"]
+TOOL = re.compile(r"^scripts/mac-shell/([^/]+)\.(swift|m)$")
 
 
 def hashes():
@@ -40,22 +46,31 @@ def hashes():
     return dict(zip(paths, answer))
 
 
+def noted():
+    """What the note says: path to (hash, time stamp), and when the build ended. Raises if it says nothing usable."""
+    with open(NOTE, encoding="utf-8", errors="surrogateescape") as handle:
+        lines = [line.rstrip("\n").split("\t", 2) for line in handle]
+    then = {path: (digest, int(stamp)) for digest, stamp, path in lines}
+    return then, then.pop("")[1]
+
+
 def record():
+    try:
+        earlier = noted()[1]
+    except (OSError, ValueError, KeyError):
+        earlier = 0
     lines = [f"{digest}\t{os.stat(path).st_mtime_ns}\t{path}\n" for path, digest in sorted(hashes().items())
              if "\n" not in path and "\t" not in path]
     with open(NOTE, "w", encoding="utf-8", errors="surrogateescape") as handle:
-        # Nothing in .build is newer than this.
-        handle.write(f"built\t{time.time_ns()}\t\n")
+        # Nothing in .build is newer than this, also if some of it is from a build this one was built upon, on a Mac whose clock was ahead.
+        handle.write(f"built\t{max(time.time_ns(), earlier)}\t\n")
         handle.writelines(lines)
     print(f"noted {len(lines)} files in {NOTE}")
 
 
 def restore():
     try:
-        with open(NOTE, encoding="utf-8", errors="surrogateescape") as handle:
-            noted = [line.rstrip("\n").split("\t", 2) for line in handle]
-        then = {path: (digest, int(stamp)) for digest, stamp, path in noted}
-        built = then.pop("")[1]
+        then, built = noted()
     except (OSError, ValueError, KeyError) as error:
         print(f"no usable {NOTE} ({type(error).__name__}): every file counts as changed")
         then, built = {}, 0
@@ -68,6 +83,12 @@ def restore():
     later = max(time.time_ns(), built + 1_000_000_000)
     for path in changed:
         os.utime(path, ns=(later, later))
+    kept = {TOOL.match(path).group(1) for path in same if TOOL.match(path)}
+    tools = os.path.join(".build", "mac-shell")
+    for name in sorted(os.listdir(tools)) if os.path.isdir(tools) else []:
+        if name not in kept:
+            print(f"  away with the helper tool {name}: its source is not what it was made of")
+            os.remove(os.path.join(tools, name))
     print(f"{len(same)} files are as they were at the cached build; {len(changed)} changed or new, {len(set(then) - set(now))} gone")
     for path in changed[:20]:
         print(f"  {path}")

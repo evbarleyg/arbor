@@ -37,12 +37,14 @@ permissions:
 jobs:
   shell:
     runs-on: macos-26
-    timeout-minutes: 25
+    # The script's twenty minutes, and before them, on the first run of a day, the toolchain and a build from nothing.
+    timeout-minutes: 35
     permissions:
       contents: write # to push mac-shell-out/<tag>; nothing else is written
     env:
       SCRIPT: ${{ inputs.script }}
       TAG: ${{ inputs.tag || github.run_id }}
+      REF: ${{ inputs.ref }}
     steps:
       - name: Check the inputs
         id: inputs
@@ -50,6 +52,12 @@ jobs:
           case "$SCRIPT" in
             ""|/*|*..*|*$'\n'*)
               echo "::error::script must be a relative path inside the repository, got '$SCRIPT'"
+              exit 2;;
+          esac
+          # What is built here is kept for everybody's runs, so it has to be the work of somebody who may push here.
+          case "$REF" in
+            refs/pull/*|pull/*)
+              echo "::error::not a pull request's ref: push the branch to this repository first"
               exit 2;;
           esac
           if ! [[ "$TAG" =~ ^[A-Za-z0-9._-]{1,40}$ ]] || ! git check-ref-format "refs/heads/mac-shell-out/$TAG"; then
@@ -88,6 +96,8 @@ jobs:
           .ci/scripts/ci-build.sh && echo "passed=true" >> "$GITHUB_OUTPUT" || echo "::warning::swift build failed"
       - name: Keep the build
         if: steps.build.outputs.passed == 'true' && steps.setup.outputs.keep-build == 'true'
+        continue-on-error: true
+        timeout-minutes: 5
         uses: ./.ci/.github/actions/mac-keep-build
         with:
           key: ${{ steps.setup.outputs.build-key }}

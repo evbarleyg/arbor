@@ -18,10 +18,14 @@ set -euo pipefail
 kind=${1:?usage: scripts/ci-build-key.sh products|tests}
 
 short() { git hash-object --stdin | cut -c 1-16; }
-made_with=$( { sw_vers -productVersion | cut -d. -f1; uname -m; xcodebuild -version; swift --version 2>&1; pwd; } | short)
+# The runner's image too: the helper tools are compiled for the system they are compiled on. And the tools that build and note, whose meaning
+# is part of what a cache means.
+made_with=$( { sw_vers -buildVersion; echo "${ImageVersion:-}"; uname -m; xcodebuild -version; swift --version 2>&1; pwd
+  cat "$(dirname "$0")/ci-build.sh" "$(dirname "$0")/ci-mtimes.py"; } | short)
 manifest=$(git rev-parse HEAD:Package.swift | cut -c 1-16)
 # With the helper tools that scripts/ci-build.sh compiles into .build/mac-shell.
-sources=$( { git rev-parse HEAD:Sources; git ls-files -s -- 'scripts/mac-shell/*.swift' 'scripts/mac-shell/*.m'; } | short)
+sources=$( { git rev-parse HEAD:Sources
+  git ls-files -s -- 'scripts/mac-shell/*.swift' 'scripts/mac-shell/*.m' scripts/mac-shell/compile-tools.sh; } | short)
 tests=$(git rev-parse HEAD:Tests | cut -c 1-16)
 [ -z "$(git status --porcelain -- Package.swift Sources Tests scripts/mac-shell)" ] \
   || { echo "ci-build-key.sh: the checkout differs from its commit, so the commit's hashes do not name it" >&2; exit 2; }

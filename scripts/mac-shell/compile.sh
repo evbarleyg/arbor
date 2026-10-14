@@ -8,7 +8,10 @@
 cd "$(dirname "$0")/../.." || exit 2
 mkdir -p mac-shell
 
-swift build > mac-shell/build.log 2>&1
+# On GitHub's Macs the workflow has built already (scripts/ci-build.sh), upon an earlier run's build if there was one: its log comes first. So the
+# errors are all here, but of the warnings only those about what had to be compiled again.
+cat .build/ci-build.log > mac-shell/build.log 2>/dev/null
+swift build >> mac-shell/build.log 2>&1
 code=$?
 # The compiler repeats a message for every file that sees it, and under an excerpt of the source.
 grep -E "^/.*: (error|warning):|^error:" mac-shell/build.log | sed "s|^$PWD/||" | sort -u | head -n 100
