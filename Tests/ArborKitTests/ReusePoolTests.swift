@@ -88,8 +88,10 @@ import Testing
       let disposed = Set(graveyard.map(ObjectIdentifier.init))
       let used = pool.inUse.values.map(ObjectIdentifier.init)
       let spare = pool.spares.map(ObjectIdentifier.init)
-      #expect(Set(used + spare).count == used.count + spare.count)
-      #expect(disposed.isDisjoint(with: used + spare))
+      // Added up first: Swift 6.2 gives up on type-checking the sums inside #expect.
+      let held = used + spare
+      #expect(Set(held).count == held.count)
+      #expect(disposed.isDisjoint(with: held))
       #expect(pool.spares.count <= 3)
     }
   }
