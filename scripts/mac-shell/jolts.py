@@ -569,8 +569,10 @@ def judge(step, world, by_number, own):
         if window not in frames:
             step.find("4", "FAIL", window, "is not on the screen at all")
             continue
-        if order and order[0] != window:
-            ahead = order[: order.index(window)] if window in order else order[:3]
+        # A window that is out of view is in nobody's way, wherever it is in the pile.
+        ahead = [other for other in (order[: order.index(window)] if window in order else order[:3])
+                 if not display or shared(frames[other], display) / max(frames[other][2] * frames[other][3], 1) > STRIP]
+        if ahead:
             covering = [other for other in ahead if shared(frames[other], frames[window]) > 0]
             step.find(
                 "4", "FAIL", window,
@@ -883,6 +885,8 @@ def self_test():
     detectors("a window out of view that is moved along its corner shows nothing", parked + [
         "2000 M begin 3 walk", "2140 W 2 20 0 999 790 400 300 Two", "3000 M end 3 moves=any"], [])
     detectors("covered", start + ["2000 M begin 2 switch", "2100 A 20 app.two", "3000 M end 2 front=2"], ["behind"])
+    detectors("a window out of view is in nobody's way", parked + [
+        "2000 M begin 3 switch", "2100 Z 2,1", "3000 M end 3 front=1"], [])
     detectors("the keyboard is elsewhere", start + ["2000 M begin 2 switch", "2100 Z 2,1", "3000 M end 2 front=2"], ["focus"])
     detectors("an app comes forward by itself", start + ["2000 M begin 2 idle", "2100 A 20 app.two", "3000 M end 2 act=idle"], ["focus"])
     detectors("an app comes forward because somebody switched", start + [
