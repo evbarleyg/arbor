@@ -123,24 +123,65 @@ pmset -g custom 2>&1 | grep -i -E "sleep|Power"
 pmset -g assertions 2>&1 | head -n 12
 echo "locked: $(ioreg -n Root -d1 | grep -c '"CGSSessionScreenIsLocked"=Yes')"
 
+ARBOR_TEST_WINDOWS_ARGS="--max-size 1:300x240 --min-size 2:700x500"
 arbor_start 3
 read -r sx sy sw sh <<< "$(arbor_ask screen)"
 "$ARBOR_ROOT/.build/mac-shell/axwatch" "$ARBOR_WINDOWS_PID" >> "$ARBOR_OUT/ax-events.txt" 2>&1 &
 watcher=$!
 started "$watcher"
 sleep 1
+summary
 
-to top-31 512 31
-to opt 200 368 --mods opt
-to opt-shift 200 368 --mods opt+shift
-to ctrl-opt 200 368 --mods ctrl+opt
-to ctrl-opt-cmd 200 368 --mods ctrl+opt+cmd
-to opt-cmd 200 368 --mods opt+cmd
-to ctrl-opt-shift 200 368 --mods ctrl+opt+shift
-to shift-left-0 0 368 --mods shift
-to ctrl-top-0 512 0 --mods ctrl
-for y in 60 100 150 200 250; do to "left-0-$y" 0 "$y"; done
-for y in 500 600 650 704 740; do to "left-0-$y" 0 "$y"; done
+# With ⌘ held this Arbor docks nothing, so what happens is macOS's doing alone.
+# alone <name> <window> <x> <y> [options of drag]: from the middle of the screen, held a second and a half
+alone() {
+  local name=$1 id=$2 x=$3 y=$4
+  shift 4
+  step "$name: window $id to $x $y $*"
+  echo front "$id" >&9
+  sleep 0.3
+  # shellcheck disable=SC2046
+  drag $(grab_of "$id") 512 300 --mods cmd > /dev/null
+  sleep 0.6
+  echo "--- $name" >> "$ARBOR_OUT/ax-events.txt"
+  echo "before: $(real_frame_of "$id")"
+  # shellcheck disable=SC2046
+  drag $(grab_of "$id") "$x" "$y" --mods cmd "$@"
+}
+held() {
+  local name=$1 id=$2
+  alone "$@" --hold 1.5 --no-release
+  echo "macOS shows: $(strangers | awk '{ print $9, $4, $5, $6, $7 }' | sort -u | tr '\n' ';')"
+  ARBOR_SETTLE=0 shot "$name"
+  release --mods cmd
+  sleep 2
+  echo "let go: $(real_frame_of "$id")"
+}
+brisk() {
+  local id=$2
+  alone "$@" --no-settle
+  sleep 2
+  echo "let go: $(real_frame_of "$id")"
+}
+
+echo "open 300 200 300 240 fixed" >&9
+sleep 1.5
+F=$(tail -n 1 "$ARBOR_SESSION_DIR/hello" | python3 -c 'import json, sys; print(json.loads(sys.stdin.read())["window"])')
+echo "the window of a fixed size: $F"
+summary
+
+held fixed-left "$F" 0 368
+held fixed-top "$F" 512 0
+held fixed-option "$F" 200 368 --mods cmd+opt
+held max-left "$W1" 0 368
+held max-top "$W1" 512 0
+held min-left "$W2" 0 368
+held min-top "$W2" 512 0
+for hold in 0 0.05 0.1 0.2 0.4; do
+  brisk "brisk-left-$hold" "$W3" 0 368 --duration 0.15 --steps 8 --hold "$hold"
+  brisk "brisk-top-$hold" "$W3" 512 0 --duration 0.15 --steps 8 --hold "$hold"
+done
+brisk "swift-left" "$W3" 0 368 --duration 0.05 --steps 3 --hold 0
+brisk "swift-top" "$W3" 512 0 --duration 0.05 --steps 3 --hold 0
 kill_started "$watcher"
 arbor_stop
-
