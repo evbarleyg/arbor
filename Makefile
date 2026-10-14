@@ -1,4 +1,4 @@
-.PHONY: public-check hooks lint build test check sim scenarios parity linux run app install uninstall release e2e e2e-drag typecheck-mac typecheck-mac-selftest rehearse trace trace-check replay fuzz attack clean
+.PHONY: public-check hooks lint build test check sim scenarios parity linux run app install uninstall release e2e e2e-drag day typecheck-mac typecheck-mac-selftest rehearse trace trace-check replay fuzz attack clean
 
 # Files that would compile on Linux but not on macOS, and Mac shell scripts that would change a person's Mac,
 # found without a Mac. And a ledger of macOS's surprises (docs/REALITY.md) that names what is no longer there.
@@ -13,6 +13,7 @@ lint:
 	@for test in scripts/test-public-*.py; do python3 $$test || exit 1; done
 	@python3 scripts/gh-state.py --self-test
 	@python3 scripts/reality-ledger.py --self-test && python3 scripts/reality-ledger.py --check
+	@python3 scripts/mac-shell/jolts.py --self-test > /dev/null || python3 scripts/mac-shell/jolts.py --self-test
 
 # Reads what this branch adds (lines, file names, commit messages, its own name) for what should stay private, and checks
 # that its history begins where the public repository's does. Before every push (docs/PUBLIC.md).
@@ -120,6 +121,12 @@ e2e: build
 # Real drags with the real pointer, which it takes over for about half a minute. Same permission.
 e2e-drag:
 	@./scripts/mac-shell/e2e-drag.sh
+
+# The rehearsal of the acceptance pass, from anywhere: an ordinary day with real apps on one of GitHub's Macs, macOS at its default
+# settings, every frame of every window written down, and a table of what broke which rule (docs/TESTING.md, "An ordinary day").
+# Runs what GitHub has of the current branch. CONTROL=1 plays the same day without Arbor.
+day:
+	@./scripts/mac-shell/run.sh scripts/mac-shell/day$(if $(CONTROL),-control).sh
 
 # On Linux: type-checks all the macOS-only code against stand-ins for Apple's frameworks (scripts/typecheck-mac/README.md).
 # Not proof, but fifteen seconds instead of a macOS job. REF=origin/some-branch checks that commit's Sources instead.

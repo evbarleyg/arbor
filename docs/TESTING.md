@@ -764,6 +764,63 @@ skips the steps that need a changed system setting or a process it was not start
 **Run the suite after any change to
 `AX/AXWindowSystem.swift` or to how the controller places windows**.
 
+### An ordinary day (`make day`)
+
+A release is decided by half an hour on a person's ordinary Mac, macOS at its default settings: no jolts, no lost or stuck window,
+nothing moved that they did not move. `scripts/mac-shell/day.sh` rehearses that on one of GitHub's Macs:
+
+```bash
+make day                # scripts/mac-shell/run.sh scripts/mac-shell/day.sh: what GitHub has of the current branch, ten minutes
+make day CONTROL=1      # the same day without Arbor: what is found then is macOS's doing or an app's
+```
+
+Finder, Safari, TextEdit, Terminal, Notes, Calendar, System Settings, Preview and Mail are open already when Arbor starts, as a person runs it.
+macOS's own tiling and "click wallpaper to reveal desktop" stay as they come, which is on, and Reduce Motion, which the runners come
+with, is switched off, as it is on a person's Mac. Then the day: windows are docked by key and by real drags, apps are switched with ⌘Tab, the
+Dock and the Window menu, ⌘H, ⌘M, ⌘W, ⌘N, ⌘Q, full screen, the view goes in and out, a click lands on the wallpaper, pause, Float All, Quit, a
+second launch.
+
+**The sampler.** A check asks where a window is once things have settled. A person also sees how it got there. `sampler.swift` asks the window
+server, which is what the screen shows, for every window's frame and the order of the pile sixty times a second, and writes every change
+down with its time (`samples.log`). It only looks, and never reads a title.
+
+**A step is one thing a person does**, and says what that may do (`lib-day.sh`):
+
+```bash
+act dock-left "presses ⌃⌥⌘←";  key ctrl+opt+cmd+left;  acted moves=docked front="$W_safari"
+```
+
+`acted` waits until nothing has moved for a second, compares what Arbor believes with the screen (`compat.py audit`), and takes a picture.
+
+**The jolt detector.** `jolts.py` reads the samples afterwards and holds every step to the product's rules:
+
+| Rule | What breaks it |
+|---|---|
+| 2: nothing moves that the person did not move | a window moved that `moves=` and `drags=` do not name; after a way there and back (`returns=<step>`) a window is not where it was |
+| 3: a window moves once, to where it ends up | its changes fall into two or more moves, a quarter of a second or more apart; it travelled more than six points beyond the straight road in x, y, width or height (it went elsewhere first, or flashed into view and out); it opened in one place and was moved to another; it left the screen and came back |
+| 4: the window you switch to comes to the front and into view | at the end `front=<window>` is not the first of the pile, its app is not the one in front, or part of it is beyond the space between the menu bar and the Dock |
+| 5: Quit, Float All and pause give sizes back | `restores=`: a window's size differs from its own, which is the one it had when Arbor started or when it opened, or that the person gave it since (`own=`) |
+| L: no window is lost | a window left the screen and the step did not say so (`leaves=`); `everything=1` and less than half of one is on the display; `comes=` and it is not there |
+
+While the button is down a dragged window goes where the hand goes; what counts is what happens after the drop. Setting a size and then a place
+shows as two frames a few milliseconds apart, which is one move on a straight road. What happens between a step's end and the next step's beginning
+counts for the step that ended. Arbor's own panels are not windows.
+
+What comes back in `.mac-shell/day-<run>/`:
+
+| | |
+|---|---|
+| `day-report.md` | the rules, how many steps checked and broke each; every finding with its step, its window and the road the window took; then every step with what moved, how many times, through how many frames, in how many milliseconds |
+| `<nnn>-<slug>.jpg`, `<nnn>-<slug>.story.log` | for every step with a finding: the screen at its end, and one timeline of what the screen showed (`SCREEN`), what macOS reported (`MACOS`), what the script did (`SCRIPT`) and what Arbor logged |
+| `day-findings.json`, `samples.log` | the findings for a program; the samples, for `jolts.py trace <samples> <step> [window]` and `jolts.py story` |
+
+**Read a finding against the control** before calling it Arbor's: apps move their own windows, and so does macOS. **What it cannot see**: two changes within
+one sample (16 ms; the report says `blind for … ms` where the runner was too busy to look), anything that is drawn without a window moving, and whatever only a
+trackpad, a second display or a person's own apps bring out. A clean day is a rehearsal, not the acceptance pass.
+
+For a script of your own, `lib-day.sh` is the harness (its header lists everything) and `jolts.py`'s header lists the marks and keys. `make lint` runs `jolts.py --self-test`,
+which holds the detector to some thirty situations, each with the finding it must or must not give.
+
 ## 8. Type-checking macOS-only code on Linux (`make typecheck-mac`)
 
 Half of Arbor builds only on macOS: `ArborKit/{AX,UI,Input,App,IPC}`, `Arbor`, `arborctl`, `arbor-e2e`, `ArborTestWindows`, the test files with `#if os(macOS)` in them, and the Mac shell's helper tools (`scripts/mac-shell/*.swift`), which only a script that is already running on a Mac compiles. `make typecheck-mac`

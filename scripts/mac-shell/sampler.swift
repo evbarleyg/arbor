@@ -49,17 +49,21 @@ if let index = arguments.firstIndex(of: "--hz") {
   arguments.removeSubrange(index...(index + 1))
 }
 guard arguments.count == 3 else { fail("usage: sampler <log file> <commands fifo> <replies fifo> [--hz n]") }
-guard let log = fopen(arguments[0], "a") else { fail("cannot write to \(arguments[0])") }
+/// Not `guard let`: what that binds at the top of a file is no global, and the class below could not use it.
+nonisolated(unsafe) let logFile: UnsafeMutablePointer<FILE> = {
+  guard let file = fopen(arguments[0], "a") else { fail("cannot write to \(arguments[0])") }
+  return file
+}()
 
-func now() -> Double { Date().timeIntervalSince1970 * 1000 }
+@Sendable func now() -> Double { Date().timeIntervalSince1970 * 1000 }
 
 /// `12` for 12.0 and `12.5` for 12.5.
-func text(_ value: CGFloat) -> String {
+@Sendable func text(_ value: CGFloat) -> String {
   let number = Double(value)
   return number == number.rounded() ? String(Int(number)) : String(format: "%.1f", number)
 }
 
-func text(_ rect: CGRect) -> String {
+@Sendable func text(_ rect: CGRect) -> String {
   "\(text(rect.minX)) \(text(rect.minY)) \(text(rect.width)) \(text(rect.height))"
 }
 
@@ -68,14 +72,14 @@ let lock = NSLock()
 /// When a line that `quiet` waits for was last written.
 var lastChange = now()
 
-func write(_ time: Double, _ line: String, isChange: Bool = false) {
+@Sendable func write(_ time: Double, _ line: String, isChange: Bool = false) {
   lock.lock()
-  fputs("\(Int64(time)) \(line)\n", log)
+  fputs("\(Int64(time)) \(line)\n", logFile)
   if isChange { lastChange = time }
   lock.unlock()
 }
 
-func sinceLastChange() -> Double {
+@Sendable func sinceLastChange() -> Double {
   lock.lock()
   defer { lock.unlock() }
   return now() - lastChange
@@ -149,7 +153,7 @@ final class Sampler {
     samples += 1
     spent += now() - started
     lock.lock()
-    fflush(log)
+    fflush(logFile)
     lock.unlock()
   }
 }
@@ -173,7 +177,7 @@ let sampling = Thread {
 }
 sampling.qualityOfService = .userInteractive
 
-func finish() -> Never {
+@Sendable func finish() -> Never {
   stopping = true
   Thread.sleep(forTimeInterval: 0.1)
   let seconds = (now() - started) / 1000
@@ -183,15 +187,17 @@ func finish() -> Never {
       format: "S samples %d seconds %.1f hz %.1f cost-ms %.2f late %d longest-gap-ms %d", sampler.samples, seconds,
       Double(sampler.samples) / max(seconds, 0.001), sampler.spent / Double(max(sampler.samples, 1)), sampler.late,
       Int(sampler.longestGap)))
-  fflush(log)
+  fflush(logFile)
   exit(0)
 }
 
 // MARK: Commands
 
 // In this order, which is the order the script opens them in: opening a fifo waits for the other end.
-guard let commands = fopen(arguments[1], "r") else { fail("cannot read \(arguments[1])") }
-guard let replies = fopen(arguments[2], "w") else { fail("cannot write to \(arguments[2])") }
+guard let opened = fopen(arguments[1], "r") else { fail("cannot read \(arguments[1])") }
+guard let answering = fopen(arguments[2], "w") else { fail("cannot write to \(arguments[2])") }
+nonisolated(unsafe) let commands = opened
+nonisolated(unsafe) let replies = answering
 
 let listening = Thread {
   var buffer = [CChar](repeating: 0, count: 4096)
@@ -230,39 +236,43 @@ let listening = Thread {
 let app = NSApplication.shared
 app.setActivationPolicy(.prohibited)
 
-func noteFront(_ running: NSRunningApplication?) {
+@Sendable func noteFront(_ running: NSRunningApplication?) {
   guard let running else { return }
   write(now(), "A \(running.processIdentifier) \(running.bundleIdentifier ?? "?")")
 }
 
-var visible = CGRect.null
-var display = CGRect.null
-func noteVisible() {
-  let bounds = CGDisplayBounds(CGMainDisplayID())
-  if bounds != display {
-    display = bounds
-    write(now(), "D \(text(bounds))")
-  }
-  guard let screen = NSScreen.screens.first else { return }
-  // AppKit counts from the bottom of the main display.
-  let frame = screen.visibleFrame
-  let flipped = CGRect(x: frame.minX, y: screen.frame.maxY - frame.maxY, width: frame.width, height: frame.height)
-  if flipped != visible {
-    visible = flipped
-    write(now(), "V \(text(flipped))")
+@MainActor final class Display {
+  private var bounds = CGRect.null
+  private var visible = CGRect.null
+
+  func note() {
+    let whole = CGDisplayBounds(CGMainDisplayID())
+    if whole != bounds {
+      bounds = whole
+      write(now(), "D \(text(whole))")
+    }
+    guard let screen = NSScreen.screens.first else { return }
+    // AppKit counts from the bottom of the main display.
+    let frame = screen.visibleFrame
+    let flipped = CGRect(x: frame.minX, y: screen.frame.maxY - frame.maxY, width: frame.width, height: frame.height)
+    if flipped != visible {
+      visible = flipped
+      write(now(), "V \(text(flipped))")
+    }
   }
 }
+let display = MainActor.assumeIsolated { Display() }
 
 write(started, "M sampler at \(Int(hertz)) Hz")
 noteFront(NSWorkspace.shared.frontmostApplication)
-noteVisible()
+MainActor.assumeIsolated { display.note() }
 NSWorkspace.shared.notificationCenter.addObserver(
   forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
 ) { note in
   noteFront(note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)
 }
 // The Dock grows and shrinks as apps come and go, without a notification of its own.
-Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { _ in noteVisible() }
+Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { _ in MainActor.assumeIsolated { display.note() } }
 
 sampling.start()
 listening.start()
