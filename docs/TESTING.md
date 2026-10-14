@@ -562,6 +562,10 @@ deletes branches whose work has landed (`scripts/housekeeping.py` has the rules,
 
 ### On a person's own Mac
 
+**Nobody is asked to run anything on a Mac of their own, and no result from one goes into this repository** (issue #4, `docs/PUBLIC.md`): real Macs
+are GitHub's hosted runners. This section is for the person who checks the repository out and runs a script all the same, which
+nobody can prevent and which must therefore do no harm.
+
 The scripts are written for GitHub's Macs, which are thrown away after the run. They also get run on people's own, and there a
 `defaults write`, a `killall Safari` or an `rm -rf ~/Applications/Arbor.app` is damage. So is a line that means no harm: with a full disk
 `dir=$(mktemp -d)` leaves `dir` empty, and the clean-up's `rm -rf "$dir/"*`, `cd "$dir"` (bash 3.2 takes `cd ""` for a success) or
@@ -636,8 +640,8 @@ off, or leaves the Mac different. What comes of it lies in `.mac-shell/list-<dat
 Even so: hands off the mouse and the keyboard while a script runs.
 
 **What each script does on a person's Mac.** Read line by line on 2026-10-14 as a person's Mac would run it: their apps open with unsaved work, their Arbor perhaps running, two displays, another
-keyboard layout, a full disk, an interruption at any line. "Trunk" rows hold for the commit that brought this table. A branch's row
-holds for the commit named (second reading, 10:45 UTC) and says what the script does once its branch has merged this harness: no script of a branch runs on a person's Mac before that.
+keyboard layout, a full disk, an interruption at any line. "Trunk" rows hold for the commit that brought this table. "Not landed" rows were read on a
+copy from before the repository was public, and say what the script does once it has been brought over onto this harness: it is read again then, and runs on nobody's Mac before.
 
 | Script | Where | On a person's Mac | Pointer and keys | What it skips there, or why not |
 |---|---|---|---|---|
@@ -712,7 +716,7 @@ Somebody with a Mac may check out a branch they have not read, by hand or from a
 - **A test touches nothing but temporary folders and processes it started**: no `UserDefaults`, pasteboard, `NSWorkspace…open`, login item, posted event, Accessibility call on another app, window, alert
   or network. A test that starts a shell gives it a `PATH` and a `HOME` of its own, so that an `arborctl` in a documented example is the stand-in and not the installed one.
 - **The three scripts, and every script under `scripts/` that they name, are read by `scripts/lint-mac-shell.py`** like the Mac shell scripts. A step that runs on macOS only (`[ "$(uname)" = Darwin ]`) runs there
-  for the first time on that Mac: the keeper of the harness reads it line by line before it merges.
+  for the first time on that Mac: a reviewer reads it line by line before it lands.
 - **`arbor-e2e`** keeps to a home and a socket in a temporary folder and to its own test windows (`ARBOR_ONLY_PIDS`), with shortcuts, menu bar item and prompts off; it posts no input and opens no app.
   It does bring its test windows to the front and gives them the keyboard. A new step may not open an app, a URL or a document, write outside that home, or leave a panel up when the run dies.
 - `make <target>` succeeds without doing anything when the target is only left in `.PHONY`, which is how a merge once turned `make e2e` green; `scripts/test-tooling.py` holds every declared target to a rule.

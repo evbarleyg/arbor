@@ -1,8 +1,9 @@
-# Report: <item id and title>
+<!-- The description of a pull request. Read it through `scripts/public-check.py --text` before posting: docs/PUBLIC.md. -->
 
-- Date:
-- Executor: <session or agent name>
-- Branch / merge commit:
+## What it changes for a person
+
+<Two or three sentences somebody who has never seen the code can follow.>
+
 - Board item:
 - Spec: docs/features/<file>
 - Reference items: T.., A..
@@ -21,15 +22,15 @@ tried the current behaviour (sim output, scenario results, e2e).>
 - `make check`: <test counts>
 - `make parity`: <score before → after; any items that changed level>
 - Scenarios: <which ran, which passed>
-- Real windows: <`make e2e` result, or "not run: no Accessibility permission">
+- Real windows: <what ran on a hosted Mac and what it brought back, or "nothing: Linux proves all of it, because …">
 
 ## Deviations from the spec
 
 <What you did differently and why. "None" if none.>
 
-## Still to check on a real Mac
+## Still unchecked on real windows
 
-<Concrete manual steps, or "nothing".>
+<What, and the script that will check it on a hosted Mac. "Nothing" if nothing. What only a person at a desk could check is not done.>
 
 ## Questions and ideas raised
 

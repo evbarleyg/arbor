@@ -4,9 +4,10 @@ Arbor is a free, open-source macOS window manager inspired by TrellisWM: real
 windows dock into nested splits, and a "camera" zooms between spaces in that
 tree. Read this file before changing anything. `AGENTS.md` is a symlink to it.
 
-Arbor is built by two roles that collaborate through this repo: a
-**documenter** (decides what to build: reference, specs, board, scenarios) and
-**executors** (build it, prove it, merge it). Read `collab/README.md` for the
+Arbor is built by agents in a few roles that collaborate through this repo: a
+**documenter** (what Arbor should do: specs, scenarios), a **product owner** (decides, and orders the board),
+**executors** (build it, prove it, hand it in) and a **coordinator** (has it reviewed and lands it). Issues #3 (what
+Arbor is for) and #4 (how we work) are the maintainer's word on both. Read `collab/README.md` for the
 loop; start every session from `collab/BOARD.md`.
 
 ## This repository is public
@@ -82,7 +83,7 @@ new. See "Executors without a Mac" in `collab/README.md`.
 | `scripts/public-*`, `scripts/git-hooks/` | What keeps private things out of a public repository: `public-check.py` reads what is pushed, with its exceptions in `public-check.allow`; `public-text.py` reads what is posted; `public-clone.py` looks through the clone; `git-hooks/` is what `make hooks` installs; `test-public-*.py` hold them to tables of situations | `docs/PUBLIC.md`. Linux and Python only. The rules name kinds of things, never the things. |
 | `docs/` | `ARCHITECTURE.md`, `TESTING.md`, `ROADMAP.md`, `features/F*.md` specs, generated `FEATURES.md` | Specs belong to the documenter |
 | `docs/CENSUS.md` | What each test touches, which premises of the fakes a recording bears out, which real code nothing runs, which features no Mac has tried | Generated: `scripts/census.py --write`, words in `scripts/census-template.md`. By hand, not part of `make check` |
-| `collab/` | Board, questions, ideas, reports, scenarios, parity data, evidence | See `collab/README.md` |
+| `collab/` | Board, questions, ideas, scenarios, parity data, evidence | See `collab/README.md` |
 | `collab/reality.json`, generated `docs/REALITY.md` | Every known case where real macOS differed from the stand-ins or from what a test expected, and what guards it | A real Mac surprised you: add an entry and run `scripts/reality-ledger.py`. `make lint` fails on a name that is gone or a stale page: you renamed a test or reworded a step that a case names, and the line under each ✘ says what to put where. |
 
 ## How to verify your work without permissions
@@ -104,7 +105,8 @@ against fakes.
 5. `make e2e` only if `arborctl status` reports Accessibility. Without a Mac, CI's
    `macos` job runs it, and a Mac shell script drives the real app with real drags,
    clicks and shortcuts and brings back screenshots (`docs/TESTING.md`, section 5).
-   Say in your report what is still unchecked on real windows.
+   Say in the pull request what is still unchecked on real windows. Real Macs are GitHub's hosted runners and no others:
+   nothing is run on, or asked of, a person's Mac.
 
 ## Conventions
 
@@ -136,12 +138,13 @@ against fakes.
 
 Several executors may work on Arbor at once, one board item each.
 
-1. **Pick work** from `collab/BOARD.md`: the top **Ready** item you can do whose
-   dependencies are merged.
-2. **Work in your own worktree and branch**, never directly on `main`:
-   `git worktree add ../arbor-worktrees/F07 -b feat/F07-edge-resize origin/swarm/trunk`
-3. **Claim it**: move the item to **In progress** on the board and set the
-   spec's `Status:` to `in progress (<branch>)`. Edit only your own spec, and
+1. **Pick work** from `collab/BOARD.md`: the topmost item that is free, that you can do, and whose
+   dependencies have landed.
+2. **Work on a branch of your own that starts from `origin/swarm/trunk`**, in a worktree of your own if you have several:
+   `git fetch origin && git worktree add ../arbor-worktrees/F07 -b feat/F07-edge-resize origin/swarm/trunk`.
+   Never commit on, or push to, `main` or `swarm/trunk`.
+3. **Claim it**: put your branch's name against the item on the board and set the
+   spec's `Status:` to `in progress (<branch>)`, in your pull request's first commit. Edit only your own spec, and
    only its status and Shipped note; ask in `collab/QUESTIONS.md` if the spec is wrong.
 4. **Shared hot spots** that several features touch: `Command.swift`,
    `Controller+Commands.swift` (`perform`), `Settings.swift`, `KeyBindings.swift`,
@@ -149,14 +152,18 @@ Several executors may work on Arbor at once, one board item each.
    there small and append-only (new cases and keys at the end) so merges stay mechanical.
 5. **Definition of done**:
    - the spec's acceptance criteria are met, each covered by a test where testable;
-   - `make check`, `make scenarios` and `make parity` pass, with your tests and
+   - a fault was reproduced first, by a test that failed before the fix (headless if at all possible);
+   - `make check`, `make scenarios`, `make parity` and, on Linux, `make typecheck-mac` pass, with your tests and
      e2e steps added to the item's entries in `collab/parity.json`;
-   - the spec's status is `done` with a short "Shipped / Not shipped" note;
-   - a report in `collab/reports/` (template in `collab/templates/report.md`).
-6. **Merge**: rebase onto `main`, re-run the checks, merge into `main`, push,
-   and move the item to **Done** on the board. Agents launched for a single
-   feature by another session follow their launch instructions instead
-   (usually: hand back without merging).
+   - what the board item says a hosted Mac must run has run there, and what agents must judge has been judged (#4). What
+     only a person at a desk could check is not done: redesign it;
+   - the spec's status is `done` with a short "Shipped / Not shipped" note.
+6. **Hand it in**: a pull request against `swarm/trunk`, small, one thing. Its description is the report
+   (`collab/templates/report.md`): first what it changes for a person, then how it was tried and what is still unchecked.
+   It is ready when its own CI is green. The coordinator has it read by an independent reviewer and lands it: rebased, then
+   `swarm/trunk` is moved forward to that very commit. Nobody uses the merge button, which makes a commit of its own under
+   whatever address the account has on file (`docs/REPOSITORY.md`). When told that your branch conflicts, rebase it on
+   `origin/swarm/trunk` at once. `swarm/trunk` goes to `main` as a train, with all the Mac jobs.
 
 Do not add dependencies, do not use private APIs beyond `_AXUIElementGetWindow`
 without justifying it in the spec, and do not weaken an existing test to make

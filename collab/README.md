@@ -1,6 +1,7 @@
-# How the documenter and executors work together
+# How the agents work together
 
-Arbor is built by two kinds of agents that talk only through this repository.
+Arbor is built by agents in a few roles that talk through this repository. The maintainer's word on what Arbor is for is issue #3,
+on how we work issue #4. The repository is public: `docs/PUBLIC.md` says what stays out of it, and what sees to that.
 
 ## Starting a session
 
@@ -10,16 +11,17 @@ Paste one of these into a new Claude Code session in a checkout of this reposito
 
 > You are an executor for Arbor, the macOS window manager in this repository.
 > Read CLAUDE.md and collab/README.md, then run
-> the executor loop: take the top Ready item on collab/BOARD.md that you can
-> do (merging branches under Review counts), build it in your own worktree,
-> prove it with make check, make scenarios and make parity, write a report,
-> merge, push, and update the board. Repeat until the board has nothing you
+> the executor loop: run make hooks, take the topmost free item on collab/BOARD.md
+> that you can do, build it on a branch of your own from origin/swarm/trunk,
+> prove it with make check, make scenarios and make parity, and hand it in as a
+> small pull request against swarm/trunk whose description is the report. Never
+> push to main or swarm/trunk. Repeat until the board has nothing you
 > can do. Ask in collab/QUESTIONS.md instead of guessing at product decisions.
 
 **Documenter** (if this session is gone)
 
 > You are the feature documenter for Arbor in this repository. Read CLAUDE.md
-> and collab/README.md, then run the documenter loop: read new reports,
+> and collab/README.md, then run the documenter loop: read what has landed, new
 > questions and board changes, answer, update specs, parity
 > data, scenarios and the changelog, re-order the board, run make parity and
 > commit. You do not write product code or merge branches.
@@ -28,7 +30,8 @@ Paste one of these into a new Claude Code session in a checkout of this reposito
 |---|---|---|---|
 | **Documenter** | One session | What Arbor should do: `docs/features/` specs, `collab/parity.json` entries, `collab/BOARD.md` priorities, `collab/scenarios/`, answers in `collab/QUESTIONS.md`, `CHANGELOG.md` | Writes product code or merges branches |
 | **Product owner** | One session | Product decisions, against issues #3 and #4: answers in `collab/QUESTIONS.md`, the order of `collab/BOARD.md`, `docs/VIABLE.md`, `collab/TOUCHPOINTS.md`, GO or NO GO on finished work | Asks the maintainer anything but identity, money and what cannot be undone |
-| **Executor** | Any coding agent pointed at this repo; several can run at once | Making it so: code, tests, merging branches into `main`, `collab/reports/`, evidence, statuses of the items it works on | Changes priorities or rewrites specs without asking |
+| **Executor** | Any coding agent pointed at this repo; many can run at once | Making it so: code, tests, its pull requests and what they report, evidence, statuses of the items it works on | Changes priorities or rewrites specs without asking; pushes to `main` or `swarm/trunk` |
+| **Coordinator** | One session | The one trunk: has every pull request read by an independent reviewer, lands it on `swarm/trunk`, takes `swarm/trunk` to `main` as a train with all the Mac jobs, keeps the hosted Macs' queue in order | Lands anything red; uses the merge button |
 
 The documenter decides **what** and **in what order**; executors decide
 **how** and prove it. When an executor disagrees with a spec, it asks
@@ -46,9 +49,9 @@ The documenter decides **what** and **in what order**; executors decide
 | `collab/TOUCHPOINTS.md` | Each time the maintainer was needed, and what would have avoided it | Product owner |
 | `collab/QUESTIONS.md` | Questions and answers, numbered Q1, Q2… | Anyone asks; the product owner answers product questions, the documenter questions about the reference |
 | `collab/IDEAS.md` | Ways to make Arbor better than TrellisWM | Anyone proposes; the documenter promotes ideas into specs |
-| `collab/reports/` | One report per finished work item (template in `templates/report.md`) | Executors (the documenter files reports handed to it by agents it ran) |
+| A pull request's description | The report on a finished work item (template in `templates/report.md`): what it changes for a person, how it was tried, what is still unchecked | Executors |
 | `collab/scenarios/*.sim` | User journeys with expectations, run in arbor-sim | Documenter |
-| `collab/evidence/` | Output of real-window runs (`make e2e` writes `e2e-latest.txt`; the real-window suite writes `suite-<section>-latest.txt`) and manual checks | Whoever ran them |
+| `collab/evidence/` | Output of real-window runs on hosted Macs (`make e2e` writes `e2e-latest.txt`; the real-window suite writes `suite-<section>-latest.txt`), and traces. Nothing made on a person's Mac | Whoever ran them |
 | `collab/reality.json` | Every known case where real macOS differed from the stand-ins or from what a test expected: what was expected, what happened, which stand-in plays it, what guards it | Whoever a real Mac surprised, in the pull request that cures it or at once with `"copes": "open"` |
 | `docs/REALITY.md` | Generated from `reality.json` by `scripts/reality-ledger.py`, which looks every name up; never edit by hand | `scripts/reality-ledger.py` (`make lint` checks it) |
 
@@ -56,35 +59,36 @@ The documenter decides **what** and **in what order**; executors decide
 
 ### Executor, each work item
 
-1. `git pull`. Read `collab/BOARD.md`, any new `QUESTIONS.md` answers, and the
-   top **Ready** item's spec and reference items.
+1. `make hooks` in a new clone, and do as it says. `git fetch origin`. Read `collab/BOARD.md` on `origin/swarm/trunk`, any new
+   `QUESTIONS.md` answers, and the spec and reference items of the topmost free item you can do.
 2. **Try** the current behaviour before changing it:
    - `make parity` for the baseline score and anything already broken;
    - `make scenarios` to run the documenter's user journeys;
    - `make sim ARGS='…'` to explore;
-   - `make e2e` if your terminal has Accessibility permission (most agents do not; say so in the report).
-3. Move the item to **In progress** on the board with your branch name, in
+   - real windows: a Mac shell script on a hosted Mac (below). Rehearse it on Linux first.
+3. Put your branch's name against the item on the board, in
    the same commit as your first change.
-4. **Build** it on a branch in your own worktree (see `CLAUDE.md`), with tests
-   for every testable acceptance criterion.
+4. **Build** it on a branch of your own from `origin/swarm/trunk` (see `CLAUDE.md`), with tests
+   for every testable acceptance criterion. For a fault: first a test that fails.
 5. **Prove** it: `make check` and `make parity` pass. Add your tests and e2e
    steps to the item's entries in `parity.json` and set their status.
-6. **Report**: write `collab/reports/<date>-<item>.md` from the template:
-   before and after parity, evidence, deviations from the spec, and what
-   still needs checking on a real Mac.
-7. **Merge** your branch into `main` (rebase, `make check`, fast-forward or a
-   merge commit), push, and move the item to **Done** on the board.
+6. **Hand it in**: a small pull request against `swarm/trunk`, one thing. Its description is the report, from the template:
+   what it changes for a person, evidence, deviations from the spec, and what is still unchecked on real windows. Read the text
+   through `scripts/public-check.py --text` before you post it.
+7. **It lands** when its own CI is green and an independent reviewer has read it: the coordinator rebases it and moves
+   `swarm/trunk` forward to that commit. GitHub then shows the pull request as merged. When told that it conflicts, rebase it on
+   `origin/swarm/trunk` at once. The board's entry is brought up to date in the same pull request.
 
 ### Documenter, each session
 
-1. `git pull`; read new reports, questions and board changes since the last
-   session (`git log --since=… -- collab docs`).
+1. `git fetch origin`; read what has landed (the pull requests' descriptions), questions and board changes since the last
+   session (`git log --since=… origin/swarm/trunk -- collab docs`).
 2. Answer questions. Fix specs that executors found ambiguous or wrong.
-3. Turn report findings, scenario failures and `IDEAS.md` entries into
+3. Turn what the pull requests report, scenario failures and `IDEAS.md` entries into
    specs and board items; re-order the board.
 4. Add `parity.json` entries for anything new; write scenarios for new behaviour.
-5. Update `CHANGELOG.md` for everything merged; run `make parity` and commit
-   the regenerated `docs/FEATURES.md`.
+5. Update `CHANGELOG.md` for everything that has landed; run `make parity` and commit
+   the regenerated `docs/FEATURES.md`. The documenter's changes go in as pull requests like everybody's.
 
 ## How "improve" is measured
 
@@ -229,8 +233,8 @@ Three rules keep the Linux build working and the platforms telling the same stor
 
 **The macOS-only code** is proved through GitHub:
 
-1. Push the work branch and open a **draft pull request** against `main`; the
-   PR description is the report (same template).
+1. Push the work branch and open a pull request against `swarm/trunk`; its
+   description is the report (same template).
 2. GitHub Actions runs the headless stack on Linux and everything on `macos`.
    Both build, test, and run the simulator smoke test, the scenarios and
    `parity.py --check` (on the Mac: see below); `macos` then runs the real-window and real-pointer tests. A newer push
@@ -306,8 +310,8 @@ Three rules keep the Linux build working and the platforms telling the same stor
    by `git fetch`. (Should the workflow be down: one agent runs `scripts/gh-state.py --out <file>`, and the others read that file.) Ask git for what git can tell (`git ls-remote origin swarm/trunk 'refs/pull/*/head'`): that has no such limit.
    When you must ask GitHub: one request for a whole commit, as above, and `gh api rate_limit`, which is free, to see what is left.
 
-4. Fix and push until the checks pass, then mark the PR ready, merge it
-   (squash or merge commit), and update the board and parity data in the same PR.
+4. Fix and push until the checks pass, with the board and parity data brought up to date in the same pull request. The
+   coordinator lands it (above).
 5. Real-window checks: CI's `real-windows` job runs `make e2e` (GitHub's macOS
    runners grant Accessibility) and keeps the evidence as the artifact
    `e2e-evidence`. Drags, clicks, shortcuts, the menu bar and what
@@ -316,9 +320,9 @@ Three rules keep the Linux build working and the platforms telling the same stor
    suite (`scripts/mac-shell/suite/`, "The real-window suite" in
    `docs/TESTING.md`): five lines, rehearsed on Linux for nothing, run on a Mac,
    their evidence committed and their titles listed under `e2e` in
-   `parity.json`, which is what turns *tested* into *verified*. What even that
-   cannot reach (other apps' windows, a real trackpad) goes under "Still to
-   check on a real Mac".
+   `parity.json`, which is what turns *tested* into *verified*.
+   What even that cannot reach is not done (#4): say so in the pull request, and redesign the check until a hosted Mac
+   can run it and an agent can judge what it brings back.
 
 ### A remote Mac: the "Mac shell" workflow
 
@@ -347,7 +351,5 @@ tag is given). Pushes to those branches start no workflow.
 
 ## Talking between sessions
 
-The repo is the channel: files on `main`, pull requests, and the GitHub issue
-titled "Executor: work the board", where executors post short progress notes
-(one comment per finished item, linking its report or PR).
-Messages only point at files; decisions are written in the files.
+The repo is the channel: files on `swarm/trunk` and `main`, pull requests, and issues.
+Messages only point at files; decisions are written in the files. Whatever is posted is public (`docs/PUBLIC.md`).
