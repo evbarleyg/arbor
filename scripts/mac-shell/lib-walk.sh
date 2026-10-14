@@ -16,7 +16,7 @@
 #
 # <app> is a name of the cast's: finder safari textedit terminal notes calendar settings preview mail.
 #
-#   walk_begin <cast> <display> <tiling> [seed]       the Mac (stock | laptop desk | defaults off), the apps, macOS seen to tile or not to, Arbor started
+#   walk_begin <cast> <display> <tiling> [seed]       the Mac (stock | laptop desk two | defaults off), the apps, macOS seen to tile or not to, Arbor started
 #                                                     and its welcome closed. WALK_WITHOUT_ARBOR=1: the control, in which Arbor's own acts are left out.
 #                                                     WALK_REDUCE_MOTION=on: no stage, so every move of every window shows. WALK_KIND=sit: what run.json calls it
 #   walk_end                                          Arbor quit if it runs, every window reached, the report
@@ -38,6 +38,9 @@
 #   resize_gap <app> <points>    the gap to the right of its docked window, dragged that far     resize_key grow|shrink|balance
 #   full_screen on|off           ⌃⌘F in the app in front                wallpaper_click        a click on a bare spot, and a second one
 #   pause | resume | float_all
+#   display plug|unplug|left|right|smaller|larger     a second, virtual display: plugged in to the right at 1920×1080, unplugged, moved to that side of the main
+#                                                     one, unplugged and plugged in again at 1280×800 or 1920×1080. In the cell `two` alone
+#   send_across                  ⌃⌥⌘] has no key yet: `arborctl move-to-display next` for the window in front, which is what the menu does
 #   quit_and_start               Quit from Arbor's menu, every app's window reached by its Dock icon, Arbor started again
 #   idle_act                     half a minute of nothing
 source "$(dirname "${BASH_SOURCE[0]}")/lib-day.sh"
@@ -52,6 +55,9 @@ WALK_MINIMIZED=""
 WALK_HIDDEN=""
 WALK_PAUSED=""
 WALK_FULL_SCREEN=""
+# Whether this walk may have a second display, and whether it is plugged in.
+WALK_TWO=""
+WALK_SECOND=""
 # The last step after which everything was in view and the arrangement has not changed since: where Show Everything has to lead back to.
 WALK_HOME=""
 
@@ -469,6 +475,42 @@ wallpaper_click() {
   acted moves=any leaves=any returns="$before"
 }
 
+# MARK: Displays
+
+# A display comes, goes, moves or changes size: the windows on the displays concerned may move; afterwards nothing is lost.
+display() {
+  [ -n "$WALK_TWO" ] && [ -z "$WALK_FULL_SCREEN" ] || { left_out "display $1: this walk has one display"; return; }
+  case "$1" in
+    plug) [ -z "$WALK_SECOND" ] || { left_out "display plug: it is plugged in"; return; } ;;
+    unplug | left | right | smaller | larger) [ -n "$WALK_SECOND" ] || { left_out "display $1: it is not plugged in"; return; } ;;
+    *) die "display: no such change: $1" ;;
+  esac
+  walk_act display-change "display-$1" "the second display: $1"
+  case "$1" in
+    plug) display_add 1920 1080 right; WALK_SECOND=yes ;;
+    unplug) display_remove; WALK_SECOND="" ;;
+    left | right) display_move "$1" ;;
+    smaller) display_remove; sleep 1; display_add 1280 800 right ;;
+    larger) display_remove; sleep 1; display_add 1920 1080 right ;;
+  esac
+  sleep 2
+  # macOS gives the main display another size when the virtual one comes and goes.
+  read -r _ WALK_X WALK_Y WALK_W WALK_H _ <<< "$(pointer displays | head -n 1)"
+  changed
+  acted moves=any leaves=any everything=1 tiles=ok
+}
+
+send_across() {
+  local window
+  arbor_acts && [ -n "$WALK_SECOND" ] || { left_out "send_across: there is no second display, or Arbor is not acting"; return; }
+  window=$(front_window)
+  [ -n "$window" ] && is managed "$window" 2>/dev/null || { left_out "send_across: Arbor does not arrange the window in front"; return; }
+  walk_act dock-key send-across "sends the window in front to the other display"
+  ctl move-to-display next
+  changed
+  acted moves=docked,"$window" front="$window"
+}
+
 # MARK: The ways out
 
 pause() {
@@ -574,7 +616,8 @@ walk_begin() {
   case "$display" in
     laptop) display_mode 1440x900 1600x900 1680x1050 1920x1080 ;;
     desk) display_mode 1920x1080 ;;
-    *) die "walk_begin: laptop or desk, not $display" ;;
+    two) display_mode 1440x900 1600x900 1680x1050 1920x1080; WALK_TWO=yes ;;
+    *) die "walk_begin: laptop, desk or two, not $display" ;;
   esac
   case "$tiling" in
     defaults)
@@ -645,6 +688,7 @@ walk_begin() {
 
 walk_end() {
   if [ -n "$WALK_FULL_SCREEN" ]; then full_screen off; fi
+  if [ -n "$WALK_SECOND" ]; then display unplug; fi
   if with_arbor && arbor_answers; then
     chapter "The end"
     walk_quit
