@@ -58,7 +58,7 @@ final class Arbor {
     overlays = WatchedOverlays(world: world)
     store = MemoryStateStore()
     scheduler = ManualScheduler()
-    // The world's clock and no word about this machine, so that the same session gives the same bytes every time.
+    // The world's clock, and no word about where it runs, so that the same session gives the same bytes every time.
     recorder.clock = { [scheduler] in scheduler.now }
     recorder.arborVersion = "rehearsal"
     recorder.osVersion = "rehearsal"
