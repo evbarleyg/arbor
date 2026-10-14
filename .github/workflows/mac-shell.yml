@@ -37,7 +37,7 @@ permissions:
 jobs:
   shell:
     runs-on: macos-26
-    timeout-minutes: 25
+    timeout-minutes: 45
     permissions:
       contents: write # to push mac-shell-out/<tag>; nothing else is written
     env:
@@ -73,7 +73,7 @@ jobs:
       - name: Run the script from the repository
         # Shorter than the job's limit, so that a script that hangs still gets its output pushed, and
         # short enough that a hung script does not hold a Mac for hours: a session takes two minutes.
-        timeout-minutes: 20
+        timeout-minutes: 40
         run: |
           set -o pipefail
           if [ ! -f "$SCRIPT" ]; then
