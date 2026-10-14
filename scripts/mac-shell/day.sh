@@ -1,0 +1,387 @@
+#!/bin/bash
+# An ordinary day: the rehearsal of the acceptance pass. Real apps, macOS at its default settings, Arbor as a person runs it,
+# and every frame of every window written down meanwhile.
+#
+#   scripts/mac-shell/run.sh scripts/mac-shell/day.sh          on one of GitHub's Macs, from anywhere (`make day`): ten minutes
+#
+# A release is decided by half an hour on a person's ordinary Mac: no jolts, no lost or stuck window, nothing moved that they
+# did not move. This plays such a day: the apps are open already when Arbor starts; windows are docked by key and by real
+# drags; apps are switched with ⌘Tab, the Dock and the Window menu; ⌘H, ⌘M, ⌘W, ⌘N, ⌘Q; full screen; the view goes in and out;
+# a click lands on the wallpaper; pause, Float All, Quit, and a second launch. macOS's own tiling and "click wallpaper to
+# reveal desktop" stay as they come, which is on. Each step is one thing a person does and says what that may move
+# (lib-day.sh); jolts.py then reads the samples and says which step broke which rule.
+#
+# What comes back in .mac-shell/day-<run>/: day-report.md (the findings per rule, each with the step that shows it, then every
+# step with what moved and how often), day-findings.json, samples.log, and for every step with a finding its picture
+# <nnn>-<slug>.jpg and its story <nnn>-<slug>.story.log: what the screen showed, what macOS reported and what Arbor logged, in order.
+#
+# DAY_WITHOUT_ARBOR=1 (day-control.sh) plays the same day without Arbor, leaving out the steps that are Arbor's own keys: what is found
+# then is macOS's doing or an app's, and no fault of Arbor's when it shows up in the real day too.
+# DAY_DISPLAY="1440x900 1600x900" asks for another size of display. DAY_KEEP_PICTURES=1 keeps every step's picture.
+#
+# Only on GitHub's Macs: it quits apps, closes windows, clicks in the Dock and on the wallpaper, and changes the display's size.
+source "$(dirname "${BASH_SOURCE[0]}")/lib-day.sh"
+needs_throwaway_mac "open a dozen real apps, press ⌘Q and ⌘W in them, click in the Dock and on the wallpaper, and switch the display's size"
+
+CAST=""
+with_arbor() { [ -z "${DAY_WITHOUT_ARBOR:-}" ]; }
+
+bundle_of() {
+  case "$1" in
+    finder) echo com.apple.finder ;;
+    safari) echo com.apple.Safari ;;
+    textedit) echo com.apple.TextEdit ;;
+    terminal) echo com.apple.Terminal ;;
+    notes) echo com.apple.Notes ;;
+    calendar) echo com.apple.iCal ;;
+    settings) echo com.apple.systempreferences ;;
+    preview) echo com.apple.Preview ;;
+    mail) echo com.apple.mail ;;
+  esac
+}
+
+window_of() { eval "echo \"\${W_$1:-}\""; }
+pid_of() { eval "echo \"\${P_$1:-}\""; }
+
+# Before Arbor runs nothing is judged: apps place and size their own windows as they open.
+open_app() {
+  local name=$1
+  shift
+  act "open-$name" "opens $name"
+  if APP_WAIT=25 meet "$name" "$(bundle_of "$name")" "$@"; then
+    app_dismiss "$APP_PID" || echo "a sheet or dialog stayed in the way"
+    CAST="$CAST $name"
+  else
+    echo "$name opened no standard window: the day goes on without it"
+    [ -n "$APP_PID" ] && apptool tree "$APP_PID" 3 | head -n 20
+  fi
+  acted judge=no
+}
+
+# The way a person gets at a window: its title bar if that shows, otherwise its app's icon in the Dock.
+reach() {
+  local name=$1 window
+  shift
+  window=$(window_of "$name")
+  act "reach-$name" "clicks $name's title bar, or its Dock icon if that is covered"
+  click_window "$window" || dock_click "$(bundle_of "$name")"
+  acted front="$window" "$@"
+}
+
+# One of Arbor's shortcuts, pressed.
+press() {
+  local slug=$1 keys=$2 chord=$3
+  shift 3
+  act "$slug" "presses $keys"
+  key "$chord"
+  acted "$@"
+}
+
+front_pid() { apptool front | cut -d ' ' -f 1; }
+
+# MARK: The Mac
+
+apps_watchdog "${DAY_LIMIT:-1060}"
+step "the Mac"
+echo "macOS $(sw_vers -productVersion) ($(sw_vers -buildVersion)) on $(uname -m)"
+day_build
+# The size of a small MacBook's screen, or the nearest on offer: the runner's own 1024×768 is smaller than any Mac's.
+# shellcheck disable=SC2086
+display_mode ${DAY_DISPLAY:-1440x900 1600x900 1680x1050 1920x1080}
+echo "macOS's own window management, as it comes:"
+macos_tiling
+macos_click_wallpaper
+# GitHub's Macs come with Reduce Motion on. A person's Mac does not, and with it on Arbor shows no motion.
+macos_reduce_motion off
+apps_scratch
+sampler_start
+watch_start day-macos.log
+
+# MARK: The day
+
+chapter "Before Arbor: the apps are open already"
+open_app finder "$APPS_SCRATCH/grove"
+open_app safari "$APPS_SCRATCH/page.html"
+open_app textedit "$APPS_SCRATCH/oak.txt"
+open_app terminal
+open_app notes
+open_app calendar
+open_app settings
+open_app preview "$APPS_SCRATCH/leaf.png"
+open_app mail
+# The Dock grows with every app that joins it, and the space between it and the menu bar shrinks.
+sleep 3
+echo "the cast:$CAST"
+# shellcheck disable=SC2086
+set -- $CAST
+[ $# -ge 6 ] || die "only $# apps opened a window: no day to speak of"
+# Five that get docked in the course of the day, and one that floats all day.
+NA=$1 NB=$2 NC=$3 ND=$4 NE=$5 NX=$6
+A=$(window_of "$NA") B=$(window_of "$NB") C=$(window_of "$NC") D=$(window_of "$ND") E=$(window_of "$NE") X=$(window_of "$NX")
+echo "docked in the course of the day: $NA $NB $NC $ND $NE; floating all day: $NX and the rest"
+act look-around "looks at the screen"
+sleep 2
+acted own=all
+apptool apps | sed 's/^/  /'
+
+chapter "Arbor starts"
+if with_arbor; then
+  act launch "starts Arbor"
+  day_launch || die "Arbor did not start"
+  acted
+  for name in $CAST; do
+    check "$name's window is arranged, and floats" is floating "$(window_of "$name")"
+  done
+fi
+act leave-alone "does nothing for five seconds"
+sleep 5
+acted
+
+chapter "Switching between apps, nothing docked yet"
+for name in $CAST; do
+  act "dock-icon-$name" "clicks $name's icon in the Dock"
+  dock_click "$(bundle_of "$name")"
+  acted front="$(main_window_of "$(pid_of "$name")")"
+done
+act cmd-tab "presses ⌘Tab"
+before=$(front_pid)
+cmd_tab
+sleep 0.5
+want "another app came to the front" test "$(front_pid)" != "$before"
+acted front="$(main_window_of "$(front_pid)")"
+act cmd-tab-twice "holds ⌘ and presses Tab twice"
+cmd_tab 2
+sleep 0.5
+acted front="$(main_window_of "$(front_pid)")"
+
+if with_arbor; then
+  chapter "The first docks, by key"
+  reach "$NA"
+  press "dock-$NA-left" "⌃⌥⌘←" ctrl+opt+cmd+left moves=docked front="$A"
+  check "$NA is docked" is docked "$A"
+  reach "$NB"
+  press "dock-$NB-right" "⌃⌥⌘→" ctrl+opt+cmd+right moves=docked front="$B"
+  check "$NB is docked" is docked "$B"
+  reach "$NC"
+  press "dock-$NC-right" "⌃⌥⌘→" ctrl+opt+cmd+right moves=docked front="$C"
+  check "$NC is docked" is docked "$C"
+  brief | sed 's/^/    /'
+
+  chapter "Docking by real drags"
+  reach "$ND"
+  read -r x y w h <<< "$(frame_of "$A")"
+  act "drag-$ND-onto-$NA" "drags $ND by its title bar onto the right part of $NA and lets go"
+  drag_window "$D" "$((x + w * 5 / 6))" "$((y + h / 2))"
+  want "$ND is docked" eventually is docked "$D"
+  acted drags="$D" moves=docked front="$D"
+  reach "$NE"
+  read -r x y w h <<< "$(arbor_ask screen)"
+  act "drag-$NE-to-left-edge" "drags $NE by its title bar against the left edge of the screen and lets go"
+  drag_window "$E" "$x" "$((y + h / 2))"
+  acted drags="$E" moves=docked front="$E"
+  echo "$NE is $(is docked "$E" && echo docked || echo not docked), at $(real_frame_of "$E")"
+  if read -r x y w h <<< "$(arbor_ask desktop 2>/dev/null)" && [ -n "${w:-}" ]; then
+    act "drag-$ND-out" "drags $ND out of the arrangement onto the Desktop and lets go"
+    drag_window "$D" "$((x + w / 2))" "$((y + h / 3))"
+    want "$ND floats" eventually is floating "$D"
+    acted drags="$D" moves=docked front="$D" restores="$D"
+  fi
+  brief | sed 's/^/    /'
+fi
+
+chapter "macOS's own tiling, which is on"
+reach "$NX"
+read -r _ dx dy dw dh _ <<< "$(pointer displays | head -n 1)"
+act "drag-$NX-to-top" "drags $NX by its title bar against the menu bar and lets go: macOS fills the screen with it"
+drag_window "$X" "$((dx + dw / 2))" "$dy" --hold 1
+acted drags="$X" front="$X"
+echo "$NX is at $(real_frame_of "$X")"
+act "drag-$NX-back" "drags $NX away from the top again, to the middle of the screen"
+drag_window "$X" "$((dx + dw / 2))" "$((dy + dh / 3))"
+acted drags="$X" front="$X" restores="$X" own="$X"
+echo "$NX is at $(real_frame_of "$X")"
+
+chapter "Switching between apps, with an arrangement"
+HOME_STEP=$DAY_STEP
+for name in $CAST; do
+  act "dock-icon-$name-2" "clicks $name's icon in the Dock"
+  dock_click "$(bundle_of "$name")"
+  acted front="$(main_window_of "$(pid_of "$name")")"
+done
+act cmd-tab-2 "presses ⌘Tab"
+cmd_tab
+sleep 0.5
+acted front="$(main_window_of "$(front_pid)")" returns="$HOME_STEP"
+
+if with_arbor; then
+  chapter "The view goes in and out"
+  reach "$NA"
+  HOME_STEP=$DAY_STEP
+  press "frame-$NA" "⌃⌥↩" ctrl+opt+return moves=any front="$A"
+  FRAMED_STEP=$DAY_STEP
+  act "dock-icon-$NB-while-framed" "clicks $NB's icon in the Dock, whose window is out of view"
+  dock_click "$(bundle_of "$NB")"
+  acted moves=any front="$B"
+  act cmd-tab-while-framed "presses ⌘Tab, back to $NA"
+  cmd_tab
+  acted moves=any front="$A"
+  act "dock-icon-$NX-while-framed" "clicks $NX's icon in the Dock, whose window floats and is out of view"
+  dock_click "$(bundle_of "$NX")"
+  acted moves=any front="$X"
+  press show-everything "⌃⌥Space" ctrl+opt+space moves=any everything=1 returns="$HOME_STEP"
+  reach "$NB"
+  press "frame-$NB" "⌃⌥↩" ctrl+opt+return moves=any front="$B"
+  press neighbour-left "⌃⌥←" ctrl+opt+left moves=any
+  press back "⌃⌥[" "ctrl+opt+[" moves=any front="$B"
+  press step-out "⌃⌥↑" ctrl+opt+up moves=any
+  press show-desktop "⌃⌥D" ctrl+opt+d moves=any
+  press show-everything-2 "⌃⌥Space" ctrl+opt+space moves=any everything=1 returns="$HOME_STEP"
+fi
+
+chapter "Windows come and go"
+reach safari
+HOME_STEP=$DAY_STEP
+known=$(app_windows "$P_safari")
+act new-window "presses ⌘N in Safari"
+key cmd+n
+app_await_window "$P_safari" "$known" 8 && label "$NEW_WINDOW" safari-new
+acted front="$NEW_WINDOW"
+N=$NEW_WINDOW
+if [ -n "$N" ]; then
+  act window-menu "chooses Safari's first window in the Window menu"
+  window_menu "$W_safari"
+  acted front="$W_safari"
+  act cmd-backtick "presses ⌘\` for Safari's other window"
+  key 'cmd+`'
+  acted front="$N"
+  act close-window "presses ⌘W"
+  key cmd+w
+  acted leaves="$N" returns="$HOME_STEP"
+fi
+if with_arbor; then
+  reach safari
+  press frame-safari "⌃⌥↩" ctrl+opt+return moves=any front="$W_safari"
+  known=$(app_windows "$P_safari")
+  act new-window-while-framed "presses ⌘N in Safari while its window is framed"
+  key cmd+n
+  app_await_window "$P_safari" "$known" 8 && label "$NEW_WINDOW" safari-new-2
+  acted moves=any front="$NEW_WINDOW"
+  N=$NEW_WINDOW
+  act close-window-while-framed "presses ⌘W"
+  key cmd+w
+  acted moves=any leaves="$N"
+  press show-everything-3 "⌃⌥Space" ctrl+opt+space moves=any everything=1 returns="$HOME_STEP"
+fi
+
+reach "$NB"
+HOME_STEP=$DAY_STEP
+act "minimize-$NB" "presses ⌘M"
+key cmd+m
+acted moves=docked leaves="$B"
+act "restore-$NB" "clicks its miniature in the Dock"
+if read -r x y <<< "$(apptool dock-window "$B" 2>/dev/null)" && [ -n "${x:-}" ]; then click "$x" "$y"; move "$x" "$((y - 200))"; else echo "no miniature in the Dock"; apptool unminimize "$B"; fi
+acted moves=docked comes="$B" front="$B" returns="$HOME_STEP"
+
+reach "$NA"
+HOME_STEP=$DAY_STEP
+act "hide-$NA" "presses ⌘H"
+key cmd+h
+acted moves=docked leaves="$A"
+act "unhide-$NA" "clicks its icon in the Dock"
+dock_click "$(bundle_of "$NA")"
+acted moves=docked comes="$A" front="$A" returns="$HOME_STEP"
+
+reach textedit
+HOME_STEP=$DAY_STEP
+act quit-textedit "presses ⌘Q in TextEdit"
+key cmd+q
+arbor_await_exit "$P_textedit" 50 && apps_forget "$P_textedit"
+acted moves=docked leaves="$W_textedit"
+act reopen-textedit "opens the document again"
+OLD=$W_textedit
+# Not in the background: a person who opens a document gets its app in front.
+open -b com.apple.TextEdit "$APPS_SCRATCH/oak.txt"
+sleep 1
+meet textedit com.apple.TextEdit "$APPS_SCRATCH/oak.txt"
+acted moves=docked front="$W_textedit"
+[ "$A" = "$OLD" ] && A=$W_textedit
+[ "$B" = "$OLD" ] && B=$W_textedit
+[ "$C" = "$OLD" ] && C=$W_textedit
+[ "$D" = "$OLD" ] && D=$W_textedit
+[ "$E" = "$OLD" ] && E=$W_textedit
+[ "$X" = "$OLD" ] && X=$W_textedit
+
+chapter "Full screen"
+reach safari
+HOME_STEP=$DAY_STEP
+act full-screen "presses ⌃⌘F in Safari"
+key ctrl+cmd+f
+sleep 2
+acted moves=any leaves=any
+act leave-full-screen "presses ⌃⌘F again"
+key ctrl+cmd+f
+sleep 2
+acted moves=any leaves=any comes="$W_safari" front="$W_safari" returns="$HOME_STEP"
+
+chapter "A click lands on the wallpaper"
+HOME_STEP=$DAY_STEP
+if spot=$(bare_spot); then
+  act click-wallpaper "clicks on the wallpaper: macOS sweeps every window aside"
+  # shellcheck disable=SC2086
+  click $spot
+  sleep 1
+  acted moves=any leaves=any
+  act click-wallpaper-again "clicks on the wallpaper again: macOS brings them back"
+  # shellcheck disable=SC2086
+  click $spot
+  sleep 1
+  acted moves=any leaves=any returns="$HOME_STEP" everything=1
+else
+  echo "no bare spot of wallpaper shows"
+fi
+
+if with_arbor; then
+  chapter "The ways out"
+  reach "$NB"
+  HOME_STEP=$DAY_STEP
+  press pause "⌃⌥⎋" ctrl+opt+escape moves=any restores=all everything=1
+  act "drag-$NX-while-paused" "moves $NX a little while Arbor is paused"
+  read -r x y w h <<< "$(real_of "$X")"
+  click_window "$X"
+  drag_window "$X" "$((x + w / 2 + 60))" "$((y + 72))"
+  acted drags="$X" own="$X"
+  press resume "⌃⌥⎋" ctrl+opt+escape moves=any
+  press float-all "⌃⌥⇧F" ctrl+opt+shift+f moves=any restores=all places=1 everything=1
+
+  reach "$NA"
+  press "dock-$NA-left-2" "⌃⌥⌘←" ctrl+opt+cmd+left moves=docked front="$A"
+  reach "$NB"
+  press "dock-$NB-right-2" "⌃⌥⌘→" ctrl+opt+cmd+right moves=docked front="$B"
+  press "frame-$NB-2" "⌃⌥↩" ctrl+opt+return moves=any front="$B"
+  act quit "chooses Quit Arbor in Arbor's menu"
+  arbor_menu up return
+  want "Arbor ends within five seconds" day_gone
+  acted moves=any restores=all places=1 everything=1
+
+  chapter "After Arbor: can every window be reached?"
+  for name in $CAST; do
+    act "dock-icon-$name-3" "clicks $name's icon in the Dock"
+    dock_click "$(bundle_of "$name")"
+    acted front="$(main_window_of "$(pid_of "$name")")"
+  done
+
+  chapter "The next morning: Arbor starts again"
+  act launch-2 "starts Arbor again"
+  day_launch || die "Arbor did not start again"
+  acted moves=docked
+  brief | sed 's/^/    /'
+  act leave-alone-2 "does nothing for five seconds"
+  sleep 5
+  acted
+  act quit-2 "quits Arbor"
+  ctl quit
+  want "Arbor ends within five seconds" day_gone
+  acted moves=any restores=all places=1 everything=1
+fi
+
+day_report
