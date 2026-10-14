@@ -537,7 +537,7 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
       let corner = CGPoint(x: list[0].frame.minX, y: list[0].frame.maxY)
       (list[1].frame.origin, list[1].visibleFrame.origin) = (corner, corner)
     }
-    system.setDisplays(list)
+    system.setDisplays(keepingTheProjector(list, of: system))
     return ("\(count) display(s)", true)
   case "macos":
     // What `doctor` and the welcome window are told about this Mac. Until this line: nothing ("unknown here").
@@ -609,12 +609,17 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
       return usage("display-size <WxH> [<menu bar height>]")
     }
     let bar = words.count > 2 ? Double(words[2]).map { CGFloat($0) } ?? 25 : 25
-    system.setDisplays([
+    let resized = [
       DisplaySnapshot(
         id: FakeWindowSystem.standardDisplay.id, frame: CGRect(origin: .zero, size: size),
         visibleFrame: CGRect(x: 0, y: bar, width: size.width, height: size.height - bar), isMain: true)
-    ])
+    ]
+    system.setDisplays(keepingTheProjector(resized, of: system))
     return ("the main display is \(words[1])", true)
+  case "projector":
+    guard words.count == 2, ["on", "off"].contains(words[1]) else { return usage("projector on|off") }
+    system.setMirroring(words[1] == "on")
+    return ("mirroring \(words[1])", true)
   case "min":
     guard let id = window(1), words.count > 2, let minimum = size(words[2]) else { return usage("min <id> <WxH>") }
     system.setMinimumSize(id, minimum)

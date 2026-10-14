@@ -357,6 +357,9 @@ private final class Panel {
     let p = Panel()
     p.model.search = "ring"
     #expect(p.model.found.sections.flatMap(\.rows).map(\.key) == ["focusRing", "focusRingWidth", "focusRingColour"])
+    // Nor does it end a word of a key: `holdStillWhileMirroring` is found by how its words begin.
+    p.model.search = "mirr"
+    #expect(p.model.found.sections.flatMap(\.rows).map(\.key) == ["holdStillWhileMirroring"])
     p.model.search = "dock"
     #expect(p.model.found.sections.flatMap(\.rows).contains { $0.key == "dimBehindArranged" }, "“docked” begins so")
     // A key's words run together, and whoever types part of one knows it.

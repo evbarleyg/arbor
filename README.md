@@ -572,6 +572,7 @@ version changes one. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete refere
 | `shortcutsFollowLayout` | true | A letter, digit or sign in a shortcut is the key that types it on the keyboard layout in use; false: its place on a US keyboard |
 | `pauseForApps` | [] | Apps (bundle ids) Arbor pauses for while one is in front, as ⌃⌥⎋ does, and resumes after: games, anything that changes the display's resolution |
 | `holdStillWhileCameraIsOn` / `holdStillWhileMicrophoneIsOn` | false / false | Hold still (below) by itself while any app has a camera or a microphone running |
+| `holdStillWhileMirroring` | false | And while the display is mirrored to a projector, a television or over AirPlay. An experiment, like the others: not yet seen at work on a Mac |
 | `holdStillFor` | [] | And while such a window is open. A bundle id, then optionally part of the title (without it any window of the app counts, minimized ones too), for example `"us.zoom.xos Zoom Meeting"` (written from memory: check the title on your Mac) |
 | `animationDuration` | 0.46 | Seconds a zoom, dock or close takes to play, up to 2; 0 applies everything at once |
 | `windowPictures` | false | Not ready, see [Install and run](#install-and-run): windows keep their contents while they move, with Screen Recording permission |
@@ -735,8 +736,8 @@ once for each app and hold.
 **Out of the box Arbor holds only when asked.** It can start Hold Still by itself during a call and end it with the call; the menu then says why ("Holding still
 while the camera is on"). macOS does not tell apps whether the screen is being shared or recorded, but it does tell every app, without asking you, whether some
 app has a camera or a microphone running: Arbor only reads that, and opens neither. `arborctl set holdStillWhileCameraIsOn true` makes a camera do it for you. All
-three signs are off until they have been seen at work on a Mac: a camera that is on is not a screen that is shared.
-A window listed in `holdStillFor` counts as a call too. Release during a call lasts until that call is over.
+four signs are off until they have been seen at work on a Mac: a camera that is on is not a screen that is shared.
+A window listed in `holdStillFor` counts as a call too, and so does a display that is mirrored (a projector, a television, AirPlay; `holdStillWhileMirroring`), which is a screen that is shared. Release during a call lasts until that call is over.
 The microphone (`holdStillWhileMicrophoneIsOn`) is for calls without a camera: it is not yet known what else keeps a
 microphone running on a Mac ("Hey Siri", dictation), nor whether muting ends it. Only devices that are microphones and nothing else count then, because a
 headset that is one device for both directions is "running" while it plays music.

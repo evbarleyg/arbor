@@ -486,7 +486,7 @@ extension TraceDisplay {
   public init(_ display: DisplaySnapshot, name: String = "") {
     self.init(
       id: display.id, frame: display.frame, visible: display.visibleFrame, main: display.isMain, name: name,
-      builtIn: display.isBuiltIn)
+      builtIn: display.isBuiltIn, mirrored: display.isMirrored)
   }
 }
 
@@ -494,6 +494,6 @@ extension DisplaySnapshot {
   public init(_ display: TraceDisplay) {
     self.init(
       id: display.id, frame: display.frame, visibleFrame: display.visible, isMain: display.main,
-      name: display.name.isEmpty ? nil : display.name, isBuiltIn: display.builtIn)
+      name: display.name.isEmpty ? nil : display.name, isBuiltIn: display.builtIn, isMirrored: display.mirrored)
   }
 }

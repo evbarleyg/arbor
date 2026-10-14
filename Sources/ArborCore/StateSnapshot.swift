@@ -25,6 +25,8 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
     /// nil when there is nothing to undo or redo.
     public var undo: String?
     public var redo: String?
+    /// What it shows is shown on another display as well (a projector, a television, AirPlay).
+    public var mirrored = false
 
     public init(
       id: DisplayID, frame: CGRect, visibleFrame: CGRect, camera: NodeID, tree: LayoutTree,

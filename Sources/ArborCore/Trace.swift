@@ -113,18 +113,24 @@ public struct TraceDisplay: Equatable, Sendable {
   public var name: String
   public var builtIn: Bool
 
-  public init(id: DisplayID, frame: CGRect, visible: CGRect, main: Bool, name: String = "", builtIn: Bool = false) {
+  /// Its picture is shown on another display as well. Arbor holds still meanwhile (K160), so a replay has to know.
+  public var mirrored: Bool
+
+  public init(
+    id: DisplayID, frame: CGRect, visible: CGRect, main: Bool, name: String = "", builtIn: Bool = false, mirrored: Bool = false
+  ) {
     self.id = id
     self.frame = frame
     self.visible = visible
     self.main = main
     self.name = name
     self.builtIn = builtIn
+    self.mirrored = mirrored
   }
 }
 
 extension TraceDisplay: Codable {
-  private enum CodingKeys: String, CodingKey { case id, frame, visible, main, name, builtIn }
+  private enum CodingKeys: String, CodingKey { case id, frame, visible, main, name, builtIn, mirrored }
 
   public init(from decoder: any Decoder) throws {
     let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -134,6 +140,7 @@ extension TraceDisplay: Codable {
     main = try c.decodeIfPresent(Bool.self, forKey: .main) ?? false
     name = try c.decodeIfPresent(String.self, forKey: .name) ?? ""
     builtIn = try c.decodeIfPresent(Bool.self, forKey: .builtIn) ?? false
+    mirrored = try c.decodeIfPresent(Bool.self, forKey: .mirrored) ?? false
   }
 
   public func encode(to encoder: any Encoder) throws {
@@ -144,6 +151,7 @@ extension TraceDisplay: Codable {
     if main { try c.encode(true, forKey: .main) }
     if !name.isEmpty { try c.encode(name, forKey: .name) }
     if builtIn { try c.encode(true, forKey: .builtIn) }
+    if mirrored { try c.encode(true, forKey: .mirrored) }
   }
 }
 
@@ -831,7 +839,7 @@ extension TraceWindow: CustomStringConvertible {
 
 extension TraceDisplay: CustomStringConvertible {
   public var description: String {
-    "\(id) \(traceText(frame)), visible \(traceText(visible))" + (main ? ", main" : "")
+    "\(id) \(traceText(frame)), visible \(traceText(visible))" + (main ? ", main" : "") + (mirrored ? ", mirrored" : "")
   }
 }
 
