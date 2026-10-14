@@ -11,7 +11,10 @@
 # Two runs of Arbor, one after the other, each with four test windows. In each: a rest after the launch, then `sample` watches
 # Arbor's threads while two windows are docked, one after the other, and each command is timed. Kept: mac-shell/sample-<n>.txt
 # (call stacks, no window's title), Arbor's log and `stats`.
-# Safe on a person's Mac: its own test windows, an Arbor limited to them, no setting changed. About a minute after the build.
+# A first try taught two things: a hosted Mac comes with Reduce Motion on, so there was no stage, and the first dock then took
+# 0.28 s (the control); and the first `sample` of a login needs seconds to get going, so the commands now wait for it.
+# Safe on a person's Mac: its own test windows and an Arbor limited to them. Only on a throwaway Mac does it switch Reduce Motion
+# off; elsewhere the setting stays as it is. About a minute after the build.
 source "$(dirname "$0")/lib.sh"
 
 now() { python3 -c 'import time; print(int(time.time() * 1000))'; }
@@ -28,6 +31,7 @@ timed() {
 step "the Mac"
 echo "macOS $(sw_vers -productVersion) ($(sw_vers -buildVersion)) on $(uname -m), $(sysctl -n hw.ncpu) cores"
 arbor_build
+macos_reduce_motion off
 timed status
 
 for run in 1 2; do
@@ -36,10 +40,15 @@ for run in 1 2; do
   # Past the housekeeping that follows a launch: the wallpaper's file is read 0.6 s after the first layout.
   sleep 4
   if command -v sample > /dev/null 2>&1; then
-    sample "$ARBOR_PID" 6 1 -mayDie -file "$ARBOR_OUT/sample-$run.txt" > /dev/null 2>&1 &
+    sample "$ARBOR_PID" 8 1 -mayDie -file "$ARBOR_OUT/sample-$run.txt" > "$ARBOR_OUT/sample-$run.says" 2>&1 &
     started $!
-    # It takes a moment to attach.
-    sleep 1.5
+    tries=0
+    until grep -q "^Sampling process" "$ARBOR_OUT/sample-$run.says" || [ "$tries" -ge 60 ]; do
+      sleep 0.25
+      tries=$((tries + 1))
+    done
+    echo "sample got going after $tries quarters of a second"
+    sleep 0.5
   else
     echo "no sample here: times only"
   fi
@@ -62,6 +71,7 @@ for run in 1 2; do
   arbor_stop
 done
 
-step "the main thread while the first window was docked, run 1 (the heaviest branches)"
-[ -s "$ARBOR_OUT/sample-1.txt" ] && sed -n '/^Call graph:/,/^Total number in stack/p' "$ARBOR_OUT/sample-1.txt" | head -n 150 | cut -c 1-200
+step "what the samples saw of the stage"
+grep -c "" "$ARBOR_OUT"/sample-*.txt 2> /dev/null
+grep -h -E "StageDirector.play|Stage.play|costume\(for|WindowPictures.desktop|makeStage" "$ARBOR_OUT"/sample-*.txt 2> /dev/null | cut -c 1-220 | head -n 30
 exit 0
