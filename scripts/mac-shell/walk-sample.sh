@@ -5,9 +5,9 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib-walk.sh"
 walk_begin stock laptop defaults 4711
 view back
 switch_click textedit
-switch_click terminal
+switch_to terminal
 dock_key up
-switch_click textedit
+switch_to textedit
 float_key
 switch_dock textedit
 hide
@@ -37,15 +37,15 @@ switch_dock textedit
 reopen preview
 view back
 switch_dock notes
-switch_click settings
+switch_to settings
 dock_key right
-switch_click mail
+switch_to mail
 dock_key left
 switch_click safari
 view forward
 view out
 view in
-switch_click safari
+switch_to safari
 dock_key down
 quit_app preview
 switch_cmdtab 3
@@ -82,7 +82,7 @@ switch_click textedit
 drag_onto textedit preview bottom
 wallpaper_click
 pause
-switch_click settings
+switch_to settings
 dock_key down
 view back
 drag_by mail -126 75

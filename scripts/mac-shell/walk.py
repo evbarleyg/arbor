@@ -106,7 +106,7 @@ def walk(seed, acts, two=False):
             else:
                 say("close_new")
         elif kind == "dock-key":
-            say(f"switch_click {app}")
+            say(f"switch_to {app}")
             say(dice.weighted([(f"dock_key {dice.pick(['left', 'right', 'up', 'down'])}", 4), ("float_key", 1)]))
         elif kind == "drag":
             say(dice.weighted([(f"drag_onto {app} {other} {dice.pick(['left', 'right', 'top', 'bottom'])}", 3), (f"drag_out {app}", 2),
@@ -183,10 +183,10 @@ def self_test():
     return 1 if failures else 0
 
 
-WORDS = {"switch_dock", "switch_click", "switch_cmdtab", "switch_backtick", "switch_menu", "switch_tile", "open_new", "close_new", "minimize", "restore", "hide", "unhide",
+WORDS = {"switch_dock", "switch_click", "switch_to", "switch_cmdtab", "switch_backtick", "switch_menu", "switch_tile", "open_new", "close_new", "minimize", "restore", "hide", "unhide",
          "quit_app", "reopen", "dock_key", "float_key", "drag_onto", "drag_out", "drag_by", "drag_edge", "view", "resize_gap", "resize_key", "full_screen",
          "wallpaper_click", "pause", "resume", "float_all", "quit_and_start", "idle_act", "display", "send_across"}
-PINNED = ['view back', 'switch_click textedit', 'switch_click terminal']
+PINNED = ['view back', 'switch_click textedit', 'switch_to terminal']
 
 
 def main(arguments):
