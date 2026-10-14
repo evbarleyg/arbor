@@ -234,6 +234,7 @@ extension Controller {
     check("unplaced", unplaced)
     check("owedMoves", owedMoves)
     check("givenUp", enforcement.givenUp)
+    check("appsDoubleClick", [appsDoubleClick?.window].compactMap { $0 })
     check("focusHistory", focusHistory)
     check("ignoredWindowIDs", filter.ignoredWindowIDs)
     check("landsAt", landsAt.keys)
@@ -298,6 +299,12 @@ extension Controller {
 
   /// Whether a key that may become a peek is down, held long enough yet or not (F51).
   public var aPeekIsUnderWay: Bool { peeking != nil }
+
+  /// Those of them that are where a double-click put them (Controller+AppsDoubleClick.swift).
+  public var windowsLeftWhereADoubleClickPutThem: Set<WindowID> { enforcement.leftAlone }
+
+  /// The docked window whose next change of frame would be put down to a double-click.
+  public var windowJustDoubleClicked: WindowID? { appsDoubleClick?.window }
 
   /// Windows whose app did not answer when they were to be moved, and have not been moved since.
   public var windowsOwedAMove: Set<WindowID> { unplaced.union(owedMoves) }

@@ -244,9 +244,15 @@ public protocol WindowSystemEvents: AnyObject {
   /// A window that was open all along has come to notice: its macOS Space is showing for the first time
   /// since `start()`. Nobody just opened it, which is what `windowAppeared` says.
   func windowFound(_ window: WindowSnapshot)
+  /// The second press of a double-click has gone to `window`'s app. macOS has an action of its own for one on a title
+  /// bar, and whoever puts windows back must not undo it.
+  func doubleClickReached(_ window: WindowID)
 }
 
 extension WindowSystemEvents {
   /// To a listener that makes no difference between the two, a window that was found is one more window.
   public func windowFound(_ window: WindowSnapshot) { windowAppeared(window) }
+
+  /// It matters only to a listener that puts windows back.
+  public func doubleClickReached(_ window: WindowID) {}
 }

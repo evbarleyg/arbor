@@ -40,6 +40,10 @@ public final class FakeWindowSystem: WindowSystem {
     public internal(set) var movesNotArbors = 0
     /// The app changed its ways since Arbor last asked it for anything.
     public internal(set) var changedItsWays = false
+    /// macOS has zoomed it: the frame it got, and the one it had, to which the next zoom returns it.
+    var zoom: (to: CGRect, from: CGRect)?
+    /// How often it has been double-clicked.
+    public internal(set) var doubleClicks = 0
 
     public static func == (a: FakeWindow, b: FakeWindow) -> Bool {
       a.snapshot == b.snapshot && a.minimumSize == b.minimumSize && a.maximumSize == b.maximumSize

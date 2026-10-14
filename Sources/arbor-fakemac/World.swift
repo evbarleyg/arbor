@@ -85,8 +85,6 @@ final class World {
   private var nextExtraID: UInt32 = 5001
   /// What each window's content has received: down, up, dragged, key, magnify.
   var counts: [UInt32: [String: Int]] = [:]
-  /// Where a zoomed window was before, for the second double-click on its title bar.
-  var zoomedFrom: [WindowID: CGRect] = [:]
 
   // MARK: In front of what
 
@@ -180,6 +178,7 @@ final class World {
   static let tilingSettings = ["EnableTilingByEdgeDrag", "EnableTopTilingByEdgeDrag", "EnableTilingOptionAccelerator"].map {
     "defaults/com.apple.WindowManager.\($0)"
   }
+  static let titleBarActionSetting = "defaults/-g.AppleActionOnDoubleClick"
   static let filesWritten = filesRead + ["state.unreadable.json", "state.before-repair.json", "arbor.lock"]
 
   init(socket: String, display: DisplaySnapshot) {
@@ -203,7 +202,7 @@ final class World {
   /// last line (settings.json edited, state.json deleted or damaged…) and notes it, so that later replays see
   /// the same.
   func noticeChanges(in folder: String, settingsIn rehearsal: String?) {
-    for name in World.filesRead + [World.clickWallpaperSetting] + World.tilingSettings {
+    for name in World.filesRead + [World.clickWallpaperSetting, World.titleBarActionSetting] + World.tilingSettings {
       let path = (name.hasPrefix("defaults/") ? rehearsal ?? "/dev/null" : folder) + "/" + name
       let data = try? Data(contentsOf: URL(fileURLWithPath: path))
       guard data != file(name) else { continue }

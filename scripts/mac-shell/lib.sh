@@ -130,7 +130,7 @@
 #   ran <command…>                  Arbor ran that command since the claim began (whether or not it succeeded)
 #   logged <text>                   arbor.log has gained a line with that text since the claim began
 #   about <a> <b> [tolerance]       two whole numbers at most 3 (or tolerance) apart
-#   is <what> <id>                  docked floating parked tile focused minimized hidden fullScreen pinned managed known on_screen
+#   is <what> <id>                  docked floating parked tile focused minimized hidden fullScreen pinned letBe managed known on_screen
 #                                     in_slot display1 display2 (whose workspace holds it)
 #   in_view <id> | out_of_view <id>          at least 90 %, at most 5 % of it is on a display (none, when it is minimized,
 #                                     hidden or on another Space)

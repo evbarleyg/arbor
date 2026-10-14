@@ -12,6 +12,8 @@ public struct EnforcementLimiter: Sendable, Equatable {
   public var span: TimeInterval
   private var putBacks: [WindowID: [TimeInterval]] = [:]
   public private(set) var givenUp: Set<WindowID> = []
+  /// Those of `givenUp` that never fought: see `leave`.
+  public private(set) var leftAlone: Set<WindowID> = []
 
   public init(limit: Int = 3, span: TimeInterval = 3) {
     self.limit = limit
@@ -33,11 +35,20 @@ public struct EnforcementLimiter: Sendable, Equatable {
     return true
   }
 
+  /// Leaves `window` where it is from here on, as if Arbor had given up on it, without counting anything: what
+  /// moved it was asked for (`AppsDoubleClick`).
+  public mutating func leave(_ window: WindowID) {
+    givenUp.insert(window)
+    leftAlone.insert(window)
+    putBacks[window] = nil
+  }
+
   /// The layout these windows belong to has changed, so each gets a fresh start.
   public mutating func reset<Windows: Sequence>(_ windows: Windows) where Windows.Element == WindowID {
     for window in windows {
       putBacks[window] = nil
       givenUp.remove(window)
+      leftAlone.remove(window)
     }
   }
 }

@@ -106,6 +106,8 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
   case grab(WindowID)
   case carry(CGPoint)
   case release
+  /// Double-clicks a window's title bar, and macOS zooms the window, or returns it to where it was before.
+  case doubleClick(WindowID)
   /// The button comes up and nobody sees it: the drag ends without a drop.
   case loseRelease
   /// ⌘ goes down, or comes up. Held during a drag, it turns docking off (F09).
@@ -249,6 +251,7 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
     case .backgroundFocus(let window): return "background-focus \(window.rawValue)"
     case .press: return "press"
     case .grab(let window): return "grab \(window.rawValue)"
+    case .doubleClick(let window): return "double-click \(window.rawValue)"
     case .carry(let point): return "carry \(n(point.x)) \(n(point.y))"
     case .release: return "release"
     case .loseRelease: return "lose-release"
@@ -400,6 +403,7 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
     case ("cursor", 3): return point(1).map { .cursor($0) }
     case ("focus", 2): return window(1).map { .focus($0) }
     case ("switch-app", 2): return window(1).map { .switchApp($0) }
+    case ("double-click", 2): return window(1).map { .doubleClick($0) }
     case ("focus-nothing", 1): return .focusNothing
     case ("background-focus", 2): return window(1).map { .backgroundFocus($0) }
     case ("press", 1): return .press

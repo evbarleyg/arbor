@@ -54,6 +54,7 @@ extension Controller: WindowSystemEvents {
     returningWindows.remove(id)
     if unframedIntoATile?.window == id || unframedIntoATile?.heir == id { unframedIntoATile = nil }
     enforcement.reset([id])
+    if appsDoubleClick?.window == id { appsDoubleClick = nil }
     forgetRuleState(of: id)
     releasePendingSlot(of: id)
     if drag?.window == id { cancelDrag() }
@@ -196,8 +197,10 @@ extension Controller: WindowSystemEvents {
     }
     if enforcement.givenUp.contains(window.id) {
       settled[window.id] = window.frame
+      noteWhetherItIsBackInItsSlot(window, on: display)
       return
     }
+    if standsAsideAfterADoubleClick(on: window, display: display) { return }
     scheduleEnforce(display)
   }
 
