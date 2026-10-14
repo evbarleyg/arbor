@@ -435,6 +435,7 @@ final class Runner {
     let (w1, w2, w3) = (testWindows[0], testWindows[1], testWindows[2])
 
     print("\n▸ start watching events  (watch)")
+    noteWhereTheLogIs()
     let watcher = Watcher("watch", socket: socket)
     check("hello arrives at once", poll(5) { !watcher.lines.isEmpty })
     if case .hello(let hello)? = watcher.events.first {
@@ -499,6 +500,7 @@ final class Runner {
 
     // B2: this used to crash Arbor, so a missing reply is a failed check, not a failed setup.
     print("\n▸ resize by an absurd amount  (resize \(w1.rawValue) right 1e300)")
+    noteWhereTheLogIs()
     let absurd = try? send("resize \(w1.rawValue) right 1e300")
     check("the command is refused", absurd?.ok == false, absurd?.message ?? "no reply")
     check("Arbor is still running", (try? send("status"))?.ok == true)
@@ -552,9 +554,11 @@ final class Runner {
     }
     // The titles are spelt out here because `make parity` looks for them in this file.
     print("\n▸ replace settings.json as most editors do  (no command)")
+    noteWhereTheLogIs()
     try editSettings(gap: "24", replacingTheFile: true, visible: visible)
     // Back to the file Arbor started on, and so to the gap the other steps expect.
     print("\n▸ write into settings.json in place  (no command)")
+    noteWhereTheLogIs()
     try editSettings(gap: "12.0", replacingTheFile: false, visible: visible)
     // Two above the floating level: `PassingPanel`.
     try step("show the shortcuts on screen", "show-shortcuts") { _ in
@@ -606,6 +610,7 @@ final class Runner {
     }
 
     print("\n▸ reload a settings file with a typo  (reload-settings)")
+    noteWhereTheLogIs()
     let typo = Self.handEditedSettings.replacingOccurrences(of: "12.0,", with: "12.0")
     try Data(typo.utf8).write(to: settingsFile)
     let reload = try send("reload-settings")
@@ -620,6 +625,7 @@ final class Runner {
     check("mended, it loads again", mended.ok, mended.message)
 
     print("\n▸ what the watcher heard  (watch)")
+    noteWhereTheLogIs()
     check("the Desktop on its own, last", poll(3) { watcher.views.last?.kind == .desktop }, "\(watcher.views.last as Any)")
     check("every line is an event", watcher.events.count == watcher.lines.count)
     for window in [w1, w2, w3] {
@@ -670,6 +676,7 @@ final class Runner {
     _ = try send("reload-settings")
 
     print("\n▸ quit Arbor  (quit)")
+    noteWhereTheLogIs()
     _ = try? send("quit")
     let exited = poll(5) { !(self.arbor?.isRunning ?? false) }
     check("Arbor exited", exited)
@@ -684,6 +691,7 @@ final class Runner {
     }
 
     print("\n▸ the watcher is told that Arbor quit  (watch)")
+    noteWhereTheLogIs()
     check("the watch ended as arborctl's exit code 0", poll(5) { watcher.end != nil } && watcher.end == .stopped, "\(watcher.end as Any)")
     check("quitting is the last event", watcher.events.last == .quitting, watcher.lines.last ?? "nothing")
 
@@ -722,6 +730,7 @@ final class Runner {
     let (w1, w2, w3) = (testWindows[0], testWindows[1], testWindows[2])
 
     print("\n▸ start Arbor again  (launch)")
+    noteWhereTheLogIs()
     try launchArbor()
     check("Arbor is arranging the windows", arborIsBack(after: nil))
     check("the arrangement is back", Set(try state().displays[0].tree.allWindows) == Set([w1, w2, w3]))
@@ -731,12 +740,14 @@ final class Runner {
     }
 
     print("\n▸ clients that hang up without reading the reply  (state)")
+    noteWhereTheLogIs()
     for _ in 0..<20 { askAndHangUp(socket) }
     Thread.sleep(forTimeInterval: 0.5)
     check("Arbor is still running", arbor?.isRunning == true)
     check("Arbor still answers", (try? send("status"))?.ok == true)
 
     print("\n▸ a second copy of Arbor  (launch)")
+    noteWhereTheLogIs()
     let before = try state()
     let second = try launchArbor(asSecondCopy: true)
     check("the second copy leaves by itself", poll(8) { !second.isRunning })
@@ -755,6 +766,7 @@ final class Runner {
     let arranged = try state().displays[0]
 
     print("\n▸ kill Arbor while windows are parked  (kill -9)")
+    noteWhereTheLogIs()
     var previous = killArbor()
     check("Arbor was running", previous != nil)
     check("the watchdog starts Arbor again", arborIsBack(after: previous))
@@ -778,6 +790,7 @@ final class Runner {
       }
     }
     print("\n▸ kill Arbor during the pause  (kill -9)")
+    noteWhereTheLogIs()
     previous = killArbor()
     check("the watchdog starts Arbor a second time, and it is still paused", poll(15) {
       guard let pid = self.arborPID(), pid != previous, let state = try? self.state() else { return false }
@@ -798,6 +811,7 @@ final class Runner {
       }
     }
     print("\n▸ kill Arbor a third time within two minutes  (kill -9)")
+    noteWhereTheLogIs()
     _ = killArbor()
     check("the third time Arbor only rescues the windows and quits", poll(15) {
       self.arborPID() == nil && [w1, w2, w3].allSatisfy { self.visibleFraction($0) > 0.9 }
@@ -812,6 +826,7 @@ final class Runner {
 
     // What follows in the run expects to find the three windows docked.
     print("\n▸ start Arbor after the rescue and arrange again  (launch, arrange, quit)")
+    noteWhereTheLogIs()
     try launchArbor()
     check("Arbor starts afresh", arborIsBack(after: nil))
     check("the windows are arranged again", (try? send("arrange"))?.ok == true)

@@ -48,6 +48,7 @@ records; its two traces say what was done about that. **B5 came back with #101**
 | `stubborn-fast` | A window that goes back to its old frame 0.05 s after every move is docked. B2 (fixed in #24, below the seam: one line was added by hand, as the trace says, for what `AXWindowSystem` reports since). (First run.) |
 | `stubborn-slow` | The same at 0.4 s: two rounds of a fight, then B2 ended it (fixed in #24; one line added by hand, likewise). |
 | `hide-unhide` | The app hides and unhides itself. B1 (fixed), **B4**. |
+| `app-switch-unreported` | Two apps: three docked windows of the first (29, 30, 31) and one of the other (75). 29 is framed, 75 is out of view, and the other app brings itself forward (arbor-e2e's "switch to the other app", cut after the switch). `didActivateApplication` came 5 ms before `frontmostApplication` named the app, so `AXWindowSystem` took it for an app in the background and dropped it: no `focused` line, only "the keyboard focus moved", twice, and the window had the keyboard out of view. One switch in three went like that. Fixed in `AXWindowSystem`, below what a trace records: one line was added by hand, as the trace says, for what it reports since. |
 
 **Real apps**, one per session (`ARBOR_ONLY_PIDS`)
 
