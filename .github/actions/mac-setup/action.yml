@@ -20,6 +20,10 @@ description: >
 # shell script with one ✘ fails its job. It also saves after the script has had its way with .build.
 
 inputs:
+  swift:
+    description: "The Swift release to install, e.g. 6.4. Empty: the one that comes with the runner's Xcode, and nothing is restored, installed or saved."
+    required: false
+    default: "6.4"
   build-cache:
     description: "products: .build as `swift build` leaves it. tests: as `swift build --build-tests` does. none: build from nothing."
     required: false
@@ -38,13 +42,16 @@ runs:
     - name: Use the newest Xcode on the runner
       id: xcode
       shell: bash
+      env:
+        WANTED: ${{ inputs.swift }}
       run: |
         xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
         sudo xcode-select -s "$xcode"
-        echo "toolchain=swift-toolchain-v1-6.4-${ImageOS:-macos}-$(uname -m)-$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+        echo "toolchain=swift-toolchain-v1-$WANTED-${ImageOS:-macos}-$(uname -m)-$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
 
     - name: The toolchain an earlier job installed
       id: toolchain
+      if: inputs.swift != ''
       uses: actions/cache/restore@v4
       env:
         SEGMENT_DOWNLOAD_TIMEOUT_MINS: 2 # a download that stalls is given up, and the Mac goes on without
@@ -56,19 +63,21 @@ runs:
 
     - name: The Swift release the project is built with
       id: install
+      if: inputs.swift != ''
       shell: bash
       env:
+        WANTED: ${{ inputs.swift }}
         WHOLE: ${{ steps.toolchain.outputs.cache-hit }}
       run: |
         # What was put back is used only if all of it came and it answers with the right version. Anything else is thrown away and installed afresh.
         kept=$("$HOME/.swiftly/bin/swift" --version 2>&1 | sed -nE 's/.*Swift version ([0-9]+\.[0-9]+).*/\1/p' | head -1) || true
-        if [ "$WHOLE" = true ] && [ "$kept" = 6.4 ]; then
+        if [ "$WHOLE" = true ] && [ "$kept" = "$WANTED" ]; then
           echo "using the Swift $kept an earlier job installed"
           echo "$HOME/.swiftly/bin" >> "$GITHUB_PATH"
           exit 0
         fi
         rm -rf "$HOME/.swiftly" "$HOME/Library/Developer/Toolchains"
-        "$GITHUB_ACTION_PATH/../../../scripts/ci-toolchain.sh" 6.4
+        "$GITHUB_ACTION_PATH/../../../scripts/ci-toolchain.sh" "$WANTED"
         # Nothing, on a runner that comes with that release.
         if [ -d "$HOME/.swiftly" ]; then
           echo "installed=true" >> "$GITHUB_OUTPUT"
