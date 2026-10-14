@@ -1,5 +1,5 @@
 name: Mac shell
-run-name: "Mac shell: ${{ inputs.script }} at ${{ inputs.ref || github.ref_name }} [${{ inputs.tag || github.run_id }}]"
+run-name: "Mac shell (${{ inputs.runner }}): ${{ inputs.script }} at ${{ inputs.ref || github.ref_name }} [${{ inputs.tag || github.run_id }}]"
 
 # A remote Mac for executors that have none. Checks out a ref, runs one script
 # from that ref on GitHub's macOS runner with the newest Xcode selected, and
@@ -31,12 +31,24 @@ on:
         default: ""
         type: string
 
+      runner:
+        description: Which of GitHub's Macs
+        required: false
+        default: macos-26
+        type: choice
+        options: [macos-26, macos-15, macos-14, macos-latest, macos-15-intel, macos-26-intel, macos-26-large, macos-26-xlarge, macos-15-xlarge, macos-15-large, macos-14-large, macos-14-xlarge, macos-13, macos-27]
+      bare:
+        description: No toolchain and no build, for a script that only asks the Mac something
+        required: false
+        default: false
+        type: boolean
+
 permissions:
   contents: read
 
 jobs:
   shell:
-    runs-on: macos-26
+    runs-on: ${{ inputs.runner }}
     timeout-minutes: 25
     permissions:
       contents: write # to push mac-shell-out/<tag>; nothing else is written
@@ -66,6 +78,7 @@ jobs:
       # workflow from one and the same branch for everybody, because a cache can be read only from the branch that wrote it (and from
       # main): so all runs share one toolchain and one another's builds.
       - name: The workflow's own tools
+        if: ${{ !inputs.bare }}
         uses: actions/checkout@v5
         with:
           ref: ${{ github.sha }}
@@ -76,12 +89,14 @@ jobs:
           persist-credentials: false
       - name: Set up
         id: setup
+        if: ${{ !inputs.bare }}
         uses: ./.ci/.github/actions/mac-setup
         with:
           build-cache: products
       # Here, so that what is kept is a build and nothing else. A build that fails is the script's to report, as it always was.
       - name: Build
         id: build
+        if: ${{ !inputs.bare }}
         run: |
           echo .ci >> .git/info/exclude
           swift --version
