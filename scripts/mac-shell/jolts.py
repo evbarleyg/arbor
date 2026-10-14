@@ -35,7 +35,8 @@ The script says what it is doing in marks (lib-day.sh writes them):
     front=<id>             it ends in front of every other window, its app in front, wholly in view
     leaves=<ids>|any       these may leave the screen (closed, hidden, minimized, another Space)
     comes=<ids>            these are on the screen at the end
-    own=<ids>|all          where these are now is where the person wants them: the size to give back later
+    own=<ids>|all          where these are now is where the person wants them: the size and the place to give back later
+    place=<ids>            the person moved these: the place is theirs from now on, the size to give back is what it was
     restores=<ids>|all     these have their own sizes back; places=1: their places too, as after Float All and Quit
     everything=1           no window may be out of view
     returns=<n>            every window is where it was at the end of step n
@@ -54,6 +55,9 @@ import sys
 EPISODE_GAP = 250
 # Points a window may travel beyond the straight road, per coordinate, before it counts as having gone elsewhere first.
 EXCESS = 6
+# AppKit lets a window pop or slide open: for this long after it first shows, within this many points, it is still opening.
+OPENING = 600
+OPENING_REACH = 24
 # A step during which the sampler saw nothing for longer than this is not judged: it says nothing either way.
 BLIND = 250
 # Points that are no move at all: apps round sizes, and Retina screens deal in halves.
@@ -163,6 +167,12 @@ def read(path):
     chapter = ""
     account = ""
     own = {}
+    # The script learns Arbor's process id a moment after Arbor has put up its first panel.
+    with open(path, encoding="utf-8", errors="replace") as lines:
+        for line in lines:
+            parts = line.split()
+            if len(parts) == 4 and parts[1:3] == ["M", "arbor"] and parts[3].isdigit():
+                world.arbors.add(int(parts[3]))
     with open(path, encoding="utf-8", errors="replace") as lines:
         for line in lines:
             parts = line.rstrip("\n").split(" ")
@@ -280,6 +290,9 @@ def remember(step, own):
     for window in frames if mine == "all" else ids(mine) | {born for born in step.born if born not in own}:
         if window in frames:
             own[window] = frames[window]
+    for window in ids(step.wants.get("place", "")):
+        if window in frames and window in own:
+            own[window] = frames[window][:2] + own[window][2:]
 
 
 def judge(step, world, by_number, own):
@@ -296,6 +309,8 @@ def judge(step, world, by_number, own):
     named = ids(may)
     dragged = ids(wants.get("drags", ""))
     may_leave = wants.get("leaves", "")
+    # What is said to go or to come is named by that.
+    named |= ids(may_leave) | ids(wants.get("comes", ""))
     kin = {world.pids.get(window) for window in named | dragged}
     if end:
         taken = [end["frames"][window] for window in named | dragged if window in end["frames"]]
@@ -312,16 +327,26 @@ def judge(step, world, by_number, own):
                 step.find("3", "ODD", window, "changed its size while it was being dragged", road(held))
             last_held = max((index for index, entry in enumerate(trace) if entry[2]), default=0)
             trace = trace[last_held:]
+        if window in step.born and trace and trace[0][1]:
+            # Where it has opened is where its app put it.
+            opened = 0
+            for index, entry in enumerate(trace):
+                if not entry[1] or entry[0] - trace[0][0] > OPENING or differs(trace[0][1], entry[1], by=OPENING_REACH):
+                    break
+                opened = index
+            trace = trace[opened:]
         moves, frames, took, detour, elsewhere = measure(trace)
-        if window in step.born and trace:
-            # Where it first showed is where its app put it.
-            pass
+        # macOS shrinks a window into the Dock and lets it grow out of it, by a road of its own.
+        if window in ids(may_leave) | ids(wants.get("comes", "")):
+            detour = 0
+        follows = window not in world.labels and world.pids.get(window) in {
+            world.pids.get(other) for other in step.traces if other in world.labels and len(step.traces[other]) > 1}
         if moves:
             step.moved[window] = (moves, frames, took)
         if moves and may != "any" and window not in named and window not in dragged:
             if window in step.born:
                 step.find("3", "FAIL", window, "opened in one place and was then moved to another", road(trace))
-            elif window not in world.labels and world.pids.get(window) in kin:
+            elif follows or (window not in world.labels and world.pids.get(window) in kin):
                 step.find("2", "ODD", window, "moved along with a window of its app", road(trace))
             else:
                 kind = "a floating window, " if window in ids(wants.get("floating", "")) else ""
@@ -330,7 +355,8 @@ def judge(step, world, by_number, own):
         if moves > 1:
             step.find("3", "FAIL", window, f"moved {moves} times", road(trace))
         elif detour > EXCESS and (may == "any" or window in named or window in dragged):
-            step.find("3", "FAIL", window, f"went {round(detour)} points out of its way before it ended up", road(trace))
+            # A sheet or a panel hangs on its window, and goes where that goes at each stage of its move.
+            step.find("3", "ODD" if follows else "FAIL", window, f"went {round(detour)} points out of its way before it ended up", road(trace))
         gone = trace and trace[-1][1] is None
         if gone and may_leave != "any" and window not in ids(may_leave) and window in world.labels:
             step.find("L", "FAIL", window, "left the screen, and the step did not say it would", road(trace))
@@ -550,6 +576,8 @@ def story(path, world, steps, number, logs):
             elif kind == "B":
                 said = "the button is " + " ".join(rest)
             elif kind == "L":
+                if int(rest[0]) < 100:
+                    continue
                 said = f"(nothing was seen for {rest[0]} ms)"
             elif kind == "M":
                 said = "-- " + " ".join(rest)
@@ -680,6 +708,26 @@ def self_test():
     expect("a new window is moved after it opened", start + [
         "2000 M begin 2 new", "2100 W 3 10 0 200 200 400 300 One", "2100 Z 3,1,2", "2300 W 3 10 0 0 30 400 300 One",
         "3000 M end 2"], [("3", "FAIL")])
+    expect("a new window pops open", start + [
+        "2000 M begin 2 new", "2100 W 3 10 0 203 202 394 296 One", "2100 Z 3,1,2", "2160 W 3 10 0 200 200 400 300 One",
+        "2230 W 3 10 0 199 199 402 302 One", "2400 W 3 10 0 200 200 400 300 One", "3400 M end 2"], [])
+    expect("Arbor's first panel shows before the script knows its process", [
+        "900 W 8 98 0 0 0 50 50 Arbor"] + start + [
+        "2000 M begin 2 launch", "2100 W 7 98 0 500 100 300 300 Arbor", "2300 W 7 98 0 400 100 300 300 Arbor", "2500 M arbor 98",
+        "3400 M end 2"], [])
+    expect("the road into the Dock is macOS's own", start + [
+        "2000 M begin 2 minimize", "2100 W 2 20 0 500 100 460 300 Two", "2150 W 2 20 0 700 500 100 80 Two", "2200 G 2", "2200 Z 1",
+        "3200 M end 2 leaves=2"], [])
+    expect("a sheet goes where its window goes, at each stage", start + [
+        "1300 W 5 20 0 600 150 200 100 Two",
+        "2000 M begin 2 float-all", "2100 W 2 20 0 500 100 600 300 Two", "2100 W 5 20 0 700 150 200 100 Two",
+        "2130 W 2 20 0 300 100 600 300 Two", "2130 W 5 20 0 500 150 200 100 Two", "3200 M end 2 moves=any"], [("3", "ODD")])
+    moved = docked + ["3500 M begin 3 drag", "3550 B down 10 40", "3600 W 1 10 0 300 200 500 700 One", "3650 B up 310 210",
+                      "4700 M end 3 drags=1 place=1"]
+    expect("a move by hand changes the place to give back, not the size", moved + [
+        "5000 M begin 4 quit", "5100 W 1 10 0 300 200 400 300 One", "6100 M end 4 moves=any restores=all places=1"], [])
+    expect("and the old place is then the wrong one", moved + [
+        "5000 M begin 4 quit", "5100 W 1 10 0 100 100 400 300 One", "6100 M end 4 moves=any restores=all places=1"], [("5", "FAIL")])
     expect("before Arbor runs nothing is judged", start + [
         "2000 M begin 2 open", "2100 W 2 20 0 600 100 400 300 Two", "2600 W 2 20 0 500 100 400 300 Two", "2700 G 1",
         "3700 M end 2 judge=no"], [])

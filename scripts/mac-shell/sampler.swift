@@ -238,6 +238,10 @@ let listening = Thread {
 
 let app = NSApplication.shared
 app.setActivationPolicy(.prohibited)
+// A process without a window is put to sleep between its timers (App Nap) and its timers are run together with others': on a hosted
+// Mac every other sample came 40 to 70 ms late, with nothing else going on.
+let awake = ProcessInfo.processInfo.beginActivity(
+  options: [.userInitiated, .latencyCritical], reason: "sampling the window list at a steady rate")
 
 @Sendable func noteFront(_ running: NSRunningApplication?) {
   guard let running else { return }
