@@ -1,0 +1,43 @@
+# Touchpoints: each time the maintainer was needed
+
+The purpose of this project, in the maintainer's words (issue #4): "to see if we can reach truly autonomous development from someone who's non-technical, like me, and replicate a consumer-grade app."
+So the number that matters here is **how often, and for how long, a person was needed**. The target is near zero beyond identity, money and what cannot be undone.
+
+Kept by the product owner. One row each time, written the same day. Minutes are estimates. **Nothing private**: never which apps or machines, no names, no sums, no quotations from private conversations.
+
+**Kinds.** *Needed*: identity, money, an irreversible act: only a person can. *Avoidable*: the swarm asked, or made the person step in, where a rule, a default or a check would have done. *Their own wish*: nobody asked; they chose to.
+Every avoidable row names what would have avoided it, and that becomes a board item or a rule (last column) until the same row cannot happen again.
+
+## The count
+
+| Day | Needed | Avoidable | Their own wish |
+|---|---|---|---|
+| 2026-10-14 | 3 times, 8 min | 7 matters, 10 times, 36 min | once, 30 min, and two pointers |
+
+## 2026-10-14
+
+| # | Kind | What for | Min | What would have avoided it | Now |
+|---|---|---|---|---|---|
+| 1 | needed | To approve that the repository goes public | 2 | Nothing: irreversible | stays theirs |
+| 2 | needed | To give the agents' account write access and accept the invitation | 5 | Nothing: identity | done once |
+| 3 | needed | To say that agents may merge to `main` when every check passes | 1 | Nothing the first time: it hands over authority | a standing word; not asked again |
+| 4 | avoidable | Had to set the privacy rules for going public themselves | 10 | Private by default: no person's name, machine, apps, logs or pictures in anything public, before anybody asks | the rules are written; a lint on files, commits and comments (board, guardrails) |
+| 5 | avoidable | Had to ask for short, plain updates after long technical ones | 3 | Write for a non-technical reader from the first line | one digest a day, five plain lines |
+| 6 | avoidable | Was asked three times to choose between publishing now and waiting for a fix | 5 | One recommendation, with a default that applies on silence | issue #4, section 5: 24 hours, then the default |
+| 7 | avoidable | Was asked, twice, whether public posts that broke their own rule should be reworded | 4 | The rule was authority enough | mend first, report after; the lint catches it before it is posted |
+| 8 | avoidable | Was told of a warning that did not apply to them | 2 | Report only what needs a decision | the digest holds decisions and defaults, no noise |
+| 9 | avoidable | Was asked about a line in a commit message | 2 | Harmless; should not have been raised | product and process questions go to the product owner |
+| 10 | avoidable | Was walked through options for getting more Macs | 10 | Decide within the rule that stands (free services only) and report the outcome | issue #4, section 1; the queue's priorities |
+| 11 | their own wish | Drove the reference app for about half an hour | 30 | Not to be avoided: it gave the project issue #3, the most valuable half hour of the day. What it found is now looked for by machines: `docs/VIABLE.md` | the day with real apps at macOS's default settings |
+
+**Two pointers they gave unasked, both right**, and the question each leaves:
+
+- *The tests pass and the real Mac disagrees.* What would have let the swarm see that by itself? A count of the differences between the stand-ins and real Macs, kept from the first day, and a rule that nothing is "done" on stand-ins alone. Now: ring 2 of `docs/VIABLE.md`.
+- *The Macs are the bottleneck.* What would have shown it? Measuring where an hour of waiting goes before adding hands. Now: Mac minutes per landed fix are on the scoreboard, and a Mac run has to name the question only a Mac can answer.
+
+## What still needs a person, and the default if nobody answers
+
+| What | Why only they can | Default on silence |
+|---|---|---|
+| A Developer ID, so that a download opens without a warning | identity and money | Arbor ships signed ad hoc, and `docs/INSTALL.md` says what macOS will ask and why |
+| The first tag and release | irreversible, under their name | none is made until `docs/VIABLE.md` says `VIABLE`; then the product owner proposes it in the digest, and it waits for their word |
