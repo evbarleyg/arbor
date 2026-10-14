@@ -34,6 +34,7 @@ scripts/test-public-check.py holds it to a table of situations; `make lint` runs
 """
 
 import argparse
+import bisect
 import fnmatch
 import json
 import os
@@ -80,7 +81,7 @@ RULES = [
     rule("host", "a host this repository has not linked to before: an internal one must go; a public one that is needed gets a "
          "line in scripts/public-check.allow",
          r"\b(?:https?|wss?|ssh|git|ftp)://(?:[^@\s/]*@)?([a-z0-9-]+(?:\.[a-z0-9-]+)*)"
-         r"|\b(?:[a-z0-9-]+\.)+(?:dev|internal|corp|lan|intranet)\b(?!\()|(?<![\w/.:-])go/[a-z][a-z0-9-]+\b"),
+         r"|(?<![a-z0-9.-])(?:[a-z0-9-]+\.)+(?:dev|internal|corp|lan|intranet)\b(?!\()|(?<![\w/.:-])go/[a-z][a-z0-9-]+\b"),
     rule("email", "an e-mail address: only no-reply addresses and example.com belong here",
          r"(?<![\w.+-])[\w.+-]+@(?:[a-z0-9-]+\.)+[a-z]{2,}\b"),
     rule("home", "a path on one particular machine: write ~/…, /Users/you/… or a path inside the repository",
@@ -98,7 +99,7 @@ RULES = [
          r"|out of (?:credits|minutes)|costs? (?:ten|\d+) times)\b|\$\d+\.\d\d\b|\b\d+ ?(?:USD|EUR|dollars|euros)\b"),
     rule("model", "names a model or its maker: \"an agent\" or \"Claude Code\" says enough",
          r"\b(?:anthropic|openai|deepmind|gemini|gpt-?\d[\w.-]*|opus|sonnet|haiku|llama|mistral|copilot)\b"
-         r"|\bclaude[- ](?!code\b)(?:[a-z]+-)*v?\d[\w.-]*"),
+         r"|(?<![\w-])claude[- ](?!code\b)(?:[a-z]+-)*v?\d[\w.-]*"),
     rule("role", "a role of the private phase, which means nothing to a reader here: say what the thing does, or who in plain words "
          "(\"a reviewer\", \"the product owner\")",
          r"\b" + ROLE + r"(?:['’]s\b| (?:" + SAID + r")\b)|\b(?:session|environment|lane|conductor|reviewer|builder|executor|owner:?) "
@@ -109,17 +110,24 @@ NAME_WHY = "the name in LICENSE belongs in LICENSE: say \"the maintainer\""
 NUMBER_WHY = "no issue or pull request here has this number yet, so it is one of the private phase: say what the thing does"
 REPOSITORY_WHY = "another repository of the same owner: whether there is one is nobody's business here"
 HERE_WHY = "this very machine's or session's own"
-PRIVATE_WHY = "a word on a private list (git config arbor.privateWords, $PUBLIC_CHECK_WORDS)"
+PRIVATE_WHY = "a word on a private list (git config arbor.privateWords, or PUBLIC_CHECK_WORDS in the environment)"
 OTHER_RULES = ("name", "number", "repository", "here", "private")
 # Where something was found, when it was not in a file.
 NO_FILE = ("message", "author", "branch", "tag", "path", "text")
-NUMBER = re.compile(r"(?<![\w&/#])#(\d{1,4})\b(?![\w-]*;)")
+NUMBER = re.compile(r"(?<![\w&/#])#(\d{1,4})\b")
 # Names of environment variables whose values say which machine, session or person this is, or open a door.
 TELLING = re.compile(r"_?(ID|UUID|TOKEN|KEY|SECRET|PASSWORD)$|EMAIL|HOSTNAME$|^HOME$")
 # Shorter values turn up by chance.
 TELLING_LENGTH = 8
 # Values any machine may have.
 ORDINARY = {"/home/runner", "/users/runner", "/github/home", "localhost"}
+
+
+def is_colour(line, number):
+    """`border: 1px solid #333;` is no reference to anything."""
+    if len(number.group(1)) != 3 or line[number.end():number.end() + 1] != ";":
+        return False
+    return ": " in line[line.rfind(";", 0, number.start()) + 1:number.start()]
 
 
 def read_lines(path):
@@ -147,21 +155,34 @@ def told_by_this_machine(environment, hostname):
     for name, value in environment.items():
         if TELLING.search(name):
             values[value] = name
-    # Not a no-reply address: it is what commits are meant to carry, trailers too.
-    return {value: name for value, name in values.items() if len(value) >= TELLING_LENGTH and value.lower() not in ORDINARY and not NO_REPLY.match(value)}
+    # Not a no-reply address: it is what commits are meant to carry, trailers too. Not numbers: an account's or a run's number is in
+    # every address and link GitHub makes of it, for all to see.
+    return {value: name for value, name in values.items()
+            if len(value) >= TELLING_LENGTH and value.lower() not in ORDINARY and not NO_REPLY.match(value) and not value.isdigit()}
 
 
 def blanked(line, spans, first=0, last=None):
-    """line[first:last] with the spans blanked out."""
+    """line[first:last] with the spans, which are in order and apart, blanked out."""
     last = len(line) if last is None else last
-    text, at, blank_until = "", first, -1
-    for start, end in sorted(spans):
-        if end <= at or start >= last:
-            continue
-        if start > blank_until:  # else it runs on from the one before
+    text, at = "", first
+    for start, end in spans[max(0, bisect.bisect_left(spans, (first, 0)) - 1):]:
+        if start >= last:
+            break
+        if end > at:
             text += line[at:max(at, start)] + MASK
-        at = blank_until = max(end, blank_until)
+            at = end
     return text + line[at:max(at, last)]
+
+
+def merged(spans):
+    """The spans in order, with those that overlap made one."""
+    whole = []
+    for start, end in sorted(spans):
+        if whole and start <= whole[-1][1]:
+            whole[-1] = (whole[-1][0], max(end, whole[-1][1]))
+        else:
+            whole.append((start, end))
+    return whole
 
 
 class Finding:
@@ -210,28 +231,30 @@ class Checker:
                 yield name, why, match.start(), match.end()
         if self.highest is not None:
             for match in NUMBER.finditer(line):
-                if int(match.group(1)) > self.highest:
+                if int(match.group(1)) > self.highest and not is_colour(line, match):
                     yield "number", NUMBER_WHY, match.start(), match.end()
 
     def check(self, where, text, first_line=1, numbered=True):
         """The findings in a text of one or more lines. `where` is a path or one of NO_FILE."""
         findings = []
         for offset, line in enumerate(text.split("\n")):
-            unfit, before = [], len(findings)
+            unfit, before, taken = [], len(findings), bytearray(len(line))
             for name, why, start, end in self.spans(line):
                 if self.is_allowed(name, where, line[start:end]):
                     continue
                 # One finding per place: an address at a maker's host is an address, not also a maker and a host.
-                if not any(start < other_end and other_start < end for other_start, other_end in unfit):
+                if taken.find(1, start, end) < 0:
                     findings.append(Finding(where, first_line + offset if numbered else None, name, why, line, start, end))
+                taken[start:end] = b"\1" * (end - start)
                 unfit.append((start, end))
+            unfit = merged(unfit)
             for finding in findings[before:]:
                 finding.unfit = unfit
         return findings
 
     def fit_to_print(self, where, name):
         """A file's, a branch's or a tag's name as it may be repeated in public."""
-        return blanked(name, [span for finding in self.check(where, name.replace("\n", " ")) for span in finding.unfit])
+        return blanked(name, merged(span for finding in self.check(where, name.replace("\n", " ")) for span in finding.unfit))
 
 
 # MARK: git
@@ -390,7 +413,8 @@ def highest_number(cwd=None):
 
 # MARK: the command line
 
-def checker_for(top):
+def checker_for(top, here=None):
+    """The checker for a clone. `here`: what this machine would give away, where its environment is not the place to look."""
     private = os.environ.get("PUBLIC_CHECK_WORDS", "").split("\n")
     code, path = git("config", "--get", "arbor.privateWords", cwd=top, check=False)
     if code == 0 and path.strip():
@@ -407,7 +431,7 @@ def checker_for(top):
     return Checker(
         allowed=read_lines(os.path.join(HERE, "public-check.allow")), licence=licence, highest=highest,
         owner=os.environ.get("GITHUB_REPOSITORY_OWNER") or (owner.group(1) if owner else None),
-        here=told_by_this_machine(os.environ, socket.gethostname()), private=[word.strip() for word in private if word.strip()])
+        here=told_by_this_machine(os.environ, socket.gethostname()) if here is None else here, private=[word.strip() for word in private if word.strip()])
 
 
 def escape(text, is_property=False):

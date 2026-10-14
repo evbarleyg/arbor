@@ -16,6 +16,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("public_check", os.path.join(HERE, "public-check.py"))
@@ -130,8 +131,10 @@ TEXTS = [
     ([], "roles the public knows", "the documenter, the product owner, a reviewer, an executor"),
 
     (["number"], "a number nothing here has yet", "fixed in #187"),
+    (["number"], "before a semicolon", "like #187; and more"),
     ([], "a number that exists", "see #3 and #40"),
     ([], "colours, entities, anchors and Swift", 'color: #333; &#187; docs/x.md#187 "#fff" #if os(macOS)'),
+    ([], "a colour further along in its line", "border: 1px solid #333;"),
 
     (["name"], "the first name", "Robin asked for it"),
     (["name"], "the last name, in part", "the Fielding build"),
@@ -167,7 +170,8 @@ def check_texts():
     row("the line is counted from where the text begins", [f.number for f in checker().check("x", "fine\nhe said", 10)], [11])
 
     here = check.told_by_this_machine(
-        {"SOME_SESSION_ID": "abcdef-123456", "A_CONTAINER_ID": "container-77", "MY_EMAIL": "r@mail.org", "X_TOKEN": "t0ken-t0ken", "HOME": "/home/runner", "GIT_AUTHOR_EMAIL": "1+someone@users.noreply.github.com",
+        {"SOME_SESSION_ID": "abcdef-123456", "A_CONTAINER_ID": "container-77", "MY_EMAIL": "r@mail.org", "X_TOKEN": "t0ken-t0ken", "HOME": "/home/runner",
+         "GIT_AUTHOR_EMAIL": "1+someone@users.noreply.github.com", "AN_ACTOR_ID": "123456789",
          "USER": "claude-user", "PATH": "/usr/local/bin", "SHORT_ID": "x1"},
         "box-7f3a")
     row("what a machine would give away about itself", here, {"abcdef-123456": "SOME_SESSION_ID", "container-77": "A_CONTAINER_ID", "r@mail.org": "MY_EMAIL", "t0ken-t0ken": "X_TOKEN", "box-7f3a": "host name"})
@@ -187,6 +191,15 @@ def check_texts():
     row("a name that is not", checker().fit_to_print("branch", "fix/robins-display"), f"fix/{check.MASK}-display")
     [finding] = checker().check("x", "a" * 200 + " Zebedee " + "b" * 200)
     row("a long line is cut to what surrounds the find", len(finding.excerpt(False)) < 170, True)
+
+    # What a stranger could post to keep the check busy for ever. A post holds 65,536 characters at most.
+    for what, piece in [("dots", "a."), ("dashes", "a-"), ("the beginning of a model's name", "claude-"), ("finds without end", "his "), ("at signs", "a@a."),
+                        ("slashes", "/Users/"), ("schemes", "https://"), ("hashes", "#9999 "), ("colours", "a: #999;"), ("colons", "a: "), ("underscores", "ab_01"), ("spaces", " ")]:
+        began = time.monotonic()
+        found_in_it = checker().check("text", piece * (65536 // len(piece)))
+        for finding in found_in_it[:50]:
+            finding.excerpt(True)
+        row(f"a line of 65,536 characters, all {what}, takes no time to speak of", time.monotonic() - began < 2, True)
 
     try:
         check.Checker(allowed=["name LICENSE"])

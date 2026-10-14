@@ -16,8 +16,9 @@ maintainer", "a tester"), anything about one person's Mac, apps, days or work, i
 addresses, paths on a particular machine, internal hosts, cost, names of models, roles and numbers of the private phase.
 
 - First thing in a clone: `make hooks`. Git then runs `scripts/public-check.py` before every push.
-- Before you post a pull request's body, an issue or a comment: `scripts/public-check.py --text <file>`. After you have
-  created a pull request, read its body back: a platform may have added a link to your session.
+- Before you post a pull request's body, an issue or a comment: `scripts/public-check.py --text <file>`. The workflow
+  `Public text` reads every post afterwards, replaces a link to a working session that a platform may have added, and
+  names the rest in a comment on the thread: reword in place, and the comment goes.
 - Commit under a no-reply address. Branch only from a branch of `origin`.
 
 ## Commands
@@ -72,7 +73,7 @@ new. See "Executors without a Mac" in `collab/README.md`.
 | `Sources/arbor-fakemac` | The stand-ins behind `scripts/mac-shell/rehearse.sh`: Mac shell scripts run on Linux against the real controller | Built on Linux only. Wraps the fakes and copies `ArborApp`'s wiring: a new member of `WindowSystem` or `OverlayPresenter` needs a line in `Arbor.swift`. |
 | `Sources/ArborTestWindows`, `Sources/arbor-e2e` | End-to-end runner and the windows it arranges | macOS only. |
 | `scripts/` | What the make targets and CI run (`bundle.sh`, `e2e.sh`, `linux.sh`, `scenarios.sh`, `sim-smoke.sh`, `candidate-check.sh`, `parity.py`, `ci-step.py`, `ci-changes.py`, `ci-toolchain.sh`, `ci-build.sh`, `ci-build-key.sh` and `ci-mtimes.py` (what `.github/actions/mac-setup` gives a hosted Mac to start with), `ci-mac-shell.sh`, `mac-queue.py`, and their self-tests `test-tooling.py`, `test-ci-changes.py` and `test-mac-queue.py`), `mutate.py` (mutation testing), `mac-shell/` (the real app on a remote Mac) | Each file's header says how to use it; `docs/TESTING.md` covers `mutate.py` and `mac-shell/`. |
-| `scripts/public-*`, `scripts/git-hooks/` | What keeps private things out of a public repository: `public-check.py` reads what is pushed, with its exceptions in `public-check.allow`; `git-hooks/` is what `make hooks` installs; `test-public-*.py` hold them to tables of situations | `docs/PUBLIC.md`. Linux and Python only. The rules name kinds of things, never the things. |
+| `scripts/public-*`, `scripts/git-hooks/` | What keeps private things out of a public repository: `public-check.py` reads what is pushed, with its exceptions in `public-check.allow`; `public-text.py` reads what is posted; `git-hooks/` is what `make hooks` installs; `test-public-*.py` hold them to tables of situations | `docs/PUBLIC.md`. Linux and Python only. The rules name kinds of things, never the things. |
 | `docs/` | `ARCHITECTURE.md`, `TESTING.md`, `ROADMAP.md`, `features/F*.md` specs, generated `FEATURES.md` | Specs belong to the documenter |
 | `docs/CENSUS.md` | What each test touches, which premises of the fakes a recording bears out, which real code nothing runs, which features no Mac has tried | Generated: `scripts/census.py --write`, words in `scripts/census-template.md`. By hand, not part of `make check` |
 | `collab/` | Board, questions, ideas, reports, scenarios, parity data, evidence | See `collab/README.md` |

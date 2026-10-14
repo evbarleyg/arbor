@@ -1,0 +1,62 @@
+name: Public text
+
+# What is posted here is as public as what is pushed, and nothing reads it beforehand. So every issue, pull request, comment
+# and review is read when it is posted and whenever it is edited (scripts/public-text.py): a link to a working session is
+# replaced by the generic one, and whatever else should be reworded is named in one comment on the thread.
+#
+# This workflow holds a token that may edit what people wrote, and anybody on the internet can start it by posting. Hence:
+#   - `pull_request_target`, `issues`, `issue_comment` and the schedule take this file from the default branch, and the checkout names
+#     that branch outright. Nothing of a pull request is ever checked out.
+#   - The two review events are different: GitHub takes the workflow file itself from the pull request's merge commit, so for them
+#     all of this is the pull request's author's to rewrite. What protects the repository there is GitHub's own rule: a pull
+#     request from a fork gets a token that may only read, and no secrets. The run then says what it found and changes nothing,
+#     and the nightly run does the mending. Whoever can open a pull request from a branch of this repository can push here anyway.
+#   - What was posted reaches the script as data, in the event's file and over the API. None of it is written into a command,
+#     an environment variable or an output here.
+#   - The token may write issues and pull requests (that is: comments and descriptions) and only read the code. It is handed
+#     to the one step that needs it.
+#   - What the token itself posts and edits starts no further run, so it cannot answer itself.
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited, deleted]
+  pull_request_target:
+    types: [opened, edited]
+  pull_request_review:
+    types: [submitted, edited]
+  pull_request_review_comment:
+    types: [created, edited, deleted]
+  # What no event brought here: every thread that changed in the last day and a bit.
+  schedule:
+    - cron: "41 3 * * *"
+
+# One at a time for each thread. Each run reads the whole thread, so of those waiting only the newest matters.
+concurrency:
+  group: public-text-${{ github.event.issue.number || github.event.pull_request.number || 'nightly' }}
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  public-text:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: scripts
+          persist-credentials: false
+      - name: Nothing private in what was posted
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          # Words no rule covers, one to a line, if the maintainer has set such a secret. Empty otherwise.
+          PUBLIC_CHECK_WORDS: ${{ secrets.PUBLIC_CHECK_WORDS }}
+          RECENT: ${{ github.event_name == 'schedule' && '--recent 26' || '' }}
+        run: ./scripts/public-text.py $RECENT
