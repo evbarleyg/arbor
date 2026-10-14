@@ -62,7 +62,7 @@ public struct HeadsUpModel: Equatable, Sendable {
   /// The whole line as one string, as logs, arbor-sim and tests show it.
   public var line: String { hint.map { "\(text) · \($0)" } ?? text }
 
-  /// The line read out, as VoiceOver gets it: two sentences, where the eye has a dot between two shades of grey.
+  /// The line read out, as VoiceOver gets it: two sentences, where the eye has a dot between two weights of type.
   public var spoken: String { hint.map { "\(text). \($0)" } ?? text }
 
   /// How long the line stays, in seconds: a glance for a few words, and time to read a sentence.
