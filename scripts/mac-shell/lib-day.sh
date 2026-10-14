@@ -31,6 +31,8 @@
 #   act <kind> <slug> "<what the person does>"        a step begins. The kinds are docs/VIABLE.md's: switch open-close dock-key drag
 #                                     drag-where-macos-tiles view resize macos-own way-out quit-and-start display-change idle
 #   want "<what should hold>" <command…>              inside a step: a finding of the script's own when it does not
+#   must <command…>                 inside a step: what the person does. When it cannot be done (no free point of a title bar, no icon in the
+#                                     Dock) the step is a finding of the script's own and is not judged: an act that was not performed passes nothing
 #   acted [key=value…]              waits for quiet, compares Arbor's belief with the screen (audit), takes the picture
 #                                     mac-shell/<nnn>-<slug>.jpg and ends the step. The keys are jolts.py's, and besides ids
 #                                     `moves=` takes `docked`: whatever is docked before or after the step; `yields=` takes
@@ -41,6 +43,7 @@
 #                                     $ARBOR_HOME every time, so that a second launch finds what the first one saved
 #   day_gone                        after a step that quit Arbor: waits for it to end, and forgets its process
 #   docked_ids | floating_ids       the ids Arbor has docked | floating, separated by commas
+#   arbor_window                    the id of Arbor's own standard window, if one is open: its welcome
 #   click_window <window>           a real click on a free point of its title bar (fails when it is covered)
 #   drag_window <window> x y [options]                a real drag by such a point
 #   dock_click <bundle id>          a real click on the app's icon in the Dock
@@ -60,6 +63,8 @@ DAY_SAMPLES="$ARBOR_OUT/samples.log"
 DAY_SAMPLER_PID=""
 DAY_STEP=0
 DAY_TRACES=0
+DAY_QUESTIONS=0
+DAY_UNDONE=""
 DAY_SLUG=""
 DAY_KIND=""
 DAY_DOCKED_BEFORE=""
@@ -105,9 +110,14 @@ day_build_tools() {
 
 # Descriptors 5 and 6 are the script's ends of the two fifos. Opened in the order the sampler opens its ends in.
 sampler_start() {
+  local tiers=""
   [ -z "$DAY_SAMPLER_PID" ] || return 0
+  if command -v taskpolicy > /dev/null; then tiers="taskpolicy -l 0 -t 0"; fi
   mkfifo "$APPS_TEMP/sampler-in" "$APPS_TEMP/sampler-out" || die "sampler_start: no fifos in $APPS_TEMP"
-  "$DAY_SAMPLER" "$DAY_SAMPLES" "$APPS_TEMP/sampler-in" "$APPS_TEMP/sampler-out" --hz "${DAY_HZ:-60}" \
+  # What the runner's agent starts counts as work in the background, whose timers macOS runs together with others': two samples in seven came 40 to
+  # 70 ms late. taskpolicy asks for the tightest tiers, then becomes the sampler.
+  # shellcheck disable=SC2086
+  $tiers "$DAY_SAMPLER" "$DAY_SAMPLES" "$APPS_TEMP/sampler-in" "$APPS_TEMP/sampler-out" --hz "${DAY_HZ:-60}" \
     2>> "$ARBOR_OUT/sampler.log" 8>&- 9>&- &
   DAY_SAMPLER_PID=$!
   started "$DAY_SAMPLER_PID"
@@ -126,14 +136,20 @@ sampler_stop() {
 note() { [ -n "$DAY_SAMPLER_PID" ] && echo "mark $*" >&6; }
 
 quiet() {
-  local answer waited
+  local answer waited word
   QUIET=""
   [ -n "$DAY_SAMPLER_PID" ] || { sleep 1; return 0; }
-  echo "quiet ${1:-1000} ${2:-8000}" >&6
-  # Longer than the sampler takes at the most; it may have died.
-  read -r -t $(((${2:-8000} + 4000) / 1000)) answer waited <&5 || { QUIET="restless:0"; return 1; }
-  QUIET="$answer:$waited"
-  [ "$answer" = quiet ]
+  DAY_QUESTIONS=$((DAY_QUESTIONS + 1))
+  echo "quiet ${1:-1000} ${2:-8000} q$DAY_QUESTIONS" >&6
+  # Longer than the sampler takes at the most; it may have died. An answer to an earlier question, which came too late for it, is passed over.
+  while read -r -t $(((${2:-8000} + 4000) / 1000)) answer waited word <&5; do
+    [ "$word" = "q$DAY_QUESTIONS" ] || continue
+    QUIET="$answer:$waited"
+    [ "$answer" = quiet ]
+    return
+  done
+  QUIET="restless:0"
+  return 1
 }
 
 # MARK: Steps
@@ -172,27 +188,32 @@ meet() {
 
 arbor_answers() { [ -n "$ARBOR_PID" ] && kill -0 "$ARBOR_PID" 2>/dev/null; }
 
+# One question to Arbor for both lists: sets DAY_DOCKED and DAY_FLOATING, to nothing while Arbor does not run.
 day_ids() {
+  DAY_DOCKED="" DAY_FLOATING=""
   arbor_answers || return 0
-  "$ARBOR_BIN/arborctl" state 2>/dev/null | python3 -c '
+  read -r DAY_DOCKED DAY_FLOATING <<< "$("$ARBOR_BIN/arborctl" state 2>/dev/null | python3 -c '
 import json, sys
 try:
-    windows = json.load(sys.stdin)["state"]["windows"]
+    windows = [window for window in json.load(sys.stdin)["state"]["windows"] if window["managed"]]
 except (ValueError, KeyError):
     sys.exit(0)
-docked = sys.argv[1] == "docked"
-print(",".join(str(window["id"]) for window in windows if window["managed"] and window["docked"] == docked))' "$1"
+for docked in (True, False):
+    print(",".join(str(window["id"]) for window in windows if window["docked"] == docked) or "-", end=" ")')"
+  DAY_DOCKED=${DAY_DOCKED#-} DAY_FLOATING=${DAY_FLOATING#-}
 }
-docked_ids() { day_ids docked; }
-floating_ids() { day_ids floating; }
+docked_ids() { day_ids; echo "$DAY_DOCKED"; }
+floating_ids() { day_ids; echo "$DAY_FLOATING"; }
+arbor_window() { arbor_answers && app_windows "$ARBOR_PID" | cut -d ' ' -f 1; }
 
 act() {
   DAY_STEP=$((DAY_STEP + 1))
   DAY_KIND=$1
   shift
   DAY_SLUG=$1
-  DAY_DOCKED_BEFORE=$(docked_ids)
-  DAY_FLOATING_BEFORE=$(floating_ids)
+  DAY_UNDONE=""
+  day_ids
+  DAY_DOCKED_BEFORE=$DAY_DOCKED DAY_FLOATING_BEFORE=$DAY_FLOATING
   echo
   echo "-- $DAY_STEP $1: $2"
   mark "== $DAY_STEP $1"
@@ -205,21 +226,33 @@ want() {
   check "$@" || note "finding $DAY_STEP - FAIL not so: $1"
 }
 
+must() {
+  "$@" && return 0
+  DAY_UNDONE="$DAY_UNDONE $1"
+  return 1
+}
+
 acted() {
   local word wants="" findings line code audit=yes
   quiet || echo "  ~ windows were still moving after ${QUIET#*:} ms"
+  day_ids
+  if [ -n "$DAY_UNDONE" ]; then
+    echo "  ✘ the act was not performed:$DAY_UNDONE"
+    note "finding $DAY_STEP - FAIL the act was not performed:$DAY_UNDONE could not be done"
+    wants=" judge=no"
+  fi
   for word in "$@"; do
     case "$word" in
-      moves=docked) word="moves=$DAY_DOCKED_BEFORE,$(docked_ids)" ;;
+      moves=docked) word="moves=$DAY_DOCKED_BEFORE,$DAY_DOCKED" ;;
       audit=no) audit=""; continue ;;
-      yields=floating) word="yields=$DAY_FLOATING_BEFORE,$(floating_ids)" ;;
+      yields=floating) word="yields=$DAY_FLOATING_BEFORE,$DAY_FLOATING" ;;
       # Nothing would be checked, and it would look like a pass.
       front= | comes= | drags=) note "finding $DAY_STEP - FAIL the script could not tell which window ${word%=} is about"; continue ;;
     esac
     wants="$wants $word"
   done
   if arbor_answers && [ -z "$audit" ]; then
-    wants="$wants floating=$(floating_ids)"
+    wants="$wants floating=$DAY_FLOATING docked=$DAY_DOCKED"
   elif arbor_answers; then
     findings=$(audit)
     code=$?
@@ -237,7 +270,7 @@ acted() {
       esac
     done <<< "$findings"
     DAY_AUDIT_BEFORE=$findings
-    wants="$wants floating=$(floating_ids) docked=$(docked_ids)"
+    wants="$wants floating=$DAY_FLOATING docked=$DAY_DOCKED"
   elif [ -n "$ARBOR_PID" ]; then
     echo "  ✘ ARBOR DIED"
     note "finding $DAY_STEP - FAIL Arbor died"
@@ -366,7 +399,7 @@ day_write_manifest() {
 import json, os, sys
 path, commit, script, macos, seconds = sys.argv[1:]
 run = {"gate": 1, "commit": commit, "run": os.environ.get("GITHUB_RUN_ID", ""), "attempt": int(os.environ.get("GITHUB_RUN_ATTEMPT", "1")),
-       "script": script, "settings": "shipped", "macos": macos, "seconds": int(seconds)}
+       "script": script, "settings": "shipped", "build": "debug", "macos": macos, "seconds": int(seconds)}
 for line in os.environ["DAY_MANIFEST"].splitlines():
     key, _, value = line.partition("=")
     run[key] = json.loads(value)
@@ -381,10 +414,11 @@ day_report() {
   sampler_stop
   watch_stop
   if arbor_answers; then "$ARBOR_BIN/arborctl" trace off > /dev/null 2>&1; fi
-  arbor_log
+  # One home for the whole day, so one log, whatever the number of the session.
+  if [ -f "$ARBOR_HOME/arbor.log" ]; then cp "$ARBOR_HOME/arbor.log" "$ARBOR_OUT/arbor.log"; fi
   if [ -d "$ARBOR_HOME/traces" ]; then cp -R "$ARBOR_HOME/traces" "$ARBOR_OUT/traces"; fi
   day_write_manifest
-  logs=$(ls "$ARBOR_OUT"/arbor*.log "$ARBOR_OUT"/day-macos.log 2>/dev/null | grep -v stderr | tr '\n' ' ')
+  logs=$(ls "$ARBOR_OUT/arbor.log" "$ARBOR_OUT/day-macos.log" 2>/dev/null | tr '\n' ' ')
   python3 "$DAY_JOLTS" report "$DAY_SAMPLES" --json "$ARBOR_OUT/day-findings.json" > "$ARBOR_OUT/day-report.md"
   code=$?
   step "the report (all of it: mac-shell/day-report.md)"
@@ -395,14 +429,12 @@ day_report() {
     python3 "$DAY_JOLTS" sabotage "$DAY_SAMPLES" | tee "$ARBOR_OUT/sabotage.md"
     code=${PIPESTATUS[0]}
   fi
-  python3 "$DAY_JOLTS" failing "$DAY_SAMPLES" > "$APPS_TEMP/failing"
+  # shellcheck disable=SC2086
+  python3 "$DAY_JOLTS" stories "$DAY_SAMPLES" "$ARBOR_OUT" $logs > "$APPS_TEMP/failing"
   for name in "$ARBOR_OUT"/[0-9][0-9][0-9]-*.jpg; do
     [ -f "$name" ] || continue
     number=$(basename "$name" | cut -c 1-3 | sed 's/^0*//')
-    if grep -qx "$number" "$APPS_TEMP/failing"; then
-      # shellcheck disable=SC2086
-      python3 "$DAY_JOLTS" story "$DAY_SAMPLES" "$number" $logs > "${name%.jpg}.story.log"
-    elif [ -z "${DAY_KEEP_PICTURES:-}" ]; then
+    if [ -z "${DAY_KEEP_PICTURES:-}" ] && ! grep -qx "$number" "$APPS_TEMP/failing"; then
       rm -f "$name" # never empty: the loop's own, and the line above found it to be a file
     fi
   done

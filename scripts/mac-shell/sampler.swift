@@ -30,8 +30,9 @@
 //
 // Commands, one per line:
 //   mark <text>                    write an M line
-//   quiet <ms> <limit ms>          reply once no W (of an ordinary window), G, Z, B or K line was written for <ms>: `quiet <waited ms>`, or after
-//                                  <limit ms> at the latest: `restless <waited ms>`
+//   quiet <ms> <limit ms> <word>   reply once no W (of an ordinary window), G, Z, B or K line was written for <ms>: `quiet <waited ms> <word>`, or
+//                                  after <limit ms> at the latest: `restless <waited ms> <word>`. Never sooner than 350 ms after it was asked: what the
+//                                  asker did last may not have shown yet. The word tells the asker which question is being answered
 //   stop                           write the S line and end (so does the end of the fifo)
 
 import AppKit
@@ -226,19 +227,20 @@ let listening = Thread {
     case "mark":
       write(now(), "M \(words.count > 1 ? words[1] : "")")
     case "quiet":
-      let numbers = (words.count > 1 ? words[1] : "").split(separator: " ").compactMap { Double($0) }
-      let wanted = numbers.first ?? 1000
-      let limit = numbers.count > 1 ? numbers[1] : 8000
+      let parts = (words.count > 1 ? words[1] : "").split(separator: " ").map(String.init)
+      let wanted = parts.first.flatMap(Double.init) ?? 1000
+      let limit = parts.count > 1 ? Double(parts[1]) ?? 8000 : 8000
+      let word = parts.count > 2 ? " \(parts[2])" : ""
       let asked = now()
       var answer = "restless"
       while now() - asked < limit {
-        if sinceLastChange() >= wanted {
+        if sinceLastChange() >= wanted, now() - asked >= 350 {
           answer = "quiet"
           break
         }
         Thread.sleep(forTimeInterval: 0.02)
       }
-      fputs("\(answer) \(Int(now() - asked))\n", replies)
+      fputs("\(answer) \(Int(now() - asked))\(word)\n", replies)
       fflush(replies)
     case "stop":
       finish()

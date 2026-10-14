@@ -176,12 +176,17 @@ func owner(of window: UInt32) -> pid_t? {
   return nil
 }
 
-/// The frontmost window at the ordinary level under a point: the list comes front to back. `pastArbor` looks through Arbor's
-/// own: its focus ring is a window at the ordinary level, right in front of the focused window and all over it, that lets presses through.
-func topWindow(at point: CGPoint, pastArbor: Bool = false) -> (id: UInt32, pid: pid_t)? {
+/// The frontmost window at the ordinary level under a point: the list comes front to back. `ringAround` looks through Arbor's focus
+/// ring: a window at the ordinary level, right in front of the focused window and a few points larger all round, that lets presses
+/// through. Arbor's other windows (its welcome, its settings) take presses like anybody's.
+func topWindow(at point: CGPoint, ringAround framed: CGRect? = nil) -> (id: UInt32, pid: pid_t)? {
   for info in windowList([.optionOnScreenOnly, .excludeDesktopElements]) where number(info, kCGWindowLayer) == 0 {
-    if pastArbor, info[kCGWindowOwnerName as String] as? String == "Arbor" { continue }
     guard let rect = bounds(info), rect.contains(point), let id = number(info, kCGWindowNumber) else { continue }
+    if let framed, info[kCGWindowOwnerName as String] as? String == "Arbor", rect.contains(framed),
+      framed.insetBy(dx: -24, dy: -24).contains(rect)
+    {
+      continue
+    }
     return (UInt32(id), pid_t(number(info, kCGWindowOwnerPID) ?? 0))
   }
   return nil
@@ -275,7 +280,7 @@ func grabPoint(_ window: AXUIElement, id: UInt32, pid: pid_t) -> (CGPoint, Strin
   for offset in [12, 20, 7] as [CGFloat] {
     for column in columns {
       let point = CGPoint(x: column.rounded(), y: (frame.minY + offset).rounded())
-      guard topWindow(at: point, pastArbor: true)?.id == id else { continue }
+      guard topWindow(at: point, ringAround: frame)?.id == id else { continue }
       var found: AXUIElement?
       guard AXUIElementCopyElementAtPosition(app, Float(point.x), Float(point.y), &found) == .success,
         let element = found

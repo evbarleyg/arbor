@@ -21,6 +21,7 @@ and script for what the script itself found out.
   jolts.py sabotage <samples>                 for a run in which the script itself commits offences (`offence=`): does every detector report
                                               its own offence, that one alone, and nothing where none was committed? Exit code 1 if not
   jolts.py trace <samples> <step> [window]    every frame seen during that step
+  jolts.py stories <samples> <folder> [log…]  the story of every step with a finding, as <folder>/<nnn>-<slug>.story.log; prints those steps' numbers
   jolts.py story <samples> <step> [log…]      one timeline of that step: what the screen showed, and the lines of those logs
                                               (arbor.log, `apptool watch`) that were written meanwhile
   jolts.py --self-test
@@ -68,7 +69,8 @@ EXCESS = 6
 OPENING = 600
 OPENING_REACH = 24
 OPENING_SHARE = 0.08
-# A step during which the sampler saw nothing for longer than this is not judged: it says nothing either way.
+# A step during which the sampler saw nothing for longer than this does not count as judged: it may have missed something. What it did see
+# stands, because a gap can hide a move and cannot make one up.
 BLIND = 250
 # A window Arbor moves is at rest this long after the key or the drop: later is worth a look, much later is a failure.
 SLOW_ODD = 700
@@ -77,12 +79,11 @@ SLOW = 1500
 ARBORS_OWN = {"dock-key", "view", "resize", "way-out", "drag"}
 # The acts during which the app in front has no reason to change.
 NO_SWITCH = {"idle", "dock-key", "resize"}
-# A dragged window may be this many points from where the pointer carries it. Without Arbor it is within a point or two of the pointer's road,
-# but for where macOS holds it back: under the menu bar, and for a moment where its edge meets another's.
+# From one sample to the next a dragged window may move this many points further than the pointer did.
 PULLED = 16
-# The pointer's road is looked at from this long before a sample of the window to this long after: the two are not read at one moment.
+# The pointer's road is looked at from this long before the first of the two samples to this long after the second: window and pointer are not read at one moment.
 SKEW = (150, 60)
-# macOS gives a window it had tiled its size back under the hand, in a motion of its own. The hold is taken anew once the size has kept still this long.
+# macOS gives a window it had tiled its size back under the hand, in a motion of its own that shifts the origin too. Nothing is made of a move this soon after.
 RESIZING = 300
 # Less of a window than this on the display is its parking strip; more than that, and it shows.
 STRIP = 0.03
@@ -166,7 +167,7 @@ class World:
 
     def __init__(self):
         self.frames = {}
-        self.last_frames = {}
+        self.seen = set()
         self.pids = {}
         self.owners = {}
         self.layers = {}
@@ -193,7 +194,8 @@ class World:
     def snapshot(self):
         return {
             "frames": {window: frame for window, frame in self.frames.items() if self.ordinary(window)},
-            "order": [window for window in self.order if self.ordinary(window)],
+            # A mark can fall between the lines of one sample: a window that has gone may still be in the pile.
+            "order": [window for window in self.order if self.ordinary(window) and window in self.frames],
             "app": self.app,
             "visible": self.visible,
             "display": self.display,
@@ -224,13 +226,15 @@ def read(path):
             if kind == "W" and len(rest) >= 7:
                 window = int(rest[0])
                 frame = tuple(float(number) for number in rest[3:7])
-                known = window in world.last_frames
+                known = window in world.seen
                 world.pids[window], world.layers[window] = int(rest[1]), int(rest[2])
                 world.owners[window] = " ".join(rest[7:]).replace("_", " ")
-                world.frames[window] = world.last_frames[window] = frame
+                world.frames[window] = frame
+                world.seen.add(window)
                 if world.owners[window] == "WindowManager" and world.layers[window] == 0:
                     world.macos_previews.add(window)
-                elif world.pids[window] in world.arbors and world.layers[window] == 3:
+                elif world.pids[window] in world.arbors and world.layers[window] == 3 and world.button and not known:
+                    # Other panels of Arbor's float at that level too. The preview is the one that comes up while the button is down.
                     world.arbor_previews.add(window)
                 if current and world.button and world.macos_previews and world.arbor_previews:
                     current.both_previews = True
@@ -358,40 +362,24 @@ def remember(step, own):
             own[window] = frames[window][:2] + own[window][2:]
 
 
-def off_the_road(point, road_points):
-    """How far a point is from a road given by its corners."""
-    if len(road_points) == 1:
-        return max(abs(point[0] - road_points[0][0]), abs(point[1] - road_points[0][1]))
-    best = None
-    for (ax, ay), (bx, by) in zip(road_points, road_points[1:]):
-        dx, dy = bx - ax, by - ay
-        along = 0 if dx == dy == 0 else max(0, min(1, ((point[0] - ax) * dx + (point[1] - ay) * dy) / (dx * dx + dy * dy)))
-        away = max(abs(point[0] - ax - along * dx), abs(point[1] - ay - along * dy))
-        best = away if best is None else min(best, away)
-    return best
+def pulled(held, pointer):
+    """The most a dragged window moved beyond what the pointer moved meanwhile, and when.
 
-
-def pulled(held, pointer, top):
-    """The furthest a dragged window was from where the pointer carried it, and when. `top`: macOS lets no title bar go above this."""
-    worst, when, anchor, size, still_since = 0, None, None, None, None
-    for time, frame, _ in held:
-        near = [(x, y) for at, x, y in pointer if time - SKEW[0] <= at <= time + SKEW[1]]
-        last = [(x, y) for at, x, y in pointer if at <= time][-1:]
-        if not near and not last:
+    Not how far it is from where the pointer would carry it: macOS itself holds a dragged window back, under the menu bar and where its edge meets another
+    window's, and it does not catch up (49 points behind at the end of a drag of 130, with no Arbor running). But it never runs ahead."""
+    worst, when, resized = 0, None, None
+    for (before, old, _), (time, new, _) in zip(held, held[1:]):
+        if differs(old[2:], new[2:], by=0.6):
+            # Its size changes under the hand, which has a finding of its own, and its origin with it.
+            resized = time
+        if resized is not None and time - resized < RESIZING:
             continue
-        if size is None or differs(size, frame[2:], by=0.6):
-            # Where it was taken hold of; and again when its size has changed under the hand, which has a finding of its own.
-            anchor, still_since = (None, time) if size is not None else (anchor, None)
-            size = frame[2:]
-        if anchor is None:
-            if still_since is None or time - still_since >= RESIZING:
-                at = (last or near)[-1]
-                anchor = (frame[0] - at[0], frame[1] - at[1])
-            continue
-        carried = [(x + anchor[0], max(y + anchor[1], top)) for x, y in (near or last)]
-        away = off_the_road(frame[:2], carried)
-        if away > worst:
-            worst, when = away, time
+        near = [(x, y) for at, x, y in pointer if before - SKEW[0] <= at <= time + SKEW[1]]
+        for axis in (0, 1):
+            went = max(point[axis] for point in near) - min(point[axis] for point in near) if near else 0
+            beyond = abs(new[axis] - old[axis]) - went
+            if beyond > worst:
+                worst, when = beyond, time
     return worst, when
 
 
@@ -425,10 +413,9 @@ def judge(step, world, by_number, own):
             held = [entry for entry in trace if entry[2] and entry[1]]
             if any(differs(a[1][2:], b[1][2:]) for a, b in zip(held, held[1:])):
                 step.find("3", "ODD", window, "changed its size while it was being dragged", road(held))
-            area = (end or {}).get("visible") or world.visible
-            away, when = pulled(held, step.pointer, area[1] if area else 0)
+            away, when = pulled(held, step.pointer)
             if away > PULLED:
-                step.find("3", "FAIL", window, f"was {round(away)} points from where the pointer carried it, {when - step.began} ms into the step", road(held), "pulled")
+                step.find("3", "FAIL", window, f"moved {round(away)} points further than the pointer did, {when - step.began} ms into the step", road(held), "pulled")
             if step.both_previews:
                 step.find("1", "FAIL", window, "macOS's tiling preview and Arbor's drop preview were up at the same time")
             if step.macos_answered and window in ids(wants.get("docked", "")):
@@ -567,7 +554,7 @@ def judged(step):
 
 def checked(step, rule):
     wants = step.wants
-    if not judged(step):
+    if step.at_end is None or wants.get("judge") == "no":
         return False
     return {
         "1": "drags" in wants,
@@ -882,6 +869,9 @@ def self_test():
         "2300 B up 620 110", "2316 W 1 10 0 420 100 400 300 One", "3400 M end 2 drags=1"], [])
     detectors("a dragged window is pulled out of the hand", glide + [
         "2250 W 1 10 0 600 400 400 300 One", "2280 W 1 10 0 260 100 400 300 One", "2300 B up 460 110", "3400 M end 2 drags=1"], ["pulled"])
+    detectors("macOS holds it back where its edge meets another's, and it does not catch up", start + ["2000 M begin 2 drag", "2050 B down 300 110"] + [
+        line for i in range(1, 9) for line in (f"{2100 + 16 * i} W 1 10 0 {100 + 20 * min(i, 3) + 20 * max(i - 6, 0)} 100 400 300 One", f"{2100 + 16 * i} P {300 + 20 * i} 110")] + [
+        "2300 B up 460 110", "3400 M end 2 drags=1"], [])
     detectors("under the menu bar macOS holds it back", start + ["2000 M begin 2 drag", "2050 B down 300 110"] + [
         line for i in range(1, 9) for line in (f"{2100 + 16 * i} W 1 10 0 100 {max(100 - 20 * i, 30)} 400 300 One", f"{2100 + 16 * i} P 300 {110 - 20 * i}")] + [
         "2300 B up 300 -50", "3400 M end 2 drags=1"], [])
@@ -935,6 +925,10 @@ def self_test():
     expect("what the script found", start + [
         "2000 M begin 2 idle", "2500 M finding 2 - FAIL Arbor believes otherwise", "3000 M end 2"], [("-", "FAIL")])
     expect("a step that never ended", start + ["2000 M begin 2 idle"], [("-", "FAIL")])
+    expect("a mark falls between the lines of one sample", start + [
+        "2000 M begin 2 close", "2100 A 20 app.two", "3000 G 1", "3000 M end 2 front=2 leaves=1", "3000 Z 2"], [])
+    detectors("another panel of Arbor's at the preview's level is no preview", start + ["1300 W 52 99 3 300 300 200 100 Arbor"] + tiling[len(start):] + [
+        "2300 B up 460 110", "2310 G 50", "2320 W 1 10 0 0 30 1000 700 One", "3400 M end 2 drags=1"], [])
 
     world, steps, account = play(docked + ["5000 S samples 10 seconds 1.0"])
     text = report(world, steps, account)
@@ -998,6 +992,13 @@ def main(arguments):
         text, missed = sabotage(steps)
         print(text, end="")
         return 1 if missed or not any(step.wants.get("offence") for step in steps) else 0
+    if command == "stories" and rest:
+        for step in steps:
+            if step.findings:
+                with open(f"{rest[0]}/{step.number:03d}-{step.slug}.story.log", "w", encoding="utf-8") as handle:
+                    handle.write(story(path, world, steps, step.number, rest[1:]))
+                print(step.number)
+        return 0
     if command == "story" and rest and rest[0].isdigit():
         print(story(path, world, steps, int(rest[0]), rest[1:]), end="")
         return 0

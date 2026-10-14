@@ -344,7 +344,7 @@ arbor_start_apps() {
   # shellcheck disable=SC2086
   # safe anywhere: $limit is ARBOR_ONLY_PIDS=<the processes named>, or, asked for by name just above, no limit
   env "$limit" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 ARBOR_NO_WATCHDOG=1 $extra \
-    "$ARBOR_BIN/Arbor" > "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>&1 8>&- 9>&- &
+    "$ARBOR_BIN/Arbor" > "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>&1 5<&- 6>&- 8>&- 9>&- &
   ARBOR_PID=$!
   started "$ARBOR_PID"
   deadline=$((SECONDS + 20))
@@ -451,7 +451,7 @@ watch_start() {
   watch_stop
   WATCH_FILE="$ARBOR_OUT/$1"
   shift
-  "$ARBOR_APPTOOL" watch "$@" >> "$WATCH_FILE" 2>&1 8>&- 9>&- &
+  "$ARBOR_APPTOOL" watch "$@" >> "$WATCH_FILE" 2>&1 5<&- 6>&- 8>&- 9>&- &
   WATCH_PID=$!
 }
 
