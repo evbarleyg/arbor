@@ -297,6 +297,43 @@ def main():
     check(wrong, "selection: a file on the list that is gone", ["Tests/T/Gone.swift"],
           tests.missing_from({"Tests/T/Gone.swift": "because"}, {"Tests/T/F.swift": PLAIN}))
 
+    # What has to be compiled for the selection to compile. T/Chosen.swift is the selection.
+    test = "import Testing\n@Test func %s() {}\n"
+    for situation, others, expected in [
+        ("the selection alone", {"T/Other.swift": test % "other"}, ["Chosen.swift"]),
+        ("a file without a test in it is a helper", {"T/Helper.swift": "func unused() {}\n"}, ["Chosen.swift", "Helper.swift"]),
+        ("a type the selection names", {"T/Named.swift": "struct Fixture {}\n" + test % "named"}, ["Chosen.swift", "Named.swift"]),
+        ("behind attributes and modifiers", {"T/Named.swift": "@MainActor @Suite(.serialized) final class Fixture {}\n" + test % "n"},
+         ["Chosen.swift", "Named.swift"]),
+        ("a function at the margin", {"T/Named.swift": "func Fixture() {}\n" + test % "named"}, ["Chosen.swift", "Named.swift"]),
+        ("and what that file names in turn", {"T/Named.swift": "struct Fixture { let more = Further() }\n" + test % "named",
+                                              "T/Third.swift": "struct Further {}\n" + test % "third"}, ["Chosen.swift", "Named.swift", "Third.swift"]),
+        ("what a helper names", {"T/Helper.swift": "let one = Further()\n", "T/Third.swift": "enum Further {}\n" + test % "third"},
+         ["Chosen.swift", "Helper.swift", "Third.swift"]),
+        ("two that name each other", {"T/Named.swift": "struct Fixture { let more = Further() }\n" + test % "named",
+                                      "T/Third.swift": "struct Further { let back = Fixture() }\n" + test % "third"},
+         ["Chosen.swift", "Named.swift", "Third.swift"]),
+        ("a private name is nobody else's", {"T/Named.swift": "private struct Fixture {}\nfileprivate func Fixture() {}\n" + test % "named"},
+         ["Chosen.swift"]),
+        ("a member is not a name of the file's", {"T/Named.swift": "struct Unnamed {\n  struct Fixture {}\n}\n" + test % "named"}, ["Chosen.swift"]),
+        ("the same name in another target is another thing", {"U/Named.swift": "struct Fixture {}\n" + test % "named"}, ["Chosen.swift"]),
+        ("a longer word that holds the name", {"T/Named.swift": "struct Fix {}\n" + test % "named"}, ["Chosen.swift"]),
+        ("in a folder of the target", {"T/Deep/Named.swift": "struct Fixture {}\n" + test % "named"}, ["Chosen.swift", "Deep/Named.swift"]),
+    ]:
+        count += 1
+        files = {"Tests/T/Chosen.swift": "let it = Fixture()\n" + test % "chosen", **{f"Tests/{path}": text for path, text in others.items()}}
+        check(wrong, f"sources: {situation}", expected, tests.compiled_with(files, {"Tests/T/Chosen.swift": "because"}).get("T"))
+    count += 1
+    check(wrong, "sources: a target of which nothing is selected has only its helpers", {"T": ["Chosen.swift"], "U": ["Helper.swift"]},
+          tests.compiled_with({"Tests/T/Chosen.swift": test % "c", "Tests/U/Helper.swift": "", "Tests/U/Other.swift": test % "o"}, {"Tests/T/Chosen.swift": "x"}))
+    # The real thing: everything selected is compiled, and far from everything is.
+    count += 2
+    real = tests.read_sources(tests.ROOT)
+    chosen = tests.select(real)
+    compiled = {f"Tests/{target}/{name}" for target, names in tests.compiled_with(real, chosen).items() for name in names}
+    check(wrong, "sources: of this repository: all of the selection", set(), set(chosen) - compiled)
+    check(wrong, "sources: of this repository: less than half of the files", True, len(compiled) * 2 < len(real))
+
     filters = tests.filters_for(["Tests/ArborKitTests/Mac.swift", "Tests/ArborCoreTests/Deep/Also.swift"])
     for expected, identifier in FILTERED:
         count += 1

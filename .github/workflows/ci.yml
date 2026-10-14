@@ -66,6 +66,9 @@ jobs:
       TESTS: ${{ needs.changes.outputs.tests == 'mac-only' && 'mac-only' || 'full' }}
     steps:
       - uses: actions/checkout@v5
+      # Compiling all the test files took longer than running the ones this job runs. For every step: it is part of the manifest's answer.
+      - name: Which test files are compiled
+        run: ./scripts/ci-tests.py sources --mode "$TESTS" >> "$GITHUB_ENV"
       - name: Set up
         id: setup
         uses: ./.github/actions/mac-setup
@@ -75,9 +78,21 @@ jobs:
         run: ./scripts/ci-step.py toolchain swift --version
       - name: Build
         id: build
-        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build ./scripts/ci-build.sh --build-tests
+        run: |
+          build() { ./scripts/ci-step.py --summary 'warning:|Build complete' build ./scripts/ci-build.sh --build-tests; }
+          build && exit 0
+          [ -n "${!ARBOR_TEST_SOURCES_*}" ] || exit 1
+          # The list is read off the sources, and a file too few on it must cost minutes, not the verdict. If the fault is in the code it fails again.
+          echo "::warning title=build::it does not compile with the selected test files alone (scripts/ci-tests.py sources): now with all of them"
+          for name in ${!ARBOR_TEST_SOURCES_*}; do
+            echo "$name=" >> "$GITHUB_ENV"
+            unset "$name"
+          done
+          echo "whole=true" >> "$GITHUB_OUTPUT"
+          build
       - name: Keep the build
-        if: steps.setup.outputs.keep-build == 'true'
+        # Not under the name of a build it is not.
+        if: steps.setup.outputs.keep-build == 'true' && steps.build.outputs.whole != 'true'
         continue-on-error: true
         timeout-minutes: 5
         uses: ./.github/actions/mac-keep-build

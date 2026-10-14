@@ -26,7 +26,8 @@ manifest=$(git rev-parse HEAD:Package.swift | cut -c 1-16)
 # With the helper tools that scripts/ci-build.sh compiles into .build/mac-shell.
 sources=$( { git rev-parse HEAD:Sources
   git ls-files -s -- 'scripts/mac-shell/*.swift' 'scripts/mac-shell/*.m' scripts/mac-shell/compile-tools.sh; } | short)
-tests=$(git rev-parse HEAD:Tests | cut -c 1-16)
+# With which of them are compiled (scripts/ci-tests.py sources).
+tests=$( { git rev-parse HEAD:Tests; env | grep '^ARBOR_TEST_SOURCES_' | sort; } | short)
 [ -z "$(git status --porcelain -- Package.swift Sources Tests scripts/mac-shell)" ] \
   || { echo "ci-build-key.sh: the checkout differs from its commit, so the commit's hashes do not name it" >&2; exit 2; }
 

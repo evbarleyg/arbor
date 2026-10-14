@@ -3,12 +3,17 @@
 
 Nearly every test drives the same code on Linux and on macOS, and the `linux` job has run it on the same commit. A hosted
 Mac is the scarce machine. So it runs a selection; every night on main, and when asked, it runs everything
-(scripts/ci-changes.py decides: `tests=mac-only` or `tests=full`). Four commands:
+(scripts/ci-changes.py decides: `tests=mac-only` or `tests=full`). Five commands:
 
   select    The test files that may behave differently on a Mac, or exist only there, each with the reason, and the
             `swift test --filter` that runs them. Read from the sources, and generous: a compile-time condition, a trait
             that switches a test on or off, an import nobody has vouched for, a question about the user, real files,
             sockets, processes, threads and clocks, and the files in ALWAYS.
+  sources   What has to be compiled for the selection to run, as lines for $GITHUB_ENV: ARBOR_TEST_SOURCES_<target>=A.swift:B.swift, which
+            Package.swift reads. Compiling all the test files took a Mac longer than running the selection. It is the selection, every
+            file without a test in it (the helpers), and whatever any of these names that another file of the target declares, and so on.
+            Read from the sources and generous, like the selection; a file too few is a compiler's error, never a test that goes missing: the
+            tests that run are those of `select`, whatever else is compiled. In the mode `full` it prints nothing: everything is compiled.
   run       `swift test`, on everything or on the selection, and the record of it (see `record`). With --all also the
             list of every test the build contains, selected or not. Output and exit code are those of `swift test`,
             unless the record cannot be trusted: then it says why and fails.
@@ -36,6 +41,7 @@ What `swift test` 6.4 does, found by trying (the self-test scripts/test-ci-tests
 
 Usage:
   scripts/ci-tests.py select [--root DIR]
+  scripts/ci-tests.py sources --mode full|mac-only [--root DIR]
   scripts/ci-tests.py run --mode full|mac-only --record FILE [--all FILE] [argument for swift test…]
   scripts/ci-tests.py record EVENTS FILE
   scripts/ci-tests.py account --mac FILE --mac-all FILE --linux FILE [--mode MODE] [--why TEXT]
@@ -160,6 +166,36 @@ def filters_for(paths):
         "^%s\\..*/(%s):\\d+:\\d+$" % (re.escape(target), "|".join(re.escape(name) for name in sorted(names)))
         for target, names in sorted(by_target.items())
     ]
+
+
+# A name a file gives to something other files of its module can use: at the margin, and not private. Members do not count: whoever uses
+# one has named its type.
+DECLARES = re.compile(
+    r"^(?:@\w+(?:\([^)\n]*\))?\s+)*(?:(?:public|internal|final|indirect|nonisolated)\s+)*"
+    r"(?:struct|class|enum|actor|protocol|typealias|func|let|var)\s+`?(\w+)", re.M)
+WORD = re.compile(r"\w+")
+
+
+def compiled_with(sources, chosen):
+    """The files that have to be compiled for `chosen` to compile, target by target: {target: [file names]}."""
+    needed = {path for path, text in sources.items() if path in chosen or not DECLARES_A_TEST.search(text)}
+    declared = {}
+    for path, text in sources.items():
+        for name in DECLARES.findall(text):
+            declared.setdefault((path.split("/")[1], name), set()).add(path)
+    waiting = sorted(needed)
+    while waiting:
+        path = waiting.pop()
+        for word in set(WORD.findall(sources[path])):
+            for other in declared.get((path.split("/")[1], word), ()):
+                if other not in needed:
+                    needed.add(other)
+                    waiting.append(other)
+    by_target = {}
+    for path in sorted(needed):
+        # As Package.swift wants them: relative to the target's folder.
+        by_target.setdefault(path.split("/")[1], []).append("/".join(path.split("/")[2:]))
+    return by_target
 
 
 def read_sources(root):
@@ -384,6 +420,19 @@ def command_select(args):
     return 0
 
 
+def command_sources(args):
+    if mode_of(args.mode) != MAC_ONLY:
+        return 0
+    chosen, out_of = selection(args.root)
+    by_target = compiled_with(read_sources(args.root), chosen)
+    for target, names in sorted(by_target.items()):
+        if any(":" in name or "\n" in name for name in names):
+            raise Untrustworthy(f"a file name in {target} that cannot stand in a list")
+        print(f"ARBOR_TEST_SOURCES_{target}={':'.join(names)}")
+    print(f"{sum(len(names) for names in by_target.values())} of {out_of} test files are compiled", file=sys.stderr)
+    return 0
+
+
 def command_record(args):
     forget(args.file)
     write(args.file, as_text(record_of(lines_of(read(args.events, "the event stream")))))
@@ -453,6 +502,11 @@ def main():
     one = commands.add_parser("select", help="which test files a Mac can say something about, and why")
     one.add_argument("--root", default=ROOT, help="the checkout to read")
     one.set_defaults(run=command_select)
+
+    one = commands.add_parser("sources", help="what has to be compiled for the selection to run")
+    one.add_argument("--mode", required=True, help=f"{MAC_ONLY} prints the lists; anything else prints nothing")
+    one.add_argument("--root", default=ROOT, help="the checkout to read")
+    one.set_defaults(run=command_sources)
 
     one = commands.add_parser("run", help="swift test, with a record of what ran")
     one.add_argument("--mode", required=True, help=f"{MAC_ONLY} runs the selection; anything else runs everything")
