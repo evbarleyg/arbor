@@ -5,10 +5,10 @@
 #   source "$(dirname "$0")/lib-day.sh"
 #   day_build;  apps_scratch;  sampler_start
 #   chapter "Morning"
-#   act open-textedit "opens TextEdit";       meet textedit com.apple.TextEdit "$APPS_SCRATCH/oak.txt";  acted
-#   act launch "starts Arbor";                day_launch;                                              acted
-#   act click-textedit "clicks its title bar";    click_window "$W_textedit";      acted front="$W_textedit"
-#   act dock-left "presses ⌃⌥⌘←";                 key ctrl+opt+cmd+left;           acted moves=docked front="$W_textedit"
+#   act open-close open-textedit "opens TextEdit";    meet textedit com.apple.TextEdit "$APPS_SCRATCH/oak.txt";  acted judge=no
+#   act quit-and-start launch "starts Arbor";         day_launch;                      acted
+#   act switch click-textedit "clicks its title bar"; click_window "$W_textedit";      acted front="$W_textedit"
+#   act dock-key dock-left "presses ⌃⌥⌘←";            key ctrl+opt+cmd+left;           acted moves=docked yields=floating front="$W_textedit"
 #   day_report
 #
 # A check asks where a window is once things have settled. A person also sees how it got there. So sampler.swift asks the
@@ -27,11 +27,13 @@
 #   label <window> <name>           what the report calls the window. Never its title
 #   meet <name> <bundle id> [file…] app_open, and label what opened: sets P_<name>, W_<name> (its first standard window). Fails
 #                                     when no standard window came
-#   act <slug> "<what the person does>"               a step begins
+#   act <kind> <slug> "<what the person does>"        a step begins. The kinds are docs/VIABLE.md's: switch open-close dock-key drag
+#                                     drag-where-macos-tiles view resize macos-own way-out quit-and-start display-change idle
 #   want "<what should hold>" <command…>              inside a step: a finding of the script's own when it does not
 #   acted [key=value…]              waits for quiet, compares Arbor's belief with the screen (audit), takes the picture
 #                                     mac-shell/<nnn>-<slug>.jpg and ends the step. The keys are jolts.py's, and besides ids
-#                                     `moves=` takes `docked`: whatever is docked before or after the step
+#                                     `moves=` takes `docked`: whatever is docked before or after the step; `yields=` takes
+#                                     `floating`: whatever floats before or after it
 #   day_launch [NAME=value…]        Arbor as a person runs it: every regular app, shortcuts and menu bar item on. The same
 #                                     $ARBOR_HOME every time, so that a second launch finds what the first one saved
 #   day_gone                        after a step that quit Arbor: waits for it to end, and forgets its process
@@ -44,6 +46,7 @@
 #   arbor_menu <key…>               open Arbor's menu with a real click and choose with these keys, e.g. `arbor_menu up return`
 #   main_window_of <pid>            the window of that app that has, or would have, the keyboard
 #   bare_spot                       x y: a point of the wallpaper that no window covers (fails when there is none)
+#   day_manifest <key> <json value> what mac-shell/run.json says about the run besides what every run says (docs/VIABLE.md, "Which runs count")
 #   day_report                      stop the sampler, write mac-shell/day-report.md, print the findings, keep the pictures and
 #                                     write the stories (mac-shell/<nnn>-<slug>.story.log) of the steps with a finding
 source "$(dirname "${BASH_SOURCE[0]}")/lib-apps.sh"
@@ -55,7 +58,10 @@ DAY_SAMPLER_PID=""
 DAY_STEP=0
 DAY_TRACES=0
 DAY_SLUG=""
+DAY_KIND=""
 DAY_DOCKED_BEFORE=""
+DAY_FLOATING_BEFORE=""
+DAY_MANIFEST=""
 DAY_FACE="ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_NO_PROMPT=0"
 QUIET=""
 
@@ -158,8 +164,11 @@ floating_ids() { day_ids floating; }
 
 act() {
   DAY_STEP=$((DAY_STEP + 1))
+  DAY_KIND=$1
+  shift
   DAY_SLUG=$1
   DAY_DOCKED_BEFORE=$(docked_ids)
+  DAY_FLOATING_BEFORE=$(floating_ids)
   echo
   echo "-- $DAY_STEP $1: $2"
   mark "== $DAY_STEP $1"
@@ -178,6 +187,7 @@ acted() {
   for word in "$@"; do
     case "$word" in
       moves=docked) word="moves=$DAY_DOCKED_BEFORE,$(docked_ids)" ;;
+      yields=floating) word="yields=$DAY_FLOATING_BEFORE,$(floating_ids)" ;;
       # Nothing would be checked, and it would look like a pass.
       front= | comes= | drags=) note "finding $DAY_STEP - FAIL the script could not tell which window ${word%=} is about"; continue ;;
     esac
@@ -205,7 +215,7 @@ acted() {
     tail -n 20 "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>/dev/null
     ARBOR_PID=""
   fi
-  note "end $DAY_STEP settled=$QUIET$wants"
+  note "end $DAY_STEP act=$DAY_KIND settled=$QUIET$wants"
   echo "  ($QUIET ms)$wants"
   snap_now "$(printf '%03d-%s' "$DAY_STEP" "$DAY_SLUG")" > /dev/null
 }
@@ -319,6 +329,24 @@ bare_spot() {
 
 # MARK: The report
 
+day_manifest() { DAY_MANIFEST="$DAY_MANIFEST$1=$2"$'\n'; }
+
+day_write_manifest() {
+  DAY_MANIFEST=$DAY_MANIFEST python3 - "$ARBOR_OUT/run.json" "$(git -C "$ARBOR_ROOT" rev-parse HEAD)" "$(basename "$ARBOR_SCRIPT")" \
+    "$(sw_vers -productVersion) ($(sw_vers -buildVersion))" "$SECONDS" << 'PYTHON'
+import json, os, sys
+path, commit, script, macos, seconds = sys.argv[1:]
+run = {"gate": 1, "commit": commit, "run": os.environ.get("GITHUB_RUN_ID", ""), "attempt": int(os.environ.get("GITHUB_RUN_ATTEMPT", "1")),
+       "script": script, "settings": "shipped", "macos": macos, "seconds": int(seconds)}
+for line in os.environ["DAY_MANIFEST"].splitlines():
+    key, _, value = line.partition("=")
+    run[key] = json.loads(value)
+with open(path, "w", encoding="utf-8") as handle:
+    json.dump(run, handle, indent=1)
+    handle.write("\n")
+PYTHON
+}
+
 day_report() {
   local number name code logs
   sampler_stop
@@ -326,6 +354,7 @@ day_report() {
   if arbor_answers; then "$ARBOR_BIN/arborctl" trace off > /dev/null 2>&1; fi
   arbor_log
   if [ -d "$ARBOR_HOME/traces" ]; then cp -R "$ARBOR_HOME/traces" "$ARBOR_OUT/traces"; fi
+  day_write_manifest
   logs=$(ls "$ARBOR_OUT"/arbor*.log "$ARBOR_OUT"/day-macos.log 2>/dev/null | grep -v stderr | tr '\n' ' ')
   python3 "$DAY_JOLTS" report "$DAY_SAMPLES" --json "$ARBOR_OUT/day-findings.json" > "$ARBOR_OUT/day-report.md"
   code=$?
