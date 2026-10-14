@@ -116,6 +116,9 @@ echo "the mark on its program: $(xattr -p com.apple.quarantine "$app/Contents/Ma
 codesign --verify --deep --strict --verbose=2 "$app" 2>&1 | sed 's/^/  codesign: /'
 spctl --assess --type execute --verbose=4 "$app" 2>&1 | sed 's/^/  spctl: /'
 lipo -archs "$app/Contents/MacOS/Arbor"
+echo "what it is linked against that is not the system's:"; otool -arch arm64 -L "$app/Contents/MacOS/Arbor" | grep -vE "^\s+/(System|usr/lib)/" | head
+echo "where it looks for @rpath:"; otool -arch arm64 -l "$app/Contents/MacOS/Arbor" | grep -A2 LC_RPATH | grep path
+echo "a toolchain from swift.org on this Mac? $(ls ~/Library/Developer/Toolchains 2>&1 | head -2)"
 otool -l "$app/Contents/MacOS/Arbor" | grep -A4 LC_BUILD_VERSION | grep -E "minos|sdk" | sort -u | tr '\n' ' '; echo
 osascript -e 'tell application "Safari" to quit' 2>&1
 
