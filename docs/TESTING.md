@@ -333,6 +333,17 @@ not start, 98 timed out, 99 the run brought no output back). **Look at the pictu
 and say honestly what you see. `arbor.log` (debug level), `build.log` and
 `output.txt` are in the same folder.
 
+**The Macs are shared.** GitHub lends the whole repository about five at a time, for every contributor's Mac shell runs, CI's
+`macos` and `real-windows` jobs and the release build together. A run that finds none free waits, and that wait counts
+towards `run.sh`'s time limit. So look at the queue before you start many runs, and start them a few at a time when there is one:
+
+```bash
+scripts/mac-queue.py                     # or --minutes 180; it only reads, and takes a few seconds
+```
+
+It lists what is running and waiting now, with branch, script and link, then the waits, run times and Mac minutes of the
+last hour and who used them. The last line is made to grep for, `mean wait: 3 min 20 s over 14 jobs`; above
+five minutes (`--alarm`) a line that starts with `ALARM:` follows and the exit code is 3. `--json` gives the same facts to a script.
 **What a run starts with.** A hosted Mac knows nothing of the project, and used to spend its first three minutes installing the Swift
 release Arbor is built with and building from nothing, in every run. Now a run begins with `.github/actions/mac-setup`, which puts back what an
 earlier run installed and built.
