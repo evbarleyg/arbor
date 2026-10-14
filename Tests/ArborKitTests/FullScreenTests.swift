@@ -98,6 +98,70 @@ import Testing
     expectWindowsMatchLayout(h, on: h.display)
   }
 
+  @Test func itsSlotIsTheOneItWillHaveNotTheOneItHad() {
+    let (h, a, b, f) = makeHarness()
+    let before = h.frame(a)!
+    enterFullScreen(h, a, others: [b, f])
+    // Its neighbour closes meanwhile, on the Space that does not show.
+    h.system.close(b)
+    h.system.clearSightings()
+    h.system.leaveFullScreen(a, with: [f])
+    h.scheduler.advance(by: 2)
+    #expect(h.frame(a) != before)
+    #expect(h.system.sightings(of: a) == [h.frame(a)!], "\(h.system.sightings(of: a))")
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  @Test func oneThatTakesNoFrameOnItsWayOutStillEndsInItsSlot() {
+    let (h, a, b, f) = makeHarness()
+    let slot = h.frame(a)!
+    h.system.echoes.flightFromFullScreen = 0.9
+    enterFullScreen(h, a, others: [b, f])
+    h.system.leaveFullScreen(a, with: [b, f])
+    h.scheduler.advance(by: 2)
+    #expect(h.frame(a) == slot)
+    #expect(h.layout!.tiles.isEmpty, "what it answered on its way says nothing about its sizes")
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  @Test func aFloatingWindowOnItsWayOutIsLeftToMacOS() {
+    let (h, a, b, f) = makeHarness()
+    let chosen = h.frame(f)!
+    enterFullScreen(h, f, others: [a, b])
+    h.system.clearSightings()
+    h.system.leaveFullScreen(f, with: [a, b])
+    h.scheduler.advance(by: 2)
+    #expect(h.system.sightings(of: f) == [chosen], "\(h.system.sightings(of: f))")
+    #expect(h.workspace.floating[f] == chosen)
+  }
+
+  @Test func duringAPauseAWindowOnItsWayOutIsNotArborsToMove() {
+    let (h, a, b, f) = makeHarness()
+    enterFullScreen(h, a, others: [b, f])
+    h.run("pause")
+    h.system.clearFrameLog()
+    h.system.leaveFullScreen(a, with: [b, f])
+    h.scheduler.advance(by: 2)
+    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
+  }
+
+  @Test func oneWhoseSlotIsOutOfViewIsNotFetchedAhead() {
+    let (h, a, b, f) = makeHarness()
+    enterFullScreen(h, a, others: [b, f])
+    // Back on the first Space with a swipe, the view goes to the neighbour; then back to Safari's Space and out of full screen.
+    h.system.setOnActiveSpace(a, false)
+    for other in [b, f] { h.system.setOnActiveSpace(other, true) }
+    h.scheduler.advance(by: 2)
+    h.run("zoom \(b.rawValue)")
+    for other in [b, f] { h.system.setOnActiveSpace(other, false) }
+    h.system.setOnActiveSpace(a, true)
+    h.scheduler.advance(by: 2)
+    h.system.leaveFullScreen(a, with: [b, f])
+    h.scheduler.advance(by: 2)
+    #expect(h.controller.invariantViolations().isEmpty, "\(h.controller.invariantViolations())")
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
   @Test func quittingLeavesAFullScreenWindowAlone() {
     let (h, a, b, f) = makeHarness()
     enterFullScreen(h, a, others: [b, f])
