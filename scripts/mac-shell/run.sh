@@ -4,7 +4,7 @@
 #   scripts/mac-shell/run.sh <script> [ref]
 #   scripts/mac-shell/run.sh scripts/mac-shell/shots-demo.sh
 #
-# Starts the "Mac shell" workflow (.github/workflows/mac-shell.yml) on <ref> (a branch; default: the
+# Starts the "Mac shell" workflow (.github/workflows/mac-shell.yml) for <ref> (a branch; default: the
 # current one, which must be pushed: the Mac runs what GitHub has), waits for it, fetches the branch
 # the workflow pushed its output to into .mac-shell/<script>-<run id>/ in this worktree, deletes that branch,
 # and prints the folder, the exit code and the end of the output. Exits with the script's exit code, or with
@@ -20,6 +20,10 @@
 # Environment: MAC_SHELL_TIMEOUT  seconds to wait for the run (default 2700)
 #              MAC_SHELL_TAIL     lines of output.txt to print (default 40)
 #              MAC_SHELL_TAG      another tag (letters, digits, . _ -; at most 40)
+#              MAC_SHELL_WORKFLOW_REF   the branch whose mac-shell.yml runs (default: swarm/trunk if there is one, else main).
+#                                 One for everybody, whatever <ref> is: a run can read only the caches of the branch its workflow is
+#                                 from, so this is what lets it start with the toolchain, and the build, of somebody else's run.
+#                                 Name your own branch after changing the workflow or .github/actions.
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 97
 
@@ -43,6 +47,13 @@ if [ "$ref" = "$(git rev-parse --abbrev-ref HEAD)" ]; then
     || echo "run.sh: note: uncommitted changes under scripts/ or Sources/ will not be part of this run" >&2
 fi
 
+home=${MAC_SHELL_WORKFLOW_REF:-}
+for candidate in swarm/trunk main; do
+  [ -n "$home" ] || ! api "repos/$repo/contents/.github/actions/mac-setup/action.yml?ref=$candidate" --jq .path >/dev/null 2>&1 || home=$candidate
+done
+# Neither has the shared set-up yet: as it was before there was one.
+home=${home:-$ref}
+
 slug() { printf '%s' "$1" | tr -c 'A-Za-z0-9_-' '-' | cut -c "1-$2"; }
 name=$(slug "$(basename "$script" .sh)" 16)
 tag=${MAC_SHELL_TAG:-$(slug "$ref" 23).$name}
@@ -52,7 +63,8 @@ tag=${MAC_SHELL_TAG:-$(slug "$ref" 23).$name}
 runs="repos/$repo/actions/workflows/mac-shell.yml/runs?event=workflow_dispatch&per_page=30"
 newest=$(api "$runs" --jq '.workflow_runs[0].id // 0') || fail "cannot list the workflow's runs"
 api -X POST "repos/$repo/actions/workflows/mac-shell.yml/dispatches" \
-  -f ref="$ref" -f "inputs[script]=$script" -f "inputs[tag]=$tag" >/dev/null || fail "could not start the workflow on $ref"
+  -f ref="$home" -f "inputs[ref]=$ref" -f "inputs[script]=$script" -f "inputs[tag]=$tag" >/dev/null \
+  || fail "could not start the workflow of $home for $ref"
 echo "started $script at $ref (${remote:0:7}), tag $tag"
 
 start=$(date +%s)

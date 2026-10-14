@@ -1,0 +1,25 @@
+name: Keep the build folder
+description: >
+  After a build that passed: puts .build into the cache under the key mac-setup worked out, for the jobs to come. Call it before anything
+  else gets to write there, and only if mac-setup's `keep-build` says 'true'.
+
+inputs:
+  key:
+    description: mac-setup's output `build-key`
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Note what the build was made of
+      shell: bash
+      run: |
+        "$GITHUB_ACTION_PATH/../../../scripts/ci-mtimes.py" record
+        # Written by every compilation for editors to read, never read by a build, and a third of the folder.
+        rm -rf .build/*/debug/index .build/debug/index
+        du -sh .build | sed 's/^/the build folder: /'
+    - name: Keep it
+      uses: actions/cache/save@v4
+      with:
+        path: .build
+        key: ${{ inputs.key }}

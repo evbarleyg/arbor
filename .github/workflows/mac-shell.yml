@@ -1,5 +1,5 @@
 name: Mac shell
-run-name: "Mac shell: ${{ inputs.script }} [${{ inputs.tag || github.run_id }}]"
+run-name: "Mac shell: ${{ inputs.script }} at ${{ inputs.ref || github.ref_name }} [${{ inputs.tag || github.run_id }}]"
 
 # A remote Mac for executors that have none. Checks out a ref, runs one script
 # from that ref on GitHub's macOS runner with the newest Xcode selected, and
@@ -62,13 +62,35 @@ jobs:
           ref: ${{ inputs.ref }}
           persist-credentials: false # the script gets no token
 
-      - name: Use the newest Xcode on the runner
+      # The set-up belongs to the workflow, not to the commit under test, which may be older than any of it. run.sh starts the
+      # workflow from one and the same branch for everybody, because a cache can be read only from the branch that wrote it (and from
+      # main): so all runs share one toolchain and one another's builds.
+      - name: The workflow's own tools
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.sha }}
+          path: .ci
+          sparse-checkout: |
+            .github/actions
+            scripts
+          persist-credentials: false
+      - name: Set up
+        id: setup
+        uses: ./.ci/.github/actions/mac-setup
+        with:
+          build-cache: products
+      # Here, so that what is kept is a build and nothing else. A build that fails is the script's to report, as it always was.
+      - name: Build
+        id: build
         run: |
-          xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
-          sudo xcode-select -s "$xcode"
-          ./scripts/ci-toolchain.sh
-          export PATH="$HOME/.swiftly/bin:$PATH"
+          echo .ci >> .git/info/exclude
           swift --version
+          .ci/scripts/ci-build.sh && echo "passed=true" >> "$GITHUB_OUTPUT" || echo "::warning::swift build failed"
+      - name: Keep the build
+        if: steps.build.outputs.passed == 'true' && steps.setup.outputs.keep-build == 'true'
+        uses: ./.ci/.github/actions/mac-keep-build
+        with:
+          key: ${{ steps.setup.outputs.build-key }}
 
       - name: Run the script from the repository
         # Shorter than the job's limit, so that a script that hangs still gets its output pushed, and
