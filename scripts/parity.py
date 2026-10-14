@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """Scores Arbor against TrellisWM and regenerates docs/FEATURES.md.
 
-Reads collab/parity.json, runs `swift test` (or reads a saved log), reads the
-real-window evidence in collab/evidence/*-latest.txt, and works out a level
-for every item:
+Reads collab/parity.json, the record of a test run, and the real-window evidence in
+collab/evidence/*-latest.txt, and works out a level for every item:
 
   verified  shipped, listed tests pass, listed real-window steps passed
   tested    shipped, listed tests pass
@@ -16,22 +15,29 @@ Real-window steps are the `▸` headings that arbor-e2e (`make e2e`) and scripts
 step has passed when the evidence shows at least one ✔ and no ✘ under it. A step that a runner
 has but the evidence does not is simply not counted yet.
 
+The record of a test run is what Swift Testing writes for tools (`make test` asks for it: one line of JSON for every test
+there is and for everything that happened to it; each test process writes a file, and `swift test` puts the files together). What
+`swift test` prints is for people, and proves nothing: it passes the tests' output on in pieces of 4096 bytes and drops each piece
+that ends or begins inside a character of several bytes (✔ ◇ ➜ ↳), some hundred lines at a time, from a run that ends well.
+Nothing here reads it.
+
 A listed test that needs a macOS framework is skipped on Linux. If its reason for skipping contains
-"only on macOS", it counts as passing in a log from another platform, so the levels and
+"only on macOS", it counts as passing in a record from another platform, so the levels and
 FEATURES.md come out the same everywhere; macOS CI is what proves it. Any other skipped
-test, and every skipped test in a log from macOS, proves nothing and counts as not found.
+test, and every skipped test in a record from macOS, proves nothing, and neither does a test with a known issue.
 
 Usage:
-  scripts/parity.py                     run the tests, print the score, rewrite docs/FEATURES.md
-  scripts/parity.py --test-log FILE     use a saved `swift test` log instead of running the tests
-  scripts/parity.py --check             also fail if docs/FEATURES.md is out of date (CI)
+  scripts/parity.py                          run the tests (`make test`), print the score, rewrite docs/FEATURES.md
+  scripts/parity.py --report FILE [FILE…]    use the records of tests that have just run (several: the parts of one suite)
+  scripts/parity.py --check                  also fail if docs/FEATURES.md is out of date (CI)
 
-Exit code 1 if any item is broken, if the test run failed or did not finish (then nothing it
-printed proves anything), or, with --check, if FEATURES.md is stale. Exit code 2 if parity.json itself is
+Exit code 1 if any item is broken, if a test run failed or did not finish or its record is damaged (then nothing in
+it proves anything), or, with --check, if FEATURES.md is stale. Exit code 2 if parity.json itself is
 wrong: an unknown status, a spec that does not exist, an id the reference does not have.
 """
 
 import argparse
+import collections
 import glob
 import json
 import os
@@ -51,131 +57,138 @@ REFERENCE_IDS = set(
 # Where real-window steps are defined: step("title", …) and print("\n▸ title …") in Swift, claim "title" in shell.
 RUNNERS = [os.path.join(ROOT, "Sources", "arbor-e2e", "*.swift"), os.path.join(ROOT, "scripts", "mac-shell", "*.sh")]
 FEATURES = os.path.join(ROOT, "docs", "FEATURES.md")
+REPORT = os.path.join(ROOT, ".build", "test-report.jsonl")
 SPECS = os.path.join(ROOT, "docs", "features")
 
 # Colours and hyperlinks.
 ANSI = re.compile(r"\x1b\[[0-9;]*m|\x1b\]8;;.*?\x1b\\")
-TEST_LINE = re.compile(r"^\s*([✔✘])\s+Test\s+(\w+)\(")
-# `swift test` now and then loses lines of a long output (seen with 474 tests: eight "passed" lines gone from a run
-# that closed with "180 tests passed"). A test that started, in a log where every run finished and passed, has passed.
-START_LINE = re.compile(r"^\s*◇\s+Test\s+(\w+)\(.*\bstarted\b")
-KNOWN_ISSUE_LINE = re.compile(r"\bTest\s+(\w+)\(.*\brecorded a known issue\b")
-SKIP_LINE = re.compile(r'^\s*[^\s✔✘]+\s+Test\s+(\w+)\([^)]*\)\s+skipped: ".*only on macOS')
 PLATFORM_LINE = re.compile(r"Target Platform:\s*(\S+)")
 STEP_LINE = re.compile(r"^▸ (.+?)(?:\s{2}\(.*\))?\s*$")
-# Not anchored on the symbol in front: it differs when the run recorded a known issue.
-RUN_STARTED = re.compile(r"\bTest run started\b")
-RUN_ENDED = re.compile(r"\bTest run with \d+ tests? in \d+ suites? (passed|failed)\b")
-RUN_SIZE = re.compile(r"\bTest run with (\d+) tests? in \d+ suites? passed\b")
-# `@Test`, its arguments if any (brackets up to three deep), other attributes and modifiers, `func name(`.
-DECLARATION = re.compile(r"@Test\b(\((?:[^()]|\((?:[^()]|\([^()]*\))*\))*\))?\s*(?:@\w+\s+)*(?:\w+\s+)*?func\s+(\w+)\s*\(")
 STEP_SOURCE = re.compile(r'(?:\bstep\(|^\s*claim |▸ )"?([^"\\(]+?)(?:"|\s{2}\(|\s*$)', re.MULTILINE)
 
 SHIPPED_LEVELS = {"verified", "tested", "unproven"}
 LEVEL_ORDER = ["broken", "verified", "tested", "unproven", "partial", "review", "in-progress",
                "planned", "missing", "not-planned"]
 STATUSES = {"shipped", "partial", "review", "in-progress", "planned", "missing", "not-planned"}
+# What became of a test, in the words BROKEN lines use. A test skipped for a reason of its own "was skipped: …".
+PASSED, FAILED, LEFT_TO_MACOS = "passed", "failed", "was left to macOS"
+KNOWN_ISSUE, UNFINISHED, NOT_RUN, SKIPPED = "has a known issue", "did not finish", "did not run", "was skipped"
+# outcomes: {function name: what became of it}. problems: why none of it proves anything. issues: what went wrong, for people.
+Results = collections.namedtuple("Results", "outcomes problems issues count")
 
 
 def run_tests():
-    print("running swift test…", file=sys.stderr)
-    result = subprocess.run(["swift", "test"], cwd=ROOT, capture_output=True, text=True)
-    return result.stdout + result.stderr, result.returncode
+    """`make test`, quietly. What it says is shown only if it leaves no record: then the build failed."""
+    print("running the tests…", file=sys.stderr)
+    result = subprocess.run(["make", "test", f"TEST_REPORT={REPORT}"], cwd=ROOT, capture_output=True, text=True, errors="replace",
+                            check=False)
+    if not os.path.exists(REPORT):
+        print("\n".join((result.stdout + result.stderr).split("\n")[-40:]))
 
 
-def declared_tests(on_mac, root=ROOT):
-    """What the sources under Tests/ declare for that platform: the tests that run, the ones left to macOS, and how many in all."""
-    runs, mac_only, count = set(), set(), 0
-    for path in sorted(glob.glob(os.path.join(root, "Tests", "**", "*.swift"), recursive=True)):
-        with open(path, encoding="utf-8") as handle:
-            lines = handle.read().split("\n")
-        compiled, kept = [], []
-        for line in lines:
-            word = line.strip()
-            if word.startswith("#if"):
-                # A condition this does not know makes the count come out wrong, and then nothing is recovered.
-                compiled.append({"os(macOS)": on_mac, "!os(macOS)": not on_mac, "canImport(Carbon)": on_mac,
-                                 "canImport(AppKit)": on_mac}.get(word[3:].strip(), True))
-            elif word.startswith("#else") and compiled:
-                compiled[-1] = not compiled[-1]
-            elif word.startswith("#endif") and compiled:
-                compiled.pop()
-            elif all(compiled):
-                kept.append(line)
-        for arguments, name in DECLARATION.findall("\n".join(kept)):
-            count += 1
-            if ".disabled" not in arguments:
-                runs.add(name)
-            elif "only on macOS" in arguments and not on_mac:
-                mac_only.add(name)
-    return runs, mac_only, count
+def read_report(path):
+    """What one record of a test run says: ({test id: (function name, outcome)}, problems, issues, how many runs).
 
-
-def recover(missing, log, root=ROOT):
-    """Which of the listed tests that a log does not mention passed all the same, and which were left to macOS.
-
-    `swift test` can lose both lines of a test (see START_LINE). But its closing lines say how many tests ran, skipped ones
-    included. If every run finished and passed, and together they ran exactly as many tests as the sources declare, then every
-    test the sources declare has run and passed, whether or not its lines survived.
+    The format is Swift Testing's own for tools, version 0: a line of JSON for each test there is, then one for each event.
     """
-    lines = [ANSI.sub("", raw) for raw in log.splitlines()]
-    if run_problem(log) is not None or parse_tests(log)[1]:
-        return set(), set()
-    targets = [match.group(1) for match in map(PLATFORM_LINE.search, lines) if match]
-    on_mac = "apple" in targets[-1] if targets else platform.system() == "Darwin"
-    runs, mac_only, count = declared_tests(on_mac, root)
-    if count == 0 or count != sum(int(match.group(1)) for match in map(RUN_SIZE.search, lines) if match):
-        return set(), set()
-    return missing & runs, missing & mac_only
-
-
-def parse_tests(log):
-    """Returns the tests that passed, failed, and were left to macOS by a run elsewhere."""
-    passed, failed, mac_only, started, doubtful = set(), set(), set(), set(), set()
+    try:
+        with open(path, encoding="utf-8", errors="replace") as handle:
+            lines = handle.read().split("\n")
+    except OSError as error:
+        return {}, [f"{path}: {error.strerror} (`make test` writes it)"], [], 0
+    names, suites, started, ended, failed, known, skipped = {}, set(), set(), set(), set(), set(), {}
+    problems, issues, runs, finished, run_failed = [], [], 0, 0, False
     on_mac = platform.system() == "Darwin"
-    for raw in log.splitlines():
-        line = ANSI.sub("", raw)
-        start = START_LINE.match(line)
-        if start:
-            started.add(start.group(1))
+    for number, line in enumerate(lines, 1):
+        if not line:
             continue
-        known = KNOWN_ISSUE_LINE.search(line)
-        if known:
-            doubtful.add(known.group(1))
-            continue
-        target = PLATFORM_LINE.search(line)
-        if target:
-            on_mac = "apple" in target.group(1)
-            continue
-        skip = SKIP_LINE.match(line)
-        if skip:
-            mac_only.add(skip.group(1))
-            continue
-        match = TEST_LINE.match(line)
-        if not match:
-            continue
-        symbol, name = match.groups()
-        if symbol == "✘":
-            failed.add(name)
-        elif " passed" in line:
-            passed.add(name)
-    if not failed and started and run_problem(log) is None:
-        passed |= started - doubtful
-    return passed - failed, failed, set() if on_mac else mac_only - failed
+        try:
+            entry = json.loads(line)
+            if entry["version"] != 0:
+                problems.append(f"{path}: line {number} is in version {entry['version']} of the format, and this reads version 0")
+                continue
+            payload = entry["payload"]
+            what, test = payload["kind"], payload.get("testID")
+            texts = [message["text"] for message in payload.get("messages", [])]
+            if entry["kind"] == "test":
+                if what == "function":
+                    # `dock(side:)` is the function dock. A name between backticks may hold anything.
+                    name = payload["name"]
+                    names[payload["id"]] = name[1:].split("`")[0] if name.startswith("`") else name.split("(")[0]
+                else:
+                    suites.add(payload["id"])
+            elif test is not None and test not in names and test not in suites:
+                problems.append(f"{path}: line {number} is about a test that the lines before it do not have")
+            elif what == "runStarted":
+                runs += 1
+                for target in filter(None, map(PLATFORM_LINE.search, texts)):
+                    on_mac = "apple" in target.group(1)
+            elif what == "runEnded":
+                finished += 1
+                run_failed = run_failed or any(message["symbol"] == "fail" for message in payload["messages"])
+            elif what == "testStarted":
+                started.add(test)
+            elif what == "testEnded":
+                ended.add(test)
+            elif what == "testSkipped":
+                # The key with the underscore is nobody's promise. The message for people has the reason too, after the test's name.
+                reasons = payload.get("_comments") or [text.split(" skipped: ", 1)[1] for text in texts if " skipped: " in text]
+                mac_only = not on_mac and "only on macOS" in " ".join(reasons)
+                skipped[test] = LEFT_TO_MACOS if mac_only else SKIPPED + (": " + "; ".join(reasons) if reasons else "")
+            elif what == "issueRecorded":
+                if payload["issue"]["isKnown"]:
+                    known.add(test)
+                else:
+                    failed.add(test)
+                    where = payload["issue"].get("sourceLocation") or {}
+                    issues.append({"test": names.get(test), "text": "\n".join(texts), "path": where.get("_filePath"),
+                                   "file": where.get("fileID"), "line": where.get("line"), "column": where.get("column")})
+        except (ValueError, KeyError, TypeError, AttributeError):
+            problems.append(f"{path}: line {number} is damaged")
+    if runs == 0:
+        problems.append(f"{path}: there is no test run in it")
+    elif finished < runs:
+        problems.append(f"{path}: {runs - finished} of {runs} test runs did not finish (a crash?)")
+    elif set(names) - ended - set(skipped) - failed:
+        # A test whose trait or condition throws fails without having started.
+        open_ended = len(set(names) - ended - set(skipped) - failed)
+        problems.append(f"{path}: the runs finished, yet nothing says how {open_ended} of the tests ended: lines are missing")
+    if None in failed:
+        problems.append(f"{path}: something went wrong outside any test")
+    elif run_failed and not failed & set(names):
+        problems.append(f"{path}: a test run failed")
+
+    def outcome(test):
+        if test in failed:
+            return FAILED
+        if test in known:
+            return KNOWN_ISSUE
+        if test in skipped:
+            return skipped[test]
+        if test in ended:
+            return PASSED
+        return UNFINISHED if test in started else NOT_RUN
+
+    return {test: (name, outcome(test)) for test, name in names.items()}, problems, issues, runs
 
 
-def run_problem(log, code=0):
-    """Why the test run as a whole proves nothing, or None. A crash ends the log without a closing line."""
-    lines = [ANSI.sub("", raw) for raw in log.splitlines()]
-    started = sum(1 for line in lines if RUN_STARTED.search(line))
-    ended = [match.group(1) for match in map(RUN_ENDED.search, lines) if match]
-    if len(ended) < started:
-        return f"{started - len(ended)} of {started} test runs did not finish (a crash?)"
-    if "failed" in ended:
-        return "the test run failed"
-    if code != 0:
-        return f"swift test exited with code {code}"
-    return None
+def read_reports(paths):
+    """The same of several records, the parts of one suite, as Results.
+
+    parity.json lists tests by the names of their functions. Where two suites have a function of one name, or two records have one
+    test, the worst that became of any of them counts.
+    """
+    order = [FAILED, KNOWN_ISSUE, UNFINISHED, NOT_RUN, SKIPPED, LEFT_TO_MACOS, PASSED]
+    named, every, problems, issues, runs = {}, [], [], [], 0
+    for path in paths:
+        tests, wrong, found, count = read_report(path)
+        problems, issues, runs = problems + wrong, issues + found, runs + count
+        for name, outcome in tests.values():
+            every.append(outcome)
+            named[name] = min(named.get(name, outcome), outcome, key=lambda o: order.index(o.split(":")[0]))
+    skipped = sum(1 for outcome in every if outcome == LEFT_TO_MACOS or outcome.startswith(SKIPPED))
+    count = f"tests: {len(every)}, passed: {every.count(PASSED)}, skipped: {skipped}, test runs: {runs}"
+    return Results(named, problems, issues, count)
 
 
 def parse_evidence(path):
@@ -251,7 +264,7 @@ def spec_file(spec_id):
     return None
 
 
-def level_of(item, passed, failed, steps, runnable):
+def level_of(item, passed, failed, steps, runnable, outcomes=None):
     status = item["status"]
     tests = item.get("tests", [])
     e2e = item.get("e2e", [])
@@ -266,7 +279,7 @@ def level_of(item, passed, failed, steps, runnable):
         notes.append(f"real windows {len(run_steps)}/{len(e2e)}")
     # Whatever the status: what an item lists as proof has to exist and pass.
     if missing or failed_steps or unknown_steps:
-        detail = ", ".join([f"test {t} {'failed' if t in failed else 'not found'}" for t in missing]
+        detail = ", ".join([f"test {t} {'failed' if t in failed else (outcomes or {}).get(t, 'not found')}" for t in missing]
                            + [f"step '{s}' failed" for s in failed_steps]
                            + [f"no runner has a step '{s}'" for s in unknown_steps])
         return "broken", detail
@@ -345,7 +358,8 @@ def next_up(data, results, count=8):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--test-log", help="use this saved `swift test` output")
+    parser.add_argument("--report", nargs="+", metavar="FILE",
+                        help="the record of tests that have just run, as `make test` leaves it in .build/test-report.jsonl")
     parser.add_argument("--check", action="store_true", help="fail if docs/FEATURES.md is out of date")
     args = parser.parse_args()
 
@@ -359,38 +373,22 @@ def main():
         print("collab/parity.json:\n  " + "\n  ".join(wrong))
         sys.exit(2)
 
-    code = 0
-    if args.test_log:
-        with open(args.test_log, encoding="utf-8", errors="replace") as handle:
-            log = handle.read()
-    else:
-        log, code = run_tests()
-    passed, failed, mac_only = parse_tests(log)
-    listed = {test for item in data["features"] for test in item.get("tests", [])}
-    if code == 0 and listed - passed - mac_only:
-        found, left = recover(listed - passed - mac_only, log)
-        if found or left:
-            print("not in the output, which lost lines, but run and passed by the count of tests: " + ", ".join(sorted(found | left)))
-        passed, mac_only = passed | found, mac_only | left
-    if not args.test_log and not failed and run_problem(log, code) is None and listed - passed - mac_only:
-        # Both lines of a test can be among the lost ones (see START_LINE). A test that is really gone is still gone
-        # the second time; what either run saw pass has passed.
-        print("some listed tests are not in the output of a run that passed; running once more…", file=sys.stderr)
-        again, code = run_tests()
-        second = parse_tests(again)
-        if not second[1] and run_problem(again, code) is None:
-            passed, mac_only = passed | second[0], mac_only | second[2]
-        else:
-            log, (passed, failed, mac_only) = again, second
-    if not passed and not failed:
-        sys.exit("no test results found; did the build fail?")
+    if not args.report:
+        run_tests()
+    outcomes, problems, _, count = read_reports(args.report or [REPORT])
+    if not outcomes:
+        sys.exit("no test results found; did the build fail?\n  " + "\n  ".join(problems[:5]))
+    print(count)
+    passed = {test for test, outcome in outcomes.items() if outcome == PASSED}
+    failed = {test for test, outcome in outcomes.items() if outcome == FAILED}
+    mac_only = {test for test, outcome in outcomes.items() if outcome == LEFT_TO_MACOS}
     if mac_only:
         print("left to macOS and taken as passing: " + ", ".join(sorted(mac_only)))
         passed |= mac_only
     steps, header = read_evidence()
     runnable = known_steps()
 
-    results = {item["id"]: level_of(item, passed, failed, steps, runnable) for item in data["features"]}
+    results = {item["id"]: level_of(item, passed, failed, steps, runnable, outcomes) for item in data["features"]}
     text = render(data, results, header)
 
     for line in summary_lines(data, results, header):
@@ -399,11 +397,10 @@ def main():
     broken = [(i, results[i][1]) for i in ids if results[i][0] == "broken"]
     for item_id, detail in broken:
         print(f"BROKEN {item_id}: {detail}")
-    unsound = run_problem(log, code)
-    if not unsound and failed:
-        unsound = "failed: " + ", ".join(sorted(failed))
+    unsound = "; ".join(problems[:3] + [f"and {len(problems) - 3} more of the kind"] * (len(problems) > 3)
+                        + ["failed: " + ", ".join(sorted(failed))] * bool(failed))
     if unsound:
-        print(f"THE TESTS DO NOT PASS, so the levels above prove nothing: {unsound}")
+        print(f"THE TESTS DID NOT ALL RUN AND PASS, so the levels above prove nothing: {unsound}")
     upcoming = next_up(data, results)
     if upcoming:
         print("Next up: " + ", ".join(f"{i['id']} {i['title']} ({i.get('spec') or 'needs a spec'})"

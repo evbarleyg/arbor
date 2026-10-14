@@ -947,8 +947,8 @@ The same script can divide the tests among several machines, the compiling too (
 ## The tools test themselves (`scripts/test-tooling.py`)
 
 `parity.py`, `ci-step.py`, `scenarios.sh` with arbor-sim, `lint-imports.py`, `lint-mac-shell.py`, `mutate.py` and `fuzz-launch.py` are what says "all is well", so each is given
-situations that must come out as failures: a misspelt status, a renamed test or step, a log cut off by a
-crash, a scenario whose commands do nothing, an `rm -rf` of a variable nobody checked. The safety nets of `scripts/mac-shell/lib.sh` are tried for real: small scripts
+situations that must come out as failures: a misspelt status, a renamed test or step, a record of the tests cut off by a
+crash or with a torn line, a scenario whose commands do nothing, an `rm -rf` of a variable nobody checked. The safety nets of `scripts/mac-shell/lib.sh` are tried for real: small scripts
 run against stand-ins for a Mac and are interrupted, timed out and killed, with a full disk, with somebody's window under the pointer, beside a running Arbor
 (`ARBOR_TEST_BASH=<a bash 3.2>` tries them under macOS's own shell). `make check` runs it. When you teach one of these tools something, add
 the situation that would have fooled it.
@@ -956,6 +956,14 @@ the situation that would have fooled it.
 The two scripts that decide what CI's Mac does have tables of their own, which the job `linux-lint` runs: `scripts/test-ci-changes.py`
 (whether a Mac is needed, which tests it runs, and whether it may build upon a cache) and `scripts/test-ci-tests.py` (which tests a Mac can say something about, the record of
 a run, and the net that fails when a test ran nowhere). Most of their rows are situations in which the answer must be the careful one.
+
+**Never judge by what `swift test` prints.** It passes the tests' output on in pieces of 4096 bytes and drops every piece that is not
+valid UTF-8 by itself, that is, one that ends or begins inside a ✔, ◇, ➜ or ↳: two pieces at a time, some hundred lines, and the exit code
+stays 0 (Swift 6.4.1; 60,000 lines with one ✔ each lose three to five thousand in every run, the same lines in ASCII none). For months that read as
+"test … not found" about one gate in seven. `make test` therefore asks Swift Testing for its own record (`--event-stream-output-path`, one line of JSON per
+test and per event; each test process writes a file, and `swift test` puts them together when the last has ended, also after a crash, but not
+when it is killed itself; in CI `ci-tests.py run` asks for the same and leaves it at `<record>.events`), and `parity.py` and `ci-step.py` read that: `parity.read_reports`. A tool that wants to know what a test did reads it too;
+the exit code says whether all went well; the output is for people. (`mutate.py` judges by the exit code and takes only the names it shows from the output.)
 
 ## Mutation testing (`scripts/mutate.py`)
 

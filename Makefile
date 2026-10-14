@@ -27,8 +27,12 @@ hooks:
 build:
 	swift build
 
+# Swift Testing's own record of the run goes into a file, for scripts/parity.py and scripts/ci-step.py: what `swift test` prints
+# loses lines (scripts/parity.py says how). A part of the suite: make test TEST_REPORT=… TEST_ARGS='--filter …'
+TEST_REPORT ?= .build/test-report.jsonl
 test:
-	swift test
+	@rm -f $(TEST_REPORT)
+	swift test --event-stream-output-path $(TEST_REPORT) --event-stream-version 0 $(TEST_ARGS)
 
 # Check the imports, build, test, run the simulator through a dock/zoom/back script, run the scenarios, check that
 # the tools that report all this can also report a failure, and test the release tooling.
@@ -58,9 +62,11 @@ sim: build
 scenarios: build
 	@./scripts/scenarios.sh
 
-# Score Arbor against TrellisWM and regenerate docs/FEATURES.md (see collab/README.md).
-parity: build
-	@python3 scripts/parity.py
+# Score Arbor against TrellisWM and regenerate docs/FEATURES.md (see collab/README.md). By itself it runs the tests; after
+# `check` or `test` in one call of make (`make check parity`) it reads the record they have just left, so they run once.
+TESTED := $(filter check test,$(MAKECMDGOALS))
+parity: $(TESTED)
+	@python3 scripts/parity.py $(if $(TESTED),--report $(TEST_REPORT))
 
 # check, scenarios and parity for the headless stack in the Linux image CI uses. Needs Docker.
 linux:

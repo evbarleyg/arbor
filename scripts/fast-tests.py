@@ -15,9 +15,9 @@ every file, and takes out of the files that are not its own only the functions m
 helpers, extensions and whatever else a file declares stay for the others to use: nobody who writes a test has a rule to keep. Each
 part is built from nothing, so there is no cache that could be stale.
 
-  run             Builds the tests (not with --no-build) and runs them as said. --jobs N: that many at a time. --log FILE: all output, as
-                  scripts/parity.py reads it. --events FILE: Swift Testing's own event streams, one after another, each a finished
-                  run. --record FILE: one line per test, `<id><tab>passed|failed|skipped`, sorted; the id is `swift test list`'s,
+  run             Builds the tests (not with --no-build) and runs them as said. --jobs N: that many at a time. --log FILE: all output.
+                  --events FILE: Swift Testing's own event streams, one after another, each a finished run, as scripts/parity.py
+                  reads them. --record FILE: one line per test, `<id><tab>passed|failed|skipped`, sorted; the id is `swift test list`'s,
                   Module.Suite/function(label:). A failed test is in both. Neither is written of a run that cannot be trusted
                   (a crash, a test that did not run). On Linux only.
   plan N          Which file belongs to which of N parts, and how heavy each part is. Every file under Tests/ is in exactly one:

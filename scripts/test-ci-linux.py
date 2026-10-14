@@ -33,8 +33,10 @@ NOT_A_CHECK = {"changes"}
 # is a check of its own, by its own name: what real windows said there, whether every test ran there or here, that it had built from nothing.
 OF_THE_MAC = {"real-windows", "tests-accounted-for", "macos-from-nothing"}
 # What CI's Linux jobs run beyond `make check`.
-ALSO = ["make typecheck-mac", "scripts/parity.py --test-log test.log --check", "scripts/test-ci-changes.py",
+ALSO = ["make typecheck-mac", "scripts/parity.py --report linux.tsv.events --check", "scripts/test-ci-changes.py",
         "scripts/test-mac-queue.py", "scripts/test-ci-tests.py"]
+# Of `make check`, but no check: it forgets the record of the run before, as ci-tests.py does by itself.
+TIDYING = {"rm -f $(TEST_REPORT)"}
 JOB = re.compile(r"""^  ["']?([A-Za-z_][\w-]*)["']?:\s*(?:#.*)?$""")
 KEY = re.compile(r"^(\s*)(?:- )?([\w-]+):\s*(.*)$")
 # They only widen when something runs.
@@ -94,7 +96,7 @@ def plain(command):
         return command
     if words and words[0].endswith("scripts/ci-step.py"):
         words = words[1:]
-        while words and words[0] in ("--summary", "--log"):
+        while words and words[0] in ("--summary", "--log", "--report"):
             words = words[2:]
         words = words[1:]
     if words and words[0] == "python3":
@@ -104,6 +106,9 @@ def plain(command):
     # `swift test` on everything, which also leaves a record of what ran.
     if words[:5] == ["scripts/ci-tests.py", "run", "--mode", "full", "--record"] and len(words) > 5:
         words = ["swift", "test", *words[6:]]
+    # And so is `make test`: where the record goes does not change what runs. $(TEST_ARGS) is empty unless somebody fills it.
+    if words[:2] == ["swift", "test"] and words[2::2][:2] == ["--event-stream-output-path", "--event-stream-version"]:
+        words = ["swift", "test", *(word for word in words[6:] if word != "$(TEST_ARGS)")]
     return " ".join(words)
 
 
@@ -176,7 +181,7 @@ def problems_in(workflow, makefile):
     check = steps_of(makefile, "check")
     if not check:
         found.append("the Makefile has no `check`, or it runs nothing")
-    found += [f"`make check` runs `{step}`, and no Linux job does" for step in check or [] if step not in run]
+    found += [f"`make check` runs `{step}`, and no Linux job does" for step in check or [] if step not in run | TIDYING]
     found += [f"no Linux job runs `{step}` any more" for step in ALSO if step not in run]
     return found
 
@@ -204,9 +209,9 @@ jobs:
     runs-on: ubuntu-latest
     container: swift:1
     steps:
-      - run: ./scripts/ci-step.py --log test.log test swift test
+      - run: ./scripts/ci-step.py --report linux.tsv.events test swift test
       - run: ./scripts/ci-step.py smoke ./scripts/smoke.sh
-      - run: ./scripts/ci-step.py parity python3 scripts/parity.py --test-log test.log --check
+      - run: ./scripts/ci-step.py parity python3 scripts/parity.py --report linux.tsv.events --check
   linux:
     needs: [linux-a, linux-b]
     if: ${{ !cancelled() }}
@@ -230,6 +235,7 @@ check: lint build test
 typecheck-mac:
 \t@./scripts/typecheck-mac/check.sh
 """
+WITH_A_RECORD = "\t@rm -f $(TEST_REPORT)\n\tswift test --event-stream-output-path $(TEST_REPORT) --event-stream-version 0 $(TEST_ARGS)\n"
 SMOKE = "      - run: ./scripts/ci-step.py smoke ./scripts/smoke.sh\n"
 NEEDS = "needs: [linux-a, linux-b]"
 CONDITION = NEEDS + "\n    if: ${{ !cancelled() }}"
@@ -289,13 +295,18 @@ TABLE = [
     ("runs `swift test`", "through that script, only some", changed("test swift test", "test ./scripts/ci-tests.py run --mode full --record linux.tsv --filter Geometry"), MAKEFILE),
     ("runs `swift test`", "that script only selects", changed("test swift test", "test ./scripts/ci-tests.py select"), MAKEFILE),
     ("runs `swift test`", "only some of the tests run", changed("test swift test", "test swift test --filter Geometry"), MAKEFILE),
+    (None, "make check's tests leave a record too, and forget the one before", GOOD, changed("\tswift test\n", WITH_A_RECORD, MAKEFILE)),
+    (None, "the same, and the job says `make test`", changed("test swift test", "test make test"), changed("\tswift test\n", WITH_A_RECORD, MAKEFILE)),
+    ("runs `swift test`", "the same, and the job runs only some", changed("test swift test", "test make test TEST_ARGS=--filter=Geometry"),
+     changed("\tswift test\n", WITH_A_RECORD, MAKEFILE)),
+    ("runs `swift test --filter Geometry`", "make check itself runs only some", GOOD, changed("$(TEST_ARGS)", "--filter Geometry", changed("\tswift test\n", WITH_A_RECORD, MAKEFILE))),
     ("lint-a.py", "lint was dropped", changed("      - run: ./scripts/ci-step.py lint make lint\n", ""), MAKEFILE),
     ("lint-a.py", "lint is only printed", changed("lint make lint", "lint make lint -n"), MAKEFILE),
     ("runs `scripts/lint-b.py`", "a lint that make check runs by another way", GOOD,
      changed("check: lint build test", "more:\n\t@python3 scripts/lint-b.py\ncheck: lint more build test", MAKEFILE)),
     ("has no `check`", "make check was renamed", GOOD, changed("check:", "verify:", MAKEFILE)),
-    ("runs `scripts/parity.py", "parity was dropped", changed("      - run: ./scripts/ci-step.py parity python3 scripts/parity.py --test-log test.log --check\n", ""), MAKEFILE),
-    ("runs `scripts/parity.py", "parity no longer minds FEATURES.md", changed("test.log --check", "test.log"), MAKEFILE),
+    ("runs `scripts/parity.py", "parity was dropped", changed("      - run: ./scripts/ci-step.py parity python3 scripts/parity.py --report linux.tsv.events --check\n", ""), MAKEFILE),
+    ("runs `scripts/parity.py", "parity no longer minds FEATURES.md", changed("linux.tsv.events --check", "linux.tsv.events"), MAKEFILE),
     ("runs `make typecheck-mac`", "the type-check was dropped", changed("typecheck-mac make typecheck-mac", "typecheck-mac true"), MAKEFILE),
     ("runs `scripts/test-ci-changes.py`", "the Mac's rules go unchecked", changed("      - run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py\n", ""), MAKEFILE),
 ]

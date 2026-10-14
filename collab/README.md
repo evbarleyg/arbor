@@ -107,9 +107,14 @@ A real-window step is a `▸` heading printed by `arbor-e2e` (`make e2e`,
 A step the runner has but the evidence does not yet is not counted and breaks nothing.
 
 `make parity` also fails when the test run as a whole failed or did not finish
-(a crash ends the log early; what it printed before proves nothing), and exits with
+(a crash ends its record early; what came before proves nothing), and exits with
 code 2 when `parity.json` itself is wrong: an unknown status or a spec that does not
 exist.
+
+What the tests did is read from the record Swift Testing writes for tools (`make test` leaves it in
+`.build/test-report.jsonl`), never from what `swift test` prints, which loses some hundred lines now and
+then from a run that went well. So "test … not found" means what it says: no such test ran. Do not run it
+again; look for the test. `make check parity` runs the tests once.
 
 **Keeping it honest.** `shipped` means a TrellisWM user who tried the thing the
 reference describes, the way it describes it, would agree that Arbor does it. If it
@@ -212,9 +217,9 @@ Three rules keep the Linux build working and the platforms telling the same stor
   elsewhere with a reason containing "only on macOS" (`CarbonKeyCodeTests.swift`
   is the pattern). `parity.py` takes exactly those as passing in a run off
   macOS, so `docs/FEATURES.md` comes out the same on both platforms. A test
-  skipped for any other reason counts as not found, and so does one in a file
-  that is compiled only on macOS (`EventTapThreadTests.swift`, all of it inside
-  `#if os(macOS)`): do not list such a test in `parity.json`.
+  skipped for any other reason proves nothing and breaks the item that lists it, and so does
+  one in a file that is compiled only on macOS (`EventTapThreadTests.swift`, all of it inside
+  `#if os(macOS)`), which off macOS is not found: do not list such a test in `parity.json`.
 
 **The macOS-only code** is proved through GitHub:
 

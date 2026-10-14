@@ -5,10 +5,10 @@
 #                               the type-check of the macOS-only code, parity (which rewrites docs/FEATURES.md, as `make parity` does)
 #   scripts/gate.sh --check     parity fails if docs/FEATURES.md is out of date instead of rewriting it, as CI does
 #
-# It proves what `make check scenarios parity typecheck-mac lint` proves. That runs the tests twice (`make parity` once more),
-# each time on one core of four, because nearly every test is bound to the main actor, and the scenarios twice. Here the tests run
-# once, a process to a file, as many at a time as there are cores (scripts/fast-tests.py), parity reads what they left, and what
-# does not need one another's results runs side by side. On four cores, with the build up to date: four minutes instead of thirteen.
+# It proves what `make check scenarios parity typecheck-mac lint` proves. That runs the tests on one core of four, because nearly
+# every test is bound to the main actor, and the scenarios twice. Here the tests run a process to a file, as many at a time as
+# there are cores (scripts/fast-tests.py), parity reads the record they left, and what does not need one another's results
+# runs side by side. On four cores, with the build up to date: four minutes instead of nine.
 # What else `make check` runs it reads from the Makefile, so a step added there is a step here, with nobody's help.
 #
 # Every step runs, whatever became of the others, unless the build failed: one round tells all there is to tell. A line for each, with its
@@ -58,7 +58,7 @@ gate() {
   fi
 
   # By themselves: some of them hold Arbor to a budget of milliseconds, and the smoke runs give a process fractions of a second to answer.
-  step tests ./scripts/fast-tests.py run --no-build --log "$logs/test-output.log"
+  step tests ./scripts/fast-tests.py run --no-build --log "$logs/test-output.log" --events "$logs/test-events.jsonl"
 
   # The rest of `make check`: what it depends on besides lint, build and test, then the lines of its recipe, one after another as there.
   # But the tools' self-test, which takes two minutes and mostly waits for processes it started: that goes beside the compiler, below.
@@ -86,7 +86,7 @@ gate() {
   if [ -e "$logs/tests.failed" ]; then
     echo "  – parity                    not asked: it goes by the tests, which failed"
   else
-    step parity python3 scripts/parity.py --test-log "$logs/test-output.log" ${parity[@]+"${parity[@]}"} &
+    step parity python3 scripts/parity.py --report "$logs/test-events.jsonl" ${parity[@]+"${parity[@]}"} &
   fi
   wait
 
