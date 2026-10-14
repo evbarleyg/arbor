@@ -703,7 +703,7 @@ in a row agree (four seconds at most) and appends one line of JSON to `mac-shell
 | | |
 |---|---|
 | `belief` | what Arbor says (`arborctl state`): every window's status, frame and slot, the tree and the camera as a line of text, who it thinks has the keyboard, tiles, the Desktop, its own words |
-| `truth` | what the window server says (`pointer windows`, `pointer keyboard`): every test window's frame, whether it is on screen, the order from the front, the app in front, the window keys go to, Arbor's own windows by level |
+| `truth` | what the window server says (`pointer windows`, `pointer keyboard`): every test window's frame, whether it is on screen, the order from the front, the app in front, the window keys go to, Arbor's own windows by level, macOS's own by owner (the outline of its tiling is WindowManager's) |
 | `reports`, `replies` | what crossed the seam since the step before, from a trace that runs for the whole journey (a rehearsal records traces too): events as `changed:W1:user`, calls as `setFrame:W1 asked→took`, `focus:W1`, `raise:W1`, in order, nothing collapsed; and what Arbor answered to each command |
 
 Windows are W1, W2… in the order they opened, and there are no process ids, node ids, titles or times, so two rehearsals give the same bytes. What the script's own questions set off is left out. The traces themselves
@@ -722,7 +722,7 @@ reality: 41 divergences in 66 steps of 5 journeys (new: 1, known: 40, gone: 0)
 | `belief` | Arbor ends up believing something else: a status, a frame, the tree, the camera, a reply | follows from one of the others, as a rule: look at the step's reports first |
 | `truth` | real windows end up elsewhere (by more than a point), or on screen where the stand-ins' are not | the stand-ins' |
 | `belief-vs-truth` | **on the Mac alone**, what Arbor believes is not what the window server shows | Arbor's, or its Accessibility layer's, whatever the stand-ins do |
-| `focus`, `stacking`, `overlays` | who has the keyboard and who Arbor thinks has it, which app is in front; the order from front to back; how many of Arbor's own windows show at a level | mostly `World.swift`'s and `Arbor.swift`'s in `arbor-fakemac` |
+| `focus`, `stacking`, `overlays` | who has the keyboard and who Arbor thinks has it, which app is in front; the order from front to back; how many of Arbor's own windows show at a level, and of macOS's own | mostly `World.swift`'s and `Arbor.swift`'s in `arbor-fakemac` |
 | `answers` | a window asked for the same frame took another, or Arbor asked it for another frame to begin with | `FakeWindowSystem.setFrame`; the second kind follows from something earlier |
 | `reports-extra`, `reports-missing`, `reports-order` | the Mac reports what the stand-ins do not; the stand-ins what the Mac does not; the same in another order | `FakeWindowSystem` and `World*.swift` |
 | `unplayed` | a journey or a step one world does not have | the script's, or a run that was cut off |

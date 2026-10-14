@@ -1118,11 +1118,11 @@ def check_reality_observer():
             result = subprocess.run([sys.executable, tool, "look", folder, os.path.join(folder, "names"), "arbor=60", "app=70"],
                                     capture_output=True, text=True, check=False)
         seen = json.loads(result.stdout)
-        return seen["belief"], seen["truth"]["order"], seen["truth"]["overlays"], seen["truth"]["front"], seen["truth"]["keyboard"]
+        return seen["belief"], seen["truth"]["order"], seen["truth"]["overlays"], seen["truth"]["furniture"], seen["truth"]["front"], seen["truth"]["keyboard"]
 
-    row("reality.py: a new window gets the next name; a helper, a stranger's window and Arbor's own panels get none",
-        look("9001 60 3 0 0 10 10 on Arbor\n4502 70 0 5 5 480 352 on App\n4503 70 0 5 5 40 20 on App\n4501 70 0 0 0 480 352 on App\n77 80 0 0 0 900 700 on Other\n"),
-        (None, ["W2", "W1"], {"3": 1}, "app", "W2"))
+    row("reality.py: a new window gets the next name; a helper, macOS's furniture and Arbor's own panels get none",
+        look("9001 60 3 0 0 10 10 on Arbor\n4502 70 0 5 5 480 352 on App\n4503 70 0 5 5 40 20 on App\n4501 70 0 0 0 480 352 on App\n77 80 0 0 0 900 700 on Window Server\n"),
+        (None, ["W2", "W1"], {"3": 1}, {"Window Server": 1}, "app", "W2"))
 
 
 def main():

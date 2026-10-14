@@ -18,7 +18,8 @@ belief    running, says (the reply's own words), focused, camera and tree (as in
           desktop, tiles, floating, and per window its status (docked or floating, then parked, tile, minimized, hidden…), its frame
           and its slot
 truth     per window its frame and whether it is on screen, the order of those on screen from the front, which process is in
-          front, which window keys go to, and how many of Arbor's own windows are on screen at each level
+          front, which window keys go to, how many of Arbor's own windows are on screen at each level, and how many of everybody else's
+          by owner (`furniture`: on a hosted Mac that is macOS itself)
 reports   events as kind:Wn[:user|arbor][+minimized…], calls as setFrame:Wn asked→took, focus:Wn, raise:Wn…, overlay actions, and commands
           that did not come from the script. In the order they were recorded; nothing is collapsed. Left out: reads, timers, the
           raw lines only a Mac has, and whatever the script's own questions (`state`) set off
@@ -201,7 +202,7 @@ def listed(text):
             continue
         rows.append({
             "id": int(numbers[0]), "pid": int(numbers[1]), "layer": int(numbers[2]), "frame": whole(numbers[3:7]),
-            "on": parts[7] == "on",
+            "on": parts[7] == "on", "owner": " ".join(parts[8:]),
         })
     return rows
 
@@ -215,7 +216,7 @@ def truth(folder, names):
         row["id"] for row in everything
         if row["pid"] in apps and row["layer"] == 0 and row["frame"][2] >= 100 and row["frame"][3] >= 60
     )
-    result = {"windows": {}, "order": [], "overlays": {}}
+    result = {"windows": {}, "order": [], "overlays": {}, "furniture": {}}
     for row in everything:
         if row["id"] in names.windows:
             result["windows"][names.window(row["id"])] = {"frame": row["frame"], "on": row["on"]}
@@ -225,6 +226,9 @@ def truth(folder, names):
         elif names.processes.get(row["pid"]) == "arbor":
             level = str(row["layer"])
             result["overlays"][level] = result["overlays"].get(level, 0) + 1
+        elif row["pid"] not in apps:
+            # The menu bar, the Dock, the wallpaper, and what macOS puts up by itself: the outline of its own tiling is WindowManager's.
+            result["furniture"][row["owner"]] = result["furniture"].get(row["owner"], 0) + 1
     answer = read(folder, "keyboard").split()
     pid, window = (answer + ["-", "-"])[:2]
     result["front"] = names.process(int(pid)) if pid.isdigit() else "nobody"

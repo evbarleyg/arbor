@@ -25,7 +25,7 @@ Observations are aligned by journey and step and compared field by field. One li
                    layer, whatever the stand-ins do
   focus            who Arbor thinks has the keyboard, who has it, which app is in front
   stacking         the order of the windows from front to back
-  overlays         how many of Arbor's own windows are on screen at a level
+  overlays         how many of Arbor's own windows are on screen at a level, and how many of macOS's own by owner (`furniture`)
   answers          a window asked for the same frame took another, or Arbor asked it for another frame to begin with
   reports-extra    the Mac reports, or Arbor does there, what does not happen in the rehearsal
   reports-missing  the stand-ins report, or Arbor does on them, what does not happen on the Mac
@@ -154,12 +154,14 @@ def fields(observation):
     found[("focus", "truth/keyboard")] = truth.get("keyboard")
     for level, count in truth.get("overlays", {}).items():
         found[("overlays", f"truth/overlays/level-{level}")] = count
+    for owner, count in truth.get("furniture", {}).items():
+        found[("overlays", f"truth/furniture/{slug(owner)}")] = count
     return found
 
 
 def absent(field):
     """What a field that one world lacks counts as."""
-    return 0 if "/overlays/" in field else None
+    return 0 if "/overlays/" in field or "/furniture/" in field else None
 
 
 def against_itself(observation):
@@ -415,6 +417,9 @@ def report(args):
         times = [sum(row.get("reports", []).count(word) for rows in world.values() for row in rows) for world in (mac, linux)]
         if any(times):
             aside.append(f"reality: not compared, being of another seam than the window system's: {word} (mac: {times[0]}×, linux: {times[1]}×)")
+    # The table once more on one line, for readers who get only the lines that begin with `reality:` (CI's annotations).
+    short = ", ".join(f"{kind} {table[kind]['new'] + table[kind]['known']}" for kind in CLASSES if table[kind]["new"] + table[kind]["known"])
+    aside.append(f"reality: by class: {short or 'nothing'}")
     print("\n".join(lines + [""] + summary + [""] + aside + [apart, last]))
 
     if args.markdown:
