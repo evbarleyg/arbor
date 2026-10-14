@@ -139,6 +139,16 @@ typecheck-mac:
 typecheck-mac-selftest:
 	@./scripts/typecheck-mac/selftest.py
 
+.PHONY: mac-on-linux mac-on-linux-selftest
+# On Linux: the real Accessibility layer (Sources/ArborKit/AX), compiled, linked and RUN against a model of a Mac that is as rude as real ones were seen
+# to be (scripts/mac-on-linux/README.md). make mac-on-linux ARGS="--only tab --verbose"
+mac-on-linux:
+	@./scripts/mac-on-linux/build.sh $(ARGS)
+
+# Does that net hold? Takes known cures out of a copy of the layer; the stories about them must go red.
+mac-on-linux-selftest:
+	@./scripts/mac-on-linux/build.sh --self-test
+
 # Mac shell scripts against stand-ins built on the fakes: proves the scripts, not Arbor. On Linux only.
 # make rehearse SCRIPTS="scripts/mac-shell/shots-demo.sh" (docs/TESTING.md, "Rehearse it first, for nothing")
 rehearse:

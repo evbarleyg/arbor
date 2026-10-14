@@ -1,5 +1,7 @@
-// A stand-in for CoreGraphics (scripts/typecheck-mac/README.md). Never shipped, never run. Signatures as in the macOS 14 SDK.
+// A stand-in for CoreGraphics (scripts/typecheck-mac/README.md). Never shipped. Signatures as in the macOS 14 SDK. The window list, the event source's
+// figures and the displays' identity ask the model of a Mac (stubs/FakeMacOS), for `make mac-on-linux`; the rest does nothing.
 // The geometry types (CGRect and company) are Foundation's.
+import FakeMacOS
 @_exported import MacFoundation
 
 public typealias boolean_t = UInt32
@@ -30,7 +32,24 @@ public struct CGWindowImageOption: OptionSet, Sendable {
   public static let bestResolution = CGWindowImageOption(rawValue: 8)
   public static let nominalResolution = CGWindowImageOption(rawValue: 16)
 }
-public func CGWindowListCopyWindowInfo(_ option: CGWindowListOption, _ relativeToWindow: CGWindowID) -> CFArray? { nil }
+public func CGWindowListCopyWindowInfo(_ option: CGWindowListOption, _ relativeToWindow: CGWindowID) -> CFArray? {
+  let list = FakeMac.current.windowList(
+    onScreenOnly: option.contains(.optionOnScreenOnly), withoutDesktop: option.contains(.excludeDesktopElements),
+    only: option.contains(.optionIncludingWindow) ? relativeToWindow : nil)
+  guard let list else { return nil }
+  return list.map { window -> NSDictionary in
+    let info = NSMutableDictionary()
+    info[kCGWindowNumber] = NSNumber(value: window.number)
+    info[kCGWindowOwnerPID] = NSNumber(value: window.pid)
+    info[kCGWindowOwnerName] = window.ownerName as NSString
+    info[kCGWindowLayer] = NSNumber(value: window.layer)
+    info[kCGWindowAlpha] = NSNumber(value: window.alpha)
+    info[kCGWindowBounds] = window.bounds.dictionaryRepresentation
+    // The key is there only for a window that shows.
+    if window.isOnScreen { info[kCGWindowIsOnscreen] = NSNumber(value: true) }
+    return info
+  } as NSArray
+}
 public func CGWindowListCreateDescriptionFromArray(_ windowArray: CFArray?) -> CFArray? { nil }
 @available(*, unavailable, message: "the macOS 15 SDK took it away: use ScreenCaptureKit")
 public func CGWindowListCreateImage(
@@ -92,7 +111,7 @@ public func CGDisplayIsActive(_ display: CGDirectDisplayID) -> boolean_t { 0 }
 public func CGDisplayIsAsleep(_ display: CGDirectDisplayID) -> boolean_t { 0 }
 public func CGDisplayIsOnline(_ display: CGDirectDisplayID) -> boolean_t { 0 }
 public func CGDisplayIsMain(_ display: CGDirectDisplayID) -> boolean_t { 0 }
-public func CGDisplayIsBuiltin(_ display: CGDirectDisplayID) -> boolean_t { 0 }
+public func CGDisplayIsBuiltin(_ display: CGDirectDisplayID) -> boolean_t { FakeMac.current.screens.contains { $0.id == display && $0.isBuiltIn } ? 1 : 0 }
 public func CGDisplayIsInMirrorSet(_ display: CGDirectDisplayID) -> boolean_t { 0 }
 public func CGDisplayMirrorsDisplay(_ display: CGDirectDisplayID) -> CGDirectDisplayID { 0 }
 public func CGDisplayVendorNumber(_ display: CGDirectDisplayID) -> UInt32 { 0 }
@@ -100,7 +119,10 @@ public func CGDisplayModelNumber(_ display: CGDirectDisplayID) -> UInt32 { 0 }
 public func CGDisplaySerialNumber(_ display: CGDirectDisplayID) -> UInt32 { 0 }
 public func CGDisplayUnitNumber(_ display: CGDirectDisplayID) -> UInt32 { 0 }
 // ColorSync's, which ApplicationServices brings; here for convenience.
-public func CGDisplayCreateUUIDFromDisplayID(_ display: CGDirectDisplayID) -> Unmanaged<CFUUID>? { nil }
+public func CGDisplayCreateUUIDFromDisplayID(_ display: CGDirectDisplayID) -> Unmanaged<CFUUID>? {
+  guard FakeMac.current.screens.contains(where: { $0.id == display }) else { return nil }
+  return Unmanaged.passRetained(CFUUID(_text: "00000000-0000-0000-0000-" + String(format: "%012d", Int(display))))
+}
 public func CGDisplayGetDisplayIDFromUUID(_ uuid: CFUUID) -> CGDirectDisplayID { 0 }
 public final class CGDisplayMode {
   public var width: Int { 0 }
@@ -231,10 +253,12 @@ public typealias CGEventTapCallBack = (CGEventTapProxy, CGEventType, CGEvent, Un
 public final class CGEventSource {
   public init?(stateID: CGEventSourceStateID) {}
   public class func buttonState(_ stateID: CGEventSourceStateID, button: CGMouseButton) -> Bool { false }
-  public class func keyState(_ stateID: CGEventSourceStateID, key: CGKeyCode) -> Bool { false }
+  public class func keyState(_ stateID: CGEventSourceStateID, key: CGKeyCode) -> Bool { FakeMac.current.mouse.keysDown.contains(key) }
   public class func flagsState(_ stateID: CGEventSourceStateID) -> CGEventFlags { [] }
-  public class func secondsSinceLastEventType(_ stateID: CGEventSourceStateID, eventType: CGEventType) -> CFTimeInterval { 0 }
-  public class func counterForEventType(_ stateID: CGEventSourceStateID, eventType: CGEventType) -> UInt32 { 0 }
+  public class func secondsSinceLastEventType(_ stateID: CGEventSourceStateID, eventType: CGEventType) -> CFTimeInterval {
+    FakeMac.current.secondsSinceLastEvent(eventType.rawValue)
+  }
+  public class func counterForEventType(_ stateID: CGEventSourceStateID, eventType: CGEventType) -> UInt32 { FakeMac.current.eventCount(eventType.rawValue) }
   public var localEventsSuppressionInterval: CFTimeInterval = 0
   public var userData: Int64 = 0
   public var pixelsPerLine: Double = 0
@@ -280,8 +304,14 @@ public final class CGEvent {
 
 extension CGRect {
   public func equalTo(_ rect2: CGRect) -> Bool { self == rect2 }
-  public init?(dictionaryRepresentation dict: CFDictionary) { return nil }
-  public var dictionaryRepresentation: CFDictionary { [:] }
+  public init?(dictionaryRepresentation dict: CFDictionary) {
+    func number(_ key: String) -> Double? { (dict[key] as? NSNumber)?.doubleValue }
+    guard let x = number("X"), let y = number("Y"), let width = number("Width"), let height = number("Height") else { return nil }
+    self.init(x: x, y: y, width: width, height: height)
+  }
+  public var dictionaryRepresentation: CFDictionary {
+    ["X": NSNumber(value: Double(minX)), "Y": NSNumber(value: Double(minY)), "Width": NSNumber(value: Double(width)), "Height": NSNumber(value: Double(height))]
+  }
   public func applying(_ t: CGAffineTransform) -> CGRect { self }
 }
 extension CGPoint {

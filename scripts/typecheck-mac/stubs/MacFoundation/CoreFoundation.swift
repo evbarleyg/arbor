@@ -1,4 +1,5 @@
-// A stand-in for Core Foundation, which a Mac's Foundation brings along (scripts/typecheck-mac/README.md). Never shipped, never run.
+// A stand-in for Core Foundation, which a Mac's Foundation brings along (scripts/typecheck-mac/README.md). Never shipped. Type ids, booleans, UUIDs and
+// a run loop's sources do what they do on a Mac, for `make mac-on-linux` (scripts/mac-on-linux/README.md); the rest does nothing.
 
 public typealias CFTypeRef = AnyObject
 public typealias CFTypeID = UInt
@@ -21,18 +22,39 @@ public typealias CFDate = NSDate
 public typealias CFError = NSError
 public final class CFBoolean: NSObject, @unchecked Sendable {}
 public final class CFNull: NSObject, @unchecked Sendable {}
-public final class CFUUID: NSObject {}
+public final class CFUUID: NSObject {
+  let _text: String
+  public init(_text: String) { self._text = _text }
+}
 public final class CFAllocator: NSObject {}
 public final class CFMachPort: NSObject {}
 public final class CFRunLoop: NSObject {}
-public final class CFRunLoopSource: NSObject {}
+public final class CFRunLoopSource: NSObject {
+  /// Told when the source is put on a run loop and when it is taken off: whoever made it delivers nothing in between.
+  public var _onRunLoop: ((Bool) -> Void)?
+}
 public final class CFRunLoopTimer: NSObject {}
 public final class CFRunLoopObserver: NSObject {}
 public nonisolated(unsafe) let kCFAllocatorDefault: CFAllocator! = nil
 public let kCFBooleanTrue: CFBoolean! = CFBoolean()
 public let kCFBooleanFalse: CFBoolean! = CFBoolean()
 public let kCFNull: CFNull! = CFNull()
-public func CFGetTypeID(_ cf: CFTypeRef!) -> CFTypeID { 0 }
+/// A stand-in for a Core Foundation type of another framework's.
+public protocol _CFTypeWithID: AnyObject { static var _typeID: CFTypeID { get } }
+public func CFGetTypeID(_ cf: CFTypeRef!) -> CFTypeID {
+  switch cf {
+  case let typed as any _CFTypeWithID: type(of: typed)._typeID
+  case is CFBoolean: CFBooleanGetTypeID()
+  case is NSArray: CFArrayGetTypeID()
+  case is NSString: CFStringGetTypeID()
+  case is NSNumber: CFNumberGetTypeID()
+  case is NSDictionary: CFDictionaryGetTypeID()
+  case is NSData: CFDataGetTypeID()
+  case is CFNull: CFNullGetTypeID()
+  case is NSURL: CFURLGetTypeID()
+  default: 0
+  }
+}
 public func CFBooleanGetTypeID() -> CFTypeID { 1 }
 public func CFArrayGetTypeID() -> CFTypeID { 2 }
 public func CFStringGetTypeID() -> CFTypeID { 3 }
@@ -41,12 +63,12 @@ public func CFDictionaryGetTypeID() -> CFTypeID { 5 }
 public func CFDataGetTypeID() -> CFTypeID { 6 }
 public func CFNullGetTypeID() -> CFTypeID { 7 }
 public func CFURLGetTypeID() -> CFTypeID { 8 }
-public func CFBooleanGetValue(_ boolean: CFBoolean!) -> Bool { false }
-public func CFEqual(_ cf1: CFTypeRef!, _ cf2: CFTypeRef!) -> Bool { false }
+public func CFBooleanGetValue(_ boolean: CFBoolean!) -> Bool { boolean === kCFBooleanTrue }
+public func CFEqual(_ cf1: CFTypeRef!, _ cf2: CFTypeRef!) -> Bool { (cf1 as? NSObject)?.isEqual(cf2) ?? (cf1 === cf2) }
 public func CFHash(_ cf: CFTypeRef!) -> CFHashCode { 0 }
 public func CFCopyDescription(_ cf: CFTypeRef!) -> CFString! { nil }
-public func CFUUIDCreateString(_ alloc: CFAllocator!, _ uuid: CFUUID!) -> CFString! { nil }
-public func CFUUIDCreateFromString(_ alloc: CFAllocator!, _ uuidStr: CFString!) -> CFUUID! { nil }
+public func CFUUIDCreateString(_ alloc: CFAllocator!, _ uuid: CFUUID!) -> CFString! { uuid.map { $0._text as NSString } }
+public func CFUUIDCreateFromString(_ alloc: CFAllocator!, _ uuidStr: CFString!) -> CFUUID! { uuidStr.map { CFUUID(_text: $0 as String) } }
 public func CFAbsoluteTimeGetCurrent() -> CFAbsoluteTime { 0 }
 public func CFDataGetBytePtr(_ theData: CFData!) -> UnsafePointer<UInt8>! { nil }
 public func CFDataGetLength(_ theData: CFData!) -> CFIndex { 0 }
@@ -84,8 +106,8 @@ public func CFRunLoopRun() {}
 public func CFRunLoopStop(_ rl: CFRunLoop!) {}
 public func CFRunLoopWakeUp(_ rl: CFRunLoop!) {}
 public func CFRunLoopPerformBlock(_ rl: CFRunLoop!, _ mode: CFTypeRef!, _ block: (() -> Void)!) {}
-public func CFRunLoopAddSource(_ rl: CFRunLoop!, _ source: CFRunLoopSource!, _ mode: CFRunLoopMode!) {}
-public func CFRunLoopRemoveSource(_ rl: CFRunLoop!, _ source: CFRunLoopSource!, _ mode: CFRunLoopMode!) {}
+public func CFRunLoopAddSource(_ rl: CFRunLoop!, _ source: CFRunLoopSource!, _ mode: CFRunLoopMode!) { source?._onRunLoop?(true) }
+public func CFRunLoopRemoveSource(_ rl: CFRunLoop!, _ source: CFRunLoopSource!, _ mode: CFRunLoopMode!) { source?._onRunLoop?(false) }
 public func CFRunLoopContainsSource(_ rl: CFRunLoop!, _ source: CFRunLoopSource!, _ mode: CFRunLoopMode!) -> Bool { false }
 public func CFRunLoopSourceInvalidate(_ source: CFRunLoopSource!) {}
 public func CFRunLoopAddTimer(_ rl: CFRunLoop!, _ timer: CFRunLoopTimer!, _ mode: CFRunLoopMode!) {}

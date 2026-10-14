@@ -1,6 +1,8 @@
-// A stand-in for AppKit (scripts/typecheck-mac/README.md). Never shipped, never run. Names, types, optionals and actor isolation as in the
-// macOS 14 SDK. This file: the application, other applications, the workspace, screens.
+// A stand-in for AppKit (scripts/typecheck-mac/README.md). Never shipped. Names, types, optionals and actor isolation as in the
+// macOS 14 SDK. This file: the application, other applications, the workspace, screens. What Arbor's Accessibility layer asks of the last three is
+// answered by the model of a Mac (stubs/FakeMacOS), for `make mac-on-linux` (scripts/mac-on-linux/README.md); the rest does nothing.
 @_exported import ApplicationServices
+import FakeMacOS
 @_exported import QuartzCore
 
 public struct NSDeviceDescriptionKey: Hashable, RawRepresentable, Sendable {
@@ -15,15 +17,28 @@ public struct NSDeviceDescriptionKey: Hashable, RawRepresentable, Sendable {
 }
 
 @MainActor open class NSScreen: NSObject {
-  open class var screens: [NSScreen] { [] }
-  open class var main: NSScreen? { nil }
+  var _screen: FakeMac.Screen?
+  /// The model's coordinates have their origin at the top left of the first screen; AppKit's at its bottom left, and y grows upwards.
+  private static func _appKit(_ rect: CGRect) -> NSRect {
+    NSRect(x: rect.minX, y: (FakeMac.current.screens.first?.frame.height ?? 0) - rect.maxY, width: rect.width, height: rect.height)
+  }
+  open class var screens: [NSScreen] {
+    FakeMac.current.screens.map { model in
+      let screen = NSScreen()
+      screen._screen = model
+      return screen
+    }
+  }
+  open class var main: NSScreen? { screens.first }
   open class var deepest: NSScreen? { nil }
   open class var screensHaveSeparateSpaces: Bool { true }
-  open var frame: NSRect { .zero }
-  open var visibleFrame: NSRect { .zero }
-  open var deviceDescription: [NSDeviceDescriptionKey: Any] { [:] }
+  open var frame: NSRect { _screen.map { Self._appKit($0.frame) } ?? .zero }
+  open var visibleFrame: NSRect { _screen.map { Self._appKit($0.visibleFrame) } ?? .zero }
+  open var deviceDescription: [NSDeviceDescriptionKey: Any] {
+    _screen.map { [NSDeviceDescriptionKey("NSScreenNumber"): NSNumber(value: $0.id)] } ?? [:]
+  }
   open var backingScaleFactor: CGFloat { 2 }
-  open var localizedName: String { "" }
+  open var localizedName: String { _screen?.name ?? "" }
   open var safeAreaInsets: NSEdgeInsets { NSEdgeInsets() }
   open var auxiliaryTopLeftArea: NSRect? { nil }
   open var auxiliaryTopRightArea: NSRect? { nil }
@@ -40,37 +55,68 @@ public struct NSDeviceDescriptionKey: Hashable, RawRepresentable, Sendable {
 }
 
 open class NSRunningApplication: NSObject, @unchecked Sendable {
-  public convenience init?(processIdentifier pid: pid_t) { self.init() }
-  open class func runningApplications(withBundleIdentifier bundleIdentifier: String) -> [NSRunningApplication] { [] }
-  open class var current: NSRunningApplication { NSRunningApplication() }
+  nonisolated(unsafe) var _pid: pid_t = 0
+  private var _app: FakeMac.App? { FakeMac.current.app(_pid) }
+  /// Also for a process that has ended: the notice of its end carries one.
+  convenience init(_pid: pid_t) {
+    self.init()
+    self._pid = _pid
+  }
+  public convenience init?(processIdentifier pid: pid_t) {
+    guard FakeMac.current.app(pid) != nil else { return nil }
+    self.init(_pid: pid)
+  }
+  open class func runningApplications(withBundleIdentifier bundleIdentifier: String) -> [NSRunningApplication] {
+    FakeMac.current.apps.filter { $0.bundleID == bundleIdentifier }.map { NSRunningApplication(_pid: $0.pid) }
+  }
+  open class var current: NSRunningApplication { NSRunningApplication(_pid: getpid()) }
   open class func terminateAutomaticallyTerminableApplications() {}
-  open var processIdentifier: pid_t { 0 }
-  open var bundleIdentifier: String? { nil }
+  open var processIdentifier: pid_t { _pid }
+  open var bundleIdentifier: String? { _app?.bundleID }
   open var bundleURL: URL? { nil }
   open var executableURL: URL? { nil }
-  open var localizedName: String? { nil }
+  open var localizedName: String? { _app?.name }
   open var icon: NSImage? { nil }
   open var launchDate: Date? { nil }
-  open var activationPolicy: NSApplication.ActivationPolicy { .regular }
+  open var activationPolicy: NSApplication.ActivationPolicy { _app.flatMap { .init(rawValue: $0.policy.rawValue) } ?? .prohibited }
   open var isFinishedLaunching: Bool { true }
-  open var isTerminated: Bool { false }
-  open var isActive: Bool { false }
-  open var isHidden: Bool { false }
+  open var isTerminated: Bool { _app == nil }
+  open var isActive: Bool { _app != nil && FakeMac.current.frontmostByWorkspace === _app }
+  open var isHidden: Bool { _app?.isHidden ?? false }
   open var ownsMenuBar: Bool { false }
   open var executableArchitecture: Int { 0 }
-  @discardableResult open func hide() -> Bool { false }
-  @discardableResult open func unhide() -> Bool { false }
+  @discardableResult open func hide() -> Bool {
+    guard let _app else { return false }
+    FakeMac.current.hide(_app)
+    return true
+  }
+  @discardableResult open func unhide() -> Bool {
+    guard let _app else { return false }
+    FakeMac.current.unhide(_app)
+    return true
+  }
   @discardableResult open func terminate() -> Bool { false }
   @discardableResult open func forceTerminate() -> Bool { false }
-  @discardableResult open func activate(options: NSApplication.ActivationOptions = []) -> Bool { false }
+  @discardableResult open func activate(options: NSApplication.ActivationOptions = []) -> Bool { FakeMac.current.askToActivate(_pid) }
   @discardableResult open func activate(from application: NSRunningApplication, options: NSApplication.ActivationOptions = []) -> Bool { false }
 }
 
 open class NSWorkspace: NSObject, @unchecked Sendable {
-  open class var shared: NSWorkspace { NSWorkspace() }
-  open var notificationCenter: NotificationCenter { .default }
-  open var runningApplications: [NSRunningApplication] { [] }
-  open var frontmostApplication: NSRunningApplication? { nil }
+  private static let _center = NotificationCenter()
+  private static let _shared: NSWorkspace = {
+    let workspace = NSWorkspace()
+    FakeMac.postsWorkspaceNotification = { name, pid in
+      _center.post(
+        name: NSNotification.Name(name), object: workspace, userInfo: pid.map { [applicationUserInfoKey: NSRunningApplication(_pid: $0)] })
+    }
+    return workspace
+  }()
+  open class var shared: NSWorkspace { _shared }
+  /// A centre of its own, as on a Mac: what is posted here does not reach `NotificationCenter.default`.
+  open var notificationCenter: NotificationCenter { Self._center }
+  open var runningApplications: [NSRunningApplication] { FakeMac.current.apps.map { NSRunningApplication(_pid: $0.pid) } }
+  /// AppKit's copy of what the system knows, which can be behind (`FakeMac.frontmostLagsNoticeBy`).
+  open var frontmostApplication: NSRunningApplication? { FakeMac.current.frontmostByWorkspace.map { NSRunningApplication(_pid: $0.pid) } }
   open var menuBarOwningApplication: NSRunningApplication? { nil }
   open var accessibilityDisplayShouldReduceMotion: Bool { false }
   open var accessibilityDisplayShouldReduceTransparency: Bool { false }
