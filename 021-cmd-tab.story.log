@@ -1,0 +1,57 @@
+21 cmd-tab: presses ⌘Tab
+expected: {'settled': 'quiet:423', 'front': '63'}
+FAIL rule 3: w122 of Mail opened in one place and was then moved to another
+FAIL rule 3: w124 of Mail opened in one place and was then moved to another
+ODD rule 4: the window in front changed 3 times: preview (w67) → w122 of Mail → w124 of Mail → settings (w63)
+
+23:01:43.121 SCREEN -- begin 21 cmd-tab
+23:01:43.121 SCREEN -- text 21 presses ⌘Tab
+23:01:43.223 SCREEN (nothing was seen for 72 ms)
+23:01:43.223 SCREEN w122 of Mail 248,76 1104×622
+23:01:43.223 SCREEN front to back: w122 preview settings calendar notes terminal textedit safari finder
+23:01:43.251 SCREEN w122 of Mail 246,75 1108×624
+23:01:43.258 SCREEN w122 of Mail 243,74 1114×626
+23:01:43.287 SCREEN w122 of Mail 242,73 1116×628
+23:01:43.344 SCREEN (nothing was seen for 57 ms)
+23:01:43.344 SCREEN w122 of Mail 240,72 1120×630
+23:01:43.421 SCREEN (nothing was seen for 72 ms)
+23:01:43.421 SCREEN w124 of Mail 565,164 470×416
+23:01:43.421 SCREEN front to back: w124 w122 preview settings calendar notes terminal textedit safari finder
+23:01:43.439 SCREEN w124 of Mail 565,172 470×416
+23:01:43.511 SCREEN (nothing was seen for 62 ms)
+23:01:43.511 SCREEN w124 of Mail 565,178 470×416
+23:01:43.564 SCREEN (nothing was seen for 48 ms)
+23:01:43.590 SCREEN w124 of Mail 565,179 470×416
+23:01:43.706 SCREEN (nothing was seen for 66 ms)
+23:01:43.800 SCREEN (nothing was seen for 50 ms)
+23:01:43.856 MACOS watching pid 9874, attempt 0
+23:01:43.866 MACOS pid 9874 listed w122 AXWindow/AXStandardWindow 240 72 1120 630
+23:01:43.867 MACOS pid 9874 AXWindowCreated w122 AXWindow/AXStandardWindow 240 72 1120 630
+23:01:43.872 SCREEN (nothing was seen for 46 ms)
+23:01:43.942 SCREEN (nothing was seen for 62 ms)
+23:01:44.043 SCREEN (nothing was seen for 101 ms)
+23:01:44.043 SCREEN in front: process 8058 com.apple.systempreferences
+23:01:44.083 MACOS pid 9874 AXApplicationDeactivated
+23:01:44.083 MACOS workspace didActivate pid 8058 com.apple.systempreferences regular
+23:01:44.083 MACOS workspace didDeactivate pid 9874 com.apple.mail regular
+23:01:44.083 MACOS pid 8058 AXApplicationActivated
+23:01:44.114 SCREEN (nothing was seen for 45 ms)
+23:01:44.114 SCREEN front to back: settings w124 w122 preview calendar notes terminal textedit safari finder
+23:01:44.204 SCREEN (nothing was seen for 60 ms)
+23:01:44.287 SCREEN (nothing was seen for 74 ms)
+23:01:44.363 SCREEN (nothing was seen for 68 ms)
+23:01:44.443 SCREEN (nothing was seen for 76 ms)
+23:01:44.502 SCREEN (nothing was seen for 54 ms)
+23:01:44.562 SCREEN (nothing was seen for 53 ms)
+23:01:44.629 SCREEN (nothing was seen for 63 ms)
+23:01:44.705 SCREEN (nothing was seen for 54 ms)
+23:01:44.786 SCREEN (nothing was seen for 78 ms)
+23:01:44.833 SCREEN (nothing was seen for 41 ms)
+23:01:45.034 SCREEN (nothing was seen for 66 ms)
+23:01:45.130 SCREEN (nothing was seen for 52 ms)
+23:01:45.139 SCREEN -- end 21 settled=quiet:423 front=63
+23:01:45.235 SCREEN (nothing was seen for 59 ms)
+23:01:45.291 SCREEN (nothing was seen for 44 ms)
+23:01:45.358 SCREEN (nothing was seen for 59 ms)
+23:01:45.420 SCREEN (nothing was seen for 57 ms)
+23:01:45.478 SCRIPT == 22 cmd-tab-twice

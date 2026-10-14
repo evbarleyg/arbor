@@ -1,0 +1,720 @@
+{
+ "sampler": "samples 5244 seconds 182.6 hz 28.7 cost-ms 5.34 late 1747 longest-gap-ms 1742",
+ "steps": [
+  {
+   "number": 1,
+   "slug": "open-finder",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "opens finder",
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 2,
+   "slug": "open-safari",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "opens safari",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 3,
+   "slug": "open-textedit",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "opens textedit",
+   "moved": {
+    "45": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 4,
+   "slug": "open-terminal",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "opens terminal",
+   "moved": {
+    "51": [
+     2,
+     6,
+     714
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 5,
+   "slug": "open-notes",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "opens notes",
+   "moved": {
+    "54": [
+     1,
+     2,
+     9
+    ],
+    "55": [
+     2,
+     13,
+     1786
+    ],
+    "57": [
+     1,
+     5,
+     159
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 6,
+   "slug": "open-calendar",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "opens calendar",
+   "moved": {
+    "60": [
+     1,
+     4,
+     318
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 7,
+   "slug": "open-settings",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "opens settings",
+   "moved": {
+    "63": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 8,
+   "slug": "open-preview",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "opens preview",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 9,
+   "slug": "open-mail",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "opens mail",
+   "moved": {
+    "73": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 10,
+   "slug": "look-around",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "looks at the screen",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 11,
+   "slug": "leave-alone",
+   "chapter": "Arbor starts",
+   "text": "does nothing for five seconds",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 12,
+   "slug": "dock-icon-finder",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks finder's icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 13,
+   "slug": "dock-icon-safari",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks safari's icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 14,
+   "slug": "dock-icon-textedit",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks textedit's icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 15,
+   "slug": "dock-icon-terminal",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks terminal's icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 16,
+   "slug": "dock-icon-notes",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks notes's icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 17,
+   "slug": "dock-icon-calendar",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks calendar's icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 18,
+   "slug": "dock-icon-settings",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks settings's icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 19,
+   "slug": "dock-icon-preview",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks preview's icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 20,
+   "slug": "dock-icon-mail",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "clicks mail's icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 21,
+   "slug": "cmd-tab",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "presses ⌘Tab",
+   "moved": {
+    "122": [
+     1,
+     4,
+     93
+    ],
+    "124": [
+     1,
+     3,
+     151
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "level": "FAIL",
+     "window": "w122 of Mail",
+     "what": "opened in one place and was then moved to another",
+     "trace": "+0 ms 248,76 1104×622 · +28 ms 246,75 1108×624 · +35 ms 243,74 1114×626 · +64 ms 242,73 1116×628 · +121 ms 240,72 1120×630"
+    },
+    {
+     "rule": "3",
+     "level": "FAIL",
+     "window": "w124 of Mail",
+     "what": "opened in one place and was then moved to another",
+     "trace": "+0 ms 565,164 470×416 · +18 ms 565,172 470×416 · +90 ms 565,178 470×416 · +169 ms 565,179 470×416"
+    },
+    {
+     "rule": "4",
+     "level": "ODD",
+     "window": null,
+     "what": "the window in front changed 3 times: preview (w67) → w122 of Mail → w124 of Mail → settings (w63)",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 22,
+   "slug": "cmd-tab-twice",
+   "chapter": "Switching between apps, nothing docked yet",
+   "text": "holds ⌘ and presses Tab twice",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 23,
+   "slug": "reach-calendar",
+   "chapter": "macOS's own tiling, which is on",
+   "text": "clicks calendar's title bar, or its Dock icon if that is covered",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 24,
+   "slug": "drag-calendar-to-top",
+   "chapter": "macOS's own tiling, which is on",
+   "text": "drags calendar by its title bar against the menu bar and lets go: macOS fills the screen with it",
+   "moved": {
+    "60": [
+     1,
+     10,
+     346
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 25,
+   "slug": "drag-calendar-back",
+   "chapter": "macOS's own tiling, which is on",
+   "text": "drags calendar away from the top again, to the middle of the screen",
+   "moved": {},
+   "findings": [
+    {
+     "rule": "3",
+     "level": "ODD",
+     "window": "calendar (w60)",
+     "what": "changed its size while it was being dragged",
+     "trace": "+0 ms 4,39 1600×791 · +36 ms 13,57 1600×791 · +88 ms 13,57 1550×777 · +93 ms 29,48 1550×777 · +146 ms 161,48 1237×686 · +222 ms 260,56 1015×622 · … 27 more … · +1846 ms 395,262 936×599 · +1949 ms 400,270 936×599 · +2010 ms 404,279 936×599 · +2327 ms 405,279 936×599 · +2444 ms 404,279 936×599"
+    },
+    {
+     "rule": "4",
+     "level": "FAIL",
+     "window": "calendar (w60)",
+     "what": "is not wholly in view: 91% of it, at 404,279 936×599 in 0,31 1600×791",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 26,
+   "slug": "dock-icon-finder-2",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks finder's icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 27,
+   "slug": "dock-icon-safari-2",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks safari's icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 28,
+   "slug": "dock-icon-textedit-2",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks textedit's icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 29,
+   "slug": "dock-icon-terminal-2",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks terminal's icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 30,
+   "slug": "dock-icon-notes-2",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks notes's icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 31,
+   "slug": "dock-icon-calendar-2",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks calendar's icon in the Dock",
+   "moved": {},
+   "findings": [
+    {
+     "rule": "4",
+     "level": "FAIL",
+     "window": "calendar (w60)",
+     "what": "is not wholly in view: 91% of it, at 404,279 936×599 in 0,31 1600×791",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 32,
+   "slug": "dock-icon-settings-2",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks settings's icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 33,
+   "slug": "dock-icon-preview-2",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks preview's icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 34,
+   "slug": "dock-icon-mail-2",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "clicks mail's icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 35,
+   "slug": "cmd-tab-2",
+   "chapter": "Switching between apps, with an arrangement",
+   "text": "presses ⌘Tab",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 36,
+   "slug": "reach-safari",
+   "chapter": "Windows come and go",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 37,
+   "slug": "new-window",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘N in Safari",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 38,
+   "slug": "window-menu",
+   "chapter": "Windows come and go",
+   "text": "chooses Safari's first window in the Window menu",
+   "moved": {},
+   "findings": [
+    {
+     "rule": "4",
+     "level": "FAIL",
+     "window": "safari (w34)",
+     "what": "is not in front: safari-new (w155) ahead of it, of which 1 cover part of it",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 39,
+   "slug": "cmd-backtick",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘` for Safari's other window",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 40,
+   "slug": "close-window",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘W",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 41,
+   "slug": "reach-safari",
+   "chapter": "Windows come and go",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 42,
+   "slug": "minimize-safari",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘M",
+   "moved": {
+    "34": [
+     1,
+     10,
+     289
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "level": "FAIL",
+     "window": "safari (w34)",
+     "what": "moved, and the step did not name it",
+     "trace": "+0 ms 138,31 1324×791 · +406 ms 138,31 1324×792 · +428 ms 141,56 1321×792 · +462 ms 194,139 1268×731 · +529 ms 666,386 796×484 · +539 ms 767,427 695×443 · +614 ms 1352,717 113×153 · +623 ms 1379,744 86×126 · +658 ms 1415,818 51×52 · +669 ms 1416,827 50×43 · +695 ms 1416,834 50×36 · +704 ms off the screen"
+    }
+   ]
+  },
+  {
+   "number": 43,
+   "slug": "restore-safari",
+   "chapter": "Windows come and go",
+   "text": "clicks its miniature in the Dock",
+   "moved": {
+    "34": [
+     1,
+     10,
+     336
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "level": "FAIL",
+     "window": "safari (w34)",
+     "what": "moved, and the step did not name it",
+     "trace": "+0 ms 1416,834 50×36 · +9 ms 1416,832 50×38 · +51 ms 1405,783 60×87 · +57 ms 1372,737 93×133 · +86 ms 1251,644 213×226 · +153 ms 629,371 833×499 · +167 ms 531,330 930×540 · +185 ms 368,254 1094×616 · +232 ms 163,102 1299×768 · +278 ms 138,33 1324×792 · +345 ms 138,31 1324×791"
+    }
+   ]
+  },
+  {
+   "number": 44,
+   "slug": "reach-finder",
+   "chapter": "Windows come and go",
+   "text": "clicks finder's title bar, or its Dock icon if that is covered",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 45,
+   "slug": "hide-finder",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘H",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 46,
+   "slug": "unhide-finder",
+   "chapter": "Windows come and go",
+   "text": "clicks its icon in the Dock",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 47,
+   "slug": "reach-textedit",
+   "chapter": "Windows come and go",
+   "text": "clicks textedit's title bar, or its Dock icon if that is covered",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 48,
+   "slug": "quit-textedit",
+   "chapter": "Windows come and go",
+   "text": "presses ⌘Q in TextEdit",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 49,
+   "slug": "reopen-textedit",
+   "chapter": "Windows come and go",
+   "text": "opens the document again",
+   "moved": {
+    "177": [
+     1,
+     6,
+     316
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "level": "FAIL",
+     "window": "textedit (w177)",
+     "what": "opened in one place and was then moved to another",
+     "trace": "+0 ms 171,68 644×416 · +6 ms 169,68 648×416 · +36 ms 168,67 667×435 · +42 ms 167,66 669×437 · +99 ms 165,65 673×439 · +104 ms 164,64 675×441 · +322 ms 165,65 673×439"
+    }
+   ]
+  },
+  {
+   "number": 50,
+   "slug": "reach-safari",
+   "chapter": "Full screen",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 51,
+   "slug": "full-screen",
+   "chapter": "Full screen",
+   "text": "presses ⌃⌘F in Safari",
+   "moved": {
+    "34": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 52,
+   "slug": "leave-full-screen",
+   "chapter": "Full screen",
+   "text": "presses ⌃⌘F again",
+   "moved": {
+    "34": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 53,
+   "slug": "click-wallpaper",
+   "chapter": "A click lands on the wallpaper",
+   "text": "clicks on the wallpaper: macOS sweeps every window aside",
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "34": [
+     1,
+     1,
+     0
+    ],
+    "51": [
+     1,
+     1,
+     0
+    ],
+    "54": [
+     1,
+     1,
+     0
+    ],
+    "60": [
+     1,
+     1,
+     0
+    ],
+    "63": [
+     1,
+     1,
+     0
+    ],
+    "67": [
+     1,
+     1,
+     0
+    ],
+    "122": [
+     1,
+     1,
+     0
+    ],
+    "124": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ],
+    "213": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 54,
+   "slug": "click-wallpaper-again",
+   "chapter": "A click lands on the wallpaper",
+   "text": "clicks on the wallpaper again: macOS brings them back",
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "34": [
+     1,
+     1,
+     0
+    ],
+    "51": [
+     1,
+     1,
+     0
+    ],
+    "54": [
+     1,
+     1,
+     0
+    ],
+    "60": [
+     1,
+     1,
+     0
+    ],
+    "63": [
+     1,
+     1,
+     0
+    ],
+    "67": [
+     1,
+     1,
+     0
+    ],
+    "122": [
+     1,
+     1,
+     0
+    ],
+    "124": [
+     1,
+     1,
+     0
+    ],
+    "177": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  }
+ ]
+}

@@ -1,0 +1,57 @@
+49 reopen-textedit: opens the document again
+expected: {'settled': 'quiet:563', 'moves': ',', 'front': '177'}
+FAIL rule 3: textedit (w177) opened in one place and was then moved to another
+
+23:02:55.078 SCREEN -- begin 49 reopen-textedit
+23:02:55.078 SCREEN -- text 49 opens the document again
+23:02:55.108 SCREEN (nothing was seen for 60 ms)
+23:02:55.175 SCREEN (nothing was seen for 61 ms)
+23:02:55.227 SCREEN (nothing was seen for 46 ms)
+23:02:55.278 MACOS pid 367 AXApplicationDeactivated
+23:02:55.279 MACOS workspace didActivate pid 13367 com.apple.TextEdit regular
+23:02:55.281 SCREEN in front: process 13367 com.apple.TextEdit
+23:02:55.281 MACOS workspace didDeactivate pid 367 com.apple.finder regular
+23:02:55.293 SCREEN (nothing was seen for 62 ms)
+23:02:55.354 SCREEN (nothing was seen for 61 ms)
+23:02:55.407 SCREEN (nothing was seen for 49 ms)
+23:02:55.469 MACOS workspace didLaunch pid 13367 com.apple.TextEdit regular
+23:02:55.520 SCREEN (nothing was seen for 44 ms)
+23:02:55.738 MACOS watching pid 13367, attempt 0
+23:02:55.752 SCREEN (nothing was seen for 42 ms)
+23:02:55.752 SCREEN textedit (w177) 171,68 644×416
+23:02:55.752 SCREEN front to back: textedit finder safari preview w124 w122 settings calendar notes terminal
+23:02:55.758 SCREEN textedit (w177) 169,68 648×416
+23:02:55.767 MACOS pid 13367 listed w177 AXWindow/AXStandardWindow 165 65 673 439
+23:02:55.767 MACOS pid 13367 AXFocusedWindowChanged w177 AXWindow/AXStandardWindow 165 65 673 439
+23:02:55.767 MACOS pid 13367 AXMainWindowChanged w177 AXWindow/AXStandardWindow 165 65 673 439
+23:02:55.768 MACOS pid 13367 AXWindowCreated w177 AXWindow/AXStandardWindow 165 65 673 439
+23:02:55.788 SCREEN textedit (w177) 168,67 667×435
+23:02:55.794 SCREEN textedit (w177) 167,66 669×437
+23:02:55.851 SCREEN (nothing was seen for 56 ms)
+23:02:55.851 SCREEN textedit (w177) 165,65 673×439
+23:02:55.856 SCREEN textedit (w177) 164,64 675×441
+23:02:55.965 SCREEN (nothing was seen for 45 ms)
+23:02:56.034 SCREEN (nothing was seen for 42 ms)
+23:02:56.074 SCREEN textedit (w177) 165,65 673×439
+23:02:56.140 SCREEN (nothing was seen for 54 ms)
+23:02:56.207 SCREEN (nothing was seen for 60 ms)
+23:02:56.267 SCREEN (nothing was seen for 50 ms)
+23:02:56.432 SCREEN (nothing was seen for 55 ms)
+23:02:56.510 SCREEN (nothing was seen for 56 ms)
+23:02:56.534 SCREEN -- label 177 textedit
+23:02:56.614 SCREEN (nothing was seen for 66 ms)
+23:02:56.681 SCREEN (nothing was seen for 60 ms)
+23:02:56.748 SCREEN (nothing was seen for 60 ms)
+23:02:56.807 SCREEN (nothing was seen for 52 ms)
+23:02:56.929 SCREEN (nothing was seen for 63 ms)
+23:02:56.990 SCREEN (nothing was seen for 55 ms)
+23:02:57.098 SCREEN (nothing was seen for 97 ms)
+23:02:57.148 SCREEN -- end 49 settled=quiet:563 moves=, front=177
+23:02:57.578 SCREEN (nothing was seen for 326 ms)
+23:02:57.906 SCREEN (nothing was seen for 328 ms)
+23:02:58.010 SCREEN (nothing was seen for 48 ms)
+23:02:58.098 SCREEN (nothing was seen for 87 ms)
+23:02:58.155 SCREEN (nothing was seen for 56 ms)
+23:02:58.293 SCREEN -- chapter Full screen
+23:02:58.307 SCREEN (nothing was seen for 46 ms)
+23:02:58.325 SCRIPT == 50 reach-safari
