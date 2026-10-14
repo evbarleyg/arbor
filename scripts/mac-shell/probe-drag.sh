@@ -130,66 +130,17 @@ watcher=$!
 started "$watcher"
 sleep 1
 
-for x in 2 1 0; do to "left-$x" "$x" 368; done
-for x in 1021 1022 1023; do to "right-$x" "$x" 368; done
-for y in 42 32 30 24 16 8 4 1 0; do to "top-$y" 512 "$y"; done
-to corner-top-left 0 31
-to corner-top-left-0 0 0
-to corner-bottom-left 0 700
-to corner-bottom-left-767 0 767
-to bottom-767 512 767
-to option-left-third 200 368 --mods opt
-to option-middle 512 368 --mods opt
-to cmd-top-0 512 0 --mods cmd
-to cmd-left-0 0 368 --mods cmd
-
-step "a docked window carried to the menu bar"
-ctl dock "$W3" left
-ctl dock "$W2" right
-sleep 1
-summary
-mark=$(wc -l < "$ARBOR_HOME/arbor.log")
-echo "--- docked to the menu bar" >> "$ARBOR_OUT/ax-events.txt"
-# shellcheck disable=SC2046
-drag $(grab_of "$W3") 512 0 --hold 1.5
-sleep 2
-summary
-since "$mark" | grep -v "Reduce motion\|said on"
-shot docked-to-menu-bar
-ctl float-all
-sleep 1
-
-step "a double-click on the title bar of a floating window that nothing covers"
-# shellcheck disable=SC2046
-drag $(grab_of "$W3") 700 500 > /dev/null
-sleep 0.5
-echo "--- double-click" >> "$ARBOR_OUT/ax-events.txt"
-echo "before: $(real_frame_of "$W3")"
-# shellcheck disable=SC2046
-dblclick $(grab_of "$W3")
-sleep 2
-echo "after: $(real_frame_of "$W3")"
-summary
+to top-31 512 31
+to opt 200 368 --mods opt
+to opt-shift 200 368 --mods opt+shift
+to ctrl-opt 200 368 --mods ctrl+opt
+to ctrl-opt-cmd 200 368 --mods ctrl+opt+cmd
+to opt-cmd 200 368 --mods opt+cmd
+to ctrl-opt-shift 200 368 --mods ctrl+opt+shift
+to shift-left-0 0 368 --mods shift
+to ctrl-top-0 512 0 --mods ctrl
+for y in 60 100 150 200 250; do to "left-0-$y" 0 "$y"; done
+for y in 500 600 650 704 740; do to "left-0-$y" 0 "$y"; done
 kill_started "$watcher"
 arbor_stop
 
-step "the first drag of e2e-drag.sh with the screen saver up"
-arbor_start 3
-open -a ScreenSaverEngine
-sleep 4
-echo "ScreenSaverEngine: $(pgrep -x ScreenSaverEngine | tr '\n' ' ')"
-pointer windows --on-screen | head -n 12
-ARBOR_SETTLE=0 shot saver-0-up
-mark=$(wc -l < "$ARBOR_HOME/arbor.log")
-# shellcheck disable=SC2046
-drag $(titlebar_of "$W3") $((sx + 3)) $((sy + sh / 2)) --no-release
-echo "held: pointer $(pointer where), window $(real_frame_of "$W3"); preview: $(has_overlay 3 && echo yes || echo no)"
-ARBOR_SETTLE=0 shot saver-1-held
-release
-sleep 2
-echo "ScreenSaverEngine: $(pgrep -x ScreenSaverEngine | tr '\n' ' ')"
-pointer windows --on-screen | head -n 12
-summary
-since "$mark"
-shot saver-2-after
-arbor_stop
