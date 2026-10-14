@@ -22,6 +22,7 @@ make install    # make app, replace ~/Applications/Arbor.app, link arborctl, sta
 make release    # universal build/Arbor.app as zip and disk image, with checksums, notes and the Homebrew cask
 make e2e        # real windows, real Accessibility; see docs/TESTING.md
 make e2e-drag   # real drags with the real pointer, which it takes over for half a minute
+make day        # from anywhere: an ordinary day with real apps on a hosted Mac, every frame sampled, a table of what broke which rule (docs/TESTING.md)
 make typecheck-mac  # on Linux: type-check all the macOS-only code, tests included, against stand-ins for Apple's frameworks
 make trace NAME=x  # record a trace from the running Arbor into collab/evidence/traces/x.jsonl (docs/TRACES.md)
 make replay FILE=x # replay a trace against the real controller and see what happened
