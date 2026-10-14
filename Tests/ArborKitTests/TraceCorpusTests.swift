@@ -40,7 +40,7 @@ import Testing
   /// brought about, and from each one every way back is tried.
   @Test(arguments: names)
   func everyWayBackReturnsEveryWindowFromEveryStateOfATrace(name: String) throws {
-    let text = try #require(text(name, ".jsonl"))
+    let text = try #require(self.text(name, ".jsonl"))
     let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
     let cuts = try Trace(text: text).entries.filter { $0.line.isStimulus && !$0.nested }.map(\.number) + [lines.count + 1]
     var states = 0
