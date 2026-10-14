@@ -111,10 +111,8 @@ public enum MakeRoom {
         }
         guard let shares = giver.shares(growing: slot.node, to: wished, atLeast: needed) else { return nil }
         guard !shares.isEmpty else { continue }
-        // With `shareRemovedSpace` off a weight covers a slot and the gap after it (`LayoutEngine.keptExtents`).
-        let withEach = options.shareRemovedSpace ? 0 : Double(options.gap)
         for share in shares {
-          copy.setShares(share.mapValues { $0 + withEach }, for: slot.window == nil ? nil : slot.node)
+          copy.setShares(giver.ownStretches(for: share), for: slot.window == nil ? nil : slot.node)
         }
         after = layOut(copy)
       }
@@ -343,8 +341,11 @@ public enum MakeRoom {
       for index in levels.indices where missing > 0 {
         let branch = levels[index].branch
         var spare: [NodeID: CGFloat] = [:]
+        let borrowed = borrowedPoints(among: Array(levels[index].lengths.keys))
         for (sibling, length) in levels[index].lengths where sibling != branch {
-          spare[sibling] = max(length - floor(of: sibling), 0)
+          // What it shows of an absent neighbour's place is not its own to give, and of its own it keeps what it would without one: when
+          // the neighbour comes back it must not have paid with its place.
+          spare[sibling] = max(length - floor(of: sibling) - (borrowed[sibling]?.points ?? 0), 0)
         }
         var taken: CGFloat = 0
         // The Desktop first: nobody is looking at the part of it that goes.
@@ -365,6 +366,42 @@ public enum MakeRoom {
       }
       guard needed - missing > atLeast - 0.01 else { return nil }
       return levels.map { level in level.lengths.mapValues { Double($0) } }
+    }
+
+    /// With `shareRemovedSpace` off, the place of a sibling that is absent (minimized, hidden, on another Space) stays reserved and
+    /// shows as part of the neighbour before it, or of the first in view (`LayoutEngine.keptExtents`). For each of `shown`, the
+    /// children in view of one row, that has such a place: how long it is. With it, the gap in that row. Empty with
+    /// the switch on, when absent siblings take no room.
+    func borrowedPoints(among shown: [NodeID]) -> [NodeID: (points: CGFloat, gap: CGFloat)] {
+      guard !options.shareRemovedSpace, let parent = shown.first.flatMap({ view.tree.parent(of: $0) }),
+        let seam = layout.seams.first(where: { $0.split == parent })
+      else { return [:] }
+      let inView = Set(shown)
+      var weights: [NodeID: Double] = [:]
+      var beforeTheFirst = 0.0
+      var last: NodeID?
+      for child in view.tree.children(of: parent) {
+        if inView.contains(child) {
+          weights[child, default: 0] += beforeTheFirst
+          beforeTheFirst = 0
+          last = child
+        } else if let weight = view.tree[child]?.weight {
+          if let last { weights[last, default: 0] += weight } else { beforeTheFirst += weight }
+        }
+      }
+      let gap = seam.frame.length(along: axis)
+      return weights.mapValues { (CGFloat($0) * seam.pointsPerWeight, gap) }
+    }
+
+    /// `lengths`, the lengths wanted for the children in view of one row, as `LayoutTree.setShares` has to be told them. With
+    /// `shareRemovedSpace` off a weight covers a slot and the gap after it, and not the reserved places that show as part of it.
+    func ownStretches(for lengths: [NodeID: Double]) -> [NodeID: Double] {
+      let borrowed = borrowedPoints(among: Array(lengths.keys))
+      guard !borrowed.isEmpty else { return lengths }
+      return Dictionary(
+        uniqueKeysWithValues: lengths.map { node, length in
+          (node, length + Double(borrowed[node]?.gap ?? 0) - Double(borrowed[node]?.points ?? 0))
+        })
     }
 
     /// The least `node` can be along the axis without anything in it losing its place. A row shrinks in proportion, so

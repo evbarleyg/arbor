@@ -72,6 +72,12 @@ Four of the five switches, each with its default keeping the old behaviour; the 
   size, chooses the corner again for an app that refuses to shrink, and learns no minimum sizes there.
 - Found on the way and fixed: after a crash, a floating window that the saved arrangement knew stayed in
   the corner for good, with or without `shrinkOutOfView`. Windows found out of view at launch now count as parked.
+- Second round. With `shrinkOutOfView` on, a floating window taken by its sliver while it is small has its own size again when it is let go; it
+  stayed small until something else laid the display out. Let go where macOS tiles, it is left to macOS. With `shareRemovedSpace` off, room is made (F61) beside a window that is minimized, hidden
+  or on another Space: what a neighbour shows of the reserved place is neither its own to give nor to keep, and of its own slot it keeps a usable
+  width, so that it is still a window when the other comes back. The slot a window left in full screen comes back to is worked out with the switch as it
+  is set. `lint-share-space.py` reads `Drop.swift` too. Known limits: in a row inside a row that grows, the reserved place grows along and the window is
+  not served (it stays a tile; nothing is lost); a docked window taken by its sliver and refused by the place it is dropped on stays small.
 
 Not shipped: nothing in the menu or a settings window (F12's `set` and `SettingsSchema` were not on the
 trunk; each of the four keys needs an entry there). arbor-sim has a stand-in `set <key> <value>` until then.

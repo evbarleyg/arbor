@@ -38,7 +38,8 @@ extension Controller {
     var isActive = false
     /// Where the window would land on the active target, if it would dock.
     var landing: CGRect?
-    /// The size a command meant to give the window while it was in the hand (`putBack`). It takes it when it is let go.
+    /// The size a command meant to give the window while it was in the hand (`putBack`), or its own if it was taken in hand while it
+    /// was small out of view. It takes it when it is let go.
     var sizeOwed: CGSize?
     /// What live reflow has moved (Controller+Reflow.swift).
     var reflow = Reflow()
@@ -73,12 +74,17 @@ extension Controller {
     closeFinderBecauseTheUserLeft()
     guard isRunning, isManaged(id) else { return }
     rememberDragOrigin(of: id)
+    // Out of view a floating window may have been made small (`shrinkOutOfView`). It takes its own size when it is let go. (A docked
+    // one that is let go over the Desktop takes the size it floated at, as ever.)
+    let wasMadeSmall = parked.contains(id) && sizeInView(of: id) != windows[id]?.frame.size
+    let own = wasMadeSmall ? workspaceID(containing: id).flatMap { workspaces[$0]?.floating[id]?.size } : nil
     // Whatever Arbor did with it before, it is in the user's hand and in view now.
     parked.remove(id)
     drag = DragSession(window: id, sourceDisplay: workspaceID(containing: id), point: point)
     // Asked at every drag: people change it while Arbor runs, in the window that Check Setup sent them to.
     drag?.macTiling = system.macTiling()
     drag?.edgesNeverLeft = screenEdges(near: point)
+    drag?.sizeOwed = own
     soleFloatTakenInHand(id)
     // Word of a drag can come late, when the pointer has already stopped where it is going. The
     // hold counts from now, without waiting for a move that may not come.

@@ -275,6 +275,40 @@ private func layout(_ tree: LayoutTree, _ options: LayoutOptions, without absent
     }
   }
 
+  /// What is seen of 1 includes the place reserved for 2, which is not 1's to give or to keep.
+  @Test func roomIsMadeBesideAMinimizedWindowAsWellAndItsSlotIsLeftAlone() {
+    var tree = LayoutTree()
+    for raw in [3, 2, 1] as [UInt32] { tree.dock(WindowID(raw), beside: tree.root, edge: .left) }
+    let options = LayoutOptions(shareRemovedSpace: false)
+    // [1 and the slot of 2 | 3 | Desktop]: 702, 345 and 345 points. 3 needs 700.
+    let (served, layout, _) = MakeRoom.serve(
+      &tree, camera: tree.root, in: screen, options: options, isPresent: { $0 != WindowID(2) },
+      minimumSize: { $0 == WindowID(3) ? CGSize(width: 700, height: 240) : nil },
+      terms: MakeRoom.Terms(desktopIsInUse: true))
+    #expect(served.map(\.window) == [WindowID(3)])
+    #expect((700...702).contains(layout.windowFrames[WindowID(3)]?.width ?? 0))
+    #expect((611...613).contains(layout.windowFrames[WindowID(1)]?.width ?? 0), "the Desktop gives first, down to a tile, and 1 gives the rest")
+    let back = LayoutEngine.layout(
+      tree, camera: tree.root, in: screen, options: LayoutOptions(minimumUsableSize: .zero, shareRemovedSpace: false),
+      isPresent: { _ in true })
+    #expect((344...346).contains(back.windowFrames[WindowID(2)]?.width ?? 0), "what 2 comes back to is what it left")
+    #expect((back.windowFrames[WindowID(1)]?.width ?? 0) >= 240, "and 1 has not paid with its place")
+  }
+
+  /// It gives of its own slot only, and keeps a usable width of that: when 2 comes back, 1 is still a window.
+  @Test func aWindowBesideAReservedPlaceGivesNoMoreThanItsOwnSlot() {
+    var tree = LayoutTree()
+    for raw in [3, 2, 1] as [UInt32] { tree.dock(WindowID(raw), beside: tree.root, edge: .left) }
+    let before = tree
+    // 3 wants 345 + 265 from the Desktop + more than the 105 that 1 can spare of its own 345.
+    let (served, _, _) = MakeRoom.serve(
+      &tree, camera: tree.root, in: screen, options: LayoutOptions(shareRemovedSpace: false),
+      isPresent: { $0 != WindowID(2) }, minimumSize: { $0 == WindowID(3) ? CGSize(width: 730, height: 240) : nil },
+      terms: MakeRoom.Terms(desktopIsInUse: true))
+    #expect(served.isEmpty)
+    #expect(tree == before)
+  }
+
   /// Any tree, any minimums, one window perhaps minimized, the switch off: whoever is served fits, and nobody pays with their place.
   @Test func makingRoomHoldsItsPromisesWithTheSwitchOff() {
     var seed: UInt64 = 0x5EED_F033

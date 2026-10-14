@@ -555,7 +555,6 @@ in the file it costs only its own key. [docs/SETTINGS.md](docs/SETTINGS.md) is t
 | `focusRingColour` | "accent" | "accent" (from System Settings), "#RRGGBB" or "#RRGGBBAA" |
 | `focusRingRadius` | 0 | The radius of the window corners it follows; 0 picks 17 on macOS 26 and 10 before |
 | `newWindowsWhileFramed` | "guest" | A window that opens over a view that does not show the Desktop (a framed window, a group) stays with that view: it goes out of view and comes back with it. "float": it belongs to the Desktop like any floating window |
-| `gapHandles` | "shown" | Drag the gap between two docked windows to resize both: "shown", "hidden" (it works, and no handle will be drawn; today none is drawn either way) or "off" (`resize` and dragging a window's own edge still work) |
 | `shareRemovedSpace` | true | A window that leaves (closed, floated, dragged out, minimized, hidden with ⌘H) gives its space to everyone in its group; false gives it to the neighbour before it, and nothing else moves (except where ⌃⌥⌘ + arrow has to take a little from everyone to keep a window usable) |
 | `shrinkOutOfView` | false | Windows out of view are also made small, 320 × 200 at most, until they come back (some apps rearrange their contents when they are made small) |
 | `ruleTitleWait` | 2 | Seconds (at most 60) a new window's title is checked against rules with a `title`; 0 checks only its first title |

@@ -1053,6 +1053,72 @@ private let side = DisplaySnapshot(
     s.expectNothingLeftBehind()
   }
 
+  /// With `shrinkOutOfView` what is taken by its sliver is small.
+  @Test(arguments: both) func aWindowMadeSmallOutOfViewHasItsOwnSizeWhenItIsDraggedBack(lost: Bool) {
+    let s = DragScene { $0.shrinkOutOfView = true }
+    let own = s.frame(s.c).size
+    s.h.run("zoom \(s.a.rawValue)")
+    #expect(s.frame(s.c).size != own)
+    s.h.system.beginDrag(s.c)
+    s.h.system.moveDrag(to: CGPoint(x: 700, y: 400), holding: 0.3)
+    if lost { s.h.system.loseTheReleaseOfTheDrag() } else { s.h.system.endDrag() }
+    #expect(s.frame(s.c).size == own)
+    #expect(s.frame(s.c).contains(CGPoint(x: 700, y: 400)), "under the pointer")
+    #expect(s.h.workspace.floating[s.c] == s.frame(s.c))
+    s.h.run("show-all")
+    #expect(s.frame(s.c).size == own)
+    s.expectNothingLeftBehind()
+    expectWindowsMatchLayout(s.h)
+  }
+
+  /// Let go where macOS tiles, it is macOS's, which is about to give it a frame: Arbor owes it a size and still keeps its hands off.
+  @Test func letGoWhereMacOSTilesAWindowMadeSmallIsLeftToMacOS() {
+    let s = DragScene { $0.shrinkOutOfView = true }
+    s.h.system.tiling = .on
+    s.h.run("zoom \(s.a.rawValue)")
+    s.h.system.clearFrameLog()
+    s.h.system.beginDrag(s.c)
+    s.h.system.moveDrag(to: CGPoint(x: 0, y: 450), holding: 1)
+    s.h.system.endDrag()
+    s.h.scheduler.advance(by: 3)
+    #expect(s.frame(s.c) == CGRect(x: 0, y: 25, width: 720, height: 875), "where macOS put it")
+    #expect(!s.h.system.frameLog.contains { $0.window == s.c }, "Arbor set no frame on it: \(s.h.system.frameLog)")
+    s.expectNothingLeftBehind()
+  }
+
+  /// A few points further in macOS does not act, and with its tiling on Arbor offers nothing along that edge either: the window
+  /// floats where it is let go, and nobody but Arbor is there to give it its size.
+  @Test func letGoInTheBandWhereNobodyActsAWindowMadeSmallHasItsOwnSize() {
+    let s = DragScene { $0.shrinkOutOfView = true }
+    s.h.system.tiling = .on
+    let own = s.frame(s.c).size
+    s.h.run("zoom \(s.a.rawValue)")
+    #expect(s.frame(s.c).size != own)
+    s.h.system.beginDrag(s.c)
+    s.h.system.moveDrag(to: CGPoint(x: 700, y: 400), holding: 0.3)
+    s.h.system.moveDrag(to: CGPoint(x: 3, y: 450), holding: 1)
+    s.h.system.endDrag()
+    s.h.scheduler.advance(by: 3)
+    #expect(s.h.workspace.isFloating(s.c))
+    #expect(s.frame(s.c).size == own)
+    s.expectNothingLeftBehind()
+  }
+
+  /// In view again and made as small by hand as it was out of view, it is as small as its person made it.
+  @Test func aWindowInViewIsNotGivenAnOlderSizeWhenItIsDragged() {
+    let s = DragScene { $0.shrinkOutOfView = true }
+    s.h.run("zoom \(s.a.rawValue)")
+    let small = s.frame(s.c).size
+    s.h.run("show-all")
+    #expect(s.frame(s.c).size != small)
+    s.h.system.userResize(s.c, to: CGRect(origin: s.frame(s.c).origin, size: small))
+    s.h.system.beginDrag(s.c)
+    s.h.system.moveDrag(to: CGPoint(x: 700, y: 400), holding: 0.3)
+    s.h.system.endDrag()
+    #expect(s.frame(s.c).size == small)
+    s.expectNothingLeftBehind()
+  }
+
   /// A window out of view shows a sliver, and Mission Control shows all of it.
   @Test(arguments: both) func aWindowDraggedBackFromOutOfViewStaysWhereItIsDropped(reflow: Bool) {
     let s = DragScene { $0.reflowWhileDragging = reflow }

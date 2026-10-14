@@ -47,7 +47,8 @@ extension Controller {
   }
 
   private func slotWithEverythingInView(of window: WindowID, in workspace: Workspace, on display: DisplaySnapshot) -> CGRect? {
-    let options = LayoutOptions(gap: CGFloat(options(for: display.id).gap), minimumUsableSize: .zero)
+    var options = options(for: display.id).layoutOptions
+    options.minimumUsableSize = .zero
     let layout = LayoutEngine.layout(
       workspace.tree, camera: workspace.tree.root, in: display.visibleFrame, options: options, isPresent: { _ in true })
     return workspace.tree.leaf(containing: window).flatMap { layout.nodeFrames[$0] }
