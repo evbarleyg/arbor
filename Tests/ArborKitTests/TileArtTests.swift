@@ -226,7 +226,7 @@ import Testing
   // MARK: A group's tile
 
   @Test func aGroupsTileShowsItsWindowsInMiniatureWithACount() throws {
-    let model = try #require(tile(.group, makeHarness()))
+    let model = try #require(self.tile(.group, makeHarness()))
     let colours: [Int32: RGBA] = [11: blue, 12: yellow]
     let tile = TileArt(model, isDark: false) { colours[$0.pid] }
     #expect(tile.plate.top == TilePalette.tray(isDark: false).top)
@@ -342,7 +342,7 @@ import Testing
   // MARK: The Desktop's tile
 
   @Test func theDesktopsTileIsGlassWithAGlyphInBothModes() throws {
-    var model = try #require(tile(.desktop, makeHarness()))
+    var model = try #require(self.tile(.desktop, makeHarness()))
     let tile = art(model, isDark: false, colour: blue)
     #expect(tile == art(model, isDark: true, colour: yellow), "the wallpaper does not change with the mode")
     #expect(tile.plate.top.alpha < 0.5, "the wallpaper shows through")
