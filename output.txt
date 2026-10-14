@@ -1,0 +1,675 @@
+# mac-shell: scripts/mac-shell/shots-F10.sh at a391fe4, macOS 26.6.2, 2026-10-14T22:38Z
+built Arbor and the pointer tool in 128s
+the display is 1024 by 768 points
+
+== the app icon
+drew /tmp/arbor-icon.645X3G/Arbor.iconset
+380016 /tmp/arbor-icon.645X3G/Arbor.icns
+ 
+ 
+ 
+9302 icon_128x128.png
+23824 icon_128x128@2x.png
+588 icon_16x16.png
+1208 icon_16x16@2x.png
+23824 icon_256x256.png
+65401 icon_256x256@2x.png
+1208 icon_32x32.png
+3435 icon_32x32@2x.png
+65401 icon_512x512.png
+184819 icon_512x512@2x.png
+  ✔ the icon script and iconutil made Arbor.icns
+
+== session 1: the menu bar item
+session 1: Arbor pid 10054, test windows 29 30 31 (pid 10031)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ with the permission there, the welcome window still opens at the first launch
+the welcome window is at: 232 91 560 434
+shot: mac-shell/05-first-launch-with-permission.png
+shot: mac-shell/05-first-launch-with-permission-own.png
+> click 248 106
+  ✔ and closes
+> doctor
+arborctl: ✘ Desktop & Dock settings: as they stand, macOS reacts to the same clicks and drags as Arbor. In System Settings → Desktop & Dock:
+    “Click wallpaper to reveal desktop”: choose “Only in Stage Manager”. Otherwise a click on the Desktop sends every window away
+    “Drag windows to left or right edge of screen to tile”: switch it off
+    “Drag windows to menu bar to fill screen”: switch it off
+    “Hold ⌥ key while dragging windows to tile”: switch it off
+– Version: dev
+✔ Accessibility: granted
+✔ Displays have separate Spaces: yes
+✔ Other window managers: none running
+✔ VoiceOver: off
+✔ Input sources: 1
+✔ Gestures: pinch, scroll, rectangle
+✔ Shortcuts: 52 registered
+✔ Keyboard layout: U.S.
+✔ settings.json: no problems
+✔ Menu bar item: showing
+✔ Displays: 1 (1024×768 main)
+> menu-bar
+a single icon that opens the menu: nothing is docked on this display
+the item is at: 752 3 36 24
+shot: mac-shell/10-start.png
+  ✔ with nothing docked the item is Arbor's mark alone
+> click 410 394
+> menu
+View
+  ✓ Show Everything  ⌃⌥Space
+    Show the Desktop  ⌃⌥D
+    Frame Focused Window  ⌃⌥↩
+    Step Out  ⌃⌥↑  (grey)
+    Step In  ⌃⌥↓  (grey)
+    Back  ⌃⌥[  (grey)
+    Forward  ⌃⌥]  (grey)
+    Go to…  ⌃⌥G
+    Saved Views ▸
+        Save This View As
+            View 1  ⌃⌥⇧1
+            View 2  ⌃⌥⇧2
+            View 3  ⌃⌥⇧3
+            View 4  ⌃⌥⇧4
+            View 5  ⌃⌥⇧5
+            View 6  ⌃⌥⇧6
+            View 7  ⌃⌥⇧7
+            View 8  ⌃⌥⇧8
+            View 9  ⌃⌥⇧9
+        -----
+            Name This Space…  ⌃⌥N
+    Show Minimap  ⌃⌥M  (grey)
+Focused Window
+    Dock Focused Window ▸
+        Left  ⌃⌥⌘←
+        Right  ⌃⌥⌘→
+        Top  ⌃⌥⌘↑
+        Bottom  ⌃⌥⌘↓
+    Float Focused Window  ⌃⌥F  (grey)
+    Keep This Window in View
+    Don’t Arrange This App  (grey)
+    Shortcuts Off in This App  (grey)
+Arrangement
+    Undo  ⌃⌥Z  (grey)
+    Redo  ⌃⌥⇧Z  (grey)
+    Arrange Windows  ⌃⌥A
+    Float All Windows  ⌃⌥⇧F
+    Adjust ▸
+        Grow  ⌃⌥⌘=
+        Shrink  ⌃⌥⌘-
+        Balance Sizes  ⌃⌥⌘0  (grey)
+    -----
+        Rotate Group  ⌃⌥R  (grey)
+        Mirror Group  ⌃⌥⇧R  (grey)
+    -----
+        Lay Out Again
+    Dock New Windows
+Arbor
+    Hold This View
+    Hold Still
+    Settings…  ⌃⌥,
+    Keyboard Shortcuts…  ⌃⌥⇧/
+    Help ▸
+        Welcome…
+        Check Setup…
+    -----
+        Settings File…
+        Reload Settings
+        Show Log
+    -----
+        Check for Updates…
+        About Arbor
+-----
+    Pause Arbor  ⌃⌥⎋
+    Quit Arbor  ⌘Q
+> click 770 15
+  ✔ and a plain click opens the menu
+shot: mac-shell/10-first-menu.png
+shot: mac-shell/10-first-menu-own.png
+  ✔ which closes again
+
+== two saved views
+> dock 29 left
+docked w29 at the left edge
+  ✔ the first dock brings the buttons
+  ✔ there is nowhere to go back to
+> dock 30 right
+docked w30 at the right edge
+> zoom 29
+framed w29
+> save-view 1
+saved view 1: ArborTestWindows (n1)
+> zoom 30
+framed w30
+> save-view 3
+saved view 3: ArborTestWindows (n3)
+> show-all
+showing everything
+> menu-bar
+back       0 22 - Back (⌃⌥[)
+forward    22 22 disabled Forward (⌃⌥])
+desktop    48 22 - Show the Desktop (⌃⌥D)
+everything 70 22 current Show Everything (⌃⌥Space)
+view-1     96 22 - View 1: ArborTestWindows (⌃⌥1)
+view-3     118 22 - View 3: ArborTestWindows (⌃⌥3)
+menu       144 22 - Menu (a right click anywhere opens it too)
+the item is at: 652 3 184 24
+shot: mac-shell/11-two-views.png
+shot: mac-shell/12-whole-screen.png
+
+== real clicks on the buttons
+> click 720 15
+  ✔ a click on 1 went to view 1
+  ✔ the other docked window is out of view
+shot: mac-shell/13-view-1.png
+> click 624 15
+  ✔ a click on back went back to everything
+> click 646 15
+  ✔ a click on forward went to view 1 again
+> click 672 15
+  ✔ a click on the Desktop button showed the Desktop
+shot: mac-shell/14-desktop.png
+> click 646 15
+  ✔ a click on the disabled forward button changed nothing
+  ✔ and opened no menu
+> click 742 15
+  ✔ a click on 3 went to view 3
+> click 694 15
+  ✔ a click on the Arbor mark showed everything
+shot: mac-shell/15-everything.png
+> click 768 15
+  ✔ a plain click on the last button opened the menu
+  ✔ escape closed it again
+
+== a tooltip
+> move 720 15
+shot: mac-shell/16-tooltip.png
+
+== the menu: right click, ⌃-click, ⌥-click
+> click 174 368
+> click 694 15 --right
+  ✔ a right click opened the menu
+> menu
+View
+  ✓ Show Everything  ⌃⌥Space
+    Show the Desktop  ⌃⌥D
+    Frame Focused Window  ⌃⌥↩
+    Step Out  ⌃⌥↑  (grey)
+    Step In  ⌃⌥↓
+    Back  ⌃⌥[
+    Forward  ⌃⌥]  (grey)
+    Go to…  ⌃⌥G
+    Saved Views ▸
+        Go To
+            View 1: ArborTestWindows  ⌃⌥1
+            View 3: ArborTestWindows  ⌃⌥3
+        Save This View As
+            View 1 (replace)  ⌃⌥⇧1
+            View 2  ⌃⌥⇧2
+            View 3 (replace)  ⌃⌥⇧3
+            View 4  ⌃⌥⇧4
+            View 5  ⌃⌥⇧5
+            View 6  ⌃⌥⇧6
+            View 7  ⌃⌥⇧7
+            View 8  ⌃⌥⇧8
+            View 9  ⌃⌥⇧9
+        -----
+            Name This Space…  ⌃⌥N
+    Show Minimap  ⌃⌥M
+Focused Window
+    Dock Focused Window ▸
+        Left  ⌃⌥⌘←  (grey)
+        Right  ⌃⌥⌘→
+        Top  ⌃⌥⌘↑
+        Bottom  ⌃⌥⌘↓
+    Float Focused Window  ⌃⌥F
+    Keep This Window in View
+    Don’t Arrange This App  (grey)
+    Shortcuts Off in This App  (grey)
+Arrangement
+    Undo Dock  ⌃⌥Z
+    Redo  ⌃⌥⇧Z  (grey)
+    Arrange Windows  ⌃⌥A
+    Float All Windows  ⌃⌥⇧F
+    Adjust ▸
+        Grow  ⌃⌥⌘=
+        Shrink  ⌃⌥⌘-
+        Balance Sizes  ⌃⌥⌘0
+    -----
+        Rotate Group  ⌃⌥R
+        Mirror Group  ⌃⌥⇧R
+    -----
+        Lay Out Again
+    Dock New Windows
+Arbor
+    Hold This View
+    Hold Still
+    Settings…  ⌃⌥,
+    Keyboard Shortcuts…  ⌃⌥⇧/
+    Help ▸
+        Welcome…
+        Check Setup…
+    -----
+        Settings File…
+        Reload Settings
+        Show Log
+    -----
+        Check for Updates…
+        About Arbor
+-----
+    Pause Arbor  ⌃⌥⎋
+    Quit Arbor  ⌘Q
+shot: mac-shell/20-menu.png
+shot: mac-shell/20-menu-own.png
+> key s
+> key a
+> key right
+shot: mac-shell/21-saved-views.png
+shot: mac-shell/21-saved-views-own.png
+shot: mac-shell/21-saved-views-own-2.png
+> key escape
+  ✔ escape closed it
+  ✔ and the view did not move
+> click 672 15 --mods ctrl
+  ✔ a ⌃-click opened the menu
+> key escape
+> click 672 15 --mods opt
+  ✔ an ⌥-click opened the menu
+> key escape
+  ✔ neither ran the button
+
+== an item of the menu, chosen with the keyboard
+> click 694 15 --right
+> key down
+> key down
+> key return
+  ✔ the second item, Show the Desktop, showed the Desktop
+> show-all
+showing everything
+
+== Help, and About Arbor in it
+> click 694 15 --right
+> key h
+> key e
+> key right
+shot: mac-shell/22-help.png
+shot: mac-shell/22-help-own.png
+shot: mac-shell/22-help-own-2.png
+> key a
+> key b
+> key return
+  ✔ About Arbor opened a panel
+shot: mac-shell/23-about.png
+shot: mac-shell/23-about-own.png
+> click 386 145
+  ✔ and its close button closed it
+> click 174 368
+
+== nine saved views
+> menu-bar
+back       0 22 - Back (⌃⌥[)
+forward    22 22 disabled Forward (⌃⌥])
+desktop    48 22 - Show the Desktop (⌃⌥D)
+everything 70 22 current Show Everything (⌃⌥Space)
+view-1     96 22 - View 1: ArborTestWindows (⌃⌥1)
+view-2     118 22 current View 2: everything (⌃⌥2)
+view-3     140 22 - View 3: ArborTestWindows (⌃⌥3)
+view-4     162 22 current View 4: everything (⌃⌥4)
+view-5     184 22 current View 5: everything (⌃⌥5)
+view-6     206 22 current View 6: everything (⌃⌥6)
+view-7     228 22 current View 7: everything (⌃⌥7)
+view-8     250 22 current View 8: everything (⌃⌥8)
+view-9     272 22 current View 9: everything (⌃⌥9)
+menu       298 22 - Menu (a right click anywhere opens it too)
+the item is at: 604 3 338 24
+shot: mac-shell/24-nine-views.png
+
+== a pause
+> pause
+paused until `resume`; windows that were out of view are back on screen
+  ✔ paused, the item is a single icon
+shot: mac-shell/25-paused.png
+> click 770 15
+  ✔ a click opens the menu
+> menu
+    Arbor is paused: it leaves windows and shortcuts alone  (grey)
+    Resume  ⌃⌥⎋
+-----
+    Settings…
+    Help ▸
+        Welcome…
+        Check Setup…
+    -----
+        Settings File…
+        Reload Settings  (grey)
+        Show Log
+    -----
+        Check for Updates…
+        About Arbor
+-----
+    Quit Arbor  ⌘Q
+shot: mac-shell/26-paused-menu.png
+shot: mac-shell/26-paused-menu-own.png
+> key down
+> key return
+  ✔ Resume, chosen from the menu, brought the buttons back
+
+== the settings
+> reload-settings
+settings reloaded
+> menu-bar
+desktop    0 22 - Show the Desktop (⌃⌥D)
+everything 22 22 current Show Everything (⌃⌥Space)
+view-1     48 22 - View 1: ArborTestWindows (⌃⌥1)
+view-2     70 22 current View 2: everything (⌃⌥2)
+view-3     92 22 - View 3: ArborTestWindows (⌃⌥3)
+view-4     114 22 current View 4: everything (⌃⌥4)
+view-5     136 22 current View 5: everything (⌃⌥5)
+view-6     158 22 current View 6: everything (⌃⌥6)
+view-7     180 22 current View 7: everything (⌃⌥7)
+view-8     202 22 current View 8: everything (⌃⌥8)
+view-9     224 22 current View 9: everything (⌃⌥9)
+menu       250 22 - Menu (a right click anywhere opens it too)
+shot: mac-shell/30-no-history-faint-fill.png
+> reload-settings
+settings reloaded
+> menu-bar
+a single icon that opens the menu: menuBarControls is false
+shot: mac-shell/31-single-icon.png
+> click 770 15
+  ✔ a plain click on the single icon opened the menu
+shot: mac-shell/32-single-icon-menu.png
+shot: mac-shell/32-single-icon-menu-own.png
+> key escape
+> reload-settings
+settings reloaded
+  ✔ the buttons are back
+
+== the welcome window, with everything granted
+> float-all
+floated 2 windows; 9 saved views are gone
+  ✔ with everything floating the item is the mark again
+> welcome
+showing the welcome window
+  ✔ welcome opens the window on the three moves
+  ✔ where it waits at the right of the display, clear of the left edge
+> check-setup
+showing the welcome window
+  ✔ check-setup turns it to the first page
+  ✔ the welcome window is on screen
+the welcome window is at: 440 65 560 434
+41 10054 103 720 34 188 18 off Arbor
+67 10054 0 440 65 560 434 on Arbor
+63 10054 6 461 611 102 38 off Arbor
+62 10054 -2147483602 0 31 1024 674 off Arbor
+61 10054 0 3 34 343 668 off Arbor
+60 10054 0 675 43 12 650 off Arbor
+59 10054 0 337 43 12 650 off Arbor
+  ✔ it opens on its first page
+shot: mac-shell/40-welcome-ready.png
+shot: mac-shell/40-welcome-ready-own.png
+> click 938 461
+  ✔ a click on Continue turned the page
+shot: mac-shell/41-first-steps.png
+shot: mac-shell/41-first-steps-own.png
+> drag 720 79 740 173
+the welcome window is at: 460 159 560 539
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w29 170 220 480 348      floating focused
+  w30 220 180 480 348      floating
+  w31 270 140 480 348      floating
+
+== the three moves, for real
+> drag 410 232 3 400
+  ✔ the dragged window docked
+shot: mac-shell/42-docked.png
+shot: mac-shell/42-docked-own.png
+> click 760 229
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ framed the docked window although the welcome window was clicked last
+shot: mac-shell/43-framed.png
+shot: mac-shell/43-framed-own.png
+> key ctrl+opt+space
+  ✔ ⌃⌥Space showed everything
+shot: mac-shell/44-all-ticked.png
+shot: mac-shell/44-all-ticked-own.png
+
+== Back, and the close button
+> click 900 660
+  ✔ Back turned to the first page
+> click 476 174
+  ✔ its close button closed the welcome window
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 29 is back on screen after quitting
+  ✔ window 30 is back on screen after quitting
+  ✔ window 31 is back on screen after quitting
+shot: mac-shell/59-after-quit.png
+
+== the second launch, with what the first one saved
+  ✔ the first launch wrote down that the window was seen
+session 2: Arbor pid 13632, test windows 74 75 76 (pid 13613)
+running: 1 display, 1 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ the welcome window does not open by itself again
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 74 is back on screen after quitting
+  ✔ window 75 is back on screen after quitting
+  ✔ window 76 is back on screen after quitting
+
+== session 2: a first launch without Accessibility permission
+/tmp/arbor-shell.Z1DMF1/Arbor.app: replacing existing signature
+Arbor pid 13878
+> status
+waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+Arbor 0.0.0 (build 0)
+> doctor
+arborctl: ✘ Accessibility: not granted, so Arbor cannot move windows (System Settings → Privacy & Security → Accessibility; the `check-setup` command opens a window that explains it)
+✘ Desktop & Dock settings: as they stand, macOS reacts to the same clicks and drags as Arbor. In System Settings → Desktop & Dock:
+    “Click wallpaper to reveal desktop”: choose “Only in Stage Manager”. Otherwise a click on the Desktop sends every window away
+    “Drag windows to left or right edge of screen to tile”: switch it off
+    “Drag windows to menu bar to fill screen”: switch it off
+    “Hold ⌥ key while dragging windows to tile”: switch it off
+– Gestures: off (ARBOR_NO_HOTKEYS)
+– Shortcuts: off (ARBOR_NO_HOTKEYS)
+– Version: 0.0.0 (build 0)
+✔ Displays have separate Spaces: yes
+✔ Other window managers: none running
+✔ VoiceOver: off
+✔ Input sources: 1
+✔ settings.json: no problems
+✔ Menu bar item: showing
+✔ Displays: 1 (1024×768 main)
+> menu-bar
+a single icon that opens the menu: waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+  ✔ the welcome window opened by itself
+shot: mac-shell/60-first-launch.png
+shot: mac-shell/60-first-launch-own.png
+shot: mac-shell/61-first-launch-bar.png
+> click 768 15
+> menu
+    Arbor needs Accessibility permission  (grey)
+    Check Setup…
+-----
+    Settings…
+    Help ▸
+        Welcome…
+        Check Setup…
+    -----
+        Settings File…
+        Reload Settings  (grey)
+        Show Log
+    -----
+        Check for Updates…
+        About Arbor
+-----
+    Quit Arbor  ⌘Q
+shot: mac-shell/62-first-launch-menu.png
+shot: mac-shell/62-first-launch-menu-own.png
+> key escape
+
+== closed, then Arbor is opened again
+> click 248 95
+  ✔ the welcome window closed
+Application /tmp/arbor-shell.Z1DMF1/Arbor.app was already running and so the additional environment variables could not be set.
+  ✔ opening Arbor again brought the welcome window back
+shot: mac-shell/63-reopened.png
+shot: mac-shell/63-reopened-own.png
+
+== its button
+> click 702 254
+shot: mac-shell/64-open-settings.png
+> quit
+quitting
+
+== session 3: dark
+> appearance dark: now dark
+dark: system
+session 3: Arbor pid 14767, test windows 102 103 (pid 14751)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 102 left
+docked w102 at the left edge
+> zoom 102
+framed w102
+> save-view 1
+saved view 1: ArborTestWindows (n1)
+> show-all
+showing everything
+shot: mac-shell/70-dark-bar.png
+> click 259 368
+> click 716 15 --right
+shot: mac-shell/71-dark-menu.png
+shot: mac-shell/71-dark-menu-own.png
+> key escape
+
+== what gets in the way: another window manager, a second input source
+enabling the German layout: 0
+> doctor
+arborctl: ✘ Desktop & Dock settings: as they stand, macOS reacts to the same clicks and drags as Arbor. In System Settings → Desktop & Dock:
+    “Click wallpaper to reveal desktop”: choose “Only in Stage Manager”. Otherwise a click on the Desktop sends every window away
+    “Drag windows to left or right edge of screen to tile”: switch it off
+    “Drag windows to menu bar to fill screen”: switch it off
+    “Hold ⌥ key while dragging windows to tile”: switch it off
+✘ Other window managers: TrellisWM running: the same ⌃⌥ shortcuts, or arranging windows as well, so both react or one silently wins. Quit it or switch its shortcuts off
+– Input sources: 2, so macOS may keep ⌃⌥Space (`show-all`) for “Select next source in Input menu” (System Settings → Keyboard → Keyboard Shortcuts → Input Sources); ⌃⌥0 shows everything too
+– Version: dev
+✔ Accessibility: granted
+✔ Displays have separate Spaces: yes
+✔ VoiceOver: off
+✔ Gestures: pinch, scroll, rectangle
+✔ Shortcuts: 52 registered
+✔ Keyboard layout: U.S.
+✔ settings.json: no problems
+✔ Menu bar item: showing
+✔ Displays: 1 (1024×768 main)
+> click 259 368
+> zoom 102
+framed w102
+> key ctrl+opt+space
+with two input sources, ⌃⌥Space still reached Arbor
+shot: mac-shell/72-after-ctrl-opt-space.png
+> check-setup
+showing the welcome window
+shot: mac-shell/73-dark-welcome.png
+shot: mac-shell/73-dark-welcome-own.png
+the welcome window is at: 232 49 560 603; the display shows 31 to 705
+  ✔ the welcome window fits between the menu bar and the Dock
+> click 730 614
+shot: mac-shell/74-dark-first-steps.png
+shot: mac-shell/74-dark-first-steps-own.png
+> click 456 64
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 102 is back on screen after quitting
+  ✔ window 103 is back on screen after quitting
+> appearance light: now light
+ 
+9302 00-icon_128x128.png
+588 00-icon_16x16.png
+1208 00-icon_16x16@2x.png
+23824 00-icon_256x256.png
+1208 00-icon_32x32.png
+3435 00-icon_32x32@2x.png
+65765 05-first-launch-with-permission-own.png
+178350 05-first-launch-with-permission.png
+41976 10-first-menu-own.png
+208762 10-first-menu.png
+6925 10-start.png
+7793 11-two-views.png
+131627 12-whole-screen.png
+7733 13-view-1.png
+7775 14-desktop.png
+7714 15-everything.png
+132137 16-tooltip.png
+43018 20-menu-own.png
+226081 20-menu.png
+76395 21-saved-views-own-2.png
+76395 21-saved-views-own.png
+272500 21-saved-views.png
+58542 22-help-own-2.png
+58542 22-help-own.png
+250841 22-help.png
+18528 23-about-own.png
+159420 23-about.png
+8833 24-nine-views.png
+7001 25-paused.png
+14365 26-paused-menu-own.png
+156013 26-paused-menu.png
+8682 30-no-history-faint-fill.png
+6999 31-single-icon.png
+43018 32-single-icon-menu-own.png
+211647 32-single-icon-menu.png
+65765 40-welcome-ready-own.png
+187802 40-welcome-ready.png
+66320 41-first-steps-own.png
+177394 41-first-steps.png
+64394 42-docked-own.png
+180003 42-docked.png
+66701 43-framed-own.png
+188499 43-framed.png
+67949 44-all-ticked-own.png
+192358 44-all-ticked.png
+118956 59-after-quit.png
+75309 60-first-launch-own.png
+154887 60-first-launch.png
+7159 61-first-launch-bar.png
+13096 62-first-launch-menu-own.png
+168516 62-first-launch-menu.png
+75408 63-reopened-own.png
+155209 63-reopened.png
+190339 64-open-settings.png
+7775 70-dark-bar.png
+45017 71-dark-menu-own.png
+190653 71-dark-menu.png
+117014 72-after-ctrl-opt-space.png
+94869 73-dark-welcome-own.png
+243430 73-dark-welcome.png
+67587 74-dark-first-steps-own.png
+192270 74-dark-first-steps.png
+961 arbor-2.log
+1971 arbor-3.log
+307 arbor-first-launch.log
+0 arbor-stderr-2.log
+0 arbor-stderr-3.log
+0 arbor-stderr.log
+8527 arbor.log
+0 build-curtain.log
+0 build-pointer.log
+0 build-vdisplay.log
+2575 build.log
+18902 output.txt
+0 screencapture.log
+141 test-windows.log
+
+62 passed, 0 failed
+still running when the script had ended, and stopped now:
+  15195 TrellisWM
+exit code 0
