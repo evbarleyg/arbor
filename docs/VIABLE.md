@@ -253,6 +253,8 @@ A move Arbor cannot make yet counts as failed, not as left out. So the gate wait
 
 Every measure is first tried on a metronome: a square of the camera's own that moves rightly once and wrongly in known ways. If the judge misreads it, that run's score is void. The judge builds nothing it judges.
 
+**What no hosted Mac can show:** every system material comes out there as one flat colour, so translucency and blur are not scored. What is scored is the flat look, which is what a person with Reduce Transparency sees; and nothing in Arbor may rest on the rest (`collab/QUESTIONS.md`, "materials").
+
 What the product owner asks of the rubric, whatever else it holds. The first five are measured, from the sampler, the stage's own log of frames and the film; the rest are judged from the film by an agent that has the rubric and no stake in the answer.
 
 | Row | Passes when |
