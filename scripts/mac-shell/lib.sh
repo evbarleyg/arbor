@@ -168,6 +168,7 @@
 #   macos_click_wallpaper [on|off]  print, or set, "click wallpaper to reveal desktop", which sweeps every window aside
 #   macos_reduce_motion [on|off]    print, or set (before arbor_start), Reduce Motion, which GitHub's Macs come with
 #                                     and which turns Arbor's motion off
+#   macos_increase_contrast [on|off] | macos_reduce_transparency [on|off]   the same for those two settings
 #   display_add <w> <h> [side]      plug in a virtual second display: right (default), left, above or below the main one
 #   display_move <side> [offset]    rearrange it, that many points further down (or right) than flush with the main one
 #   display_remove                  unplug it (the end of the script does too)
@@ -891,6 +892,8 @@ arbor_fingerprint() {
   local file
   arbor_fact "setting WindowManager" defaults read com.apple.WindowManager
   arbor_fact "setting Reduce Motion" defaults read com.apple.universalaccess reduceMotion
+  arbor_fact "setting Increase Contrast" defaults read com.apple.universalaccess increaseContrast
+  arbor_fact "setting Reduce Transparency" defaults read com.apple.universalaccess reduceTransparency
   arbor_fact "setting appearance" defaults read -g AppleInterfaceStyle
   arbor_fact "setting Dock hides" defaults read com.apple.dock autohide
   arbor_fact "keyboard layouts" defaults read com.apple.HIToolbox AppleEnabledInputSources
@@ -2315,6 +2318,32 @@ macos_reduce_motion() {
       fi ;;
   esac
   echo "Reduce Motion: $("$ARBOR_POINTER" reduce-motion)"
+}
+
+# Both are read by an app when it starts, like Reduce Motion. In System Settings the first switches the second on with it; here each
+# is set alone, and whoever wants what a person gets sets both.
+macos_increase_contrast() {
+  local value
+  case "${1:-}" in
+    on | off)
+      if arbor_may "change the Accessibility setting Increase Contrast"; then
+        [ "$1" = on ] && value=true || value=false
+        defaults write com.apple.universalaccess increaseContrast -bool "$value"
+      fi ;;
+  esac
+  echo "Increase Contrast: $("$ARBOR_POINTER" increase-contrast)"
+}
+
+macos_reduce_transparency() {
+  local value
+  case "${1:-}" in
+    on | off)
+      if arbor_may "change the Accessibility setting Reduce Transparency"; then
+        [ "$1" = on ] && value=true || value=false
+        defaults write com.apple.universalaccess reduceTransparency -bool "$value"
+      fi ;;
+  esac
+  echo "Reduce Transparency: $("$ARBOR_POINTER" reduce-transparency)"
 }
 
 # MARK: A second display (vdisplay.m: private API, for tests only)
