@@ -1,0 +1,18 @@
+36 drag-terminal-out: drags terminal out of the arrangement onto the Desktop and lets go
+expected: {'act': 'drag', 'settled': 'quiet:0', 'drags': '51', 'moves': '32,35,46,51,54,32,35,46,51,54', 'front': '51', 'restores': '51', 'place': '51', 'floating': '60,63,65,128', 'docked': '32,35,46,51,54'}
+FAIL rule -: not so: terminal floats
+FAIL rule 4: terminal (w51) is not in front: notes (w54), w130 of Mail, w128 of Mail, preview (w65) ahead of it, of which 1 cover part of it
+FAIL rule 4: terminal (w51) its app is not the one in front (process 6789 is)
+FAIL rule 4: terminal (w51) is not wholly in view: 0% of it, at 1599,790 240×769 in 0,31 1600×791
+FAIL rule 5: terminal (w51) is 1599,790 240×769; its own size was 40,51 877×499
+
+23:21:33.847 SCREEN -- begin 36 drag-terminal-out
+23:21:33.847 SCREEN -- text 36 drags terminal out of the arrangement onto the Desktop and lets go
+23:21:39.826 SCREEN -- finding 36 - FAIL not so: terminal floats
+23:21:40.040 SCREEN -- end 36 act=drag settled=quiet:0 drags=51 moves=32,35,46,51,54,32,35,46,51,54 front=51 restores=51 place=51 floating=60,63,65,128 docked=32,35,46,51,54
+23:21:40.379 SCREEN (nothing was seen for 253 ms)
+23:21:40.732 SCREEN (nothing was seen for 112 ms)
+23:21:40.854 SCREEN -- chapter Sizes
+23:21:40.867 INFO  trace day-4 ended: 895 lines, trace off
+23:21:40.887 INFO  trace day-5: recording to /tmp/arbor-shell.RMqtI2/home/traces/2026-10-14-232140-day-5.jsonl
+23:21:41.024 SCRIPT == 37 reach-finder

@@ -1,0 +1,30 @@
+49 dock-icon-notes-2: clicks notes's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:385', 'front': '54', 'floating': '63,65,128', 'docked': '32,35,46,51,54,60'}
+FAIL rule 2: terminal (w51) moved, and the step did not name it
+FAIL rule 2: notes (w54) moved, and the step did not name it
+
+23:22:20.300 SCREEN -- begin 49 dock-icon-notes-2
+23:22:20.300 SCREEN -- text 49 clicks notes's icon in the Dock
+23:22:21.011 SCREEN the button is down 803 854
+23:22:21.011 SCREEN the button is up 803 854
+23:22:21.076 SCREEN in front: process 6789 com.apple.Notes
+23:22:21.076 MACOS pid 6595 AXApplicationDeactivated
+23:22:21.095 MACOS workspace didActivate pid 6789 com.apple.Notes regular
+23:22:21.096 MACOS workspace didDeactivate pid 6595 com.apple.Terminal regular
+23:22:21.097 MACOS pid 6789 AXApplicationActivated
+23:22:21.103 DEBUG focus is on w54
+23:22:21.109 DEBUG w54 has the keyboard
+23:22:21.139 SCREEN front to back: notes w143 terminal textedit safari finder calendar w130 w128 preview settings w87
+23:22:21.151 SCREEN w141 of Arbor 0,0 1600×900 (level 4)
+23:22:21.153 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 3 stand-ins, 0.46 s
+23:22:21.249 MACOS pid 6789 AXResized w54 AXWindow/AXStandardWindow 12 43 1576 767
+23:22:21.258 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow 12 43 1576 767
+23:22:21.273 SCREEN notes (w54) 12,43 1576×767
+23:22:21.273 SCREEN terminal (w51) 1599,790 1577×769
+23:22:21.273 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 1599 790 1577 769
+23:22:21.310 SCREEN w143 of Arbor 3,34 1594×785
+23:22:21.310 SCREEN front to back: w143 notes terminal textedit safari finder calendar w130 w128 preview settings w87
+23:22:21.756 DEBUG stage down
+23:22:21.785 SCREEN w141 of Arbor left the screen
+23:22:22.734 SCREEN -- end 49 act=switch settled=quiet:385 front=54 floating=63,65,128 docked=32,35,46,51,54,60
+23:22:23.193 SCRIPT == 50 dock-icon-calendar-2

@@ -1,0 +1,29 @@
+46 dock-icon-safari-2: clicks safari's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:594', 'front': '35', 'floating': '63,65,128', 'docked': '32,35,46,51,54,60'}
+FAIL rule 2: finder (w32) moved, and the step did not name it
+FAIL rule 2: safari (w35) moved, and the step did not name it
+
+23:22:12.198 SCREEN -- begin 46 dock-icon-safari-2
+23:22:12.198 SCREEN -- text 46 clicks safari's icon in the Dock
+23:22:12.794 SCREEN the button is down 243 854
+23:22:12.904 SCREEN front to back: safari w143 finder calendar notes w130 w128 preview settings terminal textedit w87
+23:22:12.904 SCREEN the button is up 243 854
+23:22:12.904 SCREEN in front: process 6198 com.apple.Safari
+23:22:12.904 MACOS pid 363 AXApplicationDeactivated
+23:22:12.933 MACOS workspace didActivate pid 6198 com.apple.Safari regular
+23:22:12.941 MACOS workspace didDeactivate pid 363 com.apple.finder regular
+23:22:12.948 MACOS pid 6198 AXApplicationActivated
+23:22:12.950 DEBUG focus is on w35
+23:22:12.950 DEBUG w35 has the keyboard
+23:22:12.974 SCREEN w141 of Arbor 0,0 1600×900 (level 4)
+23:22:12.978 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 0.46 s
+23:22:13.069 MACOS pid 6198 AXResized w35 AXWindow/AXStandardWindow 12 43 1576 767
+23:22:13.071 MACOS pid 6198 AXMoved w35 AXWindow/AXStandardWindow 12 43 1576 767
+23:22:13.075 SCREEN safari (w35) 12,43 1576×767
+23:22:13.088 SCREEN finder (w32) 1599,770 1576×767
+23:22:13.088 MACOS pid 363 AXMoved w32 AXWindow/AXStandardWindow 1599 770 1576 767
+23:22:13.134 SCREEN front to back: w143 safari finder calendar notes w130 w128 preview settings terminal textedit w87
+23:22:13.595 DEBUG stage down
+23:22:13.677 SCREEN w141 of Arbor left the screen
+23:22:14.396 SCREEN -- end 46 act=switch settled=quiet:594 front=35 floating=63,65,128 docked=32,35,46,51,54,60
+23:22:14.748 SCRIPT == 47 dock-icon-textedit-2

@@ -1,0 +1,19 @@
+109 dock-icon-mail-3: clicks mail's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:459'}
+FAIL rule -: the script could not tell which window front is about
+
+23:25:25.675 SCREEN -- begin 109 dock-icon-mail-3
+23:25:25.675 SCREEN -- text 109 clicks mail's icon in the Dock
+23:25:26.356 SCREEN the button is down 355 854
+23:25:26.464 SCREEN (nothing was seen for 102 ms)
+23:25:26.464 SCREEN the button is up 355 854
+23:25:26.464 MACOS pid 7479 AXApplicationDeactivated
+23:25:26.468 SCREEN in front: process 10254 com.apple.mail
+23:25:26.535 MACOS pid 10254 AXApplicationActivated
+23:25:26.537 SCREEN front to back: w130 w128 preview settings calendar notes terminal textedit safari finder
+23:25:26.537 MACOS workspace didActivate pid 10254 com.apple.mail regular
+23:25:26.538 MACOS workspace didDeactivate pid 7479 com.apple.Preview regular
+23:25:27.625 SCREEN -- finding 109 - FAIL the script could not tell which window front is about
+23:25:27.625 SCREEN -- end 109 act=switch settled=quiet:459
+23:25:27.891 SCREEN -- chapter The next morning: Arbor starts again
+23:25:27.915 SCRIPT == 110 launch-2

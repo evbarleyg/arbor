@@ -1,0 +1,59 @@
+37 reach-finder: clicks finder's title bar, or its Dock icon if that is covered
+expected: {'act': 'switch', 'settled': 'quiet:803', 'front': '32', 'floating': '60,63,65,128', 'docked': '32,35,46,51,54'}
+FAIL rule 2: finder (w32) moved, and the step did not name it
+FAIL rule 2: safari (w35) moved, and the step did not name it
+FAIL rule 2: textedit (w46) moved, and the step did not name it
+FAIL rule 2: calendar (w60) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w63) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w65) a floating window, moved, and the step did not name it
+FAIL rule 2: w128 of Mail a floating window, moved, and the step did not name it
+FAIL rule 2: w130 of Mail moved, and the step did not name it
+
+23:21:41.043 SCREEN -- begin 37 reach-finder
+23:21:41.044 SCREEN -- text 37 clicks finder's title bar, or its Dock icon if that is covered
+23:21:41.997 SCREEN the button is down 131 854
+23:21:42.202 SCREEN (nothing was seen for 126 ms)
+23:21:42.202 SCREEN the button is up 131 854
+23:21:42.207 MACOS pid 6789 AXApplicationDeactivated
+23:21:42.211 SCREEN in front: process 363 com.apple.finder
+23:21:42.216 SCREEN front to back: finder notes w130 w128 preview settings calendar terminal textedit safari w87 w163 w152 w164 w165 w142 w158 w148 w153
+23:21:42.216 MACOS workspace didActivate pid 363 com.apple.finder regular
+23:21:42.218 MACOS workspace didDeactivate pid 6789 com.apple.Notes regular
+23:21:42.234 MACOS pid 363 AXApplicationActivated
+23:21:42.240 DEBUG focus is on w32
+23:21:42.242 DEBUG w32 has the keyboard
+23:21:42.318 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+23:21:42.334 SCREEN w141 of Arbor 0,0 1600×900 (level 4)
+23:21:42.489 SCREEN finder (w32) 12,43 1576×767
+23:21:42.491 MACOS pid 363 AXResized w32 AXWindow/AXStandardWindow 12 43 1576 767
+23:21:42.492 MACOS pid 363 AXMoved w32 AXWindow/AXStandardWindow 12 43 1576 767
+23:21:42.494 MACOS pid 6198 AXMoved w35 AXWindow/AXStandardWindow 1599 770 574 767
+23:21:42.502 MACOS pid 6372 AXMoved w46 AXWindow/AXStandardWindow 1599 790 271 767
+23:21:42.504 SCREEN safari (w35) 1599,770 574×767
+23:21:42.551 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 1599 770 680 599
+23:21:42.552 MACOS pid 7419 AXMoved w63 AXWindow/AXStandardWindow 1599 770 723 625
+23:21:42.556 MACOS pid 7479 AXMoved w65 AXWindow/AXStandardWindow 1599 770 708 424
+23:21:42.594 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Your other windows are out of view, not closed · ⌃⌥Space shows everything
+23:21:42.600 SCREEN w130 of Mail 1800,877 470×416
+23:21:42.600 SCREEN w128 of Mail 1599,770 871×630
+23:21:42.600 SCREEN preview (w65) 1599,770 708×424
+23:21:42.600 SCREEN settings (w63) 1599,770 723×625
+23:21:42.600 SCREEN calendar (w60) 1599,770 680×599
+23:21:42.600 SCREEN textedit (w46) 1599,790 271×767
+23:21:42.600 MACOS pid 10254 AXMoved w128 AXWindow/AXStandardWindow 1599 770 871 630
+23:21:42.682 SCREEN w145 of Arbor 516,728 568×38 (level 6)
+23:21:42.682 SCREEN w143 of Arbor 3,34 1594×785
+23:21:42.682 SCREEN w165 of Arbor left the screen
+23:21:42.682 SCREEN w153 of Arbor left the screen
+23:21:42.682 SCREEN w142 of Arbor left the screen
+23:21:42.682 SCREEN w158 of Arbor left the screen
+23:21:42.682 SCREEN w148 of Arbor left the screen
+23:21:42.682 SCREEN front to back: w143 finder notes w130 w128 preview settings calendar terminal textedit safari w87 w163 w152 w164
+23:21:42.885 DEBUG stage down
+23:21:42.892 SCREEN w141 of Arbor left the screen
+23:21:42.899 SCREEN w163 of Arbor left the screen
+23:21:42.899 SCREEN w152 of Arbor left the screen
+23:21:42.899 SCREEN w164 of Arbor left the screen
+23:21:42.899 SCREEN front to back: w143 finder notes w130 w128 preview settings calendar terminal textedit safari w87
+23:21:44.075 SCREEN -- end 37 act=switch settled=quiet:803 front=32 floating=60,63,65,128 docked=32,35,46,51,54
+23:21:44.515 SCRIPT == 38 drag-gap-beside-finder

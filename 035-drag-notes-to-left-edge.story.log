@@ -1,0 +1,175 @@
+35 drag-notes-to-left-edge: drags notes by its title bar against the left edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:1533', 'drags': '54', 'moves': '32,35,46,51,32,35,46,51,54', 'yields': '54,60,63,65,128,60,63,65,128', 'front': '54', 'floating': '60,63,65,128', 'docked': '32,35,46,51,54'}
+ODD rule -: took more than a second longer to agree with the screen: w54 is parked but 100% of it shows, at -1,32 800×791
+FAIL rule 3: textedit (w46) went 38 points out of its way before it ended up
+FAIL rule 3: notes (w54) was 75 points from where the pointer carried it, 2679 ms into the step
+FAIL rule 1: notes (w54) macOS's tiling preview and Arbor's drop preview were up at the same time
+FAIL rule 3: notes (w54) moved 2 times
+FAIL rule 2: w130 of Mail moved, and the step did not name it
+FAIL rule 4: notes (w54) is not wholly in view: 0% of it, at 1599,770 800×791 in 0,31 1600×791
+
+23:21:25.587 SCREEN -- begin 35 drag-notes-to-left-edge
+23:21:25.587 SCREEN -- text 35 drags notes by its title bar against the left edge of the screen and lets go
+23:21:25.682 SCRIPT drag w54 from 552,117 to 0,426
+23:21:26.280 SCREEN front to back: notes w143 terminal textedit safari finder w130 w128 preview settings calendar w87 w152 w142 w158 w148 w153
+23:21:26.280 SCREEN the button is down 552 117
+23:21:26.537 SCREEN notes (w54) 183,115 709×660
+23:21:26.554 DEBUG w54 is being dragged
+23:21:26.555 DEBUG drag of w54: on float
+23:21:26.564 SCREEN notes (w54) 165,125 709×660
+23:21:26.609 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow 165 125 709 660
+23:21:26.621 SCREEN w143 of Arbor left the screen
+23:21:26.621 SCREEN front to back: notes terminal textedit safari finder w130 w128 preview settings calendar w87 w152 w142 w158 w148 w153
+23:21:26.676 SCREEN notes (w54) 151,135 709×660
+23:21:26.745 SCREEN notes (w54) 151,146 709×660
+23:21:26.754 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow 151 146 709 660
+23:21:26.841 SCREEN notes (w54) 151,150 709×660
+23:21:26.878 SCREEN notes (w54) 132,150 709×660
+23:21:26.952 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow 132 150 709 660
+23:21:26.979 SCREEN notes (w54) 96,150 709×660
+23:21:26.986 SCREEN notes (w54) 77,150 709×660
+23:21:27.050 DEBUG drag of w54: waiting over beside(n5, ArborCore.Edge.right)
+23:21:27.058 SCREEN notes (w54) 59,150 709×660
+23:21:27.078 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow 59 150 709 660
+23:21:27.108 SCREEN notes (w54) 41,150 709×660
+23:21:27.170 SCREEN notes (w54) 22,150 709×660
+23:21:27.196 SCREEN notes (w54) 4,160 709×660
+23:21:27.202 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow 4 160 709 660
+23:21:27.249 DEBUG drag of w54: on beside(n5, ArborCore.Edge.right)
+23:21:27.264 SCREEN w157 of Arbor 210,43 709×767 (level 3)
+23:21:27.280 DEBUG drag of w54: waiting over beside(n5, ArborCore.Edge.top)
+23:21:27.325 SCREEN notes (w54) 0,180 709×660
+23:21:27.386 SCREEN notes (w54) 0,191 709×660
+23:21:27.403 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow 0 191 709 660
+23:21:27.442 SCREEN w157 of Arbor left the screen
+23:21:27.444 DEBUG drag of w54: on beside(n5, ArborCore.Edge.top)
+23:21:27.451 SCREEN notes (w54) 0,201 709×660
+23:21:27.493 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow 0 201 709 660
+23:21:27.513 SCREEN w157 of Arbor 150,43 242×378 (level 3)
+23:21:27.532 DEBUG drag of w54: on float
+23:21:27.549 SCREEN notes (w54) -19,211 709×660
+23:21:27.640 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow -55 222 709 660
+23:21:27.655 SCREEN notes (w54) -55,222 709×660
+23:21:27.683 SCREEN w157 of Arbor left the screen
+23:21:27.686 DEBUG drag of w54: waiting over beside(n5, ArborCore.Edge.left)
+23:21:27.729 SCREEN notes (w54) -74,232 709×660
+23:21:27.786 SCREEN notes (w54) -92,240 709×660
+23:21:27.801 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow -92 240 709 660
+23:21:27.849 DEBUG drag of w54: on beside(n5, ArborCore.Edge.left)
+23:21:27.896 SCREEN w157 of Arbor 111,43 709×767 (level 3)
+23:21:27.896 SCREEN notes (w54) -110,240 709×660
+23:21:27.903 SCREEN notes (w54) -129,250 709×660
+23:21:27.969 DEBUG drag of w54: on float
+23:21:27.972 SCREEN notes (w54) -147,271 709×660
+23:21:27.988 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow -147 271 709 660
+23:21:28.051 DEBUG drag of w54: waiting over beside(n1, ArborCore.Edge.right)
+23:21:28.056 SCREEN notes (w54) -166,281 709×660
+23:21:28.105 SCREEN w157 of Arbor left the screen
+23:21:28.122 SCREEN notes (w54) -184,292 709×660
+23:21:28.263 DEBUG drag of w54: on float
+23:21:28.263 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow -184 292 709 660
+23:21:28.266 SCREEN (nothing was seen for 143 ms)
+23:21:28.266 SCREEN notes (w54) -202,302 709×660
+23:21:28.323 SCREEN notes (w54) -221,312 709×660
+23:21:28.335 SCREEN notes (w54) -239,323 709×660
+23:21:28.365 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow -239 323 709 660
+23:21:28.415 DEBUG drag of w54: waiting over beside(n1, ArborCore.Edge.left)
+23:21:28.464 SCREEN notes (w54) -258,333 709×660
+23:21:28.505 SCREEN notes (w54) -276,343 709×660
+23:21:28.539 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow -276 343 709 660
+23:21:28.569 DEBUG drag of w54: on cameraEdge(ArborCore.Edge.left)
+23:21:28.580 SCREEN w157 of Arbor 12,43 709×767 (level 3)
+23:21:28.580 SCREEN w162 of WindowManager -15,16 830×821
+23:21:28.580 SCREEN notes (w54) -294,354 709×660
+23:21:28.580 SCREEN w161 of WindowManager -15,16 830×821
+23:21:28.580 SCREEN front to back: w162 notes w161 terminal textedit safari finder w130 w128 preview settings calendar w87 w152 w142 w158 w148 w153
+23:21:28.685 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow -294 354 709 660
+23:21:28.861 SCREEN notes (w54) -293,354 709×660
+23:21:28.950 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow -293 354 709 660
+23:21:29.247 INFO  dropped w54 on cameraEdge(ArborCore.Edge.left), display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+23:21:29.250 SCREEN notes (w54) -294,354 709×660
+23:21:29.250 SCREEN w162 of WindowManager left the screen
+23:21:29.250 SCREEN w161 of WindowManager left the screen
+23:21:29.250 SCREEN front to back: notes terminal textedit safari finder w130 w128 preview settings calendar w87 w152 w142 w158 w148 w153
+23:21:29.250 SCREEN the button is up 0 426
+23:21:29.254 INFO  made room for w54, the Desktop
+23:21:29.269 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow -294 354 709 660
+23:21:29.282 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+23:21:29.310 SCREEN w141 of Arbor 0,0 1600×900 (level 4)
+23:21:29.310 SCREEN textedit (w46) 1308,43 252×767
+23:21:29.310 MACOS pid 6372 AXResized w46 AXWindow/AXStandardWindow 1336 43 252 767
+23:21:29.339 SCREEN notes (w54) -275,333 716×669
+23:21:29.339 SCREEN textedit (w46) 1336,43 252×767
+23:21:29.396 SCREEN notes (w54) -58,94 783×766
+23:21:29.456 MACOS pid 6789 AXResized w54 AXWindow/AXStandardWindow 12 43 789 776
+23:21:29.459 SCREEN notes (w54) -36,70 789×776
+23:21:29.468 MACOS pid 6372 AXMoved w46 AXWindow/AXStandardWindow 1336 43 252 767
+23:21:29.473 INFO  made room for w35, the Desktop
+23:21:29.515 MACOS pid 6789 AXResized w54 AXWindow/AXStandardWindow -9 40 798 788
+23:21:29.517 MACOS pid 6372 AXResized w46 AXWindow/AXStandardWindow 1317 43 271 767
+23:21:29.517 MACOS pid 6198 AXMoved w35 AXWindow/AXStandardWindow 731 43 574 767
+23:21:29.520 SCREEN terminal (w51) 1599,790 240×769
+23:21:29.520 SCREEN textedit (w46) 1336,43 264×767
+23:21:29.520 SCREEN safari (w35) 731,43 574×767
+23:21:29.556 MACOS pid 6789 AXResized w54 AXWindow/AXStandardWindow -3 33 800 791
+23:21:29.558 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 1599 790 240 769
+23:21:29.559 MACOS pid 6372 AXMoved w46 AXWindow/AXStandardWindow 1317 43 271 767
+23:21:29.560 MACOS pid 6198 AXMoved w35 AXWindow/AXStandardWindow 731 43 574 767
+23:21:29.573 SCREEN notes (w54) -1,32 800×791
+23:21:29.573 SCREEN textedit (w46) 1317,43 271×767
+23:21:29.622 MACOS pid 6789 AXResized w54 AXWindow/AXStandardWindow 1599 899 789 776
+23:21:29.628 MACOS pid 6372 AXResized w46 AXWindow/AXStandardWindow 1317 43 271 767
+23:21:29.633 SCREEN notes (w54) -1,32 789×776
+23:21:29.633 SCREEN calendar (w60) 253,115 680×599
+23:21:29.659 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow -1 32 800 791
+23:21:29.660 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 253 115 680 599
+23:21:29.660 MACOS pid 6789 AXResized w54 AXWindow/AXStandardWindow -1 32 800 791
+23:21:29.660 MACOS pid 6789 AXResized w54 AXWindow/AXStandardWindow -1 32 800 791
+23:21:29.660 MACOS pid 6789 AXResized w54 AXWindow/AXStandardWindow -1 32 800 791
+23:21:29.661 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow -1 32 800 791
+23:21:29.661 MACOS pid 6789 AXResized w54 AXWindow/AXStandardWindow -1 32 800 791
+23:21:29.661 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow -1 32 800 791
+23:21:29.662 MACOS pid 6789 AXResized w54 AXWindow/AXStandardWindow -1 32 800 791
+23:21:29.662 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow -1 32 800 791
+23:21:29.662 MACOS pid 6789 AXResized w54 AXWindow/AXStandardWindow -1 32 800 791
+23:21:29.672 DEBUG raised w60, which was left hanging over docked windows
+23:21:29.674 MACOS pid 7215 AXFocusedWindowChanged w60 AXWindow/AXStandardWindow 253 115 680 599
+23:21:29.678 MACOS pid 7215 AXMainWindowChanged w60 AXWindow/AXStandardWindow 253 115 680 599
+23:21:29.681 SCREEN notes (w54) -1,32 800×791
+23:21:29.688 MACOS pid 7419 AXMoved w63 AXWindow/AXStandardWindow 231 85 723 625
+23:21:29.694 DEBUG raised w63, which was left hanging over docked windows
+23:21:29.694 MACOS pid 7419 AXFocusedWindowChanged w63 AXWindow/AXStandardWindow 231 85 723 625
+23:21:29.694 MACOS pid 7419 AXMainWindowChanged w63 AXWindow/AXStandardWindow 231 85 723 625
+23:21:29.704 MACOS pid 7479 AXMoved w65 AXWindow/AXStandardWindow 239 35 708 424
+23:21:29.713 DEBUG raised w65, which was left hanging over docked windows
+23:21:29.714 SCREEN settings (w63) 231,85 723×625
+23:21:29.714 SCREEN preview (w65) 239,35 708×424
+23:21:29.714 SCREEN front to back: notes settings calendar terminal textedit safari finder w130 w128 preview w87 w152 w142 w158 w148 w153
+23:21:29.718 MACOS pid 7479 AXFocusedWindowChanged w65 AXWindow/AXStandardWindow 239 35 708 424
+23:21:29.719 MACOS pid 7479 AXMainWindowChanged w65 AXWindow/AXStandardWindow 239 35 708 424
+23:21:29.722 MACOS pid 10254 AXMoved w128 AXWindow/AXStandardWindow 157 72 871 630
+23:21:29.731 DEBUG raised w128, which was left hanging over docked windows
+23:21:29.735 MACOS pid 10254 AXFocusedWindowChanged w130 AXSheet/- 358 179 470 416
+23:21:29.736 MACOS pid 10254 AXMainWindowChanged w128 AXWindow/AXStandardWindow 157 72 871 630
+23:21:29.737 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+23:21:29.745 SCREEN w130 of Mail 358,179 470×416
+23:21:29.745 SCREEN w128 of Mail 157,72 871×630
+23:21:29.745 SCREEN front to back: notes preview settings calendar terminal textedit safari finder w130 w128 w87 w152 w142 w158 w148 w153
+23:21:29.762 SCREEN front to back: notes w130 w128 preview settings calendar terminal textedit safari finder w87 w152 w142 w158 w148 w153
+23:21:30.812 SCREEN w163 of Arbor 12,43 173×767
+23:21:30.812 SCREEN w152 of Arbor 197,43 97×767
+23:21:30.812 SCREEN w164 of Arbor 306,43 149×767
+23:21:30.812 SCREEN w165 of Arbor 185,43 12×767
+23:21:30.812 SCREEN w142 of Arbor 294,43 12×767
+23:21:30.812 SCREEN w158 of Arbor 455,43 12×767
+23:21:30.812 SCREEN w148 of Arbor 719,43 12×767
+23:21:30.812 SCREEN w153 of Arbor 1305,43 12×767
+23:21:30.812 SCREEN w157 of Arbor left the screen
+23:21:30.812 SCREEN front to back: notes w130 w128 preview settings calendar terminal textedit safari finder w87 w163 w152 w164 w165 w142 w158 w148 w153
+23:21:30.927 DEBUG stage down
+23:21:30.965 SCREEN w141 of Arbor left the screen
+23:21:31.237 SCREEN notes (w54) 1599,770 800×791
+23:21:31.238 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow 1599 770 800 791
+23:21:32.725 SCREEN -- finding 35 - ODD took more than a second longer to agree with the screen: w54 is parked but 100% of it shows, at -1,32 800×791
+23:21:32.830 SCREEN -- end 35 act=drag-where-macos-tiles settled=quiet:1533 drags=54 moves=32,35,46,51,32,35,46,51,54 yields=54,60,63,65,128,60,63,65,128 front=54 floating=60,63,65,128 docked=32,35,46,51,54
+23:21:33.805 SCRIPT == 36 drag-terminal-out

@@ -1,0 +1,42 @@
+87 reach-safari: clicks safari's title bar, or its Dock icon if that is covered
+expected: {'act': 'switch', 'settled': 'quiet:507', 'front': '35', 'floating': '63,65,128,251', 'docked': '32,35,51,54,60'}
+FAIL rule 2: finder (w32) moved, and the step did not name it
+FAIL rule 2: safari (w35) moved, and the step did not name it
+FAIL rule 2: textedit (w251) a floating window, moved, and the step did not name it
+
+23:24:22.910 SCREEN -- begin 87 reach-safari
+23:24:22.910 SCREEN -- text 87 clicks safari's title bar, or its Dock icon if that is covered
+23:24:23.658 SCREEN the button is down 243 854
+23:24:23.797 MACOS pid 20051 AXApplicationDeactivated
+23:24:23.798 SCREEN the button is up 243 854
+23:24:23.798 SCREEN in front: process 6198 com.apple.Safari
+23:24:23.798 MACOS workspace didActivate pid 6198 com.apple.Safari regular
+23:24:23.798 MACOS workspace didDeactivate pid 20051 com.apple.TextEdit regular
+23:24:23.807 SCREEN front to back: w143 textedit finder preview w130 w128 settings calendar notes terminal w87
+23:24:23.827 SCREEN safari (w35) 731,43 574×767
+23:24:23.827 SCREEN front to back: safari w143 textedit finder preview w130 w128 settings calendar notes terminal w87
+23:24:23.867 DEBUG focus is on w35
+23:24:23.867 MACOS pid 6198 AXApplicationShown
+23:24:23.875 MACOS workspace didUnhide pid 6198 com.apple.Safari regular
+23:24:23.882 DEBUG focus report for w35, which does not have the keyboard or takes no space; 4 checks left
+23:24:23.882 MACOS pid 6198 AXApplicationActivated
+23:24:23.898 MACOS pid 6198 AXMoved w35 AXWindow/AXStandardWindow 1599 770 574 767
+23:24:23.900 DEBUG w35 has the keyboard
+23:24:23.906 SCREEN safari (w35) 1599,770 574×767
+23:24:23.906 SCREEN w143 of Arbor left the screen
+23:24:23.906 SCREEN front to back: safari textedit finder preview w130 w128 settings calendar notes terminal w87
+23:24:23.907 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 5 stand-ins, 0.46 s
+23:24:23.918 SCREEN w141 of Arbor 0,0 1600×900 (level 4)
+23:24:24.013 MACOS pid 6198 AXResized w35 AXWindow/AXStandardWindow 12 43 1576 767
+23:24:24.014 MACOS pid 6198 AXMoved w35 AXWindow/AXStandardWindow 12 43 1576 767
+23:24:24.033 SCREEN safari (w35) 12,43 1576×767
+23:24:24.033 SCREEN finder (w32) 1599,770 1576×767
+23:24:24.033 MACOS pid 363 AXMoved w32 AXWindow/AXStandardWindow 1599 770 1576 767
+23:24:24.041 SCREEN textedit (w251) 1599,790 673×439
+23:24:24.041 MACOS pid 20051 AXMoved w251 AXWindow/AXStandardWindow 1599 790 673 439
+23:24:24.094 SCREEN w143 of Arbor 3,34 1594×785
+23:24:24.094 SCREEN front to back: w143 safari textedit finder preview w130 w128 settings calendar notes terminal w87
+23:24:24.546 SCREEN w141 of Arbor left the screen
+23:24:24.546 DEBUG stage down
+23:24:25.269 SCREEN -- end 87 act=switch settled=quiet:507 front=35 floating=63,65,128,251 docked=32,35,51,54,60
+23:24:25.693 SCRIPT == 88 full-screen

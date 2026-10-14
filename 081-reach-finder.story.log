@@ -1,0 +1,14 @@
+81 reach-finder: clicks finder's title bar, or its Dock icon if that is covered
+expected: {'act': 'switch', 'settled': 'quiet:262', 'front': '32', 'floating': '63,65,128', 'docked': '32,35,46,51,54,60'}
+FAIL rule 4: finder (w32) is not in front: safari (w35), preview (w65), w130 of Mail, w128 of Mail ahead of it, of which 1 cover part of it
+FAIL rule 4: finder (w32) its app is not the one in front (process 6198 is)
+FAIL rule 4: finder (w32) is not wholly in view: 0% of it, at 1599,770 1576×767 in 0,31 1600×791
+
+23:24:02.819 SCREEN -- begin 81 reach-finder
+23:24:02.820 SCREEN -- text 81 clicks finder's title bar, or its Dock icon if that is covered
+23:24:03.477 SCREEN (nothing was seen for 106 ms)
+23:24:04.903 SCREEN the button is down 2383 782
+23:24:04.966 SCREEN the button is up 2383 782
+23:24:06.243 SCREEN -- end 81 act=switch settled=quiet:262 front=32 floating=63,65,128 docked=32,35,46,51,54,60
+23:24:06.644 SCREEN (nothing was seen for 150 ms)
+23:24:06.891 SCRIPT == 82 hide-finder

@@ -1,0 +1,33 @@
+47 dock-icon-textedit-2: clicks textedit's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:423', 'front': '46', 'floating': '63,65,128', 'docked': '32,35,46,51,54,60'}
+FAIL rule 2: safari (w35) moved, and the step did not name it
+FAIL rule 2: textedit (w46) moved, and the step did not name it
+
+23:22:14.761 SCREEN -- begin 47 dock-icon-textedit-2
+23:22:14.761 SCREEN -- text 47 clicks textedit's icon in the Dock
+23:22:15.423 SCREEN the button is down 1220 854
+23:22:15.554 SCREEN the button is up 1220 854
+23:22:15.557 SCREEN in front: process 6372 com.apple.TextEdit
+23:22:15.569 MACOS pid 6198 AXApplicationDeactivated
+23:22:15.573 MACOS workspace didActivate pid 6372 com.apple.TextEdit regular
+23:22:15.573 MACOS workspace didDeactivate pid 6198 com.apple.Safari regular
+23:22:15.575 MACOS pid 6372 AXApplicationActivated
+23:22:15.580 DEBUG focus is on w46
+23:22:15.582 DEBUG w46 has the keyboard
+23:22:15.619 SCREEN front to back: textedit w143 safari finder calendar notes w130 w128 preview settings terminal w87
+23:22:15.627 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 2 stand-ins, 0.46 s
+23:22:15.640 SCREEN w141 of Arbor 0,0 1600×900 (level 4)
+23:22:15.640 SCREEN w143 of Arbor left the screen
+23:22:15.640 SCREEN front to back: textedit safari finder calendar notes w130 w128 preview settings terminal w87
+23:22:15.653 SCREEN textedit (w46) 1599,790 1576×767
+23:22:15.654 MACOS pid 6372 AXResized w46 AXWindow/AXStandardWindow 12 43 1576 767
+23:22:15.656 MACOS pid 6372 AXMoved w46 AXWindow/AXStandardWindow 12 43 1576 767
+23:22:15.658 MACOS pid 6198 AXMoved w35 AXWindow/AXStandardWindow 1599 770 1576 767
+23:22:15.672 SCREEN w143 of Arbor 3,34 1594×785
+23:22:15.672 SCREEN textedit (w46) 12,43 1576×767
+23:22:15.672 SCREEN safari (w35) 1599,770 1576×767
+23:22:15.672 SCREEN front to back: w143 textedit safari finder calendar notes w130 w128 preview settings terminal w87
+23:22:16.274 DEBUG stage down
+23:22:16.282 SCREEN w141 of Arbor left the screen
+23:22:16.980 SCREEN -- end 47 act=switch settled=quiet:423 front=46 floating=63,65,128 docked=32,35,46,51,54,60
+23:22:17.495 SCRIPT == 48 dock-icon-terminal-2

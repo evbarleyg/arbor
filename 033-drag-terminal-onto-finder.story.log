@@ -1,0 +1,124 @@
+33 drag-terminal-onto-finder: drags terminal by its title bar onto the right part of finder and lets go
+expected: {'act': 'drag', 'settled': 'quiet:908', 'drags': '51', 'moves': '32,35,46,32,35,46,51', 'yields': '51,54,60,63,65,128,54,60,63,65,128', 'front': '51', 'floating': '54,60,63,65,128', 'docked': '32,35,46,51'}
+ODD rule -: floating w54 and docked w51 overlap by 188×660
+ODD rule -: floating w60 and docked w51 overlap by 173×599
+ODD rule -: floating w63 and docked w51 overlap by 195×625
+ODD rule -: floating w128 and docked w51 overlap by 240×630
+FAIL rule 3: terminal (w51) was 86 points from where the pointer carried it, 3247 ms into the step
+FAIL rule 2: w130 of Mail moved, and the step did not name it
+
+23:21:15.395 SCREEN -- begin 33 drag-terminal-onto-finder
+23:21:15.395 SCREEN -- text 33 drags terminal by its title bar onto the right part of finder and lets go
+23:21:15.456 SCRIPT drag w51 from 765,63 to 429,426
+23:21:16.083 SCREEN front to back: terminal w143 textedit safari finder w130 w128 preview settings calendar notes w87 w152 w142 w148 w153
+23:21:16.083 SCREEN the button is down 765 63
+23:21:16.212 SCREEN terminal (w51) 529,63 457×499
+23:21:16.238 DEBUG w51 is being dragged
+23:21:16.240 DEBUG drag of w51: waiting over beside(n3, ArborCore.Edge.left)
+23:21:16.257 SCREEN terminal (w51) 518,75 457×499
+23:21:16.315 SCREEN terminal (w51) 514,87 457×499
+23:21:16.317 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 518 75 457 499
+23:21:16.369 SCREEN w143 of Arbor left the screen
+23:21:16.369 SCREEN front to back: terminal textedit safari finder w130 w128 preview settings calendar notes w87 w152 w142 w148 w153
+23:21:16.413 DEBUG drag of w51: on beside(n3, ArborCore.Edge.left)
+23:21:16.423 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 514 99 457 499
+23:21:16.432 SCREEN terminal (w51) 514,99 457×499
+23:21:16.442 SCREEN w157 of Arbor 478,43 250×767 (level 3)
+23:21:16.492 DEBUG drag of w51: on float
+23:21:16.500 SCREEN terminal (w51) 514,111 457×499
+23:21:16.566 SCREEN terminal (w51) 514,123 457×499
+23:21:16.597 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 514 123 457 499
+23:21:16.626 SCREEN terminal (w51) 514,135 457×499
+23:21:16.626 SCREEN w157 of Arbor left the screen
+23:21:16.739 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 514 147 457 499
+23:21:16.760 SCREEN terminal (w51) 514,147 457×499
+23:21:16.827 SCREEN terminal (w51) 514,159 457×499
+23:21:16.862 SCREEN terminal (w51) 514,172 457×499
+23:21:16.917 SCREEN terminal (w51) 514,184 457×499
+23:21:16.921 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 514 184 457 499
+23:21:16.980 SCREEN terminal (w51) 502,196 457×499
+23:21:17.014 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 502 196 457 499
+23:21:17.041 SCREEN terminal (w51) 480,208 457×499
+23:21:17.139 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 469 220 457 499
+23:21:17.145 SCREEN terminal (w51) 469,220 457×499
+23:21:17.252 SCREEN terminal (w51) 458,232 457×499
+23:21:17.281 SCREEN terminal (w51) 446,244 457×499
+23:21:17.316 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 446 244 457 499
+23:21:17.357 SCREEN terminal (w51) 435,256 457×499
+23:21:17.407 SCREEN terminal (w51) 424,268 457×499
+23:21:17.446 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 424 268 457 499
+23:21:17.475 SCREEN terminal (w51) 413,280 457×499
+23:21:17.565 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 402 293 457 499
+23:21:17.575 SCREEN terminal (w51) 402,293 457×499
+23:21:17.628 SCREEN terminal (w51) 390,305 457×499
+23:21:17.733 SCREEN terminal (w51) 379,317 457×499
+23:21:17.775 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 379 317 457 499
+23:21:17.802 DEBUG drag of w51: waiting over beside(n1, ArborCore.Edge.right)
+23:21:17.818 SCREEN terminal (w51) 368,322 457×499
+23:21:17.910 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 357 322 457 499
+23:21:17.933 SCREEN terminal (w51) 357,322 457×499
+23:21:18.027 DEBUG drag of w51: on beside(n1, ArborCore.Edge.right)
+23:21:18.037 SCREEN terminal (w51) 346,322 457×499
+23:21:18.096 SCREEN terminal (w51) 334,322 457×499
+23:21:18.097 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 334 322 457 499
+23:21:18.181 SCREEN terminal (w51) 323,322 457×499
+23:21:18.265 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 312 322 457 499
+23:21:18.266 SCREEN w157 of Arbor 150,43 242×767 (level 3)
+23:21:18.266 SCREEN terminal (w51) 312,322 457×499
+23:21:18.300 SCREEN terminal (w51) 301,322 457×499
+23:21:18.393 SCREEN terminal (w51) 290,334 457×499
+23:21:18.404 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 290 334 457 499
+23:21:18.642 SCREEN terminal (w51) 291,347 457×499
+23:21:18.713 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 291 347 457 499
+23:21:18.748 SCREEN terminal (w51) 290,347 457×499
+23:21:18.826 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 290 347 457 499
+23:21:19.080 SCREEN the button is up 429 426
+23:21:19.126 INFO  dropped w51 on beside(n1, ArborCore.Edge.right), display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+23:21:19.131 INFO  made room for w35, the Desktop
+23:21:19.142 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+23:21:19.167 SCREEN w141 of Arbor 0,0 1600×900 (level 4)
+23:21:19.167 SCREEN safari (w35) 722,43 574×767
+23:21:19.167 MACOS pid 6198 AXMoved w35 AXWindow/AXStandardWindow 722 43 574 767
+23:21:19.199 SCREEN textedit (w46) 1308,43 280×767
+23:21:19.200 MACOS pid 6372 AXResized w46 AXWindow/AXStandardWindow 1298 43 280 767
+23:21:19.206 MACOS pid 6372 AXMoved w46 AXWindow/AXStandardWindow 1308 43 280 767
+23:21:19.234 MACOS pid 6595 AXTitleChanged w51 AXWindow/AXStandardWindow 150 43 240 769
+23:21:19.239 MACOS pid 6595 AXResized w51 AXWindow/AXStandardWindow 150 43 240 769
+23:21:19.240 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 150 43 240 769
+23:21:19.247 MACOS pid 363 AXMoved w32 AXWindow/AXStandardWindow 1599 770 501 767
+23:21:19.248 MACOS pid 6595 AXTitleChanged w51 AXWindow/AXStandardWindow 150 43 240 769
+23:21:19.249 MACOS pid 6595 AXResized w51 AXWindow/AXStandardWindow 150 43 240 769
+23:21:19.262 SCREEN terminal (w51) 150,43 240×769
+23:21:19.262 SCREEN finder (w32) 1599,770 501×767
+23:21:19.262 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow 202 105 709 660
+23:21:19.279 SCREEN notes (w54) 202,105 709×660
+23:21:19.281 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 217 115 680 599
+23:21:19.289 SCREEN calendar (w60) 217,115 680×599
+23:21:19.293 MACOS pid 7419 AXMoved w63 AXWindow/AXStandardWindow 195 85 723 625
+23:21:19.301 MACOS pid 7479 AXMoved w65 AXWindow/AXStandardWindow 203 35 708 424
+23:21:19.309 SCREEN preview (w65) 203,35 708×424
+23:21:19.309 SCREEN settings (w63) 195,85 723×625
+23:21:19.310 MACOS pid 10254 AXMoved w128 AXWindow/AXStandardWindow 121 72 871 630
+23:21:19.315 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+23:21:19.323 SCREEN w130 of Mail 322,179 470×416
+23:21:19.323 SCREEN w128 of Mail 121,72 871×630
+23:21:19.362 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Too small to show: click the tile to zoom in · ⌃⌥G goes there too
+23:21:20.280 SCREEN w145 of Arbor 558,728 485×38 (level 6)
+23:21:20.280 SCREEN w143 of Arbor 141,34 258×787
+23:21:20.280 SCREEN w152 of Arbor 12,43 126×767
+23:21:20.280 SCREEN w142 of Arbor 138,43 12×767
+23:21:20.280 SCREEN w158 of Arbor 392,43 12×767
+23:21:20.280 SCREEN w148 of Arbor 710,43 12×767
+23:21:20.280 SCREEN w153 of Arbor 1296,43 12×767
+23:21:20.280 SCREEN front to back: w143 terminal textedit safari finder w130 w128 preview settings calendar notes w87 w152 w142 w158 w148 w153
+23:21:20.392 SCREEN (nothing was seen for 112 ms)
+23:21:20.460 DEBUG stage down
+23:21:20.486 SCREEN w157 of Arbor left the screen
+23:21:20.486 SCREEN w141 of Arbor left the screen
+23:21:21.632 SCREEN -- finding 33 - ODD floating w54 and docked w51 overlap by 188×660
+23:21:21.634 SCREEN -- finding 33 - ODD floating w60 and docked w51 overlap by 173×599
+23:21:21.634 SCREEN -- finding 33 - ODD floating w63 and docked w51 overlap by 195×625
+23:21:21.634 SCREEN -- finding 33 - ODD floating w128 and docked w51 overlap by 240×630
+23:21:21.741 SCREEN -- end 33 act=drag settled=quiet:908 drags=51 moves=32,35,46,32,35,46,51 yields=51,54,60,63,65,128,54,60,63,65,128 front=51 floating=54,60,63,65,128 docked=32,35,46,51
+23:21:22.021 SCREEN (nothing was seen for 175 ms)
+23:21:22.390 SCRIPT == 34 reach-notes

@@ -1,0 +1,30 @@
+84 reach-textedit: clicks textedit's title bar, or its Dock icon if that is covered
+expected: {'act': 'switch', 'settled': 'quiet:544', 'front': '46', 'floating': '63,65,128', 'docked': '32,35,46,51,54,60'}
+FAIL rule 2: finder (w32) moved, and the step did not name it
+FAIL rule 2: textedit (w46) moved, and the step did not name it
+
+23:24:12.883 SCREEN -- begin 84 reach-textedit
+23:24:12.883 SCREEN -- text 84 clicks textedit's title bar, or its Dock icon if that is covered
+23:24:13.658 SCREEN the button is down 1220 854
+23:24:13.814 SCREEN the button is up 1220 854
+23:24:13.814 SCREEN in front: process 6372 com.apple.TextEdit
+23:24:13.818 MACOS workspace didActivate pid 6372 com.apple.TextEdit regular
+23:24:13.827 SCREEN front to back: textedit w143 finder preview w130 w128 settings calendar notes terminal w87
+23:24:13.827 DEBUG focus is on w46
+23:24:13.828 MACOS workspace didDeactivate pid 363 com.apple.finder regular
+23:24:13.841 MACOS pid 363 AXApplicationDeactivated
+23:24:13.841 MACOS pid 6372 AXApplicationActivated
+23:24:13.842 DEBUG w46 has the keyboard
+23:24:13.852 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 0.46 s
+23:24:13.862 MACOS pid 6372 AXResized w46 AXWindow/AXStandardWindow 12 43 1576 767
+23:24:13.863 MACOS pid 6372 AXMoved w46 AXWindow/AXStandardWindow 12 43 1576 767
+23:24:13.868 MACOS pid 363 AXMoved w32 AXWindow/AXStandardWindow 1599 770 1576 767
+23:24:13.882 SCREEN w141 of Arbor 0,0 1600×900 (level 4)
+23:24:13.882 SCREEN textedit (w46) 1599,790 1576×767
+23:24:13.882 SCREEN finder (w32) 1599,770 1576×767
+23:24:13.913 SCREEN textedit (w46) 12,43 1576×767
+23:24:13.913 SCREEN front to back: w143 textedit finder preview w130 w128 settings calendar notes terminal w87
+23:24:14.541 DEBUG stage down
+23:24:14.600 SCREEN w141 of Arbor left the screen
+23:24:15.261 SCREEN -- end 84 act=switch settled=quiet:544 front=46 floating=63,65,128 docked=32,35,46,51,54,60
+23:24:15.977 SCRIPT == 85 quit-textedit

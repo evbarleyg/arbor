@@ -1,0 +1,33 @@
+54 cmd-tab-2: presses ⌘Tab
+expected: {'act': 'switch', 'settled': 'quiet:599', 'front': '65', 'returns': '44', 'floating': '63,65,128', 'docked': '32,35,46,51,54,60'}
+FAIL rule 2: safari (w35) is not back where it was after step 44: 1599,770 1576×767, it was at 1599,770 574×767
+FAIL rule 2: textedit (w46) is not back where it was after step 44: 1599,790 1576×767, it was at 1599,790 271×767
+FAIL rule 2: terminal (w51) is not back where it was after step 44: 1599,790 1577×769, it was at 1599,790 240×769
+FAIL rule 2: notes (w54) is not back where it was after step 44: 1599,770 1576×767, it was at 1599,770 800×791
+FAIL rule 2: calendar (w60) is not back where it was after step 44: 1599,770 1576×767, it was at 12,43 1576×503
+FAIL rule 2: settings (w63) is not back where it was after step 44: 437,85 723×625, it was at 437,352 723×470
+FAIL rule 2: preview (w65) is not back where it was after step 44: 4,35 708×424, it was at 4,558 708×264
+FAIL rule 2: w128 of Mail is not back where it was after step 44: 240,72 1120×630, it was at 240,558 1120×264
+FAIL rule 2: w130 of Mail is not back where it was after step 44: 565,179 470×416, it was at 565,610 470×416
+
+23:22:33.961 SCREEN -- begin 54 cmd-tab-2
+23:22:33.961 SCREEN -- text 54 presses ⌘Tab
+23:22:34.621 SCREEN (nothing was seen for 111 ms)
+23:22:34.621 SCREEN front to back: preview w130 w128 settings calendar notes terminal textedit safari finder w87
+23:22:34.621 MACOS pid 7479 AXApplicationActivated
+23:22:34.622 MACOS workspace didActivate pid 7479 com.apple.Preview regular
+23:22:34.622 MACOS workspace didDeactivate pid 10254 com.apple.mail regular
+23:22:34.622 MACOS pid 10254 AXApplicationDeactivated
+23:22:34.628 SCREEN in front: process 7479 com.apple.Preview
+23:22:34.635 DEBUG focus is on w65
+23:22:34.637 DEBUG w65 has the keyboard
+23:22:34.660 SCREEN w143 of Arbor -5,26 726×442
+23:22:34.660 SCREEN front to back: w143 preview w130 w128 settings calendar notes terminal textedit safari finder w87
+23:22:35.542 SCREEN (nothing was seen for 208 ms)
+23:22:35.876 SCREEN (nothing was seen for 333 ms)
+23:22:36.048 SCREEN (nothing was seen for 127 ms)
+23:22:36.301 SCREEN -- end 54 act=switch settled=quiet:599 front=65 returns=44 floating=63,65,128 docked=32,35,46,51,54,60
+23:22:36.625 SCREEN -- chapter The view goes in and out
+23:22:36.637 INFO  trace day-7 ended: 586 lines, trace off
+23:22:36.656 INFO  trace day-8: recording to /tmp/arbor-shell.RMqtI2/home/traces/2026-10-14-232236-day-8.jsonl
+23:22:36.786 SCRIPT == 55 reach-finder

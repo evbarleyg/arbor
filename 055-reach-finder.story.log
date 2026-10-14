@@ -1,0 +1,38 @@
+55 reach-finder: clicks finder's title bar, or its Dock icon if that is covered
+expected: {'act': 'switch', 'settled': 'quiet:622', 'front': '32', 'floating': '63,65,128', 'docked': '32,35,46,51,54,60'}
+FAIL rule 2: finder (w32) moved, and the step did not name it
+FAIL rule 2: settings (w63) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w65) a floating window, moved, and the step did not name it
+FAIL rule 2: w128 of Mail a floating window, moved, and the step did not name it
+FAIL rule 2: w130 of Mail moved, and the step did not name it
+
+23:22:36.804 SCREEN -- begin 55 reach-finder
+23:22:36.804 SCREEN -- text 55 clicks finder's title bar, or its Dock icon if that is covered
+23:22:37.651 SCREEN the button is down 131 854
+23:22:37.798 SCREEN in front: process 363 com.apple.finder
+23:22:37.799 SCREEN the button is up 131 854
+23:22:37.804 MACOS workspace didActivate pid 363 com.apple.finder regular
+23:22:37.805 MACOS workspace didDeactivate pid 7479 com.apple.Preview regular
+23:22:37.805 MACOS pid 7479 AXApplicationDeactivated
+23:22:37.833 DEBUG focus is on w32
+23:22:37.833 MACOS pid 363 AXApplicationActivated
+23:22:37.834 DEBUG w32 has the keyboard
+23:22:37.845 SCREEN front to back: finder w143 preview w130 w128 settings calendar notes terminal textedit safari w87
+23:22:37.857 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 6 stand-ins, 0.46 s
+23:22:37.867 MACOS pid 363 AXMoved w32 AXWindow/AXStandardWindow 12 43 1576 767
+23:22:37.898 SCREEN w141 of Arbor 0,0 1600×900 (level 4)
+23:22:37.898 SCREEN finder (w32) 12,43 1576×767
+23:22:37.898 SCREEN settings (w63) 1599,770 723×625
+23:22:37.898 MACOS pid 7419 AXMoved w63 AXWindow/AXStandardWindow 1599 770 723 625
+23:22:37.903 MACOS pid 7479 AXMoved w65 AXWindow/AXStandardWindow 1599 770 708 424
+23:22:37.922 MACOS pid 10254 AXMoved w128 AXWindow/AXStandardWindow 1599 770 1120 630
+23:22:37.924 SCREEN preview (w65) 1599,770 708×424
+23:22:37.924 SCREEN w130 of Mail 1924,877 470×416
+23:22:37.924 SCREEN w128 of Mail 1599,770 1120×630
+23:22:37.943 SCREEN w143 of Arbor 3,34 1594×785
+23:22:37.943 SCREEN w144 of Arbor 0,31 1600×791 (level -2147483602)
+23:22:37.943 SCREEN front to back: w143 finder preview w130 w128 settings calendar notes terminal textedit safari w87
+23:22:38.428 DEBUG stage down
+23:22:38.435 SCREEN w141 of Arbor left the screen
+23:22:39.182 SCREEN -- end 55 act=switch settled=quiet:622 front=32 floating=63,65,128 docked=32,35,46,51,54,60
+23:22:39.502 SCRIPT == 56 frame-finder

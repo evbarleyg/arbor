@@ -1,0 +1,37 @@
+91 pause: presses ⌃⌥⎋
+expected: {'act': 'way-out', 'settled': 'quiet:982', 'moves': 'any', 'restores': 'all', 'everything': '1', 'floating': '', 'docked': ''}
+FAIL rule 5: safari (w35) is 12,43 1576×767; its own size was 138,31 1324×791
+FAIL rule 5: settings (w63) is 877,352 723×470; its own size was 437,85 723×625
+FAIL rule 5: preview (w65) is 892,558 708×264; its own size was 4,35 708×424
+FAIL rule 5: w128 of Mail is 729,558 871×264; its own size was 240,72 1120×630
+FAIL rule 5: textedit (w251) is 908,558 673×264; its own size was 165,65 673×439
+
+23:24:43.777 SCREEN -- begin 91 pause
+23:24:43.777 SCREEN -- text 91 presses ⌃⌥⎋
+23:24:44.183 MACOS pid 363 AXResized w32 AXWindow/AXStandardWindow 340 120 920 436
+23:24:44.183 MACOS pid 363 AXMoved w32 AXWindow/AXStandardWindow 340 120 920 436
+23:24:44.184 SCREEN finder (w32) 1599,770 920×436
+23:24:44.211 SCREEN finder (w32) 340,120 920×436
+23:24:44.239 MACOS pid 6595 AXTitleChanged w51 AXWindow/AXStandardWindow 40 51 877 499
+23:24:44.239 MACOS pid 6595 AXResized w51 AXWindow/AXStandardWindow 40 51 877 499
+23:24:44.240 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 40 51 877 499
+23:24:44.241 SCREEN terminal (w51) 1599,790 877×499
+23:24:44.260 SCREEN terminal (w51) 40,51 877×499
+23:24:44.288 MACOS pid 6789 AXResized w54 AXWindow/AXStandardWindow 300 105 1000 660
+23:24:44.290 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow 300 105 1000 660
+23:24:44.292 SCREEN notes (w54) 1599,770 1000×660
+23:24:44.342 SCREEN notes (w54) 300,105 1000×660
+23:24:44.396 MACOS pid 7215 AXResized w60 AXWindow/AXStandardWindow 404 115 936 599
+23:24:44.397 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 404 115 936 599
+23:24:44.408 SCREEN calendar (w60) 404,115 936×599
+23:24:44.410 INFO  trace day-12 ended: 49 lines, Arbor stopped
+23:24:44.416 INFO  registered 1 shortcuts in 1311 µs
+23:24:44.417 INFO  stopped; all windows returned to view
+23:24:44.417 INFO  paused
+23:24:44.418 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Paused until ⌃⌥⎋; windows that were out of view are back on screen
+23:24:44.456 SCREEN w282 of Arbor 538,728 525×38 (level 6)
+23:24:44.456 SCREEN w143 of Arbor left the screen
+23:24:44.456 SCREEN w144 of Arbor left the screen
+23:24:44.456 SCREEN front to back: safari textedit finder preview w130 w128 settings calendar notes terminal w87
+23:24:45.658 SCREEN -- end 91 act=way-out settled=quiet:982 moves=any restores=all everything=1 floating= docked=
+23:24:46.027 SCRIPT == 92 drag-calendar-while-paused

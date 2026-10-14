@@ -1,0 +1,34 @@
+23 dock-icon-mail: clicks mail's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:162', 'floating': '32,35,46,51,54,60,63,65,128', 'docked': ''}
+FAIL rule -: the script could not tell which window front is about
+ODD rule -: took more than a second longer to agree with the screen: w128 is gone from the window server but Arbor still lists it
+
+23:20:45.256 SCREEN -- begin 23 dock-icon-mail
+23:20:45.256 SCREEN -- text 23 clicks mail's icon in the Dock
+23:20:46.020 SCREEN the button is down 355 854
+23:20:46.089 SCREEN the button is up 355 854
+23:20:46.295 SCREEN in front: process 10254 com.apple.mail
+23:20:46.297 MACOS workspace didActivate pid 10254 com.apple.mail regular
+23:20:46.298 MACOS workspace didDeactivate pid 7479 com.apple.Preview regular
+23:20:46.312 MACOS pid 7479 AXApplicationDeactivated
+23:20:46.549 MACOS workspace didLaunch pid 10254 com.apple.mail regular
+23:20:47.148 SCREEN -- finding 23 - FAIL the script could not tell which window front is about
+23:20:47.890 SCREEN w128 of Mail 249,77 1102×620
+23:20:47.890 SCREEN front to back: w128 preview settings calendar notes terminal textedit safari finder w87
+23:20:47.902 SCREEN w128 of Mail 247,76 1106×622
+23:20:47.922 SCREEN w128 of Mail 243,74 1114×626
+23:20:47.954 SCREEN w128 of Mail 242,73 1116×628
+23:20:47.970 SCREEN w128 of Mail 241,73 1118×628
+23:20:48.009 SCREEN w128 of Mail 240,72 1120×630
+23:20:48.168 SCREEN w130 of Mail 565,159 470×416
+23:20:48.168 SCREEN front to back: w130 w128 preview settings calendar notes terminal textedit safari finder w87
+23:20:48.179 SCREEN w130 of Mail 565,162 470×416
+23:20:48.226 SCREEN w130 of Mail 565,171 470×416
+23:20:48.252 SCREEN w130 of Mail 565,175 470×416
+23:20:48.309 SCREEN w130 of Mail 565,178 470×416
+23:20:48.422 SCREEN w130 of Mail 565,179 470×416
+23:20:48.612 MACOS watching pid 10254, attempt 0
+23:20:48.618 MACOS pid 10254 listed w128 AXWindow/AXStandardWindow 240 72 1120 630
+23:20:50.277 SCREEN -- finding 23 - ODD took more than a second longer to agree with the screen: w128 is gone from the window server but Arbor still lists it
+23:20:50.344 SCREEN -- end 23 act=switch settled=quiet:162 floating=32,35,46,51,54,60,63,65,128 docked=
+23:20:50.859 SCRIPT == 24 cmd-tab

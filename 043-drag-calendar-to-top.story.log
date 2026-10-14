@@ -1,0 +1,99 @@
+43 drag-calendar-to-top: drags calendar by its title bar against the menu bar and lets go: macOS fills the screen with it
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:0', 'drags': '60', 'front': '60', 'floating': '63,65,128', 'docked': '32,35,46,51,54,60'}
+ODD rule -: took more than a second longer to agree with the screen: w60 is at 464,31 936×599 but Arbor believes 12,43 1576×503
+FAIL rule 2: settings (w63) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w65) a floating window, moved, and the step did not name it
+FAIL rule 2: w128 of Mail a floating window, moved, and the step did not name it
+FAIL rule 2: w130 of Mail moved, and the step did not name it
+
+23:21:57.597 SCREEN -- begin 43 drag-calendar-to-top
+23:21:57.597 SCREEN -- text 43 drags calendar by its title bar against the menu bar and lets go: macOS fills the screen with it
+23:21:57.725 SCRIPT drag w60 from 740,127 to 800,0
+23:21:58.335 SCREEN front to back: calendar w143 finder notes w130 w128 preview settings terminal textedit safari w87
+23:21:58.335 SCREEN the button is down 740 127
+23:21:58.537 DEBUG w60 is being dragged
+23:21:58.545 DEBUG drag of w60: on float
+23:21:58.550 SCREEN calendar (w60) 406,110 936×599
+23:21:58.595 SCREEN calendar (w60) 408,106 936×599
+23:21:58.633 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 408 106 936 599
+23:21:58.640 SCREEN w143 of Arbor left the screen
+23:21:58.640 SCREEN front to back: calendar finder notes w130 w128 preview settings terminal textedit safari w87
+23:21:58.662 SCREEN calendar (w60) 410,102 936×599
+23:21:58.681 SCREEN calendar (w60) 412,98 936×599
+23:21:58.765 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 412 98 936 599
+23:21:58.812 SCREEN calendar (w60) 416,89 936×599
+23:21:58.876 SCREEN calendar (w60) 418,85 936×599
+23:21:58.882 SCREEN calendar (w60) 420,81 936×599
+23:21:58.896 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 420 81 936 599
+23:21:59.011 SCREEN calendar (w60) 424,72 936×599
+23:21:59.075 SCREEN calendar (w60) 426,68 936×599
+23:21:59.079 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 426 68 936 599
+23:21:59.137 SCREEN calendar (w60) 428,64 936×599
+23:21:59.217 SCREEN calendar (w60) 430,59 936×599
+23:21:59.234 SCREEN calendar (w60) 432,55 936×599
+23:21:59.239 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 430 59 936 599
+23:21:59.275 SCREEN calendar (w60) 434,51 936×599
+23:21:59.336 SCREEN calendar (w60) 436,47 936×599
+23:21:59.351 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 436 47 936 599
+23:21:59.437 SCREEN calendar (w60) 438,43 936×599
+23:21:59.495 SCREEN calendar (w60) 440,38 936×599
+23:21:59.528 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 440 38 936 599
+23:21:59.554 SCREEN calendar (w60) 442,34 936×599
+23:21:59.627 DEBUG drag of w60: on cameraEdge(ArborCore.Edge.top)
+23:21:59.629 SCREEN calendar (w60) 444,31 936×599
+23:21:59.653 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 444 31 936 599
+23:21:59.664 SCREEN w157 of Arbor 12,43 1576×378 (level 3)
+23:21:59.664 SCREEN calendar (w60) 446,31 936×599
+23:21:59.694 SCREEN calendar (w60) 448,31 936×599
+23:21:59.764 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 448 31 936 599
+23:21:59.772 SCREEN calendar (w60) 450,31 936×599
+23:21:59.800 SCREEN calendar (w60) 452,31 936×599
+23:21:59.835 SCREEN calendar (w60) 454,31 936×599
+23:21:59.898 SCREEN calendar (w60) 456,31 936×599
+23:21:59.901 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 454 31 936 599
+23:21:59.951 SCREEN calendar (w60) 458,31 936×599
+23:22:00.015 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 458 31 936 599
+23:22:00.072 SCREEN calendar (w60) 460,31 936×599
+23:22:00.147 SCREEN calendar (w60) 462,31 936×599
+23:22:00.178 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 462 31 936 599
+23:22:00.224 SCREEN calendar (w60) 464,31 936×599
+23:22:00.331 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 464 31 936 599
+23:22:00.427 SCREEN calendar (w60) 465,31 936×599
+23:22:00.523 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 465 31 936 599
+23:22:01.726 SCREEN the button is up 800 0
+23:22:01.731 INFO  dropped w60 on cameraEdge(ArborCore.Edge.top), display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+23:22:01.737 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 464 31 936 599
+23:22:01.750 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 0.46 s
+23:22:01.752 SCREEN calendar (w60) 464,31 936×599
+23:22:01.762 SCREEN w141 of Arbor 0,0 1600×900 (level 4)
+23:22:01.837 SCREEN calendar (w60) 464,31 1136×503
+23:22:01.849 MACOS pid 7215 AXResized w60 AXWindow/AXStandardWindow 12 43 1136 503
+23:22:01.850 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 12 43 1136 503
+23:22:01.876 SCREEN calendar (w60) 12,43 1136×503
+23:22:01.885 MACOS pid 7215 AXResized w60 AXWindow/AXStandardWindow 12 43 1576 503
+23:22:01.888 INFO  made room for w60
+23:22:01.927 SCREEN calendar (w60) 12,43 1576×503
+23:22:01.938 MACOS pid 7419 AXResized w63 AXWindow/AXStandardWindow 437 558 723 470
+23:22:01.938 MACOS pid 7419 AXMoved w63 AXWindow/AXStandardWindow 437 558 723 470
+23:22:01.956 MACOS pid 7419 AXMoved w63 AXWindow/AXStandardWindow 437 352 723 470
+23:22:01.960 SCREEN settings (w63) 437,558 723×470
+23:22:02.014 SCREEN preview (w65) 4,35 708×264
+23:22:02.014 SCREEN settings (w63) 437,352 723×470
+23:22:02.015 MACOS pid 7479 AXResized w65 AXWindow/AXStandardWindow 4 558 708 264
+23:22:02.017 MACOS pid 7479 AXMoved w65 AXWindow/AXStandardWindow 4 558 708 264
+23:22:02.029 SCREEN preview (w65) 4,558 708×264
+23:22:02.117 SCREEN w130 of Mail 565,610 470×416
+23:22:02.117 SCREEN w128 of Mail 240,558 1120×264
+23:22:02.119 MACOS pid 10254 AXResized w128 AXWindow/AXStandardWindow 240 558 1120 264
+23:22:02.119 MACOS pid 10254 AXMoved w128 AXWindow/AXStandardWindow 240 558 1120 264
+23:22:02.123 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 0.46 s
+23:22:02.159 SCREEN w143 of Arbor 3,34 1594×521
+23:22:02.159 SCREEN w142 of Arbor 12,546 1576×12
+23:22:02.159 SCREEN w144 of Arbor 0,31 1600×791 (level -2147483602)
+23:22:02.159 SCREEN front to back: w143 calendar finder notes w130 w128 preview settings terminal textedit safari w87 w142
+23:22:02.188 SCREEN w157 of Arbor left the screen
+23:22:02.807 DEBUG stage down
+23:22:02.812 SCREEN w141 of Arbor left the screen
+23:22:03.805 SCREEN -- finding 43 - ODD took more than a second longer to agree with the screen: w60 is at 464,31 936×599 but Arbor believes 12,43 1576×503
+23:22:03.908 SCREEN -- end 43 act=drag-where-macos-tiles settled=quiet:0 drags=60 front=60 floating=63,65,128 docked=32,35,46,51,54,60
+23:22:04.392 SCRIPT == 44 drag-calendar-back

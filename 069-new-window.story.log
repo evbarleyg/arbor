@@ -1,0 +1,37 @@
+69 new-window: presses ⌘N in Safari
+expected: {'act': 'open-close', 'settled': 'quiet:1055', 'front': '218', 'floating': '63,65,128,218', 'docked': '32,35,46,51,54,60'}
+ODD rule -: floating w218 and docked w35 overlap by 545×755
+
+23:23:16.343 SCREEN -- begin 69 new-window
+23:23:16.343 SCREEN -- text 69 presses ⌘N in Safari
+23:23:17.661 SCREEN safari-new (w218) 760,31 574×767
+23:23:17.661 SCREEN front to back: safari-new w143 safari preview w130 w128 settings calendar finder notes terminal textedit w87 w163 w152 w201 w164 w142 w158 w153 w202 w148 w165
+23:23:17.868 SCREEN (nothing was seen for 190 ms)
+23:23:18.302 MACOS pid 6198 AXFocusedWindowChanged w218 AXWindow/AXStandardWindow 760 31 574 767
+23:23:18.587 MACOS pid 6198 AXMainWindowChanged w218 AXWindow/AXStandardWindow 760 31 574 767
+23:23:18.587 MACOS pid 6198 AXWindowCreated w218 AXWindow/AXStandardWindow 760 31 574 767
+23:23:18.589 DEBUG focus is on w218
+23:23:18.599 DEBUG w218 has the keyboard
+23:23:18.600 SCREEN (nothing was seen for 731 ms)
+23:23:18.642 SCREEN -- label 218 safari-new
+23:23:18.642 SCREEN w143 of Arbor 751,25 592×782
+23:23:18.642 SCREEN front to back: w143 safari-new safari preview w130 w128 settings calendar finder notes terminal textedit w87 w163 w152 w201 w164 w142 w158 w153 w202 w148 w165
+23:23:19.875 SCREEN (nothing was seen for 114 ms)
+23:23:20.123 SCREEN (nothing was seen for 161 ms)
+23:23:20.549 SCREEN (nothing was seen for 425 ms)
+23:23:21.509 SCREEN (nothing was seen for 841 ms)
+23:23:21.679 SCREEN (nothing was seen for 133 ms)
+23:23:22.074 SCREEN (nothing was seen for 395 ms)
+23:23:22.242 SCREEN (nothing was seen for 167 ms)
+23:23:22.403 SCREEN -- finding 69 - ODD floating w218 and docked w35 overlap by 545×755
+23:23:22.655 SCREEN (nothing was seen for 110 ms)
+23:23:22.761 SCREEN -- end 69 act=open-close settled=quiet:1055 front=218 floating=63,65,128,218 docked=32,35,46,51,54,60
+23:23:23.569 SCREEN (nothing was seen for 552 ms)
+23:23:23.817 SCREEN (nothing was seen for 181 ms)
+23:23:23.981 SCREEN (nothing was seen for 164 ms)
+23:23:24.730 SCREEN (nothing was seen for 312 ms)
+23:23:24.944 SCREEN (nothing was seen for 138 ms)
+23:23:25.236 SCREEN (nothing was seen for 291 ms)
+23:23:25.379 SCRIPT == 70 window-menu
+23:23:25.476 SCREEN (nothing was seen for 134 ms)
+23:23:25.666 SCREEN (nothing was seen for 190 ms)

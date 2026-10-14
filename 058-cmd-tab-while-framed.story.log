@@ -1,0 +1,22 @@
+58 cmd-tab-while-framed: presses ⌘Tab, back to finder
+expected: {'act': 'switch', 'settled': 'quiet:1042', 'moves': 'any', 'front': '32', 'floating': '63,65,128', 'docked': '32,35,46,51,54,60'}
+FAIL rule 4: finder (w32) is not in front: preview (w65), safari (w35) ahead of it, none of which covers it
+FAIL rule 4: finder (w32) its app is not the one in front (process 7479 is)
+FAIL rule 4: finder (w32) is not wholly in view: 0% of it, at 1599,770 1576×767 in 0,31 1600×791
+
+23:22:45.762 SCREEN -- begin 58 cmd-tab-while-framed
+23:22:45.762 SCREEN -- text 58 presses ⌘Tab, back to finder
+23:22:46.454 SCREEN in front: process 7479 com.apple.Preview
+23:22:46.466 MACOS workspace didActivate pid 7479 com.apple.Preview regular
+23:22:46.477 MACOS workspace didDeactivate pid 6198 com.apple.Safari regular
+23:22:46.490 SCREEN front to back: preview w143 safari finder w130 w128 settings calendar notes terminal textedit w87 w163 w152 w164 w201 w142 w148 w153 w165 w158 w202
+23:22:46.494 DEBUG focus is on w65
+23:22:46.498 DEBUG w65 has the keyboard
+23:22:46.509 MACOS pid 6198 AXApplicationDeactivated
+23:22:46.510 MACOS pid 7479 AXApplicationActivated
+23:22:46.538 SCREEN w143 of Arbor 230,424 726×404
+23:22:46.538 SCREEN front to back: w143 preview safari finder w130 w128 settings calendar notes terminal textedit w87 w163 w152 w164 w201 w142 w148 w153 w165 w158 w202
+23:22:47.754 SCREEN -- end 58 act=switch settled=quiet:1042 moves=any front=32 floating=63,65,128 docked=32,35,46,51,54,60
+23:22:48.076 SCREEN (nothing was seen for 196 ms)
+23:22:48.504 SCREEN (nothing was seen for 161 ms)
+23:22:48.998 SCRIPT == 59 dock-icon-calendar-while-framed

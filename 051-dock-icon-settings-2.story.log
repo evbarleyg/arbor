@@ -1,0 +1,43 @@
+51 dock-icon-settings-2: clicks settings's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:697', 'front': '63', 'floating': '63,65,128', 'docked': '32,35,46,51,54,60'}
+FAIL rule 2: calendar (w60) moved, and the step did not name it
+FAIL rule 2: settings (w63) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w65) a floating window, moved, and the step did not name it
+FAIL rule 2: w128 of Mail a floating window, moved, and the step did not name it
+FAIL rule 2: w130 of Mail moved, and the step did not name it
+
+23:22:26.002 SCREEN -- begin 51 dock-icon-settings-2
+23:22:26.002 SCREEN -- text 51 clicks settings's icon in the Dock
+23:22:26.692 SCREEN the button is down 1139 854
+23:22:26.692 SCREEN the button is up 1139 854
+23:22:26.730 SCREEN in front: process 7419 com.apple.systempreferences
+23:22:26.730 MACOS pid 7215 AXApplicationDeactivated
+23:22:26.731 MACOS workspace didActivate pid 7419 com.apple.systempreferences regular
+23:22:26.731 MACOS workspace didDeactivate pid 7215 com.apple.iCal regular
+23:22:26.812 MACOS pid 7419 AXApplicationActivated
+23:22:26.813 DEBUG focus is on w63
+23:22:26.814 DEBUG w63 has the keyboard
+23:22:26.829 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 0.46 s
+23:22:26.833 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 1599 770 1576 767
+23:22:26.843 SCREEN w141 of Arbor 0,0 1600×900 (level 4)
+23:22:26.843 SCREEN calendar (w60) 1599,770 1576×767
+23:22:26.843 SCREEN front to back: settings w143 calendar notes terminal textedit safari finder w130 w128 preview w87
+23:22:26.870 MACOS pid 7419 AXResized w63 AXWindow/AXStandardWindow 437 85 723 625
+23:22:26.870 MACOS pid 7419 AXMoved w63 AXWindow/AXStandardWindow 437 85 723 625
+23:22:26.914 SCREEN settings (w63) 437,85 723×625
+23:22:26.917 MACOS pid 7479 AXResized w65 AXWindow/AXStandardWindow 1599 770 708 424
+23:22:26.917 MACOS pid 7479 AXMoved w65 AXWindow/AXStandardWindow 4 35 708 424
+23:22:26.921 SCREEN preview (w65) 4,35 708×424
+23:22:27.042 SCREEN w130 of Mail 1924,877 470×416
+23:22:27.042 SCREEN w128 of Mail 1599,770 1120×630
+23:22:27.052 MACOS pid 10254 AXResized w128 AXWindow/AXStandardWindow 240 72 1120 630
+23:22:27.052 MACOS pid 10254 AXMoved w128 AXWindow/AXStandardWindow 240 72 1120 630
+23:22:27.105 SCREEN w143 of Arbor 428,76 741×643
+23:22:27.105 SCREEN w130 of Mail 565,179 470×416
+23:22:27.105 SCREEN w128 of Mail 240,72 1120×630
+23:22:27.105 SCREEN front to back: w143 settings calendar notes terminal textedit safari finder w130 w128 preview w87
+23:22:27.295 SCREEN w144 of Arbor left the screen
+23:22:27.376 DEBUG stage down
+23:22:27.411 SCREEN w141 of Arbor left the screen
+23:22:28.287 SCREEN -- end 51 act=switch settled=quiet:697 front=63 floating=63,65,128 docked=32,35,46,51,54,60
+23:22:28.685 SCRIPT == 52 dock-icon-preview-2

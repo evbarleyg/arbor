@@ -1,0 +1,76 @@
+60 show-everything: presses ⌃⌥Space
+expected: {'act': 'view', 'settled': 'quiet:909', 'moves': 'any', 'everything': '1', 'returns': '55', 'floating': '63,65,128', 'docked': '32,35,46,51,54,60'}
+FAIL rule L: finder (w32) is out of view: 0% of it is on the display, at 1599,770 1576×767
+FAIL rule L: notes (w54) is out of view: 0% of it is on the display, at 1599,770 1576×767
+FAIL rule L: calendar (w60) is out of view: 0% of it is on the display, at 1599,770 1576×767
+FAIL rule 2: finder (w32) is not back where it was after step 55: 1599,770 1576×767, it was at 12,43 1576×767
+FAIL rule 2: safari (w35) is not back where it was after step 55: 731,43 574×767, it was at 1599,770 1576×767
+FAIL rule 2: textedit (w46) is not back where it was after step 55: 1317,43 271×767, it was at 1599,790 1576×767
+FAIL rule 2: settings (w63) is not back where it was after step 55: 231,352 723×470, it was at 1599,770 723×625
+FAIL rule 2: preview (w65) is not back where it was after step 55: 239,433 708×389, it was at 1599,770 708×424
+FAIL rule 2: w128 of Mail is not back where it was after step 55: 157,433 871×389, it was at 1599,770 1120×630
+FAIL rule 2: w130 of Mail is not back where it was after step 55: 358,485 470×416, it was at 1924,877 470×416
+
+23:22:52.677 SCREEN -- begin 60 show-everything
+23:22:52.677 SCREEN -- text 60 presses ⌃⌥Space
+23:22:52.916 DEBUG commands follow the pointer: a shortcut, pointer idle 1.8 s, keys 6.5 s, focus 2.3 s
+23:22:52.927 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+23:22:52.938 SCREEN w141 of Arbor 0,0 1600×900 (level 4)
+23:22:52.938 SCREEN safari (w35) 731,43 574×767
+23:22:52.938 MACOS pid 6198 AXMoved w35 AXWindow/AXStandardWindow 731 43 574 767
+23:22:52.955 SCREEN textedit (w46) 1317,43 271×767
+23:22:52.955 MACOS pid 6372 AXMoved w46 AXWindow/AXStandardWindow 1317 43 271 767
+23:22:52.964 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 1599 770 1576 767
+23:22:53.003 MACOS pid 7419 AXMoved w63 AXWindow/AXStandardWindow 231 352 723 470
+23:22:53.012 SCREEN calendar (w60) 1599,770 1576×767
+23:22:53.012 SCREEN settings (w63) 231,352 723×470
+23:22:53.020 DEBUG raised w63, which was left hanging over docked windows
+23:22:53.025 MACOS pid 7419 AXFocusedWindowChanged w63 AXWindow/AXStandardWindow 231 352 723 470
+23:22:53.026 MACOS pid 7419 AXMainWindowChanged w63 AXWindow/AXStandardWindow 231 352 723 470
+23:22:53.029 MACOS pid 7479 AXMoved w65 AXWindow/AXStandardWindow 239 433 708 389
+23:22:53.030 SCREEN preview (w65) 239,433 708×389
+23:22:53.030 SCREEN front to back: w143 calendar settings preview safari finder w130 w128 notes terminal textedit w87
+23:22:53.071 MACOS pid 10254 AXMoved w128 AXWindow/AXStandardWindow 157 433 871 389
+23:22:53.075 SCREEN w130 of Mail 358,485 470×416
+23:22:53.075 SCREEN w128 of Mail 157,433 871×389
+23:22:53.076 DEBUG raised w128, which was left hanging over docked windows
+23:22:53.077 MACOS pid 10254 AXFocusedWindowChanged w130 AXSheet/- 358 485 470 416
+23:22:53.079 MACOS pid 10254 AXMainWindowChanged w128 AXWindow/AXStandardWindow 157 433 871 389
+23:22:53.101 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Too small to show: click the tile to zoom in · ⌃⌥G goes there too
+23:22:53.114 MACOS pid 7479 AXFocusedWindowChanged w65 AXWindow/AXStandardWindow 239 433 708 389
+23:22:53.122 SCREEN front to back: w143 calendar preview w130 w128 settings safari finder notes terminal textedit w87
+23:22:53.123 MACOS pid 7479 AXMainWindowChanged w65 AXWindow/AXStandardWindow 239 433 708 389
+23:22:53.124 MACOS pid 7479 AXFocusedWindowChanged w65 AXWindow/AXStandardWindow 239 433 708 389
+23:22:53.126 MACOS pid 7479 AXMainWindowChanged w65 AXWindow/AXStandardWindow 239 433 708 389
+23:22:53.140 SCREEN in front: process 7479 com.apple.Preview
+23:22:53.140 INFO  show-all: showing everything
+23:22:53.145 MACOS workspace didActivate pid 7479 com.apple.Preview regular
+23:22:53.145 MACOS workspace didDeactivate pid 7215 com.apple.iCal regular
+23:22:53.197 MACOS pid 7215 AXApplicationDeactivated
+23:22:53.202 SCREEN front to back: preview w143 calendar w130 w128 settings safari finder notes terminal textedit w87
+23:22:53.202 MACOS pid 7479 AXApplicationActivated
+23:22:53.234 DEBUG focus is on w65
+23:22:53.234 DEBUG w65 has the keyboard
+23:22:53.235 SCREEN w145 of Arbor 558,728 485×38 (level 6)
+23:22:53.235 SCREEN w163 of Arbor 12,43 173×767
+23:22:53.235 SCREEN w152 of Arbor 197,43 97×767
+23:22:53.235 SCREEN w201 of Arbor 306,43 149×767
+23:22:53.235 SCREEN w164 of Arbor 467,43 252×378
+23:22:53.235 SCREEN w142 of Arbor 467,421 252×12
+23:22:53.235 SCREEN w158 of Arbor 185,43 12×767
+23:22:53.235 SCREEN w153 of Arbor 294,43 12×767
+23:22:53.235 SCREEN w202 of Arbor 455,43 12×767
+23:22:53.235 SCREEN w148 of Arbor 719,43 12×767
+23:22:53.235 SCREEN w165 of Arbor 1305,43 12×767
+23:22:53.235 SCREEN w143 of Arbor left the screen
+23:22:53.235 SCREEN front to back: preview calendar w130 w128 settings safari finder notes terminal textedit w87 w163 w152 w201 w164 w142 w158 w153 w202 w148 w165
+23:22:53.268 SCREEN w143 of Arbor 230,424 726×404
+23:22:53.268 SCREEN front to back: w143 preview calendar w130 w128 settings safari finder notes terminal textedit w87 w163 w152 w201 w164 w142 w158 w153 w202 w148 w165
+23:22:53.271 DEBUG peek: the key came up
+23:22:53.594 DEBUG stage down
+23:22:53.598 SCREEN w141 of Arbor left the screen
+23:22:54.603 SCREEN (nothing was seen for 159 ms)
+23:22:54.879 SCREEN -- end 60 act=view settled=quiet:909 moves=any everything=1 returns=55 floating=63,65,128 docked=32,35,46,51,54,60
+23:22:55.224 SCREEN (nothing was seen for 120 ms)
+23:22:55.786 SCREEN (nothing was seen for 284 ms)
+23:22:56.089 SCRIPT == 61 reach-safari

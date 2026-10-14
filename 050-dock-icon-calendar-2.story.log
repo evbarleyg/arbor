@@ -1,0 +1,29 @@
+50 dock-icon-calendar-2: clicks calendar's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:548', 'front': '60', 'floating': '63,65,128', 'docked': '32,35,46,51,54,60'}
+FAIL rule 2: notes (w54) moved, and the step did not name it
+FAIL rule 2: calendar (w60) moved, and the step did not name it
+
+23:22:23.217 SCREEN -- begin 50 dock-icon-calendar-2
+23:22:23.218 SCREEN -- text 50 clicks calendar's icon in the Dock
+23:22:23.862 SCREEN the button is down 635 854
+23:22:24.002 MACOS pid 6789 AXApplicationDeactivated
+23:22:24.006 SCREEN front to back: calendar w143 notes terminal textedit safari finder w130 w128 preview settings w87
+23:22:24.006 SCREEN the button is up 635 854
+23:22:24.006 MACOS workspace didActivate pid 7215 com.apple.iCal regular
+23:22:24.006 MACOS workspace didDeactivate pid 6789 com.apple.Notes regular
+23:22:24.007 SCREEN in front: process 7215 com.apple.iCal
+23:22:24.007 MACOS pid 7215 AXApplicationActivated
+23:22:24.013 DEBUG focus is on w60
+23:22:24.014 DEBUG w60 has the keyboard
+23:22:24.048 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 0.46 s
+23:22:24.085 SCREEN w141 of Arbor 0,0 1600×900 (level 4)
+23:22:24.085 SCREEN calendar (w60) 12,43 1576×767
+23:22:24.107 MACOS pid 7215 AXResized w60 AXWindow/AXStandardWindow 12 43 1576 767
+23:22:24.108 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 12 43 1576 767
+23:22:24.116 MACOS pid 6789 AXMoved w54 AXWindow/AXStandardWindow 1599 770 1576 767
+23:22:24.153 SCREEN notes (w54) 1599,770 1576×767
+23:22:24.153 SCREEN front to back: w143 calendar notes terminal textedit safari finder w130 w128 preview settings w87
+23:22:24.702 DEBUG stage down
+23:22:24.721 SCREEN w141 of Arbor left the screen
+23:22:25.441 SCREEN -- end 50 act=switch settled=quiet:548 front=60 floating=63,65,128 docked=32,35,46,51,54,60
+23:22:25.992 SCRIPT == 51 dock-icon-settings-2

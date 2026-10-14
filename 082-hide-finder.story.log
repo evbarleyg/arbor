@@ -1,0 +1,61 @@
+82 hide-finder: presses ⌘H
+expected: {'act': 'open-close', 'settled': 'quiet:1523', 'moves': '32,35,46,51,54,60,32,35,46,51,54,60', 'leaves': '32', 'floating': '63,65,128', 'docked': '32,35,46,51,54,60'}
+FAIL rule L: safari (w35) left the screen, and the step did not say it would
+FAIL rule 2: settings (w63) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w65) a floating window, moved, and the step did not name it
+FAIL rule 2: w128 of Mail a floating window, moved, and the step did not name it
+FAIL rule 2: w130 of Mail moved, and the step did not name it
+
+23:24:06.916 SCREEN -- begin 82 hide-finder
+23:24:06.916 SCREEN -- text 82 presses ⌘H
+23:24:07.186 INFO  made room for w60
+23:24:07.260 SCREEN in front: process 7479 com.apple.Preview
+23:24:07.261 SCREEN textedit (w46) 1317,43 283×767
+23:24:07.261 SCREEN safari (w35) left the screen
+23:24:07.261 SCREEN front to back: w143 preview w130 w128 settings calendar finder notes terminal textedit w87 w163 w152 w201 w164 w142 w148 w153 w165 w158 w202
+23:24:07.288 SCREEN textedit (w46) 1261,43 283×767
+23:24:07.340 MACOS pid 6198 AXApplicationHidden
+23:24:07.349 MACOS workspace didActivate pid 7479 com.apple.Preview regular
+23:24:07.351 MACOS workspace didDeactivate pid 6198 com.apple.Safari regular
+23:24:07.351 MACOS workspace didHide pid 6198 com.apple.Safari regular
+23:24:07.353 MACOS pid 6372 AXResized w46 AXWindow/AXStandardWindow 1261 43 327 767
+23:24:07.366 MACOS pid 7479 AXApplicationActivated
+23:24:07.370 SCREEN terminal (w51) 317,43 240×769
+23:24:07.370 SCREEN textedit (w46) 1261,43 327×767
+23:24:07.370 SCREEN front to back: preview w143 w130 w128 settings calendar finder notes terminal textedit w87 w163 w152 w201 w164 w142 w148 w153 w165 w158 w202
+23:24:07.395 MACOS pid 6198 AXApplicationDeactivated
+23:24:07.397 MACOS pid 6372 AXMoved w46 AXWindow/AXStandardWindow 1261 43 327 767
+23:24:07.442 SCREEN calendar (w60) 569,43 680×503
+23:24:07.442 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 317 43 240 769
+23:24:07.444 MACOS pid 6372 AXResized w46 AXWindow/AXStandardWindow 1261 43 327 767
+23:24:07.444 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 569 43 680 503
+23:24:07.458 SCREEN settings (w63) 547,352 723×470
+23:24:07.458 MACOS pid 7419 AXMoved w63 AXWindow/AXStandardWindow 547 352 723 470
+23:24:07.492 SCREEN preview (w65) 239,433 708×264
+23:24:07.498 MACOS pid 7479 AXResized w65 AXWindow/AXStandardWindow 555 558 708 264
+23:24:07.498 MACOS pid 7479 AXMoved w65 AXWindow/AXStandardWindow 555 558 708 264
+23:24:07.511 SCREEN preview (w65) 555,558 708×264
+23:24:07.620 SCREEN (nothing was seen for 109 ms)
+23:24:07.620 SCREEN w128 of Mail 157,433 871×264
+23:24:07.645 MACOS pid 10254 AXResized w128 AXWindow/AXStandardWindow 473 558 871 264
+23:24:07.646 MACOS pid 10254 AXMoved w128 AXWindow/AXStandardWindow 473 558 871 264
+23:24:07.687 DEBUG focus is on w65
+23:24:07.689 DEBUG w65 has the keyboard
+23:24:07.719 SCREEN w143 of Arbor 546,549 726×279
+23:24:07.719 SCREEN w130 of Mail 674,610 470×416
+23:24:07.719 SCREEN w128 of Mail 473,558 871×264
+23:24:07.719 SCREEN w163 of Arbor 12,43 167×767
+23:24:07.719 SCREEN w152 of Arbor 191,43 114×767
+23:24:07.719 SCREEN w142 of Arbor 569,546 680×12
+23:24:07.719 SCREEN w148 of Arbor 179,43 12×767
+23:24:07.719 SCREEN w153 of Arbor 305,43 12×767
+23:24:07.719 SCREEN w165 of Arbor 557,43 12×767
+23:24:07.719 SCREEN w158 of Arbor 1249,43 12×767
+23:24:07.719 SCREEN w202 of Arbor left the screen
+23:24:07.719 SCREEN front to back: w143 preview w130 w128 settings calendar finder notes terminal textedit w87 w201 w164 w163 w152 w142 w148 w153 w165 w158
+23:24:07.927 SCREEN w201 of Arbor left the screen
+23:24:07.927 SCREEN w164 of Arbor left the screen
+23:24:07.927 SCREEN front to back: w143 preview w130 w128 settings calendar finder notes terminal textedit w87 w163 w152 w142 w148 w153 w165 w158
+23:24:09.272 SCREEN -- end 82 act=open-close settled=quiet:1523 moves=32,35,46,51,54,60,32,35,46,51,54,60 leaves=32 floating=63,65,128 docked=32,35,46,51,54,60
+23:24:09.495 SCREEN (nothing was seen for 107 ms)
+23:24:10.023 SCRIPT == 83 unhide-finder

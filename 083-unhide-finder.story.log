@@ -1,0 +1,56 @@
+83 unhide-finder: clicks its icon in the Dock
+expected: {'act': 'open-close', 'settled': 'quiet:758', 'moves': '32,35,46,51,54,60,32,35,46,51,54,60', 'comes': '32', 'front': '32', 'returns': '81', 'floating': '63,65,128', 'docked': '32,35,46,51,54,60'}
+FAIL rule 2: settings (w63) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w65) a floating window, moved, and the step did not name it
+FAIL rule 2: w128 of Mail a floating window, moved, and the step did not name it
+FAIL rule 2: w130 of Mail moved, and the step did not name it
+FAIL rule 2: finder (w32) is not back where it was after step 81: 12,43 1576×767, it was at 1599,770 1576×767
+FAIL rule 2: textedit (w46) is not back where it was after step 81: 1599,790 327×767, it was at 1317,43 271×767
+FAIL rule 2: settings (w63) is not back where it was after step 81: 1599,770 723×470, it was at 231,352 723×470
+FAIL rule 2: preview (w65) is not back where it was after step 81: 1599,770 708×264, it was at 239,433 708×388
+FAIL rule 2: w128 of Mail is not back where it was after step 81: 1599,770 871×264, it was at 157,433 871×388
+FAIL rule 2: w130 of Mail is not back where it was after step 81: 1800,822 470×416, it was at 358,485 470×416
+
+23:24:10.045 SCREEN -- begin 83 unhide-finder
+23:24:10.045 SCREEN -- text 83 clicks its icon in the Dock
+23:24:10.586 SCREEN the button is down 131 854
+23:24:10.651 SCREEN the button is up 131 854
+23:24:10.659 SCREEN in front: process 363 com.apple.finder
+23:24:10.661 MACOS workspace didActivate pid 363 com.apple.finder regular
+23:24:10.662 MACOS workspace didDeactivate pid 7479 com.apple.Preview regular
+23:24:10.663 DEBUG focus is on w32
+23:24:10.700 MACOS pid 7479 AXApplicationDeactivated
+23:24:10.796 SCREEN front to back: finder w143 preview w130 w128 settings calendar notes terminal textedit w87 w163 w152 w142 w148 w153 w165 w158
+23:24:10.813 MACOS pid 363 AXApplicationActivated
+23:24:10.820 DEBUG w32 has the keyboard
+23:24:10.878 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 8 stand-ins, 0.46 s
+23:24:10.885 SCREEN w141 of Arbor 0,0 1600×900 (level 4)
+23:24:10.885 MACOS pid 363 AXMoved w32 AXWindow/AXStandardWindow 12 43 1576 767
+23:24:10.891 MACOS pid 6372 AXMoved w46 AXWindow/AXStandardWindow 1599 790 327 767
+23:24:10.902 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 1599 790 240 769
+23:24:10.909 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 1599 770 680 503
+23:24:10.912 SCREEN textedit (w46) 1599,790 327×767
+23:24:10.920 MACOS pid 7419 AXMoved w63 AXWindow/AXStandardWindow 1599 770 723 470
+23:24:10.926 SCREEN finder (w32) 12,43 1576×767
+23:24:10.926 SCREEN calendar (w60) 1599,770 680×503
+23:24:10.926 SCREEN terminal (w51) 1599,790 240×769
+23:24:10.927 MACOS pid 7479 AXMoved w65 AXWindow/AXStandardWindow 1599 770 708 264
+23:24:10.945 SCREEN preview (w65) 1599,770 708×264
+23:24:10.945 SCREEN settings (w63) 1599,770 723×470
+23:24:10.956 MACOS pid 10254 AXMoved w128 AXWindow/AXStandardWindow 1599 770 871 264
+23:24:10.969 SCREEN w130 of Mail 1800,822 470×416
+23:24:10.969 SCREEN w128 of Mail 1599,770 871×264
+23:24:10.990 SCREEN w143 of Arbor 3,34 1594×785
+23:24:10.990 SCREEN w165 of Arbor left the screen
+23:24:10.990 SCREEN w142 of Arbor left the screen
+23:24:10.990 SCREEN w153 of Arbor left the screen
+23:24:10.990 SCREEN w158 of Arbor left the screen
+23:24:10.990 SCREEN w148 of Arbor left the screen
+23:24:10.990 SCREEN front to back: w143 finder preview w130 w128 settings calendar notes terminal textedit w87 w163 w152
+23:24:11.181 SCREEN w163 of Arbor left the screen
+23:24:11.181 SCREEN w152 of Arbor left the screen
+23:24:11.181 SCREEN front to back: w143 finder preview w130 w128 settings calendar notes terminal textedit w87
+23:24:11.556 DEBUG stage down
+23:24:11.586 SCREEN w141 of Arbor left the screen
+23:24:12.439 SCREEN -- end 83 act=open-close settled=quiet:758 moves=32,35,46,51,54,60,32,35,46,51,54,60 comes=32 front=32 returns=81 floating=63,65,128 docked=32,35,46,51,54,60
+23:24:12.862 SCRIPT == 84 reach-textedit

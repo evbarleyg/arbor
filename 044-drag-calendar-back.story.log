@@ -1,0 +1,56 @@
+44 drag-calendar-back: drags calendar away from the top again, a hand's breadth down
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:1109', 'drags': '60', 'front': '60', 'restores': '60', 'place': '60', 'floating': '63,65,128', 'docked': '32,35,46,51,54,60'}
+FAIL rule 3: calendar (w60) was 61 points from where the pointer carried it, 2989 ms into the step
+FAIL rule 5: calendar (w60) is 12,43 1576×503; its own size was 404,115 936×599
+
+23:22:04.415 SCREEN -- begin 44 drag-calendar-back
+23:22:04.415 SCREEN -- text 44 drags calendar away from the top again, a hand's breadth down
+23:22:04.502 SCRIPT drag w60 from 670,55 to 800,130
+23:22:05.071 SCREEN front to back: calendar w143 finder notes w130 w128 preview settings terminal textedit safari w87 w142
+23:22:05.071 SCREEN the button is down 670 55
+23:22:05.307 SCREEN calendar (w60) 16,45 1576×503
+23:22:05.310 DEBUG w60 is being dragged
+23:22:05.311 DEBUG drag of w60: on none
+23:22:05.315 SCREEN calendar (w60) 20,48 1576×503
+23:22:05.384 SCREEN calendar (w60) 24,50 1576×503
+23:22:05.385 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 20 48 1576 503
+23:22:05.432 SCREEN calendar (w60) 24,53 1576×503
+23:22:05.432 SCREEN w143 of Arbor left the screen
+23:22:05.432 SCREEN front to back: calendar finder notes w130 w128 preview settings terminal textedit safari w87 w142
+23:22:05.489 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 24 53 1576 503
+23:22:05.523 SCREEN calendar (w60) 24,54 1576×503
+23:22:05.612 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 24 54 1576 503
+23:22:06.529 SCREEN calendar (w60) 28,54 1576×503
+23:22:06.638 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 37 54 1576 503
+23:22:06.666 SCREEN calendar (w60) 41,54 1576×503
+23:22:06.739 SCREEN calendar (w60) 46,54 1576×503
+23:22:06.755 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 46 54 1576 503
+23:22:06.791 SCREEN calendar (w60) 50,54 1576×503
+23:22:06.856 SCREEN calendar (w60) 54,54 1576×503
+23:22:06.880 SCREEN calendar (w60) 59,54 1576×503
+23:22:06.888 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 59 54 1576 503
+23:22:06.947 SCREEN calendar (w60) 63,54 1576×503
+23:22:07.005 SCREEN calendar (w60) 72,54 1576×503
+23:22:07.015 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 72 54 1576 503
+23:22:07.066 SCREEN calendar (w60) 80,54 1576×503
+23:22:07.116 SCREEN calendar (w60) 85,54 1576×503
+23:22:07.136 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 85 54 1576 503
+23:22:07.404 SCREEN calendar (w60) 86,54 1576×503
+23:22:07.506 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 86 54 1576 503
+23:22:07.854 INFO  dropped w60 on none, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+23:22:07.857 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 85 54 1576 503
+23:22:07.869 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 0.46 s
+23:22:07.872 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 12 43 1576 503
+23:22:07.875 SCREEN calendar (w60) 85,54 1576×503
+23:22:07.875 SCREEN the button is up 800 130
+23:22:07.882 SCREEN w141 of Arbor 0,0 1600×900 (level 4)
+23:22:07.945 SCREEN w143 of Arbor 3,34 1594×521
+23:22:07.945 SCREEN calendar (w60) 12,43 1576×503
+23:22:07.945 SCREEN front to back: w143 calendar finder notes w130 w128 preview settings terminal textedit safari w87 w142
+23:22:08.557 DEBUG stage down
+23:22:08.578 SCREEN w141 of Arbor left the screen
+23:22:09.139 SCREEN -- end 44 act=drag-where-macos-tiles settled=quiet:1109 drags=60 front=60 restores=60 place=60 floating=63,65,128 docked=32,35,46,51,54,60
+23:22:09.513 SCREEN -- chapter Switching between apps, with an arrangement
+23:22:09.523 INFO  trace day-6 ended: 533 lines, trace off
+23:22:09.538 INFO  trace day-7: recording to /tmp/arbor-shell.RMqtI2/home/traces/2026-10-14-232209-day-7.jsonl
+23:22:09.655 SCRIPT == 45 dock-icon-finder-2

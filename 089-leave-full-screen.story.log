@@ -1,0 +1,73 @@
+89 leave-full-screen: presses ⌃⌘F again
+expected: {'act': 'macos-own', 'settled': 'quiet:0', 'moves': 'any', 'leaves': 'any', 'comes': '35', 'front': '35', 'returns': '87', 'floating': '63,65,128,251', 'docked': '32,35,51,54,60'}
+FAIL rule 2: finder (w32) is not back where it was after step 87: 1599,770 501×767, it was at 1599,770 1576×767
+FAIL rule 2: terminal (w51) is not back where it was after step 87: 1599,790 247×769, it was at 1599,790 240×769
+FAIL rule 2: settings (w63) is not back where it was after step 87: 877,352 723×470, it was at 1599,770 723×470
+FAIL rule 2: preview (w65) is not back where it was after step 87: 892,558 708×264, it was at 1599,770 708×264
+FAIL rule 2: w128 of Mail is not back where it was after step 87: 729,558 871×264, it was at 1599,770 871×264
+FAIL rule 2: w130 of Mail is not back where it was after step 87: 930,610 470×416, it was at 1800,822 470×416
+FAIL rule 2: textedit (w251) is not back where it was after step 87: 908,558 673×264, it was at 1599,790 673×439
+
+23:24:29.053 SCREEN -- begin 89 leave-full-screen
+23:24:29.053 SCREEN -- text 89 presses ⌃⌘F again
+23:24:29.245 DEBUG focus report for w35, which does not have the keyboard or takes no space; 0 checks left
+23:24:29.471 SCREEN w274 of Safari 0,0 1600×900
+23:24:29.471 SCREEN safari (w35) left the screen
+23:24:29.471 SCREEN w257 of Safari left the screen
+23:24:29.471 SCREEN front to back: w274
+23:24:29.486 MACOS pid 6198 AXWindowCreated w274 AXWindow/AXUnknown 0 0 1600 900
+23:24:29.496 MACOS pid 6198 AXResized w35 AXWindow/AXStandardWindow 138 31 1324 791
+23:24:29.500 DEBUG w35 is no longer listed
+23:24:29.502 DEBUG w35 left full screen
+23:24:29.545 SCREEN textedit (w251) 908,558 673×264
+23:24:29.545 SCREEN finder (w32) 135,43 501×767
+23:24:29.545 SCREEN preview (w65) 892,558 708×264
+23:24:29.545 SCREEN w130 of Mail 930,610 470×416
+23:24:29.545 SCREEN w128 of Mail 729,558 871×264
+23:24:29.545 SCREEN settings (w63) 877,352 723×470
+23:24:29.545 SCREEN calendar (w60) 908,43 680×503
+23:24:29.545 SCREEN notes (w54) 1599,770 1576×767
+23:24:29.545 SCREEN terminal (w51) 648,43 247×769
+23:24:29.545 SCREEN w87 of Arbor 520,121 560×434
+23:24:29.545 SCREEN front to back: w274 textedit finder preview w130 w128 settings calendar notes terminal w87
+23:24:29.675 MACOS pid 6198 AXMoved w35 AXWindow/AXStandardWindow 138 31 1324 791
+23:24:29.676 MACOS pid 6198 AXMoved w274 AXWindow/AXUnknown 0 0 1600 900
+23:24:30.210 SCREEN (nothing was seen for 180 ms)
+23:24:30.210 SCREEN safari (w35) 138,31 1324×791
+23:24:30.210 SCREEN w274 of Safari left the screen
+23:24:30.210 SCREEN front to back: safari textedit finder preview w130 w128 settings calendar notes terminal w87
+23:24:30.212 MACOS pid 6198 AXUIElementDestroyed w274
+23:24:30.277 DEBUG w32 is listed again
+23:24:30.279 DEBUG w35 is listed again
+23:24:30.280 DEBUG w51 is listed again
+23:24:30.281 DEBUG w54 is listed again
+23:24:30.282 DEBUG w60 is listed again
+23:24:30.283 DEBUG w63 is listed again
+23:24:30.283 DEBUG w65 is listed again
+23:24:30.284 DEBUG w128 is listed again
+23:24:30.285 DEBUG w251 is listed again
+23:24:30.287 DEBUG focus is on w35
+23:24:30.332 SCREEN safari (w35) 138,31 1462×767
+23:24:30.341 SCREEN safari (w35) 12,43 1462×767
+23:24:30.405 SCREEN safari (w35) 12,43 1576×767
+23:24:30.406 MACOS pid 6198 AXResized w35 AXWindow/AXStandardWindow 12 43 1462 767
+23:24:30.407 MACOS pid 6198 AXMoved w35 AXWindow/AXStandardWindow 12 43 1576 767
+23:24:30.407 MACOS pid 6198 AXResized w35 AXWindow/AXStandardWindow 12 43 1576 767
+23:24:30.416 MACOS pid 363 AXMoved w32 AXWindow/AXStandardWindow 1599 770 501 767
+23:24:30.425 MACOS pid 6595 AXMoved w51 AXWindow/AXStandardWindow 1599 790 247 769
+23:24:30.434 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 1599 770 680 503
+23:24:30.439 SCREEN finder (w32) 1599,770 501×767
+23:24:30.439 SCREEN calendar (w60) 1599,770 680×503
+23:24:30.439 SCREEN terminal (w51) 1599,790 247×769
+23:24:30.449 DEBUG w35 has the keyboard
+23:24:30.487 SCREEN w143 of Arbor 3,34 1594×785
+23:24:30.487 SCREEN w144 of Arbor 0,31 1600×791 (level -2147483602)
+23:24:30.487 SCREEN front to back: w143 safari textedit finder preview w130 w128 settings calendar notes terminal w87
+23:24:32.000 SCREEN -- end 89 act=macos-own settled=quiet:0 moves=any leaves=any comes=35 front=35 returns=87 floating=63,65,128,251 docked=32,35,51,54,60
+23:24:32.501 SCREEN -- chapter A click lands on the wallpaper
+23:24:32.514 INFO  trace day-10 ended: 291 lines, trace off
+23:24:32.538 INFO  trace day-11: recording to /tmp/arbor-shell.RMqtI2/home/traces/2026-10-14-232432-day-11.jsonl
+23:24:40.787 SCREEN -- chapter The ways out
+23:24:40.801 INFO  trace day-11 ended: 11 lines, trace off
+23:24:40.824 INFO  trace day-12: recording to /tmp/arbor-shell.RMqtI2/home/traces/2026-10-14-232440-day-12.jsonl
+23:24:41.002 SCRIPT == 90 reach-safari

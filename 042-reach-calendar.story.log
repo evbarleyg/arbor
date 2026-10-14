@@ -1,0 +1,50 @@
+42 reach-calendar: clicks calendar's title bar, or its Dock icon if that is covered
+expected: {'act': 'switch', 'settled': 'quiet:858', 'front': '60', 'floating': '60,63,65,128', 'docked': '32,35,46,51,54'}
+FAIL rule 2: finder (w32) moved, and the step did not name it
+FAIL rule 2: calendar (w60) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w63) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w65) a floating window, moved, and the step did not name it
+FAIL rule 2: w128 of Mail a floating window, moved, and the step did not name it
+FAIL rule 2: w130 of Mail moved, and the step did not name it
+
+23:21:54.460 SCREEN -- begin 42 reach-calendar
+23:21:54.460 SCREEN -- text 42 clicks calendar's title bar, or its Dock icon if that is covered
+23:21:55.286 SCREEN the button is down 635 854
+23:21:55.419 MACOS pid 363 AXFocusedWindowChanged
+23:21:55.429 SCREEN (nothing was seen for 138 ms)
+23:21:55.429 SCREEN the button is up 635 854
+23:21:55.430 SCREEN in front: process 7215 com.apple.iCal
+23:21:55.430 MACOS workspace didActivate pid 7215 com.apple.iCal regular
+23:21:55.434 MACOS workspace didDeactivate pid 363 com.apple.finder regular
+23:21:55.434 MACOS pid 363 AXMainWindowChanged
+23:21:55.461 SCREEN front to back: calendar finder notes w130 w128 preview settings terminal textedit safari w87
+23:21:55.461 MACOS pid 7215 AXApplicationActivated
+23:21:55.461 MACOS pid 363 AXApplicationDeactivated
+23:21:55.462 DEBUG focus is on w60
+23:21:55.462 DEBUG w60 has the keyboard
+23:21:55.489 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 6 stand-ins, 0.46 s
+23:21:55.495 SCREEN w141 of Arbor 0,0 1600×900 (level 4)
+23:21:55.496 MACOS pid 363 AXMoved w32 AXWindow/AXStandardWindow 1599 770 1576 767
+23:21:55.507 SCREEN finder (w32) 1599,770 1576×767
+23:21:55.677 SCREEN (nothing was seen for 170 ms)
+23:21:55.677 SCREEN calendar (w60) 404,115 936×599
+23:21:55.677 MACOS pid 7215 AXResized w60 AXWindow/AXStandardWindow 404 115 936 599
+23:21:55.678 MACOS pid 7215 AXMoved w60 AXWindow/AXStandardWindow 404 115 936 599
+23:21:55.688 SCREEN settings (w63) 437,85 723×625
+23:21:55.693 MACOS pid 7419 AXMoved w63 AXWindow/AXStandardWindow 437 85 723 625
+23:21:55.701 MACOS pid 7479 AXMoved w65 AXWindow/AXStandardWindow 4 35 708 424
+23:21:55.708 SCREEN preview (w65) 4,35 708×424
+23:21:55.905 SCREEN w130 of Mail 1924,877 470×416
+23:21:55.905 SCREEN w128 of Mail 1599,770 1120×630
+23:21:55.931 MACOS pid 10254 AXResized w128 AXWindow/AXStandardWindow 240 72 1120 630
+23:21:55.933 MACOS pid 10254 AXMoved w128 AXWindow/AXStandardWindow 240 72 1120 630
+23:21:55.944 SCREEN w143 of Arbor 395,106 954×617
+23:21:55.944 SCREEN w130 of Mail 565,179 470×416
+23:21:55.944 SCREEN w128 of Mail 240,72 1120×630
+23:21:55.944 SCREEN front to back: w143 calendar finder notes w130 w128 preview settings terminal textedit safari w87
+23:21:56.168 SCREEN w144 of Arbor left the screen
+23:21:56.169 DEBUG stage down
+23:21:56.227 SCREEN w141 of Arbor left the screen
+23:21:56.317 SCREEN w145 of Arbor left the screen
+23:21:57.162 SCREEN -- end 42 act=switch settled=quiet:858 front=60 floating=60,63,65,128 docked=32,35,46,51,54
+23:21:57.577 SCRIPT == 43 drag-calendar-to-top
