@@ -337,8 +337,9 @@ product decisions) answers in place. Do not delete answered questions.
 - What follows from it:
   - `newWindows` stays `"float"`. Nothing docks that nobody docked.
   - **A later start** brings back what the person had docked, each window moving once, because that arrangement is theirs (T60). One rule for the view: **a start takes no window out of view that is in view when Arbor starts.**
-    After a Quit every window is in view, so the start ends showing everything, and ⌃⌥[ goes to where the view was. After a crash, a kill or an update the others are still in the corner: keeping the view hides nothing and moves nothing, so it is kept,
-    unless a window it would hide has come into view meanwhile. A start never sizes a floating window or sends one away.
+    **When a person starts Arbor**, whatever ended the last run (a login item's start and the start after an update are such starts too: an update quits Arbor first), it ends showing everything, which also fetches what a crash left in the corner; the view it stopped in goes on the history, so ⌃⌥[ returns to it, and saved views, names and older history stay.
+    **When the watchdog restarts it** a second after a crash, nobody quit and every window is where it was: arrangement and view are kept and no frame is set. A start never sizes a floating window or sends one away: a window that summon had sent away is an
+    ordinary floating window at a person's start. A display that is gone at the start and plugged in later, or was dormant and is back, comes back showing everything too. A resume after a pause or a returned permission keeps the view, and so does an unplug and replug within one run.
   - Played on the trunk (`arbor-sim replay --frames`: three windows, two docked, one framed, `quit`, `launch`): the first start moves nothing, and quitting gives all three their own frames back.
     The second start frames the window that was framed and sends the other two to the corner, one of them a window that was never docked. **That is a fault against rule 2**: on the board.
 
@@ -374,6 +375,67 @@ product decisions) answers in place. Do not delete answered questions.
 - **Answer** (product owner, 2026-10-14): **`docs/VIABLE.md`.** The half hour becomes the day that a script plays with real apps on hosted Macs at macOS's default settings, many times over, judged by detectors. Its measure is #3's: no jolt, no lost or stuck
   window, nothing moved that the person did not move. Anybody may still try Arbor and say what they saw, and what they say becomes a test; nothing waits for it.
 - A tag still needs what it needed: nothing of severity 1 or 2 known that can be met with the settings as they ship. "New since `main`" no longer excuses an old one.
+
+## Q20: What may Arbor do to a floating window that nobody touched?
+
+- Asked by: the coordinator, 2026-10-14, after the first day played with nine real apps on a hosted Mac at macOS's defaults. A dock squeezed floating windows nobody had touched (one from 1324 to 794 points wide). ⌘H, ⌘M and ⌘Q on a docked window moved floating
+  windows too, and unhiding did not undo it. After framing a window and showing everything, floating windows came back somewhere else than they had been.
+- Context: rule 2 says that nothing moves which the person did not move. The specs on room, the Desktop and the squeeze (F18, F48, F61, scenario 20) say that floating windows are kept on the Desktop. Both cannot hold.
+  Replayed on the trunk in arbor-sim: four windows, two docks, and a mail window that nobody touched goes from 1000 to 714 to 464 points wide.
+- **Answer** (product owner, 2026-10-14): **a floating window's frame is its person's. Arbor never resizes it and never moves it on screen.**
+  1. Shoving and squeezing every other window at the first dock is the very thing issue #3 complains of in the reference.
+  2. The guide has promised all along that other windows "float exactly as they always have".
+  3. Nearly every lost window found so far came from Arbor placing or squeezing a floating window. This removes the family instead of mending its members.
+- **The one thing Arbor does to a floating window:** it takes it out of view when the view leaves the Desktop, and puts it back exactly where it was, same place, same size, one move, when the Desktop is in view again.
+- **The one exception**, because "never lost" outranks "never moved": if the displays have changed meanwhile and that frame would show less than half of the window, it is fitted: moved the least that brings it wholly into view, and made smaller only if it is larger than the display.
+- Floating and docked windows may overlap, as windows on a Mac do. macOS's order says which is in front; the window acted on or switched to comes to the front (rule 4); ⌃⌥D shows everything that floats.
+- **What a person sees at their first dock.** The window docked is the one in the hand or with the keyboard, so it is in front; loose windows that lay there are behind it, untouched. It looks like macOS's own tiling of one window, which people know.
+  A window docked from the menu or by command while another is in front is raised too. **Arbor raises nothing else**, not the other docked windows, not at a dock and not at a move of the view: raising the arrangement would bury a call that somebody keeps in front. Taking a window out of view and
+  bringing it back does not change its place in the order. What says that something happened: the surface behind docked windows, the line round the focused one, "Docked · ⌃⌥↩ frames it". The coach goes straight on to Frame, where the whole heap leaves the view, and to Show Everything, where it is back exactly:
+  that pair is where Arbor pays.
+- **The price, known and accepted:** at Show Everything loose windows may lie over docked ones. (They did before: on the hosted day four floating windows overlapped a docked one by some 400 points for most of the day, because their apps refused the squeeze.) For whoever wants them gathered: IDEAS I14.
+- **There and back is nothing.** Frame and Show Everything; hide and unhide; minimize and restore: when nothing else has changed between, every window is exactly where it was, the docked neighbours at their old sizes.
+  **The gaps depend on who is away, never on the order.** The arrangement is the person's as of their last change to it (a gap or an edge dragged, a window docked, floated, closed or swapped, arrange, layout, undo). What Arbor lends and borrows while windows are away (F61) is worked out afresh from those gaps each time,
+  so the same set of windows always gives the same frames. A move of the view and a switch of macOS Space change nothing. Not kept across a restart of Arbor.
+- How it is built: a setting `floatingWindowsMakeWay`, which ships **false**. True is the behaviour so far, so that the tests written for it keep their meaning and the decision can be undone. With false there is no placing and no squeeze, a window that floats alone is not stretched over the
+  Desktop (F18), and F61 counts the Desktop as not in use: docked windows come first.
+- Overruled, with the setting as it ships: "floating windows make way" (scenario 20), "a window that floats alone takes the Desktop" (F18), the squeeze and all that follows from it (own sizes of squeezed windows in F48, F49, F53), "what Arbor took from the Desktop it gives back while a window floats on it" (F61).
+
+## Q21: What does a pause do to the windows in view?
+
+- Asked by: a fixer, 2026-10-14. The hosted day found that a pause gives no size back: docked windows keep their slots' sizes. F40 says "what you are looking at stays as it is"; rule 5 says a pause gives windows their own earlier sizes back.
+- **Answer** (product owner, 2026-10-14): **rule 5 wins, and a pause has one meaning: as if Arbor had quit, and it comes back.** Every window Arbor sized goes to its own earlier frame by the road Quit takes, one move each, nothing raised. Resume brings arrangement and view back, one move each.
+  The pause Arbor begins by itself for an app in `pauseForApps` is the same pause: one meaning is worth more than a special case in a setting that ships empty. Whoever only wants ⌃⌥ back has Shortcuts Off in “App” (F41), which moves nothing; the guide says so beside pause.
+
+## Q22: macOS zooms a docked window at a double-click on its title bar. What does Arbor do?
+
+- Asked by: the porter of F14, 2026-10-14. With both of Arbor's double-click switches off, macOS zooms or fills the window and Arbor pulls it back a quarter of a second later: two moves, and a fight (rules 1 and 3).
+- **Answer** (product owner, 2026-10-14): **Arbor stands aside.** macOS's frame stays, the window stays docked, its place stays reserved, nobody else moves. It goes back in one move at macOS's own second double-click, or at the next command that lays out.
+  Not "it floats and the neighbours close up": that moves windows nobody touched. The first three times a line on screen says how to get back (F43), if that is cheap.
+
+## Q23: With macOS's own tiling on, whose are the screen's edges?
+
+- Asked by: product owner, 2026-10-14, reading the change that makes Arbor stand aside where macOS tiles (board 1.1).
+- Context: measured on a hosted Mac, macOS takes a dragged window only in the outermost point of the left and right edges and in the menu bar. Arbor's own band along the screen's edges is 12 points deep and previews at once. A real pointer travels:
+  on its way to the last point it crosses the band, so Arbor's preview comes up, goes again, and macOS's follows. People push the pointer against the edge, so nobody can let go within the band on purpose.
+- **Answer** (product owner, 2026-10-14): **while macOS's switch for an edge is on, that whole edge is macOS's.** With "drag to the left or right edge to tile" on, Arbor offers nothing in its left and right bands; with "drag to the menu bar to fill" on, nothing in its top band. No preview, no dock:
+  a window let go there, short of macOS's own point, floats where it is.
+  1. Rule 1 says that Arbor stands aside at the top edge and the side edges "rather than both reacting to one drag". Two previews one after the other are both reacting.
+  2. A preview that shows for a few frames is a flicker, which the rubric fails.
+  3. One sentence can be remembered: "With macOS's tiling on, the left, right and top edges are macOS's." The bottom edge, docked windows' own edges and the keys stay Arbor's.
+- What follows: at macOS's defaults a drag to the left edge does not dock. So the first page of the welcome window says so and offers the fix in one step, which is seen to have worked; declining is respected. **The coach never teaches a move that cannot work on this Mac as it is set**: with macOS's tiling on, its first
+  move is ⌃⌥⌘←, which works at every setting. The line on screen after such a drop names the key that docks at once.
+- For later: IDEAS I15.
+
+## Q24: macOS sweeps the windows aside at a click on the wallpaper. What does Arbor do meanwhile?
+
+- Asked by: the fixer of board 1.5, 2026-10-14, after a probe on a hosted Mac (22 sweeps). The product owner's first design was "Arbor notices from the window list, moves nothing while they are swept, and takes no swept frame for the person's".
+- What the Mac answered: a sweep is only a picture. Accessibility keeps every true frame, while the window list shows the swept ones. A frame set through Accessibility meanwhile is taken, stays invisible, does not end the sweep, and the window comes back at the new frame in one motion.
+  Arbor ended all ten cases tried rightly (idle, close, dock, zoom, focus, pause, Quit). The Dock announces the beginning and the end, 0.2 s late. **The real fault:** a click on the strip of a swept window, the natural way back, that slips by 3 points: the window list jumps back while the button is
+  down, and Arbor takes that for a drag by hand. Strips lie at the display's edges, which are drop zones, so a mere click can dock a floating window.
+- **Answer** (product owner, 2026-10-14): **while the windows are swept Arbor goes by Accessibility only, never by the window list.** No drag begins from a press on a swept window: no preview, no "moved by the user". The stage and the pause's rescues ignore swept frames. Shortcuts keep working.
+  "Moves nothing while swept" is withdrawn: putting moves off would make a visible jolt after the windows are back, and moving meanwhile shows nothing.
+- What is Arbor's own (the line round the focused window, tiles, gap handles, the surface) goes with the windows and comes back with them.
 
 ## Decided by the executor
 
@@ -1245,3 +1307,6 @@ One line per product decision made while building, newest last.
 - Product owner, 2026-10-14 (links): the floor is that a link may not cost what ⌃⌥Z cannot bring back. Above it, `arrange`, its styled forms on a whole display, `cycle-layout` and `layout` stay refused where they would cost a saved view or a name, although undo restores them. What takes several links and has a way back each time is not guarded. `arbor://save-view/N` is refused where N is taken.
 - Product owner, 2026-10-14 (`arborctl … > /dev/full`): by design: the exit code says whether Arbor did it, not whether the shell could print it.
 - Product owner, 2026-10-14 (how a claim is run, third lesson): ask for the RIGHT place, not only a whole window; let time pass between two reports a simulator delivers at once; press the keys a person presses, not the commands behind them; after every release add a step that must move something. The replays are under `scripts/replays` on the branch `tools/decision-replays`.
+- Product owner, 2026-10-14 (a first meeting; rule 3): a window Arbor knows nothing about is asked for its size where it stands, and is then moved once to where it ends up, worked out from the size it really took. Never a wrong place: each coordinate goes one way only. Not "it lands at the offered corner and is shifted by what is missing, once in its life": once in its life is a person's first minutes with Arbor, and every run of the gate, which starts from an empty home. Whoever may refuse is asked first and the neighbours move once; a window of fixed size goes straight to the middle of its place.
+- Product owner, 2026-10-14 (`arrange`; rule 3): a first `arrange` plans on paper, asks early only the windows that may refuse, and moves everybody else once. A window that took its first place and refuses the corrected one becomes a tile, the reply says so, nobody else moves again, and the next `arrange` knows. No third plan.
+- Product owner, 2026-10-14 (F14, rule 1): with `titleBarDoubleClick` on, Arbor takes a title bar's double-click only while macOS's own action there is Fill or Zoom, as macOS comes. Whoever chose Minimize or Do Nothing has said what they want, and Arbor stands aside entirely; read afresh at each layout. `doctor` and the settings window's row say so in one line when it applies. The Desktop's double-click is not touched by this.

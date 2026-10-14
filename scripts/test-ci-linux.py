@@ -29,7 +29,16 @@ VERDICT = "linux"
 # On Linux too, but it decides about the Mac and proves nothing about the code.
 NOT_A_CHECK = {"changes"}
 # What CI's Linux jobs run beyond `make check`.
-ALSO = ["make typecheck-mac", "scripts/parity.py --test-log test.log --check", "scripts/test-ci-changes.py"]
+ALSO = ["make typecheck-mac", "scripts/parity.py --test-log test.log --check", "scripts/test-ci-changes.py",
+        "scripts/test-mac-queue.py"]
+# What stands for a command of `make check`: all of these together, or it does not count. The tests are divided among several
+# machines (scripts/fast-tests.py): each cuts out its part, builds it and runs it, and one job holds the parts against the sources.
+INSTEAD = {"swift test": [
+    "scripts/fast-tests.py cut ${{ matrix.part }} ${{ strategy.job-total }}",
+    "swift build --build-tests",
+    "scripts/fast-tests.py run --no-build --log test-${{ matrix.part }}.log --record test-${{ matrix.part }}.record",
+    "scripts/fast-tests.py join --record tests-linux.record test-*.record",
+]}
 JOB = re.compile(r"""^  ["']?([A-Za-z_][\w-]*)["']?:\s*(?:#.*)?$""")
 KEY = re.compile(r"^(\s*)(?:- )?([\w-]+):\s*(.*)$")
 # They only widen when something runs.
@@ -165,6 +174,7 @@ def problems_in(workflow, makefile):
         words = command.split()
         if words[:1] == ["make"] and all(steps_of(makefile, word) is not None for word in words[1:]):
             run |= {step for word in words[1:] for step in steps_of(makefile, word)}
+    run |= {step for step, commands in INSTEAD.items() if all(command in run for command in commands)}
     check = steps_of(makefile, "check")
     if not check:
         found.append("the Makefile has no `check`, or it runs nothing")
@@ -187,6 +197,7 @@ jobs:
     steps:
       - run: ./scripts/ci-step.py lint make lint
       - run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py
+      - run: ./scripts/ci-step.py mac-queue ./scripts/test-mac-queue.py
       - name: Build
         run: ./scripts/ci-step.py --summary 'warning:' build swift build
       - run: ./scripts/ci-step.py typecheck-mac make typecheck-mac
@@ -220,6 +231,8 @@ check: lint build test
 typecheck-mac:
 \t@./scripts/typecheck-mac/check.sh
 """
+WHOLE = "      - run: ./scripts/ci-step.py --log test.log test swift test\n"
+DIVIDED = "".join(f"      - run: ./scripts/ci-step.py x ./{command}\n".replace("./swift", "swift") for command in INSTEAD["swift test"])
 SMOKE = "      - run: ./scripts/ci-step.py smoke ./scripts/smoke.sh\n"
 NEEDS = "needs: [linux-a, linux-b]"
 CONDITION = NEEDS + "\n    if: ${{ !cancelled() }}"
@@ -272,6 +285,10 @@ TABLE = [
     ("runs `scripts/smoke.sh && ./scripts/new.sh`", "a new step on an old line", GOOD, changed("smoke.sh\n", "smoke.sh && ./scripts/new.sh\n", MAKEFILE)),
     ("runs `swift test`", "the tests run only on the Mac", changed("test swift test", "test true").replace("- run: swift build", "- run: swift test"), MAKEFILE),
     ("runs `swift test`", "only some of the tests run", changed("test swift test", "test swift test --filter Geometry"), MAKEFILE),
+    (None, "the tests are divided among machines", changed(WHOLE, DIVIDED), MAKEFILE),
+    ("runs `swift test`", "divided, and nobody counts them afterwards", changed(WHOLE, "".join(DIVIDED.splitlines(True)[:3])), MAKEFILE),
+    ("runs `swift test`", "divided, and built, and not run", changed(WHOLE, "".join(DIVIDED.splitlines(True)[:2] + DIVIDED.splitlines(True)[3:])), MAKEFILE),
+    ("runs `swift test`", "divided, and a part's failure is thrown away", changed(WHOLE, DIVIDED.replace(".record\n", ".record || true\n", 1)), MAKEFILE),
     ("lint-a.py", "lint was dropped", changed("      - run: ./scripts/ci-step.py lint make lint\n", ""), MAKEFILE),
     ("lint-a.py", "lint is only printed", changed("lint make lint", "lint make lint -n"), MAKEFILE),
     ("runs `scripts/lint-b.py`", "a lint that make check runs by another way", GOOD,

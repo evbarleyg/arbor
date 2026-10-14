@@ -44,4 +44,4 @@ every restart, update or crash.
 3. `b` unknown to the server at launch: dropped, as today.
 4. `b` known at launch, closed unseen, then a Space switch: dropped, invariants hold.
 5. A reused number belonging to another app is dropped (A07's test still passes).
-6. `make check` passes. Real Mac: dock a window, move to another Space, restart Arbor, come back.
+6. `make check` passes. On a hosted Mac, by script: dock a window, go to another Space with ⌃→, restart Arbor, come back: the window is in its place (`lost`, `moved-unasked`).

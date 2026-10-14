@@ -116,6 +116,8 @@ Setting `makeRoom` (default on; advanced: nobody should need it). Off is today's
 | Notes, Desktop, Calendar, Safari (1380 for four) | tile, 345, tile, tile | tile (312), 80, tile (414), 574: the window docked last is in view; no two of these fit beside the rest |
 | Notes, Desktop, Safari, Mail (500) | tile, 345, tile, tile | tile (226), 80, 574, 500 |
 
+**Changed on 2026-10-14 by the product owner (QUESTIONS Q20):** floating windows are left where they are, so they need no room on the Desktop: with `floatingWindowsMakeWay` false the Desktop counts as not in use, and docked windows come first. Being built; until it lands the text below is what the trunk does.
+
 ## Design notes
 
 - **Move weights, do not bend the layout.** The tempting place is `LayoutEngine.placeSplit`: raise every child to its need at layout time and leave the tree alone. It breaks the gaps: a `Seam` carries `pointsPerWeight`, and a drag converts points

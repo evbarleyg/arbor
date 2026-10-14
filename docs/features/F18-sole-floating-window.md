@@ -55,6 +55,8 @@ With `soleFloatTakesDesktop` on, for each display by itself:
   windows stay as they were found. (A pause leaves it filling, so on resume there is nothing to do.)
 - **`float`** on a window that floats alone and was taken in hand makes it take the Desktop again; otherwise it says "already floating" as before.
 
+**Overruled on 2026-10-14 by the product owner (QUESTIONS Q20), as Arbor ships:** a floating window's frame is its person's, so a window that floats alone is **not** stretched over the Desktop. What this spec describes happens only with `floatingWindowsMakeWay` true. Being built; until it lands the text below is what the trunk does.
+
 ## Design notes
 
 - There is one memory of a window's own frame, and this feature adds none: `Workspace.floating` while it floats, F48's `undockedFrames` while it is docked.

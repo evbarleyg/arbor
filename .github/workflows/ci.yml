@@ -129,6 +129,8 @@ jobs:
       - uses: actions/checkout@v5
       - name: The rules that decide about the macOS job
         run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py
+      - name: The arithmetic of the queue for the Macs
+        run: ./scripts/ci-step.py mac-queue ./scripts/test-mac-queue.py
       - name: Lint (imports a Mac would miss; Mac shell scripts that would change a person's Mac; these jobs)
         run: ./scripts/ci-step.py lint make lint
       - name: Release tooling
@@ -169,25 +171,70 @@ jobs:
       - name: The tools that report all this can also report a failure
         run: ./scripts/ci-step.py tooling python3 scripts/test-tooling.py
 
+  # Half of `swift test` is compiling the tests, on every core; the other half is running them, on one. So the tests are
+  # divided among several machines, each of which compiles only its part, from nothing, and runs it on all of its cores
+  # (scripts/fast-tests.py says how, and why nobody who writes a test need know). To change the number of parts, change
+  # the list.
   linux-tests:
+    name: linux-tests-${{ matrix.part }}
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3, 4]
     runs-on: ubuntu-latest
     container: swift:6.4-noble
-    timeout-minutes: 30
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v5
       - name: Install Python and make for the scripts
         run: apt-get update -qq && apt-get install -y -qq python3 make
       - name: Toolchain
         run: ./scripts/ci-step.py toolchain swift --version
+      - name: Keep this part's tests
+        run: ./scripts/ci-step.py cut ./scripts/fast-tests.py cut ${{ matrix.part }} ${{ strategy.job-total }}
+      - name: Build
+        run: ./scripts/ci-step.py --summary 'Build complete' build swift build --build-tests
       - name: Test
-        run: ./scripts/ci-step.py --summary 'Test run with|skipped' --log test.log test swift test
+        run: ./scripts/ci-step.py --summary ' tests of | slowest files' test ./scripts/fast-tests.py run --no-build --log test-${{ matrix.part }}.log --record test-${{ matrix.part }}.record
+      - name: Hand over what ran
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-tests-${{ matrix.part }}
+          path: |
+            test-${{ matrix.part }}.log
+            test-${{ matrix.part }}.record
+          if-no-files-found: warn
+          retention-days: 7
+
+  # What needs all the parts: that between them they ran every test, each once, and parity.
+  linux-parity:
+    needs: [linux-tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: linux-tests-*
+          merge-multiple: true
+      - name: No test was lost, none ran twice
+        run: ./scripts/ci-step.py join ./scripts/fast-tests.py join --record tests-linux.record test-*.record
+      - name: One log of all parts
+        run: cat test-*.log > test.log
       - name: Parity (no shipped feature may break; FEATURES.md must be current)
         run: ./scripts/ci-step.py parity python3 scripts/parity.py --test-log test.log --check
+      - name: Keep the record of which test ran on Linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-linux
+          path: tests-linux.record
+          retention-days: 7
 
   # The verdict. It runs whatever became of the others: by default a failure among them would leave it
   # skipped, which reads as "nothing against it". Only when the whole run is cancelled is there no verdict.
   linux:
-    needs: [linux-lint, linux-typecheck-mac, linux-sim, linux-tests]
+    needs: [linux-lint, linux-typecheck-mac, linux-sim, linux-tests, linux-parity]
     if: ${{ !cancelled() }}
     runs-on: ubuntu-latest
     timeout-minutes: 5

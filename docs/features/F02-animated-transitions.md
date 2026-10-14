@@ -69,7 +69,7 @@ look first, and with pictures as a second look. Criterion 4 ("Manual") is replac
    the right edge), and a window entering starts from its projected frame.
 2. With `animationDuration: 0` no transition is produced.
 3. Final window frames are identical with and without animation (existing tests unchanged).
-4. Manual: zooming looks continuous; ⌃⌥Space twice in quick succession does not leave stray panels.
+4. (was "Manual"; board, section 5) A hosted Mac films `shots-F02.sh` with the stage's own log of frames. Measured: length, curve, cadence, hand-over, nothing stray (`docs/VIABLE.md`, section 8), also with ⌃⌥Space twice in quick succession. Judged from the film against `docs/POLISH.md`: no flicker, one motion.
 5. `make check` passes.
 
 ## Shipped (2026-10-14, `feat/F02-transitions`)

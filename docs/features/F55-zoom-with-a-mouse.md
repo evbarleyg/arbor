@@ -29,7 +29,7 @@ Pinch is how TrellisWM and Arbor are meant to feel, and a Mac mini, Mac Studio o
 
 1. Interpreter tests: notches and continuous travel give the expected steps; momentum phases give none; a gesture claimed at its start stays claimed when the keys go up.
 2. Without the keys, over an app window, nothing is swallowed.
-3. Manual: a wheel mouse steps in and out toward the pointer; scrolling in apps is unaffected and no slower.
+3. (was "Manual"; board, section 5) On a hosted Mac, wheel events posted without phases: ⌃⌥ + a notch steps in and out toward the pointer; scrolls without the keys reach the witness, no more than 10 ms late (`input-held`). With macOS's own "scroll gesture with modifier keys to zoom" switched on by script, ⌃⌥ + scroll steps Arbor's view and leaves the screen's zoom alone.
 
 ## Shipped / Not shipped
 

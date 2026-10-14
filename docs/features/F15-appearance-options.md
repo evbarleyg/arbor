@@ -46,7 +46,7 @@ nothing else: never logged, never in a trace. The measure: two windows of one ap
 2. Scenario tests: the backdrop shape matches the docked slots after dock,
    zoom, float and close.
 3. Tile colour follows `appColours` / `appColourAmount`.
-4. Manual: dim and blur look right in light and dark mode and never block clicks.
+4. (was "Manual"; board, section 5) On a hosted Mac, `shots-F15.sh` in light, dark and increased contrast: the pictures are judged against `docs/POLISH.md`; a click and a drag on a Desktop icon under the surface arrive as without Arbor (`input-held`).
 5. `make check` passes.
 
 ## Shipped / Not shipped

@@ -1,33 +1,95 @@
 #!/bin/bash
-# Runs a script from this repository on a real Mac and brings back what it produced.
+# Runs a script from this repository on a real Mac and brings back what it produced. Or several scripts.
 #
-#   scripts/mac-shell/run.sh <script> [ref]
+#   scripts/mac-shell/run.sh [--macs N] [--on macos-15] [--bare] [--priority N] [--no-preflight "<why>"] <script>… [ref]
 #   scripts/mac-shell/run.sh scripts/mac-shell/shots-demo.sh
+#   scripts/mac-shell/run.sh scripts/mac-shell/shots-F10.sh scripts/mac-shell/shots-F12.sh scripts/mac-shell/shots-F43.sh
 #
-# Starts the "Mac shell" workflow (.github/workflows/mac-shell.yml) on <ref> (a branch; default: the
+# NOTHING STARTS THAT LINUX CAN ALREADY REFUTE. The commit must have been through scripts/mac-shell/preflight.sh: lint, build, the type-check of the
+# macOS-only code and the headless tests (none of it needed while the code is the trunk's), and a rehearsal of each script against the fake Mac.
+# Where there is a `swift`, run.sh runs it itself. Where there is none it says what to run where there is one, and exits with 96.
+#   --no-preflight "<why>"   start it all the same, and say why: the reason is printed, and stands in the run's title for everybody to read.
+# It applies to the branch that is checked out: of another ref run.sh cannot know more than GitHub does.
+#
+# SEVERAL SCRIPTS IN ONE RUN share one Mac, one checkout and one build, and wait for a Mac once: GitHub lends the repository five at a
+# time (`make mac-queue`), so three scripts in one run are back sooner than three runs, and leave four Macs to the others. They
+# run one after the other, each gets its turn whatever became of the one before, and what each said and left comes back in a folder of
+# its own: .mac-shell/<first script>-<run id>/1-<script>/, 2-<script>/, …, with a line for each in summary.txt. At most four to a Mac
+# (each may take twenty minutes); more are shared out among as many Macs as that takes.
+#   --macs N    share the scripts out among N Macs, which work side by side: for scripts that take long. What the second Mac brings
+#               back is in …/mac-2/. ONE script and --macs N: every Mac runs it, and finds in $MAC_SHELL_SHARE which part is
+#               its own, "2/3" on the second of three; only for a script that looks there (compat.sh does).
+#   --on KIND   another of GitHub's Macs than macos-26: macos-15, macos-14 or macos-15-intel. They come out of the same five.
+#   --bare      no toolchain and no build: half a minute saved for a script that only asks the Mac something.
+#   --priority N   GitHub hands its Macs out in no particular order, so the order is kept here, before the run is started: waiting
+#               here costs nobody anything. 1 starts at once: a fault on real windows, a merge train. 2 waits while three or
+#               more jobs are waiting for a Mac. 3 (the default) waits while any is: pictures, features, whatever can wait.
+#               And whatever the priority, it waits while two jobs for <ref> (3: one) are running or waiting already.
+#
+# Starts the "Mac shell" workflow (.github/workflows/mac-shell.yml) for <ref> (a branch; default: the
 # current one, which must be pushed: the Mac runs what GitHub has), waits for it, fetches the branch
 # the workflow pushed its output to into .mac-shell/<script>-<run id>/ in this worktree, deletes that branch,
-# and prints the folder, the exit code and the end of the output. Exits with the script's exit code, or with
-# 97 (could not start), 98 (timed out) or 99 (the run produced no output).
+# and prints the folder, the exit code and the end of the output. Exits with the script's exit code (of several: the first that is
+# not 0), or with 96 (not through the pre-flight), 97 (could not start), 98 (timed out) or 99 (the run produced no output).
 #
 # Needs only git and `gh api` (REST), so it works where logs and artifacts cannot be downloaded.
 # See "Seeing the real app from anywhere" in docs/TESTING.md.
 #
 # The output branch is mac-shell-out/<tag>, and the tag names the ref and the script, not the run: some
 # environments may push but not delete branches, and there each run replaces the last one's output
-# instead of adding a branch. So do not start the same script on the same ref twice at once.
+# instead of adding a branch. Starting the same scripts for the same ref again cancels the run that is still under way.
 #
 # Environment: MAC_SHELL_TIMEOUT  seconds to wait for the run (default 2700)
 #              MAC_SHELL_TAIL     lines of output.txt to print (default 40)
+#              ARBOR_MAC_PRIORITY as --priority
 #              MAC_SHELL_TAG      another tag (letters, digits, . _ -; at most 40)
+#              MAC_SHELL_WORKFLOW_REF   the branch whose mac-shell.yml runs (default: swarm/trunk if there is one, else main).
+#                                 One for everybody, whatever <ref> is: a run can read only the caches of the branch its workflow is
+#                                 from, so this is what lets it start with the toolchain, and the build, of somebody else's run.
+#                                 Name your own branch after changing the workflow or .github/actions.
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 97
 
-script=${1:?usage: scripts/mac-shell/run.sh <script> [ref]}
-ref=${2:-$(git rev-parse --abbrev-ref HEAD)}
+usage="usage: scripts/mac-shell/run.sh [--macs N] [--on macos-15] [--bare] [--priority N] [--no-preflight \"<why>\"] <script>… [ref]"
+macs="" ref="" kind=macos-26 bare=false priority=${ARBOR_MAC_PRIORITY:-3} unchecked=""
+scripts=()
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --macs) macs=${2:?$usage}; shift ;;
+    --on) kind=${2:?$usage}; shift ;;
+    --bare) bare=true ;;
+    --priority) priority=${2:?$usage}; shift ;;
+    --no-preflight) unchecked=${2:?$usage}; shift ;;
+    -*) echo "$usage" >&2; exit 97 ;;
+    *.sh) scripts+=("${1#./}") ;;
+    # The one word that is no script, and only in the last place: a script's name with a slip in it must not pass for a branch.
+    *) [ $# -eq 1 ] || { echo "run.sh: '$1' is neither a script (*.sh) nor, in the last place, a ref" >&2; exit 97; }; ref=$1 ;;
+  esac
+  shift
+done
+[ ${#scripts[@]} -gt 0 ] || { echo "$usage" >&2; exit 97; }
+case "$macs" in *[!0-9]* | 0) echo "run.sh: --macs takes a number, 1 or more" >&2; exit 97 ;; esac
+case "$priority" in 1 | 2 | 3) ;; *) echo "run.sh: --priority takes 1, 2 or 3" >&2; exit 97 ;; esac
+ref=${ref:-$(git rev-parse --abbrev-ref HEAD)}
 [ "$ref" != HEAD ] || { echo "run.sh: no branch is checked out; name one: run.sh <script> <ref>" >&2; exit 97; }
 limit=${MAC_SHELL_TIMEOUT:-2700}
-script=${script#./}
+script=${scripts[0]}
+
+# Who runs what: one line for each Mac.
+PER_MAC=4
+if [ ${#scripts[@]} -eq 1 ]; then
+  macs=${macs:-1}
+  shares=$(for ((mac = 0; mac < macs; mac++)); do echo "$script"; done)
+else
+  macs=${macs:-$(((${#scripts[@]} + PER_MAC - 1) / PER_MAC))}
+  [ "$macs" -le ${#scripts[@]} ] || macs=${#scripts[@]}
+  [ $(((${#scripts[@]} + macs - 1) / macs)) -le $PER_MAC ] \
+    || { echo "run.sh: ${#scripts[@]} scripts are more than $PER_MAC each for $macs Macs" >&2; exit 97; }
+  # Dealt out like cards, so that neighbours in the list, which tend to be alike, do not all land on one Mac.
+  shares=$(for ((mac = 0; mac < macs; mac++)); do
+    for ((index = mac; index < ${#scripts[@]}; index += macs)); do printf '%s ' "${scripts[index]}"; done; echo
+  done | sed 's/ $//')
+fi
 
 repo=$(git remote get-url origin | sed -E 's#^(https://[^/]*/|git@[^:]*:|ssh://[^/]*/)##; s#\.git$##; s#/$##')
 api() { gh api "$@"; }
@@ -35,25 +97,70 @@ fail() { echo "run.sh: $1" >&2; exit "${2:-97}"; }
 
 # What runs is what GitHub has at <ref>, so catch a forgotten push before a Mac is started.
 remote=$(api "repos/$repo/commits/$ref" --jq .sha 2>/dev/null) || fail "GitHub has no ref '$ref' in $repo; push it first"
-api "repos/$repo/contents/$script?ref=$remote" --jq .path >/dev/null 2>&1 \
-  || fail "GitHub has no file '$script' at $ref (${remote:0:7}); commit and push it first"
+for each in "${scripts[@]}"; do
+  case "$each" in *[!A-Za-z0-9._/-]*) fail "'$each': a script's path may hold letters, digits, dots, dashes, underscores and slashes" ;; esac
+  api "repos/$repo/contents/$each?ref=$remote" --jq .path >/dev/null 2>&1 \
+    || fail "GitHub has no file '$each' at $ref (${remote:0:7}); commit and push it first"
+done
 if [ "$ref" = "$(git rev-parse --abbrev-ref HEAD)" ]; then
   [ "$remote" = "$(git rev-parse HEAD)" ] || fail "$ref is at ${remote:0:7} on GitHub but $(git rev-parse --short HEAD) here; push first"
   [ -z "$(git status --porcelain -- scripts Sources Package.swift)" ] \
     || echo "run.sh: note: uncommitted changes under scripts/ or Sources/ will not be part of this run" >&2
 fi
 
+home=${MAC_SHELL_WORKFLOW_REF:-}
+for candidate in swarm/trunk main; do
+  [ -n "$home" ] || ! api "repos/$repo/contents/.github/actions/mac-setup/action.yml?ref=$candidate" --jq .path >/dev/null 2>&1 || home=$candidate
+done
+# Neither has the shared set-up yet: as it was before there was one.
+home=${home:-$ref}
+if [ "$home" != "$ref" ] && ! git diff --quiet "origin/$home" HEAD -- .github/workflows/mac-shell.yml .github/actions 'scripts/ci-*' 2>/dev/null; then
+  echo "run.sh: note: the workflow and its set-up are $home's, not this branch's, which differ (MAC_SHELL_WORKFLOW_REF=$ref runs these)" >&2
+fi
+
 slug() { printf '%s' "$1" | tr -c 'A-Za-z0-9_-' '-' | cut -c "1-$2"; }
 name=$(slug "$(basename "$script" .sh)" 16)
-tag=${MAC_SHELL_TAG:-$(slug "$ref" 23).$name}
+[ ${#scripts[@]} -eq 1 ] || name=$(slug "$name" 13)-x${#scripts[@]}
+[ "$kind" = macos-26 ] || name=$(slug "$name" 9)-${kind#macos-}
+tag=${MAC_SHELL_TAG:-$(slug "$ref" 21).$name}
+
+# What Linux can say, it says first.
+if [ -n "$unchecked" ]; then
+  echo "without the pre-flight: $unchecked"
+elif [ "$ref" = "$(git rev-parse --abbrev-ref HEAD)" ] && [ "$(uname -s)" = Linux ]; then
+  if ! scripts/mac-shell/preflight.sh --check "${scripts[@]}" > /dev/null; then
+    if command -v swift > /dev/null 2>&1; then
+      scripts/mac-shell/preflight.sh "${scripts[@]}" || fail "the pre-flight failed: no Mac for what Linux can already refute (--no-preflight \"<why>\" if it must be)" 96
+    else
+      scripts/mac-shell/preflight.sh --check "${scripts[@]}" >&2
+      echo "run.sh: there is no swift here. Where there is one, in this folder:  scripts/mac-shell/preflight.sh ${scripts[*]}" >&2
+      fail "not started (--no-preflight \"<why>\" if it must be)" 96
+    fi
+  fi
+fi
+
+# Its turn. What cannot be found out does not hold anything up.
+start=$(date +%s)
+told=""
+while :; do
+  why=$(python3 scripts/mac-queue.py --repo "$repo" --turn "$priority" --for "$ref" 2>/dev/null)
+  [ $? -eq 4 ] || break
+  [ $(($(date +%s) - start)) -le "$limit" ] || fail "not started after ${limit}s: $why" 98
+  [ "$why" = "$told" ] || echo "holding back: $why"
+  told=$why
+  sleep "${MAC_SHELL_POLL:-30}"
+done
 
 # The dispatch call does not say which run it started: it is the one newer than the newest so far
 # whose title carries the tag.
 runs="repos/$repo/actions/workflows/mac-shell.yml/runs?event=workflow_dispatch&per_page=30"
 newest=$(api "$runs" --jq '.workflow_runs[0].id // 0') || fail "cannot list the workflow's runs"
 api -X POST "repos/$repo/actions/workflows/mac-shell.yml/dispatches" \
-  -f ref="$ref" -f "inputs[script]=$script" -f "inputs[tag]=$tag" >/dev/null || fail "could not start the workflow on $ref"
-echo "started $script at $ref (${remote:0:7}), tag $tag"
+  -f ref="$home" -f "inputs[ref]=$ref" -f "inputs[script]=${scripts[*]}" -f "inputs[tag]=$tag" \
+  -f "inputs[runner]=$kind" -F "inputs[bare]=$bare" -f "inputs[unchecked]=$(printf '%s' "$unchecked" | tr -c 'A-Za-z0-9 .,:_/-' ' ' | cut -c 1-80)" \
+  -f "inputs[macs]=$([ "$macs" -eq 1 ] || echo "$shares" | sed 's/.*/"&"/' | paste -sd, - | sed 's/.*/[&]/')" >/dev/null \
+  || fail "could not start the workflow of $home for $ref"
+echo "started ${scripts[*]} at $ref (${remote:0:7}), tag $tag$([ "$macs" -eq 1 ] || echo ", on $macs Macs")"
 
 start=$(date +%s)
 run=""
@@ -84,33 +191,52 @@ annotations() {
   done
 }
 
-# The branch may hold an earlier run's output; the commit message says whose it is.
-branch="mac-shell-out/$tag"
-git fetch --quiet --no-tags origin "+refs/heads/$branch:refs/mac-shell/$tag" 2>/dev/null
-case "$(git log -1 --format=%s "refs/mac-shell/$tag" 2>/dev/null)" in
-  *"(run $run)") ;;
-  *)
-    git update-ref -d "refs/mac-shell/$tag" 2>/dev/null
-    echo "the run pushed no output; its annotations:"
-    annotations
-    exit 99 ;;
-esac
-directory=".mac-shell/$name-$run"
-mkdir -p "$directory"
-git archive "refs/mac-shell/$tag" | tar -x -C "$directory"
-git update-ref -d "refs/mac-shell/$tag"
-api -X DELETE "repos/$repo/git/refs/heads/$branch" >/dev/null 2>&1 \
-  || echo "(this environment may not delete branches: $branch stays until the next run replaces it)"
+# bring_back <tag> <folder>: what one Mac pushed. The branch may hold an earlier run's output; the commit message says whose it is.
+bring_back() {
+  local branch="mac-shell-out/$1"
+  git fetch --quiet --no-tags origin "+refs/heads/$branch:refs/mac-shell/$1" 2>/dev/null
+  case "$(git log -1 --format=%s "refs/mac-shell/$1" 2>/dev/null)" in
+    *"(run $run)") ;;
+    *) git update-ref -d "refs/mac-shell/$1" 2>/dev/null; return 1 ;;
+  esac
+  mkdir -p "$2"
+  git archive "refs/mac-shell/$1" | tar -x -C "$2"
+  git update-ref -d "refs/mac-shell/$1"
+  api -X DELETE "repos/$repo/git/refs/heads/$branch" >/dev/null 2>&1 \
+    || echo "(this environment may not delete branches: $branch stays until the next run replaces it)"
+}
 
-code=$(cat "$directory/exit-code.txt" 2>/dev/null)
+directory=".mac-shell/$name-$run"
+code="" missing=0
+for ((mac = 1; mac <= macs; mac++)); do
+  if [ "$macs" -eq 1 ]; then from=$tag into=$directory; else from=$tag.$mac into=$directory/mac-$mac; fi
+  if ! bring_back "$from" "$into"; then
+    missing=$((missing + 1))
+    continue
+  fi
+  its=$(cat "$into/exit-code.txt" 2>/dev/null)
+  [ "$macs" -eq 1 ] || echo "Mac $mac: exit code ${its:-unknown (cut off)}: $(echo "$shares" | sed -n "${mac}p")"
+  case "$code" in "" | 0) code=$its ;; esac
+  [ -n "$its" ] || missing=$((missing + 1))
+done
+if [ ! -d "$directory" ]; then
+  echo "the run pushed no output; its annotations:"
+  annotations
+  exit 99
+fi
+
 echo
-echo "--- end of $directory/output.txt"
-tail -n "${MAC_SHELL_TAIL:-40}" "$directory/output.txt" 2>/dev/null
-echo "---"
+if [ ${#scripts[@]} -eq 1 ] && [ "$macs" -eq 1 ]; then
+  echo "--- end of $directory/output.txt"
+  tail -n "${MAC_SHELL_TAIL:-40}" "$directory/output.txt" 2>/dev/null
+  echo "---"
+else
+  cat "$directory"/summary.txt "$directory"/mac-*/summary.txt 2>/dev/null
+fi
 echo "output: $PWD/$directory"
 ls "$directory" | sed 's/^/  /'
-if [ -z "$code" ]; then
-  echo "exit code: unknown (the script was cut off: $conclusion)"
+if [ "$missing" -gt 0 ] || [ -z "$code" ]; then
+  echo "exit code: unknown (cut off, or a Mac brought nothing back: $conclusion)"
   exit 99
 fi
 echo "exit code: $code"

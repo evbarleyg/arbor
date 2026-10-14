@@ -61,15 +61,15 @@ the rule in a pure function with unit tests.
 
 1. H1: a `FakeWindowSystem`-level test is not possible for CGWindowList, so
    keep the decision logic (frame before/after → drag, resize or nothing) in a
-   pure function with unit tests; manual check: drag-to-dock works in Safari,
-   Finder, Terminal, an Electron app (VS Code or Slack) and System Settings.
+   pure function with unit tests; on a hosted Mac (was a manual check; board, section 5): the day's real drags dock Safari,
+   Finder, Terminal, System Settings and an app of another toolkit (`docs/VIABLE.md`, the casts).
 2. H2: a scenario test where a fake window snaps back to its own frame after
    every `setFrame` ends with no more than three enforcements and no
    pending enforcement work.
 3. H3: code review only.
 4. H4: `make e2e-drag` passes on a Mac with Accessibility permission; `make e2e` is unchanged.
-5. H5: unit tests for the edge-proximity rule; manual check that a title-bar
-   double-click on a docked window does not move any seam.
+5. H5: unit tests for the edge-proximity rule; on a hosted Mac a real title-bar
+   double-click on a docked window moves no gap and no neighbour (QUESTIONS Q22; `moved-unasked`).
 6. `make check` passes.
 
 ## Shipped / Not shipped

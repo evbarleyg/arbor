@@ -45,4 +45,4 @@ sentence, and what to do. Nothing is changed without being asked; where a switch
 
 1. Unit tests: each fact alone produces its finding; a clean Mac produces only ✔ lines; unknown values produce nothing.
 2. `doctor` works before Accessibility is granted.
-3. Manual on macOS 14 and 15+: each switch flipped in System Settings changes the finding without restarting Arbor.
+3. (was "Manual"; board, section 5) On a hosted Mac: each switch is written by script and **seen to act** (a drag to the top fills the display, or no longer does); the finding changes without restarting Arbor. On the versions of macOS that hosted runners offer; the notes name them.

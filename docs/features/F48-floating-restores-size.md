@@ -22,6 +22,8 @@ Windows all give a window its previous size back when it leaves a tile, so this 
 - A window docked since Arbor first saw it, with nothing remembered, keeps today's behaviour.
 - Remembered frames are saved with the arrangement and dropped when the window closes.
 
+**Changed on 2026-10-14 by the product owner (QUESTIONS Q20, Q21):** Arbor no longer places or squeezes floating windows (`floatingWindowsMakeWay` ships false), so a floating window has only one frame, its own, and nothing to be given back. A pause gives docked windows their own frames back as Quit does. Being built; until it lands the text below is what the trunk does.
+
 ## Design notes
 
 - `Workspace.undockedFrames: [WindowID: CGRect]?` (optional, so old `state.json` files load with the synthesised decoder). Set in `Workspace.dock` from `floating[window]` before it is cleared, only if nothing is

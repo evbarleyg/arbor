@@ -33,7 +33,7 @@ Reasoned from how AppKit centres alerts over the key or main window; how often i
 ## Acceptance criteria
 
 1. Unit tests for the rule: off screen → centred; half visible → untouched; tiny → untouched; no displays → untouched.
-2. Manual: the `osascript` check above shows the dialog in the middle of the display.
+2. (was "Manual"; board, section 5) On a hosted Mac the `osascript` check above runs by script, and the sampler sees the dialog wholly in view, moved once (`lost`, `jolt`).
 3. Spotlight, menus, tooltips, the Dock and Notification Centre are unaffected (they belong to apps Arbor does not observe, or are on screen).
 
 ## Shipped / Not shipped

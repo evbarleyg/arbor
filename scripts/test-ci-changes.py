@@ -37,6 +37,18 @@ TABLE = [
     (False, "only code that builds on Linux", pull(), dict(files=[CORE, CONTROLLER, TEST, DOC])),
     (False, "the same with a Mac shell script", pull(), dict(files=[CORE, SHOTS])),
     (False, "stand-ins that only Linux compiles", pull(), dict(files=[CORE, "scripts/typecheck-mac/stubs/AppKit/View.swift"])),
+    (False, "the Mac shell workflow and its set-up, which CI's own jobs do not use", pull(), dict(files=[
+        ".github/workflows/mac-shell.yml", ".github/actions/mac-setup/action.yml", ".github/actions/mac-keep-build/action.yml",
+        "scripts/ci-build.sh", "scripts/ci-build-key.sh", "scripts/ci-mtimes.py", "scripts/mac-shell/run.sh"])),
+    (False, "these rules, their table and the tools' self-test, which Linux runs", pull(), dict(files=[
+        "scripts/ci-changes.py", "scripts/test-ci-changes.py", "scripts/test-tooling.py"])),
+    (False, "trunk: the same", TRUNK, dict(files=[".github/workflows/mac-shell.yml", "scripts/ci-changes.py"])),
+    (True, "the script that installs the toolchain in CI's jobs too", pull(), dict(files=["scripts/ci-toolchain.sh"])),
+    (True, "another action", pull(), dict(files=[".github/actions/other/action.yml"])),
+    (True, "the wrapper of every step", pull(), dict(files=["scripts/ci-step.py"])),
+    (False, "the look at the queue for the Macs, and its self-test", pull(), dict(files=["scripts/mac-queue.py", "scripts/test-mac-queue.py"])),
+    (False, "trunk: the same", TRUNK, dict(files=["scripts/mac-queue.py", "scripts/test-mac-queue.py"])),
+    (True, "a script that only sounds like it", pull(), dict(files=["scripts/mac-queue.py.sh"])),
     (True, "the Mac shell script CI runs", pull(), dict(files=[DOC, "scripts/mac-shell/e2e-drag.sh"])),
     (True, "what that script is built on", pull(), dict(files=[DOC, "scripts/mac-shell/lib.sh"])),
     (True, "a helper tool, which only a Mac's tests type-check", pull(), dict(files=[DOC, "scripts/mac-shell/curtain.swift"])),

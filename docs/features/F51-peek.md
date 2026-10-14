@@ -35,7 +35,7 @@ Everything spring-loaded, like ⌘Tab, Exposé's hold-the-key mode and spring-lo
 2. Hold, move the pointer over a window, release: that window is framed; `back` returns to the view before the peek.
 3. Hold and release without moving, or ⎋: the original view, no history entry.
 4. Temporary hot keys are gone after every ending, including the window under the outline closing and Arbor pausing.
-5. Manual: with F02 the whole thing reads as one motion out and one in.
+5. (was "Manual"; board, section 5) A film from a hosted Mac of a peek with real keys: one motion out and one in by the stage's log of frames; judged against `docs/POLISH.md`, "one thing".
 
 ## Shipped (2026-10-14, `feat/F51-peek`)
 

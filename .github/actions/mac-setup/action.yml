@@ -1,0 +1,137 @@
+name: Set up a hosted Mac
+description: >
+  The newest Xcode, the Swift release the project is built with, and (if asked for) the build folder of an earlier job to build
+  upon. Hosted Macs are few, and without this every job spends its first three minutes on what the job before it has done.
+
+# What comes out of a cache, and why none of it can turn a red run green:
+#
+#   The toolchain       what swiftly installed, under a key that names the release, the runner's system and the week, so that a new
+#                       patch release arrives within days. A toolchain that does not answer with the right version is thrown away
+#                       and installed afresh.
+#   The build folder    compiler output only. Tests and scripts always run; nothing remembers a result. The key
+#                       (scripts/ci-build-key.sh) names everything that goes into a build: system, Xcode, compiler, manifest
+#                       and the content of every source file. Under another key's folder the build goes on from where that one
+#                       stopped, and scripts/ci-mtimes.py sees to it that every file whose content differs is compiled again.
+#                       The day is part of the key: each day's first build starts from nothing.
+#   Where work is integrated (the pull request from the trunk into main, pushes to main, a release) nothing is to be built
+#   upon: a caller asks for `build-cache: none` there, so that what reaches main has been built from nothing on a Mac.
+#
+# Restore and save are separate steps, not actions/cache's one: that one saves only at the end of a job that passed, and a Mac
+# shell script with one ✘ fails its job. It also saves after the script has had its way with .build.
+
+inputs:
+  build-cache:
+    description: "products: .build as `swift build` leaves it. tests: as `swift build --build-tests` does. none: build from nothing."
+    required: false
+    default: none
+outputs:
+  build-key:
+    description: The key to keep .build under after the build (see mac-keep-build)
+    value: ${{ steps.key.outputs.key }}
+  keep-build:
+    description: "'true' if what this job builds is worth keeping: no cache has it yet"
+    value: ${{ steps.found.outputs.keep }}
+
+runs:
+  using: composite
+  steps:
+    - name: Use the newest Xcode on the runner
+      id: xcode
+      shell: bash
+      run: |
+        xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+        sudo xcode-select -s "$xcode"
+        echo "toolchain=swift-toolchain-v1-6.4-${ImageOS:-macos}-$(uname -m)-$(date -u +%G-%V)" >> "$GITHUB_OUTPUT"
+
+    - name: The toolchain an earlier job installed
+      id: toolchain
+      uses: actions/cache/restore@v4
+      env:
+        SEGMENT_DOWNLOAD_TIMEOUT_MINS: 2 # a download that stalls is given up, and the Mac goes on without
+      with:
+        path: |
+          ~/.swiftly
+          ~/Library/Developer/Toolchains
+        key: ${{ steps.xcode.outputs.toolchain }}
+
+    - name: The Swift release the project is built with
+      id: install
+      shell: bash
+      env:
+        WHOLE: ${{ steps.toolchain.outputs.cache-hit }}
+      run: |
+        # What was put back is used only if all of it came and it answers with the right version. Anything else is thrown away and installed afresh.
+        kept=$("$HOME/.swiftly/bin/swift" --version 2>&1 | sed -nE 's/.*Swift version ([0-9]+\.[0-9]+).*/\1/p' | head -1) || true
+        if [ "$WHOLE" = true ] && [ "$kept" = 6.4 ]; then
+          echo "using the Swift $kept an earlier job installed"
+          echo "$HOME/.swiftly/bin" >> "$GITHUB_PATH"
+          exit 0
+        fi
+        rm -rf "$HOME/.swiftly" "$HOME/Library/Developer/Toolchains"
+        "$GITHUB_ACTION_PATH/../../../scripts/ci-toolchain.sh" 6.4
+        # Nothing, on a runner that comes with that release.
+        if [ -d "$HOME/.swiftly" ]; then
+          echo "installed=true" >> "$GITHUB_OUTPUT"
+          echo "::notice title=toolchain::installed $(du -sm "$HOME/Library/Developer/Toolchains" | cut -f1) MB"
+        fi
+
+    - name: Keep the toolchain for the jobs to come
+      if: steps.install.outputs.installed == 'true'
+      uses: actions/cache/save@v4
+      with:
+        path: |
+          ~/.swiftly
+          ~/Library/Developer/Toolchains
+        key: ${{ steps.xcode.outputs.toolchain }}
+
+    - name: What a build here is made of
+      id: key
+      if: inputs.build-cache != 'none'
+      shell: bash
+      env:
+        KIND: ${{ inputs.build-cache }}
+      run: |
+        # Whatever goes wrong with a cache costs the cache, never the job.
+        if key=$("$GITHUB_ACTION_PATH/../../../scripts/ci-build-key.sh" "$KIND"); then
+          echo "$key" | tee -a "$GITHUB_OUTPUT"
+        else
+          echo "::warning title=build cache::no name for this build, so no cache"
+        fi
+
+    - name: The build folder of an earlier job
+      id: build
+      if: steps.key.outputs.key != ''
+      uses: actions/cache/restore@v4
+      env:
+        SEGMENT_DOWNLOAD_TIMEOUT_MINS: 2
+      with:
+        path: .build
+        key: ${{ steps.key.outputs.key }}
+        restore-keys: ${{ steps.key.outputs.or }}
+
+    - name: Only what has changed is built again
+      id: found
+      if: steps.key.outputs.key != ''
+      shell: bash
+      env:
+        FOUND: ${{ steps.build.outputs.cache-matched-key }}
+        ENOUGH: ${{ steps.key.outputs.enough }}
+      run: |
+        keep=true
+        if [ -n "$FOUND" ] && ! "$GITHUB_ACTION_PATH/../../../scripts/ci-mtimes.py" restore; then
+          echo "::warning title=build cache::could not tell what has changed since $FOUND was built"
+          FOUND=""
+        fi
+        if [ -z "$FOUND" ]; then
+          # Also what a restore that broke off half way has left.
+          rm -rf .build
+          say="none: this job builds from nothing"
+        else
+          # shellcheck disable=SC2254  # a pattern, and meant as one
+          case "$FOUND" in
+            $ENOUGH) keep=false; say="of these very sources ($FOUND)" ;;
+            *) say="of other sources, to build upon ($FOUND)" ;;
+          esac
+        fi
+        echo "keep=$keep" >> "$GITHUB_OUTPUT"
+        echo "::notice title=build cache::$say"

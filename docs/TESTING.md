@@ -326,12 +326,39 @@ arbor_stop 04-after-quit                      # quits, checks that every window 
 scripts/mac-shell/run.sh scripts/mac-shell/shots-F09.sh      # about two minutes; give it a 10 minute timeout
 ```
 
-It starts the "Mac shell" workflow on your branch, waits, fetches the output into
+It starts the "Mac shell" workflow for your branch, waits, fetches the output into
 `.mac-shell/<script>-<run id>/` (ignored by Git), prints the end of `output.txt`, and exits with the script's
 exit code: 0, or 1 when a `check` failed, or 2 when the build or the launch did (`run.sh`'s own: 97 could
 not start, 98 timed out, 99 the run brought no output back). **Look at the pictures**
 and say honestly what you see. `arbor.log` (debug level), `build.log` and
 `output.txt` are in the same folder.
+
+**The Macs are shared.** GitHub lends the whole repository about five at a time, for every contributor's Mac shell runs, CI's
+`macos` and `real-windows` jobs and the release build together. A run that finds none free waits, and that wait counts
+towards `run.sh`'s time limit. So look at the queue before you start many runs, and start them a few at a time when there is one:
+
+```bash
+scripts/mac-queue.py                     # or --minutes 180; it only reads, and takes a few seconds
+```
+
+It lists what is running and waiting now, with branch, script and link, then the waits, run times and Mac minutes of the
+last hour and who used them. The last line is made to grep for, `mean wait: 3 min 20 s over 14 jobs`; above
+five minutes (`--alarm`) a line that starts with `ALARM:` follows and the exit code is 3. `--json` gives the same facts to a script.
+**What a run starts with.** A hosted Mac knows nothing of the project, and used to spend its first three minutes installing the Swift
+release Arbor is built with and building from nothing, in every run. Now a run begins with `.github/actions/mac-setup`, which puts back what an
+earlier run installed and built.
+
+- **A build is named after what goes into it**, not after a commit or a branch (`scripts/ci-build-key.sh`): the system, Xcode, the compiler, the
+  manifest, and Git's hash of `Sources` and of the helper tools. So a branch that only adds a Mac shell script builds nothing, whoever built those
+  sources first. With other sources the newest build of the day is built upon, and only what differs is compiled.
+- **`run.sh` starts the workflow from one branch for everybody** (`swarm/trunk`, else `main`) and tells it which branch to check out, because a run can read only
+  the caches of the branch its workflow is from. After changing `mac-shell.yml` or `.github/actions`, say `MAC_SHELL_WORKFLOW_REF=<your branch>`.
+  The branch under test may be older than all this: the set-up comes with the workflow.
+- **No cache can turn a red run green.** Only compiler output is kept; every script still runs. A checkout stamps every file with the
+  present, which would make SwiftPM compile everything again, so `scripts/ci-mtimes.py` gives a file its earlier time stamp back if, and only if, its
+  content is what was built, and stamps every other file later than anything in the cache (`scripts/test-tooling.py` holds it to that). The chain of
+  builds upon builds is cut every day.
+- The annotation `build cache` on the job says what it found: nothing, a build of other sources, or a build of these very sources.
 
 **Rehearse it first, for nothing**, on Linux (on a Mac it refuses: it tells scripts that the Mac is a throwaway one, and `rm`, `pkill` and the like stay real):
 
@@ -438,6 +465,44 @@ without a Mac" in `collab/README.md`).
 **Three runs per feature should do.** A hosted Mac is slow to come and shared.
 Rehearse the commands in arbor-sim first, put several questions into one script,
 and read the whole output before running again. `bash -n script.sh` catches syntax errors for free.
+
+**Several scripts: one run, not several.** They share one Mac, one checkout and one build, and wait for a Mac once:
+
+```bash
+scripts/mac-shell/run.sh scripts/mac-shell/shots-F10.sh scripts/mac-shell/shots-F12.sh scripts/mac-shell/shots-F43.sh
+scripts/mac-shell/run.sh --macs 2 scripts/mac-shell/compat.sh            # one long script that shares its work out among two Macs
+scripts/mac-shell/run.sh --on macos-15 scripts/mac-shell/e2e.sh          # another macOS: macos-15, macos-14, macos-15-intel
+scripts/mac-shell/run.sh --bare scripts/mac-shell/desktop-facts.sh       # no toolchain, no build: it only asks the Mac something
+```
+
+They run one after the other. Each gets its turn and its own twenty minutes, whatever became of the one before, and starts with an empty
+`mac-shell/`. What comes back is `.mac-shell/<first script>-x3-<run id>/` with a folder for each, `1-shots-F10/`, `2-shots-F12/`, …, holding what a
+run of that script alone would have brought (`output.txt`, `exit-code.txt`, pictures, logs), and `summary.txt` with a line for each. `run.sh` exits with the
+first exit code that is not 0. At most four to a Mac; more are shared out among as many Macs as that takes, or among `--macs N`, whose
+output lies in `mac-1/`, `mac-2/`, …. A script that is given to several Macs by itself finds in `$MAC_SHELL_SHARE` which part is its own
+(`2/3`: the second of three); `compat.sh` takes every Nth app. All kinds of Mac come out of the same five at a time.
+
+**Whose turn it is.** GitHub hands its Macs out in no particular order: a job has been seen to wait eight minutes while later ones started. So
+`run.sh` keeps the order itself, before it starts the run, where waiting takes nobody's place. `--priority 1` (or `ARBOR_MAC_PRIORITY=1`) starts at once: a
+fault on real windows, a merge train, whatever others are blocked by. `2` holds back while three or more jobs are waiting for a Mac. `3`, the default, holds back
+while any is: pictures, features, whatever can wait. Whatever the priority, a branch has at most two jobs running or waiting at a time (`3`: one).
+It says what it is holding back for, and the wait counts towards `MAC_SHELL_TIMEOUT`.
+
+**Nothing takes a Mac that Linux can already refute.** A run that ends in a compiler's error, a typo in the script or a wait for something that never
+comes has held a Mac for minutes to say what Linux says for nothing. So `run.sh` starts nothing that has not been through `scripts/mac-shell/preflight.sh`:
+
+```bash
+scripts/mac-shell/preflight.sh scripts/mac-shell/shots-F09.sh      # where Swift is, e.g. in the container; run.sh does it itself if it finds a swift
+```
+
+- **The code:** `make lint`, `swift build`, `make typecheck-mac` and `swift test`. None of it while `Package.swift`, `Sources`, `Tests`, the stand-ins and the helper
+  tools are what the trunk has, as on a branch that only adds a script.
+- **Each script:** `bash -n`, and a rehearsal (below) that gets to the script's end: exit code 0, or 1 for a check that came out ✘, which may be the very thing the Mac
+  is asked about. On the way it may not have said what is a slip on any machine: a command bash does not know, a variable nobody set, a command Arbor does not
+  know. `lib.sh` goes on after a step that fails, so the exit code alone does not tell. Not needed for a script that is, with `lib*.sh`, what the trunk has.
+- **What has passed is noted** in `.mac-shell/preflight/`, under Git's hash of what was checked and not under a commit: nothing is checked twice, and the note made
+  in a container is found by `run.sh` outside it. What is not committed does not count, and where Git does not work nothing does.
+- **`--no-preflight "<why>"`** starts the run all the same, for a script that needs what the fake Mac lacks. The reason stands in the run's title, for everybody to read.
 
 Where branches cannot be deleted, the output branch
 `mac-shell-out/<ref>.<script>` stays on GitHub and the next run of the same script replaces its content.
@@ -640,7 +705,7 @@ where the title bar was, native tabs, sheets, windows that reopen by themselves.
 in front of the stock apps on the same Macs, which nobody is using:
 
 ```bash
-scripts/mac-shell/run.sh scripts/mac-shell/compat.sh            # 13 apps × 28 steps; what does not fit into 1000 s is reported as not run
+scripts/mac-shell/run.sh --macs 2 scripts/mac-shell/compat.sh   # 13 apps × 28 steps, every second app on the second Mac; what does not fit into 1000 s is reported as not run
 scripts/mac-shell/run.sh scripts/mac-shell/compat-extras.sh     # tabs, sheets, full screen, a growing font: 4 minutes
 ARBOR_APPS_HERE=1 scripts/mac-shell/compat.sh terminal safari   # on your own Mac, if you mean it (see lib-apps.sh): only these apps
 ```

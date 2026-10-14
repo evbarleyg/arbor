@@ -44,7 +44,7 @@ itself), with the user's own bindings in place of the defaults. Any key or click
 3. `messages: "off"` records nothing; `"all"` records every reply.
 4. A rebound shortcut shows the user's keys in messages and in the panel; a removed one is left out of the sentence.
 5. Window titles never appear.
-6. Manual: the capsule is legible on light and dark wallpapers, does not steal focus, and does not appear in a full-screen Space of another app.
+6. (was "Manual"; board, section 5) On a hosted Mac, `shots-F43.sh`: pictures on a light and a dark wallpaper are judged for legibility against `docs/POLISH.md`; a key typed while the line shows arrives in the witness window (`focus`). In another app's full-screen Space it shows only in answer to the person's own key (decided since).
 
 ## Shipped / Not shipped
 

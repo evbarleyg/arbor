@@ -43,7 +43,7 @@ script on a hosted Mac, the stage's own count of frames, a film, the detectors a
    settles on the best-fitting node, including the root and single windows.
 2. Scenario tests: a simulated gesture ends with the same layout as the
    equivalent `zoom`, `in` or `out` command.
-3. Manual: motion follows the fingers smoothly at 60 Hz with eight windows open.
+3. (was "Manual"; board, section 5) On a hosted Mac, posted pinches and scrolls with eight windows open: no two frames of the stage more than 34 ms apart while the fingers move; a film judged against `docs/POLISH.md`.
 4. `make check` passes.
 
 ## Shipped: the input half

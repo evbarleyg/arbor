@@ -32,7 +32,7 @@ Pinching in steps the camera in toward the pointer; pinching out steps out.
 
 1. Interpreter: thresholds, multi-level steps, and phase handling are unit tested.
 2. Interpreter emits nothing for magnification below the threshold.
-3. Manual: ⌥-pinch in on a window frames it; pinch out on the wallpaper shows everything; pinching in apps without ⌥ still zooms the app.
+3. (was "Manual"; board, section 5) On a hosted Mac, pinches posted by `witness.swift` (`input-taps.sh`): ⌥-pinch in on a window frames it; a pinch out on the wallpaper shows everything; a pinch without ⌥ reaches the witness window, no more than 10 ms late (`input-held`). No hosted Mac has a trackpad: the guide says "tried with posted gestures", and nothing about the feature's safety rests on real fingers: every gesture, cancelled ones too, ends with real windows where a command would put them.
 4. `make check` passes.
 
 ## Shipped
