@@ -313,8 +313,10 @@ extension World {
         throw fail("expected close, minimize or zoom, got \(name)")
       }
       let corner = try arguments.point(at: 1)
+      // A function of its own: with the sums written out in the comparison, Swift 6.2 gives up on type-checking it.
+      func distance(_ frame: CGRect) -> CGFloat { abs(frame.minX - corner.x) + abs(frame.minY - corner.y) }
       let nearest = windowIDs(of: pid).compactMap { id in frame(of: id).map { (id, $0) } }
-        .min { abs($0.1.minX - corner.x) + abs($0.1.minY - corner.y) < abs($1.1.minX - corner.x) + abs($1.1.minY - corner.y) }
+        .min { distance($0.1) < distance($1.1) }
       guard let id = nearest?.0, let point = buttonCentre(name, of: id) else {
         throw fail("process \(pid) has no window with a \(name) button")
       }
