@@ -1,0 +1,135 @@
+# Story: someone who zooms about never has to wonder where they are. ⌃⌥M shows the whole arrangement in small with the
+# space in view marked; it stays, and a click in it goes straight to a window. Someone with animation off has it show by itself
+# after every move of the view, also when nobody asked for the move.
+# Reference: A26 (docs/features/F26-minimap.md).
+open Safari
+open Notes
+open Mail
+dock 101 left
+dock 102 right
+# As it ships, nothing appears by itself.
+zoom 101
+expect minimap none
+show-all
+set minimapDuration 0.9
+# Docking from the widest view changes the arrangement, not the view.
+expect minimap none
+zoom 101
+expect minimap 101
+# It goes by itself.
+wait 0.8
+expect minimap 101
+wait 0.2
+expect minimap none
+# A second move takes the first one's place, and the time starts again.
+neighbor right
+expect minimap desktop
+wait 0.6
+neighbor right
+expect minimap 102
+wait 0.6
+expect minimap 102
+wait 0.4
+expect minimap none
+# Everything is on screen then: a small picture of it would say nothing. One that is still up goes.
+zoom 101
+expect minimap 101
+show-all
+expect minimap none
+# The move nobody asked for: the framed window closes, and the one below it fills the view.
+open Xcode
+dock 104 beside 102 bottom
+zoom 102
+wait 1
+close 102
+expect camera 104
+expect minimap 104
+wait 1
+close 104
+# On demand it stays five seconds and takes clicks.
+open Terminal
+dock 105 right
+zoom 101
+wait 1
+minimap
+expect minimap 101
+wait 4.9
+expect minimap 101
+map 105
+expect camera 105
+expect fills 105
+expect ring 105
+expect minimap 105
+# Its job done, it goes like any other.
+wait 1
+expect minimap none
+# A passing one lets clicks through.
+zoom 101
+map 105
+expect fail
+expect camera 101
+wait 1
+# ⌃⌥M again puts it away, and so does a click beside the map.
+minimap
+minimap
+expect minimap none
+minimap
+map beside
+expect minimap none
+expect camera 101
+# The Desktop can be clicked too, and the window floating on it comes back into view.
+expect hidden 103
+minimap
+map desktop
+expect camera desktop
+expect visible 103
+# Held, ⌃⌥M is like a held ⌃⌥Space: hold to look, let go to land. The panel is at 600,690, 240 by 154, on this display.
+wait 1
+zoom 101
+wait 1
+keydown ctrl+opt+m
+wait 8
+expect minimap 101
+cursor 800 780
+wait 0.1
+keyup ctrl+opt+m
+expect camera 105
+expect ring 105
+expect minimap 105
+wait 1
+expect minimap none
+# Let go with the pointer over nothing, it is only put away.
+cursor 300 300
+keydown ctrl+opt+m
+wait 1
+keyup ctrl+opt+m
+expect minimap none
+expect camera 105
+# ⎋ while holding gives up. It is ⌃⌥⎋ then, which would pause Arbor: it does not.
+keydown ctrl+opt+m
+wait 1
+key ctrl+opt+escape
+expect minimap none
+expect hidden 101
+keyup ctrl+opt+m
+expect camera 105
+# Its time does not run out under the pointer.
+key ctrl+opt+m
+cursor 720 780
+wait 30
+expect minimap 105
+cursor 300 300
+wait 5.2
+expect minimap none
+# A tap stays.
+key ctrl+opt+m
+expect minimap 105
+# A pause takes it down at once; resuming is not a move.
+pause
+expect minimap none
+resume
+expect minimap none
+# With nothing docked there is nothing to map.
+float-all
+minimap
+expect fail

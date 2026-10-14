@@ -1,0 +1,64 @@
+# Proposed by the swarm (2026-10-14); the documenter may edit or drop it.
+# Story: on a MacBook Air someone docks Notes on the left and Safari on the right. Neither will go as narrow as a
+# third of the screen (709 and 574 points, measured on the real apps), and a third of the screen lies empty between
+# them. Arbor moves the gaps itself: both are in view, with the empty Desktop as a tile between.
+# Reference: T03 T20 A05, F61.
+open Notes 1000x660 min 709x300
+open Safari 1324x800 min 574x240
+dock 101 left
+dock 102 right
+expect visible 101
+expect visible 102
+expect left-of 101 102
+expect count docked 2
+# The first new window of the day floats where it opened, and nothing jumps for it.
+open Terminal 585x366
+expect visible 101
+expect visible 102
+expect visible 103
+# It is on a Desktop that is a tile, so it shows over the arrangement, in Show Everything too. No docked window becomes a tile for
+# the Desktop's sake: somebody has asked for each of them.
+zoom 101
+show-all
+expect visible 103
+expect visible 102
+expect visible 101
+close 103
+# Squeezing Safari by hand still makes a tile of it, and Arbor does not push back, now or later.
+resize 102 left -150
+expect tile 102
+zoom 101
+back
+expect tile 102
+expect visible 101
+# The hand that squeezed it lets it out again.
+resize 102 left 150
+expect visible 102
+# Whether the Calculator is there before the two are docked makes no difference.
+float 101
+float 102
+open Calculator 230x408
+dock 101 left
+dock 102 right
+expect visible 101
+expect visible 102
+expect visible 104
+close 104
+# Activity Monitor will not go under 740 points: there is not enough for all three, and the ones docked first are tiles.
+open Activity 960x640 min 740x384
+dock 105 right
+expect visible 105
+expect tile 101
+expect tile 102
+# A click on the tile frames Notes as ever.
+zoom 101
+expect fills 101
+show-all
+# Activity Monitor closes: what was taken for it goes back where it came from, and the two have their room again.
+close 105
+expect visible 101
+expect visible 102
+# Notes closes: Safari keeps no more than its half, and the Desktop has the other.
+close 101
+expect visible 102
+expect size 102 702x851

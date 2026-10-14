@@ -1,0 +1,90 @@
+# Story: three windows, one framed. Someone goes from window to window by holding ⌃⌥Space, looking, and letting go;
+# changes their mind twice; and finds that a tap still does what it always did.
+# Reference: T30, A51 (docs/features/F51-peek.md). Window ids start at 101.
+open Safari
+open Notes
+open Mail
+dock 101 left
+dock 102 right
+dock 103 beside 101 bottom
+zoom 101
+cursor 720 450
+# A tap: everything, and it stays.
+key ctrl+opt+space
+expect camera root
+wait 1
+expect camera root
+expect outline none
+back
+expect camera 101
+# A slow press, as of someone who is lost: the outline shows, nothing is chosen, the keys come up within a second.
+# Everything stays.
+keydown ctrl+opt+space
+wait 0.6
+expect outline 101
+keyup ctrl+opt+space
+expect camera root
+expect outline none
+back
+expect camera 101
+# Held: everything at once, and after a moment an outline around the view that was left.
+keydown ctrl+opt+space
+expect camera root
+expect outline none
+wait 0.4
+expect outline 101
+# The outline follows the pointer. Letting go frames what is outlined, and gives it the keyboard.
+cursor 1200 400
+wait 0.1
+expect outline 102
+keyup ctrl+opt+space
+expect camera 102
+expect fills 102
+expect hidden 101
+expect outline none
+expect ring 102
+# One move in history: back is where the peek began.
+back
+expect camera 101
+# Keyboard only: ⌃⌥ are down anyway, so the arrows walk the outline instead of moving the view.
+keydown ctrl+opt+space
+wait 0.4
+key ctrl+opt+down
+expect outline 103
+expect camera root
+keyup ctrl+opt+space
+expect camera 103
+back
+expect camera 101
+# Changing one's mind: ⎋ returns, and does not pause Arbor; so does letting go without choosing.
+keydown ctrl+opt+space
+wait 0.4
+cursor 1210 400
+wait 0.1
+expect outline 102
+key ctrl+opt+escape
+expect camera 101
+expect outline none
+keyup ctrl+opt+space
+expect camera 101
+keydown ctrl+opt+space
+wait 2
+keyup ctrl+opt+space
+expect camera 101
+# Neither left a trace: forward still leads to Mail, which the last `back` came from.
+forward
+expect camera 103
+back
+expect camera 101
+# A click lands at once, with the keys still down.
+keydown ctrl+opt+space
+wait 0.4
+cursor 1200 420
+wait 0.1
+mouse down
+wait 0.1
+mouse up
+wait 0.1
+expect camera 102
+keyup ctrl+opt+space
+expect camera 102

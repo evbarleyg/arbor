@@ -1,0 +1,285 @@
+# How the documenter and executors work together
+
+Arbor is built by two kinds of agents that talk only through this repository.
+
+## Starting a session
+
+Paste one of these into a new Claude Code session in a checkout of this repository:
+
+**Executor**
+
+> You are an executor for Arbor, the macOS window manager in this repository.
+> Read CLAUDE.md and collab/README.md, then run
+> the executor loop: take the top Ready item on collab/BOARD.md that you can
+> do (merging branches under Review counts), build it in your own worktree,
+> prove it with make check, make scenarios and make parity, write a report,
+> merge, push, and update the board. Repeat until the board has nothing you
+> can do. Ask in collab/QUESTIONS.md instead of guessing at product decisions.
+
+**Documenter** (if this session is gone)
+
+> You are the feature documenter for Arbor in this repository. Read CLAUDE.md
+> and collab/README.md, then run the documenter loop: read new reports,
+> questions and board changes, answer, update specs, parity
+> data, scenarios and the changelog, re-order the board, run make parity and
+> commit. You do not write product code or merge branches.
+
+| Role | Who | Owns | Never |
+|---|---|---|---|
+| **Documenter** | One session | What Arbor should do: `docs/features/` specs, `collab/parity.json` entries, `collab/BOARD.md` priorities, `collab/scenarios/`, answers in `collab/QUESTIONS.md`, `CHANGELOG.md` | Writes product code or merges branches |
+| **Executor** | Any coding agent pointed at this repo; several can run at once | Making it so: code, tests, merging branches into `main`, `collab/reports/`, evidence, statuses of the items it works on | Changes priorities or rewrites specs without asking |
+
+The documenter decides **what** and **in what order**; executors decide
+**how** and prove it. When an executor disagrees with a spec, it asks
+(`QUESTIONS.md`) or proposes (`IDEAS.md`) instead of silently doing something else.
+
+## The files
+
+| File | Purpose | Written by |
+|---|---|---|
+| `docs/features/F*.md` | One spec per feature, with acceptance criteria | Documenter (executors edit only `Status:` and the Shipped note) |
+| `collab/parity.json` | Every reference item and Arbor-only feature (A01…), its status, and the tests and real-window steps that prove it | Documenter adds entries; executors update `status`, `branch`, `tests`, `e2e` for items they ship |
+| `docs/FEATURES.md` | Generated from `parity.json` by `make parity`; never edit by hand | `make parity` |
+| `collab/BOARD.md` | The ordered work queue | Documenter orders; executors move items between columns |
+| `collab/QUESTIONS.md` | Questions and answers, numbered Q1, Q2… | Either asks; the documenter (or the maintainer) answers |
+| `collab/IDEAS.md` | Ways to make Arbor better than TrellisWM | Anyone proposes; the documenter promotes ideas into specs |
+| `collab/reports/` | One report per finished work item (template in `templates/report.md`) | Executors (the documenter files reports handed to it by agents it ran) |
+| `collab/scenarios/*.sim` | User journeys with expectations, run in arbor-sim | Documenter |
+| `collab/evidence/` | Output of real-window runs (`make e2e` writes `e2e-latest.txt`) and manual checks | Whoever ran them |
+
+## The loop
+
+### Executor, each work item
+
+1. `git pull`. Read `collab/BOARD.md`, any new `QUESTIONS.md` answers, and the
+   top **Ready** item's spec and reference items.
+2. **Try** the current behaviour before changing it:
+   - `make parity` for the baseline score and anything already broken;
+   - `make scenarios` to run the documenter's user journeys;
+   - `make sim ARGS='…'` to explore;
+   - `make e2e` if your terminal has Accessibility permission (most agents do not; say so in the report).
+3. Move the item to **In progress** on the board with your branch name, in
+   the same commit as your first change.
+4. **Build** it on a branch in your own worktree (see `CLAUDE.md`), with tests
+   for every testable acceptance criterion.
+5. **Prove** it: `make check` and `make parity` pass. Add your tests and e2e
+   steps to the item's entries in `parity.json` and set their status.
+6. **Report**: write `collab/reports/<date>-<item>.md` from the template:
+   before and after parity, evidence, deviations from the spec, and what
+   still needs checking on a real Mac.
+7. **Merge** your branch into `main` (rebase, `make check`, fast-forward or a
+   merge commit), push, and move the item to **Done** on the board.
+
+### Documenter, each session
+
+1. `git pull`; read new reports, questions and board changes since the last
+   session (`git log --since=… -- collab docs`).
+2. Answer questions. Fix specs that executors found ambiguous or wrong.
+3. Turn report findings, scenario failures and `IDEAS.md` entries into
+   specs and board items; re-order the board.
+4. Add `parity.json` entries for anything new; write scenarios for new behaviour.
+5. Update `CHANGELOG.md` for everything merged; run `make parity` and commit
+   the regenerated `docs/FEATURES.md`.
+
+## How "improve" is measured
+
+`make parity` runs the test suite, reads the real-window evidence in
+`collab/evidence/*-latest.txt`, and for every item in `parity.json` reports:
+
+- **verified**: shipped, its tests pass, and its real-window steps passed (or
+  it is a policy, `"kind": "policy"`, with nothing to test);
+- **tested**: shipped and its tests pass;
+- **unproven**: marked shipped but no listed test or step has run;
+- **broken**, whatever the item's status: a listed test failed or is missing, a
+  listed real-window step failed, or no runner has a step of that name (exit code 1);
+- otherwise its plain status: partial, review, in progress, planned, missing
+  (no spec yet), not planned.
+
+A real-window step is a `▸` heading printed by `arbor-e2e` (`make e2e`,
+`e2e-latest.txt`) or by a `claim "…"` line of a Mac shell script
+(`scripts/mac-shell/proof.sh`, `gestures-latest.txt`); list it by its title under the item's
+`"e2e"`. It has passed when the evidence shows at least one ✔ and no ✘ under it.
+A step the runner has but the evidence does not yet is not counted and breaks nothing.
+
+`make parity` also fails when the test run as a whole failed or did not finish
+(a crash ends the log early; what it printed before proves nothing), and exits with
+code 2 when `parity.json` itself is wrong: an unknown status or a spec that does not
+exist.
+
+**Keeping it honest.** `shipped` means a TrellisWM user who tried the thing the
+reference describes, the way it describes it, would agree that Arbor does it. If it
+works only through a command while the reference describes a gesture, or
+fails on real windows, it is `partial`, and the `arbor` text says what is missing.
+List tests that would fail if the claim stopped being true, not tests that pass near it.
+
+It prints the parity score (shipped TrellisWM items out of all TrellisWM
+items that are not "not planned") and the next items to take. A change
+improves Arbor when it raises the score or turns unproven or tested items
+into verified ones, without making anything broken. CI runs the same check.
+
+## Scenarios
+
+A scenario is an arbor-sim script that tells a short user story with
+`expect` lines, e.g.:
+
+```
+# A developer docks an editor and a terminal, then focuses the editor.
+open Xcode
+open Terminal
+dock 101 left
+dock 102 right
+expect docked 101
+expect left-of 101 102
+zoom 101
+expect fills 101
+expect hidden 102
+```
+
+`expect` forms: `docked <id>`, `floating <id>`, `visible <id>`, `hidden <id>`
+(an open window that is not visible: parked, inside a tile, an inactive tab,
+minimized, hidden with its app, or on another Space), `tile <id>`, `fills <id>` (fills the screen minus
+gaps), `left-of <a> <b>`, `above <a> <b>`, `camera root|desktop|<id>`
+(the camera is on that window's leaf), `count docked <n>`, `ok` / `fail`
+(the previous command's result), `ring <id>` / `ring none` (the focus ring is
+around that window, where the window is; there is none), `outline <id>|desktop|none` (what a peek outlines), `shortcut <keys> on|off`
+(whether Arbor holds that shortcut right now, e.g. `shortcut ctrl+opt+space off`), `shortcut <keys> shows <label>` and
+`shortcut <keys> key <code>` (how menus show it, and which key it is, on the layout chosen with `keyboard german`), `pinned <id>`,
+`in-front <id>` (no window covers it), `size <id> <w>x<h>`, `summoned <id>`, `space <name>` (some display's view is on the space of that name), `no-space <name>`,
+`field open` / `field closed` (the field of `ask-name`; `field-type [text]` types into it and presses ↩, `field-cancel` presses ⎋), `minimap <id>|desktop|everything|none` (what the minimap marks as filling the view; there is none;
+`map <id>|desktop|beside` clicks in it),
+`held view|still|no` (F58), `focused <id>` (that window has the keyboard),
+`said <words>` / `silent` (the heads-up line on screen now contains those words, ignoring
+case; there is none. A line stays until `flush` or `wait`). `press <command>` runs a command as its shortcut would, which is what
+makes Arbor answer on screen; arbor-sim prints each line as `on screen: …`. Failed expectations print
+`EXPECTATION FAILED` and make arbor-sim exit with code 1.
+
+arbor-sim checks each `expect` line as it runs (`ScenarioExpectation` in
+ArborTesting). A line that does not hold prints `EXPECTATION FAILED: <why>`,
+and arbor-sim exits with code 1 at the end, so `make scenarios` (part of
+`make check` and of CI) fails when a user journey breaks. `expect ok` and
+`expect fail` refer to the last command, not to earlier expectations.
+
+A command that fails (a misspelt verb, a window that is not there) fails the
+scenario too, unless the very next line is `expect fail`; so does a scenario
+without a single `expect`. Otherwise a journey whose steps had stopped doing
+anything would go on passing.
+
+## Executors without a Mac (cloud sessions)
+
+The app needs macOS to build (AppKit, Accessibility, Carbon), but everything
+above the platform protocols does not: `ArborCore`, the controller,
+`ArborTesting`, arbor-sim and the test targets build and run on Linux, and so does
+the control socket (`ArborIPC`, `ArborKit/IPC`, `arborctl`), which needs only POSIX and Dispatch. There
+`Package.swift` leaves out `ArborKit`'s `AX`, `App`, `Input` and `UI`
+folders and the `Arbor`, `ArborTestWindows`
+and `arbor-e2e` executables, and adds a module named CoreGraphics that re-exports
+Foundation (`Sources/LinuxShims`), so `import CoreGraphics` works on both platforms.
+
+**On Linux**, `make check`, `make scenarios`, `make parity` and `make sim` work as
+on a Mac, so run them before pushing. A machine with Docker but no Swift (or a
+Mac, to check that the Linux build still works) runs the first three in the image
+CI uses with `make linux`, or any command with `./scripts/linux.sh <command>`.
+
+Three rules keep the Linux build working and the platforms telling the same story:
+
+- Outside the four macOS-only folders, and in the tests, only the geometry
+  types of CoreGraphics exist (`CGRect`, `CGPoint`, `CGSize`, `CGFloat`). Keep
+  writing `import CoreGraphics` for them: on macOS, Foundation alone brings the
+  types without their members. The reverse trap: on Linux that import passes on all
+  of Foundation, so a file that uses `JSONEncoder` or `Date` and forgets
+  `import Foundation` compiles there and fails on macOS. `make check` looks for that
+  first (`scripts/lint-imports.py`).
+- `CGRect` is CoreGraphics' on macOS and Foundation's on Linux, and they differ
+  at the boundaries: use `overlaps`, not `intersects`. `GeometryTests` pins what
+  Arbor relies on; add to it when you lean on something new.
+- A test that needs a macOS framework lives in its own file and is `.disabled`
+  elsewhere with a reason containing "only on macOS" (`CarbonKeyCodeTests.swift`
+  is the pattern). `parity.py` takes exactly those as passing in a run off
+  macOS, so `docs/FEATURES.md` comes out the same on both platforms. A test
+  skipped for any other reason counts as not found, and so does one in a file
+  that is compiled only on macOS (`EventTapThreadTests.swift`, all of it inside
+  `#if os(macOS)`): do not list such a test in `parity.json`.
+
+**The macOS-only code** is proved through GitHub:
+
+1. Push the work branch and open a **draft pull request** against `main`; the
+   PR description is the report (same template).
+2. GitHub Actions runs `linux` (the headless stack) and `macos` (everything).
+   Both build, test, and run the simulator smoke test, the scenarios and
+   `parity.py --check`; `macos` then runs the real-window and real-pointer tests. A newer push
+   cancels the run for the older one.
+
+   A macOS job is slow and runners are few, so a first small job,
+   `changes`, leaves it out (it shows as skipped, and the annotation on
+   `changes` says why) when a Mac could prove nothing new
+   (`scripts/ci-changes.py`; the `linux` job holds its rules to the table of
+   cases in `scripts/test-ci-changes.py`):
+   - the pull request changes only `collab/`, `docs/`, `*.md` files, `scripts/typecheck-mac/` and the scripts in
+     `scripts/mac-shell/` that CI does not run (it runs `e2e-drag.sh`, built on `lib.sh`, `pointer.swift` and `state.py`);
+   - or besides those only code that Linux builds and tests too: `Sources/ArborCore`,
+     `Sources/ArborKit/{Controller,Platform,Support}`, `Sources/ArborTesting`,
+     `Sources/arbor-sim`, `Sources/LinuxShims`, `Tests`;
+   - or only prose has changed since the last commit that passed on a Mac
+     (the report pushed after the code; a branch moved to a tested head).
+
+   The second rule does not hold where work is integrated (pushes to `main`,
+   the pull request from `swarm/trunk`): there every change of code is compiled
+   and driven on a Mac. So a change to the controller or a platform protocol can
+   pass its own pull request and break the macOS-only code that uses it. The `linux`
+   job type-checks that code against stand-ins (`make typecheck-mac`), which catches a changed
+   name or type; it runs nothing. When
+   you change something `AX`, `App`, `Input`, `IPC` or `UI` calls, run that first, and ask for the Mac with
+   **`[mac]` in the subject of the head commit** (or the label `mac`), or
+   compile with `scripts/mac-shell/run.sh scripts/mac-shell/compile.sh`.
+3. Read the results. Every step publishes its outcome as check annotations:
+   compiler warnings, test counts and the parity score when it passes; the
+   errors and the end of its output when it fails (`scripts/ci-step.py`). They can
+   be read where logs, `gh pr checks` and `gh run view` are not available:
+
+   ```bash
+   gh api repos/evbarleyg/arbor/commits/<sha>/check-runs \
+     --jq '.check_runs[] | "\(.id) \(.name) \(.status) \(.conclusion)"'
+   gh api repos/evbarleyg/arbor/check-runs/<id>/annotations \
+     --jq '.[] | "\(.annotation_level) [\(.title)] \(.path):\(.start_line)\n\(.message)"'
+   ```
+
+4. Fix and push until the checks pass, then mark the PR ready, merge it
+   (squash or merge commit), and update the board and parity data in the same PR.
+5. Real-window checks: CI's `macos` job ends with `make e2e` (GitHub's macOS
+   runners grant Accessibility) and keeps the evidence as the artifact
+   `e2e-evidence`. Drags, clicks, shortcuts, the menu bar and what
+   it all looks like can be checked from anywhere with a Mac shell script
+   (below). What even that cannot reach (a trackpad pinch, other apps' windows,
+   a second display) goes under "Still to check on a real Mac".
+
+### A remote Mac: the "Mac shell" workflow
+
+`.github/workflows/mac-shell.yml` runs one script from the repository on
+GitHub's macOS runner, with the newest Xcode selected, and pushes everything the
+script leaves in `mac-shell/` to a throwaway branch. It is for anything the
+full CI run does not cover: seeing the real app (screenshots, real drags,
+clicks and shortcuts), `swift test --filter …`, a build of a release bundle.
+
+1. Commit the script on your branch, e.g. `scripts/mac-shell/shots-F09.sh`, and
+   push; the workflow only runs files from the checked-out ref, never text
+   typed into the dispatch form, and the script never sees a token.
+   `scripts/mac-shell/lib.sh` has what a real-window session needs.
+2. Run it: `scripts/mac-shell/run.sh scripts/mac-shell/shots-F09.sh [branch]`.
+   It needs only `git` and `gh api`. It starts the workflow, waits, fetches the
+   output into `.mac-shell/<script>-<run id>/`, prints the end of it, and
+   exits with the script's exit code.
+3. Look at the pictures and read `output.txt` and `arbor.log` there.
+
+"Seeing the real app from anywhere" in `docs/TESTING.md` is the manual.
+The output is also kept as the artifact `mac-shell-output`, its end as check
+annotations and in the run's job summary. By hand, the workflow starts with
+`gh api -X POST repos/evbarleyg/arbor/actions/workflows/mac-shell.yml/dispatches -f ref=<branch> -f 'inputs[script]=<path>' -f 'inputs[tag]=<name>'`
+and the output lands on the branch `mac-shell-out/<name>` (the run id when no
+tag is given). Pushes to those branches start no workflow.
+
+## Talking between sessions
+
+The repo is the channel: files on `main`, pull requests, and the GitHub issue
+titled "Executor: work the board", where executors post short progress notes
+(one comment per finished item, linking its report or PR).
+Messages only point at files; decisions are written in the files.

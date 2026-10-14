@@ -1,0 +1,71 @@
+# Story: someone who never leaves the keyboard docks an editor, a terminal and a browser, walks around
+# them with focus, trades places, makes the editor bigger, evens things out, turns the row into a
+# column, and sends the editor to a second display.
+# Reference: F22 (A220 to A225). Window ids start at 101. `focus 101` is a click; `focus right` is the command.
+open Editor
+open Terminal
+open Browser
+dock 101 left
+dock 102 right
+dock 103 beside 102 bottom
+focus 101
+# Two windows are equally near on the right: the one that had the keyboard last wins (docking gave it to the browser).
+focus right
+expect ok
+expect focused 103
+focus up
+expect focused 102
+focus left
+expect focused 101
+focus left
+expect fail
+expect focused 101
+# Trade places with the window on the right that had focus last. The slots keep their sizes.
+swap right
+expect ok
+expect left-of 102 101
+expect above 101 103
+expect focused 101
+swap left
+expect left-of 101 102
+expect above 102 103
+# Bigger, then even again.
+grow 100
+expect ok
+balance
+expect ok
+# Framed on one window, the same command walks from space to space, as `neighbor` does.
+zoom 101
+focus right
+expect ok
+expect camera desktop
+focus right
+expect ok
+expect hidden 101
+expect visible 102
+expect visible 103
+show-all
+# Turn the row into a column and back, then reverse it.
+focus 101
+rotate
+expect ok
+expect above 101 102
+expect left-of 102 103
+rotate
+expect left-of 101 102
+expect above 102 103
+mirror
+expect left-of 102 101
+# A second display to the right: send the editor there, then go back.
+displays 2
+move-to-display next
+expect ok
+expect docked 101
+expect focused 101
+expect left-of 102 101
+# Back on the first display, to the window there that had the keyboard last.
+focus-display previous
+expect ok
+expect focused 102
+move-to-display 3
+expect fail

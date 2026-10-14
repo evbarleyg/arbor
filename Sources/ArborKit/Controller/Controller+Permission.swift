@@ -1,0 +1,196 @@
+import ArborCore
+import Foundation
+
+/// Accessibility permission taken away while Arbor runs (docs/features/F63-permission-taken-away.md).
+///
+/// Without it Arbor can move nothing, not even back into view. So it notices quickly, stops without touching
+/// a window, says what happened and what to do, and starts again, as at launch, when the permission returns.
+/// Stopping is `shutdown` without the moves and recovering is `start`: paths that quitting, pausing and
+/// launching exercise all the time.
+extension Controller {
+  /// What was out of view, and so out of reach, when the permission went.
+  public struct PermissionLoss: Equatable, Sendable {
+    public var windows: Int
+    /// The names of their apps, each once, in alphabetical order. Never titles: this goes into replies and the log.
+    public var apps: [String]
+    /// When it went.
+    public var since: Date
+  }
+
+  /// A loss shorter than this is taken for a false alarm, or for a slip of the finger: the view stays as it was.
+  static let shortestLossWorthAFuss: TimeInterval = 3
+  /// The ways home lead to the Accessibility pane at most this often, however hard they are hammered.
+  static let secondsBetweenVisitsToSettings: TimeInterval = 10
+  static let secondsAThoroughYesHolds: TimeInterval = 1
+
+  /// Whether Arbor is in business: running, paused, or waiting to get its permission back. False before the first
+  /// start and after quitting. While it is true the app holds what `activeBindings` and `inputSettings` say.
+  public var isInBusiness: Bool { isRunning || isPaused || permissionLoss != nil }
+
+  // MARK: Noticing
+
+  /// Asks macOS now and acts on the answer. `beyondDoubt`: there is a second reason to believe a "no".
+  /// Does nothing before the first `start()`: until then the app waits for the first grant itself.
+  ///
+  /// `inPassing`: before a command. A held shortcut or the steps of a pinch are tens of commands a second, and asking
+  /// thoroughly costs a visit to the window server and to the privacy daemon each time. So within a second of a
+  /// thorough "yes" only the flag is read. If it lags, the calls that follow are refused, which is heard too.
+  public func askAboutAccessibility(beyondDoubt: Bool = false, inPassing: Bool = false) {
+    guard isWatchingPermission, let probe = accessibilityProbe else { return }
+    let isFresh = lastThoroughYes.map { now().timeIntervalSince($0) < Self.secondsAThoroughYesHolds } ?? false
+    let thoroughly = !(inPassing && isFresh)
+    // The one thing Arbor asks of macOS that does not go through a protocol in Platform/, so it sees to its own line in a trace.
+    func ask(_ thoroughly: Bool) -> Bool {
+      traceRecorder?.read("mayUseAccessibility", [thoroughly]) { probe(thoroughly) } ?? probe(thoroughly)
+    }
+    var answer = ask(thoroughly)
+    if answer, thoroughly { thoroughWayHasSaidYes = true }
+    if !answer, thoroughly, !thoroughWayHasSaidYes, ask(false) {
+      // The thorough way has never yet said yes in this process, and the flag does. Nobody has seen what macOS lets a process
+      // do that was given the permission while it ran, which is everybody's first minute with Arbor: if it has to be
+      // started again before it may make an event tap, that is no reason to stop arranging windows. The flag is
+      // believed, as it was before there was a thorough way, until the thorough way has shown that it works here.
+      if !saidThatTheThoroughWayFails { Log.error("macOS says Arbor has the Accessibility permission and refuses it an event tap") }
+      saidThatTheThoroughWayFails = true
+      answer = true
+    } else if !answer {
+      lastThoroughYes = nil
+    } else if thoroughly {
+      lastThoroughYes = now()
+    }
+    switch permissionWatch.heard(answer, beyondDoubt: beyondDoubt) {
+    case .lost: loseAccessibility()
+    case .returned: regainAccessibility()
+    case .none: break
+    }
+    scheduleAccessibilityQuestion()
+  }
+
+  /// A call was refused. That is a second opinion, but it arrives in the middle of whatever made the call (a layout, a
+  /// drop), which must not have the ground pulled from under it: the question is put as soon as that has returned.
+  public func accessibilityWasRefused() {
+    guard isWatchingPermission, accessibilityGranted else { return }
+    scheduler.schedule("accessibility", after: 0) { [weak self] in self?.askAboutAccessibility(beyondDoubt: true) }
+  }
+
+  /// Begins to ask, from `start()`. Without a probe (tests, arbor-sim unless they set one) nobody asks.
+  func watchAccessibility() {
+    guard accessibilityProbe != nil else { return }
+    if !isWatchingPermission {
+      isWatchingPermission = true
+      permissionWatch = PermissionWatch()
+    }
+    scheduleAccessibilityQuestion()
+  }
+
+  private func scheduleAccessibilityQuestion() {
+    scheduler.schedule("accessibility", after: permissionWatch.secondsToNextQuestion) { [weak self] in
+      self?.askAboutAccessibility()
+    }
+  }
+
+  // MARK: Stopping and starting
+
+  private func loseAccessibility() {
+    let apps = Set(parked.compactMap { windows[$0]?.appName }).sorted()
+    let loss = PermissionLoss(windows: parked.count, apps: apps, since: now())
+    // Set first: observers of the `.lifecycle` change read them.
+    accessibilityGranted = false
+    permissionLoss = loss
+    Log.error("Accessibility permission was taken away with \(loss.windows) window(s) out of view")
+    // Granting it again means wanting Arbor, as launching it does: a pause does not outlive this.
+    scheduler.cancel("resume")
+    isPausedForApp = false
+    // If an app Arbor pauses for is still in front when it starts again, that is a new pause.
+    frontmostAppPaused = false
+    if isPaused {
+      isPaused = false
+      pausedFrames.removeAll()
+      notify(.lifecycle)
+    } else if isRunning {
+      overlays.showDropPreview(nil)
+      // Kept in memory as well, so that coming back does not depend on the file having been written.
+      resumeState = persistedState()
+      shutdown(movingWindows: false)
+      // Arbor cannot look any more, so `state` and `ascii` must not pass off old frames as current.
+      layouts.removeAll()
+      windows.removeAll()
+    }
+    // Whoever switched Arbor off on purpose, with nothing missing, is not nagged.
+    if loss.windows > 0 { askForAccessibility?() }
+  }
+
+  private func regainAccessibility() {
+    let loss = permissionLoss
+    accessibilityGranted = true
+    permissionLoss = nil
+    Log.info("Accessibility permission is back")
+    start()
+    filter.ignoredWindowIDs.formIntersection(windows.keys)
+    lastVisitToSettings = nil
+    // They were promised their windows back. Back returns to the view this replaces. Not after a false alarm, which
+    // is over in a second: nobody read a promise, and the view must not change for nothing.
+    if let loss, loss.windows > 0, isRunning, now().timeIntervalSince(loss.since) >= Self.shortestLossWorthAFuss {
+      _ = home()
+    }
+    // As after a pause: Arbor was not looking when the keyboard went where it is now.
+    if isRunning, let focused = system.focusedWindow() { windowFocused(focused) }
+  }
+
+  /// Whether a shortcut that failed for want of the permission should open the Accessibility pane now. Someone
+  /// hammering ⌃⌥Space in a fright must not get a stack of System Settings coming forward.
+  public func shouldOpenAccessibilitySettings() -> Bool {
+    guard !accessibilityGranted else { return false }
+    if let last = lastVisitToSettings, abs(now().timeIntervalSince(last)) < Self.secondsBetweenVisitsToSettings {
+      return false
+    }
+    lastVisitToSettings = now()
+    return true
+  }
+
+  // MARK: Saying so
+
+  static let whereToGrantAccessibility = "System Settings → Privacy & Security → Accessibility"
+  /// The first sentence everywhere: `status`, refused commands, the menu.
+  static let whatHappened = "Arbor's Accessibility permission was taken away, so it cannot move windows"
+
+  /// The reply to `status` and to every command that cannot run, while the permission is missing.
+  var permissionSentence: String {
+    guard let loss = permissionLoss else {
+      return "waiting for Accessibility permission (\(Self.whereToGrantAccessibility))"
+    }
+    let start = Self.whatHappened + ". "
+    guard loss.windows > 0 else { return start + "Grant it again under \(Self.whereToGrantAccessibility)" }
+    return start + "\(Self.strandedWindows(loss)) and \(loss.windows == 1 ? "comes" : "come") back as soon as it is "
+      + "granted again: \(Self.whereToGrantAccessibility)"
+  }
+
+  /// The same in lines short enough for a menu; empty unless the permission was taken away.
+  public var permissionMenuLines: [String] {
+    guard let loss = permissionLoss else { return [] }
+    // Menus have typographic apostrophes, replies plain ones.
+    let first = Self.whatHappened.replacingOccurrences(of: "'", with: "’")
+    guard loss.windows > 0 else { return [first] }
+    return [
+      first,
+      Self.strandedWindows(loss),
+      loss.windows == 1 ? "It comes back as soon as you grant it again" : "They come back as soon as you grant it again",
+    ]
+  }
+
+  /// Quitting is the last of the three ways home, and the one time it does not lead there it has to say so.
+  public var quitTitle: String {
+    guard let loss = permissionLoss, loss.windows > 0 else { return "Quit Arbor" }
+    return "Quit Arbor (\(Self.count(loss.windows, "window")) \(loss.windows == 1 ? "stays" : "stay") out of view)"
+  }
+
+  /// "1 window (Safari) is out of view", "3 windows (Mail, Notes and Safari) are out of view".
+  private static func strandedWindows(_ loss: PermissionLoss) -> String {
+    var names = loss.apps.prefix(3).map { $0 }
+    if loss.apps.count > 3 { names.append(count(loss.apps.count - 3, "other app")) }
+    let list =
+      names.count < 2 ? names.joined() : names.dropLast().joined(separator: ", ") + " and " + names[names.count - 1]
+    return count(loss.windows, "window") + (list.isEmpty ? "" : " (\(list))") + (loss.windows == 1 ? " is" : " are")
+      + " out of view"
+  }
+}

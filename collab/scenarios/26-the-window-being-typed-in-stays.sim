@@ -1,0 +1,18 @@
+# Proposed by the swarm's review (2026-10-14), from the product owner's replay; the documenter may edit or drop it.
+# Story: five windows arranged, so the Desktop is a tile. A new window opens over them and is being typed in. Somebody
+# minimizes another window and brings it back. The Desktop is wide enough to use for that moment. The window being typed
+# in must neither be squeezed onto it nor go out of view when it is a tile again.
+# Reference: T03 T07 T52.
+open A
+open B
+open C
+open D
+open E
+arrange
+open F 500x400
+expect visible 106
+minimize 105
+expect visible 106
+restore 105
+expect visible 106
+expect floating 106

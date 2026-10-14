@@ -1,0 +1,39 @@
+# Story: someone who lives in Emacs, where every ⌃⌥ + letter is a command, tells Arbor to leave the keys
+# alone there. Emacs stays docked and the view still follows ⌘Tab; the shortcuts are back in any other app.
+# Written by the executor swarm (F41); for the documenter to review.
+# Reference: A61. Window ids start at 101; `open Emacs` has the bundle id com.example.emacs.
+open Emacs
+open Safari
+dock 101 left
+dock 102 right
+focus 102
+expect shortcut ctrl+opt+space on
+# In Emacs: the menu's Shortcuts Off in "Emacs", or the command.
+focus 101
+pass-through
+expect ok
+expect shortcut ctrl+opt+space off
+expect shortcut ctrl+opt+f off
+# The one key that answers everywhere.
+expect shortcut ctrl+opt+escape on
+expect docked 101
+# ⌘Tab to Safari: everything works again.
+focus 102
+expect shortcut ctrl+opt+space on
+zoom
+expect fills 102
+expect hidden 101
+# ⌘Tab back to Emacs, which is out of view: the view moves, as for any window, and the keys are Emacs's.
+focus 101
+expect visible 101
+expect shortcut ctrl+opt+space off
+# Changed their mind.
+pass-through
+expect shortcut ctrl+opt+space on
+# A pause by hand inside a listed app, and back.
+pass-through
+toggle-pause
+expect shortcut ctrl+opt+escape on
+toggle-pause
+expect shortcut ctrl+opt+space off
+expect docked 101

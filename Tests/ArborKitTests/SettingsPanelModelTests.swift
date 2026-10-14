@@ -1,0 +1,883 @@
+import ArborCore
+import ArborKit
+import ArborTesting
+import CoreGraphics
+import Foundation
+import Testing
+
+/// The settings window without the window: a model on a real controller, with a window docked on the left,
+/// and three apps "running".
+@MainActor
+private final class Panel {
+  let h: Harness
+  let a: WindowID
+  let model: SettingsPanelModel
+  var commands: [String] = []
+  var redraws = 0
+
+  init(settings: Settings = Settings()) {
+    let h = Harness(settings: settings)
+    self.h = h
+    a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
+    h.start()
+    h.run("dock \(a.rawValue) left")
+    final class Box { weak var panel: Panel? }
+    let box = Box()
+    model = SettingsPanelModel(
+      controller: h.controller,
+      runningApps: {
+        [
+          .init(bundleID: "com.example.safari", name: "Safari"), .init(bundleID: "com.example.mail", name: "Mail"),
+          .init(bundleID: "com.example.notes", name: "notes"),
+        ]
+      },
+      run: { command in
+        box.panel?.commands.append(command.text)
+        return h.controller.perform(command)
+      })
+    box.panel = self
+    model.onChange = { [unowned self] in redraws += 1 }
+  }
+
+  var settings: Settings { h.controller.settings }
+  var inset: CGFloat { h.frame(a)!.minX - h.visibleFrame.minX }
+
+  func row(_ key: String, in section: SettingsSection) -> SettingsPanelModel.Row? {
+    (model.rows(in: section) + model.advancedRows(in: section)).first { $0.key == key }
+  }
+
+  func shortcut(_ command: String) -> SettingsPanelModel.ShortcutRow? {
+    model.shortcutRows.first { $0.command.text == command }
+  }
+
+  /// Presses keys as the window's event monitor reports them.
+  @discardableResult func press(_ text: String) throws -> Bool {
+    let chord = try KeyChord(text: text)
+    return model.keyPressed(code: chord.key.code, modifiers: chord.modifiers)
+  }
+}
+
+@Suite @MainActor struct SettingsPanelPaneTests {
+  @Test func theSidebarHasTheSectionsWithSomethingToShowThenTheLists() {
+    let p = Panel()
+    let titles = p.model.panes.map(\.title)
+    #expect(titles.first == "General")
+    #expect(titles.suffix(2) == ["Shortcuts", "Rules"] && titles.contains("Apps"))
+    // In the schema's order, and only those with a control to show.
+    let sections = p.model.panes.compactMap { pane -> SettingsSection? in
+      if case .section(let section) = pane { section } else { nil }
+    }
+    #expect(sections == SettingsSection.allCases.filter { sections.contains($0) })
+    for section in sections where section != .general {
+      #expect(!(p.model.rows(in: section) + p.model.advancedRows(in: section)).isEmpty, "\(section)")
+    }
+    for section in SettingsSection.allCases where !sections.contains(section) {
+      #expect((p.model.rows(in: section) + p.model.advancedRows(in: section)).isEmpty, "\(section)")
+    }
+    #expect(Set(p.model.panes.map(\.id)).count == p.model.panes.count)
+    #expect(p.model.panes.allSatisfy { !$0.symbol.isEmpty })
+    #expect(p.model.pane == .section(.general))
+  }
+
+  @Test func everySettingIsShownOnceAtItsLevelAndHiddenOnesNowhere() {
+    let p = Panel()
+    var shown: [String: SettingEntry.Level] = [:]
+    for section in SettingsSection.allCases {
+      for row in p.model.rows(in: section) {
+        #expect(shown.updateValue(.normal, forKey: row.key) == nil)
+      }
+      for row in p.model.advancedRows(in: section) {
+        #expect(shown.updateValue(.advanced, forKey: row.key) == nil)
+      }
+    }
+    for entry in SettingsSchema.entries {
+      if SettingsPane.editing(entry) != nil {
+        #expect(shown[entry.key] == nil, "\(entry.key) has a pane to itself")
+      } else if entry.level == .advanced, !SettingsSchema.windowEntries(in: entry.section).contains(where: { $0.level == .normal }) {
+        #expect(shown[entry.key] == .normal, "\(entry.key) has nothing to stand behind")
+      } else {
+        #expect(shown[entry.key] == (entry.level == .hidden ? nil : entry.level), "\(entry.key)")
+      }
+    }
+  }
+
+  @Test func aSectionWithOnlyAdvancedSettingsShowsThemAtOnce() throws {
+    let p = Panel()
+    // Whichever section that is today. (Settings land every day: no test here counts on a section's whole list.)
+    let section = try #require(
+      SettingsSection.allCases.first { section in
+        let entries = SettingsSchema.windowEntries(in: section)
+        return !entries.isEmpty && entries.allSatisfy { $0.level == .advanced }
+      })
+    #expect(p.model.rows(in: section).map(\.key) == SettingsSchema.windowEntries(in: section).map(\.key))
+    #expect(p.model.advancedRows(in: section).isEmpty)
+    // Windows has both kinds.
+    #expect(p.model.advancedRows(in: .windows).contains { $0.key == "arrangeDesktopWeight" })
+    #expect(!p.model.rows(in: .windows).contains { $0.key == "arrangeDesktopWeight" })
+  }
+
+  @Test func aRowSaysWhatToDraw() throws {
+    var settings = Settings()
+    settings.gap = 30
+    let p = Panel(settings: settings)
+    let gap = try #require(p.row("gap", in: .windows))
+    #expect(gap.label == "Gap" && gap.help.hasPrefix("Space between docked windows") && gap.isChanged && gap.error == nil)
+    #expect(gap.control == .number(value: 30, range: 0...100, step: 1, unit: "pt"))
+    #expect(p.row("focusRing", in: .appearance)?.control == .toggle(isOn: true))
+    #expect(p.row("focusRing", in: .appearance)?.isChanged == false)
+    #expect(p.row("frameRectangleModifier", in: .gestures)?.control == .text(value: "ctrl+opt", example: "shift+cmd"))
+  }
+
+  @Test func advancedOpensSectionBySection() {
+    let p = Panel()
+    #expect(p.model.openAdvanced.isEmpty)
+    p.model.setAdvanced(true, in: .dragging)
+    #expect(p.model.openAdvanced == [.dragging] && p.redraws == 1)
+    p.model.setAdvanced(false, in: .dragging)
+    #expect(p.model.openAdvanced.isEmpty)
+  }
+
+  @Test func theFootSaysWhichArborThisIs() {
+    let p = Panel()
+    #expect(p.model.version == "Arbor dev")
+    p.h.controller.buildInfo = BuildInfo(version: "1.0", build: "214", commit: "47a2ba9")
+    #expect(p.model.version == "Arbor 1.0 (build 214, 47a2ba9)")
+  }
+}
+
+@Suite @MainActor struct SettingsPanelChangeTests {
+  @Test func everyChangeIsASetCommandThatAppliesAtOnce() {
+    let p = Panel()
+    p.model.set("gap", to: 30.4)  // a slider let go of between two steps
+    p.model.set("focusRing", to: false)
+    p.model.set("frameRectangleModifier", to: "Control + Option")
+    #expect(p.commands == ["set gap 30", "set focusRing false", "set frameRectangleModifier Control + Option"])
+    #expect(p.inset == 30)
+    #expect(!p.settings.focusRing && p.settings.frameRectangleModifier == "ctrl+opt")
+    #expect(p.row("gap", in: .windows)?.control == .number(value: 30, range: 0...100, step: 1, unit: "pt"))
+    #expect(p.model.errors.isEmpty)
+  }
+
+  @Test func aRefusalIsShownOnItsRowUntilTheNextChangeThere() {
+    let p = Panel()
+    p.model.set("gap", to: "500")
+    #expect(p.row("gap", in: .windows)?.error == "`gap` must be from 0 to 100 pt, got 500")
+    #expect(p.row("minimumUsableWidth", in: .windows)?.error == nil)
+    #expect(p.settings.gap == 12 && p.inset == 12)
+    p.model.set("gap", to: "wide")
+    #expect(p.row("gap", in: .windows)?.error == "`gap` needs a number from 0 to 100 pt, got `wide`")
+    p.model.set("gap", to: "20")
+    #expect(p.row("gap", in: .windows)?.error == nil && p.settings.gap == 20)
+    p.model.set("gap", to: "500")
+    p.model.pane = .section(.windows)
+    #expect(p.model.errors.isEmpty, "a refusal does not outlive a visit to another pane")
+  }
+
+  @Test func changesMadeElsewhereShowUp() {
+    let p = Panel()
+    p.h.run("set gap 44")  // arborctl, a shortcut, or an edit to settings.json
+    #expect(p.redraws == 1)
+    #expect(p.row("gap", in: .windows)?.control == .number(value: 44, range: 0...100, step: 1, unit: "pt"))
+    p.h.run("zoom \(p.a.rawValue)")
+    #expect(p.redraws == 1, "nothing the window shows changed")
+  }
+
+  @Test(arguments: [
+    (30.4, 0.0, 100.0, 1.0, 30.0), (30.5, 0, 100, 1, 31), (-5, 0, 100, 1, 0), (500, 0, 100, 1, 100),
+    (0.30000000000000004, 0, 0.5, 0.05, 0.3), (0.32, 0, 0.5, 0.05, 0.3), (0.33, 0, 0.5, 0.05, 0.35),
+    (0.07, 0.05, 2, 0.05, 0.05), (1.26, 1, 12, 0.5, 1.5), (2.9, 0.1, 3, 0.1, 2.9), (2.99, 0.1, 3, 0.1, 3),
+  ]) func slidersLandOnSteps(value: Double, low: Double, high: Double, step: Double, expected: Double) {
+    #expect(SettingsPanelModel.snapped(value, in: low...high, step: step) == expected)
+  }
+
+  @Test func oddNumbersFromASliderAreHarmless() {
+    #expect(SettingsPanelModel.snapped(.nan, in: 0...100, step: 1) == 0)
+    #expect(SettingsPanelModel.snapped(.infinity, in: 0...100, step: 1) == 0)
+    #expect(SettingsPanelModel.snapped(50, in: 0...100, step: 0) == 0)
+    #expect(SettingsPanelModel.text(0.3) == "0.3" && SettingsPanelModel.text(12) == "12")
+    let p = Panel()
+    p.model.set("focusRing", to: 3.0)  // not a number: nothing to snap to
+    p.model.set("nonsense", to: 3.0)
+    #expect(p.commands.isEmpty)
+  }
+
+  @Test func everySnappedValueOfEverySliderIsAccepted() {
+    let p = Panel()
+    for entry in SettingsSchema.entries {
+      guard case .number(let range, let step, _) = entry.kind else { continue }
+      var value = range.lowerBound
+      while value <= range.upperBound + step {
+        p.model.set(entry.key, to: value + step / 3)
+        #expect(p.model.errors[entry.key] == nil, "\(entry.key) \(value)")
+        value += max(step, (range.upperBound - range.lowerBound) / 25)
+      }
+    }
+  }
+
+  @Test func restoreDefaultsRestoresWhatTheSectionShows() {
+    var settings = Settings()
+    settings.focusRing = false  // normal
+    settings.focusRingWidth = 6  // advanced
+    settings.focusRingRadius = 10  // hidden
+    settings.gap = 30  // another section
+    let p = Panel(settings: settings)
+    #expect(p.model.changedKeys(in: .appearance) == ["focusRing", "focusRingWidth"])
+    p.model.restoreDefaults(in: .appearance)
+    #expect(p.commands == ["reset focusRing", "reset focusRingWidth"])
+    #expect(p.settings.focusRing && p.settings.focusRingWidth == 3)
+    #expect(p.settings.focusRingRadius == 10 && p.settings.gap == 30)
+    #expect(p.model.changedKeys(in: .appearance).isEmpty)
+    p.model.restoreDefaults(in: .appearance)
+    #expect(p.commands.count == 2)
+    p.model.reset("gap")
+    #expect(p.settings.gap == 12)
+  }
+
+  @Test func theLoginItemIsAskedNotRemembered() {
+    let p = Panel()
+    #expect(p.model.hasLoginItem && !p.model.opensAtLogin)
+    p.model.setOpensAtLogin(true)
+    #expect(p.commands == ["launch-at-login on"])
+    #expect(p.h.loginItem.status == .enabled && p.model.opensAtLogin && p.model.errors["login"] == nil)
+    p.h.loginItem.refuses = true
+    p.model.setOpensAtLogin(false)
+    #expect(p.model.opensAtLogin, "the switch shows what macOS has, not what was clicked")
+    #expect(p.model.errors["login"] == "Arbor opens at login (macOS refused: operation not permitted)")
+    // Switched off in System Settings behind Arbor's back: the switch is off, and switching it on says where to go.
+    p.h.loginItem.status = .requiresApproval
+    #expect(p.model.hasLoginItem && !p.model.opensAtLogin && p.model.loginItemNeedsApproval)
+    p.model.setOpensAtLogin(true)
+    #expect(p.model.errors["login"]?.contains("System Settings → General → Login Items") == true)
+    p.h.loginItem.status = .disabled
+    #expect(!p.model.loginItemNeedsApproval)
+    // A copy that cannot be opened at login has no such line.
+    p.h.loginItem.status = .unavailable("Arbor is not running from an app bundle")
+    #expect(!p.model.hasLoginItem)
+    p.h.controller.loginItem = nil
+    #expect(!p.model.hasLoginItem)
+  }
+}
+
+@Suite @MainActor struct SettingsPanelSearchTests {
+  @Test func aSearchFindsSettingsInEverySectionAdvancedOnesToo() {
+    let p = Panel()
+    #expect(!p.model.isSearching)
+    p.model.search = "edge"
+    #expect(p.model.isSearching && p.redraws == 1)
+    let found = p.model.found
+    func keys(in section: SettingsSection) -> [String] {
+      found.sections.first { $0.section == section }?.rows.map(\.key) ?? []
+    }
+    #expect(keys(in: .windows).contains("gap"))  // "…and the screen edges"
+    #expect(keys(in: .dragging).starts(with: ["screenEdgeBand", "windowEdgeFraction"]))  // both advanced
+    // In the order of the panes, and nothing that does not say the word.
+    let order = found.sections.compactMap { SettingsSection.allCases.firstIndex(of: $0.section) }
+    #expect(order == order.sorted())
+    for row in found.sections.flatMap(\.rows) {
+      var words = "\(row.key) \(row.label) \(row.help)"
+      if case .choice(_, let choices) = row.control { words += choices.map(\.label).joined(separator: " ") }
+      #expect(words.lowercased().contains("edge"), "\(row.key)")
+    }
+  }
+
+  @Test func hiddenSettingsAreNotFound() {
+    let p = Panel()
+    p.model.search = "focus ring"
+    let found = p.model.found.sections.flatMap(\.rows).map(\.key)
+    #expect(found.starts(with: ["focusRing", "focusRingWidth", "focusRingColour"]) && !found.contains("focusRingRadius"))
+    p.model.search = "focusRingRadius"
+    #expect(p.model.found.isEmpty)
+  }
+
+  @Test func theListsAreFoundAsPanesToGoTo() {
+    let p = Panel()
+    p.model.search = "your shortcuts"
+    #expect(p.model.found.panes == [.shortcuts])
+    p.model.search = "shortcuts"
+    #expect(p.model.found.panes == [.shortcuts])
+    #expect(p.model.found.sections.flatMap(\.rows).map(\.key).contains("hotkeysEnabled"))
+    p.model.search = "rul"
+    #expect(p.model.found.panes == [.rules])
+    p.model.go(to: .rules)
+    #expect(p.model.pane == .rules && p.model.search.isEmpty && !p.model.isSearching)
+    // A list of apps is a line like any other, found where it stands.
+    p.model.search = " don't arrange "
+    #expect(p.model.found.panes.isEmpty && p.model.found.sections.map(\.section) == [.apps])
+    #expect(p.model.found.sections.first?.rows.map(\.key) == ["excludedBundleIDs"])
+  }
+
+  @Test func shortcutsAreFoundByCommandAndByKeys() throws {
+    let p = Panel()
+    p.model.search = "desktop"
+    #expect(p.model.found.shortcuts.map(\.command.text) == ["desktop"])
+    p.model.search = "⌃⌥d"
+    #expect(p.model.found.shortcuts.map(\.command.text) == ["desktop"])
+    p.model.search = "ctrl+opt+cmd"
+    #expect(
+      p.model.found.shortcuts.map(\.command.text) == ["dock left", "dock right", "dock top", "dock bottom", "grow", "shrink", "balance"])
+    p.model.search = "dock left"
+    #expect(p.model.found.shortcuts.map(\.command.text) == ["dock left"])
+    // A line found works like the line in its pane.
+    p.model.startRecording(try #require(p.model.found.shortcuts.first))
+    try p.press("ctrl+opt+x")
+    #expect(p.commands == ["bind ctrl+opt+x dock left", "unbind ctrl+opt+cmd+left"])
+    #expect(p.model.found.shortcuts.first?.label == "⌃⌥X")
+    p.model.search = "gap"
+    #expect(p.model.found.shortcuts.isEmpty)
+  }
+
+  @Test func nothingFoundIsNothingFound() {
+    let p = Panel()
+    p.model.search = "volume"
+    #expect(p.model.found.isEmpty)
+    // One kind of find is enough not to say so.
+    p.model.search = "smallest usable"
+    #expect(!p.model.found.isEmpty && p.model.found.panes.isEmpty && p.model.found.shortcuts.isEmpty)
+    p.model.search = "rules are checked"
+    #expect(!p.model.found.isEmpty && p.model.found.sections.isEmpty && p.model.found.shortcuts.isEmpty)
+    p.model.search = "float-all"
+    #expect(!p.model.found.isEmpty && p.model.found.sections.isEmpty && p.model.found.panes.isEmpty)
+    p.model.search = "   "
+    #expect(!p.model.isSearching)
+  }
+
+  @Test func aFoundRowWorksLikeAnyOther() {
+    let p = Panel()
+    p.model.search = "gap"
+    p.model.set("gap", to: "500")
+    #expect(p.model.found.sections.first?.rows.first?.error != nil)
+    p.model.set("gap", to: "20")
+    #expect(p.model.found.sections.first?.rows.first?.control == .number(value: 20, range: 0...100, step: 1, unit: "pt"))
+  }
+}
+
+@Suite @MainActor struct SettingsPanelFileTests {
+  @Test func aFileThatCannotBeReadIsSaidAboveEverythingAndCanBeReplaced() {
+    let p = Panel()
+    var broken = true
+    p.h.controller.loadSettings = {
+      if broken { throw Settings.FileError("line 3, column 1: expected a key") }
+      return Settings()
+    }
+    p.h.controller.replaceSettingsFile = { _ in
+      broken = false
+      return "settings.unreadable.json"
+    }
+    #expect(p.model.fileProblem == nil)
+    p.h.controller.takeInSettingsFile()
+    #expect(p.model.fileProblem == "line 3, column 1: expected a key")
+    #expect(p.redraws == 1, "the window hears of it by itself")
+    p.model.set("gap", to: "30")
+    #expect(p.row("gap", in: .windows)?.error?.hasPrefix("settings.json cannot be read, so nothing was changed") == true)
+    // Not at one click.
+    p.model.replaceFileWithDefaults()
+    #expect(p.model.question == .replaceFile && p.commands.last != "reset everything")
+    p.model.answer(yes: false)
+    #expect(p.model.question == nil && p.model.fileProblem != nil && broken)
+    p.model.replaceFileWithDefaults()
+    p.model.answer(yes: true)
+    #expect(p.model.question == nil && p.commands.last == "reset everything")
+    #expect(p.model.fileProblem == nil && !broken)
+    p.h.controller.loadSettings = nil
+    p.model.set("gap", to: "30")
+    #expect(p.settings.gap == 30)
+  }
+
+  @Test func valuesThatCouldNotBeUsedAreListed() throws {
+    let settings = try JSONDecoder().decode(Settings.self, from: Data(#"{"gap": -500}"#.utf8))
+    #expect(Panel(settings: settings).model.valueProblems == ["gap: -500 is outside 0 to 100 pt; using 0"])
+  }
+}
+
+@Suite @MainActor struct SettingsPanelShortcutTests {
+  @Test func theTableHasEveryDefaultInOrderThenTheUsersOwn() {
+    var settings = Settings()
+    settings.bindings = ["ctrl+opt+x": "float-all", "ctrl+opt+cmd+h": "dock left"]
+    let p = Panel(settings: settings)
+    let rows = p.model.shortcutRows
+    #expect(rows.prefix(KeyBindings.defaults.count).map(\.command) == KeyBindings.defaults.map(\.command))
+    #expect(rows.prefix(KeyBindings.defaults.count).allSatisfy { $0.chord == $0.standard && !$0.isChanged })
+    #expect(rows.suffix(2).map(\.command.text) == ["dock left", "float-all"])
+    #expect(rows.suffix(2).allSatisfy { $0.standard == nil && $0.isChanged })
+    #expect(Set(rows.map(\.id)).count == rows.count)
+    #expect(p.model.shortcutsAreChanged && !Panel().model.shortcutsAreChanged)
+  }
+
+  @Test func aShortcutThatTakesKeysFromEveryAppSaysSoOnItsLine() throws {
+    let p = Panel()
+    #expect(p.model.shortcutRows.allSatisfy { $0.caution == nil }, "no default needs a warning")
+    p.model.startRecording(try #require(p.shortcut("show-all")))
+    try p.press("cmd+w")
+    #expect(p.shortcut("show-all")?.caution == "no app gets ⌘W while Arbor runs")
+  }
+
+  @Test func whateverIsRecordedIsRegisteredOnTheKeyThatWasPressed() {
+    let modifierSets: [KeyChord.Modifiers] = [
+      [.control, .option], [.control, .option, .shift], [.control, .option, .command], [.command], [.command, .shift],
+    ]
+    for (name, layout) in SampleKeyLayouts.byName {
+      for code in UInt32(0)..<128 {
+        for modifiers in modifierSets {
+          guard let chord = KeyChord(code: code, modifiers: modifiers, layout: layout) else { continue }
+          #expect(chord.code(in: layout) == code && chord.modifiers == modifiers, "\(name) \(code): \(chord.text)")
+          // And it survives being written into settings.json.
+          #expect((try? KeyChord(text: chord.text)) == chord, "\(name) \(code): \(chord.text)")
+        }
+      }
+      // Every key of the four rows can be recorded, whatever it types.
+      for code in SampleKeyLayouts.rows.joined() {
+        #expect(KeyChord(code: code, modifiers: [.control, .option], layout: layout) != nil, "\(name) \(code)")
+      }
+      // Pressing a default shortcut as it is registered gives that shortcut back under its own name.
+      for binding in KeyBindings.effective(settings: Settings(), layout: layout).bindings {
+        let recorded = KeyChord(code: binding.keyCode, modifiers: binding.modifiers, layout: layout)
+        #expect(recorded == binding.chord, "\(name): \(binding.chord.text) came back as \(recorded?.text ?? "nothing")")
+      }
+    }
+  }
+
+  @Test func aDefaultShortcutRecordedAgainLeavesNothingChanged() throws {
+    for (name, layout) in SampleKeyLayouts.byName {
+      let p = Panel()
+      p.h.controller.keyboardLayoutChanged(layout)
+      for binding in p.h.controller.effectiveBindings.bindings {
+        let row = try #require(p.model.shortcutRows.first { $0.standard == binding.chord })
+        p.model.startRecording(row)
+        try p.press("ctrl+opt+shift+f9")
+        p.model.startRecording(try #require(p.model.shortcutRows.first { $0.standard == binding.chord }))
+        #expect(p.model.keyPressed(code: binding.keyCode, modifiers: binding.modifiers))
+        let after = try #require(p.model.shortcutRows.first { $0.standard == binding.chord })
+        #expect(!after.isChanged && p.model.clash == nil, "\(name): \(binding.chord.text) is now \(after.chord?.text ?? "nothing")")
+      }
+      #expect(p.settings.bindings.isEmpty, "\(name): \(p.settings.bindings)")
+    }
+  }
+
+  @Test func aKeyIsCalledWhatItTypes() {
+    let german = SampleKeyLayouts.german
+    let base: KeyChord.Modifiers = [.control, .option]
+    #expect(KeyChord(code: 6, modifiers: base, layout: german)?.text == "ctrl+opt+y")  // left of X
+    #expect(KeyChord(code: 16, modifiers: base, layout: german)?.text == "ctrl+opt+z")
+    #expect(KeyChord(code: 33, modifiers: base, layout: german)?.text == "ctrl+opt+[")  // Ü, where a US keyboard has [
+    #expect(KeyChord(code: 33, modifiers: base, layout: german)?.label(in: german) == "⌃⌥Ü")
+    #expect(KeyChord(code: 27, modifiers: [.control, .option, .shift], layout: german)?.text == "ctrl+opt+shift+/")  // ⇧ß types ?
+    // - is beside the right ⇧ in Germany, so the key that has it on a US keyboard needs saying so.
+    #expect(KeyChord(code: 27, modifiers: base, layout: german)?.text == "ctrl+opt+us:-")
+    #expect(KeyChord(code: 12, modifiers: base, layout: SampleKeyLayouts.french)?.text == "ctrl+opt+a")
+    #expect(KeyChord(code: 49, modifiers: base, layout: german)?.text == "ctrl+opt+space")
+  }
+
+  @Test func theTableAndTheRecorderFollowTheKeyboardLayout() throws {
+    let p = Panel()
+    p.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    #expect(p.shortcut("back")?.label == "⌃⌥Ü" && p.shortcut("back")?.isChanged == false)
+    p.model.startRecording(try #require(p.shortcut("desktop")))
+    #expect(p.model.keyPressed(code: 6, modifiers: [.control, .option]))  // the key labelled Y
+    #expect(p.commands == ["bind ctrl+opt+y desktop", "unbind ctrl+opt+d"])
+    #expect(p.shortcut("desktop")?.label == "⌃⌥Y")
+    // With the setting off, keys go by their place on a US keyboard.
+    p.h.run("set shortcutsFollowLayout false")
+    // ⌃⌥Z is Undo's by default (F19): free here, so that the recorder has nothing to ask.
+    p.h.run("unbind ctrl+opt+z")
+    p.model.startRecording(try #require(p.shortcut("desktop")))
+    #expect(p.model.keyPressed(code: 6, modifiers: [.control, .option]))
+    #expect(p.commands.suffix(2) == ["bind ctrl+opt+z desktop", "unbind ctrl+opt+y"])
+  }
+
+  @Test func twoNamesForOneKeyClash() throws {
+    var settings = Settings()
+    settings.bindings = ["ctrl+opt+us:z": "float-all"]  // the key labelled Y in Germany
+    let p = Panel(settings: settings)
+    p.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    p.model.startRecording(try #require(p.shortcut("desktop")))
+    #expect(p.model.keyPressed(code: 6, modifiers: [.control, .option]))
+    let clash = try #require(p.model.clash)
+    #expect(clash.holder == .floatAll && clash.chord.text == "ctrl+opt+y" && clash.label == "⌃⌥Y")
+    p.model.replaceHolder()
+    #expect(p.commands == ["bind ctrl+opt+y desktop", "unbind ctrl+opt+us:z", "unbind ctrl+opt+d"])
+    #expect(p.h.controller.effectiveBindings.problems.isEmpty)
+    #expect(p.h.controller.effectiveBindings.bindings.filter { $0.keyCode == 6 }.map(\.command) == [.desktop])
+  }
+
+  @Test func arborHoldsNoShortcutWhileOneIsRecorded() throws {
+    let p = Panel()
+    var changes: [Controller.Change] = []
+    p.h.controller.observe { changes.append($0) }
+    #expect(!p.h.controller.activeBindings.isEmpty)
+    p.model.startRecording(try #require(p.shortcut("desktop")))
+    #expect(p.h.controller.activeBindings.isEmpty && changes == [.input], "or pressing one would run it")
+    p.model.cancelRecording()
+    #expect(!p.h.controller.activeBindings.isEmpty && changes == [.input, .input])
+    // However the recording ends.
+    p.model.startRecording(try #require(p.shortcut("desktop")))
+    try p.press("ctrl+opt+x")
+    #expect(p.h.controller.activeBindings.contains { $0.chord.text == "ctrl+opt+x" })
+    p.model.startRecording(try #require(p.shortcut("desktop")))
+    p.model.pane = .rules
+    #expect(!p.h.controller.isRecordingShortcut)
+  }
+
+  @Test func recordingGivesACommandNewKeysOnTheSameLine() throws {
+    let p = Panel()
+    var recordings: [Bool] = []
+    p.model.onRecordingChanged = { recordings.append($0) }
+    let row = try #require(p.shortcut("desktop"))
+    p.model.startRecording(row)
+    #expect(p.model.recording == row && recordings == [true])
+    #expect(try p.press("ctrl+opt+y"))
+    #expect(p.model.recording == nil && recordings == [true, false])
+    #expect(p.commands == ["bind ctrl+opt+y desktop", "unbind ctrl+opt+d"])
+    let after = try #require(p.shortcut("desktop"))
+    #expect(after.chord?.text == "ctrl+opt+y" && after.standard?.text == "ctrl+opt+d" && after.isChanged)
+    #expect(after.id == row.id, "the line stays where it was")
+    #expect(p.model.shortcutRows.count == KeyBindings.defaults.count)
+  }
+
+  @Test func keysPressedWhenNothingIsRecordingAreNotTheWindowsBusiness() throws {
+    let p = Panel()
+    #expect(try !p.press("ctrl+opt+y"))
+    #expect(p.commands.isEmpty)
+  }
+
+  @Test func escapeAloneCancels() throws {
+    let p = Panel()
+    p.model.startRecording(try #require(p.shortcut("desktop")))
+    #expect(p.redraws == 1, "the button asks for keys")
+    #expect(try p.press("escape"))
+    #expect(p.model.recording == nil && p.commands.isEmpty)
+    #expect(p.redraws == 2, "and shows the old ones again")
+    // With modifiers it is a shortcut like any other.
+    p.model.startRecording(try #require(p.shortcut("desktop")))
+    try p.press("ctrl+opt+shift+escape")
+    #expect(p.shortcut("desktop")?.chord?.text == "ctrl+opt+shift+escape")
+  }
+
+  @Test func theSameKeysAgainChangeNothing() throws {
+    let p = Panel()
+    p.model.startRecording(try #require(p.shortcut("desktop")))
+    try p.press("ctrl+opt+d")
+    #expect(p.model.recording == nil && p.commands.isEmpty && p.model.clash == nil)
+  }
+
+  @Test func keysAnotherCommandHasAreFlaggedAndTakenOnlyOnRequest() throws {
+    let p = Panel()
+    let row = try #require(p.shortcut("desktop"))
+    p.model.startRecording(row)
+    try p.press("ctrl+opt+a")
+    let clash = try #require(p.model.clash)
+    #expect(clash.row == row && clash.chord.text == "ctrl+opt+a" && clash.holder == .arrange)
+    #expect(p.commands.isEmpty && p.model.recording == nil)
+    p.model.cancelRecording()
+    #expect(p.model.clash == nil && p.commands.isEmpty)
+
+    // Turning to another line drops the question too.
+    p.model.startRecording(row)
+    try p.press("ctrl+opt+a")
+    p.model.startRecording(try #require(p.shortcut("back")))
+    #expect(p.model.clash == nil && p.model.recording?.command == .back)
+    p.model.replaceHolder()
+    #expect(p.commands.isEmpty)
+    p.model.cancelRecording()
+
+    p.model.startRecording(row)
+    try p.press("ctrl+opt+a")
+    p.model.replaceHolder()
+    #expect(p.model.clash == nil)
+    #expect(p.shortcut("desktop")?.chord?.text == "ctrl+opt+a")
+    let loser = try #require(p.shortcut("arrange"))
+    #expect(loser.chord == nil && loser.standard?.text == "ctrl+opt+a" && loser.isChanged)
+  }
+
+  @Test func keysThatCannotBeAShortcutAreRefusedOnTheLineAndTheOldOnesStay() throws {
+    let p = Panel()
+    let row = try #require(p.shortcut("desktop"))
+    p.model.startRecording(row)
+    try p.press("shift+a")
+    #expect(p.model.errors[row.id]?.hasPrefix("shift+a: needs ctrl, opt or cmd") == true)
+    #expect(p.shortcut("desktop")?.chord?.text == "ctrl+opt+d", "the old shortcut goes only after the new one took")
+    // A key Arbor has no name for leaves the recording going.
+    p.model.startRecording(row)
+    #expect(p.model.keyPressed(code: 10, modifiers: [.control, .option]))
+    #expect(p.model.errors[row.id] == "that key cannot be part of a shortcut" && p.model.recording == row)
+  }
+
+  @Test func removeLeavesTheLineWithoutKeysAndRestoreBringsThemBack() throws {
+    let p = Panel()
+    p.model.removeShortcut(try #require(p.shortcut("desktop")))
+    let removed = try #require(p.shortcut("desktop"))
+    #expect(removed.chord == nil && removed.isChanged)
+    p.model.removeShortcut(removed)  // nothing left to remove
+    #expect(p.commands == ["unbind ctrl+opt+d"])
+    p.model.restoreShortcut(removed)
+    #expect(p.shortcut("desktop")?.isChanged == false && p.settings.bindings.isEmpty)
+  }
+
+  @Test func restoreUndoesAMove() throws {
+    let p = Panel()
+    p.model.startRecording(try #require(p.shortcut("desktop")))
+    try p.press("ctrl+opt+y")
+    p.model.restoreShortcut(try #require(p.shortcut("desktop")))
+    #expect(p.settings.bindings.isEmpty)
+    #expect(p.model.shortcutRows.allSatisfy { !$0.isChanged })
+  }
+
+  @Test func aShortcutOfTheUsersOwnGoesWhenRemovedOrRestored() throws {
+    for restore in [false, true] {
+      let p = Panel()
+      p.h.run("bind ctrl+opt+x float-all here")
+      let row = try #require(p.shortcut("float-all here"))
+      if restore { p.model.restoreShortcut(row) } else { p.model.removeShortcut(row) }
+      #expect(p.shortcut("float-all here") == nil && p.settings.bindings.isEmpty)
+    }
+  }
+
+  @Test func aCommandThatHasNoLineYetCanBeTyped() throws {
+    let p = Panel()
+    p.model.pane = .shortcuts
+    p.model.startRecording(commandText: "teleport")
+    #expect(p.model.errors["Shortcuts"] == "unknown command `teleport`; try `help`" && p.model.recording == nil)
+    p.model.startRecording(commandText: "set gap 0")
+    #expect(p.model.recording?.isNew == true && p.model.errors.isEmpty)
+    try p.press("ctrl+opt+x")
+    #expect(p.shortcut("set gap 0")?.chord?.text == "ctrl+opt+x")
+    // What `bind` refuses has no line to be shown on, so the pane shows it.
+    p.model.startRecording(commandText: "state")
+    try p.press("ctrl+opt+y")
+    #expect(p.model.errors["Shortcuts"]?.contains("is a query") == true)
+  }
+
+  @Test func leavingThePaneEndsTheRecording() throws {
+    let p = Panel()
+    p.model.pane = .shortcuts
+    var recordings: [Bool] = []
+    p.model.onRecordingChanged = { recordings.append($0) }
+    p.model.startRecording(try #require(p.shortcut("desktop")))
+    p.model.pane = .rules
+    #expect(p.model.recording == nil && recordings == [true, false])
+  }
+
+  @Test func restoreAllAndTheProblemsOfTheFile() throws {
+    let json = #"{"bindings": {"hyper+x": "desktop", "ctrl+opt+x": "arrange"}, "hotkeysEnabled": false}"#
+    let p = Panel(settings: try JSONDecoder().decode(Settings.self, from: Data(json.utf8)))
+    #expect(p.model.shortcutProblems.count == 1 && p.model.shortcutProblems[0].hasPrefix("hyper+x: "))
+    #expect(p.model.shortcutsAreOff)
+    // Not at one click: it says how much would go, and where a copy stays.
+    p.model.restoreAllShortcuts()
+    #expect(p.model.question == .restoreAllShortcuts(count: 2) && p.commands.isEmpty)
+    #expect(p.model.question?.text.hasPrefix("Give up all 2 of your changes to the shortcuts?") == true)
+    #expect(p.model.question?.text.contains("settings.before-reset.json") == true)
+    p.model.answer(yes: false)
+    #expect(p.model.question == nil && p.commands.isEmpty && p.model.shortcutsAreChanged)
+    p.model.restoreAllShortcuts()
+    p.model.pane = .rules
+    #expect(p.model.question == nil, "walking away is a no")
+    p.model.pane = .shortcuts
+    p.model.answer(yes: true)
+    #expect(p.commands.isEmpty, "there is nothing to say yes to")
+    p.model.restoreAllShortcuts()
+    p.model.answer(yes: true)
+    #expect(p.commands == ["reset bindings"] && p.model.shortcutProblems.isEmpty && !p.model.shortcutsAreChanged)
+    // With nothing changed there is nothing to ask.
+    p.model.restoreAllShortcuts()
+    #expect(p.model.question == nil)
+  }
+}
+
+@Suite @MainActor struct SettingsPanelRuleTests {
+  private func panel() -> Panel {
+    var settings = Settings()
+    settings.rules = [
+      AppRule(app: "com.example.mail", title: "Inbox", action: .dock(.left)),
+      AppRule(app: "com.apple.finder", action: .ignore),
+      AppRule(app: "com.example.notes", action: .dockBeside(bundleID: "com.example.mail", .bottom)),
+    ]
+    return Panel(settings: settings)
+  }
+
+  @Test func theLinesAreTheRulesInOrderWithNamesWhereKnown() {
+    let rows = panel().model.ruleRows
+    #expect(rows.map(\.number) == [1, 2, 3])
+    #expect(rows.map(\.appName) == ["Mail", "com.apple.finder", "notes"])
+    #expect(rows.map(\.kind) == [.dock, .ignore, .dockBeside])
+    #expect(rows.map(\.edge) == [.left, nil, .bottom])
+    #expect(rows.map(\.neighbour) == [nil, nil, "com.example.mail"])
+  }
+
+  @Test func aTitleHandedOverJustBeforeAMenuActsIsKept() {
+    // Menus do not take the keyboard, so the window hands over what is in the title field, then acts, both
+    // with the line as it was drawn.
+    let p = panel()
+    let drawn = p.model.ruleRows[1]
+    p.model.setTitle("Downloads", of: drawn)
+    p.model.setKind(.float, of: drawn)
+    #expect(p.settings.rules[1] == AppRule(app: "com.apple.finder", title: "Downloads", action: .float))
+    let first = p.model.ruleRows[0]
+    p.model.setTitle("Sent", of: first)
+    p.model.setEdge(.top, of: first)
+    #expect(p.settings.rules[0] == AppRule(app: "com.example.mail", title: "Sent", action: .dock(.top)))
+  }
+
+  @Test func aLineWhoseRuleIsGoneChangesNothing() {
+    let p = panel()
+    let last = p.model.ruleRows[2]
+    p.h.run("rule remove 3")
+    let before = p.settings.rules
+    p.model.setKind(.float, of: last)
+    p.model.setTitle("x", of: last)
+    #expect(p.settings.rules == before)
+  }
+
+  @Test func addRemoveAndMove() {
+    let p = panel()
+    p.model.addRule(app: "com.example.safari")
+    #expect(p.settings.rules.last == AppRule(app: "com.example.safari", action: .dock(.right)))
+    p.model.moveRule(p.model.ruleRows[3], by: -1)
+    #expect(p.settings.rules.map(\.app)[2] == "com.example.safari")
+    p.model.moveRule(p.model.ruleRows[0], by: 1)
+    #expect(p.settings.rules.map(\.app).prefix(2) == ["com.apple.finder", "com.example.mail"])
+    p.model.removeRule(p.model.ruleRows[0])
+    #expect(p.settings.rules.map(\.app) == ["com.example.mail", "com.example.safari", "com.example.notes"])
+    #expect(
+      p.commands == ["rule add com.example.safari dock right", "rule move 4 3", "rule move 1 2", "rule remove 1"])
+  }
+
+  @Test func theEndsOfTheListCannotBeMovedPast() {
+    let p = panel()
+    #expect(!p.model.canMove(p.model.ruleRows[0], by: -1) && p.model.canMove(p.model.ruleRows[0], by: 1))
+    #expect(p.model.canMove(p.model.ruleRows[2], by: -1) && !p.model.canMove(p.model.ruleRows[2], by: 1))
+    p.model.moveRule(p.model.ruleRows[0], by: -1)
+    p.model.moveRule(p.model.ruleRows[2], by: 1)
+    #expect(p.commands.isEmpty)
+  }
+
+  @Test func theMenusOfALineChangeTheRuleInPlace() {
+    let p = panel()
+    p.model.setEdge(.top, of: p.model.ruleRows[0])
+    #expect(p.settings.rules[0] == AppRule(app: "com.example.mail", title: "Inbox", action: .dock(.top)))
+    p.model.setKind(.dockBeside, of: p.model.ruleRows[0])
+    // The edge is kept; the neighbour is the first running app that is not the rule's own.
+    #expect(p.settings.rules[0].action == .dockBeside(bundleID: "com.example.notes", .top))
+    p.model.setNeighbour("com.example.safari", of: p.model.ruleRows[0])
+    #expect(p.settings.rules[0].action == .dockBeside(bundleID: "com.example.safari", .top))
+    p.model.setKind(.float, of: p.model.ruleRows[0])
+    #expect(p.settings.rules[0] == AppRule(app: "com.example.mail", title: "Inbox", action: .float))
+    p.model.setKind(.dock, of: p.model.ruleRows[0])
+    #expect(p.settings.rules[0].action == .dock(.right))
+    p.model.setKind(.dock, of: p.model.ruleRows[2])
+    #expect(p.settings.rules[2].action == .dock(.bottom))
+    #expect(p.settings.rules[1] == AppRule(app: "com.apple.finder", action: .ignore))
+  }
+
+  @Test func whatChangesNothingRunsNothing() {
+    let p = panel()
+    p.model.setEdge(.left, of: p.model.ruleRows[0])
+    p.model.setKind(.dock, of: p.model.ruleRows[0])
+    p.model.setEdge(.left, of: p.model.ruleRows[1])  // it does not dock
+    p.model.setNeighbour("com.example.safari", of: p.model.ruleRows[0])  // it docks beside nothing
+    p.model.setTitle(" Inbox ", of: p.model.ruleRows[0])
+    #expect(p.commands.isEmpty)
+  }
+
+  @Test func theTitleCanBeSetChangedAndCleared() {
+    let p = panel()
+    p.model.setTitle("Build  log / today", of: p.model.ruleRows[1])
+    #expect(p.settings.rules[1].title == "Build log / today")
+    p.model.setTitle("   ", of: p.model.ruleRows[1])
+    #expect(p.settings.rules[1].title == nil)
+  }
+
+  @Test func entriesThatCouldNotBeReadAreListed() throws {
+    let settings = try JSONDecoder().decode(Settings.self, from: Data(#"{"rules": [{"app": "com.a"}]}"#.utf8))
+    #expect(Panel(settings: settings).model.skippedRules == ["entry 1 (com.a): `action` is missing"])
+  }
+}
+
+@Suite @MainActor struct SettingsPanelAppListTests {
+  private typealias App = SettingsPanelModel.AppChoice
+
+  /// The apps on "Don't arrange", and the ones its menu offers.
+  private func dontArrange(_ p: Panel) throws -> (listed: [App], candidates: [App]) {
+    guard case .apps(let listed, let candidates)? = p.row("excludedBundleIDs", in: .apps)?.control else {
+      throw Settings.FileError("no such line")
+    }
+    return (listed, candidates)
+  }
+
+  @Test func theAppsPaneHasEveryListOfAppsAtItsLevel() {
+    let p = Panel()
+    #expect(p.model.panes.contains(.section(.apps)))
+    #expect(p.model.rows(in: .apps).first?.label == "Don't arrange")
+    let shown = (p.model.rows(in: .apps) + p.model.advancedRows(in: .apps)).map(\.key)
+    #expect(shown == SettingsSchema.entries.filter { $0.isAppList && $0.level != .hidden }.map(\.key))
+    #expect(p.model.advancedRows(in: .apps).map(\.key) == ["pauseForApps"])
+  }
+
+  @Test func appsAreAddedFromTheOnesRunningAndTakenOffAgain() throws {
+    let p = Panel()
+    #expect(try dontArrange(p).listed.isEmpty)
+    #expect(try dontArrange(p).candidates.map(\.name) == ["Mail", "notes", "Safari"])  // by name, whatever the case
+    p.model.add("com.example.safari", to: "excludedBundleIDs")
+    #expect(p.commands == ["set excludedBundleIDs add com.example.safari"])
+    #expect(try dontArrange(p).listed == [.init(bundleID: "com.example.safari", name: "Safari")])
+    #expect(try dontArrange(p).candidates.map(\.name) == ["Mail", "notes"])
+    #expect(!p.h.workspace.contains(p.a), "its window is let go at once")
+    p.model.remove("com.example.safari", from: "excludedBundleIDs")
+    #expect(try dontArrange(p).listed.isEmpty && p.h.workspace.contains(p.a))
+  }
+
+  @Test func eachListHasItsOwnApps() throws {
+    let p = Panel()
+    p.model.add("com.example.mail", to: "passThroughApps")
+    p.model.add("com.example.notes", to: "pauseForApps")
+    #expect(p.settings.passThroughApps == ["com.example.mail"] && p.settings.pauseForApps == ["com.example.notes"])
+    #expect(try dontArrange(p).listed.isEmpty && dontArrange(p).candidates.count == 3)
+  }
+
+  @Test func lookingAgainAtWhatRunsRedraws() {
+    let p = Panel()
+    p.model.refreshApps()
+    #expect(p.redraws == 1, "apps have come and gone while the window was away")
+  }
+
+  @Test func anAppThatIsNotRunningIsShownByItsBundleID() throws {
+    var settings = Settings()
+    settings.excludedBundleIDs = ["com.apple.Music"]
+    #expect(try dontArrange(Panel(settings: settings)).listed == [.init(bundleID: "com.apple.Music", name: "com.apple.Music")])
+  }
+
+  @Test func aRefusalIsShownOnTheList() throws {
+    let p = Panel()
+    p.h.controller.loadSettings = { throw Settings.FileError("line 1, column 1: expected `{`") }
+    p.model.add("com.example.safari", to: "excludedBundleIDs")
+    #expect(p.row("excludedBundleIDs", in: .apps)?.error?.hasPrefix("settings.json cannot be read") == true)
+    #expect(try dontArrange(p).listed.isEmpty)
+  }
+
+  @Test func theListsCanBeChangedDuringAPause() throws {
+    let p = Panel()
+    p.h.run("pause")
+    p.model.add("com.example.safari", to: "excludedBundleIDs")
+    #expect(p.row("excludedBundleIDs", in: .apps)?.error == nil)
+    #expect(try dontArrange(p).listed.count == 1)
+  }
+
+  @Test func restoreDefaultsLeavesListsAlone() {
+    var settings = Settings()
+    settings.excludedBundleIDs = ["com.apple.Music"]
+    let p = Panel(settings: settings)
+    #expect(p.model.changedKeys(in: .apps).isEmpty && !p.model.canRestoreDefaults(in: .apps))
+    #expect(p.model.canRestoreDefaults(in: .windows))
+    p.model.restoreDefaults(in: .apps)
+    #expect(p.settings.excludedBundleIDs == ["com.apple.Music"] && p.commands.isEmpty)
+  }
+
+  @Test func aListWithoutAnEditorIsALineThatSaysHowLongItIs() throws {
+    // None is in the schema today; `displays` will be.
+    let entry = SettingEntry.list(
+      "rules", \.rules, shape: "a list", editedWith: "a text editor", "Options per display", "Other values for some displays.")
+    var settings = Settings()
+    settings.rules = [AppRule(app: "a.b", action: .float), AppRule(app: "c.d", action: .float)]
+    let row = try #require(Panel(settings: settings).model.row(for: entry))
+    #expect(row.control == .list(summary: "2 entries") && row.label == "Options per display" && row.isChanged)
+  }
+}

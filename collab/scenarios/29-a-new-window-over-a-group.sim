@@ -1,0 +1,34 @@
+# Proposed by the swarm's review (2026-10-14), from the product owner's replay; the documenter may edit or drop it.
+# Story: Mail and Notes are a group, saved as view 2, as in the guide. Looking at it, someone opens a terminal, which floats
+# over the group. They frame Safari and come back with the shortcut for view 2: the terminal is there, in front, and
+# has the focus it had. (F57; before, only a single framed window kept its new windows.)
+# Reference: T34 T52.
+open Safari
+open Mail
+open Notes
+dock 101 left
+dock 102 right
+dock 103 beside 102 bottom
+zoom 102
+out
+save-view 2
+open Term 500x400
+expect floating 104
+expect ring 104
+zoom 101
+expect hidden 104
+view 2
+expect visible 104
+expect ring 104
+# Inside the group only a part of what it opened over is showing.
+zoom 102
+expect hidden 104
+out
+expect visible 104
+# Notes closes, and Mail alone is what is left of the group. The terminal stays with it.
+close 103
+flush
+zoom 101
+expect hidden 104
+zoom 102
+expect visible 104

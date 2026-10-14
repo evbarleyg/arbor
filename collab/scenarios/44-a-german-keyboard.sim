@@ -1,0 +1,27 @@
+# Story: someone with a German keyboard. The menu says ⌃⌥A, ⌃⌥F, ⌃⌥D and those are the keys with these letters on
+# them; Back is on the key where a US keyboard has [, which is labelled Ü here, and the menu says so.
+# Then a French keyboard, where the digits need ⇧ to type and the saved views stay on the digit keys.
+# Written by the executor swarm (F44); for the documenter to review. Reference: A64.
+open Safari
+expect shortcut ctrl+opt+[ shows ⌃⌥[
+keyboard german
+expect shortcut ctrl+opt+a key 0
+expect shortcut ctrl+opt+a shows ⌃⌥A
+expect shortcut ctrl+opt+[ key 33
+expect shortcut ctrl+opt+[ shows ⌃⌥Ü
+expect shortcut ctrl+opt+] shows ⌃⌥+
+expect shortcut ctrl+opt+space shows ⌃⌥Space
+expect shortcut ctrl+opt+cmd+left shows ⌃⌥⌘←
+keyboard french
+expect shortcut ctrl+opt+a key 12
+expect shortcut ctrl+opt+a shows ⌃⌥A
+expect shortcut ctrl+opt+1 key 18
+expect shortcut ctrl+opt+1 shows ⌃⌥1
+expect shortcut ctrl+opt+shift+1 shows ⌃⌥⇧1
+keyboard dvorak
+expect shortcut ctrl+opt+d key 4
+expect shortcut ctrl+opt+[ key 27
+expect shortcut ctrl+opt+[ shows ⌃⌥[
+keyboard us
+expect shortcut ctrl+opt+a key 0
+expect shortcut ctrl+opt+[ shows ⌃⌥[

@@ -1,0 +1,32 @@
+# Proposed by the swarm's review (2026-10-14); the documenter may edit or drop it.
+# Story: view 1 is "Mail on its own". Mail is then moved somewhere else in the
+# arrangement. View 1, and Back, still frame Mail.
+# Reference: T34 T35.
+open Safari
+open Notes
+open Mail
+dock 101 left
+dock 102 right
+dock 103 beside 101 bottom
+zoom 103
+save-view 1
+show-all
+# Mail steps out of Safari's column.
+dock 103 right
+expect left-of 101 103
+view 1
+expect camera 103
+expect fills 103
+show-all
+# Dragged under Notes.
+drag 103 1200 850
+expect above 102 103
+back
+expect camera 103
+# Arranging while zoomed in keeps the windows in the order they had.
+arrange
+expect camera root
+expect above 101 102
+expect left-of 101 103
+view 1
+expect fail

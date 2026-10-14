@@ -1,0 +1,62 @@
+# Story: a newcomer docks three windows, frames one, wanders off, loses track of the others, and
+# finds that every way back works: the frame shortcut again, home, pause, and float-all.
+# Reference: T17 T30 T32 T61 T62, A40 A41. Window ids start at 101.
+open Safari
+open Mail
+open Notes
+open Slack
+dock 101 left
+dock 102 right
+dock 103 beside 102 bottom
+# Slack (104) floats on the Desktop between them.
+expect floating 104
+expect count docked 3
+# ⌃⌥↩ frames the focused window; the same keys again return to where the view came from.
+focus 103
+zoom
+expect fills 103
+expect hidden 101
+expect hidden 104
+zoom
+expect camera root
+expect visible 101
+expect visible 104
+# Wandering: frame Mail, walk to its neighbour, step in where there is nothing to step into.
+zoom 102
+neighbor down
+expect camera 103
+in
+expect fail
+# Lost. home shows everything.
+home
+expect ok
+expect camera root
+expect visible 101
+expect visible 102
+expect visible 103
+expect visible 104
+# A call starts. Framed on Notes, pause brings every window into view and Arbor lets go.
+zoom 103
+expect hidden 101
+pause
+expect ok
+expect visible 101
+expect visible 102
+expect visible 104
+dock 104 left
+expect fail
+# Mail is closed during the call. Afterwards the arrangement and the view come back without it.
+close 102
+resume
+expect ok
+expect camera 103
+expect fills 103
+expect hidden 101
+expect count docked 2
+# Enough: back to a normal Mac.
+float-all
+expect ok
+expect count docked 0
+expect visible 101
+expect visible 103
+expect visible 104

@@ -1,0 +1,77 @@
+# Story: someone in a video call all day pins the call, then works as usual: frames the editor, walks to
+# the browser, clicks around, arranges, floats everything, pauses. The call never leaves the view, is never
+# covered, and never takes the keyboard by itself.
+# Reference: F49 (A-items in collab/parity.json). Window ids start at 101.
+open Editor
+open Browser
+open Zoom 320x240
+move 103 1090 50 320 240
+dock 101 left
+dock 102 right
+# Without a pin the call leaves with the Desktop.
+zoom 101
+expect hidden 103
+show-all
+expect visible 103
+# Keep "Zoom" in View.
+move 103 1090 50 320 240
+pin 103
+expect ok
+expect pinned 103
+expect floating 103
+focus 101
+zoom
+expect fills 101
+expect visible 103
+expect in-front 103
+neighbor right
+expect camera desktop
+expect visible 103
+neighbor right
+expect fills 102
+expect visible 103
+expect in-front 103
+# Clicking the window under it does not bury it.
+focus 102
+expect in-front 103
+show-all
+expect visible 103
+# Dragging moves it, even over the edge of a docked window, where any other window would dock.
+drag 103 60 400
+expect floating 103
+expect pinned 103
+move 103 1090 50 320 240
+# Arranging leaves it out; floating everything leaves it where it is.
+arrange
+expect count docked 2
+expect pinned 103
+zoom 101
+float-all
+expect visible 103
+expect pinned 103
+# A pause lets go of everything and forgets nothing.
+dock 101 left
+zoom 101
+pause
+expect visible 103
+resume
+expect pinned 103
+expect visible 103
+# Docking it ends the pin, and floating it again does not bring the pin back.
+show-all
+dock 103 right
+expect docked 103
+float 103
+pin 103
+expect ok
+unpin 103
+expect ok
+unpin 103
+expect fail
+# A rule pins the next call as it opens, whatever is in view.
+rule com.example.facetime pin
+zoom 101
+open FaceTime 300x200
+expect pinned 104
+neighbor right
+expect visible 104

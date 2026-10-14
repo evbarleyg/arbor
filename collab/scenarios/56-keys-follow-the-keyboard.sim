@@ -1,0 +1,74 @@
+# Story: someone who lives on the keyboard writes in Notes with the pointer left over Safari. The shortcuts
+# mean Notes. Then they point at Safari, and the shortcuts mean Safari, until they go back to typing.
+# Reference: T31, A56 (docs/features/F56-keys-follow-the-keyboard.md). Window ids start at 101.
+open Safari
+open Notes
+open Mail
+dock 101 left
+dock 102 right
+dock 103 beside 102 bottom
+# The pointer is left over Safari; ⌘Tab to Mail, and type.
+cursor 200 400
+wait 5
+focus 103
+type
+wait 0.3
+# ⌃⌥↓ twice: into the group that holds Mail, then onto Mail. Safari, under the pointer, goes out of view.
+press in
+expect visible 102
+expect visible 103
+expect hidden 101
+wait 0.5
+press in
+expect camera 103
+# A pinch means what is under the pointer, whatever the keyboard is doing.
+press show-all
+expect camera root
+from gesture in
+expect camera 101
+press show-all
+# The focus went to Safari when Mail left the view. Back to Mail, and type.
+focus 103
+type
+wait 2
+# Pointing at Safari and pressing ⌃⌥↓ means Safari…
+cursor 220 420
+wait 0.4
+press in
+expect camera 101
+# …and so do the shortcuts that follow, however long one looks first.
+wait 4
+press out
+expect camera root
+wait 4
+press in
+expect camera 101
+# A second display is plugged in, with Terminal and Slack side by side on it and Terminal framed.
+# Safari is still framed on the main display.
+displays 2
+open Terminal
+open Slack
+move 104 1600 100 500 400
+move 105 2400 100 500 400
+dock 104 left
+dock 105 right
+zoom 104
+expect fills 101
+expect hidden 105
+# The trap: click into Terminal, push the mouse aside onto the main display, type.
+cursor 1700 300
+focus 104
+wait 1
+cursor 200 400
+wait 1
+type
+wait 0.3
+# ⌃⌥↑ zooms out the display being typed on. The one under the pointer stays as it was.
+press out
+expect visible 105
+expect fills 101
+expect hidden 102
+# A pinch, and a shortcut right after moving the pointer, mean the display under the pointer.
+from gesture out
+expect visible 102
+expect visible 103

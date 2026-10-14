@@ -1,0 +1,124 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push makes the run for the older one worthless.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+# A hosted Mac is the slower and scarcer machine.
+# Hence one macOS job, and none at all when it could prove nothing new (scripts/ci-changes.py
+# has the rules; "[mac]" in the head commit's subject asks for it regardless).
+#
+# Steps run through scripts/ci-step.py, which publishes test counts, the parity score and whatever
+# failed as check annotations, for executors that cannot download logs.
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+      checks: read
+    outputs:
+      mac: ${{ steps.decide.outputs.mac }}
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          sparse-checkout: scripts
+      - name: Does this run need a Mac?
+        id: decide
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: ./scripts/ci-changes.py
+
+  # Everything: the app, the real Accessibility and AppKit code, the headless stack, and real windows.
+  macos:
+    needs: changes
+    # Only an explicit "false" saves the Mac: it also runs when `changes` itself failed.
+    if: ${{ !cancelled() && needs.changes.outputs.mac != 'false' }}
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - name: Use the newest Xcode on the runner
+        run: |
+          xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          sudo xcode-select -s "$xcode"
+      - name: Toolchain
+        run: ./scripts/ci-step.py toolchain swift --version
+      - name: Build
+        id: build
+        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build
+      - name: Test
+        run: ./scripts/ci-step.py --summary 'Test run with|skipped' --log test.log test swift test
+      - name: Type-check the macOS-only code against stand-ins
+        run: ./scripts/ci-step.py --summary 'error:|type-check' typecheck-mac make typecheck-mac
+      - name: Simulator smoke test
+        run: ./scripts/ci-step.py smoke ./scripts/sim-smoke.sh
+      - name: User-journey scenarios
+        run: ./scripts/ci-step.py scenarios ./scripts/scenarios.sh
+      - name: Release tooling
+        run: ./scripts/ci-step.py --summary '✘|release tools test' release-tools ./scripts/release-tools-test.sh
+      - name: Parity (no shipped feature may break; FEATURES.md must be current)
+        run: ./scripts/ci-step.py parity python3 scripts/parity.py --test-log test.log --check
+      # Real windows. GitHub's macOS runners grant Accessibility to the runner's processes (probe P3,
+      # 2026-10-14), so arbor-e2e can move its test windows there. It needs only the build, so a failed
+      # test does not hide what real windows do; it comes after the parity step, which reads the
+      # committed evidence. The fresh evidence comes back as an artifact (or through
+      # scripts/mac-shell/run.sh scripts/mac-shell/e2e.sh); commit it as
+      # collab/evidence/e2e-latest.txt when `make parity` should count it.
+      - name: Real-window test
+        id: e2e
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: |
+          rm -f collab/evidence/e2e-latest.txt  # only a file this run wrote may be uploaded
+          ./scripts/ci-step.py e2e ./scripts/e2e.sh --full-screen
+      # Nobody is using this Mac's pointer, so the drags a person would make can be made for real (F17, H4).
+      - name: Real-pointer test
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: ./scripts/ci-step.py e2e-drag ./scripts/mac-shell/e2e-drag.sh
+      - name: Keep the evidence
+        if: ${{ !cancelled() && steps.e2e.outcome != 'skipped' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-evidence
+          path: collab/evidence/e2e-latest.txt
+          if-no-files-found: warn
+
+  # The headless stack only (see Package.swift), so that it stays buildable for executors without a
+  # Mac. Always runs: it is what checks parity, FEATURES.md and the scenarios when the Mac is left out.
+  # scripts/linux.sh runs the same image.
+  linux:
+    runs-on: ubuntu-latest
+    container: swift:6.4-noble
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Python for the scripts
+        run: apt-get update -qq && apt-get install -y -qq python3
+      - name: The rules that decide about the macOS job
+        run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py
+      - name: Lint (imports a Mac would miss; Mac shell scripts that would change a person's Mac)
+        run: ./scripts/ci-step.py lint make lint
+      - name: Toolchain
+        run: ./scripts/ci-step.py toolchain swift --version
+      - name: Build
+        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build
+      - name: Test
+        run: ./scripts/ci-step.py --summary 'Test run with|skipped' --log test.log test swift test
+      - name: Simulator smoke test
+        run: ./scripts/ci-step.py smoke ./scripts/sim-smoke.sh
+      - name: User-journey scenarios
+        run: ./scripts/ci-step.py scenarios ./scripts/scenarios.sh
+      - name: Release tooling
+        run: ./scripts/ci-step.py --summary '✘|release tools test' release-tools ./scripts/release-tools-test.sh
+      - name: Parity (no shipped feature may break; FEATURES.md must be current)
+        run: ./scripts/ci-step.py parity python3 scripts/parity.py --test-log test.log --check

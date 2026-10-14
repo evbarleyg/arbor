@@ -1,0 +1,91 @@
+# Story: someone with five windows, four of them out of view, finds each by typing a few letters, whatever
+# keeps it out of view, and hops back to where they were with Return alone.
+# Reference: A27 (docs/features/F27-window-finder.md). Window ids start at 101.
+# Written by the executor swarm, 2026-10-14; for the documenter to review.
+open Safari
+open Mail
+open Notes
+open Terminal
+open Music
+dock 101 left
+dock 102 right
+dock 103 beside 102 bottom
+dock 105 beside 101 bottom
+# Terminal (104) floats on the Desktop in the middle. Framed on Safari, everything else is out of view.
+focus 101
+zoom 101
+expect fills 101
+expect hidden 102
+expect hidden 104
+# ⌃⌥G, "no", Return: the level is kept, so Notes is framed as Safari was.
+find
+expect ok
+finder-type no
+finder-choose
+expect ok
+expect fills 103
+expect hidden 101
+# Return straight after ⌃⌥G goes back to the window before this one, and frames that.
+find
+finder-choose
+expect fills 101
+expect hidden 103
+# Escape changes nothing.
+zoom 101
+find
+finder-type mail
+finder-cancel
+expect fills 101
+expect hidden 102
+# Without the palette, for scripts and shortcuts.
+find music
+expect ok
+expect fills 105
+expect hidden 101
+# From a group the view steps out just far enough to show both.
+zoom 102
+out
+expect visible 103
+expect hidden 105
+find music
+expect ok
+expect visible 105
+expect visible 102
+# A floating window brings the Desktop back.
+zoom 101
+find term
+expect ok
+expect visible 104
+expect floating 104
+expect hidden 101
+# A minimised window comes back from the Dock to its own place.
+minimize 102
+zoom 101
+find mail
+expect ok
+expect fills 102
+show-all
+expect above 102 103
+# Saved views are in the same list.
+zoom 103
+save-view 3
+show-all
+find
+finder-type v3
+finder-choose
+expect fills 103
+# Nothing matches: it says so and nothing moves.
+find zebra
+expect fail
+expect fills 103
+# The window chosen has closed meanwhile: the palette stays open with a fresh list.
+find
+finder-type music
+close 105
+finder-choose
+expect ok
+expect fills 103
+finder-type safari
+finder-choose
+expect visible 101
+expect count docked 3

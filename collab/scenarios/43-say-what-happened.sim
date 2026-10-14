@@ -1,0 +1,86 @@
+# Story: a newcomer who only has the keyboard and the mouse, no terminal. Every key that seems dead says why, the
+# moments that frighten are explained a few times and then left alone, and an expert's routine stays silent.
+# Reference: A65 A66 (F43). `press` runs a command as its shortcut would; window ids start at 101.
+open Safari
+open Mail
+open Notes
+# The first key they try does nothing, and says what to do instead.
+press in
+expect fail
+expect said Nothing is docked yet: drag a window to a screen edge, or try ⌃⌥⌘←
+# They drag a window to the left edge. No command ran, and the moment is explained all the same.
+drag 101 3 400
+expect docked 101
+expect said Docked · ⌃⌥↩ frames it
+# They press those keys. The other windows vanish: the sentence that keeps a newcomer.
+focus 101
+press zoom
+expect fills 101
+expect hidden 102
+expect said Your other windows are out of view, not closed · ⌃⌥Space shows everything
+press show-all
+expect visible 102
+# The line goes by itself.
+flush
+expect silent
+# Something that cannot be seen is confirmed.
+press save-view 1
+expect said Saved view 1: everything
+flush
+# A view that was never saved: the sentence names the keys that would save it.
+press view 7
+expect fail
+expect said View 7 is not saved; ⌃⌥⇧7 saves where you are looking
+flush
+# The same commands from a script are answered in the reply only.
+view 7
+expect fail
+expect silent
+# After three times the hint is taken as read, and what can be seen for oneself is not announced.
+press zoom
+press show-all
+press zoom
+expect said out of view
+press show-all
+flush
+press zoom
+expect fills 101
+expect silent
+press show-all
+expect ok
+expect silent
+# The shortcuts, on screen; any command puts them away.
+press show-shortcuts
+expect ok
+expect silent
+press out
+expect fail
+expect said Already showing everything
+# Pausing clears the screen, then says how to come back.
+press toggle-pause
+expect said Paused until ⌃⌥⎋; windows that were out of view are back on screen
+flush
+expect silent
+press toggle-pause
+expect said Resumed
+# A name shows nowhere on the space, so giving one and taking it off are confirmed. The field is its own answer.
+press name Work
+expect said Named everything: Work
+flush
+press ask-name
+expect ok
+expect silent
+field-cancel
+press unname
+expect said Removed the name Work from everything
+# What a command took along is said, with the way back, and the way back works.
+focus 101
+press zoom
+press save-view 3
+press show-all
+flush
+press arrange
+expect said 2 saved views are gone · ⌃⌥Z takes it back
+press undo
+press view 3
+expect fills 101

@@ -1,0 +1,40 @@
+{"arbor":"dev (a51104d)","cursor":[134,533],"displays":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"visible":[0,31,1024,674]}],"focusHistory":[53,51,52],"focused":53,"minimumSizes":{"52":[700,500]},"mouseDown":false,"name":"stubborn-slow","onlyPIDs":[4418],"os":"macOS Version 26.6.2 (Build 25G83)","parked":[51,52],"recorded":"2026-10-14T07:07:58Z","settings":{"arrangeDesktopWeight":0.5,"bindings":{},"excludedBundleIDs":[],"frameRectangleModifier":"shift+cmd","gap":12,"gesturesEnabled":true,"hotkeysEnabled":true,"minimumUsableHeight":160,"minimumUsableWidth":240,"pinchThreshold":0.25,"rules":[],"screenEdgeBand":12,"tabsEnabled":false,"windowEdgeFraction":0.3},"thinning":0.05,"trace":1,"windows":[{"app":"ArborTestWindows","frame":[524,216,480,352],"id":50,"pid":4418,"title":"title-1"},{"app":"ArborTestWindows","frame":[1023,673,1000,650],"id":51,"pid":4418,"title":"title-2"},{"app":"ArborTestWindows","frame":[1023,673,1000,650],"id":52,"pid":4418,"title":"title-3"},{"app":"ArborTestWindows","frame":[714,133,558,650],"id":53,"pid":4418,"title":"title-4"}],"workspaces":{"07230EFA-7A8D-4E37-845C-19CC8737EEF5":{"back":[2,4,2,4,2],"camera":2,"floating":{"50":[[524,216],[480,352]],"53":[[714,133],[558,650]]},"forward":[],"savedViews":{},"tree":{"desktop":0,"nextRawID":7,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"parent":2,"weight":1},"2":{"id":2,"kind":{"split":{"axis":"horizontal","children":[4,3,0]}},"weight":1},"3":{"id":3,"kind":{"stack":{"active":0,"windows":[51]}},"parent":2,"weight":0.25},"4":{"id":4,"kind":{"stack":{"active":0,"windows":[52]}},"parent":2,"weight":0.5}},"root":2}}}}
+{"t":0.0057,"note":"a window that goes back to its old frame 0.4 s after every move is docked by a command"}
+{"t":0.0098,"command":"dock 53 left"}
+{"t":0.0125,"call":"setFrame","frame":[12,43,241,650],"id":53,"result":[12,43,241,650],"took":0.0025}
+{"t":0.0137,"call":"setFrame","frame":[599,216,413,352],"id":50,"result":[599,216,413,352],"took":0.0012}
+{"t":0.0169,"call":"focus","id":53}
+{"t":0.0180,"done":"dock 53 left","message":"docked w53 at the left edge","ok":true}
+{"t":0.2582,"raw":"AXResized w53"}
+{"t":0.2584,"event":"changed","user":false,"window":{"app":"ArborTestWindows","frame":[12,43,241,650],"id":53,"pid":4418,"title":"title-4"}}
+{"t":0.2587,"raw":"AXMoved w53"}
+{"t":0.2589,"event":"changed","user":false,"window":{"app":"ArborTestWindows","frame":[12,43,241,650],"id":53,"pid":4418,"title":"title-4"}}
+{"t":0.2591,"raw":"AXResized w50"}
+{"t":0.2592,"event":"changed","user":false,"window":{"app":"ArborTestWindows","frame":[599,216,413,352],"id":50,"pid":4418,"title":"title-1"}}
+{"t":0.2593,"raw":"AXMoved w50"}
+{"t":0.2594,"event":"changed","user":false,"window":{"app":"ArborTestWindows","frame":[599,216,413,352],"id":50,"pid":4418,"title":"title-1"}}
+{"t":0.4863,"raw":"AXResized w53"}
+{"t":0.4887,"event":"changed","user":true,"window":{"app":"ArborTestWindows","frame":[714,133,558,650],"id":53,"pid":4418,"title":"title-4"}}
+{"t":0.7592,"timer":"enforce-07230EFA-7A8D-4E37-845C-19CC8737EEF5"}
+{"t":0.7593,"call":"isMouseButtonDown","result":false}
+{"t":0.7637,"call":"setFrame","frame":[12,43,241,650],"id":53,"result":[12,43,241,650],"took":0.0042}
+{"t":0.7645,"raw":"AXResized w53"}
+{"t":0.7649,"event":"changed","user":false,"window":{"app":"ArborTestWindows","frame":[12,43,241,650],"id":53,"pid":4418,"title":"title-4"}}
+{"t":0.7652,"raw":"AXMoved w53"}
+{"t":0.7657,"event":"changed","user":false,"window":{"app":"ArborTestWindows","frame":[12,43,241,650],"id":53,"pid":4418,"title":"title-4"}}
+{"t":0.7724,"timer":"save"}
+{"t":0.9595,"raw":"AXResized w53"}
+{"t":0.9612,"event":"changed","user":true,"window":{"app":"ArborTestWindows","frame":[714,133,558,650],"id":53,"pid":4418,"title":"title-4"}}
+{"t":1.2717,"timer":"enforce-07230EFA-7A8D-4E37-845C-19CC8737EEF5"}
+{"t":1.2718,"call":"isMouseButtonDown","result":false}
+{"t":1.2749,"call":"setFrame","frame":[12,43,241,650],"id":53,"result":[12,43,241,650],"took":0.003}
+{"t":1.2784,"raw":"AXResized w53"}
+{"t":1.2786,"event":"changed","user":false,"window":{"app":"ArborTestWindows","frame":[12,43,241,650],"id":53,"pid":4418,"title":"title-4"}}
+{"t":1.2788,"raw":"AXMoved w53"}
+{"t":1.2789,"event":"changed","user":false,"window":{"app":"ArborTestWindows","frame":[12,43,241,650],"id":53,"pid":4418,"title":"title-4"}}
+{"t":1.3883,"raw":"AXResized w53"}
+{"t":1.3884,"event":"changed","user":false,"window":{"app":"ArborTestWindows","frame":[714,133,558,650],"id":53,"pid":4418,"title":"title-4"}}
+# The next line was added by hand. The recording was made with an AXWindowSystem that took the change above for an echo and said no more (B2).
+# Since #24 it looks again 0.3 s later and, finding the window not where Arbor put it, reports that as somebody else's move.
+{"t":1.6884,"event":"changed","user":true,"window":{"app":"ArborTestWindows","frame":[714,133,558,650],"id":53,"pid":4418,"title":"title-4"}}
+{"t":6.1147,"end":"trace off","lines":36,"thinned":0}

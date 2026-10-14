@@ -1,0 +1,81 @@
+# F48: A window that floats again gets its old size back
+
+Written by the executor swarm, 2026-10-14; for the documenter to review.
+
+Status: done (`feat/F48-floating-restores-size`)
+Depends on: F01; touches `Workspace`, as I3 (undo) does
+Size: small to medium
+
+## Summary
+
+Docking stretches a window to its slot. Floating it again leaves it stretched: a small Notes window that spent an hour as a 700 × 850 column stays 700 × 850, and floating a **framed** window leaves a
+display-sized window floating over whatever the view moved to. "Float All Windows: back to a normal Mac" (T17, T62) and quitting (T61) leave a Mac full of column-shaped windows. macOS 15's own tiling, Rectangle, Magnet and
+Windows all give a window its previous size back when it leaves a tile, so this is what people expect.
+
+## Behaviour
+
+- When a floating window is docked (drag, command, rule, `arrange`), Arbor remembers the frame it floated at.
+- `float`, `toggle-float`: the window takes its remembered **size**, centred on where its slot was, fitted into the Desktop if the Desktop is in view, otherwise into the display.
+- Dragging a docked window out and dropping it to float: remembered size, placed so that the pointer stays over the title bar at the same relative position. (Resizing at the drop is safe. Resizing when the
+  drag starts, as macOS does, looks better but means setting a frame during a live drag; try it on a Mac behind a setting before making it the default.)
+- `float-all` and quitting: remembered **frame**, position too: these mean "as it was".
+- A window docked since Arbor first saw it, with nothing remembered, keeps today's behaviour.
+- Remembered frames are saved with the arrangement and dropped when the window closes.
+
+## Design notes
+
+- `Workspace.undockedFrames: [WindowID: CGRect]?` (optional, so old `state.json` files load with the synthesised decoder). Set in `Workspace.dock` from `floating[window]` before it is cleared, only if nothing is
+  remembered yet (moving a docked window must not overwrite it); cleared in `forget` and `undock`. `arrange` and `reset(tree:)` go through the same helper.
+- `Controller.floatingFrame(for:on:)` is the one place that decides where an undocked window goes.
+- A remembered frame on a display that has gone is fitted into the current one.
+
+## Acceptance criteria
+
+1. Dock a 400 × 300 window, float it: 400 × 300, centred on its old slot, inside the Desktop.
+2. Frame it, then float it: 400 × 300, and the view is one that shows the Desktop.
+3. `arrange` then `float-all`: every window is back at its exact frame. The same for quit.
+4. Moving a docked window around with ⌃⌥⌘ + arrows does not change what is remembered.
+5. An old `state.json` loads; the new one round-trips.
+
+## Shipped / Not shipped
+
+Shipped: everything above. Each criterion has a scenario test in `Tests/ArborKitTests/UndockedFrameTests.swift` (1 `aFloatedWindowTakesItsOldSizeCentredOnItsSlot`, 2 `floatingAFramedWindowShowsTheDesktop`,
+3 `floatAllPutsEveryWindowBackExactlyWhereItWas` and `quittingPutsEveryWindowBackExactlyWhereItWas`, 4 `movingADockedWindowAroundDoesNotChangeWhatIsRemembered`, 5 `anOldStateFileLoadsAndItsWindowsKeepTheirSlotsSize` and
+`theNextLaunchDocksThemAgainAndStillRemembers`); the model's part is in `Tests/ArborCoreTests/UndockedFrameTests.swift`; `collab/scenarios/48-float-gets-its-size-back.sim` tells the story; `arbor-e2e` checks `float` and quitting on real windows.
+
+Beyond the list above:
+
+- **Excluding an app** lets go as quitting does: the remembered frame.
+- **Pausing** (the product owner's decision, F40) does not touch what is in view. Windows out of view come back on screen at the remembered frame. Quitting during a pause puts the rest back too, except what somebody has moved
+  meanwhile, so it leaves no column-shaped windows either.
+- **Windows that take no space** (minimized, hidden, on another macOS Space) get their frame back from `float-all` and quitting too, or they would come back later in the shape of a slot.
+- **A window docked by a rule as it opens** goes back to the frame its app gave it.
+- **A dropped window is not pushed onto the Desktop** by the layout that follows the drop, so it does not jump away from the pointer when its old slot closes and the Desktop moves.
+- **Its own size, also beside a narrow Desktop** (the product owner's review): "fitted into the Desktop" moves the window and does not shrink it. After `arrange`, whose Desktop is a narrow column, `float` gives 800 × 600 back as a drag does: on the
+  Desktop as far as it fits, over the docked windows for the rest, kept on the display, and left alone by the layout that follows.
+- **With the Desktop out of view** a window that starts to float (by command or by a drop) is a guest of the view it floats over (F57), so it leaves and comes back with that view.
+- **A window that grows at the drop** slides back onto the display as far as the pointer stays on its title bar.
+- **Slots that wait for their window** (the app shell review's pending slots) keep what is remembered, and `Workspace.repaired()` drops frames remembered for windows that are not docked.
+- **Windows that floated all along** are let go of too: one that docked windows pushed aside or squeezed to keep it on the Desktop goes back to where the user left it.
+- **A floating window that can no longer be as small as it was** (its app's minimum grew: a sidebar opened, a larger font): when it is pushed onto the Desktop and its app refuses the size, what is remembered grows on that side to the
+  size the app took. The window ends on the screen, in one move from then on. A window merely squeezed onto a narrow Desktop still goes back to the size the user gave it.
+- **A tile's window floated while the Desktop is a tile too** (two large windows after `arrange all`): the room its slot took goes to the Desktop (F61), so `float` looks at the layout that is to come, not at the one before room is made, and the window comes into
+  view with the Desktop, at its own size, in one move. Should a layout ever show the Desktop against that forecast, it places the window like any other floating one.
+- **An app that does not answer** when its window is to be put back: a window that was out of view still counts as out of view and is placed as soon as the app answers. One that was in view stays where it is, at its slot's size.
+- **A move is not a resize.** A floating window that Arbor squeezed to keep it on the Desktop, and that its user then only moves (by the title bar or otherwise), keeps its own size to go back to, from where it is now. Only a resize by its user changes the size that is remembered.
+  Not built: a move during a pause, which Arbor does not see.
+- **Exactly** means exactly: a window that hung over a screen edge goes back there. A frame is fitted into its display only when it is no longer a place for a window (larger than the display, less than half
+  on it, its title bar under the menu bar).
+- **Other displays**: a window docked on another display than the one it floated on keeps its size and its distance from the display's corner. When a display goes away, its docked windows float on the
+  main one at their own sizes.
+- **A restarted app's window**, matched again by app and title, keeps what was remembered.
+- **A window in macOS's full screen** is left alone; macOS does not let it be moved.
+- **Guests** (F57) that are out of view come back where they were; a guest in view is not touched by a pause; a guest that is docked and floats again has its own size.
+- Placing the dropped window relative to the pointer needs its frame at mouse-up. `AXWindowSystem.endGrab` (F17) reads it from the window server just before `dragEnded`.
+
+Not shipped:
+
+- **Shrinking when the drag starts**, as macOS's own tiling does. It means setting a frame during a live drag; nobody has tried that on a Mac yet.
+- **Tearing a tab off its strip** (F04) is not on the trunk yet. Dragging a tab's window out and `float` on either tab are covered (`aTabThatFloatsGetsItsOwnSizeBack`); a drop that ends in `finishDrop` with its pointer gets the size back.
+- **What the user did while Arbor was not looking.** A docked window moved or resized between a quit and the next launch, or during a pause, is docked again and still goes back to the frame
+  remembered before. Telling that apart from a crash (where windows are found in their slots) needs a "quit cleanly" mark in `state.json`.

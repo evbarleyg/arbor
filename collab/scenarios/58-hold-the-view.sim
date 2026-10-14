@@ -1,0 +1,162 @@
+# Proposed by the executor who built F58 (2026-10-14); for the documenter to adopt or change.
+#
+# Someone presents Keynote on a shared screen. Mail and Slack are docked out of view, Notes floats on the
+# Desktop. Nothing may jump, appear or change size that they did not ask for.
+quiet
+open Keynote
+open Mail
+open Slack
+open Notes
+dock 101 left
+dock 102 right
+dock 103 beside 102 bottom
+rule com.example.terminal dock bottom
+zoom 101
+focus 101
+expect fills 101
+expect hidden 102
+expect hidden 103
+expect hidden 104
+
+# Hold This View, from the menu.
+hold
+expect ok
+expect held view
+
+# A chat mention: Slack brings itself forward. It stays out of view, and typing goes on in Keynote.
+comes-forward 103
+expect hidden 103
+expect focused 101
+expect camera 101
+
+# ⌘Tab to Mail by habit: the same.
+focus 102
+expect hidden 102
+expect focused 101
+expect fills 101
+
+# A slip of the fingers on ⌃⌥Space, ⌃⌥↑, ⌃⌥→, ⌃⌥A.
+show-all
+expect fail
+out
+expect fail
+neighbor right
+expect fail
+arrange
+expect fail
+expect camera 101
+expect hidden 102
+
+# A nudge of the title bar, a drag to the screen edge, ⌃⌥F: the one window being shown stays where it is.
+drag 101 3 400
+expect fills 101
+expect hidden 102
+toggle-float 101
+expect fail
+expect fills 101
+
+# A terminal opens. Its rule would dock it and halve Keynote; it floats instead.
+open Terminal
+expect floating 105
+expect visible 105
+expect fills 101
+
+# The talk is over.
+release
+expect ok
+expect held no
+expect docked 105
+show-all
+expect ok
+expect visible 102
+
+# A call, not a presentation: Arbor holds still by itself while the meeting's window is open.
+zoom 101
+focus 101
+open Zoom
+hold-still-for com.example.zoom Meeting
+expect held no
+title 106 Zoom Meeting
+expect held still
+focus 101
+
+# Slack pushes itself forward: no.
+comes-forward 103
+expect hidden 103
+expect focused 101
+
+# The person's own keys and their own ⌘Tab: yes.
+neighbor right
+expect ok
+zoom 101
+focus 103
+expect visible 103
+expect focused 103
+
+# For a demo during the call they hold the view, then let go: the call goes on, and so does holding still.
+zoom 101
+hold
+expect held view
+release
+expect held still
+
+# The call ends.
+close 106
+expect held no
+
+# Pausing is the opposite: it brings everything into view, and ends a hold.
+zoom 101
+hold
+pause
+expect ok
+expect held no
+expect visible 102
+expect visible 103
+resume
+expect held no
+
+# Three things that showed an audience everything, found by the product owner on review.
+# 1. A slip on a key. ⌃⌥⇧F floats everything: refused. ⌃⌥⎋ pauses, which brings everything into view: held, it only lets go.
+show-all
+float 105
+zoom 101
+focus 101
+hold
+key ctrl+opt+shift+f
+expect fail
+expect held view
+expect hidden 102
+key ctrl+opt+escape
+expect ok
+expect held no
+expect fills 101
+expect hidden 102
+expect hidden 103
+
+# 2. ⌘M on the window being shown, by habit. The wallpaper gives nothing away, and the view is still held.
+# (A rule for later, now: settings wait while the view is held.)
+rule com.example.console dock beside com.example.mail bottom
+hold
+set gap 40
+expect fail
+minimize 101
+expect held view
+expect hidden 102
+expect hidden 103
+expect hidden 104
+show-all
+expect fail
+restore 101
+expect fills 101
+expect hidden 102
+
+# 3. The end of the hold. A console's rule puts it under Mail, which is out of view: that would move the view, so it goes on floating.
+open Console
+expect floating 107
+focus 101
+release
+expect ok
+expect floating 107
+expect fills 101
+expect hidden 102
+expect hidden 103

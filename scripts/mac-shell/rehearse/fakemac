@@ -1,0 +1,4 @@
+#!/bin/bash
+# Stands in for arborctl, the pointer tool, `open` and `lsappinfo` in a rehearsal
+# (scripts/mac-shell/rehearse.sh), under those names.
+exec "$ARBOR_FAKEMAC" "${0##*/}" "$@"

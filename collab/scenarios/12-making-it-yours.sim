@@ -1,0 +1,64 @@
+# Story: an evening of making Arbor one's own, with commands, which is also everything the settings window does: each of
+# its controls runs one of these. A wider gap, a slip that is refused, a shortcut moved, a rule by the app's name, an
+# app left alone, a switch on a key.
+# Written by the executor swarm (F12); for the documenter to review.
+# Reference: T72, A17. Window ids start at 101; `open Safari` has the bundle id com.example.safari.
+open Safari
+open Mail
+dock 101 left
+dock 102 right
+zoom 101
+expect fills 101
+# A wider gap applies at once: `fills` counts the gap in use.
+set gap 40
+expect ok
+expect fills 101
+# A slip changes nothing and says why.
+set gap 500
+expect fail
+expect fills 101
+set gpa 10
+expect fail
+reset gap
+expect fills 101
+show-all
+# The Desktop's shortcut moves to other keys, written as menus show them; the old keys are free again.
+expect shortcut ctrl+opt+d on
+bind ⌃⌥X desktop
+expect ok
+unbind ctrl+opt+d
+expect shortcut ctrl+opt+x on
+expect shortcut ctrl+opt+d off
+# A key that would no longer type is refused.
+bind x desktop
+expect fail
+reset bindings
+expect shortcut ctrl+opt+d on
+expect shortcut ctrl+opt+x off
+# A rule for an app by the name people know it by, since it has a window open.
+rule add Mail dock left
+expect ok
+open Mail
+expect docked 103
+# An app nobody has heard of is not taken for a bundle id.
+rule add Keynote dock left
+expect fail
+# Leave an app alone, and take it back.
+set dont-arrange add Safari
+expect ok
+expect count docked 2
+set dont-arrange remove safari
+expect ok
+# A switch on a key: the focus ring off and on.
+focus 102
+expect ring 102
+set focusRing toggle
+expect ring none
+set focusRing toggle
+expect ring 102
+# Everything back, except what took longest to make.
+set gap 30
+reset all
+expect ok
+open Mail
+expect docked 104

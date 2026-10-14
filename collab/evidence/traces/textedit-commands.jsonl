@@ -1,0 +1,48 @@
+{"arbor":"dev (a51104d)","cursor":[904,255],"displays":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"visible":[0,31,1024,677]}],"focused":105,"mouseDown":false,"name":"textedit-commands","onlyPIDs":[5622],"os":"macOS Version 26.6.2 (Build 25G83)","recorded":"2026-10-14T07:08:44Z","settings":{"arrangeDesktopWeight":0.5,"bindings":{},"excludedBundleIDs":[],"frameRectangleModifier":"shift+cmd","gap":12,"gesturesEnabled":true,"hotkeysEnabled":true,"minimumUsableHeight":160,"minimumUsableWidth":240,"pinchThreshold":0.25,"rules":[],"screenEdgeBand":12,"tabsEnabled":false,"windowEdgeFraction":0.3},"thinning":0.05,"trace":1,"windows":[{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[332,43,680,653],"id":105,"pid":5622,"title":"title-1"}],"workspaces":{"07230EFA-7A8D-4E37-845C-19CC8737EEF5":{"back":[],"camera":0,"floating":{"105":[[547,115],[680,653]]},"forward":[],"savedViews":{},"tree":{"desktop":0,"nextRawID":3,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"weight":1}},"root":0}}}}
+{"t":0.0144,"note":"textedit: dock left, make the slot 250 points narrower, frame it, show the Desktop, show all, float"}
+{"t":0.0245,"command":"dock 105 left"}
+{"t":0.0300,"call":"setFrame","frame":[12,43,494,653],"id":105,"result":[12,43,494,653],"took":0.0053}
+{"t":0.0319,"call":"focus","id":105}
+{"t":0.0333,"done":"dock 105 left","message":"docked w105 at the left edge","ok":true}
+{"t":0.0334,"raw":"AXResized w105"}
+{"t":0.0336,"event":"changed","user":false,"window":{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[12,43,494,653],"id":105,"pid":5622,"title":"title-1"}}
+{"t":0.0341,"raw":"AXMoved w105"}
+{"t":0.0342,"event":"changed","user":false,"window":{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[12,43,494,653],"id":105,"pid":5622,"title":"title-1"}}
+{"t":0.5371,"timer":"save"}
+{"t":1.6185,"command":"resize 105 right -250"}
+{"t":1.6263,"call":"setFrame","frame":[12,43,244,653],"id":105,"result":[12,43,244,653],"took":0.0075}
+{"t":1.6270,"done":"resize 105 right -250","message":"resized w105","ok":true}
+{"t":1.6275,"raw":"AXResized w105"}
+{"t":1.6278,"event":"changed","user":false,"window":{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[12,43,244,653],"id":105,"pid":5622,"title":"title-1"}}
+{"t":2.1503,"timer":"save"}
+{"t":3.2189,"command":"zoom 105"}
+{"t":3.2285,"call":"setFrame","frame":[12,43,1000,653],"id":105,"result":[12,43,1000,653],"took":0.0093}
+{"t":3.2296,"call":"focusedWindow","result":105}
+{"t":3.2298,"call":"focus","id":105}
+{"t":3.2312,"done":"zoom 105","message":"framed w105","ok":true}
+{"t":3.2317,"raw":"AXResized w105"}
+{"t":3.2320,"event":"changed","user":false,"window":{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[12,43,1000,653],"id":105,"pid":5622,"title":"title-1"}}
+{"t":3.7637,"timer":"save"}
+{"t":4.8006,"command":"desktop"}
+{"t":4.8008,"call":"cursorLocation","result":[904,255]}
+{"t":4.8033,"call":"setFrame","frame":[1023,767,1000,653],"id":105,"result":[1023,676,1000,653],"took":0.0022}
+{"t":4.8038,"call":"focusedWindow","result":105}
+{"t":4.8038,"call":"cursorLocation","result":[904,255]}
+{"t":4.8039,"done":"desktop","message":"showing the Desktop","ok":true}
+{"t":4.8040,"raw":"AXMoved w105"}
+{"t":4.8041,"event":"changed","user":false,"window":{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[1023,676,1000,653],"id":105,"pid":5622,"title":"title-1"}}
+{"t":5.3241,"timer":"save"}
+{"t":6.3900,"command":"show-all"}
+{"t":6.3902,"call":"cursorLocation","result":[904,255]}
+{"t":6.3987,"call":"setFrame","frame":[12,43,244,653],"id":105,"result":[12,43,244,653],"took":0.0082}
+{"t":6.4033,"call":"focusedWindow","result":105}
+{"t":6.4036,"done":"show-all","message":"showing everything","ok":true}
+{"t":6.4050,"raw":"AXResized w105"}
+{"t":6.4051,"event":"changed","user":false,"window":{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[12,43,244,653],"id":105,"pid":5622,"title":"title-1"}}
+{"t":6.4054,"raw":"AXMoved w105"}
+{"t":6.4057,"event":"changed","user":false,"window":{"app":"TextEdit","bundle":"com.apple.TextEdit","frame":[12,43,244,653],"id":105,"pid":5622,"title":"title-1"}}
+{"t":6.9378,"timer":"save"}
+{"t":7.9239,"command":"float 105"}
+{"t":7.9247,"done":"float 105","message":"w105 is floating","ok":true}
+{"t":8.4630,"timer":"save"}
+{"t":9.5052,"end":"trace off","lines":47,"thinned":0}

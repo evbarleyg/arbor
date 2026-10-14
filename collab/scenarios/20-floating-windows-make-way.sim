@@ -1,0 +1,48 @@
+# Proposed by the swarm's review (2026-10-14); the documenter may edit or drop it.
+# Story: a wide Preview window floats while Safari docks beside it. Preview makes
+# way, stays in view when the Desktop is squeezed into a tile, and is left alone
+# where its owner puts it on purpose.
+# Reference: T03 T08 T50.
+open Safari 440x400
+open Preview 1000x500
+dock 101 left
+# Preview is pushed off the space Safari took.
+expect left-of 101 102
+expect visible 102
+# Safari's edge is pulled across the Desktop until it is too narrow to use. Only a move
+# of the view takes a window out of view, so Preview stays.
+resize 101 right 500
+expect visible 102
+# A look at Safari on its own takes Preview out of view. Back where the Desktop is part of the view, if only as a
+# tile, Preview is in view again.
+zoom 101
+expect hidden 102
+back
+expect visible 102
+# ⌘Tab to Preview from the framed Safari opens the Desktop rather than leaving it out of view.
+zoom 101
+flush
+focus 102
+expect camera desktop
+expect visible 102
+back
+back
+resize 101 right -500
+expect visible 102
+expect left-of 101 102
+# Put half over Safari on purpose, it stays there when something else changes.
+open Notes
+dock 103 right
+move 102 500 300 400 300
+minimize 103
+restore 103
+expect visible 102
+expect left-of 102 103
+# Floating a window out of a column puts it on the Desktop, not over its old neighbour. (It has its own size
+# back, F48, and fits. One wider than the Desktop hangs over: 48-float-gets-its-size-back.sim.)
+open Mail
+dock 104 beside 101 bottom
+float 101
+expect floating 101
+expect size 101 440x400
+expect left-of 104 101

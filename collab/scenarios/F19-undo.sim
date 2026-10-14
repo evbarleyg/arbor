@@ -1,0 +1,89 @@
+# Story: a writer has a browser and notes on either side of the Desktop and is reading the browser
+# on its own. One slip (Arrange instead of Desktop) rearranges everything; one undo puts it all back,
+# the view included. Then a window dropped on the wrong edge, and a window that closed in between.
+# Written by the executor swarm. Spec: F19. Window ids start at 101.
+open Safari
+open Notes
+open Mail
+undo
+expect fail
+dock 101 left
+dock 102 right
+zoom 101
+expect fills 101
+# The slip.
+arrange
+expect count docked 3
+expect camera root
+undo
+expect ok
+expect count docked 2
+expect floating 103
+expect camera 101
+expect fills 101
+expect hidden 102
+# Changing one's mind again.
+redo
+expect count docked 3
+undo
+expect fills 101
+# Moving the view is not a step: undo goes past it, and leaves the view alone.
+show-all
+expect visible 102
+undo
+expect floating 102
+expect docked 101
+expect camera root
+redo
+expect left-of 101 102
+# A drop on the wrong edge.
+drag 103 1437 450
+expect docked 103
+expect left-of 102 103
+undo
+expect floating 103
+expect visible 103
+# A docked window that closed cannot come back. Undo says so once, then goes on to what it can
+# still take back, passing over the step that was about the closed window.
+dock 103 beside 101 bottom
+close 103
+undo
+expect fail
+expect docked 102
+undo
+expect ok
+expect floating 102
+expect docked 101
+# A new change clears redo.
+float 101
+redo
+expect fail
+undo
+expect docked 101
+undo
+expect floating 101
+undo
+expect fail
+# With one window framed, a change elsewhere would not show, and the next press would take back something
+# else. The view steps out just far enough to show it; Back returns.
+dock 101 left
+dock 102 right
+resize 102 left 80
+zoom 101
+expect hidden 102
+undo
+expect ok
+expect visible 102
+back
+expect fills 101
+# A dozen taps on a shortcut that each move an edge a little are one adjustment, and one undo.
+show-all
+resize 101 right 20
+resize 101 right 20
+resize 101 right 20
+undo
+expect ok
+undo
+expect ok
+expect floating 102
+expect docked 101

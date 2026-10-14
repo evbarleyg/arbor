@@ -1,0 +1,50 @@
+# Proposed by the swarm (2026-10-14, F30); the documenter may edit or drop it.
+# Story: Safari is docked between Notes and the Desktop, where a calculator floats. A video goes full
+# screen with the green button. Arbor leaves it to macOS: it keeps its place, is not turned into a tile,
+# and commands on it are refused. When it comes back, everything is where it was.
+# Reference: T63.
+open Notes
+open Safari
+open Calculator 300x400
+dock 101 left
+dock 102 beside 101 right
+expect left-of 101 102
+expect floating 103
+fullscreen 102 on
+# Still docked, taking no space, and not Arbor's to move.
+expect docked 102
+expect hidden 102
+expect count docked 2
+zoom 102
+expect fail
+float 102
+expect fail
+resize 102 right 50
+expect fail
+dock 102 left
+expect fail
+expect docked 102
+fullscreen 102 off
+expect visible 101
+expect visible 102
+expect visible 103
+expect left-of 101 102
+expect floating 103
+# Not taken for a window that refuses to shrink: it can be framed and goes back.
+zoom 102
+expect fills 102
+back
+expect left-of 101 102
+# A floating window does the same, and returns to where its owner left it.
+move 103 1000 300 300 400
+fullscreen 103 on
+expect floating 103
+expect hidden 103
+fullscreen 103 off
+expect visible 103
+expect left-of 102 103
+# Misspelt, it says how.
+fullscreen 103 maybe
+expect fail
+fullscreen 999 on
+expect fail

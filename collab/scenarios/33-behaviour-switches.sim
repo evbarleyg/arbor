@@ -1,0 +1,56 @@
+# Story: someone who likes TrellisWM's other settings turns each switch of F33 round and finds
+# that only the thing it names changes.
+# Reference: T05 T06 T11 T52.
+open Safari
+open Notes
+open Mail
+open Calculator 300x400
+
+# No drop preview: a drag to the left screen edge still docks.
+set previewDrags false
+expect ok
+drag 103 3 450
+expect docked 103
+dock 102 left
+dock 101 left
+expect left-of 101 102
+expect left-of 102 103
+
+# No seam handles: there is nothing to drag in the gaps, but the keyboard still resizes.
+set gapHandles off
+seam 0 40
+expect fail
+resize 101 right 40
+expect ok
+set gapHandles hidden
+seam 0 -40
+expect ok
+
+# Small while out of view: windows leave and come back as before.
+set shrinkOutOfView true
+zoom 102
+expect fills 102
+expect hidden 101
+expect hidden 104
+back
+expect visible 101
+expect visible 103
+expect floating 104
+expect visible 104
+
+# A leaving window's space goes to its neighbour; a minimized one still gets its spot back.
+set shareRemovedSpace false
+minimize 102
+expect left-of 101 103
+restore 102
+expect left-of 101 102
+expect left-of 102 103
+close 102
+expect count docked 2
+expect left-of 101 103
+
+# A key that does not exist, and a value that does not fit.
+set noSuchKey true
+expect fail
+set shrinkOutOfView sometimes
+expect fail

@@ -1,0 +1,46 @@
+# Proposed by the swarm (2026-10-14, F18); the documenter may edit or drop it.
+# Story: someone who likes every point of the screen used turns on soleFloatTakesDesktop.
+# Notes floats alone beside Safari and takes the whole Desktop; when Mail opens, Notes is its
+# old self again; when Mail closes, it takes the Desktop again; once resized by hand it is left alone.
+# Reference: T21.
+open Safari
+open Notes
+dock 101 left
+set soleFloatTakesDesktop true
+expect floating 102
+expect left-of 101 102
+# The Desktop framed: a window that takes the Desktop fills the view.
+desktop
+expect camera desktop
+expect fills 102
+back
+# It goes out of view and comes back with the Desktop, like any floating window.
+zoom 101
+expect hidden 102
+back
+expect visible 102
+# Company: both float at their own sizes, so Notes fits above Mail again.
+open Mail 400x200
+move 103 900 650 400 200
+move 102 900 100 400 300
+expect above 102 103
+close 103
+desktop
+expect fills 102
+back
+# The user's hand wins: pulled shorter, it stays shorter.
+pull 102 bottom -400
+open Mail 400x200
+move 104 900 650 400 200
+expect above 102 104
+dock 104 right
+desktop
+expect fills 102
+back
+# Back to a normal Mac: nothing is docked, so nothing is stretched.
+float-all
+close 101
+close 104
+desktop
+expect floating 102
+expect visible 102

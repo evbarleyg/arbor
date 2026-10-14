@@ -1,0 +1,26 @@
+# Story: a writer docks a browser and notes on either side of the Desktop,
+# adds mail under the browser, focuses on the browser, then comes back.
+# Reference: T01 T02 T03 T30 T32 T34. Window ids start at 101.
+open Safari
+open Notes
+open Mail
+dock 101 left
+expect ok
+expect docked 101
+dock 102 right
+expect left-of 101 102
+expect count docked 2
+dock 103 beside 101 bottom
+expect above 101 103
+expect camera root
+zoom 101
+expect fills 101
+expect hidden 102
+expect hidden 103
+expect camera 101
+back
+expect visible 102
+expect visible 103
+expect camera root
+out
+expect fail

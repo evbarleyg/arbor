@@ -1,0 +1,40 @@
+{"arbor":"dev (a51104d)","cursor":[904,255],"displays":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"visible":[0,31,1024,680]}],"focusHistory":[183],"focused":183,"mouseDown":false,"name":"calculator-commands","onlyPIDs":[11642],"os":"macOS Version 26.6.2 (Build 25G83)","recorded":"2026-10-14T07:11:39Z","settings":{"arrangeDesktopWeight":0.5,"bindings":{},"excludedBundleIDs":[],"frameRectangleModifier":"shift+cmd","gap":12,"gesturesEnabled":true,"hotkeysEnabled":true,"minimumUsableHeight":160,"minimumUsableWidth":240,"pinchThreshold":0.25,"rules":[],"screenEdgeBand":12,"tabsEnabled":false,"windowEdgeFraction":0.3},"thinning":0.05,"trace":1,"windows":[{"app":"Calculator","bundle":"com.apple.calculator","frame":[733,229,230,408],"id":183,"pid":11642,"title":"title-1"}],"workspaces":{"07230EFA-7A8D-4E37-845C-19CC8737EEF5":{"back":[],"camera":0,"floating":{"183":[[733,229],[230,408]]},"forward":[],"savedViews":{},"tree":{"desktop":0,"nextRawID":3,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"weight":1}},"root":0}}}}
+{"t":0.0095,"note":"calculator: dock left, make the slot 250 points narrower, frame it, show the Desktop, show all, float"}
+{"t":0.0181,"command":"dock 183 left"}
+{"t":0.0208,"call":"setFrame","frame":[12,43,494,656],"id":183,"result":[12,43,230,408],"took":0.0025}
+{"t":0.0258,"call":"focus","id":183}
+{"t":0.0283,"done":"dock 183 left","message":"docked w183 at the left edge","ok":true}
+{"t":0.0295,"raw":"AXMoved w183"}
+{"t":0.0297,"event":"changed","user":false,"window":{"app":"Calculator","bundle":"com.apple.calculator","frame":[12,43,230,408],"id":183,"pid":11642,"title":"title-1"}}
+{"t":0.5515,"timer":"save"}
+{"t":1.5698,"command":"resize 183 right -250"}
+{"t":1.5710,"call":"setFrame","frame":[12,43,244,656],"id":183,"result":[12,43,230,408]}
+{"t":1.5716,"done":"resize 183 right -250","message":"resized w183","ok":true}
+{"t":2.1321,"timer":"save"}
+{"t":3.1706,"command":"zoom 183"}
+{"t":3.1717,"call":"setFrame","frame":[12,43,1000,656],"id":183,"result":[12,43,230,408]}
+{"t":3.1727,"call":"focusedWindow","result":183}
+{"t":3.1728,"call":"focus","id":183}
+{"t":3.1751,"done":"zoom 183","message":"framed w183","ok":true}
+{"t":3.6790,"timer":"save"}
+{"t":4.6893,"command":"desktop"}
+{"t":4.6894,"call":"cursorLocation","result":[904,255]}
+{"t":4.6909,"call":"setFrame","frame":[1023,767,230,408],"id":183,"result":[1023,659,230,408],"took":0.0014}
+{"t":4.6913,"call":"focusedWindow","result":183}
+{"t":4.6913,"call":"cursorLocation","result":[904,255]}
+{"t":4.6914,"done":"desktop","message":"showing the Desktop","ok":true}
+{"t":4.6915,"raw":"AXMoved w183"}
+{"t":4.6917,"event":"changed","user":false,"window":{"app":"Calculator","bundle":"com.apple.calculator","frame":[1023,659,230,408],"id":183,"pid":11642,"title":"title-1"}}
+{"t":5.1977,"timer":"save"}
+{"t":6.2189,"command":"show-all"}
+{"t":6.2190,"call":"cursorLocation","result":[904,255]}
+{"t":6.2206,"call":"setFrame","frame":[12,43,244,656],"id":183,"result":[12,43,230,408],"took":0.0014}
+{"t":6.2225,"call":"focusedWindow","result":183}
+{"t":6.2226,"done":"show-all","message":"showing everything","ok":true}
+{"t":6.2233,"raw":"AXMoved w183"}
+{"t":6.2236,"event":"changed","user":false,"window":{"app":"Calculator","bundle":"com.apple.calculator","frame":[12,43,230,408],"id":183,"pid":11642,"title":"title-1"}}
+{"t":6.7318,"timer":"save"}
+{"t":7.7562,"command":"float 183"}
+{"t":7.7571,"done":"float 183","message":"w183 is floating","ok":true}
+{"t":8.2676,"timer":"save"}
+{"t":9.3518,"end":"trace off","lines":39,"thinned":0}

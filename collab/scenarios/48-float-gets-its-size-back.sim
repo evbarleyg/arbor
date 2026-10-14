@@ -1,0 +1,83 @@
+# F48. Someone keeps a small Notes window. It spends an hour as a column, and when it floats
+# again it is small again. "Float All Windows" and pausing put everything back as it was.
+quiet
+open Notes 400x300
+open Safari 800x600
+open Mail 640x420
+
+dock 101 left
+dock 102 right
+expect docked 101
+float 101
+expect floating 101
+expect size 101 400x300
+expect visible 101
+
+# Framed, it fills the display. Floated from there it is small again, and the Desktop is in view.
+dock 101 left
+zoom 101
+expect fills 101
+float 101
+expect size 101 400x300
+expect visible 101
+expect visible 103
+
+# Dragged out of its slot and dropped on the Desktop.
+dock 101 left
+drag 101 720 300
+expect floating 101
+expect size 101 400x300
+
+# Arrange leaves only a narrow Desktop. A window floated from there still has its own size, over the docked
+# windows if need be, and so has one that is dragged out: the two ways to float agree.
+arrange
+float 102
+expect size 102 800x600
+expect visible 102
+arrange
+drag 102 1300 300
+expect floating 102
+expect size 102 800x600
+expect visible 102
+
+# Floated out of a view without the Desktop, it belongs to that view: walk away, come back, and it is there.
+open Slack
+arrange
+zoom 101
+out
+float 101
+expect visible 101
+neighbor right
+expect hidden 101
+back
+expect visible 101
+expect size 101 400x300
+close 104
+
+# Walking a docked window about changes nothing.
+arrange
+expect count docked 3
+dock 101 right
+dock 101 down
+dock 101 left
+zoom 102
+float-all
+expect count docked 0
+expect size 101 400x300
+expect size 102 800x600
+expect size 103 640x420
+
+# Framed on Safari, a pause cannot be seen: Safari stays as it is. The windows that were out of view come
+# back on screen, at their own sizes. Resuming takes them back.
+arrange
+zoom 102
+expect fills 102
+pause
+expect fills 102
+expect visible 101
+expect size 101 400x300
+expect size 103 640x420
+resume
+expect fills 102
+expect hidden 101
+expect count docked 3

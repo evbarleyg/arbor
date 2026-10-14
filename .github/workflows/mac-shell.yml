@@ -1,0 +1,140 @@
+name: Mac shell
+run-name: "Mac shell: ${{ inputs.script }} [${{ inputs.tag || github.run_id }}]"
+
+# A remote Mac for executors that have none. Checks out a ref, runs one script
+# from that ref on GitHub's macOS runner with the newest Xcode selected, and
+# pushes everything the script left in mac-shell/ (its output, screenshots,
+# logs) to the throwaway branch mac-shell-out/<tag>, where `git fetch` reaches
+# it. Start it with scripts/mac-shell/run.sh, which also waits, fetches the
+# output and deletes the branch.
+#
+# Only repository writers can start it (workflow_dispatch), and the script is
+# a file in the repository, never free text, so nobody can run arbitrary
+# commands by filling in a form. The script never sees the token that pushes.
+# See docs/TESTING.md, "Seeing the real app from anywhere".
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag or commit to check out (empty means the ref the workflow runs from)
+        required: false
+        default: ""
+        type: string
+      script:
+        description: Path of a script inside the repository at that ref, e.g. scripts/mac-shell/e2e.sh
+        required: true
+        type: string
+      tag:
+        description: The output goes to the branch mac-shell-out/<tag> (letters, digits, . _ -; empty means the run id)
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  shell:
+    runs-on: macos-26
+    timeout-minutes: 25
+    permissions:
+      contents: write # to push mac-shell-out/<tag>; nothing else is written
+    env:
+      SCRIPT: ${{ inputs.script }}
+      TAG: ${{ inputs.tag || github.run_id }}
+    steps:
+      - name: Check the inputs
+        id: inputs
+        run: |
+          case "$SCRIPT" in
+            ""|/*|*..*|*$'\n'*)
+              echo "::error::script must be a relative path inside the repository, got '$SCRIPT'"
+              exit 2;;
+          esac
+          if ! [[ "$TAG" =~ ^[A-Za-z0-9._-]{1,40}$ ]] || ! git check-ref-format "refs/heads/mac-shell-out/$TAG"; then
+            echo "::error::tag must be 1 to 40 letters, digits, dots, underscores or dashes, and a valid branch name"
+            exit 2
+          fi
+
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref }}
+          persist-credentials: false # the script gets no token
+
+      - name: Use the newest Xcode on the runner
+        run: |
+          xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          sudo xcode-select -s "$xcode"
+          swift --version
+
+      - name: Run the script from the repository
+        # Shorter than the job's limit, so that a script that hangs still gets its output pushed, and
+        # short enough that a hung script does not hold a Mac for hours: a session takes two minutes.
+        timeout-minutes: 20
+        run: |
+          set -o pipefail
+          if [ ! -f "$SCRIPT" ]; then
+            echo "::error::no file '$SCRIPT' at $(git rev-parse --short HEAD)"
+            exit 2
+          fi
+          mkdir -p mac-shell
+          header="# mac-shell: $SCRIPT at $(git rev-parse --short HEAD), macOS $(sw_vers -productVersion), $(date -u +%Y-%m-%dT%H:%MZ)"
+          echo "$header" | tee mac-shell/output.txt
+          set +e
+          bash "$SCRIPT" 2>&1 | tee -a mac-shell/output.txt
+          code=${PIPESTATUS[0]}
+          set -e
+          echo "exit code $code" | tee -a mac-shell/output.txt
+          echo "$code" > mac-shell/exit-code.txt
+          # Readers that can reach only the REST API get the exit code and the tail as check annotations.
+          echo "::notice title=mac-shell exit code::$SCRIPT exited with $code"
+          tail -n 40 mac-shell/output.txt | cut -c 1-200 | awk '{ gsub(/%/, "%25"); printf "%s%%0A", $0 }' \
+            | sed 's/^/::notice title=mac-shell output (tail)::/'
+          {
+            echo "## mac-shell"
+            echo
+            echo "$header; exit code $code"
+            echo
+            echo '```'
+            tail -c 60000 mac-shell/output.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit "$code"
+
+      # An orphan commit holding only the output. CI runs on pushes to main and on pull requests, and
+      # pushes made with GITHUB_TOKEN start no workflows at all, so this branch never starts a run.
+      - name: Push the output to mac-shell-out/<tag>
+        if: always() && steps.inputs.outcome == 'success'
+        env:
+          TOKEN: ${{ github.token }}
+        run: |
+          if [ ! -d mac-shell ] || [ -z "$(ls -A mac-shell)" ]; then
+            echo "::warning::nothing was left in mac-shell/, so there is no output branch"
+            exit 0
+          fi
+          commit=$(git rev-parse --short HEAD)
+          out=$(mktemp -d)
+          cp -R mac-shell/. "$out/"
+          cd "$out"
+          # GitHub refuses files over 100 MB, and one of those must not cost the rest of the output.
+          find . -type f -size +50m -print -delete | sed 's/^/::warning::left out, over 50 MB: /'
+          git init --quiet --initial-branch=out
+          git add --all
+          git -c user.name="mac-shell" -c user.email="mac-shell@users.noreply.github.com" \
+            commit --quiet --message "mac-shell: output of $SCRIPT at $commit (run $GITHUB_RUN_ID)"
+          # The token travels in the environment, not on a command line or in a file.
+          export GIT_TERMINAL_PROMPT=0
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.https://github.com/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 | tr -d '\n')"
+          git push --quiet --force "https://github.com/$GITHUB_REPOSITORY.git" "out:refs/heads/mac-shell-out/$TAG"
+          echo "::notice title=mac-shell output branch::mac-shell-out/$TAG ($(git ls-files | wc -l | tr -d ' ') files)"
+
+      - name: Keep the output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-shell-output
+          path: mac-shell/
+          if-no-files-found: warn

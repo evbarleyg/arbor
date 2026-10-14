@@ -1,0 +1,27 @@
+# Proposed by the swarm's review (2026-10-14), from the chaos harness's `vanished` rule; the documenter may edit or drop it.
+# Story: five windows arranged, so the Desktop is a tile, and a note floating over them. Out of habit the user presses the
+# shortcut for home, though home is what is showing. Nothing a person can see may change: the note stays.
+# Only when the view really moves does the note go with the Desktop, and it comes back with it.
+# Reference: T03 T52.
+open A
+open B
+open C
+open D
+open E
+arrange
+open Note 500x400
+expect visible 106
+home
+expect visible 106
+show-all
+expect visible 106
+zoom 101
+expect hidden 106
+desktop
+expect visible 106
+# The Desktop is a tile in the widest view, and still part of it: after "show everything" nothing is out of view.
+zoom 101
+expect hidden 106
+home
+expect visible 106
+expect in-front 106
