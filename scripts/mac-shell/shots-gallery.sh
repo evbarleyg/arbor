@@ -255,6 +255,11 @@ tour() {
     for pane in general windows dragging tabs gestures calls appearance menu-bar apps scripting shortcuts rules; do
       "$ARBOR_BIN/arborctl" settings-window "$pane" > /dev/null 2>&1 || continue
       ARBOR_SETTLE=0.4 look "$p-17-settings-$pane" "$(ax window "$TITLE")"
+      # What is behind Advanced. The element is the triangle with its word; the triangle is 25 points into it.
+      read -r x y w h <<< "$(ax frame AXDisclosureTriangle Advanced 2> /dev/null)"
+      [ -n "${h:-}" ] || continue
+      click "$((x + 25))" "$((y + h / 2))"
+      ARBOR_SETTLE=0.4 look "$p-17-settings-$pane-advanced" "$(ax window "$TITLE")"
     done
     ctl settings-window close
     check "it closes" eventually not ax window "$TITLE"
