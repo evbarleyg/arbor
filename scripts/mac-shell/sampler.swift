@@ -24,6 +24,9 @@
 //   L ms                           this sample came late: nothing was seen for that long
 //   S …                            at the end: how many samples, how long one took, how many came late
 //
+// The grammar stays as it is: other tools write files in it that are merged with this one by time. A new kind is a new capital
+// letter, and a reader skips the kinds it does not know. Taken besides the ones above: F, by whoever films the screen.
+//
 // Commands, one per line:
 //   mark <text>                    write an M line
 //   quiet <ms> <limit ms>          reply once no W, G, Z or B line was written for <ms>: `quiet <waited ms>`, or after
