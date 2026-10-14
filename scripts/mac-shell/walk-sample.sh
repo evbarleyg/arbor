@@ -12,7 +12,7 @@ float_key
 switch_dock textedit
 hide
 unhide textedit
-switch_click textedit
+switch_menu textedit
 switch_dock mail
 hide
 resize_gap mail -40
@@ -33,7 +33,7 @@ full_screen on
 full_screen off
 quit_app preview
 view left
-switch_menu safari
+switch_dock textedit
 reopen preview
 view back
 switch_dock notes
@@ -48,7 +48,7 @@ view in
 switch_click safari
 dock_key down
 quit_app preview
-switch_menu safari
+switch_cmdtab 3
 switch_dock finder
 hide
 reopen preview
@@ -73,12 +73,12 @@ switch_cmdtab 3
 view in
 switch_dock terminal
 open_new
-switch_cmdtab 2
+switch_tile
 close_new
 view left
 wallpaper_click
-switch_dock textedit
-switch_cmdtab 1
+switch_click textedit
+switch_click textedit
 drag_onto textedit preview bottom
 wallpaper_click
 pause
