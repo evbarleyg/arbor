@@ -10,13 +10,17 @@ whether a window was lost. The rules are the product's (docs/TESTING.md, "An ord
   3  no jolts: a window moves once, to where it ends up
   4  the window you switch to comes to the front and into view
   5  quitting, Float All and pause give windows their own earlier sizes back
+  6  drags never block input: what a person presses reaches the apps, at once
   L  no window is lost: none leaves the screen or ends out of view unless the step says so
 
-Every finding also names its detector, by the names docs/VIABLE.md gives them: fought, moved-unasked, jolt, pulled, flash, stuck, slow, behind, focus, size-lost, lost; crash, busy, left-behind and told, which the
+Every finding also names its detector, by the names docs/VIABLE.md gives them: fought, moved-unasked, jolt, pulled, flash, stuck, slow, behind, focus, size-lost, input-held, lost; crash, busy, left-behind and told, which the
 script finds out and hands on; and script for whatever else it checked.
 
-  jolts.py report <samples> [--json <file>]   the findings per rule, each with the step that shows it, then every step.
-                                              Exit code 1 when a rule was broken, 0 when none was
+  jolts.py report <samples> [--json <file>] [--control <findings of the run without Arbor>]
+                                              the findings per rule, each with the step that shows it, then every step.
+                                              Exit code 1 when a rule was broken, 0 when none was.
+                                              A `witness.log` beside the samples (witness.swift log) is read with them: how late each press, release
+                                              and key reached the far end of the event taps. With --control, that run's lateness is the measure
   jolts.py failing <samples>                  the numbers of the steps with a finding, one per line
   jolts.py sabotage <samples>                 for a run in which the script itself commits offences (`offence=`): does every detector report
                                               its own offence, that one alone, and nothing where none was committed? Exit code 1 if not
@@ -61,6 +65,7 @@ What happens between a step's end and the next step's beginning counts for the s
 
 import datetime
 import json
+import os
 import sys
 
 # Two changes of one window further apart than this are two moves to a person, not one.
@@ -95,18 +100,23 @@ SKEW = (150, 60)
 RESIZING = 300
 # After a drop a window is where it was let go, or where the preview was, to within this many points (a gap, a size its app rounds).
 DROPPED = 24
+# The button is up for the apps this many microseconds after it came up, at the latest.
+HELD = 50000
+# Of a hundred events that are not Arbor's own, the latest but one reaches the apps at most this many microseconds later than without Arbor.
+HELD_MORE = 10000
 # Less of a window than this on the display is its parking strip; more than that, and it shows.
 STRIP = 0.03
 SHOWS = 0.05
 # Points that are no move at all: apps round sizes, and Retina screens deal in halves.
 SAME = 2
-DETECTORS = {"1": "fought", "2": "moved-unasked", "3": "jolt", "4": "focus", "5": "size-lost", "L": "lost", "-": "script"}
+DETECTORS = {"6": "input-held", "1": "fought", "2": "moved-unasked", "3": "jolt", "4": "focus", "5": "size-lost", "L": "lost", "-": "script"}
 RULES = [
     ("1", "never fight macOS: where it answers a drag, Arbor stands aside"),
     ("2", "nothing moves that the person did not move"),
     ("3", "no jolts: a window moves once, to where it ends up"),
     ("4", "the window you switch to comes to the front and into view"),
     ("5", "quitting, Float All and pause give windows their own sizes back"),
+    ("6", "what a person presses reaches the apps, at once"),
     ("L", "no window is lost or stuck"),
     ("-", "what the script itself checked"),
 ]
@@ -167,6 +177,8 @@ class Step:
         self.under_the_stage = 0
         # Where Arbor's drop preview was when the button came up, if it was up.
         self.preview_at_drop = None
+        # What reached the far end of the event taps: (time, kind, microseconds late, whether Arbor posted it).
+        self.arrived = []
         self.at_end = None
         self.findings = []
         self.moved = {}
@@ -371,9 +383,36 @@ def read(path):
                     step.ended = time
                     step.wants = dict(word.split("=", 1) for word in rest[1:] if "=" in word)
                     step.at_end = world.snapshot()
+    world.witnessed = hear(os.path.join(os.path.dirname(os.path.abspath(path)), "witness.log"), steps)
     for step in steps:
         judge(step, world, by_number, own)
     return world, steps, account
+
+
+def hear(path, steps):
+    """Hands each step what the witness saw arrive during it. Whether there was a witness at all."""
+    if not os.path.exists(path):
+        return False
+    index = 0
+    with open(path, encoding="utf-8", errors="replace") as lines:
+        for line in lines:
+            parts = line.split()
+            if len(parts) != 5 or parts[1] != "E" or not parts[0].isdigit() or not parts[3].lstrip("-").isdigit():
+                continue
+            time = int(parts[0])
+            while index + 1 < len(steps) and steps[index + 1].began <= time:
+                index += 1
+            if steps and steps[index].began <= time:
+                steps[index].arrived.append((time, parts[2], int(parts[3]), parts[4] == "arbor"))
+    return True
+
+
+def lateness(steps):
+    """How late the events that are not Arbor's own reached the apps, over the steps that are judged: how many, the middle one, the latest but one in a hundred, the latest."""
+    late = sorted(delay for step in steps if step.wants.get("judge") != "no" for _, _, delay, arbors in step.arrived if not arbors)
+    if not late:
+        return None
+    return {"events": len(late), "p50_us": late[len(late) // 2], "p99_us": late[min(len(late) - 1, len(late) * 99 // 100)], "max_us": late[-1]}
 
 
 def road(trace):
@@ -564,6 +603,10 @@ def judge(step, world, by_number, own):
     if wants.get("act") in NO_SWITCH and any(app != step.app_before for app in step.apps):
         step.find("4", "FAIL", None, "the app in front changed (to process %s), and nobody switched" % ", ".join(str(app) for app in step.apps))
 
+    for time, kind, delay, _ in step.arrived:
+        if kind == "up" and delay > HELD:
+            step.find("6", "FAIL", None, f"the button came up, and the apps heard of it {delay // 1000} ms later")
+
     tops = [top for top in step.tops if top is not None]
     if len(tops) > 3:
         step.find("4", "ODD", None, "the window in front changed %d times: %s" % (len(tops) - 1, " → ".join(world.name(top) for top in tops[:8])))
@@ -652,6 +695,7 @@ def checked(step, rule):
         "3": True,
         "4": "front" in wants or wants.get("act") in NO_SWITCH,
         "5": "restores" in wants,
+        "6": any(kind == "up" for _, kind, _, _ in step.arrived),
         "L": True,
         "-": True,
     }[rule]
@@ -667,6 +711,9 @@ def report(world, steps, account):
     count = sum(1 for step in steps if judged(step))
     seconds = (steps[-1].ended or steps[-1].began) - steps[0].began if steps else 0
     out.append(f"{len(steps)} steps in {seconds // 1000} s, {count} of them judged, {broken} with a rule broken. The sampler: {account or 'it was cut off'}.")
+    heard = lateness(steps)
+    if heard:
+        out.append(f"Input: {heard['events']} presses, releases, keys and scrolls reached the apps, half of them within {heard['p50_us']} µs, 99 in 100 within {heard['p99_us']} µs, the latest after {heard['max_us']} µs.")
     out.append("")
     out.append("## Per rule")
     out.append("")
@@ -702,8 +749,8 @@ def report(world, steps, account):
             out.append("")
             out.append(f"### {chapter}")
             out.append("")
-            out.append("| # | Step | The person | Moved | Quiet after | 1 | 2 | 3 | 4 | 5 | L | – |")
-            out.append("|---|---|---|---|---|---|---|---|---|---|---|---|")
+            out.append("| # | Step | The person | Moved | Quiet after | 1 | 2 | 3 | 4 | 5 | 6 | L | – |")
+            out.append("|---|---|---|---|---|---|---|---|---|---|---|---|---|")
         moved = ", ".join(
             f"{world.labels.get(window, 'w%d' % window)} ×{moves} ({frames}, {took} ms)"
             for window, (moves, frames, took) in sorted(step.moved.items()))
@@ -725,6 +772,7 @@ def report(world, steps, account):
 def as_json(world, steps, account):
     return {
         "sampler": account,
+        "input": lateness(steps),
         "steps": [
             {
                 "number": step.number,
@@ -1084,6 +1132,18 @@ def self_test():
         if sabotage(play(spoilt)[1])[1] != 1:
             failures.append(f"sabotage: an offence {name} must count against the run")
     with tempfile.TemporaryDirectory() as folder:
+        samples = os.path.join(folder, "samples.log")
+        with open(samples, "w", encoding="utf-8") as handle:
+            handle.write("\n".join(start + ["2000 M begin 2 click", "3000 M end 2", "4000 M begin 3 click", "5000 M end 3"]) + "\n")
+        with open(os.path.join(folder, "witness.log"), "w", encoding="utf-8") as handle:
+            handle.write("2100 E down 300 none\n2150 E up 400 none\n4100 E down 300 none\n4350 E up 210000 none\n4400 E key 900 none\n")
+        _, heard, _ = read(samples)
+        got = [[finding["detector"] for finding in step.findings] for step in heard]
+        if got != [[], [], ["input-held"]]:
+            failures.append(f"a mouse-up that is held back for 210 ms is input-held, in its own step and no other: {got}")
+        if lateness(heard) != {"events": 5, "p50_us": 400, "p99_us": 210000, "max_us": 210000}:
+            failures.append(f"the lateness of five events: {lateness(heard)}")
+    with tempfile.TemporaryDirectory() as folder:
         samples, log = os.path.join(folder, "samples.log"), os.path.join(folder, "arbor.log")
         with open(samples, "w", encoding="utf-8") as handle:
             handle.write("\n".join(docked) + "\n")
@@ -1109,9 +1169,15 @@ def main(arguments):
     command, path, rest = arguments[0], arguments[1], arguments[2:]
     world, steps, account = read(path)
     if command == "report":
+        options = dict(zip(rest[::2], rest[1::2]))
+        if "--control" in options and steps:
+            with open(options["--control"], encoding="utf-8") as handle:
+                without, heard = json.load(handle).get("input"), lateness(steps)
+            if without and heard and heard["p99_us"] > without["p99_us"] + HELD_MORE:
+                steps[-1].find("6", "FAIL", None, f"99 in 100 events reached the apps within {heard['p99_us']} µs; without Arbor, within {without['p99_us']} µs")
         print(report(world, steps, account), end="")
-        if len(rest) == 2 and rest[0] == "--json":
-            with open(rest[1], "w", encoding="utf-8") as handle:
+        if "--json" in options:
+            with open(options["--json"], "w", encoding="utf-8") as handle:
                 json.dump(as_json(world, steps, account), handle, indent=1, ensure_ascii=False)
         return 1 if any(fails(step) for step in steps) else 0
     if command == "failing":

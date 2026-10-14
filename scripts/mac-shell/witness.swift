@@ -29,6 +29,8 @@ func rest(_ seconds: Double) {
 let usage = """
   usage: witness <command>
     watch <seconds>                     print every left mouse, scroll and gesture event that reaches the end of the taps
+    log <file>                          until killed: write every left mouse, scroll and key event that gets there, in sampler.swift's grammar, to be merged
+                                        with its samples by time: `<ms since 1970> E down|up|dragged|scroll|key <delay in µs> arbor|none`. Never which key
     taps                                every event tap on the Mac, as the window server lists them
     pinch x y <total> [--steps n] [--opt] [--rotate] [--tap hid|session]
                                         a pinch of that much magnification, with ⌥ held, with a rotation inside it
@@ -109,6 +111,36 @@ func watch(seconds: Double) {
   CGEvent.tapEnable(tap: port, enable: true)
   print("witness-ready \(kind)")
   CFRunLoopRunInMode(.defaultMode, seconds, false)
+}
+
+var witnessLog: UnsafeMutablePointer<FILE>?
+
+func log(to path: String) {
+  guard let file = fopen(path, "a") else { fail("cannot write to \(path)") }
+  witnessLog = file
+  var mask = CGEventMask(0)
+  for type in [1, 2, 6, 10, 22] { mask |= CGEventMask(1) << CGEventMask(type) }
+  let callback: CGEventTapCallBack = { _, type, event, _ in
+    if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+      if let port = witnessPort { CGEvent.tapEnable(tap: port, enable: true) }
+      return Unmanaged.passUnretained(event)
+    }
+    let names: [UInt32: String] = [1: "down", 2: "up", 6: "dragged", 10: "key", 22: "scroll"]
+    let delay = (Int64(clock_gettime_nsec_np(CLOCK_UPTIME_RAW)) - Int64(event.timestamp)) / 1000
+    let mark = event.getIntegerValueField(.eventSourceUserData) == 0x4152_424F ? "arbor" : "none"
+    if let file = witnessLog, let name = names[type.rawValue] {
+      fputs("\(Int64(Date().timeIntervalSince1970 * 1000)) E \(name) \(delay) \(mark)\n", file)
+      fflush(file)
+    }
+    return Unmanaged.passUnretained(event)
+  }
+  witnessPort = CGEvent.tapCreate(
+    tap: .cgSessionEventTap, place: .tailAppendEventTap, options: .listenOnly, eventsOfInterest: mask,
+    callback: callback, userInfo: nil)
+  guard let port = witnessPort else { fail("macOS refused the tap") }
+  CFRunLoopAddSource(CFRunLoopGetCurrent(), CFMachPortCreateRunLoopSource(kCFAllocatorDefault, port, 0), .commonModes)
+  CGEvent.tapEnable(tap: port, enable: true)
+  CFRunLoopRun()
 }
 
 func listTaps() {
@@ -233,6 +265,10 @@ if let name = option("--tap") {
 switch command {
 case "watch":
   watch(seconds: number(0))
+
+case "log":
+  guard let path = arguments.first else { fail(usage) }
+  log(to: path)
 
 case "taps":
   listTaps()
