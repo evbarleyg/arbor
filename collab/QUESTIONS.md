@@ -337,8 +337,9 @@ product decisions) answers in place. Do not delete answered questions.
 - What follows from it:
   - `newWindows` stays `"float"`. Nothing docks that nobody docked.
   - **A later start** brings back what the person had docked, each window moving once, because that arrangement is theirs (T60). One rule for the view: **a start takes no window out of view that is in view when Arbor starts.**
-    After a Quit every window is in view, so the start ends showing everything, and ⌃⌥[ goes to where the view was. After a crash, a kill or an update the others are still in the corner: keeping the view hides nothing and moves nothing, so it is kept,
-    unless a window it would hide has come into view meanwhile. A start never sizes a floating window or sends one away.
+    **When a person starts Arbor**, whatever ended the last run (a login item's start and the start after an update are such starts too: an update quits Arbor first), it ends showing everything, which also fetches what a crash left in the corner; the view it stopped in goes on the history, so ⌃⌥[ returns to it, and saved views, names and older history stay.
+    **When the watchdog restarts it** a second after a crash, nobody quit and every window is where it was: arrangement and view are kept and no frame is set. A start never sizes a floating window or sends one away: a window that summon had sent away is an
+    ordinary floating window at a person's start. A display that is gone at the start and plugged in later, or was dormant and is back, comes back showing everything too. A resume after a pause or a returned permission keeps the view, and so does an unplug and replug within one run.
   - Played on the trunk (`arbor-sim replay --frames`: three windows, two docked, one framed, `quit`, `launch`): the first start moves nothing, and quitting gives all three their own frames back.
     The second start frames the window that was framed and sends the other two to the corner, one of them a window that was never docked. **That is a fault against rule 2**: on the board.
 
@@ -374,6 +375,36 @@ product decisions) answers in place. Do not delete answered questions.
 - **Answer** (product owner, 2026-10-14): **`docs/VIABLE.md`.** The half hour becomes the day that a script plays with real apps on hosted Macs at macOS's default settings, many times over, judged by detectors. Its measure is #3's: no jolt, no lost or stuck
   window, nothing moved that the person did not move. Anybody may still try Arbor and say what they saw, and what they say becomes a test; nothing waits for it.
 - A tag still needs what it needed: nothing of severity 1 or 2 known that can be met with the settings as they ship. "New since `main`" no longer excuses an old one.
+
+## Q20: What may Arbor do to a floating window that nobody touched?
+
+- Asked by: the coordinator, 2026-10-14, after the first day played with nine real apps on a hosted Mac at macOS's defaults. A dock squeezed floating windows nobody had touched (one from 1324 to 794 points wide). ⌘H, ⌘M and ⌘Q on a docked window moved floating
+  windows too, and unhiding did not undo it. After framing a window and showing everything, floating windows came back somewhere else than they had been.
+- Context: rule 2 says that nothing moves which the person did not move. The specs on room, the Desktop and the squeeze (F18, F48, F61, scenario 20) say that floating windows are kept on the Desktop. Both cannot hold.
+  Replayed on the trunk in arbor-sim: four windows, two docks, and a mail window that nobody touched goes from 1000 to 714 to 464 points wide.
+- **Answer** (product owner, 2026-10-14): **a floating window's frame is its person's. Arbor never resizes it and never moves it on screen.**
+  1. Shoving and squeezing every other window at the first dock is the very thing issue #3 complains of in the reference.
+  2. The guide has promised all along that other windows "float exactly as they always have".
+  3. Nearly every lost window found so far came from Arbor placing or squeezing a floating window. This removes the family instead of mending its members.
+- **The one thing Arbor does to a floating window:** it takes it out of view when the view leaves the Desktop, and puts it back exactly where it was, same place, same size, one move, when the Desktop is in view again.
+- **The one exception**, because "never lost" outranks "never moved": if the displays have changed meanwhile and that frame would show less than half of the window, it is fitted: moved the least that brings it wholly into view, and made smaller only if it is larger than the display.
+- Floating and docked windows may overlap, as windows on a Mac do. macOS's order says which is in front; the window acted on or switched to comes to the front (rule 4); ⌃⌥D shows everything that floats.
+- **There and back is nothing.** Frame and Show Everything; hide and unhide; minimize and restore: when nothing else has changed between, every window is exactly where it was, the docked neighbours at their old sizes.
+- How it is built: a setting `floatingWindowsMakeWay`, which ships **false**. True is the behaviour so far, so that the tests written for it keep their meaning and the decision can be undone. With false there is no placing and no squeeze, a window that floats alone is not stretched over the
+  Desktop (F18), and F61 counts the Desktop as not in use: docked windows come first.
+- Overruled, with the setting as it ships: "floating windows make way" (scenario 20), "a window that floats alone takes the Desktop" (F18), the squeeze and all that follows from it (own sizes of squeezed windows in F48, F49, F53), "what Arbor took from the Desktop it gives back while a window floats on it" (F61).
+
+## Q21: What does a pause do to the windows in view?
+
+- Asked by: a fixer, 2026-10-14. The hosted day found that a pause gives no size back: docked windows keep their slots' sizes. F40 says "what you are looking at stays as it is"; rule 5 says a pause gives windows their own earlier sizes back.
+- **Answer** (product owner, 2026-10-14): **rule 5 wins, and a pause has one meaning: as if Arbor had quit, and it comes back.** Every window Arbor sized goes to its own earlier frame by the road Quit takes, one move each, nothing raised. Resume brings arrangement and view back, one move each.
+  The pause Arbor begins by itself for an app in `pauseForApps` is the same pause: one meaning is worth more than a special case in a setting that ships empty. Whoever only wants ⌃⌥ back has Shortcuts Off in “App” (F41), which moves nothing; the guide says so beside pause.
+
+## Q22: macOS zooms a docked window at a double-click on its title bar. What does Arbor do?
+
+- Asked by: the porter of F14, 2026-10-14. With both of Arbor's double-click switches off, macOS zooms or fills the window and Arbor pulls it back a quarter of a second later: two moves, and a fight (rules 1 and 3).
+- **Answer** (product owner, 2026-10-14): **Arbor stands aside.** macOS's frame stays, the window stays docked, its place stays reserved, nobody else moves. It goes back in one move at macOS's own second double-click, or at the next command that lays out.
+  Not "it floats and the neighbours close up": that moves windows nobody touched. The first three times a line on screen says how to get back (F43), if that is cheap.
 
 ## Decided by the executor
 
