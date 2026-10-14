@@ -118,8 +118,11 @@ def walk(seed, acts, two=False):
         elif kind == "resize":
             say(dice.weighted([(f"resize_gap {app} {dice.pick([-80, -40, 40, 80])}", 2), (f"resize_key {dice.pick(['grow', 'shrink', 'balance'])}", 3)]))
         elif kind == "macos-own":
-            if dice.roll(2):
+            what = dice.roll(3)
+            if what == 0:
                 say("wallpaper_click", 2)
+            elif what == 1:
+                say(f"title_double_click {app}", 2)
             else:
                 say("switch_dock safari")
                 say("full_screen on")
@@ -185,7 +188,7 @@ def self_test():
 
 WORDS = {"switch_dock", "switch_click", "switch_to", "switch_cmdtab", "switch_backtick", "switch_menu", "switch_tile", "open_new", "close_new", "minimize", "restore", "hide", "unhide",
          "quit_app", "reopen", "dock_key", "float_key", "drag_onto", "drag_out", "drag_by", "drag_edge", "view", "resize_gap", "resize_key", "full_screen",
-         "wallpaper_click", "pause", "resume", "float_all", "quit_and_start", "idle_act", "display", "send_across"}
+         "wallpaper_click", "title_double_click", "pause", "resume", "float_all", "quit_and_start", "idle_act", "display", "send_across"}
 PINNED = ['view back', 'switch_click textedit', 'switch_to terminal']
 
 

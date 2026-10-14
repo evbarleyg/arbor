@@ -20,17 +20,13 @@ drag_edge textedit left
 drag_onto terminal calendar right
 unhide mail
 view out
-switch_dock safari
-full_screen on
-full_screen off
+wallpaper_click
 switch_dock textedit
 hide
 idle_act
 unhide textedit
 drag_edge finder right
-switch_dock safari
-full_screen on
-full_screen off
+title_double_click finder
 quit_app preview
 view left
 switch_dock textedit
@@ -53,20 +49,20 @@ switch_dock finder
 hide
 reopen preview
 unhide finder
-quit_and_start
 switch_dock terminal
 open_new
-wallpaper_click
+switch_dock safari
+full_screen on
+full_screen off
 close_new
+quit_and_start
 view out
 close_new
 idle_act
 drag_edge safari right
 switch_dock finder
 open_new
-switch_dock safari
-full_screen on
-full_screen off
+wallpaper_click
 close_new
 close_new
 switch_cmdtab 3
@@ -80,7 +76,7 @@ wallpaper_click
 switch_click textedit
 switch_click textedit
 drag_onto textedit preview bottom
-wallpaper_click
+title_double_click terminal
 pause
 switch_to settings
 dock_key down
@@ -89,4 +85,6 @@ drag_by mail -126 75
 resume
 drag_onto preview notes right
 switch_click preview
+switch_click settings
+resize_key grow
 walk_end

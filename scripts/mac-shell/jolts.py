@@ -43,6 +43,7 @@ The script says what it is doing in marks (lib-day.sh writes them):
     act=<kind>             what kind of thing the person did (docs/VIABLE.md lists the kinds), for the count
     moves=<ids>|any|none   the windows the step may move (default none)
     drags=<id>             the person drags this one: while the button is down it goes where the pointer goes
+    zooms=<id>             the person double-clicks its title bar, which macOS answers: it may move, once, and whoever moves it again is fighting macOS
     front=<id>             it ends in front of every other window, its app in front, wholly in view
     leaves=<ids>|any       these may leave the screen (closed, hidden, minimized, another Space)
     comes=<ids>            these are on the screen at the end
@@ -567,7 +568,7 @@ def judge(step, world, by_number, own):
     dragged = ids(wants.get("drags", ""))
     may_leave = wants.get("leaves", "")
     # What is said to go or to come is named by that.
-    named |= ids(may_leave) | ids(wants.get("comes", ""))
+    named |= ids(may_leave) | ids(wants.get("comes", "")) | ids(wants.get("zooms", ""))
     kin = {world.pids.get(window) for window in named | dragged}
     screens = (end or {}).get("displays") or world.displays()
     if wants.get("act") in ("switch", "tile-click") and screens:
@@ -647,6 +648,8 @@ def judge(step, world, by_number, own):
         shares = [showing(entry[1], screens) for entry in trace if entry[1]] if screens else []
         if len(shares) > 2 and shares[0] < STRIP and shares[-1] < STRIP and max(shares) > SHOWS:
             step.find("3", "FAIL", window, f"is out of view before and after, and {max(shares):.0%} of it showed in between", road(trace), "flash")
+        elif moves > 1 and window in ids(wants.get("zooms", "")):
+            step.find("1", "FAIL", window, f"macOS answered the double-click on its title bar, and it was moved again afterwards ({moves} moves)", road(trace))
         elif moves > 1:
             step.find("3", "FAIL", window, f"moved {moves} times", road(trace))
         elif detour > EXCESS and (may == "any" or window in named or window in dragged):
@@ -771,7 +774,7 @@ def checked(step, rule):
     if step.at_end is None or wants.get("judge") == "no":
         return False
     return {
-        "1": "drags" in wants,
+        "1": "drags" in wants or "zooms" in wants,
         "2": wants.get("moves", "none") != "any" or "returns" in wants,
         "3": True,
         "4": "front" in wants or wants.get("act") in NO_SWITCH,
@@ -1172,6 +1175,11 @@ def self_test():
     for i in range(1, 30):
         put_back += [f"{2100 + 50 * i} W 1 10 0 {100 + (10 if i % 2 else 0)} 100 400 300 One", f"{2100 + 50 * i} P {300 + 10 * i} 110"]
     detectors("a window that is put back at every move falls behind", put_back + ["3600 B up 590 110", "4700 M end 2 drags=1"], ["pulled"])
+    detectors("macOS zooms a window at a double-click, and that is that", start + [
+        "2000 M begin 2 zoom", "2050 B down 300 110", "2050 B up 300 110", "2200 W 1 10 0 0 30 1000 700 One", "3300 M end 2 zooms=1"], [])
+    detectors("macOS zooms a window at a double-click, and it is pulled back", start + [
+        "2000 M begin 2 zoom", "2050 B down 300 110", "2050 B up 300 110", "2200 W 1 10 0 0 30 1000 700 One", "2500 W 1 10 0 100 100 400 300 One",
+        "3600 M end 2 zooms=1"], ["fought"])
     detectors("macOS answers the drag and Arbor docks the window all the same", tiling + [
         "2300 B up 460 110", "2310 G 50", "2320 W 1 10 0 0 30 500 700 One", "3400 M end 2 drags=1 docked=1"], ["fought"])
     detectors("Arbor's preview alone is what a drag is for", glide + [
