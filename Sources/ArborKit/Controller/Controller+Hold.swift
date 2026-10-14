@@ -11,7 +11,7 @@ import Foundation
 ///
 /// - `hold still` stops the first two. The user's own keys, clicks and gestures work as ever. It also
 ///   starts by itself during a call: while a window listed in `holdStillFor` is open, or a camera or a
-///   microphone is on.
+///   microphone is on; and while a display is mirrored.
 /// - `hold` stops all three: the view stays exactly where it is, on every display, until `release`.
 ///
 /// It is the opposite of a pause (Controller+Pause.swift), which lets go of everything and brings **every**
@@ -369,15 +369,21 @@ extension Controller {
   // MARK: Calls
 
   /// Starts and ends holding still as the signs of a call come and go. Called when a window opens, closes or
-  /// changes its title, when a camera or microphone goes on or off, when settings change, and at launch.
+  /// changes its title, when a camera or microphone goes on or off, when displays or settings change, and at launch.
   /// Minimized and hidden windows and those on another macOS Space count: the call goes on.
-  func refreshHoldCaller() {
+  ///
+  /// A release lasts for the occasion it was made on. A call and an audience are two: whichever begins or is left over when the
+  /// other was released holds anew. `anAudienceHasCome`: a display has just begun to be mirrored.
+  func refreshHoldCaller(anAudienceHasCome: Bool = false) {
     guard isRunning else { return }
     let caller = signOfACall
-    guard caller != hold.caller else { return }
+    let mirrored = Self.signOfAnAudience
+    let isAnotherOccasion =
+      caller == nil || (caller == mirrored) != (hold.caller == mirrored) || (anAudienceHasCome && settings.holdStillWhileMirroring)
+    guard caller != hold.caller || (isAnotherOccasion && hold.callerDismissed) else { return }
     let before = holdLevel
     hold.caller = caller
-    if caller == nil { hold.callerDismissed = false }
+    if isAnotherOccasion { hold.callerDismissed = false }
     holdChanged(from: before)
   }
 
@@ -393,8 +399,12 @@ extension Controller {
     if let open { return open }
     if settings.holdStillWhileCameraIsOn, callSignals.cameraIsOn { return "the camera is on" }
     if settings.holdStillWhileMicrophoneIsOn, callSignals.microphoneIsOn { return "the microphone is on" }
+    // An audience, if not a call (K160).
+    if settings.holdStillWhileMirroring, isMirroring { return Self.signOfAnAudience }
     return nil
   }
+
+  static let signOfAnAudience = "the display is mirrored"
 
   /// The app reports what it reads from macOS (App/CallSensor.swift). Whether it matters is decided here.
   public func callSignalsChanged(_ signals: CallSignals) {

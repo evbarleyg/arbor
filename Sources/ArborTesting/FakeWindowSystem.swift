@@ -619,6 +619,15 @@ public final class FakeWindowSystem: WindowSystem {
     events?.displaysChanged()
   }
 
+  /// The user starts or stops mirroring the main display to a projector that was not in use as a display of its own.
+  public func setMirroring(_ isMirrored: Bool) {
+    setDisplays(displayList.map { display in
+      var display = display
+      if display.isMain { display.isMirrored = isMirrored }
+      return display
+    })
+  }
+
   // MARK: Inspection
 
   public func frame(of window: WindowID) -> CGRect? { windows[window]?.snapshot.frame }

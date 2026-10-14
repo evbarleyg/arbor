@@ -3762,6 +3762,31 @@
       ]
     },
     {
+      "id": "A92",
+      "area": "Arbor only",
+      "title": "Holding still while the display is mirrored",
+      "trellis": "",
+      "arbor": "An experiment: with `holdStillWhileMirroring` on (it ships off; no Mac has shown what Arbor is told as a display is mirrored) the view moves only when asked on a projector, a television or AirPlay; a hold or pause of one's own is left alone",
+      "status": "partial",
+      "spec": "F58",
+      "priority": 2,
+      "tests": [
+        "aCallAndAnAudienceAreTwoOccasions",
+        "aHoldThePersonMadeIsNeitherReplacedNorEnded",
+        "aPauseThePersonMadeIsLeftAlone",
+        "alreadyMirroredAtLaunchItHoldsFromTheStart",
+        "anotherChangeOfTheDisplaysDoesNotCutShortTheMomentACallIsGiven",
+        "arborHearsWhenMirroringBeginsAndEnds",
+        "arborHoldsStillWhileTheDisplayIsMirroredAndNoLonger",
+        "mirroringBeginningOrEndingIsReportedSoon",
+        "releasedByHandItStaysReleasedUntilTheMirroringIsOver",
+        "theViewAndTheWindowsStayAsTheyAre",
+        "whatWaitedForTheEndOfTheHoldComesInOnceTheDisplaysAreDealtWith",
+        "whenASecondDisplayBecomesTheMirrorTheViewOfTheFirstStays",
+        "withTheSettingOffNothingIsHeld"
+      ]
+    },
+    {
       "id": "A27",
       "area": "Arbor only",
       "title": "Go to…: find any window, named space or saved view by typing",

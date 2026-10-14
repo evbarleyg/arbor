@@ -99,6 +99,7 @@ File). There are four ways to change one, and each takes effect at once and show
 | `holdStillWhileCameraIsOn` | `false` | true or false | **While a camera is on.** Hold still by itself during a call: the view moves only when you ask. Arbor reads from macOS that some app has a camera running, and opens none itself. Experimental; Hold Still in the menu does the same by hand. *Advanced.* |
 | `holdStillWhileMicrophoneIsOn` | `false` | true or false | **While a microphone is on.** The same for calls without a camera. Experimental: other things than calls may keep a microphone running. *Advanced.* |
 | `holdStillFor` | `[]` | a list of bundle ids, each with part of a title after it if you like | **While one of these is open.** Arbor also holds still while a window like one of these is open: an app's bundle id and, if you like, part of the window's title, such as "us.zoom.xos Zoom Meeting". Change it with a text editor. *Advanced.* |
+| `holdStillWhileMirroring` | `false` | true or false | **While the display is mirrored.** Arbor also holds still while the display is mirrored to a projector, a television or over AirPlay: a mirrored display is one that others are looking at. Experimental. *Advanced.* |
 
 ## Appearance
 

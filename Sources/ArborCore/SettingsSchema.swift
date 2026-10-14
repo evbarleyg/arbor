@@ -308,6 +308,10 @@ public enum SettingsSchema {
         editedWith: "a text editor", "While one of these is open",
         "Arbor also holds still while a window like one of these is open: an app's bundle id and, if you like, part of the "
           + "window's title, such as \"us.zoom.xos Zoom Meeting\".", advanced: true),
+      .toggle(
+        "holdStillWhileMirroring", \.holdStillWhileMirroring, "While the display is mirrored",
+        "Arbor also holds still while the display is mirrored to a projector, a television or over AirPlay: a mirrored display is "
+          + "one that others are looking at. Experimental.", advanced: true),
     ])
 
   private static let menuBar = section(
@@ -819,11 +823,19 @@ public struct SettingEntry: Sendable {
     return " Change it with \(editedWith)."
   }
 
-  /// Whether a search for `words` finds this setting, ignoring case: each must begin a word of its label or help, or occur
-  /// anywhere in its key, whose words run together. "ring" is after the focus ring, not after what happens "during a call".
+  /// Whether a search for `words` finds this setting, ignoring case: each must begin a word of its label, its help or its
+  /// key, whose words run together and begin with a capital. "ring" is after the focus ring, not after what happens "during a
+  /// call" or while "mirroring".
   public func matches(search words: String) -> Bool {
-    let key = key.lowercased(), typed = SettingsSearch(words)
-    return typed.isEmpty || typed.finds(in: "\(label) \(help)") { key.firstRange(of: $0) != nil }
+    let lowered = key.lowercased(), typed = SettingsSearch(words)
+    return typed.isEmpty
+      || typed.finds(in: "\(label) \(help)") { word in
+        lowered.ranges(of: word).contains { found in
+          // Keys are plain letters and digits, so a place in the one is the same place in the other.
+          let place = key.index(key.startIndex, offsetBy: lowered.distance(from: lowered.startIndex, to: found.lowerBound))
+          return place == key.startIndex || key[place].isUppercase
+        }
+      }
   }
 
   // MARK: Writing
