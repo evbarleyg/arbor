@@ -337,6 +337,7 @@ case "$1" in
   status-item) case " $* " in *" --frame "*) cat "$FAKE/status-item-frame" 2>/dev/null || exit 64 ;; *) cat "$FAKE/status-item" 2>/dev/null || exit 64 ;; esac ;;
   front) cat "$FAKE/front" 2>/dev/null || exit 64 ;;
   screen-access) cat "$FAKE/screen-access" 2>/dev/null || echo true ;;
+  asleep) cat "$FAKE/asleep" 2>/dev/null || echo false ;;
   displays) echo "1 0 0 1024 768 1024 768 1" ;;
   wallpaper) echo "/System/Library/Desktop Pictures/x.heic" ;;
   *) echo "$*" >> "$FAKE/posted" ;;
@@ -350,7 +351,8 @@ esac
     "pgrep": '#!/bin/bash\nname=${!#}\n[ -f "$FAKE/running-$name" ] && cat "$FAKE/running-$name" || exit 1\n',
     "ioreg": '#!/bin/bash\necho "    | |   \\"HIDIdleTime\\" = $(cat "$FAKE/idle" 2>/dev/null || echo 900)000000000"\n'
              '[ -f "$FAKE/locked" ] && echo "    \\"IOConsoleUsers\\" = ({\\"CGSSessionScreenIsLocked\\"=Yes,\\"kCGSSessionOnConsoleKey\\"=Yes})"\nexit 0\n',
-    "pmset": '#!/bin/bash\necho "   PreventUserIdleDisplaySleep    $(cat "$FAKE/awake" 2>/dev/null || echo 0)"\n',
+    "pmset": '#!/bin/bash\necho "   PreventUserIdleDisplaySleep    $(cat "$FAKE/awake" 2>/dev/null || echo 0)"\necho "Listed by owning process:"\n'
+             'cat "$FAKE/awake-owners" 2>/dev/null\nexit 0\n',
     "defaults": '#!/bin/bash\n[ "$1" = read ] || exit 0\ncat "$FAKE/defaults-${2#-}" 2>/dev/null || exit 1\n',
     "security": "#!/bin/bash\necho '\"/Users/x/Library/Keychains/login.keychain-db\"'\n",
     "lsappinfo": "#!/bin/bash\nexit 0\n",
@@ -591,6 +593,24 @@ def lib_situations(canary):
         return [("lib.sh: in a list, no input since the script before ended is as good as five quiet minutes; input since then is somebody's",
                  (quiet, touched, nonsense, mac.read("said")), (0, 77, 77, "went on\n"))]
 
+    def keeps_awake(mac):
+        went = 'arbor_build\necho "went on" >> "$FAKE/said"'
+        line = '   pid {}({}): [0x0005f5a300018a5b] 00:00:04 PreventUserIdleDisplaySleep named: "{}"'
+        mac.environment["ARBOR_KEEPS_AWAKE"] = "4711"
+        mac.put("awake", "1")
+        mac.put("awake-owners", line.format(4711, "caffeinate", "caffeinate command-line tool"))
+        ours, _ = mac.run(went)
+        mac.put("awake", "2")
+        mac.put("awake-owners", line.format(4711, "caffeinate", "caffeinate command-line tool") + "\n" + line.format(500, "zoom.us", "a call"))
+        both, _ = mac.run(went)
+        mac.put("awake", "1")
+        mac.put("awake-owners", line.format(4711, "zoom.us", "a call"))
+        posing, _ = mac.run(went)
+        mac.put("awake-owners", "   something macOS has never printed yet")
+        unknown, _ = mac.run(went)
+        return [("lib.sh: the list's own caffeinate is no call; a call beside it, a call under its number and a listing nobody can read are",
+                 (ours, both, posing, unknown, mac.read("said")), (0, 77, 77, 77, "went on\n"))]
+
     def no_curtain(mac):
         mac.tool("curtain", "#!/bin/bash\nexit 1\n")
         return declined("not without a curtain")(mac)
@@ -707,9 +727,10 @@ kill $mine
         mac.environment["HOME"] = os.path.join(mac.folder, "home of mine")
         os.makedirs(mac.environment["HOME"])
         said = 'echo "in $ARBOR_ROOT/Sources and /private$ARBOR_ROOT/x, $HOME/Documents/tax.pdf, /Users/jo/Library and \\"/Users/al\\": done"'
-        setup = 'echo "2026-10-14T11:00:00.000Z ERROR setup: Other window managers: Secret Tiler is running | quit it"'
+        setup = ('echo "2026-10-14T11:00:00.000Z ERROR setup: Other window managers: Secret Tiler is running | quit it"\n'
+                 'echo "2026-10-14T11:00:00.000Z INFO  shortcuts: Secret Tiler keys is a shortcut of macOS\'s as well, so one of the two does nothing"')
         code, output = mac.run(f'{said}\n{said} >&2\n{said} > "$ARBOR_OUT/build.log"\n{said} > "$ARBOR_OUT/picture.png"\nyes | head -n 1\n'
-                               f'{setup}\n{setup} > "$ARBOR_OUT/arbor.log"\nexit 3')
+                               f'logs() {{\n{setup}\n}}\nlogs\nlogs > "$ARBOR_OUT/arbor.log"\nexit 3')
         clean = 'in <checkout>/Sources and <checkout>/x, ~/Documents/tax.pdf, ~/Library and "~": done'
         return [("lib.sh: on somebody's Mac what a run prints, on either output, says neither where the checkout nor where the home folder is",
                  (code, [line for line in output.splitlines() if line.startswith("in ") or line == "y"]), (3, [clean, clean, "y"])),
@@ -778,8 +799,9 @@ kill $mine
                  ended("the time limit", "on somebody's Mac, "), ended("an interrupt", "on somebody's Mac, "), ended("kill -9", "on somebody's Mac, "),
                  declined("not beside an Arbor that is running already", running__Arbor=str(canary)),
                  declined("not beside another window manager", running__Rectangle=str(canary)),
-                 declined("not under somebody's hands", idle="20"), quiet_since, declined("not into a call", awake="1"), declined("not as root", uid="0"),
-                 declined("not behind a locked screen", locked="yes"), declined("not under the screen saver", running__ScreenSaverEngine=str(canary))]
+                 declined("not under somebody's hands", idle="20"), quiet_since, keeps_awake, declined("not into a call", awake="1"), declined("not as root", uid="0"),
+                 declined("not behind a locked screen", locked="yes"), declined("not under the screen saver", running__ScreenSaverEngine=str(canary)),
+                 declined("not with the display asleep", asleep="true")]
     # One looks at what else is under /tmp, the other is no rehearsal and would be declined beside another run.
     return [(situation, False) for situation in throwaway] + [(situation, True) for situation in somebodys], [(traces, True), (stray_environment, False)]
 
@@ -897,6 +919,24 @@ def check_run_list():
     tools = {"compile-tools.sh": fine, "b.sh": fine}
     row("run-list: at a terminal it asks for Return once everything is built, and quiet counts from there", at_a_terminal(tools, b"\n"), (0, ["sees no no no", "sees no no no quiet"]))
     row("run-list: at a terminal ⌃C instead of Return ends it, and nothing more is started", at_a_terminal(tools, b"\x03"), (1, ["sees no no no"]))
+    def awake(listing):
+        """What the scripts are told, with stand-ins for caffeinate and pmset on the PATH, and whether the caffeinate outlives the list."""
+        with tempfile.TemporaryDirectory(prefix="tooling-") as tools:
+            for name, text in (("caffeinate", f'echo $$ > "{tools}/pid"\nexec sleep 30'), ("pmset", listing.replace("TOOLS", tools))):
+                with open(os.path.join(tools, name), "w", encoding="utf-8") as handle:
+                    handle.write(f"#!/bin/bash\n{text}\n")
+                os.chmod(os.path.join(tools, name), 0o755)
+            told = 'echo "told ${ARBOR_KEEPS_AWAKE:-nothing}"\n'
+            output = tried({"a.sh": told, "b.sh": told}, PATH=tools + os.pathsep + os.environ["PATH"], ARBOR_KEEPS_AWAKE="1")[2]
+            with open(os.path.join(tools, "pid"), encoding="utf-8") as handle:
+                pid = handle.read().strip()
+            return [line.replace(pid, "its pid") for line in output.splitlines() if line.startswith("told")], alive(pid)
+
+    row("run-list: it keeps the display awake, tells every script with which process, and lets go at the end",
+        awake('echo "   pid $(cat "TOOLS/pid")(caffeinate): [0x1] 00:00:01 PreventUserIdleDisplaySleep named: \\"caffeinate command-line tool\\""'),
+        (["told its pid", "told its pid"], False))
+    row("run-list: where macOS does not list its caffeinate as the scripts look for it, it is given up, or they would all decline",
+        awake('echo "   something else"'), (["told nothing", "told nothing"], False))
     some = {"compile-tools.sh": 'echo "✔ pointer"\necho "✘ scenery"\necho "✘ axfind"\nexit 2\n', "b.sh": fine}
     row("run-list: a tool that does not compile is a finding, and the harness is tried all the same",
         tried(some, ARBOR_LIST_FIRST="compile-tools.sh b.sh")[:2], (0, ["01-compile-tools", "02-b"]))

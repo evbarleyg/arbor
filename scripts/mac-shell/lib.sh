@@ -597,7 +597,7 @@ arbor_sweep_stale() {
 # the person's own Arbor, which would take the script's shortcuts and gestures for theirs and arrange THEIR windows (the
 # lock that keeps two Arbors apart lies in $ARBOR_HOME, so it does not keep a session's Arbor from theirs).
 arbor_mac_is_free() {
-  local id idle
+  local id idle held ours
   on_throwaway_mac && return 0
   for id in $(pgrep -x Arbor 2>/dev/null); do
     arbor_started_here "$id" && continue
@@ -624,6 +624,11 @@ arbor_mac_is_free() {
     echo "skipped: the screen saver is up, so no window that opens would show"
     return 1
   fi
+  # Once the tool is there to ask, which it is before the first window opens.
+  if [ -x "$ARBOR_POINTER" ] && [ "$("$ARBOR_POINTER" asleep 2>/dev/null)" = true ]; then
+    echo "skipped: the display is asleep, so no window that opens would show. Wake it, and keep it awake for as long as this takes"
+    return 1
+  fi
   # Asked once: after the first session the last input is the script's own.
   [ "${ARBOR_BUSY_OK:-}" = 1 ] || [ -f "$ARBOR_LEDGER/free" ] && return 0
   idle=$(ioreg -c IOHIDSystem 2>/dev/null | awk '/HIDIdleTime/ { print int($NF / 1000000000); exit }')
@@ -637,9 +642,19 @@ arbor_mac_is_free() {
     return 1
   fi
   # safe anywhere: -g only reads
-  if pmset -g assertions 2>/dev/null | grep -Eq "PreventUserIdleDisplaySleep +[1-9]"; then
-    echo "skipped: an app keeps the display awake, as a call, a shared screen or a film does (ARBOR_BUSY_OK=1 if it is none of these)"
-    return 1
+  held=$(pmset -g assertions 2>/dev/null)
+  if grep -Eq "PreventUserIdleDisplaySleep +[1-9]" <<< "$held"; then
+    # run-list.sh keeps the display awake itself, for as long as the list takes, and says with which process. It counts for nothing only if the
+    # list of who holds what names that very process, as a caffeinate, and nobody else.
+    ours=0
+    case "${ARBOR_KEEPS_AWAKE:-}" in
+      "" | *[!0-9]*) ;;
+      *) ours=$(grep -Ec "pid $ARBOR_KEEPS_AWAKE\(caffeinate\).* PreventUserIdleDisplaySleep " <<< "$held") ;;
+    esac
+    if [ "$ours" -eq 0 ] || [ "$(grep -Ec "pid [0-9]+\(.* PreventUserIdleDisplaySleep " <<< "$held")" -gt "$ours" ]; then
+      echo "skipped: an app keeps the display awake, as a call, a shared screen or a film does (ARBOR_BUSY_OK=1 if it is none of these)"
+      return 1
+    fi
   fi
   : > "$ARBOR_LEDGER/free"
 }
@@ -732,14 +747,15 @@ arbor_tell_what_differs() {
 
 # What a run prints on a person's Mac gets pasted into pull requests, and so do its logs. Where the checkout and the home folder lie
 # says who the person is and how they keep their disk, and nothing about Arbor. So do the lines Arbor logs at its start about what it found
-# amiss on the Mac (`setup: Other window managers: …`, their Desktop & Dock switches). The signals are the supervisor's to handle: this
+# amiss on the Mac (`setup: Other window managers: …`, their Desktop & Dock switches, which of its shortcuts macOS uses as well). The signals are the supervisor's to handle: this
 # must live to print what it says afterwards.
 ARBOR_DISCREET='BEGIN { $| = 1; $SIG{$_} = "IGNORE" for qw(INT TERM HUP);
   @hide = map { [quotemeta($_->[0]), $_->[1]] } grep { length($_->[0]) > 1 }
     (["/private$ENV{ARBOR_ROOT}", "<checkout>"], [$ENV{ARBOR_ROOT}, "<checkout>"], ["/private$ENV{HOME}", "~"], [$ENV{HOME}, "~"]) }
   for $pair (@hide) { s/$pair->[0]/$pair->[1]/g }
   s{/Users/[^/\s"\x27:,;)]+}{~}g;
-  s/(\bsetup: [^:]*):.*/$1: (stays on this Mac)/;'
+  s/(\bsetup: [^:]*):.*/$1: (stays on this Mac)/;
+  s/(\bshortcuts: ).*macOS\x27s as well.*/$1(stays on this Mac)/;'
 arbor_discreet() { ARBOR_ROOT=$ARBOR_ROOT perl -pe "$ARBOR_DISCREET"; }
 arbor_discreet_files() {
   find "$ARBOR_OUT" -type f \( -name "*.txt" -o -name "*.log" -o -name "*.json" -o -name "*.jsonl" \) \

@@ -588,7 +588,7 @@ off, or leaves the Mac different. What comes of it lies in `.mac-shell/list-<dat
   keeps the display awake**, as a call does (`ARBOR_BUSY_OK=1` overrides the last two). Exit code 77.
 - Then **the curtain** goes up (`curtain.swift`): a plain dark window over every display, in front of everything that was open, behind everything the script opens. It takes the presses that miss
   and never comes forward. It goes down with the run; a right-click takes it down, and ends the script.
-- Before every session: not behind a locked screen or under the screen saver. Nothing that opens there shows, Accessibility lists no window that does not show, and every check would fail in a way that looks like Arbor's fault.
+- Before every session: not behind a locked screen, under the screen saver or with the display asleep. Nothing that opens there shows, Accessibility lists no window that does not show, and every check would fail in a way that looks like Arbor's fault.
 - `arbor_start` ends by bringing the test windows' app forward, so that from the first line of a session no app of the person's has the keyboard or is named in Arbor's menu.
 - **A press** is let through only between the menu bar and the Dock (and on the session's own menu bar item), and only where the first window to get it, Arbor's own panels aside, belongs to a process the
   run started. **Keys** go only to such a process, or to an open menu of Arbor's, and never if macOS itself takes the shortcut (⌘Tab, ⌘Space, ⌃←, ⌘⇧Q, ⌘⌥D, ⌘⇧4…; ⌃⌥Space where several input sources are on, because it
@@ -617,7 +617,7 @@ holds for the commit named (second reading, 10:45 UTC) and says what the script 
 | `compile.sh`, `compile-tools.sh` | trunk | safe | none | They compile and start nothing |
 | `sweep.sh` | trunk | safe | lets go, puts the pointer back | Only what the record of a run that was cut off names |
 | `check-harness.sh` | trunk | safe | 10 s | The harness itself: run it first |
-| `run-list.sh` | trunk | safe | its scripts' | Runs what this table calls safe, in order, and stops at the first sign of trouble |
+| `run-list.sh` | trunk | safe | its scripts' | Runs what this table calls safe, in order, and stops at the first sign of trouble. Keeps the display awake for as long as it lives (`caffeinate -d -i -w`), which changes no setting; the scripts are told which process that is, so that they do not take it for a call |
 | `e2e-drag.sh` | trunk | safe | 30 s | |
 | `e2e.sh` | trunk | safe | 30 s | `make e2e` with full screen, then `e2e-drag.sh`; rewrites `collab/evidence/e2e-latest.txt` |
 | `shots-F45.sh` | trunk | safe | none | |
@@ -658,13 +658,13 @@ holds for the commit named (second reading, 10:45 UTC) and says what the script 
 | `check-F58.sh` (`share-probe.swift`) | trunk | safe, steps skip themselves | 2 min | ⌘Tab, the second display, the grey wallpaper; the pictures of single test windows only where Screen Recording is granted already. Two test apps have an icon in the Dock. A test window is put at and beyond the display's edges, so with two displays it shows on the other for a moment |
 | `shots-finder.sh` | trunk | safe, steps skip themselves | 3 min, mostly keys | ⌘Tab, Mission Control, the swipe to another Space. Types digits and letters with the palette open or its own test app in front, which has an icon in the Dock |
 | `watch.sh` | trunk | **not this copy**: #233's | 6 s; 10 min in all | On the trunk: `arborctl watch` without a limit, more than 900 s, and the end-to-end runner under a time limit. #233 `cea45a10`: safe |
-| `shots-F10.sh` | trunk | **not this copy**: #180's | 5 min | On the trunk: pictures of its own without a look at the permission, a bundle with its watchdog, `doctor` in full. #180 `08f12ac4`: safe, steps skip themselves, once it leaves out the pictures of the welcome window's first page, which shows what `doctor` found |
+| `shots-F10.sh` | trunk | safe, steps skip themselves | 5 min | The appearance, input sources, the Accessibility list, a stand-in for another window manager. No `shot` here whatever `ARBOR_SHOTS` says, and no picture of the welcome window: it shows what `doctor` found on the Mac. A bundle of its own under an identifier of its own is opened through Launch Services, which keeps the entry for a while. Arbor's item shows in the menu bar |
 | `desktop-facts.sh` | #197 `e75d37f8` | safe | none | It reads the window list, four preferences and three answers of Finder's, and names only Apple's own processes |
 | `shots-F15-apps.sh` | trunk | **never**: ends with 77 | | Ten real apps opened for their icons, and killed |
 | `check-F52.sh`, `check-F63.sh` | #59, #66 | **never**: end with 77 | | Virtual displays, Accessibility taken from every app |
 | `check-F59.sh` | #158 `6907ce87` | safe | 30 s | During a carry nobody's app gets arrows, ↩ or ⎋ |
 | `shots-F04.sh`, `shots-F34.sh` | #79 `32612c35`, #187 `acf72c67` | safe | 3 min, 60 s | Test windows go to the Dock and come back; one is closed by its tab's button |
-| `shots-F22.sh`, `shots-F19.sh` | #71 `f5bc5d3c`, #160 `ac4f3120` | safe | 90 s, 45 s | |
+| `shots-F22.sh`, `shots-F19.sh` | trunk | safe | 90 s, 45 s | |
 | `check-F14.sh` | #204 `62e1fae1` | safe, steps skip themselves | 3 min | The double-click on the wallpaper, Safari, the survey of stock apps. A witness that only listens writes down every press of the button meanwhile, with its place. macOS zooms a floating test window to the full display |
 | `check-F21.sh` | #102 `9acaae38` | safe, parts skip themselves | two clicks, five keys | The virtual display; Arbor over every window; apps opened |
 | `film-F16.sh` | #98 `a2e34e43` | safe, steps skip themselves | 3 min | Reduce Motion. Pinches and ⌃⌥-scrolls over a test window, each after the net was asked; the helper is on record |
