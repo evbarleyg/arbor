@@ -145,9 +145,9 @@ must drag_window "$A" "$((x + 100))" "$((y + 40))"
 read -r fx fy fw fh <<< "$(real_of "$A")"
 place "$A" "$((fx + 420))" "$((fy + 260))" "$fw" "$fh"
 acted drags="$A" offence=stuck
-act dock-key honest-move-2 "it is moved back"
+act dock-key honest-move-2 "it is moved back to where the hand left it, which is its own place from now on"
 place "$A" "$fx" "$fy" "$fw" "$fh"
-acted moves="$A"
+acted moves="$A" place="$A"
 # Where the hand left it is its own place from now on.
 read -r ox oy _ _ <<< "$(real_of "$A")"
 

@@ -285,7 +285,10 @@ func grabPoint(_ window: AXUIElement, id: UInt32, pid: pid_t) -> (CGPoint, Strin
       let point = CGPoint(x: column.rounded(), y: (frame.minY + offset).rounded())
       // A window that is out of view has its title bar beyond the edge of the display, where a press lands on nothing.
       guard displays.contains(where: { $0.contains(point) }) else { continue }
-      guard topWindow(at: point, ringAround: frame)?.id == id else { continue }
+      // A window takes presses a few points beyond its frame, where its border can be dragged: a point that close to another window's edge
+      // resizes or raises that one instead. So the window has to be the frontmost all round the point as well.
+      let around = [(0, 0), (-10, 0), (10, 0), (0, 8)].map { CGPoint(x: point.x + CGFloat($0.0), y: point.y + CGFloat($0.1)) }
+      guard around.allSatisfy({ topWindow(at: $0, ringAround: frame)?.id == id }) else { continue }
       var found: AXUIElement?
       guard AXUIElementCopyElementAtPosition(app, Float(point.x), Float(point.y), &found) == .success,
         let element = found
