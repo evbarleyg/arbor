@@ -1,0 +1,59 @@
+# mac-shell: scripts/mac-shell/probe-swift.sh at 7abf5c3, macOS 26.6.2, 2026-10-14T22:44Z
+== Xcodes on this Mac
+/Applications/Xcode_26.0.1.app: swift-driver version: 1.127.14.1 Apple Swift version 6.2 (swiftlang-6.2.0.19.9 clang-1700.3.19.1)
+/Applications/Xcode_26.0.app -> /Applications/Xcode_26.0.1.app
+/Applications/Xcode_26.1.1.app: swift-driver version: 1.127.14.1 Apple Swift version 6.2.1 (swiftlang-6.2.1.4.8 clang-1700.4.4.1)
+/Applications/Xcode_26.1.app -> /Applications/Xcode_26.1.1.app
+/Applications/Xcode_26.2.0.app -> /Applications/Xcode_26.2.app
+/Applications/Xcode_26.2.app: swift-driver version: 1.127.14.1 Apple Swift version 6.2.3 (swiftlang-6.2.3.3.21 clang-1700.6.3.2)
+/Applications/Xcode_26.3.0.app -> /Applications/Xcode_26.3.app
+/Applications/Xcode_26.3.app: swift-driver version: 1.127.15 Apple Swift version 6.2.4 (swiftlang-6.2.4.1.4 clang-1700.6.4.2)
+/Applications/Xcode_26.4.1.app: swift-driver version: 1.148.6 Apple Swift version 6.3.1 (swiftlang-6.3.1.1.2 clang-2100.0.123.102)
+/Applications/Xcode_26.4.app -> /Applications/Xcode_26.4.1.app
+/Applications/Xcode_26.5.0.app -> /Applications/Xcode_26.5.app
+/Applications/Xcode_26.5.app: swift-driver version: 1.148.6 Apple Swift version 6.3.2 (swiftlang-6.3.2.1.108 clang-2100.1.1.101)
+/Applications/Xcode_26.6.0.app -> /Applications/Xcode_26.6.app
+/Applications/Xcode_26.6.app: swift-driver version: 1.148.6 Apple Swift version 6.3.3 (swiftlang-6.3.3.1.3 clang-2100.1.1.101)
+/Applications/Xcode.app -> /Applications/Xcode_26.6.app
+selected: /Applications/Xcode_26.6.0.app/Contents/Developer
+swift-driver version: 1.148.6 Apple Swift version 6.3.3 (swiftlang-6.3.3.1.3 clang-2100.1.1.101)
+Target: arm64-apple-macosx26.0
+== variants
+scripts/mac-shell/probe-swift.sh: line 19:  3054 Abort trap: 6           swiftc -swift-version 6 -target arm64-apple-macosx14.0 -parse-as-library -emit-ir $mode -o /dev/null "$file" > "$log" 2>&1
+FAILED  -Onone a-as-it-is.swift: <unknown>:0: error: fatal error encountered during compilation; please submit a bug report (https://swift.org/contributing/#reporting-bugs) 4.	While emitting IR SIL function "@$sSSScA_pSgIeAghgg_SSIeAghn_TR". 
+scripts/mac-shell/probe-swift.sh: line 19:  3202 Abort trap: 6           swiftc -swift-version 6 -target arm64-apple-macosx14.0 -parse-as-library -emit-ir $mode -o /dev/null "$file" > "$log" 2>&1
+FAILED  -O a-as-it-is.swift: <unknown>:0: error: fatal error encountered during compilation; please submit a bug report (https://swift.org/contributing/#reporting-bugs) 4.	While emitting IR SIL function "@$sSSScA_pSgIeAghgg_SSIeAghn_TR". 
+scripts/mac-shell/probe-swift.sh: line 19:  3232 Abort trap: 6           swiftc -swift-version 6 -target arm64-apple-macosx14.0 -parse-as-library -emit-ir $mode -o /dev/null "$file" > "$log" 2>&1
+FAILED  -Onone b-with-a-call.swift: <unknown>:0: error: fatal error encountered during compilation; please submit a bug report (https://swift.org/contributing/#reporting-bugs) 4.	While emitting IR SIL function "@$sSSScA_pSgIeAghgg_SSIeAghn_TR". 
+scripts/mac-shell/probe-swift.sh: line 19:  3243 Abort trap: 6           swiftc -swift-version 6 -target arm64-apple-macosx14.0 -parse-as-library -emit-ir $mode -o /dev/null "$file" > "$log" 2>&1
+FAILED  -O b-with-a-call.swift: <unknown>:0: error: fatal error encountered during compilation; please submit a bug report (https://swift.org/contributing/#reporting-bugs) 4.	While emitting IR SIL function "@$sSSScA_pSgIeAghgg_SSIeAghn_TR". 
+scripts/mac-shell/probe-swift.sh: line 19:  3253 Abort trap: 6           swiftc -swift-version 6 -target arm64-apple-macosx14.0 -parse-as-library -emit-ir $mode -o /dev/null "$file" > "$log" 2>&1
+FAILED  -Onone c-enum.swift: <unknown>:0: error: fatal error encountered during compilation; please submit a bug report (https://swift.org/contributing/#reporting-bugs) 4.	While emitting IR SIL function "@$s4null4KindOScA_pSgIeAghyg_ACIeAghn_TR". 
+scripts/mac-shell/probe-swift.sh: line 19:  3261 Abort trap: 6           swiftc -swift-version 6 -target arm64-apple-macosx14.0 -parse-as-library -emit-ir $mode -o /dev/null "$file" > "$log" 2>&1
+FAILED  -O c-enum.swift: <unknown>:0: error: fatal error encountered during compilation; please submit a bug report (https://swift.org/contributing/#reporting-bugs) 4.	While emitting IR SIL function "@$s4null4KindOScA_pSgIeAghyg_ACIeAghn_TR". 
+ok      -Onone d-helper.swift
+ok      -O d-helper.swift
+ok      -Onone e-assume.swift
+ok      -O e-assume.swift
+ok      -Onone f-bare.swift
+ok      -O f-bare.swift
+scripts/mac-shell/probe-swift.sh: line 19:  3314 Abort trap: 6           swiftc -swift-version 6 -target arm64-apple-macosx14.0 -parse-as-library -emit-ir $mode -o /dev/null "$file" > "$log" 2>&1
+FAILED  -Onone g-typed-closure.swift: <unknown>:0: error: fatal error encountered during compilation; please submit a bug report (https://swift.org/contributing/#reporting-bugs) 4.	While emitting IR SIL function "@$sSSScA_pSgIeAghgg_SSIeAghn_TR". 
+scripts/mac-shell/probe-swift.sh: line 19:  3322 Abort trap: 6           swiftc -swift-version 6 -target arm64-apple-macosx14.0 -parse-as-library -emit-ir $mode -o /dev/null "$file" > "$log" 2>&1
+FAILED  -O g-typed-closure.swift: <unknown>:0: error: fatal error encountered during compilation; please submit a bug report (https://swift.org/contributing/#reporting-bugs) 4.	While emitting IR SIL function "@$sSSScA_pSgIeAghgg_SSIeAghn_TR". 
+scripts/mac-shell/probe-swift.sh: line 19:  3331 Abort trap: 6           swiftc -swift-version 6 -target arm64-apple-macosx14.0 -parse-as-library -emit-ir $mode -o /dev/null "$file" > "$log" 2>&1
+FAILED  -Onone h-two-strings.swift: <unknown>:0: error: fatal error encountered during compilation; please submit a bug report (https://swift.org/contributing/#reporting-bugs) 4.	While emitting IR SIL function "@$sSSScA_pSgIeAghgg_SSIeAghn_TR". 
+scripts/mac-shell/probe-swift.sh: line 19:  3340 Abort trap: 6           swiftc -swift-version 6 -target arm64-apple-macosx14.0 -parse-as-library -emit-ir $mode -o /dev/null "$file" > "$log" 2>&1
+FAILED  -O h-two-strings.swift: <unknown>:0: error: fatal error encountered during compilation; please submit a bug report (https://swift.org/contributing/#reporting-bugs) 4.	While emitting IR SIL function "@$sSSScA_pSgIeAghgg_SSIeAghn_TR". 
+ok      -Onone i-main-actor-property.swift
+ok      -O i-main-actor-property.swift
+ok      -Onone j-on-submit.swift
+ok      -O j-on-submit.swift
+== the real thing
+4.	While evaluating request IRGenRequest(IR Generation for file "Sources/ArborKit/UI/SettingsListViews.swift")
+5.	While emitting IR SIL function "@$sSSScA_pSgIeAghgg_SSIeAghn_TR".
+error: compile command failed due to signal 6 (use -v to see invocation)
+Sources/ArborKit/Controller/Controller+HeadsUp.swift:52:60: error: generic parameter 'Result' could not be inferred
+25 swift-frontend           0x0000000104a6c424 swift::mainEntry(int, char const**) + 5224
+26 dyld                     0x0000000181efc4e4 start + 6992
+exit code 1
