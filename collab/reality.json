@@ -6841,8 +6841,12 @@
    "found": "A suite of real-window checks that is not on the trunk yet, in its first run on hosted Macs, beside its rehearsal on Linux, where this was green; the real Accessibility layer run on Linux against a model of a loaded Mac, which lost such drags and showed how; and `check-displays.sh` in its first run on a hosted Mac on 2026-10-15. That drags are lost was seen. That the 24 points are why is suspected: a trace is to come, and the script's coarse steps may have a share. A unit test of `WindowGrab` holds Arbor to today's rule, so it is no guard: a cure will have to change it.",
    "modelled": "no",
    "knobs": [],
-   "guards": [],
-   "copes": "open",
+   "guards": [
+    "test: aWindowThatStartsLateIsStillBeingDragged",
+    "test: aWindowThatGoesItsOwnWayDuringASelectionIsNotInHand",
+    "test: anEdgeThatFollowsLateIsStillAnEdgeResize"
+   ],
+   "copes": "WindowGrab.judge remembers that the window stood still and goes on looking: a window that later goes the pointer's way at its own size is in hand, however late it started, and an edge that follows late is still an edge resize. Sources/ArborKit/AX/AXWindowSystem.swift no longer settles such a press: it asks the window server ten times a second from then on, hears the app's reports as before, and logs a press that has moved nothing so far, a drag that began late, and at the release a window that was moved and taken for neither. Not cured: a flick that is over before Arbor hears of the press.",
    "hurt": 2,
    "touches": [
     "stuck"

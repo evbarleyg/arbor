@@ -1139,6 +1139,9 @@ public final class AXWindowSystem: WindowSystem {
   // notifications are looked at as before. The window server moves a dragged window itself and knows its place at once,
   // without the app having a say; the app learns of it about a tenth of a second later, posts at most a few
   // notifications a second, and some apps post none until the drag is over. Asking the window server also cannot hang.
+  // Neither sign is ever switched off while the button is down: a pointer that has gone far over a window that stands still
+  // is most likely selecting text, so the window server is then asked ten times a second and not with every movement, but a
+  // window that starts late is still a window in hand (`WindowGrab.judge`).
 
   private struct Press {
     let point: CGPoint
@@ -1148,7 +1151,16 @@ public final class AXWindowSystem: WindowSystem {
     var frame: CGRect = .zero
     /// It is settled that this press is not about a window Arbor knows.
     var isSettled = false
+    /// What `WindowGrab.judge` remembers between two looks. Once the pointer has gone far while the window stood still, the
+    /// window server is asked less often; what the window's app reports is heard as before.
+    var memory = WindowGrab.Memory()
+    /// When the window server was last asked.
+    var lookedAt: TimeInterval = 0
   }
+
+  /// How long the window server is left alone between two looks at a window that stood still: a selection in a long text
+  /// is thousands of movements.
+  private static let restBetweenLooks: TimeInterval = 0.1
 
   /// How far outside a window's frame a press still belongs to it: macOS's resize area.
   private static let reach: CGFloat = 4
@@ -1186,6 +1198,7 @@ public final class AXWindowSystem: WindowSystem {
       // A modifier going down or up counts as a move, so ⌘ takes effect while the pointer rests.
       if let window = draggingWindow { events?.dragMoved(window, to: cursorLocation()) }
     case .leftMouseUp:
+      noteAGrabThatWasMissed()
       press = nil
       endGrab()
     default:
@@ -1259,8 +1272,10 @@ public final class AXWindowSystem: WindowSystem {
   /// The pointer moved with the button down and nothing is decided yet.
   private func lookAtPressedWindow() {
     guard let press, !press.isSettled, let window = press.window, records[window] != nil,
+      !press.memory.stoodStill || uptime - press.lookedAt >= Self.restBetweenLooks,
       let bounds = Self.serverBounds(of: window)
     else { return }
+    self.press?.lookedAt = uptime
     if echoes.isEcho(bounds, of: window, at: uptime) {
       // Arbor moved it itself after the press. Start from there.
       self.press?.frame = bounds
@@ -1281,21 +1296,35 @@ public final class AXWindowSystem: WindowSystem {
     }
   }
 
+  /// The button comes up on a press that was taken for nothing, and the window is not where it was. Nothing can be done about it
+  /// now; a line in the log is what tells a run, or whoever reads a report, that it happened at all.
+  private func noteAGrabThatWasMissed() {
+    guard Log.debugEnabled, let press, !press.isSettled, draggingWindow == nil, resizingWindow == nil, let window = press.window,
+      let bounds = Self.serverBounds(of: window), !echoes.isEcho(bounds, of: window, at: uptime),
+      abs(bounds.minX - press.frame.minX) >= 1 || abs(bounds.minY - press.frame.minY) >= 1 || bounds.size != press.frame.size
+    else { return }
+    Log.debug("\(window) was moved or resized while the button was down, and it was taken for neither a drag nor a resize")
+  }
+
   private func decide(_ window: WindowID, from before: CGRect, to now: CGRect, pressedAt point: CGPoint) {
-    switch WindowGrab.classify(pressedAt: point, frameAtPress: before, frameNow: now, pointerNow: cursorLocation()) {
-    case .undecided:
+    var memory = press?.memory ?? WindowGrab.Memory()
+    let late = memory.stoodStill
+    let verdict = WindowGrab.judge(
+      pressedAt: point, frameAtPress: before, frameNow: now, pointerNow: cursorLocation(), memory: &memory)
+    if memory.stoodStill, !late { Log.debug("the press on \(window) has moved nothing so far: looking less often") }
+    press?.memory = memory
+    switch verdict {
+    case .undecided, .neither:
       break
-    case .neither:
-      press?.isSettled = true
     case .drag:
       draggingWindow = window
       watchForLostRelease()
-      Log.debug("\(window) is being dragged")
+      Log.debug("\(window) is being dragged" + (late ? ", which began late" : ""))
       events?.dragBegan(window, at: cursorLocation())
     case .resize:
       resizingWindow = window
       watchForLostRelease()
-      Log.debug("\(window) is being resized by its edges")
+      Log.debug("\(window) is being resized by its edges" + (late ? ", which began late" : ""))
       events?.resizeBegan(window)
     }
   }

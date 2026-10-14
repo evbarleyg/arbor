@@ -93,6 +93,77 @@ extension Box where Value == EchoFilter {
     #expect(verdict(pressedAt: inside, now: frame, pointer: CGPoint(x: 330, y: 300)) == .neither)
   }
 
+  // MARK: A press that is looked at again and again
+
+  /// The looks of one press, in order: where the window and the pointer were at each.
+  func verdicts(pressedAt: CGPoint, _ looks: [(now: CGRect, pointer: CGPoint)]) -> [WindowGrab.Verdict] {
+    var memory = WindowGrab.Memory()
+    return looks.map {
+      WindowGrab.judge(pressedAt: pressedAt, frameAtPress: frame, frameNow: $0.now, pointerNow: $0.pointer, memory: &memory)
+    }
+  }
+
+  /// The pointer after so many steps of 27 points, down and to the left.
+  func pointer(_ steps: CGFloat) -> CGPoint { CGPoint(x: titleBar.x - 24 * steps, y: titleBar.y + 12.7 * steps) }
+
+  /// Seen on a hosted Mac: the pointer went 27 points a step, and at the first look the window had not stirred.
+  @Test func aWindowThatStartsLateIsStillBeingDragged() {
+    #expect(
+      verdicts(pressedAt: titleBar, [(frame, pointer(1)), (frame, pointer(2)), (frame.offsetBy(dx: -48, dy: 25), pointer(3))])
+        == [.neither, .neither, .drag])
+    #expect(
+      verdicts(pressedAt: titleBar, [(frame, pointer(1)), (frame.offsetBy(dx: -240, dy: 127), pointer(10))]).last == .drag,
+      "it has caught up in one leap, and the hand may be at rest by now")
+  }
+
+  /// It need not be under the pointer, as long as it goes on.
+  @Test func aWindowThatStartsLateAndTrailsThePointerIsInHandAtTheSecondLook() {
+    func looks(_ first: (CGFloat, CGFloat), _ second: (CGFloat, CGFloat)) -> [WindowGrab.Verdict] {
+      verdicts(
+        pressedAt: titleBar,
+        [
+          (frame, pointer(1)), (frame.offsetBy(dx: first.0, dy: first.1), pointer(10)),
+          (frame.offsetBy(dx: second.0, dy: second.1), pointer(11)),
+        ])
+    }
+    #expect(looks((-192, 102), (-216, 114)) == [.neither, .neither, .drag], "its app's reports are a step behind")
+    #expect(looks((-242, 1), (-266, 1)) == [.neither, .neither, .drag], "macOS held it back one way")
+    #expect(
+      looks((-307, 127), (-331, 140)) == [.neither, .neither, .drag],
+      "a pointer in steps of 66 points is a step further on by the time the window is read")
+  }
+
+  /// One jump cannot be told from a late start at one look. At two it can: this window then stands still.
+  @Test func aWindowThatJumpsOnceThePointersWayDuringASelectionIsNotInHand() {
+    let inside = CGPoint(x: 300, y: 300)
+    for jump: CGFloat in [40, 80] {
+      let jumped = frame.offsetBy(dx: jump, dy: 0)
+      let looks = [(frame, CGPoint(x: 330, y: 300))] + (0..<4).map { (jumped, CGPoint(x: 420 + CGFloat($0) * 10, y: 300)) }
+      #expect(verdicts(pressedAt: inside, looks) == Array(repeating: .neither, count: 5), "a jump of \(jump) points")
+    }
+  }
+
+  @Test func aWindowThatGoesItsOwnWayDuringASelectionIsNotInHand() {
+    let (inside, far) = (CGPoint(x: 300, y: 300), CGPoint(x: 420, y: 300))
+    func late(_ now: CGRect) -> WindowGrab.Verdict? { verdicts(pressedAt: inside, [(frame, far), (now, far)]).last }
+    #expect(late(frame) == .neither)
+    #expect(late(frame.offsetBy(dx: -60, dy: 0)) == .neither, "against the pointer")
+    #expect(late(frame.offsetBy(dx: 0, dy: 200)) == .neither, "across it")
+    #expect(late(frame.offsetBy(dx: 400, dy: 0)) == .neither, "far past it")
+    #expect(late(CGRect(x: 160, y: 100, width: 700, height: 400)) == .neither, "at another size")
+  }
+
+  @Test func anEdgeThatFollowsLateIsStillAnEdgeResize() {
+    let (edge, far) = (CGPoint(x: 699, y: 300), CGPoint(x: 739, y: 300))
+    #expect(
+      verdicts(pressedAt: edge, [(frame, far), (CGRect(x: 100, y: 100, width: 640, height: 400), far)]) == [.neither, .resize])
+  }
+
+  /// Until the pointer has gone far nothing is remembered, and a look is what it always was.
+  @Test func aPressThatIsDecidedAtOnceIsJudgedAsBefore() {
+    #expect(verdicts(pressedAt: titleBar, [(frame, titleBar), (frame.offsetBy(dx: -8, dy: 6), titleBar)]) == [.undecided, .drag])
+  }
+
   @Test func aSizeChangeAfterAPressOnTheBorderIsAnEdgeResize() {
     let wider = CGRect(x: 100, y: 100, width: 660, height: 400)
     #expect(verdict(pressedAt: CGPoint(x: 699, y: 300), now: wider) == .resize)

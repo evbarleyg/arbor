@@ -342,8 +342,11 @@ changed after a press within 10 points of the border → an edge resize; size
 changed after a press anywhere else → not a resize (macOS zooms a window whose
 title bar is double-clicked, and gives a window it had tiled its old size back
 when it is dragged away); the pointer 24 points away and the window where it was
-→ the press is about the window's content, stop looking; moved farther than the
-pointer went, by more than 32 points → not in the hand, stop looking.
+→ the press is most likely about the window's content: look ten times a second
+from here on, not with every movement. It is not the last word
+(`WindowGrab.judge`): a window whose app was busy, or had to bring it forward first,
+starts late, and one that then goes the pointer's way at its own size is in hand.
+Moved farther than the pointer went, by more than 32 points → not in the hand, stop looking.
 
 **macOS showing its desktop** (a click on the wallpaper, as macOS 14 and later come; F11; a
 hot corner) is a picture and nothing more: the window server lists every window at the
