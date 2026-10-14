@@ -81,6 +81,7 @@ public struct WindowFilter: Sendable, Equatable {
 /// - Controller+CheatSheet.swift: the shortcuts on screen
 /// - Controller+Minimap.swift: the whole arrangement in small, after the view has moved
 /// - Controller+Undo.swift: undo and redo for changes to the arrangement
+/// - Controller+AppsDoubleClick.swift: what macOS makes of a double-click on a docked window stays
 @MainActor
 public final class Controller {
   public let system: any WindowSystem
@@ -199,6 +200,9 @@ public final class Controller {
   /// See Controller+DesktopGuard.swift.
   var announcedGuardZones = DesktopGuardZones()
   var guardZonesCheckIsQueued = false
+
+  /// The last double-click that went to a docked window's app, until something has come of it.
+  var appsDoubleClick: AppsDoubleClick?
 
   /// Managed windows, most recently focused first. `dock beside` rules use it
   /// to pick which of an app's windows to dock beside (Controller+Rules.swift).
@@ -478,6 +482,7 @@ public final class Controller {
     drag = nil
     soleFloats.dragged = nil
     edgeResize = nil
+    appsDoubleClick = nil
     system.start()
     let shapes = Dictionary(displays.map { ($0.id, $0.frame) }, uniquingKeysWith: { first, _ in first })
     displays = system.displays()
@@ -592,6 +597,7 @@ public final class Controller {
     isStoppingWithoutMoving = !movingWindows
     defer { isStoppingWithoutMoving = false }
     if movingWindows { cancelDragLettingGo() } else { cancelDrag() }
+    appsDoubleClick = nil
     if movingWindows { lookAtTheDisplaysBeforeLettingGo() }
     scheduler.cancel("save")
     overlays.finishAnimations()
@@ -1029,6 +1035,7 @@ public final class Controller {
       snapshot.windows[index].pinned = role == .pinned
       snapshot.windows[index].stashed = role == .stashed
       if case .summoned = role { snapshot.windows[index].summoned = true }
+      snapshot.windows[index].letBe = snapshot.windows[index].docked && enforcement.givenUp.contains(snapshot.windows[index].id)
     }
     snapshot.held = holdLevel
     return snapshot

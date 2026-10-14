@@ -191,6 +191,8 @@ public enum HeadsUpHint: String, Sendable, CaseIterable {
   case docked
   /// A window was let go where macOS itself tiles, and Arbor stood aside (`MacTiling`).
   case leftToMacOS
+  /// macOS made a docked window big at a double-click on its title bar, and Arbor stood aside (`AppsDoubleClick`).
+  case zoomedByMacOS
 
   /// How often each is shown before Arbor takes it as read. More than once, because a line that fades
   /// after a few seconds is easily missed the first time.
@@ -215,6 +217,11 @@ public enum HeadsUpHint: String, Sendable, CaseIterable {
       // First the way that works at once, then the lasting cure, which is no shortcut and is said whatever the keys are.
       let ways = [shortcut(.dock(nil, .left)).map { "\($0) docks it" }, "Check Setup… in the menu"].compactMap { $0 }
       return HeadsUpModel(kind: .hint, text: "macOS tiled this window; Arbor stood aside", hint: ways.joined(separator: " · "))
+    case .zoomedByMacOS:
+      // The first way back is no shortcut, so it is said whatever the keys are.
+      return HeadsUpModel(
+        kind: .hint, text: "macOS zoomed this window",
+        hint: shortcut(.showAll).map { "double-click again, or \($0), puts it back" } ?? "double-click again puts it back")
     }
   }
 }

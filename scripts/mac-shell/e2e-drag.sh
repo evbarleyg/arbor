@@ -83,8 +83,12 @@ step "double-click the title bar of a docked window (H5)"
 # shellcheck disable=SC2046
 dblclick $(titlebar_of "$W3")
 sleep 1.5
-check "the window is in its slot" eventually same_frame "$W3" "$x3" "$y3" "$w3" "$h3"
+# What macOS makes of it stays (check-macos-double-click.sh looks closer). Whatever that is here, nothing else moves,
 check "no seam moved" eventually same_frame "$W2" "$x2" "$y2" "$w2" "$h2"
+check "the window is still docked" is docked "$W3"
+# and one command takes the window back.
+ctl show-all
+check "showing everything puts the window into its slot" eventually same_frame "$W3" "$x3" "$y3" "$w3" "$h3"
 
 step "press inside a docked window and move the pointer"
 drag $((x3 + w3 / 2)) $((y3 + h3 / 2)) $((x3 + w3 / 2 + 90)) $((y3 + h3 / 2 + 60)) --no-release

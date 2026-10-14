@@ -44,6 +44,10 @@ public final class FakeWindowSystem: WindowSystem {
     var ownTitleBar: CGFloat?
     /// How much of its top macOS keeps above the bottom of the visible frame: its title bar, with the toolbar if that is part of it.
     public var titleBar: CGFloat { ownTitleBar ?? FakeWindowSystem.measuredTitleBars[snapshot.appName] ?? FakeWindowSystem.usualTitleBar }
+    /// macOS has zoomed it: the frame it got, and the one it had, to which the next zoom returns it.
+    var zoom: (to: CGRect, from: CGRect)?
+    /// How often it has been double-clicked.
+    public internal(set) var doubleClicks = 0
 
     public static func == (a: FakeWindow, b: FakeWindow) -> Bool {
       a.snapshot == b.snapshot && a.minimumSize == b.minimumSize && a.maximumSize == b.maximumSize

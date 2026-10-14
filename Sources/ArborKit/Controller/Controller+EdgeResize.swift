@@ -20,6 +20,7 @@ extension Controller {
 
   public func resizeBegan(_ id: WindowID) {
     edgeResize = nil
+    appsDoubleClick = nil
     stopWatchingTitle(of: id)
     guard isRunning, isManaged(id), let display = workspaceID(containing: id),
       workspaces[display]!.isDocked(id)

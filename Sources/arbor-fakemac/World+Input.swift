@@ -133,6 +133,21 @@ extension World {
     land(at: point, clicks: clicks, secondary: right || !modifiers.isDisjoint(with: [.control, .option]))
     // What the Accessibility layer's monitor of the mouse passes on.
     system.events?.pointerPressed()
+    reportDoubleClick(clicks)
+  }
+
+  /// What that monitor makes of a press that has landed, if it is the second of a pair.
+  private func reportDoubleClick(_ clicks: Int) {
+    if AppsDoubleClick.isCompleted(byClick: clicks), let window = pressedWindow { system.events?.doubleClickReached(window) }
+  }
+
+  /// The window of an app's that the press in progress landed on.
+  private var pressedWindow: WindowID? {
+    switch held {
+    case .title(let window, _, _, _), .button(let window, _), .resize(let window, _, _, _): window
+    case .content(let id): extras[id] == nil ? WindowID(id) : nil
+    default: nil
+    }
   }
 
   /// A press that got past Arbor's taps.
@@ -373,8 +388,14 @@ extension World {
         let letGo = system.frame(of: window)
         system.events?.dragEnded(window, at: point)
         if let letGo { system.letMacOSTile(window, letGoAt: letGo) }
-      } else if clicks == 2 {
-        zoom(window)
+      } else if AppsDoubleClick.isCompleted(byClick: clicks) {
+        // System Settings → Desktop & Dock → "Double-click a window's title bar to". Not set, it fills or zooms.
+        let setting = file(World.titleBarActionSetting).map { String(decoding: $0, as: UTF8.self) }
+        switch setting?.trimmingCharacters(in: .whitespacesAndNewlines) {
+        case "None": break
+        case "Minimize": minimizeWindow(window)
+        default: system.zoomAsMacOSDoes(window)
+        }
       }
 
     case .button(let window, let name):
@@ -384,7 +405,7 @@ extension World {
       switch name {
       case "close": closeWindow(window.rawValue)
       case "minimize": minimizeWindow(window)
-      default: zoom(window)
+      default: system.zoomAsMacOSDoes(window)
       }
 
     case .content(let id):
@@ -409,6 +430,7 @@ extension World {
         // A plain modifier-click: the app gets the press it missed, then this release.
         system.mouseDown = true
         land(at: start, clicks: clicks, secondary: false)
+        reportDoubleClick(clicks)
         lift(at: point)
       case .frame(let rect):
         arbor.band?.shown = false
@@ -430,22 +452,6 @@ extension World {
     case .nothing, .idle, .panelTitle, .resize, .seam:
       break
     }
-  }
-
-  /// What a double-click on the title bar and the green button do: fill the screen, or go back to the size
-  /// before.
-  private func zoom(_ window: WindowID) {
-    guard let fake = system.windows[window] else { return }
-    if let before = zoomedFrom.removeValue(forKey: window) {
-      system.userMove(window, to: before)
-      return
-    }
-    var frame = display.visibleFrame
-    if let maximum = fake.maximumSize {
-      frame.size = CGSize(width: min(frame.width, maximum.width), height: min(frame.height, maximum.height))
-    }
-    zoomedFrom[window] = fake.snapshot.frame
-    system.userMove(window, to: frame)
   }
 
   // MARK: The keyboard

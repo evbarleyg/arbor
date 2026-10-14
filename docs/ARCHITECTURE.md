@@ -372,6 +372,16 @@ loop without end. After three put-backs of a window within three seconds
 (`EnforcementLimiter`) Arbor leaves it where its app wants it, says so once in
 the log, and tries again when the layout next changes.
 
+What macOS makes of a double-click is not put back either. macOS fills, zooms or minimizes a window whose title bar is
+double-clicked, and the person asked for that. `AXWindowSystem`'s mouse monitor only listens and hears only what apps get, so
+a press with an even click count has reached the window under the pointer: `doubleClickReached(_:)`. The controller
+keeps a note for a docked window (`AppsDoubleClick`), and a new frame of that window within two seconds, with the button
+up, stays (`standsAsideAfterADoubleClick`, from `windowChanged`): no frame is set and no timer started. The window is still docked
+and its slot stays empty behind it; it is left alone like one Arbor has given up on (`EnforcementLimiter.leave`) until macOS's
+second double-click returns it or the layout next changes, which takes it back in one move. The first three times a line on screen says so
+(`HeadsUpHint.zoomedByMacOS`). A drag or an edge resize drops
+the note. Not covered: ⌥-click on the green button and the tiles in its menu, which no press tells apart from an app's whim.
+
 ## Drag and drop
 
 `AXWindowSystem` watches global mouse events. When the button goes down it
