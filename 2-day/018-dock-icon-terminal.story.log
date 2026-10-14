@@ -1,0 +1,18 @@
+18 dock-icon-terminal: clicks terminal's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:414', 'front': '112', 'floating': '95,98,109,112,115,121,124,128', 'docked': ''}
+FAIL rule 4: terminal (w112) is not wholly in view: 98% of it, at 740,300 877×499 in 0,31 1600×791
+
+23:43:45.690 SCREEN -- begin 18 dock-icon-terminal
+23:43:45.690 SCREEN -- text 18 clicks terminal's icon in the Dock
+23:43:46.312 SCREEN the button is down 1332 854
+23:43:46.357 SCREEN in front: process 14828 com.apple.Terminal
+23:43:46.357 MACOS pid 14768 AXApplicationDeactivated
+23:43:46.361 MACOS workspace didActivate pid 14828 com.apple.Terminal regular
+23:43:46.362 MACOS workspace didDeactivate pid 14768 com.apple.TextEdit regular
+23:43:46.367 SCREEN the button is up 1332 854
+23:43:46.475 SCREEN front to back: terminal textedit safari finder w148 calendar preview settings notes
+23:43:46.525 MACOS pid 14828 AXApplicationActivated
+23:43:46.540 DEBUG focus is on w112
+23:43:46.540 DEBUG w112 has the keyboard
+23:43:47.697 SCREEN -- end 18 act=switch settled=quiet:414 front=112 floating=95,98,109,112,115,121,124,128 docked=
+23:43:48.050 SCRIPT == 19 dock-icon-notes

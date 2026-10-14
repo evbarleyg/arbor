@@ -1,0 +1,9 @@
+11 moved-twice: OFFENCE: a window is moved, and half a second later moved again
+expected: {'act': 'dock-key', 'settled': 'quiet:1085', 'moves': '36', 'offence': 'jolt'}
+FAIL rule 3: oak (w36) moved 2 times
+
+23:40:44.344 SCREEN -- begin 11 moved-twice
+23:40:44.344 SCREEN -- text 11 OFFENCE: a window is moved, and half a second later moved again
+23:40:44.408 SCREEN oak (w36) 160,100 600×420
+23:40:45.035 SCREEN oak (w36) 220,100 600×420
+23:40:46.069 SCREEN -- end 11 act=dock-key settled=quiet:1085 moves=36 offence=jolt

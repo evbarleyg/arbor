@@ -1,0 +1,17 @@
+79 click-settings: clicks settings's title bar
+expected: {'act': 'switch', 'settled': 'quiet:447', 'front': '398', 'floating': '', 'docked': ''}
+FAIL rule 4: settings (w398) is not in front: textedit (w390), notes (w394), finder (w376), terminal-new-71 (w560) ahead of it, of which 7 cover part of it
+FAIL rule 4: settings (w398) its app is not the one in front (process 39090 is)
+
+23:53:01.280 SCREEN -- begin 79 click-settings
+23:53:01.280 SCREEN -- text 79 clicks settings's title bar
+23:53:01.998 SCREEN the button is down 1137 97
+23:53:02.127 SCREEN front to back: textedit notes finder terminal-new-71 terminal-new-60 terminal preview settings calendar
+23:53:02.127 SCREEN the button is up 1137 97
+23:53:02.127 MACOS pid 39090 AXApplicationActivated
+23:53:02.128 SCREEN in front: process 39090 com.apple.TextEdit
+23:53:02.128 MACOS workspace didActivate pid 39090 com.apple.TextEdit regular
+23:53:02.128 MACOS workspace didDeactivate pid 39492 com.apple.Notes regular
+23:53:02.128 MACOS pid 39492 AXApplicationDeactivated
+23:53:03.231 SCREEN -- end 79 act=switch settled=quiet:447 front=398 floating= docked=
+23:53:03.440 SCRIPT == 80 resume

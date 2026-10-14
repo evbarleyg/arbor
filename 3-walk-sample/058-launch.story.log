@@ -1,0 +1,28 @@
+58 launch: starts Arbor
+expected: {'act': 'quit-and-start', 'settled': 'quiet:944', 'moves': ',390', 'everything': '1', 'floating': '376,379,393,394,397,398,513', 'docked': '390'}
+FAIL rule L: textedit (w390) is out of view: 0% of it is on the display, at 1599,790 673×439
+
+23:51:41.140 SCREEN -- begin 58 launch
+23:51:41.140 SCREEN -- text 58 starts Arbor
+23:51:41.279 INFO  Arbor dev starting, pid 48716, home /tmp/arbor-shell.ACQBwD/home
+23:51:41.282 INFO  control socket at /tmp/arbor-shell.ACQBwD/home/arbor.sock
+23:51:41.346 INFO  keyboard layout: U.S.
+23:51:41.443 INFO  started: 1 display(s), 8 managed window(s)
+23:51:41.446 MACOS pid 39090 AXMoved w390 AXWindow/AXStandardWindow 1599 790 673 439
+23:51:41.450 SCREEN textedit (w390) 1599,790 673×439
+23:51:41.466 INFO  registered 52 shortcuts in 1256 µs
+23:51:41.467 DEBUG w513 has the keyboard
+23:51:41.471 INFO  pinch event tap installed
+23:51:41.471 INFO  scroll event tap installed
+23:51:41.471 INFO  rectangle event taps installed
+23:51:41.487 ERROR setup: Desktop & Dock settings: as they stand, macOS reacts to the same clicks and drags as Arbor. In System Settings → Desktop & Dock: | “Click wallpaper to reveal desktop”: choose “Only in Stage Manager”. Otherwise a click on the Desktop sends every window away | “Drag windows to left or right edge of screen to tile”: switch it off | “Drag windows to menu bar to fill screen”: switch it off | “Hold ⌥ key while dragging windows to tile”: switch it off
+23:51:41.501 DEBUG pinch event tap installed
+23:51:41.503 DEBUG scroll event tap installed
+23:51:41.504 DEBUG rectangle event tap installed
+23:51:41.505 SCREEN w535 of Arbor -5,26 726×442
+23:51:41.505 SCREEN front to back: w535 preview settings calendar notes terminal textedit finder
+23:51:41.505 DEBUG rectangle drag event tap installed
+23:51:41.576 SCREEN -- arbor 48716
+23:51:41.604 INFO  trace day-2: recording to /tmp/arbor-shell.ACQBwD/home/traces/2026-10-14-235141-day-2.jsonl
+23:51:42.679 SCREEN -- end 58 act=quit-and-start settled=quiet:944 moves=,390 everything=1 floating=376,379,393,394,397,398,513 docked=390
+23:51:43.045 SCRIPT == 59 dock-icon-terminal

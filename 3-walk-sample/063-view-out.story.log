@@ -1,0 +1,44 @@
+63 view-out: presses ⌃⌥↑
+expected: {'act': 'view', 'settled': 'quiet:908', 'moves': 'any', 'floating': '376,379,393,394,397,398,513,538', 'docked': '390'}
+ODD rule 3: the last window came to rest 767 ms after the key or the button
+
+23:51:52.643 SCREEN -- begin 63 view-out
+23:51:52.643 SCREEN -- text 63 presses ⌃⌥↑
+23:51:52.826 DEBUG commands follow the pointer: a shortcut, pointer idle 2.3 s, keys 7.4 s, focus 4.6 s
+23:51:52.882 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 8 stand-ins, 0.46 s
+23:51:52.886 SCREEN w544 of Arbor 0,0 1600×900 (level 4)
+23:51:52.895 MACOS pid 39090 AXResized w390 AXWindow/AXStandardWindow 12 43 782 767
+23:51:52.895 MACOS pid 39090 AXMoved w390 AXWindow/AXStandardWindow 12 43 782 767
+23:51:52.931 MACOS pid 38851 AXResized w376 AXWindow/AXStandardWindow 806 120 794 436
+23:51:52.931 MACOS pid 38851 AXMoved w376 AXWindow/AXStandardWindow 806 120 794 436
+23:51:52.950 MACOS pid 39421 AXTitleChanged w393 AXWindow/AXStandardWindow 806 239 793 499
+23:51:52.958 SCREEN terminal (w393) 97,239 793×499
+23:51:52.958 SCREEN textedit (w390) 12,43 782×767
+23:51:52.958 SCREEN finder (w376) 806,120 794×436
+23:51:52.958 MACOS pid 39421 AXResized w393 AXWindow/AXStandardWindow 806 239 793 499
+23:51:52.959 MACOS pid 39421 AXMoved w393 AXWindow/AXStandardWindow 806 239 793 499
+23:51:52.989 MACOS pid 39492 AXResized w394 AXWindow/AXStandardWindow 806 31 794 791
+23:51:52.993 MACOS pid 39492 AXMoved w394 AXWindow/AXStandardWindow 806 31 794 791
+23:51:53.010 SCREEN notes (w394) 806,31 794×791
+23:51:53.010 SCREEN terminal (w393) 806,239 793×499
+23:51:53.020 SCREEN calendar (w397) 404,115 794×599
+23:51:53.020 MACOS pid 39554 AXResized w397 AXWindow/AXStandardWindow 806 115 794 599
+23:51:53.021 MACOS pid 39554 AXMoved w397 AXWindow/AXStandardWindow 806 115 794 599
+23:51:53.032 MACOS pid 39616 AXMoved w398 AXWindow/AXStandardWindow 806 85 723 625
+23:51:53.034 MACOS pid 47435 AXMoved w513 AXWindow/AXStandardWindow 806 35 708 424
+23:51:53.051 MACOS pid 39421 AXTitleChanged w538 AXWindow/AXStandardWindow 806 268 793 499
+23:51:53.054 MACOS pid 39421 AXResized w538 AXWindow/AXStandardWindow 806 268 793 499
+23:51:53.054 MACOS pid 39421 AXMoved w538 AXWindow/AXStandardWindow 806 268 793 499
+23:51:53.064 INFO  out: stepped out to everything
+23:51:53.092 SCREEN w535 of Arbor 797,25 809×803
+23:51:53.092 SCREEN terminal-new-60 (w538) 806,268 793×499
+23:51:53.092 SCREEN preview (w513) 806,35 708×424
+23:51:53.092 SCREEN settings (w398) 806,85 723×625
+23:51:53.092 SCREEN calendar (w397) 806,115 794×599
+23:51:53.092 SCREEN w545 of Arbor 794,43 12×767
+23:51:53.092 SCREEN w546 of Arbor 0,31 1600×791 (level -2147483602)
+23:51:53.092 SCREEN front to back: w535 notes terminal-new-60 terminal preview settings calendar textedit finder w545
+23:51:53.543 DEBUG stage down
+23:51:53.602 SCREEN w544 of Arbor left the screen
+23:51:54.306 SCREEN -- end 63 act=view settled=quiet:908 moves=any floating=376,379,393,394,397,398,513,538 docked=390
+23:51:54.568 SCRIPT == 64 leave-alone

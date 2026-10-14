@@ -1,0 +1,24 @@
+94 pause: presses ⌃⌥⎋
+expected: {'act': 'way-out', 'settled': 'quiet:722', 'moves': 'any', 'restores': 'all', 'everything': '1', 'floating': '', 'docked': ''}
+FAIL rule 5: finder (w95) is 12,43 501×767; its own size was 340,120 920×436
+FAIL rule 5: safari (w98) is 1014,43 574×767; its own size was 138,31 1324×791
+FAIL rule 5: terminal (w112) is 525,239 478×499; its own size was 97,238 877×499
+FAIL rule 5: calendar (w121) is 423,115 680×599; its own size was 423,115 936×599
+FAIL rule 5: w189 of Mail is 328,72 871×630; its own size was 240,72 1120×630
+FAIL rule 5: textedit (w286) is 525,65 477×439; its own size was 165,65 673×439
+
+23:47:07.704 SCREEN -- begin 94 pause
+23:47:07.704 SCREEN -- text 94 presses ⌃⌥⎋
+23:47:07.854 INFO  trace day-12 ended: 32 lines, Arbor stopped
+23:47:07.857 INFO  registered 1 shortcuts in 1735 µs
+23:47:07.858 INFO  stopped; all windows returned to view
+23:47:07.858 INFO  paused
+23:47:07.859 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Paused until ⌃⌥⎋; windows that were out of view are back on screen
+23:47:07.902 SCREEN w338 of Arbor 538,728 525×38 (level 6)
+23:47:07.902 SCREEN w205 of Arbor left the screen
+23:47:07.902 SCREEN w203 of Arbor left the screen
+23:47:07.902 SCREEN w209 of Arbor left the screen
+23:47:07.902 SCREEN w204 of Arbor left the screen
+23:47:07.902 SCREEN front to back: safari notes textedit finder calendar terminal w191 w189 preview settings w148
+23:47:09.014 SCREEN -- end 94 act=way-out settled=quiet:722 moves=any restores=all everything=1 floating= docked=
+23:47:09.256 SCRIPT == 95 drag-calendar-while-paused

@@ -1,0 +1,92 @@
+88 drag-notes-to-left-edge: drags notes by its title bar against the left edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:402', 'drags': '115', 'moves': '95,98,95,98', 'yields': '112,115,121,124,128,189,286,112,115,121,124,128,189,286', 'front': '115', 'own': '115', 'floating': '112,115,121,124,128,189,286', 'docked': '95,98'}
+ODD rule -: floating w115 and docked w95 overlap by 501×767
+
+23:46:50.400 SCREEN -- begin 88 drag-notes-to-left-edge
+23:46:50.400 SCREEN -- text 88 drags notes by its title bar against the left edge of the screen and lets go
+23:46:50.459 SCRIPT drag w115 from 759,117 to 0,450
+23:46:50.943 SCREEN front to back: notes w204 safari textedit finder calendar terminal w191 w189 preview settings w148 w203 w209
+23:46:50.943 SCREEN the button is down 759 117
+23:46:51.185 SCREEN notes (w115) 383,116 709×660
+23:46:51.192 SCREEN notes (w115) 358,127 709×660
+23:46:51.277 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow 358 127 709 660
+23:46:51.292 SCREEN notes (w115) 333,138 709×660
+23:46:51.292 SCREEN w204 of Arbor left the screen
+23:46:51.292 SCREEN front to back: notes safari textedit finder calendar terminal w191 w189 preview settings w148 w203 w209
+23:46:51.393 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow 307 149 709 660
+23:46:51.402 SCREEN notes (w115) 307,149 709×660
+23:46:51.525 SCREEN notes (w115) 257,161 709×660
+23:46:51.531 SCREEN notes (w115) 231,161 709×660
+23:46:51.561 SCREEN notes (w115) 206,172 709×660
+23:46:51.567 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow 206 172 709 660
+23:46:51.634 SCREEN notes (w115) 181,194 709×660
+23:46:51.674 SCREEN notes (w115) 156,206 709×660
+23:46:51.685 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow 156 206 709 660
+23:46:51.716 SCREEN notes (w115) 130,217 709×660
+23:46:51.815 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow 105 228 709 660
+23:46:51.831 SCREEN notes (w115) 105,228 709×660
+23:46:51.835 SCREEN notes (w115) 80,239 709×660
+23:46:51.931 SCREEN notes (w115) 54,240 709×660
+23:46:51.949 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow 54 240 709 660
+23:46:52.036 SCREEN notes (w115) 29,240 709×660
+23:46:52.054 SCREEN notes (w115) 4,240 709×660
+23:46:52.126 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow 4 240 709 660
+23:46:52.144 SCREEN notes (w115) 0,240 709×660
+23:46:52.193 SCREEN notes (w115) -26,240 709×660
+23:46:52.242 SCREEN notes (w115) -76,240 709×660
+23:46:52.249 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow -76 240 709 660
+23:46:52.306 SCREEN notes (w115) -101,240 709×660
+23:46:52.370 SCREEN notes (w115) -127,240 709×660
+23:46:52.408 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow -127 240 709 660
+23:46:52.458 SCREEN notes (w115) -152,240 709×660
+23:46:52.502 SCREEN notes (w115) -203,251 709×660
+23:46:52.555 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow -203 251 709 660
+23:46:52.619 SCREEN notes (w115) -228,273 709×660
+23:46:52.664 SCREEN notes (w115) -253,284 709×660
+23:46:52.700 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow -253 284 709 660
+23:46:52.792 SCREEN notes (w115) -304,306 709×660
+23:46:52.858 SCREEN notes (w115) -329,317 709×660
+23:46:52.863 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow -329 317 709 660
+23:46:52.917 SCREEN w333 of WindowManager -15,16 830×821
+23:46:52.917 SCREEN notes (w115) -354,329 709×660
+23:46:52.917 SCREEN w332 of WindowManager -15,16 830×821
+23:46:52.917 SCREEN front to back: w333 notes w332 safari textedit finder calendar terminal w191 w189 preview settings w148 w203 w209
+23:46:53.025 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow -354 329 709 660
+23:46:53.184 SCREEN notes (w115) -353,329 709×660
+23:46:53.276 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow -353 329 709 660
+23:46:53.557 SCREEN the button is up 0 450
+23:46:53.571 SCREEN notes (w115) -354,329 709×660
+23:46:53.571 SCREEN w332 of WindowManager left the screen
+23:46:53.571 SCREEN w333 of WindowManager left the screen
+23:46:53.571 SCREEN front to back: notes safari textedit finder calendar terminal w191 w189 preview settings w148 w203 w209
+23:46:53.583 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow -354 329 709 660
+23:46:53.610 MACOS pid 14919 AXResized w115 AXWindow/AXStandardWindow -353 328 710 661
+23:46:53.625 SCREEN w204 of Arbor -360,320 724×675
+23:46:53.625 SCREEN notes (w115) -353,328 710×661
+23:46:53.625 SCREEN front to back: w204 notes safari textedit finder calendar terminal w191 w189 preview settings w148 w203 w209
+23:46:53.632 MACOS pid 14919 AXResized w115 AXWindow/AXStandardWindow -259 249 734 696
+23:46:53.651 SCREEN w204 of Arbor -359,319 725×676
+23:46:53.651 SCREEN notes (w115) -259,249 734×696
+23:46:53.661 MACOS pid 14919 AXResized w115 AXWindow/AXStandardWindow -201 200 749 717
+23:46:53.689 MACOS pid 14919 AXResized w115 AXWindow/AXStandardWindow -110 123 772 751
+23:46:53.700 SCREEN w204 of Arbor -207,191 764×732
+23:46:53.700 SCREEN notes (w115) -110,123 772×751
+23:46:53.706 SCREEN w204 of Arbor -116,114 787×766
+23:46:53.721 MACOS pid 14919 AXResized w115 AXWindow/AXStandardWindow -56 78 786 771
+23:46:53.736 SCREEN w204 of Arbor -62,69 801×786
+23:46:53.736 SCREEN notes (w115) -56,78 786×771
+23:46:53.776 MACOS pid 14919 AXResized w115 AXWindow/AXStandardWindow -28 53 794 782
+23:46:53.796 SCREEN w204 of Arbor -34,44 809×797
+23:46:53.796 SCREEN notes (w115) -28,53 794×782
+23:46:53.812 MACOS pid 14919 AXResized w115 AXWindow/AXStandardWindow -12 41 798 787
+23:46:53.830 SCREEN notes (w115) -12,41 798×787
+23:46:53.839 MACOS pid 14919 AXResized w115 AXWindow/AXStandardWindow -4 34 799 790
+23:46:53.872 SCREEN notes (w115) -4,34 799×790
+23:46:53.892 MACOS pid 14919 AXResized w115 AXWindow/AXStandardWindow -1 32 800 791
+23:46:53.893 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow -1 32 800 791
+23:46:53.910 SCREEN w204 of Arbor -10,25 814×805
+23:46:53.910 SCREEN notes (w115) -1,32 800×791
+23:46:53.917 SCREEN w204 of Arbor -7,25 815×804
+23:46:59.769 SCREEN -- finding 88 - ODD floating w115 and docked w95 overlap by 501×767
+23:46:59.770 SCREEN -- end 88 act=drag-where-macos-tiles settled=quiet:402 drags=115 moves=95,98,95,98 yields=112,115,121,124,128,189,286,112,115,121,124,128,189,286 front=115 own=115 floating=112,115,121,124,128,189,286 docked=95,98
+23:47:00.134 SCRIPT == 89 reach-calendar

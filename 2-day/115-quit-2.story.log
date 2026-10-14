@@ -1,0 +1,33 @@
+115 quit-2: quits Arbor
+expected: {'act': 'quit-and-start', 'settled': 'quiet:936', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule 5: calendar (w121) has its size back but not its place: 404,115 936×599, it was at 423,115 936×599
+
+23:48:23.932 SCREEN -- begin 115 quit-2
+23:48:23.932 SCREEN -- text 115 quits Arbor
+23:48:23.955 SCREEN finder (w95) 340,120 920×436
+23:48:23.956 MACOS pid 13562 AXMoved w95 AXWindow/AXStandardWindow 340 120 920 436
+23:48:24.053 MACOS pid 14544 AXResized w98 AXWindow/AXStandardWindow 138 31 1324 778
+23:48:24.054 MACOS pid 14544 AXMoved w98 AXWindow/AXStandardWindow 138 31 1324 778
+23:48:24.075 SCREEN safari (w98) 138,31 1324×778
+23:48:24.082 MACOS pid 14544 AXResized w98 AXWindow/AXStandardWindow 138 31 1324 790
+23:48:24.090 MACOS pid 14828 AXMoved w112 AXWindow/AXStandardWindow 97 239 877 499
+23:48:24.096 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow -1 32 800 791
+23:48:24.108 MACOS pid 15393 AXMoved w121 AXWindow/AXStandardWindow 404 115 936 599
+23:48:24.114 MACOS pid 15469 AXMoved w124 AXWindow/AXStandardWindow 437 85 723 625
+23:48:24.117 MACOS pid 15609 AXMoved w128 AXWindow/AXStandardWindow 4 35 708 424
+23:48:24.135 SCREEN preview (w128) 4,35 708×424
+23:48:24.135 SCREEN settings (w124) 437,85 723×625
+23:48:24.135 SCREEN calendar (w121) 404,115 936×599
+23:48:24.135 SCREEN notes (w115) -1,32 800×791
+23:48:24.135 SCREEN terminal (w112) 97,239 877×499
+23:48:24.135 SCREEN safari (w98) 138,31 1324×790
+23:48:24.146 MACOS pid 20389 AXMoved w189 AXWindow/AXStandardWindow 240 72 1120 630
+23:48:24.150 MACOS pid 29468 AXMoved w286 AXWindow/AXStandardWindow 165 65 673 439
+23:48:24.154 INFO  trace day-14 ended: 76 lines, Arbor stopped
+23:48:24.155 INFO  stopped; all windows returned to view
+23:48:24.162 INFO  Arbor quit
+23:48:24.204 SCREEN w191 of Mail 565,179 470×416
+23:48:24.204 SCREEN w189 of Mail 240,72 1120×630
+23:48:24.204 SCREEN textedit (w286) 165,65 673×439
+23:48:24.204 SCREEN w369 of Arbor left the screen
+23:48:25.222 SCREEN -- end 115 act=quit-and-start settled=quiet:936 moves=any restores=all places=1 everything=1

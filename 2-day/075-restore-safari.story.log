@@ -1,0 +1,73 @@
+75 restore-safari: clicks its miniature in the Dock
+expected: {'act': 'open-close', 'settled': 'quiet:1160', 'moves': '95,98,109,95,98,109', 'comes': '98', 'front': '98', 'returns': '73', 'floating': '112,115,121,124,128,189', 'docked': '95,98,109'}
+ODD rule -: floating w115 and docked w98 overlap by 429×660
+ODD rule -: floating w121 and docked w98 overlap by 415×599
+ODD rule -: floating w124 and docked w98 overlap by 436×625
+ODD rule -: floating w189 and docked w98 overlap by 510×630
+FAIL rule 2: terminal (w112) is not back where it was after step 73: 525,239 331×499, it was at 97,239 877×499
+FAIL rule 2: notes (w115) is not back where it was after step 73: 337,105 709×660, it was at 300,105 1000×660
+FAIL rule 2: calendar (w121) is not back where it was after step 73: 352,115 680×599, it was at 404,115 936×599
+FAIL rule 2: settings (w124) is not back where it was after step 73: 330,85 723×625, it was at 437,85 723×625
+FAIL rule 2: preview (w128) is not back where it was after step 73: 338,35 708×424, it was at 4,35 708×424
+FAIL rule 2: w189 of Mail is not back where it was after step 73: 256,72 871×630, it was at 240,72 1120×630
+FAIL rule 2: w191 of Mail is not back where it was after step 73: 457,179 470×416, it was at 565,179 470×416
+
+23:46:12.138 SCREEN -- begin 75 restore-safari
+23:46:12.138 SCREEN -- text 75 clicks its miniature in the Dock
+23:46:12.668 SCREEN the button is down 1441 854
+23:46:12.807 SCREEN safari (w98) 1423,815 36×66
+23:46:12.807 SCREEN front to back: safari w204 calendar terminal w191 w189 preview settings notes finder textedit w148 w203 w209
+23:46:12.807 SCREEN the button is up 1441 854
+23:46:12.818 SCREEN safari (w98) 1422,806 37×75
+23:46:12.856 SCREEN safari (w98) 1396,730 63×151
+23:46:12.912 SCREEN safari (w98) 1175,530 282×351
+23:46:12.918 SCREEN safari (w98) 1116,491 340×390
+23:46:12.933 SCREEN safari (w98) 1035,441 421×440
+23:46:12.987 SCREEN safari (w98) 722,226 731×655
+23:46:13.053 SCREEN safari (w98) 618,62 831×768
+23:46:13.061 SCREEN safari (w98) 617,52 831×768
+23:46:13.125 SCREEN safari (w98) 617,43 781×767
+23:46:13.134 SCREEN safari (w98) 617,43 764×767
+23:46:13.155 SCREEN safari (w98) 617,43 735×767
+23:46:13.170 SCREEN safari (w98) 617,43 718×767
+23:46:13.189 SCREEN safari (w98) 617,43 685×767
+23:46:13.204 SCREEN safari (w98) 617,43 649×767
+23:46:13.217 SCREEN safari (w98) 617,43 634×767
+23:46:13.235 SCREEN safari (w98) 617,43 607×767
+23:46:13.253 SCREEN safari (w98) 617,43 589×767
+23:46:13.265 SCREEN safari (w98) 617,43 582×767
+23:46:13.289 SCREEN safari (w98) 617,43 575×767
+23:46:13.303 SCREEN safari (w98) 617,43 574×767
+23:46:13.360 MACOS pid 15393 AXApplicationDeactivated
+23:46:13.360 MACOS workspace didActivate pid 14544 com.apple.Safari regular
+23:46:13.361 SCREEN in front: process 14544 com.apple.Safari
+23:46:13.361 MACOS workspace didDeactivate pid 15393 com.apple.iCal regular
+23:46:13.365 MACOS pid 14544 AXApplicationActivated
+23:46:13.366 DEBUG focus is on w98
+23:46:13.366 MACOS pid 14544 AXFocusedWindowChanged w98 AXWindow/AXStandardWindow 617 43 574 767
+23:46:13.366 MACOS pid 14544 AXMainWindowChanged w98 AXWindow/AXStandardWindow 617 43 574 767
+23:46:13.367 DEBUG focus report for w98, which does not have the keyboard or takes no space; 4 checks left
+23:46:13.367 MACOS pid 14544 AXWindowDeminiaturized w98 AXWindow/AXStandardWindow 617 43 574 767
+23:46:13.367 MACOS pid 14544 AXApplicationActivated
+23:46:13.379 INFO  made room for w95
+23:46:13.383 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+23:46:13.394 MACOS pid 14768 AXResized w109 AXWindow/AXStandardWindow 1203 43 385 767
+23:46:13.394 MACOS pid 14768 AXMoved w109 AXWindow/AXStandardWindow 1203 43 385 767
+23:46:13.397 DEBUG w98 has the keyboard
+23:46:13.400 SCREEN w202 of Arbor 0,0 1600×900 (level 4)
+23:46:13.400 SCREEN w204 of Arbor left the screen
+23:46:13.400 SCREEN front to back: safari calendar terminal w191 w189 preview settings notes finder textedit w148 w203 w209
+23:46:13.408 SCREEN textedit (w109) 1203,43 385×767
+23:46:13.469 SCREEN w204 of Arbor 608,34 592×785
+23:46:13.469 SCREEN w213 of Arbor 525,43 80×767
+23:46:13.469 SCREEN w209 of Arbor 605,43 12×767
+23:46:13.469 SCREEN w214 of Arbor 1191,43 12×767
+23:46:13.469 SCREEN front to back: w204 safari calendar terminal w191 w189 preview settings notes finder textedit w148 w213 w203 w209 w214
+23:46:14.074 DEBUG stage down
+23:46:14.079 SCREEN w202 of Arbor left the screen
+23:46:14.658 SCREEN -- finding 75 - ODD floating w115 and docked w98 overlap by 429×660
+23:46:14.659 SCREEN -- finding 75 - ODD floating w121 and docked w98 overlap by 415×599
+23:46:14.659 SCREEN -- finding 75 - ODD floating w124 and docked w98 overlap by 436×625
+23:46:14.659 SCREEN -- finding 75 - ODD floating w189 and docked w98 overlap by 510×630
+23:46:14.659 SCREEN -- end 75 act=open-close settled=quiet:1160 moves=95,98,109,95,98,109 comes=98 front=98 returns=73 floating=112,115,121,124,128,189 docked=95,98,109
+23:46:15.072 SCRIPT == 76 reach-finder

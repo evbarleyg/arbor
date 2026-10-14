@@ -1,0 +1,44 @@
+58 neighbour-left: presses ⌃⌥←
+expected: {'act': 'view', 'settled': 'quiet:883', 'moves': 'any', 'floating': '112,115,121,124,128,189', 'docked': '95,98,109'}
+ODD rule 3: the last window came to rest 702 ms after the key or the button
+
+23:45:29.866 SCREEN -- begin 58 neighbour-left
+23:45:29.866 SCREEN -- text 58 presses ⌃⌥←
+23:45:30.091 DEBUG commands follow the keyboard: a shortcut, pointer idle 3.0 s, keys 1.8 s, focus 3.6 s
+23:45:30.096 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 7 stand-ins, 0.46 s
+23:45:30.101 SCREEN w202 of Arbor 0,0 1600×900 (level 4)
+23:45:30.101 SCREEN safari (w98) 1599,770 1576×767
+23:45:30.113 MACOS pid 14544 AXMoved w98 AXWindow/AXStandardWindow 1599 770 1576 767
+23:45:30.113 MACOS pid 14828 AXMoved w112 AXWindow/AXStandardWindow 97 239 877 499
+23:45:30.114 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow 300 105 1000 660
+23:45:30.116 MACOS pid 15393 AXMoved w121 AXWindow/AXStandardWindow 404 115 936 599
+23:45:30.123 MACOS pid 15469 AXMoved w124 AXWindow/AXStandardWindow 437 85 723 625
+23:45:30.126 MACOS pid 15609 AXMoved w128 AXWindow/AXStandardWindow 4 35 708 424
+23:45:30.134 MACOS pid 20389 AXMoved w189 AXWindow/AXStandardWindow 240 72 1120 630
+23:45:30.147 MACOS pid 15393 AXFocusedWindowChanged w121 AXWindow/AXStandardWindow 404 115 936 599
+23:45:30.148 MACOS pid 15393 AXMainWindowChanged w121 AXWindow/AXStandardWindow 404 115 936 599
+23:45:30.200 MACOS pid 15393 AXFocusedWindowChanged w121 AXWindow/AXStandardWindow 404 115 936 599
+23:45:30.206 MACOS pid 15393 AXMainWindowChanged w121 AXWindow/AXStandardWindow 404 115 936 599
+23:45:30.206 MACOS workspace didActivate pid 15393 com.apple.iCal regular
+23:45:30.207 SCREEN calendar (w121) 404,115 936×599
+23:45:30.207 SCREEN preview (w128) 4,35 708×424
+23:45:30.207 SCREEN w191 of Mail 565,179 470×416
+23:45:30.207 SCREEN w189 of Mail 240,72 1120×630
+23:45:30.207 SCREEN settings (w124) 437,85 723×625
+23:45:30.207 SCREEN notes (w115) 300,105 1000×660
+23:45:30.207 SCREEN terminal (w112) 97,239 877×499
+23:45:30.207 SCREEN front to back: calendar w204 safari finder preview w191 w189 settings notes terminal textedit w148
+23:45:30.207 SCREEN in front: process 15393 com.apple.iCal
+23:45:30.207 INFO  neighbor left: moved to the Desktop
+23:45:30.207 MACOS workspace didDeactivate pid 14544 com.apple.Safari regular
+23:45:30.212 MACOS pid 14544 AXApplicationDeactivated
+23:45:30.212 MACOS pid 15393 AXApplicationActivated
+23:45:30.216 DEBUG focus is on w121
+23:45:30.217 DEBUG w121 has the keyboard
+23:45:30.277 SCREEN w204 of Arbor 395,106 954×617
+23:45:30.277 SCREEN front to back: w204 calendar safari finder preview w191 w189 settings notes terminal textedit w148
+23:45:30.425 SCREEN w205 of Arbor left the screen
+23:45:30.715 DEBUG stage down
+23:45:30.803 SCREEN w202 of Arbor left the screen
+23:45:31.410 SCREEN -- end 58 act=view settled=quiet:883 moves=any floating=112,115,121,124,128,189 docked=95,98,109
+23:45:31.662 SCRIPT == 59 back

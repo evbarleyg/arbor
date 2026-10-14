@@ -1,0 +1,43 @@
+31 dock-textedit-right: presses ⌃⌥⌘→
+expected: {'act': 'dock-key', 'settled': 'quiet:686', 'moves': '95,98,95,98,109', 'yields': '109,112,115,121,124,128,189,112,115,121,124,128,189', 'front': '109', 'floating': '112,115,121,124,128,189', 'docked': '95,98,109'}
+ODD rule -: floating w115 and docked w98 overlap by 414×660
+ODD rule -: floating w121 and docked w98 overlap by 399×599
+ODD rule -: floating w124 and docked w98 overlap by 421×625
+ODD rule -: floating w189 and docked w98 overlap by 495×630
+
+23:44:21.582 SCREEN -- begin 31 dock-textedit-right
+23:44:21.582 SCREEN -- text 31 presses ⌃⌥⌘→
+23:44:21.835 INFO  made room for w98, the Desktop
+23:44:21.841 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+23:44:21.861 MACOS pid 13562 AXResized w95 AXWindow/AXStandardWindow 12 43 501 767
+23:44:21.867 MACOS pid 14544 AXMoved w98 AXWindow/AXStandardWindow 712 43 574 767
+23:44:21.870 SCREEN w202 of Arbor 0,0 1600×900 (level 4)
+23:44:21.870 SCREEN safari (w98) 712,43 574×767
+23:44:21.870 SCREEN finder (w95) 12,43 501×767
+23:44:21.881 INFO  made room for w98, the Desktop, w95
+23:44:21.881 MACOS pid 14768 AXResized w109 AXWindow/AXStandardWindow 1298 43 290 756
+23:44:21.881 MACOS pid 14768 AXMoved w109 AXWindow/AXStandardWindow 1298 43 290 767
+23:44:21.881 MACOS pid 14768 AXResized w109 AXWindow/AXStandardWindow 1298 43 290 767
+23:44:21.884 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+23:44:21.912 INFO  dock right: docked w109 at the right edge
+23:44:21.914 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Docked · ⌃⌥↩ frames it
+23:44:21.924 SCREEN textedit (w109) 1298,43 290×767
+23:44:21.924 SCREEN front to back: textedit w204 safari finder w191 w189 preview settings calendar notes terminal w148 w203 w209
+23:44:21.954 SCREEN w206 of Arbor 696,728 208×38 (level 6)
+23:44:21.954 SCREEN w204 of Arbor 1289,34 308×785
+23:44:21.954 SCREEN w213 of Arbor 525,43 175×767
+23:44:21.954 SCREEN w203 of Arbor 513,43 12×767
+23:44:21.954 SCREEN w209 of Arbor 700,43 12×767
+23:44:21.954 SCREEN w214 of Arbor 1286,43 12×767
+23:44:21.954 SCREEN front to back: w204 textedit safari finder w191 w189 preview settings calendar notes terminal w148 w213 w203 w209 w214
+23:44:22.521 DEBUG stage down
+23:44:22.531 SCREEN w202 of Arbor left the screen
+23:44:23.118 SCREEN -- finding 31 - ODD floating w115 and docked w98 overlap by 414×660
+23:44:23.118 SCREEN -- finding 31 - ODD floating w121 and docked w98 overlap by 399×599
+23:44:23.118 SCREEN -- finding 31 - ODD floating w124 and docked w98 overlap by 421×625
+23:44:23.119 SCREEN -- finding 31 - ODD floating w189 and docked w98 overlap by 495×630
+23:44:23.119 SCREEN -- end 31 act=dock-key settled=quiet:686 moves=95,98,95,98,109 yields=109,112,115,121,124,128,189,112,115,121,124,128,189 front=109 floating=112,115,121,124,128,189 docked=95,98,109
+23:44:23.419 SCREEN -- chapter Docking by real drags
+23:44:23.430 INFO  trace day-3 ended: 365 lines, trace off
+23:44:23.442 INFO  trace day-4: recording to /tmp/arbor-shell.1eY33v/home/traces/2026-10-14-234423-day-4.jsonl
+23:44:23.512 SCRIPT == 32 reach-terminal

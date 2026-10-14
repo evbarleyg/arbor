@@ -1,0 +1,14 @@
+39 balance: presses ⌃⌥⌘0
+expected: {'act': 'resize', 'settled': 'quiet:563', 'moves': '95,98,109,95,98,109', 'front': '95', 'floating': '112,115,121,124,128,189', 'docked': '95,98,109'}
+FAIL rule 4: finder (w95) is not in front: terminal (w112) ahead of it, of which 1 cover part of it
+FAIL rule 4: finder (w95) its app is not the one in front (process 14828 is)
+
+23:44:48.290 SCREEN -- begin 39 balance
+23:44:48.290 SCREEN -- text 39 presses ⌃⌥⌘0
+23:44:48.541 INFO  made room for w98, w95
+23:44:48.544 INFO  balance: balanced 1 group
+23:44:49.667 SCREEN -- end 39 act=resize settled=quiet:563 moves=95,98,109,95,98,109 front=95 floating=112,115,121,124,128,189 docked=95,98,109
+23:44:49.864 SCREEN -- chapter Switching between apps, with an arrangement
+23:44:49.874 INFO  trace day-5 ended: 239 lines, trace off
+23:44:49.889 INFO  trace day-6: recording to /tmp/arbor-shell.1eY33v/home/traces/2026-10-14-234449-day-6.jsonl
+23:44:49.942 SCRIPT == 40 dock-icon-finder-2

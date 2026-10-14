@@ -1,0 +1,18 @@
+48 dock-icon-mail-2: clicks mail's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:512', 'floating': '112,115,121,124,128,189', 'docked': '95,98,109'}
+FAIL rule -: the script could not tell which window front is about
+
+23:45:07.326 SCREEN -- begin 48 dock-icon-mail-2
+23:45:07.326 SCREEN -- text 48 clicks mail's icon in the Dock
+23:45:07.939 SCREEN the button is down 355 854
+23:45:08.044 SCREEN the button is up 355 854
+23:45:08.044 SCREEN in front: process 20389 com.apple.mail
+23:45:08.045 MACOS pid 15609 AXApplicationDeactivated
+23:45:08.046 MACOS workspace didActivate pid 20389 com.apple.mail regular
+23:45:08.046 MACOS workspace didDeactivate pid 15609 com.apple.Preview regular
+23:45:08.080 MACOS pid 20389 AXApplicationActivated
+23:45:08.134 SCREEN w204 of Arbor left the screen
+23:45:08.134 SCREEN front to back: w191 w189 preview settings calendar notes terminal textedit safari finder w148 w213 w203 w209 w214
+23:45:09.183 SCREEN -- finding 48 - FAIL the script could not tell which window front is about
+23:45:09.232 SCREEN -- end 48 act=switch settled=quiet:512 floating=112,115,121,124,128,189 docked=95,98,109
+23:45:09.465 SCRIPT == 49 cmd-tab-2

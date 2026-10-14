@@ -1,0 +1,65 @@
+60 step-out: presses ⌃⌥↑
+expected: {'act': 'view', 'settled': 'quiet:791', 'moves': 'any', 'floating': '112,115,121,124,128,189', 'docked': '95,98,109'}
+ODD rule -: floating w112 and docked w95 overlap by 416×499
+ODD rule -: floating w115 and docked w98 overlap by 574×660
+ODD rule -: floating w121 and docked w98 overlap by 574×599
+ODD rule -: floating w124 and docked w98 overlap by 543×625
+ODD rule -: floating w128 and docked w95 overlap by 501×416
+ODD rule -: floating w189 and docked w98 overlap by 574×630
+
+23:45:33.527 SCREEN -- begin 60 step-out
+23:45:33.527 SCREEN -- text 60 presses ⌃⌥↑
+23:45:33.746 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+23:45:33.750 MACOS pid 13562 AXMoved w95 AXWindow/AXStandardWindow 12 43 501 767
+23:45:33.756 SCREEN w202 of Arbor 0,0 1600×900 (level 4)
+23:45:33.756 SCREEN finder (w95) 12,43 501×767
+23:45:33.786 MACOS pid 14544 AXResized w98 AXWindow/AXStandardWindow 617 43 574 767
+23:45:33.787 MACOS pid 14544 AXMoved w98 AXWindow/AXStandardWindow 617 43 574 767
+23:45:33.794 MACOS pid 14768 AXMoved w109 AXWindow/AXStandardWindow 1203 43 385 767
+23:45:33.797 MACOS pid 14828 AXMoved w112 AXWindow/AXStandardWindow 97 239 877 499
+23:45:33.798 MACOS pid 14828 AXFocusedWindowChanged w112 AXWindow/AXStandardWindow 97 239 877 499
+23:45:33.799 MACOS pid 14828 AXMainWindowChanged w112 AXWindow/AXStandardWindow 97 239 877 499
+23:45:33.800 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow 300 105 1000 660
+23:45:33.803 MACOS pid 14919 AXFocusedWindowChanged w115 AXWindow/AXStandardWindow 300 105 1000 660
+23:45:33.804 SCREEN safari (w98) 617,43 574×767
+23:45:33.804 SCREEN terminal (w112) 97,239 877×499
+23:45:33.804 SCREEN textedit (w109) 1203,43 385×767
+23:45:33.804 SCREEN front to back: w204 safari terminal calendar finder preview w191 w189 settings notes textedit w148
+23:45:33.804 MACOS pid 14919 AXMainWindowChanged w115 AXWindow/AXStandardWindow 300 105 1000 660
+23:45:33.810 MACOS pid 15393 AXMoved w121 AXWindow/AXStandardWindow 404 115 936 599
+23:45:33.816 MACOS pid 15393 AXFocusedWindowChanged w121 AXWindow/AXStandardWindow 404 115 936 599
+23:45:33.823 SCREEN calendar (w121) 404,115 936×599
+23:45:33.823 SCREEN notes (w115) 300,105 1000×660
+23:45:33.823 SCREEN front to back: w204 safari calendar notes terminal finder preview w191 w189 settings textedit w148
+23:45:33.823 MACOS pid 15393 AXMainWindowChanged w121 AXWindow/AXStandardWindow 404 115 936 599
+23:45:33.823 MACOS pid 15469 AXMoved w124 AXWindow/AXStandardWindow 437 85 723 625
+23:45:33.826 MACOS pid 15469 AXFocusedWindowChanged w124 AXWindow/AXStandardWindow 437 85 723 625
+23:45:33.827 MACOS pid 15469 AXMainWindowChanged w124 AXWindow/AXStandardWindow 437 85 723 625
+23:45:33.828 MACOS pid 15609 AXMoved w128 AXWindow/AXStandardWindow 4 35 708 424
+23:45:33.829 MACOS pid 15609 AXFocusedWindowChanged w128 AXWindow/AXStandardWindow 4 35 708 424
+23:45:33.830 MACOS pid 15609 AXMainWindowChanged w128 AXWindow/AXStandardWindow 4 35 708 424
+23:45:33.835 MACOS pid 20389 AXMoved w189 AXWindow/AXStandardWindow 240 72 1120 630
+23:45:33.839 MACOS pid 20389 AXFocusedWindowChanged w191 AXSheet/- 565 179 470 416
+23:45:33.840 MACOS pid 20389 AXMainWindowChanged w189 AXWindow/AXStandardWindow 240 72 1120 630
+23:45:33.841 INFO  out: stepped out to everything
+23:45:33.854 SCREEN settings (w124) 437,85 723×625
+23:45:33.854 SCREEN preview (w128) 4,35 708×424
+23:45:33.854 SCREEN w191 of Mail 565,179 470×416
+23:45:33.854 SCREEN w189 of Mail 240,72 1120×630
+23:45:33.854 SCREEN front to back: w204 safari settings calendar notes terminal finder preview w191 w189 textedit w148
+23:45:33.858 SCREEN w204 of Arbor 608,34 592×785
+23:45:33.858 SCREEN w213 of Arbor 525,43 80×767
+23:45:33.858 SCREEN w209 of Arbor 513,43 12×767
+23:45:33.858 SCREEN w203 of Arbor 605,43 12×767
+23:45:33.858 SCREEN w214 of Arbor 1191,43 12×767
+23:45:33.858 SCREEN front to back: w204 safari w191 w189 preview settings calendar notes terminal finder textedit w148 w213 w209 w203 w214
+23:45:34.312 DEBUG stage down
+23:45:34.336 SCREEN w202 of Arbor left the screen
+23:45:34.991 SCREEN -- finding 60 - ODD floating w112 and docked w95 overlap by 416×499
+23:45:34.991 SCREEN -- finding 60 - ODD floating w115 and docked w98 overlap by 574×660
+23:45:34.992 SCREEN -- finding 60 - ODD floating w121 and docked w98 overlap by 574×599
+23:45:34.992 SCREEN -- finding 60 - ODD floating w124 and docked w98 overlap by 543×625
+23:45:34.992 SCREEN -- finding 60 - ODD floating w128 and docked w95 overlap by 501×416
+23:45:34.992 SCREEN -- finding 60 - ODD floating w189 and docked w98 overlap by 574×630
+23:45:34.992 SCREEN -- end 60 act=view settled=quiet:791 moves=any floating=112,115,121,124,128,189 docked=95,98,109
+23:45:35.251 SCRIPT == 61 show-desktop

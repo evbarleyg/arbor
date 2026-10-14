@@ -1,0 +1,55 @@
+18 float: presses ⌃⌥F
+expected: {'act': 'dock-key', 'settled': 'quiet:914', 'moves': '390,', 'front': '390', 'restores': '390', 'floating': '376,379,390,393,394,397,398,402', 'docked': ''}
+FAIL rule 2: finder (w376) a floating window, moved, and the step did not name it
+FAIL rule 2: safari (w379) a floating window, moved, and the step did not name it
+FAIL rule 2: terminal (w393) a floating window, moved, and the step did not name it
+FAIL rule 2: notes (w394) a floating window, moved, and the step did not name it
+FAIL rule 2: calendar (w397) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w398) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w402) a floating window, moved, and the step did not name it
+ODD rule 3: the last window came to rest 724 ms after the key or the button
+
+23:49:46.479 SCREEN -- begin 18 float
+23:49:46.479 SCREEN -- text 18 presses ⌃⌥F
+23:49:46.690 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 8 stand-ins, 0.46 s
+23:49:46.692 SCREEN w423 of Arbor 0,0 1600×900 (level 4)
+23:49:46.700 MACOS pid 39090 AXResized w390 AXWindow/AXStandardWindow 464 31 673 439
+23:49:46.702 MACOS pid 39090 AXMoved w390 AXWindow/AXStandardWindow 464 31 673 439
+23:49:46.729 MACOS pid 38851 AXMoved w376 AXWindow/AXStandardWindow 340 120 920 436
+23:49:46.730 MACOS pid 38851 AXResized w376 AXWindow/AXStandardWindow 340 120 920 436
+23:49:46.744 MACOS pid 38942 AXMoved w379 AXWindow/AXStandardWindow 138 31 1324 389
+23:49:46.745 SCREEN textedit (w390) 464,31 673×439
+23:49:46.745 SCREEN safari (w379) 138,31 1324×389
+23:49:46.745 SCREEN finder (w376) 340,120 920×436
+23:49:46.765 MACOS pid 38942 AXResized w379 AXWindow/AXStandardWindow 138 31 1324 790
+23:49:46.780 MACOS pid 39421 AXTitleChanged w393 AXWindow/AXStandardWindow 97 239 877 499
+23:49:46.783 SCREEN terminal (w393) 97,433 877×394
+23:49:46.783 SCREEN safari (w379) 138,31 1324×790
+23:49:46.783 MACOS pid 39421 AXResized w393 AXWindow/AXStandardWindow 97 239 877 499
+23:49:46.784 MACOS pid 39421 AXMoved w393 AXWindow/AXStandardWindow 97 239 877 499
+23:49:46.784 MACOS pid 39421 AXTitleChanged w393 AXWindow/AXStandardWindow 97 239 877 499
+23:49:46.792 MACOS pid 39421 AXResized w393 AXWindow/AXStandardWindow 97 239 877 499
+23:49:46.796 SCREEN notes (w394) 0,31 800×389
+23:49:46.811 MACOS pid 39492 AXMoved w394 AXWindow/AXStandardWindow 0 31 800 790
+23:49:46.811 MACOS pid 39492 AXResized w394 AXWindow/AXStandardWindow 0 31 800 790
+23:49:46.842 MACOS pid 39554 AXMoved w397 AXWindow/AXStandardWindow 404 115 936 599
+23:49:46.843 MACOS pid 39554 AXResized w397 AXWindow/AXStandardWindow 404 115 936 599
+23:49:46.854 SCREEN settings (w398) 437,85 723×470
+23:49:46.854 SCREEN calendar (w397) 404,115 936×599
+23:49:46.854 SCREEN notes (w394) 0,31 800×790
+23:49:46.854 SCREEN terminal (w393) 97,239 877×499
+23:49:46.866 MACOS pid 39616 AXMoved w398 AXWindow/AXStandardWindow 437 85 723 625
+23:49:46.866 MACOS pid 39616 AXResized w398 AXWindow/AXStandardWindow 437 85 723 625
+23:49:46.875 MACOS pid 39882 AXMoved w402 AXWindow/AXStandardWindow 4 35 708 424
+23:49:46.876 MACOS pid 39882 AXResized w402 AXWindow/AXStandardWindow 4 35 708 424
+23:49:46.877 INFO  toggle-float: w390 is floating
+23:49:46.925 SCREEN settings (w398) 437,85 723×625
+23:49:46.925 SCREEN preview (w402) 4,35 708×424
+23:49:46.925 SCREEN w424 of Arbor left the screen
+23:49:46.925 SCREEN w425 of Arbor left the screen
+23:49:46.925 SCREEN front to back: textedit w416 settings preview calendar notes terminal safari finder
+23:49:47.126 SCREEN w426 of Arbor left the screen
+23:49:47.371 DEBUG stage down
+23:49:47.409 SCREEN w423 of Arbor left the screen
+23:49:48.063 SCREEN -- end 18 act=dock-key settled=quiet:914 moves=390, front=390 restores=390 floating=376,379,390,393,394,397,398,402 docked=
+23:49:48.278 SCRIPT == 19 dock-icon-textedit

@@ -1,0 +1,640 @@
+# mac-shell: scripts/mac-shell/walk-sample.sh at 03051b5, macOS 26.6.2, 2026-10-14T23:48Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64
+built Arbor and the pointer tool in 8s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+macOS's own window management, as it comes:
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+com.apple.WindowManager EnableStandardClickToShowDesktop: not set
+Reduce Motion: false
+the sampler writes mac-shell/samples.log (pid 38814)
+
+== Before Arbor: the apps are open already
+
+-- 1 open-finder: opens finder
+> open -g -b com.apple.finder /tmp/arbor-apps.5Q6SWM/scratch/told/…-grove
+pid 38851 lists (id role subrole x y w h flags):
+  376 AXWindow AXStandardWindow 340 120 920 436 toolbar
+  0 AXScrollArea - 0 0 1600 900 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+  w376 is finder
+  (quiet:836 ms) judge=no
+
+-- 2 open-safari: opens safari
+> open -g -b com.apple.Safari /tmp/arbor-apps.5Q6SWM/scratch/told/…-page.html
+pid 38942 lists (id role subrole x y w h flags):
+  379 AXWindow AXStandardWindow 138 31 1324 790 main,toolbar
+  w379 is safari
+  (quiet:380 ms) judge=no
+
+-- 3 open-textedit: opens textedit
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.5Q6SWM/scratch/told/…-oak.txt
+pid 39090 lists (id role subrole x y w h flags):
+  390 AXWindow AXStandardWindow 165 65 673 439 main
+  w390 is textedit
+  (quiet:1278 ms) judge=no
+
+-- 4 open-terminal: opens terminal
+> open -g -b com.apple.Terminal 
+pid 39421 lists (id role subrole x y w h flags):
+  393 AXWindow AXStandardWindow 97 239 877 499 main
+  w393 is terminal
+  (quiet:1265 ms) judge=no
+
+-- 5 open-notes: opens notes
+> open -g -b com.apple.Notes 
+pid 39492 lists (id role subrole x y w h flags):
+  394 AXWindow AXStandardWindow 0 31 800 791 main,toolbar
+  w394 is notes
+  (quiet:1231 ms) judge=no
+
+-- 6 open-calendar: opens calendar
+> open -g -b com.apple.iCal 
+pid 39554 lists (id role subrole x y w h flags):
+  397 AXWindow AXStandardWindow 404 115 936 599 main,toolbar
+  w397 is calendar
+  (quiet:1246 ms) judge=no
+
+-- 7 open-settings: opens settings
+> open -g -b com.apple.systempreferences 
+pid 39616 lists (id role subrole x y w h flags):
+  398 AXWindow AXStandardWindow 437 85 723 625 main,toolbar
+  w398 is settings
+  (quiet:403 ms) judge=no
+
+-- 8 open-preview: opens preview
+> open -g -b com.apple.Preview /tmp/arbor-apps.5Q6SWM/scratch/told/…-leaf.png
+pid 39882 lists (id role subrole x y w h flags):
+  402 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w402 is preview
+  (quiet:986 ms) judge=no
+
+-- 9 open-mail: opens mail
+> open -g -b com.apple.mail 
+pid 20389 lists (id role subrole x y w h flags):
+  189 AXWindow AXStandardWindow 240 72 1120 630 main,close-disabled,sheets=1,toolbar
+  w189 is mail
+something is in the way:
+  AXWindow/AXStandardWindow 240 72 1120 630
+      AXButton/- 394 72 44 52 "Sidebar"
+      AXButton/- 755 72 45 52 "New Message"
+        AXButton/AXSegment 871 72 36 52 "Reply"
+        AXButton/AXSegment 908 72 36 52 "Reply All"
+        AXButton/AXSegment 945 72 36 52 "Forward"
+        AXButton/AXSegment 989 72 36 52 "Archive"
+        AXButton/AXSegment 1026 72 36 52 "Delete"
+        AXButton/AXSegment 1063 72 37 52 "Junk"
+          AXButton/AXSegment 1168 80 36 36 "flagged Orange"
+        AXButton/AXSearchField 1314 79 39 38 ""
+    AXButton/AXCloseButton 258 90 16 16
+    AXButton/AXZoomButton 304 90 16 16
+    AXButton/AXMinimizeButton 281 90 16 16
+    AXSheet/- 565 179 470 416
+          AXButton/- 936 302 79 24 "Continue"
+        AXButton/- 585 551 24 24 "Help"
+        AXButton/- 949 551 66 24 "Cancel"
+pressed "Cancel": 0
+  (quiet:368 ms) judge=no
+the cast: finder safari textedit terminal notes calendar settings preview mail
+
+-- 10 tiling-acts: without Arbor: drags a window by its title bar against the menu bar and lets go
+> click 1160 127
+> move 1160 247
+> drag 1160 127 800 0 --hold 1
+  (quiet:1002 ms) judge=no
+macOS's tiling was seen to act: false
+  ✘ macOS's own tiling acts
+
+-- 11 tiling-acts-back: drags it away again, a hand's breadth down
+> drag 1160 127 800 130
+  (quiet:1048 ms) judge=no
+
+-- 12 look-around: looks at the screen
+  (quiet:352 ms) judge=no own=all
+
+== The walk
+
+-- 13 launch: starts Arbor
+session 1: Arbor pid 41410, ARBOR_LIMIT=none: running: 1 display, 0 docked and 8 floating, 0 out of view
+Arbor dev
+recording traces/2026-10-14-234935-day-1.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  (quiet:1010 ms) moves=, everything=1 floating=376,379,390,393,394,397,398,402 docked=
+
+-- 14 view-back: presses ⌃⌥[
+> key ctrl+opt+[
+  (quiet:755 ms) moves=any floating=376,379,390,393,394,397,398,402 docked=
+
+-- 15 click-textedit: clicks textedit's title bar
+> click 501 77
+> move 501 197
+  (quiet:375 ms) front=390 floating=376,379,390,393,394,397,398,402 docked=
+
+-- left out: switch_click terminal: no free point of its title bar shows
+
+-- 16 dock-up: presses ⌃⌥⌘ and the up arrow
+> key ctrl+opt+cmd+up
+  (quiet:1419 ms) moves=,390 yields=376,379,390,393,394,397,398,402,376,379,393,394,397,398,402 front=390 floating=376,379,393,394,397,398,402 docked=390
+
+-- 17 click-textedit: clicks textedit's title bar
+> click 796 55
+> move 796 175
+  (quiet:431 ms) front=390 floating=376,379,393,394,397,398,402 docked=390
+
+-- 18 float: presses ⌃⌥F
+> key ctrl+opt+f
+  (quiet:914 ms) moves=390, front=390 restores=390 floating=376,379,390,393,394,397,398,402 docked=
+
+-- 19 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:359 ms) front=390 floating=376,379,390,393,394,397,398,402 docked=
+
+-- 20 hide-textedit: presses ⌘H
+> key cmd+h
+  (quiet:897 ms) moves=, leaves=390, floating=376,379,390,393,394,397,398,402 docked=
+
+-- 21 unhide-textedit: clicks its icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:419 ms) moves=, comes=390 front=390 floating=376,379,390,393,394,397,398,402 docked=
+
+-- 22 click-textedit: clicks textedit's title bar
+> click 800 43
+> move 800 163
+  (quiet:359 ms) front=390 floating=376,379,390,393,394,397,398,402 docked=
+
+-- left out: switch_dock mail: it has no window to come forward
+
+-- 23 hide-textedit: presses ⌘H
+> key cmd+h
+  (quiet:926 ms) moves=, leaves=390, floating=376,379,390,393,394,397,398,402 docked=
+
+-- left out: resize_gap mail -40: it is not there
+
+-- left out: drag_edge textedit left: nothing to take hold of
+
+-- left out: drag_onto terminal calendar right: nothing to take hold of
+
+-- left out: unhide mail: it is not hidden
+
+-- 24 view-out: presses ⌃⌥↑
+> key ctrl+opt+up
+  (quiet:637 ms) moves=any floating=376,379,390,393,394,397,398,402 docked=
+
+-- 25 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:424 ms) front=379 floating=376,379,390,393,394,397,398,402 docked=
+
+-- 26 full-screen: presses ⌃⌘F in Safari
+> key ctrl+cmd+f
+  (quiet:356 ms) moves=any leaves=any floating=376,379,390,393,394,397,398,402 docked=
+
+-- 27 leave-full-screen: presses ⌃⌘F again
+> key ctrl+cmd+f
+  (quiet:376 ms) moves=any leaves=any comes=379 front=379 returns=25 floating=376,379,390,393,394,397,398,402 docked=
+
+-- left out: switch_dock textedit: it has no window to come forward
+
+-- 28 hide-safari: presses ⌘H
+> key cmd+h
+  (quiet:729 ms) moves=, leaves=379, floating=376,379,390,393,394,397,398,402 docked=
+
+-- 29 leave-alone: does nothing for half a minute
+  with nothing to do Arbor used 1.6 % of a core and wrote 0 lines a minute
+  (quiet:376 ms) floating=376,379,390,393,394,397,398,402 docked=
+
+-- 30 unhide-textedit: clicks its icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:605 ms) moves=, comes=390 front=390 floating=376,379,390,393,394,397,398,402 docked=
+
+-- left out: drag_edge finder right: nothing to take hold of
+
+-- left out: switch_dock safari: it has no window to come forward
+
+-- left out: full_screen on: played in Safari, which is not in front
+
+-- left out: full_screen off: nothing is in full screen
+
+-- 31 dock-icon-preview: clicks preview's icon in the Dock
+> click 1276 854
+> move 1276 654
+  (quiet:489 ms) front=402 floating=376,379,390,393,394,397,398,402 docked=
+
+-- 32 quit-preview: presses ⌘Q in preview
+> key cmd+q
+  (quiet:897 ms) moves=, leaves=402, floating=376,379,390,393,394,397,398 docked=
+
+-- 33 view-left: presses ⌃⌥←
+> key ctrl+opt+left
+  (quiet:768 ms) moves=any floating=376,379,390,393,394,397,398 docked=
+
+-- left out: switch_menu safari: it has no window
+
+-- 34 reopen-preview: opens preview's document again
+> open -g -b com.apple.Preview /tmp/arbor-apps.5Q6SWM/scratch/told/…-leaf.png
+pid 45546 lists (id role subrole x y w h flags):
+  484 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w484 is preview
+  (quiet:942 ms) moves=, front=484 floating=376,379,390,393,394,397,398,484 docked=
+
+-- 35 view-back: presses ⌃⌥[
+> key ctrl+opt+[
+  (quiet:439 ms) moves=any floating=376,379,390,393,394,397,398,484 docked=
+
+-- 36 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:560 ms) front=394 floating=376,379,390,393,394,397,398,484 docked=
+
+-- 37 click-settings: clicks settings's title bar
+> click 1137 97
+> move 1137 217
+  (quiet:351 ms) front=398 floating=376,379,390,393,394,397,398,484 docked=
+
+-- 38 dock-right: presses ⌃⌥⌘ and the right arrow
+> key ctrl+opt+cmd+right
+  (quiet:859 ms) moves=,390 yields=376,379,390,393,394,397,398,484,376,379,393,394,397,398,484 front=390 floating=376,379,393,394,397,398,484 docked=390
+
+-- left out: switch_click mail: no free point of its title bar shows
+
+-- 39 dock-left: presses ⌃⌥⌘ and the left arrow
+> key ctrl+opt+cmd+left
+  (quiet:788 ms) moves=390,390 yields=376,379,393,394,397,398,484,376,379,393,394,397,398,484 front=390 floating=376,379,393,394,397,398,484 docked=390
+
+-- left out: switch_click safari: no free point of its title bar shows
+
+-- 40 view-forward: presses ⌃⌥]
+> key ctrl+opt+]
+  (quiet:615 ms) moves=any floating=376,379,393,394,397,398,484 docked=390
+
+-- 41 view-out: presses ⌃⌥↑
+> key ctrl+opt+up
+  (quiet:770 ms) moves=any floating=376,379,393,394,397,398,484 docked=390
+
+-- 42 view-in: presses ⌃⌥↓
+> key ctrl+opt+down
+  (quiet:832 ms) moves=any floating=376,379,393,394,397,398,484 docked=390
+
+-- left out: switch_click safari: no free point of its title bar shows
+
+-- 43 dock-down: presses ⌃⌥⌘ and the down arrow
+> key ctrl+opt+cmd+down
+  (quiet:729 ms) moves=390,390 yields=376,379,393,394,397,398,484,376,379,393,394,397,398,484 front=390 floating=376,379,393,394,397,398,484 docked=390
+
+-- 44 dock-icon-preview: clicks preview's icon in the Dock
+> click 1276 854
+> move 1276 654
+  (quiet:684 ms) front=484 floating=376,379,393,394,397,398,484 docked=390
+
+-- 45 quit-preview: presses ⌘Q in preview
+> key cmd+q
+  (quiet:901 ms) moves=390,390 leaves=484, floating=376,379,393,394,397,398 docked=390
+
+-- left out: switch_menu safari: it has no window
+
+-- 46 dock-icon-finder: clicks finder's icon in the Dock
+> click 131 854
+> move 131 654
+  (quiet:668 ms) front=376 floating=376,379,393,394,397,398 docked=390
+
+-- 47 hide-finder: presses ⌘H
+> key cmd+h
+  (quiet:882 ms) moves=390,390 leaves=376, floating=376,379,393,394,397,398 docked=390
+
+-- 48 reopen-preview: opens preview's document again
+> open -g -b com.apple.Preview /tmp/arbor-apps.5Q6SWM/scratch/told/…-leaf.png
+pid 47435 lists (id role subrole x y w h flags):
+  513 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w513 is preview
+  (quiet:1023 ms) moves=390,390 front=513 floating=376,379,393,394,397,398,513 docked=390
+
+-- 49 unhide-finder: clicks its icon in the Dock
+> click 131 854
+> move 131 654
+  (quiet:468 ms) moves=390,390 comes=376 front=376 floating=376,379,393,394,397,398,513 docked=390
+
+-- 50 quit: chooses Quit Arbor in Arbor's menu
+> click 1296 15 --right
+> key up
+> key return
+  ✔ Arbor ends within five seconds
+  (quiet:922 ms) moves=any restores=all places=1 everything=1
+
+-- 51 dock-icon-finder: clicks finder's icon in the Dock
+> click 131 854
+> move 131 654
+  (quiet:366 ms) front=376
+
+-- left out: switch_dock safari: it has no window to come forward
+
+-- 52 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:456 ms) front=390
+
+-- 53 dock-icon-terminal: clicks terminal's icon in the Dock
+> click 1332 854
+> move 1332 654
+  (quiet:494 ms) front=393
+
+-- 54 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:396 ms) front=394
+
+-- 55 dock-icon-calendar: clicks calendar's icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:385 ms) front=397
+
+-- 56 dock-icon-settings: clicks settings's icon in the Dock
+> click 1139 854
+> move 1139 654
+  (quiet:545 ms) front=398
+
+-- 57 dock-icon-preview: clicks preview's icon in the Dock
+> click 1276 854
+> move 1276 654
+  (quiet:375 ms) front=513
+
+-- left out: switch_dock mail: it has no window to come forward
+
+-- 58 launch: starts Arbor
+session 2: Arbor pid 48716, ARBOR_LIMIT=none: running: 1 display, 1 docked and 7 floating, 1 out of view
+Arbor dev
+recording traces/2026-10-14-235141-day-2.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  (quiet:944 ms) moves=,390 everything=1 floating=376,379,393,394,397,398,513 docked=390
+
+-- 59 dock-icon-terminal: clicks terminal's icon in the Dock
+> click 1332 854
+> move 1332 654
+  (quiet:572 ms) front=393 floating=376,379,393,394,397,398,513 docked=390
+
+-- 60 new-window-terminal: presses ⌘N in terminal
+> key cmd+n
+  w538 is terminal-new-60
+  (quiet:1192 ms) front=538 floating=376,379,393,394,397,398,513,538 docked=390
+
+-- 61 click-wallpaper: clicks on the wallpaper
+> click 800 60
+  (quiet:359 ms) moves=any leaves=any floating=376,379,393,394,397,398,513,538 docked=390
+
+-- 62 click-wallpaper-again: clicks on the wallpaper again
+> click 800 60
+  (quiet:400 ms) moves=any leaves=any returns=60 floating=376,379,393,394,397,398,513,538 docked=390
+
+-- left out: close_new: the window in front is not one that open_new opened
+
+-- 63 view-out: presses ⌃⌥↑
+> key ctrl+opt+up
+  (quiet:908 ms) moves=any floating=376,379,393,394,397,398,513,538 docked=390
+
+-- left out: close_new: the window in front is not one that open_new opened
+
+-- 64 leave-alone: does nothing for half a minute
+  with nothing to do Arbor used 0.1 % of a core and wrote 0 lines a minute
+  (quiet:389 ms) floating=376,379,393,394,397,398,513,538 docked=390
+
+-- left out: drag_edge safari right: nothing to take hold of
+
+-- 65 dock-icon-finder: clicks finder's icon in the Dock
+> click 131 854
+> move 131 654
+  (quiet:522 ms) front=376 floating=376,379,393,394,397,398,513,538 docked=390
+
+-- 66 new-window-finder: presses ⌘N in finder
+> key cmd+n
+  w550 is finder-new-66
+  ~ floating w550 and docked w390 overlap by 780×436
+  (quiet:1047 ms) front=550 floating=376,379,393,394,397,398,513,538,550 docked=390
+
+-- left out: switch_dock safari: it has no window to come forward
+
+-- left out: full_screen on: played in Safari, which is not in front
+
+-- left out: full_screen off: nothing is in full screen
+
+-- 67 close-window: presses ⌘W
+> key cmd+w
+  (quiet:1080 ms) leaves=550 moves=390,390 floating=376,379,393,394,397,398,513,538 docked=390
+
+-- left out: close_new: the window in front is not one that open_new opened
+
+-- 68 cmd-tab-3: holds ⌘ and presses Tab 3 time(s)
+> key cmd+tab --down
+> key cmd+tab --held
+> key cmd+tab --held
+> key cmd+tab --up
+  (quiet:535 ms) front=538 floating=376,379,393,394,397,398,513,538 docked=390
+
+-- 69 view-in: presses ⌃⌥↓
+> key ctrl+opt+down
+  (quiet:918 ms) moves=any floating=376,379,393,394,397,398,513,538 docked=390
+
+-- 70 dock-icon-terminal: clicks terminal's icon in the Dock
+> click 1332 854
+> move 1332 654
+  (quiet:494 ms) front=538 floating=376,379,393,394,397,398,513,538 docked=390
+
+-- 71 new-window-terminal: presses ⌘N in terminal
+> key cmd+n
+  w560 is terminal-new-71
+  (quiet:1181 ms) front=560 floating=376,379,393,394,397,398,513,538,560 docked=390
+
+-- 72 cmd-tab-2: holds ⌘ and presses Tab 2 time(s)
+> key cmd+tab --down
+> key cmd+tab --held
+> key cmd+tab --up
+  (quiet:468 ms) front=376 floating=376,379,393,394,397,398,513,538,560 docked=390
+
+-- left out: close_new: the window in front is not one that open_new opened
+
+-- 73 view-left: presses ⌃⌥←
+> key ctrl+opt+left
+  (quiet:862 ms) moves=any floating=376,379,393,394,397,398,513,538,560 docked=390
+
+-- left out: wallpaper_click: no bare spot of wallpaper shows
+
+-- 74 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:507 ms) front=390 floating=376,379,393,394,397,398,513,538,560 docked=390
+
+-- 75 cmd-tab-1: holds ⌘ and presses Tab 1 time(s)
+> key cmd+tab --down
+> key cmd+tab --up
+  (quiet:445 ms) front=376 floating=376,379,393,394,397,398,513,538,560 docked=390
+
+-- left out: drag_onto textedit preview bottom: nothing to take hold of
+
+-- 76 click-wallpaper: clicks on the wallpaper
+> click 800 60
+  (quiet:355 ms) moves=any leaves=any floating=376,379,393,394,397,398,513,538,560 docked=390
+
+-- 77 click-wallpaper-again: clicks on the wallpaper again
+> click 800 60
+  (quiet:395 ms) moves=any leaves=any returns=75 floating=376,379,393,394,397,398,513,538,560 docked=390
+
+-- 78 pause: presses ⌃⌥⎋
+> key ctrl+opt+escape
+  (quiet:740 ms) moves=any restores=all everything=1 floating= docked=
+
+-- 79 click-settings: clicks settings's title bar
+> click 1137 97
+> move 1137 217
+  (quiet:447 ms) front=398 floating= docked=
+
+-- left out: dock_key down: Arbor is not acting
+
+-- left out: view back: Arbor is not acting
+
+-- left out: drag_by mail -126 75: nothing to take hold of
+
+-- 80 resume: presses ⌃⌥⎋
+> key ctrl+opt+escape
+  (quiet:993 ms) moves=any floating=376,379,393,394,397,398,513,538,560 docked=390
+recording traces/2026-10-14-235305-day-3.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- left out: drag_onto preview notes right: nothing to take hold of
+
+-- left out: switch_click preview: no free point of its title bar shows
+
+== The end
+recording traces/2026-10-14-235305-day-4.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- 81 quit: chooses Quit Arbor in Arbor's menu
+> click 1296 15 --right
+> key up
+> key return
+  ✔ Arbor ends within five seconds
+  (quiet:858 ms) moves=any restores=all places=1 everything=1
+
+-- 82 dock-icon-finder: clicks finder's icon in the Dock
+> click 131 854
+> move 131 654
+  (quiet:411 ms) front=376
+
+-- left out: switch_dock safari: it has no window to come forward
+
+-- 83 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:366 ms) front=390
+
+-- 84 dock-icon-terminal: clicks terminal's icon in the Dock
+> click 1332 854
+> move 1332 654
+  (quiet:484 ms) front=560
+
+-- 85 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:490 ms) front=394
+
+-- 86 dock-icon-calendar: clicks calendar's icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:436 ms) front=397
+
+-- 87 dock-icon-settings: clicks settings's icon in the Dock
+> click 1139 854
+> move 1139 654
+  (quiet:540 ms) front=398
+
+-- 88 dock-icon-preview: clicks preview's icon in the Dock
+> click 1276 854
+> move 1276 654
+  (quiet:427 ms) front=513
+
+-- left out: switch_dock mail: it has no window to come forward
+
+76 acts, 35 left out because they did not apply
+
+== the report (all of it: mac-shell/day-report.md)
+88 steps in 277 s, 75 of them judged, 10 with a rule broken. The sampler: samples 10976 seconds 277.7 hz 39.5 cost-ms 2.23 late 2592 longest-gap-ms 1215.
+
+## Per rule
+
+| Rule | | Steps that checked it | Steps that broke it | Which |
+|---|---|---|---|---|
+| 1 | never fight macOS: where it answers a drag, Arbor stands aside | 0 | 0 |  |
+| 2 | nothing moves that the person did not move | 59 | 3 | 18 float, 38 dock-right, 45 quit-preview |
+| 3 | no jolts: a window moves once, to where it ends up | 76 | 1 | 80 resume |
+| 4 | the window you switch to comes to the front and into view | 48 | 2 | 37 click-settings, 79 click-settings |
+| 5 | quitting, Float All and pause give windows their own sizes back | 4 | 2 | 50 quit, 81 quit |
+| L | no window is lost or stuck | 76 | 1 | 58 launch |
+| - | what the script itself checked | 76 | 1 | 29 leave-alone |
+
+## Findings
+
+### Rule 2: nothing moves that the person did not move
+
+- ✘ **18 float** (presses ⌃⌥F): finder (w376) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 340,433 920×389 · +930 ms 340,120 920×436
+- ✘ **18 float** (presses ⌃⌥F): safari (w379) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 138,433 1324×389 · +930 ms 138,31 1324×790
+- ✘ **18 float** (presses ⌃⌥F): terminal (w393) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 97,433 877×379 · +930 ms 97,239 877×499
+- ✘ **18 float** (presses ⌃⌥F): notes (w394) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 0,433 800×389 · +930 ms 0,31 800×790
+- ✘ **18 float** (presses ⌃⌥F): calendar (w397) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 404,319 936×503 · +930 ms 404,115 936×599
+- ✘ **18 float** (presses ⌃⌥F): settings (w398) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 437,352 723×470 · +930 ms 437,85 723×625
+- ✘ **18 float** (presses ⌃⌥F): preview (w402) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 4,433 708×389 · +930 ms 4,35 708×424
+- ✘ **38 dock-right** (presses ⌃⌥⌘ and the right arrow): notes (w394) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 0,31 800×790 · +1043 ms 0,31 794×790
+- ✘ **45 quit-preview** (presses ⌘Q in preview): finder (w376) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 340,120 920×436 · +961 ms 1599,770 920×436
+- ✘ **45 quit-preview** (presses ⌘Q in preview): terminal (w393) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 97,239 877×499 · +961 ms 1599,790 877×499
+- ✘ **45 quit-preview** (presses ⌘Q in preview): notes (w394) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 0,31 800×791 · +961 ms 1599,770 800×791
+- ✘ **45 quit-preview** (presses ⌘Q in preview): calendar (w397) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 404,115 936×599 · +961 ms 1599,770 936×599
+- ✘ **45 quit-preview** (presses ⌘Q in preview): settings (w398) a floating window, moved, and the step did not name it [moved-unasked]
+  - +0 ms 437,85 723×625 · +961 ms 1599,770 723×625
+
+### Rule 3: no jolts: a window moves once, to where it ends up
+
+- ~ **16 dock-up** (presses ⌃⌥⌘ and the up arrow): the last window came to rest 1158 ms after the key or the button [slow]
+- ~ **18 float** (presses ⌃⌥F): the last window came to rest 724 ms after the key or the button [slow]
+- ~ **39 dock-left** (presses ⌃⌥⌘ and the left arrow): the last window came to rest 732 ms after the key or the button [slow]
+- ~ **63 view-out** (presses ⌃⌥↑): the last window came to rest 767 ms after the key or the button [slow]
+- ✘ **80 resume** (presses ⌃⌥⎋): textedit (w390) moved 2 times [jolt]
+  - +0 ms 464,31 673×439 · +255 ms 1599,790 673×439 · +962 ms 12,43 1576×767
+- ~ **80 resume** (presses ⌃⌥⎋): the last window came to rest 743 ms after the key or the button [slow]
+
+### Rule 4: the window you switch to comes to the front and into view
+
+- ✘ **37 click-settings** (clicks settings's title bar): settings (w398) is not in front: textedit (w390), notes (w394), preview (w484) ahead of it, of which 3 cover part of it [behind]
+- ✘ **37 click-settings** (clicks settings's title bar): settings (w398) its app is not the one in front (process 39090 is) [focus]
+- ✘ **79 click-settings** (clicks settings's title bar): settings (w398) is not in front: textedit (w390), notes (w394), finder (w376), terminal-new-71 (w560) ahead of it, of which 7 cover part of it [behind]
+- ✘ **79 click-settings** (clicks settings's title bar): settings (w398) its app is not the one in front (process 39090 is) [focus]
+
+### Rule 5: quitting, Float All and pause give windows their own sizes back
+
+- ✘ **50 quit** (chooses Quit Arbor in Arbor's menu): textedit (w390) has its size back but not its place: 464,31 673×439, it was at 165,65 673×439 [size-lost]
+- ✘ **81 quit** (chooses Quit Arbor in Arbor's menu): textedit (w390) has its size back but not its place: 464,31 673×439, it was at 165,65 673×439 [size-lost]
+
+### Rule L: no window is lost or stuck
+
+- ✘ **58 launch** (starts Arbor): textedit (w390) is out of view: 0% of it is on the display, at 1599,790 673×439 [lost]
+
+### Rule -: what the script itself checked
+
+- ✘ **29 leave-alone** (does nothing for half a minute): with nothing to do Arbor used 1.6 % of a core [busy]
+- ~ **66 new-window-finder** (presses ⌘N in finder): floating w550 and docked w390 overlap by 780×436 [script]
+
+
+2 passed, 2 failed
+still running when the script had ended, and stopped now:
+  37884 sleep
+exit code 1

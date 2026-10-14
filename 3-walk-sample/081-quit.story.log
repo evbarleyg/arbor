@@ -1,0 +1,37 @@
+81 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:858', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule 5: textedit (w390) has its size back but not its place: 464,31 673×439, it was at 165,65 673×439
+
+23:53:05.311 SCREEN -- begin 81 quit
+23:53:05.311 SCREEN -- text 81 chooses Quit Arbor in Arbor's menu
+23:53:05.592 SCREEN w573 of Arbor left the screen
+23:53:05.860 DEBUG menu bar click: x 67.0 by the event, 67.0 by the screen, button 134.0 wide
+23:53:05.987 SCREEN w581 of Arbor 1215,31 288×785 (level 101)
+23:53:07.438 MACOS pid 39090 AXResized w390 AXWindow/AXStandardWindow 464 31 673 439
+23:53:07.439 MACOS pid 39090 AXMoved w390 AXWindow/AXStandardWindow 464 31 673 439
+23:53:07.442 MACOS pid 38851 AXMoved w376 AXWindow/AXStandardWindow 340 120 920 436
+23:53:07.444 MACOS pid 39421 AXMoved w393 AXWindow/AXStandardWindow 97 239 877 499
+23:53:07.446 MACOS pid 39492 AXMoved w394 AXWindow/AXStandardWindow 0 31 800 791
+23:53:07.448 MACOS pid 39554 AXMoved w397 AXWindow/AXStandardWindow 404 115 936 599
+23:53:07.450 MACOS pid 39616 AXMoved w398 AXWindow/AXStandardWindow 437 85 723 625
+23:53:07.450 MACOS pid 47435 AXMoved w513 AXWindow/AXStandardWindow 4 35 708 424
+23:53:07.456 MACOS pid 39421 AXMoved w538 AXWindow/AXStandardWindow 126 268 877 499
+23:53:07.457 MACOS pid 39421 AXMoved w560 AXWindow/AXStandardWindow 155 297 877 499
+23:53:07.459 SCREEN textedit (w390) 464,31 673×439
+23:53:07.459 SCREEN notes (w394) 0,31 800×791
+23:53:07.459 SCREEN finder (w376) 340,120 920×436
+23:53:07.459 SCREEN terminal (w393) 97,239 877×499
+23:53:07.459 SCREEN calendar (w397) 404,115 936×599
+23:53:07.459 INFO  trace day-4 ended: 45 lines, Arbor stopped
+23:53:07.459 INFO  stopped; all windows returned to view
+23:53:07.461 INFO  Arbor quit
+23:53:07.465 SCREEN terminal-new-60 (w538) 126,268 877×499
+23:53:07.465 SCREEN preview (w513) 4,35 708×424
+23:53:07.465 SCREEN settings (w398) 437,85 723×625
+23:53:07.465 SCREEN w577 of Arbor left the screen
+23:53:07.465 SCREEN w578 of Arbor left the screen
+23:53:07.465 SCREEN w581 of Arbor left the screen
+23:53:07.465 SCREEN front to back: textedit notes finder terminal-new-71 terminal-new-60 terminal preview settings calendar
+23:53:07.498 SCREEN terminal-new-71 (w560) 155,297 877×499
+23:53:08.535 SCREEN -- end 81 act=quit-and-start settled=quiet:858 moves=any restores=all places=1 everything=1
+23:53:08.726 SCRIPT == 82 dock-icon-finder

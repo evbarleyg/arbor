@@ -1,0 +1,9 @@
+91 drag-calendar-back: drags calendar away from the top again, a hand's breadth down
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:357', 'judge': 'no', 'drags': '121', 'front': '121', 'restores': '121', 'place': '121', 'floating': '112,115,121,124,128,189,286', 'docked': '95,98'}
+FAIL rule -: the act was not performed: drag_window could not be done
+
+23:47:03.182 SCREEN -- begin 91 drag-calendar-back
+23:47:03.182 SCREEN -- text 91 drags calendar away from the top again, a hand's breadth down
+23:47:03.657 SCREEN -- finding 91 - FAIL the act was not performed: drag_window could not be done
+23:47:03.717 SCREEN -- end 91 act=drag-where-macos-tiles settled=quiet:357 judge=no drags=121 front=121 restores=121 place=121 floating=112,115,121,124,128,189,286 docked=95,98
+23:47:04.049 SCRIPT == 92 show-everything-4

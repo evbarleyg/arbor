@@ -1,0 +1,54 @@
+80 resume: presses ⌃⌥⎋
+expected: {'act': 'way-out', 'settled': 'quiet:993', 'moves': 'any', 'floating': '376,379,393,394,397,398,513,538,560', 'docked': '390'}
+FAIL rule 3: textedit (w390) moved 2 times
+ODD rule 3: the last window came to rest 743 ms after the key or the button
+
+23:53:03.452 SCREEN -- begin 80 resume
+23:53:03.452 SCREEN -- text 80 presses ⌃⌥⎋
+23:53:03.701 INFO  started: 1 display(s), 10 managed window(s)
+23:53:03.704 MACOS pid 39090 AXMoved w390 AXWindow/AXStandardWindow 1599 790 673 439
+23:53:03.707 SCREEN textedit (w390) 1599,790 673×439
+23:53:03.710 INFO  registered 52 shortcuts in 2643 µs
+23:53:03.711 INFO  pinch event tap installed
+23:53:03.711 INFO  scroll event tap installed
+23:53:03.711 INFO  rectangle event taps installed
+23:53:03.712 DEBUG w390 has the keyboard
+23:53:03.723 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+23:53:03.726 SCREEN w544 of Arbor 0,0 1600×900 (level 4)
+23:53:03.731 MACOS pid 39090 AXResized w390 AXWindow/AXStandardWindow 1599 790 1576 767
+23:53:03.733 MACOS pid 39090 AXMoved w390 AXWindow/AXStandardWindow 12 43 1576 767
+23:53:03.744 MACOS pid 38851 AXMoved w376 AXWindow/AXStandardWindow 1599 770 920 436
+23:53:03.750 MACOS pid 39421 AXMoved w393 AXWindow/AXStandardWindow 1599 790 877 499
+23:53:03.756 MACOS pid 39492 AXMoved w394 AXWindow/AXStandardWindow 1599 770 800 791
+23:53:03.763 MACOS pid 39554 AXMoved w397 AXWindow/AXStandardWindow 1599 770 936 599
+23:53:03.766 MACOS pid 39616 AXMoved w398 AXWindow/AXStandardWindow 1599 770 723 625
+23:53:03.767 MACOS pid 47435 AXMoved w513 AXWindow/AXStandardWindow 1599 770 708 424
+23:53:03.776 MACOS pid 39421 AXMoved w538 AXWindow/AXStandardWindow 1599 790 877 499
+23:53:03.780 MACOS pid 39421 AXMoved w560 AXWindow/AXStandardWindow 1599 790 877 499
+23:53:03.787 SCREEN textedit (w390) 12,43 1576×767
+23:53:03.787 SCREEN notes (w394) 1599,770 800×791
+23:53:03.787 SCREEN finder (w376) 1599,770 920×436
+23:53:03.787 SCREEN terminal-new-71 (w560) 1599,790 877×499
+23:53:03.787 SCREEN terminal-new-60 (w538) 1599,790 877×499
+23:53:03.787 SCREEN terminal (w393) 1599,790 877×499
+23:53:03.787 SCREEN preview (w513) 1599,770 708×424
+23:53:03.787 SCREEN settings (w398) 1599,770 723×625
+23:53:03.787 SCREEN calendar (w397) 1599,770 936×599
+23:53:03.796 INFO  resumed
+23:53:03.797 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Resumed
+23:53:03.810 DEBUG pinch event tap installed
+23:53:03.810 DEBUG scroll event tap installed
+23:53:03.810 DEBUG rectangle event tap installed
+23:53:03.810 DEBUG rectangle drag event tap installed
+23:53:03.818 SCREEN w573 of Arbor 749,728 102×38 (level 6)
+23:53:03.818 SCREEN w577 of Arbor 3,34 1594×785
+23:53:03.818 SCREEN w578 of Arbor 0,31 1600×791 (level -2147483602)
+23:53:03.818 SCREEN front to back: w577 textedit notes finder terminal-new-71 terminal-new-60 terminal preview settings calendar
+23:53:04.410 DEBUG stage down
+23:53:04.414 SCREEN w544 of Arbor left the screen
+23:53:04.947 SCREEN -- end 80 act=way-out settled=quiet:993 moves=any floating=376,379,393,394,397,398,513,538,560 docked=390
+23:53:05.117 INFO  trace day-3: recording to /tmp/arbor-shell.ACQBwD/home/traces/2026-10-14-235305-day-3.jsonl
+23:53:05.207 SCREEN -- chapter The end
+23:53:05.219 INFO  trace day-3 ended: 3 lines, trace off
+23:53:05.234 INFO  trace day-4: recording to /tmp/arbor-shell.ACQBwD/home/traces/2026-10-14-235305-day-4.jsonl
+23:53:05.297 SCRIPT == 81 quit

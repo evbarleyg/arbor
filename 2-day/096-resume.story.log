@@ -1,0 +1,31 @@
+96 resume: presses ⌃⌥⎋
+expected: {'act': 'way-out', 'settled': 'quiet:815', 'moves': 'any', 'floating': '112,115,121,124,128,189,286', 'docked': '95,98'}
+ODD rule -: floating w115 and docked w95 overlap by 501×767
+
+23:47:14.182 SCREEN -- begin 96 resume
+23:47:14.182 SCREEN -- text 96 presses ⌃⌥⎋
+23:47:14.437 INFO  started: 1 display(s), 9 managed window(s)
+23:47:14.460 MACOS pid 14544 AXResized w98 AXWindow/AXStandardWindow 1014 43 574 767
+23:47:14.461 MACOS pid 14544 AXMoved w98 AXWindow/AXStandardWindow 1014 43 574 767
+23:47:14.477 SCREEN safari (w98) 1014,43 574×767
+23:47:14.480 INFO  registered 52 shortcuts in 1160 µs
+23:47:14.482 INFO  pinch event tap installed
+23:47:14.483 INFO  scroll event tap installed
+23:47:14.483 INFO  rectangle event taps installed
+23:47:14.485 DEBUG w98 has the keyboard
+23:47:14.485 INFO  resumed
+23:47:14.486 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Resumed
+23:47:14.496 DEBUG pinch event tap installed
+23:47:14.499 DEBUG scroll event tap installed
+23:47:14.499 DEBUG rectangle event tap installed
+23:47:14.499 DEBUG rectangle drag event tap installed
+23:47:14.520 SCREEN w338 of Arbor 749,728 102×38 (level 6)
+23:47:14.520 SCREEN w343 of Arbor 1005,34 592×785
+23:47:14.520 SCREEN w341 of Arbor 513,43 12×767
+23:47:14.520 SCREEN w342 of Arbor 1002,43 12×767
+23:47:14.520 SCREEN w344 of Arbor 0,31 1600×791 (level -2147483602)
+23:47:14.520 SCREEN front to back: w343 safari notes textedit finder calendar terminal w191 w189 preview settings w148 w341 w342
+23:47:15.684 SCREEN -- finding 96 - ODD floating w115 and docked w95 overlap by 501×767
+23:47:15.684 SCREEN -- end 96 act=way-out settled=quiet:815 moves=any floating=112,115,121,124,128,189,286 docked=95,98
+23:47:15.923 INFO  trace day-13: recording to /tmp/arbor-shell.1eY33v/home/traces/2026-10-14-234715-day-13.jsonl
+23:47:15.974 SCRIPT == 97 float-all

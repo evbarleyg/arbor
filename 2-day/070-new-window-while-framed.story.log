@@ -1,0 +1,22 @@
+70 new-window-while-framed: presses ⌘N in Safari while its window is framed
+expected: {'act': 'open-close', 'settled': 'quiet:998', 'moves': 'any', 'front': '265', 'floating': '112,115,121,124,128,189,265', 'docked': '95,98,109'}
+ODD rule -: floating w265 and docked w98 overlap by 1564×755
+
+23:46:01.275 SCREEN -- begin 70 new-window-while-framed
+23:46:01.275 SCREEN -- text 70 presses ⌘N in Safari while its window is framed
+23:46:01.793 SCREEN (nothing was seen for 122 ms)
+23:46:01.793 SCREEN safari-new-2 (w265) 0,31 1576×767
+23:46:01.793 SCREEN front to back: safari-new-2 w204 safari calendar w191 w189 preview settings notes terminal finder textedit w148
+23:46:01.894 INFO  w265 floats over n3 and stays with it
+23:46:01.895 MACOS pid 14544 AXFocusedWindowChanged w265 AXWindow/AXStandardWindow 0 31 1576 767
+23:46:01.896 MACOS pid 14544 AXMainWindowChanged w265 AXWindow/AXStandardWindow 0 31 1576 767
+23:46:01.900 MACOS pid 14544 AXWindowCreated w265 AXWindow/AXStandardWindow 0 31 1576 767
+23:46:01.904 DEBUG focus is on w265
+23:46:01.904 DEBUG w265 has the keyboard
+23:46:01.923 SCREEN w204 of Arbor -6,25 1591×782
+23:46:01.923 SCREEN front to back: w204 safari-new-2 safari calendar w191 w189 preview settings notes terminal finder textedit w148
+23:46:01.923 MACOS pid 14544 AXTitleChanged w265 AXWindow/AXStandardWindow 0 31 1576 767
+23:46:01.929 SCREEN -- label 265 safari-new-2
+23:46:03.052 SCREEN -- finding 70 - ODD floating w265 and docked w98 overlap by 1564×755
+23:46:03.052 SCREEN -- end 70 act=open-close settled=quiet:998 moves=any front=265 floating=112,115,121,124,128,189,265 docked=95,98,109
+23:46:03.352 SCRIPT == 71 close-window-while-framed

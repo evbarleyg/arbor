@@ -1,0 +1,20 @@
+36 drag-gap-beside-finder: drags the gap to the right of finder sixty points to the right
+expected: {'act': 'resize', 'settled': 'quiet:1040', 'moves': '95,98,109,95,98,109', 'floating': '112,115,121,124,128,189', 'docked': '95,98,109'}
+FAIL rule 4: the app in front changed (to process 14828), and nobody switched
+
+23:44:40.046 SCREEN -- begin 36 drag-gap-beside-finder
+23:44:40.046 SCREEN -- text 36 drags the gap to the right of finder sixty points to the right
+23:44:40.552 SCREEN in front: process 14828 com.apple.Terminal
+23:44:40.552 SCREEN front to back: terminal w204 finder textedit safari w191 w189 preview settings calendar notes w148 w213 w203 w209 w214
+23:44:40.552 SCREEN the button is down 519 426
+23:44:40.553 MACOS workspace didActivate pid 14828 com.apple.Terminal regular
+23:44:40.553 MACOS workspace didDeactivate pid 13562 com.apple.finder regular
+23:44:40.604 MACOS pid 13562 AXApplicationDeactivated
+23:44:40.628 MACOS pid 14828 AXApplicationActivated
+23:44:40.638 DEBUG focus is on w112
+23:44:40.639 DEBUG w112 has the keyboard
+23:44:40.662 SCREEN w204 of Arbor 88,229 895×517
+23:44:40.662 SCREEN front to back: w204 terminal finder textedit safari w191 w189 preview settings calendar notes w148 w213 w203 w209 w214
+23:44:43.443 SCREEN the button is up 579 426
+23:44:44.588 SCREEN -- end 36 act=resize settled=quiet:1040 moves=95,98,109,95,98,109 floating=112,115,121,124,128,189 docked=95,98,109
+23:44:44.938 SCRIPT == 37 grow-finder

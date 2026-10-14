@@ -1,0 +1,19 @@
+37 grow-finder: presses ⌃⌥⌘=
+expected: {'act': 'resize', 'settled': 'quiet:712', 'moves': '95,98,109,95,98,109', 'front': '95', 'floating': '112,115,121,124,128,189', 'docked': '95,98,109'}
+ODD rule -: floating w112 and docked w95 overlap by 437×544
+FAIL rule 2: terminal (w112) a floating window, moved, and the step did not name it
+FAIL rule 4: finder (w95) is not in front: terminal (w112) ahead of it, of which 1 cover part of it
+FAIL rule 4: finder (w95) its app is not the one in front (process 14828 is)
+
+23:44:44.950 SCREEN -- begin 37 grow-finder
+23:44:44.950 SCREEN -- text 37 presses ⌃⌥⌘=
+23:44:45.116 MACOS pid 14828 AXTitleChanged w112 AXWindow/AXStandardWindow 77 218 919 544
+23:44:45.121 MACOS pid 14828 AXResized w112 AXWindow/AXStandardWindow 77 218 919 544
+23:44:45.122 MACOS pid 14828 AXMoved w112 AXWindow/AXStandardWindow 77 218 919 544
+23:44:45.126 MACOS pid 14828 AXMoved w112 AXWindow/AXStandardWindow 76 216 919 544
+23:44:45.128 INFO  grow: w112 grew
+23:44:45.168 SCREEN w204 of Arbor 67,207 937×562
+23:44:45.168 SCREEN terminal (w112) 76,216 919×544
+23:44:46.269 SCREEN -- finding 37 - ODD floating w112 and docked w95 overlap by 437×544
+23:44:46.269 SCREEN -- end 37 act=resize settled=quiet:712 moves=95,98,109,95,98,109 front=95 floating=112,115,121,124,128,189 docked=95,98,109
+23:44:46.535 SCRIPT == 38 shrink-finder

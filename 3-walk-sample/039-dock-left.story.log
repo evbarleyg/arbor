@@ -1,0 +1,29 @@
+39 dock-left: presses ⌃⌥⌘ and the left arrow
+expected: {'act': 'dock-key', 'settled': 'quiet:788', 'moves': '390,390', 'yields': '376,379,393,394,397,398,484,376,379,393,394,397,398,484', 'front': '390', 'floating': '376,379,393,394,397,398,484', 'docked': '390'}
+ODD rule 3: the last window came to rest 732 ms after the key or the button
+
+23:51:02.492 SCREEN -- begin 39 dock-left
+23:51:02.492 SCREEN -- text 39 presses ⌃⌥⌘ and the left arrow
+23:51:02.651 SCREEN w419 of Arbor left the screen
+23:51:02.748 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 7 stand-ins, 0.46 s
+23:51:02.749 MACOS pid 39090 AXMoved w390 AXWindow/AXStandardWindow 12 43 782 767
+23:51:02.751 MACOS pid 38851 AXMoved w376 AXWindow/AXStandardWindow 806 120 794 436
+23:51:02.752 SCREEN w423 of Arbor 0,0 1600×900 (level 4)
+23:51:02.752 SCREEN textedit (w390) 12,43 782×767
+23:51:02.760 MACOS pid 39421 AXMoved w393 AXWindow/AXStandardWindow 806 239 793 499
+23:51:02.764 MACOS pid 39492 AXMoved w394 AXWindow/AXStandardWindow 806 31 794 790
+23:51:02.766 MACOS pid 39554 AXMoved w397 AXWindow/AXStandardWindow 806 115 794 599
+23:51:02.771 SCREEN notes (w394) 806,31 794×790
+23:51:02.771 SCREEN calendar (w397) 806,115 794×599
+23:51:02.771 SCREEN terminal (w393) 806,239 793×499
+23:51:02.771 SCREEN finder (w376) 806,120 794×436
+23:51:02.771 MACOS pid 39616 AXMoved w398 AXWindow/AXStandardWindow 806 85 723 625
+23:51:02.779 MACOS pid 45546 AXMoved w484 AXWindow/AXStandardWindow 806 35 708 424
+23:51:02.784 INFO  dock left: moved w390 left
+23:51:02.834 SCREEN w425 of Arbor 3,34 800×785
+23:51:02.834 SCREEN preview (w484) 806,35 708×424
+23:51:02.834 SCREEN settings (w398) 806,85 723×625
+23:51:03.438 DEBUG stage down
+23:51:03.484 SCREEN w423 of Arbor left the screen
+23:51:04.032 SCREEN -- end 39 act=dock-key settled=quiet:788 moves=390,390 yields=376,379,393,394,397,398,484,376,379,393,394,397,398,484 front=390 floating=376,379,393,394,397,398,484 docked=390
+23:51:04.366 SCRIPT == 40 view-forward

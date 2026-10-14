@@ -1,0 +1,22 @@
+89 reach-calendar: clicks calendar's title bar, or its Dock icon if that is covered
+expected: {'act': 'switch', 'settled': 'quiet:352', 'front': '121', 'floating': '112,115,121,124,128,189,286', 'docked': '95,98'}
+FAIL rule 4: calendar (w121) is not in front: safari (w98), notes (w115), textedit (w286), finder (w95) ahead of it, of which 4 cover part of it
+FAIL rule 4: calendar (w121) its app is not the one in front (process 14544 is)
+
+23:47:00.147 SCREEN -- begin 89 reach-calendar
+23:47:00.147 SCREEN -- text 89 clicks calendar's title bar, or its Dock icon if that is covered
+23:47:00.800 SCREEN the button is down 1011 127
+23:47:01.007 SCREEN (nothing was seen for 128 ms)
+23:47:01.007 SCREEN front to back: safari w204 notes textedit finder calendar terminal w191 w189 preview settings w148 w203 w209
+23:47:01.007 SCREEN the button is up 1011 127
+23:47:01.021 MACOS pid 14919 AXApplicationDeactivated
+23:47:01.023 SCREEN in front: process 14544 com.apple.Safari
+23:47:01.023 MACOS workspace didActivate pid 14544 com.apple.Safari regular
+23:47:01.024 MACOS workspace didDeactivate pid 14919 com.apple.Notes regular
+23:47:01.044 MACOS pid 14544 AXApplicationActivated
+23:47:01.048 DEBUG focus is on w98
+23:47:01.048 DEBUG w98 has the keyboard
+23:47:01.068 SCREEN w204 of Arbor 1005,34 592×785
+23:47:01.068 SCREEN front to back: w204 safari notes textedit finder calendar terminal w191 w189 preview settings w148 w203 w209
+23:47:02.199 SCREEN -- end 89 act=switch settled=quiet:352 front=121 floating=112,115,121,124,128,189,286 docked=95,98
+23:47:02.403 SCRIPT == 90 drag-calendar-to-top

@@ -1,0 +1,61 @@
+113 launch-2: starts Arbor again
+expected: {'act': 'quit-and-start', 'settled': 'quiet:848', 'moves': ',95,98', 'everything': '1', 'floating': '112,115,121,124,128,189,286', 'docked': '95,98'}
+FAIL rule 2: terminal (w112) a floating window, moved, and the step did not name it
+FAIL rule 2: notes (w115) a floating window, moved, and the step did not name it
+FAIL rule 2: calendar (w121) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w124) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w128) a floating window, moved, and the step did not name it
+FAIL rule 2: w189 of Mail a floating window, moved, and the step did not name it
+ODD rule 2: w191 of Mail moved along with a window of its app
+FAIL rule 2: textedit (w286) a floating window, moved, and the step did not name it
+FAIL rule L: finder (w95) is out of view: 0% of it is on the display, at 1599,770 920×436
+FAIL rule L: terminal (w112) is out of view: 0% of it is on the display, at 1599,790 877×499
+FAIL rule L: notes (w115) is out of view: 0% of it is on the display, at 1599,770 800×791
+FAIL rule L: calendar (w121) is out of view: 0% of it is on the display, at 1599,770 936×599
+FAIL rule L: settings (w124) is out of view: 0% of it is on the display, at 1599,770 723×625
+FAIL rule L: preview (w128) is out of view: 0% of it is on the display, at 1599,770 708×424
+FAIL rule L: textedit (w286) is out of view: 0% of it is on the display, at 1599,790 673×439
+
+23:47:50.906 SCREEN -- begin 113 launch-2
+23:47:50.906 SCREEN -- text 113 starts Arbor again
+23:47:51.090 INFO  Arbor dev starting, pid 35140, home /tmp/arbor-shell.1eY33v/home
+23:47:51.091 INFO  control socket at /tmp/arbor-shell.1eY33v/home/arbor.sock
+23:47:51.160 INFO  keyboard layout: U.S.
+23:47:51.261 INFO  started: 1 display(s), 9 managed window(s)
+23:47:51.342 SCREEN safari (w98) 138,31 1462×767
+23:47:51.362 MACOS pid 14544 AXResized w98 AXWindow/AXStandardWindow 12 43 1462 767
+23:47:51.363 SCREEN safari (w98) 12,43 1462×767
+23:47:51.363 MACOS pid 14544 AXMoved w98 AXWindow/AXStandardWindow 12 43 1462 767
+23:47:51.403 SCREEN safari (w98) 12,43 1576×767
+23:47:51.432 MACOS pid 14544 AXResized w98 AXWindow/AXStandardWindow 12 43 1576 767
+23:47:51.439 SCREEN finder (w95) 1599,770 920×436
+23:47:51.447 MACOS pid 13562 AXMoved w95 AXWindow/AXStandardWindow 1599 770 920 436
+23:47:51.453 MACOS pid 14828 AXMoved w112 AXWindow/AXStandardWindow 1599 790 877 499
+23:47:51.457 SCREEN terminal (w112) 1599,790 877×499
+23:47:51.478 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow 1599 770 800 791
+23:47:51.484 MACOS pid 15393 AXMoved w121 AXWindow/AXStandardWindow 1599 770 936 599
+23:47:51.491 SCREEN notes (w115) 1599,770 800×791
+23:47:51.492 MACOS pid 15469 AXMoved w124 AXWindow/AXStandardWindow 1599 770 723 625
+23:47:51.494 MACOS pid 15609 AXMoved w128 AXWindow/AXStandardWindow 1599 770 708 424
+23:47:51.510 MACOS pid 20389 AXMoved w189 AXWindow/AXStandardWindow 1599 770 1120 630
+23:47:51.513 MACOS pid 29468 AXMoved w286 AXWindow/AXStandardWindow 1599 790 673 439
+23:47:51.520 SCREEN w191 of Mail 1924,877 470×416
+23:47:51.520 SCREEN w189 of Mail 1599,770 1120×630
+23:47:51.520 SCREEN preview (w128) 1599,770 708×424
+23:47:51.520 SCREEN settings (w124) 1599,770 723×625
+23:47:51.520 SCREEN calendar (w121) 1599,770 936×599
+23:47:51.520 SCREEN textedit (w286) 1599,790 673×439
+23:47:51.556 INFO  registered 52 shortcuts in 5253 µs
+23:47:51.561 INFO  pinch event tap installed
+23:47:51.562 INFO  scroll event tap installed
+23:47:51.562 INFO  rectangle event taps installed
+23:47:51.581 ERROR setup: Desktop & Dock settings: as they stand, macOS reacts to the same clicks and drags as Arbor. In System Settings → Desktop & Dock: | “Click wallpaper to reveal desktop”: choose “Only in Stage Manager”. Otherwise a click on the Desktop sends every window away | “Drag windows to left or right edge of screen to tile”: switch it off | “Drag windows to menu bar to fill screen”: switch it off | “Hold ⌥ key while dragging windows to tile”: switch it off
+23:47:51.593 SCREEN w369 of Arbor 0,31 1600×791 (level -2147483602)
+23:47:51.622 DEBUG pinch event tap installed
+23:47:51.622 DEBUG scroll event tap installed
+23:47:51.622 DEBUG rectangle event tap installed
+23:47:51.622 DEBUG rectangle drag event tap installed
+23:47:51.669 SCREEN -- arbor 35140
+23:47:51.712 INFO  trace day-14: recording to /tmp/arbor-shell.1eY33v/home/traces/2026-10-14-234751-day-14.jsonl
+23:47:52.661 SCREEN -- end 113 act=quit-and-start settled=quiet:848 moves=,95,98 everything=1 floating=112,115,121,124,128,189,286 docked=95,98
+23:47:52.989 SCRIPT == 114 leave-alone-2

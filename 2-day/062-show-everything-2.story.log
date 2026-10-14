@@ -1,0 +1,47 @@
+62 show-everything-2: presses ⌃⌥Space
+expected: {'act': 'view', 'settled': 'quiet:712', 'moves': 'any', 'everything': '1', 'returns': '50', 'floating': '112,115,121,124,128,189', 'docked': '95,98,109'}
+ODD rule -: floating w112 and docked w95 overlap by 416×499
+ODD rule -: floating w115 and docked w98 overlap by 574×660
+ODD rule -: floating w121 and docked w98 overlap by 574×599
+ODD rule -: floating w124 and docked w98 overlap by 543×625
+ODD rule -: floating w128 and docked w95 overlap by 501×416
+ODD rule -: floating w189 and docked w98 overlap by 574×630
+ODD rule 3: the last window came to rest 735 ms after the key or the button
+FAIL rule 2: notes (w115) is not back where it was after step 50: 300,105 1000×660, it was at 202,105 709×660
+FAIL rule 2: calendar (w121) is not back where it was after step 50: 404,115 936×599, it was at 217,115 680×599
+FAIL rule 2: settings (w124) is not back where it was after step 50: 437,85 723×625, it was at 195,85 723×625
+FAIL rule 2: preview (w128) is not back where it was after step 50: 4,35 708×424, it was at 203,35 708×424
+FAIL rule 2: w189 of Mail is not back where it was after step 50: 240,72 1120×630, it was at 121,72 871×630
+FAIL rule 2: w191 of Mail is not back where it was after step 50: 565,179 470×416, it was at 322,179 470×416
+
+23:45:37.217 SCREEN -- begin 62 show-everything-2
+23:45:37.217 SCREEN -- text 62 presses ⌃⌥Space
+23:45:37.443 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+23:45:37.445 MACOS pid 13562 AXMoved w95 AXWindow/AXStandardWindow 12 43 501 767
+23:45:37.450 MACOS pid 14544 AXMoved w98 AXWindow/AXStandardWindow 617 43 574 767
+23:45:37.452 MACOS pid 14768 AXMoved w109 AXWindow/AXStandardWindow 1203 43 385 767
+23:45:37.460 INFO  show-all: showing everything
+23:45:37.467 SCREEN w202 of Arbor 0,0 1600×900 (level 4)
+23:45:37.467 SCREEN safari (w98) 617,43 574×767
+23:45:37.467 SCREEN finder (w95) 12,43 501×767
+23:45:37.467 SCREEN textedit (w109) 1203,43 385×767
+23:45:37.477 SCREEN w213 of Arbor 525,43 80×767
+23:45:37.477 SCREEN w214 of Arbor 513,43 12×767
+23:45:37.477 SCREEN w209 of Arbor 605,43 12×767
+23:45:37.477 SCREEN w203 of Arbor 1191,43 12×767
+23:45:37.477 SCREEN w205 of Arbor 0,31 1600×791 (level -2147483602)
+23:45:37.477 SCREEN front to back: w204 calendar safari w191 w189 preview settings notes terminal finder textedit w148 w213 w214 w209 w203
+23:45:37.639 DEBUG peek: the key came up
+23:45:38.139 DEBUG stage down
+23:45:38.172 SCREEN w202 of Arbor left the screen
+23:45:38.654 SCREEN -- finding 62 - ODD floating w112 and docked w95 overlap by 416×499
+23:45:38.655 SCREEN -- finding 62 - ODD floating w115 and docked w98 overlap by 574×660
+23:45:38.655 SCREEN -- finding 62 - ODD floating w121 and docked w98 overlap by 574×599
+23:45:38.655 SCREEN -- finding 62 - ODD floating w124 and docked w98 overlap by 543×625
+23:45:38.655 SCREEN -- finding 62 - ODD floating w128 and docked w95 overlap by 501×416
+23:45:38.655 SCREEN -- finding 62 - ODD floating w189 and docked w98 overlap by 574×630
+23:45:38.656 SCREEN -- end 62 act=view settled=quiet:712 moves=any everything=1 returns=50 floating=112,115,121,124,128,189 docked=95,98,109
+23:45:38.886 SCREEN -- chapter Windows come and go
+23:45:38.894 INFO  trace day-7 ended: 834 lines, trace off
+23:45:38.908 INFO  trace day-8: recording to /tmp/arbor-shell.1eY33v/home/traces/2026-10-14-234538-day-8.jsonl
+23:45:38.965 SCRIPT == 63 reach-safari

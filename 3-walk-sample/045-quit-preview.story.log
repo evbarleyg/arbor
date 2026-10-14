@@ -1,0 +1,43 @@
+45 quit-preview: presses ⌘Q in preview
+expected: {'act': 'open-close', 'settled': 'quiet:901', 'moves': '390,390', 'leaves': '484,', 'floating': '376,379,393,394,397,398', 'docked': '390'}
+FAIL rule 2: finder (w376) a floating window, moved, and the step did not name it
+FAIL rule 2: terminal (w393) a floating window, moved, and the step did not name it
+FAIL rule 2: notes (w394) a floating window, moved, and the step did not name it
+FAIL rule 2: calendar (w397) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w398) a floating window, moved, and the step did not name it
+
+23:51:13.211 SCREEN -- begin 45 quit-preview
+23:51:13.211 SCREEN -- text 45 presses ⌘Q in preview
+23:51:13.414 SCREEN preview (w484) left the screen
+23:51:13.414 SCREEN front to back: textedit w425 notes settings w416 calendar terminal finder
+23:51:13.415 SCREEN in front: process 39090 com.apple.TextEdit
+23:51:13.415 MACOS pid 39090 AXApplicationActivated
+23:51:13.415 MACOS workspace didActivate pid 39090 com.apple.TextEdit regular
+23:51:13.415 MACOS workspace didDeactivate pid -1 ? unknown
+23:51:13.415 MACOS workspace didTerminate pid 45546 com.apple.Preview regular
+23:51:13.417 DEBUG focus is on w390
+23:51:13.417 DEBUG w390 has the keyboard
+23:51:13.423 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 7 stand-ins, 0.46 s
+23:51:13.424 MACOS pid 39090 AXMoved w390 AXWindow/AXStandardWindow 12 43 1576 767
+23:51:13.426 MACOS pid 38851 AXMoved w376 AXWindow/AXStandardWindow 1599 770 920 436
+23:51:13.427 MACOS pid 39421 AXMoved w393 AXWindow/AXStandardWindow 1599 790 877 499
+23:51:13.430 MACOS pid 39492 AXMoved w394 AXWindow/AXStandardWindow 1599 770 800 791
+23:51:13.432 MACOS pid 39554 AXMoved w397 AXWindow/AXStandardWindow 1599 770 936 599
+23:51:13.439 SCREEN w423 of Arbor 0,0 1600×900 (level 4)
+23:51:13.439 SCREEN textedit (w390) 12,43 1576×767
+23:51:13.439 SCREEN notes (w394) 1599,770 800×791
+23:51:13.439 SCREEN calendar (w397) 1599,770 936×599
+23:51:13.439 SCREEN terminal (w393) 1599,790 877×499
+23:51:13.439 SCREEN finder (w376) 1599,770 920×436
+23:51:13.439 SCREEN w425 of Arbor left the screen
+23:51:13.439 SCREEN front to back: textedit notes settings w416 calendar terminal finder
+23:51:13.440 MACOS pid 39616 AXMoved w398 AXWindow/AXStandardWindow 1599 770 723 625
+23:51:13.442 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 7 stand-ins, 0.46 s
+23:51:13.473 SCREEN w425 of Arbor 3,34 1594×785
+23:51:13.473 SCREEN settings (w398) 1599,770 723×625
+23:51:13.473 SCREEN w426 of Arbor 0,31 1600×791 (level -2147483602)
+23:51:13.473 SCREEN front to back: w425 textedit notes settings w416 calendar terminal finder
+23:51:14.127 DEBUG stage down
+23:51:14.172 SCREEN w423 of Arbor left the screen
+23:51:14.620 SCREEN -- end 45 act=open-close settled=quiet:901 moves=390,390 leaves=484, floating=376,379,393,394,397,398 docked=390
+23:51:14.863 SCRIPT == 46 dock-icon-finder

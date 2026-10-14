@@ -1,0 +1,57 @@
+29 dock-safari-right: presses ⌃⌥⌘→
+expected: {'act': 'dock-key', 'settled': 'quiet:1236', 'moves': '95,95,98', 'yields': '98,109,112,115,121,124,128,189,109,112,115,121,124,128,189', 'front': '98', 'floating': '109,112,115,121,124,128,189', 'docked': '95,98'}
+ODD rule 2: w191 of Mail moved along with a window of its app
+ODD rule 3: the last window came to rest 1063 ms after the key or the button
+
+23:44:16.937 SCREEN -- begin 29 dock-safari-right
+23:44:16.937 SCREEN -- text 29 presses ⌃⌥⌘→
+23:44:17.214 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+23:44:17.236 SCREEN w202 of Arbor 0,0 1600×900 (level 4)
+23:44:17.268 MACOS pid 13562 AXResized w95 AXWindow/AXStandardWindow 12 43 517 767
+23:44:17.275 SCREEN finder (w95) 12,43 517×767
+23:44:17.337 SCREEN safari (w98) 806,31 574×767
+23:44:17.349 MACOS pid 14544 AXResized w98 AXWindow/AXStandardWindow 1071 43 574 767
+23:44:17.350 MACOS pid 14544 AXMoved w98 AXWindow/AXStandardWindow 1071 43 574 767
+23:44:17.352 INFO  made room for w98
+23:44:17.363 MACOS pid 14544 AXMoved w98 AXWindow/AXStandardWindow 1014 43 574 767
+23:44:17.392 SCREEN safari (w98) 1014,43 574×767
+23:44:17.407 MACOS pid 14768 AXResized w109 AXWindow/AXStandardWindow 541 65 461 439
+23:44:17.409 MACOS pid 14768 AXMoved w109 AXWindow/AXStandardWindow 541 65 461 439
+23:44:17.417 SCREEN textedit (w109) 541,65 461×439
+23:44:17.431 MACOS pid 14828 AXTitleChanged w112 AXWindow/AXStandardWindow 541 300 464 499
+23:44:17.432 MACOS pid 14828 AXResized w112 AXWindow/AXStandardWindow 541 300 464 499
+23:44:17.447 MACOS pid 14828 AXMoved w112 AXWindow/AXStandardWindow 541 300 464 499
+23:44:17.448 MACOS pid 14828 AXTitleChanged w112 AXWindow/AXStandardWindow 541 300 457 499
+23:44:17.449 MACOS pid 14828 AXResized w112 AXWindow/AXStandardWindow 541 300 457 499
+23:44:17.472 SCREEN terminal (w112) 541,300 457×499
+23:44:17.515 MACOS pid 14919 AXResized w115 AXWindow/AXStandardWindow 541 105 709 660
+23:44:17.517 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow 541 105 709 660
+23:44:17.527 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow 417 105 709 660
+23:44:17.545 SCREEN notes (w115) 417,105 709×660
+23:44:17.561 MACOS pid 15393 AXResized w121 AXWindow/AXStandardWindow 541 115 680 599
+23:44:17.562 MACOS pid 15393 AXMoved w121 AXWindow/AXStandardWindow 431 115 680 599
+23:44:17.563 MACOS pid 15393 AXMoved w121 AXWindow/AXStandardWindow 431 115 680 599
+23:44:17.567 MACOS pid 15469 AXMoved w124 AXWindow/AXStandardWindow 541 85 723 625
+23:44:17.571 SCREEN calendar (w121) 806,115 680×599
+23:44:17.573 MACOS pid 15469 AXMoved w124 AXWindow/AXStandardWindow 410 85 723 625
+23:44:17.581 MACOS pid 15609 AXMoved w128 AXWindow/AXStandardWindow 541 35 708 424
+23:44:17.582 MACOS pid 15609 AXMoved w128 AXWindow/AXStandardWindow 417 35 708 424
+23:44:17.588 MACOS pid 20389 AXMoved w189 AXWindow/AXStandardWindow 336 72 871 630
+23:44:17.592 SCREEN preview (w128) 417,35 708×424
+23:44:17.592 SCREEN settings (w124) 410,85 723×625
+23:44:17.592 SCREEN calendar (w121) 431,115 680×599
+23:44:17.596 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+23:44:17.607 SCREEN w191 of Mail 537,179 470×416
+23:44:17.607 SCREEN w189 of Mail 336,72 871×630
+23:44:17.610 INFO  dock right: docked w98 at the right edge
+23:44:17.613 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Docked · ⌃⌥↩ frames it
+23:44:17.635 SCREEN w206 of Arbor 696,728 208×38 (level 6)
+23:44:17.635 SCREEN w204 of Arbor 1005,34 592×785
+23:44:17.635 SCREEN w203 of Arbor 529,43 12×767
+23:44:17.635 SCREEN w209 of Arbor 1002,43 12×767
+23:44:17.635 SCREEN front to back: safari w204 finder w191 w189 preview settings calendar notes terminal textedit w148 w203 w209
+23:44:17.848 SCREEN front to back: w204 safari finder w191 w189 preview settings calendar notes terminal textedit w148 w203 w209
+23:44:18.279 DEBUG stage down
+23:44:18.299 SCREEN w202 of Arbor left the screen
+23:44:18.995 SCREEN -- end 29 act=dock-key settled=quiet:1236 moves=95,95,98 yields=98,109,112,115,121,124,128,189,109,112,115,121,124,128,189 front=98 floating=109,112,115,121,124,128,189 docked=95,98
+23:44:19.374 SCRIPT == 30 reach-textedit

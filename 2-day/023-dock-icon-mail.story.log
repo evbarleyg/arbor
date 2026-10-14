@@ -1,0 +1,32 @@
+23 dock-icon-mail: clicks mail's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:1628', 'floating': '95,98,109,112,115,121,124,128,189', 'docked': ''}
+FAIL rule -: the script could not tell which window front is about
+
+23:43:58.053 SCREEN -- begin 23 dock-icon-mail
+23:43:58.053 SCREEN -- text 23 clicks mail's icon in the Dock
+23:43:58.618 SCREEN the button is down 355 854
+23:43:58.729 SCREEN the button is up 355 854
+23:43:58.940 MACOS pid 15609 AXApplicationDeactivated
+23:43:58.950 SCREEN in front: process 20389 com.apple.mail
+23:43:58.972 MACOS workspace didActivate pid 20389 com.apple.mail regular
+23:43:58.972 MACOS workspace didDeactivate pid 15609 com.apple.Preview regular
+23:43:59.117 MACOS workspace didLaunch pid 20389 com.apple.mail regular
+23:43:59.381 SCREEN (nothing was seen for 180 ms)
+23:44:00.389 SCREEN w189 of Mail 244,74 1112×626
+23:44:00.389 SCREEN front to back: w189 preview settings calendar notes terminal textedit safari finder w148
+23:44:00.409 SCREEN w189 of Mail 242,73 1116×628
+23:44:00.426 SCREEN w189 of Mail 241,73 1118×628
+23:44:00.460 SCREEN w189 of Mail 240,72 1120×630
+23:44:00.538 SCREEN w191 of Mail 565,160 470×416
+23:44:00.538 SCREEN front to back: w191 w189 preview settings calendar notes terminal textedit safari finder w148
+23:44:00.545 SCREEN w191 of Mail 565,164 470×416
+23:44:00.606 SCREEN w191 of Mail 565,175 470×416
+23:44:00.641 SCREEN w191 of Mail 565,178 470×416
+23:44:00.743 SCREEN w191 of Mail 565,179 470×416
+23:44:01.137 SCREEN (nothing was seen for 194 ms)
+23:44:01.142 MACOS watching pid 20389, attempt 0
+23:44:01.149 MACOS pid 20389 listed w189 AXWindow/AXStandardWindow 240 72 1120 630
+23:44:01.150 MACOS pid 20389 AXWindowCreated w189 AXWindow/AXStandardWindow 240 72 1120 630
+23:44:02.188 SCREEN -- finding 23 - FAIL the script could not tell which window front is about
+23:44:02.364 SCREEN -- end 23 act=switch settled=quiet:1628 floating=95,98,109,112,115,121,124,128,189 docked=
+23:44:03.215 SCRIPT == 24 cmd-tab

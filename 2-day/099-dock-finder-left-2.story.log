@@ -1,0 +1,51 @@
+99 dock-finder-left-2: presses ⌃⌥⌘←
+expected: {'act': 'dock-key', 'settled': 'quiet:1107', 'moves': ',95', 'yields': '95,98,112,115,121,124,128,189,286,98,112,115,121,124,128,189,286', 'front': '95', 'floating': '98,112,115,121,124,128,189,286', 'docked': '95'}
+ODD rule 2: w191 of Mail moved along with a window of its app
+
+23:47:20.458 SCREEN -- begin 99 dock-finder-left-2
+23:47:20.458 SCREEN -- text 99 presses ⌃⌥⌘←
+23:47:20.697 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+23:47:20.700 SCREEN w202 of Arbor 0,0 1600×900 (level 4)
+23:47:20.720 MACOS pid 13562 AXResized w95 AXWindow/AXStandardWindow 12 43 782 701
+23:47:20.720 MACOS pid 13562 AXMoved w95 AXWindow/AXStandardWindow 12 43 782 701
+23:47:20.737 SCREEN finder (w95) 12,43 782×701
+23:47:20.749 MACOS pid 13562 AXResized w95 AXWindow/AXStandardWindow 12 43 782 767
+23:47:20.792 MACOS pid 14544 AXResized w98 AXWindow/AXStandardWindow 806 31 794 790
+23:47:20.793 MACOS pid 14544 AXMoved w98 AXWindow/AXStandardWindow 806 31 794 790
+23:47:20.802 MACOS pid 14828 AXTitleChanged w112 AXWindow/AXStandardWindow 806 239 793 499
+23:47:20.802 MACOS pid 14828 AXResized w112 AXWindow/AXStandardWindow 806 239 793 499
+23:47:20.802 MACOS pid 14828 AXMoved w112 AXWindow/AXStandardWindow 806 239 793 499
+23:47:20.803 SCREEN finder (w95) 12,43 782×767
+23:47:20.803 SCREEN safari (w98) 806,31 794×790
+23:47:20.803 SCREEN terminal (w112) 97,239 793×499
+23:47:20.848 MACOS pid 14919 AXResized w115 AXWindow/AXStandardWindow 806 32 794 791
+23:47:20.848 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow 806 32 794 791
+23:47:20.867 SCREEN notes (w115) -1,32 794×791
+23:47:20.867 SCREEN terminal (w112) 806,239 793×499
+23:47:20.873 MACOS pid 15393 AXResized w121 AXWindow/AXStandardWindow 806 115 794 599
+23:47:20.874 MACOS pid 15393 AXMoved w121 AXWindow/AXStandardWindow 806 115 794 599
+23:47:20.875 SCREEN notes (w115) 806,32 794×791
+23:47:20.875 SCREEN calendar (w121) 404,115 794×599
+23:47:20.876 MACOS pid 15469 AXMoved w124 AXWindow/AXStandardWindow 806 85 723 625
+23:47:20.877 MACOS pid 15609 AXMoved w128 AXWindow/AXStandardWindow 806 35 708 424
+23:47:20.925 SCREEN calendar (w121) 806,115 794×599
+23:47:20.925 SCREEN preview (w128) 806,35 708×424
+23:47:20.925 SCREEN settings (w124) 806,85 723×625
+23:47:20.949 MACOS pid 20389 AXResized w189 AXWindow/AXStandardWindow 729 72 871 630
+23:47:20.949 MACOS pid 20389 AXMoved w189 AXWindow/AXStandardWindow 729 72 871 630
+23:47:20.952 MACOS pid 29468 AXMoved w286 AXWindow/AXStandardWindow 806 65 673 439
+23:47:20.958 INFO  dock left: docked w95 at the left edge
+23:47:20.961 SCREEN textedit (w286) 806,65 673×439
+23:47:20.961 SCREEN w191 of Mail 441,179 470×416
+23:47:20.961 SCREEN w189 of Mail 240,72 871×630
+23:47:20.994 SCREEN w343 of Arbor 3,34 800×785
+23:47:20.994 SCREEN w191 of Mail 930,179 470×416
+23:47:20.994 SCREEN w189 of Mail 729,72 871×630
+23:47:20.994 SCREEN w341 of Arbor 794,43 12×767
+23:47:20.994 SCREEN w344 of Arbor 0,31 1600×791 (level -2147483602)
+23:47:20.994 SCREEN front to back: finder w343 safari notes textedit calendar terminal w191 w189 preview settings w148 w341
+23:47:21.200 SCREEN front to back: w343 finder safari notes textedit calendar terminal w191 w189 preview settings w148 w341
+23:47:21.280 DEBUG stage down
+23:47:21.291 SCREEN w202 of Arbor left the screen
+23:47:22.331 SCREEN -- end 99 act=dock-key settled=quiet:1107 moves=,95 yields=95,98,112,115,121,124,128,189,286,98,112,115,121,124,128,189,286 front=95 floating=98,112,115,121,124,128,189,286 docked=95
+23:47:22.587 SCRIPT == 100 reach-safari

@@ -1,0 +1,38 @@
+38 dock-right: presses ⌃⌥⌘ and the right arrow
+expected: {'act': 'dock-key', 'settled': 'quiet:859', 'moves': ',390', 'yields': '376,379,390,393,394,397,398,484,376,379,393,394,397,398,484', 'front': '390', 'floating': '376,379,393,394,397,398,484', 'docked': '390'}
+FAIL rule 2: notes (w394) a floating window, moved, and the step did not name it
+
+23:51:00.288 SCREEN -- begin 38 dock-right
+23:51:00.288 SCREEN -- text 38 presses ⌃⌥⌘ and the right arrow
+23:51:00.619 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 7 stand-ins, 0.46 s
+23:51:00.633 MACOS pid 39090 AXResized w390 AXWindow/AXStandardWindow 806 43 782 767
+23:51:00.634 MACOS pid 39090 AXMoved w390 AXWindow/AXStandardWindow 806 43 782 767
+23:51:00.648 SCREEN w423 of Arbor 0,0 1600×900 (level 4)
+23:51:00.648 SCREEN textedit (w390) 464,31 782×767
+23:51:00.657 SCREEN textedit (w390) 806,43 782×767
+23:51:00.693 MACOS pid 38851 AXResized w376 AXWindow/AXStandardWindow 0 120 794 436
+23:51:00.695 MACOS pid 38851 AXMoved w376 AXWindow/AXStandardWindow 0 120 794 436
+23:51:00.707 SCREEN finder (w376) 0,120 794×436
+23:51:00.725 MACOS pid 39421 AXTitleChanged w393 AXWindow/AXStandardWindow 0 239 793 499
+23:51:00.726 SCREEN terminal (w393) 97,239 793×499
+23:51:00.726 MACOS pid 39421 AXResized w393 AXWindow/AXStandardWindow 0 239 793 499
+23:51:00.726 MACOS pid 39421 AXMoved w393 AXWindow/AXStandardWindow 0 239 793 499
+23:51:00.760 SCREEN terminal (w393) 0,239 793×499
+23:51:00.785 MACOS pid 39492 AXResized w394 AXWindow/AXStandardWindow 0 31 794 790
+23:51:00.801 SCREEN notes (w394) 0,31 794×790
+23:51:00.839 MACOS pid 39554 AXResized w397 AXWindow/AXStandardWindow 0 115 794 599
+23:51:00.841 MACOS pid 39554 AXMoved w397 AXWindow/AXStandardWindow 0 115 794 599
+23:51:00.851 MACOS pid 39616 AXMoved w398 AXWindow/AXStandardWindow 71 85 723 625
+23:51:00.859 INFO  dock right: docked w390 at the right edge
+23:51:00.861 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Docked · ⌃⌥↩ frames it
+23:51:00.896 SCREEN w419 of Arbor 696,728 208×38 (level 6)
+23:51:00.896 SCREEN w425 of Arbor 797,34 800×785
+23:51:00.896 SCREEN settings (w398) 71,85 723×625
+23:51:00.896 SCREEN calendar (w397) 0,115 794×599
+23:51:00.896 SCREEN w424 of Arbor 794,43 12×767
+23:51:00.896 SCREEN w426 of Arbor 0,31 1600×791 (level -2147483602)
+23:51:00.896 SCREEN front to back: w425 textedit notes preview settings w416 calendar terminal finder w424
+23:51:01.303 DEBUG stage down
+23:51:01.331 SCREEN w423 of Arbor left the screen
+23:51:02.052 SCREEN -- end 38 act=dock-key settled=quiet:859 moves=,390 yields=376,379,390,393,394,397,398,484,376,379,393,394,397,398,484 front=390 floating=376,379,393,394,397,398,484 docked=390
+23:51:02.462 SCRIPT == 39 dock-left

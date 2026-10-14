@@ -1,0 +1,9 @@
+90 drag-calendar-to-top: drags calendar by its title bar against the menu bar and lets go: macOS fills the screen with it
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:407', 'judge': 'no', 'drags': '121', 'front': '121', 'floating': '112,115,121,124,128,189,286', 'docked': '95,98'}
+FAIL rule -: the act was not performed: drag_window could not be done
+
+23:47:02.412 SCREEN -- begin 90 drag-calendar-to-top
+23:47:02.412 SCREEN -- text 90 drags calendar by its title bar against the menu bar and lets go: macOS fills the screen with it
+23:47:02.940 SCREEN -- finding 90 - FAIL the act was not performed: drag_window could not be done
+23:47:02.986 SCREEN -- end 90 act=drag-where-macos-tiles settled=quiet:407 judge=no drags=121 front=121 floating=112,115,121,124,128,189,286 docked=95,98
+23:47:03.174 SCRIPT == 91 drag-calendar-back

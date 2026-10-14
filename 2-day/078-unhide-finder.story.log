@@ -1,0 +1,54 @@
+78 unhide-finder: clicks its icon in the Dock
+expected: {'act': 'open-close', 'settled': 'quiet:528', 'moves': '95,98,109,95,98,109', 'comes': '95', 'front': '95', 'returns': '76', 'floating': '112,115,121,124,128,189', 'docked': '95,98,109'}
+ODD rule -: floating w112 and docked w95 overlap by 403×499
+ODD rule -: floating w115 and docked w95 overlap by 501×660
+ODD rule -: floating w121 and docked w95 overlap by 501×599
+ODD rule -: floating w124 and docked w95 overlap by 501×625
+ODD rule -: floating w128 and docked w95 overlap by 501×416
+ODD rule -: floating w189 and docked w95 overlap by 501×630
+FAIL rule 2: terminal (w112) is not back where it was after step 76: 0,239 415×499, it was at 525,239 331×499
+FAIL rule 2: notes (w115) is not back where it was after step 76: 0,105 709×660, it was at 337,105 709×660
+FAIL rule 2: calendar (w121) is not back where it was after step 76: 0,115 680×599, it was at 352,115 680×599
+FAIL rule 2: settings (w124) is not back where it was after step 76: 0,85 723×625, it was at 330,85 723×625
+FAIL rule 2: preview (w128) is not back where it was after step 76: 0,35 708×424, it was at 338,35 708×424
+FAIL rule 2: w189 of Mail is not back where it was after step 76: 0,72 871×630, it was at 256,72 871×630
+FAIL rule 2: w191 of Mail is not back where it was after step 76: 201,179 470×416, it was at 457,179 470×416
+
+23:46:19.233 SCREEN -- begin 78 unhide-finder
+23:46:19.233 SCREEN -- text 78 clicks its icon in the Dock
+23:46:19.791 SCREEN the button is down 131 854
+23:46:19.946 SCREEN the button is up 131 854
+23:46:19.946 SCREEN in front: process 13562 com.apple.finder
+23:46:19.958 MACOS pid 14544 AXApplicationDeactivated
+23:46:19.959 SCREEN finder (w95) 12,43 501×767
+23:46:19.959 SCREEN front to back: finder w204 safari calendar terminal w191 w189 preview settings notes textedit w148 w209 w214
+23:46:19.959 MACOS workspace didActivate pid 13562 com.apple.finder regular
+23:46:19.959 MACOS workspace didDeactivate pid 14544 com.apple.Safari regular
+23:46:19.959 MACOS workspace didUnhide pid 13562 com.apple.finder regular
+23:46:19.964 MACOS pid 13562 AXApplicationShown
+23:46:19.968 MACOS pid 13562 AXApplicationActivated
+23:46:19.970 DEBUG focus is on w95
+23:46:19.971 DEBUG focus report for w95, which does not have the keyboard or takes no space; 4 checks left
+23:46:20.029 INFO  made room for w98
+23:46:20.030 SCREEN w204 of Arbor left the screen
+23:46:20.030 SCREEN front to back: finder safari calendar terminal w191 w189 preview settings notes textedit w148 w209 w214
+23:46:20.034 MACOS pid 14544 AXMoved w98 AXWindow/AXStandardWindow 617 43 574 767
+23:46:20.046 MACOS pid 14768 AXResized w109 AXWindow/AXStandardWindow 1203 43 385 767
+23:46:20.046 MACOS pid 14768 AXMoved w109 AXWindow/AXStandardWindow 1203 43 385 767
+23:46:20.048 SCREEN safari (w98) 617,43 574×767
+23:46:20.051 DEBUG w95 has the keyboard
+23:46:20.094 SCREEN w204 of Arbor 3,34 519×785
+23:46:20.094 SCREEN textedit (w109) 1203,43 385×767
+23:46:20.094 SCREEN w213 of Arbor 525,43 80×767
+23:46:20.094 SCREEN w203 of Arbor 513,43 12×767
+23:46:20.094 SCREEN w209 of Arbor 605,43 12×767
+23:46:20.094 SCREEN w214 of Arbor 1191,43 12×767
+23:46:20.094 SCREEN front to back: w204 finder safari calendar terminal w191 w189 preview settings notes textedit w148 w213 w203 w209 w214
+23:46:21.244 SCREEN -- finding 78 - ODD floating w112 and docked w95 overlap by 403×499
+23:46:21.244 SCREEN -- finding 78 - ODD floating w115 and docked w95 overlap by 501×660
+23:46:21.244 SCREEN -- finding 78 - ODD floating w121 and docked w95 overlap by 501×599
+23:46:21.244 SCREEN -- finding 78 - ODD floating w124 and docked w95 overlap by 501×625
+23:46:21.244 SCREEN -- finding 78 - ODD floating w128 and docked w95 overlap by 501×416
+23:46:21.244 SCREEN -- finding 78 - ODD floating w189 and docked w95 overlap by 501×630
+23:46:21.244 SCREEN -- end 78 act=open-close settled=quiet:528 moves=95,98,109,95,98,109 comes=95 front=95 returns=76 floating=112,115,121,124,128,189 docked=95,98,109
+23:46:21.581 SCRIPT == 79 reach-textedit

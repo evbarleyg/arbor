@@ -1,0 +1,58 @@
+77 hide-finder: presses ⌘H
+expected: {'act': 'open-close', 'settled': 'quiet:1129', 'moves': '95,98,109,95,98,109', 'leaves': '95', 'floating': '112,115,121,124,128,189', 'docked': '95,98,109'}
+ODD rule -: floating w189 and docked w98 overlap by 444×630
+FAIL rule 2: terminal (w112) a floating window, moved, and the step did not name it
+FAIL rule 2: notes (w115) a floating window, moved, and the step did not name it
+FAIL rule 2: calendar (w121) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w124) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w128) a floating window, moved, and the step did not name it
+FAIL rule 2: w189 of Mail a floating window, moved, and the step did not name it
+ODD rule 2: w191 of Mail moved along with a window of its app
+
+23:46:17.193 SCREEN -- begin 77 hide-finder
+23:46:17.193 SCREEN -- text 77 presses ⌘H
+23:46:17.441 SCREEN finder (w95) left the screen
+23:46:17.441 SCREEN front to back: w204 safari calendar terminal w191 w189 preview settings notes textedit w148 w213 w203 w209 w214
+23:46:17.444 SCREEN in front: process 14544 com.apple.Safari
+23:46:17.451 SCREEN front to back: safari w204 calendar terminal w191 w189 preview settings notes textedit w148 w213 w203 w209 w214
+23:46:17.460 DEBUG focus is on w98
+23:46:17.467 MACOS pid 13562 AXApplicationHidden
+23:46:17.467 MACOS workspace didActivate pid 14544 com.apple.Safari regular
+23:46:17.469 MACOS workspace didDeactivate pid 13562 com.apple.finder regular
+23:46:17.469 MACOS workspace didHide pid 13562 com.apple.finder regular
+23:46:17.473 MACOS pid 14544 AXApplicationActivated
+23:46:17.473 MACOS pid 13562 AXApplicationDeactivated
+23:46:17.482 MACOS pid 14768 AXResized w109 AXWindow/AXStandardWindow 1013 43 575 767
+23:46:17.483 MACOS pid 14544 AXMoved w98 AXWindow/AXStandardWindow 427 43 574 767
+23:46:17.493 MACOS pid 14768 AXMoved w109 AXWindow/AXStandardWindow 1013 43 575 767
+23:46:17.494 MACOS pid 14768 AXResized w109 AXWindow/AXStandardWindow 1013 43 575 767
+23:46:17.505 SCREEN safari (w98) 427,43 574×767
+23:46:17.505 SCREEN textedit (w109) 1203,43 397×767
+23:46:17.513 MACOS pid 14828 AXTitleChanged w112 AXWindow/AXStandardWindow 0 239 415 499
+23:46:17.514 MACOS pid 14828 AXResized w112 AXWindow/AXStandardWindow 0 239 415 499
+23:46:17.515 MACOS pid 14828 AXMoved w112 AXWindow/AXStandardWindow 0 239 415 499
+23:46:17.516 SCREEN terminal (w112) 525,239 415×499
+23:46:17.516 SCREEN textedit (w109) 1013,43 575×767
+23:46:17.530 MACOS pid 14919 AXMoved w115 AXWindow/AXStandardWindow 0 105 709 660
+23:46:17.533 MACOS pid 15393 AXMoved w121 AXWindow/AXStandardWindow 0 115 680 599
+23:46:17.544 MACOS pid 15469 AXMoved w124 AXWindow/AXStandardWindow 0 85 723 625
+23:46:17.545 SCREEN calendar (w121) 0,115 680×599
+23:46:17.545 SCREEN terminal (w112) 0,239 415×499
+23:46:17.545 SCREEN notes (w115) 0,105 709×660
+23:46:17.550 MACOS pid 15609 AXMoved w128 AXWindow/AXStandardWindow 0 35 708 424
+23:46:17.555 SCREEN settings (w124) 0,85 723×625
+23:46:17.558 MACOS pid 20389 AXMoved w189 AXWindow/AXStandardWindow 0 72 871 630
+23:46:17.560 DEBUG w98 has the keyboard
+23:46:17.582 SCREEN w204 of Arbor 418,34 592×785
+23:46:17.582 SCREEN w191 of Mail 201,179 470×416
+23:46:17.582 SCREEN w189 of Mail 0,72 871×630
+23:46:17.582 SCREEN preview (w128) 0,35 708×424
+23:46:17.582 SCREEN w209 of Arbor 415,43 12×767
+23:46:17.582 SCREEN w214 of Arbor 1001,43 12×767
+23:46:17.582 SCREEN w203 of Arbor left the screen
+23:46:17.582 SCREEN front to back: w204 safari calendar terminal w191 w189 preview settings notes textedit w148 w213 w209 w214
+23:46:17.787 SCREEN w213 of Arbor left the screen
+23:46:17.787 SCREEN front to back: w204 safari calendar terminal w191 w189 preview settings notes textedit w148 w209 w214
+23:46:18.908 SCREEN -- finding 77 - ODD floating w189 and docked w98 overlap by 444×630
+23:46:18.908 SCREEN -- end 77 act=open-close settled=quiet:1129 moves=95,98,109,95,98,109 leaves=95 floating=112,115,121,124,128,189 docked=95,98,109
+23:46:19.220 SCRIPT == 78 unhide-finder

@@ -1,0 +1,20 @@
+50 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:922', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule 5: textedit (w390) has its size back but not its place: 464,31 673×439, it was at 165,65 673×439
+
+23:51:23.759 SCREEN -- begin 50 quit
+23:51:23.759 SCREEN -- text 50 chooses Quit Arbor in Arbor's menu
+23:51:24.379 DEBUG menu bar click: x 67.0 by the event, 67.0 by the screen, button 134.0 wide
+23:51:24.589 SCREEN w518 of Arbor 1215,31 286×785 (level 101)
+23:51:26.058 MACOS pid 39090 AXResized w390 AXWindow/AXStandardWindow 464 31 673 439
+23:51:26.059 MACOS pid 39090 AXMoved w390 AXWindow/AXStandardWindow 464 31 673 439
+23:51:26.064 INFO  trace day-1 ended: 1630 lines, Arbor stopped
+23:51:26.064 INFO  stopped; all windows returned to view
+23:51:26.067 INFO  Arbor quit
+23:51:26.075 SCREEN textedit (w390) 464,31 673×439
+23:51:26.075 SCREEN w518 of Arbor left the screen
+23:51:26.075 SCREEN w416 of Arbor left the screen
+23:51:26.075 SCREEN w425 of Arbor left the screen
+23:51:26.075 SCREEN front to back: finder preview notes textedit settings calendar terminal
+23:51:27.119 SCREEN -- end 50 act=quit-and-start settled=quiet:922 moves=any restores=all places=1 everything=1
+23:51:27.384 SCRIPT == 51 dock-icon-finder

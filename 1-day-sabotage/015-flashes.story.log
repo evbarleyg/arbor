@@ -1,0 +1,9 @@
+15 flashes: OFFENCE: a window that is out of view shows for a moment
+expected: {'act': 'view', 'settled': 'quiet:1089', 'moves': 'any', 'offence': 'flash'}
+FAIL rule 3: leaf (w47) is out of view before and after, and 100% of it showed in between
+
+23:40:50.304 SCREEN -- begin 15 flashes
+23:40:50.304 SCREEN -- text 15 OFFENCE: a window that is out of view shows for a moment
+23:40:50.368 SCREEN leaf (w47) 400,300 708×320
+23:40:50.438 SCREEN leaf (w47) 1599,770 708×320
+23:40:51.471 SCREEN -- end 15 act=view settled=quiet:1089 moves=any offence=flash

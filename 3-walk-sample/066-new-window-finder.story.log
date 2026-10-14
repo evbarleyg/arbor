@@ -1,0 +1,24 @@
+66 new-window-finder: presses ⌘N in finder
+expected: {'act': 'open-close', 'settled': 'quiet:1047', 'front': '550', 'floating': '376,379,393,394,397,398,513,538,550', 'docked': '390'}
+ODD rule -: floating w550 and docked w390 overlap by 780×436
+
+23:52:27.889 SCREEN -- begin 66 new-window-finder
+23:52:27.889 SCREEN -- text 66 presses ⌘N in finder
+23:52:28.534 SCREEN finder-new-66 (w550) 18,151 912×432
+23:52:28.534 SCREEN front to back: finder-new-66 w535 finder notes terminal-new-60 terminal preview settings calendar textedit w545
+23:52:28.563 MACOS pid 38851 AXFocusedWindowChanged w550 AXWindow/AXStandardWindow 14 149 920 436
+23:52:28.565 MACOS pid 38851 AXMainWindowChanged w550 AXWindow/AXStandardWindow 14 149 920 436
+23:52:28.566 MACOS pid 38851 AXWindowCreated w550 AXWindow/AXStandardWindow 14 149 920 436
+23:52:28.567 SCREEN finder-new-66 (w550) 17,150 914×434
+23:52:28.579 DEBUG focus is on w550
+23:52:28.579 DEBUG w550 has the keyboard
+23:52:28.588 SCREEN w535 of Arbor 5,140 938×454
+23:52:28.588 SCREEN finder-new-66 (w550) 16,150 916×434
+23:52:28.588 SCREEN front to back: w535 finder-new-66 finder notes terminal-new-60 terminal preview settings calendar textedit w545
+23:52:28.603 SCREEN finder-new-66 (w550) 15,149 918×436
+23:52:28.617 SCREEN finder-new-66 (w550) 14,149 920×436
+23:52:28.629 SCREEN -- label 550 finder-new-66
+23:52:29.774 SCREEN -- finding 66 - ODD floating w550 and docked w390 overlap by 780×436
+23:52:29.775 SCREEN -- end 66 act=open-close settled=quiet:1047 front=550 floating=376,379,393,394,397,398,513,538,550 docked=390
+23:52:30.082 SCREEN (nothing was seen for 111 ms)
+23:52:30.252 SCRIPT == 67 close-window
