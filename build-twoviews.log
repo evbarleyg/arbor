@@ -1,0 +1,7 @@
+/Users/runner/work/arbor/arbor/scripts/mac-shell/twoviews.swift:151:6: warning: concurrently-executed global function 'watch(_:id:pid:)' must be marked as '@Sendable'; this is an error in the Swift 6 language mode
+149 | var elements: [CGWindowID: AXUIElement] = [:]
+150 | 
+151 | func watch(_ window: AXUIElement, id: CGWindowID, pid: pid_t) {
+    |      `- warning: concurrently-executed global function 'watch(_:id:pid:)' must be marked as '@Sendable'; this is an error in the Swift 6 language mode
+152 |   guard elements[id] == nil, let observer = observers[pid] else { return }
+153 |   elements[id] = window

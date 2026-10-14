@@ -1,0 +1,626 @@
+# mac-shell: scripts/mac-shell/probe-sweep.sh at 239b33b, macOS 26.6.2, 2026-10-14T23:07Z
+built Arbor and the pointer tool in 114s
+  ProductName:		macOS
+  ProductVersion:		26.6.2
+  BuildVersion:		25G83
+com.apple.WindowManager EnableStandardClickToShowDesktop: not set
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+Reduce Motion: false
+1 0 0 1024 768 1024 768 1
+
+== part 1: macOS by itself (Arbor is paused and has docked nothing)
+session 1: Arbor pid 11186, test windows 29 30 31 32 (pid 11159)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+> pause
+paused until `resume`; windows that were out of view are back on screen
+
+-- 1.0 at rest
+  29 | ax 170 220 480 348 | server 170 220 480 348 on
+  30 | ax 220 180 480 348 | server 220 180 480 348 on
+  31 | ax 270 140 480 348 | server 270 140 480 348 on
+  32 | ax 320 100 480 348 | server 320 100 480 348 on
+  in front: 370 com.apple.finder
+  26 368 25 787 0 31 30 on Control Center
+  25 368 25 818 0 42 30 on Control Center
+  24 368 25 860 0 164 30 on Control Center
+  17 167 24 0 0 1024 30 on Window Server
+  6 366 20 0 0 1024 768 on Dock
+  32 11159 0 320 100 480 348 on ArborTestWindows
+  31 11159 0 270 140 480 348 on ArborTestWindows
+  30 11159 0 220 180 480 348 on ArborTestWindows
+  29 11159 0 170 220 480 348 on ArborTestWindows
+  10 370 -2147483603 0 0 1024 768 on Finder
+  7 366 -2147483624 0 0 1024 768 on Dock
+  2 167 -2147483626 0 0 1024 768 on Window Server
+
+-- 1.1 a click on the wallpaper
+  swept (a click at 999,680)
+  29 | ax 170 220 480 348 | server -468 189 480 348 on
+  30 | ax 220 180 480 348 | server -341 -306 480 348 on
+  31 | ax 270 140 480 348 | server 260 -306 480 348 on
+  32 | ax 320 100 480 348 | server 476 -306 480 348 on
+  in front: 370 com.apple.finder
+  => STILL SWEPT
+  => the window server's frames differ from those at rest
+  26 368 25 787 0 31 30 on Control Center
+  25 368 25 818 0 42 30 on Control Center
+  24 368 25 860 0 164 30 on Control Center
+  17 167 24 0 0 1024 30 on Window Server
+  6 366 20 0 0 1024 768 on Dock
+  37 366 18 0 0 1024 768 on Dock
+  39 11524 0 12 40 392 148 on WindowManagerShowDesktopEducati
+  32 11159 0 476 -306 480 348 on ArborTestWindows
+  31 11159 0 260 -306 480 348 on ArborTestWindows
+  30 11159 0 -341 -306 480 348 on ArborTestWindows
+  29 11159 0 -468 189 480 348 on ArborTestWindows
+  10 370 -2147483603 0 0 1024 768 on Finder
+  7 366 -2147483624 0 0 1024 768 on Dock
+  2 167 -2147483626 0 0 1024 768 on Window Server
+shot: mac-shell/11-swept.png
+
+-- 1.2 a second click on the wallpaper
+  (a click on the wallpaper at 999,680, to end the sweep)
+  29 | ax 170 220 480 348 | server 170 220 480 348 on
+  30 | ax 220 180 480 348 | server 220 180 480 348 on
+  31 | ax 270 140 480 348 | server 270 140 480 348 on
+  32 | ax 320 100 480 348 | server 320 100 480 348 on
+  => back: every window is where it was at rest
+  41 167 2147483630 837 1 28 28 on Window Server
+  40 167 2147483630 837 1 28 28 on Window Server
+  26 368 25 787 0 31 30 on Control Center
+  25 368 25 818 0 42 30 on Control Center
+  24 368 25 860 0 164 30 on Control Center
+  17 167 24 0 0 1024 30 on Window Server
+  6 366 20 0 0 1024 768 on Dock
+  32 11159 0 320 100 480 348 on ArborTestWindows
+  31 11159 0 270 140 480 348 on ArborTestWindows
+  30 11159 0 220 180 480 348 on ArborTestWindows
+  29 11159 0 170 220 480 348 on ArborTestWindows
+  10 370 -2147483603 0 0 1024 768 on Finder
+  7 366 -2147483624 0 0 1024 768 on Dock
+  2 167 -2147483626 0 0 1024 768 on Window Server
+
+-- 1.3 swept; then a frame is set through Accessibility, somewhere else in view
+  swept (a click at 999,680)
+> apptool set-frame 29 120 120 420 300
+  120 120 420 300
+  29 | ax 120 120 420 300 | server -468 189 480 348 on
+  30 | ax 220 180 480 348 | server -341 -306 480 348 on
+  31 | ax 270 140 480 348 | server 260 -306 480 348 on
+  32 | ax 320 100 480 348 | server 476 -306 480 348 on
+  in front: 370 com.apple.finder
+  => STILL SWEPT
+  => the window server's frames differ from those at rest
+shot: mac-shell/13-a-frame-set-while-swept.png
+  (a click on the wallpaper at 999,680, to end the sweep)
+  29 | ax 120 120 420 300 | server 120 120 420 300 on
+  30 | ax 220 180 480 348 | server 220 180 480 348 on
+  31 | ax 270 140 480 348 | server 270 140 480 348 on
+  32 | ax 320 100 480 348 | server 320 100 480 348 on
+  => back, but the frames differ from those at rest
+
+-- 1.3b the window is put where it was
+> apptool set-frame 29 170 220 480 348
+  170 220 480 348
+  29 | ax 170 220 480 348 | server 170 220 480 348 on
+  30 | ax 220 180 480 348 | server 220 180 480 348 on
+  31 | ax 270 140 480 348 | server 270 140 480 348 on
+  32 | ax 320 100 480 348 | server 320 100 480 348 on
+
+-- 1.4 swept; then the frame Accessibility reports is set again, unchanged
+  swept (a click at 999,680)
+> apptool set-frame 30 220 180 480 348
+  220 180 480 348
+  29 | ax 170 220 480 348 | server -468 189 480 348 on
+  30 | ax 220 180 480 348 | server -341 -306 480 348 on
+  31 | ax 270 140 480 348 | server 260 -306 480 348 on
+  32 | ax 320 100 480 348 | server 476 -306 480 348 on
+  in front: 370 com.apple.finder
+  => STILL SWEPT
+  => the window server's frames differ from those at rest
+  (a click on the wallpaper at 999,680, to end the sweep)
+  29 | ax 170 220 480 348 | server 170 220 480 348 on
+  30 | ax 220 180 480 348 | server 220 180 480 348 on
+  31 | ax 270 140 480 348 | server 270 140 480 348 on
+  32 | ax 320 100 480 348 | server 320 100 480 348 on
+  => back: every window is where it was at rest
+
+-- 1.5 swept; then the app moves its own window
+  swept (a click at 999,680)
+> test windows: move 31 200 200 400 300
+  29 | ax 170 220 480 348 | server -468 189 480 348 on
+  30 | ax 220 180 480 348 | server -341 -306 480 348 on
+  31 | ax 200 200 400 300 | server 260 -306 480 348 on
+  32 | ax 320 100 480 348 | server 476 -306 480 348 on
+  in front: 370 com.apple.finder
+  => STILL SWEPT
+  => the window server's frames differ from those at rest
+  (a click on the wallpaper at 999,680, to end the sweep)
+  29 | ax 170 220 480 348 | server 170 220 480 348 on
+  30 | ax 220 180 480 348 | server 220 180 480 348 on
+  31 | ax 200 200 400 300 | server 200 200 400 300 on
+  32 | ax 320 100 480 348 | server 320 100 480 348 on
+  => back, but the frames differ from those at rest
+> test windows: move 31 270 140 480 348
+
+-- 1.6 swept; then a window is raised through Accessibility (AXRaise, AXMain)
+  swept (a click at 999,680)
+> apptool raise 31
+  29 | ax 170 220 480 348 | server -468 189 480 348 on
+  30 | ax 220 180 480 348 | server -341 -306 480 348 on
+  31 | ax 270 140 480 348 | server 260 -306 480 348 on
+  32 | ax 320 100 480 348 | server 476 -306 480 348 on
+  in front: 370 com.apple.finder
+  => STILL SWEPT
+  => the window server's frames differ from those at rest
+  (a click on the wallpaper at 999,680, to end the sweep)
+  29 | ax 170 220 480 348 | server 170 220 480 348 on
+  30 | ax 220 180 480 348 | server 220 180 480 348 on
+  31 | ax 270 140 480 348 | server 270 140 480 348 on
+  32 | ax 320 100 480 348 | server 320 100 480 348 on
+  => back: every window is where it was at rest
+
+-- 1.7 swept; then the windows' app is brought forward (NSRunningApplication.activate)
+  swept (a click at 999,680)
+> apptool activate 11159
+  29 | ax 170 220 480 348 | server -468 189 480 348 on
+  30 | ax 220 180 480 348 | server -341 -306 480 348 on
+  31 | ax 270 140 480 348 | server 260 -306 480 348 on
+  32 | ax 320 100 480 348 | server 476 -306 480 348 on
+  in front: 370 com.apple.finder
+  => STILL SWEPT
+  => the window server's frames differ from those at rest
+  (a click on the wallpaper at 999,680, to end the sweep)
+  29 | ax 170 220 480 348 | server 170 220 480 348 on
+  30 | ax 220 180 480 348 | server 220 180 480 348 on
+  31 | ax 270 140 480 348 | server 270 140 480 348 on
+  32 | ax 320 100 480 348 | server 320 100 480 348 on
+  => back: every window is where it was at rest
+
+-- 1.8 swept; then ⌘Tab
+  swept (a click at 999,680)
+> key cmd+tab
+  29 | ax 170 220 480 348 | server 170 220 480 348 on
+  30 | ax 220 180 480 348 | server 220 180 480 348 on
+  31 | ax 270 140 480 348 | server 270 140 480 348 on
+  32 | ax 320 100 480 348 | server 320 100 480 348 on
+  in front: 11159 ?
+  => the sweep is over
+  => every window is where it was at rest
+
+-- 1.9 swept; then a click on the strip of a window that still shows
+  swept (a click at 999,680)
+  29 | ax 170 220 480 348 | server 170 220 480 348 on
+  30 | ax 220 180 480 348 | server 220 180 480 348 on
+  31 | ax 270 140 480 348 | server 270 140 480 348 on
+  32 | ax 320 100 480 348 | server 320 100 480 348 on
+  in front: 370 com.apple.finder
+  => the sweep is over
+  => every window is where it was at rest
+
+-- 1.10 swept; then the app opens a new window
+  swept (a click at 999,680)
+> test windows: open 300 200 300 200
+  29 | ax 170 220 480 348 | server -468 189 480 348 on
+  30 | ax 220 180 480 348 | server -341 -306 480 348 on
+  31 | ax 270 140 480 348 | server 260 -306 480 348 on
+  32 | ax 320 100 480 348 | server 476 -306 480 348 on
+  73 | ax 300 200 300 200 | server 300 200 300 200 on
+  in front: 370 com.apple.finder
+  => STILL SWEPT
+  => the window server's frames differ from those at rest
+  26 368 25 787 0 31 30 on Control Center
+  25 368 25 818 0 42 30 on Control Center
+  24 368 25 860 0 164 30 on Control Center
+  17 167 24 0 0 1024 30 on Window Server
+  6 366 20 0 0 1024 768 on Dock
+  71 366 18 0 0 1024 768 on Dock
+  73 11159 0 300 200 300 200 on ArborTestWindows
+  31 11159 0 260 -306 480 348 on ArborTestWindows
+  32 11159 0 476 -306 480 348 on ArborTestWindows
+  30 11159 0 -341 -306 480 348 on ArborTestWindows
+  29 11159 0 -468 189 480 348 on ArborTestWindows
+  10 370 -2147483603 0 0 1024 768 on Finder
+  7 366 -2147483624 0 0 1024 768 on Dock
+  2 167 -2147483626 0 0 1024 768 on Window Server
+  (a click on the wallpaper at 999,680, to end the sweep)
+  29 | ax 170 220 480 348 | server 170 220 480 348 on
+  30 | ax 220 180 480 348 | server 220 180 480 348 on
+  31 | ax 270 140 480 348 | server 270 140 480 348 on
+  32 | ax 320 100 480 348 | server 320 100 480 348 on
+  73 | ax 300 200 300 200 | server 300 200 300 200 on
+  => back: every window is where it was at rest
+
+-- 1.11 swept; then a window is minimized through Accessibility, and restored
+  swept (a click at 999,680)
+> apptool minimize 32
+  29 | ax 170 220 480 348 | server -468 189 480 348 on
+  30 | ax 220 180 480 348 | server -341 -306 480 348 on
+  31 | ax 270 140 480 348 | server 260 -306 480 348 on
+  32 | ax 320 100 480 348 | server 476 -306 480 348 off
+  73 | ax 300 200 300 200 | server 76 -158 300 200 on
+  in front: 370 com.apple.finder
+  => STILL SWEPT
+  => the window server's frames differ from those at rest
+> apptool unminimize 32
+  29 | ax 170 220 480 348 | server -468 189 480 348 on
+  30 | ax 220 180 480 348 | server -341 -306 480 348 on
+  31 | ax 270 140 480 348 | server 260 -306 480 348 on
+  32 | ax 320 100 480 348 | server 476 -306 480 348 on
+  73 | ax 300 200 300 200 | server 76 -158 300 200 on
+  in front: 370 com.apple.finder
+  => STILL SWEPT
+  => the window server's frames differ from those at rest
+  (a click on the wallpaper at 999,680, to end the sweep)
+  29 | ax 170 220 480 348 | server 170 220 480 348 on
+  30 | ax 220 180 480 348 | server 220 180 480 348 on
+  31 | ax 270 140 480 348 | server 270 140 480 348 on
+  32 | ax 320 100 480 348 | server 320 100 480 348 on
+  73 | ax 300 200 300 200 | server 300 200 300 200 on
+  => back: every window is where it was at rest
+
+-- 1.12 F11, Show Desktop
+> key f11
+  29 | ax 170 220 480 348 | server -468 189 480 348 on
+  30 | ax 220 180 480 348 | server -341 -306 480 348 on
+  31 | ax 270 140 480 348 | server 260 -306 480 348 on
+  32 | ax 320 100 480 348 | server 476 -306 480 348 on
+  73 | ax 300 200 300 200 | server 76 -158 300 200 on
+  in front: 370 com.apple.finder
+  => STILL SWEPT
+  => the window server's frames differ from those at rest
+  26 368 25 787 0 31 30 on Control Center
+  25 368 25 818 0 42 30 on Control Center
+  24 368 25 860 0 164 30 on Control Center
+  17 167 24 0 0 1024 30 on Window Server
+  6 366 20 0 0 1024 768 on Dock
+  78 366 18 0 0 1024 768 on Dock
+  32 11159 0 476 -306 480 348 on ArborTestWindows
+  73 11159 0 76 -158 300 200 on ArborTestWindows
+  31 11159 0 260 -306 480 348 on ArborTestWindows
+  30 11159 0 -341 -306 480 348 on ArborTestWindows
+  29 11159 0 -468 189 480 348 on ArborTestWindows
+  10 370 -2147483603 0 0 1024 768 on Finder
+  7 366 -2147483624 0 0 1024 768 on Dock
+  2 167 -2147483626 0 0 1024 768 on Window Server
+
+-- 1.12b F11 again
+> key f11
+  29 | ax 170 220 480 348 | server 170 220 480 348 on
+  30 | ax 220 180 480 348 | server 220 180 480 348 on
+  31 | ax 270 140 480 348 | server 270 140 480 348 on
+  32 | ax 320 100 480 348 | server 320 100 480 348 on
+  73 | ax 300 200 300 200 | server 300 200 300 200 on
+  in front: 370 com.apple.finder
+  => the sweep is over
+  => every window is where it was at rest
+
+-- 1.14 a person moves a window: a real drag of a second
+state.py: Arbor knows no window 29
+/Users/runner/work/arbor/arbor/scripts/mac-shell/lib.sh: line 1083: $3: unbound variable
+> drag   200 120 --steps 60 --duration 1
+pointer: expected a number, got 
+  29 | ax 170 220 480 348 | server 170 220 480 348 on
+  30 | ax 220 180 480 348 | server 220 180 480 348 on
+  31 | ax 270 140 480 348 | server 270 140 480 348 on
+  32 | ax 320 100 480 348 | server 320 100 480 348 on
+  73 | ax 300 200 300 200 | server 300 200 300 200 on
+> drag 200 120   --steps 10 --duration 0.15
+pointer: expected a number, got 
+  29 | ax 170 220 480 348 | server 170 220 480 348 on
+  30 | ax 220 180 480 348 | server 220 180 480 348 on
+  31 | ax 270 140 480 348 | server 270 140 480 348 on
+  32 | ax 320 100 480 348 | server 320 100 480 348 on
+  73 | ax 300 200 300 200 | server 300 200 300 200 on
+
+-- 1.15 swept, and left alone for twelve seconds
+  swept (a click at 999,680)
+  29 | ax 170 220 480 348 | server -468 189 480 348 on
+  30 | ax 220 180 480 348 | server -341 -306 480 348 on
+  31 | ax 270 140 480 348 | server 260 -306 480 348 on
+  32 | ax 320 100 480 348 | server 476 -306 480 348 on
+  73 | ax 300 200 300 200 | server 76 -158 300 200 on
+  in front: 370 com.apple.finder
+  => STILL SWEPT
+  => the window server's frames differ from those at rest
+  (a click on the wallpaper at 999,680, to end the sweep)
+  29 | ax 170 220 480 348 | server 170 220 480 348 on
+  30 | ax 220 180 480 348 | server 220 180 480 348 on
+  31 | ax 270 140 480 348 | server 270 140 480 348 on
+  32 | ax 320 100 480 348 | server 320 100 480 348 on
+  73 | ax 300 200 300 200 | server 300 200 300 200 on
+  => back: every window is where it was at rest
+> resume
+resumed
+
+== part 2: Arbor as it is today, with two windows docked and two floating
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          349 43 326 653
+  w29 12 43 325 653        docked
+  w30 687 43 325 653       docked focused
+  w31 349 140 326 348      floating
+  w32 349 100 326 348      floating
+  w73 349 200 300 200      floating
+> trace on sweep
+recording /tmp/arbor-shell.OWmntB/home/traces/2026-10-14-231121-sweep.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- 2.0 at rest
+  29 | ax 12 43 325 653 | server 12 43 325 653 on
+  30 | ax 687 43 325 653 | server 687 43 325 653 on
+  31 | ax 349 140 326 348 | server 349 140 326 348 on
+  32 | ax 349 100 326 348 | server 349 100 326 348 on
+  73 | ax 349 200 300 200 | server 349 200 300 200 on
+  88 11186 0 675 43 12 653 on Arbor
+  87 11186 0 678 34 343 671 on Arbor
+  86 11186 -2147483602 0 31 1024 677 on Arbor
+  85 11186 0 337 43 12 653 on Arbor
+  84 11186 4 0 0 1024 768 off Arbor
+
+-- 2.1 a click on the wallpaper
+  swept (a click at 659,683)
+  29 | ax 12 43 325 653 | server -313 15 325 653 on
+  30 | ax 687 43 325 653 | server 1012 15 325 653 on
+  31 | ax 349 140 326 348 | server 349 -306 326 348 on
+  32 | ax 349 100 326 348 | server 349 -306 326 348 on
+  73 | ax 349 200 300 200 | server 302 -158 300 200 on
+  in front: 370 com.apple.finder
+  => STILL SWEPT
+  => the window server's frames differ from those at rest
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          349 43 326 653
+  w29 12 43 325 653        docked
+  w30 687 43 325 653       docked
+  w31 349 140 326 348      floating
+  w32 349 100 326 348      floating
+  w73 349 200 300 200      floating
+  88 11186 0 1012 -15 12 653 on Arbor
+  87 11186 0 678 34 343 671 off Arbor
+  86 11186 -2147483602 0 -635 1024 677 on Arbor
+  85 11186 0 0 -15 12 653 on Arbor
+  84 11186 4 0 0 1024 768 off Arbor
+shot: mac-shell/21-swept-with-arbor.png
+
+-- 2.1b a second click
+  (a click on the wallpaper at 659,683, to end the sweep)
+  29 | ax 12 43 325 653 | server 12 43 325 653 on
+  30 | ax 687 43 325 653 | server 687 43 325 653 on
+  31 | ax 349 140 326 348 | server 349 140 326 348 on
+  32 | ax 349 100 326 348 | server 349 100 326 348 on
+  73 | ax 349 200 300 200 | server 349 200 300 200 on
+  => back: every window is where it was at rest
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          349 43 326 653
+  w29 12 43 325 653        docked
+  w30 687 43 325 653       docked
+  w31 349 140 326 348      floating
+  w32 349 100 326 348      floating
+  w73 349 200 300 200      floating
+
+-- 2.2 swept; then a command that only moves the keyboard: focus
+  swept (a click at 659,683)
+> focus 30
+focused w30
+  29 | ax 12 43 325 653 | server 12 43 325 653 on
+  30 | ax 687 43 325 653 | server 687 43 325 653 on
+  31 | ax 349 140 326 348 | server 349 140 326 348 on
+  32 | ax 349 100 326 348 | server 349 100 326 348 on
+  73 | ax 349 200 300 200 | server 349 200 300 200 on
+  in front: 11159 ?
+  => the sweep is over
+  => every window is where it was at rest
+
+-- 2.3 swept; then a command that lays out: a third window is docked
+  swept (a click at 659,683)
+> dock 31 bottom
+docked w31 at the bottom edge
+  29 | ax 12 43 325 321 | server 12 43 325 321 on
+  30 | ax 687 43 325 321 | server 687 43 325 321 on
+  31 | ax 12 376 1000 320 | server 12 376 1000 320 on
+  32 | ax 349 31 326 333 | server 349 31 326 333 on
+  73 | ax 349 164 300 200 | server 349 164 300 200 on
+  in front: 11159 ?
+  => the sweep is over
+  => the window server's frames differ from those at rest
+display 0 0 1024 768, visible 0 31 1024 677, camera n5, back no
+  Desktop          349 43 326 321
+  w29 12 43 325 321        docked
+  w30 687 43 325 321       docked
+  w31 12 376 1000 320      docked focused
+  w32 349 31 326 333       floating
+  w73 349 164 300 200      floating
+shot: mac-shell/23-docked-while-swept.png
+display 0 0 1024 768, visible 0 31 1024 677, camera n5, back no
+  Desktop          349 43 326 321
+  w29 12 43 325 321        docked
+  w30 687 43 325 321       docked
+  w31 12 376 1000 320      docked focused
+  w32 349 31 326 333       floating
+  w73 349 164 300 200      floating
+shot: mac-shell/23b-afterwards.png
+  29: Arbor believes 12 43 325 321, the window server has 12 43 325 321
+  30: Arbor believes 687 43 325 321, the window server has 687 43 325 321
+  31: Arbor believes 12 376 1000 320, the window server has 12 376 1000 320
+  32: Arbor believes 349 31 326 333, the window server has 349 31 326 333
+> float 31
+w31 is floating
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          349 43 326 653
+  w29 12 43 325 653        docked
+  w30 687 43 325 653       docked
+  w31 272 360 480 347      floating focused
+  w32 349 100 326 348      floating
+  w73 349 200 300 200      floating
+
+-- 2.4 swept; then the view changes: zoom on one window, and back to everything
+  swept (a click at 659,83)
+> zoom 29
+framed w29
+  29 | ax 12 43 1000 653 | server 12 43 1000 653 on
+  30 | ax 1023 680 325 653 | server 1023 680 325 653 on
+  31 | ax 1023 680 480 347 | server 1023 680 480 347 on
+  32 | ax 1023 680 326 348 | server 1023 680 326 348 on
+  73 | ax 1023 680 300 200 | server 1023 680 300 200 on
+  in front: 11159 ?
+  => STILL SWEPT
+  => the window server's frames differ from those at rest
+shot: mac-shell/24-zoomed-while-swept.png
+> show-all
+showing everything
+  29 | ax 12 43 325 653 | server 12 43 325 653 on
+  30 | ax 687 43 325 653 | server 687 43 325 653 on
+  31 | ax 349 360 326 348 | server 349 360 326 348 on
+  32 | ax 349 100 326 348 | server 349 100 326 348 on
+  73 | ax 349 200 300 200 | server 349 200 300 200 on
+  in front: 11159 ?
+  => the sweep is over
+  => the window server's frames differ from those at rest
+  29: Arbor believes 12 43 325 653, the window server has 12 43 325 653
+  30: Arbor believes 687 43 325 653, the window server has 687 43 325 653
+  31: Arbor believes 349 360 326 348, the window server has 349 360 326 348
+  32: Arbor believes 349 100 326 348, the window server has 349 100 326 348
+
+-- 2.5 swept; then a press on a docked window's strip that slips by three points
+  swept (a click at 659,83)
+> drag 6 350 9 353 --steps 4 --duration 0.2
+  29 | ax 12 43 325 653 | server 12 43 325 653 on
+  30 | ax 687 43 325 653 | server 687 43 325 653 on
+  31 | ax 349 360 326 348 | server 349 360 326 348 on
+  32 | ax 349 100 326 348 | server 349 100 326 348 on
+  73 | ax 349 200 300 200 | server 349 200 300 200 on
+  in front: 370 com.apple.finder
+  => the sweep is over
+  => every window is where it was at rest
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back yes
+  Desktop          349 43 326 653
+  w29 12 43 325 653        docked
+  w30 687 43 325 653       docked
+  w31 349 360 326 348      floating
+  w32 349 100 326 348      floating
+  w73 349 200 300 200      floating
+
+-- 2.6 swept, and left alone for twelve seconds
+  swept (a click at 659,83)
+  29 | ax 12 43 325 653 | server -313 15 325 653 on
+  30 | ax 687 43 325 653 | server 1012 15 325 653 on
+  31 | ax 349 360 326 348 | server 349 756 326 348 on
+  32 | ax 349 100 326 348 | server 349 -306 326 348 on
+  73 | ax 349 200 300 200 | server 302 -158 300 200 on
+  in front: 370 com.apple.finder
+  => STILL SWEPT
+  => the window server's frames differ from those at rest
+  (a click on the wallpaper at 659,83, to end the sweep)
+  29 | ax 12 43 325 653 | server 12 43 325 653 on
+  30 | ax 687 43 325 653 | server 687 43 325 653 on
+  31 | ax 349 360 326 348 | server 349 360 326 348 on
+  32 | ax 349 100 326 348 | server 349 100 326 348 on
+  73 | ax 349 200 300 200 | server 349 200 300 200 on
+  => back: every window is where it was at rest
+
+-- 2.7 swept; then a window closes
+  swept (a click at 659,83)
+> test windows: close 32
+  29 | ax 12 43 325 653 | server -313 15 325 653 on
+  30 | ax 687 43 325 653 | server 1012 15 325 653 on
+  31 | ax 349 360 326 348 | server 349 756 326 348 on
+  73 | ax 349 200 300 200 | server 302 -158 300 200 on
+  in front: 370 com.apple.finder
+  => STILL SWEPT
+  => the window server's frames differ from those at rest
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back yes
+  Desktop          349 43 326 653
+  w29 12 43 325 653        docked
+  w30 687 43 325 653       docked
+  w31 349 360 326 348      floating
+  w73 349 200 300 200      floating
+  (a click on the wallpaper at 659,83, to end the sweep)
+  29 | ax 12 43 325 653 | server 12 43 325 653 on
+  30 | ax 687 43 325 653 | server 687 43 325 653 on
+  31 | ax 349 360 326 348 | server 349 360 326 348 on
+  73 | ax 349 200 300 200 | server 349 200 300 200 on
+  => back, but the frames differ from those at rest
+
+-- 2.8 swept; then pause, which gives windows their own frames back
+  swept (a click at 659,343)
+> pause
+paused until `resume`; windows that were out of view are back on screen
+  29 | ax 12 43 325 653 | server -313 15 325 653 on
+  30 | ax 687 43 325 653 | server 1012 15 325 653 on
+  31 | ax 349 360 326 348 | server 349 756 326 348 on
+  73 | ax 349 200 300 200 | server 302 -158 300 200 on
+  in front: 370 com.apple.finder
+  => STILL SWEPT
+  => the window server's frames differ from those at rest
+  (a click on the wallpaper at 659,343, to end the sweep)
+  29 | ax 12 43 325 653 | server 12 43 325 653 on
+  30 | ax 687 43 325 653 | server 687 43 325 653 on
+  31 | ax 349 360 326 348 | server 349 360 326 348 on
+  73 | ax 349 200 300 200 | server 349 200 300 200 on
+  => back: every window is where it was at rest
+> resume
+resumed
+  29 | ax 12 43 325 653 | server 12 43 325 653 on
+  30 | ax 687 43 325 653 | server 687 43 325 653 on
+  31 | ax 349 360 326 348 | server 349 360 326 348 on
+  73 | ax 349 200 300 200 | server 349 200 300 200 on
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back yes
+  Desktop          349 43 326 653
+  w29 12 43 325 653        docked
+  w30 687 43 325 653       docked
+  w31 349 360 326 348      floating
+  w73 349 200 300 200      floating
+
+-- 2.9 Reduce Motion on, as GitHub's Macs come: one sweep and back
+Reduce Motion: true
+  swept (a click at 659,343)
+  29 | ax 12 43 325 653 | server -313 15 325 653 on
+  30 | ax 687 43 325 653 | server 1012 15 325 653 on
+  31 | ax 349 360 326 348 | server 349 756 326 348 on
+  73 | ax 349 200 300 200 | server 302 -158 300 200 on
+  in front: 370 com.apple.finder
+  => STILL SWEPT
+  => the window server's frames differ from those at rest
+  (a click on the wallpaper at 659,343, to end the sweep)
+  29 | ax 12 43 325 653 | server 12 43 325 653 on
+  30 | ax 687 43 325 653 | server 687 43 325 653 on
+  31 | ax 349 360 326 348 | server 349 360 326 348 on
+  73 | ax 349 200 300 200 | server 349 200 300 200 on
+  => back: every window is where it was at rest
+Reduce Motion: false
+
+-- 2.10 swept; then Quit
+  swept (a click at 659,343)
+> trace off
+arborctl: not recording; last trace /tmp/arbor-shell.OWmntB/home/traces/2026-10-14-231121-sweep.jsonl: 476 lines, Arbor stopped
+> quit
+quitting
+  29 | ax 170 220 480 348 | server -313 15 325 653 on
+  30 | ax 220 180 480 348 | server 1012 15 325 653 on
+  31 | ax 272 360 480 348 | server 349 756 326 348 on
+  73 | ax 300 200 300 200 | server 302 -158 300 200 on
+shot: mac-shell/210-quit-while-swept.png
+  => STILL SWEPT
+  (a click on the wallpaper at 659,343, to end the sweep)
+  29 | ax 170 220 480 348 | server 170 220 480 348 on
+  30 | ax 220 180 480 348 | server 220 180 480 348 on
+  31 | ax 272 360 480 348 | server 272 360 480 348 on
+  73 | ax 300 200 300 200 | server 300 200 300 200 on
+  => back, but the frames differ from those at rest
+shot: mac-shell/210b-afterwards.png
+> quit
+arborctl: Arbor is not running (no control socket at /tmp/arbor-shell.OWmntB/home/arbor.sock); start it with `open -a Arbor`
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 29 is back on screen after quitting
+  ✔ window 30 is back on screen after quitting
+  ✔ window 31 is back on screen after quitting
+the probe is over
+
+4 passed, 0 failed
+exit code 0
