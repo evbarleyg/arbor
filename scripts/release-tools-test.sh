@@ -152,7 +152,8 @@ PYTHON
 python3 "$root/github.py" "$root" &
 server=$!
 tries=0
-while [ ! -s "$root/port" ] && [ "$tries" -lt 50 ]; do sleep 0.1; tries=$((tries + 1)); done
+# A hosted Mac took more than five seconds to start Python for the first time.
+while [ ! -s "$root/port" ] && [ "$tries" -lt 600 ]; do sleep 0.1; tries=$((tries + 1)); done
 port=$(cat "$root/port")
 export GITHUB_API_URL="http://127.0.0.1:$port" GITHUB_REPOSITORY=o/r GITHUB_TOKEN=s3cret NO_PROXY=127.0.0.1
 log="$root/requests.log"

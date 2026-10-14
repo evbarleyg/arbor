@@ -45,7 +45,8 @@ jobs:
     # Only an explicit "false" saves the Mac: it also runs when `changes` itself failed.
     if: ${{ !cancelled() && needs.changes.outputs.mac != 'false' }}
     runs-on: macos-26
-    timeout-minutes: 20
+    # The tests alone take thirteen minutes on a hosted Mac.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v5
       - name: Use the newest Xcode on the runner
@@ -69,10 +70,27 @@ jobs:
         run: ./scripts/ci-step.py --summary '✘|release tools test' release-tools ./scripts/release-tools-test.sh
       - name: Parity (no shipped feature may break; FEATURES.md must be current)
         run: ./scripts/ci-step.py parity python3 scripts/parity.py --test-log test.log --check
+
+  # Real windows and the real pointer, in a job of their own: whether Arbor builds and passes its tests, and whether it
+  # does on real windows what the tests say, are two questions, and each gets its own answer. They also run side by side.
+  real-windows:
+    needs: changes
+    if: ${{ !cancelled() && needs.changes.outputs.mac != 'false' }}
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Use the newest Xcode on the runner
+        run: |
+          xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
+          sudo xcode-select -s "$xcode"
+      - name: The Swift release the project is built with
+        run: ./scripts/ci-toolchain.sh
+      - name: Build
+        id: build
+        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build
       # Real windows. GitHub's macOS runners grant Accessibility to the runner's processes (probe P3,
-      # 2026-10-14), so arbor-e2e can move its test windows there. It needs only the build, so a failed
-      # test does not hide what real windows do; it comes after the parity step, which reads the
-      # committed evidence. The fresh evidence comes back as an artifact (or through
+      # 2026-10-14), so arbor-e2e can move its test windows there. The fresh evidence comes back as an artifact (or through
       # scripts/mac-shell/run.sh scripts/mac-shell/e2e.sh); commit it as
       # collab/evidence/e2e-latest.txt when `make parity` should count it.
       - name: Real-window test
