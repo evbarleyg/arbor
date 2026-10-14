@@ -3,6 +3,10 @@
 # T01 dock at a screen edge, T03 the Desktop stays, T06 a leaving window's space, T11 the drop preview.
 source "$(dirname "$0")/../lib.sh"
 arbor_build
+if ! screen_edges_dock; then
+  echo "skipped: macOS tiles at the screen's edges on this Mac, and Arbor stands aside there"
+  exit 77
+fi
 arbor_start 4
 
 claim "drag a window to the left screen edge: a preview shows where it will land, and it docks there"

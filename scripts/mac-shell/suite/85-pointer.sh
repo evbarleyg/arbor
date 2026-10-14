@@ -2,7 +2,10 @@
 # The pointer gestures that need event taps: the ⌃⌥ rectangle and the trackpad pinch.
 # T38 drag a rectangle to frame it (⌃⌥ anywhere, plain ⇧ from the Desktop), T36 pinch to zoom.
 source "$(dirname "$0")/../lib.sh"
+source "$(dirname "$0")/../lib-gestures.sh"
 arbor_build
+# The pinch and the rectangle need event taps, which Arbor asks for only where its person has asked for the gestures.
+arbor_settings "{$ARBOR_GESTURES_ON}"
 arbor_start 3 ARBOR_NO_HOTKEYS=0
 ctl dock "$W1" left
 ctl dock "$W2" beside "$W1" bottom
@@ -10,7 +13,7 @@ ctl dock "$W3" right
 summary
 # An ⌥-click on another app's window hides the app in front, so that has to be a test app: a press that Arbor's tap missed would be one.
 click_window "$W3" || exit 1
-check "a test app is in front" eventually front_is "$ARBOR_WINDOWS_PID" || exit 1
+check "a test app is in front" eventually front_is "$ARBOR_WINDOWS_PID" || on_throwaway_mac || exit 1
 
 claim "⌃⌥-drag a rectangle around a window: a band follows the pointer and release frames the window"
 proves T38

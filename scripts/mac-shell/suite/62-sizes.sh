@@ -5,6 +5,8 @@
 # unlearned, T21 a single floating window fills the Desktop.
 source "$(dirname "$0")/../lib.sh"
 arbor_build
+# Where macOS tiles at the screen's edges they are macOS's, and what is docked there below is docked by command.
+if screen_edges_dock; then edges=ours; else edges=""; fi
 
 # has_size <id> <w> <h> | is_at <id> <x> <y> <w> <h>: by the window server, which also answers while Arbor is not running.
 has_size() { width_is "$1" "$2" && height_is "$1" "$3"; }
@@ -15,13 +17,24 @@ is_at() {
 }
 # Arbor has heard of a move that the app made itself. What it gives back to a window is what it last saw of it.
 seen_where_it_is() { arbor_close "$(frame_of "$1")" "$(real_frame_of "$1")"; }
-# The pointer is over the window's title bar.
-pointer_on_titlebar() {
+# grip <id>: dx dy w: the pointer from the window's corner, and the window's width, by the window server.
+grip() {
   local place frame
   place=$(pointer where) && frame=$(real_frame_of "$1") || { echo "no answer from the pointer tool"; return 1; }
   # shellcheck disable=SC2086
   set -- $place $frame
-  [ $# -eq 7 ] && inside "$1 $2 1 1" "$4 $5 $6 32" || { echo "the pointer is at $place, the window at $frame"; return 1; }
+  [ $# -eq 7 ] || { echo "the pointer is at $place, the window at $frame"; return 1; }
+  echo "$((${1%.*} - ${4%.*})) $((${2%.*} - ${5%.*})) ${6%.*}"
+}
+# keeps_grip <id> <dx> <dy> <w>: the pointer is as far down the window, and as far along its width, as it was then. A window trails
+# a posted pointer (docs/TESTING.md), so where the pointer was on it with the button still down is measured, not assumed.
+keeps_grip() {
+  local id=$1 dx=$2 dy=$3 w=$4 now
+  now=$(grip "$id") || { echo "$now"; return 1; }
+  # shellcheck disable=SC2086
+  set -- $now
+  about "$2" "$dy" 3 > /dev/null && about "$(($1 * 100 / $3))" "$((dx * 100 / w))" 2 > /dev/null \
+    || { echo "it was held $dx $dy from the corner of a window $w wide; now the pointer is $1 $2 from the corner of one $3 wide"; return 1; }
 }
 # The window server has the window where Arbor's layout has the Desktop.
 takes_desktop() {
@@ -76,11 +89,15 @@ proves A48
 ctl dock "$W1" left
 check "docked, it is taller than it was" eventually taller_than "$W1" "$((own_h + 40))"
 # shellcheck disable=SC2046
-drag_window "$W1" $(desktop_point)
+drag_window "$W1" $(desktop_point) --no-release
+take "dx dy w" grip "$W1"
+release
+# From further down than a title bar reaches (`Controller.titleBarReach`) the window comes up to the pointer.
+[ "$dy" -gt 60 ] && dy=60
 check "the window floats" eventually is floating "$W1"
 check "it has its own size again" eventually has_size "$W1" "$own_w" "$own_h"
-check "the pointer is still on its title bar" eventually pointer_on_titlebar "$W1"
-check "the layout that follows the drop leaves it there" stays pointer_on_titlebar "$W1"
+check "the pointer is where it was on the window" eventually keeps_grip "$W1" "$dx" "$dy" "$w"
+check "the layout that follows the drop leaves it there" stays keeps_grip "$W1" "$dx" "$dy" "$w"
 settled
 
 step "where every window is before Arbor arranges them all"
@@ -233,7 +250,7 @@ own_h=$all_h
 claim "dock every window but one: the one that floats alone takes the Desktop"
 proves T21
 # shellcheck disable=SC2046
-drag_window "$W1" $(edge_point left)
+if [ -n "$edges" ]; then drag_window "$W1" $(edge_point left); else ctl dock "$W1" left; fi
 check "the first window is docked" eventually is docked "$W1"
 check "with another floating beside it, the third keeps its size" stays has_size "$W3" "$own_w" "$own_h"
 # shellcheck disable=SC2046
@@ -282,9 +299,11 @@ settled
 claim "drag the window that fills the Desktop by its title bar: its own size under the pointer, and it stays that size"
 proves T21
 take "x y" titlebar_of "$W3"
-drag "$x" "$y" "$((x - 30))" "$((y + 80))"
+drag "$x" "$y" "$((x - 30))" "$((y + 80))" --no-release
+take "dx dy w" grip "$W3"
+release
 check "it has its own size back" eventually has_size "$W3" "$own_w" "$own_h"
-check "the pointer is still on its title bar" pointer_on_titlebar "$W3"
+check "the pointer is where it was on the window" eventually keeps_grip "$W3" "$dx" "$dy" "$w"
 check "it still floats" is floating "$W3"
 check "⌃⌥0, which lays the screen out again" pressed ctrl+opt+0 home
 check "the hand wins: it keeps that size" stays has_size "$W3" "$own_w" "$own_h"

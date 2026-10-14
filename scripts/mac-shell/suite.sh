@@ -4,7 +4,8 @@
 #
 #   make suite [SECTIONS="30 60-tiles"]                      on this Mac, keeping the evidence
 #   scripts/mac-shell/suite.sh [section…]                    on this Mac; sections by number or name
-#   scripts/mac-shell/run.sh scripts/mac-shell/suite.sh      on one of GitHub's Macs, from anywhere
+#   scripts/mac-shell/run.sh --macs 2 scripts/mac-shell/suite.sh      on two of GitHub's Macs, side by side, from anywhere: eight minutes
+#                                                            each. All of it takes sixteen, which is more than one run is given
 #   scripts/mac-shell/rehearse.sh                            on Linux, against stand-ins: proves the scripts, not Arbor
 #
 # Builds, then runs scripts/mac-shell/suite/[0-9]*.sh in order, each as a process of its own with a time limit, so that
@@ -39,8 +40,25 @@ else
   done
 fi
 
+# Given to several Macs at once (run.sh --macs 2), each takes every second section: "2/2" is the second Mac of two.
+share=${MAC_SHELL_SHARE:-1/1}
+if [ "${share#*/}" -gt 1 ] 2>/dev/null; then
+  mine="" place=0
+  for section in $sections; do
+    [ $((place % ${share#*/} + 1)) -ne "${share%/*}" ] || mine="$mine $section"
+    place=$((place + 1))
+  done
+  echo "Mac ${share%/*} of ${share#*/}:$(for section in $mine; do printf ' %s' "$(basename "$section" .sh)"; done)"
+  sections=$mine
+fi
+
 # Here, so that the sections find it done, and so that the curtain is this script's and hangs until the last of them has ended.
 arbor_build
+on_throwaway_mac && macos_dictation_shortcut off
+# For every Mac that has a share of the sections, whichever they are.
+screen_edges_dock || echo "macOS tiles at the screen's edges on this Mac, so Arbor stands aside there: the claims about docking at an edge skip themselves"
+# What a Mac has shown once can be replayed on Linux for ever (docs/TRACES.md).
+export ARBOR_RECORD=1
 
 began_all=$SECONDS
 report=""
@@ -64,6 +82,7 @@ for section in $sections; do
     echo "the curtain was taken down: somebody wants their Mac back. Ending the suite"
     exit 75
   fi
+  on_throwaway_mac && arbor_in_the_way | sed 's/^/left in the way: /'
   evidence="$ARBOR_OUT/evidence/$name.txt"
   section_passed=$(grep -c '^  ✔' "$evidence" 2>/dev/null)
   section_failed=$(grep -c '^  ✘' "$evidence" 2>/dev/null)

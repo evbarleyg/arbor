@@ -11,6 +11,10 @@ arbor_build
 patiently() { eventually "$@" > /dev/null 2>&1 || eventually "$@"; }
 
 ARBOR_SECOND_APP=2
+# ⌘H is for an ordinary app, with an icon in the Dock: one without did nothing for it on a real Mac. A person's Dock stays as it is,
+# and there the app hides itself.
+if on_throwaway_mac; then ARBOR_SECOND_APP_ARGS="--regular"; fi
+hide_other_app() { if on_throwaway_mac; then key_to "$V1" cmd+h; else tw2 hide; fi; }
 # Four columns on a 1024-point screen are 241 points each, a point above where slots become tiles.
 arbor_settings '{"minimumUsableWidth": 200}'
 arbor_start 3 ARBOR_NO_HOTKEYS=0
@@ -219,7 +223,8 @@ proves A75
 click_button "$W2" minimize
 check "Arbor sees the window minimized" eventually is minimized "$W2"
 click_window "$V1"
-key_to "$V1" cmd+h
+hide_other_app
+check "macOS hides the app" eventually out_of_view "$V1"
 check "Arbor sees the other app's windows hidden" eventually is hidden "$V1"
 arbor_quit
 arbor_relaunch

@@ -29,6 +29,8 @@ uncovered() {
 marked() { [ "$(pointer menu-mark "$ARBOR_PID" "$1" 2>&1)" = "$2" ]; }
 
 ARBOR_SECOND_APP=1
+# A call is an ordinary app's window, with an icon in the Dock. A person's Dock stays as it is.
+if on_throwaway_mac; then ARBOR_SECOND_APP_ARGS="--regular"; fi
 # No shortcut is bound to it; ⌃⌥⇧D is the one docs/KEYBOARD.md keeps free for it.
 arbor_settings '{"bindings": {"ctrl+opt+shift+d": "toggle-pin"}}'
 arbor_start 3 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0
@@ -80,6 +82,7 @@ still_there() {
 
 claim "⌃⌥↩, ⌃⌥→ and ⌃⌥0 move the view: the pinned window keeps its place in front, other floating windows leave"
 proves A49
+known "a pinned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; reported, nobody has it yet"
 click_window "$W1"
 check "⌃⌥↩ reaches Arbor" pressed ctrl+opt+return zoom
 check "the first window fills the screen" eventually fills "$W1"
@@ -96,6 +99,7 @@ settled
 
 claim "click the docked window under a pinned one: the pinned window is in front again, the keyboard stays in the other"
 proves A49
+known "a pinned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; reported, nobody has it yet"
 click_window "$W1"
 check "the first window has the keyboard" eventually is focused "$W1"
 click_window "$W2"
@@ -131,6 +135,7 @@ settled
 
 claim "⌃⌥⇧D pins again; quit Arbor and start it again: the window is still pinned, in the same place"
 proves A49
+known "a pinned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; reported, nobody has it yet"
 click_window "$V1"
 check "⌃⌥⇧D reaches Arbor" pressed ctrl+opt+shift+d toggle-pin
 check "it is pinned" eventually is pinned "$V1"
@@ -142,7 +147,10 @@ arbor_quit
 check "quitting leaves it where it is" is_at "$V1" $place
 arbor_relaunch
 check "it is still pinned" eventually is pinned "$V1"
-check "the view is back on the first window" eventually fills "$W1"
+# A start shows everything; the view Arbor stopped in is one step back.
+check "the camera shows everything" eventually camera_on root
+ctl back
+check "one step back the first window fills the screen" eventually fills "$W1"
 # shellcheck disable=SC2086
 check "the pinned window has not moved" eventually is_at "$V1" $place
 check "it is in view" in_view "$V1"

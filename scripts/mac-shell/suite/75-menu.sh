@@ -100,11 +100,13 @@ proves T61
 ctl dock "$W1" right
 ctl zoom "$W2"
 check "the others are out of view" eventually out_of_view "$W1"
+arbor=$ARBOR_PID
 check "the item can be clicked" click_menu "Quit Arbor"
 check "Arbor exits" arbor_await_exit "$ARBOR_PID" 50
+# If it has not, it is ended here, so that what follows speaks of a Mac without Arbor either way.
+arbor_ended
 check "the first window is in view" eventually in_view "$W1"
 check "the second window is in view" eventually in_view "$W2"
 check "the third window is in view" eventually in_view "$W3"
 check "the other app's window is in view" eventually in_view "$V1"
-check "its menu bar item is gone" eventually fails status_item
-arbor_ended
+check "its menu bar item is gone" eventually fails pointer status-item "$arbor"

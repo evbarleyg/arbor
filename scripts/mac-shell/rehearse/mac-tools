@@ -81,6 +81,7 @@ case "$tool" in
         case "${4:-}" in
           -bool) case "${5:-}" in true | yes | 1) echo 1 ;; *) echo 0 ;; esac > "$store/$2.$3" ;;
           -int | -string | -float) echo "${5:-}" > "$store/$2.$3" ;;
+          -dict-add) ;;
           *) refuse "$@" ;;
         esac
         ;;

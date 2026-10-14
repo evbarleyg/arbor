@@ -4,6 +4,8 @@
 # A69 room before tiles.
 source "$(dirname "$0")/../lib.sh"
 arbor_build
+# Where macOS tiles at the screen's edges they are macOS's, and the last session, which docks there, skips itself.
+if screen_edges_dock; then edges=ours; else edges=""; fi
 # The third window refuses to be smaller than seven tenths of the screen each way: too big for half of it, small enough
 # to be framed on its own.
 read -r _ _ _ screen_w screen_h _ <<< "$(pointer displays | head -n 1)"
@@ -101,23 +103,25 @@ ctl dock "$W3" right
 ctl show-all
 arbor_stop
 
-# The second window refuses to be narrower than 45 hundredths of the screen: more than the third it would get.
-ARBOR_TEST_WINDOWS_ARGS="--min-size 2:$((screen_w * 45 / 100))x200"
-arbor_start 3
-ctl dock "$W1" left
+if [ -n "$edges" ]; then
+  # The second window refuses to be narrower than 45 hundredths of the screen: more than the third it would get.
+  ARBOR_TEST_WINDOWS_ARGS="--min-size 2:$((screen_w * 45 / 100))x200"
+  arbor_start 3
+  ctl dock "$W1" left
 
-claim "drag a window too wide for a third of the screen to the edge: the gaps move to make room, and it is no tile"
-proves A69
-# shellcheck disable=SC2046
-drag_window "$W2" $(edge_point right)
-check "the window is docked" eventually is docked "$W2"
-check "no tile stands in for it" stays fails is tile "$W2"
-check "it is in view" eventually in_view "$W2"
-check "in its slot" eventually in_slot "$W2"
-check "which is as wide as the window needs" eventually wider_than "$W2" "$((screen_w * 45 / 100 - 4))"
-check "it reaches the right edge of the screen" eventually at_edge "$W2" right
-check "the Desktop is still between the two" eventually desktop_between "$W1" "$W2"
-check "nothing overlaps" eventually no_overlaps
-check "the log says that it made room" logged "made room for"
-settled
-arbor_stop
+  claim "drag a window too wide for a third of the screen to the edge: the gaps move to make room, and it is no tile"
+  proves A69
+  # shellcheck disable=SC2046
+  drag_window "$W2" $(edge_point right)
+  check "the window is docked" eventually is docked "$W2"
+  check "no tile stands in for it" stays fails is tile "$W2"
+  check "it is in view" eventually in_view "$W2"
+  check "in its slot" eventually in_slot "$W2"
+  check "which is as wide as the window needs" eventually wider_than "$W2" "$((screen_w * 45 / 100 - 4))"
+  check "it reaches the right edge of the screen" eventually at_edge "$W2" right
+  check "the Desktop is still between the two" eventually desktop_between "$W1" "$W2"
+  check "nothing overlaps" eventually no_overlaps
+  check "the log says that it made room" logged "made room for"
+  settled
+  arbor_stop
+fi

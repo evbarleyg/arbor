@@ -3,6 +3,8 @@
 # T02 dock beside another window, T04 unlimited nesting.
 source "$(dirname "$0")/../lib.sh"
 arbor_build
+# Where macOS tiles at the screen's edges they are macOS's, and what is docked there below is docked by command.
+if screen_edges_dock; then edges=ours; else edges=""; fi
 # Docking beside a window halves its slot, and on a 1024-point screen the halves of halves are tiles by default. This
 # section is about where windows land, so slots may be small.
 arbor_settings '{"minimumUsableWidth": 200, "minimumUsableHeight": 120}'
@@ -72,10 +74,10 @@ arbor_stop
 arbor_settings '{"minimumUsableWidth": 120, "minimumUsableHeight": 90}'
 arbor_start 4
 
-claim "nest spaces four levels deep by dragging alone"
+claim "nest spaces four levels deep by dragging one window onto another"
 proves T04
 # shellcheck disable=SC2046
-drag_window "$W4" $(edge_point left)
+if [ -n "$edges" ]; then drag_window "$W4" $(edge_point left); else ctl dock "$W4" left; fi
 check "level 1: a column at the left edge" eventually depth_is "$W4" 1
 # shellcheck disable=SC2046
 drag_window "$W3" $(zone_of "$W4" bottom)

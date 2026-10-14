@@ -135,7 +135,7 @@
 #   in_view <id> | out_of_view <id>          at least 90 %, at most 5 % of it is on a display (none, when it is minimized,
 #                                     hidden or on another Space)
 #   has_overlay <level>             Arbor shows a window of its own at that level
-#   front_is <pid>                  that process is the app with the keyboard ($ARBOR_WINDOWS_PID, $ARBOR_WINDOWS_PID_2)
+#   front_is <pid>                  that process is the app in front, which has the keyboard ($ARBOR_WINDOWS_PID, $ARBOR_WINDOWS_PID_2)
 #   The rest compare what the window server reports, within 3 points:
 #   at_edge <id> <edge> | fills <id> | in_slot <id> | frame_is <id> x y w h | corner_is <id> x y
 #   left_of <a> <b> | above <a> <b> | same_column <a> <b> | same_row <a> <b> | desktop_between <a> <b>
@@ -153,6 +153,9 @@
 # Other
 #   arbor_log                       copy arbor.log to mac-shell/ now (arbor_stop and the exit trap do it too)
 #   macos_tiling [on|off]           print, or set, macOS's own "drag windows to screen edges to tile"
+#   macos_tiles | screen_edges_dock whether macOS tiles at the screen's edges, where Arbor then stands aside | before arbor_start, for a script that
+#                                     docks by dragging to a screen edge: switches that off on a throwaway Mac; false where a person has it on
+#   macos_dictation_shortcut off    ⌃ pressed twice no longer asks whether to enable Dictation
 #   macos_click_wallpaper [on|off]  print, or set, "click wallpaper to reveal desktop", which sweeps every window aside
 #   macos_reduce_motion [on|off]    print, or set (before arbor_start), Reduce Motion, which GitHub's Macs come with
 #                                     and which turns Arbor's motion off
@@ -171,7 +174,8 @@
 # Settings: ARBOR_SETTLE (seconds `shot` waits first, default 0.7), ARBOR_TEST_WINDOWS_ARGS (more arguments
 # for ArborTestWindows, e.g. "--min-size 3:700x500"), ARBOR_SECOND_APP (that many windows V1… of a second
 # app, with ARBOR_SECOND_APP_ARGS), ARBOR_EXTRA_PIDS (processes the script started itself whose windows Arbor should
-# arrange too, comma-separated), ARBOR_BUNDLED=1 (run Arbor from an app bundle, as installed; on a throwaway Mac only), ARBOR_TIME_LIMIT
+# arrange too, comma-separated), ARBOR_BUNDLED=1 (run Arbor from an app bundle, as installed; on a throwaway Mac only), ARBOR_RECORD=1 (a trace
+# of every launch on a throwaway Mac, in mac-shell/traces/), ARBOR_TIME_LIMIT
 # (seconds the whole script may take, default 900, on
 # GitHub's Macs 1100; set it above `source lib.sh`). On a person's Mac: ARBOR_SHOTS=1 (take the pictures of what is in front of the
 # curtain), ARBOR_BUSY_OK=1 (start although somebody seems to be using the Mac), ARBOR_QUIET_SINCE (run-list.sh sets it: the time, in seconds since
@@ -1110,6 +1114,10 @@ arbor_log_name() {
 
 arbor_log() {
   if [ -f "$ARBOR_HOME/arbor.log" ]; then cp "$ARBOR_HOME/arbor.log" "$ARBOR_OUT/$(arbor_log_name arbor)"; fi
+  if ls "$ARBOR_HOME"/traces/*.jsonl > /dev/null 2>&1; then
+    mkdir -p "$ARBOR_OUT/traces"
+    cp "$ARBOR_HOME"/traces/*.jsonl "$ARBOR_OUT/traces/"
+  fi
 }
 
 # arbor_open_app <1|2> <executable> <count> [arguments…]: starts a test app and sets W1… (or V1…).
@@ -1234,6 +1242,13 @@ arbor_launch() {
       0)
         echo "session $ARBOR_SESSION: Arbor pid $ARBOR_PID, test windows$ARBOR_WINDOW_IDS (pid $pids)"
         "$ARBOR_BIN/arborctl" status
+        # With ARBOR_RECORD=1 every launch on a throwaway Mac is recorded (docs/TRACES.md): what macOS reported and what Arbor asked of
+        # it comes back in mac-shell/traces/ and replays on Linux from then on. Never on a person's Mac: a trace holds every press
+        # of the button, wherever it landed.
+        if [ "${ARBOR_RECORD:-}" = 1 ] && on_throwaway_mac && [ -z "${ARBOR_REHEARSAL:-}" ]; then
+          ARBOR_LAUNCHES=$((${ARBOR_LAUNCHES:-0} + 1))
+          "$ARBOR_BIN/arborctl" trace on "$ARBOR_NAME-$ARBOR_LAUNCHES" > /dev/null 2>&1 || echo "note: this launch is not recorded"
+        fi
         # So that nobody takes a film in which nothing moves for a bug.
         [ "$("$ARBOR_POINTER" reduce-motion 2>/dev/null)" = true ] \
           && echo "Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)"
@@ -1706,6 +1721,16 @@ arbor_explain() {
     summary 2>&1 | sed 's/^/      | /'
   fi
   arbor_log_since "$ARBOR_STEP_MARK" | tail -n 25 | cut -c 26-230 | sed 's/^/      log | /'
+  on_throwaway_mac && arbor_in_the_way | sed 's/^/      in the way? | /'
+}
+
+# What shows above the apps' windows and is neither Arbor's nor the Mac's furniture: an alert of macOS's own takes the presses and
+# the keys meant for the windows under it, and every check after it fails for a reason that no log has.
+arbor_in_the_way() {
+  "$ARBOR_POINTER" windows --on-screen | awk -v arbor="${ARBOR_PID:-0}" '
+    $3 <= 0 || $2 == arbor { next }
+    { owner = $9; for (i = 10; i <= NF; i++) owner = owner " " $i }
+    owner !~ /^(Dock|Window Server|WindowManager|Control Center|SystemUIServer|Spotlight|Notification Center)$/ { print }'
 }
 
 check() {
@@ -2042,6 +2067,13 @@ open_menu() {
   rightclick $point
 }
 
+# arbor_in_open_menu x y: the point is in a menu as far as it shows. A menu taller than the display is cut off at its foot, and
+# Accessibility gives the rows below the cut the places they would have.
+arbor_in_open_menu() {
+  overlays | awk -v x="$1" -v y="$2" '
+    $3 == 101 && $8 == "on" && x >= $4 && x < $4 + $6 && y >= $5 && y < $5 + $7 { found = 1 } END { exit !found }'
+}
+
 # The menu is rebuilt as it opens, so an item's place is asked for only then.
 click_menu() {
   local point
@@ -2052,6 +2084,20 @@ click_menu() {
       echo "$point"
       key escape
       return 1
+    fi
+    # shellcheck disable=SC2086
+    if ! arbor_in_open_menu $point; then
+      # With no row chosen ↑ goes to the last one, and the menu scrolls to its end.
+      key up
+      sleep 0.3
+      point=$("$ARBOR_POINTER" menu-item "$ARBOR_PID" "$1" 2>&1)
+      # A press out there would choose nothing and close the menu, and look like a click that worked.
+      # shellcheck disable=SC2086
+      if ! arbor_in_open_menu $point; then
+        echo "$1 is at $point, which the open menu does not show: it is taller than the display"
+        key escape
+        return 1
+      fi
     fi
     # A press that was declined chose nothing, and the menu is still open.
     # shellcheck disable=SC2086
@@ -2084,6 +2130,39 @@ macos_tiling() {
   for name in EnableTilingByEdgeDrag EnableTopTilingByEdgeDrag EnableTilingOptionAccelerator EnableTiledWindowMargins; do
     echo "com.apple.WindowManager $name: $(defaults read com.apple.WindowManager "$name" 2>/dev/null || echo "not set")"
   done
+}
+
+# Whether macOS itself tiles a window that is dragged to the left, right or top edge of the screen. A key that is not there means
+# on, from macOS 15 on, which is the first that tiles.
+macos_tiles() {
+  case "$(sw_vers -productVersion)" in 1[0-4].*) return 1 ;; esac
+  [ "$(defaults read com.apple.WindowManager EnableTilingByEdgeDrag 2>/dev/null || echo 1)" = 1 ] \
+    || [ "$(defaults read com.apple.WindowManager EnableTopTilingByEdgeDrag 2>/dev/null || echo 1)" = 1 ]
+}
+
+# Where macOS tiles, those edges are macOS's and Arbor stands aside. So a script that docks by dragging to a screen edge asks this before
+# arbor_start: on a throwaway Mac it switches macOS's tiling off; a person's setting is theirs, and the answer there is what they chose.
+screen_edges_dock() {
+  macos_tiles || return 0
+  on_throwaway_mac || return 1
+  macos_tiling off > /dev/null
+  ! macos_tiles
+}
+
+# As macOS comes, ⌃ pressed twice starts Dictation, and asks first, in an alert that stays in front of everything. Two shortcuts of
+# Arbor's posted one after the other were that to it (seen on GitHub's Macs, in the middle of the suite).
+macos_dictation_shortcut() {
+  case "${1:-}" in
+    off)
+      if arbor_may "switch the shortcut for Dictation off"; then
+        defaults write com.apple.HIToolbox AppleDictationAutoEnable -int 0
+        defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 164 "{ enabled = 0; }"
+        # Makes the system read its shortcuts again, which it otherwise does at login.
+        if [ -x /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings ]; then
+          /System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
+        fi
+      fi ;;
+  esac
 }
 
 # Since macOS 14 a click on the wallpaper sweeps every window aside, and the next one only brings them back.

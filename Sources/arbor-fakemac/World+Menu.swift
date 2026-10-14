@@ -37,6 +37,8 @@ struct Menu {
   var items: [Item]
   /// The item whose submenu is open.
   var openItem: Int?
+  /// How much of the menu lies below where the display cuts it off.
+  var hiddenBelow: CGFloat = 0
 
   var submenuFrame: CGRect? {
     guard let openItem, let first = items[openItem].children.first, let last = items[openItem].children.last
@@ -135,8 +137,23 @@ extension World {
       menu.items.append(item)
       y += Menu.rowHeight
     }
-    menu.frame = CGRect(x: left, y: top, width: width, height: y + Menu.padding - top)
+    // A menu taller than the display is cut off above the Dock (a hosted Mac: 31 to 699 of 768 points) and scrolls.
+    // Accessibility goes on giving the rows below the cut the places they would have.
+    let foot = min(y + Menu.padding, display.visibleFrame.maxY - 6)
+    menu.frame = CGRect(x: left, y: top, width: width, height: foot - top)
+    menu.hiddenBelow = y + Menu.padding - foot
     return menu
+  }
+
+  /// ↑ with no row chosen goes to the last row, and a menu that is cut off scrolls to its end.
+  func scrollMenuToItsEnd() {
+    guard let arbor, var menu = arbor.menu, menu.hiddenBelow > 0 else { return }
+    for index in menu.items.indices {
+      menu.items[index].frame.origin.y -= menu.hiddenBelow
+      for child in menu.items[index].children.indices { menu.items[index].children[child].frame.origin.y -= menu.hiddenBelow }
+    }
+    menu.hiddenBelow = 0
+    arbor.menu = menu
   }
 
   func closeMenu() { arbor?.menu = nil }
@@ -150,6 +167,8 @@ extension World {
     {
       return Menu.Path(top: top, child: child)
     }
+    // What the display cuts off cannot be pressed.
+    guard menu.frame.contains(point) else { return nil }
     return menu.items.firstIndex { $0.frame.contains(point) }.map { Menu.Path(top: $0, child: nil) }
   }
 

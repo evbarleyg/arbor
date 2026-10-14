@@ -6,6 +6,10 @@
 source "$(dirname "$0")/../lib.sh"
 arbor_build
 ARBOR_SECOND_APP=1
+# ⌘H is for an ordinary app, with an icon in the Dock: one without did nothing for it on a real Mac. A person's Dock stays as it is,
+# and there the app hides itself.
+if on_throwaway_mac; then ARBOR_SECOND_APP_ARGS="--regular"; fi
+hide_other_app() { if on_throwaway_mac; then key_to "$V1" cmd+h; else tw2 hide; fi; }
 # Four columns on a 1024-point screen are 241 points each, a point above where slots become tiles.
 arbor_settings '{"minimumUsableWidth": 200}'
 arbor_start 4
@@ -54,7 +58,8 @@ proves T07
 ctl show-all
 click_window "$V1"
 check "the other app's window has the keyboard" eventually is focused "$V1"
-key_to "$V1" cmd+h
+hide_other_app
+check "macOS hides the app" eventually out_of_view "$V1"
 check "Arbor sees its window hidden" eventually is hidden "$V1"
 check "it is still docked" is docked "$V1"
 check "the windows of the first app grew" eventually wider_than "$W1" "$((width + 40))"

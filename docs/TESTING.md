@@ -700,7 +700,7 @@ holds for the commit named (second reading, 10:45 UTC) and says what the script 
 | `film-F16.sh` | #98 `a2e34e43` | safe, steps skip themselves | 3 min | Reduce Motion. Pinches and ⌃⌥-scrolls over a test window, each after the net was asked; the helper is on record |
 | `perf.sh` | #45 `fbd7e3b5` | safe, steps skip themselves | one drag | By the second reading, not read again since |
 | `input-taps.sh`, `witness.swift` | trunk and #193, #204 | **never without the switch**; with it, not before the fixes | | A witness that is killed leaves ⌃, ⌥ or Space down and a gesture unfinished; ⌃ with a wheel is macOS's zoom |
-| `suite.sh`, `suite/*.sh` | trunk | safe, steps skip themselves | 15 to 25 min by estimate | One supervised run with one curtain. macOS's edge tiling, `open arbor://…`, Launch at Login, ⌘Tab, and every press or pinch on the bare Desktop, which is behind the curtain |
+| `suite.sh`, `suite/*.sh` | trunk | safe, steps skip themselves | 16 min on a hosted Mac | One supervised run with one curtain. Docking at a screen edge where macOS tiles, `open arbor://…`, Launch at Login, ⌘Tab, and every press or pinch on the bare Desktop, which is behind the curtain |
 | `suite-twice.sh` | trunk | **never**: ends with 77 | | An hour, against a curtain and a sweep that reckon with half of one |
 
 ### What an unattended build runs on a person's Mac
@@ -920,8 +920,8 @@ does it (drags to screen edges and onto windows, seams and edges, title-bar butt
 `open arbor://…`, settings.json, quitting, killing and restarting), and checked against the window server.
 
 ```bash
-make suite                                                       # on a Mac, 15 to 25 minutes by estimate (SECTIONS="30 60" for some)
-ARBOR_KEEP_EVIDENCE=1 scripts/mac-shell/run.sh scripts/mac-shell/suite.sh   # all of it on one of GitHub's Macs, from anywhere
+make suite                                                       # on a Mac: sixteen minutes on a hosted one (SECTIONS="30 60" for some)
+ARBOR_KEEP_EVIDENCE=1 scripts/mac-shell/run.sh --macs 2 scripts/mac-shell/suite.sh   # all of it on two of GitHub's Macs, side by side, from anywhere
 scripts/mac-shell/run.sh scripts/mac-shell/suite/30-seams.sh     # one section, about a minute
 scripts/mac-shell/rehearse.sh                                    # all of it against stand-ins, on Linux, for nothing
 scripts/mac-shell/rehearse.sh scripts/mac-shell/suite/30-seams.sh
@@ -930,7 +930,7 @@ scripts/mac-shell/rehearse.sh scripts/mac-shell/suite/30-seams.sh
 **On a person's Mac** it is one supervised run with one curtain ("On a person's own Mac", in section 5, says what that means and what
 `lib.sh` declines there). It needs Accessibility for the terminal, five quiet minutes before it starts (or `ARBOR_BUSY_OK=1`) and no Arbor or other window
 manager running; it moves the pointer and presses keys, so hands off meanwhile; it uses only its own test windows, changes no setting and
-registers nothing. ⌃C stops it, a right-click on the curtain too. What needs more than that skips itself: switching macOS's own edge tiling off,
+registers nothing. ⌃C stops it, a right-click on the curtain too. What needs more than that skips itself: docking at a screen edge where macOS tiles there itself and Arbor stands aside (`screen_edges_dock`: only a throwaway Mac has that switched off),
 `open arbor://…` (which app opens those links is a setting), Launch at Login, real ⌘Tab (`on_throwaway_mac`), and claims about a press or a pinch on
 the bare Desktop, which is behind the curtain (`desktop_is_bare`). Nothing in it depends on the size of the screen. Rehearse that mode too:
 `ARBOR_REHEARSAL_AS=person scripts/mac-shell/rehearse.sh` shows what a claim loses to the nets.

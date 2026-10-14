@@ -7,9 +7,10 @@ arbor_build
 
 paused() { "$ARBOR_BIN/arborctl" status | grep "^paused" > /dev/null || { echo "Arbor is not paused"; return 1; }; }
 running() { "$ARBOR_BIN/arborctl" status | grep "^running" > /dev/null || { echo "Arbor is not running"; return 1; }; }
+# But for the line that says what happened (F43, level 6: "Paused until ⌃⌥⎋…"), which stays four seconds and goes by itself.
 no_overlays() {
   local shown
-  shown=$(overlays | awk '$8 == "on"')
+  shown=$(overlays | awk '$8 == "on" && $3 != 6')
   [ -z "$shown" ] || { echo "Arbor shows: $(echo "$shown" | head -n 1)"; return 1; }
 }
 

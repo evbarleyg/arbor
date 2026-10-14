@@ -3,6 +3,8 @@
 # A15 focus ring around the focused window.
 source "$(dirname "$0")/../lib.sh"
 arbor_build
+# Where macOS tiles at the screen's edges they are macOS's, and what is docked there below is docked by command.
+if screen_edges_dock; then edges=ours; else edges=""; fi
 
 # The ring is a panel of Arbor's own that spans its window and a little more: the line, which lies in the gap, and room for
 # the flash. Seams are at the ordinary level too, but a gap wide; there are no tiles in this section.
@@ -53,10 +55,10 @@ click_window "$W3"
 check "the window has the keyboard" eventually is focused "$W3"
 check "Arbor draws nothing around it" stays no_ring
 
-claim "drag a window to the left screen edge: once docked it wears the focus ring"
+claim "dock the window that has the keyboard: once docked it wears the focus ring"
 proves A15
 # shellcheck disable=SC2046
-drag_window "$W1" $(edge_point left)
+if [ -n "$edges" ]; then drag_window "$W1" $(edge_point left); else click_window "$W1"; ctl dock "$W1" left; fi
 check "it docked at the left edge" eventually at_edge "$W1" left
 check "the ring is around it" eventually ring_around "$W1"
 check "directly in front of it" eventually ring_in_front_of "$W1"

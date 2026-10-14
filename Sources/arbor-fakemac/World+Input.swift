@@ -445,8 +445,9 @@ extension World {
 
   func pressKey(_ chord: KeyChord) {
     if arbor?.menu != nil {
-      // An open menu takes every key. Only Escape is modelled.
+      // An open menu takes every key. Only Escape is modelled, and ↑ as far as it scrolls a menu that is cut off.
       if chord.key == .escape { closeMenu() }
+      if chord.key == .up, chord.modifiers.isEmpty { scrollMenuToItsEnd() }
       return
     }
     // A registered hot key never reaches an app.

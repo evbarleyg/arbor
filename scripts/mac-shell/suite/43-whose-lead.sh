@@ -3,6 +3,7 @@
 # window under the pointer are two. On one display; which display a shortcut acts on needs a second one.
 # A56 keys follow the keyboard, gestures follow the pointer.
 source "$(dirname "$0")/../lib.sh"
+source "$(dirname "$0")/../lib-gestures.sh"
 arbor_build
 
 only_shows() { fills "$1" && out_of_view "$2"; }
@@ -23,6 +24,8 @@ points_at() {
   move "$((x + nudge))" "$((y + nudge))"
 }
 
+# The pinch and the rectangle need event taps, which Arbor asks for only where its person has asked for the gestures.
+arbor_settings "{$ARBOR_GESTURES_ON}"
 arbor_start 2 ARBOR_NO_HOTKEYS=0
 ctl dock "$W1" left
 ctl dock "$W2" right

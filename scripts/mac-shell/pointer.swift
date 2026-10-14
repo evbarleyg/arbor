@@ -87,7 +87,7 @@ struct Pointer {
       spot <window id>              x y: a point on its content that no other window covers
       button <window id> <which>    x y: the middle of its close, minimize or zoom button
       ax <window id>                its Accessibility role and subrole, e.g. AXWindow AXStandardWindow
-      front                         the process id of the app that has the keyboard
+      front                         the process id of the app in front, which has the keyboard
       status-item <pid> [--frame]   x y: the middle of that process's menu bar item (--frame: x y w h)
       menu-item <pid> <title>       x y: the middle of the item of its open menu whose title starts so
       menu-mark <pid> <title>       that item's mark, e.g. ✓, or - when it has none
@@ -750,12 +750,10 @@ struct Pointer {
       print("\(role) \(subrole)")
 
     case "front":
-      var pid: pid_t = 0
-      guard let application = attribute(AXUIElementCreateSystemWide(), kAXFocusedApplicationAttribute),
-        CFGetTypeID(application) == AXUIElementGetTypeID(),
-        AXUIElementGetPid(application as! AXUIElement, &pid) == .success
-      else { fail("no app has the keyboard") }
-      print(pid)
+      // As Arbor asks. Accessibility's system-wide "focused application" answered nothing on GitHub's Macs (macOS 26), with an
+      // ordinary app in front and its name in the menu bar.
+      guard let application = NSWorkspace.shared.frontmostApplication else { fail("no app is in front") }
+      print(application.processIdentifier)
 
     case "menu-item", "menu-mark":
       guard arguments.count > 1, let pid = pid_t(arguments[0]) else { fail("expected a process id and a title") }

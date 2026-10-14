@@ -38,16 +38,21 @@ check "and frames the same window" eventually fills "$W2"
 ctl show-all
 settled
 
-claim "quit Arbor while zoomed in and start it again: the camera is where it was"
+claim "quit Arbor while zoomed in and start it again: it shows everything, takes no window out of view, and Back returns to the old view"
 proves T60
 ctl zoom "$W3"
 check "the window fills the screen" eventually fills "$W3"
 arbor_quit
 check "quitting brought the others back into view" eventually in_view "$W1"
 arbor_relaunch
-check "the camera is on the same window" eventually camera_on "$W3"
-check "it fills the screen" eventually fills "$W3"
-check "the others are out of view again" eventually out_of_view "$W1"
+check "the camera shows everything" eventually camera_on root
+check "the first window stays in view" stays in_view "$W1"
+check "the window that was framed is in its slot" eventually in_slot "$W3"
+check "the one that floats is in view" in_view "$W4"
+check "there is a view to go back to" can back
+ctl back
+check "which is the one Arbor stopped in" eventually fills "$W3"
+check "the others are out of view there" eventually out_of_view "$W1"
 ctl show-all
 check "and come back with show-all" eventually in_view "$W1"
 settled

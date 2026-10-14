@@ -18,10 +18,11 @@ check "there is a display" test "$(pointer displays | wc -l)" -ge 1
 check "no mouse button is down" test "$(pointer where | awk '{ print $3 }')" = up
 
 
-# macOS's own edge tiling competes with Arbor's edge docking (docs/TESTING.md). It is a setting of the person's, not of
-# the session, so only a throwaway Mac has it switched off.
+# Where macOS tiles at the screen's edges Arbor stands aside (docs/TESTING.md). It is a setting of the person's, not of the
+# session, so only a throwaway Mac has it switched off (`screen_edges_dock`).
 if on_throwaway_mac; then
-  macos_tiling off
+  screen_edges_dock
+  macos_tiling
   echo "windows on screen (id pid layer x y w h on owner):"
   pointer windows | awk '$8 == "on"' | head -n 20
 else

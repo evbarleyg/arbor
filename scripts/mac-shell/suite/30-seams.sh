@@ -64,9 +64,18 @@ settled
 claim "drag a docked window's corner: both seams move"
 proves A11
 take "x y w h" real_frame_of "$W1"
-drag "$((x + w - 2))" "$((y + h - 2))" "$((x + w + 38))" "$((y + h - 32))"
-check "the window is 40 points wider" eventually width_is "$W1" "$((w + 40))" 8
-check "and 30 points shorter" eventually height_is "$W1" "$((h - 30))" 8
+drag "$((x + w - 2))" "$((y + h - 2))" "$((x + w + 38))" "$((y + h - 32))" --no-release
+# macOS holds back an edge that is flush with a neighbour's, as this one is with the window's below, and does not give the points
+# back: on a hosted Mac 9 of 40 arrived. What Arbor promises is that the seams go where the window's edges are when it is let go.
+held_w=$(width_of "$W1")
+held_h=$(height_of "$W1")
+echo "held: the window is at $(real_frame_of "$W1"), the pointer at $(pointer where)"
+check "the window grew wider under the pointer" wider_than "$W1" "$((w + 5))"
+check "and shorter" shorter_than "$W1" "$((h - 5))"
+release
+check "released, it keeps the width it was given" eventually width_is "$W1" "$held_w" 4
+check "and the height" eventually height_is "$W1" "$held_h" 4
+check "it is in its slot: the layout followed the window" eventually in_slot "$W1"
 check "the window below took the height and the width" eventually same_column "$W1" "$W3"
 check "and reaches the bottom edge" eventually at_edge "$W3" bottom
 check "nothing overlaps" eventually no_overlaps
