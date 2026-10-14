@@ -31,7 +31,8 @@ else
   awk '/^arbor-e2e: no verdict/ { on = 1 } on && /^$/ { on = 0; print "" } on' "$tmp"
   if grep -q "^  ✘ " "$tmp"; then
     echo "# the checks that failed, each under its step; the whole run follows"
-    awk '/^▸ / { step = $0 } /^  ✘ / { if (step != "") print step; step = ""; print }' "$tmp"
+    # With the notes under it (↳: what Arbor logged during the step), word for word, so that ci-step.py takes both for one failure.
+    awk '/^▸ / { step = $0 } /^  ✘ / { if (step != "") print step; step = ""; print; noted = 1; next } noted && /^ *↳/ { print; next } { noted = 0 }' "$tmp"
     echo
   fi
   cat "$tmp"

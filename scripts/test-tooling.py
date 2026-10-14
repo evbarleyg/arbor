@@ -1020,6 +1020,10 @@ def check_e2e():
         (code, quoted[:4]), (1, ["▸ step 180  (command 180)", "  ✘ late — 3 is not 4", "  ✘ later still", "▸ step 1  (command 1)"]))
     row("e2e.sh: the run follows whole, with one summary, and the evidence is the run alone",
         (output.count("▸ step "), output.count("200 passed, 2 failed"), kept.count("▸ step "), kept.count("✘"), "that failed" in kept), (201, 1, 200, 2, False))
+    noted = steps.replace("  ✘ late — 3 is not 4\n", "  ✘ late — 3 is not 4\n    ↳ what Arbor logged\n    ↳ and then\n").replace("▸ step 181", "    ↳ under no failure\n▸ step 181")
+    row("e2e.sh: the notes under a failed check come with it, and no others",
+        tried(noted + "\n200 passed, 2 failed\n", 1)[1].splitlines()[1:7],
+        ["▸ step 180  (command 180)", "  ✘ late — 3 is not 4", "    ↳ what Arbor logged", "    ↳ and then", "  ✘ later still", ""])
     code, output, kept = tried(steps.replace("  ✘ late — 3 is not 4\n  ✘ later still\n", "") + "\n200 passed, 0 failed\n", 0)
     row("e2e.sh: a run without failures is printed as it was", (code, "that failed" in output, output.count("▸ step "), kept is not None), (0, False, 200, True))
     row("e2e.sh: a run that could not start keeps its exit code and leaves no evidence", tried("somebody is using this Mac\n", 2)[::2], (2, None))

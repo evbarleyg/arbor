@@ -269,6 +269,9 @@ screen locked is on record too.
 
 At a terminal the run is printed as it goes; anywhere else that block comes first, then
 the checks that failed, each under its step, and the whole run after them, because whoever quotes a report quotes its beginning.
+Under a check that failed stands what Arbor logged since its step began (under a second one in the same step: since the first), each line after a `↳`, sixty at
+most. `scripts/ci-step.py` publishes those lines with the failure, so they can be read in the check's annotations. No line under a step's first failure means that Arbor
+logged nothing, which is a finding too.
 
 **On a Mac that is somebody's** (`Sources/arbor-e2e/Manners.swift`). The test windows come to the front and take the keyboard. So a run that no person started
 from a terminal (standard input is no terminal, as in a loop that builds one commit after another) starts only after 60 seconds without

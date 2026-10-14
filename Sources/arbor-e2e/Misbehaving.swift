@@ -105,6 +105,7 @@ extension Runner {
   /// A step set off by something other than a command to Arbor.
   func step(_ title: String, by what: String, body: () throws -> Void) rethrows {
     print("\n▸ \(title)  (\(what))")
+    noteWhereTheLogIs()
     // Nobody is this quick: for 0.15 s after moving a window, Arbor takes any report about it for an echo.
     Thread.sleep(forTimeInterval: 0.5)
     try body()
