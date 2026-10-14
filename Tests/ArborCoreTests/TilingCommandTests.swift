@@ -64,13 +64,14 @@ import Testing
 
   @Test func badTilingCommandsAreRejectedWithTheUsage() {
     let bad = [
-      "focus", "focus sideways", "focus left right", "focus -1", "focus next now",
-      "swap", "swap sideways", "swap 7", "swap 7 8 9", "swap left 7", "swap seven 8", "swap 7 eight",
+      // Since F50 a word where a window belongs is an app's name (`focus Safari`, `swap Safari Mail`). A number gone wrong is not.
+      "focus", "focus 1.5", "focus left right", "focus -1", "focus next now",
+      "swap", "swap sideways", "swap 7", "swap 7 8 9", "swap left 7", "swap 7.5 8", "swap 7 -8", "swap 7 4294967296",
       "balance everything", "balance all now", "equalize everything", "rotate left", "mirror now",
       "grow 0", "grow -40", "grow nan", "grow inf", "grow 1e300", "grow 1000001", "grow forty", "grow 40 40",
       "shrink 0", "shrink -1", "shrink nan", "shrink 1e300", "shrink 4 4",
       "move-to-display", "move-to-display sideways", "move-to-display 0", "move-to-display -1", "move-to-display 100",
-      "move-to-display 99999999999999999999", "move-to-display next nine", "move-to-display next 9 9",
+      "move-to-display 99999999999999999999", "move-to-display next 9.5", "move-to-display next 9 9",
       "focus-display", "focus-display 0", "focus-display 1.5", "focus-display next 2",
     ]
     for text in bad {

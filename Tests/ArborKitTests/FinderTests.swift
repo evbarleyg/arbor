@@ -957,7 +957,7 @@ private let side = DisplaySnapshot(
     let workspace = h.workspace
     let result = h.run("find zebra crossing")
     #expect(!result.ok)
-    #expect(result.message == "no window, space or saved view matches “zebra crossing”")
+    #expect(result.message == "no window, space or saved view matches “zebra crossing”; `windows` lists them")
     let long = h.run("find " + String(repeating: "z", count: 500)).message
     #expect(long.contains("“" + String(repeating: "z", count: 80) + "”"), "a long text is quoted up to 80 characters")
     #expect(h.workspace == workspace)
@@ -1391,7 +1391,11 @@ private let side = DisplaySnapshot(
     #expect(try Command.parse("reveal") == .reveal(nil))
     #expect(try Command.parse("reveal 412") == .reveal(WindowID(412)))
     #expect(try Command.parse("reveal w412") == .reveal(WindowID(412)))
-    #expect(throws: Command.ParseError.self) { try Command.parse("reveal safari") }
+    // Since F50 a window can be named by its app wherever a command takes one.
+    let named = try Command.parse("reveal safari")
+    if case .naming(_, let names) = named { #expect(names == [.app("safari")]) } else { Issue.record("reveal safari became \(named)") }
+    #expect(named.filling([WindowID(412)]) == .reveal(WindowID(412)))
+    #expect(throws: Command.ParseError.self) { try Command.parse("reveal safari mail") }
   }
 
   @Test(arguments: [

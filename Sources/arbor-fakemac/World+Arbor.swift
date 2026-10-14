@@ -345,31 +345,33 @@ extension World {
     return arbor.controller.perform(command, from: source)
   }
 
-  /// Sources/arborctl/main.swift and `ArborApp.handleLine`
+  /// Sources/arborctl/main.swift. All it decides is `Arborctl.run`, so that is what runs here too; what is repeated is what
+  /// lies behind it on a Mac: `ControlClient.send`, when nobody listens, and `ArborApp.handleLine`.
   func arborctl(_ words: [String]) -> Reply {
-    var arguments = words
-    let rawJSON = arguments.first == "--json"
-    if rawJSON { arguments.removeFirst() }
-    if arguments.isEmpty || arguments == ["--help"] || arguments == ["-h"] { arguments = ["help"] }
-    // Answered by arborctl itself, because people read the help before they have Arbor running.
-    if arguments == ["help"] { return .printing(Command.helpText) }
-    guard arbor != nil else {
-      let advice = "start it with `open -a Arbor`"
-      return Reply(err: "arborctl: Arbor is not running (no control socket at \(socket)); \(advice)\n", code: 2)
-    }
-    let result: CommandResult
-    do {
-      result = handle(try Command.parse(arguments.joined(separator: " ")), from: .script)
-    } catch {
-      result = .failure("\(error)")
-    }
-    if rawJSON || arguments.first == "state" {
-      let encoder = JSONEncoder()
-      encoder.outputFormatting = [.sortedKeys]
-      let reply = (try? encoder.encode(result)).map { String(decoding: $0, as: UTF8.self) }
-      return .printing(reply ?? #"{"ok":false,"message":"encoding failed"}"#)
-    }
-    return Reply(out: (result.text ?? result.message) + "\n", code: result.ok ? 0 : 1)
+    struct Failure: Error, CustomStringConvertible { let description: String }
+    var reply = Reply()
+    reply.code = Arborctl.run(
+      words,
+      send: { line, _ in
+        guard arbor != nil else {
+          throw Failure(description: "Arbor is not running (no control socket at \(socket)); start it with `open -a Arbor`")
+        }
+        let result: CommandResult
+        do {
+          result = handle(try Command.parse(line), from: .script)
+        } catch {
+          result = .failure("\(error)")
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys]
+        guard let data = try? encoder.encode(result) else { return #"{"ok":false,"message":"encoding failed"}"# }
+        return String(decoding: data, as: UTF8.self)
+      },
+      emit: { output in
+        if let out = output.out { reply.out += out + "\n" }
+        if let err = output.err { reply.err += "arborctl: \(err)\n" }
+      })
+    return reply
   }
 
   /// `open <url>` and `ArborApp.handleURLEvent`. macOS hands URLs to app bundles only, and this one does not

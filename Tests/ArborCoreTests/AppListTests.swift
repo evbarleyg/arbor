@@ -48,9 +48,14 @@ import Testing
     #expect(Command.helpText.contains("pass-through [bundle-id] [on|off]"))
   }
 
-  @Test(arguments: ["pass-through a b", "pass-through a b on", "pass-through on off", "pass-through com.example.*", "pass-through \"x\"", "pass-through é"])
+  @Test(arguments: ["pass-through a b", "pass-through a b on", "pass-through on off", "pass-through com.example.*", "pass-through x\"y", "pass-through \"x", "pass-through \"a b\"", "pass-through é"])
   func theCommandRefusesWhatIsNotOneBundleID(text: String) {
     #expect(throws: Command.ParseError.self) { try Command.parse(text) }
+  }
+
+  /// Quotes around a word hold it together and come off (F50), so none of them gets into settings.json either.
+  @Test func quotesAroundTheBundleIDComeOff() throws {
+    #expect(try Command.parse("pass-through \"org.gnu.Emacs\" on") == .passThrough(bundleID: "org.gnu.Emacs", on: true))
   }
 
   /// It changes settings, and could be used to switch the shortcuts off in every app one by one.

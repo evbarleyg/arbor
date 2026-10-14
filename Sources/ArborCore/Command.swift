@@ -121,8 +121,17 @@ public enum Command: Equatable, Sendable, Codable {
   case spaces
   /// Shows the field to type a name for the space in view into, or with `cancel` closes it.
   case askName(cancel: Bool)
-  /// A query: the displays, and the options in effect on each (see DisplayOptions.swift).
-  case displays
+  /// A command that names windows by app, `focused` or `pointer` instead of by number: `zoom Safari`. It holds the
+  /// command with stand-in numbers, and the names in their order (WindowRef.swift).
+  indirect case naming(Command, [WindowRef])
+  /// The small queries (Queries.swift): the windows Arbor arranges, what each display's view shows (`where`), the saved
+  /// views, the displays, and Arbor's version.
+  case listWindows(titles: Bool)
+  case listPlaces
+  case listViews
+  case listDisplays
+  /// `help zoom`: one command's usage, other names and shortcuts (CommandHelp.swift).
+  case helpOn(String)
   /// Switches the setting `newWindows` between `dock` and `float` (F23, Controller+AutoDock.swift).
   case toggleAutoDock
   /// Shows the shortcuts in effect in a panel on screen, or puts the panel away (Controller+CheatSheet.swift).
@@ -166,7 +175,8 @@ public enum Command: Equatable, Sendable, Codable {
     case .trace(.status): true
     case .printLayout: true
     case .spaces: true
-    case .displays: true
+    case .naming(let command, _): command.isQuery
+    case .listWindows, .listPlaces, .listViews, .listDisplays, .helpOn: true
     default: false
     }
   }
@@ -176,6 +186,7 @@ public enum Command: Equatable, Sendable, Codable {
   public var endsPause: Bool {
     switch self {
     case .resume, .togglePause: true
+    case .naming(let command, _): command.endsPause
     default: false
     }
   }
@@ -216,18 +227,7 @@ public enum Command: Equatable, Sendable, Codable {
   /// space around the words of a path does not count: `/ dock / left /`.
   public static func parse(_ text: String) throws -> Command {
     if let line = layoutLine(in: text) { return try parseLayout(line) }
-    func isSeparator(_ character: Character) -> Bool { character == "/" || character.isWhitespace }
-    func trimmed(_ word: Substring) -> Substring {
-      var word = word.drop(while: \.isWhitespace)
-      while word.last?.isWhitespace == true { word.removeLast() }
-      return word
-    }
-    let whole = trimmed(text[...])
-    let body = whole.drop(while: isSeparator)
-    let words =
-      whole.first == "/" || body.first(where: isSeparator) == "/"
-      ? body.split(separator: "/").map(trimmed).filter { !$0.isEmpty } : body.split(whereSeparator: \.isWhitespace)
-    return try parse(words: words.map(String.init))
+    return try parse(words: words(of: text))
   }
 
   /// Bundle ids end up in settings.json, the menu and the log, so only what Apple allows in one
@@ -247,10 +247,22 @@ public enum Command: Equatable, Sendable, Codable {
   }
 
   public static func parse(words input: [String]) throws -> Command {
+    var names: [WindowRef] = []
+    let command = try parse(words: input, names: &names)
+    return names.isEmpty ? command : try wrapped(command, naming: names)
+  }
+
+  /// `names` collects the windows that were named rather than numbered (WindowRef.swift).
+  private static func parse(words typed: [String], names: inout [WindowRef]) throws -> Command {
+    // Quotes hold a word together: `summon "Visual Studio Code"`, `bind "ctrl+opt+/" desktop`, `rule add … title "My Page"`. They come off
+    // here, once, for every command alike. Only `window` asks whether they were there, because they also say that a word is a
+    // name and nothing else (`"left"`, `"412"`); and a command inside a command (`bind`, `layout`'s line) is read later, so it keeps them.
+    let input = typed.map { unquoted($0) ?? $0 }
     let words = input.map { $0.lowercased() }
     guard let verb = words.first else { throw ParseError("empty command; try `help`") }
     let args = Array(words.dropFirst())
     let originalArgs = Array(input.dropFirst())
+    let typedArgs = Array(typed.dropFirst())
 
     func edge(_ word: String?) throws -> Edge {
       guard let word, let edge = Edge(word: word) else {
@@ -258,9 +270,14 @@ public enum Command: Equatable, Sendable, Codable {
       }
       return edge
     }
-    func window(_ word: String) throws -> WindowID {
-      guard let id = WindowID(word: word) else { throw ParseError("expected a window id, got \(word)") }
-      return id
+    /// Every command reads its windows through this, which is how all of them take names as well. By its place among the arguments,
+    /// because the word is wanted as it was typed, with its quotes, if it had any, and its capitals: in `dock "left" left` only the first is a name.
+    func window(_ index: Int) throws -> WindowID {
+      let typed = typedArgs[index]
+      if unquoted(typed) == nil, let id = WindowID(word: args[index]) { return id }
+      guard names.count < mostNames else { throw ParseError("too many windows") }
+      names.append(try WindowRef(word: typed))
+      return standIn(names.count - 1)
     }
     func slot(_ word: String?) throws -> Int {
       guard let word, let n = Int(word), (1...9).contains(n) else {
@@ -269,9 +286,9 @@ public enum Command: Equatable, Sendable, Codable {
       return n
     }
     func optionalWindow() throws -> WindowID? {
-      guard let first = args.first else { return nil }
+      guard !args.isEmpty else { return nil }
       guard args.count == 1 else { throw ParseError("`\(verb)` takes one window at most") }
-      return try window(first)
+      return try window(0)
     }
     /// A distance or a coordinate. The bound is larger than any arrangement of displays, and keeps
     /// infinity and numbers that are not numbers away from everything that computes with them.
@@ -306,7 +323,10 @@ public enum Command: Equatable, Sendable, Codable {
       guard args.allSatisfy({ $0 == "--titles" }) else { throw ParseError("usage: state [--titles]") }
       return .state(titles: !args.isEmpty)
     case "ascii", "draw": return try noArgs(.ascii)
-    case "help", "--help", "-h": return .help  // whatever follows: `help dock` wants help, and this has it
+    case "help", "--help", "-h":
+      // Help is given whatever follows: on the command that was named, or else the whole of it, which has what they are after.
+      guard args.count == 1, let known = canonicalVerb(args[0]) else { return .help }
+      return .helpOn(known)
     case "show-all", "everything", "overview", "show-everything": return try noArgs(.showAll)
     case "out", "step-out", "zoom-out": return try noArgs(.stepOut)
     case "in", "step-in", "zoom-in": return try noArgs(.stepIn)
@@ -337,11 +357,11 @@ public enum Command: Equatable, Sendable, Codable {
     case "dock":
       switch args.count {
       case 1: return .dock(nil, try edge(args[0]))
-      case 2: return .dock(try window(args[0]), try edge(args[1]))
+      case 2: return .dock(try window(0), try edge(args[1]))
       case 3 where args[0] == "beside":
-        return .dockBeside(nil, target: try window(args[1]), try edge(args[2]))
+        return .dockBeside(nil, target: try window(1), try edge(args[2]))
       case 4 where args[1] == "beside":
-        return .dockBeside(try window(args[0]), target: try window(args[2]), try edge(args[3]))
+        return .dockBeside(try window(0), target: try window(2), try edge(args[3]))
       default:
         throw ParseError("usage: dock [window] <edge> | dock [window] beside <window> <edge>")
       }
@@ -360,7 +380,7 @@ public enum Command: Equatable, Sendable, Codable {
       case 2:
         return .resize(nil, try edge(args[0]), try points(args[1]))
       case 3:
-        return .resize(try window(args[0]), try edge(args[1]), try points(args[2]))
+        return .resize(try window(0), try edge(args[1]), try points(args[2]))
       default:
         throw ParseError("usage: resize [window] <edge> <points> (negative shrinks)")
       }
@@ -433,7 +453,8 @@ public enum Command: Equatable, Sendable, Codable {
       default: throw ParseError("usage: launch-at-login [on|off]")
       }
     case _ where SettingsCommand.verbs.contains(verb):
-      return .settings(try SettingsCommand.parse(verb: verb, args: originalArgs))
+      // What a shortcut is to run is a command of its own, read when it is bound.
+      return .settings(try SettingsCommand.parse(verb: verb, args: verb == "bind" ? Array(originalArgs.prefix(1)) + Array(typedArgs.dropFirst()) : originalArgs))
     case "find", "go-to":
       // As typed: the finder ignores case by itself. A URL's words may hold spaces and slashes, which divide words
       // in a command's text; the finder takes them for the same, and so the text parses back to this command.
@@ -465,7 +486,7 @@ public enum Command: Equatable, Sendable, Codable {
         throw ParseError("usage: summon <app> (its name, like Terminal, or its bundle id, like com.apple.Terminal)")
       }
       return .summon(app: app)
-    case "layout": return try parseLayout(originalArgs.joined(separator: " "))
+    case "layout": return try parseLayout(typedArgs.joined(separator: " "))
     case "name": return args.isEmpty ? .unname(nil) : .name(try spaceName())
     case "unname": return .unname(args.isEmpty ? nil : try spaceName())
     case "spaces": return try noArgs(.spaces)
@@ -473,17 +494,26 @@ public enum Command: Equatable, Sendable, Codable {
       if args == ["cancel"] { return .askName(cancel: true) }
       guard args.isEmpty else { throw ParseError("usage: ask-name [cancel]") }
       return .askName(cancel: false)
+    case "windows":
+      guard args.isEmpty || args == ["--titles"] else { throw ParseError("usage: windows [--titles]") }
+      return .listWindows(titles: !args.isEmpty)
+    case "where": return try noArgs(.listPlaces)
+    case "views": return try noArgs(.listViews)
+    case "displays": return try noArgs(.listDisplays)
     case "focus":
-      guard args.count == 1, let target = FocusTarget(word: args[0]) else {
+      guard args.count == 1 else {
         throw ParseError("usage: focus <left|right|up|down> | focus next | focus previous | focus <window>")
       }
-      return .focus(target)
+      // In quotes it is an app's name, whatever it says: `focus "next"`.
+      if unquoted(typedArgs[0]) == nil, let target = FocusTarget(word: args[0]) { return .focus(target) }
+      return .focus(.window(try window(0)))
     case "swap":
       switch args.count {
       case 1: return .swap(nil, try edge(args[0]))
       case 2:
-        if let direction = Edge(word: args[1]) { return .swap(try window(args[0]), direction) }
-        return .swapWindows(try window(args[0]), try window(args[1]))
+        // In quotes it is an app's name, as after `focus`.
+        if unquoted(typedArgs[1]) == nil, let direction = Edge(word: args[1]) { return .swap(try window(0), direction) }
+        return .swapWindows(try window(0), try window(1))
       default:
         throw ParseError("usage: swap [window] <left|right|up|down> | swap <window> <window>")
       }
@@ -506,7 +536,7 @@ public enum Command: Equatable, Sendable, Codable {
       guard (1...2).contains(args.count), let target = DisplayTarget(word: args[0]) else {
         throw ParseError("usage: move-to-display <next|previous|number> [window]")
       }
-      return .moveToDisplay(target, args.count == 2 ? try window(args[1]) : nil)
+      return .moveToDisplay(target, args.count == 2 ? try window(1) : nil)
     case "focus-display":
       guard args.count == 1, let target = DisplayTarget(word: args[0]) else {
         throw ParseError("usage: focus-display <next|previous|number>")
@@ -522,14 +552,13 @@ public enum Command: Equatable, Sendable, Codable {
         kinds.append(kind)
       }
       return .watch(WatchOptions(kinds: kinds, titles: args.contains("--titles")))
-    case "displays": return try noArgs(.displays)
     case "toggle-auto-dock": return try noArgs(.toggleAutoDock)
     case "show-shortcuts": return try noArgs(.showShortcuts)
     case "minimap": return try noArgs(.minimap)
     case "undo": return try noArgs(.undo)
     case "redo": return try noArgs(.redo)
     default:
-      throw ParseError("unknown command `\(verb)`; try `help`")
+      throw ParseError(unknown(verb))
     }
   }
 
@@ -623,7 +652,13 @@ public enum Command: Equatable, Sendable, Codable {
     case .shrink(let points): return "shrink" + (points.map { " \(Self.format($0))" } ?? "")
     case .moveToDisplay(let target, let window): return "move-to-display \(target.text)" + w(window)
     case .focusDisplay(let target): return "focus-display \(target.text)"
-    case .displays: return "displays"
+    case .naming(let command, let names):
+      return Self.text(of: command, names: names.count) { names[$0].text }
+    case .listWindows(let titles): return titles ? "windows --titles" : "windows"
+    case .listPlaces: return "where"
+    case .listViews: return "views"
+    case .listDisplays: return "displays"
+    case .helpOn(let topic): return "help \(topic)"
     case .toggleAutoDock: return "toggle-auto-dock"
     case .showShortcuts: return "show-shortcuts"
     case .minimap: return "minimap"
@@ -640,7 +675,8 @@ public enum Command: Equatable, Sendable, Codable {
 
   public static let helpText = """
     Arbor commands. Use them as `arborctl dock left`, as the URL arbor://dock/left, or in settings.json's `bindings`.
-    [window] is a number from `state`; leave it out to act on the focused window.
+    [window] is an app's name or bundle id (its most recently focused window), a number from `windows`, `focused` or
+    `pointer`; leave it out to act on the focused window.
     <edge> is left, right, top or bottom (up and down work too); <direction> is left, right, up or down.
     "This display" is the focused window's, or the pointer's if the pointer moved last (setting: stepInToward).
 
@@ -654,7 +690,7 @@ public enum Command: Equatable, Sendable, Codable {
       zoom [window]                frame one window on its own; without a window, again to return
       zoom-node <node>             frame a space by its node number from `state`
       desktop                      show the Desktop, where floating windows live
-      save-view <1-9> | view <1-9> save where you are looking | go back there
+      save-view <1-9> | view <1-9>  save where you are looking | go back there
       frame-rect <x> <y> <w> <h>   frame what best fits a rectangle (what ⌃⌥-drag does)
       go <name>                    go to the space of that name, or the only one that begins so (go <edge>: neighbor)
       name <text> | unname [name]  name the space in view | take the name off it, or off the space of that name
@@ -702,7 +738,7 @@ public enum Command: Equatable, Sendable, Codable {
       pass-through [bundle-id] [on|off]          shortcuts and gestures off in that app, for apps that need ⌃⌥
                                                  themselves; again, or `off`, to have them back
       relayout | reload-settings | quit
-      status | state | ascii | help              one line | everything as JSON | the layout as text | this
+      status | state | ascii | help [command]    one line | everything as JSON | the layout as text | this
       state --titles                             with windows' titles and spaces' names, which `state` leaves out
       bindings                                   list the keyboard shortcuts in effect
       rules                                      per-app rules and which one the focused window matches
@@ -712,6 +748,8 @@ public enum Command: Equatable, Sendable, Codable {
       menu-bar | menu                            the buttons the menu bar item shows, and where each is | its menu, as text
       stats [reset]                              what commands and calls to other apps cost | start counting afresh
       spaces                                     the named spaces, what they hold and where they are
+      windows [--titles]                         the windows Arbor arranges, most recently focused first
+      where | views                              what each display's view shows | the saved views
       toggle-auto-dock                           new windows dock beside the focused window | float, as usual
       version                                    this build, and what the last update check found
       check-for-updates                          ask GitHub for a newer release and offer its page
@@ -729,7 +767,7 @@ public enum Command: Equatable, Sendable, Codable {
       rule add <bundle-id> <action> [title <text>]   add a rule; actions: float, ignore, pin, dock auto, dock <edge>,
                                                  dock beside <bundle-id> <edge>; `*` is any app
       rule change <n> <bundle-id> <action> [title <text>] | rule remove <n> | rule move <n> <place>
-      trace on [name] | off | status             record what macOS and Arbor tell each other (docs/TRACES.md)
+      trace on [name] | trace off | trace status record what macOS and Arbor tell each other (docs/TRACES.md)
       trace note <text>                          write a remark into the trace being recorded
       displays                                   the displays, and the options in effect on each
     """
@@ -741,12 +779,20 @@ public struct CommandResult: Codable, Sendable, Equatable {
   public var message: String
   public var state: StateSnapshot?
   public var text: String?
+  /// A query's answer for scripts; `text` is the same for people. `arborctl --json` prints it.
+  public var json: JSONValue?
+  /// What a person should hear beside the answer, which stays a table or JSON. `arborctl` prints it on stderr; the command has still worked.
+  public var warning: String?
 
-  public init(ok: Bool, message: String, state: StateSnapshot? = nil, text: String? = nil) {
+  public init(
+    ok: Bool, message: String, state: StateSnapshot? = nil, text: String? = nil, json: JSONValue? = nil, warning: String? = nil
+  ) {
     self.ok = ok
     self.message = message
     self.state = state
     self.text = text
+    self.json = json
+    self.warning = warning
   }
 
   public static func success(_ message: String) -> CommandResult { .init(ok: true, message: message) }

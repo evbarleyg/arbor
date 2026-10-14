@@ -15,7 +15,8 @@ check "and the window is docked" eventually at_edge "$W1" left
 check "it says what it did" says "docked" arborctl dock "$W2" right
 check "a window Arbor does not know exits with 1" exits_with 1 arborctl dock 999999 left
 check "it says why" says "no window w999999" arborctl dock 999999 left
-check "an unknown command exits with 1" exits_with 1 arborctl frobnicate
+# Found out by arborctl itself, which reads a command before it sends it (F50).
+check "an unknown command exits with 64" exits_with 64 arborctl frobnicate
 check "it says so" says "unknown command" arborctl frobnicate
 check "a command that cannot apply exits with 1" exits_with 1 arborctl view 7
 check "status says how many windows it arranges" says "2 docked and 1 floating" arborctl status
@@ -30,12 +31,13 @@ arborctl zoom "$W1" > /dev/null
 check "a camera move says where it went" says "stepped out to everything" arborctl out
 check "no reply speaks of nodes" fails says " n2" arborctl show-all
 check "a view that is not saved says how to save it" says "save-view 7" arborctl view 7
-check "a window Arbor does not know says where to look" says "\`state\` lists" arborctl zoom 999999
+check "a window Arbor does not know says where to look" says "\`windows\` lists" arborctl zoom 999999
 arborctl show-all > /dev/null
 
 claim "arborctl state is JSON that agrees with the window server"
 proves A02
-arborctl state > "$ARBOR_SESSION_DIR/state.json"
+# With the titles, which `state` leaves out unless it is asked.
+arborctl state --titles > "$ARBOR_SESSION_DIR/state.json"
 check "it is one JSON object with ok, message and state" python3 -c '
 import json, sys
 reply = json.load(open(sys.argv[1]))
@@ -49,7 +51,9 @@ check "the first window is where the state says" frame_is "$W1" $(frame_of "$W1"
 # shellcheck disable=SC2046
 check "the floating window too" frame_is "$W3" $(frame_of "$W3")
 check "--json gives the raw reply of any command" says '"ok":true' arborctl --json zoom "$W1"
-check "and of one that fails, still exiting with 0" says '"ok":false' arborctl --json dock 999999 left
+check "one that fails exits with 1 even so" exits_with 1 arborctl --json dock 999999 left
+check "with the reason, and no JSON" says "arborctl: there is no window w999999" arborctl --json dock 999999 left
+check "nothing of it on standard output" test -z "$(arborctl --json dock 999999 left 2> /dev/null)"
 arborctl show-all > /dev/null
 
 claim "arborctl ascii draws the layout"

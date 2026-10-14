@@ -341,13 +341,15 @@ them plain gaps. None of this moves a window.
 ```bash
 arborctl help                 # all of them; works without Arbor running
 arborctl dock left            # the focused window
+arborctl zoom Safari          # or any window, by its app
+arborctl where                # what the view shows: a status bar's label
 arborctl view 2
 arborctl state | jq .state    # everything, as JSON
 arborctl watch view           # a line of JSON whenever the view changes, for a status bar
 open "arbor://view/2"         # from Raycast, Alfred, Shortcuts, a Stream Deck
 ```
 
-`arborctl` exits with 0 when the command worked, 1 when Arbor said no (and why), 2 when Arbor is not running. URLs can only move the view and arrange windows, because any web page can open one; `allowAllURLCommands` lifts that. [Scripting Arbor](SCRIPTING.md) has every event of `watch`, a SketchyBar item that shows the space in view, and recipes for the shell and `jq`.
+`arborctl` exits with 0 when the command worked, 1 when Arbor said no (and why, on stderr), 2 when Arbor is not running, 4 when no answer came in time, 64 when it cannot read the command. URLs can only move the view and arrange windows, because any web page can open one; `allowAllURLCommands` lifts that. [Scripting Arbor](SCRIPTING.md) has the rest: every event of `watch`, the small queries, and examples for Raycast, SketchyBar, Shortcuts, the shell and `jq`.
 
 **A whole arrangement in one line.** `|` is side by side, `/` one above the other, brackets group, `[ ]` is a tab group, `:2` is twice the size:
 

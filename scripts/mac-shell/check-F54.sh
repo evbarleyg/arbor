@@ -49,7 +49,7 @@ shot 02-tabs
 
 step "errors come back whole"
 ctl layout "$W1 | $W2 / $W3"
-check "and the command fails" test "$("$ARBOR_BIN/arborctl" layout "$W1 | $W2 / $W3" > /dev/null 2>&1; echo $?)" = 1
+check "and arborctl exits with 64, having asked nobody" test "$("$ARBOR_BIN/arborctl" layout "$W1 | $W2 / $W3" > /dev/null 2>&1; echo $?)" = 64
 
 step "parts of titles stay out of the log"
 ctl layout "'$app'~Zebra | $W2"

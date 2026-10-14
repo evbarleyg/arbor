@@ -133,7 +133,7 @@ import Testing
 
   /// What counts as one of Arbor's own first words: the commands `help` lists, each of them, and no word of its prose.
   @Test func arborsOwnFirstWords() {
-    for verb in Command.documentedVerbs { #expect(Command.isVerb(verb), "\(verb)") }
+    for verb in Command.verbs { #expect(Command.isVerb(verb), "\(verb)") }
     for verb in ["state", "unname", "quit", "in", "redo", "resume", "reload-settings", "LAYOUT", "Go"] { #expect(Command.isVerb(verb), "\(verb)") }
     for word in ["the", "this", "window", "arbor", "edge", "space", "frame", "zom", "", "…"] { #expect(!Command.isVerb(word), "\(word)") }
   }

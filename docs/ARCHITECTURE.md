@@ -1167,7 +1167,7 @@ or hit-tests a display reads `layoutOptions`, `dropOptions` or `gap` from there*
 
 One request per connection on the Unix socket: the client writes one line of
 command text (`Command.parse`), the server replies with one line of JSON
-(`CommandResult`: `ok`, `message`, optional `state`, optional `text`) and
+(`CommandResult`: `ok`, `message`, optional `state`, `text`, `json` and `warning`) and
 closes. `arborctl` and `arbor-e2e` are the clients. `docs/SCRIPTING.md` is the guide for script authors.
 
 `watch [events…] [--titles]` is the exception: the connection stays open and the
@@ -1198,6 +1198,30 @@ On quit the feed sends `quitting`, after the windows are back in view, and the s
 The framing (`ArborIPC/LineBuffer.swift`, `OutboundQueue.swift`) is pure. The server, the client and `arborctl` need only POSIX
 and Dispatch, so they build and are tested on Linux too; `ArborIPC/UnixSocket.swift` is the one file that tells
 the platforms apart.
+
+A query answers twice: `text` for people (one line per item, fields separated by tabs) and `json` (`JSONValue`) for scripts; what else a person should hear is its `warning`, which `arborctl` prints on stderr.
+`where`, `views` and a window's `state` are made from `eventSummary`, so that queries and events cannot tell different stories. The rows are
+Codable structs in `ArborCore/Queries.swift`; the controller fills them in `Controller+Queries.swift`. In everything scripts read, a rectangle is an
+object: the property stays a `CGRect` and `@JSONRect` changes how it is written (`state.json`, Arbor's own file, is not touched).
+docs/SCRIPTING.md documents every field; fields are only ever added.
+
+**arborctl decides nothing in `main.swift`.** `Arborctl.run(arguments, send:, emit:)` in ArborCore is the whole program but for the socket and the
+file descriptors: options anywhere on the line, commas between commands, putting quotes back around arguments with spaces, reading every
+command before sending any (exit code 64), which part of a reply goes to stdout or stderr, lining tables up for a terminal. The tests, the transcripts in
+the documentation and the worked examples all call that function.
+
+`help <command>`, "did you mean" and the shell completions are read out of `Command.helpText` (`CommandHelp.swift`), so a command that is in the help
+has them. The format they rely on is written there; `CommandHelpTests` fails if a help line does not keep to it.
+
+## Naming windows
+
+`zoom Safari`, `dock Mail beside Safari bottom`, `float pointer`. Which window a name means depends on the moment, so the parser keeps the name and the
+controller looks it up. The cases of `Command` hold `WindowID`s, and dozens of places build and match them, so names are added around them rather than
+inside: the parser's one helper for window words hands out a stand-in number per name, and the command is wrapped as
+`.naming(command with stand-ins, [WindowRef])`. `execute`, first of all, finds the windows (`AppName.windows(of:in:)` over `windowCandidates()`, the same as `layout`),
+`Command.filling` puts their numbers in, and the plain command runs. Every command that reads its window through that helper takes names, new ones included.
+Command text is split at spaces and slashes except inside quotes (`Command.words(of:)`), which is how a name with spaces stays one word.
+A link may say `focused` and `pointer` but not an app (`isAllowedFromURL`): by name a page could pick the window that gets the keyboard.
 
 ## URLs
 

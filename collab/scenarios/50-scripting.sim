@@ -1,0 +1,56 @@
+# Story: someone glues Arbor to a launcher and a status bar. Windows are named by app, never by number;
+# the window a name means is the one used last; a name that means nothing says so and changes nothing;
+# and the small queries answer without changing anything.
+# Spec: F50. Window ids start at 101.
+open Safari
+open Mail
+open Terminal
+open Safari
+focus 101
+focus 104
+dock Safari left
+expect ok
+expect docked 104
+expect floating 101
+dock Mail beside Safari bottom
+expect ok
+expect above 104 102
+dock com.example.terminal right
+expect docked 103
+zoom Safari
+expect fills 104
+expect hidden 102
+# Named, it stays framed however often it is said; a shortcut's bare `zoom` would return.
+zoom Safari
+expect fills 104
+zoom focused
+expect ok
+expect fills 104
+windows
+expect ok
+where
+expect ok
+views
+expect ok
+displays
+expect ok
+version
+expect ok
+help zoom
+expect ok
+expect fills 104
+expect count docked 3
+# No such window, no such command, and an app that is called like a direction.
+zoom Notes
+expect fail
+zom Safari
+expect fail
+zoom left
+expect fail
+expect fills 104
+# The pointer names a window too.
+show-all
+cursor 1300 400
+float pointer
+expect ok
+expect floating 103

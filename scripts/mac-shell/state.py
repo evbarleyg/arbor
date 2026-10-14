@@ -55,7 +55,9 @@ GAP = float(os.environ.get("ARBOR_GAP") or 12)
 
 
 def rect(value):
-    """A CGRect is encoded as [[x, y], [width, height]]."""
+    """A rectangle is {"x", "y", "width", "height"} since schema 2, and was [[x, y], [width, height]]."""
+    if isinstance(value, dict):
+        return [value["x"], value["y"], value["width"], value["height"]]
     (x, y), (width, height) = value
     return [x, y, width, height]
 
@@ -204,6 +206,11 @@ class World:
         return frame
 
 
+def display_of(window):
+    """The id of a window's display: `displayID` since schema 2, where `display` is a number; `display` before."""
+    return window.get("displayID", window.get("display"))
+
+
 def display_number(state, identifier):
     for number, display in enumerate(state["displays"], start=1):
         if display["id"] == identifier:
@@ -243,7 +250,7 @@ def summary(world):
         if state.get("focused") == window["id"]:
             traits.append("focused")
         if several:
-            traits.insert(0, f"display {display_number(state, window.get('display')) or '-'},")
+            traits.insert(0, f"display {display_number(state, display_of(window)) or '-'},")
         line = f"  w{window['id']} {words(rect(window['frame'])):<20} {' '.join(traits)}"
         real = world.real.get(window["id"])
         if real and not same(real["frame"], rect(window["frame"]), 1):
@@ -450,7 +457,7 @@ def main():
     elif query == "displays":
         print(len(state["displays"]))
     elif query == "display" and arguments:
-        number = display_number(state, world.known(window_id(arguments[0])).get("display"))
+        number = display_number(state, display_of(world.known(window_id(arguments[0]))))
         if number is None:
             fail(f"window {arguments[0]} is on no display")
         print(number)

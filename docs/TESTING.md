@@ -120,7 +120,10 @@ proves that animation changes nothing but the picture. The fake window that gets
 `DocTranscriptTests` runs each `$ arborctl …` and `$ open "arbor://…"` line against a `Harness` and compares what is printed, and
 loads each `json` block that follows `<!-- settings -->`. Comments such as `<!-- windows: Safari, Mail "Inbox" -->` set the scene
 (the header of `Tests/ArborKitTests/DocTranscripts.swift` lists them). After changing a reply, run the tests once with
-`ARBOR_UPDATE_DOCS=1` to write the new output into the files, and read the diff.
+`ARBOR_UPDATE_DOCS=1` to write the new output into the files, and read the diff. `docs/SCRIPTING.md` is checked the same way; there `arborctl … | cut -f2` really
+pipes into `sh`, `echo $?` prints the exit code, and lines with `jq` run where `jq` is installed. Its worked examples (a Raycast script, a SketchyBar plugin)
+are run as they stand on the page, under bash, by `ScriptingExampleTests`, with a stand-in `arborctl` on their PATH that hands each call to the real `Arborctl.run`
+and a real controller. The completion scripts are driven in bash, and in zsh and fish where those are installed (`CommandHelpTests`).
 
 ## 3. arbor-sim
 

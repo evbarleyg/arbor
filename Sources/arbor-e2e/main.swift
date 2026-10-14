@@ -198,6 +198,29 @@ final class Runner {
     return try JSONDecoder().decode(CommandResult.self, from: Data(reply.utf8))
   }
 
+  /// Runs the real `arborctl` against this Arbor, or against `socket`.
+  func arborctl(_ arguments: [String], socket: String? = nil) -> (code: Int32, out: String, err: String) {
+    let process = Process()
+    process.executableURL = binaries.appendingPathComponent("arborctl")
+    process.arguments = arguments
+    var environment = ProcessInfo.processInfo.environment
+    environment["ARBOR_HOME"] = home.path
+    environment["ARBOR_SOCKET"] = socket ?? self.socket
+    process.environment = environment
+    let (out, err) = (Pipe(), Pipe())
+    process.standardOutput = out
+    process.standardError = err
+    do {
+      try process.run()
+    } catch {
+      return (-1, "", "\(error)")
+    }
+    let printed = out.fileHandleForReading.readDataToEndOfFile()
+    let complained = err.fileHandleForReading.readDataToEndOfFile()
+    process.waitUntilExit()
+    return (process.terminationStatus, String(decoding: printed, as: UTF8.self), String(decoding: complained, as: UTF8.self))
+  }
+
   func state() throws -> StateSnapshot {
     guard let state = try send("state").state else { throw Setup(description: "state reply had no state") }
     return state
@@ -590,6 +613,35 @@ final class Runner {
     try step("put the three side by side again", "arrange") { state in
       check("all three show", Set(state.displays[0].windowFrames.keys) == Set([w1, w2, w3]))
     }
+    // F50: the command line as scripts meet it, through the real arborctl.
+    try step("name a window by its app", "zoom \"\(testApp)\"") { state in
+      check("the state is schema 2", state.schema == 2, "\(state.schema)")
+      check("one window of the app is framed", state.displays[0].windowFrames.count == 1, "\(state.displays[0].windowFrames.keys.sorted())")
+    }
+    print("\n▸ arborctl's exit codes and streams  (arborctl …)")
+    var run = arborctl(["show-all"])
+    check("done is 0, with the reply on stdout", run.code == 0 && !run.out.isEmpty && run.err.isEmpty, "\(run)")
+    run = arborctl(["zoom", "No Such App"])
+    check("Arbor saying no is 1, with the reason on stderr alone", run.code == 1 && run.out.isEmpty && run.err.contains("no window of No Such App"), "\(run)")
+    run = arborctl(["zom"])
+    check("what cannot be read is 64", run.code == 64 && run.out.isEmpty && run.err.contains("did you mean `zoom`?"), "\(run)")
+    run = arborctl(["status"], socket: home.appendingPathComponent("nobody.sock").path)
+    check("not reaching Arbor is 2", run.code == 2 && run.out.isEmpty && !run.err.isEmpty, "\(run)")
+    run = arborctl(["-q", "zoom", "No Such App"])
+    check("-q prints nothing and keeps the exit code", run.code == 1 && run.out.isEmpty && run.err.isEmpty, "\(run)")
+    run = arborctl(["out", ",", "zoom", "No Such App", ",", "desktop"])
+    check("several commands stop at the first failure", run.code == 1, "\(run)")
+    print("\n▸ the small queries  (arborctl windows --json)")
+    run = arborctl(["windows", "--json"])
+    let listed = (try? JSONDecoder().decode([Query.Window].self, from: Data(run.out.utf8))) ?? []
+    check("`windows --json` lists the three test windows", Set(listed.map(\.id)) == Set([w1, w2, w3]), run.out + run.err)
+    check("without titles", listed.allSatisfy { $0.title == nil })
+    run = arborctl(["windows"])
+    check("as text, into a pipe, the fields are separated by tabs", run.out.split(separator: "\n").allSatisfy { $0.split(separator: "\t").count == 6 }, run.out)
+    run = arborctl(["where"])
+    check("`where` has one line per display", run.out.split(separator: "\n").count == start.displays.count, run.out)
+    run = arborctl(["--version"])
+    check("arborctl and Arbor are of one build", run.code == 0 && run.err.isEmpty && run.out.split(separator: "\n").count == 1, "\(run)")
     try step("show the Desktop", "desktop") { _ in
       for window in [w1, w2, w3] {
         check("\(window) is out of view", leavesView(window), whereabouts(window))

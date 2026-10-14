@@ -16,20 +16,26 @@ import Testing
 ///     ```
 ///
 /// Lines that begin with `$ ` are run, and the lines up to the next one must be exactly what is printed.
-/// `arborctl <words>` goes to a real controller over fake windows, joined as arborctl joins them;
-/// `open "arbor://…"` goes down the road URLs take. Comments set the scene:
+/// `arborctl <words>` is the real `Arborctl.run` talking to a real controller over fake windows, as seen in a terminal
+/// (stdout and stderr together); `arborctl … | <rest>` hands its stdout to `sh -c '<rest>'`, as a pipe does; `echo $?` prints the
+/// last exit code; `open "arbor://…"` goes down the road URLs take. A pipeline that needs `jq` is only run where `jq`
+/// is installed. Comments set the scene:
 ///
 /// - `<!-- windows: A, B "Title", C [bundle.id] -->` starts afresh with these windows open, floating, ids from 101;
 /// - `<!-- displays: 2 -->`, before `windows`, adds a second display to the right of the first;
 /// - `<!-- opens: A -->` opens another window; `<!-- focuses: 102 -->` is the user clicking a window.
 ///
 /// A block marked `json` after `<!-- settings -->` must be a fragment of settings.json that loads, with
-/// no shortcut or rule skipped.
+/// no shortcut or rule skipped. The block after `<!-- file: morning.arbor -->` is that file, which `arborctl - < morning.arbor` then reads.
 ///
 /// Run the tests with `ARBOR_UPDATE_DOCS=1` to write what is really printed into the files.
 @MainActor
 struct DocTranscript {
   static let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+  /// What may stand after a `|` in a transcript.
+  static let filters: Set = ["cut", "jq", "head", "tail", "sort", "uniq", "wc", "grep", "tr", "sed", "awk", "column"]
+  /// Which build Arbor and arborctl are in the examples.
+  static let build = BuildInfo(version: "0.9.0", build: "214", commit: "47a2ba9")
 
   struct Problem: CustomStringConvertible {
     var line: Int
@@ -44,11 +50,15 @@ struct DocTranscript {
 
   private var harness: Harness?
   private var displays = 1
+  private var lastExitCode: Int32 = 0
+  /// The files the page has shown so far, by name.
+  private var files: [String: [String]] = [:]
 
   init(markdown: String) {
     let lines = markdown.components(separatedBy: "\n")
     var index = 0
     var expectSettings = false
+    var expectFile: String?
     while index < lines.count {
       let line = lines[index]
       corrected.append(line)
@@ -56,7 +66,13 @@ struct DocTranscript {
       let trimmed = line.trimmingCharacters(in: .whitespaces)
       if trimmed.hasPrefix("<!--"), trimmed.hasSuffix("-->") {
         let directive = trimmed.dropFirst(4).dropLast(3).trimmingCharacters(in: .whitespaces)
-        if directive == "settings" { expectSettings = true } else { follow(directive, line: index) }
+        if directive == "settings" {
+          expectSettings = true
+        } else if directive.hasPrefix("file:") {
+          expectFile = directive.dropFirst(5).trimmingCharacters(in: .whitespaces)
+        } else {
+          follow(directive, line: index)
+        }
         continue
       }
       guard trimmed.hasPrefix("```"), trimmed != "```" else { continue }
@@ -65,6 +81,12 @@ struct DocTranscript {
       while index < lines.count, lines[index].trimmingCharacters(in: .whitespaces) != "```" {
         block.append(lines[index])
         index += 1
+      }
+      if let name = expectFile {
+        files[name] = block
+        expectFile = nil
+        corrected += block
+        continue
       }
       switch trimmed.dropFirst(3) {
       case "console":
@@ -94,6 +116,8 @@ struct DocTranscript {
         list.append(DisplaySnapshot(id: DisplayID("side"), frame: frame, visibleFrame: frame, isMain: false))
       }
       let h = Harness(displays: list)
+      // What a reader's own Arbor would say, rather than the `dev` of a build that is in no bundle.
+      h.controller.buildInfo = Self.build
       for item in value.components(separatedBy: ",") where !item.trimmingCharacters(in: .whitespaces).isEmpty { open(item, in: h) }
       h.start()
       harness = h
@@ -167,15 +191,60 @@ struct DocTranscript {
       problems.append(Problem(line: line, description: "a transcript before any `<!-- windows: … -->`"))
       return nil
     }
-    guard let words = Self.shellWords(command), let program = words.first else {
+    let (first, rest) = Self.splitAtPipe(command)
+    guard var words = Self.shellWords(first), let program = words.first else {
       problems.append(Problem(line: line, description: "cannot split into words: \(command)"))
       return nil
     }
+    // `… < morning.arbor`
+    var input: [String] = []
+    if words.count >= 2, words[words.count - 2] == "<" {
+      guard let file = files[words[words.count - 1]] else {
+        problems.append(Problem(line: line, description: "no `<!-- file: \(words[words.count - 1]) -->` before this"))
+        return nil
+      }
+      input = file
+      words.removeLast(2)
+    }
     switch program {
+    case "echo" where words == ["echo", "$?"]:
+      return String(lastExitCode)
     case "arborctl":
-      // What arborctl does with its arguments, and with the reply.
-      let result = harness.run(words.dropFirst().joined(separator: " "))
-      return result.text ?? result.message
+      var out: [String] = []
+      var err: [String] = []
+      var printed: [String] = []
+      lastExitCode = Arborctl.run(
+        Array(words.dropFirst()), terminal: rest == nil, own: Self.build,
+        readLine: { input.isEmpty ? nil : input.removeFirst() },
+        send: { line, _ in
+          // What the app does with a line from the socket.
+          let encoder = JSONEncoder()
+          encoder.outputFormatting = [.sortedKeys]
+          return String(decoding: try encoder.encode(harness.run(line)), as: UTF8.self)
+        },
+        emit: { output in
+          if let text = output.out { out.append(text) }
+          if let text = output.err { err.append("arborctl: \(text)") }
+          printed += [output.out, output.err.map { "arborctl: \($0)" }].compactMap { $0 }
+        })
+      guard let rest else { return printed.joined(separator: "\n") }
+      // These tests also run on a person's own Mac, where `arborctl` is the installed one and talks to the Arbor that is running.
+      // Nothing that could reach it, or write anywhere, follows a pipe: only filters do.
+      var stages: String? = rest
+      while let (stage, following) = stages.map(Self.splitAtPipe) {
+        let program = stage.split(separator: " ").first.map(String.init) ?? ""
+        guard Self.filters.contains(program) else {
+          problems.append(Problem(line: line, description: "only filters can follow a pipe (\(Self.filters.sorted().joined(separator: ", "))), not `\(program)`"))
+          return nil
+        }
+        stages = following
+      }
+      if rest.contains("jq "), !Self.isInstalled("jq") { return nil }
+      guard let piped = Self.shell(rest, input: out.joined(separator: "\n") + (out.isEmpty ? "" : "\n")) else {
+        problems.append(Problem(line: line, description: "could not run: \(rest)"))
+        return nil
+      }
+      return (err + (piped.isEmpty ? [] : [piped])).joined(separator: "\n")
     case "open" where words.count == 2:
       switch harness.controller.admit(url: words[1]) {
       case .success(let command):
@@ -189,6 +258,44 @@ struct DocTranscript {
       problems.append(Problem(line: line, description: "only `arborctl …` and `open \"arbor://…\"` can be run: \(command)"))
       return nil
     }
+  }
+
+  /// `a "x | y" | b | c` is `a "x | y"` and `b | c`.
+  static func splitAtPipe(_ command: String) -> (String, String?) {
+    var quote: Character?
+    for index in command.indices {
+      let character = command[index]
+      if let open = quote {
+        if character == open { quote = nil }
+      } else if character == "'" || character == "\"" {
+        quote = character
+      } else if character == "|" {
+        return (String(command[..<index]), command[command.index(after: index)...].trimmingCharacters(in: .whitespaces))
+      }
+    }
+    return (command, nil)
+  }
+
+  static func isInstalled(_ tool: String) -> Bool { shell("command -v \(tool)", input: "")?.isEmpty == false }
+
+  /// What `sh -c command` prints, given `input`, without the last line break. Nil if it cannot be run.
+  static func shell(_ command: String, input: String) -> String? {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/bin/sh")
+    process.arguments = ["-c", command]
+    process.environment = ["PATH": "/usr/bin:/bin:/opt/homebrew/bin"]
+    let (stdin, stdout) = (Pipe(), Pipe())
+    process.standardInput = stdin
+    process.standardOutput = stdout
+    process.standardError = stdout
+    guard (try? process.run()) != nil else { return nil }
+    stdin.fileHandleForWriting.write(Data(input.utf8))
+    try? stdin.fileHandleForWriting.close()
+    let data = stdout.fileHandleForReading.readDataToEndOfFile()
+    process.waitUntilExit()
+    var text = String(decoding: data, as: UTF8.self)
+    if text.hasSuffix("\n") { text.removeLast() }
+    return text
   }
 
   /// Splits as a shell does, for what the documentation uses: spaces, '…', "…" with \" and \\ inside, and a
@@ -244,7 +351,22 @@ struct DocTranscript {
 @Suite @MainActor struct DocTranscriptTests {
   /// The files with transcripts, and how many commands each runs at least (so that a change of
   /// format cannot quietly turn the check off).
-  @Test(arguments: [("docs/LAYOUTS.md", 30), ("README.md", 3)])
+  /// These tests run on a person's own Mac too. Nothing in a transcript may reach the installed arborctl, or write anywhere.
+  @Test(arguments: [
+    "arborctl windows | xargs -n1 arborctl close", "arborctl windows | pbcopy", "arborctl windows | tee /tmp/x", "arborctl windows | cut -f1 | sh",
+    "arborctl windows | cut -f1 | xargs rm", "arborctl windows | arborctl -", "arborctl windows |",
+  ]) func onlyFiltersFollowAPipe(command: String) {
+    let transcript = DocTranscript(markdown: "<!-- windows: Safari -->\n```console\n$ \(command)\n```\n")
+    #expect(transcript.commandsRun == 0)
+    #expect(transcript.problems.count == 1 && transcript.problems[0].description.hasPrefix("only filters can follow a pipe"), "\(transcript.problems)")
+  }
+
+  @Test func aBarInsideQuotesIsNoPipe() {
+    let transcript = DocTranscript(markdown: "<!-- windows: Safari -->\n```console\n$ arborctl windows | grep -cE 'nothing|Safari' | tr -d ' '\n1\n```\n")
+    #expect(transcript.problems.isEmpty && transcript.commandsRun == 1, "\(transcript.problems)")
+  }
+
+  @Test(arguments: [("docs/LAYOUTS.md", 30), ("docs/SCRIPTING.md", 45), ("README.md", 3)])
   func theExamplesInTheDocumentationDoWhatTheySay(path: String, atLeast: Int) throws {
     let url = DocTranscript.root.appendingPathComponent(path)
     let markdown = try String(contentsOf: url, encoding: .utf8)

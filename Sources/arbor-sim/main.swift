@@ -479,7 +479,7 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     guard let id = window(1) else { return usage("background-focus <id>") }
     system.backgroundFocus(id)
     return ("\(id.rawValue) became its app's focused window, in the background", true)
-  // `displays` on its own is Arbor's query (the displays and the options in effect on each).
+  // `displays 2` plugs a display in; `displays` on its own is Arbor's query.
   case "displays" where words.count > 1:
     guard let count = Int(words[1]), (0...2).contains(count) else { return usage("displays <0|1|2>") }
     system.setDisplays(Array(simulatedDisplays.prefix(count)))
@@ -660,7 +660,8 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     if let outcome = simulateHands(words, harness: harness) { return outcome }
     let result = harness.run(words.joined(separator: " "))
     if words[0] == "find", result.ok, let finder = harness.overlays.finder { return (finder.text, true) }
-    if let text = result.text { return (text, result.ok) }
+    // With what `arborctl` would print beside it, on stderr.
+    if let text = result.text { return ([text, result.warning].compactMap { $0 }.filter { !$0.isEmpty }.joined(separator: "\n"), result.ok) }
     if let state = result.state {
       return (describe(state), result.ok)
     }

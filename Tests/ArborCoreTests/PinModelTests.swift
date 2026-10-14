@@ -97,7 +97,11 @@ import Testing
       #expect(command.isAllowedFromURL, "an arrangement that is easily put back")
       #expect(!command.isQuery && !command.endsPause)
     }
-    #expect(throws: Command.ParseError.self) { try Command.parse("pin Zoom") }
+    // Since F50 a window can be named by its app wherever a command takes one. It is kept as a name, never guessed at here.
+    let named = try Command.parse("pin Zoom")
+    if case .naming(_, let names) = named { #expect(names == [.app("Zoom")]) } else { Issue.record("pin Zoom became \(named)") }
+    #expect(named.filling([a]) == .pin(a))
+    #expect(throws: Command.ParseError.self) { try Command.parse("pin left") }
     for verb in ["pin", "unpin", "toggle-pin"] {
       #expect(throws: Command.ParseError.self, "a second window is not ignored in silence") { try Command.parse("\(verb) 103 104") }
     }

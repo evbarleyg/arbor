@@ -56,7 +56,8 @@ check "a setting left alone is not marked" fails grep -q "^\* *focusRing = " "$A
 
 claim "set a value out of range by command: it is refused with the range, and nothing changes"
 proves A17
-check "set gap 500 exits with 1" exits_with 1 arborctl set gap 500
+# arborctl reads a command before it sends it, and knows the ranges and the keys (F50): 64, and nothing was sent.
+check "set gap 500 exits with 64" exits_with 64 arborctl set gap 500
 check "it says what the range is" says "\`gap\` must be from 0 to 100 pt, got 500" arborctl set gap 500
 check "a word for a number is refused too" says "\`gap\` needs a number from 0 to 100 pt" arborctl set gap wide
 check "and a number for a switch" says "\`tabsEnabled\` is true or false" arborctl set tabsEnabled 7
@@ -66,7 +67,7 @@ check "the file stays" file_is '{"noteToSelf": "narrower?",   "gap": 16, "tabsEn
 
 claim "misspell a setting by command: Arbor asks whether the nearest one was meant"
 proves A17
-check "set gpa 10 exits with 1" exits_with 1 arborctl set gpa 10
+check "set gpa 10 exits with 64" exits_with 64 arborctl set gpa 10
 check "it suggests gap" says "unknown setting \`gpa\`; did you mean \`gap\`?" arborctl set gpa 10
 check "get does the same" says "did you mean \`focusRing\`?" arborctl get focusRign
 check "and so does reset" says "did you mean \`tabsEnabled\`?" arborctl reset tabEnabled

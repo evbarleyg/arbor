@@ -61,7 +61,7 @@ extension Controller {
     return summary
   }
 
-  private func eventState(of window: WindowSnapshot, in layout: Layout?, docked: Bool) -> ArborEvent.Window.State {
+  func eventState(of window: WindowSnapshot, in layout: Layout?, docked: Bool) -> ArborEvent.Window.State {
     if window.isMinimized { return .minimized }
     if window.isHidden { return .hidden }
     if window.isFullScreen { return .fullScreen }
@@ -80,7 +80,7 @@ extension Controller {
   }
 
   /// The space in the words replies use (`name(of:on:)`), without the number that follows them there.
-  private func label(of node: NodeID, on display: DisplayID) -> String {
+  func label(of node: NodeID, on display: DisplayID) -> String {
     // Arbor's own words. What a person called the space is `name`.
     let name = name(of: node, on: display, byName: false)
     // Replies have only the number for a space of which nothing can be seen just now (minimized, hidden, on another of
@@ -94,7 +94,7 @@ extension Controller {
   }
 
   /// How often `out` can be run from `node`.
-  private func stepsOut(from node: NodeID, on display: DisplayID) -> Int {
+  func stepsOut(from node: NodeID, on display: DisplayID) -> Int {
     guard let view = treeView(display) else { return 0 }
     var steps = 0
     var current = node

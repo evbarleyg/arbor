@@ -123,6 +123,11 @@ against fakes.
   so they work from hotkeys, the menu, `arborctl`, URLs and tests alike. URLs refuse a
   command until it is listed in `Command.isAllowedFromURL` (`CommandURL.swift`): list camera and
   arrangement commands there, never ones that change settings, delete things or quit.
+  Read a window argument with the parser's `window()` helper, so that it also takes app names (`zoom Safari`,
+  `WindowRef.swift`). In `helpText`, keep two or more spaces between a usage and its description (or begin the description in its column): `help <command>`,
+  "did you mean" and the shell completions are read out of it (`CommandHelp.swift`).
+- Replies are quoted in the documentation, and the quotes are tested (`DocTranscriptTests`). After rewording one, run the
+  tests once with `ARBOR_UPDATE_DOCS=1` and commit what changed in `README.md` and `docs/`.
 - Put a feature's controller code in its own `Controller+<Feature>.swift` and
   add one line to the `perform` switch.
 - Settings: add keys at the end of `Settings` (a property with its default, a

@@ -82,9 +82,10 @@ public struct ChaosGenerator {
     case focus, swap, swapWindows, equalize, rotate, mirror, grow, shrink, moveToDisplay, focusDisplay
     case hold, holdStill, release, toggleHold
     case undo, redo
-    case watch, find, reveal, displays
+    case watch, find, reveal
     case showShortcuts
     case minimap
+    case naming, listWindows, listPlaces, listViews, listDisplays, helpOn
   }
 
   /// No `default`, on purpose: a new `Command` case does not compile until it is listed here.
@@ -169,9 +170,14 @@ public struct ChaosGenerator {
     case .watch: .watch
     case .find: .find
     case .reveal: .reveal
-    case .displays: .displays
     case .showShortcuts: .showShortcuts
     case .minimap: .minimap
+    case .naming: .naming
+    case .listWindows: .listWindows
+    case .listPlaces: .listPlaces
+    case .listViews: .listViews
+    case .listDisplays: .listDisplays
+    case .helpOn: .helpOn
     }
   }
 
@@ -286,9 +292,24 @@ public struct ChaosGenerator {
       // The palette, opened or closed; or straight to an app's window, now and then one that is not there.
       return .find(random.chance(30) ? nil : random.chance(10) ? "Nobody" : random.pick(Self.apps)!)
     case .reveal: return .reveal(optionalWindow(in: world))
-    case .displays: return .displays
     case .showShortcuts: return .showShortcuts
     case .minimap: return .minimap
+    case .naming:
+      // Windows by their app, by the keyboard and by the pointer; now and then an app that is not there.
+      func name(_ r: inout ChaosRandom) -> String {
+        r.chance(15) ? "focused" : r.chance(15) ? "pointer" : r.chance(10) ? "Nobody" : "\"\(r.pick(Self.apps)!)\""
+      }
+      let edge = random.pick(["left", "right", "top", "bottom"])!
+      let text = random.pick([
+        "zoom \(name(&random))", "float \(name(&random))", "toggle-float \(name(&random))", "pin \(name(&random))", "dock \(name(&random)) \(edge)",
+        "dock \(name(&random)) beside \(name(&random)) \(edge)", "resize \(name(&random)) \(edge) 60",
+      ])!
+      return (try? Command.parse(text)) ?? .listWindows(titles: false)
+    case .listWindows: return .listWindows(titles: random.chance(50))
+    case .listPlaces: return .listPlaces
+    case .listViews: return .listViews
+    case .listDisplays: return .listDisplays
+    case .helpOn: return .helpOn(random.pick(Command.verbs)!)
     }
   }
 
@@ -386,7 +407,9 @@ public struct ChaosGenerator {
     case .release: ProcessInfo.processInfo.environment["ARBOR_CHAOS_HOLDS"] == nil && ProcessInfo.processInfo.environment["ARBOR_CHAOS_TWO_DISPLAYS"] == nil ? 1 : 6
     case .undo: 30
     case .redo: 8
-    case .watch, .displays: 1
+    case .watch: 1
+    case .listWindows, .listPlaces, .listViews, .listDisplays, .helpOn: 1
+    case .naming: 8
     case .find, .reveal: 8
     case .showShortcuts: 2
     case .minimap: 3

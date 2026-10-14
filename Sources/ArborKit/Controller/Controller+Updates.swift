@@ -27,10 +27,11 @@ extension Controller {
   func versionReport() -> CommandResult {
     let version = "Arbor \(buildInfo.text)"
     // One line, for scripts, until somebody or the setting has asked about updates.
+    let json = JSONValue(encoding: Query.Version(buildInfo))
     guard let update = updates.inFlight != nil ? "checking" : updates.lastDecision?.summary else {
-      return .success(version)
+      return CommandResult(ok: true, message: version, json: json)
     }
-    return CommandResult(ok: true, message: version, text: "\(version)\nUpdates: \(update)")
+    return CommandResult(ok: true, message: version, text: "\(version)\nUpdates: \(update)", json: json)
   }
 
   /// What the menu calls `check-for-updates`. The one sign an automatic check gives of what it found.

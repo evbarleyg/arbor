@@ -147,7 +147,7 @@ extension Controller {
     guard let best = ranked.first else {
       Log.debug("find failed: nothing matches among \(rows.count)")
       let asked = FinderCandidate.line(text, limit: 80)
-      return .failure("no window, space or saved view matches “\(asked)”")
+      return .failure("no window, space or saved view matches “\(asked)”; `windows` lists them")
     }
     return go(to: rows[best.index].destination, by: "find")
   }

@@ -275,7 +275,8 @@ import Testing
   /// The next command that takes words has to be looked at by somebody. Bundle ids, app names, and the numbers and ids of displays are
   /// in traces anyway.
   @Test func everyCommandThatTakesWordsIsKnownHere() throws {
-    let harmless: Set = ["exclude", "include", "passThrough", "summon", "printLayout"]
+    /// `helpOn` holds one of Arbor's own command words (`Command.canonicalVerb`), never what was typed.
+    let harmless: Set = ["exclude", "include", "passThrough", "summon", "printLayout", "helpOn"]
     /// `find` comes with F27, which brings its own stand-in.
     let replaced: Set = ["name", "unname", "goToSpace", "layout", "find"]
     let found = try casesThatTakeWords(in: "Sources/ArborCore/Command.swift")

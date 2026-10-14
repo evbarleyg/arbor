@@ -20,7 +20,9 @@ SYMBOLS = {"ok": "✔", "fail": "✘", "odd": "odd", "na": "–"}
 
 
 def rect(value):
-    """A CGRect is encoded as [[x, y], [width, height]]."""
+    """A rectangle is {"x", "y", "width", "height"} since schema 2, and was [[x, y], [width, height]]."""
+    if isinstance(value, dict):
+        return (value["x"], value["y"], value["width"], value["height"])
     (x, y), (width, height) = value
     return (x, y, width, height)
 

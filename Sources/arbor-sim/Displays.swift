@@ -79,7 +79,8 @@ func simulateDisplays(_ words: [String], harness: Harness) -> (String, Bool)? {
     frame.size = CGSize(width: min(frame.width, most.width), height: min(frame.height, most.height))
     if frame != old { system.userMove(id, to: frame) }
     return ("\(id.rawValue) is at most \(words[2])", true)
-  case "where":
+  // `where 101` asks the pretend Mac; `where` on its own is Arbor's query.
+  case "where" where words.count > 1:
     guard words.count == 2, let id = WindowID(word: words[1]), let frame = system.frame(of: id) else { return usage("where <id>") }
     let showing = system.displayList.map { frame.fractionInside($0.frame) }.reduce(0, +)
     let place = "\(Int(frame.minX)),\(Int(frame.minY)) \(Int(frame.width))x\(Int(frame.height))"

@@ -7,6 +7,17 @@ extension Controller {
   /// Runs a command. Every entry point (hotkeys, menu, socket, URLs, tests)
   /// ends up here, by way of `perform(_:from:)` (Controller+Lead.swift).
   func execute(_ command: Command) -> CommandResult {
+    // A name is looked up first of all, so that whatever is asked about a command below (may it run while the view is held? is its
+    // window in view?) is asked about the window the name stands for. `zoom Safari` is `zoom 102` from here on.
+    // `execute`, not `perform`: it is still the same command from the same shortcut, menu, script or link, and one line in a trace.
+    var meansNothing: Command.ParseError?
+    if case .naming(_, let names) = command {
+      switch plain(command, naming: names) {
+      case .success(let plain): return execute(plain)
+      // It goes on as it is, and fails below: like `zoom 999` it ends a peek, closes Go to… and is counted.
+      case .failure(let refusal): meansNothing = refusal
+      }
+    }
     // Before it changes anything: a peek ends on the arrangement it began with. Here, so that no way in goes round it.
     // The one exception is no command but a click (Controller+FrameRect.swift).
     if let landed = landPeek(insteadOf: command) { return landed }
@@ -20,9 +31,10 @@ extension Controller {
     let start = DispatchTime.now()
     defer { if !command.isQuery { stats.record("commands", command.verb, seconds: CallStats.seconds(since: start)) } }
     // First of all: some commands below are answered whether or not Arbor is running.
-    if let answer = holdAnswers(command) ?? refusalWhileHeld(command) { return answer }
+    if meansNothing == nil, let answer = holdAnswers(command) ?? refusalWhileHeld(command) { return answer }
     // A command must never pretend: see Controller+Permission.swift.
     if !command.isQuery, command != .quit { askAboutAccessibility(beyondDoubt: true, inPassing: true) }
+    if let meansNothing { return .failure(meansNothing.description) }
     switch command {
     case .status:
       // The message stays the one line scripts compare, but for a file that cannot be read, which somebody has to hear
@@ -78,8 +90,11 @@ extension Controller {
       return isRunning ? printLayout(display: display, naming: naming) : .failure(statusText)
     case .spaces:
       return spacesReport()
-    case .displays:
-      return displaysReport()
+    case .listWindows(let titles): return listWindows(titles: titles)
+    case .listPlaces: return listPlaces()
+    case .listViews: return listViews()
+    case .listDisplays: return listDisplays()
+    case .helpOn(let topic): return help(on: topic)
     default:
       break
     }
@@ -175,8 +190,8 @@ extension Controller {
     case .shrink(let points): result = resizeFocusedWindow(by: points, growing: false)
     case .moveToDisplay(let target, let window): result = move(window, to: target)
     case .focusDisplay(let target): result = focusDisplay(target)
-    case .displays:
-      result = displaysReport()
+    case .naming: result = .success("ok")
+    case .listWindows, .listPlaces, .listViews, .listDisplays, .helpOn: result = .success("ok")
     case .toggleAutoDock: result = toggleAutoDock()
     case .showShortcuts: result = toggleCheatSheet()
     case .minimap: result = toggleMinimap()
@@ -207,7 +222,7 @@ extension Controller {
   /// The explicit window, or the focused window, if Arbor manages it.
   func target(_ window: WindowID?) -> Target {
     guard let id = window ?? keyboardFocus() else {
-      return .failure(.failure("no focused window; click one, or name one (`state` lists their ids)"))
+      return .failure(.failure("no focused window; click one, or name one (`windows` lists them)"))
     }
     guard isManaged(id) else { return .failure(.failure(whyNotManaged(id))) }
     // Its arrangement is on another of the macOS Spaces: a shortcut pressed here would rearrange what cannot be seen.
@@ -221,7 +236,7 @@ extension Controller {
 
   /// Why `isManaged(id)` is false, and what to do about it.
   func whyNotManaged(_ id: WindowID) -> String {
-    guard let window = windows[id] else { return "there is no window \(id) (`state` lists their ids)" }
+    guard let window = windows[id] else { return "there is no window \(id) (`windows` lists them)" }
     if filter.ignoredWindowIDs.contains(id) { return "\(id) is left alone by an `ignore` rule (see `rules`)" }
     if let bundle = window.bundleID, filter.excludedBundleIDs.contains(bundle) {
       return "Arbor does not arrange \(window.appName); `include \(bundle)` arranges it again"
@@ -752,8 +767,15 @@ extension Controller {
   // MARK: Settings
 
   func exclude(_ bundleID: String?) -> CommandResult {
+    var named: String?
+    if let bundleID {
+      switch self.bundleID(named: bundleID, listed: settings.excludedBundleIDs) {
+      case .success(let found): named = found
+      case .failure(let refusal): return .failure(refusal.description)
+      }
+    }
     guard
-      let bundle = bundleID
+      let bundle = named
         ?? system.focusedWindow().flatMap({ windows[$0]?.bundleID })
     else { return .failure("no focused window; click one of the app's, or name the app: `exclude <bundle id>`") }
     if let refusal = refusalToChangeSettings() { return refusal }
@@ -764,7 +786,12 @@ extension Controller {
     return reply("no longer arranging \(app)", unsaved: change(settings: updated))
   }
 
-  func include(_ bundleID: String) -> CommandResult {
+  func include(_ word: String) -> CommandResult {
+    let bundleID: String
+    switch self.bundleID(named: word, listed: settings.excludedBundleIDs) {
+    case .success(let found): bundleID = found
+    case .failure(let refusal): return .failure(refusal.description)
+    }
     if let refusal = refusalToChangeSettings() { return refusal }
     let app = appName(forBundleID: bundleID)
     guard settings.excludedBundleIDs.contains(bundleID) else { return .failure("Arbor arranges \(app) already") }

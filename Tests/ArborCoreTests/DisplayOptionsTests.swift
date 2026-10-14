@@ -240,10 +240,10 @@ private func decode(_ json: String) throws -> Settings {
   }
 
   @Test func displaysIsAQueryWithoutArguments() throws {
-    #expect(try Command.parse("displays") == .displays)
-    #expect(Command.displays.text == "displays")
-    #expect(Command.displays.isQuery)
-    #expect(!Command.displays.isAllowedFromURL)
+    #expect(try Command.parse("displays") == .listDisplays)
+    #expect(Command.listDisplays.text == "displays")
+    #expect(Command.listDisplays.isQuery)
+    #expect(!Command.listDisplays.isAllowedFromURL)
     #expect(throws: Command.ParseError.self) { try Command.parse("displays main") }
   }
 }

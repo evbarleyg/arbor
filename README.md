@@ -440,17 +440,21 @@ arborctl find safari docs     # go to the window, space or saved view that match
 arborctl reveal 412           # bring a window into view, un-minimised and unhidden, and focus it
 arborctl trace on safari-drag # record what macOS and Arbor tell each other, until `trace off` (docs/TRACES.md)
 arborctl summon Terminal      # Terminal's window over the view; again, and it is out of view
+arborctl zoom Safari          # windows go by app name, bundle id, number, `focused` or `pointer`
+arborctl dock Mail beside Safari bottom , home     # several commands; they stop at the first that fails
+arborctl windows              # what Arbor arranges, one line each; also where, views, displays, version
+arborctl where --json         # any of them as JSON
+arborctl help dock            # one command's usage, other names and shortcuts
 arborctl watch view focus     # one line of JSON whenever the view or the focused window changes
 arborctl toggle-auto-dock     # new windows dock beside the focused window, or float as usual
 ```
 
-It exits with 0 when the command worked, 1 when Arbor said no (the reason goes to standard error), 2 when Arbor is not
-running, 4 when it did not answer in time. `arborctl - < file` runs a file of commands, `arborctl completions zsh` prints a
-completion script, `arborctl --help` lists the options.
-[Scripting Arbor](docs/SCRIPTING.md) has every event, `state`, URLs, exit codes, and
-recipes for SketchyBar, shell loops and `jq`.
+It exits with 0 when the command worked, 1 when Arbor said no (the reason is on stderr), 2 when Arbor is not running, 3 when `watch` was
+cut off, 4 when no answer came in time, 64 when the command cannot be read. `arborctl - < file` runs a file of commands, `arborctl completions zsh`
+prints a completion script, `arborctl --help` lists the options. [docs/SCRIPTING.md](docs/SCRIPTING.md) is the manual for scripts: every event of `watch`, output made
+for `cut` and `jq`, the JSON schema, and worked examples for Raycast, SketchyBar and Shortcuts.
 
-`arborctl <command> --json` prints the whole reply as JSON, refusals too; the exit code stays.
+`--json` prints a query's answer as JSON. A refusal is on stderr with exit code 1 even then, and nothing on stdout: the exit code always tells the truth.
 Every command but `help` is answered by a running Arbor.
 
 `make install` links `arborctl` onto your `PATH`. `swift build` puts it in `.build/debug/`; `make app` puts it in
@@ -468,7 +472,7 @@ arranged 3 windows
 $ arborctl layout
 Safari:2 | (Mail / Notes) | Desktop:0.75
 $ arborctl layout "Safari | Mail / Notes"
-layout, column 15: `|` and `/` are mixed here: put brackets around one of them
+arborctl: layout, column 15: `|` and `/` are mixed here: put brackets around one of them
   Safari | Mail / Notes
                 ^
 ```
@@ -480,7 +484,7 @@ Safari's other windows as tabs; `@2` names another display. A line can be bound 
 ## URLs
 
 `arbor://` followed by a command's words, separated by slashes: `arbor://show-all`,
-`arbor://dock/left`, `arbor://view/2`, `arbor://zoom/412`, `arbor://arrange`, `arbor://go/Writing/Desk`.
+`arbor://dock/left`, `arbor://view/2`, `arbor://zoom/412`, `arbor://zoom/pointer`, `arbor://arrange`, `arbor://go/Writing/Desk`.
 
 Any web page, document or message can ask macOS to open a URL, so URLs can only
 move the view and arrange windows: `show-all`, `home`, `out`, `in`, `neighbor`, `back`,
@@ -657,8 +661,8 @@ The first match wins, as for rules, but key by key: on a display, each of `gap`,
 particular entry goes before a general one and need not repeat it: the Studio Display above is 2560 points wide, takes its band from
 its own entry and the rest from `>=2500`. `match` is `main` (the display with the menu bar), `builtin` (a laptop's or an iMac's
 own), the display's width in points compared with a number (`>=2500`, `>`, `<=`, `<`), its UUID, or part of its name; not its number,
-which changes with the arrangement of the displays. `arborctl displays` lists your displays with their names, sizes and UUIDs, each
-value in effect and the entry it comes from, and any entry it could not read and why. `arborctl set gap 20` changes the general
+which changes with the arrangement of the displays. `arborctl displays` lists your displays with their names, sizes and UUIDs and what
+each has of its own, with the entry it comes from (`--json` has every value in effect), and says beside the table which entries it could not read and why. `arborctl set gap 20` changes the general
 value and says which displays keep their own.
 
 A `*` at the end of `app` stands for the rest of the bundle id: `com.jetbrains.*` is every JetBrains app, `*` alone is
