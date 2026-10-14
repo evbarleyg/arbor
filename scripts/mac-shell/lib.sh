@@ -71,6 +71,7 @@
 #   look <name> <window id>         save that window alone, which must be of a process the run started: a test window, a
 #                                     panel of Arbor's (`overlays` lists them). Nothing else can be in the picture
 #   panorama <name>                 one picture of all displays as they are arranged
+#   closeup <name> <x> <y> <w> <h>  that rectangle of the screen in the display's own pixels, never made smaller
 #   shot_after <seconds> <name>     the same after exactly that long: `ctl zoom $W1 & shot_after 0.2 mid-zoom`
 #   film <name> <count>             <name>-1.png … as fast as pictures can be taken: `ctl zoom $W1 & film zoom 4`
 #   drag x1 y1 x2 y2 [options]      real events; see pointer.swift for --steps, --duration, --hold,
@@ -1306,6 +1307,19 @@ look() {
     return 1
   fi
   arbor_finish_shot "$1"
+}
+
+# A rectangle of the screen, in global coordinates, in the display's own pixels and never made smaller: on a Retina display two
+# to the point, which is what corners, hairlines and small text are judged by.
+closeup() {
+  local name=${1:?closeup <name> <x> <y> <w> <h>} x=${2:?} y=${3:?} w=${4:?} h=${5:?}
+  sleep "${ARBOR_SETTLE:-0.7}"
+  arbor_may_shoot "$name" || return 1
+  if ! screencapture -x "-R$x,$y,$w,$h" "$ARBOR_OUT/$name.png" 2>> "$ARBOR_OUT/screencapture.log"; then
+    echo "closeup $name: screencapture failed ($(tail -n 1 "$ARBOR_OUT/screencapture.log"))"
+    return 1
+  fi
+  echo "shot: mac-shell/$name.png"
 }
 
 # -R takes a rectangle in global coordinates, and it may span displays.
