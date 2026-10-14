@@ -9,7 +9,8 @@
 # `close` are the saboteur, through Accessibility, as Arbor moves windows. Between the offences there are honest steps, which must stay clean.
 #
 # What comes back: sabotage.md (step, offence committed, what was reported), and what every day brings back.
-# Committed so far: jolt (moved twice; elsewhere first), moved-unasked, flash, behind, focus, pulled, slow, size-lost, lost (out of view; gone).
+# Committed so far: jolt (moved twice; elsewhere first), moved-unasked, flash, behind, focus, pulled, stuck, slow, size-lost, lost (out of view; gone), told.
+# Not yet: fought, crash, busy and left-behind, which take a process that passes for Arbor; input-held, which has no detector yet.
 #
 # Only on GitHub's Macs: it opens real apps, moves and closes their windows, and switches the display's size.
 DAY_SABOTAGE=1
@@ -137,6 +138,15 @@ sleep 0.3
 place "$A" "$fx" "$fy" "$fw" "$fh"
 release
 acted drags="$A" place="$A" offence=pulled
+read -r x y _ <<< "$(apptool grab "$A")"
+act drag dropped-elsewhere "OFFENCE: a window is dragged and let go, and goes somewhere else altogether"
+must drag_window "$A" "$((x + 100))" "$((y + 40))"
+read -r fx fy fw fh <<< "$(real_of "$A")"
+place "$A" "$((fx + 420))" "$((fy + 260))" "$fw" "$fh"
+acted drags="$A" offence=stuck
+act dock-key honest-move-2 "it is moved back"
+place "$A" "$fx" "$fy" "$fw" "$fh"
+acted moves="$A"
 # Where the hand left it is its own place from now on.
 read -r ox oy _ _ <<< "$(real_of "$A")"
 
@@ -167,5 +177,8 @@ acted moves="$B"
 act idle vanishes "OFFENCE: a window is closed, and nobody asked for that"
 apptool close "$E"
 acted offence=lost
+act idle tells "OFFENCE: a window's title is written into a log"
+echo "the window is called $APPS_CANARY-oak.txt" > "$ARBOR_OUT/saboteur.log"
+acted offence=told
 
 day_report

@@ -107,21 +107,21 @@ case "${DAY_TILING:=defaults}" in
 esac
 # GitHub's Macs come with Reduce Motion on. A person's Mac does not, and with it on Arbor shows no motion.
 macos_reduce_motion off
-apps_scratch
+day_scratch
 sampler_start
 watch_start day-macos.log
 
 # MARK: The day
 
 chapter "Before Arbor: the apps are open already"
-open_app finder "$APPS_SCRATCH/grove"
-open_app safari "$APPS_SCRATCH/page.html"
-open_app textedit "$APPS_SCRATCH/oak.txt"
+open_app finder "$DAY_DOCUMENTS/$APPS_CANARY-grove"
+open_app safari "$DAY_DOCUMENTS/$APPS_CANARY-page.html"
+open_app textedit "$DAY_DOCUMENTS/$APPS_CANARY-oak.txt"
 open_app terminal
 open_app notes
 open_app calendar
 open_app settings
-open_app preview "$APPS_SCRATCH/leaf.png"
+open_app preview "$DAY_DOCUMENTS/$APPS_CANARY-leaf.png"
 open_app mail
 # The Dock grows with every app that joins it, and the space between it and the menu bar shrinks.
 sleep 3
@@ -191,7 +191,7 @@ if with_arbor; then
   fi
 fi
 act idle leave-alone "does nothing for half a minute"
-sleep 30
+idle 30
 acted
 
 chapter "Switching between apps, nothing docked yet"
@@ -231,14 +231,6 @@ if with_arbor; then
   must drag_window "$D" "$((x + w * 5 / 6))" "$((y + h / 2))"
   want "$ND is docked" eventually is docked "$D"
   acted drags="$D" moves=docked yields=floating front="$D"
-  reach "$NE"
-  read -r x y w h <<< "$(arbor_ask screen)"
-  act drag-where-macos-tiles "drag-$NE-to-left-edge" "drags $NE by its title bar against the left edge of the screen and lets go"
-  must drag_window "$E" "$x" "$((y + h / 2))"
-  # Docked by Arbor, or tiled by macOS with Arbor standing aside: then that is where its person put it, and its own frame from now on.
-  if eventually is docked "$E"; then edge=""; else edge="own=$E"; fi
-  acted drags="$E" moves=docked yields=floating front="$E" $edge
-  echo "$NE is $(is docked "$E" && echo docked || echo not docked), at $(real_frame_of "$E")"
   if read -r x y w h <<< "$(arbor_ask desktop 2>/dev/null)" && [ -n "${w:-}" ]; then
     act drag "drag-$ND-out" "drags $ND out of the arrangement onto the Desktop and lets go"
     must drag_window "$D" "$((x + w / 2))" "$((y + h / 3))"
@@ -260,17 +252,6 @@ if with_arbor; then
   press resize "shrink-$NA" "⌃⌥⌘-" ctrl+opt+cmd+- moves=docked front="$A"
   press resize balance "⌃⌥⌘0" ctrl+opt+cmd+0 moves=docked front="$A"
 fi
-
-chapter "macOS's own tiling"
-reach "$NX"
-act drag-where-macos-tiles "drag-$NX-to-top" "drags $NX by its title bar against the menu bar and lets go: macOS fills the screen with it"
-must drag_window "$X" "$((dx + dw / 2))" "$dy" --hold 1
-acted drags="$X" front="$X"
-echo "$NX is at $(real_frame_of "$X")"
-act drag-where-macos-tiles "drag-$NX-back" "drags $NX away from the top again, a hand's breadth down"
-must drag_window "$X" "$((dx + dw / 2))" "$((dy + 130))"
-acted drags="$X" front="$X" restores="$X" place="$X"
-echo "$NX is at $(real_frame_of "$X")"
 
 chapter "Switching between apps, with an arrangement"
 HOME_STEP=$DAY_STEP
@@ -373,9 +354,9 @@ acted moves=docked leaves="$W_textedit"
 act open-close reopen-textedit "opens the document again"
 OLD=$W_textedit
 # Not in the background: a person who opens a document gets its app in front.
-open -b com.apple.TextEdit "$APPS_SCRATCH/oak.txt"
+open -b com.apple.TextEdit "$DAY_DOCUMENTS/$APPS_CANARY-oak.txt"
 sleep 1
-meet textedit com.apple.TextEdit "$APPS_SCRATCH/oak.txt"
+meet textedit com.apple.TextEdit "$DAY_DOCUMENTS/$APPS_CANARY-oak.txt"
 acted moves=docked front="$W_textedit"
 [ "$A" = "$OLD" ] && A=$W_textedit
 [ "$B" = "$OLD" ] && B=$W_textedit
@@ -411,6 +392,29 @@ if spot=$(bare_spot); then
   acted moves=any leaves=any returns="$HOME_STEP" everything=1
 else
   echo "no bare spot of wallpaper shows"
+fi
+
+chapter "Where macOS tiles too"
+# Late in the day: whatever comes of two window managers answering one drag, the chapters above have been played by then.
+reach "$NE"
+act drag-where-macos-tiles "drag-$NE-to-left-edge" "drags $NE by its title bar against the left edge of the screen and lets go"
+must drag_window "$E" "$dx" "$((dy + dh / 2))"
+# Docked by Arbor, or tiled by macOS with Arbor standing aside: then that is where its person put it, and its own frame from now on.
+if with_arbor && eventually is docked "$E"; then edge=""; else edge="own=$E"; fi
+acted drags="$E" moves=docked yields=floating front="$E" $edge
+echo "$NE is at $(real_frame_of "$E")"
+reach "$NX"
+act drag-where-macos-tiles "drag-$NX-to-top" "drags $NX by its title bar against the menu bar and lets go: macOS fills the screen with it"
+must drag_window "$X" "$((dx + dw / 2))" "$dy" --hold 1
+acted drags="$X" front="$X"
+echo "$NX is at $(real_frame_of "$X")"
+act drag-where-macos-tiles "drag-$NX-back" "drags $NX away from the top again, a hand's breadth down"
+must drag_window "$X" "$((dx + dw / 2))" "$((dy + 130))"
+acted drags="$X" front="$X" restores="$X" place="$X"
+echo "$NX is at $(real_frame_of "$X")"
+if with_arbor; then
+  brief | sed 's/^/    /'
+  press view show-everything-4 "⌃⌥Space" ctrl+opt+space moves=any everything=1
 fi
 
 if with_arbor; then
@@ -451,7 +455,7 @@ if with_arbor; then
   acted moves=docked everything=1
   brief | sed 's/^/    /'
   act idle leave-alone-2 "does nothing for half a minute"
-  sleep 30
+  idle 30
   acted
   act quit-and-start quit-2 "quits Arbor"
   ctl quit
