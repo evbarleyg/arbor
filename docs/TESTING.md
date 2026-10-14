@@ -527,6 +527,7 @@ holds for the commit named (second reading, 10:45 UTC) and says what the script 
 | `check-harness.sh` | trunk | safe | 10 s | The harness itself: run it first |
 | `run-list.sh` | trunk | safe | its scripts' | Runs what this table calls safe, in order, and stops at the first sign of trouble |
 | `e2e-drag.sh` | trunk | safe | 30 s | |
+| `reality.sh` | trunk | **never**: ends with 77 | | Ten minutes of pointer and keyboard, for observations that mean something only on the display a rehearsal has |
 | `e2e.sh` | trunk | safe | 30 s | `make e2e` with full screen, then `e2e-drag.sh`; rewrites `collab/evidence/e2e-latest.txt` |
 | `shots-F45.sh` | trunk | safe | none | |
 | `shots-F48.sh` | trunk | safe | 5 s | |
@@ -683,6 +684,64 @@ when resolving a merge conflict in them. The README lists what it cannot see: ca
 least one into each folder, and expects every line marked wrong to be reported and no other. Run it after changing the tool. It is how we learnt that
 `swift build` reports only the first failing stage, which is why the tool calls the compiler itself, and that `#if os(macOS)` was being skipped.
 
+## 9. Reality: the stand-ins against a real Mac (`make reality`)
+
+Everything in sections 1 to 3, and every rehearsal, runs on stand-ins (`Sources/ArborTesting`, `Sources/arbor-fakemac`), and they are more polite than macOS: thousands of
+tests pass on them while the serious faults are found on real Macs. `make reality` says how far the two are apart, as **one number to bring down to zero**:
+
+```bash
+make reality                                  # on Linux: rehearse reality.sh, run it on a hosted Mac (push first), compare. A quarter of an hour
+make reality MAC=.mac-shell/reality-<run id>  # compare with an earlier run on a Mac: a minute and a half, and no Mac
+make reality MAC="<run> <another run>"        # what differs between the Macs' own runs is counted apart, as unstable
+```
+
+**`scripts/mac-shell/reality.sh`** runs unchanged in both worlds and checks nothing. It plays five journeys, each in an Arbor session of its own: `commands` (what `arbor-e2e`'s first session does
+over the socket), `apps` (windows minimize, hide, close and open; another app comes forward), `edges` (title-bar drags to three screen edges, looked at while held and after), `pointer` (`e2e-drag.sh`'s steps,
+a seam and a tile) and `keys` (a click, then shortcuts). macOS stays as it comes, its own edge tiling included: that is where people live. After every step `observe` waits a second, looks until two looks
+in a row agree (four seconds at most) and appends one line of JSON to `mac-shell/reality/<journey>.jsonl` (`scripts/mac-shell/reality.py` has the form):
+
+| | |
+|---|---|
+| `belief` | what Arbor says (`arborctl state`): every window's status, frame and slot, the tree and the camera as a line of text, who it thinks has the keyboard, tiles, the Desktop, its own words |
+| `truth` | what the window server says (`pointer windows`, `pointer keyboard`): every test window's frame, whether it is on screen, the order from the front, the app in front, the window keys go to, Arbor's own windows by level |
+| `reports`, `replies` | what crossed the seam since the step before, from a trace that runs for the whole journey (a rehearsal records traces too): events as `changed:W1:user`, calls as `setFrame:W1 asked→took`, `focus:W1`, `raise:W1`, in order, nothing collapsed; and what Arbor answered to each command |
+
+Windows are W1, W2… in the order they opened, and there are no process ids, node ids, titles or times, so two rehearsals give the same bytes. What the script's own questions set off is left out. The traces themselves
+come back in `reality/traces/`.
+
+**`scripts/reality-diff.py <mac> <linux>`** aligns the two by journey and step, compares field by field and prints one line per divergence: whether it is new, its class, its key
+(`journey/step/field/window`, the same from run to run) and both values. Then a table by class and the number:
+
+```
+✘ new      answers         commands/zoom-W1/answers/W2/1023767-480x352   mac: 1023,737 480x352 | linux: 1023,673 480x352
+reality: 41 divergences in 66 steps of 5 journeys (new: 1, known: 40, gone: 0)
+```
+
+| Class | | Whose |
+|---|---|---|
+| `belief` | Arbor ends up believing something else: a status, a frame, the tree, the camera, a reply | follows from one of the others, as a rule: look at the step's reports first |
+| `truth` | real windows end up elsewhere (by more than a point), or on screen where the stand-ins' are not | the stand-ins' |
+| `belief-vs-truth` | **on the Mac alone**, what Arbor believes is not what the window server shows | Arbor's, or its Accessibility layer's, whatever the stand-ins do |
+| `focus`, `stacking`, `overlays` | who has the keyboard and who Arbor thinks has it, which app is in front; the order from front to back; how many of Arbor's own windows show at a level | mostly `World.swift`'s and `Arbor.swift`'s in `arbor-fakemac` |
+| `answers` | a window asked for the same frame took another, or Arbor asked it for another frame to begin with | `FakeWindowSystem.setFrame`; the second kind follows from something earlier |
+| `reports-extra`, `reports-missing`, `reports-order` | the Mac reports what the stand-ins do not; the stand-ins what the Mac does not; the same in another order | `FakeWindowSystem` and `World*.swift` |
+| `unplayed` | a journey or a step one world does not have | the script's, or a run that was cut off |
+| `unstable` | any of these that differs between two runs on real Macs, or at a step that had not come to rest: counted apart, never dropped | timing |
+
+A difference in belief or truth that stays the same from one step to the next is one divergence, under the step where it began. During a drag, a resize or a seam drag the number of moves is a matter of timing (a
+trace thins them by the clock), so a run of moves counts as one of each kind, written `~dragMoved:W3`.
+
+**The ratchet** is `collab/evidence/reality-known.txt`: every known key with a word on whose it is. With `--check` (`make reality MAC=… CHECK=1`, and CI) the tool fails for a key the list does not have *and* for a key of the list that is gone, so the
+list shrinks with every cure and never grows unseen. `~` before a key: it comes and goes. `make reality MAC=… KNOWN=1` writes the list anew and keeps the words it has.
+
+**To bring the number down**: pick a key, read both lines of that step (`.build/reality/report.md` has everything as tables, `reality/traces/` what macOS really sent), teach the stand-in to be as rude as the Mac was, give the lesson a test of its own in
+`Tests/ArborKitTests`, run `make reality MAC=<the last run>`, and take the keys that are gone off the list. If it is Arbor that is wrong, report it: the key stays until Arbor is cured. One lie usually shows at many steps, so one cure takes many keys.
+
+**CI** reports the number whenever the Mac jobs run: `real-windows` plays the journeys on real windows, `linux` rehearses them, and the small job `reality` compares the two with `--check`. The number and whatever is new or gone come out as
+check annotations. A pull request that touches the list gets its Mac (`scripts/ci-changes.py`): only a Mac can say that a divergence is gone.
+
+**What it does not cover yet**: one display of one size, test windows only (section 7 has real apps), no timers, no pinches, no menu, no Spaces or full screen, and only what shows once things have come to rest.
+
 ## Pictures without a screen (`OffscreenPicture`)
 
 What Arbor draws can be looked at, and checked, without a window, a permission, a script or anybody's screen. `Tests/ArborKitTests/OffscreenPicture.swift` (macOS only) is a bitmap in memory
@@ -717,7 +776,7 @@ Such tests run inside an ordinary `swift test`, and **leave their pictures in `.
 
 ## The tools test themselves (`scripts/test-tooling.py`)
 
-`parity.py`, `ci-step.py`, `scenarios.sh` with arbor-sim, `lint-imports.py`, `lint-mac-shell.py`, `mutate.py` and `fuzz-launch.py` are what says "all is well", so each is given
+`parity.py`, `ci-step.py`, `scenarios.sh` with arbor-sim, `lint-imports.py`, `lint-mac-shell.py`, `mutate.py`, `fuzz-launch.py` and `reality-diff.py` are what says "all is well", so each is given
 situations that must come out as failures: a misspelt status, a renamed test or step, a log cut off by a
 crash, a scenario whose commands do nothing, an `rm -rf` of a variable nobody checked. The safety nets of `scripts/mac-shell/lib.sh` are tried for real: small scripts
 run against stand-ins for a Mac and are interrupted, timed out and killed, with a full disk, with somebody's window under the pointer, beside a running Arbor

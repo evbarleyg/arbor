@@ -25,6 +25,7 @@ make e2e-drag   # real drags with the real pointer, which it takes over for half
 make typecheck-mac  # on Linux: type-check all the macOS-only code, tests included, against stand-ins for Apple's frameworks
 make trace NAME=x  # record a trace from the running Arbor into collab/evidence/traces/x.jsonl (docs/TRACES.md)
 make replay FILE=x # replay a trace against the real controller and see what happened
+make reality    # on Linux: the same script rehearsed and on a hosted Mac, compared step by step; one number (docs/TESTING.md, section 9)
 make attack     # hostile and broken clients against the control socket, for half a minute; after changing the socket
 make scenarios  # the documenter's user journeys (collab/scenarios); VERBOSE=1 for arbor-sim's output
 make parity     # score Arbor against TrellisWM; regenerates docs/FEATURES.md

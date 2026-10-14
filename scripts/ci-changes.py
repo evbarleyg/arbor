@@ -5,8 +5,9 @@ A Mac is left out when it could prove nothing new, or nothing that will not be p
 
   1. everything the pull request changes (for a push: everything since the commit before it) is
      prose, or data the Linux job checks just as well: collab/, docs/, *.md, scripts/typecheck-mac/ (which
-     only Linux runs), and the scripts in scripts/mac-shell/ that CI does not run (it runs e2e-drag.sh, and
-     with it lib.sh and its tools; and `swift test` on a Mac type-checks every helper tool there, *.swift and *.m);
+     only Linux runs), and the scripts in scripts/mac-shell/ that CI does not run (it runs e2e-drag.sh and reality.sh, and
+     with them lib.sh and its tools; and `swift test` on a Mac type-checks every helper tool there, *.swift and *.m).
+     Not collab/evidence/reality-known.txt: whether a divergence between the stand-ins and a Mac is gone, only a Mac can say;
   2. or, in an ordinary pull request, all the rest of it is code that also builds and is tested on
      Linux (the core, the controller, the platform protocols, the fakes, arbor-sim, the tests);
   3. or only prose has changed since the nearest earlier commit that passed the macOS job. That covers
@@ -36,7 +37,10 @@ import re
 import subprocess
 import sys
 
-PROSE = re.compile(r"^(collab|docs|scripts/typecheck-mac)/|^scripts/mac-shell/(?!(e2e-drag\.sh|lib\.sh|state\.py|.*\.swift|.*\.m)$)|\.md$")
+PROSE = re.compile(
+    r"^(?!collab/evidence/reality-known\.txt$)(collab|docs|scripts/typecheck-mac)/"
+    r"|^scripts/mac-shell/(?!(e2e-drag\.sh|reality\.sh|reality\.py|lib\.sh|state\.py|.*\.swift|.*\.m)$)|\.md$"
+)
 # What Package.swift builds on Linux too. Anything in neither list needs a Mac.
 HEADLESS = re.compile(
     r"^(Sources/(ArborCore|ArborKit/(Controller|Platform|Support|Trace)|ArborTesting|arbor-sim|LinuxShims)|Tests)/"

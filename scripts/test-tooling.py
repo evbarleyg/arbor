@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Checks that the tools which say "all is well" can also say the opposite.
 
-parity.py, ci-step.py, scenarios.sh with arbor-sim, lint-imports.py, lint-mac-shell.py, mutate.py, fuzz-launch.py and the safety nets of
+parity.py, ci-step.py, scenarios.sh with arbor-sim, lint-imports.py, lint-mac-shell.py, mutate.py, fuzz-launch.py, reality-diff.py and the safety nets of
 scripts/mac-shell/lib.sh each get situations that must come out as failures (a misspelt status, a test that was renamed, a log cut off by a crash, a scenario whose
 commands do nothing) next to ones that must pass. Every row here passed when it should have failed
 before 2026-10-14.
@@ -13,6 +13,7 @@ Exit code 1 when a row comes out wrong.
 
 import concurrent.futures
 import importlib.util
+import json
 import os
 import pty
 import select
@@ -41,6 +42,10 @@ spec.loader.exec_module(mac_lint)
 spec = importlib.util.spec_from_file_location("fuzz_launch", os.path.join(HERE, "fuzz-launch.py"))
 fuzz_launch = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(fuzz_launch)
+
+spec = importlib.util.spec_from_file_location("reality_diff", os.path.join(HERE, "reality-diff.py"))
+reality_diff = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(reality_diff)
 
 rows = []
 
@@ -1062,6 +1067,64 @@ def check_fuzz_launch():
         row(*situation)
 
 
+def check_reality_diff():
+    for situation in reality_diff.situations():
+        row(*situation)
+
+
+def check_reality_observer():
+    """reality.py must write the same words in both worlds, and nothing of what the script itself asked."""
+    tool = os.path.join(HERE, "mac-shell", "reality.py")
+    header = {"trace": 1, "displays": []}
+    window = {"id": 4501, "pid": 70, "frame": [0, 0, 10, 10]}
+    asked = [{"command": "state", "from": "script"}, {"call": "focus", "id": 4501}, {"done": "state", "ok": True, "message": "running"}]
+    dock = [{"command": "dock 4501 left", "from": "script"}, {"call": "setFrame", "id": 4501, "frame": [12, 43.4, 494, 650], "result": [12, 43, 494, 650]},
+            {"call": "focusedWindow", "result": 4501}, {"read": "stackedWindows", "result": []}, {"timer": "save"}, {"raw": "AXWindowMoved w4501"},
+            {"done": "dock 4501 left", "ok": True, "message": "docked w4501 at the left edge"}]
+    mark = [{"note": "reality: a step"}]
+
+    def line(*parts):
+        with tempfile.TemporaryDirectory() as folder:
+            paths = {name: os.path.join(folder, name) for name in ("look", "names", "trace")}
+            with open(paths["look"], "w", encoding="utf-8") as handle:
+                handle.write('{"belief": null, "truth": {}}')
+            with open(paths["names"], "w", encoding="utf-8") as handle:
+                handle.write("4501 W1\n")
+            with open(paths["trace"], "w", encoding="utf-8") as handle:
+                handle.writelines(json.dumps(entry) + "\n" for entry in [header] + [entry for part in parts for entry in part])
+            result = subprocess.run([sys.executable, tool, "line", "j", "a step", "1", "yes", paths["look"], paths["names"], paths["trace"], "arbor=60", "app=70"],
+                                    capture_output=True, text=True, check=False)
+        written = json.loads(result.stdout)
+        return written["reports"], written["replies"]
+
+    docked = (["setFrame:W1 12,43 494x650→12,43 494x650"], ["docked W1 at the left edge"])
+    row("reality.py: a call with its answer, a reply, and no reads, timers or raw lines", line(dock, mark), docked)
+    row("reality.py: what the script's own question set off is left out", line(asked, dock, asked, mark), docked)
+    row("reality.py: only what came since the mark before", line(dock, mark, [{"event": "focused", "id": 4501}], mark), (["focused:W1"], []))
+    row("reality.py: what came after the last mark waits for the next", line(dock, mark, [{"event": "focused", "id": 4501}]), docked)
+    row("reality.py: unless the trace has ended", line(dock, mark, [{"call": "stop"}, {"end": "Arbor stopped", "lines": 9, "thinned": 0}]), (["stop"], []))
+    row("reality.py: whose doing a change is, and what the window is now",
+        line([{"event": "changed", "user": True, "window": dict(window, minimized=True)}, {"event": "changed", "user": False, "window": window}], mark),
+        (["changed:W1:user+minimized", "changed:W1:arbor"], []))
+    row("reality.py: a window nobody has named, a process by its name, a shortcut's command",
+        line([{"event": "destroyed", "id": 9}, {"call": "unhideApp", "args": [70]}, {"command": "zoom 4501", "from": "shortcut"}], mark),
+        (["destroyed:W?", "unhideApp:app", "command:zoom W1:shortcut"], []))
+
+    def look(windows):
+        with tempfile.TemporaryDirectory() as folder:
+            for name, text in (("windows", windows), ("on-screen", windows), ("keyboard", "70 4502\n"), ("names", "4501 W1\n")):
+                with open(os.path.join(folder, name), "w", encoding="utf-8") as handle:
+                    handle.write(text)
+            result = subprocess.run([sys.executable, tool, "look", folder, os.path.join(folder, "names"), "arbor=60", "app=70"],
+                                    capture_output=True, text=True, check=False)
+        seen = json.loads(result.stdout)
+        return seen["belief"], seen["truth"]["order"], seen["truth"]["overlays"], seen["truth"]["front"], seen["truth"]["keyboard"]
+
+    row("reality.py: a new window gets the next name; a helper, a stranger's window and Arbor's own panels get none",
+        look("9001 60 3 0 0 10 10 on Arbor\n4502 70 0 5 5 480 352 on App\n4503 70 0 5 5 40 20 on App\n4501 70 0 0 0 480 352 on App\n77 80 0 0 0 900 700 on Other\n"),
+        (None, ["W2", "W1"], {"3": 1}, "app", "W2"))
+
+
 def main():
     canary, since = subprocess.Popen(["sleep", "600"]), time.time()
     check_parity()
@@ -1077,6 +1140,8 @@ def main():
     check_install()
     check_e2e()
     check_fuzz_launch()
+    check_reality_diff()
+    check_reality_observer()
     wrong = 0
     for what, got, expected in rows:
         if got != expected:

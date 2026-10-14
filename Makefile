@@ -1,4 +1,4 @@
-.PHONY: lint build test check sim scenarios parity linux run app install uninstall release e2e e2e-drag typecheck-mac typecheck-mac-selftest rehearse trace trace-check replay fuzz attack clean
+.PHONY: lint build test check sim scenarios parity linux run app install uninstall release e2e e2e-drag typecheck-mac typecheck-mac-selftest rehearse reality trace trace-check replay fuzz attack clean
 
 # Files that would compile on Linux but not on macOS, and Mac shell scripts that would change a person's Mac,
 # found without a Mac.
@@ -109,6 +109,11 @@ typecheck-mac-selftest:
 # make rehearse SCRIPTS="scripts/mac-shell/shots-demo.sh" (docs/TESTING.md, "Rehearse it first, for nothing")
 rehearse:
 	@./scripts/mac-shell/rehearse.sh $(SCRIPTS)
+
+# How far the stand-ins are from a real Mac: the same script rehearsed here and run on a hosted Mac, step by step, and the differences counted.
+# On Linux only. make reality MAC=.mac-shell/reality-<run id> compares with an earlier run (docs/TESTING.md, "Reality"; scripts/reality.sh has the rest).
+reality:
+	@MAC="$(MAC)" CHECK="$(CHECK)" KNOWN="$(KNOWN)" ./scripts/reality.sh
 
 # Hostile and broken clients against the control socket of arbor-sim --serve, for half a minute (scripts/socket-attack.py).
 attack: build

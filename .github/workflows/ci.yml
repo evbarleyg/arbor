@@ -103,6 +103,17 @@ jobs:
       - name: Real-pointer test
         if: ${{ !cancelled() && steps.build.outcome == 'success' }}
         run: ./scripts/ci-step.py e2e-drag ./scripts/mac-shell/e2e-drag.sh
+      # The journeys a rehearsal plays on Linux, here on real windows, written down step by step. It checks nothing: the `reality` job compares.
+      - name: Reality, on real windows
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        run: ./scripts/ci-step.py --summary 'total$|not come to rest' reality-mac ./scripts/mac-shell/reality.sh
+      - name: Keep what was written down
+        if: ${{ !cancelled() && steps.build.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: reality-mac
+          path: mac-shell/reality
+          if-no-files-found: warn
       - name: Keep the evidence
         if: ${{ !cancelled() && steps.e2e.outcome != 'skipped' }}
         uses: actions/upload-artifact@v4
@@ -130,6 +141,15 @@ jobs:
         run: ./scripts/ci-step.py toolchain swift --version
       - name: Build
         run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build
+      # Before the tests, so that a test that fails does not cost the `reality` job its other half.
+      - name: Reality, rehearsed
+        run: ./scripts/ci-step.py --summary 'total$' reality-linux ./scripts/mac-shell/rehearse.sh scripts/mac-shell/reality.sh
+      - name: Keep what was written down
+        uses: actions/upload-artifact@v4
+        with:
+          name: reality-linux
+          path: .build/rehearsal/out/reality
+          if-no-files-found: warn
       - name: Test
         run: ./scripts/ci-step.py --summary 'Test run with|skipped' --log test.log test swift test
       - name: Simulator smoke test
@@ -143,3 +163,27 @@ jobs:
         run: ./scripts/ci-step.py --summary 'error:|type-check' typecheck-mac make typecheck-mac
       - name: Parity (no shipped feature may break; FEATURES.md must be current)
         run: ./scripts/ci-step.py parity python3 scripts/parity.py --test-log test.log --check
+
+  # How far the stand-ins are from a real Mac: the same script on both, compared step by step (docs/TESTING.md, "Reality"). The number, and every
+  # divergence that collab/evidence/reality-known.txt does not have or has and is gone, come out as annotations.
+  reality:
+    needs: [real-windows, linux]
+    # Whenever a Mac ran, even if one of its checks or a test on Linux failed: both halves are written down before those.
+    if: ${{ !cancelled() && needs.real-windows.result != 'skipped' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: reality-mac
+          path: reality/mac
+      - uses: actions/download-artifact@v4
+        with:
+          name: reality-linux
+          path: reality/linux
+      - name: The Mac against the rehearsal
+        run: >-
+          ./scripts/ci-step.py --summary '^reality:' reality
+          python3 scripts/reality-diff.py reality/mac reality/linux
+          --known collab/evidence/reality-known.txt --check --markdown "$GITHUB_STEP_SUMMARY"

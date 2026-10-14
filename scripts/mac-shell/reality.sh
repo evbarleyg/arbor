@@ -15,7 +15,7 @@
 # The journeys:
 #   commands   what arbor-e2e's first session does over the socket: dock, zoom, back, resize, float, arrange, the gap, the Desktop, quit
 #   apps       what windows and apps do by themselves: minimize, restore, hide, unhide, close, open, another app coming forward
-#   edges      title-bar drags with the real pointer to the left, top and right screen edge, each looked at while held and after
+#   edges      title-bar drags with the real pointer all the way to the left, top and right screen edge, each looked at while held and after
 #   pointer    e2e-drag.sh's steps and a few more: a window's edge, onto another window, a double-click, a press inside, a seam, out onto
 #              the Desktop, a click on a tile
 #   keys       a click on a window, then shortcuts on the real keyboard
@@ -145,7 +145,7 @@ title_of() { at "$1" "x + w / 2" "y + 12"; }
 middle_of() { at "$1" "x + w / 2" "y + h / 2"; }
 
 shows() { pointer windows --on-screen | awk -v id="$1" '$1 == id { found = 1 } END { exit !found }'; }
-in_front() { [ "$(pointer front 2>/dev/null)" = "$1" ]; }
+in_front() { [ "$(pointer keyboard | cut -d ' ' -f 1)" = "$1" ]; }
 has_windows() { [ "$(pointer windows --pid "$ARBOR_WINDOWS_PID" | wc -l | tr -d ' ')" -ge "$1" ]; }
 
 # tw <command…>: the first test app does something to its own windows (descriptor 9 is its stdin).
@@ -248,15 +248,17 @@ fi
 
 if wanted edges; then
   journey edges 3
-  # Three points short of the edge, as the other scripts stop; the last window goes all the way, where a hand pushes against it.
+  # All the way, where a hand pushes against the edge and macOS's own tiling wakes up. (The other scripts, and the next journey, stop three points short.)
+  read -r fx fy fw _ <<< "$(arbor_ask display-frame)"
+  [ -n "$fw" ] || die "Arbor does not say where the display is"
   # shellcheck disable=SC2046
-  does "W3 held at the left edge" drag $(title_of "$W3") $((sx + 3)) $((sy + sh / 2)) --no-release
+  does "W3 held at the left edge" drag $(title_of "$W3") "$fx" $((sy + sh / 2)) --no-release
   does "W3 let go at the left edge" release
   # shellcheck disable=SC2046
-  does "W2 held at the top edge" drag $(title_of "$W2") $((sx + sw * 3 / 4)) $((sy + 2)) --no-release
+  does "W2 held at the top edge" drag $(title_of "$W2") $((sx + sw * 3 / 4)) "$fy" --no-release
   does "W2 let go at the top edge" release
   # shellcheck disable=SC2046
-  does "W1 held at the right edge" drag $(title_of "$W1") $((sx + sw - 1)) $((sy + sh / 2)) --no-release
+  does "W1 held at the right edge" drag $(title_of "$W1") $((fx + fw - 1)) $((sy + sh / 2)) --no-release
   does "W1 let go at the right edge" release
   journey_ends
 fi
