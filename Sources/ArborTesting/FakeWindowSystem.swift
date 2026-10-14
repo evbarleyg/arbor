@@ -224,6 +224,10 @@ public final class FakeWindowSystem: WindowSystem {
   private var turnedAway: Set<Int32> = []
   private var focusWhenFree: WindowID?
   private var isLettingGo = false
+  /// Like the Accessibility layer: where windows out of view whose apps do not answer were to go since `finishMoves`, the first place
+  /// in view asked for each; and what of that was sent all the same at `stop()`, to be carried out when the app wakes.
+  private var unansweredMoves: [WindowID: CGRect] = [:]
+  private var wordLeft: [WindowID: CGRect] = [:]
 
   /// A 1440×900 display with a 25-point menu bar.
   public static let standardDisplay = DisplaySnapshot(
@@ -248,6 +252,8 @@ public final class FakeWindowSystem: WindowSystem {
     slowAppsFinish()
     events = listener
     isLettingGo = false
+    for (window, frame) in unansweredMoves { wordLeft[window] = frame }
+    unansweredMoves.removeAll()
     started = false
     undelivered.removeAll()
   }
@@ -286,6 +292,7 @@ public final class FakeWindowSystem: WindowSystem {
 
   public func finishMoves(timeout: Double) {
     defer { isLettingGo = true }
+    unansweredMoves.removeAll()
     guard slowAppsOutlastTheWait else { return slowAppsFinish() }
     // Like the Accessibility layer: the books say where each is going, so that whoever lets go of the windows fetches it from there.
     for (window, frame) in movesUnderWay {
@@ -316,7 +323,15 @@ public final class FakeWindowSystem: WindowSystem {
 
   private func move(_ window: WindowID, to frame: CGRect, together: Bool) -> CGRect? {
     willSetFrame?(window, frame)
-    guard var fake = windows[window], !unresponsive.contains(fake.snapshot.pid) else { return nil }
+    guard var fake = windows[window] else { return nil }
+    guard !unresponsive.contains(fake.snapshot.pid) else {
+      func isInView(_ frame: CGRect) -> Bool { displayList.contains { frame.fractionInside($0.frame) >= 0.5 } }
+      if isLettingGo, unansweredMoves[window] == nil, !isInView(fake.snapshot.frame), isInView(frame) {
+        unansweredMoves[window] = frame
+      }
+      return nil
+    }
+    unansweredMoves[window] = nil
     if isDenied {
       // Every call fails and the frame cannot be read back; the real window system has been known to answer
       // with the frame it was asked for, which is the worse of the two things it could say.
@@ -1002,6 +1017,11 @@ extension FakeWindowSystem {
     if hung {
       unresponsive.insert(pid)
     } else if unresponsive.remove(pid) != nil {
+      // A call that was not answered in time is carried out now.
+      for (id, frame) in wordLeft.sorted(by: { $0.key < $1.key }) where windows[id]?.snapshot.pid == pid {
+        wordLeft[id] = nil
+        _ = move(id, to: frame, together: false)
+      }
       for id in windows.keys.sorted() where windows[id]!.snapshot.pid == pid {
         events?.windowChanged(windows[id]!.snapshot, userInitiated: true)
       }

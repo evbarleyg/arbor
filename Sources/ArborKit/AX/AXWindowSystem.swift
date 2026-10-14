@@ -93,6 +93,11 @@ public final class AXWindowSystem: WindowSystem {
   private var focusWhenFree: WindowID?
   /// Arbor is about to stop (`finishMoves`). There is no next time for a move that is turned away now, so none is.
   private var isLettingGo = false
+  /// Since then: where windows were to go that have not been seen to get there, because their apps do not answer
+  /// (`leaveWordForAppsThatDoNotAnswer`).
+  private var undelivered: [WindowID: CGRect] = [:]
+  /// Two calls of a tenth of a second for each window: room for ten.
+  private static let timeForLeavingWord: TimeInterval = 2
   private var lettingGoEnds: TimeInterval = 0
   /// Moves that were sent and whose outcome is not known: where each window is going. One that was not answered in time
   /// is among them until its app answers again, because the app carries it out when it wakes.
@@ -208,7 +213,10 @@ public final class AXWindowSystem: WindowSystem {
     running = false
     // Windows on their way back into view should arrive before Arbor is gone.
     lanes.waitUntilIdle(timeout: 5)
-    _ = lanes.takeLate()
+    for (_, result) in lanes.takeLate() {
+      for (raw, outcome) in result.outputs where outcome.frame != nil { undelivered[WindowID(raw)] = nil }
+    }
+    leaveWordForAppsThatDoNotAnswer()
     lateToReport.removeAll()
     underWay.removeAll()
     lateAnswers.removeAll()
@@ -317,18 +325,22 @@ public final class AXWindowSystem: WindowSystem {
     for (window, target) in frames {
       if let late = lateAnswers.removeValue(forKey: window), late.requested == target {
         taken[window] = late.answer
+        undelivered[window] = nil
         continue
       }
+      guard let record = records[window] else { continue }
       // A slow app with two windows out of view: the first is on its way when the second is asked for.
-      guard let record = records[window],
-        isLettingGo ? !unresponsive.contains(record.snapshot.pid) : answers(record.snapshot.pid)
-      else { continue }
+      guard isLettingGo ? !unresponsive.contains(record.snapshot.pid) : answers(record.snapshot.pid) else {
+        owe(target, to: window)
+        continue
+      }
       let pid = record.snapshot.pid
       let known = record.snapshot.frame
       // macOS accepts a new size for a full-screen window and does nothing. A window that is there needs nothing; but what is
       // known of it is a belief, and the last move Arbor makes does not rest on one.
       if record.snapshot.isFullScreen || (!isLettingGo && known.approximatelyEquals(target, tolerance: 0.5)) {
         taken[window] = known
+        undelivered[window] = nil
         continue
       }
       let move = AXMove(window: record.element, app: apps[pid]?.element, pid: pid, known: known, target: target)
@@ -342,7 +354,11 @@ public final class AXWindowSystem: WindowSystem {
     let sent = Set(jobs.map(\.id))
     for (window, target) in frames {
       guard let outcome = result.outputs[window.rawValue] else {
-        if sent.contains(window.rawValue) { underWay[window] = target }
+        if sent.contains(window.rawValue) {
+          underWay[window] = target
+          // Until it has been seen to arrive.
+          owe(target, to: window)
+        }
         // No answer means "could not", and whoever asked would try something else. This one is on its way, behind
         // whatever its app is busy with, and nobody will be there to hear how it ended. The books say where it is going,
         // also for the plan of a move that may follow it.
@@ -377,6 +393,7 @@ public final class AXWindowSystem: WindowSystem {
     if outcome.refused { events?.accessibilityWasRefused() }
     underWay[window] = nil
     guard records[window] != nil, let actual = outcome.frame else { return nil }
+    undelivered[window] = nil
     echoes.expect(actual, for: window, at: uptime)
     records[window]?.snapshot.frame = actual
     return actual
@@ -396,6 +413,34 @@ public final class AXWindowSystem: WindowSystem {
     }
     isLettingGo = true
     lettingGoEnds = uptime + Self.timeForLettingGo
+    undelivered.removeAll()
+  }
+
+  /// Several places are tried for a window while Arbor lets go, and the first is the considered one: where it floated, in its own
+  /// size. The last is "anywhere in view". Never out of view, whoever asks. And only for a window that is out of view, which would
+  /// be lost: one that is in view in the shape of its slot stays as it is, as before.
+  private func owe(_ frame: CGRect, to window: WindowID) {
+    guard isLettingGo, undelivered[window] == nil, let known = records[window]?.snapshot.frame else { return }
+    let screens = displays().map(\.frame)
+    guard !screens.contains(where: { known.fractionInside($0) >= 0.5 }), screens.contains(where: { frame.fractionInside($0) >= 0.5 })
+    else { return }
+    undelivered[window] = frame
+  }
+
+  /// Arbor is stopping, and nobody will be there to place these windows when their apps wake up: one that is out of view
+  /// would stay there. A call that is not answered in time is still delivered when the app wakes, so the moves are sent
+  /// without waiting for answers. First where, which is what brings a window into view, then how large.
+  private func leaveWordForAppsThatDoNotAnswer() {
+    let deadline = uptime + Self.timeForLeavingWord
+    for (window, frame) in undelivered.sorted(by: { $0.key < $1.key }) {
+      guard uptime < deadline, let record = records[window], !record.snapshot.isFullScreen else { continue }
+      // Of this object alone, which is not used again. A process that is gone fails at once.
+      AXUIElementSetMessagingTimeout(record.element, 0.1)
+      _ = record.element.setPosition(frame.origin)
+      _ = record.element.setSize(frame.size)
+      Log.info("\(window)'s app does not answer; left word where the window is to go when it does")
+    }
+    undelivered.removeAll()
   }
 
   /// What lanes did after `move` stopped waiting goes into the books before anything that could be judged by them: the apps'

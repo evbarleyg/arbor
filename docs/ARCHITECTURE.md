@@ -291,6 +291,9 @@ and nothing else is worth optimising.
   frame it was asked for, so that nothing is tried in its place. A move that is still not done after the wait is entered in the
   books as made, so that a window on its way out of view is fetched from there. And while Arbor lets go the main thread waits 1.2 s
   for a move (3 s in all) instead of 0.5: long enough to hear that an app hangs, of which "on its way" must not be said.
+  For such an app `stop` leaves word: a call that is not answered in time is still carried out when the app wakes, so each of its windows that is out of view
+  is sent, without waiting for an answer, to the first place in view that was asked for it while Arbor let go (where it floated, in its
+  own size). The log's last line says which windows could not be returned to view.
 - It asks as little as it can: a window that is where it should go is not moved, the window that has the focus is not given it,
   the frame is read back in one call (`AXUIElementCopyMultipleAttributeValues`), as is a window's whole state; whether an app
   animates frame changes is asked once for all the moves of a moment, not before every one (and again after a second: it is also the

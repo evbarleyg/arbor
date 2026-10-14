@@ -1036,4 +1036,21 @@ private let c = WindowID(103)
         settle
         """)
   }
+
+  /// The rule `quit-left-out-of-reach` (K003). Arbor is quit while an app with a window out of view does not answer: the window was still past the
+  /// corner when the app woke, and Arbor was gone. Word is left for it now, and it goes back to where it floated.
+  @Test func aQuitWhileAnAppHangsLosesNoWindow() {
+    let runner = world(
+      after: """
+        launch
+        open 101 Safari pid 1000 at 100 100 700 500
+        open 102 Notes pid 2000 at 300 200 600 400
+        dock 101 left
+        zoom 101
+        hang 2000
+        quit
+        wake 2000
+        """)
+    #expect(runner.system.frame(of: b) == CGRect(x: 300, y: 200, width: 600, height: 400))
+  }
 }
