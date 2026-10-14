@@ -427,6 +427,16 @@ product decisions) answers in place. Do not delete answered questions.
   move is ⌃⌥⌘←, which works at every setting. The line on screen after such a drop names the key that docks at once.
 - For later: IDEAS I15.
 
+## Q24: macOS sweeps the windows aside at a click on the wallpaper. What does Arbor do meanwhile?
+
+- Asked by: the fixer of board 1.5, 2026-10-14, after a probe on a hosted Mac (22 sweeps). The product owner's first design was "Arbor notices from the window list, moves nothing while they are swept, and takes no swept frame for the person's".
+- What the Mac answered: a sweep is only a picture. Accessibility keeps every true frame, while the window list shows the swept ones. A frame set through Accessibility meanwhile is taken, stays invisible, does not end the sweep, and the window comes back at the new frame in one motion.
+  Arbor ended all ten cases tried rightly (idle, close, dock, zoom, focus, pause, Quit). The Dock announces the beginning and the end, 0.2 s late. **The real fault:** a click on the strip of a swept window, the natural way back, that slips by 3 points: the window list jumps back while the button is
+  down, and Arbor takes that for a drag by hand. Strips lie at the display's edges, which are drop zones, so a mere click can dock a floating window.
+- **Answer** (product owner, 2026-10-14): **while the windows are swept Arbor goes by Accessibility only, never by the window list.** No drag begins from a press on a swept window: no preview, no "moved by the user". The stage and the pause's rescues ignore swept frames. Shortcuts keep working.
+  "Moves nothing while swept" is withdrawn: putting moves off would make a visible jolt after the windows are back, and moving meanwhile shows nothing.
+- What is Arbor's own (the line round the focused window, tiles, gap handles, the surface) goes with the windows and comes back with them.
+
 ## Decided by the executor
 
 One line per product decision made while building, newest last.
