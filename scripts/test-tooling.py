@@ -1163,6 +1163,95 @@ def check_ci_mtimes():
             (built.returncode, sorted(os.listdir(os.path.join(folder, ".build/mac-shell")))), (0, ["vdisplay"]))
 
 
+# MARK: ci-mac-shell.sh and run.sh
+
+def check_mac_shell_batch():
+    """Several scripts on one Mac: each gets its turn, and nothing of one passes for another's."""
+    runner = os.path.join(HERE, "ci-mac-shell.sh")
+    scripts = {
+        "fine.sh": "echo fine; echo picture > mac-shell/fine.png; echo '3 passed, 0 failed'\n",
+        "fails.sh": "echo fails; ls mac-shell | grep -c png; echo log > mac-shell/fails.log; exit 1\n",
+        "worse.sh": "exit 7\n",
+        "hangs.sh": "trap 'echo cleaned up; exit 143' TERM\necho hangs\nsleep 60 & wait\n",
+        "leaves.sh": "(sleep 20 &)\necho left\n",
+    }
+
+    def tried(*names, limit="60"):
+        with tempfile.TemporaryDirectory(prefix="tooling-") as folder:
+            for name, text in scripts.items():
+                with open(os.path.join(folder, name), "w", encoding="utf-8") as handle:
+                    handle.write(text)
+            began = time.time()
+            done = subprocess.run([BASH, runner, *names], cwd=folder, env={**os.environ, "MAC_SHELL_LIMIT": limit}, capture_output=True,
+                                  text=True, check=False, timeout=90)
+            left = {}
+            for where, _folders, files in os.walk(os.path.join(folder, "mac-shell")):
+                for name in files:
+                    with open(os.path.join(where, name), encoding="utf-8") as handle:
+                        left[os.path.relpath(os.path.join(where, name), os.path.join(folder, "mac-shell"))] = handle.read()
+            return done.returncode, left, done.stdout, time.time() - began
+
+    code, left, said, _ = tried("fails.sh")
+    row("ci-mac-shell.sh: one script: its exit code, and the files where they have always been",
+        (code, sorted(left), left["exit-code.txt"]), (1, ["exit-code.txt", "fails.log", "output.txt"], "1\n"))
+    row("ci-mac-shell.sh: one script: what it said, between the header and the exit code",
+        (left["output.txt"].splitlines()[0][:25], left["output.txt"].splitlines()[1:]), ("# mac-shell: fails.sh at ", ["fails", "0", "exit code 1"]))
+    row("ci-mac-shell.sh: the exit code is an annotation", "::notice title=mac-shell exit code::fails.sh exited with 1" in said, True)
+
+    code, left, said, _ = tried("fine.sh", "fails.sh", "nothing.sh", "worse.sh", "fine.sh")
+    row("ci-mac-shell.sh: several: the first exit code that is not 0", (code, left["exit-code.txt"]), (1, "1\n"))
+    row("ci-mac-shell.sh: several: a folder for each, also for one that ran twice, failed, or is not there", sorted(left), sorted(
+        ["exit-code.txt", "summary.txt", "1-fine/exit-code.txt", "1-fine/output.txt", "1-fine/fine.png", "2-fails/exit-code.txt", "2-fails/output.txt",
+         "2-fails/fails.log", "3-nothing/exit-code.txt", "3-nothing/output.txt", "4-worse/exit-code.txt", "4-worse/output.txt",
+         "5-fine/exit-code.txt", "5-fine/output.txt", "5-fine/fine.png"]))
+    row("ci-mac-shell.sh: several: a script finds nothing of the one before in mac-shell/", left["2-fails/output.txt"].splitlines()[1:3], ["fails", "0"])
+    row("ci-mac-shell.sh: several: each one's own exit code",
+        [left[f"{name}/exit-code.txt"].strip() for name in ("1-fine", "2-fails", "3-nothing", "4-worse", "5-fine")], ["0", "1", "2", "7", "0"])
+    row("ci-mac-shell.sh: several: a line for each in the summary", [line.split()[:4] for line in left["summary.txt"].splitlines()],
+        [["1", "fine.sh", "exit", "0"], ["2", "fails.sh", "exit", "1"], ["3", "nothing.sh", "exit", "2"], ["4", "worse.sh", "exit", "7"],
+         ["5", "fine.sh", "exit", "0"]])
+    row("ci-mac-shell.sh: all pass", tried("fine.sh", "fine.sh")[0], 0)
+
+    code, left, _, _ = tried("hangs.sh", "fine.sh", limit="1")
+    row("ci-mac-shell.sh: one that hangs is stopped, may clean up, and the next one runs",
+        (code, left["1-hangs/output.txt"].splitlines()[-2:], left["2-fine/exit-code.txt"]), (124, ["cleaned up", "exit code 124"], "0\n"))
+    code, left, _, took = tried("leaves.sh", "fine.sh")
+    row("ci-mac-shell.sh: what a script leaves running holds nobody up", (code, took < 10), (0, True))
+    row("ci-mac-shell.sh: no script at all", tried()[0], 64)
+
+    # run.sh, up to the moment it starts the run: a stand-in for `gh` answers every question and notes what was asked for.
+    def started(*arguments):
+        with tempfile.TemporaryDirectory(prefix="tooling-") as folder:
+            with open(os.path.join(folder, "gh"), "w", encoding="utf-8") as handle:
+                handle.write('#!/bin/sh\ncase "$*" in *dispatches*) printf "%s\\n" "$@" > "$NOTED"; exit 1;; *commits/*) git rev-parse HEAD;; *) echo 0;; esac\n')
+            os.chmod(os.path.join(folder, "gh"), 0o755)
+            noted = os.path.join(folder, "noted")
+            environment = {**os.environ, "PATH": folder + os.pathsep + os.environ["PATH"], "NOTED": noted, "MAC_SHELL_WORKFLOW_REF": "home"}
+            done = subprocess.run([BASH, os.path.join(HERE, "mac-shell", "run.sh"), *arguments], env=environment, capture_output=True, text=True, check=False)
+            if not os.path.exists(noted):
+                return done.returncode, None, {}
+            with open(noted, encoding="utf-8") as handle:
+                asked = dict(line.strip().split("=", 1) for line in handle if "=" in line)
+            return done.returncode, [asked.get(key) for key in ("ref", "inputs[ref]", "inputs[script]", "inputs[macs]")], asked
+
+    row("run.sh: one script", started("a.sh", "feat/x")[:2], (97, ["home", "feat/x", "a.sh", ""]))
+    row("run.sh: three scripts go to one Mac", started("a.sh", "./b.sh", "c.sh", "feat/x")[:2], (97, ["home", "feat/x", "a.sh b.sh c.sh", ""]))
+    row("run.sh: five are too many for one", started("a.sh", "b.sh", "c.sh", "d.sh", "e.sh", "feat/x")[1][3], '["a.sh c.sh e.sh","b.sh d.sh"]')
+    row("run.sh: --macs 3", started("--macs", "3", "a.sh", "b.sh", "c.sh", "d.sh", "feat/x")[1][3], '["a.sh d.sh","b.sh","c.sh"]')
+    row("run.sh: more Macs than scripts", started("--macs", "9", "a.sh", "b.sh", "feat/x")[1][3], '["a.sh","b.sh"]')
+    row("run.sh: one script for three Macs to share", started("--macs", "3", "a.sh", "feat/x")[1][3], '["a.sh","a.sh","a.sh"]')
+    row("run.sh: the ordinary Mac, set up, unless something else is asked for",
+        [started("a.sh", "feat/x")[2].get(key) for key in ("inputs[runner]", "inputs[bare]")], ["macos-26", "false"])
+    row("run.sh: --on and --bare, and a tag of its own for another kind of Mac",
+        [started("--on", "macos-15-intel", "--bare", "e2e-drag.sh", "feat/x")[2].get(key) for key in ("inputs[runner]", "inputs[bare]", "inputs[tag]")],
+        ["macos-15-intel", "true", "feat-x.e2e-drag-15-intel"])
+    row("run.sh: too few Macs", started("--macs", "2", *[f"{n}.sh" for n in range(9)], "feat/x")[:2], (97, None))
+    row("run.sh: a slip in a script's name does not pass for a branch", started("a.sh", "b.sj", "c.sh")[:2], (97, None))
+    row("run.sh: no script", started("feat/x")[:2], (97, None))
+    row("run.sh: a path that could be more than a path", started("a;b.sh", "feat/x")[:2], (97, None))
+    row("run.sh: --macs 0", started("--macs", "0", "a.sh", "feat/x")[:2], (97, None))
+
+
 def check_fuzz_launch():
     for situation in fuzz_launch.situations():
         row(*situation)
@@ -1183,6 +1272,7 @@ def main():
     check_install()
     check_e2e()
     check_ci_mtimes()
+    check_mac_shell_batch()
     check_fuzz_launch()
     wrong = 0
     for what, got, expected in rows:

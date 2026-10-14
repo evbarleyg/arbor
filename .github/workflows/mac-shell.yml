@@ -1,16 +1,16 @@
 name: Mac shell
-run-name: "Mac shell: ${{ inputs.script }} at ${{ inputs.ref || github.ref_name }} [${{ inputs.tag || github.run_id }}]"
+run-name: "Mac shell${{ inputs.runner != 'macos-26' && format(' ({0})', inputs.runner) || '' }}: ${{ inputs.script }} at ${{ inputs.ref || github.ref_name }} [${{ inputs.tag || github.run_id }}]"
 
 # A remote Mac for executors that have none. Checks out a ref, runs one script
-# from that ref on GitHub's macOS runner with the newest Xcode selected, and
-# pushes everything the script left in mac-shell/ (its output, screenshots,
-# logs) to the throwaway branch mac-shell-out/<tag>, where `git fetch` reaches
-# it. Start it with scripts/mac-shell/run.sh, which also waits, fetches the
+# from that ref, or several one after the other, on GitHub's macOS runner with
+# the newest Xcode selected, and pushes everything they left in mac-shell/ (output,
+# screenshots, logs) to the throwaway branch mac-shell-out/<tag>, where `git fetch`
+# reaches it. Start it with scripts/mac-shell/run.sh, which also waits, fetches the
 # output and deletes the branch.
 #
-# Only repository writers can start it (workflow_dispatch), and the script is
+# Only repository writers can start it (workflow_dispatch), and a script is
 # a file in the repository, never free text, so nobody can run arbitrary
-# commands by filling in a form. The script never sees the token that pushes.
+# commands by filling in a form. The scripts never see the token that pushes.
 # See docs/TESTING.md, "Seeing the real app from anywhere".
 
 on:
@@ -22,38 +22,67 @@ on:
         default: ""
         type: string
       script:
-        description: Path of a script inside the repository at that ref, e.g. scripts/mac-shell/e2e.sh
+        description: Path of a script inside the repository at that ref, e.g. scripts/mac-shell/e2e.sh; or several, with spaces between them
         required: true
         type: string
-      tag:
-        description: The output goes to the branch mac-shell-out/<tag> (letters, digits, . _ -; empty means the run id)
+      macs:
+        description: 'For more than one Mac: a JSON list with the scripts for each, e.g. ["a.sh b.sh", "c.sh"] (run.sh --macs writes it)'
         required: false
         default: ""
         type: string
+      tag:
+        description: The output goes to the branch mac-shell-out/<tag> (letters, digits, . _ -; empty means the run id); of several Macs to <tag>.1, <tag>.2, …
+        required: false
+        default: ""
+        type: string
+      runner:
+        description: Which of GitHub's Macs. Arbor claims macOS 14 and later; all of these count towards the same five at a time
+        required: false
+        default: macos-26
+        type: choice
+        # A list, so that nothing but a hosted Mac of the ordinary kind can ever be named here.
+        options: [macos-26, macos-15, macos-14, macos-15-intel]
+      bare:
+        description: No toolchain and no build, for a script that only asks the Mac something
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: read
 
 jobs:
   shell:
-    runs-on: macos-26
-    # The script's twenty minutes, and before them, on the first run of a day, the toolchain and a build from nothing.
-    timeout-minutes: 35
+    runs-on: ${{ inputs.runner || 'macos-26' }}
+    # Each script has twenty minutes (scripts/ci-mac-shell.sh); this is for a Mac on which nothing moves any more.
+    timeout-minutes: 100
+    strategy:
+      fail-fast: false
+      matrix:
+        scripts: ${{ fromJSON(inputs.macs || format('["{0}"]', inputs.script)) }}
     permissions:
       contents: write # to push mac-shell-out/<tag>; nothing else is written
     env:
-      SCRIPT: ${{ inputs.script }}
-      TAG: ${{ inputs.tag || github.run_id }}
+      SCRIPT: ${{ matrix.scripts }}
       REF: ${{ inputs.ref }}
     steps:
       - name: Check the inputs
         id: inputs
+        env:
+          TAG: ${{ inputs.tag || github.run_id }}
+          INDEX: ${{ strategy.job-index }}
+          TOTAL: ${{ strategy.job-total }}
         run: |
-          case "$SCRIPT" in
-            ""|/*|*..*|*$'\n'*)
-              echo "::error::script must be a relative path inside the repository, got '$SCRIPT'"
-              exit 2;;
-          esac
+          set -f # a star in there is a mistake, not a pattern
+          [ -n "$SCRIPT" ] || { echo "::error::no script"; exit 2; }
+          [ "$(echo $SCRIPT | wc -w)" -le 4 ] || { echo "::error::at most four scripts for one Mac: give the rest to another (run.sh --macs)"; exit 2; }
+          for script in $SCRIPT; do
+            case "$script" in
+              /*|-*|*..*|*[!A-Za-z0-9._/-]*)
+                echo "::error::a script must be a relative path inside the repository, got '$script'"
+                exit 2;;
+            esac
+          done
           # What is built here is kept for everybody's runs, so it has to be the work of somebody who may push here.
           case "$REF" in
             refs/pull/*|pull/*)
@@ -64,6 +93,10 @@ jobs:
             echo "::error::tag must be 1 to 40 letters, digits, dots, underscores or dashes, and a valid branch name"
             exit 2
           fi
+          if [ "$TOTAL" -gt 1 ]; then TAG=$TAG.$((INDEX + 1)); fi
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          # For a script that is given to several Macs and shares its work out among them: "2/3" on the second of three.
+          echo "MAC_SHELL_SHARE=$((INDEX + 1))/$TOTAL" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v5
         with:
@@ -82,16 +115,19 @@ jobs:
             .github/actions
             scripts
           persist-credentials: false
+      - name: Which Git need not see
+        run: echo .ci >> .git/info/exclude
       - name: Set up
         id: setup
+        if: ${{ !inputs.bare }}
         uses: ./.ci/.github/actions/mac-setup
         with:
           build-cache: products
       # Here, so that what is kept is a build and nothing else. A build that fails is the script's to report, as it always was.
       - name: Build
         id: build
+        if: ${{ !inputs.bare }}
         run: |
-          echo .ci >> .git/info/exclude
           swift --version
           .ci/scripts/ci-build.sh && echo "passed=true" >> "$GITHUB_OUTPUT" || echo "::warning::swift build failed"
       - name: Keep the build
@@ -102,39 +138,12 @@ jobs:
         with:
           key: ${{ steps.setup.outputs.build-key }}
 
-      - name: Run the script from the repository
-        # Shorter than the job's limit, so that a script that hangs still gets its output pushed, and
-        # short enough that a hung script does not hold a Mac for hours: a session takes two minutes.
-        timeout-minutes: 20
+      - name: Run the scripts from the repository
+        # Shorter than the job's limit, so that whatever happens the output gets pushed.
+        timeout-minutes: 90
         run: |
-          set -o pipefail
-          if [ ! -f "$SCRIPT" ]; then
-            echo "::error::no file '$SCRIPT' at $(git rev-parse --short HEAD)"
-            exit 2
-          fi
-          mkdir -p mac-shell
-          header="# mac-shell: $SCRIPT at $(git rev-parse --short HEAD), macOS $(sw_vers -productVersion), $(date -u +%Y-%m-%dT%H:%MZ)"
-          echo "$header" | tee mac-shell/output.txt
-          set +e
-          bash "$SCRIPT" 2>&1 | tee -a mac-shell/output.txt
-          code=${PIPESTATUS[0]}
-          set -e
-          echo "exit code $code" | tee -a mac-shell/output.txt
-          echo "$code" > mac-shell/exit-code.txt
-          # Readers that can reach only the REST API get the exit code and the tail as check annotations.
-          echo "::notice title=mac-shell exit code::$SCRIPT exited with $code"
-          tail -n 40 mac-shell/output.txt | cut -c 1-200 | awk '{ gsub(/%/, "%25"); printf "%s%%0A", $0 }' \
-            | sed 's/^/::notice title=mac-shell output (tail)::/'
-          {
-            echo "## mac-shell"
-            echo
-            echo "$header; exit code $code"
-            echo
-            echo '```'
-            tail -c 60000 mac-shell/output.txt
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-          exit "$code"
+          set -f
+          .ci/scripts/ci-mac-shell.sh $SCRIPT
 
       # An orphan commit holding only the output. CI runs on pushes to main and on pull requests, and
       # pushes made with GITHUB_TOKEN start no workflows at all, so this branch never starts a run.
@@ -169,6 +178,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mac-shell-output
+          name: mac-shell-output${{ strategy.job-total > 1 && format('-{0}', env.TAG) || '' }}
           path: mac-shell/
           if-no-files-found: warn

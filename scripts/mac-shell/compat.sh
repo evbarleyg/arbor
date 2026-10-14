@@ -3,7 +3,7 @@
 #
 #   ARBOR_APPS_HERE=1 scripts/mac-shell/compat.sh [app…]          on your own Mac (the terminal needs Accessibility and Screen
 #                                                 Recording): read "On your own Mac" in lib-apps.sh first
-#   scripts/mac-shell/run.sh scripts/mac-shell/compat.sh          on one of GitHub's, from anywhere: every app, about 20 minutes
+#   scripts/mac-shell/run.sh --macs 2 scripts/mac-shell/compat.sh on two of GitHub's, from anywhere: every app, about 15 minutes
 #
 # Apps: textedit finder safari terminal calculator settings notes preview activity script fontbook calendar maps
 # xcode (default: all but xcode; COMPAT_APPS="…" does the same as arguments, for run.sh, which passes none).
@@ -23,7 +23,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/lib-apps.sh"
 
 ALL_APPS="textedit finder safari terminal calculator settings notes preview activity script fontbook calendar maps"
 # Stop starting drills after this many seconds, and report the rest as not run: the workflow cuts a script off at 20 minutes. All
-# thirteen apps take two runs (COMPAT_APPS="finder terminal textedit notes safari preview", then the others).
+# thirteen apps take two Macs (run.sh --macs 2).
 COMPAT_BUDGET=${COMPAT_BUDGET:-1000}
 
 # What differs between apps. MORE is how a person gets a second window: a shortcut, or another document.
@@ -521,6 +521,19 @@ prepare() {
 set -- "$@" ${COMPAT_APPS:-}
 # shellcheck disable=SC2086
 [ $# -gt 0 ] || set -- $ALL_APPS
+
+# Given to several Macs at once (run.sh --macs 2), each takes every second app: "2/2" is the second Mac of two.
+share=${MAC_SHELL_SHARE:-1/1}
+if [ "${share#*/}" -gt 1 ] 2>/dev/null; then
+  mine="" place=0
+  for app in "$@"; do
+    [ $((place % ${share#*/} + 1)) -ne "${share%/*}" ] || mine="$mine $app"
+    place=$((place + 1))
+  done
+  echo "Mac ${share%/*} of ${share#*/}:$mine"
+  # shellcheck disable=SC2086
+  set -- $mine
+fi
 
 prepare
 for app in "$@"; do

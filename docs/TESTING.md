@@ -466,6 +466,22 @@ without a Mac" in `collab/README.md`).
 Rehearse the commands in arbor-sim first, put several questions into one script,
 and read the whole output before running again. `bash -n script.sh` catches syntax errors for free.
 
+**Several scripts: one run, not several.** They share one Mac, one checkout and one build, and wait for a Mac once:
+
+```bash
+scripts/mac-shell/run.sh scripts/mac-shell/shots-F10.sh scripts/mac-shell/shots-F12.sh scripts/mac-shell/shots-F43.sh
+scripts/mac-shell/run.sh --macs 2 scripts/mac-shell/compat.sh            # one long script that shares its work out among two Macs
+scripts/mac-shell/run.sh --on macos-15 scripts/mac-shell/e2e.sh          # another macOS: macos-15, macos-14, macos-15-intel
+scripts/mac-shell/run.sh --bare scripts/mac-shell/desktop-facts.sh       # no toolchain, no build: it only asks the Mac something
+```
+
+They run one after the other. Each gets its turn and its own twenty minutes, whatever became of the one before, and starts with an empty
+`mac-shell/`. What comes back is `.mac-shell/<first script>-x3-<run id>/` with a folder for each, `1-shots-F10/`, `2-shots-F12/`, …, holding what a
+run of that script alone would have brought (`output.txt`, `exit-code.txt`, pictures, logs), and `summary.txt` with a line for each. `run.sh` exits with the
+first exit code that is not 0. At most four to a Mac; more are shared out among as many Macs as that takes, or among `--macs N`, whose
+output lies in `mac-1/`, `mac-2/`, …. A script that is given to several Macs by itself finds in `$MAC_SHELL_SHARE` which part is its own
+(`2/3`: the second of three); `compat.sh` takes every Nth app. All kinds of Mac come out of the same five at a time.
+
 Where branches cannot be deleted, the output branch
 `mac-shell-out/<ref>.<script>` stays on GitHub and the next run of the same script replaces its content.
 Anyone with ordinary credentials can clear them:
@@ -667,7 +683,7 @@ where the title bar was, native tabs, sheets, windows that reopen by themselves.
 in front of the stock apps on the same Macs, which nobody is using:
 
 ```bash
-scripts/mac-shell/run.sh scripts/mac-shell/compat.sh            # 13 apps × 28 steps; what does not fit into 1000 s is reported as not run
+scripts/mac-shell/run.sh --macs 2 scripts/mac-shell/compat.sh   # 13 apps × 28 steps, every second app on the second Mac; what does not fit into 1000 s is reported as not run
 scripts/mac-shell/run.sh scripts/mac-shell/compat-extras.sh     # tabs, sheets, full screen, a growing font: 4 minutes
 ARBOR_APPS_HERE=1 scripts/mac-shell/compat.sh terminal safari   # on your own Mac, if you mean it (see lib-apps.sh): only these apps
 ```
