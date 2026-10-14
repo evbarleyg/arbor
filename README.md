@@ -164,7 +164,8 @@ and shows what matters, with a live tick on everything that is in order and a bu
   VoiceOver is on (⌃⌥ is its modifier), when there are several input sources, which macOS can switch with ⌃⌥Space, and when an
   app that uses ⌃⌥ itself is open (Emacs, a virtual machine, a JetBrains IDE).
 
-When the permission arrives the window goes on to **three moves to try** on your own windows, ticked off as you
+When the permission arrives the window comes forward. If something on its first page is still in the way it waits there, because
+the first move would run into it; Continue goes on. Otherwise it goes on by itself, to **three moves to try** on your own windows, ticked off as you
 make them, in any order: drag a window to a screen edge, ⌃⌥↩ to frame it, ⌃⌥Space to show everything. There are always three ways
 back: Show Everything, Float All Windows (your Mac is back to normal), and quitting Arbor, which brings every window
 back into view. The same page has the box for Open at Login, which is also in the settings window, under General.

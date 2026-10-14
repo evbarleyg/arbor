@@ -39,8 +39,7 @@ extension Controller {
     guard isRunning, !hasWelcomed else { return nil }
     let facts =
       systemFacts?() ?? SystemFacts(accessibility: accessibilityGranted, screenRecording: false, switches: nil)
-    let needsAttention = onboardingModel(facts).rows.contains { $0.state == .required || $0.state == .recommended }
-    return needsAttention ? .permissions : .firstSteps
+    return onboardingModel(facts).pageToOpenOn
   }
 
   /// The welcome window is on the display, whoever opened it.
@@ -102,7 +101,7 @@ public final class OnboardingSession {
   public func refresh() {
     guard isOpen, let controller else { return }
     facts = Self.facts(of: controller)
-    flow.update(isReady: facts.accessibility)
+    flow.update(isReady: facts.accessibility, needsAttention: controller.onboardingModel(facts).needsAttention)
     publish()
   }
 

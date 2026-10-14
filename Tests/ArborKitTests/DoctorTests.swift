@@ -512,6 +512,13 @@ import Testing
     #expect(shown.count == 1)
     #expect(shown.last?.row(.desktopAndDock)?.points == [MacSwitch.optionKey.advice])
 
+    // The last one.
+    mac.facts.switches = []
+    session.refresh()
+    #expect(shown.count == 2)
+    #expect(shown.last?.row(.desktopAndDock)?.isSatisfied == true)
+    #expect(session.model.page == .permissions)
+
     // The permission arrives; the app starts the controller.
     mac.facts.accessibility = true
     h.controller.accessibilityGranted = true
@@ -530,6 +537,41 @@ import Testing
     #expect(ticks(session.model) == [true, true, true])
     #expect(session.model.title == "That is all there is to it")
     #expect(shown.last == session.model)
+  }
+
+  /// Whoever comes back from granting the permission has looked at nothing else on the page. The first of the three moves is a drag to
+  /// a screen edge, which macOS as it comes takes for itself: so the window waits at what is in the way (F46, "Setup: only the
+  /// problems. Skipped when there are none"), and nothing has been arranged by then.
+  @Test func withThePermissionThereTheWindowWaitsAtWhatIsStillInTheWay() throws {
+    let h = Harness()
+    let a = h.system.open(app: "Safari")
+    let before = h.frame(a)
+    let mac = Mac()
+    mac.facts.switches = MacSwitch.inTheWay(macOS: 26) { _ in nil }
+    h.controller.accessibilityGranted = false
+    h.controller.systemFacts = { mac.facts }
+    let session = OnboardingSession(controller: h.controller) { _ in }
+    session.begin()
+    #expect(session.model.title == "Welcome to Arbor")
+
+    mac.facts.accessibility = true
+    h.controller.accessibilityGranted = true
+    h.start()
+    session.refresh()
+    #expect(session.model.page == .permissions)
+    #expect(session.model.title == "One thing is in the way")
+    #expect(session.model.row(.accessibility)?.isSatisfied == true)
+    #expect(session.model.row(.desktopAndDock)?.state == .recommended)
+    #expect(session.model.isPrimaryEnabled, "it is advice: nobody is held up")
+    #expect(h.frame(a) == before && h.system.frameLog.isEmpty && h.workspace.isFloating(a), "nothing has moved")
+
+    // Put right while the window waits: it says so and stays, so that what was done can be read. Continue goes on.
+    mac.facts.switches = []
+    session.refresh()
+    #expect(session.model.page == .permissions)
+    #expect(session.model.title == "Arbor is ready")
+    session.go(to: .firstSteps)
+    #expect(session.model.page == .firstSteps)
   }
 
   @Test func aPausedArborSaysSoInsteadOfPromisingMovesThatDoNothing() {

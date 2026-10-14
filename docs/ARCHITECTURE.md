@@ -1188,7 +1188,7 @@ All three show state, so each is a headless model that the app only draws.
   `Controller.systemFacts` is called. Tests make them up.
 - **The welcome window.** `OnboardingSession` holds one showing of it: `refresh()` reads the facts again (the window
   asks once a second), the controller's changes tick off `FirstSteps`, `OnboardingFlow` turns the page when the
-  permission arrives, and `OnboardingModel` words it all. `OnboardingWindow` lays the model out in SwiftUI. It is a
+  permission arrives (unless the first page still has advice that was not taken: the first move would run into it), and `OnboardingModel` words it all. `OnboardingWindow` lays the model out in SwiftUI. It is a
   panel that never activates Arbor, so that "the focused window" stays the user's while they try the moves. It opens by itself when
   the permission is missing and once more in a lifetime: after the first start `ArborApp` asks `Controller.pageToWelcomeOn()`, which answers nil
   once `noteWelcomed()` has been called, now or at an earlier launch (`welcomed` in `state.json`). The flag is written only while Arbor runs: before

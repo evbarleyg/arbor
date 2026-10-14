@@ -1276,8 +1276,9 @@ display at scale 1, macOS 26) with real clicks and keys; the rest need a person:
   are at is ticked.
 - `"menuBarControls": false` and Reload Settings: a single icon, and a plain click opens the menu.
 - Take Accessibility away from Arbor and launch it: the welcome window opens by itself, Continue is grey, the
-  menu bar shows a warning sign, the menu offers Check Setup… first. Grant it: within a second or two the window turns to "Three moves to try" and floats
-  above other windows. Dock, frame, show everything: each is ticked as it happens.
+  menu bar shows a warning sign, the menu offers Check Setup… first. Grant it: within a second or two the window comes in front of System Settings. On a Mac
+  as it comes it stays on its first page, headed "One thing is in the way" (the Desktop & Dock row), with Continue enabled; with nothing in the way it turns to
+  "Three moves to try" and floats above other windows. Dock, frame, show everything: each is ticked as it happens.
 - Close the window and open Arbor.app again from Finder: it comes back.
 - Quit Arbor, delete `"welcomed"` from `state.json` (or the file) and launch it with the permission granted: the window opens by itself, on
   the three moves if nothing is in the way, at the right of the display. Quit and launch again: it does not. The arrangement survives both.

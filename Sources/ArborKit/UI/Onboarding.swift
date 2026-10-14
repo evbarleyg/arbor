@@ -18,6 +18,8 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
   private let mark = ArborArtwork.menuBarIcon()
   private var window: NSPanel?
   private var content: NSHostingView<OnboardingView>?
+  /// What the window last showed.
+  private var shown: OnboardingModel?
   private var timer: Timer?
   /// It has gone to the side for the three moves, in this showing. From then on it stays where it is put.
   private var isAside = false
@@ -124,6 +126,9 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
     // The moves are made in other apps' windows, one of which then fills the display: stay above them.
     window.level = model.page == .firstSteps ? .floating : .normal
     if window.isVisible { stepAside() }
+    // Whoever has just put something right did it in System Settings, which lies over this window.
+    if window.isVisible, let shown, model.isWorthComingForward(after: shown) { window.orderFrontRegardless() }
+    shown = model
   }
 
   /// The first move is a drag to a screen edge, and most people take the left. So for the three moves the window waits at the

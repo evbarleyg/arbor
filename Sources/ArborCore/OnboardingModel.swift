@@ -26,7 +26,8 @@ public struct FirstSteps: Equatable, Sendable {
 }
 
 /// Which page the welcome window shows. It opens on the permissions, goes on to the first steps by
-/// itself the moment Arbor may arrange windows, and comes back if that is taken away.
+/// itself the moment Arbor may arrange windows, unless something else on the page is still in the way, and
+/// comes back if the permission is taken away.
 public struct OnboardingFlow: Equatable, Sendable {
   public enum Page: Sendable {
     case permissions, firstSteps
@@ -35,16 +36,23 @@ public struct OnboardingFlow: Equatable, Sendable {
   public private(set) var page = Page.permissions
   public var steps = FirstSteps()
   private var isReady: Bool
+  /// The three moves have been on show. Whoever has passed the first page by is not held at it again.
+  private var hasGoneOn = false
 
   /// - Parameter isReady: Arbor has Accessibility permission.
   public init(isReady: Bool) { self.isReady = isReady }
 
-  public mutating func update(isReady: Bool) {
+  /// - Parameter needsAttention: the first page has advice that has not been taken (`OnboardingModel.needsAttention`). Asked only
+  ///   at the moment the permission arrives.
+  public mutating func update(isReady: Bool, needsAttention: @autoclosure () -> Bool) {
     if !isReady {
       page = .permissions
-    } else if !self.isReady {
+    } else if !self.isReady, hasGoneOn || !needsAttention() {
       // What the window was waiting for. Closing now would leave a newcomer looking at an unchanged screen.
+      // Not past what is in the way: whoever comes back from granting the permission has read nothing else on the page, and
+      // the first move is a drag to a screen edge, which macOS as it comes takes for itself.
       page = .firstSteps
+      hasGoneOn = true
     }
     self.isReady = isReady
   }
@@ -52,6 +60,7 @@ public struct OnboardingFlow: Equatable, Sendable {
   /// The Continue and Back buttons. There is nothing to try before Arbor may move windows.
   public mutating func go(to page: Page) {
     self.page = isReady ? page : .permissions
+    if self.page == .firstSteps { hasGoneOn = true }
   }
 }
 
@@ -95,6 +104,8 @@ public struct OnboardingModel: Equatable, Sendable {
     public var button: String?
 
     public var isSatisfied: Bool { state == .done }
+    /// Something is missing or in the way, and there is something to do about it.
+    public var needsAttention: Bool { state == .required || state == .recommended }
   }
 
   /// One of the moves to try: what to do, and what happens.
@@ -134,6 +145,18 @@ public struct OnboardingModel: Equatable, Sendable {
   /// Arbor has what it needs to arrange windows.
   public var isReady: Bool { rows.allSatisfy { $0.state != .required } }
 
+  /// Something is missing or in the way: a reason to show the first page before the three moves.
+  public var needsAttention: Bool { rows.contains(where: \.needsAttention) }
+
+  /// The page to show somebody who has seen neither.
+  public var pageToOpenOn: OnboardingFlow.Page { needsAttention ? .permissions : .firstSteps }
+
+  /// Whether this is good news that somebody is waiting for in another window: the permission has arrived, or the last thing in the
+  /// way has gone. They are in System Settings then, which covers this window, and Arbor has no other face: it comes forward.
+  public func isWorthComingForward(after old: OnboardingModel) -> Bool {
+    (isReady && !old.isReady) || (!needsAttention && old.needsAttention)
+  }
+
   public func row(_ id: Row.ID) -> Row? { rows.first { $0.id == id } }
   public func step(_ id: Step.ID) -> Step? { steps.first { $0.id == id } }
 
@@ -172,7 +195,7 @@ public struct OnboardingModel: Equatable, Sendable {
       title =
         !facts.accessibility
         ? (windowsOutOfView > 0 ? "Arbor needs its permission back" : "Welcome to Arbor")
-        : isPaused ? "Arbor is paused" : "Arbor is ready"
+        : isPaused ? "Arbor is paused" : Self.title(inTheWay: rows.filter(\.needsAttention).count)
       summary =
         "Dock windows side by side, then zoom between them: a camera frames one window, its group, or "
         + "everything at once."
@@ -181,7 +204,7 @@ public struct OnboardingModel: Equatable, Sendable {
       backButton = nil
       footnote =
         facts.accessibility
-        ? Self.whereArborLives : "This window goes on by itself when the permission arrives."
+        ? Self.whereArborLives : "Arbor notices by itself when the permission arrives."
       footnoteShowsMark = facts.accessibility
     case .firstSteps:
       title = flow.steps.isComplete ? "That is all there is to it" : "Three moves to try"
@@ -196,6 +219,15 @@ public struct OnboardingModel: Equatable, Sendable {
       backButton = "Back"
       footnote = Self.whereArborLives
       footnoteShowsMark = true
+    }
+  }
+
+  /// True of a newcomer and of whoever chooses Check Setup… after a year. Not "Arbor is ready" over a warning sign.
+  private static func title(inTheWay count: Int) -> String {
+    switch count {
+    case 0: "Arbor is ready"
+    case 1: "One thing is in the way"
+    default: "\(["Two", "Three", "Four", "Five"][min(count, 5) - 2]) things are in the way"
     }
   }
 

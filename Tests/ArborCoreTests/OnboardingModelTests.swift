@@ -172,7 +172,7 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(waiting.page == .permissions)
     #expect(waiting.primaryButton == "Continue" && !waiting.isPrimaryEnabled)
     #expect(waiting.backButton == nil)
-    #expect(waiting.footnote.contains("goes on by itself"))
+    #expect(waiting.footnote == "Arbor notices by itself when the permission arrives.", "true whatever the window does then")
 
     let ready = OnboardingModel(tuned, shortcut: defaults)
     #expect(ready.page == .permissions, "opened from the menu, it starts with how things stand")
@@ -188,27 +188,100 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
   @Test func theWindowGoesOnToTheFirstStepsWhenThePermissionArrives() {
     var flow = OnboardingFlow(isReady: false)
     #expect(flow.page == .permissions)
-    flow.update(isReady: false)
+    flow.update(isReady: false, needsAttention: false)
     #expect(flow.page == .permissions, "still waiting")
     flow.go(to: .firstSteps)
     #expect(flow.page == .permissions, "there is nothing to try before Arbor may move windows")
 
-    flow.update(isReady: true)
+    flow.update(isReady: true, needsAttention: false)
     #expect(flow.page == .firstSteps, "not closed: a newcomer would be left looking at an unchanged screen")
-    flow.update(isReady: true)
+    flow.update(isReady: true, needsAttention: false)
     flow.go(to: .permissions)
-    flow.update(isReady: true)
+    flow.update(isReady: true, needsAttention: false)
     #expect(flow.page == .permissions, "Back is not undone by the next look at the facts")
     flow.go(to: .firstSteps)
     #expect(flow.page == .firstSteps)
 
-    flow.update(isReady: false)
+    flow.update(isReady: false, needsAttention: false)
     #expect(flow.page == .permissions, "the permission was taken away")
+  }
+
+  @Test func itDoesNotGoOnPastWhatIsStillInTheWay() {
+    var flow = OnboardingFlow(isReady: false)
+    flow.update(isReady: true, needsAttention: true)
+    #expect(flow.page == .permissions, "the first move would run into it")
+    flow.update(isReady: true, needsAttention: false)
+    #expect(flow.page == .permissions, "what was waited for was the permission; from here on the button turns the page")
+    flow.go(to: .firstSteps)
+    #expect(flow.page == .firstSteps, "it is advice, and can be passed by")
+    flow.update(isReady: true, needsAttention: true)
+    #expect(flow.page == .firstSteps, "nobody is called back from the moves")
+
+    // The permission goes and comes back: whoever has passed the advice by is not held at it a second time.
+    flow.update(isReady: false, needsAttention: true)
+    #expect(flow.page == .permissions)
+    flow.update(isReady: true, needsAttention: true)
+    #expect(flow.page == .firstSteps)
+  }
+
+  /// The rest of the time nobody needs to know, and finding out means wording the whole window.
+  @Test func whatIsInTheWayIsAskedOnlyWhenThePermissionArrives() {
+    var asked = 0
+    func ask() -> Bool {
+      asked += 1
+      return true
+    }
+    var flow = OnboardingFlow(isReady: false)
+    flow.update(isReady: false, needsAttention: ask())
+    #expect(asked == 0)
+    flow.update(isReady: true, needsAttention: ask())
+    #expect(asked == 1)
+    flow.update(isReady: true, needsAttention: ask())
+    flow.update(isReady: true, needsAttention: ask())
+    #expect(asked == 1)
+  }
+
+  /// "Arbor is ready" over a warning sign says two things at once. The words hold for a newcomer and after a year.
+  @Test func theTitleCountsWhatIsInTheWay() {
+    var facts = tuned
+    #expect(OnboardingModel(facts, shortcut: defaults).title == "Arbor is ready")
+    facts.switches = [.menuBar, .optionKey]
+    #expect(OnboardingModel(facts, shortcut: defaults).title == "One thing is in the way", "a row, however many switches")
+    facts.competingApps = ["Rectangle", "Magnet"]
+    #expect(OnboardingModel(facts, shortcut: defaults).title == "Two things are in the way")
+    facts.voiceOver = true
+    #expect(OnboardingModel(facts, shortcut: defaults).title == "Three things are in the way")
+    // What is only good to know does not count.
+    facts = tuned
+    facts.inputSources = 2
+    #expect(OnboardingModel(facts, shortcut: defaults).title == "Arbor is ready")
+    #expect(OnboardingModel(facts, shortcut: defaults).pageToOpenOn == .firstSteps)
+    facts.accessibility = false
+    #expect(OnboardingModel(facts, shortcut: defaults).title == "Welcome to Arbor")
+    #expect(OnboardingModel(facts, shortcut: defaults).pageToOpenOn == .permissions)
+  }
+
+  /// Things are put right in System Settings, which lies over the window meanwhile, and Arbor has no Dock icon to click.
+  @Test func goodNewsBringsTheWindowForward() {
+    var granted = fresh
+    granted.accessibility = true
+    let (waiting, held, ready) = (OnboardingModel(fresh), OnboardingModel(granted), OnboardingModel(tuned))
+    #expect(held.isWorthComingForward(after: waiting), "the permission arrived")
+    #expect(ready.isWorthComingForward(after: held), "the last switch went off")
+    #expect(ready.isWorthComingForward(after: waiting))
+    #expect(!waiting.isWorthComingForward(after: waiting) && !held.isWorthComingForward(after: held))
+    #expect(!ready.isWorthComingForward(after: ready))
+    // One switch of several is a step on the way: whoever is at it is not interrupted.
+    var fewer = granted
+    fewer.switches = [.optionKey]
+    #expect(!OnboardingModel(fewer).isWorthComingForward(after: held))
+    // Bad news comes by other roads (F63 opens the window).
+    #expect(!waiting.isWorthComingForward(after: ready) && !held.isWorthComingForward(after: ready))
   }
 
   @Test func openedWithThePermissionItStaysOnTheFirstPageUntilAsked() {
     var flow = OnboardingFlow(isReady: true)
-    flow.update(isReady: true)
+    flow.update(isReady: true, needsAttention: false)
     #expect(flow.page == .permissions)
     flow.go(to: .firstSteps)
     #expect(flow.page == .firstSteps)

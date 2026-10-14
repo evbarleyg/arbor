@@ -10,7 +10,8 @@ the pointer, with a tooltip each, and Arbor's mark alone while nothing is docked
 ticks for Accessibility and the Desktop & Dock settings that compete with Arbor (Screen Recording has a row too, not offered until pictures of windows have been seen to work on a Mac), and rows for competing apps,
 VoiceOver and input sources when they apply; the commands `doctor`, `check-setup`, `welcome`, `menu-bar` and `menu`.
 Differs from criterion 2, by the coordinator's decision after the product review: when the permission arrives the window
-does not close but goes on to a second page, three moves to try, ticked off live, ending on the three ways back. It also
+does not close but goes on to a second page, three moves to try, ticked off live, ending on the three ways back (it waits on the first
+page while something there is still in the way, and comes in front of System Settings when the permission arrives). It also
 opens when Arbor is opened again.
 With `feat/F10-no-room`: falling back to the single icon by itself when macOS leaves a wide item out of a full menu bar, and `doctor`'s row "Menu bar item" (tested against a stand-in; what macOS really answers is unseen).
 Not shipped: following the pointer to another
