@@ -703,11 +703,20 @@ extension Controller {
     }
   }
 
-  func scheduleEnforce(_ displayID: DisplayID) {
+  func scheduleEnforce(_ displayID: DisplayID, havingWaitedForTheDisplays turns: Int = 0) {
     scheduler.schedule("enforce-\(displayID.rawValue)", after: 0.25) { [weak self] in
       guard let self else { return }
       if self.system.isMouseButtonDown() || self.isAwaitingResizeEnd(on: displayID) {
         self.scheduleEnforce(displayID)
+        return
+      }
+      // Asked now and not when it was scheduled: an app can speak of its window before macOS's list of displays changes. A put-back
+      // lays out the whole display, which may be the one that is gone. It waits for the report, which looks after every window, or
+      // for the displays to be as they were; for as long as the look-out for a blink does, after which the report has to do.
+      guard self.knowsTheDisplays else {
+        if Double(turns) * 0.25 < Double(Self.blinkTries) * (DisplayChange.comingAndGoing + 0.5) {
+          self.scheduleEnforce(displayID, havingWaitedForTheDisplays: turns + 1)
+        }
         return
       }
       self.countPutBacks(on: displayID)

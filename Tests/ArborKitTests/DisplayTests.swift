@@ -399,6 +399,131 @@ private func reopen(_ old: Harness, in new: Harness) {
     for (window, slot) in slots { #expect(h.frame(window) == slot, "\(window)") }
   }
 
+  /// A window out of view that macOS brought onto the main display had "left its
+  /// corner", which was answered before anybody asked which displays there are, and by laying out the whole display.
+  @Test func withAWindowOutOfViewNothingIsSentToADisplayThatIsGoneEither() {
+    let (h, a, b, c) = makeHarness()
+    h.run("zoom \(a.rawValue)")
+    #expect(h.controller.parked.contains(b) && h.controller.parked.contains(c))
+    h.system.clearFrameLog()
+
+    unplugSideWithoutAWord(h, moving: [a, b, c])
+    h.scheduler.advance(by: 1.5)
+    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
+
+    h.system.setDisplays([main])
+    for window in [a, b, c] { #expect(h.system.isVisible(window), "\(window)") }
+    let moves = Dictionary(grouping: h.system.frameLog, by: \.window).mapValues(\.count)
+    #expect(moves.values.allSatisfy { $0 == 1 }, "\(moves)")
+  }
+
+  @Test func afterABlinkWindowsOutOfViewGoOutOfViewAgainOnce() {
+    let (h, a, b, c) = makeHarness()
+    h.run("zoom \(a.rawValue)")
+    let slot = h.frame(a)
+    h.system.clearFrameLog()
+
+    unplugSideWithoutAWord(h, moving: [a, b, c])
+    h.scheduler.advance(by: 1)
+    sideIsBackWithoutAWord(h)
+    h.scheduler.advance(by: 4)
+    #expect(h.frame(a) == slot)
+    for window in [b, c] { #expect(!h.system.isVisible(window), "\(window)") }
+    let moves = Dictionary(grouping: h.system.frameLog, by: \.window).mapValues(\.count)
+    #expect(moves.values.allSatisfy { $0 == 1 }, "\(moves)")
+  }
+
+  /// Nothing in view says a word (not every app reports what the window server does to its windows).
+  @Test func afterABlinkThatOnlyWindowsOutOfViewReportedTheyStillGoOutOfViewAgain() {
+    let (h, a, b, c) = makeHarness()
+    h.run("zoom \(a.rawValue)")
+    unplugSideWithoutAWord(h, moving: [b, c])
+    for window in [b, c] { #expect(h.system.isVisible(window)) }
+    h.scheduler.advance(by: 1)
+    sideIsBackWithoutAWord(h)
+    h.scheduler.advance(by: 4)
+    for window in [b, c] { #expect(!h.system.isVisible(window), "\(window)") }
+  }
+
+  /// The same the other way round: the display is back, macOS carries its windows home, and Arbor has not heard yet.
+  @Test func windowsOutOfViewThatMacOSCarriesHomeAreNotFetchedBack() {
+    let (h, a, b, c) = makeHarness()
+    let code = h.system.open(app: "Code", frame: CGRect(x: 100, y: 100, width: 500, height: 400))
+    h.system.setDisplays([main])
+    h.system.cursor = CGPoint(x: 700, y: 400)
+    h.run("dock \(code.rawValue) left")
+    h.run("zoom \(code.rawValue)")
+    for window in [a, b, c] { #expect(h.controller.parked.contains(window)) }
+    h.system.clearFrameLog()
+
+    h.system.displayList = [main, side]
+    for (index, window) in [a, b, c].enumerated() {
+      h.system.userMove(window, to: CGRect(x: 1500 + 100 * CGFloat(index), y: 60, width: 500, height: 400))
+    }
+    h.scheduler.advance(by: 1.5)
+    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
+    h.system.setDisplays([main, side])
+    for window in [a, b, c] { #expect(sideWorkspace(h)!.isDocked(window) && h.system.isVisible(window)) }
+  }
+
+  /// An app can speak of its window before macOS's list of displays changes. The put-back is then due a quarter of a second
+  /// later, when the display may be gone: what counts is which displays there are when it is carried out.
+  @Test func aPutBackThatFallsDueWhenTheDisplayHasGoneIsNotCarriedOut() {
+    let (h, a, b, c) = makeHarness()
+    h.run("zoom \(a.rawValue)")
+    h.system.clearFrameLog()
+    h.system.userMove(b, to: CGRect(x: 100, y: 60, width: 500, height: 400))
+    #expect(h.scheduler.pendingKeys.contains("enforce-side"), "the displays are still the ones Arbor knows")
+    unplugSideWithoutAWord(h, moving: [a, c])
+    h.scheduler.advance(by: 1.5)
+    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
+
+    h.system.setDisplays([main])
+    for window in [a, b, c] { #expect(h.system.isVisible(window), "\(window)") }
+  }
+
+  /// It waits, and is not forgotten: nobody else would put that window back.
+  @Test func afterABlinkThePutBackThatWasDueIsCarriedOut() {
+    let (h, a, b, _) = makeHarness()
+    h.run("zoom \(a.rawValue)")
+    h.system.userMove(b, to: CGRect(x: 1500, y: 60, width: 500, height: 400))
+    #expect(h.system.isVisible(b))
+    h.system.clearFrameLog()
+    unplugSideWithoutAWord(h, moving: [])
+    h.scheduler.advance(by: 1)
+    #expect(h.system.frameLog.isEmpty, "not while nobody knows which displays there are: \(h.system.frameLog)")
+    sideIsBackWithoutAWord(h)
+    h.scheduler.advance(by: 1)
+    #expect(!h.system.isVisible(b))
+  }
+
+  @Test func norDoesAPutBackWaitForEverForDisplaysThatStayUnknown() {
+    let (h, a, b, _) = makeHarness()
+    h.run("zoom \(a.rawValue)")
+    h.system.userMove(b, to: CGRect(x: 1500, y: 60, width: 500, height: 400))
+    unplugSideWithoutAWord(h, moving: [])
+    h.scheduler.advance(by: 15)
+    #expect(h.scheduler.pendingKeys.contains("enforce-side"), "still waiting")
+    h.scheduler.advance(by: 60)
+    #expect(!h.scheduler.pendingKeys.contains { $0.hasPrefix("enforce-") })
+  }
+
+  /// A report that never comes must not leave a timer that fires every two seconds for ever.
+  @Test func displaysThatStayUnknownAreNotAskedAboutForEver() {
+    let (h, a, b, c) = makeHarness()
+    unplugSideWithoutAWord(h, moving: [a, b, c])
+    h.scheduler.advance(by: 15)
+    #expect(h.scheduler.pendingKeys.contains("displays-blinked"), "still asking")
+    h.scheduler.advance(by: 60)
+    #expect(!h.scheduler.pendingKeys.contains("displays-blinked"))
+
+    // The report, late as it is, looks after every window as it always does.
+    h.system.setDisplays([main])
+    for window in [a, b, c] { #expect(h.workspace.isFloating(window)) }
+    h.system.setDisplays([main, side])
+    for window in [a, b, c] { #expect(sideWorkspace(h)!.isDocked(window)) }
+  }
+
   @Test func theSameDisplaysInAnotherOrderDoNotStopArborFromFollowingTheUser() {
     let (h, _, _, _) = makeHarness()
     let d = h.system.open(app: "Terminal", frame: CGRect(x: 1900, y: 100, width: 300, height: 200))

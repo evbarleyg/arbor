@@ -168,19 +168,25 @@ extension Controller {
   /// followed it, and it is not put back at once, because there may be no display to put it back on.
   func noteMoveBehindArborsBack(of window: WindowID) {
     movedBehindArborsBack.insert(window)
+    lookForABlink(triesLeft: Self.blinkTries)
+  }
+
+  /// How often Arbor asks whether the displays are the ones it knows again: for half a minute after the last move.
+  static let blinkTries = 15
+
+  private func lookForABlink(triesLeft: Int) {
     // By then a report that was due has come.
     scheduler.schedule("displays-blinked", after: DisplayChange.comingAndGoing + 0.5) { [weak self] in
-      self?.putBackAfterABlink()
+      self?.putBackAfterABlink(triesLeft: triesLeft - 1)
     }
   }
 
-  private func putBackAfterABlink() {
+  private func putBackAfterABlink(triesLeft: Int) {
     guard isRunning else { return movedBehindArborsBack = [] }
-    // The displays go on changing, which holds the report back. Ask again.
+    // The displays go on changing, which holds the report back. Ask again, but not for ever: that was no blink, and
+    // the report, whenever it comes, looks after every window.
     guard knowsTheDisplays else {
-      scheduler.schedule("displays-blinked", after: DisplayChange.comingAndGoing + 0.5) { [weak self] in
-        self?.putBackAfterABlink()
-      }
+      if triesLeft > 0 { lookForABlink(triesLeft: triesLeft) } else { movedBehindArborsBack = [] }
       return
     }
     // What macOS has put back itself by now is left alone: a docked window in its slot by the layout, a floating one here.

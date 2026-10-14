@@ -140,8 +140,12 @@ extension Controller: WindowSystemEvents {
     noteThatTheAppAnswers(window, on: display)
 
     // macOS sometimes pulls a window that is mostly off screen back onto it (seen when another window of
-    // its app leaves full screen). It goes back to the corner with the next put-back.
-    if hasLeftItsCorner(window.id) { scheduleEnforce(display) }
+    // its app leaves full screen). It goes back to the corner with the next put-back. Not while macOS has other
+    // displays than Arbor was told of (below): the corner may be that of a display that is gone, and a put-back lays
+    // out the whole display, so every window macOS had just rescued would be sent to where there is nothing.
+    if hasLeftItsCorner(window.id) {
+      if knowsTheDisplays { scheduleEnforce(display) } else { noteMoveBehindArborsBack(of: window.id) }
+    }
 
     // A drag by the title bar changes no size, with one exception: macOS gives a window that is dragged off a tile of its own the
     // size it had before. That is the window's own size again. Left as it was, what is remembered would be the tile's,
