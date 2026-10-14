@@ -27,6 +27,7 @@ Paste one of these into a new Claude Code session in a checkout of this reposito
 | Role | Who | Owns | Never |
 |---|---|---|---|
 | **Documenter** | One session | What Arbor should do: `docs/features/` specs, `collab/parity.json` entries, `collab/BOARD.md` priorities, `collab/scenarios/`, answers in `collab/QUESTIONS.md`, `CHANGELOG.md` | Writes product code or merges branches |
+| **Product owner** | One session | Product decisions, against issues #3 and #4: answers in `collab/QUESTIONS.md`, the order of `collab/BOARD.md`, `docs/VIABLE.md`, `collab/TOUCHPOINTS.md`, GO or NO GO on finished work | Asks the maintainer anything but identity, money and what cannot be undone |
 | **Executor** | Any coding agent pointed at this repo; several can run at once | Making it so: code, tests, merging branches into `main`, `collab/reports/`, evidence, statuses of the items it works on | Changes priorities or rewrites specs without asking |
 
 The documenter decides **what** and **in what order**; executors decide
@@ -40,8 +41,10 @@ The documenter decides **what** and **in what order**; executors decide
 | `docs/features/F*.md` | One spec per feature, with acceptance criteria | Documenter (executors edit only `Status:` and the Shipped note) |
 | `collab/parity.json` | Every reference item and Arbor-only feature (A01…), its status, and the tests and real-window steps that prove it | Documenter adds entries; executors update `status`, `branch`, `tests`, `e2e` for items they ship |
 | `docs/FEATURES.md` | Generated from `parity.json` by `make parity`; never edit by hand | `make parity` |
-| `collab/BOARD.md` | The ordered work queue | Documenter orders; executors move items between columns |
-| `collab/QUESTIONS.md` | Questions and answers, numbered Q1, Q2… | Either asks; the documenter (or the maintainer) answers |
+| `collab/BOARD.md` | The ordered work queue; each item says what Linux proves, what a hosted Mac runs and what agents judge | The product owner orders; executors claim items and report them done |
+| `docs/VIABLE.md` | The gate: when Arbor is good enough to hand to somebody who did not build it, in numbers a program checks | Product owner |
+| `collab/TOUCHPOINTS.md` | Each time the maintainer was needed, and what would have avoided it | Product owner |
+| `collab/QUESTIONS.md` | Questions and answers, numbered Q1, Q2… | Anyone asks; the product owner answers product questions, the documenter questions about the reference |
 | `collab/IDEAS.md` | Ways to make Arbor better than TrellisWM | Anyone proposes; the documenter promotes ideas into specs |
 | `collab/reports/` | One report per finished work item (template in `templates/report.md`) | Executors (the documenter files reports handed to it by agents it ran) |
 | `collab/scenarios/*.sim` | User journeys with expectations, run in arbor-sim | Documenter |
