@@ -389,11 +389,6 @@ final class RubberBandPanel: OverlayPanel {
 
 private final class RubberBandView: NSView {
   override func draw(_ dirtyRect: NSRect) {
-    NSColor.controlAccentColor.withAlphaComponent(0.15).setFill()
-    NSBezierPath(rect: bounds).fill()
-    let outline = NSBezierPath(rect: bounds.insetBy(dx: 0.5, dy: 0.5))
-    outline.lineWidth = 1
-    NSColor.controlAccentColor.withAlphaComponent(0.9).setStroke()
-    outline.stroke()
+    AccentInk.mark(bounds, radius: 0, fill: 0.15, width: 1)
   }
 }

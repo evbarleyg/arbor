@@ -221,14 +221,7 @@ class OverlayPanel: NSPanel {
 private final class PreviewView: NSView {
   /// The shape of the tile or window that would land here, in the accent colour.
   override func draw(_ dirtyRect: NSRect) {
-    let radius = ContinuousCorners.windowRadius
-    NSColor.controlAccentColor.withAlphaComponent(0.18).setFill()
-    NSBezierPath.make(RoundedPath.rect(bounds, radius: radius)).fill()
-    // The middle of a 2-point line lies 1 point inside the edge.
-    let border = NSBezierPath.make(RoundedPath.rect(bounds.insetBy(dx: 1, dy: 1), radius: radius - 1))
-    border.lineWidth = 2
-    NSColor.controlAccentColor.setStroke()
-    border.stroke()
+    AccentInk.mark(bounds, radius: ContinuousCorners.windowRadius, fill: 0.18, width: 2)
   }
 }
 
