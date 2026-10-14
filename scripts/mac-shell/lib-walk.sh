@@ -11,7 +11,8 @@
 # A day written by hand (day.sh) knows at every step what the screen looks like. A walk made from a seed does not. So each act here
 # is a step of lib-day.sh's that looks at the state for itself: it knows its kind (docs/VIABLE.md, "Across what"), what it may move ("What an act
 # may move"), and which window has to end in front. **An act that does not apply is left out**, with a line in the output and no step: there is no
-# second window to close, the window to drag is out of view, nothing is docked to drag onto. So whoever writes the walk needs to know the
+# second window to close, nothing is docked to drag onto. What a person would do first is done first, as an act of its own: a window that is covered is brought
+# forward before it is dragged. So whoever writes the walk needs to know the
 # words and nothing else, and may be blind to the state. An act that does apply and cannot be performed is a finding, as in lib-day.sh (`must`).
 #
 # <app> is a name of the cast's: finder safari textedit terminal notes calendar settings preview mail.
@@ -28,8 +29,8 @@
 #   switch_menu <app>            its first window's line in the Window menu (the app is brought forward first, which is an act of its own)
 #   switch_tile                  clicks the first tile that stands in for a window: the real window comes wholly into view, with the keyboard
 #   open_new                     ⌘N in the app in front                 close_new              ⌘W, if the window in front is one that open_new opened
-#   minimize | restore <app>     ⌘M on the window in front | a click on its miniature in the Dock
-#   hide | unhide <app>          ⌘H on the app in front | a click on its icon in the Dock
+#   minimize | restore [app]     ⌘M on the window in front | a click on its miniature in the Dock. A walk cannot know which window was in front: if that
+#   hide | unhide [app]          ⌘H on the app in front | a click on its icon in the Dock        app is not the one, whichever was last comes back
 #   quit_app <app> | reopen <app>                     ⌘Q (the app is brought forward first) | its document opened again. textedit preview safari
 #   dock_key left|right|up|down  ⌃⌥⌘ + arrow on the window in front     float_key              ⌃⌥F, if it is docked
 #   drag_onto <app> <app> left|right|top|bottom       by its title bar onto that part of the other's window, which has to be docked and in view
@@ -221,7 +222,14 @@ open_new() {
 close_new() {
   local window
   window=$(front_window)
-  [ -n "$window" ] && listed "$window" "$WALK_NEW" || { left_out "close_new: the window in front is not one that open_new opened"; return; }
+  if [ -z "$window" ] || ! listed "$window" "$WALK_NEW"; then
+    window=${WALK_NEW%% *}
+    [ -n "$window" ] && apptool grab "$window" > /dev/null 2>&1 || { left_out "close_new: no window that open_new opened is within reach"; return; }
+    walk_act switch click-new-window "clicks the title bar of the window that ⌘N opened"
+    must click_window "$window"
+    acted front="$window"
+    [ "$(front_window)" = "$window" ] || { left_out "close_new: the window that ⌘N opened did not come forward, and ⌘W would close another"; return; }
+  fi
   walk_act open-close close-window "presses ⌘W"
   key cmd+w
   WALK_NEW=$(without "$window" "$WALK_NEW")
@@ -241,7 +249,8 @@ minimize() {
 
 restore() {
   local x y window
-  listed "$1" "$WALK_MINIMIZED" || { left_out "restore $1: it is not minimized"; return; }
+  listed "${1:-}" "$WALK_MINIMIZED" || set -- "${WALK_MINIMIZED##* }"
+  [ -n "$1" ] || { left_out "restore: nothing is minimized"; return; }
   window=$(window_of "$1")
   walk_act open-close "restore-$1" "clicks its miniature in the Dock"
   read -r x y <<< "$(apptool dock-window "$window" 2>/dev/null)"
@@ -264,7 +273,8 @@ hide() {
 }
 
 unhide() {
-  listed "$1" "$WALK_HIDDEN" || { left_out "unhide $1: it is not hidden"; return; }
+  listed "${1:-}" "$WALK_HIDDEN" || set -- "${WALK_HIDDEN##* }"
+  [ -n "$1" ] || { left_out "unhide: nothing is hidden"; return; }
   walk_act open-close "unhide-$1" "clicks its icon in the Dock"
   must dock_click "$(bundle_of "$1")"
   WALK_HIDDEN=$(without "$1" "$WALK_HIDDEN")
@@ -323,8 +333,13 @@ float_key() {
   acted moves=docked front="$window" restores="$window"
 }
 
-# can_be_dragged <app>: present, in view, and a free point of its title bar shows.
-can_be_dragged() { present "$1" && shows "$(window_of "$1")" && apptool grab "$(window_of "$1")" > /dev/null 2>&1; }
+# can_be_dragged <app>: present, in view, and a free point of its title bar shows. A window that is covered is brought forward first, as a person would.
+can_be_dragged() {
+  present "$1" && shows "$(window_of "$1")" || return 1
+  apptool grab "$(window_of "$1")" > /dev/null 2>&1 && return 0
+  switch_dock "$1"
+  shows "$(window_of "$1")" && apptool grab "$(window_of "$1")" > /dev/null 2>&1
+}
 
 drag_onto() {
   local x y w h px py window target
@@ -401,6 +416,8 @@ resize_gap() {
   is docked "$window" 2>/dev/null && in_view "$window" || { left_out "resize_gap $*: it is not docked and in view"; return; }
   read -r x y <<< "$(seam_right_of "$window")"
   [ "$x" -lt $((WALK_X + WALK_W - 40)) ] || { left_out "resize_gap $*: there is no gap to its right"; return; }
+  # A floating window may lie over the gap, and would take the press.
+  [ "$(apptool top-at "$x" "$y" 2>/dev/null | cut -d ' ' -f 2)" = "$ARBOR_PID" ] || { left_out "resize_gap $*: something lies over the gap"; return; }
   walk_act resize "drag-gap-beside-$1" "drags the gap to the right of $1 by $2 points"
   drag "$x" "$y" "$((x + $2))" "$y"
   changed
@@ -458,8 +475,10 @@ full_screen() {
   case "$1" in
     on)
       [ -z "$WALK_FULL_SCREEN" ] || { left_out "full_screen on: a window is in full screen already"; return; }
+      present safari || { left_out "full_screen on: played in Safari, which is not there"; return; }
+      [ "$(name_of_pid "$(front_pid)")" = safari ] || switch_dock safari
       window=$(front_window)
-      [ "$(name_of_pid "$(front_pid)")" = safari ] && [ -n "$window" ] || { left_out "full_screen on: played in Safari, which is not in front"; return; }
+      [ "$(name_of_pid "$(front_pid)")" = safari ] && [ -n "$window" ] || { left_out "full_screen on: Safari did not come forward"; return; }
       walk_act macos-own full-screen "presses ⌃⌘F in Safari"
       key ctrl+cmd+f
       sleep 2
@@ -627,7 +646,8 @@ walk_open() {
   act open-close "open-$name" "opens $name"
   # shellcheck disable=SC2086
   if APP_WAIT=25 meet "$name" "$(bundle_of "$name")" ${document:+"$document"}; then
-    app_dismiss "$APP_PID" || echo "a sheet or dialog stayed in the way"
+    # Mail without an account asks for one in a sheet, and swaps its windows for others when the sheet is answered. It is left alone: a window with a sheet.
+    [ "$name" = mail ] || app_dismiss "$APP_PID" || echo "a sheet or dialog stayed in the way"
     WALK_CAST="$WALK_CAST $name"
   else
     echo "$name opened no standard window: the walk goes on without it"
@@ -725,6 +745,9 @@ walk_begin() {
 walk_end() {
   if [ -n "$WALK_FULL_SCREEN" ]; then full_screen off; fi
   if [ -n "$WALK_SECOND" ]; then display unplug; fi
+  if [ -n "$WALK_PAUSED" ]; then resume; fi
+  while [ -n "${WALK_HIDDEN// /}" ]; do unhide; done
+  while [ -n "${WALK_MINIMIZED// /}" ]; do restore; done
   if with_arbor && arbor_answers; then
     chapter "The end"
     walk_quit

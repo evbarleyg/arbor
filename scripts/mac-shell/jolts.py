@@ -715,7 +715,9 @@ def judge(step, world, by_number, own):
                 None, "behind")
         if end["app"] is not None and end["app"] != world.pids.get(window):
             step.find("4", "FAIL", window, f"its app is not the one in front (process {end['app']} is)")
-        if areas and not any(inside(frames[window], area) for area in areas):
+        # A window that hangs over an edge because its person, or its app, has it there is where it belongs.
+        theirs = window in own and not differs(own[window], frames[window])
+        if areas and not theirs and not any(inside(frames[window], area) for area in areas):
             step.find("4", "FAIL", window, f"is not wholly in view: {showing(frames[window], areas):.0%} of it, at {words(frames[window])} in {' and '.join(words(area) for area in areas)}")
 
     for window in sorted(ids(wants.get("comes", ""))):
@@ -1027,6 +1029,9 @@ def self_test():
     detectors("covered", start + ["2000 M begin 2 switch", "2100 A 20 app.two", "3000 M end 2 front=2"], ["behind"])
     detectors("a window out of view is in nobody's way", parked + [
         "2000 M begin 3 switch", "2100 Z 2,1", "3000 M end 3 front=1"], [])
+    detectors("a window that hangs over the edge where its person has it is in view enough", [
+        line.replace("W 2 20 0 500 100 400 300", "W 2 20 0 700 100 400 300") for line in start] + [
+        "2000 M begin 2 switch", "2100 Z 2,1", "2100 A 20 app.two", "3000 M end 2 act=switch front=2"], [])
     detectors("the keyboard is elsewhere", start + ["2000 M begin 2 switch", "2100 Z 2,1", "3000 M end 2 front=2"], ["focus"])
     detectors("an app comes forward by itself", start + ["2000 M begin 2 idle", "2100 A 20 app.two", "3000 M end 2 act=idle"], ["focus"])
     detectors("an app comes forward because somebody switched", start + [
