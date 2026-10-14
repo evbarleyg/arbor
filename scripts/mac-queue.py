@@ -13,7 +13,7 @@ Usage: scripts/mac-queue.py [--minutes N] [--alarm N] [--json] [--repo owner/nam
   --json             the same facts as one JSON object; every length of time in it is in seconds
   --repo owner/name  another repository than the one `origin` points to
 
-It prints what is running and waiting NOW, the waits, run times and Mac minutes of THE LAST HOUR, WHO used them, and
+It prints what is running and waiting NOW (and which branch has more than its two jobs there), the waits, run times and Mac minutes of THE LAST HOUR, WHO used them, and
 a last line to grep for: `mean wait: 3 min 20 s over 14 jobs`. That mean is over the jobs whose wait ended within the
 period (they got a Mac, or gave up) and, at what they have waited so far, those still waiting. The waits further up
 leave out the ones still waiting. Mac minutes count only the part of a job that lies within the period, and
@@ -75,6 +75,7 @@ NOT_YET = 4
 # How many jobs may be waiting for a Mac when a run of this priority starts, and how many jobs its branch may have already.
 MAY_WAIT = {1: None, 2: 2, 3: 0}
 OF_ONE_BRANCH = {1: 1, 2: 1, 3: 0}
+AT_MOST_OF_ONE_BRANCH = 2
 
 
 class Unanswered(Exception):
@@ -246,6 +247,10 @@ def facts(runs, now, minutes=60, alarm=5):
     held = [(job, max(job["start"], since), job["end"]) for job in jobs if job["start"] and job["end"] > since]
     used = [(job, seconds(start, end)) for job, start, end in held]
 
+    in_flight = {}
+    for job in running + waiting:
+        in_flight[job["branch"]] = in_flight.get(job["branch"], 0) + 1
+
     def line(job):
         lasted = job["wait"] if job["state"] == "waiting" else seconds(job["start"], now)
         rest = {key: job[key] for key in ("job", "mac", "branch", "script", "url")}
@@ -257,6 +262,8 @@ def facts(runs, now, minutes=60, alarm=5):
         "running": len(running),
         "waiting": len(waiting),
         "now": [line(job) for job in running + waiting],
+        # By the rule --turn holds a run back on, so that whoever looks here and run.sh see the same thing.
+        "over": [{"branch": branch, "jobs": own} for branch, own in sorted(in_flight.items()) if own > AT_MOST_OF_ONE_BRANCH],
         "finished": len(finished),
         "waits": len(served),
         "wait_mean": mean(served),
@@ -328,6 +335,8 @@ def report(found, repo):
         + [f"NOW: {found['running']} running, {found['waiting']} waiting"]
         + columns([(job["state"], span(job["seconds"]), job["job"], job["mac"], job["branch"], job["script"], job["url"])
                    for job in found["now"]], right=(1,))
+        + [f"  OVER THE LIMIT of {AT_MOST_OF_ONE_BRANCH} running or waiting for one branch: "
+           + ", ".join(f"{entry['branch']} ({entry['jobs']})" for entry in found["over"])] * bool(found["over"])
         + ["", period]
         + columns([
             ("finished", count(found["finished"])),

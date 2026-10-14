@@ -65,7 +65,7 @@ def run(*jobs, branch="feat/x", workflow="ci", title="feat: x", number=1, status
 
 
 NOTHING = dict(
-    running=0, waiting=0, now=[], finished=0, waits=0, wait_mean=0, wait_longest=0, run_mean=0, run_longest=0,
+    running=0, waiting=0, now=[], over=[], finished=0, waits=0, wait_mean=0, wait_longest=0, run_mean=0, run_longest=0,
     mac_seconds=0, most_at_once=0, by_branch=[], by_job=[], by_mac=[], mean_wait=0, mean_wait_jobs=0, alarm=False,
 )
 SHELL = dict(workflow="mac-shell", title="Mac shell: scripts/mac-shell/shots-F10.sh [eyes.shots-F10]")
@@ -264,6 +264,17 @@ SINGLE = [
     ("no alarm, no such line", lambda: "ALARM" in said(FOURTEEN), False),
     ("the whole report", lambda: said(A_QUEUE), THE_REPORT),
     ("the heading of another period", lambda: "THE LAST 90 MINUTES" in said([], minutes=90), True),
+    ("over the limit: three of one branch, running or waiting; two of another are within it",
+     lambda: queue.facts([run(running("11:50:00", "11:50:10"), waiting("11:59:00"), waiting("11:59:00"), branch="greedy", status="in_progress"),
+                          run(running("11:50:00", "11:50:10"), waiting("11:59:00"), number=2, branch="modest", status="in_progress"),
+                          run(*[finished("11:00:00", "11:00:10", "11:10:00")] * 5, number=3, branch="done")], NOON)["over"],
+     [dict(branch="greedy", jobs=3)]),
+    ("over the limit: it is said under NOW", lambda: [line for line in said(
+        [run(*[waiting("11:59:00")] * 3, branch="greedy", status="queued")]).splitlines() if "OVER" in line],
+     ["  OVER THE LIMIT of 2 running or waiting for one branch: greedy (3)"]),
+    ("over the limit: nobody is, and no such line", lambda: "OVER" in said(A_QUEUE), False),
+    ("over the limit: whoever is named there is held back by run.sh at every priority",
+     lambda: [bool(turn(n, 0, own=2, own_waiting=1)) for n in (1, 2, 3)], [True] * 3),
     ("whose turn: nobody waits, nothing of its own", lambda: [turn(n, 0) for n in (1, 2, 3)], ["", "", ""]),
     ("whose turn: one waits", lambda: [bool(turn(n, 1)) for n in (1, 2, 3)], [False, False, True]),
     ("whose turn: two wait", lambda: [bool(turn(n, 2)) for n in (1, 2, 3)], [False, False, True]),
