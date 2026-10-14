@@ -303,7 +303,7 @@ acted() {
   fi
   for word in "$@"; do
     case "$word" in
-      moves=docked) word="moves=$DAY_DOCKED_BEFORE,$DAY_DOCKED" ;;
+      moves=docked | moves=docked,*) word="moves=$DAY_DOCKED_BEFORE,$DAY_DOCKED,${word#moves=docked}" ;;
       audit=no) audit=""; continue ;;
       tiles=ok) word="tiles=$DAY_TILES keyboard=$(apptool focused 2>/dev/null | cut -d ' ' -f 1)" ;;
       offence=*) DAY_OFFENCES="$DAY_OFFENCES ${word#offence=}:$DAY_SLUG" ;;
