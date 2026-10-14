@@ -303,12 +303,14 @@ final class World {
   func letTimePass(_ seconds: Double = 1) {
     system.deliverEchoes()
     // Apps that insist on a frame or wake up from a hang do so in Arbor's own rhythm, not once a second.
-    let step = system.stubbornFrames.isEmpty && hungUntil.isEmpty ? seconds : 0.25
+    let step = system.stubbornFrames.isEmpty && hungUntil.isEmpty && system.slowApps.isEmpty ? seconds : 0.25
     var left = seconds
     while left > 0 {
       let span = min(step, left)
       left -= span
       system.appsSettle()
+      // Busy apps have got round to what they were asked.
+      system.slowAppsFinish()
       arbor?.scheduler.advance(by: span)
       elapsed += span
       for (pid, end) in hungUntil.sorted(by: { $0.key < $1.key }) where end <= elapsed {

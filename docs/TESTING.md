@@ -98,6 +98,8 @@ to grow, the counterpart of `minimumSize`.
 What else real apps do: `stubbornFrames` with
 `appsSettle()` (an app that moves its window back a moment after anyone moves it);
 `setUnresponsive(pid:_:)` (`setFrame` returns nil until the app wakes up and reports its windows);
+`slowApps` (a move has no answer and goes on behind Arbor's back until `slowAppsFinish()`, whatever else is asked of the app meanwhile is turned away;
+with `slowAppsOutlastTheWait` it is not done either when Arbor has waited for it before letting go);
 `openTab(in:)`, `selectTab(_:insteadOf:)`, `closeTab(_:revealing:)` (native tab groups);
 `dragAndLoseTheRelease(_:to:)`. `RealWindowHardeningTests.swift` uses them all.
 
@@ -688,7 +690,7 @@ copy from before the repository was public, and say what the script does once it
 | `check-F13.sh` (`lib-F13.sh`) | trunk | safe | none | 10 to 25 minutes and 2 GB. Everything in a sandbox under `/tmp`: a throwaway `HOME`, `ARBOR_HOME`, keychain and clone. A small window takes the keyboard twice for seconds. Three copies run with their watchdog, which after a crash would use `open` |
 | `check-F12.sh` | trunk | safe | none | |
 | `perf.sh` | trunk | safe, steps skip themselves | one drag | `footprint`, `heap`, `leaks` where developer mode is off (macOS would ask for a password) |
-| `check-hang.sh` | trunk | safe | none | Four minutes. One of its two test apps stops answering for 20 s, four times: macOS may show it the spinning pointer |
+| `check-hang.sh` | trunk | safe | none | Five minutes. One of its two test apps stops answering for 20 s, four times, and is busy for ten: macOS may show it the spinning pointer |
 | `check-F13-system.sh` | trunk | **never**: ends with 77 | | TCC.db as root, `tccutil`, login items, `make install` as a person runs it |
 | `check-F58.sh` (`share-probe.swift`) | trunk | safe, steps skip themselves | 2 min | ⌘Tab, the second display, the grey wallpaper; the pictures of single test windows only where Screen Recording is granted already. Two test apps have an icon in the Dock. A test window is put at and beyond the display's edges, so with two displays it shows on the other for a moment |
 | `shots-finder.sh` | trunk | safe, steps skip themselves | 3 min, mostly keys | ⌘Tab, Mission Control, the swipe to another Space. Types digits and letters with the palette open or its own test app in front, which has an icon in the Dock |

@@ -21,6 +21,8 @@ import AppKit
 ///   full-screen <id>                enters or leaves macOS's full-screen mode
 ///   hide | unhide | activate        the whole app
 ///   hang <seconds>                  stops answering anyone for that long
+///   busy <ms> [<attention ms>]      from now on works that long at a time, with 30 ms of attention between, or as
+///                                   many as given: a busy app, which answers late. `busy 0` ends it
 ///
 /// MoreCommands.swift has more: open, front, activate <id>, title, events, list, ping.
 @MainActor
@@ -34,6 +36,7 @@ final class Commands {
   private var ticksAway: [Int: Int] = [:]
   private var patience: [Int: Int] = [:]
   private var insistence: Timer?
+  private var busyness: Timer?
 
   init(_ windows: [NSWindow]) {
     self.windows = windows
@@ -110,6 +113,16 @@ final class Commands {
       target?.makeKeyAndOrderFront(nil)
     case "hang":
       if words.count > 1, let seconds = Double(words[1]) { Thread.sleep(forTimeInterval: min(max(seconds, 0), 60)) }
+    case "busy":
+      busyness?.invalidate()
+      busyness = nil
+      if words.count > 1, let work = Double(words[1]), work > 0 {
+        let seconds = min(work, 5000) / 1000
+        let attention = min(max(words.count > 2 ? Double(words[2]) ?? 30 : 30, 1), 1000) / 1000
+        busyness = Timer.scheduledTimer(withTimeInterval: seconds + attention, repeats: true) { _ in
+          Thread.sleep(forTimeInterval: seconds)
+        }
+      }
     default: performMore(words)
     }
   }

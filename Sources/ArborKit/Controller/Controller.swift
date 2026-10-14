@@ -558,6 +558,8 @@ public final class Controller {
     defer { isStoppingWithoutMoving = false }
     cancelDrag()
     if movingWindows { lookAtTheDisplaysBeforeLettingGo() }
+    // A window whose app is still busy with the last move could not be brought back.
+    system.finishMoves(timeout: 1)
     scheduler.cancel("save")
     overlays.finishAnimations()
     stopWatchingTitles()
