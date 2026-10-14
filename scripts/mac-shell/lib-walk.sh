@@ -23,6 +23,7 @@
 #   chapter "<title>"                                 lib-day.sh's: a heading, and a new trace
 #
 #   switch_dock <app>            clicks its icon in the Dock            switch_click <app>     clicks its window's title bar
+#   switch_to <app>              the way a person gets at a window: its title bar if a free point of it shows, otherwise its icon in the Dock
 #   switch_cmdtab [n]            ⌘ down, ⇥ n times, ⌘ up                switch_backtick        ⌘` : the app's next window
 #   switch_menu <app>            its first window's line in the Window menu (the app is brought forward first, which is an act of its own)
 #   switch_tile                  clicks the first tile that stands in for a window: the real window comes wholly into view, with the keyboard
@@ -60,6 +61,7 @@ WALK_TWO=""
 WALK_SECOND=""
 # The last step after which everything was in view and the arrangement has not changed since: where Show Everything has to lead back to.
 WALK_HOME=""
+WALK_EPOCH=0
 
 with_arbor() { [ -z "${WALK_WITHOUT_ARBOR:-}" ]; }
 
@@ -123,7 +125,14 @@ shows() { is on_screen "$1" 2>/dev/null; }
 arbor_acts() { with_arbor && arbor_answers && [ -z "$WALK_PAUSED" ] && [ -z "$WALK_FULL_SCREEN" ]; }
 
 # The arrangement, or a window's own frame, has changed: there is no going back to how things were.
-changed() { WALK_HOME=""; }
+changed() { WALK_HOME=""; WALK_EPOCH=$((WALK_EPOCH + 1)); }
+# There and back is nothing: what is minimized or hidden and comes back leaves every window where it was, unless something else was changed meanwhile.
+leaving() { eval "WALK_LEFT_$1=$((DAY_STEP - 1)):$WALK_EPOCH"; }
+came_back() {
+  local left
+  eval "left=\${WALK_LEFT_$1:-}"
+  [ "${left#*:}" = "$WALK_EPOCH" ] && echo "returns=${left%:*}"
+}
 # Everything is in view: from here a way there and back has to end here.
 at_home() { WALK_HOME=$DAY_STEP; }
 back_home() { [ -n "$WALK_HOME" ] && echo "returns=$WALK_HOME"; }
@@ -147,6 +156,10 @@ switch_click() {
   walk_act switch "click-$1" "clicks $1's title bar"
   must click_window "$(window_of "$1")"
   acted front="$(window_of "$1")"
+}
+
+switch_to() {
+  if present "$1" && apptool grab "$(window_of "$1")" > /dev/null 2>&1; then switch_click "$1"; else switch_dock "$1"; fi
 }
 
 switch_cmdtab() {
@@ -219,6 +232,7 @@ minimize() {
   window=$(front_window)
   name=$(name_of_pid "$(front_pid)") && [ "$window" = "$(window_of "$name")" ] || { left_out "minimize: the window in front is not a first window of the cast's"; return; }
   walk_act open-close "minimize-$name" "presses ⌘M"
+  leaving "$name"
   key cmd+m
   WALK_MINIMIZED="$WALK_MINIMIZED $name"
   acted moves=docked leaves="$window"
@@ -232,7 +246,8 @@ restore() {
   read -r x y <<< "$(apptool dock-window "$window" 2>/dev/null)"
   if [ -n "${x:-}" ]; then click "$x" "$y"; move "$x" "$((y - 200))"; else must false; fi
   WALK_MINIMIZED=$(without "$1" "$WALK_MINIMIZED")
-  acted moves=docked comes="$window" front="$window"
+  # shellcheck disable=SC2046
+  acted moves=docked comes="$window" front="$window" $(came_back "$1")
 }
 
 hide() {
@@ -241,6 +256,7 @@ hide() {
   name=$(name_of_pid "$pid") || { left_out "hide: the app in front is not of the cast"; return; }
   gone=$(app_windows "$pid" | tr ' ' ',')
   walk_act open-close "hide-$name" "presses ⌘H"
+  leaving "$name"
   key cmd+h
   WALK_HIDDEN="$WALK_HIDDEN $name"
   acted moves=docked leaves="$gone"
@@ -251,7 +267,8 @@ unhide() {
   walk_act open-close "unhide-$1" "clicks its icon in the Dock"
   must dock_click "$(bundle_of "$1")"
   WALK_HIDDEN=$(without "$1" "$WALK_HIDDEN")
-  acted moves=docked comes="$(window_of "$1")" front="$(main_window_of "$(pid_of "$1")")"
+  # shellcheck disable=SC2046
+  acted moves=docked comes="$(window_of "$1")" front="$(main_window_of "$(pid_of "$1")")" $(came_back "$1")
 }
 
 quit_app() {
