@@ -19,6 +19,7 @@
 # DAY_WITHOUT_ARBOR=1 (day-control.sh) plays the same day without Arbor, leaving out the steps that are Arbor's own keys: what is found
 # then is macOS's doing or an app's, and no fault of Arbor's when it shows up in the real day too.
 # DAY_TILING=off (day-off.sh) plays it with macOS's own window management switched off: edges, menu bar, ⌥, the wallpaper click.
+# DAY_REDUCE_MOTION=on (day-still.sh) leaves Reduce Motion on, as the runners come: then Arbor puts up no stage, and every move of every window shows.
 # DAY_DISPLAY=desk plays it at 1920×1080 instead of a laptop's 1440×900 or the nearest on offer. DAY_KEEP_PICTURES=1 keeps every step's picture.
 #
 # Only on GitHub's Macs: it quits apps, closes windows, clicks in the Dock and on the wallpaper, and changes the display's size.
@@ -106,7 +107,7 @@ case "${DAY_TILING:=defaults}" in
   *) die "DAY_TILING: defaults or off, not $DAY_TILING" ;;
 esac
 # GitHub's Macs come with Reduce Motion on. A person's Mac does not, and with it on Arbor shows no motion.
-macos_reduce_motion off
+macos_reduce_motion "${DAY_REDUCE_MOTION:-off}"
 day_scratch
 sampler_start
 watch_start day-macos.log
@@ -214,13 +215,13 @@ acted front="$(main_window_of "$(front_pid)")"
 if with_arbor; then
   chapter "The first docks, by key"
   reach "$NA"
-  press dock-key "dock-$NA-left" "⌃⌥⌘←" ctrl+opt+cmd+left moves=docked yields=floating front="$A"
+  press dock-key "dock-$NA-left" "⌃⌥⌘←" ctrl+opt+cmd+left moves=docked front="$A"
   check "$NA is docked" is docked "$A"
   reach "$NB"
-  press dock-key "dock-$NB-right" "⌃⌥⌘→" ctrl+opt+cmd+right moves=docked yields=floating front="$B"
+  press dock-key "dock-$NB-right" "⌃⌥⌘→" ctrl+opt+cmd+right moves=docked front="$B"
   check "$NB is docked" is docked "$B"
   reach "$NC"
-  press dock-key "dock-$NC-right" "⌃⌥⌘→" ctrl+opt+cmd+right moves=docked yields=floating front="$C"
+  press dock-key "dock-$NC-right" "⌃⌥⌘→" ctrl+opt+cmd+right moves=docked front="$C"
   check "$NC is docked" is docked "$C"
   brief | sed 's/^/    /'
 
@@ -230,7 +231,7 @@ if with_arbor; then
   act drag "drag-$ND-onto-$NA" "drags $ND by its title bar onto the right part of $NA and lets go"
   must drag_window "$D" "$((x + w * 5 / 6))" "$((y + h / 2))"
   want "$ND is docked" eventually is docked "$D"
-  acted drags="$D" moves=docked yields=floating front="$D"
+  acted drags="$D" moves=docked front="$D"
   if read -r x y w h <<< "$(arbor_ask desktop 2>/dev/null)" && [ -n "${w:-}" ]; then
     act drag "drag-$ND-out" "drags $ND out of the arrangement onto the Desktop and lets go"
     must drag_window "$D" "$((x + w / 2))" "$((y + h / 3))"
@@ -279,14 +280,14 @@ if with_arbor; then
   act switch "dock-icon-$NX-while-framed" "clicks $NX's icon in the Dock, whose window floats and is out of view"
   must dock_click "$(bundle_of "$NX")"
   acted moves=any front="$X"
-  press view show-everything "⌃⌥Space" ctrl+opt+space moves=any everything=1 returns="$HOME_STEP"
+  press view show-everything "⌃⌥Space" ctrl+opt+space moves=any everything=1 tiles=ok returns="$HOME_STEP"
   reach "$NB"
   press view "frame-$NB" "⌃⌥↩" ctrl+opt+return moves=any front="$B"
   press view neighbour-left "⌃⌥←" ctrl+opt+left moves=any
   press view back "⌃⌥[" "ctrl+opt+[" moves=any front="$B"
   press view step-out "⌃⌥↑" ctrl+opt+up moves=any
   press view show-desktop "⌃⌥D" ctrl+opt+d moves=any
-  press view show-everything-2 "⌃⌥Space" ctrl+opt+space moves=any everything=1 returns="$HOME_STEP"
+  press view show-everything-2 "⌃⌥Space" ctrl+opt+space moves=any everything=1 tiles=ok returns="$HOME_STEP"
 fi
 
 chapter "Windows come and go"
@@ -324,7 +325,7 @@ if with_arbor; then
     key cmd+w
     acted moves=any leaves="$N"
   fi
-  press view show-everything-3 "⌃⌥Space" ctrl+opt+space moves=any everything=1 returns="$HOME_STEP"
+  press view show-everything-3 "⌃⌥Space" ctrl+opt+space moves=any everything=1 tiles=ok returns="$HOME_STEP"
 fi
 
 reach "$NB"
@@ -401,7 +402,7 @@ act drag-where-macos-tiles "drag-$NE-to-left-edge" "drags $NE by its title bar a
 must drag_window "$E" "$dx" "$((dy + dh / 2))"
 # Docked by Arbor, or tiled by macOS with Arbor standing aside: then that is where its person put it, and its own frame from now on.
 if with_arbor && eventually is docked "$E"; then edge=""; else edge="own=$E"; fi
-acted drags="$E" moves=docked yields=floating front="$E" $edge
+acted drags="$E" moves=docked front="$E" $edge
 echo "$NE is at $(real_frame_of "$E")"
 reach "$NX"
 act drag-where-macos-tiles "drag-$NX-to-top" "drags $NX by its title bar against the menu bar and lets go: macOS fills the screen with it"
@@ -414,7 +415,7 @@ acted drags="$X" front="$X" restores="$X" place="$X"
 echo "$NX is at $(real_frame_of "$X")"
 if with_arbor; then
   brief | sed 's/^/    /'
-  press view show-everything-4 "⌃⌥Space" ctrl+opt+space moves=any everything=1
+  press view show-everything-4 "⌃⌥Space" ctrl+opt+space moves=any everything=1 tiles=ok
 fi
 
 if with_arbor; then
@@ -432,9 +433,9 @@ if with_arbor; then
   press way-out float-all "⌃⌥⇧F" ctrl+opt+shift+f moves=any restores=all places=1 everything=1
 
   reach "$NA"
-  press dock-key "dock-$NA-left-2" "⌃⌥⌘←" ctrl+opt+cmd+left moves=docked yields=floating front="$A"
+  press dock-key "dock-$NA-left-2" "⌃⌥⌘←" ctrl+opt+cmd+left moves=docked front="$A"
   reach "$NB"
-  press dock-key "dock-$NB-right-2" "⌃⌥⌘→" ctrl+opt+cmd+right moves=docked yields=floating front="$B"
+  press dock-key "dock-$NB-right-2" "⌃⌥⌘→" ctrl+opt+cmd+right moves=docked front="$B"
   press view "frame-$NB-2" "⌃⌥↩" ctrl+opt+return moves=any front="$B"
   act quit-and-start quit "chooses Quit Arbor in Arbor's menu"
   must arbor_menu up return

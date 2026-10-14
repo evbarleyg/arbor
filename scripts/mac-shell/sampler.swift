@@ -22,7 +22,7 @@
 //   D x y w h                      the main display
 //   V x y w h                      the main display between the menu bar and the Dock
 //   M text                         a mark of the script's
-//   L ms                           this sample came late: nothing was seen for that long
+//   L ms                           this sample came late, over 100 ms after the one before (docs/VIABLE.md, sampler.late_ms): nothing was seen for that long
 //   S …                            at the end: how many samples, how long one took, how many came late
 //
 // The grammar stays as it is: other tools write files in it that are merged with this one by time. A new kind is a new capital
@@ -99,6 +99,8 @@ struct Seen: Equatable {
 }
 
 final class Sampler {
+  /// A person sees a gap of this many milliseconds. One or two frames more or less they do not.
+  static let late = 100.0
   private var windows: [Int: Seen] = [:]
   private var order: [Int] = []
   private var buttonIsDown = false
@@ -112,7 +114,7 @@ final class Sampler {
 
   func sample(gap: Double, period: Double) {
     let started = now()
-    if gap > period * 2.5 {
+    if gap > Sampler.late {
       late += 1
       write(started, "L \(Int(gap))")
     }

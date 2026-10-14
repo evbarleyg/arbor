@@ -16,6 +16,7 @@ lint:
 	@python3 scripts/lint-workflows.py --self-test && python3 scripts/lint-workflows.py
 	@python3 scripts/reality-ledger.py --self-test && python3 scripts/reality-ledger.py --check
 	@python3 scripts/mac-shell/jolts.py --self-test > /dev/null || python3 scripts/mac-shell/jolts.py --self-test
+	@python3 scripts/mac-shell/viable.py --self-test > /dev/null || python3 scripts/mac-shell/viable.py --self-test
 
 # Reads what this branch adds (lines, file names, commit messages, its own name) for what should stay private, and checks
 # that its history begins where the public repository's does. Before every push (docs/PUBLIC.md).
@@ -134,11 +135,11 @@ e2e-drag:
 
 # The rehearsal of the acceptance pass, from anywhere: an ordinary day with real apps on one of GitHub's Macs, macOS at its default
 # settings, every frame of every window written down, and a table of what broke which rule (docs/TESTING.md, "An ordinary day").
-# Runs what GitHub has of the current branch. One of: CONTROL=1 plays the same day without Arbor; OFF=1 with macOS's own tiling switched off; SABOTAGE=1 commits
-# the offences itself, to see the detectors speak. They cannot be rehearsed yet: the fake Mac knows no apptool and no sampler.
+# Runs what GitHub has of the current branch. One of: CONTROL=1 plays the same day without Arbor; OFF=1 with macOS's own tiling switched off; STILL=1 with Reduce
+# Motion on; SABOTAGE=1 commits the offences itself, to see the detectors speak. They cannot be rehearsed yet: the fake Mac knows no apptool and no sampler.
 day:
 	@./scripts/mac-shell/run.sh --no-preflight "the fake Mac knows no apptool, no sampler and no stock apps yet" \
-	  scripts/mac-shell/day$(if $(CONTROL),-control,$(if $(OFF),-off,$(if $(SABOTAGE),-sabotage))).sh
+	  scripts/mac-shell/day$(if $(CONTROL),-control,$(if $(OFF),-off,$(if $(STILL),-still,$(if $(SABOTAGE),-sabotage)))).sh
 
 # On Linux: type-checks all the macOS-only code against stand-ins for Apple's frameworks (scripts/typecheck-mac/README.md).
 # Not proof, but fifteen seconds instead of a macOS job. REF=origin/some-branch checks that commit's Sources instead.
