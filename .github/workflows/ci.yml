@@ -42,7 +42,7 @@ jobs:
       build: ${{ steps.decide.outputs.build }}
       why: ${{ steps.decide.outputs.why }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           # The rules, and what they read off which scripts the macOS job can reach.
           sparse-checkout: |
@@ -70,7 +70,7 @@ jobs:
       # Anything but these two words means the most: every test, built from nothing.
       TESTS: ${{ needs.changes.outputs.tests == 'mac-only' && 'mac-only' || 'full' }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       # Compiling all the test files took longer than running the ones this job runs. For every step: it is part of the manifest's answer.
       - name: Which test files are compiled
         run: ./scripts/ci-tests.py sources --mode "$TESTS" >> "$GITHUB_ENV"
@@ -136,7 +136,7 @@ jobs:
           ./scripts/ci-tests.py run --mode "$TESTS" --record mac.tsv --all mac-all.txt
       - name: Hand on what ran
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: tests-mac
           path: |
@@ -166,7 +166,7 @@ jobs:
           { echo "said<<END-OF-WHAT-WAS-SAID"; cat e2e.out e2e-drag.out 2>/dev/null | grep -E '^::(error|notice) ' | cut -c 1-4000 | head -n 24; echo "END-OF-WHAT-WAS-SAID"; } >> "$GITHUB_OUTPUT"
       - name: Keep the evidence
         if: ${{ !cancelled() && steps.e2e.outcome != 'skipped' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: e2e-evidence
           path: collab/evidence/e2e-latest.txt
@@ -208,10 +208,10 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           sparse-checkout: scripts
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: tests-*
           merge-multiple: true
@@ -236,7 +236,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: The rules that decide about the macOS job
         run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py
       - name: The arithmetic of the queue for the Macs
@@ -255,7 +255,7 @@ jobs:
     container: swift:6.4-noble
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: Python and make for the scripts, and a git that trusts the checkout
         # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
         run: |
@@ -270,7 +270,7 @@ jobs:
     container: swift:6.4-noble
     timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: Python and make for the scripts, and a git that trusts the checkout
         # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
         run: |
@@ -296,7 +296,7 @@ jobs:
     container: swift:6.4-noble
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: Python and make for the scripts, and a git that trusts the checkout
         # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
         run: |
@@ -308,7 +308,7 @@ jobs:
         run: ./scripts/ci-step.py --summary '^Recorded [0-9]' --report linux.tsv.events test ./scripts/ci-tests.py run --mode full --record linux.tsv
       - name: Hand on what ran
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: tests-linux
           path: linux.tsv

@@ -17,7 +17,7 @@ runs:
         "$GITHUB_ACTION_PATH/../../../scripts/ci-mtimes.py" record
         echo "::notice title=build cache::keeping $(du -sm .build | cut -f1) MB"
     - name: Keep it
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
       with:
         path: .build
         key: ${{ inputs.key }}

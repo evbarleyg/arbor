@@ -1,0 +1,18 @@
+# Keeps the actions the workflows use current. They are named by commit (scripts/lint-workflows.py), which stops them from
+# changing underfoot and would also stop them from ever being mended. One pull request a week at most, all actions in it,
+# against the branch where work is integrated.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /.github/actions/*
+    schedule:
+      interval: weekly
+    target-branch: swarm/trunk
+    open-pull-requests-limit: 1
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns: ["*"]
