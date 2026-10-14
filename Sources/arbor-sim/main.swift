@@ -64,7 +64,8 @@ import Foundation
 //   wait <seconds>               let time pass, running the scheduled work that falls due
 //   watch [events…] [--titles]   from here on, print the lines `arborctl watch` would send after each step
 //   fullscreen <id> on|off       the green button: the window gets a macOS Space to itself, so the other windows
-//                                of its display are on a Space that does not show; off brings all of it back
+//                                of its display are on a Space that does not show; off brings all of it back, as a Mac
+//                                does (FakeWindowSystem.leaveFullScreen), and says where a person saw the window meanwhile
 //   comes-forward <id>           the window's app brings itself forward: nobody clicked or pressed anything
 //   hold-still-for <bundle id> [title words…]
 //                                add an entry to the `holdStillFor` setting
@@ -543,13 +544,20 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     let others = system.windows.keys.sorted().filter {
       $0 != id && harness.controller.workspaceID(containing: $0) == display
     }
-    system.setFullScreen(id, on)
-    for other in others where system.windows[other]?.snapshot.isFullScreen == false {
-      system.setOnActiveSpace(other, !on)
+    let onItsSpace = others.filter { system.windows[$0]?.snapshot.isFullScreen == false }
+    if on {
+      system.setFullScreen(id, true)
+      for other in onItsSpace { system.setOnActiveSpace(other, false) }
+    } else {
+      // In the order and at the times of a Mac, where it is seen before it is reported back.
+      system.clearSightings()
+      system.leaveFullScreen(id, with: onItsSpace)
     }
     // macOS reports each window by itself; Arbor lays out once they have all been heard of.
     harness.scheduler.advance(by: 2)
-    return ("\(id.rawValue) \(on ? "went into" : "left") full screen", true)
+    let seen = system.sightings(of: id).map { "\(Int($0.minX)),\(Int($0.minY)) \(Int($0.width))×\(Int($0.height))" }
+    let sighted = on || seen.isEmpty ? "" : " and was seen at \(seen.joined(separator: ", then at "))"
+    return ("\(id.rawValue) \(on ? "went into" : "left") full screen\(sighted)", true)
   case "field-type":
     guard let prompt = harness.overlays.namePrompt else { return ("the name field is not open", false) }
     let text = words.dropFirst().joined(separator: " ")

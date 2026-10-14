@@ -70,6 +70,11 @@ public final class FakeWindowSystem: WindowSystem {
   public private(set) var started = false
   /// Every frame Arbor set, in order.
   public private(set) var frameLog: [(window: WindowID, frame: CGRect)] = []
+  /// Where a person could have seen windows that Arbor or macOS moved, in order: the frame a window came out of full screen
+  /// at (`leaveFullScreen`), and every frame Arbor gave a window that was in sight. A move nobody can see is not here.
+  public fileprivate(set) var sightings: [(window: WindowID, frame: CGRect)] = []
+  /// Windows that are on the screen again after full screen, and that their apps do not list yet.
+  fileprivate var inSightUnlisted: Set<WindowID> = []
   /// As on a Mac, `focus` takes effect only a moment later: at `finishSlowFocus()`.
   public var focusIsSlow = false
   public private(set) var slowFocus: WindowID?
@@ -90,6 +95,8 @@ public final class FakeWindowSystem: WindowSystem {
   /// Windows that had the keyboard, most recent first.
   fileprivate var keyboardOrder: [WindowID] = []
   fileprivate var framesBeforeFullScreen: [WindowID: CGRect] = [:]
+  /// The last frame each of them, or its user, chose for itself.
+  fileprivate var ownFramesBeforeFullScreen: [WindowID: CGRect] = [:]
   /// Windows whose app moves them back to a frame of its own a moment after anyone else moves them
   /// (`appsSettle()` is that moment).
   public var stubbornFrames: [WindowID: CGRect] = [:]
@@ -287,6 +294,7 @@ public final class FakeWindowSystem: WindowSystem {
     fake.changedItsWays = false
     windows[window] = fake
     frameLog.append((window, applied))
+    if changed, fake.snapshot.isPresent || inSightUnlisted.contains(window) { sightings.append((window, applied)) }
     if changed, echoes.frames, !undelivered.contains(.frame(window)) { undelivered.append(.frame(window)) }
     return applied
   }
@@ -554,6 +562,8 @@ public final class FakeWindowSystem: WindowSystem {
   }
 
   public func clearFrameLog() { frameLog.removeAll() }
+  public func clearSightings() { sightings.removeAll() }
+  public func sightings(of window: WindowID) -> [CGRect] { sightings.filter { $0.window == window }.map(\.frame) }
 
   fileprivate func nextTabID() -> UInt32 {
     defer { nextID += 1 }
@@ -776,19 +786,53 @@ extension FakeWindowSystem {
   /// The user clicks the green button. Entering, the window grows to cover its display, on a Space
   /// of its own: switch the other windows' Space out of view with `setOnActiveSpace`. Leaving,
   /// it goes back to the frame it had. Both are reported as resizes nobody asked Arbor for.
+  ///
+  /// This is the report alone, and kinder than a Mac about the frame. `leaveFullScreen` plays the whole way out as one was seen to.
   public func setFullScreen(_ window: WindowID, _ fullScreen: Bool) {
     guard let fake = windows[window], fake.snapshot.isFullScreen != fullScreen else { return }
     if fullScreen {
       framesBeforeFullScreen[window] = fake.snapshot.frame
+      ownFramesBeforeFullScreen[window] = fake.home ?? fake.snapshot.frame
       let center = CGPoint(x: fake.snapshot.frame.midX, y: fake.snapshot.frame.midY)
       let display = displayList.first { $0.frame.contains(center) } ?? displayList[0]
       windows[window]!.snapshot.frame = display.frame
     } else if let frame = framesBeforeFullScreen.removeValue(forKey: window) {
+      ownFramesBeforeFullScreen[window] = nil
       windows[window]!.snapshot.frame = frame
     }
     windows[window]!.snapshot.isFullScreen = fullScreen
     landings[window] = !fullScreen && echoes.flightFromFullScreen > 0 ? clock() + echoes.flightFromFullScreen : nil
     events?.windowChanged(windows[window]!.snapshot, userInitiated: true)
+  }
+
+  /// The way out of full screen as a hosted Mac played it with a docked Safari window (⌃⌘F, 2026-10-14), `others` being the
+  /// windows of the Space that comes back:
+  ///
+  ///     0 ms    macOS puts a stand-in on the app's list, which shows the animation. The window is off the list, and off the screen.
+  ///     2 ms    the window reports a resize: no longer in full screen, and already at the frame macOS gives it back. That is
+  ///             not the one it had last, its slot: it is the one it had before Arbor ever moved it
+  ///     690 ms  the stand-in goes
+  ///     720 ms  the window is on the screen
+  ///     830 ms  the Space is reported to have changed. Only now do the apps list their windows again, this one too
+  ///
+  /// So "it has left" comes when the way out begins, and "it is back" a tenth of a second after everybody has seen it.
+  public func leaveFullScreen(_ window: WindowID, with others: [WindowID]) {
+    guard windows[window]?.snapshot.isFullScreen == true else { return }
+    setOnActiveSpace(window, false)
+    if let own = ownFramesBeforeFullScreen[window] { framesBeforeFullScreen[window] = own }
+    setFullScreen(window, false)
+    afterEvents?()
+    deliverEchoes()
+    passTime?(0.72)
+    inSightUnlisted.insert(window)
+    sightings.append((window, windows[window]!.snapshot.frame))
+    passTime?(0.11)
+    inSightUnlisted.remove(window)
+    // One list after the other, in the order of the Accessibility layer's scan.
+    for id in (others + [window]).sorted() { setOnActiveSpace(id, true) }
+    if echoes.keyboard { giveKeyboard(to: window) }
+    afterEvents?()
+    deliverEchoes()
   }
 }
 

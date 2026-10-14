@@ -78,6 +78,7 @@ extension Controller: WindowSystemEvents {
     if owedTheWayBack[window.id] != nil { payTheWayBack(to: window.id) }
     noteWhetherItCameBack(window, was: previous)
     putBackIfItLeftFullScreen(window, was: previous)
+    meetAtItsSlotIfItLeftFullScreen(window, was: previous)
     defer { focusRingFollows(window) }
     if previous?.title != window.title { refreshHoldCaller() }
     defer { if previous?.frame != window.frame { notify(.frames) } }
