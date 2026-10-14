@@ -17,13 +17,15 @@
 # <app> is a name of the cast's: finder safari textedit terminal notes calendar settings preview mail.
 #
 #   walk_begin <cast> <display> <tiling> [seed]       the Mac (stock | laptop desk | defaults off), the apps, macOS seen to tile or not to, Arbor started
-#                                                     and its welcome closed. WALK_WITHOUT_ARBOR=1: the control, in which Arbor's own acts are left out
+#                                                     and its welcome closed. WALK_WITHOUT_ARBOR=1: the control, in which Arbor's own acts are left out.
+#                                                     WALK_REDUCE_MOTION=on: no stage, so every move of every window shows
 #   walk_end                                          Arbor quit if it runs, every window reached, the report
 #   chapter "<title>"                                 lib-day.sh's: a heading, and a new trace
 #
 #   switch_dock <app>            clicks its icon in the Dock            switch_click <app>     clicks its window's title bar
 #   switch_cmdtab [n]            ⌘ down, ⇥ n times, ⌘ up                switch_backtick        ⌘` : the app's next window
 #   switch_menu <app>            its first window's line in the Window menu (the app is brought forward first, which is an act of its own)
+#   switch_tile                  clicks the first tile that stands in for a window: the real window comes wholly into view, with the keyboard
 #   open_new                     ⌘N in the app in front                 close_new              ⌘W, if the window in front is one that open_new opened
 #   minimize | restore <app>     ⌘M on the window in front | a click on its miniature in the Dock
 #   hide | unhide <app>          ⌘H on the app in front | a click on its icon in the Dock
@@ -166,6 +168,18 @@ switch_menu() {
   acted front="$(window_of "$1")"
 }
 
+switch_tile() {
+  local window place x y w h
+  arbor_acts || { left_out "switch_tile: Arbor is not acting"; return; }
+  day_ids
+  [ -n "$DAY_TILES" ] || { left_out "switch_tile: no tile stands in for a window"; return; }
+  window=${DAY_TILES%%@*} place=${DAY_TILES#*@}
+  IFS=: read -r x y w h <<< "${place%%,*}"
+  walk_act switch click-tile "clicks the tile that stands in for a window"
+  click "$((x + w / 2))" "$((y + h / 2))"
+  acted moves=any front="$window"
+}
+
 # MARK: Windows come and go
 
 open_new() {
@@ -271,7 +285,7 @@ dock_key() {
   walk_act dock-key "dock-$1" "presses ⌃⌥⌘ and the $1 arrow"
   key "ctrl+opt+cmd+$1"
   changed
-  acted moves=docked yields=floating front="$window"
+  acted moves=docked front="$window"
 }
 
 float_key() {
@@ -305,7 +319,7 @@ drag_onto() {
   walk_act drag "drag-$1-onto-$2-$3" "drags $1 by its title bar onto the $3 part of $2 and lets go"
   must drag_window "$window" "$px" "$py"
   changed
-  acted drags="$window" moves=docked yields=floating front="$window"
+  acted drags="$window" moves=docked front="$window"
 }
 
 drag_out() {
@@ -352,7 +366,7 @@ drag_edge() {
   changed
   # Docked by Arbor, or tiled by macOS with Arbor standing aside: then that is where its person put it, and its own frame from now on.
   if ! { with_arbor && arbor_answers && eventually is docked "$window"; }; then own="own=$window"; fi
-  acted drags="$window" moves=docked yields=floating front="$window" $own
+  acted drags="$window" moves=docked front="$window" $own
 }
 
 resize_gap() {
@@ -403,7 +417,7 @@ view() {
     back) chord="ctrl+opt+[" keys="⌃⌥[" ;;
     forward) chord="ctrl+opt+]" keys="⌃⌥]" ;;
     desktop) chord=ctrl+opt+d keys="⌃⌥D" ;;
-    all) chord=ctrl+opt+space keys="⌃⌥Space" wants="everything=1 $(back_home)" ;;
+    all) chord=ctrl+opt+space keys="⌃⌥Space" wants="everything=1 tiles=ok $(back_home)" ;;
     *) die "view: no such move: $1" ;;
   esac
   walk_act view "view-$1" "presses $keys"
@@ -575,7 +589,7 @@ walk_begin() {
     *) die "walk_begin: defaults or off, not $tiling" ;;
   esac
   # GitHub's Macs come with Reduce Motion on. A person's Mac does not, and with it on Arbor shows no motion.
-  macos_reduce_motion off
+  macos_reduce_motion "${WALK_REDUCE_MOTION:-off}"
   day_scratch
   sampler_start
   watch_start day-macos.log
