@@ -1,0 +1,48 @@
+name: Housekeeping
+
+# Once a day, at an hour when few are pushing: deletes the branches nobody needs any more, so that no person has to. The output of Mac shell runs after a day,
+# and branches whose work has landed. scripts/housekeeping.py has the rules, and what never goes. Some of the environments
+# agents work in may push branches but not delete them.
+#
+# A schedule runs from the default branch only. Started by hand it only says what would go, unless told otherwise.
+
+on:
+  schedule:
+    - cron: "23 11 * * *"
+  workflow_dispatch:
+    inputs:
+      prune:
+        description: Really delete (unticked, it only says what would go)
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: housekeeping
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  prune:
+    # A fork has branches of its own, which are none of this workflow's business.
+    if: github.repository == 'evbarleyg/arbor'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write # to delete branches; nothing else is written
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          # The rules as they have been reviewed, whichever branch it was started from.
+          ref: ${{ github.event.repository.default_branch }}
+          sparse-checkout: scripts
+          persist-credentials: false
+      - name: The rules do what they say
+        run: ./scripts/housekeeping.py --self-test
+      - name: Prune
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          WHAT: ${{ (github.event_name == 'schedule' || inputs.prune) && '--prune' || '--dry-run' }}
+        run: ./scripts/housekeeping.py "$WHAT"

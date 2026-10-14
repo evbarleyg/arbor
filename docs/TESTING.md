@@ -557,8 +557,8 @@ scripts/mac-shell/preflight.sh scripts/mac-shell/shots-F09.sh      # where Swift
 
 Where branches cannot be deleted, the output branch
 `mac-shell-out/<ref>.<script>` stays on GitHub and the next run of the same script replaces its content.
-Anyone with ordinary credentials can clear them:
-`git ls-remote --heads origin 'mac-shell-out/*' | cut -f2 | xargs git push origin --delete`.
+The workflow `Housekeeping` deletes it once it is a day old, so fetch what you want to keep before then. The same workflow
+deletes branches whose work has landed (`scripts/housekeeping.py` has the rules, and what never goes).
 
 ### On a person's own Mac
 
