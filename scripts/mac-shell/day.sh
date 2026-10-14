@@ -352,6 +352,8 @@ if with_arbor; then
   drag_window "$X" "$((x + w / 2 + 60))" "$((y + 72))"
   acted drags="$X" own="$X"
   press resume "⌃⌥⎋" ctrl+opt+escape moves=any
+  # The pause ended the chapter's trace.
+  day_trace
   press float-all "⌃⌥⇧F" ctrl+opt+shift+f moves=any restores=all places=1 everything=1
 
   reach "$NA"
