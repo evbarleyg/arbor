@@ -255,4 +255,20 @@ code=$?
 grep -E "^/.*: error:|^error:|While emitting IR|While evaluating request IRGen" "$out/build-oldest.log" | sed "s|$PWD/||g" | sort -u | cut -c 1-260 | head -n 40
 tail -n 1 "$out/build-oldest.log"
 echo "Xcode 26.0.1: exit code $code  ($(date -u +%T))"
+
+step "C  the Command Line Tools alone, without Xcode: is that enough for make app?"
+if [ -x /Library/Developer/CommandLineTools/usr/bin/swift ]; then
+  export DEVELOPER_DIR=/Library/Developer/CommandLineTools
+  swift --version 2>&1 | head -1
+  pkgutil --pkg-info com.apple.pkg.CLTools_Executables 2>&1 | grep version
+  rm -rf .build build
+  ARBOR_SIGN_IDENTITY=- make app > "$out/make-app-clt.log" 2>&1
+  clt=$?
+  grep -E "error:|warning: could not" "$out/make-app-clt.log" | sort -u | cut -c 1-240 | head -20
+  tail -n 3 "$out/make-app-clt.log"
+  echo "Command Line Tools: make app exit code $clt  ($(date -u +%T))"
+  build/Arbor.app/Contents/Helpers/arborctl --version 2>&1 | head -2
+else
+  echo "this Mac has no Command Line Tools apart from Xcode's"
+fi
 exit "$code"
