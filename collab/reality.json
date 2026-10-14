@@ -3172,20 +3172,28 @@
    "expected": "A window dragged to a screen edge is Arbor's to dock: after the drop Arbor sets one frame and the window stays there. The stand-ins and the drag script knew no other actor, and the committed real-pointer evidence had been recorded with macOS's tiling switched off.",
    "happened": "macOS 15 and later tile such a window themselves (`EnableTilingByEdgeDrag`, `EnableTopTilingByEdgeDrag`; unset means on). On a 1024×768 display a window let go at x 0, at x 1023 or in the menu bar moved three times: into Arbor's slot (12,43 494×650), from 7 ms later into macOS's tile (-1,31 512×674, reached 0.30 to 0.34 s after the release), and back into the slot after 0.61 to 1.22 s. It happened at all 25 such drops (21 to 26 reports each, against 3 or 4 within 35 ms one point further in); the log said `did not stay where it was put` for only 15. Arbor only advises switching the settings off; a cure that stands aside where macOS tiles is under way.",
    "found": "The first run of the drag script in CI on a hosted Mac (a drag towards the top ended with the window filling the display), then three probes of real title-bar drags on hosted Macs with a watcher of Accessibility notifications beside them.",
-   "modelled": "no",
-   "knobs": [],
+   "modelled": "yes",
+   "knobs": [
+    "FakeWindowSystem.tiling",
+    "FakeWindowSystem.letMacOSTile"
+   ],
    "guards": [
     "test: desktopAndDockSettingsCompeteWithArbor",
     "test: theSwitchesAreReadFromTheWindowManagersDefaults",
-    "e2e: the window ends in Arbor's slot"
+    "test: aFloatingWindowLetGoWhereMacOSTilesIsLeftToMacOS",
+    "test: aDockedWindowLetGoThereLeavesTheArrangementAndIsNotTouched",
+    "test: macOSShowedItsPreviewHere",
+    "e2e: Arbor shows no preview beside macOS's",
+    "e2e: macOS gives it its tile"
    ],
-   "copes": "open",
+   "copes": "MacTiling.claim says where macOS takes a window that is let go; there Arbor shows no preview, docks nothing and sets no frame",
    "hurt": 2,
    "sources": [
     "scripts/mac-shell/lib.sh",
     "docs/GUIDE.md",
     "Sources/arbor-fakemac/main.swift",
     "Sources/ArborCore/SystemFacts.swift",
+    "Sources/ArborCore/MacTiling.swift",
     "collab/evidence/gestures-latest.txt"
    ]
   },

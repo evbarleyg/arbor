@@ -104,6 +104,7 @@ final class WatchedSystem: WindowSystem {
   func cursorLocation() -> CGPoint { fake.cursorLocation() }
   func isMouseButtonDown() -> Bool { fake.isMouseButtonDown() }
   func modifierKeysDown() -> KeyChord.Modifiers { fake.modifierKeysDown() }
+  func macTiling() -> MacTiling { fake.macTiling() }
   func existingWindowIDs() -> Set<WindowID> { fake.existingWindowIDs() }
   func inputActivity() -> InputActivity { fake.inputActivity() }
   func isHolding(_ chord: KeyChord) -> Bool { fake.isHolding(chord) }

@@ -38,7 +38,7 @@ import Foundation
 // changes, this has to follow.
 //
 // What it cannot say anything about: AppKit's and Accessibility's timing and order of notifications,
-// animations, the finer points of which window is in front, macOS's own tiling, the Dock growing and shrinking,
+// animations, the finer points of which window is in front, the Dock growing and shrinking,
 // Spaces and full screen, what anything looks like, whether an event tap or a hot key really gets its events. A
 // rehearsal proves the script, not Arbor.
 //

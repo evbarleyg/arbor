@@ -249,7 +249,10 @@ opened, with nobody moved; a native tab takes no slot of its own; closing the do
 **`make e2e-drag`** (`scripts/mac-shell/e2e-drag.sh`) does with the real pointer what no command can
 stand in for: a title-bar drag to the screen edge (preview while held, docked on release), a drag onto
 another window's edge, a double-click on a docked window's title bar (no seam may move), a press and drag
-inside a window (not a drag), a drag of a docked window's edge (the seam follows), a drag out onto the Desktop. It
+inside a window (not a drag), a drag of a docked window's edge (the seam follows), a drag out onto the Desktop. Then macOS's own tiling, as the
+Mac is set: a docked window let go at the very edge of the screen and a floating one let go in the menu bar are left to macOS (no preview of
+Arbor's, the window ends in macOS's tile, stays there and floats); on GitHub's Macs, which come with macOS's defaults, the same places once more with the
+tiling switched off, where Arbor docks. It
 takes over the pointer for about half a minute, so it is a target of its own; CI runs it after `arbor-e2e`.
 
 It needs Accessibility permission for the terminal you run it from (Arbor
@@ -391,8 +394,10 @@ it prints the same frames and the same log.
 - A script that uses a command, an option or a tool the stand-ins lack fails loudly: a message that names it, exit
   code 64. Teach it to `Sources/arbor-fakemac/World*.swift` (or `scripts/mac-shell/rehearse/mac-tools`) then. A script that compiles a tool
   of its own against AppKit, or plugs in a display (`vdisplay.m`), stops there with exit code 2.
+- The fake Mac stops the pointer at the edge of the display, as a hand's is stopped. On a Mac a posted pointer goes on: `drag … -40 368` ends at x -40
+  there and at x 0 here, which is macOS's point of the edge.
 - **What it cannot prove**: anything about AppKit's and Accessibility's timing and order of events, animations,
-  macOS's own tiling, the Dock resizing, Spaces, full screen, what anything looks like
+  the Dock resizing, Spaces, full screen, what anything looks like
   (every picture is one black pixel), or whether a tap or a hot key gets its events. A ✔ proves the script, not Arbor.
 
 The header of `scripts/mac-shell/lib.sh` lists every function; `shots-demo.sh` uses most of them, `check-displays.sh` the ones
@@ -415,10 +420,13 @@ for a second display, `check-desktop.sh` those for dark mode, wallpapers and Spa
 What the Mac is (macos-26 runner, October 2026): macOS 26.6 on arm64, Swift 6.3, one 1024×768 display at scale 1
 (visible frame 0,31 1024×674: menu bar 31, Dock 63), black wallpaper, Finder in front, bash 3.2, python3.
 Child processes have Accessibility and Screen Recording. Reduce Motion is on. A build takes about 15 s, a picture 70 ms.
-macOS's own edge tiling is at its default, which is on: its white outline showed together with Arbor's preview when a window
-was held at the edge between two displays (the window still ended in Arbor's slot). At an outer edge it has not shown
-so far, but the drags stopped three points short of the edge, where a hand pushes against it; `check-desktop.sh` has
-that experiment. `macos_tiling off` switches it off.
+macOS's own tiling is at its default, which is on (no key of `com.apple.WindowManager` is set). Where it acts was measured there by holding a window
+with the pointer at one point after another and looking for WindowManager's preview in the window server's list: at x 0 and x 1023 (not 1, 2, 1021,
+1022), from y 0 to y 30 (not 31), nowhere along the bottom, and anywhere with ⌥ held, whatever else is held. At the sides at once; in the menu bar only after a rest of 0.1 to 0.2 s. A window of a
+fixed size is taken too, and moved into the tile as it is. There Arbor stands aside (`MacTiling.swift`, which has the
+numbers; `e2e-drag.sh` plays it). A posted pointer is not stopped at the edge of the display as a hand's is: `drag … -40 368` really goes to x -40,
+where neither macOS nor Arbor does anything. `macos_tiling off` switches it off, and Arbor goes by the setting from the next drag on.
+A double-click on a title bar fills the screen too (macOS's default for it), tiling or no tiling.
 
 Things that bite:
 
@@ -1274,9 +1282,8 @@ Real apps, which the test windows cannot stand in for (F17):
   second; `kill -CONT` and the windows go where they belong.
 - Resize the Dock, or set it to hide, then `arborctl relayout`: the layout uses the new space.
 
-If you use macOS's own window tiling, turn off "Drag windows to screen edges
-to tile" (System Settings → Desktop & Dock) so it does not compete with
-Arbor's edge docking. Stage Manager rearranges windows on its own and cannot be used with Arbor.
+With macOS's own window tiling on, as a Mac comes, Arbor stands aside at the very edge of the screen and in the menu
+bar (`MacTiling`), so try the edges both ways: System Settings → Desktop & Dock → Windows. Stage Manager rearranges windows on its own and cannot be used with Arbor.
 
 How the menu bar item, the icon and the welcome window look can be seen without a screen: `Tests/ArborKitTests/MenuBarDrawingTests.swift` (macOS only, part
 of `swift test`) draws them with the real AppKit and SwiftUI code into bitmaps in memory, checks pixels and sizes, and leaves pictures of every

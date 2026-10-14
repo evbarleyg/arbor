@@ -161,6 +161,10 @@ final class World {
   /// A setting of the Mac's that the world goes by, where the `defaults` stand-in keeps it
   /// (rehearse/mac-tools).
   static let clickWallpaperSetting = "defaults/com.apple.WindowManager.EnableStandardClickToShowDesktop"
+  /// macOS's own tiling of dragged windows. As on a Mac, a key that is not there means on.
+  static let tilingSettings = ["EnableTilingByEdgeDrag", "EnableTopTilingByEdgeDrag", "EnableTilingOptionAccelerator"].map {
+    "defaults/com.apple.WindowManager.\($0)"
+  }
   static let filesWritten = filesRead + ["state.unreadable.json", "state.before-repair.json", "arbor.lock"]
 
   init(socket: String, display: DisplaySnapshot) {
@@ -183,7 +187,7 @@ final class World {
   /// last line (settings.json edited, state.json deleted or damaged…) and notes it, so that later replays see
   /// the same.
   func noticeChanges(in folder: String, settingsIn rehearsal: String?) {
-    for name in World.filesRead + [World.clickWallpaperSetting] {
+    for name in World.filesRead + [World.clickWallpaperSetting] + World.tilingSettings {
       let path = (name.hasPrefix("defaults/") ? rehearsal ?? "/dev/null" : folder) + "/" + name
       let data = try? Data(contentsOf: URL(fileURLWithPath: path))
       guard data != file(name) else { continue }

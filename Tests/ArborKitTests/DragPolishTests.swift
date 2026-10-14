@@ -311,8 +311,10 @@ private let side = DisplaySnapshot(
     s.expectNothingLeftBehind()
   }
 
+  /// As far as Arbor is concerned. With "Hold ⌥ key while dragging windows to tile" on, ⌥ makes the window macOS's (MacTilingTests).
   @Test func theOtherModifiersDoNotSuppressDocking() {
     let s = DragScene()
+    s.h.system.tiling.optionKey = false
     s.h.system.heldModifiers = [.option, .shift, .control]
     s.h.system.drag(s.c, through: [s.frame(s.c).center, s.edge(.bottom, of: s.b)])
     #expect(s.h.workspace.isDocked(s.c))
@@ -348,8 +350,10 @@ private let side = DisplaySnapshot(
   }
 
   /// ⌃⌥⌘ + arrow moves the focused window. Pressed with a window in the hand it is a command, not "do not dock".
+  /// With macOS's ⌥ switch off: with it on, macOS tiles a window let go with ⌃⌥⌘ held, as it was seen to (MacTilingTests).
   @Test func arborsOwnShortcutsHeldDuringADragDoNotTurnDockingOff() {
     let s = DragScene()
+    s.h.system.tiling.optionKey = false
     s.h.system.beginDrag(s.c)
     s.h.system.moveDrag(to: s.edge(.bottom, of: s.b), holding: 0.3)
     let preview = s.h.overlays.preview

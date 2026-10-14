@@ -724,6 +724,7 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     system.moveTogether([(id, frame)])
     #expect(spy.calls.last == "moveTogether w5")
     #expect(system.windowsFrontToBack() == [WindowID(77), WindowID(5)])
+    #expect(system.macTiling() == MacTiling(screenEdges: true, menuBar: false, optionKey: true))
     system.setMinimized(id, true)
     #expect(spy.calls.last == "setMinimized w5 true")
     system.unhideApp(pid: 9)
@@ -983,6 +984,7 @@ final class SpyWindowSystem: WindowSystem {
   func windowsFrontToBack() -> [WindowID] { [WindowID(77), WindowID(5)] }
   func stackedWindows() -> [StackedWindow] { [] }
   func modifierKeysDown() -> KeyChord.Modifiers { [.command] }
+  func macTiling() -> MacTiling { MacTiling(screenEdges: true, menuBar: false, optionKey: true) }
   func openApplication(_ app: String) -> Bool {
     calls.append("openApplication \(app)")
     return true

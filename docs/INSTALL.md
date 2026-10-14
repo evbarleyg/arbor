@@ -37,8 +37,8 @@ copy kept, let a build arrange all your windows, or change your login keychain. 
 
 On first launch Arbor asks for **Accessibility** permission (System Settings → Privacy & Security → Accessibility),
 which it needs to move other apps' windows. It starts arranging the moment you switch it on; there is no need
-to restart it. If you use macOS's own window tiling, turn off "Drag windows to screen edges to tile" (System
-Settings → Desktop & Dock) so that the two do not compete.
+to restart it. macOS's own window tiling is on as a Mac comes, and where it acts (the very edge of the screen, the menu bar) Arbor
+stands aside. Turn it off (System Settings → Desktop & Dock → Windows) and every edge docks: `docs/GUIDE.md`, section 2.
 
 ## The signing identity, and why
 

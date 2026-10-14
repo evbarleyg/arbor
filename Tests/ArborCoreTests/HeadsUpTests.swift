@@ -247,9 +247,13 @@ import Testing
     #expect(HeadsUpHint.outOfView.model(facts: facts(2, 1, 0), shortcut: keys).text == "Your other window is out of view, not closed")
     #expect(HeadsUpHint.docked.model(facts: two, shortcut: keys).line == "Docked · ⌃⌥↩ frames it")
     #expect(HeadsUpHint.tile.model(facts: two, shortcut: keys).line == "Too small to show: click the tile to zoom in · ⌃⌥G goes there too")
+    #expect(
+      HeadsUpHint.leftToMacOS.model(facts: two, shortcut: keys).line
+        == "macOS tiles windows let go here, so Arbor stood aside · Check Setup… in the menu")
     for hint in HeadsUpHint.allCases {
       let bare = hint.model(facts: two) { _ in nil }
-      #expect(bare.hint == nil)
+      // The one whose second half names a menu item, which is there whatever the keys are.
+      #expect((bare.hint == nil) == (hint != .leftToMacOS))
       #expect(bare.kind == .hint)
       #expect(!bare.text.isEmpty)
     }

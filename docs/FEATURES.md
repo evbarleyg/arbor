@@ -6,7 +6,7 @@ A.. items are Arbor-only. Levels are explained in `collab/README.md`.
 
 **TrellisWM parity: 39 of 52 reference items shipped (75%), 15 verified on real windows.**
 
-Levels: verified 18, tested 90, partial 7, planned 7, missing 1, not-planned 3.
+Levels: verified 18, tested 91, partial 7, planned 7, missing 1, not-planned 3.
 
 Real-window evidence: mac-shell: scripts/mac-shell/proof.sh at ab40b20, macOS 26.6.2, 2026-10-14T06:48Z.
 
@@ -125,6 +125,7 @@ Real-window evidence: mac-shell: scripts/mac-shell/proof.sh at ab40b20, macOS 26
 | A223 | Rotate and mirror a group |  | ⌃⌥R / ⌃⌥⇧R; `rotate` turns the focused window's row into a column, and again turns it back; `mirror` reverses it | tested | tests 14/14 | [F22](features/F22-keyboard-tiling-tools.md) |
 | A224 | Send a window to another display |  | `move-to-display <next\|previous\|n> [window]`: docked stays docked (at the facing edge of the view there), floating stays floating; focus goes along | tested | tests 18/18 | [F22](features/F22-keyboard-tiling-tools.md) |
 | A225 | Focus another display |  | `focus-display <next\|previous\|n>` focuses that display's last window; shortcuts follow the keyboard there (F56), the pointer stays (IDEAS I4) | tested | tests 5/5 | [F22](features/F22-keyboard-tiling-tools.md) |
+| A226 | Never fights macOS's own tiling |  | With macOS's tiling on, as a Mac comes, a window let go at the very edge of the screen, in the menu bar or with ⌥ held is left to macOS: no second preview, no docking, one move. A few points further in, and everywhere once the switches are off, Arbor docks. Real drags at macOS's defaults: `make e2e-drag` | tested | tests 24/24 | [F42](features/F42-setup-check.md) |
 | A41 | Home: everything on every display |  | ⌃⌥0; `home` | tested | tests 2/2 | [F40](features/F40-pause.md) |
 | A42 | The frame shortcut pressed again returns |  | ⌃⌥↩ twice; `zoom <id>` stays idempotent | tested | tests 3/3 | [F01](features/F01-dock-and-zoom.md) |
 | A43 | Windows that cannot grow sit in the middle of their slot |  | Calculator, System Settings; not moved again while slot and frame hold | tested | tests 3/3 | [F01](features/F01-dock-and-zoom.md) |

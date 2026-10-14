@@ -81,9 +81,11 @@ macOS has features of its own that want the same screen edges and the same click
 | Switch | Set it to | Otherwise |
 |---|---|---|
 | Click wallpaper to reveal desktop | **Only in Stage Manager** | One click on the Desktop, or in a gap between docked windows, sweeps every window off to the sides. It looks as if Arbor lost them. A second click brings them back |
-| Drag windows to screen edges to tile | off | Both macOS and Arbor react to the same drag |
-| Drag windows to menu bar to fill screen | off | The same, at the top edge |
-| Hold ⌥ key while dragging windows to tile | off | macOS's tiling preview appears while ⌥ is down |
+| Drag windows to screen edges to tile | off | Pushed against the left or right edge of the screen, the window is macOS's, which gives it half the screen. Arbor docks it only if you let go a few points short of the edge |
+| Drag windows to menu bar to fill screen | off | The same at the top: in the menu bar macOS fills the screen with it; just under the menu bar Arbor docks it |
+| Hold ⌥ key while dragging windows to tile | off | While ⌥ is down the window is macOS's wherever you let go |
+
+**Arbor never fights macOS over a window.** While these three are on, Arbor stands aside wherever macOS acts: it shows no preview there, docks nothing, and leaves the window floating where macOS puts it. So there is one preview at a time, and what it shows is what happens. The first few times, a line on screen says who took the window. With the switches off, every edge is Arbor's to its last point.
 
 Quit other window managers (Rectangle, Magnet, Amethyst and others use the same ⌃⌥ keys), and turn Stage Manager off.
 
@@ -351,7 +353,7 @@ Arrange the windows by hand once, ask for the line, and bind it to a shortcut: `
 | **Only ⌃⌥Space does nothing**, or ⌃⌥Space no longer switches keyboards | With several keyboards or input methods set up, macOS uses the same keys for "Select next source in Input menu", and only one of the two gets them (on the one Mac where it was measured, Arbor) | ⌃⌥0 shows everything too. Free the key on either side: System Settings → Keyboard → Keyboard Shortcuts → Input Sources, or `arborctl unbind ctrl+opt+space` |
 | **Show Everything springs back** when the keys come up | They were held for a second or more, or the pointer moved meanwhile, which is a peek: letting go returns to the outlined view | Let go within a second with the pointer at rest, or use ⌃⌥0, which never peeks. `"peek": false` in `settings.json` turns peeking off |
 | **A beep** | The shortcut has nothing to do here, and `messages` is "off" | Set `messages` to "helpful" and Arbor says why on screen; or ask `arborctl` with the same command: `arborctl in` → "nothing is docked yet: drag a window to a screen edge…" |
-| **Two previews fight** when dragging to an edge | macOS's own tiling | The three switches in section 2 |
+| **A window pushed against the edge takes half the screen**, or all of it at the top, and is not docked | macOS's own tiling took it, and Arbor stood aside | Let go a few points short of the edge, or just under the menu bar. Or switch off the three switches in section 2, and every edge is Arbor's |
 | **A window shows as a coloured tile** with its icon | Its place is too small for it, or its app refused to shrink that far | Arbor has already moved the gaps as far as the Desktop and the neighbours could spare. Click the tile to zoom in on it. Give it more room by dragging a gap. Once there is room, Arbor asks the window again, out of view, and gives it the place if it fits |
 | **An app keeps moving its own windows**, or looks wrong when docked | Some apps insist | Don't Arrange "App" in the menu |
 | **The menu shows ⌃⌥Ü, the documentation ⌃⌥[** | A letter, digit or sign is the key that types it on your keyboard layout. What your layout cannot type on its own stays where a US keyboard has it, and the menu shows what is printed on that key | Trust the menu and `arborctl bindings`. To move it, bind the command to a key you like, written as your keyboard types it: `"ctrl+opt+ö": "back"`; `"ctrl+opt+ü": null` frees the old one |
@@ -374,7 +376,6 @@ Being built or waiting to be merged as this is written. When one lands, its sect
 | Motion with the windows' own contents | With Screen Recording permission windows will keep their contents while they move. Not yet: wait for the release notes to say it has been seen on a Mac |
 | A later start shows everything | Today a later start also goes back to the view you had, so windows can go out of view at once. It will end showing everything; ⌃⌥[ will go to where the view was |
 | Tiles say which window they are | A tile will show the window's title under the icon, so that two windows of one app can be told apart (`tileStyle`, which will ship as `name`) |
-| Standing aside for macOS's own tiling | Where macOS reacts to a drag (the screen's edges, the menu bar), Arbor will leave the drag to it, so the switches in section 2 become advice and no longer a condition |
 | Tab groups | Drop a window on the middle of another: they share a place under a strip of tabs; ⌃⌥⇥ switches |
 | Presets | Set the table with one command |
 | Carry a window with the keyboard (⌃⌥⌘Space) | Everything a drag can do, from the keys: put a window under one other window, make a tab group |

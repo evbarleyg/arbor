@@ -186,6 +186,8 @@ public enum HeadsUpHint: String, Sendable, CaseIterable {
   case outOfView
   case tile
   case docked
+  /// A window was let go where macOS itself tiles, and Arbor stood aside (`MacTiling`).
+  case leftToMacOS
 
   /// How often each is shown before Arbor takes it as read. More than once, because a line that fades
   /// after a few seconds is easily missed the first time.
@@ -206,6 +208,10 @@ public enum HeadsUpHint: String, Sendable, CaseIterable {
         kind: .hint, text: "Too small to show: click the tile to zoom in", hint: shortcut(.find(nil)).map { "\($0) goes there too" })
     case .docked:
       return HeadsUpModel(kind: .hint, text: "Docked", hint: shortcut(.zoom(nil)).map { "\($0) frames it" })
+    case .leftToMacOS:
+      // The way out is no shortcut, so it is said whatever the keys are.
+      return HeadsUpModel(
+        kind: .hint, text: "macOS tiles windows let go here, so Arbor stood aside", hint: "Check Setup… in the menu")
     }
   }
 }

@@ -213,13 +213,22 @@ extension World {
     let point = onScreen(target)
     system.cursor = point
     switch held {
-    case .title(let window, let grip, let moved, let clicks):
+    case .title(let window, var grip, let moved, let clicks):
       guard var frame = system.frame(of: window) else { return }
+      // Dragged off a tile of macOS's, it has its own size again, with the pointer as far along its title bar as before.
+      if !moved, let size = system.takeSizeBeforeTile(of: window) {
+        grip.width *= size.width / frame.width
+        frame.size = size
+      }
       // The window server does not let a title bar go under the menu bar.
       frame.origin = CGPoint(x: point.x - grip.width, y: max(point.y - grip.height, display.visibleFrame.minY))
       // As the Accessibility layer does: the first move with the button down is what tells it that a drag
       // began.
       if !moved {
+        let isOn = World.tilingSettings.map { name in
+          file(name).map { String(decoding: $0, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines) } != "0"
+        }
+        system.tiling = MacTiling(screenEdges: isOn[0], menuBar: isOn[1], optionKey: isOn[2])
         system.events?.dragBegan(window, at: point)
         held = .title(window, grip: grip, moved: true, clicks: clicks)
       }
@@ -275,7 +284,9 @@ extension World {
     switch released {
     case .title(let window, _, let moved, let clicks):
       if moved {
+        let letGo = system.frame(of: window)
         system.events?.dragEnded(window, at: point)
+        if let letGo { system.letMacOSTile(window, letGoAt: letGo) }
       } else if clicks == 2 {
         zoom(window)
       }

@@ -1079,6 +1079,8 @@ private final class ReplayWindowSystem: WindowSystem {
   func windowsFrontToBack() -> [WindowID] { replayer?.answer(read: "windowsFrontToBack") ?? fake?.windowsFrontToBack() ?? [] }
   func stackedWindows() -> [StackedWindow] { replayer?.answer(read: "stackedWindows") ?? fake?.stackedWindows() ?? [] }
   func modifierKeysDown() -> KeyChord.Modifiers { replayer?.answer(read: "modifierKeysDown") ?? fake?.modifierKeysDown() ?? [] }
+  /// A trace without the answer was recorded by an Arbor that did not ask, and stood aside for nobody.
+  func macTiling() -> MacTiling { replayer?.answer(read: "macTiling") ?? .off }
   func openApplication(_ app: String) -> Bool {
     replayer?.answer(call: "openApplication", [app])?.decoded() ?? fake?.openApplication(app) ?? false
   }

@@ -56,7 +56,14 @@ public final class FakeWindowSystem: WindowSystem {
       keyboardOrder.insert(focused, at: 0)
     }
   }
-  public var cursor: CGPoint = CGPoint(x: 720, y: 450) { didSet { pointerUsedAt = clock() } }
+  public var cursor: CGPoint = CGPoint(x: 720, y: 450) {
+    didSet {
+      pointerUsedAt = clock()
+      if macClaim(at: cursor) != .menuBar { inMenuBarSince = nil } else if inMenuBarSince == nil { inMenuBarSince = clock() }
+    }
+  }
+  /// Since when the pointer has been where macOS fills the screen, which it does only for a pointer that has rested there.
+  private var inMenuBarSince: Double?
   public var mouseDown = false
   /// The window being resized by its edges until the mouse is released.
   public internal(set) var resizing: WindowID?
@@ -114,6 +121,11 @@ public final class FakeWindowSystem: WindowSystem {
   private var pointerUsedAt = 0.0
   private var keyReleasedAt = -Double.infinity
   private var keyPresses: UInt32 = 0
+  /// macOS's own tiling of dragged windows, which `endDrag` carries out as macOS does. On, as a Mac comes: what holds only with
+  /// the switches off does not hold for most people.
+  public var tiling = MacTiling.on
+  /// The sizes windows had before macOS tiled them, which it gives back when they are dragged off their tiles.
+  private var sizesBeforeTiles: [WindowID: CGSize] = [:]
   /// The modifier keys that are down. `hold` and `letGo` keep it; set it to let go of ⌃⌥ before the key.
   public var heldModifiers: KeyChord.Modifiers = []
   private var heldKeys: Set<KeyChord.Key> = []
@@ -337,6 +349,7 @@ public final class FakeWindowSystem: WindowSystem {
   public func bringInStrayDialogs(ofApp bundleID: String?) { strayDialogs.removeAll { $0 == bundleID } }
   public func strayDialogsWaiting() -> Int { strayDialogs.count }
   public func modifierKeysDown() -> KeyChord.Modifiers { heldModifiers }
+  public func macTiling() -> MacTiling { tiling }
 
   public func inputActivity() -> InputActivity {
     InputActivity(
@@ -859,6 +872,8 @@ extension FakeWindowSystem {
     events?.windowChanged(windows[window]!.snapshot, userInitiated: true)
     events?.dragMoved(window, to: point)
     mouseDown = false
+    // macOS sees every release.
+    if let letGo = windows[window]?.snapshot.frame { letMacOSTile(window, letGoAt: letGo) }
     events?.dragCancelled(window)
   }
 }
@@ -954,13 +969,20 @@ extension FakeWindowSystem {
   /// Presses the mouse on `window`'s title bar (10 points below its top, centred) and starts
   /// dragging it with the pointer at `point`, or where it took hold.
   public func beginDrag(_ window: WindowID, at point: CGPoint? = nil) {
-    guard let start = windows[window]?.snapshot.frame else { return }
+    guard var start = windows[window]?.snapshot.frame else { return }
+    let ownSize = takeSizeBeforeTile(of: window)
+    if let ownSize {
+      start = CGRect(x: (start.midX - ownSize.width / 2).rounded(), y: start.minY, width: ownSize.width, height: ownSize.height)
+      windows[window]?.snapshot.frame = start
+    }
     let grab = CGPoint(x: start.midX, y: start.minY + 10)
     inHand = (window, start, grab)
     mouseDown = true
     events?.pointerPressed()
     follow(point ?? grab)
     events?.dragBegan(window, at: point ?? grab)
+    // Its app reports the size it has again, a moment after the window server has shown that it is being dragged.
+    if ownSize != nil, let snapshot = windows[window]?.snapshot { events?.windowChanged(snapshot, userInitiated: true) }
   }
 
   /// Moves the pointer, and the dragged window with it, to `point` and rests there for `seconds`.
@@ -989,7 +1011,72 @@ extension FakeWindowSystem {
     mouseDown = false
     guard let window = inHand?.window else { return }
     inHand = nil
+    let letGo = windows[window]?.snapshot.frame
     events?.dragEnded(window, at: cursor)
+    if let letGo { letMacOSTile(window, letGoAt: letGo) }
+  }
+
+  /// Where macOS puts a window that is let go with the pointer at `point`, or nil where it leaves it alone. The
+  /// halves, the quarters and the whole of the visible frame, where they were seen on a Mac (`MacTiling`).
+  public func macTile(at point: CGPoint) -> CGRect? {
+    guard let display = displayList.first(where: { $0.frame.contains(point) }), let claim = macClaim(at: point) else {
+      return nil
+    }
+    let (frame, visible) = (display.frame, display.visibleFrame)
+    guard claim != .menuBar else { return visible }
+    var tile = visible
+    tile.size.width = visible.width / 2
+    if point.x >= visible.midX { tile.origin.x = visible.midX }
+    guard claim == .side else { return tile }
+    if point.y < visible.minY + 1 {
+      tile.size.height = visible.height / 2
+    } else if point.y >= frame.maxY - 1 {
+      tile.size.height = visible.height / 2
+      tile.origin.y = visible.midY
+    }
+    return tile
+  }
+
+  private func macClaim(at point: CGPoint) -> MacTiling.Claim? {
+    guard let display = displayList.first(where: { $0.frame.contains(point) }) else { return nil }
+    return tiling.claim(
+      onWindowLetGoAt: point, on: display.frame, visibleFrame: display.visibleFrame,
+      optionHeld: heldModifiers.contains(.option))
+  }
+
+  /// The size macOS gives back to a window that is dragged off the tile it put it in, once. Nil if it is in none.
+  public func takeSizeBeforeTile(of window: WindowID) -> CGSize? { sizesBeforeTiles.removeValue(forKey: window) }
+
+  /// What macOS does about a window that had the frame `start` when it was let go with the pointer where it is now. As seen on
+  /// a Mac: Arbor hears of the release first and does what it does. Then macOS grows the window from where it was let go
+  /// to the tile, over a third of a second, whatever has become of it meanwhile, and its app reports every step.
+  ///
+  /// Thrown into the menu bar and let go at once, the window is left alone (`MacTiling.menuBarRest`); at the sides macOS waits for
+  /// nothing. A window that cannot take the tile's size keeps the nearest it can: one too small lies against the side of the
+  /// screen, or in the middle of a screen it should have filled, half way up; one too large begins where the tile does.
+  /// ⌥ means nothing for a window of a fixed size.
+  public func letMacOSTile(_ window: WindowID, letGoAt start: CGRect) {
+    guard var tile = macTile(at: cursor), let claim = macClaim(at: cursor), let fake = windows[window] else { return }
+    if claim == .menuBar, clock() - (inMenuBarSince ?? clock()) < MacTiling.menuBarRest { return }
+    if claim == .optionKey, fake.maximumSize == fake.minimumSize { return }
+    let largest = fake.maximumSize ?? tile.size
+    let size = CGSize(
+      width: max(min(tile.width, largest.width), fake.minimumSize.width),
+      height: max(min(tile.height, largest.height), fake.minimumSize.height))
+    if size.width < tile.width {
+      tile.origin.x = claim == .menuBar ? (tile.midX - size.width / 2).rounded() : tile.minX > start.midX ? tile.maxX - size.width : tile.minX
+    }
+    if size.height < tile.height { tile.origin.y = (tile.midY - size.height / 2).rounded() }
+    tile.size = size
+    sizesBeforeTiles[window] = start.size
+    let halfway = CGRect(
+      x: (start.minX + tile.minX) / 2, y: (start.minY + tile.minY) / 2, width: (start.width + tile.width) / 2,
+      height: (start.height + tile.height) / 2
+    ).integral
+    for step in [halfway, tile] {
+      passTime?(0.15)
+      userMove(window, to: step)
+    }
   }
 
   /// The button comes up and nobody sees it, until the AX layer finds it up and calls the drag off.
@@ -997,6 +1084,8 @@ extension FakeWindowSystem {
     mouseDown = false
     guard let window = inHand?.window else { return }
     inHand = nil
+    // macOS sees every release.
+    if let letGo = windows[window]?.snapshot.frame { letMacOSTile(window, letGoAt: letGo) }
     events?.dragCancelled(window)
   }
 

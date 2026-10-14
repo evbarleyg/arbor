@@ -366,6 +366,23 @@ on release) every target is "float", even the window's own slot. During a mouse
 event `AXWindowSystem` answers with that event's own flags: people let go of key
 and button together, and the key can be up by the time the mouse-up arrives.
 
+**Where macOS tiles, Arbor stands aside.** macOS 15 and later tile a dragged window themselves, a Mac comes with that
+switched on, and macOS asks nobody. `WindowSystem.macTiling()` says which of its three switches are on; it is asked
+when a drag begins and kept in the session. `MacTiling.claim(onWindowLetGoAt:…)` (ArborCore, with the measurements) says
+whether the pointer is where macOS acts, and why: the first and the last point of the display's width, the menu bar, anywhere
+with ⌥ held. `hover(of:)` asks that before anything else and answers `.float` with `leftToMacOS` set: no preview, no
+docking, and neither `drop(of:…)` nor `soleFloatDropped` gives the window a frame, so that a docked window leaves the
+arrangement without the size Arbor would otherwise give it back. From then on it is a floating window that something else
+moves, which `windowChanged` follows as always. Half a second later, if macOS has moved it, a hint says who took it
+(`HeadsUpHint.leftToMacOS`); macOS does not always: thrown into the menu bar and let go at once, the window stays as it is.
+A release that Arbor never saw ends the same way at an edge or in the menu bar (`dragCancelled`), because macOS saw it; a drag
+that ends with the button still down (a pause, a quit) does not. Dragged off its tile, a window gets its earlier size
+back from macOS, the one change of size `windowChanged` takes from a window in the hand. One point decides, so
+`AXWindowSystem.cursorLocation()` answers with the event's own place while a press or a release is handled.
+`FakeWindowSystem.tiling`, which is on as on a Mac that nobody has changed, makes the fake tile as a Mac was seen to: after
+Arbor has heard of the release, step by step, whatever Arbor made of the window meanwhile. That is what turns a fight
+into a failing test, in every test, random walk and scenario that lets go of a window there.
+
 Every drag ends in `endDrag(on:)`, whether the mouse came up (`dragEnded`) or
 the release will never come (`cancelDrag()`: the window closed, Arbor is
 quitting or pausing, another drag began, the release was lost). `endDrag` cancels

@@ -47,6 +47,25 @@ import Testing
     #expect(other.controller.pageToWelcomeOn() == .firstSteps)
   }
 
+  /// A Mac comes with macOS's own tiling and the wallpaper click switched on. A newcomer hears of it before anything is
+  /// arranged: nothing has moved by then, and nothing moves until they dock a window.
+  @Test func onAMacAsItComesTheFirstThingShownIsWhatMacOSWantsForItself() throws {
+    var facts = Self.healthy
+    facts.switches = MacSwitch.inTheWay(macOS: 26) { _ in nil }
+    let h = makeHarness(facts: facts)
+    let windows = [h.system.open(app: "Safari"), h.system.open(app: "Mail")]
+    let before = windows.map { h.frame($0) }
+    h.start()
+    h.scheduler.advance(by: 5)
+    #expect(h.controller.pageToWelcomeOn() == .permissions)
+    let row = try #require(h.controller.onboardingModel(facts).row(.desktopAndDock))
+    #expect(row.state == .recommended)
+    for tiling in [MacSwitch.screenEdges, .menuBar, .optionKey] { #expect(row.points.contains(tiling.advice)) }
+    #expect(windows.map { h.frame($0) } == before)
+    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
+    #expect(windows.allSatisfy { h.workspace.isFloating($0) })
+  }
+
   /// Whoever used Arbor before there was a welcome window has not seen it, and loses nothing by it.
   @Test func anOlderStateFileCountsAsNotWelcomedAndKeepsItsArrangement() throws {
     let before = Harness()

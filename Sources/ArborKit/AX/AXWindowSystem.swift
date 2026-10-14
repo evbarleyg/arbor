@@ -37,6 +37,9 @@ public final class AXWindowSystem: WindowSystem {
   private var resizingWindow: WindowID?
   /// The modifier keys held when the mouse event being handled happened; nil between events.
   private var eventModifiers: NSEvent.ModifierFlags?
+  /// Where the button went down or came up, while that event is being handled. A hand recoils, and Arbor can be some way behind:
+  /// one point decides whether a window is let go at the very edge of the display, where it is macOS's (`MacTiling`).
+  private var eventLocation: CGPoint?
   private var running = false
   /// Numbers the drags and resizes, so that the check on one does not outlive it.
   private var grabNumber = 0
@@ -152,7 +155,8 @@ public final class AXWindowSystem: WindowSystem {
       [weak self] event in
       let type = event.type
       let modifiers = event.modifierFlags
-      MainActor.assumeIsolated { self?.handleMouse(type, modifiers: modifiers) }
+      let location = event.cgEvent?.location
+      MainActor.assumeIsolated { self?.handleMouse(type, modifiers: modifiers, at: location) }
     }
     // Global monitors do not see events that go to Arbor's own panels (seams, tiles, the menu).
     localMouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] event in
@@ -342,7 +346,7 @@ public final class AXWindowSystem: WindowSystem {
   }
 
   public func cursorLocation() -> CGPoint {
-    ScreenGeometry.global(fromAppKit: NSEvent.mouseLocation)
+    eventLocation ?? ScreenGeometry.global(fromAppKit: NSEvent.mouseLocation)
   }
 
   public func isMouseButtonDown() -> Bool {
@@ -366,6 +370,8 @@ public final class AXWindowSystem: WindowSystem {
   public func unhideApp(pid: Int32) {
     NSRunningApplication(processIdentifier: pid)?.unhide()
   }
+
+  public func macTiling() -> MacTiling { MacFacts.tiling }
 
   public func modifierKeysDown() -> KeyChord.Modifiers {
     // People let go of the key and the button together, and by the time Arbor hears of the
@@ -1147,9 +1153,14 @@ public final class AXWindowSystem: WindowSystem {
   /// How far outside a window's frame a press still belongs to it: macOS's resize area.
   private static let reach: CGFloat = 4
 
-  private func handleMouse(_ type: NSEvent.EventType, modifiers: NSEvent.ModifierFlags) {
+  private func handleMouse(_ type: NSEvent.EventType, modifiers: NSEvent.ModifierFlags, at location: CGPoint?) {
     eventModifiers = modifiers
-    defer { eventModifiers = nil }
+    // Not for movements: of those the newest place is the one to show a preview for.
+    if type == .leftMouseDown || type == .leftMouseUp { eventLocation = location }
+    defer {
+      eventModifiers = nil
+      eventLocation = nil
+    }
     if let recorder, recorder.isRecording {
       switch type {
       case .leftMouseDown: recorder.raw("leftMouseDown \(traceText(cursorLocation()))")

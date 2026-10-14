@@ -43,7 +43,7 @@ that is replayed on every platform, or a step on real windows (`e2e:`). CI runs 
 | [missing-report](#missing-report) | 34 | 6 | 12 | 6 | 3 | 13 | 20 | 2 | 1 | 11 | 5 |
 | [extra-report](#extra-report) | 7 | 0 | 1 | 4 | 0 | 2 | 5 | 0 | 0 | 2 | 0 |
 | [late-or-partial-answer](#late-or-partial-answer) | 36 | 8 | 10 | 11 | 5 | 10 | 26 | 0 | 1 | 9 | 8 |
-| [second-actor](#second-actor) | 35 | 6 | 5 | 12 | 13 | 5 | 20 | 0 | 2 | 13 | 9 |
+| [second-actor](#second-actor) | 35 | 6 | 6 | 12 | 12 | 5 | 20 | 0 | 2 | 13 | 8 |
 | [geometry](#geometry) | 25 | 0 | 6 | 12 | 5 | 2 | 14 | 1 | 2 | 8 | 5 |
 | [identity](#identity) | 20 | 4 | 6 | 5 | 1 | 8 | 11 | 1 | 0 | 8 | 4 |
 | [permissions](#permissions) | 16 | 6 | 5 | 3 | 2 | 6 | 10 | 2 | 1 | 3 | 0 |
@@ -51,7 +51,7 @@ that is replayed on every platform, or a step on real windows (`e2e:`). CI runs 
 | [input](#input) | 46 | 5 | 4 | 11 | 9 | 22 | 19 | 6 | 4 | 17 | 6 |
 | [looks](#looks) | 13 | 0 | 0 | 0 | 0 | 13 | 1 | 2 | 2 | 8 | 2 |
 | [toolchain](#toolchain) | 32 | 1 | 0 | 1 | 3 | 28 | 21 | 1 | 0 | 10 | 2 |
-| **all** | 310 | 45 | 60 | 82 | 48 | 120 | 177 | 21 | 13 | 99 | 44 |
+| **all** | 310 | 45 | 61 | 82 | 47 | 120 | 177 | 21 | 13 | 99 | 43 |
 
 **Where the difference bit**
 
@@ -93,7 +93,6 @@ A fault that is known and open.
 | [the-second-click-of-a-double-click-lands-in-the-window-just-framed](#the-second-click-of-a-double-click-lands-in-the-window-just-framed) | 2 | below the seam | partly | not guarded |
 | [the-tile-is-remembered-as-the-windows-own-size](#the-tile-is-remembered-as-the-windows-own-size) | 2 | controller | no | not guarded |
 | [twins-and-displays-without-a-uuid-share-one-name](#twins-and-displays-without-a-uuid-share-one-name) | 2 | at the seam | no | not guarded |
-| [macos-tiles-over-arbors-slot-three-moves](#macos-tiles-over-arbors-slot-three-moves) | 2 | at the seam | no | guarded without a mac |
 | [nobody-has-the-keyboard-also-means-a-launcher-has-it](#nobody-has-the-keyboard-also-means-a-launcher-has-it) | 2 | at the seam | partly | guarded without a mac |
 | [open-says-yes-to-any-name](#open-says-yes-to-any-name) | 2 | at the seam | partly | guarded without a mac |
 | [voiceover-and-other-window-managers-use-control-option-too](#voiceover-and-other-window-managers-use-control-option-too) | 2 | below the seam | cannot | guarded without a mac |
@@ -145,7 +144,6 @@ So no test on Linux can meet it. (Those they play partly are not listed: see eac
 | [a-rotation-rides-along-with-a-pinch](#a-rotation-rides-along-with-a-pinch) | 2 | controller | no | guarded without a mac |
 | [a-window-macos-tiled-gets-its-old-size-back-in-the-hand](#a-window-macos-tiled-gets-its-old-size-back-in-the-hand) | 2 | at the seam | no | guarded without a mac |
 | [macos-leaves-out-a-menu-bar-item-that-does-not-fit](#macos-leaves-out-a-menu-bar-item-that-does-not-fit) | 2 | at the seam | no | guarded without a mac |
-| [macos-tiles-over-arbors-slot-three-moves](#macos-tiles-over-arbors-slot-three-moves) | 2 | at the seam | no | guarded without a mac |
 
 ## order-of-reports
 
@@ -1530,10 +1528,10 @@ A second actor: macOS, an app or another tool moves things too.
 - **Expected:** A window dragged to a screen edge is Arbor's to dock: after the drop Arbor sets one frame and the window stays there. The stand-ins and the drag script knew no other actor, and the committed real-pointer evidence had been recorded with macOS's tiling switched off.
 - **Happened:** macOS 15 and later tile such a window themselves (`EnableTilingByEdgeDrag`, `EnableTopTilingByEdgeDrag`; unset means on). On a 1024×768 display a window let go at x 0, at x 1023 or in the menu bar moved three times: into Arbor's slot (12,43 494×650), from 7 ms later into macOS's tile (-1,31 512×674, reached 0.30 to 0.34 s after the release), and back into the slot after 0.61 to 1.22 s. It happened at all 25 such drops (21 to 26 reports each, against 3 or 4 within 35 ms one point further in); the log said `did not stay where it was put` for only 15. Arbor only advises switching the settings off; a cure that stands aside where macOS tiles is under way.
 - **Found by:** The first run of the drag script in CI on a hosted Mac (a drag towards the top ended with the window filling the display), then three probes of real title-bar drags on hosted Macs with a watcher of Accessibility notifications beside them.
-- **Stand-ins play it:** **no**
-- **Guard:** `test: desktopAndDockSettingsCompeteWithArbor`; `test: theSwitchesAreReadFromTheWindowManagersDefaults`; `e2e: the window ends in Arbor's slot` (by hand)
-- **Arbor copes:** **not yet**
-- **Read in:** `scripts/mac-shell/lib.sh`, `docs/GUIDE.md`, `Sources/arbor-fakemac/main.swift`, `Sources/ArborCore/SystemFacts.swift`, `collab/evidence/gestures-latest.txt`
+- **Stand-ins play it:** yes (`FakeWindowSystem.tiling`, `FakeWindowSystem.letMacOSTile`)
+- **Guard:** `test: desktopAndDockSettingsCompeteWithArbor`; `test: theSwitchesAreReadFromTheWindowManagersDefaults`; `test: aFloatingWindowLetGoWhereMacOSTilesIsLeftToMacOS`; `test: aDockedWindowLetGoThereLeavesTheArrangementAndIsNotTouched`; `test: macOSShowedItsPreviewHere`; `e2e: Arbor shows no preview beside macOS's` (on CI's Macs); `e2e: macOS gives it its tile` (on CI's Macs)
+- **Arbor copes:** MacTiling.claim says where macOS takes a window that is let go; there Arbor shows no preview, docks nothing and sets no frame
+- **Read in:** `scripts/mac-shell/lib.sh`, `docs/GUIDE.md`, `Sources/arbor-fakemac/main.swift`, `Sources/ArborCore/SystemFacts.swift`, `Sources/ArborCore/MacTiling.swift`, `collab/evidence/gestures-latest.txt`
 
 ### new-windows-take-the-size-of-the-window-the-app-saw-last
 

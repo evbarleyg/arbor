@@ -256,6 +256,14 @@ extension Controller {
     return HeadsUpFacts(docked: docked.count, outOfView: outside + floatingAway, tiles: tiles)
   }
 
+  /// A teaching moment that is an event and no change of the facts. Shown as often as the others.
+  func teach(_ hint: HeadsUpHint, on display: DisplayID) {
+    guard headsUp.source == nil, headsUp.trying == 0, peeking == nil, settings.messageLevel != .off,
+      headsUp.hintsShown[hint.rawValue, default: 0] < HeadsUpHint.timesShown, let facts = facts(on: display)
+    else { return }
+    teach(Moment(hint: hint, display: display, facts: facts))
+  }
+
   private func teach(_ moment: Moment) {
     // Not in front of an audience, and not counted as shown (Controller+Hold.swift).
     guard mayShowUnasked else { return }
