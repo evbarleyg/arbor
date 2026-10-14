@@ -177,7 +177,8 @@ def look_at(run, job, now):
     """One macOS job: its state, how long it waited, and from when to when it held a Mac (`start`, `end`)."""
     asked, started, ended = (when(job.get(key)) for key in ("created_at", "started_at", "completed_at"))
     found = {
-        "job": f"{workflow_of(run)} / {job['name']}",
+        # Of a job that is one of several alike, "shell (a.sh b.sh)", only the name: the title of the run has the rest.
+        "job": f"{workflow_of(run)} / {job['name'].split(' (')[0]}",
         "branch": branch_of(run),
         "mac": next(label for label in job["labels"] if label.lower().startswith("macos")),
         "script": script_of(run),
