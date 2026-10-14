@@ -463,12 +463,10 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
     h.start()
     h.scheduler.advance(by: 5)
     changeWithAppsSpeakingBeforeAnything(h, to: [Self.desk], shifting: CGPoint(x: -1728, y: 323))
-    // Not to the point, and known: the early report also says which DISPLAY the window is on, judged by the displays as
-    // they still were, and 590,429 was on the laptop then. It leaves with the laptop's windows, which keep their places
-    // below the menu bar, and the two bars differ by 8 points. In full view, at the same x.
-    let frame = h.frame(terminal)!
-    #expect(frame.size == CGSize(width: 1164, height: 262) && frame.minX == 590 && abs(frame.minY - 429) <= 8, "\(frame)")
-    #expect(Self.desk.visibleFrame.contains(frame))
+    // The early report also said which DISPLAY the window is on, judged by the displays as they still were, and 590,429 was
+    // on the laptop then: it left with the laptop's windows and ended 8 points up (two menu bars). It is on the
+    // display it is really on.
+    #expect(h.frame(terminal) == CGRect(x: 590, y: 429, width: 1164, height: 262))
   }
 
   /// B16's smallest: the same displays stay, and one corner moves by 300 points. All apps speak, or every other one.
@@ -501,6 +499,86 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
     }
   }
 
+  /// A reviewer's: the lid closes and opens again, the app speaking first both times. At 672 the window was on the LAPTOP as the
+  /// displays still were, joined its workspace, and was fetched back there when the lid opened: whole, on the wrong display.
+  @Test func thereAndBackWithTheAppSpeakingFirst() {
+    let main = DisplaySnapshot(
+      id: DisplayID("main"), frame: CGRect(x: 0, y: 0, width: 1728, height: 1117),
+      visibleFrame: CGRect(x: 0, y: 25, width: 1728, height: 1092), isMain: true)
+    let beside = moved(studio, to: CGPoint(x: 1728, y: 0), isMain: false)
+    let h = Harness(displays: [main, beside])
+    let spot = CGRect(x: 2400, y: 300, width: 600, height: 500)
+    let n = h.system.open(app: "Notes", frame: spot)
+    h.start()
+    h.scheduler.advance(by: 5)
+    changeWithAppsSpeakingBeforeAnything(h, to: [moved(studio, to: .zero, isMain: true)], shifting: CGPoint(x: -1728, y: 0))
+    #expect(h.frame(n) == spot.offsetBy(dx: -1728, dy: 0))
+    changeWithAppsSpeakingBeforeAnything(h, to: [main, beside], shifting: CGPoint(x: 1728, y: 0))
+    #expect(h.frame(n) == spot)
+    #expect(onStudio(h)?.isFloating(n) == true)
+  }
+
+  /// A window really carried to the other display by hand stays there: it is on the display it is really on.
+  @Test func aWindowCarriedToTheOtherDisplayByHandStaysThere() {
+    let h = Harness(displays: [laptop, studio])
+    let n = h.system.open(app: "Notes", frame: CGRect(x: 2000, y: 500, width: 600, height: 400))
+    h.start()
+    let chosen = CGRect(x: 300, y: 200, width: 600, height: 400)
+    h.system.userMove(n, to: chosen)
+    h.scheduler.advance(by: 3)
+    change(h, to: [laptop, moved(studio, to: CGPoint(x: 1440, y: 300), isMain: false)], shifting: .zero)
+    h.run("home")
+    #expect(h.frame(n) == chosen)
+    #expect(h.controller.workspaces[laptop.id]?.isFloating(n) == true)
+  }
+
+  // MARK: A display that moves AND shrinks
+
+  /// The product owner's, 2026-10-14: nobody has touched the window, it is wholly in view, and its display changes side and
+  /// shrinks in one step. macOS takes it along by the corner, to −750,468 on a display now 600 high. Late and never
+  /// ended right: shifted, then fitted. With the app speaking first the place counted as up to date and was kept as it
+  /// was: a quarter of the window showed, and home, show-all, desktop, float-all, relayout and focus all left it.
+  @Test(arguments: ["first", "late", "never"], ["found", "opened", "by hand"])
+  func aDisplayThatChangesSideAndShrinks(order: String, placed: String) {
+    let (opensLater, byHand) = (placed != "found", placed == "by hand")
+    let big = DisplaySnapshot(
+      id: DisplayID("side"), frame: CGRect(x: 1440, y: 0, width: 1920, height: 1080),
+      visibleFrame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), isMain: false)
+    let small = DisplaySnapshot(
+      id: DisplayID("side"), frame: CGRect(x: -800, y: 0, width: 800, height: 600),
+      visibleFrame: CGRect(x: -800, y: 0, width: 800, height: 600), isMain: false)
+    let h = Harness(displays: [laptop, big])
+    if !opensLater { h.system.open(app: "Notes", frame: CGRect(x: 1490, y: 468, width: 700, height: 500)) }
+    h.start()
+    if opensLater { h.system.open(app: "Notes", frame: CGRect(x: 1490, y: 468, width: 700, height: 500)) }
+    let n = h.system.allWindows()[0].id
+    if byHand { h.system.userMove(n, to: CGRect(x: 1490, y: 468, width: 700, height: 500).offsetBy(dx: 10, dy: 0)) }
+    h.scheduler.advance(by: 40)
+    let carried = h.frame(n)!.offsetBy(dx: -2240, dy: 0)
+    switch order {
+    case "first":
+      h.system.userMove(n, to: carried)
+      h.system.setDisplays([laptop, small])
+    case "late":
+      h.system.moveSilently(n, to: carried)
+      let mark = h.system.frameLog.count
+      h.system.setDisplays([laptop, small])
+      h.system.report(n, userInitiated: !h.system.frameLog[mark...].contains { $0.window == n })
+    default:
+      h.system.moveSilently(n, to: carried)
+      h.system.setDisplays([laptop, small])
+    }
+    h.scheduler.advance(by: 3)
+    if order == "first" || placed == "opened" { #expect(small.visibleFrame.contains(h.frame(n)!), "at once: \(h.frame(n)!)") }
+    // The pointer is on that display: the commands are for it.
+    h.system.cursor = CGPoint(x: -400, y: 300)
+    for command in ["home", "relayout", "desktop", "home"] {
+      h.run(command)
+      h.scheduler.advance(by: 3)
+      #expect(small.visibleFrame.contains(h.frame(n)!), "after \(command): \(h.frame(n)!)")
+    }
+  }
+
   // MARK: The release manager's table
 
   /// {the lid opens, the lid closes, a display dragged in System Settings} × {the app speaks first, late, never}, each ending
@@ -513,7 +591,6 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
     let (from, to): ([DisplaySnapshot], [DisplaySnapshot]) =
       play == "opens" ? ([alone], [laptop, beside]) : play == "closes" ? ([laptop, beside], [alone]) : ([laptop, beside], [laptop, dragged])
     let (start, end) = (from.last!.frame.origin, to.last!.frame.origin)
-    let offset = CGPoint(x: end.x - start.x, y: end.y - start.y)
     let h = Harness(displays: from)
     // Far enough in that its new place is on the big display by the old frames as well.
     let place = CGRect(x: 1600, y: 800, width: 600, height: 400)
@@ -534,7 +611,6 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
       h.system.moveSilently(n, to: there)
       h.system.setDisplays(to)
     }
-    _ = offset
     h.scheduler.advance(by: 5)
     for command in ["relayout", "desktop", "pause", "resume", "home"] {
       h.run(command)
