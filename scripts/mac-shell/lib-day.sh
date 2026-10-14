@@ -165,6 +165,8 @@ acted() {
   for word in "$@"; do
     case "$word" in
       moves=docked) word="moves=$DAY_DOCKED_BEFORE,$(docked_ids)" ;;
+      # Nothing would be checked, and it would look like a pass.
+      front= | comes= | drags=) note "finding $DAY_STEP - FAIL the script could not tell which window ${word%=} is about"; continue ;;
     esac
     wants="$wants $word"
   done
