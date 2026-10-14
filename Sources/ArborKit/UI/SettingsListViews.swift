@@ -257,27 +257,27 @@ struct RuleRowView: View {
   }
 
   private var kind: Binding<SettingsPanelModel.RuleKind> {
-    Binding<SettingsPanelModel.RuleKind>(
-      get: { @MainActor in row.kind },
-      set: { @MainActor kind in
+    Binding<SettingsPanelModel.RuleKind>.onMainActor(
+      get: { row.kind },
+      set: { kind in
         commitTitle()
         store.model.setKind(kind, of: row)
       })
   }
 
   private var edge: Binding<ArborCore.Edge> {
-    Binding<ArborCore.Edge>(
-      get: { @MainActor in row.edge ?? .right },
-      set: { @MainActor edge in
+    Binding<ArborCore.Edge>.onMainActor(
+      get: { row.edge ?? .right },
+      set: { edge in
         commitTitle()
         store.model.setEdge(edge, of: row)
       })
   }
 
   private var title: Binding<String> {
-    Binding<String>(
-      get: { @MainActor in typedTitle ?? row.rule.title ?? "" },
-      set: { @MainActor new in typedTitle = new })
+    Binding<String>.onMainActor(
+      get: { typedTitle ?? row.rule.title ?? "" },
+      set: { new in typedTitle = new })
   }
 
   /// Also before anything else is done to the line: buttons and menus do not take the keyboard on a Mac, so the
@@ -389,5 +389,19 @@ struct AppMenu: View {
         Button(app.name) { choose(app) }
       }
     }
+  }
+}
+
+extension Binding {
+  /// A binding whose two closures run on the main actor, like everything else in a view.
+  ///
+  /// Instead of `Binding(get: { @MainActor in … }, set: { @MainActor new in … })` where the binding is wanted, which says the same and which
+  /// Swift 6.3 (Xcode 26.4 to 26.6) crashes on: the initializer takes `@isolated(any)` closures of any `Value`, and that compiler
+  /// dies making the piece between a main-actor closure that takes a `String`, say, and one of those. Here `Value` is still
+  /// any type, so no such piece is made.
+  @MainActor static func onMainActor(
+    get: @escaping @MainActor () -> Value, set: @escaping @MainActor (Value) -> Void
+  ) -> Binding<Value> {
+    Binding(get: get, set: set)
   }
 }
