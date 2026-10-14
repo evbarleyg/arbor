@@ -114,7 +114,10 @@ def audit(state, server, pids):
         if share < 0.9:
             findings.append(f"FAIL {name} is in view for Arbor but only {share:.0%} of it is on a display: {words(real['frame'])}")
         slot = slots.get(window["id"])
-        if slot:
+        if slot and window.get("letBe"):
+            # Arbor knows, and stands aside: macOS zoomed it at a double-click, or its app keeps moving it.
+            findings.append(f"NOTE {name} is let be at {words(real['frame'])}, out of its slot {words(slot)}")
+        elif slot:
             placed[window["id"]] = real["frame"]
             x, y, width, height = real["frame"]
             beyond = max(slot[0] - x, slot[1] - y, x + width - slot[0] - slot[2], y + height - slot[1] - slot[3])

@@ -70,6 +70,8 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
     public var stashed = false
     /// The space a floating window opened over and goes in and out of view with, if not the Desktop (F57).
     public var guestOf: NodeID?
+    /// Docked, and for now not kept in its slot: macOS moved it at a double-click on its title bar, or its app keeps moving it.
+    public var letBe = false
 
     public init(
       id: WindowID, pid: Int32, app: String, bundleID: String?, title: String?, frame: CGRect,

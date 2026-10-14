@@ -152,8 +152,13 @@ extension ChaosRunner {
         }
         guard inPlace else {
           if controller.windowsLeftToTheirApps.contains(window) {
-            // Arbor stops putting back a window that something keeps moving. Not one that was moved once or twice.
-            if fake.movesNotArbors < 3 {
+            // Arbor stops putting back a window that something keeps moving. Not one that was moved once or twice,
+            // unless by macOS at a double-click on its title bar.
+            if controller.windowsLeftWhereADoubleClickPutThem.contains(window) {
+              if fake.doubleClicks == 0 {
+                problems.append(.init("left-alone", "Arbor leaves \(window) out of its slot as after a double-click, and there was none"))
+              }
+            } else if fake.movesNotArbors < 3 {
               problems.append(
                 .init("given-up", "Arbor has given up on \(window), which something other than Arbor moved \(fake.movesNotArbors) times"))
             }
@@ -162,6 +167,9 @@ extension ChaosRunner {
               .init("slot", "\(window) on \(display.id) is at \(actual.brief), its slot is \(slot.brief), and nothing is going to put it back"))
           }
           continue
+        }
+        if actual.approximatelyEquals(slot, tolerance: 1), controller.windowsLeftWhereADoubleClickPutThem.contains(window) {
+          problems.append(.init("left-alone", "\(window) is in its slot, and Arbor would not keep it there: it still lets it be as after a double-click"))
         }
         // A window nudged within the tolerance may lean a few points over a narrow gap.
         if exactly { shown.append((window, actual)) }
