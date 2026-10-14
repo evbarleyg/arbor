@@ -482,6 +482,12 @@ first exit code that is not 0. At most four to a Mac; more are shared out among 
 output lies in `mac-1/`, `mac-2/`, …. A script that is given to several Macs by itself finds in `$MAC_SHELL_SHARE` which part is its own
 (`2/3`: the second of three); `compat.sh` takes every Nth app. All kinds of Mac come out of the same five at a time.
 
+**Whose turn it is.** GitHub hands its Macs out in no particular order: a job has been seen to wait eight minutes while later ones started. So
+`run.sh` keeps the order itself, before it starts the run, where waiting takes nobody's place. `--priority 1` (or `MAC_SHELL_PRIORITY=1`) starts at once: a
+fault on real windows, a merge train, whatever others are blocked by. `2`, the default, holds back while three or more jobs are waiting for a Mac. `3` holds back
+while any is: pictures, features, whatever can wait. Whatever the priority, a branch has at most two jobs running or waiting at a time (`3`: one).
+It says what it is holding back for, and the wait counts towards `MAC_SHELL_TIMEOUT`.
+
 Where branches cannot be deleted, the output branch
 `mac-shell-out/<ref>.<script>` stays on GitHub and the next run of the same script replaces its content.
 Anyone with ordinary credentials can clear them:

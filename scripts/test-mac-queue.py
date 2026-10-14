@@ -202,6 +202,12 @@ and by kind of Mac
 mean wait: 3 min 16 s over 4 jobs, 2 of them still waiting"""
 
 
+def turn(priority, waits, own=0, own_waiting=0, others=0):
+    runs = [run(*[waiting("11:59:00")] * waits, *[running("11:50:00", "11:50:10")] * others, branch="theirs", status="in_progress"),
+            run(*[running("11:50:00", "11:50:10")] * own, *[waiting("11:59:00")] * own_waiting, number=2, branch="mine", status="in_progress")]
+    return queue.hold_back(queue.facts(runs, NOON), priority, "mine")
+
+
 def said(runs, **options):
     return queue.report(queue.facts(runs, NOON, **options), "owner/repo")
 
@@ -255,6 +261,19 @@ SINGLE = [
     ("no alarm, no such line", lambda: "ALARM" in said(FOURTEEN), False),
     ("the whole report", lambda: said(A_QUEUE), THE_REPORT),
     ("the heading of another period", lambda: "THE LAST 90 MINUTES" in said([], minutes=90), True),
+    ("whose turn: nobody waits, nothing of its own", lambda: [turn(n, 0) for n in (1, 2, 3)], ["", "", ""]),
+    ("whose turn: one waits", lambda: [bool(turn(n, 1)) for n in (1, 2, 3)], [False, False, True]),
+    ("whose turn: two wait", lambda: [bool(turn(n, 2)) for n in (1, 2, 3)], [False, False, True]),
+    ("whose turn: three wait", lambda: [bool(turn(n, 3)) for n in (1, 2, 3)], [False, True, True]),
+    ("whose turn: it says why", lambda: turn(2, 3), "3 jobs waiting for a Mac, and this has priority 2"),
+    ("whose turn: one job of its own branch runs", lambda: [bool(turn(n, 0, own=1)) for n in (1, 2, 3)], [False, False, True]),
+    ("whose turn: two of its own, one of them still waiting", lambda: [bool(turn(n, 0, own=1, own_waiting=1)) for n in (1, 2, 3)], [True] * 3),
+    ("whose turn: it says that too", lambda: turn(1, 0, own=2), "2 jobs for mine are running or waiting already"),
+    ("whose turn: five of other branches run, none waits", lambda: [turn(n, 0, others=5) for n in (1, 2, 3)], ["", "", ""]),
+    ("exit code 4 when it is not its turn, and only the reason", lambda: ends_with([run(waiting("00:00:00"))], "--turn", "3", "--for", "mine"),
+     (4, "1 job waiting for a Mac, and this has priority 3\n")),
+    ("exit code 0 when it is, and not a word, however long others have waited", lambda: ends_with([run(waiting("00:00:00"))], "--turn", "1", "--for", "mine"),
+     (0, "")),
     ("lengths of time", lambda: [queue.span(n) for n in (0, 59, 60, 200, 3905)],
      ["0 s", "59 s", "1 min 00 s", "3 min 20 s", "65 min 05 s"]),
     ("the repository in a URL", lambda: [queue.name_in(url) for url in (

@@ -1,7 +1,7 @@
 #!/bin/bash
 # Runs a script from this repository on a real Mac and brings back what it produced. Or several scripts.
 #
-#   scripts/mac-shell/run.sh [--macs N] [--on macos-15] [--bare] <script>… [ref]
+#   scripts/mac-shell/run.sh [--macs N] [--on macos-15] [--bare] [--priority N] <script>… [ref]
 #   scripts/mac-shell/run.sh scripts/mac-shell/shots-demo.sh
 #   scripts/mac-shell/run.sh scripts/mac-shell/shots-F10.sh scripts/mac-shell/shots-F12.sh scripts/mac-shell/shots-F43.sh
 #
@@ -15,6 +15,10 @@
 #               its own, "2/3" on the second of three; only for a script that looks there (compat.sh does).
 #   --on KIND   another of GitHub's Macs than macos-26: macos-15, macos-14 or macos-15-intel. They come out of the same five.
 #   --bare      no toolchain and no build: half a minute saved for a script that only asks the Mac something.
+#   --priority N   GitHub hands its Macs out in no particular order, so the order is kept here, before the run is started: waiting
+#               here costs nobody anything. 1 starts at once: a fault on real windows, a merge train. 2 (the default) waits
+#               while three or more jobs are waiting for a Mac. 3 waits while any is: pictures, features, whatever can wait.
+#               And whatever the priority, it waits while two jobs for <ref> (3: one) are running or waiting already.
 #
 # Starts the "Mac shell" workflow (.github/workflows/mac-shell.yml) for <ref> (a branch; default: the
 # current one, which must be pushed: the Mac runs what GitHub has), waits for it, fetches the branch
@@ -31,6 +35,7 @@
 #
 # Environment: MAC_SHELL_TIMEOUT  seconds to wait for the run (default 2700)
 #              MAC_SHELL_TAIL     lines of output.txt to print (default 40)
+#              MAC_SHELL_PRIORITY as --priority
 #              MAC_SHELL_TAG      another tag (letters, digits, . _ -; at most 40)
 #              MAC_SHELL_WORKFLOW_REF   the branch whose mac-shell.yml runs (default: swarm/trunk if there is one, else main).
 #                                 One for everybody, whatever <ref> is: a run can read only the caches of the branch its workflow is
@@ -39,14 +44,15 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 97
 
-usage="usage: scripts/mac-shell/run.sh [--macs N] [--on macos-15] [--bare] <script>… [ref]"
-macs="" ref="" kind=macos-26 bare=false
+usage="usage: scripts/mac-shell/run.sh [--macs N] [--on macos-15] [--bare] [--priority N] <script>… [ref]"
+macs="" ref="" kind=macos-26 bare=false priority=${MAC_SHELL_PRIORITY:-2}
 scripts=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --macs) macs=${2:?$usage}; shift ;;
     --on) kind=${2:?$usage}; shift ;;
     --bare) bare=true ;;
+    --priority) priority=${2:?$usage}; shift ;;
     -*) echo "$usage" >&2; exit 97 ;;
     *.sh) scripts+=("${1#./}") ;;
     # The one word that is no script, and only in the last place: a script's name with a slip in it must not pass for a branch.
@@ -56,6 +62,7 @@ while [ $# -gt 0 ]; do
 done
 [ ${#scripts[@]} -gt 0 ] || { echo "$usage" >&2; exit 97; }
 case "$macs" in *[!0-9]* | 0) echo "run.sh: --macs takes a number, 1 or more" >&2; exit 97 ;; esac
+case "$priority" in 1 | 2 | 3) ;; *) echo "run.sh: --priority takes 1, 2 or 3" >&2; exit 97 ;; esac
 ref=${ref:-$(git rev-parse --abbrev-ref HEAD)}
 [ "$ref" != HEAD ] || { echo "run.sh: no branch is checked out; name one: run.sh <script> <ref>" >&2; exit 97; }
 limit=${MAC_SHELL_TIMEOUT:-2700}
@@ -109,6 +116,18 @@ name=$(slug "$(basename "$script" .sh)" 16)
 [ ${#scripts[@]} -eq 1 ] || name=$(slug "$name" 13)-x${#scripts[@]}
 [ "$kind" = macos-26 ] || name=$(slug "$name" 9)-${kind#macos-}
 tag=${MAC_SHELL_TAG:-$(slug "$ref" 21).$name}
+
+# Its turn. What cannot be found out does not hold anything up.
+start=$(date +%s)
+told=""
+while :; do
+  why=$(python3 scripts/mac-queue.py --repo "$repo" --turn "$priority" --for "$ref" 2>/dev/null)
+  [ $? -eq 4 ] || break
+  [ $(($(date +%s) - start)) -le "$limit" ] || fail "not started after ${limit}s: $why" 98
+  [ "$why" = "$told" ] || echo "holding back: $why"
+  told=$why
+  sleep "${MAC_SHELL_POLL:-30}"
+done
 
 # The dispatch call does not say which run it started: it is the one newer than the newest so far
 # whose title carries the tag.

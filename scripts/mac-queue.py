@@ -7,6 +7,7 @@ build. A job that finds none free waits, and nothing on the run's page says for 
 before starting many runs, and when a run seems stuck.
 
 Usage: scripts/mac-queue.py [--minutes N] [--alarm N] [--json] [--repo owner/name]
+       scripts/mac-queue.py --turn 1|2|3 --for <branch>      for scripts/mac-shell/run.sh: may a run of that priority start now?
   --minutes N        how far to look back, 60 by default
   --alarm N          the mean wait, in minutes, above which it says ALARM, 5 by default
   --json             the same facts as one JSON object; every length of time in it is in seconds
@@ -19,6 +20,11 @@ leave out the ones still waiting. Mac minutes count only the part of a job that 
 a job that is still running counts up to now.
 
 Exit code 0; 3 with a line that starts with `ALARM:` when that mean is above --alarm; 1 when GitHub did not answer.
+
+--turn prints nothing and exits with 0 when the run may start, or says what it should wait for and exits with 4. GitHub hands its Macs
+out in no particular order (see below), so whoever can wait does so before starting a run, where waiting takes nobody's place:
+priority 1 (a fault on real windows, a merge train) never waits for others, 2 waits while three or more jobs are waiting for a Mac,
+3 while any is. And nobody has more than two jobs for one branch running or waiting at a time (priority 3: one).
 Needs `gh` and a token that may read the repository. It only reads: one request for every hundred runs, and one for
 every run that could have held or wanted a Mac within the period.
 
@@ -65,6 +71,10 @@ AT_ONCE = 8
 # "Mac shell: scripts/mac-shell/shots-F10.sh at feat/x [tag]"; "at feat/x" is missing from the runs of older branches.
 MAC_SHELL = re.compile(r"^Mac shell(?: \([^)]*\))?: (?:scripts/mac-shell/)?(?P<script>.*?)(?: at (?P<ref>\S+))?(?P<tag> \[[^\]]*\])?$")
 ALARMED = 3
+NOT_YET = 4
+# How many jobs may be waiting for a Mac when a run of this priority starts, and how many jobs its branch may have already.
+MAY_WAIT = {1: None, 2: 2, 3: 0}
+OF_ONE_BRANCH = {1: 1, 2: 1, 3: 0}
 
 
 class Unanswered(Exception):
@@ -266,6 +276,16 @@ def facts(runs, now, minutes=60, alarm=5):
     }
 
 
+def hold_back(found, priority, branch):
+    """Why a run of that priority for that branch should not start yet; nothing if it may."""
+    own = sum(1 for job in found["now"] if job["branch"] == branch)
+    if own > OF_ONE_BRANCH[priority]:
+        return f"{count(own)} for {branch} {'is' if own == 1 else 'are'} running or waiting already"
+    if MAY_WAIT[priority] is not None and found["waiting"] > MAY_WAIT[priority]:
+        return f"{count(found['waiting'])} waiting for a Mac, and this has priority {priority}"
+    return ""
+
+
 # Saying it
 
 
@@ -331,15 +351,21 @@ def main():
     parser.add_argument("--alarm", type=float, default=5, help="the mean wait, in minutes, above which it says ALARM")
     parser.add_argument("--json", action="store_true", help="the same facts as one JSON object")
     parser.add_argument("--repo", help="owner/name, instead of what origin points to")
+    parser.add_argument("--turn", type=int, choices=sorted(MAY_WAIT), help="may a run of this priority start now?")
+    parser.add_argument("--for", dest="branch", default="", help="with --turn: the branch the run is for")
     args = parser.parse_args()
 
     try:
         repo = args.repo or repository()
         now = datetime.now(timezone.utc)
-        found = facts(fetch(repo, now, args.minutes), now, args.minutes, args.alarm)
+        found = facts(fetch(repo, now, 1 if args.turn else args.minutes), now, args.minutes, args.alarm)
     except Unanswered as error:
         print(f"mac-queue.py: {error}", file=sys.stderr)
         return 1
+    if args.turn:
+        why = hold_back(found, args.turn, args.branch)
+        print(why, end="\n" if why else "")
+        return NOT_YET if why else 0
     print(json.dumps({"repo": repo, **found}, indent=2) if args.json else report(found, repo))
     return ALARMED if found["alarm"] else 0
 
