@@ -1,0 +1,109 @@
+# mac-shell: scripts/mac-shell/check-switch.sh at e66315f, macOS 26.6.2, 2026-10-14T23:14Z
+built Arbor and the pointer tool in 122s
+
+== two apps: the first has two windows, the other one
+session 1: Arbor pid 6206, test windows 33 34 (pid 6190)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ Arbor manages the other app's window too
+> dock 33 left
+docked w33 at the left edge
+> dock 34 right
+docked w34 at the right edge
+> dock 28 beside 34 bottom
+docked w28 below w34
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          349 43 326 655
+  w28 687 377 325 321      docked focused
+  w33 12 43 325 655        docked
+  w34 687 43 325 322       docked
+
+== a click on a window in view, of an app whose focused window is out of view (1 of 6)
+  ✔ the view is on the column, the keyboard in the other app
+> click 512 204
+  ✔ the window that was clicked has the keyboard
+  ✔ the view did not move
+  ✔ the first app's other window is still out of view
+
+== a click on a window in view, of an app whose focused window is out of view (2 of 6)
+  ✔ the view is on the column, the keyboard in the other app
+> click 512 204
+  ✔ the window that was clicked has the keyboard
+  ✔ the view did not move
+  ✔ the first app's other window is still out of view
+
+== a click on a window in view, of an app whose focused window is out of view (3 of 6)
+  ✔ the view is on the column, the keyboard in the other app
+> click 512 204
+  ✔ the window that was clicked has the keyboard
+  ✔ the view did not move
+  ✔ the first app's other window is still out of view
+
+== a click on a window in view, of an app whose focused window is out of view (4 of 6)
+  ✔ the view is on the column, the keyboard in the other app
+> click 512 204
+  ✔ the window that was clicked has the keyboard
+  ✔ the view did not move
+  ✔ the first app's other window is still out of view
+
+== a click on a window in view, of an app whose focused window is out of view (5 of 6)
+  ✔ the view is on the column, the keyboard in the other app
+> click 512 204
+  ✔ the window that was clicked has the keyboard
+  ✔ the view did not move
+  ✔ the first app's other window is still out of view
+
+== a click on a window in view, of an app whose focused window is out of view (6 of 6)
+  ✔ the view is on the column, the keyboard in the other app
+> click 512 204
+  ✔ the window that was clicked has the keyboard
+  ✔ the view did not move
+  ✔ the first app's other window is still out of view
+
+== ⌘Tab to an app whose focused window is out of view (1 of 6)
+  ✔ the view is on the column, the keyboard in the other app
+> key cmd+tab
+  ✔ the first app's window has the keyboard
+  ✔ and is in view
+
+== ⌘Tab to an app whose focused window is out of view (2 of 6)
+  ✔ the view is on the column, the keyboard in the other app
+> key cmd+tab
+  ✔ the first app's window has the keyboard
+  ✔ and is in view
+
+== ⌘Tab to an app whose focused window is out of view (3 of 6)
+  ✔ the view is on the column, the keyboard in the other app
+> key cmd+tab
+  ✔ the first app's window has the keyboard
+  ✔ and is in view
+
+== ⌘Tab to an app whose focused window is out of view (4 of 6)
+  ✔ the view is on the column, the keyboard in the other app
+> key cmd+tab
+  ✔ the first app's window has the keyboard
+  ✔ and is in view
+
+== ⌘Tab to an app whose focused window is out of view (5 of 6)
+  ✔ the view is on the column, the keyboard in the other app
+> key cmd+tab
+  ✔ the first app's window has the keyboard
+  ✔ and is in view
+
+== ⌘Tab to an app whose focused window is out of view (6 of 6)
+  ✔ the view is on the column, the keyboard in the other app
+> key cmd+tab
+  ✔ the first app's window has the keyboard
+  ✔ and is in view
+
+macOS named the app in front late 3 time(s) in this session
+given up on: 0
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 33 is back on screen after quitting
+  ✔ window 34 is back on screen after quitting
+
+46 passed, 0 failed
+exit code 0
