@@ -1,0 +1,734 @@
+# the checks that failed, each under its step; the whole run follows
+▸ switch to the other app  (the other app activates itself)
+  ✘ the camera moves to show its window — it is in front
+    ↳ 2026-10-14T21:49:50.261Z DEBUG pid 11476 came forward, but pid 10654 is named as the one in front
+  ✘ w256 is in view — 0.0005809128630705395 at (1023,677 241×650)
+
+# arbor-e2e 2026-10-14T21:48Z on macOS 26.6.2, commit 289b61a
+test windows: w211 w212 w213 (pid 10654)
+this Mac: screen locked: no; display asleep: no; screen saver: no; on the console: yes; last input: 482 s ago
+
+▸ start watching events  (watch)
+  ✔ hello arrives at once
+  ✔ hello says that Arbor is running
+  ✔ hello lists the test windows, floating
+display 07230EFA-7A8D-4E37-845C-19CC8737EEF5 visible frame (0,31 1024×674)
+
+▸ dock the first window on the left  (dock 211 left)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w211 is docked
+  ✔ w211 sits at the left edge
+
+▸ dock the second window on the right  (dock 212 right)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w212 sits at the right edge
+  ✔ the Desktop stays between them
+
+▸ dock the third window below the first  (dock 213 beside 211 bottom)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w213 is below w211
+  ✔ w213 shares w211's column
+
+▸ look behind the docked windows  (status)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the backdrop is on screen just above the Desktop's icons
+  ✔ it covers the display's visible frame
+
+▸ frame the first window on its own  (zoom 211)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w211 fills the screen
+  ✔ w212 is out of view
+  ✔ w213 is out of view
+
+▸ go back  (back)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w211 is back in view
+  ✔ w212 is back in view
+  ✔ w213 is back in view
+  ✔ w211 is back in its slot
+
+▸ resize the first window by command  (resize 211 right 100)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w211 is 100 points wider
+
+▸ resize by an absurd amount  (resize 211 right 1e300)
+  ✔ the command is refused
+  ✔ Arbor is still running
+
+▸ float the second window  (float 212)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w212 is floating
+  ✔ the Desktop reaches the right edge
+  ✔ w212 has its old size back
+  ✔ all of it is on the display
+
+▸ a window that floats alone takes the Desktop  (reload-settings)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w212 fills the Desktop, (670,43 342×650)
+  ✔ w212 is still floating
+
+▸ without the setting it has its own frame back  (reload-settings)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w212 is back at (670,194 354×348)
+
+▸ move the floating window across two gaps  (the app moves w212 and brings it to the front)
+  ✔ w212 lies across the gap below w211 and the gap beside it
+
+▸ resize under the floating window  (resize 211 right -40)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ two gap handles lie under w212
+  ✔ and none of Arbor's panels over it
+
+▸ arrange everything  (arrange)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ all three are docked
+  ✔ w211 is in view
+  ✔ w212 is in view
+  ✔ w213 is in view
+
+▸ change the gap with a command  (set gap 40)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ windows start 40 points from the edge
+  ✔ only the gap changed in settings.json
+
+▸ replace settings.json as most editors do  (no command)
+  ✔ Arbor uses the new gap
+  ✔ windows match Arbor's layout
+  ✔ windows start 24 points from the edge
+
+▸ write into settings.json in place  (no command)
+  ✔ Arbor uses the new gap
+  ✔ windows match Arbor's layout
+  ✔ windows start 12.0 points from the edge
+
+▸ show the shortcuts on screen  (show-shortcuts)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the panel is on screen
+
+▸ put the shortcuts away  (show-shortcuts)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the panel is gone
+
+▸ arrange by a line of text  (layout 212 | Desktop | (213 / 211))
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w212 is left of the Desktop
+  ✔ w213 is right of the Desktop
+  ✔ w213 is above w211
+  ✔ `layout --ids` prints the same line
+
+▸ arrange by app name, the rest as tabs  (layout "ArborTestWindows" | "ArborTestWindows"*)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ all three are docked
+  ✔ two of them show
+  ✔ the tab behind, w213, is out of view
+
+▸ put the three side by side again  (arrange)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ all three show
+
+▸ show the Desktop  (desktop)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w211 is out of view
+  ✔ w212 is out of view
+  ✔ w213 is out of view
+
+▸ look behind the Desktop  (status)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ there is no backdrop while nothing docked is in view
+
+▸ stop arranging an app  (exclude com.example.second)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ only that list changed in settings.json
+
+▸ arrange it again  (include com.example.second)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ settings.json is as it was, byte for byte
+
+▸ reload a settings file with a typo  (reload-settings)
+  ✔ the reload is refused
+  ✔ the reply says where the typo is
+  ✔ a change is refused meanwhile
+  ✔ the file with the typo is left alone
+  ✔ mended, it loads again
+
+▸ what the watcher heard  (watch)
+  ✔ the Desktop on its own, last
+  ✔ every line is an event
+  ✔ w211 was docked
+  ✔ w212 was docked
+  ✔ w213 was docked
+  ✔ w212 was floated
+  ✔ w211 framed on its own, with a way back
+  ✔ a layout with all three windows in view
+  ✔ a test window getting the keyboard
+  ✔ no window titles, which nobody asked for
+  ✔ still connected
+
+▸ find a window by its title  (find test 2)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w212 is in view
+  ✔ w212 has the keyboard
+
+▸ open Go to…  (find)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the palette is on screen
+  ✔ AppKit says it has the keyboard
+  ✔ Accessibility says so too: what has the keyboard is Arbor's
+  ✔ w212 still counts as focused: Arbor did not become the active app
+
+▸ close Go to…  (find)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the palette has gone
+
+▸ open Go to… once more  (find)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the palette is on screen
+
+▸ another window takes the keyboard  (the app makes w211 key)
+  ✔ the palette closes when the keyboard goes elsewhere
+  ✔ no palette is left behind
+
+▸ send the third window to the Dock  (the app minimizes w213)
+  ✔ Arbor sees it
+
+▸ frame the first window again  (zoom 211)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w212 is out of view
+
+▸ bring the minimised window back  (reveal 213)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w213 is no longer minimised
+  ✔ w213 has its slot, and is not a tile
+  ✔ the windows match Arbor's layout once it is back
+  ✔ w213 is in view
+  ✔ w213 has the keyboard
+
+▸ hide the app  (the app hides itself, as ⌘H does)
+  ✔ Arbor sees it
+
+▸ bring a window of the hidden app back  (reveal 212)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the app shows again
+  ✔ w212 is in view
+  ✔ the windows match Arbor's layout
+  ✔ the app is not left hidden
+
+▸ show everything behind the settings window  (show-all)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+
+▸ give a window the keyboard before opening the settings window  (zoom 211)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w211 has the keyboard
+
+▸ open the settings window  (settings-window)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ a window of its size, Arbor's own, is on screen
+  ✔ it has the keyboard, and so floats above tiles and gap handles
+
+▸ change the gap behind the open settings window  (set gap 30)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the window is still there, above the panels that were drawn again
+  ✔ it turns to a pane by name
+  ✔ a pane it does not have is refused
+
+▸ close the settings window  (settings-window close)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ it is gone
+  ✔ the window that had the keyboard has it again
+
+▸ quit Arbor  (quit)
+  ✔ Arbor exited
+  ✔ w211 is visible after quitting
+  ✔ w212 is visible after quitting
+  ✔ w213 is visible after quitting
+  ✔ w211 is back where it was before Arbor
+  ✔ w213 is back where it was before Arbor
+
+▸ the watcher is told that Arbor quit  (watch)
+  ✔ the watch ended as arborctl's exit code 0
+  ✔ quitting is the last event
+  ✔ the watchdog does not start Arbor again after a quit
+
+▸ start Arbor again  (launch)
+  ✔ Arbor is arranging the windows
+  ✔ the arrangement is back
+
+▸ arrange, so that what follows depends on nothing before it  (arrange)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ all three show
+
+▸ clients that hang up without reading the reply  (state)
+  ✔ Arbor is still running
+  ✔ Arbor still answers
+
+▸ a second copy of Arbor  (launch)
+  ✔ the second copy leaves by itself
+  ✔ its exit code says that Arbor is running already
+  ✔ the first copy still answers
+  ✔ nothing moved
+
+▸ frame the first window before the crash  (zoom 211)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w212 is out of view
+  ✔ w213 is out of view
+
+▸ kill Arbor while windows are parked  (kill -9)
+  ✔ Arbor was running
+  ✔ the watchdog starts Arbor again
+  ✔ the arrangement survived
+  ✔ the camera is where it was
+
+▸ show everything after the crash  (show-all)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w211 is back in view
+  ✔ w212 is back in view
+  ✔ w213 is back in view
+
+▸ show the Desktop before crashing again and again  (desktop)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w211 is out of view
+  ✔ w212 is out of view
+  ✔ w213 is out of view
+
+▸ pause, as for a game  (pause)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w211 is back in view
+  ✔ w212 is back in view
+  ✔ w213 is back in view
+
+▸ kill Arbor during the pause  (kill -9)
+  ✔ the watchdog starts Arbor a second time, and it is still paused
+  ✔ w211 stays in view
+  ✔ w212 stays in view
+  ✔ w213 stays in view
+
+▸ resume  (resume)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ Arbor is running again
+  ✔ the arrangement is as it was
+
+▸ show the Desktop again before the last crash  (desktop)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w211 is out of view
+  ✔ w212 is out of view
+  ✔ w213 is out of view
+
+▸ kill Arbor a third time within two minutes  (kill -9)
+  ✔ the third time Arbor only rescues the windows and quits
+  ✔ w211 is visible after the rescue
+  ✔ w212 is visible after the rescue
+  ✔ w213 is visible after the rescue
+  ✔ Arbor stays away
+  ✔ the saved state was set aside
+
+▸ start Arbor after the rescue and arrange again  (launch, arrange, quit)
+  ✔ Arbor starts afresh
+  ✔ the windows are arranged again
+  ✔ Arbor exited
+
+second app: w256 (pid 11476)
+
+▸ start again  (Arbor, same home folder)
+  ✔ the arrangement survived
+  ✔ the other app's window floats
+
+▸ show everything  (show-all)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ all three have a slot
+
+▸ minimize a docked window  (the app minimizes w212)
+  ✔ Arbor sees it
+  ✔ it takes no space
+  ✔ it keeps its place in the tree
+  ✔ the others share the space
+
+▸ restore it  (the app restores w212)
+  ✔ every window is back in its slot
+
+▸ move a docked window from outside  (the app moves w211)
+  ✔ it left its slot
+  ✔ Arbor puts it back
+
+▸ an app that insists on its own frame  (the app keeps moving w211 back)
+  ✔ Arbor gives up on it
+  ✔ and the window is left in peace
+  ✔ it is still docked
+
+▸ lay out again once it has calmed down  (relayout)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ every window is back in its slot
+
+▸ an app that answers every move at once  (the app moves w211 back within 0.05 s)
+  ✔ Arbor notices, and gives up on it too
+  ✔ it is still docked
+
+▸ lay out again after that  (relayout)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ every window is back in its slot
+
+▸ open a native tab in a docked window  (the app opens a tab in w211)
+  ✔ the tab takes over the slot
+  ✔ the covered tab leaves no ghost
+  ✔ nothing else changed
+  ✔ windows match Arbor's layout
+
+▸ choose the first tab again  (the app selects w211)
+  ✔ it has its slot back
+  ✔ the other tab leaves no ghost
+
+▸ close the tab in front  (the app selects w263 and closes it)
+  ✔ the second tab is in the slot
+  ✔ the remaining tab inherits the slot
+
+▸ make a docked window full screen  (the app toggles full screen for w212)
+  ✔ it gives up its slot
+  ✔ it keeps its place in the tree
+
+▸ leave full screen  (the app toggles full screen for w212)
+  ✔ every window is back in its slot
+  ✔ it is a window, not a tile
+
+▸ move the camera while the app hangs  (the app hangs for 6 s; zoom 213)
+  ✔ Arbor answers all the same
+  ✔ within three seconds
+  ✔ and goes on answering
+  ✔ the windows are placed once the app wakes up
+
+▸ show everything after the hang  (show-all)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ every window is back in its slot
+
+▸ dock the other app's window  (dock 256 right)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w256 is docked
+
+▸ frame a window of the first app  (zoom 211)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w256 is out of view
+  ✔ the keyboard crossed over to the first app
+
+▸ switch to the other app  (the other app activates itself)
+  ✘ the camera moves to show its window — it is in front
+    ↳ 2026-10-14T21:49:50.261Z DEBUG pid 11476 came forward, but pid 10654 is named as the one in front
+  ✘ w256 is in view — 0.0005809128630705395 at (1023,677 241×650)
+
+▸ frame a window of the first app  (zoom 211)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w256 is out of view
+  ✔ the keyboard crossed over to the first app
+
+▸ switch to the other app  (the other app activates itself)
+  ✔ the camera moves to show its window
+  ✔ w256 is in view
+
+▸ frame a window of the first app  (zoom 211)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w256 is out of view
+  ✔ the keyboard crossed over to the first app
+
+▸ switch to the other app  (the other app activates itself)
+  ✔ the camera moves to show its window
+  ✔ w256 is in view
+
+▸ frame the other app's window  (zoom 256)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w212 is out of view
+  ✔ the keyboard is with the other app
+
+▸ a dialog opens over a window that is out of view  (the first app opens a dialog over w212)
+  ✔ Arbor brings it into view
+
+▸ an app in the background changes its focused window  (the first app makes w212 its key window)
+  ✔ the camera stays where the user is
+
+▸ show everything before docking a large window  (show-all)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+
+▸ float the third window  (float 213)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+
+▸ a window stops accepting small sizes  (the app sets a minimum size of 700 × 524 for w213)
+
+▸ dock a window that cannot shrink to its slot  (dock 213 beside 211 bottom)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ it becomes a tile
+  ✔ the window itself is out of view
+  ✔ the camera stays where it was
+  ✔ w211 is still in view
+
+▸ close a docked window  (the app closes w212)
+  ✔ it leaves the tree
+  ✔ the others share the space
+
+▸ frame one window before quitting  (zoom 256)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w211 is out of view
+
+▸ minimize a window that is in the tree  (the app minimizes w211)
+  ✔ Arbor sees it
+
+▸ quit while zoomed in  (quit)
+  ✔ Arbor exited
+  ✔ w211 is on screen after quitting
+  ✔ w213 is on screen after quitting
+  ✔ w256 is on screen after quitting
+
+▸ start with a minimized window  (Arbor, same home folder)
+  ✔ it kept its place in the tree
+
+▸ show everything with the window still minimized  (show-all)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ it takes no space
+
+▸ restore the window that was minimized at the start  (the app restores w211)
+  ✔ it gets its slot
+  ✔ and keeps it
+  ✔ windows match Arbor's layout
+
+▸ the other app is killed  (SIGTERM to pid 11476)
+  ✔ it is gone
+
+▸ frame a window, which sends the others out of view  (zoom 213)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ the dead app's window leaves the tree
+  ✔ w211 is out of view
+
+▸ hide the app whose windows are out of view, then quit  (the app hides; quit; the app unhides)
+  ✔ Arbor sees it
+  ✔ Arbor exited
+  ✔ w211 is on screen when the app shows again
+  ✔ w213 is on screen when the app shows again
+
+▸ start once more  (Arbor, same home folder, settings.json without the typo)
+
+▸ start from a normal Mac  (float-all)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+
+▸ dock one window  (dock 211 left)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ w211 is docked
+  ✔ it has the keyboard
+
+▸ a new window, as things are by default  (the app opens a window)
+  ✔ it floats where its app put it
+
+▸ switch automatic docking on  (toggle-auto-dock)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ settings.json says so
+  ✔ and kept what Arbor does not know or could not read
+
+▸ give the docked window the keyboard  (zoom 211)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ it has the keyboard
+
+▸ show everything again  (show-all)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+
+▸ a new window docks beside the focused one  (the app opens a window)
+  ✔ it is docked
+  ✔ the two share the slot the focused window had
+  ✔ the new one comes after it
+  ✔ nothing became a tile
+  ✔ the view stayed
+  ✔ windows match Arbor's layout
+  ✔ it has the keyboard
+
+▸ a small window floats  (the app opens a window of 300 x 200)
+  ✔ it floats where its app put it
+  ✔ nobody made room
+
+▸ a window of a fixed size floats  (the app opens a window that cannot be resized)
+  ✔ it floats where its app put it
+  ✔ nobody made room
+
+▸ a window that fits nowhere floats  (the app opens a window that insists on nearly all of the display)
+  ✔ it is back where its app put it
+  ✔ every window is back in its slot
+  ✔ nothing became a tile
+
+▸ a native tab takes no slot of its own  (the app opens a tab in w293)
+  ✔ the tab takes over the slot
+  ✔ and nothing else docked
+  ✔ the first tab has the slot back
+
+▸ closing the window gives its room back  (the app closes w293)
+  ✔ the first window has its slot back
+
+▸ switch automatic docking off  (toggle-auto-dock)
+  ✔ command succeeded
+  ✔ windows match Arbor's layout
+  ✔ settings.json says so
+
+▸ a new window floats again  (the app opens a window)
+  ✔ it floats where its app put it
+
+▸ quit for the last time  (quit)
+  ✔ Arbor exited
+  ✔ w211 is on screen after quitting
+  ✔ w213 is on screen after quitting
+
+371 passed, 2 failed
+
+--- arbor.log (last 100 lines) ---
+2026-10-14T21:50:04.284Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:04.305Z INFO  float 213: w213 is floating
+2026-10-14T21:50:05.485Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:05.531Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:05.588Z INFO  dock 213 beside 211 bottom: docked w213 below w211; its space is too small to show it, so it is a tile
+2026-10-14T21:50:07.444Z DEBUG w212 is gone from its app's list and no longer valid
+2026-10-14T21:50:07.450Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:08.171Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:08.260Z INFO  zoom 256: framed w256
+2026-10-14T21:50:09.986Z INFO  displays changed: 1 display(s), 0 remembered
+2026-10-14T21:50:10.114Z INFO  stopped; all windows returned to view
+2026-10-14T21:50:10.114Z INFO  Arbor quit
+2026-10-14T21:50:11.127Z ERROR settings.json: skipped rules entry 1 (com.example.typo): unknown edge `sideways` in `dock sideways`; expected left, right, top or bottom
+2026-10-14T21:50:11.191Z INFO  Arbor dev starting, pid 12966, home <home>
+2026-10-14T21:50:11.192Z INFO  watchdog started, pid 12968
+2026-10-14T21:50:11.193Z INFO  control socket at <home>/arbor.sock
+2026-10-14T21:50:11.200Z INFO  keyboard layout: U.S.
+2026-10-14T21:50:11.262Z INFO  started: 1 display(s), 3 managed window(s)
+2026-10-14T21:50:11.374Z DEBUG w256 has the keyboard
+2026-10-14T21:50:11.415Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:11.428Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:11.477Z INFO  show-all: showing everything
+2026-10-14T21:50:12.695Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:12.814Z DEBUG focus report for w211, which does not have the keyboard or takes no space; 0 checks left
+2026-10-14T21:50:13.139Z INFO  displays changed: 1 display(s), 0 remembered
+2026-10-14T21:50:14.607Z DEBUG pid 367 came forward and names no focused window (observed: false)
+2026-10-14T21:50:14.821Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:14.830Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:14.865Z INFO  zoom 213: framed w213
+2026-10-14T21:50:14.868Z DEBUG pid 10654 came forward, but pid 367 is named as the one in front
+2026-10-14T21:50:14.873Z INFO  pid 11476 is gone without a word; forgetting its windows
+2026-10-14T21:50:14.893Z DEBUG focus is on w213
+2026-10-14T21:50:14.894Z DEBUG w213 has the keyboard
+2026-10-14T21:50:15.513Z DEBUG pid 367 came forward, but pid 10654 is named as the one in front
+2026-10-14T21:50:15.678Z INFO  stopped; all windows returned to view
+2026-10-14T21:50:15.685Z INFO  Arbor quit
+2026-10-14T21:50:16.637Z ERROR settings.json: skipped rules entry 1 (com.example.typo): unknown edge `sideways` in `dock sideways`; expected left, right, top or bottom
+2026-10-14T21:50:16.685Z INFO  Arbor dev starting, pid 13230, home <home>
+2026-10-14T21:50:16.688Z INFO  watchdog started, pid 13253
+2026-10-14T21:50:16.689Z INFO  control socket at <home>/arbor.sock
+2026-10-14T21:50:16.703Z INFO  keyboard layout: U.S.
+2026-10-14T21:50:16.740Z INFO  started: 1 display(s), 2 managed window(s)
+2026-10-14T21:50:16.849Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:16.859Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:16.867Z INFO  float-all: floated 2 windows
+2026-10-14T21:50:16.872Z DEBUG pid 10654 came forward, but pid 367 is named as the one in front
+2026-10-14T21:50:16.911Z DEBUG focus is on w211
+2026-10-14T21:50:16.911Z DEBUG w211 has the keyboard
+2026-10-14T21:50:16.926Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:16.930Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:16.934Z INFO  dock 211 left: docked w211 at the left edge
+2026-10-14T21:50:17.622Z DEBUG focus is on w292
+2026-10-14T21:50:17.623Z DEBUG w292 has the keyboard
+2026-10-14T21:50:17.644Z DEBUG w292 is gone from its app's list and no longer valid
+2026-10-14T21:50:17.648Z DEBUG focus is on w211
+2026-10-14T21:50:17.648Z DEBUG w211 has the keyboard
+2026-10-14T21:50:17.905Z INFO  toggle-auto-dock: new windows dock beside the focused window
+2026-10-14T21:50:17.914Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:17.923Z INFO  zoom 211: framed w211
+2026-10-14T21:50:17.942Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:17.949Z INFO  show-all: showing everything
+2026-10-14T21:50:18.661Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:18.667Z DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Docked · ⌃⌥↩ frames it
+2026-10-14T21:50:18.694Z INFO  newWindows (*: dock auto): docked w293: on the bottom of n1
+2026-10-14T21:50:18.694Z DEBUG focus is on w293
+2026-10-14T21:50:18.695Z DEBUG w293 has the keyboard
+2026-10-14T21:50:19.295Z DEBUG focus is on w296
+2026-10-14T21:50:19.295Z DEBUG w296 has the keyboard
+2026-10-14T21:50:19.325Z DEBUG w296 is gone from its app's list and no longer valid
+2026-10-14T21:50:19.329Z DEBUG focus is on w293
+2026-10-14T21:50:19.329Z DEBUG w293 has the keyboard
+2026-10-14T21:50:20.218Z DEBUG focus is on w297
+2026-10-14T21:50:20.219Z DEBUG w297 has the keyboard
+2026-10-14T21:50:20.245Z DEBUG w297 is gone from its app's list and no longer valid
+2026-10-14T21:50:20.251Z DEBUG focus is on w293
+2026-10-14T21:50:20.251Z DEBUG w293 has the keyboard
+2026-10-14T21:50:20.962Z INFO  newWindows (*: dock auto): w298 floats: there is no room for it in the view
+2026-10-14T21:50:20.964Z DEBUG focus is on w298
+2026-10-14T21:50:20.964Z DEBUG w298 has the keyboard
+2026-10-14T21:50:21.149Z DEBUG w298 is gone from its app's list and no longer valid
+2026-10-14T21:50:21.151Z DEBUG focus is on w293
+2026-10-14T21:50:21.152Z DEBUG w293 has the keyboard
+2026-10-14T21:50:21.970Z DEBUG w293 went behind its tab w299
+2026-10-14T21:50:21.976Z DEBUG focus is on w299
+2026-10-14T21:50:21.977Z DEBUG w299 has the keyboard
+2026-10-14T21:50:22.010Z DEBUG w299 went behind its tab w293
+2026-10-14T21:50:22.012Z DEBUG focus is on w293
+2026-10-14T21:50:22.012Z DEBUG w293 has the keyboard
+2026-10-14T21:50:22.846Z DEBUG w293 is gone from its app's list and no longer valid
+2026-10-14T21:50:22.849Z DEBUG no stage: Reduce motion is on
+2026-10-14T21:50:22.857Z DEBUG focus is on w211
+2026-10-14T21:50:22.858Z DEBUG w211 has the keyboard
+2026-10-14T21:50:23.112Z INFO  toggle-auto-dock: new windows float
+2026-10-14T21:50:23.663Z DEBUG focus is on w300
+2026-10-14T21:50:23.663Z DEBUG w300 has the keyboard
+2026-10-14T21:50:23.693Z DEBUG w300 is gone from its app's list and no longer valid
+2026-10-14T21:50:23.698Z DEBUG focus is on w211
+2026-10-14T21:50:23.698Z DEBUG w211 has the keyboard
+2026-10-14T21:50:24.473Z INFO  stopped; all windows returned to view
+2026-10-14T21:50:24.480Z INFO  Arbor quit
+evidence saved to collab/evidence/e2e-latest.txt (it names this Mac's display: commit it only from a throwaway Mac, such as CI's)

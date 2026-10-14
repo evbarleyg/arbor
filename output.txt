@@ -1,0 +1,17 @@
+# mac-shell: scripts/mac-shell/probe-switch.sh at 289b61a, macOS 26.6.2, 2026-10-14T21:43Z
+=== plain
+exit 1
+=== plain
+exit 0
+=== plain
+exit 1
+   2     ↳ 2026-10-14T21:46:49.238Z DEBUG pid 5872 came forward, but pid 4892 is named as the one in front
+   2     ↳ 2026-10-14T21:46:58.079Z DEBUG pid 5872 came forward, but pid 4892 is named as the one in front
+   2     ↳ 2026-10-14T21:49:50.261Z DEBUG pid 11476 came forward, but pid 10654 is named as the one in front
+   6   ✘ the camera moves to show its window — it is in front
+   2   ✘ w256 is in view — 0.0005809128630705395 at (1023,677 241×650)
+   4   ✘ w75 is in view — 0.0005809128630705395 at (1023,677 241×650)
+mac-shell/run-plain-1079.txt:4
+mac-shell/run-plain-2254.txt:8
+mac-shell/run-plain-26789.txt:0
+exit code 0
