@@ -1,0 +1,121 @@
+# mac-shell: scripts/mac-shell/probe-first-motion.sh at 530255c, macOS 26.6.2, 2026-10-14T23:25Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64, 3 cores
+built Arbor and the pointer tool in 80s
+  38 ms: status
+
+== run 1 of Arbor
+session 1: Arbor pid 4731, test windows 29 30 31 32 (pid 4711)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  37 ms: status
+  278 ms: dock 29 left
+  152 ms: dock 30 right
+  71 ms: zoom 29
+  76 ms: show-all
+2026-10-14T23:26:44.217Z INFO  started: 1 display(s), 4 managed window(s)
+2026-10-14T23:26:50.141Z DEBUG no stage: Reduce motion is on
+2026-10-14T23:26:51.516Z DEBUG no stage: Reduce motion is on
+2026-10-14T23:26:52.749Z DEBUG no stage: Reduce motion is on
+2026-10-14T23:26:53.873Z DEBUG no stage: Reduce motion is on
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 29 is back on screen after quitting
+  ✔ window 30 is back on screen after quitting
+  ✔ window 31 is back on screen after quitting
+  ✔ window 32 is back on screen after quitting
+
+== run 2 of Arbor
+session 2: Arbor pid 5437, test windows 39 40 41 42 (pid 5420)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  38 ms: status
+  193 ms: dock 39 left
+  80 ms: dock 40 right
+  66 ms: zoom 39
+  57 ms: show-all
+2026-10-14T23:27:11.539Z INFO  started: 1 display(s), 4 managed window(s)
+2026-10-14T23:27:17.490Z DEBUG no stage: Reduce motion is on
+2026-10-14T23:27:18.723Z DEBUG no stage: Reduce motion is on
+2026-10-14T23:27:19.896Z DEBUG no stage: Reduce motion is on
+2026-10-14T23:27:21.072Z DEBUG no stage: Reduce motion is on
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 39 is back on screen after quitting
+  ✔ window 40 is back on screen after quitting
+  ✔ window 41 is back on screen after quitting
+  ✔ window 42 is back on screen after quitting
+
+== the main thread while the first window was docked, run 1 (the heaviest branches)
+Call graph:
+    4910 Thread_18665   DispatchQueue_1: com.apple.main-thread  (serial)
+    + 4910 start  (in dyld) + 6992  [0x1872144e4]
+    +   4910 main  (in Arbor) + 112  [0x102d8df08]  main.swift:3
+    +     4910 static MainActor.assumeIsolated<A>(_:file:line:)  (in Arbor) + 424  [0x102d8e188]  /<compiler-generated>:0
+    +       4910 closure #1 in static MainActor.assumeIsolated<A>(_:file:line:)  (in Arbor) + 28  [0x102d8e3a0]  /<compiler-generated>:0
+    +         4910 partial apply for thunk for @callee_guaranteed () -> (@out A, @error @owned Error)  (in Arbor) + 40  [0x102d8e374]  /<compiler-generated>:0
+    +           4910 thunk for @callee_guaranteed () -> (@out A, @error @owned Error)  (in Arbor) + 24  [0x102d8e2d8]  /<compiler-generated>:0
+    +             4910 closure #1 in   (in Arbor) + 152  [0x102d8dfc4]  main.swift:4
+    +               4910 static ArborApp.run()  (in Arbor) + 852  [0x1030cf8fc]  ArborApp.swift:21
+    +                 4910 closure #1 in static ArborApp.run()  (in Arbor) + 164  [0x1030cfb28]  ArborApp.swift:21
+    +                   4910 -[NSApplication run]  (in AppKit) + 368  [0x18bac513c]
+    +                     4910 -[NSApplication(NSEventRouting) nextEventMatchingMask:untilDate:inMode:dequeue:]  (in AppKit) + 72  [0x18c667678]
+    +                       4910 -[NSApplication(NSEventRouting) _nextEventMatchingEventMask:untilDate:inMode:dequeue:]  (in AppKit) + 688  [0x18c66796c]
+    +                         4910 _DPSNextEvent  (in AppKit) + 576  [0x18bad2084]
+    +                           4910 _DPSBlockUntilNextEventMatchingListInMode  (in AppKit) + 228  [0x18c17e3d0]
+    +                             4910 _BlockUntilNextEventMatchingListInMode  (in HIToolbox) + 48  [0x19461414c]
+    +                               4910 ReceiveNextEventCommon  (in HIToolbox) + 488  [0x19448a8bc]
+    +                                 4910 RunCurrentEventLoopInMode  (in HIToolbox) + 320  [0x194487560]
+    +                                   4910 _CFRunLoopRunSpecificWithOptions  (in CoreFoundation) + 532  [0x18776e264]
+    +                                     4910 __CFRunLoopRun  (in CoreFoundation) + 1188  [0x18769b9f4]
+    +                                       4910 __CFRunLoopServiceMachPort  (in CoreFoundation) + 160  [0x18769d108]
+    +                                         4910 mach_msg  (in libsystem_kernel.dylib) + 24  [0x18759bfc0]
+    +                                           4910 mach_msg_overwrite  (in libsystem_kernel.dylib) + 480  [0x1875a49c0]
+    +                                             4910 mach_msg2_internal  (in libsystem_kernel.dylib) + 76  [0x1875ae5a4]
+    +                                               4910 mach_msg2_trap  (in libsystem_kernel.dylib) + 8  [0x18759bc34]
+    4910 Thread_18686
+    + 4910 start_wqthread  (in libsystem_pthread.dylib) + 8  [0x1875dac10]
+    +   4910 _pthread_wqthread  (in libsystem_pthread.dylib) + 368  [0x1875dbf0c]
+    +     4910 __workq_kernreturn  (in libsystem_kernel.dylib) + 8  [0x18759d9f0]
+    4910 Thread_18687
+    + 4910 start_wqthread  (in libsystem_pthread.dylib) + 8  [0x1875dac10]
+    +   4910 _pthread_wqthread  (in libsystem_pthread.dylib) + 368  [0x1875dbf0c]
+    +     4910 __workq_kernreturn  (in libsystem_kernel.dylib) + 8  [0x18759d9f0]
+    4910 Thread_18691: com.apple.NSEventThread
+    + 4910 thread_start  (in libsystem_pthread.dylib) + 8  [0x1875dac1c]
+    +   4910 _pthread_start  (in libsystem_pthread.dylib) + 136  [0x1875dfc58]
+    +     4910 _NSEventThread  (in AppKit) + 184  [0x18bbf3cac]
+    +       4910 _CFRunLoopRunSpecificWithOptions  (in CoreFoundation) + 532  [0x18776e264]
+    +         4910 __CFRunLoopRun  (in CoreFoundation) + 1188  [0x18769b9f4]
+    +           4910 __CFRunLoopServiceMachPort  (in CoreFoundation) + 160  [0x18769d108]
+    +             4910 mach_msg  (in libsystem_kernel.dylib) + 24  [0x18759bfc0]
+    +               4910 mach_msg_overwrite  (in libsystem_kernel.dylib) + 480  [0x1875a49c0]
+    +                 4910 mach_msg2_internal  (in libsystem_kernel.dylib) + 76  [0x1875ae5a4]
+    +                   4910 mach_msg2_trap  (in libsystem_kernel.dylib) + 8  [0x18759bc34]
+    4909 Thread_18688
+    + 4909 start_wqthread  (in libsystem_pthread.dylib) + 8  [0x1875dac10]
+    +   4909 _pthread_wqthread  (in libsystem_pthread.dylib) + 368  [0x1875dbf0c]
+    +     4909 __workq_kernreturn  (in libsystem_kernel.dylib) + 8  [0x18759d9f0]
+    1723 Thread_18692
+    + 1723 start_wqthread  (in libsystem_pthread.dylib) + 8  [0x1875dac10]
+    +   1723 _pthread_wqthread  (in libsystem_pthread.dylib) + 368  [0x1875dbf0c]
+    +     1723 __workq_kernreturn  (in libsystem_kernel.dylib) + 8  [0x18759d9f0]
+    1 Thread_18688   DispatchQueue_2: com.apple.libdispatch-manager  (serial)
+      1 start_wqthread  (in libsystem_pthread.dylib) + 8  [0x1875dac10]
+        1 _pthread_wqthread  (in libsystem_pthread.dylib) + 348  [0x1875dbef8]
+          1 _dispatch_kevent_worker_thread  (in libdispatch.dylib) + 444  [0x187436334]
+            1 _dispatch_event_loop_drain_timers  (in libdispatch.dylib) + 504  [0x18744424c]
+              1 _dispatch_event_loop_drain_timers.cold.3  (in libdispatch.dylib) + 80  [0x18745d1b0]
+                1 _dispatch_root_queue_poke_slow  (in libdispatch.dylib) + 368  [0x187431624]
+                  1 _pthread_workqueue_add_cooperativethreads  (in libsystem_pthread.dylib) + 44  [0x1875e192c]
+                    1 __workq_kernreturn  (in libsystem_kernel.dylib) + 8  [0x18759d9f0]
+
+Total number in stack (recursive counted multiple, when >=5):
+
+10 passed, 0 failed
+exit code 0
