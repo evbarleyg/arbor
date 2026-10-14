@@ -226,8 +226,17 @@ only outside `Sources`, `Resources` and `Package.swift` inherits its ledger.
 
 Only on a commit whose rings 1 to 3 are green. The rubric itself is `docs/POLISH.md`, kept by lane Q; the gate asks that **no row fails, on any of the five moves, in light and in dark, in the look that ships** (colour and icon: Q15).
 
-The five moves are those of the reference's public how-it-works page, watched and never copied: no assets, no code, no wording. In Arbor's words, until Q has confirmed them against that page: dock by a drag to an edge; make a tab group and drag it whole; frame a window and come back;
-zoom out and in through the levels with the fingers; frame what a dragged rectangle holds.
+The five moves are those of the reference's public how-it-works page, watched and never copied: no assets, no code, no wording. In Arbor's words and the page's order:
+
+1. make a tab group by dropping one window on another (F04, F34);
+2. dock, rearrange, nest, and see what does not fit become a tile;
+3. double-click the Desktop, or a title bar, to go there (F14);
+4. drag a rectangle to frame what it holds, and save the view;
+5. show everything, and pinch in (F16).
+
+A move Arbor cannot make yet counts as failed, not as left out. So the gate waits for all four trains of the board's section 3.
+
+Every measure is first tried on a metronome: a square of the camera's own that moves rightly once and wrongly in known ways. If the judge misreads it, that run's score is void. The judge builds nothing it judges.
 
 What the product owner asks of the rubric, whatever else it holds. The first five are measured, from the sampler, the stage's own log of frames and the film; the rest are judged from the film by an agent that has the rubric and no stake in the answer.
 
@@ -236,7 +245,7 @@ What the product owner asks of the rubric, whatever else it holds. The first fiv
 | Length | the motion takes `animationDuration` (460 ms) give or take 60 |
 | Curve | fast start, gentle settle: no stand-in ever goes back on its road, none overshoots by more than 2 points |
 | Cadence | no two frames of the stage are more than 34 ms apart, with eight windows. The stage's own log is the app's view of it; the film is the screen's |
-| Hand-over | at the first and the last frame each stand-in is within 2 points of its real window, and the mean brightness of the display changes by less than 2 % from one frame to the next |
+| Hand-over | at the first and the last frame each stand-in is within 2 points of its real window; and inside each window's own rectangle, window to card to window is a fade: no step of more than 10 % of full scale from one frame to the next (some 130 ms or more). Measured inside the rectangle, because a window that grows changes the whole display's brightness, rightly |
 | Nothing stray | no panel of Arbor's is on screen for less than 100 ms, and none is left 500 ms after the motion. Seen from outside, by the sampler |
 | No flicker | nothing blinks, tears or shows through: not the wallpaper, not shadows, not text |
 | Crisp | overlays, tiles, tab strips and the preview are sharp at both scales, their corners follow the windows', their text is legible on a light and on a dark wallpaper |

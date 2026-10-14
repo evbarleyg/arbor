@@ -3,7 +3,7 @@
 **Ordered by the product owner against issues #3 (the seven rules) and #4 (how we work).** Last ordered: 2026-10-14, 23:15 UTC, after the first day played with real apps on a hosted Mac (106 acts, nine apps, macOS's defaults: no window lost, none left behind another in 72 switches, six faults: 1.3 and 1.18 to 1.21).
 
 1. **Faults against the seven rules come first** (section 1), whatever else is nearly ready.
-2. **Then the polish that is already written**, one train each, in this order: the motion's second step, tab groups, continuous zoom (section 3).
+2. **Then the polish that is already written**, one train each, in this order: the motion's second step, tab groups, continuous zoom, double-click (section 3).
 3. **Then the rest**, what serves a working day before what looks like the reference (section 4).
 4. **The instruments** (section 2) run beside all of it: without them nothing can be judged.
 
@@ -94,6 +94,17 @@ Each train lands whole or not at all, and is judged by the loop of #4, section 2
 
 **Ships:** `continuousZoom` false in the train; true by a commit of its own once Q18 holds. No hosted Mac has a trackpad, so nothing about its safety may rest on real fingers (section 5).
 
+### 3.4 Double-click to go there (F14) · the porter of F14
+
+**For a person:** a double-click on a title bar frames that window; one on the Desktop shows the Desktop. It is the third of the five moves, so the gate waits for it (`docs/VIABLE.md`, section 8). It ranks last of the four because it holds input.
+**From the archive:** `handoff/F14-alone-on-the-trunk`. **First** 1.22: with Arbor's switches off, Arbor stands aside for macOS's own zoom.
+
+| Linux proves | A hosted Mac runs | Agents judge |
+|---|---|---|
+| The decision as a pure function: whose a double-click is, by where it lands and how macOS is set; off, no tap is installed | Real double-clicks on real apps' title bars and on the wallpaper, with macOS's own title-bar action at Zoom, Fill, Minimize and None, and "click wallpaper to reveal desktop" at both values; single clicks, slow double-clicks and drags that begin with a click over a witness window | `fought`: one of the two acts, never both; `input-held`: what is not Arbor's reaches the app, no more than 10 ms late; `jolt`. Rubric: the third move |
+
+**Ships:** `titleBarDoubleClick` and `desktopDoubleClick` off in the train; on by a commit of its own once Q18 holds.
+
 ## 4. The rest, in this order
 
 Mends before features; what a person meets every day before what they meet once.
@@ -110,7 +121,7 @@ Mends before features; what a person meets every day before what they meet once.
 | 4.8 | A link may not replace a saved view unasked; by hand the reply says what was replaced; saving a view can be undone | **free**, small | Tests | | |
 | 4.9 | An unplugged display becomes a space (F52); places survive on other Spaces (F35) | **free**; the archive's newest F52 branch | Its tests; never a tile for the window being typed in | The cell `two` | `lost`, `focus` |
 | 4.10 | Arrange styles (F29), presets (F21) | **free**; archive `handover/F29-arrange-styles`, `handover/F21-presets` | Their tests | One script each with real apps | `jolt`; pictures |
-| 4.11 | Carry with the keyboard (F59), a command line that is pleasant to script (F50), double-click a title bar (F14) | K; archive `ready/F59-carry`, `pick/F50-on-trunk`, `handoff/F14-alone-on-the-trunk` | Their tests | F14: real double-clicks on real apps' title bars, macOS's own double-click setting at each value | `input-held`: a double-click that is not Arbor's reaches the app |
+| 4.11 | Carry with the keyboard (F59), a command line that is pleasant to script (F50) | porters; archive `ready/F59-carry`, `pick/F50-on-trunk` | Their tests | F59: `check` script with real keys | `jolt` |
 
 ## 5. Sent back: what only a person at a desk could check
 
