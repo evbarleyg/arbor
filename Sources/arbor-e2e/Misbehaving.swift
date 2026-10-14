@@ -1,5 +1,4 @@
 import ArborCore
-import ApplicationServices
 import ArborIPC
 import CoreGraphics
 import Foundation
@@ -264,15 +263,9 @@ extension Runner {
     }
     step("switch to the other app", by: "the other app activates itself") {
       other.send("activate")
-      // What the step is about begins here: macOS can turn down an app that asks to come forward.
-      check("macOS lets it come forward", poll(3) { frontmostPID() == other.pid }, "in front: pid \(frontmostPID() ?? -1)")
-      if frontmostPID() != other.pid {
-        // PROBE: what System Events' `set frontmost` does.
-        let answer = AXUIElementSetAttributeValue(
-          AXUIElementCreateApplication(other.pid), kAXFrontmostAttribute as CFString, kCFBooleanTrue)
-        observe("asked through Accessibility it does", poll(3) { frontmostPID() == other.pid }, "answer \(answer.rawValue)")
-      }
-      check("the camera moves to show its window", eventually { $0.displays[0].windowFrames[x] != nil })
+      // macOS can turn down an app that asks to come forward, and then there was nothing to follow.
+      func inFront() -> String { frontmostPID() == other.pid ? "it is in front" : "macOS has pid \(frontmostPID() ?? -1) in front, not it" }
+      check("the camera moves to show its window", eventually { $0.displays[0].windowFrames[x] != nil }, inFront())
       check("\(x) is in view", comesIntoView(x), whereabouts(x))
     }
     try step("frame the other app's window", "zoom \(x.rawValue)") { _ in

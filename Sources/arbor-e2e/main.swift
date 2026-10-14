@@ -338,12 +338,13 @@ final class Runner {
   func noteWhereTheLogIs() { logShown = arborLog().utf8.count }
 
   /// What Arbor logged since the step began, under the check that failed. The end of the log, printed when the run is over, is
-  /// several launches past most steps, and whoever reads the report has nothing else to go by.
+  /// several launches past most steps, and whoever reads the report has nothing else to go by. The arrow is Swift Testing's for a note
+  /// under an issue: scripts/ci-step.py publishes such lines with the failure they stand under.
   func showWhatArborLogged() {
     let log = Array(arborLog().utf8)
     let new = String(decoding: log.dropFirst(log.count >= logShown ? logShown : 0), as: UTF8.self)
     logShown = log.count
-    for line in forOthersToRead(new).split(separator: "\n").suffix(60) { print("      \(line)") }
+    for line in forOthersToRead(new).split(separator: "\n").suffix(60) { print("    ↳ \(line)") }
   }
 
   /// Waits until the window server agrees with every frame Arbor says it set.
