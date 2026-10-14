@@ -99,9 +99,9 @@ e2e-drag:
 
 # The rehearsal of the acceptance pass, from anywhere: an ordinary day with real apps on one of GitHub's Macs, macOS at its default
 # settings, every frame of every window written down, and a table of what broke which rule (docs/TESTING.md, "An ordinary day").
-# Runs what GitHub has of the current branch. CONTROL=1 plays the same day without Arbor.
+# Runs what GitHub has of the current branch. CONTROL=1 plays the same day without Arbor; SABOTAGE=1 commits the offences itself, to see the detectors speak.
 day:
-	@./scripts/mac-shell/run.sh scripts/mac-shell/day$(if $(CONTROL),-control).sh
+	@./scripts/mac-shell/run.sh scripts/mac-shell/day$(if $(CONTROL),-control)$(if $(SABOTAGE),-sabotage).sh
 
 # On Linux: type-checks all the macOS-only code against stand-ins for Apple's frameworks (scripts/typecheck-mac/README.md).
 # Not proof, but fifteen seconds instead of a macOS job. REF=origin/some-branch checks that commit's Sources instead.
