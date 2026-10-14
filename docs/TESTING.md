@@ -356,8 +356,8 @@ It lists what is running and waiting now, with branch, script and link, then the
 last hour and who used them. The last line is made to grep for, `mean wait: 3 min 20 s over 14 jobs`; above
 five minutes (`--alarm`) a line that starts with `ALARM:` follows and the exit code is 3. `--json` gives the same facts to a script.
 **What a run starts with.** A hosted Mac knows nothing of the project, and used to spend its first three minutes installing the Swift
-release Arbor is built with and building from nothing, in every run. Now a run begins with `.github/actions/mac-setup`, which puts back what an
-earlier run installed and built.
+release Arbor is built with and building from nothing, in every run. Now a run, and CI's `macos` job too, begins with `.github/actions/mac-setup`,
+which puts back what an earlier run installed and built.
 
 - **A build is named after what goes into it**, not after a commit or a branch (`scripts/ci-build-key.sh`): the system, Xcode, the compiler, the
   manifest, and Git's hash of `Sources` and of the helper tools. So a branch that only adds a Mac shell script builds nothing, whoever built those
@@ -368,7 +368,8 @@ earlier run installed and built.
 - **No cache can turn a red run green.** Only compiler output is kept; every script still runs. A checkout stamps every file with the
   present, which would make SwiftPM compile everything again, so `scripts/ci-mtimes.py` gives a file its earlier time stamp back if, and only if, its
   content is what was built, and stamps every other file later than anything in the cache (`scripts/test-tooling.py` holds it to that). The chain of
-  builds upon builds is cut every day.
+  builds upon builds is cut every day. And where work is integrated (pull requests into `main`, pushes to it, a release) nothing is built upon at all,
+  and a pass that was built upon a cache does not count there (`scripts/ci-changes.py`).
 - The annotation `build cache` on the job says what it found: nothing, a build of other sources, or a build of these very sources.
 
 **Rehearse it first, for nothing**, on Linux (on a Mac it refuses: it tells scripts that the Mac is a throwaway one, and `rm`, `pkill` and the like stay real):
@@ -837,6 +838,10 @@ crash, a scenario whose commands do nothing, an `rm -rf` of a variable nobody ch
 run against stand-ins for a Mac and are interrupted, timed out and killed, with a full disk, with somebody's window under the pointer, beside a running Arbor
 (`ARBOR_TEST_BASH=<a bash 3.2>` tries them under macOS's own shell). `make check` runs it. When you teach one of these tools something, add
 the situation that would have fooled it.
+
+The two scripts that decide what CI's Mac does have tables of their own, which `make check` and the `linux` job run: `scripts/test-ci-changes.py`
+(whether a Mac is needed, which tests it runs, and whether it may build upon a cache) and `scripts/test-ci-tests.py` (which tests a Mac can say something about, the record of
+a run, and the net that fails when a test ran nowhere). Most of their rows are situations in which the answer must be the careful one.
 
 ## Mutation testing (`scripts/mutate.py`)
 

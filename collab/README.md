@@ -213,7 +213,7 @@ Three rules keep the Linux build working and the platforms telling the same stor
    PR description is the report (same template).
 2. GitHub Actions runs the headless stack on Linux and everything on `macos`.
    Both build, test, and run the simulator smoke test, the scenarios and
-   `parity.py --check`; a second Mac, `real-windows`, runs the real-window and real-pointer tests. A newer push
+   `parity.py --check` (on the Mac: see below); `macos` then runs the real-window and real-pointer tests. A newer push
    cancels the run for the older one.
 
    Linux runners are plentiful, so the Linux work is several jobs side by side, each named `linux-…`
@@ -226,15 +226,16 @@ Three rules keep the Linux build working and the platforms telling the same stor
    `changes` says why) when a Mac could prove nothing new
    (`scripts/ci-changes.py`; the `linux-lint` job holds its rules to the table of
    cases in `scripts/test-ci-changes.py`):
-   - the pull request changes only `collab/`, `docs/`, `*.md` files, `scripts/typecheck-mac/` and the scripts in
-     `scripts/mac-shell/` that CI does not run (it runs `e2e-drag.sh`, built on `lib.sh`, `pointer.swift` and `state.py`);
+   - the pull request changes only `collab/`, `docs/`, `*.md` files, `scripts/typecheck-mac/`, the scripts in
+     `scripts/mac-shell/` that CI does not run (it runs `e2e-drag.sh` and `compile-tools.sh`, built on `lib.sh`, `pointer.swift` and
+     `state.py`), the Mac shell workflow, and the rules and self-tests that only Linux runs;
    - or besides those only code that Linux builds and tests too: `Sources/ArborCore`,
      `Sources/ArborKit/{Controller,Platform,Support}`, `Sources/ArborTesting`,
      `Sources/arbor-sim`, `Sources/LinuxShims`, `Tests`;
    - or only prose has changed since the last commit that passed on a Mac
      (the report pushed after the code; a branch moved to a tested head).
 
-   The second rule does not hold where work is integrated (pushes to `main`,
+   The second rule does not hold where work is integrated (pushes to `main`, pull requests into it,
    the pull request from `swarm/trunk`): there every change of code is compiled
    and driven on a Mac. So a change to the controller or a platform protocol can
    pass its own pull request and break the macOS-only code that uses it. The `linux-typecheck-mac`
@@ -243,6 +244,27 @@ Three rules keep the Linux build working and the platforms telling the same stor
    you change something `AX`, `App`, `Input`, `IPC` or `UI` calls, run that first, and ask for the Mac with
    **`[mac]` in the subject of the head commit** (or the label `mac`), or
    compile with `scripts/mac-shell/run.sh scripts/mac-shell/compile.sh`.
+
+   A Mac that does run need not repeat what `linux` runs on the same commit, nor build what an earlier job has built. There is
+   one Mac job, `macos`: it sets up once, builds once, runs **only the tests a Mac can say something about**, then the
+   real-window and real-pointer tests. `scripts/ci-tests.py select` lists the test files, each with its reason (a
+   compile-time condition, a trait that switches a test on or off, an Apple framework, real files, sockets,
+   processes, threads and clocks, or a place in that script's `ALWAYS`). The annotation on `changes` says how it runs, and why:
+   - **in an ordinary pull request** it builds upon an earlier job's build (`docs/TESTING.md`, "What a run starts with");
+   - **where work is integrated** (pull requests into `main`, the one from `swarm/trunk`, pushes to `main`) it builds from
+     nothing, and only a pass of that kind (the job `macos-from-nothing` marks it) spares a later run there its Mac;
+   - **every test, built from nothing**: every night on `main`, when **`[mac-full]` in the subject of the head commit** (or the
+     label `mac-full`) asks for it, when the workflow is started by hand, and when anything is unclear.
+
+   `real-windows` is still a check of its own, with its own annotations, but no longer a Mac of its own: it passes on what the two
+   steps on real windows in `macos` said. So `macos` green and `real-windows` red means what it always did.
+
+   Nothing is dropped on the way. Both jobs leave a record of every test and what became of it, and the job
+   `tests-accounted-for` fails, naming each one, if a test ran neither on the Mac nor on Linux: one that only a
+   Mac compiles and the selection missed, one that is skipped on both. Its summary counts what ran where. If it names
+   your test, give the file a reason to be selected; a test that is to run on neither is a decision, and goes
+   into `NOWHERE_ON_PURPOSE` with the reason. With a selection `macos` leaves `parity.py --check` to `linux`,
+   which runs it on every commit.
 3. Read the results. Every step publishes its outcome as check annotations:
    compiler warnings, test counts and the parity score when it passes; the
    errors and the end of its output when it fails (`scripts/ci-step.py`). They can

@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
-"""Decides whether a CI run needs its macOS job, the slow and scarce one.
+"""Decides whether a CI run needs its macOS job, the slow and scarce one, and which tests that job runs.
 
 A Mac is left out when it could prove nothing new, or nothing that will not be proved soon anyway:
 
   1. everything the pull request changes (for a push: everything since the commit before it) is
      prose, or data the Linux job checks just as well: collab/, docs/, *.md, scripts/typecheck-mac/ (which
-     only Linux runs), the scripts in scripts/mac-shell/ that CI does not run (it runs e2e-drag.sh, and
-     with it lib.sh and its tools; and `swift test` on a Mac type-checks every helper tool there, *.swift and *.m),
-     the Mac shell workflow with its set-up, and these rules, scripts/mac-queue.py and the tools' self-tests, which run on Linux,
-     the Makefile, which no macOS job uses, and what looks after the repository itself (scripts/public-*, git-hooks, .claude …);
+     only Linux runs), the scripts in scripts/mac-shell/ that CI does not run (it runs e2e-drag.sh and compile-tools.sh, and
+     with them lib.sh and its tools; and `swift test` on a Mac type-checks every helper tool there, *.swift and *.m),
+     the Mac shell workflow, these rules, scripts/mac-queue.py and the tools' self-tests, which run on Linux,
+     the Makefile, which the macOS job does not use, and what looks after the repository itself (scripts/public-*, git-hooks, .claude …);
   2. or, in an ordinary pull request, all the rest of it is code that also builds and is tested on
      Linux (the core, the controller, the platform protocols, the fakes, arbor-sim, the tests);
   3. or only prose has changed since the nearest earlier commit that passed the macOS job. That covers
@@ -16,16 +16,29 @@ A Mac is left out when it could prove nothing new, or nothing that will not be p
      request, where nothing changed at all.
 
 Rule 2 can let through a change that breaks the macOS-only code which uses it. So it does not apply where
-work is integrated: pushes to `main`, and the pull request whose head is the swarm's trunk. There every
+work is integrated: pushes to `main`, pull requests into `main`, and the pull request whose head is the swarm's trunk. There every
 change of code is compiled and driven on a real Mac.
 
 "[mac]" in the subject of the head commit, or the label "mac" on the pull request, asks for the Mac
 whatever changed. When anything is unclear (a call fails, a comparison is too large to
 list), it runs.
 
+A Mac that runs need not repeat what the Linux job does on the same commit, nor build what an earlier job has built. There are
+three ways for it to run:
+
+  upon    in an ordinary pull request: only the tests a Mac can say something about (scripts/ci-tests.py selects them, and a job of its
+          own checks that every test ran somewhere), built upon an earlier job's build (.github/actions/mac-setup);
+  fresh   where work is integrated: the same tests, but built from nothing. Whatever building upon a cache might hide cannot reach main;
+  full    every test, built from nothing: every night on main, as a backstop; when "[mac-full]" in the subject of the head commit or the
+          label "mac-full" asks for it; for an event without a rule (the workflow started by hand); and when anything is unclear.
+
+Where work is integrated, rule 3 counts only a commit that passed on a Mac built from nothing. The job `macos-from-nothing` says so: it
+succeeds when `macos` has passed that way, and does nothing else.
+
 Reads the event from the environment GitHub Actions provides. Needs `gh` and a token that may read
-contents, pull requests and checks. Appends `mac=true` or `mac=false` to $GITHUB_OUTPUT and publishes
-the reason as a check annotation. To try it by hand:
+contents, pull requests and checks. Appends `mac=true` or `mac=false`, `tests=full`, `mac-only` or (without a Mac) `none`,
+`build=from-nothing`, `upon` or `none`, and `why=` with the reason to $GITHUB_OUTPUT, and publishes the reason as a check annotation.
+Whoever reads them takes anything but `mac-only` for `full`, and anything but `upon` for `from-nothing`. To try it by hand:
 
   gh api repos/evbarleyg/arbor/pulls/10 --jq '{pull_request: .}' > /tmp/event.json
   GITHUB_EVENT_NAME=pull_request GITHUB_EVENT_PATH=/tmp/event.json GITHUB_REPOSITORY=evbarleyg/arbor \\
@@ -39,11 +52,10 @@ import subprocess
 import sys
 
 PROSE = re.compile(
-    r"^(collab|docs|scripts/typecheck-mac)/|^scripts/mac-shell/(?!(e2e-drag\.sh|lib\.sh|state\.py|.*\.swift|.*\.m)$)|\.md$"
-    # What CI's macOS jobs never run. The Mac shell workflow and its set-up are proved by a Mac shell run, these rules and the
-    # tools' self-tests by Linux. TAKE THE SET-UP OFF THIS LIST in the change that makes ci.yml use it.
-    r"|^\.github/workflows/mac-shell\.yml$|^\.github/actions/mac-(setup|keep-build)/|^scripts/ci-(build|build-key|mtimes)\.(sh|py)$"
-    r"|^scripts/ci-mac-shell\.sh$|^scripts/(test-)?(ci-changes|mac-queue)\.py$|^scripts/test-tooling\.py$"
+    r"^(collab|docs|scripts/typecheck-mac)/|^scripts/mac-shell/(?!(e2e-drag\.sh|lib\.sh|compile-tools\.sh|state\.py|.*\.swift|.*\.m)$)|\.md$"
+    # What CI's macOS job never runs. The Mac shell workflow is proved by a Mac shell run, these rules and the tools' self-tests by Linux.
+    r"|^\.github/workflows/mac-shell\.yml$|^scripts/ci-mac-shell\.sh$"
+    r"|^scripts/(test-)?(ci-changes|mac-queue)\.py$|^scripts/test-(tooling|ci-tests)\.py$"
     # The Makefile: no step of a macOS job calls make. And what looks after the repository itself, on Linux or at GitHub's.
     r"|^Makefile$|^scripts/(test-)?public-[a-z-]+\.\w+$|^scripts/git-hooks/|^scripts/(lint-workflows|housekeeping|gh-state)\.py$|^\.github/(workflows/(public-[a-z-]+|housekeeping)|dependabot)\.yml$|^\.claude/"
 )
@@ -52,9 +64,19 @@ HEADLESS = re.compile(
     r"^(Sources/(ArborCore|ArborKit/(Controller|Platform|Support|Trace)|ArborTesting|arbor-sim|LinuxShims)|Tests)/"
 )
 INTEGRATION_BRANCH = "swarm/trunk"
+MAIN = "main"
 MARKER = "[mac]"
 LABEL = "mac"
+FULL_MARKER = "[mac-full]"
+FULL_LABEL = "mac-full"
 ASKED_FOR = "asked for"
+UPON, FRESH, FULL = "upon", "fresh", "full"
+HOW = {
+    UPON: "only the tests a Mac can say something about, built upon an earlier job's build",
+    FRESH: "only the tests a Mac can say something about, built from nothing, because work is integrated here",
+}
+# The check that says a Mac passed, and the one that says it had built from nothing when it did.
+CHECK, FRESH_CHECK = "macos", "macos-from-nothing"
 # How many commits back to look for one that passed.
 LOOK_BACK = 10
 # The comparison API lists at most this many files and does not say when it left some out.
@@ -95,9 +117,9 @@ def recent_commits(repo, head):
     return commits
 
 
-def passed_on_a_mac(repo, sha):
+def passed_on_a_mac(repo, sha, check):
     [passed] = api(
-        f"repos/{repo}/commits/{sha}/check-runs?check_name=macos&per_page=100",
+        f"repos/{repo}/commits/{sha}/check-runs?check_name={check}&per_page=100",
         '[.check_runs[].conclusion] | any(. == "success")',
     )
     return passed
@@ -118,58 +140,77 @@ def some(names):
 
 
 def decide(name, event, repo, sha):
-    """Whether the Mac is needed, and why."""
+    """How the Mac runs (UPON, FRESH or FULL), or None when it is not needed at all, and why."""
     if name == "pull_request":
         pull = event["pull_request"]
         head, whole = pull["head"]["sha"], "the pull request"
-        integration = pull["head"].get("ref") == INTEGRATION_BRANCH
+        integration = pull["head"].get("ref") == INTEGRATION_BRANCH or pull.get("base", {}).get("ref") == MAIN
         changed = lambda: files_of_pull_request(repo, pull["number"])
-        if any(label.get("name") == LABEL for label in pull.get("labels", [])):
-            return True, f'{ASKED_FOR}: the pull request has the label "{LABEL}"'
+        labels = {label.get("name") for label in pull.get("labels", [])}
     elif name == "push":
-        head, whole, integration = sha, "the push", True
+        head, whole, integration, labels = sha, "the push", True, set()
         changed = lambda: files_between(repo, event["before"], head)
+    elif name == "schedule":
+        return FULL, "every night: every test, built from nothing, as a backstop"
     else:
-        return True, f"there is no rule for {name} events"
-    if MARKER in subject(repo, head):
-        return True, f"{ASKED_FOR}: the head commit's subject says {MARKER}"
+        return FULL, f"there is no rule for {name} events: every test, built from nothing"
+    if FULL_LABEL in labels:
+        return FULL, f'{ASKED_FOR}: the pull request has the label "{FULL_LABEL}"'
+    words = subject(repo, head)
+    if FULL_MARKER in words:
+        return FULL, f"{ASKED_FOR}: the head commit's subject says {FULL_MARKER}"
 
-    names = []
     try:
         names = changed()
-        if names and not beyond(names, PROSE):
-            return False, f"{whole} changes only prose and data that the Linux job checks too"
-        if names and not integration and not beyond(names, PROSE, HEADLESS):
-            return False, f"{whole} changes only code that Linux builds and tests too; a Mac sees it when it is integrated"
     except Unclear:
-        pass  # a new branch has no commit before it, say; the last rule may still apply
+        names = []  # a new branch has no commit before it, say; the last rule may still apply
+    how = FRESH if integration else UPON
+    if LABEL in labels:
+        return how, f'{ASKED_FOR}: the pull request has the label "{LABEL}"; {HOW[how]}'
+    if MARKER in words:
+        return how, f"{ASKED_FOR}: the head commit's subject says {MARKER}; {HOW[how]}"
+    if names and not beyond(names, PROSE):
+        return None, f"{whole} changes only prose and data that the Linux job checks too"
+    if names and not integration and not beyond(names, PROSE, HEADLESS):
+        return None, f"{whole} changes only code that Linux builds and tests too; a Mac sees it when it is integrated"
 
+    check, passed = (FRESH_CHECK, "passed, built from nothing") if integration else (CHECK, "passed")
     for commit in recent_commits(repo, head):
-        if passed_on_a_mac(repo, commit):
+        if passed_on_a_mac(repo, commit, check):
             since = beyond(files_between(repo, commit, head), PROSE)
             if since:
-                return True, f"changed since {commit[:7]} passed: {some(since)}"
-            return False, f"nothing a Mac could check has changed since {commit[:7]} passed"
-    what = some(beyond(names, PROSE) if integration else beyond(names, PROSE, HEADLESS)) or "unknown"
-    return True, f"changed: {what}; none of the last {LOOK_BACK} commits has passed on a Mac"
+                return how, f"changed since {commit[:7]} {passed}: {some(since)}; {HOW[how]}"
+            return None, f"nothing a Mac could check has changed since {commit[:7]} {passed}"
+    if not names:
+        return FULL, f"it is unclear what changed, and none of the last {LOOK_BACK} commits has {passed} on a Mac: every test, built from nothing"
+    what = some(beyond(names, PROSE) if integration else beyond(names, PROSE, HEADLESS))
+    return how, f"changed: {what}; none of the last {LOOK_BACK} commits has {passed} on a Mac; {HOW[how]}"
+
+
+def answers(how, reason):
+    """The lines for $GITHUB_OUTPUT. The reason quotes file names, which anyone can choose: it stays on one line, and
+    comes first, so that no name can add an answer of its own or have the last word."""
+    tests = {None: "none", UPON: "mac-only", FRESH: "mac-only"}.get(how, "full")
+    build = {None: "none", UPON: "upon"}.get(how, "from-nothing")
+    return [f"why={' '.join(reason.split())}", f"tests={tests}", f"build={build}", f"mac={'true' if how else 'false'}"]
 
 
 def main():
     try:
         with open(os.environ["GITHUB_EVENT_PATH"], encoding="utf-8") as handle:
             event = json.load(handle)
-        needed, reason = decide(
+        how, reason = decide(
             os.environ["GITHUB_EVENT_NAME"], event, os.environ["GITHUB_REPOSITORY"], os.environ.get("GITHUB_SHA", "")
         )
-    except Exception as error:  # whatever went wrong, running the Mac is the safe answer
-        needed, reason = True, f"could not tell what changed ({type(error).__name__}: {error})"
+    except Exception as error:  # whatever went wrong, running the Mac, and every test on it, is the safe answer
+        how, reason = FULL, f"could not tell what changed ({type(error).__name__}: {error})"
 
-    answer = f"mac={'true' if needed else 'false'}"
+    lines = answers(how, reason)
     if "GITHUB_OUTPUT" in os.environ:
         with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as handle:
-            handle.write(answer + "\n")
-    print(answer)
-    message = f"{'runs' if needed else 'skipped'}: {reason}".replace("%", "%25").replace("\n", "%0A")
+            handle.write("\n".join(lines) + "\n")
+    print("\n".join(reversed(lines[1:])))
+    message = f"{'runs' if how else 'skipped'}: {lines[0][len('why='):]}".replace("%", "%25")
     print(f"::notice title=macOS job::{message}")
 
 

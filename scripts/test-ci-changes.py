@@ -19,79 +19,116 @@ UI, DOC, SHOTS = "Sources/ArborKit/UI/B.swift", "docs/x.md", "scripts/mac-shell/
 NEW_BRANCH = "0" * 40
 
 
-def pull(ref="feat/x", labels=()):
+def pull(ref="feat/x", labels=(), base=rules.INTEGRATION_BRANCH):
     head = {"sha": "H", "ref": ref}
-    return "pull_request", {"pull_request": {"number": 1, "head": head, "labels": [{"name": name} for name in labels]}}
+    return "pull_request", {"pull_request": {"number": 1, "head": head, "base": {"ref": base}, "labels": [{"name": name} for name in labels]}}
 
 
 def push(before="B"):
     return "push", {"before": before}
 
 
-TRUNK = pull(ref=rules.INTEGRATION_BRANCH)
+TRUNK = pull(ref=rules.INTEGRATION_BRANCH, base=rules.MAIN)
+# No Mac at all; its own tests, built upon an earlier build; the same, built from nothing; every test, built from nothing.
+NO, UPON, FRESH, FULL = None, rules.UPON, rules.FRESH, rules.FULL
 
 # What is expected, the situation, the event, then GitHub's answers: `files` of the pull request, files
-# `between` two commits, which of the commits H, P1, P2 (newest first) `passed`, the head's `subject`.
+# `between` two commits, which of the commits H, P1, P2 (newest first) `passed` on a Mac, on which of them it had built `fresh`,
+# from nothing, the head's `subject`.
 TABLE = [
-    (False, "only prose", pull(), dict(files=[DOC, "collab/BOARD.md", "README.md"])),
-    (False, "only code that builds on Linux", pull(), dict(files=[CORE, CONTROLLER, TEST, DOC])),
-    (False, "the same with a Mac shell script", pull(), dict(files=[CORE, SHOTS])),
-    (False, "stand-ins that only Linux compiles", pull(), dict(files=[CORE, "scripts/typecheck-mac/stubs/AppKit/View.swift"])),
-    (False, "the Mac shell workflow and its set-up, which CI's own jobs do not use", pull(), dict(files=[
-        ".github/workflows/mac-shell.yml", ".github/actions/mac-setup/action.yml", ".github/actions/mac-keep-build/action.yml",
-        "scripts/ci-build.sh", "scripts/ci-build-key.sh", "scripts/ci-mtimes.py", "scripts/mac-shell/run.sh"])),
-    (False, "these rules, their table and the tools' self-test, which Linux runs", pull(), dict(files=[
-        "scripts/ci-changes.py", "scripts/test-ci-changes.py", "scripts/test-tooling.py"])),
-    (False, "trunk: the same", TRUNK, dict(files=[".github/workflows/mac-shell.yml", "scripts/ci-changes.py"])),
-    (True, "the script that installs the toolchain in CI's jobs too", pull(), dict(files=["scripts/ci-toolchain.sh"])),
-    (True, "another action", pull(), dict(files=[".github/actions/other/action.yml"])),
-    (True, "the wrapper of every step", pull(), dict(files=["scripts/ci-step.py"])),
-    (False, "the look at the queue for the Macs, and its self-test", pull(), dict(files=["scripts/mac-queue.py", "scripts/test-mac-queue.py"])),
-    (False, "trunk: the same", TRUNK, dict(files=["scripts/mac-queue.py", "scripts/test-mac-queue.py"])),
-    (True, "a script that only sounds like it", pull(), dict(files=["scripts/mac-queue.py.sh"])),
-    (True, "the Mac shell script CI runs", pull(), dict(files=[DOC, "scripts/mac-shell/e2e-drag.sh"])),
-    (True, "what that script is built on", pull(), dict(files=[DOC, "scripts/mac-shell/lib.sh"])),
-    (True, "a helper tool, which only a Mac's tests type-check", pull(), dict(files=[DOC, "scripts/mac-shell/curtain.swift"])),
-    (True, "the one in Objective-C too", pull(), dict(files=[DOC, "scripts/mac-shell/vdisplay.m"])),
-    (True, "macOS-only code", pull(), dict(files=[CORE, UI])),
-    (False, "macOS-only code whose head has passed", pull(), dict(files=[CORE, UI], passed={"H"})),
-    (False, "prose since the pass", pull(), dict(files=[CORE, UI, DOC], passed={"P1"}, between={("P1", "H"): [DOC]})),
-    (True, "code since the pass", pull(), dict(files=[CORE, UI], passed={"P1"}, between={("P1", "H"): [CORE]})),
-    (True, "the manifest", pull(), dict(files=["Package.swift"])),
-    (True, "a script CI runs", pull(), dict(files=["scripts/parity.py"])),
-    (True, "a workflow", pull(), dict(files=[".github/workflows/ci.yml"])),
-    (True, "the socket client's module", pull(), dict(files=["Sources/ArborIPC/ArborPaths.swift"])),
-    (False, "the Makefile, which no macOS job uses", pull(), dict(files=["Makefile"])),
-    (True, "resources", pull(), dict(files=["Makefile", "Resources/Info.plist"])),
-    (False, "what looks after the repository itself, on Linux or at GitHub's", pull(), dict(files=[
+    (NO, "only prose", pull(), dict(files=[DOC, "collab/BOARD.md", "README.md"])),
+    (NO, "only code that builds on Linux", pull(), dict(files=[CORE, CONTROLLER, TEST, DOC])),
+    (NO, "the same with a Mac shell script", pull(), dict(files=[CORE, SHOTS])),
+    (NO, "stand-ins that only Linux compiles", pull(), dict(files=[CORE, "scripts/typecheck-mac/stubs/AppKit/View.swift"])),
+    (NO, "the Mac shell workflow and what runs the scripts there, which CI's own job does not use", pull(), dict(files=[
+        ".github/workflows/mac-shell.yml", "scripts/ci-mac-shell.sh", "scripts/mac-shell/run.sh", "scripts/mac-shell/preflight.sh"])),
+    (NO, "these rules, their table and the tools' self-tests, which Linux runs", pull(), dict(files=[
+        "scripts/ci-changes.py", "scripts/test-ci-changes.py", "scripts/test-tooling.py", "scripts/test-ci-tests.py"])),
+    (NO, "trunk: the same", TRUNK, dict(files=[".github/workflows/mac-shell.yml", "scripts/ci-changes.py"])),
+    (NO, "the look at the queue for the Macs, and its self-test", pull(), dict(files=["scripts/mac-queue.py", "scripts/test-mac-queue.py"])),
+    (UPON, "a script that only sounds like it", pull(), dict(files=["scripts/mac-queue.py.sh"])),
+    (UPON, "the set-up of a hosted Mac, which CI's job begins with", pull(), dict(files=[".github/actions/mac-setup/action.yml"])),
+    (UPON, "what keeps a build", pull(), dict(files=[".github/actions/mac-keep-build/action.yml"])),
+    (UPON, "what builds, names a build and restores time stamps", pull(), dict(files=["scripts/ci-build.sh"])),
+    (UPON, "the same", pull(), dict(files=["scripts/ci-build-key.sh"])),
+    (UPON, "the same", pull(), dict(files=["scripts/ci-mtimes.py"])),
+    (UPON, "the script that installs the toolchain", pull(), dict(files=["scripts/ci-toolchain.sh"])),
+    (UPON, "the script that selects the tests, which the Mac runs", pull(), dict(files=["scripts/ci-tests.py"])),
+    (UPON, "the wrapper of every step", pull(), dict(files=["scripts/ci-step.py"])),
+    (UPON, "the Mac shell script CI runs", pull(), dict(files=[DOC, "scripts/mac-shell/e2e-drag.sh"])),
+    (UPON, "what that script is built on", pull(), dict(files=[DOC, "scripts/mac-shell/lib.sh"])),
+    (UPON, "what compiles the helper tools in CI's build step", pull(), dict(files=[DOC, "scripts/mac-shell/compile-tools.sh"])),
+    (UPON, "a helper tool, which only a Mac's tests type-check", pull(), dict(files=[DOC, "scripts/mac-shell/curtain.swift"])),
+    (UPON, "the one in Objective-C too", pull(), dict(files=[DOC, "scripts/mac-shell/vdisplay.m"])),
+    (UPON, "macOS-only code", pull(), dict(files=[CORE, UI])),
+    (UPON, "the app's main.swift and the real-window runner", pull(), dict(files=["Sources/Arbor/main.swift", "Sources/arbor-e2e/Steps.swift"])),
+    (NO, "macOS-only code whose head has passed", pull(), dict(files=[CORE, UI], passed={"H"})),
+    (NO, "prose since the pass", pull(), dict(files=[CORE, UI, DOC], passed={"P1"}, between={("P1", "H"): [DOC]})),
+    (UPON, "code since the pass", pull(), dict(files=[CORE, UI], passed={"P1"}, between={("P1", "H"): [CORE]})),
+    (UPON, "the manifest (which is part of a build's name, so nothing is built upon)", pull(), dict(files=["Package.swift"])),
+    (UPON, "a script CI runs", pull(), dict(files=["scripts/parity.py"])),
+    (UPON, "a workflow", pull(), dict(files=[".github/workflows/ci.yml"])),
+    (UPON, "the socket client's module", pull(), dict(files=["Sources/ArborIPC/ArborPaths.swift"])),
+    (NO, "the Makefile, which the macOS job does not use", pull(), dict(files=["Makefile"])),
+    (UPON, "resources", pull(), dict(files=["Makefile", "Resources/Info.plist"])),
+    (NO, "what looks after the repository itself, on Linux or at GitHub's", pull(), dict(files=[
         "scripts/public-check.py", "scripts/public-check.allow", "scripts/test-public-check.py", "scripts/git-hooks/pre-push", "scripts/lint-workflows.py",
         "scripts/housekeeping.py", "scripts/gh-state.py", ".github/workflows/public-check.yml", ".github/workflows/housekeeping.yml", ".github/dependabot.yml",
         ".claude/settings.json"])),
-    (True, "scripts and workflows that only begin like those", pull(), dict(files=["scripts/publish-release.sh"])),
-    (True, "the same", pull(), dict(files=["scripts/public/x.sh"])),
-    (True, "the same", pull(), dict(files=[".github/workflows/publish.yml"])),
-    (True, "a path nobody has thought of", pull(), dict(files=[".gitignore"])),
-    (True, "macOS-only code renamed into docs/", pull(), dict(files=["docs/B.md", UI])),
-    (True, "[mac] in the subject", pull(), dict(files=[CORE], subject="fix: y [mac]")),
-    (True, "the label mac", pull(labels=["mac"]), dict(files=[DOC])),
-    (False, "another label", pull(labels=["bug"]), dict(files=[CORE])),
-    (True, "the list of files cannot be read", pull(), dict()),
-    (True, "no files at all", pull(), dict(files=[])),
-    (True, "trunk: code that builds on Linux", TRUNK, dict(files=[CORE])),
-    (False, "trunk: only prose", TRUNK, dict(files=[DOC])),
-    (False, "trunk: moved to a tested head", TRUNK, dict(files=[CORE, UI], passed={"H"})),
-    (True, "trunk: merged an unchecked branch", TRUNK, dict(files=[CORE, UI], passed={"P2"}, between={("P2", "H"): [CORE]})),
-    (False, "trunk: merge commit of a tested, rebased head", TRUNK, dict(files=[UI], passed={"P1"}, between={("P1", "H"): []})),
-    (False, "push: only prose", push(), dict(between={("B", "H"): [DOC]})),
-    (True, "push: code that builds on Linux", push(), dict(between={("B", "H"): [CORE]})),
-    (False, "push: fast-forward to a tested head", push(), dict(between={("B", "H"): [CORE, UI]}, passed={"H"})),
-    (True, "push: a new branch", push(NEW_BRANCH), dict()),
-    (False, "push: a new branch at a tested commit", push(NEW_BRANCH), dict(passed={"H"})),
-    (True, "an event without a rule", ("schedule", {}), dict()),
+    (UPON, "scripts and workflows that only begin like those", pull(), dict(files=["scripts/publish-release.sh"])),
+    (UPON, "the same", pull(), dict(files=["scripts/public/x.sh"])),
+    (UPON, "the same", pull(), dict(files=[".github/workflows/publish.yml"])),
+    (UPON, "a path nobody has thought of", pull(), dict(files=[".gitignore"])),
+    (UPON, "macOS-only code renamed into docs/", pull(), dict(files=["docs/B.md", UI])),
+    (UPON, "[mac] in the subject", pull(), dict(files=[CORE], subject="fix: y [mac]")),
+    (UPON, "the label mac", pull(labels=["mac"]), dict(files=[DOC])),
+    (FULL, "[mac-full] in the subject", pull(), dict(files=[DOC], subject="fix: y [mac-full]")),
+    (FULL, "[mac-full] though the head has passed", pull(), dict(files=[UI], fresh={"H"}, subject="fix: y [mac-full]")),
+    (FULL, "the label mac-full", pull(labels=["mac-full"]), dict(files=[DOC])),
+    (FULL, "both labels", pull(labels=["mac", "mac-full"]), dict(files=[UI])),
+    (NO, "another label", pull(labels=["bug"]), dict(files=[CORE])),
+    (FULL, "the list of files cannot be read", pull(), dict()),
+    (UPON, "the same, and asked for with [mac]", pull(), dict(subject="fix: y [mac]")),
+    (FULL, "no files at all", pull(), dict(files=[])),
+    (FRESH, "trunk: code that builds on Linux", TRUNK, dict(files=[CORE])),
+    (FRESH, "trunk: macOS-only code", TRUNK, dict(files=[UI])),
+    (FRESH, "trunk: asked for with [mac]", TRUNK, dict(files=[DOC], subject="docs: y [mac]")),
+    (FULL, "trunk: asked for with [mac-full]", TRUNK, dict(files=[DOC], subject="docs: y [mac-full]")),
+    (NO, "trunk: only prose", TRUNK, dict(files=[DOC])),
+    (NO, "trunk: moved to a head that passed, built from nothing", TRUNK, dict(files=[CORE, UI], fresh={"H"})),
+    (FRESH, "trunk: moved to a head that passed, built upon a cache: that pass does not count here", TRUNK, dict(files=[CORE, UI], passed={"H"})),
+    (FRESH, "trunk: merged an unchecked branch", TRUNK, dict(files=[CORE, UI], fresh={"P2"}, between={("P2", "H"): [CORE]})),
+    (NO, "trunk: merge commit of a tested, rebased head", TRUNK, dict(files=[UI], fresh={"P1"}, between={("P1", "H"): []})),
+    (NO, "trunk: passed upon a cache since, from nothing before that, prose between", TRUNK,
+     dict(files=[UI], passed={"P1"}, fresh={"P2"}, between={("P2", "H"): [DOC]})),
+    (FRESH, "any other branch into main is integration too", pull(ref="hotfix/x", base=rules.MAIN), dict(files=[UI])),
+    (FRESH, "into main: code that builds on Linux", pull(ref="hotfix/x", base=rules.MAIN), dict(files=[CORE])),
+    (FRESH, "into main: a pass upon a cache does not count", pull(ref="hotfix/x", base=rules.MAIN), dict(files=[UI], passed={"H"})),
+    (NO, "into main: only prose", pull(ref="hotfix/x", base=rules.MAIN), dict(files=[DOC])),
+    (NO, "push: only prose", push(), dict(between={("B", "H"): [DOC]})),
+    (FRESH, "push: code that builds on Linux", push(), dict(between={("B", "H"): [CORE]})),
+    (NO, "push: fast-forward to a head that passed, built from nothing", push(), dict(between={("B", "H"): [CORE, UI]}, fresh={"H"})),
+    (FRESH, "push: fast-forward to a head that passed upon a cache", push(), dict(between={("B", "H"): [CORE, UI]}, passed={"H"})),
+    (FULL, "push: a new branch", push(NEW_BRANCH), dict()),
+    (NO, "push: a new branch at a commit that passed, built from nothing", push(NEW_BRANCH), dict(fresh={"H"})),
+    (FULL, "every night", ("schedule", {}), dict()),
+    (FULL, "every night, whatever has passed", ("schedule", {}), dict(fresh={"H"})),
+    (FULL, "started by hand, for which there is no rule", ("workflow_dispatch", {}), dict()),
+]
+
+# What goes to $GITHUB_OUTPUT, where every line is an answer and the last one of a name counts.
+OUTPUT = [
+    ("every test, from nothing", (FULL, "changed: x"), ["why=changed: x", "tests=full", "build=from-nothing", "mac=true"]),
+    ("its own tests, from nothing", (FRESH, "changed: x"), ["why=changed: x", "tests=mac-only", "build=from-nothing", "mac=true"]),
+    ("its own tests, upon a cache", (UPON, "changed: x"), ["why=changed: x", "tests=mac-only", "build=upon", "mac=true"]),
+    ("no Mac", (NO, "only prose"), ["why=only prose", "tests=none", "build=none", "mac=false"]),
+    ("a word nobody knows is taken for the most", ("sideways", "x"), ["why=x", "tests=full", "build=from-nothing", "mac=true"]),
+    ("a file name with an answer of its own", (FULL, "changed: a\nmac=false\r\ntests=mac-only\nbuild=upon"),
+     ["why=changed: a mac=false tests=mac-only build=upon", "tests=full", "build=from-nothing", "mac=true"]),
 ]
 
 
-def pretend(files=None, between=None, passed=(), subject="feat: x"):
+def pretend(files=None, between=None, passed=(), fresh=(), subject="feat: x"):
     def files_of_pull_request(_repo, _number):
         if files is None:
             raise rules.Unclear("no list")
@@ -107,7 +144,8 @@ def pretend(files=None, between=None, passed=(), subject="feat: x"):
     rules.files_of_pull_request = files_of_pull_request
     rules.files_between = files_between
     rules.recent_commits = lambda _repo, _head: ["H", "P1", "P2"]
-    rules.passed_on_a_mac = lambda _repo, sha: sha in passed
+    # A Mac that passed after building from nothing has passed.
+    rules.passed_on_a_mac = lambda _repo, sha, check: sha in fresh or (check == rules.CHECK and sha in passed)
     rules.subject = lambda _repo, _sha: subject
 
 
@@ -115,11 +153,17 @@ def main():
     wrong = 0
     for expected, situation, (name, event), answers in TABLE:
         pretend(**answers)
-        needed, reason = rules.decide(name, event, "owner/repo", "H")
-        if needed != expected:
+        tests, reason = rules.decide(name, event, "owner/repo", "H")
+        if tests != expected:
             wrong += 1
-            print(f"✘ {situation}: expected {expected}, got {needed} ({reason})")
-    print(f"{len(TABLE) - wrong} of {len(TABLE)} situations decided as expected")
+            print(f"✘ {situation}: expected {expected}, got {tests} ({reason})")
+    for situation, decision, expected in OUTPUT:
+        lines = rules.answers(*decision)
+        if lines != expected:
+            wrong += 1
+            print(f"✘ {situation}: expected {expected}, got {lines}")
+    count = len(TABLE) + len(OUTPUT)
+    print(f"{count - wrong} of {count} situations decided as expected")
     return 1 if wrong else 0
 
 

@@ -36,6 +36,9 @@ check: lint build test
 	@./scripts/privacy-smoke.sh
 	@./scripts/scenarios.sh
 	@python3 scripts/test-tooling.py
+	@python3 scripts/test-ci-changes.py
+	@python3 scripts/test-ci-tests.py
+	@python3 scripts/test-mac-queue.py
 	@./scripts/release-tools-test.sh
 
 # On Linux: all that a change must pass before it is pushed (check, scenarios, parity, typecheck-mac, lint), each thing once and

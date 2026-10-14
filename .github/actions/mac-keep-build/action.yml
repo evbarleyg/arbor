@@ -15,10 +15,7 @@ runs:
       shell: bash
       run: |
         "$GITHUB_ACTION_PATH/../../../scripts/ci-mtimes.py" record
-        before=$(du -sm .build | cut -f1)
-        # Written by every compilation for editors to read, and never read by a build.
-        rm -rf .build/*/debug/index
-        echo "::notice title=build cache::keeping $(du -sm .build | cut -f1) MB ($before MB with the index for editors)"
+        echo "::notice title=build cache::keeping $(du -sm .build | cut -f1) MB"
     - name: Keep it
       uses: actions/cache/save@v4
       with:
