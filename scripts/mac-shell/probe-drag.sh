@@ -73,61 +73,123 @@ try() {
   echo "Arbor's log:"; since "$mark"
 }
 
-round() {
-  local tag=$1 x y w h
-  step "ROUND $tag"
-  macos_tiling
-  arbor_start 3
-  ctl doctor
-  read -r sx sy sw sh <<< "$(arbor_ask screen)"
-  echo "on the screen, front to back:"
-  pointer windows --on-screen
-  "$ARBOR_ROOT/.build/mac-shell/axwatch" "$ARBOR_WINDOWS_PID" >> "$ARBOR_OUT/ax-events.txt" 2>&1 &
-  watcher=$!
-  started "$watcher"
-  "$ARBOR_ROOT/.build/mac-shell/witness" watch 200 >> "$ARBOR_OUT/pointer-events.txt" 2>&1 &
-  witness=$!
-  started "$witness"
-  sleep 1
-  shot "$tag-0-start"
 
-  # shellcheck disable=SC2046
-  try "$tag-1-middle" "$W3" $(titlebar_of "$W3") $((sx + sw / 2 + 60)) $((sy + 200))
-  # shellcheck disable=SC2046
-  try "$tag-2-left-edge" "$W3" $(titlebar_of "$W3") $((sx + 3)) $((sy + sh / 2))
-  is docked "$W3" && ctl float "$W3"
-  sleep 1
-  read -r x y w h <<< "$(real_frame_of "$W3")"
-  try "$tag-3-pushed-left" "$W3" $((${x%.*} + ${w%.*} / 2)) $((${y%.*} + 12)) $((sx - 40)) $((sy + sh / 2)) --hold 1
-  is docked "$W3" && ctl float "$W3"
-  sleep 1
-  read -r x y w h <<< "$(real_frame_of "$W3")"
-  try "$tag-4-near-the-top" "$W3" $((${x%.*} + ${w%.*} / 2)) $((${y%.*} + 12)) $((sx + sw / 2)) $((sy + 72))
-  is docked "$W3" && ctl float "$W3"
-  sleep 1
-  read -r x y w h <<< "$(real_frame_of "$W3")"
-  try "$tag-5-menu-bar" "$W3" $((${x%.*} + ${w%.*} / 2)) $((${y%.*} + 12)) $((sx + sw / 2)) 2 --hold 1
-  is docked "$W3" && ctl float "$W3"
-  sleep 1
-
-  step "$tag-6: a double-click on a floating window's title bar"
-  mark=$(wc -l < "$ARBOR_HOME/arbor.log")
-  read -r x y w h <<< "$(real_frame_of "$W2")"
-  echo "before: $x $y $w $h"
-  pointer windows --on-screen | head -n 8
-  # Its left part, which the window in front of it leaves free.
-  dblclick $((${x%.*} + 100)) $((${y%.*} + 12))
-  sleep 1.5
-  echo "after: $(real_frame_of "$W2")"
-  shot "$tag-6-double-click"
-  summary
-  since "$mark"
-
-  kill_started "$watcher" "$witness"
-  arbor_stop
+# quick <name> <window> <x1 y1 x2 y2> [options]: the same without pictures of the end
+grab_of() {
+  local x y w h left right
+  read -r x y w h <<< "$(real_frame_of "$1")"
+  x=${x%.*}; y=${y%.*}; w=${w%.*}
+  left=$x; right=$((x + w))
+  [ "$left" -lt 0 ] && left=0
+  [ "$right" -gt 1024 ] && right=1024
+  echo "$(((left + right) / 2)) $((y + 12))"
 }
 
-round default
-macos_tiling off
-round off
-macos_tiling on
+home() {
+  is docked "$1" && ctl float "$1" > /dev/null
+  echo "move $2 300 200 480 348" >&9
+  sleep 0.8
+}
+
+# to <name> <x> <y> [options]: W3 from the middle of the screen to that point, held a second and a half, let go
+to() {
+  local name=$1 x=$2 y=$3 mark
+  shift 3
+  step "$name: to $x $y $*"
+  "$ARBOR_BIN/arborctl" float "$W3" > /dev/null 2>&1
+  sleep 0.5
+  # shellcheck disable=SC2046
+  drag $(grab_of "$W3") 512 300 > /dev/null
+  sleep 0.5
+  mark=$(wc -l < "$ARBOR_HOME/arbor.log")
+  echo "--- $name" >> "$ARBOR_OUT/ax-events.txt"
+  # shellcheck disable=SC2046
+  drag $(grab_of "$W3") "$x" "$y" --hold 1.5 --no-release "$@"
+  echo "held: pointer $(pointer where), window $(real_frame_of "$W3")"
+  echo "Arbor shows: $(overlays | awk '$8 == "on" { print $3, $4, $5, $6, $7 }' | tr '\n' ';')"
+  echo "macOS shows: $(strangers | awk '{ print $9, $4, $5, $6, $7 }' | sort -u | tr '\n' ';')"
+  ARBOR_SETTLE=0 shot "$name"
+  release "$@"
+  sleep 2
+  echo "let go: window $(real_frame_of "$W3"), Arbor $(frame_of "$W3") $(is docked "$W3" && echo docked || echo floating)"
+  since "$mark" | grep -v "Reduce motion\|said on"
+}
+
+step "how long this Mac has been left alone, and what it does then"
+uptime
+echo "HIDIdleTime: $(ioreg -c IOHIDSystem | awk '/HIDIdleTime/ { print int($NF / 1000000000); exit }') s"
+echo "screen saver:"; defaults -currentHost read com.apple.screensaver 2>&1
+pmset -g custom 2>&1 | grep -i -E "sleep|Power"
+pmset -g assertions 2>&1 | head -n 12
+echo "locked: $(ioreg -n Root -d1 | grep -c '"CGSSessionScreenIsLocked"=Yes')"
+
+arbor_start 3
+read -r sx sy sw sh <<< "$(arbor_ask screen)"
+"$ARBOR_ROOT/.build/mac-shell/axwatch" "$ARBOR_WINDOWS_PID" >> "$ARBOR_OUT/ax-events.txt" 2>&1 &
+watcher=$!
+started "$watcher"
+sleep 1
+
+for x in 2 1 0; do to "left-$x" "$x" 368; done
+for x in 1021 1022 1023; do to "right-$x" "$x" 368; done
+for y in 42 32 30 24 16 8 4 1 0; do to "top-$y" 512 "$y"; done
+to corner-top-left 0 31
+to corner-top-left-0 0 0
+to corner-bottom-left 0 700
+to corner-bottom-left-767 0 767
+to bottom-767 512 767
+to option-left-third 200 368 --mods opt
+to option-middle 512 368 --mods opt
+to cmd-top-0 512 0 --mods cmd
+to cmd-left-0 0 368 --mods cmd
+
+step "a docked window carried to the menu bar"
+ctl dock "$W3" left
+ctl dock "$W2" right
+sleep 1
+summary
+mark=$(wc -l < "$ARBOR_HOME/arbor.log")
+echo "--- docked to the menu bar" >> "$ARBOR_OUT/ax-events.txt"
+# shellcheck disable=SC2046
+drag $(grab_of "$W3") 512 0 --hold 1.5
+sleep 2
+summary
+since "$mark" | grep -v "Reduce motion\|said on"
+shot docked-to-menu-bar
+ctl float-all
+sleep 1
+
+step "a double-click on the title bar of a floating window that nothing covers"
+# shellcheck disable=SC2046
+drag $(grab_of "$W3") 700 500 > /dev/null
+sleep 0.5
+echo "--- double-click" >> "$ARBOR_OUT/ax-events.txt"
+echo "before: $(real_frame_of "$W3")"
+# shellcheck disable=SC2046
+dblclick $(grab_of "$W3")
+sleep 2
+echo "after: $(real_frame_of "$W3")"
+summary
+kill_started "$watcher"
+arbor_stop
+
+step "the first drag of e2e-drag.sh with the screen saver up"
+arbor_start 3
+open -a ScreenSaverEngine
+sleep 4
+echo "ScreenSaverEngine: $(pgrep -x ScreenSaverEngine | tr '\n' ' ')"
+pointer windows --on-screen | head -n 12
+ARBOR_SETTLE=0 shot saver-0-up
+mark=$(wc -l < "$ARBOR_HOME/arbor.log")
+# shellcheck disable=SC2046
+drag $(titlebar_of "$W3") $((sx + 3)) $((sy + sh / 2)) --no-release
+echo "held: pointer $(pointer where), window $(real_frame_of "$W3"); preview: $(has_overlay 3 && echo yes || echo no)"
+ARBOR_SETTLE=0 shot saver-1-held
+release
+sleep 2
+echo "ScreenSaverEngine: $(pgrep -x ScreenSaverEngine | tr '\n' ' ')"
+pointer windows --on-screen | head -n 12
+summary
+since "$mark"
+shot saver-2-after
+arbor_stop
