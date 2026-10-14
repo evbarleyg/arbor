@@ -64,6 +64,14 @@ That is all of it: **dock**, **float**, **zoom**. Everything else is a faster wa
 
 The keys follow one rule: **⌃⌥ looks, ⌃⌥⌘ moves, ⇧ does the opposite or the bigger version.**
 
+### Where Arbor differs on purpose
+
+Arbor was inspired by TrellisWM and is not a copy of it. Three things are different because we think them better, not because they are unfinished:
+
+- **Nothing moves until you dock something.** When Arbor starts, every window stays where it is, at the size it has, and floats. You choose what gets a place. When it starts again later, what *you* docked goes back to its place.
+- **Show Everything shows your real windows**, laid out smaller, not pictures of them. You can read, click and type in them at once, and Arbor needs no permission to record your screen. A window that cannot be that small shows as a tile with its app's colour and icon.
+- **Nothing of Arbor's lies between your pointer and your windows.** While you drag, the preview is a picture that lets the mouse through: no layer of Arbor's covers the screen, so letting go always reaches the window.
+
 ## 2. The first ten minutes
 
 ### Before you start: four switches
@@ -364,6 +372,9 @@ Being built or waiting to be merged as this is written. When one lands, its sect
 | | What it will change here |
 |---|---|
 | Motion with the windows' own contents | With Screen Recording permission windows will keep their contents while they move. Not yet: wait for the release notes to say it has been seen on a Mac |
+| A later start shows everything | Today a later start also goes back to the view you had, so windows can go out of view at once. It will end showing everything; ⌃⌥[ will go to where the view was |
+| Tiles say which window they are | A tile will show the window's title under the icon, so that two windows of one app can be told apart (`tileStyle`, which will ship as `name`) |
+| Standing aside for macOS's own tiling | Where macOS reacts to a drag (the screen's edges, the menu bar), Arbor will leave the drag to it, so the switches in section 2 become advice and no longer a condition |
 | Tab groups | Drop a window on the middle of another: they share a place under a strip of tabs; ⌃⌥⇥ switches |
 | Presets | Set the table with one command |
 | Carry a window with the keyboard (⌃⌥⌘Space) | Everything a drag can do, from the keys: put a window under one other window, make a tab group |

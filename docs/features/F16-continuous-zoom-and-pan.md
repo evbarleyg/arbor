@@ -27,6 +27,9 @@ result moves real windows.
 - Setting `continuousZoom` (default true once shipped) falls back to F03's steps when false.
 - A click or key press during the settle animation ends it immediately.
 
+**Decided on 2026-10-14 by the product owner (QUESTIONS Q15, Q18):** judged with colour and icon first, since that is what ships. Criterion 3 ("Manual: … at 60 Hz") is replaced by the board's row for the zoom train: pinches posted by a
+script on a hosted Mac, the stage's own count of frames, a film, the detectors and the rubric. No hosted Mac has a trackpad: what rests on real fingers alone (whether scroll events arrive during a pinch) must not be what the feature's safety rests on.
+
 ## Design notes
 
 - Model the gesture's virtual camera (a rectangle in layout space) in a pure

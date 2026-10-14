@@ -36,6 +36,9 @@ ease-out rather than ease-in-out. If a branch already implements the old
 motion, merge it as it is and do the plane zoom as a follow-up; do not hold a
 finished branch for this.
 
+**Decided on 2026-10-14 by the product owner (QUESTIONS Q15, Q18):** Arbor never asks for Screen Recording by itself and `windowPictures` stays false, so colour and icon is the look that ships: the motion is judged in that
+look first, and with pictures as a second look. Criterion 4 ("Manual") is replaced by the board's row for the motion train: a film from a hosted Mac, read by the detectors and judged against the polish rubric.
+
 ## Design notes
 
 - Extend `OverlayPresenter` with `animate(_ transition: Transition)` where

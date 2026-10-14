@@ -307,6 +307,74 @@ product decisions) answers in place. Do not delete answered questions.
      run or one Arbor reacted to. The clock is monotonic. Kinds of line a reader does not know are skipped, not fatal.
   10. `make scenarios` records and strictly replays each scenario, so that a new way across the seams cannot go unrecorded unnoticed.
 
+## Q15: What does "show everything" look like: the real windows, or a picture of them?
+
+- Asked by: documenter, 2026-10-14 (issue #2, decision 1). The documenter answered provisionally there.
+- Context: the reference draws its overview itself: a darkened live picture of each window with icon and title, the real windows out of view
+  meanwhile. Arbor lays the real windows out smaller, and shows a tile for one that cannot be that small.
+- **Answer** (product owner, 2026-10-14): **the real windows. The provisional answer stands and is provisional no longer.**
+  1. It needs no second permission. Pictures need Screen Recording: one more prompt in the first minute, which macOS repeats from time to time.
+  2. What shows is the window itself. It can be read, clicked and typed in at once, it is never stale, and nothing has to hand over to it, so nothing can jump (#3, rule 3).
+  3. A drawn overview is visual parity, and nothing in a working day waits for it (#3, rule 7).
+- What follows from it:
+  - **A picture overview is not on the board.** It is IDEAS I13. It may be proposed again once `docs/VIABLE.md` has passed, as an option for people who have granted Screen Recording already.
+  - **Arbor never asks for Screen Recording by itself**, and `windowPictures` stays false. So colour and icon is the look that ships, and F02's second step and F16 are judged
+    **in that look first**. Pictures are a second look, judged on hosted Macs by the same rubric; when they pass they may switch themselves on where the permission is already there.
+  - **Two windows of one app can be told apart in the overview without a click.** Played on a 1440-point display with four docked apps at their real smallest sizes: two are tiles,
+    63 and 157 points wide, and the tile of one Safari window says nothing that tells it from the other Safari window. So `tileStyle` ships as `"name"`, and a window's tile is
+    captioned with the space's name if it has one, else the window's title, else the app's name. A tile too narrow for eight letters shows the icon alone; every tile has its caption as its help tag.
+    While the view is held, at either strength, the app's name stands in for the title, as on F04's strips.
+  - A title is drawn and nothing else: not logged, not in a trace, not in `state` or `watch` without `--titles`.
+
+## Q16: What does Arbor do to the windows that are open when it starts?
+
+- Asked by: documenter, 2026-10-14 (issue #2, decision 2; #3, rule 2).
+- Context: the reference arranges and resizes every window on the desktop the moment it starts, which surprised the person trying it. Arbor takes them in as floating and waits.
+- **Answer** (product owner, 2026-10-14): **nothing. Arbor's way stays, as a deliberate difference, and `docs/GUIDE.md` says so.**
+  1. It was the first thing that went wrong for the tester, before any feature had a chance (#3).
+  2. An arrangement is worth something because its owner made it. Arbor cannot know which three of twelve windows matter.
+  3. The way in costs one drag or one key, and the first-run coach invites it (F46).
+- What follows from it:
+  - `newWindows` stays `"float"`. Nothing docks that nobody docked.
+  - **A later start** brings back what the person had docked, each window moving once, because that arrangement is theirs (T60). One rule for the view: **a start takes no window out of view that is in view when Arbor starts.**
+    After a Quit every window is in view, so the start ends showing everything, and ⌃⌥[ goes to where the view was. After a crash, a kill or an update the others are still in the corner: keeping the view hides nothing and moves nothing, so it is kept,
+    unless a window it would hide has come into view meanwhile. A start never sizes a floating window or sends one away.
+  - Played on the trunk (`arbor-sim replay --frames`: three windows, two docked, one framed, `quit`, `launch`): the first start moves nothing, and quitting gives all three their own frames back.
+    The second start frames the window that was framed and sends the other two to the corner, one of them a window that was never docked. **That is a fault against rule 2**: on the board.
+
+## Q17: Does anything of Arbor's lie between the pointer and the windows during a drag?
+
+- Asked by: documenter, 2026-10-14 (issue #2, decision 3; #3, rule 6).
+- Context: the reference covers the screen with one window of its own during a drag. Accessibility tools and automation cannot let go of a drag over a foreign full-screen window.
+- **Answer** (product owner, 2026-10-14): **no. The preview stays a panel that ignores the mouse, and there will be no drop layer.**
+  1. Rule 6: whoever cannot let go of a window has lost the Mac, not a feature.
+  2. Read on the trunk: the preview, the stage, the rectangle's band, the focus ring, the surface and the line on screen all ignore the mouse. What takes clicks (tiles, gap handles, the peek's outline,
+     the minimap when asked, the panels with a field) is no larger than what it stands for.
+  3. Reading is not proof, and the next panel will be written by somebody who has not read this. So it becomes a rule with checks.
+- **The rule.** While a mouse button is down that went down outside Arbor's own panels, Arbor puts no panel that takes the mouse under the pointer, and moves none there. No panel that takes the mouse
+  covers a whole display, except the peek's outline while the person holds its keys.
+- **The checks** (board, "Nothing of Arbor's takes the mouse-up"): on Linux, one table of Arbor's panels (level, takes the mouse or not, why), and a check that fails for a panel that is not in it. On a hosted Mac, in `e2e-drag.sh`,
+  at both settings of macOS tiling, for every drag: the button is up within 50 ms of the posted mouse-up, the window ends where the preview was, and a click at that point 300 ms later arrives in the window that lies there.
+
+## Q18: Who says that something may ship switched on, now that nobody is asked to look?
+
+- Asked by: product owner, 2026-10-14. Issue #4 forbids what the rule so far rested on ("ships off until a person has tried it on a Mac", under "what ships off" below).
+- **Answer** (product owner, 2026-10-14): **the loop does.** A thing ships switched on when all of these hold on one commit:
+  1. its own script has run unattended on a hosted Mac, in under ten minutes, at both settings of macOS tiling, and every check in it passed;
+  2. the detectors of `docs/VIABLE.md` found nothing in what that run recorded;
+  3. if it holds or swallows input (an event tap, a panel that takes the mouse, a registered key): every key, click and scroll that is not Arbor's reached the witness, none more than 10 ms later than without Arbor;
+  4. if it draws: its rows of the polish rubric pass, in light and dark.
+- What a hosted Mac cannot produce (a real trackpad, a camera or a call, a lid, a notch, a second physical display, a login) proves nothing either way. A feature whose safety rests on one of those is **redesigned until it does not**, or
+  ships off and is called an experiment in the guide. It is not done, and the board says so.
+- The caution that rule came from stays: compare the known faults of what is in with the risks of what would replace it, and weigh the failure nobody has thought of. A click that vanishes looks like a broken Mac.
+
+## Q19: What decides a release?
+
+- Asked by: product owner, 2026-10-14. Issue #3 ends with half an hour on one person's ordinary Mac; issue #4, which is later, says that quality is never judged by asking the maintainer to look.
+- **Answer** (product owner, 2026-10-14): **`docs/VIABLE.md`.** The half hour becomes the day that a script plays with real apps on hosted Macs at macOS's default settings, many times over, judged by detectors. Its measure is #3's: no jolt, no lost or stuck
+  window, nothing moved that the person did not move. Anybody may still try Arbor and say what they saw, and what they say becomes a test; nothing waits for it.
+- A tag still needs what it needed: nothing of severity 1 or 2 known that can be met with the settings as they ship. "New since `main`" no longer excuses an old one.
+
 ## Decided by the executor
 
 One line per product decision made while building, newest last.

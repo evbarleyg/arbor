@@ -22,6 +22,9 @@ modifier suppresses docking, and (optionally) neighbours make room while you dra
   keeps, as TrellisWM does (T11). Arbor's preview already matches the
   rest of TrellisWM's look: a tinted rounded region with a brighter outline.
 
+**Decided on 2026-10-14 by the product owner (QUESTIONS Q17):** the preview stays a panel that ignores the mouse; there will be no layer over the screen during a drag. While a mouse button is down that went down outside
+Arbor's own panels, Arbor puts no panel that takes the mouse under the pointer and moves none there. The checks are on the board ("Nothing of Arbor's takes the mouse-up").
+
 ## Design notes
 
 - The controller needs time: inject it through `Scheduler` (`ManualScheduler`
