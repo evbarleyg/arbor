@@ -4,7 +4,8 @@ Arbor is tested at five levels, numbered below. The first three need no
 permissions and run anywhere, including CI, agents' sandboxes and Linux:
 nothing above the platform protocols needs macOS (see "Executors without a
 Mac" in `collab/README.md`). The last two need a Mac with Accessibility
-permission, which GitHub's runners have.
+permission, which GitHub's runners have. What each level can and cannot
+prove, counted test by test, is in [CENSUS.md](CENSUS.md).
 
 ## 1. Core unit tests (`Tests/ArborCoreTests`)
 
