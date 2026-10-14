@@ -17,6 +17,7 @@
 # which windows moved, how many times, by which road, and which rule of the product's that broke (its header lists them).
 #
 #   day_build                       apps_build, and compile sampler.swift
+#   day_build_tools                 only the tools (pointer, apptool, sampler), for a script in which Arbor does not run
 #   sampler_start | sampler_stop    write mac-shell/samples.log from now on | stop
 #   note <text…>                    a mark in the samples (jolts.py's header lists the marks it reads)
 #   quiet [ms] [limit ms]           wait until no window has moved, come, gone or changed its place in the pile for that long
@@ -79,6 +80,25 @@ day_build() {
     grep -A 6 "error:" "$ARBOR_OUT/build-sampler.log" | head -n 80
     die "scripts/mac-shell/sampler.swift did not compile"
   fi
+}
+
+day_build_tools() {
+  local started=$SECONDS tool jobs=""
+  mkdir -p "$(dirname "$DAY_SAMPLER")"
+  for tool in pointer apptool sampler; do
+    swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/$tool.swift" -o "$ARBOR_ROOT/.build/mac-shell/$tool" \
+      > "$ARBOR_OUT/build-$tool.log" 2>&1 &
+    jobs="$jobs $tool:$!"
+  done
+  for tool in $jobs; do
+    if ! wait "${tool#*:}"; then
+      grep -A 6 "error:" "$ARBOR_OUT/build-${tool%:*}.log" | head -n 80
+      die "scripts/mac-shell/${tool%:*}.swift did not compile"
+    fi
+  done
+  ARBOR_DISPLAY_COUNT=$("$ARBOR_POINTER" displays | wc -l | tr -d ' ')
+  echo "built the tools in $((SECONDS - started))s"
+  arbor_make_room || exit 77
 }
 
 # MARK: The sampler
@@ -217,7 +237,7 @@ acted() {
       esac
     done <<< "$findings"
     DAY_AUDIT_BEFORE=$findings
-    wants="$wants floating=$(floating_ids)"
+    wants="$wants floating=$(floating_ids) docked=$(docked_ids)"
   elif [ -n "$ARBOR_PID" ]; then
     echo "  ✘ ARBOR DIED"
     note "finding $DAY_STEP - FAIL Arbor died"
@@ -369,6 +389,12 @@ day_report() {
   code=$?
   step "the report (all of it: mac-shell/day-report.md)"
   sed -n '1,/^## Every step/p' "$ARBOR_OUT/day-report.md" | sed '$d'
+  if [ -n "${DAY_SABOTAGE:-}" ]; then
+    # Findings are what this run is after. What counts is whether they are the right ones.
+    step "the sabotage"
+    python3 "$DAY_JOLTS" sabotage "$DAY_SAMPLES" | tee "$ARBOR_OUT/sabotage.md"
+    code=${PIPESTATUS[0]}
+  fi
   python3 "$DAY_JOLTS" failing "$DAY_SAMPLES" > "$APPS_TEMP/failing"
   for name in "$ARBOR_OUT"/[0-9][0-9][0-9]-*.jpg; do
     [ -f "$name" ] || continue
