@@ -472,7 +472,7 @@ public final class AXWindowSystem: WindowSystem {
     activations += 1
     lastReportedFocus = nil
     if apps[pid] == nil, !waitingToObserve.contains(pid) { observe(pid: pid, announce: true, wasRunning: true) }
-    reportFocus(of: pid)
+    reportFocus(of: pid, whichCameForward: true)
   }
 
   // MARK: Apps that do not answer
@@ -933,24 +933,32 @@ public final class AXWindowSystem: WindowSystem {
   /// focused window too (it opens or closes a window, or Arbor raises one before activating the app), and
   /// reporting that would move the camera away from what the user is doing. If the app then comes forward,
   /// `appCameForward` reports its focused window.
-  private func reportFocus(of pid: pid_t) {
-    guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else { return }
+  private func reportFocus(of pid: pid_t, whichCameForward cameForward: Bool = false) {
+    guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else {
+      if cameForward {
+        Log.debug("pid \(pid) came forward, but pid \(NSWorkspace.shared.frontmostApplication?.processIdentifier ?? -1) is named as the one in front")
+      }
+      return
+    }
     guard let app = apps[pid], answers(pid), let element = app.element.element(kAXFocusedWindowAttribute),
       let window = element.windowID
     else {
       // Finder after a click on the wallpaper, an app that is not observed: the keyboard left the known windows.
+      if cameForward { Log.debug("pid \(pid) came forward and names no focused window (observed: \(apps[pid] != nil))") }
       keyboardLeftTheKnownWindows()
       return
     }
     if records[window] == nil { addWindow(element, pid: pid, announce: true, wasOpenBefore: true) }
     guard let record = records[window], !record.isBackgroundTab else {
       // A sheet, a dialog or a panel.
+      if cameForward { Log.debug("pid \(pid) came forward with \(window), which is no window to arrange") }
       keyboardLeftTheKnownWindows()
       return
     }
     // Switching Spaces activates an app too, before or after `rescan` has found out which windows show now. A
     // window still taken to be on another Space is left for `rescan` to report.
     guard record.snapshot.isOnActiveSpace else {
+      if cameForward { Log.debug("pid \(pid) came forward with \(window), which is taken to be on another Space") }
       keyboardLeftTheKnownWindows()
       return
     }

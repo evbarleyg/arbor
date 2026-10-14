@@ -257,16 +257,25 @@ extension Runner {
     try step("dock the other app's window", "dock \(x.rawValue) right") { state in
       check("\(x) is docked", state.displays[0].windowFrames[x] != nil)
     }
-    try step("frame a window of the first app", "zoom \(w1.rawValue)") { _ in
-      check("\(x) is out of view", leavesView(x), whereabouts(x))
-      check("the keyboard crossed over to the first app", eventually { $0.focused == w1 })
+    // PROBE
+    _ = try? send("trace on switch")
+    for _ in 1...3 {
+      try step("frame a window of the first app", "zoom \(w1.rawValue)") { _ in
+        check("\(x) is out of view", leavesView(x), whereabouts(x))
+        check("the keyboard crossed over to the first app", eventually { $0.focused == w1 })
+      }
+      step("switch to the other app", by: "the other app activates itself") {
+        other.send("activate")
+        // macOS can turn down an app that asks to come forward, and then there was nothing to follow.
+        func inFront() -> String { frontmostPID() == other.pid ? "it is in front" : "macOS has pid \(frontmostPID() ?? -1) in front, not it" }
+        check("the camera moves to show its window", eventually { $0.displays[0].windowFrames[x] != nil }, inFront())
+        check("\(x) is in view", comesIntoView(x), whereabouts(x))
+      }
     }
-    step("switch to the other app", by: "the other app activates itself") {
-      other.send("activate")
-      // macOS can turn down an app that asks to come forward, and then there was nothing to follow.
-      func inFront() -> String { frontmostPID() == other.pid ? "it is in front" : "macOS has pid \(frontmostPID() ?? -1) in front, not it" }
-      check("the camera moves to show its window", eventually { $0.displays[0].windowFrames[x] != nil }, inFront())
-      check("\(x) is in view", comesIntoView(x), whereabouts(x))
+    _ = try? send("trace off")
+    if FileManager.default.fileExists(atPath: "mac-shell") {
+      try? FileManager.default.copyItem(at: home.appendingPathComponent("traces"), to: URL(fileURLWithPath: "mac-shell/traces-\(getpid())"))
+      try? FileManager.default.copyItem(at: home.appendingPathComponent("arbor.log"), to: URL(fileURLWithPath: "mac-shell/log-\(getpid()).txt"))
     }
     try step("frame the other app's window", "zoom \(x.rawValue)") { _ in
       check("\(w2) is out of view", leavesView(w2), whereabouts(w2))
