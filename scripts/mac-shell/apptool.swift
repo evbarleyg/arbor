@@ -268,6 +268,9 @@ let surelyDraggable: Set<String> = ["AXWindow", "AXToolbar", "AXStaticText"]
 func grabPoint(_ window: AXUIElement, id: UInt32, pid: pid_t) -> (CGPoint, String)? {
   guard let frame = window.frame else { return nil }
   let app = application(pid)
+  // AppKit counts from the bottom of the main display.
+  let height = NSScreen.screens.first?.frame.maxY ?? 0
+  let displays = NSScreen.screens.map { CGRect(x: $0.frame.minX, y: height - $0.frame.maxY, width: $0.frame.width, height: $0.frame.height) }
   var columns: [CGFloat] = []
   var x = frame.minX + 84  // past the traffic lights
   while x < frame.maxX - 20 {
@@ -280,6 +283,8 @@ func grabPoint(_ window: AXUIElement, id: UInt32, pid: pid_t) -> (CGPoint, Strin
   for offset in [12, 20, 7] as [CGFloat] {
     for column in columns {
       let point = CGPoint(x: column.rounded(), y: (frame.minY + offset).rounded())
+      // A window that is out of view has its title bar beyond the edge of the display, where a press lands on nothing.
+      guard displays.contains(where: { $0.contains(point) }) else { continue }
       guard topWindow(at: point, ringAround: frame)?.id == id else { continue }
       var found: AXUIElement?
       guard AXUIElementCopyElementAtPosition(app, Float(point.x), Float(point.y), &found) == .success,
