@@ -114,7 +114,61 @@ jobs:
   # The headless stack only (see Package.swift), so that it stays buildable for executors without a
   # Mac. Always runs: it is what checks parity, FEATURES.md and the scenarios when the Mac is left out.
   # scripts/linux.sh runs the same image.
-  linux:
+  #
+  # Linux runners are plentiful and a pull request waits for the slowest job, so what does not need one another's results runs
+  # side by side. Every job's name starts with "linux", and the last one, `linux`, passes only if all the others did: that
+  # is the one to wait for or to put in `needs`. scripts/test-ci-linux.py holds this file to that.
+
+  # What needs neither Swift nor a build, and so no container either.
+  linux-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: The rules that decide about the macOS job
+        run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py
+      - name: The Linux jobs are all waited for
+        run: ./scripts/ci-step.py ci-linux ./scripts/test-ci-linux.py
+      - name: Lint (imports a Mac would miss; Mac shell scripts that would change a person's Mac)
+        run: ./scripts/ci-step.py lint make lint
+
+  # Here and not on the Mac: the stand-ins are for machines without AppKit, and the check declines where swift build sees the real thing.
+  linux-typecheck-mac:
+    runs-on: ubuntu-latest
+    container: swift:6.4-noble
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Python and make for the scripts
+        run: apt-get update -qq && apt-get install -y -qq python3 make
+      - name: Type-check the macOS-only code against stand-ins
+        run: ./scripts/ci-step.py --summary 'error:|type-check' typecheck-mac make typecheck-mac
+
+  # Whatever drives the built arbor-sim, and the rest of `make check` that is not a test.
+  linux-sim:
+    runs-on: ubuntu-latest
+    container: swift:6.4-noble
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Python and make for the scripts
+        run: apt-get update -qq && apt-get install -y -qq python3 make
+      - name: Toolchain
+        run: ./scripts/ci-step.py toolchain swift --version
+      - name: Build
+        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build
+      - name: Simulator smoke test
+        run: ./scripts/ci-step.py smoke ./scripts/sim-smoke.sh
+      - name: Nothing a person typed reaches the log
+        run: ./scripts/ci-step.py privacy ./scripts/privacy-smoke.sh
+      - name: User-journey scenarios
+        run: ./scripts/ci-step.py scenarios ./scripts/scenarios.sh
+      - name: The tools that report all this can also report a failure
+        run: ./scripts/ci-step.py tooling python3 scripts/test-tooling.py
+      - name: Release tooling
+        run: ./scripts/ci-step.py --summary '✘|release tools test' release-tools ./scripts/release-tools-test.sh
+
+  linux-tests:
     runs-on: ubuntu-latest
     container: swift:6.4-noble
     timeout-minutes: 30
@@ -122,24 +176,21 @@ jobs:
       - uses: actions/checkout@v5
       - name: Install Python and make for the scripts
         run: apt-get update -qq && apt-get install -y -qq python3 make
-      - name: The rules that decide about the macOS job
-        run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py
-      - name: Lint (imports a Mac would miss; Mac shell scripts that would change a person's Mac)
-        run: ./scripts/ci-step.py lint make lint
-      - name: Toolchain
-        run: ./scripts/ci-step.py toolchain swift --version
-      - name: Build
-        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build
       - name: Test
         run: ./scripts/ci-step.py --summary 'Test run with|skipped' --log test.log test swift test
-      - name: Simulator smoke test
-        run: ./scripts/ci-step.py smoke ./scripts/sim-smoke.sh
-      - name: User-journey scenarios
-        run: ./scripts/ci-step.py scenarios ./scripts/scenarios.sh
-      - name: Release tooling
-        run: ./scripts/ci-step.py --summary '✘|release tools test' release-tools ./scripts/release-tools-test.sh
-      # Here and not on the Mac: the stand-ins are for machines without AppKit, and the check declines where swift build sees the real thing.
-      - name: Type-check the macOS-only code against stand-ins
-        run: ./scripts/ci-step.py --summary 'error:|type-check' typecheck-mac make typecheck-mac
       - name: Parity (no shipped feature may break; FEATURES.md must be current)
         run: ./scripts/ci-step.py parity python3 scripts/parity.py --test-log test.log --check
+
+  # The verdict. It runs whatever became of the others, or a failure would leave it skipped, which blocks nobody who waits for it.
+  linux:
+    needs: [linux-lint, linux-typecheck-mac, linux-sim, linux-tests]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every Linux job passed
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          jq -r 'to_entries[] | select(.value.result != "success") | "::error title=linux::\(.key): \(.value.result)"' <<<"$RESULTS"
+          jq -e 'length > 0 and all(.[]; .result == "success")' <<<"$RESULTS" > /dev/null

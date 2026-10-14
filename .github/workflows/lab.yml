@@ -1,0 +1,89 @@
+name: Lab
+
+# Throwaway: times the Linux jobs of ci.yml on a branch without a pull request.
+on:
+  push:
+    branches: ['lab/**']
+
+concurrency:
+  group: lab-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  linux-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: The rules that decide about the macOS job
+        run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py
+      - name: The Linux jobs are all waited for
+        run: ./scripts/ci-step.py ci-linux ./scripts/test-ci-linux.py
+      - name: Lint (imports a Mac would miss; Mac shell scripts that would change a person's Mac)
+        run: ./scripts/ci-step.py lint make lint
+
+  # Here and not on the Mac: the stand-ins are for machines without AppKit, and the check declines where swift build sees the real thing.
+  linux-typecheck-mac:
+    runs-on: ubuntu-latest
+    container: swift:6.4-noble
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Python and make for the scripts
+        run: apt-get update -qq && apt-get install -y -qq python3 make
+      - name: Type-check the macOS-only code against stand-ins
+        run: ./scripts/ci-step.py --summary 'error:|type-check' typecheck-mac make typecheck-mac
+
+  # Whatever drives the built arbor-sim, and the rest of `make check` that is not a test.
+  linux-sim:
+    runs-on: ubuntu-latest
+    container: swift:6.4-noble
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Python and make for the scripts
+        run: apt-get update -qq && apt-get install -y -qq python3 make
+      - name: Toolchain
+        run: ./scripts/ci-step.py toolchain swift --version
+      - name: Build
+        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build
+      - name: Simulator smoke test
+        run: ./scripts/ci-step.py smoke ./scripts/sim-smoke.sh
+      - name: Nothing a person typed reaches the log
+        run: ./scripts/ci-step.py privacy ./scripts/privacy-smoke.sh
+      - name: User-journey scenarios
+        run: ./scripts/ci-step.py scenarios ./scripts/scenarios.sh
+      - name: The tools that report all this can also report a failure
+        run: ./scripts/ci-step.py tooling python3 scripts/test-tooling.py
+      - name: Release tooling
+        run: ./scripts/ci-step.py --summary '✘|release tools test' release-tools ./scripts/release-tools-test.sh
+
+  linux-tests:
+    runs-on: ubuntu-latest
+    container: swift:6.4-noble
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Python and make for the scripts
+        run: apt-get update -qq && apt-get install -y -qq python3 make
+      - name: Test
+        run: ./scripts/ci-step.py --summary 'Test run with|skipped' --log test.log test swift test
+      - name: Parity (no shipped feature may break; FEATURES.md must be current)
+        run: ./scripts/ci-step.py parity python3 scripts/parity.py --test-log test.log --check
+
+  # The verdict. It runs whatever became of the others, or a failure would leave it skipped, which blocks nobody who waits for it.
+  linux:
+    needs: [linux-lint, linux-typecheck-mac, linux-sim, linux-tests]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every Linux job passed
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          jq -r 'to_entries[] | select(.value.result != "success") | "::error title=linux::\(.key): \(.value.result)"' <<<"$RESULTS"
+          jq -e 'length > 0 and all(.[]; .result == "success")' <<<"$RESULTS" > /dev/null
