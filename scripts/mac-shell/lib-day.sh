@@ -33,7 +33,9 @@
 #   acted [key=value…]              waits for quiet, compares Arbor's belief with the screen (audit), takes the picture
 #                                     mac-shell/<nnn>-<slug>.jpg and ends the step. The keys are jolts.py's, and besides ids
 #                                     `moves=` takes `docked`: whatever is docked before or after the step; `yields=` takes
-#                                     `floating`: whatever floats before or after it
+#                                     `floating`: whatever floats before or after it. `audit=no` leaves the comparison out, for a step
+#                                     in which macOS holds the windows where Arbor cannot know them to be. What the comparison
+#                                     found after the step before as well is not said again
 #   day_launch [NAME=value…]        Arbor as a person runs it: every regular app, shortcuts and menu bar item on. The same
 #                                     $ARBOR_HOME every time, so that a second launch finds what the first one saved
 #   day_gone                        after a step that quit Arbor: waits for it to end, and forgets its process
@@ -62,6 +64,7 @@ DAY_KIND=""
 DAY_DOCKED_BEFORE=""
 DAY_FLOATING_BEFORE=""
 DAY_MANIFEST=""
+DAY_AUDIT_BEFORE=""
 DAY_FACE="ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_NO_PROMPT=0"
 QUIET=""
 
@@ -157,7 +160,8 @@ try:
     windows = json.load(sys.stdin)["state"]["windows"]
 except (ValueError, KeyError):
     sys.exit(0)
-print(",".join(str(window["id"]) for window in windows if window["managed"] and window[sys.argv[1]]))' "$1"
+docked = sys.argv[1] == "docked"
+print(",".join(str(window["id"]) for window in windows if window["managed"] and window["docked"] == docked))' "$1"
 }
 docked_ids() { day_ids docked; }
 floating_ids() { day_ids floating; }
@@ -182,18 +186,21 @@ want() {
 }
 
 acted() {
-  local word wants="" findings line code
+  local word wants="" findings line code audit=yes
   quiet || echo "  ~ windows were still moving after ${QUIET#*:} ms"
   for word in "$@"; do
     case "$word" in
       moves=docked) word="moves=$DAY_DOCKED_BEFORE,$(docked_ids)" ;;
+      audit=no) audit=""; continue ;;
       yields=floating) word="yields=$DAY_FLOATING_BEFORE,$(floating_ids)" ;;
       # Nothing would be checked, and it would look like a pass.
       front= | comes= | drags=) note "finding $DAY_STEP - FAIL the script could not tell which window ${word%=} is about"; continue ;;
     esac
     wants="$wants $word"
   done
-  if arbor_answers; then
+  if arbor_answers && [ -z "$audit" ]; then
+    wants="$wants floating=$(floating_ids)"
+  elif arbor_answers; then
     findings=$(audit)
     code=$?
     if [ "$code" -eq 2 ]; then
@@ -203,11 +210,13 @@ acted() {
       [ $? -eq 2 ] || { note "finding $DAY_STEP - ODD took more than a second longer to agree with the screen: $(echo "$findings" | grep -m 1 FAIL | cut -c 6-)"; findings=$line; }
     fi
     while IFS= read -r line; do
+      case $'\n'"$DAY_AUDIT_BEFORE"$'\n' in *$'\n'"$line"$'\n'*) continue ;; esac
       case "$line" in
         FAIL*) echo "  ✘ ${line#FAIL }"; note "finding $DAY_STEP - FAIL ${line#FAIL }" ;;
         ODD*) echo "  ~ ${line#ODD }"; note "finding $DAY_STEP - ODD ${line#ODD }" ;;
       esac
     done <<< "$findings"
+    DAY_AUDIT_BEFORE=$findings
     wants="$wants floating=$(floating_ids)"
   elif [ -n "$ARBOR_PID" ]; then
     echo "  ✘ ARBOR DIED"

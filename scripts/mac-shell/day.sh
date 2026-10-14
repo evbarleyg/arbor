@@ -124,6 +124,14 @@ open_app preview "$APPS_SCRATCH/leaf.png"
 open_app mail
 # The Dock grows with every app that joins it, and the space between it and the menu bar shrinks.
 sleep 3
+# An app may have swapped the window it opened with for another meanwhile: Mail's first one gives way to its real one.
+for name in $CAST; do
+  listed=$(app_windows "$(pid_of "$name")")
+  case " $listed " in
+    *" $(window_of "$name") "*) ;;
+    *) [ -z "$listed" ] || { eval "W_$name=\${listed%% *}"; label "$(window_of "$name")" "$name"; } ;;
+  esac
+done
 echo "the cast:$CAST"
 # shellcheck disable=SC2086
 set -- $CAST
@@ -223,7 +231,7 @@ if with_arbor; then
     drag_window "$D" "$((x + w / 2))" "$((y + h / 3))"
     want "$ND floats" eventually is floating "$D"
     # Its own size again, and where it was dropped is its own place from now on.
-    acted drags="$D" moves=docked front="$D" restores="$D" own="$D"
+    acted drags="$D" moves=docked front="$D" restores="$D" place="$D"
   fi
   brief | sed 's/^/    /'
 fi
@@ -248,7 +256,7 @@ acted drags="$X" front="$X"
 echo "$NX is at $(real_frame_of "$X")"
 act drag-where-macos-tiles "drag-$NX-back" "drags $NX away from the top again, to the middle of the screen"
 drag_window "$X" "$((dx + dw / 2))" "$((dy + dh / 3))"
-acted drags="$X" front="$X" restores="$X" own="$X"
+acted drags="$X" front="$X" restores="$X" place="$X"
 echo "$NX is at $(real_frame_of "$X")"
 
 chapter "Switching between apps, with an arrangement"
@@ -367,7 +375,7 @@ HOME_STEP=$DAY_STEP
 act macos-own full-screen "presses ⌃⌘F in Safari"
 key ctrl+cmd+f
 sleep 2
-acted moves=any leaves=any
+acted moves=any leaves=any audit=no
 act macos-own leave-full-screen "presses ⌃⌘F again"
 key ctrl+cmd+f
 sleep 2
@@ -380,7 +388,7 @@ if spot=$(bare_spot); then
   # shellcheck disable=SC2086
   click $spot
   sleep 1
-  acted moves=any leaves=any
+  acted moves=any leaves=any audit=no
   act macos-own click-wallpaper-again "clicks on the wallpaper again: macOS brings them back"
   # shellcheck disable=SC2086
   click $spot
@@ -399,7 +407,7 @@ if with_arbor; then
   read -r x y w h <<< "$(real_of "$X")"
   click_window "$X"
   drag_window "$X" "$((x + w / 2 + 60))" "$((y + 72))"
-  acted drags="$X" own="$X"
+  acted drags="$X" place="$X"
   press way-out resume "⌃⌥⎋" ctrl+opt+escape moves=any
   # The pause ended the chapter's trace.
   day_trace
