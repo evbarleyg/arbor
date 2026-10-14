@@ -54,16 +54,16 @@ struct SettingsSidebar: View {
   }
 
   private var search: Binding<String> {
-    Binding<String>(
-      get: { @MainActor in store.model.search },
-      set: { @MainActor new in store.model.search = new })
+    Binding<String>.onMainActor(
+      get: { store.model.search },
+      set: { new in store.model.search = new })
   }
 
   /// Nothing is selected during a search; choosing a pane ends it.
   private var selection: Binding<SettingsPanelModel.Pane?> {
-    Binding<SettingsPanelModel.Pane?>(
-      get: { @MainActor in store.model.isSearching ? nil : store.model.pane },
-      set: { @MainActor pane in
+    Binding<SettingsPanelModel.Pane?>.onMainActor(
+      get: { store.model.isSearching ? nil : store.model.pane },
+      set: { pane in
         if let pane { store.model.go(to: pane) }
       })
   }
@@ -252,9 +252,9 @@ struct SettingsSectionPane: View {
   private var hasLoginItem: Bool { section == .general && store.model.hasLoginItem }
 
   private var advanced: Binding<Bool> {
-    Binding<Bool>(
-      get: { @MainActor in store.model.openAdvanced.contains(section) },
-      set: { @MainActor new in store.model.setAdvanced(new, in: section) })
+    Binding<Bool>.onMainActor(
+      get: { store.model.openAdvanced.contains(section) },
+      set: { new in store.model.setAdvanced(new, in: section) })
   }
 }
 
@@ -316,9 +316,9 @@ struct LoginItemRow: View {
   }
 
   private var isOn: Binding<Bool> {
-    Binding<Bool>(
-      get: { @MainActor in store.model.opensAtLogin },
-      set: { @MainActor new in store.model.setOpensAtLogin(new) })
+    Binding<Bool>.onMainActor(
+      get: { store.model.opensAtLogin },
+      set: { new in store.model.setOpensAtLogin(new) })
   }
 }
 
@@ -381,7 +381,7 @@ struct ToggleSettingRow: View {
   }
 
   private var binding: Binding<Bool> {
-    Binding<Bool>(get: { @MainActor in isOn }, set: { @MainActor new in store.model.set(row.key, to: new) })
+    Binding<Bool>.onMainActor(get: { isOn }, set: { new in store.model.set(row.key, to: new) })
   }
 }
 
@@ -440,9 +440,9 @@ struct NumberSettingRow: View {
 
   /// Moved by anything but a drag (arrow keys, VoiceOver) there is no letting go to wait for.
   private var slider: Binding<Double> {
-    Binding<Double>(
-      get: { @MainActor in held ?? value },
-      set: { @MainActor moved in
+    Binding<Double>.onMainActor(
+      get: { held ?? value },
+      set: { moved in
         if isHeld { held = moved } else { store.model.set(row.key, to: moved) }
       })
   }
@@ -460,9 +460,9 @@ struct NumberSettingRow: View {
   }
 
   private var field: Binding<String> {
-    Binding<String>(
-      get: { @MainActor in store.model.draft(in: .setting(row.key)) ?? shownNumber },
-      set: { @MainActor new in
+    Binding<String>.onMainActor(
+      get: { store.model.draft(in: .setting(row.key)) ?? shownNumber },
+      set: { new in
         // What the field says while the slider is held is what the slider gave it to show.
         if !isHeld { store.model.type(new, into: .setting(row.key)) }
       })
@@ -495,9 +495,9 @@ struct ChoiceSettingRow: View {
   }
 
   private var binding: Binding<String> {
-    Binding<String>(
-      get: { @MainActor in value },
-      set: { @MainActor new in store.model.set(row.key, to: new) })
+    Binding<String>.onMainActor(
+      get: { value },
+      set: { new in store.model.set(row.key, to: new) })
   }
 }
 
@@ -534,9 +534,9 @@ struct TextSettingRow: View {
   }
 
   private var binding: Binding<String> {
-    Binding<String>(
-      get: { @MainActor in store.model.draft(in: .setting(row.key)) ?? value },
-      set: { @MainActor new in store.model.type(new, into: .setting(row.key)) })
+    Binding<String>.onMainActor(
+      get: { store.model.draft(in: .setting(row.key)) ?? value },
+      set: { new in store.model.type(new, into: .setting(row.key)) })
   }
 
   private func commit() { changedByTheField = store.model.handOver(.setting(row.key)) }
