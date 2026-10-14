@@ -284,6 +284,9 @@ extension Controller {
   /// Docked windows Arbor no longer puts back, because something kept moving them (Controller+Hardening.swift).
   public var windowsLeftToTheirApps: Set<WindowID> { enforcement.givenUp }
 
+  /// Whether a key that may become a peek is down, held long enough yet or not (F51).
+  public var aPeekIsUnderWay: Bool { peeking != nil }
+
   /// Windows whose app did not answer when they were to be moved, and have not been moved since.
   public var windowsOwedAMove: Set<WindowID> { unplaced.union(owedMoves) }
 

@@ -16,6 +16,11 @@ public struct ChaosGenerator {
   /// Some runs have apps that fight back. They make rules about frames moot for their windows and
   /// keep timers alive, so most runs do without.
   private let allowsMisbehaviour: Bool
+  /// `ARBOR_CHAOS_DESKS=1`: walks about displays. Ten times as many changes of displays, in the orders a Mac has; each display keeps
+  /// its size, as a thing on a desk does; and after half the changes the commands that place floating windows again.
+  private let desks = ProcessInfo.processInfo.environment["ARBOR_CHAOS_DESKS"] != nil
+  private var sizesOnTheDesk: [String: CGSize] = [:]
+  private let twoDisplays = ProcessInfo.processInfo.environment["ARBOR_CHAOS_TWO_DISPLAYS"] != nil
 
   public init(seed: UInt64) {
     random = ChaosRandom(seed: seed)
@@ -23,6 +28,14 @@ public struct ChaosGenerator {
     // A script starts from one standard display, no windows and Arbor not running.
     if random.chance(50) { planned.append(.displays(arrangement(), .never)) }
     if random.chance(30) { planned.append(.settings(settingsChange())) }
+    // `ARBOR_CHAOS_TWO_DISPLAYS=1`: two displays that stay, two windows docked on one, two floating on the other; holds at eight times their weight.
+    if twoDisplays {
+      planned = [
+        "displays main:0,0,1440,900:25,0,0,0* side:1440,-90,1920,1080:0,0,0,0 windows-never", "open 101 Safari pid 1000 at 100 100 700 500 min 574 240",
+        "open 102 Notes pid 1001 at 300 200 720 420 min 709 300", "open 103 Terminal pid 1003 at 1700 100 585 400",
+        "open 104 Mail pid 1002 at 2300 300 800 600 min 500 400", "launch", "dock 101 left", "dock 102 right", "settle",
+      ].map { ChaosAction(text: $0) }
+    }
     // Everything that ships switched off, switched on together (`ARBOR_CHAOS_ALL_ON=1`).
     if ProcessInfo.processInfo.environment["ARBOR_CHAOS_ALL_ON"] != nil {
       planned.append(
@@ -358,8 +371,8 @@ public struct ChaosGenerator {
     case .grow, .shrink: 8
     case .moveToDisplay: 8
     case .focusDisplay: 4
-    case .hold, .holdStill, .toggleHold: 1
-    case .release: 1
+    case .hold, .holdStill, .toggleHold: ProcessInfo.processInfo.environment["ARBOR_CHAOS_HOLDS"] == nil && ProcessInfo.processInfo.environment["ARBOR_CHAOS_TWO_DISPLAYS"] == nil ? 1 : 8
+    case .release: ProcessInfo.processInfo.environment["ARBOR_CHAOS_HOLDS"] == nil && ProcessInfo.processInfo.environment["ARBOR_CHAOS_TWO_DISPLAYS"] == nil ? 1 : 6
     case .undo: 30
     case .redo: 8
     case .watch, .displays: 1
@@ -392,7 +405,7 @@ public struct ChaosGenerator {
   // MARK: The next action
 
   public mutating func next(_ world: ChaosRunner) -> ChaosAction {
-    if !planned.isEmpty, random.chance(80) { return planned.removeFirst() }
+    if !planned.isEmpty, twoDisplays || random.chance(80) { return planned.removeFirst() }
     guard world.isRunning else { return world.isPaused ? whilePaused(world) : whileStopped(world) }
 
     let system = world.system
@@ -441,7 +454,7 @@ public struct ChaosGenerator {
         (380, .command),
         (10, .nonsense),
         (12, .url),
-        (16, .displays),
+        (twoDisplays ? 0 : desks ? 160 : 16, .displays),
         (16, .settings),
         (60, .flush),
         (36, .advance),
@@ -578,7 +591,23 @@ public struct ChaosGenerator {
       if random.chance(30) { return .url(random.pick(Self.hostileURLs)!) }
       let words = command(random.pick(weighted: Self.weightedKinds)!, in: world).text.split(separator: " ")
       return .url("arbor://" + words.joined(separator: "/"))
-    case .displays: return .displays(arrangement(), random.pick(weighted: [(5, .first), (5, .late), (2, .never)])!)
+    case .displays:
+      guard desks else {
+        // `ARBOR_CHAOS_WINDOWS_FIRST=1`: mostly the order in which the windows speak before the displays do.
+        let mostlyFirst = ProcessInfo.processInfo.environment["ARBOR_CHAOS_WINDOWS_FIRST"] != nil
+        let change = ChaosAction.displays(
+          arrangement(), random.pick(weighted: [(mostlyFirst ? 12 : 2, .first), (5, .late), (5, .silent), (1, .never)])!)
+        // Half the time a window has spoken of its place a while before: what Arbor believes for some seconds is tried at every age.
+        if mostlyFirst, random.chance(50), !world.system.windows.isEmpty {
+          planned.insert(contentsOf: [.advance(Double(random.int(1...40))), change], at: 0)
+          let id = window(in: world, .inView)
+          return .move(id, movedFrame(of: id, in: world))
+        }
+        return change
+      }
+      // A frame remembered in the old coordinates is applied by the next layout that places floating windows.
+      if random.chance(50) { planned.insert(contentsOf: ["home", "relayout", "desktop", "home"].map { .command($0) }, at: 0) }
+      return .displays(arrangement(), random.chance(50) ? .late : .silent)
     case .settings: return .settings(settingsChange())
     case .flush: return .flush
     case .advance: return .advance(random.pick([0, 0.1, 0.25, 0.3, 0.5, 1, 5])!)
@@ -874,7 +903,11 @@ public struct ChaosGenerator {
     // Each display goes just outside the box around the ones before it, so none overlap.
     var box = CGRect.zero
     for (index, id) in ids.prefix(count).enumerated() {
-      let size = random.pick(sizes)!
+      var size = random.pick(sizes)!
+      if desks {
+        if let own = sizesOnTheDesk[id], !random.chance(10) { size = own }
+        sizesOnTheDesk[id] = size
+      }
       var origin = CGPoint.zero
       if index > 0 {
         switch random.int(0...2) {

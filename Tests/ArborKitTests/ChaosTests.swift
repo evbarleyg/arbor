@@ -24,7 +24,7 @@ private let steps = environment("ARBOR_CHAOS_STEPS") ?? 200
     let report = """
       \(ChaosRunner.shrink(failure))
       This is not a flake: the same seed gives the same run. If the steps have to do with your change, it is yours. If not, your change \
-      has only led this seed to a bug that was there: SEND THE SCRIPT TO THE CHAOS LAB (collab/reports/2026-10-14-chaos-lab.md), or list \
+      has only led this seed to a bug that was there: OPEN AN ISSUE WITH THE SCRIPT, or list \
       it with its owner in Sources/ArborTesting/ChaosKnownFailures.swift (docs/TESTING.md, "Chaos").
       """
     // Until hunts find fewer than one unknown failure in 2000 seeds, a script nobody knows is reported here and does not turn
@@ -61,6 +61,50 @@ private let steps = environment("ARBOR_CHAOS_STEPS") ?? 200
     }
     #expect(ChaosAction(text: "release") == .release)
     #expect(ChaosAction.command("dock left").text == "dock left")
+  }
+
+  /// A replay that echoes what it cannot play proves nothing, and neither does a `hold` that Arbor refused.
+  @Test func whatCannotBePlayedAndWhatArborRefusesIsSaid() {
+    let runner = ChaosRunner()
+    _ = runner.step(.launch)
+    #expect(runner.refusals.isEmpty)
+    _ = runner.step(ChaosAction(text: "displays main:0,0,800,600:0,0,0,0* windows-sideways"))
+    #expect(runner.refusals.count == 1 && runner.refusals[0].contains("windows-sideways"))
+    #expect(runner.system.displayList.first?.frame.width != 800, "the line was not played")
+    _ = runner.step(.command("hold"))
+    #expect(runner.refusals == ["there is nothing in view to hold"])
+    _ = runner.step(.settle)
+    #expect(runner.refusals.isEmpty)
+  }
+
+  /// The order a Mac has: the windows have moved with their displays by the time Arbor hears of the displays, and no app says so.
+  @Test func windowsThatMoveInSilenceAreWhereTheirDisplayIs() {
+    let runner = ChaosRunner()
+    for line in [
+      "displays main:0,0,1440,900:25,0,0,0* side:1440,0,1280,800:0,0,0,0 windows-first", "open 101 Notes pid 1001 at 1600 100 400 300",
+      "displays main:0,0,1440,900:25,0,0,0* side:-1280,50,1280,800:0,0,0,0 windows-silent",
+    ] { #expect(runner.step(ChaosAction(text: line)).isEmpty) }
+    #expect(runner.system.windows[WindowID(101)]?.snapshot.frame == CGRect(x: -1120, y: 150, width: 400, height: 300))
+  }
+
+  /// The rules about where Arbor puts a window see a move that leaves it hanging, and leave alone what its user left so.
+  @Test func aWindowPutWhereLessThanAllOfItShowsBreaksARuleUnlessItsUserLeftItThere() {
+    func rules(_ moves: [String], then frame: CGRect) -> Set<String> {
+      let runner = ChaosRunner()
+      for line in ["launch", "open 101 Notes pid 1001 at 200 200 400 300"] + moves { _ = runner.step(ChaosAction(text: line)) }
+      // As if a layout had done it.
+      runner.beforeTheNextCheck = { _ = $0.system.setFrame(frame, of: WindowID(101)) }
+      // Other rules notice that Arbor knows nothing of the move; they are not what is tried here.
+      return Set(runner.step(.flush).map(\.rule).filter { $0.hasPrefix("placed-") || $0 == "grown-while-hanging" })
+    }
+    #expect(rules([], then: CGRect(x: 1414, y: 200, width: 400, height: 300)).isSuperset(of: ["placed-out-of-reach", "placed-mostly-out"]))
+    #expect(rules([], then: CGRect(x: 1200, y: 200, width: 400, height: 300)) == ["placed-partly-out"])
+    #expect(rules([], then: CGRect(x: 900, y: 200, width: 400, height: 300)).isEmpty)
+    // Its user left it hanging by 160 points: Arbor may put it back there, and may not let it hang further.
+    #expect(rules(["move 101 1200 200 400 300"], then: CGRect(x: 1200, y: 300, width: 400, height: 300)).isEmpty)
+    #expect(rules(["move 101 1200 200 400 300"], then: CGRect(x: 1300, y: 200, width: 400, height: 300)) == ["placed-partly-out"])
+    // Larger where it hangs, with as much showing as its user left showing.
+    #expect(rules(["move 101 1200 200 400 300"], then: CGRect(x: 1200, y: 200, width: 700, height: 300)) == ["grown-while-hanging"])
   }
 
   @Test func actionsRoundTripThroughTheirText() {

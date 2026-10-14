@@ -69,6 +69,9 @@ extension ChaosRunner {
     undoViolations(after: action, &problems)
     holdViolations(&problems)
     guardZoneViolations(&problems)
+    reachViolations(&problems)
+    wholeViolations(&problems)
+    restingPlaceViolations(after: action, &problems)
     timerViolations(settled: action == .settle, &problems)
     untouchedViolations(&problems)
     // Encoding is slow next to everything else, so a random run checks it now and then. A replay checks it at every step:
@@ -367,9 +370,95 @@ extension ChaosRunner {
       && now.tree.subtree(now.camera, contains: now.tree.desktop)
   }
 
+  /// Where Arbor puts a window that is meant to be in view, a person can get hold of it: forty points of its title bar are on a display.
+  /// At the step in which Arbor moved it, so that the script ends with the move. (`out-of-reach` asks the same after each way back.)
+  func reachViolations(_ problems: inout [InvariantViolation]) {
+    guard frameLogMark < system.frameLog.count else { return }
+    let moved = Set(system.frameLog[frameLogMark...].map(\.window))
+    for window in windowsOutOfReach() where moved.contains(window) && window != system.dragging && window != system.resizing {
+      problems.append(
+        .init("placed-out-of-reach", "Arbor put \(window) at \(system.windows[window]!.snapshot.frame.brief), where nobody can get hold of it, and does not count it as out of view"))
+    }
+  }
+
+  /// No window that Arbor placed shows less than all of itself, unless its user put it there, on this display as it is (the
+  /// product owner, 2026-10-14). Windows Arbor counts as out of view are another matter, and so is one that is larger than the display.
+  func wholeViolations(_ problems: inout [InvariantViolation]) {
+    guard frameLogMark < system.frameLog.count else { return }
+    let rules = controller.settings.rules
+    for window in Set(system.frameLog[frameLogMark...].map(\.window)).sorted() {
+      guard let fake = system.windows[window], fake.snapshot.isPresent, !fake.snapshot.isFullScreen, cooperates(fake),
+        controller.filter.manages(fake.snapshot), !controller.parked.contains(window),
+        window != system.dragging, window != system.resizing,
+        fake.lastRequest?.took == fake.snapshot.frame, !fake.groundHasShifted,
+        AppRule.firstMatch(in: rules, bundleID: fake.snapshot.bundleID, title: fake.snapshot.title)?.action != .ignore
+      else { continue }
+      let frame = fake.snapshot.frame
+      guard Self.area(of: frame, showingOn: system.displayList) < 0.995 * frame.area, !fake.changedItsWays,
+        let display = Self.display(showingMostOf: frame, among: system.displayList),
+        // It can be made to fit.
+        fake.minimumSize.width <= display.visibleFrame.width, fake.minimumSize.height <= display.visibleFrame.height,
+        // Left hanging over an edge, it may hang as far when Arbor makes room beside it or gives it another size.
+        !(userPlaces[window] ?? []).contains(where: { $0.allows(frame, on: display) })
+      else { continue }
+      let share = Int((100 * Self.area(of: frame, showingOn: system.displayList) / frame.area).rounded())
+      // A rule name of its own for a docked window that is kept larger than its slot and hangs out of the display on that account.
+      let floats = controller.workspaces.values.contains { $0.isFloating(window) }
+      // And for one that its user left hanging and that Arbor has made larger there: as much of it shows as its user left showing.
+      let showsAsMuch = (userPlaces[window] ?? []).contains {
+        $0.isOn(display) && Self.area(of: frame, showingOn: system.displayList) >= $0.showing - 1
+      }
+      // The product owner's blocker: its user had it wholly in view, never across an edge, and less than half of it shows now.
+      let mostlyOut = floats && !leftAcrossAnEdge.contains(window) && Self.area(of: frame, showingOn: system.displayList) < 0.5 * frame.area
+      problems.append(
+        .init(!floats ? "docked-partly-out" : mostlyOut ? "placed-mostly-out" : showsAsMuch ? "grown-while-hanging" : "placed-partly-out", "Arbor put \(window) at \(frame.brief), \(share) % of it on a display, and nobody had left it there on \(display.id) as it is"))
+    }
+  }
+
+  /// A floating window keeps its place relative to its display's corner across a change of displays in which that display stays as
+  /// large as it was, unless somebody moved it meanwhile (K1811, the lid). Also later: a frame remembered in the old coordinates is
+  /// applied by the next layout that places floating windows, so the rule looks on through time and through moves of the camera.
+  func restingPlaceViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
+    guard !restingPlaces.isEmpty else { return }
+    switch action {
+    case .displays, .advance, .flush, .settle, .launch, .crash, .cursor,
+      .command("home"), .command("relayout"), .command("desktop"), .command("show-all"), .command("back"), .command("forward"):
+      break
+    default:
+      restingPlaces = [:]
+      return
+    }
+    let timers = harness.scheduler.pendingKeys
+    guard !timers.contains(where: { key in ["space-", "enforce-", "landed-", "displays-blinked"].contains { key.hasPrefix($0) } }) else { return }
+    for (window, place) in restingPlaces.sorted(by: { $0.key < $1.key }) {
+      guard let fake = system.windows[window], fake.movesNotArbors == place.moves, fake.snapshot.isPresent, !fake.snapshot.isFullScreen,
+        cooperates(fake), controller.filter.manages(fake.snapshot),
+        controller.workspaces.values.contains(where: { $0.isFloating(window) && !$0.isStashed(window) })
+      else {
+        restingPlaces[window] = nil
+        continue
+      }
+      guard !controller.parked.contains(window) else { continue }
+      let frame = fake.snapshot.frame
+      if fake.placeIsArborsDoing, abs(frame.minX - place.frame.minX) > 1 || abs(frame.minY - place.frame.minY) > 1 {
+        restingPlaces[window] = nil
+        // Its own display had gone and has come back: Arbor takes it home (F52).
+        if let display = system.displayList.first(where: { $0.frame.contains(frame.center) }), !displaysBeforeTheChange.contains(display.id) {
+          continue
+        }
+        problems.append(
+          .init(theChangeChangedNothing ? "moved-for-nothing" : "left-its-place", "\(window) floated at \(place.frame.brief) when its display had moved, nobody has touched it, and Arbor has put it at \(frame.brief)"))
+        restingPlaces[window] = nil
+      }
+    }
+  }
+
   /// `hold`: what shows stays what shows, on every display, until `release`: windows that are out of view stay there (F58).
   func holdViolations(_ problems: inout [InvariantViolation]) {
-    guard holdBefore == .view, controller.holdLevel == .view, wasRunningBefore, controller.displays == displaysBefore else { return }
+    guard holdBefore == .view, controller.holdLevel == .view, wasRunningBefore, controller.displays == displaysBefore,
+      // A switch of Spaces from before the hold is still to be laid out.
+      !timersBefore.contains(where: { $0.hasPrefix("space-") })
+    else { return }
     // Not by node ids: windows in view may be docked, floated and resized among themselves, which makes new groups to be on.
     for window in parkedBefore.subtracting(controller.parked).sorted() {
       guard let fake = system.windows[window], fake.snapshot.isPresent, presentBefore.contains(window), cooperates(fake),
@@ -424,9 +513,11 @@ extension ChaosRunner {
       }
     }
     // On the way the Desktop may have been more than a tile, and no change of the arrangement takes a floating window out of view again.
+    // A window that came back over a framed view follows the Desktop out of view with the next layout, whenever that is (`vanished`).
+    let wentOut = controller.parked.subtracting(before.parked).subtracting(cameBack)
     let cameIn = before.parked.subtracting(controller.parked)
     let onlyFloatsCameIn = cameIn.allSatisfy { window in controller.workspaces.values.contains { $0.isFloating(window) } }
-    if viewsStayed, !controller.parked.isSubset(of: before.parked) || !onlyFloatsCameIn {
+    if viewsStayed, !wentOut.isEmpty || !onlyFloatsCameIn {
       problems.append(.init("undo-redo", "undo and redo changed what is out of view: \(before.parked.sorted()) became \(controller.parked.sorted())"))
     }
   }

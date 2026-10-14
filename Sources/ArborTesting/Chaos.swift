@@ -202,6 +202,8 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
     case first
     /// Arbor hears about the displays first.
     case late
+    /// The windows have moved with their displays by the time Arbor hears about the displays, and no app ever says so.
+    case silent
     /// The windows stay at their old coordinates, which no Mac does; Arbor must cope anyway.
     case never
   }

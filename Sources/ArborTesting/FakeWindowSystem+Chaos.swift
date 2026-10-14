@@ -155,6 +155,10 @@ extension FakeWindowSystem {
 
   /// macOS moves a window itself, as it does when the displays change. Nobody hears of it until `report`.
   public func moveSilently(_ window: WindowID, to frame: CGRect) {
+    if let old = windows[window]?.snapshot.frame, old.size == frame.size, let request = windows[window]?.lastRequest {
+      let (dx, dy) = (frame.minX - old.minX, frame.minY - old.minY)
+      windows[window]?.lastRequest = (request.asked.offsetBy(dx: dx, dy: dy), request.took.offsetBy(dx: dx, dy: dy))
+    }
     windows[window]?.snapshot.frame = frame
   }
 

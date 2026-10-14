@@ -900,7 +900,23 @@ swift build -c release --product arbor-sim                             # four ti
 .build/debug/arbor-sim replay --frames < script.txt                    # … and after each step Arbor's own moves, then where every window is
 .build/debug/arbor-sim ways-back < script.txt                          # which of Float All, crash and launch, quit returns every window
 ARBOR_CHAOS_ALL_ON=1 .build/release/arbor-sim hunt 1 2000 300          # everything that ships switched off, switched on together
+ARBOR_CHAOS_DESKS=1 .build/release/arbor-sim hunt 1 2000 300           # walks about displays: ten times the changes, in a Mac's orders, each display keeps its size
+ARBOR_CHAOS_WINDOWS_FIRST=1 .build/release/arbor-sim hunt 1 2000 300   # mostly the order in which the windows speak before the displays; a window has spoken 1 to 40 s before
+.build/release/arbor-sim hunt 1 2000 300 --pass=slot,undo-redo         # walks on past those rules too, counting them: for a hunt after one rule that others would end first
+.build/debug/arbor-sim replay --frames --go-on < script.txt            # plays on past a broken rule: for steps added to see what fetches a window
 ```
+
+**A cure is hunted with a control**: the same seeds, under the same generator and rules, on the tree with the cure and on the tree without. Compare the lists of failing seeds, not
+only the counts: "no seed fails on the sum alone" is the finding. A seed that does is replayed on the control as a script, because a cure also leads walks elsewhere. The same
+goes for blame: before a family is given to the owner of the newest merge, its scripts are replayed on the tree without that merge.
+
+**A rate in walks is not a rate on desks.** A walk closes a lid as rarely as it does anything else; a person does it every day. Judge a finding by what a person has to do to get there.
+
+**Where Arbor puts a window**, at the step in which it makes the move: `placed-out-of-reach` (fewer than 40 × 12 points of title bar on a display, and Arbor does not count the window as
+out of view); `placed-partly-out` (a floating window hangs further over an edge than anybody but Arbor ever left it on this display at this size); `placed-mostly-out` (nobody ever left it across an edge, and
+under half shows: with "⌃⌥0 does not fetch it" this is the product owner's measure of a blocker); `grown-while-hanging` (made larger where its user left it hanging; as much shows as before);
+`docked-partly-out` (kept larger than its slot, it hangs out of the display); `left-its-place` and `moved-for-nothing` (a display only moved, or nothing changed at all, and a floating window was moved).
+`replay` says `REFUSED:` for every command Arbor refuses and every line that is no command and no event: a script whose `hold` was refused says nothing about holds.
 
 **Seeds mean something only on one generator.** A new `Command` case, weight or event sends every seed elsewhere: compare rates and scripts, never
 seed numbers, between two commits. **A script means something only on a harness that knows its words**: a line that is no event is taken for

@@ -549,6 +549,39 @@ private let c = WindowID(103)
       """)
   }
 
+  // MARK: What Arbor gives back is fitted unless its user left it there
+
+  /// `layout` docks a wide app and Arbor squeezes the floating Terminal into the strip that is left. Its user moves it down inside the
+  /// strip, four points behind the Dock. Docking another window makes room, and Arbor used to give the Terminal its own, larger size at
+  /// the corner the hand gave: 253 of 716 points showed, and ⌃⌥0 did not fetch it.
+  @Test func aSqueezedWindowItsUserNudgedGetsItsOwnSizeBackInView() {
+    expectEveryInvariantHolds(Self.squeezedThenNudged(moveTo: 330))
+    // The threshold: one point behind the Dock (the visible frame ends at 923, the window is 597 high).
+    expectEveryInvariantHolds(Self.squeezedThenNudged(moveTo: 327))
+  }
+
+  /// Its controls, which end with the window wholly in view: no hand; a hand that leaves it wholly inside the visible frame.
+  @Test func aSqueezedWindowThatIsLeftAloneOrLeftInsideTheVisibleFrameEndsWhollyInView() {
+    for script in [Self.squeezedThenNudged(moveTo: nil), Self.squeezedThenNudged(moveTo: 326)] {
+      let runner = world(after: script)
+      let frame = runner.system.windows[WindowID(102)]!.snapshot.frame
+      #expect(runner.system.displayList[0].frame.contains(frame), "\(frame)")
+    }
+  }
+
+  private static func squeezedThenNudged(moveTo y: Int?) -> String {
+    """
+    launch
+    open 102 Terminal pid 1003 at 117 200 763 597
+    open 105 Xcode pid 1004 at 100 100 1300 800 min 1188 685
+    displays third:0,0,1512,982:25,0,59,0* windows-late
+    layout Finder / Xcode
+    open 107 Safari pid 1000 at 176 351 431 478 max 437 480
+    \(y.map { "move 102 1212 \($0) 288 597" } ?? "settle")
+    dock left
+    """
+  }
+
   // MARK: What Arbor owes a window it has let go of
 
   /// Arbor never moves what it does not arrange, but for the way back it owes a window that it put out of view and whose app did

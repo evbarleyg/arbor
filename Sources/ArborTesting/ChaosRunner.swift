@@ -76,6 +76,17 @@ public final class ChaosRunner {
   var parkedBefore: Set<WindowID> = []
   /// Windows whose app did not answer when they were to be moved: the move comes when it does, whatever else happens then.
   var owedAMoveBefore: Set<WindowID> = []
+  /// Where macOS put each floating window that was wholly on a display when that display moved without changing, and how often
+  /// somebody other than Arbor had moved it by then. Forgotten with the next step that may well move a floating window.
+  var restingPlaces: [WindowID: (frame: CGRect, moves: Int)] = [:]
+  var displaysBeforeTheChange: Set<DisplayID> = []
+  var userPlaces: [WindowID: [UserPlace]] = [:]
+  var inHandBefore: WindowID?
+  /// For the harness's own tests: something done as part of the next step, as if Arbor had done it.
+  public var beforeTheNextCheck: ((ChaosRunner) -> Void)?
+  /// Windows that somebody other than Arbor has ever left across the edge of a display: hanging over it, or straddling two.
+  var leftAcrossAnEdge: Set<WindowID> = []
+  var theChangeChangedNothing = false
   /// The displays there were last, for as long as there are none.
   private var lastDisplays: [DisplaySnapshot] = []
   var owedTheWayBackBefore: Set<WindowID> = []
@@ -90,6 +101,8 @@ public final class ChaosRunner {
   var staleSinceADrop = false
   /// Whether the last command succeeded, and what was true before the `undo` that was the last action.
   var lastCommandSucceeded = false
+  /// What Arbor answered to the commands of the current step that it refused. A script whose `hold` was refused says nothing about holds.
+  public private(set) var refusals: [String] = []
   var beforeUndo: (workspaces: [DisplayID: Workspace], parked: Set<WindowID>, slots: [DisplayID: [WindowID: CGRect]])?
   var holdBefore: HoldLevel?
   var staleSinceAPeek = false
@@ -177,6 +190,7 @@ public final class ChaosRunner {
     Self.beforeEachStep?(action)
     script.append(action)
     found = []
+    refusals = []
     filterBefore = controller.filter
     frameLogMark = system.frameLog.count
     owedAPlaceBefore = controller.windowsOwedAPlace
@@ -192,9 +206,81 @@ public final class ChaosRunner {
     holdBefore = isRunning ? controller.holdLevel : nil
     owedAMoveBefore = controller.windowsOwedAMove
     wasPeekingBefore = timersBefore.contains("peek")
+    let movesBefore = system.windows.mapValues(\.movesNotArbors)
+    inHandBefore = system.dragging ?? system.resizing
     perform(action)
     listen()
+    beforeTheNextCheck?(self)
+    beforeTheNextCheck = nil
+    noteWhereItsUserLeftEachWindow(after: action, movesBefore: movesBefore)
     return found + check(after: action)
+  }
+
+  /// Where somebody other than Arbor last put each window, as seen from the corner of the display that shows most of it, and
+  /// what that display was like. macOS carrying a window along with its display is nobody putting it anywhere.
+  private func noteWhereItsUserLeftEachWindow(after action: ChaosAction, movesBefore: [WindowID: Int]) {
+    userPlaces = userPlaces.filter { system.windows[$0.key] != nil }
+    leftAcrossAnEdge = leftAcrossAnEdge.filter { system.windows[$0] != nil }
+    if case .displays = action { return }
+    if case .wayBack = action { return }
+    func note(_ id: WindowID, _ frame: CGRect) {
+      if !system.displayList.contains(where: { $0.frame.contains(frame) }) { leftAcrossAnEdge.insert(id) }
+      guard let display = Self.display(showingMostOf: frame, among: system.displayList) else { return }
+      // Every place it was given on a display that is still as it was counts: `float-all` takes a window back to an earlier one.
+      var place = UserPlace(
+        overhang: UserPlace.overhang(of: frame, on: display), showing: Self.area(of: frame, showingOn: system.displayList), display: display)
+      if let index = userPlaces[id, default: []].firstIndex(where: { $0.isOn(display) }) {
+        let known = userPlaces[id]!.remove(at: index)
+        place.overhang = zip(known.overhang, place.overhang).map(max)
+        place.showing = min(known.showing, place.showing)
+      }
+      userPlaces[id, default: []].append(place)
+    }
+    // Also where Arbor has moved it on in the same step: `home` is the last frame that was not Arbor's.
+    for (id, fake) in system.windows where fake.movesNotArbors != movesBefore[id] { if let home = fake.home { note(id, home) } }
+    // Where its app opened it counts as a place given it, if more than half of it shows there (the product owner).
+    if case .open(let new) = action {
+      let frame = Self.within(new.frame, minimum: new.minimum, maximum: new.maximum)
+      if Self.area(of: frame, showingOn: system.displayList) > 0.5 * frame.area { note(new.id, frame) } else { leftAcrossAnEdge.insert(new.id) }
+    }
+    // A native tab is where its group is.
+    if case .openTab(let new, let front) = action, userPlaces[new] == nil {
+      userPlaces[new] = userPlaces[front]
+      if leftAcrossAnEdge.contains(front) { leftAcrossAnEdge.insert(new) }
+    }
+    if case .selectTab(let tab, let front) = action, userPlaces[tab] == nil { userPlaces[tab] = userPlaces[front] }
+    // Where a window is let go of is where its user put it, whatever size Arbor gives it there (F48).
+    if let dropped = inHandBefore, system.dragging != dropped, let fake = system.windows[dropped], !controller.parked.contains(dropped),
+      controller.workspaces.values.contains(where: { $0.isFloating(dropped) })
+    {
+      note(dropped, fake.snapshot.frame)
+    }
+  }
+
+  struct UserPlace {
+    /// By how many points it hung over the display's left, top, right and bottom edge there, at most.
+    var overhang: [CGFloat]
+    /// How much of it showed there, in square points, at least.
+    var showing: CGFloat
+    var display: DisplaySnapshot
+
+    static func overhang(of frame: CGRect, on display: DisplaySnapshot) -> [CGFloat] {
+      [display.frame.minX - frame.minX, display.frame.minY - frame.minY, frame.maxX - display.frame.maxX, frame.maxY - display.frame.maxY]
+        .map { max($0, 0) }
+    }
+
+    func allows(_ frame: CGRect, on now: DisplaySnapshot) -> Bool {
+      isOn(now) && zip(Self.overhang(of: frame, on: now), overhang).allSatisfy { $0 <= $1 + 1 }
+    }
+
+    /// The same display, as large as it was. It may stand elsewhere among the displays, and its Dock and menu bar may have come or gone:
+    /// an overhang is over the display's edge, not over theirs.
+    func isOn(_ now: DisplaySnapshot) -> Bool { now.id == display.id && now.frame.size == display.frame.size }
+  }
+
+  static func display(showingMostOf frame: CGRect, among displays: [DisplaySnapshot]) -> DisplaySnapshot? {
+    displays.max { frame.intersection($0.frame).area < frame.intersection($1.frame).area }
+      .flatMap { frame.overlaps($0.frame) ? $0 : nil }
   }
 
   /// Tabs are opened, chosen and closed in a window that can be seen and that nobody is holding.
@@ -241,7 +327,8 @@ public final class ChaosRunner {
     case .move(let window, let frame):
       guard let fake = system.windows[window] else { return }
       let frame = Self.within(frame, minimum: fake.minimumSize, maximum: fake.maximumSize)
-      if isReachable(frame) { system.userMove(window, to: frame) }
+      // Nobody moves, picks up or resizes a window while no display is plugged in.
+      if isReachable(frame), !system.displayList.isEmpty { system.userMove(window, to: frame) }
     case .react: system.appsReact()
 
     case .cursor(let point):
@@ -256,7 +343,9 @@ public final class ChaosRunner {
       if system.dragging == nil, system.resizing == nil { system.mouseDown = true }
     case .grab(let window):
       // Only a window that can be seen can be picked up.
-      if let snapshot = system.windows[window]?.snapshot, snapshot.isPresent, isReachable(snapshot.frame) { system.grab(window) }
+      if let snapshot = system.windows[window]?.snapshot, snapshot.isPresent, isReachable(snapshot.frame), !system.displayList.isEmpty {
+        system.grab(window)
+      }
     case .carry(let point):
       // macOS does not let a title bar be dragged above the top of a display, under the menu bar.
       var point = onADisplay(point)
@@ -268,7 +357,8 @@ public final class ChaosRunner {
     case .via(let source, let line):
       // `quit`, `pause` and the like have their promises checked in `run`.
       if let command = try? Command.parse(line), isRunning, ![.quit, .pause(minutes: nil), .togglePause].contains(command) {
-        _ = controller.perform(command, from: source)
+        let reply = controller.perform(command, from: source)
+        if !reply.ok { refusals.append(reply.message) }
       }
     case .key(let line, let phase):
       guard isRunning, let command = try? Command.parse(line),
@@ -306,7 +396,7 @@ public final class ChaosRunner {
       if listed { system.windows[window]?.groundHasShifted = true }
     case .edge(let window, let frame, let hold):
       // One window is dragged or resized at a time, and only from a fresh press of the button.
-      guard system.dragging == nil, system.resizing == nil ? !system.mouseDown : system.resizing == window,
+      guard !system.displayList.isEmpty, system.dragging == nil, system.resizing == nil ? !system.mouseDown : system.resizing == window,
         let current = system.windows[window]?.snapshot, current.isPresent, isReachable(current.frame),
         let result = system.frameAfterResizing(window, toward: frame), isReachable(result)
       else { return }
@@ -323,7 +413,12 @@ public final class ChaosRunner {
       guard let seams = harness.overlays.seams[display], seams.indices.contains(index) else { return }
       harness.overlays.dragSeam(seams[index], by: CGFloat(delta), on: display)
     case .command(let line):
-      if let command = try? Command.parse(line) { run(command) } else { harness.run(line) }
+      if let command = try? Command.parse(line) {
+        run(command)
+      } else {
+        refusals.append("`\(line)` is no command and no event that this harness knows")
+        harness.run(line)
+      }
     case .url(let url):
       // As ArborApp does.
       if case .success(let command) = controller.admit(url: url) { run(command) }
@@ -389,10 +484,10 @@ public final class ChaosRunner {
   private static func isReachable(_ frame: CGRect, on displays: [DisplaySnapshot]) -> Bool {
     displays.isEmpty
       || displays.contains { display in
-        let showing = frame.intersection(display.frame)
-        // Forty points of title bar, or half of a window narrower than that.
-        return !showing.isNull && showing.width >= min(frame.width / 2, 40) && showing.height >= min(frame.height, 20)
-          && frame.minY >= display.frame.minY
+        // Forty points of title bar, or half of a window narrower than that, and enough of its height to hit.
+        let bar = CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: min(frame.height, 28))
+        let showing = bar.intersection(display.frame)
+        return !showing.isNull && showing.width >= min(frame.width / 2, 40) && showing.height >= min(bar.height, 12)
       }
   }
 
@@ -414,6 +509,7 @@ public final class ChaosRunner {
     if !system.displayList.isEmpty { lastDisplays = system.displayList }
     let old = lastDisplays
     var moves: [(window: WindowID, frame: CGRect)] = []
+    var resting: [WindowID: CGRect] = [:]
     if follow != .never, let main = displays.first(where: \.isMain) ?? displays.first {
       for (id, fake) in system.windows.sorted(by: { $0.key < $1.key }) {
         let frame = fake.snapshot.frame
@@ -428,6 +524,14 @@ public final class ChaosRunner {
         // It does not leave a window where nobody could get hold of it, on a display that shrank, say.
         if destination.id != home.id || !Self.isReachable(moved, on: displays) { moved = moved.fitted(into: destination.visibleFrame) }
         if moved != frame { moves.append((id, moved)) }
+        // On a display that is as large as it was, only elsewhere, the window is where it was on it, and there it stays.
+        if destination.id == home.id, destination.frame.size == home.frame.size,
+          destination.visibleFrame.offsetBy(dx: -destination.frame.minX, dy: -destination.frame.minY)
+            == home.visibleFrame.offsetBy(dx: -home.frame.minX, dy: -home.frame.minY),
+          home.frame.contains(frame), !controller.parked.contains(id), id != system.dragging, id != system.resizing
+        {
+          resting[id] = moved
+        }
       }
     }
     switch follow {
@@ -438,6 +542,9 @@ public final class ChaosRunner {
     case .first:
       for move in moves { system.userMove(move.window, to: move.frame) }
       system.setDisplays(displays)
+    case .silent:
+      for move in moves { system.moveSilently(move.window, to: move.frame) }
+      system.setDisplays(displays)
     case .late:
       for move in moves { system.moveSilently(move.window, to: move.frame) }
       let mark = system.frameLog.count
@@ -447,6 +554,9 @@ public final class ChaosRunner {
       let placed = Set(system.frameLog[mark...].map(\.window))
       for move in moves { system.report(move.window, userInitiated: !placed.contains(move.window)) }
     }
+    restingPlaces = [:]
+    (displaysBeforeTheChange, theChangeChangedNothing) = (Set(old.map(\.id)), old == displays)
+    for (id, frame) in resting { if let fake = system.windows[id] { restingPlaces[id] = (frame, fake.movesNotArbors) } }
     // The pointer cannot stay where there is no display any more, and the window it holds goes with it.
     if system.dragging != nil, !displays.isEmpty { perform(.carry(system.cursor)) } else { system.cursor = onADisplay(system.cursor) }
   }
@@ -503,10 +613,15 @@ public final class ChaosRunner {
     let placed = controller.parked.union(
       controller.workspaces.values.flatMap(\.tree.allWindows).filter { controller.windows[$0]?.isPresent == true })
     // Not while a layout is still to come, which would be taken for the work of undo and redo.
-    if command == .undo, isRunning, !harness.scheduler.pendingKeys.contains(where: { $0.hasPrefix("space-") || $0.hasPrefix("enforce-") }) {
+    // Nor during a peek: undo ends it, and leaves the view on everything by design (`back` returns).
+    if command == .undo, isRunning, !controller.aPeekIsUnderWay,
+      !harness.scheduler.pendingKeys.contains(where: { $0.hasPrefix("space-") || $0.hasPrefix("enforce-") })
+    {
       beforeUndo = (controller.workspaces, controller.parked, controller.layouts.mapValues(\.windowFrames))
     }
-    lastCommandSucceeded = controller.perform(command).ok
+    let reply = controller.perform(command)
+    lastCommandSucceeded = reply.ok
+    if !reply.ok { refusals.append(reply.message) }
     if command == .quit { controller.shutdown() }
     if wasRunning, !isRunning { found += shutdownViolations(placed: placed) }
     if command == .quit, wasRunning || isPaused { endProcess() }

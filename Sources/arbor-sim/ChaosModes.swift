@@ -75,6 +75,10 @@ func runChaosMode(_ arguments: [String]) -> Int32? {
     let named = argument.dropFirst("--known".count).drop { $0 == "=" }.split(separator: ",").map(String.init)
     excused = named.isEmpty ? [] : excused.subtracting(named)
   }
+  // `--pass=rule,rule` walks on past those rules too, counting them: for a hunt after one rule that others would end first.
+  for argument in arguments where argument.hasPrefix("--pass=") {
+    excused.formUnion(argument.dropFirst("--pass=".count).split(separator: ",").map(String.init))
+  }
   switch arguments.first {
   case "chaos":
     guard arguments.count >= 2 else {
@@ -118,10 +122,12 @@ func runChaosMode(_ arguments: [String]) -> Int32? {
     let quiet = arguments.contains("--quiet")
     let runner = ChaosRunner()
     runner.checksFilesAtEveryStep = true
+    var broken = false
     for (index, action) in readScript().enumerated() {
       say(quiet ? "STEP \(index + 1)" : "> \(action.text)")
       let mark = runner.system.frameLog.count
       let violations = runner.step(action)
+      if !quiet { for refusal in runner.refusals { say("  REFUSED: \(refusal)") } }
       if !quiet { say(runner.harness.ascii(columns: 64, rows: 16) + "\n") }
       if arguments.contains("--frames") {
         // Who moved what: Arbor's own moves in this step, in order, then where every window is.
@@ -131,11 +137,13 @@ func runChaosMode(_ arguments: [String]) -> Int32? {
       if let first = violations.first {
         say("RULE \(first.rule)")
         for violation in violations { say("  \(violation)") }
-        return 1
+        // `--go-on` plays to the end: for steps added after the break, to see what fetches a window.
+        guard arguments.contains("--go-on") else { return 1 }
+        broken = true
       }
     }
-    if !quiet { say("# every invariant held") }
-    return 0
+    if !quiet, !broken { say("# every invariant held") }
+    return broken ? 1 : 0
 
   case "ways-back":
     // For a script that ends with a window gone: which of the things a person would try brings it back?
