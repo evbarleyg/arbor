@@ -62,13 +62,9 @@ public final class SettingsPanelModel {
 
   private func changed() { onChange?() }
 
-  /// Whether settings.json could not be read when the window last heard of the settings.
-  private var fileWasBroken = false
-
   private func settingsChanged() {
     // What was refused because of the file is not held against the file that was mended or replaced.
-    if fileWasBroken, fileProblem == nil { errors.removeAll() }
-    fileWasBroken = fileProblem != nil
+    if fileProblem == nil { errors = errors.filter { $0.value != Self.refusedForTheFile } }
     changed()
   }
 
@@ -123,7 +119,7 @@ public final class SettingsPanelModel {
     switch (entry.kind, entry.value(in: settings)) {
     case (.toggle, .bool(let isOn)):
       control = .toggle(isOn: isOn)
-    case (.number(let range, let step, _), .number(let value)) where Self.isShare(entry):
+    case (.number(let range, let step, _), .number(let value)) where entry.isShare:
       control = .number(
         value: Self.tidy(value * 100), range: Self.tidy(range.lowerBound * 100)...Self.tidy(range.upperBound * 100),
         step: Self.tidy(step * 100), unit: "%")
@@ -205,17 +201,16 @@ public final class SettingsPanelModel {
       let rows = entries(in: section).filter { $0.matches(search: search) }.compactMap(row(for:))
       return rows.isEmpty ? nil : FoundSection(section: section, rows: rows)
     }
-    let words = search.lowercased().split(whereSeparator: \.isWhitespace)
+    let typed = SettingsSearch(search)
     let editors: [Pane] = [.shortcuts, .rules]
     let panes = editors.filter { pane in
-      words.allSatisfy { pane.title.lowercased().firstRange(of: $0) != nil }
+      typed.finds(in: pane.title)
         || SettingsSchema.entries.contains {
           $0.level != .hidden && Pane.editing($0) == pane && $0.matches(search: search)
         }
     }
     let shortcuts = shortcutRows.filter { row in
-      let text = "\(row.title) \(row.command.text) \(row.label ?? "") \(row.chord?.text ?? "")".lowercased()
-      return !words.isEmpty && words.allSatisfy { text.firstRange(of: $0) != nil }
+      typed.finds(in: "\(row.title) \(row.command.text) \(row.label ?? "") \(row.chord?.text ?? "")")
     }
     return Found(sections: sections, shortcuts: shortcuts, panes: panes)
   }
@@ -244,26 +239,43 @@ public final class SettingsPanelModel {
     }
   }
 
-  /// A refusal is written for a terminal: it names the key, marks code as code, and says which command helps. The window shows
-  /// it under the control it is about, as plain text, and has buttons for what helps.
+  /// What stands under a control while settings.json cannot be read. The banner has the reason and the ways out.
+  private static let refusedForTheFile = "Nothing was changed: settings.json cannot be read"
+
+  /// A refusal is written for a terminal: it names the key, marks code as code, and says which command
+  /// helps. The window shows it under the control it is about, as plain text, and has buttons for what helps.
   private func inTheWindowsWords(_ message: String, at place: String) -> String {
-    // The banner has the reason and the ways out.
-    if fileProblem != nil, message.hasPrefix("settings.json cannot be read") {
-      return "Nothing was changed: settings.json cannot be read"
-    }
+    if fileProblem != nil, message.hasPrefix("settings.json cannot be read") { return Self.refusedForTheFile }
     var words = message
-    if words.hasPrefix("`\(place)` ") {
-      words.removeFirst(place.count + 3)
-      words = words.prefix(1).uppercased() + words.dropFirst()
-    }
-    return Self.withoutCodeMarks(words)
+    if words.hasPrefix("`\(place)` ") { words.removeFirst(place.count + 3) }
+    // What somebody typed is quoted; a command that is left is called by its title, advice to type one is dropped and
+    // the first letter is a capital, as on the line on screen.
+    let said = HeadsUpText.sentence(
+      from: Self.withoutCodeMarks(words) { (try? Command.parse($0)) == nil }, appName: { _ in nil }, shortcut: { _ in nil })
+    // Keys are written small: "shift+a: needs ctrl, opt or cmd…".
+    return words.prefix { $0 != " " }.contains("+") ? String(words.prefix(1) + said.dropFirst()) : said
   }
 
-  /// Nothing in the window draws a backtick as anything but a backtick. They come in pairs, and what stands between two of them
-  /// is a word of the file's or something somebody typed: quoted.
-  static func withoutCodeMarks(_ text: String) -> String {
-    let parts = text.split(separator: "`", omittingEmptySubsequences: false)
-    return parts.enumerated().map { index, part in index % 2 == 1 && index < parts.count - 1 ? "“\(part)”" : String(part) }.joined()
+  /// Nothing in the window draws a backtick as anything but a backtick: what stands between two of them, a word of the
+  /// file's or something somebody typed, is quoted instead, if it passes `quoting`. One that follows a letter or a
+  /// sign opens nothing: it is the key of that name, as in `ctrl+opt+``.
+  public static func withoutCodeMarks(_ text: String, quoting: (String) -> Bool = { _ in true }) -> String {
+    var result = ""
+    var rest = text[...]
+    while let open = rest.firstIndex(of: "`") {
+      let after = rest.index(after: open)
+      let opens = open == text.startIndex || " (".contains(text[text.index(before: open)])
+      guard opens, let close = rest[after...].firstIndex(of: "`"), quoting(String(rest[after..<close])) else {
+        // As it stands, up to and with its partner if it has one: a command's marks are left for whoever asked for that.
+        let end = opens ? rest[after...].firstIndex(of: "`").map { rest.index(after: $0) } ?? after : after
+        result += rest[..<end]
+        rest = rest[end...]
+        continue
+      }
+      result += rest[..<open] + "“" + rest[after..<close] + "”"
+      rest = rest[rest.index(after: close)...]
+    }
+    return result + rest
   }
 
   private func perform(_ commands: [SettingsCommand], at place: String) {
@@ -273,27 +285,28 @@ public final class SettingsPanelModel {
   /// A switch flipped, a choice picked, text entered: `text` is what `set` would be given, but for a share, which the window
   /// counts in per cent.
   public func set(_ key: String, to text: String) {
-    guard let entry = try? SettingsSchema.entry(named: key), Self.isShare(entry), case .number(let range, _, _) = entry.kind else {
-      return perform([.set(key: key, value: text)], at: key)
-    }
+    guard let entry = try? SettingsSchema.entry(named: key), entry.isShare, case .number(let range, _, _) = entry.kind
+    else { return perform([.set(key: key, value: text)], at: key) }
     // Refused here: the command's own words would count from 0 to 1 under a field that says 25 %.
-    let accepts = "from \(Self.text(Self.tidy(range.lowerBound * 100))) to \(Self.text(Self.tidy(range.upperBound * 100))) %"
-    let typed = text.filter { !$0.isWhitespace && $0 != "%" }
-    guard let percent = Double(typed), percent.isFinite else { return refuse("Needs a number \(accepts), got “\(typed)”", at: key) }
+    let (low, high) = (Self.text(Self.tidy(range.lowerBound * 100)), Self.text(Self.tidy(range.upperBound * 100)))
+    var typed = text.trimmingPrefix(while: \.isWhitespace)
+    while typed.last?.isWhitespace == true { typed.removeLast() }
+    var number = typed
+    if number.last == "%" { number.removeLast() }
+    while number.last?.isWhitespace == true { number.removeLast() }
+    guard let percent = Double(number), percent.isFinite else {
+      return refuse("Needs a number from \(low) to \(high) %, got “\(typed.prefix(40))”", at: key)
+    }
     let share = Self.tidy(percent / 100)
-    guard range.contains(share) else { return refuse("Must be \(accepts), got \(Self.text(percent))", at: key) }
+    guard range.contains(share) else {
+      return refuse("Must be from \(low) to \(high) %, got \(Self.text(percent))", at: key)
+    }
     perform([.set(key: key, value: Self.text(share))], at: key)
   }
 
   private func refuse(_ reason: String, at place: String) {
     errors[place] = reason
     changed()
-  }
-
-  /// A number from 0 to 1 at most that is measured in nothing: a share of some whole.
-  private static func isShare(_ entry: SettingEntry) -> Bool {
-    guard case .number(let range, _, let unit) = entry.kind else { return false }
-    return unit.isEmpty && range.lowerBound >= 0 && range.upperBound <= 1
   }
 
   /// Without the crumbs binary fractions leave (30.000000000000004).
@@ -304,7 +317,8 @@ public final class SettingsPanelModel {
   /// A slider let go of. It lands on the nearest step.
   public func set(_ key: String, to value: Double) {
     // As the window counts, which for a share is in per cent.
-    guard let entry = try? SettingsSchema.entry(named: key), case .number(_, let range, let step, _)? = row(for: entry)?.control
+    guard let entry = try? SettingsSchema.entry(named: key),
+      case .number(_, let range, let step, _)? = row(for: entry)?.control
     else { return }
     set(key, to: Self.text(Self.snapped(value, in: range, step: step)))
   }
@@ -350,10 +364,10 @@ public final class SettingsPanelModel {
 
   /// Why settings.json cannot be read. While it is set nothing can be saved, so the window says this
   /// above everything else.
-  public var fileProblem: String? { controller.settingsFileProblem }
+  public var fileProblem: String? { controller.settingsFileProblem.map { Self.withoutCodeMarks($0) } }
 
   /// Values in the file that could not be used as written.
-  public var valueProblems: [String] { settings.valueProblems.map(Self.withoutCodeMarks) }
+  public var valueProblems: [String] { settings.valueProblems.map { Self.withoutCodeMarks($0) } }
 
   /// The way out of a file that cannot be read. Asks first.
   public func replaceFileWithDefaults() { ask(.replaceFile) }
@@ -482,11 +496,12 @@ public final class SettingsPanelModel {
     let groups = Command.Group.allCases.map { group in
       ShortcutSection(title: group.title, rows: rows.filter { $0.standard != nil && $0.command.group == group })
     }
-    return (groups + [ShortcutSection(title: "Your own", rows: rows.filter { $0.standard == nil })]).filter { !$0.rows.isEmpty }
+    let own = ShortcutSection(title: "Your own", rows: rows.filter { $0.standard == nil })
+    return (groups + [own]).filter { !$0.rows.isEmpty }
   }
 
   /// Entries of `bindings` in settings.json that could not be used, and why.
-  public var shortcutProblems: [String] { controller.effectiveBindings.problems.map(Self.withoutCodeMarks) }
+  public var shortcutProblems: [String] { controller.effectiveBindings.problems.map { Self.withoutCodeMarks($0) } }
 
   public var shortcutsAreOff: Bool { !settings.hotkeysEnabled }
 
@@ -532,7 +547,7 @@ public final class SettingsPanelModel {
   public func keyPressed(code: UInt32, modifiers: KeyChord.Modifiers) -> Bool {
     guard let row = recording else { return false }
     guard let chord = KeyChord(code: code, modifiers: modifiers, layout: controller.layoutInEffect) else {
-      errors[place(of: row)] = "that key cannot be part of a shortcut"
+      errors[place(of: row)] = "That key cannot be part of a shortcut"
       changed()
       return true
     }
@@ -607,7 +622,7 @@ public final class SettingsPanelModel {
     do {
       startRecording(ShortcutRow(command: try Command.parse(commandText), chord: nil, standard: nil, label: nil))
     } catch {
-      errors[Pane.shortcuts.id] = "\(error)"
+      errors[Pane.shortcuts.id] = inTheWindowsWords("\(error)", at: Pane.shortcuts.id)
       changed()
     }
   }
@@ -668,7 +683,7 @@ public final class SettingsPanelModel {
   }
 
   /// Entries of `rules` in settings.json that could not be read, and why.
-  public var skippedRules: [String] { settings.skippedRules.map(Self.withoutCodeMarks) }
+  public var skippedRules: [String] { settings.skippedRules.map { Self.withoutCodeMarks($0) } }
 
   /// Starts from the rule as it is now, not as it was when the line was drawn: a title typed on the line is
   /// handed over just before its menus act.

@@ -259,7 +259,7 @@ check "the banner is up" eventually shows AXStaticText "settings.json cannot be 
 wshot light-file-broken
 press_switch hotkeysEnabled
 check "a switch is refused meanwhile" setting_is hotkeysEnabled true
-check "with the reason under it" eventually shows AXStaticText "so nothing was changed"
+check "with the reason under it" eventually shows AXStaticText "Nothing was changed"
 wshot light-file-broken-refusal
 press AXButton "Replace It with the Defaults"
 check "it asks first" eventually shows AXButton question.yes

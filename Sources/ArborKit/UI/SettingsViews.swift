@@ -43,8 +43,8 @@ struct SettingsSidebar: View {
         }
       }
       .listStyle(.sidebar)
-      // The list's own background is a shade lighter than the window's in the dark look, where the field above it and the line
-      // below it then stood on darker strips.
+      // The list's own background is a shade lighter than the window's in the dark look, where the field above it
+      // and the line below it then stood on darker strips.
       .scrollContentBackground(.hidden)
       Text(store.model.version)
         .font(.caption)
@@ -195,7 +195,7 @@ struct SettingsSectionPane: View {
   var body: some View {
     VStack(spacing: 0) {
       form
-      // Under the form and not in it: there it was a card of its own, empty but for a button that is mostly greyed out.
+      // Under the form and not in it: there it was a card of its own, empty but for a button mostly greyed out.
       if store.model.canRestoreDefaults(in: section) {
         Divider()
         HStack {
@@ -229,7 +229,7 @@ struct SettingsSectionPane: View {
               SettingRowView(store: store, row: row)
             }
           } label: {
-            // By itself only the triangle opens the group, seven points of a line that looks like a button all along.
+            // By itself only the triangle opens the group: seven points of a line that looks like a button.
             Text("Advanced")
               .frame(maxWidth: .infinity, alignment: .leading)
               .contentShape(Rectangle())
@@ -408,15 +408,13 @@ struct NumberSettingRow: View {
           .accessibilityIdentifier("\(row.key).field")
           .accessibilityLabel(unit.isEmpty ? row.label : "\(row.label), \(unit)")
           .focused($fieldIsFocused)
-          .onSubmit {
-            commitField()
-            fieldIsFocused = false
-          }
+          .onSubmit { commitField() }
           .onChange(of: fieldIsFocused) {
             if !fieldIsFocused { commitField() }
           }
-          // A field that has the keyboard shows what was last typed into it, whatever it is told to show: beside a slider at 86
-          // it went on saying 40. So it keeps the keyboard only while somebody types.
+          // A field that has the keyboard shows what was last typed into it, whatever it is told to show: beside a
+          // slider at 86 it went on saying 40. After Return it keeps the keyboard, so that Tab goes on from there; it gives
+          // it up when its number changes by another hand, the slider's (below) or somebody's outside the window.
           .onChange(of: value) {
             if typed == nil { fieldIsFocused = false }
           }

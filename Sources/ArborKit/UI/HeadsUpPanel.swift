@@ -135,8 +135,9 @@ final class HeadsUpPanel: PassingPanel {
     appear()
   }
 
-  /// What happened, and after a dot what to press next: lighter in weight, not in colour. The keys are what the person came
-  /// for, the line is gone in seconds, and the colour of secondary text stood out from the panel by 3 to 1 on a Mac.
+  /// What happened, and after a dot what to press next: lighter in weight, not in colour. The keys are what the
+  /// person came for, the line is gone in seconds, and the colour of secondary text stood out from the panel by 3 to 1
+  /// on a Mac. Where the line wraps the dot goes with the hint: spaces that do not break tie it there.
   private static func text(of model: HeadsUpModel) -> NSAttributedString {
     let paragraph = NSMutableParagraphStyle()
     paragraph.alignment = .center
@@ -148,7 +149,7 @@ final class HeadsUpPanel: PassingPanel {
         .paragraphStyle: paragraph,
       ])
     if let hint = model.hint {
-      for (part, colour) in [("  ·  ", NSColor.tertiaryLabelColor), (hint, NSColor.labelColor)] {
+      for (part, colour) in [("  ·\u{A0}\u{A0}", NSColor.tertiaryLabelColor), (hint, NSColor.labelColor)] {
         text.append(
           NSAttributedString(
             string: part,

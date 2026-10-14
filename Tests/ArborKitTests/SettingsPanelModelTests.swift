@@ -185,6 +185,22 @@ private final class Panel {
     }
   }
 
+  /// One translator: what the line on screen does with a reply (`HeadsUpText`), the window does too.
+  @Test func adviceForATerminalIsLeftOutAndCommandsAreCalledByTheirTitles() throws {
+    let p = Panel()
+    p.model.pane = .shortcuts
+    p.model.startRecording(commandText: "frobnicate")
+    #expect(p.model.errors[SettingsPanelModel.Pane.shortcuts.id] == "Unknown command “frobnicate”")
+  }
+
+  /// ⌃⌥` is written with the very sign that marks code.
+  @Test func aBacktickThatIsAKeyStaysOne() {
+    #expect(SettingsPanelModel.withoutCodeMarks("ctrl+opt+`: `state` is a query") == "ctrl+opt+`: “state” is a query")
+    #expect(SettingsPanelModel.withoutCodeMarks("ctrl+opt+`: the same shortcut as ⌃⌥`") == "ctrl+opt+`: the same shortcut as ⌃⌥`")
+    #expect(SettingsPanelModel.withoutCodeMarks("(`a` and `b`)") == "(“a” and “b”)")
+    #expect(SettingsPanelModel.withoutCodeMarks("one ` alone") == "one ` alone")
+  }
+
   @Test func changesMadeElsewhereShowUp() {
     let p = Panel()
     p.h.run("set gap 44")  // arborctl, a shortcut, or an edit to settings.json
@@ -228,6 +244,11 @@ private final class Panel {
     #expect(p.row("dimBehindArranged", in: .appearance)?.control == .number(value: 55, range: 0...100, step: 5, unit: "%"))
     p.model.set("dimBehindArranged", to: " 7.5 % ")
     #expect(p.commands.last == "set dimBehindArranged 0.075")
+    for odd in ["2 5", "5%5", "%", "1e400"] {
+      p.model.set("dimBehindArranged", to: odd)
+      #expect(p.model.errors["dimBehindArranged"]?.hasPrefix("Needs a number from 0 to 100 %") == true, "\(odd)")
+    }
+    p.model.set("dimBehindArranged", to: "7.5")
 
     // A refusal counts as the field does.
     let before = p.commands.count
@@ -341,6 +362,15 @@ private final class Panel {
     // A key's words run together, and whoever types part of one knows it.
     p.model.search = "behindarr"
     #expect(p.model.found.sections.flatMap(\.rows).map(\.key).contains("dimBehindArranged"))
+    // One field, one rule: the lines of the Shortcuts pane and the panes themselves are found the same way.
+    p.model.search = "range"
+    #expect(p.model.found.shortcuts.isEmpty, "not Arrange Windows")
+    p.model.search = "arr"
+    #expect(p.model.found.shortcuts.map(\.title) == ["Arrange Windows"])
+    p.model.search = "cuts"
+    #expect(p.model.found.panes.isEmpty, "not Shortcuts")
+    p.model.search = "short"
+    #expect(p.model.found.panes.contains(.shortcuts))
   }
 
   @Test func hiddenSettingsAreNotFound() {
@@ -451,6 +481,25 @@ private final class Panel {
     p.h.controller.loadSettings = nil
     p.model.set("gap", to: "30")
     #expect(p.settings.gap == 30)
+  }
+
+  /// The window is made when it is first opened, which may well be because Arbor beeped at the file.
+  @Test func aWindowOpenedOnABrokenFileForgetsItsRefusalsToo() {
+    let early = Panel()
+    var broken = true
+    early.h.controller.loadSettings = {
+      if broken { throw Settings.FileError("line 3, column 1: expected `,` or `}` after the value of `gap`, found `rules`") }
+      return Settings()
+    }
+    early.h.controller.takeInSettingsFile()
+    let model = SettingsPanelModel(controller: early.h.controller) { early.h.controller.perform($0) }
+    #expect(model.fileProblem == "line 3, column 1: expected “,” or “}” after the value of “gap”, found “rules”", "no code marks")
+    model.set("gap", to: "30")
+    #expect(model.errors["gap"] == "Nothing was changed: settings.json cannot be read")
+    model.set("minimumUsableWidth", to: "-4")
+    broken = false
+    early.h.controller.takeInSettingsFile()
+    #expect(model.fileProblem == nil && model.errors.isEmpty)
   }
 
   @Test func valuesThatCouldNotBeUsedAreListed() throws {
@@ -700,7 +749,7 @@ private final class Panel {
     // A key Arbor has no name for leaves the recording going.
     p.model.startRecording(row)
     #expect(p.model.keyPressed(code: 10, modifiers: [.control, .option]))
-    #expect(p.model.errors[row.id] == "that key cannot be part of a shortcut" && p.model.recording == row)
+    #expect(p.model.errors[row.id] == "That key cannot be part of a shortcut" && p.model.recording == row)
   }
 
   @Test func removeLeavesTheLineWithoutKeysAndRestoreBringsThemBack() throws {
@@ -737,7 +786,7 @@ private final class Panel {
     let p = Panel()
     p.model.pane = .shortcuts
     p.model.startRecording(commandText: "teleport")
-    #expect(p.model.errors["Shortcuts"] == "unknown command `teleport`; try `help`" && p.model.recording == nil)
+    #expect(p.model.errors["Shortcuts"] == "Unknown command “teleport”" && p.model.recording == nil)
     p.model.startRecording(commandText: "set gap 0")
     #expect(p.model.recording?.isNew == true && p.model.errors.isEmpty)
     try p.press("ctrl+opt+x")

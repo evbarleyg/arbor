@@ -147,14 +147,16 @@
       }
     }
 
-    /// "⌃⌥Space shows everything" is the half of the line that helps. Measured on a hosted Mac it stood out from the panel by 3.1 to
-    /// 1 in the light look and 3.6 to 1 in the dark one, the sentence before it by 7.5 and 12.5. 4.5 is what text of this size needs.
+    /// "⌃⌥Space shows everything" is the half of the line that helps. Measured on a hosted Mac it stood out from the
+    /// panel by 3.1 to 1 in the light look and 3.6 to 1 in the dark one, the sentence before it by 7.5 and 12.5. 4.5 is
+    /// what text of this size needs.
     @Test func theKeysToPressStandOutAsTextMust() throws {
       let model = try #require(try lines().first { $0.name == "5-out-of-view" }?.model)
       let hint = try #require(model.hint)
       let placement = HeadsUpPanel.placement(of: model)
       // The hint is the end of the one line.
-      let start = placement.text.attributedSubstring(from: NSRange(location: 0, length: placement.text.length - (hint as NSString).length))
+      let start = placement.text.attributedSubstring(
+        from: NSRange(location: 0, length: placement.text.length - (hint as NSString).length))
       var area = placement.textFrame
       area.origin.x += start.size().width
       area.size.width -= start.size().width
@@ -162,8 +164,10 @@
       for look in looks {
         let view = MeasuredTextView()
         view.text = placement.text
-        let picture = try Picture(panel: placement.frame.size, content: view, at: placement.textFrame, isDark: look.isDark, scale: 2)
-        let plate = picture.lightness(4, placement.frame.height / 2)
+        let picture = try Picture(
+          panel: placement.frame.size, content: view, at: placement.textFrame, isDark: look.isDark, scale: 2)
+        // The plate right above the hint, in the padding.
+        let plate = picture.lightness(area.midX, 3)
         var ink = plate
         for y in stride(from: area.minY + 0.25, to: area.maxY, by: 0.5) {
           for x in stride(from: area.minX + 0.25, to: area.maxX, by: 0.5) {
