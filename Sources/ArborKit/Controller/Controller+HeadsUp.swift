@@ -49,7 +49,7 @@ extension Controller {
     // Asked first: afterwards the window may be somewhere else, or Arbor may have stopped looking. During a pause it
     // is not looking yet, and the answer to `resume` goes where the question is asked afterwards.
     // Not asked for a script, which is answered in its reply. Only asked: it is the command that decides (F56).
-    let display = isRunning && source.isAnsweredOnScreen ? deciding(false) { display(actedOnBy: command) } : nil
+    let display = isRunning && source.isAnsweredOnScreen ? deciding(false) { self.display(actedOnBy: command) } : nil
     let result = execute(command)
     if source.isAnsweredOnScreen { headsUp.lastAsked = now() }
     say(result, to: command, from: source, on: display, changedNothing: before.map { $0 == seen() } ?? false, namesBefore: names)
