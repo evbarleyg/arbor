@@ -39,9 +39,14 @@
 #                                     `floating`: whatever floats before or after it. `audit=no` leaves the comparison out, for a step
 #                                     in which macOS holds the windows where Arbor cannot know them to be. What the comparison
 #                                     found after the step before as well is not said again
+#   day_scratch                     apps_scratch, and the same documents under names with a canary word in them ($DAY_DOCUMENTS/$APPS_CANARY-oak.txt, -elm.txt,
+#                                     -grove/, -page.html, -leaf.png): a document's name is its window's title, and day_report looks for the word in all
+#                                     that the run brings back but the pictures (`told`)
+#   idle <seconds>                  inside a step: nothing is done for that long. Meanwhile Arbor may use 1 % of a core and write 20 lines a minute (`busy`)
 #   day_launch [NAME=value…]        Arbor as a person runs it: every regular app, shortcuts and menu bar item on. The same
 #                                     $ARBOR_HOME every time, so that a second launch finds what the first one saved
-#   day_gone                        after a step that quit Arbor: waits for it to end, and forgets its process
+#   day_gone                        after a step that quit Arbor: waits for it to end, forgets its process, and looks for what it left: a process, a
+#                                     panel (`left-behind`)
 #   docked_ids | floating_ids       the ids Arbor has docked | floating, separated by commas
 #   arbor_window                    the id of Arbor's own standard window, if one is open: its welcome
 #   click_window <window>           a real click on a free point of its title bar (fails when it is covered)
@@ -65,6 +70,9 @@ DAY_STEP=0
 DAY_TRACES=0
 DAY_QUESTIONS=0
 DAY_UNDONE=""
+DAY_DOCUMENTS=""
+# No word of any language, so that nothing else can bring it in.
+APPS_CANARY=quokkadoo
 DAY_SLUG=""
 DAY_KIND=""
 DAY_DOCKED_BEFORE=""
@@ -152,6 +160,19 @@ quiet() {
   return 1
 }
 
+# MARK: Documents whose names must not be told
+
+day_scratch() {
+  apps_scratch
+  DAY_DOCUMENTS="$APPS_SCRATCH/told"
+  mkdir -p "$DAY_DOCUMENTS"
+  cp "$APPS_SCRATCH/oak.txt" "$DAY_DOCUMENTS/$APPS_CANARY-oak.txt"
+  cp "$APPS_SCRATCH/elm.txt" "$DAY_DOCUMENTS/$APPS_CANARY-elm.txt"
+  cp "$APPS_SCRATCH/leaf.png" "$DAY_DOCUMENTS/$APPS_CANARY-leaf.png"
+  cp -R "$APPS_SCRATCH/grove" "${DAY_DOCUMENTS:?}/$APPS_CANARY-grove"
+  sed "s|<title>|<title>$APPS_CANARY |" "$APPS_SCRATCH/page.html" > "$DAY_DOCUMENTS/$APPS_CANARY-page.html"
+}
+
 # MARK: Steps
 
 chapter() {
@@ -226,6 +247,24 @@ want() {
   check "$@" || note "finding $DAY_STEP - FAIL not so: $1"
 }
 
+# ps gives the time a process has had of the processors as [[dd-]hh:]mm:ss.cc.
+day_cpu_seconds() {
+  ps -o cputime= -p "$1" 2>/dev/null | awk '{ parts = split($1, unit, ":"); seconds = 0; for (i = 1; i <= parts; i++) seconds = seconds * 60 + unit[i]; printf "%.2f", seconds }'
+}
+
+idle() {
+  local seconds=$1 cpu lines share written
+  arbor_answers || { sleep "$seconds"; return 0; }
+  cpu=$(day_cpu_seconds "$ARBOR_PID")
+  lines=$(lines_of "$ARBOR_HOME/arbor.log")
+  sleep "$seconds"
+  share=$(echo "$(day_cpu_seconds "$ARBOR_PID") $cpu $seconds" | awk '{ printf "%.1f", ($1 - $2) * 100 / $3 }')
+  written=$(( ($(lines_of "$ARBOR_HOME/arbor.log") - lines) * 60 / seconds ))
+  echo "  with nothing to do Arbor used $share % of a core and wrote $written lines a minute"
+  if [ "$(echo "$share" | awk '{ print ($1 > 1) }')" = 1 ]; then note "finding $DAY_STEP -:busy FAIL with nothing to do Arbor used $share % of a core"; fi
+  if [ "$written" -gt 20 ]; then note "finding $DAY_STEP -:busy FAIL with nothing to do Arbor wrote $written lines of log a minute"; fi
+}
+
 must() {
   "$@" && return 0
   DAY_UNDONE="$DAY_UNDONE $1"
@@ -273,7 +312,7 @@ acted() {
     wants="$wants floating=$DAY_FLOATING docked=$DAY_DOCKED"
   elif [ -n "$ARBOR_PID" ]; then
     echo "  ✘ ARBOR DIED"
-    note "finding $DAY_STEP - FAIL Arbor died"
+    note "finding $DAY_STEP -:crash FAIL Arbor's process ended, and nobody asked it to"
     tail -n 20 "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>/dev/null
     ARBOR_PID=""
   fi
@@ -292,9 +331,14 @@ day_launch() {
 }
 
 day_gone() {
-  [ -n "$ARBOR_PID" ] || return 0
-  ended "$ARBOR_PID" 50 || return 1
+  local pid=$ARBOR_PID left
+  [ -n "$pid" ] || return 0
+  ended "$pid" 50 || return 1
   ARBOR_PID=""
+  left=$(ps -A -o pid=,comm= | grep -F "$ARBOR_BIN/Arbor" | awk '{ printf "%s ", $1 }')
+  [ -z "$left" ] || note "finding $DAY_STEP -:left-behind FAIL after Quit a process of Arbor's is still there: $left"
+  left=$(pointer windows --pid "$pid" | wc -l | tr -d ' ')
+  [ "$left" -eq 0 ] || note "finding $DAY_STEP -:left-behind FAIL after Quit $left windows of Arbor's are still there"
 }
 
 # MARK: What a person does
@@ -368,7 +412,13 @@ arbor_menu() {
   done
 }
 
-main_window_of() { apptool focused "$1" 2>/dev/null | cut -d ' ' -f 1; }
+# An app whose keyboard is with a sheet or a dialog names no window: then the first standard one it lists, which is the frontmost.
+main_window_of() {
+  local id
+  id=$(apptool focused "$1" 2>/dev/null | cut -d ' ' -f 1)
+  [ -n "$id" ] || id=$(app_windows "$1" | cut -d ' ' -f 1)
+  echo "$id"
+}
 
 # From the middle outwards would find the gaps last; a person who misses a window clicks beside it, so any bare point will do.
 bare_spot() {
@@ -410,13 +460,20 @@ PYTHON
 }
 
 day_report() {
-  local number name code logs
-  sampler_stop
+  local number name code logs told
   watch_stop
   if arbor_answers; then "$ARBOR_BIN/arborctl" trace off > /dev/null 2>&1; fi
   # One home for the whole day, so one log, whatever the number of the session.
   if [ -f "$ARBOR_HOME/arbor.log" ]; then cp "$ARBOR_HOME/arbor.log" "$ARBOR_OUT/arbor.log"; fi
   if [ -d "$ARBOR_HOME/traces" ]; then cp -R "$ARBOR_HOME/traces" "$ARBOR_OUT/traces"; fi
+  # While the sampler still takes marks: what only shows once everything has been gathered counts for the last step.
+  if on_throwaway_mac && cp "$HOME"/Library/Logs/DiagnosticReports/Arbor*.ips "$ARBOR_OUT/" 2>/dev/null; then
+    note "finding $DAY_STEP -:crash FAIL macOS wrote a crash report of Arbor's"
+  fi
+  # -I: not the pictures, which show the titles as the screen did.
+  told=$(grep -rIl "$APPS_CANARY" "$ARBOR_OUT" 2>/dev/null | sed "s|$ARBOR_OUT/||" | tr '\n' ' ')
+  [ -z "$told" ] || note "finding $DAY_STEP -:told FAIL a window's title is in what the run brings back: $told"
+  sampler_stop
   day_write_manifest
   logs=$(ls "$ARBOR_OUT/arbor.log" "$ARBOR_OUT/day-macos.log" 2>/dev/null | tr '\n' ' ')
   python3 "$DAY_JOLTS" report "$DAY_SAMPLES" --json "$ARBOR_OUT/day-findings.json" > "$ARBOR_OUT/day-report.md"

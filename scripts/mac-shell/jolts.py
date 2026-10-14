@@ -12,8 +12,8 @@ whether a window was lost. The rules are the product's (docs/TESTING.md, "An ord
   5  quitting, Float All and pause give windows their own earlier sizes back
   L  no window is lost: none leaves the screen or ends out of view unless the step says so
 
-Every finding also names its detector, by the names docs/VIABLE.md gives them: fought, moved-unasked, jolt, pulled, flash, slow, behind, focus, size-lost, lost,
-and script for what the script itself found out.
+Every finding also names its detector, by the names docs/VIABLE.md gives them: fought, moved-unasked, jolt, pulled, flash, stuck, slow, behind, focus, size-lost, lost; crash, busy, left-behind and told, which the
+script finds out and hands on; and script for whatever else it checked.
 
   jolts.py report <samples> [--json <file>]   the findings per rule, each with the step that shows it, then every step.
                                               Exit code 1 when a rule was broken, 0 when none was
@@ -33,7 +33,8 @@ The script says what it is doing in marks (lib-day.sh writes them):
   chapter <title>
   begin <n> <slug>         a step begins: one thing a person does
   text <n> <words…>        what the person does, for the report
-  finding <n> <rule> <FAIL|ODD> <words…>      something the script itself found out during the step
+  finding <n> <rule> <FAIL|ODD> <words…>      something the script itself found out during the step. `-` for the rule, or `-:<detector>` for what only the
+                           script can see: crash, busy, left-behind, told
   end <n> [key=value…]     things have settled, and this should hold:
     act=<kind>             what kind of thing the person did (docs/VIABLE.md lists the kinds), for the count
     moves=<ids>|any|none   the windows the step may move (default none)
@@ -79,12 +80,15 @@ SLOW = 1500
 ARBORS_OWN = {"dock-key", "view", "resize", "way-out", "drag"}
 # The acts during which the app in front has no reason to change.
 NO_SWITCH = {"idle", "dock-key", "resize"}
-# From one sample to the next a dragged window may move this many points further than the pointer did.
-PULLED = 16
+# From one sample to the next a dragged window may move this many points further than the pointer did: it lags, and makes up for it (18 points
+# were seen with nobody pulling). Whoever sets its frame sends it much further.
+PULLED = 40
 # The pointer's road is looked at from this long before the first of the two samples to this long after the second: window and pointer are not read at one moment.
 SKEW = (150, 60)
 # macOS gives a window it had tiled its size back under the hand, in a motion of its own that shifts the origin too. Nothing is made of a move this soon after.
 RESIZING = 300
+# After a drop a window is where it was let go, or where the preview was, to within this many points (a gap, a size its app rounds).
+DROPPED = 24
 # Less of a window than this on the display is its parking strip; more than that, and it shows.
 STRIP = 0.03
 SHOWS = 0.05
@@ -153,9 +157,30 @@ class Step:
         # During a drag: macOS's tiling preview was up when the button came up; Arbor's and macOS's previews were up together.
         self.macos_answered = False
         self.both_previews = False
+        self.stage_since = None
+        self.under_the_stage = 0
+        # Where Arbor's drop preview was when the button came up, if it was up.
+        self.preview_at_drop = None
         self.at_end = None
         self.findings = []
         self.moved = {}
+
+    def stage_went_up(self, time):
+        self.stage_since = time
+
+    def stage_came_down(self, time):
+        """Under the stage the real windows go to their places where nobody sees them. A person sees each where the stage found it, and
+        then, when the stage comes down, where it is by then. What the stand-ins do meanwhile is on the film, not in the samples."""
+        since, self.stage_since = self.stage_since, None
+        if since is None:
+            return
+        for window, trace in self.traces.items():
+            hidden = [index for index, entry in enumerate(trace) if entry[0] >= since and index > 0]
+            if hidden:
+                last = trace[hidden[-1]]
+                del trace[hidden[0]:]
+                trace.append((time, last[1], last[2]))
+        self.under_the_stage += 1
 
     def find(self, rule, level, window, what, trace=None, detector=None):
         self.findings.append({
@@ -180,6 +205,10 @@ class World:
         # The previews that are up: macOS's own (windows of WindowManager's) and Arbor's (its panels at level 3).
         self.macos_previews = set()
         self.arbor_previews = set()
+        self.macos_preview_left = 0
+        self.arbor_preview_last = (0, None)
+        # Arbor's stage, while it is up: a panel at level 4 over the whole display that shows a picture of the desktop and a stand-in for each window.
+        self.stages = set()
         self.labels = {}
 
     def ordinary(self, window):
@@ -227,14 +256,21 @@ def read(path):
                 window = int(rest[0])
                 frame = tuple(float(number) for number in rest[3:7])
                 known = window in world.seen
+                showing = window in world.frames
                 world.pids[window], world.layers[window] = int(rest[1]), int(rest[2])
                 world.owners[window] = " ".join(rest[7:]).replace("_", " ")
                 world.frames[window] = frame
                 world.seen.add(window)
+                if (world.pids[window] in world.arbors and world.layers[window] == 4 and world.display
+                        and shared(frame, world.display) >= 0.95 * world.display[2] * world.display[3]):
+                    if not world.stages and current:
+                        current.stage_went_up(time)
+                    world.stages.add(window)
                 if world.owners[window] == "WindowManager" and world.layers[window] == 0:
                     world.macos_previews.add(window)
-                elif world.pids[window] in world.arbors and world.layers[window] == 3 and world.button and not known:
-                    # Other panels of Arbor's float at that level too. The preview is the one that comes up while the button is down.
+                elif world.pids[window] in world.arbors and world.layers[window] == 3 and world.button and not showing:
+                    # Other panels of Arbor's float at that level too. The preview is the one that comes up while the button is down, as
+                    # often as the drag passes a place to drop: it is one panel, put away and brought out again.
                     world.arbor_previews.add(window)
                 if current and world.button and world.macos_previews and world.arbor_previews:
                     current.both_previews = True
@@ -249,7 +285,15 @@ def read(path):
                 if current and world.ordinary(window):
                     current.traces.setdefault(window, [(current.began, world.frames.get(window), False)])
                     current.traces[window].append((time, None, world.button))
-                world.frames.pop(window, None)
+                world.gone_frame = world.frames.pop(window, None)
+                if window in world.stages:
+                    world.stages.discard(window)
+                    if not world.stages and current:
+                        current.stage_came_down(time)
+                if window in world.arbor_previews:
+                    world.arbor_preview_last = (time, world.gone_frame)
+                if window in world.macos_previews:
+                    world.macos_preview_left = time
                 world.macos_previews.discard(window)
                 world.arbor_previews.discard(window)
             elif kind == "Z":
@@ -268,7 +312,13 @@ def read(path):
                     if len(rest) >= 3:
                         current.pointer.append((time, float(rest[1]), float(rest[2])))
                     if not world.button:
-                        current.macos_answered = bool(world.macos_previews)
+                        # It goes with the button, and within one sample its going is written first.
+                        current.macos_answered = bool(world.macos_previews) or time - world.macos_preview_left <= 150
+                        up = [world.frames[preview] for preview in world.arbor_previews if preview in world.frames]
+                        if up:
+                            current.preview_at_drop = up[0]
+                        elif time - world.arbor_preview_last[0] <= 150:
+                            current.preview_at_drop = world.arbor_preview_last[1]
             elif kind == "P" and len(rest) >= 2:
                 if current:
                     current.pointer.append((time, float(rest[0]), float(rest[1])))
@@ -305,7 +355,8 @@ def read(path):
                 elif verb == "text" and len(rest) >= 2 and int(rest[0]) in by_number:
                     by_number[int(rest[0])].text = " ".join(rest[1:])
                 elif verb == "finding" and len(rest) >= 4 and int(rest[0]) in by_number:
-                    by_number[int(rest[0])].find(rest[1], rest[2], None, " ".join(rest[3:]))
+                    rule, _, detector = rest[1].partition(":")
+                    by_number[int(rest[0])].find(rule if rule in DETECTORS else "-", rest[2], None, " ".join(rest[3:]), None, detector or None)
                 elif verb == "end" and rest and int(rest[0]) in by_number:
                     step = by_number[int(rest[0])]
                     step.ended = time
@@ -400,6 +451,13 @@ def judge(step, world, by_number, own):
     # What is said to go or to come is named by that.
     named |= ids(may_leave) | ids(wants.get("comes", ""))
     kin = {world.pids.get(window) for window in named | dragged}
+    screen = (end or {}).get("display") or world.display
+    if wants.get("act") == "switch" and screen:
+        # To bring a window into view that is out of view, the view has to move.
+        for window in ids(wants.get("front", "")):
+            first = (step.traces.get(window) or [(0, None, False)])[0][1]
+            if first is None or shared(first, screen) / max(first[2] * first[3], 1) < 0.5:
+                may = "any"
     if end:
         taken = [end["frames"][window] for window in named | dragged if window in end["frames"]]
         for window in ids(wants.get("yields", "")):
@@ -420,8 +478,22 @@ def judge(step, world, by_number, own):
                 step.find("1", "FAIL", window, "macOS's tiling preview and Arbor's drop preview were up at the same time")
             if step.macos_answered and window in ids(wants.get("docked", "")):
                 step.find("1", "FAIL", window, "macOS's tiling preview was up when it was let go, and Arbor docked it")
+            elif step.macos_answered and measure(trace[max((index for index, entry in enumerate(trace) if entry[2]), default=0):])[0] > 1:
+                step.find("1", "FAIL", window, "macOS's tiling preview was up when it was let go, macOS tiled it, and it was moved again afterwards")
             last_held = max((index for index, entry in enumerate(trace) if entry[2]), default=0)
+            taken = trace[0][1]
             trace = trace[last_held:]
+            let_go, ended, drop = trace[0][1], trace[-1][1], step.pointer[-1][1:] if step.pointer else None
+            if held and let_go and ended and not step.macos_answered and differs(let_go, ended, by=DROPPED):
+                preview = step.preview_at_drop
+                in_preview = preview and inside(ended, preview, by=DROPPED)
+                # A window that gets its own size back at the drop stays under the pointer by its title bar.
+                in_hand = drop and ended[0] <= drop[0] <= ended[0] + ended[2] and ended[1] - 4 <= drop[1] <= ended[1] + 60
+                # A drag that is called off: a docked window let go over its own place goes back to it.
+                back = taken and not differs(taken, ended, by=DROPPED)
+                if not in_preview and not in_hand and not back:
+                    step.find("3", "FAIL", window, "ended neither where it was let go nor where the preview was: let go at %s, %s, now at %s" % (
+                        words(let_go), "the preview at " + words(preview) if preview else "no preview", words(ended)), road(trace), "stuck")
         if window in step.born and trace and trace[0][1]:
             # Where it has opened is where its app put it.
             opened = 0
@@ -435,8 +507,10 @@ def judge(step, world, by_number, own):
         # macOS shrinks a window into the Dock and lets it grow out of it, by a road of its own.
         if window in ids(may_leave) | ids(wants.get("comes", "")):
             detour = 0
-        follows = window not in world.labels and world.pids.get(window) in {
-            world.pids.get(other) for other in step.traces if other in world.labels and len(step.traces[other]) > 1}
+        follows = window not in world.labels and any(
+            other != window and world.pids.get(other) == world.pids.get(window) and len(theirs) > 1 and theirs[0][1] and trace and trace[0][1]
+            and theirs[0][1][2] * theirs[0][1][3] > trace[0][1][2] * trace[0][1][3]
+            for other, theirs in step.traces.items())
         if moves:
             step.moved[window] = (moves, frames, took)
         if moves and may != "any" and window not in named and window not in dragged:
@@ -819,6 +893,16 @@ def self_test():
         "2000 M begin 2 dock", "2300 K 1", "4000 W 1 10 0 0 30 500 700 One", "5100 M end 2 act=dock-key moves=1"], ["slow"])
     detectors("what macOS takes its time over is not Arbor's", start + [
         "2000 M begin 2 full", "2300 K 1", "4000 W 1 10 0 0 0 1000 800 One", "5100 M end 2 act=macos-own moves=1"], [])
+    stage = ["2050 W 70 99 4 0 0 1000 800 Arbor"]
+    expect("under the stage a window goes about unseen", start + ["2000 M begin 2 dock"] + stage + [
+        "2100 W 1 10 0 600 30 400 300 One", "2140 W 1 10 0 0 30 400 300 One", "2500 W 1 10 0 0 30 500 700 One", "2600 G 70",
+        "3700 M end 2 moves=1"], [])
+    expect("what it does once the stage is down is seen", start + ["2000 M begin 2 dock"] + stage + [
+        "2100 W 1 10 0 0 30 500 700 One", "2600 G 70", "3100 W 1 10 0 0 30 480 700 One", "4200 M end 2 moves=1"], [("3", "FAIL")])
+    expect("a window nobody named is seen elsewhere when the stage comes down", start + ["2000 M begin 2 dock"] + stage + [
+        "2100 W 1 10 0 0 30 500 700 One", "2120 W 2 20 0 600 100 400 300 Two", "2600 G 70", "3700 M end 2 moves=1"], [("2", "FAIL")])
+    expect("a small panel of Arbor's at that level hides nothing", start + ["2000 M begin 2 dock", "2050 W 70 99 4 100 100 300 200 Arbor",
+        "2100 W 1 10 0 600 30 400 300 One", "2140 W 1 10 0 0 30 400 300 One", "2600 G 70", "3700 M end 2 moves=1"], [("3", "FAIL")])
     expect("a late move counts for the step before", start + [
         "2000 M begin 2 dock", "2100 W 1 10 0 0 30 500 700 One", "3200 M end 2 moves=1", "3300 W 1 10 0 0 30 490 700 One",
         "3400 M begin 3 idle", "4400 M end 3"], [("3", "FAIL"), ("3", "ODD")])
@@ -854,7 +938,8 @@ def self_test():
         "6000 M begin 4 back", "6100 W 2 20 0 520 100 400 300 Two", "7000 M end 4 moves=any returns=2"], [("2", "FAIL")])
     drag = start + ["2000 M begin 2 drag", "2050 B down 300 110"] + [
         line for i in range(1, 9) for line in (
-            f"{2100 + 16 * i} W 1 10 0 {100 + (-1) ** i * 20 * i} 100 400 300 One", f"{2100 + 16 * i} P {300 + (-1) ** i * 20 * i} 110")]
+            f"{2100 + 16 * i} W 1 10 0 {100 + (-1) ** i * 20 * i} 100 400 300 One", f"{2100 + 16 * i} P {300 + (-1) ** i * 20 * i} 110")] + [
+        "2290 W 51 99 3 0 30 500 700 Arbor"]
     expect("in the hand a window goes where the hand goes", drag + [
         "2300 B up 10 110", "2320 W 1 10 0 0 30 500 700 One", "3400 M end 2 drags=1"], [])
     expect("after the drop it moves once", drag + [
@@ -886,6 +971,30 @@ def self_test():
     detectors("both previews are up", tiling + [
         "2260 W 51 99 3 0 30 500 700 Arbor", "2300 B up 460 110", "2310 G 50", "2310 G 51", "2320 W 1 10 0 0 30 1000 700 One",
         "3400 M end 2 drags=1"], ["fought"])
+    detectors("Arbor's preview is one panel, brought out again and again", glide[:len(start) + 4] + [
+        "2120 W 51 99 3 0 30 500 700 Arbor", "2125 G 51"] + glide[len(start) + 4:] + [
+        "2240 W 51 99 3 0 30 500 700 Arbor", "2240 W 50 5 0 -15 16 1030 760 WindowManager", "2300 G 50", "2300 G 51", "2300 B up 460 110",
+        "2320 W 1 10 0 0 30 1000 700 One", "3400 M end 2 drags=1"], ["fought"])
+    detectors("macOS tiles it, and a moment later it is sent elsewhere", tiling + [
+        "2300 G 50", "2300 B up 460 110", "2320 W 1 10 0 0 30 500 700 One", "3900 W 1 10 0 999 799 500 700 One", "5000 M end 2 drags=1"],
+        ["fought", "jolt"])
+    detectors("a switch to a window that is out of view moves the view", parked + [
+        "2000 M begin 3 switch", "2100 W 2 20 0 500 100 400 300 Two", "2100 W 1 10 0 999 799 400 300 One", "2100 Z 2,1", "2100 A 20 app.two",
+        "3200 M end 3 act=switch front=2"], [])
+    detectors("a switch to a window in view moves nothing", start + [
+        "2000 M begin 2 switch", "2100 W 1 10 0 999 799 400 300 One", "2100 Z 2,1", "2100 A 20 app.two", "3200 M end 2 act=switch front=2"],
+        ["moved-unasked"])
+    detectors("dropped where the preview was", glide + [
+        "2260 W 51 99 3 0 30 500 700 Arbor", "2300 B up 460 110", "2310 G 51", "2320 W 1 10 0 12 42 476 676 One", "3400 M end 2 drags=1 docked=1"], [])
+    detectors("dropped, and it goes somewhere else altogether", glide + [
+        "2260 W 51 99 3 0 30 500 700 Arbor", "2300 B up 460 110", "2310 G 51", "2320 W 1 10 0 520 300 400 300 One", "3400 M end 2 drags=1"], ["stuck"])
+    detectors("a drag that is called off: it goes back to where it was taken from", glide + [
+        "2300 B up 460 110", "2320 W 1 10 0 100 100 400 300 One", "3400 M end 2 drags=1 docked=1"], [])
+    detectors("dropped with no preview, and it stays", glide + ["2300 B up 460 110", "3400 M end 2 drags=1"], [])
+    detectors("dropped with no preview, and it gets its own size back under the pointer", glide + [
+        "2300 B up 460 110", "2320 W 1 10 0 360 100 200 150 One", "3400 M end 2 drags=1"], [])
+    detectors("what the script hands on keeps its name", start + [
+        "2000 M begin 2 idle", "2500 M finding 2 -:busy FAIL Arbor used 4 % of a core", "3000 M end 2"], ["busy"])
     detectors("macOS answers the drag and Arbor docks the window all the same", tiling + [
         "2300 B up 460 110", "2310 G 50", "2320 W 1 10 0 0 30 500 700 One", "3400 M end 2 drags=1 docked=1"], ["fought"])
     detectors("Arbor's preview alone is what a drag is for", glide + [
