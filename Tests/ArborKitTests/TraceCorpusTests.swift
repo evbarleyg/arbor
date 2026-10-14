@@ -58,7 +58,7 @@ import Testing
   /// pointer brought about, and from each one every way back is tried.
   @Test(arguments: names)
   func everyWayBackReturnsEveryWindowFromEveryStateOfATrace(name: String) throws {
-    let text = try #require(text(name, ".jsonl"))
+    let text = try #require(self.text(name, ".jsonl"))
     let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
     // Before every stimulus since the last of which something may have changed: where a window is, or what Arbor knows or has done. In a trace of real
     // apps two stimuli in three are a timer that looked and did nothing or a report that moved nothing, and the state after it is the state before it.

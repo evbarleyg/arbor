@@ -35,7 +35,7 @@ import Testing
     let floated = try #require(h.frame(a))
     h.run("dock \(a.rawValue) left")
     let slot = try #require(h.frame(a))
-    let item = try #require(item(a, in: journey(h, "undo")))
+    let item = try #require(self.item(a, in: journey(h, "undo")))
     #expect(h.frame(a) == floated)
     #expect(item.from == slot && item.fromOpacity == 1, "it starts where it is seen")
     #expect(item.to == floated && item.toOpacity == 1)
@@ -49,7 +49,7 @@ import Testing
     h.system.userMove(c, to: place)
     h.run("dock \(c.rawValue) right")
     let slot = try #require(h.frame(c))
-    let item = try #require(item(c, in: journey(h, "undo")))
+    let item = try #require(self.item(c, in: journey(h, "undo")))
     #expect(h.frame(c) == place)
     #expect(item.from == slot && item.to == place)
   }
@@ -62,7 +62,7 @@ import Testing
     // Docking b brings it into view; undoing that sends it out again.
     h.run("dock \(b.rawValue) right")
     let slot = try #require(h.frame(b))
-    let item = try #require(item(b, in: journey(h, "undo")))
+    let item = try #require(self.item(b, in: journey(h, "undo")))
     #expect(h.controller.parked.contains(b))
     #expect(item.from == slot && item.fromOpacity == 1, "it starts where it is seen")
     #expect(!item.to.overlaps(h.visibleFrame) || item.toOpacity == 0, "and leaves")
@@ -74,7 +74,7 @@ import Testing
     h.run("dock \(a.rawValue) left")
     let slot = try #require(h.frame(a))
     h.run("undo")
-    let item = try #require(item(a, in: journey(h, "redo")))
+    let item = try #require(self.item(a, in: journey(h, "redo")))
     #expect(item.from == floated && item.to == slot)
   }
 

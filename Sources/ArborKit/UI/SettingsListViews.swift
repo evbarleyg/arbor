@@ -272,21 +272,21 @@ struct RuleRowView: View {
   }
 
   private var kind: Binding<SettingsPanelModel.RuleKind> {
-    Binding<SettingsPanelModel.RuleKind>(
-      get: { @MainActor in row.kind },
-      set: { @MainActor kind in store.model.setKind(kind, of: row) })
+    Binding<SettingsPanelModel.RuleKind>.onMainActor(
+      get: { row.kind },
+      set: { kind in store.model.setKind(kind, of: row) })
   }
 
   private var edge: Binding<ArborCore.Edge> {
-    Binding<ArborCore.Edge>(
-      get: { @MainActor in row.edge ?? .right },
-      set: { @MainActor edge in store.model.setEdge(edge, of: row) })
+    Binding<ArborCore.Edge>.onMainActor(
+      get: { row.edge ?? .right },
+      set: { edge in store.model.setEdge(edge, of: row) })
   }
 
   private var title: Binding<String> {
-    Binding<String>(
-      get: { @MainActor in store.model.draft(in: row.titleField) ?? row.rule.title ?? "" },
-      set: { @MainActor new in store.model.type(new, into: row.titleField) })
+    Binding<String>.onMainActor(
+      get: { store.model.draft(in: row.titleField) ?? row.rule.title ?? "" },
+      set: { new in store.model.type(new, into: row.titleField) })
   }
 
   /// (Before anything else is done to the line the model does this by itself.)
@@ -389,5 +389,19 @@ struct AppMenu: View {
         Button(app.name) { choose(app) }
       }
     }
+  }
+}
+
+extension Binding {
+  /// A binding whose two closures run on the main actor, like everything else in a view.
+  ///
+  /// Instead of `Binding(get: { @MainActor in … }, set: { @MainActor new in … })` where the binding is wanted, which says the same and which
+  /// Swift 6.3 (Xcode 26.4 to 26.6) crashes on: the initializer takes `@isolated(any)` closures of any `Value`, and that compiler
+  /// dies making the piece between a main-actor closure that takes a `String`, say, and one of those. Here `Value` is still
+  /// any type, so no such piece is made.
+  @MainActor static func onMainActor(
+    get: @escaping @MainActor () -> Value, set: @escaping @MainActor (Value) -> Void
+  ) -> Binding<Value> {
+    Binding(get: get, set: set)
   }
 }
