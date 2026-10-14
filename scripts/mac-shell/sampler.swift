@@ -16,8 +16,9 @@
 //   G id                           it left the screen: closed, hidden, minimized, or on another Space
 //   Z id,id,…                      the order of the ordinary windows (layer 0) changed: from the frontmost to the one at the back
 //   A pid bundle-id                another app came to the front
-//   B down|up x y                  the left mouse button
+//   B down|up x y                  the left mouse button. A click that began and ended between two samples is written as both, at the later one
 //   P x y                          the pointer moved while the button was down
+//   K n                            n keys went down since the last sample. Never which
 //   D x y w h                      the main display
 //   V x y w h                      the main display between the menu bar and the Dock
 //   M text                         a mark of the script's
@@ -29,7 +30,7 @@
 //
 // Commands, one per line:
 //   mark <text>                    write an M line
-//   quiet <ms> <limit ms>          reply once no W, G, Z or B line was written for <ms>: `quiet <waited ms>`, or after
+//   quiet <ms> <limit ms>          reply once no W (of an ordinary window), G, Z, B or K line was written for <ms>: `quiet <waited ms>`, or after
 //                                  <limit ms> at the latest: `restless <waited ms>`
 //   stop                           write the S line and end (so does the end of the fifo)
 
@@ -101,6 +102,8 @@ final class Sampler {
   private var order: [Int] = []
   private var buttonIsDown = false
   private var pointer = CGPoint(x: -1, y: -1)
+  private var keys = CGEventSource.counterForEventType(.combinedSessionState, eventType: .keyDown)
+  private var presses = CGEventSource.counterForEventType(.combinedSessionState, eventType: .leftMouseDown)
   private(set) var samples = 0
   private(set) var late = 0
   private(set) var longestGap = 0.0
@@ -143,6 +146,13 @@ final class Sampler {
     }
 
     let down = CGEventSource.buttonState(.combinedSessionState, button: .left)
+    let pressedButton = CGEventSource.counterForEventType(.combinedSessionState, eventType: .leftMouseDown)
+    if !down, !buttonIsDown, pressedButton != presses, let place = CGEvent(source: nil)?.location {
+      // What a click sets off comes a moment later: whoever waits for quiet has to know that there was one.
+      write(started, "B down \(text(place.x)) \(text(place.y))", isChange: true)
+      write(started, "B up \(text(place.x)) \(text(place.y))", isChange: true)
+    }
+    presses = pressedButton
     if down || buttonIsDown, let place = CGEvent(source: nil)?.location {
       if down != buttonIsDown {
         write(started, "B \(down ? "down" : "up") \(text(place.x)) \(text(place.y))", isChange: true)
@@ -152,6 +162,11 @@ final class Sampler {
       pointer = place
     }
     buttonIsDown = down
+    let pressed = CGEventSource.counterForEventType(.combinedSessionState, eventType: .keyDown)
+    if pressed != keys {
+      write(started, "K \(pressed &- keys)", isChange: true)
+      keys = pressed
+    }
 
     samples += 1
     spent += now() - started

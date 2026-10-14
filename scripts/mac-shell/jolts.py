@@ -5,15 +5,21 @@ For every step of the script: which windows moved, how many times each moved and
 that the step did not name, whether the window switched to ended in front and wholly in view, whether sizes came back,
 whether a window was lost. The rules are the product's (docs/TESTING.md, "An ordinary day"):
 
+  1  never fight macOS: where its own tiling answers a drag, Arbor stands aside
   2  nothing moves that the person did not move
   3  no jolts: a window moves once, to where it ends up
   4  the window you switch to comes to the front and into view
   5  quitting, Float All and pause give windows their own earlier sizes back
   L  no window is lost: none leaves the screen or ends out of view unless the step says so
 
+Every finding also names its detector, by the names docs/VIABLE.md gives them: fought, moved-unasked, jolt, pulled, flash, slow, behind, focus, size-lost, lost,
+and script for what the script itself found out.
+
   jolts.py report <samples> [--json <file>]   the findings per rule, each with the step that shows it, then every step.
                                               Exit code 1 when a rule was broken, 0 when none was
   jolts.py failing <samples>                  the numbers of the steps with a finding, one per line
+  jolts.py sabotage <samples>                 for a run in which the script itself commits offences (`offence=`): does every detector report
+                                              its own offence, that one alone, and nothing where none was committed? Exit code 1 if not
   jolts.py trace <samples> <step> [window]    every frame seen during that step
   jolts.py story <samples> <step> [log…]      one timeline of that step: what the screen showed, and the lines of those logs
                                               (arbor.log, `apptool watch`) that were written meanwhile
@@ -41,6 +47,8 @@ The script says what it is doing in marks (lib-day.sh writes them):
     everything=1           no window may be out of view
     returns=<n>            every window is where it was at the end of step n
     floating=<ids>         for the report: these float, so no arrangement explains a move of theirs
+    docked=<ids>           these are docked at the end
+    offence=<detector>     the script committed this offence itself during the step, to see whether it is found (`jolts.py sabotage`)
     judge=no               nothing is judged: Arbor is not running yet, and apps place their own windows as they open
     settled=<quiet|restless>:<ms>
 
@@ -55,14 +63,35 @@ import sys
 EPISODE_GAP = 250
 # Points a window may travel beyond the straight road, per coordinate, before it counts as having gone elsewhere first.
 EXCESS = 6
-# AppKit lets a window pop or slide open: for this long after it first shows, within this many points, it is still opening.
+# AppKit lets a window pop or slide open: for this long after it first shows, within this many points or this share of its size (it
+# grows from some 95 %), it is still opening.
 OPENING = 600
 OPENING_REACH = 24
+OPENING_SHARE = 0.08
 # A step during which the sampler saw nothing for longer than this is not judged: it says nothing either way.
 BLIND = 250
+# A window Arbor moves is at rest this long after the key or the drop: later is worth a look, much later is a failure.
+SLOW_ODD = 700
+SLOW = 1500
+# The acts that are answered by Arbor alone, so that how long the answer takes is Arbor's doing.
+ARBORS_OWN = {"dock-key", "view", "resize", "way-out", "drag"}
+# The acts during which the app in front has no reason to change.
+NO_SWITCH = {"idle", "dock-key", "resize"}
+# A dragged window may be this many points from where the pointer carries it. Without Arbor it is within a point or two of the pointer's road,
+# but for where macOS holds it back: under the menu bar, and for a moment where its edge meets another's.
+PULLED = 16
+# The pointer's road is looked at from this long before a sample of the window to this long after: the two are not read at one moment.
+SKEW = (150, 60)
+# macOS gives a window it had tiled its size back under the hand, in a motion of its own. The hold is taken anew once the size has kept still this long.
+RESIZING = 300
+# Less of a window than this on the display is its parking strip; more than that, and it shows.
+STRIP = 0.03
+SHOWS = 0.05
 # Points that are no move at all: apps round sizes, and Retina screens deal in halves.
 SAME = 2
+DETECTORS = {"1": "fought", "2": "moved-unasked", "3": "jolt", "4": "focus", "5": "size-lost", "L": "lost", "-": "script"}
 RULES = [
+    ("1", "never fight macOS: where it answers a drag, Arbor stands aside"),
     ("2", "nothing moves that the person did not move"),
     ("3", "no jolts: a window moves once, to where it ends up"),
     ("4", "the window you switch to comes to the front and into view"),
@@ -115,12 +144,21 @@ class Step:
         self.tops = []
         self.apps = []
         self.late_samples = []
+        self.app_before = None
+        # When a key went down or the button changed.
+        self.inputs = []
+        # Where the pointer was while the button was down: (time, x, y).
+        self.pointer = []
+        # During a drag: macOS's tiling preview was up when the button came up; Arbor's and macOS's previews were up together.
+        self.macos_answered = False
+        self.both_previews = False
         self.at_end = None
         self.findings = []
         self.moved = {}
 
-    def find(self, rule, level, window, what, trace=None):
-        self.findings.append({"rule": rule, "level": level, "window": window, "what": what, "trace": trace})
+    def find(self, rule, level, window, what, trace=None, detector=None):
+        self.findings.append({
+            "rule": rule, "detector": detector or DETECTORS[rule], "level": level, "window": window, "what": what, "trace": trace})
 
 
 class World:
@@ -138,10 +176,14 @@ class World:
         self.display = None
         self.button = False
         self.arbors = set()
+        # The previews that are up: macOS's own (windows of WindowManager's) and Arbor's (its panels at level 3).
+        self.macos_previews = set()
+        self.arbor_previews = set()
         self.labels = {}
 
     def ordinary(self, window):
-        return self.layers.get(window) == 0 and self.pids.get(window) not in self.arbors
+        return (self.layers.get(window) == 0 and self.pids.get(window) not in self.arbors
+                and not self.owners.get(window, "").startswith("WindowManager"))
 
     def name(self, window):
         if window in self.labels:
@@ -186,6 +228,12 @@ def read(path):
                 world.pids[window], world.layers[window] = int(rest[1]), int(rest[2])
                 world.owners[window] = " ".join(rest[7:]).replace("_", " ")
                 world.frames[window] = world.last_frames[window] = frame
+                if world.owners[window] == "WindowManager" and world.layers[window] == 0:
+                    world.macos_previews.add(window)
+                elif world.pids[window] in world.arbors and world.layers[window] == 3:
+                    world.arbor_previews.add(window)
+                if current and world.button and world.macos_previews and world.arbor_previews:
+                    current.both_previews = True
                 if current and world.ordinary(window):
                     if window not in current.traces:
                         current.traces[window] = []
@@ -198,6 +246,8 @@ def read(path):
                     current.traces.setdefault(window, [(current.began, world.frames.get(window), False)])
                     current.traces[window].append((time, None, world.button))
                 world.frames.pop(window, None)
+                world.macos_previews.discard(window)
+                world.arbor_previews.discard(window)
             elif kind == "Z":
                 world.order = [int(word) for word in rest[0].split(",")] if rest and rest[0] else []
                 top = next((window for window in world.order if world.ordinary(window)), None)
@@ -209,6 +259,18 @@ def read(path):
                     current.apps.append(world.app)
             elif kind == "B" and rest:
                 world.button = rest[0] == "down"
+                if current:
+                    current.inputs.append(time)
+                    if len(rest) >= 3:
+                        current.pointer.append((time, float(rest[1]), float(rest[2])))
+                    if not world.button:
+                        current.macos_answered = bool(world.macos_previews)
+            elif kind == "P" and len(rest) >= 2:
+                if current:
+                    current.pointer.append((time, float(rest[0]), float(rest[1])))
+            elif kind == "K":
+                if current:
+                    current.inputs.append(time)
             elif kind == "V" and len(rest) == 4:
                 world.visible = tuple(float(number) for number in rest)
             elif kind == "D" and len(rest) == 4:
@@ -228,6 +290,7 @@ def read(path):
                     chapter = " ".join(rest)
                 elif verb == "begin" and len(rest) >= 2:
                     current = Step(int(rest[0]), rest[1], chapter, time)
+                    current.app_before = world.app
                     for window, frame in world.frames.items():
                         if world.ordinary(window):
                             current.traces[window] = [(time, frame, world.button)]
@@ -295,6 +358,43 @@ def remember(step, own):
             own[window] = frames[window][:2] + own[window][2:]
 
 
+def off_the_road(point, road_points):
+    """How far a point is from a road given by its corners."""
+    if len(road_points) == 1:
+        return max(abs(point[0] - road_points[0][0]), abs(point[1] - road_points[0][1]))
+    best = None
+    for (ax, ay), (bx, by) in zip(road_points, road_points[1:]):
+        dx, dy = bx - ax, by - ay
+        along = 0 if dx == dy == 0 else max(0, min(1, ((point[0] - ax) * dx + (point[1] - ay) * dy) / (dx * dx + dy * dy)))
+        away = max(abs(point[0] - ax - along * dx), abs(point[1] - ay - along * dy))
+        best = away if best is None else min(best, away)
+    return best
+
+
+def pulled(held, pointer, top):
+    """The furthest a dragged window was from where the pointer carried it, and when. `top`: macOS lets no title bar go above this."""
+    worst, when, anchor, size, still_since = 0, None, None, None, None
+    for time, frame, _ in held:
+        near = [(x, y) for at, x, y in pointer if time - SKEW[0] <= at <= time + SKEW[1]]
+        last = [(x, y) for at, x, y in pointer if at <= time][-1:]
+        if not near and not last:
+            continue
+        if size is None or differs(size, frame[2:], by=0.6):
+            # Where it was taken hold of; and again when its size has changed under the hand, which has a finding of its own.
+            anchor, still_since = (None, time) if size is not None else (anchor, None)
+            size = frame[2:]
+        if anchor is None:
+            if still_since is None or time - still_since >= RESIZING:
+                at = (last or near)[-1]
+                anchor = (frame[0] - at[0], frame[1] - at[1])
+            continue
+        carried = [(x + anchor[0], max(y + anchor[1], top)) for x, y in (near or last)]
+        away = off_the_road(frame[:2], carried)
+        if away > worst:
+            worst, when = away, time
+    return worst, when
+
+
 def judge(step, world, by_number, own):
     wants = step.wants
     end = step.at_end
@@ -325,13 +425,22 @@ def judge(step, world, by_number, own):
             held = [entry for entry in trace if entry[2] and entry[1]]
             if any(differs(a[1][2:], b[1][2:]) for a, b in zip(held, held[1:])):
                 step.find("3", "ODD", window, "changed its size while it was being dragged", road(held))
+            area = (end or {}).get("visible") or world.visible
+            away, when = pulled(held, step.pointer, area[1] if area else 0)
+            if away > PULLED:
+                step.find("3", "FAIL", window, f"was {round(away)} points from where the pointer carried it, {when - step.began} ms into the step", road(held), "pulled")
+            if step.both_previews:
+                step.find("1", "FAIL", window, "macOS's tiling preview and Arbor's drop preview were up at the same time")
+            if step.macos_answered and window in ids(wants.get("docked", "")):
+                step.find("1", "FAIL", window, "macOS's tiling preview was up when it was let go, and Arbor docked it")
             last_held = max((index for index, entry in enumerate(trace) if entry[2]), default=0)
             trace = trace[last_held:]
         if window in step.born and trace and trace[0][1]:
             # Where it has opened is where its app put it.
             opened = 0
+            reach = max(OPENING_REACH, OPENING_SHARE * max(trace[0][1][2:]))
             for index, entry in enumerate(trace):
-                if not entry[1] or entry[0] - trace[0][0] > OPENING or differs(trace[0][1], entry[1], by=OPENING_REACH):
+                if not entry[1] or entry[0] - trace[0][0] > OPENING or differs(trace[0][1], entry[1], by=reach):
                     break
                 opened = index
             trace = trace[opened:]
@@ -352,7 +461,11 @@ def judge(step, world, by_number, own):
                 kind = "a floating window, " if window in ids(wants.get("floating", "")) else ""
                 how = "moved" if elsewhere else "moved and came back"
                 step.find("2", "FAIL", window, f"{kind}{how}, and the step did not name it", road(trace))
-        if moves > 1:
+        screen = (end or {}).get("display") or world.display
+        shares = [shared(entry[1], screen) / max(entry[1][2] * entry[1][3], 1) for entry in trace if entry[1]] if screen else []
+        if len(shares) > 2 and shares[0] < STRIP and shares[-1] < STRIP and max(shares) > SHOWS:
+            step.find("3", "FAIL", window, f"is out of view before and after, and {max(shares):.0%} of it showed in between", road(trace), "flash")
+        elif moves > 1:
             step.find("3", "FAIL", window, f"moved {moves} times", road(trace))
         elif detour > EXCESS and (may == "any" or window in named or window in dragged):
             # A sheet or a panel hangs on its window, and goes where that goes at each stage of its move.
@@ -362,7 +475,7 @@ def judge(step, world, by_number, own):
             step.find("L", "FAIL", window, "left the screen, and the step did not say it would", road(trace))
         elif not gone and any(entry[1] is None for entry in trace) and may_leave != "any" and window not in ids(may_leave):
             if window in world.labels:
-                step.find("3", "FAIL", window, "left the screen and came back", road(trace))
+                step.find("3", "FAIL", window, "left the screen and came back", road(trace), "flash")
 
     if end is None:
         step.find("-", "FAIL", None, "the step never ended: the script stopped here")
@@ -372,6 +485,18 @@ def judge(step, world, by_number, own):
             late = [entry for entry in trace if entry[0] > step.ended]
             if late and window in step.moved:
                 step.find("3", "ODD", window, f"was still moving {late[-1][0] - step.ended} ms after everything had been quiet for a second")
+
+    if wants.get("act") in ARBORS_OWN and step.moved:
+        changes = [entry[0] for window in step.moved for before, entry in zip(step.traces[window], step.traces[window][1:])
+                   if entry[1] and before[1] and not entry[2] and differs(before[1], entry[1], by=0.6)]
+        asked = max((time for time in step.inputs if changes and time <= min(changes)), default=None)
+        if changes and asked is not None:
+            took = max(changes) - asked
+            if took > SLOW_ODD:
+                step.find("3", "FAIL" if took > SLOW else "ODD", None, f"the last window came to rest {took} ms after the key or the button", None, "slow")
+
+    if wants.get("act") in NO_SWITCH and any(app != step.app_before for app in step.apps):
+        step.find("4", "FAIL", None, "the app in front changed (to process %s), and nobody switched" % ", ".join(str(app) for app in step.apps))
 
     tops = [top for top in step.tops if top is not None]
     if len(tops) > 3:
@@ -390,7 +515,8 @@ def judge(step, world, by_number, own):
                 "4", "FAIL", window,
                 "is not in front: %s ahead of it%s" % (
                     ", ".join(world.name(other) for other in ahead[:4]),
-                    ", of which %d cover part of it" % len(covering) if covering else ", none of which covers it"))
+                    ", of which %d cover part of it" % len(covering) if covering else ", none of which covers it"),
+                None, "behind")
         if end["app"] is not None and end["app"] != world.pids.get(window):
             step.find("4", "FAIL", window, f"its app is not the one in front (process {end['app']} is)")
         if area and not inside(frames[window], area):
@@ -444,9 +570,10 @@ def checked(step, rule):
     if not judged(step):
         return False
     return {
+        "1": "drags" in wants,
         "2": wants.get("moves", "none") != "any" or "returns" in wants,
         "3": True,
-        "4": "front" in wants,
+        "4": "front" in wants or wants.get("act") in NO_SWITCH,
         "5": "restores" in wants,
         "L": True,
         "-": True,
@@ -484,7 +611,7 @@ def report(world, steps, account):
         for step, finding in found:
             mark = "✘" if finding["level"] == "FAIL" else "~"
             who = world.name(finding["window"]) + " " if finding["window"] is not None else ""
-            out.append(f"- {mark} **{step.number} {step.slug}** ({step.text}): {who}{finding['what']}")
+            out.append(f"- {mark} **{step.number} {step.slug}** ({step.text}): {who}{finding['what']} [{finding['detector']}]")
             if finding["trace"]:
                 out.append(f"  - {finding['trace']}")
     out.append("")
@@ -498,8 +625,8 @@ def report(world, steps, account):
             out.append("")
             out.append(f"### {chapter}")
             out.append("")
-            out.append("| # | Step | The person | Moved | Quiet after | 2 | 3 | 4 | 5 | L | – |")
-            out.append("|---|---|---|---|---|---|---|---|---|---|---|")
+            out.append("| # | Step | The person | Moved | Quiet after | 1 | 2 | 3 | 4 | 5 | L | – |")
+            out.append("|---|---|---|---|---|---|---|---|---|---|---|---|")
         moved = ", ".join(
             f"{world.labels.get(window, 'w%d' % window)} ×{moves} ({frames}, {took} ms)"
             for window, (moves, frames, took) in sorted(step.moved.items()))
@@ -540,6 +667,26 @@ def as_json(world, steps, account):
             for step in steps
         ],
     }
+
+
+def sabotage(steps):
+    """Every offence found by its own detector and by no other, and nothing found where nothing was done."""
+    out, missed = [], 0
+    out.append("| # | Step | Offence committed | Reported | |")
+    out.append("|---|---|---|---|---|")
+    for step in steps:
+        if step.wants.get("judge") == "no":
+            continue
+        committed = step.wants.get("offence", "")
+        reported = sorted({finding["detector"] for finding in step.findings if finding["level"] == "FAIL"})
+        good = reported == ([committed] if committed else [])
+        missed += not good
+        out.append(f"| {step.number} | {step.slug} | {committed or 'none'} | {', '.join(reported) or 'nothing'} | {'✔' if good else '✘'} |")
+    offences = {step.wants["offence"] for step in steps if step.wants.get("offence")}
+    out.append("")
+    out.append(f"{len(offences)} kinds of offence committed: {', '.join(sorted(offences))}. "
+               + ("Every one was reported by its own detector alone." if not missed else f"{missed} steps were judged wrongly."))
+    return "\n".join(out) + "\n", missed
 
 
 def clock(time):
@@ -629,6 +776,12 @@ def self_test():
             failures.append(f"{name}: expected {sorted(wanted)}, got {got}: " + "; ".join(
                 finding["what"] for step in steps for finding in step.findings))
 
+    def detectors(name, lines, wanted):
+        _, steps, _ = play(lines)
+        got = sorted({finding["detector"] for step in steps for finding in step.findings if finding["level"] == "FAIL"})
+        if got != sorted(wanted):
+            failures.append(f"{name}: expected the detectors {sorted(wanted)}, got {got}")
+
     start = [
         "1000 V 0 30 1000 700", "1000 D 0 0 1000 800", "1000 A 10 app.one",
         "1000 W 1 10 0 100 100 400 300 One", "1000 W 2 20 0 500 100 400 300 Two", "1000 W 9 99 0 0 0 50 50 Arbor",
@@ -663,6 +816,22 @@ def self_test():
     expect("a flash during a move of the camera", start + [
         "2000 M begin 2 zoom", "2100 W 2 20 0 999 799 400 300 Two", "2140 W 2 20 0 500 100 400 300 Two",
         "2180 W 2 20 0 999 799 400 300 Two", "3000 M end 2 moves=any"], [("3", "FAIL")])
+    parked = start + ["1500 M begin 2 zoom", "1600 W 2 20 0 999 799 400 300 Two", "1900 M end 2 moves=any"]
+    detectors("a window out of view shows for a moment", parked + [
+        "2000 M begin 3 walk", "2140 W 2 20 0 500 100 400 300 Two", "2180 W 2 20 0 999 799 400 300 Two", "3000 M end 3 moves=any"], ["flash"])
+    detectors("a window out of view that is moved along its corner shows nothing", parked + [
+        "2000 M begin 3 walk", "2140 W 2 20 0 999 790 400 300 Two", "3000 M end 3 moves=any"], [])
+    detectors("covered", start + ["2000 M begin 2 switch", "2100 A 20 app.two", "3000 M end 2 front=2"], ["behind"])
+    detectors("the keyboard is elsewhere", start + ["2000 M begin 2 switch", "2100 Z 2,1", "3000 M end 2 front=2"], ["focus"])
+    detectors("an app comes forward by itself", start + ["2000 M begin 2 idle", "2100 A 20 app.two", "3000 M end 2 act=idle"], ["focus"])
+    detectors("an app comes forward because somebody switched", start + [
+        "2000 M begin 2 switch", "2100 A 20 app.two", "2100 Z 2,1", "3000 M end 2 act=switch front=2"], [])
+    detectors("at rest in good time", start + [
+        "2000 M begin 2 dock", "2300 K 1", "2500 W 1 10 0 0 30 500 700 One", "3600 M end 2 act=dock-key moves=1"], [])
+    detectors("at rest far too late", start + [
+        "2000 M begin 2 dock", "2300 K 1", "4000 W 1 10 0 0 30 500 700 One", "5100 M end 2 act=dock-key moves=1"], ["slow"])
+    detectors("what macOS takes its time over is not Arbor's", start + [
+        "2000 M begin 2 full", "2300 K 1", "4000 W 1 10 0 0 0 1000 800 One", "5100 M end 2 act=macos-own moves=1"], [])
     expect("a late move counts for the step before", start + [
         "2000 M begin 2 dock", "2100 W 1 10 0 0 30 500 700 One", "3200 M end 2 moves=1", "3300 W 1 10 0 0 30 490 700 One",
         "3400 M begin 3 idle", "4400 M end 3"], [("3", "FAIL"), ("3", "ODD")])
@@ -697,12 +866,41 @@ def self_test():
         "4000 M begin 3 zoom", "4100 W 2 20 0 999 799 400 300 Two", "5000 M end 3 moves=any",
         "6000 M begin 4 back", "6100 W 2 20 0 520 100 400 300 Two", "7000 M end 4 moves=any returns=2"], [("2", "FAIL")])
     drag = start + ["2000 M begin 2 drag", "2050 B down 300 110"] + [
-        f"{2100 + 16 * i} W 1 10 0 {100 + (-1) ** i * 20 * i} 100 400 300 One" for i in range(1, 9)]
+        line for i in range(1, 9) for line in (
+            f"{2100 + 16 * i} W 1 10 0 {100 + (-1) ** i * 20 * i} 100 400 300 One", f"{2100 + 16 * i} P {300 + (-1) ** i * 20 * i} 110")]
     expect("in the hand a window goes where the hand goes", drag + [
         "2300 B up 10 110", "2320 W 1 10 0 0 30 500 700 One", "3400 M end 2 drags=1"], [])
     expect("after the drop it moves once", drag + [
         "2300 B up 10 110", "2320 W 1 10 0 0 30 500 700 One", "2800 W 1 10 0 0 30 480 700 One", "3900 M end 2 drags=1"],
         [("3", "FAIL")])
+    glide = start + ["2000 M begin 2 drag", "2050 B down 300 110"]
+    for i in range(1, 9):
+        glide += [f"{2100 + 16 * i} W 1 10 0 {100 + 20 * i} 100 400 300 One", f"{2100 + 16 * i} P {300 + 20 * i} 110"]
+    detectors("a dragged window goes with the pointer", glide + ["2300 B up 460 110", "3400 M end 2 drags=1"], [])
+    detectors("one sample behind the pointer is not pulled", start + ["2000 M begin 2 drag", "2050 B down 300 110"] + [
+        line for i in range(1, 9) for line in (f"{2100 + 16 * i} W 1 10 0 {100 + 40 * (i - 1)} 100 400 300 One", f"{2100 + 16 * i} P {300 + 40 * i} 110")] + [
+        "2300 B up 620 110", "2316 W 1 10 0 420 100 400 300 One", "3400 M end 2 drags=1"], [])
+    detectors("a dragged window is pulled out of the hand", glide + [
+        "2250 W 1 10 0 600 400 400 300 One", "2280 W 1 10 0 260 100 400 300 One", "2300 B up 460 110", "3400 M end 2 drags=1"], ["pulled"])
+    detectors("under the menu bar macOS holds it back", start + ["2000 M begin 2 drag", "2050 B down 300 110"] + [
+        line for i in range(1, 9) for line in (f"{2100 + 16 * i} W 1 10 0 100 {max(100 - 20 * i, 30)} 400 300 One", f"{2100 + 16 * i} P 300 {110 - 20 * i}")] + [
+        "2300 B up 300 -50", "3400 M end 2 drags=1"], [])
+    detectors("macOS gives a tiled window its size back under the hand", start + [
+        "2000 M begin 2 drag", "2050 B down 500 40", "2100 W 1 10 0 4 39 1000 700 One", "2100 P 504 49", "2150 W 1 10 0 13 57 950 680 One", "2150 P 508 58",
+        "2160 W 1 10 0 60 48 950 680 One", "2200 W 1 10 0 200 56 600 400 One", "2200 P 512 66", "2260 W 1 10 0 300 65 400 300 One", "2260 P 516 75",
+        "2600 W 1 10 0 310 85 400 300 One", "2600 P 526 95", "2700 W 1 10 0 330 105 400 300 One", "2700 P 546 115", "2800 B up 546 115",
+        "3900 M end 2 drags=1"], [])
+    tiling = glide + ["2240 W 50 5 0 -15 16 1030 760 WindowManager"]
+    detectors("macOS answers the drag and Arbor stands aside", tiling + [
+        "2300 B up 460 110", "2310 G 50", "2320 W 1 10 0 0 30 1000 700 One", "3400 M end 2 drags=1"], [])
+    detectors("both previews are up", tiling + [
+        "2260 W 51 99 3 0 30 500 700 Arbor", "2300 B up 460 110", "2310 G 50", "2310 G 51", "2320 W 1 10 0 0 30 1000 700 One",
+        "3400 M end 2 drags=1"], ["fought"])
+    detectors("macOS answers the drag and Arbor docks the window all the same", tiling + [
+        "2300 B up 460 110", "2310 G 50", "2320 W 1 10 0 0 30 500 700 One", "3400 M end 2 drags=1 docked=1"], ["fought"])
+    detectors("Arbor's preview alone is what a drag is for", glide + [
+        "2260 W 51 99 3 0 30 500 700 Arbor", "2300 B up 460 110", "2310 G 51", "2320 W 1 10 0 0 30 500 700 One",
+        "3400 M end 2 drags=1 docked=1"], [])
     expect("a new window stays where it opened", start + [
         "2000 M begin 2 new", "2100 W 3 10 0 200 200 400 300 One", "2100 Z 3,1,2", "3000 M end 2"], [])
     expect("a new window is moved after it opened", start + [
@@ -711,6 +909,9 @@ def self_test():
     expect("a new window pops open", start + [
         "2000 M begin 2 new", "2100 W 3 10 0 203 202 394 296 One", "2100 Z 3,1,2", "2160 W 3 10 0 200 200 400 300 One",
         "2230 W 3 10 0 199 199 402 302 One", "2400 W 3 10 0 200 200 400 300 One", "3400 M end 2"], [])
+    expect("a large new window pops open by more points", start + [
+        "2000 M begin 2 new", "2100 W 3 10 0 171 68 644 416 One", "2100 Z 3,1,2", "2140 W 3 10 0 168 67 667 435 One",
+        "2200 W 3 10 0 164 64 675 441 One", "2420 W 3 10 0 165 65 673 439 One", "3400 M end 2"], [])
     expect("Arbor's first panel shows before the script knows its process", [
         "900 W 8 98 0 0 0 50 50 Arbor"] + start + [
         "2000 M begin 2 launch", "2100 W 7 98 0 500 100 300 300 Arbor", "2300 W 7 98 0 400 100 300 300 Arbor", "2500 M arbor 98",
@@ -747,6 +948,16 @@ def self_test():
     _, blind, _ = play(start + ["2000 M begin 2 dock", "2400 L 400", "3000 M end 2 act=dock-key"])
     if judged(blind[1]) or not judged(blind[0]):
         failures.append("a step during which the sampler was blind for 400 ms must not be judged")
+    offences = start + [
+        "2000 M begin 2 clean", "2100 W 1 10 0 0 30 500 700 One", "3000 M end 2 moves=1",
+        "4000 M begin 3 twice", "4100 W 1 10 0 0 30 480 700 One", "4600 W 1 10 0 0 30 460 700 One", "5700 M end 3 moves=1 offence=jolt"]
+    if sabotage(play(offences)[1])[1] != 0:
+        failures.append("sabotage: an offence that was found by its own detector counts as missed")
+    for name, spoilt in (("missed", [line.replace("4600 W 1 10 0 0 30 460", "4600 W 1 10 0 0 30 480") for line in offences]),
+                         ("found by another detector as well", offences[:-1] + ["4700 W 2 20 0 0 0 400 300 Two", offences[-1]]),
+                         ("found where none was committed", [line.replace(" offence=jolt", "") for line in offences])):
+        if sabotage(play(spoilt)[1])[1] != 1:
+            failures.append(f"sabotage: an offence {name} must count against the run")
     with tempfile.TemporaryDirectory() as folder:
         samples, log = os.path.join(folder, "samples.log"), os.path.join(folder, "arbor.log")
         with open(samples, "w", encoding="utf-8") as handle:
@@ -783,6 +994,10 @@ def main(arguments):
             if step.findings:
                 print(step.number)
         return 0
+    if command == "sabotage":
+        text, missed = sabotage(steps)
+        print(text, end="")
+        return 1 if missed or not any(step.wants.get("offence") for step in steps) else 0
     if command == "story" and rest and rest[0].isdigit():
         print(story(path, world, steps, int(rest[0]), rest[1:]), end="")
         return 0

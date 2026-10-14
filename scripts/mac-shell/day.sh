@@ -155,8 +155,8 @@ acted judge=no
 if eventually fills_the_display "$X"; then TILING_SEEN=true; else TILING_SEEN=false; fi
 echo "$NX is at $(real_frame_of "$X"): macOS's tiling was seen to act: $TILING_SEEN"
 if [ "$DAY_TILING" = defaults ]; then check "macOS's own tiling acts" test "$TILING_SEEN" = true; else check "macOS's own tiling is off" test "$TILING_SEEN" = false; fi
-act drag-where-macos-tiles tiling-acts-back "drags it away again, to the middle of the screen"
-drag_window "$X" "$((dx + dw / 2))" "$((dy + dh / 3))"
+act drag-where-macos-tiles tiling-acts-back "drags it away again, a hand's breadth down"
+drag_window "$X" "$((dx + dw / 2))" "$((dy + 130))"
 acted judge=no
 
 act idle look-around "looks at the screen"
@@ -254,8 +254,8 @@ act drag-where-macos-tiles "drag-$NX-to-top" "drags $NX by its title bar against
 drag_window "$X" "$((dx + dw / 2))" "$dy" --hold 1
 acted drags="$X" front="$X"
 echo "$NX is at $(real_frame_of "$X")"
-act drag-where-macos-tiles "drag-$NX-back" "drags $NX away from the top again, to the middle of the screen"
-drag_window "$X" "$((dx + dw / 2))" "$((dy + dh / 3))"
+act drag-where-macos-tiles "drag-$NX-back" "drags $NX away from the top again, a hand's breadth down"
+drag_window "$X" "$((dx + dw / 2))" "$((dy + 130))"
 acted drags="$X" front="$X" restores="$X" place="$X"
 echo "$NX is at $(real_frame_of "$X")"
 
