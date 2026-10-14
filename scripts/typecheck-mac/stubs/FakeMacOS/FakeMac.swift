@@ -191,7 +191,9 @@ public final class FakeMac: @unchecked Sendable {
     let number = sleepersMade
     try await withTaskCancellationHandler {
       try await withUnsafeThrowingContinuation { (continuation: UnsafeContinuation<Void, any Error>) in
-        if Task.isCancelled || hasEnded { return continuation.resume(throwing: CancellationError()) }
+        if Task.isCancelled { return continuation.resume(throwing: CancellationError()) }
+        // Its Mac is no more: it sleeps for ever.
+        if hasEnded { return }
         sleepers[number] = continuation
         send(after: seconds, from: .sleeper(number), "") { [self] in sleepers.removeValue(forKey: number)?.resume() }
       }
@@ -200,15 +202,13 @@ public final class FakeMac: @unchecked Sendable {
     }
   }
 
-  /// The story is over: nothing more is delivered, and every sleeping task wakes to find that out.
+  /// The story is over: nothing more is delivered, and whoever sleeps is never woken. Waking them would run what they were waiting to do, on a Mac
+  /// that is no more, and a timer that winds itself up again would never let go.
   public func end() {
+    Pump.runTasks()
     hasEnded = true
     pending.removeAll()
-    Pump.runTasks()
-    while !sleepers.isEmpty {
-      for number in sleepers.keys.sorted() { sleepers.removeValue(forKey: number)?.resume(throwing: CancellationError()) }
-      Pump.runTasks()
-    }
+    sleepers.removeAll()
   }
 
   // MARK: Processes

@@ -1,0 +1,12 @@
+# Checks of `make mac-on-linux` that are known to fail, one to a line: the story, a colon, the check, then " # " and a word on it.
+# The run fails when a check that is not listed fails, AND when one that is listed passes: whoever lands the cure deletes the line.
+
+# didActivateApplication arrives while NSWorkspace.shared.frontmostApplication still names the old app (hosted Macs, 2026-10-14: 27 times in three runs), and
+# `reportFocus(of:)` begins by dropping the report of any app that property does not name. If the app comes forward with the window it already had focused,
+# macOS says nothing more.
+⌘Tab to another app, and NSWorkspace names the old app for 5 ms more: the window that has the keyboard now is reported focused # reportFocus(of:) trusts a frontmostApplication that lags
+⌘Tab to another app, and NSWorkspace names the old app for 50 ms more: the window that has the keyboard now is reported focused # reportFocus(of:) trusts a frontmostApplication that lags
+a click on another window of another app, and NSWorkspace names the old app for 5 ms more: the window that was clicked is reported focused # reportFocus(of:) trusts a frontmostApplication that lags
+a click on another window of another app, and NSWorkspace names the old app for 50 ms more: the window that was clicked is reported focused # reportFocus(of:) trusts a frontmostApplication that lags
+⌘Tab to an app whose window is out of view, and NSWorkspace names the old app for 5 ms more: the view moves to show the window that has the keyboard now # reportFocus(of:) trusts a frontmostApplication that lags
+⌘Tab to an app whose window is out of view, and NSWorkspace names the old app for 50 ms more: the view moves to show the window that has the keyboard now # reportFocus(of:) trusts a frontmostApplication that lags

@@ -73,4 +73,5 @@ checkThePump()
 
 book.readKnownFailures()
 tellOfOpening(book)
+tellOfComingForward(book)
 exit(book.tellAll())
