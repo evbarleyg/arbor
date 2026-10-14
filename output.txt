@@ -1,0 +1,427 @@
+# mac-shell: scripts/mac-shell/probe-download.sh at 1b26583, macOS 26.6.2, 2026-10-14T23:22Z
+
+== the Mac  (23:22:06)
+ProductName:		macOS ProductVersion:		26.6.2 BuildVersion:		25G83 arm64
+assessments enabled
+System Integrity Protection status: disabled.
+ax access: true, screen access: true
+Permission denied. Please enter user's old password:<dscl_cmd> DS Error: -14090 (eDSAuthFailed)
+passwd: DS error: eDSAuthFailed
+
+== A0  the files, as the other Mac left them  (23:22:20)
+total 45656
+-rw-r--r--  1 runner  staff       164 Oct 14 23:22 Arbor-0.9.0-checksums.txt
+-rw-r--r--  1 runner  staff      4588 Oct 14 23:22 Arbor-0.9.0-notes.md
+-rw-r--r--  1 runner  staff  12287051 Oct 14 23:22 Arbor-0.9.0.dmg
+-rw-r--r--  1 runner  staff  11069691 Oct 14 23:22 Arbor-0.9.0.zip
+-rw-r--r--  1 runner  staff      1073 Oct 14 23:22 arbor.rb
+Arbor-0.9.0.zip: OK
+Arbor-0.9.0.dmg: OK
+version 0.9.0
+cask "arbor" do
+  version "0.9.0"
+  sha256 "47df8e0ae40517e0eabf67716d386bb7fbe5cd71b0a9c7e323208d842bc2086e"
+
+  url "https://github.com/evbarleyg/arbor/releases/download/v#{version}/Arbor-#{version}.dmg"
+  name "Arbor"
+  desc "Dock windows side by side, then zoom between them"
+  homepage "https://github.com/evbarleyg/arbor"
+
+  livecheck do
+    url :url
+    strategy :github_latest
+  end
+
+  depends_on macos: ">= :sonoma"
+
+  app "Arbor.app"
+  binary "#{appdir}/Arbor.app/Contents/Helpers/arborctl"
+
+  uninstall quit:       "com.evbarleyg.arbor",
+            login_item: "Arbor"
+
+  zap trash: "~/Library/Application Support/Arbor"
+
+  caveats <<~EOS
+    Arbor needs Accessibility permission to move other apps' windows:
+      System Settings → Privacy & Security → Accessibility
+
+    Until Arbor is notarized, macOS blocks its first launch. Allow it under
+      System Settings → Privacy & Security → Open Anyway
+    and, because each release has a signature of its own, remove Arbor's entry
+    under Accessibility after an upgrade and let it ask again.
+  EOS
+end
+
+== A1  download the zip with Safari  (23:22:21)
+  [picture 01-safari-download]
+  -- UserNotificationCenter (3375) shows:
+     AXWindow _NS:87 "alert" "" 382 118 260 250
+       AXImage _NS:35 "alert" "" 401 137 66 66
+       AXStaticText _NS:74 "" "Allow “Python” to find devices on local networks?" 403 217 218 34
+       AXStaticText _NS:58 "" "This will allow the app to discover, connect to, and collect data from devices on your networks." 403 259 218 50
+       AXButton action-button-2 "Don’t Allow" "" 397 323 112 30
+       AXButton action-button-1 "Allow" "" 515 323 112 30
+  -- Safari (3381) shows:
+     AXWindow SafariWindow?IsSecure=false&UUID=D5249B51-BEFA-4DCE-A076-C2D71F05EFD6 "Untitled" "" 0 31 1024 674
+       AXSplitGroup - "" "" 0 31 1024 674
+         AXTabGroup - "" "" 0 31 1024 674
+           AXGroup BrowserView?IsPageLoaded=false&WebViewProcessID=3388 "" "" 0 31 1024 674
+       AXImage WindowControlShadowView._shadowImageView "" "" -2 29 102 56
+       AXToolbar - "" "" 0 31 1024 52
+           AXButton SidebarButton "show sidebar" "" 95 38 42 38
+           AXMenuButton TabGroupPickerButton?TabGroup= "Tab Group picker" "" 135 38 20 38
+           AXGroup BackForwardSegmentedControl "" "" 170 38 75 38
+             AXButton BackButton "Go back" "" 171 39 36 36
+             AXButton ForwardButton "Go forward" "" 208 39 36 36
+           AXButton AssistantButton "Page Menu" "" 306 43 31 29
+           AXButton OneStepBookmarkingButton "Add page to Reading List" "" 328 42 24 30
+           AXTextField WEB_BROWSER_ADDRESS_AND_SEARCH_FIELD "smart search field" "127.0.0.1:8123/Arbor-0.9.0.zip" 329 49 358 31
+           AXButton ReloadButton "Stop loading this page" "" 693 41 24 32
+         AXButton ShareButton "Share" "" 899 31 41 52
+         AXButton NewTabButton "New Tab" "" 940 31 37 52
+         AXButton TabOverviewButton "Tab Overview" "" 977 31 43 52
+       AXButton - "" "" 18 49 16 16
+       AXButton - "" "" 64 49 16 16
+       AXButton - "" "" 41 49 16 16
+total 0
+drwx------+  3 runner  staff    96 Sep  7 04:03 .
+drwxr-x---+ 40 runner  staff  1280 Oct 14 23:21 ..
+-rw-r--r--   1 runner  staff     0 Sep  7 04:03 .localized
+com.apple.quarantine: 0083;6ad00ec6;Safari;E7618DFC-50CA-4186-A082-DFB852CEF5AA
+total 21640
+drwx------+  6 runner  staff       192 Oct 14 23:22 .
+drwxr-x---+ 40 runner  staff      1280 Oct 14 23:21 ..
+-rw-r--r--@  1 runner  staff      6148 Oct 14 23:22 .DS_Store
+	com.apple.FinderInfo	      32 
+-rw-r--r--   1 runner  staff         0 Sep  7 04:03 .localized
+-rw-r--r--@  1 runner  staff  11069691 Oct 14 23:22 Arbor-0.9.0.zip
+	com.apple.quarantine	      57 
+drwxr-xr-x@  3 runner  staff        96 Oct 14 23:00 Arbor.app
+	com.apple.quarantine	      57 
+SAFARI DID NOT DOWNLOAD IT: a copy marked by hand as Safari marks one; Archive Utility unpacked it
+the mark on the app: 0083;6ad00ec6;Safari;E7618DFC-50CA-4186-A082-DFB852CEF5AA
+the mark on its program: 0083;6ad00ec6;Safari;E7618DFC-50CA-4186-A082-DFB852CEF5AA
+  codesign: --prepared:/Users/runner/Downloads/Arbor.app/Contents/Helpers/arborctl
+  codesign: --validated:/Users/runner/Downloads/Arbor.app/Contents/Helpers/arborctl
+  codesign: /Users/runner/Downloads/Arbor.app: valid on disk
+  codesign: /Users/runner/Downloads/Arbor.app: satisfies its Designated Requirement
+  spctl: /Users/runner/Downloads/Arbor.app: rejected
+x86_64 arm64
+what it is linked against that is not the system's:
+/Users/runner/Downloads/Arbor.app/Contents/MacOS/Arbor:
+where it looks for @rpath:
+         path /usr/lib/swift (offset 12)
+         path @loader_path (offset 12)
+         path /var/run/com.apple.security.cryptexd/mnt/com.apple.MobileAsset.MetalToolchain-v17.6.109.0.MObF9w/Metal.xctoolchain/usr/lib/swift-6.2/macosx (offset 12)
+         path /Users/runner/Library/Developer/Toolchains/swift-6.4.1-RELEASE.xctoolchain/usr/lib/swift-6.2/macosx (offset 12)
+         path /Applications/Xcode_26.6.0.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-6.2/macosx (offset 12)
+a toolchain from swift.org on this Mac? ls: /Users/runner/Library/Developer/Toolchains: No such file or directory
+      sdk 14.0     minos 14.0 
+
+== A2  the command line tool and the Intel half, still marked  (23:22:57)
+arborctl 0.9.0 (build 4, a391fe4)
+arborctl 0.9.0 (build 4, a391fe4)
+  [picture 02-after-arborctl]
+  -- UserNotificationCenter (3375) shows:
+     AXWindow _NS:87 "alert" "" 382 118 260 250
+       AXImage _NS:35 "alert" "" 401 137 66 66
+       AXStaticText _NS:74 "" "Allow “Python” to find devices on local networks?" 403 217 218 34
+       AXStaticText _NS:58 "" "This will allow the app to discover, connect to, and collect data from devices on your networks." 403 259 218 50
+       AXButton action-button-2 "Don’t Allow" "" 397 323 112 30
+       AXButton action-button-1 "Allow" "" 515 323 112 30
+
+== A3  open it, as a double click does, and get past what comes  (23:23:04)
+  Arbor runs after 0 actions
+PAST GATEKEEPER
+4164 /private/var/folders/36/tjdph2t965j8snz9_vkdnw0r0000gn/T/AppTranslocation/85D0B9F9-7FF2-4EF5-A3A9-3555F010353C/d/Arbor.app/Contents/MacOS/Arbor
+the mark on the app now: 0083;6ad00ec6;Safari;E7618DFC-50CA-4186-A082-DFB852CEF5AA
+  spctl: /Users/runner/Downloads/Arbor.app: rejected
+
+== A4  the first run  (23:23:07)
+  [picture 03-first-run]
+  -- UserNotificationCenter (3375) shows:
+     AXWindow _NS:87 "alert" "" 382 118 260 250
+       AXImage _NS:35 "alert" "" 401 137 66 66
+       AXStaticText _NS:74 "" "Allow “Python” to find devices on local networks?" 403 217 218 34
+       AXStaticText _NS:58 "" "This will allow the app to discover, connect to, and collect data from devices on your networks." 403 259 218 50
+       AXButton action-button-2 "Don’t Allow" "" 397 323 112 30
+       AXButton action-button-1 "Allow" "" 515 323 112 30
+  -- CoreServicesUIAgent (345) shows:
+     AXWindow _NS:87 "alert" "" 382 133 260 268
+       AXImage _NS:35 "caution alert" "" 401 152 66 66
+       AXStaticText _NS:74 "" "“Arbor” Not Opened" 403 232 218 18
+       AXStaticText _NS:58 "" "Apple could not verify “Arbor” is free of malware that may harm your Mac or compromise your privacy." 403 258 218 50
+       AXButton _NS:30 "Help" "" 601 144 30 30
+       AXButton action-button--897 "Move to Trash" "" 397 322 230 30
+       AXButton action-button--898 "Done" "" 397 356 230 30
+arborctl: Arbor is not running (no control socket at /Users/runner/Library/Application Support/Arbor/arbor.sock); start it with `open -a Arbor`
+arborctl: Arbor is not running (no control socket at /Users/runner/Library/Application Support/Arbor/arbor.sock); start it with `open -a Arbor`
+arborctl: Arbor is not running (no control socket at /Users/runner/Library/Application Support/Arbor/arbor.sock); start it with `open -a Arbor`
+
+== A5  Accessibility, by hand  (23:23:11)
+  [picture 04-accessibility-pane]
+            AXButton - "" "" 356 154 0 0
+            AXButton - "" "" 356 154 0 0
+            AXButton - "" "" 359 401 11 259
+            AXButton - "" "" 359 157 11 0
+          AXButton - "Search" "" 176 127 15 9
+                      AXCheckBox ankarund_Toggle "" "1" 807 160 36 16
+                      AXCheckBox bash_Toggle "" "1" 807 202 36 16
+                      AXCheckBox hosted-compute-agent_Toggle "" "1" 807 244 36 16
+                      AXCheckBox osascript_Toggle "" "1" 807 286 36 16
+                      AXCheckBox provisioner_Toggle "" "1" 807 328 36 16
+                      AXCheckBox runprovisioner.sh_Toggle "" "1" 807 370 36 16
+                      AXCheckBox sshd-keygen-wrapper_Toggle "" "1" 807 412 36 16
+                      AXCheckBox start_hca.sh_Toggle "" "1" 807 454 36 16
+                      AXCheckBox Terminal_Toggle "" "1" 807 496 36 16
+                      AXCheckBox Xcode Helper_Toggle "" "1" 807 538 36 16
+              AXButton - "Add" "" 400 572 10 10
+              AXButton - "Remove" "" 425 576 10 2
+        AXButton go back "Back" "" 381 64 36 36
+  AXButton - "" "" 168 74 16 16
+  AXButton - "" "" 214 74 16 16
+  AXButton - "" "" 191 74 16 16
+  [picture 05-accessibility-after-the-switch]
+  -- UserNotificationCenter (3375) shows:
+     AXWindow _NS:87 "alert" "" 382 118 260 250
+       AXImage _NS:35 "alert" "" 401 137 66 66
+       AXStaticText _NS:74 "" "Allow “Python” to find devices on local networks?" 403 217 218 34
+       AXStaticText _NS:58 "" "This will allow the app to discover, connect to, and collect data from devices on your networks." 403 259 218 50
+       AXButton action-button-2 "Don’t Allow" "" 397 323 112 30
+       AXButton action-button-1 "Allow" "" 515 323 112 30
+  -- CoreServicesUIAgent (345) shows:
+     AXWindow _NS:87 "alert" "" 382 133 260 268
+       AXImage _NS:35 "caution alert" "" 401 152 66 66
+       AXStaticText _NS:74 "" "“Arbor” Not Opened" 403 232 218 18
+       AXStaticText _NS:58 "" "Apple could not verify “Arbor” is free of malware that may harm your Mac or compromise your privacy." 403 258 218 50
+       AXButton _NS:30 "Help" "" 601 144 30 30
+       AXButton action-button--897 "Move to Trash" "" 397 322 230 30
+       AXButton action-button--898 "Done" "" 397 356 230 30
+  -- System Settings (4364) shows:
+     AXWindow main "Accessibility" "" 150 56 723 625
+         AXSplitGroup main, SidebarNavigationSplitView "" "" 150 56 723 625
+             AXScrollArea - "" "" 158 154 215 519
+               AXOutline - "Sidebar" "" 158 154 215 519
+                     AXStaticText com.apple.systempreferences.AppleIDSettings*AppleIDSettings "" "Sign in, with your Apple Account" 174 158 123 46
+                     AXStaticText com.apple.FollowUpSettings.FollowUpSettingsExtension*FOLLOWUP_SINGLE_ACTION_com.apple.SoftwareUpdateServices.followup:com.apple.Software-Update-Settings.extension "Software Update Available, 1 new item" "1" 174 225 166 32
+                     AXStaticText com.apple.wifi-settings-extension "" "Wi‑Fi" 173 278 61 24
+                     AXStaticText com.apple.BluetoothSettings "" "Bluetooth" 173 310 87 24
+                     AXStaticText com.apple.Network-Settings.extension "" "Network" 173 342 79 24
+                     AXStaticText com.apple.Battery-Settings.extension*BatteryPreferences "" "Energy" 173 374 71 24
+                     AXStaticText com.apple.systempreferences.GeneralSettings "" "General" 173 419 76 24
+                     AXStaticText com.apple.Accessibility-Settings.extension "" "Accessibility" 173 451 104 24
+                     AXStaticText com.apple.Appearance-Settings.extension "" "Appearance" 173 483 101 24
+                     AXStaticText com.apple.Desktop-Settings.extension "" "Desktop & Dock" 173 515 126 24
+                     AXStaticText com.apple.Displays-Settings.extension "" "Displays" 173 547 79 24
+                     AXStaticText com.apple.ControlCenter-Settings.extension "" "Menu Bar" 173 579 86 24
+                     AXStaticText com.apple.Siri-Settings.extension*siri-non-sae "" "Siri" 173 611 48 24
+                     AXStaticText com.apple.Spotlight-Settings.extension "" "Spotlight" 173 643 83 24
+                     AXStaticText com.apple.Wallpaper-Settings.extension "" "Wallpaper" 173 675 89 24
+                     AXStaticText com.apple.Notifications-Settings.extension "" "Notifications" 0 768 0 0
+                     AXStaticText com.apple.Sound-Settings.extension "" "Sound" 0 768 0 0
+                     AXStaticText com.apple.Focus-Settings.extension "" "Focus" 0 768 0 0
+                     AXStaticText com.apple.Screen-Time-Settings.extension "" "Screen Time" 0 768 0 0
+                     AXStaticText com.apple.Lock-Screen-Settings.extension "" "Lock Screen" 0 768 0 0
+                     AXStaticText com.apple.settings.PrivacySecurity.extension "" "Privacy & Security" 0 768 0 0
+                     AXStaticText com.apple.Touch-ID-Settings.extension*TouchIDPasswordPrefs "" "Login Password" 0 768 0 0
+                     AXStaticText com.apple.Users-Groups-Settings.extension "" "Users & Groups" 0 768 0 0
+                     AXStaticText com.apple.Internet-Accounts-Settings.extension "" "Internet Accounts" 0 768 0 0
+                     AXStaticText com.apple.Game-Center-Settings.extension "" "Game Center" 0 768 0 0
+                     AXStaticText com.apple.systempreferences.AppleIDSettings:icloud "" "iCloud" 0 768 0 0
+arborctl: Arbor is not running (no control socket at /Users/runner/Library/Application Support/Arbor/arbor.sock); start it with `open -a Arbor`
+the switch did not do it: writing the entry as System Settings would
+cdhash H"385b3ef0b012b62a11982b259bafda4ee6a01b81" or cdhash H"04d50927f0598c062a4c1f9617ec8cc529658647"
+arborctl: Arbor is not running (no control socket at /Users/runner/Library/Application Support/Arbor/arbor.sock); start it with `open -a Arbor`
+
+== A6  does it work? two windows, docked side by side  (23:23:36)
+  [picture 06-after-the-permission]
+  -- UserNotificationCenter (3375) shows:
+     AXWindow _NS:87 "alert" "" 382 118 260 250
+       AXImage _NS:35 "alert" "" 401 137 66 66
+       AXStaticText _NS:74 "" "Allow “Python” to find devices on local networks?" 403 217 218 34
+       AXStaticText _NS:58 "" "This will allow the app to discover, connect to, and collect data from devices on your networks." 403 259 218 50
+       AXButton action-button-2 "Don’t Allow" "" 397 323 112 30
+       AXButton action-button-1 "Allow" "" 515 323 112 30
+  -- CoreServicesUIAgent (345) shows:
+     AXWindow _NS:87 "alert" "" 382 133 260 268
+       AXImage _NS:35 "caution alert" "" 401 152 66 66
+       AXStaticText _NS:74 "" "“Arbor” Not Opened" 403 232 218 18
+       AXStaticText _NS:58 "" "Apple could not verify “Arbor” is free of malware that may harm your Mac or compromise your privacy." 403 258 218 50
+       AXButton _NS:30 "Help" "" 601 144 30 30
+       AXButton action-button--897 "Move to Trash" "" 397 322 230 30
+       AXButton action-button--898 "Done" "" 397 356 230 30
+arborctl: Arbor is not running (no control socket at /Users/runner/Library/Application Support/Arbor/arbor.sock); start it with `open -a Arbor`
+arborctl: Arbor is not running (no control socket at /Users/runner/Library/Application Support/Arbor/arbor.sock); start it with `open -a Arbor`
+  [picture 07-arranged]
+arborctl: Arbor is not running (no control socket at /Users/runner/Library/Application Support/Arbor/arbor.sock); start it with `open -a Arbor`
+arborctl: Arbor is not running (no control socket at /Users/runner/Library/Application Support/Arbor/arbor.sock); start it with `open -a Arbor`
+arborctl: Arbor is not running (no control socket at /Users/runner/Library/Application Support/Arbor/arbor.sock); start it with `open -a Arbor`
+still running? 4164 /private/var/folders/36/tjdph2t965j8snz9_vkdnw0r0000gn/T/AppTranslocation/85D0B9F9-7FF2-4EF5-A3A9-3555F010353C/d/Arbor.app/Contents/MacOS/Arbor
+  [picture 08-after-quit]
+
+== A7  the second launch asks nothing?  (23:23:49)
+_LSOpenURLsWithCompletionHandler() failed with error -10673.
+  [picture 09-second-launch]
+4164 /private/var/folders/36/tjdph2t965j8snz9_vkdnw0r0000gn/T/AppTranslocation/85D0B9F9-7FF2-4EF5-A3A9-3555F010353C/d/Arbor.app/Contents/MacOS/Arbor
+arborctl: Arbor is not running (no control socket at /Users/runner/Library/Application Support/Arbor/arbor.sock); start it with `open -a Arbor`
+arborctl: Arbor is not running (no control socket at /Users/runner/Library/Application Support/Arbor/arbor.sock); start it with `open -a Arbor`
+
+== A8  the other way: take the mark off in Terminal  (23:23:58)
+after ditto: 0083;6ad00f0e;Safari;2FE2ACDC-1575-48F8-B952-CB7CD2B85AA5
+after xattr -dr: xattr: /tmp/second/Arbor.app: No such xattr: com.apple.quarantine
+  [picture 10-without-the-mark]
+4164 /private/var/folders/36/tjdph2t965j8snz9_vkdnw0r0000gn/T/AppTranslocation/85D0B9F9-7FF2-4EF5-A3A9-3555F010353C/d/Arbor.app/Contents/MacOS/Arbor
+5782 /private/tmp/second/Arbor.app/Contents/MacOS/Arbor
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor 0.9.0 (build 4, a391fe4)
+quitting
+
+== A9  the disk image  (23:24:06)
+  [picture 11-disk-image-open]
+  -- UserNotificationCenter (3375) shows:
+     AXWindow _NS:87 "alert" "" 382 118 260 250
+       AXImage _NS:35 "alert" "" 401 137 66 66
+       AXStaticText _NS:74 "" "Allow “Python” to find devices on local networks?" 403 217 218 34
+       AXStaticText _NS:58 "" "This will allow the app to discover, connect to, and collect data from devices on your networks." 403 259 218 50
+       AXButton action-button-2 "Don’t Allow" "" 397 323 112 30
+       AXButton action-button-1 "Allow" "" 515 323 112 30
+  -- CoreServicesUIAgent (345) shows:
+     AXWindow _NS:87 "alert" "" 382 133 260 268
+       AXImage _NS:35 "caution alert" "" 401 152 66 66
+       AXStaticText _NS:74 "" "“Arbor” Not Opened" 403 232 218 18
+       AXStaticText _NS:58 "" "Apple could not verify “Arbor” is free of malware that may harm your Mac or compromise your privacy." 403 258 218 50
+       AXButton _NS:30 "Help" "" 601 144 30 30
+       AXButton action-button--897 "Move to Trash" "" 397 322 230 30
+       AXButton action-button--898 "Done" "" 397 356 230 30
+  -- TextEdit (5244) shows:
+     AXWindow _NS:34 "LICENSE" "" 108 85 673 439
+       AXScrollArea _NS:8 "" "" 108 117 673 407
+         AXTextArea First Text View "" "MIT License  Copyright (c) 2026 Evan Barley-Greenfield  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without
+       AXButton - "" "" 116 93 16 16
+       AXButton - "" "" 162 93 16 16
+       AXButton - "" "" 139 93 16 16
+       AXMenuButton - "document actions" "" 267 92 12 18
+       AXImage - "LICENSE" "" 189 91 18 18
+       AXStaticText - "" "LICENSE" 208 93 60 16
+     AXWindow _NS:34 "VERSION" "" 79 56 673 439
+       AXScrollArea _NS:8 "" "" 79 88 673 407
+         AXTextArea First Text View "" "0.9.0 " 79 88 656 384
+       AXButton - "" "" 87 64 16 16
+       AXButton - "" "" 133 64 16 16
+       AXButton - "" "" 110 64 16 16
+       AXMenuButton - "document actions" "" 242 63 12 18
+       AXImage - "VERSION" "" 160 62 18 18
+       AXStaticText - "" "VERSION" 179 64 64 16
+total 0
+drwx------  4 runner  staff  128 Oct 14 23:00 .
+drwxr-xr-x  4 root    wheel  128 Oct 14 23:24 ..
+lrwxr-xr-x  1 runner  staff   13 Oct 14 23:00 Applications -> /Applications
+drwxr-xr-x  3 runner  staff   96 Oct 14 23:00 Arbor.app
+the mark on the copy in /Applications: 0083;6ad00f17;Safari;3FBD100C-7898-49CD-8666-2C6B34504DD5
+  [picture 12-disk-image-first-open]
+  -- UserNotificationCenter (3375) shows:
+     AXWindow _NS:87 "alert" "" 382 118 260 250
+       AXImage _NS:35 "alert" "" 401 137 66 66
+       AXStaticText _NS:74 "" "Allow “Python” to find devices on local networks?" 403 217 218 34
+       AXStaticText _NS:58 "" "This will allow the app to discover, connect to, and collect data from devices on your networks." 403 259 218 50
+       AXButton action-button-2 "Don’t Allow" "" 397 323 112 30
+       AXButton action-button-1 "Allow" "" 515 323 112 30
+  -- CoreServicesUIAgent (345) shows:
+     AXWindow _NS:87 "alert" "" 448 199 260 268
+       AXImage _NS:35 "caution alert" "" 467 218 66 66
+       AXStaticText _NS:74 "" "“Arbor” Not Opened" 469 298 218 18
+       AXStaticText _NS:58 "" "Apple could not verify “Arbor” is free of malware that may harm your Mac or compromise your privacy." 469 324 218 50
+       AXButton _NS:30 "Help" "" 667 210 30 30
+       AXButton action-button--897 "Move to Trash" "" 463 388 230 30
+       AXButton action-button--898 "Done" "" 463 422 230 30
+     AXWindow _NS:87 "alert" "" 382 133 260 268
+       AXImage _NS:35 "caution alert" "" 401 152 66 66
+       AXStaticText _NS:74 "" "“Arbor” Not Opened" 403 232 218 18
+       AXStaticText _NS:58 "" "Apple could not verify “Arbor” is free of malware that may harm your Mac or compromise your privacy." 403 258 218 50
+       AXButton _NS:30 "Help" "" 601 144 30 30
+       AXButton action-button--897 "Move to Trash" "" 397 322 230 30
+       AXButton action-button--898 "Done" "" 397 356 230 30
+  -- TextEdit (5244) shows:
+     AXWindow _NS:34 "LICENSE" "" 108 85 673 439
+       AXScrollArea _NS:8 "" "" 108 117 673 407
+         AXTextArea First Text View "" "MIT License  Copyright (c) 2026 Evan Barley-Greenfield  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without
+       AXButton - "" "" 116 93 16 16
+       AXButton - "" "" 162 93 16 16
+       AXButton - "" "" 139 93 16 16
+       AXMenuButton - "document actions" "" 267 92 12 18
+       AXImage - "LICENSE" "" 189 91 18 18
+       AXStaticText - "" "LICENSE" 208 93 60 16
+     AXWindow _NS:34 "VERSION" "" 79 56 673 439
+       AXScrollArea _NS:8 "" "" 79 88 673 407
+         AXTextArea First Text View "" "0.9.0 " 79 88 656 384
+       AXButton - "" "" 87 64 16 16
+       AXButton - "" "" 133 64 16 16
+       AXButton - "" "" 110 64 16 16
+       AXMenuButton - "document actions" "" 242 63 12 18
+       AXImage - "VERSION" "" 160 62 18 18
+4164 /private/var/folders/36/tjdph2t965j8snz9_vkdnw0r0000gn/T/AppTranslocation/85D0B9F9-7FF2-4EF5-A3A9-3555F010353C/d/Arbor.app/Contents/MacOS/Arbor
+6413 /private/var/folders/36/tjdph2t965j8snz9_vkdnw0r0000gn/T/AppTranslocation/5BD084E2-8BF0-40C3-AC58-63AF6CBEE92E/d/Arbor.app/Contents/MacOS/Arbor
+  CLICK 'Done' (process 345) at 578 437
+_LSOpenURLsWithCompletionHandler() failed with error -128.
+
+== A10  the cask, from a tap of this run's own, with the address pointed at this Mac  (23:24:33)
+Homebrew 6.0.22
+/opt/homebrew/Library/Homebrew/cmd/--version.sh: line 29: echo: write error: Broken pipe
+/opt/homebrew/Library/Homebrew/cmd/--version.sh: line 34: echo: write error: Broken pipe
+[34m==>[0m [1mTrusted cask arbor/probe/arbor[0m
+::warning::Calling string comparison format for `depends_on macos:` is deprecated! Use `depends_on macos: :sonoma` instead.%0APlease report this issue to the arbor/homebrew-probe tap (not Homebrew/* repositories), or even better, submit a PR to fix it:%0A  /opt/homebrew/Library/Taps/arbor/homebrew-probe/Casks/arbor.rb:15%0A%0A
+[34m==>[0m [1mWould install 1 cask:[0m
+arbor/probe/arbor
+[32m==>[0m [1mFetching downloads for: [32marbor/probe/arbor[39m[0m
+✔︎ Cask arbor (0.9.0)
+[32m==>[0m [1mInstalling Cask [32marbor[39m[0m
+::warning::Calling string comparison format for `depends_on macos:` is deprecated! Use `depends_on macos: :sonoma` instead.%0APlease report this issue to the arbor/homebrew-probe tap (not Homebrew/* repositories), or even better, submit a PR to fix it:%0A  /opt/homebrew/Library/Taps/arbor/homebrew-probe/Casks/arbor.rb:15%0A%0A
+[34m==>[0m [1mMoving App 'Arbor.app' to '/Applications/Arbor.app'[0m
+[34m==>[0m [1mLinking Binary 'arborctl' to '/opt/homebrew/bin/arborctl'[0m
+🍺  arbor was successfully installed!
+[32m==>[0m [1mCaveats[0m
+[34m==>[0m [1marbor[0m
+Arbor needs Accessibility permission to move other apps' windows:
+  System Settings → Privacy & Security → Accessibility
+
+Until Arbor is notarized, macOS blocks its first launch. Allow it under
+  System Settings → Privacy & Security → Open Anyway
+and, because each release has a signature of its own, remove Arbor's entry
+under Accessibility after an upgrade and let it ask again.
+drwxr-xr-x@ 3 runner  staff  96 Oct 14 23:00 /Applications/Arbor.app
+lrwxr-xr-x  1 runner  admin  49 Oct 14 23:24 /opt/homebrew/bin/arborctl -> /Applications/Arbor.app/Contents/Helpers/arborctl
+the mark Homebrew leaves: 0181;6ad00f39;Homebrew\x20Cask;CB79FC8D-6C8F-4330-8A69-21EA793F70AB
+Installing rubydex 0.4.0 (arm64-darwin)
+Installing test-prof 1.6.3
+Installing rbs 4.2.0 with native extensions
+Bundle complete! 38 Gemfile dependencies, 39 gems now installed.
+Bundled gems are installed into `../../../../../opt/homebrew/Library/Homebrew/vendor/bundle`
+3 installed gems you directly depend on are looking for funding.
+  Run `bundle fund` for details
+[36mTaps/arbor/homebrew-probe/Casks/arbor.rb[0m:15:21: [33mC[0m: [33m[Correctable] [0mHomebrew/OSDependsOn: Use [33mdepends_on macos: :sonoma[0m.
+  depends_on macos: ">= :sonoma"
+                    ^^^^^^^^^^^^
+
+1 file inspected, [31m1 offense[0m detected, [33m1 offense[0m autocorrectable
+[34m==>[0m [1mRemoving login item /Applications/Arbor.app[0m
+[34m==>[0m [1mRemoving login item Arbor[0m
+[34m==>[0m [1mBacking up App 'Arbor.app' to '/opt/homebrew/Caskroom/arbor/0.9.0/Arbor.app'[0m
+[34m==>[0m [1mRemoving App '/Applications/Arbor.app'[0m
+[34m==>[0m [1mUnlinking Binary '/opt/homebrew/bin/arborctl'[0m
+[34m==>[0m [1mPurging files for version 0.9.0 of Cask arbor[0m
+scripts/mac-shell/probe-download.sh: line 248:  3372 Terminated: 15          python3 -m http.server 8123 --bind 127.0.0.1 --directory "$served" > "$out/server.log" 2>&1
+
+== B  the oldest Xcode on the runner  (23:25:53)
+swift-driver version: 1.127.14.1 Apple Swift version 6.2 (swiftlang-6.2.0.19.9 clang-1700.3.19.1)
+Build complete! (384.79s)
+Xcode 26.0.1: exit code 0  (23:32:28)
+
+== C  the Command Line Tools alone, without Xcode: is that enough for make app?  (23:32:28)
+swift-driver version: 1.148.6 Apple Swift version 6.3.3 (swiftlang-6.3.3.1.3 clang-2100.1.1.101)
+version: 26.6.0.0.1781586589
+Signed build/Arbor.app ad hoc. The signature changes with every build, so each new build has to be given
+  Accessibility permission again. scripts/make-signing-identity.sh, run once, ends that (docs/INSTALL.md).
+Built build/Arbor.app, version 0.9.0 (build 1, 1b26583)
+Command Line Tools: make app exit code 0  (23:36:22)
+arborctl 0.9.0 (build 1, 1b26583)
