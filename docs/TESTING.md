@@ -495,6 +495,14 @@ fault on real windows, a merge train, whatever others are blocked by. `2` holds 
 while any is: pictures, features, whatever can wait. Whatever the priority, a branch has at most two jobs running or waiting at a time (`3`: one).
 It says what it is holding back for, and the wait counts towards `MAC_SHELL_TIMEOUT`.
 
+**GitHub's API is shared too.** An account may make 5,000 REST calls an hour, for everything everybody does under it, and when they are used up nobody
+under that account can start a run, open a pull request or read a check until the hour is over. It has happened: a dozen copies of `run.sh` asking every ten
+seconds whether their run had ended, and every thirty what the queue looked like. So `run.sh` asks Git whatever Git can answer, which does not count (what GitHub has at
+the branch; whether the run has ended, which is when its output branch appears), and a run costs about ten calls however long it waits. While it holds back it looks
+at the queue every two minutes, for a handful of calls. **Do the same in your own loops:** `git ls-remote` instead of `gh api` where it will do, a minute or more
+between two calls where it will not, and never a loop round `scripts/mac-queue.py`, whose full report costs twenty to forty; its last line but one says what is left of
+the hour. Several checkouts, containers or people who share a folder can share one look at the queue: `export ARBOR_MAC_QUEUE_CACHE=<a file there>`.
+
 **Nothing takes a Mac that Linux can already refute.** A run that ends in a compiler's error, a typo in the script or a wait for something that never
 comes has held a Mac for minutes to say what Linux says for nothing. So `run.sh` starts nothing that has not been through `scripts/mac-shell/preflight.sh`:
 

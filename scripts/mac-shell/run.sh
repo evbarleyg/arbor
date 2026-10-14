@@ -32,7 +32,10 @@
 # and prints the folder, the exit code and the end of the output. Exits with the script's exit code (of several: the first that is
 # not 0), or with 96 (not through the pre-flight), 97 (could not start), 98 (timed out) or 99 (the run produced no output).
 #
-# Needs only git and `gh api` (REST), so it works where logs and artifacts cannot be downloaded.
+# Needs only git and `gh api` (REST), so it works where logs and artifacts cannot be downloaded. GitHub allows an account 5,000 REST calls an
+# hour, for everything everybody does under it, and a dozen copies of this script asking every ten seconds have used them up and
+# stopped all work for half an hour. So whatever Git can answer is asked of Git, which does not count: what GitHub has at <ref>, and whether
+# the run has ended, which is when its output branch appears. A run costs about ten calls, however long it waits.
 # See "Seeing the real app from anywhere" in docs/TESTING.md.
 #
 # The output branch is mac-shell-out/<tag>, and the tag names the ref and the script, not the run: some
@@ -41,6 +44,8 @@
 #
 # Environment: MAC_SHELL_TIMEOUT  seconds to wait for the run (default 2700)
 #              MAC_SHELL_TAIL     lines of output.txt to print (default 40)
+#              MAC_SHELL_POLL     seconds between two looks at the queue while it holds back (default 120, and up to 30 more)
+#              ARBOR_MAC_QUEUE_CACHE   a file in which several checkouts share one look at the queue (scripts/mac-queue.py)
 #              ARBOR_MAC_PRIORITY as --priority
 #              MAC_SHELL_TAG      another tag (letters, digits, . _ -; at most 40)
 #              MAC_SHELL_WORKFLOW_REF   the branch whose mac-shell.yml runs (default: swarm/trunk if there is one, else main).
@@ -96,11 +101,13 @@ api() { gh api "$@"; }
 fail() { echo "run.sh: $1" >&2; exit "${2:-97}"; }
 
 # What runs is what GitHub has at <ref>, so catch a forgotten push before a Mac is started.
-remote=$(api "repos/$repo/commits/$ref" --jq .sha 2>/dev/null) || fail "GitHub has no ref '$ref' in $repo; push it first"
+remote=$(git ls-remote origin "refs/heads/$ref" 2>/dev/null | cut -f 1)
+[ -n "$remote" ] || fail "GitHub has no branch '$ref' in $repo; push it first"
+git cat-file -e "$remote^{commit}" 2>/dev/null || git fetch --quiet --no-tags origin "refs/heads/$ref" 2>/dev/null \
+  || fail "cannot fetch '$ref' from $repo"
 for each in "${scripts[@]}"; do
   case "$each" in *[!A-Za-z0-9._/-]*) fail "'$each': a script's path may hold letters, digits, dots, dashes, underscores and slashes" ;; esac
-  api "repos/$repo/contents/$each?ref=$remote" --jq .path >/dev/null 2>&1 \
-    || fail "GitHub has no file '$each' at $ref (${remote:0:7}); commit and push it first"
+  git cat-file -e "$remote:$each" 2>/dev/null || fail "GitHub has no file '$each' at $ref (${remote:0:7}); commit and push it first"
 done
 if [ "$ref" = "$(git rev-parse --abbrev-ref HEAD)" ]; then
   [ "$remote" = "$(git rev-parse HEAD)" ] || fail "$ref is at ${remote:0:7} on GitHub but $(git rev-parse --short HEAD) here; push first"
@@ -110,7 +117,9 @@ fi
 
 home=${MAC_SHELL_WORKFLOW_REF:-}
 for candidate in swarm/trunk main; do
-  [ -n "$home" ] || ! api "repos/$repo/contents/.github/actions/mac-setup/action.yml?ref=$candidate" --jq .path >/dev/null 2>&1 || home=$candidate
+  [ -z "$home" ] || break
+  git fetch --quiet --no-tags origin "+refs/heads/$candidate:refs/remotes/origin/$candidate" 2>/dev/null || continue
+  ! git cat-file -e "origin/$candidate:.github/actions/mac-setup/action.yml" 2>/dev/null || home=$candidate
 done
 # Neither has the shared set-up yet: as it was before there was one.
 home=${home:-$ref}
@@ -148,8 +157,13 @@ while :; do
   [ $(($(date +%s) - start)) -le "$limit" ] || fail "not started after ${limit}s: $why" 98
   [ "$why" = "$told" ] || echo "holding back: $why"
   told=$why
-  sleep "${MAC_SHELL_POLL:-30}"
+  # Seldom, and not all copies at the same moment: every look costs calls.
+  sleep "$((${MAC_SHELL_POLL:-120} + RANDOM % 30))"
 done
+
+# What the output branches hold now, which may be an earlier run's: a change is the sign that a Mac has finished.
+outputs() { git ls-remote origin "refs/heads/mac-shell-out/$tag" "refs/heads/mac-shell-out/$tag.*" 2>/dev/null | sort; }
+before=$(outputs)
 
 # The dispatch call does not say which run it started: it is the one newer than the newest so far
 # whose title carries the tag.
@@ -166,23 +180,33 @@ start=$(date +%s)
 run=""
 while [ -z "$run" ]; do
   [ $(($(date +%s) - start)) -gt 180 ] && fail "the run did not appear within 3 minutes" 98
-  sleep 4
+  sleep 6
   run=$(api "$runs" --jq ".workflow_runs[] | select(.id > $newest and (.display_title | endswith(\"[$tag]\"))) | .id" \
     2>/dev/null | tail -n 1)
 done
 echo "run $run: https://github.com/$repo/actions/runs/$run"
 
-status=""
+# Every Mac pushes its output as its last deed, so Git tells when they have finished. GitHub itself is asked only now and then, for the run
+# that ends without any output: cancelled while it waited, or stopped before its first step.
+status="" asked=$(date +%s)
 while [ "$status" != completed ]; do
   if [ $(($(date +%s) - start)) -gt "$limit" ]; then
     api -X POST "repos/$repo/actions/runs/$run/cancel" >/dev/null 2>&1
-    fail "still $status after ${limit}s; cancelled the run" 98
+    fail "still ${status:-under way} after ${limit}s; cancelled the run" 98
   fi
-  sleep 10
-  status=$(api "repos/$repo/actions/runs/$run" --jq .status 2>/dev/null)
+  sleep 15
+  if [ "$(comm -13 <(echo "$before") <(outputs) | grep -c .)" -ge "$macs" ]; then
+    # The job has a few steps left after the push.
+    sleep 10
+    break
+  fi
+  if [ $(($(date +%s) - asked)) -ge 180 ]; then
+    asked=$(date +%s)
+    status=$(api "repos/$repo/actions/runs/$run" --jq .status 2>/dev/null)
+  fi
 done
-conclusion=$(api "repos/$repo/actions/runs/$run" --jq .conclusion)
-echo "finished after $(($(date +%s) - start))s: $conclusion"
+conclusion=$(api "repos/$repo/actions/runs/$run" --jq '.conclusion // .status' 2>/dev/null)
+echo "finished after $(($(date +%s) - start))s: ${conclusion:-GitHub does not say how}"
 
 annotations() {
   for job in $(api "repos/$repo/actions/runs/$run/jobs" --jq '.jobs[].id'); do

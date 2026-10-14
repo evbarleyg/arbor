@@ -12,6 +12,8 @@ import io
 import json
 import os
 import sys
+import tempfile
+from datetime import timedelta
 
 path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mac-queue.py")
 spec = importlib.util.spec_from_file_location("mac_queue", path)
@@ -247,11 +249,63 @@ def ends_with(runs, *arguments):
         return runs
 
     real, queue.fetch, argv, sys.argv = queue.fetch, fetch, sys.argv, ["mac-queue.py", "--repo", "owner/repo", *arguments]
+    others, queue.fetch_now, queue.left_this_hour = (queue.fetch_now, queue.left_this_hour), lambda repo: fetch(repo, None, None), lambda: ""
+    kept = os.environ.pop("ARBOR_MAC_QUEUE_CACHE", None)
     try:
         with contextlib.redirect_stdout(io.StringIO()) as out, contextlib.redirect_stderr(io.StringIO()):
             return queue.main(), out.getvalue()
     finally:
-        queue.fetch, sys.argv = real, argv
+        queue.fetch, sys.argv, (queue.fetch_now, queue.left_this_hour) = real, argv, others
+        if kept is not None:
+            os.environ["ARBOR_MAC_QUEUE_CACHE"] = kept
+
+
+def a_look():
+    """What `fetch_now` asks GitHub, and what it makes of the answers."""
+    shell = dict(workflow="mac-shell", title="Mac shell: scripts/mac-shell/a.sh at feat/y [t]")
+    answers = {
+        "status=queued": [run(number=1, status="queued", **shell), run(number=2, status="queued")],
+        "status=in_progress": [run(number=3, status="in_progress", **{**shell, "title": "Mac shell (macos-15): a.sh at feat/z [u]"}),
+                               run(number=4, status="in_progress")],
+    }
+    for found in answers.values():
+        for one in found:
+            one.update(created_at=at("11:50:00"), run_started_at=at("11:55:00"))
+            del one["jobs"]
+    asked = []
+
+    def api(request, _jq):
+        asked.append(request.split("repos/owner/repo/actions/runs")[1].split("&")[0])
+        return [waiting("11:58:00")] if "/jobs?" in request else answers[request.split("?")[1].split("&")[0]]
+
+    real, queue.api = queue.api, api
+    try:
+        found = queue.facts(queue.fetch_now("owner/repo"), NOON)
+    finally:
+        queue.api = real
+    return asked, [(job["state"], job["seconds"], job["job"], job["mac"], job["branch"]) for job in found["now"]]
+
+
+def cached(kept, writable=True):
+    """How often GitHub is asked by two who share a cache that holds `kept` (text; None: nothing), and what the second one gets."""
+    looks = []
+
+    def look():
+        looks.append(1)
+        return [{"id": len(looks)}]
+
+    with tempfile.TemporaryDirectory() as folder:
+        path = os.path.join(folder if writable else os.path.join(folder, "no", "such", "folder"), "queue.json")
+        if kept is not None:
+            with open(path, "w", encoding="utf-8") as handle:
+                handle.write(kept)
+        queue.shared("owner/repo", NOON, look, path)
+        second = queue.shared("owner/repo", NOON + timedelta(seconds=20), look, path)
+        return len(looks), second
+
+
+def kept_at(time, repo="owner/repo"):
+    return json.dumps({"repo": repo, "at": at(time), "runs": [{"id": "kept"}]})
 
 
 LISTS = "repos/owner/repo/actions/runs?"
@@ -275,6 +329,22 @@ SINGLE = [
     ("over the limit: nobody is, and no such line", lambda: "OVER" in said(A_QUEUE), False),
     ("over the limit: whoever is named there is held back by run.sh at every priority",
      lambda: [bool(turn(n, 0, own=2, own_waiting=1)) for n in (1, 2, 3)], [True] * 3),
+    ("a look for --turn: two lists, and the jobs only of a run in progress that is not a Mac shell run", lambda: a_look()[0],
+     ["?status=queued", "?status=in_progress", "/4/jobs?filter=latest"]),
+    ("a look for --turn: a Mac shell run is told by its own state, with its branch and its kind of Mac; a CI run of which nothing has started wants none yet",
+     lambda: a_look()[1], [("running", 300, "mac-shell / shell", "macos-15", "feat/z"), ("waiting", 600, "mac-shell / shell", "macos-26", "feat/y"),
+                           ("waiting", 120, "ci / macos", "macos-26", "feat/x")]),
+    ("the cache: nothing there: the first asks, the second reads", lambda: cached(None), (1, [{"id": 1}])),
+    ("the cache: half a minute old: nobody asks", lambda: cached(kept_at("11:59:30")), (0, [{"id": "kept"}])),
+    ("the cache: two minutes old", lambda: cached(kept_at("11:58:00")), (1, [{"id": 1}])),
+    ("the cache: from a clock that is ahead", lambda: cached(kept_at("12:05:00")), (1, [{"id": 1}])),
+    ("the cache: of another repository", lambda: cached(kept_at("11:59:30", "other/repo")), (1, [{"id": 1}])),
+    ("the cache: half a file", lambda: cached(kept_at("11:59:30")[:25]), (1, [{"id": 1}])),
+    ("the cache: not what was expected there", lambda: cached("[1, 2]"), (1, [{"id": 1}])),
+    ("the cache: cannot be written: both ask, and that is all", lambda: cached(None, writable=False), (2, [{"id": 2}])),
+    ("no cache is named: everybody asks", lambda: [queue.shared("owner/repo", NOON, lambda: "asked", "")], ["asked"]),
+    ("what is left of the hour's requests stands above the line to grep for", lambda: queue.report(queue.facts([], NOON), "owner/repo", "GitHub's API: 7 left").splitlines()[-2:],
+     ["GitHub's API: 7 left", "mean wait: 0 s over 0 jobs"]),
     ("whose turn: nobody waits, nothing of its own", lambda: [turn(n, 0) for n in (1, 2, 3)], ["", "", ""]),
     ("whose turn: one waits", lambda: [bool(turn(n, 1)) for n in (1, 2, 3)], [False, False, True]),
     ("whose turn: two wait", lambda: [bool(turn(n, 2)) for n in (1, 2, 3)], [False, False, True]),

@@ -1219,20 +1219,66 @@ def check_mac_shell_batch():
     row("ci-mac-shell.sh: what a script leaves running holds nobody up", (code, took < 10), (0, True))
     row("ci-mac-shell.sh: no script at all", tried()[0], 64)
 
-    # run.sh, up to the moment it starts the run: a stand-in for `gh` answers every question and notes what was asked for.
+    # run.sh in a checkout of its own whose origin is a folder beside it, with a stand-in for `gh` that notes every call. GitHub allows an account
+    # 5,000 calls an hour, and copies of this script have used them up: how many it makes is part of what it does.
+    world = tempfile.TemporaryDirectory(prefix="tooling-")
+    checkout, origin = os.path.join(world.name, "checkout"), os.path.join(world.name, "origin.git")
+
+    def git(*arguments, where=checkout):
+        return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@example.com", *arguments], cwd=where, capture_output=True, text=True,
+                              check=True).stdout.strip()
+
+    os.makedirs(os.path.join(checkout, "scripts", "mac-shell"))
+    for name in ("mac-shell/run.sh", "mac-shell/preflight.sh", "mac-queue.py"):
+        shutil.copy(os.path.join(HERE, name), os.path.join(checkout, "scripts", name))
+    for name in ["a", "b", "c", "d", "e", "e2e-drag", *map(str, range(9))]:
+        with open(os.path.join(checkout, f"{name}.sh"), "w", encoding="utf-8") as handle:
+            handle.write("echo hello\n")
+    subprocess.run(["git", "init", "--quiet", "--bare", origin], check=True)
+    git("init", "--quiet", "--initial-branch=elsewhere")
+    git("add", "--all")
+    git("commit", "--quiet", "--message", "scripts")
+    git("remote", "add", "origin", origin)
+    git("push", "--quiet", "origin", "HEAD:refs/heads/feat/x")
+
+    # The stand-in: $CALLS gets a line for every call. A dispatch is noted in $NOTED and, unless $GOES says otherwise, refused.
+    stand_in = r'''#!/bin/bash
+echo "$*" >> "$CALLS"
+case "$*" in
+  *dispatches*) printf '%s\n' "$@" > "$NOTED"; [ -n "${GOES:-}" ] || exit 1; eval "$GOES" ;;
+  *rate_limit*) echo '{}' ;;
+  *"runs?event=workflow_dispatch"*) if [ -f "$NOTED" ]; then echo 7; else echo 0; fi ;;
+  *actions/runs/7*) echo "${STATUS:-in_progress}" ;;
+  *) echo 0 ;;
+esac
+'''
+    with open(os.path.join(world.name, "gh"), "w", encoding="utf-8") as handle:
+        handle.write(stand_in)
+    os.chmod(os.path.join(world.name, "gh"), 0o755)
+
+    def ran(*arguments, **more):
+        noted, calls = os.path.join(world.name, "noted"), os.path.join(world.name, "calls")
+        for path in (noted, calls):
+            if os.path.exists(path):
+                os.remove(path)
+        environment = {**os.environ, "PATH": world.name + os.pathsep + os.environ["PATH"], "NOTED": noted, "CALLS": calls, "MAC_SHELL_WORKFLOW_REF": "home",
+                       "ARBOR_MAC_PRIORITY": "1", "ORIGIN": origin, **more}
+        environment.pop("ARBOR_MAC_QUEUE_CACHE", None)
+        done = subprocess.run([BASH, "scripts/mac-shell/run.sh", *arguments], cwd=checkout, env=environment, capture_output=True, text=True, check=False,
+                              timeout=120)
+        made = []
+        if os.path.exists(calls):
+            with open(calls, encoding="utf-8") as handle:
+                made = handle.read().splitlines()
+        return done, noted, made
+
     def started(*arguments):
-        with tempfile.TemporaryDirectory(prefix="tooling-") as folder:
-            with open(os.path.join(folder, "gh"), "w", encoding="utf-8") as handle:
-                handle.write('#!/bin/sh\ncase "$*" in *dispatches*) printf "%s\\n" "$@" > "$NOTED"; exit 1;; *commits/*) git rev-parse HEAD;; *) echo 0;; esac\n')
-            os.chmod(os.path.join(folder, "gh"), 0o755)
-            noted = os.path.join(folder, "noted")
-            environment = {**os.environ, "PATH": folder + os.pathsep + os.environ["PATH"], "NOTED": noted, "MAC_SHELL_WORKFLOW_REF": "home"}
-            done = subprocess.run([BASH, os.path.join(HERE, "mac-shell", "run.sh"), *arguments], env=environment, capture_output=True, text=True, check=False)
-            if not os.path.exists(noted):
-                return done.returncode, None, {}
-            with open(noted, encoding="utf-8") as handle:
-                asked = dict(line.strip().split("=", 1) for line in handle if "=" in line)
-            return done.returncode, [asked.get(key) for key in ("ref", "inputs[ref]", "inputs[script]", "inputs[macs]")], asked
+        done, noted, _ = ran(*arguments)
+        if not os.path.exists(noted):
+            return done.returncode, None, {}
+        with open(noted, encoding="utf-8") as handle:
+            asked = dict(line.strip().split("=", 1) for line in handle if "=" in line)
+        return done.returncode, [asked.get(key) for key in ("ref", "inputs[ref]", "inputs[script]", "inputs[macs]")], asked
 
     row("run.sh: one script", started("a.sh", "feat/x")[:2], (97, ["home", "feat/x", "a.sh", ""]))
     row("run.sh: three scripts go to one Mac", started("a.sh", "./b.sh", "c.sh", "feat/x")[:2], (97, ["home", "feat/x", "a.sh b.sh c.sh", ""]))
@@ -1250,6 +1296,20 @@ def check_mac_shell_batch():
     row("run.sh: no script", started("feat/x")[:2], (97, None))
     row("run.sh: a path that could be more than a path", started("a;b.sh", "feat/x")[:2], (97, None))
     row("run.sh: --macs 0", started("--macs", "0", "a.sh", "feat/x")[:2], (97, None))
+    row("run.sh: a branch GitHub does not have, found out without a call", (lambda done, _, made: (done.returncode, made))(*ran("a.sh", "feat/none")), (97, []))
+    row("run.sh: a script GitHub does not have at that branch, likewise", (lambda done, _, made: (done.returncode, made))(*ran("z.sh", "feat/x")), (97, []))
+
+    # A whole run. The "Mac" pushes its output a few seconds after the dispatch, as the workflow's last deed but a few.
+    pushes = '''( sleep 3; w=$(mktemp -d); cd "$w"; git init -q; echo 0 > exit-code.txt; echo said > output.txt; git add -A
+      git -c user.name=m -c user.email=m@example.com commit -q -m "mac-shell: output of a.sh at 1234567 (run 7)"
+      git push -q --force "$ORIGIN" HEAD:refs/heads/mac-shell-out/t ) > /dev/null 2>&1 &'''
+    done, _, made = ran("a.sh", "feat/x", GOES=pushes, MAC_SHELL_TAG="t")
+    polls = [call for call in made if call.startswith("api repos/") and call.endswith("actions/runs/7 --jq .status")]
+    row("run.sh: a whole run: it ends when the output branch appears, with the script's exit code", (done.returncode, "exit code: 0" in done.stdout), (0, True))
+    row("run.sh: a whole run: GitHub was not asked once whether it had ended", polls, [])
+    row("run.sh: a whole run: ten calls at most", len(made) <= 10, True)
+    shutil.rmtree(os.path.join(checkout, ".mac-shell"), ignore_errors=True)
+    world.cleanup()
 
 
 # MARK: preflight.sh
@@ -1358,10 +1418,12 @@ def check_preflight():
 
         # run.sh in front of it, with a stand-in for `gh` that notes what was started.
         write("bin/gh", '#!/bin/sh\ncase "$*" in *dispatches*) printf "%s\\n" "$@" > noted; exit 1;; *commits/*) git rev-parse HEAD;; *) echo 0;; esac\n', 0o755)
-        git("remote", "add", "origin", "https://github.com/owner/repo")
+        subprocess.run(["git", "init", "--quiet", "--bare", os.path.join(folder, "bin", "origin.git")], check=True)
+        git("remote", "add", "origin", os.path.join(folder, "bin", "origin.git"))
 
         def started(*arguments, swift=True):
             flight("--check", new)  # writes the stand-ins
+            git("push", "--quiet", "--force", "origin", "HEAD:refs/heads/work")
             if not swift:
                 os.remove(os.path.join(folder, "bin/swift"))
             if os.path.exists(os.path.join(folder, "noted")):

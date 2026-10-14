@@ -26,7 +26,12 @@ out in no particular order (see below), so whoever can wait does so before start
 priority 1 (a fault on real windows, a merge train) never waits for others, 2 waits while three or more jobs are waiting for a Mac,
 3 while any is. And nobody has more than two jobs for one branch running or waiting at a time (priority 3: one).
 Needs `gh` and a token that may read the repository. It only reads: one request for every hundred runs, and one for
-every run that could have held or wanted a Mac within the period.
+every run that could have held or wanted a Mac within the period: some twenty to forty. GitHub allows an account 5,000 an hour, for
+everything everybody does under it, so do not run this in a loop; the last line but one says what is left.
+
+--turn is made to be asked again and again, and costs little: two requests, and one for every run in progress that is not a Mac shell
+run (of those the run's own state tells enough). With $ARBOR_MAC_QUEUE_CACHE naming a file, whoever asks within a minute of somebody else
+reads the answer there and asks GitHub nothing: for several checkouts, containers or people on one machine or one shared folder.
 
 What GitHub's answers mean, found by looking at them on 2026-10-14 while five jobs ran and five waited:
 
@@ -65,9 +70,11 @@ PER_PAGE = 100
 # A run can be much older than the period and have finished within it. Six hours is the longest a hosted job may take.
 OLDER_RUNS = timedelta(hours=6)
 # Only what is used: a job's steps are most of the answer.
-RUNS = "[.workflow_runs[] | {id, path, status, head_branch, display_title, html_url, updated_at}]"
+RUNS = "[.workflow_runs[] | {id, path, status, head_branch, display_title, html_url, updated_at, created_at, run_started_at}]"
 JOBS = "[.jobs[] | {name, status, conclusion, labels, runner_name, created_at, started_at, completed_at}]"
 AT_ONCE = 8
+# For how long one look at the queue will do for everybody who shares a cache.
+FRESH_FOR = 60
 # "Mac shell: scripts/mac-shell/shots-F10.sh at feat/x [tag]"; "at feat/x" is missing from the runs of older branches.
 MAC_SHELL = re.compile(r"^Mac shell(?: \([^)]*\))?: (?:scripts/mac-shell/)?(?P<script>.*?)(?: at (?P<ref>\S+))?(?: \(no pre-flight: .*\))?(?P<tag> \[[^\]]*\])?$")
 ALARMED = 3
@@ -120,6 +127,62 @@ def fetch(repo, now, minutes):
     with concurrent.futures.ThreadPoolExecutor(AT_ONCE) as pool:
         jobs = pool.map(lambda run: pages(f"{runs}/{run['id']}/jobs?filter=latest", JOBS), wanted)
         return [{**run, "jobs": found} for run, found in zip(wanted, jobs)]
+
+
+def stands_for(run):
+    """A Mac shell run as the one job it mostly is, told from the run alone. Of a run on several Macs this makes one."""
+    kind = re.match(r"^Mac shell \(([^)]*)\)", run.get("display_title") or "")
+    waits = run["status"] != "in_progress"
+    return {
+        "name": "shell", "status": "queued" if waits else "in_progress", "conclusion": None, "labels": [kind.group(1) if kind else "macos-26"],
+        "runner_name": "" if waits else "?", "created_at": run["created_at"], "started_at": run.get("run_started_at") or run["created_at"],
+        "completed_at": None,
+    }
+
+
+def fetch_now(repo):
+    """What is running and waiting at this moment, for few requests: good enough to tell whose turn it is."""
+    runs = f"repos/{repo}/actions/runs"
+    listed = {run["id"]: run for status in ("queued", "in_progress") for run in pages(f"{runs}?status={status}", RUNS)}
+    found = []
+    for run in listed.values():
+        if workflow_of(run) == "mac-shell":
+            found.append({**run, "jobs": [stands_for(run)]})
+        elif run["status"] == "in_progress":
+            # Of a run of which nothing has started yet no job has asked for a Mac either.
+            found.append({**run, "jobs": pages(f"{runs}/{run['id']}/jobs?filter=latest", JOBS)})
+    return found
+
+
+def shared(repo, now, look, path=None):
+    """`look()`, or what somebody who shares the cache saw less than a minute ago."""
+    path = os.environ.get("ARBOR_MAC_QUEUE_CACHE", "") if path is None else path
+    if not path:
+        return look()
+    try:
+        with open(path, encoding="utf-8") as handle:
+            kept = json.load(handle)
+        if kept["repo"] == repo and 0 <= (now - when(kept["at"])).total_seconds() < FRESH_FOR:
+            return kept["runs"]
+    except (OSError, ValueError, KeyError, TypeError):
+        pass  # none yet, or half of one: then this look is the first
+    runs = look()
+    try:
+        with open(f"{path}.{os.getpid()}", "w", encoding="utf-8") as handle:
+            json.dump({"repo": repo, "at": stamp(now), "runs": runs}, handle)
+        os.replace(f"{path}.{os.getpid()}", path)
+    except OSError:
+        pass  # a cache that cannot be written costs requests, nothing else
+    return runs
+
+
+def left_this_hour():
+    """What is left of the hour's requests. Asking this costs none."""
+    try:
+        left = api("rate_limit", ".resources.core")
+        return f"GitHub's API: {left['remaining']} of {left['limit']} requests left until {stamp(datetime.fromtimestamp(left['reset'], timezone.utc))[11:16]} UTC"
+    except (Unanswered, KeyError, TypeError, ValueError):
+        return ""
 
 
 def repository():
@@ -323,7 +386,7 @@ def last_lines(found):
     return lines
 
 
-def report(found, repo):
+def report(found, repo, left=""):
     period = "THE LAST HOUR" if found["minutes"] == 60 else f"THE LAST {found['minutes']} MINUTES"
     share = lambda key: columns(
         [(f"{round(entry['mac_seconds'] / 60)} min", count(entry["jobs"]), entry[key])
@@ -351,7 +414,7 @@ def report(found, repo):
         + ["", "and by kind of Mac"]
         + columns([(f"{round(entry['mac_seconds'] / 60)} min", count(entry["jobs"]), entry["mac"], f"{entry['most_at_once']} at once at most")
                    for entry in found["by_mac"]], right=(0, 1))
-        + [""] + last_lines(found)
+        + [""] + [left] * bool(left) + last_lines(found)
     )
 
 
@@ -368,7 +431,8 @@ def main():
     try:
         repo = args.repo or repository()
         now = datetime.now(timezone.utc)
-        found = facts(fetch(repo, now, 1 if args.turn else args.minutes), now, args.minutes, args.alarm)
+        runs = shared(repo, now, lambda: fetch_now(repo)) if args.turn else fetch(repo, now, args.minutes)
+        found = facts(runs, now, args.minutes, args.alarm)
     except Unanswered as error:
         print(f"mac-queue.py: {error}", file=sys.stderr)
         return 1
@@ -376,7 +440,7 @@ def main():
         why = hold_back(found, args.turn, args.branch)
         print(why, end="\n" if why else "")
         return NOT_YET if why else 0
-    print(json.dumps({"repo": repo, **found}, indent=2) if args.json else report(found, repo))
+    print(json.dumps({"repo": repo, **found}, indent=2) if args.json else report(found, repo, left_this_hour()))
     return ALARMED if found["alarm"] else 0
 
 
