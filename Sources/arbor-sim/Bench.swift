@@ -38,6 +38,20 @@ func runBenchmarks(_ arguments: [String]) {
     print("")
   }
 
+  let names = [
+    "stackedWindows", "windowsFrontToBack", "existingWindowIDs", "allWindows", "displays", "inputActivity",
+    "cursorLocation", "isMouseButtonDown", "modifierKeysDown",
+  ]
+  print("what else is asked, 10 windows (the first three have the window server list every window)")
+  print("  \("command".padding(toLength: 24, withPad: " ", startingAt: 0))" + names.map { pad(String($0.prefix(9)), 10) }.joined())
+  for benchmark in BenchmarkCase.all {
+    let questions = benchmark.run(windows: 10, repetitions: 1).budget.asked
+    print(
+      "  \(benchmark.name.padding(toLength: 24, withPad: " ", startingAt: 0))"
+        + names.map { pad(String(questions[$0, default: 0]), 10) }.joined())
+  }
+  print("")
+
   print("the pure parts, µs" + trees.map { pad("\($0)", 9) }.joined())
   let columns = trees.map { CoreBenchmark.run(windows: $0) }
   for row in columns[0].indices {

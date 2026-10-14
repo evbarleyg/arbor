@@ -12,12 +12,11 @@ import Testing
       let budget = BenchmarkCase.named(name).run(windows: windows).budget
       #expect(budget.moves == windows && budget.movesAlone == 0, "\(name) with \(windows) windows: \(budget)")
     }
-    // On a desk with floating windows, those follow the Desktop one at a time. A single move needs no company, nor does a
+    // On a desk with floating windows, those follow the Desktop in the same breath. A single move needs no company, nor does a
     // single question (whether the window can grow as far as it has never been).
-    let floating = Workload(windows: windows).floating.count
     for name in ["zoom", "back", "show-all", "zoom group", "neighbor", "focus out of view"] {
       let budget = BenchmarkCase.named(name).run(windows: windows).budget
-      #expect(budget.movesAlone <= floating + 1 + min(budget.questions, 1), "\(name) with \(windows) windows: \(budget)")
+      #expect(budget.movesAlone <= 1 + min(budget.questions, 1), "\(name) with \(windows) windows: \(budget)")
     }
   }
 
@@ -26,6 +25,52 @@ import Testing
       let budget = benchmark.run(windows: windows).budget
       #expect(budget.unclaimedMoves == 0, "\(benchmark.name) with \(windows) windows: \(budget)")
     }
+  }
+
+  /// With `shrinkOutOfView` a window goes out of view at another size than it has, docked or floating. A forecast at the size
+  /// it has would be a move that nobody asks for: the window would go to the corner twice, large and then small.
+  @Test(arguments: [4, 10, 30]) func nothingForetoldGoesUnclaimedWhereWindowsShrinkOutOfView(windows: Int) {
+    var settings = Settings()
+    settings.shrinkOutOfView = true
+    let desk = Workload(windows: windows, settings: settings)
+    let h = desk.harness
+    for command in ["zoom \(desk.groups[0][0].rawValue)", "back", "zoom-node \(desk.node(ofGroup: 0).rawValue)", "show-all"] {
+      let budget = h.measure { h.run(command) }
+      #expect(budget.unclaimedMoves == 0 && budget.repeatMoves == 0, "\(command) with \(windows) windows: \(budget)")
+      #expect(budget.moves > 0, "\(command) moves something, or this says nothing")
+    }
+  }
+
+  /// Floating windows are placed last, after the rounds in which a window that refuses its slot has the layout reckoned again, and
+  /// the Desktop may be elsewhere by then. Foretold from the layout as it was first reckoned, they went where the final plan never
+  /// sent them: twice on their way at best, and left there at worst, if the final plan had nothing to ask of them.
+  @Test func aLayoutReckonedAgainSendsNoFloatingWindowAnywhereTwice() throws {
+    func desk(ignoring: Bool) -> (Harness, floating: [WindowID], stubborn: WindowID) {
+      let h = Harness()
+      h.system.ignoresMoveTogether = ignoring
+      let a = h.system.open(app: "A")
+      let floating = (0..<3).map {
+        h.system.open(app: "Note\($0)", frame: CGRect(x: 760 + $0 * 60, y: 120 + $0 * 60, width: 300, height: 240))
+      }
+      // Half the display is room enough for it to float in, so nothing is known about it until it is docked.
+      let stubborn = h.system.open(
+        app: "Settings", frame: CGRect(x: 800, y: 100, width: 600, height: 700), minimumSize: CGSize(width: 600, height: 700))
+      h.start()
+      h.run("dock \(a.rawValue) left")
+      return (h, floating, stubborn)
+    }
+    let (h, floating, stubborn) = desk(ignoring: false)
+    let log = h.system.moveLog.count
+    let budget = h.measure { h.run("dock \(stubborn.rawValue) right") }
+    #expect(h.system.moveLog[log...].filter { $0.window == stubborn }.count > 1, "it refuses, or this says nothing: \(budget)")
+    for window in floating {
+      #expect(h.system.moveLog[log...].filter { $0.window == window }.count <= 1, "\(window): \(budget)")
+    }
+    #expect(budget.unclaimedMoves == 0, "\(budget)")
+    // And they are where a window system that ignores the hint has them.
+    let (plain, _, _) = desk(ignoring: true)
+    plain.run("dock \(stubborn.rawValue) right")
+    for window in floating { #expect(h.frame(window) == plain.frame(window), "\(window)") }
   }
 
   /// A long walk through everything a desk goes through, once with a window system that takes the hint and once with

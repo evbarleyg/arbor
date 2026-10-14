@@ -28,6 +28,11 @@ public struct Budget: Equatable, Sendable, CustomStringConvertible {
   /// Moves, counted among `moves`, that asked a window for a size where it stood before it went anywhere: nobody knew
   /// whether it would take it (Controller+AskFirst.swift). Each size is asked once, so what is done a second time has none.
   public var questions = 0
+  /// Times the window server was asked to list every window there is (`stackedWindows`, `windowsFrontToBack`,
+  /// `existingWindowIDs`). Milliseconds each, and more the more windows are open, Arbor's or not.
+  public var windowLists = 0
+  /// Everything else that was asked of the window system and moves nothing, by name.
+  public var asked: [String: Int] = [:]
 
   public init(
     moves: Int = 0, idleMoves: Int = 0, repeatMoves: Int = 0, movesAlone: Int = 0, unclaimedMoves: Int = 0,
@@ -53,7 +58,8 @@ public struct Budget: Equatable, Sendable, CustomStringConvertible {
 
   public var description: String {
     "moves \(moves) (questions \(questions), idle \(idleMoves), repeat \(repeatMoves), alone \(movesAlone), unclaimed \(unclaimedMoves)), focus \(focuses) (idle \(idleFocuses)), "
-      + "focus reads \(focusReads), overlays \(overlayUpdates) (idle \(idleOverlayUpdates)), saves \(saves)"
+      + "focus reads \(focusReads), window lists \(windowLists), overlays \(overlayUpdates) (idle \(idleOverlayUpdates)), "
+      + "saves \(saves)"
   }
 }
 
@@ -66,12 +72,14 @@ extension Harness {
     let reads = system.focusedWindowReads
     let updates = overlays.updateLog.count
     let saves = store.saveCount
+    let asked = system.asked
+    let unclaimed = system.answersNobodyClaimed
     body()
     // Scheduled work can schedule more; a put-back waiting for the mouse button would do so forever.
     for _ in 0..<4 where !scheduler.pendingKeys.isEmpty { scheduler.runPending() }
 
     var budget = Budget.tally(system.moveLog[moves...])
-    budget.unclaimedMoves = system.answersAhead.count
+    budget.unclaimedMoves = system.answersNobodyClaimed - unclaimed + system.answersAhead.count
     for focus in system.focusLog[focuses...] {
       budget.focuses += 1
       if focus.wasFocused { budget.idleFocuses += 1 }
@@ -82,6 +90,11 @@ extension Harness {
       if !update.changed { budget.idleOverlayUpdates += 1 }
     }
     budget.saves = store.saveCount - saves
+    for (name, count) in system.asked where count > asked[name, default: 0] {
+      budget.asked[name] = count - asked[name, default: 0]
+    }
+    budget.windowLists = ["stackedWindows", "windowsFrontToBack", "existingWindowIDs"]
+      .map { budget.asked[$0, default: 0] }.reduce(0, +)
     return budget
   }
 }

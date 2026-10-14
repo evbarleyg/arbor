@@ -35,6 +35,21 @@ import Testing
     }
   }
 
+  /// `stackedWindows`, `windowsFrontToBack` and `existingWindowIDs` each have the window server list every window on the
+  /// Mac, Arbor's or not: milliseconds, on the main thread. The stage needs one list for a motion. Nothing needs two.
+  @Test(arguments: sizes) func aCommandHasTheWindowServerListItsWindowsOnceAtMost(windows: Int) {
+    // An app that quits is a layout, and a motion, per window that closes. A start asks what still exists, twice, and ends with
+    // the focused window in view: on a big desk that window is inside a tile, so the view goes to it, which is a motion.
+    let more = ["quit app": 2, "restart": 3]
+    for benchmark in BenchmarkCase.all {
+      let budget = benchmark.run(windows: windows).budget
+      #expect(budget.windowLists <= more[benchmark.name, default: 1], "\(benchmark.name) with \(windows) windows: \(budget)")
+    }
+    for name in ["seam step", "grid: seam step", "focus in view", "put back", "relayout", "echoes", "zoom again"] {
+      #expect(BenchmarkCase.named(name).run(windows: windows).budget.windowLists == 0, "\(name)")
+    }
+  }
+
   @Test(arguments: sizes) func commandsThatChangeNothingMoveAndSaveNothing(windows: Int) {
     for name in ["zoom again", "show-all again", "relayout", "displays: no change"] {
       let budget = BenchmarkCase.named(name).run(windows: windows).budget

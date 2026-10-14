@@ -299,7 +299,7 @@ and nothing else is worth optimising.
 - Before a layout moves anything it tells the window system which `setFrame` calls are about to follow
   (`WindowSystem.moveTogether`, `Controller+Together.swift`). A window system that can moves those windows at once, the apps side
   by side, waits only so long for all of them together, and answers the calls from what came of it. `apply` stays one
-  window at a time. Only docked windows are foretold, and not when they are put back. The hint changes what the calls cost, never
+  window at a time. Docked windows are foretold before the first `apply`, floating ones by `placeFloatingWindows` from the plan it is about to walk (they are placed last, and the layout may have been reckoned again by then), neither when windows are put back. The hint changes what the calls cost, never
   what they return: `MoveTogetherTests` walks two desks through everything, one taking the hint and one ignoring it, and compares them after every step.
   **Whoever gives `apply` or `park` a new reason to leave a docked window alone gives it to `movesInSight` as well**; the tests fail otherwise.
 

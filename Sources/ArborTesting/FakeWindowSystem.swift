@@ -210,6 +210,9 @@ public final class FakeWindowSystem: WindowSystem {
   public private(set) var moveLog: [Move] = []
   public private(set) var focusLog: [Focus] = []
   public private(set) var focusedWindowReads = 0
+  /// How often each of the other questions was asked, by name. `stackedWindows`, `windowsFrontToBack` and
+  /// `existingWindowIDs` each have the window server list every window there is, which takes milliseconds.
+  public internal(set) var asked: [String: Int] = [:]
   /// Lets simulated time pass while a drag rests at a point. `Harness` points it at its scheduler.
   public var passTime: ((Double) -> Void)?
   /// The window being dragged by its title bar, from `beginDrag` to `endDrag`: where it was and
@@ -219,6 +222,9 @@ public final class FakeWindowSystem: WindowSystem {
   public var ignoresMoveTogether = false
   /// What came of the moves announced with `moveTogether`, until `setFrame` asks for it.
   public private(set) var answersAhead: [WindowID: (requested: CGRect, answer: CGRect?)] = [:]
+  /// How many of them were still there when the next forecast came. A layout makes two, so looking at what is left of the last
+  /// would miss what was left of the first.
+  public private(set) var answersNobodyClaimed = 0
 
   /// A 1440×900 display with a 25-point menu bar.
   public static let standardDisplay = DisplaySnapshot(
@@ -249,11 +255,15 @@ public final class FakeWindowSystem: WindowSystem {
   }
 
   public func allWindows() -> [WindowSnapshot] {
+    asked["allWindows", default: 0] += 1
     guard !isDenied else { return [] }
     return windows.values.map(\.snapshot).sorted { $0.id < $1.id }
   }
 
-  public func displays() -> [DisplaySnapshot] { displayList }
+  public func displays() -> [DisplaySnapshot] {
+    asked["displays", default: 0] += 1
+    return displayList
+  }
 
   public func setFrame(_ frame: CGRect, of window: WindowID) -> CGRect? {
     if let ahead = answersAhead.removeValue(forKey: window), ahead.requested == frame { return ahead.answer }
@@ -265,6 +275,7 @@ public final class FakeWindowSystem: WindowSystem {
     // Like the Accessibility layer: what nobody asked for is reported, so that nobody believes an old frame.
     let unclaimed = answersAhead.keys.sorted()
     answersAhead.removeAll()
+    answersNobodyClaimed += unclaimed.count
     for window in unclaimed {
       if let snapshot = windows[window]?.snapshot { events?.windowChanged(snapshot, userInitiated: false) }
     }
@@ -399,9 +410,18 @@ public final class FakeWindowSystem: WindowSystem {
     return isDenied ? nil : focused
   }
 
-  public func cursorLocation() -> CGPoint { cursor }
-  public func isMouseButtonDown() -> Bool { mouseDown }
-  public func secondsSinceClickOrModifierKey() -> Double { secondsSinceInput }
+  public func cursorLocation() -> CGPoint {
+    asked["cursorLocation", default: 0] += 1
+    return cursor
+  }
+  public func isMouseButtonDown() -> Bool {
+    asked["isMouseButtonDown", default: 0] += 1
+    return mouseDown
+  }
+  public func secondsSinceClickOrModifierKey() -> Double {
+    asked["secondsSinceClickOrModifierKey", default: 0] += 1
+    return secondsSinceInput
+  }
   public func leaveStrayDialogs(_ leave: Bool, exceptOfApp inUse: String?) {
     leavesStrayDialogs = leave
     appWhoseDialogsNeverWait = leave ? inUse : nil
@@ -416,12 +436,22 @@ public final class FakeWindowSystem: WindowSystem {
     return true
   }
   public func bringInStrayDialogs(ofApp bundleID: String?) { strayDialogs.removeAll { $0 == bundleID } }
-  public func strayDialogsWaiting() -> Int { strayDialogs.count }
-  public func modifierKeysDown() -> KeyChord.Modifiers { heldModifiers }
-  public func macTiling() -> MacTiling { tiling }
+  public func strayDialogsWaiting() -> Int {
+    asked["strayDialogsWaiting", default: 0] += 1
+    return strayDialogs.count
+  }
+  public func modifierKeysDown() -> KeyChord.Modifiers {
+    asked["modifierKeysDown", default: 0] += 1
+    return heldModifiers
+  }
+  public func macTiling() -> MacTiling {
+    asked["macTiling", default: 0] += 1
+    return tiling
+  }
 
   public func inputActivity() -> InputActivity {
-    InputActivity(
+    asked["inputActivity", default: 0] += 1
+    return InputActivity(
       pointerIdle: clock() - pointerUsedAt, keyboardIdle: clock() - keyReleasedAt, keyPresses: keyPresses)
   }
 
@@ -643,7 +673,10 @@ public final class FakeWindowSystem: WindowSystem {
     return nextID
   }
 
-  public func existingWindowIDs() -> Set<WindowID> { Set(windows.keys).union(unlisted.keys) }
+  public func existingWindowIDs() -> Set<WindowID> {
+    asked["existingWindowIDs", default: 0] += 1
+    return Set(windows.keys).union(unlisted.keys)
+  }
 
   /// Takes a window off the list before Arbor starts (its Space is not showing), or puts it back
   /// (the user switched to its Space), which announces it as a window that was open all along.
@@ -1126,8 +1159,9 @@ extension FakeWindowSystem {
 
 extension FakeWindowSystem {
   public func stackedWindows() -> [StackedWindow] {
-    strangers
-      + windowsFrontToBack().compactMap { id in
+    asked["stackedWindows", default: 0] += 1
+    return strangers
+      + frontToBack().compactMap { id in
         guard let snapshot = windows[id]?.snapshot, snapshot.isPresent else { return nil }
         return StackedWindow(id: id, frame: sweptAside?[id] ?? snapshot.frame)
       }

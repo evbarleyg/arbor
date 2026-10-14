@@ -6,9 +6,11 @@ import CoreGraphics
 ///
 /// `apply` stays as it is: one window at a time, each answer looked at before the next question. This only foretells
 /// its questions. A move foretold and never asked for would leave a window where nobody meant it to be, so only what is
-/// certain is foretold: docked windows going into their slots and out of view, which is most of what a camera move
-/// moves. Floating windows have many reasons to stay where they are, and putting windows back has reasons of its own,
-/// so neither is foretold. A move that is not foretold costs a wait of its own and nothing else.
+/// certain is foretold, and only just before it is asked for: docked windows going into their slots and out of view, before the
+/// first `apply` of that very layout; floating windows by `placeFloatingWindows` itself, from the plan it is about to walk.
+/// So a layout moves its windows in two breaths. One would not do: floating windows are placed last, after the rounds in which
+/// a window that refuses its slot has the layout reckoned again, and the Desktop may be elsewhere by then. Putting windows
+/// back has reasons of its own and is not foretold. A move that is not foretold costs a wait of its own and nothing else.
 ///
 /// `BudgetTests` and `MoveTogetherTests` fail on a move that goes unclaimed. Whoever gives `apply` or `park` a new reason to
 /// leave a docked window alone gives it here as well.
@@ -34,6 +36,31 @@ extension Controller {
       // The frame `park` asks for.
       guard let size = windows[window]?.frame.size else { continue }
       moves.append((window, CGRect(origin: parkingOrigin(for: size, of: window, on: display), size: size)))
+    }
+    // One window needs no company.
+    return moves.count > 1 ? moves : []
+  }
+
+  /// What `placeFloatingWindows` is about to ask for, walking `plan`.
+  func movesInSight(
+    in plan: [(window: WindowID, move: FloatingMove)], on display: DisplaySnapshot, reason: RelayoutReason
+  ) -> [(window: WindowID, frame: CGRect)] {
+    guard reason != .enforce else { return [] }
+    var moves: [(window: WindowID, frame: CGRect)] = []
+    for (window, move) in plan {
+      guard let current = windows[window] else { continue }
+      switch move {
+      case .place(let target, _):
+        if !isInPlace(current, at: target) { moves.append((window, target)) }
+      case .park:
+        // As for docked windows: with `shrinkOutOfView` it is parked at another size.
+        if !settings.shrinkOutOfView {
+          moves.append((window, CGRect(origin: parkingOrigin(for: current.frame.size, of: window, on: display), size: current.frame.size)))
+        }
+      case .fill:
+        // Asked for in steps, each depending on the answer to the one before.
+        break
+      }
     }
     // One window needs no company.
     return moves.count > 1 ? moves : []

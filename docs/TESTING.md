@@ -185,7 +185,8 @@ arrive first.
 `pull <id> <edge> <points>` drags a window's edge with the mouse (positive
 grows the window; give two edges for a corner): `pull 101 right 100 down 80`.
 
-`arbor-sim bench [sizes…]` prints those budgets and the time each command takes, then times for the pure parts
+`arbor-sim bench [sizes…]` prints those budgets and the time each command takes, then what else each command asks of the window
+system (`Budget.asked`; the first three columns have the window server list every window on the Mac), then times for the pure parts
 (layout, navigation, drop targets, encoding the state) on nested trees of 10, 50 and 150 windows. Build it with
 `swift build -c release --product arbor-sim` for times worth quoting.
 `press <command>` runs a command as its shortcut would (`press dock left`), so that Arbor answers on screen as well; whatever it

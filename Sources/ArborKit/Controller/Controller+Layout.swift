@@ -369,7 +369,10 @@ extension Controller {
     letGoOfWindowsNoLongerInHand(on: displayID)
     // Paid with this layout, or owed again because the app has stopped answering again (`unplaced`).
     defer { owedMoves = owedMoves.filter { !workspace.contains($0) } }
-    for (window, move) in floatingMoves(on: displayID, layout: layout, reason: reason) {
+    let plan = floatingMoves(on: displayID, layout: layout, reason: reason)
+    // From the very plan that is walked below, so that nothing is foretold that is not asked for (Controller+Together.swift).
+    system.moveTogether(movesInSight(in: plan, on: display, reason: reason))
+    for (window, move) in plan {
       if case .fill(let desktop) = move {
         fill(desktop, with: window, on: display)
         continue
