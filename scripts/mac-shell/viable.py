@@ -130,6 +130,13 @@ def why_not(run, gate, commit):
         return f"there is no cast {manifest.get('cast')}"
     if manifest.get("tiling") == "defaults" and manifest.get("tiling_seen_to_act") is not True:
         return "macOS's own tiling was not seen to act before Arbor started"
+    if not isinstance(manifest.get("reduce_motion"), bool):
+        return "it does not say whether macOS's Reduce Motion was on"
+    # Without Arbor there is no stage either way.
+    if manifest["kind"] != "control" and manifest.get("stage_seen") is not (not manifest["reduce_motion"]):
+        return ("Reduce Motion was on, and Arbor's stage was seen all the same" if manifest["reduce_motion"] and manifest.get("stage_seen") is True
+                else "Reduce Motion was off, and Arbor's stage was never seen" if manifest.get("stage_seen") is False
+                else "it does not say whether Arbor's stage was seen")
     if len(set(manifest.get("apps") or [])) < gate["apps_per_run_min"]:
         return f"fewer than {gate['apps_per_run_min']} apps opened a window"
     if not acts:
@@ -148,7 +155,7 @@ def why_not(run, gate, commit):
 
 def journey(manifest):
     """What has to be the same for two runs to have played the same acts."""
-    return tuple(manifest.get(key) for key in ("script", "seed", "tiling", "display", "cast"))
+    return tuple(manifest.get(key) for key in ("script", "seed", "tiling", "display", "cast", "reduce_motion"))
 
 
 def judge(ledger, gate, listed=None):
@@ -174,6 +181,7 @@ def judge(ledger, gate, listed=None):
     kinds = dict.fromkeys(gate["acts_min"], 0)
     apps, provoked = set(), set()
     total = from_walks = sabotage = fails = odd = fell_out = 0
+    bare, without_stage = dict.fromkeys(gate["tiling"], 0), 0
 
     if ledger.get("gate") != gate["gate"]:
         reasons.append(f"the ledger is of gate {ledger.get('gate')}, the page describes gate {gate['gate']}")
@@ -250,6 +258,10 @@ def judge(ledger, gate, listed=None):
         apps.update(manifest["apps"])
         if kind == "walk":
             from_walks += len(judged)
+        # With macOS's Reduce Motion on there is no stage, and whatever a window does on its way is seen.
+        if manifest["reduce_motion"]:
+            without_stage += len(judged)
+            bare[manifest["tiling"]] += sum(1 for act in judged if act.get("act") in gate["reduce_motion"]["kinds_that_move"])
         for act in judged:
             if act.get("act") in kinds:
                 kinds[act["act"]] += 1
@@ -301,6 +313,13 @@ def judge(ledger, gate, listed=None):
     table.append(f"  real apps: {len(apps)}")
     if len(apps) < gate["real_apps_min"]:
         reasons.append(f"{len(apps)} different apps took part; {gate['real_apps_min']} are asked for")
+    for tiling, acts in bare.items():
+        least = gate["reduce_motion"]["acts_that_move_per_tiling_min"]
+        table.append(f"  Reduce Motion on, {tiling:9}{acts:5} acts that move windows, of {least}")
+        if acts < least:
+            reasons.append(f"{acts} acts that move windows were played with Reduce Motion on at {tiling}; {least} are asked for")
+    if total and without_stage / total > gate["reduce_motion"]["share_of_acts_max"]:
+        reasons.append(f"{without_stage / total:.0%} of the acts were played with Reduce Motion on; at most {gate['reduce_motion']['share_of_acts_max']:.0%} may be: a Mac comes with it off")
     if total and from_walks / total < gate["share_of_acts_from_walks_min"]:
         reasons.append(f"{from_walks / total:.0%} of the acts came from walks; {gate['share_of_acts_from_walks_min']:.0%} are asked for")
     for kind, least in gate["acts_min"].items():
@@ -491,12 +510,17 @@ def perfect(gate):
         return {
             "gate": gate["gate"], "commit": commit, "run": str(1000 + number), "attempt": 1, "script": f"{kind}.sh", "kind": kind, "seed": None,
             "tiling": cell[0], "tiling_seen_to_act": True, "display": cell[1], "cast": cast, "apps": apps, "settings": "shipped",
-            "seconds": gate["run_seconds_max"],
+            "seconds": gate["run_seconds_max"], "reduce_motion": False, "stage_seen": kind != "control",
         }
 
+    still = dict.fromkeys(gate["tiling"], gate["reduce_motion"]["acts_that_move_per_tiling_min"])
     for number, (cell, cast) in enumerate(plan):
         acts = [{"id": f"{kind}#{index}", "act": kind, "judged": True} for index, kind in enumerate(wanted[number * per_run:(number + 1) * per_run])]
         runs.append({"manifest": manifest(number, "walk" if number < walks else "day", cell, cast), "sampler": dict(sampler), "acts": acts, "findings": []})
+        moving = sum(1 for act in acts if act["act"] in gate["reduce_motion"]["kinds_that_move"])
+        if still[cell[0]] > 0 and moving:
+            still[cell[0]] -= moving
+            runs[-1]["manifest"].update(reduce_motion=True, stage_seen=False)
     for again in range(gate["controls"]["without_arbor_per_cell_min"]):
         for number, cell in enumerate(cells):
             runs.append({
@@ -579,7 +603,7 @@ def self_test():
         run = every(ledger, "day")[0]
         finding = {"detector": "jolt", "level": "FAIL", "id": run["acts"][0]["id"], "what": "an app moves its own window twice"}
         run["findings"].append(finding)
-        control = twin(ledger, "control", run="8000", **{key: run["manifest"][key] for key in ("script", "seed", "tiling", "display", "cast")})
+        control = twin(ledger, "control", run="8000", **{key: run["manifest"][key] for key in ("script", "seed", "tiling", "display", "cast", "reduce_motion")})
         control["findings"] = [dict(finding, id=finding["id"] if same_act else "elsewhere#1")]
 
     expect("what the run without Arbor shows too", the_mac_does_it_alone, "VIABLE", "", listed={**everything, "8000": 1})
@@ -591,6 +615,29 @@ def self_test():
     expect("every journey learnt by heart", lambda l: amend(l, ["walk"], kind="day"), "NOT VIABLE", "came from walks")
     expect("a cast played at one setting of tiling only", lambda l: [run["manifest"].update(cast=gate["cast"][1 if run["manifest"]["tiling"] == gate["tiling"][0] else 0])
                                                                     for run in every(l, *COUNTED) if run["manifest"]["cast"] in gate["cast"][:2]], "NOT VIABLE", "was never played at")
+    def still_runs(ledger):
+        return [run for run in every(ledger, *COUNTED) if run["manifest"]["reduce_motion"]]
+
+    expect("nobody played with Reduce Motion on", lambda l: amend(l, COUNTED, reduce_motion=False, stage_seen=True), "NOT VIABLE", "with Reduce Motion on at")
+    expect("Reduce Motion on at one setting of tiling only", lambda l: [run["manifest"].update(reduce_motion=False, stage_seen=True) for run in still_runs(l) if run["manifest"]["tiling"] == gate["tiling"][0]],
+           "NOT VIABLE", f"with Reduce Motion on at {gate['tiling'][0]}")
+    expect("Reduce Motion on, and nothing but idling", lambda l: [act.update(act="idle") for run in still_runs(l) for act in run["acts"]], "NOT VIABLE", "0 acts that move windows were played with Reduce Motion on")
+    expect("Reduce Motion on all the way", lambda l: amend(l, COUNTED, reduce_motion=True, stage_seen=False), "NOT VIABLE", "a Mac comes with it off")
+    expect("one run that does not say whether Reduce Motion was on", lambda l: every(l, "day")[-1]["manifest"].pop("reduce_motion"), "VIABLE", "does not say whether macOS's Reduce Motion was on")
+    for nonsense in ("on", 1, None):
+        expect(f"Reduce Motion is {nonsense!r}", lambda l, nonsense=nonsense: [run["manifest"].update(reduce_motion=nonsense) for run in still_runs(l)], "NOT VIABLE", "with Reduce Motion on at")
+    expect("Reduce Motion written and not obeyed", lambda l: [run["manifest"].update(stage_seen=True) for run in still_runs(l)], "NOT VIABLE", "Arbor's stage was seen all the same")
+    expect("Reduce Motion off, and never a stage", lambda l: every(l, "day")[-1]["manifest"].update(stage_seen=False), "VIABLE", "Arbor's stage was never seen")
+    expect("nobody looked for the stage", lambda l: every(l, "day")[-1]["manifest"].pop("stage_seen"), "VIABLE", "does not say whether Arbor's stage was seen")
+
+    def a_control_with_the_stage(ledger):
+        run = still_runs(ledger)[0]
+        finding = {"detector": "jolt", "level": "FAIL", "id": run["acts"][0]["id"], "what": "seen bare"}
+        run["findings"].append(finding)
+        control = twin(ledger, "control", run="8000", **{key: run["manifest"][key] for key in ("script", "seed", "tiling", "display", "cast")})
+        control["findings"] = [dict(finding)]
+
+    expect("a control played with Reduce Motion off excuses nothing seen with it on", a_control_with_the_stage, "NOT VIABLE", "jolt in run", listed={**everything, "8000": 1})
     expect("too few apps", lambda l: amend(l, KINDS, apps=good["runs"][0]["manifest"]["apps"][:gate["apps_per_run_min"]]), "NOT VIABLE", "different apps")
     expect("acts that were not judged", lambda l: [act.update(judged=False) for run in every(l, *COUNTED) for act in run["acts"][:len(run["acts"]) // 20]], "NOT VIABLE", "are asked for")
 
@@ -672,9 +719,20 @@ def self_test():
     expect("the page allows one oddity", lambda l: find(l, "walk", detector="focus", level="ODD"), "VIABLE", "", page=with_number(["odd_unexplained_max"], 1))
     expect("the page allows one failure", lambda l: find(l, "day", detector="jolt", level="FAIL"), "VIABLE", "", page=with_number(["fail_max"], 1))
     expect("the page asks for more apps a run", nothing, "INVALID", "too many fell out", page=with_number(["apps_per_run_min"], len(good["runs"][0]["manifest"]["apps"]) + 1))
+    expect("the page asks for more acts with Reduce Motion on", nothing, "NOT VIABLE", "with Reduce Motion on at",
+           page=with_number(["reduce_motion", "acts_that_move_per_tiling_min"], 100000))
+    def moving(ledger):
+        return [act for run in still_runs(ledger) if run["manifest"]["tiling"] == gate["tiling"][0] for act in run["acts"]
+                if act["act"] in gate["reduce_motion"]["kinds_that_move"]]
+
+    exactly = with_number(["reduce_motion", "acts_that_move_per_tiling_min"], len(moving(good)))
+    expect("the page asks for exactly the acts there are with Reduce Motion on", nothing, "VIABLE", "", page=exactly)
+    expect("… and one of them was not judged", lambda l: moving(l)[0].update(judged=False), "NOT VIABLE", f"{len(moving(good)) - 1} acts that move windows", page=exactly)
+    expect("the page allows fewer acts with Reduce Motion on", nothing, "NOT VIABLE", "a Mac comes with it off", page=with_number(["reduce_motion", "share_of_acts_max"], 0.001))
     expect("the page knows one detector more", nothing, "INVALID", "never shown to catch anything: dizzy", page=with_number(["detectors"], [*gate["detectors"], "dizzy"]))
     for path, value in [(["share_of_acts_from_walks_min"], 0.6), (["controls", "sabotage_runs_min"], 2), (["controls", "without_arbor_per_cell_min"], 2),
-                        (["acts_min", "switch"], 6000), (["real_apps_min"], 5), (["user_hours"], 50), (["user_hours_per_cast_min"], 11)]:
+                        (["acts_min", "switch"], 6000), (["real_apps_min"], 5), (["user_hours"], 50), (["user_hours_per_cast_min"], 11),
+                        (["reduce_motion", "acts_that_move_per_tiling_min"], 200)]:
         page = with_number(path, value)
         other = perfect(page)
         verdict, reasons, _ = judge(other, page, {run["manifest"]["run"]: 1 for run in other["runs"]})
