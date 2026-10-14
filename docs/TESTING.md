@@ -773,6 +773,7 @@ moved that they did not move. `scripts/mac-shell/day.sh` plays such a day on one
 make day                # scripts/mac-shell/run.sh scripts/mac-shell/day.sh: what GitHub has of the current branch, ten minutes
 make day CONTROL=1      # the same day without Arbor: what is found then is macOS's doing or an app's
 make day OFF=1          # the same day with macOS's own window management switched off
+make day STILL=1        # the same day with Reduce Motion on: no stage, so every move of every window shows
 make day SABOTAGE=1     # the script commits the offences itself: does every detector report its own? Three minutes, Arbor is not even built
 ```
 
@@ -780,7 +781,7 @@ Finder, Safari, TextEdit, Terminal, Notes, Calendar, System Settings, Preview an
 macOS's own tiling and "click wallpaper to reveal desktop" stay as they come, which is on (and are seen to act before anything counts), and Reduce
 Motion, which the runners come with, is switched off, as it is on a person's Mac. Then the day: windows are docked by key and by real drags, apps are switched
 with ⌘Tab, the Dock and the Window menu, ⌘H, ⌘M, ⌘W, ⌘N, ⌘Q, full screen, the view goes in and out, gaps are dragged, a click lands on the wallpaper, pause, Float All,
-Quit, a second launch. `run.sh` hands a script no arguments and no environment, so each way of playing the day is a script of three lines that sets a variable (`day-control.sh`, `day-off.sh`;
+Quit, a second launch. `run.sh` hands a script no arguments and no environment, so each way of playing the day is a script of three lines that sets a variable (`day-control.sh`, `day-off.sh`, `day-still.sh`;
 `DAY_DISPLAY=desk` for 1920×1080 has none yet).
 
 **The Mac only plays and records; the judging needs no Mac.** Everything below reads `samples.log`, so a day that was played once can be judged again, by a
@@ -795,7 +796,7 @@ readers skip the kinds they do not know.
 **A step is one thing a person does**, says what kind of thing it is, and what it may do (`lib-day.sh`):
 
 ```bash
-act dock-key dock-left "presses ⌃⌥⌘←";  key ctrl+opt+cmd+left;  acted moves=docked yields=floating front="$W_safari"
+act dock-key dock-left "presses ⌃⌥⌘←";  key ctrl+opt+cmd+left;  acted moves=docked front="$W_safari"
 ```
 
 `acted` waits until nothing has moved and no key or button was pressed for a second, compares what Arbor believes with the screen (`compat.py audit`), and takes a picture. What the person does goes
@@ -807,24 +808,24 @@ While Arbor runs, each chapter is also a trace of its own (section 6), with ever
 | Rule | Detector | What sets it off |
 |---|---|---|
 | 1: never fight macOS | `fought` | during a drag macOS's tiling preview (a window of WindowManager's) and Arbor's drop preview are up together; or macOS's was up at the drop and Arbor docked the window, or it was moved again after macOS had tiled it |
-| 2: nothing moves that the person did not move | `moved-unasked` | a window moved that `moves=`, `drags=`, `leaves=` and `comes=` do not name (a floating one named by `yields=` may, if it lay where a named one ends up); after a way there and back (`returns=<step>`) a window is not where it was |
+| 2: nothing moves that the person did not move | `moved-unasked` | a window moved that `moves=`, `drags=`, `leaves=` and `comes=` do not name. A floating window's frame is its person's: no dock, no ⌘M and no ⌘H of another window is a reason to move or size it; after a way there and back (`returns=<step>`) a window is not where it was |
 | 3: a window moves once, to where it ends up | `jolt` | its changes fall into two or more moves, a quarter of a second or more apart; it travelled more than six points beyond the straight road in x, y, width or height; it opened in one place and was moved to another |
 | | `pulled` | while the button is down the dragged window moves, from one sample to the next, over 40 points further than the pointer did meanwhile |
 | | `stuck` | after the drop it ends neither where it was let go, nor where Arbor's preview was, nor under the pointer by its title bar (its own size given back), nor where it was taken from (a drag called off) |
 | | `flash` | out of view before and after, and more than its parking strip showed in between; or it left the screen and came back |
-| | `slow` | after one of Arbor's own acts the last window came to rest more than 1,500 ms after the key or the button (odd from 700) |
+| | `slow` | after one of Arbor's own acts the last window came to rest more than 1,500 ms after the key or the button (odd from 700); after its first act since it started, 3,000 (odd from 1,500) |
 | 4: the window you switch to comes to the front and into view | `behind` | at the end `front=<window>` is not the first of the pile |
 | | `focus` | its app is not the one in front, or part of it is beyond the space between the menu bar and the Dock; or the app in front changes during an act that is no switch |
 | 5: Quit, Float All and pause give sizes back | `size-lost` | `restores=`: a window's size differs from its own, which is the one it had when Arbor started or when it opened, or that the person gave it since (`own=`; `place=` after a mere move). With `places=1`, as after Float All and Quit, its place too |
 | what only the script can see | `crash`, `busy`, `left-behind`, `told` | Arbor's process ends unasked, or macOS writes a crash report of its; during `idle <seconds>` it uses over 1 % of a core or writes over 20 lines a minute; after Quit a process or a window of its is still there; the canary word that is in every document's name, and so in every title, turns up in anything the run brings back but the pictures |
-| L: no window is lost | `lost` | a window left the screen and the step did not say so (`leaves=`); `everything=1` and less than half of one is on the display; `comes=` and it is not there |
+| L: no window is lost | `lost` | a window left the screen and the step did not say so (`leaves=`); `everything=1` and less than half of one is on the display (after Show Everything a tile may stand in for it, `tiles=ok`, if a panel of Arbor's is seen where Arbor says the tile is; never for the window that has the keyboard); `comes=` and it is not there |
 
 What a real Mac taught it, each with a situation in `jolts.py --self-test`:
 
 - While the button is down a dragged window goes where the hand goes; what counts is what happens after the drop. macOS holds it back under the menu bar and where its edge meets another window's, and it does not catch up
   (49 points behind at the end of a drag of 130, with no Arbor running), so "how far from where the pointer carries it" says nothing; but it never runs ahead. macOS also gives a window it had tiled its size back under the hand.
 - What an act sets off shows a moment later, and a click of 40 ms can fall between two samples. So clicks and keys are counted, not watched for, and `acted` never takes the screen for quiet sooner than 350 ms after it asked.
-- Setting a size and then a place shows as two frames a few milliseconds apart, which is one move on a straight road. A sheet or a dialog follows its window at each of the two stages, so it does go out of its way: odd, not a failure.
+- Setting a size and then a place shows as two frames a few milliseconds apart, which is one move on a straight road. A sheet or a dialog follows its window at each of the two stages, so it does go out of its way: odd, not a failure, and explained by itself (`"explained": "follows its window"`).
 - macOS's own animations change frames: a window grows from some 95 % as it opens, a sheet slides, the road into and out of the Dock is a curve. None of that is a jolt.
 - Arbor's own panels are not windows, nor are WindowManager's. Arbor's focus ring is a window at the ordinary level right in front of the focused one.
 - Arbor moves the real windows under its stage, a panel over the whole display that shows a picture of the desktop and a stand-in for each window. Nobody sees them there. So all that a window does while the stage is up counts as one
