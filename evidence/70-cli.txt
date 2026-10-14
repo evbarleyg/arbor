@@ -1,0 +1,73 @@
+# 70-cli 2026-10-14T23:09Z on macOS 26.6.2, commit 2d3b4f4
+
+▸ arborctl says what Arbor did and exits with 0, or why not and exits with 1
+  ✔ a command that works exits with 0
+  ✔ and the window is docked
+  ✔ it says what it did
+  ✔ a window Arbor does not know exits with 1
+  ✔ it says why
+  ✔ an unknown command exits with 1
+  ✔ it says so
+  ✔ a command that cannot apply exits with 1
+  ✔ status says how many windows it arranges
+  ✔ help lists the commands
+  ✔ no arguments mean help
+
+▸ replies are in words, and a failure says what to do next
+  ✔ a camera move says where it went
+  ✔ no reply speaks of nodes
+  ✔ a view that is not saved says how to save it
+  ✔ a window Arbor does not know says where to look
+
+▸ arborctl state is JSON that agrees with the window server
+  ✔ it is one JSON object with ok, message and state
+  ✔ the first window is where the state says
+  ✔ the floating window too
+  ✔ --json gives the raw reply of any command
+  ✔ and of one that fails, still exiting with 0
+
+▸ arborctl ascii draws the layout
+  ✔ the drawing names the docked windows
+  ✔ and the Desktop
+  ✔ docked windows have boxes
+
+▸ open an arbor:// URL: the running Arbor does what it says
+  ✔ arbor://zoom/<window> ran
+  ✔ the window fills the screen
+  ✔ arbor://show-all ran
+  ✔ everything is in view
+  ✔ a URL with several words ran
+  ✔ the window docked below the other
+  ✔ arbor://desktop ran
+  ✔ the windows left
+  ✔ arbor://view/3 brought the saved view back
+  ✔ the window fills the screen again
+  ✔ arbor://zoom-out, TrellisWM's spelling, stepped out
+  ✔ the window below it is back
+  ✔ a URL that makes no sense is logged and ignored
+  ✔ a URL may not quit Arbor
+  ✔ Arbor is still running
+  ✔ macOS did not start a second Arbor for them
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+▸ a client that hangs up before Arbor replies does it no harm
+  ✔ Arbor is still running
+  ✔ and still answers
+  ✔ a line that is no command gets an answer too
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+▸ arborctl without Arbor says so and exits with 2
+  ✔ the exit code is 2
+  ✔ it says that Arbor is not running
+
+52 passed, 0 failed

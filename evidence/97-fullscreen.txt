@@ -1,0 +1,28 @@
+# 97-fullscreen 2026-10-14T23:13Z on macOS 26.6.2, commit 2d3b4f4
+
+▸ a floating window goes full screen: Arbor leaves it and everything else alone
+  ✔ the window covers the display
+  ✔ Arbor keeps running
+  ✔ it does not shrink the window back
+
+▸ it leaves full screen: the arrangement is as it was
+  ✔ the window is small again
+  ✔ the first docked window is where it was
+  ✔ the second too
+  ✔ both are docked
+  ✔ windows match Arbor's layout
+
+▸ a docked window goes full screen and comes back: it returns to its slot
+  ✔ the window covers the display
+  ✔ Arbor does not fight it
+  ✔ it is back in its slot
+  ✔ its neighbour is where it was
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+17 passed, 0 failed
