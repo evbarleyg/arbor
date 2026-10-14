@@ -38,6 +38,7 @@
 #   view frame|out|in|left|right|back|forward|all|desktop
 #   resize_gap <app> <points>    the gap to the right of its docked window, dragged that far     resize_key grow|shrink|balance
 #   full_screen on|off           ⌃⌘F in the app in front                wallpaper_click        a click on a bare spot, and a second one
+#   title_double_click <app>     a double-click on its title bar, which macOS answers by zooming the window, and a second one, which takes it back
 #   pause | resume | float_all
 #   display plug|unplug|left|right|smaller|larger     a second, virtual display: plugged in to the right at 1920×1080, unplugged, moved to that side of the main
 #                                                     one, unplugged and plugged in again at 1280×800 or 1920×1080. In the cell `two` alone
@@ -475,6 +476,24 @@ full_screen() {
       WALK_FULL_SCREEN="" ;;
     *) die "full_screen: on or off, not $1" ;;
   esac
+}
+
+title_double_click() {
+  local x y role window before=$DAY_STEP
+  can_be_dragged "$1" || { left_out "title_double_click $1: no free point of its title bar shows"; return; }
+  window=$(window_of "$1")
+  read -r x y role <<< "$(apptool grab "$window")"
+  walk_act macos-own "double-click-$1" "double-clicks $1's title bar: macOS zooms the window"
+  dblclick "$x" "$y"
+  move "$x" "$((y + 120))"
+  # macOS's frame stays, and nobody else moves.
+  acted zooms="$window" front="$window"
+  read -r x y role <<< "$(apptool grab "$window" 2>/dev/null)"
+  [ -n "${x:-}" ] || { changed; left_out "title_double_click $1: no free point of its title bar shows for the second one"; return; }
+  walk_act macos-own "double-click-$1-again" "double-clicks it again: macOS takes the window back"
+  dblclick "$x" "$y"
+  move "$x" "$((y + 120))"
+  acted zooms="$window" front="$window" returns="$before"
 }
 
 wallpaper_click() {
