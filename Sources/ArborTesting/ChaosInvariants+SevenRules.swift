@@ -31,8 +31,11 @@ extension ChaosRunner {
     var earlierOwnSizes: [WindowID: CGSize] = [:]
     /// The last thing somebody did was to plug, unplug or rearrange displays, which has rules of its own (`left-its-place`, `moved-for-nothing`).
     var displaysChangedLast = false
-    /// Where every window was and what was out of view before the last thing somebody did, kept through a pause in which nobody does anything.
-    var beforeThePause: (frames: [WindowID: CGRect], parked: Set<WindowID>)?
+    /// In the current step nobody does anything; and the last thing somebody did was a command that asks for everything.
+    var timeOnly = false
+    var askedForEverything = false
+    /// Where every window was before the last thing somebody did, kept through a pause in which nobody does anything.
+    var beforeThePause: [WindowID: CGRect]?
     /// Where everything was, at rest, before the last thing somebody did, and what that was.
     var there: (frames: [WindowID: CGRect], action: ChaosAction, views: [DisplayID: NodeID])?
     /// The last thing somebody did took the one before it back: where everything has to be again once it has come to rest.
@@ -80,19 +83,23 @@ extension ChaosRunner {
     seven.focusedBefore = system.focused
     seven.pausedBefore = isPaused
     seven.fullScreenBefore = Set(system.windows.values.lazy.filter(\.snapshot.isFullScreen).map(\.snapshot.id))
-    guard !isOnlyTimePassing(action) else { return }
+    // Asked now: `settle` lets go of the mouse, and afterwards nothing shows that somebody held it.
+    seven.timeOnly = isOnlyTimePassing(action)
+    guard !seven.timeOnly else { return }
+    // A key that comes up again belongs to its going down. (Show Everything is decided when it comes up: a tap, or the end of a look.)
+    if case .key(let line, .released) = action, (try? Command.parse(line)) != .showAll { return }
     seven.seenSinceSomebodyActed = [:]
     seven.concerned = windowsConcerned(by: action)
+    seven.askedForEverything = asksForEverything(action)
     seven.switchedTo = nil
     if case .displays = action { seven.displaysChangedLast = true } else { seven.displaysChangedLast = false }
-    // A key that comes up again belongs to its going down.
     if case .key(_, .released) = action { return }
     seven.backDue = seven.there.flatMap { takesBack(action, $0.action) ? ($0.frames, $0.action.text, "there-and-back-moved") : nil }
     let atRest = isRunning && !isWaitingForALayout() && system.dragging == nil && system.resizing == nil && !system.mouseDown
-    seven.there = atRest ? (system.windows.mapValues(\.snapshot.frame), action, controller.workspaces.mapValues(\.camera)) : nil
+    seven.there = atRest ? (framesBefore, action, controller.workspaces.mapValues(\.camera)) : nil
     if isRunning, !isWaitingForALayout(), system.dragging == nil, system.resizing == nil {
-      seven.beforeThePause = (system.windows.mapValues(\.snapshot.frame), controller.parked)
-    } else if !isPaused || (action.commandLine.flatMap { try? Command.parse($0) })?.endsPause != true {
+      seven.beforeThePause = framesBefore
+    } else if !isPaused || action.parsedCommand?.endsPause != true {
       // Something was done during the pause, or there is none.
       seven.beforeThePause = nil
     }
@@ -114,19 +121,19 @@ extension ChaosRunner {
     case .hide(let pid, _), .hang(let pid, _): return windows(of: pid)
     case .activate(let bundleID): return Set(system.windows.values.lazy.filter { $0.snapshot.bundleID == bundleID }.map(\.snapshot.id))
     case .openTab(let a, let b), .selectTab(let a, let b), .closeTab(let a, let b), .renumber(let a, let b): return [a, b]
-    case .command, .via, .key, .url: return windowsConcerned(byCommand: action.commandLine ?? "")
+    case .command, .via, .key, .url: return windowsConcerned(byCommand: action.parsedCommand)
     case .tile, .palette, .seam, .pinch, .displays, .settings, .wayBack, .crash, .launch, .sleep, .corrupt: return nil
     }
   }
 
   /// The windows a command names, and the one that has the keyboard, which it means when it names none.
-  private func windowsConcerned(byCommand line: String) -> Set<WindowID>? {
-    guard let command = try? Command.parse(line) else { return [] }
+  private func windowsConcerned(byCommand command: Command?) -> Set<WindowID>? {
+    guard let command else { return [] }
     if command.isQuery { return [] }
     switch command {
     case .dock, .dockBeside, .float, .toggleFloat, .resize, .pin, .unpin, .togglePin, .zoom, .reveal, .swap, .swapWindows, .grow, .shrink,
       .moveToDisplay, .frameRect:
-      let named = line.split(separator: " ").compactMap { UInt32($0) }.map { WindowID($0) }
+      let named = command.text.split(separator: " ").compactMap { UInt32($0) }.map { WindowID($0) }
       return Set(named + [system.focused].compactMap { $0 })
     case .saveView, .name, .unname, .askName, .showShortcuts, .minimap, .checkForUpdates, .welcome, .checkSetup, .hold, .holdStill, .trace,
       .launchAtLogin, .passThrough, .focusDisplay:
@@ -137,9 +144,13 @@ extension ChaosRunner {
 
   /// After the action, before the rules are asked: whose size is whose.
   func noteAfterTheSevenRules(_ action: ChaosAction, movesBefore: [WindowID: Int]) {
-    seven.ownSizes = seven.ownSizes.filter { system.windows[$0.key] != nil || system.backgroundTabs[$0.key] != nil }
     switch action {
-    case .renumber(let old, let new): if system.windows[new] != nil, seven.ownSizes[new] == nil { seven.ownSizes[new] = seven.ownSizes[old] }
+    case .renumber(let old, let new):
+      if system.windows[new] != nil, seven.ownSizes[new] == nil {
+        (seven.ownSizes[new], seven.earlierOwnSizes[new]) = (seven.ownSizes[old], seven.earlierOwnSizes[old])
+      }
+    // What Arbor learnt about sizes it learnt in a process that is gone.
+    case .launch, .crash: (seven.refusedLess, seven.refusedMore) = ([], [])
     // A native tab has the size of its group.
     case .openTab(let new, let front), .selectTab(let new, let front): if let size = seven.ownSizes[front] { seven.ownSizes[new] = size }
     case .closeTab(let front, let next): if let size = seven.ownSizes[front] { seven.ownSizes[next] = size }
@@ -154,6 +165,7 @@ extension ChaosRunner {
       seven.refusedMore.remove(window)
     default: break
     }
+    seven.ownSizes = seven.ownSizes.filter { system.windows[$0.key] != nil || system.backgroundTabs[$0.key] != nil }
     seven.earlierOwnSizes = seven.earlierOwnSizes.filter { system.windows[$0.key] != nil }
     for (id, fake) in system.windows {
       guard let known = seven.ownSizes[id] else {
@@ -174,7 +186,7 @@ extension ChaosRunner {
       }
     }
     // A size its user asked Arbor for is its own as well.
-    if action.isACommand, let line = action.commandLine, let command = try? Command.parse(line) {
+    if let command = action.parsedCommand {
       switch command {
       case .grow, .shrink, .resize, .frameRect:
         for window in Set(movesSeenInThisStep.map(\.window)) where controller.workspaces.values.contains(where: { $0.isFloating(window) }) {
@@ -217,7 +229,7 @@ extension ChaosRunner {
   func sevenRulesViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
     onceViolations(after: action, &problems)
     unaskedViolations(after: action, &problems)
-    pauseAndResumeViolations(after: action, &problems)
+    noteAPauseThatEnded()
     thereAndBackViolations(&problems)
     startViolations(after: action, &problems)
     switchedToViolations(&problems)
@@ -231,13 +243,15 @@ extension ChaosRunner {
       seven.seenSinceSomebodyActed = [:]
       return
     }
-    let timeOnly = isOnlyTimePassing(action)
+    let timeOnly = seven.timeOnly
     // A pause or a hold whose time was up: what follows is its own story, however long ago the last one was.
-    if timeOnly, seven.pausedBefore != isPaused || holdBefore != controller.holdLevel { seven.seenSinceSomebodyActed = [:] }
-    // So is anything after seconds in which nothing moved.
-    if case .advance(let seconds) = action, seconds >= 2 { seven.seenSinceSomebodyActed = [:] }
+    if timeOnly, seven.pausedBefore != isPaused || (isRunning && holdBefore != controller.holdLevel) { seven.seenSinceSomebodyActed = [:] }
     let seen = movesSeenInThisStep
-    guard !seen.isEmpty else { return }
+    guard !seen.isEmpty else {
+      // So is anything that comes after seconds in which nothing moved.
+      if case .advance(let seconds) = action, seconds >= 2 { seven.seenSinceSomebodyActed = [:] }
+      return
+    }
     for move in seen { seven.seenSinceSomebodyActed[move.window, default: []].append(move) }
     for window in Set(seen.map(\.window)).sorted() {
       guard isFairGame(window) != nil, presentBefore.contains(window), let moves = seven.seenSinceSomebodyActed[window] else { continue }
@@ -271,7 +285,7 @@ extension ChaosRunner {
 
   /// The ways home, and the commands that lay everything out afresh or take an arrangement back.
   private func asksForEverything(_ action: ChaosAction) -> Bool {
-    guard let line = action.commandLine, let command = try? Command.parse(line) else { return false }
+    guard let command = action.parsedCommand else { return false }
     switch command {
     case .relayout, .resume, .quit, .undo, .redo, .arrange, .arrangeAll, .layout: return true
     default: return command.bringsWindowsBack
@@ -293,7 +307,8 @@ extension ChaosRunner {
       let showedBefore = Self.area(of: before, showingOn: system.displayList)
       if untouched {
         // A command that names a window is somebody asking, and so is one that asks for everything.
-        if action.isACommand, named || asksForEverything(action) { continue }
+        // Timers finish what it began.
+        if action.isACommand || seven.timeOnly, named || seven.askedForEverything { continue }
         if seven.displaysChangedLast { continue }
         problems.append(
           .init(
@@ -342,8 +357,7 @@ extension ChaosRunner {
     case (.hide(let a, true), .hide(let b, false)): return a == b
     default:
       // A key goes down and comes up: the command runs once.
-      guard let first = there.commandLine.flatMap({ try? Command.parse($0) }), let second = back.commandLine.flatMap({ try? Command.parse($0) }),
-        second == .back, controller.holdLevel == nil
+      guard let first = there.parsedCommand, back.parsedCommand == .back, controller.holdLevel == nil
       else { return false }
       switch first {
       case .zoom, .stepIn, .stepOut, .neighbor, .home, .showAll, .desktop, .goToView:
@@ -383,9 +397,9 @@ extension ChaosRunner {
 
   /// A pause that ends with nothing done meanwhile cannot be seen afterwards (F40): everything is where it was before it. Asked, like every
   /// way there and back, once all has come to rest.
-  func pauseAndResumeViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
+  func noteAPauseThatEnded() {
     guard seven.pausedBefore, isRunning, let before = seven.beforeThePause else { return }
-    seven.backDue = (before.frames, "pause", "pause-and-resume-moved")
+    seven.backDue = (before, "pause", "pause-and-resume-moved")
   }
 
   // MARK: The window you switch to comes to the front and into view
@@ -501,23 +515,23 @@ extension ChaosRunner {
     [bounds.minX - frame.minX, bounds.minY - frame.minY, frame.maxX - bounds.maxX, frame.maxY - bounds.maxY].map { max($0, 0) }
   }
 
-  /// A way home taken as a plain command in the middle of a walk.
+  /// A way home taken as a plain command in the middle of a walk: typed, from the menu, by link, or with its key.
   func wayHomeViolations(after action: ChaosAction) -> [InvariantViolation] {
-    let line: String
-    switch action {
-    case .command(let text), .via(_, let text): line = text
-    default: return []
-    }
+    guard let command = action.parsedCommand else { return [] }
+    // A key acts when it goes down, but for Show Everything, which may become a look around.
+    if case .key(_, let phase) = action, phase != (command == .showAll ? .released : .pressed) { return [] }
+    let line = command.text
     // The echoes of the moves the command has just made are still to come, and change nothing.
-    guard let command = try? Command.parse(line), refusals.isEmpty, wasRunningBefore, holdBefore == nil, !isWaitingForALayout(orReports: false),
+    guard refusals.isEmpty, wasRunningBefore, holdBefore == nil, !isWaitingForALayout(orReports: false), !controller.aPeekIsUnderWay,
       system.dragging == nil, system.resizing == nil, inHandBefore == nil
     else { return [] }
-    // The displays whose view is on everything now.
-    let atHome = Set(controller.workspaces.filter { $0.value.camera == $0.value.tree.root }.keys)
+    let atHome = displaysAtHome
     switch command {
     case .quit: return isRunning ? [] : wayHomeViolations(line, on: nil, givesSizesBack: true)
     case .pause, .togglePause: return isPaused ? wayHomeViolations(line, on: nil, givesSizesBack: true) : []
-    case .floatAll: return wayHomeViolations(line, on: nil, givesSizesBack: true)
+    // A key says nothing of whether it was obeyed.
+    case .floatAll:
+      return controller.workspaces.values.allSatisfy(\.tree.allWindows.isEmpty) ? wayHomeViolations(line, on: nil, givesSizesBack: true) : []
     case .floatAllHere:
       let emptied = Set(controller.workspaces.filter { $0.value.tree.allWindows.isEmpty && workspacesBefore[$0.key]?.tree.allWindows.isEmpty == false }.keys)
       return wayHomeViolations(line, on: emptied, givesSizesBack: true)
@@ -530,11 +544,11 @@ extension ChaosRunner {
 }
 
 extension ChaosAction {
-  /// The words of the command, if it is one.
-  var commandLine: String? {
+  /// The command, if it is one that Arbor can read.
+  var parsedCommand: Command? {
     switch self {
-    case .command(let text), .via(_, let text), .key(let text, _): text
-    case .url(let url): url.replacingOccurrences(of: "arbor://", with: "").replacingOccurrences(of: "/", with: " ")
+    case .command(let text), .via(_, let text), .key(let text, _): try? Command.parse(text)
+    case .url(let url): try? Command.parse(url: url)
     default: nil
     }
   }

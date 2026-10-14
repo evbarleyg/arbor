@@ -48,7 +48,10 @@ extension ChaosRunner {
       for index in inside.indices where inside[index].rule == "stale-layout" { inside[index].rule = "stale-layout-after-drop" }
     }
     guard isRunning else {
-      return inside + (harness.overlays.finder == nil ? [] : [.init("palette", "Go to… is open and Arbor is paused or not running")])
+      // Quitting and pausing move more windows at once than anything else, each of them once.
+      var jolts: [InvariantViolation] = []
+      onceViolations(after: action, &jolts)
+      return inside + jolts + (harness.overlays.finder == nil ? [] : [.init("palette", "Go to… is open and Arbor is paused or not running")])
     }
     var problems: [InvariantViolation] = []
     mirrorViolations(&problems)

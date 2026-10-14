@@ -50,6 +50,23 @@ private let b = WindowID(102)
     #expect(!nets(after: moved + ["cursor 10 10"], then: "flush") { _ = $0.setFrame(self.rect(726, 60, 702, 800), of: b) }.contains("moved-again"))
   }
 
+  /// A key that comes up belongs to its going down, and seconds in which something does move are not seconds of rest.
+  @Test func aMoveAfterAKeyHasComeUpOrEarlyInALongWaitIsStillTheSameStory() {
+    let pressed = oneDocked + ["focus 102", "react", "key down dock right", "key up dock right"]
+    #expect(nets(after: pressed, then: "flush") { _ = $0.setFrame(self.rect(726, 60, 702, 800), of: b) }.contains("moved-again"))
+    #expect(nets(after: pressed, then: "advance 5") { _ = $0.setFrame(self.rect(726, 60, 702, 800), of: b) }.contains("moved-again"))
+    #expect(!nets(after: pressed + ["advance 5"], then: "flush") { _ = $0.setFrame(self.rect(726, 60, 702, 800), of: b) }.contains("moved-again"))
+  }
+
+  @Test(arguments: ["quit", "pause"]) func aWindowMovedTwiceOnTheWayOutIsAJolt(way: String) {
+    #expect(!nets(after: oneDocked, then: way).contains("moved-twice"))
+    let twice = nets(after: oneDocked, then: way) {
+      _ = $0.setFrame(self.rect(60, 60, 500, 400), of: a)
+      _ = $0.setFrame(self.rect(100, 100, 500, 400), of: a)
+    }
+    #expect(twice.contains("moved-twice"))
+  }
+
   @Test func whatNobodyCanSeeIsNoJolt() {
     // Framed on 101, 102 is out of view, and is moved about there.
     let framed = oneDocked + ["zoom 101", "settle"]
@@ -166,6 +183,14 @@ private let b = WindowID(102)
     // Where its user left it hanging, it may hang.
     let hanging = ["launch", "open 101 Notes pid 1001 at 100 100 500 400", "open 102 Mail pid 1002 at 800 300 500 400", "dock 101 left", "move 102 1200 300 500 400", "zoom 101", "settle"]
     #expect(!nets(after: hanging, then: "home").contains("home-not-whole"))
+  }
+
+  /// People press keys: the question is asked after ⌃⌥0 as after `home`.
+  @Test func aWayHomeTakenWithItsKeyIsAskedTheSame() {
+    let framed = oneDocked + ["zoom 101", "settle"]
+    #expect(nets(after: framed, then: "key down home").isEmpty)
+    #expect(nets(after: framed, then: "key down home") { _ = $0.setFrame(self.rect(1200, 300, 500, 400), of: b) }.contains("home-not-whole"))
+    #expect(nets(after: oneDocked, then: "key down float-all") { _ = $0.setFrame(self.rect(100, 100, 702, 400), of: a) }.contains("size-not-given-back"))
   }
 
   @Test func whatArborPlacesOnTheWayHomeIsClearOfTheDock() {

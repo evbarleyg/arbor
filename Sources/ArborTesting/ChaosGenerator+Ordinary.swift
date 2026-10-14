@@ -111,8 +111,8 @@ extension ChaosGenerator {
 
   /// What is in the menu and on no key, or is refused as a key by the harness.
   private static let menu: [(weight: Int, value: String)] = [
-    (4, "toggle-pin"), (3, "toggle-pause"), (2, "hold"), (2, "release"), (6, "move-to-display next"), (2, "float-all-here"), (1, "quit"),
-    (2, "arrange-all"),
+    (4, "toggle-pin"), (3, "toggle-pause"), (2, "hold"), (2, "release"), (6, "move-to-display next"), (2, "float-all here"), (1, "quit"),
+    (2, "arrange all"),
   ]
 
   mutating func startOrdinaryWalk() {
@@ -152,9 +152,7 @@ extension ChaosGenerator {
     let all = world.system.windows.keys.sorted()
     switch preference {
     case .inView: return random.pick(all.filter { !controller.parked.contains($0) && world.system.windows[$0]!.snapshot.isPresent })
-    case .floating: return random.pick(all.filter { id in controller.workspaces.values.contains { $0.isFloating(id) } })
-    case .docked: return random.pick(all.filter { id in controller.workspaces.values.contains { $0.isDocked(id) } })
-    case .any: return random.pick(all)
+    default: return random.pick(all)
     }
   }
 
@@ -206,8 +204,9 @@ extension ChaosGenerator {
       thenAMoment()
       return .focus(window)
     case .commandTab:
-      // Onto any window of any app, in view or not.
-      guard let window = existing(world) else { return .flush }
+      // Onto any window of any app, in view or not, that is not in the Dock or hidden with its app.
+      guard let window = random.pick(system.windows.keys.sorted().filter { !system.windows[$0]!.snapshot.isMinimized && !system.windows[$0]!.snapshot.isHidden })
+      else { return .flush }
       thenAMoment()
       // The Accessibility layer says which window of the app that came forward has the keyboard.
       return .focus(window)
@@ -260,9 +259,14 @@ extension ChaosGenerator {
       return .via(.shortcut, "summon \(random.pick(Self.realApps)!.name)")
     case .time: return random.chance(50) ? .settle : .advance(random.pick([1, 5, 31])!)
     case .fullScreen:
+      // Out of it again first, if one is in it.
+      if let full = system.windows.keys.sorted().first(where: { system.windows[$0]!.snapshot.isFullScreen }) {
+        thenAMoment()
+        return .fullScreen(full, false)
+      }
       guard let window = existing(world, .inView) else { return .flush }
-      thenAMoment()
-      return .fullScreen(window, !system.windows[window]!.snapshot.isFullScreen)
+      if random.chance(50) { thenAMoment([.react, .advance(1), .react, .fullScreen(window, false)]) } else { thenAMoment() }
+      return .fullScreen(window, true)
     case .displays:
       desk.plugged = random.pick(Desk.Plugged.allCases.filter { $0 != desk.plugged })!
       thenAMoment([.settle])

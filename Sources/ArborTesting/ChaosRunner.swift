@@ -164,7 +164,10 @@ public final class ChaosRunner {
       if let failure = step(generator.next(runner)) { return failure }
     }
     // Whatever happened, the three things a person tries when a window is gone each bring every window within reach.
-    for action in WayBack.allCases.map({ ChaosAction.wayBack($0) }) {
+    // Each comes first in its share of the walks, from the state the walk ended in: held, framed, paused, in the middle of a drag.
+    let ways = WayBack.allCases
+    let first = Int(seed % UInt64(ways.count))
+    for action in (ways[first...] + ways[..<first]).map({ ChaosAction.wayBack($0) }) {
       if let failure = step(action) { return failure }
     }
     return nil
@@ -714,7 +717,6 @@ public final class ChaosRunner {
 
   /// What a person does when a window is gone: float everything, quit Arbor, or (after whatever ended it) start it again.
   public enum WayBack: String, CaseIterable, Sendable {
-    // The ones that leave the arrangement as it is come first: at the end of a walk each is taken in turn.
     case home
     case showAll = "show-all"
     case pause
@@ -735,8 +737,8 @@ public final class ChaosRunner {
 
     /// Quitting, Float All and pause give every window the size it had of its own (F48).
     var givesSizesBack: Bool { [.pause, .floatAll, .quit].contains(self) }
-    /// ⌃⌥0 and ⌃⌥Space are about the display they are pressed on.
-    var isAboutOneDisplay: Bool { [.home, .showAll].contains(self) }
+    /// ⌃⌥0 and ⌃⌥Space are about the display they are pressed on, and a start brings back the view there was.
+    var isAboutOneDisplay: Bool { [.home, .showAll, .startAgain].contains(self) }
   }
 
   /// The displays whose view is on everything.
