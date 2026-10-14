@@ -50,6 +50,8 @@ jobs:
         run: |
           xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
           sudo xcode-select -s "$xcode"
+          ./scripts/ci-toolchain.sh
+          export PATH="$HOME/.swiftly/bin:$PATH"
 
       # Inputs and ref names reach the shell only through the environment, and version.sh checks the result.
       - name: Decide the version

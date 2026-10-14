@@ -52,6 +52,8 @@ jobs:
         run: |
           xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
           sudo xcode-select -s "$xcode"
+      - name: The Swift release the project is built with
+        run: ./scripts/ci-toolchain.sh
       - name: Toolchain
         run: ./scripts/ci-step.py toolchain swift --version
       - name: Build
@@ -59,8 +61,6 @@ jobs:
         run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build
       - name: Test
         run: ./scripts/ci-step.py --summary 'Test run with|skipped' --log test.log test swift test
-      - name: Type-check the macOS-only code against stand-ins
-        run: ./scripts/ci-step.py --summary 'error:|type-check' typecheck-mac make typecheck-mac
       - name: Simulator smoke test
         run: ./scripts/ci-step.py smoke ./scripts/sim-smoke.sh
       - name: User-journey scenarios
@@ -102,8 +102,8 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
-      - name: Install Python for the scripts
-        run: apt-get update -qq && apt-get install -y -qq python3
+      - name: Install Python and make for the scripts
+        run: apt-get update -qq && apt-get install -y -qq python3 make
       - name: The rules that decide about the macOS job
         run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py
       - name: Lint (imports a Mac would miss; Mac shell scripts that would change a person's Mac)
@@ -120,5 +120,8 @@ jobs:
         run: ./scripts/ci-step.py scenarios ./scripts/scenarios.sh
       - name: Release tooling
         run: ./scripts/ci-step.py --summary '✘|release tools test' release-tools ./scripts/release-tools-test.sh
+      # Here and not on the Mac: the stand-ins are for machines without AppKit, and the check declines where swift build sees the real thing.
+      - name: Type-check the macOS-only code against stand-ins
+        run: ./scripts/ci-step.py --summary 'error:|type-check' typecheck-mac make typecheck-mac
       - name: Parity (no shipped feature may break; FEATURES.md must be current)
         run: ./scripts/ci-step.py parity python3 scripts/parity.py --test-log test.log --check

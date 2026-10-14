@@ -66,6 +66,8 @@ jobs:
         run: |
           xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
           sudo xcode-select -s "$xcode"
+          ./scripts/ci-toolchain.sh
+          export PATH="$HOME/.swiftly/bin:$PATH"
           swift --version
 
       - name: Run the script from the repository

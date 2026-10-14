@@ -121,7 +121,7 @@ in the menu bar); they come back the moment the permission does.
 
 ## Install and run
 
-Requires macOS 14 or later and Xcode 16 or later.
+Requires macOS 14 or later. Building it needs Swift 6.4 or later (Xcode 27): Swift 6.3 crashes on one of its files.
 
 ```bash
 git clone https://github.com/evbarleyg/arbor && cd arbor
