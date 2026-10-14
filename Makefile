@@ -1,9 +1,10 @@
 .PHONY: lint build test check sim scenarios parity linux run app install uninstall release e2e e2e-drag typecheck-mac typecheck-mac-selftest rehearse trace trace-check replay fuzz attack clean
 
-# Files that would compile on Linux but not on macOS, and Mac shell scripts that would change a person's Mac,
-# found without a Mac.
+# Files that would compile on Linux but not on macOS, or not with the Swift many people's Xcode has, and Mac shell scripts that
+# would change a person's Mac, found without a Mac.
 lint:
 	@python3 scripts/lint-imports.py
+	@python3 scripts/lint-older-swift.py --self-test && python3 scripts/lint-older-swift.py
 	@python3 scripts/lint-share-space.py --self-test && python3 scripts/lint-share-space.py
 	@python3 scripts/lint-mac-shell.py --self-test > /dev/null || python3 scripts/lint-mac-shell.py --self-test
 	@python3 scripts/lint-mac-shell.py
