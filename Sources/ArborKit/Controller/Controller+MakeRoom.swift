@@ -33,7 +33,8 @@ extension Controller {
     let present = presentWindowIDs()
     let minimums = minimumSizes
     var terms = roomTerms(on: displayID)
-    // What the Desktop is owed it gets when something moves anyway, not because an app has moved its own window.
+    // What the Desktop is owed it gets when something moves anyway, not because an app has moved its own window. (An app that makes
+    // the window being typed in larger than its slot is still served, at a neighbour's cost if need be; one in the background never.)
     if reason == .enforce {
       terms.desktopIsOwed = false
       terms.givesBack = false
@@ -60,7 +61,9 @@ extension Controller {
     let onDesktop = windowsOnDesktop(of: displayID, without: docking)
     let frames = onDesktop.compactMap { workspaces[displayID]?.floating[$0] }
     return MakeRoom.Terms(
-      desktopIsInUse: !onDesktop.isEmpty, keyboard: focusHistory.first.flatMap { workspaces[displayID]?.tree.leaf(containing: $0) },
+      desktopIsInUse: !onDesktop.isEmpty,
+      // Who has it now, not who had it last: it can cost a neighbour its place.
+      keyboard: keyboardFocus(),
       leaving: squeezedByHand[displayID] ?? [], desktopIsOwed: workspaces[displayID]?.desktopIsOwedRoom == true,
       desktopWish: CGSize(width: frames.map(\.width).max() ?? 0, height: frames.map(\.height).max() ?? 0))
   }

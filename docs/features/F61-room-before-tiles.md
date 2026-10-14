@@ -23,7 +23,18 @@ weights change inside the layout that follows the command, so a snapshot taken b
 2. **Room goes back to whom it was taken from.** The tree keeps a ledger (`LayoutTree+Loans.swift`): who gave how much to whom, for whose sake. It is repaid when the window closes, floats or is docked elsewhere, and as soon as the window can spare it
    (a neighbour has closed, the display is larger); only windows whose minimum is known give back, so a launch moves nothing. So the arrangement is what the person made it plus the least its windows need, in whatever order things happened. What
    was lent across a gap that a person has moved since is forgotten: that gap is theirs. The ledger is saved with the tree, and comes and goes with undo.
-3. **The window with the keyboard is the last to become a tile**: it is served first, then the others, the one docked last first.
+3. **The window with the keyboard is the last to become a tile**: it is served first, then the others, the one docked last first. If what can be spared is not enough for it, what Arbor lent to its neighbours goes back first, and they are served again from what is
+   left: the one exception to "nobody in view pays with their place". So of Mail and a chat that do not both fit, the one that shows after ⌃⌥Space is the one the person was typing in, as long as the gaps between them are where Arbor put them. How far it reaches:
+   - The window that has the keyboard now, not the one that had it last: when a floating window closes and nobody has it, nobody pays.
+   - Only in the rows and columns that the window itself is in, as far as they are in view as a whole: a look into a group changes nothing outside it, and in a column beside it the same windows show as before.
+   - On every occasion, also when the app being typed in makes its own window larger than its place (decided by the product owner, 2026-10-15). An app in the background that does so costs nobody their place: its window is the tile.
+   - All or nothing: for a window that still does not fit, nothing goes back and nobody pays. It is the tile.
+   - A place that the person's own hand has made short, or shorter, stays as they left it: it is not served, whoever has the keyboard (criterion 6), and gives nothing back for it.
+   - Nobody is left with less than a tile, and what cannot go back stays owed.
+   - A drop's preview goes by the window in the hand, as the drop will: its place is one that only the drop makes.
+   - Switching to a window moves no gap by itself. It happens at the next layout: ⌘Tab to a tile's window still frames it.
+   - **A limit, known:** only what Arbor lent goes back. A gap that a person has moved since is theirs, nothing is owed across it, and beside it the window being typed in can still be the tile, against `docs/VIABLE.md` ("The window with the
+     keyboard is never the tile"). The cure is decided (the neighbours lend what they need themselves, written into the ledger, so that the gap comes back) and is a change of its own.
 4. Tiles give in two steps: first what leaves them large enough for a window, below that only if it takes that.
 5. A gap moved by hand marks only the slots it made short, or shorter, as squeezed; it cancels what the Desktop is owed only if it is one of the Desktop's own gaps; looking at the Desktop cancels nothing; `layout <line>` starts afresh like `arrange` (all
    four from the review by R6).

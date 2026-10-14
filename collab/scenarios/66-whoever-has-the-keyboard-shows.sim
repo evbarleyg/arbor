@@ -1,0 +1,26 @@
+# Proposed by the swarm (2026-10-15); the documenter may edit or drop it.
+# Story: a MacBook Air, Mail on the left, the chat on the right. 820 and 760 points do not both fit on 1440, so one of the two is a tile.
+# Which? Never the one being typed in: ⌘Tab to the other, ⌃⌥Space, and the two have traded places.
+# Reference: T20, F61 (second round, 3), rule 4.
+open Mail 1100x700 min 820x400
+open Slack 1100x750 min 760x500
+focus 101
+key ctrl+opt+cmd+left
+focus 102
+key ctrl+opt+cmd+right
+expect visible 102
+expect tile 101
+# ⌘Tab to Mail frames it. Show Everything shows it beside the chat's tile.
+focus 101
+expect fills 101
+key ctrl+opt+space
+expect visible 101
+expect focused 101
+expect tile 102
+# And back.
+focus 102
+key ctrl+opt+space
+expect visible 102
+expect focused 102
+expect tile 101
+expect size 102 760x851

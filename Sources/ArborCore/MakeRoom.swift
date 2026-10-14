@@ -16,9 +16,10 @@ public enum MakeRoom {
     /// nobody for the Desktop's points, so it gives down to a tile either way, and what floats on it then shows over the
     /// arrangement. In use it is the first to be served from what can be spared, and gets more of it: see `desktopWish`.
     public var desktopIsInUse: Bool
-    /// The slot of the window that has the keyboard. It is served before anybody else, so it is the last to be a tile: a
-    /// person who types into a window that nobody can see has lost it.
-    public var keyboard: NodeID?
+    /// The window that has the keyboard. It is served before anybody else, so it is the last to be a tile: a person who types
+    /// into a window that nobody can see has lost it. The window, not its slot: whoever rehearses a dock (a drop's preview) does
+    /// so on a copy of the tree, and the slot of the window in the hand is one that only the copy has.
+    public var keyboard: WindowID?
     /// Slots that stay as they are: the person squeezed them by hand.
     public var leaving: Set<NodeID>
     /// The Desktop is a tile because room was taken from it, not because somebody wanted it narrow. Then it is served
@@ -30,11 +31,12 @@ public enum MakeRoom {
     /// As wide as the widest and as tall as the tallest window that floats on the Desktop. A Desktop in use that is owed room
     /// gets more than the smallest usable size if its neighbours can spare it: up to this, and to an even share.
     public var desktopWish: CGSize
-    /// Whether what was taken for a window goes back where the window can spare it by now.
+    /// Whether what was taken for a window goes back where the window can spare it by now. (What goes back for the sake of the window
+    /// with the keyboard does so either way: there is no occasion on which that one may be the tile.)
     public var givesBack = true
 
     public init(
-      desktopIsInUse: Bool, keyboard: NodeID? = nil, leaving: Set<NodeID> = [], desktopIsOwed: Bool = false, emptyDesktopAsksNobody: Bool = false,
+      desktopIsInUse: Bool, keyboard: WindowID? = nil, leaving: Set<NodeID> = [], desktopIsOwed: Bool = false, emptyDesktopAsksNobody: Bool = false,
       desktopWish: CGSize = .zero
     ) {
       self.desktopIsInUse = desktopIsInUse
@@ -61,7 +63,8 @@ public enum MakeRoom {
   /// When there is not enough for all, the window with the keyboard comes first, then the one that was given its place last:
   /// node ids only grow. So the outcome depends on the arrangement and on where the person is, not on what came before.
   ///
-  /// Nobody in view pays with their place, for a window or for the Desktop: room is what others can spare.
+  /// Nobody in view pays with their place, for a window or for the Desktop: room is what others can spare. But for the window with
+  /// the keyboard: for its sake what was lent to the others in view goes back, which can cost them theirs.
   public static func serve(
     _ tree: inout LayoutTree, camera: NodeID, in frame: CGRect, options: LayoutOptions,
     isPresent: @escaping (WindowID) -> Bool, minimumSize: @escaping (WindowID) -> CGSize?, terms: Terms
@@ -74,6 +77,8 @@ public enum MakeRoom {
     var gaveBack = false
     var hadDesktop = false
     let desktopIsInUse = terms.desktopIsInUse
+    // Making room moves weights and no window.
+    let keyboard = terms.keyboard.flatMap { tree.leaf(containing: $0) }
     var served: [Short] = []
     var tried = terms.leaving
 
@@ -84,12 +89,16 @@ public enum MakeRoom {
     ///
     /// Tiles give too, at first only what leaves them large enough for a window: whatever is docked beside a tile later
     /// shares its row or column. Only if that is not enough do they go as far as a tile goes.
-    func grown(_ slot: Short) -> (tree: LayoutTree, layout: Layout)? {
-      grown(slot, tilesKeep: options.minimumUsableSize) ?? grown(slot, tilesKeep: tileFloor)
+    ///
+    /// From the tree as it is, or from `start`.
+    func grown(_ slot: Short, from start: (tree: LayoutTree, layout: Layout)? = nil) -> (tree: LayoutTree, layout: Layout)? {
+      let start = start ?? (tree, layout)
+      return grown(slot, from: start, tilesKeep: options.minimumUsableSize) ?? grown(slot, from: start, tilesKeep: tileFloor)
     }
-    func grown(_ slot: Short, tilesKeep: CGSize) -> (tree: LayoutTree, layout: Layout)? {
-      var copy = tree
-      var after = layout
+    func grown(
+      _ slot: Short, from start: (tree: LayoutTree, layout: Layout), tilesKeep: CGSize
+    ) -> (tree: LayoutTree, layout: Layout)? {
+      var (copy, after) = start
       for axis in [Axis.horizontal, .vertical] {
         let giver = Giver(
           view: TreeView(tree: copy, isPresent: isPresent), layout: after, axis: axis, options: options,
@@ -110,9 +119,53 @@ public enum MakeRoom {
         after = layOut(copy)
       }
       guard slot.window.map({ after.windowFrames[$0] != nil }) ?? (after.desktopFrame != nil),
-        layout.windowFrames.keys.allSatisfy({ after.windowFrames[$0] != nil })
+        start.layout.windowFrames.keys.allSatisfy({ after.windowFrames[$0] != nil })
       else { return nil }
       return (copy, after)
+    }
+
+    /// The tree and its layout with what was lent to the neighbours of `slot` given back, whether or not they can spare it, or nil if
+    /// there is nothing of the kind. Like `giveBackWhatCanBeSpared` only in a row that is in view as a whole, and of those only in the
+    /// rows and columns that `slot` is in: elsewhere it could not help, and would only decide anew who shows there.
+    ///
+    /// The ledger can say more than is true by now (a window docked beside a borrower has taken half of its slot, lent room and all). So
+    /// nobody is left with less than a tile, and what cannot go back stays owed. A slot that the person squeezed stays as it is.
+    func withWhatWasLentToTheOthersBack(for slot: NodeID) -> (tree: LayoutTree, layout: Layout)? {
+      var rows: Set<NodeID> = []
+      var current = slot
+      while current != layout.camera, let parent = tree.parent(of: current) {
+        rows.insert(parent)
+        current = parent
+      }
+      let view = TreeView(tree: tree, isPresent: isPresent)
+      // With `shareRemovedSpace` off a weight covers a slot and the gap after it (`LayoutEngine.keptExtents`).
+      let withEach = options.shareRemovedSpace ? 0 : options.gap
+      var copy = tree
+      var changed = false
+      for index in tree.loans.indices.reversed() {
+        let loan = tree.loans[index]
+        guard loan.borrower != slot, terms.leaving.isDisjoint(with: [loan.borrower, loan.receiver]),
+          let row = tree.parent(of: loan.receiver), row == tree.parent(of: loan.giver), rows.contains(row),
+          case .split(let axis, _) = tree[row]?.kind
+        else { continue }
+        let children = view.effectiveChildren(of: row)
+        let lengths = children.compactMap { layout.nodeFrames[$0]?.length(along: axis) }
+        guard children.contains(loan.giver), children.contains(loan.receiver), lengths.count == children.count else { continue }
+        let points = lengths.reduce(0) { $0 + $1 + withEach }
+        let weight = children.reduce(0) { $0 + (tree[$1]?.weight ?? 0) }
+        guard points > 0, weight > 0, let has = copy[loan.receiver]?.weight else { continue }
+        // The receiver can be a group, which shrinks in proportion: as far as the one in it with the least to lose allows.
+        let giver = Giver(
+          view: view, layout: layout, axis: axis, options: options, minimumSize: minimumSize, tilesKeep: tileFloor,
+          strangersGive: true, windowsGiveLikeTiles: true)
+        let floor = Double(giver.floor(of: loan.receiver) + withEach) * weight / Double(points)
+        guard has > floor else { continue }
+        copy.repay(min(loan.weight, has - floor), ofLoanAt: index)
+        changed = true
+      }
+      guard changed else { return nil }
+      copy.dropSettledLoans()
+      return (copy, layOut(copy))
     }
 
     // Boundaries are whole points, so what has just been served can have a point to spare. Round again until nothing moves,
@@ -138,13 +191,19 @@ public enum MakeRoom {
       let short = shortSlots(in: layout, view: view, options: options, minimumSize: minimumSize)
         .filter { !tried.contains($0.node) && ($0.window != nil || desktopIsOwed) }
       func turn(_ slot: Short) -> (Int, Int) {
-        if slot.node == terms.keyboard { return (-1, 0) }
+        if slot.node == keyboard { return (-1, 0) }
         return slot.window == nil ? (desktopIsInUse ? 0 : 2, 0) : (1, -slot.node.rawValue)
       }
       guard let next = short.min(by: { turn($0) < turn($1) }) else { break }
       tried.insert(next.node)
 
-      guard let result = grown(next) else { continue }
+      var result = grown(next)
+      if result == nil, next.node == keyboard {
+        // The one exception to "nobody pays with their place": whoever types into a window that nobody can see has lost it.
+        // What was lent to the others goes back, the window with the keyboard is served, and then the others, from what is left.
+        result = withWhatWasLentToTheOthersBack(for: next.node).flatMap { grown(next, from: $0) }
+      }
+      guard let result else { continue }
       (tree, layout) = result
       served.append(next)
       // What was out of reach may be within it now: a column widened for one window is wider for all in it.
@@ -237,6 +296,8 @@ public enum MakeRoom {
     let tilesKeep: CGSize
     /// Whether windows whose minimum is not known give, down to the smallest usable size.
     let strangersGive: Bool
+    /// Whether a window in view gives as far as its tile would, which costs it its place.
+    var windowsGiveLikeTiles = false
 
     func length(of node: NodeID) -> CGFloat? { layout.nodeFrames[node]?.length(along: axis) }
 
@@ -320,6 +381,7 @@ public enum MakeRoom {
       case .desktop:
         return length
       case .stack:
+        if windowsGiveLikeTiles { return min(length, MakeRoom.length(tilesKeep, axis)) }
         guard let learned = view.visibleWindow(of: node).flatMap(minimumSize).map({ MakeRoom.length($0, axis) }) else {
           return strangersGive ? min(length, MakeRoom.length(options.minimumUsableSize, axis)) : length
         }
