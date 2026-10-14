@@ -21,7 +21,9 @@
 #   note <text…>                    a mark in the samples (jolts.py's header lists the marks it reads)
 #   quiet [ms] [limit ms]           wait until no window has moved, come, gone or changed its place in the pile for that long
 #                                     (1000, at most 8000). Sets QUIET to `quiet:<waited ms>` or `restless:<waited ms>`
-#   chapter "<title>"               a heading in the output and in the report
+#   chapter "<title>"               a heading in the output and in the report. While Arbor runs each chapter is a trace of its own
+#                                     (docs/TRACES.md): mac-shell/traces/<date>-day-<n>.jsonl, with every step as a remark in it, so that
+#                                     what macOS reported and the apps answered on the Mac can be replayed anywhere
 #   label <window> <name>           what the report calls the window. Never its title
 #   meet <name> <bundle id> [file…] app_open, and label what opened: sets P_<name>, W_<name> (its first standard window). Fails
 #                                     when no standard window came
@@ -51,6 +53,7 @@ DAY_JOLTS="$ARBOR_ROOT/scripts/mac-shell/jolts.py"
 DAY_SAMPLES="$ARBOR_OUT/samples.log"
 DAY_SAMPLER_PID=""
 DAY_STEP=0
+DAY_TRACES=0
 DAY_SLUG=""
 DAY_DOCKED_BEFORE=""
 DAY_FACE="ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_NO_PROMPT=0"
@@ -109,6 +112,15 @@ quiet() {
 chapter() {
   step "$*"
   note "chapter $*"
+  day_trace
+}
+
+# A new trace, from a moment when things are at rest. A trace ends by itself after ten minutes, and when Arbor pauses or quits.
+day_trace() {
+  arbor_answers || return 0
+  "$ARBOR_BIN/arborctl" trace off > /dev/null 2>&1
+  DAY_TRACES=$((DAY_TRACES + 1))
+  "$ARBOR_BIN/arborctl" trace on "day-$DAY_TRACES" | sed "s|$ARBOR_HOME/||"
 }
 
 label() {
@@ -151,6 +163,7 @@ act() {
   echo
   echo "-- $DAY_STEP $1: $2"
   mark "== $DAY_STEP $1"
+  if arbor_answers; then "$ARBOR_BIN/arborctl" trace note "step $DAY_STEP $1" > /dev/null 2>&1; fi
   note "begin $DAY_STEP $1"
   note "text $DAY_STEP $2"
 }
@@ -203,6 +216,7 @@ day_launch() {
   # shellcheck disable=SC2086
   arbor_start_apps all $DAY_FACE "$@" || return 1
   note "arbor $ARBOR_PID"
+  day_trace
 }
 
 day_gone() {
@@ -309,7 +323,9 @@ day_report() {
   local number name code logs
   sampler_stop
   watch_stop
+  if arbor_answers; then "$ARBOR_BIN/arborctl" trace off > /dev/null 2>&1; fi
   arbor_log
+  if [ -d "$ARBOR_HOME/traces" ]; then cp -R "$ARBOR_HOME/traces" "$ARBOR_OUT/traces"; fi
   logs=$(ls "$ARBOR_OUT"/arbor*.log "$ARBOR_OUT"/day-macos.log 2>/dev/null | grep -v stderr | tr '\n' ' ')
   python3 "$DAY_JOLTS" report "$DAY_SAMPLES" --json "$ARBOR_OUT/day-findings.json" > "$ARBOR_OUT/day-report.md"
   code=$?
