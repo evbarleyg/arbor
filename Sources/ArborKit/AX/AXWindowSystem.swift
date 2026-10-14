@@ -15,8 +15,8 @@ import CoreGraphics
 ///
 /// No test reaches this code, so it decides as little as it can: what counts as a window, an echo, a drag, a
 /// tab or a reason to try again is decided by pure types in ArborCore (`WindowKind`, `EchoFilter`, `WindowGrab`,
-/// `NativeTabs`, `FramePlan`, `RetrySchedule`). What macOS does in each case was written down by a Mac: see
-/// collab/reports/2026-10-14-review-ax.md.
+/// `NativeTabs`, `FramePlan`, `RetrySchedule`, `AppThatCameForward`). What macOS does in each case was written down by a
+/// Mac: see collab/reports/2026-10-14-review-ax.md.
 @MainActor
 public final class AXWindowSystem: WindowSystem {
   public weak var events: (any WindowSystemEvents)?
@@ -51,6 +51,8 @@ public final class AXWindowSystem: WindowSystem {
   private var lastReportedFocus: WindowID?
   /// Counts the apps that came forward, to see whether a request to activate one had any effect.
   private var activations = 0
+  /// The next look at an app that came forward before macOS named it as the one in front.
+  private var lookAtAppThatCameForward: Task<Void, Never>?
   /// The displays as the controller last heard of them.
   private var reportedDisplays: [DisplaySnapshot] = []
   /// Windows to be looked at again once Arbor's move of them has settled (`EchoFilter.Verdict.early`).
@@ -173,6 +175,7 @@ public final class AXWindowSystem: WindowSystem {
     localMouseMonitor = nil
     pendingRescan?.cancel()
     pendingDisplayChange?.cancel()
+    lookAtAppThatCameForward?.cancel()
     for look in secondLooks.values { look.cancel() }
     secondLooks.removeAll()
     broughtIntoView.removeAll()
@@ -472,7 +475,31 @@ public final class AXWindowSystem: WindowSystem {
     activations += 1
     lastReportedFocus = nil
     if apps[pid] == nil, !waitingToObserve.contains(pid) { observe(pid: pid, announce: true, wasRunning: true) }
-    reportFocus(of: pid)
+    // Whoever came forward before has been overtaken.
+    lookAtAppThatCameForward?.cancel()
+    reportFocus(ofAppThatCameForward: pid, earlierLooks: 0)
+  }
+
+  /// Reports the focused window of `pid` as soon as macOS names it as the app in front (`AppThatCameForward`).
+  private func reportFocus(ofAppThatCameForward pid: pid_t, earlierLooks: Int) {
+    let front = NSWorkspace.shared.frontmostApplication?.processIdentifier
+    switch AppThatCameForward.verdict(isNamedInFront: front == pid, earlierLooks: earlierLooks) {
+    case .report:
+      if earlierLooks > 0 { recorder?.raw("frontmostApplication names pid \(pid)") }
+      reportFocus(of: pid)
+    case .lookAgain(let seconds):
+      if earlierLooks == 0 {
+        recorder?.raw("frontmostApplication still names pid \(front ?? -1)")
+        Log.debug("pid \(pid) came forward, and macOS still names another app as the one in front")
+      }
+      lookAtAppThatCameForward = Task { @MainActor [weak self] in
+        try? await Task.sleep(nanoseconds: UInt64(seconds * 1_000_000_000))
+        guard !Task.isCancelled, let self, self.running else { return }
+        self.reportFocus(ofAppThatCameForward: pid, earlierLooks: earlierLooks + 1)
+      }
+    case .giveUp:
+      Log.debug("pid \(pid) came forward and was never named as the app in front: nothing is reported")
+    }
   }
 
   // MARK: Apps that do not answer

@@ -622,6 +622,7 @@ holds for the commit named (second reading, 10:45 UTC) and says what the script 
 | `check-F41.sh` | trunk | safe, steps skip themselves | 2 min | The two measurements that press past the nets; switching layouts, and which are switched on; ⌘Tab |
 | `check-F49.sh` | trunk | safe, steps skip themselves | 2 min | The second display |
 | `check-F51.sh` | trunk | safe, steps skip themselves | 90 s | Holds ⌃⌥Space down for seconds at a time. All of it is ⌃⌥Space: declined where several input sources are on |
+| `check-switch.sh` | trunk | safe, steps skip themselves | 60 s | ⌘Tab: the app used before may be the person's own |
 | `check-F56.sh` | trunk | safe, steps skip themselves | 60 s | The second display. Types "arbor" into a test window |
 | `check-F09.sh` | trunk | safe, steps skip themselves | 3 min | Reduce Motion. The button is held for up to 6 s at a time, ⌘ for 2 s. macOS's own edge tiling stays on and may cost some checks at the screen edge |
 | `check-F18.sh` | trunk | safe | 15 s | |

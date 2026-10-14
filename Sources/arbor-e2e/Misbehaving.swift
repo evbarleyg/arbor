@@ -257,20 +257,29 @@ extension Runner {
     try step("dock the other app's window", "dock \(x.rawValue) right") { state in
       check("\(x) is docked", state.displays[0].windowFrames[x] != nil)
     }
-    // Five times. One switch in three went unnoticed, by a race inside macOS, so one that is followed says little.
-    for _ in 1...5 {
+    // Ten times. One switch in three went unnoticed, by a race inside macOS, so one that is followed says little.
+    func timesBehind() -> Int { arborLog().components(separatedBy: "macOS still names another app as the one in front").count - 1 }
+    let behindBefore = timesBehind()
+    for _ in 1...10 {
       try step("frame a window of the first app", "zoom \(w1.rawValue)") { _ in
         check("\(x) is out of view", leavesView(x), whereabouts(x))
         check("the keyboard crossed over to the first app", eventually { $0.focused == w1 })
       }
       step("switch to the other app", by: "the other app activates itself") {
         other.send("activate")
-        // macOS can turn down an app that asks to come forward, and then there was nothing to follow.
-        func inFront() -> String { frontmostPID() == other.pid ? "it is in front" : "macOS has pid \(frontmostPID() ?? -1) in front, not it" }
-        check("the camera moves to show its window", eventually { $0.displays[0].windowFrames[x] != nil }, inFront())
+        let followed = eventually { $0.displays[0].windowFrames[x] != nil }
+        let front = frontmostPID()
+        if !followed, front != other.pid {
+          // macOS can turn down an app that asks to come forward, and then there was nothing to follow.
+          observe("macOS lets it come forward", false, "pid \(front ?? -1) is in front")
+          return
+        }
+        check("the camera moves to show its window", followed, "its app is in front")
         check("\(x) is in view", comesIntoView(x), whereabouts(x))
       }
     }
+    // Both ways: Arbor's own `zoom` brings the first app forward.
+    print("\n(in those twenty switches macOS named the app in front late \(timesBehind() - behindBefore) time(s))")
     try step("frame the other app's window", "zoom \(x.rawValue)") { _ in
       check("\(w2) is out of view", leavesView(w2), whereabouts(w2))
       check("the keyboard is with the other app", eventually { $0.focused == x })

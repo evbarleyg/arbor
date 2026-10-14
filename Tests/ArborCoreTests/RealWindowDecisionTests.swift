@@ -311,6 +311,26 @@ extension Box where Value == EchoFilter {
   }
 }
 
+@Suite struct AppThatCameForwardTests {
+  @Test func anAppThatMacOSNamesIsReportedAtOnce() {
+    #expect(AppThatCameForward.verdict(isNamedInFront: true, earlierLooks: 0) == .report)
+  }
+
+  /// It used to be dropped, and nothing else tells of ⌘Tab.
+  @Test func oneThatMacOSDoesNotNameYetIsLookedAtAgainWithinTheBlinkOfAnEye() {
+    #expect(AppThatCameForward.verdict(isNamedInFront: false, earlierLooks: 0) == .lookAgain(after: 0.01))
+    #expect(AppThatCameForward.verdict(isNamedInFront: true, earlierLooks: 1) == .report)
+  }
+
+  @Test func theLookingEndsAfterHalfASecond() {
+    let verdicts = (0..<100).map { AppThatCameForward.verdict(isNamedInFront: false, earlierLooks: $0) }
+    let waits = verdicts.compactMap { if case .lookAgain(let seconds) = $0 { seconds } else { nil } }
+    #expect(abs(waits.reduce(0, +) - 0.5) < 0.001)
+    #expect(verdicts[waits.count...].allSatisfy { $0 == .giveUp })
+    #expect(AppThatCameForward.verdict(isNamedInFront: true, earlierLooks: Int.max) == .report, "better late than never")
+  }
+}
+
 @Suite struct StrayDialogTests {
   let main = StrayDialog.Display(
     frame: CGRect(x: 0, y: 0, width: 1440, height: 900), visibleFrame: CGRect(x: 0, y: 25, width: 1440, height: 805))
