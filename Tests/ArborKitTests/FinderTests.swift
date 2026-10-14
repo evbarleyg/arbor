@@ -117,7 +117,7 @@ private let side = DisplaySnapshot(
   @Test func rowsCarryWhatThePaletteShows() throws {
     let (h, safari, _, _, _) = makeHarness()
     h.run("find")
-    let row = try #require(row(h, safari))
+    let row = try #require(self.row(h, safari))
     #expect(row.name == "Safari")
     #expect(row.detail == "Arbor docs")
     #expect(row.pid == 11)
@@ -221,7 +221,7 @@ private let side = DisplaySnapshot(
     let window = h.system.open(app: String(repeating: "A", count: 5000), title: String(repeating: "t", count: 100_000))
     h.start()
     h.run("find")
-    let row = try #require(row(h, window))
+    let row = try #require(self.row(h, window))
     #expect(row.detail.count == 200)
     #expect(row.name.count == 80)
   }
