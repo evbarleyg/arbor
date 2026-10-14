@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Writes a walk: a journey for a real Mac, made from a seed, in the words of lib-walk.sh.
 
-  walk.py <seed> [--acts n] [--display laptop|desk] [--tiling defaults|off] [--control]   prints the script
+  walk.py <seed> [--acts n] [--display laptop|desk|two] [--tiling defaults|off] [--control]   prints the script
   walk.py --self-test
 
 The same seed gives the same walk, on any machine and any version of Python. The kinds of act come in the proportions docs/VIABLE.md asks of the whole
@@ -46,9 +46,11 @@ class Dice:
         return pairs[-1][0]
 
 
-def walk(seed, acts):
-    """The lines of a walk of about that many acts. Some words are two acts (a click on the wallpaper and a second one), one is a dozen."""
+def walk(seed, acts, two=False):
+    """The lines of a walk of about that many acts. Some words are two acts (a click on the wallpaper and a second one), one is a dozen.
+    `two`: with a second display that comes, goes, moves and changes size; the dice are rolled as without it, so the rest of the walk is the same."""
     dice = Dice(seed)
+    changes = Dice(f"{seed} displays")
     lines, owed, count = [], [], 0
     restart_at = acts // 2
 
@@ -62,6 +64,11 @@ def walk(seed, acts):
 
     restarted = False
     while count < acts:
+        # Before anything else, and not counted: what is owed comes due, and Arbor is started again, when it would have without.
+        if two and changes.roll(12) == 0:
+            lines.append(changes.weighted([("display plug", 4), ("display unplug", 2), ("display left", 1), ("display right", 1), ("display smaller", 1),
+                                           ("display larger", 1), ("send_across", 4)]))
+            continue
         for debt in owed:
             debt[0] -= 1
         due = [debt for debt in owed if debt[0] <= 0]
@@ -139,7 +146,7 @@ def script(seed, acts, display, tiling, control):
     if control:
         head.append("WALK_WITHOUT_ARBOR=1")
     head += ['source "$(dirname "${BASH_SOURCE[0]}")/lib-walk.sh"', f"walk_begin stock {display} {tiling} {seed}"]
-    return "\n".join(head + walk(seed, acts) + ["walk_end"]) + "\n"
+    return "\n".join(head + walk(seed, acts, display == "two") + ["walk_end"]) + "\n"
 
 
 def self_test():
@@ -161,7 +168,10 @@ def self_test():
         between = [line for line in lines[lines.index("full_screen on") + 1:][:1]] if "full_screen on" in lines else ["full_screen off"]
         if between != ["full_screen off"]:
             failures.append(f"seed {seed}: full screen is left with the next act")
-    words = {line.split()[0] for seed in range(200) for line in walk(seed, 110)}
+    plain = [line for line in walk("4711", 110, two=True) if line.split()[0] not in ("display", "send_across")]
+    if plain[:60] != walk("4711", 110)[:60]:
+        failures.append("with a second display the rest of the walk is another walk")
+    words = {line.split()[0] for seed in range(200) for line in walk(seed, 110, two=True)}
     missing = WORDS - words
     if missing:
         failures.append(f"never walked in 200 walks: {sorted(missing)}")
@@ -175,7 +185,7 @@ def self_test():
 
 WORDS = {"switch_dock", "switch_click", "switch_cmdtab", "switch_backtick", "switch_menu", "switch_tile", "open_new", "close_new", "minimize", "restore", "hide", "unhide",
          "quit_app", "reopen", "dock_key", "float_key", "drag_onto", "drag_out", "drag_by", "drag_edge", "view", "resize_gap", "resize_key", "full_screen",
-         "wallpaper_click", "pause", "resume", "float_all", "quit_and_start", "idle_act"}
+         "wallpaper_click", "pause", "resume", "float_all", "quit_and_start", "idle_act", "display", "send_across"}
 PINNED = ['view back', 'switch_click textedit', 'switch_click terminal']
 
 
