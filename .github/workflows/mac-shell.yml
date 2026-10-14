@@ -40,6 +40,7 @@ jobs:
     timeout-minutes: 45
     permissions:
       contents: write # to push mac-shell-out/<tag>; nothing else is written
+      actions: read # the probe: to fetch what the Release workflow's rehearsal built
     env:
       SCRIPT: ${{ inputs.script }}
       TAG: ${{ inputs.tag || github.run_id }}
@@ -66,9 +67,15 @@ jobs:
         run: |
           xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
           sudo xcode-select -s "$xcode"
-          ./scripts/ci-toolchain.sh
-          export PATH="$HOME/.swiftly/bin:$PATH"
           swift --version
+
+      - name: "The probe: what the Release workflow's rehearsal built on another Mac"
+        uses: actions/download-artifact@v4
+        with:
+          name: arbor-release
+          path: downloaded
+          run-id: 38648944591
+          github-token: ${{ github.token }}
 
       - name: Run the script from the repository
         # Shorter than the job's limit, so that a script that hangs still gets its output pushed, and
