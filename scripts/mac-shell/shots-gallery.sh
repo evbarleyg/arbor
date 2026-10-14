@@ -102,6 +102,31 @@ session_over() {
   arbor_stop "${1:-}"
 }
 
+# As a person has it: in a bundle, which is where Arbor's icon, its version and "Open at Login" come from. Still started as every Mac
+# shell script starts it, as a child of the script, which is what lets it move windows here. If any of this fails the plain
+# binary does, with a blank icon and no version.
+in_a_bundle() {
+  local app
+  scratch_dir gallery-app APP_DIR
+  app="$APP_DIR/Arbor.app"
+  mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources" || return 1
+  cp "$ARBOR_BIN/Arbor" "$app/Contents/MacOS/Arbor" || return 1
+  # Links: run from inside the bundle they would take its icon and its name for their own.
+  ln -s "$ARBOR_BIN/arborctl" "$ARBOR_BIN/ArborTestWindows" "$app/Contents/MacOS/" || return 1
+  cp Resources/Info.plist "$app/Contents/Info.plist" || return 1
+  limit 60 swift scripts/make-icon.swift "$APP_DIR/Arbor.iconset" > /dev/null \
+    && iconutil -c icns "$APP_DIR/Arbor.iconset" -o "$app/Contents/Resources/Arbor.icns"
+  # An identifier of its own and no claim on arbor:// URLs; a version to be older than the release it is told about; and leave to
+  # ask this Mac over plain http.
+  /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier com.evbarleyg.arbor.gallery" -c "Delete :CFBundleURLTypes" \
+    -c "Set :CFBundleShortVersionString 0.9.0" -c "Add :NSAppTransportSecurity dict" \
+    -c "Add :NSAppTransportSecurity:NSAllowsLocalNetworking bool true" "$app/Contents/Info.plist" || return 1
+  case "$(limit 10 "$app/Contents/MacOS/Arbor" --version 2>&1)" in
+    "Arbor 0.9.0"*) ARBOR_BIN="$app/Contents/MacOS"; echo "Arbor runs from a bundle: $("$ARBOR_BIN/Arbor" --version)" ;;
+    *) echo "the bundle does not answer as Arbor 0.9.0"; return 1 ;;
+  esac
+}
+
 # MARK: One look
 
 tour() {
@@ -471,6 +496,7 @@ else
   swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/axfind.swift" -o "$AXFIND" > "$ARBOR_OUT/build-axfind.log" 2>&1 \
     || { cat "$ARBOR_OUT/build-axfind.log"; die "scripts/mac-shell/axfind.swift did not compile"; }
 fi
+[ -n "${ARBOR_REHEARSAL:-}" ] || in_a_bundle || echo "no bundle: Arbor runs as a plain binary"
 echo "as the Mac comes:"
 macos_reduce_motion
 macos_increase_contrast
