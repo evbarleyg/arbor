@@ -7,6 +7,12 @@ Mac" in `collab/README.md`). The last two need a Mac with Accessibility
 permission, which GitHub's runners have. What each level can and cannot
 prove, counted test by test, is in [CENSUS.md](CENSUS.md).
 
+**What the stand-ins get wrong, and what to do when a Mac surprises you:** `docs/REALITY.md`. It lists every known case where real macOS
+differed from the fakes or from what a test expected, with the switch that plays it by now and the test, trace or real-window step that
+guards it. A green run at the first three levels proves Arbor right in the world the stand-ins make up, and that page says how far that
+world is from a Mac. New cases go into `collab/reality.json`; `scripts/reality-ledger.py` looks every name up and writes the page, and
+`make lint` fails when a name is gone or the page is stale.
+
 ## 1. Core unit tests (`Tests/ArborCoreTests`)
 
 Pure functions over value types: tree operations (including a seeded random

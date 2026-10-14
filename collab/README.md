@@ -49,6 +49,8 @@ The documenter decides **what** and **in what order**; executors decide
 | `collab/reports/` | One report per finished work item (template in `templates/report.md`) | Executors (the documenter files reports handed to it by agents it ran) |
 | `collab/scenarios/*.sim` | User journeys with expectations, run in arbor-sim | Documenter |
 | `collab/evidence/` | Output of real-window runs (`make e2e` writes `e2e-latest.txt`) and manual checks | Whoever ran them |
+| `collab/reality.json` | Every known case where real macOS differed from the stand-ins or from what a test expected: what was expected, what happened, which stand-in plays it, what guards it | Whoever a real Mac surprised, in the pull request that cures it or at once with `"copes": "open"` |
+| `docs/REALITY.md` | Generated from `reality.json` by `scripts/reality-ledger.py`, which looks every name up; never edit by hand | `scripts/reality-ledger.py` (`make lint` checks it) |
 
 ## The loop
 

@@ -75,6 +75,7 @@ new. See "Executors without a Mac" in `collab/README.md`.
 | `docs/` | `ARCHITECTURE.md`, `TESTING.md`, `ROADMAP.md`, `features/F*.md` specs, generated `FEATURES.md` | Specs belong to the documenter |
 | `docs/CENSUS.md` | What each test touches, which premises of the fakes a recording bears out, which real code nothing runs, which features no Mac has tried | Generated: `scripts/census.py --write`, words in `scripts/census-template.md`. By hand, not part of `make check` |
 | `collab/` | Board, questions, ideas, reports, scenarios, parity data, evidence | See `collab/README.md` |
+| `collab/reality.json`, generated `docs/REALITY.md` | Every known case where real macOS differed from the stand-ins or from what a test expected, and what guards it | A real Mac surprised you: add an entry and run `scripts/reality-ledger.py`. `make lint` fails on a name that is gone or a stale page. |
 
 ## How to verify your work without permissions
 

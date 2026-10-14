@@ -1,7 +1,7 @@
 .PHONY: public-check hooks lint build test check sim scenarios parity linux run app install uninstall release e2e e2e-drag typecheck-mac typecheck-mac-selftest rehearse trace trace-check replay fuzz attack clean
 
 # Files that would compile on Linux but not on macOS, and Mac shell scripts that would change a person's Mac,
-# found without a Mac.
+# found without a Mac. And a ledger of macOS's surprises (docs/REALITY.md) that names what is no longer there.
 lint:
 	@python3 scripts/lint-imports.py
 	@python3 scripts/lint-share-space.py --self-test && python3 scripts/lint-share-space.py
@@ -9,6 +9,7 @@ lint:
 	@python3 scripts/lint-mac-shell.py
 	@python3 scripts/lint-paste-safe.py --self-test && python3 scripts/lint-paste-safe.py
 	@for test in scripts/test-public-*.py; do python3 $$test || exit 1; done
+	@python3 scripts/reality-ledger.py --self-test && python3 scripts/reality-ledger.py --check
 
 # Reads what this branch adds (lines, file names, commit messages, its own name) for what should stay private, and checks
 # that its history begins where the public repository's does. Before every push (docs/PUBLIC.md).
