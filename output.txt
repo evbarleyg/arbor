@@ -1,0 +1,203 @@
+# mac-shell: scripts/mac-shell/probe-drag.sh at 16885ae, macOS 26.6.2, 2026-10-14T22:59Z
+built Arbor and the pointer tool in 125s
+
+== the Mac
+ProductName:		macOS
+ProductVersion:		26.6.2
+BuildVersion:		25G83
+com.apple.WindowManager:
+{
+    "LastHeartbeatDateString.daily" = "2026-10-14T22:54:42Z";
+}
+AppleActionOnDoubleClick: The domain/default pair of (kCFPreferencesAnyApplication, AppleActionOnDoubleClick) does not exist
+AppleMiniaturizeOnDoubleClick: 0
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+com.apple.WindowManager EnableStandardClickToShowDesktop: not set
+displays:
+1 0 0 1024 768 1024 768 1
+pointer: no app has the keyboard
+pointer: 10 10 up; front: 
+event taps:
+tap 424238335 pid=332 point=1 options=1 mask=0x1c00 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1957747793 pid=332 point=1 options=1 mask=0x80000e0 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1714636915 pid=332 point=1 options=1 mask=0x204000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 846930886 pid=377 point=1 options=1 mask=0x1c00 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+on the screen, front to back (id pid level x y w h on owner):
+25 340 25 787 0 31 30 on Control Center
+24 340 25 818 0 42 30 on Control Center
+23 340 25 860 0 164 30 on Control Center
+14 160 24 0 0 1024 30 on Window Server
+6 338 20 0 0 1024 768 on Dock
+9 343 -2147483603 0 0 1024 768 on Finder
+7 338 -2147483624 0 0 1024 768 on Dock
+2 160 -2147483626 0 0 1024 768 on Window Server
+
+== how long this Mac has been left alone, and what it does then
+23:01  up 7 mins, 1 user, load averages: 61.73 39.05 22.16
+HIDIdleTime: 428 s
+screen saver:
+2026-10-14 23:01:49.229 defaults[8775:29266] 
+Domain com.apple.screensaver does not exist
+AC Power:
+ Sleep On Power Button 1
+ powernap             1
+ displaysleep         0
+ sleep                0
+ disksleep            0
+2026-10-14 23:01:49 +0000 
+Assertion status system-wide:
+   BackgroundTask                 0
+   PreventDiskIdle                1
+   ApplePushServiceTask           0
+   UserIsActive                   1
+   PreventUserIdleDisplaySleep    1
+   SoftwareUpdateTask             0
+   PreventSystemSleep             0
+   ExternalMedia                  0
+   PreventUserIdleSystemSleep     1
+   NetworkClientActive            1
+locked: 0
+session 1: Arbor pid 8808, test windows 31 32 33 (pid 8784)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w31 170 220 300 236      floating
+  w32 220 180 480 348      floating
+  w33 270 140 480 348      floating
+the window of a fixed size: 34
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w31 170 220 300 236      floating
+  w32 220 180 480 348      floating
+  w33 270 140 480 348      floating
+  w34 300 200 300 240      floating
+
+== fixed-left: window 34 to 0 368 --hold 1.5 --no-release
+before: 362 288 300 240
+> drag 512 300 0 368 --mods cmd --hold 1.5 --no-release
+macOS shows: WindowManager -15 16 542 704;
+shot: mac-shell/fixed-left.png
+> release --mods cmd
+let go: 0 248 300 240
+
+== fixed-top: window 34 to 512 0 --hold 1.5 --no-release
+before: 337 286 300 240
+> drag 487 298 512 0 --mods cmd --hold 1.5 --no-release
+macOS shows: WindowManager -15 16 1054 704;
+shot: mac-shell/fixed-top.png
+> release --mods cmd
+let go: 362 248 300 240
+
+== fixed-option: window 34 to 200 368 --mods cmd+opt --hold 1.5 --no-release
+before: 362 286 300 240
+> drag 512 298 200 368 --mods cmd --mods cmd+opt --hold 1.5 --no-release
+macOS shows: 
+shot: mac-shell/fixed-option.png
+> release --mods cmd
+let go: 50 356 300 240
+
+== max-left: window 31 to 0 368 --hold 1.5 --no-release
+before: 362 288 300 236
+> drag 512 300 0 368 --mods cmd --hold 1.5 --no-release
+macOS shows: WindowManager -15 16 542 704;
+shot: mac-shell/max-left.png
+> release --mods cmd
+let go: -1 249 300 240
+
+== max-top: window 31 to 512 0 --hold 1.5 --no-release
+before: 349 286 300 237
+> drag 499 298 512 0 --mods cmd --hold 1.5 --no-release
+macOS shows: WindowManager -15 16 1054 704;
+shot: mac-shell/max-top.png
+> release --mods cmd
+let go: 362 248 300 240
+
+== min-left: window 32 to 0 368 --hold 1.5 --no-release
+before: 272 288 480 348
+> drag 512 300 0 368 --mods cmd --hold 1.5 --no-release
+macOS shows: WindowManager -15 16 542 704;
+shot: mac-shell/min-left.png
+> release --mods cmd
+let go: -1 31 700 674
+
+== min-top: window 32 to 512 0 --hold 1.5 --no-release
+before: 156 279 700 501
+> drag 506 291 512 0 --mods cmd --hold 1.5 --no-release
+macOS shows: WindowManager -15 16 1054 704;
+shot: mac-shell/min-top.png
+> release --mods cmd
+let go: 0 31 1024 674
+
+== brisk-left-0: window 33 to 0 368 --duration 0.15 --steps 8 --hold 0 --no-settle
+before: 272 288 480 348
+> drag 512 300 0 368 --mods cmd --duration 0.15 --steps 8 --hold 0 --no-settle
+let go: -1 31 512 674
+
+== brisk-top-0: window 33 to 512 0 --duration 0.15 --steps 8 --hold 0 --no-settle
+before: 262 279 481 349
+> drag 502 291 512 0 --mods cmd --duration 0.15 --steps 8 --hold 0 --no-settle
+let go: 272 31 481 349
+
+== brisk-left-0.05: window 33 to 0 368 --duration 0.15 --steps 8 --hold 0.05 --no-settle
+before: 272 288 481 349
+> drag 512 300 0 368 --mods cmd --duration 0.15 --steps 8 --hold 0.05 --no-settle
+let go: -1 31 512 674
+
+== brisk-top-0.05: window 33 to 512 0 --duration 0.15 --steps 8 --hold 0.05 --no-settle
+before: 262 279 482 350
+> drag 503 291 512 0 --mods cmd --duration 0.15 --steps 8 --hold 0.05 --no-settle
+let go: 271 31 482 350
+
+== brisk-left-0.1: window 33 to 0 368 --duration 0.15 --steps 8 --hold 0.1 --no-settle
+before: 271 288 482 350
+> drag 512 300 0 368 --mods cmd --duration 0.15 --steps 8 --hold 0.1 --no-settle
+let go: -1 31 512 674
+
+== brisk-top-0.1: window 33 to 512 0 --duration 0.15 --steps 8 --hold 0.1 --no-settle
+before: 261 279 483 351
+> drag 502 291 512 0 --mods cmd --duration 0.15 --steps 8 --hold 0.1 --no-settle
+let go: 271 31 483 351
+
+== brisk-left-0.2: window 33 to 0 368 --duration 0.15 --steps 8 --hold 0.2 --no-settle
+before: 271 288 483 351
+> drag 512 300 0 368 --mods cmd --duration 0.15 --steps 8 --hold 0.2 --no-settle
+let go: -1 31 512 674
+
+== brisk-top-0.2: window 33 to 512 0 --duration 0.15 --steps 8 --hold 0.2 --no-settle
+before: 261 279 484 352
+> drag 503 291 512 0 --mods cmd --duration 0.15 --steps 8 --hold 0.2 --no-settle
+let go: 0 31 1024 674
+
+== brisk-left-0.4: window 33 to 0 368 --duration 0.15 --steps 8 --hold 0.4 --no-settle
+before: 269 279 485 353
+> drag 511 291 0 368 --mods cmd --duration 0.15 --steps 8 --hold 0.4 --no-settle
+let go: -1 31 512 674
+
+== brisk-top-0.4: window 33 to 512 0 --duration 0.15 --steps 8 --hold 0.4 --no-settle
+before: 260 279 486 354
+> drag 503 291 512 0 --mods cmd --duration 0.15 --steps 8 --hold 0.4 --no-settle
+let go: 0 31 1024 674
+
+== swift-left: window 33 to 0 368 --duration 0.05 --steps 3 --hold 0 --no-settle
+before: 268 279 487 355
+> drag 511 291 0 368 --mods cmd --duration 0.05 --steps 3 --hold 0 --no-settle
+let go: -1 32 512 674
+
+== swift-top: window 33 to 512 0 --duration 0.05 --steps 3 --hold 0 --no-settle
+before: 259 278 488 356
+> drag 503 290 512 0 --mods cmd --duration 0.05 --steps 3 --hold 0 --no-settle
+let go: 268 31 488 356
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 31 is back on screen after quitting
+  ✔ window 32 is back on screen after quitting
+  ✔ window 33 is back on screen after quitting
+
+4 passed, 0 failed
+exit code 0
