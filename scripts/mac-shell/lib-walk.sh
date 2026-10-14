@@ -18,7 +18,7 @@
 #
 #   walk_begin <cast> <display> <tiling> [seed]       the Mac (stock | laptop desk | defaults off), the apps, macOS seen to tile or not to, Arbor started
 #                                                     and its welcome closed. WALK_WITHOUT_ARBOR=1: the control, in which Arbor's own acts are left out.
-#                                                     WALK_REDUCE_MOTION=on: no stage, so every move of every window shows
+#                                                     WALK_REDUCE_MOTION=on: no stage, so every move of every window shows. WALK_KIND=sit: what run.json calls it
 #   walk_end                                          Arbor quit if it runs, every window reached, the report
 #   chapter "<title>"                                 lib-day.sh's: a heading, and a new trace
 #
@@ -630,7 +630,7 @@ walk_begin() {
   sleep 2
   acted judge=no own=all
 
-  day_manifest kind "\"$(if ! with_arbor; then echo control; elif [ -n "$seed" ]; then echo walk; else echo day; fi)\""
+  day_manifest kind "\"$(if ! with_arbor; then echo control; elif [ -n "${WALK_KIND:-}" ]; then echo "$WALK_KIND"; elif [ -n "$seed" ]; then echo walk; else echo day; fi)\""
   day_manifest seed "\"$seed\""
   day_manifest tiling "\"$tiling\""
   day_manifest tiling_seen_to_act "$seen"
