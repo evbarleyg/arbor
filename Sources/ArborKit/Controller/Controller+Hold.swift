@@ -600,7 +600,7 @@ extension Controller {
   }
 
   /// Lets in what waited on `display`, or with nil everywhere, and lays those displays out, whether or not a view moves.
-  private func holdFetchesWhatWaited(on display: DisplayID?) {
+  func holdFetchesWhatWaited(on display: DisplayID?) {
     let displays = Set(hold.keptOut.compactMap(workspaceID(containing:))).filter { display == nil || $0 == display }
     // Also with no window waiting: dialogs wait as well.
     holdLetsInWhatWaited(on: display)
