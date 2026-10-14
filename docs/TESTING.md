@@ -816,10 +816,10 @@ While Arbor runs, each chapter is also a trace of its own (section 6), with ever
 
 | Rule | Detector | What sets it off |
 |---|---|---|
-| 1: never fight macOS | `fought` | during a drag macOS's tiling preview (a window of WindowManager's) and Arbor's drop preview are up together; or macOS's was up at the drop and Arbor docked the window, or it was moved again after macOS had tiled it |
+| 1: never fight macOS | `fought` | during a drag macOS's tiling preview (a window of WindowManager's) and Arbor's drop preview are up together; or Arbor's had been up at any time in a drag that macOS answered (its preview was up at the drop, or the window ends in one of macOS's own tiles); or macOS answered and Arbor docked the window, or it was moved again afterwards |
 | 2: nothing moves that the person did not move | `moved-unasked` | a window moved that `moves=`, `drags=`, `leaves=` and `comes=` do not name. A floating window's frame is its person's: no dock, no ⌘M and no ⌘H of another window is a reason to move or size it; after a way there and back (`returns=<step>`) a window is not where it was |
 | 3: a window moves once, to where it ends up | `jolt` | its changes fall into two or more moves, a quarter of a second or more apart; it travelled more than six points beyond the straight road in x, y, width or height; it opened in one place and was moved to another |
-| | `pulled` | while the button is down the dragged window moves, from one sample to the next, over 40 points further than the pointer did meanwhile |
+| | `pulled` | while the button is down the dragged window moves, from one sample to the next, over 40 points further than the pointer did meanwhile; or, over the drag so far, it is over 40 points ahead of the pointer's travel or over 150 behind it |
 | | `stuck` | after the drop it ends neither where it was let go, nor where Arbor's preview was, nor under the pointer by its title bar (its own size given back), nor where it was taken from (a drag called off) |
 | | `flash` | out of view before and after, and more than its parking strip showed in between; or it left the screen and came back |
 | | `slow` | after one of Arbor's own acts the last window came to rest more than 1,500 ms after the key or the button (odd from 700); after its first act since it started, 3,000 (odd from 1,500) |

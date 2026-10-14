@@ -30,7 +30,7 @@
 #   meet <name> <bundle id> [file…] app_open, and label what opened: sets P_<name>, W_<name> (its first standard window). Fails
 #                                     when no standard window came
 #   act <kind> <slug> "<what the person does>"        a step begins. The kinds are docs/VIABLE.md's: switch open-close dock-key drag
-#                                     drag-where-macos-tiles view resize macos-own way-out quit-and-start display-change idle
+#                                     drag-where-macos-tiles view resize macos-own way-out quit-and-start display-change tile-click idle
 #   want "<what should hold>" <command…>              inside a step: a finding of the script's own when it does not
 #   must <command…>                 inside a step: what the person does. When it cannot be done (no free point of a title bar, no icon in the
 #                                     Dock) the step is a finding of the script's own and is not judged: an act that was not performed passes nothing
@@ -341,7 +341,7 @@ acted() {
     ARBOR_PID=""
   fi
   case "$DAY_KIND" in
-    dock-key | view | resize | way-out | drag)
+    dock-key | view | resize | way-out | drag | tile-click)
       DAY_SINCE_START=$((DAY_SINCE_START + 1))
       [ "$DAY_SINCE_START" -ne 1 ] || wants="$wants first=1" ;;
   esac
@@ -512,10 +512,12 @@ day_report() {
   told=$(grep -rIl "$APPS_CANARY" "$ARBOR_OUT" 2>/dev/null | sed "s|$ARBOR_OUT/||" | tr '\n' ' ')
   [ -z "$told" ] || note "finding $DAY_STEP -:told FAIL a window's title is in what the run brings back: $told"
   sampler_stop
-  day_write_manifest
   logs=$(ls "$ARBOR_OUT/arbor.log" "$ARBOR_OUT/day-macos.log" 2>/dev/null | tr '\n' ' ')
   python3 "$DAY_JOLTS" report "$DAY_SAMPLES" --json "$ARBOR_OUT/day-findings.json" > "$ARBOR_OUT/day-report.md"
   code=$?
+  # Only the samples know whether Arbor's stage was ever up.
+  day_manifest stage_seen "$(python3 -c 'import json, sys; print(json.dumps(json.load(open(sys.argv[1]))["stage_seen"]))' "$ARBOR_OUT/day-findings.json" 2>/dev/null || echo null)"
+  day_write_manifest
   step "the report (all of it: mac-shell/day-report.md)"
   sed -n '1,/^## Every step/p' "$ARBOR_OUT/day-report.md" | sed '$d'
   if [ -n "${DAY_SABOTAGE:-}" ]; then
