@@ -72,6 +72,8 @@ final class Runner {
   var passes = 0
   /// Whether Arbor has found the test windows: what goes wrong from there on is no failure of the set-up.
   var isUnderWay = false
+  /// How many bytes of arbor.log were written before this step, or have been shown under one of its checks.
+  var logShown = 0
 
   init() throws {
     binaries = URL(fileURLWithPath: CommandLine.arguments[0]).resolvingSymlinksInPath().deletingLastPathComponent()
@@ -328,7 +330,20 @@ final class Runner {
       let message = detail()
       failures.append("\(name)\(message.isEmpty ? "" : ": \(message)")")
       print("  ✘ \(name)\(message.isEmpty ? "" : " — \(message)")")
+      showWhatArborLogged()
     }
+  }
+
+  /// A step begins: what Arbor logs from here on belongs to it.
+  func noteWhereTheLogIs() { logShown = arborLog().utf8.count }
+
+  /// What Arbor logged since the step began, under the check that failed. The end of the log, printed when the run is over, is
+  /// several launches past most steps, and whoever reads the report has nothing else to go by.
+  func showWhatArborLogged() {
+    let log = Array(arborLog().utf8)
+    let new = String(decoding: log.dropFirst(log.count >= logShown ? logShown : 0), as: UTF8.self)
+    logShown = log.count
+    for line in forOthersToRead(new).split(separator: "\n").suffix(60) { print("      \(line)") }
   }
 
   /// Waits until the window server agrees with every frame Arbor says it set.
@@ -346,6 +361,7 @@ final class Runner {
 
   func step(_ title: String, _ command: String, body: (StateSnapshot) throws -> Void) throws {
     print("\n▸ \(title)  (\(command))")
+    noteWhereTheLogIs()
     let result = try send(command)
     check("command succeeded", result.ok, result.message)
     let state = try state()
@@ -490,14 +506,15 @@ final class Runner {
       check("\(w2) is floating", state.displays[0].floating.contains(w2))
       let desktop = state.displays[0].desktopFrame ?? .zero
       check("the Desktop reaches the right edge", abs(desktop.maxX - (visible.maxX - gap)) <= 3, describe(desktop))
-      // As much of it as the Desktop has room for.
+      // All of it. A Desktop narrower than the window, as on a display 1024 points wide, moves it and does not shrink it (F48): it lies
+      // over the docked windows for the rest.
       let old = untouched[w2]?.size ?? .zero
-      let expected = CGSize(width: min(old.width, desktop.width), height: min(old.height, desktop.height))
       let hasOldSize = poll(3) {
         let size = self.actualFrames()[w2]?.size ?? .zero
-        return abs(size.width - expected.width) <= 3 && abs(size.height - expected.height) <= 3
+        return abs(size.width - old.width) <= 3 && abs(size.height - old.height) <= 3
       }
-      check("\(w2) has its old size back", hasOldSize, whereabouts(w2))
+      check("\(w2) has its old size back", hasOldSize, "\(whereabouts(w2)), not \(Int(old.width))×\(Int(old.height))")
+      check("all of it is on the display", visibleFraction(w2) > 0.99, whereabouts(w2))
     }
     try soleFloatingWindow(w2)
     // Gap handles cannot be seen and take clicks. In front of a floating window one would take a strip of its clicks.

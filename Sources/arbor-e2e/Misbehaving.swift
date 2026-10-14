@@ -1,4 +1,5 @@
 import ArborCore
+import ApplicationServices
 import ArborIPC
 import CoreGraphics
 import Foundation
@@ -105,6 +106,7 @@ extension Runner {
   /// A step set off by something other than a command to Arbor.
   func step(_ title: String, by what: String, body: () throws -> Void) rethrows {
     print("\n▸ \(title)  (\(what))")
+    noteWhereTheLogIs()
     // Nobody is this quick: for 0.15 s after moving a window, Arbor takes any report about it for an echo.
     Thread.sleep(forTimeInterval: 0.5)
     try body()
@@ -262,6 +264,14 @@ extension Runner {
     }
     step("switch to the other app", by: "the other app activates itself") {
       other.send("activate")
+      // What the step is about begins here: macOS can turn down an app that asks to come forward.
+      check("macOS lets it come forward", poll(3) { frontmostPID() == other.pid }, "in front: pid \(frontmostPID() ?? -1)")
+      if frontmostPID() != other.pid {
+        // PROBE: what System Events' `set frontmost` does.
+        let answer = AXUIElementSetAttributeValue(
+          AXUIElementCreateApplication(other.pid), kAXFrontmostAttribute as CFString, kCFBooleanTrue)
+        observe("asked through Accessibility it does", poll(3) { frontmostPID() == other.pid }, "answer \(answer.rawValue)")
+      }
       check("the camera moves to show its window", eventually { $0.displays[0].windowFrames[x] != nil })
       check("\(x) is in view", comesIntoView(x), whereabouts(x))
     }
