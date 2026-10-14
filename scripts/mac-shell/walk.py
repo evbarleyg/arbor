@@ -77,7 +77,7 @@ def walk(seed, acts):
         app, other = dice.pick(APPS), dice.pick(APPS)
         if kind == "switch":
             say(dice.weighted([(f"switch_dock {app}", 4), (f"switch_click {app}", 4), (f"switch_cmdtab {1 + dice.roll(3)}", 3),
-                               ("switch_backtick", 1), (f"switch_menu {dice.pick(['safari', 'finder', 'textedit', 'terminal'])}", 1)]))
+                               ("switch_backtick", 1), ("switch_tile", 1), (f"switch_menu {dice.pick(['safari', 'finder', 'textedit', 'terminal'])}", 1)]))
         elif kind == "open-close":
             what = dice.roll(5)
             if what == 0:
@@ -173,7 +173,7 @@ def self_test():
     return 1 if failures else 0
 
 
-WORDS = {"switch_dock", "switch_click", "switch_cmdtab", "switch_backtick", "switch_menu", "open_new", "close_new", "minimize", "restore", "hide", "unhide",
+WORDS = {"switch_dock", "switch_click", "switch_cmdtab", "switch_backtick", "switch_menu", "switch_tile", "open_new", "close_new", "minimize", "restore", "hide", "unhide",
          "quit_app", "reopen", "dock_key", "float_key", "drag_onto", "drag_out", "drag_by", "drag_edge", "view", "resize_gap", "resize_key", "full_screen",
          "wallpaper_click", "pause", "resume", "float_all", "quit_and_start", "idle_act"}
 PINNED = ['view back', 'switch_click textedit', 'switch_click terminal']
