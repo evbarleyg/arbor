@@ -1,0 +1,75 @@
+AXWindow - "Arbor Settings" "" 122 58 780 568
+  AXGroup - "" "" 122 86 780 540
+    AXTextField search "Search the settings" "" 132 96 180 22
+    AXScrollArea - "" "" 122 128 200 469
+      AXOutline - "Sidebar" "" 122 128 200 469
+        AXRow - "" "" 122 138 200 28
+          AXCell - "" "" 132 138 180 28
+            AXStaticText pane.general "" "General" 141 144 69 16
+        AXRow - "" "" 122 166 200 28
+          AXCell - "" "" 132 166 180 28
+            AXStaticText pane.windows "" "Windows" 141 172 76 16
+        AXRow - "" "" 122 194 200 28
+          AXCell - "" "" 132 194 180 28
+            AXStaticText pane.dragging "" "Dragging" 141 199 77 16
+        AXRow - "" "" 122 222 200 28
+          AXCell - "" "" 132 222 180 28
+            AXStaticText pane.gestures "" "Gestures" 142 228 75 16
+        AXRow - "" "" 122 250 200 28
+          AXCell - "" "" 132 250 180 28
+            AXStaticText pane.calls "" "Calls" 141 256 51 16
+        AXRow - "" "" 122 278 200 28
+          AXCell - "" "" 132 278 180 28
+            AXStaticText pane.appearance "" "Appearance" 141 284 94 16
+        AXRow - "" "" 122 306 200 28
+          AXCell - "" "" 132 306 180 28
+            AXStaticText pane.menu-bar "" "Menu Bar" 141 312 79 16
+        AXRow - "" "" 122 334 200 28
+          AXCell - "" "" 132 334 180 28
+            AXStaticText pane.apps "" "Apps" 142 340 52 16
+        AXRow - "" "" 122 362 200 28
+          AXCell - "" "" 132 362 180 28
+            AXStaticText pane.scripting "" "Scripting" 141 368 76 16
+        AXRow - "" "" 122 390 200 28
+          AXCell - "" "" 132 390 180 28
+            AXStaticText pane.shortcuts "" "Shortcuts" 140 396 81 16
+        AXRow - "" "" 122 418 200 28
+          AXCell - "" "" 132 418 180 28
+            AXStaticText pane.rules "" "Rules" 142 424 54 16
+        AXColumn ListColumn "" "" 132 128 180 469
+    AXStaticText - "" "Arbor dev" 198 605 48 13
+    AXScrollArea - "" "" 323 86 579 540
+      AXGroup - "" "" 343 106 539 259
+        AXStaticText - "" "Screen edge band" 353 116 111 16
+        AXStaticText - "" "How close to a screen edge the pointer must come for a dragged window to dock there." 353 134 249 26
+        AXSlider screenEdgeBand.slider "Screen edge band" "12" 620 115 150 20
+          AXValueIndicator - "" "12" 634 113 24 28
+        AXTextField screenEdgeBand.field "Screen edge band, pt" "12" 778 115 60 21
+        AXStaticText - "" "pt" 846 117 13 16
+        AXStaticText - "" "Window edge band" 353 181 117 16
+        AXStaticText - "" "The band along a window's edges, as a fraction of its size, where a dropped window docks beside it." 353 199 257 26
+        AXSlider windowEdgeFraction.slider "Window edge band" "0.3" 620 180 150 20
+          AXValueIndicator - "" "0.3" 696 178 24 28
+        AXTextField windowEdgeFraction.field "Window edge band" "0.3" 778 180 60 21
+        AXStaticText - "" "" 845 182 2 16
+        AXStaticText - "" "Hold over a target" 353 246 109 16
+        AXStaticText - "" "How long a dragged window must be held over a window or tile before it can be dropped there. Screen edges never wait." 353 264 257 39
+        AXSlider dropDwell.slider "Hold over a target" "0.15" 620 245 150 20
+          AXValueIndicator - "" "0.15" 628 243 24 28
+        AXTextField dropDwell.field "Hold over a target, s" "0.15" 778 245 60 21
+        AXStaticText - "" "s" 846 247 7 16
+        AXStaticText - "" "Drop preview" 353 324 81 16
+        AXStaticText - "" "Show where a dragged window will land. Without it nothing has to be held either." 353 342 389 13
+        AXCheckBox previewDrags "" "1" 846 325 26 15
+      AXGroup - "" "" 343 375 539 40
+        AXButton - "Restore Defaults" "" 755 385 117 20
+  AXButton - "" "" 130 65 12 14
+  AXButton - "" "" 170 65 12 14
+    AXGroup - "" "" 169 64 14 16
+      AXGroup - "" "" 169 64 14 16
+  AXButton - "" "" 150 65 12 14
+  AXStaticText - "" "Arbor Settings" 462 63 99 16
+AXWindow - "" "" 253 43 12 650
+AXWindow - "" "" 506 43 12 650
+AXWindow - "" "" 759 43 12 650
+AXWindow - "" "" 0 31 1024 674

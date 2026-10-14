@@ -1,0 +1,369 @@
+# mac-shell: scripts/mac-shell/shots-F43.sh at db21a3b, macOS 26.6.2, 2026-10-14T23:13Z
+built Arbor and the pointer tool in 2s
+Reduce Motion: false
+> appearance light: now light
+
+== session 1: light mode
+session 1: Arbor pid 27917, test windows 199 200 201 (pid 27901)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+> click 190 548
+  ✔ the click focused the first window
+
+== a key that seems dead
+> key ctrl+opt+down
+shot: mac-shell/01-nothing-docked.png
+  ✔ ⌃⌥↓ with nothing docked says what to do
+  ✔ the line is on screen
+Arbor's own windows (id pid level x y w h on owner):
+203 27917 6 250 611 525 38 on Arbor
+  ✔ the window keeps the keyboard
+
+== the first dock
+> key ctrl+opt+cmd+left
+shot: mac-shell/02-docked.png
+  ✔ the first dock is explained
+  ✔ and names the keys that frame it
+  ✔ the window keeps the keyboard
+
+== the line comes and goes
+  ✔ the line went by itself
+> key ctrl+opt+up
+film: 4 pictures in .28 s
+shot: mac-shell/03-fade-in-1.png
+shot: mac-shell/03-fade-in-2.png
+shot: mac-shell/03-fade-in-3.png
+shot: mac-shell/03-fade-in-4.png
+film: 6 pictures in .48 s
+shot: mac-shell/04-fade-out-1.png
+shot: mac-shell/04-fade-out-2.png
+shot: mac-shell/04-fade-out-3.png
+shot: mac-shell/04-fade-out-4.png
+shot: mac-shell/04-fade-out-5.png
+shot: mac-shell/04-fade-out-6.png
+  ✔ and is gone again
+
+== clicks go through the line
+> key ctrl+opt+up
+the line is at 397 611 231 38
+> float 199
+w199 is floating
+> dock 200 bottom
+docked w200 at the bottom edge
+> click 259 196
+  ✔ another window has the keyboard
+> key ctrl+opt+up
+  ✔ the line is up
+> click 512 630
+  ✔ a click on the line lands on the window under it
+> float 200
+w200 is floating
+> dock 199 left
+docked w199 at the left edge
+> click 259 368
+
+== light: a problem, over the Desktop
+> key ctrl+opt+up
+shot: mac-shell/light-1-problem.png
+  ✔ ⌃⌥↑ with everything in view is explained
+
+== light: a longer sentence that names keys
+> key ctrl+opt+9
+shot: mac-shell/light-2-sentence.png
+  ✔ ⌃⌥9 says which keys save view 9
+
+== light: a hint, over a window
+> key ctrl+opt+return
+shot: mac-shell/light-3-hint.png
+  ✔ framing a window says where the others went
+> key ctrl+opt+shift+2
+shot: mac-shell/light-4-change.png
+  ✔ saving a view is confirmed
+> show-all
+showing everything
+
+== light: the shortcuts
+> key ctrl+opt+shift+/
+shot: mac-shell/light-5-shortcuts.png
+  ✔ ⌃⌥⇧/ brings up the panel
+> key escape
+  ✔ ⎋ puts it away
+> wallpaper #d8d8d8
+/System/Library/Desktop Pictures/Solid Colors/Black.png
+
+== light-on-light: a problem, over the Desktop
+> key ctrl+opt+up
+shot: mac-shell/light-on-light-1-problem.png
+  ✔ ⌃⌥↑ with everything in view is explained
+
+== light-on-light: a longer sentence that names keys
+> key ctrl+opt+9
+shot: mac-shell/light-on-light-2-sentence.png
+  ✔ ⌃⌥9 says which keys save view 9
+
+== light-on-light: a hint, over a window
+> key ctrl+opt+return
+shot: mac-shell/light-on-light-3-hint.png
+  ✔ framing a window says where the others went
+> key ctrl+opt+shift+2
+shot: mac-shell/light-on-light-4-change.png
+  ✔ saving a view is confirmed
+> show-all
+showing everything
+
+== light-on-light: the shortcuts
+> key ctrl+opt+shift+/
+shot: mac-shell/light-on-light-5-shortcuts.png
+  ✔ ⌃⌥⇧/ brings up the panel
+> key escape
+  ✔ ⎋ puts it away
+
+== what ends the panel
+> key ctrl+opt+shift+/
+  ✔ the panel is up
+  ✔ it has the keyboard
+> key x
+  ✔ any key puts it away
+  ✔ and the key went to the panel, not to the app
+  ✔ the window has the keyboard again
+> key ctrl+opt+shift+/
+  ✔ up again
+> key ctrl+opt+shift+/
+  ✔ the same keys put it away
+> key ctrl+opt+shift+/
+  ✔ up again
+> click 32 673
+  ✔ a click elsewhere puts it away
+> key ctrl+opt+shift+/
+  ✔ up again
+the panel is at 29 145 967 446
+> click 512 165
+  ✔ a click on it puts it away
+> key ctrl+opt+shift+/
+  ✔ up again
+> key ctrl+opt+return
+  ✔ one of Arbor's own shortcuts puts it away
+  ✔ and does its own job
+> show-all
+showing everything
+DEBUG the panel of shortcuts is up, with the keyboard
+DEBUG the panel of shortcuts is put away by a key
+DEBUG the panel of shortcuts is up, with the keyboard
+DEBUG the panel of shortcuts is put away by a key
+DEBUG the panel of shortcuts is up, with the keyboard
+DEBUG the panel of shortcuts is put away by a key
+DEBUG the panel of shortcuts is up, with the keyboard
+DEBUG the panel of shortcuts is up, with the keyboard
+DEBUG the panel of shortcuts is put away by something typed or clicked in another app
+DEBUG the panel of shortcuts is up, with the keyboard
+DEBUG the panel of shortcuts is put away by a click on it
+DEBUG the panel of shortcuts is up, with the keyboard
+
+== the menu
+> click 663 15
+shot: mac-shell/20-menu.png
+> key escape
+
+== pausing
+> key ctrl+opt+shift+/
+  ✔ the panel is up
+> key ctrl+opt+escape
+shot: mac-shell/21-paused.png
+  ✔ pausing puts the panel away
+  ✔ and says how to come back
+  ✔ then nothing of Arbor's is left on screen
+> key ctrl+opt+escape
+shot: mac-shell/22-resumed.png
+  ✔ resuming is confirmed
+
+== the user's own shortcuts, and every reply
+> reload-settings
+settings reloaded
+> key ctrl+opt+shift+/
+shot: mac-shell/23-own-shortcuts.png
+> key escape
+> key ctrl+opt+return
+shot: mac-shell/24-every-reply.png
+> key ctrl+opt+e
+everything Arbor said in this session:
+  Nothing is docked yet: drag a window to a screen edge, or try ⌃⌥⌘←
+  Docked · ⌃⌥↩ frames it
+  Already showing everything
+  Already showing everything
+  Already showing everything
+  Already showing everything
+  View 9 is not saved; ⌃⌥⇧9 saves where you are looking
+  Your other windows are out of view, not closed · ⌃⌥Space shows everything
+  Saved view 2: ArborTestWindows
+  Already showing everything
+  View 9 is not saved; ⌃⌥⇧9 saves where you are looking
+  Your other windows are out of view, not closed · ⌃⌥Space shows everything
+  Saved view 2: ArborTestWindows
+  Your other windows are out of view, not closed · ⌃⌥Space shows everything
+  Showing everything
+  Paused until ⌃⌥⎋; windows that were out of view are back on screen
+  Resumed
+  Framed ArborTestWindows
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 199 is back on screen after quitting
+  ✔ window 200 is back on screen after quitting
+  ✔ window 201 is back on screen after quitting
+shot: mac-shell/25-after-quit.png
+Reduce Motion: true
+> appearance dark: now dark
+
+== session 2: dark mode, Reduce motion
+session 2: Arbor pid 30767, test windows 230 231 232 (pid 30745)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> click 190 548
+  ✔ the click focused the first window
+> key ctrl+opt+cmd+left
+shot: mac-shell/30-dark-docked.png
+
+== dark: a problem, over the Desktop
+> key ctrl+opt+up
+shot: mac-shell/dark-1-problem.png
+  ✔ ⌃⌥↑ with everything in view is explained
+
+== dark: a longer sentence that names keys
+> key ctrl+opt+9
+shot: mac-shell/dark-2-sentence.png
+  ✔ ⌃⌥9 says which keys save view 9
+
+== dark: a hint, over a window
+> key ctrl+opt+return
+shot: mac-shell/dark-3-hint.png
+  ✔ framing a window says where the others went
+> key ctrl+opt+shift+2
+shot: mac-shell/dark-4-change.png
+  ✔ saving a view is confirmed
+> show-all
+showing everything
+
+== dark: the shortcuts
+> key ctrl+opt+shift+/
+shot: mac-shell/dark-5-shortcuts.png
+  ✔ ⌃⌥⇧/ brings up the panel
+> key escape
+  ✔ ⎋ puts it away
+> wallpaper gradient
+/Users/runner/work/arbor/arbor/.build/mac-shell/wallpaper-d8d8d8.png
+
+== dark-on-a-gradient: a problem, over the Desktop
+> key ctrl+opt+up
+shot: mac-shell/dark-on-a-gradient-1-problem.png
+  ✔ ⌃⌥↑ with everything in view is explained
+
+== dark-on-a-gradient: a longer sentence that names keys
+> key ctrl+opt+9
+shot: mac-shell/dark-on-a-gradient-2-sentence.png
+  ✔ ⌃⌥9 says which keys save view 9
+
+== dark-on-a-gradient: a hint, over a window
+> key ctrl+opt+return
+shot: mac-shell/dark-on-a-gradient-3-hint.png
+  ✔ framing a window says where the others went
+> key ctrl+opt+shift+2
+shot: mac-shell/dark-on-a-gradient-4-change.png
+  ✔ saving a view is confirmed
+> show-all
+showing everything
+
+== dark-on-a-gradient: the shortcuts
+> key ctrl+opt+shift+/
+shot: mac-shell/dark-on-a-gradient-5-shortcuts.png
+  ✔ ⌃⌥⇧/ brings up the panel
+> key escape
+  ✔ ⎋ puts it away
+> key ctrl+opt+up
+film: 3 pictures in .34 s
+shot: mac-shell/31-no-fade-1.png
+shot: mac-shell/31-no-fade-2.png
+shot: mac-shell/31-no-fade-3.png
+
+== two displays: the line and the panel go where the command acted
+> display_add 1280 800: display 2, 47A6373C-F043-4666-AC4E-441287FA080C
+> display_move right: now at 1920 0 1280 800
+the second display's visible frame: 1920 31 1280 769
+> move 2560 415
+> key ctrl+opt+up
+the line is at 2445 706 231 38
+  ✔ the line is on the second display
+shot: mac-shell/40-second-display-line.png and 40-second-display-line-d2.png
+> key ctrl+opt+shift+/
+  ✔ the panel is up
+  ✔ the panel is on the second display
+shot: mac-shell/41-second-display-shortcuts.png and 41-second-display-shortcuts-d2.png
+> key escape
+> display_remove
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 230 is back on screen after quitting
+  ✔ window 231 is back on screen after quitting
+  ✔ window 232 is back on screen after quitting
+> appearance light: now light
+Reduce Motion: false
+ 
+124007 01-nothing-docked.png
+176620 02-docked.png
+124424 03-fade-in-1.png
+124442 03-fade-in-2.png
+130485 03-fade-in-3.png
+130382 03-fade-in-4.png
+130389 04-fade-out-1.png
+130389 04-fade-out-2.png
+130389 04-fade-out-3.png
+130389 04-fade-out-4.png
+130389 04-fade-out-5.png
+130931 04-fade-out-6.png
+180493 20-menu.png
+186698 21-paused.png
+178843 22-resumed.png
+212901 23-own-shortcuts.png
+123161 24-every-reply.png
+184457 25-after-quit.png
+180271 30-dark-docked.png
+344073 31-no-fade-1.png
+347936 31-no-fade-2.png
+347936 31-no-fade-3.png
+830911 40-second-display-line-d2.png
+620946 40-second-display-line.png
+525813 41-second-display-shortcuts-d2.png
+621223 41-second-display-shortcuts.png
+4631 arbor-2.log
+0 arbor-stderr-2.log
+0 arbor-stderr.log
+10854 arbor.log
+79 build.log
+180872 dark-1-problem.png
+183671 dark-2-sentence.png
+128823 dark-3-hint.png
+125972 dark-4-change.png
+211399 dark-5-shortcuts.png
+347859 dark-on-a-gradient-1-problem.png
+347170 dark-on-a-gradient-2-sentence.png
+169155 dark-on-a-gradient-3-hint.png
+166734 dark-on-a-gradient-4-change.png
+354909 dark-on-a-gradient-5-shortcuts.png
+140731 light-1-problem.png
+143694 light-2-sentence.png
+100928 light-3-hint.png
+98482 light-4-change.png
+172625 light-5-shortcuts.png
+181165 light-on-light-1-problem.png
+183888 light-on-light-2-sentence.png
+126983 light-on-light-3-hint.png
+123987 light-on-light-4-change.png
+210704 light-on-light-5-shortcuts.png
+9461 output.txt
+0 screencapture.log
+0 test-windows.log
+0 vdisplay.log
+
+67 passed, 0 failed
+exit code 0
