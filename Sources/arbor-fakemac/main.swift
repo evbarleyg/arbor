@@ -26,6 +26,8 @@ import Foundation
 // state, settings, key bindings, URLs, pausing, `RectangleGesture`, `GestureRouter`, `PointerSurface`,
 // `RestartPolicy`) and the log lines they write. `FakeWindowSystem` decides what macOS does without being
 // asked: where the keyboard goes, what is reported back, whole points, title bars that stay in reach.
+// So are traces: the controller is wired through the recording decorators as in the app, and `arborctl trace on` leaves its file in
+// ARBOR_HOME/traces, on the world's clock and without the `raw` lines, which only the real Accessibility layer writes.
 //
 // What is modelled (World*.swift), on `FakeWindowSystem` and `FakeOverlays`: one display, the test apps and
 // their requests, which window is in front, who has the keyboard, what a press lands on (menu, tile, seam,

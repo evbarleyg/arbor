@@ -15,6 +15,10 @@ import CoreGraphics
 import Foundation
 import ImageIO
 
+/// The window server's number for a window that Accessibility names: the one private call Arbor itself leans on.
+@_silgen_name("_AXUIElementGetWindow")
+func _AXUIElementGetWindow(_ element: AXUIElement, _ identifier: UnsafeMutablePointer<CGWindowID>) -> AXError
+
 func fail(_ message: String) -> Never {
   FileHandle.standardError.write(Data("pointer: \(message)\n".utf8))
   exit(64)
@@ -77,6 +81,7 @@ struct Pointer {
       visible <window id>           the share of the window that is on some display, 0 to 1
       status-item <pid> [--frame]   x y: the middle of that process's menu bar item (--frame: x y w h)
       front                         the process id of the app that has the keyboard
+      keyboard                      that process id, then the number of the window of its that keys go to; - for none
       button <pid> x y <name>       x y: the middle of the close, minimize or zoom button of that process's
                                     window whose top-left corner is nearest the point
       screen-access | ax-access     true or false: Screen Recording, Accessibility
@@ -606,6 +611,26 @@ struct Pointer {
         AXUIElementGetPid(application as! AXUIElement, &pid) == .success
       else { fail("no app has the keyboard") }
       print(pid)
+
+    case "keyboard":
+      // Never a failure: that nobody has the keyboard is an answer too.
+      var pid: pid_t = 0
+      guard let application = attribute(AXUIElementCreateSystemWide(), kAXFocusedApplicationAttribute),
+        CFGetTypeID(application) == AXUIElementGetTypeID(),
+        AXUIElementGetPid(application as! AXUIElement, &pid) == .success
+      else {
+        print("- -")
+        break
+      }
+      var number: CGWindowID = 0
+      if let window = attribute(application as! AXUIElement, kAXFocusedWindowAttribute),
+        CFGetTypeID(window) == AXUIElementGetTypeID(),
+        _AXUIElementGetWindow(window as! AXUIElement, &number) == .success
+      {
+        print("\(pid) \(number)")
+      } else {
+        print("\(pid) -")
+      }
 
     case "screen-access":
       print(CGPreflightScreenCaptureAccess())
