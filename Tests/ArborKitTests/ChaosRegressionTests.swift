@@ -38,6 +38,67 @@ private let c = WindowID(103)
     dock 102 right
     """
 
+  // MARK: A view that followed the keyboard and was taken back
+
+  /// Minimizing or closing the window with the keyboard hands the keyboard to its app's next window. macOS reports that
+  /// first, the view follows, and the minimize takes the move back. Floating windows that lay over the view, which is not
+  /// the Desktop's, went out of view with one of the two moves and nothing brought them back.
+  @Test(arguments: ["minimize", "close"]) func oneFloatingWindowLeavingDoesNotTakeAnotherOutOfView(leave: String) {
+    expectEveryInvariantHolds(Self.floatsOverAViewThatIsNotTheDesktops + "\nfocus 109\n\(leave) 109")
+  }
+
+  /// Preview is docked beside a hidden app's window, so the view is on a group that shows only Preview. Mail (104) and a
+  /// window of Safari (109) float over it; Safari's other window (105) is docked and out of view.
+  static let floatsOverAViewThatIsNotTheDesktops = """
+    open 104 Mail pid 1002 at 371 506 948 407 min 948 407
+    open 105 Safari pid 1000 at 1219 136 528 623
+    launch
+    open 108 Notes pid 1001 at -349 519 614 278 title Untitled
+    layout Safari | Notes | Music
+    hide 1001
+    open 109 Safari pid 1000 at 608 356 514 532
+    zoom-node 3
+    open 110 Preview pid 1007 at 892 1716 732 402 min 374 256
+    url arbor://dock/beside/108/bottom
+    """
+
+  /// The same with the report of the minimize or close a moment late, and for an app that is hidden, whose next window is another
+  /// app's. The camera moves in that step, so the lab's rule has nothing to say: the window is looked at.
+  @Test(arguments: [
+    (holder: 109, steps: "focus 105\nadvance 0.05\nminimize 109", stays: 104),
+    (holder: 109, steps: "focus 105\nadvance 0.05\nclose 109", stays: 104),
+    (holder: 104, steps: "focus 105\nhide 1002", stays: 109),
+  ])
+  func aViewThatDidFollowAndIsTakenBackLeavesTheFloatingWindowsWhereTheyWere(holder: Int, steps: String, stays: Int) {
+    let start = Self.floatsOverAViewThatIsNotTheDesktops + "\nfocus \(holder)"
+    let before = world(after: start)
+    let followed = world(after: start + "\nfocus 105")
+    let after = world(after: start + "\n" + steps + "\nsettle")
+    let window = WindowID(UInt32(stays))
+    let main = before.controller.displays[0].id
+    #expect(!before.controller.parked.contains(window))
+    #expect(followed.controller.workspaces[main]?.camera != before.controller.workspaces[main]?.camera, "the view did follow")
+    #expect(after.controller.workspaces[main]?.camera == before.controller.workspaces[main]?.camera, "the move was taken back")
+    #expect(!after.controller.parked.contains(window))
+    #expect(after.harness.frame(window) == before.harness.frame(window))
+  }
+
+  @Test(arguments: ["minimize", "close"]) func norAfterADisplayWentAndItsWindowArrived(leave: String) {
+    expectEveryInvariantHolds(
+      """
+      launch
+      open 101 Xcode pid 1004 at 86 925 888 383 min 888 383 title Übersicht
+      open 104 Terminal pid 1003 at 979 1022 822 348 min 822 348
+      displays main:0,0,2560,1440:25,0,0,0* side:-800,-77,800,600:0,68,0,0 windows-late
+      dock left
+      open 109 Finder pid 1005 at -730 333 686 654 min 686 365
+      in
+      displays main:0,0,1920,1080:25,0,0,0* windows-first
+      open 114 Xcode pid 1004 at -1740 915 2965 992 max 356 912
+      \(leave) 114
+      """)
+  }
+
   // MARK: A floating window whose app answers with less than it was asked for
 
   @Test(arguments: [

@@ -176,6 +176,9 @@ keyboard on by itself. If it picks a window out of view, the view stays and a wi
 view gets the keyboard; the view follows only if nothing is in view. macOS reports
 the new focus before a close or a minimize, after a hide, and sometimes not at all, so
 a view that has already followed is taken back (`Workspace.retractLastMove`).
+Two moves that cancel out are no move to a person. A window can float over a view that is not the Desktop's, and
+nothing in the model says that it does: the move back to such a view would park it. So the floating windows that
+were in view before the first move are where they were after the second (`Reveal.floatingInView`).
 When a camera move parks the window that has the keyboard, a visible window is
 focused instead. Commands that arrange windows focus the window they moved only
 if it shows, because focusing a tile would zoom onto it.

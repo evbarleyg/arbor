@@ -326,7 +326,8 @@ public final class Controller {
   /// What was wrong with it when this run read it (Controller+Notices.swift).
   var stateNews: StateNews?
   /// Floating windows that the layout in progress must leave exactly where they are: the one that was just
-  /// dropped, or the ones `float-all` has just put back (Controller+UndockedFrames.swift).
+  /// dropped, the ones `float-all` has just put back (Controller+UndockedFrames.swift), or the ones that lay over a view that
+  /// is taken back (Controller+Focus.swift).
   var placedOnPurpose: Set<WindowID> = []
   /// What each display showed when it was last laid out, for the next transition to start from
   /// (Controller+Transitions.swift).
