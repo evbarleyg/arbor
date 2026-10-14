@@ -1,0 +1,303 @@
+# mac-shell: scripts/mac-shell/shots-demo.sh at a391fe4, macOS 26.6.2, 2026-10-14T22:38Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64, 3 cores
+session: Aqua; bash 3.2.57(1)-release; Python 3.14.7
+Apple Swift version 6.4.1 (swift-6.4.1-RELEASE)
+Target: arm64-apple-macosx26.0
+built Arbor and the pointer tool in 120s
+displays (id x y w h pixel-width pixel-height scale):
+1 0 0 1024 768 1024 768 1
+Accessibility for a child process: true
+Screen Recording for a child process: true
+pointer: 10 10 up
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+windows on screen before the session (id pid layer x y w h on owner):
+27 319 25 787 0 31 30 on Control Center
+22 319 25 818 0 42 30 on Control Center
+21 319 25 860 0 164 30 on Control Center
+17 165 24 0 0 1024 30 on Window Server
+16 321 -2147483603 0 0 1024 768 on Finder
+7 317 -2147483624 0 0 1024 768 on Dock
+6 317 20 0 0 1024 768 on Dock
+2 165 -2147483626 0 0 1024 768 on Window Server
+
+== session 1: four windows
+session 1: Arbor pid 5029, test windows 29 30 31 32 (pid 5001)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w29 170 220 480 348      floating
+  w30 220 180 480 348      floating
+  w31 270 140 480 348      floating
+  w32 320 100 480 348      floating
+shot: mac-shell/01-start.png
+
+== dock a window with a command
+> dock 29 left
+docked w29 at the left edge
+shot: mac-shell/02-dock-left.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          518 43 494 650
+  w29 12 43 494 650        docked focused
+  w30 518 180 480 348      floating
+  w31 518 140 480 348      floating
+  w32 518 100 480 348      floating
+
+== drag a window by its title bar to the left screen edge
+> drag 758 112 3 368 --no-release
+pointer: 3 368 down
+shot: mac-shell/03-drag-held.png
+Arbor's own windows while the button is held (the drop preview is at level 3):
+38 5029 3 12 43 325 650 on Arbor
+37 5029 0 509 91 498 366 off Arbor
+36 5029 -2147483602 0 31 1024 674 on Arbor
+35 5029 0 506 43 12 650 on Arbor
+  ✔ a drop preview is on screen while the button is held
+> release 3 368
+shot: mac-shell/04-drag-released.png
+  ✔ the dragged window is docked after the release
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          687 43 325 650
+  w29 349 43 326 650       docked
+  w30 687 180 337 348      floating
+  w31 324 140 700 500      floating
+  w32 12 43 325 650        docked focused
+the window server has it at: 12 43 325 650
+
+== drag the seam between the two docked windows 80 points to the right
+> move 343 368
+shot: mac-shell/05-seam-hover.png
+> drag 343 368 423 368
+shot: mac-shell/06-seam-dragged.png
+the left window was 325 wide and is now 325
+  ✘ the seam drag made the left window about 80 points wider
+
+== drag a docked window's own right edge 60 points to the right
+> drag 674 368 734 368 --no-release
+shot: mac-shell/06b-edge-held.png
+> release
+shot: mac-shell/06c-edge-released.png
+the window was 326 wide and is now 326
+  ✘ the edge drag made the window about 60 points wider
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          687 43 325 650
+  w29 349 43 326 650       docked
+  w30 687 180 337 348      floating
+  w31 324 140 700 500      floating focused
+  w32 12 43 325 650        docked
+
+== dock below, and a window too big for its slot
+> dock 30 beside 29 bottom
+docked w30 below w29
+shot: mac-shell/07-dock-below.png
+> dock 31 beside 32 bottom
+arborctl: Arbor did not answer within 5 s; it may be waiting for an app that is busy
+shot: mac-shell/08-dock-too-big.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          687 43 325 650
+  tile n6 window   12 374 325 319  holds w31
+  w29 349 43 326 319       docked
+  w30 349 374 326 319      docked focused
+  w31 1023 677 700 500     docked parked
+  w32 12 43 325 319        docked
+> show-all
+showing everything
+shot: mac-shell/09-tile.png
+> ascii
+display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
++----------------------++----------------------+........................
+|w32 ArborTestWindows  ||w29 ArborTestWindows  |.desktop               .
+|                      ||                      |.                      .
+|                      ||                      |.                      .
+|                      ||                      |.                      .
+|                      ||                      |.                      .
+|                      ||                      |.                      .
+|                      ||                      |.                      .
+|                      ||                      |.                      .
+|                      ||                      |.                      .
++----------------------++----------------------+.                      .
+########################+----------------------+.                      .
+#w31 ArborTestWindows  #|w30 ArborTestWindows  |.                      .
+#                      #|                      |.                      .
+#                      #|                      |.                      .
+#                      #|                      |.                      .
+#                      #|                      |.                      .
+#                      #|                      |.                      .
+#                      #|                      |.                      .
+#                      #|                      |.                      .
+#                      #|                      |.                      .
+########################+----------------------+........................
+camera n2  hidden: w31 ArborTestWindows
+  ✔ the window that cannot shrink is a tile
+
+== zoom and back
+> zoom 29
+framed w29
+shot: mac-shell/10-zoom.png
+> back
+back to everything
+shot: mac-shell/11-back.png
+
+== catch a camera move half way
+> zoom 30
+framed w30
+shot: mac-shell/12-mid-zoom.png
+> back
+back to everything
+film: 4 pictures in .51 s
+shot: mac-shell/12-back-1.png
+shot: mac-shell/12-back-2.png
+shot: mac-shell/12-back-3.png
+shot: mac-shell/12-back-4.png
+
+== click the tile
+> click 174 533
+shot: mac-shell/13-tile-clicked.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n6, back yes
+  w29 1023 677 326 319     docked parked
+  w30 1023 677 326 319     docked parked
+  w31 12 43 1000 650       docked focused
+  w32 1023 677 325 319     docked parked
+  ✔ the click on the tile framed its window
+> show-all
+showing everything
+
+== the Desktop, then quit
+> desktop
+showing the Desktop
+shot: mac-shell/14-desktop.png
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 29 is back on screen after quitting
+  ✔ window 30 is back on screen after quitting
+  ✔ window 31 is back on screen after quitting
+  ✔ window 32 is back on screen after quitting
+shot: mac-shell/15-after-quit.png
+
+== session 2: the menu bar item and the shortcuts, macOS's own edge tiling off
+com.apple.WindowManager EnableTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+session 2: Arbor pid 6815, test windows 52 53 (pid 6787)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+menu bar items, as the window server sees them (id pid level x y w h on owner):
+27 319 25 787 0 31 30 on Control Center
+22 319 25 818 0 42 30 on Control Center
+21 319 25 860 0 164 30 on Control Center
+54 319 25 755 2 30 26 on Control Center
+> click 460 354
+shot: mac-shell/20-menu-bar.png
+Arbor's menu bar item is at 770 15
+> click 770 15
+shot: mac-shell/21-menu-open.png
+> key escape
+
+== shortcuts: click a window to focus it, then ⌃⌥⌘← and ⌃⌥Space
+> click 190 548
+  ✔ the click focused the window
+> key ctrl+opt+cmd+left
+DEBUG no stage: Reduce motion is on
+INFO  dock left: docked w52 at the left edge
+DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Docked · ⌃⌥↩ frames it
+  ✔ ctrl+opt+cmd+left made Arbor run a command
+shot: mac-shell/23-shortcut-dock-left.png
+  ✔ ⌃⌥⌘← docked the focused window
+> key ctrl+opt+space
+INFO  show-all: showing everything
+DEBUG peek: the key came up
+  ✔ ctrl+opt+space made Arbor run a command
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          524 55 476 626
+  w52 24 55 476 626        docked focused
+  w53 524 180 480 348      floating
+
+== drag the other window to the right edge, this time without macOS's tiling
+> drag 764 192 1021 368 --no-release
+shot: mac-shell/24-drag-right-held.png
+> release
+shot: mac-shell/25-drag-right-released.png
+  ✔ the dragged window is docked after the release
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          357 55 310 626
+  w52 24 55 309 626        docked
+  w53 691 55 309 626       docked focused
+
+== ⌃⌥-drag a rectangle around the window on the right
+> drag 721 115 970 641 --mods ctrl+opt --no-release
+shot: mac-shell/25b-rectangle-held.png
+> release --mods ctrl+opt
+shot: mac-shell/25c-rectangle-released.png
+  ✔ the rectangle framed the window inside it
+display 0 0 1024 768, visible 0 31 1024 674, camera n3, back yes
+  w52 1023 677 309 626     docked parked
+  w53 24 55 976 626        docked focused
+> show-all
+showing everything
+
+== double-click a title bar
+> click 845 67 2
+shot: mac-shell/26-double-click.png
+before: 691 55 309 626, after: 691 55 309 626
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  Desktop          357 55 310 626
+  w52 24 55 309 626        docked
+  w53 691 55 309 626       docked focused
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 52 is back on screen after quitting
+  ✔ window 53 is back on screen after quitting
+ 
+140573 01-start.png
+130390 02-dock-left.png
+136145 03-drag-held.png
+160309 04-drag-released.png
+153369 05-seam-hover.png
+143535 06-seam-dragged.png
+143503 06b-edge-held.png
+143601 06c-edge-released.png
+158668 07-dock-below.png
+113003 08-dock-too-big.png
+166209 09-tile.png
+91663 10-zoom.png
+173541 11-back.png
+165013 12-back-1.png
+166700 12-back-2.png
+166700 12-back-3.png
+166700 12-back-4.png
+92144 12-mid-zoom.png
+103193 13-tile-clicked.png
+90031 14-desktop.png
+157330 15-after-quit.png
+117170 20-menu-bar.png
+162503 21-menu-open.png
+111182 23-shortcut-dock-left.png
+97419 24-drag-right-held.png
+102405 25-drag-right-released.png
+99536 25b-rectangle-held.png
+102693 25c-rectangle-released.png
+110131 26-double-click.png
+2574 arbor-2.log
+0 arbor-stderr-2.log
+0 arbor-stderr.log
+3583 arbor.log
+0 build-curtain.log
+0 build-pointer.log
+0 build-vdisplay.log
+2655 build.log
+10164 output.txt
+0 screencapture.log
+0 test-windows.log
+
+18 passed, 2 failed
+exit code 1
