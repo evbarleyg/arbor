@@ -182,6 +182,19 @@ private let b = WindowID(102)
       }.contains("moved-twice-floating"))
   }
 
+  /// One known bug has a name of its own, and nothing else goes by it: not the same jolt without the setting, nor in another order.
+  @Test func theNameForWindowsFirstIsOnlyThatBugs() {
+    let jolt: (FakeWindowSystem) -> Void = {
+      _ = $0.setFrame(self.rect(900, 300, 500, 400), of: b)
+      _ = $0.setFrame(self.rect(850, 300, 500, 400), of: b)
+    }
+    let (filling, displays) = (oneDocked + ["set soleFloatTakesDesktop true", "settle"], "displays main:0,0,1440,900:25,0,0,0* ")
+    #expect(nets(after: filling, then: displays + "windows-first", fault: jolt).contains("moved-twice-floating-windows-first"))
+    #expect(nets(after: oneDocked, then: displays + "windows-first", fault: jolt).contains("moved-twice-floating"))
+    #expect(nets(after: filling, then: displays + "windows-late", fault: jolt).contains("moved-twice-floating"))
+    #expect(nets(after: filling, then: "cursor 10 10", fault: jolt).contains("moved-twice-floating"))
+  }
+
   // MARK: Nothing moves that was not asked to
 
   @Test func nothingMovesBeforeAnythingIsDocked() {

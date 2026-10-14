@@ -5,7 +5,9 @@ Written by the executor swarm, 2026-10-14; for the documenter to review.
 Status: mostly done with F10 (`feat/F10-menu-bar`: `doctor`, `SystemFacts`, `MacSwitch`, `CompetingApp`, `Controller+Doctor.swift`, the first page of the welcome window), including the wallpaper click, Stage Manager, Moom,
 BetterSnapTool, Loop, Swish and the paused state; and with `feat/F42-setup-check-rest`: F41's apps (a note in `doctor`, a row in the welcome window), the keyboard layout and the shortcuts it moves, a process named `yabai`, the worst first, and
 a line in the log at launch for every problem. With `guardDesktopClicks` on (F60) the wallpaper click is a note. **Left**: symbolic hot key 61 (K126, being built as `SystemShortcuts`; its `systemShortcutClashes` replaces the count of input sources), an unreadable
-`settings.json` (comes with F12's `settingsFileProblem`), "Turn it off for me", `--json`
+`settings.json` (comes with F12's `settingsFileProblem`), `--json`. **"Turn it off for me" is shipped** as `fix-setup` and the button Switch Them Off in the welcome window's row, with
+`fix-setup undo` / Put Them Back as the way back (`Controller+FixSetup.swift`, `MacSwitchboard`): macOS's three tiling switches, never Stage Manager, never unasked. The click on the wallpaper is left alone and is a note in `doctor`, with or without the guard, and no row's business in the welcome window (Q24: a sweep is only a picture). Seen on a hosted Mac with
+macOS 26.6 and with 15.7 at their defaults: macOS obeys within a second of the keys being written or removed, and nothing has to be restarted (`scripts/mac-shell/probe-switches.sh`, `first-five-minutes.sh`)
 Depends on: F10 (shows it), F06
 Size: small, for what is left
 

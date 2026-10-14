@@ -47,6 +47,7 @@ THEIRS = r"(\$HOME|\$\{HOME\}|~)/|(?<![\w.$}])/(Applications|Library|Users|usr/l
 GESTURES = "posts gestures or keys past lib.sh's nets: they go to whatever lies at that place or has the keyboard (ask `arbor_input_is_ours click x y` first)"
 RISKS = [
     ("changes a setting", r"\bdefaults\s+(-currentHost\s+)?(write|delete|import|rename)\b|\bPlistBuddy\b"),
+    ("has Arbor change settings of macOS", r"\bfix-setup\b|\bARBOR_MAC_SWITCHES="),
     ("resets or edits privacy permissions", r"\btccutil\b|TCC\.db"),
     ("scripts other apps", r"\bosascript\b"),
     ("kills processes by name", r"\b(killall|pkill)\b"),
@@ -438,6 +439,9 @@ SELF_TEST = [
     (0, 'if [ "${GITHUB_ACTIONS:-}" = true ]; then\n  sudo tccutil reset Accessibility\nfi\n'),
     (1, 'if [ "${GITHUB_ACTIONS:-}" != true ]; then\n  sudo tccutil reset Accessibility\nfi\n'),
     (0, 'defaults read com.apple.WindowManager Enable\n'),
+    (1, 'ctl fix-setup\n'),
+    (1, 'arbor_start 3 ARBOR_MAC_SWITCHES=1\n'),
+    (0, 'source lib.sh\nneeds_throwaway_mac "switch tiling off"\narbor_start 3 ARBOR_MAC_SWITCHES=1\nctl fix-setup undo\n'),
     (1, 'sudo tccutil reset Accessibility\n'),
     (1, 'screencapture -x "$path"\n'),
     (0, 'f() {\n  arbor_may_shoot "$1" || return 1\n  screencapture -x "$path"\n}\n'),

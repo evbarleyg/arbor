@@ -150,6 +150,8 @@ public enum Command: Equatable, Sendable, Codable {
   case shrink(Double?)
   case moveToDisplay(DisplayTarget, WindowID?)
   case focusDisplay(DisplayTarget)
+  /// Switches off the settings of macOS that are in Arbor's way, or with `undo` puts them back as they were (Controller+FixSetup.swift).
+  case fixSetup(undo: Bool)
 
   /// Whether the command only reads state.
   public var isQuery: Bool {
@@ -520,6 +522,9 @@ public enum Command: Equatable, Sendable, Codable {
         throw ParseError("usage: focus-display <next|previous|number>")
       }
       return .focusDisplay(target)
+    case "fix-setup":
+      guard args.isEmpty || args == ["undo"] else { throw ParseError("usage: fix-setup [undo]") }
+      return .fixSetup(undo: !args.isEmpty)
     case "watch":
       var kinds: [ArborEvent.Kind] = []
       for word in args where word != "--titles" {
@@ -631,6 +636,7 @@ public enum Command: Equatable, Sendable, Codable {
     case .shrink(let points): return "shrink" + (points.map { " \(Self.format($0))" } ?? "")
     case .moveToDisplay(let target, let window): return "move-to-display \(target.text)" + w(window)
     case .focusDisplay(let target): return "focus-display \(target.text)"
+    case .fixSetup(let undo): return "fix-setup" + (undo ? " undo" : "")
     case .displays: return "displays"
     case .toggleAutoDock: return "toggle-auto-dock"
     case .showShortcuts: return "show-shortcuts"
@@ -717,6 +723,7 @@ public enum Command: Equatable, Sendable, Codable {
       watch [events…] [--titles]                 stream changes as lines of JSON (docs/SCRIPTING.md)
       doctor                                     check permissions, macOS settings, shortcuts and settings.json
       check-setup | welcome                      open the welcome window: what matters on this Mac | three moves to try
+      fix-setup [undo]                           switch off the macOS settings `doctor` finds in Arbor's way | put them back as they were
       menu-bar | menu                            the buttons the menu bar item shows, and where each is | its menu, as text
       stats [reset]                              what commands and calls to other apps cost | start counting afresh
       spaces                                     the named spaces, what they hold and where they are

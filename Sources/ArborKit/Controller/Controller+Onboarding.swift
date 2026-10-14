@@ -4,17 +4,19 @@ import ArborCore
 /// `OnboardingWindow` lays that out and reports the buttons.
 extension Controller {
   /// What the welcome window says, given what the app found out and how far the user has got.
-  public func onboardingModel(_ facts: SystemFacts, flow: OnboardingFlow? = nil) -> OnboardingModel {
+  public func onboardingModel(
+    _ facts: SystemFacts, flow: OnboardingFlow? = nil, fixSetupFailure: String? = nil
+  ) -> OnboardingModel {
     // During a pause nearly every shortcut is handed back; the window names the ones that will be there again.
     let bindings =
       facts.inputDisabled || !settings.hotkeysEnabled
       ? [] : isPaused ? effectiveBindings.bindings : bindingsInEffect
-    // Arbor keeps clicks on the Desktop from macOS itself (F60), so a newcomer is not sent to look for that switch.
     var facts = facts
-    if guardsDesktopClicks { facts.switches?.removeAll { $0 == .clickWallpaper } }
+    facts.switches = macSwitchesInTheWay(facts)
     facts.accessibility = hasPermission(facts)
     return OnboardingModel(
-      facts, flow: flow, windowsOutOfView: permissionLoss?.windows ?? 0, offersScreenRecording: offersScreenRecording, appsWithOwnShortcuts: passThroughSuggestions.map(\.name), isPaused: isPaused && accessibilityGranted,
+      facts, flow: flow, windowsOutOfView: permissionLoss?.windows ?? 0, offersScreenRecording: offersScreenRecording, appsWithOwnShortcuts: passThroughSuggestions.map(\.name),
+      canFixSetup: macSwitchboard != nil, switchesChangedByArbor: macSwitchesChangedByArbor, fixSetupFailure: fixSetupFailure, isPaused: isPaused && accessibilityGranted,
       shortcut: { KeyBindings.label(for: $0, in: bindings) })
   }
 
@@ -62,6 +64,8 @@ public final class OnboardingSession {
   private var facts: SystemFacts
   private var flow: OnboardingFlow
   private var isOpen = false
+  /// What the row's button answered when it last failed.
+  private var failure: String?
   private weak var controller: Controller?
   private let onChange: @MainActor (OnboardingModel) -> Void
 
@@ -89,6 +93,7 @@ public final class OnboardingSession {
     isOpen = true
     facts = Self.facts(of: controller)
     flow = OnboardingFlow(isReady: facts.accessibility)
+    failure = nil
     flow.go(to: page)
     flow.steps.observe(controller.workspaces)
     publish()
@@ -103,6 +108,13 @@ public final class OnboardingSession {
     facts = Self.facts(of: controller)
     flow.update(isReady: facts.accessibility, needsAttention: controller.onboardingModel(facts).needsAttention)
     publish()
+  }
+
+  /// A row's button has run its command. The window follows at once, not at the next look at the Mac, and says so if nothing came of it:
+  /// before Arbor runs there is no display to say it on.
+  public func actionEnded(_ result: CommandResult) {
+    failure = result.ok ? nil : result.message
+    refresh()
   }
 
   /// The Continue and Back buttons.
@@ -122,7 +134,7 @@ public final class OnboardingSession {
 
   private func publish() {
     guard let controller else { return }
-    let current = controller.onboardingModel(facts, flow: flow)
+    let current = controller.onboardingModel(facts, flow: flow, fixSetupFailure: failure)
     guard current != model else { return }
     model = current
     onChange(current)

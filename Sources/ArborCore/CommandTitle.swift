@@ -99,6 +99,8 @@ extension Command {
     case .mirror: return "Mirror Group"
     case .moveToDisplay(let target, _): return "Move to \(Self.title(of: target))"
     case .focusDisplay(let target): return "Focus \(Self.title(of: target))"
+    case .fixSetup(undo: false): return "Switch Off macOS Settings in the Way"
+    case .fixSetup(undo: true): return "Put macOS Settings Back"
     default: return nil
     }
   }

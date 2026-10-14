@@ -228,6 +228,8 @@ import Testing
       // face (how wide an item the menu bar has room for, which page is open, that the window has been seen). No window, view or
       // layout depends on it. Their scheduled work (`menu-bar`, `menu-bar-room`, a `save`) has no effect a replay would miss.
       "update", "tryAgain", "begin", "end", "refresh", "go", "noteWelcomed",
+      // F42. `OnboardingSession` is told how the command of a row's button ended, to say so in the window. The command itself went through `perform`.
+      "actionEnded",
       "invariantViolations", "expectedTilesAndSeams",
       // F26. Where the minimap is, for whatever shares the bottom of the display with it.
       "minimapFrame",

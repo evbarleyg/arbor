@@ -1388,6 +1388,11 @@ All three show state, so each is a headless model that the app only draws.
   the permission is missing and once more in a lifetime: after the first start `ArborApp` asks `Controller.pageToWelcomeOn()`, which answers nil
   once `noteWelcomed()` has been called, now or at an earlier launch (`welcomed` in `state.json`). The flag is written only while Arbor runs: before
   `start()` the controller has not read what it saved, and would write an empty arrangement over it.
+- **The one step.** `fix-setup` (`Controller+FixSetup.swift`) switches off the Desktop & Dock settings that are in the way, through the seam
+  `MacSwitchboard` (`SystemMacSwitchboard`: the `com.apple.WindowManager` defaults, which macOS follows within a second with nothing restarted), after writing
+  down how each was stored (`macos-settings-before.json` beside the settings, part of neither them nor the saved arrangement); `fix-setup undo` and
+  `Arbor --fix-setup undo` (`make uninstall`) put them back. Only when asked. An Arbor limited to some processes (`ARBOR_ONLY_PIDS`) has no switchboard,
+  so its window shows no such button, unless `ARBOR_MAC_SWITCHES=1`.
 - **`doctor`** is `Controller.doctorReport()`: the same facts plus the settings, the shortcuts and the displays. It calls a shortcut
   refused only if macOS refused it when the app asked (`refusedBindings`), and misses a gesture's event tap only if `inputSettings` wants
   it, so a pause, or anything else that makes Arbor hold less than the settings describe, is not a problem.

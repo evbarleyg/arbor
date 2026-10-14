@@ -8,11 +8,18 @@ import Carbon.HIToolbox
 enum MacFacts {
   /// The settings under Desktop & Dock that are in Arbor's way as they stand, or nil if they cannot be read.
   static var switches: [MacSwitch]? {
-    // A new object each time: this is another process's domain, and the user is changing it meanwhile.
-    guard let defaults = UserDefaults(suiteName: "com.apple.WindowManager") else { return nil }
-    return MacSwitch.inTheWay(macOS: ProcessInfo.processInfo.operatingSystemVersion.majorVersion) { key in
-      defaults.object(forKey: key) as? Bool
-    }
+    guard windowManagerDefaults != nil else { return nil }
+    return MacSwitch.inTheWay(macOS: ProcessInfo.processInfo.operatingSystemVersion.majorVersion) { stored($0) }
+  }
+
+  /// Where System Settings keeps them. A new object each time: this is another process's domain, and the user is changing it meanwhile.
+  static var windowManagerDefaults: UserDefaults? { UserDefaults(suiteName: "com.apple.WindowManager") }
+
+  /// What is stored under one of those keys, nil if nothing is. As macOS itself reads it: `defaults write … NO` without `-bool` stores a
+  /// word, which counts as off.
+  static func stored(_ key: String) -> Bool? {
+    guard let defaults = windowManagerDefaults, defaults.object(forKey: key) != nil else { return nil }
+    return defaults.bool(forKey: key)
   }
 
   /// macOS's own tiling of dragged windows as it stands. Settings that cannot be read count as this macOS comes: standing

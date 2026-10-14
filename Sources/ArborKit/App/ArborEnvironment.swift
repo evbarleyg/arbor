@@ -5,6 +5,9 @@ import Foundation
 ///
 /// - `ARBOR_HOME`, `ARBOR_SOCKET`: see `ArborPaths`.
 /// - `ARBOR_ONLY_PIDS=123,456`: arrange only these processes' windows.
+/// - `ARBOR_MAC_SWITCHES=1`: with `ARBOR_ONLY_PIDS`, `fix-setup` may still change macOS's own settings. Without it an Arbor that is limited
+///   to some processes offers nothing of the kind: it is somebody's tool on what may be somebody else's Mac, and a script's
+///   click that lands on the wrong button must not cost them their settings.
 /// - `ARBOR_NO_HOTKEYS=1`: do not register global shortcuts or install the
 ///   pinch and rectangle event taps.
 /// - `ARBOR_NO_STATUS_ITEM=1`: no menu bar item.
@@ -25,6 +28,7 @@ import Foundation
 /// - `ARBOR_NO_REHEARSAL=1`: get nothing ready for the first motion ahead of time, to measure what that saves.
 public struct ArborEnvironment: Sendable {
   public var onlyPIDs: Set<Int32>?
+  public var macSwitches: Bool
   public var noHotkeys: Bool
   public var noStatusItem: Bool
   public var noPrompt: Bool
@@ -48,7 +52,7 @@ public struct ArborEnvironment: Sendable {
       Set(list.split(separator: ",").compactMap { Int32($0.trimmingCharacters(in: .whitespaces)) })
     }
     return ArborEnvironment(
-      onlyPIDs: pids, noHotkeys: flag("ARBOR_NO_HOTKEYS"), noStatusItem: flag("ARBOR_NO_STATUS_ITEM"),
+      onlyPIDs: pids, macSwitches: flag("ARBOR_MAC_SWITCHES"), noHotkeys: flag("ARBOR_NO_HOTKEYS"), noStatusItem: flag("ARBOR_NO_STATUS_ITEM"),
       noPrompt: flag("ARBOR_NO_PROMPT"), noWatchdog: flag("ARBOR_NO_WATCHDOG"), rescue: flag("ARBOR_RESCUE"),
       darkAppearance: ["dark": true, "light": false][env["ARBOR_APPEARANCE"]?.lowercased() ?? ""],
       noPictures: flag("ARBOR_NO_PICTURES"),

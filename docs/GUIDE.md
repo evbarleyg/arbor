@@ -90,13 +90,12 @@ Seven things you can hold Arbor to. Each has a story of its own that is played a
 
 ## 2. The first ten minutes
 
-### Before you start: four switches
+### Before you start: three switches
 
-macOS has features of its own that want the same screen edges and the same clicks. In **System Settings → Desktop & Dock**:
+macOS has tiling of its own, which wants the same screen edges. In **System Settings → Desktop & Dock**:
 
 | Switch | Set it to | Otherwise |
 |---|---|---|
-| Click wallpaper to reveal desktop | **Only in Stage Manager** | One click on the Desktop, or in a gap between docked windows, sweeps every window off to the sides. It looks as if Arbor lost them. A second click brings them back |
 | Drag windows to screen edges to tile | off | The left and right edges of the screen are macOS's: pushed against one, a window gets half the screen from macOS, and Arbor offers nothing along them |
 | Drag windows to menu bar to fill screen | off | The top edge is macOS's: held in the menu bar, a window fills the screen |
 | Hold ⌥ key while dragging windows to tile | off | While ⌥ is down the window is macOS's wherever you let go |
@@ -105,7 +104,11 @@ macOS has features of its own that want the same screen edges and the same click
 
 Quit other window managers (Rectangle, Magnet, Amethyst and others use the same ⌃⌥ keys), and turn Stage Manager off.
 
-Arbor checks all of this for you and changes none of it: the welcome window lists what stands in the way, worst first, and so do **Check Setup…** (menu → Help) and `arborctl doctor` at any later time.
+One more is good to know and nothing to change: with **Click wallpaper to reveal desktop** as macOS comes, one click on the Desktop, or in a gap between docked windows, sweeps every window off to the sides. It looks as if Arbor lost them. It has not: a second click brings them back where they were. "Only in Stage Manager" switches it off, if you would rather.
+
+Arbor checks all of this for you before it arranges anything, and changes none of it unasked: the welcome window lists what stands in the way, worst first, and so do **Check Setup…** (menu → Help) and `arborctl doctor` at any later time.
+
+**Or in one step.** The row has a button, **Switch Them Off** (`arborctl fix-setup`). It switches off the three above, as far as they are on, and nothing else; macOS obeys at once, nothing restarts and no window moves. Arbor writes down how each was. **Put Them Back**, in the same row afterwards (`arborctl fix-setup undo`), restores exactly that, next week as well as now, and so does uninstalling. Stage Manager is not part of it: whoever has it on chose it.
 
 ### Launch and permission
 
@@ -366,14 +369,14 @@ Arrange the windows by hand once, ask for the line, and bind it to a shortcut: `
 
 | What you see | Why | What to do |
 |---|---|---|
-| **Every window flew to the sides** after a click on the Desktop or in a gap | macOS's "Click wallpaper to reveal desktop" | Click the wallpaper again. Then set it to "Only in Stage Manager" (section 2) |
+| **Every window flew to the sides** after a click on the Desktop or in a gap | macOS's "Click wallpaper to reveal desktop" | Click the wallpaper again: they come back where they were. To be rid of it, set it to "Only in Stage Manager" (section 2) |
 | **A window is gone** | It is out of view | ⌃⌥0, or ⌘Tab to its app. Still gone: ⌃⌥⇧F. Still gone: quit Arbor and start it again; at launch it brings back anything left off screen |
 | **The shortcuts do nothing** | No permission; another app has the keys; shortcuts are off, or off in this app; Arbor is paused | Open the menu: it says if permission is missing or Arbor is paused, and Shortcuts Off in “App” has a tick if they are off in the app in front. Quit Rectangle, Magnet and the like. ⌃⌥⇧/ or menu → Help → Keyboard Shortcuts… shows the shortcuts in effect; `arborctl bindings` lists them too and says if they are off right now, and why |
 | **Only ⌃⌥Space does nothing**, or ⌃⌥Space no longer switches keyboards | With several keyboards or input methods set up, macOS uses the same keys for "Select next source in Input menu", and only one of the two gets them (on the one Mac where it was measured, Arbor) | ⌃⌥0 shows everything too. Free the key on either side: System Settings → Keyboard → Keyboard Shortcuts → Input Sources, or `arborctl unbind ctrl+opt+space` |
 | **Show Everything springs back** when the keys come up | They were held for a second or more, or the pointer moved meanwhile, which is a peek: letting go returns to the outlined view | Let go within a second with the pointer at rest, or use ⌃⌥0, which never peeks. `"peek": false` in `settings.json` turns peeking off |
 | **Clicks, scrolling or pinches feel late or go missing**, in any app, since you switched the gestures on | For the pinch, ⌃⌥ + scroll and the rectangle macOS shows Arbor each press, scroll and pinch first, and holds it until Arbor has answered | Settings… → Gestures → **Trackpad and mouse gestures** off, or `arborctl set pointerGestures false`: nothing waits for Arbor any more. Keys, the menu and dragging windows, gaps and tiles work as before. If that cures it, please tell us |
 | **A beep** | The shortcut has nothing to do here, and `messages` is "off" | Set `messages` to "helpful" and Arbor says why on screen; or ask `arborctl` with the same command: `arborctl in` → "nothing is docked yet: drag a window to a screen edge…" |
-| **A window pushed against the edge takes half the screen**, or all of it at the top, and is not docked | With macOS's own tiling on, the left, right and top edges are macOS's, and Arbor stands aside | ⌃⌥⌘ + an arrow docks it at once. Or switch off the three switches in section 2, and every edge is Arbor's |
+| **A window pushed against the edge takes half the screen**, or all of it at the top, and is not docked | With macOS's own tiling on, the left, right and top edges are macOS's, and Arbor stands aside | ⌃⌥⌘ + an arrow docks it at once. Or Help → Check Setup… → Switch Them Off (or the three switches in section 2 by hand), and every edge is Arbor's |
 | **A docked window covers the others** after a double-click on its title bar | macOS's own title-bar action (System Settings → Desktop & Dock → "Double-click a window's title bar to"). You asked macOS for it, so Arbor leaves the window where macOS put it | Double-click the title bar again, or press ⌃⌥Space or ⌃⌥0: the window is back in its place |
 | **A window shows as a coloured tile** with its icon | Its place is too small for it, or its app refused to shrink that far | Arbor has already moved the gaps as far as the Desktop and the neighbours could spare. Click the tile to zoom in on it. Give it more room by dragging a gap. Once there is room, Arbor asks the window again, out of view, and gives it the place if it fits |
 | **An app keeps moving its own windows**, or looks wrong when docked | Some apps insist | Don't Arrange "App" in the menu |
@@ -400,6 +403,6 @@ Being built or waiting to be merged as this is written. When one lands, its sect
 | Tab groups | Drop a window on the middle of another: they share a place under a strip of tabs; ⌃⌥⇥ switches |
 | Presets | Set the table with one command |
 | Carry a window with the keyboard (⌃⌥⌘Space) | Everything a drag can do, from the keys: put a window under one other window, make a tab group |
-| Clicks on the Desktop guarded | Built, and off until someone has tried it on a Mac (`guardDesktopClicks`). Then the first of the four switches in section 2 will no longer be needed |
+| Clicks on the Desktop guarded | Built, and off until someone has tried it on a Mac (`guardDesktopClicks`). Then a click on the Desktop sweeps nothing aside, whatever macOS's switch says |
 | Trackpad and mouse gestures: the pinch, ⌃⌥ + scroll, the rectangle | Built, and off for now: for them macOS shows Arbor every pinch, scroll and press of the Mac first, in every app, and holds it until Arbor has answered. That waits until all its checks on a Mac are green. To have them today: Settings… → Gestures → **Trackpad and mouse gestures**, or `arborctl set pointerGestures true` |
 | Double-click a title bar or the Desktop | More of what TrellisWM users' hands expect |

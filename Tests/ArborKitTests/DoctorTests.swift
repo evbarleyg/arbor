@@ -153,14 +153,11 @@ import Testing
 
   @Test func desktopAndDockSettingsCompeteWithArbor() {
     var facts = Self.healthy
-    facts.switches = [.clickWallpaper, .optionKey]
-    var unguarded = Settings()
-    unguarded.guardDesktopClicks = false
-    let h = makeHarness(facts, settings: unguarded)
+    facts.switches = [.menuBar, .optionKey]
+    let h = makeHarness(facts)
     #expect(check(h, "Desktop & Dock settings")?.mark == .problem)
     #expect(check(h, "Desktop & Dock settings")?.detail.contains("System Settings → Desktop & Dock") == true)
-    #expect(check(h, "Desktop & Dock settings")?.notes == [MacSwitch.clickWallpaper.advice, MacSwitch.optionKey.advice])
-    #expect(check(h, "Desktop & Dock settings")?.notes.first?.contains("Only in Stage Manager") == true)
+    #expect(check(h, "Desktop & Dock settings")?.notes == [MacSwitch.menuBar.advice, MacSwitch.optionKey.advice])
     #expect(!h.run("doctor").ok)
 
     // What cannot be read is unknown, never a problem.
@@ -170,8 +167,9 @@ import Testing
         == .init(mark: .note, title: "Desktop & Dock settings", detail: "unknown here"))
   }
 
-  /// Arbor keeps clicks on the Desktop from macOS itself (F60): that switch is then something to know, not to put right.
-  @Test func theWallpaperClickIsOnlyNotedWhileArborGuardsAgainstIt() {
+  /// A sweep is only a picture, and the next click brings the windows back (Q24): that switch is something to know, not to put right. The
+  /// more so while Arbor keeps clicks on the Desktop from macOS itself (F60).
+  @Test func theWallpaperClickIsOnlyNoted() {
     var facts = Self.healthy
     facts.switches = [.clickWallpaper]
     var guarded = Settings.withGestures
@@ -191,16 +189,24 @@ import Testing
     // Nor is a newcomer sent to look for it.
     facts.switches = [.clickWallpaper]
     #expect(makeHarness(facts, settings: guarded).controller.onboardingModel(facts).row(.desktopAndDock)?.isSatisfied == true)
-    var unguarded = Settings()
-    unguarded.guardDesktopClicks = false
-    let row = makeHarness(facts, settings: unguarded).controller.onboardingModel(facts).row(.desktopAndDock)
-    #expect(row?.points == [MacSwitch.clickWallpaper.advice])
+
+    // Without the guard, which is how Arbor ships: the same, in other words.
+    let unguarded = makeHarness(facts)
+    #expect(!unguarded.controller.settings.guardDesktopClicks)
+    let plain = check(unguarded, "Desktop & Dock settings")
+    #expect(plain?.mark == .ok && plain?.detail == "none in the way")
+    #expect(
+      plain?.notes == [
+        "“Click wallpaper to reveal desktop” is on: a click on the wallpaper sweeps the windows aside, and the next one brings them back "
+          + "where they were. “Only in Stage Manager” switches that off"
+      ])
+    #expect(unguarded.run("doctor").ok)
+    #expect(unguarded.controller.onboardingModel(facts).row(.desktopAndDock)?.isSatisfied == true)
+    #expect(unguarded.controller.pageToWelcomeOn() == nil || unguarded.controller.onboardingModel(facts).pageToOpenOn == .firstSteps)
 
     // The guard works through an event tap. With `pointerGestures` off there is none, and nobody may be told that Arbor guards.
     guarded.pointerGestures = false
-    #expect(check(makeHarness(facts, settings: guarded), "Desktop & Dock settings")?.mark == .problem)
-    #expect(
-      makeHarness(facts, settings: guarded).controller.onboardingModel(facts).row(.desktopAndDock)?.points == [MacSwitch.clickWallpaper.advice])
+    #expect(check(makeHarness(facts, settings: guarded), "Desktop & Dock settings")?.notes == plain?.notes)
   }
 
   @Test func aPauseIsSaidAndIsNotAProblem() {

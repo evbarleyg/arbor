@@ -259,6 +259,20 @@ extension ChaosRunner {
         displays main:0,0,1512,982:25,0,58,0* windows-silent
         """),
     ChaosKnownFailure(
+      rule: "moved-twice-floating-windows-first", owner: "rule 3: a floating window's frame is its person's (board 0.22)", severity: 4,
+      story: "With `soleFloatTakesDesktop` on (it ships off), a display is unplugged, the one that stays loses its menu bar in the same breath, and "
+        + "macOS says where it has moved the window before it says any of that. Arbor takes the move for a person's (`knowsTheDisplays` still "
+        + "holds), lays out by the displays it believes in (`floatingWindowMoved`), and again when it hears: the window twitches by the "
+        + "height of a menu bar that is no longer there.",
+      script: """
+        launch
+        set soleFloatTakesDesktop true
+        displays main:0,0,2560,1440:25,0,86,0* side:2560,-170,1280,800:0,0,0,0 windows-never
+        open 101 Terminal pid 1003 at 2183 1137 147 131 title Inbox
+        move 101 2572 -158 1257 781
+        displays main:0,0,1440,900:0,0,92,0* windows-first
+        """),
+    ChaosKnownFailure(
       rule: "moved-twice-sizing", owner: "rule 3: one thing that happens is one layout", severity: 3,
       story: "A window its person has left lower than macOS lets anybody put one cannot be asked where it stands, for it would not stay there. That it will not be "
         + "as narrow as its slot shows in the slot, and it is a tile a moment later. Once per window.",

@@ -2417,6 +2417,38 @@
       ]
     },
     {
+      "id": "A142",
+      "area": "Arbor only",
+      "title": "macOS's own tiling switched off in one step, and put back",
+      "trellis": "",
+      "arbor": "Before anything is arranged the welcome window and `doctor` find macOS's three tiling switches (\"Click wallpaper to reveal desktop\" is a note: Q24); Switch Them Off in the row (`fix-setup`) switches off those that are on and nothing else, at once, after writing down how they were; Put Them Back (`fix-setup undo`) and `make uninstall` restore exactly that. Never unasked, never Stage Manager",
+      "status": "shipped",
+      "spec": "F42",
+      "priority": 1,
+      "tests": [
+        "aFileThatCannotBeReadIsNotNothingAndIsNotWrittenOver",
+        "aKeyThisBuildDoesNotKnowStaysInTheFile",
+        "aMacThatDoesNotKeepTheChangeGetsAllOfItBack",
+        "aRecordThatCannotBeReadStopsBothWays",
+        "aSecondRoundKeepsWhatTheFirstOneWroteDown",
+        "aStepThatFailsIsSaidInTheWindow",
+        "afterTheStepTheRowSaysWhatWasDoneAndOffersTheWayBack",
+        "doctorNamesTheOneStepAndAfterwardsTheWayBack",
+        "noLinkCanDoIt",
+        "nothingIsChangedUnasked",
+        "oneStepSwitchesOffAllThatIsInTheWayAndOneStepPutsItBack",
+        "onlyWhatIsInTheWayIsTouchedAndOnlyThatIsPutBack",
+        "stageManagerIsItsOwnersToSwitchOff",
+        "theRowOffersToSwitchThemOffAndSaysHowToUndoIt",
+        "theWayBackIsOfferedAlsoWhileSomethingIsInTheWay",
+        "theWayBackOutlastsAQuit",
+        "theWelcomeWindowsButtonTakesTheStepAndThenOffersTheWayBack",
+        "whatCannotBeWrittenDownIsNotChanged",
+        "whatIsWrittenComesBack",
+        "whatMacOSDoesNotTakeBackStaysWrittenDown"
+      ]
+    },
+    {
       "id": "A41",
       "area": "Arbor only",
       "title": "Home: everything on every display",

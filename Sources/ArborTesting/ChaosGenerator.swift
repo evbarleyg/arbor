@@ -85,6 +85,7 @@ public struct ChaosGenerator {
     case watch, find, reveal, displays
     case showShortcuts
     case minimap
+    case fixSetup
   }
 
   /// No `default`, on purpose: a new `Command` case does not compile until it is listed here.
@@ -160,6 +161,7 @@ public struct ChaosGenerator {
     case .shrink: .shrink
     case .moveToDisplay: .moveToDisplay
     case .focusDisplay: .focusDisplay
+    case .fixSetup: .fixSetup
     case .hold: .hold
     case .holdStill: .holdStill
     case .release: .release
@@ -271,6 +273,7 @@ public struct ChaosGenerator {
     case .shrink: return .shrink(step())
     case .moveToDisplay: return .moveToDisplay(displayTarget(), optionalWindow(in: world))
     case .focusDisplay: return .focusDisplay(displayTarget())
+    case .fixSetup: return .fixSetup(undo: random.pick([false, true]) ?? false)
     case .hold: return .hold(minutes: random.pick([nil, nil, 0.001, 0.5, 1, 1440]) ?? nil)
     case .holdStill: return .holdStill(minutes: random.pick([nil, nil, 0.001, 0.5, 1, 1440]) ?? nil)
     case .release: return .release
@@ -382,6 +385,7 @@ public struct ChaosGenerator {
     case .grow, .shrink: 8
     case .moveToDisplay: 8
     case .focusDisplay: 4
+    case .fixSetup: 1
     case .hold, .holdStill, .toggleHold: ProcessInfo.processInfo.environment["ARBOR_CHAOS_HOLDS"] == nil && ProcessInfo.processInfo.environment["ARBOR_CHAOS_TWO_DISPLAYS"] == nil ? 1 : 8
     case .release: ProcessInfo.processInfo.environment["ARBOR_CHAOS_HOLDS"] == nil && ProcessInfo.processInfo.environment["ARBOR_CHAOS_TWO_DISPLAYS"] == nil ? 1 : 6
     case .undo: 30

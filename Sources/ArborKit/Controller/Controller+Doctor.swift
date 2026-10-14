@@ -115,22 +115,38 @@ extension Controller {
     }
 
     if let switches = facts.switches {
-      // Arbor keeps those clicks from macOS itself (F60), so that switch is nothing to put right, only something to know.
-      let isGuarded = guardsDesktopClicks && switches.contains(.clickWallpaper)
-      let inTheWay = switches.filter { !(isGuarded && $0 == .clickWallpaper) }
+      let inTheWay = macSwitchesInTheWay(facts) ?? switches
+      // Nothing to put right, only something to know (Q24), the more so while Arbor keeps those clicks from macOS itself (F60).
       let guardNote =
-        isGuarded
-        ? [
-          "“\(MacSwitch.clickWallpaper.label)” is on; Arbor keeps clicks on the Desktop from sweeping windows away "
-            + "(guardDesktopClicks). “Only in Stage Manager” is surer still"
-        ] : []
+        !switches.contains(.clickWallpaper)
+        ? []
+        : guardsDesktopClicks
+          ? [
+            "“\(MacSwitch.clickWallpaper.label)” is on; Arbor keeps clicks on the Desktop from sweeping windows away "
+              + "(guardDesktopClicks). “Only in Stage Manager” is surer still"
+          ]
+          : [
+            "“\(MacSwitch.clickWallpaper.label)” is on: a click on the wallpaper sweeps the windows aside, and the next one brings "
+              + "them back where they were. “Only in Stage Manager” switches that off"
+          ]
+      // What Arbor did for somebody is said for as long as it can be undone.
+      let changed = macSwitchesChangedByArbor.count
+      let undoNote =
+        changed == 0
+        ? []
+        : [
+          "Arbor switched off \(changed) of them; `fix-setup undo` puts \(changed == 1 ? "it back as it was" : "them back as they were")"
+        ]
       if inTheWay.isEmpty {
-        report.add(.ok, titles.switches, "none in the way", notes: guardNote)
+        report.add(.ok, titles.switches, "none in the way", notes: guardNote + undoNote)
       } else {
+        let oneStep =
+          macSwitchboard != nil && inTheWay.contains(where: \.canBeSwitchedOffForYou)
+          ? "`fix-setup` switches them off for you (and `fix-setup undo` puts them back), or do it in" : "In"
         report.add(
           .problem, titles.switches,
-          "as they stand, macOS reacts to the same clicks and drags as Arbor. In System Settings → Desktop & Dock:",
-          notes: inTheWay.map(\.advice) + guardNote)
+          "as they stand, macOS reacts to the same clicks and drags as Arbor. \(oneStep) System Settings → Desktop & Dock:",
+          notes: inTheWay.map(\.advice) + guardNote + undoNote)
       }
     } else {
       report.add(.note, titles.switches, Self.unknown)

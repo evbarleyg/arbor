@@ -123,6 +123,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
       self?.updateWindow.show(decision, current: build)
     }
     controller.loginItem = SystemLoginItem()
+    if environment.onlyPIDs == nil || environment.macSwitches { controller.macSwitchboard = SystemMacSwitchboard() }
     // From the first start on the controller watches the permission itself (Controller+Permission.swift).
     // The taps' own check: the flag, and a tap made and thrown away. It talks to no app, so none can keep it waiting.
     controller.accessibilityProbe = { thoroughly in thoroughly ? EventTap.isPermitted() : AXIsProcessTrusted() }
@@ -494,6 +495,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     if onboarding == nil {
       onboarding = OnboardingWindow(
         controller: controller, onButton: { [weak self] row in self?.openSystemSettings(for: row) },
+        onAction: { [weak self] command in self?.handle(command) ?? .failure("Arbor is quitting") },
         onLogin: { [weak self] in self?.toggleLaunchAtLogin() })
     }
     onboarding?.show(page)

@@ -155,13 +155,15 @@ and shows what matters, with a live tick on everything that is in order and a bu
 - **Accessibility** (required): macOS lets an app move other apps' windows only with this permission (System Settings →
   Privacy & Security → Accessibility). If the switch is on there and Arbor still says it has no permission, the build's signature has
   changed: switch it off and on again ([docs/INSTALL.md](docs/INSTALL.md) has how to sign so that this does not happen).
-- **Desktop & Dock** (best changed): four settings there make macOS react to the same clicks and drags as Arbor. Set
-  "Click wallpaper to reveal desktop" to "Only in Stage Manager" (macOS 14 and later): otherwise a click on the Desktop, or
-  in a gap between docked windows, sends every window away. (Arbor can keep such clicks from macOS itself, `guardDesktopClicks`,
-  but that is off: it has not been seen at work on a Mac yet. With it on, the window does not ask for this one.) Under Windows,
+- **Desktop & Dock** (best changed): macOS's own tiling, three settings there, reacts to the same drags as Arbor. **Switch Them Off** in
+  the row does it in one step (`arborctl fix-setup`): it changes those settings and nothing else, takes effect at once, and writes down how they
+  were, so that **Put Them Back** in the same row (Help → Check Setup…, or `arborctl fix-setup undo`) and `make uninstall` leave the Mac as
+  Arbor found it. Nothing is changed unasked. By hand: under Windows,
   switch off "Drag windows to left or right edge of screen to tile", "Drag windows to menu bar to fill screen" and "Hold ⌥ key
   while dragging windows to tile" (macOS 15 and later). The row names the ones that are still on. Stage Manager itself moves
-  windows too: use one or the other.
+  windows too: use one or the other. "Click wallpaper to reveal desktop" (macOS 14 and later) is left alone, and is only a note in `arborctl doctor`:
+  a click on the wallpaper, or in a gap between docked windows, sweeps every window aside, and the next click brings them back where they were.
+  "Only in Stage Manager" switches that off.
 - It also says so when Rectangle, Magnet, yabai or another window manager is running (they use the same ⌃⌥ shortcuts), when
   VoiceOver is on (⌃⌥ is its modifier), when there are several input sources, which macOS can switch with ⌃⌥Space, and when an
   app that uses ⌃⌥ itself is open (Emacs, a virtual machine, a JetBrains IDE).

@@ -102,6 +102,25 @@ public struct OnboardingModel: Equatable, Sendable {
     public var points: [String] = []
     /// The title of the button that opens the right pane of System Settings, if one helps.
     public var button: String?
+    /// A button that has Arbor do something itself: the one step.
+    public var action: Action?
+    /// Said under the points: what the action changes, and how to undo it.
+    public var afterword: String = ""
+    /// What Arbor has done to this Mac for its owner, said for as long as it can be undone, and the button that undoes it.
+    public var done: String = ""
+    public var undo: Action?
+    /// Why the button that was just pressed did nothing. A button that seems dead gets pressed again.
+    public var failure: String = ""
+
+    public struct Action: Equatable, Sendable {
+      public var title: String
+      public var command: Command
+
+      public init(_ title: String, _ command: Command) {
+        self.title = title
+        self.command = command
+      }
+    }
 
     public var isSatisfied: Bool { state == .done }
     /// Something is missing or in the way, and there is something to do about it.
@@ -165,19 +184,24 @@ public struct OnboardingModel: Equatable, Sendable {
   ///     still are (F63 counts them).
   ///   - offersScreenRecording: whether the optional permission has a row. Only where Arbor makes good use of it.
   ///   - appsWithOwnShortcuts: the names of open apps known to use ⌃⌥ themselves, for which nothing has been decided (F41).
+  ///   - canFixSetup: Arbor can switch macOS's own settings off for whoever asks (`fix-setup`).
+  ///   - switchesChangedByArbor: the ones it has switched off and not put back.
+  ///   - fixSetupFailure: what `fix-setup` answered when it last failed in this showing of the window.
   ///   - isPaused: the user has paused Arbor, so none of the moves would do anything.
   ///   - shortcut: the label of the shortcut that runs a command, e.g. ⌃⌥Space. A move without one is
   ///     explained by the menu instead, and with no shortcuts at all the rows about what collides
   ///     with them are left out.
   public init(
     _ facts: SystemFacts, flow: OnboardingFlow? = nil, windowsOutOfView: Int = 0, offersScreenRecording: Bool = false,
-    appsWithOwnShortcuts: [String] = [], isPaused: Bool = false, shortcut: (Command) -> String? = { _ in nil }
+    appsWithOwnShortcuts: [String] = [], canFixSetup: Bool = false, switchesChangedByArbor: [MacSwitch] = [],
+    fixSetupFailure: String? = nil, isPaused: Bool = false, shortcut: (Command) -> String? = { _ in nil }
   ) {
     let flow = flow ?? OnboardingFlow(isReady: facts.accessibility)
     page = flow.page
     rows = Self.rows(
       facts, windowsOutOfView: windowsOutOfView, offersScreenRecording: offersScreenRecording,
-      appsWithOwnShortcuts: appsWithOwnShortcuts, shortcut: shortcut)
+      appsWithOwnShortcuts: appsWithOwnShortcuts, canFixSetup: canFixSetup, changed: switchesChangedByArbor,
+      failure: fixSetupFailure, shortcut: shortcut)
     steps = Self.steps(flow.steps, shortcut: shortcut)
     opensAtLogin = facts.opensAtLogin
     loginTitle = "Open at Login"
@@ -240,7 +264,7 @@ public struct OnboardingModel: Equatable, Sendable {
 
   private static func rows(
     _ facts: SystemFacts, windowsOutOfView: Int, offersScreenRecording: Bool, appsWithOwnShortcuts apps: [String],
-    shortcut: (Command) -> String?
+    canFixSetup: Bool, changed: [MacSwitch], failure: String?, shortcut: (Command) -> String?
   ) -> [Row] {
     let settings = "Open Settings…"
     let stranded =
@@ -270,13 +294,30 @@ public struct OnboardingModel: Equatable, Sendable {
               + "icon. Nothing is recorded or stored. macOS restarts Arbor to apply it.",
           button: settings))
     }
-    if let switches = facts.switches {
-      rows.append(
-        Row(
-          id: .desktopAndDock, title: "Desktop & Dock settings", importance: "Best changed",
-          state: switches.isEmpty ? .done : .recommended, status: switches.isEmpty ? "In order" : "In the way",
-          detail: switches.isEmpty ? "" : "As they stand, macOS reacts to the same clicks and drags as Arbor:",
-          points: switches.map(\.advice), button: settings))
+    if let switches = facts.switches?.filter(\.isInArborsWay) {
+      var row = Row(
+        id: .desktopAndDock, title: "Desktop & Dock settings", importance: "Best changed",
+        state: switches.isEmpty ? .done : .recommended, status: switches.isEmpty ? "In order" : "In the way",
+        detail: switches.isEmpty ? "" : "As they stand, macOS reacts to the same clicks and drags as Arbor:",
+        points: switches.map(\.advice), button: settings)
+      let mine = switches.filter(\.canBeSwitchedOffForYou).count
+      if canFixSetup, mine > 0 {
+        // One step instead of a search for four switches. What it touches and the way back are said before it is taken.
+        row.action = Row.Action(mine == 1 ? "Switch It Off" : "Switch Them Off", .fixSetup(undo: false))
+        row.afterword =
+          "“\(mine == 1 ? "Switch It Off" : "Switch Them Off")” changes "
+          + (mine == switches.count ? (mine == 1 ? "this setting" : "these \(mine) settings") : "all but Stage Manager")
+          + " for you and nothing else. Arbor writes down how \(mine == 1 ? "it was" : "they were"): "
+          + "Help → Check Setup… in its menu puts \(mine == 1 ? "it" : "them") back."
+      }
+      if canFixSetup, !changed.isEmpty {
+        // A tick says enough, except of what Arbor did to somebody's Mac. Whatever else the row has to say: the way back was promised here.
+        let one = changed.count == 1
+        row.done = "Arbor switched off \(changed.count) setting\(one ? "" : "s") of macOS for you."
+        row.undo = Row.Action(one ? "Put It Back" : "Put Them Back", .fixSetup(undo: true))
+      }
+      if let failure { row.failure = "That did not work: \(failure)." }
+      rows.append(row)
     }
     if !facts.competingApps.isEmpty {
       let several = facts.competingApps.count > 1

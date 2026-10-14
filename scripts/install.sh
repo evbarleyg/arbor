@@ -112,6 +112,12 @@ if [ "${1:-}" = --uninstall ]; then
     if [ -z "${ARBOR_KEEP_LOGIN_ITEM:-}" ] && grep -q ArborCommit "$installed/Contents/Info.plist" 2>/dev/null; then
       "$installed/Contents/MacOS/Arbor" --launch-at-login off || true
     fi
+    # What Arbor switched off under Desktop & Dock for its owner goes back as it was. A build that does not know the argument would take it
+    # for none and start as the app, and the file may be another build's.
+    if [ -f "${ARBOR_HOME:-$HOME/Library/Application Support/Arbor}/macos-settings-before.json" ] \
+      && grep -q "Arbor --fix-setup undo" "$installed/Contents/MacOS/Arbor" 2>/dev/null; then
+      "$installed/Contents/MacOS/Arbor" --fix-setup undo || true
+    fi
     rm -rf "$installed"
     echo "Removed $installed"
   else

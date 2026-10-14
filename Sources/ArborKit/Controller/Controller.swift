@@ -261,6 +261,8 @@ public final class Controller {
   public var refusedBindings: [KeyBinding] = []
   /// Reads what only macOS knows, for `doctor` and the welcome window (Controller+Doctor.swift).
   public var systemFacts: (() -> SystemFacts)?
+  /// macOS's own switches under Desktop & Dock, for `fix-setup` (Controller+FixSetup.swift). Nil where they cannot be changed.
+  public var macSwitchboard: (any MacSwitchboard)?
   /// The name of an installed app, from its bundle id, for an app that has no window open to ask (Controller+Menu.swift).
   public var nameOfApp: ((String) -> String?)?
   /// Whether the welcome window and `doctor` speak of Screen Recording. Pictures of moving windows are all Arbor wants that

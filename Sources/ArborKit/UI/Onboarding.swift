@@ -13,6 +13,7 @@ import SwiftUI
 final class OnboardingWindow: NSObject, NSWindowDelegate {
   private var session: OnboardingSession?
   private let onButton: @MainActor (OnboardingModel.Row.ID) -> Void
+  private let onAction: @MainActor (Command) -> CommandResult
   private let onLogin: @MainActor () -> Void
   private let icon = ArborArtwork.appIcon(side: 128)
   private let mark = ArborArtwork.menuBarIcon()
@@ -26,12 +27,14 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
 
   /// - Parameters:
   ///   - onButton: a row's button was clicked.
+  ///   - onAction: a row's button that runs a command of Arbor's was clicked.
   ///   - onLogin: the Open at Login box was clicked.
   init(
     controller: Controller, onButton: @escaping @MainActor (OnboardingModel.Row.ID) -> Void,
-    onLogin: @escaping @MainActor () -> Void
+    onAction: @escaping @MainActor (Command) -> CommandResult, onLogin: @escaping @MainActor () -> Void
   ) {
     self.onButton = onButton
+    self.onAction = onAction
     self.onLogin = onLogin
     super.init()
     session = OnboardingSession(controller: controller) { [weak self] _ in self?.render() }
@@ -84,6 +87,10 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
   private func view(_ model: OnboardingModel, rowsHeight: CGFloat? = nil) -> OnboardingView {
     OnboardingView(
       model: model, icon: icon, mark: mark, rowsHeight: rowsHeight, onButton: onButton,
+      onAction: { [weak self] command in
+        guard let self else { return }
+        self.session?.actionEnded(self.onAction(command))
+      },
       onLogin: { [weak self] in
         self?.onLogin()
         self?.session?.refresh()
@@ -199,6 +206,7 @@ struct OnboardingView: View {
   let mark: NSImage
   let rowsHeight: CGFloat?
   let onButton: @MainActor (OnboardingModel.Row.ID) -> Void
+  let onAction: @MainActor (Command) -> Void
   let onLogin: @MainActor () -> Void
   let onPrimary: @MainActor () -> Void
   let onBack: @MainActor () -> Void
@@ -270,7 +278,13 @@ struct OnboardingView: View {
             .font(.caption)
             .foregroundStyle(.secondary)
           Spacer(minLength: 8)
-          if let title = row.button {
+          if let action = row.action {
+            // The one step has the place beside the title. The way to do it by hand comes last, under the text.
+            Button(action.title) { onAction(action.command) }
+              .buttonStyle(.borderedProminent)
+          } else if let undo = row.undo {
+            Button(undo.title) { onAction(undo.command) }
+          } else if let title = row.button {
             if row.state == .required {
               Button(title) { onButton(row.id) }
                 .buttonStyle(.borderedProminent)
@@ -293,6 +307,35 @@ struct OnboardingView: View {
               .font(.callout)
               .foregroundStyle(.secondary)
               .fixedSize(horizontal: false, vertical: true)
+          }
+        }
+        if !row.afterword.isEmpty {
+          Text(row.afterword)
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .fixedSize(horizontal: false, vertical: true)
+            .padding(.top, 2)
+        }
+        if !row.failure.isEmpty {
+          Text(row.failure)
+            .font(.callout)
+            .foregroundStyle(.red)
+            .fixedSize(horizontal: false, vertical: true)
+        }
+        if row.action != nil || row.undo != nil, !row.isSatisfied, let title = row.button {
+          Button(title) { onButton(row.id) }
+            .padding(.top, 2)
+        }
+        if !row.done.isEmpty {
+          HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Text(row.done)
+              .font(.callout)
+              .foregroundStyle(.secondary)
+              .fixedSize(horizontal: false, vertical: true)
+            // Beside the title when that place is free.
+            if row.action != nil, let undo = row.undo {
+              Button(undo.title) { onAction(undo.command) }
+            }
           }
         }
       }

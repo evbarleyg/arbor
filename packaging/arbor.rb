@@ -21,6 +21,11 @@ cask "arbor" do
   app "Arbor.app"
   binary "#{appdir}/Arbor.app/Contents/Helpers/arborctl"
 
+  # What Arbor switched off under Desktop & Dock for its owner (`fix-setup`) goes back as it was. With nothing to put back it says so.
+  uninstall_preflight do
+    system_command "#{appdir}/Arbor.app/Contents/MacOS/Arbor", args: ["--fix-setup", "undo"], must_succeed: false
+  end
+
   uninstall quit:       "com.evbarleyg.arbor",
             login_item: "Arbor"
 

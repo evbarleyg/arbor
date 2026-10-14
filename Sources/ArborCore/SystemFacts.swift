@@ -5,7 +5,7 @@
 public struct SystemFacts: Equatable, Sendable {
   public var accessibility: Bool
   public var screenRecording: Bool
-  /// The settings under Desktop & Dock that are in Arbor's way as they stand. Nil if they cannot be read.
+  /// The settings under Desktop & Dock that are on and that Arbor has something to say about. Nil if they cannot be read.
   public var switches: [MacSwitch]?
   /// "Displays have separate Spaces" in System Settings. Nil if it cannot be read.
   public var separateSpaces: Bool?
@@ -61,6 +61,14 @@ public enum MacSwitch: String, CaseIterable, Sendable {
 
   /// What a missing key means: macOS writes one only when the user changes the setting.
   var isOnByDefault: Bool { self != .stageManager }
+
+  /// Whether, switched on, it is in Arbor's way at all. The click on the wallpaper is not (collab/QUESTIONS.md, Q24): a sweep is only a
+  /// picture, Accessibility keeps every true frame, and the next click brings the windows back. It is something to know.
+  public var isInArborsWay: Bool { self != .clickWallpaper }
+
+  /// Whether Arbor offers to switch it off for a person (`fix-setup`). As little as possible: macOS's tiling, which is on as a Mac comes and
+  /// which hardly anybody chose. Stage Manager is off as a Mac comes: whoever has it on wanted it, and switching it off rearranges their windows.
+  public var canBeSwitchedOffForYou: Bool { isInArborsWay && isOnByDefault }
 
   /// The first macOS that has it.
   var since: Int {

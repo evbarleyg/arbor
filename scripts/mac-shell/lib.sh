@@ -67,7 +67,8 @@
 #   arbor_settings '<json>'         settings.json for the next arbor_start (or `ctl reload-settings`)
 #                                   In a section of the suite $ARBOR_EVERYTHING_ON goes under it, which switches on what ships off
 #                                   ("Which Arbor", below); ARBOR_SWITCHES=shipped above arbor_start: Arbor as a person gets it
-#   arbor_start [count] [NAME=v…]   test windows W1…Wcount (default 4), then Arbor limited to them
+#   arbor_start [count] [NAME=v…]   test windows W1…Wcount (default 4), then Arbor limited to them. With ARBOR_BUNDLE=<a copy of Arbor.app in
+#                                     the session's folder> that copy is opened as Finder would: it has no permissions of its own
 #   arbor_stop [name]               quit Arbor, check that every test window is back on screen (and take the
 #                                     picture <name> of that), close the test windows. ARBOR_AFTER_QUIT=<function>: called before
 #                                     they close, for a script that wants a look of its own at what quitting left
@@ -1262,11 +1263,17 @@ arbor_launch() {
   expected=$#
 
   # Later assignments win, so ARBOR_NO_STATUS_ITEM=0 or ARBOR_NO_HOTKEYS=0 among the arguments switches that part on.
-  # shellcheck disable=SC2086
   # No watchdog: arbor_kill and arbor_stop end an Arbor that must then stay dead (ARBOR_NO_WATCHDOG=0 brings it back).
-  env ARBOR_ONLY_PIDS="$pids" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 \
-    ARBOR_NO_WATCHDOG=1 $ARBOR_LAUNCH_ENV "$binary" >> "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>&1 3>&- 7>&- 8>&- 9>&- &
-  ARBOR_PID=$!
+  if [ -n "${ARBOR_BUNDLE:-}" ]; then
+    # shellcheck disable=SC2086
+    arbor_open_bundle ARBOR_ONLY_PIDS="$pids" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 \
+      ARBOR_NO_WATCHDOG=1 $ARBOR_LAUNCH_ENV
+  else
+    # shellcheck disable=SC2086
+    env ARBOR_ONLY_PIDS="$pids" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 \
+      ARBOR_NO_WATCHDOG=1 $ARBOR_LAUNCH_ENV "$binary" >> "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>&1 3>&- 7>&- 8>&- 9>&- &
+    ARBOR_PID=$!
+  fi
   started "$ARBOR_PID"
 
   deadline=$((SECONDS + 20))
@@ -1299,6 +1306,23 @@ arbor_launch() {
   echo "Arbor did not get going; its last status: $status"
   tail -n 30 "$ARBOR_HOME/arbor.log" "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>/dev/null
   die "Arbor did not start managing the $expected test windows"
+}
+
+# arbor_open_bundle NAME=value…: starts $ARBOR_BUNDLE, a copy of Arbor.app that the script made in its session folder, through Launch
+# Services. That makes Arbor answer for its own permissions instead of borrowing the terminal's: it has none, as on a newcomer's Mac
+# (so ARBOR_MAY_LACK_PERMISSION=1 goes with it). Give the copy an identifier of its own and no claim on arbor:// (shots-F10.sh).
+arbor_open_bundle() {
+  local argument options=""
+  case "$ARBOR_BUNDLE" in "$ARBOR_SESSION_DIR"/*.app) ;; *) die "arbor_open_bundle: $ARBOR_BUNDLE is not in this session's folder" ;; esac
+  for argument in ARBOR_HOME="$ARBOR_HOME" ARBOR_SOCKET="$ARBOR_SOCKET" "$@"; do options="$options --env $argument"; done
+  # shellcheck disable=SC2086
+  # safe anywhere: a bundle this run made in its own folder, limited to the run's own test windows, on a home folder of the run's
+  limit 20 open -n "$ARBOR_BUNDLE" $options || die "could not open $ARBOR_BUNDLE"
+  sleep 2
+  # Not anchored: /tmp is /private/tmp to Launch Services.
+  # never empty: the case above ends the script unless it is a path in the session's folder
+  ARBOR_PID=$(pgrep -f "$ARBOR_BUNDLE/Contents/MacOS/Arbor" | head -n 1)
+  [ -n "$ARBOR_PID" ] || die "the bundle did not start"
 }
 
 # A drag or a modifier left held (the script was stopped half way through one) would outlive the session: nobody

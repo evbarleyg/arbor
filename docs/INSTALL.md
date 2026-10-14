@@ -140,7 +140,9 @@ make uninstall
 ```
 
 (with the same `PREFIX` and `BINDIR` as `make install`, if you gave any) quits Arbor (every window comes back into
-view), removes the login item, the app and the `arborctl` link.
+view), removes the login item, the app and the `arborctl` link. If you had Arbor switch off macOS's own tiling
+(`fix-setup`, "Switch Them Off" in the welcome window), those settings go back as they were; `brew uninstall` does the same. Dragging the app to the Trash does none of
+this: run `arborctl fix-setup undo` first, or switch them on again under System Settings → Desktop & Dock.
 
 **It looks before it removes.** An Arbor that may not move windows (its switch under Accessibility is off, or belongs
 to a build with another signature) or that hangs puts nothing back when it goes, and the app is the only thing that

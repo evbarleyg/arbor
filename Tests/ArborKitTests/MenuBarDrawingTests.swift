@@ -248,7 +248,7 @@
     func page(_ model: OnboardingModel, rowsHeight: CGFloat? = nil, isDark: Bool, as name: String) throws -> CGSize {
       let view = OnboardingView(
         model: model, icon: ArborArtwork.appIcon(side: 128), mark: ArborArtwork.menuBarIcon(), rowsHeight: rowsHeight,
-        onButton: { _ in }, onLogin: {}, onPrimary: {}, onBack: {})
+        onButton: { _ in }, onAction: { _ in }, onLogin: {}, onPrimary: {}, onBack: {})
       // A window needs an application object, which a test runner has not made. Nothing is activated or shown.
       _ = NSApplication.shared
       let host = NSHostingView(rootView: view)
@@ -270,9 +270,11 @@
 
     @Test func picturesOfEveryPageAndTheRoomEachTakes() throws {
       func model(
-        _ facts: SystemFacts, flow: OnboardingFlow? = nil, apps: [String] = [], isPaused: Bool = false
+        _ facts: SystemFacts, flow: OnboardingFlow? = nil, apps: [String] = [], changed: [MacSwitch] = [], isPaused: Bool = false
       ) -> OnboardingModel {
-        OnboardingModel(facts, flow: flow, appsWithOwnShortcuts: apps, isPaused: isPaused) { command in
+        OnboardingModel(
+          facts, flow: flow, appsWithOwnShortcuts: apps, canFixSetup: true, switchesChangedByArbor: changed, isPaused: isPaused
+        ) { command in
           KeyBindings.label(for: command)
         }
       }
@@ -309,6 +311,7 @@
         ("7-one-move-made", model(tuned, flow: half), nil),
         ("8-all-moves-made", model(tuned, flow: done), nil),
         ("9-paused", model(tuned, flow: moves, isPaused: true), nil),
+        ("10-switched-off-by-arbor", model(tuned, changed: tiling), nil),
       ]
       var sizes = ""
       var heights: [String: CGFloat] = [:]

@@ -47,7 +47,7 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     // An ad-hoc build loses the permission while System Settings still shows the switch on.
     #expect(model.row(.accessibility)?.detail.contains("off and on again") == true)
     #expect(model.row(.screenRecording)?.detail.contains("Nothing is recorded or stored") == true)
-    #expect(model.row(.desktopAndDock)?.points.count == 4)
+    #expect(model.row(.desktopAndDock)?.points.count == 3, "the click on the wallpaper is in nobody's way (Q24)")
   }
 
   @Test func everythingInOrderIsAllDone() {
@@ -75,8 +75,6 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     let all = try #require(OnboardingModel(fresh).row(.desktopAndDock))
     #expect(
       all.points == [
-        "“Click wallpaper to reveal desktop”: choose “Only in Stage Manager”. Otherwise a click on the Desktop sends every "
-          + "window away",
         "“Drag windows to left or right edge of screen to tile”: switch it off",
         "“Drag windows to menu bar to fill screen”: switch it off",
         "“Hold ⌥ key while dragging windows to tile”: switch it off",
@@ -90,6 +88,59 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
 
     facts.switches = [.stageManager]
     #expect(OnboardingModel(facts).row(.desktopAndDock)?.points.first?.contains("use one or the other") == true)
+  }
+
+  // MARK: The one step
+
+  /// Four switches to look for in System Settings are four steps. Before the one step is taken the row says what it touches, that it
+  /// touches nothing else, and where the way back is.
+  @Test func theRowOffersToSwitchThemOffAndSaysHowToUndoIt() throws {
+    let row = try #require(OnboardingModel(fresh, canFixSetup: true).row(.desktopAndDock))
+    #expect(row.action == OnboardingModel.Row.Action("Switch Them Off", .fixSetup(undo: false)))
+    #expect(
+      row.afterword == "“Switch Them Off” changes these 3 settings for you and nothing else. Arbor writes down how they were: "
+        + "Help → Check Setup… in its menu puts them back.")
+    #expect(row.button == "Open Settings…", "whoever would rather do it by hand still can")
+    #expect(row.points.count == 3 && row.state == .recommended)
+
+    var facts = fresh
+    facts.switches = [.menuBar]
+    let one = try #require(OnboardingModel(facts, canFixSetup: true).row(.desktopAndDock))
+    #expect(one.action?.title == "Switch It Off")
+    #expect(
+      one.afterword == "“Switch It Off” changes this setting for you and nothing else. Arbor writes down how it was: "
+        + "Help → Check Setup… in its menu puts it back.")
+  }
+
+  @Test func whereArborCannotChangeThemTheRowOffersNothing() throws {
+    let row = try #require(OnboardingModel(fresh).row(.desktopAndDock))
+    #expect(row.action == nil && row.afterword.isEmpty && row.button != nil)
+  }
+
+  /// Whoever has Stage Manager on chose it.
+  @Test func stageManagerIsNotPartOfTheStep() throws {
+    var facts = fresh
+    facts.switches = [.stageManager]
+    let alone = try #require(OnboardingModel(facts, canFixSetup: true).row(.desktopAndDock))
+    #expect(alone.action == nil && alone.afterword.isEmpty)
+    facts.switches = [.screenEdges, .menuBar, .stageManager]
+    let among = try #require(OnboardingModel(facts, canFixSetup: true).row(.desktopAndDock))
+    #expect(among.action?.title == "Switch Them Off")
+    #expect(among.afterword.hasPrefix("“Switch Them Off” changes all but Stage Manager for you and nothing else."))
+  }
+
+  /// A tick says enough, except of what Arbor did to somebody's Mac: that is said for as long as it can be undone.
+  @Test func afterTheStepTheRowSaysWhatWasDoneAndOffersTheWayBack() throws {
+    let row = try #require(
+      OnboardingModel(tuned, canFixSetup: true, switchesChangedByArbor: [.screenEdges, .menuBar]).row(.desktopAndDock))
+    #expect(row.isSatisfied && row.importance == "In order")
+    #expect(row.done == "Arbor switched off 2 settings of macOS for you.")
+    #expect(row.undo == OnboardingModel.Row.Action("Put Them Back", .fixSetup(undo: true)) && row.action == nil)
+    let one = try #require(OnboardingModel(tuned, canFixSetup: true, switchesChangedByArbor: [.menuBar]).row(.desktopAndDock))
+    #expect(one.done == "Arbor switched off 1 setting of macOS for you." && one.undo?.title == "Put It Back")
+    // In order by their owner's own hand: nothing to say.
+    let own = try #require(OnboardingModel(tuned, canFixSetup: true).row(.desktopAndDock))
+    #expect(own.action == nil && own.undo == nil && own.done.isEmpty && own.detail.isEmpty)
   }
 
   @Test func theDesktopAndDockRowIsLeftOutWhenTheSettingsCannotBeRead() {

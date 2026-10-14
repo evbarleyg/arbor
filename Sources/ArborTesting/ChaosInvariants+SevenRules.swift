@@ -9,7 +9,7 @@ import Foundation
 /// | Rule | Net |
 /// |---|---|
 /// | Nothing moves until the person docks something | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-launch-after-a-crash`, `moved-at-resume`, `start-took-out-of-view`, `pause-and-resume-moved`, `there-and-back-moved`, `moved-unasked` |
-/// | No jolts: a window moves once, to where it ends up | `moved-twice`, `moved-again`; both with `-sizing` where its app refused a size, `-sizing-again` where it had refused before; `flashed-into-view`, `flashed-out-of-view`, `moved-over-and-over` |
+/// | No jolts: a window moves once, to where it ends up | `moved-twice`, `moved-again`; both with `-sizing` where its app refused a size, `-sizing-again` where it had refused before, `-floating` for a floating window; `moved-twice-floating-windows-first` (with `soleFloatTakesDesktop`, where macOS reported the window before the displays); `flashed-into-view`, `flashed-out-of-view`, `moved-over-and-over` |
 /// | The window you switch to comes to the front and into view | `switched-to-out-of-view`, `app-switch-out-of-view`, `switched-to-partly-out`, `switched-to-behind` |
 /// | Quitting, Float All and pause give windows their own earlier sizes back | `size-not-given-back` |
 /// | After any way home no window is less than wholly in view | `home-not-whole`, `home-behind-the-dock`, `home-leaves-out` |
@@ -339,10 +339,13 @@ extension ChaosRunner {
         problems.append(.init("sized-there-and-back" + floats, "Arbor made \(window) smaller or larger than it ends up, for one thing that happened: \(path)"))
         continue
       }
-      problems.append(
-        .init(
-          (timeOnly ? "moved-again" : "moved-twice") + (knew ? "-sizing-again" : refused ? "-sizing" : "") + floats,
-          "Arbor moved \(window) \(moves.count) times for one thing that happened: \(path)"))
+      var rule = (timeOnly ? "moved-again" : "moved-twice") + (knew ? "-sizing-again" : refused ? "-sizing" : "") + floats
+      // macOS said where it had moved the window before it said that a display had gone, and a lone window fills the Desktop. One bug, with
+      // a name of its own, so that the rule goes on binding everywhere else.
+      if rule == "moved-twice-floating", controller.settings.soleFloatTakesDesktop, case .displays(_, .first) = action {
+        rule += "-windows-first"
+      }
+      problems.append(.init(rule, "Arbor moved \(window) \(moves.count) times for one thing that happened: \(path)"))
     }
     for move in seen {
       if move.after.width > move.requested.width + 1 || move.after.height > move.requested.height + 1 { seven.refusedLess.insert(move.window) }

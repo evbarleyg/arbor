@@ -71,6 +71,8 @@ extension Controller {
       return checkForUpdates()
     case .launchAtLogin(let enabled):
       return launchAtLogin(enabled)
+    case .fixSetup(let undo):
+      return fixSetup(undo: undo)
     case .settings(let command):
       return performSettings(command)
     case .trace(let action):
@@ -149,7 +151,7 @@ extension Controller {
     case .holdStill(let minutes): result = hold(.still, minutes: minutes)
     case .release: result = release()
     case .toggleHold: result = toggleHold()
-    case .version, .checkForUpdates, .launchAtLogin:
+    case .version, .checkForUpdates, .launchAtLogin, .fixSetup:
       result = .success("ok")
     case .settings(let command):
       result = performSettings(command)
