@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Checks that the tools which say "all is well" can also say the opposite.
 
-parity.py, ci-step.py, scenarios.sh with arbor-sim, lint-imports.py, lint-mac-shell.py, mutate.py, fuzz-launch.py and the safety nets of
+parity.py, ci-step.py, scenarios.sh with arbor-sim, lint-imports.py, lint-mac-shell.py, mutate.py, fuzz-launch.py, ci-mtimes.py and the safety nets of
 scripts/mac-shell/lib.sh each get situations that must come out as failures (a misspelt status, a test that was renamed, a log cut off by a crash, a scenario whose
 commands do nothing) next to ones that must pass. Every row here passed when it should have failed
 before 2026-10-14.
@@ -1061,6 +1061,75 @@ def check_rehearse():
         row("rehearse.sh: on a Mac it refuses and runs nothing", (code, os.path.exists(witness)), (77, False))
 
 
+# MARK: ci-mtimes.py
+
+def check_ci_mtimes():
+    """A file may get its old time stamp back only if its content is what was built: anything else would hide a change from the compiler."""
+    tool = os.path.join(HERE, "ci-mtimes.py")
+    then, checkout = 1_000_000_000, 1_500_000_000
+    with tempfile.TemporaryDirectory() as folder:
+        def git(*arguments):
+            subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@example.com", *arguments], cwd=folder, capture_output=True, check=True)
+
+        def write(path, text, stamp):
+            os.makedirs(os.path.dirname(os.path.join(folder, path)), exist_ok=True)
+            with open(os.path.join(folder, path), "w", encoding="utf-8") as handle:
+                handle.write(text)
+            os.utime(os.path.join(folder, path), (stamp, stamp))
+
+        def run(word):
+            return subprocess.run([sys.executable, tool, word], cwd=folder, capture_output=True, text=True, check=False)
+
+        def stamp(path):
+            return int(os.stat(os.path.join(folder, path)).st_mtime)
+
+        names = ["same", "changed", "same length", "gone", "edited after the checkout"]
+        git("init", "--quiet")
+        for name in names:
+            write(f"Sources/A/{name}.swift", f"let a = 1 // {name}\n", then)
+        write("docs/prose.md", "prose\n", then)
+        os.makedirs(os.path.join(folder, ".build"))
+        git("add", "--all")
+        git("commit", "--quiet", "--message", "built")
+        row("ci-mtimes.py: record", run("record").returncode, 0)
+
+        # Another commit, checked out afresh: every file is stamped with the present.
+        for name in names:
+            write(f"Sources/A/{name}.swift", f"let a = 1 // {name}\n", checkout)
+        write("Sources/A/changed.swift", "let a = 22222\n", checkout)
+        write("Sources/A/same length.swift", "let a = 2 // same length\n", checkout)
+        write("Sources/A/new.swift", "let b = 1\n", checkout)
+        write("docs/prose.md", "prose\n", checkout)
+        os.remove(os.path.join(folder, "Sources/A/gone.swift"))
+        git("add", "--all")
+        git("commit", "--quiet", "--message", "next")
+        # The index still says what was committed. What lies in the folder is what gets compiled.
+        write("Sources/A/edited after the checkout.swift", "let a = 3\n", checkout)
+        row("ci-mtimes.py: restore", run("restore").returncode, 0)
+        row("ci-mtimes.py: a file with the content that was built gets its time stamp back", stamp("Sources/A/same.swift"), then)
+        # Later than the cached build, not merely later than its own earlier self: another job may have built after this one checked out.
+        with open(os.path.join(folder, ".build/ci-mtimes.tsv"), encoding="utf-8") as handle:
+            built = int(handle.readline().split("\t")[1]) // 10 ** 9 + 1
+        for name in ["changed", "same length", "new", "edited after the checkout"]:
+            row(f"ci-mtimes.py: {name}: counts as changed, and as newer than anything in the cache", stamp(f"Sources/A/{name}.swift") >= built, True)
+        row("ci-mtimes.py: what no build reads is left alone", stamp("docs/prose.md"), checkout)
+
+        for what, damage in [("missing", None), ("cut off", "0123\t"), ("not a note at all", "\x00\x01 nonsense\n")]:
+            os.utime(os.path.join(folder, "Sources/A/same.swift"), (checkout, checkout))
+            if os.path.exists(os.path.join(folder, ".build/ci-mtimes.tsv")):
+                os.remove(os.path.join(folder, ".build/ci-mtimes.tsv"))
+            if damage is not None:
+                with open(os.path.join(folder, ".build/ci-mtimes.tsv"), "w", encoding="utf-8") as handle:
+                    handle.write(damage)
+            row(f"ci-mtimes.py: the note is {what}: every file counts as changed, and that is no failure",
+                (run("restore").returncode, stamp("Sources/A/same.swift") > checkout), (0, True))
+        with open(os.path.join(folder, ".build/ci-mtimes.tsv"), "w", encoding="utf-8") as handle:
+            handle.write(f"built\t{(int(time.time()) + 3600) * 10 ** 9}\t\n")
+        run("restore")
+        row("ci-mtimes.py: the clock of the Mac that built was an hour ahead: still newer", stamp("Sources/A/changed.swift") > time.time() + 3599, True)
+        row("ci-mtimes.py: no such word", run("forget").returncode != 0, True)
+
+
 def check_fuzz_launch():
     for situation in fuzz_launch.situations():
         row(*situation)
@@ -1080,6 +1149,7 @@ def main():
     check_run_list()
     check_install()
     check_e2e()
+    check_ci_mtimes()
     check_fuzz_launch()
     wrong = 0
     for what, got, expected in rows:

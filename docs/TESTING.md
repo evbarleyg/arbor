@@ -326,12 +326,28 @@ arbor_stop 04-after-quit                      # quits, checks that every window 
 scripts/mac-shell/run.sh scripts/mac-shell/shots-F09.sh      # about two minutes; give it a 10 minute timeout
 ```
 
-It starts the "Mac shell" workflow on your branch, waits, fetches the output into
+It starts the "Mac shell" workflow for your branch, waits, fetches the output into
 `.mac-shell/<script>-<run id>/` (ignored by Git), prints the end of `output.txt`, and exits with the script's
 exit code: 0, or 1 when a `check` failed, or 2 when the build or the launch did (`run.sh`'s own: 97 could
 not start, 98 timed out, 99 the run brought no output back). **Look at the pictures**
 and say honestly what you see. `arbor.log` (debug level), `build.log` and
 `output.txt` are in the same folder.
+
+**What a run starts with.** A hosted Mac knows nothing of the project, and used to spend its first three minutes installing the Swift
+release Arbor is built with and building from nothing, in every run. Now a run begins with `.github/actions/mac-setup`, which puts back what an
+earlier run installed and built.
+
+- **A build is named after what goes into it**, not after a commit or a branch (`scripts/ci-build-key.sh`): the system, Xcode, the compiler, the
+  manifest, and Git's hash of `Sources` and of the helper tools. So a branch that only adds a Mac shell script builds nothing, whoever built those
+  sources first. With other sources the newest build of the day is built upon, and only what differs is compiled.
+- **`run.sh` starts the workflow from one branch for everybody** (`swarm/trunk`, else `main`) and tells it which branch to check out, because a run can read only
+  the caches of the branch its workflow is from. After changing `mac-shell.yml` or `.github/actions`, say `MAC_SHELL_WORKFLOW_REF=<your branch>`.
+  The branch under test may be older than all this: the set-up comes with the workflow.
+- **No cache can turn a red run green.** Only compiler output is kept; every script still runs. A checkout stamps every file with the
+  present, which would make SwiftPM compile everything again, so `scripts/ci-mtimes.py` gives a file its earlier time stamp back if, and only if, its
+  content is what was built, and stamps every other file later than anything in the cache (`scripts/test-tooling.py` holds it to that). The chain of
+  builds upon builds is cut every day.
+- The annotation `build cache` on the job says what it found: nothing, a build of other sources, or a build of these very sources.
 
 **Rehearse it first, for nothing**, on Linux (on a Mac it refuses: it tells scripts that the Mac is a throwaway one, and `rm`, `pkill` and the like stay real):
 

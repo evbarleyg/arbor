@@ -5,8 +5,9 @@ A Mac is left out when it could prove nothing new, or nothing that will not be p
 
   1. everything the pull request changes (for a push: everything since the commit before it) is
      prose, or data the Linux job checks just as well: collab/, docs/, *.md, scripts/typecheck-mac/ (which
-     only Linux runs), and the scripts in scripts/mac-shell/ that CI does not run (it runs e2e-drag.sh, and
-     with it lib.sh and its tools; and `swift test` on a Mac type-checks every helper tool there, *.swift and *.m);
+     only Linux runs), the scripts in scripts/mac-shell/ that CI does not run (it runs e2e-drag.sh, and
+     with it lib.sh and its tools; and `swift test` on a Mac type-checks every helper tool there, *.swift and *.m),
+     the Mac shell workflow with its set-up, and these rules and the tools' self-tests, which run on Linux;
   2. or, in an ordinary pull request, all the rest of it is code that also builds and is tested on
      Linux (the core, the controller, the platform protocols, the fakes, arbor-sim, the tests);
   3. or only prose has changed since the nearest earlier commit that passed the macOS job. That covers
@@ -36,7 +37,13 @@ import re
 import subprocess
 import sys
 
-PROSE = re.compile(r"^(collab|docs|scripts/typecheck-mac)/|^scripts/mac-shell/(?!(e2e-drag\.sh|lib\.sh|state\.py|.*\.swift|.*\.m)$)|\.md$")
+PROSE = re.compile(
+    r"^(collab|docs|scripts/typecheck-mac)/|^scripts/mac-shell/(?!(e2e-drag\.sh|lib\.sh|state\.py|.*\.swift|.*\.m)$)|\.md$"
+    # What CI's macOS jobs never run. The Mac shell workflow and its set-up are proved by a Mac shell run, these rules and the
+    # tools' self-tests by Linux. TAKE THE SET-UP OFF THIS LIST in the change that makes ci.yml use it.
+    r"|^\.github/workflows/mac-shell\.yml$|^\.github/actions/mac-(setup|keep-build)/|^scripts/ci-(build|build-key|mtimes)\.(sh|py)$"
+    r"|^scripts/(test-)?ci-changes\.py$|^scripts/test-tooling\.py$"
+)
 # What Package.swift builds on Linux too. Anything in neither list needs a Mac.
 HEADLESS = re.compile(
     r"^(Sources/(ArborCore|ArborKit/(Controller|Platform|Support|Trace)|ArborTesting|arbor-sim|LinuxShims)|Tests)/"
