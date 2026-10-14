@@ -437,6 +437,21 @@ product decisions) answers in place. Do not delete answered questions.
   "Moves nothing while swept" is withdrawn: putting moves off would make a visible jolt after the windows are back, and moving meanwhile shows nothing.
 - What is Arbor's own (the line round the focused window, tiles, gap handles, the surface) goes with the windows and comes back with them.
 
+## Q25: A window kept in view lies behind the window that has the keyboard. What does "Keep in View" promise?
+
+- Asked by: the coordinator, 2026-10-14, from the real-window suite on hosted Macs. Pin a call, frame the editor: the call is wholly covered, while the menu's tick and `state` say it is kept in view. Arbor sees the cover and raises three times after every event, in vain:
+  the Accessibility raise lifts a background app's window over everything but the active app's key window. No public call is known that does more without taking the keyboard.
+- The choices: (a) a private window-server call; (b) place instead of raise; (c) take the promise back and say what is true; (d) activate the pinned app for a moment and give the keyboard back.
+- **Answer** (product owner, 2026-10-14): **(b), with (c)'s honesty where (b) has no room. Keep in View makes room instead of fighting for the front.**
+  1. Not (a): a private call under the one promise people lean on during a call is a promise that breaks with an update of macOS.
+  2. Not (d): it takes the keyboard, however briefly (rules 4 and 6).
+  3. A call beside the editor, neither covering the other, is what whoever pins a call wants (rule 7).
+- **The rule.** A window kept in view reserves a strip of its display, as the Dock does: from its inner edge to the display's edge, over the whole height or width; of the four strips, the one that costs the least area. Every view, a framed window, a group, everything, is laid out in what is left.
+  The pinned window itself is never moved or sized (Q20). Docked windows move once when the pin is set, when it is taken off, and when the person lets go after dragging or resizing the pinned window.
+- **Where there is no room:** if the cheapest strip would cost more than 40 % of the view (a pin in the middle, or a very large one), none is reserved. The window still never goes out of view, and Arbor says so: a line on screen at the pin, and the menu's item and `state` say "covered" when it is.
+  Two pins each have their strip while the sum stays under 40 %, in the order pinned.
+- **The raise:** one, when the pin is set. No retries. By Q20 Arbor raises nothing else: the raise of windows left hanging over docked ones goes; a guest that comes back and a summoned window that stays follow the pin's rule.
+
 ## Decided by the executor
 
 One line per product decision made while building, newest last.
@@ -1311,3 +1326,4 @@ One line per product decision made while building, newest last.
 - Product owner, 2026-10-14 (`arrange`; rule 3): a first `arrange` plans on paper, asks early only the windows that may refuse, and moves everybody else once. A window that took its first place and refuses the corrected one becomes a tile, the reply says so, nobody else moves again, and the next `arrange` knows. No third plan.
 - Product owner, 2026-10-14 (F14, rule 1): with `titleBarDoubleClick` on, Arbor takes a title bar's double-click only while macOS's own action there is Fill or Zoom, as macOS comes. Whoever chose Minimize or Do Nothing has said what they want, and Arbor stands aside entirely; read afresh at each layout. `doctor` and the settings window's row say so in one line when it applies. The Desktop's double-click is not touched by this.
 - Product owner, 2026-10-14 (F49, rule 5, after Q20): Keep in View on a docked window gives it its own earlier size, always: what it floated at, or what its app opened it at. With nothing remembered it keeps its place's size, as F48 says for `float`. "More than half the display's area becomes half the display" is overruled: Arbor picks no size for a floating window. One that hides too much is a drag of its corner away from right, and that size is then its person's.
+- Product owner, 2026-10-14 (the menu, rule 7): the ways out may never be below a fold. The menu is at most 600 points high, and Show Everything, Float All, Pause and Quit are reachable without scrolling on a display 768 points high; groups go into submenus, and `docs/MENU.md` follows. Seen on a hosted Mac: about 820 points, with Pause and Quit below the fold of a 768-point display.

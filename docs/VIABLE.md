@@ -199,6 +199,7 @@ Each window at most once, straight to where it ends up.
 | A drag | the dragged window goes where the pointer goes. Everything else waits for the button |
 | A move of the view; a switch to a window out of view | the docked windows; floating windows only out of view and back to exactly where they were |
 | A gap or an edge is dragged | the windows on both sides of it |
+| A window is kept in view, let go of again, or dragged or resized while it is kept in view | that window by the hand only; the docked windows, which make room beside it (Q25) |
 | Pause, resume, Float All, Quit | anything; afterwards `size-lost` and `lost` have their say |
 | macOS's own (full screen, Mission Control, a Space, the wallpaper click) | what the run without Arbor shows macOS moving. When it is over, every window is where it was before |
 | A display comes, goes, moves or changes size | the windows on the displays concerned; afterwards nothing is `lost` |
