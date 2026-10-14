@@ -1,0 +1,18 @@
+# mac-shell: scripts/mac-shell/probe-own-test.sh at ab33e10, macOS 26.6.2, 2026-10-14T23:09Z
+swift-driver version: 1.148.6 Apple Swift version 6.3.3 (swiftlang-6.3.3.1.3 clang-2100.1.1.101)
+Target: arm64-apple-macosx26.0
+23:09:40
+Tests/ArborKitTests/FaithfulFakeTests.swift:107:12: warning: result of call to 'setFrame(_:of:)' is unused [#no-usage]
+Tests/ArborKitTests/FaithfulFakeTests.swift:115:12: warning: result of call to 'setFrame(_:of:)' is unused [#no-usage]
+Tests/ArborKitTests/FaithfulFakeTests.swift:99:12: warning: result of call to 'setFrame(_:of:)' is unused [#no-usage]
+Tests/ArborKitTests/FocusTests.swift:456:13: warning: immutable value 'a' was never used; consider replacing with '_' or removing it [#no-usage]
+Tests/ArborKitTests/MenuBarTests.swift:229:12: warning: 'asleep' mutated after capture by sendable closure
+Tests/ArborKitTests/MenuBarTests.swift:269:10: warning: 'room' mutated after capture by sendable closure
+Tests/ArborKitTests/TraceRecorderTests.swift:525:11: warning: 'now' mutated after capture by sendable closure
+[595/596] Linking ArborPackageTests
+Build complete! (391.55s)
+23:16:20
+	 Executed 0 tests, with 0 failures (0 unexpected) in 0.000 (0.011) seconds
+✔ Test run with 5554 tests in 383 suites passed after 313.557 seconds.
+23:21:41
+exit code 0
