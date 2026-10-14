@@ -117,6 +117,8 @@ if [ "${1:-}" = --uninstall ]; then
   else
     echo "There is no $installed"
   fi
+  # What an install that was killed may have left, beside the app or alone.
+  rm -rf "$prefix/.Arbor.app.new"
   for folder in "${BINDIR:-}" "$HOME/.local/bin" /usr/local/bin; do
     link="$folder/arborctl"
     if [ -L "$link" ] && [ "$(readlink "$link")" = "$installed/$tool" ]; then
@@ -140,8 +142,12 @@ fi
 # Arbor that was running, which is what fetches windows that are out of view.
 staged="$prefix/.Arbor.app.new"
 rm -rf "$staged"
+# Whatever ends this before the swap (⌃C while the old Arbor takes its time to quit) leaves no hidden copy behind.
+trap 'rm -rf "$staged"' EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 if ! cp -R "$built" "$staged"; then
-  rm -rf "$staged"
   echo "install.sh: $built could not be copied to $prefix. Nothing was changed: the Arbor that was installed is, and goes on running." >&2
   exit 1
 fi
@@ -154,8 +160,12 @@ if [ "${stranded:-0}" != 0 ]; then
   echo "NOTE: $stranded window(s) are still out of view: the Arbor that quit could not move them (its switch under Accessibility is off or"
   echo "  belongs to another build, or it hung). The new build brings them back when it starts, once ITS switch is on."
 fi
+# From here to the end of the swap nothing ends it (nor `rm`, which ⌃C reaches too): the old Arbor has quit, and with the old app
+# half removed and the new one cleared away there would be none to fetch windows that are out of view.
+trap '' HUP INT TERM
 rm -rf "$installed"
 mv "$staged" "$installed"
+trap - EXIT HUP INT TERM
 echo "Installed $installed, version $(./scripts/version.sh)"
 
 if [ -n "${BINDIR:-}" ]; then

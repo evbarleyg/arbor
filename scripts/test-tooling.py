@@ -1145,6 +1145,15 @@ def check_install():
             row("make-signing-identity.sh: a job on somebody's own Mac leaves the login keychain alone, making and removing",
                 (in_a_job(identity, "zelda"), in_a_job(identity + ["--remove"], "zelda")), ((77, []), (77, [])))
 
+    def leftover_after_uninstalling(beside):
+        """Whether the hidden copy that a killed install left is still there, beside an installed app or alone."""
+        with tempfile.TemporaryDirectory(prefix="tooling-") as home:
+            for name in [".Arbor.app.new"] + (["Arbor.app"] if beside else []):
+                os.makedirs(os.path.join(home, "Applications", name, "Contents", "Helpers"))
+            subprocess.run(["bash", "scripts/install.sh", "--uninstall"], cwd=root, stdin=subprocess.DEVNULL, capture_output=True, text=True,
+                           env={**kept, "HOME": home, "ARBOR_UNATTENDED": "1"})
+            return os.path.exists(os.path.join(home, "Applications", ".Arbor.app.new"))
+
     def uninstalled(swift, **more):
         """(exit code, whether the app is still there) with a stand-in for `swift scripts/out-of-view.swift`."""
         with tempfile.TemporaryDirectory(prefix="tooling-") as home:
@@ -1157,14 +1166,14 @@ def check_install():
                                   env={**kept, "HOME": home, "PATH": os.path.join(home, "bin") + os.pathsep + os.environ["PATH"], "ARBOR_UNATTENDED": "1", **more})
             return done.returncode, os.path.isdir(os.path.join(home, "Applications", "Arbor.app")), "NOTHING WAS REMOVED" in done.stderr
 
-    def installed(cp):
-        """(exit code, what the installed app holds, whether Arbor was asked to quit, what else lies beside it) with a stand-in for `cp`."""
+    def installed(cp, rm='exec /bin/rm "$@"'):
+        """(exit code, what the installed app holds, whether Arbor was asked to quit, what else lies beside it) with stand-ins for `cp` and `rm`."""
         with tempfile.TemporaryDirectory(prefix="tooling-") as folder:
             home = os.path.join(folder, "home")
             for path in ("scripts", "bin", "build/Arbor.app/Contents/Helpers", "home/Applications/Arbor.app"):
                 os.makedirs(os.path.join(folder, path))
             shutil.copy(os.path.join(HERE, "install.sh"), os.path.join(folder, "scripts", "install.sh"))
-            for path, text in (("scripts/version.sh", "echo 1.0"), ("bin/swift", "echo 0"), ("bin/cp", cp),
+            for path, text in (("scripts/version.sh", "echo 1.0"), ("bin/swift", "echo 0"), ("bin/cp", cp), ("bin/rm", rm),
                                ("build/Arbor.app/Contents/Helpers/arborctl", f'echo "$1" >> "{folder}/asked"; exit 2')):
                 with open(os.path.join(folder, path), "w", encoding="utf-8") as handle:
                     handle.write(f"#!/bin/bash\n{text}\n")
@@ -1172,12 +1181,21 @@ def check_install():
             open(os.path.join(home, "Applications", "Arbor.app", "the-old-one"), "w", encoding="utf-8").close()
             done = subprocess.run(["bash", "scripts/install.sh"], cwd=folder, stdin=subprocess.DEVNULL, capture_output=True, text=True,
                                   env={**kept, "HOME": home, "PATH": os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"], "ARBOR_UNATTENDED": "1", "LAUNCH": "0"})
-            return (done.returncode, sorted(os.listdir(os.path.join(home, "Applications", "Arbor.app"))), os.path.exists(os.path.join(folder, "asked")),
+            app = os.path.join(home, "Applications", "Arbor.app")
+            return (done.returncode, sorted(os.listdir(app)) if os.path.isdir(app) else "no app at all", os.path.exists(os.path.join(folder, "asked")),
                     sorted(name for name in os.listdir(os.path.join(home, "Applications")) if name != "Arbor.app"))
 
     row("install.sh: the new app takes the old one's place, and nothing is left beside it", installed('exec /bin/cp "$@"'), (0, ["Contents"], True, []))
     row("install.sh: a copy that fails half way changes nothing: the old app stays, and the Arbor that runs is not asked to quit",
         installed('/bin/mkdir -p "${@: -1}/half"; exit 1'), (1, ["the-old-one"], False, []))
+    row("install.sh: ended before the swap, it leaves no hidden copy, and the old app",
+        installed('/bin/cp "$@" && kill -TERM $PPID; sleep 1'), (143, ["the-old-one"], False, []))
+    # By then the old Arbor has quit, and whichever copy is left is what fetches windows that are out of view.
+    row("install.sh: once the swap has begun it is finished, whatever signal comes: never neither app",
+        [installed('exec /bin/cp "$@"', rm=f'case "${{@: -1}}" in */Arbor.app) kill -{signal} $PPID; sleep 0.3 ;; esac; exec /bin/rm "$@"') for signal in ("TERM", "INT", "HUP")],
+        [(0, ["Contents"], True, [])] * 3)
+    row("install.sh: uninstalling removes the hidden copy that a killed install left, beside an app or alone",
+        (leftover_after_uninstalling(True), leftover_after_uninstalling(False)), (False, False))
     row("install.sh: with windows still out of view after Arbor has quit, nothing is removed", uninstalled("echo 2"), (75, True, True))
     row("install.sh: with every window in view it is", uninstalled("echo 0"), (0, False, False))
     row("install.sh: told that they are not Arbor's doing, it is", uninstalled("echo 2", ARBOR_LEAVE_WINDOWS="1"), (0, False, False))
