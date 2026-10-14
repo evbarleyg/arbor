@@ -1,0 +1,9 @@
+13 somebody-else: OFFENCE: a window that the step does not name is moved
+expected: {'act': 'dock-key', 'settled': 'quiet:0', 'moves': '37', 'offence': 'moved-unasked'}
+FAIL rule 2: grove (w44) moved, and the step did not name it
+ODD rule 3: grove (w44) was still moving 10 ms after everything had been quiet for a second
+
+23:16:03.802 SCREEN -- begin 13 somebody-else
+23:16:03.802 SCREEN -- text 13 OFFENCE: a window that the step does not name is moved
+23:16:03.828 SCREEN -- end 13 act=dock-key settled=quiet:0 moves=37 offence=moved-unasked
+23:16:03.838 SCREEN grove (w44) 720,120 560×380

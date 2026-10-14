@@ -1,0 +1,9 @@
+26 answers-late: OFFENCE: a key is pressed, and the window moves two seconds later
+expected: {'act': 'dock-key', 'settled': 'quiet:0', 'moves': '37', 'offence': 'slow'}
+ODD rule 3: oak (w37) was still moving 21 ms after everything had been quiet for a second
+FAIL rule 3: the last window came to rest 2309 ms after the key or the button
+
+23:16:29.266 SCREEN -- begin 26 answers-late
+23:16:29.266 SCREEN -- text 26 OFFENCE: a key is pressed, and the window moves two seconds later
+23:16:31.662 SCREEN -- end 26 act=dock-key settled=quiet:0 moves=37 offence=slow
+23:16:31.683 SCREEN oak (w37) 140,100 600×420

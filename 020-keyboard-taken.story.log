@@ -1,0 +1,22 @@
+20 keyboard-taken: OFFENCE: after the switch another app, with no window to show, takes the keyboard
+expected: {'act': 'switch', 'settled': 'quiet:0', 'front': '37', 'offence': 'focus'}
+FAIL rule 2: shell (w47) moved, and the step did not name it
+FAIL rule L: shell (w47) left the screen, and the step did not say it would
+
+23:16:10.904 SCREEN -- begin 20 keyboard-taken
+23:16:10.904 SCREEN -- text 20 OFFENCE: after the switch another app, with no window to show, takes the keyboard
+23:16:10.917 SCREEN shell (w47) 1168,532 284×260
+23:16:10.936 SCREEN shell (w47) 1211,565 243×260
+23:16:11.003 SCREEN shell (w47) 1345,683 115×188
+23:16:11.052 SCREEN shell (w47) 1397,753 66×118
+23:16:11.059 SCREEN shell (w47) 1402,765 61×106
+23:16:11.075 SCREEN shell (w47) 1407,776 57×95
+23:16:11.141 SCREEN shell (w47) 1417,827 49×44
+23:16:11.148 SCREEN shell (w47) 1417,830 49×41
+23:16:11.177 SCREEN shell (w47) 1416,833 50×38
+23:16:11.179 SCREEN shell (w47) left the screen
+23:16:11.179 SCREEN front to back: oak elm leaf grove
+23:16:11.492 SCREEN the button is down 394 112
+23:16:11.586 SCREEN the button is up 394 112
+23:16:12.759 SCREEN in front: process 3371 com.apple.Terminal
+23:16:12.760 SCREEN -- end 20 act=switch settled=quiet:0 front=37 offence=focus

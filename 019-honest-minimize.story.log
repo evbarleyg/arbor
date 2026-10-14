@@ -1,0 +1,15 @@
+19 honest-minimize: Terminal's window is minimized
+expected: {'act': 'open-close', 'settled': 'quiet:0', 'leaves': '47'}
+ODD rule 3: shell (w47) was still moving 233 ms after everything had been quiet for a second
+
+23:16:10.616 SCREEN -- begin 19 honest-minimize
+23:16:10.616 SCREEN -- text 19 Terminal's window is minimized
+23:16:10.644 SCREEN -- end 19 act=open-close settled=quiet:0 leaves=47
+23:16:10.706 SCREEN shell (w47) 1000,300 423×259
+23:16:10.712 SCREEN shell (w47) 1000,300 423×260
+23:16:10.732 SCREEN shell (w47) 1000,306 424×260
+23:16:10.750 SCREEN shell (w47) 1000,311 425×260
+23:16:10.793 SCREEN shell (w47) 1002,337 425×260
+23:16:10.799 SCREEN shell (w47) 1003,346 425×260
+23:16:10.842 SCREEN shell (w47) 1029,406 407×260
+23:16:10.877 SCREEN shell (w47) 1067,450 375×260

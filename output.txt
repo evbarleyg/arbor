@@ -1,0 +1,244 @@
+# mac-shell: scripts/mac-shell/day-sabotage.sh at 1505dcc, macOS 26.6.2, 2026-10-14T23:15Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64
+built the tools in 34s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+the sampler writes mac-shell/samples.log (pid 3074)
+
+== The windows
+
+-- 1 open-textedit: opens a document in TextEdit
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.0gfAuo/scratch/oak.txt
+pid 3093 lists (id role subrole x y w h flags):
+  37 AXWindow AXStandardWindow 165 65 673 439 main
+  w37 is oak
+  (quiet:1027 ms) judge=no
+
+-- 2 open-second: opens a second one
+  w42 is elm
+  (quiet:1039 ms) judge=no
+
+-- 3 open-finder: opens a folder in Finder
+> open -g -b com.apple.finder /tmp/arbor-apps.0gfAuo/scratch/grove
+pid 355 lists (id role subrole x y w h flags):
+  44 AXWindow AXStandardWindow 340 120 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1600 900 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+  w44 is grove
+  (quiet:949 ms) judge=no
+
+-- 4 open-preview: opens a picture in Preview
+> open -g -b com.apple.Preview /tmp/arbor-apps.0gfAuo/scratch/leaf.png
+pid 3338 lists (id role subrole x y w h flags):
+  45 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w45 is leaf
+  (quiet:970 ms) judge=no
+
+-- 5 open-terminal: opens Terminal
+> open -g -b com.apple.Terminal 
+pid 3371 lists (id role subrole x y w h flags):
+  47 AXWindow AXStandardWindow 40 51 877 499 main
+  w47 is shell
+  (quiet:969 ms) judge=no
+
+-- 6 lay-out: puts them side by side
+  (quiet:0 ms) judge=no own=all
+
+== Honest steps and offences
+
+-- 7 honest-switch: clicks TextEdit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:388 ms) front=42
+
+-- 8 honest-click: clicks the first document's title bar
+> click 346 92
+> move 346 212
+  (quiet:380 ms) front=37
+
+-- 9 honest-move: a window is moved once, straight to where it ends up
+  (quiet:0 ms) moves=37
+
+-- 10 honest-resize: a window is given another size and another place, which takes two stages
+  (quiet:1044 ms) moves=37
+
+-- 11 moved-twice: OFFENCE: a window is moved, and half a second later moved again
+  (quiet:1086 ms) moves=37 offence=jolt
+
+-- 12 elsewhere-first: OFFENCE: a window goes somewhere else before it goes where it ends up
+  (quiet:1092 ms) moves=37 offence=jolt
+
+-- 13 somebody-else: OFFENCE: a window that the step does not name is moved
+  (quiet:0 ms) moves=37 offence=moved-unasked
+
+-- 14 honest-park: a window is sent out of view, to the corner
+  (quiet:1016 ms) moves=45
+parked at 1599 770 708 320
+
+-- 15 flashes: OFFENCE: a window that is out of view shows for a moment
+  (quiet:1059 ms) moves=any offence=flash
+
+-- 16 honest-return: it comes back into view
+  (quiet:0 ms) moves=45
+
+-- 17 covered: OFFENCE: the window switched to is covered by another one at once
+> click 394 112
+> move 394 232
+  (quiet:0 ms) front=37 offence=behind
+
+-- 18 honest-click-2: clicks the first document's title bar
+> click 394 112
+> move 394 232
+  (quiet:337 ms) front=37
+
+-- 19 honest-minimize: Terminal's window is minimized
+  (quiet:0 ms) leaves=47
+
+-- 20 keyboard-taken: OFFENCE: after the switch another app, with no window to show, takes the keyboard
+> click 394 112
+> move 394 232
+  (quiet:0 ms) front=37 offence=focus
+
+-- 21 honest-click-3: clicks the first document's title bar
+> click 394 112
+> move 394 232
+  (quiet:419 ms) front=37
+
+-- 22 comes-forward: OFFENCE: nobody does anything, and an app comes forward by itself
+  (quiet:0 ms) offence=focus
+
+-- 23 honest-click-4: clicks the first document's title bar
+> click 394 112
+> move 394 232
+  (quiet:373 ms) front=37
+
+-- 24 honest-drag: drags the first document a little way by its title bar
+> drag 394 112 514 172
+  (quiet:1040 ms) drags=37 place=37
+
+-- 25 out-of-the-hand: OFFENCE: while the button is down the dragged window is pulled away
+> drag 465 132 345 72 --no-release
+> release
+  (quiet:1069 ms) drags=37 place=37 offence=pulled
+
+-- 26 answers-late: OFFENCE: a key is pressed, and the window moves two seconds later
+> key escape
+  (quiet:0 ms) moves=37 offence=slow
+
+-- 27 honest-idle: nobody does anything for three seconds
+  (quiet:0 ms)
+
+-- 28 wrong-size: OFFENCE: everything is given back, but one window keeps a size that is not its own
+  (quiet:1040 ms) moves=any restores=all offence=size-lost
+
+-- 29 honest-give-back: now it gets its own size and place back too
+  (quiet:0 ms) moves=any restores=all places=1 everything=1
+
+-- 30 left-out: OFFENCE: everything should be in view, and one window is in the corner
+  (quiet:1063 ms) moves=any everything=1 offence=lost
+
+-- 31 honest-return-2: it comes back
+  (quiet:0 ms) moves=44
+
+-- 32 vanishes: OFFENCE: a window is closed, and nobody asked for that
+  (quiet:0 ms) offence=lost
+
+== the report (all of it: mac-shell/day-report.md)
+32 steps in 61 s, 26 of them judged, 13 with a rule broken. The sampler: samples 2361 seconds 62.3 hz 37.9 cost-ms 1.63 late 652 longest-gap-ms 331.
+
+## Per rule
+
+| Rule | | Steps that checked it | Steps that broke it | Which |
+|---|---|---|---|---|
+| 1 | never fight macOS: where it answers a drag, Arbor stands aside | 2 | 0 |  |
+| 2 | nothing moves that the person did not move | 22 | 2 | 13 somebody-else, 20 keyboard-taken |
+| 3 | no jolts: a window moves once, to where it ends up | 26 | 6 | 11 moved-twice, 12 elsewhere-first, 15 flashes, 24 honest-drag, 25 out-of-the-hand, 26 answers-late |
+| 4 | the window you switch to comes to the front and into view | 16 | 1 | 22 comes-forward |
+| 5 | quitting, Float All and pause give windows their own sizes back | 2 | 2 | 28 wrong-size, 29 honest-give-back |
+| L | no window is lost or stuck | 26 | 3 | 20 keyboard-taken, 30 left-out, 32 vanishes |
+| - | what the script itself checked | 26 | 0 |  |
+
+## Findings
+
+### Rule 2: nothing moves that the person did not move
+
+- ✘ **13 somebody-else** (OFFENCE: a window that the step does not name is moved): grove (w44) moved, and the step did not name it [moved-unasked]
+  - +0 ms 700,80 560×380 · +36 ms 720,120 560×380
+- ✘ **20 keyboard-taken** (OFFENCE: after the switch another app, with no window to show, takes the keyboard): shell (w47) moved, and the step did not name it [moved-unasked]
+  - +0 ms 1067,450 375×260 · +13 ms 1168,532 284×260 · +32 ms 1211,565 243×260 · +99 ms 1345,683 115×188 · +148 ms 1397,753 66×118 · +155 ms 1402,765 61×106 · +171 ms 1407,776 57×95 · +237 ms 1417,827 49×44 · +244 ms 1417,830 49×41 · +273 ms 1416,833 50×38 · +275 ms off the screen
+
+### Rule 3: no jolts: a window moves once, to where it ends up
+
+- ~ **9 honest-move** (a window is moved once, straight to where it ends up): oak (w37) was still moving 19 ms after everything had been quiet for a second [jolt]
+- ✘ **11 moved-twice** (OFFENCE: a window is moved, and half a second later moved again): oak (w37) moved 2 times [jolt]
+  - +0 ms 60,60 600×420 · +63 ms 160,100 600×420 · +563 ms 220,100 600×420
+- ✘ **12 elsewhere-first** (OFFENCE: a window goes somewhere else before it goes where it ends up): oak (w37) went 960 points out of its way before it ended up [jolt]
+  - +0 ms 220,100 600×420 · +45 ms 700,300 600×420 · +112 ms 100,100 600×420
+- ~ **13 somebody-else** (OFFENCE: a window that the step does not name is moved): grove (w44) was still moving 10 ms after everything had been quiet for a second [jolt]
+- ✘ **15 flashes** (OFFENCE: a window that is out of view shows for a moment): leaf (w45) is out of view before and after, and 100% of it showed in between [flash]
+  - +0 ms 1599,770 708×320 · +25 ms 400,300 708×320 · +88 ms 1599,770 708×320
+- ~ **16 honest-return** (it comes back into view): leaf (w45) was still moving 40 ms after everything had been quiet for a second [jolt]
+- ~ **19 honest-minimize** (Terminal's window is minimized): shell (w47) was still moving 233 ms after everything had been quiet for a second [jolt]
+- ✘ **24 honest-drag** (drags the first document a little way by its title bar): oak (w37) was 49 points from where the pointer carried it, 1762 ms into the step [pulled]
+  - +0 ms 104,102 600×420 · +23 ms 108,104 600×420 · +130 ms 112,106 600×420 · +188 ms 116,108 600×420 · +237 ms 119,110 600×420 · +320 ms 119,112 600×420 · … 13 more … · +1654 ms 163,120 600×420 · +1756 ms 167,120 600×420 · +1762 ms 171,120 600×420 · +2017 ms 172,120 600×420 · +2167 ms 171,120 600×420
+- ✘ **25 out-of-the-hand** (OFFENCE: while the button is down the dragged window is pulled away): oak (w37) was 401 points from where the pointer carried it, 3060 ms into the step [pulled]
+  - +0 ms 167,120 600×420 · +59 ms 163,120 600×420 · +95 ms 159,120 600×420 · +809 ms 155,120 600×420 · +862 ms 122,120 600×420 · +867 ms 107,120 600×420 · … 8 more … · +1435 ms 55,62 600×420 · +1534 ms 51,60 600×420 · +1703 ms 52,60 600×420 · +2311 ms 452,260 600×420 · +2763 ms 51,60 600×420
+- ~ **26 answers-late** (OFFENCE: a key is pressed, and the window moves two seconds later): oak (w37) was still moving 21 ms after everything had been quiet for a second [jolt]
+- ✘ **26 answers-late** (OFFENCE: a key is pressed, and the window moves two seconds later): the last window came to rest 2309 ms after the key or the button [slow]
+- ~ **31 honest-return-2** (it comes back): grove (w44) was still moving 37 ms after everything had been quiet for a second [jolt]
+
+### Rule 4: the window you switch to comes to the front and into view
+
+- ✘ **22 comes-forward** (OFFENCE: nobody does anything, and an app comes forward by itself): the app in front changed (to process 3371), and nobody switched [focus]
+
+### Rule 5: quitting, Float All and pause give windows their own sizes back
+
+- ✘ **28 wrong-size** (OFFENCE: everything is given back, but one window keeps a size that is not its own): oak (w37) is 80,80 640×460; its own size was 51,60 520×380 [size-lost]
+- ✘ **29 honest-give-back** (now it gets its own size and place back too): oak (w37) is 80,80 640×460; its own size was 51,60 520×380 [size-lost]
+
+### Rule L: no window is lost or stuck
+
+- ✘ **20 keyboard-taken** (OFFENCE: after the switch another app, with no window to show, takes the keyboard): shell (w47) left the screen, and the step did not say it would [lost]
+  - +0 ms 1067,450 375×260 · +13 ms 1168,532 284×260 · +32 ms 1211,565 243×260 · +99 ms 1345,683 115×188 · +148 ms 1397,753 66×118 · +155 ms 1402,765 61×106 · +171 ms 1407,776 57×95 · +237 ms 1417,827 49×44 · +244 ms 1417,830 49×41 · +273 ms 1416,833 50×38 · +275 ms off the screen
+- ✘ **30 left-out** (OFFENCE: everything should be in view, and one window is in the corner): grove (w44) is out of view: 0% of it is on the display, at 1599,770 560×380 [lost]
+- ✘ **32 vanishes** (OFFENCE: a window is closed, and nobody asked for that): elm (w42) left the screen, and the step did not say it would [lost]
+  - +0 ms 140,500 520×300 · +263 ms off the screen
+
+
+== the sabotage
+| # | Step | Offence committed | Reported | |
+|---|---|---|---|---|
+| 7 | honest-switch | none | nothing | ✔ |
+| 8 | honest-click | none | nothing | ✔ |
+| 9 | honest-move | none | nothing | ✔ |
+| 10 | honest-resize | none | nothing | ✔ |
+| 11 | moved-twice | jolt | jolt | ✔ |
+| 12 | elsewhere-first | jolt | jolt | ✔ |
+| 13 | somebody-else | moved-unasked | moved-unasked | ✔ |
+| 14 | honest-park | none | nothing | ✔ |
+| 15 | flashes | flash | flash | ✔ |
+| 16 | honest-return | none | nothing | ✔ |
+| 17 | covered | behind | nothing | ✘ |
+| 18 | honest-click-2 | none | nothing | ✔ |
+| 19 | honest-minimize | none | nothing | ✔ |
+| 20 | keyboard-taken | focus | lost, moved-unasked | ✘ |
+| 21 | honest-click-3 | none | nothing | ✔ |
+| 22 | comes-forward | focus | focus | ✔ |
+| 23 | honest-click-4 | none | nothing | ✔ |
+| 24 | honest-drag | none | pulled | ✘ |
+| 25 | out-of-the-hand | pulled | pulled | ✔ |
+| 26 | answers-late | slow | slow | ✔ |
+| 27 | honest-idle | none | nothing | ✔ |
+| 28 | wrong-size | size-lost | size-lost | ✔ |
+| 29 | honest-give-back | none | size-lost | ✘ |
+| 30 | left-out | lost | lost | ✔ |
+| 31 | honest-return-2 | none | nothing | ✔ |
+| 32 | vanishes | lost | lost | ✔ |
+
+9 kinds of offence committed: behind, flash, focus, jolt, lost, moved-unasked, pulled, size-lost, slow. 4 steps were judged wrongly.
+
+0 passed, 1 failed
+still running when the script had ended, and stopped now:
+  2460 sleep
+exit code 1

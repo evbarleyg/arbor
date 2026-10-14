@@ -1,0 +1,9 @@
+28 wrong-size: OFFENCE: everything is given back, but one window keeps a size that is not its own
+expected: {'act': 'way-out', 'settled': 'quiet:1040', 'moves': 'any', 'restores': 'all', 'offence': 'size-lost'}
+FAIL rule 5: oak (w37) is 80,80 640×460; its own size was 51,60 520×380
+
+23:16:35.503 SCREEN -- begin 28 wrong-size
+23:16:35.504 SCREEN -- text 28 OFFENCE: everything is given back, but one window keeps a size that is not its own
+23:16:35.593 SCREEN grove (w44) 700,80 560×380
+23:16:35.903 SCREEN oak (w37) 80,80 640×460
+23:16:36.926 SCREEN -- end 28 act=way-out settled=quiet:1040 moves=any restores=all offence=size-lost
