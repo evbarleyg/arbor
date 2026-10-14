@@ -943,6 +943,32 @@ under half shows: with "⌃⌥0 does not fetch it" this is the product owner's m
 `docked-partly-out` (kept larger than its slot, it hangs out of the display); `left-its-place` and `moved-for-nothing` (a display only moved, or nothing changed at all, and a floating window was moved).
 `replay` says `REFUSED:` for every command Arbor refuses and every line that is no command and no event: a script whose `hold` was refused says nothing about holds.
 
+**The seven rules as nets** (`ChaosInvariants+SevenRules.swift`). They ask what the window system saw, never what the controller believes, and each has a control in `ChaosSevenRulesTests`: a fault
+done to the world as if Arbor had done it, at which the net has to speak, beside the same story without the fault, at which it has to be silent. `ChaosRunner.detector(for:)` gives the detector of `docs/VIABLE.md`, section 5, that a rule stands for.
+
+| Rule of the product | Rules of the walks | Detector |
+|---|---|---|
+| Nothing moves until the person docks something, and nothing that was not asked to | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-resume`, `moved-unasked`, `there-and-back-moved`, `pause-and-resume-moved` | `moved-unasked` |
+| A start takes nothing out of view | `start-took-out-of-view` | `lost` |
+| A window moves once, to where it ends up | `moved-twice` (in the step of the command or event), `moved-again` (later, with nobody touching anything); `-sizing` where its app refused a size, `-sizing-again` where it had refused in the same way before | `jolt` |
+| The window you switch to comes to the front and into view | `switched-to-out-of-view`, `switched-to-partly-out`, `app-switch-out-of-view` (only the app was reported), `switched-to-behind` | `focus`, `behind` |
+| Quitting, Float All and pause give windows their own sizes back | `size-not-given-back`, `size-kept-through-a-pause` | `size-lost` |
+| After any way home no window shows less than its person left showing | `home-not-whole`, `home-behind-the-dock`, `home-leaves-out` | `lost` |
+
+The ways home (`way-back home`, `show-all`, `pause`, `float-all`, `start-again`, `quit`) are each taken at the end of every walk, the ones that leave the arrangement alone first.
+A hunt ends with `asked: <net> <n> times`: **a net that never asks its question catches nothing**, and `ordinaryWalksReachEveryQuestion` holds each to a floor.
+
+**Ordinary walks** (`ARBOR_CHAOS_ORDINARY=1`): the displays of a real desk, apps with the smallest sizes real apps have, windows that open wholly in view, keys that are bound, items that are in the menu, the mouse, and
+a moment between one thing and the next. No settings edited by hand, no app that fights back, no crash, no nonsense. **What such a walk finds is likely on a real desk**; what only the wild walks find has to be looked at for how a person would get there.
+
+```bash
+ARBOR_CHAOS_ORDINARY=1 .build/release/arbor-sim hunt 1 2000 300                                # the seed chooses the desk
+ARBOR_CHAOS_ORDINARY=1 ARBOR_CHAOS_DESK=laptop ARBOR_CHAOS_DOCK=left .build/release/arbor-sim hunt 1 2000 300   # laptop | desk | both; bottom | left | right | hidden
+ARBOR_CHAOS_ORDINARY=1 .build/release/arbor-sim hunt 1 2000 300 --known                        # the known failures end a walk like any other
+```
+
+**The scoreboard** is the number of ordinary walks in 10,000 in which a rule broke, by rule: the `known:` lines of a hunt count the walks that passed a rule by, the summary line those that ended at one.
+
 **Seeds mean something only on one generator.** A new `Command` case, weight or event sends every seed elsewhere: compare rates and scripts, never
 seed numbers, between two commits. **A script means something only on a harness that knows its words**: a line that is no event is taken for
 a command, and a command Arbor does not know does nothing, so a script with `via …` or `key down …` on a branch from before those events

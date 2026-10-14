@@ -11,8 +11,8 @@ public struct ChaosGenerator {
   var random: ChaosRandom
   /// Steps already decided: the setup, and the rest of a gesture that takes several actions. Other
   /// actions slip in between them now and then, which is where the interesting orders come from.
-  private var planned: [ChaosAction] = []
-  private var nextWindow: UInt32 = 101
+  var planned: [ChaosAction] = []
+  var nextWindow: UInt32 = 101
   /// Some runs have apps that fight back. They make rules about frames moot for their windows and
   /// keep timers alive, so most runs do without.
   private let allowsMisbehaviour: Bool
@@ -21,10 +21,21 @@ public struct ChaosGenerator {
   private let desks = ProcessInfo.processInfo.environment["ARBOR_CHAOS_DESKS"] != nil
   private var sizesOnTheDesk: [String: CGSize] = [:]
   private let twoDisplays = ProcessInfo.processInfo.environment["ARBOR_CHAOS_TWO_DISPLAYS"] != nil
+  /// `ARBOR_CHAOS_ORDINARY=1`: walks a person could take, on a real desk (ChaosGenerator+Ordinary.swift).
+  private let ordinary: Bool
+  var desk: Desk
 
-  public init(seed: UInt64) {
+  public init(seed: UInt64, ordinary: Bool = ProcessInfo.processInfo.environment["ARBOR_CHAOS_ORDINARY"] != nil) {
+    self.ordinary = ordinary
     random = ChaosRandom(seed: seed)
     allowsMisbehaviour = random.chance(30)
+    // From a stream of its own, so that the other walks are what they were.
+    var forTheDesk = ChaosRandom(seed: seed &+ 0x5EED)
+    desk = Desk(&forTheDesk)
+    if ordinary {
+      startOrdinaryWalk()
+      return
+    }
     // A script starts from one standard display, no windows and Arbor not running.
     if random.chance(50) { planned.append(.displays(arrangement(), .never)) }
     if random.chance(30) { planned.append(.settings(settingsChange())) }
@@ -405,6 +416,7 @@ public struct ChaosGenerator {
   // MARK: The next action
 
   public mutating func next(_ world: ChaosRunner) -> ChaosAction {
+    if ordinary { return ordinaryNext(world) }
     if !planned.isEmpty, twoDisplays || random.chance(80) { return planned.removeFirst() }
     guard world.isRunning else { return world.isPaused ? whilePaused(world) : whileStopped(world) }
 

@@ -79,6 +79,10 @@ func runChaosMode(_ arguments: [String]) -> Int32? {
   for argument in arguments where argument.hasPrefix("--pass=") {
     excused.formUnion(argument.dropFirst("--pass=".count).split(separator: ",").map(String.init))
   }
+  // Shrinking walks past what the walk walked past, or a script could not lose a step without ending at another rule.
+  func shrunk(_ failure: ChaosFailure) -> ChaosFailure {
+    ChaosRunner.shrink(failure) { ChaosRunner.replay($0, excusing: excused.subtracting([failure.rule])) }
+  }
   switch arguments.first {
   case "chaos":
     guard arguments.count >= 2 else {
@@ -93,7 +97,7 @@ func runChaosMode(_ arguments: [String]) -> Int32? {
       return 0
     }
     say("")
-    say("\(ChaosRunner.shrink(failure))")
+    say("\(shrunk(failure))")
     return 1
 
   case "hunt":
@@ -109,13 +113,15 @@ func runChaosMode(_ arguments: [String]) -> Int32? {
       byRule[failure.rule, default: 0] += 1
       // A few shrunk scripts per rule are enough to work on; the rest are counted.
       if byRule[failure.rule]! <= 3 {
-        say("\(ChaosRunner.shrink(failure))\n")
+        say("\(shrunk(failure))\n")
       } else {
-        say("seed \(seed): \(failure.violations[0])")
+        say("seed \(seed): \(failure.violations[0]) ← \(failure.script.last?.text ?? "")")
       }
     }
     say("\(count) seeds × \(steps) steps: " + (byRule.isEmpty ? "every invariant held" : "\(byRule.sorted { $0.key < $1.key })"))
     for (rule, seeds) in known.sorted(by: { $0.key < $1.key }) { say("known: \(rule) in \(seeds) seeds") }
+    // A net that never asks its question catches nothing.
+    for (net, times) in ChaosRunner.questionsAsked.sorted(by: { $0.key < $1.key }) { say("asked: \(net) \(times) times") }
     return byRule.isEmpty ? 0 : 1
 
   case "replay":

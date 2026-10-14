@@ -73,6 +73,7 @@ extension ChaosRunner {
     reachViolations(&problems)
     wholeViolations(&problems)
     restingPlaceViolations(after: action, &problems)
+    sevenRulesViolations(after: action, &problems)
     timerViolations(settled: action == .settle, &problems)
     untouchedViolations(&problems)
     // Encoding is slow next to everything else, so a random run checks it now and then. A replay checks it at every step:
