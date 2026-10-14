@@ -104,6 +104,7 @@ struct Pointer {
                                     window whose top-left corner is nearest the point
       screen-access | ax-access     true or false: Screen Recording, Accessibility
       reduce-motion                 true or false: what an app launched now is told about Reduce Motion
+      increase-contrast | reduce-transparency       the same about those two
       asleep                        true or false: whether the main display is asleep
       picture <file> <w> <h> <#rrggbb> [<#rrggbb>]
                                     write a PNG: one colour, or a gradient between two under a grid
@@ -877,6 +878,12 @@ struct Pointer {
 
     case "asleep":
       print(CGDisplayIsAsleep(CGMainDisplayID()) != 0)
+
+    case "increase-contrast":
+      print(NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast)
+
+    case "reduce-transparency":
+      print(NSWorkspace.shared.accessibilityDisplayShouldReduceTransparency)
 
     default:
       fail("unknown command \(command)\n\(Pointer.usage)")
