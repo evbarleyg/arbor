@@ -411,6 +411,20 @@ product decisions) answers in place. Do not delete answered questions.
 - **Answer** (product owner, 2026-10-14): **Arbor stands aside.** macOS's frame stays, the window stays docked, its place stays reserved, nobody else moves. It goes back in one move at macOS's own second double-click, or at the next command that lays out.
   Not "it floats and the neighbours close up": that moves windows nobody touched. The first three times a line on screen says how to get back (F43), if that is cheap.
 
+## Q23: With macOS's own tiling on, whose are the screen's edges?
+
+- Asked by: product owner, 2026-10-14, reading the change that makes Arbor stand aside where macOS tiles (board 1.1).
+- Context: measured on a hosted Mac, macOS takes a dragged window only in the outermost point of the left and right edges and in the menu bar. Arbor's own band along the screen's edges is 12 points deep and previews at once. A real pointer travels:
+  on its way to the last point it crosses the band, so Arbor's preview comes up, goes again, and macOS's follows. People push the pointer against the edge, so nobody can let go within the band on purpose.
+- **Answer** (product owner, 2026-10-14): **while macOS's switch for an edge is on, that whole edge is macOS's.** With "drag to the left or right edge to tile" on, Arbor offers nothing in its left and right bands; with "drag to the menu bar to fill" on, nothing in its top band. No preview, no dock:
+  a window let go there, short of macOS's own point, floats where it is.
+  1. Rule 1 says that Arbor stands aside at the top edge and the side edges "rather than both reacting to one drag". Two previews one after the other are both reacting.
+  2. A preview that shows for a few frames is a flicker, which the rubric fails.
+  3. One sentence can be remembered: "With macOS's tiling on, the left, right and top edges are macOS's." The bottom edge, docked windows' own edges and the keys stay Arbor's.
+- What follows: at macOS's defaults a drag to the left edge does not dock. So the first page of the welcome window says so and offers the fix in one step, which is seen to have worked; declining is respected. **The coach never teaches a move that cannot work on this Mac as it is set**: with macOS's tiling on, its first
+  move is ⌃⌥⌘←, which works at every setting. The line on screen after such a drop names the key that docks at once.
+- For later: IDEAS I15.
+
 ## Decided by the executor
 
 One line per product decision made while building, newest last.
