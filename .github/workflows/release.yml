@@ -46,12 +46,11 @@ jobs:
         with:
           fetch-depth: 0 # the build number is the number of commits
 
-      - name: Use the newest Xcode on the runner
-        run: |
-          xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
-          sudo xcode-select -s "$xcode"
-          ./scripts/ci-toolchain.sh
-          export PATH="$HOME/.swiftly/bin:$PATH"
+      # The toolchain may come from a cache. The build may not: what people download is built from nothing.
+      - name: Set up
+        uses: ./.github/actions/mac-setup
+        with:
+          build-cache: none
 
       # Inputs and ref names reach the shell only through the environment, and version.sh checks the result.
       - name: Decide the version

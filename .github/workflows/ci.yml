@@ -49,17 +49,23 @@ jobs:
     timeout-minutes: 40
     steps:
       - uses: actions/checkout@v5
-      - name: Use the newest Xcode on the runner
-        run: |
-          xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
-          sudo xcode-select -s "$xcode"
-      - name: The Swift release the project is built with
-        run: ./scripts/ci-toolchain.sh
+      # Where work is integrated everything is built from nothing: whatever building upon an earlier job's build might hide, it
+      # cannot reach main.
+      - name: Set up
+        id: setup
+        uses: ./.github/actions/mac-setup
+        with:
+          build-cache: ${{ (github.event_name == 'push' || github.head_ref == 'swarm/trunk') && 'none' || 'tests' }}
       - name: Toolchain
         run: ./scripts/ci-step.py toolchain swift --version
       - name: Build
         id: build
-        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build
+        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build ./scripts/ci-build.sh --build-tests
+      - name: Keep the build
+        if: steps.setup.outputs.keep-build == 'true'
+        uses: ./.github/actions/mac-keep-build
+        with:
+          key: ${{ steps.setup.outputs.build-key }}
       - name: Test
         run: ./scripts/ci-step.py --summary 'Test run with|skipped' --log test.log test swift test
       - name: Simulator smoke test
@@ -80,15 +86,14 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v5
-      - name: Use the newest Xcode on the runner
-        run: |
-          xcode=$(ls -d /Applications/Xcode*.app | sort -V | tail -1)
-          sudo xcode-select -s "$xcode"
-      - name: The Swift release the project is built with
-        run: ./scripts/ci-toolchain.sh
+      - name: Set up
+        id: setup
+        uses: ./.github/actions/mac-setup
+        with:
+          build-cache: ${{ (github.event_name == 'push' || github.head_ref == 'swarm/trunk') && 'none' || 'products' }}
       - name: Build
         id: build
-        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build
+        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build ./scripts/ci-build.sh
       # Real windows. GitHub's macOS runners grant Accessibility to the runner's processes (probe P3,
       # 2026-10-14), so arbor-e2e can move its test windows there. The fresh evidence comes back as an artifact (or through
       # scripts/mac-shell/run.sh scripts/mac-shell/e2e.sh); commit it as
