@@ -59,10 +59,10 @@ acted judge=no own=all
 
 chapter "Honest steps and offences"
 act switch honest-switch "clicks TextEdit's icon in the Dock"
-dock_click com.apple.TextEdit
+must dock_click com.apple.TextEdit
 acted front="$(main_window_of "$P_oak")"
 act switch honest-click "clicks the first document's title bar"
-click_window "$A"
+must click_window "$A"
 acted front="$A"
 act dock-key honest-move "a window is moved once, straight to where it ends up"
 place "$A" 120 100 520 380
@@ -97,23 +97,23 @@ place "$C" 760 500 480 320
 acted moves="$C"
 
 act switch covered "OFFENCE: the window switched to is covered by another one at once"
-click_window "$A"
+must click_window "$A"
 sleep 0.4
 apptool raise "$E"
 acted front="$A" offence=behind
 act switch honest-click-2 "clicks the first document's title bar"
-click_window "$A"
+must click_window "$A"
 acted front="$A"
 act open-close honest-minimize "Terminal's window is minimized"
 apptool minimize "$D"
 acted leaves="$D"
 act switch keyboard-taken "OFFENCE: after the switch another app, with no window to show, takes the keyboard"
-click_window "$A"
+must click_window "$A"
 sleep 0.4
 apptool activate "$P_shell"
 acted front="$A" offence=focus
 act switch honest-click-3 "clicks the first document's title bar"
-click_window "$A"
+must click_window "$A"
 acted front="$A"
 act idle comes-forward "OFFENCE: nobody does anything, and an app comes forward by itself"
 sleep 1
@@ -121,22 +121,24 @@ apptool activate "$P_shell"
 sleep 1
 acted offence=focus
 act switch honest-click-4 "clicks the first document's title bar"
-click_window "$A"
+must click_window "$A"
 acted front="$A"
 
 read -r x y _ <<< "$(apptool grab "$A")"
 act drag honest-drag "drags the first document a little way by its title bar"
-drag_window "$A" "$((x + 120))" "$((y + 60))"
+must drag_window "$A" "$((x + 120))" "$((y + 60))"
 acted drags="$A" place="$A"
 read -r x y _ <<< "$(apptool grab "$A")"
 act drag out-of-the-hand "OFFENCE: while the button is down the dragged window is pulled away"
-drag_window "$A" "$((x - 120))" "$((y - 60))" --no-release
+must drag_window "$A" "$((x - 120))" "$((y - 60))" --no-release
 read -r fx fy fw fh <<< "$(real_of "$A")"
 place "$A" "$((fx + 400))" "$((fy + 200))" "$fw" "$fh"
 sleep 0.3
 place "$A" "$fx" "$fy" "$fw" "$fh"
 release
 acted drags="$A" place="$A" offence=pulled
+# Where the hand left it is its own place from now on.
+read -r ox oy _ _ <<< "$(real_of "$A")"
 
 act dock-key answers-late "OFFENCE: a key is pressed, and the window moves two seconds later"
 key escape
@@ -151,10 +153,10 @@ act way-out wrong-size "OFFENCE: everything is given back, but one window keeps 
 place "$B" 700 80 560 380
 place "$C" 760 500 480 320
 place "$E" 140 500 520 300
-place "$A" 80 80 640 460
+place "$A" "$ox" "$oy" 640 460
 acted moves=any restores=all offence=size-lost
 act way-out honest-give-back "now it gets its own size and place back too"
-place "$A" 80 80 520 380
+place "$A" "$ox" "$oy" 520 380
 acted moves=any restores=all places=1 everything=1
 act way-out left-out "OFFENCE: everything should be in view, and one window is in the corner"
 place "$B" "$((dx + dw - 1))" "$((dy + dh - 1))" 560 380

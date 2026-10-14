@@ -773,6 +773,7 @@ moved that they did not move. `scripts/mac-shell/day.sh` plays such a day on one
 ```bash
 make day                # scripts/mac-shell/run.sh scripts/mac-shell/day.sh: what GitHub has of the current branch, ten minutes
 make day CONTROL=1      # the same day without Arbor: what is found then is macOS's doing or an app's
+make day OFF=1          # the same day with macOS's own window management switched off
 make day SABOTAGE=1     # the script commits the offences itself: does every detector report its own? Three minutes, Arbor is not even built
 ```
 
@@ -780,7 +781,8 @@ Finder, Safari, TextEdit, Terminal, Notes, Calendar, System Settings, Preview an
 macOS's own tiling and "click wallpaper to reveal desktop" stay as they come, which is on (and are seen to act before anything counts), and Reduce
 Motion, which the runners come with, is switched off, as it is on a person's Mac. Then the day: windows are docked by key and by real drags, apps are switched
 with ⌘Tab, the Dock and the Window menu, ⌘H, ⌘M, ⌘W, ⌘N, ⌘Q, full screen, the view goes in and out, gaps are dragged, a click lands on the wallpaper, pause, Float All,
-Quit, a second launch. `DAY_TILING=off` and `DAY_DISPLAY=desk` play it with macOS's window management switched off, and at 1920×1080.
+Quit, a second launch. `run.sh` hands a script no arguments and no environment, so each way of playing the day is a script of three lines that sets a variable (`day-control.sh`, `day-off.sh`;
+`DAY_DISPLAY=desk` for 1920×1080 has none yet).
 
 **The Mac only plays and records; the judging needs no Mac.** Everything below reads `samples.log`, so a day that was played once can be judged again, by a
 better detector, on any machine: `python3 scripts/mac-shell/jolts.py report .mac-shell/day-<run>/samples.log`.
@@ -797,7 +799,8 @@ readers skip the kinds they do not know.
 act dock-key dock-left "presses ⌃⌥⌘←";  key ctrl+opt+cmd+left;  acted moves=docked yields=floating front="$W_safari"
 ```
 
-`acted` waits until nothing has moved and no key or button was pressed for a second, compares what Arbor believes with the screen (`compat.py audit`), and takes a picture.
+`acted` waits until nothing has moved and no key or button was pressed for a second, compares what Arbor believes with the screen (`compat.py audit`), and takes a picture. What the person does goes
+through `must` (`must drag_window …`): an act that could not be performed is a finding of the script's own and is not judged, because it passes nothing.
 While Arbor runs, each chapter is also a trace of its own (section 6), with every step as a remark in it.
 
 **The jolt detector.** `jolts.py` holds every step to the product's rules. Each finding names its detector:
@@ -807,7 +810,7 @@ While Arbor runs, each chapter is also a trace of its own (section 6), with ever
 | 1: never fight macOS | `fought` | during a drag macOS's tiling preview (a window of WindowManager's) and Arbor's drop preview are up together; or macOS's was up at the drop and Arbor docked the window |
 | 2: nothing moves that the person did not move | `moved-unasked` | a window moved that `moves=`, `drags=`, `leaves=` and `comes=` do not name (a floating one named by `yields=` may, if it lay where a named one ends up); after a way there and back (`returns=<step>`) a window is not where it was |
 | 3: a window moves once, to where it ends up | `jolt` | its changes fall into two or more moves, a quarter of a second or more apart; it travelled more than six points beyond the straight road in x, y, width or height; it opened in one place and was moved to another |
-| | `pulled` | while the button is down the dragged window is more than 16 points from where the pointer's road carries it |
+| | `pulled` | while the button is down the dragged window moves, from one sample to the next, over 16 points further than the pointer did meanwhile |
 | | `flash` | out of view before and after, and more than its parking strip showed in between; or it left the screen and came back |
 | | `slow` | after one of Arbor's own acts the last window came to rest more than 1,500 ms after the key or the button (odd from 700) |
 | 4: the window you switch to comes to the front and into view | `behind` | at the end `front=<window>` is not the first of the pile |
@@ -817,7 +820,9 @@ While Arbor runs, each chapter is also a trace of its own (section 6), with ever
 
 What a real Mac taught it, each with a situation in `jolts.py --self-test`:
 
-- While the button is down a dragged window goes where the hand goes; what counts is what happens after the drop. macOS holds it back under the menu bar, and gives a window it had tiled its size back under the hand.
+- While the button is down a dragged window goes where the hand goes; what counts is what happens after the drop. macOS holds it back under the menu bar and where its edge meets another window's, and it does not catch up
+  (49 points behind at the end of a drag of 130, with no Arbor running), so "how far from where the pointer carries it" says nothing; but it never runs ahead. macOS also gives a window it had tiled its size back under the hand.
+- What an act sets off shows a moment later, and a click of 40 ms can fall between two samples. So clicks and keys are counted, not watched for, and `acted` never takes the screen for quiet sooner than 350 ms after it asked.
 - Setting a size and then a place shows as two frames a few milliseconds apart, which is one move on a straight road. A sheet or a dialog follows its window at each of the two stages, so it does go out of its way: odd, not a failure.
 - macOS's own animations change frames: a window grows from some 95 % as it opens, a sheet slides, the road into and out of the Dock is a curve. None of that is a jolt.
 - Arbor's own panels are not windows, nor are WindowManager's. Arbor's focus ring is a window at the ordinary level right in front of the focused one.
@@ -838,7 +843,8 @@ What comes back in `.mac-shell/day-<run>/`:
 calling it Arbor's. *Sabotage*: `apptool set-frame`, `raise`, `activate` and `close` do to real windows what Arbor must never do, one offence a step with honest steps between, and `jolts.py sabotage` fails
 unless every offence is reported by its own detector, by no other, and nothing where nothing was done. *The self-test*, part of `make lint`: some sixty situations, each with the finding it must or must not give.
 
-**What it cannot see**: two changes within one sample (a step during which the sampler saw nothing for more than 250 ms is not judged, and the report says `blind for … ms`), anything that is
+**What it cannot see**: two changes within one sample (a step during which the sampler saw nothing for more than 250 ms does not count as judged, and the report says `blind for … ms`; what it did see stands, because a gap
+can hide a move and cannot make one up), anything that is
 drawn without a window moving, and whatever only a trackpad, a second display or a person's own apps bring out.
 
 For a script of your own, `lib-day.sh` is the harness (its header lists everything) and `jolts.py`'s header lists the marks and keys.
