@@ -17,8 +17,9 @@
 # which windows moved, how many times, by which road, and which rule of the product's that broke (its header lists them).
 #
 #   day_build                       apps_build, and compile sampler.swift
-#   day_build_tools                 only the tools (pointer, apptool, sampler), for a script in which Arbor does not run
-#   sampler_start | sampler_stop    write mac-shell/samples.log from now on | stop
+#   day_build_tools                 only the tools (pointer, apptool, sampler, witness), for a script in which Arbor does not run
+#   sampler_start | sampler_stop    write mac-shell/samples.log from now on | stop. With it goes the witness (witness.swift log): mac-shell/witness.log, how late
+#                                     every press, release and key reached the far end of the event taps (`input-held`)
 #   note <text…>                    a mark in the samples (jolts.py's header lists the marks it reads)
 #   quiet [ms] [limit ms]           wait until no window has moved, come, gone or changed its place in the pile for that long
 #                                     (1000, at most 8000). Sets QUIET to `quiet:<waited ms>` or `restless:<waited ms>`
@@ -66,6 +67,8 @@ DAY_SAMPLER="$ARBOR_ROOT/.build/mac-shell/sampler"
 DAY_JOLTS="$ARBOR_ROOT/scripts/mac-shell/jolts.py"
 DAY_SAMPLES="$ARBOR_OUT/samples.log"
 DAY_SAMPLER_PID=""
+DAY_WITNESS="$ARBOR_ROOT/.build/mac-shell/witness"
+DAY_WITNESS_PID=""
 DAY_STEP=0
 DAY_TRACES=0
 DAY_QUESTIONS=0
@@ -85,22 +88,29 @@ DAY_FACE="ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_NO_PROMPT=0"
 QUIET=""
 
 day_build() {
-  local compiler
+  local compiler second
   mkdir -p "$(dirname "$DAY_SAMPLER")"
   swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/sampler.swift" -o "$DAY_SAMPLER" \
     > "$ARBOR_OUT/build-sampler.log" 2>&1 &
   compiler=$!
+  swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/witness.swift" -o "$DAY_WITNESS" \
+    > "$ARBOR_OUT/build-witness.log" 2>&1 &
+  second=$!
   apps_build
   if ! wait "$compiler"; then
     grep -A 6 "error:" "$ARBOR_OUT/build-sampler.log" | head -n 80
     die "scripts/mac-shell/sampler.swift did not compile"
+  fi
+  if ! wait "$second"; then
+    grep -A 6 "error:" "$ARBOR_OUT/build-witness.log" | head -n 80
+    die "scripts/mac-shell/witness.swift did not compile"
   fi
 }
 
 day_build_tools() {
   local started=$SECONDS tool jobs=""
   mkdir -p "$(dirname "$DAY_SAMPLER")"
-  for tool in pointer apptool sampler; do
+  for tool in pointer apptool sampler witness; do
     swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/$tool.swift" -o "$ARBOR_ROOT/.build/mac-shell/$tool" \
       > "$ARBOR_OUT/build-$tool.log" 2>&1 &
     jobs="$jobs $tool:$!"
@@ -132,7 +142,10 @@ sampler_start() {
   DAY_SAMPLER_PID=$!
   started "$DAY_SAMPLER_PID"
   exec 6> "$APPS_TEMP/sampler-in" 5< "$APPS_TEMP/sampler-out"
-  echo "the sampler writes mac-shell/samples.log (pid $DAY_SAMPLER_PID)"
+  "$DAY_WITNESS" log "$ARBOR_OUT/witness.log" 2>> "$ARBOR_OUT/sampler.log" 5<&- 6>&- 8>&- 9>&- &
+  DAY_WITNESS_PID=$!
+  started "$DAY_WITNESS_PID"
+  echo "the sampler writes mac-shell/samples.log (pid $DAY_SAMPLER_PID), the witness mac-shell/witness.log (pid $DAY_WITNESS_PID)"
 }
 
 sampler_stop() {
@@ -141,6 +154,8 @@ sampler_stop() {
   exec 6>&- 5<&-
   apps_end "$DAY_SAMPLER_PID"
   DAY_SAMPLER_PID=""
+  kill_started "$DAY_WITNESS_PID"
+  DAY_WITNESS_PID=""
 }
 
 note() { [ -n "$DAY_SAMPLER_PID" ] && echo "mark $*" >&6; }
@@ -278,6 +293,7 @@ must() {
 
 acted() {
   local word wants="" findings line code audit=yes
+  [ -z "${DAY_NO_AUDIT:-}" ] || audit=""
   quiet || echo "  ~ windows were still moving after ${QUIET#*:} ms"
   day_ids
   if [ -n "$DAY_UNDONE" ]; then
