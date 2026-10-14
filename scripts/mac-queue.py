@@ -69,7 +69,7 @@ RUNS = "[.workflow_runs[] | {id, path, status, head_branch, display_title, html_
 JOBS = "[.jobs[] | {name, status, conclusion, labels, runner_name, created_at, started_at, completed_at}]"
 AT_ONCE = 8
 # "Mac shell: scripts/mac-shell/shots-F10.sh at feat/x [tag]"; "at feat/x" is missing from the runs of older branches.
-MAC_SHELL = re.compile(r"^Mac shell(?: \([^)]*\))?: (?:scripts/mac-shell/)?(?P<script>.*?)(?: at (?P<ref>\S+))?(?P<tag> \[[^\]]*\])?$")
+MAC_SHELL = re.compile(r"^Mac shell(?: \([^)]*\))?: (?:scripts/mac-shell/)?(?P<script>.*?)(?: at (?P<ref>\S+))?(?: \(no pre-flight: .*\))?(?P<tag> \[[^\]]*\])?$")
 ALARMED = 3
 NOT_YET = 4
 # How many jobs may be waiting for a Mac when a run of this priority starts, and how many jobs its branch may have already.

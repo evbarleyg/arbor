@@ -1252,6 +1252,141 @@ def check_mac_shell_batch():
     row("run.sh: --macs 0", started("--macs", "0", "a.sh", "feat/x")[:2], (97, None))
 
 
+# MARK: preflight.sh
+
+def check_preflight():
+    """What has not been shown on Linux takes no Mac, and what cannot be told counts as not shown."""
+    with tempfile.TemporaryDirectory(prefix="tooling-") as folder:
+        def git(*arguments):
+            return subprocess.run(["git", "-c", "user.name=t", "-c", "user.email=t@example.com", *arguments], cwd=folder, capture_output=True,
+                                  text=True, check=True).stdout.strip()
+
+        def write(path, text, mode=0o644):
+            os.makedirs(os.path.dirname(os.path.join(folder, path)), exist_ok=True)
+            with open(os.path.join(folder, path), "w", encoding="utf-8") as handle:
+                handle.write(text)
+            os.chmod(os.path.join(folder, path), mode)
+
+        def commit(files):
+            for path, text in files.items():
+                write(path, text)
+            git("add", "--all")
+            git("commit", "--quiet", "--allow-empty", "--message", "next")
+
+        def flight(*arguments, swift="exit 0", trunk="trunk", path=True):
+            write("bin/swift", f"#!/bin/sh\necho swift \"$@\" >> \"{folder}/ran\"\n{swift}\n", 0o755)
+            write("bin/make", f"#!/bin/sh\necho make \"$@\" >> \"{folder}/ran\"\n", 0o755)
+            if os.path.exists(os.path.join(folder, "ran")):
+                os.remove(os.path.join(folder, "ran"))
+            environment = {**os.environ, "ARBOR_TRUNK": trunk}
+            if path:
+                environment["PATH"] = os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"]
+            done = subprocess.run([BASH, "scripts/mac-shell/preflight.sh", *arguments], cwd=folder, env=environment, capture_output=True, text=True,
+                                  check=False)
+            ran = []
+            if os.path.exists(os.path.join(folder, "ran")):
+                with open(os.path.join(folder, "ran"), encoding="utf-8") as handle:
+                    ran = handle.read().split("\n")[:-1]
+            return done.returncode, ran, done.stdout + done.stderr
+
+        library = 'source "$(dirname "$0")/lib.sh"\n'
+        for name in ("preflight.sh", "run.sh"):
+            shutil.copy(os.path.join(HERE, "mac-shell", name), os.path.join(folder, name))
+        git("init", "--quiet", "--initial-branch=trunk")
+        write(".gitignore", "/bin/\n/ran\n/.mac-shell/\n/noted\n")
+        for name in ("preflight.sh", "run.sh"):
+            os.makedirs(os.path.join(folder, "scripts/mac-shell"), exist_ok=True)
+            shutil.move(os.path.join(folder, name), os.path.join(folder, "scripts/mac-shell", name))
+        shutil.copy(os.path.join(HERE, "mac-queue.py"), os.path.join(folder, "scripts/mac-queue.py"))
+        # The stand-in for the rehearsal does what the script's second line says.
+        write("scripts/mac-shell/rehearse.sh", '#!/bin/bash\necho rehearse "$1" >> ran\neval "$(sed -n 2p "$1" | cut -c 3-)"\n', 0o755)
+        write("scripts/mac-shell/lib.sh", "# the library\n")
+        write("scripts/typecheck-mac/stub.swift", "")
+        write("Tests/T.swift", "")
+        write("Package.swift", "")
+        commit({"Sources/A.swift": "let a = 1\n", "scripts/mac-shell/old.sh": library + "# exit 2\n"})
+        git("checkout", "--quiet", "-b", "work")
+        old, new = "scripts/mac-shell/old.sh", "scripts/mac-shell/new.sh"
+
+        row("preflight.sh: the trunk's code and a script of the trunk's owe nothing, whether or not it can be rehearsed", flight("--check", old)[0], 0)
+        commit({"scripts/mac-shell/new.sh": library + "# exit 0\n"})
+        row("preflight.sh: a new script is owed a rehearsal", flight("--check", new)[:2], (1, []))
+        if sys.platform != "linux":
+            row("preflight.sh: only on Linux", flight(new)[0], 2)
+            return
+        row("preflight.sh: it is rehearsed, and the code, being the trunk's, is left alone", flight(new)[:2], (0, [f"rehearse {new}"]))
+        row("preflight.sh: which is noted", flight("--check", new)[0], 0)
+        row("preflight.sh: and not done twice", flight(new)[:2], (0, []))
+        for what, line, expected in [
+            ("a check came out ✘: it got to its end", "exit 1", 0),
+            ("it broke off", "exit 2", 1),
+            ("it was killed", "kill -9 $$", 1),
+            ("the fake Mac lacks something", "exit 64", 0),
+            ("it declines there", "exit 77", 0),
+            ("a function bash does not know, and on it went", "echo 'x.sh: line 4: arbor_strat: command not found'; exit 1", 1),
+            ("a variable nobody set", "echo 'x.sh: line 5: W1: unbound variable'; exit 0", 1),
+            ("a command Arbor does not know", "echo 'unknown command `dokc`; try `help`'; exit 1", 1),
+        ]:
+            commit({"scripts/mac-shell/new.sh": library + f"# {line}\n"})
+            row(f"preflight.sh: changed, so rehearsed again: {what}", (flight("--check", new)[0], flight(new)[0], flight("--check", new)[0]),
+                (1, expected, expected))
+        commit({"scripts/mac-shell/new.sh": "if true; then\n"})
+        row("preflight.sh: what bash cannot even read", flight(new)[:2], (1, []))
+        commit({"scripts/mac-shell/new.sh": "echo hello\n# exit 2\n"})
+        row("preflight.sh: a script that is not built on lib.sh is only read", flight(new)[:2], (0, []))
+        commit({"scripts/mac-shell/lib.sh": "# the library, changed\n"})
+        row("preflight.sh: the library has changed, so the trunk's script is owed a rehearsal too", flight("--check", old)[0], 1)
+        git("reset", "--quiet", "--hard", "HEAD~1")
+
+        commit({"Sources/A.swift": "let a = 2\n"})
+        row("preflight.sh: other code than the trunk's is owed everything", flight("--check", new)[0], 1)
+        row("preflight.sh: the tests fail: nothing is noted", (flight(new, swift='[ "$1" != test ]')[0], flight("--check", new)[0]), (1, 1))
+        row("preflight.sh: lint, build, type-check, tests, in that order", flight(new)[:2],
+            (0, ["make lint", "swift build", "make typecheck-mac", "swift test"]))
+        row("preflight.sh: which is noted too", flight("--check", new)[0], 0)
+        commit({"docs/x": "prose\n"})
+        row("preflight.sh: another commit with the same code and scripts owes nothing", flight("--check", new)[0], 0)
+        row("preflight.sh: no trunk to compare with: the note still counts", flight("--check", new, trunk="nowhere")[0], 0)
+        shutil.rmtree(os.path.join(folder, ".mac-shell"))
+        git("checkout", "--quiet", "trunk")
+        row("preflight.sh: no trunk to compare with: the code is owed", flight("--check", old, trunk="nowhere")[0], 1)
+        git("checkout", "--quiet", "work")
+        row("preflight.sh: no swift here", flight(new, path=False)[0] if not shutil.which("swift") else 2, 2)
+        write("Sources/A.swift", "let a = 3\n")
+        row("preflight.sh: what is not committed is not what the Mac would run", flight("--check", new)[0], 1)
+        git("checkout", "--quiet", "--", "Sources/A.swift")
+
+        # run.sh in front of it, with a stand-in for `gh` that notes what was started.
+        write("bin/gh", '#!/bin/sh\ncase "$*" in *dispatches*) printf "%s\\n" "$@" > noted; exit 1;; *commits/*) git rev-parse HEAD;; *) echo 0;; esac\n', 0o755)
+        git("remote", "add", "origin", "https://github.com/owner/repo")
+
+        def started(*arguments, swift=True):
+            flight("--check", new)  # writes the stand-ins
+            if not swift:
+                os.remove(os.path.join(folder, "bin/swift"))
+            if os.path.exists(os.path.join(folder, "noted")):
+                os.remove(os.path.join(folder, "noted"))
+            environment = {**os.environ, "PATH": os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"], "ARBOR_TRUNK": "trunk",
+                           "MAC_SHELL_WORKFLOW_REF": "home", "ARBOR_MAC_PRIORITY": "1"}
+            done = subprocess.run([BASH, "scripts/mac-shell/run.sh", *arguments], cwd=folder, env=environment, capture_output=True, text=True, check=False)
+            asked = {}
+            if os.path.exists(os.path.join(folder, "noted")):
+                with open(os.path.join(folder, "noted"), encoding="utf-8") as handle:
+                    asked = dict(line.strip().split("=", 1) for line in handle if "=" in line)
+            return done.returncode, asked.get("inputs[script]"), asked.get("inputs[unchecked]")
+
+        if not shutil.which("swift"):
+            row("run.sh: not through the pre-flight, and no swift here: nothing is started", started(new, swift=False), (96, None, None))
+        row("run.sh: all the same, with the reason for everybody to read", started("--no-preflight", "the fake Mac has no `tiling`; see #3", new, swift=False),
+            (97, new, "the fake Mac has no  tiling   see  3"))
+        commit({"scripts/mac-shell/new.sh": library + "# exit 2\n"})
+        row("run.sh: where there is a swift it runs the pre-flight itself, and starts nothing when that fails", started(new), (96, None, None))
+        commit({"scripts/mac-shell/new.sh": library + "# exit 0\n"})
+        row("run.sh: and starts the run when it passes", started(new), (97, new, ""))
+        shutil.rmtree(os.path.join(folder, ".git"))
+        row("preflight.sh: where Git does not work nothing counts as shown", (flight("--check", new)[0], flight(new)[0]), (2, 2))
+
+
 def check_fuzz_launch():
     for situation in fuzz_launch.situations():
         row(*situation)
@@ -1273,6 +1408,7 @@ def main():
     check_e2e()
     check_ci_mtimes()
     check_mac_shell_batch()
+    check_preflight()
     check_fuzz_launch()
     wrong = 0
     for what, got, expected in rows:

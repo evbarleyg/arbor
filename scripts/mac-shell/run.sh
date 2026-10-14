@@ -1,9 +1,15 @@
 #!/bin/bash
 # Runs a script from this repository on a real Mac and brings back what it produced. Or several scripts.
 #
-#   scripts/mac-shell/run.sh [--macs N] [--on macos-15] [--bare] [--priority N] <script>… [ref]
+#   scripts/mac-shell/run.sh [--macs N] [--on macos-15] [--bare] [--priority N] [--no-preflight "<why>"] <script>… [ref]
 #   scripts/mac-shell/run.sh scripts/mac-shell/shots-demo.sh
 #   scripts/mac-shell/run.sh scripts/mac-shell/shots-F10.sh scripts/mac-shell/shots-F12.sh scripts/mac-shell/shots-F43.sh
+#
+# NOTHING STARTS THAT LINUX CAN ALREADY REFUTE. The commit must have been through scripts/mac-shell/preflight.sh: lint, build, the type-check of the
+# macOS-only code and the headless tests (none of it needed while the code is the trunk's), and a rehearsal of each script against the fake Mac.
+# Where there is a `swift`, run.sh runs it itself. Where there is none it says what to run where there is one, and exits with 96.
+#   --no-preflight "<why>"   start it all the same, and say why: the reason is printed, and stands in the run's title for everybody to read.
+# It applies to the branch that is checked out: of another ref run.sh cannot know more than GitHub does.
 #
 # SEVERAL SCRIPTS IN ONE RUN share one Mac, one checkout and one build, and wait for a Mac once: GitHub lends the repository five at a
 # time (`make mac-queue`), so three scripts in one run are back sooner than three runs, and leave four Macs to the others. They
@@ -16,15 +22,15 @@
 #   --on KIND   another of GitHub's Macs than macos-26: macos-15, macos-14 or macos-15-intel. They come out of the same five.
 #   --bare      no toolchain and no build: half a minute saved for a script that only asks the Mac something.
 #   --priority N   GitHub hands its Macs out in no particular order, so the order is kept here, before the run is started: waiting
-#               here costs nobody anything. 1 starts at once: a fault on real windows, a merge train. 2 (the default) waits
-#               while three or more jobs are waiting for a Mac. 3 waits while any is: pictures, features, whatever can wait.
+#               here costs nobody anything. 1 starts at once: a fault on real windows, a merge train. 2 waits while three or
+#               more jobs are waiting for a Mac. 3 (the default) waits while any is: pictures, features, whatever can wait.
 #               And whatever the priority, it waits while two jobs for <ref> (3: one) are running or waiting already.
 #
 # Starts the "Mac shell" workflow (.github/workflows/mac-shell.yml) for <ref> (a branch; default: the
 # current one, which must be pushed: the Mac runs what GitHub has), waits for it, fetches the branch
 # the workflow pushed its output to into .mac-shell/<script>-<run id>/ in this worktree, deletes that branch,
 # and prints the folder, the exit code and the end of the output. Exits with the script's exit code (of several: the first that is
-# not 0), or with 97 (could not start), 98 (timed out) or 99 (the run produced no output).
+# not 0), or with 96 (not through the pre-flight), 97 (could not start), 98 (timed out) or 99 (the run produced no output).
 #
 # Needs only git and `gh api` (REST), so it works where logs and artifacts cannot be downloaded.
 # See "Seeing the real app from anywhere" in docs/TESTING.md.
@@ -35,7 +41,7 @@
 #
 # Environment: MAC_SHELL_TIMEOUT  seconds to wait for the run (default 2700)
 #              MAC_SHELL_TAIL     lines of output.txt to print (default 40)
-#              MAC_SHELL_PRIORITY as --priority
+#              ARBOR_MAC_PRIORITY as --priority
 #              MAC_SHELL_TAG      another tag (letters, digits, . _ -; at most 40)
 #              MAC_SHELL_WORKFLOW_REF   the branch whose mac-shell.yml runs (default: swarm/trunk if there is one, else main).
 #                                 One for everybody, whatever <ref> is: a run can read only the caches of the branch its workflow is
@@ -44,8 +50,8 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 97
 
-usage="usage: scripts/mac-shell/run.sh [--macs N] [--on macos-15] [--bare] [--priority N] <script>… [ref]"
-macs="" ref="" kind=macos-26 bare=false priority=${MAC_SHELL_PRIORITY:-2}
+usage="usage: scripts/mac-shell/run.sh [--macs N] [--on macos-15] [--bare] [--priority N] [--no-preflight \"<why>\"] <script>… [ref]"
+macs="" ref="" kind=macos-26 bare=false priority=${ARBOR_MAC_PRIORITY:-3} unchecked=""
 scripts=()
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -53,6 +59,7 @@ while [ $# -gt 0 ]; do
     --on) kind=${2:?$usage}; shift ;;
     --bare) bare=true ;;
     --priority) priority=${2:?$usage}; shift ;;
+    --no-preflight) unchecked=${2:?$usage}; shift ;;
     -*) echo "$usage" >&2; exit 97 ;;
     *.sh) scripts+=("${1#./}") ;;
     # The one word that is no script, and only in the last place: a script's name with a slip in it must not pass for a branch.
@@ -117,6 +124,21 @@ name=$(slug "$(basename "$script" .sh)" 16)
 [ "$kind" = macos-26 ] || name=$(slug "$name" 9)-${kind#macos-}
 tag=${MAC_SHELL_TAG:-$(slug "$ref" 21).$name}
 
+# What Linux can say, it says first.
+if [ -n "$unchecked" ]; then
+  echo "without the pre-flight: $unchecked"
+elif [ "$ref" = "$(git rev-parse --abbrev-ref HEAD)" ] && [ "$(uname -s)" = Linux ]; then
+  if ! scripts/mac-shell/preflight.sh --check "${scripts[@]}" > /dev/null; then
+    if command -v swift > /dev/null 2>&1; then
+      scripts/mac-shell/preflight.sh "${scripts[@]}" || fail "the pre-flight failed: no Mac for what Linux can already refute (--no-preflight \"<why>\" if it must be)" 96
+    else
+      scripts/mac-shell/preflight.sh --check "${scripts[@]}" >&2
+      echo "run.sh: there is no swift here. Where there is one, in this folder:  scripts/mac-shell/preflight.sh ${scripts[*]}" >&2
+      fail "not started (--no-preflight \"<why>\" if it must be)" 96
+    fi
+  fi
+fi
+
 # Its turn. What cannot be found out does not hold anything up.
 start=$(date +%s)
 told=""
@@ -135,7 +157,7 @@ runs="repos/$repo/actions/workflows/mac-shell.yml/runs?event=workflow_dispatch&p
 newest=$(api "$runs" --jq '.workflow_runs[0].id // 0') || fail "cannot list the workflow's runs"
 api -X POST "repos/$repo/actions/workflows/mac-shell.yml/dispatches" \
   -f ref="$home" -f "inputs[ref]=$ref" -f "inputs[script]=${scripts[*]}" -f "inputs[tag]=$tag" \
-  -f "inputs[runner]=$kind" -F "inputs[bare]=$bare" \
+  -f "inputs[runner]=$kind" -F "inputs[bare]=$bare" -f "inputs[unchecked]=$(printf '%s' "$unchecked" | tr -c 'A-Za-z0-9 .,:_/-' ' ' | cut -c 1-80)" \
   -f "inputs[macs]=$([ "$macs" -eq 1 ] || echo "$shares" | sed 's/.*/"&"/' | paste -sd, - | sed 's/.*/[&]/')" >/dev/null \
   || fail "could not start the workflow of $home for $ref"
 echo "started ${scripts[*]} at $ref (${remote:0:7}), tag $tag$([ "$macs" -eq 1 ] || echo ", on $macs Macs")"

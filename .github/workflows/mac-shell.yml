@@ -1,5 +1,5 @@
 name: Mac shell
-run-name: "Mac shell${{ inputs.runner != 'macos-26' && format(' ({0})', inputs.runner) || '' }}: ${{ inputs.script }} at ${{ inputs.ref || github.ref_name }} [${{ inputs.tag || github.run_id }}]"
+run-name: "Mac shell${{ inputs.runner != 'macos-26' && format(' ({0})', inputs.runner) || '' }}: ${{ inputs.script }} at ${{ inputs.ref || github.ref_name }}${{ inputs.unchecked && format(' (no pre-flight: {0})', inputs.unchecked) || '' }} [${{ inputs.tag || github.run_id }}]"
 
 # A remote Mac for executors that have none. Checks out a ref, runs one script
 # from that ref, or several one after the other, on GitHub's macOS runner with
@@ -42,6 +42,11 @@ on:
         type: choice
         # A list, so that nothing but a hosted Mac of the ordinary kind can ever be named here.
         options: [macos-26, macos-15, macos-14, macos-15-intel]
+      unchecked:
+        description: Why the run was started without the pre-flight on Linux (run.sh --no-preflight); only shown, in the run's title
+        required: false
+        default: ""
+        type: string
       bare:
         description: No toolchain and no build, for a script that only asks the Mac something
         required: false

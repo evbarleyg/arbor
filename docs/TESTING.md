@@ -483,10 +483,26 @@ output lies in `mac-1/`, `mac-2/`, …. A script that is given to several Macs b
 (`2/3`: the second of three); `compat.sh` takes every Nth app. All kinds of Mac come out of the same five at a time.
 
 **Whose turn it is.** GitHub hands its Macs out in no particular order: a job has been seen to wait eight minutes while later ones started. So
-`run.sh` keeps the order itself, before it starts the run, where waiting takes nobody's place. `--priority 1` (or `MAC_SHELL_PRIORITY=1`) starts at once: a
-fault on real windows, a merge train, whatever others are blocked by. `2`, the default, holds back while three or more jobs are waiting for a Mac. `3` holds back
+`run.sh` keeps the order itself, before it starts the run, where waiting takes nobody's place. `--priority 1` (or `ARBOR_MAC_PRIORITY=1`) starts at once: a
+fault on real windows, a merge train, whatever others are blocked by. `2` holds back while three or more jobs are waiting for a Mac. `3`, the default, holds back
 while any is: pictures, features, whatever can wait. Whatever the priority, a branch has at most two jobs running or waiting at a time (`3`: one).
 It says what it is holding back for, and the wait counts towards `MAC_SHELL_TIMEOUT`.
+
+**Nothing takes a Mac that Linux can already refute.** A run that ends in a compiler's error, a typo in the script or a wait for something that never
+comes has held a Mac for minutes to say what Linux says for nothing. So `run.sh` starts nothing that has not been through `scripts/mac-shell/preflight.sh`:
+
+```bash
+scripts/mac-shell/preflight.sh scripts/mac-shell/shots-F09.sh      # where Swift is, e.g. in the container; run.sh does it itself if it finds a swift
+```
+
+- **The code:** `make lint`, `swift build`, `make typecheck-mac` and `swift test`. None of it while `Package.swift`, `Sources`, `Tests`, the stand-ins and the helper
+  tools are what the trunk has, as on a branch that only adds a script.
+- **Each script:** `bash -n`, and a rehearsal (below) that gets to the script's end: exit code 0, or 1 for a check that came out ✘, which may be the very thing the Mac
+  is asked about. On the way it may not have said what is a slip on any machine: a command bash does not know, a variable nobody set, a command Arbor does not
+  know. `lib.sh` goes on after a step that fails, so the exit code alone does not tell. Not needed for a script that is, with `lib*.sh`, what the trunk has.
+- **What has passed is noted** in `.mac-shell/preflight/`, under Git's hash of what was checked and not under a commit: nothing is checked twice, and the note made
+  in a container is found by `run.sh` outside it. What is not committed does not count, and where Git does not work nothing does.
+- **`--no-preflight "<why>"`** starts the run all the same, for a script that needs what the fake Mac lacks. The reason stands in the run's title, for everybody to read.
 
 Where branches cannot be deleted, the output branch
 `mac-shell-out/<ref>.<script>` stays on GitHub and the next run of the same script replaces its content.
