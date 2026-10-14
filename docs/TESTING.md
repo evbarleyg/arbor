@@ -806,15 +806,17 @@ While Arbor runs, each chapter is also a trace of its own (section 6), with ever
 
 | Rule | Detector | What sets it off |
 |---|---|---|
-| 1: never fight macOS | `fought` | during a drag macOS's tiling preview (a window of WindowManager's) and Arbor's drop preview are up together; or macOS's was up at the drop and Arbor docked the window |
+| 1: never fight macOS | `fought` | during a drag macOS's tiling preview (a window of WindowManager's) and Arbor's drop preview are up together; or macOS's was up at the drop and Arbor docked the window, or it was moved again after macOS had tiled it |
 | 2: nothing moves that the person did not move | `moved-unasked` | a window moved that `moves=`, `drags=`, `leaves=` and `comes=` do not name (a floating one named by `yields=` may, if it lay where a named one ends up); after a way there and back (`returns=<step>`) a window is not where it was |
 | 3: a window moves once, to where it ends up | `jolt` | its changes fall into two or more moves, a quarter of a second or more apart; it travelled more than six points beyond the straight road in x, y, width or height; it opened in one place and was moved to another |
-| | `pulled` | while the button is down the dragged window moves, from one sample to the next, over 16 points further than the pointer did meanwhile |
+| | `pulled` | while the button is down the dragged window moves, from one sample to the next, over 40 points further than the pointer did meanwhile |
+| | `stuck` | after the drop it ends neither where it was let go, nor where Arbor's preview was, nor under the pointer by its title bar (its own size given back), nor where it was taken from (a drag called off) |
 | | `flash` | out of view before and after, and more than its parking strip showed in between; or it left the screen and came back |
 | | `slow` | after one of Arbor's own acts the last window came to rest more than 1,500 ms after the key or the button (odd from 700) |
 | 4: the window you switch to comes to the front and into view | `behind` | at the end `front=<window>` is not the first of the pile |
 | | `focus` | its app is not the one in front, or part of it is beyond the space between the menu bar and the Dock; or the app in front changes during an act that is no switch |
 | 5: Quit, Float All and pause give sizes back | `size-lost` | `restores=`: a window's size differs from its own, which is the one it had when Arbor started or when it opened, or that the person gave it since (`own=`; `place=` after a mere move). With `places=1`, as after Float All and Quit, its place too |
+| what only the script can see | `crash`, `busy`, `left-behind`, `told` | Arbor's process ends unasked, or macOS writes a crash report of its; during `idle <seconds>` it uses over 1 % of a core or writes over 20 lines a minute; after Quit a process or a window of its is still there; the canary word that is in every document's name, and so in every title, turns up in anything the run brings back but the pictures |
 | L: no window is lost | `lost` | a window left the screen and the step did not say so (`leaves=`); `everything=1` and less than half of one is on the display; `comes=` and it is not there |
 
 What a real Mac taught it, each with a situation in `jolts.py --self-test`:
@@ -825,7 +827,9 @@ What a real Mac taught it, each with a situation in `jolts.py --self-test`:
 - Setting a size and then a place shows as two frames a few milliseconds apart, which is one move on a straight road. A sheet or a dialog follows its window at each of the two stages, so it does go out of its way: odd, not a failure.
 - macOS's own animations change frames: a window grows from some 95 % as it opens, a sheet slides, the road into and out of the Dock is a curve. None of that is a jolt.
 - Arbor's own panels are not windows, nor are WindowManager's. Arbor's focus ring is a window at the ordinary level right in front of the focused one.
-- Arbor moves the real windows under its stage, one after another. The samples judge the real windows; what a person sees meanwhile is on the film, not in them.
+- Arbor moves the real windows under its stage, a panel over the whole display that shows a picture of the desktop and a stand-in for each window. Nobody sees them there. So all that a window does while the stage is up counts as one
+  change, seen when the stage comes down; what the stand-ins do meanwhile is on the film, not in the samples. What a window does once the stage is down counts in full.
+- To bring a window into view that is out of view the view has to move, so a switch to such a window may move anything.
 - What happens between a step's end and the next step's beginning counts for the step that ended.
 
 What comes back in `.mac-shell/day-<run>/`:

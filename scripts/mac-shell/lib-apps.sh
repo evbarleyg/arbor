@@ -170,7 +170,7 @@ app_windows() { apptool windows "$1" 2>/dev/null | awk '$3 == "AXStandardWindow"
 app_running() { apptool pid "$1" > /dev/null 2>&1; }
 
 app_open() {
-  local app=$1 how=-a tries=0 lines code ours=yes
+  local app=$1 how=-a tries=0 lines code ours=yes said
   shift
   if app_running "$app"; then
     ours=""
@@ -186,7 +186,9 @@ app_open() {
   APP_PID=""
   APP_WINDOW=""
   APP_WINDOWS=""
-  echo "> open -g $how $app $*"
+  # A document's name is its window's title. A script that looks for titles in what a run brings back (lib-day.sh) must not put them there itself.
+  said="$*"
+  echo "> open -g $how $app ${said//${APPS_CANARY:-$'\001'}/…}"
   # -g: in the background, as the test windows open, so that what comes to the front is the script's doing.
   # safe anywhere: on a person's Mac only an app that was not running or that this script started gets here
   bounded 20 open -g "$how" "$app" "$@" || { echo "open failed"; return 1; }
