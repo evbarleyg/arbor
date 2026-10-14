@@ -82,6 +82,33 @@ struct MacState {
 }
 
 extension Runner {
+  /// When the display was last turned off and on, from macOS's own log, in UTC: the person's time zone is nobody's business.
+  static func displayLog() -> String {
+    let process = Process()
+    process.executableURL = URL(fileURLWithPath: "/bin/sh")
+    process.arguments = ["-c", "/usr/bin/pmset -g log | /usr/bin/grep 'Display is turned' | /usr/bin/tail -n 3"]
+    let output = Pipe()
+    process.standardInput = FileHandle.nullDevice
+    process.standardOutput = output
+    process.standardError = FileHandle.nullDevice
+    guard (try? process.run()) != nil else { return "unknown" }
+    let text = String(decoding: output.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
+    process.waitUntilExit()
+    let theirs = DateFormatter()
+    theirs.locale = Locale(identifier: "en_US_POSIX")
+    theirs.dateFormat = "yyyy-MM-dd HH:mm:ss Z"
+    let ours = DateFormatter()
+    ours.locale = Locale(identifier: "en_US_POSIX")
+    ours.timeZone = TimeZone(identifier: "UTC")
+    ours.dateFormat = "HH:mm:ss"
+    // `2026-01-02 03:04:05 +0100 Notification        	Display is turned off`
+    let turns = text.split(separator: "\n").compactMap { line -> String? in
+      guard let date = theirs.date(from: String(line.prefix(25))) else { return nil }
+      return "\(line.contains("turned off") ? "off" : "on") at \(ours.string(from: date)) UTC"
+    }
+    return turns.isEmpty ? "unknown" : turns.joined(separator: ", ")
+  }
+
   /// For a set-up that failed: what the window server and Accessibility say of the test windows when this runner asks them itself,
   /// with the permission Arbor has (both are the terminal's children).
   func whatTheMacSays() -> [String] {
@@ -99,10 +126,28 @@ extension Runner {
     AXUIElementSetMessagingTimeout(app, 2)
     var value: CFTypeRef?
     let error = AXUIElementCopyAttributeValue(app, kAXWindowsAttribute as CFString, &value)
-    let count = (value as? [AXUIElement])?.count ?? 0
+    let windows = value as? [AXUIElement] ?? []
     facts.append(
-      "Accessibility, asked for the test app's windows: error \(error.rawValue), \(count) window(s) "
+      "Accessibility, asked for the test app's windows: error \(error.rawValue), \(windows.count) window(s) "
         + "(0 is success, -25204 cannot complete, -25211 the API is disabled)")
+    // What Arbor goes by when it takes a window up or leaves it: only an AXWindow that is an AXStandardWindow is one to arrange.
+    func text(_ element: AXUIElement, _ attribute: String) -> String {
+      var value: CFTypeRef?
+      let error = AXUIElementCopyAttributeValue(element, attribute as CFString, &value)
+      guard error == .success else { return "error \(error.rawValue)" }
+      return (value as? String) ?? (value as? NSNumber).map { $0.boolValue ? "yes" : "no" } ?? "?"
+    }
+    for window in windows.prefix(3) {
+      facts.append(
+        "  a window: role \(text(window, kAXRoleAttribute)), subrole \(text(window, kAXSubroleAttribute)), "
+          + "minimized \(text(window, kAXMinimizedAttribute))")
+    }
+    // And what it needs before it reads that list at all.
+    var observer: AXObserver?
+    let created = AXObserverCreate(helperPID, { _, _, _, _ in }, &observer)
+    let added = observer.map { AXObserverAddNotification($0, app, kAXWindowCreatedNotification as CFString, nil).rawValue }
+    facts.append("an observer of the test app: created with error \(created.rawValue), told of new windows with error \(added.map(String.init) ?? "-")")
+    facts.append("the display went: \(Self.displayLog())")
 
     facts.append("the test app is \(helper?.isRunning == true ? "running" : "NOT running"); Arbor is \(arborPID() == nil ? "NOT running" : "running")")
     return facts

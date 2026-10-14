@@ -283,7 +283,8 @@ Accessibility → enable Terminal (or iTerm, Ghostty…). Exit 0 means every che
 | 128 + n | stopped by signal n | |
 
 The facts are yes, no and numbers: is the screen locked, the display asleep, how long since the last input, how many of the test windows the window server has on screen,
-and what Accessibility answers when the runner itself asks for them. Every run prints the first of those lines at its start, so that a run that passes with the
+what Accessibility answers when the runner itself asks for them (how many, each one's role, subrole and whether it is minimized, and whether an observer can be had),
+and when the display last went off and on, in UTC. Every run prints the first of those lines at its start, so that a run that passes with the
 screen locked is on record too.
 
 At a terminal the run is printed as it goes; anywhere else that block comes first, then
