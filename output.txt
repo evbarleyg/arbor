@@ -1,0 +1,1205 @@
+# mac-shell: scripts/mac-shell/suite.sh 45 47 50 55 60 62 at 2d3b4f4, macOS 26.6.2, 2026-10-14T22:52Z
+built Arbor, the pointer tool and the app bundles in 123s
+
+=== 45-pause
+session 1: Arbor pid 5088, test windows 29 30 31 (pid 5048)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+> dock 31 beside 30 bottom
+docked w31 below w30
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w29 12 43 325 650        docked
+  w30 687 43 325 319       docked
+  w31 687 374 325 319      docked focused
+
+▸ ⌃⌥↩ pressed again returns to where the camera was
+> click 851 552
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the focused window fills the screen
+  ✔ the others are out of view
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ again
+  ✔ the camera is back on everything
+  ✔ the others are back in view
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥0 goes home: everything is in view
+> zoom 29
+framed w29
+  ✔ the others are out of view
+> key ctrl+opt+0
+  ✔ ⌃⌥0 reaches Arbor
+  ✔ the camera is on everything
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⎋ pauses Arbor while zoomed in: every window comes back and Arbor lets go of the Mac
+> zoom 31
+framed w31
+  ✔ the others are out of view
+> key ctrl+opt+escape
+  ✔ ⌃⌥⎋ reaches Arbor
+  ✔ status says paused
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✘ none of Arbor's own windows is on screen — Arbor shows: 38 5088 6 250 611 525 38 on Arbor
+      picture: mac-shell/fail-45-pause-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n4, back yes
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  zoom 31: framed w31
+      log | DEBUG focus is on w31
+      log | DEBUG w31 has the keyboard
+      log | INFO  registered 1 shortcuts in 5125 µs
+      log | INFO  stopped; all windows returned to view
+      log | INFO  paused
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Paused until ⌃⌥⎋; windows that were out of view are back on screen
+  ✔ only the shortcut that ends the pause is still registered
+> dock 29 right
+  ✔ a command is refused
+
+▸ while paused Arbor reacts to nothing: no shortcut, no drag
+> key ctrl+opt+space
+  ✔ ⌃⌥Space does not reach Arbor
+> test windows: front 29
+> click 412 410
+> drag 446 232 3 368 --no-release
+  ✔ a drag to the left screen edge shows no preview
+> release
+  ✔ Arbor is still paused
+  ✔ the second window has not moved
+
+▸ ⌃⌥⎋ again resumes: the arrangement and the view are back
+> click 512 383
+> key ctrl+opt+escape
+  ✔ ⌃⌥⎋ reaches Arbor
+  ✔ status says running
+  ✔ the view is back on the third window
+  ✔ the first window is out of view again
+  ✔ the second window is out of view again
+  ✔ all the shortcuts are registered again
+> key ctrl+opt+space
+  ✔ ⌃⌥Space works again
+  ✔ the window dragged away during the pause is back in its slot
+  ✔ windows match Arbor's layout
+
+▸ resume with the keyboard in a window the view left out: the view moves to show it
+> zoom 31
+framed w31
+  ✔ the first window is out of view
+> key ctrl+opt+escape
+  ✔ Arbor is paused
+> test windows: front 29
+> click 412 410
+> key ctrl+opt+escape
+  ✔ Arbor runs again
+  ✔ the window with the keyboard is in view
+> show-all
+showing everything
+  ✔ windows match Arbor's layout
+
+▸ pause for a while by command: Arbor resumes by itself
+> pause 0.05
+  ✔ pause 0.05, three seconds, succeeds
+  ✔ status says paused
+  ✔ it has resumed
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⇧F floats every window, from wherever the camera is
+> zoom 29
+framed w29
+  ✔ the others are out of view
+> key ctrl+opt+shift+f
+  ✔ ⌃⌥⇧F reaches Arbor
+  ✔ nothing is docked
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the window that was framed no longer covers the screen
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+session 2: Arbor pid 7103, test windows 60 61 (pid 7081)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+
+▸ a docked window that cannot grow sits in the middle of its slot
+> dock 60 left
+docked w60 at the left edge
+> dock 61 right
+docked w61 at the right edge
+its slot is at 12 43 325 650, the window at 24 248 300 240
+  ✔ it kept its own width
+  ✔ it is centred across
+  ✔ it is centred down
+  ✔ Arbor leaves it there
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+61 passed, 1 failed
+
+=== 47-whose-keys
+session 1: Arbor pid 7575, test windows 67 68 73 (pid 7535,7552)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 67 left
+docked w67 at the left edge
+> dock 73 right
+docked w73 at the right edge
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          349 43 326 655
+  w67 12 43 325 655        docked
+  w68 349 180 326 348      floating
+  w73 687 43 325 655       docked focused
+
+▸ turn Arbor's shortcuts off in the app in front, by command: they reach the app instead
+> click 176 389
+  ✘ the app is in front — the app in front is pointer: no app has the keyboard, not 7535
+      picture: mac-shell/fail-47-whose-keys-1.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+      |   Desktop          349 43 326 655
+      |   w67 12 43 325 655        docked focused
+      |   w68 349 180 326 348      floating
+      |   w73 687 43 325 655       docked
+      log | DEBUG focus is on w67
+      log | DEBUG w67 has the keyboard
+> key ctrl+opt+return
+  ✔ before, ⌃⌥↩ is Arbor's
+> key ctrl+opt+space
+  ✔ and so is ⌃⌥Space
+> pass-through dev.arbor.testwindows on
+  ✔ pass-through on succeeds
+  ✔ settings.json lists the app
+  ✔ Arbor lets go of all its shortcuts but one
+  ✔ status says where they are off
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ goes to the app
+> key ctrl+opt+d
+  ✔ ⌃⌥D goes to the app
+> key ctrl+opt+cmd+right
+  ✔ ⌃⌥⌘→ goes to the app
+  ✔ the camera stayed on everything
+  ✔ the other app's window is still in view
+  ✔ windows match Arbor's layout
+
+▸ with the shortcuts off in its app, a window dragged onto another still docks
+> drag 547 192 174 617
+  ✔ it is docked
+  ✔ below the first window
+  ✔ in its column
+> key ctrl+opt+f
+  ✔ the shortcuts are still the app's
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⎋ answers even in an app that keeps its keys: Arbor pauses, and resumes
+> click 176 221
+> key ctrl+opt+escape
+  ✔ Arbor is paused
+> key ctrl+opt+escape
+  ✔ Arbor runs again
+  ✔ the app saw neither press
+> key ctrl+opt+space
+  ✔ the other shortcuts are still the app's
+  ✔ windows match Arbor's layout
+
+▸ click another app's window: Arbor's shortcuts work again, and are off again back in the listed app
+> click 851 389
+  ✘ the other app is in front — the app in front is pointer: no app has the keyboard, not 7552
+      picture: mac-shell/fail-47-whose-keys-2.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n2, back yes
+      |   Desktop          349 43 326 655
+      |   w67 12 43 325 322        docked
+      |   w68 12 377 325 321       docked
+      |   w73 687 43 325 655       docked focused
+      log | INFO  shortcuts and gestures are on again: dev.arbor.testwindows2 is frontmost
+      log | INFO  registered 52 shortcuts in 6179 µs
+      log | INFO  pinch event tap installed
+      log | INFO  scroll event tap installed
+      log | INFO  rectangle event taps installed
+      log | DEBUG focus is on w73
+      log | DEBUG w73 has the keyboard
+      log | DEBUG pinch event tap installed
+      log | DEBUG scroll event tap installed
+      log | DEBUG rectangle event tap installed
+      log | DEBUG rectangle drag event tap installed
+  ✔ all the shortcuts are registered again
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the focused window fills the screen
+  ✔ the listed app's windows go out of view like any others
+> key ctrl+opt+space
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ and they come back
+  ✔ the app in front saw neither
+> click 176 221
+  ✘ the listed app is in front — the app in front is pointer: no app has the keyboard, not 7535
+      picture: mac-shell/fail-47-whose-keys-3.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+33 passed, 3 failed
+
+=== 50-lifecycle
+session 1: Arbor pid 10070, test windows 100 101 102 103 104 (pid 9993,10045)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 104 left
+docked w104 at the left edge
+> dock 101 left
+docked w101 at the left edge
+> dock 100 left
+docked w100 at the left edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          771 43 241 650
+  w100 12 43 241 650        docked focused
+  w101 265 43 241 650       docked
+  w102 771 140 253 348      floating
+  w103 771 100 253 348      floating
+  w104 518 43 241 650       docked
+
+▸ minimize a docked window with its yellow button: the neighbours take its space
+> click 299 57
+  ✔ Arbor sees it minimized
+  ✔ it is still docked
+  ✔ the window on its left grew
+  ✔ the window on its right moved up to it
+  ✔ nothing overlaps
+  ✔ windows match Arbor's layout
+
+▸ restore the minimized window: it returns to its slot between the same neighbours
+> test windows: restore 101
+  ✔ Arbor sees it restored
+  ✔ it is in its slot
+  ✔ right of the first
+  ✔ left of the third
+  ✔ the first has its old width
+  ✔ the camera stayed on everything
+  ✔ windows match Arbor's layout
+
+▸ ⌘M minimizes the focused docked window, and it comes back the same way
+> show-all
+showing everything
+> click 387 383
+> key cmd+m
+  ✔ Arbor sees it minimized
+  ✔ the window on its left grew
+> test windows: restore 101
+  ✔ it is back in its slot
+  ✔ the first has its old width
+  ✔ windows match Arbor's layout
+
+▸ hide an app with ⌘H: its docked window's space goes to the neighbours
+> show-all
+showing everything
+> click 640 383
+  ✔ the other app's window has the keyboard
+> key cmd+h
+  ✘ Arbor sees its window hidden — it is managed docked at 518 43 241 650
+      picture: mac-shell/fail-50-lifecycle-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          771 43 241 650
+      |   w100 12 43 241 650        docked
+      |   w101 265 43 241 650       docked
+      |   w102 771 140 253 348      floating
+      |   w103 771 100 253 348      floating
+      |   w104 518 43 241 650       docked focused
+      log | INFO  show-all: showing everything
+      log | DEBUG focus is on w104
+      log | DEBUG w104 has the keyboard
+  ✔ it is still docked
+  ✘ the windows of the first app grew — it is 241 wide, which is not -gt 281
+      picture: mac-shell/fail-50-lifecycle-2.png
+  ✔ windows match Arbor's layout
+
+▸ show the hidden app again: its window returns to its slot
+> test windows: unhide
+  ✔ Arbor sees it shown
+  ✔ it is in its slot
+  ✔ right of the second
+  ✔ the first has its old width
+  ✔ windows match Arbor's layout
+
+▸ close a docked window with its red button: the row shares its space
+> show-all
+showing everything
+> click 279 57
+  ✔ Arbor has forgotten it
+  ✔ two are docked
+  ✔ the window on its left grew
+  ✔ the window on its right is beside it now
+  ✔ the two have the same width
+  ✔ windows match Arbor's layout
+
+▸ close the window the camera frames with ⌘W: the camera steps out to what is left
+> zoom 104
+framed w104
+  ✔ the window fills the screen
+  ✔ the other is out of view
+> key cmd+w
+  ✔ Arbor has forgotten it
+  ✔ the other window is back in view
+  ✔ windows match Arbor's layout
+
+▸ a window opened while Arbor runs floats where its app put it
+> test windows: open size=300x200 at=615,268 title=A new window
+  ✔ Arbor arranges it
+  ✔ it floats
+  ✔ it is where its app put it
+
+▸ panels and sheets are left alone
+> test windows: open kind=panel size=220x160 at=655,78 title=A panel
+Accessibility calls the panel: AXWindow AXFloatingWindow
+> test windows: open kind=sheet:114 size=200x100 title=A sheet
+  ✔ Arbor does not list the panel
+  ✔ nor the sheet
+> arrange
+arranged 4 windows
+  ✔ arranging everything leaves the panel where it was
+  ✔ the sheet moved along with its window
+  ✔ windows match Arbor's layout
+
+▸ a window that opens while one window is framed stays with that view
+> zoom 100
+framed w100
+  ✔ the framed window fills the screen
+> test windows: open size=320x220 at=352,258 title=A guest
+  ✔ it floats
+  ✔ over the framed window, where its app put it
+> neighbor right
+moved to ArborTestWindows and ArborTestWindows (n7)
+  ✔ the view moves on and it goes out of view
+> back
+back to ArborTestWindows (n1)
+  ✔ the view comes back
+  ✔ and the window with it, in the same place
+
+▸ a dialog of a window that is out of view opens in the middle of the screen
+  ✔ the window it belongs to is out of view
+> test windows: dialog 102
+  ✔ the dialog is in view
+> test windows: close 120
+> show-all
+showing everything
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+
+60 passed, 2 failed
+
+=== 55-apps
+session 1: Arbor pid 12203, test windows 122 123 124 125 126 (pid 12169,12189)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 125 left
+docked w125 at the left edge
+> dock 123 left
+docked w123 at the left edge
+> dock 122 left
+docked w122 at the left edge
+> dock 126 beside 125 bottom
+docked w126 below w125
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          771 43 241 650
+  w122 12 43 241 650        docked
+  w123 265 43 241 650       docked
+  w124 771 140 253 348      floating
+  w125 518 43 241 319       docked
+  w126 518 374 241 319      docked focused
+
+▸ a docked window gets a new native tab: the tab has the window's slot and nothing else moves
+> test windows: tab 122
+  ✔ the tab is docked
+  ✔ where the window was
+  ✔ the tab it covers has no place of its own
+  ✔ as many windows are docked as before
+  ✔ the window beside it has not moved
+  ✔ nor has the other app's
+  ✔ windows match Arbor's layout
+
+▸ choose the first tab again: it has the slot back and the other tab leaves nothing behind
+> test windows: select 122
+  ✔ the first tab is docked
+  ✔ in the same place
+  ✔ the other tab has no place of its own
+  ✔ as many windows are docked as before
+  ✔ the window beside it has not moved
+  ✔ windows match Arbor's layout
+
+▸ close the tab in front with ⌘W: the tab behind it inherits the slot
+> test windows: select 133
+  ✔ the second tab is in the slot
+> click 134 383
+> key cmd+w
+  ✔ Arbor has forgotten the closed tab
+  ✔ the first tab is docked
+  ✔ in the same place
+  ✔ as many windows are docked as before
+  ✔ the window beside it has not moved
+  ✔ windows match Arbor's layout
+
+▸ a new tab in the window the camera frames, closed again with ⌘W: the camera stays on the group
+> zoom 122
+framed w122
+  ✔ the window fills the screen
+> test windows: tab 122
+  ✔ the tab fills the screen
+  ✔ the camera is on it
+  ✔ the others stay out of view
+> click 512 383
+> key cmd+w
+  ✔ the first tab fills the screen again
+  ✔ the camera is on it
+  ✔ the others are still out of view
+> show-all
+showing everything
+  ✔ windows match Arbor's layout
+
+▸ an app moves its docked window once: Arbor puts it back
+> test windows: move 122 42 73 181 590
+  ✔ the app moves it
+  ✔ it is back in its slot
+  ✔ windows match Arbor's layout
+
+▸ an app insists on a place of its own for a docked window: Arbor puts it back a few times, then leaves it alone
+> test windows: insist 122 42 73 181 590
+  ✔ Arbor gives up on it
+  ✔ the window stays where its app wants it
+  ✔ it is still docked
+  ✔ the window beside it is in its slot
+
+▸ the app relents and the neighbour is minimized: with the new layout the window is in its slot again
+> test windows: relent 122
+  ✔ until the layout changes it is left where it is
+> click 299 57
+  ✔ Arbor sees the neighbour minimized
+  ✔ the window is in its slot
+  ✔ which has grown
+  ✔ windows match Arbor's layout
+> test windows: restore 123
+  ✔ with the neighbour back it is where it was at first
+  ✔ windows match Arbor's layout
+
+▸ an app stops answering and ⌃⌥↩ frames another app's window: the camera moves all the same
+> test windows: hang 7
+> click 640 221
+  ✔ the other app's window has the keyboard
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ nobody can move the windows of the app that hangs
+  ✔ the other app's window fills the screen
+  ✔ its second window is out of view
+
+▸ the app answers again: its docked windows go where the layout has them
+  ✔ the first is out of view
+  ✔ the second is out of view
+  ✔ the other app's window still fills the screen
+  ✔ windows match Arbor's layout
+
+▸ the app answers again: its floating window leaves the view too
+  ✔ it is out of view
+
+▸ ⌃⌥0 after the hang: every window is back where it was
+> key ctrl+opt+0
+  ✔ ⌃⌥0 reaches Arbor
+  ✔ the first
+  ✔ the second
+  ✔ the other app's
+  ✔ the one that floats is in view
+  ✔ windows match Arbor's layout
+
+▸ an app hangs with its windows out of view and ⌃⌥⎋ pauses Arbor: once it answers, its windows are back in view
+> click 640 221
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ frames the other app's window
+  ✔ the first app's window is out of view
+> test windows: hang 6
+> click 512 383
+  ✔ the other app's window has the keyboard
+> key ctrl+opt+escape
+  ✔ Arbor is paused
+  ✔ the first is in view
+  ✔ the second is in view
+> key ctrl+opt+escape
+  ✔ Arbor runs again
+> show-all
+showing everything
+  ✔ windows match Arbor's layout
+
+▸ click another app's window that is in view: it gets the keyboard and the camera stays
+> click 134 383
+  ✘ the first app has the keyboard — the app in front is pointer: no app has the keyboard, not 12169
+      picture: mac-shell/fail-55-apps-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+      |   Desktop          771 43 241 650
+      |   w122 12 43 241 650        docked focused
+      |   w123 265 43 241 650       docked
+      |   w124 771 140 253 348      floating
+      |   w125 518 43 241 319       docked
+      |   w126 518 374 241 319      docked
+      log | DEBUG focus is on w122
+      log | DEBUG w122 has the keyboard
+> click 640 221
+  ✘ the other app has the keyboard — the app in front is pointer: no app has the keyboard, not 12189
+      picture: mac-shell/fail-55-apps-2.png
+  ✔ Arbor says its window is focused
+  ✔ the camera stays on everything
+  ✔ windows match Arbor's layout
+
+▸ switch to another app's second window, which is out of view: the camera follows
+> zoom 122
+framed w122
+  ✘ the first app has the keyboard — the app in front is pointer: no app has the keyboard, not 12169
+      picture: mac-shell/fail-55-apps-3.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n4, back yes
+      |   w122 12 43 1000 650       docked focused
+      |   w123 1023 677 241 650     docked parked
+      |   w124 1023 677 253 348     floating parked
+      |   w125 1023 677 241 319     docked parked
+      |   w126 1023 677 241 319     docked parked
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  zoom 122: framed w122
+      log | DEBUG focus is on w122
+      log | DEBUG w122 has the keyboard
+  ✔ the other app's second window is out of view
+> test windows: activate 126
+  ✘ the other app has the keyboard — the app in front is pointer: no app has the keyboard, not 12189
+      picture: mac-shell/fail-55-apps-4.png
+  ✔ Arbor says its second window is focused
+  ✔ which comes into view
+  ✔ windows match Arbor's layout
+
+▸ an app in the background changes its focused window: nothing moves
+> zoom 122
+framed w122
+  ✔ the first app's window fills the screen
+  ✘ the first app has the keyboard — the app in front is pointer: no app has the keyboard, not 12169
+      picture: mac-shell/fail-55-apps-5.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n4, back yes
+      |   w122 12 43 1000 650       docked focused
+      |   w123 1023 677 241 650     docked parked
+      |   w124 1023 677 253 348     floating parked
+      |   w125 1023 677 241 319     docked parked
+      |   w126 1023 677 1000 650    docked parked
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  zoom 122: framed w122
+      log | DEBUG focus is on w122
+      log | DEBUG w122 has the keyboard
+> test windows: key 125
+  ✔ the camera stays where the person is
+  ✔ the window still fills the screen
+  ✔ the window the other app chose is still out of view
+  ✘ the first app still has the keyboard — the app in front is pointer: no app has the keyboard, not 12169
+      picture: mac-shell/fail-55-apps-6.png
+  ✔ Arbor says its window is focused
+> show-all
+showing everything
+  ✔ windows match Arbor's layout
+
+▸ quit Arbor with a docked window minimized and an app hidden, and start it again: they have kept their places
+> click 299 57
+  ✔ Arbor sees the window minimized
+> click 513 221
+> key cmd+h
+  ✘ Arbor sees the other app's windows hidden — it is managed docked at 349 43 326 319
+      picture: mac-shell/fail-55-apps-7.png
+      | display 0 0 1024 768, visible 0 31 1024 676, camera n2, back yes
+      |   Desktop          687 43 325 652
+      |   w122 12 43 325 652        docked
+      |   w123 265 43 241 650       docked minimized
+      |   w124 687 140 337 348      floating
+      |   w125 349 43 326 319       docked focused
+      |   w126 349 374 326 319      docked
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  displays changed: 1 display(s), 0 remembered
+      log | DEBUG focus is on w125
+      log | DEBUG w125 has the keyboard
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+session 1: Arbor pid 16349, test windows 122 123 124 125 126 (pid 12169,12189)
+running: 1 display, 4 docked and 1 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ the window is still minimized
+  ✔ and docked
+  ✘ the other app is still hidden — it is managed docked at 349 43 326 320
+      picture: mac-shell/fail-55-apps-8.png
+  ✔ its first window is docked
+  ✔ and its second
+  ✔ the one window in sight has their space meanwhile
+  ✔ windows match Arbor's layout
+
+▸ restore the window that was minimized when Arbor started: it is back in its slot
+> test windows: restore 123
+  ✔ Arbor sees it restored
+  ✔ it is in its slot
+  ✔ and stays there
+  ✔ right of the first
+  ✔ windows match Arbor's layout
+
+▸ show the app that was hidden when Arbor started: every window is between the same neighbours as before
+> test windows: unhide
+  ✔ Arbor sees it shown
+  ✔ its first window is in its slot
+  ✔ right of the window that was minimized
+  ✔ above its second
+  ✔ the first window is where it was before the restart
+  ✔ the one that was minimized too
+  ✔ and the other app's
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+
+106 passed, 8 failed
+
+=== 60-tiles
+session 1: Arbor pid 17048, test windows 162 163 164 165 (pid 17030)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 162 left
+docked w162 at the left edge
+
+▸ drop a window that refuses to shrink into a slot too small for it: a tile takes its place
+> click 760 456
+> drag 794 152 259 612
+  ✔ the window is docked
+  ✔ a tile stands in for it
+  ✔ it is a window's tile
+  ✔ Arbor draws the tile where the slot is
+  ✔ the window itself is out of view
+  ✔ the camera stayed where it was
+  ✔ the window above it is in view
+  ✔ nothing overlaps
+  ✔ windows match Arbor's layout
+
+▸ click the tile: the camera frames its window
+> click 259 533
+  ✔ the window fills the screen
+  ✔ the camera is on it
+  ✔ the other docked window is out of view
+  ✔ it has the keyboard
+
+▸ go back from a tile's window: the tile returns
+> back
+back to everything
+  ✔ a tile stands in for it again
+  ✔ Arbor draws it
+  ✔ the window is out of view
+  ✔ the window above it is back
+  ✔ windows match Arbor's layout
+
+▸ dock a window that refuses to shrink by command: the camera stays and a tile takes its place
+> float 164
+w164 is floating
+  ✔ the window floats
+> dock 164 beside 162 bottom
+docked w164 below w162; its space is too small to show it, so it is a tile
+  ✔ a tile stands in for it
+  ✔ the camera stays on everything
+  ✔ the window above it stays in view
+
+▸ shrink a space below the smallest usable size: one tile stands in for the whole group
+> show-all
+showing everything
+> drag 512 202 208 202
+  ✔ a tile stands in for the first window
+  ✔ it is a group's tile
+  ✔ the same tile holds the other window
+  ✔ there is one tile
+  ✔ Arbor draws it
+  ✔ both windows are out of view
+
+▸ click the group's tile: the camera goes into the group
+> click 107 368
+  ✔ the first window is in view
+  ✔ it is as wide as the screen
+  ✔ the floating windows left with the Desktop
+> show-all
+showing everything
+
+▸ a floating window that cannot shrink stays on the screen when the Desktop gets narrow
+> float-all
+floated 2 windows
+> dock 162 left
+docked w162 at the left edge
+  ✔ the window floats
+  ✔ all of it is on the screen
+
+▸ a window made to refuse its slot while docked becomes a tile at the next layout
+> float-all
+floated 1 window
+> dock 163 left
+docked w163 at the left edge
+> dock 165 beside 163 bottom
+docked w165 below w163
+  ✔ it fits its slot at first
+> test windows: min-size 165 716 537
+> zoom 165
+framed w165
+> back
+back to everything
+  ✔ a tile stands in for it
+  ✔ nothing overlaps
+
+== before quitting
+> dock 164 right
+docked w164 at the right edge; its space is too small to show it, so it is a tile
+> show-all
+showing everything
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+session 2: Arbor pid 18330, test windows 176 177 178 (pid 18299)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 176 left
+docked w176 at the left edge
+
+▸ drag a window too wide for a third of the screen to the edge: the gaps move to make room, and it is no tile
+> click 760 496
+> drag 794 192 1021 368
+  ✔ the window is docked
+  ✔ no tile stands in for it
+  ✔ it is in view
+  ✔ in its slot
+  ✔ which is as wide as the window needs
+  ✔ it reaches the right edge of the screen
+  ✔ the Desktop is still between the two
+  ✔ nothing overlaps
+  ✔ the log says that it made room
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+55 passed, 0 failed
+
+=== 62-sizes
+session 1: Arbor pid 19050, test windows 186 187 188 189 (pid 19016,19032)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> test windows: move 186 170 220 400 298
+> dock 186 left
+docked w186 at the left edge
+> dock 187 right
+docked w187 at the right edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w186 12 43 325 650        docked
+  w187 687 43 325 650       docked focused
+  w188 349 140 326 348      floating
+  w189 349 220 326 348      floating
+
+▸ ⌃⌥F on a docked window: it floats at the size it had before it was docked
+  ✔ docked, it is taller than it was
+> click 176 383
+> key ctrl+opt+f
+  ✔ ⌃⌥F reaches Arbor
+  ✔ the window floats
+  ✔ it has its own size again
+  ✔ all of it is in view
+  ✔ Arbor leaves it that size
+  ✔ the other docked window is in its slot
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥F on the window the camera frames: its own size again, in a view that shows the Desktop
+> dock 186 left
+docked w186 at the left edge
+> zoom 186
+framed w186
+  ✔ framed, it fills the screen
+  ✔ the floating windows left with the Desktop
+> key ctrl+opt+f
+  ✔ ⌃⌥F reaches Arbor
+  ✔ the window floats
+  ✔ it has its own size again
+  ✔ all of it is in view
+  ✔ the Desktop is in view
+  ✔ and the windows that float on it
+  ✔ windows match Arbor's layout
+
+▸ drag a docked window out of its slot and drop it on the Desktop: it shrinks back to its own size under the pointer
+> dock 186 left
+docked w186 at the left edge
+  ✔ docked, it is taller than it was
+> drag 210 55 512 368
+  ✔ the window floats
+  ✔ it has its own size again
+  ✘ the pointer is still on its title bar — the pointer is at 512 368 up, the window at 171 308 400 298
+      picture: mac-shell/fail-62-sizes-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          12 43 494 650
+      |   w186 171 308 400 298      floating focused
+      |   w187 518 43 494 650       docked
+      |   w188 26 140 480 348       floating
+      |   w189 26 220 480 348       floating
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  dock 186 left: docked w186 at the left edge
+      log | DEBUG w186 is being dragged
+      log | DEBUG drag of w186: on none
+      log | DEBUG drag of w186: on none
+      log | DEBUG drag of w186: on float
+      log | DEBUG w186 was dropped out of its slot and took its own size, 400×298
+      log | INFO  dropped w186 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+      log | DEBUG no stage: Reduce motion is on
+  ✘ the layout that follows the drop leaves it there — the pointer is at 512 368 up, the window at 171 308 400 298
+      picture: mac-shell/fail-62-sizes-2.png
+  ✔ windows match Arbor's layout
+
+== where every window is before Arbor arranges them all
+> float-all
+floated 1 window
+171 308 400 298 | 220 180 480 348 | 270 140 480 348 | 170 220 480 348
+
+▸ ⌃⌥A arranges every window, ⌃⌥⇧F floats them all: each is back exactly where it was
+> click 462 304
+> key ctrl+opt+a
+  ✔ ⌃⌥A reaches Arbor
+  ✔ all four are docked
+  ✔ the first window has left its place
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ frames the focused window
+> key ctrl+opt+shift+f
+  ✔ ⌃⌥⇧F reaches Arbor
+  ✔ nothing is docked
+  ✔ the first window is exactly where it was, at its own size
+  ✔ the second
+  ✔ the third
+  ✔ the other app's
+
+▸ choose Arrange Windows and then Float All Windows from the menu: each window is back exactly where it was
+> click 770 15 --right
+> click 842.5 550
+  ✔ Arrange Windows can be clicked
+  ✔ all four are docked
+  ✔ the other app's window has left its place
+> click 720 15 --right
+> click 814.5 574
+  ✔ Float All Windows can be clicked
+  ✔ nothing is docked
+  ✔ the first window is exactly where it was, at its own size
+  ✔ the second
+  ✔ the third
+  ✔ the other app's
+
+▸ choose Don’t Arrange for an app whose window is docked: the window goes back to where it was
+> dock 186 left
+docked w186 at the left edge
+> dock 189 right
+docked w189 at the right edge
+  ✔ docked, it reaches the right edge of the screen
+> click 851 383
+> click 720 15 --right
+> click 818.5 419
+  ✔ the item can be clicked
+  ✔ Arbor ran exclude
+  ✔ Arbor no longer arranges it
+  ✔ it is exactly where it was, at its own size
+> include dev.arbor.testwindows2
+arranging ArborTestWindows2 again
+> float-all
+floated 1 window
+
+▸ choose Quit Arbor with every window docked and one framed: each is back exactly where it was
+> arrange
+arranged 4 windows
+> zoom 188
+framed w188
+  ✔ the framed window fills the screen
+  ✔ the others are out of view
+> click 720 15 --right
+> click 814.5 836
+  ✔ the item can be clicked
+  ✘ Arbor exits
+      picture: mac-shell/fail-62-sizes-3.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n6, back yes
+      |   w186 1023 677 390 319     docked parked
+      |   w187 1023 677 391 319     docked parked
+      |   w188 12 43 1000 650       docked focused
+      |   w189 1023 677 390 319     docked parked
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  arrange: arranged 4 windows
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  zoom 188: framed w188
+      log | DEBUG focus is on w188
+      log | DEBUG w188 has the keyboard
+      log | DEBUG menu bar click: x 67.0 by the event, 67.0 by the screen, button 134.0 wide
+> kill -TERM (Arbor)
+  ✔ the first window is exactly where it was, at its own size
+  ✔ the second
+  ✔ the third
+  ✔ the other app's
+
+▸ start Arbor again: the windows dock again, and ⌃⌥F still gives one its own size
+session 1: Arbor pid 21060, test windows 186 187 188 189 (pid 19016,19032)
+running: 1 display, 4 docked and 0 floating, 3 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ all four are docked again
+> show-all
+showing everything
+> click 608 221
+> key ctrl+opt+f
+  ✔ ⌃⌥F reaches Arbor
+  ✔ the window floats
+  ✔ it has its own size
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+session 2: Arbor pid 21546, test windows 221 222 223 (pid 21529)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 221 left
+docked w221 at the left edge
+> dock 222 beside 221 bottom
+docked w222 below w221
+> test windows: min-size 222 716 471
+> zoom 222
+framed w222
+> back
+back to everything
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          518 43 494 650
+  tile n3 window   12 374 494 319  holds w222
+  w221 12 43 494 319        docked focused
+  w222 1023 677 716 471     docked parked
+  w223 518 140 480 348      floating
+
+▸ a window that goes on refusing its slot is asked again out of view: it stays a tile, and nothing else moves
+  ✔ a tile stands in for it
+  ✔ the window itself is out of view
+> click 260 221
+> key ctrl+opt+0
+  ✔ ⌃⌥0, which lays the screen out again
+  ✔ Arbor asked it again
+  ✔ it is still a tile
+  ✔ and out of view
+  ✔ the window above it has not moved
+  ✔ windows match Arbor's layout
+
+▸ its app allows a smaller size: after tileRetryMinutes the next layout makes the tile a window in its slot again
+> test windows: min-size 222 200 150
+  ✔ time alone changes nothing
+> key ctrl+opt+0
+  ✔ ⌃⌥0, which lays the screen out again
+  ✔ no tile stands in for it
+  ✔ it is in its slot
+  ✔ in view
+  ✔ below the first window
+  ✔ which has not moved
+  ✔ nothing overlaps
+  ✔ windows match Arbor's layout
+
+▸ relayout by command asks at once: a tile whose app has relented is a window again without waiting
+> reload-settings
+settings reloaded
+> test windows: min-size 222 716 471
+> zoom 222
+framed w222
+> back
+back to everything
+  ✔ a tile stands in for it again
+> test windows: min-size 222 200 150
+> key ctrl+opt+0
+  ✔ ⌃⌥0, which lays the screen out again
+  ✔ it stays a tile
+> relayout
+  ✔ relayout succeeds
+  ✔ no tile stands in for it
+  ✔ it is in its slot
+  ✔ nothing overlaps
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+session 3: Arbor pid 22873, test windows 231 232 233 (pid 22852)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+
+▸ dock every window but one: the one that floats alone takes the Desktop
+> click 412 536
+> drag 446 232 3 368
+  ✔ the first window is docked
+  ✔ with another floating beside it, the third keeps its size
+> click 760 496
+> drag 794 192 259 612
+  ✔ the second window is docked
+  ✔ alone, the third has the Desktop's place and size
+  ✔ it reaches the right edge of the screen
+  ✔ it still floats
+  ✔ nothing overlaps
+  ✔ windows match Arbor's layout
+
+▸ drag the gap beside the Desktop: the window that fills it follows
+> drag 512 202 432 202
+  ✔ the docked window is narrower
+  ✔ the window is wider
+  ✔ it has the Desktop's place and size
+  ✔ windows match Arbor's layout
+
+▸ frame a docked window and come back: the window that fills the Desktop leaves and returns with it
+> click 218 221
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the docked window fills the screen
+  ✔ the floating one is out of view
+> key ctrl+opt+0
+  ✔ ⌃⌥0 reaches Arbor
+  ✔ it has the Desktop's place and size again
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥F gives it company: it has its own size back, and takes the Desktop again once it is alone
+> click 218 552
+> key ctrl+opt+f
+  ✔ ⌃⌥F reaches Arbor
+  ✔ the second window floats
+  ✔ the third has its own size back
+  ✔ the second has its own too
+> drag 714 369 219 612
+  ✔ the second window is docked again
+  ✔ the third has the Desktop's place and size again
+  ✔ windows match Arbor's layout
+
+▸ drag the window that fills the Desktop by its title bar: its own size under the pointer, and it stays that size
+> drag 756 55 726 135
+  ✔ it has its own size back
+  ✘ the pointer is still on its title bar — the pointer is at 726 135 up, the window at 483 82 480 348
+      picture: mac-shell/fail-62-sizes-4.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+      |   Desktop          438 43 574 650
+      |   w231 12 43 414 319        docked
+      |   w232 12 374 414 319       docked
+      |   w233 483 82 480 348       floating focused
+      log | DEBUG focus is on w233
+      log | DEBUG w233 has the keyboard
+      log | DEBUG w233 is being dragged
+      log | DEBUG drag of w233: on float
+      log | INFO  dropped w233 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+  ✔ it still floats
+> key ctrl+opt+0
+  ✔ ⌃⌥0, which lays the screen out again
+  ✔ the hand wins: it keeps that size
+  ✔ windows match Arbor's layout
+
+▸ switch soleFloatTakesDesktop off in settings.json: the window has its own size back
+> dock 233 right
+docked w233 at the right edge
+> float 233
+w233 is floating
+  ✔ it has the Desktop's place and size
+> reload-settings
+settings reloaded
+  ✔ it has its own size back
+  ✔ windows match Arbor's layout
+
+▸ quit Arbor while a window fills the Desktop: it has its own size back
+> reload-settings
+settings reloaded
+  ✔ it has the Desktop's place and size
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ it has its own size back
+  ✔ all of it is in view
+
+128 passed, 4 failed
+
+=== the suite
+45-pause            11 claims   61 passed   1 failed   45 s
+47-whose-keys        5 claims   33 passed   3 failed   47 s
+50-lifecycle        12 claims   60 passed   2 failed   37 s
+55-apps             19 claims  106 passed   8 failed   82 s
+60-tiles            11 claims   55 passed   0 failed   35 s
+62-sizes            20 claims  128 passed   4 failed  105 s
+failed: ✘ none of Arbor's own windows is on screen — Arbor shows: 38 5088 6 250 611 525 38 on Arbor
+failed: ✘ the app is in front — the app in front is pointer: no app has the keyboard, not 7535
+failed: ✘ the other app is in front — the app in front is pointer: no app has the keyboard, not 7552
+failed: ✘ the listed app is in front — the app in front is pointer: no app has the keyboard, not 7535
+failed: ✘ Arbor sees its window hidden — it is managed docked at 518 43 241 650
+failed: ✘ the windows of the first app grew — it is 241 wide, which is not -gt 281
+failed: ✘ the first app has the keyboard — the app in front is pointer: no app has the keyboard, not 12169
+failed: ✘ the other app has the keyboard — the app in front is pointer: no app has the keyboard, not 12189
+failed: ✘ the first app has the keyboard — the app in front is pointer: no app has the keyboard, not 12169
+failed: ✘ the other app has the keyboard — the app in front is pointer: no app has the keyboard, not 12189
+failed: ✘ the first app has the keyboard — the app in front is pointer: no app has the keyboard, not 12169
+failed: ✘ the first app still has the keyboard — the app in front is pointer: no app has the keyboard, not 12169
+failed: ✘ Arbor sees the other app's windows hidden — it is managed docked at 349 43 326 319
+failed: ✘ the other app is still hidden — it is managed docked at 349 43 326 320
+failed: ✘ the pointer is still on its title bar — the pointer is at 512 368 up, the window at 171 308 400 298
+failed: ✘ the layout that follows the drop leaves it there — the pointer is at 512 368 up, the window at 171 308 400 298
+failed: ✘ Arbor exits
+failed: ✘ the pointer is still on its title bar — the pointer is at 726 135 up, the window at 483 82 480 348
+suite: 443 passed, 18 failed (0 of them known), 0 section(s) unfinished, in 351 s
+exit code 1

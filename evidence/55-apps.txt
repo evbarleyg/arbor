@@ -1,0 +1,155 @@
+# 55-apps 2026-10-14T22:56Z on macOS 26.6.2, commit 2d3b4f4
+
+▸ a docked window gets a new native tab: the tab has the window's slot and nothing else moves
+  ✔ the tab is docked
+  ✔ where the window was
+  ✔ the tab it covers has no place of its own
+  ✔ as many windows are docked as before
+  ✔ the window beside it has not moved
+  ✔ nor has the other app's
+  ✔ windows match Arbor's layout
+
+▸ choose the first tab again: it has the slot back and the other tab leaves nothing behind
+  ✔ the first tab is docked
+  ✔ in the same place
+  ✔ the other tab has no place of its own
+  ✔ as many windows are docked as before
+  ✔ the window beside it has not moved
+  ✔ windows match Arbor's layout
+
+▸ close the tab in front with ⌘W: the tab behind it inherits the slot
+  ✔ the second tab is in the slot
+  ✔ Arbor has forgotten the closed tab
+  ✔ the first tab is docked
+  ✔ in the same place
+  ✔ as many windows are docked as before
+  ✔ the window beside it has not moved
+  ✔ windows match Arbor's layout
+
+▸ a new tab in the window the camera frames, closed again with ⌘W: the camera stays on the group
+  ✔ the window fills the screen
+  ✔ the tab fills the screen
+  ✔ the camera is on it
+  ✔ the others stay out of view
+  ✔ the first tab fills the screen again
+  ✔ the camera is on it
+  ✔ the others are still out of view
+  ✔ windows match Arbor's layout
+
+▸ an app moves its docked window once: Arbor puts it back
+  ✔ the app moves it
+  ✔ it is back in its slot
+  ✔ windows match Arbor's layout
+
+▸ an app insists on a place of its own for a docked window: Arbor puts it back a few times, then leaves it alone
+  ✔ Arbor gives up on it
+  ✔ the window stays where its app wants it
+  ✔ it is still docked
+  ✔ the window beside it is in its slot
+
+▸ the app relents and the neighbour is minimized: with the new layout the window is in its slot again
+  ✔ until the layout changes it is left where it is
+  ✔ Arbor sees the neighbour minimized
+  ✔ the window is in its slot
+  ✔ which has grown
+  ✔ windows match Arbor's layout
+  ✔ with the neighbour back it is where it was at first
+  ✔ windows match Arbor's layout
+
+▸ an app stops answering and ⌃⌥↩ frames another app's window: the camera moves all the same
+  ✔ the other app's window has the keyboard
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ nobody can move the windows of the app that hangs
+  ✔ the other app's window fills the screen
+  ✔ its second window is out of view
+
+▸ the app answers again: its docked windows go where the layout has them
+  ✔ the first is out of view
+  ✔ the second is out of view
+  ✔ the other app's window still fills the screen
+  ✔ windows match Arbor's layout
+
+▸ the app answers again: its floating window leaves the view too
+  ✔ it is out of view
+
+▸ ⌃⌥0 after the hang: every window is back where it was
+  ✔ ⌃⌥0 reaches Arbor
+  ✔ the first
+  ✔ the second
+  ✔ the other app's
+  ✔ the one that floats is in view
+  ✔ windows match Arbor's layout
+
+▸ an app hangs with its windows out of view and ⌃⌥⎋ pauses Arbor: once it answers, its windows are back in view
+  ✔ ⌃⌥↩ frames the other app's window
+  ✔ the first app's window is out of view
+  ✔ the other app's window has the keyboard
+  ✔ Arbor is paused
+  ✔ the first is in view
+  ✔ the second is in view
+  ✔ Arbor runs again
+  ✔ windows match Arbor's layout
+
+▸ click another app's window that is in view: it gets the keyboard and the camera stays
+  ✘ the first app has the keyboard — the app in front is pointer: no app has the keyboard, not 12169
+  ✘ the other app has the keyboard — the app in front is pointer: no app has the keyboard, not 12189
+  ✔ Arbor says its window is focused
+  ✔ the camera stays on everything
+  ✔ windows match Arbor's layout
+
+▸ switch to another app's second window, which is out of view: the camera follows
+  ✘ the first app has the keyboard — the app in front is pointer: no app has the keyboard, not 12169
+  ✔ the other app's second window is out of view
+  ✘ the other app has the keyboard — the app in front is pointer: no app has the keyboard, not 12189
+  ✔ Arbor says its second window is focused
+  ✔ which comes into view
+  ✔ windows match Arbor's layout
+
+▸ an app in the background changes its focused window: nothing moves
+  ✔ the first app's window fills the screen
+  ✘ the first app has the keyboard — the app in front is pointer: no app has the keyboard, not 12169
+  ✔ the camera stays where the person is
+  ✔ the window still fills the screen
+  ✔ the window the other app chose is still out of view
+  ✘ the first app still has the keyboard — the app in front is pointer: no app has the keyboard, not 12169
+  ✔ Arbor says its window is focused
+  ✔ windows match Arbor's layout
+
+▸ quit Arbor with a docked window minimized and an app hidden, and start it again: they have kept their places
+  ✔ Arbor sees the window minimized
+  ✘ Arbor sees the other app's windows hidden — it is managed docked at 349 43 326 319
+  ✔ Arbor exits within 5 s of quit
+  ✔ the window is still minimized
+  ✔ and docked
+  ✘ the other app is still hidden — it is managed docked at 349 43 326 320
+  ✔ its first window is docked
+  ✔ and its second
+  ✔ the one window in sight has their space meanwhile
+  ✔ windows match Arbor's layout
+
+▸ restore the window that was minimized when Arbor started: it is back in its slot
+  ✔ Arbor sees it restored
+  ✔ it is in its slot
+  ✔ and stays there
+  ✔ right of the first
+  ✔ windows match Arbor's layout
+
+▸ show the app that was hidden when Arbor started: every window is between the same neighbours as before
+  ✔ Arbor sees it shown
+  ✔ its first window is in its slot
+  ✔ right of the window that was minimized
+  ✔ above its second
+  ✔ the first window is where it was before the restart
+  ✔ the one that was minimized too
+  ✔ and the other app's
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+
+106 passed, 8 failed

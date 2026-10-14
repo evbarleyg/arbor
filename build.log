@@ -1,0 +1,151 @@
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 269]
+[Planning deferred tasks]
+[4 / 127]
+[65 / 130]
+[67 / 179]
+[69 / 186]
+[71 / 186]
+[73 / 186]
+[75 / 186] ArborTestWindows-product
+[79 / 235]
+[82 / 235]
+[85 / 235]
+[87 / 235]
+[88 / 235]
+[90 / 235]
+[91 / 235]
+[92 / 235]
+[95 / 235]
+[96 / 235]
+[99 / 235]
+[100 / 235]
+[101 / 235]
+[102 / 235]
+[103 / 235]
+[104 / 235]
+[105 / 235]
+[106 / 235]
+[109 / 235]
+[110 / 235]
+[111 / 235]
+[112 / 235]
+[114 / 235]
+[115 / 235]
+[116 / 235]
+[117 / 235]
+[118 / 235]
+[120 / 235]
+[122 / 235]
+[123 / 235]
+[124 / 235]
+[125 / 235]
+[128 / 235]
+[130 / 235]
+[131 / 235]
+[132 / 235]
+[134 / 235]
+[136 / 235]
+[137 / 235]
+[139 / 235]
+[140 / 235]
+[141 / 235]
+[145 / 235]
+[148 / 235] ArborIPC
+[155 / 235]
+[156 / 235]
+[156 / 235] ArborIPC
+[159 / 235]
+[160 / 235]
+[161 / 235] ArborIPC
+[163 / 235]
+[164 / 235] ArborIPC
+[165 / 235]
+[166 / 235] ArborCore
+[168 / 235] ArborCore
+[174 / 235] ArborCore
+[175 / 235] ArborCore
+[176 / 235] ArborIPC
+[178 / 235] ArborCore
+[179 / 235] arborctl-product
+[180 / 235] ArborTestWindows-product
+[183 / 235] ArborKit
+[184 / 235] ArborKit
+/Users/runner/work/arbor/arbor/Sources/ArborTestWindows/MoreCommands.swift:26:46: [1;33mwarning: [1;39muse '#selector' instead of explicitly constructing a 'Selector'[0;0m
+ [0;36m24 |[0;0m   let submenu = NSMenu(title: "ArborTestWindows")
+ [0;36m25 |[0;0m   // By name, in two pairs of brackets, rather than with #selector: `make typecheck-mac` has no Objective-C to look them up in.
+ [0;36m26 |[0;0m   submenu.addItem(withTitle: "Hide", action: Selector(("hide:")), keyEquivalent: "h")
+    [0;36m|[0;0m                                              `- [1;33mwarning: [1;39muse '#selector' instead of explicitly constructing a 'Selector'[0;0m
+ [0;36m27 |[0;0m   submenu.addItem(withTitle: "Minimize", action: Selector(("performMiniaturize:")), keyEquivalent: "m")
+ [0;36m28 |[0;0m   submenu.addItem(withTitle: "Close", action: Selector(("performClose:")), keyEquivalent: "w")
+
+/Users/runner/work/arbor/arbor/Sources/ArborTestWindows/MoreCommands.swift:27:50: [1;33mwarning: [1;39muse '#selector' instead of explicitly constructing a 'Selector'[0;0m
+ [0;36m25 |[0;0m   // By name, in two pairs of brackets, rather than with #selector: `make typecheck-mac` has no Objective-C to look them up in.
+ [0;36m26 |[0;0m   submenu.addItem(withTitle: "Hide", action: Selector(("hide:")), keyEquivalent: "h")
+ [0;36m27 |[0;0m   submenu.addItem(withTitle: "Minimize", action: Selector(("performMiniaturize:")), keyEquivalent: "m")
+    [0;36m|[0;0m                                                  `- [1;33mwarning: [1;39muse '#selector' instead of explicitly constructing a 'Selector'[0;0m
+ [0;36m28 |[0;0m   submenu.addItem(withTitle: "Close", action: Selector(("performClose:")), keyEquivalent: "w")
+ [0;36m29 |[0;0m   item.submenu = submenu
+
+/Users/runner/work/arbor/arbor/Sources/ArborTestWindows/MoreCommands.swift:28:47: [1;33mwarning: [1;39muse '#selector' instead of explicitly constructing a 'Selector'[0;0m
+ [0;36m26 |[0;0m   submenu.addItem(withTitle: "Hide", action: Selector(("hide:")), keyEquivalent: "h")
+ [0;36m27 |[0;0m   submenu.addItem(withTitle: "Minimize", action: Selector(("performMiniaturize:")), keyEquivalent: "m")
+ [0;36m28 |[0;0m   submenu.addItem(withTitle: "Close", action: Selector(("performClose:")), keyEquivalent: "w")
+    [0;36m|[0;0m                                               `- [1;33mwarning: [1;39muse '#selector' instead of explicitly constructing a 'Selector'[0;0m
+ [0;36m29 |[0;0m   item.submenu = submenu
+ [0;36m30 |[0;0m   return menu
+[186 / 235] ArborIPC
+[188 / 235] arborctl-product
+[193 / 237] arbor-e2e-product
+[194 / 239] arborctl-product
+[195 / 243] arbor-e2e-product
+[196 / 243] arborctl-product
+[198 / 243] arborctl-product
+[200 / 243] arborctl-product
+[202 / 243] arbor-e2e-product
+[202 / 243] ArborTestWindows-product
+[203 / 244]
+[206 / 244] ArborCore
+[208 / 244] ArborCore
+[210 / 244] ArborKit
+[212 / 273]
+[213 / 273]
+[216 / 273]
+[219 / 273]
+[220 / 273]
+[221 / 273] arborctl-product
+[224 / 273]
+[226 / 273]
+[226 / 273] arbor-e2e-product
+[227 / 273]
+[229 / 273]
+[233 / 273]
+[235 / 273]
+[236 / 273]
+[240 / 273] ArborKit
+[241 / 273] ArborKit
+[242 / 273] ArborKit
+[243 / 273] ArborKit
+[249 / 273] ArborTesting
+[251 / 273]
+[252 / 274]
+[255 / 279] ArborTesting
+[256 / 281] Arbor-product
+[257 / 281] ArborTesting
+[264 / 281] ArborTesting
+[265 / 281] arbor-sim-product
+[268 / 281] ArborKit
+[268 / 281] arbor-sim-product
+[269 / 281]
+[272 / 282]
+[274 / 286] arbor-sim-product
+[275 / 286] arbor-sim-product
+[276 / 286] arbor-sim-product
+[277 / 286] AllExcludingTests
+[279 / 286] ArborTesting
+[281 / 286] ArborTesting
+[282 / 286] Arbor-product
+[283 / 286] Arbor-product
+[284 / 286] arbor-sim-product
+Build complete! (96.25 sec)

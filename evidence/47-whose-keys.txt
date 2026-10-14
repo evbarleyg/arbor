@@ -1,0 +1,49 @@
+# 47-whose-keys 2026-10-14T22:55Z on macOS 26.6.2, commit 2d3b4f4
+
+▸ turn Arbor's shortcuts off in the app in front, by command: they reach the app instead
+  ✘ the app is in front — the app in front is pointer: no app has the keyboard, not 7535
+  ✔ before, ⌃⌥↩ is Arbor's
+  ✔ and so is ⌃⌥Space
+  ✔ pass-through on succeeds
+  ✔ settings.json lists the app
+  ✔ Arbor lets go of all its shortcuts but one
+  ✔ status says where they are off
+  ✔ ⌃⌥↩ goes to the app
+  ✔ ⌃⌥D goes to the app
+  ✔ ⌃⌥⌘→ goes to the app
+  ✔ the camera stayed on everything
+  ✔ the other app's window is still in view
+  ✔ windows match Arbor's layout
+
+▸ with the shortcuts off in its app, a window dragged onto another still docks
+  ✔ it is docked
+  ✔ below the first window
+  ✔ in its column
+  ✔ the shortcuts are still the app's
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⎋ answers even in an app that keeps its keys: Arbor pauses, and resumes
+  ✔ Arbor is paused
+  ✔ Arbor runs again
+  ✔ the app saw neither press
+  ✔ the other shortcuts are still the app's
+  ✔ windows match Arbor's layout
+
+▸ click another app's window: Arbor's shortcuts work again, and are off again back in the listed app
+  ✘ the other app is in front — the app in front is pointer: no app has the keyboard, not 7552
+  ✔ all the shortcuts are registered again
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the focused window fills the screen
+  ✔ the listed app's windows go out of view like any others
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ and they come back
+  ✔ the app in front saw neither
+  ✘ the listed app is in front — the app in front is pointer: no app has the keyboard, not 7535
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+33 passed, 3 failed
