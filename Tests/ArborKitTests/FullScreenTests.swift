@@ -84,6 +84,20 @@ import Testing
     #expect(h.workspace.camera == tree.root)
   }
 
+  /// "A window moves once, to where it ends up." On a Mac the window landed where macOS put it, in plain view, and went to its
+  /// slot 282 ms later: Arbor had known for 0.7 s that it was coming, and waited to hear that it was back.
+  @Test func aDockedWindowThatLeavesFullScreenIsSeenInItsSlotAndNowhereElse() {
+    let (h, a, b, f) = makeHarness()
+    let slot = h.frame(a)!
+    enterFullScreen(h, a, others: [b, f])
+    h.system.clearSightings()
+    h.system.leaveFullScreen(a, with: [b, f])
+    h.scheduler.advance(by: 2)
+    #expect(h.system.sightings(of: a) == [slot], "\(h.system.sightings(of: a))")
+    #expect(h.layout!.tiles.isEmpty)
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
   @Test func quittingLeavesAFullScreenWindowAlone() {
     let (h, a, b, f) = makeHarness()
     enterFullScreen(h, a, others: [b, f])

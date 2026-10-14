@@ -82,16 +82,24 @@ if let index = arguments.firstIndex(of: "--seconds"), index + 1 < arguments.coun
   seconds = Double(arguments[index + 1]) ?? seconds
   arguments.removeSubrange(index...(index + 1))
 }
-guard arguments.count == 7, let pid = pid_t(arguments[0]), let wanted = CGWindowID(arguments[1]),
-  ["never", "now", "left", "scaffold", "landed"].contains(arguments[2]),
-  let x = Double(arguments[3]), let y = Double(arguments[4]), let w = Double(arguments[5]), let h = Double(arguments[6])
-else { fail("usage: fsprobe <pid> <window> never|now|left|scaffold|landed <x> <y> <w> <h> [--other <pid>] [--seconds <n>]") }
+let usage = "usage: fsprobe <pid> <window> never|now|left|scaffold|landed <x> <y> <w> <h> [--other <pid>] [--seconds <n>]"
+if arguments.count != 7 { fail(usage) }
+// Plain globals, none of them bound by a `guard`: what a `guard` binds at the top level is a local variable, and a function that
+// reads one cannot be handed to C as a callback.
+let pid = pid_t(arguments[0]) ?? 0
+let wanted = CGWindowID(arguments[1]) ?? 0
 let when = arguments[2]
-let target = CGRect(x: x, y: y, width: w, height: h)
+let numbers = arguments[3...6].map { Double($0) ?? -1 }
+if pid == 0 || wanted == 0 || !["never", "now", "left", "scaffold", "landed"].contains(when) || numbers[2] <= 0 || numbers[3] <= 0 {
+  fail(usage)
+}
+let target = CGRect(x: numbers[0], y: numbers[1], width: numbers[2], height: numbers[3])
 
 let app = AXUIElementCreateApplication(pid)
 let other = otherPid.map { AXUIElementCreateApplication($0) }
-guard let window = windows(of: app)?.first(where: { number(of: $0) == wanted }) else { fail("pid \(pid) lists no window \(wanted)") }
+let found = windows(of: app)?.first(where: { number(of: $0) == wanted })
+if found == nil { fail("pid \(pid) lists no window \(wanted)") }
+let window = found!
 
 var asked = false
 var looking = false
@@ -111,7 +119,7 @@ func ask() {
   let second = AXUIElementSetAttributeValue(window, "AXSize" as CFString, extent)
   let third = AXUIElementSetAttributeValue(window, "AXPosition" as CFString, position)
   say(
-    "ASK \(Int(x)),\(Int(y)) \(Int(w))x\(Int(h)): position \(first.rawValue) size \(second.rawValue) position \(third.rawValue), "
+    "ASK \(Int(target.minX)),\(Int(target.minY)) \(Int(target.width))x\(Int(target.height)): position \(first.rawValue) size \(second.rawValue) position \(third.rawValue), "
       + "took \(now() - began) ms, has \(frame(of: window))")
 }
 
@@ -137,8 +145,6 @@ func startLooking() {
   Timer.scheduledTimer(withTimeInterval: 0.025, repeats: true) { _ in look() }
 }
 
-var observer: AXObserver?
-
 func callback(
   _ observer: AXObserver, _ element: AXUIElement, _ notification: CFString, _ refcon: UnsafeMutableRawPointer?
 ) {
@@ -163,7 +169,9 @@ func callback(
   startLooking()
 }
 
-guard AXObserverCreate(pid, callback, &observer) == .success, let observer else { fail("cannot observe pid \(pid)") }
+var created: AXObserver?
+if AXObserverCreate(pid, callback, &created) != .success || created == nil { fail("cannot observe pid \(pid)") }
+let observer = created!
 AXObserverAddNotification(observer, app, "AXWindowCreated" as CFString, nil)
 for name in ["AXMoved", "AXResized", "AXUIElementDestroyed"] {
   AXObserverAddNotification(observer, window, name as CFString, UnsafeMutableRawPointer(bitPattern: UInt(wanted)))

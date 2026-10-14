@@ -19,6 +19,36 @@ extension Controller {
     landsAt[window.id] = now().addingTimeInterval(previous.isFullScreen ? Self.timeToLandFromFullScreen : Self.timeToLand)
   }
 
+  /// Called with every report about a window. macOS says that a window has left full screen when the way out begins. For 0.7 s
+  /// a stand-in of macOS's shows the animation, the window itself is off the screen and off its app's list, at the frame it
+  /// will land at: the one it had before Arbor ever moved it. That it is back Arbor hears with the change of Space, a tenth of a
+  /// second after everybody has seen it there. Laid out only then, it is seen to land in one place and jump to another.
+  ///
+  /// So a docked window is given the frame of its slot while nobody can see it. Nothing else is moved, and nothing is concluded
+  /// from its answer: the layout that follows the change of Space finds it in place, or puts it there as it always has.
+  func meetAtItsSlotIfItLeftFullScreen(_ window: WindowSnapshot, was previous: WindowSnapshot?) {
+    guard isRunning, previous?.isFullScreen == true, !window.isFullScreen, !window.isPresent, !window.isMinimized,
+      !window.isHidden, drag?.window != window.id, !enforcement.givenUp.contains(window.id), filter.manages(window),
+      let display = workspaceID(containing: window.id), let slot = slotWhenItsSpaceIsBack(of: window.id, on: display)
+    else { return }
+    // Where it ended the last time it was asked to fill this slot, if it could not.
+    let target = misfits[window.id].flatMap { $0.slot == slot ? $0.frame : nil } ?? slot
+    guard let actual = system.setFrame(target, of: window.id) else { return }
+    Log.debug("\(window.id) is on its way out of full screen and was given its slot ahead of its landing")
+    windows[window.id]?.frame = actual
+  }
+
+  /// The slot of a docked window once the windows that are away with their Space, as it is, are back. Nil if it has none then
+  /// (it floats, it is out of view, or a tile). Only a look, like `layoutToCome`: the gaps are the layout's to move.
+  private func slotWhenItsSpaceIsBack(of window: WindowID, on displayID: DisplayID) -> CGRect? {
+    let (asItIs, noted, known) = (workspaces[displayID], treesBeforeRoomWasMade[displayID], windows)
+    defer { (workspaces[displayID], treesBeforeRoomWasMade[displayID], windows) = (asItIs, noted, known) }
+    var back = known
+    for id in asItIs?.allWindows ?? [] { back[id]?.isOnActiveSpace = true }
+    windows = back
+    return roomyLayout(of: displayID, for: .structure)?.windowFrames[window]
+  }
+
   /// Called by `apply` for a window that did not take the frame of its slot. True if that means nothing yet: then it
   /// does not count as a misfit, nothing is learned about its sizes, and its display is laid out again shortly.
   func postponesJudgement(of window: WindowID, on displayID: DisplayID) -> Bool {

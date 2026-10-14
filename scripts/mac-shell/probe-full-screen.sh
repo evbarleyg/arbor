@@ -10,7 +10,7 @@
 #
 # Without Arbor: fsprobe.swift asks, at one moment per round (never, now = still in full screen, scaffold, left, landed), the sampler
 # writes down every frame the window server showed, and a burst of pictures shows where the animation went.
-# PROBE_WITH_ARBOR=1 then plays the same with Arbor: two apps docked, each into full screen and out again, twice.
+# Then the same with Arbor: three apps docked, two of them into full screen and out again, twice each.
 #
 # What comes back: fsprobe-<app>-<n>-<when>.log, samples.log, day-report.md, burst/<app>-<n>-<when>-<ms>.jpg, traces/.
 #
@@ -130,7 +130,7 @@ if [ -z "${PROBE_ONLY_ARBOR:-}" ]; then
   done
 fi
 
-if [ -n "${PROBE_WITH_ARBOR:-}" ]; then
+if [ -z "${PROBE_WITHOUT_ARBOR:-}" ]; then
   chapter "With Arbor"
   act quit-and-start launch "starts Arbor"
   day_launch || die "Arbor did not start"
