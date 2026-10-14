@@ -105,6 +105,7 @@ public final class AXWindowSystem: WindowSystem {
     AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), Self.messagingTimeout)
     reportedDisplays = displays()
 
+    countWindows()
     for app in NSWorkspace.shared.runningApplications {
       observe(pid: app.processIdentifier, announce: false)
     }
@@ -179,6 +180,8 @@ public final class AXWindowSystem: WindowSystem {
     leavesStrayDialogs = false
     appWhoseDialogsNeverWait = nil
     reportedCreated.removeAll()
+    counted.removeAll()
+    putAway.removeAll()
     press = nil
     draggingWindow = nil
     resizingWindow = nil
@@ -598,6 +601,8 @@ public final class AXWindowSystem: WindowSystem {
   /// with its app, and is reported as found. `aWindowOpened` says that an app has just reported a new window: it may
   /// have opened several at once, and the reports of the others are still on their way.
   private func rescan(_ pids: [pid_t], afterSpaceSwitch: Bool, aWindowOpened: Bool = false) {
+    // What the Space brings into sight exists already.
+    if afterSpaceSwitch { countWindows() }
     var listed: [(pid: pid_t, id: WindowID, element: AXUIElement)] = []
     var listedIDs = Set<WindowID>()
     var answered = Set<pid_t>()
@@ -728,8 +733,26 @@ public final class AXWindowSystem: WindowSystem {
   /// at once, and may be found on a list before the second look.
   private var reportedCreated: Set<WindowID> = []
 
+  /// The windows the window server had, on whichever Space, when Arbor last counted them (at the start and after every
+  /// Space switch), and those seen since. One that is seen for the first time and is not among them has opened since.
+  ///
+  /// Apps keep to no order in what they report: "the focus is on it" was seen on a Mac to come a millisecond before "it was
+  /// created", so whoever sees a window first cannot go by what its app has said so far.
+  private var counted: Set<WindowID> = []
+  /// Windows that have closed as far as anybody can see, and that the window server may have all the same: apps with one window
+  /// (Music, Notes, Calendar) put it away and show it again under the same number. Opened again, it is new.
+  private var putAway: Set<WindowID> = []
+
+  private func countWindows() {
+    let existing = existingWindowIDs()
+    // No answer is not "there are none".
+    guard !existing.isEmpty else { return }
+    putAway.formIntersection(existing)
+    counted = existing.subtracting(putAway)
+  }
+
   /// `wasOpenBefore`: as far as the caller knows the window is only seen for the first time. If its app has reported it as
-  /// created, it is new all the same.
+  /// created, or the window server did not have it at the last count, it is new all the same.
   private func addWindow(
     _ element: AXUIElement, pid: pid_t, announce: Bool, wasOpenBefore: Bool = false, attempt: Int = 0
   ) {
@@ -750,8 +773,10 @@ public final class AXWindowSystem: WindowSystem {
     }
     records[id] = record
     let wasReportedCreated = reportedCreated.remove(id) != nil
+    let hasOpenedSince = counted.insert(id).inserted
+    putAway.remove(id)
     guard announce else { return }
-    if wasOpenBefore, !wasReportedCreated {
+    if wasOpenBefore, !wasReportedCreated, !hasOpenedSince {
       Log.debug("\(id) is seen for the first time and did not just open")
       events?.windowFound(record.snapshot)
     } else {
@@ -872,6 +897,8 @@ public final class AXWindowSystem: WindowSystem {
   /// Forgets a window and reports it gone.
   private func drop(_ window: WindowID) {
     guard let record = records.removeValue(forKey: window) else { return }
+    counted.remove(window)
+    putAway.insert(window)
     echoes.forget(window)
     secondLooks.removeValue(forKey: window)?.cancel()
     forgetGrab(of: window)
