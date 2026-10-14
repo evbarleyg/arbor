@@ -21,6 +21,7 @@
 //   K n                            n keys went down since the last sample. Never which
 //   D x y w h                      the main display
 //   V x y w h                      the main display between the menu bar and the Dock
+//   Y id x y w h vx vy vw vh       another display: all of it, and the part of it between its menu bar and the Dock. `Y id` alone: it has gone
 //   M text                         a mark of the script's
 //   L ms                           this sample came late, over 100 ms after the one before (docs/VIABLE.md, sampler.late_ms): nothing was seen for that long
 //   S …                            at the end: how many samples, how long one took, how many came late
@@ -270,6 +271,7 @@ let awake = ProcessInfo.processInfo.beginActivity(
 @MainActor final class Display {
   private var bounds = CGRect.null
   private var visible = CGRect.null
+  private var others: [String: String] = [:]
 
   func note() {
     let whole = CGDisplayBounds(CGMainDisplayID())
@@ -285,6 +287,16 @@ let awake = ProcessInfo.processInfo.beginActivity(
       visible = flipped
       write(now(), "V \(text(flipped))")
     }
+    var present: [String: String] = [:]
+    for other in NSScreen.screens.dropFirst() {
+      let id = (other.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.stringValue ?? "?"
+      let all = CGRect(x: other.frame.minX, y: screen.frame.maxY - other.frame.maxY, width: other.frame.width, height: other.frame.height)
+      let part = other.visibleFrame
+      present[id] = "\(text(all)) \(text(CGRect(x: part.minX, y: screen.frame.maxY - part.maxY, width: part.width, height: part.height)))"
+    }
+    for (id, said) in present where others[id] != said { write(now(), "Y \(id) \(said)") }
+    for id in others.keys where present[id] == nil { write(now(), "Y \(id)") }
+    others = present
   }
 }
 let display = MainActor.assumeIsolated { Display() }

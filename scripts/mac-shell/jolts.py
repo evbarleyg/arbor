@@ -137,6 +137,11 @@ def shared(a, b):
     return width * height if width > 0 and height > 0 else 0
 
 
+def showing(frame, displays):
+    """The share of a window that is on some display. Displays do not overlap."""
+    return sum(shared(frame, display) for display in displays) / max(frame[2] * frame[3], 1)
+
+
 def inside(frame, area, by=SAME):
     return (
         frame[0] >= area[0] - by
@@ -173,7 +178,8 @@ class Step:
         # During a drag: macOS's tiling preview was up when the button came up; Arbor's and macOS's previews were up together.
         self.macos_answered = False
         self.both_previews = False
-        self.stage_since = None
+        self.stages_up = {}
+        self.all_displays = []
         self.under_the_stage = 0
         # Where Arbor's drop preview was when the button came up, if it was up.
         self.preview_at_drop = None
@@ -183,22 +189,27 @@ class Step:
         self.findings = []
         self.moved = {}
 
-    def stage_went_up(self, time):
-        self.stage_since = time
+    def stage_went_up(self, stage, time, display):
+        self.stages_up[stage] = (time, display)
 
-    def stage_came_down(self, time):
+    def stage_came_down(self, stage, time):
         """Under the stage the real windows go to their places where nobody sees them. A person sees each where the stage found it, and
         then, when the stage comes down, where it is by then. What the stand-ins do meanwhile is on the film, not in the samples."""
-        since, self.stage_since = self.stage_since, None
+        since, display = self.stages_up.pop(stage, (None, None))
         if since is None:
             return
         for window, trace in self.traces.items():
             hidden = [index for index, entry in enumerate(trace) if entry[0] >= since and index > 0]
-            if hidden:
+            # Each display has a stage of its own, which hides what is on that display. What shows on another display meanwhile is seen.
+            frames = [trace[index][1] for index in [hidden[0] - 1] + hidden if trace[index][1]] if hidden else []
+            if hidden and all(showing(frame, self.other_displays(display)) <= STRIP for frame in frames):
                 last = trace[hidden[-1]]
                 del trace[hidden[0]:]
                 trace.append((time, last[1], last[2]))
         self.under_the_stage += 1
+
+    def other_displays(self, display):
+        return [other for other in self.all_displays if other != display]
 
     def find(self, rule, level, window, what, trace=None, detector=None, explained=None):
         self.findings.append({
@@ -220,6 +231,8 @@ class World:
         self.app = None
         self.visible = None
         self.display = None
+        # The displays besides the main one: id -> (frame, the part between its menu bar and the Dock).
+        self.others = {}
         self.button = False
         self.arbors = set()
         # The previews that are up: macOS's own (windows of WindowManager's) and Arbor's (its panels at level 3).
@@ -230,6 +243,9 @@ class World:
         # Arbor's stage, while it is up: a panel at level 4 over the whole display that shows a picture of the desktop and a stand-in for each window.
         self.stages = set()
         self.labels = {}
+
+    def displays(self):
+        return ([self.display] if self.display else []) + [frame for frame, _ in self.others.values()]
 
     def ordinary(self, window):
         return (self.layers.get(window) == 0 and self.pids.get(window) not in self.arbors
@@ -248,7 +264,8 @@ class World:
             "arbors": [frame for window, frame in self.frames.items() if self.pids.get(window) in self.arbors],
             "app": self.app,
             "visible": self.visible,
-            "display": self.display,
+            "displays": ([self.display] if self.display else []) + [frame for frame, _ in self.others.values()],
+            "visibles": ([self.visible] if self.visible else []) + [visible for _, visible in self.others.values()],
         }
 
 
@@ -282,10 +299,11 @@ def read(path):
                 world.owners[window] = " ".join(rest[7:]).replace("_", " ")
                 world.frames[window] = frame
                 world.seen.add(window)
-                if (world.pids[window] in world.arbors and world.layers[window] == 4 and world.display
-                        and shared(frame, world.display) >= 0.95 * world.display[2] * world.display[3]):
-                    if not world.stages and current:
-                        current.stage_went_up(time)
+                covered = [display for display in world.displays() if shared(frame, display) >= 0.95 * display[2] * display[3]]
+                if world.pids[window] in world.arbors and world.layers[window] == 4 and covered:
+                    if window not in world.stages and current:
+                        current.all_displays = world.displays()
+                        current.stage_went_up(window, time, covered[0])
                     world.stages.add(window)
                 if world.owners[window] == "WindowManager" and world.layers[window] == 0:
                     world.macos_previews.add(window)
@@ -309,8 +327,8 @@ def read(path):
                 world.gone_frame = world.frames.pop(window, None)
                 if window in world.stages:
                     world.stages.discard(window)
-                    if not world.stages and current:
-                        current.stage_came_down(time)
+                    if current:
+                        current.stage_came_down(window, time)
                 if window in world.arbor_previews:
                     world.arbor_preview_last = (time, world.gone_frame)
                 if window in world.macos_previews:
@@ -350,6 +368,12 @@ def read(path):
                 world.visible = tuple(float(number) for number in rest)
             elif kind == "D" and len(rest) == 4:
                 world.display = tuple(float(number) for number in rest)
+            elif kind == "Y" and rest:
+                if len(rest) == 9:
+                    numbers = tuple(float(number) for number in rest[1:])
+                    world.others[rest[0]] = (numbers[:4], numbers[4:])
+                else:
+                    world.others.pop(rest[0], None)
             elif kind == "L" and rest:
                 if current:
                     current.late_samples.append(int(rest[0]))
@@ -499,12 +523,12 @@ def judge(step, world, by_number, own):
     # What is said to go or to come is named by that.
     named |= ids(may_leave) | ids(wants.get("comes", ""))
     kin = {world.pids.get(window) for window in named | dragged}
-    screen = (end or {}).get("display") or world.display
-    if wants.get("act") == "switch" and screen:
+    screens = (end or {}).get("displays") or world.displays()
+    if wants.get("act") == "switch" and screens:
         # To bring a window into view that is out of view, the view has to move.
         for window in ids(wants.get("front", "")):
             first = (step.traces.get(window) or [(0, None, False)])[0][1]
-            if first is None or shared(first, screen) / max(first[2] * first[3], 1) < 0.5:
+            if first is None or showing(first, screens) < 0.5:
                 may = "any"
     for window, trace in sorted(step.traces.items()):
         if window in dragged:
@@ -563,8 +587,7 @@ def judge(step, world, by_number, own):
                 kind = "a floating window, " if window in ids(wants.get("floating", "")) else ""
                 how = "moved" if elsewhere else "moved and came back"
                 step.find("2", "FAIL", window, f"{kind}{how}, and the step did not name it", road(trace))
-        screen = (end or {}).get("display") or world.display
-        shares = [shared(entry[1], screen) / max(entry[1][2] * entry[1][3], 1) for entry in trace if entry[1]] if screen else []
+        shares = [showing(entry[1], screens) for entry in trace if entry[1]] if screens else []
         if len(shares) > 2 and shares[0] < STRIP and shares[-1] < STRIP and max(shares) > SHOWS:
             step.find("3", "FAIL", window, f"is out of view before and after, and {max(shares):.0%} of it showed in between", road(trace), "flash")
         elif moves > 1:
@@ -611,15 +634,15 @@ def judge(step, world, by_number, own):
     if len(tops) > 3:
         step.find("4", "ODD", None, "the window in front changed %d times: %s" % (len(tops) - 1, " → ".join(world.name(top) for top in tops[:8])))
 
-    frames, order, area = end["frames"], end["order"], end["visible"]
-    display = end["display"] or area
+    frames, order, areas = end["frames"], end["order"], end["visibles"]
+    displays = end["displays"] or areas
     for window in sorted(ids(wants.get("front", ""))):
         if window not in frames:
             step.find("4", "FAIL", window, "is not on the screen at all")
             continue
         # A window that is out of view is in nobody's way, wherever it is in the pile.
         ahead = [other for other in (order[: order.index(window)] if window in order else order[:3])
-                 if not display or shared(frames[other], display) / max(frames[other][2] * frames[other][3], 1) > STRIP]
+                 if not displays or showing(frames[other], displays) > STRIP]
         if ahead:
             covering = [other for other in ahead if shared(frames[other], frames[window]) > 0]
             step.find(
@@ -630,9 +653,8 @@ def judge(step, world, by_number, own):
                 None, "behind")
         if end["app"] is not None and end["app"] != world.pids.get(window):
             step.find("4", "FAIL", window, f"its app is not the one in front (process {end['app']} is)")
-        if area and not inside(frames[window], area):
-            share = shared(frames[window], area) / max(frames[window][2] * frames[window][3], 1)
-            step.find("4", "FAIL", window, f"is not wholly in view: {share:.0%} of it, at {words(frames[window])} in {words(area)}")
+        if areas and not any(inside(frames[window], area) for area in areas):
+            step.find("4", "FAIL", window, f"is not wholly in view: {showing(frames[window], areas):.0%} of it, at {words(frames[window])} in {' and '.join(words(area) for area in areas)}")
 
     for window in sorted(ids(wants.get("comes", ""))):
         if window not in frames:
@@ -647,7 +669,7 @@ def judge(step, world, by_number, own):
         elif wants.get("places") == "1" and differs(own[window][:2], frames[window][:2]):
             step.find("5", "FAIL", window, f"has its size back but not its place: {words(frames[window])}, it was at {words(own[window])}")
 
-    if wants.get("everything") == "1" and display:
+    if wants.get("everything") == "1" and displays:
         tiles = {}
         for word in wants.get("tiles", "").split(","):
             window, _, place = word.partition("@")
@@ -658,11 +680,11 @@ def judge(step, world, by_number, own):
         for window, frame in sorted(frames.items()):
             if window not in world.labels:
                 continue
-            share = shared(frame, display) / max(frame[2] * frame[3], 1)
+            share = showing(frame, displays)
             if share < 0.5 and window in tiles and any(not differs(tiles[window], panel, by=4) for panel in end["arbors"]):
                 continue
-            if share < 0.5 and not (window in own and shared(own[window], display) / max(own[window][2] * own[window][3], 1) < 0.5):
-                step.find("L", "FAIL", window, f"is out of view: {share:.0%} of it is on the display, at {words(frame)}")
+            if share < 0.5 and not (window in own and showing(own[window], displays) < 0.5):
+                step.find("L", "FAIL", window, f"is out of view: {share:.0%} of it is on a display, at {words(frame)}")
 
     if wants.get("returns", "").isdigit() and int(wants["returns"]) in by_number:
         before = by_number[int(wants["returns"])].at_end
@@ -995,6 +1017,18 @@ def self_test():
         "5000 M end 3 moves=any everything=1 tiles=2@520:30:100:700 keyboard=1"], [("L", "FAIL")])
     expect("the window with the keyboard is never a tile", away + [
         "4100 W 60 99 0 520 30 100 700 Arbor", "5000 M end 3 moves=any everything=1 tiles=2@520:30:100:700 keyboard=2"], [("4", "FAIL")])
+    second = ["1050 Y 7 1000 0 800 600 1000 25 800 575"]
+    expect("a window on a second display is in view", start + second + [
+        "2000 M begin 2 move", "2100 W 2 20 0 1200 100 400 300 Two", "2100 Z 2,1", "2100 A 20 app.two", "3100 M end 2 moves=2 front=2 everything=1"], [])
+    expect("without that display it is lost", start + [
+        "2000 M begin 2 move", "2100 W 2 20 0 1200 100 400 300 Two", "3100 M end 2 moves=2 everything=1"], [("L", "FAIL")])
+    expect("and when the display has gone it is lost", start + second + [
+        "2000 M begin 2 move", "2100 W 2 20 0 1200 100 400 300 Two", "2500 Y 7", "3600 M end 2 moves=2 everything=1"], [("L", "FAIL")])
+    expect("a stage hides its own display", start + second + ["1500 M begin 2 move", "1600 W 2 20 0 1200 100 400 300 Two", "1900 M end 2 moves=2",
+        "2000 M begin 3 dock", "2050 W 70 99 4 1000 0 800 600 Arbor",
+        "2100 W 2 20 0 1500 100 300 300 Two", "2140 W 2 20 0 1000 25 400 575 Two", "2600 G 70", "3700 M end 3 moves=2"], [])
+    expect("and not the other one", start + second + ["2000 M begin 2 dock", "2050 W 70 99 4 1000 0 800 600 Arbor",
+        "2100 W 1 10 0 600 30 400 300 One", "2140 W 1 10 0 0 30 400 300 One", "2600 G 70", "3700 M end 2 moves=1"], [("3", "FAIL")])
     expect("a window leaves the screen", start + ["2000 M begin 2 idle", "2100 G 2", "2100 Z 1", "3000 M end 2"], [("L", "FAIL")])
     expect("a window is closed", start + ["2000 M begin 2 close", "2100 G 2", "2100 Z 1", "3000 M end 2 leaves=2"], [])
     expect("a hidden window comes back elsewhere", start + [
