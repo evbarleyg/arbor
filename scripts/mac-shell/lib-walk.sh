@@ -1,0 +1,643 @@
+# The acts: one word for each thing a person does to a window, for journeys that are written by a program.
+# Source it instead of lib-day.sh (it sources that first); do not run it. walk-sample.sh is an example.
+#
+#   #!/bin/bash
+#   source "$(dirname "$0")/lib-walk.sh"
+#   walk_begin stock laptop defaults 4711
+#   switch_dock safari;  dock_key left;  switch_click terminal;  drag_onto terminal safari right
+#   view frame;  switch_cmdtab 1;  view all;  idle_act;  quit_and_start
+#   walk_end
+#
+# A day written by hand (day.sh) knows at every step what the screen looks like. A walk made from a seed does not. So each act here
+# is a step of lib-day.sh's that looks at the state for itself: it knows its kind (docs/VIABLE.md, "Across what"), what it may move ("What an act
+# may move"), and which window has to end in front. **An act that does not apply is left out**, with a line in the output and no step: there is no
+# second window to close, the window to drag is out of view, nothing is docked to drag onto. So whoever writes the walk needs to know the
+# words and nothing else, and may be blind to the state. An act that does apply and cannot be performed is a finding, as in lib-day.sh (`must`).
+#
+# <app> is a name of the cast's: finder safari textedit terminal notes calendar settings preview mail.
+#
+#   walk_begin <cast> <display> <tiling> [seed]       the Mac (stock | laptop desk | defaults off), the apps, macOS seen to tile or not to, Arbor started
+#                                                     and its welcome closed. WALK_WITHOUT_ARBOR=1: the control, in which Arbor's own acts are left out
+#   walk_end                                          Arbor quit if it runs, every window reached, the report
+#   chapter "<title>"                                 lib-day.sh's: a heading, and a new trace
+#
+#   switch_dock <app>            clicks its icon in the Dock            switch_click <app>     clicks its window's title bar
+#   switch_cmdtab [n]            ⌘ down, ⇥ n times, ⌘ up                switch_backtick        ⌘` : the app's next window
+#   switch_menu <app>            its first window's line in the Window menu (the app is brought forward first, which is an act of its own)
+#   open_new                     ⌘N in the app in front                 close_new              ⌘W, if the window in front is one that open_new opened
+#   minimize | restore <app>     ⌘M on the window in front | a click on its miniature in the Dock
+#   hide | unhide <app>          ⌘H on the app in front | a click on its icon in the Dock
+#   quit_app <app> | reopen <app>                     ⌘Q (the app is brought forward first) | its document opened again. textedit preview safari
+#   dock_key left|right|up|down  ⌃⌥⌘ + arrow on the window in front     float_key              ⌃⌥F, if it is docked
+#   drag_onto <app> <app> left|right|top|bottom       by its title bar onto that part of the other's window, which has to be docked and in view
+#   drag_out <app>               a docked window, onto the Desktop      drag_by <app> <dx> <dy>    a floating window, that far
+#   drag_edge <app> left|right|top                    against that edge of the display, where macOS tiles too
+#   view frame|out|in|left|right|back|forward|all|desktop
+#   resize_gap <app> <points>    the gap to the right of its docked window, dragged that far     resize_key grow|shrink|balance
+#   full_screen on|off           ⌃⌘F in the app in front                wallpaper_click        a click on a bare spot, and a second one
+#   pause | resume | float_all
+#   quit_and_start               Quit from Arbor's menu, every app's window reached by its Dock icon, Arbor started again
+#   idle_act                     half a minute of nothing
+source "$(dirname "${BASH_SOURCE[0]}")/lib-day.sh"
+needs_throwaway_mac "open a dozen real apps, press ⌘Q and ⌘W in them, click in the Dock and on the wallpaper, and switch the display's size"
+
+WALK_CAST=""
+WALK_ACTS=0
+WALK_LEFT_OUT=0
+# The windows open_new opened and nobody has closed, the newest first; what is minimized; what is hidden (names).
+WALK_NEW=""
+WALK_MINIMIZED=""
+WALK_HIDDEN=""
+WALK_PAUSED=""
+WALK_FULL_SCREEN=""
+# The last step after which everything was in view and the arrangement has not changed since: where Show Everything has to lead back to.
+WALK_HOME=""
+
+with_arbor() { [ -z "${WALK_WITHOUT_ARBOR:-}" ]; }
+
+bundle_of() {
+  case "$1" in
+    finder) echo com.apple.finder ;;
+    safari) echo com.apple.Safari ;;
+    textedit) echo com.apple.TextEdit ;;
+    terminal) echo com.apple.Terminal ;;
+    notes) echo com.apple.Notes ;;
+    calendar) echo com.apple.iCal ;;
+    settings) echo com.apple.systempreferences ;;
+    preview) echo com.apple.Preview ;;
+    mail) echo com.apple.mail ;;
+    *) return 1 ;;
+  esac
+}
+
+document_of() {
+  case "$1" in
+    finder) echo "$DAY_DOCUMENTS/$APPS_CANARY-grove" ;;
+    safari) echo "$DAY_DOCUMENTS/$APPS_CANARY-page.html" ;;
+    textedit) echo "$DAY_DOCUMENTS/$APPS_CANARY-oak.txt" ;;
+    preview) echo "$DAY_DOCUMENTS/$APPS_CANARY-leaf.png" ;;
+  esac
+}
+
+window_of() { eval "echo \"\${W_$1:-}\""; }
+pid_of() { eval "echo \"\${P_$1:-}\""; }
+front_pid() { apptool front | cut -d ' ' -f 1; }
+front_window() { apptool focused 2>/dev/null | cut -d ' ' -f 1; }
+name_of_pid() {
+  local name
+  for name in $WALK_CAST; do [ "$(pid_of "$name")" = "$1" ] && { echo "$name"; return 0; }; done
+  return 1
+}
+listed() { case " $2 " in *" $1 "*) return 0 ;; esac; return 1; }
+without() {
+  local word kept=""
+  for word in $2; do [ "$word" = "$1" ] || kept="$kept $word"; done
+  echo "${kept# }"
+}
+
+# MARK: Whether an act applies
+
+left_out() {
+  WALK_LEFT_OUT=$((WALK_LEFT_OUT + 1))
+  echo
+  echo "-- left out: $*"
+  return 0
+}
+
+# A member of the cast whose window is there to be seen or to be brought into view.
+present() {
+  listed "$1" "$WALK_CAST" && [ -n "$(window_of "$1")" ] && kill -0 "$(pid_of "$1")" 2>/dev/null \
+    && ! listed "$1" "$WALK_MINIMIZED" && ! listed "$1" "$WALK_HIDDEN"
+}
+
+# At least nine tenths of it are on a display.
+shows() { is on_screen "$1" 2>/dev/null; }
+arbor_acts() { with_arbor && arbor_answers && [ -z "$WALK_PAUSED" ] && [ -z "$WALK_FULL_SCREEN" ]; }
+
+# The arrangement, or a window's own frame, has changed: there is no going back to how things were.
+changed() { WALK_HOME=""; }
+# Everything is in view: from here a way there and back has to end here.
+at_home() { WALK_HOME=$DAY_STEP; }
+back_home() { [ -n "$WALK_HOME" ] && echo "returns=$WALK_HOME"; }
+
+walk_act() {
+  WALK_ACTS=$((WALK_ACTS + 1))
+  act "$@"
+}
+
+# MARK: Switching
+
+switch_dock() {
+  present "$1" || { left_out "switch_dock $1: it has no window to come forward"; return; }
+  walk_act switch "dock-icon-$1" "clicks $1's icon in the Dock"
+  must dock_click "$(bundle_of "$1")"
+  acted front="$(main_window_of "$(pid_of "$1")")"
+}
+
+switch_click() {
+  present "$1" && apptool grab "$(window_of "$1")" > /dev/null 2>&1 || { left_out "switch_click $1: no free point of its title bar shows"; return; }
+  walk_act switch "click-$1" "clicks $1's title bar"
+  must click_window "$(window_of "$1")"
+  acted front="$(window_of "$1")"
+}
+
+switch_cmdtab() {
+  walk_act switch "cmd-tab-${1:-1}" "holds ⌘ and presses Tab ${1:-1} time(s)"
+  cmd_tab "${1:-1}"
+  sleep 0.5
+  acted front="$(main_window_of "$(front_pid)")"
+}
+
+switch_backtick() {
+  local pid
+  pid=$(front_pid)
+  [ "$(app_windows "$pid" | wc -w)" -ge 2 ] || { left_out "switch_backtick: the app in front has one window"; return; }
+  walk_act switch cmd-backtick "presses ⌘\` for the app's next window"
+  key 'cmd+`'
+  sleep 0.3
+  acted front="$(main_window_of "$pid")"
+}
+
+switch_menu() {
+  present "$1" || { left_out "switch_menu $1: it has no window"; return; }
+  [ "$(front_pid)" = "$(pid_of "$1")" ] || switch_dock "$1"
+  walk_act switch "window-menu-$1" "chooses $1's first window in the Window menu"
+  must window_menu "$(window_of "$1")"
+  acted front="$(window_of "$1")"
+}
+
+# MARK: Windows come and go
+
+open_new() {
+  local pid known name
+  pid=$(front_pid)
+  name=$(name_of_pid "$pid") || { left_out "open_new: the app in front is not of the cast"; return; }
+  case "$name" in safari | textedit | finder | terminal) ;; *) left_out "open_new: ⌘N in $name is no new window"; return ;; esac
+  known=$(app_windows "$pid")
+  walk_act open-close "new-window-$name" "presses ⌘N in $name"
+  key cmd+n
+  if app_await_window "$pid" "$known" 8; then
+    label "$NEW_WINDOW" "$name-new-$DAY_STEP"
+    WALK_NEW="$NEW_WINDOW $WALK_NEW"
+  fi
+  # A new window stays where its app put it, and nothing else moves. Over a framed window the view may have to make room.
+  acted front="$NEW_WINDOW"
+}
+
+close_new() {
+  local window
+  window=$(front_window)
+  [ -n "$window" ] && listed "$window" "$WALK_NEW" || { left_out "close_new: the window in front is not one that open_new opened"; return; }
+  walk_act open-close close-window "presses ⌘W"
+  key cmd+w
+  WALK_NEW=$(without "$window" "$WALK_NEW")
+  acted leaves="$window" moves=docked
+}
+
+minimize() {
+  local window name
+  window=$(front_window)
+  name=$(name_of_pid "$(front_pid)") && [ "$window" = "$(window_of "$name")" ] || { left_out "minimize: the window in front is not a first window of the cast's"; return; }
+  walk_act open-close "minimize-$name" "presses ⌘M"
+  key cmd+m
+  WALK_MINIMIZED="$WALK_MINIMIZED $name"
+  acted moves=docked leaves="$window"
+}
+
+restore() {
+  local x y window
+  listed "$1" "$WALK_MINIMIZED" || { left_out "restore $1: it is not minimized"; return; }
+  window=$(window_of "$1")
+  walk_act open-close "restore-$1" "clicks its miniature in the Dock"
+  read -r x y <<< "$(apptool dock-window "$window" 2>/dev/null)"
+  if [ -n "${x:-}" ]; then click "$x" "$y"; move "$x" "$((y - 200))"; else must false; fi
+  WALK_MINIMIZED=$(without "$1" "$WALK_MINIMIZED")
+  acted moves=docked comes="$window" front="$window"
+}
+
+hide() {
+  local name pid gone
+  pid=$(front_pid)
+  name=$(name_of_pid "$pid") || { left_out "hide: the app in front is not of the cast"; return; }
+  gone=$(app_windows "$pid" | tr ' ' ',')
+  walk_act open-close "hide-$name" "presses ⌘H"
+  key cmd+h
+  WALK_HIDDEN="$WALK_HIDDEN $name"
+  acted moves=docked leaves="$gone"
+}
+
+unhide() {
+  listed "$1" "$WALK_HIDDEN" || { left_out "unhide $1: it is not hidden"; return; }
+  walk_act open-close "unhide-$1" "clicks its icon in the Dock"
+  must dock_click "$(bundle_of "$1")"
+  WALK_HIDDEN=$(without "$1" "$WALK_HIDDEN")
+  acted moves=docked comes="$(window_of "$1")" front="$(main_window_of "$(pid_of "$1")")"
+}
+
+quit_app() {
+  local pid gone id
+  case "$1" in textedit | preview | safari) ;; *) left_out "quit_app $1: only apps whose document can be opened again"; return ;; esac
+  present "$1" || { left_out "quit_app $1: it is not there"; return; }
+  pid=$(pid_of "$1")
+  [ "$(front_pid)" = "$pid" ] || switch_dock "$1"
+  gone=$(app_windows "$pid")
+  walk_act open-close "quit-$1" "presses ⌘Q in $1"
+  key cmd+q
+  arbor_await_exit "$pid" 50 && apps_forget "$pid"
+  for id in $gone; do WALK_NEW=$(without "$id" "$WALK_NEW"); done
+  eval "W_$1= P_$1="
+  changed
+  acted moves=docked leaves="$(echo "$gone" | tr ' ' ',')"
+}
+
+reopen() {
+  listed "$1" "$WALK_CAST" && [ -z "$(window_of "$1")" ] && [ -n "$(document_of "$1")" ] || { left_out "reopen $1: it was not quit"; return; }
+  walk_act open-close "reopen-$1" "opens $1's document again"
+  # Not in the background: a person who opens a document gets its app in front.
+  open -b "$(bundle_of "$1")" "$(document_of "$1")"
+  sleep 1
+  meet "$1" "$(bundle_of "$1")" "$(document_of "$1")"
+  changed
+  acted moves=docked front="$(window_of "$1")"
+}
+
+# MARK: Arranging
+
+dock_key() {
+  local window
+  arbor_acts || { left_out "dock_key $1: Arbor is not acting"; return; }
+  window=$(front_window)
+  [ -n "$window" ] && is managed "$window" 2>/dev/null || { left_out "dock_key $1: Arbor does not arrange the window in front"; return; }
+  walk_act dock-key "dock-$1" "presses ⌃⌥⌘ and the $1 arrow"
+  key "ctrl+opt+cmd+$1"
+  changed
+  acted moves=docked yields=floating front="$window"
+}
+
+float_key() {
+  local window
+  arbor_acts || { left_out "float_key: Arbor is not acting"; return; }
+  window=$(front_window)
+  [ -n "$window" ] && is docked "$window" 2>/dev/null || { left_out "float_key: the window in front is not docked"; return; }
+  walk_act dock-key float "presses ⌃⌥F"
+  key ctrl+opt+f
+  changed
+  acted moves=docked front="$window" restores="$window"
+}
+
+# can_be_dragged <app>: present, in view, and a free point of its title bar shows.
+can_be_dragged() { present "$1" && shows "$(window_of "$1")" && apptool grab "$(window_of "$1")" > /dev/null 2>&1; }
+
+drag_onto() {
+  local x y w h px py window target
+  arbor_acts || { left_out "drag_onto $*: Arbor is not acting"; return; }
+  [ "$1" != "$2" ] && can_be_dragged "$1" && present "$2" || { left_out "drag_onto $*: nothing to take hold of"; return; }
+  window=$(window_of "$1") target=$(window_of "$2")
+  is docked "$target" 2>/dev/null && in_view "$target" || { left_out "drag_onto $*: $2 is not docked and in view"; return; }
+  read -r x y w h <<< "$(frame_of "$target")"
+  case "$3" in
+    left) px=$((x + w / 6)) py=$((y + h / 2)) ;;
+    right) px=$((x + w * 5 / 6)) py=$((y + h / 2)) ;;
+    top) px=$((x + w / 2)) py=$((y + h / 6)) ;;
+    bottom) px=$((x + w / 2)) py=$((y + h * 5 / 6)) ;;
+    *) die "drag_onto: left, right, top or bottom, not $3" ;;
+  esac
+  walk_act drag "drag-$1-onto-$2-$3" "drags $1 by its title bar onto the $3 part of $2 and lets go"
+  must drag_window "$window" "$px" "$py"
+  changed
+  acted drags="$window" moves=docked yields=floating front="$window"
+}
+
+drag_out() {
+  local x y w h window
+  arbor_acts || { left_out "drag_out $1: Arbor is not acting"; return; }
+  can_be_dragged "$1" && is docked "$(window_of "$1")" 2>/dev/null || { left_out "drag_out $1: it is not docked and in reach"; return; }
+  read -r x y w h <<< "$(arbor_ask desktop 2>/dev/null)"
+  [ -n "${w:-}" ] || { left_out "drag_out $1: the Desktop is out of view"; return; }
+  window=$(window_of "$1")
+  walk_act drag "drag-$1-out" "drags $1 out of the arrangement onto the Desktop and lets go"
+  must drag_window "$window" "$((x + w / 2))" "$((y + h / 3))"
+  changed
+  acted drags="$window" moves=docked front="$window" restores="$window" place="$window"
+}
+
+drag_by() {
+  local x y role window
+  can_be_dragged "$1" || { left_out "drag_by $*: nothing to take hold of"; return; }
+  window=$(window_of "$1")
+  if with_arbor && arbor_answers && is docked "$window" 2>/dev/null; then left_out "drag_by $*: it is docked"; return; fi
+  read -r x y role <<< "$(apptool grab "$window")"
+  # Not into the menu bar, the Dock or an edge, where macOS has ideas of its own.
+  x=$((x + $2)) y=$((y + $3))
+  [ "$x" -gt $((WALK_X + 60)) ] && [ "$x" -lt $((WALK_X + WALK_W - 60)) ] && [ "$y" -gt $((WALK_Y + 80)) ] && [ "$y" -lt $((WALK_Y + WALK_H - 260)) ] \
+    || { left_out "drag_by $*: that would end at an edge"; return; }
+  walk_act drag "drag-$1-by" "drags $1, which floats, by its title bar $2 across and $3 down"
+  must drag_window "$window" "$x" "$y"
+  changed
+  acted drags="$window" front="$window" place="$window"
+}
+
+drag_edge() {
+  local px py window own=""
+  can_be_dragged "$1" || { left_out "drag_edge $*: nothing to take hold of"; return; }
+  window=$(window_of "$1")
+  case "$2" in
+    left) px=$WALK_X py=$((WALK_Y + WALK_H / 2)) ;;
+    right) px=$((WALK_X + WALK_W - 1)) py=$((WALK_Y + WALK_H / 2)) ;;
+    top) px=$((WALK_X + WALK_W / 2)) py=$WALK_Y ;;
+    *) die "drag_edge: left, right or top, not $2" ;;
+  esac
+  walk_act drag-where-macos-tiles "drag-$1-to-$2-edge" "drags $1 by its title bar against the $2 edge of the screen and lets go"
+  must drag_window "$window" "$px" "$py" --hold 1
+  changed
+  # Docked by Arbor, or tiled by macOS with Arbor standing aside: then that is where its person put it, and its own frame from now on.
+  if ! { with_arbor && arbor_answers && eventually is docked "$window"; }; then own="own=$window"; fi
+  acted drags="$window" moves=docked yields=floating front="$window" $own
+}
+
+resize_gap() {
+  local x y window
+  arbor_acts || { left_out "resize_gap $*: Arbor is not acting"; return; }
+  present "$1" || { left_out "resize_gap $*: it is not there"; return; }
+  window=$(window_of "$1")
+  is docked "$window" 2>/dev/null && in_view "$window" || { left_out "resize_gap $*: it is not docked and in view"; return; }
+  read -r x y <<< "$(seam_right_of "$window")"
+  [ "$x" -lt $((WALK_X + WALK_W - 40)) ] || { left_out "resize_gap $*: there is no gap to its right"; return; }
+  walk_act resize "drag-gap-beside-$1" "drags the gap to the right of $1 by $2 points"
+  drag "$x" "$y" "$((x + $2))" "$y"
+  changed
+  acted moves=docked
+}
+
+resize_key() {
+  local window chord keys
+  arbor_acts || { left_out "resize_key $1: Arbor is not acting"; return; }
+  window=$(front_window)
+  [ -n "$window" ] && is docked "$window" 2>/dev/null || { left_out "resize_key $1: the window in front is not docked"; return; }
+  case "$1" in
+    grow) chord=ctrl+opt+cmd+= keys="⌃⌥⌘=" ;;
+    shrink) chord=ctrl+opt+cmd+- keys="⌃⌥⌘-" ;;
+    balance) chord=ctrl+opt+cmd+0 keys="⌃⌥⌘0" ;;
+    *) die "resize_key: grow, shrink or balance, not $1" ;;
+  esac
+  walk_act resize "$1" "presses $keys"
+  key "$chord"
+  changed
+  acted moves=docked front="$window"
+}
+
+# MARK: The view
+
+view() {
+  local chord keys window wants=""
+  arbor_acts || { left_out "view $1: Arbor is not acting"; return; }
+  window=$(front_window)
+  case "$1" in
+    frame)
+      [ -n "$window" ] && is managed "$window" 2>/dev/null || { left_out "view frame: Arbor does not arrange the window in front"; return; }
+      chord=ctrl+opt+return keys="⌃⌥↩" wants="front=$window" ;;
+    out) chord=ctrl+opt+up keys="⌃⌥↑" ;;
+    in) chord=ctrl+opt+down keys="⌃⌥↓" ;;
+    left) chord=ctrl+opt+left keys="⌃⌥←" ;;
+    right) chord=ctrl+opt+right keys="⌃⌥→" ;;
+    back) chord="ctrl+opt+[" keys="⌃⌥[" ;;
+    forward) chord="ctrl+opt+]" keys="⌃⌥]" ;;
+    desktop) chord=ctrl+opt+d keys="⌃⌥D" ;;
+    all) chord=ctrl+opt+space keys="⌃⌥Space" wants="everything=1 $(back_home)" ;;
+    *) die "view: no such move: $1" ;;
+  esac
+  walk_act view "view-$1" "presses $keys"
+  key "$chord"
+  # shellcheck disable=SC2086
+  acted moves=any $wants
+  [ "$1" != all ] || at_home
+}
+
+# MARK: macOS's own
+
+full_screen() {
+  local window
+  case "$1" in
+    on)
+      [ -z "$WALK_FULL_SCREEN" ] || { left_out "full_screen on: a window is in full screen already"; return; }
+      window=$(front_window)
+      [ "$(name_of_pid "$(front_pid)")" = safari ] && [ -n "$window" ] || { left_out "full_screen on: played in Safari, which is not in front"; return; }
+      walk_act macos-own full-screen "presses ⌃⌘F in Safari"
+      key ctrl+cmd+f
+      sleep 2
+      WALK_FULL_SCREEN="$window $DAY_STEP"
+      acted moves=any leaves=any audit=no ;;
+    off)
+      [ -n "$WALK_FULL_SCREEN" ] || { left_out "full_screen off: nothing is in full screen"; return; }
+      window=${WALK_FULL_SCREEN% *}
+      walk_act macos-own leave-full-screen "presses ⌃⌘F again"
+      key ctrl+cmd+f
+      sleep 2
+      # Every window is where it was before.
+      acted moves=any leaves=any comes="$window" front="$window" returns="$((${WALK_FULL_SCREEN#* } - 1))"
+      WALK_FULL_SCREEN="" ;;
+    *) die "full_screen: on or off, not $1" ;;
+  esac
+}
+
+wallpaper_click() {
+  local spot before=$DAY_STEP
+  [ -z "$WALK_FULL_SCREEN" ] && spot=$(bare_spot) || { left_out "wallpaper_click: no bare spot of wallpaper shows"; return; }
+  walk_act macos-own click-wallpaper "clicks on the wallpaper"
+  # shellcheck disable=SC2086
+  click $spot
+  sleep 1
+  acted moves=any leaves=any audit=no
+  walk_act macos-own click-wallpaper-again "clicks on the wallpaper again"
+  # shellcheck disable=SC2086
+  click $spot
+  sleep 1
+  acted moves=any leaves=any returns="$before"
+}
+
+# MARK: The ways out
+
+pause() {
+  arbor_acts || { left_out "pause: Arbor is not acting"; return; }
+  walk_act way-out pause "presses ⌃⌥⎋"
+  key ctrl+opt+escape
+  WALK_PAUSED=yes
+  changed
+  acted moves=any restores=all everything=1
+}
+
+resume() {
+  [ -n "$WALK_PAUSED" ] || { left_out "resume: Arbor is not paused"; return; }
+  walk_act way-out resume "presses ⌃⌥⎋"
+  key ctrl+opt+escape
+  WALK_PAUSED=""
+  acted moves=any
+  # The pause ended the trace.
+  day_trace
+}
+
+float_all() {
+  arbor_acts || { left_out "float_all: Arbor is not acting"; return; }
+  walk_act way-out float-all "presses ⌃⌥⇧F"
+  key ctrl+opt+shift+f
+  acted moves=any restores=all places=1 everything=1
+  at_home
+}
+
+walk_quit() {
+  walk_act quit-and-start quit "chooses Quit Arbor in Arbor's menu"
+  must arbor_menu up return
+  want "Arbor ends within five seconds" day_gone
+  WALK_PAUSED=""
+  acted moves=any restores=all places=1 everything=1
+}
+
+walk_roll_call() {
+  local name
+  for name in $WALK_CAST; do switch_dock "$name"; done
+}
+
+walk_start() {
+  local welcome
+  walk_act quit-and-start launch "starts Arbor"
+  day_launch || die "Arbor did not start"
+  # What was docked when it stopped may go back. No window that is in view goes out of view.
+  acted moves=docked everything=1
+  # What Arbor has to say at its first start lies in the middle of the screen, over the windows. A person reads it and closes it.
+  welcome=$(arbor_window)
+  if [ -n "$welcome" ]; then
+    walk_act open-close close-welcome "closes Arbor's welcome window with its red button"
+    # shellcheck disable=SC2046
+    must click $(apptool button "$welcome" close)
+    acted
+  fi
+  changed
+}
+
+quit_and_start() {
+  with_arbor && arbor_answers && [ -z "$WALK_FULL_SCREEN" ] || { left_out "quit_and_start: Arbor is not running"; return; }
+  walk_quit
+  walk_roll_call
+  walk_start
+}
+
+idle_act() {
+  walk_act idle leave-alone "does nothing for half a minute"
+  idle 30
+  acted
+}
+
+# MARK: The beginning and the end
+
+walk_open() {
+  local name=$1 document
+  document=$(document_of "$name")
+  act open-close "open-$name" "opens $name"
+  # shellcheck disable=SC2086
+  if APP_WAIT=25 meet "$name" "$(bundle_of "$name")" ${document:+"$document"}; then
+    app_dismiss "$APP_PID" || echo "a sheet or dialog stayed in the way"
+    WALK_CAST="$WALK_CAST $name"
+  else
+    echo "$name opened no standard window: the walk goes on without it"
+    eval "W_$name= P_$name="
+  fi
+  acted judge=no
+}
+
+fills_the_display() {
+  local x y w h
+  read -r x y w h <<< "$(real_of "$1")"
+  [ "${w:-0}" -ge $((WALK_W - 40)) ] && [ "${h:-0}" -ge $((WALK_H - 160)) ]
+}
+
+walk_begin() {
+  local cast=${1:-stock} display=${2:-laptop} tiling=${3:-defaults} seed=${4:-} name listed probe seen
+  apps_watchdog "${WALK_LIMIT:-1060}"
+  step "the Mac"
+  echo "macOS $(sw_vers -productVersion) ($(sw_vers -buildVersion)) on $(uname -m)"
+  if with_arbor; then day_build; else day_build_tools; fi
+  # The runner's own 1024×768 is smaller than any Mac's.
+  case "$display" in
+    laptop) display_mode 1440x900 1600x900 1680x1050 1920x1080 ;;
+    desk) display_mode 1920x1080 ;;
+    *) die "walk_begin: laptop or desk, not $display" ;;
+  esac
+  case "$tiling" in
+    defaults)
+      echo "macOS's own window management, as it comes:"
+      macos_tiling
+      macos_click_wallpaper ;;
+    off)
+      echo "macOS's own window management, switched off:"
+      defaults write com.apple.WindowManager EnableTilingOptionAccelerator -bool false
+      macos_tiling off
+      macos_click_wallpaper off ;;
+    *) die "walk_begin: defaults or off, not $tiling" ;;
+  esac
+  # GitHub's Macs come with Reduce Motion on. A person's Mac does not, and with it on Arbor shows no motion.
+  macos_reduce_motion off
+  day_scratch
+  sampler_start
+  watch_start day-macos.log
+  read -r _ WALK_X WALK_Y WALK_W WALK_H _ <<< "$(pointer displays | head -n 1)"
+
+  chapter "Before Arbor: the apps are open already"
+  case "$cast" in
+    stock) for name in finder safari textedit terminal notes calendar settings preview mail; do walk_open "$name"; done ;;
+    *) die "walk_begin: no cast called $cast" ;;
+  esac
+  # The Dock grows with every app that joins it, and the space between it and the menu bar shrinks.
+  sleep 3
+  # An app may have swapped the window it opened with for another meanwhile: Mail's first one gives way to its real one.
+  for name in $WALK_CAST; do
+    listed=$(app_windows "$(pid_of "$name")")
+    case " $listed " in
+      *" $(window_of "$name") "*) ;;
+      *) [ -z "$listed" ] || { eval "W_$name=\${listed%% *}"; label "$(window_of "$name")" "$name"; } ;;
+    esac
+  done
+  echo "the cast:$WALK_CAST"
+  [ "$(echo "$WALK_CAST" | wc -w)" -ge 6 ] || die "fewer than six apps opened a window: no walk to speak of"
+
+  # A switch that is written and not obeyed proves nothing: before anything counts, macOS is seen to fill the screen, or not to.
+  probe=$(window_of calendar)
+  [ -n "$probe" ] || probe=$(window_of "${WALK_CAST##* }")
+  act drag-where-macos-tiles tiling-acts "without Arbor: drags a window by its title bar against the menu bar and lets go"
+  click_window "$probe" || apptool raise "$probe"
+  must drag_window "$probe" "$((WALK_X + WALK_W / 2))" "$WALK_Y" --hold 1
+  acted judge=no
+  if eventually fills_the_display "$probe"; then seen=true; else seen=false; fi
+  echo "macOS's tiling was seen to act: $seen"
+  if [ "$tiling" = defaults ]; then check "macOS's own tiling acts" test "$seen" = true; else check "macOS's own tiling is off" test "$seen" = false; fi
+  act drag-where-macos-tiles tiling-acts-back "drags it away again, a hand's breadth down"
+  must drag_window "$probe" "$((WALK_X + WALK_W / 2))" "$((WALK_Y + 130))"
+  acted judge=no
+  act idle look-around "looks at the screen"
+  sleep 2
+  acted judge=no own=all
+
+  day_manifest kind "\"$(if ! with_arbor; then echo control; elif [ -n "$seed" ]; then echo walk; else echo day; fi)\""
+  day_manifest seed "\"$seed\""
+  day_manifest tiling "\"$tiling\""
+  day_manifest tiling_seen_to_act "$seen"
+  day_manifest display "\"$display\""
+  day_manifest cast "\"$cast\""
+  day_manifest apps "[$(for name in $WALK_CAST; do printf '"%s",' "$(bundle_of "$name")"; done | sed 's/,$//')]"
+
+  chapter "The walk"
+  if with_arbor; then walk_start; fi
+  at_home
+}
+
+walk_end() {
+  if [ -n "$WALK_FULL_SCREEN" ]; then full_screen off; fi
+  if with_arbor && arbor_answers; then
+    chapter "The end"
+    walk_quit
+    walk_roll_call
+  fi
+  echo
+  echo "$WALK_ACTS acts, $WALK_LEFT_OUT left out because they did not apply"
+  day_manifest acts_left_out "$WALK_LEFT_OUT"
+  day_report
+}
