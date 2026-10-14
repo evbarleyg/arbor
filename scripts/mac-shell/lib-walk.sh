@@ -181,7 +181,7 @@ switch_tile() {
   [ -n "$DAY_TILES" ] || { left_out "switch_tile: no tile stands in for a window"; return; }
   window=${DAY_TILES%%@*} place=${DAY_TILES#*@}
   IFS=: read -r x y w h <<< "${place%%,*}"
-  walk_act switch click-tile "clicks the tile that stands in for a window"
+  walk_act tile-click click-tile "clicks the tile that stands in for a window"
   click "$((x + w / 2))" "$((y + h / 2))"
   acted moves=any front="$window"
 }
