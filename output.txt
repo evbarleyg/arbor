@@ -1,0 +1,465 @@
+# mac-shell: scripts/mac-shell/shots-F15.sh at a391fe4, macOS 26.6.2, 2026-10-14T22:44Z
+
+== the Mac
+macOS 26.6.2, Apple Swift version 6.4.1 (swift-6.4.1-RELEASE)
+built Arbor and the pointer tool in 111s
+
+== light mode
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+/System/Library/Desktop Pictures/Solid Colors/Black.png
+> appearance light: now light
+shot: mac-shell/light-materials.png
+session 1: Arbor pid 6419, test windows 33 34 35 36 37 38 (pid 6398)
+running: 1 display, 0 docked and 6 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> reload-settings
+settings reloaded
+> move 984 71
+shot: mac-shell/light-00-nothing-docked.png
+  ✔ nothing docked, no backdrop
+
+== light: two columns with the Desktop between them
+> dock 33 left
+docked w33 at the left edge
+> dock 34 right
+docked w34 at the right edge
+> move 984 71
+shot: mac-shell/light-01-two-columns.png
+  ✔ the backdrop is on screen
+Arbor's own windows (id pid level x y w h on owner):
+44 6419 0 675 43 12 650 on Arbor
+43 6419 0 678 34 343 668 on Arbor
+42 6419 -2147483602 0 31 1024 674 on Arbor
+41 6419 0 337 43 12 650 on Arbor
+scenery capture: took light-01b-own-windows-only.png: Arbor's and the test windows and nothing else should be in it
+
+== light: clicks go through the backdrop to the Desktop
+> click 174 368
+in front after a click on a test window: ArborTestWindows
+> click 8 368
+in front after a click on the backdrop beside it: ArborTestWindows
+  ✘ a click on the backdrop reaches the Finder's Desktop
+
+== light: a drop preview, held over the lower part of the left window
+> drag 512 43 174 653 --no-release
+shot: mac-shell/light-02-drop-preview.png
+  ✔ a drop preview is on screen while the button is held
+> release
+  ✔ the dragged window docked
+
+== light: window tiles, a group's tile and the Desktop's tile
+> dock 37 beside 38 right
+arborctl: Arbor did not answer within 5 s; it may be waiting for an app that is busy
+> dock 35 beside 34 bottom
+arborctl: Arbor did not answer within 5 s; it may be waiting for an app that is busy
+> dock 36 beside 35 right
+docked w36 right of w35; its space is too small to show it, so it is a tile, and so is 1 other window now
+> show-all
+showing everything
+> resize 33 right 110
+resized w33
+> resize 34 left 60
+resized w34
+> resize 38 top -90
+resized w38; its space is too small to show it, so it is a tile
+> resize 35 top -190
+resized w35; its space is too small to show it, so it is a tile
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  tile n4 window   12 464 212 229  holds w38
+  tile n6 window   236 464 211 229  holds w37
+  tile n0 desktop  459 43 156 650  holds -
+  tile n11 group    627 564 385 129  holds w35 w36
+  w33 12 43 435 409        docked focused
+  w34 627 43 385 509       docked
+  w35 1023 677 1000 650    docked parked
+  w36 1023 677 326 348     docked parked
+  w37 1023 677 326 348     docked parked
+  w38 1023 677 325 319     docked parked
+> move 984 71
+shot: mac-shell/light-03-tiles.png
+
+== light: the handle in a gap, under the pointer and while it is dragged
+> move 159 458
+shot: mac-shell/light-04-gap-hover.png
+> drag 159 458 159 488 --no-release
+shot: mac-shell/light-05-gap-dragged.png
+> release
+the window above the gap was 409 high and is now 439
+  ✔ dragging the gap made the window above it about 30 points higher
+> move 453 192
+shot: mac-shell/light-06-upright-gap-hover.png
+> move 984 71
+shot: mac-shell/light-07-gap-left.png
+
+== light: blur
+> reload-settings
+settings reloaded
+shot: mac-shell/light-10-dim-and-blur.png
+> reload-settings
+settings reloaded
+shot: mac-shell/light-11-blur-alone.png
+> reload-settings
+settings reloaded
+shot: mac-shell/light-12-blur-60-alone.png
+> reload-settings
+settings reloaded
+shot: mac-shell/light-13-blur-30-alone.png
+
+== light: more and less darkening
+> reload-settings
+settings reloaded
+shot: mac-shell/light-14-no-backdrop.png
+  ✔ with neither, the backdrop leaves the screen
+> reload-settings
+settings reloaded
+shot: mac-shell/light-15-dim-50.png
+
+== light: tint
+> reload-settings
+settings reloaded
+shot: mac-shell/light-15b-tint-20.png
+> reload-settings
+settings reloaded
+shot: mac-shell/light-15c-tint-50-alone.png
+
+== light: tile options
+> reload-settings
+settings reloaded
+shot: mac-shell/light-16-names.png
+> reload-settings
+settings reloaded
+shot: mac-shell/light-16b-plain.png
+> reload-settings
+settings reloaded
+shot: mac-shell/light-17-grey.png
+> reload-settings
+settings reloaded
+shot: mac-shell/light-18-full-colour.png
+> reload-settings
+settings reloaded
+> move 159 488
+shot: mac-shell/light-19-handle-hidden.png
+> reload-settings
+settings reloaded
+
+== light: the line around the Desktop
+> float 37
+w37 is floating
+> float 38
+w38 is floating
+> resize 33 right -170
+resized w33
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  Desktop          289 43 326 650
+  tile n11 group    627 564 385 129  holds w35 w36
+  w33 12 43 265 650        docked
+  w34 627 43 385 509       docked
+  w35 1023 677 1000 650    docked parked
+  w36 1023 677 326 348     docked parked
+  w37 289 357 326 348      floating focused
+  w38 0 357 480 347        floating
+> move 984 71
+shot: mac-shell/light-19b-desktop-edge-default.png
+> reload-settings
+settings reloaded
+shot: mac-shell/light-19c-desktop-edge-30.png
+> reload-settings
+settings reloaded
+shot: mac-shell/light-19d-desktop-edge-alone.png
+> reload-settings
+settings reloaded
+
+== light: the camera
+> move 984 71
+> zoom 33
+framed w33
+shot: mac-shell/light-20-framed.png
+> back
+back to everything
+> desktop
+showing the Desktop
+shot: mac-shell/light-21-desktop.png
+  ✔ with the Desktop framed, no backdrop
+> show-all
+showing everything
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 33 is back on screen after quitting
+  ✔ window 34 is back on screen after quitting
+  ✔ window 35 is back on screen after quitting
+  ✔ window 36 is back on screen after quitting
+  ✔ window 37 is back on screen after quitting
+  ✔ window 38 is back on screen after quitting
+shot: mac-shell/light-22-after-quit.png
+
+== dark mode
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-night.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-night.png
+/Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+> appearance dark: now dark
+shot: mac-shell/dark-materials.png
+session 2: Arbor pid 8933, test windows 69 70 71 72 73 74 (pid 8912)
+running: 1 display, 0 docked and 6 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> reload-settings
+settings reloaded
+> move 984 71
+shot: mac-shell/dark-00-nothing-docked.png
+  ✔ nothing docked, no backdrop
+
+== dark: two columns with the Desktop between them
+> dock 69 left
+docked w69 at the left edge
+> dock 70 right
+docked w70 at the right edge
+> move 984 71
+shot: mac-shell/dark-01-two-columns.png
+  ✔ the backdrop is on screen
+Arbor's own windows (id pid level x y w h on owner):
+80 8933 0 675 43 12 650 on Arbor
+79 8933 0 678 34 343 668 on Arbor
+78 8933 -2147483602 0 31 1024 674 on Arbor
+77 8933 0 337 43 12 650 on Arbor
+scenery capture: took dark-01b-own-windows-only.png: Arbor's and the test windows and nothing else should be in it
+
+== dark: clicks go through the backdrop to the Desktop
+> click 174 368
+in front after a click on a test window: ArborTestWindows
+> click 8 368
+in front after a click on the backdrop beside it: ArborTestWindows
+  ✘ a click on the backdrop reaches the Finder's Desktop
+
+== dark: a drop preview, held over the lower part of the left window
+> drag 512 43 174 653 --no-release
+shot: mac-shell/dark-02-drop-preview.png
+  ✔ a drop preview is on screen while the button is held
+> release
+  ✔ the dragged window docked
+
+== dark: window tiles, a group's tile and the Desktop's tile
+> dock 73 beside 74 right
+docked w73 right of w74; its space is too small to show it, so it is a tile, and so is 1 other window now
+> dock 71 beside 70 bottom
+docked w71 below w70
+> dock 72 beside 71 right
+docked w72 right of w71; its space is too small to show it, so it is a tile, and so is 1 other window now
+> show-all
+showing everything
+> resize 69 right 110
+resized w69
+> resize 70 left 60
+resized w70
+> resize 74 top -90
+resized w74; its space is too small to show it, so it is a tile
+> resize 71 top -190
+resized w71; its space is too small to show it, so it is a tile
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  tile n4 window   12 464 212 229  holds w74
+  tile n6 window   236 464 211 229  holds w73
+  tile n0 desktop  459 43 156 650  holds -
+  tile n11 group    627 564 385 129  holds w71 w72
+  w69 12 43 435 409        docked focused
+  w70 627 43 385 509       docked
+  w71 1023 677 325 319     docked parked
+  w72 1023 677 326 348     docked parked
+  w73 1023 677 326 348     docked parked
+  w74 1023 677 325 319     docked parked
+> move 984 71
+shot: mac-shell/dark-03-tiles.png
+
+== dark: the handle in a gap, under the pointer and while it is dragged
+> move 159 458
+shot: mac-shell/dark-04-gap-hover.png
+> drag 159 458 159 488 --no-release
+shot: mac-shell/dark-05-gap-dragged.png
+> release
+the window above the gap was 409 high and is now 438
+  ✔ dragging the gap made the window above it about 30 points higher
+> move 453 192
+shot: mac-shell/dark-06-upright-gap-hover.png
+> move 984 71
+shot: mac-shell/dark-07-gap-left.png
+
+== dark: blur
+> reload-settings
+settings reloaded
+shot: mac-shell/dark-10-dim-and-blur.png
+> reload-settings
+settings reloaded
+shot: mac-shell/dark-11-blur-alone.png
+> reload-settings
+settings reloaded
+shot: mac-shell/dark-12-blur-60-alone.png
+> reload-settings
+settings reloaded
+shot: mac-shell/dark-13-blur-30-alone.png
+
+== dark: more and less darkening
+> reload-settings
+settings reloaded
+shot: mac-shell/dark-14-no-backdrop.png
+  ✔ with neither, the backdrop leaves the screen
+> reload-settings
+settings reloaded
+shot: mac-shell/dark-15-dim-50.png
+
+== dark: tint
+> reload-settings
+settings reloaded
+shot: mac-shell/dark-15b-tint-20.png
+> reload-settings
+settings reloaded
+shot: mac-shell/dark-15c-tint-50-alone.png
+
+== dark: tile options
+> reload-settings
+settings reloaded
+shot: mac-shell/dark-16-names.png
+> reload-settings
+settings reloaded
+shot: mac-shell/dark-16b-plain.png
+> reload-settings
+settings reloaded
+shot: mac-shell/dark-17-grey.png
+> reload-settings
+settings reloaded
+shot: mac-shell/dark-18-full-colour.png
+> reload-settings
+settings reloaded
+> move 159 487
+shot: mac-shell/dark-19-handle-hidden.png
+> reload-settings
+settings reloaded
+
+== dark: the line around the Desktop
+> float 73
+w73 is floating
+> float 74
+w74 is floating
+> resize 69 right -170
+resized w69
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          289 43 326 650
+  tile n11 group    627 564 385 129  holds w71 w72
+  w69 12 43 265 650        docked
+  w70 627 43 385 509       docked
+  w71 1023 677 325 319     docked parked
+  w72 1023 677 326 348     docked parked
+  w73 289 357 326 348      floating focused
+  w74 0 357 480 347        floating
+> move 984 71
+shot: mac-shell/dark-19b-desktop-edge-default.png
+> reload-settings
+settings reloaded
+shot: mac-shell/dark-19c-desktop-edge-30.png
+> reload-settings
+settings reloaded
+shot: mac-shell/dark-19d-desktop-edge-alone.png
+> reload-settings
+settings reloaded
+
+== dark: the camera
+> move 984 71
+> zoom 69
+framed w69
+shot: mac-shell/dark-20-framed.png
+> back
+back to everything
+> desktop
+showing the Desktop
+shot: mac-shell/dark-21-desktop.png
+  ✔ with the Desktop framed, no backdrop
+> show-all
+showing everything
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 69 is back on screen after quitting
+  ✔ window 70 is back on screen after quitting
+  ✔ window 71 is back on screen after quitting
+  ✔ window 72 is back on screen after quitting
+  ✔ window 73 is back on screen after quitting
+  ✔ window 74 is back on screen after quitting
+shot: mac-shell/dark-22-after-quit.png
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+/Users/runner/work/arbor/arbor/.build/mac-shell/scenery-night.png
+> appearance light: now light
+ 
+6705 arbor-2.log
+0 arbor-stderr-2.log
+0 arbor-stderr.log
+6983 arbor.log
+0 build-curtain.log
+0 build-pointer.log
+0 build-scenery.log
+0 build-vdisplay.log
+2562 build.log
+283169 dark-00-nothing-docked.png
+207187 dark-01-two-columns.png
+43615 dark-01b-own-windows-only.png
+207888 dark-02-drop-preview.png
+257556 dark-03-tiles.png
+257874 dark-04-gap-hover.png
+257499 dark-05-gap-dragged.png
+255844 dark-06-upright-gap-hover.png
+255721 dark-07-gap-left.png
+207083 dark-10-dim-and-blur.png
+210311 dark-11-blur-alone.png
+252801 dark-12-blur-60-alone.png
+260335 dark-13-blur-30-alone.png
+266900 dark-14-no-backdrop.png
+238086 dark-15-dim-50.png
+262404 dark-15b-tint-20.png
+274222 dark-15c-tint-50-alone.png
+262202 dark-16-names.png
+243345 dark-16b-plain.png
+255037 dark-17-grey.png
+253633 dark-18-full-colour.png
+255730 dark-19-handle-hidden.png
+250299 dark-19b-desktop-edge-default.png
+250742 dark-19c-desktop-edge-30.png
+252003 dark-19d-desktop-edge-alone.png
+118785 dark-20-framed.png
+219551 dark-21-desktop.png
+269019 dark-22-after-quit.png
+143175 dark-materials.png
+309774 light-00-nothing-docked.png
+227870 light-01-two-columns.png
+44119 light-01b-own-windows-only.png
+229115 light-02-drop-preview.png
+304089 light-03-tiles.png
+304213 light-04-gap-hover.png
+297234 light-05-gap-dragged.png
+294144 light-06-upright-gap-hover.png
+294173 light-07-gap-left.png
+248596 light-10-dim-and-blur.png
+258187 light-11-blur-alone.png
+300902 light-12-blur-60-alone.png
+305822 light-13-blur-30-alone.png
+303006 light-14-no-backdrop.png
+277494 light-15-dim-50.png
+293853 light-15b-tint-20.png
+295374 light-15c-tint-50-alone.png
+300100 light-16-names.png
+280783 light-16b-plain.png
+294130 light-17-grey.png
+285264 light-18-full-colour.png
+293545 light-19-handle-hidden.png
+275499 light-19b-desktop-edge-default.png
+275615 light-19c-desktop-edge-30.png
+276770 light-19d-desktop-edge-alone.png
+125084 light-20-framed.png
+232614 light-21-desktop.png
+293546 light-22-after-quit.png
+147023 light-materials.png
+12398 output.txt
+0 screencapture.log
+0 test-windows.log
+
+28 passed, 2 failed
+exit code 1
