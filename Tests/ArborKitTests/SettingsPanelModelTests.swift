@@ -213,10 +213,49 @@ private final class Panel {
     #expect(p.commands.isEmpty)
   }
 
+  /// 0.25 of what? A share of a whole is a number from 0 to 1 in settings.json, and so many per cent to a person.
+  @Test func aShareOfTheWholeIsShownInPerCent() throws {
+    let p = Panel()
+    #expect(p.row("dimBehindArranged", in: .appearance)?.control == .number(value: 25, range: 0...100, step: 5, unit: "%"))
+    #expect(p.row("windowEdgeFraction", in: .dragging)?.control == .number(value: 30, range: 0...50, step: 5, unit: "%"))
+    // Not everything without a unit is one: this is so many times the width of the windows beside it.
+    #expect(p.row("arrangeDesktopWeight", in: .windows)?.control == .number(value: 0.5, range: 0.1...3, step: 0.1, unit: ""))
+
+    p.model.set("dimBehindArranged", to: 41.0)  // the slider
+    #expect(p.commands.last == "set dimBehindArranged 0.4" && p.settings.dimBehindArranged == 0.4)
+    p.model.set("dimBehindArranged", to: "55")  // the field
+    #expect(p.commands.last == "set dimBehindArranged 0.55")
+    #expect(p.row("dimBehindArranged", in: .appearance)?.control == .number(value: 55, range: 0...100, step: 5, unit: "%"))
+    p.model.set("dimBehindArranged", to: " 7.5 % ")
+    #expect(p.commands.last == "set dimBehindArranged 0.075")
+
+    // A refusal counts as the field does.
+    let before = p.commands.count
+    p.model.set("dimBehindArranged", to: "500")
+    #expect(p.model.errors["dimBehindArranged"] == "Must be from 0 to 100 %, got 500")
+    p.model.set("windowEdgeFraction", to: "60")
+    #expect(p.model.errors["windowEdgeFraction"] == "Must be from 0 to 50 %, got 60")
+    p.model.set("dimBehindArranged", to: "dark")
+    #expect(p.model.errors["dimBehindArranged"] == "Needs a number from 0 to 100 %, got “dark”")
+    #expect(p.commands.count == before && p.settings.dimBehindArranged == 0.075)
+  }
+
+  /// The help stands beside the field, and in docs/SETTINGS.md beside the file's numbers: it can name neither's.
+  @Test func theHelpOfAShareNamesNoNumberButNought() {
+    let p = Panel()
+    for entry in SettingsSchema.entries where entry.level != .hidden {
+      guard case .number(_, _, _, "%")? = p.model.row(for: entry)?.control else { continue }
+      let words = entry.help.split { !($0.isLetter || $0.isNumber || $0 == ".") }
+      #expect(!words.contains { Double($0) != nil && Double($0) != 0 }, "\(entry.key): \(entry.help)")
+      #expect(!entry.help.contains("fraction"), "\(entry.key)")
+    }
+  }
+
   @Test func everySnappedValueOfEverySliderIsAccepted() {
     let p = Panel()
     for entry in SettingsSchema.entries {
-      guard case .number(let range, let step, _) = entry.kind else { continue }
+      // As the slider counts.
+      guard case .number(_, let range, let step, _)? = p.model.row(for: entry)?.control else { continue }
       var value = range.lowerBound
       while value <= range.upperBound + step {
         p.model.set(entry.key, to: value + step / 3)
@@ -436,6 +475,21 @@ private final class Panel {
     // One of the user's own, for a command nobody chose a title for, still says what runs.
     p.h.run("bind ctrl+opt+x set gap 0")
     #expect(p.shortcut("set gap 0")?.title == "Set Gap 0")
+  }
+
+  /// Fifty lines in a row are a wall. The panel of shortcuts and docs/KEYBOARD.md have three groups.
+  @Test func theLinesStandInTheGroupsOfThePanelOfShortcuts() throws {
+    let p = Panel()
+    #expect(p.model.shortcutSections.map(\.title) == ["Look", "Arrange", "Arbor itself"])
+    #expect(p.model.shortcutSections.flatMap(\.rows).map(\.id).sorted() == p.model.shortcutRows.map(\.id).sorted(), "each once")
+    let look = try #require(p.model.shortcutSections.first)
+    #expect(look.rows.prefix(3).map(\.title) == ["Show Everything", "Step Out", "Step In"], "in the table's order")
+    #expect(look.rows.allSatisfy { $0.command.group == .look })
+    // The user's own have a group to themselves, whatever they run: that is where one looks for them.
+    p.h.run("bind ctrl+opt+x set gap 0")
+    p.h.run("bind ctrl+opt+y desktop")
+    #expect(p.model.shortcutSections.map(\.title) == ["Look", "Arrange", "Arbor itself", "Your own"])
+    #expect(p.model.shortcutSections.last?.rows.map(\.command.text) == ["desktop", "set gap 0"])
   }
 
   @Test func aShortcutThatTakesKeysFromEveryAppSaysSoOnItsLine() throws {

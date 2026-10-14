@@ -143,7 +143,7 @@ public enum SettingsSchema {
         "How close to a screen edge the pointer must come for a dragged window to dock there.", advanced: true),
       .number(
         "windowEdgeFraction", \.windowEdgeFraction, min: 0, max: 0.5, step: 0.05, unit: "", "Window edge band",
-        "The band along a window's edges, as a fraction of its size, where a dropped window docks beside it.",
+        "The band along a window's edges, as a share of its size, where a dropped window docks beside it.",
         advanced: true),
       .number(
         "dropDwell", \.dropDwell, min: 0, max: 2, step: 0.05, unit: "s", "Hold over a target",
@@ -238,11 +238,11 @@ public enum SettingsSchema {
         "For how long the minimap shows by itself after the view has moved. 0 is off; its shortcut shows it either way."),
       .number(
         "dimBehindArranged", \.dimBehindArranged, min: 0, max: 1, step: 0.05, unit: "", "Darken behind docked windows",
-        "How much darker the wallpaper is behind docked windows, so that they read as one surface: 0 leaves it as it "
-          + "is, 1 is black."),
+        "How much darker the wallpaper is behind docked windows, so that they read as one surface: from as it is to "
+          + "black."),
       .number(
         "blurBehindArranged", \.blurBehindArranged, min: 0, max: 1, step: 0.1, unit: "", "Blur behind docked windows",
-        "How much the wallpaper is blurred behind docked windows: 0 leaves it sharp, 1 is all the blur macOS has.",
+        "How much the wallpaper is blurred behind docked windows: from sharp to all the blur macOS has.",
         advanced: true),
       .choice(
         "tileStyle", \.tileStyle, ["icon": "The icon", "name": "The icon and the name", "plain": "Only the colour"],
@@ -252,7 +252,7 @@ public enum SettingsSchema {
         "A tile takes on the colour of its app's icon. Off, every tile is the same grey.", advanced: true),
       .number(
         "appColourAmount", \.appColourAmount, min: 0, max: 1, step: 0.05, unit: "", "How much of the app's colour",
-        "How much of its app's colour goes into a tile: 0 is grey, 1 is the colour itself.", advanced: true),
+        "How much of its app's colour goes into a tile: from grey to the colour itself.", advanced: true),
       .choice(
         "gapHandles", \.gapHandles,
         ["shown": "Drag them, with a handle", "hidden": "Drag them, nothing drawn", "off": "Only gaps"],

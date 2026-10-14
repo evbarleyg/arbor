@@ -63,7 +63,7 @@ File). There are four ways to change one, and each takes effect at once and show
 | Key | Default | Values | What it does |
 |---|---|---|---|
 | `screenEdgeBand` | `12` | 0 to 100 pt | **Screen edge band.** How close to a screen edge the pointer must come for a dragged window to dock there. *Advanced.* |
-| `windowEdgeFraction` | `0.3` | 0 to 0.5 | **Window edge band.** The band along a window's edges, as a fraction of its size, where a dropped window docks beside it. *Advanced.* |
+| `windowEdgeFraction` | `0.3` | 0 to 0.5 | **Window edge band.** The band along a window's edges, as a share of its size, where a dropped window docks beside it. *Advanced.* |
 | `dropDwell` | `0.15` | 0 to 2 s | **Hold over a target.** How long a dragged window must be held over a window or tile before it can be dropped there. Screen edges never wait. *Advanced.* |
 | `previewDrags` | `true` | true or false | **Drop preview.** Show where a dragged window will land. Without it nothing has to be held either. *Advanced.* |
 | `reflowWhileDragging` | `false` | true or false | **Make room while dragging.** While you drag, the other windows close up and make room, showing what letting go would do. *Not in the settings window.* |
@@ -107,11 +107,11 @@ File). There are four ways to change one, and each takes effect at once and show
 | `focusRingRadius` | `0` | 0 to 60 pt | **Focus ring corners.** The radius of the window corners the line follows; 0 picks that of the macOS Arbor runs on. *Not in the settings window.* |
 | `animationDuration` | `0.46` | 0 to 2 s | **Motion.** How long a zoom, a dock or a close takes to play; 0 applies everything at once. “Reduce motion” in System Settings turns the motion off as well. |
 | `minimapDuration` | `0` | 0 to 10 s | **Show minimap after each move.** For how long the minimap shows by itself after the view has moved. 0 is off; its shortcut shows it either way. |
-| `dimBehindArranged` | `0.25` | 0 to 1 | **Darken behind docked windows.** How much darker the wallpaper is behind docked windows, so that they read as one surface: 0 leaves it as it is, 1 is black. |
-| `blurBehindArranged` | `0` | 0 to 1 | **Blur behind docked windows.** How much the wallpaper is blurred behind docked windows: 0 leaves it sharp, 1 is all the blur macOS has. *Advanced.* |
+| `dimBehindArranged` | `0.25` | 0 to 1 | **Darken behind docked windows.** How much darker the wallpaper is behind docked windows, so that they read as one surface: from as it is to black. |
+| `blurBehindArranged` | `0` | 0 to 1 | **Blur behind docked windows.** How much the wallpaper is blurred behind docked windows: from sharp to all the blur macOS has. *Advanced.* |
 | `tileStyle` | `icon` | icon or name or plain | **Tiles show.** What the tile of a window too small to use shows on its colour. `icon`: The icon. `name`: The icon and the name. `plain`: Only the colour. |
 | `appColours` | `true` | true or false | **Tiles in their app's colour.** A tile takes on the colour of its app's icon. Off, every tile is the same grey. *Advanced.* |
-| `appColourAmount` | `0.25` | 0 to 1 | **How much of the app's colour.** How much of its app's colour goes into a tile: 0 is grey, 1 is the colour itself. *Advanced.* |
+| `appColourAmount` | `0.25` | 0 to 1 | **How much of the app's colour.** How much of its app's colour goes into a tile: from grey to the colour itself. *Advanced.* |
 | `gapHandles` | `shown` | shown or hidden or off | **Gaps between windows.** Dragging a gap resizes the windows on both sides of it, and a handle shows in the gap under the pointer. A window's own edges resize it either way. `shown`: Drag them, with a handle. `hidden`: Drag them, nothing drawn. `off`: Only gaps. |
 | `windowPictures` | `false` | true or false | **Pictures of moving windows.** Not ready: it has crashed Arbor and has not been tried since it was mended. While they move, windows are still pictures of themselves instead of their app's colour and icon. Needs Screen & System Audio Recording permission; nothing is recorded or stored. *Not in the settings window.* |
 | `tintBehindArranged` | `0` | 0 to 1 | **Tint behind docked windows.** How much of your accent colour is laid over the wallpaper behind docked windows. *Advanced.* |

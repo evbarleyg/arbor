@@ -18,9 +18,11 @@ struct ShortcutsPane: View {
             .foregroundStyle(.secondary)
         }
       }
-      Section {
-        ForEach(store.model.shortcutRows) { row in
-          ShortcutRowView(store: store, row: row)
+      ForEach(store.model.shortcutSections) { section in
+        Section(section.title) {
+          ForEach(section.rows) { row in
+            ShortcutRowView(store: store, row: row)
+          }
         }
       }
       Section("A shortcut for another command") {

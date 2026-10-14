@@ -123,6 +123,10 @@ public final class SettingsPanelModel {
     switch (entry.kind, entry.value(in: settings)) {
     case (.toggle, .bool(let isOn)):
       control = .toggle(isOn: isOn)
+    case (.number(let range, let step, _), .number(let value)) where Self.isShare(entry):
+      control = .number(
+        value: Self.tidy(value * 100), range: Self.tidy(range.lowerBound * 100)...Self.tidy(range.upperBound * 100),
+        step: Self.tidy(step * 100), unit: "%")
     case (.number(let range, let step, let unit), .number(let value)):
       control = .number(value: value, range: range, step: step, unit: unit)
     case (.choice(let choices), .text(let value)):
@@ -266,16 +270,42 @@ public final class SettingsPanelModel {
     perform(commands.map(Command.settings), at: place)
   }
 
-  /// A switch flipped, a choice picked, text entered: `text` is what `set` would be given.
+  /// A switch flipped, a choice picked, text entered: `text` is what `set` would be given, but for a share, which the window
+  /// counts in per cent.
   public func set(_ key: String, to text: String) {
-    perform([.set(key: key, value: text)], at: key)
+    guard let entry = try? SettingsSchema.entry(named: key), Self.isShare(entry), case .number(let range, _, _) = entry.kind else {
+      return perform([.set(key: key, value: text)], at: key)
+    }
+    // Refused here: the command's own words would count from 0 to 1 under a field that says 25 %.
+    let accepts = "from \(Self.text(Self.tidy(range.lowerBound * 100))) to \(Self.text(Self.tidy(range.upperBound * 100))) %"
+    let typed = text.filter { !$0.isWhitespace && $0 != "%" }
+    guard let percent = Double(typed), percent.isFinite else { return refuse("Needs a number \(accepts), got “\(typed)”", at: key) }
+    let share = Self.tidy(percent / 100)
+    guard range.contains(share) else { return refuse("Must be \(accepts), got \(Self.text(percent))", at: key) }
+    perform([.set(key: key, value: Self.text(share))], at: key)
   }
+
+  private func refuse(_ reason: String, at place: String) {
+    errors[place] = reason
+    changed()
+  }
+
+  /// A number from 0 to 1 at most that is measured in nothing: a share of some whole.
+  private static func isShare(_ entry: SettingEntry) -> Bool {
+    guard case .number(let range, _, let unit) = entry.kind else { return false }
+    return unit.isEmpty && range.lowerBound >= 0 && range.upperBound <= 1
+  }
+
+  /// Without the crumbs binary fractions leave (30.000000000000004).
+  private static func tidy(_ value: Double) -> Double { (value * 1_000_000).rounded() / 1_000_000 }
 
   public func set(_ key: String, to isOn: Bool) { set(key, to: isOn ? "true" : "false") }
 
   /// A slider let go of. It lands on the nearest step.
   public func set(_ key: String, to value: Double) {
-    guard case .number(let range, let step, _)? = (try? SettingsSchema.entry(named: key))?.kind else { return }
+    // As the window counts, which for a share is in per cent.
+    guard let entry = try? SettingsSchema.entry(named: key), case .number(_, let range, let step, _)? = row(for: entry)?.control
+    else { return }
     set(key, to: Self.text(Self.snapped(value, in: range, step: step)))
   }
 
@@ -437,6 +467,22 @@ public final class SettingsPanelModel {
       ShortcutRow(command: $0.command, chord: $0.chord, standard: nil, label: $0.label)
     }
     return rows
+  }
+
+  /// Some lines under a heading.
+  public struct ShortcutSection: Equatable, Identifiable, Sendable {
+    public let title: String
+    public let rows: [ShortcutRow]
+    public var id: String { title }
+  }
+
+  /// The lines in the three groups of the panel of shortcuts, each in the table's order, then the user's own.
+  public var shortcutSections: [ShortcutSection] {
+    let rows = shortcutRows
+    let groups = Command.Group.allCases.map { group in
+      ShortcutSection(title: group.title, rows: rows.filter { $0.standard != nil && $0.command.group == group })
+    }
+    return (groups + [ShortcutSection(title: "Your own", rows: rows.filter { $0.standard == nil })]).filter { !$0.rows.isEmpty }
   }
 
   /// Entries of `bindings` in settings.json that could not be used, and why.
