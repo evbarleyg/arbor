@@ -43,6 +43,9 @@ struct SettingsSidebar: View {
         }
       }
       .listStyle(.sidebar)
+      // The list's own background is a shade lighter than the window's in the dark look, where the field above it and the line
+      // below it then stood on darker strips.
+      .scrollContentBackground(.hidden)
       Text(store.model.version)
         .font(.caption)
         .foregroundStyle(.secondary)
@@ -190,6 +193,24 @@ struct SettingsSectionPane: View {
   let section: SettingsSection
 
   var body: some View {
+    VStack(spacing: 0) {
+      form
+      // Under the form and not in it: there it was a card of its own, empty but for a button that is mostly greyed out.
+      if store.model.canRestoreDefaults(in: section) {
+        Divider()
+        HStack {
+          SettingsErrorText(text: store.model.errors[SettingsPanelModel.Pane.section(section).id])
+          Spacer()
+          Button("Restore Defaults") { store.model.restoreDefaults(in: section) }
+            .disabled(store.model.changedKeys(in: section).isEmpty)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 10)
+      }
+    }
+  }
+
+  private var form: some View {
     Form {
       if hasLoginItem || !store.model.rows(in: section).isEmpty {
         Section {
@@ -203,20 +224,16 @@ struct SettingsSectionPane: View {
       }
       if !store.model.advancedRows(in: section).isEmpty {
         Section {
-          DisclosureGroup("Advanced", isExpanded: advanced) {
+          DisclosureGroup(isExpanded: advanced) {
             ForEach(store.model.advancedRows(in: section)) { row in
               SettingRowView(store: store, row: row)
             }
-          }
-        }
-      }
-      if store.model.canRestoreDefaults(in: section) {
-        Section {
-          HStack {
-            SettingsErrorText(text: store.model.errors[SettingsPanelModel.Pane.section(section).id])
-            Spacer()
-            Button("Restore Defaults") { store.model.restoreDefaults(in: section) }
-              .disabled(store.model.changedKeys(in: section).isEmpty)
+          } label: {
+            // By itself only the triangle opens the group, seven points of a line that looks like a button all along.
+            Text("Advanced")
+              .frame(maxWidth: .infinity, alignment: .leading)
+              .contentShape(Rectangle())
+              .onTapGesture { advanced.wrappedValue.toggle() }
           }
         }
       }
@@ -391,9 +408,17 @@ struct NumberSettingRow: View {
           .accessibilityIdentifier("\(row.key).field")
           .accessibilityLabel(unit.isEmpty ? row.label : "\(row.label), \(unit)")
           .focused($fieldIsFocused)
-          .onSubmit { commitField() }
+          .onSubmit {
+            commitField()
+            fieldIsFocused = false
+          }
           .onChange(of: fieldIsFocused) {
             if !fieldIsFocused { commitField() }
+          }
+          // A field that has the keyboard shows what was last typed into it, whatever it is told to show: beside a slider at 86
+          // it went on saying 40. So it keeps the keyboard only while somebody types.
+          .onChange(of: value) {
+            if typed == nil { fieldIsFocused = false }
           }
         // As wide as the widest unit, so that the fields of a pane stand in one column.
         Text(unit)
@@ -416,6 +441,7 @@ struct NumberSettingRow: View {
 
   private func sliderChanged(_ isHeldNow: Bool) {
     isHeld = isHeldNow
+    if isHeldNow { fieldIsFocused = false }
     guard !isHeldNow, let final = held else { return }
     held = nil
     store.model.set(row.key, to: final)
