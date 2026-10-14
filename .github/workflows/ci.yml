@@ -83,33 +83,12 @@ jobs:
         uses: ./.github/actions/mac-keep-build
         with:
           key: ${{ steps.setup.outputs.build-key }}
-      - name: Test
-        run: >
-          ./scripts/ci-step.py --summary 'Test run with|skipped|Running the tests of|Recorded' --log test.log test
-          ./scripts/ci-tests.py run --mode "$TESTS" --record mac.tsv --all mac-all.txt
-      - name: Hand on what ran
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: tests-mac
-          path: |
-            mac.tsv
-            mac-all.txt
-          if-no-files-found: warn
-      - name: Simulator smoke test
-        run: ./scripts/ci-step.py smoke ./scripts/sim-smoke.sh
-      - name: User-journey scenarios
-        run: ./scripts/ci-step.py scenarios ./scripts/scenarios.sh
-      - name: Release tooling
-        run: ./scripts/ci-step.py --summary '✘|release tools test' release-tools ./scripts/release-tools-test.sh
-      # It wants the log of every test. Linux has one on every commit, and checks the same.
-      - name: Parity (no shipped feature may break; FEATURES.md must be current)
-        if: env.TESTS == 'full'
-        run: ./scripts/ci-step.py parity python3 scripts/parity.py --test-log test.log --check
-
       # Real windows and the real pointer, on the same Mac and the same build. Whether Arbor builds and passes its tests, and whether it does on
       # real windows what the tests say, are two questions, and each still gets its own answer: these two steps do not fail this job, and
       # the job `real-windows` below passes on what they said.
+      #
+      # First, on a Mac on which nothing but a build has happened. After the tests and the rest, a quarter of an hour into the job, Arbor saw
+      # no drag at all (11 of 18 checks of e2e-drag.sh, twice: whenever these steps came last, and never when they had a Mac of their own).
       #
       # GitHub's macOS runners grant Accessibility to the runner's processes (probe P3,
       # 2026-10-14), so arbor-e2e can move its test windows there. The fresh evidence comes back as an artifact (or through
@@ -131,6 +110,30 @@ jobs:
         run: |
           set -o pipefail
           ./scripts/ci-step.py e2e-drag ./scripts/mac-shell/e2e-drag.sh | tee e2e-drag.out
+      - name: Test
+        run: >
+          ./scripts/ci-step.py --summary 'Test run with|^Recorded [0-9]|^Running the tests of|Test .* skipped' --log test.log test
+          ./scripts/ci-tests.py run --mode "$TESTS" --record mac.tsv --all mac-all.txt
+      - name: Hand on what ran
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-mac
+          path: |
+            mac.tsv
+            mac-all.txt
+          if-no-files-found: warn
+      - name: Simulator smoke test
+        run: ./scripts/ci-step.py smoke ./scripts/sim-smoke.sh
+      - name: User-journey scenarios
+        run: ./scripts/ci-step.py scenarios ./scripts/scenarios.sh
+      - name: Release tooling
+        run: ./scripts/ci-step.py --summary '✘|release tools test' release-tools ./scripts/release-tools-test.sh
+      # It wants the log of every test. Linux has one on every commit, and checks the same.
+      - name: Parity (no shipped feature may break; FEATURES.md must be current)
+        if: env.TESTS == 'full'
+        run: ./scripts/ci-step.py parity python3 scripts/parity.py --test-log test.log --check
+
       - name: What real windows said
         id: verdict
         if: ${{ !cancelled() }}
@@ -278,7 +281,7 @@ jobs:
       - name: Toolchain
         run: ./scripts/ci-step.py toolchain swift --version
       - name: Test
-        run: ./scripts/ci-step.py --summary 'Test run with|skipped|Recorded' --log test.log test ./scripts/ci-tests.py run --mode full --record linux.tsv
+        run: ./scripts/ci-step.py --summary 'Test run with|^Recorded [0-9]|Test .* skipped' --log test.log test ./scripts/ci-tests.py run --mode full --record linux.tsv
       - name: Hand on what ran
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@v4

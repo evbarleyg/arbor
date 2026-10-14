@@ -274,8 +274,11 @@ def account(mac, mac_all, linux, mode, on_purpose=None):
     on_purpose = NOWHERE_ON_PURPOSE if on_purpose is None else on_purpose
     on_mac = {name for name, status in mac.items() if status != SKIPPED}
     on_linux = {name for name, status in linux.items() if status != SKIPPED}
-    # A test that only Linux compiles and then skips has run nowhere either: the stand-in of a Mac's test that was renamed, say.
-    nowhere = (set(mac_all) | set(mac) | set(linux)) - on_mac - on_linux
+    # A test that only Linux compiles and then skips has run nowhere either: the stand-in of a Mac's test that was renamed, say. But a
+    # stand-in need not take the arguments of what it stands in for: M.S/layouts() is that of M.S/layouts(name:id:), which ran.
+    without_labels = {name.rsplit("(", 1)[0] for name in on_mac}
+    stood_in_for = {name for name in set(linux) - set(mac_all) - on_linux if name.rsplit("(", 1)[0] in without_labels}
+    nowhere = (set(mac_all) | set(mac) | set(linux)) - on_mac - on_linux - stood_in_for
     groups = {
         "both": on_mac & on_linux,
         "mac": on_mac - on_linux,
