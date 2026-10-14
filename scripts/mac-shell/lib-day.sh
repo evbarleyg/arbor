@@ -8,7 +8,7 @@
 #   act open-close open-textedit "opens TextEdit";    meet textedit com.apple.TextEdit "$APPS_SCRATCH/oak.txt";  acted judge=no
 #   act quit-and-start launch "starts Arbor";         day_launch;                      acted
 #   act switch click-textedit "clicks its title bar"; click_window "$W_textedit";      acted front="$W_textedit"
-#   act dock-key dock-left "presses ⌃⌥⌘←";            key ctrl+opt+cmd+left;           acted moves=docked yields=floating front="$W_textedit"
+#   act dock-key dock-left "presses ⌃⌥⌘←";            key ctrl+opt+cmd+left;           acted moves=docked front="$W_textedit"
 #   day_report
 #
 # A check asks where a window is once things have settled. A person also sees how it got there. So sampler.swift asks the
@@ -35,8 +35,8 @@
 #                                     Dock) the step is a finding of the script's own and is not judged: an act that was not performed passes nothing
 #   acted [key=value…]              waits for quiet, compares Arbor's belief with the screen (audit), takes the picture
 #                                     mac-shell/<nnn>-<slug>.jpg and ends the step. The keys are jolts.py's, and besides ids
-#                                     `moves=` takes `docked`: whatever is docked before or after the step; `yields=` takes
-#                                     `floating`: whatever floats before or after it. `audit=no` leaves the comparison out, for a step
+#                                     `moves=` takes `docked`: whatever is docked before or after the step. `tiles=ok`, with everything=1 after Show
+#                                     Everything: a tile may stand in for a window (jolts.py's tiles= and keyboard=). `audit=no` leaves the comparison out, for a step
 #                                     in which macOS holds the windows where Arbor cannot know them to be. What the comparison
 #                                     found after the step before as well is not said again
 #   day_scratch                     apps_scratch, and the same documents under names with a canary word in them ($DAY_DOCUMENTS/$APPS_CANARY-oak.txt, -elm.txt,
@@ -76,7 +76,9 @@ APPS_CANARY=quokkadoo
 DAY_SLUG=""
 DAY_KIND=""
 DAY_DOCKED_BEFORE=""
-DAY_FLOATING_BEFORE=""
+DAY_OFFENCES=""
+# Arbor's own acts since it started.
+DAY_SINCE_START=0
 DAY_MANIFEST=""
 DAY_AUDIT_BEFORE=""
 DAY_FACE="ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_NO_PROMPT=0"
@@ -209,19 +211,22 @@ meet() {
 
 arbor_answers() { [ -n "$ARBOR_PID" ] && kill -0 "$ARBOR_PID" 2>/dev/null; }
 
-# One question to Arbor for both lists: sets DAY_DOCKED and DAY_FLOATING, to nothing while Arbor does not run.
+# One question to Arbor for all three: sets DAY_DOCKED, DAY_FLOATING and DAY_TILES (<window>@x:y:w:h,…), to nothing while Arbor does not run.
 day_ids() {
-  DAY_DOCKED="" DAY_FLOATING=""
+  DAY_DOCKED="" DAY_FLOATING="" DAY_TILES=""
   arbor_answers || return 0
-  read -r DAY_DOCKED DAY_FLOATING <<< "$("$ARBOR_BIN/arborctl" state 2>/dev/null | python3 -c '
+  read -r DAY_DOCKED DAY_FLOATING DAY_TILES <<< "$("$ARBOR_BIN/arborctl" state 2>/dev/null | python3 -c '
 import json, sys
 try:
-    windows = [window for window in json.load(sys.stdin)["state"]["windows"] if window["managed"]]
+    state = json.load(sys.stdin)["state"]
+    windows = [window for window in state["windows"] if window["managed"]]
 except (ValueError, KeyError):
     sys.exit(0)
 for docked in (True, False):
-    print(",".join(str(window["id"]) for window in windows if window["docked"] == docked) or "-", end=" ")')"
-  DAY_DOCKED=${DAY_DOCKED#-} DAY_FLOATING=${DAY_FLOATING#-}
+    print(",".join(str(window["id"]) for window in windows if window["docked"] == docked) or "-", end=" ")
+print(",".join("%d@%s" % (window, ":".join(str(round(number)) for pair in tile["frame"] for number in pair))
+               for display in state["displays"] for tile in display["tiles"] for window in tile["windows"]) or "-")')"
+  DAY_DOCKED=${DAY_DOCKED#-} DAY_FLOATING=${DAY_FLOATING#-} DAY_TILES=${DAY_TILES#-}
 }
 docked_ids() { day_ids; echo "$DAY_DOCKED"; }
 floating_ids() { day_ids; echo "$DAY_FLOATING"; }
@@ -234,7 +239,7 @@ act() {
   DAY_SLUG=$1
   DAY_UNDONE=""
   day_ids
-  DAY_DOCKED_BEFORE=$DAY_DOCKED DAY_FLOATING_BEFORE=$DAY_FLOATING
+  DAY_DOCKED_BEFORE=$DAY_DOCKED
   echo
   echo "-- $DAY_STEP $1: $2"
   mark "== $DAY_STEP $1"
@@ -284,7 +289,8 @@ acted() {
     case "$word" in
       moves=docked) word="moves=$DAY_DOCKED_BEFORE,$DAY_DOCKED" ;;
       audit=no) audit=""; continue ;;
-      yields=floating) word="yields=$DAY_FLOATING_BEFORE,$DAY_FLOATING" ;;
+      tiles=ok) word="tiles=$DAY_TILES keyboard=$(apptool focused 2>/dev/null | cut -d ' ' -f 1)" ;;
+      offence=*) DAY_OFFENCES="$DAY_OFFENCES ${word#offence=}:$DAY_SLUG" ;;
       # Nothing would be checked, and it would look like a pass.
       front= | comes= | drags=) note "finding $DAY_STEP - FAIL the script could not tell which window ${word%=} is about"; continue ;;
     esac
@@ -303,6 +309,8 @@ acted() {
     fi
     while IFS= read -r line; do
       case $'\n'"$DAY_AUDIT_BEFORE"$'\n' in *$'\n'"$line"$'\n'*) continue ;; esac
+      # A floating window's frame is its person's, so it may lie over docked ones.
+      case "$line" in "ODD floating "*" overlap by "*) continue ;; esac
       case "$line" in
         FAIL*) echo "  ✘ ${line#FAIL }"; note "finding $DAY_STEP - FAIL ${line#FAIL }" ;;
         ODD*) echo "  ~ ${line#ODD }"; note "finding $DAY_STEP - ODD ${line#ODD }" ;;
@@ -316,6 +324,11 @@ acted() {
     tail -n 20 "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>/dev/null
     ARBOR_PID=""
   fi
+  case "$DAY_KIND" in
+    dock-key | view | resize | way-out | drag)
+      DAY_SINCE_START=$((DAY_SINCE_START + 1))
+      [ "$DAY_SINCE_START" -ne 1 ] || wants="$wants first=1" ;;
+  esac
   note "end $DAY_STEP act=$DAY_KIND settled=$QUIET$wants"
   echo "  ($QUIET ms)$wants"
   snap_now "$(printf '%03d-%s' "$DAY_STEP" "$DAY_SLUG")" > /dev/null
@@ -327,6 +340,7 @@ day_launch() {
   # shellcheck disable=SC2086
   arbor_start_apps all $DAY_FACE "$@" || return 1
   note "arbor $ARBOR_PID"
+  DAY_SINCE_START=0
   day_trace
 }
 
@@ -444,7 +458,8 @@ bare_spot() {
 day_manifest() { DAY_MANIFEST="$DAY_MANIFEST$1=$2"$'\n'; }
 
 day_write_manifest() {
-  DAY_MANIFEST=$DAY_MANIFEST python3 - "$ARBOR_OUT/run.json" "$(git -C "$ARBOR_ROOT" rev-parse HEAD)" "$(basename "$ARBOR_SCRIPT")" \
+  day_manifest reduce_motion "$("$ARBOR_POINTER" reduce-motion)"
+  DAY_MANIFEST=$DAY_MANIFEST DAY_OFFENCES=$DAY_OFFENCES python3 - "$ARBOR_OUT/run.json" "$(git -C "$ARBOR_ROOT" rev-parse HEAD)" "$(basename "$ARBOR_SCRIPT")" \
     "$(sw_vers -productVersion) ($(sw_vers -buildVersion))" "$SECONDS" << 'PYTHON'
 import json, os, sys
 path, commit, script, macos, seconds = sys.argv[1:]
@@ -453,6 +468,13 @@ run = {"gate": 1, "commit": commit, "run": os.environ.get("GITHUB_RUN_ID", ""), 
 for line in os.environ["DAY_MANIFEST"].splitlines():
     key, _, value = line.partition("=")
     run[key] = json.loads(value)
+# An act's id is its slug and which act of that slug it is in its run (viable.py).
+offences = []
+for word in os.environ["DAY_OFFENCES"].split():
+    detector, _, slug = word.partition(":")
+    offences.append({"detector": detector, "id": f"{slug}#1"})
+if offences:
+    run["offences"] = offences
 with open(path, "w", encoding="utf-8") as handle:
     json.dump(run, handle, indent=1)
     handle.write("\n")

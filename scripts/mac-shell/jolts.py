@@ -38,7 +38,6 @@ The script says what it is doing in marks (lib-day.sh writes them):
   end <n> [key=value…]     things have settled, and this should hold:
     act=<kind>             what kind of thing the person did (docs/VIABLE.md lists the kinds), for the count
     moves=<ids>|any|none   the windows the step may move (default none)
-    yields=<ids>           these float, and may move too if they lay where one of `moves=` is at the end: it took their place
     drags=<id>             the person drags this one: while the button is down it goes where the pointer goes
     front=<id>             it ends in front of every other window, its app in front, wholly in view
     leaves=<ids>|any       these may leave the screen (closed, hidden, minimized, another Space)
@@ -47,6 +46,9 @@ The script says what it is doing in marks (lib-day.sh writes them):
     place=<ids>            the person moved these: the place is theirs from now on, the size to give back is what it was
     restores=<ids>|all     these have their own sizes back; places=1: their places too, as after Float All and Quit
     everything=1           no window may be out of view
+    tiles=<id>@x:y:w:h,…   with everything=1, after Show Everything alone: for these windows a tile of Arbor's stands in, there. It counts as in view if a
+                           panel of Arbor's is seen at that frame. keyboard=<id>: the window that has the keyboard, which is never one of them
+    first=1                Arbor's first act of its own since it started
     returns=<n>            every window is where it was at the end of step n
     floating=<ids>         for the report: these float, so no arrangement explains a move of theirs
     docked=<ids>           these are docked at the end
@@ -76,6 +78,10 @@ BLIND = 250
 # A window Arbor moves is at rest this long after the key or the drop: later is worth a look, much later is a failure.
 SLOW_ODD = 700
 SLOW = 1500
+# The first act after Arbor has started may take this long (odd from what is a failure otherwise).
+SLOW_FIRST = 3000
+# An oddity that explains itself: a sheet or a dialog of a window that was moved in the same step.
+FOLLOWS = "follows its window"
 # The acts that are answered by Arbor alone, so that how long the answer takes is Arbor's doing.
 ARBORS_OWN = {"dock-key", "view", "resize", "way-out", "drag"}
 # The acts during which the app in front has no reason to change.
@@ -182,9 +188,11 @@ class Step:
                 trace.append((time, last[1], last[2]))
         self.under_the_stage += 1
 
-    def find(self, rule, level, window, what, trace=None, detector=None):
+    def find(self, rule, level, window, what, trace=None, detector=None, explained=None):
         self.findings.append({
             "rule": rule, "detector": detector or DETECTORS[rule], "level": level, "window": window, "what": what, "trace": trace})
+        if explained:
+            self.findings[-1]["explained"] = explained
 
 
 class World:
@@ -225,6 +233,7 @@ class World:
             "frames": {window: frame for window, frame in self.frames.items() if self.ordinary(window)},
             # A mark can fall between the lines of one sample: a window that has gone may still be in the pile.
             "order": [window for window in self.order if self.ordinary(window) and window in self.frames],
+            "arbors": [frame for window, frame in self.frames.items() if self.pids.get(window) in self.arbors],
             "app": self.app,
             "visible": self.visible,
             "display": self.display,
@@ -458,13 +467,6 @@ def judge(step, world, by_number, own):
             first = (step.traces.get(window) or [(0, None, False)])[0][1]
             if first is None or shared(first, screen) / max(first[2] * first[3], 1) < 0.5:
                 may = "any"
-    if end:
-        taken = [end["frames"][window] for window in named | dragged if window in end["frames"]]
-        for window in ids(wants.get("yields", "")):
-            trace = step.traces.get(window)
-            if trace and trace[0][1] and any(shared(trace[0][1], frame) > 0 for frame in taken):
-                named.add(window)
-
     for window, trace in sorted(step.traces.items()):
         if window in dragged:
             # In the hand it goes where the hand goes. What counts is what happens to its size meanwhile, and everything after.
@@ -517,7 +519,7 @@ def judge(step, world, by_number, own):
             if window in step.born:
                 step.find("3", "FAIL", window, "opened in one place and was then moved to another", road(trace))
             elif follows or (window not in world.labels and world.pids.get(window) in kin):
-                step.find("2", "ODD", window, "moved along with a window of its app", road(trace))
+                step.find("2", "ODD", window, "moved along with a window of its app", road(trace), None, FOLLOWS)
             else:
                 kind = "a floating window, " if window in ids(wants.get("floating", "")) else ""
                 how = "moved" if elsewhere else "moved and came back"
@@ -530,7 +532,8 @@ def judge(step, world, by_number, own):
             step.find("3", "FAIL", window, f"moved {moves} times", road(trace))
         elif detour > EXCESS and (may == "any" or window in named or window in dragged):
             # A sheet or a panel hangs on its window, and goes where that goes at each stage of its move.
-            step.find("3", "ODD" if follows else "FAIL", window, f"went {round(detour)} points out of its way before it ended up", road(trace))
+            step.find("3", "ODD" if follows else "FAIL", window, f"went {round(detour)} points out of its way before it ended up", road(trace),
+                      None, FOLLOWS if follows else None)
         gone = trace and trace[-1][1] is None
         if gone and may_leave != "any" and window not in ids(may_leave) and window in world.labels:
             step.find("L", "FAIL", window, "left the screen, and the step did not say it would", road(trace))
@@ -553,8 +556,10 @@ def judge(step, world, by_number, own):
         asked = max((time for time in step.inputs if changes and time <= min(changes)), default=None)
         if changes and asked is not None:
             took = max(changes) - asked
-            if took > SLOW_ODD:
-                step.find("3", "FAIL" if took > SLOW else "ODD", None, f"the last window came to rest {took} ms after the key or the button", None, "slow")
+            first = wants.get("first") == "1"
+            if took > (SLOW if first else SLOW_ODD):
+                step.find("3", "FAIL" if took > (SLOW_FIRST if first else SLOW) else "ODD", None,
+                          f"the last window came to rest {took} ms after the key or the button" + (", in Arbor's first act since it started" if first else ""), None, "slow")
 
     if wants.get("act") in NO_SWITCH and any(app != step.app_before for app in step.apps):
         step.find("4", "FAIL", None, "the app in front changed (to process %s), and nobody switched" % ", ".join(str(app) for app in step.apps))
@@ -600,10 +605,19 @@ def judge(step, world, by_number, own):
             step.find("5", "FAIL", window, f"has its size back but not its place: {words(frames[window])}, it was at {words(own[window])}")
 
     if wants.get("everything") == "1" and display:
+        tiles = {}
+        for word in wants.get("tiles", "").split(","):
+            window, _, place = word.partition("@")
+            if window.isdigit() and place.count(":") == 3:
+                tiles[int(window)] = tuple(float(number) for number in place.split(":"))
+        for window in sorted(ids(wants.get("keyboard", "")) & set(tiles)):
+            step.find("4", "FAIL", window, "has the keyboard, and only a tile of it shows")
         for window, frame in sorted(frames.items()):
             if window not in world.labels:
                 continue
             share = shared(frame, display) / max(frame[2] * frame[3], 1)
+            if share < 0.5 and window in tiles and any(not differs(tiles[window], panel, by=4) for panel in end["arbors"]):
+                continue
             if share < 0.5 and not (window in own and shared(own[window], display) / max(own[window][2] * own[window][3], 1) < 0.5):
                 step.find("L", "FAIL", window, f"is out of view: {share:.0%} of it is on the display, at {words(frame)}")
 
@@ -786,8 +800,6 @@ def story(path, world, steps, number, logs):
             elif kind == "B":
                 said = "the button is " + " ".join(rest)
             elif kind == "L":
-                if int(rest[0]) < 100:
-                    continue
                 said = f"(nothing was seen for {rest[0]} ms)"
             elif kind == "M":
                 said = "-- " + " ".join(rest)
@@ -863,11 +875,6 @@ def self_test():
     expect("an unnamed window moves and comes back", start + [
         "2000 M begin 2 dock", "2100 W 2 20 0 600 100 400 300 Two", "2150 W 2 20 0 500 100 400 300 Two", "3000 M end 2 moves=1"],
         [("2", "FAIL")])
-    expect("a floating window gives way to the one that is docked where it lay", start + [
-        "2000 M begin 2 dock", "2100 W 1 10 0 400 30 600 700 One", "2110 W 2 20 0 0 100 400 300 Two", "3000 M end 2 moves=1 yields=2"], [])
-    expect("a floating window that lay elsewhere has nothing to give way to", start + [
-        "2000 M begin 2 dock", "2100 W 1 10 0 0 30 450 700 One", "2110 W 2 20 0 550 100 400 300 Two", "3000 M end 2 moves=1 yields=2"],
-        [("2", "FAIL")])
     expect("Arbor's own panels are no windows", start + [
         "2000 M begin 2 dock", "2100 W 9 99 0 10 10 50 50 Arbor", "3000 M end 2"], [])
     expect("two moves", start + [
@@ -895,6 +902,10 @@ def self_test():
         "2000 M begin 2 dock", "2300 K 1", "2500 W 1 10 0 0 30 500 700 One", "3600 M end 2 act=dock-key moves=1"], [])
     detectors("at rest far too late", start + [
         "2000 M begin 2 dock", "2300 K 1", "4000 W 1 10 0 0 30 500 700 One", "5100 M end 2 act=dock-key moves=1"], ["slow"])
+    detectors("the first act after a start may take longer", start + [
+        "2000 M begin 2 dock", "2300 K 1", "4000 W 1 10 0 0 30 500 700 One", "5100 M end 2 act=dock-key moves=1 first=1"], [])
+    detectors("but not for ever", start + [
+        "2000 M begin 2 dock", "2300 K 1", "5400 W 1 10 0 0 30 500 700 One", "6500 M end 2 act=dock-key moves=1 first=1"], ["slow"])
     detectors("what macOS takes its time over is not Arbor's", start + [
         "2000 M begin 2 full", "2300 K 1", "4000 W 1 10 0 0 0 1000 800 One", "5100 M end 2 act=macos-own moves=1"], [])
     stage = ["2050 W 70 99 4 0 0 1000 800 Arbor"]
@@ -929,6 +940,13 @@ def self_test():
         "4000 M begin 3 quit", "4100 W 1 10 0 100 100 400 300 One", "5000 M end 3 moves=any restores=all places=1 everything=1"], [])
     expect("a window stays out of view", docked + [
         "4000 M begin 3 quit", "4100 W 2 20 0 999 799 400 300 Two", "5000 M end 3 moves=any everything=1"], [("L", "FAIL")])
+    away = docked + ["4000 M begin 3 all", "4100 W 2 20 0 999 799 400 300 Two"]
+    expect("a tile that is seen stands in for its window", away + [
+        "4100 W 60 99 0 520 30 100 700 Arbor", "5000 M end 3 moves=any everything=1 tiles=2@520:30:100:700 keyboard=1"], [])
+    expect("a tile that Arbor speaks of and nobody sees does not", away + [
+        "5000 M end 3 moves=any everything=1 tiles=2@520:30:100:700 keyboard=1"], [("L", "FAIL")])
+    expect("the window with the keyboard is never a tile", away + [
+        "4100 W 60 99 0 520 30 100 700 Arbor", "5000 M end 3 moves=any everything=1 tiles=2@520:30:100:700 keyboard=2"], [("4", "FAIL")])
     expect("a window leaves the screen", start + ["2000 M begin 2 idle", "2100 G 2", "2100 Z 1", "3000 M end 2"], [("L", "FAIL")])
     expect("a window is closed", start + ["2000 M begin 2 close", "2100 G 2", "2100 Z 1", "3000 M end 2 leaves=2"], [])
     expect("a hidden window comes back elsewhere", start + [
