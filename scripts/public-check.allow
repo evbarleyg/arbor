@@ -1,0 +1,46 @@
+# Honest exceptions to scripts/public-check.py. One per line, three fields:
+#
+#   rules   where   what
+#
+# `rules` are the names findings are printed with, with commas between them. `where` is a path, or one of: message,
+# author, branch, tag, path (a file's name), text (what people post); it may hold * and ?. `what` is a regular expression
+# that must cover the whole of what was found, whatever its case. Say above each line, or group of lines, why it is
+# honest. Keep them narrow: an exception for a whole file switches a rule off there for everybody who comes later.
+
+# The copyright line is what the name is for.
+name   LICENSE   .*
+
+# The file that says what is looked for, and the table of made-up situations that holds it to that. Real names, real
+# ids of a real machine and words on a private list are looked for there as everywhere.
+session,host,email,home,person,money,model,role,number,repository   scripts/public-check.py        .*
+session,host,email,home,person,money,model,role,number,repository   scripts/test-public-check.py   .*
+
+# Addresses that lead to nobody: GitHub's no-reply addresses, the domains reserved for examples, and the form of
+# an ssh address. `name@2x.png` is a picture at twice the size.
+email  *   .*@users\.noreply\.github\.com
+email  *   noreply@github\.com
+email  *   git@github\.com
+email  *   .*@(.*\.)?example(\.(com|org|net))?
+email  *   .*@[123]x\.png
+
+# Public hosts the project needs: where it lives, what it is built with, what it is measured against, and the names and
+# numbers that stand for "this machine" or "no machine at all".
+host   *   (.*\.)?github\.com
+host   *   (.*\.)?githubusercontent\.com
+host   *   (.*\.)?apple\.com
+host   *   (.*\.)?swift\.org
+host   *   trelliswm\.app
+host   *   claude\.ai
+host   *   code\.claude\.com
+host   *   brew\.sh
+host   *   (.*\.)?example(\.(com|org|net|invalid))?
+host   *   .*\.(invalid|test|example)
+host   *   localhost|127\.0\.0\.1|0\.0\.0\.0
+
+# This repository, and the tap `brew install` finds it through.
+repository   *   [^/]+/(arbor|homebrew-tap|tap)(\.git)?
+
+# The record of the private phase, published as it stood. Its rows are long and are edited in place, which makes a whole
+# row count as new, and its numbers and roles are how its rows refer to each other. New rows do without them.
+number,role   collab/BACKLOG.md     .*
+number,role   collab/QUESTIONS.md   .*

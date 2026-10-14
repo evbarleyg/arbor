@@ -1,0 +1,8 @@
+#!/bin/sh
+# arbor's pre-push hook. `make hooks` copies it to where git looks for hooks; git then runs it before every push from this
+# clone and its worktrees, and gives up the push when it fails. See scripts/public-check.py and docs/PUBLIC.md.
+top=$(git rev-parse --show-toplevel) && common=$(git rev-parse --git-common-dir) || exit 1
+check="$top/scripts/public-check.py"
+# A branch from before the check existed is as public as any other: it is read with the copy `make hooks` kept.
+[ -f "$check" ] || check="$common/arbor-public-check/public-check.py"
+exec python3 "$check" --pre-push

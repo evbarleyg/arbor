@@ -7,7 +7,8 @@ A Mac is left out when it could prove nothing new, or nothing that will not be p
      prose, or data the Linux job checks just as well: collab/, docs/, *.md, scripts/typecheck-mac/ (which
      only Linux runs), the scripts in scripts/mac-shell/ that CI does not run (it runs e2e-drag.sh, and
      with it lib.sh and its tools; and `swift test` on a Mac type-checks every helper tool there, *.swift and *.m),
-     the Mac shell workflow with its set-up, and these rules, scripts/mac-queue.py and the tools' self-tests, which run on Linux;
+     the Mac shell workflow with its set-up, and these rules, scripts/mac-queue.py and the tools' self-tests, which run on Linux,
+     the Makefile, which no macOS job uses, and what looks after the repository itself (scripts/public-*, git-hooks, .claude …);
   2. or, in an ordinary pull request, all the rest of it is code that also builds and is tested on
      Linux (the core, the controller, the platform protocols, the fakes, arbor-sim, the tests);
   3. or only prose has changed since the nearest earlier commit that passed the macOS job. That covers
@@ -43,6 +44,8 @@ PROSE = re.compile(
     # tools' self-tests by Linux. TAKE THE SET-UP OFF THIS LIST in the change that makes ci.yml use it.
     r"|^\.github/workflows/mac-shell\.yml$|^\.github/actions/mac-(setup|keep-build)/|^scripts/ci-(build|build-key|mtimes)\.(sh|py)$"
     r"|^scripts/ci-mac-shell\.sh$|^scripts/(test-)?(ci-changes|mac-queue)\.py$|^scripts/test-tooling\.py$"
+    # The Makefile: no step of a macOS job calls make. And what looks after the repository itself, on Linux or at GitHub's.
+    r"|^Makefile$|^scripts/(test-)?public-[a-z-]+\.\w+$|^scripts/git-hooks/|^scripts/(lint-workflows|housekeeping)\.py$|^\.github/(workflows/(public-[a-z-]+|housekeeping)|dependabot)\.yml$|^\.claude/"
 )
 # What Package.swift builds on Linux too. Anything in neither list needs a Mac.
 HEADLESS = re.compile(

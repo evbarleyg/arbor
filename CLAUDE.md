@@ -9,6 +9,17 @@ Arbor is built by two roles that collaborate through this repo: a
 **executors** (build it, prove it, merge it). Read `collab/README.md` for the
 loop; start every session from `collab/BOARD.md`.
 
+## This repository is public
+
+Whatever is pushed or posted here is public at once and for good. `docs/PUBLIC.md` says what stays out: names ("the
+maintainer", "a tester"), anything about one person's Mac, apps, days or work, ids of and links to working sessions, e-mail
+addresses, paths on a particular machine, internal hosts, cost, names of models, roles and numbers of the private phase.
+
+- First thing in a clone: `make hooks`. Git then runs `scripts/public-check.py` before every push.
+- Before you post a pull request's body, an issue or a comment: `scripts/public-check.py --text <file>`. After you have
+  created a pull request, read its body back: a platform may have added a link to your session.
+- Commit under a no-reply address. Branch only from a branch of `origin`.
+
 ## Commands
 
 ```bash
@@ -31,6 +42,8 @@ make parity     # score Arbor against TrellisWM; regenerates docs/FEATURES.md
 make fuzz       # start Arbor on damaged state.json and settings.json files (a sample; docs/TESTING.md)
 make linux      # check, scenarios and parity in the Linux image CI uses (needs Docker)
 make clean      # remove .build and build
+make hooks      # once per clone: git then runs the next line's check by itself before every push
+make public-check  # nothing private in what this branch adds, and its history begins where the public one does (docs/PUBLIC.md)
 ```
 
 Swift 6 language mode, macOS 14+, no third-party dependencies.
@@ -58,6 +71,7 @@ new. See "Executors without a Mac" in `collab/README.md`.
 | `Sources/arbor-fakemac` | The stand-ins behind `scripts/mac-shell/rehearse.sh`: Mac shell scripts run on Linux against the real controller | Built on Linux only. Wraps the fakes and copies `ArborApp`'s wiring: a new member of `WindowSystem` or `OverlayPresenter` needs a line in `Arbor.swift`. |
 | `Sources/ArborTestWindows`, `Sources/arbor-e2e` | End-to-end runner and the windows it arranges | macOS only. |
 | `scripts/` | What the make targets and CI run (`bundle.sh`, `e2e.sh`, `linux.sh`, `scenarios.sh`, `sim-smoke.sh`, `candidate-check.sh`, `parity.py`, `ci-step.py`, `ci-changes.py`, `ci-toolchain.sh`, `ci-build.sh`, `ci-build-key.sh` and `ci-mtimes.py` (what `.github/actions/mac-setup` gives a hosted Mac to start with), `ci-mac-shell.sh`, `mac-queue.py`, and their self-tests `test-tooling.py`, `test-ci-changes.py` and `test-mac-queue.py`), `mutate.py` (mutation testing), `mac-shell/` (the real app on a remote Mac) | Each file's header says how to use it; `docs/TESTING.md` covers `mutate.py` and `mac-shell/`. |
+| `scripts/public-*`, `scripts/git-hooks/` | What keeps private things out of a public repository: `public-check.py` reads what is pushed, with its exceptions in `public-check.allow`; `git-hooks/` is what `make hooks` installs; `test-public-*.py` hold them to tables of situations | `docs/PUBLIC.md`. Linux and Python only. The rules name kinds of things, never the things. |
 | `docs/` | `ARCHITECTURE.md`, `TESTING.md`, `ROADMAP.md`, `features/F*.md` specs, generated `FEATURES.md` | Specs belong to the documenter |
 | `collab/` | Board, questions, ideas, reports, scenarios, parity data, evidence | See `collab/README.md` |
 
@@ -115,7 +129,7 @@ Several executors may work on Arbor at once, one board item each.
 1. **Pick work** from `collab/BOARD.md`: the top **Ready** item you can do whose
    dependencies are merged.
 2. **Work in your own worktree and branch**, never directly on `main`:
-   `git worktree add ../arbor-worktrees/F07 -b feat/F07-edge-resize main`
+   `git worktree add ../arbor-worktrees/F07 -b feat/F07-edge-resize origin/swarm/trunk`
 3. **Claim it**: move the item to **In progress** on the board and set the
    spec's `Status:` to `in progress (<branch>)`. Edit only your own spec, and
    only its status and Shipped note; ask in `collab/QUESTIONS.md` if the spec is wrong.
