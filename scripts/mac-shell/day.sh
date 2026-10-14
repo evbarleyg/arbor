@@ -93,8 +93,10 @@ switch_to safari
 full_screen on
 full_screen off
 
-chapter "A click lands on the wallpaper"
+chapter "A click lands on the wallpaper, a double-click on a title bar"
 wallpaper_click
+title_double_click finder
+title_double_click calendar
 
 chapter "Where macOS tiles too"
 # Late in the day: whatever comes of two window managers answering one drag, the chapters above have been played by then.
