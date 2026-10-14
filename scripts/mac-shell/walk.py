@@ -1,0 +1,202 @@
+#!/usr/bin/env python3
+"""Writes a walk: a journey for a real Mac, made from a seed, in the words of lib-walk.sh.
+
+  walk.py <seed> [--acts n] [--display laptop|desk] [--tiling defaults|off] [--control]   prints the script
+  walk.py --self-test
+
+The same seed gives the same walk, on any machine and any version of Python. The kinds of act come in the proportions docs/VIABLE.md asks of the whole
+gate ("The mixture"). The walk knows nothing of the state of the screen: lib-walk.sh leaves out an act that does not apply. It only keeps what belongs
+together near each other (what is minimized is restored a few acts later, a pause is resumed, full screen is left), because a walk that hides every
+app in its first minute has nothing left to walk through.
+
+A plain random walk, until the generator of the Linux walks writes these words too.
+"""
+
+import sys
+
+APPS = ["finder", "safari", "textedit", "terminal", "notes", "calendar", "settings", "preview", "mail"]
+# docs/VIABLE.md, acts_min. A drag where macOS tiles counts within the drags there, and is a kind of its own here.
+MIXTURE = [("switch", 480), ("open-close", 300), ("dock-key", 160), ("drag", 160), ("drag-where-macos-tiles", 80), ("view", 400),
+           ("resize", 80), ("macos-own", 80), ("way-out", 60), ("idle", 40)]
+
+
+class Dice:
+    """A generator of its own (a linear congruential one, Knuth's constants): `random` makes no promise across versions."""
+
+    def __init__(self, seed):
+        self.state = 0
+        for byte in str(seed).encode():
+            self.state = (self.state * 257 + byte + 1) % 2**64
+        for _ in range(8):
+            self.roll(2)
+
+    def roll(self, sides):
+        self.state = (self.state * 6364136223846793005 + 1442695040888963407) % 2**64
+        return (self.state >> 33) % sides
+
+    def pick(self, choices):
+        return choices[self.roll(len(choices))]
+
+    def weighted(self, pairs):
+        at = self.roll(sum(weight for _, weight in pairs))
+        for choice, weight in pairs:
+            if at < weight:
+                return choice
+            at -= weight
+        return pairs[-1][0]
+
+
+def walk(seed, acts):
+    """The lines of a walk of about that many acts. Some words are two acts (a click on the wallpaper and a second one), one is a dozen."""
+    dice = Dice(seed)
+    lines, owed, count = [], [], 0
+    restart_at = acts // 2
+
+    def say(line, worth=1):
+        nonlocal count
+        lines.append(line)
+        count += worth
+
+    def later(line):
+        owed.append([1 + dice.roll(4), line])
+
+    restarted = False
+    while count < acts:
+        for debt in owed:
+            debt[0] -= 1
+        due = [debt for debt in owed if debt[0] <= 0]
+        if due:
+            owed.remove(due[0])
+            say(due[0][1])
+            continue
+        if not restarted and count >= restart_at and not owed:
+            restarted = True
+            say("quit_and_start", 12)
+            continue
+        kind = dice.weighted(MIXTURE)
+        app, other = dice.pick(APPS), dice.pick(APPS)
+        if kind == "switch":
+            say(dice.weighted([(f"switch_dock {app}", 4), (f"switch_click {app}", 4), (f"switch_cmdtab {1 + dice.roll(3)}", 3),
+                               ("switch_backtick", 1), (f"switch_menu {dice.pick(['safari', 'finder', 'textedit', 'terminal'])}", 1)]))
+        elif kind == "open-close":
+            what = dice.roll(5)
+            if what == 0:
+                say(f"switch_dock {dice.pick(['safari', 'textedit', 'finder', 'terminal'])}")
+                say("open_new")
+                later("close_new")
+            elif what == 1:
+                say(f"switch_dock {app}")
+                say("minimize")
+                later(f"restore {app}")
+            elif what == 2:
+                say(f"switch_dock {app}")
+                say("hide")
+                later(f"unhide {app}")
+            elif what == 3:
+                quits = dice.pick(["textedit", "preview", "safari"])
+                say(f"quit_app {quits}")
+                later(f"reopen {quits}")
+            else:
+                say("close_new")
+        elif kind == "dock-key":
+            say(f"switch_click {app}")
+            say(dice.weighted([(f"dock_key {dice.pick(['left', 'right', 'up', 'down'])}", 4), ("float_key", 1)]))
+        elif kind == "drag":
+            say(dice.weighted([(f"drag_onto {app} {other} {dice.pick(['left', 'right', 'top', 'bottom'])}", 3), (f"drag_out {app}", 2),
+                               (f"drag_by {app} {dice.roll(401) - 200} {dice.roll(241) - 120}", 2)]))
+        elif kind == "drag-where-macos-tiles":
+            say(f"drag_edge {app} {dice.pick(['left', 'right', 'top'])}")
+        elif kind == "view":
+            say("view " + dice.weighted([("frame", 4), ("all", 4), ("out", 2), ("in", 2), ("left", 2), ("right", 2), ("back", 2), ("forward", 1), ("desktop", 1)]))
+        elif kind == "resize":
+            say(dice.weighted([(f"resize_gap {app} {dice.pick([-80, -40, 40, 80])}", 2), (f"resize_key {dice.pick(['grow', 'shrink', 'balance'])}", 3)]))
+        elif kind == "macos-own":
+            if dice.roll(2):
+                say("wallpaper_click", 2)
+            else:
+                say("switch_dock safari")
+                say("full_screen on")
+                say("full_screen off")
+        elif kind == "way-out":
+            if dice.roll(2):
+                say("pause")
+                later("resume")
+            else:
+                say("float_all")
+        else:
+            say("idle_act")
+    for _, line in owed:
+        say(line)
+    return lines
+
+
+def script(seed, acts, display, tiling, control):
+    head = [
+        "#!/bin/bash",
+        f"# A walk from the seed {seed}: scripts/mac-shell/walk.py {seed} --acts {acts} --display {display} --tiling {tiling}" + (" --control" if control else ""),
+        "# Written by a program. Change the program, not this file.",
+    ]
+    if control:
+        head.append("WALK_WITHOUT_ARBOR=1")
+    head += ['source "$(dirname "${BASH_SOURCE[0]}")/lib-walk.sh"', f"walk_begin stock {display} {tiling} {seed}"]
+    return "\n".join(head + walk(seed, acts) + ["walk_end"]) + "\n"
+
+
+def self_test():
+    failures = []
+    if walk("4711", 110) != walk("4711", 110):
+        failures.append("the same seed gives two walks")
+    if walk("4711", 110) == walk("4712", 110):
+        failures.append("two seeds give the same walk")
+    # Pinned, so that a change of the generator, which changes what every seed means, does not go unnoticed.
+    if walk("4711", 110)[:3] != PINNED:
+        failures.append(f"the walk from 4711 begins {walk('4711', 110)[:3]}, not {PINNED}")
+    for seed in range(200):
+        lines = walk(seed, 110)
+        for opens, closes in (("minimize", "restore"), ("hide", "unhide"), ("pause", "resume"), ("full_screen on", "full_screen off"), ("quit_app", "reopen")):
+            if sum(line.startswith(opens) for line in lines) != sum(line.startswith(closes) for line in lines):
+                failures.append(f"seed {seed}: as many of `{opens}` as of `{closes}`")
+        if lines.count("quit_and_start") != 1:
+            failures.append(f"seed {seed}: Arbor is quit and started once in every walk")
+        between = [line for line in lines[lines.index("full_screen on") + 1:][:1]] if "full_screen on" in lines else ["full_screen off"]
+        if between != ["full_screen off"]:
+            failures.append(f"seed {seed}: full screen is left with the next act")
+    words = {line.split()[0] for seed in range(200) for line in walk(seed, 110)}
+    missing = WORDS - words
+    if missing:
+        failures.append(f"never walked in 200 walks: {sorted(missing)}")
+    if words - WORDS:
+        failures.append(f"words lib-walk.sh does not list: {sorted(words - WORDS)}")
+    for failure in failures:
+        print(f"✘ {failure}")
+    print("walk.py: " + ("every walk is whole, and the same seed walks the same way" if not failures else f"{len(failures)} failed"))
+    return 1 if failures else 0
+
+
+WORDS = {"switch_dock", "switch_click", "switch_cmdtab", "switch_backtick", "switch_menu", "open_new", "close_new", "minimize", "restore", "hide", "unhide",
+         "quit_app", "reopen", "dock_key", "float_key", "drag_onto", "drag_out", "drag_by", "drag_edge", "view", "resize_gap", "resize_key", "full_screen",
+         "wallpaper_click", "pause", "resume", "float_all", "quit_and_start", "idle_act"}
+PINNED = ['view back', 'switch_click textedit', 'switch_click terminal']
+
+
+def main(arguments):
+    if arguments == ["--self-test"]:
+        return self_test()
+    if not arguments or arguments[0].startswith("-"):
+        print(__doc__)
+        return 64
+    seed, rest = arguments[0], arguments[1:]
+    options = {"--acts": "110", "--display": "laptop", "--tiling": "defaults"}
+    control = "--control" in rest
+    rest = [word for word in rest if word != "--control"]
+    for name, value in zip(rest[::2], rest[1::2]):
+        if name not in options:
+            print(f"walk.py: no option {name}", file=sys.stderr)
+            return 64
+        options[name] = value
+    print(script(seed, int(options["--acts"]), options["--display"], options["--tiling"], control), end="")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
