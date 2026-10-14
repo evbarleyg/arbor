@@ -48,6 +48,9 @@ final class NamePanel: OverlayPanel, NSTextFieldDelegate {
     hasShadow = true
     ignoresMouseEvents = false
     collectionBehavior = [.ignoresCycle, .transient, .fullScreenAuxiliary]
+    // It shows a name a person gave: not for an audience. macOS decides how far this is honoured. Scripts that take pictures
+    // of the panels need to see it.
+    sharingType = ProcessInfo.processInfo.environment["ARBOR_PANELS_IN_PICTURES"] == "1" ? .readOnly : .none
 
     let background = PanelGround()
     contentView = background
@@ -91,8 +94,8 @@ final class NamePanel: OverlayPanel, NSTextFieldDelegate {
       makeKey()
       field.selectText(nil)
       // `resignKey` should cover the clicks, but a field left on screen that no click puts away would be worse than
-      // one that is closed twice, and the second time does nothing. A key press reaches another app only if macOS did
-      // not give the field the keyboard (secure text entry does that): then it must not sit there looking as if it had.
+      // one that is closed twice, and the second time does nothing. A key press reaches another app only if the field
+      // does not have the keyboard, for whatever reason: then it must not sit there looking as if it had.
       // The key that opened the field may still be down and repeating.
       clickMonitor = NSEvent.addGlobalMonitorForEvents(
         matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown, .keyDown]

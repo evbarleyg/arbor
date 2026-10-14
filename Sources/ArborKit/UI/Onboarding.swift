@@ -125,6 +125,8 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
     if frame != old { window.setFrame(frame, display: true) }
     // The moves are made in other apps' windows, one of which then fills the display: stay above them.
     window.level = model.page == .firstSteps ? .floating : .normal
+    // Which page is up, for whoever looks from outside without seeing the screen: a script, which has only the level to go by so far.
+    window.setAccessibilityIdentifier(model.page == .firstSteps ? "welcome-first-steps" : "welcome-permissions")
     if window.isVisible { stepAside() }
     // Whoever has just put something right did it in System Settings, which lies over this window.
     if window.isVisible, let shown, model.isWorthComingForward(after: shown) { window.orderFrontRegardless() }

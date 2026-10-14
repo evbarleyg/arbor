@@ -330,6 +330,7 @@ extension NSWindowDelegate {
   open func displayLink(target: Any, selector: Selector) -> CADisplayLink { CADisplayLink() }
   open func setAccessibilityElement(_ accessibilityElement: Bool) {}
   open func setAccessibilityLabel(_ accessibilityLabel: String?) {}
+  open func setAccessibilityIdentifier(_ accessibilityIdentifier: String?) {}
   open func setAccessibilityRole(_ accessibilityRole: NSAccessibility.Role?) {}
   open func setAccessibilitySubrole(_ accessibilitySubrole: NSAccessibility.Subrole?) {}
   open func setAccessibilityHidden(_ accessibilityHidden: Bool) {}

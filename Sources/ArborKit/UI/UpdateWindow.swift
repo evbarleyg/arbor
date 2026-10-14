@@ -54,20 +54,28 @@ final class UpdateWindow: NSObject {
     // Arbor has no Dock icon to find the window by, so it must not end up under other apps' windows.
     window.level = .floating
     window.center()
-    NSApp.activate()
+    // The app in front gets the keyboard back when the alert goes. The answer comes when the network pleases, perhaps in
+    // mid-word: Arbor asks to come forward and does not insist.
+    KeyboardLoan.shared.borrow(insisting: false)
     window.makeKeyAndOrderFront(nil)
     // Asked for from a terminal, Arbor may not be let to the front; the window comes all the same.
     window.orderFrontRegardless()
   }
 
   @objc func close() {
+    // Taken off the screen, not closed: no notification tells of it.
+    if alert != nil { KeyboardLoan.shared.aWindowWasTakenAway() }
     alert?.window.orderOut(nil)
     alert = nil
     page = nil
   }
 
   @objc private func openPage() {
-    if let page { NSWorkspace.shared.open(page) }
+    if let page {
+      // The browser comes forward, a moment later than the window closes.
+      KeyboardLoan.shared.forgive()
+      NSWorkspace.shared.open(page)
+    }
     close()
   }
 }

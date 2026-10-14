@@ -38,7 +38,8 @@ final class PeekOutlinePanel: OverlayPanel {
     level = .floating
     // Said explicitly: clicks fall through the transparent parts of a borderless panel otherwise.
     ignoresMouseEvents = false
-    collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
+    // Transient, like every overlay: a stationary panel stays on screen in Mission Control.
+    collectionBehavior = [.canJoinAllSpaces, .transient, .ignoresCycle, .fullScreenAuxiliary]
     contentView = outline
   }
 }

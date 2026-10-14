@@ -17,6 +17,8 @@ final class CheatSheetPanel: PassingPanel {
     super.init()
     // Said out loud: the window server lets clicks fall through where a borderless panel draws nothing.
     ignoresMouseEvents = false
+    // It only ever answers a key.
+    showsOverFullScreen = true
     list.autoresizingMask = [.width, .height]
     background.addSubview(list)
   }
@@ -57,8 +59,9 @@ final class CheatSheetPanel: PassingPanel {
 
   private static let margin: CGFloat = 24
 
-  /// Clicks outside the panel go to other apps, and so do keys should macOS not have let the panel have the
-  /// keyboard (secure text entry, say). Those cannot be kept from the app, but they still put the panel away.
+  /// Clicks outside the panel go to other apps, and so do keys should the panel not have the keyboard, for whatever
+  /// reason. Those cannot be kept from the app, but they still put the panel away. Presses on Arbor's own panels, which
+  /// no global monitor sees, reach the controller by `pointerPressed`.
   private func watchOtherApps() {
     guard monitor == nil else { return }
     monitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown]) {

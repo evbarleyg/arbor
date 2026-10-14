@@ -20,10 +20,19 @@ class PassingPanel: OverlayPanel {
     // The stage that covers a display while windows move is one above `.floating`.
     level = NSWindow.Level(rawValue: NSWindow.Level.floating.rawValue + 2)
     hasShadow = true
-    // Not `.fullScreenAuxiliary`: another app's full-screen Space is none of Arbor's business. `.transient`, because a
-    // `.stationary` panel stays on screen in Mission Control.
+    // `.transient`, because a `.stationary` panel stays on screen in Mission Control. See also `showsOverFullScreen`.
     collectionBehavior = [.canJoinAllSpaces, .transient, .ignoresCycle]
     contentView = background
+  }
+
+  /// Whether the panel also shows in another app's full-screen Space. That is none of Arbor's business, and nothing it says
+  /// by itself shows there. But whoever pressed one of its keys there asked it a question: a key that is silent, and a
+  /// panel that takes the keyboard unseen, are both worse than a line over a film.
+  var showsOverFullScreen: Bool {
+    get { collectionBehavior.contains(.fullScreenAuxiliary) }
+    set {
+      if newValue { collectionBehavior.insert(.fullScreenAuxiliary) } else { collectionBehavior.remove(.fullScreenAuxiliary) }
+    }
   }
 
   private var animates: Bool { !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
@@ -112,7 +121,12 @@ final class HeadsUpPanel: PassingPanel {
     line.frame = placement.textFrame
     line.text = placement.text
     invalidateShadow()
+    let changesSpaces = showsOverFullScreen != model.isAnswer
+    showsOverFullScreen = model.isAnswer
     appear()
+    // A line Arbor said by itself counts as visible also in a full-screen Space, where it does not show, and `appear` leaves a
+    // visible panel where it is. Whether a change of behaviour alone takes it into that Space is not known; this does.
+    if changesSpaces { orderFrontRegardless() }
   }
 
   /// What happened, and after a dot what to press next: lighter in weight, not in colour. The keys are what the

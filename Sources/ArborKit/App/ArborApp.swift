@@ -475,7 +475,8 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
         NSAttributedString(string: repository, attributes: attributes.merging([.link: url]) { _, link in link }))
     }
     let build = controller.buildInfo
-    NSApp.activate(ignoringOtherApps: true)
+    // The app in front gets the keyboard back when the panel closes.
+    KeyboardLoan.shared.borrow()
     NSApp.orderFrontStandardAboutPanel(options: [
       .applicationName: "Arbor",
       .applicationIcon: ArborArtwork.appIcon(side: 128),

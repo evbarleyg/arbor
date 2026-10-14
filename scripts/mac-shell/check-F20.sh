@@ -28,7 +28,7 @@ arbor_build
 step "three windows: [1 | Desktop | 2 / 3], shortcuts and the menu bar item on"
 # An ordinary app, so that it can be the app in front.
 ARBOR_TEST_WINDOWS_ARGS="--regular"
-arbor_start 3 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0
+arbor_start 3 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_PANELS_IN_PICTURES=1
 ctl dock "$W1" left
 ctl dock "$W2" right
 ctl dock "$W3" beside "$W2" bottom
