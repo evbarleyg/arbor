@@ -116,3 +116,150 @@ import Testing
     #expect(system.answersAhead.isEmpty)
   }
 }
+
+/// An app that takes longer over a move than Arbor waits (`FakeWindowSystem.slowApps`).
+@Suite @MainActor struct SlowAppTests {
+  func makeDesk() -> (Harness, slow: WindowID, other: WindowID) {
+    let h = Harness()
+    let slow = h.system.open(app: "Xcode", pid: 3001)
+    let other = h.system.open(app: "Notes", pid: 3002)
+    h.start()
+    h.run("dock \(slow.rawValue) left")
+    h.run("dock \(other.rawValue) right")
+    h.system.userFocus(other)
+    return (h, slow, other)
+  }
+
+  func isInView(_ window: WindowID, _ h: Harness) -> Bool {
+    h.system.frame(of: window)!.fractionInside(FakeWindowSystem.standardDisplay.frame) > 0.9
+  }
+
+  @Test func itsWindowsFollowWhenItIsDone() {
+    let (h, slow, other) = makeDesk()
+    h.system.slowApps = [3001]
+    h.run("zoom \(other.rawValue)")
+    #expect(isInView(slow, h), "still on its way out")
+    h.system.slowAppsFinish()
+    h.scheduler.runPending()
+    #expect(!isInView(slow, h))
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  /// The window that grows is the likeliest to be slow, and the one the keyboard is meant for.
+  @Test func theKeyboardFollowsIntoTheWindowThatWasFramed() {
+    let (h, slow, _) = makeDesk()
+    h.system.slowApps = [3001]
+    h.run("zoom \(slow.rawValue)")
+    h.system.slowAppsFinish()
+    h.scheduler.runPending()
+    #expect(h.system.focused == slow)
+    #expect(h.frame(slow) == h.layout!.windowFrames[slow])
+  }
+
+  /// `zoom` and `quit` in one breath: the window is still on its way out of view when Arbor lets go of everything.
+  @Test func quittingRightAfterACameraMoveLeavesNothingOutOfView() {
+    let (h, slow, other) = makeDesk()
+    h.system.slowApps = [3001]
+    h.run("zoom \(other.rawValue)")
+    h.controller.shutdown()
+    #expect(isInView(slow, h) && isInView(other, h))
+  }
+
+  /// So slow that it is not done when Arbor has waited for it: the window would arrive out of view with Arbor gone, while
+  /// everybody believed it in view.
+  @Test(arguments: [false, true], [false, true])
+  func aMoveOutOfViewThatOutlastsTheWaitIsFetchedBack(paused: Bool, floating: Bool) {
+    let (h, slow, other) = makeDesk()
+    // A docked window is asked to go somewhere at a quit in any case; a floating one that is taken to be in view is not.
+    if floating { h.run("float \(slow.rawValue)") }
+    h.system.slowApps = [3001]
+    h.system.slowAppsOutlastTheWait = true
+    h.run("zoom \(other.rawValue)")
+    #expect(isInView(slow, h), "still on its way out")
+    if paused { h.run("pause") } else { h.controller.shutdown() }
+    h.system.slowAppsFinish()
+    #expect(isInView(slow, h) && isInView(other, h))
+  }
+
+  /// While it is busy with one move the next is turned away. Nobody may count on that one.
+  @Test func whatABusyAppWasAskedMeanwhileIsMadeUpForWhenItIsDone() {
+    let (h, slow, other) = makeDesk()
+    h.system.slowApps = [3001]
+    h.run("zoom \(other.rawValue)")
+    h.run("back")
+    h.system.slowAppsFinish()
+    h.scheduler.runPending()
+    h.system.slowAppsFinish()
+    h.scheduler.runPending()
+    #expect(isInView(slow, h) && isInView(other, h))
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  /// A window that refuses its slot's width has the layout reckoned again, which Arbor learns from what the app made of the frame it
+  /// was asked to take. From an app that is always late that answer never comes in time.
+  ///
+  /// Not to the point the same arrangement as from an app that answers in time: there the refusal is learnt within `arrange`, which shares
+  /// the width out afresh; here at a later layout, which makes room. What counts is that room is made.
+  @Test(arguments: [false, true]) func whatABusyAppMakesOfTheSizeIsLearntWhenItIsDone(busy: Bool) {
+    do {
+      let h = Harness()
+      let wide = h.system.open(
+        app: "Xcode", pid: 3001, frame: CGRect(x: 100, y: 100, width: 900, height: 400), minimumSize: CGSize(width: 800, height: 300))
+      let second = h.system.open(app: "Notes", pid: 3002, frame: CGRect(x: 200, y: 160, width: 500, height: 400))
+      let third = h.system.open(app: "Mail", pid: 3003, frame: CGRect(x: 300, y: 200, width: 500, height: 400))
+      h.start()
+      if busy { h.system.slowApps = [3001] }
+      h.run("arrange")
+      for _ in 0..<12 {
+        h.system.slowAppsFinish()
+        h.scheduler.advance(by: 0.25)
+      }
+      let frames = [wide, second, third].map { h.system.frame(of: $0)! }
+      #expect(frames[0].width == 800, "it has its way")
+      for (index, frame) in frames.enumerated() {
+        for other in frames.dropFirst(index + 1) { #expect(!frame.overlaps(other), "\(frame) and \(other)") }
+      }
+      expectWindowsMatchLayout(h, on: h.display)
+    }
+  }
+
+  /// No odd timing needed, only a slow app at quit: its first window is on its way when the second is asked for.
+  @Test func quittingLeavesNeitherOfASlowAppsTwoWindowsOutOfView() {
+    let h = Harness()
+    let first = h.system.open(app: "Xcode", pid: 3001)
+    let second = h.system.open(app: "Xcode", pid: 3001)
+    let other = h.system.open(app: "Notes", pid: 3002)
+    h.start()
+    h.run("dock \(first.rawValue) left")
+    h.run("dock \(second.rawValue) left")
+    h.run("dock \(other.rawValue) right")
+    h.run("zoom \(other.rawValue)")
+    h.scheduler.runPending()
+    #expect(!isInView(first, h) && !isInView(second, h))
+    h.system.slowApps = [3001]
+    h.controller.shutdown()
+    #expect(isInView(first, h))
+    #expect(isInView(second, h))
+  }
+
+  /// In view is not enough: each goes back to where it floated, in its own size.
+  @Test(arguments: [false, true]) func aSlowAppsWindowsEndWhereAQuickAppsDo(paused: Bool) {
+    func quit(slow: Bool) -> [CGRect] {
+      let h = Harness()
+      let first = h.system.open(app: "Xcode", pid: 3001, frame: CGRect(x: 100, y: 100, width: 500, height: 400))
+      let second = h.system.open(app: "Xcode", pid: 3001, frame: CGRect(x: 200, y: 160, width: 520, height: 420))
+      let other = h.system.open(app: "Notes", pid: 3002, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
+      h.start()
+      h.run("dock \(first.rawValue) left")
+      h.run("dock \(second.rawValue) left")
+      h.run("dock \(other.rawValue) right")
+      // A pause leaves what is in view in the shape of its slot, and a quit during it undoes that.
+      h.run(paused ? "pause" : "zoom \(other.rawValue)")
+      h.scheduler.runPending()
+      if slow { h.system.slowApps = [3001] }
+      h.controller.shutdown()
+      return [first, second, other].map { h.system.frame(of: $0)! }
+    }
+    #expect(quit(slow: true) == quit(slow: false))
+  }
+}

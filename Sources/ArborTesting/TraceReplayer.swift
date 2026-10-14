@@ -1362,5 +1362,6 @@ private final class ReplayWindowSystem: WindowSystem {
   }
   /// A hint that may be ignored: the `setFrame` calls it foretells are answered from the recording one by one.
   func moveTogether(_ frames: [(window: WindowID, frame: CGRect)]) {}
+  func finishMoves(timeout: Double) {}
   func setFrameOnce(_ frame: CGRect, of window: WindowID, pid: Int32) -> CGRect? { setFrame(frame, of: window) }
 }

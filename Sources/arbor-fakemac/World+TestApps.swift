@@ -290,6 +290,14 @@ extension World {
       hungUntil[pid] = elapsed + min(max(seconds, 0), 60)
       system.setUnresponsive(pid: pid, true)
       return ""
+    case "busy", "sluggish":
+      // Works that long at a time, or over every move, so that is how late it answers. Longer than Arbor waits for a move, and the
+      // move goes on behind Arbor's back until time passes (`letTimePass`).
+      guard (2...3).contains(words.count), let work = Double(words[1]) else {
+        throw AppRefusal("usage: busy <ms> [<attention ms>] | sluggish <ms>")
+      }
+      if work >= 500 { system.slowApps.insert(pid) } else { system.slowApps.remove(pid) }
+      return ""
     case "list":
       let listed = windowIDs(of: pid).filter { id in
         isOnScreen(id)

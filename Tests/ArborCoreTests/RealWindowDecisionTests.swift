@@ -526,6 +526,17 @@ extension Box where Value == EchoFilter {
     #expect(filter.value.hasStrayed(w, now: set))
   }
 
+  /// Then the frame need not even be read.
+  @Test func aMoveIsFreshForAsLongAsAnyReportIsAnEchoOrEarly() {
+    var filter = EchoFilter()
+    filter.expect(set, for: w, at: 100)
+    #expect(filter.isFresh(w, at: 100) && filter.isFresh(w, at: 100.14))
+    #expect(!filter.isFresh(w, at: 100.15) && !filter.isFresh(w, at: 99), "later, or with the clock behind")
+    #expect(!filter.isFresh(WindowID(8), at: 100.01))
+    #expect(filter.judge(set.offsetBy(dx: 50, dy: 0), of: w, at: 100.14) == .early)
+    #expect(filter.judge(set.offsetBy(dx: 50, dy: 0), of: w, at: 100.15) == .other)
+  }
+
   @Test func expectationsDoNotPileUp() {
     let filter = Box(EchoFilter())
     filter.expect(set, for: w, at: 100)

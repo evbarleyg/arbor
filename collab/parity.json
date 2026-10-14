@@ -3333,6 +3333,32 @@
       ]
     },
     {
+      "id": "A945",
+      "area": "Arbor only",
+      "title": "No app holds up another, or Arbor",
+      "trellis": "",
+      "arbor": "Each app moves its windows on a lane of its own; Arbor waits 0.5 s for all of them together, and a slow app's windows follow when it is done",
+      "status": "shipped",
+      "priority": 1,
+      "tests": [
+        "aMoveIsFreshForAsLongAsAnyReportIsAnEchoOrEarly",
+        "aMoveOutOfViewThatOutlastsTheWaitIsFetchedBack",
+        "aSlowAppCostsPatienceOnceAndFinishesInTheBackground",
+        "aSlowAppsWindowsEndWhereAQuickAppsDo",
+        "anAppThatDoesNotAnswerIsNamedAndTheRestOfItsBatchDropped",
+        "appsAnswerSideBySideAndEachAppInOrder",
+        "itsWindowsFollowWhenItIsDone",
+        "jobsForABusyLaneWaitTheirTurnWhenAsked",
+        "quittingLeavesNeitherOfASlowAppsTwoWindowsOutOfView",
+        "quittingRightAfterACameraMoveLeavesNothingOutOfView",
+        "silenceAfterPatienceRanOutIsReportedLate",
+        "theKeyboardFollowsIntoTheWindowThatWasFramed",
+        "whatABusyAppMakesOfTheSizeIsLearntWhenItIsDone",
+        "whatABusyAppWasAskedMeanwhileIsMadeUpForWhenItIsDone",
+        "whatWaitsBehindAJobThatWentUnansweredIsNotTried"
+      ]
+    },
+    {
       "id": "A48",
       "area": "Arbor only",
       "title": "A window that leaves the arrangement gets its own size back",

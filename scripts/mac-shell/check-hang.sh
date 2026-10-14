@@ -1,14 +1,14 @@
 #!/bin/bash
 # An app that hangs, on real windows: does Arbor go on answering, does Quit end, does every window come back? Four sessions
 # with two apps of test windows, one of which stops answering for 20 s: while the view moves, during a Quit, during a pause
-# and during a start. Run it with
+# and during a start. Then two in which it is only slow, and takes 0.7 s over every move. Run it with
 #
 #   scripts/mac-shell/run.sh scripts/mac-shell/check-hang.sh        (or, on a Mac, bash scripts/mac-shell/check-hang.sh)
 #
 # What only a Mac can answer: how long a call to an app that does not answer really holds Arbor up, and whether a move that was
 # sent to such an app is carried out when it wakes. It prints the seconds until every answer, beside what the same commands take
 # while every app is awake, so that two runs on two commits can be laid side by side. Each session records a trace (mac-shell/traces).
-# Safe on a person's Mac: it touches only its own test windows and changes no setting; no pointer, no keys. About four minutes.
+# Safe on a person's Mac: it touches only its own test windows and changes no setting; no pointer, no keys. About five minutes.
 source "$(dirname "$0")/lib.sh"
 
 HANG=20
@@ -25,7 +25,7 @@ at_exit '[ -z "$AWKWARD_JOB" ] || kill_started $AWKWARD_JOB'
 awkward_start() {
   local hello="" tries=0
   mkfifo "$ARBOR_SESSION_DIR/awkward-stdin"
-  "${ARBOR_TEST_WINDOWS_2:-$ARBOR_BIN/ArborTestWindows}" --count 2 < "$ARBOR_SESSION_DIR/awkward-stdin" \
+  "${ARBOR_TEST_WINDOWS_2:-$ARBOR_BIN/ArborTestWindows}" --count 2 "$@" < "$ARBOR_SESSION_DIR/awkward-stdin" \
     > "$ARBOR_SESSION_DIR/awkward-hello" 2>> "$ARBOR_OUT/test-windows.log" &
   AWKWARD_JOB=$!
   started "$AWKWARD_JOB"
@@ -148,7 +148,7 @@ for command in "zoom $W1" back "zoom $W2" back "zoom $W1" back; do
   sleep 0.5
 done
 echo "while the app hung: the first answer came after $FIRST s, the slowest of the later ones after $LATER s"
-check "the first command is held up by a quarter of a second at most" at_most "$FIRST" "$(echo "$AWAKE + 0.25" | bc)"
+check "the first command is held up by 0.6 s at most" at_most "$FIRST" "$(echo "$AWAKE + 0.6" | bc)"
 check "the later ones by a tenth at most" at_most "$LATER" "$(echo "$AWAKE + 0.1" | bc)"
 for id in "$W1" "$W2" "$W3"; do
   check "window $id of the other app is in its slot meanwhile" eventually is in_slot "$id"
@@ -186,6 +186,9 @@ for id in "$X1" "$X2"; do
   check "window $id comes back on screen once its app is awake, though Arbor is gone" eventually is on_screen "$id"
 done
 echo "the window server has them at: $(real_frame_of "$X1") and $(real_frame_of "$X2")"
+# Seen, not inferred from a sleep: an app obeys its stdin only when its main thread runs again.
+tell_awkward move "$X1" 120 120 420 300
+check "the app is awake by then: told to, it moves window $X1 into view itself" eventually is on_screen "$X1"
 session_ends
 
 step "3. a pause while an app hangs whose windows are out of view"
@@ -234,4 +237,54 @@ for id in "$X1" "$X2"; do
   check "and has not moved: nobody docked it" arbor_close "$(real_frame_of "$id")" "$([ "$id" = "$X1" ] && echo 120 120 420 300 || echo 200 180 420 300)"
 done
 summary
+session_ends
+
+# where_everything_is: each window's state and frame, the second app's first, without the numbers that differ from session to session.
+where_everything_is() {
+  local id
+  for id in "$X1" "$X2" "$W1" "$W2" "$W3"; do
+    if is tile "$id" > /dev/null 2>&1; then echo tile; else frame_of "$id"; fi
+  done | tr '\n' ';'
+}
+
+# arranged <name> [slow]: five windows are arranged, of which the second app's first refuses to be narrower than 500 points, which no slot
+# is. WHERE says how it ended.
+arranged() {
+  awkward_start --min-size 1:500x300
+  session "$1"
+  check "Arbor arranges the second app's windows too" eventually is managed "$X1"
+  # Slow over each move, as an app is that lays its content out anew. (One that is busy in bursts does not make Arbor's moves late: a hosted
+  # Mac showed that Arbor's main thread waits on a read to it, returns the moment it attends, and the moves that follow are all served then.)
+  if [ "${2:-}" = slow ]; then
+    tell_awkward sluggish 700
+    sleep 1
+  fi
+  timed arrange
+  sleep 12
+  WHERE=$(where_everything_is)
+  summary
+}
+
+step "5. what an arrangement comes to while every app is awake"
+arranged awake-arrange
+AWAKE_WHERE=$WHERE
+session_ends
+
+step "6. the same while the second app takes 0.7 s over every move, longer than Arbor waits"
+arranged slow-arrange slow
+check "arrange is held up by 0.6 s at most" at_most "$TOOK" "$(echo "$AWAKE + 0.6" | bc)"
+echo "awake: $AWAKE_WHERE"
+echo "slow:  $WHERE"
+# Not to the point the same: awake, the refusal is learnt within `arrange`, which shares the width out afresh; slow, at a later layout.
+for id in "$X1" "$X2" "$W1" "$W2" "$W3"; do
+  check "window $id is in its slot: what the slow app made of the size was learnt late, and room was made" is in_slot "$id"
+done
+echo "what the log says of apps that went late:"
+grep -c "took longer than" "$SESSION_HOME/arbor.log"
+grep "took longer than" "$SESSION_HOME/arbor.log" | tail -n 3
+# The fake Mac's Arbor is the controller on stand-ins: the line comes from the layer below.
+[ -n "${ARBOR_REHEARSAL:-}" ] || check "the overrun is in the log, by bundle id" grep -q "took longer than" "$SESSION_HOME/arbor.log"
+"$ARBOR_BIN/arborctl" stats > "$ARBOR_OUT/stats-slow-arrange.txt" 2>&1
+tell_awkward sluggish 0
+sleep 1
 session_ends
