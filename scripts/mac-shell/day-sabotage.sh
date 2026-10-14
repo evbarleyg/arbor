@@ -6,11 +6,12 @@
 #
 # A detector that is silent all day proves nothing unless it has been seen to speak, on the same Macs, through the same sampler, about
 # the same kind of windows (docs/VIABLE.md, "Three controls"). Arbor does not run and is not even built: `apptool set-frame`, `raise`, `activate` and
-# `close` are the saboteur, through Accessibility, as Arbor moves windows. Between the offences there are honest steps, which must stay clean.
+# `close` are the saboteur, through Accessibility, as Arbor moves windows. What only Arbor's own process can do wrong is done by a program that passes
+# for it (impostor.swift). Between the offences there are honest steps, which must stay clean.
 #
 # What comes back: sabotage.md (step, offence committed, what was reported), and what every day brings back.
-# Committed so far: jolt (moved twice; elsewhere first), moved-unasked, flash, behind, focus, pulled, stuck, slow, size-lost, lost (out of view; gone), told.
-# Not yet: fought, crash, busy and left-behind, which take a process that passes for Arbor; input-held, which has no detector yet.
+# Committed: jolt (moved twice; elsewhere first), moved-unasked, flash, behind, focus, pulled, stuck, slow, size-lost, lost (out of view; gone), told; and by
+# the impostor: fought, input-held, busy, left-behind, crash. All sixteen of docs/VIABLE.md.
 #
 # Only on GitHub's Macs: it opens real apps, moves and closes their windows, and switches the display's size.
 DAY_SABOTAGE=1
@@ -177,6 +178,73 @@ acted moves="$B"
 act idle vanishes "OFFENCE: a window is closed, and nobody asked for that"
 apptool close "$E"
 acted offence=lost
+
+chapter "What only Arbor's own process can do wrong"
+# Where Arbor's program would be, so that it is told by the same signs: the name of its process, the path it runs from.
+mkdir -p "$ARBOR_BIN"
+swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/impostor.swift" -o "$ARBOR_BIN/Arbor" > "$ARBOR_OUT/build-impostor.log" 2>&1 \
+  || { cat "$ARBOR_OUT/build-impostor.log"; die "scripts/mac-shell/impostor.swift did not compile"; }
+# There is no Arbor to ask what it believes.
+DAY_NO_AUDIT=1
+impostor() {
+  rm -f "$APPS_TEMP/impostor"
+  mkfifo "$APPS_TEMP/impostor"
+  "$ARBOR_BIN/Arbor" < "$APPS_TEMP/impostor" 2>> "$ARBOR_OUT/impostor.log" 5<&- 6>&- 8>&- 9>&- &
+  ARBOR_PID=$!
+  started "$ARBOR_PID"
+  exec 7> "$APPS_TEMP/impostor"
+  note "arbor $ARBOR_PID"
+  sleep 1
+}
+tell() { echo "$*" >&7; }
+impostor
+
+act switch honest-click-5 "clicks the first document's title bar, with something that passes for Arbor running"
+must click_window "$A"
+acted front="$A"
+act switch held-back "OFFENCE: the button comes up, and an event tap keeps that from the apps for a fifth of a second"
+tell hold 200 4
+sleep 0.5
+must click_window "$A"
+acted front="$A" offence=input-held
+sleep 4
+act drag-where-macos-tiles both-previews "OFFENCE: a window is dragged against the menu bar, and a drop preview comes up beside macOS's own"
+must drag_window "$A" "$((dx + dw / 2))" "$dy" --no-release
+sleep 1
+tell panel 3 "$((dx + 12))" "$((dy + 43))" "$((dw - 24))" 400
+sleep 0.6
+release
+tell unpanel
+acted drags="$A" own="$A" offence=fought
+act drag-where-macos-tiles honest-drag-back "drags it away from the top again"
+must drag_window "$A" "$((dx + dw / 2))" "$((dy + 130))"
+acted drags="$A" own="$A"
+act idle busy-doing-nothing "OFFENCE: nobody does anything, and the process keeps a core busy"
+tell spin 8
+idle 6
+acted offence=busy
+act idle honest-idle-2 "nobody does anything, and neither does it"
+sleep 3
+idle 5
+acted
+act quit-and-start stays-behind "OFFENCE: it is asked to quit and does, but a second process of its stays"
+# Its input stays open and says nothing, so it stays.
+sleep 30 | "$ARBOR_BIN/Arbor" > /dev/null 2>&1 5<&- 6>&- 7>&- 8>&- 9>&- &
+SECOND=$!
+started "$SECOND"
+sleep 0.5
+tell quit
+exec 7>&-
+want "it ends within five seconds" day_gone
+acted offence=left-behind
+kill_started "$SECOND"
+impostor
+act idle ends-unasked "OFFENCE: nobody does anything, and the process ends"
+tell die
+exec 7>&-
+sleep 1
+acted offence=crash
+
 act idle tells "OFFENCE: a window's title is written into a log"
 echo "the window is called $APPS_CANARY-oak.txt" > "$ARBOR_OUT/saboteur.log"
 acted offence=told

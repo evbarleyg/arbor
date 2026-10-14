@@ -846,6 +846,7 @@ While Arbor runs, each chapter is also a trace of its own (section 6), with ever
 | 4: the window you switch to comes to the front and into view | `behind` | at the end `front=<window>` is not the first of the pile |
 | | `focus` | its app is not the one in front, or part of it is beyond the space between the menu bar and the Dock; or the app in front changes during an act that is no switch |
 | 5: Quit, Float All and pause give sizes back | `size-lost` | `restores=`: a window's size differs from its own, which is the one it had when Arbor started or when it opened, or that the person gave it since (`own=`; `place=` after a mere move). With `places=1`, as after Float All and Quit, its place too |
+| 6: what a person presses reaches the apps, at once | `input-held` | `witness.swift log` sits at the far end of the event taps and writes down how late each press, release and key got there (`witness.log`, in the sampler's grammar): a mouse-up over 50 ms late; or, with `--control <findings of the run without Arbor>`, 99 in 100 events over 10 ms later than there |
 | what only the script can see | `crash`, `busy`, `left-behind`, `told` | Arbor's process ends unasked, or macOS writes a crash report of its; during `idle <seconds>` it uses over 1 % of a core or writes over 20 lines a minute; after Quit a process or a window of its is still there; the canary word that is in every document's name, and so in every title, turns up in anything the run brings back but the pictures |
 | L: no window is lost | `lost` | a window left the screen and the step did not say so (`leaves=`); `everything=1` and less than half of one is on the display (after Show Everything a tile may stand in for it, `tiles=ok`, if a panel of Arbor's is seen where Arbor says the tile is; never for the window that has the keyboard); `comes=` and it is not there |
 
@@ -873,7 +874,7 @@ What comes back in `.mac-shell/day-<run>/`:
 | `sabotage.md` | of the sabotage run: each step, the offence committed, what was reported |
 
 **Three controls**, without which a silent detector means nothing. *Without Arbor*: apps move their own windows, and so does macOS, so read a finding against the control before
-calling it Arbor's. *Sabotage*: `apptool set-frame`, `raise`, `activate` and `close` do to real windows what Arbor must never do, one offence a step with honest steps between, and `jolts.py sabotage` fails
+calling it Arbor's. *Sabotage*: `apptool set-frame`, `raise`, `activate` and `close` do to real windows what Arbor must never do, and a program that passes for Arbor (`impostor.swift`) does what only its own process can do wrong, one offence a step with honest steps between, and `jolts.py sabotage` fails
 unless every offence is reported by its own detector, by no other, and nothing where nothing was done. *The self-test*, part of `make lint`: some sixty situations, each with the finding it must or must not give.
 
 **What it cannot see**: two changes within one sample (a step during which the sampler saw nothing for more than 250 ms does not count as judged, and the report says `blind for … ms`; what it did see stands, because a gap
