@@ -331,6 +331,18 @@ private final class Panel {
     }
   }
 
+  /// Seen in the window: "ring" also found the setting that holds still "during a call".
+  @Test func aSearchBeginsAWordAndDoesNotEndOne() {
+    let p = Panel()
+    p.model.search = "ring"
+    #expect(p.model.found.sections.flatMap(\.rows).map(\.key) == ["focusRing", "focusRingWidth", "focusRingColour"])
+    p.model.search = "dock"
+    #expect(p.model.found.sections.flatMap(\.rows).contains { $0.key == "dimBehindArranged" }, "“docked” begins so")
+    // A key's words run together, and whoever types part of one knows it.
+    p.model.search = "behindarr"
+    #expect(p.model.found.sections.flatMap(\.rows).map(\.key).contains("dimBehindArranged"))
+  }
+
   @Test func hiddenSettingsAreNotFound() {
     let p = Panel()
     p.model.search = "focus ring"

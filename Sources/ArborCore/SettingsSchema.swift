@@ -780,11 +780,20 @@ public struct SettingEntry: Sendable {
     return " Change it with \(editedWith)."
   }
 
-  /// Whether a search for `words` finds this setting: each must occur in its label, help or key,
-  /// ignoring case.
+  /// Whether a search for `words` finds this setting, ignoring case: each must begin a word of its label or help, or occur
+  /// anywhere in its key, whose words run together. "ring" is after the focus ring, not after what happens "during a call".
   public func matches(search words: String) -> Bool {
-    let text = "\(label) \(help) \(key)".lowercased()
-    return words.lowercased().split(whereSeparator: \.isWhitespace).allSatisfy { text.firstRange(of: $0) != nil }
+    let text = Array("\(label) \(help)".lowercased())
+    let key = key.lowercased()
+    func beginsAWord(_ word: [Character]) -> Bool {
+      guard word.count <= text.count else { return false }
+      return (0...(text.count - word.count)).contains { start in
+        (start == 0 || !(text[start - 1].isLetter || text[start - 1].isNumber)) && text[start..<(start + word.count)].elementsEqual(word)
+      }
+    }
+    return words.lowercased().split(whereSeparator: \.isWhitespace).allSatisfy {
+      key.firstRange(of: $0) != nil || beginsAWord(Array($0))
+    }
   }
 
   // MARK: Writing
