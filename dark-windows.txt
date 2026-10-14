@@ -1,0 +1,80 @@
+AXWindow - "Arbor Settings" "" 122 58 780 568
+  AXGroup - "" "" 122 86 780 540
+    AXTextField search "Search the settings" "" 132 96 180 22
+    AXScrollArea - "" "" 122 128 200 469
+      AXOutline - "Sidebar" "" 122 128 200 469
+        AXRow - "" "" 122 138 200 28
+          AXCell - "" "" 132 138 180 28
+            AXStaticText pane.general "" "General" 141 144 69 16
+        AXRow - "" "" 122 166 200 28
+          AXCell - "" "" 132 166 180 28
+            AXStaticText pane.windows "" "Windows" 141 172 76 16
+        AXRow - "" "" 122 194 200 28
+          AXCell - "" "" 132 194 180 28
+            AXStaticText pane.dragging "" "Dragging" 141 199 77 16
+        AXRow - "" "" 122 222 200 28
+          AXCell - "" "" 132 222 180 28
+            AXStaticText pane.gestures "" "Gestures" 142 228 75 16
+        AXRow - "" "" 122 250 200 28
+          AXCell - "" "" 132 250 180 28
+            AXStaticText pane.calls "" "Calls" 141 256 51 16
+        AXRow - "" "" 122 278 200 28
+          AXCell - "" "" 132 278 180 28
+            AXStaticText pane.appearance "" "Appearance" 141 284 94 16
+        AXRow - "" "" 122 306 200 28
+          AXCell - "" "" 132 306 180 28
+            AXStaticText pane.menu-bar "" "Menu Bar" 141 312 79 16
+        AXRow - "" "" 122 334 200 28
+          AXCell - "" "" 132 334 180 28
+            AXStaticText pane.apps "" "Apps" 142 340 52 16
+        AXRow - "" "" 122 362 200 28
+          AXCell - "" "" 132 362 180 28
+            AXStaticText pane.scripting "" "Scripting" 141 368 76 16
+        AXRow - "" "" 122 390 200 28
+          AXCell - "" "" 132 390 180 28
+            AXStaticText pane.shortcuts "" "Shortcuts" 140 396 81 16
+        AXRow - "" "" 122 418 200 28
+          AXCell - "" "" 132 418 180 28
+            AXStaticText pane.rules "" "Rules" 142 424 54 16
+        AXColumn ListColumn "" "" 132 128 180 469
+    AXStaticText - "" "Arbor dev" 198 605 48 13
+    AXScrollArea - "" "" 323 86 579 540
+      AXGroup - "" "" 343 106 539 363
+        AXStaticText - "" "Gap" 353 116 25 16
+        AXStaticText - "" "Space between docked windows, and between them and the screen edges." 353 134 255 26
+        AXSlider gap.slider "Gap" "12" 620 115 150 20
+          AXValueIndicator - "" "12" 634 113 24 28
+        AXTextField gap.field "Gap, pt" "12" 778 115 60 21
+        AXStaticText - "" "pt" 846 117 13 16
+        AXStaticText - "" "Smallest usable width" 353 181 132 16
+        AXStaticText - "" "A space narrower than this shows a tile with the app's colour and icon instead of its window." 353 199 234 26
+        AXSlider minimumUsableWidth.slider "Smallest usable width" "240" 620 180 150 20
+          AXValueIndicator - "" "240" 649 178 24 28
+        AXTextField minimumUsableWidth.field "Smallest usable width, pt" "240" 778 180 60 21
+        AXStaticText - "" "pt" 846 182 13 16
+        AXStaticText - "" "Smallest usable height" 353 246 137 16
+        AXStaticText - "" "A space shorter than this shows a tile instead of its window." 353 264 235 26
+        AXSlider minimumUsableHeight.slider "Smallest usable height" "160" 620 245 150 20
+          AXValueIndicator - "" "160" 639 243 24 28
+        AXTextField minimumUsableHeight.field "Smallest usable height, pt" "160" 778 245 60 21
+        AXStaticText - "" "pt" 846 247 13 16
+        AXStaticText - "" "New windows while framed" 353 311 165 16
+        AXStaticText - "" "A window that opens over a view that does not show the Desktop (a framed window, a group) can go out of view and come back with that view, or belong to the Desktop like any floating window." 353 329 362 39
+        AXPopUpButton newWindowsWhileFramed "" "Stay with that view" 725 310 147 20
+        AXStaticText - "" "New windows" 353 389 83 16
+        AXStaticText - "" "What a new window does when no rule matches it. dock: it takes half the place of the docked window you were working in, if there is room; small windows and windows of a fixed size float. The menu's Dock New Windows and `toggle-auto-dock` switch it." 353 407 337 52
+        AXPopUpButton newWindows "" "Float where they open" 705 388 167 20
+      AXGroup - "" "" 331 479 551 44
+        AXDisclosureTriangle - "Advanced" "0" 331 493 93 16
+      AXGroup - "" "" 343 533 539 40
+        AXButton - "Restore Defaults" "" 755 543 117 20
+  AXButton - "" "" 130 65 12 14
+  AXButton - "" "" 170 65 12 14
+    AXGroup - "" "" 169 64 14 16
+      AXGroup - "" "" 169 64 14 16
+  AXButton - "" "" 150 65 12 14
+  AXStaticText - "" "Arbor Settings" 462 63 99 16
+AXWindow - "" "" 253 43 12 650
+AXWindow - "" "" 506 43 12 650
+AXWindow - "" "" 759 43 12 650
+AXWindow - "" "" 0 31 1024 674
