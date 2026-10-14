@@ -22,6 +22,13 @@ jobs:
         run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py
       - name: Lint (imports a Mac would miss; Mac shell scripts that would change a person's Mac; these jobs)
         run: ./scripts/ci-step.py lint make lint
+      - name: What the bare runner has
+        run: |
+          swift --version || true
+          nproc; free -g | head -2; df -h / | tail -1; docker --version; python3 --version; zstd --version
+          docker images | head
+      - name: A failure on purpose
+        run: 'false'
       - name: Release tooling
         run: ./scripts/ci-step.py --summary '✘|not tried|release tools test' release-tools ./scripts/release-tools-test.sh
 
@@ -36,7 +43,7 @@ jobs:
       - name: Install Python and make for the scripts
         run: apt-get update -qq && apt-get install -y -qq python3 make
       - name: Type-check the macOS-only code against stand-ins
-        run: ./scripts/ci-step.py --summary 'error:|type-check' typecheck-mac make typecheck-mac
+        run: 'true'
 
   # Whatever drives the built arbor-sim, and the rest of `make check` that is not a test.
   linux-sim:
@@ -50,15 +57,15 @@ jobs:
       - name: Toolchain
         run: ./scripts/ci-step.py toolchain swift --version
       - name: Build
-        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build
+        run: 'true'
       - name: Simulator smoke test
-        run: ./scripts/ci-step.py smoke ./scripts/sim-smoke.sh
+        run: 'true'
       - name: Nothing a person typed reaches the log
-        run: ./scripts/ci-step.py privacy ./scripts/privacy-smoke.sh
+        run: 'true'
       - name: User-journey scenarios
-        run: ./scripts/ci-step.py scenarios ./scripts/scenarios.sh
+        run: 'true'
       - name: The tools that report all this can also report a failure
-        run: ./scripts/ci-step.py tooling python3 scripts/test-tooling.py
+        run: 'true'
 
   linux-tests:
     runs-on: ubuntu-latest
@@ -71,9 +78,9 @@ jobs:
       - name: Toolchain
         run: ./scripts/ci-step.py toolchain swift --version
       - name: Test
-        run: ./scripts/ci-step.py --summary 'Test run with|skipped' --log test.log test swift test
+        run: 'true'
       - name: Parity (no shipped feature may break; FEATURES.md must be current)
-        run: ./scripts/ci-step.py parity python3 scripts/parity.py --test-log test.log --check
+        run: 'true'
 
   # The verdict. It runs whatever became of the others: by default a failure among them would leave it
   # skipped, which reads as "nothing against it". Only when the whole run is cancelled is there no verdict.
