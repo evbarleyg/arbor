@@ -17,82 +17,10 @@
 #
 # On a person's Mac only the first session runs, with the setting as that person has it. The others change a setting of the system's
 # and open apps, so they run on GitHub's throwaway Macs alone.
-source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-double-click.sh"
 
-TRACES="$ARBOR_OUT/traces"
-mkdir -p "$TRACES"
-
-# frames_during <window id> <file> <command…>: runs the command and writes every distinct frame the window server
-# reports for the window from just before it until two to three seconds later.
-frames_during() {
-  local id=$1 file=$2 watcher
-  shift 2
-  (
-    end=$((SECONDS + 3))
-    last=""
-    while [ "$SECONDS" -lt "$end" ]; do
-      now=$("$ARBOR_POINTER" frame "$id")
-      if [ "$now" != "$last" ]; then echo "$now"; last=$now; fi
-    done
-  ) > "$file" 7>&- 8>&- 9>&- &
-  watcher=$!
-  started "$watcher"
-  sleep 0.1
-  "$@"
-  ended "$watcher" 80 || kill_started "$watcher"
-  echo "frames of $id meanwhile:"
-  sed 's/^/    /' "$file"
-}
-
-# one_road <file>: the window never turned round. On its way from the first frame to the last, each of x, y, width and height
-# went one way only, so it was moved once, however many stages macOS's animation shows.
-one_road() {
-  awk '
-    NR == 1 { for (i = 1; i <= 4; i++) { first[i] = $i; before[i] = $i } next }
-    { for (i = 1; i <= 4; i++) { step[NR, i] = $i - before[i]; before[i] = $i } rows = NR }
-    END {
-      for (i = 1; i <= 4; i++) {
-        whole = before[i] - first[i]
-        for (row = 2; row <= rows; row++) if (step[row, i] * whole < 0 || (whole == 0 && step[row, i] != 0)) bad = 1
-      }
-      exit bad
-    }' "$1"
-}
-stayed() { [ "$(wc -l < "$1" | tr -d ' ')" -eq 1 ]; }
-real_frame_is() { [ "$(real_frame_of "$1")" = "$2" ]; }
-differs() { [ "$1" != "$2" ]; }
-not() { ! "$@"; }
-# must <press…>: on somebody's Mac the nets may decline a press, and then nothing happens either.
-must() { "$@" || check "the press was let through: $*" false; }
-
-trace_on() {
-  ctl trace on "$1"
-  "$ARBOR_BIN/arborctl" trace note "$2" > /dev/null
-}
-# trace_off <name>: ends the trace and brings it back without the date in its name. Sets TRACE.
-trace_off() {
-  local file
-  ctl trace off
-  TRACE=""
-  for file in "$ARBOR_HOME"/traces/*-"$1".jsonl; do
-    [ -f "$file" ] || continue
-    TRACE="$TRACES/$1.jsonl"
-    cp "$file" "$TRACE"
-  done
-}
 # heard <n> <window>: Arbor's log has that many double-clicks that reached the window's app
 heard() { [ "$(grep -c "a double-click reached w$2\$" "$ARBOR_HOME/arbor.log")" -eq "$1" ]; }
-# The rehearsal on Linux records no traces: what they alone can say is left out there.
-arbor_moved_nothing() { [ -z "$TRACE" ] || ! grep -q -E '"call":"(setFrame|moveTogether)"' "$TRACE"; }
-moves_of() { [ -z "$TRACE" ] && echo "?" || grep -c -E "\"call\":\"setFrame\".*\"id\":$1[,}]" "$TRACE"; }
-
-# title_bar_action <Fill|Maximize|Minimize|None|default>: before a session, because an app may read it when it starts.
-title_bar_action() {
-  if [ "$1" != as-it-is ] && arbor_may "change the setting \"double-click a window's title bar to\""; then
-    if [ "$1" = default ]; then defaults delete -g AppleActionOnDoubleClick 2>/dev/null; else defaults write -g AppleActionOnDoubleClick -string "$1"; fi
-  fi
-  echo "AppleActionOnDoubleClick: $(defaults read -g AppleActionOnDoubleClick 2>/dev/null || echo "not set")"
-}
 
 # there_and_back <name> <window> <neighbour>: both docked, everything in view.
 there_and_back() {

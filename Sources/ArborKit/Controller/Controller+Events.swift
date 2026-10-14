@@ -260,6 +260,7 @@ extension Controller: OverlayActions {
     guard isRunning, workspaces[display]?.tree.contains(node) == true else { return }
     // Refused as the command it stands for, so that a click that does nothing is told why in the words a key is.
     guard holdLevel != .view else { return _ = perform(.zoomNode(node), from: .gesture) }
+    noteTileOpening(display: display, node: node)
     moveCamera(on: display, to: node)
     if let layout = layouts[display],
       let first = workspaces[display]?.tree.windows(under: node).first(where: { layout.windowFrames[$0] != nil })

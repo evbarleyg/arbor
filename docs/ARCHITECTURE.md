@@ -761,7 +761,7 @@ one panel per display and draws the model in one `draw`. `minimapFrame(on:)` is 
 
 ## Pointer input
 
-Trackpad pinch (F03) and the rectangle drawn with ⇧⌘, or with ⇧ from the Desktop (F05), come from session event
+Trackpad pinch (F03), the rectangle drawn with ⇧⌘, or with ⇧ from the Desktop (F05), and double-clicks (F14) come from session event
 taps (`Input/EventTap.swift`), which see events before apps do and can
 swallow them. macOS holds back every event a tap watches until its callback
 returns, so the callbacks only feed pure state machines in ArborCore
@@ -899,6 +899,53 @@ a handler; these are the rules for handlers, and `RectangleFramer` is the model.
     Drop the gesture, drop the held event, hide what was drawn, pause the second tap.
 12. **Do not remove a tap from inside its own callback** (`stopAfterCurrentEvent()` is for that).
     Pausing and resuming are fine there and take effect before the next event.
+
+### Double-clicks
+
+A double-click on a docked window's title bar or on the bare Desktop is an ordinary camera command (`zoom <id>`,
+`desktop`, `back`, `out`) chosen by where it lands (F14). A tap is needed because macOS has its own title-bar
+double-click, and the tap cannot ask the controller, so the controller describes itself instead:
+`Controller.doubleClickZones()` turns the layouts into a `DoubleClickZones` value (the title-bar strips of the docked
+windows where they really rest, the Desktop's rectangle, tiles, floating windows, what fills each view, and
+how to leave it: `wayOut(of:on:)`, the rule ⌃⌥↩ pressed again follows), and `DoubleClickTap` swaps a fresh copy into its
+lock-protected box whenever an observer hears of a layout, camera, settings or lifecycle change.
+`ArborCore/DoubleClick.swift` decides everything:
+
+- `zones.hit(at:)`: what the point means, or nil. `Controller.doubleClicked(at:)` (tests, arbor-sim) runs the result.
+- `PointerCover.at(_:windows:…)`: what the click would really land on, from the window server's front-to-back
+  list. The zones know only the windows Arbor arranges; this keeps clicks on everything else (unmanaged
+  windows, menus, floating panels) with their owners. It replaces the zones' floating frames on macOS, because it
+  knows the stacking order and where a floating window has been dragged since the last layout.
+- `hit.isBackground(roles:windowHasButtons:)`: whether the Accessibility element there is scenery or a control.
+- `DoubleClickGesture`: which events to hide, and when to run. The second mouse-down is held back; if the button comes up
+  where it went down both are hidden and the command runs, and if the pointer moves away first the mouse-down is given back.
+  So it is when the watch ends with the button still down (`reset(buttonIsDown:)`: macOS switched a tap off, a pause took them away).
+  Either the app sees the press or Arbor runs a command, never both (`neverBothArborAndTheApp`), and macOS's own
+  action needs the press.
+
+The mouse-down tap lets a click with an odd count go after one look at the zones (a lock and a few rectangles). Inside a
+zone it has the main actor publish again meanwhile, because which of Arbor's own panels take clicks is known to AppKit
+alone, and a picker or a settings window comes up without a layout. For an even count,
+only inside a zone does `PointerProbe` ask the window server and the app (the app's own element, never the
+system-wide one: a timeout set on that applies to every Accessibility call in the process). What follows a
+press that is held back is seen by a second tap, installed together with the first and paused except from that mouse-down
+until the button comes up or a drag begins, as in the rectangle framer. It watches mouse-downs as well: one that arrives first says the mouse-up was missed.
+
+Tiles take their own clicks in `TilePanel` and open on the first. The controller notes where and when (`openedTile`,
+published with the zones), and the tap swallows a second click there within the double-click time: it was aimed at
+the tile, by someone used to double-clicking them, and what lies there now is the window just framed.
+
+The taps are installed while `titleBarDoubleClick` or `desktopDoubleClick` is on in `Controller.inputSettings`, which
+switches both off during a pause, for an app that keeps its own keys and without Accessibility permission. Both are off as
+Arbor comes, and then no tap of F14's exists, not even a paused one. The zones read the same settings, so whatever takes
+the taps away also empties the zones, and tests see it.
+
+A double-click that Arbor does not take is macOS's, and what macOS makes of a docked window stays ("Echo suppression", above). The
+spec's table "One double-click, one answer" goes through every path.
+
+Framing replaces macOS's "make it big" and nothing else. `WindowSystem.macTitleBarAction()` says what macOS is set to do at a title bar's
+double-click; the controller asks at every layout while `titleBarDoubleClick` is on (`lookAtMacTitleBarAction`), and with Minimize or Do
+Nothing chosen `inputSettings` has the switch off, so zones and taps go, and observers hear `.input`.
 
 ## Threading
 
@@ -1473,7 +1520,7 @@ Everything else is a view of it:
 | `ARBOR_HOME` | Folder for settings, state, log, traces and socket |
 | `ARBOR_SOCKET` | Socket path (default `$ARBOR_HOME/arbor.sock`) |
 | `ARBOR_ONLY_PIDS=1,2` | Arrange only these processes' windows (tests) |
-| `ARBOR_NO_HOTKEYS=1` | Do not register global shortcuts or install the pinch and rectangle event taps |
+| `ARBOR_NO_HOTKEYS=1` | Do not register global shortcuts or install the pinch, rectangle and double-click event taps |
 | `ARBOR_NO_STATUS_ITEM=1` | No menu bar item |
 | `ARBOR_NO_PROMPT=1` | Do not open the welcome window at launch when Accessibility permission is missing, and show no alert |
 | `ARBOR_DEBUG=1` | Debug logging |

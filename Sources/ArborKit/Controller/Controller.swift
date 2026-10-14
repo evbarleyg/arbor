@@ -82,6 +82,7 @@ public struct WindowFilter: Sendable, Equatable {
 /// - Controller+Minimap.swift: the whole arrangement in small, after the view has moved
 /// - Controller+Undo.swift: undo and redo for changes to the arrangement
 /// - Controller+AppsDoubleClick.swift: what macOS makes of a double-click on a docked window stays
+/// - Controller+DoubleClick.swift: double-clicks on title bars and the Desktop
 @MainActor
 public final class Controller {
   public let system: any WindowSystem
@@ -197,6 +198,10 @@ public final class Controller {
   var announcedGuardZones = DesktopGuardZones()
   var guardZonesCheckIsQueued = false
 
+  /// The tile a single click opened last (Controller+DoubleClick.swift).
+  var openedTile: DoubleClickZones.OpenedTile?
+  /// What macOS does itself at a double-click on a title bar, as of the last layout (Controller+DoubleClick.swift).
+  var macTitleBarAction = MacTitleBarAction.fill
   /// The last double-click that went to a docked window's app, until something has come of it.
   var appsDoubleClick: AppsDoubleClick?
 

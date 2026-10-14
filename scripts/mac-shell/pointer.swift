@@ -65,6 +65,7 @@ struct Pointer {
           [--hold s]                wait at the end before releasing (default 0.2)
           [--no-release]            leave the button down; finish with `release`
           [--no-settle]             without the small movement at the end that lets Arbor catch up
+          [--clicks n]              the press counts as the n-th click in a row (default 1), as right after a click
       release [x y]                 release the button there (default: where the pointer is)
       key <chord>                   press a shortcut, e.g. ctrl+opt+space, cmd+shift+f5, escape
           [--down]                  press the modifiers and the key, and leave them all down
@@ -542,19 +543,20 @@ struct Pointer {
       let wait = option("--hold").map { max(0, min(30, number($0))) } ?? 0.2
       let release = !flag("--no-release")
       let settles = !flag("--no-settle")
+      let clicks = option("--clicks").map { Int64(max(1, min(3, Int(number($0))))) } ?? 1
       let start = point(at: 0)
       let end = point(at: 2)
       // A misspelt option would otherwise be a drag that quietly does something else.
       guard arguments.count == 4 else { fail("drag takes x1 y1 x2 y2 and its options, not \(arguments.dropFirst(4))") }
       move(to: start)
       hold(held)
-      mouse(.leftMouseDown, at: start, clicks: 1)
+      mouse(.leftMouseDown, at: start, clicks: clicks)
       rest(0.15)  // AppKit decides what the press means before the first movement
       glide(.leftMouseDragged, from: start, to: end, steps: steps, duration: duration)
       if settles { settle(at: end) }
       rest(wait)
       if release {
-        mouse(.leftMouseUp, at: end, clicks: 1)
+        mouse(.leftMouseUp, at: end, clicks: clicks)
         letGo(held)
       }
 

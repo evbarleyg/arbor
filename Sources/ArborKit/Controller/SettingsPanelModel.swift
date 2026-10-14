@@ -140,8 +140,11 @@ public final class SettingsPanelModel {
     default:
       return nil
     }
+    // Where a switch is on and does nothing, the row says why before it says anything else.
+    var help = entry.help
+    if entry.key == "titleBarDoubleClick", let why = controller.lookAtMacTitleBarAction() { help = "\(why). \(help)" }
     return Row(
-      key: entry.key, label: entry.label, help: entry.help, control: control,
+      key: entry.key, label: entry.label, help: help, control: control,
       isChanged: !entry.isDefault(in: settings), error: errors[entry.key])
   }
 

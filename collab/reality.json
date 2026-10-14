@@ -3171,7 +3171,8 @@
     "FakeWindowSystem.zoomAsMacOSDoes",
     "FakeWindowSystem.doubleClickTitleBar",
     "FakeWindowSystem.userMove",
-    "World.titleBarActionSetting"
+    "World.titleBarActionSetting",
+    "FakeWindowSystem.titleBarAction"
    ],
    "guards": [
     "test: aSizeChangeAfterAPressInTheTitleBarIsNotAnEdgeResize",
@@ -5066,16 +5067,19 @@
    "layer": "below the seam",
    "expected": "What Accessibility calls a group or an unknown element in a title bar is scenery, which a double-click may be taken from.",
    "happened": "Apps that draw their own title bar (Electron, CEF) may answer with a bare AXGroup or AXUnknown where a button is, so a button there could lose its second click. What those apps really answer has not been looked at.",
-   "found": "A review of the double-click feature, by reading. The feature is not in the tree.",
+   "found": "A review of the double-click feature, by reading.",
    "modelled": "cannot",
    "knobs": [],
-   "guards": [],
-   "copes": "open",
+   "guards": [
+    "test: aGroupIsSceneryOnlyInAToolbarOrASplitGroup"
+   ],
+   "copes": "Sources/ArborCore/DoubleClick.swift (`Hit.isBackground`): a bare group and an unknown element are not scenery, so such a title bar keeps its double-clicks, the empty part of it too. What those apps really answer has still not been looked at.",
    "hurt": 3,
    "touches": [
     "input-held"
    ],
    "sources": [
+    "Sources/ArborCore/DoubleClick.swift",
     "collab/BACKLOG.md"
    ],
    "backlog": [
@@ -7131,11 +7135,19 @@
    "layer": "below the seam",
    "expected": "A click count of 2 on a mouse-down means a double-click.",
    "happened": "A click on a title bar followed at once by a drag, and a drag with a double tap, arrive with a click count of 2 as well: the window would be framed at the second mouse-down and the drag reach nobody. macOS counts on, 1, 2, 3, 4, so every even count is a double-click.",
-   "found": "A review of the double-click feature, by reading. The feature is not in the tree.",
-   "modelled": "cannot",
-   "knobs": [],
-   "guards": [],
-   "copes": "open",
+   "found": "A review of the double-click feature, by reading.",
+   "modelled": "partly",
+   "knobs": [
+    "World.press",
+    "World.drag"
+   ],
+   "guards": [
+    "test: aSecondPressThatTurnsIntoADragIsGivenBackWhole",
+    "test: everySecondClickInARowIsADoubleClick",
+    "test: aSecondPressThatDragsIsADrag",
+    "e2e: the window went with the pointer: it floats now"
+   ],
+   "copes": "DoubleClickGesture.mouseDown holds the second press back, and the command runs when the button comes up; a press that moves more than four points first is given back whole. AppsDoubleClick.isCompleted: every even count.",
    "hurt": 2,
    "touches": [
     "moved-unasked",
@@ -7143,6 +7155,8 @@
    ],
    "sources": [
     "docs/features/F14-double-click-actions.md",
+    "Sources/ArborCore/DoubleClick.swift",
+    "scripts/mac-shell/check-F14.sh",
     "collab/BACKLOG.md"
    ],
    "backlog": [
@@ -8070,13 +8084,21 @@
    "found": "The check script of the double-click feature, on a real Mac.",
    "modelled": "partly",
    "knobs": [
-    "World.press"
+    "World.press",
+    "FakeWindowSystem.secondClick"
    ],
-   "guards": [],
-   "copes": "open",
+   "guards": [
+    "test: theSecondClickOfADoubleClickOnATileGoesNowhere",
+    "test: theTapHearsOfAnOpenedTileBeforeAnyWindowMoves",
+    "scenario: 06-double-click.sim",
+    "e2e: the second click reached nobody"
+   ],
+   "copes": "DoubleClickZones.OpenedTile: while a double-click switch is on, the second click where a tile has just opened is swallowed. With both switches off, as Arbor ships, there is no tap and it still lands in the window.",
    "hurt": 2,
    "sources": [
     "Sources/arbor-fakemac/World+Pointer.swift",
+    "Sources/ArborCore/DoubleClick.swift",
+    "scripts/mac-shell/check-F14.sh",
     "collab/BACKLOG.md"
    ],
    "backlog": [

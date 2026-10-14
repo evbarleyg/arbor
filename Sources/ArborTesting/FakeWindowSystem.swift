@@ -69,6 +69,8 @@ public final class FakeWindowSystem: WindowSystem {
   /// Since when the pointer has been where macOS fills the screen, which it does only for a pointer that has rested there.
   private var inMenuBarSince: Double?
   public var mouseDown = false
+  /// System Settings → Desktop & Dock → "Double-click a window's title bar to".
+  public var titleBarAction = MacTitleBarAction.fill
   /// The window being resized by its edges until the mouse is released.
   public internal(set) var resizing: WindowID?
   public private(set) var started = false

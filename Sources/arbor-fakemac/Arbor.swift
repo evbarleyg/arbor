@@ -29,7 +29,7 @@ final class Arbor {
   }
   var lastBindings: (bindings: [KeyBinding], problems: [String])?
 
-  // PointerInput, GestureTap and RectangleFramer
+  // PointerInput, GestureTap, RectangleFramer and DoubleClickTap
   /// ArborApp makes its `PointerInput` once the controller has started, unless ARBOR_NO_HOTKEYS is set.
   var hasPointerInput = false
   var pinchTap = false
@@ -39,6 +39,8 @@ final class Arbor {
   var unreadableModifier: String?
   var gesture = RectangleGesture()
   var router = GestureRouter()
+  var doubleClickTaps = false
+  var doubleClick = DoubleClickGesture()
   /// The rubber band's panel, which stays in the window server's list once it has been shown.
   var band: (id: UInt32, frame: CGRect, shown: Bool)?
 
@@ -115,6 +117,7 @@ final class WatchedSystem: WindowSystem {
   func leaveStrayDialogs(_ leave: Bool, exceptOfApp inUse: String?) { fake.leaveStrayDialogs(leave, exceptOfApp: inUse) }
   func bringInStrayDialogs(ofApp bundleID: String?) { fake.bringInStrayDialogs(ofApp: bundleID) }
   func strayDialogsWaiting() -> Int { fake.strayDialogsWaiting() }
+  func macTitleBarAction() -> MacTitleBarAction { world.titleBarAction }
 
   /// `AXWindowSystem.openApplication` looks for a bundle id, for a running app of that name, then in the folders apps are
   /// installed in. In this world the test apps are all there is to find.

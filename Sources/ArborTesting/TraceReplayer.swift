@@ -1084,6 +1084,7 @@ private final class ReplayWindowSystem: WindowSystem {
     fake?.bringInStrayDialogs(ofApp: bundleID)
   }
   func strayDialogsWaiting() -> Int { replayer?.answer(read: "strayDialogsWaiting") ?? fake?.strayDialogsWaiting() ?? 0 }
+  func macTitleBarAction() -> MacTitleBarAction { replayer?.answer(read: "macTitleBarAction") ?? fake?.macTitleBarAction() ?? .fill }
   func raise(_ window: WindowID) {
     replayer?.answer(call: "raise", [window])
     fake?.raise(window)

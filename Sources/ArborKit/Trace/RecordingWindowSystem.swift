@@ -113,6 +113,7 @@ public final class RecordingWindowSystem: WindowSystem {
     recorder.call("bringInStrayDialogs", [bundleID]) { inner.bringInStrayDialogs(ofApp: bundleID) }
   }
   public func strayDialogsWaiting() -> Int { recorder.read("strayDialogsWaiting") { inner.strayDialogsWaiting() } }
+  public func macTitleBarAction() -> MacTitleBarAction { recorder.read("macTitleBarAction") { inner.macTitleBarAction() } }
 
   public func raise(_ window: WindowID) { recorder.call("raise", [window]) { inner.raise(window) } }
   public func windowsFrontToBack() -> [WindowID] { recorder.read("windowsFrontToBack") { inner.windowsFrontToBack() } }
@@ -279,6 +280,11 @@ extension RecordingWindowSystem: WindowSystemEvents {
   public func doubleClickReached(_ window: WindowID) {
     recorder.event("doubleClickReached", [window]) { events?.doubleClickReached(window) }
   }
+
+  /// Not a line of its own: all it does is run a command, which is recorded as any command is. That is also what a trace
+  /// from the app holds, where the event tap runs the command and only tests and arbor-sim report this.
+  @discardableResult
+  public func doubleClicked(at point: CGPoint) -> Bool { events?.doubleClicked(at: point) ?? false }
 
   private func beginGesture(_ id: WindowID) {
     gesture = inner.allWindows().first { $0.id == id }

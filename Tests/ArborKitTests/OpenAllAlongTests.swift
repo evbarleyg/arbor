@@ -166,4 +166,5 @@ private final class Listener: WindowSystemEvents {
   func dragCancelled(_ id: WindowID) {}
   func windowReplaced(_ old: WindowID, by window: WindowSnapshot) {}
   func pointerPressed() {}
+  func doubleClicked(at point: CGPoint) -> Bool { false }
 }

@@ -66,6 +66,7 @@ extension Controller {
     // Not when a window is only put back where it was: that moves nothing else.
     if reason != .enforce { dropOverdueSlots(on: displayID) }
     refreshVisibleFrame(of: displayID)
+    lookAtMacTitleBarAction()
     let before = workspaces[displayID]
     guard var layout = roomyLayout(of: displayID, for: reason) else { return }
     // Before anything is moved (Controller+Hold.swift). A new node alone is no move of the view: docking a window at the edge of the

@@ -874,6 +874,8 @@ public final class AXWindowSystem: WindowSystem {
     }
   }
 
+  public func macTitleBarAction() -> MacTitleBarAction { MacFacts.titleBarAction }
+
   public func strayDialogsWaiting() -> Int {
     // One that has closed has no subrole any more. Nor has one whose app does not answer, which is not asked.
     waitingDialogs.removeAll { answers($0.pid) && $0.element.string(kAXSubroleAttribute) == nil }
@@ -1248,7 +1250,8 @@ public final class AXWindowSystem: WindowSystem {
       releaseWasLost()
       press = makePress(at: cursorLocation())
       events?.pointerPressed()
-      // A monitor hears only what apps get, so this double-click is the app's, and on a title bar macOS's.
+      // A monitor hears only what apps get. A press that Arbor's own tap keeps back (F14) never comes here, so this
+      // double-click is the app's, and on a title bar macOS's.
       if AppsDoubleClick.isCompleted(byClick: clicks), let window = press?.window { events?.doubleClickReached(window) }
     case .leftMouseDragged:
       if let window = draggingWindow {
