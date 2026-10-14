@@ -550,6 +550,8 @@ The script clicks at places it takes to be empty, so outside GitHub's Macs it re
 **Measuring.** `scripts/mac-shell/perf.sh` times camera moves over twelve real windows of one app and of four, using
 `arborctl stats`; checks that overlay panels that were put away and handed out again still show and take a drag; then runs
 1200 commands and prints `footprint`, `heap` and `leaks`, and `top`'s idle wakeups while nothing happens.
+`scripts/mac-shell/check-hang.sh` makes one of two test apps stop answering for 20 s while the view moves, during a Quit, a pause and a start, and
+prints the seconds until every answer beside what the same commands take with every app awake: run it on two commits to compare them.
 
 `scripts/mac-shell/first-dock.sh` measures the first act after a start against the next ones, with nine real apps open, in the debug and in the
 release build, each with and without what Arbor gets ready ahead of the first motion (`ARBOR_NO_REHEARSAL=1` is the control). Its first session is the
@@ -803,6 +805,7 @@ copy from before the repository was public, and say what the script does once it
 | `check-F13.sh` (`lib-F13.sh`) | trunk | safe | none | 10 to 25 minutes and 2 GB. Everything in a sandbox under `/tmp`: a throwaway `HOME`, `ARBOR_HOME`, keychain and clone. A small window takes the keyboard twice for seconds. Three copies run with their watchdog, which after a crash would use `open` |
 | `check-F12.sh` | trunk | safe | none | |
 | `perf.sh` | trunk | safe, steps skip themselves | one drag | `footprint`, `heap`, `leaks` where developer mode is off (macOS would ask for a password) |
+| `check-hang.sh` | trunk | safe | none | Four minutes. One of its two test apps stops answering for 20 s, four times: macOS may show it the spinning pointer |
 | `check-F13-system.sh` | trunk | **never**: ends with 77 | | TCC.db as root, `tccutil`, login items, `make install` as a person runs it |
 | `check-e2e-guardian.sh` | trunk | **never**: ends with 77 | | Ends `arbor-e2e` four times in the middle of a run, three of them with `kill -9`, to see whether an Arbor is left: where one is, it stays on the Mac |
 | `check-F58.sh` (`share-probe.swift`) | trunk | safe, steps skip themselves | 2 min | ⌘Tab, the second display, the grey wallpaper; the pictures of single test windows only where Screen Recording is granted already. Two test apps have an icon in the Dock. A test window is put at and beyond the display's edges, so with two displays it shows on the other for a moment |
