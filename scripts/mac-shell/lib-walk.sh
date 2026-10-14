@@ -716,7 +716,9 @@ walk_begin() {
   probe=$(window_of calendar)
   [ -n "$probe" ] || probe=$(window_of "${WALK_CAST##* }")
   act drag-where-macos-tiles tiling-acts "without Arbor: drags a window by its title bar against the menu bar and lets go"
-  click_window "$probe" || apptool raise "$probe"
+  # All of it in front, so that the middle of its title bar is free.
+  dock_click "$(bundle_of "$(name_of_pid "$(pointer windows | awk -v id="$probe" '$1 == id { print $2 }')")")"
+  sleep 0.5
   must drag_window "$probe" "$((WALK_X + WALK_W / 2))" "$WALK_Y" --hold 1
   acted judge=no
   if eventually fills_the_display "$probe"; then seen=true; else seen=false; fi

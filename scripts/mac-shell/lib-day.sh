@@ -382,13 +382,33 @@ click_window() {
   move "$x" "$((y + 120))"
 }
 
+# Not every point that looks free moves the window: a toolbar has controls Accessibility does not call controls. So the button stays down until the window is
+# seen to have followed; a press that did not take hold of it is let go, and the drag was not performed.
 drag_window() {
-  local window=$1 x y role
-  shift
+  local window=$1 to_x=$2 to_y=$3 x y role before hold=0.2 keep="" options=""
+  shift 3
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --hold) hold=$2; shift ;;
+      --no-release) keep=yes ;;
+      *) options="$options $1" ;;
+    esac
+    shift
+  done
   read -r x y role <<< "$(apptool grab "$window" 2>/dev/null)"
   [ -n "${x:-}" ] || { echo "no free point of w$window's title bar shows"; return 1; }
-  mark "drag w$window from $x,$y to $1,$2"
-  drag "$x" "$y" "$@"
+  mark "drag w$window from $x,$y to $to_x,$to_y"
+  before=$(real_frame_of "$window")
+  # shellcheck disable=SC2086
+  drag "$x" "$y" "$to_x" "$to_y" --no-release $options
+  if [ "$(real_frame_of "$window")" = "$before" ]; then
+    release
+    echo "the press at $x,$y ($role) did not take hold of w$window"
+    return 1
+  fi
+  [ -n "$keep" ] && return 0
+  sleep "$hold"
+  release
 }
 
 dock_click() {
