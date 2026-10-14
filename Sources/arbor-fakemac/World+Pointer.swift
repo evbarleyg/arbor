@@ -343,6 +343,14 @@ extension World {
         contentsOfFile: folder + "/defaults/com.apple.universalaccess.reduceMotion", encoding: .utf8)
       return .printing(value?.trimmingCharacters(in: .whitespacesAndNewlines) == "0" ? "false" : "true")
 
+    case "increase-contrast", "reduce-transparency":
+      try arguments.expect(atMost: 0, for: command)
+      // Off on GitHub's Macs. The Mac's settings too.
+      let folder = ProcessInfo.processInfo.environment["ARBOR_REHEARSAL_DIR"] ?? ""
+      let key = command == "increase-contrast" ? "increaseContrast" : "reduceTransparency"
+      let value = try? String(contentsOfFile: folder + "/defaults/com.apple.universalaccess." + key, encoding: .utf8)
+      return .printing(value?.trimmingCharacters(in: .whitespacesAndNewlines) == "1" ? "true" : "false")
+
     case "picture":
       guard arguments.words.count == 4 || arguments.words.count == 5 else {
         throw fail("expected a file, a size and one or two colours")
