@@ -1,6 +1,6 @@
 # Board
 
-**Ordered by the product owner against issues #3 (the seven rules) and #4 (how we work).** Last ordered: 2026-10-14, 23:15 UTC, after the first day played with real apps on a hosted Mac (106 acts, nine apps, macOS's defaults: no window lost, none left behind another in 72 switches, six faults: 1.3 and 1.18 to 1.21).
+**Ordered by the product owner against issues #3 (the seven rules) and #4 (how we work).** Last ordered: 2026-10-14, 23:35 UTC, after the first day played with real apps on a hosted Mac (106 acts, nine apps, macOS's defaults: no window lost, none left behind another in 72 switches, six faults: 1.3 and 1.18 to 1.21).
 
 1. **Faults against the seven rules come first** (section 1), whatever else is nearly ready.
 2. **Then the polish that is already written**, one train each, in this order: the motion's second step, tab groups, continuous zoom, double-click (section 3).
@@ -40,6 +40,20 @@ Letters name the lane that has an item. "Archive" is the branch of patches issue
 | 1.21 | 3 | A window that leaves full screen lands at its old own frame and goes to its place 282 ms later: two moves | a fixer | The stand-in reports the frame macOS gives on leaving full screen; Arbor sets the place once, and not before macOS has let go | `day.sh`, "Full screen" | `jolt` |
 | 1.22 | 1, 3 | A double-click on a docked window's title bar: macOS zooms it, Arbor pulls it back a quarter of a second later. **Decided (Q22): Arbor stands aside** | the porter of F14 | A move and resize without a drag that is macOS's zoom is let be: no frame set, no timer; one layout command returns it in one move; the walks know the state | Real double-clicks on real apps' title bars, with macOS set to Zoom, Fill, Minimize and None | `fought`, `jolt`, `moved-unasked` |
 | 1.17 | all | The rows of severity 1 and 2 that `collab/BACKLOG.md` calls open: that page is a day old | L: replay each row's script on the trunk; close it or make it a row here | the replay | | |
+
+### The baseline: how often each rule breaks on Linux
+
+Ordinary walks (real desks, real smallest sizes, bound keys, the menu, the mouse; `ARBOR_CHAOS_ORDINARY=1`), the trunk's product code of 2026-10-14, 22:30 UTC: in how many of 10,000 walks the rule broke. **No window lost or out of reach, no crash, no hang in 3,000 walks of 300 acts.** Every number has to reach nought (`docs/VIABLE.md`, ring 1).
+
+| Rule of the walks | Detector | In 10,000 | Whose |
+|---|---|---|---|
+| `moved-twice-sizing`, `moved-twice-sizing-again`, `moved-twice` | `jolt` | 8,600 · 6,200 · 5,050 | the fixer of "a refused size must not cost a second move" |
+| `size-kept-through-a-pause` | `size-lost` | 8,000 | 1.20 |
+| `there-and-back-moved` | `moved-unasked` | 2,350 | 1.19, 1.18 |
+| `moved-unasked`, `moved-before-any-dock` | `moved-unasked` | 1,250 · 100 | 1.18 |
+| `start-took-out-of-view` | `lost` | 320 | 1.3 |
+| `size-not-given-back` | `size-lost` | 275 | 1.8 |
+| `home-not-whole`, `home-behind-the-dock` | `lost` | 75 · 50 | **free** |
 
 ## 2. The instruments
 

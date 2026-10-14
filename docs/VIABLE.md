@@ -259,7 +259,8 @@ What the product owner asks of the rubric, whatever else it holds. The first fiv
 | The detectors marked "to build" or "partly": `fought`, `input-held`, `busy`, `told`, `pulled`, `flash`, `stuck`, `focus` with the witness | D |
 | The sabotage tool and its run | D |
 | The casts `browsers` and `awkward`; the cell `two` (does a hosted Mac allow `vdisplay.m`?); the two `sit` runs | D, N |
-| Walks that write a script for a real Mac, seeded from the commit; the rules of section 5 as rules of the Linux walks, with macOS's tiling in the stand-in | L |
+| The rules of section 5 as rules of the Linux walks: there for `jolt`, `moved-unasked`, `lost`, `focus`, `behind`, `size-lost` (`ChaosRunner.detector(for:)` says which rule is which detector; known failures carry a severity). **No net yet:** `flash`, `stuck`, and `fought`, which waits for macOS's tiling in the stand-in. `moved-unasked` is to be rewritten against section 6 | L |
+| Walks that write a script for a real Mac, seeded from the commit. The first version has `switch`, `open-close`, `dock-key`, `drag`, `view`, `way-out` and `quit-and-start`; display changes, hiding, native tabs and full screen come from the written days | L, after D's vocabulary is on the trunk |
 | The ledger of differences, each row saying which detector it touches | N |
 | `docs/POLISH.md`, the films of the five moves, the stage's log of frames, the judge | Q |
 | `make viable`; `viable.py --self-test` as part of `make check`; the workflow that starts a gate, lists its runs for `--runs` and keeps to the queue's priorities. (`scripts/mac-shell/viable.py` itself is there) | O, D |
