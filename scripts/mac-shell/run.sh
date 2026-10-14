@@ -27,7 +27,7 @@
 #
 # The output branch is mac-shell-out/<tag>, and the tag names the ref and the script, not the run: some
 # environments may push but not delete branches, and there each run replaces the last one's output
-# instead of adding a branch. So do not start the same script on the same ref twice at once.
+# instead of adding a branch. Starting the same scripts for the same ref again cancels the run that is still under way.
 #
 # Environment: MAC_SHELL_TIMEOUT  seconds to wait for the run (default 2700)
 #              MAC_SHELL_TAIL     lines of output.txt to print (default 40)

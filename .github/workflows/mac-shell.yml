@@ -48,6 +48,12 @@ on:
         default: false
         type: boolean
 
+# A run started again under the same tag (by default: the same scripts for the same branch) replaces the one before, which would
+# push to the same branch anyway: whoever starts it again after a fix no longer wants the old answer, and somebody is waiting for that Mac.
+concurrency:
+  group: mac-shell-${{ inputs.tag || github.run_id }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
