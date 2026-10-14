@@ -132,7 +132,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
 
   public func applicationDidFinishLaunching(_ notification: Notification) {
     Log.info("Arbor \(controller.buildInfo.text) starting, pid \(getpid()), home \(ArborPaths.home.path)")
-    guards.claimSingleInstance(prompt: !environment.noPrompt)
+    guards.claimSingleInstance(prompt: !environment.noPrompt, isConfined: environment.onlyPIDs != nil)
     if environment.rescue {
       rescueAndQuit()
       return
