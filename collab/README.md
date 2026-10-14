@@ -209,15 +209,20 @@ Three rules keep the Linux build working and the platforms telling the same stor
 
 1. Push the work branch and open a **draft pull request** against `main`; the
    PR description is the report (same template).
-2. GitHub Actions runs `linux` (the headless stack) and `macos` (everything).
+2. GitHub Actions runs the headless stack on Linux and everything on `macos`.
    Both build, test, and run the simulator smoke test, the scenarios and
-   `parity.py --check`; `macos` then runs the real-window and real-pointer tests. A newer push
+   `parity.py --check`; a second Mac, `real-windows`, runs the real-window and real-pointer tests. A newer push
    cancels the run for the older one.
+
+   Linux runners are plentiful, so the Linux work is several jobs side by side, each named `linux-…`
+   (`linux-lint`, `linux-typecheck-mac`, `linux-sim`, `linux-tests`). The last job, `linux`, passes only if all of
+   them did: that one is the Linux verdict. A new job gets a name that starts with `linux-` and a place in its `needs`;
+   `scripts/test-ci-linux.py` (part of `make lint`) fails if it has none, or if a step of `make check` is run by no job.
 
    A macOS job is slow and runners are few, so a first small job,
    `changes`, leaves it out (it shows as skipped, and the annotation on
    `changes` says why) when a Mac could prove nothing new
-   (`scripts/ci-changes.py`; the `linux` job holds its rules to the table of
+   (`scripts/ci-changes.py`; the `linux-lint` job holds its rules to the table of
    cases in `scripts/test-ci-changes.py`):
    - the pull request changes only `collab/`, `docs/`, `*.md` files, `scripts/typecheck-mac/` and the scripts in
      `scripts/mac-shell/` that CI does not run (it runs `e2e-drag.sh`, built on `lib.sh`, `pointer.swift` and `state.py`);
@@ -230,7 +235,7 @@ Three rules keep the Linux build working and the platforms telling the same stor
    The second rule does not hold where work is integrated (pushes to `main`,
    the pull request from `swarm/trunk`): there every change of code is compiled
    and driven on a Mac. So a change to the controller or a platform protocol can
-   pass its own pull request and break the macOS-only code that uses it. The `linux`
+   pass its own pull request and break the macOS-only code that uses it. The `linux-typecheck-mac`
    job type-checks that code against stand-ins (`make typecheck-mac`), which catches a changed
    name or type; it runs nothing. When
    you change something `AX`, `App`, `Input`, `IPC` or `UI` calls, run that first, and ask for the Mac with
@@ -250,7 +255,7 @@ Three rules keep the Linux build working and the platforms telling the same stor
 
 4. Fix and push until the checks pass, then mark the PR ready, merge it
    (squash or merge commit), and update the board and parity data in the same PR.
-5. Real-window checks: CI's `macos` job ends with `make e2e` (GitHub's macOS
+5. Real-window checks: CI's `real-windows` job runs `make e2e` (GitHub's macOS
    runners grant Accessibility) and keeps the evidence as the artifact
    `e2e-evidence`. Drags, clicks, shortcuts, the menu bar and what
    it all looks like can be checked from anywhere with a Mac shell script

@@ -3,6 +3,7 @@
 # Files that would compile on Linux but not on macOS, and Mac shell scripts that would change a person's Mac,
 # found without a Mac. And a ledger of macOS's surprises (docs/REALITY.md) that names what is no longer there.
 lint:
+	@python3 scripts/test-ci-linux.py
 	@python3 scripts/lint-imports.py
 	@python3 scripts/lint-share-space.py --self-test && python3 scripts/lint-share-space.py
 	@python3 scripts/lint-mac-shell.py --self-test > /dev/null || python3 scripts/lint-mac-shell.py --self-test
