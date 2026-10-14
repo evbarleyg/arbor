@@ -39,11 +39,11 @@ extension World {
     // `ProcessGuards.claimSingleInstance`
     if let running = arbor {
       let advice =
-        "Two copies would fight over the same windows. Quit the other one first: Quit Arbor in its menu, "
-        + "or arborctl quit."
+        "It has no window of its own: it is the icon in the menu bar. To start it afresh, choose Quit Arbor "
+        + "there (or run arborctl quit) and open it again."
       Log.error(
         "another Arbor (pid \(running.pid)) already runs from \(home); this one (pid \(pid)) is leaving")
-      return Reply(err: "Arbor is already running (pid \(running.pid)). \(advice)\n", code: 75)
+      return Reply(err: "Arbor is already running. \(advice)\n", code: 75)
     }
     put(Data("\(pid)\n".utf8), in: "arbor.lock")
 
@@ -218,6 +218,9 @@ extension World {
     var installed: [String] = []
 
     arbor.router.threshold = settings.pinchThreshold
+    arbor.router.zoomsWithScroll = settings.scrollZoom
+    arbor.router.scrollThreshold = settings.scrollZoomThreshold
+    arbor.router.zoomsOnDesktop = settings.scrollOnDesktopZooms
     if arbor.router.setContinuous(settings.continuousZoom) { drainGestures() }
     if !settings.gesturesEnabled {
       arbor.pinchTap = false
@@ -229,27 +232,22 @@ extension World {
         installed.append("pinch")
         Log.info("pinch event tap installed")
       }
-      if settings.continuousZoom, !arbor.scrollTap {
+      let wantsScrolls = settings.continuousZoom || settings.scrollZoom
+      if wantsScrolls, !arbor.scrollTap {
         arbor.scrollTap = true
         installed.append("scroll")
         Log.info("scroll event tap installed")
-      } else if !settings.continuousZoom {
+      } else if !wantsScrolls {
         arbor.scrollTap = false
       }
     }
 
     let text = settings.frameRectangleModifier
-    if arbor.trigger?.text != text {
-      if let parsed = RectangleGesture.Modifiers(text: text) {
-        arbor.trigger = (text, parsed)
-      } else {
-        let fallback = Settings().frameRectangleModifier
-        Log.error("frameRectangleModifier \"\(text)\" is not like \"ctrl+opt\" or \"none\"; using \(fallback)")
-        arbor.trigger = (text, RectangleGesture.Modifiers(text: fallback) ?? [.control, .option])
-      }
+    if !arbor.gesture.follow(settings), arbor.unreadableModifier != text {
+      arbor.unreadableModifier = text
+      let fallback = Settings().frameRectangleModifier
+      Log.error("frameRectangleModifier \"\(text)\" is not like \"ctrl+opt\" or \"none\"; using \(fallback)")
     }
-    arbor.gesture.trigger = arbor.trigger?.modifiers ?? []
-    arbor.gesture.desktopTrigger = settings.frameRectangleOnDesktop ? RectangleGesture.desktopModifiers : []
     if !arbor.gesture.isEnabled {
       arbor.rectangleTaps = false
       arbor.gesture.reset()

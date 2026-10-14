@@ -21,9 +21,11 @@ import AppKit
 ///   full-screen <id>                enters or leaves macOS's full-screen mode
 ///   hide | unhide | activate        the whole app
 ///   hang <seconds>                  stops answering anyone for that long
+///
+/// MoreCommands.swift has more: open, front, activate <id>, title, events, list, ping.
 @MainActor
 final class Commands {
-  private var windows: [NSWindow]
+  var windows: [NSWindow]
   /// Input that has not ended in a newline yet.
   private var pending = ""
   /// The frames (AppKit coordinates) windows insist on, by window number.
@@ -46,7 +48,7 @@ final class Commands {
     }
   }
 
-  private func window(_ words: [String]) -> NSWindow? {
+  func window(_ words: [String]) -> NSWindow? {
     guard words.count > 1, let number = Int(words[1]) else { return nil }
     return windows.first { $0.windowNumber == number }
   }
@@ -67,8 +69,9 @@ final class Commands {
     case "restore": target?.deminiaturize(nil)
     case "close": target?.close()
     case "key": target?.makeKeyAndOrderFront(nil)
-    case "front": target?.orderFrontRegardless()
-    case "title": target?.title = words.dropFirst(2).joined(separator: " ")
+    // Without such a window here MoreCommands.swift says so, and the script asks the other test app.
+    case "front" where target != nil: target?.orderFrontRegardless()
+    case "title" where target != nil: target?.title = words.dropFirst(2).joined(separator: " ")
     case "move":
       if let frame = frame(words) { target?.setFrame(frame, display: true) }
     case "insist":
@@ -89,8 +92,9 @@ final class Commands {
       if let target { openDialog(over: target) }
     case "popover":
       if let target { showPopover(over: target) }
-    case "open":
-      if words.count >= 5, let frame = frame(["open", "new"] + words[1...4]) {
+    // `open x y w h …`. `open size=… title=…` is MoreCommands.swift's.
+    case "open" where words.count >= 5 && Double(words[1]) != nil:
+      if let frame = frame(["open", "new"] + words[1...4]) {
         let minimum = words.firstIndex(of: "min").map { words[($0 + 1)...].prefix(2).compactMap { Double($0) } } ?? []
         openWindow(
           at: frame, resizable: !words.contains("fixed"),
@@ -101,10 +105,12 @@ final class Commands {
     case "hide": NSApp.hide(nil)
     case "unhide": NSApp.unhideWithoutActivation()
     // The newer `activate()` is a request that macOS does not grant an accessory app in the background.
-    case "activate": NSApp.activate(ignoringOtherApps: true)
+    case "activate":
+      NSApp.activate(ignoringOtherApps: true)
+      target?.makeKeyAndOrderFront(nil)
     case "hang":
       if words.count > 1, let seconds = Double(words[1]) { Thread.sleep(forTimeInterval: min(max(seconds, 0), 60)) }
-    default: break
+    default: performMore(words)
     }
   }
 
@@ -128,6 +134,7 @@ final class Commands {
       defer: false)
     tab.title = "\(window.title), tab \(windows.count)"
     tab.isReleasedWhenClosed = false
+    tab.isRestorable = false
     tab.backgroundColor = .systemGray
     windows.append(tab)
     window.addTabbedWindow(tab, ordered: .above)
@@ -164,6 +171,7 @@ final class Commands {
       styleMask: [.titled], backing: .buffered, defer: false)
     dialog.title = "Dialog"
     dialog.isReleasedWhenClosed = false
+    dialog.isRestorable = false
     // Panels hide while their app is in the background, which this one mostly is.
     dialog.hidesOnDeactivate = false
     windows.append(dialog)

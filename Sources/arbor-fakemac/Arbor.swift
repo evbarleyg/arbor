@@ -35,7 +35,8 @@ final class Arbor {
   var pinchTap = false
   var scrollTap = false
   var rectangleTaps = false
-  var trigger: (text: String, modifiers: RectangleGesture.Modifiers)?
+  /// The last `frameRectangleModifier` that could not be read, so that it is logged once.
+  var unreadableModifier: String?
   var gesture = RectangleGesture()
   var router = GestureRouter()
   /// The rubber band's panel, which stays in the window server's list once it has been shown.
@@ -59,6 +60,8 @@ final class Arbor {
       system: WatchedSystem(world: world), overlays: overlays, store: store, scheduler: scheduler,
       settings: settings,
       filter: WindowFilter(onlyPIDs: onlyPIDs, ownPID: pid))
+    // `SystemLoginItem`: only an app in a bundle can be a login item.
+    if bundled { controller.loginItem = world.loginItem }
     // The little of `ArborApp.systemFacts()` that this Mac has an answer to.
     controller.systemFacts = { [unowned controller] in
       SystemFacts(
@@ -112,7 +115,15 @@ final class WatchedSystem: WindowSystem {
   func leaveStrayDialogs(_ leave: Bool, exceptOfApp inUse: String?) { fake.leaveStrayDialogs(leave, exceptOfApp: inUse) }
   func bringInStrayDialogs(ofApp bundleID: String?) { fake.bringInStrayDialogs(ofApp: bundleID) }
   func strayDialogsWaiting() -> Int { fake.strayDialogsWaiting() }
-  func openApplication(_ app: String) -> Bool { fake.openApplication(app) }
+
+  /// `AXWindowSystem.openApplication` looks for a bundle id, for a running app of that name, then in the folders apps are
+  /// installed in. In this world the test apps are all there is to find.
+  func openApplication(_ app: String) -> Bool {
+    let wanted = app.lowercased()
+    guard world.apps.values.contains(where: { $0.bundleID.lowercased() == wanted || $0.name.lowercased() == wanted })
+    else { return false }
+    return fake.openApplication(app)
+  }
   func launchApp(_ name: String) -> Bool { fake.launchApp(name) }
   func moveTogether(_ frames: [(window: WindowID, frame: CGRect)]) { fake.moveTogether(frames) }
 
@@ -171,6 +182,8 @@ final class WatchedOverlays: OverlayPresenter {
   /// The focus ring's panel, likewise. It lets clicks through and keeps itself directly above its window
   /// (`FocusRingPanel`), so it has no place of its own in the order of windows.
   private(set) var ringPanel: (id: UInt32, frame: CGRect, window: WindowID, shown: Bool)?
+  /// `PeekOutlines` keeps one panel too, five points (`PeekOutlineView.reach`) larger all round than the space it outlines.
+  private(set) var outlinePanel: (id: UInt32, frame: CGRect, shown: Bool)?
   /// The field a name is typed into (`NamePanel`): its panel, which also stays in the list, what is in the field, and
   /// whether all of that is selected, as it is when the field opens.
   private(set) var namePanel: (id: UInt32, frame: CGRect, shown: Bool)?
@@ -206,6 +219,11 @@ final class WatchedOverlays: OverlayPresenter {
       ringPanel = (ringPanel?.id ?? world.newOverlayID(), area, ring.window, true)
     } else {
       ringPanel?.shown = false
+    }
+    if let outline = scene.peekOutline {
+      outlinePanel = (outlinePanel?.id ?? world.newOverlayID(), outline.insetBy(dx: -5, dy: -5), true)
+    } else {
+      outlinePanel?.shown = false
     }
     if let prompt = scene.namePrompt {
       if namePanel?.shown != true { typed = (prompt.initial, true) }
@@ -243,6 +261,7 @@ final class WatchedOverlays: OverlayPresenter {
     for thing in panels { world.forget(thing) }
     previewPanel = nil
     ringPanel = nil
+    outlinePanel = nil
     minimapPanel = nil
     namePanel = nil
     palettePanel = nil

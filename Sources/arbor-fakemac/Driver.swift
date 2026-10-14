@@ -149,7 +149,10 @@ enum Driver {
     }
     if World.onlyAsks(fields) {
       silenceLog()
-      return finish(replay(entries + [Entry(fields: fields)], lastAsks: true, session: session).reply)
+      // It looks at the disk too, and writes nothing down: a script that saves settings.json and then only
+      // looks sees the edit applied, and the next line that changes something takes note of it.
+      let asked = entries + [Entry(fields: fields)]
+      return finish(replay(asked, lastAsks: true, live: true, session: session).reply)
     }
 
     session.lock()
@@ -258,6 +261,8 @@ struct Session {
   func lock() {
     var waited = 0
     while mkdir(lockFolder, 0o700) != 0 {
+      // The session's folder is gone: a stand-in that outlived its session has nothing left to tell, and nobody to tell it to.
+      if errno == ENOENT { exit(0) }
       usleep(2000)
       waited += 1
       // Ten seconds: whoever held it was killed. A replay takes milliseconds.

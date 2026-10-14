@@ -153,6 +153,11 @@ final class World {
   var wallpaper: String?
   /// `quit` is answered first and obeyed afterwards.
   var quitRequested = false
+  /// The process whose curtain hangs behind the test windows, as lib.sh hangs one on a person's Mac (rehearse.sh,
+  /// ARBOR_REHEARSAL_AS=person). The same for every call of a run, so every replay sees the same world.
+  let curtainPID = ProcessInfo.processInfo.environment["ARBOR_CURTAIN_PID"].flatMap { Int32($0) }
+  /// Whether Arbor opens at login. macOS keeps that, not Arbor, so it outlives a launch.
+  let loginItem = FakeLoginItem()
   /// Seconds since the world began. Controllers come and go; the clock they read does not start over.
   var elapsed: Double = 0
 
@@ -191,6 +196,7 @@ final class World {
   /// Before a line runs: what had changed outside when it first ran.
   func begin(_ entry: Entry) {
     for note in entry.notes { put(note.data, in: note.name) }
+    if entry.notes.contains(where: { $0.name == "settings.json" }) { settingsFileWasSaved() }
   }
 
   /// Before the line that is happening now: looks at the real folder for what a script has changed since the
@@ -204,6 +210,16 @@ final class World {
       newNotes.append(Entry.Note(name: name, data: data))
       put(data, in: name)
     }
+    if newNotes.contains(where: { $0.name == "settings.json" }) { settingsFileWasSaved() }
+  }
+
+  /// `SettingsWatcher`, as `ArborApp.watchSettingsFile` wires it: an edit applies 0.3 s after it is saved. Here
+  /// that is over before the next line, even one that follows at once, as `reload-settings` does in many a
+  /// script: it then finds the file applied already, which changes nothing but the log.
+  private func settingsFileWasSaved() {
+    guard let arbor else { return }
+    arbor.controller.settingsFileMayHaveChanged()
+    letTimePass(0.3)
   }
 
   /// A file in Arbor's home folder, as it is at this point of the history.

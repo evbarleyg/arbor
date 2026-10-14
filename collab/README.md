@@ -48,7 +48,7 @@ The documenter decides **what** and **in what order**; executors decide
 | `collab/IDEAS.md` | Ways to make Arbor better than TrellisWM | Anyone proposes; the documenter promotes ideas into specs |
 | `collab/reports/` | One report per finished work item (template in `templates/report.md`) | Executors (the documenter files reports handed to it by agents it ran) |
 | `collab/scenarios/*.sim` | User journeys with expectations, run in arbor-sim | Documenter |
-| `collab/evidence/` | Output of real-window runs (`make e2e` writes `e2e-latest.txt`) and manual checks | Whoever ran them |
+| `collab/evidence/` | Output of real-window runs (`make e2e` writes `e2e-latest.txt`; the real-window suite writes `suite-<section>-latest.txt`) and manual checks | Whoever ran them |
 | `collab/reality.json` | Every known case where real macOS differed from the stand-ins or from what a test expected: what was expected, what happened, which stand-in plays it, what guards it | Whoever a real Mac surprised, in the pull request that cures it or at once with `"copes": "open"` |
 | `docs/REALITY.md` | Generated from `reality.json` by `scripts/reality-ledger.py`, which looks every name up; never edit by hand | `scripts/reality-ledger.py` (`make lint` checks it) |
 
@@ -121,6 +121,12 @@ reference describes, the way it describes it, would agree that Arbor does it. If
 works only through a command while the reference describes a gesture, or
 fails on real windows, it is `partial`, and the `arbor` text says what is missing.
 List tests that would fail if the claim stopped being true, not tests that pass near it.
+
+A real-window step is a `▸` heading printed by `arbor-e2e` (`make e2e`,
+`e2e-latest.txt`) or by a `claim "…"` line of the real-window suite
+(`scripts/mac-shell/suite/`, `suite-<section>-latest.txt`). It has passed when the
+evidence shows at least one ✔ and no ✘ under it. `scripts/mac-shell/suite-parity.py` lists the
+suite's claims under the items they prove.
 
 It prints the parity score (shipped TrellisWM items out of all TrellisWM
 items that are not "not planned") and the next items to take. A change
@@ -305,8 +311,13 @@ Three rules keep the Linux build working and the platforms telling the same stor
    runners grant Accessibility) and keeps the evidence as the artifact
    `e2e-evidence`. Drags, clicks, shortcuts, the menu bar and what
    it all looks like can be checked from anywhere with a Mac shell script
-   (below). What even that cannot reach (a trackpad pinch, other apps' windows,
-   a second display) goes under "Still to check on a real Mac".
+   (below). A shipped feature's real-window steps belong in the real-window
+   suite (`scripts/mac-shell/suite/`, "The real-window suite" in
+   `docs/TESTING.md`): five lines, rehearsed on Linux for nothing, run on a Mac,
+   their evidence committed and their titles listed under `e2e` in
+   `parity.json`, which is what turns *tested* into *verified*. What even that
+   cannot reach (other apps' windows, a real trackpad) goes under "Still to
+   check on a real Mac".
 
 ### A remote Mac: the "Mac shell" workflow
 

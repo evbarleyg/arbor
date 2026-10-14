@@ -111,11 +111,24 @@ extension World {
     let point = onScreen(target)
     system.cursor = point
     system.mouseDown = true
-    if let arbor, arbor.rectangleTaps,
-      arbor.gesture.mouseDown(at: point, modifiers: modifiers, onDesktop: !appWindowIsUnder(point)) == .hold
-    {
-      held = .rectangle(start: point, clicks: clicks)
-      return
+    if let arbor, arbor.rectangleTaps {
+      // `RectangleFramer.handleDown`. ArborApp hands it the zones again whenever they may have changed.
+      let zones = arbor.controller.desktopGuardZones()
+      let response = arbor.gesture.mouseDown(
+        at: point, modifiers: modifiers,
+        onDesktop: zones.mayBeBare(point, throughPanels: !modifiers.isEmpty) && !appWindowIsUnder(point))
+      switch response {
+      case .ask(let press):
+        // `DesktopProbe`: Finder answers long before the button comes up, and this Desktop has no icons.
+        arbor.gesture.desktopAnswered(isItem: false, press: press)
+        held = .rectangle(start: point, clicks: clicks)
+        return
+      case .hold:
+        held = .rectangle(start: point, clicks: clicks)
+        return
+      default:
+        break
+      }
     }
     land(at: point, clicks: clicks, secondary: right || !modifiers.isDisjoint(with: [.control, .option]))
     // What the Accessibility layer's monitor of the mouse passes on.
@@ -171,6 +184,8 @@ extension World {
         return
       }
     }
+    // The curtain takes the press, does nothing with it, and neither comes forward nor takes the keyboard.
+    if curtainPID != nil { return }
     // The bare Desktop is Finder's.
     switchTo(app: World.finderPID)
     let setting = file(World.clickWallpaperSetting).map { String(decoding: $0, as: UTF8.self) }
@@ -288,9 +303,18 @@ extension World {
     case .content(let id):
       count("dragged", for: id)
 
-    case .rectangle:
-      guard let arbor, case .band(let rect) = arbor.gesture.mouseDragged(to: point) else { return }
-      arbor.band = (arbor.band?.id ?? newOverlayID(), rect, true)
+    case .rectangle(let start, let clicks):
+      guard let arbor else { return }
+      switch arbor.gesture.mouseDragged(to: point) {
+      case .band(let rect):
+        arbor.band = (arbor.band?.id ?? newOverlayID(), rect, true)
+      case .replay:
+        // A plain drag on the Desktop is Finder's: it gets the press it missed, then this move.
+        land(at: start, clicks: clicks, secondary: false)
+        drag(to: point)
+      default:
+        break
+      }
 
     case .strip(let window, let from, let pressedAt, let taken):
       // As the Accessibility layer does (`lookAtPressedWindow`): it looks again with every movement, and asks.
@@ -426,11 +450,13 @@ extension World {
       return
     }
     // A registered hot key never reaches an app.
-    if let arbor, let binding = arbor.activeBindings.first(where: { $0.chord == chord }) {
-      // `HotKeyCenter` reports the key going down and coming up; the pointer tool lets go at once.
+    // Those a peek asked for while it lasts are registered too (`HotKeyCenter.setTemporary`).
+    if let arbor, let binding = (arbor.activeBindings + arbor.controller.temporaryShortcuts).first(where: { $0.chord == chord }) {
+      // `HotKeyCenter` reports the key going down and coming up; the pointer tool lets go at once. The modifiers stay down
+      // for as long as another key is held with them.
       system.hold(chord)
       arbor.controller.shortcut(binding, .pressed, run: { [self] in handle($0, from: .shortcut) })
-      system.letGo(chord)
+      system.letGo(chord, keepingModifiers: !heldShortcuts.isEmpty)
       self.arbor?.controller.shortcut(binding, .released, run: { [self] in handle($0, from: .shortcut) })
       return
     }

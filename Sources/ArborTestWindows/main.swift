@@ -12,7 +12,8 @@ import AppKit
 //
 // Prints one JSON line to stdout: {"pid":123,"windows":[4501,4502,4503]}
 // (window numbers are CGWindowIDs). Exits when stdin closes. Until then it takes commands on stdin
-// that make the windows minimize, move, open tabs, hang and so on: see Commands.swift.
+// that make the windows minimize, move, open tabs, hang and so on: see Commands.swift, and MoreCommands.swift for
+// opening windows of every kind and for asking what has reached them. ⌘H, ⌘M and ⌘W work as in any app.
 
 struct Options {
   var count = 3
@@ -78,10 +79,13 @@ func openWindows(_ options: Options) -> [NSWindow] {
       styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
     window.title = "Arbor Test \(index)"
     window.isReleasedWhenClosed = false
+    window.isRestorable = false
     // So that the green button, and AXFullScreen, mean full screen whatever the app's activation policy.
     window.collectionBehavior = [.fullScreenPrimary]
     // Opaque, so that a screenshot shows which window is in front.
     window.backgroundColor = colours[(index - 1) % colours.count]
+    window.contentView = CountingView()
+    window.makeFirstResponder(window.contentView)
     let label = NSTextField(labelWithString: "Arbor Test \(index)")
     label.font = .systemFont(ofSize: 28, weight: .semibold)
     label.textColor = .white
@@ -113,12 +117,14 @@ func openExtras(on first: NSWindow) -> [NSWindow] {
     backing: .buffered, defer: false)
   panel.title = "Arbor Test Panel"
   panel.isReleasedWhenClosed = false
+  panel.isRestorable = false
   // Panels hide while their app is in the background, which this one always is.
   panel.hidesOnDeactivate = false
   panel.orderFrontRegardless()
   let sheet = NSWindow(
     contentRect: NSRect(x: 0, y: 0, width: 220, height: 90), styleMask: [.titled], backing: .buffered, defer: false)
   sheet.isReleasedWhenClosed = false
+  sheet.isRestorable = false
   first.beginSheet(sheet)
   return [panel, sheet]
 }
@@ -134,7 +140,12 @@ MainActor.assumeIsolated {
   let options = parseOptions()
   // Accessory: no Dock icon and no focus stealing.
   application.setActivationPolicy(options.regular ? .regular : .accessory)
-  if options.regular { application.mainMenu = mainMenu() }
+  application.mainMenu = makeMenu()
+  // In the menu bar there is a File menu as well.
+  if options.regular, let file = mainMenu().items.last {
+    file.menu?.removeItem(file)
+    application.mainMenu?.addItem(file)
+  }
   let windows = openWindows(options)
   // Not reported below: the runner arranges only the standard windows.
   let extras = options.extras ? openExtras(on: windows[0]) : []

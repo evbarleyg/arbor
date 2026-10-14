@@ -30,12 +30,13 @@ import Foundation
 // What is modelled (World*.swift), on `FakeWindowSystem` and `FakeOverlays`: one display, the test apps and
 // their requests, which window is in front, who has the keyboard, what a press lands on (menu, tile, seam,
 // window buttons, title bar, edges, content), title-bar drags and edge resizes that can be left held,
-// shortcuts, pinches, the rectangle, the menu bar item's menu, the focus ring's panel, "click wallpaper to
-// reveal desktop", a second copy of Arbor, quitting, signals, SIGKILL and the watchdog. A second passes after
-// every line that changes something, so debounced work (saving, putting windows back) has always happened by
-// the next line. The few decisions and log lines of ArborApp, StatusMenu, PointerInput, AXWindowSystem and
-// arborctl that scripts can see are repeated here, each next to the name of what it repeats: when one of those
-// changes, this has to follow.
+// shortcuts (also held from one line to a later one), pinches, the rectangle, the menu bar item's menu, the
+// panels of the focus ring and of a peek's outline, "click wallpaper to reveal desktop", settings.json applied
+// as it is saved, a second copy of Arbor, quitting, signals, SIGKILL and the watchdog. A second passes after
+// every line that changes something, so debounced work (saving, putting
+// windows back) has always happened by the next line. The few decisions and log lines of ArborApp, StatusMenu,
+// PointerInput, AXWindowSystem and arborctl that scripts can see are repeated here, each next to the name of
+// what it repeats: when one of those changes, this has to follow.
 //
 // What it cannot say anything about: AppKit's and Accessibility's timing and order of notifications,
 // animations, the finer points of which window is in front, the Dock growing and shrinking,

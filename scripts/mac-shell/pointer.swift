@@ -15,6 +15,11 @@ import CoreGraphics
 import Foundation
 import ImageIO
 
+/// Private, stable for over a decade, and what Arbor itself uses: the window server's number for an
+/// Accessibility window. Two parked windows have the same frame, so nothing else tells them apart.
+@_silgen_name("_AXUIElementGetWindow")
+func _AXUIElementGetWindow(_ element: AXUIElement, _ identifier: UnsafeMutablePointer<CGWindowID>) -> AXError
+
 func fail(_ message: String) -> Never {
   FileHandle.standardError.write(Data("pointer: \(message)\n".utf8))
   exit(64)
@@ -67,6 +72,8 @@ struct Pointer {
           [--held]                  press and release the key only: its modifiers are down already, and stay down
           [--repeat n]              n more key-down events marked as auto-repeat, as a key that is held sends
       calm                          let go of every mouse button and key that is down, and say which, if any: for the end of a run
+      pinch x y <amount>            spread two fingers there (negative: pinch them together) by that much
+          [--steps n]               magnification, in that many events (default 10)
       where                         the pointer's position and whether the left button is down
       activity                      seconds since the pointer was used, seconds since a key was released, and the count
                                     of key presses, as Arbor reads them (AXWindowSystem+Input.swift)
@@ -74,9 +81,16 @@ struct Pointer {
       windows [--pid n]             id pid layer x y w h on|off owner, as the window server sees them
           [--on-screen]             only those on screen, from the frontmost to the one at the back
       frame <window id>             x y w h, as the window server sees it
-      visible <window id>           the share of the window that is on some display, 0 to 1
-      status-item <pid> [--frame]   x y: the middle of that process's menu bar item (--frame: x y w h)
+      visible <window id>           the share of the window that is on some display, 0 to 1; 0 when the window
+                                    server does not show it (minimized, hidden, on another Space)
+      grab <window id>              x y: a point on its title bar that no other window covers
+      spot <window id>              x y: a point on its content that no other window covers
+      button <window id> <which>    x y: the middle of its close, minimize or zoom button
+      ax <window id>                its Accessibility role and subrole, e.g. AXWindow AXStandardWindow
       front                         the process id of the app that has the keyboard
+      status-item <pid> [--frame]   x y: the middle of that process's menu bar item (--frame: x y w h)
+      menu-item <pid> <title>       x y: the middle of the item of its open menu whose title starts so
+      menu-mark <pid> <title>       that item's mark, e.g. ✓, or - when it has none
       button <pid> x y <name>       x y: the middle of the close, minimize or zoom button of that process's
                                     window whose top-left corner is nearest the point
       screen-access | ax-access     true or false: Screen Recording, Accessibility
@@ -85,7 +99,7 @@ struct Pointer {
       picture <file> <w> <h> <#rrggbb> [<#rrggbb>]
                                     write a PNG: one colour, or a gradient between two under a grid
       wallpaper [file]              show that picture on the desktop of every display; print what each shows
-    click, drag and release take --mods <chord of modifiers>, e.g. --mods shift+cmd, held meanwhile.
+    click, drag, release and pinch take --mods <chord of modifiers>, e.g. --mods shift+cmd, held meanwhile.
     Every command that posts events takes --tap session, to post them after the window server's own handling.
     """
 
@@ -249,6 +263,26 @@ struct Pointer {
     rest(0.05)
   }
 
+  /// One event of a trackpad's magnify gesture. Nothing public makes gesture events: the fields are the ones the
+  /// window server fills in for a real trackpad, as open-source tools that turn mouse buttons into gestures have
+  /// worked out, and set and posted exactly as a probe on GitHub's Macs found to arrive (October 2026): field 55
+  /// is the event's type (29, what NSEvent calls `.gesture`), 110 the kind of gesture (8: magnification), 113 the
+  /// amount, 132 the phase (IOKit's: 1 began, 2 changed, 4 ended); posted after the window server's own handling.
+  func magnify(phase: Double, by magnification: Double, at point: CGPoint) {
+    func field(_ number: UInt32) -> CGEventField {
+      CGEventField(rawValue: number) ?? unsafeBitCast(number, to: CGEventField.self)
+    }
+    guard let event = CGEvent(source: nil) else { fail("could not create a gesture event") }
+    event.setDoubleValueField(field(55), value: 29)
+    event.setDoubleValueField(field(110), value: 8)
+    event.setDoubleValueField(field(132), value: phase)
+    event.setDoubleValueField(field(113), value: magnification)
+    event.location = point
+    event.flags = flags
+    event.post(tap: .cgSessionEventTap)
+    rest(0.01)
+  }
+
   // MARK: The window server's view
 
   func displays() -> [CGDirectDisplayID] {
@@ -320,12 +354,104 @@ struct Pointer {
     guard CGImageDestinationFinalize(destination) else { fail("could not write \(path)") }
   }
 
+  func isOnScreen(_ id: UInt32) -> Bool {
+    for info in windows() where (info[kCGWindowNumber as String] as? NSNumber)?.uint32Value == id {
+      return (info[kCGWindowIsOnscreen as String] as? NSNumber)?.boolValue ?? false
+    }
+    return false
+  }
+
+  func owner(of id: UInt32) -> pid_t? {
+    for info in windows() where (info[kCGWindowNumber as String] as? NSNumber)?.uint32Value == id {
+      return (info[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value
+    }
+    return nil
+  }
+
+  /// The point of `area` nearest its middle that is on a display and that no ordinary window in front of
+  /// window `id` covers. The list of windows on screen comes front to back. Other layers hold the menu
+  /// bar, the Dock's screen-sized window and Arbor's previews, none of which takes a click meant for a window.
+  /// Nor does Arbor's focus ring, a panel at the ordinary level that lies around the whole window and lets clicks through.
+  func freePoint(of id: UInt32, in area: (CGRect) -> CGRect) -> CGPoint? {
+    let list = (CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]]) ?? []
+    var covers: [(frame: CGRect, isArbors: Bool)] = []
+    var own: CGRect?
+    for info in list {
+      guard let number = (info[kCGWindowNumber as String] as? NSNumber)?.uint32Value, let rect = bounds(info) else {
+        continue
+      }
+      if number == id {
+        own = rect
+        break
+      }
+      if (info[kCGWindowLayer as String] as? NSNumber)?.intValue == 0 {
+        covers.append((rect.insetBy(dx: -3, dy: -3), info[kCGWindowOwnerName as String] as? String == "Arbor"))
+      }
+    }
+    guard let own else { return nil }
+    covers.removeAll { $0.isArbors && $0.frame.contains(own) }
+    let wanted = area(own)
+    guard wanted.width >= 1, wanted.height >= 1 else { return nil }
+    let screens = displays().map { CGDisplayBounds($0).insetBy(dx: 2, dy: 2) }
+    var best: CGPoint?
+    var bestDistance = CGFloat.infinity
+    for x in stride(from: wanted.minX, through: wanted.maxX, by: 6) {
+      for y in stride(from: wanted.minY, through: wanted.maxY, by: 6) {
+        let point = CGPoint(x: x.rounded(), y: y.rounded())
+        let distance = abs(point.x - wanted.midX) + abs(point.y - wanted.midY)
+        guard distance < bestDistance, screens.contains(where: { $0.contains(point) }),
+          !covers.contains(where: { $0.frame.contains(point) })
+        else { continue }
+        best = point
+        bestDistance = distance
+      }
+    }
+    return best
+  }
+
   // MARK: Accessibility's view
 
   func attribute(_ element: AXUIElement, _ name: String) -> CFTypeRef? {
     var value: CFTypeRef?
     guard AXUIElementCopyAttributeValue(element, name as CFString, &value) == .success else { return nil }
     return value
+  }
+
+  func elements(_ element: AXUIElement, _ name: String) -> [AXUIElement] {
+    ((attribute(element, name) as? [AnyObject]) ?? []).compactMap { item in
+      CFGetTypeID(item) == AXUIElementGetTypeID() ? (item as! AXUIElement) : nil
+    }
+  }
+
+  func frame(of element: AXUIElement) -> CGRect? {
+    var origin = CGPoint.zero
+    var size = CGSize.zero
+    guard let position = attribute(element, kAXPositionAttribute), CFGetTypeID(position) == AXValueGetTypeID(),
+      AXValueGetValue(position as! AXValue, .cgPoint, &origin),
+      let extent = attribute(element, kAXSizeAttribute), CFGetTypeID(extent) == AXValueGetTypeID(),
+      AXValueGetValue(extent as! AXValue, .cgSize, &size)
+    else { return nil }
+    return CGRect(origin: origin, size: size)
+  }
+
+  /// The window as its app's accessibility tree lists it, which is how Arbor sees it.
+  func accessibilityWindow(_ id: UInt32) -> AXUIElement? {
+    guard let pid = owner(of: id) else { return nil }
+    for element in elements(AXUIElementCreateApplication(pid), kAXWindowsAttribute) {
+      var number = CGWindowID(0)
+      if _AXUIElementGetWindow(element, &number) == .success, number == id { return element }
+    }
+    return nil
+  }
+
+  /// The first element below `element`, in the order the tree lists them, whose title starts with `prefix`.
+  func descendant(of element: AXUIElement, titled prefix: String, depth: Int) -> AXUIElement? {
+    guard depth > 0 else { return nil }
+    for child in elements(element, kAXChildrenAttribute) {
+      if let title = attribute(child, kAXTitleAttribute) as? String, title.hasPrefix(prefix) { return child }
+      if let found = descendant(of: child, titled: prefix, depth: depth - 1) { return found }
+    }
+    return nil
   }
 
   /// Since macOS 26 the menu bar draws every app's item in windows of Control Center's, so the window list
@@ -418,6 +544,8 @@ struct Pointer {
       let settles = !flag("--no-settle")
       let start = point(at: 0)
       let end = point(at: 2)
+      // A misspelt option would otherwise be a drag that quietly does something else.
+      guard arguments.count == 4 else { fail("drag takes x1 y1 x2 y2 and its options, not \(arguments.dropFirst(4))") }
       move(to: start)
       hold(held)
       mouse(.leftMouseDown, at: start, clicks: 1)
@@ -512,6 +640,18 @@ struct Pointer {
       }
       if !released.isEmpty { print("calm: let go of \(released.joined(separator: ", "))") }
 
+    case "pinch":
+      let steps = option("--steps").map { max(1, min(200, Int(number($0)))) } ?? 10
+      let target = point(at: 0)
+      guard arguments.count > 2 else { fail("expected x y and an amount, e.g. pinch 500 400 0.6") }
+      let amount = number(arguments[2])
+      move(to: target)
+      hold(held)
+      magnify(phase: 1, by: 0, at: target)
+      for _ in 1...steps { magnify(phase: 2, by: amount / Double(steps), at: target) }
+      magnify(phase: 4, by: 0, at: target)
+      letGo(held)
+
     case "where":
       let down = CGEventSource.buttonState(.hidSystemState, button: .left)
       print("\(text(location.x)) \(text(location.y)) \(down ? "down" : "up")")
@@ -555,7 +695,7 @@ struct Pointer {
 
     case "visible":
       let rect = frame(of: windowID(at: 0))
-      let area = rect.width * rect.height
+      let area = isOnScreen(windowID(at: 0)) ? rect.width * rect.height : 0
       var best: CGFloat = 0
       for id in displays() where area > 0 {
         let shared = rect.intersection(CGDisplayBounds(id))
@@ -563,22 +703,80 @@ struct Pointer {
       }
       print(String(format: "%.2f", Double(best)))
 
+    case "grab":
+      // Right of the three buttons, and clear of the rounded corner.
+      guard
+        let point = freePoint(
+          of: windowID(at: 0),
+          in: { CGRect(x: $0.minX + 84, y: $0.minY + 12, width: max($0.width - 100, 0), height: 1) })
+      else { fail("no part of the title bar of window \(windowID(at: 0)) is in reach") }
+      print("\(text(point.x)) \(text(point.y))")
+
+    case "spot":
+      guard
+        let point = freePoint(
+          of: windowID(at: 0),
+          in: { CGRect(x: $0.minX + 8, y: $0.minY + 40, width: max($0.width - 16, 0), height: max($0.height - 48, 0)) })
+      else { fail("no part of window \(windowID(at: 0)) is in reach") }
+      print("\(text(point.x)) \(text(point.y))")
+
+    case "button":
+      // By process and place, for windows whose number is not known.
+      if arguments.count == 4 {
+        guard let word = arguments.first, let pid = pid_t(word), arguments.count == 4 else {
+          fail("expected a process id, x, y and close, minimize or zoom")
+        }
+        let names = ["close": "AXCloseButton", "minimize": "AXMinimizeButton", "zoom": "AXZoomButton"]
+        guard let name = names[arguments[3]] else { fail("expected close, minimize or zoom, got \(arguments[3])") }
+        guard let rect = titleBarButton(name, pid: pid, corner: point(at: 1)) else {
+          fail("process \(pid) has no window with a \(arguments[3]) button")
+        }
+        print("\(text(rect.midX)) \(text(rect.midY))")
+        break
+      }
+      let names = ["close": kAXCloseButtonAttribute, "minimize": kAXMinimizeButtonAttribute, "zoom": kAXZoomButtonAttribute]
+      guard arguments.count > 1, let name = names[arguments[1]] else { fail("expected close, minimize or zoom") }
+      guard let window = accessibilityWindow(windowID(at: 0)), let button = attribute(window, name),
+        CFGetTypeID(button) == AXUIElementGetTypeID(), let rect = frame(of: button as! AXUIElement)
+      else { fail("window \(windowID(at: 0)) shows no \(arguments[1]) button") }
+      print("\(text(rect.midX)) \(text(rect.midY))")
+
+    case "ax":
+      guard let window = accessibilityWindow(windowID(at: 0)) else {
+        fail("Accessibility lists no window \(windowID(at: 0))")
+      }
+      let role = attribute(window, kAXRoleAttribute) as? String ?? "?"
+      let subrole = attribute(window, kAXSubroleAttribute) as? String ?? "?"
+      print("\(role) \(subrole)")
+
+    case "front":
+      var pid: pid_t = 0
+      guard let application = attribute(AXUIElementCreateSystemWide(), kAXFocusedApplicationAttribute),
+        CFGetTypeID(application) == AXUIElementGetTypeID(),
+        AXUIElementGetPid(application as! AXUIElement, &pid) == .success
+      else { fail("no app has the keyboard") }
+      print(pid)
+
+    case "menu-item", "menu-mark":
+      guard arguments.count > 1, let pid = pid_t(arguments[0]) else { fail("expected a process id and a title") }
+      let title = arguments.dropFirst().joined(separator: " ")
+      guard let bar = attribute(AXUIElementCreateApplication(pid), "AXExtrasMenuBar"),
+        CFGetTypeID(bar) == AXUIElementGetTypeID(),
+        let item = descendant(of: bar as! AXUIElement, titled: title, depth: 6), let rect = frame(of: item),
+        rect.width > 0
+      else { fail("process \(pid) shows no menu item starting with \(title)") }
+      if command == "menu-mark" {
+        let mark = attribute(item, kAXMenuItemMarkCharAttribute) as? String ?? ""
+        print(mark.isEmpty ? "-" : mark)
+      } else {
+        print("\(text(rect.midX)) \(text(rect.midY))")
+      }
+
     case "status-item":
       let whole = flag("--frame")
       guard let word = arguments.first, let pid = pid_t(word) else { fail("expected a process id") }
       guard let rect = statusItemFrame(pid: pid) else { fail("process \(pid) shows no menu bar item") }
       print(whole ? text(rect) : "\(text(rect.midX)) \(text(rect.midY))")
-
-    case "button":
-      guard let word = arguments.first, let pid = pid_t(word), arguments.count == 4 else {
-        fail("expected a process id, x, y and close, minimize or zoom")
-      }
-      let names = ["close": "AXCloseButton", "minimize": "AXMinimizeButton", "zoom": "AXZoomButton"]
-      guard let name = names[arguments[3]] else { fail("expected close, minimize or zoom, got \(arguments[3])") }
-      guard let rect = titleBarButton(name, pid: pid, corner: point(at: 1)) else {
-        fail("process \(pid) has no window with a \(arguments[3]) button")
-      }
-      print("\(text(rect.midX)) \(text(rect.midY))")
 
     case "picture":
       guard arguments.count == 4 || arguments.count == 5 else { fail("expected a file, a size and one or two colours") }
@@ -599,14 +797,6 @@ struct Pointer {
       } catch {
         fail("could not set the wallpaper: \(error)")
       }
-
-    case "front":
-      var pid: pid_t = 0
-      guard let application = attribute(AXUIElementCreateSystemWide(), kAXFocusedApplicationAttribute),
-        CFGetTypeID(application) == AXUIElementGetTypeID(),
-        AXUIElementGetPid(application as! AXUIElement, &pid) == .success
-      else { fail("no app has the keyboard") }
-      print(pid)
 
     case "screen-access":
       print(CGPreflightScreenCaptureAccess())

@@ -1,17 +1,18 @@
 # Real-window sessions for Mac shell scripts: launch the real Arbor on test windows, drive it with
-# commands and with real pointer and key events, and take pictures. Source it; do not run it.
+# commands and with real pointer and key events, check what the window server says happened, and take
+# pictures. Source it; do not run it.
 #
 #   #!/bin/bash
 #   source "$(dirname "$0")/lib.sh"
 #   arbor_build
 #   arbor_start 3
-#   ctl dock $W1 left;  shot 01-docked
-#   drag $(titlebar_of $W2) 3 400 --no-release;  shot 02-preview;  release
+#   claim "dock by dragging to the left screen edge"
+#   drag_window $W2 $(edge_point left) --no-release;  shot 02-preview;  release
 #   check "the dragged window docked" eventually is docked $W2
 #   arbor_stop
 #
 # Run such a script on a Mac from anywhere with scripts/mac-shell/run.sh; see "Seeing the real app from
-# anywhere" in docs/TESTING.md, and shots-demo.sh for a longer example.
+# anywhere" and "The real-window suite" in docs/TESTING.md, shots-demo.sh for pictures and suite/ for checks.
 #
 # On a person's own Mac (the terminal needs Accessibility) a session touches only its own test windows and
 # temporary files, but it does move the pointer and press keys, so hands off meanwhile. Everything that would
@@ -40,8 +41,9 @@
 # also looks the Mac over before and after, and prints what differs. So lines above `source lib.sh` run twice.
 #
 # Everything a script leaves in mac-shell/ comes back to the caller. Written for bash 3.2, macOS's own.
-# Sets -u and pipefail but not -e: a step that fails should not cost the pictures of the steps after it.
+# Sets -u and pipefail but not -e: a step that fails should not cost the steps after it.
 #
+# Whose Mac is this?
 #   on_throwaway_mac                whether this is one of GitHub's Macs ($GITHUB_ACTIONS is true)
 #   needs_throwaway_mac "<would…>"  for a script that is nothing without changing the system: elsewhere it says so and
 #                                     ends the script with exit code 77, "skipped"
@@ -59,13 +61,88 @@
 #                                     seconds for an orderly end, KILL); 124 then
 #   at_exit '<command>'             run that when the script ends, however it ends, before Arbor is stopped (the last one
 #                                     first). Do not set a trap on EXIT: it would replace the one that cleans up
-#   arbor_build                     swift build, and compile the pointer tool; exits 2 with the errors
-#   arbor_settings '<json>'         settings.json for the next arbor_start
+# Sessions
+#   arbor_build                     swift build, the pointer tool, and app bundles for the test windows and Arbor;
+#                                     exits 2 with the errors
+#   arbor_settings '<json>'         settings.json for the next arbor_start (or `ctl reload-settings`)
 #   arbor_start [count] [NAME=v…]   test windows W1…Wcount (default 4), then Arbor limited to them
 #   arbor_stop [name]               quit Arbor, check that every test window is back on screen (and take the
 #                                     picture <name> of that), close the test windows
+#   arbor_quit | arbor_kill [sig]   end Arbor alone, politely or with a signal (default KILL); the windows,
+#   arbor_relaunch [NAME=v…]          the settings and the saved state stay for arbor_relaunch
+#   arbor_ended                     Arbor has ended some other way (its menu, say): there is nothing left to stop
+#   reopen_test_windows <count>     while Arbor is not running: the test app quits and starts again (new window ids)
+# Talking to Arbor and to the test windows
 #   ctl <command…>                  arborctl: prints the command and the reply
 #   state | summary                 the state as JSON | as a few readable lines
+#   tw <request…> (tw2: second app) ask ArborTestWindows to do what an app does: minimize 31, hide, activate 32, move 31 x y w h,
+#                                     title 31 Inbox… (Commands.swift and MoreCommands.swift in Sources/ArborTestWindows list them)
+#   open_window <NAME> [options]    a new test window while Arbor runs; its id goes into $NAME:
+#                                     open_window N1 size=400x300 min=700x500 title=Inbox   (open_window2: second app)
+#   open_dialog <NAME> <id>, open_tab <NAME> <id>   a dialog centred over that window; a native tab in front of it
+#   forget_window <id>              it was closed: arbor_stop no longer expects it back
+#   events_of <id> <kind>           how many down, up, dragged, key or magnify events the window's content got
+#                                     (as a check: received <id> <kind> -gt 0)
+# Real input (pointer.swift has the options: --steps, --duration, --hold, --no-release, --mods)
+#   drag x1 y1 x2 y2 [options] | release [x y] | click x y | dblclick x y | rightclick x y | move x y | key <chord>
+#   key <chord> --down | --up | --held | --repeat n   hold a shortcut, let go of it later, press another key
+#                                     meanwhile, send its auto-repeat (pointer.swift)
+#   key_to <id> <chord>             the same key, but only once that window has the keyboard: for ⌘W, ⌘M, ⌘H and whatever
+#                                     else would hit a person's own window if the click before it had missed
+#   pinch x y <amount> [options]    spread (positive) or pinch two fingers there
+#   drag_window <id> x y [options]  by its title bar, from a point that nothing covers (clicks it forward first if needed)
+#   click_window <id>               on a part of its content that nothing covers (its app brings it forward first if all is)
+#   click_button <id> <which>       its close, minimize or zoom button
+#   open_menu                       opens Arbor's menu, as a right click on its menu bar item does whatever that shows
+#   click_menu <title> [<title>]    opens Arbor's menu and clicks the item that starts so (then the submenu's)
+# Where things are: x y
+#   titlebar_of <id> | center_of <id> | tile_of <id> | status_item (status_item_frame: x y w h)
+#   seam_right_of <id> | seam_below <id>     the middle of the gap on that side of a docked window
+#   edge_point <edge>               just inside that edge of the screen: where a drag docks at the edge
+#   zone_of <id> <edge>             the part of a docked window where a drop docks beside it on that side
+#   desktop_point                   the middle of the Desktop's part of the layout
+#   desktop_is_bare                 whether the wallpaper is what lies there: on a person's Mac the curtain hangs in front of it, and to
+#                                     Arbor the curtain is an app's window. Ask before a claim about a press or a pinch on the Desktop
+#   frame_of <id> (x y w h)         as Arbor sees the window; real_frame_of: as the window server does; slot_of: its slot
+#   take "x y w h" <command…>       what one of these prints, into those variables: take "x y" center_of $W1. Ends the script when
+#                                     there is no answer: `read` and arithmetic would make a press at 0 0 of it
+#   width_of <id> | height_of <id>  as the window server sees it
+#   overlays                        Arbor's own windows (previews, tiles, seams), as the window server sees them:
+#                                     id pid level x y w h on|off owner
+#   overlay_frame <level>           x y w h of the one on screen at that level: 3 is the drop preview's
+# Claims and checks: what they print is the evidence `make parity` reads (mac-shell/evidence/<script>.txt)
+#   claim "<title>"                 ▸ title: a real-window step. parity.json's `e2e` lists refer to it, so it says what a
+#                                     user does and what happens. The checks that follow are its proof
+#   proves <id…>                    on the line after a claim: the items of collab/parity.json it is proof of (T01 A11).
+#                                     scripts/mac-shell/suite-parity.py lists the claim under them once all their claims hold
+#   known "<why, and who is on it>" after a claim that fails because Arbor is wrong: its ✘ are printed and recorded as ever (so
+#                                     nothing is verified by it) but do not fail the script, whose exit code then
+#                                     speaks of what is new. Take it off when the claim holds: the script says when
+#   step "<title>"                  == title: a heading. It ends the claim: what follows is preparation
+#   check "<what should hold>" <command…>    ✔ or ✘ — why; a ✘ takes a picture, prints the state and the log
+#                                     since the claim, and makes the script exit with 1
+#   settled                         the check that every docked window in view is where Arbor's layout says
+#   eventually <command…>           try it for up to three seconds: `eventually is docked $W2`
+#   stays <command…>                it holds now and for the next second: for things that must not happen
+#   fails <command…>                it fails
+#   exits_with <code> <command…> | says <text> <command…>    its exit code; its output has that text (`arborctl …`)
+#   pressed <chord> <command…>      presses the shortcut; holds when Arbor ran exactly that command because of it
+#   ran <command…>                  Arbor ran that command since the claim began (whether or not it succeeded)
+#   logged <text>                   arbor.log has gained a line with that text since the claim began
+#   about <a> <b> [tolerance]       two whole numbers at most 3 (or tolerance) apart
+#   is <what> <id>                  docked floating parked tile focused minimized hidden fullScreen pinned managed known on_screen
+#                                     in_slot display1 display2 (whose workspace holds it)
+#   in_view <id> | out_of_view <id>          at least 90 %, at most 5 % of it is on a display (none, when it is minimized,
+#                                     hidden or on another Space)
+#   has_overlay <level>             Arbor shows a window of its own at that level
+#   front_is <pid>                  that process is the app with the keyboard ($ARBOR_WINDOWS_PID, $ARBOR_WINDOWS_PID_2)
+#   The rest compare what the window server reports, within 3 points:
+#   at_edge <id> <edge> | fills <id> | in_slot <id> | frame_is <id> x y w h | corner_is <id> x y
+#   left_of <a> <b> | above <a> <b> | same_column <a> <b> | same_row <a> <b> | desktop_between <a> <b>
+#   width_is <id> <n> [tolerance] | height_is … | wider_than <id> <n> | narrower_than … | taller_than … | shorter_than …
+#   camera_on root|desktop|<id> | can back|forward | depth_is <id> <n> | count <what> <n> | no_overlaps | layout_matches
+#   tile_is <id> window|group       the kind of tile that stands in for it; tile_shown <id>: Arbor draws it where it says
+# Pictures
 #   shot <name>                     let things settle, then save the screen as mac-shell/<name>.png (a second
 #                                     display as <name>-d2.png)
 #   look <name> <window id>         save that window alone, which must be of a process the run started: a test window, a
@@ -73,25 +150,7 @@
 #   panorama <name>                 one picture of all displays as they are arranged
 #   shot_after <seconds> <name>     the same after exactly that long: `ctl zoom $W1 & shot_after 0.2 mid-zoom`
 #   film <name> <count>             <name>-1.png … as fast as pictures can be taken: `ctl zoom $W1 & film zoom 4`
-#   drag x1 y1 x2 y2 [options]      real events; see pointer.swift for --steps, --duration, --hold,
-#   release [x y]                     --no-release and --mods
-#   click x y | dblclick x y | rightclick x y | move x y | key <chord>
-#   key <chord> --down | --up | --held | --repeat n   hold a shortcut, let go of it later, press another key
-#                                     meanwhile, send its auto-repeat (pointer.swift)
-#   frame_of <id>                   x y w h, as Arbor sees the window (real_frame_of: as the window server does)
-#   titlebar_of <id> | center_of <id>                 x y
-#   seam_right_of <id> | seam_below <id>              x y: the middle of the gap on that side of a docked window
-#   tile_of <id>                    x y: the middle of the tile standing in for the window
-#   status_item                     x y: Arbor's menu bar item (start with ARBOR_NO_STATUS_ITEM=0)
-#   status_item_frame               x y w h of the same
-#   overlays                        Arbor's own windows (previews, tiles, seams), as the window server sees them:
-#                                     id pid level x y w h on|off owner
-#   has_overlay <level>             whether one of them is on screen at that level: 3 is the drop preview's
-#   is <what> <id>                  docked floating parked tile focused minimized hidden managed pinned on_screen in_slot
-#                                     display1 display2 (whose workspace holds it)
-#   eventually <command…>           try it for up to three seconds: `eventually is docked $W2`
-#   check "<what should hold>" <command…>             prints ✔ or ✘; a ✘ makes the script exit with 1
-#   step "<title>"                  a heading in the output
+# Other
 #   arbor_log                       copy arbor.log to mac-shell/ now (arbor_stop and the exit trap do it too)
 #   macos_tiling [on|off]           print, or set, macOS's own "drag windows to screen edges to tile"
 #   macos_click_wallpaper [on|off]  print, or set, "click wallpaper to reveal desktop", which sweeps every window aside
@@ -110,8 +169,10 @@
 #   space_go left|right             switch Spaces as a person does, with ⌃← and ⌃→
 #
 # Settings: ARBOR_SETTLE (seconds `shot` waits first, default 0.7), ARBOR_TEST_WINDOWS_ARGS (more arguments
-# for ArborTestWindows, e.g. "--min-size 3:700x500"), ARBOR_EXTRA_PIDS (processes the script started itself whose
-# windows Arbor should arrange too, comma-separated), ARBOR_TIME_LIMIT (seconds the whole script may take, default 900, on
+# for ArborTestWindows, e.g. "--min-size 3:700x500"), ARBOR_SECOND_APP (that many windows V1… of a second
+# app, with ARBOR_SECOND_APP_ARGS), ARBOR_EXTRA_PIDS (processes the script started itself whose windows Arbor should
+# arrange too, comma-separated), ARBOR_BUNDLED=1 (run Arbor from an app bundle, as installed; on a throwaway Mac only), ARBOR_TIME_LIMIT
+# (seconds the whole script may take, default 900, on
 # GitHub's Macs 1100; set it above `source lib.sh`). On a person's Mac: ARBOR_SHOTS=1 (take the pictures of what is in front of the
 # curtain), ARBOR_BUSY_OK=1 (start although somebody seems to be using the Mac), ARBOR_QUIET_SINCE (run-list.sh sets it: the time, in seconds since
 # 1970, when the script before this one ended; no input since then counts for five quiet minutes).
@@ -131,19 +192,32 @@ esac
 cd "$ARBOR_ROOT" || exit 2
 # A rehearsal (scripts/mac-shell/rehearse.sh, scripts/test-tooling.py) sets ARBOR_REHEARSAL, points these at stand-ins and sets
 # ARBOR_BUILT, to run a script without a Mac. From anybody else's environment they are not taken: files get deleted in ARBOR_OUT.
-if [ -z "${ARBOR_REHEARSAL:-}" ]; then unset ARBOR_OUT ARBOR_BIN ARBOR_POINTER ARBOR_VDISPLAY ARBOR_CURTAIN ARBOR_BUILT ARBOR_TEST_WINDOWS_2; fi
+if [ -z "${ARBOR_REHEARSAL:-}" ]; then
+  unset ARBOR_OUT ARBOR_BIN ARBOR_APPS ARBOR_POINTER ARBOR_TEST_WINDOWS ARBOR_TEST_WINDOWS_2 ARBOR_APP ARBOR_VDISPLAY ARBOR_CURTAIN ARBOR_BUILT
+fi
 ARBOR_OUT=${ARBOR_OUT:-$ARBOR_ROOT/mac-shell}
 ARBOR_BIN=${ARBOR_BIN:-$ARBOR_ROOT/.build/debug}
-ARBOR_POINTER=${ARBOR_POINTER:-$ARBOR_ROOT/.build/mac-shell/pointer}
-ARBOR_VDISPLAY=${ARBOR_VDISPLAY:-$ARBOR_ROOT/.build/mac-shell/vdisplay}
-ARBOR_CURTAIN=${ARBOR_CURTAIN:-$ARBOR_ROOT/.build/mac-shell/curtain}
+ARBOR_APPS=${ARBOR_APPS:-$ARBOR_ROOT/.build/mac-shell}
+ARBOR_POINTER=${ARBOR_POINTER:-$ARBOR_APPS/pointer}
+ARBOR_TEST_WINDOWS=${ARBOR_TEST_WINDOWS:-$ARBOR_APPS/ArborTestWindows.app/Contents/MacOS/ArborTestWindows}
+ARBOR_TEST_WINDOWS_2=${ARBOR_TEST_WINDOWS_2:-$ARBOR_APPS/ArborTestWindows2.app/Contents/MacOS/ArborTestWindows}
+ARBOR_APP=${ARBOR_APP:-$ARBOR_APPS/Arbor.app}
+ARBOR_VDISPLAY=${ARBOR_VDISPLAY:-$ARBOR_APPS/vdisplay}
+ARBOR_CURTAIN=${ARBOR_CURTAIN:-$ARBOR_APPS/curtain}
 ARBOR_CURTAIN_IS_MINE=""
 ARBOR_STATE_PY="$ARBOR_ROOT/scripts/mac-shell/state.py"
+# The test apps' bundle ids, for rules, `exclude` and `include`.
+ARBOR_TEST_BUNDLE=dev.arbor.testwindows
+ARBOR_TEST_BUNDLE_2=dev.arbor.testwindows2
 mkdir -p "$ARBOR_OUT"
 
+ARBOR_NAME=$(basename "$0" .sh)
+ARBOR_EVIDENCE="$ARBOR_OUT/evidence/$ARBOR_NAME.txt"
 ARBOR_PID=""
 ARBOR_WINDOWS_PID=""
+ARBOR_WINDOWS_PID_2=""
 ARBOR_WINDOW_IDS=""
+ARBOR_LAUNCH_ENV=""
 ARBOR_SESSION=0
 ARBOR_PASSED=0
 ARBOR_FAILED=0
@@ -155,14 +229,15 @@ ARBOR_DISPLAY_PID=""
 DISPLAY2_ID=""
 DISPLAY2_UUID=""
 DISPLAY2_SIZE=""
+ARBOR_STEP_MARK=0
+ARBOR_STEP_EXPLAINED=""
+ARBOR_KNOWN=""
+ARBOR_KNOWN_FAILED=0
+ARBOR_CLAIM_PASSED=0
+ARBOR_CLAIM_FAILED=0
 
-step() { echo; echo "== $*"; }
-
-# Also an annotation, for readers who see nothing else of the run.
-die() {
-  echo "::error title=mac-shell::$*"
-  exit 2
-}
+# What a script does is worth reading even where its output is being captured, as `check` does.
+exec 3>&1
 
 # MARK: Whose Mac is this?
 
@@ -217,7 +292,7 @@ arbor_input_is_ours() {
   local hit pid x y fx fy fw fh within=""
   on_throwaway_mac && return 0
   case "${1:-}" in
-    click | drag)
+    click | drag | pinch)
       x=${2:-} y=${3:-}
       x=${x%.*} y=${y%.*}
       # `read -r x y <<< ""` and arithmetic make 0 of an answer that never came; nothing makes a number of these.
@@ -233,6 +308,9 @@ arbor_input_is_ours() {
         read -r fx fy fw fh <<< "$("$ARBOR_POINTER" status-item "${ARBOR_PID:-0}" --frame 2>/dev/null)"
         fx=${fx%.*} fw=${fw%.*}
         if [ -n "$fw" ] && [ "$x" -ge "$fx" ] && [ "$x" -lt $((fx + fw)) ] && [ "$y" -ge 0 ] && [ "$y" -le 40 ]; then return 0; fi
+        # And one thing down there: on a small display the session's own open menu reaches over the Dock, in front of it.
+        if [ -n "${ARBOR_PID:-}" ] && "$ARBOR_POINTER" windows --on-screen --pid "$ARBOR_PID" | awk -v x="$x" -v y="$y" '
+          $3 == 101 && x >= $4 && x < $4 + $6 && y >= $5 && y < $5 + $7 { found = 1 } END { exit !found }'; then return 0; fi
         echo "skipped: the press at $x,$y would land in the menu bar, in the Dock or beyond the displays, which are somebody's"
         return 1
       fi
@@ -283,13 +361,18 @@ arbor_input_is_ours() {
 arbor_hang_curtain() {
   local tries=0
   if on_throwaway_mac && [ "${ARBOR_CURTAIN_HERE:-}" != 1 ]; then return 0; fi
-  [ -n "${ARBOR_CURTAIN_PID:-}" ] && kill -0 "$ARBOR_CURTAIN_PID" 2>/dev/null && return 0
+  if [ -n "${ARBOR_CURTAIN_PID:-}" ]; then
+    kill -0 "$ARBOR_CURTAIN_PID" 2>/dev/null && return 0
+    # Not a new one: whoever took it down would find the next session, or the suite's next section, behind another.
+    echo "the curtain was taken down: somebody wants their Mac back. Ending the script"
+    exit 75
+  fi
   if [ ! -x "$ARBOR_CURTAIN" ]; then
     echo "skipped: there is no curtain to hang between the test windows and somebody's own (arbor_build compiles it: see build-curtain.log)"
     return 1
   fi
   rm -f "$ARBOR_LEDGER/visible"
-  "$ARBOR_CURTAIN" "$ARBOR_SUPERVISOR" 1800 "$ARBOR_LEDGER/visible" >> "$ARBOR_OUT/curtain.log" 2>&1 7>&- 8>&- 9>&- &
+  "$ARBOR_CURTAIN" "$ARBOR_SUPERVISOR" 1800 "$ARBOR_LEDGER/visible" >> "$ARBOR_OUT/curtain.log" 2>&1 3>&- 7>&- 8>&- 9>&- &
   ARBOR_CURTAIN_PID=$!
   ARBOR_CURTAIN_IS_MINE=yes
   export ARBOR_CURTAIN_PID
@@ -319,6 +402,62 @@ arbor_may_shoot() {
   if on_throwaway_mac || [ "${ARBOR_SHOTS_WHOLE_SCREEN_I_HAVE_CLOSED_EVERYTHING:-}" = 1 ]; then return 0; fi
   echo "shot $1: skipped: a picture of the whole screen would show what else is open on somebody's Mac"
   return 1
+}
+
+# MARK: Steps and evidence
+
+arbor_record() { printf '%s\n' "$1" >> "$ARBOR_EVIDENCE"; }
+
+# Anew with every run of the script: what an earlier one proved is not this one's.
+arbor_begin_evidence() {
+  mkdir -p "$ARBOR_OUT/evidence"
+  if [ -n "${ARBOR_REHEARSAL:-}" ]; then
+    echo "# $ARBOR_NAME: a REHEARSAL against stand-ins, which proves nothing about real windows" > "$ARBOR_EVIDENCE"
+  else
+    echo "# $ARBOR_NAME $(date -u +%Y-%m-%dT%H:%MZ) on macOS $(sw_vers -productVersion 2>/dev/null || echo "?")," \
+      "commit $(git rev-parse --short HEAD 2>/dev/null || echo "?")" > "$ARBOR_EVIDENCE"
+  fi
+}
+
+arbor_log_lines() {
+  if [ -f "$ARBOR_HOME/arbor.log" ]; then wc -l < "$ARBOR_HOME/arbor.log" | tr -d ' '; else echo 0; fi
+}
+
+# The lines arbor.log has gained since it had $1.
+arbor_log_since() {
+  if [ -f "$ARBOR_HOME/arbor.log" ]; then tail -n "+$(($1 + 1))" "$ARBOR_HOME/arbor.log"; fi
+}
+
+# A rehearsal does not count: the stand-ins lack most of what makes Arbor fail on real windows.
+arbor_close_claim() {
+  if [ -n "$ARBOR_KNOWN" ] && [ "$ARBOR_CLAIM_FAILED" -eq 0 ] && [ "$ARBOR_CLAIM_PASSED" -gt 0 ] \
+    && [ -z "${ARBOR_REHEARSAL:-}" ]; then
+    echo "  note: this claim is marked as known to fail ($ARBOR_KNOWN) and held: take the mark off"
+  fi
+  ARBOR_KNOWN=""
+  ARBOR_CLAIM_PASSED=0
+  ARBOR_CLAIM_FAILED=0
+}
+
+arbor_heading() {
+  arbor_close_claim
+  ARBOR_STEP_MARK=$(arbor_log_lines)
+  ARBOR_STEP_EXPLAINED=""
+  echo
+  echo "$*"
+  arbor_record ""
+  arbor_record "$*"
+}
+claim() { arbor_heading "▸ $*"; }
+# Read from the script by suite-parity.py; nothing to do at run time.
+proves() { :; }
+known() { ARBOR_KNOWN=$*; }
+step() { arbor_heading "== $*"; }
+
+# Also an annotation, for readers who see nothing else of the run.
+die() {
+  echo "::error title=mac-shell::$*"
+  exit 2
 }
 
 # MARK: Only what this run made
@@ -864,16 +1003,43 @@ arbor_supervise() {
 
 # MARK: Building
 
+# arbor_bundle <name> <bundle id> <executable>: a minimal app bundle, so that the process has a bundle id as a
+# person's apps do. Rules, `exclude` and the saved state's hints all go by it.
+arbor_bundle() {
+  local app="$ARBOR_APPS/$1.app"
+  rm -rf "${app:?}"
+  mkdir -p "$app/Contents/MacOS"
+  cp "$3" "$app/Contents/MacOS/$(basename "$3")" || return 1
+  cat > "$app/Contents/Info.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>CFBundleIdentifier</key><string>$2</string>
+  <key>CFBundleName</key><string>$1</string>
+  <key>CFBundleExecutable</key><string>$(basename "$3")</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>CFBundleVersion</key><string>1</string>
+  <key>LSUIElement</key><true/>
+</dict></plist>
+PLIST
+}
+
+# The copied executable's signature knows nothing of the bundle around it. macOS runs it anyway; LaunchServices and
+# Login Items are more particular.
+arbor_sign() { limit 30 codesign --force --sign - "$ARBOR_APPS/$1.app" >> "$ARBOR_OUT/build-bundles.log" 2>&1; }
+
 # arbor_is_current <source> <program>
 arbor_is_current() { [ -x "$2" ] && [ "$2" -nt "$1" ]; }
 
 arbor_build() {
   local started=$SECONDS compiler helper curtain
-  if [ -n "${ARBOR_BUILT:-}" ]; then
+  # A rehearsal has nothing to build, and a script that another script of the same run started (the suite's sections) finds it done.
+  if [ -n "${ARBOR_BUILT:-}" ] || [ -f "$ARBOR_LEDGER/built" ]; then
+    arbor_count_displays
     arbor_make_room || exit 77
     return 0
   fi
-  mkdir -p "$(dirname "$ARBOR_POINTER")"
+  mkdir -p "$ARBOR_APPS"
   # Each only if its source is newer than what the last script compiled: a minute saved for every script of a list.
   arbor_is_current "$ARBOR_ROOT/scripts/mac-shell/vdisplay.m" "$ARBOR_VDISPLAY" \
     || clang -fobjc-arc -O1 -framework Foundation -framework ApplicationServices -framework CoreGraphics -framework ColorSync \
@@ -892,6 +1058,8 @@ arbor_build() {
     echo "swift build failed. Its errors, then the end of mac-shell/build.log:"
     grep "error:" "$ARBOR_OUT/build.log" | sort -u | head -n 40
     tail -n 30 "$ARBOR_OUT/build.log"
+    # Both compilers' errors in one run: another run takes far longer than the extra lines take to read.
+    wait "$compiler" || cat "$ARBOR_OUT/build-pointer.log"
     die "swift build failed: $(grep -c "error:" "$ARBOR_OUT/build.log") error lines, see output.txt"
   fi
   if ! wait "$compiler"; then
@@ -909,7 +1077,20 @@ arbor_build() {
     cat "$ARBOR_OUT/build-vdisplay.log"
   fi
   ARBOR_DISPLAY_COUNT=$("$ARBOR_POINTER" displays | wc -l | tr -d ' ')
-  echo "built Arbor and the pointer tool in $((SECONDS - started))s"
+  arbor_bundle ArborTestWindows "$ARBOR_TEST_BUNDLE" "$ARBOR_BIN/ArborTestWindows" \
+    && arbor_bundle ArborTestWindows2 "$ARBOR_TEST_BUNDLE_2" "$ARBOR_BIN/ArborTestWindows" \
+    || die "could not make the app bundles in $ARBOR_APPS"
+  arbor_sign ArborTestWindows && arbor_sign ArborTestWindows2 \
+    || echo "note: could not sign the app bundles: $(tail -n 1 "$ARBOR_OUT/build-bundles.log")"
+  # A second bundle with Arbor's identifier could come between a person's installed Arbor and its arbor:// links.
+  if on_throwaway_mac; then
+    arbor_bundle Arbor com.evbarleyg.arbor "$ARBOR_BIN/Arbor" \
+      && cp "$ARBOR_ROOT/Resources/Info.plist" "$ARBOR_APP/Contents/Info.plist" \
+      || die "could not make $ARBOR_APP"
+    arbor_sign Arbor || echo "note: could not sign $ARBOR_APP: $(tail -n 1 "$ARBOR_OUT/build-bundles.log")"
+  fi
+  echo "built Arbor, the pointer tool and the app bundles in $((SECONDS - started))s"
+  : > "$ARBOR_LEDGER/built"
   # Now, before the script opens its first window: whatever opens later opens in front of the curtain.
   arbor_make_room || exit 77
 }
@@ -922,26 +1103,102 @@ arbor_settings() {
   printf '%s\n' "$1" > "$ARBOR_HOME/settings.json"
 }
 
+# Several scripts can leave their logs in one folder, as the suite's sections do.
 arbor_log_name() {
-  if [ "$ARBOR_SESSION" -le 1 ]; then echo "$1.log"; else echo "$1-$ARBOR_SESSION.log"; fi
+  if [ "$ARBOR_SESSION" -le 1 ]; then echo "$1-$ARBOR_NAME.log"; else echo "$1-$ARBOR_NAME-$ARBOR_SESSION.log"; fi
 }
 
 arbor_log() {
-  [ -f "$ARBOR_HOME/arbor.log" ] && cp "$ARBOR_HOME/arbor.log" "$ARBOR_OUT/$(arbor_log_name arbor)"
+  if [ -f "$ARBOR_HOME/arbor.log" ]; then cp "$ARBOR_HOME/arbor.log" "$ARBOR_OUT/$(arbor_log_name arbor)"; fi
+}
+
+# arbor_open_app <1|2> <executable> <count> [arguments…]: starts a test app and sets W1… (or V1…).
+# ArborTestWindows lives until its stdin closes, so this shell holds the other end (descriptor 9, or 8), and no
+# other process may: an app that inherited the other's would keep it alive.
+arbor_open_app() {
+  local which=$1 binary=$2 count=$3 hello="" tries=0 index=0 id ids letter=W
+  shift 3
+  [ "$which" = 2 ] && letter=V
+  rm -f "$ARBOR_SESSION_DIR/stdin$which" "$ARBOR_SESSION_DIR/hello$which"
+  mkfifo "$ARBOR_SESSION_DIR/stdin$which"
+  # An app with a bundle id would leave its windows' saved state in the person's Library.
+  "$binary" --count "$count" "$@" -ApplePersistenceIgnoreState YES < "$ARBOR_SESSION_DIR/stdin$which" > "$ARBOR_SESSION_DIR/hello$which" \
+    2>> "$ARBOR_OUT/test-windows.log" 3>&- 7>&- 8>&- 9>&- &
+  started $!
+  if [ "$which" = 2 ]; then
+    ARBOR_WINDOWS_PID_2=$!
+    exec 8> "$ARBOR_SESSION_DIR/stdin$which"
+  else
+    ARBOR_WINDOWS_PID=$!
+    exec 9> "$ARBOR_SESSION_DIR/stdin$which"
+  fi
+  while [ -z "$hello" ] && [ "$tries" -lt 100 ]; do
+    sleep 0.1
+    hello=$(head -n 1 "$ARBOR_SESSION_DIR/hello$which" 2>/dev/null)
+    tries=$((tries + 1))
+  done
+  ids=$(python3 -c 'import json, sys; print(*json.loads(sys.argv[1])["windows"])' "$hello" 2>/dev/null) \
+    || die "ArborTestWindows did not report its windows (got: $hello)"
+  for id in $ids; do
+    index=$((index + 1))
+    eval "$letter$index=$id"
+  done
+  ARBOR_WINDOW_IDS="$ARBOR_WINDOW_IDS $ids"
 }
 
 arbor_start() {
-  local count=4 argument hello="" tries=0 index=0 id pid status="" deadline
+  local count=4
   case "${1:-}" in
     "" | *[!0-9]*) ;;
     *) count=$1; shift ;;
   esac
+  [ -z "$ARBOR_PID" ] || die "arbor_start: a session is running; call arbor_stop first"
+  [ -x "$ARBOR_BIN/Arbor" ] && [ -x "$ARBOR_POINTER" ] && [ -x "$ARBOR_TEST_WINDOWS" ] \
+    || die "arbor_start: call arbor_build first"
+  arbor_make_room || exit 77
+  ARBOR_SESSION=$((ARBOR_SESSION + 1))
+  ARBOR_WINDOW_IDS=""
+  ARBOR_LAUNCH_ENV=""
+  # shellcheck disable=SC2086
+  arbor_open_app 1 "$ARBOR_TEST_WINDOWS" "$count" ${ARBOR_TEST_WINDOWS_ARGS:-}
+  if [ "${ARBOR_SECOND_APP:-0}" -gt 0 ]; then
+    # shellcheck disable=SC2086
+    arbor_open_app 2 "$ARBOR_TEST_WINDOWS_2" "$ARBOR_SECOND_APP" ${ARBOR_SECOND_APP_ARGS:-}
+  fi
+  arbor_launch "$@"
+  # On a person's Mac an app of theirs is in front until a test window is clicked. Until then keys are declined, an ⌥-click hides that
+  # app, and Arbor's menu, which a picture may show, names it ("Shortcuts Off in …"). So the test windows' app comes forward by itself.
+  # Not when Arbor alone starts again: a test app is in front by then, and all of this one's windows coming forward would upset what is claimed.
+  on_throwaway_mac || echo activate >&9
+}
+
+reopen_test_windows() {
+  [ -z "$ARBOR_PID" ] || die "reopen_test_windows: Arbor is limited to the processes it was started with; end it first"
+  arbor_make_room || exit 77
+  arbor_close_windows
+  # shellcheck disable=SC2086
+  arbor_open_app 1 "$ARBOR_TEST_WINDOWS" "$1" ${ARBOR_TEST_WINDOWS_ARGS:-}
+}
+
+# Starts Arbor on the session's windows, settings and saved state, and waits until it manages the windows.
+# Without arguments, with those of the session's last launch.
+arbor_relaunch() { arbor_launch "$@"; }
+# Under names of their own in here, so that a script's own function of the same name changes nothing in this file.
+arbor_launch() {
+  local argument status="" deadline binary="$ARBOR_BIN/Arbor" expected pids id
   for argument in "$@"; do
     case "$argument" in
       [A-Za-z_]*=*) ;;
       *) die "arbor_start: expected NAME=value, got $argument" ;;
     esac
   done
+  [ -z "$ARBOR_PID" ] || die "arbor_relaunch: Arbor is running; call arbor_quit or arbor_kill first"
+  arbor_make_room || exit 77
+  [ $# -gt 0 ] && ARBOR_LAUNCH_ENV="$*"
+  if [ -n "${ARBOR_BUNDLED:-}" ]; then
+    on_throwaway_mac || die "ARBOR_BUNDLED: only on a throwaway Mac (write: if on_throwaway_mac; then ARBOR_BUNDLED=1; fi)"
+    binary="$ARBOR_APP/Contents/MacOS/Arbor"
+  fi
   # ARBOR_ONLY_PIDS among the arguments (and the lists some scripts add to it) point Arbor at other processes' windows.
   if ! on_throwaway_mac; then
     for argument in "$@" "+=${ARBOR_EXTRA_PIDS:-}" "+=${ARBOR_MORE_PIDS:-}"; do
@@ -957,52 +1214,28 @@ arbor_start() {
       done
     done
   fi
-  arbor_make_room || exit 77
-  [ -z "$ARBOR_PID" ] || die "arbor_start: a session is running; call arbor_stop first"
-  [ -x "$ARBOR_BIN/Arbor" ] && [ -x "$ARBOR_POINTER" ] || die "arbor_start: call arbor_build first"
-  ARBOR_SESSION=$((ARBOR_SESSION + 1))
-
-  # ArborTestWindows lives until its stdin closes, so this shell holds the other end (descriptor 9).
-  mkfifo "$ARBOR_SESSION_DIR/stdin"
+  pids=$ARBOR_WINDOWS_PID${ARBOR_WINDOWS_PID_2:+,$ARBOR_WINDOWS_PID_2}${ARBOR_EXTRA_PIDS:+,$ARBOR_EXTRA_PIDS}
   # shellcheck disable=SC2086
-  "$ARBOR_BIN/ArborTestWindows" --count "$count" ${ARBOR_TEST_WINDOWS_ARGS:-} \
-    < "$ARBOR_SESSION_DIR/stdin" > "$ARBOR_SESSION_DIR/hello" 2>> "$ARBOR_OUT/test-windows.log" 7>&- 8>&- &
-  ARBOR_WINDOWS_PID=$!
-  started "$ARBOR_WINDOWS_PID"
-  exec 9> "$ARBOR_SESSION_DIR/stdin"
-  while [ -z "$hello" ] && [ "$tries" -lt 100 ]; do
-    sleep 0.1
-    hello=$(head -n 1 "$ARBOR_SESSION_DIR/hello" 2>/dev/null)
-    tries=$((tries + 1))
-  done
-  pid=$(python3 -c 'import json, sys; print(json.loads(sys.argv[1])["pid"])' "$hello" 2>/dev/null) \
-    || die "ArborTestWindows did not report its windows (got: $hello)"
-  ARBOR_WINDOW_IDS=$(python3 -c 'import json, sys; print(*json.loads(sys.argv[1])["windows"])' "$hello")
-  for id in $ARBOR_WINDOW_IDS; do
-    index=$((index + 1))
-    eval "W$index=$id"
-  done
+  set -- $ARBOR_WINDOW_IDS
+  expected=$#
 
   # Later assignments win, so ARBOR_NO_STATUS_ITEM=0 or ARBOR_NO_HOTKEYS=0 among the arguments switches that part on.
-  # No watchdog: arbor_stop kills an Arbor that will not quit, and it must then stay dead.
-  env ARBOR_ONLY_PIDS="$pid${ARBOR_EXTRA_PIDS:+,$ARBOR_EXTRA_PIDS}" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 \
-    ARBOR_NO_WATCHDOG=1 "$@" \
-    "$ARBOR_BIN/Arbor" > "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>&1 7>&- 8>&- 9>&- &
+  # shellcheck disable=SC2086
+  # No watchdog: arbor_kill and arbor_stop end an Arbor that must then stay dead (ARBOR_NO_WATCHDOG=0 brings it back).
+  env ARBOR_ONLY_PIDS="$pids" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 \
+    ARBOR_NO_WATCHDOG=1 $ARBOR_LAUNCH_ENV "$binary" >> "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>&1 3>&- 7>&- 8>&- 9>&- &
   ARBOR_PID=$!
   started "$ARBOR_PID"
 
   deadline=$((SECONDS + 20))
   while [ "$SECONDS" -lt "$deadline" ]; do
-    "$ARBOR_BIN/arborctl" state 2>/dev/null | python3 "$ARBOR_STATE_PY" ready "$count" 2>/dev/null
+    "$ARBOR_BIN/arborctl" state 2>/dev/null | python3 "$ARBOR_STATE_PY" ready "$expected" 2>/dev/null
     case $? in
       0)
-        echo "session $ARBOR_SESSION: Arbor pid $ARBOR_PID, test windows $ARBOR_WINDOW_IDS (pid $pid)"
+        echo "session $ARBOR_SESSION: Arbor pid $ARBOR_PID, test windows$ARBOR_WINDOW_IDS (pid $pids)"
         "$ARBOR_BIN/arborctl" status
-        # On a person's Mac an app of theirs is in front until a test window is clicked. Until then keys are declined, an ⌥-click hides that
-        # app, and Arbor's menu, which a picture may show, names it ("Shortcuts Off in …"). So the test windows' app comes forward by itself.
-        on_throwaway_mac || echo activate >&9
         # So that nobody takes a film in which nothing moves for a bug.
-        [ "$("$ARBOR_POINTER" reduce-motion)" = true ] \
+        [ "$("$ARBOR_POINTER" reduce-motion 2>/dev/null)" = true ] \
           && echo "Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)"
         return 0 ;;
       3)
@@ -1016,24 +1249,54 @@ arbor_start() {
   status=$("$ARBOR_BIN/arborctl" status 2>&1)
   echo "Arbor did not get going; its last status: $status"
   tail -n 30 "$ARBOR_HOME/arbor.log" "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>/dev/null
-  die "Arbor did not start managing the $count test windows"
+  die "Arbor did not start managing the $expected test windows"
 }
 
-arbor_stop() {
-  local id
-  arbor_release_keys
-  [ -n "$ARBOR_PID" ] || return 0
-  # A drag or a shortcut left open would outlive the session: nobody else is there to let go of the button and the keys.
-  "$ARBOR_POINTER" calm
+# A drag or a modifier left held (the script was stopped half way through one) would outlive the session: nobody
+# else is there to let go.
+arbor_let_go() { "$ARBOR_POINTER" calm 2>/dev/null; }
 
+arbor_quit() {
+  [ -n "$ARBOR_PID" ] || return 0
+  arbor_let_go
   echo "> quit"
   "$ARBOR_BIN/arborctl" quit
   check "Arbor exits within 5 s of quit" arbor_await_exit "$ARBOR_PID" 50
   kill -TERM "$ARBOR_PID" 2>/dev/null && { arbor_await_exit "$ARBOR_PID" 20 || kill -KILL "$ARBOR_PID" 2>/dev/null; }
   wait "$ARBOR_PID" 2>/dev/null
   ARBOR_PID=""
+}
+
+arbor_kill() {
+  [ -n "$ARBOR_PID" ] || return 0
+  echo "> kill -${1:-KILL} (Arbor)"
+  kill "-${1:-KILL}" "$ARBOR_PID" 2>/dev/null
+  arbor_await_exit "$ARBOR_PID" 50 || kill -KILL "$ARBOR_PID" 2>/dev/null
+  wait "$ARBOR_PID" 2>/dev/null
+  ARBOR_PID=""
+}
+
+# If it has not after all (the click on Quit missed, or was declined), it is ended here: nothing may wait for it for ever.
+arbor_ended() {
+  [ -n "$ARBOR_PID" ] || return 0
+  if ! ended "$ARBOR_PID"; then
+    arbor_kill TERM
+    return 1
+  fi
+  ARBOR_PID=""
+}
+
+arbor_stop() {
+  local id number=0
+  arbor_release_keys
+  [ -n "$ARBOR_PID" ] || return 0
+  # The same title every time: one claim, which every session of every script has to bear out.
+  # parity.json lists it under T61 by hand: proof.sh makes it too, so it is not suite-parity.py's to list or take off.
+  arbor_heading "▸ quitting puts every window back in view"
+  arbor_quit
   for id in $ARBOR_WINDOW_IDS; do
-    check "window $id is back on screen after quitting" eventually is on_screen "$id"
+    number=$((number + 1))
+    check "window $number is back on screen after quitting" eventually arbor_in_view "$id"
   done
   [ -n "${1:-}" ] && shot "$1"
   arbor_log
@@ -1042,15 +1305,22 @@ arbor_stop() {
 }
 
 arbor_close_windows() {
-  [ -n "$ARBOR_WINDOWS_PID" ] || return 0
-  exec 9>&-
-  arbor_await_exit "$ARBOR_WINDOWS_PID" 30 || kill -TERM "$ARBOR_WINDOWS_PID" 2>/dev/null
-  wait "$ARBOR_WINDOWS_PID" 2>/dev/null
+  if [ -n "$ARBOR_WINDOWS_PID" ]; then
+    exec 9>&-
+    arbor_await_exit "$ARBOR_WINDOWS_PID" 30 || kill -TERM "$ARBOR_WINDOWS_PID" 2>/dev/null
+    wait "$ARBOR_WINDOWS_PID" 2>/dev/null
+  fi
+  if [ -n "$ARBOR_WINDOWS_PID_2" ]; then
+    exec 8>&-
+    arbor_await_exit "$ARBOR_WINDOWS_PID_2" 30 || kill -TERM "$ARBOR_WINDOWS_PID_2" 2>/dev/null
+    wait "$ARBOR_WINDOWS_PID_2" 2>/dev/null
+  fi
   ARBOR_WINDOWS_PID=""
+  ARBOR_WINDOWS_PID_2=""
   ARBOR_WINDOW_IDS=""
 }
 
-# Whatever ends the script, both processes stop and the log comes back. This is the orderly half, in which Arbor is asked to
+# Whatever ends the script, the processes stop and the log comes back. This is the orderly half, in which Arbor is asked to
 # quit and puts the windows back; the supervisor sees to what is left, and to a script that never got here.
 arbor_exit() {
   local code=$?
@@ -1058,7 +1328,15 @@ arbor_exit() {
   # Not '': what is ignored here would be ignored by every program the clean-up starts, too.
   trap : INT TERM HUP
   eval "$ARBOR_AT_EXIT"
+  if [ "$code" -ge 2 ] && [ "$code" -ne 77 ]; then
+    # Whatever claim was under way did not get to finish, so it must not count as borne out. (77: it never began.)
+    ARBOR_FAILED=$((ARBOR_FAILED + 1))
+    echo "  ✘ the script ended early, with exit code $code"
+    arbor_record "  ✘ the script ended early, with exit code $code"
+  fi
   arbor_stop
+  arbor_close_claim
+  arbor_log
   arbor_close_windows
   display_remove
   [ -n "$ARBOR_CURTAIN_IS_MINE" ] && kill_started "$ARBOR_CURTAIN_PID"
@@ -1068,8 +1346,15 @@ arbor_exit() {
   if [ $((ARBOR_PASSED + ARBOR_FAILED)) -gt 0 ]; then
     echo
     echo "$ARBOR_PASSED passed, $ARBOR_FAILED failed"
+    [ "$ARBOR_KNOWN_FAILED" -eq 0 ] || echo "$ARBOR_KNOWN_FAILED of the failures are known"
+    arbor_record ""
+    arbor_record "$ARBOR_PASSED passed, $ARBOR_FAILED failed"
+  else
+    # A script without claims or checks has no evidence to leave.
+    rm -f "$ARBOR_EVIDENCE"
+    rmdir "$ARBOR_OUT/evidence" 2>/dev/null
   fi
-  [ "$code" -eq 0 ] && [ "$ARBOR_FAILED" -gt 0 ] && code=1
+  [ "$code" -eq 0 ] && [ "$ARBOR_FAILED" -gt "$ARBOR_KNOWN_FAILED" ] && code=1
   if ! arbor_supervised; then
     arbor_sweep
     scratch_remove "$ARBOR_LEDGER"
@@ -1081,18 +1366,114 @@ arbor_exit() {
 
 ctl() {
   arbor_still_watched
-  echo "> $*"
+  echo "> $*" >&3
   "$ARBOR_BIN/arborctl" "$@"
 }
 
-arbor_ask() { "$ARBOR_BIN/arborctl" state | python3 "$ARBOR_STATE_PY" "$@"; }
+# Arbor's state, then the window server's list of windows: state.py answers from both.
+arbor_ask() {
+  { "$ARBOR_BIN/arborctl" state && "$ARBOR_POINTER" windows; } \
+    | ARBOR_PID="$ARBOR_PID" ARBOR_GAP="$ARBOR_GAP" python3 "$ARBOR_STATE_PY" "$@"
+}
 state() { arbor_ask json; }
 summary() { arbor_ask summary; }
+
+# MARK: Talking to the test windows
+
+# arbor_tell <descriptor> <process id> <file of replies> <request…>: prints what the app answers, which for most requests
+# is nothing, once it has carried the request out: a `ping` sent after it comes back then. Fails when the answer is an error.
+arbor_tell() {
+  local descriptor=$1 pid=$2 file=$3 before tries=0 reply token=$RANDOM$RANDOM
+  shift 3
+  echo "> test windows: $*" >&3
+  # Writing to a pipe nobody reads would end this script with SIGPIPE, exit trap and all.
+  if [ -z "$pid" ] || ! kill -0 "$pid" 2>/dev/null; then
+    echo "the test windows' process is gone"
+    return 1
+  fi
+  before=$(wc -l < "$file" | tr -d ' ')
+  printf '%s\nping %s\n' "$*" "$token" >&"$descriptor"
+  until grep -F "{\"pong\":$token}" "$file" > /dev/null; do
+    if [ "$tries" -ge 100 ]; then
+      echo "the test windows did not answer: $*"
+      return 1
+    fi
+    sleep 0.05
+    tries=$((tries + 1))
+  done
+  # Any pong: one that an app which hung for a while sends late belongs to a request that gave up on it.
+  reply=$(tail -n "+$((before + 1))" "$file" | grep -v '^{"pong":' || true)
+  [ -z "$reply" ] || printf '%s\n' "$reply"
+  case "$reply" in *'"error"'*) return 1 ;; esac
+}
+tw() { arbor_tell 9 "$ARBOR_WINDOWS_PID" "$ARBOR_SESSION_DIR/hello1" "$@"; }
+tw2() { arbor_tell 8 "$ARBOR_WINDOWS_PID_2" "$ARBOR_SESSION_DIR/hello2" "$@"; }
+
+# arbor_open_window <tw|tw2> <request that opens a window> <variable> <the request's arguments…>
+arbor_open_window() {
+  local teller=$1 request=$2 name=$3 reply id
+  shift 3
+  if ! reply=$("$teller" "$request" "$@"); then
+    echo "$reply"
+    eval "$name=0"
+    return 1
+  fi
+  id=$(printf '%s' "$reply" | sed -E 's/.*"window":([0-9]+).*/\1/')
+  case "$id" in
+    "" | *[!0-9]*)
+      echo "the test windows opened nothing: $reply"
+      eval "$name=0"
+      return 1 ;;
+  esac
+  eval "$name=$id"
+  ARBOR_WINDOW_IDS="$ARBOR_WINDOW_IDS $id"
+}
+open_window() { arbor_open_window tw open "$@"; }
+open_window2() { arbor_open_window tw2 open "$@"; }
+open_dialog() { arbor_open_window tw dialog "$@"; }
+open_tab() { arbor_open_window tw tab "$@"; }
+
+forget_window() {
+  local id kept=""
+  for id in $ARBOR_WINDOW_IDS; do
+    [ "$id" = "$1" ] || kept="$kept $id"
+  done
+  ARBOR_WINDOW_IDS=$kept
+}
+
+# Whichever of the two apps the window belongs to.
+events_of() {
+  local reply
+  reply=$(tw events "$1" 3> /dev/null) || reply=$(tw2 events "$1" 3> /dev/null) || { echo "$reply" >&2; return 1; }
+  printf '%s\n' "$reply" | sed -E "s/.*\"$2\":([0-9]+).*/\1/"
+}
 
 # MARK: Where things are
 
 frame_of() { arbor_ask frame "$1"; }
+slot_of() { arbor_ask slot "$1"; }
 real_frame_of() { "$ARBOR_POINTER" frame "$1"; }
+width_of() { real_frame_of "$1" | awk '{ print int($3 + 0.5) }'; }
+height_of() { real_frame_of "$1" | awk '{ print int($4 + 0.5) }'; }
+
+desktop_is_bare() { [ -z "${ARBOR_CURTAIN_PID:-}" ]; }
+
+take() {
+  local names=$1 answer word count=0
+  shift
+  answer=$("$@" 2>&1) || die "no place to work with: $* says: $answer"
+  for word in $answer; do
+    case "$word" in
+      "" | - | *[!0-9.-]*) die "no place to work with: $* says: $answer" ;;
+    esac
+    count=$((count + 1))
+  done
+  # shellcheck disable=SC2086
+  set -- $names
+  [ "$count" -eq $# ] || die "expected $# numbers ($names), got: $answer"
+  # shellcheck disable=SC2086,SC2229
+  read -r $names <<< "$answer"
+}
 
 # arbor_point <x y w h> <expression for x> <expression for y>
 arbor_point() {
@@ -1100,16 +1481,46 @@ arbor_point() {
   echo "$(($5)) $(($6))"
 }
 
+# A point of the title bar that no other window covers, if there is one.
 # shellcheck disable=SC2046
-titlebar_of() { arbor_point $(frame_of "$1") "x + w / 2" "y + 12"; }
-# shellcheck disable=SC2046
-center_of() { arbor_point $(frame_of "$1") "x + w / 2" "y + h / 2"; }
-# shellcheck disable=SC2046
-seam_right_of() { arbor_point $(frame_of "$1") "x + w + $ARBOR_GAP / 2" "y + h / 2"; }
-# shellcheck disable=SC2046
-seam_below() { arbor_point $(frame_of "$1") "x + w / 2" "y + h + $ARBOR_GAP / 2"; }
+titlebar_of() { "$ARBOR_POINTER" grab "$1" 2>/dev/null || arbor_point $(frame_of "$1") "x + w / 2" "y + 12"; }
+# arbor_point_on <id> <expression for x> <expression for y>: fails for a window that is out of view, where there is
+# nothing to aim at.
+arbor_point_on() {
+  local frame
+  frame=$(arbor_ask shown "$1") || return 1
+  # shellcheck disable=SC2086
+  arbor_point $frame "$2" "$3"
+}
+center_of() { arbor_point_on "$1" "x + w / 2" "y + h / 2"; }
+seam_right_of() { arbor_point_on "$1" "x + w + $ARBOR_GAP / 2" "y + h / 2"; }
+seam_below() { arbor_point_on "$1" "x + w / 2" "y + h + $ARBOR_GAP / 2"; }
 # shellcheck disable=SC2046
 tile_of() { arbor_point $(arbor_ask tile "$1") "x + w / 2" "y + h / 2"; }
+# shellcheck disable=SC2046
+desktop_point() { arbor_point $(arbor_ask desktop) "x + w / 2" "y + h / 2"; }
+
+# shellcheck disable=SC2046
+edge_point() {
+  case "$1" in
+    left) arbor_point $(arbor_ask screen) "x + 3" "y + h / 2" ;;
+    right) arbor_point $(arbor_ask screen) "x + w - 3" "y + h / 2" ;;
+    top | up) arbor_point $(arbor_ask screen) "x + w / 2" "y + 3" ;;
+    bottom | down) arbor_point $(arbor_ask screen) "x + w / 2" "y + h - 3" ;;
+    *) echo "edge_point: left, right, top or bottom, not $1" >&2; return 1 ;;
+  esac
+}
+
+# An eighth of the way in: well inside the outer 30 % that docks beside the window.
+zone_of() {
+  case "$2" in
+    left) arbor_point_on "$1" "x + w / 8" "y + h / 2" ;;
+    right) arbor_point_on "$1" "x + w - w / 8" "y + h / 2" ;;
+    top | up) arbor_point_on "$1" "x + w / 2" "y + h / 8" ;;
+    bottom | down) arbor_point_on "$1" "x + w / 2" "y + h - h / 8" ;;
+    *) echo "zone_of: left, right, top or bottom, not $2" >&2; return 1 ;;
+  esac
+}
 
 screen_of() { arbor_ask screen "$1"; }
 display_frame_of() { arbor_ask display-frame "$1"; }
@@ -1119,15 +1530,40 @@ overlays() { "$ARBOR_POINTER" windows --pid "$ARBOR_PID"; }
 
 has_overlay() { overlays | awk -v level="$1" '$3 == level && $8 == "on" { found = 1 } END { exit !found }'; }
 
+overlay_frame() {
+  overlays | awk -v level="$1" '$3 == level && $8 == "on" && !found { print $4, $5, $6, $7; found = 1 } END { exit !found }'
+}
+
 status_item() { "$ARBOR_POINTER" status-item "$ARBOR_PID"; }
 status_item_frame() { "$ARBOR_POINTER" status-item "$ARBOR_PID" --frame; }
 
 # MARK: Checks
 
+# In per cent. `visible` prints 0.07 or 1.00.
+arbor_share_in_view() {
+  local share
+  share=$("$ARBOR_POINTER" visible "$1") || return 1
+  share=${share/./}
+  echo "$((10#$share))"
+}
+
+in_view() { arbor_in_view "$@"; }
+arbor_in_view() {
+  local share
+  share=$(arbor_share_in_view "$1") || return 1
+  [ "$share" -ge 90 ] || { echo "only $share % of it is to be seen: $(real_frame_of "$1")"; return 1; }
+}
+
+out_of_view() {
+  local share
+  share=$(arbor_share_in_view "$1") || return 1
+  [ "$share" -le 5 ] || { echo "$share % of it is to be seen: $(real_frame_of "$1")"; return 1; }
+}
+
 is() {
   case "$1" in
-    on_screen) [ "$("$ARBOR_POINTER" visible "$2" | tr -d .)" -ge 90 ] ;;
-    in_slot) arbor_close "$(arbor_ask slot "$2")" "$(real_frame_of "$2")" ;;
+    on_screen) arbor_in_view "$2" ;;
+    in_slot) arbor_ask in_slot "$2" ;;
     display[1-9]) [ "$(arbor_ask display "$2")" = "${1#display}" ] ;;
     *) arbor_ask is "$2" "$1" ;;
   esac
@@ -1154,29 +1590,158 @@ inside() {
     && [ $((${1%.*} + ${3%.*})) -le $((${5%.*} + ${7%.*})) ] && [ $((${2%.*} + ${4%.*})) -le $((${6%.*} + ${8%.*})) ]
 }
 
+
+for arbor_name in at_edge fills in_slot frame_is corner_is left_of above same_column same_row desktop_between camera_on can \
+  depth_is count no_overlaps layout_matches tile_is tile_shown; do
+  eval "$arbor_name() { arbor_ask $arbor_name \"\$@\"; }"
+done
+unset arbor_name
+
 # Tries a command for up to three seconds: the window server applies moves a moment after Arbor makes them.
+# Prints what the last try printed, which is where `check` finds why it failed.
 eventually() {
-  local tries=0
-  until "$@"; do
-    [ "$tries" -ge 30 ] && return 1
+  local deadline=$((SECONDS + 3)) output
+  while :; do
+    if output=$("$@" 2>&1); then
+      [ -n "$output" ] && printf '%s\n' "$output"
+      return 0
+    fi
+    if [ "$SECONDS" -gt "$deadline" ]; then
+      printf '%s\n' "$output"
+      return 1
+    fi
     sleep 0.1
-    tries=$((tries + 1))
   done
 }
 
-check() {
-  local what=$1
-  shift
-  arbor_still_watched
+stays() {
+  local tries=0
+  while [ "$tries" -lt 3 ]; do
+    "$@" || return 1
+    sleep 0.4
+    tries=$((tries + 1))
+  done
+  "$@"
+}
+
+fails() {
   if "$@" > /dev/null 2>&1; then
-    ARBOR_PASSED=$((ARBOR_PASSED + 1))
-    echo "  ✔ $what"
-  else
-    ARBOR_FAILED=$((ARBOR_FAILED + 1))
-    echo "  ✘ $what"
+    echo "it succeeded: $*"
     return 1
   fi
 }
+
+exits_with() {
+  local expected=$1 code
+  shift
+  "$@" > /dev/null 2>&1
+  code=$?
+  [ "$code" -eq "$expected" ] || { echo "exit code $code, not $expected: $*"; return 1; }
+}
+
+says() {
+  local text=$1 output
+  shift
+  output=$("$@" 2>&1)
+  case "$output" in *"$text"*) ;; *) echo "it said: $(printf '%s' "$output" | head -n 1 | cut -c 1-120)"; return 1 ;; esac
+}
+
+# The command line itself, when its words and its exit code are the point (`ctl` prints and records them).
+arborctl() { "$ARBOR_BIN/arborctl" "$@"; }
+
+about() {
+  [ -n "$1" ] && [ -n "$2" ] || { echo "nothing to compare: '$1' and '$2'"; return 1; }
+  local difference=$(($1 - $2))
+  [ "${difference#-}" -le "${3:-3}" ] || { echo "$1 is not about $2"; return 1; }
+}
+
+width_is() { about "$(width_of "$1")" "$2" "${3:-3}"; }
+height_is() { about "$(height_of "$1")" "$2" "${3:-3}"; }
+# arbor_compare <what it is called> <actual> <test's operator> <bound>
+arbor_compare() { [ "$2" "$3" "$4" ] || { echo "it is $2 $1, which is not $3 $4"; return 1; }; }
+wider_than() { arbor_compare wide "$(width_of "$1")" -gt "$2"; }
+narrower_than() { arbor_compare wide "$(width_of "$1")" -lt "$2"; }
+taller_than() { arbor_compare high "$(height_of "$1")" -gt "$2"; }
+shorter_than() { arbor_compare high "$(height_of "$1")" -lt "$2"; }
+
+front_is() {
+  local front
+  front=$("$ARBOR_POINTER" front 2>&1)
+  [ "$front" = "$1" ] || { echo "the app in front is $front, not $1"; return 1; }
+}
+
+received() { arbor_compare "$2 events" "$(events_of "$1" "$2")" "$3" "$4"; }
+
+logged() {
+  arbor_log_since "$ARBOR_STEP_MARK" | grep -F -e "$*" > /dev/null || { echo "arbor.log does not say: $*"; return 1; }
+}
+
+# With ARBOR_DEBUG the log has a line for every command, whether or not it succeeded.
+arbor_ran_since() {
+  local mark=$1
+  shift
+  arbor_log_since "$mark" | grep -F -e "INFO  $*: " -e "DEBUG $* failed: " > /dev/null \
+    || { echo "Arbor did not run: $*"; return 1; }
+}
+ran() { arbor_ran_since "$ARBOR_STEP_MARK" "$@"; }
+
+pressed() {
+  local chord=$1 mark
+  shift
+  mark=$(arbor_log_lines)
+  key "$chord"
+  eventually arbor_ran_since "$mark" "$@"
+}
+
+# What a failed check leaves behind: a picture every time; the state and the log since the claim once per claim.
+arbor_explain() {
+  local name="fail-$ARBOR_NAME-$ARBOR_FAILED"
+  # Never on a person's Mac, whatever ARBOR_SHOTS says: there a check fails just when a window of theirs has come forward.
+  if on_throwaway_mac; then
+    arbor_capture "$name" && echo "      picture: mac-shell/$name.png"
+  fi
+  [ -z "$ARBOR_STEP_EXPLAINED" ] || return 0
+  ARBOR_STEP_EXPLAINED=yes
+  if [ -n "$ARBOR_PID" ] && kill -0 "$ARBOR_PID" 2>/dev/null; then
+    summary 2>&1 | sed 's/^/      | /'
+  fi
+  arbor_log_since "$ARBOR_STEP_MARK" | tail -n 25 | cut -c 26-230 | sed 's/^/      log | /'
+}
+
+check() {
+  local what=$1 detail outcome
+  shift
+  arbor_still_watched
+  detail=$("$@" 2>&1)
+  outcome=$?
+  # What is checked runs in a shell of its own, so an `exit 75` in there ends only that.
+  if [ -n "${ARBOR_CURTAIN_PID:-}" ] && ! kill -0 "$ARBOR_CURTAIN_PID" 2>/dev/null; then
+    echo "the curtain was taken down: somebody wants their Mac back. Ending the script"
+    exit 75
+  fi
+  if [ "$outcome" -eq 0 ]; then
+    ARBOR_PASSED=$((ARBOR_PASSED + 1))
+    ARBOR_CLAIM_PASSED=$((ARBOR_CLAIM_PASSED + 1))
+    echo "  ✔ $what"
+    arbor_record "  ✔ $what"
+  else
+    ARBOR_FAILED=$((ARBOR_FAILED + 1))
+    ARBOR_CLAIM_FAILED=$((ARBOR_CLAIM_FAILED + 1))
+    detail=$(printf '%s\n' "$detail" | grep -v '^$' | tail -n 1 | cut -c 1-200)
+    if [ -n "$ARBOR_KNOWN" ]; then
+      ARBOR_KNOWN_FAILED=$((ARBOR_KNOWN_FAILED + 1))
+      detail="${detail:+$detail }(known: $ARBOR_KNOWN)"
+    fi
+    echo "  ✘ $what${detail:+ — $detail}"
+    # Why a press or a key was declined names what else is open on somebody's Mac, and evidence gets committed.
+    case "$detail" in skipped:*) detail="declined on this Mac" ;; esac
+    arbor_record "  ✘ $what${detail:+ — $detail}"
+    arbor_explain
+    return 1
+  fi
+}
+
+settled() { check "windows match Arbor's layout" eventually layout_matches; }
 
 # MARK: Pictures
 
@@ -1387,9 +1952,13 @@ pointer() {
   if [ "${1:-}" = windows ] && ! on_throwaway_mac; then "$ARBOR_POINTER" "$@" | arbor_nameless; else "$ARBOR_POINTER" "$@"; fi
 }
 arbor_input() {
-  echo "> $*"
+  echo "> $*" >&3
   arbor_before_input
-  arbor_input_is_ours "$@" || return 1
+  if ! arbor_input_is_ours "$@"; then
+    # Whatever the checks after it find: "nothing happened" would hold for the wrong reason.
+    arbor_missed "real input is let through on this Mac"
+    return 1
+  fi
   "$ARBOR_POINTER" "$@"
 }
 move() { arbor_input move "$@"; }
@@ -1408,6 +1977,91 @@ release() { arbor_input release "$@"; }
 key() {
   case " $* " in *" --down "*) echo "$1" >> "$ARBOR_LEDGER/keys" ;; esac
   arbor_input key "$@"
+}
+pinch() { arbor_input pinch "$@"; }
+
+key_to() {
+  local why
+  why=$(eventually is focused "$1" 2>&1) || { arbor_missed "the window has the keyboard for $2 ($why)"; return 1; }
+  key "$2"
+}
+
+# Input that could not be aimed: the claim it was part of cannot hold, whatever the checks after it find. Inside
+# `check`, which runs its command in a subshell, saying why and failing is enough.
+arbor_missed() {
+  if [ "$BASH_SUBSHELL" -gt 0 ]; then
+    echo "$*"
+  else
+    check "$*" false
+  fi
+  return 1
+}
+
+# A window wholly behind others cannot be clicked forward. Its app brings it forward, as ⌘` or its Dock menu would.
+arbor_bring_forward() { tw front "$1" > /dev/null 2>&1 || tw2 front "$1" > /dev/null 2>&1; }
+
+click_window() {
+  local point
+  if ! point=$("$ARBOR_POINTER" spot "$1" 2>&1); then
+    arbor_bring_forward "$1"
+    sleep 0.2
+    point=$("$ARBOR_POINTER" spot "$1" 2>&1) || { arbor_missed "the window can be clicked ($point)"; return 1; }
+  fi
+  # shellcheck disable=SC2086
+  click $point
+}
+
+click_button() {
+  local point
+  point=$("$ARBOR_POINTER" button "$1" "$2" 2>&1) || { arbor_missed "its $2 button can be clicked ($point)"; return 1; }
+  arbor_in_view "$1" > /dev/null 2>&1 || { arbor_missed "its $2 button can be clicked (the window is out of view)"; return 1; }
+  # shellcheck disable=SC2086
+  click $point
+}
+
+drag_window() {
+  local id=$1 from
+  shift
+  # `drag_window $W1 $(zone_of $W2 left)` with nowhere to go
+  case "${1:-}" in "" | -*) arbor_missed "the window can be dragged (there is no point to drag it to)"; return 1 ;; esac
+  if ! from=$("$ARBOR_POINTER" grab "$id" 2>/dev/null); then
+    click_window "$id" || return 1
+    sleep 0.2
+    from=$("$ARBOR_POINTER" grab "$id" 2>&1) || { arbor_missed "the window can be dragged ($from)"; return 1; }
+  fi
+  # shellcheck disable=SC2086
+  drag $from "$@"
+}
+
+# Once something is docked the icon grows into a row of buttons, and a plain click in its middle presses one of them. A right click
+# anywhere on it opens the menu, on the single icon too.
+open_menu() {
+  local point
+  point=$(status_item) || return 1
+  # shellcheck disable=SC2086
+  rightclick $point
+}
+
+# The menu is rebuilt as it opens, so an item's place is asked for only then.
+click_menu() {
+  local point
+  open_menu || return 1
+  sleep 0.4
+  while [ $# -gt 0 ]; do
+    if ! point=$(eventually "$ARBOR_POINTER" menu-item "$ARBOR_PID" "$1"); then
+      echo "$point"
+      key escape
+      return 1
+    fi
+    # A press that was declined chose nothing, and the menu is still open.
+    # shellcheck disable=SC2086
+    if ! click $point; then
+      key escape
+      return 1
+    fi
+    sleep 0.3
+    shift
+  done
 }
 
 # MARK: macOS
@@ -1486,7 +2140,7 @@ display_add() {
   : > "$ARBOR_SESSION_DIR/display"
   # shellcheck disable=SC2086
   "$ARBOR_VDISPLAY" add "$width" "$height" "Arbor Test Display" --serial "${ARBOR_DISPLAY_SERIAL:-1}" ${ARBOR_DISPLAY_ARGS:-} \
-    > "$ARBOR_SESSION_DIR/display" 2>> "$ARBOR_OUT/vdisplay.log" 9>&- &
+    > "$ARBOR_SESSION_DIR/display" 2>> "$ARBOR_OUT/vdisplay.log" 9>&- 8>&- 3>&- &
   ARBOR_DISPLAY_PID=$!
   started "$ARBOR_DISPLAY_PID"
   while [ -z "$hello" ] && [ "$tries" -lt 80 ] && kill -0 "$ARBOR_DISPLAY_PID" 2>/dev/null; do
@@ -1610,6 +2264,7 @@ arbor_supervised || arbor_supervise "$@"
 # Nor does it open an app: it knows only test windows, so `summon` would take every app of the person's for one that has to be opened.
 on_throwaway_mac || export ARBOR_ONLY_PIDS=1 ARBOR_NO_WATCHDOG=1 ARBOR_NO_PROMPT=1 ARBOR_NO_PICTURES=1 ARBOR_NO_OPENING=1
 arbor_new_home
+arbor_begin_evidence
 trap arbor_exit EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM

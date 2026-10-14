@@ -61,6 +61,9 @@ extension World {
         app.regular = true
       case "--extras":
         opensExtras = true
+      case "-ApplePersistenceIgnoreState":
+        // For AppKit, which reads `-name value` as a default: no saved state is kept. There is none to keep here.
+        _ = try value(of: flag)
       default:
         throw Refusal(message: "ArborTestWindows (rehearsal): unknown argument \(flag)")
       }
@@ -143,7 +146,6 @@ extension World {
   func closeWindow(_ id: UInt32) {
     if let index = tabGroups.firstIndex(where: { $0.front == id }) {
       // The tab behind takes its place first, then the closed one is reported gone.
-      tabGroups[index].behind.removeAll { !tabExists($0) }
       if let next = tabGroups[index].behind.popLast() {
         system.closeTab(WindowID(id), revealing: WindowID(next))
         replace(id, by: next)
@@ -406,8 +408,6 @@ extension World {
     }
     return ""
   }
-
-  private func tabExists(_ id: UInt32) -> Bool { tabGroups.contains { $0.behind.contains(id) } }
 
   /// Another tab of the group shows where `old` did.
   private func replace(_ old: UInt32, by new: UInt32) {

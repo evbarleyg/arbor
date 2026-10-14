@@ -45,7 +45,7 @@ extension World {
     }
 
     func number(_ word: String) throws -> Double {
-      guard let value = Double(word), value.isFinite, abs(value) < 1_000_000 else {
+      guard let value = Double(word), value.isFinite, abs(value) < 1_000_000_000 else {
         throw Refusal(message: "pointer: expected a number, got \(word)")
       }
       return value
@@ -110,6 +110,9 @@ extension World {
     let modifiers = chord?.modifiers ?? []
     system.heldModifiers = heldShortcuts.isEmpty ? modifiers : system.heldModifiers.union(modifiers)
     defer { if !isButtonDown, heldShortcuts.isEmpty { system.heldModifiers = [] } }
+    if ["click", "drag"].contains(command), arbor?.overlays.outlinePanel?.shown == true {
+      throw Refusal(message: "pointer (rehearsal): no press while a peek's outline shows yet: `PeekOutlinePanel` would take it")
+    }
     if let name = try arguments.option("--tap"), name != "session", name != "hid" {
       throw fail("--tap takes hid or session")
     }
@@ -272,10 +275,21 @@ extension World {
       return .printing(text(point))
 
     case "button":
-      // As the real tool has it: the window of that process whose corner is nearest to the point.
+      // By its number…
+      if arguments.words.count == 2 {
+        guard ["close", "minimize", "zoom"].contains(arguments.words[1]) else {
+          throw fail("expected close, minimize or zoom")
+        }
+        let id = try arguments.windowID(at: 0)
+        guard let point = buttonCentre(arguments.words[1], of: id) else {
+          throw fail("window \(id) shows no \(arguments.words[1]) button")
+        }
+        return .printing(text(point))
+      }
+      // …or, as the real tool has it too, the window of that process whose corner is nearest to the point.
       try arguments.expect(atMost: 4, for: command)
       guard arguments.words.count == 4, let pid = Int32(arguments.words[0]) else {
-        throw fail("expected a process id, x, y and close, minimize or zoom")
+        throw fail("expected a window id and close, minimize or zoom, or a process id, x, y and one of these")
       }
       let name = arguments.words[3]
       guard ["close", "minimize", "zoom"].contains(name) else {
@@ -434,6 +448,11 @@ extension World {
           id: panel.id, pid: arbor.pid, layer: 3, frame: panel.frame, onScreen: isShown, owner: "Arbor")
         if isShown { shown.append(window) } else { hidden.append(window) }
       }
+      if let panel = arbor.overlays.outlinePanel {
+        let window = ListedWindow(
+          id: panel.id, pid: arbor.pid, layer: 3, frame: panel.frame, onScreen: panel.shown, owner: "Arbor")
+        if panel.shown { shown.append(window) } else { hidden.append(window) }
+      }
       if let panel = arbor.overlays.namePanel {
         let window = ListedWindow(
           id: panel.id, pid: arbor.pid, layer: 8, frame: panel.frame, onScreen: panel.shown, owner: "Arbor")
@@ -462,6 +481,10 @@ extension World {
           ListedWindow(id: overlayID(of: thing), pid: arbor.pid, layer: 0, frame: swept(frame), owner: "Arbor"))
       }
     }
+    // curtain.swift: behind everything the run opened, in front of everything else.
+    if let curtainPID {
+      shown.append(ListedWindow(id: 8999, pid: curtainPID, layer: 0, frame: display.frame, owner: "curtain"))
+    }
     shown += systemWindows(above: false)
 
     if let arbor, let ring = arbor.overlays.ringPanel, !ring.shown || !isOnScreen(ring.window.rawValue) {
@@ -488,16 +511,18 @@ extension World {
   /// The real tool's `freePoint`: the point of `area` nearest its middle that is on the display and that no
   /// ordinary window in front of window `id` covers.
   private func freePoint(of id: UInt32, in area: (CGRect) -> CGRect) -> CGPoint? {
-    var covers: [CGRect] = []
+    var covers: [(frame: CGRect, isArbors: Bool)] = []
     var own: CGRect?
     for window in windowServerList() where window.onScreen {
       if window.id == id {
         own = window.frame
         break
       }
-      if window.layer == 0 { covers.append(window.frame.insetBy(dx: -3, dy: -3)) }
+      if window.layer == 0 { covers.append((window.frame.insetBy(dx: -3, dy: -3), window.pid == arbor?.pid)) }
     }
     guard let own else { return nil }
+    // The focus ring's panel.
+    covers.removeAll { $0.isArbors && $0.frame.contains(own) }
     let wanted = area(own)
     guard wanted.width >= 1, wanted.height >= 1 else { return nil }
     let screen = display.frame.insetBy(dx: 2, dy: 2)
@@ -507,10 +532,9 @@ extension World {
       for y in stride(from: wanted.minY, through: wanted.maxY, by: 6) {
         let point = CGPoint(x: x.rounded(), y: y.rounded())
         let distance = abs(point.x - wanted.midX) + abs(point.y - wanted.midY)
-        guard distance < bestDistance, screen.contains(point), !covers.contains(where: { $0.contains(point) })
-        else {
-          continue
-        }
+        guard distance < bestDistance, screen.contains(point),
+          !covers.contains(where: { $0.frame.contains(point) })
+        else { continue }
         best = point
         bestDistance = distance
       }

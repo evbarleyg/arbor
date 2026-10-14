@@ -309,6 +309,9 @@ reads the committed file, so commit the fresh evidence when a run should
 count. The window server applies moves a moment after the Accessibility call
 returns, so the runner's in-view and out-of-view checks wait up to three seconds.
 
+arbor-e2e drives Arbor through commands only. What a person does with a mouse, a keyboard and the menu bar
+is the real-window suite's (section 10).
+
 ## 5. Seeing the real app from anywhere (`scripts/mac-shell`)
 
 Tests say whether frames are right. They do not say what Arbor looks like, or whether a real drag, click or
@@ -330,7 +333,7 @@ shot 01-docked                                # mac-shell/01-docked.png
 
 drag $(titlebar_of $W2) 3 400 --no-release    # a real drag; the button stays down
 shot 02-preview
-check "a drop preview shows" has_overlay 3
+check "a drop preview shows" has_overlay 3   # ✔, or ✘ with the reason, a picture, the state and the log
 release
 check "the window docked" eventually is docked $W2
 summary                                       # the state in a few lines
@@ -349,8 +352,8 @@ It starts the "Mac shell" workflow for your branch, waits, fetches the output in
 `.mac-shell/<script>-<run id>/` (ignored by Git), prints the end of `output.txt`, and exits with the script's
 exit code: 0, or 1 when a `check` failed, or 2 when the build or the launch did (`run.sh`'s own: 97 could
 not start, 98 timed out, 99 the run brought no output back). **Look at the pictures**
-and say honestly what you see. `arbor.log` (debug level), `build.log` and
-`output.txt` are in the same folder.
+and say honestly what you see. `arbor-<script>.log` (debug level), `build.log`,
+`output.txt` and `evidence/<script>.txt` (the claims and checks alone) are in the same folder.
 
 **The Macs are shared.** GitHub lends the whole repository about five at a time, for every contributor's Mac shell runs, CI's
 `macos` and `real-windows` jobs and the release build together. A run that finds none free waits, and that wait counts
@@ -396,6 +399,8 @@ it prints the same frames and the same log.
 - `ARBOR_REHEARSAL_BASH=/path/to/bash-3.2` runs the script with the bash macOS has.
 - `ARBOR_REHEARSAL_DISPLAY="1440x900 24 70"` sets the display: width x height, menu bar, Dock. The default,
   `"1024x768 31 63"`, is GitHub's runner. Slots under 240 points become tiles, so geometry that works on one can fail on the other.
+- `ARBOR_REHEARSAL_AS=person` rehearses the script as somebody's own Mac would run it: the gates stay shut, the nets look at every press and
+  key, and a curtain hangs behind the test windows (to Arbor, an app's window where the Desktop was).
 - The fake Mac's clock moves one second with everything that is done to it. `sleep` of a second or more moves it by
   that much and takes no real time; shorter sleeps do nothing.
 - To debug: `.build/rehearsal/out/` has what the Mac would have sent back, and `.build/rehearsal/worlds/` one text
@@ -415,14 +420,19 @@ for a second display, `check-desktop.sh` those for dark mode, wallpapers and Spa
 
 | | |
 |---|---|
-| `arbor_start [count] [NAME=value…]` | Shortcuts, event taps and the menu bar item are off unless you pass `ARBOR_NO_HOTKEYS=0`, `ARBOR_NO_STATUS_ITEM=0`. `ARBOR_APPEARANCE=dark` draws Arbor's own windows and menus dark. `ARBOR_TEST_WINDOWS_ARGS="--min-size 3:700x500"` makes the third window refuse to shrink. After `arbor_stop` a script can start another session. |
+| `arbor_start [count] [NAME=value…]` | Shortcuts, event taps and the menu bar item are off unless you pass `ARBOR_NO_HOTKEYS=0`, `ARBOR_NO_STATUS_ITEM=0`. `ARBOR_APPEARANCE=dark` draws Arbor's own windows and menus dark. `ARBOR_TEST_WINDOWS_ARGS="--min-size 3:700x500"` makes the third window refuse to shrink; `ARBOR_SECOND_APP=1` adds a second app's window `$V1`; `ARBOR_BUNDLED=1` runs Arbor from an app bundle. After `arbor_stop` a script can start another session. |
 | `arbor_settings "{$ARBOR_GESTURES_ON}"` | With `lib-gestures.sh` sourced after `lib.sh`. Before `arbor_start`, in a script about the pinch, ⌃⌥ + scroll, the ⌃⌥ rectangle, ⇧-drag on the Desktop or the event taps themselves: it asks for all four and for the switch above them, whatever Arbor ships with. Every session has a home of its own, so every session asks again |
+| `arbor_quit`, `arbor_kill [signal]`, `arbor_relaunch`, `reopen_test_windows <n>` | End Arbor alone and start it again on the same windows, settings and saved state; restart the test app |
 | `ctl`, `summary`, `state` | `arborctl` on the session's socket; the state as readable lines; as JSON |
+| `tw <request>`, `open_window <NAME> [options]`, `events_of <id> <kind>` | The test app does what apps do: `tw minimize $W1`, `restore`, `hide`, `activate`, `title`, `frame`, `min`, `fullscreen`; a new window with a title, size, minimum size or kind (`panel`, `sheet:<id>`); what its content received |
 | `shot`, `shot_after <s>`, `film <name> <n>` | A picture once things have settled (0.7 s, `ARBOR_SETTLE`); after exactly that long; a burst |
-| `drag`, `release`, `click`, `dblclick`, `rightclick`, `move`, `key` | Real events (`pointer.swift`): `drag x1 y1 x2 y2 [--steps n] [--duration s] [--hold s] [--no-release] [--mods shift+cmd]`, `key ctrl+opt+space`. A key can stay down: `key ctrl+opt+space --down`, later `--up`; `key ctrl+opt+left --held` presses only ← while ⌃⌥ are down; `--repeat n` sends auto-repeat |
-| `frame_of`, `titlebar_of`, `center_of`, `seam_right_of`, `seam_below`, `tile_of`, `status_item`, `status_item_frame` | Where to point, in the coordinates `arborctl state` uses |
-| `overlays`, `has_overlay <level>` | Arbor's own windows as the window server sees them |
-| `check "<what>" <command…>`, `is <what> <id>`, `eventually <command…>` | `is docked`, `floating`, `parked`, `tile`, `focused`, `on_screen`, `in_slot`, `display2`… |
+| `drag`, `release`, `click`, `dblclick`, `rightclick`, `move`, `key`, `pinch` | Real events (`pointer.swift`): `drag x1 y1 x2 y2 [--steps n] [--duration s] [--hold s] [--no-release] [--mods shift+cmd]`, `key ctrl+opt+space`, `pinch x y 0.3 --mods opt`. A key can stay down: `key ctrl+opt+space --down`, later `--up`; `key ctrl+opt+left --held` presses only ← while ⌃⌥ are down; `--repeat n` sends auto-repeat |
+| `drag_window <id> x y`, `click_window <id>`, `click_button <id> close`, `click_menu "Arrange Windows"` | The same aimed for you, at a point nothing covers |
+| `frame_of`, `real_frame_of`, `titlebar_of`, `center_of`, `seam_right_of`, `seam_below`, `tile_of`, `edge_point <edge>`, `zone_of <id> <edge>`, `desktop_point`, `status_item`, `status_item_frame` | Where to point, in the coordinates `arborctl state` uses |
+| `overlays`, `has_overlay <level>`, `overlay_frame <level>` | Arbor's own windows as the window server sees them |
+| `claim "<title>"`, `check "<what>" <command…>`, `settled`, `step "<title>"` | A real-window step and its proof: what they print is evidence (section 10). `step` is a mere heading, and ends the claim |
+| `eventually`, `stays`, `fails`, `pressed <chord> <command>`, `ran <command>`, `logged <text>` | Up to three seconds; for a whole second; not; the shortcut made Arbor run exactly that; Arbor ran it; the log says it |
+| `is <what> <id>`, `in_view`, `out_of_view`, `at_edge`, `fills`, `in_slot`, `frame_is`, `left_of`, `above`, `same_column`, `same_row`, `desktop_between`, `camera_on`, `depth_is`, `count`, `no_overlaps`, `width_is`, `wider_than`… | Predicates for `check`; where a window is comes from the window server, not from Arbor |
 | `display_add <w> <h> [side]`, `display_move <side> [offset]`, `display_remove` | A virtual second display to the `right`, `left`, `above` or `below`. `shot` then also writes `<name>-d2.png`, and `panorama <name>` takes both displays in one picture. `screen_of 2`, `display_frame_of 2`, `display_of <id>`, `inside "<rect>" "<rect>"` say where things are. `ARBOR_DISPLAY_ARGS=--hidpi` makes it a Retina display, `ARBOR_DISPLAY_SERIAL=2` another display. |
 | `appearance dark\|light`, `wallpaper <file>\|#rrggbb\|gradient` | The system's appearance; the desktop picture of every display (`gradient` has a grid, 100 pixels a square) |
 | `macos_reduce_motion off`, `macos_tiling off` | Before `arbor_start`: the runner comes with Reduce Motion on, which turns Arbor's motion off |
@@ -442,10 +452,13 @@ A double-click on a title bar fills the screen too (macOS's default for it), til
 Things that bite:
 
 - A window's title bar must not be covered when you press on it. The test windows open in a cascade with the
-  last one in front; floating windows are pushed onto the Desktop's part of the layout.
+  last one in front; floating windows are pushed onto the Desktop's part of the layout. `drag_window`, `titlebar_of` and
+  `click_window` look for a point that nothing covers.
+- `check` runs its command in a subshell, and `$(…)` among its arguments is evaluated once, before `eventually`
+  starts trying: write `eventually wider_than $W1 400`, not `eventually test $(width_of $W1) -gt 400`.
 - Commands that act on the focused window, and shortcuts, need a real `click` on a test window first.
-- `pointer` cannot post a pinch: there is no public way to make gesture events. `witness pinch` (below) does it
-  with undocumented event fields, and Arbor's tap reads the result as it reads a trackpad's.
+- There is no public way to make gesture events. `pinch` (and `witness pinch`, below) fills in the fields a trackpad's
+  events carry, and Arbor's tap reads the result as it reads a trackpad's on macOS 26; a new macOS may change that.
 - On macOS 26 a menu bar item's window belongs to Control Center; `status_item` asks Accessibility instead.
 - bash 3.2: no associative arrays, no `${x,,}`, and an empty array is an error under `set -u`.
 - Plugging the virtual display in switches the runner's main display from 1024×768 to 1920×1080, and macOS shuffles the
@@ -458,15 +471,12 @@ Things that bite:
 - A dragged window trails a posted pointer: macOS holds it back when one of its edges meets another window's, the Dock's or the
   screen's, and it does not catch up, so after a drag `titlebar_of` can be off screen (`grab_of` in `check-F09.sh`).
 
-**Proof for the scoreboard.** `scripts/mac-shell/proof.sh` tries, with real input, the claims of
-`collab/parity.json` that a person makes true with a mouse, a keyboard, a title-bar button or another app. It
-prints each as a `claim "…"` heading with its checks under it, which is the form `scripts/parity.py` reads: commit
-the run's `output.txt` as `collab/evidence/gestures-latest.txt` and an item can name the step under `"e2e"`. Add
-your feature's gesture there as one more claim, or use `claim` in a script of your own and commit its output as
-`collab/evidence/<name>-latest.txt`. `scripts/mac-shell/ax.swift` does what has no fixed place to click: minimize, full screen,
-close, hide, bring an app forward. `scripts/mac-shell/axfind.swift` finds a control in a window of Arbor's own by its accessibility identifier, title
-or value and prints where it is and what it shows (it only reads), so that a script can click in a window SwiftUI laid out. `ArborTestWindows --extras` adds a panel and a sheet, `kill -USR1` brings the
-test app forward, and `ARBOR_EXTRA_PIDS` lets a session arrange a second process's windows.
+**Proof for the scoreboard.** A `claim "…"` heading with its checks under it is the form `scripts/parity.py` reads, and
+`claim` and `check` record it in `evidence/<script>.txt` as they print it. A shipped feature's claims belong in the
+real-window suite (section 10). `scripts/mac-shell/proof.sh` was the first such script; its evidence
+(`collab/evidence/gestures-latest.txt`) counts until the suite, which makes all of its claims and more, has run on real windows.
+`scripts/mac-shell/axfind.swift` finds a control in a window of Arbor's own by its accessibility identifier, title or value and prints where it is and what it shows (it only
+reads), so that a script can click in a window SwiftUI laid out.
 
 **The event taps.** `scripts/mac-shell/input-taps.sh` is the only thing that exercises `Sources/ArborKit/Input`: run it after any
 change there. It does not ask Arbor what happened. `scripts/mac-shell/witness.swift` puts a listening tap at the far end
@@ -690,8 +700,8 @@ holds for the commit named (second reading, 10:45 UTC) and says what the script 
 | `film-F16.sh` | #98 `a2e34e43` | safe, steps skip themselves | 3 min | Reduce Motion. Pinches and ⌃⌥-scrolls over a test window, each after the net was asked; the helper is on record |
 | `perf.sh` | #45 `fbd7e3b5` | safe, steps skip themselves | one drag | By the second reading, not read again since |
 | `input-taps.sh`, `witness.swift` | trunk and #193, #204 | **never without the switch**; with it, not before the fixes | | A witness that is killed leaves ⌃, ⌥ or Space down and a gesture unfinished; ⌃ with a wheel is macOS's zoom |
-| `suite.sh`, `suite/*.sh` | #56 `0cf34b88` | **not yet, and not to be merged as it is** | 15 to 25 min | Its `lib.sh` is from before the second lock and the rules on what a run says and shows. With the trunk merged and its text taken there: safe, steps skip themselves |
-| `suite-twice.sh` | #56 | **never**: ends with 77 | | An hour, against a curtain and a sweep that reckon with half of one |
+| `suite.sh`, `suite/*.sh` | trunk | safe, steps skip themselves | 15 to 25 min by estimate | One supervised run with one curtain. macOS's edge tiling, `open arbor://…`, Launch at Login, ⌘Tab, and every press or pinch on the bare Desktop, which is behind the curtain |
+| `suite-twice.sh` | trunk | **never**: ends with 77 | | An hour, against a curtain and a sweep that reckon with half of one |
 
 ### What an unattended build runs on a person's Mac
 
@@ -901,6 +911,81 @@ seconds to two minutes. `scripts/mac-on-linux/README.md` has all of it; in short
 - **`REF=origin/fix/some-cure make mac-on-linux`** holds another commit's layer against this checkout's stories: how a cure is tried before a Mac sees it, as the one for the app switch was. `COVERAGE=1` says which lines no story enters (92 % of `AXWindowSystem.swift`'s are entered).
 
 Run it after every change under `Sources/ArborKit/AX`, and tell a story for every fault a Mac shows there. A green story proves the layer right about what we have seen or guessed, not about a Mac; a red one that rests on a guess is worth a run on a hosted Mac.
+
+## 10. The real-window suite (`scripts/mac-shell/suite.sh`)
+
+`make parity` calls a shipped feature *tested* when its unit and scenario tests pass, and *verified* when its
+real-window steps passed too. The suite is where those steps live: every shipped feature exercised the way a person
+does it (drags to screen edges and onto windows, seams and edges, title-bar buttons, every shortcut, the menu bar,
+`open arbor://…`, settings.json, quitting, killing and restarting), and checked against the window server.
+
+```bash
+make suite                                                       # on a Mac, 15 to 25 minutes by estimate (SECTIONS="30 60" for some)
+ARBOR_KEEP_EVIDENCE=1 scripts/mac-shell/run.sh scripts/mac-shell/suite.sh   # all of it on one of GitHub's Macs, from anywhere
+scripts/mac-shell/run.sh scripts/mac-shell/suite/30-seams.sh     # one section, about a minute
+scripts/mac-shell/rehearse.sh                                    # all of it against stand-ins, on Linux, for nothing
+scripts/mac-shell/rehearse.sh scripts/mac-shell/suite/30-seams.sh
+```
+
+**On a person's Mac** it is one supervised run with one curtain ("On a person's own Mac", in section 5, says what that means and what
+`lib.sh` declines there). It needs Accessibility for the terminal, five quiet minutes before it starts (or `ARBOR_BUSY_OK=1`) and no Arbor or other window
+manager running; it moves the pointer and presses keys, so hands off meanwhile; it uses only its own test windows, changes no setting and
+registers nothing. ⌃C stops it, a right-click on the curtain too. What needs more than that skips itself: switching macOS's own edge tiling off,
+`open arbor://…` (which app opens those links is a setting), Launch at Login, real ⌘Tab (`on_throwaway_mac`), and claims about a press or a pinch on
+the bare Desktop, which is behind the curtain (`desktop_is_bare`). Nothing in it depends on the size of the screen. Rehearse that mode too:
+`ARBOR_REHEARSAL_AS=person scripts/mac-shell/rehearse.sh` shows what a claim loses to the nets.
+
+`suite.sh` builds, then runs `scripts/mac-shell/suite/[0-9]*.sh` in order, each as its own process with a time limit (150 s), so one
+section's failure, crash or hang costs the others nothing. It ends with a table, every failed check again, and exit code 0 only if
+everything passed or failed as it is `known` to. A section is an ordinary Mac shell script.
+
+**Evidence.** `claim` and `check` print, and record in `mac-shell/evidence/<section>.txt`, what `arbor-e2e` prints:
+
+```
+▸ drag a window to the left screen edge: a preview shows where it will land, and it docks there
+  ✔ a drop preview is on screen while the button is held
+  ✘ it reaches the left edge of the screen — its left edge is at 170, not 12: 170 216 480 352
+```
+
+With `ARBOR_KEEP_EVIDENCE=1`, which `make suite` sets, `suite.sh` on your own Mac and `run.sh` after a run on GitHub's copy the sections' files to `collab/evidence/suite-<section>-latest.txt`, where
+`scripts/parity.py` reads them with the other `*-latest.txt`. Commit them. A claim is borne out when it has a check and no
+✘; one without checks, or the last one of a section that was cut off, counts as not run. The files carry no window ids
+or times apart from the first line, so two runs that went the same way differ in nothing else:
+`scripts/mac-shell/suite-twice.sh` runs the suite twice in one job and prints what differed, which is the flakiness test. A ✘
+also takes a picture (`fail-<section>-<n>.png`) and prints the state and what `arbor.log` gained since the claim.
+
+**Adding a feature: five lines.** Pick the section it belongs to (or start `suite/NN-<feature>.sh` from the three lines
+every section begins with) and write a claim whose title says what the person does and what happens:
+
+```bash
+claim "double-click a docked window's title bar: the camera frames it"     # unique across the suite
+proves T40                                                                # the items of collab/parity.json it is proof of
+dblclick $(titlebar_of "$W1")                                             # real input, not `ctl`
+check "the window fills the screen" eventually fills "$W1"                # what the window server says
+check "the others are out of view" eventually out_of_view "$W2"
+settled                                                                   # ✔ windows match Arbor's layout
+```
+
+Then rehearse it (`scripts/mac-shell/rehearse.sh scripts/mac-shell/suite/<section>.sh`, and again with `ARBOR_REHEARSAL_AS=person`) and run that section on a Mac. `make suite` ends by
+running `scripts/mac-shell/suite-parity.py` (after `run.sh`, run it yourself): an item ALL of whose claims hold gets them in its `e2e` list
+in `collab/parity.json`, which is what makes `make parity` call it verified; an item one of whose claims failed or has not
+run gets none, and the script says which and why. Commit the evidence, `parity.json`, and `docs/FEATURES.md` after
+`make parity`. Rules that keep the suite worth having:
+
+- **The way a user does it.** `ctl` is for setting the stage and cleaning up. If only a command can reach the feature,
+  say so in the title ("by command").
+- **No window ids, times or counts that vary in titles and check names**: say "the first window".
+- **Wait with `eventually`, never with `sleep`**, and prove absence with `stays` (`stays fails ran desktop`).
+- **Leave the session as you found it**, or start your own (`arbor_stop`; `arbor_start 3`): a session costs three seconds.
+- **A claim that fails because Arbor is wrong stays**, goes into a report, and gets `known "<what happens; who is on it>"` on the line
+  after `proves`. Its ✘ are printed and recorded as ever, and `suite-parity.py` keeps it out of `parity.json` (where it would make
+  the item *broken* and `make parity` fail for everyone), but it no longer fails the run: exit code 0 means that nothing NEW is
+  broken. When it holds on real windows the run says so; take the mark off then. If the claim is what the reference
+  describes, the item is `partial`, not `shipped`.
+- **Nothing that changes the Mac** outside `if on_throwaway_mac`, no number that depends on the screen (`desktop_point`, `edge_point`,
+  `zone_of`, `width_of` give you relative ones), `take "x y w h" real_frame_of $W1` rather than `read … <<< "$(…)"` (arithmetic makes a press at 0 0 of
+  an answer that never came), and `key_to <window> cmd+w` rather than `key cmd+w` for keys that are meant for the app in front.
+- **A flaky claim is worse than none**: run the section twice; fix or drop what differs.
 
 ## Pictures without a screen (`OffscreenPicture`)
 
@@ -1241,10 +1326,10 @@ running on damaged files: a line in `STATE_SCRIPT` or `SETTINGS_SCRIPT`. A new f
 
 ## Manual checks (the parts no automation covers)
 
-A Mac shell script (section 5) can now make most of these; `shots-demo.sh` covers the edge drag, the seam,
-the window edge, the tile, shortcuts, the ⌃⌥ rectangle, the menu and quitting, on test windows, and `input-taps.sh`
-the pinch and the rectangle. What is left for a person: other apps' windows, a real trackpad, taking
-Accessibility away, and how it feels.
+A Mac shell script (section 5) can now make most of these; the real-window suite (section 10) makes a dozen of them as claims whose
+evidence counts, `shots-demo.sh` covers the edge drag, the seam, the window edge, the tile, shortcuts, the ⌃⌥ rectangle, the menu and
+quitting, on test windows, and `input-taps.sh` the pinch and the rectangle. What is left for a person: other apps' windows, a real
+trackpad, taking Accessibility away, and how it feels.
 
 With `Arbor.app` running and permission granted:
 

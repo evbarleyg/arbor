@@ -288,6 +288,8 @@ jobs:
         run: ./scripts/ci-step.py scenarios ./scripts/scenarios.sh
       - name: The tools that report all this can also report a failure
         run: ./scripts/ci-step.py tooling python3 scripts/test-tooling.py
+      - name: Real-window evidence is read as it is meant, and the suite's claims are in order
+        run: ./scripts/ci-step.py evidence python3 scripts/test-parity.py
 
   linux-tests:
     runs-on: ubuntu-latest

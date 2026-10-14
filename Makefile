@@ -42,6 +42,7 @@ check: lint build test
 	@./scripts/privacy-smoke.sh
 	@./scripts/scenarios.sh
 	@python3 scripts/test-tooling.py
+	@python3 scripts/test-parity.py
 	@./scripts/release-tools-test.sh
 
 # On Linux: all that a change must pass before it is pushed (check, scenarios, parity, typecheck-mac, lint), each thing once and
@@ -155,6 +156,14 @@ mac-on-linux:
 # Does that net hold? Takes known cures out of a copy of the layer; the stories about them must go red.
 mac-on-linux-selftest:
 	@./scripts/mac-on-linux/build.sh --self-test
+
+# Every shipped feature on real windows, with real drags, clicks and shortcuts (docs/TESTING.md, "The real-window
+# suite"). Needs Accessibility for this terminal, and moves the pointer. SECTIONS="30 60" for some.
+# Touches only its own test windows and changes no setting of yours. Saves the evidence to
+# collab/evidence/suite-<section>-latest.txt and lists what it proved in collab/parity.json.
+.PHONY: suite
+suite:
+	@ARBOR_KEEP_EVIDENCE=1 ./scripts/mac-shell/suite.sh $(SECTIONS)
 
 # Mac shell scripts against stand-ins built on the fakes: proves the scripts, not Arbor. On Linux only.
 # make rehearse SCRIPTS="scripts/mac-shell/shots-demo.sh" (docs/TESTING.md, "Rehearse it first, for nothing")

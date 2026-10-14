@@ -35,6 +35,7 @@ make install    # make app, replace ~/Applications/Arbor.app, link arborctl, sta
 make release    # universal build/Arbor.app as zip and disk image, with checksums, notes and the Homebrew cask
 make e2e        # real windows, real Accessibility; see docs/TESTING.md
 make e2e-drag   # real drags with the real pointer, which it takes over for half a minute
+make suite      # every shipped feature on real windows with real drags, clicks, keys and menus, in sections (SECTIONS="30 60"); docs/TESTING.md, section 10
 make day        # from anywhere: an ordinary day with real apps on a hosted Mac, every frame sampled, a table of what broke which rule (docs/TESTING.md)
 make typecheck-mac  # on Linux: type-check all the macOS-only code, tests included, against stand-ins for Apple's frameworks
 make mac-on-linux   # on Linux: RUN the real Accessibility layer (Sources/ArborKit/AX) on a model of a rude Mac; after every change there (scripts/mac-on-linux/README.md)
