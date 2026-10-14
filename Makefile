@@ -125,9 +125,10 @@ e2e-drag:
 # The rehearsal of the acceptance pass, from anywhere: an ordinary day with real apps on one of GitHub's Macs, macOS at its default
 # settings, every frame of every window written down, and a table of what broke which rule (docs/TESTING.md, "An ordinary day").
 # Runs what GitHub has of the current branch. One of: CONTROL=1 plays the same day without Arbor; OFF=1 with macOS's own tiling switched off; SABOTAGE=1 commits
-# the offences itself, to see the detectors speak.
+# the offences itself, to see the detectors speak. They cannot be rehearsed yet: the fake Mac knows no apptool and no sampler.
 day:
-	@./scripts/mac-shell/run.sh scripts/mac-shell/day$(if $(CONTROL),-control,$(if $(OFF),-off,$(if $(SABOTAGE),-sabotage))).sh
+	@./scripts/mac-shell/run.sh --no-preflight "the fake Mac knows no apptool, no sampler and no stock apps yet" \
+	  scripts/mac-shell/day$(if $(CONTROL),-control,$(if $(OFF),-off,$(if $(SABOTAGE),-sabotage))).sh
 
 # On Linux: type-checks all the macOS-only code against stand-ins for Apple's frameworks (scripts/typecheck-mac/README.md).
 # Not proof, but fifteen seconds instead of a macOS job. REF=origin/some-branch checks that commit's Sources instead.
