@@ -44,4 +44,4 @@ Also:
 1. The three flags follow dock, frame and show-everything in any order, from keys, drags or commands.
 2. The window appears on the first launch only, and again from the menu or by reopening the app.
 3. Closing it half-way never blocks anything; nothing is arranged on the person's behalf.
-4. Manual: on a MacBook with a notch and a crowded menu bar, a second double-click on Arbor.app shows the window.
+4. (was "Manual"; board, section 5) On a hosted Mac a tool fills the menu bar with items until Arbor's is hidden; opening Arbor.app again shows the window.

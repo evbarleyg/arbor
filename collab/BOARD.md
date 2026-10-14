@@ -12,7 +12,7 @@ An item is done when all three are green on one commit, besides what `CLAUDE.md`
 
 Whether a thing ships switched on is decided by `collab/QUESTIONS.md`, Q18. Product questions go to the product owner, who answers within minutes; nobody asks the maintainer anything but identity, money and what cannot be undone (`collab/TOUCHPOINTS.md`).
 
-Letters name the lane that has an item. "Archive" is the branch of patches issue #4 speaks of: a patch comes over only after every added line has been read. **free** means nobody has it: take it, and tell the coordinator.
+Letters name the lane that has an item. "Archive" is the branch of patches issue #4 speaks of: a patch comes over only after every added line has been read, through one hand, after an automatic privacy scan. **free** means nobody has it: take it, and tell the coordinator.
 
 ## 1. Faults against the seven rules
 
@@ -132,7 +132,7 @@ Mends before features; what a person meets every day before what they meet once.
 
 ## 6. For the maintainer
 
-**One thing waits for you:** whether work written before the repository went public may be brought over into it. Section 3, and every row above that names the archive, stand still until then. What happens if you say nothing is at the end of `collab/TOUCHPOINTS.md`, with the two other things only you can do.
+Nothing waits for you. What only you can do, and what happens if you say nothing, is at the end of `collab/TOUCHPOINTS.md`.
 
 ## Done
 

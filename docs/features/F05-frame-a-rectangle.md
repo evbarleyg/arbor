@@ -26,7 +26,7 @@ fits it (`Navigation.bestFit`, already written and tested).
 
 1. Scenario: `frame-rect` over one window frames that window; over a column frames the column; over everything shows everything (since 2026-10-14, by the product owner: a rectangle that changes nothing to look at fails with "that is already the view", also with nothing docked).
 2. Tiny rectangles do nothing.
-3. Manual: the band follows the pointer; apps under it do not receive the drag.
+3. (was "Manual"; board, section 5) On a hosted Mac, a real ⌃⌥-drag over a witness window: the sampler sees the band's panel follow the pointer within 6 points; the witness receives no event of the drag; a plain drag and a ⌃⌥-click reach it as without Arbor (`input-held`).
 4. `make check` passes.
 
 ## Shipped

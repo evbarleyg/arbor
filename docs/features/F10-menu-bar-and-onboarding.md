@@ -39,5 +39,5 @@ explains the permissions.
 
 1. The menu bar reflects camera changes within one relayout (observe the controller after each command).
 2. Onboarding appears only while permission is missing and closes itself when it is granted.
-3. Manual: buttons work, right-click menu works, icons look right in light and dark menu bars.
+3. (was "Manual"; board, section 5) On a hosted Mac, `shots-F10.sh`: every button clicked with the real pointer does its command; a right click opens the menu. Pictures in a light and a dark menu bar are judged against `docs/POLISH.md`.
 4. `make check` passes.

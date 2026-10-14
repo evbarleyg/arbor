@@ -30,6 +30,8 @@ everything and `resume` takes it back. (For a shared screen, where bringing ever
 - The menu shows "Arbor is paused", Resume, Settings… and Quit; the menu bar icon is dimmed. ⌃⌥, is handed back like the other shortcuts.
 - A pause does not survive a relaunch: starting Arbor means wanting it.
 
+**Changed on 2026-10-14 by the product owner (QUESTIONS Q21):** a pause has one meaning: as if Arbor had quit, and it comes back. Every window Arbor sized goes to its own earlier frame, one move each, nothing raised; resume brings arrangement and view back. "What you are looking at stays as it is" no longer holds. Being built; until it lands the text below is what the trunk does.
+
 ## Design notes
 
 - `Controller+Pause.swift` calls `shutdown(leavingWhatIsInView: true)` and later `start()`, so both ends run code that quitting and launching already exercise. `resume` first drops what the

@@ -37,7 +37,7 @@ everywhere. People need "not in this app". skhd and Karabiner-Elements both have
 2. Windows of a pass-through app are still docked, parked and revealed.
 3. `pauseForApps`: activation pauses, deactivation resumes; a manual `pause` before or during is left alone.
 4. The menu item and `pass-through` write `settings.json` and apply at once; old settings files load.
-5. Manual: in Emacs or a remote desktop, ⌃⌥F and ⌃⌥Space reach the app; ⌘Tab away and ⌃⌥Space shows everything.
+5. (was "Manual"; board, section 5) On a hosted Mac, `check-F41.sh`: an app that writes down the keys it gets receives ⌃⌥F and ⌃⌥Space; ⌘Tab away and ⌃⌥Space shows everything.
 
 ## Shipped / Not shipped
 

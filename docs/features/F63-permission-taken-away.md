@@ -67,7 +67,7 @@ For the guide and the welcome window, not for Arbor to do: ⌘Tab to the app and
 7. A pause, by hand, timed or for an app, ends with the loss and does not come back with the permission.
 8. Losing it twice, losing it while it is already lost, and getting it back while running are harmless.
 9. Quitting while it is lost is safe, and the next start brings the windows back.
-10. Manual: with a window out of view switch Arbor off under Privacy & Security → Accessibility: within three seconds the icon changes and the welcome window asks for the permission back; mouse and keyboard keep working; ⌃⌥Space beeps and opens the settings; switch it on: every window is in view.
+10. (was "Manual"; board, section 5) On a hosted Mac, with a window out of view, the script takes the permission away (`tccutil reset Accessibility`) and gives it back: within three seconds the icon changes and the welcome window asks for the permission back; mouse and keyboard keep working; ⌃⌥Space beeps and opens the settings; switch it on: every window is in view.
 
 ## Shipped / Not shipped
 

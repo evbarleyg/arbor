@@ -12,7 +12,7 @@ Every avoidable row names what would have avoided it, and that becomes a board i
 
 | Day | Needed | Avoidable | Their own wish |
 |---|---|---|---|
-| 2026-10-14 | 4 times, 9 min | 7 matters, 10 times, 36 min | once, 30 min, and two pointers |
+| 2026-10-14 | 4 matters, 5 times, 10 min | 7 matters, 10 times, 36 min | once, 30 min, and two pointers |
 
 ## 2026-10-14
 
@@ -28,7 +28,7 @@ Every avoidable row names what would have avoided it, and that becomes a board i
 | 8 | avoidable | Was told of a warning that did not apply to them | 2 | Report only what needs a decision | the digest holds decisions and defaults, no noise |
 | 9 | avoidable | Was asked about a line in a commit message | 2 | Harmless; should not have been raised | product and process questions go to the product owner |
 | 10 | avoidable | Was walked through options for getting more Macs | 10 | Decide within the rule that stands (free services only) and report the outcome | issue #4, section 1; the queue's priorities |
-| 11 | needed | To say whether work written before the repository went public may be brought over into it. The agents' own safeguards rightly refuse to do that on an agent's word. It holds up the three trains of polish and every patch, not the new work | 1 | It is theirs to say, since it cannot be undone. Asking once, at the moment of going public, as part of "bring over what has not landed", would have spared the wait | asked once, yes or no |
+| 11 | needed | To say whether work written before the repository went public may be brought over into it. The agents' own safeguards rightly refuse that on an agent's word. **Answered: yes**, through one hand, after an automatic privacy scan that nobody can override. Asked twice: the first yes could not be tied to a question anybody could see, so it was asked again in a form that keeps question and answer together | 2 | It is theirs to say, since it cannot be undone. Asking once, in so many words, at the moment of going public, as part of "bring over what has not landed" | answered; the road works |
 | 12 | their own wish | Drove the reference app for about half an hour | 30 | Not to be avoided: it gave the project issue #3, the most valuable half hour of the day. What it found is now looked for by machines: `docs/VIABLE.md` | the day with real apps at macOS's default settings |
 
 **Two pointers they gave unasked, both right**, and the question each leaves:
@@ -40,6 +40,5 @@ Every avoidable row names what would have avoided it, and that becomes a board i
 
 | What | Why only they can | Default on silence |
 |---|---|---|
-| Whether work written before the repository went public may be brought over into it (row 11 of 2026-10-14) | it cannot be undone, and the agents' safeguards refuse it on an agent's word | nothing is brought over. From the digest of 2026-10-15 on, the three trains of polish and the mends the board takes from the archive are **written anew in the open**, from the public specs and tests, in the board's order |
 | A Developer ID, so that a download opens without a warning | identity and money | Arbor ships signed ad hoc, and `docs/INSTALL.md` says what macOS will ask and why |
 | The first tag and release | irreversible, under their name | none is made until `docs/VIABLE.md` says `VIABLE`; then the product owner proposes it in the digest, and it waits for their word |

@@ -29,7 +29,7 @@ Not planned, because nobody knows what they do: "Frame" (hidden, no key), `fixed
 1. Every key decodes with its default when missing, and is clamped to 0...1 where it is an opacity.
 2. The values reach `OverlayScene` or the menu bar model, checked in scenario tests.
 3. Window frames are the same whatever these are set to.
-4. `make check` passes; manual look in light and dark mode.
+4. `make check` passes. The gallery's pictures from a hosted Mac in light, dark and increased contrast are judged against `docs/POLISH.md` (was a manual look; board, section 5).
 
 ## Shipped / Not shipped
 

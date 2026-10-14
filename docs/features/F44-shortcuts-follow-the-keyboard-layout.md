@@ -34,7 +34,7 @@ Dvorak nothing is where its letter says. The menu nevertheless shows "⌃⌥Z". 
 2. AZERTY: `ctrl+opt+a` registers 12; digits register their positions and are labelled 1–9.
 3. A collision after fallback is reported by `bindings`, and the other shortcuts still work.
 4. `shortcutsFollowLayout: false` gives today's codes and labels.
-5. Manual: switch to German in the menu bar; ⌃⌥ and the key labelled Z undoes.
+5. (was "Manual"; board, section 5) On a hosted Mac, `check-F44.sh`: with German, French, Dvorak and Russian selected by script, ⌃⌥ and the key labelled Z does what ⌃⌥Z is bound to.
 
 ## Shipped / Not shipped
 

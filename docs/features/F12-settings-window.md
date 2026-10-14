@@ -20,7 +20,7 @@ tile threshold, drop bands, tabs, excluded apps, rules, key bindings, launch at 
 
 1. Changes round-trip through `settings.json` without losing unknown keys.
 2. Invalid values are rejected in the UI with a reason.
-3. Manual: every control works; window looks native in light and dark mode.
+3. (was "Manual"; board, section 5) On a hosted Mac, `shots-F12.sh`: every control of every pane is worked with real clicks and keys and the setting is read back; `axtool` finds a role, a label and a value on each. Pictures of every pane in light and dark are judged against `docs/POLISH.md`.
 4. `make check` passes.
 
 ## Shipped

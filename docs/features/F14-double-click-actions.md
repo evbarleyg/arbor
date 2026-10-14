@@ -55,5 +55,5 @@ of these but no double-click equivalents, and it opens tiles on a single click.
 3. Double-clicks inside a window's content, or on a floating window, do nothing in Arbor.
 4. Tiles open on double-click by default and on single click with `tileClick: "single"`.
 5. Old settings files still load.
-6. `make check` passes; manual check on real windows that macOS's own
-   title-bar action does not also fire.
+6. `make check` passes. On a hosted Mac (was a manual check; board, section 5): real double-clicks on real apps' title bars, with macOS's own
+   title-bar action set to Zoom, Fill, Minimize and None: one of the two acts, never both (`fought`, `jolt`); a double-click that is not Arbor's reaches the app (`input-held`).
