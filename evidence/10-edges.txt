@@ -1,0 +1,63 @@
+# 10-edges 2026-10-14T22:52Z on macOS 26.6.2, commit 2d3b4f4
+
+▸ drag a window to the left screen edge: a preview shows where it will land, and it docks there
+  ✔ a drop preview is on screen while the button is held
+  ✔ the window is docked
+  ✔ it reaches the left edge of the screen
+  ✔ it reaches the top and the bottom too
+  ✔ it reaches the bottom
+  ✔ it landed exactly where the preview was
+  ✔ the preview is gone
+  ✔ windows match Arbor's layout
+
+▸ floating windows make way for a docked one: none is left behind it
+  ✔ the first floating window is beside the docked one
+  ✔ the second
+  ✔ the third
+
+▸ drag a window to the right screen edge: it docks there and the Desktop stays between the two
+  ✔ the window is docked
+  ✔ it reaches the right edge of the screen
+  ✔ the Desktop stays between them
+  ✔ the floating windows are on the Desktop's part of the screen
+  ✔ and clear of the window on the right
+  ✔ windows match Arbor's layout
+
+▸ drag a window to the top screen edge: it docks above everything
+  ✔ the window is docked
+  ✔ it reaches the top edge of the screen
+  ✔ it is as wide as the screen
+  ✔ to the right edge
+  ✔ the others are below it
+  ✔ both of them
+  ✔ windows match Arbor's layout
+
+▸ drag a window to the bottom screen edge: it docks below everything
+  ✔ the window is docked
+  ✔ it reaches the bottom edge of the screen
+  ✔ the others are above it
+  ✔ nothing overlaps
+  ✔ all four are docked
+  ✔ windows match Arbor's layout
+
+▸ drop a docked window on its own place: it goes back into its slot
+  ✔ it is still docked
+  ✔ it is back in its slot
+  ✔ windows match Arbor's layout
+
+▸ drag a docked window out onto the Desktop: it floats, and its space goes to the others
+  ✔ the window floats
+  ✔ it is in view
+  ✔ the row below moved up to the top edge
+  ✔ and grew
+  ✔ three are docked
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+44 passed, 0 failed

@@ -1,0 +1,93 @@
+# 35-ring 2026-10-14T22:54Z on macOS 26.6.2, commit 2d3b4f4
+
+▸ click a window before anything is docked: there is no focus ring
+  ✔ the window has the keyboard
+  ✔ Arbor draws nothing around it
+
+▸ drag a window to the left screen edge: once docked it wears the focus ring
+  ✔ it docked at the left edge
+  ✔ the ring is around it
+  ✔ directly in front of it
+  ✔ windows match Arbor's layout
+
+▸ click another docked window: the focus ring follows the click
+  ✔ the ring is around the first window
+  ✔ the ring is around the second window
+  ✔ directly in front of it
+  ✔ the first window has lost it
+  ✔ no window moved for it
+
+▸ click a floating window: it gets the focus ring too
+  ✔ it floats
+  ✔ the ring is around it
+  ✔ directly in front of it
+
+▸ ⌃⌥↩ and ⌃⌥⇧↓ take the keyboard from window to window: the focus ring goes along
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the framed window fills the screen
+  ✔ the ring is around it there
+  ✔ ⌃⌥⇧↓ reaches Arbor
+  ✔ the window below fills the screen
+  ✔ it has the keyboard
+  ✔ the ring is around it
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ the ring shrinks with its window
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⌘← moves the focused window: the focus ring moves with it
+  ✔ ⌃⌥⌘← reaches Arbor
+  ✔ the window has left its column
+  ✔ the ring is around it in its new place
+  ✔ windows match Arbor's layout
+
+▸ click into the window that wears the focus ring, and on its yellow button: the ring lets both clicks through
+  ✔ the ring is around the window
+  ✔ the app got the click into its window
+  ✔ the ring is still directly in front of it
+  ✔ the app got the click on the button: the window is minimized
+  ✔ the ring has left it
+  ✔ it is back in its slot
+  ✔ windows match Arbor's layout
+
+▸ drag the window that wears the focus ring: the ring hides while the button is down and comes back
+  ✔ the ring is around the window
+  ✔ the press got through the ring: the window follows the pointer
+  ✔ there is no ring during the drag
+  ✔ the ring is around the window where it was dropped
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥D sends the focused window out of view: the focus ring goes with it, and ⌃⌥Space brings both back
+  ✔ the ring is around the window
+  ✔ ⌃⌥D reaches Arbor
+  ✔ the window is out of view
+  ✔ there is no ring
+  ✔ and none comes back
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ the window is back in view
+  ✔ the ring is around it again
+  ✔ windows match Arbor's layout
+
+▸ switch focusRing off by command: the ring is gone, and switching it on brings it back
+  ✔ the ring is around the window
+  ✔ set focusRing false succeeds
+  ✔ there is no ring
+  ✔ a click on another window brings none
+  ✔ the windows are where they were
+  ✔ set focusRing true succeeds
+  ✔ the ring is around the window that has the keyboard now
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⎋ pauses Arbor: the focus ring is gone, and back when Arbor resumes
+  ✔ Arbor is paused
+  ✔ there is no ring
+  ✔ a click on another window brings none
+  ✔ Arbor runs again
+  ✔ the ring is around the window that got the keyboard meanwhile
+  ✔ windows match Arbor's layout
+
+▸ quit Arbor: nothing is left of the focus ring
+  ✔ Arbor exits within 5 s of quit
+  ✔ the window server has no window of Arbor's any more
+  ✔ the window that wore it is in view
+
+66 passed, 0 failed

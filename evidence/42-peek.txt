@@ -1,0 +1,67 @@
+# 42-peek 2026-10-14T22:56Z on macOS 26.6.2, commit 2d3b4f4
+
+▸ tap ⌃⌥Space with a window framed: everything shows and stays, and nothing is outlined
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ every window is in view, in its slot
+  ✔ there is no outline
+  ✔ nothing sprang back
+  ✔ ⌃⌥[ reaches Arbor
+  ✔ and leads to the window that was framed
+  ✔ windows match Arbor's layout
+
+▸ hold ⌃⌥Space for a good look and let go without pointing at anything: everything shows meanwhile, then the view that was left is back
+  ✔ every window is in view while the keys are down
+  ✔ the window that was framed is outlined
+  ✔ for as long as the keys are down
+  ✔ everything still shows
+  ✔ the window that was framed fills the screen again, alone
+  ✔ it has the keyboard
+  ✔ the outline is gone
+  ✔ windows match Arbor's layout
+
+▸ hold ⌃⌥Space and move the pointer from window to window: the outline follows, and letting go frames the outlined window
+  ✔ the window that was framed is outlined
+  ✔ the outline is around the window under the pointer
+  ✔ and goes on to the next one
+  ✔ no window moved for it
+  ✔ the outlined window fills the screen, alone
+  ✔ it has the keyboard
+  ✔ the outline is gone
+  ✔ ⌃⌥[ reaches Arbor
+  ✔ one step back is the view before the peek
+  ✔ windows match Arbor's layout
+
+▸ hold ⌃⌥Space and press ↓: the outline moves to the window below while the view stays, and letting go frames that window
+  ✔ the window that was framed is outlined
+  ✔ the outline is around the window below
+  ✔ Arbor did not step in, as ⌃⌥↓ otherwise does
+  ✔ everything still shows
+  ✔ the outlined window fills the screen, alone
+  ✔ it has the keyboard
+  ✔ windows match Arbor's layout
+
+▸ hold ⌃⌥Space, point at another window and press ⎋: the view that was left is back, and letting go changes nothing
+  ✔ the window that was framed is outlined
+  ✔ the outline is around the window under the pointer
+  ✔ the window that was framed fills the screen again, alone
+  ✔ the outline is gone
+  ✔ Arbor did not pause, as ⌃⌥⎋ otherwise makes it
+  ✔ the view stays when the keys come up
+  ✔ windows match Arbor's layout
+
+▸ switch peek off by command: ⌃⌥Space held is plain Show Everything, and letting go over another window frames nothing
+  ✔ set peek false succeeds
+  ✔ every window is in view
+  ✔ nothing is outlined, however long the keys are down
+  ✔ nor under the pointer
+  ✔ everything stays in view when the keys come up
+  ✔ set peek true succeeds
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+50 passed, 0 failed
