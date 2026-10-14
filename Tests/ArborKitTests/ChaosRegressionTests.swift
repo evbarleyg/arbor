@@ -763,6 +763,29 @@ private let c = WindowID(103)
       """)
   }
 
+  /// The rule was wrong: an app that does not answer cannot be moved, so its window counts as out of view, truthfully, as after
+  /// `zoom`. The view is on its space, it has the keyboard, and it takes its slot when the app answers again.
+  @Test func aWindowOfAHungAppChosenInGoToFollowsWhenItsAppAnswersAgain() {
+    let music = WindowID(103)
+    let hung = """
+      launch
+      open 101 Xcode pid 1004 at 2789 894 1674 1091 min 1674 1091
+      toggle-pause
+      toggle-pause
+      open 103 Music pid 1006 at -259 175 808 403 min 124 188 max 210 1339 grid
+      arrange
+      tile main 1
+      hang 1006
+      find
+      palette choose
+      """
+    let waiting = world(after: hung)
+    #expect(waiting.controller.parked.contains(music) && waiting.system.focused == music)
+    #expect(waiting.controller.workspaces.values.contains { $0.camera == $0.tree.leaf(containing: music) }, "the view went there")
+    let answered = world(after: hung + "\nwake 1006\nsettle")
+    #expect(!answered.controller.parked.contains(music) && answered.system.focused == music)
+  }
+
   // MARK: Holds (F58)
 
   /// The keyboard was asked back when the window opened; its app activated it a moment later, and nobody looked again.
