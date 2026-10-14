@@ -1,0 +1,350 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/Input/EventTap.swift:
+    1|       |import ApplicationServices
+    2|       |import ArborCore
+    3|       |import CoreGraphics
+    4|       |import Foundation
+    5|       |import os
+    6|       |
+    7|       |/// The thread every event tap runs on, with its own run loop.
+    8|       |///
+    9|       |/// macOS holds back every tapped event, system-wide, until the tap's callback
+   10|       |/// returns. Arbor's main thread waits on apps (one Accessibility call can take
+   11|       |/// a second), so a tap on the main run loop would make every click, drag and
+   12|       |/// pinch on the system wait with it. Taps live here instead; their callbacks
+   13|       |/// only update their state and decide, and anything slow (running a command,
+   14|       |/// drawing) hops to the main actor afterwards.
+   15|       |final class EventTapThread: @unchecked Sendable {
+   16|       |  static let shared = EventTapThread()
+   17|       |
+   18|       |  static let name = "dev.arbor.event-taps"
+   19|       |
+   20|       |  private let thread: Thread
+   21|       |  private let runLoop: CFRunLoop
+   22|       |  // Touched only on the tap thread.
+   23|       |  /// One for all the taps: see `TapHealth`.
+   24|      2|  fileprivate var health = TapHealth()
+   25|      2|  fileprivate var taps: [EventTap] = []
+   26|       |
+   27|      2|  private init() {
+   28|      2|    let ready = DispatchSemaphore(value: 0)
+   29|      2|    let box = RunLoopBox()
+   30|      2|    let thread = Thread {
+   31|      2|      let loop = CFRunLoopGetCurrent()!
+   32|      2|      // A run loop with nothing to watch returns at once; a timer that never fires keeps it running.
+   33|      2|      let keepAlive = CFRunLoopTimerCreateWithHandler(
+   34|      2|        kCFAllocatorDefault, Date.distantFuture.timeIntervalSinceReferenceDate, 0, 0, 0) { _ in }
+   35|      2|      CFRunLoopAddTimer(loop, keepAlive, .commonModes)
+   36|      2|      box.runLoop = loop
+   37|      2|      ready.signal()
+   38|      2|      CFRunLoopRun()
+   39|      2|    }
+   40|      2|    thread.name = Self.name
+   41|      2|    // Pointer events wait on this thread, so it must not queue behind background work.
+   42|      2|    thread.qualityOfService = .userInteractive
+   43|      2|    thread.start()
+   44|      2|    ready.wait()
+   45|      2|    self.thread = thread
+   46|      2|    runLoop = box.runLoop!
+   47|      2|  }
+   48|       |
+   49|       |  /// Whether the caller is on the tap thread, as tap callbacks are.
+   50|    116|  var isCurrent: Bool { Thread.current === thread }
+   51|       |
+   52|       |  /// Runs `block` on the tap thread and waits for its result; on the tap
+   53|       |  /// thread already, runs it in place.
+   54|    116|  func sync<T>(_ block: () -> T) -> T {
+   55|    116|    if isCurrent { return block() }
+   56|    102|    let done = DispatchSemaphore(value: 0)
+   57|    102|    let result = ResultBox<T>()
+   58|    102|    withoutActuallyEscaping(block) { block in
+   59|    102|      // The run loop holds the block it is given for a moment after `signal`, when the caller may
+   60|    102|      // already be leaving `withoutActuallyEscaping`, which traps if anything still refers to the closure.
+   61|    102|      // So the block refers to a box, and the box has let go of the closure before the signal.
+   62|    102|      let work = WorkBox(block)
+   63|    102|      CFRunLoopPerformBlock(runLoop, CFRunLoopMode.commonModes.rawValue) {
+   64|    102|        result.value = work.run()
+   65|    102|        done.signal()
+   66|    102|      }
+   67|    102|      CFRunLoopWakeUp(runLoop)
+   68|    102|      done.wait()
+   69|    102|    }
+   70|    102|    return result.value!
+   71|    116|  }
+   72|       |
+   73|       |  /// Runs `block` on the tap thread once it is free, after the callback in
+   74|       |  /// progress if there is one.
+   75|    196|  func async(_ block: @escaping @Sendable () -> Void) {
+   76|    196|    CFRunLoopPerformBlock(runLoop, CFRunLoopMode.commonModes.rawValue, block)
+   77|    196|    CFRunLoopWakeUp(runLoop)
+   78|    196|  }
+   79|       |
+   80|       |  private final class RunLoopBox: @unchecked Sendable {
+   81|       |    var runLoop: CFRunLoop?
+   82|       |  }
+   83|       |
+   84|       |  private final class ResultBox<T>: @unchecked Sendable {
+   85|       |    var value: T?
+   86|       |  }
+   87|       |
+   88|       |  /// Holds a closure until it has run once.
+   89|       |  private final class WorkBox<T>: @unchecked Sendable {
+   90|       |    private var work: (() -> T)?
+   91|       |
+   92|    102|    init(_ work: @escaping () -> T) {
+   93|    102|      self.work = work
+   94|    102|    }
+   95|       |
+   96|       |    /// Runs the closure. When this returns, nothing here refers to it any more.
+   97|    102|    func run() -> T? {
+   98|    102|      let work = self.work
+   99|    102|      self.work = nil
+  100|    102|      return work?()
+  101|    102|    }
+  102|       |  }
+  103|       |}
+  104|       |
+  105|       |/// `Log` for the tap thread. `Log` writes to a file under a lock, and no event may wait for a disk,
+  106|       |/// so the line is written from the main queue a moment later.
+  107|       |enum TapLog {
+  108|      0|  static func info(_ message: String) {
+  109|      0|    DispatchQueue.main.async { Log.info(message) }
+  110|      0|  }
+  111|       |
+  112|      0|  static func error(_ message: String) {
+  113|      0|    DispatchQueue.main.async { Log.error(message) }
+  114|      0|  }
+  115|       |
+  116|      8|  static func debug(_ message: @autoclosure () -> String) {
+  117|      8|    guard Log.debugEnabled else { return }
+  118|      8|    let text = message()
+  119|      8|    DispatchQueue.main.async { Log.debug(text) }
+  120|      8|  }
+  121|       |}
+  122|       |
+  123|       |/// A session-level event tap on the tap thread (`EventTapThread`): it sees
+  124|       |/// the events in `mask` before any app does, and lets each one through
+  125|       |/// unchanged unless the handler returns true, which swallows it.
+  126|       |/// `GestureTap` and `RectangleFramer` are built on it.
+  127|       |///
+  128|       |/// The handler runs on the tap thread, never on the main actor, so it may
+  129|       |/// only use state made for that (a lock-protected box) and thread-safe
+  130|       |/// APIs; running a command or drawing goes to `DispatchQueue.main`. macOS
+  131|       |/// switches off a tap whose callback is too slow; when that happens the tap
+  132|       |/// is switched back on at once, unless it keeps happening, to this tap or
+  133|       |/// another: then all of them rest (`TapHealth`). `onReset` tells the owner
+  134|       |/// that events were missed.
+  135|       |/// docs/ARCHITECTURE.md, "Writing an event tap", has the rules for handlers.
+  136|       |///
+  137|       |/// An active tap needs the Accessibility permission Arbor already has.
+  138|       |final class EventTap: @unchecked Sendable {
+  139|       |  /// Runs on the tap thread. Returns true to swallow the event. The proxy is
+  140|       |  /// for `CGEvent.tapPostEvent`.
+  141|       |  typealias Handler = @Sendable (_ event: CGEvent, _ proxy: CGEventTapProxy) -> Bool
+  142|       |
+  143|       |  /// Arbor sets this as the `.eventSourceUserData` of every event it posts itself. Such an event
+  144|       |  /// passes Arbor's own taps again, and each of them must let it through without acting on it.
+  145|       |  static let replayMark: Int64 = 0x4152_424F  // 'ARBO'
+  146|       |
+  147|       |  let name: String
+  148|       |  /// Called on the tap thread after macOS switched the tap off, when the taps go to rest and when
+  149|       |  /// they are switched back on: events were missed.
+  150|       |  var onReset: (@Sendable () -> Void)?
+  151|       |
+  152|       |  private let mask: CGEventMask
+  153|       |  private let handler: Handler
+  154|       |  // Touched only on the tap thread.
+  155|       |  private var port: CFMachPort?
+  156|       |  private var source: CFRunLoopSource?
+  157|      8|  private var isPaused = false
+  158|       |  /// Keeps this object alive while macOS holds a pointer to it.
+  159|       |  private var retainedSelf: Unmanaged<EventTap>?
+  160|      8|  private let installed = OSAllocatedUnfairLock(initialState: false)
+  161|       |
+  162|      8|  init(name: String, mask: CGEventMask, handler: @escaping Handler) {
+  163|      8|    self.name = name
+  164|      8|    self.mask = mask
+  165|      8|    self.handler = handler
+  166|      8|  }
+  167|       |
+  168|      0|  var isInstalled: Bool { installed.withLock { $0 } }
+  169|       |
+  170|       |  /// Installs the tap, paused if asked. Returns false if macOS refused (no Accessibility permission).
+  171|       |  @discardableResult
+  172|      8|  func start(paused: Bool = false) -> Bool {
+  173|      8|    EventTapThread.shared.sync { install(paused: paused) }
+  174|      8|  }
+  175|       |
+  176|      8|  func stop() {
+  177|      8|    EventTapThread.shared.sync { remove() }
+  178|      8|  }
+  179|       |
+  180|       |  /// Stops events from coming, at no cost to anyone, until `resume()`. The tap keeps its place among
+  181|       |  /// the taps of every app, which installing it afresh would not: see `RectangleFramer`.
+  182|       |  /// A handler may pause or resume any tap, its own included; it takes effect before the next event.
+  183|     77|  func pause() {
+  184|     77|    _ = EventTapThread.shared.sync { setPaused(true) }
+  185|     77|  }
+  186|       |
+  187|       |  /// Returns false if the tap is not installed.
+  188|       |  @discardableResult
+  189|     23|  func resume() -> Bool {
+  190|     23|    EventTapThread.shared.sync { setPaused(false) }
+  191|     23|  }
+  192|       |
+  193|    100|  private func setPaused(_ paused: Bool) -> Bool {
+  194|    100|    guard let port else { return false }
+  195|    100|    // Pausing a paused tap is free, so a handler can do it on every event, just in case.
+  196|    100|    if paused, isPaused { return true }
+  197|     44|    isPaused = paused
+  198|     44|    switchOn(port, !paused)
+  199|     44|    return true
+  200|    100|  }
+  201|       |
+  202|       |  /// No tap goes on while the taps rest, whoever asks. The end of the rest switches on all that are not paused.
+  203|     52|  private func switchOn(_ port: CFMachPort, _ enable: Bool) {
+  204|     52|    CGEvent.tapEnable(tap: port, enable: enable && !EventTapThread.shared.health.isResting)
+  205|     52|  }
+  206|       |
+  207|       |  /// Removes the tap once the callback in progress has returned. A tap must
+  208|       |  /// not be invalidated from inside its own callback.
+  209|      0|  func stopAfterCurrentEvent() {
+  210|      0|    EventTapThread.shared.async { [self] in remove() }
+  211|      0|  }
+  212|       |
+  213|       |  /// Switches the tap back on if it is off: the taps' rest is over (`TapHealth`), or macOS switched it off
+  214|       |  /// and has not told the callback yet. It tells it in place of the next event the tap would have
+  215|       |  /// had, so without this the first gesture after a stall is lost. Call it now and then, from any thread.
+  216|    196|  func reviveIfSwitchedOff() {
+  217|    196|    EventTapThread.shared.async { [self] in
+  218|    196|      // A paused tap too may find that the rest is over: there may be no other, and it could never be resumed.
+  219|    196|      let isResting = EventTapThread.shared.health.isResting
+  220|    196|      guard let port, isResting || (!isPaused && !CGEvent.tapIsEnabled(tap: port)) else { return }
+  221|      0|      act(on: EventTapThread.shared.health.foundOff(at: Self.now()), port, found: "the \(name) event tap was off")
+  222|      0|    }
+  223|    196|  }
+  224|       |
+  225|       |  /// Does as `TapHealth` says about this tap, which is off though it should be on. On the tap thread.
+  226|      0|  private func act(on verdict: TapHealth.Verdict, _ port: CFMachPort, found: String) {
+  227|      0|    // A copy: what the owners do on a reset may install and remove taps.
+  228|      0|    let all = EventTapThread.shared.taps
+  229|      0|    switch verdict {
+  230|      0|    case .switchOn:
+  231|      0|      CGEvent.tapEnable(tap: port, enable: true)
+  232|      0|      TapLog.info("\(found); switched it back on")
+  233|      0|      onReset?()
+  234|      0|    case .stayOff:
+  235|      0|      break
+  236|      0|    case .restAll:
+  237|      0|      for tap in all {
+  238|      0|        if let port = tap.port { CGEvent.tapEnable(tap: port, enable: false) }
+  239|      0|      }
+  240|      0|      TapLog.error(
+  241|      0|        "\(found), and that keeps happening; leaving all \(all.count) event taps off for "
+  242|      0|          + "\(Int(TapHealth.rest)) seconds")
+  243|      0|      for tap in all { tap.onReset?() }
+  244|      0|    case .wakeAll:
+  245|      0|      for tap in all where !tap.isPaused {
+  246|      0|        if let port = tap.port { CGEvent.tapEnable(tap: port, enable: true) }
+  247|      0|      }
+  248|      0|      TapLog.info("the event taps have rested; switched them back on")
+  249|      0|      for tap in all { tap.onReset?() }
+  250|      0|    }
+  251|      0|  }
+  252|       |
+  253|      0|  private static func now() -> Double { ProcessInfo.processInfo.systemUptime }
+  254|       |
+  255|      8|  private func install(paused: Bool) -> Bool {
+  256|      8|    guard port == nil else { return true }
+  257|      8|    let reference = Unmanaged.passRetained(self)
+  258|      8|    guard
+  259|      8|      let port = CGEvent.tapCreate(
+  260|      8|        tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap,
+  261|      8|        eventsOfInterest: mask, callback: eventTapCallback, userInfo: reference.toOpaque())
+  262|      8|    else {
+  263|      0|      reference.release()
+  264|      0|      TapLog.error("could not install the \(name) event tap; is Accessibility permission granted?")
+  265|      0|      return false
+  266|      8|    }
+  267|      8|    let source = CFMachPortCreateRunLoopSource(kCFAllocatorDefault, port, 0)
+  268|      8|    // Common modes, so events are not held up while a menu is open.
+  269|      8|    CFRunLoopAddSource(CFRunLoopGetCurrent(), source, .commonModes)
+  270|      8|    switchOn(port, !paused)
+  271|      8|    isPaused = paused
+  272|      8|    self.port = port
+  273|      8|    self.source = source
+  274|      8|    retainedSelf = reference
+  275|      8|    EventTapThread.shared.taps.append(self)
+  276|      8|    installed.withLock { $0 = true }
+  277|      8|    TapLog.debug("\(name) event tap installed")
+  278|      8|    return true
+  279|      8|  }
+  280|       |
+  281|      8|  private func remove() {
+  282|      8|    guard let port else { return }
+  283|      8|    CGEvent.tapEnable(tap: port, enable: false)
+  284|      8|    if let source { CFRunLoopRemoveSource(CFRunLoopGetCurrent(), source, .commonModes) }
+  285|      8|    CFMachPortInvalidate(port)
+  286|      8|    self.port = nil
+  287|      8|    source = nil
+  288|     20|    EventTapThread.shared.taps.removeAll { $0 === self }
+  289|      8|    installed.withLock { $0 = false }
+  290|      8|    // Last, because it may drop the final reference to this object.
+  291|      8|    let reference = retainedSelf
+  292|      8|    retainedSelf = nil
+  293|      8|    reference?.release()
+  294|      8|  }
+  295|       |
+  296|       |  /// Whether macOS lets this process install an active tap right now.
+  297|       |  /// `AXIsProcessTrusted()` can keep saying yes after Arbor is removed from
+  298|       |  /// the Accessibility list, so this also creates a tap and throws it away.
+  299|       |  ///
+  300|       |  /// A tap is born switched on, and nothing serves this one, so an event that arrived before it is
+  301|       |  /// thrown away would wait for an answer that never comes. It therefore watches only for a
+  302|       |  /// drawing tablet's pen coming near, not for anything a mouse or a trackpad sends.
+  303|     61|  static func isPermitted() -> Bool { refusal() == nil }
+  304|       |
+  305|       |  /// Nil if permitted, otherwise which of the two said no, for the log: nobody has yet seen on a running Arbor
+  306|       |  /// whether the flag turns at once.
+  307|    110|  static func refusal() -> String? {
+  308|    110|    guard AXIsProcessTrusted() else { return "AXIsProcessTrusted says no" }
+  309|    110|    let mask = CGEventMask(1) << CGEventType.tabletProximity.rawValue
+  310|    110|    guard
+  311|    110|      let probe = CGEvent.tapCreate(
+  312|    110|        tap: .cgSessionEventTap, place: .tailAppendEventTap, options: .defaultTap,
+  313|    110|        eventsOfInterest: mask, callback: eventTapCallback, userInfo: nil)
+  314|    110|    else { return "AXIsProcessTrusted says yes, but macOS refused a tap" }
+  315|    110|    CGEvent.tapEnable(tap: probe, enable: false)
+  316|    110|    CFMachPortInvalidate(probe)
+  317|    110|    return nil
+  318|    110|  }
+  319|       |
+  320|       |  /// Returns true to swallow the event.
+  321|    105|  fileprivate func handle(_ type: CGEventType, _ event: CGEvent, proxy: CGEventTapProxy) -> Bool {
+  322|    105|    switch type {
+  323|    105|    case .tapDisabledByTimeout, .tapDisabledByUserInput:
+  324|     25|      // In case macOS reports Arbor's own pause this way: a paused tap stays off. And macOS says it late, in place of the
+  325|     25|      // next event: a word that finds the tap on is about a switch-off the regular check has counted and mended
+  326|     25|      // already. Counted again, one freeze would be two, and stale words after a rest could begin another.
+  327|     25|      guard !isPaused, let port, !CGEvent.tapIsEnabled(tap: port) else { return false }
+  328|      0|      let reason = type == .tapDisabledByTimeout ? "it was too slow" : "of user input"
+  329|      0|      act(
+  330|      0|        on: EventTapThread.shared.health.switchedOff(at: Self.now()), port,
+  331|      0|        found: "macOS switched the \(name) event tap off because \(reason)")
+  332|      0|      return false
+  333|    105|    default:
+  334|     80|      return handler(event, proxy)
+  335|    105|    }
+  336|    105|  }
+  337|       |}
+  338|       |
+  339|       |/// The tap's run loop source is on the tap thread's run loop, so this runs there.
+  340|       |private func eventTapCallback(
+  341|       |  _ proxy: CGEventTapProxy, _ type: CGEventType, _ event: CGEvent, _ refcon: UnsafeMutableRawPointer?
+  342|    105|) -> Unmanaged<CGEvent>? {
+  343|    105|  guard let refcon else { return Unmanaged.passUnretained(event) }
+  344|    105|  let tap = Unmanaged<EventTap>.fromOpaque(refcon).takeUnretainedValue()
+  345|    105|  return tap.handle(type, event, proxy: proxy) ? nil : Unmanaged.passUnretained(event)
+  346|    105|}
+

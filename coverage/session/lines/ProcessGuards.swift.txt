@@ -1,0 +1,88 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/App/ProcessGuards.swift:
+    1|       |import AppKit
+    2|       |import ArborIPC
+    3|       |
+    4|       |/// What protects the Arbor process, and people's windows from its accidents: settings of the process
+    5|       |/// itself, the lock that keeps a second copy out, the watchdog, and staying awake and in time.
+    6|       |@MainActor
+    7|       |final class ProcessGuards {
+    8|      8|  private let lock = InstanceLock(path: ArborPaths.lockFile.path)
+    9|       |  private var watchdog: Watchdog?
+   10|       |  private var activity: (any NSObjectProtocol)?
+   11|       |  private var powerOffObserver: (any NSObjectProtocol)?
+   12|       |
+   13|       |  /// First thing in the process, before any file or socket is made.
+   14|      8|  static func prepareProcess() {
+   15|      8|    // Writing to a pipe or socket whose reader has gone raises SIGPIPE, and the default is to die
+   16|      8|    // on the spot, with windows parked. The write fails with an error instead.
+   17|      8|    signal(SIGPIPE, SIG_IGN)
+   18|      8|    // Everything Arbor creates (state.json has window titles; the socket takes commands) is for its
+   19|      8|    // owner only, from the moment it exists.
+   20|      8|    umask(0o077)
+   21|      8|  }
+   22|       |
+   23|       |  /// Ends the process, with an explanation, if another Arbor already runs from this home folder.
+   24|      8|  func claimSingleInstance(prompt: Bool) {
+   25|      8|    try? ArborPaths.ensureHome()
+   26|      8|    switch lock.acquire(attempts: 10) {
+   27|      8|    case .acquired:
+   28|      8|      return
+   29|      8|    case .unavailable(let reason):
+   30|      0|      Log.error("running without the lock that keeps a second Arbor out: \(reason)")
+   31|      0|      return
+   32|      8|    case .held(let pid):
+   33|      0|      let who = pid.map { " (pid \($0))" } ?? ""
+   34|      0|      // Whoever opens Arbor twice was most likely looking for the window it does not have.
+   35|      0|      let advice = """
+   36|      0|        It has no window of its own: it is the icon in the menu bar. To start it afresh, choose Quit Arbor \
+   37|      0|        there (or run arborctl quit) and open it again.
+   38|      0|        """
+   39|      0|      Log.error("another Arbor\(who) already runs from \(ArborPaths.home.path); this one (pid \(getpid())) is leaving")
+   40|      0|      try? FileHandle.standardError.write(contentsOf: Data("Arbor is already running. \(advice)\n".utf8))
+   41|      0|      if prompt {
+   42|      0|        let alert = NSAlert()
+   43|      0|        alert.messageText = "Arbor is already running"
+   44|      0|        alert.informativeText = advice
+   45|      0|        NSApp.activate()
+   46|      0|        alert.runModal()
+   47|      0|      }
+   48|      0|      // Not `terminate`: nothing was started, and nothing of the other copy's may be cleaned up.
+   49|      0|      exit(Self.alreadyRunningExitCode)
+   50|      8|    }
+   51|      0|  }
+   52|       |
+   53|       |  /// EX_TEMPFAIL of sysexits.h: try again later.
+   54|       |  static let alreadyRunningExitCode: Int32 = 75
+   55|       |
+   56|      8|  func start(environment: ArborEnvironment, sessionIsEnding: @escaping @MainActor @Sendable () -> Void) {
+   57|      8|    if !environment.noWatchdog { watchdog = Watchdog() }
+   58|      8|
+   59|      8|    // An accessory app with no window on screen is a candidate for App Nap, which delays timers by
+   60|      8|    // seconds and lowers priority. Arbor's timers put windows back a quarter of a second after a
+   61|      8|    // drag and drive animations, and a hotkey must act at once. This costs nothing while idle, and the
+   62|      8|    // Mac may still go to sleep.
+   63|      8|    activity = ProcessInfo.processInfo.beginActivity(
+   64|      8|      options: .userInitiatedAllowingIdleSystemSleep, reason: "Arranging windows as they open, move and close")
+   65|      8|
+   66|      8|    // At logout and shutdown every app is asked to quit at about the same time, and apps save their
+   67|      8|    // windows' frames as they go. This arrives first, so windows are back in view before that. Arbor's own
+   68|      8|    // request to quit follows, unless some app cancels the logout (`Controller.sessionIsEnding`).
+   69|      8|    powerOffObserver = NSWorkspace.shared.notificationCenter.addObserver(
+   70|      8|      forName: NSWorkspace.willPowerOffNotification, object: nil, queue: .main
+   71|      8|    ) { _ in
+   72|      0|      MainActor.assumeIsolated { sessionIsEnding() }
+   73|      0|    }
+   74|      8|  }
+   75|       |
+   76|       |  /// Last thing in `applicationWillTerminate`: until the windows are back, an accident still counts.
+   77|      8|  func standDown() {
+   78|      8|    watchdog?.standDown()
+   79|      8|    watchdog = nil
+   80|      8|    if let activity { ProcessInfo.processInfo.endActivity(activity) }
+   81|      8|    activity = nil
+   82|      8|    lock.release()
+   83|      8|  }
+   84|       |}
+

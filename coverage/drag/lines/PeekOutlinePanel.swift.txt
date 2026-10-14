@@ -1,0 +1,80 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/PeekOutlinePanel.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import CoreGraphics
+    4|       |
+    5|       |/// Draws the outline of a peek (`OverlayScene.peekOutline`): one panel per display, of which at most one shows.
+    6|       |@MainActor
+    7|       |final class PeekOutlines {
+    8|      1|  private var panels: [DisplayID: PeekOutlinePanel] = [:]
+    9|       |
+   10|     13|  func update(display: DisplayID, frame: CGRect?, onClick: @escaping () -> Void) {
+   11|     13|    guard let frame else {
+   12|     13|      panels[display]?.orderOut(nil)
+   13|     13|      return
+   14|     13|    }
+   15|      0|    let panel = panels[display] ?? PeekOutlinePanel()
+   16|      0|    panels[display] = panel
+   17|      0|    panel.outline.onClick = onClick
+   18|      0|    // The line runs round the space, in the gap, rather than over its edge.
+   19|      0|    let area = frame.insetBy(dx: -PeekOutlineView.reach, dy: -PeekOutlineView.reach)
+   20|      0|    panel.setFrame(ScreenGeometry.appKit(fromGlobal: area), display: true)
+   21|      0|    panel.orderFrontRegardless()
+   22|      0|  }
+   23|       |
+   24|      1|  func removeAll() {
+   25|      1|    panels.values.forEach { $0.close() }
+   26|      1|    panels.removeAll()
+   27|      1|  }
+   28|       |}
+   29|       |
+   30|       |/// The panel takes the click meant for what it outlines and only reports it. With ⌃⌥ held, as they are during a
+   31|       |/// peek, the app underneath would open a contextual menu (⌃-click), and macOS would hide the app that had the
+   32|       |/// keyboard (⌥-click on another app).
+   33|       |final class PeekOutlinePanel: OverlayPanel {
+   34|      0|  fileprivate let outline = PeekOutlineView()
+   35|       |
+   36|      0|  override init() {
+   37|      0|    super.init()
+   38|      0|    level = .floating
+   39|      0|    // Said explicitly: clicks fall through the transparent parts of a borderless panel otherwise.
+   40|      0|    ignoresMouseEvents = false
+   41|      0|    collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
+   42|      0|    contentView = outline
+   43|      0|  }
+   44|       |}
+   45|       |
+   46|       |private final class PeekOutlineView: NSView {
+   47|       |  /// How far outside the space the panel reaches.
+   48|       |  static let reach: CGFloat = 5
+   49|       |  private static let lineWidth: CGFloat = 4
+   50|       |
+   51|       |  var onClick: (() -> Void)?
+   52|       |
+   53|      0|  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+   54|      0|  override func mouseDown(with event: NSEvent) {}
+   55|      0|  override func mouseUp(with event: NSEvent) { onClick?() }
+   56|       |  // A ⌃-click may arrive as the other button's.
+   57|      0|  override func rightMouseDown(with event: NSEvent) {}
+   58|      0|  override func rightMouseUp(with event: NSEvent) { onClick?() }
+   59|       |
+   60|       |  /// Windows on macOS 26 have the continuous curve of radius 17. The middle of the line runs `reach` less half
+   61|       |  /// its width outside them, so this radius keeps it parallel to their corners.
+   62|       |  private static let cornerRadius: CGFloat = 17 + reach - lineWidth / 2
+   63|       |
+   64|      0|  override func draw(_ dirtyRect: NSRect) {
+   65|      0|    guard let context = NSGraphicsContext.current?.cgContext else { return }
+   66|      0|    let inset = Self.lineWidth / 2
+   67|      0|    let path = ContinuousCorners.path(bounds.insetBy(dx: inset, dy: inset), radius: Self.cornerRadius)
+   68|      0|    context.addPath(path)
+   69|      0|    context.setFillColor(NSColor.controlAccentColor.withAlphaComponent(0.12).cgColor)
+   70|      0|    context.fillPath()
+   71|      0|    context.addPath(path)
+   72|      0|    context.setStrokeColor(NSColor.controlAccentColor.cgColor)
+   73|      0|    context.setLineWidth(Self.lineWidth)
+   74|      0|    context.strokePath()
+   75|      0|  }
+   76|       |}
+

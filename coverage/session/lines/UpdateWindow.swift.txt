@@ -1,0 +1,95 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/UpdateWindow.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |
+    4|       |/// The small window that shows the answer of an update check somebody asked for and, when there is a
+    5|       |/// newer release, offers to open its page. It draws `UpdateDecision.message`; the decisions are made
+    6|       |/// in the core, and the controller never calls for it unasked.
+    7|       |///
+    8|       |/// An ordinary window rather than an alert: an alert's modal loop would keep Arbor from hearing about
+    9|       |/// other apps' windows for as long as it stayed open.
+   10|       |@MainActor
+   11|       |final class UpdateWindow: NSObject, NSWindowDelegate {
+   12|       |  private var window: NSWindow?
+   13|       |  private var page: URL?
+   14|       |
+   15|       |  /// Replaces whatever answer is showing.
+   16|      0|  func show(_ decision: UpdateDecision, current: BuildInfo) {
+   17|      0|    close()
+   18|      0|    let message = decision.message(current: current)
+   19|      0|    page = decision.page.flatMap { URL(string: $0) }
+   20|      0|
+   21|      0|    let headline = NSTextField(labelWithString: message.headline)
+   22|      0|    headline.font = .boldSystemFont(ofSize: NSFont.systemFontSize)
+   23|      0|    let detail = NSTextField(wrappingLabelWithString: message.detail)
+   24|      0|    detail.isSelectable = false
+   25|      0|    // Both: the first wraps the text when its height is worked out, the second holds the window to it.
+   26|      0|    detail.preferredMaxLayoutWidth = 320
+   27|      0|    detail.widthAnchor.constraint(equalToConstant: 320).isActive = true
+   28|      0|
+   29|      0|    let buttons = NSStackView()
+   30|      0|    buttons.orientation = .horizontal
+   31|      0|    let dismiss = NSButton(title: page == nil ? "OK" : "Later", target: self, action: #selector(close))
+   32|      0|    buttons.addView(dismiss, in: .trailing)
+   33|      0|    if page != nil {
+   34|      0|      let open = NSButton(title: "Open Release Page", target: self, action: #selector(openPage))
+   35|      0|      open.keyEquivalent = "\r"
+   36|      0|      dismiss.keyEquivalent = "\u{1b}"
+   37|      0|      buttons.addView(open, in: .trailing)
+   38|      0|    } else {
+   39|      0|      dismiss.keyEquivalent = "\r"
+   40|      0|    }
+   41|      0|
+   42|      0|    let text = NSStackView(views: [headline, detail, buttons])
+   43|      0|    text.orientation = .vertical
+   44|      0|    text.alignment = .leading
+   45|      0|    text.spacing = 8
+   46|      0|    text.setCustomSpacing(16, after: detail)
+   47|      0|    buttons.widthAnchor.constraint(equalTo: detail.widthAnchor).isActive = true
+   48|      0|
+   49|      0|    let icon = NSImageView()
+   50|      0|    icon.image = NSApp.applicationIconImage
+   51|      0|    icon.widthAnchor.constraint(equalToConstant: 48).isActive = true
+   52|      0|    icon.heightAnchor.constraint(equalToConstant: 48).isActive = true
+   53|      0|
+   54|      0|    let content = NSStackView(views: [icon, text])
+   55|      0|    content.orientation = .horizontal
+   56|      0|    content.alignment = .top
+   57|      0|    content.spacing = 16
+   58|      0|    content.edgeInsets = NSEdgeInsets(top: 20, left: 20, bottom: 20, right: 20)
+   59|      0|
+   60|      0|    let window = NSWindow(
+   61|      0|      contentRect: NSRect(x: 0, y: 0, width: 424, height: 140), styleMask: [.titled, .closable], backing: .buffered,
+   62|      0|      defer: false)
+   63|      0|    window.title = "Arbor"
+   64|      0|    window.contentView = content
+   65|      0|    window.setContentSize(content.fittingSize)
+   66|      0|    window.isReleasedWhenClosed = false
+   67|      0|    window.delegate = self
+   68|      0|    // Arbor has no Dock icon to find the window by, so it must not end up under other apps' windows.
+   69|      0|    window.level = .floating
+   70|      0|    window.center()
+   71|      0|    self.window = window
+   72|      0|    NSApp.activate()
+   73|      0|    window.makeKeyAndOrderFront(nil)
+   74|      0|    // Asked for from a terminal, Arbor may not be let to the front; the window comes all the same.
+   75|      0|    window.orderFrontRegardless()
+   76|      0|  }
+   77|       |
+   78|      0|  @objc func close() {
+   79|      0|    window?.close()
+   80|      0|  }
+   81|       |
+   82|      0|  @objc private func openPage() {
+   83|      0|    if let page { NSWorkspace.shared.open(page) }
+   84|      0|    close()
+   85|      0|  }
+   86|       |
+   87|      0|  func windowWillClose(_ notification: Notification) {
+   88|      0|    window = nil
+   89|      0|    page = nil
+   90|      0|  }
+   91|       |}
+

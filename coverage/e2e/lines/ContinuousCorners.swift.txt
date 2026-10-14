@@ -1,0 +1,25 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/ContinuousCorners.swift:
+    1|       |import CoreGraphics
+    2|       |import SwiftUI
+    3|       |
+    4|       |/// Rounded rectangles with the corner curve macOS gives its windows, which starts to bend about one and a half
+    5|       |/// radii before the corner instead of one. SwiftUI is the only public way to that curve as a path. It
+    6|       |/// has this file to itself because it has an `Edge`, an `Axis`, a `Layout` and a `Settings` of its own.
+    7|       |@MainActor
+    8|       |enum ContinuousCorners {
+    9|       |  /// The corner radius macOS gives a window with a plain title bar. Everything of Arbor's that lies around a window
+   10|       |  /// or stands in for one follows it: the focus ring, tiles, the drop preview, the backdrop. On macOS 26 the
+   11|       |  /// continuous curve of radius 17 fits a screenshot of a window's corner to a fifth of a point; 16 leaves half a
+   12|       |  /// point of wallpaper between window and ring. The older systems' 10 is not measured.
+   13|    256|  static var windowRadius: CGFloat {
+   14|    256|    if #available(macOS 26, *) { return 17 }
+   15|      0|    return 10
+   16|    256|  }
+   17|       |
+   18|    388|  static func path(_ rect: CGRect, radius: CGFloat) -> CGPath {
+   19|    388|    RoundedRectangle(cornerRadius: radius, style: .continuous).path(in: rect).cgPath
+   20|    388|  }
+   21|       |}
+

@@ -1,0 +1,294 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/Input/GestureTap.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import os
+    4|       |
+    5|       |/// Trackpad pinch steps the camera (docs/features/F03-trackpad-gestures.md), or, with
+    6|       |/// `continuousZoom`, pinch and ⌃⌥-scroll are streamed to a view that follows the fingers
+    7|       |/// (docs/features/F16-continuous-zoom-and-pan.md).
+    8|       |///
+    9|       |/// A pinch is Arbor's when ⌥ is held as it begins, or when no app window is
+   10|       |/// under the pointer (the Desktop, a gap between windows, one of Arbor's
+   11|       |/// tiles). Arbor swallows its pinches, and the rotations that begin during
+   12|       |/// them, so the app under the pointer does not zoom or turn as well; every
+   13|       |/// other pinch goes to the app untouched. A scroll is Arbor's when ⌃⌥ is held as it begins, or a
+   14|       |/// pinch of Arbor's is in progress; up and down it zooms, also for Macs without a trackpad
+   15|       |/// (docs/features/F55-zoom-with-a-mouse.md). The decisions are made by `GestureRouter` and
+   16|       |/// `PointerSurface`; this class only reads events.
+   17|       |///
+   18|       |/// The taps' callbacks run on the tap thread (`EventTapThread`), so the
+   19|       |/// router lives in a lock-protected box that the callbacks and `update()`
+   20|       |/// share. Commands and updates hop to the main actor after the callback has
+   21|       |/// returned, which is as long as macOS holds the event back.
+   22|       |@MainActor
+   23|       |final class GestureTap {
+   24|       |  /// What the tap callbacks need: the router, and the two things that must happen on the main actor.
+   25|       |  private final class Context: Sendable {
+   26|      2|    let router = OSAllocatedUnfairLock(initialState: GestureRouter())
+   27|       |    /// The scroll tap, for the handlers, which switch it on and off.
+   28|      2|    let scrollTap = OSAllocatedUnfairLock<EventTap?>(initialState: nil)
+   29|       |    let onCommand: @MainActor (Command) -> Void
+   30|       |    let onGesture: @MainActor (GestureUpdate) -> Void
+   31|       |
+   32|       |    init(
+   33|       |      onCommand: @escaping @MainActor (Command) -> Void, onGesture: @escaping @MainActor (GestureUpdate) -> Void
+   34|      2|    ) {
+   35|      2|      self.onCommand = onCommand
+   36|      2|      self.onGesture = onGesture
+   37|      2|    }
+   38|       |  }
+   39|       |
+   40|       |  private let context: Context
+   41|       |  private let settings: @MainActor () -> Settings
+   42|       |  private var tap: EventTap?
+   43|       |  /// Installed only with `continuousZoom` or `scrollZoom`, and paused except while a scroll could be Arbor's
+   44|       |  /// (`GestureRouter.scrollTapIsWanted`): switched on, every scroll on the Mac passes through it.
+   45|       |  private var scrollTap: EventTap?
+   46|       |  /// Tell when ⌃ and ⌥ go down and up. Monitors, not a tap: they only listen, after the fact, on the main thread. If they
+   47|       |  /// hear nothing (secure keyboard entry, a busy main thread) the tap stays paused and the scroll is the app's. Two,
+   48|       |  /// because a global monitor does not hear what goes to a window of Arbor's own. Nothing is remembered from one
+   49|       |  /// event to the next: what was missed would make the memory wrong, and the next press would then be ignored.
+   50|      2|  private var keyMonitors: [Any] = []
+   51|       |
+   52|       |  init(
+   53|       |    settings: @escaping @MainActor () -> Settings, onCommand: @escaping @MainActor (Command) -> Void,
+   54|       |    onGesture: @escaping @MainActor (GestureUpdate) -> Void
+   55|      2|  ) {
+   56|      2|    self.settings = settings
+   57|      2|    context = Context(onCommand: onCommand, onGesture: onGesture)
+   58|      2|  }
+   59|       |
+   60|       |  /// Takes the threshold and `continuousZoom` from the settings and installs or removes the taps
+   61|       |  /// to match them and `gesturesEnabled`. Runs at launch and whenever settings are applied.
+   62|      2|  func update() {
+   63|      2|    let settings = settings()
+   64|      2|    let threshold = settings.pinchThreshold
+   65|      2|    let isContinuous = settings.continuousZoom
+   66|      2|    let (scrollZoom, scrollThreshold, onDesktop) =
+   67|      2|      (settings.scrollZoom, settings.scrollZoomThreshold, settings.scrollOnDesktopZooms)
+   68|      2|    let needsVisit = context.router.withLock { router -> Bool in
+   69|      2|      router.threshold = threshold
+   70|      2|      router.zoomsWithScroll = scrollZoom
+   71|      2|      router.scrollThreshold = scrollThreshold
+   72|      2|      router.zoomsOnDesktop = onDesktop
+   73|      2|      return router.setContinuous(isContinuous)
+   74|      2|    }
+   75|      2|    if needsVisit { Self.visit(context) }
+   76|      2|    guard settings.gesturesEnabled else {
+   77|      0|      stop()
+   78|      0|      return
+   79|      2|    }
+   80|      2|    let context = self.context
+   81|      2|    if tap == nil {
+   82|      2|      // Event taps see every trackpad gesture as CG event type 29 (the same
+   83|      2|      // number as NSEvent's `.gesture`); NSEvent then tells a magnify apart from
+   84|      2|      // touches, rotations and swipes. NSEvent's `.magnify` number, 30, is a
+   85|      2|      // different event type to CG (Dock control), so it is deliberately not in the mask.
+   86|      2|      let mask = NSEvent.EventTypeMask.gesture.rawValue
+   87|      2|      let tap = EventTap(name: "pinch", mask: mask) { event, _ in Self.handle(event, context: context) }
+   88|      2|      tap.onReset = { Self.reset(context) }
+   89|      2|      if tap.start() {
+   90|      2|        self.tap = tap
+   91|      2|        Log.info("pinch event tap installed")
+   92|      2|      }
+   93|      2|    }
+   94|      2|    let wantsScrolls = GestureRouter.listensToScrolls(settings)
+   95|      2|    if wantsScrolls, scrollTap == nil {
+   96|      2|      let tap = EventTap(name: "scroll", mask: 1 << CGEventType.scrollWheel.rawValue) { event, _ in
+   97|      0|        Self.handleScroll(event, context: context)
+   98|      0|      }
+   99|      2|      tap.onReset = { Self.reset(context) }
+  100|      2|      let keys = Keys(NSEvent.modifierFlags)
+  101|      2|      let isWanted = context.router.withLock { $0.scrollTapIsWanted(keys: keys) }
+  102|      2|      if tap.start(paused: !isWanted) {
+  103|      2|        scrollTap = tap
+  104|      2|        context.scrollTap.withLock { $0 = tap }
+  105|      2|        watchKeys()
+  106|      2|        Log.info("scroll event tap installed")
+  107|      2|      }
+  108|      2|    } else if !wantsScrolls {
+  109|      0|      removeScrollTap()
+  110|      0|    } else {
+  111|      0|      // The settings may have changed what is wanted.
+  112|      0|      Self.switchScrollTap(context, Keys(NSEvent.modifierFlags))
+  113|      0|    }
+  114|      2|  }
+  115|       |
+  116|      2|  func stop() {
+  117|      2|    tap?.stop()
+  118|      2|    tap = nil
+  119|      2|    removeScrollTap()
+  120|      2|    Self.reset(context)
+  121|      2|  }
+  122|       |
+  123|      2|  private func removeScrollTap() {
+  124|      4|    for monitor in keyMonitors { NSEvent.removeMonitor(monitor) }
+  125|      2|    keyMonitors = []
+  126|      2|    context.scrollTap.withLock { $0 = nil }
+  127|      2|    scrollTap?.stop()
+  128|      2|    scrollTap = nil
+  129|      2|  }
+  130|       |
+  131|      2|  private func watchKeys() {
+  132|      2|    guard keyMonitors.isEmpty else { return }
+  133|      2|    let context = self.context
+  134|      2|    // A few events a second at most, and switching a tap to what it already is costs nothing.
+  135|     84|    let global = NSEvent.addGlobalMonitorForEvents(matching: .flagsChanged) { event in
+  136|     84|      Self.switchScrollTap(context, Keys(event.modifierFlags))
+  137|     84|    }
+  138|      2|    let local = NSEvent.addLocalMonitorForEvents(matching: .flagsChanged) { event in
+  139|      0|      Self.switchScrollTap(context, Keys(event.modifierFlags))
+  140|      0|      return event
+  141|      0|    }
+  142|      4|    keyMonitors = [global, local].compactMap { $0 }
+  143|      2|  }
+  144|       |
+  145|       |  /// See `EventTap.reviveIfSwitchedOff`.
+  146|     49|  func revive() {
+  147|     49|    tap?.reviveIfSwitchedOff()
+  148|     49|    scrollTap?.reviveIfSwitchedOff()
+  149|     49|  }
+  150|       |
+  151|     49|  var isInstalled: Bool { tap != nil || scrollTap != nil }
+  152|       |
+  153|       |  /// The names of the taps installed now, for `doctor`.
+  154|      0|  var installedTaps: [String] { (tap != nil ? ["pinch"] : []) + (scrollTap != nil ? ["scroll"] : []) }
+  155|       |
+  156|       |  // MARK: On the tap thread
+  157|       |
+  158|       |  private typealias Keys = GestureRouter.Keys
+  159|       |
+  160|       |  /// Switches the scroll tap on or off as the router wants it. From any thread; a handler may do it to its own tap.
+  161|     84|  private nonisolated static func switchScrollTap(_ context: Context, _ keys: Keys) {
+  162|     84|    guard let tap = context.scrollTap.withLock({ $0 }) else { return }
+  163|     84|    if context.router.withLock({ $0.scrollTapIsWanted(keys: keys) }) {
+  164|     21|      tap.resume()
+  165|     63|    } else {
+  166|     63|      tap.pause()
+  167|     63|    }
+  168|     84|  }
+  169|       |
+  170|       |  /// Returns true to swallow the event.
+  171|      0|  private nonisolated static func handle(_ event: CGEvent, context: Context) -> Bool {
+  172|      0|    guard let nsEvent = NSEvent(cgEvent: event) else { return false }
+  173|      0|    // Check the type first: reading `magnification` of any other event raises an exception.
+  174|      0|    switch nsEvent.type {
+  175|      0|    case .magnify:
+  176|      0|      break
+  177|      0|    case .rotate:
+  178|      0|      guard let phase = phase(of: nsEvent) else { return false }
+  179|      0|      return context.router.withLock { $0.rotation(phase) }
+  180|      0|    default:
+  181|      0|      return false
+  182|      0|    }
+  183|      0|    guard let phase = phase(of: nsEvent) else {
+  184|      0|      TapLog.debug("pinch event without a phase (\(nsEvent.phase.rawValue)); left to the app")
+  185|      0|      return false
+  186|      0|    }
+  187|      0|    // The event's location is in global top-left coordinates, like the window list's bounds.
+  188|      0|    let pointer = event.location
+  189|      0|    let flags = event.flags
+  190|      0|    let magnification = Double(nsEvent.magnification)
+  191|      0|    let answer = context.router.withLock {
+  192|      0|      // The claim is worked out only when a pinch begins.
+  193|      0|      $0.pinch(
+  194|      0|        phase, magnification: magnification, at: pointer,
+  195|      0|        claim: optionIsHeld(flags) || !WindowList.appWindowIsUnder(pointer))
+  196|      0|    }
+  197|      0|    if phase != .changed {
+  198|      0|      TapLog.debug(
+  199|      0|        "pinch \(phase) (NSEvent phase \(nsEvent.phase.rawValue)): \(answer.swallow ? "Arbor's" : "the app's")")
+  200|      0|      // A pinch of Arbor's claims the scrolls that begin during it, keys or no keys.
+  201|      0|      switchScrollTap(context, Keys(flags.union(CGEventSource.flagsState(.combinedSessionState))))
+  202|      0|    }
+  203|      0|    act(on: answer, context)
+  204|      0|    return answer.swallow
+  205|      0|  }
+  206|       |
+  207|       |  /// Returns true to swallow the event.
+  208|      0|  private nonisolated static func handleScroll(_ event: CGEvent, context: Context) -> Bool {
+  209|      0|    let keys = Keys(event.flags)
+  210|      0|    // While the tap is on every scroll on the Mac waits for this callback.
+  211|      0|    guard context.router.withLock({ $0.scrollNeedsALook(keys: keys) }) else {
+  212|      0|      // On for nothing: the monitors missed a key going up.
+  213|      0|      switchScrollTap(context, keys)
+  214|      0|      return false
+  215|      0|    }
+  216|      0|    let phase = ScrollClaim.Phase(scrollPhase: event.getIntegerValueField(.scrollWheelEventScrollPhase))
+  217|      0|    let momentum = ScrollClaim.Momentum(momentumPhase: event.getIntegerValueField(.scrollWheelEventMomentumPhase))
+  218|      0|    // A wheel turns in notches, counted in lines; of those only the direction is used.
+  219|      0|    let hasNotches = event.getIntegerValueField(.scrollWheelEventIsContinuous) == 0
+  220|      0|    // Axis 1 is vertical.
+  221|      0|    let points = event.getDoubleValueField(.scrollWheelEventPointDeltaAxis1)
+  222|      0|    let lines = Double(event.getIntegerValueField(.scrollWheelEventDeltaAxis1))
+  223|      0|    let pan = CGSize(
+  224|      0|      width: event.getDoubleValueField(.scrollWheelEventPointDeltaAxis2),
+  225|      0|      height: hasNotches && points == 0 ? lines : points)
+  226|      0|    let pointer = event.location
+  227|      0|    let answer = context.router.withLock {
+  228|      0|      $0.scroll(
+  229|      0|        phase, momentum: momentum, pan: pan, at: pointer, keys: keys,
+  230|      0|        hasNotches: hasNotches, overDesktop: !WindowList.appWindowIsUnder(pointer))
+  231|      0|    }
+  232|      0|    if phase != .changed, phase != .none {
+  233|      0|      TapLog.debug("scroll \(phase): \(answer.swallow ? "Arbor's" : "the app's")")
+  234|      0|    }
+  235|      0|    // With the keys up the tap stays on only until the scroll and its momentum are over.
+  236|      0|    if keys != .arbors, phase != .changed { switchScrollTap(context, keys) }
+  237|      0|    act(on: answer, context)
+  238|      0|    return answer.swallow
+  239|      0|  }
+  240|       |
+  241|       |  /// On the main actor after the callback returns: the event is held back only until then.
+  242|      0|  private nonisolated static func act(on answer: GestureRouter.Answer, _ context: Context) {
+  243|      0|    for command in answer.commands {
+  244|      0|      DispatchQueue.main.async { context.onCommand(command) }
+  245|      0|    }
+  246|      0|    if answer.needsVisit { visit(context) }
+  247|      0|  }
+  248|       |
+  249|       |  /// Has the main actor collect what the router has gathered. The router asks for this once per
+  250|       |  /// burst of events, however many there are.
+  251|      0|  private nonisolated static func visit(_ context: Context) {
+  252|      0|    DispatchQueue.main.async {
+  253|      0|      for update in context.router.withLock({ $0.drain() }) { context.onGesture(update) }
+  254|      0|    }
+  255|      0|  }
+  256|       |
+  257|       |  /// Forgets the gesture in progress, for when events may have been missed, and for `stop()`.
+  258|       |  /// Whoever saw it begin is told that it was cancelled.
+  259|      2|  private nonisolated static func reset(_ context: Context) {
+  260|      2|    if context.router.withLock({ $0.reset() }) { visit(context) }
+  261|      2|  }
+  262|       |
+  263|      0|  private nonisolated static func phase(of event: NSEvent) -> GestureInterpreter.Phase? {
+  264|      0|    let phase = event.phase
+  265|      0|    if phase.contains(.began) { return .began }
+  266|      0|    if phase.contains(.changed) || phase.contains(.stationary) { return .changed }
+  267|      0|    if phase.contains(.ended) { return .ended }
+  268|      0|    if phase.contains(.cancelled) { return .cancelled }
+  269|      0|    return nil
+  270|      0|  }
+  271|       |
+  272|       |  /// Gesture events may not carry modifier flags, so this asks for the keys held now as well.
+  273|      0|  private nonisolated static func optionIsHeld(_ flags: CGEventFlags) -> Bool {
+  274|      0|    flags.contains(.maskAlternate) || CGEventSource.flagsState(.combinedSessionState).contains(.maskAlternate)
+  275|      0|  }
+  276|       |}
+  277|       |
+  278|       |extension GestureRouter.Keys {
+  279|     86|  fileprivate init(_ flags: NSEvent.ModifierFlags) {
+  280|     86|    self.init(
+  281|     86|      control: flags.contains(.control), option: flags.contains(.option), shift: flags.contains(.shift),
+  282|     86|      command: flags.contains(.command))
+  283|     86|  }
+  284|       |
+  285|      0|  fileprivate init(_ flags: CGEventFlags) {
+  286|      0|    self.init(
+  287|      0|      control: flags.contains(.maskControl), option: flags.contains(.maskAlternate), shift: flags.contains(.maskShift),
+  288|      0|      command: flags.contains(.maskCommand))
+  289|      0|  }
+  290|       |}
+

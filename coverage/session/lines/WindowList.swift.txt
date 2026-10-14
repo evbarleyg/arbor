@@ -1,0 +1,68 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/Input/WindowList.swift:
+    1|       |import ArborCore
+    2|       |import CoreGraphics
+    3|       |import Foundation
+    4|       |
+    5|       |/// The window server's list of what is on screen, read for `PointerSurface`, which decides.
+    6|       |///
+    7|       |/// Safe on any thread. Reading the list takes a few milliseconds, so a tap's handler asks only for
+    8|       |/// the rare event that needs it (a pinch beginning), never for every event.
+    9|       |enum WindowList {
+   10|       |  /// Whether an app's window is under `point` (global, top-left origin, like the list's bounds).
+   11|      0|  static func appWindowIsUnder(_ point: CGPoint) -> Bool {
+   12|      0|    // The wallpaper and the icons on it are left out.
+   13|      0|    guard let windows = read([.optionOnScreenOnly, .excludeDesktopElements]) else {
+   14|      0|      return true  // Without the list, leave the event to the app.
+   15|      0|    }
+   16|      0|    return PointerSurface.appWindowIsUnder(point, windows: windows, display: displayFrame(at: point))
+   17|      0|  }
+   18|       |
+   19|       |  /// What a press at `point` would meet, and on the Desktop, whose the icons are. See `PointerSurface.under`.
+   20|      0|  static func under(_ point: CGPoint, mayVanish: Bool) -> PointerSurface.Surface {
+   21|      0|    guard let windows = read([.optionOnScreenOnly]) else { return .taken }
+   22|      0|    let displays = displayFrames()
+   23|      0|    // Which levels the passing things of macOS use has been measured for few of them. This is how to find out.
+   24|      0|    if mayVanish, Log.debugEnabled, let window = PointerSurface.whatMayBeWaiting(windows, displays: displays) {
+   25|      0|      TapLog.debug(
+   26|      0|        "a press on the Desktop is left alone: a window at level \(window.layer) of pid \(window.pid), "
+   27|      0|          + "\(Int(window.frame.width)) by \(Int(window.frame.height)), may be waiting for it")
+   28|      0|    }
+   29|      0|    return PointerSurface.under(point, windows: windows, displays: displays, mayVanish: mayVanish)
+   30|      0|  }
+   31|       |
+   32|       |  /// Front to back, as the list is.
+   33|      0|  private static func read(_ options: CGWindowListOption) -> [PointerSurface.Window]? {
+   34|      0|    guard let list = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else { return nil }
+   35|      0|    let ownPID = Int(getpid())
+   36|      0|    return list.compactMap { info -> PointerSurface.Window? in
+   37|      0|      guard let bounds = info[kCGWindowBounds as String] as? NSDictionary,
+   38|      0|        let frame = CGRect(dictionaryRepresentation: bounds as CFDictionary)
+   39|      0|      else { return nil }
+   40|      0|      // A window of Arbor's with a title is an ordinary one (settings, say), where ⇧-drag selects text as
+   41|      0|      // in any app. Its panels have none. The list has the titles of the asking process's own windows.
+   42|      0|      let isPanel = (info[kCGWindowName as String] as? String ?? "").isEmpty
+   43|      0|      let pid = info[kCGWindowOwnerPID as String] as? Int
+   44|      0|      return PointerSurface.Window(
+   45|      0|        frame: frame, layer: info[kCGWindowLayer as String] as? Int ?? 0,
+   46|      0|        alpha: info[kCGWindowAlpha as String] as? Double ?? 1, isOwn: isPanel && pid == ownPID,
+   47|      0|        pid: pid.flatMap { Int32(exactly: $0) } ?? 0)
+   48|      0|    }
+   49|      0|  }
+   50|       |
+   51|      0|  private static func displayFrames() -> [CGRect] {
+   52|      0|    var displays = [CGDirectDisplayID](repeating: 0, count: 16)
+   53|      0|    var count: UInt32 = 0
+   54|      0|    guard CGGetActiveDisplayList(UInt32(displays.count), &displays, &count) == .success else { return [] }
+   55|      0|    return displays.prefix(Int(count)).map { CGDisplayBounds($0) }
+   56|      0|  }
+   57|       |
+   58|      0|  private static func displayFrame(at point: CGPoint) -> CGRect? {
+   59|      0|    var display = CGDirectDisplayID()
+   60|      0|    var count: UInt32 = 0
+   61|      0|    guard CGGetDisplaysWithPoint(point, 1, &display, &count) == .success, count > 0 else { return nil }
+   62|      0|    return CGDisplayBounds(display)
+   63|      0|  }
+   64|       |}
+

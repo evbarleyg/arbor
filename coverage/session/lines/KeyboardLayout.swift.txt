@@ -1,0 +1,103 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/Input/KeyboardLayout.swift:
+    1|       |import ArborCore
+    2|       |import Carbon.HIToolbox
+    3|       |import Foundation
+    4|       |
+    5|       |/// Reads keyboard layouts from macOS as the tables `KeyLayout` decides with. No decisions here.
+    6|       |@MainActor
+    7|       |enum KeyboardLayoutReader {
+    8|       |  /// The layout ⌘-shortcuts go by: the one selected or, while a layout or input method without Latin letters
+    9|       |  /// is (Russian, Greek, Japanese kana), the Latin one macOS pairs with it.
+   10|      8|  static func current() -> KeyLayout? {
+   11|      8|    guard let source = TISCopyCurrentASCIICapableKeyboardLayoutInputSource()?.takeRetainedValue() else { return nil }
+   12|      8|    return layout(of: source)
+   13|      8|  }
+   14|       |
+   15|       |  /// An installed layout by its id, e.g. `com.apple.keylayout.German`, selected or not. For tests.
+   16|      0|  static func installed(id: String) -> KeyLayout? {
+   17|      0|    let filter = [kTISPropertyInputSourceID as String: id] as CFDictionary
+   18|      0|    guard let list = TISCreateInputSourceList(filter, true)?.takeRetainedValue() as? [TISInputSource],
+   19|      0|      let source = list.first
+   20|      0|    else { return nil }
+   21|      0|    return layout(of: source)
+   22|      0|  }
+   23|       |
+   24|      8|  static func layout(of source: TISInputSource) -> KeyLayout? {
+   25|      8|    guard let pointer = TISGetInputSourceProperty(source, kTISPropertyUnicodeKeyLayoutData) else { return nil }
+   26|      8|    let data = Unmanaged<CFData>.fromOpaque(pointer).takeUnretainedValue() as Data
+   27|      8|    let name = TISGetInputSourceProperty(source, kTISPropertyLocalizedName).map {
+   28|      8|      Unmanaged<CFString>.fromOpaque($0).takeUnretainedValue() as String
+   29|      8|    }
+   30|      8|    return KeyLayout(
+   31|      8|      name: name ?? "unnamed", plain: table(data, modifiers: 0), shifted: table(data, modifiers: shiftKey))
+   32|      8|  }
+   33|       |
+   34|       |  /// What every key types with these modifiers (Carbon's `shiftKey`…) held. A dead key counts as the accent it
+   35|       |  /// would add: that is what is printed on it.
+   36|     16|  private static func table(_ data: Data, modifiers: Int) -> [UInt32: String] {
+   37|     16|    var result: [UInt32: String] = [:]
+   38|     16|    let keyboardType = UInt32(LMGetKbdType())
+   39|     16|    data.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) in
+   40|     16|      guard let layout = bytes.bindMemory(to: UCKeyboardLayout.self).baseAddress else { return }
+   41|  2.04k|      for code in UInt16(0)..<128 {
+   42|  2.04k|        var deadKeys: UInt32 = 0
+   43|  2.04k|        var length = 0
+   44|  2.04k|        var characters = [UniChar](repeating: 0, count: 4)
+   45|  2.04k|        let status = UCKeyTranslate(
+   46|  2.04k|          layout, code, UInt16(kUCKeyActionDisplay), UInt32((modifiers >> 8) & 0xFF), keyboardType,
+   47|  2.04k|          OptionBits(kUCKeyTranslateNoDeadKeysMask), &deadKeys, characters.count, &length, &characters)
+   48|  2.04k|        if status == noErr, length > 0 { result[UInt32(code)] = String(utf16CodeUnits: characters, count: length) }
+   49|  2.04k|      }
+   50|     16|    }
+   51|     16|    return result
+   52|     16|  }
+   53|       |}
+   54|       |
+   55|       |/// Reports the keyboard layout: once when started, then whenever another input source is selected.
+   56|       |///
+   57|       |/// `ARBOR_KEYBOARD_LAYOUT=com.apple.keylayout.German` makes Arbor go by that installed layout whatever is
+   58|       |/// selected, so that a test can press real keys "on a German keyboard" without changing somebody's Mac.
+   59|       |@MainActor
+   60|       |final class KeyboardLayoutWatcher: NSObject {
+   61|       |  private let onChange: @MainActor (KeyLayout) -> Void
+   62|      8|  private var isObserving = false
+   63|      8|  private let pretendedID = ProcessInfo.processInfo.environment["ARBOR_KEYBOARD_LAYOUT"]
+   64|       |
+   65|      8|  init(onChange: @escaping @MainActor (KeyLayout) -> Void) {
+   66|      8|    self.onChange = onChange
+   67|      8|    super.init()
+   68|      8|  }
+   69|       |
+   70|      8|  func start() {
+   71|      8|    guard !isObserving else { return }
+   72|      8|    isObserving = true
+   73|      8|    // Delivered at once: AppKit holds distributed notifications back from an app that is not active, which
+   74|      8|    // Arbor never is.
+   75|      8|    DistributedNotificationCenter.default().addObserver(
+   76|      8|      self, selector: #selector(inputSourceChanged),
+   77|      8|      name: Notification.Name(kTISNotifySelectedKeyboardInputSourceChanged as String), object: nil,
+   78|      8|      suspensionBehavior: .deliverImmediately)
+   79|      8|    report()
+   80|      8|  }
+   81|       |
+   82|      8|  func stop() {
+   83|      8|    guard isObserving else { return }
+   84|      8|    isObserving = false
+   85|      8|    DistributedNotificationCenter.default().removeObserver(self)
+   86|      8|  }
+   87|       |
+   88|       |  /// Distributed notifications arrive on the main thread.
+   89|      0|  @objc private func inputSourceChanged() { report() }
+   90|       |
+   91|      8|  private func report() {
+   92|      8|    if let pretendedID, !pretendedID.isEmpty {
+   93|      0|      if let layout = KeyboardLayoutReader.installed(id: pretendedID) { return onChange(layout) }
+   94|      0|      Log.error("ARBOR_KEYBOARD_LAYOUT: macOS has no keyboard layout \(pretendedID); using the one selected")
+   95|      8|    }
+   96|      8|    // Without a table (nobody has seen that happen) a US keyboard is as good a guess as before F44.
+   97|      8|    onChange(KeyboardLayoutReader.current() ?? .us)
+   98|      8|  }
+   99|       |}
+

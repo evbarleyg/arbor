@@ -1,0 +1,379 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/IPC/ControlServer.swift:
+    1|       |import ArborIPC
+    2|       |import Foundation
+    3|       |
+    4|       |/// Serves the control socket. A client sends one line of command text. Most commands get one line of
+    5|       |/// JSON back and the connection closes; `watch` keeps it open and streams lines until either side
+    6|       |/// goes away.
+    7|       |///
+    8|       |/// Everything runs on the main queue and nothing here ever waits for a client: sockets are
+    9|       |/// non-blocking, what a client will not take yet waits in an `OutboundQueue`, and a client that sends
+   10|       |/// no request, does not collect its reply, or stops reading its events is hung up on. Arbor's main
+   11|       |/// thread also moves people's windows and sees their clicks, so a stuck script must not be able to hold it up.
+   12|       |@MainActor
+   13|       |public final class ControlServer {
+   14|       |  /// What to do with a request.
+   15|       |  public enum Response {
+   16|       |    /// Send this line and close the connection.
+   17|       |    case reply(String)
+   18|       |    /// Keep the connection open. The closure is called once, with the function that sends a line to
+   19|       |    /// this client, and returns what to run when the connection ends, whoever ends it.
+   20|       |    case stream((_ send: @escaping (String) -> Void) -> () -> Void)
+   21|       |  }
+   22|       |
+   23|       |  /// Connections beyond this many at once are turned away. Far more than real use needs (a watcher
+   24|       |  /// per status bar item, a moment for each `arborctl`), and it bounds the descriptors a runaway script can take.
+   25|       |  public static let maximumConnections = 64
+   26|       |  /// How long a client may take to send its request.
+   27|       |  public static let requestTimeout = 2.0
+   28|       |  /// How long it may then take to collect the reply.
+   29|       |  public static let replyTimeout = 5.0
+   30|       |  /// The longest request, in bytes.
+   31|       |  public static let requestLimit = 64 * 1024
+   32|       |  /// How far behind a watcher may fall before it is dropped.
+   33|       |  public static let streamBacklogLimit = 256 * 1024
+   34|       |
+   35|       |  public let path: String
+   36|       |  private let handler: (String) -> Response
+   37|       |  private let scheduler: any Scheduler
+   38|       |  private let accept: (Int32) -> UnixSocket.Acceptance
+   39|       |  private var source: DispatchSourceRead?
+   40|      1|  private var connections: [Int: ControlConnection] = [:]
+   41|      1|  private var nextConnectionNumber = 1
+   42|       |  /// Connections turned away since the log last said so.
+   43|      1|  private var turnedAway = 0
+   44|       |  /// The socket's file as this server made it.
+   45|       |  private var boundFile: UnixSocket.FileIdentity?
+   46|       |  /// The source is suspended: there was no descriptor left for whoever is waiting.
+   47|      1|  private var isResting = false
+   48|       |  /// How long to leave the listener alone then.
+   49|       |  public static let restWithoutDescriptors = 1.0
+   50|       |
+   51|       |  /// - Parameter accept: takes the next connection from the listener. The tests' way to a process without descriptors, which
+   52|       |  ///   cannot be had for real beside other tests.
+   53|       |  public init(
+   54|       |    path: String = ArborPaths.socketPath, scheduler: any Scheduler = MainQueueScheduler(),
+   55|     56|    accept: @escaping (Int32) -> UnixSocket.Acceptance = UnixSocket.acceptance(from:),
+   56|       |    handler: @escaping (String) -> Response
+   57|      1|  ) {
+   58|      1|    self.path = path
+   59|      1|    self.scheduler = scheduler
+   60|      1|    self.accept = accept
+   61|      1|    self.handler = handler
+   62|      1|  }
+   63|       |
+   64|       |  /// Open connections, of either kind.
+   65|      0|  public var connectionCount: Int { connections.count }
+   66|       |
+   67|      1|  public func start() throws {
+   68|      1|    guard source == nil else { return }
+   69|      1|    // Writing to a client that has left must be an error to handle, not the end of the process. The
+   70|      1|    // sockets are told so one by one (`UnixSocket`), but Darwin refuses the option on a socket whose other
+   71|      1|    // end is already gone, which is exactly the socket that matters.
+   72|      1|    signal(SIGPIPE, SIG_IGN)
+   73|      1|    try FileManager.default.createDirectory(
+   74|      1|      at: URL(fileURLWithPath: path).deletingLastPathComponent(), withIntermediateDirectories: true,
+   75|      1|      attributes: [.posixPermissions: 0o700])
+   76|      1|    let listener = try UnixSocket.listening(at: path)
+   77|      1|    boundFile = UnixSocket.identity(ofFileAt: path)
+   78|      1|    let source = DispatchSource.makeReadSource(fileDescriptor: listener, queue: .main)
+   79|     28|    source.setEventHandler { [weak self] in
+   80|     28|      MainActor.assumeIsolated { self?.acceptPending(from: listener) }
+   81|     28|    }
+   82|      1|    // A descriptor may be closed only once its source has let go of it.
+   83|      1|    source.setCancelHandler { UnixSocket.release(listener) }
+   84|      1|    source.resume()
+   85|      1|    self.source = source
+   86|      1|    Log.info("control socket at \(path)")
+   87|      1|  }
+   88|       |
+   89|       |  /// Hangs up on every client and stops listening. Lines already sent still reach their clients.
+   90|      1|  public func stop() {
+   91|      1|    for number in connections.keys.sorted() { connections[number]?.hangUp() }
+   92|      1|    connections.removeAll()
+   93|      1|    scheduler.cancel("control-turned-away")
+   94|      1|    turnedAway = 0
+   95|      1|    scheduler.cancel("control-accept-again")
+   96|      1|    guard let source else { return }
+   97|      1|    // A source must be running when it is cancelled.
+   98|      1|    if isResting { source.resume() }
+   99|      1|    isResting = false
+  100|      1|    source.cancel()
+  101|      1|    self.source = nil
+  102|      1|    // Only its own: somebody may have taken the path since (two homes with one ARBOR_SOCKET), and is listening there.
+  103|      1|    if boundFile != nil, UnixSocket.identity(ofFileAt: path) == boundFile { unlink(path) }
+  104|      1|    boundFile = nil
+  105|      1|  }
+  106|       |
+  107|     28|  private func acceptPending(from listener: Int32) {
+  108|     28|    guard source != nil else { return }
+  109|     28|    // A few at a time, so that a script that connects in a loop cannot keep the main thread here; the source
+  110|     28|    // fires again while more are waiting.
+  111|     56|    for _ in 0..<16 {
+  112|     56|      let fd: Int32
+  113|     56|      switch accept(listener) {
+  114|     56|      case .connection(let accepted): fd = accepted
+  115|     56|      case .nobodyWaiting: return
+  116|     56|      case .noDescriptorLeft: return rest()
+  117|     56|      }
+  118|     28|      guard connections.count < Self.maximumConnections else {
+  119|      0|        // Not without a word: to a script, silence is "Arbor is not running", and its answer is to start another.
+  120|      0|        // One attempt, whatever comes of it: this is no time to wait for anybody.
+  121|      0|        let line = ControlEndpoint.line(for: .failure("too many connections (\(Self.maximumConnections)); try again")) + "\n"
+  122|      0|        _ = Array(line.utf8).withUnsafeBytes { UnixSocket.transmit(fd, $0) }
+  123|      0|        UnixSocket.release(fd)
+  124|      0|        noteTurnedAway()
+  125|      0|        continue
+  126|     28|      }
+  127|     28|      let number = nextConnectionNumber
+  128|     28|      nextConnectionNumber += 1
+  129|     28|      let connection = ControlConnection(
+  130|     28|        fd: fd, number: number, scheduler: scheduler, handler: handler,
+  131|     28|        onEnd: { [weak self] in self?.connections[number] = nil })
+  132|     28|      connections[number] = connection
+  133|     28|      connection.start()
+  134|     28|    }
+  135|      0|  }
+  136|       |}
+  137|       |
+  138|       |extension ControlServer {
+  139|       |  /// Whoever is waiting goes on waiting, so the source would fire again at once, for as long as it takes something
+  140|       |  /// else in Arbor to give a descriptor back, and the main thread would do nothing else. Looks again in a while instead.
+  141|      0|  private func rest() {
+  142|      0|    guard let source, !isResting else { return }
+  143|      0|    isResting = true
+  144|      0|    source.suspend()
+  145|      0|    Log.error("control socket: no file descriptor left for a new connection; looking again in \(Self.restWithoutDescriptors) s")
+  146|      0|    scheduler.schedule("control-accept-again", after: Self.restWithoutDescriptors) { [weak self] in
+  147|      0|      guard let self, self.isResting, let source = self.source else { return }
+  148|      0|      self.isResting = false
+  149|      0|      source.resume()
+  150|      0|    }
+  151|      0|  }
+  152|       |
+  153|       |  /// Says so in the log at most once a second: such a loop must not push everything else out of it either.
+  154|      0|  private func noteTurnedAway() {
+  155|      0|    turnedAway += 1
+  156|      0|    guard turnedAway == 1 else { return }
+  157|      0|    scheduler.schedule("control-turned-away", after: 1) { [weak self] in
+  158|      0|      guard let self else { return }
+  159|      0|      Log.error("control socket: \(Self.maximumConnections) connections were open; turned \(self.turnedAway) away")
+  160|      0|      self.turnedAway = 0
+  161|      0|    }
+  162|      0|  }
+  163|       |}
+  164|       |
+  165|       |/// One client of the control socket, from `accept` to `close`.
+  166|       |@MainActor
+  167|       |final class ControlConnection {
+  168|       |  private enum Phase {
+  169|       |    /// Waiting for the request line.
+  170|       |    case request
+  171|       |    /// Sending the one reply; the connection closes when it has gone.
+  172|       |    case reply
+  173|       |    /// Sending lines until someone hangs up.
+  174|       |    case stream
+  175|       |    case ended
+  176|       |  }
+  177|       |
+  178|       |  private let fd: Int32
+  179|       |  private let scheduler: any Scheduler
+  180|       |  private let timerKey: String
+  181|       |  private let handler: (String) -> ControlServer.Response
+  182|       |  private var onEnd: (() -> Void)?
+  183|       |  /// What the handler asked to have run when a stream ends.
+  184|       |  private var onStreamEnd: (() -> Void)?
+  185|     28|  private var phase = Phase.request
+  186|     28|  private var inbound = LineBuffer(limit: ControlServer.requestLimit)
+  187|       |  /// Bytes received after the request.
+  188|     28|  private var unwantedBytes = 0
+  189|     28|  private var outbound = OutboundQueue(limit: ControlServer.streamBacklogLimit)
+  190|       |
+  191|       |  private let readSource: DispatchSourceRead
+  192|       |  /// Runs only while the socket has refused bytes that are still waiting; otherwise it would fire all the time.
+  193|       |  private let writeSource: DispatchSourceWrite
+  194|     28|  private var writeSourceIsRunning = false
+  195|     28|  private var readSourceIsCancelled = false
+  196|       |  /// Sources that have not let go of `fd` yet.
+  197|     28|  private var sourcesHoldingDescriptor = 2
+  198|       |
+  199|       |  init(
+  200|       |    fd: Int32, number: Int, scheduler: any Scheduler, handler: @escaping (String) -> ControlServer.Response,
+  201|       |    onEnd: @escaping () -> Void
+  202|     28|  ) {
+  203|     28|    self.fd = fd
+  204|     28|    self.scheduler = scheduler
+  205|     28|    timerKey = "control-connection-\(number)"
+  206|     28|    self.handler = handler
+  207|     28|    self.onEnd = onEnd
+  208|     28|    readSource = DispatchSource.makeReadSource(fileDescriptor: fd, queue: .main)
+  209|     28|    writeSource = DispatchSource.makeWriteSource(fileDescriptor: fd, queue: .main)
+  210|     28|  }
+  211|       |
+  212|     28|  func start() {
+  213|     28|    readSource.setEventHandler { [weak self] in
+  214|     28|      MainActor.assumeIsolated { self?.readAvailable() }
+  215|     28|    }
+  216|     28|    writeSource.setEventHandler { [weak self] in
+  217|      0|      MainActor.assumeIsolated { self?.writePending() }
+  218|      0|    }
+  219|     28|    // These hold on to the connection, so it lives until the descriptor is closed.
+  220|     28|    readSource.setCancelHandler { MainActor.assumeIsolated { self.sourceLetGo() } }
+  221|     28|    writeSource.setCancelHandler { MainActor.assumeIsolated { self.sourceLetGo() } }
+  222|     28|    readSource.resume()
+  223|     28|    hangUp(after: ControlServer.requestTimeout)
+  224|     28|  }
+  225|       |
+  226|       |  // MARK: Reading
+  227|       |
+  228|     28|  private func readAvailable() {
+  229|     28|    var buffer = [UInt8](repeating: 0, count: 4096)
+  230|     28|    // A few rounds at a time, so a client that keeps writing cannot keep the main thread here;
+  231|     28|    // the source fires again while there is more.
+  232|     28|    for _ in 0..<16 where phase != .ended {
+  233|     28|      switch UnixSocket.receive(fd, into: &buffer) {
+  234|     28|      case .moved(let count):
+  235|     28|        // One request per connection. Whatever follows it is read, to notice the end, and dropped;
+  236|     28|        // a client that goes on and on is only keeping the main thread busy.
+  237|     28|        guard phase == .request else {
+  238|      0|          unwantedBytes += count
+  239|      0|          if unwantedBytes > ControlServer.requestLimit { hangUp() }
+  240|      0|          continue
+  241|     28|        }
+  242|     28|        let lines = inbound.append(buffer[..<count])
+  243|     28|        if let request = lines.first {
+  244|     28|          respond(to: request)
+  245|     28|        } else if inbound.overflowed {
+  246|      0|          // With a word, for the same reason as a connection too many.
+  247|      0|          answer(ControlEndpoint.line(for: .failure("the request is longer than \(ControlServer.requestLimit) bytes")))
+  248|      0|        }
+  249|     28|      case .ended:
+  250|      0|        inputEnded()
+  251|      0|        return
+  252|     28|      case .wouldBlock:
+  253|      0|        return
+  254|     28|      case .failed:
+  255|      0|        hangUp()
+  256|     28|      }
+  257|     28|    }
+  258|     28|  }
+  259|       |
+  260|      0|  private func inputEnded() {
+  261|      0|    if phase == .request, let request = inbound.finish() {
+  262|      0|      // `printf status | nc -U arbor.sock` ends its request by closing, without a newline.
+  263|      0|      respond(to: request)
+  264|      0|    }
+  265|      0|    switch phase {
+  266|      0|    case .reply:
+  267|      0|      // `arborctl` closes its writing side after the request and is now reading the reply.
+  268|      0|      stopReading()
+  269|      0|    case .request, .stream:
+  270|      0|      // Nothing was asked, or a watcher has left.
+  271|      0|      hangUp()
+  272|      0|    case .ended:
+  273|      0|      break
+  274|      0|    }
+  275|      0|  }
+  276|       |
+  277|     28|  private func respond(to request: String) {
+  278|     28|    let response = handler(request)
+  279|     28|    // The command may have stopped the server, and this connection with it.
+  280|     28|    guard phase == .request else { return }
+  281|     28|    switch response {
+  282|     28|    case .reply(let line):
+  283|     28|      answer(line)
+  284|     28|    case .stream(let open):
+  285|      0|      phase = .stream
+  286|      0|      scheduler.cancel(timerKey)
+  287|      0|      let end = open { [weak self] line in self?.send(line) }
+  288|      0|      // The first lines are sent from inside `open`, and sending can end the connection.
+  289|      0|      if phase == .ended { end() } else { onStreamEnd = end }
+  290|     28|    }
+  291|     28|  }
+  292|       |
+  293|       |  /// Sends the one reply; the connection closes when it has gone.
+  294|     28|  private func answer(_ line: String) {
+  295|     28|    phase = .reply
+  296|     28|    _ = outbound.enqueue(line)
+  297|     28|    writePending()
+  298|     28|    if phase == .reply { hangUp(after: ControlServer.replyTimeout) }
+  299|     28|  }
+  300|       |
+  301|       |  /// Gives the client this long for what it is doing now, in place of any time limit set before.
+  302|     28|  private func hangUp(after seconds: Double) {
+  303|     28|    scheduler.schedule(timerKey, after: seconds) { [weak self] in
+  304|      0|      guard let self, self.phase != .ended else { return }
+  305|      0|      Log.debug("control socket: hung up on a client that took longer than \(seconds) s")
+  306|      0|      self.hangUp()
+  307|      0|    }
+  308|     28|  }
+  309|       |
+  310|       |  // MARK: Writing
+  311|       |
+  312|      0|  private func send(_ line: String) {
+  313|      0|    guard phase == .stream else { return }
+  314|      0|    guard outbound.enqueue(line) else {
+  315|      0|      Log.info("control socket: dropped a watcher that stopped reading, \(outbound.count) bytes behind")
+  316|      0|      hangUp()
+  317|      0|      return
+  318|      0|    }
+  319|      0|    writePending()
+  320|      0|  }
+  321|       |
+  322|     28|  private func writePending() {
+  323|     28|    guard phase != .ended else { return }
+  324|     56|    while !outbound.isEmpty {
+  325|     28|      switch outbound.withPendingBytes({ UnixSocket.transmit(fd, $0) }) {
+  326|     28|      case .moved(let count):
+  327|     28|        outbound.consume(count)
+  328|     28|      case .wouldBlock:
+  329|      0|        setWriteSourceRunning(true)
+  330|      0|        return
+  331|     28|      case .ended, .failed:
+  332|      0|        hangUp()
+  333|      0|        return
+  334|     28|      }
+  335|     28|    }
+  336|     28|    setWriteSourceRunning(false)
+  337|     28|    if phase == .reply { hangUp() }
+  338|     28|  }
+  339|       |
+  340|     56|  private func setWriteSourceRunning(_ running: Bool) {
+  341|     56|    guard running != writeSourceIsRunning else { return }
+  342|     28|    writeSourceIsRunning = running
+  343|     28|    if running { writeSource.resume() } else { writeSource.suspend() }
+  344|     28|  }
+  345|       |
+  346|       |  // MARK: Ending
+  347|       |
+  348|       |  /// Ends the connection now. What the socket has already taken still reaches the client; what
+  349|       |  /// is waiting in the queue does not.
+  350|     28|  func hangUp() {
+  351|     28|    guard phase != .ended else { return }
+  352|     28|    phase = .ended
+  353|     28|    scheduler.cancel(timerKey)
+  354|     28|    UnixSocket.hangUp(fd)
+  355|     28|    stopReading()
+  356|     28|    // A source must be running when it is cancelled and released.
+  357|     28|    setWriteSourceRunning(true)
+  358|     28|    writeSource.cancel()
+  359|     28|    let callbacks = [onStreamEnd, onEnd]
+  360|     28|    onStreamEnd = nil
+  361|     28|    onEnd = nil
+  362|     56|    for callback in callbacks { callback?() }
+  363|     28|  }
+  364|       |
+  365|     28|  private func stopReading() {
+  366|     28|    guard !readSourceIsCancelled else { return }
+  367|     28|    readSourceIsCancelled = true
+  368|     28|    readSource.cancel()
+  369|     28|  }
+  370|       |
+  371|     55|  private func sourceLetGo() {
+  372|     55|    sourcesHoldingDescriptor -= 1
+  373|     55|    if sourcesHoldingDescriptor == 0 { UnixSocket.release(fd) }
+  374|     55|  }
+  375|       |}
+

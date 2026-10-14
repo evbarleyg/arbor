@@ -1,0 +1,36 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/App/LaunchArguments.swift:
+    1|       |import ArborCore
+    2|       |import Foundation
+    3|       |
+    4|       |/// What the Arbor binary does when it is started from a shell with one of these arguments, instead
+    5|       |/// of becoming the app. They answer without a running Arbor, which the scripts need:
+    6|       |///
+    7|       |///     Arbor.app/Contents/MacOS/Arbor --version
+    8|       |///     Arbor.app/Contents/MacOS/Arbor --launch-at-login [on|off]    # `make uninstall` uses `off`
+    9|       |///
+   10|       |/// Anything else is left alone: macOS passes arguments of its own to apps.
+   11|       |@MainActor
+   12|       |enum LaunchArguments {
+   13|       |  /// The exit code, or nil when Arbor should start as the app.
+   14|     19|  static func run(_ arguments: [String]) -> Int32? {
+   15|     19|    switch arguments.first {
+   16|     19|    case "--version":
+   17|      0|      print("Arbor \(BuildInfo(infoDictionary: Bundle.main.infoDictionary).text)")
+   18|      0|      return 0
+   19|     19|    case "--launch-at-login":
+   20|      0|      guard case .launchAtLogin(let enabled)? = try? Command.parse(words: ["launch-at-login"] + arguments.dropFirst())
+   21|      0|      else {
+   22|      0|        print("usage: Arbor --launch-at-login [on|off]")
+   23|      0|        return 64
+   24|      0|      }
+   25|      0|      let result = Controller.launchAtLogin(enabled, item: SystemLoginItem())
+   26|      0|      print(result.message)
+   27|      0|      return result.ok ? 0 : 1
+   28|     19|    default:
+   29|     19|      return nil
+   30|     19|    }
+   31|     19|  }
+   32|       |}
+

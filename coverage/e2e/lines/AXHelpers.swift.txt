@@ -1,0 +1,119 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/AX/AXHelpers.swift:
+    1|       |import AppKit
+    2|       |import ApplicationServices
+    3|       |import ArborCore
+    4|       |
+    5|       |/// Private but stable for over a decade, and used by every macOS window
+    6|       |/// manager: the window-server number (CGWindowID) behind an AX window.
+    7|       |@_silgen_name("_AXUIElementGetWindow")
+    8|       |func _AXUIElementGetWindow(_ element: AXUIElement, _ identifier: UnsafeMutablePointer<CGWindowID>) -> AXError
+    9|       |
+   10|       |extension AXUIElement {
+   11|       |  /// An attribute's value together with what the call returned, for callers that must tell an app that
+   12|       |  /// does not answer (`.cannotComplete`) from one that has nothing to say.
+   13|  2.74k|  func read(_ name: String) -> (error: AXError, value: CFTypeRef?) {
+   14|  2.74k|    var value: CFTypeRef?
+   15|  2.74k|    let error = AXUIElementCopyAttributeValue(self, name as CFString, &value)
+   16|  2.74k|    return (error, error == .success ? value : nil)
+   17|  2.74k|  }
+   18|       |
+   19|  2.48k|  func copyAttribute(_ name: String) -> CFTypeRef? { read(name).value }
+   20|       |
+   21|       |  /// Whether the thing this element stood for is gone, while its app is still there to say so.
+   22|     12|  var isInvalid: Bool { read(kAXRoleAttribute).error == .invalidUIElement }
+   23|       |
+   24|    116|  func string(_ name: String) -> String? { copyAttribute(name) as? String }
+   25|       |
+   26|    584|  func bool(_ name: String) -> Bool? {
+   27|    584|    guard let value = copyAttribute(name), CFGetTypeID(value) == CFBooleanGetTypeID() else { return nil }
+   28|    584|    return CFBooleanGetValue((value as! CFBoolean))
+   29|    584|  }
+   30|       |
+   31|       |  /// Whether the attribute can be set, or nil if the app does not say.
+   32|     35|  func isSettable(_ name: String) -> Bool? {
+   33|     35|    var settable: DarwinBoolean = false
+   34|     35|    guard AXUIElementIsAttributeSettable(self, name as CFString, &settable) == .success else { return nil }
+   35|     35|    return settable.boolValue
+   36|     35|  }
+   37|       |
+   38|    673|  func element(_ name: String) -> AXUIElement? {
+   39|    673|    guard let value = copyAttribute(name), CFGetTypeID(value) == AXUIElementGetTypeID() else { return nil }
+   40|    673|    return (value as! AXUIElement)
+   41|    673|  }
+   42|       |
+   43|     11|  func elements(_ name: String) -> [AXUIElement] { elementsIfAnswered(name) ?? [] }
+   44|       |
+   45|       |  /// The elements of an array attribute, or nil if the app gave no answer: it timed out, is quitting, or
+   46|       |  /// Arbor has lost its permission. Only an app that says it has no value has an empty list; reading
+   47|       |  /// every failure as "no windows" would take all of an app's windows out of the layout.
+   48|    121|  func elementsIfAnswered(_ name: String) -> [AXUIElement]? {
+   49|    121|    var value: CFTypeRef?
+   50|    121|    let result = AXUIElementCopyAttributeValue(self, name as CFString, &value)
+   51|    121|    if result == .noValue { return [] }
+   52|    121|    guard result == .success else { return nil }
+   53|    120|    guard let value, CFGetTypeID(value) == CFArrayGetTypeID() else { return [] }
+   54|    317|    return (value as? [AnyObject] ?? []).compactMap { item in
+   55|    317|      CFGetTypeID(item) == AXUIElementGetTypeID() ? (item as! AXUIElement) : nil
+   56|    317|    }
+   57|    121|  }
+   58|       |
+   59|    557|  var position: CGPoint? {
+   60|    557|    guard let value = copyAttribute(kAXPositionAttribute), CFGetTypeID(value) == AXValueGetTypeID() else {
+   61|      0|      return nil
+   62|    557|    }
+   63|    557|    var point = CGPoint.zero
+   64|    557|    return AXValueGetValue(value as! AXValue, .cgPoint, &point) ? point : nil
+   65|    557|  }
+   66|       |
+   67|    557|  var size: CGSize? {
+   68|    557|    guard let value = copyAttribute(kAXSizeAttribute), CFGetTypeID(value) == AXValueGetTypeID() else {
+   69|      0|      return nil
+   70|    557|    }
+   71|    557|    var size = CGSize.zero
+   72|    557|    return AXValueGetValue(value as! AXValue, .cgSize, &size) ? size : nil
+   73|    557|  }
+   74|       |
+   75|    557|  var frame: CGRect? {
+   76|    557|    guard let position, let size else { return nil }
+   77|    557|    return CGRect(origin: position, size: size)
+   78|    557|  }
+   79|       |
+   80|       |  @discardableResult
+   81|    192|  func setPosition(_ point: CGPoint) -> AXError {
+   82|    192|    var point = point
+   83|    192|    guard let value = AXValueCreate(.cgPoint, &point) else { return .failure }
+   84|    192|    return AXUIElementSetAttributeValue(self, kAXPositionAttribute as CFString, value)
+   85|    192|  }
+   86|       |
+   87|       |  @discardableResult
+   88|    260|  func setSize(_ size: CGSize) -> AXError {
+   89|    260|    var size = size
+   90|    260|    guard let value = AXValueCreate(.cgSize, &size) else { return .failure }
+   91|    260|    return AXUIElementSetAttributeValue(self, kAXSizeAttribute as CFString, value)
+   92|    260|  }
+   93|       |
+   94|       |  @discardableResult
+   95|     25|  func setBool(_ name: String, _ flag: Bool) -> AXError {
+   96|     25|    AXUIElementSetAttributeValue(self, name as CFString, flag ? kCFBooleanTrue : kCFBooleanFalse)
+   97|     25|  }
+   98|       |
+   99|  1.31k|  var windowID: WindowID? {
+  100|  1.31k|    var identifier = CGWindowID(0)
+  101|  1.31k|    guard _AXUIElementGetWindow(self, &identifier) == .success, identifier != 0 else { return nil }
+  102|  1.31k|    return WindowID(identifier)
+  103|  1.31k|  }
+  104|       |
+  105|    511|  var pid: pid_t? {
+  106|    511|    var pid: pid_t = 0
+  107|    511|    return AXUIElementGetPid(self, &pid) == .success ? pid : nil
+  108|    511|  }
+  109|       |}
+  110|       |
+  111|       |/// Carries a non-Sendable value across a hop that stays on the main actor, or hands it over for good to
+  112|       |/// a task that is the only one to use it.
+  113|       |struct MainActorBox<Value>: @unchecked Sendable {
+  114|       |  let value: Value
+  115|       |}
+

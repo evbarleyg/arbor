@@ -1,0 +1,36 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/Input/SystemShortcutReader.swift:
+    1|       |import ArborCore
+    2|       |import Carbon.HIToolbox
+    3|       |import Foundation
+    4|       |
+    5|       |/// Reads macOS's own keyboard shortcuts as the list `SystemShortcuts` decides with. No decisions here.
+    6|       |@MainActor
+    7|       |enum SystemShortcutReader {
+    8|       |  /// Nil if macOS does not say.
+    9|      8|  static func read() -> SystemShortcuts? {
+   10|      8|    var list: Unmanaged<CFArray>?
+   11|      8|    guard CopySymbolicHotKeys(&list) == noErr, let entries = list?.takeRetainedValue() as? [[String: Any]] else {
+   12|      0|      return nil
+   13|      8|    }
+   14|  1.83k|    let shortcuts = entries.compactMap { entry -> SystemShortcuts.Shortcut? in
+   15|  1.83k|      guard let code = (entry[kHISymbolicHotKeyCode] as? Int).flatMap(UInt32.init(exactly:)),
+   16|  1.83k|        let modifiers = (entry[kHISymbolicHotKeyModifiers] as? Int).flatMap(UInt32.init(exactly:)),
+   17|  1.83k|        let isEnabled = entry[kHISymbolicHotKeyEnabled] as? Bool
+   18|  1.83k|      else { return nil }
+   19|  1.83k|      return SystemShortcuts.Shortcut(keyCode: code, carbonModifiers: modifiers, isEnabled: isEnabled)
+   20|  1.83k|    }
+   21|      8|    return SystemShortcuts(shortcuts: shortcuts, inputSources: inputSources)
+   22|      8|  }
+   23|       |
+   24|       |  /// How many keyboard layouts and input methods the Input menu switches between.
+   25|      8|  private static var inputSources: Int? {
+   26|      8|    let wanted: [String: Any] = [
+   27|      8|      kTISPropertyInputSourceCategory as String: kTISCategoryKeyboardInputSource as String,
+   28|      8|      kTISPropertyInputSourceIsSelectCapable as String: true,
+   29|      8|    ]
+   30|      8|    return (TISCreateInputSourceList(wanted as CFDictionary, false)?.takeRetainedValue() as? [TISInputSource])?.count
+   31|      8|  }
+   32|       |}
+

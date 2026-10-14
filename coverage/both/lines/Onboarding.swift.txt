@@ -1,0 +1,414 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/Onboarding.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import SwiftUI
+    4|       |
+    5|       |/// The welcome window (docs/features/F10-menu-bar-and-onboarding.md). Its first page says what Arbor does and
+    6|       |/// shows the permissions and macOS settings that matter, with whether each is in order; its second has
+    7|       |/// three moves to try, ticked off as the user makes them. It opens at launch while Accessibility
+    8|       |/// permission is missing, from Welcome… and Check Setup… in the menu, and when Arbor is opened again.
+    9|       |///
+   10|       |/// What it says, and when it turns the page, is decided by an `OnboardingSession`; this file lays the
+   11|       |/// session's model out, asks it to look at the Mac again once a second, and reports the buttons.
+   12|       |@MainActor
+   13|       |final class OnboardingWindow: NSObject, NSWindowDelegate {
+   14|       |  private var session: OnboardingSession?
+   15|       |  private let onButton: @MainActor (OnboardingModel.Row.ID) -> Void
+   16|       |  private let onLogin: @MainActor () -> Void
+   17|      0|  private let icon = ArborArtwork.appIcon(side: 128)
+   18|      0|  private let mark = ArborArtwork.menuBarIcon()
+   19|       |  private var window: NSPanel?
+   20|       |  private var content: NSHostingView<OnboardingView>?
+   21|       |  private var timer: Timer?
+   22|       |  /// It has gone to the side for the three moves, in this showing. From then on it stays where it is put.
+   23|      0|  private var isAside = false
+   24|       |
+   25|       |  /// - Parameters:
+   26|       |  ///   - onButton: a row's button was clicked.
+   27|       |  ///   - onLogin: the Open at Login box was clicked.
+   28|       |  init(
+   29|       |    controller: Controller, onButton: @escaping @MainActor (OnboardingModel.Row.ID) -> Void,
+   30|       |    onLogin: @escaping @MainActor () -> Void
+   31|      0|  ) {
+   32|      0|    self.onButton = onButton
+   33|      0|    self.onLogin = onLogin
+   34|      0|    super.init()
+   35|      0|    session = OnboardingSession(controller: controller) { [weak self] _ in self?.render() }
+   36|      0|  }
+   37|       |
+   38|       |  /// Opens the window on `page`, or turns it to that page and brings it to the front.
+   39|       |  /// - Parameter page: nil for no page in particular: an open window stays as it is, a new one starts at the first.
+   40|      0|  func show(_ page: OnboardingFlow.Page?) {
+   41|      0|    guard let session else { return }
+   42|      0|    let window = self.window ?? makeWindow(session)
+   43|      0|    self.window = window
+   44|      0|    if window.isVisible {
+   45|      0|      if let page { session.go(to: page) }
+   46|      0|    } else {
+   47|      0|      session.begin(on: page ?? .permissions)
+   48|      0|      isAside = false
+   49|      0|      render()
+   50|      0|      window.center()
+   51|      0|      stepAside()
+   52|      0|    }
+   53|      0|    // In front of everything, without making Arbor the active app (see `makeWindow`).
+   54|      0|    window.orderFrontRegardless()
+   55|      0|    window.makeKey()
+   56|      0|    startTimer()
+   57|      0|  }
+   58|       |
+   59|       |  /// A panel that does not activate Arbor, however it is opened or clicked. The moves on the second
+   60|       |  /// page act on the focused window, which is the focused window of the active app: were that Arbor,
+   61|       |  /// ⌃⌥↩ would find this window, which Arbor does not arrange, and do nothing.
+   62|      0|  private func makeWindow(_ session: OnboardingSession) -> NSPanel {
+   63|      0|    let content = ClickThroughHostingView(rootView: view(session.model))
+   64|      0|    self.content = content
+   65|      0|    let window = WelcomeWindow(
+   66|      0|      contentRect: NSRect(origin: .zero, size: content.fittingSize),
+   67|      0|      styleMask: [.titled, .closable, .nonactivatingPanel], backing: .buffered, defer: false)
+   68|      0|    window.title = "Arbor"
+   69|      0|    window.contentView = content
+   70|      0|    window.hidesOnDeactivate = false
+   71|      0|    window.isFloatingPanel = false
+   72|      0|    // Left open on another of the macOS Spaces it still counts as visible, and would not come when called.
+   73|      0|    window.collectionBehavior = [.moveToActiveSpace]
+   74|      0|    // This object holds the window, and lets go of it after it has closed.
+   75|      0|    window.isReleasedWhenClosed = false
+   76|      0|    window.delegate = self
+   77|      0|    return window
+   78|      0|  }
+   79|       |
+   80|       |  /// - Parameter rowsHeight: the height to give the rows of the first page, which then scroll. Nil lets them
+   81|       |  ///   take what they need.
+   82|      0|  private func view(_ model: OnboardingModel, rowsHeight: CGFloat? = nil) -> OnboardingView {
+   83|      0|    OnboardingView(
+   84|      0|      model: model, icon: icon, mark: mark, rowsHeight: rowsHeight, onButton: onButton,
+   85|      0|      onLogin: { [weak self] in
+   86|      0|        self?.onLogin()
+   87|      0|        self?.session?.refresh()
+   88|      0|      },
+   89|      0|      onPrimary: { [weak self] in
+   90|      0|        if model.page == .permissions {
+   91|      0|          self?.session?.go(to: .firstSteps)
+   92|      0|        } else {
+   93|      0|          self?.window?.close()
+   94|      0|        }
+   95|      0|      },
+   96|      0|      onBack: { [weak self] in self?.session?.go(to: .permissions) })
+   97|      0|  }
+   98|       |
+   99|       |  /// Shows the session's model, and fits the window to it with its title bar staying where it is.
+  100|      0|  private func render() {
+  101|      0|    guard let session, let window, let content else { return }
+  102|      0|    let model = session.model
+  103|      0|    let old = window.frame
+  104|      0|    let visible = (window.screen ?? NSScreen.main)?.visibleFrame
+  105|      0|    // With much to say on a small display the rows scroll, so that the buttons below them stay in reach. Measured on
+  106|      0|    // views of their own: the one on show is set once, or its scroll view would be made anew and jump back to the top
+  107|      0|    // whenever a fact changes.
+  108|      0|    var rowsHeight: CGFloat?
+  109|      0|    if let visible {
+  110|      0|      let available = visible.height - window.frameRect(forContentRect: .zero).height
+  111|      0|      if height(of: view(model)) > available {
+  112|      0|        // What everything but the rows takes, found by giving the rows a known height.
+  113|      0|        let rest = height(of: view(model, rowsHeight: 100)) - 100
+  114|      0|        rowsHeight = max(available - rest, 100)
+  115|      0|      }
+  116|      0|    }
+  117|      0|    content.rootView = view(model, rowsHeight: rowsHeight)
+  118|      0|    content.layoutSubtreeIfNeeded()
+  119|      0|    var frame = window.frameRect(forContentRect: NSRect(origin: .zero, size: content.fittingSize))
+  120|      0|    frame.origin = NSPoint(x: old.minX, y: old.maxY - frame.height)
+  121|      0|    // Growing downward must not push the buttons under the Dock.
+  122|      0|    if let visible, frame.minY < visible.minY { frame.origin.y = visible.minY }
+  123|      0|    if frame != old { window.setFrame(frame, display: true) }
+  124|      0|    // The moves are made in other apps' windows, one of which then fills the display: stay above them.
+  125|      0|    window.level = model.page == .firstSteps ? .floating : .normal
+  126|      0|    if window.isVisible { stepAside() }
+  127|      0|  }
+  128|       |
+  129|       |  /// The first move is a drag to a screen edge, and most people take the left. So for the three moves the window waits at the
+  130|       |  /// right, where it covers neither that edge nor what docks there.
+  131|      0|  private func stepAside() {
+  132|      0|    guard !isAside, let window, session?.model.page == .firstSteps,
+  133|      0|      let visible = (window.screen ?? NSScreen.main)?.visibleFrame
+  134|      0|    else { return }
+  135|      0|    isAside = true
+  136|      0|    var frame = window.frame
+  137|      0|    frame.origin.x = visible.maxX - frame.width - 24
+  138|      0|    window.setFrame(frame, display: true)
+  139|      0|  }
+  140|       |
+  141|      0|  private func height(of view: OnboardingView) -> CGFloat { NSHostingView(rootView: view).fittingSize.height }
+  142|       |
+  143|       |  // MARK: Staying current
+  144|       |
+  145|      0|  private func startTimer() {
+  146|      0|    guard timer == nil else { return }
+  147|      0|    let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+  148|      0|      MainActor.assumeIsolated { self?.session?.refresh() }
+  149|      0|    }
+  150|      0|    // Common modes, so that it goes on while a menu is open or the window is dragged.
+  151|      0|    RunLoop.main.add(timer, forMode: .common)
+  152|      0|    self.timer = timer
+  153|      0|  }
+  154|       |
+  155|      0|  func windowWillClose(_ notification: Notification) {
+  156|      0|    timer?.invalidate()
+  157|      0|    timer = nil
+  158|      0|    session?.end()
+  159|      0|    // After AppKit has finished closing it.
+  160|      0|    DispatchQueue.main.async { [weak self] in self?.releaseClosedWindow() }
+  161|      0|  }
+  162|       |
+  163|      0|  private func releaseClosedWindow() {
+  164|      0|    guard let window, !window.isVisible else { return }  // opened again in the meantime
+  165|      0|    window.delegate = nil
+  166|      0|    window.contentView = nil
+  167|      0|    self.window = nil
+  168|      0|    content = nil
+  169|      0|  }
+  170|       |}
+  171|       |
+  172|       |/// Buttons answer the first click even while another window has the keyboard.
+  173|       |private final class ClickThroughHostingView<Content: View>: NSHostingView<Content> {
+  174|      0|  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+  175|       |}
+  176|       |
+  177|       |/// Arbor has no main menu to give ⌘W to its windows.
+  178|       |private final class WelcomeWindow: NSPanel {
+  179|      0|  override func performKeyEquivalent(with event: NSEvent) -> Bool {
+  180|      0|    if event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .command,
+  181|      0|      event.charactersIgnoringModifiers == "w"
+  182|      0|    {
+  183|      0|      performClose(nil)
+  184|      0|      return true
+  185|      0|    }
+  186|      0|    return super.performKeyEquivalent(with: event)
+  187|      0|  }
+  188|       |}
+  189|       |
+  190|       |struct OnboardingView: View {
+  191|       |  let model: OnboardingModel
+  192|       |  let icon: NSImage
+  193|       |  /// Arbor's mark as the menu bar shows it.
+  194|       |  let mark: NSImage
+  195|       |  let rowsHeight: CGFloat?
+  196|       |  let onButton: @MainActor (OnboardingModel.Row.ID) -> Void
+  197|       |  let onLogin: @MainActor () -> Void
+  198|       |  let onPrimary: @MainActor () -> Void
+  199|       |  let onBack: @MainActor () -> Void
+  200|       |
+  201|      0|  var body: some View {
+  202|      0|    VStack(alignment: .leading, spacing: 20) {
+  203|      0|      header
+  204|      0|      if model.page == .permissions {
+  205|      0|        if let rowsHeight {
+  206|      0|          ScrollView { rows }
+  207|      0|            .frame(height: rowsHeight)
+  208|      0|        } else {
+  209|      0|          rows
+  210|      0|        }
+  211|      0|      } else {
+  212|      0|        steps
+  213|      0|        waysBack
+  214|      0|        loginBox
+  215|      0|      }
+  216|      0|      footer
+  217|      0|    }
+  218|      0|    .padding(24)
+  219|      0|    .frame(width: 560)
+  220|      0|  }
+  221|       |
+  222|      0|  private var header: some View {
+  223|      0|    HStack(alignment: .center, spacing: 14) {
+  224|      0|      Image(nsImage: icon)
+  225|      0|        .resizable()
+  226|      0|        .frame(width: 76, height: 76)
+  227|      0|        .accessibilityHidden(true)
+  228|      0|      VStack(alignment: .leading, spacing: 4) {
+  229|      0|        Text(model.title)
+  230|      0|          .font(.title.bold())
+  231|      0|        Text(model.summary)
+  232|      0|          .foregroundStyle(.secondary)
+  233|      0|          .fixedSize(horizontal: false, vertical: true)
+  234|      0|      }
+  235|      0|    }
+  236|      0|  }
+  237|       |
+  238|       |  // MARK: The first page
+  239|       |
+  240|      0|  private var rows: some View {
+  241|      0|    VStack(alignment: .leading, spacing: 0) {
+  242|      0|      ForEach(model.rows) { row in
+  243|      0|        rowView(row)
+  244|      0|        if row.id != model.rows.last?.id {
+  245|      0|          Divider().padding(.leading, 46)
+  246|      0|        }
+  247|      0|      }
+  248|      0|    }
+  249|      0|    .modifier(Box())
+  250|      0|  }
+  251|       |
+  252|      0|  private func rowView(_ row: OnboardingModel.Row) -> some View {
+  253|      0|    HStack(alignment: .firstTextBaseline, spacing: 10) {
+  254|      0|      Image(systemName: symbol(for: row.state))
+  255|      0|        .font(.system(size: 15))
+  256|      0|        .foregroundStyle(colour(for: row.state))
+  257|      0|        .frame(width: 24)
+  258|      0|        .accessibilityLabel(row.status)
+  259|      0|      VStack(alignment: .leading, spacing: 4) {
+  260|      0|        // The button shares the title's line, so that the text below has the whole width.
+  261|      0|        HStack(alignment: .firstTextBaseline, spacing: 6) {
+  262|      0|          Text(row.title)
+  263|      0|            .font(.headline)
+  264|      0|          Text(row.importance)
+  265|      0|            .font(.caption)
+  266|      0|            .foregroundStyle(.secondary)
+  267|      0|          Spacer(minLength: 8)
+  268|      0|          if let title = row.button {
+  269|      0|            if row.state == .required {
+  270|      0|              Button(title) { onButton(row.id) }
+  271|      0|                .buttonStyle(.borderedProminent)
+  272|      0|            } else {
+  273|      0|              Button(title) { onButton(row.id) }
+  274|      0|            }
+  275|      0|          }
+  276|      0|        }
+  277|      0|        if !row.detail.isEmpty {
+  278|      0|          Text(row.detail)
+  279|      0|            .font(.callout)
+  280|      0|            .foregroundStyle(.secondary)
+  281|      0|            .fixedSize(horizontal: false, vertical: true)
+  282|      0|        }
+  283|      0|        ForEach(row.points, id: \.self) { point in
+  284|      0|          HStack(alignment: .firstTextBaseline, spacing: 6) {
+  285|      0|            Text("•")
+  286|      0|              .foregroundStyle(.secondary)
+  287|      0|            Text(point)
+  288|      0|              .font(.callout)
+  289|      0|              .foregroundStyle(.secondary)
+  290|      0|              .fixedSize(horizontal: false, vertical: true)
+  291|      0|          }
+  292|      0|        }
+  293|      0|      }
+  294|      0|    }
+  295|      0|    .padding(12)
+  296|      0|  }
+  297|       |
+  298|      0|  private func symbol(for state: OnboardingModel.Row.State) -> String {
+  299|      0|    switch state {
+  300|      0|    case .done: "checkmark.circle.fill"
+  301|      0|    case .required: "exclamationmark.circle.fill"
+  302|      0|    case .recommended: "exclamationmark.triangle.fill"
+  303|      0|    case .optional: "circle"
+  304|      0|    case .note: "info.circle"
+  305|      0|    }
+  306|      0|  }
+  307|       |
+  308|      0|  private func colour(for state: OnboardingModel.Row.State) -> Color {
+  309|      0|    switch state {
+  310|      0|    case .done: .green
+  311|      0|    case .required: .red
+  312|      0|    case .recommended: .orange
+  313|      0|    case .optional, .note: .secondary
+  314|      0|    }
+  315|      0|  }
+  316|       |
+  317|       |  // MARK: The second page
+  318|       |
+  319|      0|  private var steps: some View {
+  320|      0|    VStack(alignment: .leading, spacing: 0) {
+  321|      0|      ForEach(model.steps) { step in
+  322|      0|        HStack(alignment: .firstTextBaseline, spacing: 10) {
+  323|      0|          Image(systemName: step.isDone ? "checkmark.circle.fill" : "circle")
+  324|      0|            .font(.system(size: 15))
+  325|      0|            .foregroundStyle(step.isDone ? Color.green : Color.secondary)
+  326|      0|            .frame(width: 24)
+  327|      0|            .accessibilityLabel(step.isDone ? "Done" : "Not done yet")
+  328|      0|          VStack(alignment: .leading, spacing: 3) {
+  329|      0|            Text(step.lead)
+  330|      0|              .font(.headline)
+  331|      0|            Text(step.text)
+  332|      0|              .font(.callout)
+  333|      0|              .foregroundStyle(.secondary)
+  334|      0|              .fixedSize(horizontal: false, vertical: true)
+  335|      0|          }
+  336|      0|          Spacer(minLength: 0)
+  337|      0|        }
+  338|      0|        .padding(12)
+  339|      0|        if step.id != model.steps.last?.id {
+  340|      0|          Divider().padding(.leading, 46)
+  341|      0|        }
+  342|      0|      }
+  343|      0|    }
+  344|      0|    .modifier(Box())
+  345|      0|  }
+  346|       |
+  347|      0|  private var waysBack: some View {
+  348|      0|    VStack(alignment: .leading, spacing: 5) {
+  349|      0|      Text(model.waysBackTitle)
+  350|      0|        .font(.headline)
+  351|      0|      ForEach(model.waysBack, id: \.self) { way in
+  352|      0|        HStack(alignment: .firstTextBaseline, spacing: 8) {
+  353|      0|          Text("•")
+  354|      0|            .foregroundStyle(.secondary)
+  355|      0|          Text(way)
+  356|      0|            .font(.callout)
+  357|      0|            .fixedSize(horizontal: false, vertical: true)
+  358|      0|        }
+  359|      0|      }
+  360|      0|    }
+  361|      0|    .padding(.horizontal, 12)
+  362|      0|  }
+  363|       |
+  364|       |  /// A tick box in all but name: a real one wants a binding, and the state is macOS's, not this view's.
+  365|      0|  @ViewBuilder private var loginBox: some View {
+  366|      0|    if let isOn = model.opensAtLogin {
+  367|      0|      Button {
+  368|      0|        onLogin()
+  369|      0|      } label: {
+  370|      0|        Label(model.loginTitle, systemImage: isOn ? "checkmark.square.fill" : "square")
+  371|      0|      }
+  372|      0|      .buttonStyle(.plain)
+  373|      0|      .padding(.horizontal, 12)
+  374|      0|      .accessibilityValue(isOn ? "On" : "Off")
+  375|      0|    }
+  376|      0|  }
+  377|       |
+  378|       |  // MARK: Both
+  379|       |
+  380|      0|  private var footer: some View {
+  381|      0|    HStack(alignment: .center, spacing: 10) {
+  382|      0|      if model.footnoteShowsMark {
+  383|      0|        Image(nsImage: mark)
+  384|      0|          .renderingMode(.template)
+  385|      0|          .foregroundStyle(.secondary)
+  386|      0|          .accessibilityHidden(true)
+  387|      0|      }
+  388|      0|      Text(model.footnote)
+  389|      0|        .font(.caption)
+  390|      0|        .foregroundStyle(.secondary)
+  391|      0|        .fixedSize(horizontal: false, vertical: true)
+  392|      0|      Spacer(minLength: 12)
+  393|      0|      if let back = model.backButton {
+  394|      0|        Button(back) { onBack() }
+  395|      0|      }
+  396|      0|      Button(model.primaryButton) { onPrimary() }
+  397|      0|        .keyboardShortcut(.defaultAction)
+  398|      0|        .disabled(!model.isPrimaryEnabled)
+  399|      0|    }
+  400|      0|  }
+  401|       |}
+  402|       |
+  403|       |/// The faintly shaded box with a hairline around it that groups rows, as in System Settings.
+  404|       |private struct Box: ViewModifier {
+  405|      0|  func body(content: Content) -> some View {
+  406|      0|    content
+  407|      0|      .background(RoundedRectangle(cornerRadius: 10).fill(Color.primary.opacity(0.035)))
+  408|      0|      .overlay(RoundedRectangle(cornerRadius: 10).stroke(Color.primary.opacity(0.08), lineWidth: 1))
+  409|      0|  }
+  410|       |}
+

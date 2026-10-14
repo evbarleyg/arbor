@@ -1,0 +1,248 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/StatusMenu.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |
+    4|       |/// The menu bar item (docs/features/F10-menu-bar-and-onboarding.md).
+    5|       |///
+    6|       |/// With `menuBarControls` it shows a row of buttons: back, forward, the Desktop, everything and each
+    7|       |/// saved view, drawn as one image from a `MenuBarModel`. A click on a button runs its command; a right
+    8|       |/// click, or a click with ⌃ or ⌥, opens the menu. Otherwise, and while Arbor is not arranging windows (it waits
+    9|       |/// for permission, or is paused), it is a single icon that opens the menu. What is shown and what a click means
+   10|       |/// are decided in ArborCore and the controller; this class draws the one and reports the other.
+   11|       |///
+   12|       |/// The menu is rebuilt each time it opens, so it reflects the current state (the display under
+   13|       |/// the pointer, the focused app, saved views, permission).
+   14|       |@MainActor
+   15|       |final class StatusMenu: NSObject, NSMenuDelegate {
+   16|       |  private let item: NSStatusItem
+   17|       |  private unowned let app: ArborApp
+   18|      0|  private let menu = NSMenu()
+   19|       |  private var watcher: MenuBarWatcher?
+   20|       |  /// The buttons in the item's image, which clicks are read against. Nil while it is a single icon.
+   21|       |  private var layout: MenuBarLayout?
+   22|      0|  private var menuIsOpen = false
+   23|       |  /// What the single icon's tooltip says.
+   24|      0|  private var iconLabel = "Arbor"
+   25|      0|  private var wakeObservers: [any NSObjectProtocol] = []
+   26|       |
+   27|      0|  init(app: ArborApp) {
+   28|      0|    self.app = app
+   29|      0|    item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+   30|      0|    super.init()
+   31|      0|    menu.delegate = self
+   32|      0|    menu.autoenablesItems = false
+   33|      0|    if let button = item.button {
+   34|      0|      button.imagePosition = .imageOnly
+   35|      0|      button.target = self
+   36|      0|      button.action = #selector(clicked(_:))
+   37|      0|      button.sendAction(on: [.leftMouseUp, .rightMouseUp])
+   38|      0|    }
+   39|      0|    let watcher = MenuBarWatcher(
+   40|      0|      controller: app.controller, isShowing: { [weak self] in self?.isShowing }, onChange: { [weak self] in self?.show($0) })
+   41|      0|    self.watcher = watcher
+   42|      0|    show(watcher.model)
+   43|      0|    // Asleep, the displays show nothing, and neither does a session somebody else has switched away from: an item drawn just
+   44|      0|    // then would be taken for one that found no room.
+   45|      0|    for name in [NSWorkspace.screensDidWakeNotification, NSWorkspace.sessionDidBecomeActiveNotification] {
+   46|      0|      wakeObservers.append(
+   47|      0|        NSWorkspace.shared.notificationCenter.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+   48|      0|          MainActor.assumeIsolated { self?.watcher?.tryAgain() }
+   49|      0|        })
+   50|      0|    }
+   51|      0|  }
+   52|       |
+   53|       |  // MARK: The item
+   54|       |
+   55|       |  /// Whether macOS shows the item, which it silently leaves out of a menu bar that is too full. Nil where that cannot be
+   56|       |  /// told: a menu bar that hides itself, or a full screen Space, shows no item however much room there is.
+   57|      0|  private var isShowing: Bool? {
+   58|      0|    guard let window = item.button?.window, let screen = window.screen ?? NSScreen.main,
+   59|      0|      screen.frame.maxY - screen.visibleFrame.maxY > 1
+   60|      0|    else { return nil }
+   61|      0|    return window.occlusionState.contains(.visible)
+   62|      0|  }
+   63|       |
+   64|      0|  private func show(_ model: MenuBarModel) {
+   65|      0|    guard let button = item.button else { return }
+   66|      0|    if model.buttons.isEmpty {
+   67|      0|      layout = nil
+   68|      0|      button.image = ArborArtwork.menuBarIcon(model.icon.glyph)
+   69|      0|    } else {
+   70|      0|      let layout = MenuBarLayout(model)
+   71|      0|      self.layout = layout
+   72|      0|      button.image = ArborArtwork.menuBarControls(layout, fill: model.fill)
+   73|      0|    }
+   74|      0|    button.appearsDisabled = model.icon.isDimmed
+   75|      0|    button.setAccessibilityLabel(model.icon.label)
+   76|      0|    iconLabel = model.icon.label
+   77|      0|    attachMenu()
+   78|      0|    // Once the item has taken the width of its new image.
+   79|      0|    DispatchQueue.main.async { [weak self] in self?.placeToolTips() }
+   80|      0|  }
+   81|       |
+   82|       |  /// An item with a menu of its own opens it on every click and never calls `clicked`: right for the single
+   83|       |  /// icon, wrong for the buttons. Left alone while the menu is open, whichever way it was opened.
+   84|      0|  private func attachMenu() {
+   85|      0|    guard !menuIsOpen else { return }
+   86|      0|    item.menu = layout == nil ? menu : nil
+   87|      0|  }
+   88|       |
+   89|       |  /// Where the image starts in the button, which centres it and is a little wider.
+   90|      0|  private func imageOrigin(in button: NSStatusBarButton, layout: MenuBarLayout) -> CGFloat {
+   91|      0|    (button.bounds.width - layout.size.width) / 2
+   92|      0|  }
+   93|       |
+   94|       |  /// One tooltip per button of the image.
+   95|      0|  private func placeToolTips() {
+   96|      0|    guard let button = item.button else { return }
+   97|      0|    button.removeAllToolTips()
+   98|      0|    guard let layout else {
+   99|      0|      button.toolTip = iconLabel
+  100|      0|      return
+  101|      0|    }
+  102|      0|    button.toolTip = nil
+  103|      0|    let origin = imageOrigin(in: button, layout: layout)
+  104|      0|    for cell in layout.cells {
+  105|      0|      button.addToolTip(
+  106|      0|        NSRect(x: origin + cell.minX, y: 0, width: cell.width, height: button.bounds.height), owner: self, userData: nil)
+  107|      0|    }
+  108|      0|  }
+  109|       |
+  110|       |  /// AppKit asks the owner of a tooltip rectangle for its text under this name.
+  111|       |  @objc(view:stringForToolTip:point:userData:)
+  112|       |  func view(
+  113|       |    _ view: NSView, stringForToolTip tag: NSView.ToolTipTag, point: NSPoint, userData: UnsafeMutableRawPointer?
+  114|      0|  ) -> String {
+  115|      0|    guard let button = item.button, let layout else { return "Arbor" }
+  116|      0|    return layout.button(atX: point.x - imageOrigin(in: button, layout: layout))?.tooltip ?? "Arbor"
+  117|      0|  }
+  118|       |
+  119|      0|  @objc private func clicked(_ sender: Any?) {
+  120|      0|    guard let button = item.button, let layout else { return openMenu() }
+  121|      0|    // Anything but a mouse click (VoiceOver pressing the item, say) has no position, so it gets the menu.
+  122|      0|    guard let event = NSApp.currentEvent, event.type == .leftMouseUp || event.type == .rightMouseUp,
+  123|      0|      let x = position(of: event, in: button)
+  124|      0|    else { return openMenu() }
+  125|      0|    let secondary = event.type == .rightMouseUp || !event.modifierFlags.isDisjoint(with: [.control, .option])
+  126|      0|
+  127|      0|    switch layout.click(atX: x - imageOrigin(in: button, layout: layout), secondary: secondary) {
+  128|      0|    case .menu:
+  129|      0|      openMenu()
+  130|      0|    case .nothing:
+  131|      0|      break
+  132|      0|    case .run(let command):
+  133|      0|      app.handle(command)
+  134|      0|    }
+  135|      0|    // The pointer may have come from another display since the item was drawn, and a command that
+  136|      0|    // failed reports no change: show this display's buttons either way.
+  137|      0|    watcher?.update()
+  138|      0|  }
+  139|       |
+  140|       |  /// How far from the button's left edge a click was. The event says, in the coordinates of the
+  141|       |  /// item's window. Should that fall outside the button (the item is shown on every display, and by another
+  142|       |  /// process since macOS 26), the pointer's place on screen against the button's is the second opinion.
+  143|      0|  private func position(of event: NSEvent, in button: NSStatusBarButton) -> CGFloat? {
+  144|      0|    let local = button.convert(event.locationInWindow, from: nil).x
+  145|      0|    var onScreen: CGFloat?
+  146|      0|    if let window = button.window {
+  147|      0|      onScreen = NSEvent.mouseLocation.x - window.convertToScreen(button.convert(button.bounds, to: nil)).minX
+  148|      0|    }
+  149|      0|    Log.debug(
+  150|      0|      "menu bar click: x \(local) by the event, \(onScreen.map { "\($0)" } ?? "unknown") by the screen, "
+  151|      0|        + "button \(button.bounds.width) wide")
+  152|      0|    let width = -1...(button.bounds.width + 1)
+  153|      0|    if width.contains(local) { return local }
+  154|      0|    if let onScreen, width.contains(onScreen) { return onScreen }
+  155|      0|    return nil
+  156|      0|  }
+  157|       |
+  158|       |  /// Pops the menu up under the item, as if it were the item's own, for as long as it is open.
+  159|      0|  private func openMenu() {
+  160|      0|    item.menu = menu
+  161|      0|    item.button?.performClick(nil)
+  162|      0|    attachMenu()
+  163|      0|  }
+  164|       |
+  165|       |  // MARK: The menu
+  166|       |
+  167|      0|  func menuWillOpen(_ menu: NSMenu) {
+  168|      0|    menuIsOpen = true
+  169|      0|  }
+  170|       |
+  171|      0|  func menuDidClose(_ menu: NSMenu) {
+  172|      0|    menuIsOpen = false
+  173|      0|    attachMenu()
+  174|      0|    // A single icon opens its menu without `clicked` ever running. If it was drawn for another display, where nothing
+  175|      0|    // is docked, this is the moment to show the buttons of the one the pointer is on now.
+  176|      0|    watcher?.update()
+  177|      0|  }
+  178|       |
+  179|       |  /// What is in the menu is the controller's business (Controller+Menu.swift); this only shows it.
+  180|      0|  func menuNeedsUpdate(_ menu: NSMenu) {
+  181|      0|    fill(menu, with: app.controller.menuModel().sections)
+  182|      0|  }
+  183|       |
+  184|      0|  private func fill(_ menu: NSMenu, with sections: [MenuModel.Section]) {
+  185|      0|    menu.removeAllItems()
+  186|      0|    for (index, section) in sections.enumerated() {
+  187|      0|      if index > 0 { menu.addItem(.separator()) }
+  188|      0|      if let title = section.title { menu.addItem(.sectionHeader(title: title)) }
+  189|      0|      for item in section.items { menu.addItem(menuItem(item)) }
+  190|      0|    }
+  191|      0|  }
+  192|       |
+  193|      0|  private func menuItem(_ model: MenuModel.Item) -> NSMenuItem {
+  194|      0|    let item = NSMenuItem(title: model.title, action: nil, keyEquivalent: "")
+  195|      0|    switch model.action {
+  196|      0|    case .run(let command):
+  197|      0|      choose(item) { [weak self] in self?.app.handle(command) }
+  198|      0|    case .app(let action):
+  199|      0|      choose(item) { [weak self] in self?.app.carryOut(action) }
+  200|      0|    case .submenu(let sections):
+  201|      0|      let submenu = NSMenu()
+  202|      0|      submenu.autoenablesItems = false
+  203|      0|      fill(submenu, with: sections)
+  204|      0|      item.submenu = submenu
+  205|      0|    case .text:
+  206|      0|      break
+  207|      0|    }
+  208|      0|    // Only for show where it is one of Arbor's own: Carbon takes those keys before any menu sees them.
+  209|      0|    if let shortcut = model.shortcut {
+  210|      0|      item.keyEquivalent = shortcut.keyEquivalent
+  211|      0|      item.keyEquivalentModifierMask = shortcut.modifiers.eventFlags
+  212|      0|    }
+  213|      0|    item.isEnabled = model.isEnabled
+  214|      0|    item.state = model.isTicked ? .on : .off
+  215|      0|    item.toolTip = model.help
+  216|      0|    return item
+  217|      0|  }
+  218|       |
+  219|      0|  private func choose(_ item: NSMenuItem, _ perform: @escaping @MainActor () -> Void) {
+  220|      0|    let target = MenuAction(perform)
+  221|      0|    item.target = target
+  222|      0|    item.action = #selector(MenuAction.run)
+  223|      0|    item.representedObject = target  // keeps the target alive with the item
+  224|      0|  }
+  225|       |}
+  226|       |
+  227|       |extension KeyChord.Modifiers {
+  228|       |  /// The same modifiers as AppKit names them.
+  229|      0|  fileprivate var eventFlags: NSEvent.ModifierFlags {
+  230|      0|    var flags: NSEvent.ModifierFlags = []
+  231|      0|    if contains(.command) { flags.insert(.command) }
+  232|      0|    if contains(.shift) { flags.insert(.shift) }
+  233|      0|    if contains(.option) { flags.insert(.option) }
+  234|      0|    if contains(.control) { flags.insert(.control) }
+  235|      0|    return flags
+  236|      0|  }
+  237|       |}
+  238|       |
+  239|       |@MainActor
+  240|       |private final class MenuAction: NSObject {
+  241|       |  private let perform: @MainActor () -> Void
+  242|      0|  init(_ perform: @escaping @MainActor () -> Void) { self.perform = perform }
+  243|      0|  @objc func run() { perform() }
+  244|       |}
+

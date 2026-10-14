@@ -1,0 +1,60 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/App/ArborEnvironment.swift:
+    1|       |import Foundation
+    2|       |
+    3|       |/// Launch options read from environment variables. The end-to-end runner and
+    4|       |/// agents use these to run Arbor in isolation.
+    5|       |///
+    6|       |/// - `ARBOR_HOME`, `ARBOR_SOCKET`: see `ArborPaths`.
+    7|       |/// - `ARBOR_ONLY_PIDS=123,456`: arrange only these processes' windows.
+    8|       |/// - `ARBOR_NO_HOTKEYS=1`: do not register global shortcuts or install the
+    9|       |///   pinch and rectangle event taps.
+   10|       |/// - `ARBOR_NO_STATUS_ITEM=1`: no menu bar item.
+   11|       |/// - `ARBOR_NO_PROMPT=1`: do not open the welcome window at launch when Accessibility permission is
+   12|       |///   missing. (`check-setup` and `welcome` still open it.)
+   13|       |/// - `ARBOR_DEBUG=1`: debug logging.
+   14|       |/// - `ARBOR_NO_WATCHDOG=1`: do not start Arbor again if it ends without quitting (`Watchdog`).
+   15|       |/// - `ARBOR_RESCUE=1`: set state.json aside, bring every window into view, and quit. The watchdog
+   16|       |///   asks for this when Arbor keeps crashing; it also works by hand.
+   17|       |/// - `ARBOR_RESTARTS`: the watchdog's note to the next one (`RestartPolicy`). It also tells Arbor that no person
+   18|       |///   started it, so a pause that was on goes on.
+   19|       |/// - `ARBOR_APPEARANCE=dark` or `light`: draw Arbor's own windows, panels and menu that way whatever the system's
+   20|       |///   appearance, so that both can be looked at without changing a setting of somebody's Mac.
+   21|       |/// - `ARBOR_NO_PICTURES=1`: take no pictures of windows, as without Screen Recording permission.
+   22|       |/// - `ARBOR_RELEASES_URL=http://127.0.0.1:8000/latest.json`: ask there instead of GitHub's releases API.
+   23|       |/// - `ARBOR_NO_OPENING=1`: open no app (`summon` with no window to bring). An Arbor under test on somebody's Mac knows only
+   24|       |///   its test windows, so to it every app of theirs is one that has to be opened.
+   25|       |public struct ArborEnvironment: Sendable {
+   26|       |  public var onlyPIDs: Set<Int32>?
+   27|       |  public var noHotkeys: Bool
+   28|       |  public var noStatusItem: Bool
+   29|       |  public var noPrompt: Bool
+   30|       |  public var noWatchdog: Bool
+   31|       |  public var rescue: Bool
+   32|       |  /// Nil follows the system.
+   33|       |  public var darkAppearance: Bool?
+   34|       |  public var noPictures: Bool
+   35|       |  public var releasesURL: String?
+   36|       |  public var restarted: Bool
+   37|       |  public var noOpening: Bool
+   38|       |
+   39|      8|  public static var current: ArborEnvironment {
+   40|      8|    let env = ProcessInfo.processInfo.environment
+   41|     56|    func flag(_ name: String) -> Bool {
+   42|     56|      guard let value = env[name]?.lowercased() else { return false }
+   43|     32|      return !["", "0", "false", "no"].contains(value)
+   44|     56|    }
+   45|      8|    let pids = env["ARBOR_ONLY_PIDS"].map { list in
+   46|      9|      Set(list.split(separator: ",").compactMap { Int32($0.trimmingCharacters(in: .whitespaces)) })
+   47|      8|    }
+   48|      8|    return ArborEnvironment(
+   49|      8|      onlyPIDs: pids, noHotkeys: flag("ARBOR_NO_HOTKEYS"), noStatusItem: flag("ARBOR_NO_STATUS_ITEM"),
+   50|      8|      noPrompt: flag("ARBOR_NO_PROMPT"), noWatchdog: flag("ARBOR_NO_WATCHDOG"), rescue: flag("ARBOR_RESCUE"),
+   51|      8|      darkAppearance: ["dark": true, "light": false][env["ARBOR_APPEARANCE"]?.lowercased() ?? ""],
+   52|      8|      noPictures: flag("ARBOR_NO_PICTURES"),
+   53|      8|      releasesURL: env["ARBOR_RELEASES_URL"].flatMap { $0.isEmpty ? nil : $0 },
+   54|      8|      restarted: !(env["ARBOR_RESTARTS"] ?? "").isEmpty, noOpening: flag("ARBOR_NO_OPENING"))
+   55|      8|  }
+   56|       |}
+

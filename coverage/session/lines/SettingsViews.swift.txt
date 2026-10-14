@@ -1,0 +1,525 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/SettingsViews.swift:
+    1|       |import ArborCore
+    2|       |import Foundation
+    3|       |import SwiftUI
+    4|       |
+    5|       |// The settings window's frame and the panes made from the schema. Each view draws what
+    6|       |// `SettingsPanelModel` says and calls one of its methods; none decides anything. They are kept small, with
+    7|       |// explicit types, because SwiftUI's errors are expensive where no compiler is at hand. The accessibility identifiers
+    8|       |// are for scripts, which find a control by them (scripts/mac-shell/shots-F12.sh): a setting's key, with `.slider` or
+    9|       |// `.field` where a setting has two controls.
+   10|       |
+   11|       |struct SettingsRootView: View {
+   12|       |  @ObservedObject var store: SettingsPanelStore
+   13|       |
+   14|      0|  var body: some View {
+   15|      0|    HStack(spacing: 0) {
+   16|      0|      SettingsSidebar(store: store)
+   17|      0|        .frame(width: 200)
+   18|      0|      Divider()
+   19|      0|      SettingsDetail(store: store)
+   20|      0|        .frame(maxWidth: .infinity, maxHeight: .infinity)
+   21|      0|    }
+   22|      0|    // The ideal size is said outright: a window takes its size from what it hosts, and a form's own ideal height is that
+   23|      0|    // of everything in it, forty shortcuts, say.
+   24|      0|    .frame(minWidth: 720, idealWidth: 780, maxWidth: .infinity, minHeight: 440, idealHeight: 540, maxHeight: .infinity)
+   25|      0|  }
+   26|       |}
+   27|       |
+   28|       |struct SettingsSidebar: View {
+   29|       |  @ObservedObject var store: SettingsPanelStore
+   30|       |
+   31|      0|  var body: some View {
+   32|      0|    VStack(spacing: 0) {
+   33|      0|      TextField("Search", text: search)
+   34|      0|        .textFieldStyle(.roundedBorder)
+   35|      0|        .accessibilityIdentifier("search")
+   36|      0|        .accessibilityLabel("Search the settings")
+   37|      0|        .padding(10)
+   38|      0|      List(selection: selection) {
+   39|      0|        ForEach(store.model.panes) { pane in
+   40|      0|          Label(pane.title, systemImage: pane.symbol)
+   41|      0|            .tag(pane)
+   42|      0|            .accessibilityIdentifier("pane.\(pane.word)")
+   43|      0|        }
+   44|      0|      }
+   45|      0|      .listStyle(.sidebar)
+   46|      0|      Text(store.model.version)
+   47|      0|        .font(.caption)
+   48|      0|        .foregroundStyle(.secondary)
+   49|      0|        .padding(8)
+   50|      0|    }
+   51|      0|  }
+   52|       |
+   53|      0|  private var search: Binding<String> {
+   54|      0|    Binding<String>(
+   55|      0|      get: { @MainActor in store.model.search },
+   56|      0|      set: { @MainActor new in store.model.search = new })
+   57|      0|  }
+   58|       |
+   59|       |  /// Nothing is selected during a search; choosing a pane ends it.
+   60|      0|  private var selection: Binding<SettingsPanelModel.Pane?> {
+   61|      0|    Binding<SettingsPanelModel.Pane?>(
+   62|      0|      get: { @MainActor in store.model.isSearching ? nil : store.model.pane },
+   63|      0|      set: { @MainActor pane in
+   64|      0|        if let pane { store.model.go(to: pane) }
+   65|      0|      })
+   66|      0|  }
+   67|       |}
+   68|       |
+   69|       |struct SettingsDetail: View {
+   70|       |  @ObservedObject var store: SettingsPanelStore
+   71|       |
+   72|      0|  var body: some View {
+   73|      0|    VStack(spacing: 0) {
+   74|      0|      SettingsFileBanner(store: store)
+   75|      0|      pane
+   76|      0|    }
+   77|      0|  }
+   78|       |
+   79|      0|  @ViewBuilder private var pane: some View {
+   80|      0|    if store.model.isSearching {
+   81|      0|      SettingsSearchResults(store: store)
+   82|      0|    } else {
+   83|      0|      switch store.model.pane {
+   84|      0|      case .section(let section): SettingsSectionPane(store: store, section: section)
+   85|      0|      case .shortcuts: ShortcutsPane(store: store)
+   86|      0|      case .rules: RulesPane(store: store)
+   87|      0|      }
+   88|      0|    }
+   89|      0|  }
+   90|       |}
+   91|       |
+   92|       |/// What is wrong with settings.json, above everything else.
+   93|       |struct SettingsFileBanner: View {
+   94|       |  @ObservedObject var store: SettingsPanelStore
+   95|       |
+   96|      0|  var body: some View {
+   97|      0|    if let problem = store.model.fileProblem {
+   98|      0|      VStack(alignment: .leading, spacing: 6) {
+   99|      0|        Text("settings.json cannot be read")
+  100|      0|          .font(.headline)
+  101|      0|        Text("\(problem). Arbor keeps the settings it had, and changes nothing until the file is mended.")
+  102|      0|          .fixedSize(horizontal: false, vertical: true)
+  103|      0|        if store.model.question == .replaceFile {
+  104|      0|          SettingsQuestionView(store: store, question: .replaceFile)
+  105|      0|        } else {
+  106|      0|          HStack {
+  107|      0|            Button("Open the File") { store.openFile() }
+  108|      0|            Button("Replace It with the Defaults…") { store.model.replaceFileWithDefaults() }
+  109|      0|          }
+  110|      0|        }
+  111|      0|        SettingsErrorText(text: store.model.errors["file"])
+  112|      0|      }
+  113|      0|      .padding(12)
+  114|      0|      .frame(maxWidth: .infinity, alignment: .leading)
+  115|      0|      .background(Color.orange.opacity(0.2))
+  116|      0|    } else if !store.model.valueProblems.isEmpty {
+  117|      0|      VStack(alignment: .leading, spacing: 4) {
+  118|      0|        Text("Some values in settings.json could not be used as written")
+  119|      0|          .font(.headline)
+  120|      0|        // By their place: two lines can say the same.
+  121|      0|        ForEach(Array(store.model.valueProblems.enumerated()), id: \.offset) { _, line in
+  122|      0|          Text(line)
+  123|      0|            .font(.caption)
+  124|      0|            .fixedSize(horizontal: false, vertical: true)
+  125|      0|        }
+  126|      0|      }
+  127|      0|      .padding(12)
+  128|      0|      .frame(maxWidth: .infinity, alignment: .leading)
+  129|      0|      .background(Color.yellow.opacity(0.15))
+  130|      0|    }
+  131|      0|  }
+  132|       |}
+  133|       |
+  134|       |/// What the window asks before it does what cannot be taken back, in the place of the button that was clicked.
+  135|       |struct SettingsQuestionView: View {
+  136|       |  @ObservedObject var store: SettingsPanelStore
+  137|       |  let question: SettingsPanelModel.Question
+  138|       |
+  139|      0|  var body: some View {
+  140|      0|    VStack(alignment: .leading, spacing: 6) {
+  141|      0|      Text(question.text)
+  142|      0|        .fixedSize(horizontal: false, vertical: true)
+  143|      0|      HStack {
+  144|      0|        Button(question.confirmation) { store.model.answer(yes: true) }
+  145|      0|          .accessibilityIdentifier("question.yes")
+  146|      0|        Button("Cancel") { store.model.answer(yes: false) }
+  147|      0|          .accessibilityIdentifier("question.no")
+  148|      0|      }
+  149|      0|    }
+  150|      0|  }
+  151|       |}
+  152|       |
+  153|       |/// Why a change was refused, under the control it was made with.
+  154|       |struct SettingsErrorText: View {
+  155|       |  let text: String?
+  156|       |
+  157|      0|  var body: some View {
+  158|      0|    if let text {
+  159|      0|      Text(text)
+  160|      0|        .font(.caption)
+  161|      0|        .foregroundStyle(.red)
+  162|      0|        .fixedSize(horizontal: false, vertical: true)
+  163|      0|    }
+  164|      0|  }
+  165|       |}
+  166|       |
+  167|       |/// A list of things in settings.json that could not be used, under a pane's own content.
+  168|       |struct SettingsProblemList: View {
+  169|       |  let title: String
+  170|       |  let lines: [String]
+  171|       |
+  172|      0|  var body: some View {
+  173|      0|    if !lines.isEmpty {
+  174|      0|      Section(title) {
+  175|      0|        ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
+  176|      0|          Text(line)
+  177|      0|            .font(.caption)
+  178|      0|            .foregroundStyle(.secondary)
+  179|      0|            .fixedSize(horizontal: false, vertical: true)
+  180|      0|        }
+  181|      0|      }
+  182|      0|    }
+  183|      0|  }
+  184|       |}
+  185|       |
+  186|       |// MARK: A section of the schema
+  187|       |
+  188|       |struct SettingsSectionPane: View {
+  189|       |  @ObservedObject var store: SettingsPanelStore
+  190|       |  let section: SettingsSection
+  191|       |
+  192|      0|  var body: some View {
+  193|      0|    Form {
+  194|      0|      if hasLoginItem || !store.model.rows(in: section).isEmpty {
+  195|      0|        Section {
+  196|      0|          if hasLoginItem {
+  197|      0|            LoginItemRow(store: store)
+  198|      0|          }
+  199|      0|          ForEach(store.model.rows(in: section)) { row in
+  200|      0|            SettingRowView(store: store, row: row)
+  201|      0|          }
+  202|      0|        }
+  203|      0|      }
+  204|      0|      if !store.model.advancedRows(in: section).isEmpty {
+  205|      0|        Section {
+  206|      0|          DisclosureGroup("Advanced", isExpanded: advanced) {
+  207|      0|            ForEach(store.model.advancedRows(in: section)) { row in
+  208|      0|              SettingRowView(store: store, row: row)
+  209|      0|            }
+  210|      0|          }
+  211|      0|        }
+  212|      0|      }
+  213|      0|      if store.model.canRestoreDefaults(in: section) {
+  214|      0|        Section {
+  215|      0|          HStack {
+  216|      0|            SettingsErrorText(text: store.model.errors[SettingsPanelModel.Pane.section(section).id])
+  217|      0|            Spacer()
+  218|      0|            Button("Restore Defaults") { store.model.restoreDefaults(in: section) }
+  219|      0|              .disabled(store.model.changedKeys(in: section).isEmpty)
+  220|      0|          }
+  221|      0|        }
+  222|      0|      }
+  223|      0|    }
+  224|      0|    .formStyle(.grouped)
+  225|      0|  }
+  226|       |
+  227|      0|  private var hasLoginItem: Bool { section == .general && store.model.hasLoginItem }
+  228|       |
+  229|      0|  private var advanced: Binding<Bool> {
+  230|      0|    Binding<Bool>(
+  231|      0|      get: { @MainActor in store.model.openAdvanced.contains(section) },
+  232|      0|      set: { @MainActor new in store.model.setAdvanced(new, in: section) })
+  233|      0|  }
+  234|       |}
+  235|       |
+  236|       |struct SettingsSearchResults: View {
+  237|       |  @ObservedObject var store: SettingsPanelStore
+  238|       |
+  239|      0|  var body: some View {
+  240|      0|    Form {
+  241|      0|      if store.model.found.isEmpty {
+  242|      0|        Text("No setting matches “\(store.model.search)”.")
+  243|      0|          .foregroundStyle(.secondary)
+  244|      0|      }
+  245|      0|      ForEach(store.model.found.sections) { found in
+  246|      0|        Section(found.section.title) {
+  247|      0|          ForEach(found.rows) { row in
+  248|      0|            SettingRowView(store: store, row: row)
+  249|      0|          }
+  250|      0|        }
+  251|      0|      }
+  252|      0|      if !store.model.found.shortcuts.isEmpty {
+  253|      0|        Section("Shortcuts") {
+  254|      0|          ForEach(store.model.found.shortcuts) { row in
+  255|      0|            ShortcutRowView(store: store, row: row)
+  256|      0|          }
+  257|      0|        }
+  258|      0|      }
+  259|      0|      if !store.model.found.panes.isEmpty {
+  260|      0|        Section {
+  261|      0|          ForEach(store.model.found.panes) { pane in
+  262|      0|            Button {
+  263|      0|              store.model.go(to: pane)
+  264|      0|            } label: {
+  265|      0|              Label(pane.title, systemImage: pane.symbol)
+  266|      0|            }
+  267|      0|            .buttonStyle(.link)
+  268|      0|          }
+  269|      0|        }
+  270|      0|      }
+  271|      0|    }
+  272|      0|    .formStyle(.grouped)
+  273|      0|  }
+  274|       |}
+  275|       |
+  276|       |struct LoginItemRow: View {
+  277|       |  @ObservedObject var store: SettingsPanelStore
+  278|       |
+  279|      0|  var body: some View {
+  280|      0|    VStack(alignment: .leading, spacing: 4) {
+  281|      0|      Toggle(isOn: isOn) {
+  282|      0|        SettingLabel(label: "Open at Login", help: "Start Arbor whenever you log in to this Mac.")
+  283|      0|      }
+  284|      0|      .accessibilityIdentifier("login")
+  285|      0|      SettingsErrorText(text: store.model.errors["login"])
+  286|      0|      if store.model.loginItemNeedsApproval {
+  287|      0|        Button("Open Login Items…") { store.openLoginItems() }
+  288|      0|          .controlSize(.small)
+  289|      0|      }
+  290|      0|    }
+  291|      0|  }
+  292|       |
+  293|      0|  private var isOn: Binding<Bool> {
+  294|      0|    Binding<Bool>(
+  295|      0|      get: { @MainActor in store.model.opensAtLogin },
+  296|      0|      set: { @MainActor new in store.model.setOpensAtLogin(new) })
+  297|      0|  }
+  298|       |}
+  299|       |
+  300|       |// MARK: One setting
+  301|       |
+  302|       |struct SettingLabel: View {
+  303|       |  let label: String
+  304|       |  let help: String
+  305|       |
+  306|      0|  var body: some View {
+  307|      0|    VStack(alignment: .leading, spacing: 2) {
+  308|      0|      Text(label)
+  309|      0|      Text(help)
+  310|      0|        .font(.caption)
+  311|      0|        .foregroundStyle(.secondary)
+  312|      0|        .fixedSize(horizontal: false, vertical: true)
+  313|      0|    }
+  314|      0|  }
+  315|       |}
+  316|       |
+  317|       |struct SettingRowView: View {
+  318|       |  @ObservedObject var store: SettingsPanelStore
+  319|       |  let row: SettingsPanelModel.Row
+  320|       |
+  321|      0|  var body: some View {
+  322|      0|    VStack(alignment: .leading, spacing: 4) {
+  323|      0|      control
+  324|      0|      SettingsErrorText(text: row.error)
+  325|      0|    }
+  326|      0|  }
+  327|       |
+  328|      0|  @ViewBuilder private var control: some View {
+  329|      0|    switch row.control {
+  330|      0|    case .toggle(let isOn):
+  331|      0|      ToggleSettingRow(store: store, row: row, isOn: isOn)
+  332|      0|    case .number(let value, let range, let step, let unit):
+  333|      0|      NumberSettingRow(store: store, row: row, value: value, range: range, step: step, unit: unit)
+  334|      0|    case .choice(let value, let choices):
+  335|      0|      ChoiceSettingRow(store: store, row: row, value: value, choices: choices)
+  336|      0|    case .text(let value, let example):
+  337|      0|      TextSettingRow(store: store, row: row, value: value, example: example)
+  338|      0|    case .apps(let listed, let candidates):
+  339|      0|      AppListRow(store: store, row: row, listed: listed, candidates: candidates)
+  340|      0|    case .list(let summary):
+  341|      0|      ListSettingRow(store: store, row: row, summary: summary)
+  342|      0|    }
+  343|      0|  }
+  344|       |}
+  345|       |
+  346|       |struct ToggleSettingRow: View {
+  347|       |  @ObservedObject var store: SettingsPanelStore
+  348|       |  let row: SettingsPanelModel.Row
+  349|       |  let isOn: Bool
+  350|       |
+  351|      0|  var body: some View {
+  352|      0|    Toggle(isOn: binding) {
+  353|      0|      SettingLabel(label: row.label, help: row.help)
+  354|      0|    }
+  355|      0|    .accessibilityIdentifier(row.key)
+  356|      0|  }
+  357|       |
+  358|      0|  private var binding: Binding<Bool> {
+  359|      0|    Binding<Bool>(get: { @MainActor in isOn }, set: { @MainActor new in store.model.set(row.key, to: new) })
+  360|      0|  }
+  361|       |}
+  362|       |
+  363|       |/// A slider and a field. The slider changes the setting when it is let go of, not on the way: every
+  364|       |/// change moves real windows and writes a file.
+  365|       |struct NumberSettingRow: View {
+  366|       |  @ObservedObject var store: SettingsPanelStore
+  367|       |  let row: SettingsPanelModel.Row
+  368|       |  let value: Double
+  369|       |  let range: ClosedRange<Double>
+  370|       |  let step: Double
+  371|       |  let unit: String
+  372|       |  /// Where the slider is while it is held.
+  373|       |  @State private var held: Double?
+  374|      0|  @State private var isHeld = false
+  375|       |  /// What is in the field while it is being edited.
+  376|       |  @State private var typed: String?
+  377|       |  @FocusState private var fieldIsFocused: Bool
+  378|       |
+  379|      0|  var body: some View {
+  380|      0|    LabeledContent {
+  381|      0|      HStack(spacing: 8) {
+  382|      0|        Slider(value: slider, in: range, onEditingChanged: { isHeld in sliderChanged(isHeld) })
+  383|      0|          .frame(width: 150)
+  384|      0|          .accessibilityIdentifier("\(row.key).slider")
+  385|      0|          .accessibilityLabel(row.label)
+  386|      0|        TextField("", text: field)
+  387|      0|          .labelsHidden()
+  388|      0|          .textFieldStyle(.roundedBorder)
+  389|      0|          .multilineTextAlignment(.trailing)
+  390|      0|          .frame(width: 60)
+  391|      0|          .accessibilityIdentifier("\(row.key).field")
+  392|      0|          .accessibilityLabel(unit.isEmpty ? row.label : "\(row.label), \(unit)")
+  393|      0|          .focused($fieldIsFocused)
+  394|      0|          .onSubmit { commitField() }
+  395|      0|          .onChange(of: fieldIsFocused) {
+  396|      0|            if !fieldIsFocused { commitField() }
+  397|      0|          }
+  398|      0|        // As wide as the widest unit, so that the fields of a pane stand in one column.
+  399|      0|        Text(unit)
+  400|      0|          .foregroundStyle(.secondary)
+  401|      0|          .frame(width: 26, alignment: .leading)
+  402|      0|      }
+  403|      0|    } label: {
+  404|      0|      SettingLabel(label: row.label, help: row.help)
+  405|      0|    }
+  406|      0|  }
+  407|       |
+  408|       |  /// Moved by anything but a drag (arrow keys, VoiceOver) there is no letting go to wait for.
+  409|      0|  private var slider: Binding<Double> {
+  410|      0|    Binding<Double>(
+  411|      0|      get: { @MainActor in held ?? value },
+  412|      0|      set: { @MainActor moved in
+  413|      0|        if isHeld { held = moved } else { store.model.set(row.key, to: moved) }
+  414|      0|      })
+  415|      0|  }
+  416|       |
+  417|      0|  private func sliderChanged(_ isHeldNow: Bool) {
+  418|      0|    isHeld = isHeldNow
+  419|      0|    guard !isHeldNow, let final = held else { return }
+  420|      0|    held = nil
+  421|      0|    store.model.set(row.key, to: final)
+  422|      0|  }
+  423|       |
+  424|      0|  private var field: Binding<String> {
+  425|      0|    Binding<String>(get: { @MainActor in typed ?? shownNumber }, set: { @MainActor new in typed = new })
+  426|      0|  }
+  427|       |
+  428|       |  /// The field follows the slider while it moves.
+  429|      0|  private var shownNumber: String {
+  430|      0|    SettingsPanelModel.text(held.map { SettingsPanelModel.snapped($0, in: range, step: step) } ?? value)
+  431|      0|  }
+  432|       |
+  433|      0|  private func commitField() {
+  434|      0|    guard let text = typed else { return }
+  435|      0|    typed = nil
+  436|      0|    store.model.set(row.key, to: text)
+  437|      0|  }
+  438|       |}
+  439|       |
+  440|       |struct ChoiceSettingRow: View {
+  441|       |  @ObservedObject var store: SettingsPanelStore
+  442|       |  let row: SettingsPanelModel.Row
+  443|       |  let value: String
+  444|       |  let choices: [SettingEntry.Choice]
+  445|       |
+  446|      0|  var body: some View {
+  447|      0|    Picker(selection: binding) {
+  448|      0|      ForEach(choices, id: \.value) { choice in
+  449|      0|        Text(choice.label)
+  450|      0|          .tag(choice.value)
+  451|      0|      }
+  452|      0|    } label: {
+  453|      0|      SettingLabel(label: row.label, help: row.help)
+  454|      0|    }
+  455|      0|    .accessibilityIdentifier(row.key)
+  456|      0|  }
+  457|       |
+  458|      0|  private var binding: Binding<String> {
+  459|      0|    Binding<String>(
+  460|      0|      get: { @MainActor in value },
+  461|      0|      set: { @MainActor new in store.model.set(row.key, to: new) })
+  462|      0|  }
+  463|       |}
+  464|       |
+  465|       |struct TextSettingRow: View {
+  466|       |  @ObservedObject var store: SettingsPanelStore
+  467|       |  let row: SettingsPanelModel.Row
+  468|       |  let value: String
+  469|       |  let example: String
+  470|       |  @State private var typed: String?
+  471|       |  @FocusState private var isFocused: Bool
+  472|       |
+  473|      0|  var body: some View {
+  474|      0|    LabeledContent {
+  475|      0|      TextField("", text: binding, prompt: Text(example))
+  476|      0|        .labelsHidden()
+  477|      0|        .textFieldStyle(.roundedBorder)
+  478|      0|        .frame(width: 160)
+  479|      0|        .accessibilityIdentifier("\(row.key).field")
+  480|      0|        .accessibilityLabel(row.label)
+  481|      0|        .focused($isFocused)
+  482|      0|        .onSubmit { commit() }
+  483|      0|        .onChange(of: isFocused) {
+  484|      0|          if !isFocused { commit() }
+  485|      0|        }
+  486|      0|    } label: {
+  487|      0|      SettingLabel(label: row.label, help: row.help)
+  488|      0|    }
+  489|      0|  }
+  490|       |
+  491|      0|  private var binding: Binding<String> {
+  492|      0|    Binding<String>(get: { @MainActor in typed ?? value }, set: { @MainActor new in typed = new })
+  493|      0|  }
+  494|       |
+  495|      0|  private func commit() {
+  496|      0|    guard let text = typed else { return }
+  497|      0|    typed = nil
+  498|      0|    if text != value { store.model.set(row.key, to: text) }
+  499|      0|  }
+  500|       |}
+  501|       |
+  502|       |/// A list the window has no editor for.
+  503|       |struct ListSettingRow: View {
+  504|       |  @ObservedObject var store: SettingsPanelStore
+  505|       |  let row: SettingsPanelModel.Row
+  506|       |  let summary: String
+  507|       |
+  508|      0|  var body: some View {
+  509|      0|    LabeledContent {
+  510|      0|      HStack(spacing: 8) {
+  511|      0|        Text(summary)
+  512|      0|          .foregroundStyle(.secondary)
+  513|      0|        Button("Open the File") { store.openFile() }
+  514|      0|          .controlSize(.small)
+  515|      0|      }
+  516|      0|    } label: {
+  517|      0|      SettingLabel(label: row.label, help: row.help)
+  518|      0|    }
+  519|      0|    .accessibilityIdentifier(row.key)
+  520|      0|  }
+  521|       |}
+

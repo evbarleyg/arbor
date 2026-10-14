@@ -1,0 +1,328 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/Stage.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import QuartzCore
+    4|       |
+    5|       |/// What a stand-in is drawn from.
+    6|       |struct Costume {
+    7|       |  /// A still picture of the window, if Arbor has one.
+    8|       |  var picture: CGImage?
+    9|       |  /// The app's colour and icon, for the cover. Nil if the cover will not be seen.
+   10|       |  var colour: CGColor?
+   11|       |  var icon: CGImage?
+   12|       |}
+   13|       |
+   14|       |/// One display's stage: a panel that covers the whole display while something moves on it.
+   15|       |///
+   16|       |/// It draws a picture of the desktop and, on top, one stand-in per window. The real windows go
+   17|       |/// straight to their final frames underneath, where nobody sees them jump; Core Animation moves the
+   18|       |/// stand-ins in the render server, so the motion stays smooth while the main thread waits on apps.
+   19|       |///
+   20|       |/// A stage that stayed up would hide the user's windows from them. So every way of ending leads to
+   21|       |/// `drop()`, which cannot fail, and two independent things end a motion: a timer and Core
+   22|       |/// Animation's completion block. `StageDirector` adds clicks, sleep, and Space and display changes.
+   23|       |@MainActor
+   24|       |final class Stage {
+   25|       |  /// How long lifting the stage takes. A short fade hides small differences between the stand-ins
+   26|       |  /// and the real windows.
+   27|       |  static let liftDuration: TimeInterval = 0.08
+   28|       |  /// Shown behind the windows when there is no picture of the desktop. Never clear: the real windows
+   29|       |  /// jumping about underneath would show.
+   30|       |  static let fallbackBackdrop = NSColor(calibratedWhite: 0.12, alpha: 1).cgColor
+   31|       |
+   32|       |  /// Called whenever the stage has come down.
+   33|       |  var onDown: (() -> Void)?
+   34|      0|  private(set) var isUp = false
+   35|       |
+   36|      0|  private let panel = StagePanel()
+   37|       |  /// Holds everything that is drawn. Fading it out lifts the stage.
+   38|      0|  private let canvas = CALayer()
+   39|      0|  private let backdrop = CALayer()
+   40|       |  /// What darkens the wallpaper behind docked windows (F15), between the picture of the desktop, which is taken without
+   41|       |  /// it, and the windows. The stage covers the panel that draws it at rest.
+   42|      0|  private let surface = BackdropLayer()
+   43|       |  private var surfaceShown: BackdropModel?
+   44|       |  /// How long the motion that is playing takes.
+   45|      0|  private var duration: TimeInterval = 0
+   46|      0|  private var standIns: [WindowID: StandIn] = [:]
+   47|       |  /// The display's frame, in global coordinates.
+   48|      0|  private var frame = CGRect.zero
+   49|       |  /// Counts motions, so that the completion block and the timers of an earlier one do nothing.
+   50|      0|  private var generation = 0
+   51|       |  private var timer: Timer?
+   52|       |
+   53|      0|  init() {
+   54|      0|    // A view that is given its layer before `wantsLayer` is set hosts it: AppKit leaves the sublayers alone.
+   55|      0|    let view = NSView(frame: .zero)
+   56|      0|    let root = CALayer()
+   57|      0|    view.layer = root
+   58|      0|    view.wantsLayer = true
+   59|      0|    panel.contentView = view
+   60|      0|    root.addSublayer(canvas)
+   61|      0|    backdrop.backgroundColor = Self.fallbackBackdrop
+   62|      0|    backdrop.contentsGravity = .resizeAspectFill
+   63|      0|    backdrop.masksToBounds = true
+   64|      0|    backdrop.zPosition = -1
+   65|      0|    canvas.addSublayer(backdrop)
+   66|      0|    surface.layer.zPosition = -0.5
+   67|      0|    canvas.addSublayer(surface.layer)
+   68|      0|  }
+   69|       |
+   70|       |  /// Covers the display and starts the motion. When this returns the window server has been told
+   71|       |  /// to show the stage, so the caller can move the real windows. If the stage is up already,
+   72|       |  /// stand-ins carry on from where they are now. `atRest` is the surface behind docked windows as the display shows it.
+   73|       |  func play(
+   74|       |    _ transition: Transition, costumes: [WindowID: Costume], backdrop desktop: CGImage?, surface atRest: BackdropModel?
+   75|      0|  ) {
+   76|      0|    generation += 1
+   77|      0|    let generation = self.generation
+   78|      0|    timer?.invalidate()
+   79|      0|    frame = transition.frame
+   80|      0|    duration = transition.duration
+   81|      0|    // Core Animation raises an exception for a frame that is not finite.
+   82|      0|    let items = transition.items.filter { $0.from.isFinite && $0.to.isFinite }
+   83|      0|    let cast = Set(items.map(\.window))
+   84|      0|
+   85|      0|    // First everything where it is now, without animation, and up with the stage.
+   86|      0|    CATransaction.begin()
+   87|      0|    CATransaction.setDisableActions(true)
+   88|      0|    panel.setFrame(ScreenGeometry.appKit(fromGlobal: frame), display: false)
+   89|      0|    canvas.removeAllAnimations()
+   90|      0|    canvas.opacity = 1
+   91|      0|    canvas.frame = CGRect(origin: .zero, size: frame.size)
+   92|      0|    backdrop.frame = canvas.bounds
+   93|      0|    backdrop.contents = desktop
+   94|      0|    if !isUp {
+   95|      0|      surface.show(atRest, in: frame, fade: 0)
+   96|      0|      surfaceShown = atRest
+   97|      0|    }
+   98|      0|    for (index, item) in items.enumerated() {
+   99|      0|      let standIn: StandIn
+  100|      0|      if let onStage = standIns[item.window] {
+  101|      0|        standIn = onStage
+  102|      0|        standIn.freeze()
+  103|      0|        if let costume = costumes[item.window] { standIn.wear(costume) }
+  104|      0|      } else {
+  105|      0|        standIn = StandIn()
+  106|      0|        // Dressed first: whether it can show as itself depends on having a picture.
+  107|      0|        if let costume = costumes[item.window] { standIn.wear(costume) }
+  108|      0|        standIn.place(local(item.from))
+  109|      0|        standIn.show(item.fromLook, opacity: item.fromOpacity)
+  110|      0|        canvas.addSublayer(standIn.layer)
+  111|      0|        standIns[item.window] = standIn
+  112|      0|      }
+  113|      0|      standIn.layer.zPosition = CGFloat(index)
+  114|      0|    }
+  115|      0|    for (window, standIn) in standIns where !cast.contains(window) { standIn.freeze() }
+  116|      0|    CATransaction.commit()
+  117|      0|    panel.orderFrontRegardless()
+  118|      0|    surface.match(scale: panel.backingScaleFactor)
+  119|      0|    CATransaction.flush()
+  120|      0|    let wasUp = isUp
+  121|      0|    isUp = true
+  122|      0|
+  123|      0|    // Then on their way.
+  124|      0|    let curve = Transition.curve
+  125|      0|    let timing = CAMediaTimingFunction(
+  126|      0|      controlPoints: Float(curve.x1), Float(curve.y1), Float(curve.x2), Float(curve.y2))
+  127|      0|    CATransaction.begin()
+  128|      0|    // Said out loud, in case the caller is inside a transaction that switched them off.
+  129|      0|    CATransaction.setDisableActions(false)
+  130|      0|    CATransaction.setAnimationDuration(transition.duration)
+  131|      0|    CATransaction.setAnimationTimingFunction(timing)
+  132|      0|    CATransaction.setCompletionBlock { [weak self] in
+  133|      0|      MainActor.assumeIsolated { self?.lift(generation) }
+  134|      0|    }
+  135|      0|    for item in items {
+  136|      0|      guard let standIn = standIns[item.window] else { continue }
+  137|      0|      standIn.glide(to: local(item.to), duration: transition.duration, timing: timing)
+  138|      0|      standIn.show(item.toLook, opacity: item.toOpacity)
+  139|      0|    }
+  140|      0|    // Windows that are no longer part of it (closed since) fade away where they are.
+  141|      0|    for (window, standIn) in standIns where !cast.contains(window) { standIn.layer.opacity = 0 }
+  142|      0|    CATransaction.commit()
+  143|      0|    CATransaction.flush()
+  144|      0|
+  145|      0|    // The timer usually comes first: the completion block was seen to arrive 0.15 s after the end
+  146|      0|    // of the motion, which is 0.15 s of looking at pictures that have stopped moving.
+  147|      0|    let timer = Timer(timeInterval: transition.duration, repeats: false) { [weak self] _ in
+  148|      0|      MainActor.assumeIsolated { self?.lift(generation) }
+  149|      0|    }
+  150|      0|    // Common modes, so that an open menu does not keep the stage up.
+  151|      0|    RunLoop.main.add(timer, forMode: .common)
+  152|      0|    self.timer = timer
+  153|      0|    Log.debug("stage \(wasUp ? "retargeted" : "up") on \(transition.display): \(items.count) stand-ins, \(transition.duration) s")
+  154|      0|  }
+  155|       |
+  156|       |  /// The scene the motion ends in has arrived: the surface fades into its new shape while the windows travel, and is
+  157|       |  /// what the stage reveals when it lifts.
+  158|      0|  func show(surface model: BackdropModel?) {
+  159|      0|    guard isUp, model != surfaceShown else { return }
+  160|      0|    surfaceShown = model
+  161|      0|    surface.show(model, in: frame, fade: duration)
+  162|      0|  }
+  163|       |
+  164|       |  /// Swaps in a picture that has only just been taken.
+  165|      0|  func show(_ picture: CGImage, of window: WindowID) {
+  166|      0|    guard isUp, let standIn = standIns[window] else { return }
+  167|      0|    CATransaction.begin()
+  168|      0|    CATransaction.setAnimationDuration(0.1)
+  169|      0|    standIn.wear(picture)
+  170|      0|    CATransaction.commit()
+  171|      0|  }
+  172|       |
+  173|       |  /// The motion is over: fades the stage out and takes it down.
+  174|      0|  private func lift(_ expected: Int) {
+  175|      0|    guard isUp, expected == generation else { return }
+  176|      0|    generation += 1
+  177|      0|    let generation = self.generation
+  178|      0|    timer?.invalidate()
+  179|      0|    CATransaction.begin()
+  180|      0|    CATransaction.setAnimationDuration(Self.liftDuration)
+  181|      0|    canvas.opacity = 0
+  182|      0|    CATransaction.commit()
+  183|      0|    let timer = Timer(timeInterval: Self.liftDuration, repeats: false) { [weak self] _ in
+  184|      0|      MainActor.assumeIsolated {
+  185|      0|        guard let self, generation == self.generation else { return }
+  186|      0|        self.drop()
+  187|      0|      }
+  188|      0|    }
+  189|      0|    RunLoop.main.add(timer, forMode: .common)
+  190|      0|    self.timer = timer
+  191|      0|  }
+  192|       |
+  193|       |  /// Takes the stage down at once and lets go of the pictures.
+  194|      0|  func drop() {
+  195|      0|    generation += 1
+  196|      0|    timer?.invalidate()
+  197|      0|    timer = nil
+  198|      0|    guard isUp else { return }
+  199|      0|    isUp = false
+  200|      0|    panel.orderOut(nil)
+  201|      0|    CATransaction.begin()
+  202|      0|    CATransaction.setDisableActions(true)
+  203|      0|    for standIn in standIns.values { standIn.layer.removeFromSuperlayer() }
+  204|      0|    standIns.removeAll()
+  205|      0|    backdrop.contents = nil
+  206|      0|    surface.show(nil, in: frame, fade: 0)
+  207|      0|    surfaceShown = nil
+  208|      0|    canvas.removeAllAnimations()
+  209|      0|    canvas.opacity = 1
+  210|      0|    CATransaction.commit()
+  211|      0|    Log.debug("stage down")
+  212|      0|    onDown?()
+  213|      0|  }
+  214|       |
+  215|      0|  private func local(_ rect: CGRect) -> CGRect { ScreenGeometry.local(fromGlobal: rect, in: frame) }
+  216|       |}
+  217|       |
+  218|       |/// Above normal and floating windows and Arbor's own tiles, seams and previews; below the Dock and the
+  219|       |/// menu bar. Clicks go through it to the real windows.
+  220|       |private final class StagePanel: OverlayPanel {
+  221|      0|  override init() {
+  222|      0|    super.init()
+  223|      0|    level = NSWindow.Level(rawValue: NSWindow.Level.floating.rawValue + 1)
+  224|      0|    ignoresMouseEvents = true
+  225|      0|    // Not `.fullScreenAuxiliary`: a full-screen app is none of Arbor's business.
+  226|      0|    collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle]
+  227|      0|  }
+  228|       |}
+  229|       |
+  230|       |/// The layers that stand for one window: its picture over its cover, and a shadow.
+  231|       |@MainActor
+  232|       |private final class StandIn {
+  233|       |  /// About what macOS gives its windows.
+  234|      0|  static var cornerRadius: CGFloat {
+  235|      0|    if #available(macOS 26.0, *) { return 16 }
+  236|      0|    return 10
+  237|      0|  }
+  238|       |
+  239|       |  /// Moves and fades as a whole.
+  240|      0|  let layer = CALayer()
+  241|      0|  private let cover = CALayer()
+  242|      0|  private let icon = CALayer()
+  243|      0|  private let picture = CALayer()
+  244|       |  /// The look last asked for, which a picture that arrives late has to respect.
+  245|      0|  private var look = Plane.Look.picture
+  246|       |
+  247|      0|  init() {
+  248|      0|    layer.shadowColor = NSColor.black.cgColor
+  249|      0|    layer.shadowOpacity = 0.3
+  250|      0|    layer.shadowRadius = 14
+  251|      0|    layer.shadowOffset = CGSize(width: 0, height: -6)
+  252|      0|    cover.cornerRadius = Self.cornerRadius
+  253|      0|    cover.borderWidth = 1
+  254|      0|    cover.borderColor = NSColor.white.withAlphaComponent(0.25).cgColor
+  255|      0|    icon.contentsGravity = .resizeAspect
+  256|      0|    // Stand-ins scale by stretching, as TrellisWM's do.
+  257|      0|    picture.contentsGravity = .resize
+  258|      0|    picture.cornerRadius = Self.cornerRadius
+  259|      0|    picture.masksToBounds = true
+  260|      0|    cover.addSublayer(icon)
+  261|      0|    layer.addSublayer(cover)
+  262|      0|    layer.addSublayer(picture)
+  263|      0|  }
+  264|       |
+  265|      0|  func wear(_ costume: Costume) {
+  266|      0|    if let colour = costume.colour { cover.backgroundColor = colour }
+  267|      0|    if let image = costume.icon { icon.contents = image }
+  268|      0|    if let image = costume.picture { picture.contents = image }
+  269|      0|  }
+  270|       |
+  271|       |  /// A picture that arrived after the motion began. If there was none before, it takes the cover's
+  272|       |  /// place. Nothing else is touched: setting a property again would cut short a fade under way.
+  273|      0|  func wear(_ image: CGImage) {
+  274|      0|    picture.contents = image
+  275|      0|    guard look == .picture, picture.opacity != 1 else { return }
+  276|      0|    picture.opacity = 1
+  277|      0|    cover.opacity = 0
+  278|      0|  }
+  279|       |
+  280|       |  /// `frame` is in the canvas's coordinates.
+  281|      0|  func place(_ frame: CGRect) {
+  282|      0|    let bounds = CGRect(origin: .zero, size: frame.size)
+  283|      0|    layer.frame = frame
+  284|      0|    // A plain rectangle: under this much blur nobody sees the corners, and a rounded one may not be
+  285|      0|    // smaller than its corners.
+  286|      0|    layer.shadowPath = CGPath(rect: bounds, transform: nil)
+  287|      0|    cover.frame = bounds
+  288|      0|    picture.frame = bounds
+  289|      0|    let side = min(bounds.width, bounds.height) * 0.45
+  290|      0|    icon.frame = CGRect(x: bounds.midX - side / 2, y: bounds.midY - side / 2, width: side, height: side)
+  291|      0|  }
+  292|       |
+  293|       |  /// `place` inside an animated transaction. Everything follows by itself except the shadow's path:
+  294|       |  /// paths are not animated implicitly.
+  295|      0|  func glide(to frame: CGRect, duration: TimeInterval, timing: CAMediaTimingFunction) {
+  296|      0|    let shadow = CABasicAnimation(keyPath: "shadowPath")
+  297|      0|    shadow.fromValue = layer.shadowPath
+  298|      0|    place(frame)
+  299|      0|    shadow.toValue = layer.shadowPath
+  300|      0|    shadow.duration = duration
+  301|      0|    shadow.timingFunction = timing
+  302|      0|    layer.add(shadow, forKey: "shadowPath")
+  303|      0|  }
+  304|       |
+  305|       |  /// Without a picture to show, a window looks like its cover.
+  306|      0|  func show(_ look: Plane.Look, opacity: Double) {
+  307|      0|    self.look = look
+  308|      0|    let asItself = look == .picture && picture.contents != nil
+  309|      0|    picture.opacity = asItself ? 1 : 0
+  310|      0|    cover.opacity = asItself ? 0 : 1
+  311|      0|    layer.opacity = Float(opacity)
+  312|      0|  }
+  313|       |
+  314|       |  /// Stops where it is on screen right now, so that the next motion starts from there.
+  315|      0|  func freeze() {
+  316|      0|    let frame = layer.presentation()?.frame ?? layer.frame
+  317|      0|    let opacities = [layer, cover, picture].map { $0.presentation()?.opacity ?? $0.opacity }
+  318|      0|    for each in [layer, cover, icon, picture] { each.removeAllAnimations() }
+  319|      0|    if frame.isFinite { place(frame) }
+  320|      0|    layer.opacity = opacities[0]
+  321|      0|    cover.opacity = opacities[1]
+  322|      0|    picture.opacity = opacities[2]
+  323|      0|  }
+  324|       |}
+

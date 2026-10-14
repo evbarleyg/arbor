@@ -1,0 +1,58 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/AX/ScreenGeometry.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |
+    4|       |/// Converts between AppKit's coordinates (origin at the bottom-left of the
+    5|       |/// primary display, y up) and Arbor's global coordinates (origin at the
+    6|       |/// top-left of the primary display, y down). The conversion is its own inverse.
+    7|       |@MainActor
+    8|       |enum ScreenGeometry {
+    9|    797|  static var primaryHeight: CGFloat { NSScreen.screens.first?.frame.height ?? 0 }
+   10|       |
+   11|    382|  static func global(fromAppKit rect: NSRect) -> CGRect {
+   12|    382|    CGRect(x: rect.minX, y: primaryHeight - rect.maxY, width: rect.width, height: rect.height)
+   13|    382|  }
+   14|       |
+   15|    278|  static func appKit(fromGlobal rect: CGRect) -> NSRect {
+   16|    278|    NSRect(x: rect.minX, y: primaryHeight - rect.maxY, width: rect.width, height: rect.height)
+   17|    278|  }
+   18|       |
+   19|    137|  static func global(fromAppKit point: NSPoint) -> CGPoint {
+   20|    137|    CGPoint(x: point.x, y: primaryHeight - point.y)
+   21|    137|  }
+   22|       |
+   23|       |  /// `rect` in the coordinates of a view or layer that fills `container` (both global): the origin
+   24|       |  /// is the container's bottom-left corner and y grows upward.
+   25|      0|  static func local(fromGlobal rect: CGRect, in container: CGRect) -> CGRect {
+   26|      0|    CGRect(x: rect.minX - container.minX, y: container.maxY - rect.maxY, width: rect.width, height: rect.height)
+   27|      0|  }
+   28|       |
+   29|     54|  static func screen(for display: DisplayID) -> NSScreen? {
+   30|     54|    NSScreen.screens.first { displayID(for: $0) == display }
+   31|     54|  }
+   32|       |
+   33|    299|  static func displayID(for screen: NSScreen) -> DisplayID {
+   34|    299|    guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+   35|    299|    else { return DisplayID("unknown") }
+   36|    299|    return displayID(for: CGDirectDisplayID(number.uint32Value))
+   37|    299|  }
+   38|       |
+   39|    299|  static func displayID(for directID: CGDirectDisplayID) -> DisplayID {
+   40|    299|    if let uuid = CGDisplayCreateUUIDFromDisplayID(directID)?.takeRetainedValue(),
+   41|    299|      let text = CFUUIDCreateString(nil, uuid)
+   42|    299|    {
+   43|    299|      return DisplayID(text as String)
+   44|    299|    }
+   45|      0|    return DisplayID("display-\(directID)")
+   46|    299|  }
+   47|       |
+   48|       |  /// Whether the screen is a laptop's or an iMac's own display.
+   49|    191|  static func isBuiltIn(_ screen: NSScreen) -> Bool {
+   50|    191|    guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
+   51|    191|    else { return false }
+   52|    191|    return CGDisplayIsBuiltin(CGDirectDisplayID(number.uint32Value)) != 0
+   53|    191|  }
+   54|       |}
+

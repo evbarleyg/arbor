@@ -1,0 +1,109 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/App/Watchdog.swift:
+    1|       |import ArborIPC
+    2|       |import Foundation
+    3|       |
+    4|       |/// Starts Arbor again if it ends without quitting.
+    5|       |///
+    6|       |/// Arbor hides windows by parking them in a screen corner. If it crashes, traps or is killed, nothing
+    7|       |/// in the process can put them back: a signal handler cannot safely talk to the Accessibility API, and
+    8|       |/// `kill -9` runs no handler at all. So Arbor starts a second, tiny process from its own executable
+    9|       |/// (`Arbor --watchdog`), which does nothing but wait at the far end of a pipe:
+   10|       |///
+   11|       |/// - Arbor writes `q` when it has quit in good order, windows back in view: the watchdog exits.
+   12|       |/// - The pipe closes with no `q`: the kernel closed it because Arbor is gone. The watchdog asks
+   13|       |///   `RestartPolicy` what to do, starts Arbor again (or a rescue), and exits. The new Arbor finds the
+   14|       |///   same windows under the same numbers and restores the arrangement from state.json.
+   15|       |///
+   16|       |/// `ARBOR_NO_WATCHDOG=1` turns it off, for debuggers and scripts that kill Arbor on purpose.
+   17|       |@MainActor
+   18|       |final class Watchdog {
+   19|       |  nonisolated static let argument = "--watchdog"
+   20|       |
+   21|       |  /// The end of the pipe Arbor holds.
+   22|       |  private let line: FileHandle
+   23|       |
+   24|       |  /// Starts the watchdog process. Nil, with a line in the log, if that fails; Arbor runs without.
+   25|      0|  init?() {
+   26|      0|    guard let executable = Bundle.main.executableURL else { return nil }
+   27|      0|    let pipe = Pipe()
+   28|      0|    let process = Process()
+   29|      0|    process.executableURL = executable
+   30|      0|    process.arguments = [Self.argument, String(getpid())]
+   31|      0|    process.standardInput = pipe.fileHandleForReading
+   32|      0|    do {
+   33|      0|      try process.run()
+   34|      0|    } catch {
+   35|      0|      Log.error("could not start the watchdog: \(error)")
+   36|      0|      return nil
+   37|      0|    }
+   38|      0|    // Only the child may hold this end.
+   39|      0|    try? pipe.fileHandleForReading.close()
+   40|      0|    line = pipe.fileHandleForWriting
+   41|      0|    Log.info("watchdog started, pid \(process.processIdentifier)")
+   42|      0|  }
+   43|       |
+   44|       |  /// Arbor has quit in good order.
+   45|      0|  func standDown() {
+   46|      0|    try? line.write(contentsOf: Data("q".utf8))
+   47|      0|    try? line.close()
+   48|      0|  }
+   49|       |
+   50|       |  // MARK: The watchdog process
+   51|       |
+   52|       |  /// The whole life of `Arbor --watchdog <pid>`.
+   53|      0|  nonisolated static func run(arguments: [String]) -> Never {
+   54|      0|    signal(SIGPIPE, SIG_IGN)
+   55|      0|    var byte: UInt8 = 0
+   56|      0|    while true {
+   57|      0|      let count = read(STDIN_FILENO, &byte, 1)
+   58|      0|      if count < 0, errno == EINTR { continue }
+   59|      0|      if count == 1, byte == UInt8(ascii: "q") { exit(0) }
+   60|      0|      // Not the end of the pipe but a fault of this process's own; it says nothing about Arbor.
+   61|      0|      if count < 0 { exit(1) }
+   62|      0|      if count == 0 { break }
+   63|      0|    }
+   64|      0|
+   65|      0|    let parent = arguments.last ?? "?"
+   66|      0|    var environment = ProcessInfo.processInfo.environment
+   67|      0|    let now = Date().timeIntervalSince1970
+   68|      0|    let history = RestartPolicy.recent(RestartPolicy.history(from: environment["ARBOR_RESTARTS"]), now: now)
+   69|      0|    switch RestartPolicy.decide(history: history, now: now) {
+   70|      0|    case .restart:
+   71|      0|      Log.error("Arbor (pid \(parent)) ended without quitting; starting it again")
+   72|      0|    case .rescue:
+   73|      0|      Log.error("Arbor (pid \(parent)) ended without quitting, the third time in a row; bringing the windows back")
+   74|      0|      environment["ARBOR_RESCUE"] = "1"
+   75|      0|    case .giveUp:
+   76|      0|      Log.error("Arbor (pid \(parent)) ended without quitting yet again; giving up. Starting Arbor recovers its windows")
+   77|      0|      exit(1)
+   78|      0|    }
+   79|      0|    environment["ARBOR_RESTARTS"] = RestartPolicy.text(for: history + [now])
+   80|      0|    // Let the kernel finish with the old process: its lock, its socket, its hotkeys.
+   81|      0|    usleep(300_000)
+   82|      0|
+   83|      0|    let process = Process()
+   84|      0|    let bundle = Bundle.main.bundleURL
+   85|      0|    if bundle.pathExtension == "app" {
+   86|      0|      // Through Launch Services, as the user would, so that macOS sees the app itself asking for
+   87|      0|      // Accessibility and not a child of a process that no longer exists. `open` hands on only
+   88|      0|      // the variables it is told to.
+   89|      0|      process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+   90|      0|      let variables = environment.filter { $0.key.hasPrefix("ARBOR_") }.sorted { $0.key < $1.key }
+   91|      0|      process.arguments = ["-n"] + variables.flatMap { ["--env", "\($0.key)=\($0.value)"] } + [bundle.path]
+   92|      0|    } else {
+   93|      0|      process.executableURL = Bundle.main.executableURL
+   94|      0|      process.environment = environment
+   95|      0|    }
+   96|      0|    process.standardInput = FileHandle.nullDevice
+   97|      0|    do {
+   98|      0|      try process.run()
+   99|      0|    } catch {
+  100|      0|      Log.error("could not start Arbor again: \(error)")
+  101|      0|      exit(1)
+  102|      0|    }
+  103|      0|    exit(0)
+  104|      0|  }
+  105|       |}
+

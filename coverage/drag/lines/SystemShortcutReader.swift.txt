@@ -1,0 +1,36 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/Input/SystemShortcutReader.swift:
+    1|       |import ArborCore
+    2|       |import Carbon.HIToolbox
+    3|       |import Foundation
+    4|       |
+    5|       |/// Reads macOS's own keyboard shortcuts as the list `SystemShortcuts` decides with. No decisions here.
+    6|       |@MainActor
+    7|       |enum SystemShortcutReader {
+    8|       |  /// Nil if macOS does not say.
+    9|      1|  static func read() -> SystemShortcuts? {
+   10|      1|    var list: Unmanaged<CFArray>?
+   11|      1|    guard CopySymbolicHotKeys(&list) == noErr, let entries = list?.takeRetainedValue() as? [[String: Any]] else {
+   12|      0|      return nil
+   13|      1|    }
+   14|    229|    let shortcuts = entries.compactMap { entry -> SystemShortcuts.Shortcut? in
+   15|    229|      guard let code = (entry[kHISymbolicHotKeyCode] as? Int).flatMap(UInt32.init(exactly:)),
+   16|    229|        let modifiers = (entry[kHISymbolicHotKeyModifiers] as? Int).flatMap(UInt32.init(exactly:)),
+   17|    229|        let isEnabled = entry[kHISymbolicHotKeyEnabled] as? Bool
+   18|    229|      else { return nil }
+   19|    229|      return SystemShortcuts.Shortcut(keyCode: code, carbonModifiers: modifiers, isEnabled: isEnabled)
+   20|    229|    }
+   21|      1|    return SystemShortcuts(shortcuts: shortcuts, inputSources: inputSources)
+   22|      1|  }
+   23|       |
+   24|       |  /// How many keyboard layouts and input methods the Input menu switches between.
+   25|      1|  private static var inputSources: Int? {
+   26|      1|    let wanted: [String: Any] = [
+   27|      1|      kTISPropertyInputSourceCategory as String: kTISCategoryKeyboardInputSource as String,
+   28|      1|      kTISPropertyInputSourceIsSelectCapable as String: true,
+   29|      1|    ]
+   30|      1|    return (TISCreateInputSourceList(wanted as CFDictionary, false)?.takeRetainedValue() as? [TISInputSource])?.count
+   31|      1|  }
+   32|       |}
+

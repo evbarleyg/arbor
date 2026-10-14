@@ -1,0 +1,152 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/App/CallSensor.swift:
+    1|       |import ArborCore
+    2|       |import CoreAudio
+    3|       |import CoreMediaIO
+    4|       |import Foundation
+    5|       |
+    6|       |/// Reads whether any app has a camera or a microphone running, for `Controller.callSignalsChanged` (F58). macOS tells
+    7|       |/// every process that much, without asking the user, because nothing is captured: Arbor opens no device.
+    8|       |///
+    9|       |/// It listens for the changes, and looks for itself twice a minute in case a listener was lost. All of it happens on
+   10|       |/// a queue of its own: these calls go to the audio and camera daemons, and one that is slow to answer must not
+   11|       |/// hold up the thread that moves people's windows. It decides nothing.
+   12|       |@MainActor
+   13|       |final class CallSensor {
+   14|       |  private let watch: Watch
+   15|       |  private var timer: (any DispatchSourceTimer)?
+   16|       |
+   17|      0|  init(onChange: @escaping @MainActor (CallSignals) -> Void) {
+   18|      0|    watch = Watch(onChange: onChange)
+   19|      0|  }
+   20|       |
+   21|       |  /// Watches what the settings ask for. With neither, both are reported as off and nothing wakes up.
+   22|      0|  func update(camera: Bool, microphone: Bool) {
+   23|      0|    let watch = self.watch
+   24|      0|    watch.queue.async {
+   25|      0|      watch.camera = camera
+   26|      0|      watch.microphone = microphone
+   27|      0|      watch.look()
+   28|      0|    }
+   29|      0|    guard camera || microphone else { return stop() }
+   30|      0|    guard timer == nil else { return }
+   31|      0|    let timer = DispatchSource.makeTimerSource(queue: watch.queue)
+   32|      0|    timer.schedule(deadline: .now() + .seconds(30), repeating: .seconds(30), leeway: .seconds(10))
+   33|      0|    timer.setEventHandler { watch.look() }
+   34|      0|    timer.resume()
+   35|      0|    self.timer = timer
+   36|      0|  }
+   37|       |
+   38|      0|  func stop() {
+   39|      0|    timer?.cancel()
+   40|      0|    timer = nil
+   41|      0|  }
+   42|       |}
+   43|       |
+   44|       |/// Everything but `queue` and `onChange` is touched only on `queue`.
+   45|       |private final class Watch: @unchecked Sendable {
+   46|      0|  let queue = DispatchQueue(label: "arbor.call-sensor", qos: .utility)
+   47|       |  private let onChange: @MainActor (CallSignals) -> Void
+   48|      0|  var camera = false
+   49|      0|  var microphone = false
+   50|      0|  private var last = CallSignals()
+   51|       |  /// What has a listener already. Listeners are never removed: a device that goes away takes its own along, and
+   52|       |  /// with both switches off `look()` finds nothing new to report.
+   53|      0|  private var heardCameras = Set<CMIOObjectID>()
+   54|      0|  private var heardAudioDevices = Set<AudioObjectID>()
+   55|       |
+   56|      0|  init(onChange: @escaping @MainActor (CallSignals) -> Void) {
+   57|      0|    self.onChange = onChange
+   58|      0|  }
+   59|       |
+   60|      0|  func look() {
+   61|      0|    let signals = CallSignals(
+   62|      0|      cameraIsOn: camera && aCameraIsRunning(), microphoneIsOn: microphone && aMicrophoneIsRunning())
+   63|      0|    guard signals != last else { return }
+   64|      0|    last = signals
+   65|      0|    let onChange = self.onChange
+   66|      0|    DispatchQueue.main.async { onChange(signals) }
+   67|      0|  }
+   68|       |
+   69|       |  // MARK: Cameras (CoreMediaIO)
+   70|       |
+   71|      0|  private func cameraAddress(_ selector: some BinaryInteger) -> CMIOObjectPropertyAddress {
+   72|      0|    CMIOObjectPropertyAddress(
+   73|      0|      mSelector: CMIOObjectPropertySelector(selector), mScope: CMIOObjectPropertyScope(kCMIOObjectPropertyScopeGlobal),
+   74|      0|      mElement: CMIOObjectPropertyElement(kCMIOObjectPropertyElementMain))
+   75|      0|  }
+   76|       |
+   77|      0|  private func listen(toCamera object: CMIOObjectID, _ selector: some BinaryInteger) {
+   78|      0|    guard heardCameras.insert(object).inserted else { return }
+   79|      0|    var address = cameraAddress(selector)
+   80|      0|    _ = CMIOObjectAddPropertyListenerBlock(object, &address, queue) { [weak self] _, _ in self?.look() }
+   81|      0|  }
+   82|       |
+   83|      0|  private func aCameraIsRunning() -> Bool {
+   84|      0|    let system = CMIOObjectID(kCMIOObjectSystemObject)
+   85|      0|    // Cameras come and go: a phone as a camera, a display with one.
+   86|      0|    listen(toCamera: system, kCMIOHardwarePropertyDevices)
+   87|      0|    var address = cameraAddress(kCMIOHardwarePropertyDevices)
+   88|      0|    var size: UInt32 = 0
+   89|      0|    guard CMIOObjectGetPropertyDataSize(system, &address, 0, nil, &size) == noErr, size > 0 else { return false }
+   90|      0|    var devices = [CMIOObjectID](repeating: 0, count: Int(size) / MemoryLayout<CMIOObjectID>.size)
+   91|      0|    var used: UInt32 = 0
+   92|      0|    guard CMIOObjectGetPropertyData(system, &address, 0, nil, size, &used, &devices) == noErr else { return false }
+   93|      0|    address = cameraAddress(kCMIODevicePropertyDeviceIsRunningSomewhere)
+   94|      0|    var found = false
+   95|      0|    for device in devices {
+   96|      0|      listen(toCamera: device, kCMIODevicePropertyDeviceIsRunningSomewhere)
+   97|      0|      var running: UInt32 = 0
+   98|      0|      let status = CMIOObjectGetPropertyData(
+   99|      0|        device, &address, 0, nil, UInt32(MemoryLayout<UInt32>.size), &used, &running)
+  100|      0|      if status == noErr, running != 0 { found = true }
+  101|      0|    }
+  102|      0|    return found
+  103|      0|  }
+  104|       |
+  105|       |  // MARK: Microphones (CoreAudio)
+  106|       |
+  107|       |  private func audioAddress(
+  108|       |    _ selector: AudioObjectPropertySelector, _ scope: AudioObjectPropertyScope = kAudioObjectPropertyScopeGlobal
+  109|      0|  ) -> AudioObjectPropertyAddress {
+  110|      0|    AudioObjectPropertyAddress(mSelector: selector, mScope: scope, mElement: kAudioObjectPropertyElementMain)
+  111|      0|  }
+  112|       |
+  113|      0|  private func listen(toAudio object: AudioObjectID, _ selector: AudioObjectPropertySelector) {
+  114|      0|    guard heardAudioDevices.insert(object).inserted else { return }
+  115|      0|    var address = audioAddress(selector)
+  116|      0|    _ = AudioObjectAddPropertyListenerBlock(object, &address, queue) { [weak self] _, _ in self?.look() }
+  117|      0|  }
+  118|       |
+  119|      0|  private func hasStreams(_ device: AudioObjectID, _ scope: AudioObjectPropertyScope) -> Bool {
+  120|      0|    var address = audioAddress(kAudioDevicePropertyStreams, scope)
+  121|      0|    var size: UInt32 = 0
+  122|      0|    return AudioObjectGetPropertyDataSize(device, &address, 0, nil, &size) == noErr && size > 0
+  123|      0|  }
+  124|       |
+  125|      0|  private func aMicrophoneIsRunning() -> Bool {
+  126|      0|    let system = AudioObjectID(kAudioObjectSystemObject)
+  127|      0|    listen(toAudio: system, kAudioHardwarePropertyDevices)
+  128|      0|    var address = audioAddress(kAudioHardwarePropertyDevices)
+  129|      0|    var size: UInt32 = 0
+  130|      0|    guard AudioObjectGetPropertyDataSize(system, &address, 0, nil, &size) == noErr, size > 0 else { return false }
+  131|      0|    var devices = [AudioObjectID](repeating: 0, count: Int(size) / MemoryLayout<AudioObjectID>.size)
+  132|      0|    guard AudioObjectGetPropertyData(system, &address, 0, nil, &size, &devices) == noErr else { return false }
+  133|      0|    address = audioAddress(kAudioDevicePropertyDeviceIsRunningSomewhere)
+  134|      0|    var found = false
+  135|      0|    for device in devices {
+  136|      0|      // "Running" is said of a device, not of a direction. A headset that is one device for both is running while
+  137|      0|      // it plays music, so only what is a microphone and nothing else is believed.
+  138|      0|      guard hasStreams(device, kAudioObjectPropertyScopeInput), !hasStreams(device, kAudioObjectPropertyScopeOutput) else {
+  139|      0|        continue
+  140|      0|      }
+  141|      0|      listen(toAudio: device, kAudioDevicePropertyDeviceIsRunningSomewhere)
+  142|      0|      var running: UInt32 = 0
+  143|      0|      var runningSize = UInt32(MemoryLayout<UInt32>.size)
+  144|      0|      if AudioObjectGetPropertyData(device, &address, 0, nil, &runningSize, &running) == noErr, running != 0 { found = true }
+  145|      0|    }
+  146|      0|    return found
+  147|      0|  }
+  148|       |}
+

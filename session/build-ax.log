@@ -1,0 +1,9 @@
+/Users/runner/work/arbor/arbor/scripts/mac-shell/ax.swift:129:41: warning: 'activateIgnoringOtherApps' was deprecated in macOS 14.0: ignoringOtherApps is deprecated in macOS 14 and will have no effect. [#DeprecatedDeclaration]
+127 | case "activate":
+128 |   // Without the option macOS 14 and later leave a request from a background process unanswered.
+129 |   if !application().activate(options: [.activateIgnoringOtherApps]) { fail("the app did not accept the activation") }
+    |                                         `- warning: 'activateIgnoringOtherApps' was deprecated in macOS 14.0: ignoringOtherApps is deprecated in macOS 14 and will have no effect. [#DeprecatedDeclaration]
+130 | case "frontmost":
+131 |   print(NSWorkspace.shared.frontmostApplication?.processIdentifier ?? 0)
+
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>

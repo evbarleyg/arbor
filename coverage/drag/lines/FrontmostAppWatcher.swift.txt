@@ -1,0 +1,44 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/App/FrontmostAppWatcher.swift:
+    1|       |import AppKit
+    2|       |
+    3|       |/// Reports which app is frontmost: once when started, then every time another app comes to the front.
+    4|       |///
+    5|       |/// Not part of `AXWindowSystem`, which stops observing during a pause: a pause for an app
+    6|       |/// (`pauseForApps`) ends when that app leaves the front, so somebody has to be looking. It also sees
+    7|       |/// every app, including those Arbor does not arrange.
+    8|       |@MainActor
+    9|       |final class FrontmostAppWatcher {
+   10|       |  private var token: (any NSObjectProtocol)?
+   11|       |  private let onChange: @MainActor (FrontmostApp?) -> Void
+   12|       |
+   13|      1|  init(onChange: @escaping @MainActor (FrontmostApp?) -> Void) {
+   14|      1|    self.onChange = onChange
+   15|      1|  }
+   16|       |
+   17|      1|  func start() {
+   18|      1|    guard token == nil else { return }
+   19|      1|    token = NSWorkspace.shared.notificationCenter.addObserver(
+   20|      1|      forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main
+   21|      1|    ) { [weak self] note in
+   22|      1|      let app = (note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication).map { FrontmostApp($0) }
+   23|      1|      MainActor.assumeIsolated { self?.onChange(app) }
+   24|      1|    }
+   25|      1|    onChange(NSWorkspace.shared.frontmostApplication.map { FrontmostApp($0) })
+   26|      1|  }
+   27|       |
+   28|      1|  func stop() {
+   29|      1|    if let token { NSWorkspace.shared.notificationCenter.removeObserver(token) }
+   30|      1|    token = nil
+   31|      1|  }
+   32|       |}
+   33|       |
+   34|       |extension FrontmostApp {
+   35|      2|  init(_ app: NSRunningApplication) {
+   36|      2|    self.init(
+   37|      2|      bundleID: app.bundleIdentifier,
+   38|      2|      name: app.localizedName ?? app.bundleIdentifier ?? "pid \(app.processIdentifier)")
+   39|      2|  }
+   40|       |}
+

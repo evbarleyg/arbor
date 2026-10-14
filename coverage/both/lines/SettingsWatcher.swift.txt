@@ -1,0 +1,71 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/App/SettingsWatcher.swift:
+    1|       |import Foundation
+    2|       |
+    3|       |/// Notices when settings.json may have changed, so that an edit applies without `reload-settings`.
+    4|       |///
+    5|       |/// It only says that something happened. Waiting for the editor to finish, and deciding whether the
+    6|       |/// file now says anything new, is `Controller.settingsFileMayHaveChanged()`, which tests can reach.
+    7|       |///
+    8|       |/// Two things are watched, because editors save in two ways. Most write a new file and move it over
+    9|       |/// the old one, which changes the folder; a watch on the file alone would be left holding the old
+   10|       |/// one, which nobody can see any more. Others (VS Code, nano, `echo >`) write into the file where it
+   11|       |/// is, which does not change the folder. So after every event the file at the path is opened again.
+   12|       |@MainActor
+   13|       |final class SettingsWatcher {
+   14|       |  private let file: URL
+   15|       |  private let onChange: @MainActor () -> Void
+   16|       |  private var folderSource: DispatchSourceFileSystemObject?
+   17|       |  private var fileSource: DispatchSourceFileSystemObject?
+   18|       |
+   19|      9|  init(file: URL, onChange: @escaping @MainActor () -> Void) {
+   20|      9|    self.file = file
+   21|      9|    self.onChange = onChange
+   22|      9|  }
+   23|       |
+   24|      9|  func start() {
+   25|      9|    stop()
+   26|      9|    folderSource = watch(file.deletingLastPathComponent().path, for: .write)
+   27|      9|    watchFile()
+   28|      9|    if folderSource == nil {
+   29|      0|      Log.error("cannot watch the folder of settings.json; run reload-settings after editing the file")
+   30|      0|    }
+   31|      9|  }
+   32|       |
+   33|     15|  func stop() {
+   34|     15|    folderSource?.cancel()
+   35|     15|    folderSource = nil
+   36|     15|    fileSource?.cancel()
+   37|     15|    fileSource = nil
+   38|     15|  }
+   39|       |
+   40|     77|  private func changed() {
+   41|     77|    watchFile()
+   42|     77|    onChange()
+   43|     77|  }
+   44|       |
+   45|       |  /// Watches whatever is at the file's path now. Being deleted or renamed counts as well: if settings.json
+   46|       |  /// is a link into another folder, that is all there is to see of the file it points to being replaced.
+   47|     86|  private func watchFile() {
+   48|     86|    fileSource?.cancel()
+   49|     86|    fileSource = watch(file.path, for: [.write, .extend, .delete, .rename])
+   50|     86|  }
+   51|       |
+   52|       |  /// Nil if there is nothing at `path`.
+   53|       |  private func watch(
+   54|       |    _ path: String, for events: DispatchSource.FileSystemEvent
+   55|     95|  ) -> DispatchSourceFileSystemObject? {
+   56|     95|    let descriptor = open(path, O_EVTONLY)
+   57|     95|    guard descriptor >= 0 else { return nil }
+   58|     95|    let source = DispatchSource.makeFileSystemObjectSource(
+   59|     95|      fileDescriptor: descriptor, eventMask: events, queue: .main)
+   60|     95|    source.setEventHandler { [weak self] in
+   61|     77|      MainActor.assumeIsolated { self?.changed() }
+   62|     77|    }
+   63|     95|    source.setCancelHandler { close(descriptor) }
+   64|     95|    source.resume()
+   65|     95|    return source
+   66|     95|  }
+   67|       |}
+

@@ -1,0 +1,177 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/HeadsUpPanel.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import CoreGraphics
+    4|       |import Foundation
+    5|       |
+    6|       |/// A panel that comes, says something and goes: a translucent rounded background that fades in and out, above
+    7|       |/// everything else Arbor draws. The heads-up line and the panel of shortcuts are both one.
+    8|       |class PassingPanel: OverlayPanel {
+    9|       |  static let cornerRadius: CGFloat = 12
+   10|       |  static let fadeIn: TimeInterval = 0.1
+   11|       |  static let fadeOut: TimeInterval = 0.25
+   12|       |
+   13|      1|  let background = NSVisualEffectView()
+   14|       |  /// Whether the panel is meant to be seen. It stays on screen a little longer, while it fades out.
+   15|      1|  private(set) var isWanted = false
+   16|       |  /// How often it has begun to fade out, so that the end of an earlier fade does not cut a later one short.
+   17|      1|  private var departures = 0
+   18|       |
+   19|      1|  override init() {
+   20|      1|    super.init()
+   21|      1|    // The stage that covers a display while windows move is one above `.floating`.
+   22|      1|    level = NSWindow.Level(rawValue: NSWindow.Level.floating.rawValue + 2)
+   23|      1|    hasShadow = true
+   24|      1|    // Not `.fullScreenAuxiliary`: another app's full-screen Space is none of Arbor's business. `.transient`, because a
+   25|      1|    // `.stationary` panel stays on screen in Mission Control.
+   26|      1|    collectionBehavior = [.canJoinAllSpaces, .transient, .ignoresCycle]
+   27|      1|    background.material = .hudWindow
+   28|      1|    background.blendingMode = .behindWindow
+   29|      1|    background.state = .active  // The app is never active, and an inactive effect view turns flat grey.
+   30|      1|    background.maskImage = Self.roundedMask
+   31|      1|    contentView = background
+   32|      1|  }
+   33|       |
+   34|       |  /// A layer's corner radius does not reach what the window server blurs behind the window; a mask image does. The
+   35|       |  /// corners keep their size and the middle stretches.
+   36|      1|  private static let roundedMask: NSImage = {
+   37|      1|    let radius = cornerRadius
+   38|      1|    // AppKit may draw an image on any thread, so the closure must not inherit the main actor.
+   39|      2|    let draw: @Sendable (NSRect) -> Bool = { rect in
+   40|      2|      NSColor.black.setFill()
+   41|      2|      NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
+   42|      2|      return true
+   43|      2|    }
+   44|      1|    let image = NSImage(size: NSSize(width: radius * 2 + 1, height: radius * 2 + 1), flipped: false, drawingHandler: draw)
+   45|      1|    image.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
+   46|      1|    image.resizingMode = .stretch
+   47|      1|    return image
+   48|      1|  }()
+   49|       |
+   50|      6|  private var animates: Bool { !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
+   51|       |
+   52|       |  /// Fades in, or carries on showing. With "Reduce motion" on it only appears.
+   53|      2|  func appear() {
+   54|      2|    isWanted = true
+   55|      2|    if !isVisible {
+   56|      2|      alphaValue = animates ? 0 : 1
+   57|      2|      orderFrontRegardless()
+   58|      2|    }
+   59|      2|    // Through the animator even when there is nothing to fade, so that it replaces a fade-out under way.
+   60|      2|    NSAnimationContext.runAnimationGroup { context in
+   61|      2|      context.duration = animates ? Self.fadeIn : 0
+   62|      2|      animator().alphaValue = 1
+   63|      2|    }
+   64|      2|  }
+   65|       |
+   66|       |  /// Fades out, or with `atOnce` is simply gone.
+   67|      2|  func disappear(atOnce: Bool = false) {
+   68|      2|    guard isWanted else { return }
+   69|      2|    isWanted = false
+   70|      2|    departures += 1
+   71|      2|    let departure = departures
+   72|      2|    guard animates, !atOnce else {
+   73|      2|      orderOut(nil)
+   74|      2|      return
+   75|      2|    }
+   76|      0|    NSAnimationContext.runAnimationGroup(
+   77|      0|      { context in
+   78|      0|        context.duration = Self.fadeOut
+   79|      0|        animator().alphaValue = 0
+   80|      0|      },
+   81|      0|      completionHandler: { [weak self] in
+   82|      0|        MainActor.assumeIsolated {
+   83|      0|          // Unless it was asked for again while it faded.
+   84|      0|          guard let self, !self.isWanted, self.departures == departure else { return }
+   85|      0|          self.orderOut(nil)
+   86|      0|        }
+   87|      0|      })
+   88|      0|  }
+   89|       |}
+   90|       |
+   91|       |/// Draws the heads-up line (`HeadsUpModel`): one or two lines of text that no click can hit.
+   92|       |final class HeadsUpPanel: PassingPanel {
+   93|       |  private static let padding = NSSize(width: 18, height: 10)
+   94|      1|  private let line = MeasuredTextView()
+   95|       |  /// What it was last asked to show.
+   96|       |  private(set) var shown: HeadsUpModel?
+   97|       |
+   98|      1|  override init() {
+   99|      1|    super.init()
+  100|      1|    // One higher than the panel of shortcuts, which a line may have something to say about.
+  101|      1|    level = NSWindow.Level(rawValue: level.rawValue + 1)
+  102|      1|    ignoresMouseEvents = true
+  103|      1|    background.addSubview(line)
+  104|      1|  }
+  105|       |
+  106|       |  /// What `show` puts where. Worked out without a window, so that tests can draw it off screen.
+  107|       |  struct Placement {
+  108|       |    /// The panel, in global coordinates.
+  109|       |    var frame: CGRect
+  110|       |    var text: NSAttributedString
+  111|       |    /// The text inside the panel.
+  112|       |    var textFrame: NSRect
+  113|       |  }
+  114|       |
+  115|      2|  static func placement(of model: HeadsUpModel) -> Placement {
+  116|      2|    let text = Self.text(of: model)
+  117|      2|    let limit = NSSize(width: model.maximumWidth - 2 * Self.padding.width, height: 400)
+  118|      2|    let measured = text.boundingRect(with: limit, options: [.usesLineFragmentOrigin, .usesFontLeading]).size
+  119|      2|    let size = NSSize(width: measured.width.rounded(.up), height: measured.height.rounded(.up))
+  120|      2|    let frame = CGRect(
+  121|      2|      x: (model.anchor.x - size.width / 2 - Self.padding.width).rounded(),
+  122|      2|      y: (model.anchor.y - size.height - 2 * Self.padding.height).rounded(),
+  123|      2|      width: size.width + 2 * Self.padding.width, height: size.height + 2 * Self.padding.height)
+  124|      2|    return Placement(
+  125|      2|      frame: frame, text: text, textFrame: NSRect(origin: NSPoint(x: Self.padding.width, y: Self.padding.height), size: size))
+  126|      2|  }
+  127|       |
+  128|      2|  func show(_ model: HeadsUpModel) {
+  129|      2|    shown = model
+  130|      2|    let placement = Self.placement(of: model)
+  131|      2|    setFrame(ScreenGeometry.appKit(fromGlobal: placement.frame), display: false)
+  132|      2|    line.frame = placement.textFrame
+  133|      2|    line.text = placement.text
+  134|      2|    invalidateShadow()
+  135|      2|    appear()
+  136|      2|  }
+  137|       |
+  138|       |  /// What happened in the colour of text, and what to press next more quietly after it.
+  139|      2|  private static func text(of model: HeadsUpModel) -> NSAttributedString {
+  140|      2|    let paragraph = NSMutableParagraphStyle()
+  141|      2|    paragraph.alignment = .center
+  142|      2|    paragraph.lineBreakMode = .byWordWrapping
+  143|      2|    let text = NSMutableAttributedString(
+  144|      2|      string: model.text,
+  145|      2|      attributes: [
+  146|      2|        .font: NSFont.systemFont(ofSize: 15, weight: .medium), .foregroundColor: NSColor.labelColor,
+  147|      2|        .paragraphStyle: paragraph,
+  148|      2|      ])
+  149|      2|    if let hint = model.hint {
+  150|      2|      text.append(
+  151|      2|        NSAttributedString(
+  152|      2|          string: "   " + hint,
+  153|      2|          attributes: [
+  154|      2|            .font: NSFont.systemFont(ofSize: 15, weight: .regular), .foregroundColor: NSColor.secondaryLabelColor,
+  155|      2|            .paragraphStyle: paragraph,
+  156|      2|          ]))
+  157|      2|    }
+  158|      2|    return text
+  159|      2|  }
+  160|       |}
+  161|       |
+  162|       |/// Draws text exactly where it was measured to fit, which a text field's cell, with margins of its own, does not.
+  163|       |final class MeasuredTextView: NSView {
+  164|      1|  var text = NSAttributedString() {
+  165|      2|    didSet { needsDisplay = true }
+  166|       |  }
+  167|       |
+  168|     36|  override var isFlipped: Bool { true }
+  169|       |
+  170|      2|  override func draw(_ dirtyRect: NSRect) {
+  171|      2|    text.draw(with: bounds, options: [.usesLineFragmentOrigin, .usesFontLeading])
+  172|      2|  }
+  173|       |}
+

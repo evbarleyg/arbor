@@ -1,0 +1,204 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/NamePanel.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import CoreGraphics
+    4|       |
+    5|       |/// Shows the field a name is typed into (`NamePromptModel`): one panel, on whichever display's scene has it.
+    6|       |@MainActor
+    7|       |final class NameField {
+    8|       |  private var panel: NamePanel?
+    9|       |  private var showingOn: DisplayID?
+   10|       |
+   11|    314|  func update(display: DisplayID, model: NamePromptModel?, actions: (any OverlayActions)?) {
+   12|    314|    guard let model else {
+   13|    314|      // Other displays' scenes have no field either, and must not close this one's.
+   14|    314|      if showingOn == display { removeAll() }
+   15|    314|      return
+   16|    314|    }
+   17|      0|    let panel = self.panel ?? NamePanel()
+   18|      0|    self.panel = panel
+   19|      0|    showingOn = display
+   20|      0|    panel.run = { [weak actions] command in actions?.perform(command) }
+   21|      0|    panel.show(model)
+   22|      0|  }
+   23|       |
+   24|     16|  func removeAll() {
+   25|     16|    showingOn = nil
+   26|     16|    panel?.hide()
+   27|     16|  }
+   28|       |}
+   29|       |
+   30|       |/// A title, a field and a line of text. What they say, and what ↩ and ⎋ do, is the model's business.
+   31|       |///
+   32|       |/// Unlike Arbor's other panels this one takes the keyboard. It does so without making Arbor the active
+   33|       |/// app (`.nonactivatingPanel`), so the app in front stays in front, its window stays the focused window as
+   34|       |/// far as Accessibility can tell, and the keyboard returns to it when the panel goes.
+   35|       |final class NamePanel: OverlayPanel, NSTextFieldDelegate {
+   36|       |  var run: ((Command) -> CommandResult?)?
+   37|       |  /// Nil while the panel is hidden.
+   38|       |  private var model: NamePromptModel?
+   39|      0|  private let titleLabel = NSTextField(labelWithString: "")
+   40|      0|  private let field = NSTextField(string: "")
+   41|      0|  private let noteLabel = NSTextField(labelWithString: "")
+   42|       |  /// Watches for clicks and key presses that go to other apps while the field is open.
+   43|       |  private var clickMonitor: Any?
+   44|       |
+   45|      0|  override init() {
+   46|      0|    super.init()
+   47|      0|    level = .modalPanel
+   48|      0|    hasShadow = true
+   49|      0|    ignoresMouseEvents = false
+   50|      0|    collectionBehavior = [.ignoresCycle, .transient, .fullScreenAuxiliary]
+   51|      0|
+   52|      0|    let background = NSVisualEffectView()
+   53|      0|    background.material = .hudWindow
+   54|      0|    background.blendingMode = .behindWindow
+   55|      0|    background.state = .active  // The app is never active, and an inactive effect view turns flat grey.
+   56|      0|    background.maskImage = Self.roundedMask
+   57|      0|    contentView = background
+   58|      0|
+   59|      0|    titleLabel.font = .systemFont(ofSize: 11, weight: .semibold)
+   60|      0|    titleLabel.textColor = .secondaryLabelColor
+   61|      0|    field.font = .systemFont(ofSize: 20)
+   62|      0|    field.isBordered = false
+   63|      0|    field.isBezeled = false
+   64|      0|    field.drawsBackground = false
+   65|      0|    field.focusRingType = .none
+   66|      0|    field.usesSingleLineMode = true
+   67|      0|    field.lineBreakMode = .byTruncatingTail
+   68|      0|    field.cell?.isScrollable = true
+   69|      0|    field.placeholderString = "Name"
+   70|      0|    field.delegate = self
+   71|      0|    noteLabel.font = .systemFont(ofSize: 11)
+   72|      0|    noteLabel.lineBreakMode = .byTruncatingTail
+   73|      0|    for view in [titleLabel, field, noteLabel] { background.addSubview(view) }
+   74|      0|  }
+   75|       |
+   76|      0|  override var canBecomeKey: Bool { true }
+   77|       |
+   78|       |  /// A layer's corner radius does not reach what the window server blurs behind the window; a mask image does. The
+   79|       |  /// corners keep their size and the middle stretches. (As in `HeadsUpPanel`, F43.)
+   80|      0|  private static let roundedMask: NSImage = {
+   81|      0|    let radius: CGFloat = 14
+   82|      0|    // AppKit may draw an image on any thread, so the closure must not inherit the main actor.
+   83|      0|    let draw: @Sendable (NSRect) -> Bool = { rect in
+   84|      0|      NSColor.black.setFill()
+   85|      0|      NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
+   86|      0|      return true
+   87|      0|    }
+   88|      0|    let image = NSImage(size: NSSize(width: radius * 2 + 1, height: radius * 2 + 1), flipped: false, drawingHandler: draw)
+   89|      0|    image.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
+   90|      0|    image.resizingMode = .stretch
+   91|      0|    return image
+   92|      0|  }()
+   93|       |
+   94|      0|  func show(_ new: NamePromptModel) {
+   95|      0|    let wasHidden = model == nil
+   96|      0|    model = new
+   97|      0|    titleLabel.stringValue = new.title
+   98|      0|    setFrame(ScreenGeometry.appKit(fromGlobal: new.frame), display: true)
+   99|      0|    invalidateShadow()  // the shadow of a transparent window is shaped by what was last drawn
+  100|      0|    // From the top: 12, the title, 6, the field, 6, the note. AppKit counts from the bottom.
+  101|      0|    let (width, height) = (new.frame.width - 32, new.frame.height)
+  102|      0|    titleLabel.frame = NSRect(x: 16, y: height - 28, width: width, height: 16)
+  103|      0|    field.frame = NSRect(x: 16, y: height - 62, width: width, height: 28)
+  104|      0|    noteLabel.frame = NSRect(x: 16, y: height - 84, width: width, height: 16)
+  105|      0|    if wasHidden {
+  106|      0|      // What has been typed stays when the model changes under an open field.
+  107|      0|      field.stringValue = new.initial
+  108|      0|      orderFrontRegardless()
+  109|      0|      makeKey()
+  110|      0|      field.selectText(nil)
+  111|      0|      // `resignKey` should cover the clicks, but a field left on screen that no click puts away would be worse than
+  112|      0|      // one that is closed twice, and the second time does nothing. A key press reaches another app only if macOS did
+  113|      0|      // not give the field the keyboard (secure text entry does that): then it must not sit there looking as if it had.
+  114|      0|      // The key that opened the field may still be down and repeating.
+  115|      0|      clickMonitor = NSEvent.addGlobalMonitorForEvents(
+  116|      0|        matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown, .keyDown]
+  117|      0|      ) { [weak self] event in
+  118|      0|        let isRepeat = event.type == .keyDown && event.isARepeat
+  119|      0|        MainActor.assumeIsolated {
+  120|      0|          guard let self, !isRepeat else { return }
+  121|      0|          self.cancel()
+  122|      0|        }
+  123|      0|      }
+  124|      0|    }
+  125|      0|    showNote()
+  126|      0|  }
+  127|       |
+  128|      0|  func hide() {
+  129|      0|    // First, so that losing the keyboard by being hidden is not taken for a click elsewhere.
+  130|      0|    model = nil
+  131|      0|    if let clickMonitor { NSEvent.removeMonitor(clickMonitor) }
+  132|      0|    clickMonitor = nil
+  133|      0|    orderOut(nil)
+  134|      0|  }
+  135|       |
+  136|      0|  private func showNote(_ problem: String? = nil) {
+  137|      0|    guard let model else { return }
+  138|      0|    let answer = model.answer(to: field.stringValue)
+  139|      0|    noteLabel.stringValue = problem ?? answer.note
+  140|      0|    noteLabel.textColor = problem != nil || answer.isProblem ? .systemRed : .secondaryLabelColor
+  141|      0|  }
+  142|       |
+  143|      0|  private func submit() {
+  144|      0|    guard let model else { return }
+  145|      0|    guard let command = model.answer(to: field.stringValue).command else {
+  146|      0|      NSSound.beep()
+  147|      0|      return
+  148|      0|    }
+  149|      0|    // A command that succeeds closes the field by way of the next scene.
+  150|      0|    if let result = run?(command), !result.ok {
+  151|      0|      NSSound.beep()
+  152|      0|      showNote(result.message)
+  153|      0|    }
+  154|      0|  }
+  155|       |
+  156|      0|  private func cancel() {
+  157|      0|    guard let model else { return }
+  158|      0|    _ = run?(model.cancel)
+  159|      0|    // The next scene has closed the field by now. Should it ever not, a field that has been left must not stay up.
+  160|      0|    if self.model != nil { hide() }
+  161|      0|  }
+  162|       |
+  163|       |  // MARK: The keyboard
+  164|       |
+  165|      0|  func controlTextDidChange(_ notification: Notification) { showNote() }
+  166|       |
+  167|      0|  func control(_ control: NSControl, textView: NSTextView, doCommandBy selector: Selector) -> Bool {
+  168|      0|    if selector == #selector(NSResponder.insertNewline(_:)) {
+  169|      0|      submit()
+  170|      0|      return true
+  171|      0|    }
+  172|      0|    if selector == #selector(NSResponder.cancelOperation(_:)) {
+  173|      0|      cancel()
+  174|      0|      return true
+  175|      0|    }
+  176|      0|    return false
+  177|      0|  }
+  178|       |
+  179|       |  /// ⌘A, ⌘X, ⌘C and ⌘V are an Edit menu's work in other apps; Arbor has no menu bar.
+  180|      0|  override func performKeyEquivalent(with event: NSEvent) -> Bool {
+  181|      0|    guard event.type == .keyDown,
+  182|      0|      event.modifierFlags.intersection([.command, .option, .control, .shift]) == .command,
+  183|      0|      let key = event.charactersIgnoringModifiers, let editor = field.currentEditor()
+  184|      0|    else { return super.performKeyEquivalent(with: event) }
+  185|      0|    switch key {
+  186|      0|    case "a": editor.selectAll(nil)
+  187|      0|    case "x": editor.cut(nil)
+  188|      0|    case "c": editor.copy(nil)
+  189|      0|    case "v": editor.paste(nil)
+  190|      0|    default: return super.performKeyEquivalent(with: event)
+  191|      0|    }
+  192|      0|    return true
+  193|      0|  }
+  194|       |
+  195|       |  /// A click in another window takes the keyboard away: the field has been left.
+  196|      0|  override func resignKey() {
+  197|      0|    super.resignKey()
+  198|      0|    cancel()
+  199|      0|  }
+  200|       |}
+

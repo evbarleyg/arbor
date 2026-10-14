@@ -1,0 +1,109 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/Input/HotKeyCenter.swift:
+    1|       |import ArborCore
+    2|       |import Carbon.HIToolbox
+    3|       |
+    4|       |/// Registers global shortcuts with Carbon's RegisterEventHotKey, which needs
+    5|       |/// no extra permission and swallows the key press so the frontmost app never
+    6|       |/// sees it. It reports each shortcut's key going down and coming up, and decides nothing.
+    7|       |@MainActor
+    8|       |public final class HotKeyCenter {
+    9|       |  fileprivate static weak var current: HotKeyCenter?
+   10|       |
+   11|       |  private var handlerRef: EventHandlerRef?
+   12|      2|  private var registered: [UInt32: (ref: EventHotKeyRef, binding: KeyBinding)] = [:]
+   13|       |  /// The shortcuts `setTemporary` added.
+   14|      2|  private var temporary: [UInt32] = []
+   15|       |  /// Never used twice, so that the release of a shortcut that has been unregistered meanwhile is nobody's, and a
+   16|       |  /// press still on its way when the shortcuts are registered anew (another app came to the front) finds
+   17|       |  /// nothing rather than whichever command took over its number.
+   18|      2|  private var lastIdentifier: UInt32 = 0
+   19|       |  private let onKey: (KeyBinding, KeyPhase) -> Void
+   20|       |
+   21|      2|  public init(onKey: @escaping (KeyBinding, KeyPhase) -> Void) {
+   22|      2|    self.onKey = onKey
+   23|      2|    HotKeyCenter.current = self
+   24|      2|    let specs = [
+   25|      2|      EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed)),
+   26|      2|      EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyReleased)),
+   27|      2|    ]
+   28|      2|    let status = InstallEventHandler(
+   29|      2|      GetEventDispatcherTarget(), hotKeyEventHandler, 2, specs, nil, &handlerRef)
+   30|      2|    if status != noErr { Log.error("no shortcut will work: could not listen for hot keys (error \(status))") }
+   31|      2|  }
+   32|       |
+   33|       |  /// Registers the bindings and returns any that macOS refused.
+   34|       |  @discardableResult
+   35|      2|  public func register(_ bindings: [KeyBinding]) -> [KeyBinding] {
+   36|      2|    unregisterAll()
+   37|    104|    let failed = bindings.filter { add($0) == nil }
+   38|      2|    if !failed.isEmpty {
+   39|      0|      Log.info("shortcuts already in use by another app: \(failed.map(\.label).joined(separator: " "))")
+   40|      0|    }
+   41|      2|    return failed
+   42|      2|  }
+   43|       |
+   44|       |  /// Registers these on top of the others, in place of the ones the last call added. The others stay as
+   45|       |  /// they are: unregistering a shortcut whose key is down would lose its release.
+   46|      0|  public func setTemporary(_ bindings: [KeyBinding]) {
+   47|      0|    for identifier in temporary { remove(identifier) }
+   48|      0|    temporary = bindings.compactMap { add($0) }
+   49|      0|  }
+   50|       |
+   51|      4|  public func unregisterAll() {
+   52|    104|    for entry in registered.values { UnregisterEventHotKey(entry.ref) }
+   53|      4|    registered.removeAll()
+   54|      4|    temporary.removeAll()
+   55|      4|  }
+   56|       |
+   57|    104|  private func add(_ binding: KeyBinding) -> UInt32? {
+   58|    104|    lastIdentifier &+= 1
+   59|    104|    var ref: EventHotKeyRef?
+   60|    104|    let hotKeyID = EventHotKeyID(signature: OSType(0x4152_424F), id: lastIdentifier)  // 'ARBO'
+   61|    104|    let status = RegisterEventHotKey(
+   62|    104|      binding.keyCode, binding.modifiers.carbonFlags, hotKeyID, GetEventDispatcherTarget(), 0, &ref)
+   63|    104|    guard status == noErr, let ref else { return nil }
+   64|    104|    registered[lastIdentifier] = (ref, binding)
+   65|    104|    return lastIdentifier
+   66|    104|  }
+   67|       |
+   68|      0|  private func remove(_ identifier: UInt32) {
+   69|      0|    guard let entry = registered.removeValue(forKey: identifier) else { return }
+   70|      0|    UnregisterEventHotKey(entry.ref)
+   71|      0|  }
+   72|       |
+   73|     32|  fileprivate func fire(_ identifier: UInt32, _ phase: KeyPhase) {
+   74|     32|    guard let binding = registered[identifier]?.binding else { return }
+   75|     32|    onKey(binding, phase)
+   76|     32|  }
+   77|       |}
+   78|       |
+   79|       |extension KeyChord.Modifiers {
+   80|       |  /// Carbon's modifier flags for RegisterEventHotKey.
+   81|    104|  fileprivate var carbonFlags: UInt32 {
+   82|    104|    var flags: UInt32 = 0
+   83|    104|    if contains(.command) { flags |= UInt32(cmdKey) }
+   84|    104|    if contains(.shift) { flags |= UInt32(shiftKey) }
+   85|    104|    if contains(.option) { flags |= UInt32(optionKey) }
+   86|    104|    if contains(.control) { flags |= UInt32(controlKey) }
+   87|    104|    return flags
+   88|    104|  }
+   89|       |}
+   90|       |
+   91|       |/// Carbon delivers hot key events on the main thread.
+   92|       |private func hotKeyEventHandler(
+   93|       |  _ next: EventHandlerCallRef?, _ event: EventRef?, _ userData: UnsafeMutableRawPointer?
+   94|     32|) -> OSStatus {
+   95|     32|  guard let event else { return OSStatus(eventNotHandledErr) }
+   96|     32|  var hotKeyID = EventHotKeyID()
+   97|     32|  let status = GetEventParameter(
+   98|     32|    event, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID), nil,
+   99|     32|    MemoryLayout<EventHotKeyID>.size, nil, &hotKeyID)
+  100|     32|  guard status == noErr else { return status }
+  101|     32|  let identifier = hotKeyID.id
+  102|     32|  let phase: KeyPhase = GetEventKind(event) == UInt32(kEventHotKeyReleased) ? .released : .pressed
+  103|     32|  MainActor.assumeIsolated { HotKeyCenter.current?.fire(identifier, phase) }
+  104|     32|  return noErr
+  105|     32|}
+

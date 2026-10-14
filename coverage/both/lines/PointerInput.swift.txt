@@ -1,0 +1,94 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/Input/PointerInput.swift:
+    1|       |import ArborCore
+    2|       |import Foundation
+    3|       |
+    4|       |/// The pointer input that becomes commands: trackpad pinch (F03,
+    5|       |/// `GestureTap`) and the modifier-drag rectangle (F05, `RectangleFramer`).
+    6|       |/// Each has its own event tap, installed only while its setting turns it on
+    7|       |/// and while Arbor has Accessibility permission.
+    8|       |@MainActor
+    9|       |final class PointerInput {
+   10|       |  private let gestures: GestureTap
+   11|       |  private let framer: RectangleFramer
+   12|       |  private var permissionCheck: Timer?
+   13|       |  /// True after Accessibility permission went away; the taps stay removed until it returns.
+   14|      0|  private var suspended = false
+   15|       |  /// Called when the watchdog finds the permission gone, or back.
+   16|       |  var onPermissionChange: (@MainActor () -> Void)?
+   17|       |
+   18|       |  init(
+   19|       |    settings: @escaping @MainActor () -> Settings, onCommand: @escaping @MainActor (Command) -> Void,
+   20|       |    onGesture: @escaping @MainActor (GestureUpdate) -> Void, onPress: @escaping @MainActor () -> Void
+   21|      0|  ) {
+   22|      0|    gestures = GestureTap(settings: settings, onCommand: onCommand, onGesture: onGesture)
+   23|      0|    framer = RectangleFramer(settings: settings, onCommand: onCommand, onPress: onPress)
+   24|      0|  }
+   25|       |
+   26|       |  /// Applies the current settings: installs, removes or reconfigures the
+   27|       |  /// taps. Call at launch and after every settings change (`reload-settings`).
+   28|      0|  func update() {
+   29|      0|    watchPermission()
+   30|      0|    guard !suspended else { return }
+   31|      0|    gestures.update()
+   32|      0|    framer.update()
+   33|      0|  }
+   34|       |
+   35|       |  /// The names of the taps installed now, for `doctor`.
+   36|      0|  var installedTaps: [String] {
+   37|      0|    gestures.installedTaps + (framer.isInstalled ? ["rectangle"] : [])
+   38|      0|  }
+   39|       |
+   40|       |  /// Where a plain click might land on bare Desktop (F60). Call after every change of the layout.
+   41|      0|  func publish(_ zones: DesktopGuardZones) {
+   42|      0|    framer.publish(zones)
+   43|      0|  }
+   44|       |
+   45|      0|  func stop() {
+   46|      0|    permissionCheck?.invalidate()
+   47|      0|    permissionCheck = nil
+   48|      0|    gestures.stop()
+   49|      0|    framer.stop()
+   50|      0|  }
+   51|       |
+   52|       |  /// Users switch a misbehaving window manager off in System Settings, and
+   53|       |  /// macOS has been reported to stop all input when a process loses
+   54|       |  /// Accessibility permission while it has an active event tap. So once a
+   55|       |  /// second, while a tap is installed, Arbor checks that it still may, and
+   56|       |  /// removes its taps at once if not; they come back when permission does.
+   57|       |  /// The same check switches a tap back on that macOS left off.
+   58|      0|  private func watchPermission() {
+   59|      0|    guard permissionCheck == nil else { return }
+   60|      0|    let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
+   61|      0|      MainActor.assumeIsolated { self?.checkPermission() }
+   62|      0|    }
+   63|      0|    // Lets macOS fire it together with other timers instead of waking the Mac just for this.
+   64|      0|    timer.tolerance = 0.2
+   65|      0|    RunLoop.main.add(timer, forMode: .common)
+   66|      0|    permissionCheck = timer
+   67|      0|  }
+   68|       |
+   69|      0|  private func checkPermission() {
+   70|      0|    guard suspended || gestures.isInstalled || framer.isInstalled else { return }
+   71|      0|    let refusal = EventTap.refusal()
+   72|      0|    let permitted = refusal == nil
+   73|      0|    if !permitted, !suspended {
+   74|      0|      suspended = true
+   75|      0|      gestures.stop()
+   76|      0|      framer.stop()
+   77|      0|      Log.info("Accessibility permission is gone (\(refusal ?? "")): removed the pinch and rectangle event taps")
+   78|      0|      onPermissionChange?()
+   79|      0|    } else if permitted, suspended {
+   80|      0|      suspended = false
+   81|      0|      Log.info("Accessibility permission is back: installing the pinch and rectangle event taps")
+   82|      0|      gestures.update()
+   83|      0|      framer.update()
+   84|      0|      onPermissionChange?()
+   85|      0|    } else if permitted {
+   86|      0|      gestures.revive()
+   87|      0|      framer.revive()
+   88|      0|    }
+   89|      0|  }
+   90|       |}
+

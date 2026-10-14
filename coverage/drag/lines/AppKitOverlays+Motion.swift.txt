@@ -1,0 +1,27 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/AppKitOverlays+Motion.swift:
+    1|       |import ArborCore
+    2|       |
+    3|       |/// The moving part of `OverlayPresenter`: see `StageDirector`, `Stage` and `WindowPictures`.
+    4|       |extension AppKitOverlays {
+    5|      4|  public func animate(_ transition: Transition) {
+    6|      4|    director.play(transition, surface: backdrops.model(on: transition.display))
+    7|      4|  }
+    8|       |
+    9|      9|  public func finishAnimations() { director.finish() }
+   10|       |
+   11|       |  /// The `windowPictures` setting: whether stand-ins may be pictures of their windows.
+   12|       |  public var takesPicturesOfWindows: Bool {
+   13|      0|    get { director.pictures.isWanted }
+   14|      1|    set { director.pictures.isWanted = newValue }
+   15|       |  }
+   16|       |
+   17|       |  /// Tells the overlays that the user turned to another window, which is a good moment to take
+   18|       |  /// pictures: of the window they left and of the one they are about to work with.
+   19|      4|  public func windowFocused(_ window: WindowID) { director.windowFocused(window) }
+   20|       |
+   21|       |  /// Tells the overlays that a display was laid out, so windows may have appeared or changed size.
+   22|      6|  public func windowsWereLaidOut() { director.windowsWereLaidOut() }
+   23|       |}
+

@@ -1,0 +1,397 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/SettingsListViews.swift:
+    1|       |import ArborCore
+    2|       |import Foundation
+    3|       |import SwiftUI
+    4|       |
+    5|       |// The two panes of the settings window that edit a list, shortcuts and rules, and the line of a list of apps. As in SettingsViews.swift, each view draws what `SettingsPanelModel` says and calls its methods.
+    6|       |
+    7|       |// MARK: Shortcuts
+    8|       |
+    9|       |struct ShortcutsPane: View {
+   10|       |  @ObservedObject var store: SettingsPanelStore
+   11|      0|  @State private var commandText: String = ""
+   12|       |
+   13|      2|  var body: some View {
+   14|      2|    Form {
+   15|      2|      if store.model.shortcutsAreOff {
+   16|      0|        Section {
+   17|      0|          Text("Keyboard shortcuts are switched off (General → Use keyboard shortcuts).")
+   18|      0|            .foregroundStyle(.secondary)
+   19|      0|        }
+   20|      0|      }
+   21|      2|      Section {
+   22|    156|        ForEach(store.model.shortcutRows) { row in
+   23|    156|          ShortcutRowView(store: store, row: row)
+   24|    156|        }
+   25|      2|      }
+   26|      2|      Section("A shortcut for another command") {
+   27|      2|        newShortcut
+   28|      2|      }
+   29|      0|      SettingsProblemList(title: "Entries in settings.json that could not be used", lines: store.model.shortcutProblems)
+   30|      2|      Section {
+   31|      2|        if let question = store.model.question, question != .replaceFile {
+   32|      0|          SettingsQuestionView(store: store, question: question)
+   33|      2|        } else {
+   34|      2|          HStack {
+   35|      2|            Spacer()
+   36|      2|            Button("Restore All Shortcuts…") { store.model.restoreAllShortcuts() }
+   37|      2|              .disabled(!store.model.shortcutsAreChanged)
+   38|      2|          }
+   39|      2|        }
+   40|      2|      }
+   41|      0|    }
+   42|      2|    .formStyle(.grouped)
+   43|      2|  }
+   44|       |
+   45|      2|  private var newShortcut: some View {
+   46|      2|    VStack(alignment: .leading, spacing: 4) {
+   47|      2|      HStack {
+   48|      2|        TextField("", text: $commandText, prompt: Text("a command, such as dock left or set gap 0"))
+   49|      2|          .labelsHidden()
+   50|      2|          .textFieldStyle(.roundedBorder)
+   51|      2|          .font(.system(.body, design: .monospaced))
+   52|      2|          .accessibilityIdentifier("new-shortcut.field")
+   53|      2|          .accessibilityLabel("A command to give a shortcut to")
+   54|      2|        Button(isRecordingNew ? "Press the keys…" : "Record Shortcut") {
+   55|      0|          if isRecordingNew {
+   56|      0|            store.model.cancelRecording()
+   57|      0|          } else {
+   58|      0|            store.model.startRecording(commandText: commandText)
+   59|      0|          }
+   60|      0|        }
+   61|      2|        .disabled(commandText.isEmpty)
+   62|      2|      }
+   63|      2|      if let clash = store.model.clash, clash.row.isNew {
+   64|      0|        ShortcutClashView(store: store, clash: clash)
+   65|      0|      }
+   66|      0|      SettingsErrorText(text: store.model.errors[SettingsPanelModel.Pane.shortcuts.id])
+   67|      0|    }
+   68|      2|  }
+   69|       |
+   70|      2|  private var isRecordingNew: Bool { store.model.recording?.isNew == true }
+   71|       |}
+   72|       |
+   73|       |struct ShortcutRowView: View {
+   74|       |  @ObservedObject var store: SettingsPanelStore
+   75|       |  let row: SettingsPanelModel.ShortcutRow
+   76|       |
+   77|    104|  var body: some View {
+   78|    104|    VStack(alignment: .leading, spacing: 4) {
+   79|    104|      HStack(spacing: 8) {
+   80|    104|        Text(row.command.text)
+   81|    104|          .font(.system(.body, design: .monospaced))
+   82|    104|        Spacer()
+   83|    104|        Button {
+   84|      0|          if isRecording {
+   85|      0|            store.model.cancelRecording()
+   86|      0|          } else {
+   87|      0|            store.model.startRecording(row)
+   88|      0|          }
+   89|    104|        } label: {
+   90|    104|          Text(keysTitle)
+   91|    104|            .frame(minWidth: 110)
+   92|    104|        }
+   93|    104|        .help("Click, then press the new keys. Escape cancels.")
+   94|    104|        .accessibilityIdentifier("record.\(row.command.text)")
+   95|    104|        .accessibilityLabel("Shortcut for \(row.command.text): \(keysTitle)")
+   96|    104|        Button {
+   97|      0|          store.model.removeShortcut(row)
+   98|    104|        } label: {
+   99|    104|          Image(systemName: "minus.circle")
+  100|    104|        }
+  101|    104|        .buttonStyle(.borderless)
+  102|    104|        .disabled(row.chord == nil)
+  103|    104|        .help("Remove the shortcut")
+  104|    104|        .accessibilityIdentifier("remove.\(row.command.text)")
+  105|    104|        .accessibilityLabel("Remove the shortcut for \(row.command.text)")
+  106|    104|        Button {
+  107|      0|          store.model.restoreShortcut(row)
+  108|    104|        } label: {
+  109|    104|          Image(systemName: "arrow.uturn.backward.circle")
+  110|    104|        }
+  111|    104|        .buttonStyle(.borderless)
+  112|    104|        .disabled(!row.isChanged)
+  113|    104|        .help(row.standard == nil ? "Remove the shortcut" : "Back to the default")
+  114|    104|        .accessibilityIdentifier("restore.\(row.command.text)")
+  115|    104|        .accessibilityLabel("Restore the shortcut for \(row.command.text)")
+  116|    104|      }
+  117|    104|      if let clash = store.model.clash, clash.row == row {
+  118|      0|        ShortcutClashView(store: store, clash: clash)
+  119|      0|      }
+  120|      0|      if let caution = row.caution {
+  121|      0|        Text("Mind that \(caution).")
+  122|      0|          .font(.caption)
+  123|      0|          .foregroundStyle(.orange)
+  124|      0|          .fixedSize(horizontal: false, vertical: true)
+  125|      0|      }
+  126|      0|      SettingsErrorText(text: store.model.errors[row.id])
+  127|      0|    }
+  128|    104|  }
+  129|       |
+  130|    208|  private var isRecording: Bool { store.model.recording == row }
+  131|       |
+  132|    208|  private var keysTitle: String {
+  133|    208|    if isRecording { return "Press the keys…" }
+  134|    208|    return row.label ?? "None"
+  135|    208|  }
+  136|       |}
+  137|       |
+  138|       |/// The keys just pressed belong to another command.
+  139|       |struct ShortcutClashView: View {
+  140|       |  @ObservedObject var store: SettingsPanelStore
+  141|       |  let clash: SettingsPanelModel.Clash
+  142|       |
+  143|      0|  var body: some View {
+  144|      0|    HStack(spacing: 8) {
+  145|      0|      Text("\(clash.label) runs \(clash.holder.text) now.")
+  146|      0|        .font(.caption)
+  147|      0|        .foregroundStyle(.orange)
+  148|      0|      Button("Use It Here Instead") { store.model.replaceHolder() }
+  149|      0|        .controlSize(.small)
+  150|      0|      Button("Cancel") { store.model.cancelRecording() }
+  151|      0|        .controlSize(.small)
+  152|      0|    }
+  153|      0|  }
+  154|       |}
+  155|       |
+  156|       |// MARK: Rules
+  157|       |
+  158|       |struct RulesPane: View {
+  159|       |  @ObservedObject var store: SettingsPanelStore
+  160|       |
+  161|      0|  var body: some View {
+  162|      0|    Form {
+  163|      0|      Section {
+  164|      0|        Text(
+  165|      0|          "What happens to a new window of an app. Rules are checked from the top and the first that matches wins; "
+  166|      0|            + "windows that are already open keep their place."
+  167|      0|        )
+  168|      0|        .font(.caption)
+  169|      0|        .foregroundStyle(.secondary)
+  170|      0|        .fixedSize(horizontal: false, vertical: true)
+  171|      0|        ForEach(store.model.ruleRows) { row in
+  172|      0|          RuleRowView(store: store, row: row)
+  173|      0|        }
+  174|      0|      }
+  175|      0|      Section {
+  176|      0|        HStack {
+  177|      0|          AppMenu(title: "Add a Rule for…", apps: store.model.appsForRules) { app in
+  178|      0|            store.model.addRule(app: app.bundleID)
+  179|      0|          }
+  180|      0|          .fixedSize()
+  181|      0|          Spacer()
+  182|      0|        }
+  183|      0|        SettingsErrorText(text: store.model.errors[SettingsPanelModel.Pane.rules.id])
+  184|      0|      }
+  185|      0|      SettingsProblemList(title: "Entries in settings.json that could not be read", lines: store.model.skippedRules)
+  186|      0|    }
+  187|      0|    .formStyle(.grouped)
+  188|      0|  }
+  189|       |}
+  190|       |
+  191|       |struct RuleRowView: View {
+  192|       |  @ObservedObject var store: SettingsPanelStore
+  193|       |  let row: SettingsPanelModel.RuleRow
+  194|       |  @State private var typedTitle: String?
+  195|       |  @FocusState private var titleIsFocused: Bool
+  196|       |
+  197|      0|  var body: some View {
+  198|      0|    VStack(alignment: .leading, spacing: 6) {
+  199|      0|      HStack(spacing: 8) {
+  200|      0|        Text("\(row.number).")
+  201|      0|          .foregroundStyle(.secondary)
+  202|      0|          .monospacedDigit()
+  203|      0|        VStack(alignment: .leading, spacing: 1) {
+  204|      0|          Text(row.appName)
+  205|      0|          if row.appName != row.rule.app {
+  206|      0|            Text(row.rule.app)
+  207|      0|              .font(.caption)
+  208|      0|              .foregroundStyle(.secondary)
+  209|      0|          }
+  210|      0|        }
+  211|      0|        Spacer()
+  212|      0|        RuleOrderButtons(store: store, row: row, before: { commitTitle() })
+  213|      0|      }
+  214|      0|      HStack(spacing: 8) {
+  215|      0|        Picker("", selection: kind) {
+  216|      0|          ForEach(SettingsPanelModel.RuleKind.allCases) { kind in
+  217|      0|            Text(kind.title)
+  218|      0|              .tag(kind)
+  219|      0|          }
+  220|      0|        }
+  221|      0|        .labelsHidden()
+  222|      0|        .fixedSize()
+  223|      0|        if let neighbour = row.neighbour {
+  224|      0|          AppMenu(title: store.model.name(of: neighbour), apps: store.model.appsForRules) { app in
+  225|      0|            commitTitle()
+  226|      0|            store.model.setNeighbour(app.bundleID, of: row)
+  227|      0|          }
+  228|      0|          .fixedSize()
+  229|      0|        }
+  230|      0|        if row.edge != nil {
+  231|      0|          Picker("", selection: edge) {
+  232|      0|            ForEach(ArborCore.Edge.allCases, id: \.self) { edge in
+  233|      0|              Text(edge.rawValue.capitalized)
+  234|      0|                .tag(edge)
+  235|      0|            }
+  236|      0|          }
+  237|      0|          .labelsHidden()
+  238|      0|          .fixedSize()
+  239|      0|        }
+  240|      0|        Spacer()
+  241|      0|      }
+  242|      0|      TextField("", text: title, prompt: Text("Only windows whose title contains… (any title)"))
+  243|      0|        .labelsHidden()
+  244|      0|        .textFieldStyle(.roundedBorder)
+  245|      0|        .accessibilityIdentifier("rule.\(row.number).title")
+  246|      0|        .accessibilityLabel("Rule \(row.number): only windows whose title contains")
+  247|      0|        .focused($titleIsFocused)
+  248|      0|        .onSubmit { commitTitle() }
+  249|      0|        .onChange(of: titleIsFocused) {
+  250|      0|          if !titleIsFocused { commitTitle() }
+  251|      0|        }
+  252|      0|    }
+  253|      0|    .padding(.vertical, 2)
+  254|      0|    // Lines are told apart by their place. If another rule comes to this place, what was being typed was not
+  255|      0|    // meant for it.
+  256|      0|    .onChange(of: row.rule) { typedTitle = nil }
+  257|      0|  }
+  258|       |
+  259|      0|  private var kind: Binding<SettingsPanelModel.RuleKind> {
+  260|      0|    Binding<SettingsPanelModel.RuleKind>(
+  261|      0|      get: { @MainActor in row.kind },
+  262|      0|      set: { @MainActor kind in
+  263|      0|        commitTitle()
+  264|      0|        store.model.setKind(kind, of: row)
+  265|      0|      })
+  266|      0|  }
+  267|       |
+  268|      0|  private var edge: Binding<ArborCore.Edge> {
+  269|      0|    Binding<ArborCore.Edge>(
+  270|      0|      get: { @MainActor in row.edge ?? .right },
+  271|      0|      set: { @MainActor edge in
+  272|      0|        commitTitle()
+  273|      0|        store.model.setEdge(edge, of: row)
+  274|      0|      })
+  275|      0|  }
+  276|       |
+  277|      0|  private var title: Binding<String> {
+  278|      0|    Binding<String>(
+  279|      0|      get: { @MainActor in typedTitle ?? row.rule.title ?? "" },
+  280|      0|      set: { @MainActor new in typedTitle = new })
+  281|      0|  }
+  282|       |
+  283|       |  /// Also before anything else is done to the line: buttons and menus do not take the keyboard on a Mac, so the
+  284|       |  /// field has not lost it, and what was typed would end up on whichever rule has this place afterwards.
+  285|      0|  private func commitTitle() {
+  286|      0|    guard let text = typedTitle else { return }
+  287|      0|    typedTitle = nil
+  288|      0|    store.model.setTitle(text, of: row)
+  289|      0|  }
+  290|       |}
+  291|       |
+  292|       |struct RuleOrderButtons: View {
+  293|       |  @ObservedObject var store: SettingsPanelStore
+  294|       |  let row: SettingsPanelModel.RuleRow
+  295|       |  /// Run before the rule is moved.
+  296|       |  let before: @MainActor () -> Void
+  297|       |
+  298|      0|  var body: some View {
+  299|      0|    HStack(spacing: 4) {
+  300|      0|      Button {
+  301|      0|        before()
+  302|      0|        store.model.moveRule(row, by: -1)
+  303|      0|      } label: {
+  304|      0|        Image(systemName: "chevron.up")
+  305|      0|      }
+  306|      0|      .disabled(!store.model.canMove(row, by: -1))
+  307|      0|      .help("Check this rule earlier")
+  308|      0|      .accessibilityLabel("Check rule \(row.number) earlier")
+  309|      0|      Button {
+  310|      0|        before()
+  311|      0|        store.model.moveRule(row, by: 1)
+  312|      0|      } label: {
+  313|      0|        Image(systemName: "chevron.down")
+  314|      0|      }
+  315|      0|      .disabled(!store.model.canMove(row, by: 1))
+  316|      0|      .help("Check this rule later")
+  317|      0|      .accessibilityIdentifier("rule.\(row.number).down")
+  318|      0|      .accessibilityLabel("Check rule \(row.number) later")
+  319|      0|      Button {
+  320|      0|        store.model.removeRule(row)
+  321|      0|      } label: {
+  322|      0|        Image(systemName: "trash")
+  323|      0|      }
+  324|      0|      .help("Remove this rule")
+  325|      0|      .accessibilityIdentifier("rule.\(row.number).remove")
+  326|      0|      .accessibilityLabel("Remove rule \(row.number)")
+  327|      0|    }
+  328|      0|    .buttonStyle(.borderless)
+  329|      0|  }
+  330|       |}
+  331|       |
+  332|       |// MARK: Lists of apps
+  333|       |
+  334|       |/// What a list is for, the apps on it, and a menu to add one.
+  335|       |struct AppListRow: View {
+  336|       |  @ObservedObject var store: SettingsPanelStore
+  337|       |  let row: SettingsPanelModel.Row
+  338|       |  let listed: [SettingsPanelModel.AppChoice]
+  339|       |  let candidates: [SettingsPanelModel.AppChoice]
+  340|       |
+  341|      0|  var body: some View {
+  342|      0|    VStack(alignment: .leading, spacing: 8) {
+  343|      0|      SettingLabel(label: row.label, help: row.help)
+  344|      0|      ForEach(listed) { app in
+  345|      0|        HStack {
+  346|      0|          VStack(alignment: .leading, spacing: 1) {
+  347|      0|            Text(app.name)
+  348|      0|            if app.name != app.bundleID {
+  349|      0|              Text(app.bundleID)
+  350|      0|                .font(.caption)
+  351|      0|                .foregroundStyle(.secondary)
+  352|      0|            }
+  353|      0|          }
+  354|      0|          Spacer()
+  355|      0|          Button {
+  356|      0|            store.model.remove(app.bundleID, from: row.key)
+  357|      0|          } label: {
+  358|      0|            Image(systemName: "minus.circle")
+  359|      0|          }
+  360|      0|          .buttonStyle(.borderless)
+  361|      0|          .help("Take it off the list")
+  362|      0|          .accessibilityIdentifier("\(row.key).remove.\(app.bundleID)")
+  363|      0|          .accessibilityLabel("Take \(app.name) off the list")
+  364|      0|        }
+  365|      0|      }
+  366|      0|      AppMenu(title: "Add an App…", apps: candidates) { app in
+  367|      0|        store.model.add(app.bundleID, to: row.key)
+  368|      0|      }
+  369|      0|      .fixedSize()
+  370|      0|      .accessibilityIdentifier("\(row.key).add")
+  371|      0|    }
+  372|      0|  }
+  373|       |}
+  374|       |
+  375|       |// MARK: Shared
+  376|       |
+  377|       |/// A menu of running apps.
+  378|       |struct AppMenu: View {
+  379|       |  let title: String
+  380|       |  let apps: [SettingsPanelModel.AppChoice]
+  381|       |  let choose: @MainActor (SettingsPanelModel.AppChoice) -> Void
+  382|       |
+  383|      0|  var body: some View {
+  384|      0|    Menu(title) {
+  385|      0|      if apps.isEmpty {
+  386|      0|        Text("No other app is running")
+  387|      0|      }
+  388|      0|      ForEach(apps) { app in
+  389|      0|        Button(app.name) { choose(app) }
+  390|      0|      }
+  391|      0|    }
+  392|      0|  }
+  393|       |}
+

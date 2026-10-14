@@ -1,0 +1,32 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/App/SystemLoginItem.swift:
+    1|       |import Foundation
+    2|       |import ServiceManagement
+    3|       |
+    4|       |/// Arbor itself as a login item (`SMAppService.mainApp`, macOS 13 and later). macOS remembers the app
+    5|       |/// bundle, wherever it is installed: `~/Applications` works like `/Applications`, and a new build copied over
+    6|       |/// the old one keeps the entry. See "Launch at login" in docs/INSTALL.md.
+    7|       |@MainActor
+    8|       |final class SystemLoginItem: LoginItem {
+    9|      0|  var status: LoginItemStatus {
+   10|      0|    guard Bundle.main.bundleURL.pathExtension == "app" else {
+   11|      0|      return .unavailable("only Arbor.app can open at login, and this Arbor runs outside an app bundle")
+   12|      0|    }
+   13|      0|    switch SMAppService.mainApp.status {
+   14|      0|    case .enabled: return .enabled
+   15|      0|    case .requiresApproval: return .requiresApproval
+   16|      0|    case .notRegistered, .notFound: return .disabled
+   17|      0|    @unknown default: return .disabled
+   18|      0|    }
+   19|      0|  }
+   20|       |
+   21|      0|  func setEnabled(_ enabled: Bool) throws {
+   22|      0|    if enabled {
+   23|      0|      try SMAppService.mainApp.register()
+   24|      0|    } else {
+   25|      0|      try SMAppService.mainApp.unregister()
+   26|      0|    }
+   27|      0|  }
+   28|       |}
+

@@ -1,0 +1,224 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/MinimapPanel.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import CoreGraphics
+    4|       |import Foundation
+    5|       |
+    6|       |/// Draws the minimaps (`MinimapModel`, docs/features/F26-minimap.md): one panel per display, made when first needed and kept, because
+    7|       |/// making a panel costs more than a move of the view should.
+    8|       |@MainActor
+    9|       |final class Minimaps {
+   10|     10|  private var panels: [DisplayID: MinimapPanel] = [:]
+   11|       |  /// A click in a minimap that takes clicks, in the panel's coordinates (origin top-left, y down).
+   12|       |  var onClick: ((DisplayID, CGPoint) -> Void)?
+   13|       |
+   14|      0|  func show(_ model: MinimapModel?, on display: DisplayID) {
+   15|      0|    guard let model else {
+   16|      0|      panels[display]?.disappear()
+   17|      0|      return
+   18|      0|    }
+   19|      0|    let panel = panels[display] ?? MinimapPanel()
+   20|      0|    panels[display] = panel
+   21|      0|    panel.onClick = { [weak self] point in self?.onClick?(display, point) }
+   22|      0|    panel.show(model)
+   23|      0|  }
+   24|       |
+   25|      7|  func removeAll() {
+   26|      7|    panels.values.forEach { $0.close() }
+   27|      7|    panels.removeAll()
+   28|      7|  }
+   29|       |}
+   30|       |
+   31|       |/// A heads-up panel that fades in, shows a `MinimapModel` and fades out. It decides nothing: where it goes, what it holds, whether
+   32|       |/// it takes clicks and when it comes and goes are the controller's business.
+   33|       |///
+   34|       |/// The look is the one agreed with the heads-up line (F43): a translucent background with 12-point corners, 0.1 s in, 0.25 s out, at once
+   35|       |/// with "Reduce motion". Once that line's `PassingPanel` is on the trunk this class should be one, and lose everything from
+   36|       |/// `roundedMask` down.
+   37|       |final class MinimapPanel: OverlayPanel {
+   38|       |  private static let cornerRadius: CGFloat = 12
+   39|       |  private static let fadeIn: TimeInterval = 0.1
+   40|       |  private static let fadeOut: TimeInterval = 0.25
+   41|       |
+   42|      0|  private let background = NSVisualEffectView()
+   43|      0|  private let mapView = MinimapView()
+   44|       |  /// Whether the panel is meant to be seen. It stays on screen a little longer, while it fades out.
+   45|      0|  private var isWanted = false
+   46|       |
+   47|       |  var onClick: ((CGPoint) -> Void)? {
+   48|      0|    get { mapView.onClick }
+   49|      0|    set { mapView.onClick = newValue }
+   50|       |  }
+   51|       |
+   52|      0|  override init() {
+   53|      0|    super.init()
+   54|      0|    // Above the stage that covers a display while windows move (F02, just below `.floating`): the minimap says where they went.
+   55|      0|    level = NSWindow.Level(rawValue: NSWindow.Level.floating.rawValue + 2)
+   56|      0|    hasShadow = true
+   57|      0|    // Transient: hidden in Mission Control. Not `.fullScreenAuxiliary`: another app's full-screen Space is none of Arbor's business.
+   58|      0|    collectionBehavior = [.canJoinAllSpaces, .transient, .ignoresCycle]
+   59|      0|    ignoresMouseEvents = true
+   60|      0|    // It only informs the person at the Mac, and says which other apps are open: not for an audience. macOS decides how far this
+   61|      0|    // is honoured. The pictures of scripts/mac-shell/shots-minimap.sh need to see it.
+   62|      0|    sharingType = ProcessInfo.processInfo.environment["ARBOR_PANELS_IN_PICTURES"] == "1" ? .readOnly : .none
+   63|      0|    background.material = .hudWindow
+   64|      0|    background.blendingMode = .behindWindow
+   65|      0|    background.state = .active  // The app is never active, and an inactive effect view turns flat grey.
+   66|      0|    background.maskImage = Self.roundedMask
+   67|      0|    contentView = background
+   68|      0|    mapView.frame = background.bounds
+   69|      0|    mapView.autoresizingMask = [.width, .height]
+   70|      0|    background.addSubview(mapView)
+   71|      0|    // For pictures of both looks without touching the Mac's own setting (scripts/mac-shell/shots-minimap.sh).
+   72|      0|    switch ProcessInfo.processInfo.environment["ARBOR_APPEARANCE"] {
+   73|      0|    case "dark": appearance = NSAppearance(named: .darkAqua)
+   74|      0|    case "light": appearance = NSAppearance(named: .aqua)
+   75|      0|    default: break
+   76|      0|    }
+   77|      0|  }
+   78|       |
+   79|      0|  func show(_ model: MinimapModel) {
+   80|      0|    // Said either way: the window server lets clicks fall through where a window has not said that it wants them.
+   81|      0|    ignoresMouseEvents = !model.takesClicks
+   82|      0|    let target = ScreenGeometry.appKit(fromGlobal: model.frame)
+   83|      0|    if target != frame {
+   84|      0|      setFrame(target, display: false)
+   85|      0|      invalidateShadow()
+   86|      0|    }
+   87|      0|    mapView.model = model
+   88|      0|    appear()
+   89|      0|  }
+   90|       |
+   91|       |  /// A layer's corner radius does not reach what the window server blurs behind the window; a mask image does. The corners keep
+   92|       |  /// their size and the middle stretches.
+   93|      0|  private static let roundedMask: NSImage = {
+   94|      0|    let radius = cornerRadius
+   95|      0|    // AppKit may draw an image on any thread, so the closure must not inherit the main actor.
+   96|      0|    let draw: @Sendable (NSRect) -> Bool = { rect in
+   97|      0|      NSColor.black.setFill()
+   98|      0|      NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
+   99|      0|      return true
+  100|      0|    }
+  101|      0|    let image = NSImage(size: NSSize(width: radius * 2 + 1, height: radius * 2 + 1), flipped: false, drawingHandler: draw)
+  102|      0|    image.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
+  103|      0|    image.resizingMode = .stretch
+  104|      0|    return image
+  105|      0|  }()
+  106|       |
+  107|      0|  private var animates: Bool { !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion }
+  108|       |
+  109|       |  /// Fades in, or carries on showing. With "Reduce motion" on it only appears.
+  110|      0|  private func appear() {
+  111|      0|    isWanted = true
+  112|      0|    if !isVisible {
+  113|      0|      alphaValue = animates ? 0 : 1
+  114|      0|      orderFrontRegardless()
+  115|      0|    }
+  116|      0|    // Through the animator even when there is nothing to fade, so that it replaces a fade-out under way.
+  117|      0|    NSAnimationContext.runAnimationGroup { context in
+  118|      0|      context.duration = animates ? Self.fadeIn : 0
+  119|      0|      animator().alphaValue = 1
+  120|      0|    }
+  121|      0|  }
+  122|       |
+  123|       |  /// Fades out. A panel on its way out takes no more clicks.
+  124|      0|  func disappear() {
+  125|      0|    guard isWanted else { return }
+  126|      0|    isWanted = false
+  127|      0|    ignoresMouseEvents = true
+  128|      0|    guard animates else {
+  129|      0|      orderOut(nil)
+  130|      0|      return
+  131|      0|    }
+  132|      0|    NSAnimationContext.runAnimationGroup(
+  133|      0|      { context in
+  134|      0|        context.duration = Self.fadeOut
+  135|      0|        animator().alphaValue = 0
+  136|      0|      },
+  137|      0|      completionHandler: { [weak self] in
+  138|      0|        MainActor.assumeIsolated {
+  139|      0|          // Unless it was asked for again while it faded.
+  140|      0|          guard let self, !self.isWanted else { return }
+  141|      0|          self.orderOut(nil)
+  142|      0|        }
+  143|      0|      })
+  144|      0|  }
+  145|       |}
+  146|       |
+  147|       |private final class MinimapView: NSView {
+  148|       |  var model: MinimapModel? {
+  149|      0|    didSet { if model != oldValue { needsDisplay = true } }
+  150|       |  }
+  151|       |  var onClick: ((CGPoint) -> Void)?
+  152|       |
+  153|       |  /// The model's rectangles have their origin at the panel's top-left corner, y down. The view fills the panel.
+  154|      0|  override var isFlipped: Bool { true }
+  155|       |
+  156|      0|  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+  157|      0|  override func mouseUp(with event: NSEvent) {
+  158|      0|    let point = convert(event.locationInWindow, from: nil)
+  159|      0|    // The view that got the press gets the release wherever it happens. Let go elsewhere, it was a change of mind.
+  160|      0|    if bounds.contains(point) { onClick?(point) }
+  161|      0|  }
+  162|       |
+  163|      0|  override func draw(_ dirtyRect: NSRect) {
+  164|      0|    guard let model else { return }
+  165|      0|    MinimapDrawing.draw(model, accent: .controlAccentColor, ink: .labelColor) {
+  166|      0|      AppAppearance.colour(pid: $0.pid, bundleID: $0.bundleID)
+  167|      0|    }
+  168|      0|  }
+  169|       |}
+  170|       |
+  171|       |/// Draws a `MinimapModel` into the current graphics context, whose origin is the panel's top-left corner, y down. Apart from the view so
+  172|       |/// that a test can have the real thing drawn into a bitmap, in colours it knows, and look at it (MinimapDrawingTests).
+  173|       |@MainActor
+  174|       |enum MinimapDrawing {
+  175|       |  /// What is out of view is still there, only fainter.
+  176|       |  static let outOfViewAlpha: CGFloat = 0.45
+  177|       |  static let highlightFillAlpha: CGFloat = 0.12
+  178|       |
+  179|       |  /// `accent` frames the space in view, `ink` is for the Desktop's outline, the outline under the pointer and the caption, and
+  180|       |  /// `colour` gives each window its app's.
+  181|      0|  static func draw(_ model: MinimapModel, accent: NSColor, ink: NSColor, colour: (MinimapModel.Item) -> NSColor) {
+  182|      0|    if let desktop = model.desktop {
+  183|      0|      let outline = NSBezierPath(roundedRect: desktop.insetBy(dx: 0.5, dy: 0.5), xRadius: 2.5, yRadius: 2.5)
+  184|      0|      ink.withAlphaComponent(model.desktopIsInView ? 0.6 : 0.3).setStroke()
+  185|      0|      outline.lineWidth = 1
+  186|      0|      outline.stroke()
+  187|      0|    }
+  188|      0|
+  189|      0|    for item in model.items {
+  190|      0|      colour(item).withAlphaComponent(item.isInView ? 1 : outOfViewAlpha).setFill()
+  191|      0|      NSBezierPath(roundedRect: item.frame, xRadius: 2.5, yRadius: 2.5).fill()
+  192|      0|    }
+  193|      0|
+  194|      0|    // Around the space rather than on it, so that a small window's colour still shows.
+  195|      0|    let highlight = NSBezierPath(roundedRect: model.highlight.insetBy(dx: -2, dy: -2), xRadius: 4.5, yRadius: 4.5)
+  196|      0|    accent.withAlphaComponent(highlightFillAlpha).setFill()
+  197|      0|    highlight.fill()
+  198|      0|    accent.setStroke()
+  199|      0|    highlight.lineWidth = 2
+  200|      0|    highlight.stroke()
+  201|      0|
+  202|      0|    if let hover = model.hover {
+  203|      0|      let outline = NSBezierPath(roundedRect: hover.insetBy(dx: -0.5, dy: -0.5), xRadius: 3, yRadius: 3)
+  204|      0|      ink.setStroke()
+  205|      0|      outline.lineWidth = 1.5
+  206|      0|      outline.stroke()
+  207|      0|    }
+  208|      0|
+  209|      0|    if let caption = model.caption {
+  210|      0|      let paragraph = NSMutableParagraphStyle()
+  211|      0|      paragraph.alignment = .center
+  212|      0|      paragraph.lineBreakMode = .byTruncatingTail
+  213|      0|      (caption as NSString).draw(
+  214|      0|        in: model.captionFrame,
+  215|      0|        withAttributes: [
+  216|      0|          .font: NSFont.systemFont(ofSize: 11, weight: .medium), .foregroundColor: ink, .paragraphStyle: paragraph,
+  217|      0|        ])
+  218|      0|    }
+  219|      0|  }
+  220|       |}
+

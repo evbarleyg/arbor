@@ -1,0 +1,53 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/App/MacFacts.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import Carbon.HIToolbox
+    4|       |
+    5|       |/// The parts of `SystemFacts` that take more than a call to read. What they mean is decided in
+    6|       |/// ArborCore (`MacSwitch`, `CompetingApp`); this only asks macOS.
+    7|       |@MainActor
+    8|       |enum MacFacts {
+    9|       |  /// The settings under Desktop & Dock that are in Arbor's way as they stand, or nil if they cannot be read.
+   10|      0|  static var switches: [MacSwitch]? {
+   11|      0|    // A new object each time: this is another process's domain, and the user is changing it meanwhile.
+   12|      0|    guard let defaults = UserDefaults(suiteName: "com.apple.WindowManager") else { return nil }
+   13|      0|    return MacSwitch.inTheWay(macOS: ProcessInfo.processInfo.operatingSystemVersion.majorVersion) { key in
+   14|      0|      defaults.object(forKey: key) as? Bool
+   15|      0|    }
+   16|      0|  }
+   17|       |
+   18|       |  /// How many keyboard layouts and input methods the Input menu switches between.
+   19|      0|  static var inputSources: Int? {
+   20|      0|    let wanted: [String: Any] = [
+   21|      0|      kTISPropertyInputSourceCategory as String: kTISCategoryKeyboardInputSource as String,
+   22|      0|      kTISPropertyInputSourceIsSelectCapable as String: true,
+   23|      0|    ]
+   24|      0|    guard let list = TISCreateInputSourceList(wanted as CFDictionary, false)?.takeRetainedValue() else { return nil }
+   25|      0|    let count = CFArrayGetCount(list)
+   26|      0|    return count > 0 ? count : nil
+   27|      0|  }
+   28|       |
+   29|       |  /// The running apps that get in Arbor's way, by name.
+   30|      0|  static var competingApps: [String] {
+   31|      0|    var names: [String] = []
+   32|      0|    for app in NSWorkspace.shared.runningApplications {
+   33|      0|      let name = CompetingApp.name(
+   34|      0|        bundleID: app.bundleIdentifier, appName: app.localizedName, executable: app.executableURL?.lastPathComponent)
+   35|      0|      if let name, !names.contains(name) {
+   36|      0|        names.append(name)
+   37|      0|      }
+   38|      0|    }
+   39|      0|    return names.sorted()
+   40|      0|  }
+   41|       |
+   42|       |  /// What Finder calls the app with this bundle id, or nil if it is not installed.
+   43|      0|  static func name(ofApp bundleID: String) -> String? {
+   44|      0|    guard let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID) else { return nil }
+   45|      0|    let name = FileManager.default.displayName(atPath: url.path)
+   46|      0|    // Finder can be told to show extensions.
+   47|      0|    return name.hasSuffix(".app") ? String(name.dropLast(4)) : name
+   48|      0|  }
+   49|       |}
+

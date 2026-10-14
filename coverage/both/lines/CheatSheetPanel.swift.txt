@@ -1,0 +1,168 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/CheatSheetPanel.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import CoreGraphics
+    4|       |import Foundation
+    5|       |
+    6|       |/// Draws the panel of shortcuts (`CheatSheetModel`) and reports the key press or click that ends it.
+    7|       |///
+    8|       |/// It takes the keyboard while it is up, without making Arbor the active app, so that the key that puts it away is
+    9|       |/// not also typed into the document behind it. Arbor's own shortcuts never arrive here; the controller puts the
+   10|       |/// panel away when one of them runs a command.
+   11|       |final class CheatSheetPanel: PassingPanel {
+   12|       |  var onDismiss: (() -> Void)?
+   13|      1|  private let list = CheatSheetView()
+   14|       |  private var monitor: Any?
+   15|       |
+   16|      1|  override init() {
+   17|      1|    super.init()
+   18|      1|    // Said out loud: the window server lets clicks fall through where a borderless panel draws nothing.
+   19|      1|    ignoresMouseEvents = false
+   20|      1|    list.autoresizingMask = [.width, .height]
+   21|      1|    background.addSubview(list)
+   22|      1|  }
+   23|       |
+   24|      2|  override var canBecomeKey: Bool { true }
+   25|       |
+   26|       |  /// Where everything goes, at the size that fits the model's area. Worked out without a window, so that tests can draw
+   27|       |  /// it off screen.
+   28|      1|  static func layout(of model: CheatSheetModel) -> CheatSheetLayout {
+   29|      1|    let room = NSSize(width: model.area.width - 2 * Self.margin, height: model.area.height - 2 * Self.margin)
+   30|      1|    let layout = CheatSheetLayout(model, scale: 1)
+   31|      1|    // A long list on a small display is drawn smaller rather than cut off.
+   32|      1|    let fit = min(room.width / layout.size.width, room.height / layout.size.height)
+   33|      1|    return fit < 1 ? CheatSheetLayout(model, scale: max(fit * 0.98, 0.4)) : layout
+   34|      1|  }
+   35|       |
+   36|      1|  func show(_ model: CheatSheetModel) {
+   37|      1|    let layout = Self.layout(of: model)
+   38|      1|    let frame = CGRect(
+   39|      1|      x: (model.area.midX - layout.size.width / 2).rounded(), y: (model.area.midY - layout.size.height / 2).rounded(),
+   40|      1|      width: layout.size.width, height: layout.size.height)
+   41|      1|    setFrame(ScreenGeometry.appKit(fromGlobal: frame), display: false)
+   42|      1|    list.frame = background.bounds
+   43|      1|    list.placed = layout
+   44|      1|    invalidateShadow()
+   45|      1|    appear()
+   46|      1|    makeKey()
+   47|      1|    Log.debug("the panel of shortcuts is up, \(isKeyWindow ? "with" : "without") the keyboard")
+   48|      1|    watchOtherApps()
+   49|      1|  }
+   50|       |
+   51|      2|  func hide() {
+   52|      2|    if let monitor { NSEvent.removeMonitor(monitor) }
+   53|      2|    monitor = nil
+   54|      2|    // At once: while it faded it would still have the keyboard, and swallow what is typed next.
+   55|      2|    disappear(atOnce: true)
+   56|      2|  }
+   57|       |
+   58|       |  private static let margin: CGFloat = 24
+   59|       |
+   60|       |  /// Clicks outside the panel go to other apps, and so do keys should macOS not have let the panel have the
+   61|       |  /// keyboard (secure text entry, say). Those cannot be kept from the app, but they still put the panel away.
+   62|      1|  private func watchOtherApps() {
+   63|      1|    guard monitor == nil else { return }
+   64|      1|    monitor = NSEvent.addGlobalMonitorForEvents(matching: [.keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown]) {
+   65|      0|      [weak self] event in
+   66|      0|      // A key held down since before the panel came up is not a key press.
+   67|      0|      let isRepeat = event.type == .keyDown && event.isARepeat
+   68|      0|      MainActor.assumeIsolated {
+   69|      0|        if !isRepeat { self?.dismiss("something typed or clicked in another app") }
+   70|      0|      }
+   71|      0|    }
+   72|      1|  }
+   73|       |
+   74|      1|  private func dismiss(_ cause: String) {
+   75|      1|    guard isWanted else { return }
+   76|      0|    Log.debug("the panel of shortcuts is put away by \(cause)")
+   77|      0|    onDismiss?()
+   78|      0|    // Whatever the controller makes of that: the keyboard goes back to the app it was taken from.
+   79|      0|    hide()
+   80|      0|  }
+   81|       |
+   82|       |  // Not passed on to `super`, which beeps at keys nobody wants.
+   83|      0|  override func keyDown(with event: NSEvent) {
+   84|      0|    // The / of ⌃⌥⇧/ may still be down.
+   85|      0|    if !event.isARepeat { dismiss("a key") }
+   86|      0|  }
+   87|      0|  override func mouseDown(with event: NSEvent) { dismiss("a click on it") }
+   88|      0|  override func rightMouseDown(with event: NSEvent) { dismiss("a click on it") }
+   89|       |
+   90|      1|  override func resignKey() {
+   91|      1|    super.resignKey()
+   92|      1|    dismiss("losing the keyboard")
+   93|      1|  }
+   94|       |}
+   95|       |
+   96|       |/// Where every piece of text of the panel goes, in a view whose y grows downward.
+   97|       |@MainActor
+   98|       |struct CheatSheetLayout {
+   99|      2|  var size = NSSize.zero
+  100|      2|  var texts: [(text: NSAttributedString, origin: NSPoint)] = []
+  101|       |
+  102|      2|  init(_ model: CheatSheetModel, scale s: CGFloat) {
+  103|      2|    let padding = 28 * s
+  104|      2|    let rowHeight = 22 * s
+  105|      2|    let headingHeight = 24 * s
+  106|      2|    let sectionGap = 14 * s
+  107|      2|    let gutter = 14 * s  // between the keys and what they do
+  108|      2|    let columnGap = 40 * s
+  109|      2|
+  110|    160|    func string(_ text: String, _ size: CGFloat, _ weight: NSFont.Weight, _ colour: NSColor) -> NSAttributedString {
+  111|    160|      NSAttributedString(
+  112|    160|        string: text, attributes: [.font: NSFont.systemFont(ofSize: size * s, weight: weight), .foregroundColor: colour])
+  113|    160|    }
+  114|      2|
+  115|      2|    let title = string(model.title, 17, .semibold, .labelColor)
+  116|      2|    let footer = string(model.footer, 12, .regular, .secondaryLabelColor)
+  117|      2|    let top = padding + title.size().height + 14 * s
+  118|      2|    var x = padding
+  119|      2|    var bottom = top
+  120|      2|
+  121|      6|    for column in model.columns {
+  122|     74|      let rows = column.flatMap(\.rows).map { row in
+  123|     74|        (keys: string(row.keys, 13, .medium, .labelColor), title: string(row.title, 13, .regular, .labelColor))
+  124|     74|      }
+  125|      6|      // Keys end and titles begin at the same line all the way down a column.
+  126|     74|      let keysWidth = (rows.map { $0.keys.size().width }.max() ?? 0).rounded(.up)
+  127|     74|      let titleWidth = (rows.map { $0.title.size().width }.max() ?? 0).rounded(.up)
+  128|      6|      var y = top
+  129|      6|      var next = 0
+  130|      8|      for (index, section) in column.enumerated() {
+  131|      8|        if index > 0 { y += sectionGap }
+  132|      8|        texts.append((string(section.title, 12, .semibold, .secondaryLabelColor), NSPoint(x: x + keysWidth + gutter, y: y)))
+  133|      8|        y += headingHeight
+  134|     74|        for _ in section.rows {
+  135|     74|          let row = rows[next]
+  136|     74|          next += 1
+  137|     74|          texts.append((row.keys, NSPoint(x: x + keysWidth - row.keys.size().width, y: y)))
+  138|     74|          texts.append((row.title, NSPoint(x: x + keysWidth + gutter, y: y)))
+  139|     74|          y += rowHeight
+  140|     74|        }
+  141|      8|      }
+  142|      6|      bottom = max(bottom, y)
+  143|      6|      x += keysWidth + gutter + titleWidth + columnGap
+  144|      6|    }
+  145|      2|
+  146|      2|    let width = max(x - columnGap, padding + max(title.size().width, footer.size().width)) + padding
+  147|      2|    let footerY = bottom + 12 * s
+  148|      2|    size = NSSize(width: width.rounded(.up), height: (footerY + footer.size().height + padding * 0.8).rounded(.up))
+  149|      2|    texts.append((title, NSPoint(x: (size.width - title.size().width) / 2, y: padding * 0.8)))
+  150|      2|    texts.append((footer, NSPoint(x: (size.width - footer.size().width) / 2, y: footerY)))
+  151|      2|  }
+  152|       |}
+  153|       |
+  154|       |final class CheatSheetView: NSView {
+  155|       |  var placed: CheatSheetLayout? {
+  156|      1|    didSet { needsDisplay = true }
+  157|       |  }
+  158|       |
+  159|     32|  override var isFlipped: Bool { true }
+  160|       |
+  161|      1|  override func draw(_ dirtyRect: NSRect) {
+  162|     80|    for item in placed?.texts ?? [] { item.text.draw(at: item.origin) }
+  163|      1|  }
+  164|       |}
+

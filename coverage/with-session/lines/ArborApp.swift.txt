@@ -1,0 +1,522 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/App/ArborApp.swift:
+    1|       |import AppKit
+    2|       |import ApplicationServices
+    3|       |import ArborCore
+    4|       |import ArborIPC
+    5|       |import ServiceManagement
+    6|       |
+    7|       |/// The composition root: builds the real window system, overlays, controller,
+    8|       |/// control socket, menu bar item and hotkeys, and handles the app lifecycle.
+    9|       |@MainActor
+   10|       |public final class ArborApp: NSObject, NSApplicationDelegate {
+   11|       |  /// Runs the app. Call from `main.swift`.
+   12|     27|  public static func run() {
+   13|     27|    let arguments = CommandLine.arguments
+   14|     27|    if arguments.dropFirst().first == Watchdog.argument { Watchdog.run(arguments: arguments) }
+   15|     27|    ProcessGuards.prepareProcess()
+   16|     27|    if let code = LaunchArguments.run(Array(arguments.dropFirst())) { exit(code) }
+   17|     27|    let application = NSApplication.shared
+   18|     27|    let delegate = ArborApp()
+   19|     27|    application.delegate = delegate
+   20|     27|    application.setActivationPolicy(.accessory)
+   21|     27|    withExtendedLifetime(delegate) { application.run() }
+   22|     27|  }
+   23|       |
+   24|       |  let environment: ArborEnvironment
+   25|       |  let controller: Controller
+   26|       |  /// The events of `arborctl watch`.
+   27|       |  private let feed: EventFeed
+   28|       |  private var server: ControlServer?
+   29|       |  private var statusMenu: StatusMenu?
+   30|       |  private var hotKeys: HotKeyCenter?
+   31|       |  /// The shortcuts registered now. The controller is told, for menus, tooltips and `doctor`.
+   32|     19|  private(set) var activeBindings: [KeyBinding] = [] {
+   33|     18|    didSet { controller.registeredBindings = activeBindings }
+   34|       |  }
+   35|       |  /// What was last registered and logged, so applying settings that leave the shortcuts as they
+   36|       |  /// were (`exclude`, say) neither registers them all again nor repeats the log lines. Shortcuts
+   37|       |  /// that failed to register (another app holds them) are tried again.
+   38|       |  private var lastBindings: (bindings: [KeyBinding], problems: [String])?
+   39|       |  private var permissionTimer: Timer?
+   40|     19|  private var signalSources: [DispatchSourceSignal] = []
+   41|       |  private var pointerInput: PointerInput?
+   42|     19|  private let guards = ProcessGuards()
+   43|       |  private var onboarding: OnboardingWindow?
+   44|       |  private var frontmostApp: FrontmostAppWatcher?
+   45|       |  private var keyboardLayout: KeyboardLayoutWatcher?
+   46|       |  private var callSensor: CallSensor?
+   47|     19|  private let updateWindow = UpdateWindow()
+   48|       |  private var settingsWatcher: SettingsWatcher?
+   49|       |  private var settingsWindow: SettingsWindowController?
+   50|       |  /// What was last beeped about.
+   51|       |  private var lastSettingsFileProblem: String?
+   52|       |
+   53|     19|  override init() {
+   54|     19|    let environment = ArborEnvironment.current
+   55|     19|    let settings = SettingsFile.load()
+   56|     19|    self.environment = environment
+   57|     19|    let overlays = AppKitOverlays()
+   58|     19|    overlays.takesPicturesOfWindows = settings.windowPictures
+   59|     19|    // Each seam is wrapped in a decorator that records what crosses it while `trace on` is in effect
+   60|     19|    // (docs/TRACES.md) and otherwise only passes it on.
+   61|     19|    let recorder = TraceRecorder()
+   62|     19|    let windowSystem = AXWindowSystem(onlyPIDs: environment.onlyPIDs)
+   63|     19|    windowSystem.recorder = recorder
+   64|     19|    let controller = Controller(
+   65|     19|      system: RecordingWindowSystem(wrapping: windowSystem, recorder: recorder),
+   66|     19|      overlays: RecordingOverlays(wrapping: overlays, recorder: recorder),
+   67|     19|      store: FileStateStore(), scheduler: RecordingScheduler(wrapping: MainQueueScheduler(), recorder: recorder),
+   68|     19|      settings: settings, filter: WindowFilter(onlyPIDs: environment.onlyPIDs))
+   69|     19|    self.controller = controller
+   70|     19|    feed = EventFeed(controller: controller)
+   71|     19|    super.init()
+   72|     19|    controller.saveSettings = { try SettingsFile.update(from: $0, to: $1) }
+   73|    114|    controller.loadSettings = { try SettingsFile.read() }
+   74|     19|    controller.systemShortcuts = { SystemShortcutReader.read() }
+   75|     19|    controller.onTemporaryShortcuts = { [weak self] in self?.hotKeys?.setTemporary($0) }
+   76|     19|    controller.replaceSettingsFile = { try SettingsFile.replace(with: $0) }
+   77|     19|    controller.keepCopyOfSettingsFile = { try SettingsFile.keepCopy() }
+   78|     19|    controller.onShowSettingsWindow = { [weak self] pane in self?.showSettingsWindow(at: pane) }
+   79|     19|    controller.onCloseSettingsWindow = { [weak self] in self?.settingsWindow?.close() }
+   80|     19|    controller.onSettingsApplied = { [weak self, weak overlays] applied in
+   81|     12|      self?.registerHotKeys()
+   82|     12|      self?.pointerInput?.update()
+   83|     12|      overlays?.takesPicturesOfWindows = applied.windowPictures
+   84|     12|      self?.updateCallSensor()
+   85|     12|    }
+   86|     19|    // Pausing and resuming change which shortcuts and taps Arbor holds, and so do an app that keeps
+   87|     19|    // its own ⌃⌥ coming to the front and holding the view. Not when quitting, which also stops the
+   88|     19|    // controller: the taps are already gone then and must stay gone.
+   89|    858|    controller.observe { [weak self] change in
+   90|    858|      guard change == .lifecycle || change == .input || change == .hold, let self else { return }
+   91|     35|      guard self.controller.isInBusiness else { return }
+   92|     20|      self.registerHotKeys()
+   93|     20|      self.pointerInput?.update()
+   94|     20|    }
+   95|     19|    // The controller belongs to this object, so it cannot outlive it.
+   96|     19|    controller.systemFacts = { [unowned self] in self.systemFacts() }
+   97|     19|    controller.openWelcomeWindow = { [unowned self] page in self.showWelcomeWindow(page) }
+   98|     19|    controller.nameOfApp = { MacFacts.name(ofApp: $0) }
+   99|     19|    // The mouse-down tap decides from a copy of where bare Desktop might be, so it gets a new one whenever a
+  100|     19|    // layout, the view, a window's move, the settings, a pause or the app in front may have changed that.
+  101|    858|    controller.observe { [weak self] change in
+  102|    858|      guard change.mayChangeDesktopGuardZones, let self else { return }
+  103|    756|      self.pointerInput?.publish(self.controller.desktopGuardZones())
+  104|    756|    }
+  105|     19|    // When to take new pictures of windows for the next motion.
+  106|    858|    controller.observe { [weak overlays] change in
+  107|    858|      switch change {
+  108|    858|      case .focus(let window): overlays?.windowFocused(window)
+  109|    858|      case .layout: overlays?.windowsWereLaidOut()
+  110|    858|      default: break
+  111|    858|      }
+  112|    858|    }
+  113|     19|    let build = BuildInfo(infoDictionary: Bundle.main.infoDictionary)
+  114|     19|    controller.buildInfo = build
+  115|     19|    controller.releaseFeed = GitHubReleaseFeed(
+  116|     19|      address: environment.releasesURL ?? UpdateCheck.latestReleaseAPI, version: build.version)
+  117|     19|    controller.onUpdateDecision = { [weak self] decision in
+  118|      0|      self?.updateWindow.show(decision, current: build)
+  119|      0|    }
+  120|     19|    controller.loginItem = SystemLoginItem()
+  121|     19|    // From the first start on the controller watches the permission itself (Controller+Permission.swift).
+  122|     19|    // The taps' own check: the flag, and a tap made and thrown away. It talks to no app, so none can keep it waiting.
+  123|    181|    controller.accessibilityProbe = { thoroughly in thoroughly ? EventTap.isPermitted() : AXIsProcessTrusted() }
+  124|     19|    // The window explains first; macOS's own prompt comes when the user clicks its button.
+  125|     19|    controller.askForAccessibility = { [weak self] in
+  126|      0|      if self?.environment.noPrompt == false { self?.showWelcomeWindow() }
+  127|      0|    }
+  128|     19|  }
+  129|       |
+  130|       |  // MARK: Lifecycle
+  131|       |
+  132|     19|  public func applicationDidFinishLaunching(_ notification: Notification) {
+  133|     19|    Log.info("Arbor \(controller.buildInfo.text) starting, pid \(getpid()), home \(ArborPaths.home.path)")
+  134|     19|    guards.claimSingleInstance(prompt: !environment.noPrompt)
+  135|     19|    if environment.rescue {
+  136|      1|      rescueAndQuit()
+  137|      1|      return
+  138|     18|    }
+  139|     18|    guards.start(environment: environment) { [weak self] in self?.controller.sessionIsEnding() }
+  140|     18|    if let dark = environment.darkAppearance { NSApp.appearance = NSAppearance(named: dark ? .darkAqua : .aqua) }
+  141|     18|    startServer()
+  142|     18|    watchSettingsFile()
+  143|     18|    installSignalHandlers()
+  144|     18|    NSAppleEventManager.shared().setEventHandler(
+  145|     18|      self, andSelector: #selector(handleURLEvent(_:reply:)), forEventClass: AEEventClass(kInternetEventClass),
+  146|     18|      andEventID: AEEventID(kAEGetURL))
+  147|     18|    // Said before the menu bar item is made, which shows it: nothing announces a change of this.
+  148|     18|    let permitted = AXIsProcessTrusted()
+  149|     18|    controller.accessibilityGranted = permitted
+  150|     18|    if !environment.noStatusItem { statusMenu = StatusMenu(app: self) }
+  151|     18|
+  152|     18|    if permitted {
+  153|     17|      startController()
+  154|     17|    } else {
+  155|      1|      waitForAccessibility()
+  156|      1|    }
+  157|     18|  }
+  158|       |
+  159|       |  /// Arbor was opened again while running (from Finder, Spotlight or `open`). It has no Dock icon, and on a
+  160|       |  /// crowded menu bar macOS hides its item behind the notch, so this may be the only way to reach it.
+  161|      0|  public func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+  162|      0|    showWelcomeWindow()
+  163|      0|    return false
+  164|      0|  }
+  165|       |
+  166|     15|  public func applicationWillTerminate(_ notification: Notification) {
+  167|     15|    // First, so no pinch or click waits on Arbor while it puts windows back.
+  168|     15|    pointerInput?.stop()
+  169|     15|    frontmostApp?.stop()
+  170|     15|    keyboardLayout?.stop()
+  171|     15|    callSensor?.stop()
+  172|     15|    settingsWatcher?.stop()
+  173|     15|    controller.shutdown()
+  174|     15|    hotKeys?.unregisterAll()
+  175|     15|    // Last, so that a script that waits for `quitting` finds every window back in view.
+  176|     15|    feed.stop()
+  177|     15|    server?.stop()
+  178|     15|    guards.standDown()
+  179|     15|    Log.info("Arbor quit")
+  180|     15|  }
+  181|       |
+  182|       |  /// `ARBOR_RESCUE=1`: Arbor kept ending without quitting, so whatever it does at launch may be the
+  183|       |  /// cause. This does the least that gets people's windows back: no saved state, no socket, hotkeys,
+  184|       |  /// menu or event taps. Starting adopts every window, and quitting puts those out of view back in it.
+  185|      1|  private func rescueAndQuit() {
+  186|      1|    let store = FileStateStore()
+  187|      1|    store.setAside()
+  188|      1|    if AXIsProcessTrusted() {
+  189|      1|      controller.start()
+  190|      1|      Log.error("rescue: brought every window into view; quitting")
+  191|      1|    } else {
+  192|      0|      Log.error("rescue: no Accessibility permission, so windows cannot be moved; quitting")
+  193|      0|    }
+  194|      1|    controller.shutdown()
+  195|      1|    // Quitting saved: every window floating, nothing worth keeping. With no file the next launch sees that one was set aside.
+  196|      1|    store.discard()
+  197|      1|    if !environment.noPrompt {
+  198|      0|      let alert = NSAlert()
+  199|      0|      alert.messageText = "Arbor stopped unexpectedly several times"
+  200|      0|      alert.informativeText = """
+  201|      0|        Your windows are back in view and Arbor has quit. Its saved arrangement was set aside, in case \
+  202|      0|        that was the cause. The log is at \(ArborPaths.logFile.path).
+  203|      0|        """
+  204|      0|      NSApp.activate()
+  205|      0|      alert.runModal()
+  206|      0|    }
+  207|      1|    NSApp.terminate(nil)
+  208|      1|  }
+  209|       |
+  210|     17|  private func startController() {
+  211|     17|    controller.accessibilityGranted = true
+  212|     17|    // First, so that launching behind an app that keeps its own ⌃⌥ takes nothing from it even for a moment.
+  213|     48|    let watcher = FrontmostAppWatcher { [weak self] app in self?.controller.applicationActivated(app) }
+  214|     17|    watcher.start()
+  215|     17|    frontmostApp = watcher
+  216|     17|    // And so that the first registration is already on the right keys.
+  217|     17|    let layouts = KeyboardLayoutWatcher { [weak self] layout in self?.controller.keyboardLayoutChanged(layout) }
+  218|     17|    layouts.start()
+  219|     17|    keyboardLayout = layouts
+  220|     17|    controller.restartedAfterAccident = environment.restarted
+  221|     17|    controller.start()
+  222|     17|    registerHotKeys()
+  223|     17|    if !environment.noHotkeys {
+  224|      2|      let input = PointerInput(
+  225|      4|        settings: { [weak self] in self?.controller.inputSettings ?? Settings() },
+  226|      2|        onCommand: { [weak self] command in self?.handle(command, from: .gesture) },
+  227|      2|        onGesture: { [weak self] update in self?.controller.gesture(update) },
+  228|      2|        // A press that a tap holds back reaches no monitor, and a press ends a motion all the same.
+  229|      2|        onPress: { [weak self] in self?.controller.pointerPressed() })
+  230|      2|      // Its watchdog looks once a second, and what it finds out about the permission concerns more than the taps.
+  231|      2|      input.onPermissionChange = { [weak self] in self?.controller.askAboutAccessibility(beyondDoubt: true) }
+  232|      2|      input.update()
+  233|      2|      input.publish(controller.desktopGuardZones())
+  234|      2|      pointerInput = input
+  235|      2|    }
+  236|     17|    // Not in a session limited to test windows: what the Mac's camera is doing must not change a test's outcome.
+  237|     17|    if environment.onlyPIDs == nil {
+  238|      0|      callSensor = CallSensor { [weak self] signals in self?.controller.callSignalsChanged(signals) }
+  239|      0|      updateCallSensor()
+  240|      0|    }
+  241|     17|    // Last, so that shortcuts macOS refused and event taps that did not install are among them.
+  242|     17|    // Not under test: an Arbor that is limited to some processes is somebody's tool on what may be somebody else's Mac, and its log is
+  243|     17|    // quoted in reports. Which window managers run there and how Desktop & Dock is set is nobody's business. `doctor` still says it.
+  244|     17|    if environment.onlyPIDs == nil { controller.logSetupProblems() }
+  245|     17|    // Once in a lifetime: with the permission already there, nothing else would show that Arbor has started.
+  246|     17|    if !environment.noPrompt, let page = controller.pageToWelcomeOn() { showWelcomeWindow(page) }
+  247|     17|  }
+  248|       |
+  249|     12|  private func updateCallSensor() {
+  250|     12|    callSensor?.update(
+  251|     12|      camera: controller.settings.holdStillWhileCameraIsOn, microphone: controller.settings.holdStillWhileMicrophoneIsOn)
+  252|     12|  }
+  253|       |
+  254|       |  /// Registers the shortcuts the controller wants held now (`Controller.activeBindings`) in place of the
+  255|       |  /// ones registered before, and logs the `bindings` entries that were skipped. Runs at start, after
+  256|       |  /// every settings change, which is how `reload-settings` picks up edited bindings, and when a
+  257|       |  /// pause, the frontmost app or another keyboard layout changes the answer.
+  258|     49|  private func registerHotKeys() {
+  259|     49|    guard controller.isInBusiness else { return }
+  260|     49|    let bindings = environment.noHotkeys ? [] : controller.activeBindings
+  261|     49|    let problems = controller.effectiveBindings.problems
+  262|     49|    if let last = lastBindings, last.bindings == bindings, last.problems == problems,
+  263|     49|      activeBindings == bindings
+  264|     49|    {
+  265|     31|      return
+  266|     31|    }
+  267|     18|    lastBindings = (bindings, problems)
+  268|     18|    for problem in KeyBindings.problemsForTheLog(problems, settings: controller.settings) {
+  269|      0|      Log.error("settings.json bindings: skipped \(problem)")
+  270|     18|    }
+  271|     18|    controller.logSystemShortcutClashes()
+  272|     18|
+  273|     18|    guard !bindings.isEmpty else {
+  274|     16|      hotKeys?.unregisterAll()
+  275|     16|      controller.refusedBindings = []
+  276|     16|      activeBindings = []
+  277|     16|      return
+  278|     16|    }
+  279|     32|    let center = hotKeys ?? HotKeyCenter { [weak self] binding, phase in
+  280|     32|      guard let self else { return }
+  281|     32|      let result = self.controller.shortcut(binding, phase, run: { self.handle($0, from: .shortcut) })
+  282|     32|      // Only without the permission. Why any other key did nothing is said on screen, and `handle` has the beep for those who
+  283|     32|      // switched that off, and knows when to keep quiet.
+  284|     32|      guard result?.ok == false, !self.controller.accessibilityGranted else { return }
+  285|      0|      NSSound.beep()
+  286|      0|      // The ways home are held without the permission only to lead to where it is granted.
+  287|      0|      if self.controller.shouldOpenAccessibilitySettings() { self.openAccessibilitySettings() }
+  288|      0|    }
+  289|      2|    hotKeys = center
+  290|      2|    let began = DispatchTime.now().uptimeNanoseconds
+  291|      2|    let failed = center.register(bindings)
+  292|      2|    controller.refusedBindings = failed
+  293|      2|    let microseconds = (DispatchTime.now().uptimeNanoseconds - began) / 1000
+  294|    104|    activeBindings = bindings.filter { !failed.contains($0) }
+  295|      2|    Log.info("registered \(activeBindings.count) shortcuts in \(microseconds) µs")
+  296|      2|  }
+  297|       |
+  298|       |  /// Applies edits to settings.json as they are saved.
+  299|     17|  private func watchSettingsFile() {
+  300|     17|    // The settings are the ones just read at launch, so this changes nothing; but if the file could not
+  301|     17|    // be read, the controller now knows, and will not save the defaults over it.
+  302|     17|    controller.takeInSettingsFile()
+  303|     17|    lastSettingsFileProblem = controller.settingsFileProblem
+  304|     17|    // Someone who has just saved a mistake is looking at an editor, not at Arbor's log.
+  305|    850|    controller.observe { [weak self] change in
+  306|    850|      guard change == .settings, let self else { return }
+  307|     14|      let problem = self.controller.settingsFileProblem
+  308|     14|      if let problem, problem != self.lastSettingsFileProblem { NSSound.beep() }
+  309|     14|      self.lastSettingsFileProblem = problem
+  310|     14|    }
+  311|    164|    let watcher = SettingsWatcher(file: ArborPaths.settingsFile) { [weak self] in
+  312|    164|      self?.controller.settingsFileMayHaveChanged()
+  313|    164|    }
+  314|     17|    watcher.start()
+  315|     17|    settingsWatcher = watcher
+  316|     17|  }
+  317|       |
+  318|       |  // MARK: The settings window
+  319|       |
+  320|       |  /// `settings-window`, ⌃⌥, and Settings… in the menu.
+  321|      2|  private func showSettingsWindow(at pane: SettingsPane?) {
+  322|      2|    let window = settingsWindow ?? makeSettingsWindow()
+  323|      2|    settingsWindow = window
+  324|      2|    window.show(at: pane)
+  325|      2|  }
+  326|       |
+  327|      1|  private func makeSettingsWindow() -> SettingsWindowController {
+  328|      1|    let model = SettingsPanelModel(
+  329|      1|      controller: controller,
+  330|      4|      runningApps: { SettingsWindowController.runningApps() },
+  331|      1|      run: { [weak self] command in self?.handle(command) ?? .failure("Arbor is quitting") })
+  332|      1|    return SettingsWindowController(
+  333|      1|      model: model, openFile: { [weak self] in self?.openSettingsFile() },
+  334|      1|      openLoginItems: { SMAppService.openSystemSettingsLoginItems() })
+  335|      1|  }
+  336|       |
+  337|      0|  private func waitForAccessibility() {
+  338|      0|    controller.accessibilityGranted = false
+  339|      0|    Log.info("waiting for Accessibility permission")
+  340|      0|    // The window explains first; macOS's own prompt comes when the user clicks its button.
+  341|      0|    if !environment.noPrompt { showWelcomeWindow() }
+  342|      0|    permissionTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
+  343|      0|      MainActor.assumeIsolated {
+  344|      0|        guard AXIsProcessTrusted() else { return }
+  345|      0|        self?.permissionTimer?.invalidate()
+  346|      0|        self?.permissionTimer = nil
+  347|      0|        Log.info("Accessibility permission granted")
+  348|      0|        self?.startController()
+  349|      0|      }
+  350|      0|    }
+  351|      0|  }
+  352|       |
+  353|       |  // MARK: Commands
+  354|       |
+  355|       |  /// Runs a command from any source. `quit` terminates after replying. Arbor's own menu and windows
+  356|       |  /// need not say who they are.
+  357|       |  @discardableResult
+  358|    545|  func handle(_ command: Command, from source: CommandSource = .menu) -> CommandResult {
+  359|    545|    if command == .quit {
+  360|     14|      DispatchQueue.main.async { NSApp.terminate(nil) }
+  361|     14|    }
+  362|    545|    let result = controller.perform(command, from: source)
+  363|    545|    // The controller says on screen why a key or a menu item did nothing. For those who switched that off there is
+  364|    545|    // the Mac's own way of saying "that does nothing here".
+  365|    545|    // Not during a hold: a call would hear it.
+  366|    545|    if !result.ok, source == .shortcut || source == .menu, controller.settings.messageLevel == .off, controller.mayShowUnasked {
+  367|      0|      NSSound.beep()
+  368|      0|    }
+  369|    545|    return result
+  370|    545|  }
+  371|       |
+  372|     17|  private func startServer() {
+  373|    527|    let endpoint = ControlEndpoint(feed: feed) { [weak self] command in
+  374|    527|      self?.handle(command, from: .script) ?? .failure("Arbor is quitting")
+  375|    527|    }
+  376|    530|    let server = ControlServer { line in endpoint.respond(to: line) }
+  377|     17|    do {
+  378|     17|      // The socket takes commands: never in a folder that somebody else owns or can write to.
+  379|     17|      try ArborPaths.ensureHome()
+  380|     17|      try server.start()
+  381|     17|      self.server = server
+  382|     17|    } catch {
+  383|      0|      Log.error("control socket unavailable: \(error)")
+  384|     17|    }
+  385|     17|  }
+  386|       |
+  387|       |  /// `arbor://dock/left`, `arbor://show-all`, `arbor://view/2`. Anything can open a URL, so the
+  388|       |  /// controller decides which commands they may run (Controller+URL.swift).
+  389|      3|  @objc private func handleURLEvent(_ event: NSAppleEventDescriptor, reply: NSAppleEventDescriptor) {
+  390|      3|    guard let text = event.paramDescriptor(forKeyword: keyDirectObject)?.stringValue else { return }
+  391|      3|    switch controller.admit(url: text) {
+  392|      3|    case .success(let command): handle(command, from: .url)
+  393|      3|    case .failure: NSSound.beep()
+  394|      3|    }
+  395|      3|  }
+  396|       |
+  397|     17|  private func installSignalHandlers() {
+  398|     51|    for signalNumber in [SIGTERM, SIGINT, SIGHUP] {
+  399|     51|      signal(signalNumber, SIG_IGN)
+  400|     51|      let source = DispatchSource.makeSignalSource(signal: signalNumber, queue: .main)
+  401|     51|      source.setEventHandler {
+  402|      0|        MainActor.assumeIsolated { NSApp.terminate(nil) }
+  403|      0|      }
+  404|     51|      source.resume()
+  405|     51|      signalSources.append(source)
+  406|     51|    }
+  407|     17|  }
+  408|       |
+  409|       |  // MARK: Menu helpers
+  410|       |
+  411|       |  /// The items of the menu that only the app can carry out.
+  412|      0|  func carryOut(_ action: MenuModel.AppAction) {
+  413|      0|    switch action {
+  414|      0|    case .openSettingsFile: openSettingsFile()
+  415|      0|    case .showLog: openLog()
+  416|      0|    case .showAbout: showAbout()
+  417|      0|    case .quit: NSApp.terminate(nil)
+  418|      0|    }
+  419|      0|  }
+  420|       |
+  421|      0|  var isBundled: Bool { Bundle.main.bundleURL.pathExtension == "app" }
+  422|       |
+  423|      0|  var launchesAtLogin: Bool { controller.loginItem?.status == .enabled }
+  424|       |
+  425|      0|  func toggleLaunchAtLogin() {
+  426|      0|    if handle(.launchAtLogin(!launchesAtLogin)).ok { return }
+  427|      0|    if controller.loginItem?.status == .requiresApproval {
+  428|      0|      // Only the user can switch it back on, so take them to the switch.
+  429|      0|      SMAppService.openSystemSettingsLoginItems()
+  430|      0|    } else {
+  431|      0|      NSSound.beep()
+  432|      0|    }
+  433|      0|  }
+  434|       |
+  435|      0|  func openSettingsFile() {
+  436|      0|    SettingsFile.create(controller.settings)
+  437|      0|    NSWorkspace.shared.open(ArborPaths.settingsFile)
+  438|      0|  }
+  439|       |
+  440|      0|  func openLog() {
+  441|      0|    NSWorkspace.shared.open(ArborPaths.logFile)
+  442|      0|  }
+  443|       |
+  444|      0|  func showAbout() {
+  445|      0|    let paragraph = NSMutableParagraphStyle()
+  446|      0|    paragraph.alignment = .center
+  447|      0|    let attributes: [NSAttributedString.Key: Any] = [
+  448|      0|      .font: NSFont.systemFont(ofSize: NSFont.smallSystemFontSize), .foregroundColor: NSColor.labelColor,
+  449|      0|      .paragraphStyle: paragraph,
+  450|      0|    ]
+  451|      0|    let credits = NSMutableAttributedString(
+  452|      0|      string: "Dock windows side by side,\nthen zoom between them.\n\nFree and open source (MIT)\n", attributes: attributes)
+  453|      0|    let repository = "https://github.com/evbarleyg/arbor"
+  454|      0|    if let url = URL(string: repository) {
+  455|      0|      credits.append(
+  456|      0|        NSAttributedString(string: repository, attributes: attributes.merging([.link: url]) { _, link in link }))
+  457|      0|    }
+  458|      0|    let build = controller.buildInfo
+  459|      0|    NSApp.activate(ignoringOtherApps: true)
+  460|      0|    NSApp.orderFrontStandardAboutPanel(options: [
+  461|      0|      .applicationName: "Arbor",
+  462|      0|      .applicationIcon: ArborArtwork.appIcon(side: 128),
+  463|      0|      // The panel writes "Version 0.9.0 (build 214, 47a2ba9)", which is `BuildInfo.text` with a word before it.
+  464|      0|      .applicationVersion: build.version,
+  465|      0|      .version: [build.build.map { "build \($0)" }, build.commit].compactMap { $0 }.joined(separator: ", "),
+  466|      0|      .credits: credits,
+  467|      0|    ])
+  468|      0|  }
+  469|       |
+  470|       |  // MARK: The welcome window
+  471|       |
+  472|       |  /// - Parameter page: the page to open it on, or turn it to. Without the permission it is the first whatever is asked
+  473|       |  ///   for. Nil when Arbor only wants it seen: an open window comes forward as it is.
+  474|      0|  func showWelcomeWindow(_ page: OnboardingFlow.Page? = nil) {
+  475|      0|    if onboarding == nil {
+  476|      0|      onboarding = OnboardingWindow(
+  477|      0|        controller: controller, onButton: { [weak self] row in self?.openSystemSettings(for: row) },
+  478|      0|        onLogin: { [weak self] in self?.toggleLaunchAtLogin() })
+  479|      0|    }
+  480|      0|    onboarding?.show(page)
+  481|      0|    controller.noteWelcomed()
+  482|      0|  }
+  483|       |
+  484|       |  /// For whoever finds the permission missing at a moment when the window would be too much (F63: a shortcut that fails).
+  485|      0|  func openAccessibilitySettings() { openSystemSettings(for: .accessibility) }
+  486|       |
+  487|       |  /// A row's button: lets macOS put Arbor in the list the row is about, then opens that pane of System Settings.
+  488|      0|  private func openSystemSettings(for row: OnboardingModel.Row.ID) {
+  489|      0|    let pane: String
+  490|      0|    switch row {
+  491|      0|    case .accessibility:
+  492|      0|      // The literal is kAXTrustedCheckOptionPrompt; the global is not concurrency-safe in Swift 6.
+  493|      0|      AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
+  494|      0|      pane = "com.apple.preference.security?Privacy_Accessibility"
+  495|      0|    case .screenRecording:
+  496|      0|      CGRequestScreenCaptureAccess()
+  497|      0|      pane = "com.apple.preference.security?Privacy_ScreenCapture"
+  498|      0|    case .desktopAndDock:
+  499|      0|      pane = "com.apple.Desktop-Settings.extension"
+  500|      0|    case .inputSources:
+  501|      0|      pane = "com.apple.Keyboard-Settings.extension"
+  502|      0|    case .competingApps, .voiceOver, .ownShortcuts:
+  503|      0|      return  // these rows have no button
+  504|      0|    }
+  505|      0|    if let url = URL(string: "x-apple.systempreferences:" + pane) { NSWorkspace.shared.open(url) }
+  506|      0|  }
+  507|       |
+  508|       |  /// What only macOS knows, read afresh: for `doctor` and, once a second, the welcome window.
+  509|      0|  private func systemFacts() -> SystemFacts {
+  510|      0|    SystemFacts(
+  511|      0|      accessibility: AXIsProcessTrusted(), screenRecording: CGPreflightScreenCaptureAccess(),
+  512|      0|      switches: MacFacts.switches, separateSpaces: NSScreen.screensHaveSeparateSpaces,
+  513|      0|      voiceOver: NSWorkspace.shared.isVoiceOverEnabled, inputSources: MacFacts.inputSources,
+  514|      0|      competingApps: MacFacts.competingApps, opensAtLogin: isBundled ? launchesAtLogin : nil,
+  515|      0|      inputDisabled: environment.noHotkeys,
+  516|      0|      eventTaps: pointerInput?.installedTaps ?? [])
+  517|      0|  }
+  518|       |}
+

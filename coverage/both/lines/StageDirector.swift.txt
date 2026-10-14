@@ -1,0 +1,184 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/StageDirector.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |
+    4|       |/// Plays transitions: one `Stage` per display, dressed from `WindowPictures` and `AppAppearance`.
+    5|       |///
+    6|       |/// It also sees to it that no stage outstays its welcome. Whatever makes the picture on a stage
+    7|       |/// wrong, or shows that the user wants their windows now, takes every stage down at once: a mouse
+    8|       |/// button going down anywhere, sleep and wake, a Space switch, a change of displays.
+    9|       |@MainActor
+   10|       |final class StageDirector {
+   11|     11|  let pictures = WindowPictures()
+   12|       |
+   13|     11|  private var stages: [DisplayID: Stage] = [:]
+   14|       |  /// The windows each display's last transition left showing as themselves, largest first. Their
+   15|       |  /// pictures are taken again once things have settled.
+   16|     11|  private var showing: [DisplayID: [WindowID]] = [:]
+   17|     11|  private var icons: [String: CGImage] = [:]
+   18|     11|  private var mouseMonitors: [Any] = []
+   19|     11|  private var observers: [NSObjectProtocol] = []
+   20|       |  /// When the last transition began, in seconds since the Mac started, as events are stamped.
+   21|     11|  private var lastBegan: TimeInterval = 0
+   22|       |  private var focused: WindowID?
+   23|       |
+   24|     11|  init() {
+   25|     11|    pictures.onPicture = { [weak self] window, picture in
+   26|      0|      guard let self else { return }
+   27|      0|      for stage in self.stages.values { stage.show(picture, of: window) }
+   28|      0|    }
+   29|     11|    let workspace = NSWorkspace.shared.notificationCenter
+   30|     11|    for name in [
+   31|     11|      NSWorkspace.willSleepNotification, NSWorkspace.didWakeNotification, NSWorkspace.screensDidSleepNotification,
+   32|     11|      NSWorkspace.activeSpaceDidChangeNotification, NSWorkspace.sessionDidResignActiveNotification,
+   33|     55|    ] {
+   34|     55|      observers.append(
+   35|     55|        workspace.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+   36|      2|          MainActor.assumeIsolated { self?.finish() }
+   37|      2|        })
+   38|     55|    }
+   39|     11|    observers.append(
+   40|     11|      NotificationCenter.default.addObserver(
+   41|     11|        forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
+   42|     11|      ) { [weak self] _ in
+   43|      6|        MainActor.assumeIsolated {
+   44|      6|          self?.finish()
+   45|      6|          // A display that went away takes its stage with it.
+   46|      6|          self?.stages.removeAll()
+   47|      6|        }
+   48|      6|      })
+   49|     11|  }
+   50|       |
+   51|       |  // MARK: Playing
+   52|       |
+   53|     58|  func play(_ transition: Transition, surface: BackdropModel?) {
+   54|     58|    guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else {
+   55|     58|      Log.debug("no stage: Reduce motion is on")
+   56|     58|      return
+   57|     58|    }
+   58|      0|    guard transition.duration > 0, transition.frame.isFinite, transition.frame.width >= 1,
+   59|      0|      transition.frame.height >= 1
+   60|      0|    else {
+   61|      0|      finish()
+   62|      0|      return
+   63|      0|    }
+   64|      0|    let display = transition.display
+   65|      0|    let stage = stages[display] ?? makeStage(for: display)
+   66|      0|    var costumes: [WindowID: Costume] = [:]
+   67|      0|    for item in transition.items { costumes[item.window] = costume(for: item) }
+   68|      0|    lastBegan = ProcessInfo.processInfo.systemUptime
+   69|      0|    stage.play(transition, costumes: costumes, backdrop: pictures.desktop(of: display), surface: surface)
+   70|      0|    watchTheMouse()
+   71|      0|
+   72|      0|    let staying = transition.items.filter {
+   73|      0|      $0.toLook == .picture && $0.toOpacity > 0 && $0.to.overlaps(transition.frame)
+   74|      0|    }
+   75|      0|    showing[display] = staying.sorted { $0.to.area > $1.to.area }.map(\.window)
+   76|      0|    // A moment from now, which is after the caller has moved the real windows (it keeps the main
+   77|      0|    // thread busy until then): the new pictures show the windows at the size the stage will reveal.
+   78|      0|    pictures.refresh(showing[display] ?? [], after: 0.01)
+   79|      0|  }
+   80|       |
+   81|       |  /// A display's scene changed. During a motion that is the scene the motion ends in.
+   82|    147|  func surfaceChanged(_ surface: BackdropModel?, on display: DisplayID) {
+   83|    147|    stages[display]?.show(surface: surface)
+   84|    147|  }
+   85|       |
+   86|       |  /// Takes every stage down at once.
+   87|     78|  func finish() {
+   88|     78|    for stage in stages.values { stage.drop() }
+   89|     78|  }
+   90|       |
+   91|       |  /// Arbor is stopping: nothing of anyone's windows is kept.
+   92|      8|  func stop() {
+   93|      8|    finish()
+   94|      8|    showing.removeAll()
+   95|      8|    pictures.removeAll()
+   96|      8|  }
+   97|       |
+   98|      0|  private func makeStage(for display: DisplayID) -> Stage {
+   99|      0|    let stage = Stage()
+  100|      0|    stage.onDown = { [weak self] in self?.stageCameDown(on: display) }
+  101|      0|    stages[display] = stage
+  102|      0|    return stage
+  103|      0|  }
+  104|       |
+  105|      0|  private func stageCameDown(on display: DisplayID) {
+  106|      0|    if !stages.values.contains(where: \.isUp) { stopWatchingTheMouse() }
+  107|      0|    // Apps go on redrawing for a moment after a resize.
+  108|      0|    pictures.refresh(showing[display] ?? [], after: 0.3)
+  109|      0|  }
+  110|       |
+  111|       |  // MARK: Keeping pictures fresh
+  112|       |
+  113|       |  /// Windows may have appeared or changed size. The first time is at launch, which is what has
+  114|       |  /// pictures ready for the first motion.
+  115|    119|  func windowsWereLaidOut() {
+  116|    119|    pictures.refresh(after: 0.6)
+  117|    119|  }
+  118|       |
+  119|       |  /// The window the user leaves will mostly stay as it is now; the one they turn to is the one they
+  120|       |  /// are most likely to move next.
+  121|     47|  func windowFocused(_ window: WindowID) {
+  122|     94|    pictures.refresh([focused, window].compactMap { $0 }, after: 0.4)
+  123|     47|    focused = window
+  124|     47|  }
+  125|       |
+  126|       |  // MARK: Costumes
+  127|       |
+  128|      0|  private func costume(for item: Transition.Item) -> Costume {
+  129|      0|    let picture = pictures.picture(of: item.window)
+  130|      0|    // Working out an app's colour and icon takes a few milliseconds the first time. A motion must not
+  131|      0|    // wait for a cover that stays hidden behind the picture.
+  132|      0|    guard picture == nil || item.fromLook == .cover || item.toLook == .cover else {
+  133|      0|      return Costume(picture: picture)
+  134|      0|    }
+  135|      0|    return Costume(
+  136|      0|      picture: picture,
+  137|      0|      // The colour is the icon's average, transparent margin included. A cover hides what is behind it.
+  138|      0|      colour: AppAppearance.colour(pid: item.pid, bundleID: item.bundleID).withAlphaComponent(1).cgColor,
+  139|      0|      icon: icon(for: item))
+  140|      0|  }
+  141|       |
+  142|      0|  private func icon(for item: Transition.Item) -> CGImage? {
+  143|      0|    let key = item.bundleID ?? "pid-\(item.pid)"
+  144|      0|    if let cached = icons[key] { return cached }
+  145|      0|    var proposed = NSRect(x: 0, y: 0, width: 256, height: 256)
+  146|      0|    guard let image = AppAppearance.icon(pid: item.pid)?.cgImage(forProposedRect: &proposed, context: nil, hints: nil)
+  147|      0|    else { return nil }
+  148|      0|    icons[key] = image
+  149|      0|    return image
+  150|      0|  }
+  151|       |
+  152|       |  // MARK: A click during an animation ends it
+  153|       |
+  154|      0|  private func watchTheMouse() {
+  155|      0|    guard mouseMonitors.isEmpty else { return }
+  156|      0|    let buttons: NSEvent.EventTypeMask = [.leftMouseDown, .rightMouseDown, .otherMouseDown]
+  157|      0|    // Global monitors see other apps' events, local ones Arbor's own (a click on a tile, the menu).
+  158|      0|    let global = NSEvent.addGlobalMonitorForEvents(matching: buttons) { [weak self] event in
+  159|      0|      let time = event.timestamp
+  160|      0|      MainActor.assumeIsolated { self?.mouseWentDown(at: time) }
+  161|      0|    }
+  162|      0|    let local = NSEvent.addLocalMonitorForEvents(matching: buttons) { [weak self] event in
+  163|      0|      let time = event.timestamp
+  164|      0|      MainActor.assumeIsolated { self?.mouseWentDown(at: time) }
+  165|      0|      return event
+  166|      0|    }
+  167|      0|    mouseMonitors = [global, local].compactMap { $0 }
+  168|      0|  }
+  169|       |
+  170|      0|  private func stopWatchingTheMouse() {
+  171|      0|    for monitor in mouseMonitors { NSEvent.removeMonitor(monitor) }
+  172|      0|    mouseMonitors.removeAll()
+  173|      0|  }
+  174|       |
+  175|      0|  private func mouseWentDown(at time: TimeInterval) {
+  176|      0|    // The click that started the motion (on a tile, say) can arrive after the motion has begun.
+  177|      0|    guard time > lastBegan else { return }
+  178|      0|    finish()
+  179|      0|  }
+  180|       |}
+

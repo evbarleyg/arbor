@@ -1,0 +1,43 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/AX/AXWindowSystem+Opening.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import Foundation
+    4|       |
+    5|       |extension AXWindowSystem {
+    6|      0|  public func openApplication(_ app: String) -> Bool {
+    7|      0|    guard !ArborEnvironment.current.noOpening else {
+    8|      0|      Log.info("ARBOR_NO_OPENING: no app is opened")
+    9|      0|      return false
+   10|      0|    }
+   11|      0|    guard let url = Self.applicationURL(for: app) else { return false }
+   12|      0|    let configuration = NSWorkspace.OpenConfiguration()
+   13|      0|    configuration.activates = true
+   14|      0|    // Opening an app that is running is what a click on its Dock icon does: it comes to the front, is
+   15|      0|    // shown if it was hidden, and is asked to reopen, at which most apps with no window make one.
+   16|      0|    NSWorkspace.shared.openApplication(at: url, configuration: configuration, completionHandler: nil)
+   17|      0|    return true
+   18|      0|  }
+   19|       |
+   20|       |  /// A bundle id first; then, by name, an app that is running; then the folders apps are installed in.
+   21|      0|  private static func applicationURL(for app: String) -> URL? {
+   22|      0|    if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: app) { return url }
+   23|      0|    let running = NSWorkspace.shared.runningApplications.first {
+   24|      0|      $0.activationPolicy == .regular && $0.localizedName?.caseInsensitiveCompare(app) == .orderedSame
+   25|      0|    }
+   26|      0|    if let url = running?.bundleURL { return url }
+   27|      0|    // `Command.parse` lets no slash through; this is for callers that do not come that way.
+   28|      0|    guard !app.contains("/"), !app.hasPrefix(".") else { return nil }
+   29|      0|    let folders = [
+   30|      0|      "/Applications", "/System/Applications", "/System/Applications/Utilities", "/Applications/Utilities",
+   31|      0|      NSHomeDirectory() + "/Applications",
+   32|      0|    ]
+   33|      0|    for folder in folders {
+   34|      0|      let url = URL(fileURLWithPath: folder, isDirectory: true).appendingPathComponent(app + ".app", isDirectory: true)
+   35|      0|      if FileManager.default.fileExists(atPath: url.path) { return url }
+   36|      0|    }
+   37|      0|    return nil
+   38|      0|  }
+   39|       |}
+

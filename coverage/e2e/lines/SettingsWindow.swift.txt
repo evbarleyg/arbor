@@ -1,0 +1,187 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/SettingsWindow.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import Combine
+    4|       |import Foundation
+    5|       |import SwiftUI
+    6|       |
+    7|       |/// The settings window: `SettingsPanelModel` on screen. Everything it shows and everything a click means is
+    8|       |/// decided there, where tests reach it; this file opens and closes the window, hands key presses to
+    9|       |/// the model while a shortcut is being recorded, and asks macOS which apps are running. The views are
+   10|       |/// in SettingsViews.swift and SettingsListViews.swift.
+   11|       |@MainActor
+   12|       |final class SettingsWindowController: NSObject, NSWindowDelegate {
+   13|       |  private let store: SettingsPanelStore
+   14|       |  private var window: NSWindow?
+   15|       |  private var keyMonitor: Any?
+   16|       |  /// The app that was in front when the window was opened, which gets the keyboard back when it closes.
+   17|       |  private var appBefore: NSRunningApplication?
+   18|       |
+   19|       |  init(
+   20|       |    model: SettingsPanelModel, openFile: @escaping @MainActor () -> Void,
+   21|       |    openLoginItems: @escaping @MainActor () -> Void
+   22|      1|  ) {
+   23|      1|    store = SettingsPanelStore(model: model, openFile: openFile, openLoginItems: openLoginItems)
+   24|      1|    super.init()
+   25|      1|    model.onRecordingChanged = { [weak self] isRecording in self?.recordingChanged(isRecording) }
+   26|      1|  }
+   27|       |
+   28|       |  /// Opens the window, or brings it to the front, and turns it to `pane` if one is named.
+   29|      2|  func show(at pane: SettingsPane?) {
+   30|      2|    SettingsMainMenu.install()
+   31|      2|    let window = self.window ?? makeWindow()
+   32|      2|    self.window = window
+   33|      2|    store.model.refreshApps()
+   34|      2|    if let pane { store.model.go(to: pane) }
+   35|      2|    if let front = NSWorkspace.shared.frontmostApplication,
+   36|      2|      front.processIdentifier != NSRunningApplication.current.processIdentifier
+   37|      2|    {
+   38|      1|      appBefore = front
+   39|      1|    }
+   40|      2|    // Arbor is an accessory app: nothing brings it to the front unless it asks.
+   41|      2|    NSApp.activate(ignoringOtherApps: true)
+   42|      2|    if window.isMiniaturized { window.deminiaturize(nil) }
+   43|      2|    window.makeKeyAndOrderFront(nil)
+   44|      2|  }
+   45|       |
+   46|      1|  func close() {
+   47|      1|    window?.close()
+   48|      1|  }
+   49|       |
+   50|      1|  private func makeWindow() -> NSWindow {
+   51|      1|    let window = NSWindow(contentViewController: NSHostingController(rootView: SettingsRootView(store: store)))
+   52|      1|    window.title = "Arbor Settings"
+   53|      1|    window.styleMask = [.titled, .closable, .miniaturizable, .resizable]
+   54|      1|    window.setContentSize(NSSize(width: 780, height: 540))
+   55|      1|    // Closing only hides it: the controller keeps it for the next time, and Arbor goes on running.
+   56|      1|    window.isReleasedWhenClosed = false
+   57|      1|    // Asked for from another macOS Space, it comes to that Space instead of pulling the user back to its own.
+   58|      1|    window.collectionBehavior = [.moveToActiveSpace]
+   59|      1|    window.delegate = self
+   60|      1|    window.center()
+   61|      1|    return window
+   62|      1|  }
+   63|       |
+   64|       |  // MARK: NSWindowDelegate
+   65|       |
+   66|       |  /// Tiles and gap handles are panels at the normal level that come to the front whenever the layout is drawn
+   67|       |  /// again, which every change made here causes. While it is in use the window stays above them, or a gap's
+   68|       |  /// invisible handle would lie across its sliders.
+   69|      1|  func windowDidBecomeKey(_ notification: Notification) {
+   70|      1|    window?.level = .floating
+   71|      1|    store.model.refreshApps()
+   72|      1|  }
+   73|       |
+   74|       |  /// A shortcut can only be recorded while the window gets the keys.
+   75|      1|  func windowDidResignKey(_ notification: Notification) {
+   76|      1|    window?.level = .normal
+   77|      1|    store.model.cancelRecording()
+   78|      1|  }
+   79|       |
+   80|       |  /// An accessory app that closes its last window stays the active app, so that no window has the keyboard
+   81|       |  /// until something is clicked, and Arbor's own shortcuts find no focused window.
+   82|      1|  func windowWillClose(_ notification: Notification) {
+   83|      1|    store.model.cancelRecording()
+   84|      1|    // A field that is being typed in loses the keyboard, and so hands over what was typed. The window is kept,
+   85|      1|    // and would otherwise show it again, as if it were the setting, the next time.
+   86|      1|    window?.makeFirstResponder(nil)
+   87|      1|    if NSRunningApplication.current.isActive, let appBefore, !appBefore.isTerminated {
+   88|      1|      // Since macOS 14 an app comes forward for certain only if the one in front makes way for it.
+   89|      1|      NSApp.yieldActivation(to: appBefore)
+   90|      1|      _ = appBefore.activate(options: [])
+   91|      1|    }
+   92|      1|    appBefore = nil
+   93|      1|  }
+   94|       |
+   95|       |  // MARK: Recording a shortcut
+   96|       |
+   97|      0|  private func recordingChanged(_ isRecording: Bool) {
+   98|      0|    if let keyMonitor {
+   99|      0|      NSEvent.removeMonitor(keyMonitor)
+  100|      0|      self.keyMonitor = nil
+  101|      0|    }
+  102|      0|    guard isRecording else { return }
+  103|      0|    keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+  104|      0|      // Plain values, so that nothing that is not Sendable crosses into the main actor's closure.
+  105|      0|      let code = UInt32(event.keyCode)
+  106|      0|      let flags = event.modifierFlags.rawValue
+  107|      0|      let used = MainActor.assumeIsolated { self?.keyDown(code: code, flags: flags) ?? false }
+  108|      0|      return used ? nil : event
+  109|      0|    }
+  110|      0|  }
+  111|       |
+  112|      0|  private func keyDown(code: UInt32, flags: UInt) -> Bool {
+  113|      0|    let held = NSEvent.ModifierFlags(rawValue: flags)
+  114|      0|    var modifiers: KeyChord.Modifiers = []
+  115|      0|    if held.contains(.control) { modifiers.insert(.control) }
+  116|      0|    if held.contains(.option) { modifiers.insert(.option) }
+  117|      0|    if held.contains(.shift) { modifiers.insert(.shift) }
+  118|      0|    if held.contains(.command) { modifiers.insert(.command) }
+  119|      0|    return store.model.keyPressed(code: code, modifiers: modifiers)
+  120|      0|  }
+  121|       |
+  122|       |  // MARK: What macOS knows
+  123|       |
+  124|       |  /// The apps that are running and have a Dock icon, for `SettingsPanelModel`.
+  125|      4|  static func runningApps() -> [SettingsPanelModel.AppChoice] {
+  126|    148|    NSWorkspace.shared.runningApplications.compactMap { app in
+  127|    148|      guard app.activationPolicy == .regular, let bundleID = app.bundleIdentifier else { return nil }
+  128|      4|      return SettingsPanelModel.AppChoice(bundleID: bundleID, name: app.localizedName ?? bundleID)
+  129|    148|    }
+  130|      4|  }
+  131|       |}
+  132|       |
+  133|       |/// Tells SwiftUI when the model has changed.
+  134|       |@MainActor
+  135|       |final class SettingsPanelStore: ObservableObject {
+  136|       |  let model: SettingsPanelModel
+  137|       |  /// Opens settings.json in the user's editor.
+  138|       |  let openFile: @MainActor () -> Void
+  139|       |  /// Opens System Settings at the list of apps that open at login.
+  140|       |  let openLoginItems: @MainActor () -> Void
+  141|       |
+  142|       |  init(
+  143|       |    model: SettingsPanelModel, openFile: @escaping @MainActor () -> Void,
+  144|      0|    openLoginItems: @escaping @MainActor () -> Void = {}
+  145|      1|  ) {
+  146|      1|    self.model = model
+  147|      1|    self.openFile = openFile
+  148|      1|    self.openLoginItems = openLoginItems
+  149|      6|    model.onChange = { [weak self] in self?.objectWillChange.send() }
+  150|      1|  }
+  151|       |}
+  152|       |
+  153|       |/// An accessory app shows no menu bar, but key equivalents are still looked up in its main menu. Without
+  154|       |/// one, ⌘W does not close the window and ⌘C, ⌘V and ⌘A do nothing in its text fields.
+  155|       |@MainActor
+  156|       |enum SettingsMainMenu {
+  157|      2|  static func install() {
+  158|      2|    guard NSApp.mainMenu == nil else { return }
+  159|      1|    let main = NSMenu()
+  160|      1|    // The first menu is the app's own, whatever it is called. No Quit in it: ⌘Q pressed to be rid of a
+  161|      1|    // settings window must not end the window manager.
+  162|      1|    add("Arbor", [], to: main)
+  163|      1|    add(
+  164|      1|      "Edit",
+  165|      1|      [
+  166|      1|        ("Undo", "undo:", "z"), ("Redo", "redo:", "Z"), ("Cut", "cut:", "x"), ("Copy", "copy:", "c"),
+  167|      1|        ("Paste", "paste:", "v"), ("Select All", "selectAll:", "a"),
+  168|      1|      ], to: main)
+  169|      1|    add("Window", [("Close", "performClose:", "w"), ("Minimize", "performMiniaturize:", "m")], to: main)
+  170|      1|    NSApp.mainMenu = main
+  171|      1|  }
+  172|       |
+  173|       |  /// Actions by name, with no target: each goes to whatever in the key window answers to it.
+  174|      3|  private static func add(_ title: String, _ items: [(title: String, action: String, key: String)], to main: NSMenu) {
+  175|      3|    let menu = NSMenu(title: title)
+  176|      8|    for item in items {
+  177|      8|      menu.addItem(NSMenuItem(title: item.title, action: Selector((item.action)), keyEquivalent: item.key))
+  178|      8|    }
+  179|      3|    let holder = NSMenuItem(title: title, action: nil, keyEquivalent: "")
+  180|      3|    holder.submenu = menu
+  181|      3|    main.addItem(holder)
+  182|      3|  }
+  183|       |}
+

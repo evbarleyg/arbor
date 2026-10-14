@@ -1,0 +1,156 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/FocusRingPanel.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import CoreGraphics
+    4|       |import QuartzCore
+    5|       |
+    6|       |/// Draws the focus ring (`FocusRingModel`): one panel per display, of which at most one shows.
+    7|       |@MainActor
+    8|       |final class FocusRings {
+    9|      1|  private var panels: [DisplayID: FocusRingPanel] = [:]
+   10|       |  /// The pulse last drawn, on whichever display. The controller's count starts at 0 too.
+   11|      1|  private var lastPulse = 0
+   12|       |  private var mouseMonitor: Any?
+   13|       |
+   14|     13|  func update(display: DisplayID, model: FocusRingModel?) {
+   15|     13|    guard let model else {
+   16|      4|      panels[display]?.orderOut(nil)
+   17|      4|      return
+   18|      9|    }
+   19|      9|    let panel = panels[display] ?? FocusRingPanel()
+   20|      9|    panels[display] = panel
+   21|      9|    panel.show(model, flashing: model.pulse != lastPulse)
+   22|      9|    lastPulse = model.pulse
+   23|      9|    restackSoon()
+   24|      9|    watchMouse()
+   25|      9|  }
+   26|       |
+   27|      1|  func removeAll() {
+   28|      1|    if let mouseMonitor { NSEvent.removeMonitor(mouseMonitor) }
+   29|      1|    mouseMonitor = nil
+   30|      1|    panels.values.forEach { $0.close() }
+   31|      1|    panels.removeAll()
+   32|      1|    lastPulse = 0
+   33|      1|  }
+   34|       |
+   35|       |  /// A clicked window takes the keyboard first and comes to the front afterwards, leaving a ring that was put
+   36|       |  /// above it where it used to be, under other windows and their shadows. Nothing reports a change of
+   37|       |  /// stacking, so the ring is put above its window again when the button comes up, and a moment after
+   38|       |  /// that and after every change, for apps that take their time.
+   39|      9|  private func watchMouse() {
+   40|      9|    guard mouseMonitor == nil else { return }
+   41|     10|    mouseMonitor = NSEvent.addGlobalMonitorForEvents(matching: .leftMouseUp) { [weak self] _ in
+   42|     10|      MainActor.assumeIsolated {
+   43|     10|        self?.restack()
+   44|     10|        self?.restackSoon()
+   45|     10|      }
+   46|     10|    }
+   47|      1|  }
+   48|       |
+   49|     29|  private func restack() {
+   50|     29|    panels.values.forEach { $0.restack() }
+   51|     29|  }
+   52|       |
+   53|     19|  private func restackSoon() {
+   54|     19|    Task { @MainActor [weak self] in
+   55|     19|      try? await Task.sleep(nanoseconds: 150_000_000)
+   56|     19|      self?.restack()
+   57|     19|    }
+   58|     19|  }
+   59|       |}
+   60|       |
+   61|       |/// A line around another app's window. The panel spans the whole window, lets every click through, and is
+   62|       |/// empty but for the line.
+   63|       |///
+   64|       |/// It sits at the normal level, directly above the window it surrounds, as if it were part of it:
+   65|       |/// whatever is above that window (another app's floating panel, a picture-in-picture video, the window's own
+   66|       |/// popovers, the stage that covers the display while windows move) is above the ring as well. At the
+   67|       |/// floating level the line would cut across all of those.
+   68|       |final class FocusRingPanel: OverlayPanel {
+   69|      1|  private let line = CAShapeLayer()
+   70|      1|  private let flash = CAShapeLayer()
+   71|       |  private var ringedWindow: WindowID?
+   72|       |
+   73|      1|  override init() {
+   74|      1|    super.init()
+   75|      1|    level = .normal
+   76|      1|    ignoresMouseEvents = true
+   77|      1|    // On every Space, because the keyboard can go from a window on one Space straight to a window on
+   78|      1|    // another, and a panel stays on the Space it was first shown on. Transient: Mission Control hides it.
+   79|      1|    collectionBehavior = [.canJoinAllSpaces, .transient, .ignoresCycle]
+   80|      1|    let view = NSView()
+   81|      1|    view.layer = CALayer()
+   82|      1|    view.wantsLayer = true
+   83|      2|    for layer in [flash, line] {
+   84|      2|      // Each is the area between two rounded rectangles.
+   85|      2|      layer.fillRule = .evenOdd
+   86|      2|      view.layer?.addSublayer(layer)
+   87|      2|    }
+   88|      1|    flash.opacity = 0
+   89|      1|    contentView = view
+   90|      1|  }
+   91|       |
+   92|      9|  func show(_ model: FocusRingModel, flashing: Bool) {
+   93|      9|    // Room for the flash.
+   94|      9|    let area = model.outerFrame.insetBy(dx: -model.flashReach, dy: -model.flashReach)
+   95|      9|    let target = ScreenGeometry.appKit(fromGlobal: area)
+   96|      9|    let scale = NSScreen.screens.first { $0.frame.overlaps(target) }?.backingScaleFactor ?? backingScaleFactor
+   97|      9|    let colour = Self.cgColour(model.colour)
+   98|      9|    let radius = ContinuousCorners.windowRadius
+   99|      9|
+  100|      9|    setFrame(target, display: false)
+  101|      9|    // The ring has to be where the window is, at once: layers would otherwise glide to their new shape.
+  102|      9|    CATransaction.begin()
+  103|      9|    CATransaction.setDisableActions(true)
+  104|      9|    for (layer, band) in [
+  105|      9|      (line, model.band(automaticRadius: radius)),
+  106|      9|      (flash, model.band(reaching: model.flashReach, automaticRadius: radius)),
+  107|     18|    ] {
+  108|     18|      // Layers count y upwards from the panel's bottom edge.
+  109|     18|      let outer = CGRect(
+  110|     18|        x: band.frame.minX - area.minX, y: area.maxY - band.frame.maxY, width: band.frame.width,
+  111|     18|        height: band.frame.height)
+  112|     18|      let path = CGMutablePath()
+  113|     18|      path.addPath(ContinuousCorners.path(outer, radius: band.cornerRadius))
+  114|     18|      path.addPath(
+  115|     18|        ContinuousCorners.path(outer.insetBy(dx: band.thickness, dy: band.thickness), radius: band.innerRadius))
+  116|     18|      layer.frame = CGRect(origin: .zero, size: area.size)
+  117|     18|      layer.contentsScale = scale
+  118|     18|      layer.path = path
+  119|     18|      layer.fillColor = colour
+  120|     18|    }
+  121|      9|    CATransaction.commit()
+  122|      9|
+  123|      9|    ringedWindow = model.window
+  124|      9|    // Not `restack()`: this also brings a hidden panel back.
+  125|      9|    order(.above, relativeTo: Int(model.window.rawValue))
+  126|      9|
+  127|      9|    if flashing, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion {
+  128|      0|      let fade = CABasicAnimation(keyPath: "opacity")
+  129|      0|      fade.fromValue = 1.0
+  130|      0|      fade.toValue = 0.0
+  131|      0|      fade.duration = FocusRingModel.pulseDuration
+  132|      0|      fade.timingFunction = CAMediaTimingFunction(name: .easeIn)
+  133|      0|      flash.add(fade, forKey: "flash")
+  134|      0|    }
+  135|      9|  }
+  136|       |
+  137|       |  /// Puts the panel directly above its window again. Window numbers are the window server's, so another
+  138|       |  /// app's number works.
+  139|     29|  func restack() {
+  140|     29|    guard isVisible, let ringedWindow else { return }
+  141|     26|    order(.above, relativeTo: Int(ringedWindow.rawValue))
+  142|     26|  }
+  143|       |
+  144|      9|  private static func cgColour(_ colour: FocusRingColour) -> CGColor {
+  145|      9|    switch colour {
+  146|      9|    case .accent:
+  147|      9|      return NSColor.controlAccentColor.cgColor
+  148|      9|    case .rgba(let red, let green, let blue, let alpha):
+  149|      0|      return CGColor(srgbRed: CGFloat(red), green: CGFloat(green), blue: CGFloat(blue), alpha: CGFloat(alpha))
+  150|      9|    }
+  151|      9|  }
+  152|       |}
+

@@ -1,0 +1,403 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/Input/RectangleFramer.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import os
+    4|       |
+    5|       |/// Hold the frame modifier (⌃⌥ by default, setting `frameRectangleModifier`)
+    6|       |/// and drag, or hold ⇧ alone and start on the bare Desktop inside Arbor's
+    7|       |/// view (setting `frameRectangleOnDesktop`): a rubber band follows the
+    8|       |/// pointer, and on release the camera frames what the rectangle covers,
+    9|       |/// through the `frame-rect` command (docs/features/F05-frame-a-rectangle.md).
+   10|       |///
+   11|       |/// The same taps keep a plain click on bare Desktop from macOS, which would sweep every window aside
+   12|       |/// (setting `guardDesktopClicks`, docs/features/F60-guard-the-wallpaper-click.md): it is the same question about
+   13|       |/// the same event, and two taps that each held presses back would see each other's.
+   14|       |///
+   15|       |/// Apps do not see the drag. A modifier-click without a drag still reaches
+   16|       |/// the app, a moment late. The decisions are made by `RectangleGesture` and
+   17|       |/// `PointerSurface`; this class only reads events, draws the band and sends
+   18|       |/// the command.
+   19|       |///
+   20|       |/// Two taps, both on the tap thread (`EventTapThread`): one on mouse-downs,
+   21|       |/// and one on drags and mouse-ups that is paused except while a modifier
+   22|       |/// press is being followed, so the stream of ordinary drag events never
+   23|       |/// passes through Arbor. They are installed together, so that no other
+   24|       |/// app's tap comes between them: one in between would see the mouse-down of a
+   25|       |/// rectangle and never its mouse-up, and a modifier-click's mouse-down twice.
+   26|       |/// The gesture state lives in a lock-protected box shared by the callbacks
+   27|       |/// and the main actor; the band is drawn and the command run on the main
+   28|       |/// actor after a callback has returned.
+   29|       |@MainActor
+   30|       |final class RectangleFramer {
+   31|       |  private struct TapState {
+   32|      2|    var gesture = RectangleGesture()
+   33|       |    /// The mouse-down held back until we know whether a drag follows.
+   34|       |    var heldDown: CGEvent?
+   35|       |    /// Its mouse-up, if the click was over before Finder had said what is under it.
+   36|       |    var heldUp: CGEvent?
+   37|       |    /// The number of the press that was last asked about.
+   38|      2|    var askedPress = 0
+   39|       |
+   40|       |    /// Hands over what is held.
+   41|     16|    mutating func takeHeld() -> [CGEvent] {
+   42|     16|      defer { (heldDown, heldUp) = (nil, nil) }
+   43|     32|      return [heldDown, heldUp].compactMap { $0 }
+   44|     16|    }
+   45|       |    /// Where the band should be (nil: hidden); drawn after the callback returns.
+   46|       |    var bandFrame: CGRect?
+   47|      2|    var bandUpdateQueued = false
+   48|       |    /// The tap on drags and mouse-ups, paused except while a press is being followed.
+   49|       |    var dragTap: EventTap?
+   50|       |    /// Where a press might land on bare Desktop, by the controller's latest word.
+   51|      2|    var zones = DesktopGuardZones()
+   52|       |  }
+   53|       |
+   54|       |  /// What the tap callbacks need: the state, and the three things that must
+   55|       |  /// happen on the main actor. The state is only ever touched under its lock.
+   56|       |  private final class Context: @unchecked Sendable {
+   57|      2|    let state = OSAllocatedUnfairLock(uncheckedState: TapState())
+   58|       |    let onCommand: @MainActor (Command) -> Void
+   59|       |    let onPress: @MainActor () -> Void
+   60|       |    let draw: @MainActor () -> Void
+   61|       |
+   62|       |    init(
+   63|       |      onCommand: @escaping @MainActor (Command) -> Void, onPress: @escaping @MainActor () -> Void,
+   64|       |      draw: @escaping @MainActor () -> Void
+   65|      2|    ) {
+   66|      2|      self.onCommand = onCommand
+   67|      2|      self.onPress = onPress
+   68|      2|      self.draw = draw
+   69|      2|    }
+   70|       |  }
+   71|       |
+   72|       |  private let settings: @MainActor () -> Settings
+   73|       |  private var context: Context!
+   74|       |  private var downTap: EventTap?
+   75|       |  private var band: RubberBandPanel?
+   76|       |  /// The last `frameRectangleModifier` that could not be read, so that it is logged once.
+   77|       |  private var unreadableModifier: String?
+   78|       |
+   79|       |  /// - Parameter onPress: told of every press that is held back. Whoever listens for presses with an `NSEvent` monitor
+   80|       |  ///   hears nothing of those, unless and until they are given back.
+   81|       |  init(
+   82|       |    settings: @escaping @MainActor () -> Settings, onCommand: @escaping @MainActor (Command) -> Void,
+   83|       |    onPress: @escaping @MainActor () -> Void
+   84|      2|  ) {
+   85|      2|    self.settings = settings
+   86|     66|    context = Context(onCommand: onCommand, onPress: onPress, draw: { [weak self] in self?.drawBand() })
+   87|      2|  }
+   88|       |
+   89|       |  /// Takes what the settings say about the gesture and installs the taps, or
+   90|       |  /// removes them when the settings leave no press that could be Arbor's. Runs
+   91|       |  /// at launch and whenever settings are applied.
+   92|      2|  func update() {
+   93|      2|    let settings = settings()
+   94|      2|    let (isReadable, isEnabled) = context.state.withLockUnchecked { state -> (Bool, Bool) in
+   95|      2|      let isReadable = state.gesture.follow(settings)
+   96|      2|      return (isReadable, state.gesture.isEnabled)
+   97|      2|    }
+   98|      2|    // Once: settings are applied again on every `exclude`.
+   99|      2|    if !isReadable, unreadableModifier != settings.frameRectangleModifier {
+  100|      0|      unreadableModifier = settings.frameRectangleModifier
+  101|      0|      Log.error(
+  102|      0|        "frameRectangleModifier \"\(settings.frameRectangleModifier)\" is not like \"ctrl+opt\" or \"none\"; "
+  103|      0|          + "using \(Settings().frameRectangleModifier)")
+  104|      0|    }
+  105|      2|    guard isEnabled else {
+  106|      0|      stop()
+  107|      0|      return
+  108|      2|    }
+  109|      2|    guard downTap == nil else { return }
+  110|      2|    let context = self.context!
+  111|     12|    let tap = EventTap(name: "rectangle", mask: 1 << CGEventType.leftMouseDown.rawValue) { event, proxy in
+  112|     12|      Self.handleDown(event, proxy: proxy, context: context)
+  113|     12|    }
+  114|      2|    tap.onReset = { Self.reset(context) }
+  115|      4|    let dragMask = [CGEventType.leftMouseDragged, .leftMouseUp].reduce(CGEventMask(0)) { $0 | (1 << $1.rawValue) }
+  116|     68|    let dragTap = EventTap(name: "rectangle drag", mask: dragMask) { event, proxy in
+  117|     68|      Self.handleDrag(event, proxy: proxy, context: context)
+  118|     68|    }
+  119|      2|    dragTap.onReset = { Self.reset(context) }
+  120|      2|    guard tap.start() else { return }
+  121|      2|    guard dragTap.start(paused: true) else {
+  122|      0|      tap.stop()
+  123|      0|      return
+  124|      2|    }
+  125|      2|    // A press that arrives before this line finds no drag tap and is let through.
+  126|      2|    context.state.withLockUnchecked { $0.dragTap = dragTap }
+  127|      2|    downTap = tap
+  128|      2|    Log.info("rectangle event taps installed")
+  129|      2|  }
+  130|       |
+  131|      2|  func stop() {
+  132|      2|    downTap?.stop()
+  133|      2|    downTap = nil
+  134|      2|    Self.reset(context)
+  135|      2|    let dragTap = context.state.withLockUnchecked { state -> EventTap? in
+  136|      2|      defer { state.dragTap = nil }
+  137|      2|      return state.dragTap
+  138|      2|    }
+  139|      2|    dragTap?.stop()
+  140|      2|  }
+  141|       |
+  142|       |  /// Hands the callbacks the controller's latest word on where bare Desktop might be.
+  143|    159|  func publish(_ zones: DesktopGuardZones) {
+  144|    159|    context.state.withLockUnchecked { $0.zones = zones }
+  145|    159|  }
+  146|       |
+  147|       |  /// See `EventTap.reviveIfSwitchedOff`.
+  148|     49|  func revive() {
+  149|     49|    downTap?.reviveIfSwitchedOff()
+  150|     49|    context.state.withLockUnchecked { $0.dragTap }?.reviveIfSwitchedOff()
+  151|     49|  }
+  152|       |
+  153|      0|  var isInstalled: Bool { downTap != nil }
+  154|       |
+  155|       |  // MARK: On the tap thread
+  156|       |
+  157|       |  /// Returns true to swallow the event.
+  158|     12|  private nonisolated static func handleDown(_ event: CGEvent, proxy: CGEventTapProxy, context: Context) -> Bool {
+  159|     12|    // The mouse-down sent on by `.replay` comes past this tap again: it must not be held twice.
+  160|     12|    if event.getIntegerValueField(.eventSourceUserData) == EventTap.replayMark { return false }
+  161|     12|    // A band still showing belongs to a drag whose mouse-up was missed.
+  162|     12|    showBand(nil, context)
+  163|     12|    // A click that still waits for Finder's answer goes ahead of this press: events arrive in the order they were made.
+  164|     12|    // Half a click still held belongs to a press whose mouse-up was missed, and is forgotten.
+  165|     12|    let waiting = context.state.withLockUnchecked { state -> [CGEvent] in
+  166|     12|      let held = state.takeHeld()
+  167|     12|      return state.gesture.giveUpWaiting() ? held : []
+  168|     12|    }
+  169|     12|    sendOn(waiting, proxy: proxy)
+  170|     12|    let point = event.location
+  171|     12|    let held = modifiers(of: event.flags)
+  172|     12|    let (asks, zones) = context.state.withLockUnchecked { ($0.gesture.asksAboutDesktop(modifiers: held), $0.zones) }
+  173|     12|    var surface = PointerSurface.Surface.taken
+  174|     12|    // The window list is read only for a plain press or one with ⇧ alone, and only where Arbor knows of no
+  175|     12|    // window. Every other click leaves at once. Not under the lock: the main actor must not wait for the window server.
+  176|     12|    if asks, zones.mayBeBare(point, throughPanels: !held.isEmpty) {
+  177|      0|      surface = WindowList.under(point, mayVanish: held.isEmpty)
+  178|      0|    }
+  179|     12|    let isOnDesktop = surface != .taken
+  180|     12|    let response = context.state.withLockUnchecked {
+  181|     12|      $0.gesture.mouseDown(at: point, modifiers: held, onDesktop: isOnDesktop)
+  182|     12|    }
+  183|     12|    switch response {
+  184|     12|    case .ask(let press):
+  185|      0|      guard let copy = event.copy(), case .bare(let desktopOwner) = surface, followDrag(context) else {
+  186|      0|        reset(context)
+  187|      0|        return false
+  188|      0|      }
+  189|      0|      context.state.withLockUnchecked {
+  190|      0|        $0.heldDown = copy
+  191|      0|        $0.askedPress = press
+  192|      0|      }
+  193|      0|      DispatchQueue.main.async { context.onPress() }
+  194|      0|      guard let desktopOwner else {
+  195|      0|        // Nobody draws icons here, so it is the wallpaper.
+  196|      0|        context.state.withLockUnchecked { _ = $0.gesture.desktopAnswered(isItem: false, press: press) }
+  197|      0|        return true
+  198|      0|      }
+  199|      0|      // Not from here: all input would wait for Finder. The answer is needed when the button comes up.
+  200|      0|      DesktopProbe.ask(
+  201|      0|        pid: desktopOwner, at: point, mayVanish: held.isEmpty,
+  202|      0|        isWanted: { context.state.withLockUnchecked { $0.gesture.isWaitingForAnswer(press: press) } },
+  203|      0|        answer: { isItem in
+  204|      0|          // The click may be over by now, and waiting whole.
+  205|      0|          let (verdict, held) = context.state.withLockUnchecked { state -> (RectangleGesture.Response, [CGEvent]) in
+  206|      0|            let verdict = state.gesture.desktopAnswered(isItem: isItem, press: press)
+  207|      0|            return (verdict, verdict == .pass ? [] : state.takeHeld())
+  208|      0|          }
+  209|      0|          if verdict == .replayClick { sendOn(held, proxy: nil) }
+  210|      0|        })
+  211|      0|      return true
+  212|     12|    case .hold:
+  213|      2|      // Hold the press back only if it can be given back: with nothing to send on, or nothing
+  214|      2|      // watching for the mouse-up, the app would lose the click.
+  215|      2|      guard let copy = event.copy(), followDrag(context) else {
+  216|      0|        reset(context)
+  217|      0|        return false
+  218|      2|      }
+  219|      2|      context.state.withLockUnchecked { $0.heldDown = copy }
+  220|      2|      DispatchQueue.main.async { context.onPress() }
+  221|      2|      return true
+  222|     12|    default:
+  223|     10|      // A mouse-down starts the gesture over, so a drag tap still following
+  224|     10|      // a press whose mouse-up was missed has nothing to follow.
+  225|     10|      stopFollowing(context)
+  226|     10|      return false
+  227|     12|    }
+  228|     12|  }
+  229|       |
+  230|       |  /// Returns true to swallow the event.
+  231|     68|  private nonisolated static func handleDrag(_ event: CGEvent, proxy: CGEventTapProxy, context: Context) -> Bool {
+  232|     68|    let point = event.location
+  233|     68|    let isUp = event.type == .leftMouseUp
+  234|     68|    // Made before the lock is taken. A click that is held whole must be in the state, both halves, by the time the lock
+  235|     68|    // is free: from then on Finder's answer, on another thread, may take it out again.
+  236|     68|    let copy = isUp ? event.copy() : nil
+  237|     68|    let held = modifiers(of: event.flags)
+  238|     68|    let (response, press) = context.state.withLockUnchecked { state -> (RectangleGesture.Response, Int) in
+  239|     68|      guard isUp else { return (state.gesture.mouseDragged(to: point), 0) }
+  240|      2|      var response = state.gesture.mouseUp(at: point, modifiers: held)
+  241|      2|      if response == .holdClick {
+  242|      0|        state.heldUp = copy
+  243|      0|        // It cannot be kept, so the click is given back now.
+  244|      0|        if copy == nil, state.gesture.giveUpWaiting() { response = .replay }
+  245|      0|      }
+  246|      2|      return (response, state.askedPress)
+  247|     68|    }
+  248|     68|    switch response {
+  249|     68|    case .pass:
+  250|      0|      stopFollowing(context)
+  251|      0|      return false
+  252|     68|    case .hold, .swallow, .ask:
+  253|      0|      return true
+  254|     68|    case .drop:
+  255|      0|      // A click on bare Desktop: nobody gets it, so macOS sweeps nothing aside.
+  256|      0|      context.state.withLockUnchecked { _ = $0.takeHeld() }
+  257|      0|      stopFollowing(context)
+  258|      0|      return true
+  259|     68|    case .holdClick:
+  260|      0|      stopFollowing(context)
+  261|      0|      // The answer always comes, but behind a Finder that is stuck it may be long in coming.
+  262|      0|      DispatchQueue.global(qos: .userInteractive).asyncAfter(deadline: .now() + longestWait) {
+  263|      0|        sendOn(context.state.withLockUnchecked { $0.gesture.giveUpWaiting(press: press) ? $0.takeHeld() : [] }, proxy: nil)
+  264|      0|      }
+  265|      0|      return true
+  266|     68|    case .replayClick:
+  267|      0|      // Only `desktopAnswered` says this.
+  268|      0|      return false
+  269|     68|    case .band(let rect):
+  270|     66|      context.state.withLockUnchecked { $0.heldDown = nil }
+  271|     66|      showBand(rect, context)
+  272|     66|      return true
+  273|     68|    case .replay:
+  274|      0|      // Not Arbor's after all (a modifier-click; on the Desktop, a drag or a click on an icon): the app
+  275|      0|      // gets the mouse-down it missed, then this event.
+  276|      0|      sendOn(context.state.withLockUnchecked { $0.takeHeld() }, proxy: proxy)
+  277|      0|      stopFollowing(context)
+  278|      0|      return false
+  279|     68|    case .cancel:
+  280|      0|      context.state.withLockUnchecked { _ = $0.takeHeld() }
+  281|      0|      showBand(nil, context)
+  282|      0|      stopFollowing(context)
+  283|      0|      return true
+  284|     68|    case .frame(let rect):
+  285|      2|      // Mostly gone since the first band. Not if the answer about the Desktop came after the last drag.
+  286|      2|      context.state.withLockUnchecked { _ = $0.takeHeld() }
+  287|      2|      showBand(nil, context)
+  288|      2|      stopFollowing(context)
+  289|      2|      let command = Command.frameRect(
+  290|      2|        x: Double(rect.minX), y: Double(rect.minY), width: Double(rect.width), height: Double(rect.height))
+  291|      2|      // On the main actor after the callback returns: the controller moves windows, which takes a while.
+  292|      2|      DispatchQueue.main.async { context.onCommand(command) }
+  293|      2|      return true
+  294|     68|    }
+  295|     68|  }
+  296|       |
+  297|       |  /// How long a click that is held whole waits for Finder's answer before it is given back.
+  298|       |  private nonisolated static let longestWait = 0.3
+  299|       |
+  300|       |  /// Gives back what was held, in order, marked so that Arbor's own taps let it pass.
+  301|       |  /// - Parameter proxy: a callback's. The events then enter right behind its tap, ahead of the event it has in hand.
+  302|       |  ///   Without one (not in a callback) they enter where all events of the session do.
+  303|     12|  private nonisolated static func sendOn(_ events: [CGEvent], proxy: CGEventTapProxy?) {
+  304|     12|    for event in events {
+  305|      0|      event.setIntegerValueField(.eventSourceUserData, value: EventTap.replayMark)
+  306|      0|      if let proxy { event.tapPostEvent(proxy) } else { event.post(tap: .cgSessionEventTap) }
+  307|     12|    }
+  308|     12|  }
+  309|       |
+  310|       |  /// Lets drags and mouse-ups through the drag tap for the press just held. On the tap thread,
+  311|       |  /// so they come from the next event on. Returns false if there is no tap to follow with.
+  312|      2|  private nonisolated static func followDrag(_ context: Context) -> Bool {
+  313|      2|    context.state.withLockUnchecked { $0.dragTap }?.resume() ?? false
+  314|      2|  }
+  315|       |
+  316|     14|  private nonisolated static func stopFollowing(_ context: Context) {
+  317|     14|    context.state.withLockUnchecked { $0.dragTap }?.pause()
+  318|     14|  }
+  319|       |
+  320|       |  /// Forgets the press or drag in progress, for when events may have been
+  321|       |  /// missed, and for `stop()`.
+  322|      2|  private nonisolated static func reset(_ context: Context) {
+  323|      2|    // A whole click that was waiting is given back: nobody missed any of its events. So is a press whose button is still
+  324|      2|    // down: its mouse-up is yet to come, and will reach the app. If the button is up, the mouse-up was among the events
+  325|      2|    // that were missed, and a press sent on now would leave the app in a drag.
+  326|      2|    let (held, isWhole) = context.state.withLockUnchecked { state -> ([CGEvent], Bool) in
+  327|      2|      defer { state.gesture.reset() }
+  328|      2|      return (state.takeHeld(), state.gesture.giveUpWaiting())
+  329|      2|    }
+  330|      2|    if isWhole || CGEventSource.buttonState(.combinedSessionState, button: .left) { sendOn(held, proxy: nil) }
+  331|      2|    showBand(nil, context)
+  332|      2|    stopFollowing(context)
+  333|      2|  }
+  334|       |
+  335|     80|  private nonisolated static func modifiers(of flags: CGEventFlags) -> RectangleGesture.Modifiers {
+  336|     80|    var modifiers: RectangleGesture.Modifiers = []
+  337|     80|    if flags.contains(.maskControl) { modifiers.insert(.control) }
+  338|     80|    if flags.contains(.maskAlternate) { modifiers.insert(.option) }
+  339|     80|    if flags.contains(.maskShift) { modifiers.insert(.shift) }
+  340|     80|    if flags.contains(.maskCommand) { modifiers.insert(.command) }
+  341|     80|    return modifiers
+  342|     80|  }
+  343|       |
+  344|       |  /// Moves the band (nil hides it) on the main actor once the callback has
+  345|       |  /// returned, so a burst of drag events costs one redraw.
+  346|     82|  private nonisolated static func showBand(_ frame: CGRect?, _ context: Context) {
+  347|     82|    let queue = context.state.withLockUnchecked { state -> Bool in
+  348|     82|      guard state.bandFrame != frame else { return false }
+  349|     66|      state.bandFrame = frame
+  350|     66|      guard !state.bandUpdateQueued else { return false }
+  351|     66|      state.bandUpdateQueued = true
+  352|     66|      return true
+  353|     82|    }
+  354|     82|    if queue { DispatchQueue.main.async { context.draw() } }
+  355|     82|  }
+  356|       |
+  357|       |  // MARK: On the main actor
+  358|       |
+  359|     66|  private func drawBand() {
+  360|     66|    let frame = context.state.withLockUnchecked { state -> CGRect? in
+  361|     66|      state.bandUpdateQueued = false
+  362|     66|      return state.bandFrame
+  363|     66|    }
+  364|     66|    guard let frame else {
+  365|      2|      band?.orderOut(nil)
+  366|      2|      return
+  367|     64|    }
+  368|     64|    let panel = band ?? RubberBandPanel()
+  369|     64|    band = panel
+  370|     64|    panel.show(frame)
+  371|     64|  }
+  372|       |}
+  373|       |
+  374|       |/// The translucent rectangle drawn while dragging. It ignores the mouse.
+  375|       |final class RubberBandPanel: OverlayPanel {
+  376|      2|  override init() {
+  377|      2|    super.init()
+  378|      2|    level = .floating
+  379|      2|    ignoresMouseEvents = true
+  380|      2|    collectionBehavior = [.canJoinAllSpaces, .stationary, .ignoresCycle, .fullScreenAuxiliary]
+  381|      2|    contentView = RubberBandView()
+  382|      2|  }
+  383|       |
+  384|     64|  func show(_ frame: CGRect) {
+  385|     64|    setFrame(ScreenGeometry.appKit(fromGlobal: frame), display: true)
+  386|     64|    orderFrontRegardless()
+  387|     64|  }
+  388|       |}
+  389|       |
+  390|       |private final class RubberBandView: NSView {
+  391|     64|  override func draw(_ dirtyRect: NSRect) {
+  392|     64|    NSColor.controlAccentColor.withAlphaComponent(0.15).setFill()
+  393|     64|    NSBezierPath(rect: bounds).fill()
+  394|     64|    let outline = NSBezierPath(rect: bounds.insetBy(dx: 0.5, dy: 0.5))
+  395|     64|    outline.lineWidth = 1
+  396|     64|    NSColor.controlAccentColor.withAlphaComponent(0.9).setStroke()
+  397|     64|    outline.stroke()
+  398|     64|  }
+  399|       |}
+

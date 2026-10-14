@@ -1,0 +1,512 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/AppKitOverlays.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import CoreGraphics
+    4|       |
+    5|       |/// Draws Arbor's own on-screen elements with borderless, non-activating panels.
+    6|       |@MainActor
+    7|       |public final class AppKitOverlays: OverlayPresenter {
+    8|       |  public weak var actions: (any OverlayActions)?
+    9|       |
+   10|       |  private var previewPanel: OverlayPanel?
+   11|       |  /// Whether the preview is meant to be seen. The panel itself stays on screen while it fades out.
+   12|      8|  private var previewIsShown = false
+   13|       |  /// Panels are kept when they go out of use and handed out again (`ReusePool` says why).
+   14|      8|  private var tilePanels = ReusePool<TileKey, TilePanel>(sparesKept: 32)
+   15|      8|  private var seamPanels = ReusePool<SeamKey, SeamPanel>(sparesKept: 32)
+   16|       |  /// The tiles and seams each display shows, whether the seams show their handles, and how many Space switches there had
+   17|       |  /// been when they were shown.
+   18|      8|  private var shown: [DisplayID: (tiles: [TileModel], seams: [Seam], handles: Bool, spaceSwitches: Int)] = [:]
+   19|       |  /// A panel belongs to the Space it was shown on. After a switch everything is shown again, as it always was.
+   20|      8|  private var spaceSwitches = 0
+   21|       |  private var spaceObserver: NSObjectProtocol?
+   22|      8|  private let peekOutlines = PeekOutlines()
+   23|      8|  private let focusRings = FocusRings()
+   24|      8|  let backdrops = Backdrops()
+   25|       |  /// Plays transitions (AppKitOverlays+Motion.swift).
+   26|      8|  let director = StageDirector()
+   27|      8|  private let nameField = NameField()
+   28|       |  /// The palette of "Go to…", kept once made (FinderPanel.swift).
+   29|       |  var finderPanel: FinderPanel?
+   30|       |  /// The heads-up line and the panel of shortcuts (AppKitOverlays+HeadsUp.swift).
+   31|       |  var headsUpPanel: HeadsUpPanel?
+   32|       |  var cheatSheetPanel: CheatSheetPanel?
+   33|       |
+   34|       |  private struct TileKey: Hashable {
+   35|       |    let display: DisplayID
+   36|       |    let node: NodeID
+   37|       |  }
+   38|      8|  private let minimaps = Minimaps()
+   39|       |
+   40|       |  private struct SeamKey: Hashable {
+   41|       |    let display: DisplayID
+   42|       |    let split: NodeID
+   43|       |    let leading: NodeID
+   44|       |    let trailing: NodeID
+   45|       |  }
+   46|       |
+   47|      8|  public init() {
+   48|      8|    spaceObserver = NSWorkspace.shared.notificationCenter.addObserver(
+   49|      8|      forName: NSWorkspace.activeSpaceDidChangeNotification, object: nil, queue: .main
+   50|      8|    ) { [weak self] _ in
+   51|      2|      MainActor.assumeIsolated { self?.spaceSwitches += 1 }
+   52|      2|    }
+   53|      8|  }
+   54|       |
+   55|       |  /// The preview fades in where it appears, glides from one target to the next and fades out, each
+   56|       |  /// in `previewMotion` seconds. With "Reduce motion" on it only appears, jumps and disappears.
+   57|     24|  public func showDropPreview(_ frame: CGRect?) {
+   58|     24|    let animates = !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+   59|     24|    let wasShown = previewIsShown
+   60|     24|    previewIsShown = frame != nil
+   61|     24|
+   62|     24|    guard let frame else {
+   63|     17|      guard wasShown, let panel = previewPanel else { return }
+   64|      6|      guard animates else {
+   65|      0|        panel.orderOut(nil)
+   66|      0|        return
+   67|      6|      }
+   68|      6|      NSAnimationContext.runAnimationGroup(
+   69|      6|        { context in
+   70|      6|          context.duration = Self.previewMotion
+   71|      6|          panel.animator().alphaValue = 0
+   72|      6|        },
+   73|      6|        completionHandler: { [weak self] in
+   74|      6|          MainActor.assumeIsolated {
+   75|      6|            // Unless it was asked for again while it faded.
+   76|      6|            guard let self, !self.previewIsShown else { return }
+   77|      6|            self.previewPanel?.orderOut(nil)
+   78|      6|          }
+   79|      6|        })
+   80|      6|      return
+   81|     17|    }
+   82|      7|
+   83|      7|    let panel = previewPanel ?? makePreviewPanel()
+   84|      7|    previewPanel = panel
+   85|      7|    let target = ScreenGeometry.appKit(fromGlobal: frame)
+   86|      7|    guard animates else {
+   87|      0|      panel.alphaValue = 1
+   88|      0|      panel.setFrame(target, display: true)
+   89|      0|      panel.orderFrontRegardless()
+   90|      0|      return
+   91|      7|    }
+   92|      7|    if !panel.isVisible {
+   93|      6|      panel.alphaValue = 0
+   94|      6|      panel.setFrame(target, display: true)
+   95|      6|      panel.orderFrontRegardless()
+   96|      6|    }
+   97|      7|    // Through the animator even when it should not glide (it is fading out somewhere else), so
+   98|      7|    // that this move replaces one still under way instead of being overtaken by it.
+   99|      7|    NSAnimationContext.runAnimationGroup { context in
+  100|      7|      context.duration = wasShown ? Self.previewMotion : 0
+  101|      7|      panel.animator().setFrame(target, display: true)
+  102|      7|    }
+  103|      7|    NSAnimationContext.runAnimationGroup { context in
+  104|      7|      context.duration = Self.previewMotion
+  105|      7|      panel.animator().alphaValue = 1
+  106|      7|    }
+  107|      7|  }
+  108|       |
+  109|       |  private static let previewMotion = 0.12
+  110|       |
+  111|    167|  public func update(display: DisplayID, scene: OverlayScene) {
+  112|    167|    showTilesAndSeams(of: scene, on: display)
+  113|    167|    peekOutlines.update(display: display, frame: scene.peekOutline) { [weak self] in
+  114|      0|      self?.actions?.peekOutlineClicked(display: display)
+  115|      0|    }
+  116|    167|    focusRings.update(display: display, model: scene.focusRing)
+  117|    167|    nameField.update(display: display, model: scene.namePrompt, actions: actions)
+  118|    167|    backdrops.update(display: display, model: scene.backdrop)
+  119|    167|    director.surfaceChanged(scene.backdrop, on: display)
+  120|    167|  }
+  121|       |
+  122|    167|  private func showTilesAndSeams(of scene: OverlayScene, on display: DisplayID) {
+  123|    167|    // Most layouts leave them as they are, and every panel touched is a call to the window server.
+  124|    167|    let again = shown[display]?.spaceSwitches != spaceSwitches
+  125|    167|    if !again, let shown = shown[display], shown.tiles == scene.tiles, shown.seams == scene.seams,
+  126|    167|      shown.handles == scene.showsSeamHandles
+  127|    167|    {
+  128|     67|      return
+  129|    100|    }
+  130|    100|    shown[display] = (scene.tiles, scene.seams, scene.showsSeamHandles, spaceSwitches)
+  131|    100|
+  132|    100|    let tileKeys = scene.tiles.map { TileKey(display: display, node: $0.node) }
+  133|    100|    let tileChange = tilePanels.use(tileKeys, replacing: { $0.display == display }, make: { TilePanel() })
+  134|    100|    tileChange.retired.forEach { $0.leave(fade: scene.tileFade) }
+  135|    100|    tileChange.discarded.forEach { $0.close() }
+  136|    100|    for (key, model) in zip(tileKeys, scene.tiles) {
+  137|     42|      guard let panel = tilePanels.inUse[key] else { continue }
+  138|     42|      panel.onActivate = { [weak self] in self?.actions?.tileActivated(display: display, node: model.node) }
+  139|     42|      panel.show(model, fade: scene.tileFade, again: again)
+  140|    100|    }
+  141|    100|
+  142|    225|    let seams = scene.seams.filter { $0.frame.width >= 2 && $0.frame.height >= 2 }
+  143|    225|    let seamKeys = seams.map { SeamKey(display: display, split: $0.split, leading: $0.leading, trailing: $0.trailing) }
+  144|    215|    let seamChange = seamPanels.use(seamKeys, replacing: { $0.display == display }, make: { SeamPanel() })
+  145|    100|    seamChange.retired.forEach { $0.orderOut(nil) }
+  146|    100|    seamChange.discarded.forEach { $0.close() }
+  147|    225|    for (key, seam) in zip(seamKeys, seams) {
+  148|    225|      guard let panel = seamPanels.inUse[key] else { continue }
+  149|    225|      panel.onDrag = { [weak self] seam, delta in self?.actions?.seamDragged(display: display, seam: seam, by: delta) }
+  150|    225|      panel.show(seam, showsHandle: scene.showsSeamHandles, again: again)
+  151|    225|    }
+  152|    100|  }
+  153|       |
+  154|      8|  public func removeAll() {
+  155|      8|    previewPanel?.close()
+  156|      8|    previewPanel = nil
+  157|      8|    previewIsShown = false
+  158|      8|    tilePanels.removeAll().forEach { $0.close() }
+  159|     21|    seamPanels.removeAll().forEach { $0.close() }
+  160|      8|    shown.removeAll()
+  161|      8|    peekOutlines.removeAll()
+  162|      8|    focusRings.removeAll()
+  163|      8|    backdrops.removeAll()
+  164|      8|    director.stop()
+  165|      8|    nameField.removeAll()
+  166|      8|    finderPanel?.dismiss()
+  167|      8|    finderPanel?.close()
+  168|      8|    finderPanel = nil
+  169|      8|    removeHeadsUp()
+  170|      8|    minimaps.removeAll()
+  171|      8|  }
+  172|       |
+  173|      0|  public func showMinimap(_ model: MinimapModel?, on display: DisplayID) {
+  174|      0|    minimaps.onClick = { [weak self] display, point in self?.actions?.minimapClicked(display: display, at: point) }
+  175|      0|    minimaps.show(model, on: display)
+  176|      0|  }
+  177|       |
+  178|      3|  private func makePreviewPanel() -> OverlayPanel {
+  179|      3|    let panel = OverlayPanel()
+  180|      3|    panel.level = .floating
+  181|      3|    panel.ignoresMouseEvents = true
+  182|      3|    panel.collectionBehavior = [.canJoinAllSpaces, .transient, .ignoresCycle, .fullScreenAuxiliary]
+  183|      3|    let view = PreviewView()
+  184|      3|    panel.contentView = view
+  185|      3|    return panel
+  186|      3|  }
+  187|       |}
+  188|       |
+  189|       |/// A borderless panel that never takes focus.
+  190|       |class OverlayPanel: NSPanel {
+  191|     58|  init() {
+  192|     58|    super.init(
+  193|     58|      contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
+  194|     58|    isOpaque = false
+  195|     58|    backgroundColor = .clear
+  196|     58|    hasShadow = false
+  197|     58|    hidesOnDeactivate = false
+  198|     58|    isReleasedWhenClosed = false
+  199|     58|    animationBehavior = .none
+  200|     58|    // Transient: hidden in Mission Control. A stationary tile stayed where it was, over the windows' miniatures.
+  201|     58|    collectionBehavior = [.ignoresCycle, .transient]
+  202|     58|  }
+  203|       |
+  204|    168|  override var canBecomeKey: Bool { false }
+  205|      3|  override var canBecomeMain: Bool { false }
+  206|       |
+  207|       |  /// AppKit keeps windows from reaching under the menu bar, borderless panels at the normal level too: the focus
+  208|       |  /// ring's, whose margin does reach there around a window at the top of the screen, was pushed down and off its
+  209|       |  /// window. An overlay goes where its model says.
+  210|    967|  override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect { frameRect }
+  211|       |
+  212|       |  /// Puts the panel on screen behind every other window of its level, or sends it back there. For panels that stand where
+  213|       |  /// no docked window is: tiles and gap handles. Whatever else lies there (a floating or pinned window, a window
+  214|       |  /// Arbor does not arrange) was put there by somebody and stays in front, in view and within reach of the mouse. In front
+  215|       |  /// of it a tile would hide it, and a gap handle, which cannot even be seen, would take a strip of its clicks.
+  216|    163|  func orderInBehind() {
+  217|    163|    order(.below, relativeTo: 0)
+  218|    163|  }
+  219|       |}
+  220|       |
+  221|       |private final class PreviewView: NSView {
+  222|       |  /// The shape of the tile or window that would land here, in the accent colour.
+  223|     12|  override func draw(_ dirtyRect: NSRect) {
+  224|     12|    let radius = ContinuousCorners.windowRadius
+  225|     12|    NSColor.controlAccentColor.withAlphaComponent(0.18).setFill()
+  226|     12|    NSBezierPath.make(RoundedPath.rect(bounds, radius: radius)).fill()
+  227|     12|    // The middle of a 2-point line lies 1 point inside the edge.
+  228|     12|    let border = NSBezierPath.make(RoundedPath.rect(bounds.insetBy(dx: 1, dy: 1), radius: radius - 1))
+  229|     12|    border.lineWidth = 2
+  230|     12|    NSColor.controlAccentColor.setStroke()
+  231|     12|    border.stroke()
+  232|     12|  }
+  233|       |}
+  234|       |
+  235|       |// MARK: Tiles
+  236|       |
+  237|       |/// A node too small to show its windows: the app colour, icon and name.
+  238|       |/// Clicking zooms onto it.
+  239|       |final class TilePanel: OverlayPanel {
+  240|       |  var onActivate: (() -> Void)?
+  241|      3|  private let tileView = TileView()
+  242|       |  /// Fading out, on its way off the screen.
+  243|      3|  private var isLeaving = false
+  244|       |  /// Counts the times it has left, so that the end of an earlier fade is not taken for the end of this one.
+  245|      3|  private var departures = 0
+  246|       |
+  247|      3|  override init() {
+  248|      3|    super.init()
+  249|      3|    level = .normal
+  250|      3|    contentView = tileView
+  251|      3|    tileView.onClick = { [weak self] in self?.onActivate?() }
+  252|      3|  }
+  253|       |
+  254|       |  /// A tile that was not on screen fades in over `fade` seconds. With `again`, it is shown also when it shows this very
+  255|       |  /// model already.
+  256|     42|  func show(_ model: TileModel, fade: TimeInterval, again: Bool) {
+  257|     42|    // Moving, redrawing and reordering a panel are calls to the window server; most tiles outlast most layouts.
+  258|     42|    if !again, isVisible, !isLeaving, tileView.model == model { return }
+  259|     10|    // A panel handed over from another tile is a new tile to the eye, wherever it was a moment ago.
+  260|     10|    let isSameTile = isVisible && tileView.model?.node == model.node
+  261|     10|    let isNew = !isSameTile || isLeaving
+  262|     10|    isLeaving = false
+  263|     10|    ignoresMouseEvents = false
+  264|     10|    tileView.model = model
+  265|     10|    tileView.needsDisplay = true
+  266|     10|    setFrame(ScreenGeometry.appKit(fromGlobal: model.frame), display: true)
+  267|     10|    // The window server shapes the shadow after what was last drawn.
+  268|     10|    hasShadow = TileDrawing.art(for: model, in: tileView).castsShadow
+  269|     10|    invalidateShadow()
+  270|     10|    guard isNew, fade > 0 else {
+  271|      1|      setAlphaAtOnce(1)
+  272|      1|      orderInBehind()
+  273|      1|      return
+  274|      9|    }
+  275|      9|    // One that was on its way out comes back from however faint it is by now.
+  276|      9|    if !isSameTile { setAlphaAtOnce(0) }
+  277|      9|    orderInBehind()
+  278|      9|    NSAnimationContext.runAnimationGroup { context in
+  279|      9|      context.duration = fade
+  280|      9|      animator().alphaValue = 1
+  281|      9|    }
+  282|      9|  }
+  283|       |
+  284|       |  /// Fades out over `fade` seconds and leaves the screen. What takes the tile's place is under it already, so from now
+  285|       |  /// on clicks are meant for that. The panel may be handed out again (`show`) before it has faded.
+  286|      9|  func leave(fade: TimeInterval) {
+  287|      9|    onActivate = nil
+  288|      9|    departures += 1
+  289|      9|    guard fade > 0, isVisible else {
+  290|      0|      isLeaving = false
+  291|      0|      setAlphaAtOnce(1)
+  292|      0|      orderOut(nil)
+  293|      0|      return
+  294|      9|    }
+  295|      9|    isLeaving = true
+  296|      9|    ignoresMouseEvents = true
+  297|      9|    let departure = departures
+  298|      9|    NSAnimationContext.runAnimationGroup(
+  299|      9|      { context in
+  300|      9|        context.duration = fade
+  301|      9|        animator().alphaValue = 0
+  302|      9|      },
+  303|      9|      completionHandler: { [weak self] in
+  304|      9|        MainActor.assumeIsolated {
+  305|      9|          // Unless it was asked for again while it faded, even if it has left once more since.
+  306|      9|          guard let self, self.isLeaving, self.departures == departure else { return }
+  307|      6|          self.isLeaving = false
+  308|      6|          self.orderOut(nil)
+  309|      6|        }
+  310|      9|      })
+  311|      9|  }
+  312|       |
+  313|       |  /// Through the animator: a plain assignment would be overwritten by the next step of a fade still under way.
+  314|      9|  private func setAlphaAtOnce(_ alpha: CGFloat) {
+  315|      9|    NSAnimationContext.runAnimationGroup { context in
+  316|      9|      context.duration = 0
+  317|      9|      animator().alphaValue = alpha
+  318|      9|    }
+  319|      9|  }
+  320|       |}
+  321|       |
+  322|       |private final class TileView: NSView {
+  323|       |  var model: TileModel?
+  324|       |  var onClick: (() -> Void)?
+  325|       |
+  326|      2|  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+  327|      2|  override func mouseUp(with event: NSEvent) { onClick?() }
+  328|       |
+  329|       |  /// `TileArt` counts y downward.
+  330|    248|  override var isFlipped: Bool { true }
+  331|       |
+  332|      3|  override func viewDidChangeEffectiveAppearance() {
+  333|      3|    super.viewDidChangeEffectiveAppearance()
+  334|      3|    needsDisplay = true
+  335|      3|  }
+  336|       |
+  337|     10|  override func draw(_ dirtyRect: NSRect) {
+  338|     10|    guard let model else { return }
+  339|     10|    TileDrawing.draw(TileDrawing.art(for: model, in: self))
+  340|     10|  }
+  341|       |}
+  342|       |
+  343|       |// MARK: Seams
+  344|       |
+  345|       |/// A handle in the gap between two docked windows. Dragging it resizes both.
+  346|       |final class SeamPanel: OverlayPanel {
+  347|       |  var onDrag: ((Seam, CGFloat) -> Void)?
+  348|     21|  private let seamView = SeamView()
+  349|       |
+  350|     21|  override init() {
+  351|     21|    super.init()
+  352|     21|    level = .normal
+  353|     21|    // The handle draws nothing at rest, and the window server lets clicks fall through a window's transparent
+  354|     21|    // parts unless the window has said that it wants them.
+  355|     21|    ignoresMouseEvents = false
+  356|     21|    contentView = seamView
+  357|     32|    seamView.onDrag = { [weak self] delta in
+  358|     32|      guard let self, let seam = self.seamView.seam else { return }
+  359|     32|      self.onDrag?(seam, delta)
+  360|     32|    }
+  361|     21|  }
+  362|       |
+  363|       |  /// With `again`, also when it shows this very seam already.
+  364|    225|  func show(_ seam: Seam, showsHandle: Bool, again: Bool) {
+  365|    225|    seamView.showsHandle = showsHandle
+  366|    225|    if !again, isVisible, seamView.seam == seam { return }
+  367|    153|    // It may have been put away, or handed over from another gap, in the middle of a drag.
+  368|    153|    if let old = seamView.seam,
+  369|    153|      !isVisible || old.split != seam.split || old.leading != seam.leading || old.trailing != seam.trailing
+  370|    153|    {
+  371|     54|      seamView.forgetDrag()
+  372|     54|    }
+  373|    153|    seamView.seam = seam
+  374|    153|    setFrame(ScreenGeometry.appKit(fromGlobal: seam.frame), display: false)
+  375|    153|    orderInBehind()
+  376|    153|  }
+  377|       |}
+  378|       |
+  379|       |private final class SeamView: NSView {
+  380|       |  var seam: Seam? {
+  381|    153|    didSet { cursor = seam?.axis == .vertical ? .resizeUpDown : .resizeLeftRight }
+  382|       |  }
+  383|       |  var onDrag: ((CGFloat) -> Void)?
+  384|       |  /// Whether a pill shows in the middle of the seam while the pointer is over it or dragging it.
+  385|     21|  var showsHandle = true {
+  386|    225|    didSet { if showsHandle != oldValue { needsDisplay = true } }
+  387|       |  }
+  388|     21|  private var cursor: NSCursor = .resizeLeftRight
+  389|       |  private var lastLocation: NSPoint? {
+  390|     88|    didSet { if (lastLocation == nil) != (oldValue == nil) { needsDisplay = true } }
+  391|       |  }
+  392|     21|  private var isHovered = false {
+  393|     66|    didSet { if isHovered != oldValue { needsDisplay = true } }
+  394|       |  }
+  395|       |  private var trackingArea: NSTrackingArea?
+  396|       |
+  397|      1|  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+  398|       |
+  399|     82|  override func updateTrackingAreas() {
+  400|     82|    super.updateTrackingAreas()
+  401|     82|    if let trackingArea { removeTrackingArea(trackingArea) }
+  402|     82|    let area = NSTrackingArea(
+  403|     82|      rect: bounds, options: [.mouseEnteredAndExited, .activeAlways, .inVisibleRect], owner: self)
+  404|     82|    addTrackingArea(area)
+  405|     82|    trackingArea = area
+  406|     82|  }
+  407|       |
+  408|      6|  override func mouseEntered(with event: NSEvent) {
+  409|      6|    isHovered = true
+  410|      6|    cursor.set()
+  411|      6|  }
+  412|       |
+  413|      6|  override func mouseExited(with event: NSEvent) {
+  414|      6|    isHovered = false
+  415|      6|    if lastLocation == nil { NSCursor.arrow.set() }
+  416|      6|  }
+  417|       |
+  418|      1|  override func mouseDown(with event: NSEvent) {
+  419|      1|    lastLocation = NSEvent.mouseLocation
+  420|      1|    cursor.set()
+  421|      1|  }
+  422|       |
+  423|     32|  override func mouseDragged(with event: NSEvent) {
+  424|     32|    guard let last = lastLocation, let seam else { return }
+  425|     32|    let now = NSEvent.mouseLocation
+  426|     32|    // AppKit y grows upward; Arbor's grows downward.
+  427|     32|    let delta = seam.axis == .horizontal ? now.x - last.x : last.y - now.y
+  428|     32|    lastLocation = now
+  429|     32|    if delta != 0 { onDrag?(delta) }
+  430|     32|  }
+  431|       |
+  432|      1|  override func mouseUp(with event: NSEvent) {
+  433|      1|    lastLocation = nil
+  434|      1|  }
+  435|       |
+  436|       |  /// Nothing at rest; a pill under the pointer; the pill in the accent colour while it is dragged. The gap
+  437|       |  /// shows the wallpaper, which has nothing to do with light or dark mode, so like the labels of icons on
+  438|       |  /// the Desktop the pill is white with a soft shadow: that shows on any picture.
+  439|     96|  override func draw(_ dirtyRect: NSRect) {
+  440|     96|    let isDragged = lastLocation != nil
+  441|     96|    guard showsHandle, isHovered || isDragged, let seam, let pill = SeamHandle.pill(in: bounds, axis: seam.axis)
+  442|     96|    else { return }
+  443|      8|    TileDrawing.softShadow(RGBA.black.withAlpha(0.45)).set()
+  444|      8|    (isDragged ? NSColor.controlAccentColor : NSColor.white.withAlphaComponent(0.9)).setFill()
+  445|      8|    NSBezierPath.make(RoundedPath.capsule(pill)).fill()
+  446|      8|  }
+  447|       |
+  448|       |  /// The panel was put away or handed over: nothing tells it that the pointer is no longer over it.
+  449|     54|  func forgetDrag() {
+  450|     54|    lastLocation = nil
+  451|     54|    isHovered = false
+  452|     54|  }
+  453|       |}
+  454|       |
+  455|       |// MARK: App appearance
+  456|       |
+  457|       |@MainActor
+  458|       |enum AppAppearance {
+  459|       |  private static var colours: [String: RGBA] = [:]
+  460|       |
+  461|     26|  static func icon(pid: Int32) -> NSImage? {
+  462|     26|    NSRunningApplication(processIdentifier: pid)?.icon
+  463|     26|  }
+  464|       |
+  465|       |  /// The colour of the app's icon as a plain fill, darkened a little so white captions stay readable.
+  466|    210|  static func colour(pid: Int32, bundleID: String?) -> NSColor {
+  467|    210|    rgba(pid: pid, bundleID: bundleID)?.mixed(with: .black, amount: 0.25).nsColor ?? .systemGray
+  468|    210|  }
+  469|       |
+  470|       |  /// The colour the app's icon is recognised by (`IconColour`), which tints its tiles. Nil without an icon.
+  471|    226|  static func rgba(pid: Int32, bundleID: String?) -> RGBA? {
+  472|    226|    let key = bundleID ?? "pid-\(pid)"
+  473|    226|    if let cached = colours[key] { return cached }
+  474|      9|    guard let icon = icon(pid: pid), let colour = colour(of: icon) else { return nil }
+  475|      9|    colours[key] = colour
+  476|      9|    return colour
+  477|    226|  }
+  478|       |
+  479|      9|  static func colour(of icon: NSImage) -> RGBA? { IconColour.dominant(of: samples(of: icon)) }
+  480|       |
+  481|       |  /// The icon's pixels at a size where its large shapes are left and its details are not, in sRGB like every `RGBA`.
+  482|      9|  private static func samples(of icon: NSImage) -> [RGBA] {
+  483|      9|    let side = 24
+  484|      9|    guard let space = CGColorSpace(name: CGColorSpace.sRGB),
+  485|      9|      let bitmap = CGContext(
+  486|      9|        data: nil, width: side, height: side, bitsPerComponent: 8, bytesPerRow: side * 4, space: space,
+  487|      9|        bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+  488|      9|    else { return [] }
+  489|      9|    NSGraphicsContext.saveGraphicsState()
+  490|      9|    NSGraphicsContext.current = NSGraphicsContext(cgContext: bitmap, flipped: false)
+  491|      9|    NSGraphicsContext.current?.imageInterpolation = .high
+  492|      9|    icon.draw(in: NSRect(x: 0, y: 0, width: side, height: side))
+  493|      9|    NSGraphicsContext.restoreGraphicsState()
+  494|      9|
+  495|      9|    // Straight from the bytes (red, green, blue, alpha; colours multiplied by alpha): asking an image for 576
+  496|      9|    // colour objects takes milliseconds, and this runs while a tile waits to be drawn.
+  497|      9|    guard let bytes = bitmap.data?.assumingMemoryBound(to: UInt8.self) else { return [] }
+  498|      9|    var samples: [RGBA] = []
+  499|  4.87k|    for pixel in 0..<(side * side) where bytes[pixel * 4 + 3] > 0 {
+  500|  4.87k|      let alpha = Double(bytes[pixel * 4 + 3])
+  501|  4.87k|      samples.append(
+  502|  4.87k|        RGBA(
+  503|  4.87k|          red: Double(bytes[pixel * 4]) / alpha, green: Double(bytes[pixel * 4 + 1]) / alpha,
+  504|  4.87k|          blue: Double(bytes[pixel * 4 + 2]) / alpha, alpha: alpha / 255))
+  505|  4.87k|    }
+  506|      9|    return samples
+  507|      9|  }
+  508|       |}
+

@@ -1,0 +1,71 @@
+measurement   lines  executed     %  not executed  functions  never run  regions  never entered
+-----------------------------------------------------------------------------------------------
+e2e            9385      3747  39.9          5638       1507        923     3345           2153
+drag           9385      2124  22.6          7261       1507       1145     3345           2616
+both           9385      3979  42.4          5406       1507        895     3345           2064
+with-session   9385      5431  57.9          3954       1507        630     3345           1553
+
+folder                         lines  executed (e2e)  executed (drag)  executed (both)  executed (with-session)     %  not executed  functions  never run  regions  never entered
+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+ArborKit/UI                     5557            2043              796             2107                     2773  49.9          2784        831        371     1624            804
+ArborKit/Input                  1298             115              115              115                      814  62.7           484        254         97      558            288
+ArborKit/App                    1006             546              411              546                      605  60.1           401        187         94      412            219
+ArborKit/AX                     1524            1043              802             1211                     1239  81.3           285        235         68      751            242
+ArborKit/IPC (not in the sum)    332             244              216              244                      244  73.5            88         60         15      168             59
+
+file                                                     lines  executed (e2e)  executed (drag)  executed (both)  executed (with-session)      %  not executed  functions  never run  regions  never entered
+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Sources/ArborKit/UI/SettingsListViews.swift                903             263                0              263                      263   29.1           640         85         66      127            102
+Sources/ArborKit/UI/Onboarding.swift                       632               0                0                0                        0    0.0           632         62         62      141            141
+Sources/ArborKit/UI/SettingsViews.swift                    794             299                0              299                      299   37.7           495        118         73      191            122
+Sources/ArborKit/AX/AXWindowSystem.swift                  1271             885              663             1053                     1068   84.0           203        185         51      609            175
+Sources/ArborKit/App/ArborApp.swift                        557             315              263              315                      374   67.1           183        101         46      212             98
+Sources/ArborKit/UI/MinimapPanel.swift                     188               5                5                5                        5    2.7           183         29         27       67             65
+Sources/ArborKit/UI/NamePanel.swift                        178              10               10               10                       10    5.6           168         25         23       64             60
+Sources/ArborKit/Input/GestureTap.swift                    263               0                0                0                      123   46.8           140         55         30      128             85
+Sources/ArborKit/UI/FinderPanel.swift                      402             270                0              270                      270   67.2           132         50         18      135             67
+Sources/ArborKit/UI/WindowPictures.swift                   197              66               66               66                       69   35.0           128         41         23      103             67
+Sources/ArborKit/App/CallSensor.swift                      119               0                0                0                        0    0.0           119         27         27       55             55
+Sources/ArborKit/Input/RectangleFramer.swift               381               0                0                0                      277   72.7           104         70         18      143             55
+Sources/ArborKit/IPC/ControlServer.swift                   297             214              198              214                      214   72.1            83         55         15      150             55
+Sources/ArborKit/UI/UpdateWindow.swift                      73               0                0                0                        0    0.0            73          5          5       11             11
+Sources/ArborKit/Input/DesktopProbe.swift                   72               0                0                0                        0    0.0            72          6          6       36             36
+Sources/ArborKit/UI/ArborArtwork.swift                     137               0                0                0                       67   48.9            70         10          4       30              9
+Sources/ArborKit/Input/WindowList.swift                     69               0                0                0                        0    0.0            69         14         14       28             28
+Sources/ArborKit/UI/StatusMenu.swift                       195               0                0                0                      137   70.3            58         37         16       98             37
+Sources/ArborKit/Input/EventTap.swift                      259              13               13               13                      205   79.2            54         55         13      103             39
+Sources/ArborKit/UI/BackdropPanel.swift                    189             152              127              152                      152   80.4            37         39          4       59              6
+Sources/ArborKit/AX/AXWindowSystem+Opening.swift            36               0                0                0                        0    0.0            36          5          5       20             20
+Sources/ArborKit/App/MacFacts.swift                         36               0                0                0                        0    0.0            36          5          5       18             18
+Sources/ArborKit/UI/PeekOutlinePanel.swift                  46              10               10               10                       10   21.7            36         13         10       17             13
+Sources/ArborKit/UI/SettingsWindow.swift                   134              99                0               99                       99   73.9            35         22          8       47             22
+Sources/ArborKit/UI/CheatSheetPanel.swift                  148             121                0              121                      121   81.8            27         31         10       54             18
+Sources/ArborKit/AX/AXWindowSystem+Launch.swift             26               0                0                0                        0    0.0            26          4          4       13             13
+Sources/ArborKit/App/Watchdog.swift                         84              65                0               65                       65   77.4            19         13          7       44             14
+Sources/ArborKit/Input/PointerInput.swift                   63               0                0                0                       46   73.0            17         15          5       29             12
+Sources/ArborKit/UI/StageDirector.swift                    184              74               58               74                      167   90.8            17         46          7       74             15
+Sources/ArborKit/UI/TileDrawing.swift                      108              91               36               91                       91   84.3            17         13          2       44             11
+Sources/ArborKit/UI/Stage.swift                            263               0                0                0                      247   93.9            16         45          4       90             14
+Sources/ArborKit/UI/AppKitOverlays.swift                   453             303              205              357                      438   96.7            15        101          6      176             18
+Sources/ArborKit/App/ProcessGuards.swift                    71              57               43               57                       57   80.3            14         11          4       21              6
+Sources/ArborKit/App/SystemLoginItem.swift                  18               4                0                4                        4   22.2            14          2          1       15             13
+Sources/ArborKit/Input/HotKeyCenter.swift                   75               0                0                0                       61   81.3            14         18          6       46             16
+Sources/ArborKit/Input/KeyboardLayout.swift                 86              73               73               73                       73   84.9            13         16          5       36             15
+Sources/ArborKit/AX/AXWindowSystem+Stacking.swift           12               0                0                0                        0    0.0            12          4          4        6              6
+Sources/ArborKit/App/LaunchArguments.swift                  18               8                8                8                        8   44.4            10          1          0        9              6
+Sources/ArborKit/IPC/ControlEndpoint.swift                  35              30               18               30                       30   85.7             5          5          0       18              4
+Sources/ArborKit/AX/AXHelpers.swift                         77              73               69               73                       73   94.8             4         20          2       57             16
+Sources/ArborKit/App/SettingsWatcher.swift                  44              41               41               41                       41   93.2             3         10          1       14              3
+Sources/ArborKit/AX/AXWindowSystem+Input.swift              27              15                0               15                       25   92.6             2          4          1       18              6
+Sources/ArborKit/AX/ScreenGeometry.swift                    36              31               31               31                       34   94.4             2         11          1       17              4
+Sources/ArborKit/App/FrontmostAppWatcher.swift              31              29               29               29                       29   93.5             2         10          2       13              3
+Sources/ArborKit/UI/FocusRingPanel.swift                   134             115              125              125                      132   98.5             2         21          1       37              2
+Sources/ArborKit/App/ArborEnvironment.swift                 28              27               27               27                       27   96.4             1          7          1       11              3
+Sources/ArborKit/Input/SystemShortcutReader.swift           30              29               29               29                       29   96.7             1          5          0        9              2
+Sources/ArborKit/UI/AppKitOverlays+HeadsUp.swift            38              35               24               35                       37   97.4             1          8          1       14              2
+Sources/ArborKit/UI/AppKitOverlays+Motion.swift              8               7                7                7                        7   87.5             1          6          1        6              1
+Sources/ArborKit/UI/ContinuousCorners.swift                  7               6                6                6                        6   85.7             1          2          0        4              1
+Sources/ArborKit/AX/AXWindowSystem+StackedWindows.swift     39              39               39               39                       39  100.0             0          2          0       11              2
+Sources/ArborKit/UI/HeadsUpPanel.swift                     146             117              117              117                      146  100.0             0         22          0       35              0
+
+real-window coverage: 5431 of 9385 lines (57.9 %) of the macOS-only code; 630 functions never run

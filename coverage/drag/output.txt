@@ -1,0 +1,74 @@
+This takes over the real pointer for about half a minute. Hands off the mouse until it says it is done.
+built Arbor and the pointer tool in 6s
+session 1: Arbor pid 10082, test windows 121 122 123 (pid 10015)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w121 170 220 480 348      floating
+  w122 220 180 480 348      floating
+  w123 270 140 480 348      floating
+
+== drag a window by its title bar to the left screen edge
+> drag 510 152 3 368 --no-release
+  ✔ a drop preview shows while the button is held
+> release
+  ✔ the window docks on release
+  ✔ no preview is left behind
+  ✔ it sits at the left edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          518 43 494 650
+  w121 518 220 480 348      floating
+  w122 518 180 480 348      floating
+  w123 12 43 494 650        docked focused
+
+== drag the right edge of the docked window 60 points to the right
+> drag 505 368 565 368
+  ✔ the window is 60 points wider
+  ✔ the Desktop gave up the space
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w121 578 220 446 348      floating
+  w122 578 180 446 348      floating
+  w123 12 43 554 650        docked focused
+
+== drag another window onto the right part of the docked one
+> drag 801 192 482 368
+  ✔ it docks
+  ✔ to the right of the first
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          583 43 429 650
+  w121 583 220 441 348      floating
+  w122 298 43 273 650       docked focused
+  w123 12 43 274 650        docked
+
+== double-click the title bar of a docked window (H5)
+> click 149 55 2
+  ✔ the window is in its slot
+  ✔ no seam moved
+
+== press inside a docked window and move the pointer
+> drag 149 368 239 428 --no-release
+  ✔ that is not a drag: no preview
+> release
+  ✔ the window is in its slot
+
+== drag a docked window out onto the Desktop
+> drag 434 55 797 103
+  ✔ it floats
+  ✔ the first window is still docked
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w121 578 220 446 348      floating
+  w122 544 54 480 348       floating focused
+  w123 12 43 554 650        docked
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 121 is back on screen after quitting
+  ✔ window 122 is back on screen after quitting
+  ✔ window 123 is back on screen after quitting
+Done: the pointer is yours again.
+
+18 passed, 0 failed

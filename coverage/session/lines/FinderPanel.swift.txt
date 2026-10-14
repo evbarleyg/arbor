@@ -1,0 +1,433 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/FinderPanel.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import CoreGraphics
+    4|       |import Foundation
+    5|       |
+    6|       |extension AppKitOverlays {
+    7|      0|  public func showFinder(_ model: FinderModel?) {
+    8|      0|    guard let model else {
+    9|      0|      finderPanel?.hide()
+   10|      0|      return
+   11|      0|    }
+   12|      0|    let panel = finderPanel ?? FinderPanel()
+   13|      0|    finderPanel = panel
+   14|      0|    panel.onChoose = { [weak self] destination in self?.actions?.finderChose(destination) }
+   15|      0|    panel.onDismiss = { [weak self] in self?.actions?.finderDismissed() }
+   16|      0|    panel.show(model)
+   17|      0|  }
+   18|       |}
+   19|       |
+   20|       |/// The palette of "Go to…": a text field over a list. What it lists, what matches, what is selected and
+   21|       |/// where everything sits is a `FinderSession` (ArborCore); this draws it and passes keys and clicks on.
+   22|       |///
+   23|       |/// Unlike Arbor's other panels it takes the keyboard. Being a non-activating panel it does so without
+   24|       |/// making Arbor the active app, so the app the user was in stays active behind it and simply has the keyboard
+   25|       |/// again when the palette goes: there is nothing to restore.
+   26|       |final class FinderPanel: NSPanel, NSTextFieldDelegate {
+   27|       |  var onChoose: ((FinderDestination) -> Void)?
+   28|       |  /// The palette closed itself.
+   29|       |  var onDismiss: (() -> Void)?
+   30|       |
+   31|       |  /// Nil while the palette is closed.
+   32|       |  private var session: FinderSession?
+   33|      0|  private let field = NSTextField(frame: .zero)
+   34|      0|  private let finderView = FinderView()
+   35|       |  /// What watches, while the palette is open, for signs that the user has left it (`watchForLeaving`).
+   36|      0|  private var eventMonitors: [Any] = []
+   37|      0|  private var workspaceWatchers: [any NSObjectProtocol] = []
+   38|       |
+   39|      0|  init() {
+   40|      0|    super.init(
+   41|      0|      contentRect: .zero, styleMask: [.borderless, .nonactivatingPanel], backing: .buffered, defer: true)
+   42|      0|    isOpaque = false
+   43|      0|    backgroundColor = .clear
+   44|      0|    hasShadow = true
+   45|      0|    // Arbor is never active, so a panel that hides when its app is not would never show.
+   46|      0|    hidesOnDeactivate = false
+   47|      0|    isReleasedWhenClosed = false
+   48|      0|    animationBehavior = .none
+   49|      0|    level = NSWindow.Level(rawValue: NSWindow.Level.floating.rawValue + 2)
+   50|      0|    collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary, .ignoresCycle, .transient]
+   51|      0|    ignoresMouseEvents = false
+   52|      0|    // It lists the titles of every window, the most private thing Arbor touches: for the person at the Mac, not for an audience.
+   53|      0|    // Like the minimap it keeps out of shared screens and recordings, as far as macOS honours this. The pictures of
+   54|      0|    // scripts/mac-shell/shots-finder.sh need to see it.
+   55|      0|    sharingType = ProcessInfo.processInfo.environment["ARBOR_PANELS_IN_PICTURES"] == "1" ? .readOnly : .none
+   56|      0|
+   57|      0|    let backdrop = NSVisualEffectView(frame: .zero)
+   58|      0|    backdrop.material = .popover
+   59|      0|    backdrop.blendingMode = .behindWindow
+   60|      0|    // Otherwise it follows the app, which is never active, and looks switched off.
+   61|      0|    backdrop.state = .active
+   62|      0|    backdrop.maskImage = Self.roundedMask
+   63|      0|    contentView = backdrop
+   64|      0|
+   65|      0|    finderView.frame = backdrop.bounds
+   66|      0|    finderView.autoresizingMask = [.width, .height]
+   67|      0|    finderView.onClick = { [weak self] place in self?.choose(self?.session?.destination(atVisible: place)) }
+   68|      0|    backdrop.addSubview(finderView)
+   69|      0|
+   70|      0|    field.isBordered = false
+   71|      0|    field.isBezeled = false
+   72|      0|    field.drawsBackground = false
+   73|      0|    field.focusRingType = .none
+   74|      0|    field.font = .systemFont(ofSize: 22)
+   75|      0|    field.textColor = .labelColor
+   76|      0|    field.placeholderString = FinderSession.placeholder
+   77|      0|    field.usesSingleLineMode = true
+   78|      0|    field.cell?.wraps = false
+   79|      0|    field.cell?.isScrollable = true
+   80|      0|    field.delegate = self
+   81|      0|    finderView.addSubview(field)
+   82|      0|  }
+   83|       |
+   84|      0|  override var canBecomeKey: Bool { true }
+   85|      0|  override var canBecomeMain: Bool { false }
+   86|       |
+   87|       |  /// A layer's corner radius does not reach what the window server blurs behind the window; a mask image does. The
+   88|       |  /// corners keep their size and the middle stretches.
+   89|      0|  private static let roundedMask: NSImage = {
+   90|      0|    let radius = FinderView.cornerRadius
+   91|      0|    // AppKit may draw an image on any thread, so the closure must not inherit the main actor.
+   92|      0|    let draw: @Sendable (NSRect) -> Bool = { rect in
+   93|      0|      NSColor.black.setFill()
+   94|      0|      NSBezierPath(roundedRect: rect, xRadius: radius, yRadius: radius).fill()
+   95|      0|      return true
+   96|      0|    }
+   97|      0|    let image = NSImage(size: NSSize(width: radius * 2 + 1, height: radius * 2 + 1), flipped: false, drawingHandler: draw)
+   98|      0|    image.capInsets = NSEdgeInsets(top: radius, left: radius, bottom: radius, right: radius)
+   99|      0|    image.resizingMode = .stretch
+  100|      0|    return image
+  101|      0|  }()
+  102|       |
+  103|       |  // MARK: Showing and closing
+  104|       |
+  105|       |  /// Opens the palette, or, if it is open, replaces its list and keeps what was typed.
+  106|      0|  func show(_ model: FinderModel) {
+  107|      0|    let opening = load(model)
+  108|      0|    if model.notice != nil { NSSound.beep() }
+  109|      0|    guard opening else { return }
+  110|      0|    // First, so that nothing can close the palette before there is something to take down.
+  111|      0|    watchForLeaving()
+  112|      0|    orderFrontRegardless()
+  113|      0|    makeKey()
+  114|      0|    makeFirstResponder(field)
+  115|      0|    // AppKit's own book-keeping; whether the window server agreed shows only in where the keys go.
+  116|      0|    Log.info("find: the palette is up, \(isKeyWindow ? "with" : "without") the keyboard")
+  117|      0|  }
+  118|       |
+  119|       |  /// Takes a list in and lays the palette out for it, without showing it or taking the keyboard: the first half of `show`,
+  120|       |  /// and all that the tests need that draw the palette off screen. Returns whether the palette was closed until now.
+  121|       |  @discardableResult
+  122|      0|  func load(_ model: FinderModel) -> Bool {
+  123|      0|    let opening = session == nil
+  124|      0|    if opening {
+  125|      0|      session = FinderSession(model: model)
+  126|      0|      field.stringValue = ""
+  127|      0|    } else {
+  128|      0|      session?.replace(model: model)
+  129|      0|    }
+  130|      0|    finderView.forgetIcons()
+  131|      0|    refresh()
+  132|      0|    return opening
+  133|      0|  }
+  134|       |
+  135|       |  /// What typing does, for the same tests.
+  136|      0|  func type(_ text: String) {
+  137|      0|    field.stringValue = text
+  138|      0|    session?.type(text)
+  139|      0|    refresh()
+  140|      0|  }
+  141|       |
+  142|       |  /// `resignKey` should cover all of this. But a palette left on screen, over everything, with no way to be rid of
+  143|       |  /// it would be worse than closing it twice, and the second time does nothing.
+  144|      0|  private func watchForLeaving() {
+  145|      0|    // Clicks in other apps; and keys, which go to another app only if the palette does not have the keyboard, for
+  146|      0|    // whatever reason. They cannot be kept from the app, but they still close the palette.
+  147|      0|    let elsewhere = NSEvent.addGlobalMonitorForEvents(
+  148|      0|      matching: [.keyDown, .leftMouseDown, .rightMouseDown, .otherMouseDown]
+  149|      0|    ) { [weak self] event in
+  150|      0|      let isKey = event.type == .keyDown
+  151|      0|      // The G of ⌃⌥G may still be down.
+  152|      0|      let isRepeat = isKey && event.isARepeat
+  153|      0|      MainActor.assumeIsolated {
+  154|      0|        guard let self, !isRepeat else { return }
+  155|      0|        // An input method's candidates, and the strip of accents, are windows of other processes: a click on one
+  156|      0|        // in the middle of a word is not a click elsewhere.
+  157|      0|        if !isKey, (self.field.currentEditor() as? NSTextView)?.hasMarkedText() == true { return }
+  158|      0|        self.dismiss()
+  159|      0|      }
+  160|      0|    }
+  161|      0|    // Clicks on Arbor's own tiles and gap handles, which take no keyboard and which a global monitor does not see.
+  162|      0|    let here = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown, .otherMouseDown]) {
+  163|      0|      [weak self] event in
+  164|      0|      let number = event.windowNumber
+  165|      0|      MainActor.assumeIsolated {
+  166|      0|        if let self, number != self.windowNumber { self.dismiss() }
+  167|      0|      }
+  168|      0|      return event
+  169|      0|    }
+  170|      0|    eventMonitors = [elsewhere, here].compactMap { $0 }
+  171|      0|    // ⌘Tab, a swipe to another macOS Space (the palette is on all of them, so it would come along), Mission Control's
+  172|      0|    // choice of one, the lock screen.
+  173|      0|    let center = NSWorkspace.shared.notificationCenter
+  174|      0|    workspaceWatchers = [
+  175|      0|      NSWorkspace.didActivateApplicationNotification, NSWorkspace.activeSpaceDidChangeNotification,
+  176|      0|      NSWorkspace.sessionDidResignActiveNotification, NSWorkspace.screensDidSleepNotification,
+  177|      0|    ].map { name in
+  178|      0|      center.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
+  179|      0|        // Arbor itself coming forward (its settings window, say) is no reason.
+  180|      0|        let app = (note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)?.processIdentifier
+  181|      0|        guard app != ProcessInfo.processInfo.processIdentifier else { return }
+  182|      0|        MainActor.assumeIsolated { self?.dismiss() }
+  183|      0|      }
+  184|      0|    }
+  185|      0|  }
+  186|       |
+  187|       |  /// Closes the palette because the controller said so.
+  188|      0|  func hide() {
+  189|      0|    guard session != nil else { return }
+  190|      0|    // Cleared first: ordering out makes the panel resign the keyboard, which must not count as the user leaving.
+  191|      0|    session = nil
+  192|      0|    for monitor in eventMonitors { NSEvent.removeMonitor(monitor) }
+  193|      0|    eventMonitors.removeAll()
+  194|      0|    for watcher in workspaceWatchers { NSWorkspace.shared.notificationCenter.removeObserver(watcher) }
+  195|      0|    workspaceWatchers.removeAll()
+  196|      0|    orderOut(nil)
+  197|      0|  }
+  198|       |
+  199|       |  /// Closes the palette because the user left it, and says so.
+  200|      0|  func dismiss() {
+  201|      0|    guard session != nil else { return }
+  202|      0|    hide()
+  203|      0|    onDismiss?()
+  204|      0|  }
+  205|       |
+  206|       |  /// The keyboard went to another window: the user clicked elsewhere or switched apps.
+  207|      0|  override func resignKey() {
+  208|      0|    super.resignKey()
+  209|      0|    dismiss()
+  210|      0|  }
+  211|       |
+  212|      0|  private func refresh() {
+  213|      0|    guard let session else { return }
+  214|      0|    let geometry = session.layout
+  215|      0|    setFrame(ScreenGeometry.appKit(fromGlobal: geometry.panel), display: false)
+  216|      0|    finderView.frame = NSRect(origin: .zero, size: geometry.panel.size)
+  217|      0|    field.frame = geometry.field
+  218|      0|    finderView.show(items: session.items, message: session.message, geometry: geometry)
+  219|      0|    invalidateShadow()
+  220|      0|  }
+  221|       |
+  222|      0|  private func choose(_ destination: FinderDestination?) {
+  223|      0|    if let destination {
+  224|      0|      onChoose?(destination)
+  225|      0|    } else {
+  226|      0|      NSSound.beep()
+  227|      0|    }
+  228|      0|  }
+  229|       |
+  230|       |  // MARK: Keys
+  231|       |
+  232|      0|  func controlTextDidChange(_ obj: Notification) {
+  233|      0|    session?.type(field.stringValue)
+  234|      0|    refresh()
+  235|      0|  }
+  236|       |
+  237|      0|  func control(_ control: NSControl, textView: NSTextView, doCommandBy commandSelector: Selector) -> Bool {
+  238|      0|    switch commandSelector {
+  239|      0|    case #selector(NSResponder.moveDown(_:)), #selector(NSResponder.insertTab(_:)):
+  240|      0|      session?.moveSelection(by: 1)
+  241|      0|    case #selector(NSResponder.moveUp(_:)), #selector(NSResponder.insertBacktab(_:)):
+  242|      0|      session?.moveSelection(by: -1)
+  243|      0|    case #selector(NSResponder.scrollPageDown(_:)), #selector(NSResponder.pageDown(_:)):
+  244|      0|      session?.pageSelection(by: 1)
+  245|      0|    case #selector(NSResponder.scrollPageUp(_:)), #selector(NSResponder.pageUp(_:)):
+  246|      0|      session?.pageSelection(by: -1)
+  247|      0|    case #selector(NSResponder.insertNewline(_:)):
+  248|      0|      choose(session?.selected)
+  249|      0|      return true
+  250|      0|    case #selector(NSResponder.cancelOperation(_:)):
+  251|      0|      dismiss()
+  252|      0|      return true
+  253|      0|    default:
+  254|      0|      return false
+  255|      0|    }
+  256|      0|    refresh()
+  257|      0|    return true
+  258|      0|  }
+  259|       |
+  260|       |  /// Escape, should the field ever not have the keyboard.
+  261|      0|  override func cancelOperation(_ sender: Any?) {
+  262|      0|    dismiss()
+  263|      0|  }
+  264|       |
+  265|       |  /// ⌘1–⌘9 choose a row. ⌘A, ⌘X, ⌘C and ⌘V are an Edit menu's work in other apps; Arbor has no menu bar.
+  266|      0|  override func performKeyEquivalent(with event: NSEvent) -> Bool {
+  267|      0|    guard event.type == .keyDown,
+  268|      0|      event.modifierFlags.intersection([.command, .option, .control, .shift]) == .command,
+  269|      0|      let key = event.charactersIgnoringModifiers
+  270|      0|    else { return super.performKeyEquivalent(with: event) }
+  271|      0|    if let digit = Int(key), (1...9).contains(digit) {
+  272|      0|      choose(session?.destination(atVisible: digit - 1))
+  273|      0|      return true
+  274|      0|    }
+  275|      0|    guard let editor = field.currentEditor() else { return super.performKeyEquivalent(with: event) }
+  276|      0|    switch key {
+  277|      0|    case "a": editor.selectAll(nil)
+  278|      0|    case "x": editor.cut(nil)
+  279|      0|    case "c": editor.copy(nil)
+  280|      0|    case "v": editor.paste(nil)
+  281|      0|    default: return super.performKeyEquivalent(with: event)
+  282|      0|    }
+  283|      0|    return true
+  284|      0|  }
+  285|       |}
+  286|       |
+  287|       |/// Everything in the palette but the text field, which is its subview: the line under the field, the rows,
+  288|       |/// the message and the outline. Coordinates are `FinderLayout`'s: origin top-left, y down.
+  289|       |private final class FinderView: NSView {
+  290|       |  static let cornerRadius: CGFloat = 16
+  291|       |
+  292|       |  /// A click on the row at this place from the top.
+  293|       |  var onClick: ((Int) -> Void)?
+  294|       |
+  295|      0|  private var items: [FinderSession.Item] = []
+  296|       |  private var message: String?
+  297|       |  /// Not called `layout`, which is a method of every view.
+  298|       |  private var geometry: FinderLayout?
+  299|       |  /// App icons by process, looked up once each time the palette gets a list.
+  300|      0|  private var icons: [Int32: NSImage] = [:]
+  301|       |
+  302|      0|  private static let truncating: NSParagraphStyle = {
+  303|      0|    let style = NSMutableParagraphStyle()
+  304|      0|    style.lineBreakMode = .byTruncatingTail
+  305|      0|    return style
+  306|      0|  }()
+  307|       |
+  308|      0|  private static let truncatingRightAligned: NSParagraphStyle = {
+  309|      0|    let style = NSMutableParagraphStyle()
+  310|      0|    style.lineBreakMode = .byTruncatingTail
+  311|      0|    style.alignment = .right
+  312|      0|    return style
+  313|      0|  }()
+  314|       |
+  315|      0|  override var isFlipped: Bool { true }
+  316|      0|  override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
+  317|       |
+  318|      0|  func show(items: [FinderSession.Item], message: String?, geometry: FinderLayout) {
+  319|      0|    self.items = items
+  320|      0|    self.message = message
+  321|      0|    self.geometry = geometry
+  322|      0|    needsDisplay = true
+  323|      0|  }
+  324|       |
+  325|      0|  func forgetIcons() { icons.removeAll() }
+  326|       |
+  327|      0|  override func mouseUp(with event: NSEvent) {
+  328|      0|    guard let geometry else { return }
+  329|      0|    let point = convert(event.locationInWindow, from: nil)
+  330|      0|    if let place = geometry.row(at: CGPoint(x: point.x - geometry.list.minX, y: point.y - geometry.list.minY)) {
+  331|      0|      onClick?(place)
+  332|      0|    }
+  333|      0|  }
+  334|       |
+  335|      0|  override func draw(_ dirtyRect: NSRect) {
+  336|      0|    guard let geometry else { return }
+  337|      0|    let list = geometry.list
+  338|      0|    if list.height > 0 {
+  339|      0|      NSColor.separatorColor.setFill()
+  340|      0|      NSBezierPath(rect: NSRect(x: 0, y: list.minY, width: bounds.width, height: 1)).fill()
+  341|      0|    }
+  342|      0|    for (place, item) in items.enumerated() {
+  343|      0|      draw(item, in: geometry.rowFrame(place).offsetBy(dx: list.minX, dy: list.minY))
+  344|      0|    }
+  345|      0|    if let message {
+  346|      0|      let frame = geometry.messageFrame.offsetBy(dx: list.minX, dy: list.minY)
+  347|      0|      NSAttributedString(
+  348|      0|        string: message,
+  349|      0|        attributes: [
+  350|      0|          .font: NSFont.systemFont(ofSize: 12), .foregroundColor: NSColor.secondaryLabelColor,
+  351|      0|          .paragraphStyle: Self.truncating,
+  352|      0|        ]
+  353|      0|      ).draw(in: NSRect(x: frame.minX + 12, y: frame.midY - 8, width: max(frame.width - 24, 0), height: 16))
+  354|      0|    }
+  355|      0|    // A hairline, so the palette keeps its shape over a window of the same brightness.
+  356|      0|    let outline = NSBezierPath(
+  357|      0|      roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: Self.cornerRadius - 0.5, yRadius: Self.cornerRadius - 0.5)
+  358|      0|    NSColor.separatorColor.setStroke()
+  359|      0|    outline.lineWidth = 1
+  360|      0|    outline.stroke()
+  361|      0|  }
+  362|       |
+  363|      0|  private func draw(_ item: FinderSession.Item, in frame: NSRect) {
+  364|      0|    let selected = item.isSelected
+  365|      0|    if selected {
+  366|      0|      NSColor.controlAccentColor.setFill()
+  367|      0|      NSBezierPath(roundedRect: frame, xRadius: 9, yRadius: 9).fill()
+  368|      0|    }
+  369|      0|    let primary: NSColor = selected ? .white : .labelColor
+  370|      0|    let secondary: NSColor = selected ? NSColor.white.withAlphaComponent(0.8) : .secondaryLabelColor
+  371|      0|    let faint: NSColor = selected ? NSColor.white.withAlphaComponent(0.7) : .tertiaryLabelColor
+  372|      0|    let matched: NSColor = selected ? .white : .controlAccentColor
+  373|      0|
+  374|      0|    let iconFrame = NSRect(x: frame.minX + 10, y: frame.midY - 12, width: 24, height: 24)
+  375|      0|    if let pid = item.row.pid {
+  376|      0|      icon(for: pid)?.draw(
+  377|      0|        in: iconFrame, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
+  378|      0|    } else if let badge = item.row.badge {
+  379|      0|      (selected ? NSColor.white.withAlphaComponent(0.25) : NSColor.quaternaryLabelColor).setFill()
+  380|      0|      NSBezierPath(roundedRect: iconFrame, xRadius: 6, yRadius: 6).fill()
+  381|      0|      let text = NSAttributedString(
+  382|      0|        string: badge, attributes: [.font: NSFont.systemFont(ofSize: 13, weight: .semibold), .foregroundColor: primary])
+  383|      0|      let size = text.size()
+  384|      0|      text.draw(at: NSPoint(x: iconFrame.midX - size.width / 2, y: iconFrame.midY - size.height / 2))
+  385|      0|    }
+  386|      0|
+  387|      0|    let note = NSAttributedString(
+  388|      0|      string: item.row.note,
+  389|      0|      attributes: [
+  390|      0|        .font: NSFont.systemFont(ofSize: 11), .foregroundColor: faint, .paragraphStyle: Self.truncatingRightAligned,
+  391|      0|      ])
+  392|      0|    let noteWidth = min(note.size().width.rounded(.up) + 2, frame.width * 0.45)
+  393|      0|    let noteFrame = NSRect(x: frame.maxX - 12 - noteWidth, y: frame.midY - 7, width: noteWidth, height: 15)
+  394|      0|    note.draw(in: noteFrame)
+  395|      0|
+  396|      0|    let line = styled(
+  397|      0|      item.row.name, item.match.nameRanges, font: .systemFont(ofSize: 13, weight: .semibold), colour: primary,
+  398|      0|      matched: matched)
+  399|      0|    if !item.row.detail.isEmpty {
+  400|      0|      line.append(NSAttributedString(string: "   ", attributes: [.font: NSFont.systemFont(ofSize: 13)]))
+  401|      0|      line.append(
+  402|      0|        styled(
+  403|      0|          item.row.detail, item.match.detailRanges, font: .systemFont(ofSize: 13), colour: secondary, matched: matched))
+  404|      0|    }
+  405|      0|    line.addAttribute(.paragraphStyle, value: Self.truncating, range: NSRange(location: 0, length: line.length))
+  406|      0|    let left = iconFrame.maxX + 10
+  407|      0|    line.draw(in: NSRect(x: left, y: frame.midY - 9, width: max(noteFrame.minX - 12 - left, 0), height: 18))
+  408|      0|  }
+  409|       |
+  410|       |  /// `text` with the characters in `ranges` (character offsets) set off in bold and in the `matched` colour.
+  411|       |  private func styled(
+  412|       |    _ text: String, _ ranges: [Range<Int>], font: NSFont, colour: NSColor, matched: NSColor
+  413|      0|  ) -> NSMutableAttributedString {
+  414|      0|    let result = NSMutableAttributedString(string: text, attributes: [.font: font, .foregroundColor: colour])
+  415|      0|    let bold = NSFont.systemFont(ofSize: font.pointSize, weight: .bold)
+  416|      0|    for range in FinderMatch.utf16Ranges(ranges, in: text) where range.upperBound <= result.length {
+  417|      0|      result.addAttributes(
+  418|      0|        [.font: bold, .foregroundColor: matched], range: NSRange(location: range.lowerBound, length: range.count))
+  419|      0|    }
+  420|      0|    return result
+  421|      0|  }
+  422|       |
+  423|      0|  private func icon(for pid: Int32) -> NSImage? {
+  424|      0|    if let known = icons[pid] { return known }
+  425|      0|    let image = AppAppearance.icon(pid: pid)
+  426|      0|    icons[pid] = image
+  427|      0|    return image
+  428|      0|  }
+  429|       |}
+

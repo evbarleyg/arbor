@@ -1,0 +1,32 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/AX/AXWindowSystem+StackedWindows.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |
+    4|       |extension AXWindowSystem {
+    5|       |  /// From the window server's own list, which runs front to back and holds every window on screen.
+    6|      4|  public func stackedWindows() -> [StackedWindow] {
+    7|      4|    let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+    8|      4|    guard let windows = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else { return [] }
+    9|      4|    let ownPID = Int(getpid())
+   10|     39|    return windows.compactMap { info -> StackedWindow? in
+   11|     39|      guard (info[kCGWindowLayer as String] as? Int) == 0,
+   12|     39|        let number = info[kCGWindowNumber as String] as? Int, let id = UInt32(exactly: number),
+   13|     39|        let bounds = info[kCGWindowBounds as String] as? NSDictionary,
+   14|     39|        let frame = CGRect(dictionaryRepresentation: bounds as CFDictionary)
+   15|     39|      else { return nil }
+   16|     16|      // Some tools lay an invisible window over the whole screen.
+   17|     16|      if let alpha = info[kCGWindowAlpha as String] as? Double, alpha == 0 { return nil }
+   18|     16|      // Tiles, gap handles and the focus ring are drawn for a display at rest. They are not windows to anyone.
+   19|     16|      // What tells them from Arbor's real windows is that they never take the keyboard.
+   20|     16|      if (info[kCGWindowOwnerPID as String] as? Int) == ownPID,
+   21|     16|        NSApp.window(withWindowNumber: number)?.canBecomeKey == false
+   22|     16|      {
+   23|      4|        return nil
+   24|     12|      }
+   25|     12|      return StackedWindow(id: WindowID(id), frame: frame)
+   26|     39|    }
+   27|      4|  }
+   28|       |}
+

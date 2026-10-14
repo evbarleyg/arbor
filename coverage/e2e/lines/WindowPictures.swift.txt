@@ -1,0 +1,239 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/WindowPictures.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import ImageIO
+    4|       |// Its classes are not marked Sendable. They never leave the main actor here.
+    5|       |@preconcurrency import ScreenCaptureKit
+    6|       |
+    7|       |/// Still pictures of the windows on screen, and of the desktop behind them, for the stage to draw.
+    8|       |///
+    9|       |/// A motion has to start the moment it is asked for, and taking a picture takes a while, so pictures
+   10|       |/// are taken ahead of time and kept: when Arbor starts, when the focus moves on, and after every
+   11|       |/// motion. The stage starts with what is here, asks for new pictures, and swaps them in as they
+   12|       |/// come. A window without a picture is drawn as its cover.
+   13|       |///
+   14|       |/// Pictures need Screen Recording permission. Arbor works without it and never asks for it from here
+   15|       |/// (onboarding may, see `isAllowed`). They are stills, not recordings. They are kept in memory only, let
+   16|       |/// go of when their window leaves the screen and when Arbor stops, and nothing is written to disk.
+   17|       |@MainActor
+   18|       |final class WindowPictures {
+   19|       |  /// Whether macOS lets Arbor take pictures of other apps' windows. Asking this never prompts.
+   20|      0|  static var isAllowed: Bool { !isSwitchedOff && CGPreflightScreenCaptureAccess() }
+   21|       |
+   22|       |  /// The `windowPictures` setting. While it is off no picture is taken, whatever macOS allows, and none is kept.
+   23|     10|  var isWanted = false {
+   24|     22|    didSet {
+   25|     22|      guard isWanted != oldValue else { return }
+   26|      0|      if isWanted { refresh(after: 0.6) } else { removeAll() }
+   27|      0|    }
+   28|       |  }
+   29|       |
+   30|       |  /// `ARBOR_NO_PICTURES`, for looking at Arbor as it is without the permission on a Mac that has it.
+   31|       |  private static let isSwitchedOff = ArborEnvironment.current.noPictures
+   32|       |
+   33|       |  /// A picture holds at most this many pixels, which bounds the memory a window costs (12 MB). Small
+   34|       |  /// windows are as sharp as the display; a window that fills a Retina display is a little softer.
+   35|       |  private static let mostPixels: CGFloat = 3_000_000
+   36|       |  private static let mostPerSweep = 40
+   37|       |  /// Windows narrower or lower than this are not worth a picture.
+   38|       |  private static let smallestSide: CGFloat = 40
+   39|       |  /// What shows through a window's rounded corners. It has to outlive every configuration it is given
+   40|       |  /// to: `SCStreamConfiguration.backgroundColor` does not retain its value, and a colour made on the
+   41|       |  /// spot is gone by the time ScreenCaptureKit copies the configuration, which crashes.
+   42|       |  private static let noBackground = NSColor.clear.cgColor
+   43|       |
+   44|       |  /// Called with every new picture of a window.
+   45|       |  var onPicture: ((WindowID, CGImage) -> Void)?
+   46|       |
+   47|     10|  private var pictures: [WindowID: CGImage] = [:]
+   48|       |  /// What is behind the windows on each display: wallpaper, icons, widgets.
+   49|     10|  private var desktops: [DisplayID: CGImage] = [:]
+   50|       |  /// Wallpaper files that were read, for when there is no picture of the desktop.
+   51|     10|  private var wallpapers: [String: CGImage] = [:]
+   52|       |  /// Windows to take a new picture of in the next sweep, most important first.
+   53|     10|  private var wanted: [WindowID] = []
+   54|       |  private var timer: Timer?
+   55|     10|  private var isSweeping = false
+   56|     10|  private var sweepAgain = false
+   57|       |  /// Counts `removeAll()`, so that a sweep under way does not fill the store again.
+   58|     10|  private var epoch = 0
+   59|       |
+   60|      0|  func picture(of window: WindowID) -> CGImage? { pictures[window] }
+   61|       |
+   62|       |  /// A picture of the desktop as it is, or else the wallpaper's file, or else nothing.
+   63|      0|  func desktop(of display: DisplayID) -> CGImage? { desktops[display] ?? wallpaper(of: display) }
+   64|       |
+   65|       |  /// Takes new pictures `delay` seconds from now: of `windows`, most important first, then of every
+   66|       |  /// window on screen that has none, then of the desktop.
+   67|       |  ///
+   68|       |  /// Whoever names windows is waiting for them, so a later request never puts that off. A request
+   69|       |  /// that names none is housekeeping: asking again starts its wait anew, so a burst of them
+   70|       |  /// (a seam being dragged) costs one sweep when it is over.
+   71|    156|  func refresh(_ windows: [WindowID] = [], after delay: TimeInterval) {
+   72|    156|    let someoneIsWaiting = !wanted.isEmpty
+   73|    156|    for window in windows where !wanted.contains(window) { wanted.append(window) }
+   74|    156|    let due = Date(timeIntervalSinceNow: max(delay, 0))
+   75|    156|    if someoneIsWaiting, let timer, timer.isValid, timer.fireDate <= due { return }
+   76|    110|    timer?.invalidate()
+   77|    110|    let timer = Timer(fire: due, interval: 0, repeats: false) { [weak self] _ in
+   78|     45|      MainActor.assumeIsolated { self?.sweep() }
+   79|     45|    }
+   80|    110|    RunLoop.main.add(timer, forMode: .common)
+   81|    110|    self.timer = timer
+   82|    110|  }
+   83|       |
+   84|      7|  func removeAll() {
+   85|      7|    epoch += 1
+   86|      7|    timer?.invalidate()
+   87|      7|    timer = nil
+   88|      7|    wanted.removeAll()
+   89|      7|    pictures.removeAll()
+   90|      7|    desktops.removeAll()
+   91|      7|    wallpapers.removeAll()
+   92|      7|  }
+   93|       |
+   94|       |  // MARK: Taking pictures
+   95|       |
+   96|     45|  private func sweep() {
+   97|     45|    timer?.invalidate()
+   98|     45|    timer = nil
+   99|     45|    guard isWanted, Self.isAllowed else {
+  100|     45|      wanted.removeAll()
+  101|     45|      // The wallpaper's file is all there is to show. Read it before the first motion needs it.
+  102|     45|      for screen in NSScreen.screens { _ = wallpaper(of: ScreenGeometry.displayID(for: screen)) }
+  103|     45|      return
+  104|     45|    }
+  105|      0|    guard !isSweeping else {
+  106|      0|      sweepAgain = true
+  107|      0|      return
+  108|      0|    }
+  109|      0|    isSweeping = true
+  110|      0|    let first = wanted
+  111|      0|    wanted.removeAll()
+  112|      0|    let epoch = self.epoch
+  113|      0|    Task { @MainActor in
+  114|      0|      await self.takePictures(first: first, epoch: epoch)
+  115|      0|      self.isSweeping = false
+  116|      0|      if self.sweepAgain {
+  117|      0|        self.sweepAgain = false
+  118|      0|        self.sweep()
+  119|      0|      }
+  120|      0|    }
+  121|      0|  }
+  122|       |
+  123|      0|  private func takePictures(first: [WindowID], epoch: Int) async {
+  124|      0|    let started = ProcessInfo.processInfo.systemUptime
+  125|      0|    let content: SCShareableContent
+  126|      0|    do {
+  127|      0|      content = try await SCShareableContent.excludingDesktopWindows(false, onScreenWindowsOnly: true)
+  128|      0|    } catch {
+  129|      0|      Log.debug("pictures: no list of windows: \(error)")
+  130|      0|      return
+  131|      0|    }
+  132|      0|    guard epoch == self.epoch else { return }
+  133|      0|
+  134|      0|    // Normal and floating windows of other apps. Windows Arbor moved out of view count as on screen.
+  135|      0|    let own = getpid()
+  136|      0|    var listed: [WindowID: SCWindow] = [:]
+  137|      0|    for window in content.windows
+  138|      0|    where (0...NSWindow.Level.floating.rawValue).contains(window.windowLayer)
+  139|      0|      && window.owningApplication?.processID != own
+  140|      0|      && window.frame.width >= Self.smallestSide && window.frame.height >= Self.smallestSide
+  141|      0|    {
+  142|      0|      listed[WindowID(window.windowID)] = window
+  143|      0|    }
+  144|      0|    pictures = pictures.filter { listed[$0.key] != nil }
+  145|      0|
+  146|      0|    // The first picture of a desktop comes before the windows: it is the largest thing on the stage.
+  147|      0|    // Without Arbor's own backdrop, which lies there too: its shape changes with the arrangement, and the stage draws it.
+  148|      0|    let behind = content.windows.filter { $0.windowLayer < 0 && $0.owningApplication?.processID != own }
+  149|      0|    let displays = content.displays.map { (id: ScreenGeometry.displayID(for: $0.displayID), display: $0) }
+  150|      0|    desktops = desktops.filter { entry in displays.contains { $0.id == entry.key } }
+  151|      0|    let known = Set(desktops.keys)
+  152|      0|    for (id, display) in displays where !known.contains(id) {
+  153|      0|      guard let image = await desktop(on: display, id: id, behind: behind) else { continue }
+  154|      0|      guard epoch == self.epoch else { return }
+  155|      0|      desktops[id] = image
+  156|      0|    }
+  157|      0|
+  158|      0|    let scale = min(NSScreen.screens.map(\.backingScaleFactor).max() ?? 1, 2)
+  159|      0|    let missing = listed.keys.filter { pictures[$0] == nil && !first.contains($0) }.sorted()
+  160|      0|    var taken = 0
+  161|      0|    for id in (first + missing).prefix(Self.mostPerSweep) {
+  162|      0|      guard let window = listed[id], let image = await picture(of: window, scale: scale) else { continue }
+  163|      0|      guard epoch == self.epoch else { return }
+  164|      0|      pictures[id] = image
+  165|      0|      taken += 1
+  166|      0|      onPicture?(id, image)
+  167|      0|    }
+  168|      0|
+  169|      0|    for (id, display) in displays where known.contains(id) {
+  170|      0|      guard let image = await desktop(on: display, id: id, behind: behind) else { continue }
+  171|      0|      guard epoch == self.epoch else { return }
+  172|      0|      desktops[id] = image
+  173|      0|    }
+  174|      0|    let milliseconds = Int((ProcessInfo.processInfo.systemUptime - started) * 1000)
+  175|      0|    Log.debug(
+  176|      0|      "pictures: took \(taken) of \(listed.count) windows (\(first.count) asked for) and \(displays.count) desktop(s) "
+  177|      0|        + "from \(behind.count) windows behind, in \(milliseconds) ms")
+  178|      0|  }
+  179|       |
+  180|      0|  private func picture(of window: SCWindow, scale: CGFloat) async -> CGImage? {
+  181|      0|    let size = window.frame.size
+  182|      0|    let factor = min(scale, (Self.mostPixels / (size.width * size.height)).squareRoot())
+  183|      0|    let configuration = SCStreamConfiguration()
+  184|      0|    configuration.width = max(Int(size.width * factor), 1)
+  185|      0|    configuration.height = max(Int(size.height * factor), 1)
+  186|      0|    configuration.scalesToFit = true
+  187|      0|    configuration.showsCursor = false
+  188|      0|    // The picture is stretched over the window's frame, so it must hold the window and nothing else.
+  189|      0|    configuration.ignoreShadowsSingleWindow = true
+  190|      0|    configuration.backgroundColor = Self.noBackground
+  191|      0|    return try? await SCScreenshotManager.captureImage(
+  192|      0|      contentFilter: SCContentFilter(desktopIndependentWindow: window), configuration: configuration)
+  193|      0|  }
+  194|       |
+  195|       |  /// Everything below the level of normal windows on one display.
+  196|      0|  private func desktop(on display: SCDisplay, id: DisplayID, behind: [SCWindow]) async -> CGImage? {
+  197|      0|    // With nothing to draw the picture would be black, which is worse than the wallpaper's file.
+  198|      0|    guard !behind.isEmpty else { return nil }
+  199|      0|    let scale = ScreenGeometry.screen(for: id)?.backingScaleFactor ?? 1
+  200|      0|    let configuration = SCStreamConfiguration()
+  201|      0|    configuration.width = max(Int(CGFloat(display.width) * scale), 1)
+  202|      0|    configuration.height = max(Int(CGFloat(display.height) * scale), 1)
+  203|      0|    configuration.showsCursor = false
+  204|      0|    return try? await SCScreenshotManager.captureImage(
+  205|      0|      contentFilter: SCContentFilter(display: display, including: behind), configuration: configuration)
+  206|      0|  }
+  207|       |
+  208|       |  // MARK: The wallpaper's file
+  209|       |
+  210|       |  /// The file macOS says is the display's wallpaper, scaled down to the display. It can differ from
+  211|       |  /// what is on screen (a wallpaper that changes with the time of day, a video, a folder of
+  212|       |  /// pictures), and it has no icons or widgets, so a picture of the desktop is preferred.
+  213|     45|  private func wallpaper(of display: DisplayID) -> CGImage? {
+  214|     45|    guard let screen = ScreenGeometry.screen(for: display),
+  215|     45|      let url = NSWorkspace.shared.desktopImageURL(for: screen)
+  216|     45|    else { return nil }
+  217|     45|    let dark = NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua
+  218|     45|    let key = "\(url.path) \(dark ? "dark" : "light")"
+  219|     45|    if let cached = wallpapers[key] { return cached }
+  220|      6|    guard let source = CGImageSourceCreateWithURL(url as CFURL, nil) else { return nil }
+  221|      6|    let count = CGImageSourceGetCount(source)
+  222|      6|    guard count > 0 else { return nil }
+  223|      6|    // Apple's light-and-dark wallpapers are one file holding the light picture, then the dark one.
+  224|      6|    let index = count == 2 && dark ? 1 : 0
+  225|      6|    let options: [CFString: Any] = [
+  226|      6|      kCGImageSourceCreateThumbnailFromImageAlways: true,
+  227|      6|      kCGImageSourceCreateThumbnailWithTransform: true,
+  228|      6|      kCGImageSourceThumbnailMaxPixelSize: Int(max(screen.frame.width, screen.frame.height) * screen.backingScaleFactor),
+  229|      6|    ]
+  230|      6|    guard let image = CGImageSourceCreateThumbnailAtIndex(source, index, options as CFDictionary) else { return nil }
+  231|      6|    if wallpapers.count >= 4 { wallpapers.removeAll() }
+  232|      6|    wallpapers[key] = image
+  233|      6|    return image
+  234|     45|  }
+  235|       |}
+

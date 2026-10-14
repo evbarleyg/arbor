@@ -1,0 +1,46 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/AppKitOverlays+HeadsUp.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |
+    4|       |/// The talking part of `OverlayPresenter`: see `HeadsUpPanel` and `CheatSheetPanel`. There is one of each, which
+    5|       |/// goes to whichever display it is wanted on; the models say where that is.
+    6|       |extension AppKitOverlays {
+    7|     18|  public func showHeadsUp(_ model: HeadsUpModel?, on display: DisplayID) {
+    8|     18|    guard let model else {
+    9|      7|      headsUpPanel?.disappear()
+   10|      7|      return
+   11|     11|    }
+   12|     11|    let panel = headsUpPanel ?? HeadsUpPanel()
+   13|     11|    headsUpPanel = panel
+   14|     11|    // The same words at another place are the line making room for the minimap, not news.
+   15|     11|    let onlyMoved = panel.isWanted && panel.shown?.line == model.line && panel.shown?.anchor != model.anchor
+   16|     11|    panel.show(model)
+   17|     11|    guard !onlyMoved else { return }
+   18|     11|    // The panel never has the keyboard, so VoiceOver would not come across it.
+   19|     11|    NSAccessibility.post(
+   20|     11|      element: NSApp as Any, notification: .announcementRequested,
+   21|     11|      userInfo: [.announcement: model.spoken, .priority: NSAccessibilityPriorityLevel.medium.rawValue])
+   22|     11|  }
+   23|       |
+   24|      0|  public func showCheatSheet(_ model: CheatSheetModel?, on display: DisplayID) {
+   25|      0|    guard let model else {
+   26|      0|      cheatSheetPanel?.hide()
+   27|      0|      return
+   28|      0|    }
+   29|      0|    let panel = cheatSheetPanel ?? CheatSheetPanel()
+   30|      0|    cheatSheetPanel = panel
+   31|      0|    panel.onDismiss = { [weak self] in self?.actions?.cheatSheetDismissed() }
+   32|      0|    panel.show(model)
+   33|      0|  }
+   34|       |
+   35|      8|  func removeHeadsUp() {
+   36|      8|    headsUpPanel?.close()
+   37|      8|    headsUpPanel = nil
+   38|      8|    cheatSheetPanel?.hide()
+   39|      8|    cheatSheetPanel?.close()
+   40|      8|    cheatSheetPanel = nil
+   41|      8|  }
+   42|       |}
+

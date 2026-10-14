@@ -1,0 +1,33 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/AX/AXWindowSystem+Launch.swift:
+    1|       |import AppKit
+    2|       |import Foundation
+    3|       |
+    4|       |extension AXWindowSystem {
+    5|       |  /// Through `open`, which finds every app Launch Services knows by name, wherever it is installed.
+    6|       |  /// `-g` keeps it in the background: several apps opening at once would otherwise take the keyboard
+    7|       |  /// from the user, and from each other, as each becomes ready.
+    8|      0|  public func launchApp(_ name: String) -> Bool {
+    9|      0|    // A path would open whatever bundle lies there; apps are named, not pointed at.
+   10|      0|    guard !name.isEmpty, !name.contains("/") else { return false }
+   11|      0|    let isBundleID = NSWorkspace.shared.urlForApplication(withBundleIdentifier: name) != nil
+   12|      0|    let process = Process()
+   13|      0|    process.executableURL = URL(fileURLWithPath: "/usr/bin/open")
+   14|      0|    process.arguments = ["-g", isBundleID ? "-b" : "-a", name]
+   15|      0|    process.standardInput = FileHandle.nullDevice
+   16|      0|    process.standardOutput = FileHandle.nullDevice
+   17|      0|    process.standardError = FileHandle.nullDevice
+   18|      0|    process.terminationHandler = { finished in
+   19|      0|      if finished.terminationStatus != 0 { Log.error("macOS found no app called \(name) to open") }
+   20|      0|    }
+   21|      0|    do {
+   22|      0|      try process.run()
+   23|      0|      return true
+   24|      0|    } catch {
+   25|      0|      Log.error("could not open \(name): \(error)")
+   26|      0|      return false
+   27|      0|    }
+   28|      0|  }
+   29|       |}
+

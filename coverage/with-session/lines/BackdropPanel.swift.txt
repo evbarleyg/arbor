@@ -1,0 +1,232 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/BackdropPanel.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import CoreGraphics
+    4|       |import QuartzCore
+    5|       |
+    6|       |/// The backdrops of all displays (docs/features/F15-appearance-options.md).
+    7|       |@MainActor
+    8|       |final class Backdrops {
+    9|     19|  private var panels: [DisplayID: BackdropPanel] = [:]
+   10|       |
+   11|    314|  func update(display: DisplayID, model: BackdropModel?) {
+   12|    314|    guard let model else {
+   13|     41|      panels[display]?.hide()
+   14|     41|      return
+   15|    273|    }
+   16|    273|    let panel = panels[display] ?? BackdropPanel()
+   17|    273|    panels[display] = panel
+   18|    273|    panel.show(model)
+   19|    273|  }
+   20|       |
+   21|       |  /// What `display` shows now, for whoever covers it for a moment and has to draw the same (`BackdropLayer`).
+   22|    120|  func model(on display: DisplayID) -> BackdropModel? { panels[display]?.model }
+   23|       |
+   24|     16|  func removeAll() {
+   25|     16|    panels.values.forEach { $0.close() }
+   26|     16|    panels.removeAll()
+   27|     16|  }
+   28|       |}
+   29|       |
+   30|       |/// The shape that darkens the wallpaper, as a layer. The backdrop's panel hosts one; whatever covers that panel for
+   31|       |/// a moment and has to look the same (a stage, while windows move) can host another.
+   32|       |@MainActor
+   33|       |final class BackdropLayer {
+   34|       |  /// How long one shape takes to fade into the next.
+   35|       |  static let fade: CFTimeInterval = 0.15
+   36|       |
+   37|     26|  let layer = CAShapeLayer()
+   38|       |  /// The hairline around the Desktop.
+   39|     26|  private let edge = CAShapeLayer()
+   40|     26|  private var shown: (model: BackdropModel?, frame: CGRect) = (nil, .zero)
+   41|       |
+   42|     26|  init() {
+   43|     26|    edge.fillColor = nil
+   44|     26|    layer.addSublayer(edge)
+   45|     26|  }
+   46|       |
+   47|       |  /// From global coordinates to those of a layer or view that covers `frame` (a rectangle in global coordinates):
+   48|       |  /// origin at its bottom-left corner, y up.
+   49|    440|  private static func local(_ outline: [PathElement], in frame: CGRect) -> [PathElement] {
+   50|  22.7k|    outline.mapPoints { CGPoint(x: $0.x - frame.minX, y: frame.maxY - $0.y) }
+   51|    440|  }
+   52|       |
+   53|       |  /// `model`'s outline in the coordinates of a layer or view that covers `frame`.
+   54|    316|  static func outline(of model: BackdropModel, in frame: CGRect) -> [PathElement] {
+   55|    316|    local(model.outline(slotRadius: ContinuousCorners.windowRadius), in: frame)
+   56|    316|  }
+   57|       |
+   58|       |  /// Shows `model`'s shape, or nothing, in a layer the size of `frame`. What it showed before fades into it over `fade`
+   59|       |  /// seconds; 0 changes it at once.
+   60|    257|  func show(_ model: BackdropModel?, in frame: CGRect, fade: CFTimeInterval) {
+   61|    257|    if fade > 0 {
+   62|    137|      let transition = CATransition()
+   63|    137|      transition.type = .fade
+   64|    137|      transition.duration = fade
+   65|    137|      layer.add(transition, forKey: "shape")
+   66|    137|    } else {
+   67|    120|      layer.removeAnimation(forKey: "shape")
+   68|    120|    }
+   69|    257|
+   70|    257|    CATransaction.begin()
+   71|    257|    CATransaction.setDisableActions(true)
+   72|    257|    layer.frame = CGRect(origin: .zero, size: frame.size)
+   73|    257|    layer.path = model.map { CGPath.make(Self.outline(of: $0, in: frame)) }
+   74|    257|    shown = (model, frame)
+   75|    257|    colour()
+   76|    257|    drawEdge()
+   77|    257|    CATransaction.commit()
+   78|    257|  }
+   79|       |
+   80|       |  /// Again when the accent colour may have changed.
+   81|    274|  func colour() {
+   82|    274|    let accent = NSColor.controlAccentColor.usingColorSpace(.sRGB).map {
+   83|    274|      RGBA(red: Double($0.redComponent), green: Double($0.greenComponent), blue: Double($0.blueComponent))
+   84|    274|    }
+   85|    274|    layer.fillColor = shown.model?.fill(accent: accent ?? .black).nsColor.cgColor
+   86|    274|  }
+   87|       |
+   88|       |  /// One pixel wide, so it depends on the scale.
+   89|    257|  private func drawEdge() {
+   90|    257|    let width = 1 / max(layer.contentsScale, 1)
+   91|    257|    edge.frame = layer.bounds
+   92|    257|    edge.path = shown.model?.desktopOutline(width: width, radius: ContinuousCorners.windowRadius).map {
+   93|    124|      CGPath.make(Self.local($0, in: shown.frame))
+   94|    124|    }
+   95|    257|    edge.lineWidth = width
+   96|    257|    // White, like the border of the Desktop's tile: what is behind it has nothing to do with light or dark mode.
+   97|    257|    edge.strokeColor = CGColor(gray: 1, alpha: CGFloat(shown.model?.desktopEdge ?? 0))
+   98|    257|  }
+   99|       |
+  100|       |  /// AppKit looks after the scale of its own layers only, and at the wrong one the curves are coarse.
+  101|    201|  func match(scale: CGFloat) {
+  102|    201|    guard scale != layer.contentsScale else { return }
+  103|      0|    CATransaction.begin()
+  104|      0|    CATransaction.setDisableActions(true)
+  105|      0|    layer.contentsScale = scale
+  106|      0|    edge.contentsScale = scale
+  107|      0|    drawEdge()
+  108|      0|    CATransaction.commit()
+  109|      0|  }
+  110|       |}
+  111|       |
+  112|       |/// Hosts the shape: a layer tree of Arbor's own, because a shape costs no bitmap the size of the display.
+  113|       |private final class DimView: NSView {
+  114|     17|  let surface = BackdropLayer()
+  115|       |
+  116|       |  /// Call once. Setting the layer before asking for one is what makes the view host it instead of owning it.
+  117|     17|  func hostSurface() {
+  118|     17|    layer = CALayer()
+  119|     17|    wantsLayer = true
+  120|     17|    layer?.addSublayer(surface.layer)
+  121|     17|  }
+  122|       |
+  123|       |  /// When the panel moves to another display, or its display changes resolution.
+  124|     17|  override func viewDidChangeBackingProperties() {
+  125|     17|    super.viewDidChangeBackingProperties()
+  126|     17|    matchScale()
+  127|     17|  }
+  128|       |
+  129|    139|  func matchScale() {
+  130|    139|    if let scale = window?.backingScaleFactor { surface.match(scale: scale) }
+  131|    139|  }
+  132|       |
+  133|       |  /// Also when another accent colour is chosen in System Settings.
+  134|     17|  override func viewDidChangeEffectiveAppearance() {
+  135|     17|    super.viewDidChangeEffectiveAppearance()
+  136|     17|    surface.colour()
+  137|     17|  }
+  138|       |}
+  139|       |
+  140|       |/// Darkens and blurs the wallpaper behind one display's docked windows. The panel covers the display's
+  141|       |/// visible frame just above the Desktop's icons, under every app's windows, and the mouse goes
+  142|       |/// straight through it.
+  143|       |final class BackdropPanel: OverlayPanel {
+  144|     17|  private let dimView = DimView()
+  145|       |  private var blurView: NSVisualEffectView?
+  146|       |  private(set) var model: BackdropModel?
+  147|     17|  private var lastChange: CFTimeInterval = 0
+  148|       |
+  149|     17|  override init() {
+  150|     17|    super.init()
+  151|     17|    level = NSWindow.Level(rawValue: Int(CGWindowLevelForKey(.desktopIconWindow)) + 1)
+  152|     17|    ignoresMouseEvents = true
+  153|     17|    // Transient: Mission Control and a click on the wallpaper, which sweep the windows away, hide it with them;
+  154|     17|    // a stationary panel would stay behind as a dark shape with nothing on it. On every Space, because the
+  155|     17|    // scene follows the Space in view and a panel stays on the Space it was first shown on.
+  156|     17|    collectionBehavior = [.transient, .ignoresCycle, .canJoinAllSpaces]
+  157|     17|    dimView.hostSurface()
+  158|     17|    let content = NSView()
+  159|     17|    content.addSubview(dimView)
+  160|     17|    contentView = content
+  161|     17|  }
+  162|       |
+  163|    273|  func show(_ model: BackdropModel) {
+  164|    273|    guard model != self.model else { return }
+  165|    122|    self.model = model
+  166|    122|    setFrame(ScreenGeometry.appKit(fromGlobal: model.frame), display: false)
+  167|    122|    dimView.frame = NSRect(origin: .zero, size: model.frame.size)
+  168|    122|    dimView.surface.show(model, in: model.frame, fade: fade())
+  169|    122|    setBlur(model.blur, outline: BackdropLayer.outline(of: model, in: model.frame), size: model.frame.size)
+  170|    122|    if !isVisible { orderFrontRegardless() }
+  171|    122|    // Only now is the panel sure to know which display it is on.
+  172|    122|    dimView.matchScale()
+  173|    122|  }
+  174|       |
+  175|       |  /// Fades the backdrop out, then takes the panel off screen.
+  176|     30|  func hide() {
+  177|     30|    guard let model else { return }
+  178|     14|    self.model = nil
+  179|     14|    dimView.surface.show(nil, in: model.frame, fade: fade())
+  180|     14|    setBlur(0, outline: [], size: model.frame.size)
+  181|     14|    DispatchQueue.main.asyncAfter(deadline: .now() + (BackdropLayer.fade + 0.05)) { [weak self] in
+  182|     13|      MainActor.assumeIsolated {
+  183|     13|        guard let self, self.model == nil else { return }  // Shown again in the meantime.
+  184|     11|        self.orderOut(nil)
+  185|     11|      }
+  186|     13|    }
+  187|     14|  }
+  188|       |
+  189|       |  /// One shape cross-fades into the next instead of popping. A drag changes the shape many times a second, though, and
+  190|       |  /// fading every step would smear its edge behind the pointer.
+  191|    136|  private func fade() -> CFTimeInterval {
+  192|    136|    let now = CACurrentMediaTime()
+  193|    136|    defer { lastChange = now }
+  194|    136|    return now - lastChange > BackdropLayer.fade ? BackdropLayer.fade : 0
+  195|    136|  }
+  196|       |
+  197|       |  /// The blur exists only while it is wanted: without one the panel is a single flat shape.
+  198|    136|  private func setBlur(_ blur: Double, outline: [PathElement], size: CGSize) {
+  199|    136|    guard blur > 0, let content = contentView else {
+  200|    136|      blurView?.removeFromSuperview()
+  201|    136|      blurView = nil
+  202|    136|      return
+  203|    136|    }
+  204|      0|    let view = blurView ?? makeBlurView(in: content)
+  205|      0|    blurView = view
+  206|      0|    view.frame = NSRect(origin: .zero, size: size)
+  207|      0|    // macOS blurs behind a window by a fixed amount; less than all of it is that blur, faded.
+  208|      0|    view.alphaValue = CGFloat(blur)
+  209|      0|    // A layer mask does not reach what the window server blurs behind the window; a mask image does.
+  210|      0|    // AppKit may draw an image on any thread, so the closure must not inherit this method's main actor.
+  211|      0|    let drawMask: @Sendable (NSRect) -> Bool = { _ in
+  212|      0|      NSColor.black.setFill()
+  213|      0|      NSBezierPath.make(outline).fill()
+  214|      0|      return true
+  215|      0|    }
+  216|      0|    view.maskImage = NSImage(size: size, flipped: false, drawingHandler: drawMask)
+  217|      0|  }
+  218|       |
+  219|      0|  private func makeBlurView(in content: NSView) -> NSVisualEffectView {
+  220|      0|    let view = NSVisualEffectView()
+  221|      0|    view.blendingMode = .behindWindow
+  222|      0|    view.material = .underWindowBackground
+  223|      0|    view.state = .active  // The panel is never key, and an inactive effect view turns flat grey.
+  224|      0|    view.autoresizingMask = [.width, .height]
+  225|      0|    content.addSubview(view, positioned: .below, relativeTo: nil)
+  226|      0|    return view
+  227|      0|  }
+  228|       |}
+

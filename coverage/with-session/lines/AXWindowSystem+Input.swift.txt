@@ -1,0 +1,37 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/AX/AXWindowSystem+Input.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import CoreGraphics
+    4|       |
+    5|       |extension AXWindowSystem {
+    6|       |  /// macOS keeps these figures for the login session and gives them to any app that asks: no permission,
+    7|       |  /// no event tap, nothing about which keys. "Combined" counts events posted by other software too (a remote
+    8|       |  /// desktop, a macro tool), which are as much the user's doing as a real key.
+    9|     73|  public func inputActivity() -> InputActivity {
+   10|    584|    func idle(_ type: CGEventType) -> Double {
+   11|    584|      CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: type)
+   12|    584|    }
+   13|     73|    let pointer: [CGEventType] = [
+   14|     73|      .mouseMoved, .leftMouseDown, .leftMouseDragged, .rightMouseDown, .rightMouseDragged, .otherMouseDown,
+   15|     73|      .scrollWheel,
+   16|     73|    ]
+   17|     73|    return InputActivity(
+   18|     73|      pointerIdle: pointer.map(idle).min() ?? .infinity, keyboardIdle: idle(.keyUp),
+   19|     73|      keyPresses: CGEventSource.counterForEventType(.combinedSessionState, eventType: .keyDown))
+   20|     73|  }
+   21|       |
+   22|      5|  public func isHolding(_ chord: KeyChord) -> Bool {
+   23|      5|    guard CGEventSource.keyState(.combinedSessionState, key: CGKeyCode(truncatingIfNeeded: chord.key.code)) else {
+   24|      0|      return false
+   25|      5|    }
+   26|      5|    let (modifiers, flags) = (chord.modifiers, NSEvent.modifierFlags)
+   27|      5|    if modifiers.contains(.command), !flags.contains(.command) { return false }
+   28|      5|    if modifiers.contains(.shift), !flags.contains(.shift) { return false }
+   29|      5|    if modifiers.contains(.option), !flags.contains(.option) { return false }
+   30|      5|    if modifiers.contains(.control), !flags.contains(.control) { return false }
+   31|      5|    return true
+   32|      5|  }
+   33|       |}
+

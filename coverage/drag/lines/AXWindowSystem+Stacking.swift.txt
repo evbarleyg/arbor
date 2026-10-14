@@ -1,0 +1,18 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/AX/AXWindowSystem+Stacking.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |
+    4|       |extension AXWindowSystem {
+    5|       |  /// The window server's own list, which runs front to back. It holds every window on screen,
+    6|       |  /// Arbor's and the system's among them; callers pick out the ones they know.
+    7|      0|  public func windowsFrontToBack() -> [WindowID] {
+    8|      0|    let options: CGWindowListOption = [.optionOnScreenOnly, .excludeDesktopElements]
+    9|      0|    guard let windows = CGWindowListCopyWindowInfo(options, kCGNullWindowID) as? [[String: Any]] else { return [] }
+   10|      0|    return windows.compactMap { info in
+   11|      0|      (info[kCGWindowNumber as String] as? Int).flatMap { UInt32(exactly: $0) }.map { WindowID($0) }
+   12|      0|    }
+   13|      0|  }
+   14|       |}
+

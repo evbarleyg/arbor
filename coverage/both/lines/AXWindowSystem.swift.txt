@@ -1,0 +1,1348 @@
+Coverage Report
+Created: 2026-10-14 23:47
+/Users/runner/work/arbor/arbor/Sources/ArborKit/AX/AXWindowSystem.swift:
+    1|       |import AppKit
+    2|       |import ApplicationServices
+    3|       |import ArborCore
+    4|       |import CoreGraphics
+    5|       |
+    6|       |/// The real `WindowSystem`: finds, observes and moves other apps' windows
+    7|       |/// through the Accessibility API, and watches the mouse to detect title-bar
+    8|       |/// drags. Requires Accessibility permission.
+    9|       |///
+   10|       |/// Observation model:
+   11|       |/// - one `AXObserver` per app, subscribed to window creation, focus and hide/show;
+   12|       |/// - per window, subscriptions to destroy/move/resize/minimize/title, each
+   13|       |///   registered with the window number as its refcon so the callback knows
+   14|       |///   which window it is even after the element is destroyed.
+   15|       |///
+   16|       |/// No test reaches this code, so it decides as little as it can: what counts as a window, an echo, a drag, a
+   17|       |/// tab or a reason to try again is decided by pure types in ArborCore (`WindowKind`, `EchoFilter`, `WindowGrab`,
+   18|       |/// `NativeTabs`, `FramePlan`, `RetrySchedule`). What macOS does in each case was written down by a Mac: see
+   19|       |/// collab/reports/2026-10-14-review-ax.md.
+   20|       |@MainActor
+   21|       |public final class AXWindowSystem: WindowSystem {
+   22|       |  public weak var events: (any WindowSystemEvents)?
+   23|       |  /// While a trace is recorded it also gets every notification and mouse event as it arrives, before anything is made
+   24|       |  /// of it: the events above say what Arbor understood, these what macOS said (docs/TRACES.md).
+   25|       |  public var recorder: TraceRecorder?
+   26|       |
+   27|       |  private let onlyPIDs: Set<pid_t>?
+   28|     11|  private var apps: [pid_t: ObservedApp] = [:]
+   29|     11|  private var records: [WindowID: WindowRecord] = [:]
+   30|     11|  private var echoes = EchoFilter()
+   31|     11|  private var tokens: [NSObjectProtocol] = []
+   32|       |  private var mouseMonitor: Any?
+   33|       |  private var localMouseMonitor: Any?
+   34|       |  /// Where the mouse button went down, and on which window. Nil while it is up.
+   35|       |  private var press: Press?
+   36|       |  private var draggingWindow: WindowID?
+   37|       |  private var resizingWindow: WindowID?
+   38|       |  /// The modifier keys held when the mouse event being handled happened; nil between events.
+   39|       |  private var eventModifiers: NSEvent.ModifierFlags?
+   40|     11|  private var running = false
+   41|       |  /// Numbers the drags and resizes, so that the check on one does not outlive it.
+   42|     11|  private var grabNumber = 0
+   43|       |  /// Apps a retry is scheduled for.
+   44|     11|  private var waitingToObserve: Set<pid_t> = []
+   45|       |  /// Apps that let a call time out. Nothing is asked of them until they answer again.
+   46|     11|  private var unresponsive: Set<pid_t> = []
+   47|       |  private var pendingDisplayChange: Task<Void, Never>?
+   48|       |  private var pendingRescan: Task<Void, Never>?
+   49|       |  /// The window last reported as focused, so that the two or three notifications macOS posts for one
+   50|       |  /// change are reported once. Forgotten whenever another app comes forward.
+   51|       |  private var lastReportedFocus: WindowID?
+   52|       |  /// Counts the apps that came forward, to see whether a request to activate one had any effect.
+   53|     11|  private var activations = 0
+   54|       |  /// The displays as the controller last heard of them.
+   55|     11|  private var reportedDisplays: [DisplaySnapshot] = []
+   56|       |  /// Windows to be looked at again once Arbor's move of them has settled (`EchoFilter.Verdict.early`).
+   57|     11|  private var secondLooks: [WindowID: Task<Void, Never>] = [:]
+   58|       |  /// Whether dialogs that open out of view are left there for now, the app whose dialogs are not, and the ones that
+   59|       |  /// are waiting (F58).
+   60|     11|  private var leavesStrayDialogs = false
+   61|       |  private var appWhoseDialogsNeverWait: String?
+   62|     11|  private var waitingDialogs: [(element: AXUIElement, id: WindowID, pid: pid_t)] = []
+   63|       |  /// Dialogs that were brought into view. Each is moved once.
+   64|     11|  private var broughtIntoView: Set<WindowID> = []
+   65|       |
+   66|       |  /// How long one Accessibility call waits for an app, in seconds.
+   67|       |  private static let messagingTimeout: Float = 1
+   68|       |
+   69|       |  fileprivate static weak var current: AXWindowSystem?
+   70|       |
+   71|       |  private struct ObservedApp {
+   72|       |    let pid: pid_t
+   73|       |    let element: AXUIElement
+   74|       |    let observer: AXObserver
+   75|       |    let bundleID: String?
+   76|       |    let name: String
+   77|       |  }
+   78|       |
+   79|       |  private struct WindowRecord {
+   80|       |    let element: AXUIElement
+   81|       |    var snapshot: WindowSnapshot
+   82|       |    /// Taken on while out of sight, when it could not be told from a dialog (`WindowKind.unconfirmed`).
+   83|      0|    var isUnconfirmed = false
+   84|       |    /// A tab of a native tab group that is not in front. The controller does not know about it.
+   85|     38|    var isBackgroundTab = false
+   86|       |  }
+   87|       |
+   88|       |  /// - Parameter onlyPIDs: when set, observe only these processes (of any
+   89|       |  ///   activation policy). The end-to-end runner uses it.
+   90|     11|  public init(onlyPIDs: Set<pid_t>? = nil) {
+   91|     11|    self.onlyPIDs = onlyPIDs
+   92|     11|  }
+   93|       |
+   94|       |  /// Seconds on a clock that never goes backwards.
+   95|  1.00k|  private var uptime: TimeInterval { ProcessInfo.processInfo.systemUptime }
+   96|       |
+   97|       |  // MARK: WindowSystem
+   98|       |
+   99|     10|  public func start() {
+  100|     10|    guard !running else { return }
+  101|     10|    running = true
+  102|     10|    AXWindowSystem.current = self
+  103|     10|    // For every element of every app, those made on the fly included (F17, H3). Elements that are kept
+  104|     10|    // get the same timeout of their own as well.
+  105|     10|    AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), Self.messagingTimeout)
+  106|     10|    reportedDisplays = displays()
+  107|     10|
+  108|     10|    countWindows()
+  109|    363|    for app in NSWorkspace.shared.runningApplications {
+  110|    363|      observe(pid: app.processIdentifier, announce: false)
+  111|    363|    }
+  112|     10|
+  113|     10|    let workspaceCenter = NSWorkspace.shared.notificationCenter
+  114|     10|    tokens.append(
+  115|     10|      workspaceCenter.addObserver(forName: NSWorkspace.didLaunchApplicationNotification, object: nil, queue: .main) {
+  116|      0|        [weak self] note in
+  117|      0|        guard let pid = (note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)?.processIdentifier
+  118|      0|        else { return }
+  119|      0|        MainActor.assumeIsolated { self?.observe(pid: pid, announce: true, attempt: 0) }
+  120|      0|      })
+  121|     10|    tokens.append(
+  122|     10|      workspaceCenter.addObserver(forName: NSWorkspace.didTerminateApplicationNotification, object: nil, queue: .main) {
+  123|      0|        [weak self] note in
+  124|      0|        guard let pid = (note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)?.processIdentifier
+  125|      0|        else { return }
+  126|      0|        MainActor.assumeIsolated { self?.forget(pid: pid) }
+  127|      0|      })
+  128|     10|    tokens.append(
+  129|     13|      workspaceCenter.addObserver(forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main) {
+  130|     13|        [weak self] note in
+  131|     13|        guard let pid = (note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)?.processIdentifier
+  132|     13|        else { return }
+  133|     13|        MainActor.assumeIsolated { self?.appCameForward(pid) }
+  134|     13|      })
+  135|     10|    tokens.append(
+  136|     10|      workspaceCenter.addObserver(forName: NSWorkspace.activeSpaceDidChangeNotification, object: nil, queue: .main) {
+  137|      2|        [weak self] _ in
+  138|      2|        MainActor.assumeIsolated { self?.spaceChanged() }
+  139|      2|      })
+  140|     10|    tokens.append(
+  141|     10|      NotificationCenter.default.addObserver(
+  142|     10|        forName: NSApplication.didChangeScreenParametersNotification, object: nil, queue: .main
+  143|     10|      ) { [weak self] _ in
+  144|      6|        MainActor.assumeIsolated { self?.screensChanged() }
+  145|      6|      })
+  146|     10|
+  147|     10|    mouseMonitor = NSEvent.addGlobalMonitorForEvents(
+  148|     10|      matching: [.leftMouseDown, .leftMouseUp, .leftMouseDragged, .flagsChanged]
+  149|    183|    ) {
+  150|    183|      [weak self] event in
+  151|    183|      let type = event.type
+  152|    183|      let modifiers = event.modifierFlags
+  153|    183|      MainActor.assumeIsolated { self?.handleMouse(type, modifiers: modifiers) }
+  154|    183|    }
+  155|     10|    // Global monitors do not see events that go to Arbor's own panels (seams, tiles, the menu).
+  156|     10|    localMouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown]) { [weak self] event in
+  157|      0|      MainActor.assumeIsolated { self?.pressLandedOnArbor() }
+  158|      0|      return event
+  159|      0|    }
+  160|     10|  }
+  161|       |
+  162|      8|  public func stop() {
+  163|      8|    guard running else { return }
+  164|      8|    running = false
+  165|     40|    for token in tokens {
+  166|     40|      NSWorkspace.shared.notificationCenter.removeObserver(token)
+  167|     40|      NotificationCenter.default.removeObserver(token)
+  168|     40|    }
+  169|      8|    tokens.removeAll()
+  170|      8|    if let mouseMonitor { NSEvent.removeMonitor(mouseMonitor) }
+  171|      8|    mouseMonitor = nil
+  172|      8|    if let localMouseMonitor { NSEvent.removeMonitor(localMouseMonitor) }
+  173|      8|    localMouseMonitor = nil
+  174|      8|    pendingRescan?.cancel()
+  175|      8|    pendingDisplayChange?.cancel()
+  176|      8|    for look in secondLooks.values { look.cancel() }
+  177|      8|    secondLooks.removeAll()
+  178|      8|    broughtIntoView.removeAll()
+  179|      8|    waitingDialogs.removeAll()
+  180|      8|    leavesStrayDialogs = false
+  181|      8|    appWhoseDialogsNeverWait = nil
+  182|      8|    reportedCreated.removeAll()
+  183|      8|    counted.removeAll()
+  184|      8|    putAway.removeAll()
+  185|      8|    press = nil
+  186|      8|    draggingWindow = nil
+  187|      8|    resizingWindow = nil
+  188|      8|    grabNumber += 1
+  189|      8|    lastReportedFocus = nil
+  190|      9|    for pid in Array(apps.keys) { forget(pid: pid, announce: false) }
+  191|      8|    // `pause` stops and `resume` starts again: nothing of this run may colour the next.
+  192|      8|    waitingToObserve.removeAll()
+  193|      8|    unresponsive.removeAll()
+  194|      8|  }
+  195|       |
+  196|     14|  public func allWindows() -> [WindowSnapshot] {
+  197|     44|    records.values.filter { !$0.isBackgroundTab }.map(\.snapshot).sorted { $0.id < $1.id }
+  198|     14|  }
+  199|       |
+  200|       |  /// The numbers of all apps' windows the window server has, on whichever Space. The Accessibility API lists only what
+  201|       |  /// shows, so this is how a saved window on another Space is told from one that has closed.
+  202|     32|  public func existingWindowIDs() -> Set<WindowID> {
+  203|     32|    guard let list = CGWindowListCopyWindowInfo([.optionAll], kCGNullWindowID) as? [[String: Any]] else { return [] }
+  204|     32|    var existing = Set<WindowID>()
+  205|    473|    for info in list where (info[kCGWindowLayer as String] as? NSNumber)?.intValue == 0 {
+  206|    473|      if let number = (info[kCGWindowNumber as String] as? NSNumber)?.uint32Value { existing.insert(WindowID(number)) }
+  207|    473|    }
+  208|     32|    return existing
+  209|     32|  }
+  210|       |
+  211|    191|  public func displays() -> [DisplaySnapshot] {
+  212|    191|    let screens = NSScreen.screens
+  213|    191|    return screens.enumerated().map { index, screen in
+  214|    191|      DisplaySnapshot(
+  215|    191|        id: ScreenGeometry.displayID(for: screen),
+  216|    191|        frame: ScreenGeometry.global(fromAppKit: screen.frame),
+  217|    191|        visibleFrame: ScreenGeometry.global(fromAppKit: screen.visibleFrame),
+  218|    191|        isMain: index == 0, name: screen.localizedName, isBuiltIn: ScreenGeometry.isBuiltIn(screen))
+  219|    191|    }
+  220|    191|  }
+  221|       |
+  222|    210|  public func setFrame(_ frame: CGRect, of window: WindowID) -> CGRect? {
+  223|    210|    guard let record = records[window], answers(record.snapshot.pid) else { return nil }
+  224|    207|    // macOS accepts a new size for a full-screen window and does nothing.
+  225|    207|    guard !record.snapshot.isFullScreen else { return record.snapshot.frame }
+  226|    207|    let element = record.element
+  227|    207|    let appElement = apps[record.snapshot.pid]?.element
+  228|    207|    let began = uptime
+  229|    207|
+  230|    207|    // Apps with "enhanced user interface" on (set by assistive tools) animate
+  231|    207|    // every frame change; turn it off while we move the window.
+  232|    207|    var enhanced = false
+  233|    207|    if let answer = appElement?.read("AXEnhancedUserInterface") {
+  234|    207|      // An app that is silent now will be silent for the five calls to come. One wait is enough.
+  235|    207|      if answer.error == .cannotComplete { return gaveUp(on: record.snapshot.pid, since: began) }
+  236|    206|      // Not the app's silence: Arbor's permission is gone (Controller+Permission.swift). The calls to come would be
+  237|    206|      // refused as well.
+  238|    206|      if answer.error == .apiDisabled {
+  239|      0|        events?.accessibilityWasRefused()
+  240|      0|        return nil
+  241|    206|      }
+  242|    206|      if let value = answer.value, CFGetTypeID(value) == CFBooleanGetTypeID() {
+  243|    206|        enhanced = CFBooleanGetValue((value as! CFBoolean))
+  244|    206|      }
+  245|    206|    }
+  246|    206|    if enhanced { appElement?.setBool("AXEnhancedUserInterface", false) }
+  247|    206|
+  248|    206|    var steps = FramePlan.steps(from: record.snapshot.frame, to: frame)
+  249|    206|    var result = perform(steps, toward: frame, on: element)
+  250|    206|    if let taken = result, FramePlan.needsFullPlan(after: steps, result: taken, target: frame) {
+  251|      0|      steps = FramePlan.full
+  252|      0|      result = perform(steps, toward: frame, on: element)
+  253|      0|    }
+  254|    206|
+  255|    206|    // Also when the app fell silent half way: a call that times out is still delivered when the app wakes up.
+  256|    206|    if enhanced { appElement?.setBool("AXEnhancedUserInterface", true) }
+  257|    206|
+  258|    206|    // Nothing is known about a window whose frame cannot be read back. Saying that it took the frame would
+  259|    206|    // keep Arbor from ever trying again.
+  260|    206|    guard let actual = result else { return gaveUp(on: record.snapshot.pid, since: began) }
+  261|    206|    echoes.expect(actual, for: window, at: uptime)
+  262|    206|    records[window]?.snapshot.frame = actual
+  263|    206|    return actual
+  264|    210|  }
+  265|       |
+  266|       |  /// Sets the attributes a plan names and reads the frame back. Nil if the app did not answer. A refusal
+  267|       |  /// (a window with a fixed size, say) is an answer: the frame read back shows what came of it.
+  268|    206|  private func perform(_ steps: [FramePlan.Step], toward frame: CGRect, on element: AXUIElement) -> CGRect? {
+  269|    490|    for step in steps {
+  270|    490|      let error = step == .size ? element.setSize(frame.size) : element.setPosition(frame.origin)
+  271|    490|      if error == .cannotComplete { return nil }
+  272|    490|      if error == .apiDisabled {
+  273|      0|        events?.accessibilityWasRefused()
+  274|      0|        return nil
+  275|    490|      }
+  276|    490|    }
+  277|    206|    return element.frame
+  278|    206|  }
+  279|       |
+  280|      0|  public func setFrameOnce(_ frame: CGRect, of window: WindowID, pid: Int32) -> CGRect? {
+  281|      0|    guard !running else { return setFrame(frame, of: window) }
+  282|      0|    let app = AXUIElementCreateApplication(pid)
+  283|      0|    AXUIElementSetMessagingTimeout(app, Self.messagingTimeout)
+  284|      0|    guard let element = app.elements(kAXWindowsAttribute).first(where: { $0.windowID == window }) else {
+  285|      0|      // The long way round, which asks every app.
+  286|      0|      start()
+  287|      0|      defer { stop() }
+  288|      0|      return setFrame(frame, of: window)
+  289|      0|    }
+  290|      0|    AXUIElementSetMessagingTimeout(element, Self.messagingTimeout)
+  291|      0|    // macOS accepts a new size for a full-screen window and does nothing.
+  292|      0|    guard element.bool("AXFullScreen") != true else { return element.frame }
+  293|      0|    return perform(FramePlan.full, toward: frame, on: element)
+  294|      0|  }
+  295|       |
+  296|     26|  public func focus(_ window: WindowID) {
+  297|     26|    guard let record = records[window], answers(record.snapshot.pid) else { return }
+  298|     24|    let pid = record.snapshot.pid
+  299|     24|    let began = uptime
+  300|     24|    let answer = record.element.setBool(kAXMainAttribute, true)
+  301|     24|    if answer == .apiDisabled {
+  302|      0|      events?.accessibilityWasRefused()
+  303|      0|      return
+  304|     24|    }
+  305|     24|    guard answer != .cannotComplete else {
+  306|      0|      noteSilence(of: pid, since: began)
+  307|      0|      return
+  308|     24|    }
+  309|     24|    AXUIElementPerformAction(record.element, kAXRaiseAction as CFString)
+  310|     24|    guard NSWorkspace.shared.frontmostApplication?.processIdentifier != pid else { return }
+  311|      8|    NSRunningApplication(processIdentifier: pid)?.activate()
+  312|      8|
+  313|      8|    // Since macOS 14 activation is cooperative, and a request from an app in the background may be ignored. It has
+  314|      8|    // not been seen to be (macOS 26), but if no app at all has come forward a moment later, the app is asked
+  315|      8|    // to bring itself forward, which is what System Events' `set frontmost` does.
+  316|      8|    let before = activations
+  317|      8|    Task { @MainActor [weak self] in
+  318|      8|      try? await Task.sleep(nanoseconds: 300_000_000)
+  319|      8|      guard let self, self.running, self.activations == before, self.answers(pid), let app = self.apps[pid],
+  320|      8|        NSWorkspace.shared.frontmostApplication?.processIdentifier != pid
+  321|      8|      else { return }
+  322|      0|      Log.debug("pid \(pid) did not come forward when activated; asking it through Accessibility")
+  323|      0|      app.element.setBool(kAXFrontmostAttribute, true)
+  324|      0|    }
+  325|      8|  }
+  326|       |
+  327|      1|  public func raise(_ window: WindowID) {
+  328|      1|    guard let record = records[window] else { return }
+  329|      1|    AXUIElementPerformAction(record.element, kAXRaiseAction as CFString)
+  330|      1|  }
+  331|       |
+  332|    679|  public func focusedWindow() -> WindowID? {
+  333|    679|    // An app that is not observed has no window Arbor knows, and Arbor itself would be asking its own busy main
+  334|    679|    // thread. One that hangs is not asked either.
+  335|    679|    guard let front = NSWorkspace.shared.frontmostApplication, let app = apps[front.processIdentifier],
+  336|    679|      answers(front.processIdentifier)
+  337|    679|    else { return nil }
+  338|    632|    return app.element.element(kAXFocusedWindowAttribute)?.windowID
+  339|    679|  }
+  340|       |
+  341|    137|  public func cursorLocation() -> CGPoint {
+  342|    137|    ScreenGeometry.global(fromAppKit: NSEvent.mouseLocation)
+  343|    137|  }
+  344|       |
+  345|    389|  public func isMouseButtonDown() -> Bool {
+  346|    389|    NSEvent.pressedMouseButtons & 1 != 0
+  347|    389|  }
+  348|       |
+  349|       |  /// The window server keeps these times for every process; asking needs no permission and taps nothing.
+  350|      0|  public func secondsSinceClickOrModifierKey() -> Double {
+  351|      0|    let kinds: [CGEventType] = [.leftMouseDown, .leftMouseUp, .rightMouseDown, .rightMouseUp, .flagsChanged]
+  352|      0|    return kinds.map { CGEventSource.secondsSinceLastEventType(.combinedSessionState, eventType: $0) }.min() ?? .infinity
+  353|      0|  }
+  354|       |
+  355|      1|  public func setMinimized(_ window: WindowID, _ minimized: Bool) {
+  356|      1|    guard let record = records[window], answers(record.snapshot.pid) else { return }
+  357|      1|    let began = uptime
+  358|      1|    if record.element.setBool(kAXMinimizedAttribute, minimized) == .cannotComplete {
+  359|      0|      noteSilence(of: record.snapshot.pid, since: began)
+  360|      0|    }
+  361|      1|  }
+  362|       |
+  363|      1|  public func unhideApp(pid: Int32) {
+  364|      1|    NSRunningApplication(processIdentifier: pid)?.unhide()
+  365|      1|  }
+  366|       |
+  367|    102|  public func modifierKeysDown() -> KeyChord.Modifiers {
+  368|    102|    // People let go of the key and the button together, and by the time Arbor hears of the
+  369|    102|    // mouse-up the key can be up as well. What counts is what was held when it happened.
+  370|    102|    let flags = eventModifiers ?? NSEvent.modifierFlags
+  371|    102|    var held: KeyChord.Modifiers = []
+  372|    102|    if flags.contains(.command) { held.insert(.command) }
+  373|    102|    if flags.contains(.shift) { held.insert(.shift) }
+  374|    102|    if flags.contains(.option) { held.insert(.option) }
+  375|    102|    if flags.contains(.control) { held.insert(.control) }
+  376|    102|    return held
+  377|    102|  }
+  378|       |
+  379|       |  // MARK: Apps
+  380|       |
+  381|    367|  private func shouldObserve(_ app: NSRunningApplication) -> Bool {
+  382|    367|    if app.processIdentifier == getpid() { return false }
+  383|    356|    if let onlyPIDs { return onlyPIDs.contains(app.processIdentifier) }
+  384|      0|    return app.activationPolicy == .regular
+  385|    367|  }
+  386|       |
+  387|       |  /// Starts observing an app. Apps that just launched may not accept
+  388|       |  /// observers yet, so registration is retried (`RetrySchedule`). `wasRunning`: the app has not just been launched, so
+  389|       |  /// the windows it turns out to have were open all along.
+  390|    367|  private func observe(pid: pid_t, announce: Bool, wasRunning: Bool = false, attempt: Int = 0) {
+  391|    367|    guard running, apps[pid] == nil, let app = NSRunningApplication(processIdentifier: pid),
+  392|    367|      shouldObserve(app)
+  393|    367|    else { return }
+  394|     12|
+  395|     12|    let element = AXUIElementCreateApplication(pid)
+  396|     12|    AXUIElementSetMessagingTimeout(element, Self.messagingTimeout)
+  397|     12|    var observerRef: AXObserver?
+  398|     12|    guard AXObserverCreate(pid, axObserverCallback, &observerRef) == .success, let observer = observerRef else {
+  399|      0|      retryObserve(pid: pid, announce: announce, wasRunning: wasRunning, attempt: attempt)
+  400|      0|      return
+  401|     12|    }
+  402|     12|
+  403|     12|    // Without these two there is nothing to go by.
+  404|     24|    for name in [kAXWindowCreatedNotification, kAXFocusedWindowChangedNotification] {
+  405|     24|      let result = AXObserverAddNotification(observer, element, name as CFString, nil)
+  406|     24|      // The first refusal says it all; an app that hangs would make each further try wait as long.
+  407|     24|      guard result == .success || result == .notificationAlreadyRegistered else {
+  408|      0|        retryObserve(pid: pid, announce: announce, wasRunning: wasRunning, attempt: attempt)
+  409|      0|        return
+  410|     24|      }
+  411|     24|    }
+  412|     12|    // An app that does not know one of these is still worth observing. Choosing a native tab posts nothing
+  413|     12|    // but "main window changed".
+  414|     12|    for name in [
+  415|     12|      kAXMainWindowChangedNotification, kAXApplicationHiddenNotification, kAXApplicationShownNotification,
+  416|     12|      kAXApplicationActivatedNotification, kAXApplicationDeactivatedNotification,
+  417|     60|    ] {
+  418|     60|      AXObserverAddNotification(observer, element, name as CFString, nil)
+  419|     60|    }
+  420|     12|    // Common modes: in the default mode alone, notifications would wait while Arbor's menu is open.
+  421|     12|    CFRunLoopAddSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(observer), .commonModes)
+  422|     12|    apps[pid] = ObservedApp(
+  423|     12|      pid: pid, element: element, observer: observer, bundleID: app.bundleIdentifier,
+  424|     12|      name: app.localizedName ?? app.bundleIdentifier ?? "App")
+  425|     12|
+  426|     30|    for window in element.elements(kAXWindowsAttribute) {
+  427|     30|      addWindow(window, pid: pid, announce: announce, wasOpenBefore: wasRunning)
+  428|     30|    }
+  429|     12|  }
+  430|       |
+  431|      0|  private func retryObserve(pid: pid_t, announce: Bool, wasRunning: Bool, attempt: Int) {
+  432|      0|    guard let delay = RetrySchedule.delay(beforeRetry: attempt) else {
+  433|      0|      Log.debug("gave up observing pid \(pid); it gets another chance when it comes forward")
+  434|      0|      return
+  435|      0|    }
+  436|      0|    guard waitingToObserve.insert(pid).inserted else { return }
+  437|      0|    Task { @MainActor [weak self] in
+  438|      0|      try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+  439|      0|      self?.waitingToObserve.remove(pid)
+  440|      0|      // The controller read the list of windows long ago, so whatever turns up now has to be announced,
+  441|      0|      // also when the first try was part of the start. Then the app was running before Arbor was.
+  442|      0|      self?.observe(pid: pid, announce: true, wasRunning: wasRunning || !announce, attempt: attempt + 1)
+  443|      0|    }
+  444|      0|  }
+  445|       |
+  446|     10|  private func forget(pid: pid_t, announce: Bool = true) {
+  447|     10|    unresponsive.remove(pid)
+  448|     10|    waitingDialogs.removeAll { $0.pid == pid }
+  449|     10|    guard let app = apps.removeValue(forKey: pid) else { return }
+  450|     10|    CFRunLoopRemoveSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(app.observer), .commonModes)
+  451|     10|    let gone = windowIDs(of: pid)
+  452|     23|    for window in gone {
+  453|     23|      let known = records.removeValue(forKey: window)?.isBackgroundTab == false
+  454|     23|      echoes.forget(window)
+  455|     23|      forgetGrab(of: window)
+  456|     23|      if announce, known { events?.windowDestroyed(window) }
+  457|     23|    }
+  458|     10|  }
+  459|       |
+  460|     20|  private func windowIDs(of pid: pid_t) -> [WindowID] {
+  461|     58|    records.filter { $0.value.snapshot.pid == pid }.map(\.key).sorted()
+  462|     20|  }
+  463|       |
+  464|       |  /// An app became the active one. Switching apps posts no "focused window changed" (the app's focused window is
+  465|       |  /// the one it was), so this is the only sign that the user went to another window with ⌘Tab, the Dock or a
+  466|       |  /// click. It is also a second chance to observe an app: one that became a regular app only after launch, for
+  467|       |  /// which no launch notification is posted, or one that was too slow for the retries. Only the focused window
+  468|       |  /// counts, not the main one: a click on the wallpaper activates Finder without asking for its last window.
+  469|     13|  private func appCameForward(_ pid: pid_t) {
+  470|     13|    // The only sign of ⌘Tab, and it comes before or after what Accessibility says about the focus.
+  471|     13|    recorder?.raw("didActivateApplication pid \(pid)")
+  472|     13|    activations += 1
+  473|     13|    lastReportedFocus = nil
+  474|     13|    if apps[pid] == nil, !waitingToObserve.contains(pid) { observe(pid: pid, announce: true, wasRunning: true) }
+  475|     13|    reportFocus(of: pid)
+  476|     13|  }
+  477|       |
+  478|       |  // MARK: Apps that do not answer
+  479|       |
+  480|       |  /// Every call is synchronous, on the main thread, and waits up to `messagingTimeout` for the app. Moving one
+  481|       |  /// window takes six calls, so a hung app with three docked windows used to stop Arbor for some twenty seconds
+  482|       |  /// at every layout. Now the first call that times out ends the conversation: nothing more is asked of the app
+  483|       |  /// until it answers a call made off the main thread, or posts a notification.
+  484|  1.97k|  private func answers(_ pid: pid_t) -> Bool { !unresponsive.contains(pid) }
+  485|       |
+  486|      1|  private func gaveUp(on pid: pid_t, since began: TimeInterval) -> CGRect? {
+  487|      1|    noteSilence(of: pid, since: began)
+  488|      1|    return nil
+  489|      1|  }
+  490|       |
+  491|       |  /// Called when a call came back without an answer. A process that made Arbor wait is hung. One that is gone fails at
+  492|       |  /// once; its end is usually reported, but not that of an accessory app or one started from a shell, whose windows
+  493|       |  /// would stay in the tree as ghosts.
+  494|      2|  private func noteSilence(of pid: pid_t, since began: TimeInterval) {
+  495|      2|    guard uptime - began >= TimeInterval(Self.messagingTimeout) / 2 else {
+  496|      1|      if kill(pid, 0) != 0, errno == ESRCH {
+  497|      1|        // Not from here: the caller may be the controller, in the middle of a layout.
+  498|      1|        Task { @MainActor [weak self] in
+  499|      1|          guard let self, self.apps[pid] != nil else { return }
+  500|      1|          Log.info("pid \(pid) is gone without a word; forgetting its windows")
+  501|      1|          self.forget(pid: pid)
+  502|      1|        }
+  503|      1|      }
+  504|      1|      return
+  505|      1|    }
+  506|      1|    guard unresponsive.insert(pid).inserted else { return }
+  507|      1|    Log.info("pid \(pid) does not answer; leaving its windows alone until it does")
+  508|      1|
+  509|      1|    // The task alone uses this element.
+  510|      1|    let element = MainActorBox(value: AXUIElementCreateApplication(pid))
+  511|      1|    Task.detached { [weak self] in
+  512|      1|      // About a minute and a half. After that Arbor finds out for itself, at the price of one more wait.
+  513|      1|      var tries = 0
+  514|      1|      var answered = false
+  515|      4|      while !answered, tries < 60 {
+  516|      3|        tries += 1
+  517|      3|        try? await Task.sleep(nanoseconds: 500_000_000)
+  518|      3|        var value: CFTypeRef?
+  519|      3|        answered = AXUIElementCopyAttributeValue(element.value, kAXRoleAttribute as CFString, &value) != .cannotComplete
+  520|      3|      }
+  521|      1|      await self?.answersAgain(pid)
+  522|      1|    }
+  523|      1|  }
+  524|       |
+  525|       |  /// The app is talking again. What was asked of it in vain has to be made up for: reporting its windows
+  526|       |  /// makes the controller place the ones it could not move.
+  527|      1|  private func answersAgain(_ pid: pid_t) {
+  528|      1|    guard unresponsive.remove(pid) != nil, running, apps[pid] != nil else { return }
+  529|      1|    Log.info("pid \(pid) answers again")
+  530|      3|    for window in windowIDs(of: pid) { refresh(window, userInitiated: true) }
+  531|      1|    rescan([pid], afterSpaceSwitch: false)
+  532|      1|  }
+  533|       |
+  534|       |  // MARK: Displays
+  535|       |
+  536|       |  /// macOS posts this at every minimize, and several times in a row when a display comes or goes. `DisplayChange` says
+  537|       |  /// whether there is anything to report and how long to wait; if the displays are by then as they were (a display that
+  538|       |  /// blinked on wake), nothing is reported at all.
+  539|      6|  private func screensChanged() {
+  540|      6|    recorder?.raw("didChangeScreenParameters")
+  541|      6|    pendingDisplayChange?.cancel()
+  542|      6|    pendingDisplayChange = nil
+  543|      6|    guard let delay = DisplayChange.settleTime(from: reportedDisplays, to: displays()) else { return }
+  544|      5|    pendingDisplayChange = Task { @MainActor [weak self] in
+  545|      5|      try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
+  546|      5|      guard !Task.isCancelled, let self, self.running else { return }
+  547|      4|      let current = self.displays()
+  548|      4|      guard DisplayChange.settleTime(from: self.reportedDisplays, to: current) != nil else { return }
+  549|      4|      self.reportedDisplays = current
+  550|      4|      self.refreshFrames()
+  551|      4|      self.events?.displaysChanged()
+  552|      4|    }
+  553|      5|  }
+  554|       |
+  555|       |  /// Reads every window's frame again. When the primary display changes, so do the coordinates of every window, and
+  556|       |  /// apps post nothing about it.
+  557|      4|  private func refreshFrames() {
+  558|     14|    for window in records.keys.sorted() {
+  559|     14|      guard let record = records[window], answers(record.snapshot.pid) else { continue }
+  560|     14|      let began = uptime
+  561|     14|      if let frame = record.element.frame {
+  562|     14|        records[window]?.snapshot.frame = frame
+  563|     14|      } else {
+  564|      0|        noteSilence(of: record.snapshot.pid, since: began)
+  565|      0|      }
+  566|     14|    }
+  567|      4|  }
+  568|       |
+  569|       |  // MARK: What the apps list
+  570|       |
+  571|       |  /// Brings the window list up to date after a Space switch (entering and leaving full screen is one too). The
+  572|       |  /// notification comes in the middle of the transition, when apps have been seen to list neither the old windows
+  573|       |  /// nor the new ones, so the lists are read now, for a prompt layout, and once more when the transition is over.
+  574|      2|  private func spaceChanged() {
+  575|      2|    recorder?.raw("activeSpaceDidChange")
+  576|      2|    rescan(Array(apps.keys), afterSpaceSwitch: true)
+  577|      2|    rescanSoon()
+  578|      2|  }
+  579|       |
+  580|      4|  private func rescanSoon() {
+  581|      4|    pendingRescan?.cancel()
+  582|      4|    pendingRescan = Task { @MainActor [weak self] in
+  583|      4|      try? await Task.sleep(nanoseconds: 1_000_000_000)
+  584|      4|      guard !Task.isCancelled, let self, self.running else { return }
+  585|      2|      self.rescan(Array(self.apps.keys), afterSpaceSwitch: true)
+  586|      2|    }
+  587|      4|  }
+  588|       |
+  589|       |  /// Asks these apps which windows they list now. The Accessibility API lists
+  590|       |  /// only the windows on the Spaces that are showing, so a known window that
+  591|       |  /// is no longer listed has gone out of view with its Space, not closed: it
+  592|       |  /// is marked off the active Space (it keeps its place in the tree but takes
+  593|       |  /// no space) until it is listed again.
+  594|       |  ///
+  595|       |  /// The other way to leave the list alive is to become a background tab of a native tab group (`NativeTabs`): then
+  596|       |  /// another window of the app joins the list at the same moment, in the same place, and takes over. That is not
+  597|       |  /// looked for after a Space switch, when windows come and go for another reason and two that fill
+  598|       |  /// the same slot on different Spaces would be taken for tabs.
+  599|       |  ///
+  600|       |  /// A window found on a list for the first time has usually been open all along, on a Space that did not show or hidden
+  601|       |  /// with its app, and is reported as found. `aWindowOpened` says that an app has just reported a new window: it may
+  602|       |  /// have opened several at once, and the reports of the others are still on their way.
+  603|    112|  private func rescan(_ pids: [pid_t], afterSpaceSwitch: Bool, aWindowOpened: Bool = false) {
+  604|    112|    // What the Space brings into sight exists already.
+  605|    112|    if afterSpaceSwitch { countWindows() }
+  606|    112|    var listed: [(pid: pid_t, id: WindowID, element: AXUIElement)] = []
+  607|    112|    var listedIDs = Set<WindowID>()
+  608|    112|    var answered = Set<pid_t>()
+  609|    116|    for pid in pids.sorted() {
+  610|    116|      guard let app = apps[pid], answers(pid) else { continue }
+  611|    116|      let began = uptime
+  612|    116|      // An app that does not answer in time says nothing about its windows.
+  613|    116|      guard let elements = app.element.elementsIfAnswered(kAXWindowsAttribute) else {
+  614|      1|        noteSilence(of: pid, since: began)
+  615|      1|        continue
+  616|    115|      }
+  617|    115|      answered.insert(pid)
+  618|    308|      for element in elements {
+  619|    308|        guard let id = element.windowID else { continue }
+  620|    308|        listed.append((pid, id, element))
+  621|    308|        listedIDs.insert(id)
+  622|    308|      }
+  623|    115|    }
+  624|    112|    // Windows leave the layout before others join it, so no window is moved
+  625|    112|    // to make room for one whose Space is no longer showing.
+  626|    371|    let known = records.filter { answered.contains($0.value.snapshot.pid) }.keys.sorted()
+  627|    112|    for id in known where !listedIDs.contains(id) {
+  628|     31|      guard let record = records[id], !record.isBackgroundTab, record.snapshot.isOnActiveSpace else { continue }
+  629|     18|      // The tab comes first: when the tab in front is closed, the next one must inherit its place, not find it gone.
+  630|     18|      if !afterSpaceSwitch, let successor = tabInFront(insteadOf: record, among: listed) {
+  631|      6|        records[id]?.isBackgroundTab = true
+  632|      6|        if lastReportedFocus == id { lastReportedFocus = nil }
+  633|      6|        forgetGrab(of: id)
+  634|      6|        Log.debug("\(id) went behind its tab \(successor.id)")
+  635|      6|        events?.windowReplaced(id, by: successor)
+  636|     12|      } else if record.element.isInvalid {
+  637|      7|        // It closed, and the notification has not come, or never will.
+  638|      7|        Log.debug("\(id) is gone from its app's list and no longer valid")
+  639|      7|        drop(id)
+  640|      7|      } else if !afterSpaceSwitch, Self.isOnScreen(id) {
+  641|      0|        // The window server still shows it, so it has gone nowhere: the app's list is behind, or in flux. Lists
+  642|      0|        // are read at every change of focus, and taking a window in plain view out of the layout would be worse
+  643|      0|        // than hearing late that one has left.
+  644|      0|        Log.debug("\(id) is not listed by its app but is on screen")
+  645|      5|      } else {
+  646|      5|        setOnActiveSpace(id, false)
+  647|      5|      }
+  648|    112|    }
+  649|    291|    for id in known where listedIDs.contains(id) {
+  650|    291|      guard let record = records[id] else { continue }
+  651|    291|      if record.isBackgroundTab {
+  652|      0|        // A tab that was dragged out of its group, or whose group is back without the window Arbor knew.
+  653|      0|        records[id]?.isBackgroundTab = false
+  654|      0|        records[id]?.snapshot.isOnActiveSpace = true
+  655|      0|        if let app = apps[record.snapshot.pid], let snapshot = makeSnapshot(id: id, element: record.element, app: app) {
+  656|      0|          records[id]?.snapshot = snapshot
+  657|      0|        }
+  658|      0|        if let snapshot = records[id]?.snapshot { events?.windowAppeared(snapshot) }
+  659|    291|      } else if !record.snapshot.isOnActiveSpace {
+  660|      5|        setOnActiveSpace(id, true)
+  661|      5|      }
+  662|    291|    }
+  663|    112|    // Full screen comes with a Space switch, and the resize reports can arrive before the window says
+  664|    112|    // it is in full screen.
+  665|    291|    for id in known where listedIDs.contains(id) {
+  666|    291|      guard let record = records[id] else { continue }
+  667|    291|      if (record.element.bool("AXFullScreen") ?? record.snapshot.isFullScreen) != record.snapshot.isFullScreen {
+  668|      0|        refresh(id, userInitiated: true)
+  669|      0|      }
+  670|    291|    }
+  671|    308|    for entry in listed {
+  672|    308|      // Without second looks: palettes and the like stay on the list, and are looked at with every scan anyway.
+  673|    308|      addWindow(
+  674|    308|        entry.element, pid: entry.pid, announce: true, wasOpenBefore: !aWindowOpened, attempt: Self.lastAttempt)
+  675|    308|    }
+  676|    112|    if afterSpaceSwitch, let front = NSWorkspace.shared.frontmostApplication { reportFocus(of: front.processIdentifier) }
+  677|    112|  }
+  678|       |
+  679|       |  /// The listed window that has taken the place of `record`'s window as the tab in front, made ready to be
+  680|       |  /// reported: a record exists for it and it no longer counts as a background tab.
+  681|       |  private func tabInFront(
+  682|       |    insteadOf record: WindowRecord, among listed: [(pid: pid_t, id: WindowID, element: AXUIElement)]
+  683|     15|  ) -> WindowSnapshot? {
+  684|     15|    let pid = record.snapshot.pid
+  685|     15|    guard let app = apps[pid] else { return nil }
+  686|     15|    var elements: [WindowID: AXUIElement] = [:]
+  687|     15|    var candidates: [NativeTabs.Candidate] = []
+  688|     39|    for entry in listed where entry.pid == pid {
+  689|     39|      let known = records[entry.id]
+  690|     39|      // Windows the controller knows as windows of their own are not candidates.
+  691|     39|      guard known == nil || known?.isBackgroundTab == true, let frame = entry.element.frame else { continue }
+  692|      8|      elements[entry.id] = entry.element
+  693|      8|      candidates.append(NativeTabs.Candidate(id: entry.id, frame: frame, wasBackgroundTab: known != nil))
+  694|     15|    }
+  695|     15|    guard let id = NativeTabs.successor(toWindowAt: record.snapshot.frame, among: candidates),
+  696|     15|      let element = elements[id]
+  697|     15|    else { return nil }
+  698|      7|
+  699|      7|    if records[id] == nil {
+  700|      3|      // Not every newcomer is a window: macOS puts a stand-in on the list during a full-screen transition.
+  701|      3|      guard let fresh = makeRecord(id: id, element: element, app: app) else { return nil }
+  702|      2|      records[id] = fresh
+  703|      4|    } else {
+  704|      4|      records[id]?.isBackgroundTab = false
+  705|      4|      records[id]?.snapshot.isOnActiveSpace = true
+  706|      4|      if let kept = records[id], let snapshot = makeSnapshot(id: id, element: kept.element, app: app) {
+  707|      4|        records[id]?.snapshot = snapshot
+  708|      4|      }
+  709|      6|    }
+  710|      6|    return records[id]?.snapshot
+  711|     15|  }
+  712|       |
+  713|       |  /// Marks a window on or off the active Space and reports it. This is not a
+  714|       |  /// user move, so the change is reported with `userInitiated: false`.
+  715|     10|  private func setOnActiveSpace(_ window: WindowID, _ onActiveSpace: Bool) {
+  716|     10|    guard var record = records[window], let app = apps[record.snapshot.pid] else { return }
+  717|     10|    if onActiveSpace, let snapshot = makeSnapshot(id: window, element: record.element, app: app) {
+  718|      5|      // Read it again: it may have moved, been minimized or renamed while away.
+  719|      5|      record.snapshot = snapshot
+  720|      5|    }
+  721|     10|    record.snapshot.isOnActiveSpace = onActiveSpace
+  722|     10|    records[window] = record
+  723|     10|    Log.debug("\(window) is \(onActiveSpace ? "listed again" : "no longer listed")")
+  724|     10|    events?.windowChanged(record.snapshot, userInitiated: false)
+  725|     10|  }
+  726|       |
+  727|       |  // MARK: Windows
+  728|       |
+  729|       |  /// How many second looks a new element gets before it is taken not to be a window.
+  730|       |  private static let lastAttempt = 2
+  731|       |
+  732|       |  /// Windows their apps have reported as created and Arbor has not announced yet: some are not ready to be looked at
+  733|       |  /// at once, and may be found on a list before the second look.
+  734|     11|  private var reportedCreated: Set<WindowID> = []
+  735|       |
+  736|       |  /// The windows the window server had, on whichever Space, when Arbor last counted them (at the start and after every
+  737|       |  /// Space switch), and those seen since. One that is seen for the first time and is not among them has opened since.
+  738|       |  ///
+  739|       |  /// Apps keep to no order in what they report: "the focus is on it" was seen on a Mac to come a millisecond before "it was
+  740|       |  /// created", so whoever sees a window first cannot go by what its app has said so far.
+  741|     11|  private var counted: Set<WindowID> = []
+  742|       |  /// Windows that have closed as far as anybody can see, and that the window server may have all the same: apps with one window
+  743|       |  /// (Music, Notes, Calendar) put it away and show it again under the same number. Opened again, it is new.
+  744|     11|  private var putAway: Set<WindowID> = []
+  745|       |
+  746|     16|  private func countWindows() {
+  747|     16|    let existing = existingWindowIDs()
+  748|     16|    // No answer is not "there are none".
+  749|     16|    guard !existing.isEmpty else { return }
+  750|     16|    putAway.formIntersection(existing)
+  751|     16|    counted = existing.subtracting(putAway)
+  752|     16|  }
+  753|       |
+  754|       |  /// `wasOpenBefore`: as far as the caller knows the window is only seen for the first time. If its app has reported it as
+  755|       |  /// created, or the window server did not have it at the last count, it is new all the same.
+  756|       |  private func addWindow(
+  757|       |    _ element: AXUIElement, pid: pid_t, announce: Bool, wasOpenBefore: Bool = false, attempt: Int = 0
+  758|    358|  ) {
+  759|    358|    guard let app = apps[pid], answers(pid), let id = element.windowID, records[id] == nil else { return }
+  760|     53|    guard let record = makeRecord(id: id, element: element, app: app) else {
+  761|     17|      // Some apps give new windows their subrole a moment after creating them.
+  762|     17|      if attempt < Self.lastAttempt {
+  763|      7|        let box = MainActorBox(value: element)
+  764|      7|        Task { @MainActor [weak self] in
+  765|      7|          try? await Task.sleep(nanoseconds: 300_000_000)
+  766|      7|          // Whoever asked at the start has read the list of windows by now.
+  767|      7|          self?.addWindow(box.value, pid: pid, announce: true, wasOpenBefore: wasOpenBefore, attempt: attempt + 1)
+  768|      7|        }
+  769|     10|      } else {
+  770|     10|        bringIntoViewIfDialog(element, id: id, app: app)
+  771|     10|      }
+  772|     17|      return
+  773|     36|    }
+  774|     36|    records[id] = record
+  775|     36|    let wasReportedCreated = reportedCreated.remove(id) != nil
+  776|     36|    let hasOpenedSince = counted.insert(id).inserted
+  777|     36|    putAway.remove(id)
+  778|     36|    guard announce else { return }
+  779|      6|    if wasOpenBefore, !wasReportedCreated, !hasOpenedSince {
+  780|      0|      Log.debug("\(id) is seen for the first time and did not just open")
+  781|      0|      events?.windowFound(record.snapshot)
+  782|      6|    } else {
+  783|      6|      events?.windowAppeared(record.snapshot)
+  784|      6|    }
+  785|      6|  }
+  786|       |
+  787|      8|  public func leaveStrayDialogs(_ leave: Bool, exceptOfApp inUse: String?) {
+  788|      8|    leavesStrayDialogs = leave
+  789|      8|    appWhoseDialogsNeverWait = leave ? inUse : nil
+  790|      8|    if leave {
+  791|      0|      if let inUse { bringInStrayDialogs(ofApp: inUse) }
+  792|      8|    } else {
+  793|      8|      bringIn(waitingDialogs)
+  794|      8|    }
+  795|      8|  }
+  796|       |
+  797|       |  /// With nil: of every app that has no bundle id, and the queue is rid of those of apps that are gone.
+  798|      0|  public func bringInStrayDialogs(ofApp bundleID: String?) {
+  799|      0|    bringIn(waitingDialogs.filter { apps[$0.pid]?.bundleID == bundleID })
+  800|      0|  }
+  801|       |
+  802|       |  /// This runs on the main thread just before the view moves, and reads two or three attributes of each. One of an app that
+  803|       |  /// does not answer is dropped rather than waited for: when the app wakes, the scan that follows finds it again.
+  804|       |  /// One that has closed meanwhile has no subrole any more, and one its app has moved into view needs no help.
+  805|      8|  private func bringIn(_ dialogs: [(element: AXUIElement, id: WindowID, pid: pid_t)]) {
+  806|      8|    waitingDialogs.removeAll { waiting in dialogs.contains { $0.id == waiting.id } }
+  807|      8|    for dialog in dialogs {
+  808|      0|      if let app = apps[dialog.pid], answers(dialog.pid) {
+  809|      0|        bringIntoViewIfDialog(dialog.element, id: dialog.id, app: app, mayWait: false)
+  810|      0|      }
+  811|      8|    }
+  812|      8|  }
+  813|       |
+  814|      0|  public func strayDialogsWaiting() -> Int {
+  815|      0|    // One that has closed has no subrole any more. Nor has one whose app does not answer, which is not asked.
+  816|      0|    waitingDialogs.removeAll { answers($0.pid) && $0.element.string(kAXSubroleAttribute) == nil }
+  817|      0|    return waitingDialogs.count
+  818|      0|  }
+  819|       |
+  820|       |  /// A dialog that opened over a window of its app that is out of view is out of view too, where nobody finds it (F47).
+  821|       |  /// It is moved to the middle of the display, once, and not looked after any further.
+  822|     10|  private func bringIntoViewIfDialog(_ element: AXUIElement, id: WindowID, app: ObservedApp, mayWait: Bool = true) {
+  823|     10|    guard !broughtIntoView.contains(id), let subrole = element.string(kAXSubroleAttribute),
+  824|     10|      subrole == kAXDialogSubrole || subrole == kAXSystemDialogSubrole, let frame = element.frame,
+  825|     10|      let home = StrayDialog.home(
+  826|     10|        for: frame, siblings: windowIDs(of: app.pid).compactMap { records[$0]?.snapshot.frame },
+  827|     10|        displays: displays().map { StrayDialog.Display(frame: $0.frame, visibleFrame: $0.visibleFrame) })
+  828|     10|    else { return }
+  829|      0|    let isInUse = appWhoseDialogsNeverWait != nil && app.bundleID == appWhoseDialogsNeverWait
+  830|      0|    guard !(leavesStrayDialogs && mayWait && !isInUse) else {
+  831|      0|      // Every scan of the app comes by here, so once.
+  832|      0|      if !waitingDialogs.contains(where: { $0.id == id }) {
+  833|      0|        waitingDialogs.append((element, id, app.pid))
+  834|      0|        Log.info("\(id), a dialog, opened out of view; the view is held, so it waits there")
+  835|      0|      }
+  836|      0|      return
+  837|      0|    }
+  838|      0|    broughtIntoView.insert(id)
+  839|      0|    let owner = app.bundleID ?? "pid \(app.pid)"
+  840|      0|    Log.info("\(id), a dialog of \(owner), opened out of view; moving it to the middle of the display")
+  841|      0|    element.setPosition(home)
+  842|      0|  }
+  843|       |
+  844|       |  /// Looks at an element an app lists as a window and, if Arbor arranges such windows, subscribes to it. A window
+  845|       |  /// in full screen is one: it takes no space, and keeps the place it was saved with.
+  846|     56|  private func makeRecord(id: WindowID, element: AXUIElement, app: ObservedApp) -> WindowRecord? {
+  847|     56|    // Window elements do not go by their app element's timeout (F17, H3).
+  848|     56|    AXUIElementSetMessagingTimeout(element, Self.messagingTimeout)
+  849|     56|    let subrole = element.string(kAXSubroleAttribute)
+  850|     56|    // Only what claims to be a dialog needs the second look.
+  851|     56|    let mayBeOutOfSight = subrole == kAXDialogSubrole
+  852|     56|    let kind = WindowKind.classify(
+  853|     56|      role: element.string(kAXRoleAttribute), subrole: subrole,
+  854|     56|      isMinimized: mayBeOutOfSight && element.bool(kAXMinimizedAttribute) == true,
+  855|     56|      appIsHidden: mayBeOutOfSight && app.element.bool(kAXHiddenAttribute) == true)
+  856|     56|    guard kind != .other, let snapshot = makeSnapshot(id: id, element: element, app: app) else { return nil }
+  857|     38|
+  858|     38|    let refcon = UnsafeMutableRawPointer(bitPattern: UInt(id.rawValue))
+  859|     38|    for name in [
+  860|     38|      kAXUIElementDestroyedNotification, kAXMovedNotification, kAXResizedNotification,
+  861|     38|      kAXWindowMiniaturizedNotification, kAXWindowDeminiaturizedNotification, kAXTitleChangedNotification,
+  862|    228|    ] {
+  863|    228|      AXObserverAddNotification(app.observer, element, name as CFString, refcon)
+  864|    228|    }
+  865|     38|    return WindowRecord(element: element, snapshot: snapshot, isUnconfirmed: kind == .unconfirmed)
+  866|     56|  }
+  867|       |
+  868|       |  /// Reads a window's state. Nil if its app does not answer.
+  869|     57|  private func makeSnapshot(id: WindowID, element: AXUIElement, app: ObservedApp) -> WindowSnapshot? {
+  870|     57|    let began = uptime
+  871|     57|    let title = element.read(kAXTitleAttribute)
+  872|     57|    guard title.error != .cannotComplete else {
+  873|      0|      noteSilence(of: app.pid, since: began)
+  874|      0|      return nil
+  875|     57|    }
+  876|     57|    return WindowSnapshot(
+  877|     57|      id: id, pid: app.pid, bundleID: app.bundleID, appName: app.name,
+  878|     57|      title: title.value as? String ?? "", frame: element.frame ?? records[id]?.snapshot.frame ?? .zero,
+  879|     57|      isMinimized: element.bool(kAXMinimizedAttribute) ?? false,
+  880|     57|      isHidden: app.element.bool(kAXHiddenAttribute) ?? false,
+  881|     57|      // Only `rescan` changes this.
+  882|     57|      isOnActiveSpace: records[id]?.snapshot.isOnActiveSpace ?? true,
+  883|     57|      isFullScreen: element.bool("AXFullScreen") ?? false,
+  884|     57|      // Asked once: it matters when the window opens, and this runs for every new title.
+  885|     57|      isResizable: records[id]?.snapshot.isResizable ?? element.isSettable(kAXSizeAttribute) ?? true)
+  886|     57|  }
+  887|       |
+  888|     10|  private func refresh(_ window: WindowID, userInitiated: Bool) {
+  889|     10|    guard var record = records[window], let app = apps[record.snapshot.pid], answers(app.pid),
+  890|     10|      let snapshot = makeSnapshot(id: window, element: record.element, app: app)
+  891|     10|    else { return }
+  892|     10|    record.snapshot = snapshot
+  893|     10|    records[window] = record
+  894|     10|    if !record.isBackgroundTab { events?.windowChanged(record.snapshot, userInitiated: userInitiated) }
+  895|     10|  }
+  896|       |
+  897|       |  /// Forgets a window and reports it gone.
+  898|      9|  private func drop(_ window: WindowID) {
+  899|      9|    guard let record = records.removeValue(forKey: window) else { return }
+  900|      9|    counted.remove(window)
+  901|      9|    putAway.insert(window)
+  902|      9|    echoes.forget(window)
+  903|      9|    secondLooks.removeValue(forKey: window)?.cancel()
+  904|      9|    forgetGrab(of: window)
+  905|      9|    if lastReportedFocus == window { lastReportedFocus = nil }
+  906|      9|    if !record.isBackgroundTab { events?.windowDestroyed(window) }
+  907|      9|  }
+  908|       |
+  909|       |  /// Windows taken on while they could not be told from dialogs show what they are once they are in view. The look
+  910|       |  /// waits a moment, until the app has finished showing them.
+  911|      4|  private func confirmSoon(_ pid: pid_t) {
+  912|     10|    guard windowIDs(of: pid).contains(where: { records[$0]?.isUnconfirmed == true }) else { return }
+  913|      1|    Task { @MainActor [weak self] in
+  914|      1|      try? await Task.sleep(nanoseconds: 600_000_000)
+  915|      1|      guard let self, self.running, self.answers(pid) else { return }
+  916|      2|      for window in self.windowIDs(of: pid) {
+  917|      2|        guard let record = self.records[window], record.isUnconfirmed, !record.snapshot.isMinimized,
+  918|      2|          !record.snapshot.isHidden
+  919|      2|        else { continue }
+  920|      1|        let subrole = record.element.read(kAXSubroleAttribute)
+  921|      1|        guard subrole.error == .success else { continue }
+  922|      1|        if subrole.value as? String == kAXStandardWindowSubrole {
+  923|      1|          self.records[window]?.isUnconfirmed = false
+  924|      1|        } else {
+  925|      0|          Log.debug("\(window) turned out not to be an ordinary window")
+  926|      0|          self.drop(window)
+  927|      0|        }
+  928|      1|      }
+  929|      1|    }
+  930|      1|  }
+  931|       |
+  932|       |  /// Reports the focused window of `pid`, if that app is the one in front. An app in the background changes its
+  933|       |  /// focused window too (it opens or closes a window, or Arbor raises one before activating the app), and
+  934|       |  /// reporting that would move the camera away from what the user is doing. If the app then comes forward,
+  935|       |  /// `appCameForward` reports its focused window.
+  936|    107|  private func reportFocus(of pid: pid_t) {
+  937|    107|    guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else { return }
+  938|     91|    guard let app = apps[pid], answers(pid), let element = app.element.element(kAXFocusedWindowAttribute),
+  939|     91|      let window = element.windowID
+  940|     91|    else {
+  941|      2|      // Finder after a click on the wallpaper, an app that is not observed: the keyboard left the known windows.
+  942|      2|      keyboardLeftTheKnownWindows()
+  943|      2|      return
+  944|     89|    }
+  945|     89|    if records[window] == nil { addWindow(element, pid: pid, announce: true, wasOpenBefore: true) }
+  946|     89|    guard let record = records[window], !record.isBackgroundTab else {
+  947|      0|      // A sheet, a dialog or a panel.
+  948|      0|      keyboardLeftTheKnownWindows()
+  949|      0|      return
+  950|     89|    }
+  951|     89|    // Switching Spaces activates an app too, before or after `rescan` has found out which windows show now. A
+  952|     89|    // window still taken to be on another Space is left for `rescan` to report.
+  953|     89|    guard record.snapshot.isOnActiveSpace else {
+  954|      3|      keyboardLeftTheKnownWindows()
+  955|      3|      return
+  956|     86|    }
+  957|     86|    guard lastReportedFocus != window else { return }
+  958|     40|    lastReportedFocus = window
+  959|     40|    Log.debug("focus is on \(window)")
+  960|     40|    events?.windowFocused(window)
+  961|     40|  }
+  962|       |
+  963|      5|  private func keyboardLeftTheKnownWindows() {
+  964|      5|    // The window that had it is reported again when it gets it back.
+  965|      5|    lastReportedFocus = nil
+  966|      5|    events?.keyboardFocusMoved()
+  967|      5|  }
+  968|       |
+  969|    369|  private func geometryChanged(_ window: WindowID, resized: Bool) {
+  970|    369|    guard var record = records[window], let frame = record.element.frame else { return }
+  971|    369|    let previous = record.snapshot.frame
+  972|    369|    record.snapshot.frame = frame
+  973|    369|    // Entering and leaving full screen (the green button) arrive as resizes.
+  974|    369|    let wasFullScreen = record.snapshot.isFullScreen
+  975|    369|    if resized { record.snapshot.isFullScreen = record.element.bool("AXFullScreen") ?? wasFullScreen }
+  976|    369|    records[window] = record
+  977|    369|    guard !record.isBackgroundTab else { return }
+  978|    369|    if record.snapshot.isFullScreen != wasFullScreen {
+  979|      2|      Log.debug("\(window) \(wasFullScreen ? "left" : "entered") full screen")
+  980|      2|      events?.windowChanged(record.snapshot, userInitiated: true)
+  981|      2|      // A window that leaves full screen from afar changes Space without a Space switch.
+  982|      2|      rescan([record.snapshot.pid], afterSpaceSwitch: true)
+  983|      2|      rescanSoon()
+  984|      2|      return
+  985|    367|    }
+  986|    367|    let verdict = echoes.judge(frame, of: window, at: uptime)
+  987|    367|    if verdict == .early { lookAgain(at: window) }
+  988|    367|    let programmatic = verdict != .other
+  989|    367|
+  990|    367|    if !programmatic, isMouseButtonDown() { noteMoveWhilePressed(window, from: previous, to: frame) }
+  991|    367|    events?.windowChanged(record.snapshot, userInitiated: !programmatic)
+  992|    367|  }
+  993|       |
+  994|       |  /// A report came so soon after Arbor's move that it was taken for a stage of it, though the frame was another. If the
+  995|       |  /// window is still not where Arbor put it when things have settled, that was its app's answer, and is reported as such.
+  996|      3|  private func lookAgain(at window: WindowID) {
+  997|      3|    secondLooks[window]?.cancel()
+  998|      3|    secondLooks[window] = Task { @MainActor [weak self] in
+  999|      3|      try? await Task.sleep(nanoseconds: UInt64(EchoFilter.settleTime * 1_000_000_000))
+ 1000|      3|      guard !Task.isCancelled, let self, self.running else { return }
+ 1001|      3|      self.secondLooks[window] = nil
+ 1002|      3|      guard var record = self.records[window], !record.isBackgroundTab, self.answers(record.snapshot.pid),
+ 1003|      3|        let frame = record.element.frame, self.echoes.hasStrayed(window, now: frame)
+ 1004|      3|      else { return }
+ 1005|      3|      Log.debug("\(window) did not stay where it was put")
+ 1006|      3|      record.snapshot.frame = frame
+ 1007|      3|      self.records[window] = record
+ 1008|      3|      self.events?.windowChanged(record.snapshot, userInitiated: true)
+ 1009|      3|    }
+ 1010|      3|  }
+ 1011|       |
+ 1012|       |  // MARK: Notifications
+ 1013|       |
+ 1014|    503|  fileprivate func handle(_ notification: String, element: AXUIElement, window raw: UInt32?) {
+ 1015|    503|    guard running else { return }
+ 1016|    503|    // Before anything looks at the app's list (`answersAgain` does), where the new window may already be. Helpers that
+ 1017|    503|    // never become windows (tooltips, full-screen scaffolding) are reported too and never announced.
+ 1018|    503|    // This one is registered on the app, without a window's number: the element is the new window.
+ 1019|    503|    if notification == kAXWindowCreatedNotification, let id = raw.map({ WindowID($0) }) ?? element.windowID {
+ 1020|     13|      if reportedCreated.count > 200 { reportedCreated.removeAll() }
+ 1021|     13|      reportedCreated.insert(id)
+ 1022|     13|    }
+ 1023|    503|    // A trace shows what macOS said before what Arbor made of it.
+ 1024|    503|    if let recorder, recorder.isRecording {
+ 1025|      0|      let moving = notification == kAXMovedNotification || notification == kAXResizedNotification
+ 1026|      0|      recorder.raw(raw.map { "\(notification) w\($0)" } ?? notification, thinKey: moving ? notification : nil)
+ 1027|      0|    }
+ 1028|    503|    // Whoever posts a notification is awake.
+ 1029|    503|    if let pid = element.pid, !answers(pid) { answersAgain(pid) }
+ 1030|    503|
+ 1031|    503|    switch notification {
+ 1032|    503|    case kAXWindowCreatedNotification:
+ 1033|     13|      guard let pid = element.pid else { return }
+ 1034|     13|      // A new tab is a new window that pushes another off the list, so the list comes first.
+ 1035|     13|      rescan([pid], afterSpaceSwitch: false, aWindowOpened: true)
+ 1036|     13|      addWindow(element, pid: pid, announce: true)
+ 1037|    503|
+ 1038|    503|    case kAXUIElementDestroyedNotification:
+ 1039|      9|      guard let raw, let record = records[WindowID(raw)] else { return }
+ 1040|      2|      // If it was the tab in front of others, one of them is taking its place. macOS 26 reports that first, as a
+ 1041|      2|      // change of the main window; should the order ever be the other way round, the list says so already.
+ 1042|      2|      let pid = record.snapshot.pid
+ 1043|      2|      if !record.isBackgroundTab, windowIDs(of: pid).contains(where: { records[$0]?.isBackgroundTab == true }) {
+ 1044|      0|        rescan([pid], afterSpaceSwitch: false)
+ 1045|      0|      }
+ 1046|      2|      drop(WindowID(raw))
+ 1047|    503|
+ 1048|    503|    case kAXMovedNotification, kAXResizedNotification:
+ 1049|    369|      guard let raw else { return }
+ 1050|    369|      geometryChanged(WindowID(raw), resized: notification == kAXResizedNotification)
+ 1051|    503|
+ 1052|    503|    case kAXTitleChangedNotification:
+ 1053|      0|      // Terminals and browsers change titles all the time. Nothing else needs reading, and nobody moved anything.
+ 1054|      0|      guard let raw, var record = records[WindowID(raw)], let title = record.element.string(kAXTitleAttribute) else {
+ 1055|      0|        return
+ 1056|      0|      }
+ 1057|      0|      record.snapshot.title = title
+ 1058|      0|      records[WindowID(raw)] = record
+ 1059|      0|      if !record.isBackgroundTab { events?.windowChanged(record.snapshot, userInitiated: false) }
+ 1060|    503|
+ 1061|    503|    case kAXWindowMiniaturizedNotification, kAXWindowDeminiaturizedNotification:
+ 1062|      6|      guard let raw else { return }
+ 1063|      6|      refresh(WindowID(raw), userInitiated: true)
+ 1064|      6|      // An un-minimized window shows on some Space: ask which windows the app lists now.
+ 1065|      6|      if notification == kAXWindowDeminiaturizedNotification, let pid = records[WindowID(raw)]?.snapshot.pid {
+ 1066|      3|        rescan([pid], afterSpaceSwitch: false)
+ 1067|      3|        confirmSoon(pid)
+ 1068|      3|      }
+ 1069|    503|
+ 1070|    503|    case kAXFocusedWindowChangedNotification, kAXMainWindowChangedNotification:
+ 1071|     88|      guard let pid = element.pid else { return }
+ 1072|     88|      // Choosing another native tab shows up as "main window changed" and nothing else; the tab takes its place
+ 1073|     88|      // before it is reported as focused.
+ 1074|     88|      rescan([pid], afterSpaceSwitch: false)
+ 1075|     88|      reportFocus(of: pid)
+ 1076|    503|
+ 1077|    503|    case kAXApplicationActivatedNotification, kAXApplicationDeactivatedNotification:
+ 1078|     15|      events?.keyboardFocusMoved()
+ 1079|    503|
+ 1080|    503|    case kAXApplicationHiddenNotification, kAXApplicationShownNotification:
+ 1081|      3|      guard let pid = element.pid else { return }
+ 1082|      3|      let hidden = notification == kAXApplicationHiddenNotification
+ 1083|      8|      for window in windowIDs(of: pid) {
+ 1084|      8|        guard var record = records[window], record.snapshot.isHidden != hidden else { continue }
+ 1085|      8|        record.snapshot.isHidden = hidden
+ 1086|      8|        records[window] = record
+ 1087|      8|        if !record.isBackgroundTab { events?.windowChanged(record.snapshot, userInitiated: false) }
+ 1088|      8|      }
+ 1089|      3|      if !hidden {
+ 1090|      1|        // Windows that were hidden when Arbor started may be seen for the first time.
+ 1091|      1|        rescan([pid], afterSpaceSwitch: false)
+ 1092|      1|        confirmSoon(pid)
+ 1093|      1|      }
+ 1094|    503|
+ 1095|    503|    default:
+ 1096|      0|      break
+ 1097|    503|    }
+ 1098|    496|  }
+ 1099|       |
+ 1100|       |  // MARK: Mouse
+ 1101|       |
+ 1102|       |  // Telling what the mouse is doing to a window: dragging it by its title bar, resizing it by its edges, or neither.
+ 1103|       |  //
+ 1104|       |  // Two signs are watched, and whichever comes first wins (F17, H1). From the press on, the frame of the window under
+ 1105|       |  // the pointer is read from the window server with every movement; and the app's own "moved" and "resized"
+ 1106|       |  // notifications are looked at as before. The window server moves a dragged window itself and knows its place at once,
+ 1107|       |  // without the app having a say; the app learns of it about a tenth of a second later, posts at most a few
+ 1108|       |  // notifications a second, and some apps post none until the drag is over. Asking the window server also cannot hang.
+ 1109|       |
+ 1110|       |  private struct Press {
+ 1111|       |    let point: CGPoint
+ 1112|       |    /// The window under the pointer, if it is one Arbor knows.
+ 1113|       |    var window: WindowID?
+ 1114|       |    /// That window's frame at the time, by the window server.
+ 1115|      7|    var frame: CGRect = .zero
+ 1116|       |    /// It is settled that this press is not about a window Arbor knows.
+ 1117|      7|    var isSettled = false
+ 1118|       |  }
+ 1119|       |
+ 1120|       |  /// How far outside a window's frame a press still belongs to it: macOS's resize area.
+ 1121|       |  private static let reach: CGFloat = 4
+ 1122|       |
+ 1123|    183|  private func handleMouse(_ type: NSEvent.EventType, modifiers: NSEvent.ModifierFlags) {
+ 1124|    183|    eventModifiers = modifiers
+ 1125|    183|    defer { eventModifiers = nil }
+ 1126|    183|    if let recorder, recorder.isRecording {
+ 1127|      0|      switch type {
+ 1128|      0|      case .leftMouseDown: recorder.raw("leftMouseDown \(traceText(cursorLocation()))")
+ 1129|      0|      case .leftMouseUp: recorder.raw("leftMouseUp \(traceText(cursorLocation()))")
+ 1130|      0|      case .leftMouseDragged: recorder.raw("leftMouseDragged \(traceText(cursorLocation()))", thinKey: "leftMouseDragged")
+ 1131|      0|      case .flagsChanged: recorder.raw("flagsChanged")
+ 1132|      0|      default: break
+ 1133|      0|      }
+ 1134|    183|    }
+ 1135|    183|    switch type {
+ 1136|    183|    case .leftMouseDown:
+ 1137|      7|      // A button cannot go down twice: the release of whatever was going on was lost.
+ 1138|      7|      releaseWasLost()
+ 1139|      7|      press = makePress(at: cursorLocation())
+ 1140|      7|      events?.pointerPressed()
+ 1141|    183|    case .leftMouseDragged:
+ 1142|    161|      if let window = draggingWindow {
+ 1143|     92|        events?.dragMoved(window, to: cursorLocation())
+ 1144|     92|      } else if resizingWindow == nil {
+ 1145|     41|        lookAtPressedWindow()
+ 1146|     41|      }
+ 1147|    183|    case .flagsChanged:
+ 1148|      4|      // A modifier going down or up counts as a move, so ⌘ takes effect while the pointer rests.
+ 1149|      4|      if let window = draggingWindow { events?.dragMoved(window, to: cursorLocation()) }
+ 1150|    183|    case .leftMouseUp:
+ 1151|     11|      press = nil
+ 1152|     11|      endGrab()
+ 1153|    183|    default:
+ 1154|      0|      break
+ 1155|    183|    }
+ 1156|    183|  }
+ 1157|       |
+ 1158|       |  /// The button went down on one of Arbor's own panels. Windows that move from here on are moved by Arbor.
+ 1159|      0|  private func pressLandedOnArbor() {
+ 1160|      0|    recorder?.raw("leftMouseDown on a tile or a handle of Arbor's")
+ 1161|      0|    releaseWasLost()
+ 1162|      0|    press = nil
+ 1163|      0|    events?.pointerPressed()
+ 1164|      0|  }
+ 1165|       |
+ 1166|       |  // MARK: The press
+ 1167|       |
+ 1168|       |  /// Finds the window under the pointer: the first ordinary window, front to back, that the point belongs to.
+ 1169|      7|  private func makePress(at point: CGPoint) -> Press {
+ 1170|      7|    var press = Press(point: point)
+ 1171|      7|    guard
+ 1172|      7|      let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
+ 1173|      7|        as? [[String: Any]]
+ 1174|      7|    else { return press }
+ 1175|      7|    let own = getpid()
+ 1176|     52|    for info in list {
+ 1177|     52|      // Layer 0 is where apps' windows are; the menu bar, the Dock and overlays are above. Arbor's own panels
+ 1178|     52|      // either let clicks through or get them without this code hearing of it.
+ 1179|     52|      guard (info[kCGWindowLayer as String] as? NSNumber)?.intValue == 0,
+ 1180|     52|        (info[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value != own,
+ 1181|     52|        let bounds = Self.bounds(in: info), bounds.insetBy(dx: -Self.reach, dy: -Self.reach).contains(point)
+ 1182|     52|      else { continue }
+ 1183|      7|      if let number = (info[kCGWindowNumber as String] as? NSNumber)?.uint32Value,
+ 1184|      7|        records[WindowID(number)]?.isBackgroundTab == false
+ 1185|      7|      {
+ 1186|      7|        press.window = WindowID(number)
+ 1187|      7|        press.frame = bounds
+ 1188|      7|      } else {
+ 1189|      0|        press.isSettled = true
+ 1190|      0|      }
+ 1191|      7|      break
+ 1192|     52|    }
+ 1193|      7|    return press
+ 1194|      7|  }
+ 1195|       |
+ 1196|     27|  private static func bounds(in info: [String: Any]) -> CGRect? {
+ 1197|     27|    guard let dictionary = info[kCGWindowBounds as String] as? NSDictionary else { return nil }
+ 1198|     27|    return CGRect(dictionaryRepresentation: dictionary as CFDictionary)
+ 1199|     27|  }
+ 1200|       |
+ 1201|       |  /// Whether the window server is showing the window: not on another Space, minimized, hidden or behind its tab.
+ 1202|      2|  private static func isOnScreen(_ window: WindowID) -> Bool {
+ 1203|      2|    guard let list = CGWindowListCopyWindowInfo([.optionIncludingWindow], window.rawValue) as? [[String: Any]],
+ 1204|      2|      let info = list.first
+ 1205|      2|    else { return false }
+ 1206|      0|    return (info[kCGWindowIsOnscreen as String] as? NSNumber)?.boolValue ?? false
+ 1207|      2|  }
+ 1208|       |
+ 1209|       |  /// The window's frame as the window server has it, in the same coordinates as the Accessibility API's.
+ 1210|     18|  private static func serverBounds(of window: WindowID) -> CGRect? {
+ 1211|     18|    guard let list = CGWindowListCopyWindowInfo([.optionIncludingWindow], window.rawValue) as? [[String: Any]],
+ 1212|     18|      let info = list.first
+ 1213|     18|    else { return nil }
+ 1214|     18|    return bounds(in: info)
+ 1215|     18|  }
+ 1216|       |
+ 1217|       |  // MARK: The two signs
+ 1218|       |
+ 1219|       |  /// The pointer moved with the button down and nothing is decided yet.
+ 1220|     41|  private func lookAtPressedWindow() {
+ 1221|     41|    guard let press, !press.isSettled, let window = press.window, records[window] != nil,
+ 1222|     41|      let bounds = Self.serverBounds(of: window)
+ 1223|     41|    else { return }
+ 1224|     15|    if echoes.isEcho(bounds, of: window, at: uptime) {
+ 1225|      0|      // Arbor moved it itself after the press. Start from there.
+ 1226|      0|      self.press?.frame = bounds
+ 1227|      0|      return
+ 1228|     15|    }
+ 1229|     15|    decide(window, from: press.frame, to: bounds, pressedAt: press.point)
+ 1230|     15|    if draggingWindow == window { events?.dragMoved(window, to: cursorLocation()) }
+ 1231|     15|  }
+ 1232|       |
+ 1233|       |  /// An app reported that a window moved or changed size, not by Arbor's doing, while the button is down.
+ 1234|     59|  private func noteMoveWhilePressed(_ window: WindowID, from previous: CGRect, to frame: CGRect) {
+ 1235|     59|    guard let press, !press.isSettled, draggingWindow == nil, resizingWindow == nil else { return }
+ 1236|      1|    if press.window == window {
+ 1237|      1|      decide(window, from: press.frame, to: frame, pressedAt: press.point)
+ 1238|      1|    } else if press.window == nil, previous.insetBy(dx: -Self.reach, dy: -Self.reach).contains(press.point) {
+ 1239|      0|      // The window server's list was no help; go by where the window was.
+ 1240|      0|      decide(window, from: previous, to: frame, pressedAt: press.point)
+ 1241|      0|    }
+ 1242|      1|  }
+ 1243|       |
+ 1244|     16|  private func decide(_ window: WindowID, from before: CGRect, to now: CGRect, pressedAt point: CGPoint) {
+ 1245|     16|    switch WindowGrab.classify(pressedAt: point, frameAtPress: before, frameNow: now, pointerNow: cursorLocation()) {
+ 1246|     16|    case .undecided:
+ 1247|     11|      break
+ 1248|     16|    case .neither:
+ 1249|      1|      press?.isSettled = true
+ 1250|     16|    case .drag:
+ 1251|      3|      draggingWindow = window
+ 1252|      3|      watchForLostRelease()
+ 1253|      3|      Log.debug("\(window) is being dragged")
+ 1254|      3|      events?.dragBegan(window, at: cursorLocation())
+ 1255|     16|    case .resize:
+ 1256|      1|      resizingWindow = window
+ 1257|      1|      watchForLostRelease()
+ 1258|      1|      Log.debug("\(window) is being resized by its edges")
+ 1259|      1|      events?.resizeBegan(window)
+ 1260|     16|    }
+ 1261|     16|  }
+ 1262|       |
+ 1263|       |  // MARK: The end
+ 1264|       |
+ 1265|       |  /// The button came up.
+ 1266|     11|  private func endGrab() {
+ 1267|     11|    grabNumber += 1
+ 1268|     11|    if let window = draggingWindow {
+ 1269|      3|      draggingWindow = nil
+ 1270|      3|      // The app may not have heard yet where its window was left.
+ 1271|      3|      if let bounds = Self.serverBounds(of: window), var record = records[window] {
+ 1272|      3|        record.snapshot.frame = bounds
+ 1273|      3|        records[window] = record
+ 1274|      3|        events?.windowChanged(record.snapshot, userInitiated: true)
+ 1275|      3|      }
+ 1276|      3|      events?.dragEnded(window, at: cursorLocation())
+ 1277|      3|    }
+ 1278|     11|    endResize()
+ 1279|     11|  }
+ 1280|       |
+ 1281|     18|  private func endResize() {
+ 1282|     18|    guard let window = resizingWindow else { return }
+ 1283|      1|    resizingWindow = nil
+ 1284|      1|    // Let the controller re-check the window now that the resize is over.
+ 1285|      1|    refresh(window, userInitiated: true)
+ 1286|      1|    events?.resizeEnded(window)
+ 1287|      1|  }
+ 1288|       |
+ 1289|       |  /// The button is up, or down again, and its release was never seen: another tool's event tap swallowed it, or it
+ 1290|       |  /// went to a window of Arbor's. Without this the controller would wait for the drop for ever, with the preview on
+ 1291|       |  /// screen. A resize can be finished all the same, since the window's frame says how it ended. A drag cannot: where
+ 1292|       |  /// the pointer is by now says nothing about where the window was meant to go.
+ 1293|      7|  private func releaseWasLost() {
+ 1294|      7|    grabNumber += 1
+ 1295|      7|    if let window = draggingWindow {
+ 1296|      0|      draggingWindow = nil
+ 1297|      0|      Log.debug("the end of the drag of \(window) was not seen")
+ 1298|      0|      refresh(window, userInitiated: true)
+ 1299|      0|      events?.dragCancelled(window)
+ 1300|      0|    }
+ 1301|      7|    endResize()
+ 1302|      7|  }
+ 1303|       |
+ 1304|       |  /// While a window is held, checks twice a second that the button is still down. Two checks in a row must find it
+ 1305|       |  /// up, so that a release that is only waiting its turn on a busy main thread is not taken for lost.
+ 1306|      4|  private func watchForLostRelease() {
+ 1307|      4|    grabNumber += 1
+ 1308|      4|    let number = grabNumber
+ 1309|      4|    Task { @MainActor [weak self] in
+ 1310|      4|      var timesUp = 0
+ 1311|     21|      while true {
+ 1312|     21|        try? await Task.sleep(nanoseconds: 500_000_000)
+ 1313|     21|        guard let self, self.running, self.grabNumber == number else { return }
+ 1314|     17|        timesUp = self.isMouseButtonDown() ? 0 : timesUp + 1
+ 1315|     17|        if timesUp >= 2 {
+ 1316|      0|          self.press = nil
+ 1317|      0|          self.releaseWasLost()
+ 1318|      0|          return
+ 1319|     17|        }
+ 1320|     17|      }
+ 1321|      0|    }
+ 1322|      4|  }
+ 1323|       |
+ 1324|       |  /// The window is gone, so there is nothing left to drag or resize. The controller clears its own side when it
+ 1325|       |  /// hears that the window is gone.
+ 1326|     38|  private func forgetGrab(of window: WindowID) {
+ 1327|     38|    if draggingWindow == window { draggingWindow = nil }
+ 1328|     38|    if resizingWindow == window { resizingWindow = nil }
+ 1329|     38|    if press?.window == window { press = nil }
+ 1330|     38|  }
+ 1331|       |}
+ 1332|       |
+ 1333|       |/// AX observer callbacks arrive on the main run loop (where the observer's
+ 1334|       |/// source is installed), so hopping onto the main actor is safe.
+ 1335|       |private func axObserverCallback(
+ 1336|       |  _ observer: AXObserver, _ element: AXUIElement, _ notification: CFString, _ refcon: UnsafeMutableRawPointer?
+ 1337|    503|) {
+ 1338|    503|  let name = notification as String
+ 1339|    503|  let raw = refcon.map { UInt32(truncatingIfNeeded: UInt(bitPattern: $0)) }
+ 1340|    503|  let box = MainActorBox(value: element)
+ 1341|    503|  MainActor.assumeIsolated {
+ 1342|    503|    AXWindowSystem.current?.handle(name, element: box.value, window: raw)
+ 1343|    503|  }
+ 1344|    503|}
+

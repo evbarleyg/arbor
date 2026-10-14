@@ -1,0 +1,50 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/IPC/ControlEndpoint.swift:
+    1|       |import ArborCore
+    2|       |import Foundation
+    3|       |
+    4|       |/// What Arbor answers on the control socket: between the lines `ControlServer` carries and the commands
+    5|       |/// and events the controller deals in.
+    6|       |@MainActor
+    7|       |public final class ControlEndpoint {
+    8|       |  private let feed: EventFeed
+    9|       |  private let perform: (Command) -> CommandResult
+   10|       |
+   11|       |  /// - Parameter perform: runs a command. The app's own, because `quit` ends the app, not only the controller.
+   12|      8|  public init(feed: EventFeed, perform: @escaping (Command) -> CommandResult) {
+   13|      8|    self.feed = feed
+   14|      8|    self.perform = perform
+   15|      8|  }
+   16|       |
+   17|       |  /// Answers one request line.
+   18|    198|  public func respond(to line: String) -> ControlServer.Response {
+   19|    198|    let command: Command
+   20|    198|    do {
+   21|    198|      command = try Command.parse(line)
+   22|    198|    } catch {
+   23|      0|      return .reply(Self.line(for: .failure("\(error)")))
+   24|    198|    }
+   25|    198|    guard case .watch(let options) = command else { return .reply(Self.line(for: perform(command))) }
+   26|      0|    guard feed.hasRoom else {
+   27|      0|      let full = feed.subscriberCount >= EventFeed.maximumSubscribers
+   28|      0|      return .reply(
+   29|      0|        Self.line(
+   30|      0|          for: .failure(
+   31|      0|            full ? "\(EventFeed.maximumSubscribers) clients are watching already; that is the limit" : "Arbor is quitting")))
+   32|      0|    }
+   33|      0|    return .stream { [feed] send in
+   34|      0|      let subscription = feed.subscribe(options, sink: send)
+   35|      0|      return { if let subscription { feed.unsubscribe(subscription) } }
+   36|      0|    }
+   37|    198|  }
+   38|       |
+   39|       |  /// A command's result as the line of JSON that answers it.
+   40|    198|  public static func line(for result: CommandResult) -> String {
+   41|    198|    let encoder = JSONEncoder()
+   42|    198|    encoder.outputFormatting = [.sortedKeys]
+   43|    198|    guard let data = try? encoder.encode(result) else { return #"{"ok":false,"message":"encoding failed"}"# }
+   44|    198|    return String(decoding: data, as: UTF8.self)
+   45|    198|  }
+   46|       |}
+

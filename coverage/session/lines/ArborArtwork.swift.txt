@@ -1,0 +1,134 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/ArborArtwork.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |
+    4|       |/// What Arbor draws of itself: the images of the menu bar item, and the app icon for its own windows.
+    5|       |/// The shapes come from ArborCore (`MenuBarLayout`, `ArborGlyph`); this only fills them in.
+    6|       |///
+    7|       |/// Not on the main actor: AppKit calls an image's drawing handler whenever and wherever it draws the
+    8|       |/// image, so these functions use nothing but their arguments.
+    9|       |enum ArborArtwork {
+   10|       |  // MARK: The menu bar
+   11|       |
+   12|       |  /// How opaque a disabled button's glyph is.
+   13|       |  private static let disabledOpacity: CGFloat = 0.35
+   14|       |
+   15|       |  /// Every button of `layout` in one image. A template image carries only opacity, which macOS
+   16|       |  /// turns into black or white to suit the menu bar: so a current button's background is drawn
+   17|       |  /// faint (`fill`), with its glyph solid on top.
+   18|      3|  static func menuBarControls(_ layout: MenuBarLayout, fill: Double) -> NSImage {
+   19|      3|    let image = NSImage(size: layout.size, flipped: false) { _ in
+   20|     15|      for (button, cell) in zip(layout.buttons, layout.cells) {
+   21|     15|        draw(button, in: cell, fill: CGFloat(fill))
+   22|     15|      }
+   23|      3|      return true
+   24|      3|    }
+   25|      3|    image.isTemplate = true
+   26|      3|    return image
+   27|      3|  }
+   28|       |
+   29|       |  /// The item as a single icon: Arbor's mark on its own, or whatever sign the model asks for in its place.
+   30|      1|  static func menuBarIcon(_ glyph: MenuBarModel.Button.Glyph = .arbor) -> NSImage {
+   31|      1|    let image: NSImage
+   32|      1|    if glyph == .arbor {
+   33|      1|      image = NSImage(size: ArborGlyph.iconSize, flipped: false) { bounds in
+   34|      1|        drawMark(in: bounds, opacity: 1)
+   35|      1|        return true
+   36|      1|      }
+   37|      1|    } else {
+   38|      0|      // Drawn as a button is, in a cell of its own.
+   39|      0|      let button = MenuBarModel.Button(id: .menu, command: nil, glyph: glyph, title: "Arbor")
+   40|      0|      let cell = CGRect(x: 0, y: 0, width: MenuBarLayout.pitch, height: MenuBarLayout.height)
+   41|      0|      image = NSImage(size: cell.size, flipped: false) { _ in
+   42|      0|        draw(button, in: cell, fill: 0)
+   43|      0|        return true
+   44|      0|      }
+   45|      0|    }
+   46|      1|    image.isTemplate = true
+   47|      1|    return image
+   48|      1|  }
+   49|       |
+   50|     15|  private static func draw(_ button: MenuBarModel.Button, in cell: CGRect, fill: CGFloat) {
+   51|     15|    if button.isCurrent {
+   52|      2|      NSColor.black.withAlphaComponent(fill).setFill()
+   53|      2|      NSBezierPath(
+   54|      2|        roundedRect: MenuBarLayout.chip(in: cell), xRadius: MenuBarLayout.chipRadius, yRadius: MenuBarLayout.chipRadius
+   55|      2|      ).fill()
+   56|      2|    }
+   57|     15|    let opacity = button.isEnabled ? 1 : disabledOpacity
+   58|     15|    switch button.glyph {
+   59|     15|    case .arbor:
+   60|      3|      let size = ArborGlyph.buttonSize
+   61|      3|      drawMark(
+   62|      3|        in: CGRect(x: cell.midX - size.width / 2, y: cell.midY - size.height / 2, width: size.width, height: size.height),
+   63|      3|        opacity: opacity)
+   64|     15|    case .digit(let digit):
+   65|      0|      draw(String(digit), in: cell, opacity: opacity)
+   66|     15|    case .symbol(let name):
+   67|     12|      let configuration = NSImage.SymbolConfiguration(pointSize: 12, weight: .medium)
+   68|     12|      guard
+   69|     12|        let symbol = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+   70|     12|          .withSymbolConfiguration(configuration)
+   71|     12|      else {
+   72|      0|        // Every macOS Arbor runs on has these symbols; an initial is better than a hole all the same.
+   73|      0|        draw(String(button.title.prefix(1)), in: cell, opacity: opacity)
+   74|      0|        return
+   75|     12|      }
+   76|     12|      let size = symbol.size
+   77|     12|      symbol.draw(
+   78|     12|        in: NSRect(
+   79|     12|          x: (cell.midX - size.width / 2).rounded(), y: (cell.midY - size.height / 2).rounded(), width: size.width,
+   80|     12|          height: size.height),
+   81|     12|        from: .zero, operation: .sourceOver, fraction: opacity)
+   82|     15|    }
+   83|     15|  }
+   84|       |
+   85|      0|  private static func draw(_ text: String, in cell: CGRect, opacity: CGFloat) {
+   86|      0|    let string = NSAttributedString(
+   87|      0|      string: text,
+   88|      0|      attributes: [
+   89|      0|        .font: NSFont.systemFont(ofSize: 12, weight: .semibold),
+   90|      0|        .foregroundColor: NSColor.black.withAlphaComponent(opacity),
+   91|      0|      ])
+   92|      0|    let size = string.size()
+   93|      0|    string.draw(at: NSPoint(x: cell.midX - size.width / 2, y: cell.midY - size.height / 2))
+   94|      0|  }
+   95|       |
+   96|      4|  private static func drawMark(in rect: CGRect, opacity: CGFloat) {
+   97|      4|    NSColor.black.withAlphaComponent(opacity).setFill()
+   98|     16|    for cell in ArborGlyph.cells(in: rect, gap: 1, yUp: true) {
+   99|     16|      NSBezierPath(roundedRect: cell, xRadius: 1, yRadius: 1).fill()
+  100|     16|    }
+  101|      4|  }
+  102|       |
+  103|       |  // MARK: The app icon
+  104|       |
+  105|       |  /// The app icon, drawn rather than loaded, so that it is there when Arbor runs outside its bundle too.
+  106|       |  /// `scripts/make-icon.swift` draws the same picture for `Arbor.icns`; keep the two in step.
+  107|      0|  static func appIcon(side: CGFloat) -> NSImage {
+  108|      0|    NSImage(size: NSSize(width: side, height: side), flipped: false) { bounds in
+  109|      0|      // Apple's grid for macOS icons: the shape takes 824 of 1024 points, with a corner radius of 185.4.
+  110|      0|      let shape = bounds.insetBy(dx: bounds.width * 100 / 1024, dy: bounds.height * 100 / 1024)
+  111|      0|      let radius = shape.width * 185.4 / 824
+  112|      0|      let top = NSColor(srgbRed: 0.18, green: 0.63, blue: 0.38, alpha: 1)
+  113|      0|      let bottom = NSColor(srgbRed: 0.04, green: 0.29, blue: 0.20, alpha: 1)
+  114|      0|      NSGradient(starting: top, ending: bottom)?
+  115|      0|        .draw(in: NSBezierPath(roundedRect: shape, xRadius: radius, yRadius: radius), angle: -90)
+  116|      0|
+  117|      0|      let markSide = (shape.width * 0.58).rounded()
+  118|      0|      let mark = CGRect(
+  119|      0|        x: (bounds.midX - markSide / 2).rounded(), y: (bounds.midY - markSide / 2).rounded(), width: markSide,
+  120|      0|        height: markSide)
+  121|      0|      let gap = max((markSide * 0.07).rounded(), 1)
+  122|      0|      let corner = markSide * 0.045
+  123|      0|      for (cell, opacity) in zip(ArborGlyph.cells(in: mark, gap: gap, yUp: true), ArborGlyph.opacities) {
+  124|      0|        NSColor.white.withAlphaComponent(opacity).setFill()
+  125|      0|        NSBezierPath(roundedRect: cell, xRadius: corner, yRadius: corner).fill()
+  126|      0|      }
+  127|      0|      return true
+  128|      0|    }
+  129|      0|  }
+  130|       |}
+

@@ -1,0 +1,139 @@
+Coverage Report
+Created: 2026-10-14 23:50
+/Users/runner/work/arbor/arbor/Sources/ArborKit/UI/TileDrawing.swift:
+    1|       |import AppKit
+    2|       |import ArborCore
+    3|       |import CoreGraphics
+    4|       |
+    5|       |// The core and `TileArt` decide what Arbor's overlays look like; this file only copies their answers
+    6|       |// into AppKit's types and draws them.
+    7|       |
+    8|       |extension RGBA {
+    9|    405|  var nsColor: NSColor {
+   10|    405|    NSColor(srgbRed: CGFloat(red), green: CGFloat(green), blue: CGFloat(blue), alpha: CGFloat(alpha))
+   11|    405|  }
+   12|       |}
+   13|       |
+   14|       |extension NSBezierPath {
+   15|     52|  static func make(_ elements: [PathElement]) -> NSBezierPath {
+   16|     52|    let path = NSBezierPath()
+   17|    820|    for element in elements {
+   18|    820|      switch element {
+   19|    820|      case .move(let point): path.move(to: point)
+   20|    820|      case .line(let point): path.line(to: point)
+   21|    820|      case .curve(let point, let control1, let control2):
+   22|    560|        path.curve(to: point, controlPoint1: control1, controlPoint2: control2)
+   23|    820|      case .close: path.close()
+   24|    820|      }
+   25|    820|    }
+   26|     52|    return path
+   27|     52|  }
+   28|       |}
+   29|       |
+   30|       |extension CGPath {
+   31|    261|  static func make(_ elements: [PathElement]) -> CGPath {
+   32|    261|    let path = CGMutablePath()
+   33|  5.69k|    for element in elements {
+   34|  5.69k|      switch element {
+   35|  5.69k|      case .move(let point): path.move(to: point)
+   36|  5.69k|      case .line(let point): path.addLine(to: point)
+   37|  5.69k|      case .curve(let point, let control1, let control2):
+   38|  4.02k|        path.addCurve(to: point, control1: control1, control2: control2)
+   39|  5.69k|      case .close: path.closeSubpath()
+   40|  5.69k|      }
+   41|  5.69k|    }
+   42|    261|    return path
+   43|    261|  }
+   44|       |}
+   45|       |
+   46|       |/// Draws a tile. Anything that shows a window's stand-in can use it: make a `TileModel`, then
+   47|       |/// `draw(art(for:in:))` inside a flipped view, or in any flipped graphics context.
+   48|       |@MainActor
+   49|       |enum TileDrawing {
+   50|       |  /// What `model` looks like in `view`: in its light or dark mode, on its display.
+   51|     20|  static func art(for model: TileModel, in view: NSView) -> TileArt {
+   52|     20|    TileArt(
+   53|     20|      model, isDark: view.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua,
+   54|     20|      scale: view.window?.backingScaleFactor ?? 2, cornerRadius: ContinuousCorners.windowRadius
+   55|     20|    ) { AppAppearance.rgba(pid: $0.pid, bundleID: $0.bundleID) }
+   56|     20|  }
+   57|       |
+   58|       |  /// Draws into the current graphics context, which must be flipped: `TileArt` counts y downward.
+   59|     10|  static func draw(_ art: TileArt) {
+   60|     10|    draw(art, image: { AppAppearance.icon(pid: $0) })
+   61|     10|  }
+   62|       |
+   63|       |  /// The same with icons from `image`, which is given a process.
+   64|     10|  static func draw(_ art: TileArt, image: (Int32) -> NSImage?) {
+   65|     10|    draw(art.plate)
+   66|     10|    for cell in art.cells { draw(cell) }
+   67|     10|    NSGraphicsContext.current?.imageInterpolation = .high
+   68|     10|    for icon in art.icons {
+   69|      8|      image(icon.pid)?.draw(
+   70|      8|        in: icon.frame, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
+   71|     10|    }
+   72|     10|    if let glyph = art.glyph { draw(glyph) }
+   73|     10|    if let caption = art.caption { draw(caption) }
+   74|     10|    if let badge = art.badge {
+   75|      0|      badge.fill.nsColor.setFill()
+   76|      0|      NSBezierPath.make(badge.outline).fill()
+   77|      0|      draw(badge.label)
+   78|      0|    }
+   79|     10|  }
+   80|       |
+   81|     10|  private static func draw(_ plate: TileArt.Plate) {
+   82|     10|    NSGraphicsContext.saveGraphicsState()
+   83|     10|    NSBezierPath.make(plate.outline).addClip()
+   84|     10|    NSGradient(starting: plate.top.nsColor, ending: plate.bottom.nsColor)?.draw(
+   85|     10|      from: NSPoint(x: plate.frame.midX, y: plate.frame.minY), to: NSPoint(x: plate.frame.midX, y: plate.frame.maxY),
+   86|     10|      options: [])
+   87|     10|    NSGraphicsContext.restoreGraphicsState()
+   88|     10|
+   89|     10|    let border = NSBezierPath.make(plate.borderOutline)
+   90|     10|    border.lineWidth = plate.borderWidth
+   91|     10|    plate.border.nsColor.setStroke()
+   92|     10|    border.stroke()
+   93|     10|  }
+   94|       |
+   95|      2|  private static func draw(_ glyph: TileArt.Glyph) {
+   96|      2|    let configuration = NSImage.SymbolConfiguration(pointSize: glyph.frame.height, weight: .medium)
+   97|      2|      .applying(NSImage.SymbolConfiguration(paletteColors: [glyph.colour.nsColor]))
+   98|      2|    guard
+   99|      2|      let image = NSImage(systemSymbolName: glyph.symbol, accessibilityDescription: nil)?
+  100|      2|        .withSymbolConfiguration(configuration),
+  101|      2|      image.size.width > 0, image.size.height > 0
+  102|      2|    else { return }
+  103|      2|    // Symbols are not square; fit this one into the frame and centre it.
+  104|      2|    let scale = min(glyph.frame.width / image.size.width, glyph.frame.height / image.size.height)
+  105|      2|    let size = NSSize(width: image.size.width * scale, height: image.size.height * scale)
+  106|      2|    let frame = NSRect(
+  107|      2|      x: glyph.frame.midX - size.width / 2, y: glyph.frame.midY - size.height / 2, width: size.width,
+  108|      2|      height: size.height)
+  109|      2|    NSGraphicsContext.saveGraphicsState()
+  110|      2|    if let shadow = glyph.shadow { softShadow(shadow).set() }
+  111|      2|    image.draw(in: frame, from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
+  112|      2|    NSGraphicsContext.restoreGraphicsState()
+  113|      2|  }
+  114|       |
+  115|      0|  private static func draw(_ label: TileArt.Label) {
+  116|      0|    let paragraph = NSMutableParagraphStyle()
+  117|      0|    paragraph.alignment = label.alignment == .centre ? .center : .left
+  118|      0|    paragraph.lineBreakMode = .byTruncatingTail
+  119|      0|    var attributes: [NSAttributedString.Key: Any] = [
+  120|      0|      .font: NSFont.systemFont(ofSize: label.size, weight: label.isStrong ? .semibold : .medium),
+  121|      0|      .foregroundColor: label.colour.nsColor,
+  122|      0|      .paragraphStyle: paragraph,
+  123|      0|    ]
+  124|      0|    if let shadow = label.shadow { attributes[.shadow] = softShadow(shadow) }
+  125|      0|    (label.text as NSString).draw(in: label.frame, withAttributes: attributes)
+  126|      0|  }
+  127|       |
+  128|     10|  static func softShadow(_ colour: RGBA) -> NSShadow {
+  129|     10|    let shadow = NSShadow()
+  130|     10|    shadow.shadowColor = colour.nsColor
+  131|     10|    shadow.shadowBlurRadius = 2
+  132|     10|    shadow.shadowOffset = NSSize(width: 0, height: -1)
+  133|     10|    return shadow
+  134|     10|  }
+  135|       |}
+
