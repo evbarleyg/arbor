@@ -1,12 +1,13 @@
 .PHONY: public-check hooks lint build test test-making-way check sim scenarios parity linux run app install uninstall release e2e e2e-drag day typecheck-mac typecheck-mac-selftest rehearse trace trace-check replay film fuzz attack clean
 
-# Files that would compile on Linux but not on macOS, and Mac shell scripts that would change a person's Mac,
-# found without a Mac. And a ledger of macOS's surprises (docs/REALITY.md) that names what is no longer there.
+# Files that would compile on Linux but not on macOS, or not with the Swift many people's Xcode has, and Mac shell scripts that
+# would change a person's Mac, found without a Mac. And a ledger of macOS's surprises (docs/REALITY.md) that names what is no longer there.
 lint:
 	@python3 scripts/lint-python.py --self-test && python3 scripts/lint-python.py  # first: it says in words what would stop the others with a traceback
 	@python3 scripts/test-ci-linux.py
 	@python3 scripts/lint-imports.py
 	@python3 scripts/lint-spelling.py --self-test && python3 scripts/lint-spelling.py
+	@python3 scripts/lint-older-swift.py --self-test && python3 scripts/lint-older-swift.py
 	@python3 scripts/lint-share-space.py --self-test && python3 scripts/lint-share-space.py
 	@python3 scripts/lint-mac-shell.py --self-test > /dev/null || python3 scripts/lint-mac-shell.py --self-test
 	@python3 scripts/lint-mac-shell.py

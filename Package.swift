@@ -43,37 +43,42 @@ func sources(of target: String) -> [String]? {
   return names.isEmpty ? nil : names
 }
 
+// Constants with their types written out, not one expression inside `Package(…)`: Swift 6.2 and older give up on that one
+// ("unable to type-check this expression in reasonable time"), and then nothing is built at all.
+let everywhereProducts: [Product] = [
+  .executable(name: "arborctl", targets: ["arborctl"]),
+  .executable(name: "arbor-sim", targets: ["arbor-sim"]),
+]
+let everywhereTargets: [Target] = [
+  // Pure model: layout tree, layout engine, navigation, drop targets,
+  // commands, settings. No AppKit, no Accessibility, no side effects.
+  .target(name: "ArborCore", dependencies: geometry),
+
+  // Socket paths, the control protocol's framing, and the control-socket client shared by the
+  // app, the CLI and the end-to-end runner.
+  .target(name: "ArborIPC"),
+
+  // The window manager: controller, platform protocols, the real
+  // Accessibility/AppKit implementations, menus, hotkeys, control server.
+  .target(name: "ArborKit", dependencies: ["ArborCore", "ArborIPC"] + geometry, exclude: macOnlyKitFolders),
+
+  // In-memory fakes for the platform protocols. Used by tests and arbor-sim.
+  .target(name: "ArborTesting", dependencies: ["ArborKit", "ArborCore"] + geometry),
+
+  .executableTarget(name: "arbor-sim", dependencies: ["ArborTesting", "ArborKit", "ArborCore"] + geometry),
+
+  .executableTarget(name: "arborctl", dependencies: ["ArborCore", "ArborIPC"]),
+
+  .testTarget(name: "ArborCoreTests", dependencies: ["ArborCore"] + geometry, sources: sources(of: "ArborCoreTests")),
+  .testTarget(name: "ArborIPCTests", dependencies: ["ArborIPC"], sources: sources(of: "ArborIPCTests")),
+  .testTarget(
+    name: "ArborKitTests", dependencies: ["ArborKit", "ArborCore", "ArborIPC", "ArborTesting"] + geometry,
+    sources: sources(of: "ArborKitTests")),
+]
+
 let package = Package(
   name: "Arbor",
   platforms: [.macOS(.v14)],
-  products: macOnlyProducts + [
-    .executable(name: "arborctl", targets: ["arborctl"]),
-    .executable(name: "arbor-sim", targets: ["arbor-sim"]),
-  ],
-  targets: platformTargets + fakeMac + [
-    // Pure model: layout tree, layout engine, navigation, drop targets,
-    // commands, settings. No AppKit, no Accessibility, no side effects.
-    .target(name: "ArborCore", dependencies: geometry),
-
-    // Socket paths, the control protocol's framing, and the control-socket client shared by the
-    // app, the CLI and the end-to-end runner.
-    .target(name: "ArborIPC"),
-
-    // The window manager: controller, platform protocols, the real
-    // Accessibility/AppKit implementations, menus, hotkeys, control server.
-    .target(name: "ArborKit", dependencies: ["ArborCore", "ArborIPC"] + geometry, exclude: macOnlyKitFolders),
-
-    // In-memory fakes for the platform protocols. Used by tests and arbor-sim.
-    .target(name: "ArborTesting", dependencies: ["ArborKit", "ArborCore"] + geometry),
-
-    .executableTarget(name: "arbor-sim", dependencies: ["ArborTesting", "ArborKit", "ArborCore"] + geometry),
-
-    .executableTarget(name: "arborctl", dependencies: ["ArborCore", "ArborIPC"]),
-
-    .testTarget(name: "ArborCoreTests", dependencies: ["ArborCore"] + geometry, sources: sources(of: "ArborCoreTests")),
-    .testTarget(name: "ArborIPCTests", dependencies: ["ArborIPC"], sources: sources(of: "ArborIPCTests")),
-    .testTarget(
-      name: "ArborKitTests", dependencies: ["ArborKit", "ArborCore", "ArborIPC", "ArborTesting"] + geometry,
-      sources: sources(of: "ArborKitTests")),
-  ]
+  products: macOnlyProducts + everywhereProducts,
+  targets: platformTargets + fakeMac + everywhereTargets
 )
