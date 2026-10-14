@@ -161,16 +161,28 @@ private final class Panel {
   @Test func aRefusalIsShownOnItsRowUntilTheNextChangeThere() {
     let p = Panel()
     p.model.set("gap", to: "500")
-    #expect(p.row("gap", in: .windows)?.error == "`gap` must be from 0 to 100 pt, got 500")
+    #expect(p.row("gap", in: .windows)?.error == "Must be from 0 to 100 pt, got 500")
     #expect(p.row("minimumUsableWidth", in: .windows)?.error == nil)
     #expect(p.settings.gap == 12 && p.inset == 12)
     p.model.set("gap", to: "wide")
-    #expect(p.row("gap", in: .windows)?.error == "`gap` needs a number from 0 to 100 pt, got `wide`")
+    #expect(p.row("gap", in: .windows)?.error == "Needs a number from 0 to 100 pt, got “wide”")
     p.model.set("gap", to: "20")
     #expect(p.row("gap", in: .windows)?.error == nil && p.settings.gap == 20)
     p.model.set("gap", to: "500")
     p.model.pane = .section(.windows)
     #expect(p.model.errors.isEmpty, "a refusal does not outlive a visit to another pane")
+  }
+
+  /// A reply is written for a terminal, where the key has to be named and code is marked as code. Under the control it
+  /// is about, the key is noise, and nothing draws a backtick as anything but a backtick.
+  @Test func aRefusalIsSaidInTheWindowsWordsNotTheTerminals() {
+    let p = Panel()
+    for (key, value) in [("gap", "500"), ("gap", "wide"), ("focusRingColour", "mauve"), ("frameRectangleModifier", "hyper")] {
+      p.model.set(key, to: value)
+      let error = p.model.errors[key] ?? ""
+      #expect(!error.isEmpty && !error.contains("`") && !error.contains(key), "\(key) \(value): \(error)")
+      #expect(error.first?.isUppercase == true, "\(error)")
+    }
   }
 
   @Test func changesMadeElsewhereShowUp() {
@@ -324,6 +336,11 @@ private final class Panel {
     #expect(p.model.found.shortcuts.first?.label == "⌃⌥X")
     p.model.search = "gap"
     #expect(p.model.found.shortcuts.isEmpty)
+    // By what the line says, which is what the menu calls it.
+    p.model.search = "step out"
+    #expect(p.model.found.shortcuts.map(\.command.text) == ["out"])
+    p.model.search = "everything"
+    #expect(p.model.found.shortcuts.map(\.command.text) == ["show-all", "home"])
   }
 
   @Test func nothingFoundIsNothingFound() {
@@ -368,7 +385,8 @@ private final class Panel {
     #expect(p.model.fileProblem == "line 3, column 1: expected a key")
     #expect(p.redraws == 1, "the window hears of it by itself")
     p.model.set("gap", to: "30")
-    #expect(p.row("gap", in: .windows)?.error?.hasPrefix("settings.json cannot be read, so nothing was changed") == true)
+    // The banner above has the reason and the two ways out, as buttons.
+    #expect(p.row("gap", in: .windows)?.error == "Nothing was changed: settings.json cannot be read")
     // Not at one click.
     p.model.replaceFileWithDefaults()
     #expect(p.model.question == .replaceFile && p.commands.last != "reset everything")
@@ -378,6 +396,7 @@ private final class Panel {
     p.model.answer(yes: true)
     #expect(p.model.question == nil && p.commands.last == "reset everything")
     #expect(p.model.fileProblem == nil && !broken)
+    #expect(p.model.errors.isEmpty, "what was refused because of the file is not held against the file that replaced it")
     p.h.controller.loadSettings = nil
     p.model.set("gap", to: "30")
     #expect(p.settings.gap == 30)
@@ -386,6 +405,9 @@ private final class Panel {
   @Test func valuesThatCouldNotBeUsedAreListed() throws {
     let settings = try JSONDecoder().decode(Settings.self, from: Data(#"{"gap": -500}"#.utf8))
     #expect(Panel(settings: settings).model.valueProblems == ["gap: -500 is outside 0 to 100 pt; using 0"])
+    let mauve = try JSONDecoder().decode(Settings.self, from: Data(#"{"focusRingColour": "mauve"}"#.utf8))
+    #expect(
+      Panel(settings: mauve).model.valueProblems == ["focusRingColour: “mauve” is not accent, #RRGGBB or #RRGGBBAA; using the default, accent"])
   }
 }
 
@@ -401,6 +423,19 @@ private final class Panel {
     #expect(rows.suffix(2).allSatisfy { $0.standard == nil && $0.isChanged })
     #expect(Set(rows.map(\.id)).count == rows.count)
     #expect(p.model.shortcutsAreChanged && !Panel().model.shortcutsAreChanged)
+  }
+
+  /// `out`, `in` and `neighbor left` are what a script types. A person knows them from the menu and the panel of shortcuts.
+  @Test func aLineIsCalledWhatTheMenuCallsIt() throws {
+    let p = Panel()
+    #expect(p.shortcut("out")?.title == "Step Out" && p.shortcut("show-all")?.title == "Show Everything")
+    #expect(p.shortcut("toggle-float")?.title == "Float or Dock Focused Window")
+    for row in p.model.shortcutRows {
+      #expect(row.command.listedTitle != nil, "\(row.command.text) has only the title made from its text")
+    }
+    // One of the user's own, for a command nobody chose a title for, still says what runs.
+    p.h.run("bind ctrl+opt+x set gap 0")
+    #expect(p.shortcut("set gap 0")?.title == "Set Gap 0")
   }
 
   @Test func aShortcutThatTakesKeysFromEveryAppSaysSoOnItsLine() throws {
@@ -566,6 +601,7 @@ private final class Panel {
     try p.press("ctrl+opt+a")
     let clash = try #require(p.model.clash)
     #expect(clash.row == row && clash.chord.text == "ctrl+opt+a" && clash.holder == .arrange)
+    #expect(clash.message == "⌃⌥A runs Arrange Windows now.")
     #expect(p.commands.isEmpty && p.model.recording == nil)
     p.model.cancelRecording()
     #expect(p.model.clash == nil && p.commands.isEmpty)
@@ -788,7 +824,7 @@ private final class Panel {
 
   @Test func entriesThatCouldNotBeReadAreListed() throws {
     let settings = try JSONDecoder().decode(Settings.self, from: Data(#"{"rules": [{"app": "com.a"}]}"#.utf8))
-    #expect(Panel(settings: settings).model.skippedRules == ["entry 1 (com.a): `action` is missing"])
+    #expect(Panel(settings: settings).model.skippedRules == ["entry 1 (com.a): “action” is missing"])
   }
 }
 
@@ -849,7 +885,7 @@ private final class Panel {
     let p = Panel()
     p.h.controller.loadSettings = { throw Settings.FileError("line 1, column 1: expected `{`") }
     p.model.add("com.example.safari", to: "excludedBundleIDs")
-    #expect(p.row("excludedBundleIDs", in: .apps)?.error?.hasPrefix("settings.json cannot be read") == true)
+    #expect(p.row("excludedBundleIDs", in: .apps)?.error == "Nothing was changed: settings.json cannot be read")
     #expect(try dontArrange(p).listed.isEmpty)
   }
 

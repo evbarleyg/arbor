@@ -167,6 +167,22 @@ private let simpleEntries = SettingsSchema.entries.filter {
     }
   }
 
+  /// The window draws the help as plain text beside a control. Code marks come out as backticks there, what settings.json calls a
+  /// choice is not what the menu beside it offers, and how sure its builders are is said in one word people know.
+  @Test func whatTheWindowShowsIsWrittenForTheWindow() {
+    for entry in SettingsSchema.entries where entry.level != .hidden {
+      #expect(!entry.help.contains("`") && !entry.label.contains("`"), "\(entry.key): no code in the window")
+      if case .choice(let choices) = entry.kind {
+        for choice in choices {
+          #expect(!"\(entry.help) ".lowercased().contains("\(choice.value.lowercased()): "), "\(entry.key): “\(choice.value):” is the file's word")
+        }
+      }
+      for phrase in ["not yet", "seen at work", "from memory", "not ready", "an experiment"] {
+        #expect(!entry.help.lowercased().contains(phrase), "\(entry.key): “\(phrase)” is the builders' talk; say Experimental")
+      }
+    }
+  }
+
   @Test func aChoicesValuesAreExplainedWhereTheyAreTyped() throws {
     let entry = try SettingsSchema.entry(named: "newWindowsWhileFramed")
     let note = "`guest`: Stay with that view. `float`: Belong to the Desktop."

@@ -47,7 +47,7 @@ public final class SettingsPanelModel {
     self.runningApps = runningApps
     self.run = run
     controller.observe { [weak self] change in
-      if change == .settings { self?.changed() }
+      if change == .settings { self?.settingsChanged() }
     }
     refreshApps()
   }
@@ -61,6 +61,16 @@ public final class SettingsPanelModel {
   private var settings: Settings { controller.settings }
 
   private func changed() { onChange?() }
+
+  /// Whether settings.json could not be read when the window last heard of the settings.
+  private var fileWasBroken = false
+
+  private func settingsChanged() {
+    // What was refused because of the file is not held against the file that was mended or replaced.
+    if fileWasBroken, fileProblem == nil { errors.removeAll() }
+    fileWasBroken = fileProblem != nil
+    changed()
+  }
 
   // MARK: Panes
 
@@ -173,7 +183,7 @@ public final class SettingsPanelModel {
   public struct Found: Equatable, Sendable {
     /// Settings that match, advanced ones included (whoever searches for one wants to see it), by section.
     public var sections: [FoundSection]
-    /// Lines of the Shortcuts pane whose command or keys match: whoever types "desktop" may be after ⌃⌥D.
+    /// Lines of the Shortcuts pane whose title, command or keys match: whoever types "desktop" may be after ⌃⌥D.
     public var shortcuts: [ShortcutRow]
     /// The lists that match, as panes to go to.
     public var panes: [Pane]
@@ -200,7 +210,7 @@ public final class SettingsPanelModel {
         }
     }
     let shortcuts = shortcutRows.filter { row in
-      let text = "\(row.command.text) \(row.label ?? "") \(row.chord?.text ?? "")".lowercased()
+      let text = "\(row.title) \(row.command.text) \(row.label ?? "") \(row.chord?.text ?? "")".lowercased()
       return !words.isEmpty && words.allSatisfy { text.firstRange(of: $0) != nil }
     }
     return Found(sections: sections, shortcuts: shortcuts, panes: panes)
@@ -224,10 +234,32 @@ public final class SettingsPanelModel {
     for command in commands {
       let result = run(command)
       guard result.ok else {
-        errors[place] = result.message
+        errors[place] = inTheWindowsWords(result.message, at: place)
         return
       }
     }
+  }
+
+  /// A refusal is written for a terminal: it names the key, marks code as code, and says which command helps. The window shows
+  /// it under the control it is about, as plain text, and has buttons for what helps.
+  private func inTheWindowsWords(_ message: String, at place: String) -> String {
+    // The banner has the reason and the ways out.
+    if fileProblem != nil, message.hasPrefix("settings.json cannot be read") {
+      return "Nothing was changed: settings.json cannot be read"
+    }
+    var words = message
+    if words.hasPrefix("`\(place)` ") {
+      words.removeFirst(place.count + 3)
+      words = words.prefix(1).uppercased() + words.dropFirst()
+    }
+    return Self.withoutCodeMarks(words)
+  }
+
+  /// Nothing in the window draws a backtick as anything but a backtick. They come in pairs, and what stands between two of them
+  /// is a word of the file's or something somebody typed: quoted.
+  static func withoutCodeMarks(_ text: String) -> String {
+    let parts = text.split(separator: "`", omittingEmptySubsequences: false)
+    return parts.enumerated().map { index, part in index % 2 == 1 && index < parts.count - 1 ? "“\(part)”" : String(part) }.joined()
   }
 
   private func perform(_ commands: [SettingsCommand], at place: String) {
@@ -291,7 +323,7 @@ public final class SettingsPanelModel {
   public var fileProblem: String? { controller.settingsFileProblem }
 
   /// Values in the file that could not be used as written.
-  public var valueProblems: [String] { settings.valueProblems }
+  public var valueProblems: [String] { settings.valueProblems.map(Self.withoutCodeMarks) }
 
   /// The way out of a file that cannot be read. Asks first.
   public func replaceFileWithDefaults() { ask(.replaceFile) }
@@ -373,6 +405,8 @@ public final class SettingsPanelModel {
     public let standard: KeyChord?
     /// `chord` as menus show it on the keyboard layout in use: ⌃⌥Ü.
     public let label: String?
+    /// What the line is called: the command as the menu and the panel of shortcuts name it.
+    public var title: String { command.title }
     public var isChanged: Bool { chord != standard }
     /// What to mind about the shortcut it has, e.g. that no app gets ⌘Q while Arbor runs.
     public var caution: String? { chord?.caution }
@@ -406,7 +440,7 @@ public final class SettingsPanelModel {
   }
 
   /// Entries of `bindings` in settings.json that could not be used, and why.
-  public var shortcutProblems: [String] { controller.effectiveBindings.problems }
+  public var shortcutProblems: [String] { controller.effectiveBindings.problems.map(Self.withoutCodeMarks) }
 
   public var shortcutsAreOff: Bool { !settings.hotkeysEnabled }
 
@@ -428,6 +462,7 @@ public final class SettingsPanelModel {
     public let holder: Command
     /// What the holder's shortcut is written as, which can be another name for the same key (`us:z` and `y`).
     public let holderChord: KeyChord
+    public var message: String { "\(label) runs \(holder.title) now." }
   }
 
   public private(set) var clash: Clash?
@@ -587,7 +622,7 @@ public final class SettingsPanelModel {
   }
 
   /// Entries of `rules` in settings.json that could not be read, and why.
-  public var skippedRules: [String] { settings.skippedRules }
+  public var skippedRules: [String] { settings.skippedRules.map(Self.withoutCodeMarks) }
 
   /// Starts from the rule as it is now, not as it was when the line was drawn: a title typed on the line is
   /// handed over just before its menus act.

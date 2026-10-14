@@ -114,17 +114,17 @@ public enum SettingsSchema {
       .choice(
         "newWindows", \.newWindows, ["float": "Float where they open", "dock": "Dock beside the focused window"],
         "New windows",
-        "What a new window does when no rule matches it. dock: it takes half the place of the docked window you were "
-          + "working in, if there is room; small windows and windows of a fixed size float. The menu's Dock New "
-          + "Windows and `toggle-auto-dock` switch it."),
+        "What a new window does when no rule matches it. Docked, it takes half the place of the docked window you were "
+          + "working in, if there is room; small windows and windows of a fixed size float. Dock New Windows in the menu "
+          + "is the same switch."),
       .number(
         "autoDockMinimumWidth", \.autoDockMinimumWidth, min: 0, max: 3000, step: 10, unit: "pt",
         "Narrowest window docked",
-        "A window that opens narrower than this is never docked by `dock auto` or by a rule for `*`.", advanced: true),
+        "A window that opens narrower than this floats, even where new windows dock by themselves.", advanced: true),
       .number(
         "autoDockMinimumHeight", \.autoDockMinimumHeight, min: 0, max: 3000, step: 10, unit: "pt",
         "Shortest window docked",
-        "A window that opens shorter than this is never docked by `dock auto` or by a rule for `*`.", advanced: true),
+        "A window that opens shorter than this floats, even where new windows dock by themselves.", advanced: true),
       .toggle(
         "shareRemovedSpace", \.shareRemovedSpace, "Share a leaving window's space",
         "The space of a window that leaves is shared by its whole group. Off, it goes to the neighbour before it and "
@@ -192,7 +192,7 @@ public enum SettingsSchema {
           + "For now a pinch steps as before.", hidden: true),
       .toggle(
         "guardDesktopClicks", \.guardDesktopClicks, "Guard clicks on the Desktop",
-        "An experiment, not yet seen at work on a Mac. While something is docked, a plain click on the bare Desktop is "
+        "Experimental. While something is docked, a plain click on the bare Desktop is "
           + "kept from macOS, which would sweep every window aside (“Click wallpaper to reveal desktop”). Drags, icons and "
           + "widgets are left alone.", advanced: true),
       .toggle(
@@ -257,8 +257,8 @@ public enum SettingsSchema {
         "gapHandles", \.gapHandles,
         ["shown": "Drag them, with a handle", "hidden": "Drag them, nothing drawn", "off": "Only gaps"],
         "Gaps between windows",
-        "shown: dragging a gap resizes the windows on both sides, and a handle shows in it under the pointer. hidden: the "
-          + "same without the handle. off: gaps cannot be dragged; window edges and `resize` still resize."),
+        "Dragging a gap resizes the windows on both sides of it, and a handle shows in the gap under the pointer. A window's "
+          + "own edges resize it either way."),
       .toggle(
         "windowPictures", \.windowPictures, "Pictures of moving windows",
         "Not ready: it has crashed Arbor and has not been tried since it was mended. While they move, windows are still "
@@ -282,16 +282,16 @@ public enum SettingsSchema {
       .toggle(
         "holdStillWhileCameraIsOn", \.holdStillWhileCameraIsOn, "While a camera is on",
         "Hold still by itself during a call: the view moves only when you ask. Arbor reads from macOS that some app has a camera "
-          + "running, and opens none itself. Off until that has been seen at work: choose Hold Still from the menu.", advanced: true),
+          + "running, and opens none itself. Experimental; Hold Still in the menu does the same by hand.", advanced: true),
       .toggle(
         "holdStillWhileMicrophoneIsOn", \.holdStillWhileMicrophoneIsOn, "While a microphone is on",
-        "The same for calls without a camera. Off, because it is not yet known what else keeps a microphone running on a "
-          + "Mac.", advanced: true),
+        "The same for calls without a camera. Experimental: other things than calls may keep a microphone running.",
+        advanced: true),
       .list(
         "holdStillFor", \.holdStillFor, shape: "a list of bundle ids, each with part of a title after it if you like",
         editedWith: "a text editor", "While one of these is open",
-        "Arbor also holds still while a window like one of these is open, for example \"us.zoom.xos Zoom Meeting\" (written from "
-          + "memory: check the title on your Mac).", advanced: true),
+        "Arbor also holds still while a window like one of these is open: an app's bundle id and, if you like, part of the "
+          + "window's title, such as \"us.zoom.xos Zoom Meeting\".", advanced: true),
     ])
 
   private static let menuBar = section(
