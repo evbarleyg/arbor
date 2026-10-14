@@ -25,7 +25,7 @@
 # could be built, 75 somebody took the curtain down, 77 this Mac is not free, 124 or 130 cut off or stopped.
 # Environment: ARBOR_SECTION_LIMIT  seconds a section may take (default 150)
 # GitHub's Macs keep lib.sh's limit, which fits their job's.
-[ "${GITHUB_ACTIONS:-}" = true ] || ARBOR_TIME_LIMIT=${ARBOR_TIME_LIMIT:-1800}
+{ [ "${GITHUB_ACTIONS:-}" = true ] && [ "$(id -un)" = runner ]; } || ARBOR_TIME_LIMIT=${ARBOR_TIME_LIMIT:-1800}
 source "$(dirname "$0")/lib.sh"
 section_limit=${ARBOR_SECTION_LIMIT:-150}
 

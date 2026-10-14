@@ -514,6 +514,22 @@ def self_test(quiet=False):
     return 1 if wrong else 0
 
 
+def one_lock(text):
+    """The numbers of the lines that take GITHUB_ACTIONS alone for "one of GitHub's Macs, which nobody owns". A runner that a person sets up on
+    their own Mac sets it too, and anybody can export it; GitHub's Macs run jobs as `runner`, and no variable changes what the account is
+    called. So whatever reads the variable, in whichever way, asks for the account as well, there or within the next six lines, or says
+    `# safe anywhere: <why>`. Any language. After it has sourced lib.sh a script finds the variable gone where the account is another, and may
+    ask as it likes. A net, not a proof: it does not follow what is done with the two answers."""
+    lines = [re.sub(r"^\s*(#|//).*", "", line) for line in text.splitlines()]
+    under_lib = next((number for number, line in enumerate(lines) if re.match(r"\s*(source|\.)\s.*\blib[\w-]*\.sh", line)), len(lines))
+    # Taking it away, setting it and printing its name read nothing.
+    harmless = re.compile(r"^\s*(unset|export|echo)\b|-u GITHUB_ACTIONS\b|(^|\s)GITHUB_ACTIONS=|safe anywhere: \S")
+    # Asked of the system, not merely named: arbor-e2e is full of `runner`s of another kind (`self.runner = runner`).
+    account = re.compile(r"(id -un|NSUserName\(\))[^\n]*\brunner\b")
+    return [number + 1 for number, line in enumerate(lines[:under_lib])
+            if "GITHUB_ACTIONS" in line and not harmless.search(line) and not any(account.search(later) for later in lines[number:number + 7])]
+
+
 def loop_scripts(root=ROOT):
     """What an unattended build runs, and what that runs."""
     found, waiting = [], ["sim-smoke.sh", "scenarios.sh", "e2e.sh"]
@@ -551,12 +567,22 @@ def main():
             for number, what, shown in problems(text, shared, harness):
                 count += 1
                 print(f"{os.path.relpath(path, ROOT)}:{number}: {what}: {shown[:140]}")
+    locks = 0
+    if not arguments:
+        # What can do something to a Mac. Not the Python scripts, which go by the variable only for how they print.
+        for pattern in ("scripts/**/*.sh", "scripts/**/*.swift", "scripts/**/*.m", "Sources/**/*.swift", "Makefile", ".github/workflows/*.yml"):
+            for path in sorted(glob.glob(os.path.join(ROOT, pattern), recursive=True)):
+                with open(path, encoding="utf-8", errors="replace") as handle:
+                    for number in one_lock(handle.read()):
+                        locks += 1
+                        print(f"{os.path.relpath(path, ROOT)}:{number}: GITHUB_ACTIONS alone opens this. A runner on a person's own Mac sets it too: ask for the "
+                              "account as well, which is `runner` on GitHub's Macs (lib.sh, \"A second lock\")")
     if count:
         print(f"\n{count} line(s) would change a person's Mac without asking whose it is, or could by accident. Use lib.sh's safe ways (scratch_dir, "
               "scratch_remove, started,\nkill_started, limit, at_exit); put `needs_throwaway_mac \"<would…>\"` after sourcing lib.sh, or `on_throwaway_mac &&` or "
               "`if on_throwaway_mac; then`\naround the step; or say `# safe anywhere: <why>` (of a variable: `# never empty: <why>`). See docs/TESTING.md, \"On a person's own Mac\".")
         return 1
-    return 0
+    return 1 if locks else 0
 
 
 if __name__ == "__main__":

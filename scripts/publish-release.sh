@@ -104,4 +104,4 @@ done
 page=$(field html_url < "$work/created.json")
 if [ "$draft" = true ]; then kind="draft release"; else kind="release"; fi
 echo "Created the $kind Arbor $version: $page"
-if [ -n "${GITHUB_ACTIONS:-}" ]; then echo "::notice title=$kind::Arbor $version: $page"; fi
+if [ -n "${GITHUB_ACTIONS:-}" ]; then echo "::notice title=$kind::Arbor $version: $page"; fi  # safe anywhere: only how a line is printed

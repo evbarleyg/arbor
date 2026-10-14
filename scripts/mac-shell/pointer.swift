@@ -786,7 +786,8 @@ struct Pointer {
     case "wallpaper":
       if let path = arguments.first, !FileManager.default.fileExists(atPath: path) { fail("there is no file \(path)") }
       // As lib.sh's wrapper refuses it too: the desktop picture is the person's, except on a Mac that is thrown away.
-      if !arguments.isEmpty, ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] != "true" {
+      // The variable and the account, as there: a runner on a person's own Mac sets the variable too.
+      if !arguments.isEmpty, ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] != "true" || NSUserName() != "runner" {
         fail("this Mac is somebody's: the wallpaper is changed only on GitHub's throwaway Macs")
       }
       let picture = arguments.first.map { URL(fileURLWithPath: $0) }

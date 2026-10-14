@@ -62,11 +62,16 @@ final class Manners: @unchecked Sendable {
   private let queue = DispatchQueue(label: "arbor-e2e.manners")
   private var sources: [any DispatchSourceProtocol] = []
 
+  /// Whether this is one of GitHub's own Macs, which are thrown away after the run. The variable alone does not say so: a runner that
+  /// a person has set up on their own Mac sets it too, and so can anybody. GitHub's Macs run jobs as `runner`, and no variable
+  /// changes what the account is called (as in scripts/mac-shell/lib.sh).
+  static let isOnThrowawayMac = ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] == "true" && NSUserName() == "runner"
+
   /// Whether to look out for a person. Not on GitHub's Macs, where nobody sits; not when a person started the run from a
   /// terminal, who knows what is coming; not when told otherwise.
   let looksOutForSomebody: Bool = {
     let environment = ProcessInfo.processInfo.environment
-    return environment["GITHUB_ACTIONS"] != "true" && environment["ARBOR_BUSY_OK"] != "1" && isatty(STDIN_FILENO) == 0
+    return !Manners.isOnThrowawayMac && environment["ARBOR_BUSY_OK"] != "1" && isatty(STDIN_FILENO) == 0
   }()
 
   init(_ runner: Runner) {

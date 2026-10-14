@@ -151,7 +151,7 @@ final class Runner {
     // With Screen Recording Arbor keeps stills of every app's windows and of the desktop for its motion, whatever
     // ARBOR_ONLY_PIDS says. On a person's Mac those are their mail and their documents.
     // And `summon` opens an app of which Arbor knows no window, which here is every app of theirs.
-    if environment["GITHUB_ACTIONS"] != "true" {
+    if !Manners.isOnThrowawayMac {
       environment["ARBOR_NO_PICTURES"] = "1"
       environment["ARBOR_NO_OPENING"] = "1"
     }

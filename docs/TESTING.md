@@ -599,8 +599,9 @@ off, or leaves the Mac different. What comes of it lies in `.mac-shell/list-<dat
   appearance, Spaces, displays, keyboard layouts, keychains, login items, what LaunchServices knows (`lsregister`, `open` on a bundle or a URL),
   apps the script did not start (opening, quitting, killing, arranging their windows), files outside `mac-shell/`, `.build/` and `/tmp/arbor-*`.
   Nobody ever sets `GITHUB_ACTIONS` by hand.
-- **A runner of GitHub's on a person's own Mac sets `GITHUB_ACTIONS` as GitHub's Macs do.** So nothing may take the variable alone for "a Mac that nobody owns". `scripts/e2e.sh` takes it away where the account is not `runner`, as
-  `lib.sh` does, so that `arbor-e2e` keeps its manners, `ARBOR_NO_PICTURES` and `ARBOR_NO_OPENING` there; `install.sh` and `make-signing-identity.sh` ask for the account as well. The account such a runner runs under must never be called `runner`.
+- **A runner of GitHub's on a person's own Mac sets `GITHUB_ACTIONS` as GitHub's Macs do.** So nothing takes the variable alone for "a Mac that nobody owns": `arbor-e2e` (its manners, `ARBOR_NO_PICTURES`,
+  `ARBOR_NO_OPENING`), `e2e.sh`, which takes the variable away as `lib.sh` does, `install.sh`, `make-signing-identity.sh` and the tools `keys`, `pointer` and `vdisplay` ask for the account as well, as `lib.sh` does, and `make lint` names every line that reads the variable with no such question near it (a net, not a proof). The account such a runner
+  runs under must never be called `runner`.
 - A script that is nothing without such changes says **`needs_throwaway_mac "<what it would do>"`** right after sourcing `lib.sh`: elsewhere it says
   so and ends with exit code 77, "skipped". A script with a few such steps puts `on_throwaway_mac &&` or `if on_throwaway_mac; then` around them.
   `lib.sh`'s own helpers (`macos_tiling`, `macos_click_wallpaper`, `macos_reduce_motion`, `display_*`, `appearance`, `wallpaper`, `space_*`) decline by themselves.

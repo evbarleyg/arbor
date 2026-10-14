@@ -403,6 +403,30 @@ def check_mac_shell_lint():
         return len(mac_lint.problems(text, shared))
 
     row("mac-shell lint: its own examples", mac_lint.self_test(quiet=True), 0)
+    # A runner of GitHub's that a person sets up on their own Mac sets GITHUB_ACTIONS too, and arbor-e2e took that for a Mac that nobody owns.
+    row("mac-shell lint: GITHUB_ACTIONS alone opens a gate, in shell, Swift and Objective-C",
+        [mac_lint.one_lock(text) for text in (
+            'if [ ! -t 0 ] && [ "${GITHUB_ACTIONS:-}" != true ]; then exit 77; fi\n',
+            'private let runner: Runner\nlet alone = environment["GITHUB_ACTIONS"] != "true" && isatty(0) == 0\ninit(_ runner: Runner) {\n  self.runner = runner\n}\n',
+            'const char *value = getenv("GITHUB_ACTIONS");\nreturn value && strcmp(value, "true") == 0;\n')], [[1], [2], [1]])
+    row("mac-shell lint: however it is read",
+        [mac_lint.one_lock(text) for text in (
+            'if [ -n "$GITHUB_ACTIONS" ]; then macos_tiling off; fi\n', 'case "${GITHUB_ACTIONS:-}" in true) nobodys=yes ;; esac\n', "[ \"$GITHUB_ACTIONS\" = 'true' ] && x\n",
+            'if [ true = "$GITHUB_ACTIONS" ]; then x; fi\n', 'let alone = environment["GITHUB_ACTIONS"] != nil\n',
+            'let value = environment["GITHUB_ACTIONS"]\nlet alone = value == "true"\n', 'if os.environ.get("GITHUB_ACTIONS"):\n')], [[1]] * 7)
+    row("mac-shell lint: lib.sh takes it away from where it is sourced, not before",
+        mac_lint.one_lock('if [ "${GITHUB_ACTIONS:-}" = true ]; then macos_tiling off; fi\nsource "$(dirname "$0")/lib.sh"\n'), [1])
+    row("mac-shell lint: with the account beside it, it may",
+        [mac_lint.one_lock(text) for text in (
+            'if [ "${GITHUB_ACTIONS:-}" = true ] && [ "$(id -un)" = runner ]; then nobodys=yes; fi\n',
+            'on_throwaway_mac() { [ "${GITHUB_ACTIONS:-}" = true ]; }\n# why\n# why\nif on_throwaway_mac && [ "$(id -un)" != runner ]; then\n  unset GITHUB_ACTIONS\nfi\n',
+            'static let throwaway = environment["GITHUB_ACTIONS"] == "true" && NSUserName() == "runner"\n',
+            'const char *value = getenv("GITHUB_ACTIONS");\nreturn value && strcmp(value, "true") == 0 && [NSUserName() isEqualToString:@"runner"];\n')], [[], [], [], []])
+    row("mac-shell lint: nor is it about a comment, taking the variable away, or a script under lib.sh, which has taken it away",
+        [mac_lint.one_lock(text) for text in (
+            '# [ "${GITHUB_ACTIONS:-}" = true ] would do\n', 'env -u GITHUB_ACTIONS bash x.sh\nunset GITHUB_ACTIONS\nunset A GITHUB_ACTIONS B\nexport GITHUB_ACTIONS=true\nGITHUB_ACTIONS=true ./x.sh\n',
+            '  echo "GITHUB_ACTIONS is true, but the Mac is somebody\'s"\n', 'if [ -n "${GITHUB_ACTIONS:-}" ]; then echo "::notice::x"; fi  # safe anywhere: only how a line is printed\n',
+            'source "$(dirname "$0")/lib.sh"\nif [ "${GITHUB_ACTIONS:-}" = true ]; then macos_tiling off; fi\n')], [[], [], [], [], []])
     # The fault of 2026-10-14 08:20 UTC: a full disk, an empty variable, and the clean-up takes the checkout or every process.
     row("mac-shell lint: mktemp unchecked", found('dir=$(mktemp -d /tmp/arbor-x.XXXXXX)\n'), 1)
     row("mac-shell lint: mktemp checked", found('dir=$(mktemp -d /tmp/arbor-x.XXXXXX) || die "no folder"\n'), 0)

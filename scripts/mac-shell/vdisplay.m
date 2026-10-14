@@ -64,7 +64,8 @@ static int fail(int code, NSString *message) {
 
 static BOOL onThrowawayMac(void) {
   const char *value = getenv("GITHUB_ACTIONS");
-  return value && strcmp(value, "true") == 0;
+  // The variable and the account, as in lib.sh: a runner on a person's own Mac sets the variable too.
+  return value && strcmp(value, "true") == 0 && [NSUserName() isEqualToString:@"runner"];
 }
 
 static void *skyLight(const char *name) {

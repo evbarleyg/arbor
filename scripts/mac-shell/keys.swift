@@ -216,7 +216,8 @@ func layout(named id: String) -> TISInputSource {
 
 /// As the scripts refuse it too: which layouts are in the Input menu, and which is on, is the person's, except on a Mac that is thrown away.
 func refuseOnSomebodysMac() {
-  if ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] != "true" {
+  // Both, as in lib.sh: a runner on a person's own Mac sets the variable too; GitHub's Macs run jobs as `runner`.
+  if ProcessInfo.processInfo.environment["GITHUB_ACTIONS"] != "true" || NSUserName() != "runner" {
     fail("this Mac is somebody's: keyboard layouts are switched only on GitHub's throwaway Macs")
   }
 }
