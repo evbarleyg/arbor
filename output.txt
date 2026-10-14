@@ -1,0 +1,224 @@
+# mac-shell: scripts/mac-shell/probe-switches.sh at 16eac53, macOS 15.7.9, 2026-10-14T23:04Z
+built Arbor and the pointer tool in 126s
+
+== the Mac
+ProductName:		macOS
+ProductVersion:		15.7.9
+BuildVersion:		24G830
+{
+    "LastHeartbeatDateString.daily" = "2026-10-14T23:00:24Z";
+}
+WindowManager: 308 
+-rw-------@ 1 runner  staff  101 Oct 14 23:00 /Users/runner/Library/Preferences/com.apple.WindowManager.plist
+-rwxr-xr-x  1 root  wheel  12386672 Aug  1 16:31 /System/Library/CoreServices/WindowManager.app/Contents/MacOS/WindowManager
+what it says about its settings:
+%{public}s notify_post failed: %u
+Deny notifyClickDidEndOnDesktopBackgroundWindow for %@, missing entitlement 
+enableTiledWindowMargins
+enableTilingByEdgeDrag
+enableTilingOptionAccelerator
+enableTopTilingByEdgeDrag
+hasRequestedNotify
+notify_token
+notifyClickDidEndOnDesktopBackgroundWindow:
+prefs
+So14NSUserDefaultsC
+standardUserDefaults
+userDefaults
+y_So14NSUserDefaultsCACGGG
+y_So14NSUserDefaultsCypSgG
+y_So14NSUserDefaultsCypSgGG
+session 1: Arbor pid 7881, test windows 24 25 26 (pid 7859)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> pause
+paused until `resume`; windows that were out of view are back on screen
+the windows: 170 220 480 348 | 220 180 480 348 | 270 140 480 348
+22 311 25 826 0 34 24 on Control Center
+19 311 25 860 0 164 24 on Control Center
+18 417 25 795 0 31 24 on Spotlight
+17 155 24 0 0 1024 24 on Window Server
+7 310 20 0 0 1024 768 on Dock
+26 7859 0 270 140 480 348 on ArborTestWindows
+25 7859 0 220 180 480 348 on ArborTestWindows
+24 7859 0 170 220 480 348 on ArborTestWindows
+10 314 -2147483603 0 0 1024 768 on Finder
+8 310 -2147483624 0 0 1024 768 on Dock
+2 155 -2147483626 0 0 1024 768 on Window Server
+
+== 1. as the Mac comes
+  EnableTilingByEdgeDrag: not set
+  EnableTopTilingByEdgeDrag: not set
+  EnableTilingOptionAccelerator: not set
+  EnableStandardClickToShowDesktop: not set
+left edge: preview [WindowManager -15 10 542 711;] ended at 7 34 500 665
+menu bar: preview [WindowManager -15 10 1054 711;] ended at 8 33 1008 665
+with ⌥: preview [WindowManager -15 10 542 711;] ended at -41 356 482 350
+wallpaper click: SWEPT: 170 220 480 348 | 220 180 480 348 | 251 286 482 350 -> -468 208 480 348 | -389 -312 480 348 | 107 756 482 350
+  a second click: 170 220 480 348 | 220 180 480 348 | 251 286 482 350
+
+== 2. defaults write false, nothing restarted, a second later
+  EnableTilingByEdgeDrag: 0
+  EnableTopTilingByEdgeDrag: 0
+  EnableTilingOptionAccelerator: 0
+  EnableStandardClickToShowDesktop: 0
+left edge: preview [] ended at -238 355 482 350
+menu bar: preview [] ended at 271 25 482 350
+with ⌥: preview [] ended at -41 356 482 350
+wallpaper click: nothing moved
+
+== 3. the same, ten seconds later
+  EnableTilingByEdgeDrag: 0
+  EnableTopTilingByEdgeDrag: 0
+  EnableTilingOptionAccelerator: 0
+  EnableStandardClickToShowDesktop: 0
+left edge: preview [] ended at -256 355 482 350
+menu bar: preview [] ended at 271 25 482 350
+with ⌥: preview [] ended at -41 356 482 350
+wallpaper click: nothing moved
+
+== WindowManager is restarted
+film: 6 pictures in .94 s
+shot: mac-shell/restart-1-1.png
+shot: mac-shell/restart-1-2.png
+shot: mac-shell/restart-1-3.png
+shot: mac-shell/restart-1-4.png
+shot: mac-shell/restart-1-5.png
+shot: mac-shell/restart-1-6.png
+pid 308 -> 12431 after 0 tenths (from 1792019354.69 to 1792019355.92)
+no window moved
+pointer: no app has the keyboard
+in front: 
+
+== 4. after the restart
+  EnableTilingByEdgeDrag: 0
+  EnableTopTilingByEdgeDrag: 0
+  EnableTilingOptionAccelerator: 0
+  EnableStandardClickToShowDesktop: 0
+left edge: preview [] ended at -238 355 482 350
+menu bar: preview [] ended at 271 25 482 350
+with ⌥: preview [] ended at -41 356 482 350
+wallpaper click: nothing moved
+
+== 5. the keys deleted again, nothing restarted
+  EnableTilingByEdgeDrag: not set
+  EnableTopTilingByEdgeDrag: not set
+  EnableTilingOptionAccelerator: not set
+  EnableStandardClickToShowDesktop: not set
+left edge: preview [WindowManager -15 10 542 711;] ended at 7 34 500 665
+menu bar: preview [WindowManager -15 10 1054 711;] ended at 8 33 1008 665
+with ⌥: preview [WindowManager -15 10 542 711;] ended at -42 356 484 352
+wallpaper click: SWEPT: 170 220 480 348 | 220 180 480 348 | 249 353 484 352 -> -468 208 480 348 | -389 -312 480 348 | 186 756 484 352
+  a second click: 170 220 480 348 | 220 180 480 348 | 249 353 484 352
+
+== WindowManager is restarted
+film: 6 pictures in .60 s
+shot: mac-shell/restart-2-1.png
+shot: mac-shell/restart-2-2.png
+shot: mac-shell/restart-2-3.png
+shot: mac-shell/restart-2-4.png
+shot: mac-shell/restart-2-5.png
+shot: mac-shell/restart-2-6.png
+pid 12431 -> 15237 after 0 tenths (from 1792019434.53 to 1792019435.33)
+no window moved
+pointer: no app has the keyboard
+in front: 
+
+== 6. after the restart
+  EnableTilingByEdgeDrag: not set
+  EnableTopTilingByEdgeDrag: not set
+  EnableTilingOptionAccelerator: not set
+  EnableStandardClickToShowDesktop: not set
+left edge: preview [WindowManager -15 10 542 711;] ended at 7 34 500 665
+menu bar: preview [WindowManager -15 10 1054 711;] ended at 8 33 1008 665
+with ⌥: preview [WindowManager -15 10 542 711;] ended at -43 356 486 354
+wallpaper click: SWEPT: 170 220 480 348 | 220 180 480 348 | 248 351 486 354 -> -468 208 480 348 | -389 -312 480 348 | 184 756 486 354
+  a second click: 170 220 480 348 | 220 180 480 348 | 248 351 486 354
+
+== written by a program, as an app would
+synchronized: true
+
+== 7. CFPreferencesSetAppValue false, nothing restarted
+  EnableTilingByEdgeDrag: 0
+  EnableTopTilingByEdgeDrag: 0
+  EnableTilingOptionAccelerator: 0
+  EnableStandardClickToShowDesktop: 0
+left edge: preview [] ended at -238 351 486 354
+menu bar: preview [] ended at 269 25 486 354
+with ⌥: preview [] ended at -43 356 486 354
+wallpaper click: nothing moved
+
+== WindowManager is restarted
+film: 6 pictures in .65 s
+shot: mac-shell/restart-3-1.png
+shot: mac-shell/restart-3-2.png
+shot: mac-shell/restart-3-3.png
+shot: mac-shell/restart-3-4.png
+shot: mac-shell/restart-3-5.png
+shot: mac-shell/restart-3-6.png
+pid 15237 -> 18133 after 0 tenths (from 1792019516.08 to 1792019516.99)
+no window moved
+pointer: no app has the keyboard
+in front: 
+
+== 8. after the restart
+  EnableTilingByEdgeDrag: 0
+  EnableTopTilingByEdgeDrag: 0
+  EnableTilingOptionAccelerator: 0
+  EnableStandardClickToShowDesktop: 0
+left edge: preview [] ended at -256 351 486 354
+menu bar: preview [] ended at 269 25 486 354
+with ⌥: preview [] ended at -43 356 486 354
+wallpaper click: nothing moved
+synchronized: true
+
+== 9. CFPreferencesSetAppValue true, nothing restarted
+  EnableTilingByEdgeDrag: 1
+  EnableTopTilingByEdgeDrag: 1
+  EnableTilingOptionAccelerator: 1
+  EnableStandardClickToShowDesktop: 1
+left edge: preview [WindowManager -15 10 542 711;] ended at 7 34 500 665
+menu bar: preview [WindowManager -15 10 1054 711;] ended at 8 33 1008 665
+with ⌥: preview [WindowManager -15 10 542 711;] ended at -44 356 488 356
+wallpaper click: SWEPT: 170 220 480 348 | 220 180 480 348 | 246 349 488 356 -> -468 208 480 348 | -389 -312 480 348 | 178 756 488 356
+  a second click: 170 220 480 348 | 220 180 480 348 | 246 349 488 356
+synchronized: true
+
+== WindowManager is restarted
+film: 6 pictures in .63 s
+shot: mac-shell/restart-4-1.png
+shot: mac-shell/restart-4-2.png
+shot: mac-shell/restart-4-3.png
+shot: mac-shell/restart-4-4.png
+shot: mac-shell/restart-4-5.png
+shot: mac-shell/restart-4-6.png
+pid 18133 -> 20925 after 0 tenths (from 1792019595.02 to 1792019595.91)
+no window moved
+pointer: no app has the keyboard
+in front: 
+
+== 10. deleted and restarted: as the Mac came
+  EnableTilingByEdgeDrag: not set
+  EnableTopTilingByEdgeDrag: not set
+  EnableTilingOptionAccelerator: not set
+  EnableStandardClickToShowDesktop: not set
+left edge: preview [WindowManager -15 10 542 711;] ended at 7 34 500 665
+menu bar: preview [WindowManager -15 10 1054 711;] ended at 8 33 1008 665
+with ⌥: preview [WindowManager -15 10 542 711;] ended at -45 356 490 358
+wallpaper click: SWEPT: 170 220 480 348 | 220 180 480 348 | 245 288 490 358 -> -468 208 480 348 | -389 -312 480 348 | 100 756 490 358
+  a second click: 170 220 480 348 | 220 180 480 348 | 245 288 490 358
+{
+    "LastHeartbeatDateString.daily" = "2026-10-14T23:00:24Z";
+}
+> resume
+resumed
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 24 is back on screen after quitting
+  ✔ window 25 is back on screen after quitting
+  ✔ window 26 is back on screen after quitting
+
+4 passed, 0 failed
+exit code 0
