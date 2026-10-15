@@ -12,11 +12,15 @@
 //   scale <n>                                    of the main display
 //   list <ms> <windows>                          the list of windows every picture starts from; twice, because the first time is the dearest
 //   window <id> <w>x<h>                          the pixels asked for
+//   round <n>                                    all that follows is done three times over: the first round bears what ScreenCaptureKit needs to get going
 //   pictures <n> in-turn <ms in all> <failed> each <ms>…
 //   pictures <n> at-once <ms in all> <failed>
 
 import AppKit
 import ScreenCaptureKit
+
+// Into a pipe lines would wait for a full buffer, and be lost with a tool that is stopped for taking too long.
+setvbuf(stdout, nil, _IOLBF, 0)
 
 func now() -> Double { Double(DispatchTime.now().uptimeNanoseconds) / 1_000_000 }
 func text(_ value: Double) -> String { String(format: "%.1f", value) }
@@ -79,30 +83,33 @@ func ask(_ window: SCWindow, then: @escaping @Sendable (Bool) -> Void) {
 }
 
 for window in windows { print("window \(window.windowID) \(Int(window.frame.width * scale))x\(Int(window.frame.height * scale))") }
-for count in [1, 4, 8] where count <= windows.count {
-  var each: [String] = []
-  var failed = 0
-  let began = now()
-  for window in windows.prefix(count) {
-    let asked = now()
-    let came = Box(false)
-    let done = DispatchSemaphore(value: 0)
-    ask(window) { came.value = $0; done.signal() }
-    if done.wait(timeout: .now() + 10) == .timedOut || !came.value { failed += 1 }
-    each.append(text(now() - asked))
-  }
-  print("pictures \(count) in-turn \(text(now() - began)) \(failed) each \(each.joined(separator: " "))")
-
-  let missing = Box(count)
-  let together = DispatchGroup()
-  let again = now()
-  for window in windows.prefix(count) {
-    together.enter()
-    ask(window) { came in
-      if came { missing.change { $0 -= 1 } }
-      together.leave()
+for round in 1...3 {
+  print("round \(round)")
+  for count in [1, 4, 8] where count <= windows.count {
+    var each: [String] = []
+    var failed = 0
+    let began = now()
+    for window in windows.prefix(count) {
+      let asked = now()
+      let came = Box(false)
+      let done = DispatchSemaphore(value: 0)
+      ask(window) { came.value = $0; done.signal() }
+      if done.wait(timeout: .now() + 10) == .timedOut || !came.value { failed += 1 }
+      each.append(text(now() - asked))
     }
+    print("pictures \(count) in-turn \(text(now() - began)) \(failed) each \(each.joined(separator: " "))")
+
+    let missing = Box(count)
+    let together = DispatchGroup()
+    let again = now()
+    for window in windows.prefix(count) {
+      together.enter()
+      ask(window) { came in
+        if came { missing.change { $0 -= 1 } }
+        together.leave()
+      }
+    }
+    _ = together.wait(timeout: .now() + 10)
+    print("pictures \(count) at-once \(text(now() - again)) \(missing.value)")
   }
-  _ = together.wait(timeout: .now() + 10)
-  print("pictures \(count) at-once \(text(now() - again)) \(missing.value)")
 }
