@@ -22,8 +22,14 @@ A Mac is left out when it could prove nothing new, or nothing that will not be p
      speak for it, `real-windows` and `tests-accounted-for`.
 
 Rule 2 can let through a change that breaks the macOS-only code which uses it. So it does not apply where
-work is integrated: pushes to `main`, pull requests into `main`, and the pull request whose head is the swarm's trunk. There every
-change of code is compiled and driven on a real Mac.
+work is integrated: pushes (ci.yml listens for those to `main` and to a merge train, `train/…`), pull requests into `main`, and the pull
+request whose head is the swarm's trunk. There every change of code is compiled and driven on a real Mac.
+What a merge train changes is what it adds to the trunk, whether it is pushed for the first time or again. At first it is a new branch, with no
+commit before it: that would be unclear, and a train of more commits than rule 3 looks back would get every test, built from nothing, each
+time. Pushed again, the commit before it is the train as it was, which may never have seen a Mac: the first train there was had a line
+of a self-test mended and was pushed again before its Mac began, and "only prose since the commit before" spared the whole of it.
+So a train of prose takes no Mac, even upon a trunk that moved forward without one having passed. `main` is covered all the same: the trunk's own
+pull request into it is integration, and counts only a commit that passed on a Mac built from nothing.
 
 A pull request that is still a draft gets no Mac, whatever it changes and wherever it goes: its author has not said that it is ready, Linux
 runs lint alone for it (.github/workflows/linux.yml says why), and that run has no verdict. Marking it ready starts the whole run.
@@ -78,6 +84,7 @@ HEADLESS = re.compile(
 )
 INTEGRATION_BRANCH = "swarm/trunk"
 MAIN = "main"
+TRAINS = "refs/heads/train/"
 MARKER = "[mac]"
 LABEL = "mac"
 FULL_MARKER = "[mac-full]"
@@ -221,7 +228,8 @@ def decide(name, event, repo, sha):
         draft = bool(pull.get("draft"))
     elif name == "push":
         head, whole, integration, labels, draft = sha, "the push", True, set(), False
-        changed = lambda: files_between(repo, event["before"], head)
+        train = event.get("ref", "").startswith(TRAINS)
+        changed = lambda: files_between(repo, INTEGRATION_BRANCH if train else event["before"], head)
     elif name == "schedule":
         return FULL, "every night: every test, built from nothing, as a backstop"
     else:

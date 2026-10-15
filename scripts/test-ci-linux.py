@@ -14,7 +14,8 @@ reads .github/workflows/linux.yml, ci.yml, which calls it, and the Makefile, and
   no Linux job and no step of one has a condition that could skip it, and none may fail and pass all the same. But for ONE switch:
   ci.yml may ask for lint alone (`all: false`, for a pull request that is still a draft). Then every job but lint is skipped and the
   verdict with them: whenever there is a verdict, all it waits for has run. The switch is used in the jobs' conditions and nowhere
-  else. Marking the draft ready must start a run, and nothing else may be said about which pull requests start one. What in
+  else. Marking the draft ready must start a run, and nothing else may be said about which pull requests start one. A push to
+  `main` and a merge train (`train/…`), where the sum of what was landed is tried, must start one, whatever they change. What in
   ci.yml goes by Linux's record, or vouches for a run, does not run for a draft either;
   every command of `make check`, as it stands there, is a command of some Linux job, and so is what ALSO lists;
   the jobs that use an image use the same, which scripts/linux.sh takes from the first in linux.yml. But `oldest-swift` in ci.yml,
@@ -79,6 +80,8 @@ WHEN_ALL = "${{ " + NOT_A_DRAFT + " }}"
 # What is said of pull requests, no more and no less. A filter (paths, branches, fewer types) stops runs without a word, and a commit
 # without a run has no check that failed.
 FOR_PULL_REQUESTS = ["types: [opened, synchronize, reopened, ready_for_review]"]
+# Where the sum of what was landed is tried, whatever its parts were spared.
+FOR_PUSHES = ['branches: [main, "train/**"]']
 WHOLE_WHEN = "${{ github.event_name != 'pull_request' || (github.base_ref == 'main' && !github.event.pull_request.draft) }}"
 # They go by the record Linux leaves, or say that a run was complete.
 NOT_FOR_DRAFTS = ("tests-accounted-for", "macos-from-nothing")
@@ -201,6 +204,8 @@ def problems_in(workflow, makefile, caller):
         if events_of(caller).get("pull_request") != FOR_PULL_REQUESTS:
             found.append(f"a draft gets lint alone, so `pull_request:` must say `{FOR_PULL_REQUESTS[0]}` and nothing else: without the last of them "
                          "marking a draft ready starts no run, and a filter stops runs without a word")
+        if [line.replace("'", '"') for line in events_of(caller).get("push", [])] != FOR_PUSHES:
+            found.append(f"`push:` must say `{FOR_PUSHES[0]}` and nothing else: a push to main or a merge train that starts no run leaves the sum untried")
         if values_of(others.get(WHOLE_JOB, []), "if", 4) != [WHOLE_WHEN]:
             found.append(f"`{WHOLE_JOB}` must say `if: {WHOLE_WHEN}`: where work is integrated, and not for a draft, which has no parts to hold it against")
         found += [f"{name} runs for a draft too, where Linux left no record: its condition lacks `({NOT_A_DRAFT})`" for name in NOT_FOR_DRAFTS
@@ -383,7 +388,8 @@ typecheck-mac:
 # The same two with the one switch: linux-lint stands for linux-a there.
 DRAFTS = (GOOD.replace("linux-a", "linux-lint").replace("jobs:\n", "on:\n  workflow_call:\n    inputs:\n      all:\n        type: boolean\n        default: true\njobs:\n", 1)
           .replace("    name: b\n", "    name: b\n    if: ${{ inputs.all }}\n").replace("    if: ${{ !cancelled() }}\n", "    if: ${{ inputs.all && !cancelled() }}\n"))
-CI_DRAFTS = ("on:\n  pull_request:\n    types: [opened, synchronize, reopened, ready_for_review]\n"
+PUSHES = '  push:\n    # Where work is integrated.\n    branches: [main, "train/**"]\n'
+CI_DRAFTS = ("on:\n" + PUSHES + "  pull_request:\n    types: [opened, synchronize, reopened, ready_for_review]\n"
              + CI.replace("linux.yml\n", "linux.yml\n    with:\n      all: " + WHEN_ALL + "\n").replace("${{ github.event_name == 'push' }}", WHOLE_WHEN)
              .replace("    container: swift:0\n", "    container: swift:0\n    if: " + WHEN_ALL + "\n")
              + "  tests-accounted-for:\n    if: ${{ !cancelled() && (" + NOT_A_DRAFT + ") }}\n    runs-on: ubuntu-latest\n")
@@ -442,6 +448,14 @@ TABLE = [
     ("a filter stops runs", "all but some paths", DRAFTS, MAKEFILE, changed(TYPES, TYPES + "    paths-ignore:\n      - docs/**\n", CI_DRAFTS)),
     ("a filter stops runs", "only pull requests into main", DRAFTS, MAKEFILE, changed(TYPES, "    branches: [main]\n" + TYPES, CI_DRAFTS)),
     (None, "a remark among them", DRAFTS, MAKEFILE, changed(TYPES, "    # Why.\n" + TYPES, CI_DRAFTS)),
+    ("leaves the sum untried", "a merge train starts nothing", DRAFTS, MAKEFILE, changed(', "train/**"', "", CI_DRAFTS)),
+    ("leaves the sum untried", "only one train does", DRAFTS, MAKEFILE, changed("train/**", "train/1", CI_DRAFTS)),
+    ("leaves the sum untried", "a push to main starts nothing", DRAFTS, MAKEFILE, changed("[main, ", "[", CI_DRAFTS)),
+    ("leaves the sum untried", "no push starts anything", DRAFTS, MAKEFILE, changed(PUSHES, "", CI_DRAFTS)),
+    ("leaves the sum untried", "listed, and taken out again", DRAFTS, MAKEFILE, changed('"train/**"]', '"train/**", "!train/**"]', CI_DRAFTS)),
+    ("leaves the sum untried", "only trains that touch some paths", DRAFTS, MAKEFILE, changed('"train/**"]\n', '"train/**"]\n    paths: [Sources/**]\n', CI_DRAFTS)),
+    (None, "quoted the other way", DRAFTS, MAKEFILE, changed('"train/**"', "'train/**'", CI_DRAFTS)),
+    ("`tests-whole` must say", "the whole on main alone, never on a train", DRAFTS, MAKEFILE, changed(WHOLE_WHEN, "${{ github.ref == 'refs/heads/main' }}", CI_DRAFTS)),
     ("`tests-whole` must say", "the whole runs for a draft into main, and finds no record", DRAFTS, MAKEFILE,
      changed(WHOLE_WHEN, "${{ github.event_name != 'pull_request' || github.base_ref == 'main' }}", CI_DRAFTS)),
     ("`tests-whole` must say", "the whole never runs", DRAFTS, MAKEFILE, changed(WHOLE_WHEN, "${{ false }}", CI_DRAFTS)),
