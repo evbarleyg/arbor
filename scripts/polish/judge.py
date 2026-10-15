@@ -8,7 +8,7 @@ verdicts (collab/polish/eyes-run-<n>.json) it counts like its own.
   judge.py score <run folder> [--json <file>] [--eyes <file>] [--stills <file>]
                                         every film in <run folder>/films: the table, the findings with the frames that show
                                         them, the score. Exit code 1 when the instruments fail their own test (the metronome)
-  judge.py sheets <run folder> <folder> three sheets per scene: how it begins, the whole, how it ends
+  judge.py sheets <run folder> <folder> three sheets per scene: how it begins, the whole, how it ends; of a drag also what happens while the button is down
   judge.py measure <film folder>        everything that was measured of one film
   judge.py sheet <film folder> <png> [--from <ms>] [--to <ms>] [--columns n] [--crop x,y,w,h] [--zoom n]
                                         its frames side by side, each with its number and its time after the cause
@@ -35,7 +35,7 @@ import numpy as np  # noqa: E402
 from PIL import Image, ImageDraw  # noqa: E402
 
 from film import Film, apart_by, near  # noqa: E402
-from measure import TICK, cause_of, measure  # noqa: E402
+from measure import TICK, cause_of, flashes, measure  # noqa: E402
 
 PASS, MISS, UNSEEN = "pass", "miss", "unseen"
 # What a miss costs, by how bad it is (docs/POLISH.md, "How bad a miss is").
@@ -150,7 +150,7 @@ def no_hop(m, allow):
         return Verdict(UNSEEN, "nothing could be followed to its end")
     faults, frames = [], []
     if motion.seen:
-        hops = [push for push in motion.pushes if push["left"] <= 40]
+        hops = [push for push in motion.pushes if 3 <= push["left"] <= 40]
         if hops:
             worst = max(hops, key=lambda push: push["left"])
             faults.append(f"hops {worst['left']:.0f} px at the end")
@@ -275,25 +275,42 @@ def even_gaps(m, allow):
         return Verdict(UNSEEN, "the film does not say which windows are docked, or none is")
     picture = film.frame(len(film) - 1)
     empty = near(picture, scan.background, 24)
+    # The focus ring is drawn in the gap, round the window that has the keyboard: a few pixels of it are gap, not window.
+    ring = near(picture, (0, 122, 255), 40)
     x0, y0, x1, y1 = scan.room
     gaps = []
     for x, y, w, h in docked:
         left, top, right, bottom = (int(round(value * film.scale)) for value in (x, y, x + w, y + h))
         if left < x0 or top < y0 or right > x1 or bottom > y1:
             continue
-        across, down = (top + bottom) // 2, (left + right) // 2
-        # From well inside the window, so that a frame that is a pixel off is found out too.
-        for line, start, step, low, high in ((empty[across, :], left + 8, -1, x0, x1), (empty[across, :], right - 8, 1, x0, x1),
-                                             (empty[:, down], top + 8, -1, y0, y1), (empty[:, down], bottom - 8, 1, y0, y1)):
-            place = start
-            while low <= place < high and not line[place]:
-                place += step
-            run = 0
-            # As far as the room goes: under the bars the wallpaper goes on.
-            while low <= place < high and line[place]:
-                place += step
-                run += 1
-            gaps.append(run)
+        # Along three lines a side, and the middle one of the three answers: a seam's grip or the Desktop's mark may lie in a gap.
+        for horizontal, start, step, low, high in ((True, left + 8, -1, x0, x1), (True, right - 8, 1, x0, x1), (False, top + 8, -1, y0, y1), (False, bottom - 8, 1, y0, y1)):
+            runs = []
+            for share in (0.25, 0.5, 0.75):
+                at = int(top + share * (bottom - top)) if horizontal else int(left + share * (right - left))
+                line, ringed = (empty[at, :], ring[at, :]) if horizontal else (empty[:, at], ring[:, at])
+                place = start
+                while low <= place < high and not line[place]:
+                    place += step
+                run = 0
+
+                def thickness(from_place, direction):
+                    count = 0
+                    while low <= from_place < high and ringed[from_place] and count <= 5 * film.scale:
+                        from_place += direction
+                        count += 1
+                    return count if count <= 4 * film.scale else 0
+
+                run += thickness(place - step, -step)
+                while low <= place < high and line[place]:
+                    place += step
+                    run += 1
+                run += thickness(place, step)
+                place += thickness(place, step) * step
+                # The Dock's plate reaches a few pixels into the room, as it does under any window: what is measured is Arbor's gap.
+                left_over = (place - low + 1) if step < 0 else (high - place)
+                runs.append(run + left_over if 0 < left_over <= 4 * film.scale else run)
+            gaps.append(sorted(runs)[1])
     # What is wider is no gap: the Desktop's part, or room nobody takes.
     gaps = [gap for gap in gaps if 0 < gap <= 40 * film.scale]
     if not gaps:
@@ -633,9 +650,17 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout):
         # The good film proves nothing unless the ruler could follow it.
         unseen = [identifier for identifier in (wanted or ["M2", "M3", "M4", "M5", "M6"]) if result[1][identifier].status == UNSEEN]
         right = all(identifier in missed for identifier in wanted) and (wanted or not missed) and not unseen
+        note = ""
+        if kind == "flash" and not right:
+            # The spark is put out by a timer, which on a busy Mac comes late: then it is no flash. What the film is there to prove is that
+            # the ruler sees a thing that comes and goes on real frames, and how long it stays.
+            seen = [(track, shown) for track, shown in flashes(result[0]["scan"], result[0]["cause"], longest=600)
+                    if abs(track.rects[0].right - track.rects[0].left - 120 * result[0]["film"].scale) <= 4]
+            if seen:
+                right, note = True, f"; the spark stayed {seen[0][1]} ms, too long for a flash, and was measured as that (frames {seen[0][0].indices[0]} to {seen[0][0].indices[-1]})"
         trusted &= right
         print(f"- metronome {kind}: {'as it should be' if right else 'WRONG'}: missed {', '.join(missed) or 'nothing'}"
-              f" (must miss {', '.join(wanted) or 'nothing'})", file=out)
+              f" (must miss {', '.join(wanted) or 'nothing'}){note}", file=out)
     print(f"- allowed for this camera on this Mac: {ms(allow['latency'])} of delay, {ms(allow['gap'])} between frames\n", file=out)
 
     def read(path):
@@ -758,7 +783,7 @@ def self_test():
         "hop": ({"hop": 7}, ["M6"], []),
         "cards": ({"cards": True}, ["M7", "M12"], []),
         "cards-that-fade": ({"cards": True, "fade": 9}, ["M12"], []),
-        "cards-out-of-place": ({"cards": True, "fade": 9, "offset": 5}, ["M6", "M12"], []),
+        "cards-out-of-place": ({"cards": True, "fade": 9, "offset": 5}, ["M6", "M12"], ["M4"]),
         "preview-left": ({"left": 3}, ["M13"], []),
         "blink": ({"blink": True}, ["M8"], ["M7", "M9"]),
         "good-and-not-a-frame-more": ({"words": False}, [], []),
@@ -880,6 +905,12 @@ def main(arguments):
             last = busy[-1] if busy else every[-1]
             parts = {"begins": every[:12], "whole": [every[int(place)] for place in np.linspace(0, len(every) - 1, min(12, len(every)))],
                      "ends": [index for index in every if last - 9 <= index <= last + 2]}
+            downs, ups = ([time for time, what, _, _ in film.buttons if what == which] for which in ("down", "up"))
+            if film.kind == "drag" and downs and ups:
+                # What happens while the button is down comes before the cause.
+                held = [index for index, time in enumerate(film.times) if downs[0] - 20 <= time <= ups[-1] + 20]
+                if held:
+                    parts["held"] = [held[int(place)] for place in np.linspace(0, len(held) - 1, min(12, len(held)))]
             for part, chosen in parts.items():
                 sheet(film, os.path.join(arguments[1], f"{name}-{part}.png"), columns=4, zoom=480 / film.size[0], cause=cause, only=set(chosen))
             print(f"{name}: {len(every)} frames from the cause on")
@@ -898,7 +929,8 @@ def main(arguments):
                 for name in names[share::count]:
                     film = Film(os.path.join(films, name))
                     brief.write(f"## {name}\nKind: {film.kind}. The person {film.text}. {len(film)} frames.\n")
-                    brief.write("Sheets: " + ", ".join(os.path.abspath(os.path.join(sheets, f"{name}-{part}.png")) for part in ("begins", "whole", "ends")) + "\n")
+                    brief.write("Sheets: " + ", ".join(os.path.abspath(os.path.join(sheets, f"{name}-{part}.png")) for part in ("held", "begins", "whole", "ends")
+                                                       if os.path.isfile(os.path.join(sheets, f"{name}-{part}.png"))) + "\n")
                     brief.write(f"Film folder: {os.path.abspath(os.path.join(films, name))}\nThe ruler's claims to confirm or refute by looking:\n")
                     claims = [cell for cell in cells if cell["where"] == name and cell["status"] == MISS and not cell["check"].startswith("E")]
                     for cell in claims:

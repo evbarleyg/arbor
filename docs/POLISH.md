@@ -190,4 +190,5 @@ new table, in the same commit, so that a longer table is never mistaken for a wo
 
 | Date (UTC) | Commit | Score | Seen | Severity 1 misses | Note |
 |---|---|---|---|---|---|
-| 2026-10-14 23:27 | `a391fe4` | **36.5** | 49% | 34 | Run 1 (`collab/polish/run-1.md`). Tabs, double clicks, the followed pinch and all stills unseen; four films void |
+| 2026-10-14 23:27 | `a391fe4` | **36.6** | 49% | 36 | Run 1 (`collab/polish/run-1.md`). Tabs, double clicks, the followed pinch and all stills unseen; four films void |
+| 2026-10-15 01:38 | `302a0b0` | **42.8** | 56% | 41 | Run 2 (`collab/polish/run-2.md`). A cast of four apps, panels in the picture; two films void |
