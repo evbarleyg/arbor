@@ -851,6 +851,7 @@ walk_begin() {
   day_scratch
   sampler_start
   watch_start day-macos.log
+  note "tiling $tiling"
   read -r _ WALK_X WALK_Y WALK_W WALK_H _ <<< "$(pointer displays | head -n 1)"
 
   chapter "Before Arbor: the apps are open already"
