@@ -31,7 +31,8 @@ import Foundation
 // their requests, which window is in front, who has the keyboard, what a press lands on (menu, tile, seam,
 // window buttons, title bar, edges, content), title-bar drags and edge resizes that can be left held,
 // shortcuts (also held from one line to a later one), pinches, the rectangle, the menu bar item's menu, the
-// panels of the focus ring and of a peek's outline, "click wallpaper to reveal desktop", settings.json applied
+// panels of the focus ring and of a peek's outline, the backdrop, the heads-up line, the panel of shortcuts and
+// what ends it, the window that answers an update check, "click wallpaper to reveal desktop", settings.json applied
 // as it is saved, a second copy of Arbor, quitting, signals, SIGKILL and the watchdog. A second passes after
 // every line that changes something, so debounced work (saving, putting
 // windows back) has always happened by the next line. The few decisions and log lines of ArborApp, StatusMenu,

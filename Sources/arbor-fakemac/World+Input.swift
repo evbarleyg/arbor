@@ -139,6 +139,7 @@ extension World {
   private func land(at point: CGPoint, clicks: Int, secondary: Bool) {
     held = .idle
     arbor?.overlays.leaveNameField(for: point)
+    // From here on whatever is highest is asked first: the menu, the menu bar, Arbor's panels, its update window, the windows.
     if arbor?.menu != nil {
       // A press beside an open menu closes it and does nothing else.
       if let path = menuItem(at: point) { held = .menuItem(path) } else { closeMenu() }
@@ -148,11 +149,23 @@ extension World {
       clickStatusItem(at: point, secondary: secondary)
       return
     }
+    // A press on the panel of shortcuts puts it away and goes no further (`CheatSheetPanel.mouseDown`). One beside it lands
+    // where it lands, and what ends the panel then depends on where that is: see `pressInAnotherApp`.
+    if let panel = arbor?.overlays.shortcutsPanel, panel.shown, panel.frame.contains(point) {
+      arbor?.overlays.dismissShortcuts(by: "a click on it")
+      return
+    }
     if paletteTakesPress(at: point) { return }
     if point.y < display.visibleFrame.minY { return }
     // Above every window. One that only passes by lets the press through.
     if let model = arbor?.overlays.fake.minimaps[display.id], model.takesClicks, model.frame.contains(point) {
       held = .minimap
+      return
+    }
+    // The update window takes what lands on it, and its red button closes it: here at the press, on a Mac when the button
+    // comes up. Where its other buttons are is AppKit's to say.
+    if let window = arbor?.updateWindow, window.frame.contains(point) {
+      if abs(point.x - window.frame.minX - 14) <= 7, abs(point.y - window.frame.minY - 14) <= 7 { arbor?.updateWindow = nil }
       return
     }
     // With the windows swept aside, the next press only brings them back, as soon as the button is down, and
@@ -184,12 +197,22 @@ extension World {
         return
       }
     }
+    pressInAnotherApp()
     // The curtain takes the press, does nothing with it, and neither comes forward nor takes the keyboard.
     if curtainPID != nil { return }
     // The bare Desktop is Finder's.
     switchTo(app: World.finderPID)
     let setting = file(World.clickWallpaperSetting).map { String(decoding: $0, as: UTF8.self) }
     isSwept = setting?.trimmingCharacters(in: .whitespacesAndNewlines) != "0"
+  }
+
+  /// A press in another app's window or on the bare Desktop, which the panel of shortcuts hears of by itself in two ways: its
+  /// monitor of other apps' events, and losing the keyboard. Whichever comes first is the cause it logs, and of two hosted
+  /// Macs at the same step one logged the one and one the other. Here it is always the second. A press on a tile, a gap's
+  /// handle or the minimap is neither: the real panel logs nothing, and the controller puts it away when it hears of the
+  /// press (`pointerPressed`).
+  private func pressInAnotherApp() {
+    arbor?.overlays.dismissShortcuts(by: "losing the keyboard")
   }
 
   private func land(on thing: Thing, at point: CGPoint, clicks: Int) {
@@ -199,6 +222,7 @@ extension World {
     case .seam(let key):
       held = .seam(key, last: point)
     case .window(let id):
+      pressInAnotherApp()
       guard let frame = frame(of: id) else { return }
       let grip = CGSize(width: point.x - frame.minX, height: point.y - frame.minY)
       if let extra = extras[id] {
@@ -465,6 +489,11 @@ extension World {
     // Arbor's name field has the keyboard while it is open, though the app behind it stays in front.
     if arbor?.overlays.typeIntoNameField(chord) == true { return }
     if paletteTakes(chord) { return }
+    // So has the panel of shortcuts, which the key puts away and keeps from the app (`CheatSheetPanel.keyDown`). macOS's own
+    // keys, the palette's four, never get to a window: they go on to do what they do, and the panel is taken to lose the
+    // keyboard over it. That is reasoned from `CheatSheetPanel.resignKey`; nobody has pressed them on a Mac with the panel up.
+    let isMacOSs = chord == KeyChord(.command, .tab) || (chord.modifiers == .control && [.left, .right, .up].contains(chord.key))
+    if arbor?.overlays.dismissShortcuts(by: isMacOSs ? "losing the keyboard" : "a key") == true, !isMacOSs { return }
     system.keyDown()
     system.keyUp()
     if chord == KeyChord(.command, .tab) {
@@ -498,7 +527,9 @@ extension World {
   private func appWindowIsUnder(_ point: CGPoint) -> Bool {
     // The wallpaper and the icons on it are left out of the list.
     let windows = windowServerList().filter { $0.onScreen && $0.layer >= 0 }.map { window in
-      PointerSurface.Window(frame: window.frame, layer: window.layer, isOwn: window.pid == arbor?.pid)
+      // `WindowList.read`: a window of Arbor's with a title is an ordinary one.
+      PointerSurface.Window(
+        frame: window.frame, layer: window.layer, isOwn: window.pid == arbor?.pid && window.id != arbor?.updateWindow?.id)
     }
     return PointerSurface.appWindowIsUnder(point, windows: windows, display: display.frame)
   }
