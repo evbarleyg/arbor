@@ -428,11 +428,22 @@ if wanted keys; then
   does "⌃⌥⇧→ focus right" key ctrl+opt+shift+right
   does "⌃⌥⇧→ focus right again" key ctrl+opt+shift+right
   does "⌃⌥⇧← focus left" key ctrl+opt+shift+left
+  # What has the focus is W3, which floats: it is the window that fills the view, and nothing else moves. The same key again is how a person leaves that. Left
+  # filled, W3 would lie over all that the keys after this one do.
+  frames="$(real_frame_of "$W1") $(real_frame_of "$W2") $(real_frame_of "$W3")"
   does "⌃⌥↩ zoom what has the focus" key ctrl+opt+return
+  check "W3 is larger than it was" test "$(width_of "$W3")" -gt "$(echo "$frames" | awk '{ print int($11) }')"
+  does "⌃⌥↩ again" key ctrl+opt+return
+  check "W1, W2 and W3 are where they were and as large" test "$(real_frame_of "$W1") $(real_frame_of "$W2") $(real_frame_of "$W3")" = "$frames"
   does "⌃⌥[ back" key "ctrl+opt+["
   does "⌃⌥F float" key ctrl+opt+f
   does "⌃⌥F dock again" key ctrl+opt+f
   does "⌃⌥D desktop" key ctrl+opt+d
+  # A fill stays through a move of the view, behind what arrives, and quitting gives the window its own frame back.
+  does "⌃⌥↩ zoom W3 once more" key ctrl+opt+return
+  filled=$(width_of "$W3")
+  does "⌃⌥[ back, W3 filled" key "ctrl+opt+["
+  check "W3 is as wide as the fill made it" test "$(width_of "$W3")" = "$filled" -a "$filled" -gt "$(echo "$frames" | awk '{ print int($11) }')"
   journey_ends
 fi
 
