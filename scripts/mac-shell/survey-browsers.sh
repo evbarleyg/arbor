@@ -4,4 +4,5 @@
 #
 #   scripts/mac-shell/run.sh scripts/mac-shell/survey-browsers.sh          three minutes; Arbor is not built
 SURVEY_ONLY="chrome firefox edge"
+SURVEY_OPEN_LIMIT=40
 source "$(dirname "${BASH_SOURCE[0]}")/survey-casts.sh"
