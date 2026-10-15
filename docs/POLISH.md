@@ -106,7 +106,7 @@ After the button comes up, M1 to M13 are asked with that as the cause.
 | S1 | **Crisp at 1x and 2x** | across every straight edge at least 60 px long with a step of 60 levels or more: the pixels between 10% and 90% of the step | ≤ 1 device pixel | stills | 2 |
 | S2 | **On the pixel** | the window server's frame of every panel; half-covered rows or columns along its straight edges | whole points; none | stills | 3 |
 | S3 | **Text is never clipped** and never touches an edge | the box of the ink (pixels 60 levels from the panel's ground) against the panel's own | ≥ 6 pt at the sides, ≥ 3 pt above and below; with the longest words there are, and at the largest text size | stills, eyes | 1 |
-| S4 | **It can be read**, flat and on glass | contrast of ink to ground (WCAG), the ground being what the display shows behind the ink | ≥ 4.5 : 1; ≥ 3 : 1 from 18 pt | stills | 2 |
+| S4 | **It can be read**, flat and on glass | contrast of ink to ground (WCAG), the ground being what the display shows behind the ink | ≥ 4.5 : 1 for words one must read to act; ≥ 3 : 1 for secondary ones; nothing under 3 | stills | 2 |
 | S5 | **Light and dark** | S1 to S4 in both; the ground's lightness follows the system's | so | stills | 2 |
 | S6 | **Increase Contrast is honoured** | with it on: contrast of each panel's outline to what is around it; of ink to ground | ≥ 3 : 1; ≥ 7 : 1 | stills | 2 |
 | S7 | **Reduce Transparency is honoured** | with it on, over windows of strong colours: how much a panel's ground varies | flat (deviation ≤ 2 levels) | stills | 3 |
