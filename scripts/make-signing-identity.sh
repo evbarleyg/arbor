@@ -235,12 +235,12 @@ esac
 # The file lives for a moment in a folder only this user can read; `security import` refuses an empty password.
 transport=$("$openssl" rand -hex 16)
 "$openssl" pkcs12 -export ${legacy[@]+"${legacy[@]}"} -inkey "$work/key.pem" -in "$work/certificate.pem" -name "$name" \
-  -out "$work/identity.p12" -passout "pass:$transport" 2>"$work/openssl.log" \
+  -out "$work/$name.p12" -passout "pass:$transport" 2>"$work/openssl.log" \
   || { cat "$work/openssl.log" >&2; echo "make-signing-identity.sh: $openssl could not pack the certificate" >&2; exit 1; }
 
 # -x: the key cannot be exported again. -T: codesign is on the key's list of applications, which on the Macs that were tried is all it takes.
 imported=$hash
-security import "$work/identity.p12" -k "$keychain" -f pkcs12 -P "$transport" -x -T /usr/bin/codesign >/dev/null
+security import "$work/$name.p12" -k "$keychain" -f pkcs12 -P "$transport" -x -T /usr/bin/codesign >/dev/null
 case "$(identity_hashes)" in
   *"$hash"*) ;;
   *) echo "make-signing-identity.sh: the import went through, but $keychain shows no identity" >&2; exit 1 ;;
