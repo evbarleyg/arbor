@@ -2,7 +2,7 @@
 
 Written by the executor swarm, 2026-10-14; for the documenter to review.
 
-Status: done headlessly (`feat/F55-zoom-with-a-mouse`); the sixty macOS-only lines are neither compiled nor tried on a Mac yet
+Status: done; every step about it in `scripts/mac-shell/input-taps.sh` passed on a hosted Mac on 2026-10-15, with notches and scrolls posted by a script. No wheel and no trackpad has scrolled; macOS's own zoom on ⌃ + scroll does not answer a posted scroll, so whose ⌃⌥ + scroll is beside it is still open
 Depends on: F03 (and F16 when it lands)
 Size: small
 Rank among "what would make people recommend it": 7

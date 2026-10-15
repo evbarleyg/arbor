@@ -1,6 +1,6 @@
 # F08: Display reconnects and Spaces
 
-Status: done (verified headlessly; real displays and Spaces pending a machine with Accessibility permission)
+Status: done (verified headlessly; `scripts/mac-shell/check-displays.sh` ran on a hosted Mac with a virtual second display for the first time on 2026-10-15: 110 passed, 19 failed, eighteen of them one family, board 1.33, and one the script's own; Spaces, `check-desktop.sh`, have not run)
 Depends on: F01
 
 ## Summary

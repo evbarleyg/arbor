@@ -74,14 +74,14 @@ setListed openUnlisted finishSlowFocus userResize releaseMouse backgroundFocus s
 userSwitchesApp appsSettle setUnresponsive openTab selectTab closeTab dragAndLoseTheRelease quit quitApp comesForward
 settleFocus click userClick beginDrag moveDrag holdDrag holdModifierKeys endDrag loseTheReleaseOfTheDrag appsReact grab
 carry letGo loseTheRelease moveSilently report renumber finishRestoring openStrayDialog forgetSession type keyDown keyUp
-hold
+hold letMacOSTile clickOnTheWallpaper pressShowDesktopKey clickOnTheStrip leaveFullScreen
 """.split()
 # The test tells the fake what macOS or an app will answer when Arbor asks or acts. Methods, then properties that are set.
 SYSTEM_ANSWERS = "setMinimumSize setMaximumSize setSizeStep setBehaviour".split()
 SYSTEM_ANSWER_PROPERTIES = """
 cursor mouseDown focused heldModifiers secondsSinceInput displayList stubbornFrames focusIsSlow defersFocus restoresLate
 willSetFrame echoes holdsEchoes isDenied flagLags refusesTaps stackingIsUnknown strangers missingApps unlaunchableApps
-ignoresMoveTogether
+ignoresMoveTogether tiling
 """.split()
 # Opening a window is set-up by the definition of class C, whether before or after the start. It is counted in part 2 all
 # the same, because after the start it is a report like any other.
@@ -97,7 +97,8 @@ inputActivity isHolding frame isVisible clearFrameLog existingWindowIDs launchAp
 install place remove hasHeldEchoes dragging frameAfterResizing openApplication raise windowsFrontToBack clearRaiseLog
 snapshot minimumSize maximumSize sizeStep behaviour lastRequest placeIsArborsDoing groundHasShifted movesNotArbors
 changedItsWays window requested before after together wasFocused focus frames keyboard wholePoints
-titleBarStaysReachable flightFromTheDock flightFromFullScreen none jolts
+titleBarStaysReachable flightFromTheDock flightFromFullScreen none jolts macTiling macTile takeSizeBeforeTile
+isSweptAside whereItWaits sightings clearSightings
 """.split()
 
 # A hand on one of Arbor's own panels: the fake calls the action the real panel would call.
@@ -116,6 +117,7 @@ HARNESS_REPORTS = "keyDown keyUp keyRepeat revokeAccessibility grantAccessibilit
 HARNESS_NEUTRAL = """
 system overlays store scheduler controller releases loginItem recorder start run press registeredShortcuts key display
 workspace layout visibleFrame frame ascii lastTrace layoutProblems staleLayouts measure beginStep stepMark movesInStep jolts
+newProcess
 """.split()
 
 # What the stand-ins for GitHub's releases and macOS's login items are told to answer.
@@ -1195,6 +1197,7 @@ EVIDENCE = {
     "system.restoresLate=": (["changed, minimized", "changed, hidden"], ""),
     "system.setOnActiveSpace": (["changed, offSpace"], ""),
     "system.setFullScreen": (["changed, fullScreen"], ""),
+    "system.leaveFullScreen": (["changed, fullScreen"], ""),
     "system.userMove": (["changed by somebody else, another frame, no drag"], ""),
     "system.moveSilently": (["changed by somebody else, another frame, no drag"], ""),
     "system.report": (["changed by somebody else, another frame, no drag"], ""),
@@ -1265,6 +1268,11 @@ EVIDENCE = {
     "system.missingApps=": (["call openApplication"], ""),
     "system.unlaunchableApps=": (["call launchApp"], ""),
     "system.ignoresMoveTogether=": ([], ""),
+    "system.tiling=": (["read macTiling"], ""),
+    "system.letMacOSTile": ([], ""),
+    "system.clickOnTheWallpaper": (["event pointerPressed"], ""),
+    "system.clickOnTheStrip": (["event pointerPressed"], ""),
+    "system.pressShowDesktopKey": (["event keyboardFocusMoved"], ""),
     "system.renumber": ([], ""),
     "system.forgetSession": ([], ""),
     "harness.keyDown": (["event shortcut"], ""),
@@ -1444,6 +1452,7 @@ WIRING = {
     "Sources/ArborKit/AX/AXWindowSystem+StackedWindows.swift": ([[]], ""),
     "Sources/ArborKit/AX/AXWindowSystem+Stacking.swift": ([["cmd:pin"], ["cmd:summon"]], ""),
     "Sources/ArborKit/AX/ScreenGeometry.swift": ([[]], ""),
+    "Sources/ArborKit/UI/AccentInk.swift": ([["drag"], ["hold"]], "the drop preview of a real drag; peek's outline; the rectangle only with the taps on"),
     "Sources/ArborKit/UI/AppKitOverlays.swift": ([[]], "panels are shown; no tile is clicked and no gap handle dragged"),
     "Sources/ArborKit/UI/AppKitOverlays+HeadsUp.swift": ([["cmd:show-shortcuts"], ["hotkeys"], ["status"], ["drag"]], ""),
     "Sources/ArborKit/UI/AppKitOverlays+Motion.swift": ([[]], ""),
@@ -1531,7 +1540,8 @@ ANCHORS = [
     ("scripts/mac-shell/lib.sh", r"ARBOR_NO_WATCHDOG=1 \"\$@\""),
     (".github/workflows/ci.yml", r"\./scripts/e2e\.sh --full-screen"),
     (".github/workflows/ci.yml", r"\./scripts/mac-shell/e2e-drag\.sh"),
-    (".github/workflows/ci.yml", r"test swift test"),
+    # A selection, or everything: whatever only a Mac compiles, or may behave otherwise there, is in both (scripts/ci-tests.py, `select`).
+    (".github/workflows/ci.yml", r"\./scripts/ci-tests\.py run --mode"),
     (".github/workflows/ci.yml", r"\./scripts/sim-smoke\.sh"),
     (".github/workflows/mac-shell.yml", r"on:\s*workflow_dispatch:"),
     ("scripts/sim-smoke.sh", r"\./scripts/cli-smoke\.sh"),
@@ -1802,7 +1812,7 @@ def show(t):
 # Section 4 is prose in the template: a person ranked the features. These are the facts of the sources it goes by. If one has
 # changed the script stops, so that the ranking is read again and not merely printed again.
 RANKING_DEFAULTS = {
-    "hotkeysEnabled": "true", "gesturesEnabled": "true", "scrollZoom": "true", "peek": "true", "frameRectangleModifier": '"ctrl+opt"',
+    "pointerGestures": "false", "hotkeysEnabled": "true", "gesturesEnabled": "true", "scrollZoom": "true", "peek": "true", "frameRectangleModifier": '"ctrl+opt"',
     "animationDuration": "0.46", "focusRing": "true", "makeRoom": "true", "messages": '"helpful"', "menuBarControls": "true",
     "newWindowsWhileFramed": '"guest"', "dimBehindArranged": "0.25",
     "guardDesktopClicks": "false", "continuousZoom": "false", "windowPictures": "false", "minimapDuration": "0",

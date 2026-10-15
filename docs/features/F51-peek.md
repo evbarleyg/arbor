@@ -2,7 +2,7 @@
 
 Written by the executor swarm, 2026-10-14; for the documenter to review.
 
-Status: done
+Status: done; `scripts/mac-shell/check-F51.sh` passed on a hosted Mac on 2026-10-15, 35 of 35, with the key held by a script
 Depends on: F01; much better with F02
 Size: small to medium
 Rank among "what would make people recommend it": 2

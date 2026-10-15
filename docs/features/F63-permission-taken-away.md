@@ -2,7 +2,7 @@
 
 Written by the executor swarm, 2026-10-14; for the documenter to review.
 
-Status: done headlessly (`feat/F63-permission-lost`); the macOS-only part compiles on a Mac; the switch itself has not been tried on one yet
+Status: done headlessly; `scripts/mac-shell/check-F63.sh` ran on a hosted Mac for the first time on 2026-10-15 and is red, 15 passed and 16 failed, all sixteen behind one early step (launched without the permission and then granted by the script, Arbor did not start by itself within twelve seconds): the script's fault, since a process that runs learns of a grant only through a notification that writing to the privacy database does not send. In `input-taps.sh` the permission was reset with taps installed: they were gone within three seconds
 Depends on: F40 (stopping and starting in one process), the app shell review (#18: `start()` forgets what is transient; what is off screen at a start counts as out of view), F41 (`activeBindings`, `inputSettings`)
 Size: small to medium
 
