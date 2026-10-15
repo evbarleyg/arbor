@@ -70,6 +70,34 @@ codesign --display --requirements - "$app" 2>/dev/null | sed -n 's/^\(# \)\{0,1\
 csreq -r "$ARBOR_SESSION_DIR/requirement.txt" -b "$ARBOR_SESSION_DIR/requirement.bin" || die "csreq could not read the bundle's requirement"
 REQUIREMENT="X'$(xxd -p "$ARBOR_SESSION_DIR/requirement.bin" | tr -d '\n')'"
 at_exit "tcc \"DELETE FROM access WHERE client = '$BUNDLE_ID';\""
+
+# The third control: a tool that has one active tap and does nothing about losing the permission, under an identifier of its own. What happens to input then is
+# macOS's way with any tapper.
+TAPPER_ID=com.evbarleyg.arbor.probe-bare-tapper
+tapper="$HOME/Applications/ArborProbeBareTapper.app"
+at_exit 'rm -rf "${tapper:?}"'
+rm -rf "${tapper:?}"
+mkdir -p "$tapper/Contents/MacOS"
+cp "$ASKER" "$tapper/Contents/MacOS/asker"
+cat > "$tapper/Contents/Info.plist" <<PLIST
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+  <key>CFBundleIdentifier</key><string>$TAPPER_ID</string>
+  <key>CFBundleExecutable</key><string>asker</string>
+  <key>CFBundleName</key><string>ArborProbeBareTapper</string>
+  <key>CFBundlePackageType</key><string>APPL</string>
+  <key>LSUIElement</key><true/>
+</dict></plist>
+PLIST
+codesign --force --sign - --identifier "$TAPPER_ID" "$tapper" || die "codesign failed"
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$tapper" || echo "lsregister could not register the tapper"
+codesign --display --requirements - "$tapper" 2>/dev/null | sed -n 's/^\(# \)\{0,1\}designated => //p' > "$ARBOR_SESSION_DIR/requirement.txt"
+csreq -r "$ARBOR_SESSION_DIR/requirement.txt" -b "$ARBOR_SESSION_DIR/requirement.bin" || die "csreq could not read the tapper's requirement"
+TAPPER_REQUIREMENT="X'$(xxd -p "$ARBOR_SESSION_DIR/requirement.bin" | tr -d '\n')'"
+at_exit "tcc \"DELETE FROM access WHERE client = '$TAPPER_ID';\""
+ARBOR_ID=$BUNDLE_ID
+ARBOR_REQUIREMENT=$REQUIREMENT
 rows() { tcc "SELECT client, auth_value FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$BUNDLE_ID';"; }
 
 # What the switch in System Settings records. A new process asks the daemon, which answers from memory, so it is restarted.
@@ -109,7 +137,7 @@ by_the_row_announced() {
   "$ASKER" announce
 }
 
-# one_round <number> <how the permission goes> [arbor|arbor-without-taps|nobody]: the last two are the controls. If input stands still without
+# one_round <number> <how the permission goes> [arbor|arbor-without-taps|nobody|bare-tapper]: the last three are the controls. If input stands still without
 # Arbor's taps as well, it is not the taps' doing.
 one_round() {
   local how=$2 who=${3:-arbor} x y w h log_mark taken back length=12 between
@@ -119,8 +147,18 @@ one_round() {
   between="from the loss until the taps were gone"
   [ "$how" = by_the_row ] && between="FROM THE ROW'S DELETION UNTIL ARBOR NOTICED"
   step "round $round: $how, with $who"
+  # Whose entry is written and taken.
+  BUNDLE_ID=$ARBOR_ID REQUIREMENT=$ARBOR_REQUIREMENT
+  [ "$who" = bare-tapper ] && BUNDLE_ID=$TAPPER_ID REQUIREMENT=$TAPPER_REQUIREMENT
   grant
-  if [ "$who" != nobody ]; then
+  if [ "$who" = bare-tapper ]; then
+    : > "$ARBOR_OUT/tapper-$round.txt"
+    limit 20 open -n "$tapper" --args tap "$((length + 12))" "$ARBOR_OUT/tapper-$round.txt"
+    eventually grep -q tap-ready "$ARBOR_OUT/tapper-$round.txt" || { cat "$ARBOR_OUT/tapper-$round.txt"; invalid "the bare tapper has its tap"; return; }
+    TAPPER_PID=$(sed -n 's/.*tap-ready pid=//p' "$ARBOR_OUT/tapper-$round.txt")
+    started "$TAPPER_PID"
+    "$WITNESS" taps | grep "pid=$TAPPER_PID "
+  elif [ "$who" != nobody ]; then
     launch "$([ "$who" = arbor ] && echo 0 || echo 1)"
     if ! eventually status_starts running; then
       "$ARBOR_BIN/arborctl" status
@@ -158,7 +196,12 @@ one_round() {
   tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -E "ermission|event tap|stopped|ERROR" | cut -c 12-220 | tail -n 8
   echo "the tools' own permission afterwards: $(pointer ax-access)"
   removed=""
-  if [ "$who" != nobody ]; then
+  if [ "$who" = bare-tapper ]; then
+    echo "the tapper's own words:"; cat "$ARBOR_OUT/tapper-$round.txt"
+    echo "its tap now, by the window server's list: $("$WITNESS" taps | grep "pid=$TAPPER_PID " || echo none)"
+    removed=$(grep -m 1 switched-off "$ARBOR_OUT/tapper-$round.txt" | cut -c 1-12)
+    kill_started "$TAPPER_PID"
+  elif [ "$who" != nobody ]; then
     check "round $round: Arbor has no event tap left" eventually no_taps
     "$ARBOR_BIN/arborctl" status | head -n 1 | cut -c 1-100
     # Whichever noticed first: the taps' own check, or the controller.
@@ -231,18 +274,24 @@ PYTHON
   leave
 }
 
-one_round 1 by_the_row
-one_round 2 by_the_row nobody
-one_round 3 by_the_row arbor-without-taps
-one_round 4 by_the_row
-one_round 5 by_the_row_announced
-one_round 6 by_the_row_announced nobody
-one_round 7 by_the_row_announced
-one_round 8 by_tccutil
+one_round 1 by_the_row_announced
+one_round 2 by_the_row_announced nobody
+one_round 3 by_the_row_announced arbor-without-taps
+one_round 4 by_the_row_announced bare-tapper
+one_round 5 by_the_row
+one_round 6 by_the_row nobody
+one_round 7 by_the_row arbor-without-taps
+one_round 8 by_the_row bare-tapper
 one_round 9 by_tccutil
-one_round 10 by_tccutil
-one_round 11 by_the_row
-one_round 12 by_the_row nobody
+one_round 10 by_tccutil nobody
+one_round 11 by_tccutil bare-tapper
+one_round 12 by_the_row_announced
+one_round 13 by_the_row_announced nobody
+one_round 14 by_tccutil
+one_round 15 by_the_row
+
+step "side by side"
+grep -E "^== round|THE LONGEST HOLE|^posted|a hole of|noticed|INVALID" "$ARBOR_OUT/output.txt" 2>/dev/null | cut -c 1-170
 
 step "the end"
 arbor_log

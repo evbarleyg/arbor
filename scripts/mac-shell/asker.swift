@@ -29,6 +29,8 @@ let usage = """
                                     unless told otherwise), a whole small pinch. ⌃⌥ go down <from> seconds in and up at <until>
     arrivals <seconds>              print each of those that reaches the end of the taps: the time, its kind, its number, how late, its modifiers;
                                     and every other press, drag, key, scroll and gesture, as other=…
+    tap <seconds> <file>            install one active tap on mouse-downs, at the head of the session's taps as Arbor's are, pass everything on, and never let
+                                    go of it; append to <file> when it is in, and whenever macOS switches it off
     now                             the time as all of these write it, and as arbor.log does
   """
 
@@ -216,6 +218,37 @@ func arrivals(seconds: Double) {
   CFRunLoopRunInMode(.defaultMode, seconds, false)
 }
 
+// MARK: A bare tapper
+
+var bareTap: CFMachPort?
+var bareLog: FileHandle?
+
+/// What any tool with an event tap is, and nothing more: to tell what macOS does to a tapper that loses the permission from what Arbor does about it.
+func tap(seconds: Double, into path: String) {
+  if !FileManager.default.fileExists(atPath: path) { FileManager.default.createFile(atPath: path, contents: nil) }
+  guard let file = FileHandle(forWritingAtPath: path) else { fail("cannot write \(path)") }
+  file.seekToEndOfFile()
+  bareLog = file
+  let callback: CGEventTapCallBack = { _, type, event, _ in
+    if type == .tapDisabledByTimeout || type == .tapDisabledByUserInput {
+      bareLog?.write(Data("\(now()) switched-off \(type == .tapDisabledByTimeout ? "by timeout" : "by user input")\n".utf8))
+    }
+    return Unmanaged.passUnretained(event)
+  }
+  bareTap = CGEvent.tapCreate(
+    tap: .cgSessionEventTap, place: .headInsertEventTap, options: .defaultTap,
+    eventsOfInterest: CGEventMask(1) << CGEventMask(CGEventType.leftMouseDown.rawValue), callback: callback, userInfo: nil)
+  guard let port = bareTap else {
+    file.write(Data("\(now()) refused\n".utf8))
+    fail("macOS refused the tap")
+  }
+  CFRunLoopAddSource(CFRunLoopGetCurrent(), CFMachPortCreateRunLoopSource(kCFAllocatorDefault, port, 0), .commonModes)
+  CGEvent.tapEnable(tap: port, enable: true)
+  file.write(Data("\(now()) tap-ready pid=\(getpid())\n".utf8))
+  CFRunLoopRunInMode(.defaultMode, seconds, false)
+  file.write(Data("\(now()) the end: the tap is \(CGEvent.tapIsEnabled(tap: port) ? "on" : "off")\n".utf8))
+}
+
 // MARK: Go
 
 var arguments = Array(CommandLine.arguments.dropFirst())
@@ -248,6 +281,9 @@ case "stream":
   stream(seconds: number(1), every: number(2), at: CGPoint(x: number(3), y: number(4)), kinds: kinds, held: held.map { $0[0]...$0[1] })
 case "arrivals":
   arrivals(seconds: number(1))
+case "tap":
+  guard arguments.count == 3 else { fail(usage) }
+  tap(seconds: number(1), into: arguments[2])
 case "now":
   print(now())
 default:
