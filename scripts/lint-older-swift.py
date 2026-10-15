@@ -9,7 +9,7 @@ with "fatal error encountered during compilation" and a stack dump that names th
 SwiftUI, so neither the Linux build nor `make typecheck-mac` sees it, with any compiler. `Binding<String>.onMainActor(get:set:)`
 (Sources/ArborKit/UI/SettingsListViews.swift) says the same and compiles everywhere; its comment has the reason.
 
-What else the older compiler refuses it refuses on Linux too, with a line number: CI's job `linux-oldest-swift` is the net for that.
+What else the older compiler refuses it refuses on Linux too, with a line number: CI's job `oldest-swift` is the net for that.
 
 It looks for the words outside comments and strings, so it is a net, not a proof: closures that are first given a name and a
 `@MainActor` type and then handed over crash it as well, and only the Mac job finds those. Part of `make lint`; `--self-test` tries the
