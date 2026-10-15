@@ -55,6 +55,44 @@
       }
     }
 
+    /// About the accent colours as Increase Contrast makes them: darker.
+    private static let darkerAccents: [(name: String, red: Double, green: Double, blue: Double)] = [
+      ("blue", 0, 0.25, 0.87), ("purple", 0.54, 0.27, 0.67), ("pink", 0.83, 0.06, 0.41), ("red", 0.84, 0, 0.08),
+      ("orange", 0.79, 0.2, 0), ("yellow", 0.7, 0.31, 0), ("green", 0.14, 0.54, 0.24), ("graphite", 0.42, 0.42, 0.44),
+    ]
+
+    /// Measured on pictures from a hosted Mac with Increase Contrast: the drop preview's border 1.6 to 2.3 to 1, peek's outline
+    /// 1.06 to 1.46, against the darkened wallpaper they lay on. Three is asked.
+    @Test func withIncreaseContrastOneOfTheTwoLinesStandsOutByThreeToOne() throws {
+      func luminance(_ pixel: OffscreenPicture.Pixel) -> Double {
+        func linear(_ part: Double) -> Double { part <= 0.03928 ? part / 12.92 : pow((part + 0.055) / 1.055, 2.4) }
+        return 0.2126 * linear(pixel.red) + 0.7152 * linear(pixel.green) + 0.0722 * linear(pixel.blue)
+      }
+      for accent in Self.darkerAccents {
+        let colour = NSColor(srgbRed: accent.red, green: accent.green, blue: accent.blue, alpha: 1)
+        // White, black, a middling grey, and about what a quarter's darkening leaves of a blue sky and of green hills.
+        let grounds: [(Double, Double, Double)] = [(1, 1, 1), (0, 0, 0), (0.5, 0.5, 0.5), (0.19, 0.42, 0.63), (0.18, 0.42, 0.31)]
+        for (red, green, blue) in grounds {
+          let name = "strong-\(accent.name)-on-\(red)-\(green)-\(blue)"
+          try OffscreenPicture.each(size: size, item: "accent", name: name, scales: [2], modes: [.light]) { picture in
+            picture.draw { _ in
+              NSColor(srgbRed: red, green: green, blue: blue, alpha: 1).setFill()
+              NSRect(origin: .zero, size: size).fill()
+              AccentInk.mark(
+                NSRect(x: 20, y: 10, width: 80, height: 60), radius: 17, fill: 0.18, width: 2, accent: colour,
+                increasesContrast: true)
+            }
+            let ground = luminance(picture.pixel(5, 40))
+            let best = stride(from: 20.25, to: 23, by: 0.5).map { x -> Double in
+              let line = luminance(picture.pixel(x, 40))
+              return (max(line, ground) + 0.05) / (min(line, ground) + 0.05)
+            }.max() ?? 1
+            #expect(best >= 3, "\(accent.name) on (\(red), \(green), \(blue)): \(best) to 1")
+          }
+        }
+      }
+    }
+
     /// The rectangle of a drag begins a point high and a point wide.
     @Test func aMarkTooSmallForItsLinesIsDrawnAsFarAsItGoes() throws {
       let picture = try OffscreenPicture(size: size)

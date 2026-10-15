@@ -235,6 +235,9 @@ public struct FinderLayout: Equatable, Sendable {
   public var panel: CGRect
   /// The text field, measured from the palette's top-left corner, y down.
   public var field: CGRect
+  /// The magnifying glass before it, measured the same way: over the rows' icons. The words in an empty field are too faint to
+  /// be its only label, and are meant to be.
+  public var glyph: CGRect
   /// Everything under the field band, measured the same way: the rows, then the message. No height when
   /// there is neither.
   public var list: CGRect
@@ -264,7 +267,9 @@ public struct FinderLayout: Equatable, Sendable {
     let tallest = Self.height(rows: Self.pageSize(on: screen), hasMessage: true)
     let top = max(min(screen.minY + screen.height / 4, screen.maxY - Self.margin - tallest), screen.minY + Self.margin)
     panel = CGRect(x: (screen.midX - width / 2).rounded(), y: top.rounded(), width: width, height: height)
-    field = CGRect(x: 20, y: 13, width: width - 40, height: 30)
+    // A row's icon is 24 points wide, 10 into the row, and its words begin 10 after it. A field's words begin 2 into it.
+    glyph = CGRect(x: Self.listPadding + 12, y: (Self.fieldBand - 20) / 2, width: 20, height: 20)
+    field = CGRect(x: Self.listPadding + 42, y: 13, width: width - Self.listPadding - 42 - 20, height: 30)
     list = CGRect(x: 0, y: Self.fieldBand, width: width, height: height - Self.fieldBand)
   }
 

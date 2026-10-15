@@ -316,6 +316,7 @@ private final class FinderView: NSView {
   override func draw(_ dirtyRect: NSRect) {
     guard let geometry else { return }
     let list = geometry.list
+    drawGlyph(in: geometry.glyph)
     if list.height > 0 {
       NSColor.separatorColor.setFill()
       NSBezierPath(rect: NSRect(x: 0, y: list.minY, width: bounds.width, height: 1)).fill()
@@ -336,6 +337,21 @@ private final class FinderView: NSView {
     // Here and not on the ground, so that it is in the pictures the tests take of this view.
     PanelOutlineView.draw(
       in: bounds, radius: Self.cornerRadius, increasesContrast: effectiveAppearance.increasesContrast)
+  }
+
+  private func drawGlyph(in frame: NSRect) {
+    let configuration = NSImage.SymbolConfiguration(pointSize: frame.height - 2, weight: .medium)
+      .applying(NSImage.SymbolConfiguration(paletteColors: [PanelInk.second]))
+    guard
+      let image = NSImage(systemSymbolName: "magnifyingglass", accessibilityDescription: nil)?
+        .withSymbolConfiguration(configuration),
+      image.size.width > 0, image.size.height > 0
+    else { return }
+    let scale = min(frame.width / image.size.width, frame.height / image.size.height, 1)
+    let size = NSSize(width: image.size.width * scale, height: image.size.height * scale)
+    image.draw(
+      in: NSRect(x: frame.midX - size.width / 2, y: frame.midY - size.height / 2, width: size.width, height: size.height),
+      from: .zero, operation: .sourceOver, fraction: 1, respectFlipped: true, hints: nil)
   }
 
   private func draw(_ item: FinderSession.Item, in frame: NSRect) {
