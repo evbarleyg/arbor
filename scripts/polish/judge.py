@@ -410,6 +410,41 @@ def panel_still(m, allow):
     return Verdict(PASS, "it fades, or is there, in one place")
 
 
+def follows(m, allow):
+    """Whatever the fingers' sum means to Arbor, a width that follows it is a smooth function of it, a moment later."""
+    film = m["film"]
+    down, up = film.time_of("fingers down"), film.time_of("fingers up")
+    if not film.fingers or down is None or up is None:
+        return Verdict(UNSEEN, "the film does not say what the fingers did")
+    said_at = np.array([event[0] for event in film.fingers], dtype=float)
+    said = np.array([event[1] for event in film.fingers], dtype=float)
+    best = None
+    for track in m["scan"].tracks:
+        if track.detail:
+            continue
+        seen = [(time, rect.right - rect.left) for time, rect in zip(track.times, track.rects)
+                if down <= time <= up and not rect.cut[0] and not rect.cut[2] and not rect.ragged]
+        if len(seen) >= 12 and (best is None or np.ptp([width for _, width in seen]) > np.ptp([width for _, width in best])):
+            best = seen
+    if best is None or np.ptp([width for _, width in best]) < 40 * film.scale:
+        return Verdict(UNSEEN, "no window's width could be followed while the fingers were down")
+    times, widths = (np.array(column, dtype=float) for column in zip(*best))
+    fits = []
+    for lag in range(0, 160, 4):
+        sums = np.interp(times - lag, said_at, said)
+        line = np.polyval(np.polyfit(sums, widths, 3), sums)
+        fits.append((float(np.sqrt(np.mean((widths - line) ** 2))), lag, float((np.abs(widths - line) / widths).max()), int(np.abs(widths - line).argmax())))
+    _, lag, off, where = min(fits)
+    faults = []
+    if lag > 2 * TICK + 2 + allow["gap"]:
+        faults.append(f"{lag} ms behind the fingers (at most 35)")
+    if off > 0.02:
+        faults.append(f"at one moment {off * 100:.0f}% of its width from where the fingers have it (at most 2%)")
+    if faults:
+        return Verdict(MISS, "; ".join(faults), [frame_at(m, times[where])])
+    return Verdict(PASS, f"{lag} ms behind the fingers, never more than {off * 100:.1f}% of its width from where they have it")
+
+
 def not_yet(m, allow):
     return Verdict(UNSEEN, "the judge cannot measure this yet")
 
@@ -445,7 +480,7 @@ CHECKS = [
     ("D2", "the preview tells the truth", 2, ("drag",), preview_true),
     ("D3", "the preview comes and goes softly, once", 2, ("drag",), not_yet),
     ("D4", "others make room in one motion", 1, ("drag",), not_yet),
-    ("G1", "what follows the fingers follows them closely", 1, ("follow",), not_yet),
+    ("G1", "what follows the fingers follows them closely", 1, ("follow",), follows),
     ("P1", "a panel is there at once and gone at once", 2, ("panel",), panel_prompt),
     ("P2", "a panel fades or is there; it does not jump", 2, ("panel",), panel_still),
 ]
@@ -738,6 +773,9 @@ def self_test():
         "drag-under-a-tint": (studio.shoot_drag, {"tint": True}, [], []),
         "drag-pulled": (studio.shoot_drag, {"pull": 30}, ["D1"], []),
         "drag-preview-lies": (studio.shoot_drag, {"preview_off": 8}, ["D2"], []),
+        "fingers": (studio.shoot_follow, {}, [], []),
+        "fingers-far-ahead": (studio.shoot_follow, {"lag": 6}, ["G1"], []),
+        "fingers-and-a-step": (studio.shoot_follow, {"step": 30}, ["G1"], []),
         "panel": (studio.shoot_panel, {}, [], []),
         "panel-by-a-click": (studio.shoot_panel, {"click": True}, [], []),
         "panel-late": (studio.shoot_panel, {"late": 300}, ["P1", "M1"], []),

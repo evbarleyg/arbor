@@ -9,7 +9,7 @@ regression, found before it lands, like a failing test.
 
 | | |
 |---|---|
-| What Linux proves | that the film script plays (`scripts/mac-shell/rehearse.sh scripts/mac-shell/films.sh`) and that the judge catches what it claims to catch (`scripts/polish/judge.py --self-test`: 38 drawn films, each wrong in one known way or right) |
+| What Linux proves | that the film script plays (`scripts/mac-shell/rehearse.sh scripts/mac-shell/films.sh`) and that the judge catches what it claims to catch (`scripts/polish/judge.py --self-test`: 41 drawn films, each wrong in one known way or right) |
 | What a Mac must run | `scripts/mac-shell/films.sh`: unattended, on a free hosted runner, one run for everything, under ten minutes. It only records |
 | What the sandbox judges afterwards | everything: `scripts/polish/judge.py score <run folder>`, then the sheets, by eye |
 
