@@ -109,6 +109,8 @@ extension FakeMac {
     case "AXFullScreen": return answer(.bool(window.isFullScreen))
     case "AXMain": return answer(.bool(app.main === window))
     case "AXFocused": return answer(.bool(app.focused === window))
+    // Read on a Mac of two sheets: both name the sheet's window. Of a window: its parent is the app, and it has no AXWindow.
+    case "AXParent", "AXWindow": return window.sheetOf.map { answer(.element($0.element)) } ?? (.attributeUnsupported, nil)
     default: return (.attributeUnsupported, nil)
     }
   }
@@ -133,7 +135,7 @@ extension FakeMac {
   }
 
   private func currentList(of app: App) -> [Window] {
-    stack.filter { $0.app === app && $0.isOpen && $0.isFrontTab && $0.space == activeSpace }
+    stack.filter { $0.app === app && $0.isOpen && $0.isFrontTab && $0.space == activeSpace && $0.sheetOf == nil }
   }
 
   /// To be called before an app's list changes: with bad manners (ii) the old one is given out a while longer.

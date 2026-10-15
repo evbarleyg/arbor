@@ -195,6 +195,17 @@ MUTANTS = [
         "red": ["⌘ is held to the end of a drag and let go together with the button: when the end of the drag is reported, ⌘ counts as held"],
     },
     {
+        # What a hosted Mac showed on 2026-10-15: a sheet is named by a number of its own, which nobody above the layer knows.
+        "name": "a sheet's own number is passed on",
+        "old": "    guard role == kAXSheetRole else {\n",
+        "new": "    guard role == \"\" else {\n",
+        "red": [
+            "a sheet comes down over the window that has the keyboard, and is answered: asked where the keyboard is, the layer names the sheet's window",
+            "a click on the sheet of another window: the sheet's window is reported focused",
+            "a sheet, and a neighbour: its window goes out of view: it is in the window in view",
+        ],
+    },
+    {
         "name": "every notice about the screens is passed on",
         "old": "    guard let delay = DisplayChange.settleTime(from: reportedDisplays, to: displays()) else { return }\n",
         "new": "    guard let delay = Optional(0.0) else { return }\n",

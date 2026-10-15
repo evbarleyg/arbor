@@ -97,7 +97,7 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
   case focus(WindowID)
   /// ⌘Tab or a click brings another app to the front: no app's own focused window changes.
   case switchApp(WindowID)
-  /// The keyboard goes to the desktop, a sheet, a panel: nothing Arbor knows.
+  /// The keyboard goes to the desktop: nothing Arbor knows, and Finder is in front.
   case focusNothing
   /// An app that is not in front changes which of its windows is focused.
   case backgroundFocus(WindowID)

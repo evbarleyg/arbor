@@ -123,20 +123,20 @@ private let upperDisplay = DisplaySnapshot(
     }
   }
 
-  /// Arbor sees no focused window while the keyboard is in a sheet, a panel or Spotlight. Commands that leave focus where it
+  /// Arbor sees no focused window that it knows while the keyboard is in a panel or a launcher. Commands that leave focus where it
   /// is leave it there too.
-  @Test func theKeyboardStaysInASheet() {
+  @Test(arguments: [WindowID(9_999), nil]) func theKeyboardStaysInAPanel(named: WindowID?) {
     for command in ["balance", "balance all", "swap $0 $1", "swap $0 $3", "move-to-display next $2", "rotate", "mirror"] {
       let (h, w) = tilingScenario(
         ["A", "B", "M", "S"], ["dock $0 left", "dock $1 right", "dock $2 right", "resize $0 right 50", "move-to-display 2 $3", "dock $3 left"],
         displays: [FakeWindowSystem.standardDisplay, sideDisplay])
       h.system.setMinimized(w[2], true)
       h.system.userFocus(w[0])
-      h.system.sheetTakesTheKeyboard()
+      h.system.keyboardGoesToNoKnownWindow(named: named)
       h.system.cursor = CGPoint(x: 300, y: 300)
       runOK(h, command, w)
       h.scheduler.advance(by: 1)
-      #expect(h.system.focused == nil, "\(command) took the keyboard")
+      #expect(h.system.focused == named, "\(command) took the keyboard")
       expectSound(h)
     }
   }

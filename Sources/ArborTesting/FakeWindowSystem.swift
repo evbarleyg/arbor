@@ -1249,10 +1249,12 @@ extension FakeWindowSystem {
     events?.keyboardFocusMoved()
   }
 
-  /// A sheet, a dialog or a panel of the app in front takes the keyboard ("Do you want to keep this document?"), or a
-  /// launcher that brings no app forward. None of these windows has it then either, and the app in front stays.
-  public func sheetTakesTheKeyboard() {
-    focused = nil
+  /// The keyboard goes to something that is none of these windows, and the app in front stays. `named`: what macOS names meanwhile. A free-standing
+  /// panel or dialog of the app in front: a number of its own, which nobody here knows (seen on a hosted Mac). Nobody: the app in front is not
+  /// observed, or has no focused window. A SHEET IS NEITHER: the real layer answers it with its window's number, so that to whoever asks at this
+  /// seam the keyboard has not moved.
+  public func keyboardGoesToNoKnownWindow(named number: WindowID? = nil) {
+    focused = number
     events?.keyboardFocusMoved()
   }
 

@@ -180,12 +180,15 @@ extension FakeMac {
 
   /// A window becomes its app's key and main window. Whether the keyboard is there depends on whether the app is in front.
   /// The order of the two reports is a guess (AppKit makes a window key before it makes it main).
-  func makeKey(_ window: Window, reportingFocus: Bool = true) {
-    let app = window.app
-    guard window.isOpen else { return }
-    let (focusChanges, mainChanges) = (app.focused !== window, app.main !== window)
+  func makeKey(_ asked: Window, reportingFocus: Bool = true) {
+    let app = asked.app
+    guard asked.isOpen else { return }
+    // A window with a sheet gives the keyboard to the sheet, and is the main window all the while.
+    let window = app.windows.last { $0.sheetOf === asked && $0.isOpen } ?? asked
+    let main = window.sheetOf ?? window
+    let (focusChanges, mainChanges) = (app.focused !== window, app.main !== main)
     app.focused = window
-    app.main = window
+    app.main = main
     if app.reportsFocusTwiceAndLate, focusChanges, reportingFocus {
       // Counted from the notice that the app came forward, which follows Arbor's call by some 5 ms here.
       let notice = 0.005 - timing.report
@@ -196,7 +199,7 @@ extension FakeMac {
     }
     if focusChanges, reportingFocus { report("AXFocusedWindowChanged", about: window) }
     // Posted by the app a moment later: if something takes its main thread in between, it is held back (`minimize`).
-    if mainChanges { appDoes(app, after: timing.betweenReports, "") { [self] in report("AXMainWindowChanged", about: window) } }
+    if mainChanges { appDoes(app, after: timing.betweenReports, "") { [self] in report("AXMainWindowChanged", about: main) } }
   }
 
   /// The app's key window is gone, minimized or behind another tab: the frontmost of its others that show takes over. With none left the app

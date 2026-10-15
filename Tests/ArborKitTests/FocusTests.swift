@@ -566,7 +566,7 @@ import Testing
   /// A menu bar app's window, a launcher that comes forward, an app Arbor was told nothing about.
   func aLauncherTakesTheKeyboard(_ h: Harness) {
     h.system.activate(bundleID: "com.example.launcher", name: "Launcher")
-    h.system.sheetTakesTheKeyboard()
+    h.system.keyboardGoesToNoKnownWindow()
   }
 
   /// A key that moves the view moves the view. (Ten times of ten, on a hosted Mac, it also took the keyboard.)
@@ -592,54 +592,31 @@ import Testing
     #expect(focused != nil && focused.map { h.system.isVisible($0) } == true)
   }
 
-  /// A sheet is where its window is. While that stays in view somebody is answering it. Taken out of view with the keyboard in
-  /// it, Return would answer a question nobody can see.
+  /// A free-standing panel or dialog (Find, Fonts, Open…) stays on screen whatever the view does, so nobody takes the keyboard out of it: not while its
+  /// app's window is in view, and not when that leaves. macOS names it by a number of its own, which Arbor does not know (seen on a hosted Mac).
+  /// An app Arbor knows that has windows and names none as focused keeps the keyboard at these moves too.
   ///
-  /// `named`: whether macOS names no window meanwhile or the sheet, by a number Arbor does not know, nobody has recorded.
-  @Test(arguments: [false, true]) func aSheetKeepsTheKeyboardForAsLongAsItsWindowIsInView(named: Bool) {
+  /// A sheet needs no test here: the real layer answers it with its window's number, so it goes by what holds for that window
+  /// (`make mac-on-linux`, "a sheet").
+  @Test(arguments: [WindowID(9_999), nil]) func aPanelKeepsTheKeyboardWhereverItsAppsWindowGoes(named: WindowID?) {
     let (h, a, _, _, _) = threeAppsAndAFloat()
-    func aSheetOpens() {
-      h.system.sheetTakesTheKeyboard()
-      if named { h.system.focused = WindowID(9_999) }
-    }
     h.system.userFocus(a)
-    aSheetOpens()
-    var asked = h.system.focusLog.count
-    #expect(h.run("show-all").ok)
-    h.scheduler.advance(by: 1)
-    #expect(h.system.isVisible(a) && h.system.focusLog.dropFirst(asked).map(\.window) == [])
-    #expect(h.run("zoom \(a.rawValue)").ok)
-    aSheetOpens()
-    asked = h.system.focusLog.count
-    #expect(h.run("neighbor right").ok)
-    h.scheduler.advance(by: 1)
-    #expect(!h.system.isVisible(a) && h.system.focusLog.count == asked + 1)
-    #expect(h.system.focusedWindow().map { h.system.isVisible($0) } == true)
-  }
-
-  /// Its window is the one of its app that was used last, whatever was used in between. Everything shows; one of two
-  /// windows has a sheet, somebody clicks the other window and then the sheet again, and Back frames `a`.
-  @Test(arguments: [false, true]) func theSheetIsWhereItsAppsWindowIs(itsWindowLeaves: Bool) {
-    let (h, a, b, _, _) = threeAppsAndAFloat()
-    #expect(h.run("show-all").ok)
-    let (withTheSheet, other) = itsWindowLeaves ? (b, a) : (a, b)
-    h.system.userFocus(withTheSheet)
-    h.system.sheetTakesTheKeyboard()
-    h.system.userFocus(other)
-    h.system.activateApp(of: withTheSheet)
-    h.system.sheetTakesTheKeyboard()
+    h.system.keyboardGoesToNoKnownWindow(named: named)
     let asked = h.system.focusLog.count
-    #expect(h.run("back").ok)
+    #expect(h.run("show-all").ok)
     h.scheduler.advance(by: 1)
-    #expect(h.system.isVisible(a) && !h.system.isVisible(b))
-    #expect(h.system.focusLog.dropFirst(asked).map(\.window) == (itsWindowLeaves ? [a] : []))
+    #expect(h.system.isVisible(a) && h.system.focusLog.count == asked)
+    #expect(h.run("back").ok && h.run("neighbor right").ok)
+    h.scheduler.advance(by: 1)
+    #expect(!h.system.isVisible(a) && h.system.focusLog.count == asked, "\(h.system.focusLog.dropFirst(asked).map(\.window))")
+    #expect(h.system.focusedWindow() == named)
   }
 
   /// A window of Arbor's own has nobody to give the keyboard back to. (Run from a terminal, or by a test, Arbor has no bundle.)
   @Test func withArborItselfInFrontTheKeyboardGoesAlongWithTheView() {
     let (h, _, _, _, _) = threeAppsAndAFloat()
     h.system.activate(bundleID: nil, name: ProcessInfo.processInfo.processName)
-    h.system.sheetTakesTheKeyboard()
+    h.system.keyboardGoesToNoKnownWindow()
     #expect(h.run("show-all").ok)
     h.scheduler.advance(by: 1)
     #expect(h.system.focusedWindow().map { h.system.isVisible($0) } == true)
@@ -654,8 +631,9 @@ import Testing
     #expect(h.system.focusedWindow() == b)
   }
 
-  /// So does what names a place: a saved view, a space by its name or its number, a tile, a line of Go to….
-  @Test func whatNamesAPlaceTakesTheKeyboardThereWhoeverHadIt() throws {
+  /// So does what names a place: a saved view, a space by its name or its number, a tile, a line of Go to…. From a launcher, and from a panel of
+  /// the app in front.
+  @Test(arguments: [false, true]) func whatNamesAPlaceTakesTheKeyboardThereWhoeverHadIt(fromAPanel: Bool) throws {
     func fixture() -> (Harness, b: WindowID, f: WindowID, space: NodeID) {
       let (h, a, b, _, f) = threeAppsAndAFloat()
       h.run("zoom \(b.rawValue)")
@@ -664,7 +642,7 @@ import Testing
       let space = h.workspace.camera
       h.run("zoom \(a.rawValue)")
       h.scheduler.advance(by: 1)
-      aLauncherTakesTheKeyboard(h)
+      if fromAPanel { h.system.keyboardGoesToNoKnownWindow(named: WindowID(9_999)) } else { aLauncherTakesTheKeyboard(h) }
       return (h, b, f, space)
     }
     for line in ["view 1", "go letters", "find letters", "zoom-node $space", "frame-rect $b"] {
@@ -689,6 +667,21 @@ import Testing
     h.overlays.clickTile(h.workspace.tree.desktop)
     h.scheduler.advance(by: 1)
     #expect(h.system.focusedWindow() == f, "the Desktop's tile")
+  }
+
+  /// Whoever says "focus" asks for the keyboard, also by a direction, and also where nothing lies that way in view and the command goes on to the
+  /// neighbouring space as `neighbor` would, which by itself names nothing. NEEDS A DESKTOP WITH ROOM BESIDE THE DOCKED PLACES, and nothing on it.
+  @Test(arguments: [false, true]) func focusInEveryFormMovesTheKeyboard(fromAPanel: Bool) {
+    let (h, _, _, _) = threeApps()
+    #expect(h.run("desktop").ok)
+    h.scheduler.advance(by: 1)
+    if fromAPanel { h.system.keyboardGoesToNoKnownWindow(named: WindowID(9_999)) } else { aLauncherTakesTheKeyboard(h) }
+    let view = h.workspace.camera
+    #expect(h.run("focus left").ok)
+    h.scheduler.advance(by: 1)
+    #expect(h.workspace.camera != view, "nothing is in view to turn to, so the view moves on")
+    let focused = h.system.focusedWindow()
+    #expect(focused.map { h.system.isVisible($0) && h.workspace.contains($0) } == true, "\(String(describing: focused))")
   }
 
   /// Its last window has gone, and macOS has decided: the app is in front with its menu bar and nothing to type into. Nobody has the

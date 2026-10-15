@@ -277,14 +277,14 @@ extension World {
     }
   }
 
-  /// A panel or a sheet gets the keyboard. The system says so, but Arbor's Accessibility layer finds that it is
-  /// no standard window and passes nothing on.
+  /// A panel or a sheet gets the keyboard. macOS names it by its own number. Arbor's Accessibility layer answers a sheet with its window's number, and
+  /// of a panel it says that the keyboard has left the windows it knows.
   func takeKeyboard(extra id: UInt32) {
-    guard let pid = extras[id]?.pid else { return }
+    guard let extra = extras[id] else { return }
+    if case .sheet(let parent) = extra.kind { giveKeyboard(to: parent) } else { keyboardLeavesTheWindows(for: WindowID(id)) }
     raise(.window(id))
-    bringForward(app: pid)
-    apps[pid]?.focused = id
-    keyboardLeavesTheWindows()
+    bringForward(app: extra.pid)
+    apps[extra.pid]?.focused = id
   }
 
   func drag(to target: CGPoint) {
@@ -531,7 +531,8 @@ extension World {
     case KeyChord(.command, .w):
       if let focused { closeWindow(focused.rawValue) }
     default:
-      if let focused { count("key", for: focused.rawValue) }
+      // A sheet has the keys of its window.
+      if let extra = app.focused, extras[extra] != nil { count("key", for: extra) } else if let focused { count("key", for: focused.rawValue) }
     }
   }
 

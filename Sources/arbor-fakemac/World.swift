@@ -543,11 +543,12 @@ final class World {
     followKeyboard()
   }
 
-  /// The keyboard goes to something Arbor knows no window for: the Desktop, a panel, a sheet, a dialog.
-  func keyboardLeavesTheWindows() {
+  /// The keyboard goes to something Arbor knows no window for: the Desktop, a panel, a dialog.
+  /// `number`: what macOS names meanwhile: a panel's or a dialog's own.
+  func keyboardLeavesTheWindows(for number: WindowID? = nil) {
     // Which app is in front is this world's to say (`bringForward`).
-    if system.focused != nil { system.sheetTakesTheKeyboard() }
-    keyboardSeen = nil
+    if system.focused != number { system.keyboardGoesToNoKnownWindow(named: number) }
+    keyboardSeen = number
   }
 
   /// Another app comes to the front without any of its windows changing: ⌘Tab, a click in the Dock. No window's

@@ -618,6 +618,8 @@ extension FakeMac {
     public var alpha = 1.0
     /// False for tooltips and macOS's helpers, which never become anybody's key window.
     public var canTakeKeyboard = true
+    /// The window it is a sheet of (`openSheet`).
+    public internal(set) weak var sheetOf: Window?
     /// How often somebody outside its app has asked it for a place or a size.
     public internal(set) var timesAskedForAFrame = 0
     var lastMovedReport: TimeInterval = 0

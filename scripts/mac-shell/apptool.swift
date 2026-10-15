@@ -25,8 +25,8 @@ let usage = """
     front                         pid bundle-id of the frontmost app
     focused [pid]                 id pid: the window of the frontmost app (or of that one) that has the keyboard, or would
                                   have it if the app were in front (exit code 1: none)
-    names <pid>                   what Accessibility names for that app, raw: four lines `<what> <id|no-number|none> <role> <subrole>` for its
-                                  focused window, its main window, its focused element and the window of that element
+    names <pid>                   what Accessibility names for that app, raw: six lines `<what> <id|no-number|none> <role> <subrole>` for its
+                                  focused window, that one's parent and window, its main window, its focused element and the window of that element
     dock <bundle id | name>       x y: the middle of that app's icon in the Dock (exit code 1: it has none)
     dock-window <window>          x y: the middle of that minimized window's miniature in the Dock (exit code 1: none)
     menu <pid> <title>            x y: the middle of that menu's title in the menu bar, e.g. Window (exit code 1: none)
@@ -579,7 +579,10 @@ case "names":
     print("\(what) \(named.windowNumber.map { String($0) } ?? "no-number") \(named.role) \(named.subrole)")
   }
   let inFocus = element.element(kAXFocusedUIElementAttribute)
-  name("focused-window", element.element(kAXFocusedWindowAttribute))
+  let focusedWindow = element.element(kAXFocusedWindowAttribute)
+  name("focused-window", focusedWindow)
+  name("parent-of-the-focused-window", focusedWindow?.element(kAXParentAttribute))
+  name("window-of-the-focused-window", focusedWindow?.element(kAXWindowAttribute))
   name("main-window", element.element(kAXMainWindowAttribute))
   name("focused-element", inFocus)
   name("window-of-the-focused-element", inFocus?.element(kAXWindowAttribute))

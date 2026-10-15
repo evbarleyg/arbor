@@ -3377,7 +3377,7 @@
    "kind": "input",
    "layer": "at the seam",
    "expected": "An app that comes forward brings its main window, a report says which window has the keyboard now, and the view goes there.",
-   "happened": "A click on the wallpaper activates Finder without asking for its last window: its main window is still set, its focused window is not. Reporting the main window would bring a Finder window into view. The keyboard has left every known window and no `windowFocused` says so. The same holds for a sheet, a dialog, a panel and an app that is not observed.",
+   "happened": "A click on the wallpaper activates Finder without asking for its last window: its main window is still set, its focused window is not. Reporting the main window would bring a Finder window into view. The keyboard has left every known window and no `windowFocused` says so. The same holds for a dialog, a panel and an app that is not observed. (A sheet is answered with its window's number: what-macos-names-while-a-sheet-or-a-panel-has-the-keyboard.)",
    "found": "A review of the app as a person meets it, and comments in the Accessibility layer. The run that showed it is not named.",
    "modelled": "yes",
    "knobs": [
@@ -8822,14 +8822,13 @@
    "found": "A rehearsal check that was bisected, then reading the Accessibility layer, and a headless probe. Then seen on a hosted Mac, behind the greens of the check of apps that keep their own shortcuts: the app that writes down its keys resigned 5 ms after `show-all`.",
    "modelled": "partly",
    "knobs": [
-    "FakeWindowSystem.sheetTakesTheKeyboard"
+    "FakeWindowSystem.keyboardGoesToNoKnownWindow"
    ],
    "guards": [
     "test: aKeyThatMovesTheViewLeavesTheKeyboardWithAnAppArborDoesNotLookAt",
-    "test: aSheetKeepsTheKeyboardForAsLongAsItsWindowIsInView",
+    "test: aPanelKeepsTheKeyboardWhereverItsAppsWindowGoes",
     "test: anAppWithNoWindowLeftIsNobody",
-    "test: theKeyboardStaysInASheet",
-    "test: theSheetIsWhereItsAppsWindowIs",
+    "test: theKeyboardStaysInAPanel",
     "test: whatNamesAPlaceTakesTheKeyboardThereWhoeverHadIt",
     "test: withArborItselfInFrontTheKeyboardGoesAlongWithTheView"
    ],
@@ -9880,7 +9879,7 @@
    "knobs": [
     "World.extras",
     "FakeWindowSystem.strangers",
-    "FakeWindowSystem.sheetTakesTheKeyboard",
+    "FakeWindowSystem.keyboardGoesToNoKnownWindow",
     "FakeWindowSystem.openStrayDialog"
    ],
    "guards": [
@@ -12544,23 +12543,23 @@
    "kind": "identity",
    "layer": "below the seam",
    "expected": "While a sheet, a dialog or a panel has the keyboard an app names no focused window, or the window it belongs to.",
-   "happened": "It names the sheet or the panel itself, by a number of its own at the window server. A sheet: role AXSheet, no subrole, and its window goes on being the main window (a test window's sheet; a stock editor's Save As…). A free-standing utility panel: AXWindow, AXFloatingWindow. The stock editor's Open…: AXWindow, AXStandardWindow, without close, minimize or zoom buttons. Arbor's layer passes those numbers on as they come, nobody above it knows them, and the stand-ins say nil instead: a rule written for nil (a sheet whose window is taken out of view hands the keyboard on) would never have run on a Mac. When the sheet begins, \"focused window changed\" is posted, and \"main window changed\" 44 ms later if its window was not the main one.",
+   "happened": "It names the sheet or the panel itself, by a number of its own at the window server. A sheet: role AXSheet, no subrole; its window is its AXParent and its AXWindow, and goes on being the main window (a test window's sheet; a stock editor's Save As…, which another process draws). A free-standing utility panel: AXWindow, AXFloatingWindow. The stock editor's Open…: AXWindow, AXStandardWindow, without close, minimize or zoom buttons. Arbor's layer passed those numbers on as they came, nobody above it knew them, and the stand-ins said nil instead: a rule written for nil (a sheet whose window is taken out of view hands the keyboard on) would never have run on a Mac. When the sheet begins, \"focused window changed\" is posted, and \"main window changed\" 44 ms later if its window was not the main one.",
    "found": "A reader of the rule asked what the real layer answers, and nobody knew. Then a script on a hosted Mac that writes down number, role and subrole of what Accessibility names, with keys counted in the sheet, the panel and the windows themselves, and Arbor's own trace of the same minutes.",
    "modelled": "partly",
    "knobs": [
-    "FakeWindowSystem.sheetTakesTheKeyboard"
+    "FakeWindowSystem.keyboardGoesToNoKnownWindow"
    ],
    "guards": [
-    "test: aSheetKeepsTheKeyboardForAsLongAsItsWindowIsInView",
-    "test: theSheetIsWhereItsAppsWindowIs"
+    "test: aPanelKeepsTheKeyboardWhereverItsAppsWindowGoes"
    ],
-   "copes": "Controller.ensureFocusIsVisible takes a number it does not know like none, and the window of the app in front that was used last for the sheet's. Seen on a hosted Mac: a sheet whose window stays in view keeps the keyboard, one whose window leaves hands it on. A free-standing panel is taken like a sheet and loses the keyboard in plain sight when that window leaves: decided otherwise, and to follow: the layer is to answer a sheet with its window's number.",
+   "copes": "AXWindowSystem.windowWithTheKeyboard answers a sheet with its window's number, so that it goes by what holds for that window; a number Arbor does not know is somebody, who keeps the keyboard (Controller.ensureFocusIsVisible). `make mac-on-linux` tells six stories of it.",
    "hurt": 2,
    "touches": [
     "focus"
    ],
    "sources": [
     "Sources/ArborKit/AX/AXWindowSystem.swift",
+    "scripts/mac-on-linux/tests/Sheets.swift",
     "scripts/mac-shell/check-moves-of-the-view.sh"
    ]
   },
@@ -13268,7 +13267,7 @@
   "| `secondsSinceInput` | FWS | polite (infinity; 0 during `userFocus`) | how long since a click or a modifier key | 11 / 4 |",
   "| `userSwitchesApp` | FWS | polite | ⌘Tab as macOS alone reports it: no `windowFocused` (not what Arbor's layer sends: K1978) | 12 / 8; lab `switch-app`; fake Mac |",
   "| `userFocusesNothing` | FWS | polite | a click on the Desktop: Finder comes forward, and no known window has the keyboard | 14 / 9; lab |",
-  "| `sheetTakesTheKeyboard` | FWS | polite | the keyboard goes to a sheet, a panel or a launcher: no known window has it, and the app in front stays | 1 / 1; fake Mac |",
+  "| `keyboardGoesToNoKnownWindow` | FWS | polite | the keyboard goes to a panel (a number nobody knows) or to an app that is not observed (nobody is named), and the app in front stays | 1 / 1; fake Mac |",
   "| `userClick` | FakeWindowSystem+Stacking.swift | polite | a click in the focused window raises it and reports no focus | 6 / 3 |",
   "| `activate(bundleID:)` | FWS | polite | an app without a window comes to the front | 13 / 5; lab |",
   "| `openStrayDialog` | FWS | polite | a dialog that opens beside a window out of view | 7 / 2 |",

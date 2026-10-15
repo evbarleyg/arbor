@@ -820,14 +820,15 @@ extension Controller {
   ) -> Bool {
     // A command that moves the view says where the attention goes, so the keyboard goes along, also out of a
     // pinned window, which is still in view: keys meant for the window that arrived must not end up in a call.
-    // An app can go on naming a window in the Dock as its focused one. A number Arbor does not know is a sheet, a dialog or
-    // a panel, if macOS names those at all: no window Arbor could have taken out of view.
+    // An app can go on naming a window in the Dock as its focused one. A number Arbor does not know is a free-standing panel or
+    // dialog, which stays where it is whatever the view does: somebody has the keyboard. (A sheet is answered with its window's number.)
+    let named = system.focusedWindow()
     let nobody =
-      system.focusedWindow().flatMap { windows[$0]?.id }.map {
+      named.flatMap { windows[$0]?.id }.map {
         parked.contains($0) || (alsoFromNothing && windows[$0]?.isMinimized == true)
           // And out of a window that fills the view, behind which the view would move unseen (Controller+Fill.swift).
           || (alsoFromAPinnedWindow && (staysInView($0) || isFilled($0)))
-      } ?? (alsoFromNothing && (following.namesAPlace || nobodyHasTheKeyboard))
+      } ?? (alsoFromNothing && (following.namesAPlace || (named == nil && nobodyHasTheKeyboard)))
     return nobody && giveTheKeyboardToTheView(on: displayID, asAnHeir: asAnHeir, whichHasMoved: alsoFromAPinnedWindow, notTo: asked)
   }
 
@@ -836,7 +837,7 @@ extension Controller {
   /// keyboard away and gave it to a docked window (ten times of ten on a hosted Mac). Arbor takes the keyboard only
   /// from a window that it takes out of view. What names a place takes it there, whoever had it (`Following.namesAPlace`).
   ///
-  /// Asked only where no known window is focused.
+  /// Asked only where macOS names no focused window at all.
   private var nobodyHasTheKeyboard: Bool {
     // Before anybody has said who is in front, as it was. Finder with no window focused is the desktop. Arbor's own
     // windows give the keyboard back when they close, or have nobody to give it to.
@@ -844,16 +845,10 @@ extension Controller {
       // Run from a terminal it has no bundle.
       front.bundleID.map({ $0 != Bundle.main.bundleIdentifier }) ?? (front.name != ProcessInfo.processInfo.processName)
     else { return true }
-    func isItsOwn(_ window: WindowSnapshot) -> Bool { (window.bundleID ?? window.appName) == (front.bundleID ?? front.name) }
-    // "Do you want to keep this document?" An app Arbor knows is in front, and none of its windows is focused: the keyboard is
-    // in a sheet, a dialog or a panel, which is where the app's window used last is. While that stays in view somebody
-    // is answering it; taken out of view, Return would answer a question nobody sees.
-    if let last = focusHistory.lazy.compactMap({ self.windows[$0] }).first(where: { isItsOwn($0) && $0.isPresent }) {
-      return parked.contains(last.id)
-    }
     // An app whose windows Arbor has known, with none left: its last one closed with nothing in view to hand the keyboard
     // to, say. It has the menu bar and nothing to type into.
-    return appsSeen.contains(front.bundleID ?? front.name) && !windows.values.contains { isItsOwn($0) && $0.isPresent }
+    return appsSeen.contains(front.bundleID ?? front.name)
+      && !windows.values.contains { ($0.bundleID ?? $0.appName) == (front.bundleID ?? front.name) && $0.isPresent }
   }
 
   /// The windows in view on a display that can be given the keyboard, and where they are. `asHeirs`: only those that `canBeAnHeir`.
