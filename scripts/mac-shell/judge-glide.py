@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Does a real window that is moved in steps glide, or does it stutter? Reads what probe-glide.sh brought back from a Mac. Needs no Mac.
 
-  judge-glide.py <folder> [--seen 0.75] [--gap 2] [--off 1] [--forgive 0] [--dead 2]
+  judge-glide.py <folder> [--seen 0.75] [--gap 2] [--off 1] [--forgive 0] [--dead 2] [--blind 0]
   judge-glide.py --self-test
 
 In the folder: glide.log (glide.swift's header has its grammar: every call, with what it cost and how late it began), samples.log (sampler.swift's: what the
@@ -22,7 +22,7 @@ A row of the table pools the acts of one kind. Times are ms.
 
 THE VERDICT. A glide (not a control) STUTTERS if fewer than --seen of the places asked for were seen, or the gap is over --gap steps and one sample, or it ended
 more than --off points from where it was asked to, or its worst call took longer than the whole glide was to take. Where the app's controls end elsewhere too,
-ending elsewhere is the app's manner and no stutter. A glide is DISTURBED if the sampler was blind meanwhile (its L lines), or if glide itself overslept: a step began over half
+ending elsewhere is the app's manner and no stutter. A glide is DISTURBED if the sampler was blind meanwhile (its L lines, those of --blind ms and more), or if glide itself overslept: a step began over half
 a step late although its thread had nothing else to do. That is the Mac's doing, so places not seen and gaps are not held against such a glide, and an app all of whose
 glides were disturbed is not judged. An app stutters if more than --forgive of its glides ALONE do. The last two lines are made to grep for: `stutter: N of 9 apps`, and `verdict: dead` from --dead apps on, else `verdict: alive`.
 Exit code 0 whatever the verdict, 2 if there is nothing to judge.
@@ -87,13 +87,13 @@ def read_acts(folder):
     return found
 
 
-def read_samples(folder):
+def read_samples(folder, least=0):
     """({window: [(time, x, y, w, h)]}, [(from, to) while the sampler saw nothing], its rate, its last words)"""
     frames, blind, hertz, last = defaultdict(list), [], 60.0, ""
     for words in read_lines(os.path.join(folder, "samples.log")):
         if words[1] == "W" and len(words) >= 9:
             frames[int(words[2])].append((float(words[0]), *(float(word) for word in words[5:9])))
-        elif words[1] == "L":
+        elif words[1] == "L" and float(words[2]) >= least:
             blind.append((float(words[0]) - float(words[2]), float(words[0])))
         elif words[1:4] == ["M", "sampler", "at"]:
             hertz = float(words[4])
@@ -167,7 +167,7 @@ def percentile(values, share):
 def judge(folder, limits, out=print):
     """Prints the tables and the verdict. Returns (apps that stutter, apps judged)."""
     acts = read_acts(folder)
-    frames, blind, hertz, last = read_samples(folder)
+    frames, blind, hertz, last = read_samples(folder, limits.blind)
     looks = {act.name: look(act, frames, blind, hertz, limits) for act in acts}
     cast = []
     for act in acts:
@@ -233,13 +233,14 @@ def judge(folder, limits, out=print):
 
 
 def parse(arguments):
-    parser = argparse.ArgumentParser(usage="judge-glide.py <folder> [--seen 0.75] [--gap 2] [--off 1] [--forgive 0] [--dead 2] | --self-test   (its header says more)")
+    parser = argparse.ArgumentParser(usage="judge-glide.py <folder> [--seen 0.75] [--gap 2] [--off 1] [--forgive 0] [--dead 2] [--blind 0] | --self-test   (its header says more)")
     parser.add_argument("folder")
     parser.add_argument("--seen", type=float, default=0.75)
     parser.add_argument("--gap", type=float, default=2)
     parser.add_argument("--off", type=float, default=1)
     parser.add_argument("--forgive", type=int, default=0)
     parser.add_argument("--dead", type=int, default=2)
+    parser.add_argument("--blind", type=float, default=0)
     return parser.parse_args(arguments)
 
 
@@ -309,6 +310,7 @@ def self_test():
     expect("and how many glides are forgiven", {"a": "late"}, [], "alive", ["--forgive", "2"])
     expect("what the control does too is not the steps' doing", {"a": "never"}, [], "alive")
     expect("a glide the sampler did not see is not judged", {"a": "smooth"}, [], "alive", blind=[(1_000_500.0, 1_003_000.0)])
+    expect("unless gaps of that length are to be passed over", {"a": "smooth"}, ["a"], "alive", ["--blind", "3000"], blind=[(1_000_500.0, 1_003_000.0)])
     expect("nor one in which the tool overslept", {"a": "overslept"}, [], "alive")
     expect("but where it ended is seen all the same", {"a": "elsewhere"}, ["a"], "alive", blind=[(1_000_500.0, 1_000_700.0), (1_001_300.0, 1_001_500.0)])
     with tempfile.TemporaryDirectory() as folder:

@@ -148,6 +148,13 @@ set -- $WALK_CAST
 check "all nine apps opened a window" test $# -eq 9
 [ $# -ge 4 ] || die "only $# apps opened a window: nothing to measure"
 
+# What the window server's share has to be read against: it also answers the sampler, 120 times a second.
+if [ -n "$SERVER" ]; then
+  rested=$(day_cpu_seconds "$SERVER")
+  sleep 3
+  echo "with nothing moving the window server uses $(echo "$(day_cpu_seconds "$SERVER") $rested" | awk '{ printf "%.0f", ($1 - $2) * 100 / 3 }') % of a core"
+fi
+
 for name in $WALK_CAST; do alone "$name"; done
 together two "$1" "$2"
 together four "$1" "$2" "$3" "$4"
