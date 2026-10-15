@@ -52,6 +52,10 @@ A tool asked the window for a frame at one chosen moment per round, while a samp
 - When the stand-in goes, the window is listed again, and so are the other apps' windows of the Space that came back (16 rounds of 16). The change of Space
   was reported 0.14 s after that in one run and a few milliseconds *before* it in two rounds of four, when the window was not listed yet.
 
+**The way in** (ten rounds): the window leaves its app's list, says 1 to 4 ms later that it is in full screen, and the Space it leaves is reported away 0.47 to 0.62 s after
+that. Until then its neighbours are in plain view under macOS's animation. So the layout that gives them its room waits until their Space is away
+(`Controller+Spaces.swift`): if the window comes straight back, nothing but the window has moved; whoever comes back to that Space without it sees them close up, once.
+
 So a docked window is asked for its slot's frame from the first report on, ten times a second until it has heard (`Controller+OnTheWayBack.swift`), and the stand-in's
 end counts as the window's return (`AXWindowSystem`). What a person still sees is macOS's picture arriving at the old frame and, as it ends, the window standing in its slot.
 

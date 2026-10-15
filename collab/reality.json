@@ -3041,7 +3041,7 @@
    "kind": "late-or-partial-answer",
    "layer": "at the seam",
    "expected": "A window on its way out of full screen either takes a frame or does not, whatever its app.",
-   "happened": "The window is hidden behind macOS's stand-in for 0.5 to 0.7 s and can be asked meanwhile. TextEdit takes the frame at once, keeps it and lands there. Safari, which shows its own way out, answers success to all three calls, reads back the old frame, and lands there, if it is asked before it has placed the window once more itself (a \"moved\" report 0.06 to 0.17 s after the first report). Asked after that it takes the frame and keeps it. Asked only when the stand-in has gone, both take it at once, and TextEdit was seen at the old frame for 44 ms first.",
+   "happened": "The window is hidden behind macOS's stand-in for 0.5 to 0.7 s and can be asked meanwhile. TextEdit takes the frame at once, keeps it and lands there. Safari, which shows its own way out, answers success to all three calls, reads back the old frame, and lands there, if it is asked before it has placed the window once more itself (a \"moved\" report 0.06 to 0.17 s after the first report). Asked after that it takes the frame and keeps it. Its own placing can fall between the calls a frame is set with: in six rounds of eleven it then had the new size at the old place, or the new place at the old size, and landed so unless it was asked again. Asked only when the stand-in has gone, both take it at once, and TextEdit was seen at the old frame for 44 ms first.",
    "found": "A probe that asked at one chosen moment per round (in full screen, at the stand-in, at the report, at the landing), with a sampler of the window server's frames beside it; then four rounds with Arbor. A hosted Mac, macOS 26.6.2.",
    "modelled": "yes",
    "knobs": [
@@ -3052,7 +3052,9 @@
     "test: aDockedWindowThatLeavesFullScreenIsSeenInItsSlotAndNowhereElse",
     "test: anAppThatTakesTheFrameAtOnceIsAskedOnce",
     "test: anAppThatMakesSomethingElseOfTheFrameIsNotAskedAgainAndAgain",
-    "test: oneThatTakesNoFrameOnItsWayOutStillEndsInItsSlot"
+    "test: oneThatTakesNoFrameOnItsWayOutStillEndsInItsSlot",
+    "trace: safari-full-screen.jsonl",
+    "trace: textedit-full-screen.jsonl"
    ],
    "copes": "Controller.looksOnTheWayOut: from the report on Arbor looks ten times a second, for as long as the way takes, and asks again while the window is somewhere else than its slot. Nothing is concluded from what it answers.",
    "hurt": 2,
@@ -7003,6 +7005,36 @@
     "Sources/ArborKit/Controller/Controller+Hardening.swift",
     "Sources/ArborTesting/FakeWindowSystem.swift",
     "Sources/arbor-fakemac/World.swift"
+   ]
+  },
+  {
+   "id": "the-way-into-full-screen-plays-over-the-neighbours-for-half-a-second",
+   "kind": "timing",
+   "layer": "at the seam",
+   "expected": "A window that goes into full screen is gone, and its Space with it: whatever Arbor does to its neighbours then, nobody sees.",
+   "happened": "The window leaves its app's list, says 1 to 4 ms later that it is in full screen, and the Space it leaves is reported away only 0.47 to 0.62 s after that. Until then the neighbours are in plain view under macOS's animation. Arbor laid out at the first report, so they were seen to take the window's room, and to give it back when it returned: two moves each, for nothing.",
+   "found": "A day with real apps under a sampler of the window server's frames, then ten rounds with Safari and TextEdit, Arbor's log beside Accessibility's reports. A hosted Mac, macOS 26.6.2.",
+   "modelled": "yes",
+   "knobs": [
+    "FakeWindowSystem.enterFullScreen",
+    "FakeWindowSystem.sightings"
+   ],
+   "guards": [
+    "test: intoFullScreenAndStraightBackNothingButTheWindowMoves",
+    "test: whoeverComesBackToTheirSpaceWithoutItFindsThemClosingUpOnce",
+    "test: aSpaceThatNeverGoesAwayIsLaidOutAllTheSame",
+    "scenario: 30-the-green-button.sim"
+   ],
+   "copes": "Controller.neighboursWaitWhileItGoesIntoFullScreen puts the layout off until the Space is reported away, 1.5 s at the most. A layout for a window that has gone away waits a tenth of a second to hear why.",
+   "hurt": 2,
+   "sources": [
+    "docs/features/F30-full-screen-windows.md",
+    "Sources/ArborKit/Controller/Controller+Spaces.swift",
+    "Sources/ArborTesting/FakeWindowSystem.swift"
+   ],
+   "touches": [
+    "moved-unasked",
+    "jolt"
    ]
   },
   {

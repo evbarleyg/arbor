@@ -60,6 +60,7 @@ records; its two traces say what was done about that. **B5 came back with #101**
 | `textedit-drag`, `finder-drag`, `terminal-drag` | Floating: dragged 150 points right and 60 down, then to the left screen edge. Finder ends as a tile for 7 points. |
 | `textedit-edge`, `finder-edge`, `terminal-edge`, `calculator-edge` | Docked in a slot 760 wide, the right edge dragged 80 points left. Terminal shrinks a character at a time and renames itself before each "resized". Calculator cannot be resized: nothing is reported. |
 | `textedit-drag-out`, `settings-drag-out`, `calculator-drag-out` | Docked, dragged by the title bar out onto the Desktop. |
+| `safari-full-screen`, `textedit-full-screen` | Recorded 2026-10-15 at 1600×900, with Finder, Safari and TextEdit docked in a row and a real ⌃⌘F, twice. The way in: off the list, "in full screen" 2 ms later, the Space away half a second after that. The way out: off the list, "no longer in full screen" at the frame from before Arbor ever moved it, Arbor's question while macOS's stand-in hides the window, the return. TextEdit takes its slot's frame at once. **Safari takes half of it** (`took 138,31 574×767`: its own placing fell between Arbor's calls) and the whole 0.2 s later. The neighbours still move at both ends: recorded before that was cured. |
 | `apps-arrange` | All five together: `arrange` (three of them refuse their slots), `desktop`, `show-all`, `float-all`. |
 | `app-quits` | TextEdit quits while its docked window is framed. |
 
