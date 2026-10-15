@@ -1,0 +1,118 @@
+# mac-shell: scripts/mac-shell/check-F54.sh at baa1148, macOS 26.6.2, 2026-10-15T15:52Z
+built Arbor, the pointer tool and the app bundles in 4s
+
+== a line of text, by window number
+session 1: Arbor pid 4519, test windows 31 32 33 34 (pid 4448)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> layout 32:2 | Desktop | (33 / 31)
+arranged 3 windows
+  ✔ 2 is left of 3
+  ✔ 3 is above 1
+  ✔ every docked window is in its slot
+  ✔ 4 was not mentioned and floats
+  ✔ it prints what was typed
+shot: mac-shell/01-layout.png
+
+== the line that is printed puts things back
+> float-all
+floated 3 windows
+> layout 32:2 | Desktop | (33 / 31)
+arranged 3 windows
+  ✔ the same arrangement again
+  ✔ and the windows are there
+
+== by app name: the most recent window, the rest as tabs
+the test windows' app is called: ArborTestWindows
+> layout 'ArborTestWindows' | 'ArborTestWindows'*
+arranged 4 windows; 2 windows are behind tabs: ⌘Tab or ⌘` brings one forward
+ArborTestWindows | [ArborTestWindows ArborTestWindows ArborTestWindows] | Desktop:0.5
+ArborTestWindows~"Arbor Test 2" | [ArborTestWindows~"Arbor Test 1" ArborTestWindows~"Arbor Test 3" ArborTestWindows~"Arbor Test 4"] | Desktop:0.5
+  ✔ all four are docked
+shot: mac-shell/02-tabs.png
+
+== errors come back whole
+> layout 31 | 32 / 33
+arborctl: layout, column 9: `|` and `/` are mixed here: put brackets around one of them
+  31 | 32 / 33
+          ^
+  ✔ and the command fails
+
+== parts of titles stay out of the log
+> layout 'ArborTestWindows'~Zebra | 32
+arranged 2 windows, floated 2
+  ✔ the command is logged
+  ✔ without the title
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+shot: mac-shell/03-quit.png
+
+== layout --open, with Arbor arranging everything
+  ✔ Arbor runs
+in front before: "LSDisplayName"="Finder"
+> layout --open TextEdit | Desktop | Terminal
+arranged 0 windows; opening TextEdit and Terminal
+after 1s: TextEdit | Desktop   in front: "LSDisplayName"="TextEdit"
+after 2s: TextEdit | Desktop   in front: "LSDisplayName"="TextEdit"
+after 3s: TextEdit | Desktop | Terminal   in front: "LSDisplayName"="TextEdit"
+after 4s: TextEdit | Desktop | Terminal   in front: "LSDisplayName"="TextEdit"
+after 5s: TextEdit | Desktop | Terminal   in front: "LSDisplayName"="TextEdit"
+after 6s: TextEdit | Desktop | Terminal   in front: "LSDisplayName"="TextEdit"
+after 7s: TextEdit | Desktop | Terminal   in front: "LSDisplayName"="TextEdit"
+after 8s: TextEdit | Desktop | Terminal   in front: "LSDisplayName"="TextEdit"
+after 9s: TextEdit | Desktop | Terminal   in front: "LSDisplayName"="TextEdit"
+after 10s: TextEdit | Desktop | Terminal   in front: "LSDisplayName"="TextEdit"
+  ✔ Terminal's window took its place
+TextEdit's window took its place too
+  ✘ the app in front is the one that was
+      picture: mac-shell/fail-check-F54-1.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n2, back yes
+      |   w45 12 43 1000 655       docked focused
+      |   w54 1023 678 877 499     docked parked
+      log | INFO  Arbor dev starting, pid 5364, home /tmp/arbor-shell.yIbnfC/home
+      log | INFO  control socket at /tmp/arbor-shell.yIbnfC/home/arbor.sock
+      log | INFO  keyboard layout: U.S.
+      log | INFO  registered 0 shortcuts in 0 µs: 9 of the map's 9 are the apps' because ARBOR_NO_HOTKEYS is set
+      log | INFO  started: 1 display(s), 0 managed window(s)
+      log | ERROR setup: Desktop & Dock settings: as they stand, macOS reacts to the same clicks and drags as Arbor. `fix-setup` keeps them off for you while Arbor runs (and `fix-setup undo` ends that), or do it in Sy
+      log | DEBUG commands follow the pointer: a script, pointer idle 239.4 s, keys 239.4 s, focus for ever
+      log | INFO  layout --open TextEdit | Desktop | Terminal: arranged 0 windows; opening TextEdit and Terminal
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Your other window is out of view, not closed · ⌃⌥Space shows everything
+      log | INFO  w45 took its place in the arrangement that was waiting for it
+      log | DEBUG focus is on w45
+      log | DEBUG w45 has the keyboard
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Your other window is out of view, not closed · ⌃⌥Space shows everything
+      log | INFO  w54 took its place in the arrangement that was waiting for it
+      log | INFO  displays changed: 1 display(s), 0 remembered
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back yes
+  w45 12 43 1000 655       docked focused
+  w54 1023 678 877 499     docked parked
+shot: mac-shell/04-opened.png
+2026-10-15T15:52:30.517Z INFO  layout --open TextEdit | Desktop | Terminal: arranged 0 windows; opening TextEdit and Terminal
+2026-10-15T15:52:31.978Z INFO  w45 took its place in the arrangement that was waiting for it
+2026-10-15T15:52:34.462Z INFO  w54 took its place in the arrangement that was waiting for it
+
+== an app that does not exist
+> layout --open Terminal | NoSuchAppAtAll
+arranged 1 window, floated 1; opening NoSuchAppAtAll
+  ✔ the log says that macOS found none
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+shot: mac-shell/05-quit.png
+
+20 passed, 1 failed
+exit code 1
