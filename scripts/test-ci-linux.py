@@ -11,7 +11,8 @@ reads .github/workflows/ci.yml and the Makefile and says what does not hold:
   `linux` runs whatever became of them and fails unless each succeeded: its script is run here, on made-up results;
   no Linux job and no step of one has a condition that could skip it, and none may fail and pass all the same;
   every command of `make check`, as it stands there, is a command of some Linux job, and so is what ALSO lists;
-  all of them use the same image, which scripts/linux.sh takes from the first.
+  all of them use the same image, which scripts/linux.sh takes from the first. But one, which is there for its image (an older
+  Swift): it does not stand first, and what it runs counts for nothing above.
 
 Then it holds itself to a table of workflows that are wrong in one way each. `make lint` runs this. It reads the files as
 text: the Swift image has no YAML parser, and the few shapes that matter are easy to tell.
@@ -32,6 +33,8 @@ NOT_A_CHECK = {"changes"}
 # On Linux runners because they need no Mac, but what they say is about the macOS job, after which they run and with which they are skipped. Each
 # is a check of its own, by its own name: what real windows said there, whether every test ran there or here, that it had built from nothing.
 OF_THE_MAC = {"real-windows", "tests-accounted-for", "macos-from-nothing"}
+# There for its image: the oldest Swift that README.md promises.
+OWN_IMAGE = {"linux-oldest-swift"}
 # What CI's Linux jobs run beyond `make check`.
 ALSO = ["make typecheck-mac", "scripts/parity.py --report linux.tsv.events --check", "scripts/test-ci-changes.py",
         "scripts/test-mac-queue.py", "scripts/test-ci-tests.py"]
@@ -169,11 +172,15 @@ def problems_in(workflow, makefile):
                 found.append(f"{name} has a condition, `{condition}`: what is skipped proves nothing")
         if values_of(jobs[name], "continue-on-error"):
             found.append(f"{name} may fail and pass all the same (continue-on-error)")
-    images = sorted({image for name in parts for image in values_of(jobs[name], "container", 4)})
+    usual = [name for name in parts if name not in OWN_IMAGE]
+    images = sorted({image for name in usual for image in values_of(jobs[name], "container", 4)})
     if len(images) > 1:
         found.append(f"the Linux jobs use different images: {', '.join(images)}")
+    first = next((name for name in jobs if values_of(jobs[name], "container", 4)), None)
+    if first in OWN_IMAGE:
+        found.append(f"{first} is the first job with an image, which scripts/linux.sh would take for everybody's")
 
-    run = {plain(line) for name in parts for script in scripts_of(jobs[name]) for line in script.split("\n")}
+    run = {plain(line) for name in usual for script in scripts_of(jobs[name]) for line in script.split("\n")}
     for command in sorted(run):
         words = command.split()
         if words[:1] == ["make"] and all(steps_of(makefile, word) is not None for word in words[1:]):
@@ -238,6 +245,14 @@ typecheck-mac:
 WITH_A_RECORD = "\t@rm -f $(TEST_REPORT)\n\tswift test --event-stream-output-path $(TEST_REPORT) --event-stream-version 0 $(TEST_ARGS)\n"
 SMOKE = "      - run: ./scripts/ci-step.py smoke ./scripts/smoke.sh\n"
 NEEDS = "needs: [linux-a, linux-b]"
+OLDEST = """  linux-oldest-swift:
+    runs-on: ubuntu-latest
+    container: swift:0
+    steps:
+      - run: ./scripts/ci-step.py build swift build --build-tests
+      - run: ./scripts/ci-step.py older-typecheck make typecheck-mac
+"""
+OLDEST_NEEDS = "needs: [linux-a, linux-b, linux-oldest-swift]"
 CONDITION = NEEDS + "\n    if: ${{ !cancelled() }}"
 LAST = """          ! echo "$RESULTS" | grep -oE '"result": *"[a-z]+"' | grep -qv success\n"""
 
@@ -280,6 +295,14 @@ TABLE = [
     ("there is no job", "no verdict at all", changed("  linux:\n", "  verdict:\n"), MAKEFILE),
     ("nothing to wait for", "no jobs but the verdict", changed(NEEDS, "needs: []").replace("linux-a", "a").replace("linux-b", "b"), MAKEFILE),
     ("different images", "one job on another image", changed("  linux-a:\n    runs-on: ubuntu-latest\n", "  linux-a:\n    runs-on: ubuntu-latest\n    container: swift:2\n"), MAKEFILE),
+    (None, "the job with the oldest Swift has an image of its own", changed(NEEDS, OLDEST_NEEDS, changed("  linux:\n", OLDEST + "  linux:\n")), MAKEFILE),
+    ("does not wait for linux-oldest-swift", "nobody waits for it", changed("  linux:\n", OLDEST + "  linux:\n"), MAKEFILE),
+    ("is the first job with an image", "it stands first, and linux.sh would run its image",
+     changed(NEEDS, OLDEST_NEEDS, changed("  linux-a:\n", OLDEST + "  linux-a:\n")), MAKEFILE),
+    ("runs `make typecheck-mac`", "the type-check is left to it alone, with its older compiler",
+     changed("typecheck-mac make typecheck-mac", "typecheck-mac true", changed(NEEDS, OLDEST_NEEDS, changed("  linux:\n", OLDEST + "  linux:\n"))), MAKEFILE),
+    ("linux-oldest-swift has a condition", "it may be skipped",
+     changed(NEEDS, OLDEST_NEEDS, changed("  linux:\n", OLDEST.replace("    container", "    if: ${{ false }}\n    container") + "  linux:\n")), MAKEFILE),
     ("runs `scripts/smoke.sh`", "a step of make check was dropped", changed(SMOKE, ""), MAKEFILE),
     ("runs `scripts/smoke.sh`", "it is only spoken of, in a comment", changed(SMOKE, "      # ./scripts/smoke.sh runs elsewhere\n"), MAKEFILE),
     ("runs `scripts/smoke.sh`", "it is only spoken of, in a name", changed(SMOKE, "      - name: scripts/smoke.sh\n        run: true\n"), MAKEFILE),

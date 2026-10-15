@@ -11,7 +11,8 @@ SwiftUI, so neither the Linux build nor `make typecheck-mac` sees it, with any c
 
 What else the older compiler refuses it refuses on Linux too, with a line number: CI's job `linux-oldest-swift` is the net for that.
 
-It looks for the words outside comments and strings, so it is a net, not a proof. Part of `make lint`; `--self-test` tries the
+It looks for the words outside comments and strings, so it is a net, not a proof: closures that are first given a name and a
+`@MainActor` type and then handed over crash it as well, and only the Mac job finds those. Part of `make lint`; `--self-test` tries the
 check on wrong and right text.
 """
 
@@ -21,20 +22,28 @@ import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# A closure marked @MainActor as the `get:` or `set:` of a Binding's initializer. `[^(){}\n]*` keeps it to the type's own arguments.
-CRASHES = re.compile(r"\bBinding\s*(<[^(){}\n]*>)?\s*\(\s*get:\s*\{(\s*@MainActor\b|[^{}]*\}\s*,\s*set:\s*\{\s*@MainActor\b)")
+# A closure marked @MainActor under the label `get:` or `set:`, whoever is called: `Binding<…>(`, `Binding<…>.init(`, a bare `.init(`.
+# Nothing else in Arbor has those labels, and under `onMainActor(get:set:)` the mark is not needed.
+CRASHES = re.compile(r"\b(get|set):\s*\{\s*(@\w+(\([^()]*\))?\s+)*@MainActor\b")
 NOISE = re.compile(r'//.*?$|/\*.*?\*/|#*""".*?"""#*|#"(.*?)"#|"(\\.|[^"\\\n])*"', re.M | re.S)
 
 
 def problems_in(text, name):
-    """One line for every such binding."""
+    """One line for every binding with such a closure: for the first of its two."""
     # Blank out comments and strings, keeping the line numbers.
     code = NOISE.sub(lambda match: re.sub(r"[^\n]", " ", match.group(0)), text)
-    return [
-        f"{name}:{code.count(chr(10), 0, match.start()) + 1}: error: Swift 6.3 crashes on a @MainActor closure handed to Binding(get:set:); "
-        "write Binding<…>.onMainActor(get: { … }, set: { new in … })"
-        for match in CRASHES.finditer(code)
-    ]
+    problems, getter = [], None
+    for match in CRASHES.finditer(code):
+        # A marked setter belongs to the marked getter before it if nothing but that getter's closure lies between.
+        if match.group(1) == "set" and getter is not None and "get:" not in code[getter:match.start()] \
+                and code.count("{", getter, match.start()) == code.count("}", getter, match.start()):
+            getter = None
+            continue
+        getter = code.rindex("{", 0, match.end()) if match.group(1) == "get" else None
+        problems.append(
+            f"{name}:{code.count(chr(10), 0, match.start()) + 1}: error: Swift 6.3 crashes on a @MainActor closure handed to "
+            "Binding(get:set:); write Binding<…>.onMainActor(get: { … }, set: { new in … })")
+    return problems
 
 
 def self_test():
@@ -43,14 +52,22 @@ def self_test():
         ("over several lines", "Binding<String>(\n  get: { @MainActor in text },\n  set: { @MainActor new in\n    text = new\n  })", 1),
         ("the type left to the compiler", "Binding(get: { @MainActor in text }, set: { @MainActor new in text = new })", 1),
         ("a type with arguments of its own", "Binding<Pane<Int>?>(get: { @MainActor in pane }, set: { @MainActor new in go(new) })", 1),
+        ("a tuple", "Binding<(Int, Int)>(get: { @MainActor in pair }, set: { @MainActor new in pair = new })", 1),
         ("only the setter is marked, and it is the setter that crashes", "Binding<Bool>(get: { isOn }, set: { @MainActor new in set(new) })", 1),
+        ("a getter with braces of its own", "Binding<Bool>(get: { rows.contains { $0.isOn } }, set: { @MainActor new in set(new) })", 1),
+        ("a marked getter with braces of its own", "Binding<Bool>(get: { @MainActor in rows.contains { $0.isOn } }, set: { @MainActor new in set(new) })", 1),
+        (".init", "var x: Binding<String> { .init(get: { @MainActor in text }, set: { @MainActor new in text = new }) }", 1),
+        ("the type's .init", "Binding<String>.init(get: { @MainActor in text }, set: { @MainActor new in text = new })", 1),
+        ("another mark first", "Binding<Bool>(get: { @Sendable @MainActor in isOn }, set: { _ in })", 1),
         ("two of them", "Binding(get: { @MainActor in a }, set: { _ in })\nBinding(get: { @MainActor in b }, set: { _ in })", 2),
+        ("two of them, all four marked",
+         "Binding(get: { @MainActor in a }, set: { @MainActor n in a = n })\nBinding(get: { @MainActor in b }, set: { @MainActor n in b = n })", 2),
         ("the helper", "Binding<Bool>.onMainActor(get: { isOn }, set: { new in set(new) })", 0),
         ("the helper's own line", "Binding(get: get, set: set)", 0),
         ("closures that are not marked", "Binding<Bool>(get: { isOn }, set: { new in set(new) })", 0),
         ("a task on the main actor", "Task { @MainActor [weak self] in self?.look() }", 0),
         ("in a comment", "// Binding(get: { @MainActor in a }, set: { @MainActor new in a = new })", 0),
-        ("another type whose name ends alike", "KeyBinding(get: { @MainActor in a })", 0),
+        ("a computed property's accessors", "var a: Int {\n  get { b }\n  set { b = newValue }\n}", 0),
     ]
     failed = [f"{what}: {len(problems_in(text, 'x'))} found, {wanted} expected" for what, text, wanted in cases
               if len(problems_in(text, "x")) != wanted]
