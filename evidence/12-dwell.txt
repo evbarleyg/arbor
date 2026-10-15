@@ -1,0 +1,95 @@
+# 12-dwell 2026-10-15T07:57Z on macOS 26.6.2, commit 8ea73d0
+
+▸ sweep a window over a docked window's edge and let go without stopping: no preview shows, and it floats where it was let go
+  ✔ the window is in the hand
+  ✔ no preview is on screen
+  ✔ the window floats
+  ✔ Arbor saw it let go, and docked nothing
+  ✔ it has stayed where it was let go
+  ✔ which is over the docked window
+  ✔ the docked window has not moved
+  ✔ two are docked
+  ✔ windows match Arbor's layout
+
+▸ sweep a docked window the same way: it goes back into its slot
+  ✔ the window has left its slot with the pointer
+  ✔ it is back exactly where it was
+  ✔ it is still docked
+  ✔ no preview is on screen
+  ✔ the other docked window has not moved
+  ✔ two are docked
+  ✔ windows match Arbor's layout
+
+▸ hold ⌘ and hold a window over a docked window's edge: no preview shows, and let go there it floats
+  ✔ the window is over the docked one
+  ✔ no preview shows, however long it is held
+  ✔ the window floats
+  ✔ Arbor saw it let go, and docked nothing
+  ✔ the docked window has not moved
+  ✔ two are docked
+
+▸ hold ⌘ and drag a window to the screen edge: no preview shows, and let go there it floats
+  ✔ no preview shows
+  ✔ the window floats
+  ✔ Arbor saw it let go, and docked nothing
+  ✔ two are docked
+  ✔ windows match Arbor's layout
+
+▸ hold ⌘ and let go of a docked window over its own slot: it floats
+  ✔ no preview shows
+  ✔ the window floats
+  ✔ one is docked
+  ✔ windows match Arbor's layout
+
+▸ press ⌘ while a preview shows, without moving the pointer: it goes; let go of ⌘: it comes back, and the window docks there
+  ✔ a preview shows
+  ✔ with ⌘ down the preview goes
+  ✔ and stays away, however long the window is held
+  ✔ with ⌘ up it comes back
+  ✔ where it was
+  ✔ the window is docked
+  ✔ it landed exactly where the preview was
+  ✔ the preview is gone
+  ✔ windows match Arbor's layout
+
+▸ hold a window over one edge of a docked window, then over another: the preview shows the new place, and the window docks there
+  ✔ a preview shows
+  ✔ a preview shows at the other edge
+  ✔ and not where the first was
+  ✔ the window docked below the other
+  ✔ it landed exactly where the second preview was
+  ✔ the preview is gone
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+▸ hold a window over a docked window's edge: the preview waits until the hold is over
+  ✔ at first no preview shows
+  ✔ then it does
+  ✔ the window is docked
+  ✔ above the other
+  ✔ it landed exactly where the preview was
+  ✔ windows match Arbor's layout
+
+▸ let go of a window over a docked window's edge before the hold is over: it floats
+  ✔ the window floats
+  ✔ no preview is on screen
+  ✔ two are docked
+
+▸ drag a window to the screen edge: the preview does not wait for the hold
+  ✔ a preview shows long before the hold would be over
+  ✔ the window is docked
+  ✔ it reaches the bottom edge of the screen
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+68 passed, 0 failed

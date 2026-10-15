@@ -1,0 +1,93 @@
+# 77-says 2026-10-15T08:07Z on macOS 26.6.2, commit 8ea73d0
+
+▸ ⌃⌥↓ with nothing docked: a line on screen says what to do, leaves the keyboard where it is, and goes by itself
+  ✔ ⌃⌥↓ reaches Arbor
+  ✔ Arbor says why nothing happened
+  ✔ the line is on screen
+  ✔ a letter typed meanwhile goes to the window
+  ✔ the line has gone by itself
+
+▸ the first docks are explained three times and not a fourth, also after Arbor has been started again
+  ✔ ⌃⌥⌘← docks the focused window, the first time
+  ✔ ⌃⌥F floats it again, the first time
+  ✔ ⌃⌥⌘← docks the focused window, the second time
+  ✔ ⌃⌥F floats it again, the second time
+  ✔ explained twice so far
+  ✔ Arbor exits within 5 s of quit
+  ✔ ⌃⌥⌘← docks the focused window, the third time
+  ✔ ⌃⌥F floats it again, the third time
+  ✔ ⌃⌥⌘← docks the focused window, the fourth time
+  ✔ ⌃⌥F floats it again, the fourth time
+  ✔ a third time after the restart, and not a fourth
+
+▸ ⌃⌥↑ with everything in view is answered on screen; the same command from a terminal is answered there and not on screen
+  ✔ ⌃⌥↑ reaches Arbor
+  ✔ Arbor says that everything is showing already
+  ✔ arborctl gets the same answer
+  ✔ which is not said on screen again
+
+▸ set messages to off by command: nothing is said on screen; reset it: the line is back
+  ✔ set messages off succeeds
+  ✔ ⌃⌥↑ reaches Arbor
+  ✔ nothing is said
+  ✔ and nothing is on screen
+  ✔ reset messages succeeds
+  ✔ ⌃⌥↑ reaches Arbor again
+  ✔ and is answered on screen
+
+▸ set messages to all by command: a dock that is no longer explained is still confirmed
+  ✔ ⌃⌥⌘← docks the focused window
+  ✔ at first nothing is said: the hint has been shown often enough
+  ✔ ⌃⌥F floats it again
+  ✔ set messages all succeeds
+  ✔ ⌃⌥⌘← docks it once more
+  ✔ now the reply is said
+  ✔ reset messages succeeds
+
+▸ click on the line while it shows over a window: the click goes through to the window
+  ✔ ⌃⌥↩ frames the focused window
+  ✔ it fills the screen
+  ✔ ⌃⌥9 reaches Arbor
+  ✔ Arbor says which keys save that view
+  ✔ the line is on screen
+  ✔ the line is still up
+  ✔ the window under the line got the press
+  ✔ it still has the keyboard
+
+▸ ⌃⌥⇧/ shows the panel of shortcuts, and the same keys put it away
+  ✔ ⌃⌥⇧/ reaches Arbor
+  ✔ Arbor shows the shortcuts
+  ✔ the panel is on screen
+  ✔ it has the keyboard
+  ✔ the app behind stays the one in front
+  ✔ ⌃⌥⇧/ again
+  ✔ Arbor puts them away
+  ✔ the panel is gone
+  ✔ the window has the keyboard
+
+▸ one of Arbor's own shortcuts puts the panel of shortcuts away and does its own job
+  ✔ ⌃⌥⇧/ reaches Arbor
+  ✔ Arbor shows the shortcuts
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the focused window fills the screen
+  ✔ the panel is gone
+  ✔ ⌃⌥⇧/ reaches Arbor again
+  ✔ and shows them: they had been put away
+  ✔ ⎋ puts the panel away
+
+▸ choose Keyboard Shortcuts… from the menu and type a letter: the panel goes, and the window behind gets not that letter but the next
+  ✔ the item can be clicked
+  ✔ Arbor ran show-shortcuts
+  ✔ Arbor shows the shortcuts
+  ✔ the panel is on screen
+  ✔ the panel is gone
+  ✔ it was the letter that put it away
+  ✔ the window behind did not get the letter
+  ✔ it gets the next one
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+70 passed, 0 failed

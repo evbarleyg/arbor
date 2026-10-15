@@ -1,0 +1,105 @@
+# 47-whose-keys 2026-10-15T08:03Z on macOS 26.6.2, commit 8ea73d0
+
+▸ turn Arbor's shortcuts off in the app in front, by command: they reach the app instead
+  ✔ the app is in front
+  ✔ before, ⌃⌥↩ is Arbor's
+  ✔ and so is ⌃⌥Space
+  ✔ pass-through on succeeds
+  ✔ settings.json lists the app
+  ✔ Arbor lets go of all its shortcuts but one
+  ✔ status says where they are off
+  ✔ ⌃⌥↩ goes to the app
+  ✔ ⌃⌥D goes to the app
+  ✔ ⌃⌥⌘→ goes to the app
+  ✔ the camera stayed on everything
+  ✔ the other app's window is still in view
+  ✔ windows match Arbor's layout
+
+▸ with the shortcuts off in its app, a window dragged onto another still docks
+  ✔ it is docked
+  ✔ below the first window
+  ✔ in its column
+  ✔ the shortcuts are still the app's
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⎋ answers even in an app that keeps its keys: Arbor pauses, and resumes
+  ✔ Arbor is paused
+  ✔ Arbor runs again
+  ✔ the app saw neither press
+  ✔ the other shortcuts are still the app's
+  ✔ windows match Arbor's layout
+
+▸ click another app's window: Arbor's shortcuts work again, and are off again back in the listed app
+  ✔ the other app is in front
+  ✔ all the shortcuts are registered again
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the focused window fills the screen
+  ✔ the listed app's windows go out of view like any others
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ and they come back
+  ✔ the app in front saw neither
+  ✔ the listed app is in front
+  ✔ ⌃⌥↩ goes to the app again
+  ✔ windows match Arbor's layout
+
+▸ the menu says that the shortcuts are off in the app in front, and its ticked item switches them on again
+  ✔ the first line says so
+  ✔ Shortcuts Off in the app is ticked
+  ✔ the item can be clicked
+  ✔ Arbor ran pass-through for the app
+  ✔ settings.json no longer lists it
+  ✔ the app is still in front
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ ⌃⌥Space too
+  ✔ windows match Arbor's layout
+
+▸ choose Shortcuts Off for the app in front from the menu: the shortcuts are the app's
+  ✔ the first app is in front
+  ✔ the item can be clicked
+  ✔ settings.json lists the app
+  ✔ ⌃⌥↩ goes to the app
+  ✔ the item is ticked
+  ✔ windows match Arbor's layout
+
+▸ put an app on pauseForApps in settings.json: Arbor pauses when it comes to the front
+  ✔ reload-settings succeeds
+  ✔ Arbor runs while another app is in front
+  ✔ ⌃⌥↩ frames the focused window
+  ✔ ⌃⌥↑ steps out to its column
+  ✔ the listed app's window is in view
+  ✔ the window at the other edge is not
+  ✔ the listed app is in front
+  ✔ Arbor is paused
+  ✔ status says for which app
+  ✔ the window that was out of view is back
+  ✔ only the shortcut that ends a pause is still registered
+  ✔ ⌃⌥Space goes to the app
+  ✔ and not to Arbor
+  ✔ the menu says for which app Arbor is paused
+
+▸ leave the app Arbor paused for: Arbor resumes, with the view it had
+  ✔ the first app is in front
+  ✔ Arbor runs again
+  ✔ the window at the other edge is out of view again
+  ✔ the clicked window is in its slot
+  ✔ and so is the listed app's
+  ✔ all the shortcuts are registered again
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ everything is in view
+  ✔ windows match Arbor's layout
+
+▸ a pause begun with ⌃⌥⎋ is not ended by visiting and leaving the app Arbor pauses for
+  ✔ Arbor is paused
+  ✔ the listed app is in front
+  ✔ the first app is in front again
+  ✔ Arbor stays paused
+  ✔ ⌃⌥⎋ ends it
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+82 passed, 0 failed

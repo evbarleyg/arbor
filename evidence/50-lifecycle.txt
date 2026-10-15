@@ -1,0 +1,90 @@
+# 50-lifecycle 2026-10-15T08:04Z on macOS 26.6.2, commit 8ea73d0
+
+▸ minimize a docked window with its yellow button: the neighbours take its space
+  ✔ Arbor sees it minimized
+  ✔ it is still docked
+  ✔ the window on its left grew
+  ✔ the window on its right moved up to it
+  ✔ nothing overlaps
+  ✔ windows match Arbor's layout
+
+▸ restore the minimized window: it returns to its slot between the same neighbours
+  ✔ Arbor sees it restored
+  ✔ it is in its slot
+  ✔ right of the first
+  ✔ left of the third
+  ✔ the first has its old width
+  ✔ the camera stayed on everything
+  ✔ windows match Arbor's layout
+
+▸ ⌘M minimizes the focused docked window, and it comes back the same way
+  ✔ Arbor sees it minimized
+  ✔ the window on its left grew
+  ✔ it is back in its slot
+  ✔ the first has its old width
+  ✔ windows match Arbor's layout
+
+▸ hide an app with ⌘H: its docked window's space goes to the neighbours
+  ✔ the other app's window has the keyboard
+  ✔ macOS hides the app
+  ✔ Arbor sees its window hidden
+  ✔ it is still docked
+  ✔ the windows of the first app grew
+  ✔ windows match Arbor's layout
+
+▸ show the hidden app again: its window returns to its slot
+  ✔ Arbor sees it shown
+  ✔ it is in its slot
+  ✔ right of the second
+  ✔ the first has its old width
+  ✔ windows match Arbor's layout
+
+▸ close a docked window with its red button: the row shares its space
+  ✔ Arbor has forgotten it
+  ✔ two are docked
+  ✔ the window on its left grew
+  ✔ the window on its right is beside it now
+  ✔ the two have the same width
+  ✔ windows match Arbor's layout
+
+▸ close the window the camera frames with ⌘W: the camera steps out to what is left
+  ✔ the window fills the screen
+  ✔ the other is out of view
+  ✔ Arbor has forgotten it
+  ✔ the other window is back in view
+  ✔ windows match Arbor's layout
+
+▸ a window opened while Arbor runs floats where its app put it
+  ✔ Arbor arranges it
+  ✔ it floats
+  ✔ it is where its app put it
+
+▸ panels and sheets are left alone
+  ✔ Arbor does not list the panel
+  ✔ nor the sheet
+  ✔ arranging everything leaves the panel where it was
+  ✔ the sheet moved along with its window
+  ✔ windows match Arbor's layout
+
+▸ a window that opens while one window is framed stays with that view
+  ✔ the framed window fills the screen
+  ✔ it floats
+  ✔ over the framed window, where its app put it
+  ✔ the view moves on and it goes out of view
+  ✔ the view comes back
+  ✔ and the window with it, in the same place
+
+▸ a dialog of a window that is out of view opens in the middle of the screen
+  ✔ the window it belongs to is out of view
+  ✔ the dialog is in view
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+
+63 passed, 0 failed

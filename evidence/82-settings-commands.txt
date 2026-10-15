@@ -1,0 +1,140 @@
+# 82-settings-commands 2026-10-15T08:08Z on macOS 26.6.2, commit 8ea73d0
+
+▸ set the gap by command: the windows are laid out again at once, and settings.json has it
+  ✔ the docked window starts 12 points from the edge
+  ✔ set gap 16 says what changed
+  ✔ the docked window starts 16 points from the edge
+  ✔ the rest of the file is as the person wrote it
+  ✔ get gap prints it
+  ✔ keys ignore case
+  ✔ Arbor does not take its own save for somebody's edit
+  ✔ windows match Arbor's layout
+
+▸ list the settings by command: every key with its value, its range and its default
+  ✔ the gap, as it is now
+  ✔ marked as changed
+  ✔ a switch
+  ✔ a choice
+  ✔ a setting left alone is not marked
+
+▸ set a value out of range by command: it is refused with the range, and nothing changes
+  ✔ set gap 500 exits with 1
+  ✔ it says what the range is
+  ✔ a word for a number is refused too
+  ✔ and a number for a switch
+  ✔ the gap in use stays
+  ✔ the docked window stays
+  ✔ the file stays
+
+▸ misspell a setting by command: Arbor asks whether the nearest one was meant
+  ✔ set gpa 10 exits with 1
+  ✔ it suggests gap
+  ✔ get does the same
+  ✔ and so does reset
+  ✔ the gap in use stays
+
+▸ reset a setting by command: the default is back and the windows are laid out again
+  ✔ reset gap says what changed
+  ✔ the docked window starts 12 points from the edge
+  ✔ the person's own key is still in the file
+  ✔ resetting it again changes nothing and says so
+  ✔ windows match Arbor's layout
+
+▸ bind a shortcut to a command that changes a setting, by command, and press it
+  ✔ before, ⌃⌥⌘G goes to the app in front
+  ✔ bind succeeds
+  ✔ settings.json has the shortcut
+  ✔ now ⌃⌥⌘G reaches Arbor
+  ✔ and not the app
+  ✔ the docked window starts 30 points from the edge
+  ✔ arborctl bindings lists it
+  ✔ windows match Arbor's layout
+
+▸ unbind a default shortcut by command: the key goes to the app in front, and reset bindings brings it back
+  ✔ unbind succeeds
+  ✔ settings.json has null for it
+  ✔ ⌃⌥D does not reach Arbor
+  ✔ the app with the keyboard gets the key
+  ✔ reset bindings succeeds
+  ✔ ⌃⌥D shows the Desktop again
+  ✔ the docked window is out of view
+  ✔ the shortcut bound before is gone with the rest
+  ✔ windows match Arbor's layout
+
+▸ bind what cannot work, by command: it is refused with the reason
+  ✔ a key that is needed for typing
+  ✔ a command there is none of
+  ✔ a setting out of range inside a shortcut
+  ✔ each exits with 1
+  ✔ no shortcut was added
+
+▸ add a rule by command and open a window that matches: it docks as the rule says
+  ✔ rule add succeeds
+  ✔ settings.json has the rule
+  ✔ the new window is docked
+  ✔ at the top edge
+  ✔ an action there is none of is refused with the ones there are
+  ✔ no part of a title is in the log
+  ✔ windows match Arbor's layout
+
+▸ remove the rule by command: the next window of the kind floats
+  ✔ rule remove succeeds
+  ✔ no rule is left
+  ✔ Arbor arranges the new window
+  ✔ it floats
+  ✔ windows match Arbor's layout
+
+▸ save settings.json from an editor: it applies as it is saved, without a command
+  ✔ a file moved over the old one: the docked window starts 24 points from the edge
+  ✔ Arbor says so too
+  ✔ written in place: the docked window starts 8 points from the edge
+  ✔ windows match Arbor's layout
+
+▸ a slip in settings.json costs one key, never the file
+  ✔ the key after the slip is applied
+  ✔ a value of the wrong type gives way to the default
+  ✔ a number out of range moves to the nearest end
+  ✔ settings lists what Arbor could not use as written
+  ✔ the gap among it
+  ✔ the file is left as the person wrote it
+  ✔ windows match Arbor's layout
+
+▸ while settings.json cannot be read, a command that would save over it is refused
+  ✔ the settings in use stay
+  ✔ set exits with 1
+  ✔ it says that nothing was changed, and the way out
+  ✔ bind is refused too
+  ✔ the unfinished edit is still in the file
+  ✔ mended, it applies
+  ✔ and set works again
+  ✔ the docked window starts 12 points from the edge
+  ✔ windows match Arbor's layout
+
+▸ save a shortcut in settings.json from an editor: it works without a reload, the menu shows it, and taken out again it is gone
+  ✔ before, ⌃⌥⌘H is no shortcut of Arbor's
+  ✔ arborctl bindings lists it
+  ✔ ⌃⌥⌘H runs show-all
+  ✔ the menu shows the keys beside Show Everything
+  ✔ taken out of the file, it is no longer listed
+  ✔ and the menu shows the default again
+  ✔ windows match Arbor's layout
+
+▸ start a second copy of Arbor on the same home folder: it explains itself and leaves, and the first goes on
+  ✔ it exits with code 75
+  ✔ it says that Arbor is running already
+  ✔ and where to find it
+  ✔ the log has who stayed and who left
+  ✔ the first copy is still running
+  ✔ it still answers
+  ✔ no window moved
+  ✔ its shortcuts still work
+  ✔ the docked window is out of view
+  ✔ ⌃⌥Space brings it back
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+105 passed, 0 failed
