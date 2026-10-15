@@ -231,6 +231,7 @@ extension Controller: WindowSystemEvents {
     namePromptNoticesFocus(on: id)
     holdNotesFocus(of: id)
     defer { notify(.focus(id)) }
+    guard !waitsForThePause(thatIsDueFor: id) else { return }
     bringIntoViewIfFocused(id, saysMacOS: saysMacOS)
   }
 

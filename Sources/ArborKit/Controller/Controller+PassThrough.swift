@@ -96,6 +96,19 @@ extension Controller {
     notify(.input)
   }
 
+  /// A window of an app Arbor pauses for says that it has the keyboard, and nobody has said yet that its app is in front. The two come by
+  /// different roads, in either order. The pause that is on its way brings every window into view, so the view does not go off to show
+  /// this one first: that would be a move for nothing, and two more places in the view's history. Arbor looks again in a moment,
+  /// paused by then; if it is not, the window comes into view like any other that has the keyboard. Returns whether it waits.
+  /// (With the app known to be in front there is nothing to wait for: somebody has resumed by hand inside it.)
+  func waitsForThePause(thatIsDueFor id: WindowID) -> Bool {
+    guard isRunning, holdLevel != .view, let bundle = windows[id]?.bundleID, settings.pausesFor(bundle),
+      frontmostApp?.bundleID != bundle
+    else { return false }
+    scheduler.schedule("focus-before-a-pause", after: Self.focusCheckInterval) { [weak self] in self?.bringIntoViewIfFocused(id) }
+    return true
+  }
+
   /// A pause with an end has reached it. In an app Arbor pauses for, the pause goes on as that app's.
   func timedPauseEnded() {
     if settings.pausesFor(frontmostApp?.bundleID) {

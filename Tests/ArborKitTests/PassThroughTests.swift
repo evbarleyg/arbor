@@ -352,6 +352,61 @@ import Testing
     expectWindowsMatchLayout(h, on: h.display)
   }
 
+  /// That an app has come to the front and that one of its windows has the keyboard reach Arbor by different roads, in either order.
+  /// With the window first Arbor was still running: the view went off to show it, and then came the pause, which shows
+  /// everything anyway. Afterwards all looked as before, but `back` led to the Desktop.
+  @Test func alsoWhenItsWindowSpeaksBeforeTheAppIsSaidToBeInFront() {
+    let (h, emacs, safari, game) = makeHarness()
+    h.run("zoom \(safari.rawValue)")
+    let before = h.workspace
+    h.system.clearFrameLog()
+
+    h.system.focused = game
+    h.controller.windowFocused(game)
+    #expect(h.workspace == before, "the view waits for the word that is on its way")
+    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
+    h.system.activateApp(of: game)
+    #expect(h.controller.isPaused && h.controller.isPausedForApp)
+    #expect(h.frame(emacs)!.fractionInside(h.visibleFrame) > 0.99)
+    h.scheduler.advance(by: 2)
+    #expect(h.controller.isPausedForApp)
+
+    h.system.userFocus(safari)
+    #expect(h.controller.isRunning)
+    #expect(h.workspace == before)
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  /// Nothing says that the word must come. A window that has the keyboard is not left out of view for it.
+  @Test func ifNobodyEverSaysThatTheAppIsInFrontItsWindowComesIntoViewAllTheSame() {
+    let (h, _, safari, game) = makeHarness()
+    h.run("zoom \(safari.rawValue)")
+    #expect(!h.system.isVisible(game))
+    h.system.focused = game
+    h.controller.windowFocused(game)
+    h.scheduler.advance(by: 1)
+    #expect(h.controller.isRunning)
+    #expect(h.system.isVisible(game))
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  /// Whoever resumed by hand inside the app meant it: there Arbor is as it is in any app, at once.
+  @Test func resumedByHandInsideTheAppItsWindowsComeIntoViewAtOnce() {
+    let (h, _, _, game) = makeHarness()
+    h.system.userFocus(game)
+    #expect(h.controller.isPausedForApp)
+    h.run("resume")
+    // All within the app, which stays in front: one of its windows is framed, the other floats and goes out of view.
+    let lobby = h.system.open(app: "Game")
+    h.system.userFocus(game)
+    h.run("dock \(game.rawValue) top")
+    h.run("zoom \(game.rawValue)")
+    #expect(h.controller.isRunning && !h.system.isVisible(lobby))
+    h.system.focused = lobby
+    h.controller.windowFocused(lobby)
+    #expect(h.system.isVisible(lobby))
+  }
+
   /// The real window system is stopped during a pause, so the switch that ends the pause is reported
   /// only as an app coming to the front, never as a window taking the focus.
   @Test func theWindowSwitchedToIsInViewAfterThePauseEnds() {
