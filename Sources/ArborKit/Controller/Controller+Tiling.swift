@@ -388,6 +388,7 @@ extension Controller {
     refreshFocusRing(.geometry)
     guard !actual.approximatelyEquals(current) else { return .failure("\(id) cannot \(verb) any further") }
     workspaces[displayID]?.floating[id] = actual
+    aHandHasPlaced(id)
     // Its user has taken it in hand: alone on the Desktop, it is not stretched over it again (F18).
     floatingWindowMoved(id, from: displayID)
     scheduleSave()

@@ -465,6 +465,19 @@ private let moment = ["settle", "react", "advance 1", "react"]
     #expect(frames(runner)[safari] == sentTo)
   }
 
+  /// Made larger or smaller with Arbor's own keys on the lap: its person's command about that window, there. It stays, at that size.
+  @Test(arguments: ["grow", "shrink"], ["between", "late", "silent"])
+  func whatItsPersonSizedWithArborsOwnKeysStaysToo(key: String, order: String) {
+    let runner = play(
+      ["\(desk.both) windows-never", desk.windows[2], "launch", "settle", "\(desk.laptop) windows-\(order)"] + moment
+        + ["focus 103", "react", "advance 1", "react", "key down \(key)", "key up \(key)", "react", "advance 5", "react"])
+    let sized = frames(runner)[mail]!
+    #expect(sized.size != whereMailWas.size)
+    play(["\(desk.both) windows-\(order)"] + moment, in: runner)
+    #expect(frames(runner)[mail] == sized)
+    #expect(runner.controller.workspaces[laptop]?.isFloating(mail) == true)
+  }
+
   /// The hand's word is on file: a crash a minute later does not bring the claim back.
   @Test func whatItsPersonSizedLastsThroughACrash() {
     let runner = monitorUnpluggedAndBack(meanwhile: [

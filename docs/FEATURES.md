@@ -108,7 +108,7 @@ Real-window evidence: the real-window suite, 33 sections, the newest 2026-10-15T
 | A05 | Minimum sizes learned from apps |  | A window that refuses its slot becomes a tile | tested | tests 1/1, real windows 3/4 | [F01](features/F01-dock-and-zoom.md) |
 | A06 | Windows left off-screen by a crash are recovered |  | On launch, and only those: a window kept over an edge of the screen with 24 points of its title bar within reach stays where it is found, at a start, when it opens and at a quit | verified | tests 9/9, real windows 4/4 | [F01](features/F01-dock-and-zoom.md) |
 | A07 | Reused window numbers after a reboot are ignored |  | Saved windows must match their app | verified | tests 1/1, real windows 1/1 | [F01](features/F01-dock-and-zoom.md) |
-| A08 | A display's arrangement returns when it reconnects |  | Dormant workspaces keyed by display UUID; restored on reconnect, kept for 30 days | tested | tests 38/38 | [F08](features/F08-displays-and-spaces.md) |
+| A08 | A display's arrangement returns when it reconnects |  | Dormant workspaces keyed by display UUID; restored on reconnect, kept for 30 days | tested | tests 45/45 | [F08](features/F08-displays-and-spaces.md) |
 | A09 | Resize by command |  | `resize <id> <edge> <points>` | tested | tests 3/3, real windows 1/3 | [F01](features/F01-dock-and-zoom.md) |
 | A10 | Free, open source, no window limit |  | MIT licence | verified | nothing to test |  |
 | A11 | Resize docked windows by their own edges |  | Edge drags move the matching seams; outer edges spring back | verified | tests 7/7, real windows 6/6 | [F07](features/F07-resize-by-window-edges.md) |
