@@ -71,3 +71,5 @@ column "new" marks a file that does not exist yet.
 See `collab/BOARD.md`. Items touching different files can run in parallel;
 expect small merge conflicts in the shared hot spots listed in `CLAUDE.md` and
 resolve them by keeping both sides.
+
+A line of prose for a trial of CI; it is not meant to land.
