@@ -280,6 +280,7 @@ extension World {
       // `unhideWithoutActivation`
       apps[pid]?.hidden = false
       system.setHidden(pid: pid, false)
+      showAgainTogether(pid)
       followKeyboard()
       return ""
     case "activate" where words.count == 1:

@@ -393,6 +393,23 @@ private final class Recorder: WindowSystemEvents {
     #expect(listed() == first)
   }
 
+  /// An app that shows again brings its windows back as one block, behind the window that has the keyboard.
+  @Test func anAppThatShowsAgainComesBackAsOneBlock() {
+    let (system, _, a, b, c) = make()
+    for window in [b, c, a] { system.userFocus(window) }
+    #expect(system.windowsFrontToBack() == [a, c, b], "another app's window lies between the two")
+    system.setHidden(pid: 1, true)
+    #expect(system.focused == c)
+    system.setHidden(pid: 1, false)
+    #expect(system.windowsFrontToBack() == [c, a, b])
+    // With the keyboard in no window, in front of everything.
+    for window in [b, c, a] { system.userFocus(window) }
+    system.setHidden(pid: 1, true)
+    system.userFocusesNothing()
+    system.setHidden(pid: 1, false)
+    #expect(system.windowsFrontToBack() == [a, b, c])
+  }
+
   @Test func everySwitchCanBeTurnedOff() {
     let (system, recorder, a, b, _) = make(.none)
     system.focus(b)

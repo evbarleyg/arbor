@@ -4295,6 +4295,31 @@
    "certainty": "suspected"
   },
   {
+   "id": "an-app-that-shows-again-comes-back-as-one-block",
+   "kind": "second-actor",
+   "layer": "at the seam",
+   "expected": "A window that was hidden with its app comes back where it lay among the others. `FakeWindowSystem.setHidden` and the fake Mac's `unhide` left the order of windows as it was.",
+   "happened": "An app that shows again without coming forward (`unhideWithoutActivation`) brings its windows back as one block, in the order they had among themselves. Before the hide the order was W1 W2 W4 W3, W4 being another app's. On one hosted Mac, with Finder in front, they came back as W1 W2 W3 W4; on another, with W4 in use, as W4 W1 W2 W3. So the block lies right behind the window that has the keyboard, or in front of everything if none has. Two runs, one test app: what an app does that comes forward as it shows (a click on its Dock icon) is another matter, and where the block goes when the app in front has several windows has not been seen.",
+   "found": "The comparison of a rehearsal with runs on hosted Macs.",
+   "modelled": "yes",
+   "knobs": [
+    "FakeWindowSystem.setHidden",
+    "World.showAgainTogether"
+   ],
+   "guards": [
+    "test: anAppThatShowsAgainComesBackAsOneBlock"
+   ],
+   "copes": "Arbor asks the window system for the order of windows where it needs it, and keeps none of its own.",
+   "hurt": 4,
+   "touches": [
+    "behind"
+   ],
+   "sources": [
+    "Sources/ArborTesting/FakeWindowSystem.swift",
+    "Sources/arbor-fakemac/World.swift"
+   ]
+  },
+  {
    "id": "an-app-that-turns-regular-later-is-never-announced",
    "kind": "missing-report",
    "layer": "below the seam",

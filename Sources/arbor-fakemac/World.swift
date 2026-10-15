@@ -441,6 +441,20 @@ final class World {
     order.append(thing)
   }
 
+  /// An app that shows again without coming forward (`unhideWithoutActivation`) brings its windows back as one block, in the order they
+  /// had among themselves: right behind the window that has the keyboard, or in front of everything if none has. Seen on two hosted
+  /// Macs. W1 W2 W4 W3 before the hide, W4 being another app's, came back as W1 W2 W3 W4 with Finder in front and as W4 W1 W2 W3 with
+  /// W4 in use.
+  func showAgainTogether(_ pid: Int32) {
+    let own = order.filter { thing in
+      if case .window(let id) = thing { return owner(of: id) == pid }
+      return false
+    }
+    order.removeAll { own.contains($0) }
+    let behind = system.focused.flatMap { order.firstIndex(of: .window($0.rawValue)) }.map { $0 + 1 } ?? 0
+    order.insert(contentsOf: own, at: behind)
+  }
+
   /// The app's windows come forward together, in the order they had.
   func raiseAll(of pid: Int32) {
     let own = order.filter { thing in

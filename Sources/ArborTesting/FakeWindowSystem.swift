@@ -674,6 +674,14 @@ public final class FakeWindowSystem: WindowSystem {
   }
 
   public func setHidden(pid: Int32, _ hidden: Bool) {
+    // An app that shows again brings its windows back as one block, in the order they had among themselves: right behind the window that
+    // has the keyboard, or in front of everything if none has (seen on two hosted Macs).
+    if !hidden {
+      let own = windowsFrontToBack().filter { windows[$0]?.snapshot.pid == pid }
+      var all = windowsFrontToBack().filter { !own.contains($0) }
+      all.insert(contentsOf: own, at: focused.flatMap { all.firstIndex(of: $0) }.map { $0 + 1 } ?? 0)
+      raised = all
+    }
     for id in windows.keys.sorted() where windows[id]!.snapshot.pid == pid {
       windows[id]!.snapshot.isHidden = hidden
       if restoresLate, !hidden {
