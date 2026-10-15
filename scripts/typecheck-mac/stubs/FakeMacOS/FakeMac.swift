@@ -341,8 +341,8 @@ public final class FakeMac: @unchecked Sendable {
   /// What other processes' preferences hold, by domain and key. A key that is not there has never been touched: the setting is as a Mac comes.
   public var preferences: [String: [String: Any]] = [:]
 
-  /// Desktop & Dock: "Drag windows to left or right edge of screen to tile", "Drag windows to menu bar to fill screen", "Hold ⌥ key while dragging windows to tile". On, as a Mac comes, since macOS 15. The model
-  /// does not tile anything itself: macOS acts only at the last point of an edge, where no story lets go.
+  /// Desktop & Dock: "Drag windows to left or right edge of screen to tile", "Drag windows to menu bar to fill screen", "Hold ⌥ key while dragging windows to tile". On, as a Mac comes, since macOS 15. What macOS
+  /// then does with a window that is let go: `macOSTakes` (Mouse.swift).
   public var macOSTilesDraggedWindows: Bool {
     get { preferences["com.apple.WindowManager"]?["EnableTilingByEdgeDrag"] as? Bool ?? true }
     set {

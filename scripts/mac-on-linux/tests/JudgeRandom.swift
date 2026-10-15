@@ -33,6 +33,8 @@ func tellOfTheJudgesRandomGestures(_ book: Book) {
       let tile = CGRect(x: 518, y: 43, width: 494, height: 600)
       let free = CGRect(x: CGFloat(dice.int(300) + 150), y: CGFloat(dice.int(150) + 90), width: CGFloat(dice.int(150) + 350), height: CGFloat(dice.int(150) + 250))
       let one = StoreyOne(story) { mac in
+        // The measure's truth is what the hand did. Let go in the menu bar or at an edge, macOS's own tiling would resize the window afterwards, and the truth would read that as a resize.
+        mac.macOSTilesDraggedWindows = false
         switch scene {
         case 0: window = mac.open("window", in: mac.launch("Notes"), frame: free)
         case 1:

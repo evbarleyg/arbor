@@ -199,37 +199,87 @@ func tellOfArrangements(_ book: Book) {
     }
   }
 
-  // As a Mac comes, those edges are macOS's: it acts only at their last point, but a hand pushes a window against an edge, so Arbor leaves it the whole of its own band along them.
-  for edge in ["left", "right", "top"] {
-    let goal = ["left": CGPoint(x: 3, y: 368), "right": CGPoint(x: 1020, y: 368), "top": CGPoint(x: 512, y: 27)][edge]!
-    book.story("with macOS's tiling on, a floating window is dragged to the \(edge) edge of the screen") { story in
+  // As a Mac comes, those edges are macOS's. It acts only at their last point, and in the menu bar only for a pointer that has rested; but a hand pushes a window against an edge, so Arbor leaves it the whole of its own band
+  // along them. A window let go there belongs to whoever takes it. If macOS does, it is macOS's: Arbor sets no frame, and a docked window's place closes. If macOS does not, nothing was offered and nothing happens: a floating
+  // window stays where it was let go, a docked one goes home to its slot, in one move, its neighbours untouched (QUESTIONS, Q23).
+  // The throw: five movements in a tenth of a second, the last of them into the menu bar, and the hand opens 20 ms later.
+  let short: [(words: String, goal: CGPoint, steps: Int, interval: TimeInterval)] = [
+    ("let go three points short of the left edge of the screen", CGPoint(x: 3, y: 368), 25, 0.08), ("let go three points short of the right edge of the screen", CGPoint(x: 1020, y: 368), 25, 0.08),
+    ("let go just under the menu bar", CGPoint(x: 512, y: 35), 25, 0.08), ("thrown into the menu bar and let go at once", CGPoint(x: 512, y: 20), 5, 0.02),
+  ]
+  for place in short {
+    book.story("with macOS's tiling on, a floating window is \(place.words)") { story in
       var window: FakeMac.Window!
       let two = StoreyTwo(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 300, y: 130, width: 400, height: 300)) }
-      two.mac.drag(from: CGPoint(x: 510, y: 148), to: goal, steps: 25)
-      two.mac.pass(0.3)
+      two.mac.drag(from: CGPoint(x: 510, y: 148), to: place.goal, steps: place.steps, interval: place.interval)
       story.check("the drag is seen", two.heard.all.contains(.dragBegan(window.number)), two.heard.texts)
       story.check("Arbor stands aside: no preview", two.overlays.preview == nil)
-      let letGo = window.frame
+      let letGo = window.bounds
       let asked = window.timesAskedForAFrame
       two.mac.release()
       two.mac.pass(2)
       story.check("let go, it is not docked", !two.isDocked(window), two.whereabouts(window))
-      story.check("it stays where it was let go", window.frame == letGo && window.timesAskedForAFrame == asked, two.whereabouts(window))
+      story.check("it stays where it was let go, and nobody asks it to move", window.frame == letGo && window.timesAskedForAFrame == asked, two.whereabouts(window))
     }
 
-    book.story("with macOS's tiling on, a docked window is dragged to the \(edge) edge of the screen") { story in
+    book.story("with macOS's tiling on, a docked window is \(place.words)") { story in
       let (two, left, right) = twoDocked(story)
       // The one that is not at that edge already.
-      let window = edge == "left" ? right : left
-      let home = window.frame
-      two.mac.drag(from: CGPoint(x: home.midX, y: home.minY + 12), to: goal, steps: 25)
+      let (window, neighbour) = place.goal.x < 100 ? (right, left) : (left, right)
+      let (home, beside) = (window.frame, neighbour.frame)
+      two.mac.drag(from: CGPoint(x: home.midX, y: home.minY + 12), to: place.goal, steps: place.steps, interval: place.interval)
+      story.check("Arbor stands aside: no preview", two.overlays.preview == nil)
+      let asked = (window.timesAskedForAFrame, neighbour.timesAskedForAFrame)
+      let besideInTheDrag = neighbour.frame
+      two.mac.release()
+      two.mac.pass(0.6)
+      story.check("macOS does not take it, so it goes home: half a second later it is in its slot", two.isDocked(window) && window.frame == home, "\(two.whereabouts(window)), its slot is \(home.text)")
+      two.mac.pass(2)
+      story.check("and stays there, docked", two.isDocked(window) && window.frame == home, "\(two.whereabouts(window)), its slot is \(home.text)")
+      // A position and perhaps a size: one `setFrame`.
+      story.check("in one move", (1...3).contains(window.timesAskedForAFrame - asked.0), "asked for a place or a size \(window.timesAskedForAFrame - asked.0) times")
+      story.check(
+        "its neighbour is where it was", neighbour.frame == beside && (besideInTheDrag != beside || neighbour.timesAskedForAFrame == asked.1),
+        "\(two.whereabouts(neighbour)), it was at \(beside.text); asked \(neighbour.timesAskedForAFrame - asked.1) times")
+    }
+  }
+
+  let taken: [(words: String, goal: CGPoint, tile: CGRect)] = [
+    ("pushed against the left edge of the screen", CGPoint(x: 0, y: 368), CGRect(x: -1, y: 31, width: 512, height: 674)),
+    ("pushed against the right edge of the screen", CGPoint(x: 1023, y: 368), CGRect(x: 513, y: 31, width: 512, height: 674)),
+    ("held in the menu bar", CGPoint(x: 512, y: 20), CGRect(x: 0, y: 31, width: 1024, height: 674)),
+  ]
+  for place in taken {
+    book.story("with macOS's tiling on, a floating window is \(place.words)") { story in
+      var window: FakeMac.Window!
+      let two = StoreyTwo(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 300, y: 130, width: 400, height: 300)) }
+      two.mac.drag(from: CGPoint(x: 510, y: 148), to: place.goal, steps: 25)
       two.mac.pass(0.3)
       story.check("Arbor stands aside: no preview", two.overlays.preview == nil)
+      let asked = window.timesAskedForAFrame
       two.mac.release()
-      two.mac.pass(2)
-      // What becomes of it is written down nowhere, and differs: back in its slot at the left and right, floating where it was let go at the top.
-      story.check("let go, it is docked nowhere new: back in its slot, or floating", two.isDocked(window) ? window.frame == home : true, "\(two.whereabouts(window)), its slot was \(home.text)")
-      story.check("and in view", two.visibleFraction(window) > 0.9, two.whereabouts(window))
+      two.mac.pass(3)
+      story.check("macOS gives it its tile", window.frame == place.tile, two.whereabouts(window))
+      story.check("there is one writer: Arbor asks nothing of it", window.timesAskedForAFrame == asked, "asked for a place or a size \(window.timesAskedForAFrame - asked) times")
+      story.check("it is not docked", !two.isDocked(window))
+      let believed = two.controller.snapshot().windows.first { $0.id.rawValue == window.number }?.frame
+      story.check("Arbor knows where it is", believed == window.frame, "\(believed?.text ?? "")")
+    }
+
+    book.story("with macOS's tiling on, a docked window is \(place.words)") { story in
+      let (two, left, right) = twoDocked(story)
+      let (window, neighbour) = place.goal.x < 100 ? (right, left) : (left, right)
+      let beside = neighbour.frame
+      two.mac.drag(from: CGPoint(x: window.frame.midX, y: window.frame.minY + 12), to: place.goal, steps: 25)
+      two.mac.pass(0.3)
+      story.check("Arbor stands aside: no preview", two.overlays.preview == nil)
+      let asked = window.timesAskedForAFrame
+      two.mac.release()
+      two.mac.pass(3)
+      story.check("macOS gives it its tile", window.frame == place.tile, two.whereabouts(window))
+      story.check("there is one writer: Arbor asks nothing of it", window.timesAskedForAFrame == asked, "asked for a place or a size \(window.timesAskedForAFrame - asked) times")
+      story.check("it is macOS's: no longer docked", !two.isDocked(window))
+      story.check("and its place closes", neighbour.frame.width > beside.width * 1.5, two.whereabouts(neighbour))
     }
   }
 

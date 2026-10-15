@@ -5,6 +5,8 @@ extension FakeMac {
   public struct Mouse {
     /// Global coordinates, top-left origin.
     public internal(set) var location = CGPoint(x: 10, y: 10)
+    /// Since when it has been in the menu bar.
+    var inTheMenuBarSince: TimeInterval?
     /// Where it was one movement ago.
     var previousLocation = CGPoint(x: 10, y: 10)
     /// What `NSEvent.mouseLocation` says.
@@ -187,6 +189,8 @@ extension FakeMac {
     mouse.locationByAppKit = pointerIsReadOneStepLate && mouse.isDown ? mouse.location : point
     mouse.previousLocation = mouse.location
     mouse.location = point
+    let isInTheMenuBar = screens.contains { $0.frame.contains(point) && point.y < $0.visibleFrame.minY }
+    mouse.inTheMenuBarSince = isInTheMenuBar ? mouse.inTheMenuBarSince ?? now : nil
     guard mouse.isDown, let grab = mouse.grab else { return happened(UInt32(MouseEvent.mouseMoved.rawValue)) }
     if case .arborsPanel = grab.kind { return happened(UInt32(MouseEvent.leftMouseDragged.rawValue)) }
     tellMonitors(.leftMouseDragged, toArbor: false)
@@ -243,11 +247,66 @@ extension FakeMac {
       tellMonitors(.leftMouseUp, toArbor: toArbor, mayBeDropped: true)
       if release == .seenTwice { tellMonitors(.leftMouseUp, toArbor: toArbor, after: timing.secondMouseUp) }
     }
-    if case .titleBar? = grab?.kind, let window = grab?.window {
+    if case .titleBar? = grab?.kind, let window = grab?.window, window.isOpen, let tile = macOSsTile(for: window) {
+      macOSTakes(window, to: tile)
+    } else if case .titleBar? = grab?.kind, let window = grab?.window {
       appDoes(window.app, after: timing.dragReachesApp, "") { [self] in
         guard window.isOpen, window.frame != window.bounds, mouse.grab?.window !== window else { return }
         window.frame = window.bounds
         reportMoved(window)
+      }
+    }
+  }
+
+  // MARK: macOS's own tiling
+
+  /// Where macOS puts a window that is let go with the pointer where it is now, or nil if it leaves it alone. Measured on macOS 26.6 on a display of 1024×768, by probes of real drags on hosted Macs
+  /// (`Sources/ArborCore/MacTiling.swift`; docs/REALITY.md, macos-tiles-only-from-the-outermost-point, macos-half-tile-is-a-point-off):
+  /// - the sides: at x 0 and at x 1023, not a point further in, and without waiting. A half from y 60 to y 740, a quarter at y 0, 31 and 767; that the quarters begin at 60 and 740 is a GUESS;
+  /// - the menu bar, y 0 to 30: only for a pointer that has rested there. Let go 0.1 s after it arrived the window was left alone, after 0.2 s it filled the screen; 0.15 s is a GUESS;
+  /// - the left half is (-1,31 512×674), a point off the display; the whole screen exactly (0,31 1024×674). The right half and the quarters, by symmetry: a GUESS.
+  /// With ⌥ held it has been seen both ways (with-option-held-macos-shows-its-preview-and-does-not-tile): NOT MODELLED.
+  private func macOSsTile(for window: Window) -> CGRect? {
+    let point = mouse.location
+    guard let screen = screens.first(where: { $0.frame.contains(point) }) else { return nil }
+    let settings = preferences["com.apple.WindowManager"] ?? [:]
+    let (whole, visible) = (screen.frame, screen.visibleFrame)
+    if settings["EnableTilingByEdgeDrag"] as? Bool ?? true, point.x < whole.minX + 1 || point.x >= whole.maxX - 1 {
+      let isLeft = point.x < whole.minX + 1
+      var tile = CGRect(x: isLeft ? visible.minX - 1 : visible.midX + 1, y: visible.minY, width: visible.width / 2, height: visible.height)
+      if point.y < whole.minY + 60 { tile.size.height = visible.height / 2 }
+      if point.y > whole.maxY - 28 {
+        tile.size.height = visible.height / 2
+        tile.origin.y = visible.midY
+      }
+      return tile
+    }
+    if settings["EnableTopTilingByEdgeDrag"] as? Bool ?? true, let since = mouse.inTheMenuBarSince, now - since >= 0.15 { return visible }
+    return nil
+  }
+
+  /// macOS grows the window to its tile: the first step 7 ms after the release, 17 to 19 steps about 16 ms apart, easing out, there 0.30 to 0.36 s after the release (macos-tiling-travels-although-reduce-motion-is-on,
+  /// macos-tiles-over-arbors-slot-three-moves). It starts from where the window was let go and ignores what has become of it since (macos-starts-its-tile-from-where-the-window-was-let-go). While the size changes the app
+  /// posts "resized" only, 18 in a row; "moved" only where the size no longer changes (macos-tiling-reports-moves-as-resized). A window that cannot change its size is moved into the tile as it is. That a tiled window gets
+  /// its old size back in the hand is NOT MODELLED.
+  private func macOSTakes(_ window: Window, to tile: CGRect) {
+    let from = window.bounds
+    var goal = tile
+    if !window.isResizable { goal.size = from.size }
+    note("macOS takes w\(window.number): to \(Int(goal.minX)),\(Int(goal.minY)) \(Int(goal.width))×\(Int(goal.height))")
+    let steps = 18
+    window.isBusyUntil = now + 0.007 + Double(steps) * 0.016 + 0.05
+    for step in 1...steps {
+      send(after: 0.007 + Double(step - 1) * 0.016, from: .system, "") { [self] in
+        guard window.isOpen else { return }
+        let part = 1 - pow(1 - CGFloat(step) / CGFloat(steps), 2)
+        func between(_ a: CGFloat, _ b: CGFloat) -> CGFloat { step == steps ? b : (a + (b - a) * part).rounded() }
+        let frame = CGRect(
+          x: between(from.minX, goal.minX), y: between(from.minY, goal.minY), width: between(from.width, goal.width), height: between(from.height, goal.height))
+        let before = window.frame
+        window.frame = frame
+        window.bounds = frame
+        if before.size != frame.size { report("AXResized", about: window) } else if before.origin != frame.origin { report("AXMoved", about: window) }
       }
     }
   }

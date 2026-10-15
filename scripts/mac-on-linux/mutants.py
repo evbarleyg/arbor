@@ -80,9 +80,9 @@ MUTANTS = [
         "old": "    dropOptions.silentEdges = (drag?.macTiling.edges ?? []).union(drag?.edgesNeverLeft ?? [])\n",
         "new": "    dropOptions.silentEdges = (drag?.edgesNeverLeft ?? [])\n",
         "red": [
-            "with macOS's tiling on, a floating window is dragged to the left edge of the screen: Arbor stands aside: no preview",
-            "with macOS's tiling on, a floating window is dragged to the right edge of the screen: let go, it is not docked",
-            "with macOS's tiling on, a docked window is dragged to the right edge of the screen: Arbor stands aside: no preview",
+            "with macOS's tiling on, a floating window is let go three points short of the left edge of the screen: Arbor stands aside: no preview",
+            "with macOS's tiling on, a floating window is let go three points short of the right edge of the screen: let go, it is not docked",
+            "with macOS's tiling on, a docked window is let go three points short of the right edge of the screen: Arbor stands aside: no preview",
         ],
     },
     {

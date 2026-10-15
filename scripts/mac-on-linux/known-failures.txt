@@ -346,3 +346,10 @@ Arbor starts while an app hangs, which wakes 60 s later: announced as one that w
 # is logged: "wN is being dragged, which began late".
 text is selected over 120 points, and meanwhile the window moves the pointer's way, as far as the pointer has gone, by itself: it is not taken for a drag # late, one look is enough if the window has caught up with the pointer (WindowGrab.judge)
 text is selected over 120 points, and meanwhile the window jumps to within 24 points of the pointer's own travel, by itself: it is not taken for a drag # late, one look is enough if the window has caught up with the pointer (WindowGrab.judge)
+
+# Board 1.56 (QUESTIONS, Q23): a docked window let go in macOS's band belongs to whoever takes it. If macOS does not, it goes home to its slot, one move, its neighbours untouched. So it does short of the left and right edges and just
+# under the menu bar. IN the menu bar `MacTiling.claim` answers, through `hoverLeftToMacOS`, before the resolver is asked: the window is left to macOS at the release, whether macOS then takes it or not.
+with macOS's tiling on, a docked window is thrown into the menu bar and let go at once: macOS does not take it, so it goes home: half a second later it is in its slot # board 1.56: Arbor does not look whether macOS has taken it (0.1 to 0.2 s of rest in the menu bar decide that)
+with macOS's tiling on, a docked window is thrown into the menu bar and let go at once: and stays there, docked # board 1.56: Arbor does not look whether macOS has taken it (0.1 to 0.2 s of rest in the menu bar decide that)
+with macOS's tiling on, a docked window is thrown into the menu bar and let go at once: in one move # board 1.56: Arbor does not look whether macOS has taken it (0.1 to 0.2 s of rest in the menu bar decide that)
+with macOS's tiling on, a docked window is thrown into the menu bar and let go at once: its neighbour is where it was # board 1.56: Arbor does not look whether macOS has taken it (0.1 to 0.2 s of rest in the menu bar decide that)
