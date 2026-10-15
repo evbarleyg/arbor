@@ -1130,6 +1130,199 @@ private let second = DisplaySnapshot(
     #expect(report.problems.first?.text.contains("if it is fixed, delete that line") == true)
   }
 
+  // MARK: What Arbor did on the way
+
+  /// Safari is docked left, then Notes right, which makes Safari narrower; then the view goes to Notes and back.
+  private func courseTrace() -> Trace {
+    record(before: { h in
+      h.system.open(app: "Safari")
+      h.system.open(app: "Notes")
+      h.system.open(app: "Mail")
+    }) { h in
+      h.run("trace note the first dock")
+      h.run("dock 101 left")
+      h.run("trace note the second dock")
+      h.run("dock 102 right")
+      h.scheduler.advance(by: 1)
+    }.trace
+  }
+
+  private func problems(_ trace: Trace, _ expectations: String) -> [String] {
+    TraceReplayer(trace).run(expectations: expectations).problems.map(\.text)
+  }
+
+  @Test func aReplayKnowsWhatArborDidToEachWindowAndInAnswerToWhat() throws {
+    let trace = courseTrace()
+    let replayer = TraceReplayer(trace)
+    let deeds = replayer.run().deeds
+    #expect(!deeds.contains { $0.atStart }, "starting on the header moves nothing")
+    let first = firstLine(trace) { $0 == .command("dock 101 left") }
+    let second = firstLine(trace) { $0 == .command("dock 102 right") }
+    // (Whether Safari is first asked for the size where it stands is Controller+AskFirst.swift's business, and changes.)
+    #expect(TraceReplayer.changes(of: WindowID(101), in: deeds).filter { !$0.isQuestion }.map(\.deed.line) == [first, second])
+    // (Whether a floating window makes way at the first dock is not this test's business.)
+    #expect(deeds.filter { $0.moved == WindowID(102) }.last?.line == second)
+    guard case .setFrame(_, let asked, let from?, let took?)? = deeds.last(where: { $0.moved == WindowID(102) })?.what else {
+      Issue.record("no frame was set")
+      return
+    }
+    #expect(asked == took && from != took && took == replayer.harness.system.frame(of: WindowID(102)))
+  }
+
+  @Test func movesAreCountedForEachWindow() {
+    let trace = courseTrace()
+    #expect(problems(trace, "moved 101 2\nmoved w102 1 since the second dock") == [])
+    let wrong = problems(trace, "moved 101 1")
+    #expect(wrong.count == 1)
+    #expect(wrong.first?.hasPrefix("`moved 101 1`: Arbor moved w101 2 time(s), not 1; line ") == true)
+    // Which says where to look.
+    #expect(wrong.first?.contains("setFrame w101 asked ") == true)
+  }
+
+  @Test func aMoveIsPinnedToTheLineItAnswered() {
+    let trace = courseTrace()
+    let second = firstLine(trace) { $0 == .command("dock 102 right") }
+    // As the replay has it, questions and all; the last of them is the move that answered the second dock.
+    let at = TraceReplayer.changes(of: WindowID(101), in: TraceReplayer(trace).run().deeds).map { "\($0.deed.line)" + ($0.isQuestion ? "?" : "") }
+    #expect(at.last == "\(second)")
+    #expect(problems(trace, "moved 101 2 at \(at.joined(separator: " "))") == [])
+    let late = Array(at.dropLast()) + ["\(second + 1)"]
+    #expect(
+      problems(trace, "moved 101 2 at \(late.joined(separator: " "))")
+        == [
+          "`moved 101 2 at \(late.joined(separator: " "))`: Arbor moved w101 at line \(at.joined(separator: ", ")) of the trace, "
+            + "not at \(late.joined(separator: ", "))"
+        ])
+  }
+
+  /// What is judged is the road, not the number of requests. A person sees a window change size where it stands all the same, so a
+  /// list of lines holds the questions too: one that is new, or gone, is a change somebody reads. On deeds made by hand: when Arbor
+  /// asks is its own business.
+  @Test func aQuestionPutToAWindowWhereItStandsIsNoMoveAndTheListOfLinesHoldsItAllTheSame() {
+    func deed(_ id: Int, _ line: Int, _ from: CGRect, _ took: CGRect?) -> TraceReplayer.Deed {
+      .init(what: .setFrame(WindowID(UInt32(id)), asked: took ?? from, from: from, took: took), line: line)
+    }
+    let stood = CGRect(x: 200, y: 300, width: 480, height: 352)
+    let sized = CGRect(x: 200, y: 300, width: 494, height: 650)
+    let placed = CGRect(x: 12, y: 43, width: 494, height: 650)
+    let narrower = CGRect(x: 12, y: 43, width: 300, height: 650)
+    let course = [deed(101, 8, stood, sized), deed(102, 8, stood, placed), deed(101, 8, sized, placed), deed(101, 20, placed, narrower)]
+    func problem(_ line: String, in course: [TraceReplayer.Deed]) -> String? {
+      TraceReplayer.problem(withMoved: line.split(separator: " ").map(String.init), in: course)
+    }
+    #expect(TraceReplayer.changes(of: WindowID(101), in: course).map(\.isQuestion) == [true, false, false])
+    #expect(problem("moved 101 2", in: course) == nil && problem("moved 101 2 at 8? 8 20", in: course) == nil)
+    #expect(problem("moved 101 3", in: course)?.hasPrefix("Arbor moved w101 2 time(s), not 3; line 8: setFrame w101 asked ") == true)
+    #expect(problem("moved 101 2 at 8 20", in: course) == "Arbor moved w101 at line 8?, 8, 20 of the trace, not at 8, 20", "the question is missed")
+    #expect(problem("moved 101 2 at 8 8? 20", in: course) != nil, "it comes before the move")
+    // A resize that is all there is to do is a move like any other.
+    #expect(problem("moved 101 1 at 20", in: [course[3]]) == nil)
+    // So is one that is followed by a move in answer to something else,
+    #expect(problem("moved 101 2 at 8 9", in: [deed(101, 8, stood, sized), deed(101, 9, sized, placed)]) == nil)
+    // one that comes after a move,
+    let parked = CGRect(x: 1023, y: 677, width: 480, height: 352)
+    let parkedAndSized = CGRect(x: 1023, y: 677, width: 494, height: 650)
+    #expect(problem("moved 101 3 at 8 8 8", in: [deed(101, 8, stood, parked), deed(101, 8, parked, parkedAndSized), deed(101, 8, parkedAndSized, placed)]) == nil)
+    // and one whose move the app never took: the window is left as the question made it.
+    #expect(problem("moved 101 1 at 8", in: [deed(101, 8, stood, sized), deed(101, 8, sized, nil)]) == nil)
+    // macOS nudges a window that grows in the parking place by a few points: it stands where it stood.
+    let nudged = CGRect(x: 1023, y: 673, width: 494, height: 650)
+    #expect(problem("moved 101 1 at 8? 8", in: [deed(101, 8, parked, nudged), deed(101, 8, nudged, placed)]) == nil)
+    // Two questions and a move.
+    let wider = CGRect(x: 200, y: 300, width: 494, height: 352)
+    #expect(problem("moved 101 1 at 8? 8? 8", in: [deed(101, 8, stood, wider), deed(101, 8, wider, sized), deed(101, 8, sized, placed)]) == nil)
+  }
+
+  @Test func movesCanBeCountedFromARemarkOn() {
+    let trace = courseTrace()
+    #expect(problems(trace, "moved 101 1 since the SECOND dock\nmoved 101 2 since the first\nmoved 102 1 since second") == [])
+    #expect(problems(trace, "moved 101 1 since lunch") == ["`moved 101 1 since lunch`: no remark in the trace contains “lunch”"])
+  }
+
+  @Test func aRequestForTheFrameAWindowHasIsNoMove() {
+    let trace = record(before: { h in h.system.open(app: "Safari") }) { h in
+      h.run("dock 101 left")
+      h.run("relayout")
+      h.scheduler.advance(by: 1)
+    }.trace
+    #expect(problems(trace, "moved 101 1") == [])
+  }
+
+  @Test func whereAWindowEndsUpIsCheckedToAPoint() {
+    let trace = courseTrace()
+    let replayer = TraceReplayer(trace)
+    replayer.run()
+    let frame = replayer.harness.system.frame(of: WindowID(101))!
+    let numbers = [frame.minX, frame.minY, frame.width, frame.height].map { "\(Int($0))" }
+    #expect(problems(trace, "frame 101 " + numbers.joined(separator: " ")) == [])
+    let elsewhere = "frame 101 \(Int(frame.minX) + 3) " + numbers.dropFirst().joined(separator: " ")
+    #expect(problems(trace, elsewhere).first?.hasPrefix("`\(elsewhere)`: w101 is at ") == true)
+    #expect(problems(trace, "frame 999 0 0 1 1") == ["`frame 999 0 0 1 1`: there is no window w999"])
+  }
+
+  @Test func whomArborAskedToTakeTheKeyboardIsCheckedInOrder() {
+    let trace = record(before: { h in
+      h.system.open(app: "Safari")
+      h.system.open(app: "Notes")
+    }) { h in
+      h.run("dock 101 left")
+      h.run("dock 102 right")
+      h.run("trace note now the view")
+      h.run("zoom 101")
+      h.run("zoom 102")
+      h.scheduler.advance(by: 1)
+    }.trace
+    let asked = TraceReplayer.focusAsked(in: TraceReplayer(trace).run().deeds).map { "\($0.rawValue)" }
+    #expect(asked.suffix(2) == ["101", "102"])
+    #expect(problems(trace, "asked-focus " + asked.joined(separator: " ")) == [])
+    #expect(problems(trace, "asked-focus 101 102 since now the view") == [])
+    #expect(problems(trace, "asked-focus none since now the view") == ["`asked-focus none since now the view`: Arbor asked for the keyboard for w101 w102"])
+    #expect(problems(courseTrace(), "asked-focus 999").first?.contains("Arbor asked for the keyboard for") == true)
+  }
+
+  @Test(arguments: ["moved", "moved 101", "moved 101 two", "moved x 1", "moved 101 2 at", "moved 101 2 at 5", "moved 101 2 at 5? 6", "moved 101 2 at ? 5 6", "moved 101 2 by 5 6", "frame 101 1 2 3", "frame 101 a b c d", "asked-focus", "asked-focus x"])
+  func aLineAboutTheCourseThatCannotBeReadSaysSo(line: String) {
+    let said = problems(courseTrace(), line)
+    #expect(said.count == 1)
+    #expect(said.first?.contains("the forms are: moved <id> <n>") == true, "\(said)")
+  }
+
+  /// What scripts/trace-to-test.py writes beside a trace.
+  @Test func theExpectationsWrittenFromAReplayHoldInThatReplayAndFailWhenArborDoesSomethingElse() throws {
+    let trace = courseTrace()
+    let replayer = TraceReplayer(trace)
+    replayer.run()
+    let lines = replayer.expectationsFromThisReplay()
+    for expected in ["docked 101", "docked 102", "floating 103", "visible 101", "camera root"] { #expect(lines.contains(expected), "\(expected) is not among \(lines)") }
+    #expect(lines.contains { $0.hasPrefix("moved 101 2 at ") } && lines.contains { $0.hasPrefix("frame 102 ") } && lines.contains { $0.hasPrefix("asked-focus ") })
+    #expect(problems(trace, lines.joined(separator: "\n")) == [])
+    // The same windows and the same answers, and an Arbor that was told to do one thing less.
+    let other = Trace(header: trace.header, entries: trace.entries.filter { $0.line != .command("dock 102 right") })
+    #expect(problems(other, lines.joined(separator: "\n")).count > 3)
+  }
+
+  /// A pause and a quit end a trace, and where they leave the windows is the point of recording one.
+  @Test func afterAPauseTheExpectationsStillSayWhereTheWindowsAre() {
+    let trace = record(before: { h in h.system.open(app: "Safari") }) { h in
+      h.run("dock 101 left")
+      h.run("pause")
+    }.trace
+    let replayer = TraceReplayer(trace)
+    replayer.run()
+    let lines = replayer.expectationsFromThisReplay()
+    #expect(lines.contains { $0.hasPrefix("moved 101 ") } && lines.contains { $0.hasPrefix("frame 101 ") })
+    #expect(!lines.contains { $0.hasPrefix("docked") || $0.hasPrefix("camera") })
+    #expect(problems(trace, lines.joined(separator: "\n")) == [])
+  }
+
+  @Test func aSilentReplayEndsWhereATellingOneDoes() {
+    let trace = courseTrace()
+    let (telling, silent) = (TraceReplayer(trace), TraceReplayer(trace, silent: true))
+    #expect(telling.run().deeds == silent.run().deeds)
+    #expect(silent.report.story.isEmpty && !telling.report.story.isEmpty)
+    #expect(telling.harness.layout == silent.harness.layout)
+  }
+
   // MARK: The story
 
   @Test func theStoryTellsWhatHappenedWithDrawings() {

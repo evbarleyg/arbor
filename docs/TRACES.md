@@ -447,6 +447,18 @@ docked 32
 floating 33
 ```
 
+**What Arbor did on the way.** The end is not all a person sees. Three forms are about the course of the replay, and only an `.expect` file knows them:
+
+| | |
+|---|---|
+| `moved <id> <n>` | Arbor moved the window `n` times: after a `setFrame` it was somewhere else, or of another size, than before (by more than a point). A request the app refused outright, or for the frame it has, is no move. A window that goes somewhere else first and to its place a moment later has moved twice. A *question* is no move: a window Arbor does not know well enough is asked for a size where it stands and then goes to its place once (`Controller+AskFirst.swift`; what is judged is the road, as `Budget.tally` has it) |
+| `moved <id> <n> at <line>[?]…` | And each move followed that line of the trace: the report, command or scheduled work Arbor was answering (for work the trace does not have, which runs when its time comes: the last line before). A window that is put in its place only after it has been seen somewhere else has also moved once. A person sees a question too, so the list holds each with a mark, besides the `n` moves: `moved 32 1 at 88? 88` |
+| `moved <id> <n> since <words>` | Counted from the first remark that holds those words |
+| `frame <id> <x> <y> <w> <h>` | Where the window is at the end, to a point |
+| `asked-focus <id>… ｜ none [since <words>]` | The windows Arbor asked the keyboard for, in order (asking twice running for the same one is one wish) |
+
+What the controller does while it starts on the header is not counted: a trace begins in the middle of a session. `arbor-sim replay <file> --course` prints every deed with the line it followed.
+
 **A bug nobody has fixed yet.** A trace that shows one would fail the test. Say so in its `.expect` file:
 
 ```

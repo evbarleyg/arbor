@@ -47,8 +47,50 @@ public final class TraceReplayer {
     public var description: String { "line \(line): \(kind.rawValue): \(text)" }
   }
 
+  /// Something the replayed Arbor did to a window: what a person at that Mac would have seen, had today's Arbor been running there.
+  public struct Deed: Equatable, Sendable, CustomStringConvertible {
+    public enum What: Equatable, Sendable {
+      /// `from` is where the window was, `took` where it is now. An app may take another frame than it was asked for, or none.
+      case setFrame(WindowID, asked: CGRect, from: CGRect?, took: CGRect?)
+      case focus(WindowID)
+      /// Any other call that shows (`raise`, `setMinimized`, `unhideApp`…), as a trace writes it.
+      case call(String)
+    }
+
+    public var what: What
+    /// The last line of the trace file that had been replayed: the stimulus Arbor was reacting to, or, for scheduled work the trace does not have
+    /// and that ran when its time came, the line before that time. After the last one: that line.
+    public var line: Int
+    /// When, in the trace's seconds.
+    public var t: Double
+    /// While the controller was starting on what the header says. A trace begins in the middle of a session, so this is the replay's doing.
+    public var atStart: Bool
+
+    public init(what: What, line: Int, t: Double = 0, atStart: Bool = false) {
+      (self.what, self.line, self.t, self.atStart) = (what, line, t, atStart)
+    }
+
+    /// The window, if the deed moved it: it is somewhere else, or of another size, than before. A request that an app refused
+    /// outright, or for the frame the window has, is work but no move.
+    public var moved: WindowID? {
+      guard case .setFrame(let id, _, let from?, let took?) = what, !took.approximatelyEquals(from, tolerance: 1) else { return nil }
+      return id
+    }
+
+    public var description: String {
+      switch what {
+      case .setFrame(let id, let asked, let from, let took):
+        "setFrame \(id) asked \(traceText(asked)) from \(from.map { traceText($0) } ?? "nowhere") took \(took.map { traceText($0) } ?? "nothing")"
+      case .focus(let id): "focus \(id)"
+      case .call(let text): text
+      }
+    }
+  }
+
   public struct Report {
     public var problems: [Problem] = []
+    /// What Arbor did to the windows, in order (`moved`, `asked-focus` in an `.expect` file; `arbor-sim replay --course`).
+    public var deeds: [Deed] = []
     /// What happened, as text with drawings of the layout, for `arbor-sim replay`.
     public var story: [String] = []
     /// Stimuli delivered to the controller.
@@ -86,6 +128,9 @@ public final class TraceReplayer {
   private let problemLimit = 25
 
   private let verbose: Bool
+  /// Only the state at the end is wanted: no sentence is made, no layout drawn and no invariant looked at on the way, which is most of what a
+  /// replay costs. For whoever replays the same lines hundreds of times, after a replay that did look.
+  private let silent: Bool
   private let bridge: ReplayWindowSystem
   private var entries: [TraceEntry] { trace.entries }
   private var fake: FakeWindowSystem { harness.system }
@@ -137,10 +182,11 @@ public final class TraceReplayer {
   private var lastDrawing = ""
   private var quietLines = 0
 
-  public init(_ trace: Trace, mode: Mode = .free, verbose: Bool = false) {
+  public init(_ trace: Trace, mode: Mode = .free, verbose: Bool = false, silent: Bool = false) {
     self.trace = trace
     self.mode = mode
     self.verbose = verbose
+    self.silent = silent
     let header = trace.header
     let entries = trace.entries
     consumed = Array(repeating: false, count: entries.count)
@@ -663,9 +709,23 @@ public final class TraceReplayer {
   // MARK: Answering the controller
 
   fileprivate func setFrame(_ frame: CGRect, of id: WindowID) -> CGRect? {
+    let before = fake.frame(of: id)
     let result = answerSetFrame(frame, of: id)
+    did(.setFrame(id, asked: frame, from: before, took: result))
     noteRefusal(of: frame, by: id, took: result)
     return result
+  }
+
+  private func did(_ what: Deed.What) {
+    var (atStart, index) = (false, current)
+    switch phase {
+    case .boot: atStart = true
+    // `current` is the line whose time the clock is being moved to. It has not happened yet.
+    case .clock: index = current - 1
+    case .reacting, .drain: break
+    }
+    report.deeds.append(
+      Deed(what: what, line: entries.indices.contains(index) ? entries[index].number : 1, t: harness.scheduler.now, atStart: atStart))
   }
 
   /// An app may refuse a frame, and Arbor may try again when something has changed. Trying again and again with nothing changed
@@ -736,6 +796,7 @@ public final class TraceReplayer {
   }
 
   fileprivate func focus(_ id: WindowID) {
+    did(.focus(id))
     let match = matchEffect("focus \(id)") { $0 == .focus(id) }
     if match == nil, fake.focused != id, isReplaying { newlyAskedFocus.append(id) }
     unaskedFocus[id] = nil
@@ -826,6 +887,7 @@ public final class TraceReplayer {
   public func answer(call name: String, _ arguments: [any Encodable] = []) -> TraceJSON? {
     let arguments = arguments.map { TraceJSON(encoding: $0) }
     let line = TraceLine.other(.call, name, arguments: arguments)
+    did(.call(line.description))
     let match = matchEffect(line.description) {
       if case .other(.call, name, arguments, _) = $0 { return true }
       return false
@@ -917,6 +979,7 @@ public final class TraceReplayer {
   }
 
   private func checkInvariants(atRest: Bool, line: Int) {
+    guard !silent else { return }
     var broken = ReplayInvariants.always(harness)
     if atRest { broken += ReplayInvariants.atRest(harness, placed: placed) }
     for text in broken { add(Problem(kind: .invariant, line: line, text: text)) }
@@ -982,15 +1045,152 @@ public final class TraceReplayer {
         }
         continue
       }
-      if let failure = ScenarioExpectation.check(words, harness: harness, lastCommandOK: lastResult?.ok ?? true) {
-        add(Problem(kind: .expectation, line: line, text: "`\(words.joined(separator: " "))`: \(failure)"))
+      let failure =
+        Self.courseVerbs.contains(first.lowercased())
+        ? checkCourse(words) : ScenarioExpectation.check(words, harness: harness, lastCommandOK: lastResult?.ok ?? true)
+      if let failure { add(Problem(kind: .expectation, line: line, text: "`\(words.joined(separator: " "))`: \(failure)")) }
+    }
+  }
+
+  // MARK: What Arbor did on the way
+
+  /// The forms of an `.expect` file that are about the course of a replay and not about its end (docs/TRACES.md, "Expectations").
+  public static let courseForms =
+    "moved <id> <n> [at <line>[?]…] [since <words of a remark>], frame <id> <x> <y> <w> <h>, asked-focus <id>…|none [since <words of a remark>]"
+  static let courseVerbs: Set = ["moved", "frame", "asked-focus"]
+
+  /// The deeds from the first remark that contains `words` on; all but those of the start if there are no words; nil if no remark does.
+  private func deeds(since words: ArraySlice<String>) -> [Deed]? {
+    let course = report.deeds.filter { !$0.atStart }
+    guard !words.isEmpty else { return course }
+    let sought = words.joined(separator: " ").lowercased()
+    let remark = entries.first {
+      if case .note(let text) = $0.line { text.lowercased().contains(sought) } else { false }
+    }
+    return remark.map { remark in course.filter { $0.line >= remark.number } }
+  }
+
+  /// Every time `id` changed on the screen, in order, and whether that was a question: a window Arbor does not know well enough is
+  /// asked for a size where it stands and then goes to its place once (Controller+AskFirst.swift). As `Budget.tally` has it: a question
+  /// leaves the window where it stands, comes before any move in answer to the same thing, and counts as one only if the window then
+  /// goes somewhere. A resize that was all there was to do is a move like any other. "Where it stands" is to the tolerance the road is
+  /// judged with: macOS nudges a window that grows in the parking place up by a few points.
+  public static func changes(of id: WindowID, in course: [Deed]) -> [(deed: Deed, isQuestion: Bool)] {
+    let seen = course.filter { $0.moved == id }
+    var isQuestion = [Bool](repeating: false, count: seen.count)
+    for index in seen.indices.dropLast() where seen[index + 1].line == seen[index].line {
+      guard index == 0 || seen[index - 1].line != seen[index].line || isQuestion[index - 1] else { continue }
+      guard case .setFrame(_, _, let from?, let took?) = seen[index].what else { continue }
+      isQuestion[index] = FakeWindowSystem.changesOfPlace([from, took]) == 0
+    }
+    return zip(seen, isQuestion).map { ($0, $1) }
+  }
+
+  private static func atWords(_ changes: [(deed: Deed, isQuestion: Bool)]) -> [String] {
+    changes.map { "\($0.deed.line)" + ($0.isQuestion ? "?" : "") }
+  }
+
+  /// `moved <id> <n> [at <line>[?]…]` held against a course. Apart from a replay, so that it can be tried on deeds that no controller of the day need do:
+  /// when Arbor asks is its own business, and changes.
+  public static func problem(withMoved own: [String], in course: [Deed]) -> String? {
+    let usage = "cannot read `\(own.joined(separator: " "))`; the forms are: \(courseForms)"
+    guard own.count == 3 || own.count >= 5 else { return usage }
+    guard let id = WindowID(word: own[1]), let expected = Int(own[2]) else { return usage }
+    let changes = Self.changes(of: id, in: course)
+    let moves = changes.filter { !$0.isQuestion }
+    guard moves.count == expected else {
+      return "Arbor moved \(id) \(moves.count) time(s), not \(expected)" + changes.map { "; line \($0.deed.line): \($0.deed)" }.joined()
+    }
+    guard own.count > 3 else { return nil }
+    // In answer to what: a window that is put in its place only after it has been seen somewhere else has also moved once.
+    // Questions are no moves, and a person sees them all the same: the list holds them too, each with its mark.
+    let lines = Array(own.dropFirst(4))
+    guard own[3] == "at", lines.allSatisfy({ Int($0.hasSuffix("?") ? String($0.dropLast()) : $0) != nil }),
+      lines.filter({ !$0.hasSuffix("?") }).count == expected
+    else { return usage }
+    if Self.atWords(changes) == lines { return nil }
+    return "Arbor moved \(id) at line \(Self.atWords(changes).joined(separator: ", ")) of the trace, not at \(lines.joined(separator: ", "))"
+  }
+
+  private func checkCourse(_ words: [String]) -> String? {
+    let usage = "cannot read `\(words.joined(separator: " "))`; the forms are: \(Self.courseForms)"
+    let since = words.firstIndex(of: "since")
+    let own = words[..<(since ?? words.endIndex)]
+    guard let course = deeds(since: since.map { words[($0 + 1)...] } ?? []) else {
+      return "no remark in the trace contains “\(words[(since! + 1)...].joined(separator: " "))”"
+    }
+    switch (own.first?.lowercased(), own.count) {
+    case ("moved", 3), ("moved", 5...):
+      return Self.problem(withMoved: Array(own), in: course)
+
+    case ("frame", 6) where since == nil:
+      let numbers = own.dropFirst(2).compactMap { Double($0) }
+      guard let id = WindowID(word: own[1]), numbers.count == 4 else { return usage }
+      let expected = CGRect(x: numbers[0], y: numbers[1], width: numbers[2], height: numbers[3])
+      guard let frame = fake.frame(of: id) else { return "there is no window \(id)" }
+      return frame.approximatelyEquals(expected, tolerance: 1) ? nil : "\(id) is at \(traceText(frame)), not \(traceText(expected))"
+
+    case ("asked-focus", 2...):
+      let expected = own.dropFirst().map { $0.lowercased() } == ["none"] ? [] : own.dropFirst().map { WindowID(word: $0) }
+      guard !expected.contains(nil) else { return usage }
+      let asked = Self.focusAsked(in: course)
+      if asked == expected.compactMap({ $0 }) { return nil }
+      return "Arbor asked for the keyboard for \(asked.isEmpty ? "no window" : asked.map { "\($0)" }.joined(separator: " "))"
+
+    default:
+      return usage
+    }
+  }
+
+  /// The windows Arbor asked the keyboard for, in order. Asking again for the one it asked for last is one wish.
+  public static func focusAsked(in deeds: [Deed]) -> [WindowID] {
+    var asked: [WindowID] = []
+    for case .focus(let id) in deeds.map(\.what) where asked.last != id { asked.append(id) }
+    return asked
+  }
+
+  /// Lines for an `.expect` file that say what Arbor did in this replay and how it ended: for every window it arranges how often it was
+  /// moved, where it is and in what state; who was asked to take the keyboard and who has it; what the view is on. Call it after `run`.
+  /// scripts/trace-to-test.py writes them beside a trace, where they hold today's behaviour in place.
+  public func expectationsFromThisReplay() -> [String] {
+    let controller = harness.controller
+    guard !fake.displayList.isEmpty, let workspace = controller.workspaces[harness.display] else { return [] }
+    let course = report.deeds.filter { !$0.atStart }
+    var lines: [String] = []
+    // After a pause or a quit, which end a trace, Arbor arranges nothing any more. Where it left the windows is the whole point.
+    let isLooking = controller.isRunning
+    let windows = fake.windows.values.map(\.snapshot).filter { controller.filter.manages($0) }.map(\.id).sorted()
+    for id in windows where !isLooking || controller.workspaceID(containing: id) != nil {
+      let changes = Self.changes(of: id, in: course)
+      lines.append(
+        "moved \(id.rawValue) \(changes.filter { !$0.isQuestion }.count)" + (changes.isEmpty ? "" : " at " + Self.atWords(changes).joined(separator: " ")))
+      if gesture != id, let frame = fake.frame(of: id) {
+        lines.append("frame \(id.rawValue) \([frame.minX, frame.minY, frame.width, frame.height].map { traceText($0) }.joined(separator: " "))")
+      }
+      guard isLooking else { continue }
+      // Whichever of each pair holds: a window that is minimized is neither in view nor kept out of it.
+      for words in [["docked"], ["floating"], ["visible"], ["hidden"], ["tile"], ["pinned"]].map({ $0 + ["\(id.rawValue)"] })
+      where ScenarioExpectation.check(words, harness: harness, lastCommandOK: true) == nil {
+        lines.append(words.joined(separator: " "))
       }
     }
+    let asked = Self.focusAsked(in: course)
+    lines.append("asked-focus " + (asked.isEmpty ? "none" : asked.map { "\($0.rawValue)" }.joined(separator: " ")))
+    if let focused = fake.focused { lines.append("focused \(focused.rawValue)") }
+    guard isLooking else { return lines }
+    if workspace.camera == workspace.tree.root {
+      lines.append("camera root")
+    } else if workspace.camera == workspace.tree.desktop {
+      lines.append("camera desktop")
+    } else if let window = workspace.tree.allWindows.sorted().first(where: { workspace.tree.leaf(containing: $0) == workspace.camera }) {
+      lines.append("camera \(window.rawValue)")
+    }
+    return lines
   }
 
   // MARK: The story
 
-  private func say(_ text: String) { report.story.append(text) }
+  private func say(_ text: @autoclosure () -> String) { if !silent { report.story.append(text()) } }
 
   /// Pointer moves, frames on the way and reads are most of a trace and little of its story.
   private func isQuiet(_ entry: TraceEntry) -> Bool {
@@ -1003,6 +1203,7 @@ public final class TraceReplayer {
   }
 
   private func narrate(_ entry: TraceEntry) {
+    guard !silent else { return }
     if !verbose, isQuiet(entry) {
       quietLines += 1
       return
@@ -1026,7 +1227,7 @@ public final class TraceReplayer {
   /// Draws the layout if it has changed since it was last drawn. Not in the middle of a drag, where
   /// every move would be a drawing.
   private func draw() {
-    guard gesture == nil else { return }
+    guard gesture == nil, !silent else { return }
     let drawing = harness.ascii(columns: 64, rows: 16)
     guard drawing != lastDrawing else { return }
     lastDrawing = drawing
