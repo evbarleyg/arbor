@@ -526,9 +526,14 @@ final class World {
   /// focus changes, but the workspace says that the app became active, and `AXWindowSystem.appCameForward`
   /// reports the window that app had focused all along. (`FakeWindowSystem.userSwitchesApp` is what macOS alone
   /// says.)
-  func switchTo(app pid: Int32) {
+  ///
+  /// `byItself`: the app activates itself, as the test app does on a signal. Then AppKit gives the keyboard to the frontmost of the app's
+  /// windows, which need not be the one that had it last (one opened while the app was in the background lies before it), and only
+  /// that window comes above the other apps'. Seen on a hosted Mac: W5 W4 W1 W3, where W4 is the other app's.
+  func switchTo(app pid: Int32, byItself: Bool = false) {
     bringForward(app: pid)
     guard let app = apps[pid] else { return keyboardLeavesTheWindows() }
+    if byItself, let window = frontWindow(of: pid) { return giveKeyboard(to: window) }
     raiseAll(of: pid)
     if let focused = app.focused, isOnScreen(focused) {
       if system.windows[WindowID(focused)] != nil {

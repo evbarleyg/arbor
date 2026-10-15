@@ -4075,10 +4075,12 @@
    "kind": "second-actor",
    "layer": "at the seam",
    "expected": "An app that comes forward gives the keyboard to the window that had it before, and all its windows come in front of the other apps'. `World.switchTo` does both.",
-   "happened": "The test app that brought itself forward gave the keyboard to its key window, here the one it had opened last while in the background, and brought only that one above the other app's windows.",
+   "happened": "The test app that brought itself forward gave the keyboard to its key window, here the one it had opened last while in the background, and brought only that one above the other app's windows. Front to back it was W5 W4 W1 W3, where W4 is the other app's. The real test app calls `NSApp.activate(ignoringOtherApps:)` for it. `World.switchTo(app:byItself:)` now plays that: the frontmost of the app's windows gets the keyboard and only that one is raised. ⌘Tab goes on raising all of them.",
    "found": "The first comparison, line by line, of one script played on a hosted Mac (six runs, macOS 26.6.2, one display of 1024×768) and in a rehearsal on Linux. The difference was seen; its cause is a reading.",
-   "modelled": "no",
-   "knobs": [],
+   "modelled": "yes",
+   "knobs": [
+    "World.switchTo"
+   ],
    "guards": [],
    "copes": "Controller.windowFocused follows whichever window is reported, and asks the window system for the order of windows where it needs it.",
    "hurt": 3,

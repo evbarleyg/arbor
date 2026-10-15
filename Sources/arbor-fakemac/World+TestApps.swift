@@ -262,7 +262,7 @@ extension World {
     switch verb {
     // What the stand-in writes when it catches one of the two signals the real app listens for.
     case "SIGUSR1":
-      switchTo(app: pid)
+      switchTo(app: pid, byItself: true)
       return ""
     case "SIGUSR2":
       // `openWindows` for one more window, then `makeKeyAndOrderFront`.
@@ -283,7 +283,7 @@ extension World {
       followKeyboard()
       return ""
     case "activate" where words.count == 1:
-      switchTo(app: pid)
+      switchTo(app: pid, byItself: true)
       return ""
     case "hang":
       guard words.count == 2, let seconds = Double(words[1]) else { throw AppRefusal("usage: hang <seconds>") }
