@@ -1,0 +1,21 @@
+64 larger-font: presses ⌘+ in Terminal
+expected: {'act': 'macos-own', 'settled': 'quiet:1126', 'moves': 'any', 'floating': '32,46,54,60,61,63,67', 'docked': '35,51'}
+ODD rule -: w51 fills 557×757 of its slot 12,43 557×767
+FAIL rule 3: terminal (w51) went 144 points out of its way before it ended up
+
+09:32:46.688 SCREEN -- begin 64 larger-font
+09:32:46.689 SCREEN -- text 64 presses ⌘+ in Terminal
+09:32:46.838 MACOS pid 11820 AXTitleChanged w51 AXWindow/AXStandardWindow 12 43 629 791
+09:32:46.838 MACOS pid 11820 AXResized w51 AXWindow/AXStandardWindow 12 43 629 791
+09:32:46.868 SCREEN w105 of Arbor 3,34 647×806
+09:32:46.868 SCREEN terminal (w51) 12,43 629×791
+09:32:47.117 SCREEN terminal (w51) 12,43 557×774
+09:32:47.120 MACOS pid 11820 AXTitleChanged w51 AXWindow/AXStandardWindow 12 43 557 774
+09:32:47.120 MACOS pid 11820 AXResized w51 AXWindow/AXStandardWindow 12 43 557 757
+09:32:47.120 MACOS pid 11820 AXTitleChanged w51 AXWindow/AXStandardWindow 12 43 557 757
+09:32:47.120 MACOS pid 11820 AXResized w51 AXWindow/AXStandardWindow 12 43 557 757
+09:32:47.126 SCREEN terminal (w51) 12,43 557×757
+09:32:47.177 SCREEN w105 of Arbor 3,34 575×775
+09:32:48.337 SCREEN -- finding 64 - ODD w51 fills 557×757 of its slot 12,43 557×767
+09:32:48.337 SCREEN -- end 64 act=macos-own settled=quiet:1126 moves=any floating=32,46,54,60,61,63,67 docked=35,51
+09:32:48.758 SCRIPT == 65 click-safari

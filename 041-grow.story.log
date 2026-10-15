@@ -1,0 +1,44 @@
+41 grow: presses ⌃⌥⌘=
+expected: {'act': 'resize', 'settled': 'quiet:717', 'moves': '35,51,35,51,', 'front': '51', 'floating': '32,46,54,60,61,63,67', 'docked': '35,51'}
+FAIL rule 2: finder (w32) a floating window, moved, and the step did not name it
+FAIL rule 2: textedit (w46) a floating window, moved, and the step did not name it
+FAIL rule 2: notes (w54) a floating window, moved, and the step did not name it
+FAIL rule 2: calendar (w60) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w61) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w63) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w67) a floating window, moved, and the step did not name it
+ODD rule 2: w69 of Mail moved along with a window of its app
+
+09:32:01.473 SCREEN -- begin 41 grow
+09:32:01.474 SCREEN -- text 41 presses ⌃⌥⌘=
+09:32:01.729 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+09:32:01.730 DEBUG the stage kept the windows waiting 5 ms: its panel 0, 9 costumes 0 (0 not ready), the desktop 1, going up 4
+09:32:01.740 MACOS pid 11820 AXTitleChanged w51 AXWindow/AXStandardWindow 12 43 555 769
+09:32:01.741 MACOS pid 11820 AXResized w51 AXWindow/AXStandardWindow 12 43 555 769
+09:32:01.742 MACOS pid 371 AXMoved w32 AXWindow/AXStandardWindow 541 120 501 436
+09:32:01.757 MACOS pid 11751 AXResized w46 AXWindow/AXStandardWindow 581 65 421 439
+09:32:01.759 MACOS pid 11751 AXMoved w46 AXWindow/AXStandardWindow 581 65 421 439
+09:32:01.760 SCREEN w95 of Arbor 0,0 1600×900 (level 4)
+09:32:01.760 SCREEN terminal (w51) 12,43 555×769
+09:32:01.760 SCREEN finder (w32) 541,120 501×436
+09:32:01.766 MACOS pid 12074 AXMoved w54 AXWindow/AXStandardWindow 437 105 709 660
+09:32:01.770 SCREEN textedit (w46) 581,65 421×439
+09:32:01.772 MACOS pid 12766 AXMoved w60 AXWindow/AXStandardWindow 451 115 680 599
+09:32:01.775 MACOS pid 12830 AXMoved w61 AXWindow/AXStandardWindow 430 85 723 625
+09:32:01.781 MACOS pid 12899 AXMoved w63 AXWindow/AXStandardWindow 437 35 708 424
+09:32:01.784 MACOS pid 13222 AXMoved w67 AXWindow/AXStandardWindow 351 72 881 630
+09:32:01.791 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.4053380107879639 s
+09:32:01.801 INFO  grow: w51 grew
+09:32:01.819 SCREEN w105 of Arbor 3,34 573×787
+09:32:01.819 SCREEN preview (w63) 437,35 708×424
+09:32:01.819 SCREEN calendar (w60) 451,115 680×599
+09:32:01.819 SCREEN w69 of Mail 557,179 470×416
+09:32:01.819 SCREEN mail (w67) 351,72 881×630
+09:32:01.819 SCREEN settings (w61) 430,85 723×625
+09:32:01.819 SCREEN notes (w54) 437,105 709×660
+09:32:01.819 SCREEN w104 of Arbor 569,43 12×767
+09:32:01.819 SCREEN front to back: w105 terminal safari preview w94 calendar textedit w69 mail settings notes finder w110 w104
+09:32:02.331 DEBUG stage down
+09:32:02.335 SCREEN w95 of Arbor left the screen
+09:32:02.994 SCREEN -- end 41 act=resize settled=quiet:717 moves=35,51,35,51, front=51 floating=32,46,54,60,61,63,67 docked=35,51
+09:32:03.459 SCRIPT == 42 click-safari
