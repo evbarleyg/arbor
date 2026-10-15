@@ -183,7 +183,8 @@ func tellOfGoing(_ book: Book) {
   book.story("an app hangs in the middle of a move, and carries the calls out when it wakes") { story in
     var window: FakeMac.Window!
     let one = StoreyOne(story) { mac in window = mac.open("a", in: mac.launch("Busy"), frame: CGRect(x: 40, y: 60, width: 300, height: 300)) }
-    // It answers the question about the enhanced user interface, and takes the new size no more.
+    // It answers the question about the enhanced user interface, and the first call of the move no more. The window is to grow, so that is its place
+    // (Sources/ArborCore/FramePlan.swift).
     window.app.hangsAfterCalls = 1
     let answer = one.layer.setFrame(CGRect(x: 10, y: 40, width: 500, height: 500), of: WindowID(window.number))
     story.check("the layer says that it does not know what came of the move", answer == nil)
@@ -193,7 +194,7 @@ func tellOfGoing(_ book: Book) {
     one.mac.wake(window.app)
     one.mac.pass(1)
     story.check(
-      "when the app wakes the window takes the size that was asked of it in vain", window.frame.size == CGSize(width: 500, height: 500),
+      "when the app wakes the window goes where it was asked to in vain", window.frame == CGRect(x: 10, y: 40, width: 300, height: 300),
       window.frame.text)
     story.check(
       "Arbor hears of it", one.snapshot(window)?.frame == window.frame,
@@ -201,6 +202,18 @@ func tellOfGoing(_ book: Book) {
     story.check(
       "as something it has to look at again, not as the echo of a move of its own", one.heard.all.contains(.changed(window.number, byUser: true)),
       one.heard.texts)
+  }
+
+  book.story("an app hangs in the middle of a move into a frame that hangs over the display's edge") { story in
+    var window: FakeMac.Window!
+    let one = StoreyOne(story) { mac in window = mac.open("a", in: mac.launch("Busy"), frame: CGRect(x: 40, y: 60, width: 300, height: 300)) }
+    // As above: the first call of the move is the last it hears. Once there the window could not grow, so this time that is its size.
+    window.app.hangsAfterCalls = 1
+    _ = one.layer.setFrame(CGRect(x: 800, y: 40, width: 500, height: 500), of: WindowID(window.number))
+    one.mac.pass(3)
+    one.mac.wake(window.app)
+    one.mac.pass(1)
+    story.check("it is sized first, where it is", window.frame == CGRect(x: 40, y: 60, width: 500, height: 500), window.frame.text)
   }
 
   book.story("Arbor asks a hung app for the focus, and the app takes it when it wakes") { story in

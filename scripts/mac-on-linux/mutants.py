@@ -154,9 +154,15 @@ MUTANTS = [
     },
     {
         "name": "a shortened plan is never followed by the full one",
-        "old": "    if let taken = result, FramePlan.needsFullPlan(after: steps, result: taken, target: frame) {\n",
-        "new": "    if let taken = result, false, FramePlan.needsFullPlan(after: steps, result: taken, target: frame) {\n",
+        "old": "    if let taken = result, let more = FramePlan.makingUp(for: steps, result: taken, target: frame) {\n",
+        "new": "    if let taken = result, false, let more = FramePlan.makingUp(for: steps, result: taken, target: frame) {\n",
         "red": ["the frame Arbor believes a window has is out of date: a move that was thought to need no resize gets one"],
+    },
+    {
+        "name": "every frame is taken to lie on a display",
+        "old": "        FramePlan.room(onDisplay: ScreenGeometry.global(fromAppKit: $0.frame), visible: ScreenGeometry.global(fromAppKit: $0.visibleFrame))\n",
+        "new": "        FramePlan.room(onDisplay: ScreenGeometry.global(fromAppKit: $0.frame), visible: ScreenGeometry.global(fromAppKit: $0.frame).insetBy(dx: -9000, dy: -9000))\n",
+        "red": ["an app hangs in the middle of a move into a frame that hangs over the display's edge: it is sized first, where it is"],
     },
     {
         "name": "what claims to be a dialog is one",

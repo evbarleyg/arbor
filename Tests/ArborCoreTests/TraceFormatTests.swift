@@ -73,6 +73,7 @@ private let display = TraceDisplay(
     header.focusHistory = [WindowID(9), window.id]
     header.onlyPIDs = [811]
     header.ignored = [WindowID(5)]
+    header.framePlan = 2
     #expect(try roundTrip(header) == header)
   }
 
@@ -95,6 +96,7 @@ private let display = TraceDisplay(
     #expect(header.settings == Settings())
     #expect(header.workspaces.isEmpty)
     #expect(header.focused == nil)
+    #expect(header.framePlan == 1, "every trace from before there was a second order of calls was made by the first")
   }
 
   @Test func kindsOfLineWithoutACaseOfTheirOwnKeepTheirNameArgumentsAndResult() throws {

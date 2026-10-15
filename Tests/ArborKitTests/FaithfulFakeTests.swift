@@ -67,9 +67,9 @@ private final class Recorder: WindowSystemEvents {
     #expect(system.setFrame(rect(170, 220, 494, 650), of: a) == rect(170, 220, 494, 484), "where it stands")
     #expect(system.setFrame(rect(12, 126, 494, 484), of: a) == rect(12, 126, 494, 484))
     #expect(system.setFrame(rect(12, 126, 325, 650), of: a) == rect(12, 126, 325, 578), "from higher up, further")
-    // Size, position, size: what the first does not reach the second does.
+    // Moved first, it grows where it ends up. (Recorded under size, position, size, where the last call reached what the first did not.)
     #expect(system.setFrame(rect(12, 43, 325, 650), of: a) == rect(12, 43, 325, 650), "on its way up, all the way")
-    // Past the line already it grows as it is asked to, and keeps that on its way back.
+    // Past the line already it grows as it is asked to, and keeps that on its way back: into a frame that hangs over the line it grows first.
     #expect(system.setFrame(rect(1023, 767, 325, 524), of: a)?.size == CGSize(width: 325, height: 524))
     #expect(system.setFrame(rect(687, 106, 325, 650), of: a) == rect(687, 106, 325, 650), "its bottom at 756")
     // Each side by itself: as wide as to the right edge.
@@ -233,7 +233,8 @@ private final class Recorder: WindowSystemEvents {
 
   /// Each line was recorded on a hosted Mac: where the window was, what Arbor asked for, how many reports came back. They are from the
   /// traces of one script played on a hosted Mac to be compared with its rehearsal (collab/evidence/reality-mac/traces, journeys
-  /// apps, commands and keys), which come into the tree with that comparison.
+  /// apps, commands and keys), which come into the tree with that comparison. All were made under the first order of calls, size, position,
+  /// size, so that is the order they are played by.
   @Test(arguments: [
     // A move alone, and a resize alone.
     (CGRect(x: 270, y: 140, width: 480, height: 348), CGRect(x: 518, y: 140, width: 480, height: 348), 1),
@@ -249,7 +250,30 @@ private final class Recorder: WindowSystemEvents {
     (CGRect(x: 1023, y: 677, width: 325, height: 650), CGRect(x: 12, y: 43, width: 1000, height: 650), 2),
   ])
   func aSetFrameBringsAsManyReportsAsOnAMac(from: CGRect, to: CGRect, reports: Int) {
+    expectReports(reports, from: from, to: to, framePlan: 1)
+  }
+
+  /// The same windows and the same askings by today's order of calls: what shrinks is sized first, what grows is moved first. The rule is the
+  /// recorded one, a report for each call that changed something. The numbers are worked out from it: no Mac has been recorded yet.
+  @Test(arguments: [
+    (CGRect(x: 270, y: 140, width: 480, height: 348), CGRect(x: 518, y: 140, width: 480, height: 348), 1),
+    (CGRect(x: 12, y: 43, width: 494, height: 650), CGRect(x: 12, y: 43, width: 325, height: 650), 1),
+    (CGRect(x: 518, y: 220, width: 480, height: 348), CGRect(x: 349, y: 220, width: 326, height: 348), 2),
+    (CGRect(x: 12, y: 43, width: 390, height: 319), CGRect(x: 40, y: 71, width: 346, height: 277), 2),
+    // It grows where it ends up, where the new size fits: "moved", "resized", and nothing is cut.
+    (CGRect(x: 170, y: 220, width: 480, height: 348), CGRect(x: 12, y: 43, width: 494, height: 650), 2),
+    (CGRect(x: 687, y: 43, width: 325, height: 650), CGRect(x: 518, y: 43, width: 494, height: 650), 2),
+    // Wider and shorter: "resized", "moved", "resized".
+    (CGRect(x: 771, y: 43, width: 241, height: 650), CGRect(x: 272, y: 194, width: 480, height: 348), 3),
+    (CGRect(x: 1023, y: 677, width: 325, height: 650), CGRect(x: 12, y: 43, width: 1000, height: 650), 2),
+  ])
+  func byTodaysOrderOfCallsNothingIsCutOnTheWay(from: CGRect, to: CGRect, reports: Int) {
+    expectReports(reports, from: from, to: to, framePlan: FramePlan.version)
+  }
+
+  private func expectReports(_ reports: Int, from: CGRect, to: CGRect, framePlan: Int) {
     let system = FakeWindowSystem(displays: [Self.hosted])
+    system.framePlan = framePlan
     let recorder = Recorder()
     system.events = recorder
     let window = system.open(app: "Safari", frame: from)
@@ -261,9 +285,10 @@ private final class Recorder: WindowSystemEvents {
   }
 
   /// macOS does not cut a window below its minimum size, so the first resize is the whole of it. As recorded: 480×348 at 518,220, asked
-  /// to be 446×348 at 578,220, took 700×500 and sent "resized" and "moved".
-  @Test func aWindowAtItsMinimumIsNotCutShort() {
+  /// to be 446×348 at 578,220, took 700×500 and sent "resized" and "moved". By today's order of calls it is asked to shrink, so the same two in the same order.
+  @Test(arguments: [1, FramePlan.version]) func aWindowAtItsMinimumIsNotCutShort(framePlan: Int) {
     let system = FakeWindowSystem(displays: [Self.hosted])
+    system.framePlan = framePlan
     let recorder = Recorder()
     system.events = recorder
     let window = system.open(app: "Safari", frame: CGRect(x: 518, y: 220, width: 480, height: 348))
@@ -273,6 +298,58 @@ private final class Recorder: WindowSystemEvents {
     #expect(system.setFrame(CGRect(x: 578, y: 220, width: 446, height: 348), of: window) == CGRect(x: 578, y: 220, width: 700, height: 500))
     system.deliverEchoes()
     #expect(recorder.log == Array(repeating: "changed \(window) echo", count: 2))
+  }
+
+  /// The plan is made for the frame that is asked for, not for the one the window takes. Below its minimum, asked to be narrower and higher, it
+  /// is sized (and goes to its minimum), moved and sized again: three reports. From the frame it took, wider and higher, it would be two.
+  /// Worked out, like the rows above.
+  @Test func thePlanIsMadeForWhatIsAskedNotForWhatIsTaken() {
+    let system = FakeWindowSystem(displays: [Self.hosted])
+    let recorder = Recorder()
+    system.events = recorder
+    let window = system.open(app: "Safari", frame: CGRect(x: 118, y: 60, width: 480, height: 348))
+    system.setMinimumSize(window, CGSize(width: 700, height: 500))
+    system.start()
+    recorder.log.removeAll()
+    #expect(system.setFrame(CGRect(x: 178, y: 60, width: 446, height: 600), of: window) == CGRect(x: 178, y: 60, width: 700, height: 600))
+    system.deliverEchoes()
+    #expect(recorder.log == Array(repeating: "changed \(window) echo", count: 3))
+  }
+
+  /// Given a minimum since it was last sized, the fake's window takes another size when it is asked only to move. That is the fake's manner: a
+  /// Mac's kept its size for as long as it was only moved. As long as the fake has it, both changes are reported, though the plan was one call:
+  /// the number goes by what changed.
+  @Test func aSizeNobodyAskedForIsReportedToo() {
+    let system = FakeWindowSystem(displays: [Self.hosted])
+    let recorder = Recorder()
+    system.events = recorder
+    let window = system.open(app: "Safari", frame: CGRect(x: 118, y: 60, width: 480, height: 348))
+    system.setMinimumSize(window, CGSize(width: 700, height: 500))
+    system.start()
+    recorder.log.removeAll()
+    #expect(system.setFrame(CGRect(x: 178, y: 60, width: 480, height: 348), of: window) == CGRect(x: 178, y: 60, width: 700, height: 500))
+    system.deliverEchoes()
+    #expect(recorder.log == Array(repeating: "changed \(window) echo", count: 2))
+  }
+
+  /// Into a frame that hangs over the display's edge a window grows first, by the old plan, and the fake goes by the same plan as the layer. It
+  /// fits at the old place: whole, as measured, "resized" and "moved". Moved first it would end 494 wide.
+  @Test func intoAFrameThatHangsOverTheEdgeItIsTheOldPlan() {
+    expectReports(
+      2, from: CGRect(x: 170, y: 220, width: 480, height: 348), to: CGRect(x: 530, y: 43, width: 495, height: 400), framePlan: FramePlan.version)
+  }
+
+  /// Where there is no room at the old place either, no order of these calls gets it whole: cut to 337 where it stood, moved, and grown as far
+  /// as the edge from where it is then, 424 for 494. Three reports. Worked out from the measured rule. What to do about it is not settled here.
+  @Test func withoutRoomAtEitherPlaceItEndsAtTheEdge() {
+    let system = FakeWindowSystem(displays: [Self.hosted])
+    let recorder = Recorder()
+    system.events = recorder
+    let window = system.open(app: "Safari", frame: CGRect(x: 687, y: 43, width: 325, height: 650))
+    system.start()
+    #expect(system.setFrame(CGRect(x: 600, y: 43, width: 494, height: 650), of: window) == CGRect(x: 600, y: 43, width: 424, height: 650))
+    system.deliverEchoes()
+    #expect(recorder.log == Array(repeating: "changed \(window) echo", count: 3))
   }
 
   /// No report stands for two calls: asked twice before its app gets round to reporting, a window reports both.
@@ -294,13 +371,14 @@ private final class Recorder: WindowSystemEvents {
   /// it, which is macOS's to move; and reports that say something else (a title, a Space, the Dock), which are no echoes. A few
   /// bundles bring one report more than the rule says, most after a drop or from Terminal, and nobody knows why. Most are one call and
   /// one report: a rule of one report a call, one without the cut and one without the exception for a window that hangs over the
-  /// edge all fail this.
+  /// edge all fail this. Each recording is held against the order of calls it says it was made by.
   @Test func theRecordingsBearTheNumberOfReportsOut() throws {
     var (agreeing, differing) = (0, [String]())
     for name in TraceCorpusTests.names {
       let trace = try Trace(contentsOf: TraceCorpusTests.folder.appendingPathComponent(name + ".jsonl"))
       guard trace.header.os != "simulated", trace.header.displays.count == 1 else { continue }
       let system = FakeWindowSystem(displays: trace.header.displays.map { DisplaySnapshot($0) })
+      system.framePlan = trace.header.framePlan
       var known = Dictionary(trace.header.windows.map { ($0.id, $0) }, uniquingKeysWith: { $1 })
       var open: [WindowID: (expected: Int, seen: Int, at: Double)] = [:]
       func close(_ window: WindowID) {
@@ -315,7 +393,7 @@ private final class Recorder: WindowSystemEvents {
           if displays.count != 1 || system.displayList.count != 1 { open.removeAll() }
           system.displayList = displays.map { DisplaySnapshot($0) }
         case .stop, .dragBegan, .resizeBegan: open.removeAll()
-        case .setFrame(let window, _, let took, _):
+        case .setFrame(let window, let asked, let took, _):
           guard let took, let before = known[window], system.displayList.count == 1,
             !(before.minimized || before.hidden || before.offSpace || before.fullScreen)
           else {
@@ -324,7 +402,7 @@ private final class Recorder: WindowSystemEvents {
             continue
           }
           guard took != before.frame else { continue }
-          open[window, default: (0, 0, entry.t)].expected += system.reports(ofTheWayFrom: before.frame, to: took)
+          open[window, default: (0, 0, entry.t)].expected += system.reports(ofTheWayFrom: before.frame, to: took, asked: asked)
           open[window]?.at = entry.t
           known[window]?.frame = took
         case .appeared(let window): known[window.id] = window

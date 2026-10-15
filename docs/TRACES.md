@@ -132,6 +132,7 @@ trace needs nothing but itself, wherever in a session it was started.
 | `parked`, `minimumSizes`, `seenSizes`, `focusHistory`, `ignored`, `onlyPIDs`, `appPlaced` | What Arbor had learned and `state.json` does not hold |
 | `focused`, `cursor`, `mouseDown` | The focused window, the pointer, the left button |
 | `thinning` | The thinning interval in seconds (below) |
+| `framePlan` | By which order of calls windows were given their frames (`FramePlan.version`): it decides how many reports follow a `setFrame`. Absent: 1, size, position, size |
 
 Only `trace` and `displays` are required, so a trace written by hand for a test can be short.
 

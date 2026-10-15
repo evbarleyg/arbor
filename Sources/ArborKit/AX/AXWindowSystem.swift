@@ -244,7 +244,7 @@ public final class AXWindowSystem: WindowSystem {
     // every frame change; turn it off while we move the window.
     var enhanced = false
     if let answer = appElement?.read("AXEnhancedUserInterface") {
-      // An app that is silent now will be silent for the five calls to come. One wait is enough.
+      // An app that is silent now will be silent for the calls to come. One wait is enough.
       if answer.error == .cannotComplete { return gaveUp(on: record.snapshot.pid, since: began) }
       // Not the app's silence: Arbor's permission is gone (Controller+Permission.swift). The calls to come would be
       // refused as well.
@@ -258,11 +258,14 @@ public final class AXWindowSystem: WindowSystem {
     }
     if enhanced { appElement?.setBool("AXEnhancedUserInterface", false) }
 
-    var steps = FramePlan.steps(from: record.snapshot.frame, to: frame)
-    var result = perform(steps, toward: frame, on: element)
-    if let taken = result, FramePlan.needsFullPlan(after: steps, result: taken, target: frame) {
-      steps = FramePlan.full
-      result = perform(steps, toward: frame, on: element)
+    let steps = FramePlan.steps(
+      from: record.snapshot.frame, to: frame,
+      rooms: NSScreen.screens.map {
+        FramePlan.room(onDisplay: ScreenGeometry.global(fromAppKit: $0.frame), visible: ScreenGeometry.global(fromAppKit: $0.visibleFrame))
+      })
+    var result = perform(steps, on: element)
+    if let taken = result, let more = FramePlan.makingUp(for: steps, result: taken, target: frame) {
+      result = perform(more, on: element)
     }
 
     // Also when the app fell silent half way: a call that times out is still delivered when the app wakes up.
@@ -278,9 +281,13 @@ public final class AXWindowSystem: WindowSystem {
 
   /// Sets the attributes a plan names and reads the frame back. Nil if the app did not answer. A refusal
   /// (a window with a fixed size, say) is an answer: the frame read back shows what came of it.
-  private func perform(_ steps: [FramePlan.Step], toward frame: CGRect, on element: AXUIElement) -> CGRect? {
+  private func perform(_ steps: [FramePlan.Step], on element: AXUIElement) -> CGRect? {
     for step in steps {
-      let error = step == .size ? element.setSize(frame.size) : element.setPosition(frame.origin)
+      let error =
+        switch step {
+        case .size(let size): element.setSize(size)
+        case .position(let origin): element.setPosition(origin)
+        }
       if error == .cannotComplete { return nil }
       if error == .apiDisabled {
         events?.accessibilityWasRefused()
@@ -303,7 +310,7 @@ public final class AXWindowSystem: WindowSystem {
     AXUIElementSetMessagingTimeout(element, Self.messagingTimeout)
     // macOS accepts a new size for a full-screen window and does nothing.
     guard element.bool("AXFullScreen") != true else { return element.frame }
-    return perform(FramePlan.full, toward: frame, on: element)
+    return perform(FramePlan.full(to: frame), on: element)
   }
 
   public func focus(_ window: WindowID) {

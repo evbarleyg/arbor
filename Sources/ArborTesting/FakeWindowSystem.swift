@@ -87,8 +87,8 @@ public final class FakeWindowSystem: WindowSystem {
   public fileprivate(set) var sightings: [(window: WindowID, frame: CGRect)] = []
   /// Windows that take only half of the next frame they are asked for (`leaveFullScreen`).
   fileprivate var hearHalfNext: Set<WindowID> = []
-  /// Windows whose app carries out a move a moment late, as those do that animate every move: when the last of the three calls a frame
-  /// is set with arrives, the window is still where it was, and grows as far as it may there. It has moved by the time it is looked at.
+  /// Windows whose app carries out a move a moment late, as those do that animate every move: when the last of the calls a frame is
+  /// set with arrives, the window is still where it was, and grows as far as it may there. It has moved by the time it is looked at.
   public var movesLate: Set<WindowID> = []
   /// Windows that are on the screen again after full screen, and that their apps do not list yet.
   fileprivate var inSightUnlisted: Set<WindowID> = []
@@ -313,12 +313,25 @@ public final class FakeWindowSystem: WindowSystem {
     var applied = Self.accepted(frame, by: fake)
     let before = fake.snapshot.frame
     if fake.behaviour != .frozen {
-      // Size, position, size (`FramePlan`): how far a window may grow depends on where it is when it is asked to.
-      let first = Self.accepted(CGRect(origin: before.origin, size: sizeMacOSAllows(frame.size, to: before)), by: fake)
-      let moved = whereMacOSPuts(CGRect(origin: frame.origin, size: first.size), titleBar: fake.titleBar)
-      let isAt = movesLate.contains(window) ? CGRect(origin: before.origin, size: first.size) : moved
-      applied = whereMacOSPuts(
-        Self.accepted(CGRect(origin: frame.origin, size: sizeMacOSAllows(frame.size, to: isAt)), by: fake), titleBar: fake.titleBar)
+      // The calls of `FramePlan` one by one, and what follows the reading back, as the layer makes them: how far a window may grow depends
+      // on where it is when it is asked to. The last line is the fake's own manner and no Mac's: a limit its app was given since the window
+      // was last sized bites at the next asking, were it only a move.
+      var isAt = before
+      func perform(_ steps: [FramePlan.Step]) {
+        for (index, step) in steps.enumerated() {
+          switch step {
+          case .position(let origin): isAt = whereMacOSPuts(CGRect(origin: origin, size: isAt.size), titleBar: fake.titleBar)
+          case .size(let size):
+            let late = movesLate.contains(window) && index > 0 && index == steps.count - 1
+            let allowed = sizeMacOSAllows(size, to: late ? CGRect(origin: before.origin, size: isAt.size) : isAt)
+            isAt.size = Self.accepted(CGRect(origin: isAt.origin, size: allowed), by: fake).size
+          }
+        }
+      }
+      let steps = plan(from: before, to: frame)
+      perform(steps)
+      if let more = FramePlan.makingUp(for: steps, result: isAt, target: frame) { perform(more) }
+      applied = whereMacOSPuts(Self.accepted(CGRect(origin: frame.origin, size: isAt.size), by: fake), titleBar: fake.titleBar)
     }
     let changed = before != applied
     moveLog.append(Move(window: window, requested: frame, before: before, after: applied, together: together))
@@ -333,32 +346,53 @@ public final class FakeWindowSystem: WindowSystem {
     frameLog.append((window, applied))
     if changed, fake.snapshot.isPresent || inSightUnlisted.contains(window) { sightings.append((window, applied)) }
     if changed, echoes.frames {
-      undelivered += Array(repeating: .frame(window), count: reports(ofTheWayFrom: before, to: applied, atLeast: fake.minimumSize))
+      undelivered += Array(repeating: .frame(window), count: reports(ofTheWayFrom: before, to: applied, asked: frame, atLeast: fake.minimumSize))
     }
     return applied
   }
 
-  /// How many reports one `setFrame` that changed something brings. The Accessibility layer sets the size, the place and the size again, or
-  /// the place alone (`FramePlan`), and macOS reports each step that changed something: "resized" and "moved" are two reports. A third
-  /// comes when the new size does not fit on the display at the old place: macOS cuts the first resize short, though never below the
-  /// window's minimum, and the last step makes up for it. A window that hung over that edge already is not cut short. The layer reads
-  /// the frame when a report arrives, which is after the call, so they all say the same. And no report stands for two calls.
+  /// By which order of calls the Accessibility layer is taken to work (`FramePlan.version`): today's, or that of an older recording.
+  public var framePlan = FramePlan.version
+
+  /// The calls the layer gives a window a frame with, by the order in force.
+  private func plan(from old: CGRect, to asked: CGRect) -> [FramePlan.Step] {
+    guard framePlan == 1 else {
+      return FramePlan.steps(from: old, to: asked, rooms: displayList.map { FramePlan.room(onDisplay: $0.frame, visible: $0.visibleFrame) })
+    }
+    return abs(old.width - asked.width) < 0.5 && abs(old.height - asked.height) < 0.5 ? [.position(asked.origin)] : FramePlan.full(to: asked)
+  }
+
+  /// How many reports one `setFrame` that changed something brings. The Accessibility layer sets size and place in the steps of
+  /// `FramePlan`, and macOS reports each step that changed something: "resized" and "moved" are two reports. That much was measured, under
+  /// the first order of calls (`framePlan` 1: size, position, size), where a third came when the new size did not fit on the display at the
+  /// old place: macOS cut the first resize short, though never below the window's minimum, and the last step made up for it. A window that
+  /// hung over that edge already was not cut short. Under today's order a window grows where it ends up, so nothing is cut, and a third
+  /// report comes of a window that shrinks one way and grows the other; but for one that grows into a frame that hangs over its display's
+  /// edge, which goes by the first order still. All that is worked out from the same rule, and not recorded yet. The layer
+  /// reads the frame when a report arrives, which is after the call, so they all say the same. And no report stands for two calls.
+  /// Today's plan depends on which way the size goes, and the layer makes it for the frame it was `asked` for, not for the one the window took.
   /// Measured with one display (`sizeMacOSAllows`).
-  public func reports(ofTheWayFrom old: CGRect, to new: CGRect, atLeast minimum: CGSize = .zero) -> Int {
+  public func reports(ofTheWayFrom old: CGRect, to new: CGRect, asked: CGRect? = nil, atLeast minimum: CGSize = .zero) -> Int {
+    let asked = framePlan == 1 ? new : asked ?? new
+    // Of what is asked for in the end the window makes what it took; on the way it goes no lower than its minimum.
+    func made(of wanted: CGFloat, _ last: CGFloat, _ took: CGFloat, _ least: CGFloat) -> CGFloat { wanted == last ? took : max(wanted, least) }
     var (frame, count) = (old, 0)
-    for (index, step) in FramePlan.steps(from: old, to: new).enumerated() {
+    for (index, step) in plan(from: old, to: asked).enumerated() {
       var next = frame
       switch step {
       case .position: next.origin = new.origin
-      case .size:
-        next.size = new.size
+      case .size(let size):
+        next.size = CGSize(
+          width: made(of: size.width, asked.width, new.width, minimum.width), height: made(of: size.height, asked.height, new.height, minimum.height))
         guard index == 0 else { break }
-        let allowed = sizeMacOSAllows(new.size, to: frame)
+        let allowed = sizeMacOSAllows(next.size, to: frame)
         next.size = CGSize(width: max(allowed.width, minimum.width), height: max(allowed.height, minimum.height))
       }
       if next != frame { count += 1 }
       frame = next
     }
+    // A size the plan never asked for, which the window took all the same (a limit it was given since it was last sized), is reported too.
+    if framePlan != 1, abs(frame.width - new.width) >= 0.5 || abs(frame.height - new.height) >= 0.5 { count += 1 }
     return max(count, 1)
   }
 
