@@ -208,8 +208,8 @@ MUTANTS = [
     },
     {
         "name": "a press is looked for at its own place only, however late it is served",
-        "old": "      pressedAt: point, pointerNow: now, underPress: topWindow(at: point, in: list), underPointer: topWindow(at: now, in: list))\n",
-        "new": "      pressedAt: point, pointerNow: point, underPress: topWindow(at: point, in: list), underPointer: topWindow(at: point, in: list))\n",
+        "old": "      pressedAt: point, pointerNow: now, underPress: underPress, underPointer: topWindow(at: now, in: list))\n",
+        "new": "      pressedAt: point, pointerNow: point, underPress: underPress, underPointer: underPress)\n",
         "red": [
             "a window is dragged for a second, and the monitor hears of the press 500 ms late: the drag is reported to begin",
             "a window is dragged sideways for a second while Arbor's main thread is busy for 300 ms from the press, and what queued up comes byTime: "

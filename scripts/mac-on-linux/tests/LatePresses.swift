@@ -330,4 +330,32 @@ func tellOfLatePresses(_ book: Book) {
       }
     }
   }
+
+  // The same hand with ⌘: held from before the press, macOS moves the window without bringing it forward, so there is no report of a focus at all; or going down on the way.
+  for sameApp in [false, true] {
+    for command in ["without ⌘", "with ⌘ held from before the press", "with ⌘ going down after fifty points"] {
+      book.story("a window of \(sameApp ? "the app in front" : "an app in the background") that has not got the keyboard is dragged 300 points, \(command)") { story in
+        var window: FakeMac.Window!
+        let one = StoreyOne(story) { mac in
+          let front = mac.launch("Safari")
+          window = mac.open("window", in: sameApp ? front : mac.launch("Notes"), frame: CGRect(x: 560, y: 300, width: 360, height: 260))
+          mac.click(mac.open("front", in: front, frame: CGRect(x: 60, y: 100, width: 400, height: 300)))
+        }
+        one.heard.clear()
+        if command.contains("before") { one.mac.setModifierFlags(1 << 20) }
+        one.mac.drag(from: CGPoint(x: 700, y: 312), to: CGPoint(x: 660, y: 342), steps: 3, interval: 0.04)
+        if command.contains("after") { one.mac.setModifierFlags(1 << 20) }
+        for step in 1...10 {
+          one.mac.moveMouse(to: CGPoint(x: 660 - 20 * CGFloat(step), y: 342 + 15 * CGFloat(step)))
+          one.mac.pass(0.04)
+        }
+        one.mac.release()
+        one.mac.setModifierFlags(0)
+        one.mac.pass(2)
+        story.check("the window has moved", window.bounds.origin == CGPoint(x: 320, y: 480), window.bounds.text)
+        story.check("it comes forward, or with ⌘ from the first does not", one.heard.all.contains(.focused(window.number)) != command.contains("before"), one.heard.texts)
+        drags(story, one, window)
+      }
+    }
+  }
 }

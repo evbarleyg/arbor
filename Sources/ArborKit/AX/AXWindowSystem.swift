@@ -1286,10 +1286,24 @@ public final class AXWindowSystem: WindowSystem {
     else { return Press(point: point) }
     // Served late, on a busy Mac, the press is of a while ago, and the list is of now. So is the pointer's place.
     let now = ScreenGeometry.global(fromAppKit: NSEvent.mouseLocation)
+    let underPress = topWindow(at: point, in: list)
     let hold = WindowGrab.hold(
-      pressedAt: point, pointerNow: now, underPress: topWindow(at: point, in: list), underPointer: topWindow(at: now, in: list))
-    if hold.isInTheHand, let window = hold.window { Log.debug("the press is served late, with \(window) in the hand") }
+      pressedAt: point, pointerNow: now, underPress: underPress, underPointer: topWindow(at: now, in: list))
+    if Log.debugEnabled { logPress(at: point, pointer: now, on: underPress, hold) }
     return Press(point: hold.point, window: hold.window, frame: hold.frame, isSettled: hold.isSettled)
+  }
+
+  /// A drag that is not seen leaves nothing else behind to tell why.
+  private func logPress(at point: CGPoint, pointer: CGPoint, on top: WindowGrab.Top?, _ hold: WindowGrab.Hold) {
+    let what: String
+    switch (hold.window, top) {
+    case (let window?, _): what = hold.isInTheHand ? "it is served late, with \(window) in the hand" : "it is on \(window)"
+    case (nil, .known(let window, let listed, let believed)?):
+      what = "it is on \(window), listed at \(traceText(listed.origin)), which its app has at \(traceText(believed.origin)): on a picture of it"
+    case (nil, .stranger?): what = "it is on a window Arbor does not arrange"
+    case (nil, nil): what = "no window is there"
+    }
+    Log.debug("the button went down at \(traceText(point)), the pointer is at \(traceText(pointer)): \(what)")
   }
 
   /// The first ordinary window, front to back, that the point belongs to.

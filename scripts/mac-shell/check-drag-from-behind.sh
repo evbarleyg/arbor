@@ -9,8 +9,8 @@
 # what Arbor then asks the app keeps its main thread while the hand goes on.
 #
 # Each drag is played three times over: the window in front (the control), another window of the app in front, a window of an app in the
-# background. To the side of a docked window, and to the bottom edge of the screen. What Arbor made of each is in arbor.log, which comes back, and in
-# the trace.
+# background. To the side of a docked window, and to the bottom edge of the screen. Then the two that lie behind with ⌘, held from before the press or going
+# down on the way. What Arbor made of each press is printed, from arbor.log, which comes back, as the trace does.
 source "$(dirname "$0")/lib.sh"
 
 # dragged <id> <words> <x> <y>: by the title bar as it lies, whoever has the keyboard.
@@ -24,9 +24,28 @@ dragged() {
   shot "preview-$id"
   release
   check "$words: let go, it is docked" eventually is docked "$id"
-  if logged "the press is served late" > /dev/null 2>&1; then echo "    (the press was served late, with the window in the hand)"; fi
+  said_of_the_press
   summary
   ctl float "$id"
+  sleep 0.5
+}
+
+# What the Accessibility layer found the press to be on, and where the pointer was by the time it looked.
+said_of_the_press() { arbor_log_since "$ARBOR_STEP_MARK" | grep "the button went down at" | tail -1 | sed 's/^.*DEBUG /    (/; s/$/)/' || true; }
+
+# carried <id> <words> [--mods cmd | late]: 300 points over the Desktop and back to where nothing covers it. Only whether Arbor sees a drag.
+carried() {
+  local id=$1 words=$2 how=${3:-} tx ty
+  take "tx ty" titlebar_of "$id"
+  case "$how" in
+    late)
+      drag "$tx" "$ty" "$((tx - 40))" "$((ty + 30))" --steps 5 --duration 0.2 --no-release
+      release "$((tx - 240))" "$((ty + 180))" --mods cmd ;;
+    cmd) drag "$tx" "$ty" "$((tx - 240))" "$((ty + 180))" --steps 24 --duration 0.7 --mods cmd ;;
+  esac
+  [ -n "${ARBOR_REHEARSAL:-}" ] || check "$words: Arbor sees a drag" eventually logged "$id is being dragged"
+  said_of_the_press
+  is docked "$id" && ctl float "$id"
   sleep 0.5
 }
 
@@ -71,6 +90,21 @@ for target in side bottom; do
   check "the docked window has the keyboard" eventually is focused "$W1"
   take "x y" point
   dragged "$V1" "of another app" "$x" "$y"
+  places
+done
+
+for id in "$W3" "$V1"; do
+  if [ "$id" = "$W3" ]; then whose="another window of the app in front"; else whose="a window of an app in the background"; fi
+  claim "$whose is dragged with ⌘ held from before the press: macOS does not bring it forward"
+  click_window "$W1"
+  check "the docked window has the keyboard" eventually is focused "$W1"
+  carried "$id" "⌘ from the first" cmd
+  places
+
+  claim "$whose is dragged, and ⌘ goes down on the way"
+  click_window "$W1"
+  check "the docked window has the keyboard" eventually is focused "$W1"
+  carried "$id" "⌘ on the way" late
   places
 done
 arbor_stop

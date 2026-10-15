@@ -127,9 +127,12 @@ extension FakeMac {
       mouse.grab = Grab(kind: .nothing, window: nil, pressedAt: point, frameAtPress: .zero)
       return
     }
-    raise(window)
-    if !window.app.isHung { makeKey(window) }
-    activate(window.app, raisingAll: false)
+    // With ⌘ held a title bar takes its window along where it lies: nothing comes forward, and nobody's focus changes. Common knowledge about macOS; in no trace.
+    if mouse.flags & (1 << 20) == 0 || point.y >= window.bounds.minY + window.titleBarHeight {
+      raise(window)
+      if !window.app.isHung { makeKey(window) }
+      activate(window.app, raisingAll: false)
+    }
     let frame = window.bounds
     let inner = frame.insetBy(dx: 4, dy: 4)
     let kind: Grab.Kind
