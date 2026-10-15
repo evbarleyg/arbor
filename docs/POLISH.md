@@ -28,7 +28,9 @@ the scenes for tabs, double clicks and continuous zoom are in the sum from the f
 ## The laboratory
 
 - **The Mac**: GitHub's `macos-26` runner, one display of 1024 × 768 at 1x; a virtual Retina display for pictures at 2x. macOS at
-  its default settings (its own edge tiling on, click-wallpaper on), except Reduce Motion, which the runners come with and the script switches off.
+  its default settings (its own edge tiling on, click-wallpaper on): the runners come with Reduce Motion and Reduce Transparency on, and the script switches both off.
+- **Arbor**: as it ships, but for one switch: "Trackpad and mouse gestures" (`pointerGestures`), which ships off, is on in the sessions that film the five moves, because two of them are gestures.
+  Every session records a trace (`docs/TRACES.md`), which comes back beside the films.
 - **The windows**: `ArborTestWindows`, each one flat colour, on a plain wallpaper: a window is then a rectangle that a script can find in every
   frame to the pixel. Each is an app of its own (`cast_start`), with a name and an icon in the window's colour, because a person's windows are not all
   one app's, and cards that all look alike are harder on the eye, and on the ruler, than anybody's desk.
@@ -102,13 +104,15 @@ After the button comes up, M1 to M13 are asked with that as the cause.
 | S1 | **Crisp at 1x and 2x** | across every straight edge at least 60 px long with a step of 60 levels or more: the pixels between 10% and 90% of the step | ≤ 1 device pixel | stills | 2 |
 | S2 | **On the pixel** | the window server's frame of every panel; half-covered rows or columns along its straight edges | whole points; none | stills | 3 |
 | S3 | **Text is never clipped** and never touches an edge | the box of the ink (pixels 60 levels from the panel's ground) against the panel's own | ≥ 6 pt at the sides, ≥ 3 pt above and below; with the longest words there are, and at the largest text size | stills, eyes | 1 |
-| S4 | **It can be read** | contrast of ink to ground (WCAG) | ≥ 4.5 : 1; ≥ 3 : 1 from 18 pt | stills | 2 |
+| S4 | **It can be read**, flat and on glass | contrast of ink to ground (WCAG), the ground being what the display shows behind the ink | ≥ 4.5 : 1; ≥ 3 : 1 from 18 pt | stills | 2 |
 | S5 | **Light and dark** | S1 to S4 in both; the ground's lightness follows the system's | so | stills | 2 |
 | S6 | **Increase Contrast is honoured** | with it on: contrast of each panel's outline to what is around it; of ink to ground | ≥ 3 : 1; ≥ 7 : 1 | stills | 2 |
+| S7 | **Reduce Transparency is honoured** | with it on, over windows of strong colours: how much a panel's ground varies | flat (deviation ≤ 2 levels) | stills | 3 |
 | S8 | **Even gaps** | at rest: the gaps between neighbouring windows and to the room's edges | all equal to `gap` within 1 px | ruler | 3 |
 
-**Not scored: translucency and blur.** A hosted Mac draws every system material as one flat colour, in Arbor as in any app: the look of Reduce
-Transparency. So text has to be legible in that flat look (S4), and what a material adds on a person's Mac is not judged here, by ruler or by eye.
+**Glass.** GitHub's Macs come with Reduce Transparency on, which draws every system material as one flat colour. A Mac does not come so: the films and the pictures
+switch it off (`glass on`), and what ships is text on a material that lets through what lies behind it. So S4 is measured twice, flat and on glass, and on glass in
+pictures of the **whole screen** over windows of strong colours: the picture the window server hands over of a panel alone shows the material without what is behind it.
 
 ### Fingers: what follows a gesture while it lasts
 
@@ -162,7 +166,7 @@ The scenes of the five moves, and `frame`, are filmed twice: in light mode on a 
 | `drag-alone` | bare | a drag that Arbor leaves alone (⌘ held): what macOS does by itself, to hold D1 against. Not counted | |
 | `metronome-…` | control | the camera's own square: tests the instruments, not counted | |
 
-The panels that S1 to S6 are asked of: the heads-up line, the drop preview, a tile, a seam, the focus ring, the peek's outline, the rectangle, the minimap, Go to…, the
+The panels that S1 to S7 are asked of: the heads-up line, the drop preview, a tile, a seam, the focus ring, the peek's outline, the rectangle, the minimap, Go to…, the
 shortcuts, the name field, the menu, the settings window, the coach, the setup check, the tab strip.
 
 ## The score
@@ -188,7 +192,9 @@ new table, in the same commit, so that a longer table is never mistaken for a wo
 
 ## Scoreboard
 
+Restated on 2026-10-15 under a table 112 points longer (S4 on glass, S7): run 1 was 36.6 and run 2 was 42.8 under the table they were first scored by.
+
 | Date (UTC) | Commit | Score | Seen | Severity 1 misses | Note |
 |---|---|---|---|---|---|
-| 2026-10-14 23:27 | `a391fe4` | **36.6** | 49% | 36 | Run 1 (`collab/polish/run-1.md`). Tabs, double clicks, the followed pinch and all stills unseen; four films void |
-| 2026-10-15 01:38 | `302a0b0` | **42.8** | 56% | 41 | Run 2 (`collab/polish/run-2.md`). A cast of four apps, panels in the picture; two films void |
+| 2026-10-14 23:27 | `a391fe4` | **35.6** | 48% | 36 | Run 1 (`collab/polish/run-1.md`). Tabs, double clicks, the followed pinch and all stills unseen; four films void |
+| 2026-10-15 01:38 | `302a0b0` | **41.6** | 54% | 41 | Run 2 (`collab/polish/run-2.md`). A cast of four apps, panels in the picture; two films void |
