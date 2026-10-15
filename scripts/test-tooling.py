@@ -8,7 +8,8 @@ before 2026-10-14.
 
 arbor-e2e's guardian gets its situations too; test-e2e-guardian.py has them.
 
-`make check` runs this. The scenario rows need .build/debug/arbor-sim and are skipped, loudly, without it.
+`make check` runs this. The scenario rows need .build/debug/arbor-sim and are skipped, loudly, without it; so is the row for the fake Mac's
+list of windows without .build/debug/arbor-fakemac.
 The rows for lib.sh run small scripts for real, against stand-ins for a Mac, under `bash` or $ARBOR_TEST_BASH (macOS has 3.2).
 Exit code 1 when a row comes out wrong.
 """
@@ -1306,6 +1307,33 @@ def check_rehearse():
         code = subprocess.run(
             ["bash", os.path.join(HERE, "mac-shell", "rehearse.sh"), script], env=environment, capture_output=True, check=False).returncode
         row("rehearse.sh: on a Mac it refuses and runs nothing", (code, os.path.exists(witness)), (77, False))
+
+        # A script asks whether a panel is on screen by its level. One that the fake Mac leaves out makes the check red here and green on a Mac.
+        if sys.platform != "linux":
+            return
+        if not os.access(os.path.join(ROOT, ".build", "debug", "arbor-fakemac"), os.X_OK):
+            print("SKIPPED the row for the fake Mac's list of windows: no .build/debug/arbor-fakemac; run swift build first")
+            return
+        with open(script, "w", encoding="utf-8") as handle:
+            handle.write(f"""source '{HERE}/mac-shell/lib.sh'
+levels() {{ echo "levels:$(pointer windows $1 | awk '$NF == "Arbor" && $3 != 0 {{ printf " %s", $3 }}')"; }}
+arbor_build
+arbor_start 1 ARBOR_NO_HOTKEYS=0
+ctl dock "$W1" left
+ctl check-for-updates
+key "ctrl+opt+["
+levels --on-screen
+ctl show-shortcuts
+levels --on-screen
+arbor_quit
+levels
+""")
+        # Only what is on screen comes front to back. ⌃⌥[ with nothing to go back to is answered by a line, and is a key that stays bound.
+        environment = {name: value for name, value in os.environ.items() if name not in ("ARBOR_REHEARSAL_AS", "ARBOR_REHEARSAL_DISPLAY")}
+        said = subprocess.run(
+            ["bash", os.path.join(HERE, "mac-shell", "rehearse.sh"), script], env=environment, capture_output=True, text=True, check=False).stdout
+        row("rehearse.sh: the fake Mac lists the heads-up line, the panel of shortcuts, the update window and the backdrop, front to back, and none after Quit",
+            [line for line in said.splitlines() if line.startswith("levels:")], ["levels: 6 3 -2147483602", "levels: 5 3 -2147483602", "levels:"])
 
 
 # MARK: ci-mtimes.py
