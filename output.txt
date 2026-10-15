@@ -1,0 +1,73 @@
+# mac-shell: scripts/mac-shell/probe-another-build.sh at d2033ad, macOS 26.6.2, 2026-10-15T15:47Z
+built Arbor, the pointer tool and the app bundles in 7s
+ProductName:		macOS ProductVersion:		26.6.2 BuildVersion:		25G83 
+
+== 1  a first build, granted
+session 1: Arbor pid 4671, test windows 29 (pid 4646)
+running: 1 display, 0 docked and 1 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+/Users/runner/Applications/ArborAnotherBuild.app: replacing existing signature
+FACT the entry as it was written for the first build: auth_value 2, auth_reason 3, last written 1792079338, for a signature that is the first build's
+  ✔ the control: the grant fits the first build, which runs
+FACT the entry after the first build has run and quit: auth_value 2, auth_reason 3, last written 1792079338, for a signature that is the first build's
+  ✔ it still allows
+shot: mac-shell/10-the-pane-with-the-first-build.png
+tree: mac-shell/10-the-pane-with-the-first-build.txt, 196 elements
+145: AXStaticText ArborAnotherBuild_Title "" "ArborAnotherBuild" 402 196 145 24
+146: AXCheckBox ArborAnotherBuild_Toggle "" "1" 807 202 36 16
+147- AXRow - "" "" 393 229 460 42
+148- AXCell - "" "" 393 229 460 42
+149- AXStaticText bash_Title "" "bash" 402 238 63 24
+150- AXCheckBox bash_Toggle "" "1" 807 244 36 16
+151- AXRow - "" "" 393 271 460 42
+152- AXCell - "" "" 393 271 460 42
+153- AXStaticText hosted-compute-agent_Title "" "hosted-compute-agent" 402 280 175 24
+154- AXCheckBox hosted-compute-agent_Toggle "" "1" 807 286 36 16
+FACT beside the first build, which is allowed, the switch reads: 1
+  ✔ the control: the pane lists the bundle and its switch reads on, so the reader can tell on from off
+
+== 2  a second build in its place
+/Users/runner/Applications/ArborAnotherBuild.app: replacing existing signature
+the first build's hash: 4049f2bf082d7bd76b0896ad2c7d0db750a6aa2d; the second's: 9d4b5c0073605a01e2a3c06068e35be6ec4cca2d
+  ✔ to macOS it is another program: both have a hash, and they differ
+  ✔ the old grant does not fit it: Arbor waits for the permission
+shot: mac-shell/20-the-second-build-waits.png
+  ✘ its window says what to do where the switch is on already
+      picture: mac-shell/fail-probe-another-build-1.png
+      | 
+      log | INFO  Arbor 0.0.0 (build 0) starting, pid 5987, home /tmp/arbor-shell.JGH7J9/home
+      log | INFO  opened by a hand, as far as macOS says
+      log | INFO  control socket at /tmp/arbor-shell.JGH7J9/home/arbor.sock
+      log | INFO  keyboard layout: U.S.
+      log | INFO  registered 0 shortcuts in 0 µs: 9 of the map's 9 are the apps' because ARBOR_NO_HOTKEYS is set
+      log | INFO  waiting for Accessibility permission
+FACT the entry once the second build has started and asked nothing of anybody but “may I?”: auth_value 2, auth_reason 3, last written 1792079338, for a signature that is the first build's
+FACT macOS asks by itself at that launch: no
+
+== 3  Open Settings…, as a person would
+> click 699 352
+FACT macOS asks with its own dialog, for the second build too
+shot: mac-shell/30-macos-asks-again.png
+FACT the entry while the dialog is up: auth_value 2, auth_reason 3, last written 1792079338, for a signature that is the first build's
+> click 575 304
+shot: mac-shell/31-the-pane-after-another-build.png
+tree: mac-shell/31-the-pane-after-another-build.txt, 196 elements
+145: AXStaticText ArborAnotherBuild_Title "" "ArborAnotherBuild" 402 196 145 24
+146: AXCheckBox ArborAnotherBuild_Toggle "" "1" 807 202 36 16
+147- AXRow - "" "" 393 229 460 42
+148- AXCell - "" "" 393 229 460 42
+149- AXStaticText bash_Title "" "bash" 402 238 63 24
+150- AXCheckBox bash_Toggle "" "1" 807 244 36 16
+151- AXRow - "" "" 393 271 460 42
+152- AXCell - "" "" 393 271 460 42
+153- AXStaticText hosted-compute-agent_Title "" "hosted-compute-agent" 402 280 175 24
+154- AXCheckBox hosted-compute-agent_Toggle "" "1" 807 286 36 16
+FACT the entry at that picture: auth_value 2, auth_reason 3, last written 1792079338, for a signature that is the first build's
+ANSWER: THE SWITCH LOOKS ON beside a build that may do nothing: “Already on?” is what a person sees
+FACT macOS's dialog is on the screen at the end: no
+waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+15:49:22.839Z INFO  waiting for Accessibility permission
+
+5 passed, 1 failed
+exit code 1
