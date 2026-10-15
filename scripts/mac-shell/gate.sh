@@ -9,7 +9,7 @@
 # sabotage run or a sit, at one setting of macOS's tiling, on one arrangement of displays, with one cast, with or without Reduce Motion.
 #
 # A walk is seeded from the commit, so it cannot be a file in it. It is written here, into what the run brings back (walk.txt: one word of lib-walk.sh's a
-# line), and the same commit and row give the same walk anywhere: `gate.py row <commit> <part> <parts>`, then `gate.py acts <seed> <display> <acts>`.
+# line), and the same commit and row give the same walk anywhere: `gate.py row <commit> <part> <parts>`, then `gate.py acts <seed> <display> <acts> <cast>`.
 #
 # It relies on nothing that the script before it on the same Mac left behind: walk_begin sets the display, macOS's tiling, the wallpaper click and Reduce Motion.
 #
@@ -30,7 +30,7 @@ fi
 [ "$(row kind)" != control ] || WALK_WITHOUT_ARBOR=1
 source "$GATE_HERE/lib-walk.sh"
 
-python3 "$GATE_HERE/gate.py" acts "$(row seed)" "$(row display)" "$(row acts)" > "$ARBOR_OUT/walk.txt" || die "gate.py did not write the walk"
+python3 "$GATE_HERE/gate.py" acts "$(row seed)" "$(row display)" "$(row acts)" "$(row cast)" > "$ARBOR_OUT/walk.txt" || die "gate.py did not write the walk"
 walk_begin "$(row cast)" "$(row display)" "$(row tiling)" "$(row seed)" "$GATE_COMMIT"
 source "$ARBOR_OUT/walk.txt"
 walk_end
