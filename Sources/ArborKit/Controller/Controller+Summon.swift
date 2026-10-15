@@ -67,7 +67,7 @@ extension Controller {
   /// its app was opened in front. Nobody is using it where it is and nobody came from it, so the keyboard counts as being where it was.
   private func summon(_ window: WindowSnapshot, on display: DisplayID, awaitedSince asked: WindowID?? = nil) -> CommandResult {
     stopAwaitingSummon()
-    var keyboard = system.focusedWindow()
+    var keyboard = keyboardFocus()
     // (Or nobody has it yet, as far as macOS can tell: the app is in front and has not named a window.)
     if let asked, keyboard == window.id || keyboard == nil {
       keyboard = asked.flatMap { windows[$0] != nil && $0 != window.id ? $0 : nil } ?? focusHistory.first { $0 != window.id }
@@ -85,7 +85,7 @@ extension Controller {
       } else if inactiveTab {
         relayout(home, reason: .structure)
       }
-      system.focus(window.id)
+      askForTheKeyboard(for: window.id)
       // With the keyboard in it already nobody came from anywhere.
       visitToDockedWindow =
         before.keyboard == window.id
@@ -94,11 +94,11 @@ extension Controller {
       return .success("\(window.appName) is docked: showing it where it is")
     }
     if workspaces[home]!.isPinned(window.id) {
-      system.focus(window.id)
+      askForTheKeyboard(for: window.id)
       return .success("\(window.appName) is kept in view already")
     }
     present(window.id, on: display, keyboardWas: keyboard)
-    system.focus(window.id)
+    askForTheKeyboard(for: window.id)
     return .success("summoned \(window.appName) (\(window.id))")
   }
 
@@ -120,7 +120,7 @@ extension Controller {
       moveCamera(on: home, to: visit.cameraBefore)
     }
     if let keyboard = visit.keyboardBefore, windows[keyboard]?.isPresent == true, !parked.contains(keyboard) {
-      system.focus(keyboard)
+      askForTheKeyboard(for: keyboard)
     } else {
       ensureFocusIsVisible(on: home)
     }
@@ -199,7 +199,7 @@ extension Controller {
     keyboardBeforeSummon = nil
     if system.focusedWindow() == window {
       if let previous, windows[previous]?.isPresent == true, !parked.contains(previous) {
-        system.focus(previous)
+        askForTheKeyboard(for: previous)
       } else if !ensureFocusIsVisible(on: displayID) {
         // Nothing else is in view here. A window on another display is better than one that is out of view.
         _ = workspaces.keys.sorted().first { $0 != displayID && ensureFocusIsVisible(on: $0) }
@@ -271,7 +271,7 @@ extension Controller {
 
   private func openAndAwait(_ app: String, on display: DisplayID) -> CommandResult {
     // Asked before the app is: it comes to the front.
-    let keyboard = system.focusedWindow()
+    let keyboard = keyboardFocus()
     guard system.openApplication(app) else {
       return .failure("no app called \(app): use its name as the Dock shows it, or its bundle id")
     }

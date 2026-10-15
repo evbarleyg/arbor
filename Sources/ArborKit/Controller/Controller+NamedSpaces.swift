@@ -133,13 +133,13 @@ extension Controller {
     for window in workspace.floating.keys where !parked.contains(window) {
       if let snapshot = windows[window], snapshot.isPresent { floating[window] = snapshot.frame }
     }
-    if let focused = system.focusedWindow(), layout.windowFrames[focused] != nil || floating[focused] != nil { return }
+    if let focused = keyboardFocus(), layout.windowFrames[focused] != nil || floating[focused] != nil { return }
     for candidates in [layout.windowFrames, floating] {
       let target =
         focusHistory.first { candidates[$0] != nil }
         ?? candidates.min { ($0.value.minY, $0.value.minX, $0.key) < ($1.value.minY, $1.value.minX, $1.key) }?.key
       guard let target else { continue }
-      system.focus(target)
+      askForTheKeyboard(for: target)
       return
     }
   }
@@ -294,7 +294,7 @@ extension Controller {
       return .success("the name field is closed")
     }
     guard let (display, workspace) = cameraDisplay() else { return .failure("no display") }
-    namePrompt = (display, workspace.camera, system.focusedWindow())
+    namePrompt = (display, workspace.camera, keyboardFocus())
     showScene(on: display)
     return .success("type a name for \(name(of: workspace.camera, on: display))")
   }

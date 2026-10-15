@@ -234,7 +234,7 @@ extension Controller {
   private func focusAfterLanding(on space: NodeID, display: DisplayID) {
     guard let layout = layouts[display], let tree = workspaces[display]?.tree else { return }
     let inView = tree.windows(under: space).filter { layout.windowFrames[$0] != nil }
-    if let focused = system.focusedWindow(), inView.contains(focused) { return }
+    if let focused = keyboardFocus(), inView.contains(focused) { return }
     giveTheKeyboardToTheView(on: display)
   }
 

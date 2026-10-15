@@ -48,6 +48,8 @@ extension Controller {
     var time: Date
     /// The requests this one replaced before macOS had confirmed them. Word of those is still to come.
     var earlier: Set<WindowID> = []
+    /// Whom macOS named when the request was made: the answer it goes on giving until it has got there.
+    var from: WindowID?
     /// Activating another app takes a few hundredths of a second. After this long, what macOS says counts.
     static let patience: TimeInterval = 0.5
   }
@@ -58,7 +60,10 @@ extension Controller {
   func keyboardFocus() -> WindowID? {
     let reported = system.focusedWindow()
     guard let request = focusRequest else { return reported }
-    if reported == request.window || windows[request.window] == nil
+    // On its way macOS names whom it named before, or one of those asked for earlier. Anybody else is somebody's own doing, of which
+    // there may never be a report (⌘Tab to an app whose focused window is the same as ever): whoever came last is right.
+    let onItsWay = reported == request.from || reported.map(request.earlier.contains) == true
+    if reported == request.window || !onItsWay || windows[request.window] == nil
       || now().timeIntervalSince(request.time) > FocusRequest.patience
     {
       focusRequest = nil
@@ -166,12 +171,13 @@ extension Controller {
   }
 
   private func noteFocusRequest(for window: WindowID, replacing replaced: FocusRequest?) {
-    guard system.focusedWindow() != window else {
+    let named = system.focusedWindow()
+    guard named != window else {
       focusRequest = nil
       return
     }
     let earlier = replaced.map { $0.earlier.union([$0.window]) } ?? []
-    focusRequest = FocusRequest(window: window, time: now(), earlier: earlier.subtracting([window]))
+    focusRequest = FocusRequest(window: window, time: now(), earlier: earlier.subtracting([window]), from: named)
   }
 
   // MARK: focus <direction>

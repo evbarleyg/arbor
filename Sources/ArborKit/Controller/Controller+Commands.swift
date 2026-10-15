@@ -540,7 +540,7 @@ extension Controller {
   /// a tile now. macOS reports the focus change back, and a focused window out of view makes the
   /// camera zoom onto it (`windowFocused`), which is not what arranging windows should do.
   func focusIfShown(_ window: WindowID, on display: DisplayID) {
-    if layouts[display]?.windowFrames[window] != nil { system.focus(window) }
+    if layouts[display]?.windowFrames[window] != nil { askForTheKeyboard(for: window) }
   }
 
   func dock(_ window: WindowID?, beside target: WindowID, edge: Edge) -> CommandResult {

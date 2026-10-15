@@ -484,7 +484,7 @@ extension Controller {
     hold.isSendingBack = true
     scheduler.schedule("focus-held", after: Self.arrivalSpan) { [weak self] in self?.holdLooksAgain() }
     if let home = hold.home, windows[home]?.isPresent == true, !isOutOfView(home) {
-      system.focus(home)
+      askForTheKeyboard(for: home)
     } else if let display = displayWithSomethingInView(preferring: workspaceID(containing: id)) {
       ensureFocusIsVisible(on: display)
     }

@@ -20,7 +20,7 @@ extension Controller {
   func windowsByRecency() -> [WindowID] {
     let listed = displays.flatMap { workspaces[$0.id]?.allWindows ?? [] }.filter(isManaged)
     let known = Set(listed)
-    let focused = system.focusedWindow().flatMap { known.contains($0) ? $0 : nil }
+    let focused = keyboardFocus().flatMap { known.contains($0) ? $0 : nil }
     var order: [WindowID] = []
     var seen = Set<WindowID>()
     for window in focusHistory.filter({ $0 != focused }) + [focused].compactMap({ $0 }) + listed
@@ -161,7 +161,7 @@ extension Controller {
     guard drag == nil else { return .failure("a window is being dragged; drop it first") }
     guard let id = commandDisplayID(), let model = finderModel(on: id) else { return .failure("no display") }
     guard !model.rows.isEmpty else { return .failure("there are no windows to go to") }
-    finder = OpenFinder(display: id, openedOver: system.focusedWindow())
+    finder = OpenFinder(display: id, openedOver: keyboardFocus())
     overlays.showFinder(model)
     Log.info("find: showing \(model.rows.count) destination(s) on \(id)")
     return .success("Go to… is open")
@@ -242,15 +242,15 @@ extension Controller {
   /// `reveal`: brings a window into view and gives it the keyboard, whatever keeps it out of view: the
   /// camera, another tab, the Dock, ⌘H, full screen or another macOS Space.
   func revealAndFocus(_ window: WindowID?) -> CommandResult {
-    if let asked = window ?? system.focusedWindow(), let snapshot = windows[asked], isLeftAlone(snapshot) {
+    if let asked = window ?? keyboardFocus(), let snapshot = windows[asked], isLeftAlone(snapshot) {
       // Not Arbor's to place: it is shown and focused where it is.
       if snapshot.isHidden { system.unhideApp(pid: snapshot.pid) }
       if snapshot.isMinimized { system.setMinimized(asked, false) }
-      system.focus(asked)
+      askForTheKeyboard(for: asked)
       return .success("\(asked) is focused; Arbor does not arrange it")
     }
     let id: WindowID
-    if let asked = window ?? system.focusedWindow(), isManaged(asked), windows[asked]?.isFullScreen == true,
+    if let asked = window ?? keyboardFocus(), isManaged(asked), windows[asked]?.isFullScreen == true,
       workspaceID(containing: asked) != nil
     {
       // `target` refuses it, because commands rearrange and its arrangement is out of sight. This one only looks.
@@ -290,7 +290,7 @@ extension Controller {
     }
     // Otherwise focusing it makes macOS switch Spaces. Moving the camera now would rearrange the Space the user is
     // about to leave; the camera follows the focus report once the window's own Space shows.
-    system.focus(id)
+    askForTheKeyboard(for: id)
     return .success("\(id) is in view and focused")
   }
 

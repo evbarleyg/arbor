@@ -2,6 +2,7 @@ import ArborCore
 import ArborKit
 import ArborTesting
 import CoreGraphics
+import Foundation
 import Testing
 
 private let side = sideDisplay
@@ -548,6 +549,37 @@ private let side = sideDisplay
     #expect(h.system.focused == c)
     expectOK(h, "focus right")
     #expect(h.system.slowFocus == b, "b is on the right now")
+  }
+
+  /// Whoever asks macOS for the keyboard past the door leaves `keyboardFocus()` with the request before, or with none: for the next key, within
+  /// those hundredths of a second, the keyboard is then with a window Arbor itself has overruled. So nobody does.
+  @Test func everyRequestForTheKeyboardGoesThroughTheDoor() throws {
+    let folder = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+      .appendingPathComponent("Sources/ArborKit/Controller")
+    let files = try FileManager.default.contentsOfDirectory(atPath: folder.path).filter { $0.hasSuffix(".swift") }.sorted()
+    #expect(files.count > 50, "the controller's sources are where they were")
+    var past: [String] = []
+    for file in files where file != "Controller+KeyboardFocus.swift" {
+      let text = try String(contentsOf: folder.appendingPathComponent(file), encoding: .utf8)
+      for (number, line) in text.split(separator: "\n", omittingEmptySubsequences: false).enumerated()
+      where line.contains("system.focus(") && !line.trimmingCharacters(in: .whitespaces).hasPrefix("//") {
+        past.append("\(file):\(number + 1)")
+      }
+    }
+    #expect(past.isEmpty, "use askForTheKeyboard(for:), or giveFocus(to:): \(past)")
+  }
+
+  /// ⌘Tab to an app whose focused window is the same as ever: macOS says that the keyboard has moved and not where to. The request
+  /// that was on its way is over all the same.
+  @Test func aRequestIsOverWhenMacOSNamesSomebodyNobodyAskedFor() {
+    let (h, w) = harness(["A", "B", "C"], ["dock $0 left", "dock $1 beside $0 right", "dock $2 beside $1 right", "equalize"])
+    let (a, b, c) = (w[0], w[1], w[2])
+    h.system.userFocus(a)
+    h.system.focusIsSlow = true
+    expectOK(h, "focus right")
+    #expect(h.system.focusRequests.last == b)
+    h.system.userSwitchesApp(to: c)
+    #expect(expectOK(h, "swap left").message == "swapped \(c) with \(b)", "not b, which was only asked for")
   }
 
   /// Found by the random run. Whoever moves the keyboard after the request has the last word, at once.

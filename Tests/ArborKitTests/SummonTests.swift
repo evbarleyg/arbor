@@ -601,6 +601,34 @@ private let side = DisplaySnapshot(
     #expect(h.system.focused == editor)
   }
 
+  // MARK: A Mac that takes a moment to move the keyboard
+
+  /// Whom Arbor asked for last is who has the keyboard as far as the next key is concerned.
+  @Test func theNextKeyIsAboutTheWindowSummonedThoughMacOSHasNotGotThere() {
+    let (h, _, browser, terminal) = makeHarness()
+    h.system.focusIsSlow = true
+    h.run("zoom \(browser.rawValue)")
+    h.run("summon Terminal")
+    #expect(h.system.focusRequests.last == terminal)
+    let docked = h.run("dock left").message
+    #expect(docked.contains("\(terminal)"), "not \(browser), which was asked for before it: \(docked)")
+  }
+
+  /// The keyboard sent to another window in view, and `summon` before macOS has moved it: sent away, it goes back to where Arbor had sent it.
+  @Test func sentAwayTheKeyboardGoesBackToWhereArborHadLastSentIt() {
+    let (h, editor, browser, terminal) = makeHarness()
+    h.run("show-all")
+    settle(h)
+    h.system.userFocus(editor)
+    h.system.focusIsSlow = true
+    h.run("focus \(browser.rawValue)")
+    h.run("summon Terminal")
+    h.system.finishSlowFocus()
+    #expect(h.system.focused == terminal)
+    h.run("summon Terminal")
+    #expect(h.system.focusRequests.last == browser, "not \(editor), whom macOS still named")
+  }
+
   @Test func aWindowThatComesTooLateIsAnOrdinaryNewWindow() {
     let (h, _, _, _) = makeHarness()
     h.run("summon Notes")

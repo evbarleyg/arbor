@@ -265,7 +265,7 @@ extension Controller: OverlayActions {
     if let layout = layouts[display],
       let first = workspaces[display]?.tree.windows(under: node).first(where: { layout.windowFrames[$0] != nil })
     {
-      system.focus(first)
+      askForTheKeyboard(for: first)
     }
   }
 

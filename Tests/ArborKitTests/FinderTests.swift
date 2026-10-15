@@ -318,10 +318,48 @@ private let side = DisplaySnapshot(
   /// macOS reports the focus a command asked for a moment later: ⌃⌥→ and at once ⌃⌥G.
   @Test func aLateReportFromTheWindowItOpenedOverLeavesItOpen() {
     let (h, safari, _, _, _) = makeHarness()
-    h.system.focus(safari)
+    // By a command, as it says: asked of the stand-in directly, Arbor would not know that it had asked.
+    h.run("focus \(safari.rawValue)")
     h.run("find")
     h.controller.windowFocused(safari)
     #expect(h.overlays.finder != nil)
+  }
+
+  /// On a Mac the answer changes together with the report, not ahead of it: when the palette opens, macOS still names the old window. The keyboard
+  /// then arrives where the key before had sent it, which looked like somebody leaving: the palette flashed up and was gone.
+  @Test(arguments: ["focus right", "zoom 102", "neighbor right", "reveal 103", "dock 104 right", "summon Terminal"])
+  func openedStraightAfterAKeyThatMovedTheKeyboardItStaysOpen(key: String) throws {
+    let (h, safari, _, _, _) = makeHarness()
+    h.system.userFocus(safari)
+    h.run("zoom")
+    h.system.focusIsSlow = true
+    #expect(h.run(key).ok)
+    let asked = try #require(h.system.focusRequests.last)
+    #expect(asked != safari, "the key sends the keyboard elsewhere")
+    #expect(h.run("find").ok)
+    // As with ⌘Tab, the first row is the window the person was in before this one: ↩ goes back.
+    #expect(listedWindows(h).first == safari, "\(listedWindows(h))")
+    h.system.finishSlowFocus()
+    #expect(h.overlays.finder != nil, "the keyboard has only arrived at \(asked), where \(key) sent it")
+    // Somebody who really goes elsewhere still closes it.
+    h.system.focusIsSlow = false
+    h.system.userFocus(safari)
+    #expect(h.overlays.finder == nil)
+  }
+
+  /// The field for a space's name borrows the keyboard in the same way, and was left in the same way.
+  @Test func theNameFieldOpenedStraightAfterSuchAKeyStaysOpenToo() {
+    let (h, safari, _, _, _) = makeHarness()
+    h.system.userFocus(safari)
+    h.run("zoom")
+    h.system.focusIsSlow = true
+    #expect(h.run("neighbor right").ok)
+    #expect(h.run("ask-name").ok)
+    h.system.finishSlowFocus()
+    #expect(h.overlays.namePrompt != nil)
+    h.system.focusIsSlow = false
+    h.system.userFocus(safari)
+    #expect(h.overlays.namePrompt == nil, "somebody who really goes elsewhere has left it")
   }
 
   @Test(arguments: ["show-all", "save-view 2", "dock 104 left", "exclude com.example.mail", "reveal 102", "relayout"])
