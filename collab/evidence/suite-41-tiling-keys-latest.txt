@@ -1,0 +1,138 @@
+# 41-tiling-keys 2026-10-15T04:28Z on macOS 26.6.2, commit 8ea692f
+
+▸ ⌃⌥⇧→ walks from window to window across two apps, by way of the one that floats between them, and ⌃⌥⇧← walks back
+  ✔ the click gave the first window the keyboard
+  ✔ ⌃⌥⇧→ reaches Arbor
+  ✔ the floating window has the keyboard
+  ✔ a letter typed now arrives in it
+  ✔ ⌃⌥⇧→ again
+  ✔ the other app's window has it
+  ✔ its app is the one in front
+  ✔ a letter typed now arrives in it
+  ✔ ⌃⌥⇧→ at the last window
+  ✔ there is nothing further that way: the keyboard stays
+  ✔ ⌃⌥⇧← reaches Arbor
+  ✔ back on the floating window
+  ✔ the first app is in front again
+  ✔ ⌃⌥⇧← again
+  ✔ back on the first window
+  ✔ the camera has not moved
+  ✔ nor has the floating window
+  ✔ the pointer is where the hand left it
+  ✔ windows match Arbor's layout
+
+▸ with one window framed, ⌃⌥⇧→ takes the camera to the next space and the keyboard to what is there
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the first window fills the screen
+  ✔ ⌃⌥⇧→ reaches Arbor
+  ✔ the camera is on the Desktop
+  ✔ the window that floats there has the keyboard
+  ✔ the first window is out of view
+  ✔ ⌃⌥⇧→ again
+  ✔ the other app's window fills the screen
+  ✔ it has the keyboard
+  ✔ its app is the one in front
+  ✔ the view stays there once macOS has reported the change
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ everything is back in view
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⌘= makes the focused window 40 points wider and ⌃⌥⌘- takes them back
+  ✔ ⌃⌥⌘= reaches Arbor
+  ✔ the window is 40 points wider
+  ✔ it still reaches the left edge
+  ✔ the Desktop gave the room: the other app's window has not moved
+  ✔ windows match Arbor's layout
+  ✔ ⌃⌥⌘- reaches Arbor
+  ✔ the window has its width back
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⌘- again and again on a window whose app refuses to shrink: it stops at the size the app allows and never turns into a tile
+  ✔ Arbor ran shrink
+  ✔ in the end it says that the window cannot shrink any further
+  ✔ the window is as narrow as its app allows
+  ✔ it stays so
+  ✔ it is no tile
+  ✔ it is in view
+  ✔ it is in its slot
+  ✔ it still has the keyboard
+  ✔ the camera has not moved
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⌘0 balances the sizes: the two docked windows are equally wide again
+  ✔ at first they are not: the first was shrunk
+  ✔ ⌃⌥⌘0 reaches Arbor
+  ✔ now they are
+  ✔ the first is as wide as it was when it was docked
+  ✔ the Desktop is still between them
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥R turns the row into a column, and ⌃⌥R again turns it back to the point
+  ✔ ⌃⌥R reaches Arbor
+  ✔ the first window is above the other app's
+  ✔ it is as wide as the screen
+  ✔ it keeps the keyboard
+  ✔ windows match Arbor's layout
+  ✔ ⌃⌥R again
+  ✔ the first window is exactly where it was
+  ✔ so is the other app's
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⇧R mirrors the row, and again mirrors it back
+  ✔ ⌃⌥⇧R reaches Arbor
+  ✔ the other app's window is on the left now
+  ✔ at the left edge
+  ✔ the first window is at the right edge
+  ✔ it keeps the keyboard
+  ✔ windows match Arbor's layout
+  ✔ ⌃⌥⇧R again
+  ✔ the first window is exactly where it was
+  ✔ windows match Arbor's layout
+
+▸ a shortcut bound to swap right in settings.json: the focused window trades places with the other app's, and the places keep their sizes
+  ✔ the first window is the wider one
+  ✔ ⌃⌥⇧L reaches Arbor
+  ✔ the first window has the narrow place on the right
+  ✔ the other app's has the wide one on the left
+  ✔ the keyboard went along with the first window
+  ✔ the camera has not moved
+  ✔ windows match Arbor's layout
+  ✔ ⌃⌥⇧H reaches Arbor
+  ✔ they have traded back
+  ✔ windows match Arbor's layout
+
+▸ choose Adjust, Balance Sizes and Adjust, Mirror Group from the menu: they do what the shortcuts do
+  ✔ Balance Sizes can be clicked
+  ✔ Arbor ran balance
+  ✔ the two docked windows are equally wide
+  ✔ Mirror Group can be clicked
+  ✔ Arbor ran mirror
+  ✔ the other app's window is on the left
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+▸ ⌃⌥⇧↓ toward a tile: the camera goes onto it, its window has the keyboard, and ⌃⌥[ goes back
+  ✔ a tile stands in for the third window
+  ✔ the window above the tile has the keyboard
+  ✔ ⌃⌥⇧↓ reaches Arbor
+  ✔ the tile's window fills the screen
+  ✔ it has the keyboard
+  ✔ the window above it is out of view
+  ✔ the view stays there once macOS has reported the change
+  ✔ ⌃⌥[ reaches Arbor
+  ✔ the tile is back
+  ✔ so is the window above it
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+111 passed, 0 failed

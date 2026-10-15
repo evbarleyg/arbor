@@ -1,0 +1,66 @@
+# 46-goto-closes 2026-10-15T04:38Z on macOS 26.6.2, commit 8ea692f
+
+▸ ⌃⌥G with the palette open closes it, and changes nothing
+  ✔ ⌃⌥G opens the palette
+  ✔ ⌃⌥G again closes the palette
+  ✔ and it stays away: the key did not open another
+  ✔ the window behind did not see the key
+  ✔ the view has not moved
+  ✔ the next letter goes to the window
+
+▸ click another window with the palette open: the palette closes and the click reaches the window
+  ✔ ⌃⌥G opens the palette
+  ✔ the palette is gone
+  ✔ the clicked window got the press
+  ✔ and has the keyboard
+  ✔ nothing moved
+
+▸ click a gap handle with the palette open: the palette closes, though the handle takes no keyboard
+  ✔ ⌃⌥G opens the palette
+  ✔ the palette is gone
+  ✔ and stays away
+  ✔ the next letter goes to the window that had the keyboard
+  ✔ windows match Arbor's layout
+
+▸ another shortcut of Arbor's with the palette open: the palette closes and the shortcut does its work
+  ✔ ⌃⌥G opens the palette
+  ✔ ⌃⌥↑ reaches Arbor, not the palette
+  ✔ the palette is gone
+  ✔ the view stepped out to the column
+  ✔ and no further
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⎋ with the palette open: Arbor pauses and the palette closes, and resuming does not bring it back
+  ✔ ⌃⌥G opens the palette
+  ✔ Arbor is paused
+  ✔ the palette is gone
+  ✔ Arbor runs again
+  ✔ the palette stays away
+
+▸ another app comes forward by itself with the palette open: the palette closes, and typing goes to that app
+  ✔ ⌃⌥G opens the palette
+  ✔ the other app is in front
+  ✔ the palette is gone
+  ✔ the next letter goes to the other app's window
+
+▸ ⌃⌥G while a window is held by its title bar: no palette opens until the window is let go
+  ✔ no palette shows while the button is down
+  ✔ with the button up ⌃⌥G opens the palette
+  ✔ ⎋ closes it
+
+▸ ⌘Tab with the palette open: the palette closes, and typing goes to the app that came forward
+  ✔ the first app is in front
+  ✔ ⌃⌥G opens the palette
+  ✔ ⌘Tab switched to the other app
+  ✔ the palette is gone
+  ✔ the next letter goes to the other app's window
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+
+45 passed, 0 failed

@@ -1,0 +1,83 @@
+# 46-goto 2026-10-15T04:39Z on macOS 26.6.2, commit 8ea692f
+
+▸ ⌃⌥G while typing in a window, letters, ⎋: the palette comes a quarter of the way down and takes the letters, the app stays in front, and after ⎋ typing goes on in the window
+  ✔ what is typed reaches the window
+  ✔ ⌃⌥G reaches Arbor
+  ✔ the palette is on screen
+  ✔ in the middle, a quarter of the way down
+  ✔ the app in front stays in front
+  ✔ its window is still the focused window
+  ✔ the list shrinks to what the letters match
+  ✔ the palette's top stays where it was
+  ✔ the window saw none of the letters
+  ✔ ⎋ closes the palette
+  ✔ the window did not see that either
+  ✔ the view has not moved
+  ✔ the app is still in front
+  ✔ the next letter goes to the window, without a click
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥G, a part of a title, ↩: the window found is framed as the one before was and has the keyboard, and the pointer stays where it is
+  ✔ ⌃⌥G opens the palette
+  ✔ ↩ closes the palette
+  ✔ the window found fills the screen, alone
+  ✔ Arbor says that it is focused
+  ✔ the next letter goes to it, without a click
+  ✔ the window left behind saw none of the typing
+  ✔ the pointer has not moved
+  ✔ ⌃⌥[ reaches Arbor
+  ✔ and leads back to the window before
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥G and ↩ at once: the keyboard goes to the window used before this one, another app's; again, and it comes back; with ↓, to the one before that
+  ✔ ⌃⌥G opens the palette
+  ✔ the window used before has the keyboard
+  ✔ its app is in front
+  ✔ the palette is gone
+  ✔ ⌃⌥G opens the palette from the other app too
+  ✔ the other app stays in front
+  ✔ the keyboard is back in the first window
+  ✔ its app is in front
+  ✔ ⌃⌥G opens the palette once more
+  ✔ the second row is the window used before those two
+  ✔ the palette is gone
+  ✔ all were in view, so nothing moved
+
+▸ ⌘2 in the palette goes to the second row's window, a click on a row to that row's, and pointing at a row chooses nothing
+  ✔ ⌃⌥G opens the palette
+  ✔ ⌘2 closes the palette
+  ✔ the second row's window has the keyboard
+  ✔ ⌃⌥G opens the palette
+  ✔ the click closes the palette
+  ✔ the third row's window has the keyboard
+  ✔ ⌃⌥G opens the palette
+  ✔ the palette stays open under the pointer
+  ✔ ↩ goes to the first row's window, not to the one pointed at
+  ✔ the palette is gone
+
+▸ ↑ in the palette goes round from the first row to the last, and ⇥ and ⇧⇥ step as ↓ and ↑ do
+  ✔ ⌃⌥G opens the palette
+  ✔ two rows up from the first is the last but one
+  ✔ the palette is gone
+  ✔ ⌃⌥G opens the palette
+  ✔ two steps on and one back is the second row
+  ✔ the palette is gone
+  ✔ all were in view, so nothing moved
+
+▸ type what nothing matches and press ↩: the palette stays open and nothing moves; ⌫ brings the list back
+  ✔ ⌃⌥G opens the palette
+  ✔ the list is gone
+  ✔ the palette stays
+  ✔ the view has not moved
+  ✔ the whole list is back
+  ✔ ⎋ closes the palette
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+
+66 passed, 0 failed
