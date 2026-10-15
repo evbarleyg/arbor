@@ -881,7 +881,22 @@ unless every offence is reported by its own detector, by no other, and nothing w
 can hide a move and cannot make one up), anything that is
 drawn without a window moving, and whatever only a trackpad, a second display or a person's own apps bring out.
 
-For a script of your own, `lib-day.sh` is the harness (its header lists everything) and `jolts.py`'s header lists the marks and keys.
+**The acts, and journeys written by a program.** `lib-walk.sh` has one word for each thing a person does to a window (its header is the list): `switch_dock safari`, `dock_key left`,
+`drag_onto terminal safari right`, `view frame`, `minimize`, `restore`, `full_screen on`, `wallpaper_click`, `title_double_click finder`, `pause`, `quit_and_start`, `idle_act`, `display plug`… Each is a
+step of `lib-day.sh`'s that looks at the state for itself: it knows its kind, what it may move and which window has to end in front. An act that does not apply is left out, with a line in the output
+and no step; what a person would do first is done first, as an act of its own (a covered window is brought forward before it is dragged); an act that applies and cannot be performed is a finding. So
+whoever writes a journey needs the words and nothing else. `day.sh` is written in them by hand. **A walk** is a file of them, one act a line, that bash can run as it stands:
+
+```bash
+python3 scripts/mac-shell/walk.py 4711 --acts 110 --display two --tiling off     # prints the walk from that seed: the same on every machine
+python3 scripts/mac-shell/walk.py 4711 --control                                 # its control: the same file, played without Arbor
+```
+
+`walk_begin <cast> <display> <tiling> [seed [commit]]` prepares the Mac, opens the cast, sees macOS tile (or not), starts Arbor and writes the manifest; `walk_end` brings back what is hidden or minimized,
+quits Arbor, reaches every window, and reports. Setting the scene (`acted setup=1`) is in the report and is no act. `walk-sample.sh` is the walk from 4711 (`make lint` checks that it still is);
+`day-sit.sh` makes an arrangement and leaves the Mac alone for six minutes; `survey-casts.sh` asks a Mac which other apps it has and how their windows resist.
+
+For a script of your own, `lib-day.sh` is the harness below the acts (its header lists everything) and `jolts.py`'s header lists the marks and keys.
 
 ## 8. Type-checking macOS-only code on Linux (`make typecheck-mac`)
 

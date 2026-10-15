@@ -137,6 +137,12 @@ func log(to path: String) {
   witnessPort = CGEvent.tapCreate(
     tap: .cgSessionEventTap, place: .tailAppendEventTap, options: .listenOnly, eventsOfInterest: mask,
     callback: callback, userInfo: nil)
+  if witnessPort == nil {
+    // As `watch` does where macOS refuses one that only listens.
+    witnessPort = CGEvent.tapCreate(
+      tap: .cgSessionEventTap, place: .tailAppendEventTap, options: .defaultTap, eventsOfInterest: mask,
+      callback: callback, userInfo: nil)
+  }
   guard let port = witnessPort else { fail("macOS refused the tap") }
   CFRunLoopAddSource(CFRunLoopGetCurrent(), CFMachPortCreateRunLoopSource(kCFAllocatorDefault, port, 0), .commonModes)
   CGEvent.tapEnable(tap: port, enable: true)
