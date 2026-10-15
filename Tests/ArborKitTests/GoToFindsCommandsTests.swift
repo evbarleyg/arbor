@@ -107,14 +107,11 @@ import Testing
         #expect(picked(h, typing: row.name.replacingOccurrences(of: " ▸", with: "")) == .command(text))
         #expect(h.overlays.finder?.items.first?.row.name == row.name)
       }
-      // Decided by the product owner, 2026-10-15: a state's row never comes ahead of the command of the same name in its own menu. It does:
-      // of equally good matches the one whose name begins with a word of the query comes first (`FinderQuery`), and the name of a row in a
-      // submenu begins with its way there. Both rows run the same command, so nothing goes wrong meanwhile.
-      withKnownIssue("Go to… ranks “Holding still · Release” before “View ▸ Hold Still” for `hold still`") {
-        for row in rows where !row.name.contains(" · ") {
-          h.overlays.typeInFinder(row.item.title)
-          #expect(h.overlays.finder?.items.first?.row.name == row.name, "typed: \(row.item.title)")
-        }
+      // Decided by the product owner, 2026-10-15: a state's row never comes ahead of the command of the same name in its own menu. Of
+      // equally good matches the one whose title was typed in full comes first (`FinderQuery`).
+      for row in rows where !row.name.contains(" · ") {
+        h.overlays.typeInFinder(row.item.title)
+        #expect(h.overlays.finder?.items.first?.row.name == row.name, "typed: \(row.item.title)")
       }
     }
   }
@@ -621,6 +618,32 @@ import Testing
       h.system.userFocus(mail)
       h.scheduler.advance(by: 1)
     }
+  }
+
+  /// Return runs only what the person has seen selected (the product owner, board 0.25): a place no more than a command.
+  @Test func aWindowThatClosedBehindThePaletteLeavesNoOtherWindowSelected() throws {
+    let (h, _, _, mail) = makeHarness()
+    let first = h.system.open(app: "Pages", title: "Letter")
+    let second = h.system.open(app: "Pages", title: "Report")
+    h.system.userFocus(mail)
+    h.scheduler.advance(by: 1)
+    h.run("find")
+    h.overlays.typeInFinder("pages")
+    let chosen = try #require(h.overlays.finder?.selected)
+    #expect([.window(first), .window(second)].contains(chosen))
+    h.system.close(chosen == .window(first) ? first : second)
+    #expect(h.overlays.chooseInFinder())
+    #expect(h.overlays.finder?.message == "That window has closed")
+    #expect(h.overlays.finder?.items.count == 1 && h.overlays.finder?.selected == nil)
+    h.scheduler.advance(by: 1)
+    let before = everything(h)
+    #expect(!h.overlays.chooseInFinder(), "a beep")
+    h.scheduler.advance(by: 1)
+    #expect(everything(h) == before && h.overlays.finder != nil && h.system.focused == mail)
+    h.overlays.moveFinderSelection(by: 1)
+    #expect(h.overlays.chooseInFinder())
+    h.scheduler.advance(by: 1)
+    #expect(h.system.focused == (chosen == .window(first) ? second : first))
   }
 
   @Test func pickedWithTheArrowItRuns() {

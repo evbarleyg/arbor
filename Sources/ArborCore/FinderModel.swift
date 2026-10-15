@@ -170,6 +170,10 @@ public struct FinderSession: Equatable, Sendable {
   /// found, and where there is none the command on top is shown, not selected, until a key picks it; a click and ⌘ with a digit
   /// point at a row and need no picking. There is no list of commands that are too weighty for a reflex: none is run by one.
   public private(set) var hasPicked = false
+  /// The list changed by itself, and the row that was selected is no more. **Return runs only what the person has seen selected**
+  /// (the product owner, board 0.25): whatever took its place was on screen for no time, so nothing is selected, a place no more than a
+  /// command, until a key picks a row or something is typed.
+  private var hasLostItsRow = false
   private var candidates: [FinderCandidate]
   private var everything: [FinderModel.Row]
 
@@ -192,6 +196,8 @@ public struct FinderSession: Equatable, Sendable {
 
   /// The text in the field changed: match again and select the best. A notice has been read by then.
   public mutating func type(_ text: String) {
+    // The same text again is nobody's doing (an input method, Backspace in an empty field), and selects nothing.
+    if text == query, hasLostItsRow { return }
     if text != query { model.notice = nil }
     match(text)
   }
@@ -201,26 +207,31 @@ public struct FinderSession: Equatable, Sendable {
     matches = Self.rank(text, candidates, places: model.rows.count)
     selection = FinderSelection(count: matches.count, pageSize: selection.pageSize)
     hasPicked = false
+    hasLostItsRow = false
   }
 
-  /// A fresh list while the palette stays open. What was typed stays, and so does the selection if it is still listed. Otherwise the
-  /// row that took its place is selected, or the last place if that row is a command's: nobody has picked it.
+  /// A fresh list while the palette stays open. What was typed stays, and so does the selection if it is still listed. Otherwise nothing
+  /// is selected.
   public mutating func replace(model newModel: FinderModel) {
-    let destination = selected
+    // By its name too: the menu can have one command in two rows.
+    let row = awaitsPicking ? nil : selection.selected.map { everything[matches[$0].index] }
     let text = query
-    let row = selection.index
     let picked = hasPicked
     self = FinderSession(model: newModel)
     match(text)
-    let same = destination.flatMap { destination in matches.firstIndex { everything[$0.index].destination == destination } }
-    selection.select(same ?? min(row, max(places - 1, 0)))
+    let same = row.flatMap { row in
+      matches.firstIndex { everything[$0.index].destination == row.destination && everything[$0.index].name == row.name }
+    }
+    selection.select(same ?? 0)
     hasPicked = picked && same != nil
+    hasLostItsRow = same == nil
   }
 
-  /// No place matches, and nobody has picked the command on top: it does not show as selected, and Return does not choose it.
+  /// Nobody has picked a row, and none may be selected by itself: the list changed under the selection, or no place matches and a command
+  /// is on top. No row shows as selected, and Return chooses nothing.
   private var awaitsPicking: Bool {
     guard !hasPicked, let place = selection.selected else { return false }
-    return everything[matches[place].index].place == .command
+    return hasLostItsRow || everything[matches[place].index].place == .command
   }
 
   /// How many of `matches` are places. They come first.
@@ -228,8 +239,8 @@ public struct FinderSession: Equatable, Sendable {
 
   /// ↓ and ↑, going round at the ends. **Only ↓ past the last place leads from the places to the commands.** ↑ from the top goes round to the
   /// last place, as it did before commands were listed: `pa` ↑ Return is the last of Pages' windows, not Pause Arbor, which stands below it.
-  /// Coming up out of the commands it stays among the places likewise. Where a command waits to be picked the arrows come from outside
-  /// the list: ↓ picks the first and ↑ the last.
+  /// Coming up out of the commands it stays among the places likewise. Where nothing is selected the arrows come from outside the list: ↓
+  /// picks the first row and ↑ the last place, or the last command where there is no place.
   public mutating func moveSelection(by rows: Int) {
     guard rows != 0 else { return }
     let waited = awaitsPicking
@@ -242,8 +253,8 @@ public struct FinderSession: Equatable, Sendable {
     selection.select((min(selection.index, places - 1) - Int((up - toTheLastPlace) % UInt(places)) + places) % places)
   }
 
-  /// Page Down and Page Up, stopping at the ends; among the places, at the last of them, however often it is pressed. Where a command
-  /// waits to be picked, either picks the first row.
+  /// Page Down and Page Up, stopping at the ends; among the places, at the last of them, however often it is pressed. Where nothing is
+  /// selected, either picks the first row.
   public mutating func pageSelection(by pages: Int) {
     guard pages != 0 else { return }
     let waited = awaitsPicking
@@ -270,7 +281,7 @@ public struct FinderSession: Equatable, Sendable {
     }
   }
 
-  /// What Return would choose. Nothing, where a command waits to be picked.
+  /// What Return would choose. Nothing, where no row may be selected by itself.
   public var selected: FinderDestination? {
     awaitsPicking ? nil : selection.selected.map { everything[matches[$0].index].destination }
   }
@@ -285,7 +296,7 @@ public struct FinderSession: Equatable, Sendable {
   public var message: String? {
     if let notice = model.notice { return notice }
     if model.rows.isEmpty, matches.isEmpty { return "No windows" }
-    if awaitsPicking { return "↓ picks a command, ↩ runs it" }
+    if awaitsPicking, places == 0 { return "↓ picks a command, ↩ runs it" }
     return matches.isEmpty ? "Nothing matches" : nil
   }
 

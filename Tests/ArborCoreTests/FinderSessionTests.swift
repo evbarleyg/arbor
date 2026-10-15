@@ -243,15 +243,19 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     #expect(session.message == nil)
   }
 
-  @Test func whenTheSelectedRowHasGoneTheOneThatTookItsPlaceIsSelected() {
+  /// It used to be the row that took its place. Decided otherwise by the product owner (QUESTIONS, board 0.25): Return runs only what the
+  /// person has seen selected, and that row was on screen for no time.
+  @Test func whenTheSelectedRowHasGoneNothingIsSelected() {
     var session = FinderSession(model: model(rows))
     session.moveSelection(by: 1)
     session.replace(model: model(rows.filter { $0.destination != .window(WindowID(103)) }))
-    #expect(session.selected == .window(WindowID(104)))
-    session.moveSelection(by: -2)
-    #expect(session.selected == .view(main, slot: 3), "the last row")
+    #expect(session.selected == nil && session.items.allSatisfy { !$0.isSelected })
+    session.moveSelection(by: -1)
+    #expect(session.selected == .view(main, slot: 3), "↑ comes from outside the list: the last row")
     session.replace(model: model(Array(rows.prefix(2))))
-    #expect(session.selected == .window(WindowID(103)), "the last row there is now")
+    #expect(session.selected == nil)
+    session.moveSelection(by: 1)
+    #expect(session.selected == rows[0].destination, "↓ likewise: the first")
     session.replace(model: model([], notice: "That window has closed"))
     #expect(session.selected == nil)
     #expect(session.message == "That window has closed")
@@ -879,16 +883,166 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     #expect(session.selected == nil && !session.hasPicked, "a second Return runs nothing")
   }
 
-  /// ↓ to the second of two windows; it closes; Return. The row it had is a command's now.
-  @Test func whereAPlaceIsLeftAFreshListSelectsAPlace() {
-    let two = [window(103, "Docker", "Containers"), window(104, "Docker", "Images")]
-    var session = session(places: two)
+  /// Decided by the product owner (QUESTIONS, board 0.25): Return runs only what the person has seen selected. A list that changed by itself
+  /// keeps the selection if that row is still there; else nothing is selected, a place no more than a command.
+  @Test func aListThatChangedByItselfSelectsNothingUnlessTheRowIsStillThere() {
+    let three = [window(103, "Docker", "Containers"), window(104, "Docker", "Images"), window(105, "Docker", "Volumes")]
+    func fresh(_ rows: [FinderModel.Row]) -> FinderModel {
+      FinderModel(display: main, screen: screen, rows: rows, commands: commands, notice: "That window has closed")
+    }
+    for steps in [0, 1] {
+      var session = session(places: three)
+      session.type("dock")
+      session.moveSelection(by: steps)
+      #expect(session.selected == three[steps].destination)
+      session.replace(model: fresh(three.filter { $0 != three[steps] }))
+      #expect(session.items.map(\.row.place).prefix(3) == [.outOfView, .outOfView, .command])
+      #expect(session.selected == nil, "a second Return goes nowhere: \(steps)")
+      #expect(session.items.allSatisfy { !$0.isSelected })
+      #expect(session.message == "That window has closed")
+      // The arrows come from outside the list, and ↑ to the last of the places.
+      var up = session
+      session.moveSelection(by: 1)
+      #expect(session.selected == three.filter { $0 != three[steps] }[0].destination)
+      up.moveSelection(by: -1)
+      #expect(up.selected == .window(WindowID(105)))
+    }
+    // Still there, in another row: kept, picked or not.
+    for steps in [0, 2] {
+      var session = session(places: three)
+      session.type("dock")
+      session.moveSelection(by: steps)
+      session.replace(model: fresh([window(106, "Docker", "Networks")] + three.filter { $0 != three[1] }))
+      #expect(session.selected == three[steps].destination, "\(steps)")
+      #expect(session.items.filter(\.isSelected).map(\.row) == [three[steps]])
+    }
+    // What is typed then is the person's doing, and selects the best as ever.
+    var session = session(places: three)
     session.type("dock")
-    session.moveSelection(by: 1)
+    session.replace(model: fresh(Array(three.dropFirst())))
+    #expect(session.selected == nil)
+    session.type("docke")
     #expect(session.selected == .window(WindowID(104)))
-    session.replace(model: FinderModel(display: main, screen: screen, rows: [two[0]], commands: commands, notice: "That window has closed"))
-    #expect(session.items.map(\.row.place).prefix(2) == [.outOfView, .command])
-    #expect(session.selected == .window(WindowID(103)), "the nearest place, not the command in the row")
-    #expect(session.items.map(\.isSelected).prefix(2) == [true, false])
+    // Nothing matched, and now something does: nobody has seen it selected.
+    session = self.session(places: [places[0]])
+    session.type("docker")
+    #expect(session.items.isEmpty)
+    session.replace(model: fresh(three))
+    #expect(session.items.count == 3 && session.selected == nil)
   }
+
+  /// Decided by the product owner: a state's row never comes ahead of the command of the same name in its own menu.
+  @Test func theRowWhoseTitleWasTypedInFullComesFirstWhereverInTheMenuItIs() {
+    let rows: [FinderModel.Row] = [
+      .command(.release, name: "Holding still · Release", display: main),
+      .command(.passThrough(bundleID: "com.apple.mail"), name: "Shortcuts are off in “Mail” · Turn On", display: main),
+      .command(.hold(minutes: nil), name: "View ▸ Hold This View", display: main),
+      .command(.release, name: "View ▸ Hold Still", isOn: true, display: main),
+      .command(.passThrough(bundleID: "com.apple.mail"), name: "Focused Window ▸ Shortcuts Off in “Mail”", isOn: true, display: main),
+      .command(.undo, name: "Undo Dock", display: main),
+      .command(.toggleAutoDock, name: "Arrangement ▸ Dock New Windows", display: main),
+    ]
+    var session = FinderSession(model: FinderModel(display: main, screen: screen, rows: [], commands: rows))
+    for (typed, first) in [
+      ("Hold Still", "View ▸ Hold Still"), ("hold still", "View ▸ Hold Still"), ("still hold", "View ▸ Hold Still"),
+      ("Shortcuts Off in “Mail”", "Focused Window ▸ Shortcuts Off in “Mail”"), ("holding still release", "Holding still · Release"),
+      // The app's name is whom the row is about, no part of what it is called.
+      ("shortcuts off in", "Focused Window ▸ Shortcuts Off in “Mail”"),
+      // The title of a row in a submenu begins where its way there ends.
+      ("dock", "Arrangement ▸ Dock New Windows"),
+      // A word that the way there begins with too is looked for in the title first.
+      ("hold this view", "View ▸ Hold This View"), ("view", "View ▸ Hold This View"),
+    ] {
+      session.type(typed)
+      #expect(session.items.first?.row.name == first, "\(typed)")
+      #expect(session.items.count >= 2 || ["holding still release", "hold this view"].contains(typed), "or this looks at nothing: \(typed)")
+    }
+    // Short of the whole title too, the state's row comes after the commands that match as well.
+    for typed in ["h", "hold", "hold st", "hold stil", "s", "shortcuts", "shortcuts off", "off"] {
+      session.type(typed)
+      let states = session.items.map { $0.row.name.contains(" · ") }
+      #expect(states.contains(true) && states.contains(false), "or this looks at nothing: \(typed)")
+      #expect(states == states.sorted { !$0 && $1 }, "\(typed): \(session.items.map(\.row.name))")
+    }
+    session.type("view")
+    #expect(session.items.first?.match.nameRanges == [17..<21], "the title's word is set off, not the way's")
+  }
+
+  /// "A state's row is found only by the words a person sees in it" (the product owner): also those after the app's name.
+  @Test func theWordsAfterAnAppsNameAreTheCommandsOwn() {
+    let rows: [FinderModel.Row] = [
+      .command(.passThrough(bundleID: "com.apple.mail"), name: "Shortcuts are off in “Mail” · Turn On", display: main),
+      .command(.exclude(bundleID: "com.apple.mail"), name: "Focused Window ▸ Don’t Arrange “Turntable”", display: main),
+    ]
+    var session = FinderSession(model: FinderModel(display: main, screen: screen, rows: [], commands: rows))
+    for (typed, listed) in [("turn on", [rows[0].name]), ("turn", [rows[0].name]), ("on", [rows[0].name]), ("mail", []), ("turntable", []), ("mail turn", [rows[0].name])] {
+      session.type(typed)
+      #expect(session.items.map(\.row.name) == listed, "\(typed)")
+    }
+  }
+
+  /// A row under Arrange Again whose app has no letter in its name has no title to type in full.
+  @Test func aTitleOfNothingIsNotTypedInFull() {
+    let rows: [FinderModel.Row] = [
+      .command(.arrange, name: "Arrange Windows", display: main),
+      .command(.include(bundleID: "x"), name: "Arrangement ▸ Arrange Again ▸ “🎮”", display: main),
+      .command(.include(bundleID: "y"), name: "Arrangement ▸ Arrange Again ▸ “Calendar”", display: main),
+    ]
+    var session = FinderSession(model: FinderModel(display: main, screen: screen, rows: [], commands: rows))
+    session.type("arrange")
+    #expect(session.items.map(\.row.name) == rows.map(\.name))
+  }
+
+  /// Two rows of the menu can run one command. The one that was selected stays selected, not its twin.
+  @Test func aFreshListKeepsTheVeryRowAndNotItsTwin() {
+    let twins: [FinderModel.Row] = [
+      .command(.release, name: "Release Everything", display: main), .command(.release, name: "Release It", display: main),
+    ]
+    var session = FinderSession(model: FinderModel(display: main, screen: screen, rows: [], commands: twins))
+    session.type("release")
+    session.moveSelection(by: 2)
+    #expect(session.items.filter(\.isSelected).map(\.row.name) == ["Release It"])
+    session.replace(model: FinderModel(display: main, screen: screen, rows: [], commands: twins, notice: "“Release It” can do nothing just now"))
+    #expect(session.items.filter(\.isSelected).map(\.row.name) == ["Release It"])
+    session.replace(model: FinderModel(display: main, screen: screen, rows: [], commands: [twins[0]], notice: "That command is not in the menu now"))
+    #expect(session.selected == nil, "its twin was never seen selected")
+  }
+
+  @Test func afterTheSelectedRowHasGoneEveryKeyComesFromOutsideTheList() {
+    let three = [window(103, "Docker", "Containers"), window(104, "Docker", "Images"), window(105, "Docker", "Volumes")]
+    func lost(places: [FinderModel.Row]) -> FinderSession {
+      var lost = self.session(places: [window(102, "Docker", "Gone")] + places)
+      lost.type("dock")
+      lost.replace(model: FinderModel(display: main, screen: screen, rows: places, commands: commands, notice: "That window has closed"))
+      #expect(lost.selected == nil)
+      return lost
+    }
+    for (name, press, place, command): (String, (inout FinderSession) -> Void, UInt32, String) in [
+      ("↓", { $0.moveSelection(by: 1) }, 103, "dock left"), ("↓↓", { $0.moveSelection(by: 2) }, 104, Command.toggleAutoDock.text),
+      ("↑", { $0.moveSelection(by: -1) }, 105, "undo"), ("↑↑", { $0.moveSelection(by: -2) }, 104, Command.toggleAutoDock.text),
+      ("Page Down", { $0.pageSelection(by: 1) }, 103, "dock left"), ("Page Up", { $0.pageSelection(by: -1) }, 103, "dock left"),
+      ("Page Down twice at once", { $0.pageSelection(by: 2) }, 105, "undo"),
+    ] {
+      var session = lost(places: three)
+      press(&session)
+      #expect(session.selected == .window(WindowID(place)), "\(name)")
+      session = lost(places: [])
+      press(&session)
+      #expect(session.selected == .command(command), "with commands only: \(name)")
+    }
+    // A click and a digit point at a row that is there to be seen.
+    #expect(lost(places: three).destination(atVisible: 1) == .window(WindowID(104)))
+    // The same text again is nobody's doing: an input method, Backspace in an empty field.
+    var session = lost(places: three)
+    session.type("dock")
+    #expect(session.selected == nil && session.message == "That window has closed")
+    // Where only commands are left, the line says how to pick one as soon as the notice has been read.
+    session = lost(places: [])
+    #expect(session.message == "That window has closed")
+    var quiet = self.session(places: [])
+    quiet.type("dock")
+    quiet.replace(model: FinderModel(display: main, screen: screen, rows: [], commands: commands))
+    #expect(quiet.selected == nil && quiet.message == "↓ picks a command, ↩ runs it")
+  }
+
 }

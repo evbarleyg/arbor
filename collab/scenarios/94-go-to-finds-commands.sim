@@ -100,6 +100,20 @@ finder-choose
 expect fail
 finder-cancel
 expect docked 101
+# Nor does a second Return go to a window that nobody saw selected: of two windows of Pages the one that was selected closes.
+open Pages
+open Pages
+focus 101
+find
+finder-type pages
+close 106
+finder-choose
+finder-choose
+expect fail
+expect focused 101
+finder-move 1
+finder-choose
+expect focused 105
 # Without the palette nothing is run: a script or a link that says `find` means a place.
 find float all
 expect fail
