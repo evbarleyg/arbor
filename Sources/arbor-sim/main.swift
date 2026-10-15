@@ -133,6 +133,7 @@ func runSimulation() {
   if lines.first == "stage-judge" { runStageJudge(Array(lines.dropFirst())) }
   if let code = runChaosMode(lines) { exit(code) }
   if lines.first == "sweep" { exit(runSweep(Array(lines.dropFirst()))) }
+  if let code = runWalkMode(lines) { exit(code) }
   let launch = LaunchOptions(taking: &lines)
   if lines.isEmpty, launch?.audit != true {
     while let line = readLine() { lines.append(line) }

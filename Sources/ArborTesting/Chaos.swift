@@ -166,6 +166,8 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
   case sleep(days: Double)
   /// While Arbor is not running: state.json is damaged, in a way that follows from the number.
   case corrupt(UInt64)
+  /// All of an app's windows come to lie in front of the others', as at a click on its icon in the Dock. `focus` says which gets the keyboard.
+  case appForward(pid: Int32)
 
   public struct NewWindow: Equatable, Sendable {
     public var id: WindowID
@@ -178,6 +180,10 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
     public var title: String?
     public var hasBundleID = true
     public var behaviour: FakeWindowSystem.Behaviour = .normal
+    /// The bundle id of a real app, for walks that are also taken on a Mac. Nil is one made up from the app's name.
+    public var bundle: String?
+    /// Its size comes in steps, with so much besides: a terminal's characters.
+    public var cells: RealApp.Cells?
 
     public init(id: WindowID, app: String, pid: Int32, frame: CGRect) {
       self.id = id
@@ -186,7 +192,7 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
       self.frame = frame
     }
 
-    public var bundleID: String? { hasBundleID ? "com.example.\(app.lowercased())" : nil }
+    public var bundleID: String? { hasBundleID ? bundle ?? "com.example.\(app.lowercased())" : nil }
   }
 
   public enum PaletteKey: Equatable, Sendable {
@@ -236,6 +242,8 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
       if let maximum = window.maximum { words += ["max", size(maximum)] }
       if let title = window.title { words += ["title", title] }
       if !window.hasBundleID { words.append("no-bundle") }
+      if let bundle = window.bundle { words += ["bundle", bundle] }
+      if let cells = window.cells { words += ["cells", size(cells.step), size(cells.margin)] }
       if window.behaviour != .normal { words.append(window.behaviour.rawValue) }
       return words.joined(separator: " ")
     case .close(let window): return "close \(window.rawValue)"
@@ -303,6 +311,7 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
     case .renumber(let old, let new): return "renumber \(old.rawValue) \(new.rawValue)"
     case .sleep(let days): return "sleep \(Self.format(days))"
     case .corrupt(let how): return "corrupt \(how)"
+    case .appForward(let pid): return "app-forward \(pid)"
     }
   }
 
@@ -374,6 +383,14 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
         case "no-bundle":
           new.hasBundleID = false
           index += 1
+        case "bundle":
+          guard index + 1 < count else { return nil }
+          new.bundle = words[index + 1]
+          index += 2
+        case "cells":
+          guard let step = size(index + 1), let margin = size(index + 3), step.width >= 1, step.height >= 1 else { return nil }
+          new.cells = RealApp.Cells(step: step, margin: margin)
+          index += 5
         default:
           guard let behaviour = FakeWindowSystem.Behaviour(rawValue: words[index]) else { return nil }
           new.behaviour = behaviour
@@ -490,6 +507,7 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
       return .renumber(old, new)
     case ("sleep", 2): return number(1).map { .sleep(days: Double($0)) }
     case ("corrupt", 2): return UInt64(words[1]).map { .corrupt($0) }
+    case ("app-forward", 2): return pid(1).map { .appForward(pid: $0) }
     default: return nil
     }
   }
