@@ -523,7 +523,7 @@ def document(data, tree):
     out += ["## What to do first", "", "Only cases that hurt a person (1 or 2).", ""]
     out += listing("Arbor does not cope yet", "A fault that is known and open.", [e for e in hurts if e["copes"] == "open" and e["kind"] != UNTRIED])
     if untried := [e for e in hurts if e["copes"] == "open" and e["kind"] == UNTRIED]:
-        out += listing("Nobody knows whether Arbor copes", "Within reach as Arbor ships, and its own check has never run on a real Mac: see [never-exercised](#never-exercised).", untried)
+        out += listing("Nobody knows whether Arbor copes", "Within reach as Arbor ships, and never tried on a real Mac, or only once and by posted events: see [never-exercised](#never-exercised).", untried)
     out += listing(
         "Arbor copes, and nothing would notice if it stopped", "No guard, or only a script that somebody has to start.",
         [e for e in hurts if e["copes"] != "open" and watched[e["id"]] in ("hand", "none")])
