@@ -200,15 +200,13 @@ extension Controller {
   }
 
   /// For a workspace read from a file that does not say where its display was (written before 2026-10-14): its frames may
-  /// be from another arrangement of the displays, and there is no telling. A window that is in view on the display is
+  /// be from another arrangement of the displays, and there is no telling. A window that is in view, on whatever displays, is
   /// where macOS took it along to, which is the better witness; any other frame is fitted onto the display, not
   /// trusted. It costs a window left hanging over an edge on purpose its overhang, once.
   func healFramesOfUnknownOrigin(on display: DisplaySnapshot) {
     guard let workspace = workspaces[display.id] else { return }
     for (window, remembered) in workspace.floating.sorted(by: { $0.key < $1.key }) {
-      if let actual = windows[window]?.frame, windows[window]?.isPresent == true,
-        actual.intersection(display.visibleFrame).area * 2 > actual.area
-      {
+      if let actual = windows[window]?.frame, windows[window]?.isPresent == true, !showsLessThanHalf(actual) {
         workspaces[display.id]!.floating[window] = actual
       } else {
         workspaces[display.id]!.floating[window] = remembered.fitted(into: display.visibleFrame)

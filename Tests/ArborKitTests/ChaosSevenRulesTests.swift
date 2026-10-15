@@ -304,6 +304,16 @@ private let b = WindowID(102)
     #expect(nets(after: ["launch"], then: "open 101 Notes pid 1001 at 1439 868 600 400").isEmpty, "Arbor fetches it, and may")
   }
 
+  /// Most of it shows: it may not be fetched, wherever its title bar is. It is in view and can be used; no hand leaves a window so, so it
+  /// is its app's doing; and whoever wants it has ways that are asked for.
+  @Test func whatMostlyShowsMayNotBeFetchedWhereverItsTitleBarIs() {
+    for y in [-100, -24, -23, -13, -12, 0] {
+      let open = "open 101 Notes pid 1001 at 300 \(y) 600 400"
+      #expect(nets(after: [open], then: "launch").isEmpty, "at \(y)")
+      #expect(nets(after: [open], then: "launch") { _ = $0.setFrame(self.rect(420, 262, 600, 400), of: a) } == ["moved-before-any-dock"], "at \(y)")
+    }
+  }
+
   /// A window its person dragged two thirds over the bottom edge goes out with the view. On the way out of Arbor it is given back exactly
   /// there, and the rule about a quit has nothing to say. Left anywhere else with as little showing, it is lost.
   @Test(arguments: ["quit", "pause"]) func whatWentOutWithTheViewMayComeBackAsFarOverTheEdgeAsItWasLeftAndNoFurther(way: String) {

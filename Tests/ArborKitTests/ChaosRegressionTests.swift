@@ -1048,6 +1048,46 @@ private let c = WindowID(103)
       """)
   }
 
+  // MARK: How much shows is asked of all displays together
+
+  /// Nothing docked. 37 % of it on the laptop's display, 42 % on the monitor's, the rest below the laptop's lower edge. Each display was
+  /// asked by itself whether it showed half, and the window went to the middle of the laptop's: at a start, and put there by hand, at
+  /// a quit. No rule is excused here: the one that spoke, `moved-before-any-dock`, is known for other stories.
+  @Test(arguments: [
+    """
+    displays main:0,0,1512,982:37,0,0,0* side:1512,-200,2560,1440:25,0,0,0 windows-never
+    open 101 Notes pid 1001 at 1050 600 800 600 min 709 300
+    launch
+    react
+    advance 1
+    react
+    """,
+    """
+    displays main:0,0,1512,982:37,0,0,0* side:1512,-200,2560,1440:25,0,0,0 windows-never
+    launch
+    open 101 Notes pid 1001 at 300 200 800 600 min 709 300
+    advance 1
+    react
+    grab 101
+    carry 1450 610
+    release
+    react
+    advance 5
+    react
+    quit
+    advance 1
+    launch
+    react
+    advance 1
+    react
+    """,
+  ]) func aWindowThatTwoDisplaysShowBetweenThemIsNotFetched(script: String) {
+    let runner = ChaosRunner()
+    for action in ChaosAction.script(script) { #expect(runner.step(action).isEmpty, "\(action.text)") }
+    #expect(runner.harness.system.frame(of: a) == CGRect(x: 1050, y: 600, width: 800, height: 600))
+    #expect(runner.harness.system.frameLog.isEmpty, "\(runner.harness.system.frameLog)")
+  }
+
   /// The rule `start-took-out-of-view`. Two docked, one framed, one that was never docked: the second start brought the framed view back and sent the
   /// other two to the corner, from where the quit had just fetched them. After a summon too, whatever the view.
   @Test(arguments: ["zoom 101", "summon Mail\nfocus 101\nshow-all"]) func aLaunchTakesNothingOutOfView(before: String) {

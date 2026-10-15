@@ -107,9 +107,9 @@ extension ChaosRunner {
     }
   }
 
-  /// Half of it on some display, and enough of its title bar to get hold of on some display, below the menu bar.
+  /// Half of it shows, on all displays together, and enough of its title bar to get hold of on some display, below the menu bar.
   private func showsHalf(_ frame: CGRect) -> Bool {
-    system.displayList.contains { frame.fractionInside($0.frame) >= 0.5 }
+    !frame.showsLessThanHalf(on: system.displayList.map(\.frame))
       && system.displayList.contains {
         let bar = CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: min(frame.height, 28))
         let showing = bar.intersection(

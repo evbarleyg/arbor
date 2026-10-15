@@ -11,7 +11,8 @@ import CoreGraphics
 /// A person who moves a window moves one, with the button down, and Accessibility follows within a moment. A sweep
 /// takes all that is in view out of view at once, and the two go on disagreeing for as long as it lasts.
 public enum SweptAside {
-  /// A window is in view with at least this much of it on one display.
+  /// A window is in view with at least this much of it on one display. On one, unlike everywhere else (`areaShowing(on:)`): the
+  /// question is whether it has left *its* display, and swept to the inner edge it is listed where the neighbour is.
   static let inView: CGFloat = 0.5
   /// It is listed off that display with less than this much of it left there. On a Mac 2 to 12 % were.
   static let aside: CGFloat = 0.25

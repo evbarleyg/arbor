@@ -83,11 +83,11 @@ extension Controller {
     return isAPlace(own) ? own : own.fitted(into: display.visibleFrame)
   }
 
-  /// Whether a window at `frame` is within sight and reach whoever put it there: some display shows half of it, and a hand could get
-  /// hold of its title bar, on that display or another (`titleBarIsWithinReach`, the one measure of that). Not behind a menu bar, where
+  /// Whether a window at `frame` is within sight and reach whoever put it there: half of it shows, on all displays together
+  /// (`showsLessThanHalf`, the one measure of that), and a hand could get hold of its title bar (`titleBarIsWithinReach`, likewise). Not behind a menu bar, where
   /// macOS lets no window lie: it is what a change of displays made of a window that lay at the top of a display without one.
   func isAPlace(_ frame: CGRect) -> Bool {
-    displays.contains { frame.fractionInside($0.frame) >= 0.5 } && titleBarIsWithinReach(frame)
+    !showsLessThanHalf(frame) && titleBarIsWithinReach(frame)
       && !displays.contains {
         $0.frame.minY <= frame.minY && frame.minY < $0.visibleFrame.minY && frame.minX < $0.frame.maxX && frame.maxX > $0.frame.minX
       }

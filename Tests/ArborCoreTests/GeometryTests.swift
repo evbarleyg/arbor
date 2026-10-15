@@ -38,6 +38,87 @@ import Testing
     #expect(square.fractionInside(CGRect(x: 5, y: 0, width: 10, height: 10)) == 0.5)
   }
 
+  // MARK: How much of a window shows
+
+  private static let laptop = CGRect(x: 0, y: 0, width: 1512, height: 982)
+  private static let monitor = CGRect(x: 1512, y: -200, width: 2560, height: 1440)
+
+  /// Across two displays and below the laptop's lower edge: 36.8 % here, 42.3 % there.
+  @Test func whatSeveralScreensShowAddsUp() {
+    let window = CGRect(x: 1050, y: 600, width: 800, height: 600)
+    #expect(window.areaShowing(on: [Self.laptop]) == CGFloat(462 * 382))
+    #expect(window.areaShowing(on: [Self.monitor]) == CGFloat(338 * 600))
+    #expect(window.areaShowing(on: [Self.laptop, Self.monitor]) == CGFloat(462 * 382 + 338 * 600))
+    #expect(window.showsLessThanHalf(on: [Self.laptop]) && window.showsLessThanHalf(on: [Self.monitor]))
+    #expect(!window.showsLessThanHalf(on: [Self.laptop, Self.monitor]))
+    #expect(!window.showsLessThanHalf(on: [Self.monitor, Self.laptop]), "in whatever order")
+  }
+
+  @Test func halfIsNotLessThanHalf() {
+    #expect(!square.showsLessThanHalf(on: [CGRect(x: 5, y: 0, width: 10, height: 10)]))
+    #expect(square.showsLessThanHalf(on: [CGRect(x: 5.1, y: 0, width: 10, height: 10)]))
+    // A quarter and a quarter.
+    let quarters = [CGRect(x: -10, y: -10, width: 15, height: 15), CGRect(x: 5, y: 5, width: 15, height: 15)]
+    #expect(square.areaShowing(on: quarters) == 50)
+    #expect(!square.showsLessThanHalf(on: quarters))
+  }
+
+  @Test func whereThereIsNothingToShowItOnNothingShows() {
+    #expect(square.areaShowing(on: []) == 0)
+    #expect(square.showsLessThanHalf(on: []))
+    #expect(square.areaShowing(on: [CGRect(x: 10, y: 0, width: 10, height: 10)]) == 0, "touching is not showing")
+    #expect(square.areaShowing(on: [.null, .zero]) == 0)
+    #expect(CGRect.zero.areaShowing(on: [square]) == 0)
+    #expect(CGRect.zero.showsLessThanHalf(on: [square]), "a window without area is not in view")
+    #expect(CGRect.null.showsLessThanHalf(on: [square]))
+  }
+
+  /// Displays do not overlap. Should two ever be reported that do (mirrored, or half way through a change), a third of a
+  /// window shown twice is still a third.
+  @Test func whatTwoScreensBothShowCountsOnce() {
+    let third = CGRect(x: 0, y: 0, width: 10, height: 3)
+    #expect(square.areaShowing(on: [third, third]) == 30)
+    #expect(square.showsLessThanHalf(on: [third, third]))
+    let staggered = [CGRect(x: -5, y: 0, width: 9, height: 10), CGRect(x: 2, y: 0, width: 4, height: 20), CGRect(x: 3, y: 5, width: 1, height: 1)]
+    #expect(square.areaShowing(on: staggered) == 60)
+    #expect(square.areaShowing(on: [square, square.insetBy(dx: -5, dy: -5)]) == square.area, "never more than all of it")
+  }
+
+  // MARK: Whether a hand could get hold of it
+
+  @Test func twentyFourPointsOfTheTitleBarAreWithinReachAndTwentyThreeAreNot() {
+    func window(_ x: CGFloat, _ y: CGFloat) -> CGRect { CGRect(x: x, y: y, width: 800, height: 600) }
+    #expect(window(300, 200).titleBarIsWithinReach(on: [Self.laptop]))
+    #expect(window(1512 - 24, 200).titleBarIsWithinReach(on: [Self.laptop]))
+    #expect(!window(1512 - 23, 200).titleBarIsWithinReach(on: [Self.laptop]))
+    #expect(window(24 - 800, 200).titleBarIsWithinReach(on: [Self.laptop]))
+    #expect(!window(23 - 800, 200).titleBarIsWithinReach(on: [Self.laptop]))
+    // Half of the strip's height is enough to hit: at the bottom, and at the top.
+    #expect(window(300, 982 - 12).titleBarIsWithinReach(on: [Self.laptop]))
+    #expect(!window(300, 982 - 11).titleBarIsWithinReach(on: [Self.laptop]))
+    #expect(window(300, -12).titleBarIsWithinReach(on: [Self.laptop]))
+    #expect(!window(300, -13).titleBarIsWithinReach(on: [Self.laptop]), "nearly all of it shows, and nobody can move it")
+    #expect(!window(300, 200).titleBarIsWithinReach(on: []))
+  }
+
+  @Test func anyScreenWillDoForTheTitleBarButTheyDoNotAddUp() {
+    let window = CGRect(x: 1400, y: -100, width: 800, height: 600)
+    #expect(!window.titleBarIsWithinReach(on: [Self.laptop]), "above the laptop's display")
+    #expect(window.titleBarIsWithinReach(on: [Self.laptop, Self.monitor]), "and within reach on the one next to it")
+    // Twelve points here and twelve there are nothing to take hold of.
+    let ends = [CGRect(x: 0, y: 0, width: 12, height: 100), CGRect(x: 788, y: 0, width: 100, height: 100)]
+    #expect(!CGRect(x: 0, y: 0, width: 800, height: 600).titleBarIsWithinReach(on: ends))
+  }
+
+  @Test func allOfAWindowNarrowerOrLowerThanThatIsEnough() {
+    #expect(CGRect(x: 100, y: 100, width: 10, height: 600).titleBarIsWithinReach(on: [Self.laptop]))
+    #expect(!CGRect(x: -1, y: 100, width: 10, height: 600).titleBarIsWithinReach(on: [Self.laptop]))
+    #expect(CGRect(x: 100, y: 100, width: 600, height: 10).titleBarIsWithinReach(on: [Self.laptop]))
+    // A window without area that is on a screen is not for ever out of reach.
+    #expect(CGRect(x: 100, y: 100, width: 0, height: 0).titleBarIsWithinReach(on: [Self.laptop]))
+    #expect(!CGRect(x: -100, y: 100, width: 0, height: 0).titleBarIsWithinReach(on: [Self.laptop]))
+  }
+
   @Test func aRectangleHoldsItsNearEdgesButNotItsFarOnes() {
     #expect(square.contains(CGPoint(x: 0, y: 0)))
     #expect(square.contains(CGPoint(x: 9.5, y: 9.5)))

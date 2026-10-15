@@ -82,7 +82,7 @@ extension Controller {
       leftInFullScreen.notes[window] = nil
       return
     }
-    let fits = displays.contains { note.frame.fractionInside($0.frame) >= 0.5 }
+    let fits = !showsLessThanHalf(note.frame)
     if let actual = system.setFrame(fits ? note.frame : note.frame.fitted(into: main.visibleFrame), of: window) {
       windows[window]?.frame = actual
     }
@@ -136,7 +136,7 @@ extension Controller {
     let listed = system.stackedWindows().filter { leftInFullScreen.notes[$0.id] != nil }
     let screens = system.displays()
     guard !listed.isEmpty, let main = screens.first(where: \.isMain) ?? screens.first else { return }
-    func isOutOfView(_ frame: CGRect) -> Bool { screens.allSatisfy { frame.fractionInside($0.frame) < 0.5 } }
+    func isOutOfView(_ frame: CGRect) -> Bool { frame.showsLessThanHalf(on: screens.map(\.frame)) }
     // In full screen, and on the way out of it, it is in view or not listed.
     for window in listed.filter({ isOutOfView($0.frame) }).map(\.id).sorted() {
       guard var note = leftInFullScreen.notes[window] else { continue }

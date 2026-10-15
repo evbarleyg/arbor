@@ -470,9 +470,7 @@ extension Controller {
             target = informed
             actual = system.setFrame(target, of: window) ?? actual
           }
-        } else if actual.width < target.width - 2 || actual.height < target.height - 2,
-          displays.allSatisfy({ actual.fractionInside($0.frame) < 0.5 })
-        {
+        } else if actual.width < target.width - 2 || actual.height < target.height - 2, showsLessThanHalf(actual) {
           // The app will not make it that large any more. A window shrinks towards its top-left corner, so one that
           // hung over the left edge of the screen has gone beyond it. The frame it had is no frame to go back to: it
           // floats on the display from now on. One that took the frame it was asked to goes on hanging, whatever shows.
@@ -687,10 +685,10 @@ extension Controller {
   }
 
   /// How much of `frame` the displays show, all together, in square points.
-  func areaShowing(of frame: CGRect) -> CGFloat { displays.map { frame.intersection($0.frame).area }.reduce(0, +) }
+  func areaShowing(of frame: CGRect) -> CGFloat { frame.areaShowing(on: displays.map(\.frame)) }
 
   /// The narrowest strip of a window that counts as a place for it: about a title bar's height, both ways.
-  static let leastStrip: CGFloat = 24
+  static let leastStrip = CGRect.titleBarToHold
 
   /// The frame nearest to `preferred` that is on `desktop`. A window whose app will not make it smaller than
   /// `minimum` cannot fit: it sits in the middle of the Desktop and hangs over the docked windows on both sides

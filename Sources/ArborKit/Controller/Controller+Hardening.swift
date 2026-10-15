@@ -85,9 +85,8 @@ extension Controller {
     // First what the window server knows, which takes no app: it has closed, or somebody else has fetched it (Mission Control,
     // its app on waking). In view is all that was owed, wherever.
     let existing = system.existingWindowIDs()
-    let screens = system.displays()
-    let inView = Set(
-      system.stackedWindows().filter { window in screens.contains { window.frame.fractionInside($0.frame) >= 0.5 } }.map(\.id))
+    let screens = system.displays().map(\.frame)
+    let inView = Set(system.stackedWindows().filter { !$0.frame.showsLessThanHalf(on: screens) }.map(\.id))
     couldNotComeBack = couldNotComeBack.filter { existing.contains($0.key) && !inView.contains($0.key) }
     guard !couldNotComeBack.isEmpty else { return }
     triesForWhatCouldNotComeBack += 1

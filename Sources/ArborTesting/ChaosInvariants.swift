@@ -261,9 +261,9 @@ extension ChaosRunner {
     return least
   }
 
-  /// Displays do not overlap, so what they show adds up.
+  /// What the displays show of it, all together: Arbor's own measure, so that the two cannot drift apart.
   static func area(of frame: CGRect, showingOn displays: [DisplaySnapshot]) -> CGFloat {
-    displays.reduce(0) { $0 + frame.intersection($1.frame).area }
+    frame.areaShowing(on: displays.map(\.frame))
   }
 
   /// Whether some display shows more of `frame` than the sliver, a point or two wide, that parking leaves.
@@ -777,9 +777,9 @@ extension ChaosRunner {
         continue
       }
       let frame = fake.snapshot.frame
-      // Displays do not overlap, so what they show adds up. A window larger than a display cannot
+      // What the displays show adds up. A window larger than a display cannot
       // be 90% in view; it must show as much as fits.
-      let total = system.displayList.reduce(0) { $0 + frame.intersection($1.frame).area } / frame.area
+      let total = Self.area(of: frame, showingOn: system.displayList) / frame.area
       let best = system.displayList.map { display -> CGFloat in
         let most = min(frame.width, display.visibleFrame.width) * min(frame.height, display.visibleFrame.height)
         return frame.intersection(display.frame).area / most

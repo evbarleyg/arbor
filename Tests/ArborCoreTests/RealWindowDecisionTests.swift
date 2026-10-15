@@ -901,6 +901,17 @@ extension Box where Value == EchoFilter {
     #expect(StrayDialog.home(for: CGRect(x: 500, y: 300, width: 300, height: 160), siblings: [corner], displays: [main]) == nil)
   }
 
+  /// Across the border of two displays and below the lower edge of one: 47 % here, 27 % there. All displays are asked together.
+  @Test func aDialogThatTwoDisplaysShowBetweenThemIsLeftAlone() {
+    let across = CGRect(x: -160, y: 720, width: 300, height: 160)
+    #expect(across.showsLessThanHalf(on: [main.frame]) && across.showsLessThanHalf(on: [side.frame]), "or this proves nothing")
+    #expect(StrayDialog.home(for: across, siblings: [corner], displays: [main, side]) == nil)
+    // Nor is a window like that a sibling out of view.
+    #expect(StrayDialog.home(for: dialog, siblings: [across], displays: [main, side]) == nil)
+    // Lower, so that less than half shows on both together, it is fetched as ever.
+    #expect(StrayDialog.home(for: across.offsetBy(dx: 0, dy: 60), siblings: [corner], displays: [main, side]) != nil)
+  }
+
   @Test func whatIsTinyIsOffScreenOnPurpose() {
     #expect(StrayDialog.home(for: CGRect(x: 2000, y: 1000, width: 39, height: 200), siblings: [corner], displays: [main]) == nil)
     #expect(StrayDialog.home(for: CGRect(x: 2000, y: 1000, width: 200, height: 1), siblings: [corner], displays: [main]) == nil)

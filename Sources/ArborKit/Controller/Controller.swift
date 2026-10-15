@@ -996,20 +996,15 @@ public final class Controller {
 
   func isMostlyOffScreen(_ window: WindowID) -> Bool {
     guard let frame = windows[window]?.frame else { return false }
-    return displays.allSatisfy { frame.fractionInside($0.frame) < 0.5 }
+    return showsLessThanHalf(frame)
   }
 
-  /// Whether a hand could get hold of a window at `frame`: 24 points of its title bar are on some display, or the whole
-  /// width of a window narrower than that. The strip asked about is the window's top 24 points, less than the lowest
-  /// title bar there is (28, 32 and 52 points were measured), so nobody needs to know how high this one's is. Half of
-  /// that height is enough to hit.
-  func titleBarIsWithinReach(_ frame: CGRect) -> Bool {
-    let bar = CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: min(frame.height, Self.leastStrip))
-    return displays.contains {
-      let showing = bar.intersection($0.frame)
-      return !showing.isNull && showing.width >= min(bar.width, Self.leastStrip) && showing.height >= bar.height / 2
-    }
-  }
+  /// Less than half of `frame` shows, on all displays together (`areaShowing(of:)`). No display is asked by itself: a window
+  /// across the border of two shows on both.
+  func showsLessThanHalf(_ frame: CGRect) -> Bool { frame.showsLessThanHalf(on: displays.map(\.frame)) }
+
+  /// Whether a hand could get hold of a window at `frame`: 24 points of its title bar are on some display.
+  func titleBarIsWithinReach(_ frame: CGRect) -> Bool { frame.titleBarIsWithinReach(on: displays.map(\.frame)) }
 
   /// How Arbor came by a window it begins to arrange.
   enum Arrival {
@@ -1078,7 +1073,9 @@ public final class Controller {
     // As if its person's own hand had just left it there, so that no later layout pulls in what hangs over an edge. Not one that
     // is only not fetched now because it is in the Dock or hidden. Of the windows that open, only one that would have been
     // fetched at once before: for the others, where their app opens them is still no place anybody chose (Q20 will say).
-    if rescue, !isToBeFetched, arrival == .found || isMostlyOffScreen(window) { noteWhereItsUserLeftIt(window) }
+    // That is one with less than half of it on its own display, whatever the next one shows: a layout keeps a window on its own
+    // display's Desktop, and would do a moment later what the fetch no longer does.
+    if rescue, !isToBeFetched, arrival == .found || frame.fractionInside(display.frame) < 0.5 { noteWhereItsUserLeftIt(window) }
     hints[window] = WindowHint(bundleID: snapshot.bundleID, title: snapshot.title)
     notify(.windows)
   }
