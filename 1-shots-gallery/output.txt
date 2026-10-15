@@ -1,0 +1,1017 @@
+# mac-shell: scripts/mac-shell/shots-gallery.sh at 886617e, macOS 26.6.2, 2026-10-15T05:16Z
+
+== the Mac
+macOS 26.6.2
+built Arbor, the pointer tool and the app bundles in 12s
+Arbor runs from a bundle: Arbor 0.9.0 (build 0)
+as the Mac comes:
+Reduce Motion: true
+Increase Contrast: false
+Reduce Transparency: true
+com.apple.WindowManager EnableStandardClickToShowDesktop: 0
+Reduce Motion: true
+
+== light (40 s into the run)
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+/System/Library/Desktop Pictures/Solid Colors/Black.png
+> appearance light: now light
+Increase Contrast: false
+Reduce Transparency: false
+session 1: Arbor pid 9124, test windows 31 32 33 34 35 36 (pid 9059)
+running: 1 display, 0 docked and 6 floating, 0 out of view
+Arbor 0.9.0 (build 0)
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> trace on gallery-light
+recording /tmp/arbor-shell.aJS88W/home/traces/2026-10-15-051645-gallery-light.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> move 984 70
+
+▸ the menu bar item, and nothing else, before anything is docked  (light)
+shot: mac-shell/light-01-nothing-docked.png
+  ✔ the menu bar item shows
+  ✔ no surface behind the windows yet
+
+▸ the surface behind docked windows, and the line round the focused one  (light)
+> dock 31 left
+docked w31 at the left edge
+> dock 32 right
+docked w32 at the right edge
+> click 174 367
+> move 984 70
+shot: mac-shell/light-02-two-columns.png
+  ✔ the surface is on screen
+
+▸ the drop preview  (light)
+> drag 547 42 174 653 --no-release
+shot: mac-shell/light-03-drop-preview.png
+  ✔ it shows while the button is held
+> release
+  ✔ the window docked where it showed
+
+▸ tiles: a window's, a group's, the Desktop's  (light)
+> dock 35 beside 36 right
+docked w35 right of w36; its space is too small to show it, so it is a tile, and so is 1 other window now
+> dock 33 beside 32 bottom
+docked w33 below w32
+> dock 34 beside 33 right
+docked w34 right of w33; its space is too small to show it, so it is a tile, and so is 1 other window now
+> show-all
+showing everything
+> resize 31 right 110
+resized w31
+> resize 32 left 60
+resized w32
+> resize 36 top -90
+resized w36; its space is too small to show it, so it is a tile
+> resize 33 top -190
+resized w33; its space is too small to show it, so it is a tile
+> move 984 70
+shot: mac-shell/light-04-tiles.png
+  ✔ a window is a tile
+> set tileStyle icon
+tileStyle = icon (was name)
+shot: mac-shell/light-05-tiles-icons-alone.png
+> reset tileStyle
+tileStyle = name, the default (was icon)
+> move 118 578
+shot: mac-shell/light-05b-tile-help-tag.png
+> hold
+holding this view until `release`
+shot: mac-shell/light-05c-tiles-held.png
+> release
+released
+> move 984 70
+
+▸ the handle in a gap  (light)
+> move 159 458
+shot: mac-shell/light-06-gap-hover.png
+> drag 159 458 159 478 --no-release
+shot: mac-shell/light-06b-gap-dragged.png
+> release
+> move 984 70
+
+▸ what the settings make of tiles and of the surface  (light)
+> set tileStyle plain
+tileStyle = plain (was name)
+shot: mac-shell/light-06c-tiles-plain.png
+> reset tileStyle
+tileStyle = name, the default (was plain)
+> set appColours false
+appColours = false (was true)
+shot: mac-shell/light-06d-tiles-grey.png
+> reset appColours
+appColours = true, the default (was false)
+> set appColourAmount 1
+appColourAmount = 1 (was 0.25)
+shot: mac-shell/light-06e-tiles-full-colour.png
+> reset appColourAmount
+appColourAmount = 0.25, the default (was 1)
+> set dimBehindArranged 0
+dimBehindArranged = 0 (was 0.25)
+shot: mac-shell/light-06f-no-surface.png
+> reset dimBehindArranged
+dimBehindArranged = 0.25, the default (was 0)
+> set tintBehindArranged 0.2
+tintBehindArranged = 0.2 (was 0)
+shot: mac-shell/light-06g-surface-tinted.png
+> reset tintBehindArranged
+tintBehindArranged = 0, the default (was 0.2)
+> set blurBehindArranged 1
+blurBehindArranged = 1 (was 0)
+shot: mac-shell/light-06h-surface-blurred.png
+> reset blurBehindArranged
+blurBehindArranged = 0, the default (was 1)
+> set desktopEdge 0.3
+desktopEdge = 0.3 (was 0.05)
+shot: mac-shell/light-06i-desktop-edge-plain-to-see.png
+> reset desktopEdge
+desktopEdge = 0.05, the default (was 0.3)
+
+▸ the rectangle of a ⌃⌥-drag  (light)
+> drag 657 102 982 512 --mods ctrl+opt --no-release
+shot: mac-shell/light-06j-rectangle.png
+  ✘ it shows while the button is held
+      picture: mac-shell/fail-shots-gallery-1.png
+      | display 0 0 1024 768, visible 0 30 1024 675, camera n2, back no
+      |   tile n4 window   12 484 212 209  holds w36
+      |   tile n6 window   236 484 211 209  holds w35
+      |   tile n0 desktop  459 42 156 651  holds -
+      |   tile n11 group    627 564 385 129  holds w33 w34
+      |   w31 12 42 435 430        docked
+      |   w32 627 42 385 510       docked focused
+      |   w33 1023 677 325 319     docked parked
+      |   w34 1023 677 326 348     docked parked
+      |   w35 1023 677 326 348     docked parked
+      |   w36 1023 677 325 319     docked parked
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  resize 33 top -190: resized w33; its space is too small to show it, so it is a tile
+      log | INFO  settings: tileStyle = icon (was name)
+      log | INFO  settings: tileStyle = name, the default (was icon)
+      log | INFO  hold: none → view
+      log | INFO  hold: holding this view until `release`
+      log | INFO  hold: view → none
+      log | INFO  release: released
+      log | INFO  settings: tileStyle = plain (was name)
+      log | INFO  settings: tileStyle = name, the default (was plain)
+      log | INFO  settings: appColours = false (was true)
+      log | INFO  settings: appColours = true, the default (was false)
+      log | INFO  settings: appColourAmount = 1 (was 0.25)
+      log | INFO  settings: appColourAmount = 0.25, the default (was 1)
+      log | INFO  settings: dimBehindArranged = 0 (was 0.25)
+      log | INFO  settings: dimBehindArranged = 0.25, the default (was 0)
+      log | INFO  settings: tintBehindArranged = 0.2 (was 0)
+      log | INFO  settings: tintBehindArranged = 0, the default (was 0.2)
+      log | INFO  settings: blurBehindArranged = 1 (was 0)
+      log | INFO  settings: blurBehindArranged = 0, the default (was 1)
+      log | INFO  settings: desktopEdge = 0.3 (was 0.05)
+      log | INFO  settings: desktopEdge = 0.05, the default (was 0.3)
+      log | DEBUG focus is on w32
+      log | DEBUG w32 has the keyboard
+      log | DEBUG the press on w32 has moved nothing so far: looking less often
+> release --mods ctrl+opt
+shot: mac-shell/light-06k-framed.png
+> show-all
+showing everything
+
+▸ the panel of shortcuts  (light)
+> click 229 257
+> key ctrl+opt+shift+/
+shot: mac-shell/light-07-shortcuts.png
+shot: mac-shell/light-07-shortcuts-alone-1.png
+  ✔ it is up
+> key escape
+  ✔ ⎋ puts it away
+
+▸ Go to…  (light)
+> key ctrl+opt+g
+shot: mac-shell/light-08-go-to.png
+shot: mac-shell/light-08-go-to-alone-1.png
+  ✔ it is up
+> key b
+> key r
+> key e
+shot: mac-shell/light-09-go-to-typed.png
+shot: mac-shell/light-09-go-to-typed-alone-1.png
+> key z
+> key z
+shot: mac-shell/light-10-go-to-nothing-matches.png
+shot: mac-shell/light-10-go-to-nothing-matches-alone-1.png
+> key escape
+  ✔ ⎋ puts it away
+
+▸ the minimap  (light)
+> zoom 31
+framed w31
+> minimap
+showing the minimap
+shot: mac-shell/light-11-minimap.png
+shot: mac-shell/light-11-minimap-alone-1.png
+  ✔ it is up
+> minimap
+put the minimap away
+
+▸ the field for a name  (light)
+> key ctrl+opt+n
+shot: mac-shell/light-12-name-empty.png
+shot: mac-shell/light-12-name-empty-alone-1.png
+  ✔ it is up
+> key w
+> key r
+> key i
+> key t
+> key i
+> key n
+> key g
+shot: mac-shell/light-13-name-typed.png
+shot: mac-shell/light-13-name-typed-alone-1.png
+> key space
+> key a
+> key n
+> key d
+> key space
+> key e
+> key v
+> key e
+> key r
+> key y
+> key t
+> key h
+> key i
+> key n
+> key g
+> key space
+> key e
+> key l
+> key s
+> key e
+> key space
+> key t
+> key h
+> key a
+> key t
+> key space
+> key h
+> key a
+> key s
+> key space
+> key t
+> key o
+> key space
+> key b
+> key e
+> key space
+> key d
+> key o
+> key n
+> key e
+> key space
+> key b
+> key e
+> key f
+> key o
+> key r
+> key e
+> key space
+> key t
+> key h
+> key e
+> key space
+> key e
+> key n
+> key d
+> key space
+> key o
+> key f
+> key space
+> key t
+> key h
+> key e
+> key space
+> key m
+> key o
+> key n
+> key t
+> key h
+shot: mac-shell/light-13b-name-long.png
+shot: mac-shell/light-13b-name-long-alone-1.png
+> key escape
+
+▸ peek's outline  (light)
+> key ctrl+opt+space --down
+> move 819 297
+shot: mac-shell/light-14-peek.png
+  ✔ an outline shows while the keys are down
+> key ctrl+opt+escape --held
+> key ctrl+opt+space --up
+> show-all
+showing everything
+
+▸ the menu  (light)
+> click 229 257
+> click 732 15 --right
+  ✔ a right click opens it
+shot: mac-shell/light-15-menu.png
+shot: mac-shell/light-15-menu-alone-1.png
+> key escape
+  ✔ ⎋ closes it
+
+▸ the settings window, every pane  (light)
+> settings-window
+the settings window is open
+  ✔ it opens
+shot: mac-shell/light-16-settings-on-screen.png
+shot: mac-shell/light-17-settings-general.png
+> click 356 461
+shot: mac-shell/light-17-settings-general-advanced.png
+shot: mac-shell/light-17-settings-windows.png
+> click 356 500
+shot: mac-shell/light-17-settings-windows-advanced.png
+shot: mac-shell/light-17-settings-dragging.png
+shot: mac-shell/light-17-settings-gestures.png
+> click 356 448
+shot: mac-shell/light-17-settings-gestures-advanced.png
+shot: mac-shell/light-17-settings-calls.png
+shot: mac-shell/light-17-settings-appearance.png
+> click 356 552
+shot: mac-shell/light-17-settings-appearance-advanced.png
+shot: mac-shell/light-17-settings-menu-bar.png
+> click 356 201
+shot: mac-shell/light-17-settings-menu-bar-advanced.png
+shot: mac-shell/light-17-settings-apps.png
+> click 356 333
+shot: mac-shell/light-17-settings-apps-advanced.png
+shot: mac-shell/light-17-settings-scripting.png
+shot: mac-shell/light-17-settings-shortcuts.png
+shot: mac-shell/light-17-settings-rules.png
+> settings-window close
+the settings window is closed
+  ✔ it closes
+
+▸ the answer to Check for Updates…  (light)
+> check-for-updates
+checking for updates; `version` shows the answer
+shot: mac-shell/light-18-update.png
+shot: mac-shell/light-18-update-alone-1.png
+  ✔ a window answers
+axfind: process 9124 shows no AXButton “Later”
+> click
+pointer: expected x and y
+usage: pointer <command>
+  move x y                      glide the pointer there
+  click x y [count] [--right]   click (count 2 is a double-click), with the right button if asked
+      [--quick]                 the button comes up at once, as with tap to click (otherwise after 0.04 s)
+  drag x1 y1 x2 y2              press at the first point, drag to the second, release
+      [--steps n]               intermediate events (default 30)
+      [--duration s]            how long the movement takes (default 0.6)
+      [--hold s]                wait at the end before releasing (default 0.2)
+      [--no-release]            leave the button down; finish with `release`
+      [--no-settle]             without the small movement at the end that lets Arbor catch up
+  release [x y]                 release the button there (default: where the pointer is)
+  key <chord>                   press a shortcut, e.g. ctrl+opt+space, cmd+shift+f5, escape
+      [--down]                  press the modifiers and the key, and leave them all down
+      [--up]                    release the key, then the modifiers (modifiers alone, or a key alone, work too)
+      [--held]                  press and release the key only: its modifiers are down already, and stay down
+      [--repeat n]              n more key-down events marked as auto-repeat, as a key that is held sends
+  calm                          let go of every mouse button and key that is down, and say which, if any: for the end of a run
+  pinch x y <amount>            spread two fingers there (negative: pinch them together) by that much
+      [--steps n]               magnification, in that many events (default 10)
+  where                         the pointer's position and whether the left button is down
+  activity                      seconds since the pointer was used, seconds since a key was released, and the count
+                                of key presses, as Arbor reads them (AXWindowSystem+Input.swift)
+  displays                      id x y w h pixel-width pixel-height scale, one line per display
+  windows [--pid n]             id pid layer x y w h on|off owner, as the window server sees them
+      [--on-screen]             only those on screen, from the frontmost to the one at the back
+  frame <window id>             x y w h, as the window server sees it
+  visible <window id>           the share of the window that is on some display, 0 to 1; 0 when the window
+                                server does not show it (minimized, hidden, on another Space)
+  grab <window id>              x y: a point on its title bar that no other window covers
+  spot <window id>              x y: a point on its content that no other window covers
+  button <window id> <which>    x y: the middle of its close, minimize or zoom button
+  ax <window id>                its Accessibility role and subrole, e.g. AXWindow AXStandardWindow
+  front                         the process id of the app in front, which has the keyboard
+  status-item <pid> [--frame]   x y: the middle of that process's menu bar item (--frame: x y w h)
+  menu-item <pid> <title>       x y: the middle of the item of its open menu whose title starts so
+  menu-mark <pid> <title>       that item's mark, e.g. ✓, or - when it has none
+  button <pid> x y <name>       x y: the middle of the close, minimize or zoom button of that process's
+                                window whose top-left corner is nearest the point
+  screen-access | ax-access     true or false: Screen Recording, Accessibility
+  reduce-motion                 true or false: what an app launched now is told about Reduce Motion
+  increase-contrast | reduce-transparency       the same about those two
+  asleep                        true or false: whether the main display is asleep
+  picture <file> <w> <h> <#rrggbb> [<#rrggbb>]
+                                write a PNG: one colour, or a gradient between two under a grid
+  wallpaper [file]              show that picture on the desktop of every display; print what each shows
+click, drag, release and pinch take --mods <chord of modifiers>, e.g. --mods shift+cmd, held meanwhile.
+Every command that posts events takes --tap session, to post them after the window server's own handling.
+  ✘ Later puts it away
+      picture: mac-shell/fail-shots-gallery-2.png
+
+▸ the line on screen  (light)
+> set messages helpful
+messages = helpful (was off)
+> click 229 257
+> key ctrl+opt+up
+shot: mac-shell/light-19-line-problem.png
+shot: mac-shell/light-19-line-problem-alone-1.png
+  ✘ a key that cannot act is answered on screen
+      picture: mac-shell/fail-shots-gallery-3.png
+> key ctrl+opt+9
+shot: mac-shell/light-20-line-sentence.png
+shot: mac-shell/light-20-line-sentence-alone-1.png
+> key ctrl+opt+return
+shot: mac-shell/light-21-line-hint.png
+shot: mac-shell/light-21-line-hint-alone-1.png
+
+▸ paused  (light)
+> key ctrl+opt+escape
+shot: mac-shell/light-22-paused.png
+shot: mac-shell/light-22-paused-alone-1.png
+> click 782 15 --right
+shot: mac-shell/light-22b-paused-menu.png
+shot: mac-shell/light-22b-paused-menu-alone-1.png
+> key escape
+> key ctrl+opt+escape
+
+▸ for comparison: how macOS writes the arrow keys in a menu of its own
+> click 260 14
+shot: mac-shell/light-24-finders-go-menu.png
+> key escape
+everything Arbor said on screen in this look:
+  Already showing everything
+  View 9 is not saved; ⌃⌥⇧9 saves where you are looking
+  Your other windows are out of view, not closed · ⌃⌥Space shows everything
+  Paused until ⌃⌥⎋; windows are back in view, in their own sizes
+  Resumed
+> trace off
+arborctl: not recording; last trace /tmp/arbor-shell.aJS88W/home/traces/2026-10-15-051645-gallery-light.jsonl: 1774 lines, Arbor stopped
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+shot: mac-shell/light-23-after-quit.png
+
+== dark (191 s into the run)
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-night.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-night.png
+/Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+> appearance dark: now dark
+Increase Contrast: false
+Reduce Transparency: false
+session 2: Arbor pid 16709, test windows 116 117 118 119 120 121 (pid 16686)
+running: 1 display, 0 docked and 6 floating, 0 out of view
+Arbor 0.9.0 (build 0)
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> trace on gallery-dark
+recording /tmp/arbor-shell.S1ETln/home/traces/2026-10-15-051915-gallery-dark.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> move 984 70
+
+▸ the menu bar item, and nothing else, before anything is docked  (dark)
+shot: mac-shell/dark-01-nothing-docked.png
+  ✔ the menu bar item shows
+  ✔ no surface behind the windows yet
+
+▸ the surface behind docked windows, and the line round the focused one  (dark)
+> dock 116 left
+docked w116 at the left edge
+> dock 117 right
+docked w117 at the right edge
+> click 174 367
+> move 984 70
+shot: mac-shell/dark-02-two-columns.png
+  ✔ the surface is on screen
+
+▸ the drop preview  (dark)
+> drag 547 42 174 653 --no-release
+shot: mac-shell/dark-03-drop-preview.png
+  ✔ it shows while the button is held
+> release
+  ✔ the window docked where it showed
+
+▸ tiles: a window's, a group's, the Desktop's  (dark)
+> dock 120 beside 121 right
+docked w120 right of w121; its space is too small to show it, so it is a tile, and so is 1 other window now
+> dock 118 beside 117 bottom
+docked w118 below w117
+> dock 119 beside 118 right
+docked w119 right of w118; its space is too small to show it, so it is a tile, and so is 1 other window now
+> show-all
+showing everything
+> resize 116 right 110
+resized w116
+> resize 117 left 60
+resized w117
+> resize 121 top -90
+resized w121; its space is too small to show it, so it is a tile
+> resize 118 top -190
+resized w118; its space is too small to show it, so it is a tile
+> move 984 70
+shot: mac-shell/dark-04-tiles.png
+  ✔ a window is a tile
+> set tileStyle icon
+tileStyle = icon (was name)
+shot: mac-shell/dark-05-tiles-icons-alone.png
+> reset tileStyle
+tileStyle = name, the default (was icon)
+> move 118 578
+shot: mac-shell/dark-05b-tile-help-tag.png
+> hold
+holding this view until `release`
+shot: mac-shell/dark-05c-tiles-held.png
+> release
+released
+> move 984 70
+
+▸ the handle in a gap  (dark)
+> move 159 458
+shot: mac-shell/dark-06-gap-hover.png
+> drag 159 458 159 478 --no-release
+shot: mac-shell/dark-06b-gap-dragged.png
+> release
+> move 984 70
+
+▸ what the settings make of tiles and of the surface  (dark)
+> set tileStyle plain
+tileStyle = plain (was name)
+shot: mac-shell/dark-06c-tiles-plain.png
+> reset tileStyle
+tileStyle = name, the default (was plain)
+> set appColours false
+appColours = false (was true)
+shot: mac-shell/dark-06d-tiles-grey.png
+> reset appColours
+appColours = true, the default (was false)
+> set appColourAmount 1
+appColourAmount = 1 (was 0.25)
+shot: mac-shell/dark-06e-tiles-full-colour.png
+> reset appColourAmount
+appColourAmount = 0.25, the default (was 1)
+> set dimBehindArranged 0
+dimBehindArranged = 0 (was 0.25)
+shot: mac-shell/dark-06f-no-surface.png
+> reset dimBehindArranged
+dimBehindArranged = 0.25, the default (was 0)
+> set tintBehindArranged 0.2
+tintBehindArranged = 0.2 (was 0)
+shot: mac-shell/dark-06g-surface-tinted.png
+> reset tintBehindArranged
+tintBehindArranged = 0, the default (was 0.2)
+> set blurBehindArranged 1
+blurBehindArranged = 1 (was 0)
+shot: mac-shell/dark-06h-surface-blurred.png
+> reset blurBehindArranged
+blurBehindArranged = 0, the default (was 1)
+> set desktopEdge 0.3
+desktopEdge = 0.3 (was 0.05)
+shot: mac-shell/dark-06i-desktop-edge-plain-to-see.png
+> reset desktopEdge
+desktopEdge = 0.05, the default (was 0.3)
+
+▸ the rectangle of a ⌃⌥-drag  (dark)
+> drag 657 102 982 512 --mods ctrl+opt --no-release
+shot: mac-shell/dark-06j-rectangle.png
+  ✘ it shows while the button is held
+      picture: mac-shell/fail-shots-gallery-4.png
+      | display 0 0 1024 768, visible 0 30 1024 675, camera n2, back no
+      |   tile n4 window   12 484 212 209  holds w121
+      |   tile n6 window   236 484 211 209  holds w120
+      |   tile n0 desktop  459 42 156 651  holds -
+      |   tile n11 group    627 564 385 129  holds w118 w119
+      |   w116 12 42 435 430        docked
+      |   w117 627 42 385 510       docked focused
+      |   w118 1023 677 325 319     docked parked
+      |   w119 1023 677 326 348     docked parked
+      |   w120 1023 677 326 348     docked parked
+      |   w121 1023 677 325 319     docked parked
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  resize 118 top -190: resized w118; its space is too small to show it, so it is a tile
+      log | INFO  settings: tileStyle = icon (was name)
+      log | INFO  settings: tileStyle = name, the default (was icon)
+      log | INFO  hold: none → view
+      log | INFO  hold: holding this view until `release`
+      log | INFO  hold: view → none
+      log | INFO  release: released
+      log | INFO  settings: tileStyle = plain (was name)
+      log | INFO  settings: tileStyle = name, the default (was plain)
+      log | INFO  settings: appColours = false (was true)
+      log | INFO  settings: appColours = true, the default (was false)
+      log | INFO  settings: appColourAmount = 1 (was 0.25)
+      log | INFO  settings: appColourAmount = 0.25, the default (was 1)
+      log | INFO  settings: dimBehindArranged = 0 (was 0.25)
+      log | INFO  settings: dimBehindArranged = 0.25, the default (was 0)
+      log | INFO  settings: tintBehindArranged = 0.2 (was 0)
+      log | INFO  settings: tintBehindArranged = 0, the default (was 0.2)
+      log | INFO  settings: blurBehindArranged = 1 (was 0)
+      log | INFO  settings: blurBehindArranged = 0, the default (was 1)
+      log | INFO  settings: desktopEdge = 0.3 (was 0.05)
+      log | INFO  settings: desktopEdge = 0.05, the default (was 0.3)
+      log | DEBUG focus is on w117
+      log | DEBUG w117 has the keyboard
+      log | DEBUG the press on w117 has moved nothing so far: looking less often
+> release --mods ctrl+opt
+shot: mac-shell/dark-06k-framed.png
+> show-all
+showing everything
+
+▸ the panel of shortcuts  (dark)
+> click 229 257
+> key ctrl+opt+shift+/
+shot: mac-shell/dark-07-shortcuts.png
+shot: mac-shell/dark-07-shortcuts-alone-1.png
+  ✔ it is up
+> key escape
+  ✔ ⎋ puts it away
+
+▸ Go to…  (dark)
+> key ctrl+opt+g
+shot: mac-shell/dark-08-go-to.png
+shot: mac-shell/dark-08-go-to-alone-1.png
+  ✔ it is up
+> key b
+> key r
+> key e
+shot: mac-shell/dark-09-go-to-typed.png
+shot: mac-shell/dark-09-go-to-typed-alone-1.png
+> key z
+> key z
+shot: mac-shell/dark-10-go-to-nothing-matches.png
+shot: mac-shell/dark-10-go-to-nothing-matches-alone-1.png
+> key escape
+  ✔ ⎋ puts it away
+
+▸ the minimap  (dark)
+> zoom 116
+framed w116
+> minimap
+showing the minimap
+shot: mac-shell/dark-11-minimap.png
+shot: mac-shell/dark-11-minimap-alone-1.png
+  ✔ it is up
+> minimap
+put the minimap away
+
+▸ the field for a name  (dark)
+> key ctrl+opt+n
+shot: mac-shell/dark-12-name-empty.png
+shot: mac-shell/dark-12-name-empty-alone-1.png
+  ✔ it is up
+> key w
+> key r
+> key i
+> key t
+> key i
+> key n
+> key g
+shot: mac-shell/dark-13-name-typed.png
+shot: mac-shell/dark-13-name-typed-alone-1.png
+> key space
+> key a
+> key n
+> key d
+> key space
+> key e
+> key v
+> key e
+> key r
+> key y
+> key t
+> key h
+> key i
+> key n
+> key g
+> key space
+> key e
+> key l
+> key s
+> key e
+> key space
+> key t
+> key h
+> key a
+> key t
+> key space
+> key h
+> key a
+> key s
+> key space
+> key t
+> key o
+> key space
+> key b
+> key e
+> key space
+> key d
+> key o
+> key n
+> key e
+> key space
+> key b
+> key e
+> key f
+> key o
+> key r
+> key e
+> key space
+> key t
+> key h
+> key e
+> key space
+> key e
+> key n
+> key d
+> key space
+> key o
+> key f
+> key space
+> key t
+> key h
+> key e
+> key space
+> key m
+> key o
+> key n
+> key t
+> key h
+shot: mac-shell/dark-13b-name-long.png
+shot: mac-shell/dark-13b-name-long-alone-1.png
+> key escape
+
+▸ peek's outline  (dark)
+> key ctrl+opt+space --down
+> move 819 297
+shot: mac-shell/dark-14-peek.png
+  ✔ an outline shows while the keys are down
+> key ctrl+opt+escape --held
+> key ctrl+opt+space --up
+> show-all
+showing everything
+
+▸ the menu  (dark)
+> click 229 257
+> click 732 15 --right
+  ✔ a right click opens it
+shot: mac-shell/dark-15-menu.png
+shot: mac-shell/dark-15-menu-alone-1.png
+> key escape
+  ✔ ⎋ closes it
+
+▸ the settings window, every pane  (dark)
+> settings-window
+the settings window is open
+  ✔ it opens
+shot: mac-shell/dark-16-settings-on-screen.png
+shot: mac-shell/dark-17-settings-general.png
+> click 356 461
+shot: mac-shell/dark-17-settings-general-advanced.png
+shot: mac-shell/dark-17-settings-windows.png
+> click 356 500
+shot: mac-shell/dark-17-settings-windows-advanced.png
+shot: mac-shell/dark-17-settings-dragging.png
+shot: mac-shell/dark-17-settings-gestures.png
+> click 356 448
+shot: mac-shell/dark-17-settings-gestures-advanced.png
+shot: mac-shell/dark-17-settings-calls.png
+shot: mac-shell/dark-17-settings-appearance.png
+> click 356 552
+shot: mac-shell/dark-17-settings-appearance-advanced.png
+shot: mac-shell/dark-17-settings-menu-bar.png
+> click 356 201
+shot: mac-shell/dark-17-settings-menu-bar-advanced.png
+shot: mac-shell/dark-17-settings-apps.png
+> click 356 333
+shot: mac-shell/dark-17-settings-apps-advanced.png
+shot: mac-shell/dark-17-settings-scripting.png
+shot: mac-shell/dark-17-settings-shortcuts.png
+shot: mac-shell/dark-17-settings-rules.png
+> settings-window close
+the settings window is closed
+  ✔ it closes
+
+▸ the answer to Check for Updates…  (dark)
+> check-for-updates
+checking for updates; `version` shows the answer
+shot: mac-shell/dark-18-update.png
+shot: mac-shell/dark-18-update-alone-1.png
+  ✔ a window answers
+> click 512 382
+  ✔ Later puts it away
+
+▸ the line on screen  (dark)
+> set messages helpful
+messages = helpful (was off)
+> click 229 257
+> key ctrl+opt+up
+shot: mac-shell/dark-19-line-problem.png
+shot: mac-shell/dark-19-line-problem-alone-1.png
+  ✘ a key that cannot act is answered on screen
+      picture: mac-shell/fail-shots-gallery-5.png
+> key ctrl+opt+9
+shot: mac-shell/dark-20-line-sentence.png
+shot: mac-shell/dark-20-line-sentence-alone-1.png
+> key ctrl+opt+return
+shot: mac-shell/dark-21-line-hint.png
+shot: mac-shell/dark-21-line-hint-alone-1.png
+
+▸ paused  (dark)
+> key ctrl+opt+escape
+shot: mac-shell/dark-22-paused.png
+shot: mac-shell/dark-22-paused-alone-1.png
+> click 782 15 --right
+shot: mac-shell/dark-22b-paused-menu.png
+shot: mac-shell/dark-22b-paused-menu-alone-1.png
+> key escape
+> key ctrl+opt+escape
+everything Arbor said on screen in this look:
+  Already showing everything
+  View 9 is not saved; ⌃⌥⇧9 saves where you are looking
+  Your other windows are out of view, not closed · ⌃⌥Space shows everything
+  Paused until ⌃⌥⎋; windows are back in view, in their own sizes
+  Resumed
+> trace off
+arborctl: not recording; last trace /tmp/arbor-shell.S1ETln/home/traces/2026-10-15-051915-gallery-dark.jsonl: 1801 lines, Arbor stopped
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+shot: mac-shell/dark-23-after-quit.png
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+/Users/runner/work/arbor/arbor/.build/mac-shell/scenery-night.png
+> appearance light: now light
+Increase Contrast: false
+Reduce Transparency: false
+
+▸ a title is drawn and nothing else
+  ✔ the word in every title is in nothing the run brings back but the pictures
+ 
+8894 arbor-shots-gallery-2.log
+8863 arbor-shots-gallery.log
+0 arbor-stderr-shots-gallery-2.log
+0 arbor-stderr-shots-gallery.log
+0 build-axfind.log
+287 build-bundles.log
+0 build-scenery.log
+78 build.log
+281729 dark-01-nothing-docked.png
+208773 dark-02-two-columns.png
+211329 dark-03-drop-preview.png
+270704 dark-04-tiles.png
+264503 dark-05-tiles-icons-alone.png
+272890 dark-05b-tile-help-tag.png
+272463 dark-05c-tiles-held.png
+270715 dark-06-gap-hover.png
+271002 dark-06b-gap-dragged.png
+252779 dark-06c-tiles-plain.png
+259352 dark-06d-tiles-grey.png
+271965 dark-06e-tiles-full-colour.png
+280001 dark-06f-no-surface.png
+276176 dark-06g-surface-tinted.png
+244390 dark-06h-surface-blurred.png
+269049 dark-06i-desktop-edge-plain-to-see.png
+272370 dark-06j-rectangle.png
+272447 dark-06k-framed.png
+107399 dark-07-shortcuts-alone-1.png
+357214 dark-07-shortcuts.png
+56670 dark-08-go-to-alone-1.png
+299627 dark-08-go-to.png
+52269 dark-09-go-to-typed-alone-1.png
+291463 dark-09-go-to-typed.png
+10657 dark-10-go-to-nothing-matches-alone-1.png
+268626 dark-10-go-to-nothing-matches.png
+7179 dark-11-minimap-alone-1.png
+125797 dark-11-minimap.png
+10300 dark-12-name-empty-alone-1.png
+130228 dark-12-name-empty.png
+11069 dark-13-name-typed-alone-1.png
+131174 dark-13-name-typed.png
+14446 dark-13b-name-long-alone-1.png
+146101 dark-13b-name-long.png
+281642 dark-14-peek.png
+52924 dark-15-menu-alone-1.png
+406273 dark-15-menu.png
+338304 dark-16-settings-on-screen.png
+104254 dark-17-settings-appearance-advanced.png
+101198 dark-17-settings-appearance.png
+65773 dark-17-settings-apps-advanced.png
+60187 dark-17-settings-apps.png
+73134 dark-17-settings-calls.png
+74482 dark-17-settings-dragging.png
+114914 dark-17-settings-general-advanced.png
+90474 dark-17-settings-general.png
+111983 dark-17-settings-gestures-advanced.png
+87237 dark-17-settings-gestures.png
+57562 dark-17-settings-menu-bar-advanced.png
+51637 dark-17-settings-menu-bar.png
+61829 dark-17-settings-rules.png
+50372 dark-17-settings-scripting.png
+78336 dark-17-settings-shortcuts.png
+109249 dark-17-settings-windows-advanced.png
+95792 dark-17-settings-windows.png
+23657 dark-18-update-alone-1.png
+317359 dark-18-update.png
+7589 dark-19-line-problem-alone-1.png
+289251 dark-19-line-problem.png
+10163 dark-20-line-sentence-alone-1.png
+295296 dark-20-line-sentence.png
+12288 dark-21-line-hint-alone-1.png
+143739 dark-21-line-hint.png
+10125 dark-22-paused-alone-1.png
+287300 dark-22-paused.png
+14416 dark-22b-paused-menu-alone-1.png
+320637 dark-22b-paused-menu.png
+276475 dark-23-after-quit.png
+96 evidence
+310503 fail-shots-gallery-1.png
+326415 fail-shots-gallery-2.png
+326570 fail-shots-gallery-3.png
+272451 fail-shots-gallery-4.png
+282080 fail-shots-gallery-5.png
+310834 light-01-nothing-docked.png
+232560 light-02-two-columns.png
+233605 light-03-drop-preview.png
+308797 light-04-tiles.png
+301782 light-05-tiles-icons-alone.png
+310119 light-05b-tile-help-tag.png
+310188 light-05c-tiles-held.png
+308673 light-06-gap-hover.png
+310078 light-06b-gap-dragged.png
+290777 light-06c-tiles-plain.png
+300870 light-06d-tiles-grey.png
+307074 light-06e-tiles-full-colour.png
+316913 light-06f-no-surface.png
+307435 light-06g-surface-tinted.png
+294108 light-06h-surface-blurred.png
+307139 light-06i-desktop-edge-plain-to-see.png
+310416 light-06j-rectangle.png
+310503 light-06k-framed.png
+101953 light-07-shortcuts-alone-1.png
+375798 light-07-shortcuts.png
+51752 light-08-go-to-alone-1.png
+332272 light-08-go-to.png
+48173 light-09-go-to-typed-alone-1.png
+325415 light-09-go-to-typed.png
+9909 light-10-go-to-nothing-matches-alone-1.png
+303131 light-10-go-to-nothing-matches.png
+7081 light-11-minimap-alone-1.png
+134743 light-11-minimap.png
+10578 light-12-name-empty-alone-1.png
+139225 light-12-name-empty.png
+11248 light-13-name-typed-alone-1.png
+139834 light-13-name-typed.png
+14535 light-13b-name-long-alone-1.png
+143300 light-13b-name-long.png
+306756 light-14-peek.png
+51504 light-15-menu-alone-1.png
+416167 light-15-menu.png
+348218 light-16-settings-on-screen.png
+97687 light-17-settings-appearance-advanced.png
+94682 light-17-settings-appearance.png
+62846 light-17-settings-apps-advanced.png
+58106 light-17-settings-apps.png
+69193 light-17-settings-calls.png
+70997 light-17-settings-dragging.png
+106586 light-17-settings-general-advanced.png
+84640 light-17-settings-general.png
+104380 light-17-settings-gestures-advanced.png
+81510 light-17-settings-gestures.png
+55584 light-17-settings-menu-bar-advanced.png
+50165 light-17-settings-menu-bar.png
+59217 light-17-settings-rules.png
+48883 light-17-settings-scripting.png
+75897 light-17-settings-shortcuts.png
+102144 light-17-settings-windows-advanced.png
+89979 light-17-settings-windows.png
+19462 light-18-update-alone-1.png
+326415 light-18-update.png
+8091 light-19-line-problem-alone-1.png
+334051 light-19-line-problem.png
+11312 light-20-line-sentence-alone-1.png
+339968 light-20-line-sentence.png
+12289 light-21-line-hint-alone-1.png
+194052 light-21-line-hint.png
+11052 light-22-paused-alone-1.png
+356282 light-22-paused.png
+14083 light-22b-paused-menu-alone-1.png
+384564 light-22b-paused-menu.png
+271252 light-23-after-quit.png
+237919 light-24-finders-go-menu.png
+28663 output.txt
+0 screencapture.log
+0 test-windows.log
+128 traces
+
+52 passed, 5 failed
+exit code 1

@@ -1,0 +1,131 @@
+Building for debugging...
+[Computing dependencies]
+[Pre-planning 1 / 356]
+[Planning deferred tasks]
+[41 / 75] ArborIPCTests-product
+[43 / 79] ArborCoreTests-product
+[43 / 84] ArborKitTests-product
+[43 / 93]
+[47 / 93] ArborKitTests-product
+[47 / 93] ArborCoreTests-product
+[50 / 93] ArborKitTests-product
+[58 / 93] ArborKitTests-product
+[64 / 93] ArborKitTests-product
+[65 / 93] ArborKitTests-product
+[67 / 93] ArborKitTests-product
+[68 / 93] ArborKitTests-product
+[69 / 93] ArborKitTests-product
+/Users/runner/work/arbor/arbor/Tests/ArborKitTests/FaithfulFakeTests.swift:99:12: [1;33mwarning: [1;39mresult of call to 'setFrame(_:of:)' is unused[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+ [0;36m97 |[0;0m     let (system, recorder, _, b, _) = make()
+ [0;36m98 |[0;0m     system.focus(b)
+ [0;36m99 |[0;0m     system.setFrame(CGRect(x: 10.5, y: 20, width: 300.7, height: 200), of: b)
+    [0;36m|[0;0m            `- [1;33mwarning: [1;39mresult of call to 'setFrame(_:of:)' is unused[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+[0;36m100 |[0;0m     #expect(recorder.log == ["keyboard moved"], "nothing else is reported from inside the call")
+[0;36m101 |[0;0m     #expect(system.frame(of: b) == CGRect(x: 10, y: 20, width: 300, height: 200), "whole points")
+
+/Users/runner/work/arbor/arbor/Tests/ArborKitTests/FaithfulFakeTests.swift:107:12: [1;33mwarning: [1;39mresult of call to 'setFrame(_:of:)' is unused[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+[0;36m105 |[0;0m     recorder.log.removeAll()
+[0;36m106 |[0;0m     system.focus(b)
+[0;36m107 |[0;0m     system.setFrame(CGRect(x: 10, y: 20, width: 300, height: 200), of: b)
+    [0;36m|[0;0m            `- [1;33mwarning: [1;39mresult of call to 'setFrame(_:of:)' is unused[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+[0;36m108 |[0;0m     system.deliverEchoes()
+[0;36m109 |[0;0m     #expect(recorder.log.isEmpty, "a window that has the keyboard and the frame already answers with nothing")
+
+/Users/runner/work/arbor/arbor/Tests/ArborKitTests/FaithfulFakeTests.swift:115:12: [1;33mwarning: [1;39mresult of call to 'setFrame(_:of:)' is unused[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+[0;36m113 |[0;0m     let (system, recorder, a, b, _) = make(.none)
+[0;36m114 |[0;0m     system.focus(b)
+[0;36m115 |[0;0m     system.setFrame(CGRect(x: 10.5, y: 20, width: 300, height: 200), of: b)
+    [0;36m|[0;0m            `- [1;33mwarning: [1;39mresult of call to 'setFrame(_:of:)' is unused[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+[0;36m116 |[0;0m     system.deliverEchoes()
+[0;36m117 |[0;0m     system.userFocus(a)
+
+/Users/runner/work/arbor/arbor/Tests/ArborKitTests/FocusTests.swift:456:13: [1;33mwarning: [1;39mimmutable value 'a' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+[0;36m454 |[0;0m 
+[0;36m455 |[0;0m   @Test func aCommandThatLeavesTheViewWhereItIsLeavesTheFocusAloneToo() {
+[0;36m456 |[0;0m     let (h, a, _, _) = threeApps()
+    [0;36m|[0;0m             `- [1;33mwarning: [1;39mimmutable value 'a' was never used; consider replacing with '_' or removing it[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+[0;36m457 |[0;0m     h.system.userFocusesNothing()
+[0;36m458 |[0;0m     h.run("zoom \(h.workspace.camera)")
+
+[#NoUsage]: <https://docs.swift.org/compiler/documentation/diagnostics/no-usage>
+[69 / 93] ArborIPCTests-product
+/Users/runner/work/arbor/arbor/Tests/ArborKitTests/MenuBarTests.swift:229:12: [1;33mwarning: [1;39m'asleep' mutated after capture by sendable closure[0;0m
+[0;36m218 |[0;0m   @Test func aNoThatHadAnotherReasonHealsWhenTheItemIsTriedAgain() {
+[0;36m219 |[0;0m     let (h, a) = dayOne()
+[0;36m220 |[0;0m     var asleep = false
+    [0;36m|[0;0m         `- [1;39mnote: [1;39mvariable defined here[0;0m
+[0;36m221 |[0;0m     let item = Item(h, answer: { _ in !asleep })
+    [0;36m|[0;0m                                |       `- [1;39mnote: [1;39mcapturing use[0;0m
+    [0;36m|[0;0m                                `- [1;39mnote: [1;39mvariable captured by sendable closure[0;0m
+[0;36m222 |[0;0m     h.scheduler.advance(by: 1)
+[0;36m223 |[0;0m     h.run("dock \(a.rawValue) left")
+    [0;36m:[0;0m
+[0;36m227 |[0;0m     h.scheduler.advance(by: 2)
+[0;36m228 |[0;0m     #expect(item.drawn.buttons.isEmpty, "taken for an item that found no room")
+[0;36m229 |[0;0m     asleep = false
+    [0;36m|[0;0m            `- [1;33mwarning: [1;39m'asleep' mutated after capture by sendable closure[0;0m
+[0;36m230 |[0;0m     item.watcher?.tryAgain()
+[0;36m231 |[0;0m     #expect(item.drawn.buttons.count == 6)
+
+/Users/runner/work/arbor/arbor/Tests/ArborKitTests/MenuBarTests.swift:269:10: [1;33mwarning: [1;39m'room' mutated after capture by sendable closure[0;0m
+[0;36m264 |[0;0m   @Test func evenTheSingleIconLeftOutIsAProblem() {
+[0;36m265 |[0;0m     let (h, _) = dayOne()
+[0;36m266 |[0;0m     var room = true
+    [0;36m|[0;0m         `- [1;39mnote: [1;39mvariable defined here[0;0m
+[0;36m267 |[0;0m     let item = Item(h, answer: { _ in room })
+    [0;36m|[0;0m                                |      `- [1;39mnote: [1;39mcapturing use[0;0m
+    [0;36m|[0;0m                                `- [1;39mnote: [1;39mvariable captured by sendable closure[0;0m
+[0;36m268 |[0;0m     h.scheduler.advance(by: 1)
+[0;36m269 |[0;0m     room = false
+    [0;36m|[0;0m          `- [1;33mwarning: [1;39m'room' mutated after capture by sendable closure[0;0m
+[0;36m270 |[0;0m     // Something has the item looked at again.
+[0;36m271 |[0;0m     h.run("pause")
+[71 / 93] ArborIPCTests-product
+[71 / 93] ArborCoreTests-product
+[73 / 93] ArborIPCTests-product
+[74 / 93] ArborIPCTests-product
+[75 / 93] ArborIPCTests-product
+[76 / 93] ArborCoreTests-product
+macro expansion #expect:2:6: [1;33mwarning: [1;39mresult of call to 'contains' is unused[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+`- /Users/runner/work/arbor/arbor/Tests/ArborKitTests/TraceReplayTests.swift:206:66: [1;39mnote: [1;39mexpanded code originates here[0;0m
+ [0;36m204 |[0;0m     #expect(lines.contains(.command("desktop", from: .script)))
+ [0;36m205 |[0;0m     #expect(lines.contains(.command("show-all", from: .shortcut)))
+ [0;36m206 |[0;0m     [4;39m#expect(lines.contains(.command("show-all", from: .gesture)))[0;0m
+     [0;36m|[0;0m     `- [1;39mnote: [1;39min expansion of macro 'expect' here[0;0m
+[0;36m     +--- [0;0mmacro expansion #expect [0;36m--------------------------------------[0;0m
+[0;36m     |[0;0m[0;36m1 |[0;0m Testing.__checkFunctionCall(lines.self,calling: {
+[0;36m     |[0;0m[0;36m2 |[0;0m   $0.contains($1)
+[0;36m     |[0;0m  [0;36m|[0;0m      `- [1;33mwarning: [1;39mresult of call to 'contains' is unused[0;0m [#]8;;https://docs.swift.org/compiler/documentation/diagnostics/no-usage\NoUsage]8;;\]
+[0;36m     |[0;0m[0;36m3 |[0;0m },.command("show-all", from: .gesture),expression: .__fromFunctionCall(.__fromSyntaxNode("lines"),"contains",(nil,.__fromSyntaxNode(#".command("show-all", from: .gesture)"#))),comments: [],isRequired: false,sourceLocation: Testing.SourceLocation.__here()).__expected()
+[0;36m     +----------------------------[0;0m[0;36m--------------------------------------[0;0m
+ [0;36m207 |[0;0m     #expect(lines.contains { if case .other(.event, "shortcut", _, _) = $0 { true } else { false } })
+ [0;36m208 |[0;0m     #expect(lines.contains { if case .other(.action, "peekOutlineClicked", _, _) = $0 { true } else { false } })
+
+/Users/runner/work/arbor/arbor/Tests/ArborKitTests/TraceRecorderTests.swift:526:11: [1;33mwarning: [1;39m'now' mutated after capture by sendable closure[0;0m
+ [0;36m519 |[0;0m     let sink = MemoryTraceSink(location: "memory")
+ [0;36m520 |[0;0m     recorder.openSink = { _ in sink }
+ [0;36m521 |[0;0m     var now = 0.0
+     [0;36m|[0;0m         `- [1;39mnote: [1;39mvariable defined here[0;0m
+ [0;36m522 |[0;0m     recorder.clock = { now }
+     [0;36m|[0;0m                      | `- [1;39mnote: [1;39mcapturing use[0;0m
+     [0;36m|[0;0m                      `- [1;39mnote: [1;39mvariable captured by sendable closure[0;0m
+ [0;36m523 |[0;0m     try recorder.begin(name: "x", fileName: "x") { _ in Self.emptyHeader }
+ [0;36m524 |[0;0m     let id = WindowID(5)
+ [0;36m525 |[0;0m     for step in 1...100 {
+ [0;36m526 |[0;0m       now = Double(step) * 0.001
+     [0;36m|[0;0m           `- [1;33mwarning: [1;39m'now' mutated after capture by sendable closure[0;0m
+ [0;36m527 |[0;0m       recorder.stimulus(.dragMoved(id, to: CGPoint(x: step, y: 0)), thinKey: "dragMoved") {
+ [0;36m528 |[0;0m         _ = recorder.read("keys") { step < 60 ? "none" : "cmd" }
+
+[#NoUsage]: <https://docs.swift.org/compiler/documentation/diagnostics/no-usage>
+[76 / 93] ArborIPCTests-product
+[78 / 93] ArborKitTests-product
+[80 / 93] ArborIPCTests-product
+[80 / 93] ArborKitTests-product
+[81 / 93]
+[82 / 93] ArborKitTests-product
+[87 / 93] ArborCoreTests-product
+[89 / 93] ArborCoreTests-product
+[90 / 93] ArborCoreTests-product
+[91 / 93] ArborCoreTests-product
+Build complete! (344.59 sec)

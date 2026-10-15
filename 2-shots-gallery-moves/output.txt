@@ -1,0 +1,603 @@
+# mac-shell: scripts/mac-shell/shots-gallery-moves.sh at 886617e, macOS 26.6.2, 2026-10-15T05:21Z
+
+== the Mac
+macOS 26.6.2
+built Arbor, the pointer tool and the app bundles in 5s
+Arbor runs from a bundle: Arbor 0.9.0 (build 0)
+as the Mac comes:
+Reduce Motion: true
+Increase Contrast: false
+Reduce Transparency: false
+com.apple.WindowManager EnableStandardClickToShowDesktop: 0
+Reduce Motion: true
+
+== motion (13 s into the run)
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+/Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+> appearance light: now light
+Increase Contrast: false
+Reduce Transparency: false
+Reduce Motion: false
+session 1: Arbor pid 24749, test windows 199 200 201 202 (pid 24670)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor 0.9.0 (build 0)
+> trace on gallery-motion
+recording /tmp/arbor-shell.4EPixZ/home/traces/2026-10-15-052150-gallery-motion.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> move 984 70
+
+▸ motion: framing a window, and back
+> dock 199 left
+docked w199 at the left edge
+> dock 200 right
+docked w200 at the right edge
+> dock 201 beside 200 bottom
+docked w201 below w200
+> zoom 199
+framed w199
+film: 6 pictures in 1.09 s
+shot: mac-shell/motion-1-frame-1.png
+shot: mac-shell/motion-1-frame-2.png
+shot: mac-shell/motion-1-frame-3.png
+shot: mac-shell/motion-1-frame-4.png
+shot: mac-shell/motion-1-frame-5.png
+shot: mac-shell/motion-1-frame-6.png
+> show-all
+showing everything
+film: 6 pictures in 1.10 s
+shot: mac-shell/motion-2-everything-1.png
+shot: mac-shell/motion-2-everything-2.png
+shot: mac-shell/motion-2-everything-3.png
+shot: mac-shell/motion-2-everything-4.png
+shot: mac-shell/motion-2-everything-5.png
+shot: mac-shell/motion-2-everything-6.png
+
+▸ motion: docking
+> dock 202 beside 199 bottom
+docked w202 below w199
+film: 6 pictures in 1.00 s
+shot: mac-shell/motion-3-dock-1.png
+shot: mac-shell/motion-3-dock-2.png
+shot: mac-shell/motion-3-dock-3.png
+shot: mac-shell/motion-3-dock-4.png
+shot: mac-shell/motion-3-dock-5.png
+shot: mac-shell/motion-3-dock-6.png
+  ✔ nothing of the stage is left
+> trace off
+trace saved: /tmp/arbor-shell.4EPixZ/home/traces/2026-10-15-052150-gallery-motion.jsonl: 241 lines, trace off
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+Reduce Motion: true
+
+== large (31 s into the run)
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+/Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+> appearance light: now light
+Increase Contrast: false
+Reduce Transparency: false
+session 2: Arbor pid 25710, test windows 215 216 217 218 219 (pid 25686)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor 0.9.0 (build 0)
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> trace on gallery-large
+recording /tmp/arbor-shell.47HMCJ/home/traces/2026-10-15-052207-gallery-large.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> move 984 70
+> display_add 1440 900: display 2, 65C0E9BE-12D9-420F-954D-81969CA0A916
+> display_move right: now at 1920 0 1440 900
+the main display's visible frame: 0 30 1920 972; the Retina one's: 1920 30 1440 870
+
+▸ large: the whole menu, and its submenus
+> dock 219 left
+docked w219 at the left edge
+> click 483 516
+> click 1628 15 --right
+  ✔ a right click opens it
+shot: mac-shell/large-01-menu.png and large-01-menu-d2.png
+shot: mac-shell/large-01-menu-alone-1.png
+shot: mac-shell/large-01-menu-on-glass-1.png
+> key s
+> key a
+> key right
+shot: mac-shell/large-02-saved-views.png and large-02-saved-views-d2.png
+shot: mac-shell/large-02-saved-views-alone-1.png
+shot: mac-shell/large-02-saved-views-on-glass-1.png
+shot: mac-shell/large-02-saved-views-alone-2.png
+shot: mac-shell/large-02-saved-views-on-glass-2.png
+> key left
+> key d
+> key o
+> key right
+shot: mac-shell/large-03-dock.png and large-03-dock-d2.png
+shot: mac-shell/large-03-dock-alone-1.png
+shot: mac-shell/large-03-dock-on-glass-1.png
+shot: mac-shell/large-03-dock-alone-2.png
+shot: mac-shell/large-03-dock-on-glass-2.png
+> key left
+> key a
+> key d
+> key right
+shot: mac-shell/large-04-adjust.png and large-04-adjust-d2.png
+shot: mac-shell/large-04-adjust-alone-1.png
+shot: mac-shell/large-04-adjust-on-glass-1.png
+shot: mac-shell/large-04-adjust-alone-2.png
+shot: mac-shell/large-04-adjust-on-glass-2.png
+> key left
+> key h
+> key e
+> key right
+shot: mac-shell/large-05-help.png and large-05-help-d2.png
+shot: mac-shell/large-05-help-alone-1.png
+shot: mac-shell/large-05-help-on-glass-1.png
+shot: mac-shell/large-05-help-alone-2.png
+shot: mac-shell/large-05-help-on-glass-2.png
+> key left
+> key h
+> key e
+> key right
+> key a
+> key b
+> key return
+shot: mac-shell/large-06-about.png and large-06-about-d2.png
+shot: mac-shell/large-06-about-alone-1.png
+shot: mac-shell/large-06-about-on-glass-1.png
+
+▸ retina: the line round the focused window, the surface, tiles
+> move-to-display 2 215
+moved w215 to display 2
+> move-to-display 2 216
+moved w216 to display 2
+> move-to-display 2 217
+moved w217 to display 2
+> move-to-display 2 218
+moved w218 to display 2
+> dock 215 left
+docked w215 at the left edge
+> dock 216 right
+docked w216 at the right edge
+> dock 217 beside 216 bottom
+docked w217 below w216
+> click 2164 465
+> move 3320 70
+shot: mac-shell/retina-01-docked.png and retina-01-docked-d2.png
+  ✔ the window is on the Retina display
+shot: mac-shell/retina-02-ring-top-left.png
+shot: mac-shell/retina-03-ring-bottom-right.png
+> drag 2672 303 2164 676 --steps 90 --no-release
+shot: mac-shell/retina-04-drop-preview.png and retina-04-drop-preview-d2.png
+  ✔ it shows while the button is held
+shot: mac-shell/retina-05-drop-preview-corner.png
+> release
+> set minimumUsableHeight 600
+minimumUsableHeight = 600 (was 160)
+> set tileStyle name
+tileStyle is already name
+> move 3320 70
+shot: mac-shell/retina-06-tiles.png and retina-06-tiles-d2.png
+shot: mac-shell/retina-07-tile.png
+> reset minimumUsableHeight
+minimumUsableHeight = 160, the default (was 600)
+> reset tileStyle
+tileStyle is already the default, name
+
+▸ retina: the panels
+> click 2164 250
+> key ctrl+opt+shift+/
+shot: mac-shell/retina-08-shortcuts.png and retina-08-shortcuts-d2.png
+shot: mac-shell/retina-08-shortcuts-alone-1.png
+shot: mac-shell/retina-08-shortcuts-on-glass-1.png
+> key escape
+> key ctrl+opt+g
+shot: mac-shell/retina-09-go-to.png and retina-09-go-to-d2.png
+shot: mac-shell/retina-09-go-to-alone-1.png
+shot: mac-shell/retina-09-go-to-on-glass-1.png
+> key escape
+> minimap
+showing the minimap
+shot: mac-shell/retina-10-minimap.png and retina-10-minimap-d2.png
+shot: mac-shell/retina-10-minimap-alone-1.png
+shot: mac-shell/retina-10-minimap-on-glass-1.png
+> minimap
+put the minimap away
+> key ctrl+opt+n
+> key w
+> key r
+> key i
+> key t
+> key i
+> key n
+> key g
+shot: mac-shell/retina-11-name.png and retina-11-name-d2.png
+shot: mac-shell/retina-11-name-alone-1.png
+shot: mac-shell/retina-11-name-on-glass-1.png
+> key escape
+> set messages helpful
+messages = helpful (was off)
+> key ctrl+opt+return
+shot: mac-shell/retina-12-line-hint.png and retina-12-line-hint-d2.png
+shot: mac-shell/retina-12-line-hint-alone-1.png
+shot: mac-shell/retina-12-line-hint-on-glass-1.png
+> show-all
+showing everything
+> display_remove
+> trace off
+trace saved: /tmp/arbor-shell.47HMCJ/home/traces/2026-10-15-052207-gallery-large.jsonl: 1219 lines, trace off
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+shot: mac-shell/large-99-after-quit.png
+
+== apps-light (104 s into the run)
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+/Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+> appearance light: now light
+Increase Contrast: false
+Reduce Transparency: false
+Reduce Motion: false
+session 3: Arbor pid 30566, test windows 370 (pid 30522,29563,29567,29577,29643,29695,29712,29768,29805,29839,29857)
+running: 1 display, 0 docked and 11 floating, 0 out of view
+Arbor 0.9.0 (build 0)
+> trace on gallery-apps-light
+recording /tmp/arbor-shell.W5oyuk/home/traces/2026-10-15-052417-gallery-apps-light.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> move 984 70
+
+▸ real apps: arranged, and as tiles  (light)
+> arrange
+arranged 11 windows
+shot: mac-shell/apps-light-01-arranged.png
+> set minimumUsableWidth 100
+minimumUsableWidth = 100 (was 240)
+> set minimumUsableHeight 400
+minimumUsableHeight = 400 (was 160)
+shot: mac-shell/apps-light-02-window-tiles.png
+> set tileStyle icon
+tileStyle = icon (was name)
+shot: mac-shell/apps-light-03-window-tiles-icons-alone.png
+> reset tileStyle
+tileStyle = name, the default (was icon)
+> set minimumUsableWidth 2000
+arborctl: `minimumUsableWidth` must be from 0 to 1000 pt, got 2000
+shot: mac-shell/apps-light-04-group-tiles.png
+> reset minimumUsableWidth
+minimumUsableWidth = 240, the default (was 100)
+> reset minimumUsableHeight
+minimumUsableHeight = 160, the default (was 400)
+
+▸ real apps: Go to… and the minimap  (light)
+> click 700 538
+> key ctrl+opt+g
+shot: mac-shell/apps-light-05-go-to.png
+shot: mac-shell/apps-light-05-go-to-alone-1.png
+> key escape
+> minimap
+showing the minimap
+shot: mac-shell/apps-light-06-minimap.png
+shot: mac-shell/apps-light-06-minimap-alone-1.png
+> minimap
+put the minimap away
+
+▸ real apps: motion  (light)
+> zoom 370
+framed w370
+film: 6 pictures in 1.00 s
+shot: mac-shell/apps-light-07-frame-1.png
+shot: mac-shell/apps-light-07-frame-2.png
+shot: mac-shell/apps-light-07-frame-3.png
+shot: mac-shell/apps-light-07-frame-4.png
+shot: mac-shell/apps-light-07-frame-5.png
+shot: mac-shell/apps-light-07-frame-6.png
+> show-all
+showing everything
+film: 6 pictures in 2.01 s
+shot: mac-shell/apps-light-08-everything-1.png
+shot: mac-shell/apps-light-08-everything-2.png
+shot: mac-shell/apps-light-08-everything-3.png
+shot: mac-shell/apps-light-08-everything-4.png
+shot: mac-shell/apps-light-08-everything-5.png
+shot: mac-shell/apps-light-08-everything-6.png
+> trace off
+trace saved: /tmp/arbor-shell.W5oyuk/home/traces/2026-10-15-052417-gallery-apps-light.jsonl: 490 lines, trace off
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+Reduce Motion: true
+
+== apps-dark (202 s into the run)
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-night.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-night.png
+/Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+> appearance dark: now dark
+Increase Contrast: false
+Reduce Transparency: false
+Reduce Motion: false
+session 4: Arbor pid 33134, test windows 475 (pid 33096,32432,32435,32439,32496,32507,32525,32539,32547,32565,32573)
+running: 1 display, 0 docked and 11 floating, 0 out of view
+Arbor 0.9.0 (build 0)
+> trace on gallery-apps-dark
+recording /tmp/arbor-shell.KFt46q/home/traces/2026-10-15-052524-gallery-apps-dark.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> move 984 70
+
+▸ real apps: arranged, and as tiles  (dark)
+> arrange
+arranged 11 windows
+shot: mac-shell/apps-dark-01-arranged.png
+> set minimumUsableWidth 100
+minimumUsableWidth = 100 (was 240)
+> set minimumUsableHeight 400
+minimumUsableHeight = 400 (was 160)
+shot: mac-shell/apps-dark-02-window-tiles.png
+> set tileStyle icon
+tileStyle = icon (was name)
+shot: mac-shell/apps-dark-03-window-tiles-icons-alone.png
+> reset tileStyle
+tileStyle = name, the default (was icon)
+> set minimumUsableWidth 2000
+arborctl: `minimumUsableWidth` must be from 0 to 1000 pt, got 2000
+shot: mac-shell/apps-dark-04-group-tiles.png
+> reset minimumUsableWidth
+minimumUsableWidth = 240, the default (was 100)
+> reset minimumUsableHeight
+minimumUsableHeight = 160, the default (was 400)
+
+▸ real apps: Go to… and the minimap  (dark)
+state.py: window 475 is out of view
+> click
+pointer: expected x and y
+usage: pointer <command>
+  move x y                      glide the pointer there
+  click x y [count] [--right]   click (count 2 is a double-click), with the right button if asked
+      [--quick]                 the button comes up at once, as with tap to click (otherwise after 0.04 s)
+  drag x1 y1 x2 y2              press at the first point, drag to the second, release
+      [--steps n]               intermediate events (default 30)
+      [--duration s]            how long the movement takes (default 0.6)
+      [--hold s]                wait at the end before releasing (default 0.2)
+      [--no-release]            leave the button down; finish with `release`
+      [--no-settle]             without the small movement at the end that lets Arbor catch up
+  release [x y]                 release the button there (default: where the pointer is)
+  key <chord>                   press a shortcut, e.g. ctrl+opt+space, cmd+shift+f5, escape
+      [--down]                  press the modifiers and the key, and leave them all down
+      [--up]                    release the key, then the modifiers (modifiers alone, or a key alone, work too)
+      [--held]                  press and release the key only: its modifiers are down already, and stay down
+      [--repeat n]              n more key-down events marked as auto-repeat, as a key that is held sends
+  calm                          let go of every mouse button and key that is down, and say which, if any: for the end of a run
+  pinch x y <amount>            spread two fingers there (negative: pinch them together) by that much
+      [--steps n]               magnification, in that many events (default 10)
+  where                         the pointer's position and whether the left button is down
+  activity                      seconds since the pointer was used, seconds since a key was released, and the count
+                                of key presses, as Arbor reads them (AXWindowSystem+Input.swift)
+  displays                      id x y w h pixel-width pixel-height scale, one line per display
+  windows [--pid n]             id pid layer x y w h on|off owner, as the window server sees them
+      [--on-screen]             only those on screen, from the frontmost to the one at the back
+  frame <window id>             x y w h, as the window server sees it
+  visible <window id>           the share of the window that is on some display, 0 to 1; 0 when the window
+                                server does not show it (minimized, hidden, on another Space)
+  grab <window id>              x y: a point on its title bar that no other window covers
+  spot <window id>              x y: a point on its content that no other window covers
+  button <window id> <which>    x y: the middle of its close, minimize or zoom button
+  ax <window id>                its Accessibility role and subrole, e.g. AXWindow AXStandardWindow
+  front                         the process id of the app in front, which has the keyboard
+  status-item <pid> [--frame]   x y: the middle of that process's menu bar item (--frame: x y w h)
+  menu-item <pid> <title>       x y: the middle of the item of its open menu whose title starts so
+  menu-mark <pid> <title>       that item's mark, e.g. ✓, or - when it has none
+  button <pid> x y <name>       x y: the middle of the close, minimize or zoom button of that process's
+                                window whose top-left corner is nearest the point
+  screen-access | ax-access     true or false: Screen Recording, Accessibility
+  reduce-motion                 true or false: what an app launched now is told about Reduce Motion
+  increase-contrast | reduce-transparency       the same about those two
+  asleep                        true or false: whether the main display is asleep
+  picture <file> <w> <h> <#rrggbb> [<#rrggbb>]
+                                write a PNG: one colour, or a gradient between two under a grid
+  wallpaper [file]              show that picture on the desktop of every display; print what each shows
+click, drag, release and pinch take --mods <chord of modifiers>, e.g. --mods shift+cmd, held meanwhile.
+Every command that posts events takes --tap session, to post them after the window server's own handling.
+> key ctrl+opt+g
+shot: mac-shell/apps-dark-05-go-to.png
+shot: mac-shell/apps-dark-05-go-to-alone-1.png
+shot: mac-shell/apps-dark-05-go-to-alone-2.png
+> key escape
+> minimap
+showing the minimap
+shot: mac-shell/apps-dark-06-minimap.png
+shot: mac-shell/apps-dark-06-minimap-alone-1.png
+> minimap
+put the minimap away
+
+▸ real apps: motion  (dark)
+> zoom 475
+framed w475
+film: 6 pictures in 1.59 s
+shot: mac-shell/apps-dark-07-frame-1.png
+shot: mac-shell/apps-dark-07-frame-2.png
+shot: mac-shell/apps-dark-07-frame-3.png
+shot: mac-shell/apps-dark-07-frame-4.png
+shot: mac-shell/apps-dark-07-frame-5.png
+shot: mac-shell/apps-dark-07-frame-6.png
+> show-all
+showing everything
+film: 6 pictures in 1.83 s
+shot: mac-shell/apps-dark-08-everything-1.png
+shot: mac-shell/apps-dark-08-everything-2.png
+shot: mac-shell/apps-dark-08-everything-3.png
+shot: mac-shell/apps-dark-08-everything-4.png
+shot: mac-shell/apps-dark-08-everything-5.png
+shot: mac-shell/apps-dark-08-everything-6.png
+> trace off
+trace saved: /tmp/arbor-shell.KFt46q/home/traces/2026-10-15-052524-gallery-apps-dark.jsonl: 515 lines, trace off
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+Reduce Motion: true
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+/Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+> appearance light: now light
+Increase Contrast: false
+Reduce Transparency: false
+
+▸ a title is drawn and nothing else
+  ✔ the word in every title is in nothing the run brings back but the pictures
+ 
+454784 apps-dark-01-arranged.png
+471630 apps-dark-02-window-tiles.png
+468329 apps-dark-03-window-tiles-icons-alone.png
+471959 apps-dark-04-group-tiles.png
+53520 apps-dark-05-go-to-alone-1.png
+6327 apps-dark-05-go-to-alone-2.png
+439805 apps-dark-05-go-to.png
+7784 apps-dark-06-minimap-alone-1.png
+468086 apps-dark-06-minimap.png
+263499 apps-dark-07-frame-1.png
+127445 apps-dark-07-frame-2.png
+126683 apps-dark-07-frame-3.png
+126506 apps-dark-07-frame-4.png
+127199 apps-dark-07-frame-5.png
+127455 apps-dark-07-frame-6.png
+352334 apps-dark-08-everything-1.png
+421343 apps-dark-08-everything-2.png
+464263 apps-dark-08-everything-3.png
+465029 apps-dark-08-everything-4.png
+464770 apps-dark-08-everything-5.png
+464414 apps-dark-08-everything-6.png
+485440 apps-light-01-arranged.png
+518086 apps-light-02-window-tiles.png
+505620 apps-light-03-window-tiles-icons-alone.png
+518268 apps-light-04-group-tiles.png
+54262 apps-light-05-go-to-alone-1.png
+470727 apps-light-05-go-to.png
+7774 apps-light-06-minimap-alone-1.png
+461822 apps-light-06-minimap.png
+295877 apps-light-07-frame-1.png
+205518 apps-light-07-frame-2.png
+196271 apps-light-07-frame-3.png
+139507 apps-light-07-frame-4.png
+140081 apps-light-07-frame-5.png
+140755 apps-light-07-frame-6.png
+383842 apps-light-08-everything-1.png
+493767 apps-light-08-everything-2.png
+470178 apps-light-08-everything-3.png
+471666 apps-light-08-everything-4.png
+471001 apps-light-08-everything-5.png
+470503 apps-light-08-everything-6.png
+5578 arbor-shots-gallery-2.log
+4170 arbor-shots-gallery-3.log
+4543 arbor-shots-gallery-4.log
+3329 arbor-shots-gallery.log
+0 arbor-stderr-shots-gallery-2.log
+0 arbor-stderr-shots-gallery-3.log
+0 arbor-stderr-shots-gallery-4.log
+0 arbor-stderr-shots-gallery.log
+0 build-axfind.log
+287 build-bundles.log
+0 build-scenery.log
+78 build.log
+96 evidence
+63758 large-01-menu-alone-1.png
+353946 large-01-menu-d2.png
+161950 large-01-menu-on-glass-1.png
+516230 large-01-menu.png
+90782 large-02-saved-views-alone-1.png
+90822 large-02-saved-views-alone-2.png
+353967 large-02-saved-views-d2.png
+166169 large-02-saved-views-on-glass-1.png
+66383 large-02-saved-views-on-glass-2.png
+544464 large-02-saved-views.png
+85942 large-03-dock-alone-1.png
+85953 large-03-dock-alone-2.png
+354180 large-03-dock-d2.png
+164716 large-03-dock-on-glass-1.png
+39506 large-03-dock-on-glass-2.png
+533655 large-03-dock.png
+86845 large-04-adjust-alone-1.png
+86789 large-04-adjust-alone-2.png
+354169 large-04-adjust-d2.png
+164998 large-04-adjust-on-glass-1.png
+35055 large-04-adjust-on-glass-2.png
+540121 large-04-adjust.png
+89729 large-05-help-alone-1.png
+89747 large-05-help-alone-2.png
+354134 large-05-help-d2.png
+162894 large-05-help-on-glass-1.png
+35021 large-05-help-on-glass-2.png
+542520 large-05-help.png
+21717 large-06-about-alone-1.png
+354159 large-06-about-d2.png
+38487 large-06-about-on-glass-1.png
+426973 large-06-about.png
+303829 large-99-after-quit.png
+247144 motion-1-frame-1.png
+200814 motion-1-frame-2.png
+143591 motion-1-frame-3.png
+143516 motion-1-frame-4.png
+143508 motion-1-frame-5.png
+143510 motion-1-frame-6.png
+254176 motion-2-everything-1.png
+321660 motion-2-everything-2.png
+335240 motion-2-everything-3.png
+260694 motion-2-everything-4.png
+260723 motion-2-everything-5.png
+260723 motion-2-everything-6.png
+369032 motion-3-dock-1.png
+352701 motion-3-dock-2.png
+327337 motion-3-dock-3.png
+287083 motion-3-dock-4.png
+287120 motion-3-dock-5.png
+287095 motion-3-dock-6.png
+18574 output.txt
+376282 retina-01-docked-d2.png
+352885 retina-01-docked.png
+30405 retina-02-ring-top-left.png
+18269 retina-03-ring-bottom-right.png
+411656 retina-04-drop-preview-d2.png
+350516 retina-04-drop-preview.png
+48937 retina-05-drop-preview-corner.png
+859121 retina-06-tiles-d2.png
+350516 retina-06-tiles.png
+247226 retina-07-tile.png
+251955 retina-08-shortcuts-alone-1.png
+569823 retina-08-shortcuts-d2.png
+721665 retina-08-shortcuts-on-glass-1.png
+350516 retina-08-shortcuts.png
+126279 retina-09-go-to-alone-1.png
+473040 retina-09-go-to-d2.png
+285097 retina-09-go-to-on-glass-1.png
+350837 retina-09-go-to.png
+17585 retina-10-minimap-alone-1.png
+438513 retina-10-minimap-d2.png
+39652 retina-10-minimap-on-glass-1.png
+350837 retina-10-minimap.png
+23087 retina-11-name-alone-1.png
+434716 retina-11-name-d2.png
+61485 retina-11-name-on-glass-1.png
+350616 retina-11-name.png
+25135 retina-12-line-hint-alone-1.png
+183677 retina-12-line-hint-d2.png
+37068 retina-12-line-hint-on-glass-1.png
+350726 retina-12-line-hint.png
+0 screencapture.log
+0 test-windows.log
+192 traces
+0 vdisplay.log
+
+20 passed, 0 failed
+exit code 0

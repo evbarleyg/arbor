@@ -1,0 +1,48 @@
+# mac-shell: scripts/mac-shell/shots-offscreen.sh at 886617e, macOS 26.6.2, 2026-10-15T05:36Z
+
+== build, tests included
+built in 347 s
+
+== the tests that draw
+✘ Test aLongCaptionStaysInItsLine() recorded an issue at MinimapDrawingTests.swift:226:7: Expectation failed: (spiltLeft → 27) == 0
+✘ Test aLongCaptionStaysInItsLine() recorded an issue at MinimapDrawingTests.swift:227:7: Expectation failed: (spiltRight → 27) == 0
+✘ Test aLongCaptionStaysInItsLine() failed after 55.022 seconds with 2 issues.
+✘ Suite MinimapDrawingTests failed after 55.025 seconds with 2 issues.
+✘ Test run with 58 tests in 12 suites failed after 55.449 seconds with 2 issues.
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+✔ Test run with 0 tests in 0 suites passed after 0.001 seconds.
+  ✘ every test that draws passes
+      picture: mac-shell/fail-shots-offscreen-1.png
+      log | INFO  started: 1 display(s), 3 managed window(s)
+      log | INFO  zoom: showing the Desktop, where w101 floats
+      log | INFO  dock left: docked w101 at the left edge
+      log | INFO  zoom: framed w101
+      log | INFO  save-view 2: saved view 2: Safari (n1)
+      log | INFO  started: 1 display(s), 3 managed window(s)
+      log | INFO  zoom: showing the Desktop, where w101 floats
+      log | INFO  dock left: docked w101 at the left edge
+      log | INFO  zoom: framed w101
+      log | INFO  save-view 2: saved view 2: Safari (n1)
+      log | INFO  started: 1 display(s), 3 managed window(s)
+      log | INFO  show-shortcuts: showing 52 shortcuts; any key or click puts them away
+      log | INFO  started: 1 display(s), 3 managed window(s)
+      log | INFO  show-shortcuts: showing 53 shortcuts; any key or click puts them away
+      log | INFO  started: 1 display(s), 3 managed window(s)
+      log | INFO  keyboard layout: German
+      log | INFO  show-shortcuts: showing 52 shortcuts; any key or click puts them away
+      log | INFO  started: 1 display(s), 3 managed window(s)
+      log | INFO  shortcuts and gestures are off: org.gnu.Emacs is frontmost
+      log | INFO  show-shortcuts: showing 52 shortcuts, off in Emacs except ⌃⌥⎋; any key or click puts them away
+      log | INFO  started: 1 display(s), 3 managed window(s)
+      log | INFO  zoom: showing the Desktop, where w101 floats
+      log | INFO  dock left: docked w101 at the left edge
+      log | INFO  zoom: framed w101
+      log | INFO  save-view 2: saved view 2: Safari (n1)
+
+== what they drew
+510 pictures
+40M
+  ✔ there are pictures
+
+1 passed, 1 failed
+exit code 1
