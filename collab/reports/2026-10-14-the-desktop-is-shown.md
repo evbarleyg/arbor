@@ -132,8 +132,8 @@ their stories are in the tree.
 - `tests/DesktopShown.swift`, `tests/LatePresses.swift`, `tests/Judge.swift` and `tests/Judge2.swift` (the judge's), more of `tests/LostDrags.swift`: 607 new stories, each shape also served on
   time, as a control.
 - `make mac-on-linux`: **886 stories, 2566 ✔, 298 known ✘, 0 new, exit code 0.** `REF=origin/swarm/trunk make mac-on-linux`, the trunk's layer with the same stories and the same list: 2399 ✔, **167
-  new ✘**, and 7 that are listed pass. So **167 checks are red there and green here, and 7 the other way** (below).
-- 228 checks of the new stories are listed in `known-failures.txt`, each with its reason: 221 red on both layers, the 7. Six lines that stood there are cured and gone.
+  new ✘**, and 7 that are listed pass. So **167 checks are red there and green here, and 7 the other way**, four of them by a story that is at fault (below).
+- 228 checks of the new stories are listed in `known-failures.txt`, each with its reason: 221 red on both layers, and those 7. Six lines that stood there are cured and gone.
 - **Twice 4,000 random gestures**, the judge's (`tests/JudgeRandom.swift`, `tests/JudgeRandom2.swift`, told on request; truth is what became of the windows; a quarter with the desktop
   shown; the second lot with top edges, corners, taller title bars, longer throws):
 
@@ -149,9 +149,9 @@ their stories are in the tree.
 35, the three ✘ the trunk's own: they fail the same in another branch's run of the same hour. By the new line of the log **all 48 presses of the run were served on time**. So the Mac says that this
 does no harm where nothing is late; what it does where something is, only the model says.
 
-**Worse than before, seven checks, both shapes contrived:** a window that goes the pointer's way **by itself** under a press in its upper 60 points that is served late. A title bar double-clicked and the
-window zoomed with the button still down, the pointer slipping the way its corner went (a Mac zooms when the button comes up); text selected in a field 30 points below the top of a window that goes
-back 60 points. Each is taken for a drag. Served on time the same stories are false drags on every layer.
+**Worse than before, three checks, contrived:** a window that goes the pointer's way **by itself** under a press in its upper 60 points that is served late: text selected in a field 30 points below the
+top of a window that goes back 60 points is taken for a drag. Served on time the same story is a false drag on every layer. The other four of the seven are one story of the judge's (a title bar
+double-clicked and the window zoomed with the button still down) that its author has since called at fault: the model really drags there, so "no drag" is the wrong thing to expect.
 
 **Still lost or mistaken**, as before:
 - what is at rest when the press is served and is dragged on afterwards; an edge that takes the window's place nowhere (right, bottom) or has left the place of the press, once its app has been
