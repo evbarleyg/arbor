@@ -1,0 +1,8 @@
+Made the code-signing certificate "Arbor Local Signing" in /Users/runner/Library/Keychains/login.keychain-db
+  SHA-1 4F0200F5EFEA69C8552CEE9261E06E2C1ED4C20D, valid until Oct 12 07:07:36 2036 GMT
+/var/folders/36/tjdph2t965j8snz9_vkdnw0r0000gn/T/tmp.BAusWIJrXk/probe: replacing existing signature
+make-signing-identity.sh: codesign cannot sign with the new certificate.
+  It had no answer in 6 seconds: macOS asks in a dialog, and nobody is at a terminal here. Run this from a terminal and
+  answer with Always Allow.
+  The certificate and its key were taken out of the keychain again: builds are signed ad hoc as before.
+  A dialog of macOS's may still be on screen. It asks about a key that is gone: close it with Deny.
