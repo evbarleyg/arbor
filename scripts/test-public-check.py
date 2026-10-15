@@ -888,7 +888,7 @@ def check_history():
             repository = Repository(folder)
             more = prepare(repository)
             code, _, output = repository.run("--pre-push", *arguments, **more)
-            words = [word for word in ("could not be written down", "so there is none of this push either", "in a way this check does not know", "caf\ufffd stood at") if word in output]
+            words = [word for word in ("could not be written down", "so there is none of this push either", "in a way this check does not know", "caf\ufffd stood at", "KNOWS OF NO PRIVATE WORDS") if word in output]
             called = {"HEAD": repository.git("rev-parse", "HEAD"), **({"THE-TAG": repository.git("rev-parse", "v9")} if repository.git("tag") else {})}
             row(what, (code, *notes(folder, **called), words, repository.git("status", "--porcelain", "--untracked-files=all")), (*expected, "\n".join(inside)))
     by = [f"when read-by-{check.VERSION}\n"]
@@ -913,7 +913,13 @@ def check_history():
                pushed=lambda r: f"refs/tags/v9 {r.git('rev-parse', 'v9')} refs/tags/v9 {{none}}"), "--to", HERE_URL)
     noted("a push to a fork", nothing, hold(None), "--to", FORK_URL)
     noted("to a fork, by the remote's name", nothing, hold(None, also=lambda r: r.git("remote", "add", "mine", FORK_URL)), "--to", "mine")
-    noted("where there are no private words there are no notes either", nothing, hold(None, words=False), "--to", HERE_URL)
+    wordless = (0, None, [], ["KNOWS OF NO PRIVATE WORDS"])
+    noted("where there are no private words there are no notes either, and whoever pushes to the public repository is told: a clone made anew has lost them", wordless, hold(None, words=False), "--to", HERE_URL)
+    noted("from a hook that does not say where to, likewise", wordless, hold(None, words=False))
+    noted("a stranger, who pushes to a fork: not a word", nothing, hold(None, words=False), "--to", FORK_URL)
+    noted("a push that was refused has enough to say", refused, hold(None, words=False, also=line), "--to", HERE_URL)
+    noted("a branch that is deleted: nothing was read", nothing, hold(None, words=False, pushed="(delete) {none} refs/heads/x {head}"), "--to", HERE_URL)
+    noted("private words from the environment are private words; the notes want a place", nothing, hold(None, words=False, also=lambda r: r.environment.update(PUBLIC_CHECK_WORDS="quux7")), "--to", HERE_URL)
     noted("beside what is there already", (0, ["0123-refs%2Fheads%2Fw", "HEAD-refs%2Fheads%2Fx"], sorted(["when stood-there\n", *by]), []),
           hold(None, also=lambda r: r.write("../notes/pushes-read/0123-refs%2Fheads%2Fw", "2026-01-02T03:04:05Z stood-there\n")), "--to", HERE_URL)
     noted("the same push once more: the same note", one, hold(None, also=lambda r: r.write(f"../notes/pushes-read/{r.git('rev-parse', 'HEAD')}-refs%2Fheads%2Fx", "")), "--to", HERE_URL)
@@ -978,7 +984,7 @@ def check_history():
             if record is not None:
                 os.makedirs(os.path.join(folder, "notes", "pushes-read"))
             for name in record or ():
-                r.write("../notes/pushes-read/" + name.format(**called), "t read-by-8\n")
+                r.write("../notes/pushes-read/" + name.format(**called), f"t read-by-{check.VERSION}\n")
             called.update(prepare(r) or {} if prepare else {})
             saved = swap and getattr(swap[0], swap[1])
             try:
@@ -996,7 +1002,7 @@ def check_history():
             row(what, (code, re.findall(r"^([✘·]) (\S+) stands at (\w+)", output, re.MULTILINE), numbers, why, *notes(folder, **called)), expected)
     stood = ["{main}-refs%2Fheads%2Fmain", "{first}-refs%2Fheads%2Ffix%2Fread"]
     kept = ["first-refs%2Fheads%2Ffix%2Fread", "main-refs%2Fheads%2Fmain"]
-    this, its_note, read_by = [("✘", "fix/unread", "second")], "{second}-refs%2Fheads%2Ffix%2Funread", ["when read-by-8\n"]
+    this, its_note, read_by = [("✘", "fix/unread", "second")], "{second}-refs%2Fheads%2Ffix%2Funread", [f"when read-by-{check.VERSION}\n"]
 
     def unread(*more, named=this, of=3, left=3, says=read_by):
         names = sorted(kept + [one.format(first="first", second="second", main="main") for one in more])
@@ -1216,6 +1222,37 @@ def check_hook():
         first = subprocess.run([install], cwd=repository.path, env=repository.environment, capture_output=True, text=True, check=False)
         row("make hooks: it goes on to look through the clone, and of this one it cannot tell", (first.returncode, "public-clone: cannot tell" in first.stdout), (2, True))
         row("make hooks: it fails for that, and says that the hook is in all the same", first.stdout.strip().splitlines()[-1].startswith("make hooks: THE HOOK IS IN"), True)
+
+        def wordless(**more):
+            said = subprocess.run([install], cwd=repository.path, env=dict(repository.environment, **more), capture_output=True, text=True, check=False).stdout
+            return said.count("THIS CLONE KNOWS OF NO PRIVATE WORDS")
+        row("make hooks: a clone that knows of no private words is told so: one made anew has lost them", wordless(), 1)
+        row("make hooks: words from the environment will do", wordless(PUBLIC_CHECK_WORDS="quux7"), 0)
+        repository.git("config", "arbor.privateWords", os.path.join(folder, "notes", "words.txt"))
+        row("make hooks: a clone that knows of some: not a word", wordless(), 0)
+        repository.git("config", "--unset", "arbor.privateWords")
+
+        def by_hand(*arguments, **more):
+            """Which of the two things it says, run by hand in this clone, where the hook now is."""
+            saved = dict(repository.environment)
+            repository.environment.update(more)
+            output = repository.run(*arguments)[2]
+            repository.environment = saved
+            return [word for word in ("THIS CLONE HAS NO HOOK", "KNOWS OF NO PRIVATE WORDS") if word in output]
+        there = os.path.join(repository.path, ".git", "hooks", "pre-push")
+        row("by hand: the hook is in, the private words are not", by_hand(), ["KNOWS OF NO PRIVATE WORDS"])
+        row("by hand: a range likewise", by_hand("--base", "HEAD", "--head", "HEAD", "--branch", "x"), ["KNOWS OF NO PRIVATE WORDS"])
+        row("by hand: with words from the environment there is nothing to say", by_hand(PUBLIC_CHECK_WORDS="quux7"), [])
+        row("by hand: at GitHub there is nobody to push", by_hand(GITHUB_ACTIONS="true"), [])
+        repository.git("config", "core.hooksPath", "elsewhere")
+        row("by hand: git looks for hooks elsewhere: as good as none", by_hand(PUBLIC_CHECK_WORDS="quux7"), ["THIS CLONE HAS NO HOOK"])
+        repository.git("config", "--unset", "core.hooksPath")
+        os.rename(there, there + ".aside")
+        row("by hand: whoever runs the check before every push and never said `make hooks` is told, every time", by_hand(), ["THIS CLONE HAS NO HOOK", "KNOWS OF NO PRIVATE WORDS"])
+        repository.write(".git/hooks/pre-push", "#!/bin/sh\n")
+        row("by hand: somebody else's hook is not this one", by_hand(PUBLIC_CHECK_WORDS="quux7"), ["THIS CLONE HAS NO HOOK"])
+        os.replace(there + ".aside", there)
+        row("by hand: free text and the whole tree are read for other reasons: not a word", (by_hand("--tree"), by_hand("--text", os.path.join(repository.path, "LICENSE"))), ([], []))
         repository.write("docs/x.md", "fine\n")
         repository.commit()
         done = subprocess.run(["git", "push", "origin", "fix/something"], cwd=repository.path, env=repository.environment,
@@ -1372,7 +1409,7 @@ def main():
         except (Exception, SystemExit) as error:  # a git that behaves otherwise, say: that is one row red, and the other parts still have their say
             place = traceback.extract_tb(error.__traceback__)
             row(f"{part.__name__} gets to its end", f"line {[frame.lineno for frame in place if frame.name == part.__name__][-1]}: {type(error).__name__}: {error}", "it does")
-    wrong, rows = 0, table.finish(exactly=433)
+    wrong, rows = 0, table.finish(exactly=449)
     for what, got, expected in rows:
         if got != expected:
             wrong += 1

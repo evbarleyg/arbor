@@ -69,7 +69,7 @@ import urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 # Raise it whenever the check gets stricter or a hole in it is mended. The hook has two copies to choose from, the one `make hooks` kept
 # and the one on the branch that is checked out, and lets the newer do the reading.
-VERSION = 8
+VERSION = 9
 # The first public commit. All history begins here.
 ROOT_COMMIT = "51b162d5f28c02846134c1f4a113c787f5164602"
 # Where work is integrated: what these hold on origin has been read before. In this order: see read_elsewhere.
@@ -654,8 +654,29 @@ def write_down(top, how, refs):
     return done
 
 
+def wordless(top):
+    """What to tell a clone that knows of no private words. The setting lies in the clone: one made anew has lost it, a second one never had it."""
+    if git("config", "--get", "arbor.privateWords", cwd=top, check=False)[1].strip() or os.environ.get("PUBLIC_CHECK_WORDS"):
+        return None
+    return ("THIS CLONE KNOWS OF NO PRIVATE WORDS (git config arbor.privateWords <path>; docs/PUBLIC.md): it reads by kinds alone, and does not ask whether the rules have "
+            "changed or pushes are held")
+
+
+def unguarded(top):
+    """What this clone lacks of what guards a push, for whoever runs the check by hand and takes that for the whole of the rule."""
+    try:
+        with open(os.path.join(top, git("rev-parse", "--git-common-dir", cwd=top).strip(), "hooks", "pre-push"), encoding="utf-8", errors="replace") as handle:
+            hook = "# arbor's pre-push hook" in handle.read() and not git("config", "--get", "core.hooksPath", cwd=top, check=False)[1].strip()
+    except OSError:
+        hook = False
+    return [*([] if hook else ["THIS CLONE HAS NO HOOK: nothing reads a push from it unless somebody thinks of it, with whatever check is at hand: make hooks"]), *filter(None, [wordless(top)])]
+
+
 def leave_notes(top, read):
     """After a push that was read and let pass. `read`: what went, where to, and what stood there."""
+    # Only whoever may push to the public repository gets to read this.
+    if read and wordless(top):
+        print(f"public-check: {wordless(top)}. No note of this push is left, so it counts as one that no hook has read", file=sys.stderr)
     folder = record_of_pushes(top)
     # What stood there unread is not read now either: this clone has fetched it, so it counts as public already. The branch goes on being named.
     upon = [(ref, there) for _, ref, there in read if folder and not ZERO.match(there) and not os.path.exists(os.path.join(folder, note(there, ref)))]
@@ -851,7 +872,10 @@ def main(arguments=None, cwd=None):
         if options.tag:
             more_problems, more = check_tag(checker, options.tag, top)
             problems, findings = problems + more_problems, findings + more
-        return report(checker, problems, findings, what, masked)
+        code = report(checker, problems, findings, what, masked)
+        for lack in unguarded(top) if not os.environ.get("GITHUB_ACTIONS") else []:  # where there is nobody to push
+            print(f"public-check: {lack}", file=sys.stderr)
+        return code
     except Unclear as error:
         print(f"public-check: cannot tell: {error}")
         if os.environ.get("GITHUB_ACTIONS"):

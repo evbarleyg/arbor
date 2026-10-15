@@ -33,8 +33,15 @@ install_hook() {
     echo "git now runs scripts/public-check.py before every push from this clone"
 }
 
+# The setting lies in the clone, so a clone made anew has lost it, and nothing in the repository can say where the list is.
+private_words() {
+  [ -n "$(git config --get arbor.privateWords || true)" ] || [ -n "${PUBLIC_CHECK_WORDS:-}" ] ||
+    echo "make hooks: THIS CLONE KNOWS OF NO PRIVATE WORDS. Whoever works with a list of them: git config arbor.privateWords <path> (docs/PUBLIC.md). Without it pushes are read by kinds alone."
+}
+
 install_hook
 hook=$?
+private_words
 python3 "$here/../mergeable.py" --install
 driver=$?
 # Whatever became of the hook: what the clone holds is a question of its own.
