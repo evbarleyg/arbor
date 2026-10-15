@@ -72,6 +72,18 @@ look first, and with pictures as a second look. Criterion 4 ("Manual") is replac
 4. (was "Manual"; board, section 5) A hosted Mac films `shots-F02.sh` with the stage's own log of frames. Measured: length, curve, cadence, hand-over, nothing stray (`docs/VIABLE.md`, section 8), also with ⌃⌥Space twice in quick succession. Judged from the film against `docs/POLISH.md`: no flicker, one motion.
 5. `make check` passes.
 
+## How motion is measured
+
+Motion is judged from what an unattended run on a Mac brings back. While a trace is recorded, each stage logs what it was asked to play and where every stand-in is drawn at every tick of the
+display; `arbor-sim stage-judge` measures each motion from that. The lines, what is measured, the limits and what the log cannot show are in docs/TRACES.md, "The stage's log".
+
+- **Linux proves** (`make check`): the lines, their writer and reader, and that no word can get into one (`StageLogTests`); the judge, on logs of a good motion and of each fault (`StageJudgeTests`, `StageJudgeReviewTests`); when
+  lines are written and when none, that they are not thinned, keep their time and are skipped by a replay (`StageLogTraceTests`); the way through a trace file, rehearsed (`scripts/sim-smoke.sh`).
+- **A Mac runs**: any Mac shell script that records a trace while Arbor animates (`ctl trace on <name>`, the commands, a second's wait, `ctl trace off`, as `scripts/mac-shell/trace-demo.sh` does) and brings the file back; well under ten
+  minutes. `scripts/mac-shell/shots-F02.sh` is the one that is to do so, with eight windows at 0.46 s. Only `UI/StageSampler.swift` runs there alone: a display link while a stage is up and a trace is recorded, and the reading of the layers. It has
+  no window and no view, moves nothing and takes no event. **It has never run on a Mac.**
+- **Judged afterwards**: the trace, through the judge, by anybody. Steps in brightness, dropped frames and whatever else only the screen shows are judged from films.
+
 ## Shipped (2026-10-14, `feat/F02-transitions`)
 
 Shipped: the plane (`Plane`, `PlaneMap`), the plan (`Keyframe`, `Transition`, `TransitionPlanner`), the

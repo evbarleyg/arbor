@@ -177,6 +177,7 @@ replay delivers it from inside the same call, so that Arbor meets it in the same
 | Line | Meaning |
 |---|---|
 | `{"raw":"AXWindowMoved w7"}`, `{"raw":"leftMouseDown 360,92"}` | What macOS sent, as it arrived, before `AXWindowSystem` made events of it: Accessibility notifications with their window, mouse events with the pointer's place, `flagsChanged`, a press that landed on a tile or handle of Arbor's, and from the workspace `didActivateApplication pid 412` (the only sign of ⌘Tab), `activeSpaceDidChange` and `didChangeScreenParameters`. The events say what Arbor understood, these what it was told |
+| `{"raw":"stage up dmain 0,0,1440,900 0.46 w7 12,37,464,851,1 12,37,1416,851,1"}`, `{"raw":"stage frame dmain w7 12,37,470.25,851,1"}`, `stage retargeted …`, `stage lift dmain`, `stage down dmain` | The stage's log of its own frames (F02): "The stage's log" below |
 | `{"note":"…"}` | A remark made with `trace note` |
 | `{"end":"trace off","lines":212,"thinned":388}` | The last line: why recording stopped, the lines before this one, and how many were thinned away |
 
@@ -210,6 +211,63 @@ A question is not a reaction. Arbor asks for the modifier keys at every step of 
 asked about, written or dropped with it. A new answer is news: it is kept, and so is its line, so a replay knows at which step ⌘ went down.
 
 Seam drags are never thinned: each is a step, and the steps add up. The `end` line counts the lines that were dropped, without the questions that went with them.
+
+## The stage's log
+
+While a trace is recorded, each stage (F02) writes down what it plays and, at every tick of its display, where each stand-in is drawn, so that motion can be measured afterwards by
+somebody who was not there. The lines are `raw` lines; the time is the line's `t`, which has tenths of a millisecond. Words are separated by one space.
+
+| Line | Meaning |
+|---|---|
+| `stage up d<display> <x,y,w,h> <seconds> w<n> <from> <to> …` | The stage covers its display, whose frame this is, and the stand-ins have set off on a motion that is to take so long. Three words for each: its window's number, where it starts, where it is to end: its road |
+| `stage retargeted d<display> <x,y,w,h> <seconds> w<n> <from> <to> …` | A stage that was up has been given another motion. New roads begin; a stand-in that was on the stage starts where it is drawn at this moment |
+| `stage frame d<display> w<n> <place> …` | Where Core Animation draws each stand-in on the stage. One as the stand-ins set off, one at every tick, one as the stage comes down |
+| `stage lift d<display>` | The motion is over and the stage begins to fade |
+| `stage down d<display>` | It is off the screen. Without a `lift` before it, it was taken down in mid-motion (a click, a Space switch): cut short |
+
+A place is `x,y,width,height,opacity`, global and rounded to hundredths like everything here. In a road, `,cover` follows where the stand-in shows as its app's colour and icon. `<display>` is the display's id as the header has it
+(of anything but letters, digits and `-` it would have `_`).
+
+- **Never thinned**: the gaps between the lines are what is measured. A motion of eight windows at 0.46 s is 37 lines and 10 KB at sixty ticks a second, twice that at 120.
+- **No words.** `StageLog.Line` (ArborCore) holds numbers and the display's id and has no room for a text; `TraceRecorder.stage` takes such a line and nothing else. So these lines alone are not searched for titles and names: there are none in them, a
+  space named `1` would cost them their numbers, and the search would take time on the thread whose stalls the log is there to show. `make trace-check` fails for a `stage` line that is not exactly of the forms above.
+- **From a beginning or not at all** (`StageLogWriter`). If a trace ends in mid-motion, and another begins, the new one gets nothing of that motion. If the stage is then given something new to play, the log begins there, with `retargeted`.
+- **A replay skips them**, strict or free.
+
+### Judging it
+
+`arbor-sim stage-judge <file.jsonl>… [<limit>=<value>…]` (standard input without a file), on any platform, prints one line per motion with everything it measured, under it a line per finding (`✘`) and per note (`·`), and a last line that
+sums up. Exit code 0: no finding; 1: a finding, a `stage` line it cannot use, or a trace without any motion; 2: a file that cannot be read.
+
+| What is wanted | How it is measured | Limit |
+|---|---|---|
+| A motion lasts 460 ms ± 60 | From the stand-in with the longest way to go: when it had all but a hundredth of its road behind it (or all but 0.05 pt, if that is more), and after which share of the time `Transition.curve` has that due. The moment lies between two ticks, so the answer is a span ("lasts 458.8 to 478.8 ms"), and only a span that lies wholly outside is a finding. Of a retargeted stage the last roads count. With no road of a point or more, nothing is timed, and the line says so | `duration=0.46` (the default of `animationDuration`; `planned`: what the line says, for a run with another), `durationTolerance=0.06` |
+| No stand-in goes back on its road | Each of its four edges, from frame to frame, against the direction from start to end | `backwards=0.1`: places are rounded |
+| None overshoots by more than 2 pt | Each edge beyond its end; an edge with nowhere to go, away from its place | `overshoot=2` |
+| No two frames more than 34 ms apart | Every gap between two `frame` lines from `up` to `down`. One into which other lines of the trace fall is a **note**: the main thread was at work. One with nothing in it is a finding | `gap=0.034` |
+| At the first and the last frame each stand-in is within 2 pt of its real window | Its first frame against where its road starts, its last against where it ends; and both against the real window, where the stand-in shows as its window, in full and on the display. Where the windows are the trace says: its header, `appeared`, `changed`, `windowFound`, `windowReplaced`, the answers to `allWindows`, the frames windows took (`setFrame`). After `displaysChanged` nothing is known until it is said again | `handover=2` |
+| A retargeted stand-in carries on from where it is (`jump`) | The start of its new road against where it can have been: between its last frame and where the curve takes it from there in the time since | `handover=2` |
+| No panel is on screen for less than 100 ms | `down` minus `up` | `shortestUp=0.1` |
+| None is left 500 ms after the motion | `down` minus the latest moment the motion can have ended. A log that ends with the stage up is a finding however soon it ends: wait a second before `trace off` | `longestAfter=0.5` |
+| Every road is drawn (`frames`) | A stand-in with a road that is in no frame, or roads without any frame, prove nothing | |
+
+A stage that was cut short is not judged by how long it lasts or where it ended.
+
+**The limit.** The ticks are a display link's, and its callback runs on the main thread. So the log is the motion as the app saw it: the places Core Animation gives for that moment, at the ticks the main thread got. The window
+server draws the stand-ins by itself. While the main thread waits for apps to take their frames, which is just after `up` (real traces hold single `setFrame` calls of 50 and 117 ms), there is a gap in the log and need be none on the screen.
+So nothing is a finding that a busy main thread explains: such a gap is a note, and a motion whose end falls into one is timed by a span as wide as the gap. A note is a reason to look at the film; a log without gaps does not prove that
+the window server dropped no frame.
+
+### Rehearsing it
+
+After `rehearse-stage`, arbor-sim plays the real controller's transitions as a stage that does everything right would, sixty ticks a second, and has them logged by the same writer (`RehearsedStage`). That proves the way through a trace file to the
+judge, and says nothing about how Arbor moves.
+
+```bash
+export ARBOR_HOME=$(mktemp -d)
+swift run arbor-sim quiet "open A" "open B" "open C" rehearse-stage "trace on motion" arrange "wait 1" "zoom 101" "wait 0.2" back "wait 1" "trace off"
+swift run arbor-sim stage-judge "$ARBOR_HOME"/traces/*.jsonl
+```
 
 ## Recording: how it works
 
