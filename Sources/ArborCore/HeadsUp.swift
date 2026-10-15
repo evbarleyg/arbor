@@ -189,8 +189,6 @@ public enum HeadsUpHint: String, Sendable, CaseIterable {
   case outOfView
   case tile
   case docked
-  /// A window was let go where macOS itself tiles, and Arbor stood aside (`MacTiling`).
-  case leftToMacOS
   /// macOS made a docked window big at a double-click on its title bar, and Arbor stood aside (`AppsDoubleClick`).
   case zoomedByMacOS
 
@@ -213,16 +211,39 @@ public enum HeadsUpHint: String, Sendable, CaseIterable {
         kind: .hint, text: "Too small to show: click the tile to zoom in", hint: shortcut(.find(nil)).map { "\($0) goes there too" })
     case .docked:
       return HeadsUpModel(kind: .hint, text: "Docked", hint: shortcut(.zoom(nil)).map { "\($0) frames it" })
-    case .leftToMacOS:
-      // First the way that works at once, then the lasting cure, which is no shortcut and is said whatever the keys are.
-      let ways = [shortcut(.dock(nil, .left)).map { "\($0) docks it" }, "Check Setup… in the menu"].compactMap { $0 }
-      return HeadsUpModel(kind: .hint, text: "macOS tiled this window; Arbor stood aside", hint: ways.joined(separator: " · "))
     case .zoomedByMacOS:
       // The first way back is no shortcut, so it is said whatever the keys are.
       return HeadsUpModel(
         kind: .hint, text: "macOS zoomed this window",
         hint: shortcut(.showAll).map { "double-click again, or \($0), puts it back" } ?? "double-click again puts it back")
     }
+  }
+}
+
+/// What is said when a drag that asked Arbor to dock ended at an edge of the screen that is macOS's, and Arbor stood aside (`MacTiling`).
+///
+/// An answer to an act, not a lesson, so it is said every time. A hint teaches and may tire; a refusal or a standing aside answers, and
+/// never tires: a few times and then silence for good is "it would not dock".
+public enum StoodAside {
+  /// What the key that is named does to the window.
+  public enum Key: Sendable {
+    /// It floats: the key docks it on that side.
+    case docks
+    /// It is docked, having gone home: the key moves it that way.
+    case moves
+  }
+
+  /// `edge`: the one the window was let go at. `tiled`: macOS took the window; it does not a few points short of its own point, nor
+  /// every time at it. `key`: nil if the key would do nothing, the window being as far that way as it goes. `shortcut` gives the keys
+  /// in effect for a command, or nil if it has none.
+  public static func model(at edge: Edge, tiled: Bool, key: Key? = .docks, shortcut: (Command) -> String?) -> HeadsUpModel {
+    // First the way that works at once, on the side that was meant: a line that sends a person to the other side is worse than none. Docked
+    // at the top is not what the menu bar was asked for. Then the lasting cure, which is no shortcut and is said whatever the keys are.
+    let way = edge.axis == .horizontal ? key.flatMap { key in shortcut(.dock(nil, edge)).map { "\($0) \(key == .docks ? "docks" : "moves") it" } } : nil
+    // Of the kind of a hint in what a hold makes of it: what was said before a call began is not for its audience.
+    return HeadsUpModel(
+      kind: .hint, text: (tiled ? "macOS tiled this window" : "This edge of the screen is macOS’s") + "; Arbor stood aside",
+      hint: [way, "Check Setup… in the menu"].compactMap { $0 }.joined(separator: " · "))
   }
 }
 

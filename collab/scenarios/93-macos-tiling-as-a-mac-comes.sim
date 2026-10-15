@@ -11,16 +11,39 @@ expect floating 101
 expect size 101 720x875
 expect count docked 0
 expect said macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu
-# Held in the menu bar, Notes fills the screen.
+# Held in the menu bar, Notes fills the screen. No key docks "at the top of everything", so none is named.
 drag 102 700 0 cmd
 wait 1
 expect floating 102
 expect size 102 1440x875
-# Let go a few points short of the edge, nobody acts.
+expect said macOS tiled this window; Arbor stood aside · Check Setup… in the menu
+# Let go a few points short of the edge, nobody acts, and whoever asked Arbor is told why, with the key of THAT side.
 drag 103 1435 450 cmd
 wait 1
 expect floating 103
 expect count docked 0
+expect said This edge of the screen is macOS’s; Arbor stood aside · ⌃⌥⌘→ docks it · Check Setup… in the menu
+# It answers an act, so it never tires: the fifth time as the first.
+drag 103 900 450
+wait 10
+drag 103 1435 450 cmd
+drag 103 900 450
+wait 10
+drag 103 1435 450 cmd
+drag 103 900 450
+wait 10
+drag 103 1435 450 cmd
+drag 103 900 450
+wait 10
+expect silent
+drag 103 1435 450 cmd
+expect said This edge of the screen is macOS’s; Arbor stood aside · ⌃⌥⌘→ docks it · Check Setup… in the menu
+# A plain drag is macOS's and the person's own affair: nothing is said.
+drag 103 900 450
+wait 10
+drag 103 1435 450
+wait 1
+expect silent
 # The keys work at every setting.
 focus 103
 press dock left

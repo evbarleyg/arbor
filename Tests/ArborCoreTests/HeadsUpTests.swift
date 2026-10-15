@@ -251,21 +251,39 @@ import Testing
     #expect(HeadsUpHint.docked.model(facts: two, shortcut: keys).line == "Docked · ⌃⌥↩ frames it")
     #expect(HeadsUpHint.tile.model(facts: two, shortcut: keys).line == "Too small to show: click the tile to zoom in · ⌃⌥G goes there too")
     #expect(
-      HeadsUpHint.leftToMacOS.model(facts: two, shortcut: keys).line
-        == "macOS tiled this window; Arbor stood aside · Check Setup… in the menu")
-    #expect(
-      HeadsUpHint.leftToMacOS.model(facts: two) { $0 == .dock(nil, .left) ? "⌃⌥⌘←" : nil }.line
-        == "macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu")
-    #expect(
       HeadsUpHint.zoomedByMacOS.model(facts: two, shortcut: keys).line
         == "macOS zoomed this window · double-click again, or ⌃⌥Space, puts it back")
     #expect(HeadsUpHint.zoomedByMacOS.model(facts: two) { _ in nil }.line == "macOS zoomed this window · double-click again puts it back")
     for hint in HeadsUpHint.allCases {
       let bare = hint.model(facts: two) { _ in nil }
-      // The two whose second half names a way that is there whatever the keys are.
-      #expect((bare.hint == nil) == (hint != .leftToMacOS && hint != .zoomedByMacOS))
+      // The one whose second half names a way that is there whatever the keys are.
+      #expect((bare.hint == nil) == (hint != .zoomedByMacOS))
       #expect(bare.kind == .hint)
       #expect(!bare.text.isEmpty)
     }
+  }
+
+  /// What is said where Arbor stood aside for macOS: the key of the side the window was let go at, from the keys in effect, and none at the top.
+  @Test func whereArborStoodAsideTheLineNamesTheKeyOfThatSide() {
+    let keys: (Command) -> String? = { $0 == .dock(nil, .left) ? "⌃⌥←" : $0 == .dock(nil, .right) ? "⌃⌥→" : $0 == .dock(nil, .top) ? "⌃⌥↑" : nil }
+    #expect(
+      StoodAside.model(at: .left, tiled: true, shortcut: keys).line
+        == "macOS tiled this window; Arbor stood aside · ⌃⌥← docks it · Check Setup… in the menu")
+    #expect(
+      StoodAside.model(at: .right, tiled: true, shortcut: keys).line
+        == "macOS tiled this window; Arbor stood aside · ⌃⌥→ docks it · Check Setup… in the menu")
+    #expect(StoodAside.model(at: .top, tiled: true, shortcut: keys).line == "macOS tiled this window; Arbor stood aside · Check Setup… in the menu")
+    #expect(
+      StoodAside.model(at: .right, tiled: false, shortcut: keys).line
+        == "This edge of the screen is macOS’s; Arbor stood aside · ⌃⌥→ docks it · Check Setup… in the menu")
+    // Without a key for it, the lasting cure is still said.
+    #expect(StoodAside.model(at: .right, tiled: false) { _ in nil }.line == "This edge of the screen is macOS’s; Arbor stood aside · Check Setup… in the menu")
+    // Of a window that is docked, having gone home, the key moves it; and where it would do nothing it is not named.
+    #expect(
+      StoodAside.model(at: .right, tiled: false, key: .moves, shortcut: keys).line
+        == "This edge of the screen is macOS’s; Arbor stood aside · ⌃⌥→ moves it · Check Setup… in the menu")
+    #expect(
+      StoodAside.model(at: .right, tiled: false, key: nil, shortcut: keys).line
+        == "This edge of the screen is macOS’s; Arbor stood aside · Check Setup… in the menu")
   }
 }

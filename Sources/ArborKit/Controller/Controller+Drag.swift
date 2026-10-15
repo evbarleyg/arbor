@@ -84,6 +84,8 @@ extension Controller {
     closeFinderBecauseTheUserLeft()
     // A second press that drags is no double-click.
     appsDoubleClick = nil
+    // Whoever takes a window in hand has moved on (`sayIfArborStoodAside`).
+    scheduler.cancel(Self.leftToMacOSKey)
     guard isRunning, isManaged(id) else { return }
     rememberDragOrigin(of: id)
     // Out of view a floating window may have been made small (`shrinkOutOfView`). It takes its own size when it is let go. (A docked
@@ -362,16 +364,34 @@ extension Controller {
     finishDrop(session.window, on: hover, at: session.point, sizeOwed: session.sizeOwed, after: session.reflow)
     soleFloatDropped(session.window, from: session.sourceDisplay, leftToMacOS: hover.leftToMacOS != nil)
     noteWhereItsUserLeftIt(session.window)
-    // Whoever meant Arbor's edge and got macOS's tile is told where that can be changed. Whoever held ⌥ asked macOS, and so did
-    // whoever dragged it there while Arbor offered nothing. Said once macOS has moved the window, which it does not always
-    // do: thrown into the menu bar and let go at once, it stays as it is. Whoever has no edges of Arbor's there (a band
-    // of 0) meant none.
-    if let claim = hover.leftToMacOS, claim != .optionKey, !hover.isPlain, let display = hover.display, options(for: display).dropOptions.offersScreenEdges, let letGo = windows[session.window]?.frame
-    {
+    sayIfArborStoodAside(for: session, letGoOn: hover)
+  }
+
+  /// Whoever meant Arbor's edge and met macOS's is told whose it is, the key that docks on that side, and where it can be changed. Whoever
+  /// held ⌥ asked macOS, and so did whoever dragged it there while Arbor offered nothing (a plain drag). Whoever has no edges of
+  /// Arbor's there (a band of 0) meant none.
+  private func sayIfArborStoodAside(for session: DragSession, letGoOn hover: Hover) {
+    // (A drag that ended unseen is let go on what `cancelDrag` makes up, which knows nothing of what was held.)
+    guard !hover.isPlain, !session.wasPlain, hover.leftToMacOS != .optionKey, let display = hover.display ?? displayID(at: session.point),
+      options(for: display).dropOptions.offersScreenEdges, let middle = self.display(display)?.frame.midX
+    else { return }
+    let side: Edge = session.point.x < middle ? .left : .right
+    switch hover.leftToMacOS {
+    case .side?, .menuBar?:
+      guard let letGo = windows[session.window]?.frame else { return }
+      let edge = hover.leftToMacOS == .side ? side : .top
+      // Said once macOS has moved the window, which it does not always do: thrown into the menu bar and let go at once, it stays as it is.
       scheduler.schedule(Self.leftToMacOSKey, after: 0.5) { [weak self] in
         guard let self, let now = self.windows[session.window]?.frame, now != letGo else { return }
-        self.teach(.leftToMacOS, on: display)
+        self.sayThatArborStoodAside(for: session.window, at: edge, tiled: true, on: display)
       }
+    case .optionKey?: break
+    case nil:
+      // Short of macOS's own point, in the band along its edges, where neither acts (QUESTIONS Q23).
+      // Not for a window that lay at that edge and was only pushed along it, nor for a press that slipped: neither was carried there.
+      let edges = screenEdges(near: session.point).intersection(session.macTiling.edges).subtracting(session.edgesNeverLeft)
+      guard !edges.isEmpty, !isASlip(session), hover.target == .float || hover.target == .none else { return }
+      sayThatArborStoodAside(for: session.window, at: edges.contains(side) ? side : .top, tiled: false, on: display)
     }
   }
 

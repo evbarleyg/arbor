@@ -88,7 +88,7 @@ import Testing
     s.expectNothingLeftBehind()
   }
 
-  /// Let go in the band, short of macOS's own point, nobody acts: a floating window floats where it is.
+  /// Let go in the band, short of macOS's own point, nobody acts: a floating window floats where it is, and whoever asked Arbor is told why.
   @Test(arguments: [CGPoint(x: 1, y: 450), CGPoint(x: 11, y: 450), CGPoint(x: 1438, y: 450), CGPoint(x: 1429, y: 450), CGPoint(x: 700, y: 25), CGPoint(x: 700, y: 36)])
   func letGoInTheBandShortOfMacOSsPointAFloatingWindowStaysWhereItIs(point: CGPoint) {
     let s = scene()
@@ -101,7 +101,8 @@ import Testing
     #expect(s.frame(s.c) == letGo)
     #expect(s.h.workspace.isFloating(s.c))
     #expect(s.h.system.frameLog.isEmpty, "\(s.h.system.frameLog)")
-    #expect(s.h.overlays.messages.isEmpty, "nobody took it")
+    let key = point.y > 100 ? (point.x < 700 ? "⌃⌥⌘← docks it · " : "⌃⌥⌘→ docks it · ") : ""
+    #expect(s.h.overlays.messages.map(\.model.line) == ["This edge of the screen is macOS’s; Arbor stood aside · \(key)Check Setup… in the menu"])
     s.expectNothingLeftBehind()
   }
 
@@ -591,7 +592,8 @@ import Testing
     other.h.run("pause")
     other.h.run("resume")
     #expect(other.h.workspace.isDocked(other.a))
-    #expect(other.h.controller.headsUp.hintsShown[HeadsUpHint.leftToMacOS.rawValue] == nil)
+    other.h.scheduler.advance(by: 3)
+    #expect(!other.h.overlays.messages.contains { $0.model.line.contains("stood aside") })
   }
 
   /// The keys of a shortcut pressed with a window in the hand go up again, and the target under the pointer is Arbor's again.
@@ -689,20 +691,156 @@ import Testing
     s.expectNothingLeftBehind()
   }
 
-  /// Whoever meant Arbor's edge and got macOS's tile is told, a few times ever, where that can be changed.
-  @Test func theFirstTimesItSaysWhoTookTheWindow() {
+  /// What is said after `drop`, which carries Mail from the middle of the screen.
+  func said(_ s: DragScene, lettingGoAt point: CGPoint, plainly: Bool = false) -> [String] {
+    let before = s.h.overlays.messages.count
+    s.h.system.drag(s.c, through: [s.frame(s.c).center, CGPoint(x: 700, y: 300), point], plainly: plainly)
+    s.h.scheduler.advance(by: 8)
+    return s.h.overlays.messages.dropFirst(before).map(\.model.line)
+  }
+
+  /// Whoever meant Arbor's edge and got macOS's tile is told who took the window, the key that docks it ON THAT SIDE, and where it can be
+  /// changed. A line that sends a person to the other side is worse than none. At the top there is no such key.
+  @Test(arguments: [
+    (CGPoint(x: 0, y: 450), "⌃⌥⌘← docks it · "), (CGPoint(x: 1439, y: 450), "⌃⌥⌘→ docks it · "), (CGPoint(x: 700, y: 0), ""),
+  ]) func itSaysWhoTookTheWindowAndNamesTheKeyOfThatSide(point: CGPoint, key: String) {
+    #expect(said(scene(), lettingGoAt: point) == ["macOS tiled this window; Arbor stood aside · \(key)Check Setup… in the menu"])
+  }
+
+  /// It answers an act. A hint teaches and may tire; a standing aside answers, and never tires: three times and then silence for good
+  /// is exactly "it would not dock".
+  @Test func itIsSaidEveryTime() {
+    let s = scene()
+    for round in 1...6 {
+      #expect(
+        said(s, lettingGoAt: CGPoint(x: 1439, y: 450))
+          == ["macOS tiled this window; Arbor stood aside · ⌃⌥⌘→ docks it · Check Setup… in the menu"], "round \(round)")
+    }
+  }
+
+  /// Let go a few points short of macOS's own point nobody acts: the band is macOS's, and macOS takes nothing there. The window
+  /// floats where it was let go, hanging over the edge, and whoever asked Arbor to dock it is told why it did not (QUESTIONS Q23).
+  @Test(arguments: [
+    (CGPoint(x: 6, y: 450), "⌃⌥⌘← docks it · "), (CGPoint(x: 1433, y: 450), "⌃⌥⌘→ docks it · "), (CGPoint(x: 700, y: 30), ""),
+  ]) func shortOfMacOSsPointItSaysWhoseTheEdgeIs(point: CGPoint, key: String) {
     let s = scene()
     for round in 1...4 {
-      let before = s.h.overlays.messages.count
-      s.h.system.drag(s.c, through: [s.frame(s.c).center, CGPoint(x: 700, y: 300), CGPoint(x: 700, y: 0)])
-      s.h.scheduler.advance(by: 8)
-      let said = s.h.overlays.messages.dropFirst(before).map(\.model.line)
-      if round <= HeadsUpHint.timesShown {
-        #expect(said == ["macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu"], "round \(round)")
-      } else {
-        #expect(said.isEmpty, "round \(round)")
-      }
+      #expect(
+        said(s, lettingGoAt: point) == ["This edge of the screen is macOS’s; Arbor stood aside · \(key)Check Setup… in the menu"], "round \(round)")
+      #expect(s.h.workspace.isFloating(s.c))
     }
+  }
+
+  /// A plain drag is macOS's and the person's own affair: whoever dragged plainly to macOS's edge meant macOS (QUESTIONS Q29).
+  @Test(arguments: [CGPoint(x: 1439, y: 450), CGPoint(x: 1433, y: 450), CGPoint(x: 700, y: 0), CGPoint(x: 700, y: 30)])
+  func afterAPlainDropNothingIsSaid(point: CGPoint) {
+    #expect(said(scene(), lettingGoAt: point, plainly: true).isEmpty)
+  }
+
+  /// A plain drag whose release was never seen, or whose window closed in the hand, is a plain drag.
+  @Test func aPlainDragThatEndsUnseenIsAnsweredNoMoreThanOneThatIsSeen() {
+    let s = scene()
+    s.h.system.dragAndLoseTheRelease(s.c, to: CGPoint(x: 1433, y: 450), plainly: true)
+    s.h.scheduler.advance(by: 30)
+    #expect(s.h.overlays.messages.isEmpty, "\(s.h.overlays.messages.map(\.model.line))")
+
+    let closed = scene()
+    closed.h.system.beginDrag(closed.c)
+    closed.h.system.moveDrag(to: CGPoint(x: 1433, y: 450), holding: 0.5)
+    closed.h.system.close(closed.c)
+    closed.h.scheduler.advance(by: 3)
+    #expect(closed.h.overlays.messages.isEmpty, "there is no window to speak of: \(closed.h.overlays.messages.map(\.model.line))")
+  }
+
+  /// A window that lies at the edge and is only pushed along it has not been carried there (`edgesNeverLeft`): nothing was asked for that the edge
+  /// stood in the way of. Under the menu bar that is every window macOS has filled the screen with.
+  @Test(arguments: ["held", "always"]) func aWindowPushedAlongTheEdgeItLiesAtIsToldNothing(dragDocks: String) {
+    let s = DragScene { $0.dragDocks = dragDocks }
+    s.h.system.tiling = .on
+    s.h.system.userMove(s.c, to: CGRect(x: 800, y: 25, width: 400, height: 300))
+    s.h.scheduler.advance(by: 3)
+    let before = s.h.overlays.messages.count
+    s.h.system.drag(s.c, through: [CGPoint(x: 1000, y: 35), CGPoint(x: 1050, y: 35)])
+    s.h.scheduler.advance(by: 3)
+    #expect(s.h.overlays.messages.count == before, "\(s.h.overlays.messages.map(\.model.line))")
+  }
+
+  /// Nor is a press on a docked window's title bar that slips by a few points.
+  @Test func aSlipOnADockedTitleBarIsToldNothing() {
+    let s = scene()
+    let bar = CGPoint(x: s.frame(s.a).midX, y: s.frame(s.a).minY + 5)
+    // Up into the band under the menu bar, which begins a point above the window.
+    s.h.system.drag(s.a, through: [bar, CGPoint(x: bar.x + 1, y: s.frame(s.a).minY - 1)])
+    s.h.scheduler.advance(by: 3)
+    #expect(s.h.overlays.messages.isEmpty, "\(s.h.overlays.messages.map(\.model.line))")
+  }
+
+  /// The line about macOS's tile waits half a second for macOS. Whoever has done something else by then has moved on: the key it would name,
+  /// another drag, a quit.
+  @Test func whoeverHasMovedOnIsNotToldAfterwards() {
+    let key = scene()
+    key.h.system.drag(key.c, through: [key.frame(key.c).center, CGPoint(x: 700, y: 300), CGPoint(x: 1439, y: 450)])
+    key.h.system.userFocus(key.c)
+    key.h.press("dock right")
+    key.h.scheduler.advance(by: 3)
+    #expect(key.h.workspace.isDocked(key.c))
+    #expect(!key.h.overlays.messages.contains { $0.model.line.contains("stood aside") }, "\(key.h.overlays.messages.map(\.model.line))")
+
+    // Thrown into the menu bar, where macOS takes nothing, and taken away again by hand: nobody tiled it.
+    let hand = scene()
+    hand.h.system.beginDrag(hand.c)
+    hand.h.system.moveDrag(to: hand.onDesktop)
+    hand.h.system.moveDrag(to: CGPoint(x: 700, y: 10), holding: 0.05)
+    hand.h.system.endDrag()
+    hand.h.system.drag(hand.c, through: [CGPoint(x: 700, y: 20), CGPoint(x: 700, y: 300)], holding: 0.05, plainly: true)
+    hand.h.scheduler.advance(by: 3)
+    #expect(!hand.h.overlays.messages.contains { $0.model.line.contains("stood aside") }, "\(hand.h.overlays.messages.map(\.model.line))")
+
+    let quit = scene()
+    quit.h.system.drag(quit.c, through: [quit.frame(quit.c).center, CGPoint(x: 700, y: 300), CGPoint(x: 1439, y: 450)])
+    quit.h.controller.shutdown()
+    let before = quit.h.overlays.messages.count
+    quit.h.scheduler.advance(by: 3)
+    #expect(quit.h.overlays.messages.count == before)
+  }
+
+  /// A docked window that went home is docked: the key does not "dock it". It moves it, where there is somewhere to move it to.
+  @Test func ofADockedWindowTheLineSaysWhatTheKeyDoes() {
+    // `[Safari | Desktop | Notes]`: Notes is at the right edge already, Safari is not.
+    let s = scene()
+    func saidAfterDragging(_ window: WindowID) -> [String] {
+      let before = s.h.overlays.messages.count
+      s.h.system.drag(window, through: [s.frame(window).center, CGPoint(x: 1000, y: 300), CGPoint(x: 1433, y: 450)])
+      s.h.scheduler.advance(by: 8)
+      return s.h.overlays.messages.dropFirst(before).map(\.model.line)
+    }
+    #expect(saidAfterDragging(s.b) == ["This edge of the screen is macOS’s; Arbor stood aside · Check Setup… in the menu"])
+    #expect(saidAfterDragging(s.a) == ["This edge of the screen is macOS’s; Arbor stood aside · ⌃⌥⌘→ moves it · Check Setup… in the menu"])
+    #expect(s.h.workspace.isDocked(s.a) && s.h.workspace.isDocked(s.b))
+  }
+
+  /// What was said before a call began is not for its audience.
+  @Test func theLineGoesWhenACallBegins() {
+    let s = DragScene { $0.holdStillFor = ["us.zoom.xos Zoom Meeting"] }
+    s.h.system.tiling = .on
+    s.h.system.drag(s.c, through: [s.frame(s.c).center, CGPoint(x: 700, y: 300), CGPoint(x: 1433, y: 450)])
+    #expect(s.h.overlays.headsUp.count == 1, "or this proves nothing")
+    s.h.system.open(app: "Zoom", bundleID: "us.zoom.xos", title: "Zoom Meeting")
+    #expect(s.h.controller.isHeld)
+    #expect(s.h.overlays.headsUp.isEmpty)
+  }
+
+  /// Away from the edges, and at the bottom edge, which is Arbor's, there is nothing to answer for.
+  @Test(arguments: [CGPoint(x: 1400, y: 450), CGPoint(x: 700, y: 897)]) func whereNothingIsMacOSsNothingOfTheKindIsSaid(point: CGPoint) {
+    #expect(!said(scene(), lettingGoAt: point).contains { $0.contains("stood aside") })
+  }
+
+  /// With macOS's tiling off every edge is Arbor's.
+  @Test func withMacOSsTilingOffNothingOfTheKindIsSaid() {
+    let s = scene()
+    s.h.system.tiling = .off
+    #expect(!said(s, lettingGoAt: CGPoint(x: 1433, y: 450)).contains { $0.contains("stood aside") })
+    #expect(s.h.workspace.isDocked(s.c))
   }
 
   /// Whoever set the band to 0 meant no edge of Arbor's, very likely so as to keep macOS's tiling: nothing stood aside, and there
@@ -714,7 +852,6 @@ import Testing
     s.h.scheduler.advance(by: 8)
     #expect(s.frame(s.c) == CGRect(x: 0, y: 25, width: 1440, height: 875), "macOS tiled it")
     #expect(s.h.overlays.messages.isEmpty, "\(s.h.overlays.messages.map(\.model.line))")
-    #expect(s.h.controller.headsUp.hintsShown[HeadsUpHint.leftToMacOS.rawValue] == nil)
   }
 
   /// The strip along macOS's edges is kept clear for macOS's sake, so it is there whatever Arbor's own band is. With narrow gaps a

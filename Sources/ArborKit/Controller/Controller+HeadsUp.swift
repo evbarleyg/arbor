@@ -79,6 +79,8 @@ extension Controller {
     _ result: CommandResult, to command: Command, from source: CommandSource, on display: DisplayID?, changedNothing: Bool,
     namesBefore: Set<String>
   ) {
+    // Whoever has asked for something else meanwhile has moved on (`sayIfArborStoodAside`).
+    scheduler.cancel(Self.leftToMacOSKey)
     // Looked at whoever asked, so that what a script changed is not taken for the next event's doing.
     let moment = noteFacts(on: ([display].compactMap { $0 } + workspaces.keys.sorted()))
     let level = settings.messageLevel
@@ -285,6 +287,20 @@ extension Controller {
       headsUp.hintsShown[hint.rawValue, default: 0] < HeadsUpHint.timesShown, let facts = facts(on: display)
     else { return }
     teach(Moment(hint: hint, display: display, facts: facts))
+  }
+
+  /// A drag that asked Arbor to dock `window` ended at `edge` of the screen, which is macOS's, and nothing docked. Every time (`StoodAside`).
+  func sayThatArborStoodAside(for window: WindowID, at edge: Edge, tiled: Bool, on display: DisplayID) {
+    // Not in front of an audience (Controller+Hold.swift).
+    guard isRunning, headsUp.source == nil, headsUp.trying == 0, peeking == nil, settings.messageLevel != .off, mayShowUnasked,
+      windows[window] != nil
+    else { return }
+    // A docked window has gone home. The key moves it that way, if there is anywhere to go.
+    var key: StoodAside.Key? = .docks
+    if let home = workspaceID(containing: window), let workspace = workspaces[home], let leaf = workspace.tree.leaf(containing: window) {
+      if case .moved = moving(window, at: leaf, toward: edge, in: workspace, on: home) { key = .moves } else { key = nil }
+    }
+    showHeadsUp(StoodAside.model(at: edge, tiled: tiled, key: key, shortcut: shortcutLabel(for:)), on: display)
   }
 
   private func teach(_ moment: Moment) {
