@@ -300,8 +300,11 @@ final class Lens: NSObject, SCStreamOutput, SCStreamDelegate {
       let info = attachments.first, let raw = info[.status] as? Int, SCFrameStatus(rawValue: raw) == .complete,
       let buffer = CMSampleBufferGetImageBuffer(sampleBuffer), let (frame, width, height) = pixels(of: buffer)
     else { return }
-    // When the frame was on the display, where macOS says so; else when it got here.
-    let shown = (info[.displayTime] as? UInt64).map { milliseconds(atUptime: nanoseconds(ofTicks: $0)) } ?? now()
+    // When the frame was on the display, where macOS says so; else when it got here. A frame gets here within a few hundredths of a second. After a long rest macOS was seen to hand over
+    // the first frame that changes with a time three quarters of a second old, before the key that caused it: a time that old is not believed.
+    let here = now()
+    var shown = (info[.displayTime] as? UInt64).map { milliseconds(atUptime: nanoseconds(ofTicks: $0)) } ?? here
+    if abs(here - shown) > 250 { shown = here }
     reel.show(frame, width: width, height: height, at: shown)
     ready(width, height, scale)
   }
