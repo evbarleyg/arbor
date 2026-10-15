@@ -140,6 +140,7 @@ import Testing
         $0.gesturesEnabled = true
         $0.scrollZoom = true
         $0.menuBarControls = true
+        $0.focusRing = true
       })
     for section in SettingsSection.allCases {
       #expect(all(model, in: section).allSatisfy { $0.waitsFor == nil && $0.whyItWaits == nil }, "\(section)")
@@ -259,5 +260,46 @@ import Testing
         #expect(h.controller.menuBarModel() == single, "\(key) = \(value)")
       }
     }
+  }
+
+  /// So with the line round the focused window, which ships off: how wide it would be, of what colour and how round shows nowhere.
+  @Test func withoutTheRingWhatIsDrawnIsTheSameWhateverItWouldBeLike() throws {
+    let h = harness { $0.focusRing = true }
+    let window = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
+    h.run("dock \(window.rawValue) left")
+    h.system.userFocus(window)
+    h.scheduler.advance(by: 1)
+    let hanging = SettingsSchema.needs.filter { $0.value == "focusRing" }.keys.sorted()
+    #expect(hanging == ["focusRingColour", "focusRingRadius", "focusRingWidth"])
+    // The control: with the line there each of them shows.
+    #expect(h.overlays.scenes.values.contains { $0.focusRing != nil })
+    for key in hanging {
+      let before = h.overlays.scenes
+      #expect(h.run("set \(key) \(try #require(extremes(of: try SettingsSchema.entry(named: key)).last))").ok)
+      h.scheduler.advance(by: 1)
+      #expect(h.overlays.scenes != before, "\(key) changes nothing even with the line there")
+      #expect(h.run("reset \(key)").ok)
+    }
+    #expect(h.run("set focusRing false").ok)
+    h.scheduler.advance(by: 1)
+    let bare = h.overlays.scenes
+    #expect(bare.values.allSatisfy { $0.focusRing == nil })
+    for key in hanging {
+      for value in extremes(of: try SettingsSchema.entry(named: key)) {
+        #expect(h.run("set \(key) \(value)").ok)
+        h.scheduler.advance(by: 1)
+        #expect(h.overlays.scenes == bare, "\(key) = \(value)")
+      }
+    }
+  }
+
+  /// As Arbor ships, then, the three wait for the switch above them, and say for which.
+  @Test func asArborShipsTheRingsRowsWaitForTheRing() throws {
+    let rows = all(model(harness()), in: .appearance)
+    for key in ["focusRingWidth", "focusRingColour", "focusRingRadius"] {
+      for row in rows where row.key == key { #expect(row.waitsFor == (try label("focusRing")), "\(key)") }
+    }
+    #expect(rows.filter { $0.waitsFor != nil }.map(\.key).sorted() == ["focusRingColour", "focusRingWidth"], "the third is in no pane")
+    #expect(rows.first { $0.key == "focusRing" }?.waitsFor == nil)
   }
 }

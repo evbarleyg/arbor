@@ -231,6 +231,7 @@ public enum SettingsSchema {
     "guardDesktopClicks": "pointerGestures", "scrollZoom": "gesturesEnabled", "continuousZoom": "gesturesEnabled",
     "pinchThreshold": "gesturesEnabled", "scrollZoomThreshold": "scrollZoom", "scrollOnDesktopZooms": "scrollZoom",
     "historyButtons": "menuBarControls", "menuBarFill": "menuBarControls",
+    "focusRingWidth": "focusRing", "focusRingColour": "focusRing", "focusRingRadius": "focusRing",
   ]
 
   private static let gestures = section(
