@@ -1933,6 +1933,7 @@ def check_ci_build_key():
         row("ci-build-key.sh: neither a debug build passes for a release build nor the other way round, and neither is built upon the other",
             [(wants, has) for wants, has in (("release", "products"), ("release", "tests"), ("products", "release"), ("tests", "release"))
              if fnmatch.fnmatchcase(key(has)[1], takes(wants)[0]) or any(key(has)[1].startswith(start) for start in takes(wants)[1])], [])
+        row("ci-build-key.sh: a release build is built upon nothing at all: these very sources, or from the beginning", takes("release")[1], [])
         row("ci-build-key.sh: the control: a build without the tests is built upon one with them", any(key("tests")[1].startswith(start) for start in takes("products")[1]), True)
         row("ci-build-key.sh: which test files are compiled is part of the name of a build with tests",
             key("tests") != key("tests", ARBOR_TEST_SOURCES_T="T.swift"), True)

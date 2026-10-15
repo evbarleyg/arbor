@@ -46,9 +46,11 @@ case "$kind" in
     echo "enough=$stem-[pt]-$sources*"
     printf 'or<<.\n%s\n.\n' "$stem-t-$sources-"$'\n'"$stem-t-"$'\n'"$stem-p-" ;;
   release)
-    # A world of its own: nothing of a debug build is of use to it, nor the other way round, and neither may pass for the other.
+    # A world of its own: nothing of a debug build is of use to it, nor the other way round, and neither may pass for the other. And it is built upon
+    # nothing, not even another release build: the optimizer compiles whole modules, so one changed file compiles all of it again. Measured on hosted
+    # Macs: 322 s and 275 s upon the build of other sources, 308 s and 228 s from nothing, and fetching the 390 MB took a quarter of a minute besides.
     echo "key=$stem-r-$sources"
     echo "enough=$stem-r-$sources"
-    printf 'or<<.\n%s\n.\n' "$stem-r-" ;;
+    printf 'or<<.\n.\n' ;;
   *) echo "ci-build-key.sh: products, tests or release, not '$kind'" >&2; exit 64 ;;
 esac
