@@ -2,7 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    # A merge train: the trunk with a batch of pull requests on it, pushed as `train/…` by whoever lands them, with no pull request of
+    # its own. All of this runs on the sum, which is what will be the trunk: two pull requests that are each green can be red
+    # together. Green, and the trunk moves forward to that very commit; that push starts no run of this workflow (an open pull
+    # request from the trunk into main gets one, as at every push to the trunk, and no Mac: this commit has passed on one).
+    # To scripts/ci-changes.py a train is a push like one to main: work is integrated here.
+    branches: [main, "train/**"]
   pull_request:
     # The last of them: a draft gets lint alone (see the job `linux`), and all the rest when its author marks it ready for review.
     types: [opened, synchronize, reopened, ready_for_review]
@@ -239,7 +244,7 @@ jobs:
       all: ${{ github.event_name != 'pull_request' || !github.event.pull_request.draft }}
 
   # What is compiled for a part of the tests is not the checkout, and a process to a file is not how `swift test` runs them
-  # (linux.yml). So where work is integrated (a push to main, a pull request into it, from whatever branch), and at
+  # (linux.yml). So where work is integrated (a push to main, a merge train, a pull request into main from whatever branch), and at
   # night, plain `swift test` runs everything once more and must come to the same outcome, test by test. Nobody else has
   # to wait twelve minutes for it: whoever integrates waits for this one too. It starts at once, beside the parts: by
   # the time it has run, their record is there, or they failed and so does this.
