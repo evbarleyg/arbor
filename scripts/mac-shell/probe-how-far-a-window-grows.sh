@@ -19,6 +19,18 @@
 #      the next call. And a journey into a slot and out of it, its calls back to back as Arbor makes them, with the three later looks after the last. Asked of the test window,
 #      of G's apps and of seven more. From G on with Reduce Motion off, as a person's Mac has it (a hosted Mac comes with it on); at the end one app once more with it on
 #
+# What it answered on a hosted Mac on 2026-10-15 (macOS 26.6.2, scale 1, 844 calls):
+#   - On one display position, size gives every slot whole, with one AXResized where size, position, size gives two; size, position is the one order that ends short. Except into a frame that hangs
+#     over an edge: a window cannot grow into it once it is there, and size, position, size gets it only by sizing the window where it stood.
+#   - "Less 1" belongs to the Dock: with the Dock at the bottom growth stops 1 point above the visible bottom, with it at the left or hidden at the display's bottom. Each edge is judged by itself, and is free only
+#     when it is off the display. The Dock at the left holds nothing back. A window sent wholly off the displays is pulled back until 40 points show; y lies between the menu bar and the visible bottom less the title bar.
+#   - A position call that takes a window to a display whose visible frame is lower than the window cuts its height and puts it at the visible top, in that call. Orders that shrink first avoid it.
+#   - For some milliseconds after a position call has taken a window to another display, a size call is judged by the display it came from: back to the larger display all four orders ended short, 12 of 12.
+#     200 ms later the new display judges. probe-when-the-display-turns.sh asks when it turns.
+#   - Ten real apps of ten that could be judged are clipped like the test window. Chrome and Firefox did not open (`open -b`).
+#   - No app of eleven moved late by Accessibility (170 results of 170; the looks came at 62 to 209, 200 to 346 and 601 to 757 ms). The window server's list is behind: after 143 results of 170 it differed from Accessibility's
+#     answer, and five times it held a half-way frame 62 to 146 ms after the last call.
+#
 # What comes back: grow.jsonl, every call and every result as grow.swift printed them (its header says what is in a line); output.txt, a line for each result.
 # LATE stands in a line wherever a later look differs from the reading at once. It judges nothing: every line is an answer. Exit code 0 unless a tool did not compile.
 source "$(dirname "${BASH_SOURCE[0]}")/lib-apps.sh"
