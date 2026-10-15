@@ -65,6 +65,8 @@ extension Controller {
       // Unless Arbor knows the way back: the key filled the screen with it, and macOS has zoomed it since. Whoever presses the key
       // again means "back", whatever happened between.
       if again, takesUpItsFill(current, on: displayID, whereverItIs: true) { return endFill(of: id, on: display) }
+      // It may lie behind a framed window, where no view takes it from: what names a window gives it the keyboard, and with that the front.
+      if floatsBesideTheView(id, on: displayID), keyboardFocus() != id { askForTheKeyboard(for: id) }
       return .success("\(id) fills the screen already")
     }
     fills.gaveWay[id] = nil
@@ -147,8 +149,8 @@ extension Controller {
     guard workspaces[displayID]?.endFill(of: id) == true else { return false }
     fills.inHand.remove(id)
     misfits[id] = nil
-    // It was in view whatever the view showed. With the Desktop out of view it would now be gone at the next move of the view, and
-    // Back would not bring it back: like a window that starts to float there, it belongs to this view (Controller+UndockedFrames.swift).
+    // It was in view whatever the view showed. With the Desktop out of view it belongs to this view, like a window that starts to float
+    // there (Controller+UndockedFrames.swift): with `floatingWindowsMakeWay` it would otherwise be gone at the next move of the view.
     if layouts[displayID]?.desktopFrame == nil, workspaces[displayID]?.role(of: id) == nil, workspaces[displayID]?.guests?[id] == nil {
       stayWithTheView(id, on: displayID)
     }

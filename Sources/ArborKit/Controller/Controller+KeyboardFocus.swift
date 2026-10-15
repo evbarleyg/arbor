@@ -115,13 +115,17 @@ extension Controller {
 
   /// Everything focus can go to on `display`: the docked windows in view in tree order, the tiles, then
   /// the floating windows in view in the order they were opened. With `arriving`, what came into view with a move of the
-  /// view: not the pinned windows, which were there before, and where keys typed by surprise do harm (a call).
+  /// view: not the pinned windows, which were there before, and where keys typed by surprise do harm (a call). Nor the floating
+  /// windows that merely lie there whatever the view shows (`floatsBesideTheView`). Of those, one that something covers is never a stop: it
+  /// cannot be seen, a direction would fetch it from behind the framed window, and the neighbor beyond would be out of the key's reach.
   func focusCandidates(on display: DisplayID, arriving: Bool = false) -> [FocusCandidate] {
     guard let layout = layouts[display], let workspace = workspaces[display] else { return [] }
     var candidates: [FocusCandidate] = []
+    lazy var frontToBack = system.windowsFrontToBack()
     func add(_ window: WindowID) {
       // One that hangs over its neighbour lies where its place is: left of that neighbour, however far it reaches.
-      guard let frame = layout.tightPlaces[window] ?? frameInView(of: window, on: display), !(arriving && workspace.isPinned(window))
+      guard let frame = layout.tightPlaces[window] ?? frameInView(of: window, on: display), !(arriving && workspace.isPinned(window)),
+        !(floatsBesideTheView(window, on: display) && (arriving || isCovered(window, by: frontToBack, apartFrom: [])))
       else { return }
       candidates.append(FocusCandidate(id: .window(window), frame: frame, recency: focusRecency(of: [window])))
     }

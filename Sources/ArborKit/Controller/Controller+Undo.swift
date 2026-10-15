@@ -418,7 +418,8 @@ extension Controller {
     guard let current = workspaces[display], current.camera == restored.camera,
       current.tree.isSameNode(current.camera, in: restored.tree)
     else { return restoration }
-    // Where the windows that change places end up: in their slots, or on the Desktop.
+    // Where the windows that change places end up: in their slots, or on the Desktop. (One that floats again is in view whatever the
+    // view shows, but behind a framed window, where nobody sees it: nothing is raised.)
     let destinations = restored.allWindows
       .filter { windows[$0]?.isPresent == true && !restored.staysInView($0) && !restored.isStashed($0) }
       .filter { restored.tree.place(of: $0) != current.tree.place(of: $0) }
@@ -501,19 +502,19 @@ extension Controller {
 
   /// What becomes of the floating windows of a restored workspace that a layout would leave alone or treat otherwise.
   struct FloatingPlan {
-    /// Back to where they were in view when the step was saved, be it off the Desktop: a new window stays over a framed
-    /// one until the camera moves, and comes back with that view.
+    /// Back to where they were in view when the step was saved, be it off the Desktop: with `floatingWindowsMakeWay` a new window
+    /// stays over a framed one until the camera moves, and comes back with that view.
     var places: [WindowID: CGRect] = [:]
     /// To their place on the Desktop (or, for a pinned window or a guest, on the display).
     var homes: [WindowID: CGRect] = [:]
-    /// Out of view.
+    /// Out of view. Only with `floatingWindowsMakeWay`: as Arbor ships no step takes a floating window away.
     var leaving: Set<WindowID> = []
     /// Alone on the Desktop without filling it when the step was saved: its user had taken it in hand (F18), and has again.
     var inHand: WindowID?
   }
 
-  /// A layout keeps the windows on the Desktop on it, and leaves the other floating windows alone. After an undo these may
-  /// still be in the slot they were docked in, or on another display. Changes nothing.
+  /// A layout leaves floating windows alone (with `floatingWindowsMakeWay`: keeps those on the Desktop on it, and leaves the others
+  /// alone). After an undo they may still be in the slot they were docked in, or on another display. Changes nothing.
   private func floatingPlan(
     for restoration: Restoration, replacing previous: Workspace?, on displayID: DisplayID
   ) -> FloatingPlan {
@@ -529,10 +530,10 @@ extension Controller {
     var plan = FloatingPlan()
     for (window, preferred) in workspace.floating.sorted(by: { $0.key < $1.key }) {
       // A stashed window is out of view whatever the camera shows, and every layout sees to that (Controller+Summon.swift).
-      // So is one that fills the view in it (Controller+Fill.swift).
-      guard let current = windows[window], current.isPresent, !workspace.isStashed(window), !workspace.isFilled(window) else {
-        continue
-      }
+      // So is one that fills the view in it (Controller+Fill.swift). What a hold keeps out waits for the hold's end, not for a step.
+      guard let current = windows[window], current.isPresent, !workspace.isStashed(window), !workspace.isFilled(window),
+        settings.floatingWindowsMakeWay || !holdKeepsOut(window)
+      else { continue }
       // It filled the view till now, and that is what is taken back: to its own frame, whatever the view shows.
       if previous?.isFilled(window) == true {
         plan.places[window] = ownFrame(of: window, on: display) ?? preferred
@@ -553,10 +554,8 @@ extension Controller {
         } else if !floatsInView {
           plan.homes[window] = preferred.fitted(into: display.visibleFrame)
         }
-      } else if !settings.floatingWindowsMakeWay,
-        // By what shows, as a layout goes (`moveKeepingItsFrame`): more than the view is on, while that has nothing to show.
-        layout.map({ workspace.tree.subtree($0.camera, contains: workspace.tree.desktop) }) ?? desktopIsPartOfTheView
-      {
+      } else if !settings.floatingWindowsMakeWay {
+        // Whatever the view of the step shows: no view takes a floating window away (`moveKeepingItsFrame`).
         // Its frame is its person's (Controller+OwnFrames.swift), and the restored workspace has it: the one the step took it from, or,
         // if it was moved since, the one it was moved to. Where it happened to be on screen when the step was saved says no more.
         // One that floats in view, and of which the step changes nothing, is left where it is: what is remembered can be behind it.

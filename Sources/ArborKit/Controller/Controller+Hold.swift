@@ -41,7 +41,9 @@ extension Controller {
     var openedByTheUser: Set<WindowID> = []
     /// Floating windows that opened off screen and are not let in, not even onto a Desktop that is in view. They
     /// outlive the hold: they come in when the view next moves (`holdLetsInWhatWaited`).
-    var keptOut: Set<WindowID> = []
+    var keptOut: Set<WindowID> = [] { didSet { arrived.formIntersection(keptOut) } }
+    /// Those of them that a display that went has sent over. They were in view until then, so they come back when the hold ends.
+    var arrived: Set<WindowID> = []
     /// The window system was told to leave dialogs that open out of view where they are. The same.
     var dialogsWait = false
     /// The window in view that last had the keyboard, arranged by Arbor or not. It gets it back.
@@ -338,8 +340,11 @@ extension Controller {
     if level == nil {
       let putOff = hold.putOff
       let (caller, dismissed, keptOut, dialogsWait) = (hold.caller, hold.callerDismissed, hold.keptOut, hold.dialogsWait)
+      let arrived = hold.arrived.intersection(keptOut)
       hold = Hold()
-      (hold.caller, hold.callerDismissed, hold.keptOut, hold.dialogsWait) = (caller, dismissed, keptOut, dialogsWait)
+      (hold.caller, hold.callerDismissed, hold.keptOut, hold.dialogsWait) = (caller, dismissed, keptOut.subtracting(arrived), dialogsWait)
+      // No view takes a floating window away: only the hold kept these.
+      for display in Set(arrived.compactMap(workspaceID(containing:))).sorted() { relayout(display, reason: .structure) }
       for (window, rule) in putOff {
         // Only windows that are still as the rule would have found them.
         guard isManaged(window), let display = workspaceID(containing: window),
@@ -714,6 +719,20 @@ extension Controller {
   /// summoned: "always in view" is the person's own word about that window, and a call pinned by a rule is what they want to see
   /// during a call.
   func holdKeepsOut(_ id: WindowID) -> Bool { hold.keptOut.contains(id) && !staysInView(id) }
+
+  /// A display went during a hold, and floating `id` has come over to a view that does not show the Desktop. Or it waited for that
+  /// reason and arrives somewhere else now.
+  func holdKeepsOutWhatArrived(_ id: WindowID, if waits: Bool) {
+    if waits {
+      hold.keptOut.insert(id)
+      hold.arrived.insert(id)
+    } else if hold.arrived.contains(id) {
+      hold.keptOut.remove(id)
+    }
+  }
+
+  /// Whether `id` is one of those, and still waits.
+  func holdKeepsOutAnArrival(_ id: WindowID) -> Bool { isHeld && hold.arrived.contains(id) && holdKeepsOut(id) }
 
   /// Called when a rule has pinned `id`, which marks it and moves nothing (without a hold it would be in view already), and when somebody
   /// turns to `id` and the hold lets that pass: with the Desktop in view already no view has to move, so no move would let it in.

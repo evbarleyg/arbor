@@ -100,7 +100,8 @@ public struct Settings: Codable, Equatable, Sendable {
   public var summonStays: Bool = false
 
   /// What happens to a new window that opens over a view that does not show the Desktop, when no rule says
-  /// otherwise: `"guest"`, it floats and goes out of view and comes back with that view; `"float"`, it belongs to
+  /// otherwise: `"guest"`, it floats and belongs to that view, so it has the keyboard again when the view comes back
+  /// (with `floatingWindowsMakeWay` it also goes out of view and comes back with it); `"float"`, it belongs to
   /// the Desktop like any floating window. See docs/features/F57-new-windows-while-framed.md.
   public var newWindowsWhileFramed: String = "guest"
   /// ⇧-drag that starts where no app's window is under the pointer (the Desktop, a gap between
@@ -226,8 +227,8 @@ public struct Settings: Codable, Equatable, Sendable {
   /// Off as Arbor ships: no tap goes in at launch until all its checks of the taps on a Mac are green.
   public var pointerGestures: Bool = false
   /// Floating windows are kept on the Desktop: docked windows push them aside and squeeze them, and they go back as room
-  /// returns. Off, as it ships, a floating window's frame is its person's: Arbor sets it only to take the window out
-  /// of view and to put it back exactly where it was (collab/QUESTIONS.md, Q20).
+  /// returns, and they leave the view with the Desktop. Off, as it ships, a floating window's frame is its person's, and
+  /// no view takes it away (collab/QUESTIONS.md, Q20 and Q29, 4).
   public var floatingWindowsMakeWay: Bool = false
   /// The Desktop has a share of its own among docked windows, as in the first build: a second dock makes thirds (window, Desktop,
   /// window), Arrange Windows leaves a column `arrangeDesktopWeight` wide, and room taken from the Desktop is owed to it. Off, the

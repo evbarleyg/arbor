@@ -27,7 +27,8 @@ public struct Workspace: Codable, Sendable, Equatable {
   /// Floating windows that stay in view wherever the camera goes (see "Pins" below). Nil when there
   /// are none, as in files written before pins existed.
   public private(set) var pinned: Set<WindowID>?
-  /// Floating windows that belong to a space instead of the Desktop: they opened over it while it was framed, and
+  /// Floating windows that belong to a space instead of the Desktop: they opened over it while it was framed, and have the
+  /// keyboard again when it comes back; with `floatingWindowsMakeWay` they also
   /// go out of view and come back with it (F57). Keyed by window; the value is the space, their host.
   /// Nil when there are none, and in files written before this existed.
   public private(set) var guests: [WindowID: NodeID]?

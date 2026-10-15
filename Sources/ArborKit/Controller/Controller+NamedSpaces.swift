@@ -117,7 +117,12 @@ extension Controller {
     case .found(let space):
       let elsewhere = space.display != acting
       let place = self.name(of: space.node, on: space.display) + (elsewhere ? " on another display" : "")
-      if !space.isInView { moveCamera(on: space.display, to: space.node) }
+      // (In view already, it still gets the keyboard out of a floating window that lies beside it: it was named.)
+      if !space.isInView {
+        moveCamera(on: space.display, to: space.node)
+      } else if keyboardFocus().map({ floatsBesideTheView($0, on: space.display) }) == true {
+        ensureFocusIsVisible(on: space.display, alsoFromNothing: false)
+      }
       // The user went there, so the keyboard does, and with it the shortcuts that follow (F56).
       if elsewhere { focusSomething(on: space.display) }
       return .success(space.isInView ? "already showing \(place)" : "moved to \(place)")

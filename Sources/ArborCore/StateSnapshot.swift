@@ -70,7 +70,8 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
     public var summoned = false
     /// Floating, and out of view until it is summoned again.
     public var stashed = false
-    /// The space a floating window opened over and goes in and out of view with, if not the Desktop (F57).
+    /// The space a floating window opened over and belongs to, if not the Desktop (F57). With `floatingWindowsMakeWay` it goes in
+    /// and out of view with that space.
     public var guestOf: NodeID?
     /// Docked, and for now not kept in its place: macOS moved it at a double-click on its title bar, or its app keeps
     /// moving it. Or it had the keyboard when Arbor started and there is no room for it: then it is among `tiles` and not

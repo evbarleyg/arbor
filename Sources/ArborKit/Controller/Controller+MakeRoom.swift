@@ -140,7 +140,7 @@ extension Controller {
   }
 
   /// The windows that float on the Desktop: not kept in view wherever the view goes (pinned, summoned), not waiting out of
-  /// view (stashed), and not the guest of a space, with which it comes and goes.
+  /// view (stashed), and not the guest of a space, with which it comes and goes. Asked only with `floatingWindowsMakeWay`.
   private func windowsOnDesktop(of displayID: DisplayID, without docking: WindowID?) -> [WindowID] {
     guard let workspace = workspaces[displayID] else { return [] }
     return workspace.floating.keys.filter {

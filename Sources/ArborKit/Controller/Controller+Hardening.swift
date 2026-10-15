@@ -37,8 +37,9 @@ extension Controller {
   /// moved, now is the time to place it.
   func noteThatTheAppAnswers(_ window: WindowSnapshot, on display: DisplayID) {
     guard unplaced.remove(window.id) != nil else { return }
-    // A layout that only puts windows back takes no floating window out of view: that is for a move of the camera. This
-    // window missed such a move.
+    // For `floatingWindowsMakeWay`: a layout that only puts windows back takes no floating window out of view, that is for a move
+    // of the camera, and this window missed such a move. (As Arbor ships no move of the camera takes one away, and the note
+    // changes nothing.)
     owedMoves.insert(window.id)
     scheduleEnforce(display)
   }

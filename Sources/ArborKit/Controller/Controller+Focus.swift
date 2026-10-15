@@ -26,8 +26,9 @@ extension Controller {
   /// afterwards, as before. Nor if Arbor is about to pause for the app in front: then nothing is laid out for long, and the
   /// view that was saved is the one to come back.
   ///
-  /// Where the view does turn, the layout that follows starts from the plan as if it had been carried out: a Desktop that comes
-  /// into view gathers what floats, and what opened unseen, which was to stay over the saved view, goes with that view.
+  /// Where the view does turn, the layout that follows starts from the plan as if it had been carried out. As Arbor ships what floats
+  /// stays where it is. With `floatingWindowsMakeWay` a Desktop that comes into view gathers what floats, and what opened
+  /// unseen, which was to stay over the saved view, goes with that view.
   func letTheViewFollowTheKeyboardBeforeTheFirstLayout() {
     guard signOfACall == nil, !settings.pausesFor(frontmostApp?.bundleID), let focused = system.focusedWindow(), isManaged(focused),
       windows[focused]?.isPresent == true, let display = workspaceID(containing: focused)
@@ -126,8 +127,8 @@ extension Controller {
       var holder: WindowID?
       var display: DisplayID
       var time: Date
-      /// The floating windows that were in view before that move, and where. A window can float over a view that is not
-      /// the Desktop's (a change of the arrangement takes none away), and nothing but this says that it did.
+      /// The floating windows that were in view before that move, and where. With `floatingWindowsMakeWay` too a window can float
+      /// over a view that is not the Desktop's (a change of the arrangement takes none away), and nothing but this says that it did.
       var floatingInView: [(window: WindowID, frame: CGRect)]
     }
     var reveal: Reveal?
@@ -248,7 +249,8 @@ extension Controller {
     }
     if let reveal = followed {
       if let view = workspaces[reveal.display]?.camera {
-        // As if the view had never moved. Over a view without the Desktop the move back would send out whatever floats there,
+        // As if the view had never moved. As Arbor ships neither move touched what floats: each is there already, and is asked nothing.
+        // With `floatingWindowsMakeWay`, over a view without the Desktop the move back would send out whatever floats there,
         // and the move there may have gathered it onto a Desktop that came into view: each is where it was. With the
         // Desktop in the view the layout knows where they belong, also now that `id` has gone.
         let showsTheDesktop = workspaces[reveal.display].map { $0.tree.subtree(view, contains: $0.tree.desktop) } ?? true
@@ -259,7 +261,7 @@ extension Controller {
         keyboardHandOver.comingBack = reveal.display
         relayout(reveal.display, reason: .camera, puttingBack: back)
         keyboardHandOver.comingBack = nil
-        // Only for that layout: should the view have to move on, they go with it like any other.
+        // Only for that layout: should the view have to move on, they are treated like any other.
         placedOnPurpose.subtract(back.map(\.window))
         if !aWindowInViewGetsTheKeyboard(after: display, picked: reveal.display), let heir = system.focusedWindow(), heir != id,
           windows[heir]?.isPresent == true
@@ -328,7 +330,7 @@ extension Controller {
     let showsTheDesktop = workspace.tree.subtree(layout.camera, contains: workspace.tree.desktop)
     return workspace.floating.keys.contains {
       canBeAnHeir($0) && windows[$0]?.isPresent == true && isManaged($0) && !workspace.isStashed($0) && !workspace.staysInView($0)
-        && (showsTheDesktop || hostInView(of: $0, in: workspace, layout: layout) != nil)
+        && (settings.floatingWindowsMakeWay ? showsTheDesktop || hostInView(of: $0, in: workspace, layout: layout) != nil : !holdKeepsOut($0))
     }
   }
 

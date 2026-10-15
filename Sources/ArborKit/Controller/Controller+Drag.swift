@@ -448,7 +448,7 @@ extension Controller {
       } else if !wasDocked, hover.target == .float {
         workspaces[display]?.floating[window] = remembered
       }
-      // With the Desktop out of view it would be gone at the next move of the view: it belongs to this one.
+      // With the Desktop out of view it belongs to this view (with `floatingWindowsMakeWay` the next move of the view would take it away).
       if wasDocked, hover.target == .float, layout(of: display)?.desktopFrame == nil {
         stayWithTheView(window, on: display)
       }

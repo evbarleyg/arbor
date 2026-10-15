@@ -4,12 +4,12 @@ import Dispatch
 import Foundation
 
 extension Controller {
-  /// Why a display is being laid out again. It changes how floating windows
-  /// are treated.
+  /// Why a display is being laid out again. With `floatingWindowsMakeWay` it changes how floating windows
+  /// are treated. As Arbor ships they stay where they are, whatever the reason (Controller+OwnFrames.swift).
   enum RelayoutReason {
-    /// The camera moved: floating windows follow the Desktop in and out of view.
+    /// The camera moved. Floating windows that make way follow the Desktop in and out of view.
     case camera
-    /// The tree or the set of present windows changed: floating windows that
+    /// The tree or the set of present windows changed. Floating windows that make way and
     /// now overlap docked space are pushed back onto the Desktop.
     case structure
     /// A docked window was moved by something other than Arbor: put it back.
@@ -339,8 +339,9 @@ extension Controller {
   }
 
   /// Counts every managed window that no display shows as parked, whoever put it there. Knowing it as
-  /// parked is what brings it back: into its slot, onto the Desktop when that is in view (now, or
-  /// once the window is no longer minimized, hidden or on another Space), or on screen when Arbor quits.
+  /// parked is what brings it back: into its slot, or, if it floats, to its own frame with the next layout, whatever the
+  /// view shows (with `floatingWindowsMakeWay`, onto the Desktop when that is in view); now, or
+  /// once the window is no longer minimized, hidden or on another Space; or on screen when Arbor quits.
   func treatStrandedWindowsAsParked() {
     guard !displays.isEmpty else { return }
     for window in managedWindowIDs where window != drag?.window && isOutOfView(windows[window]!.frame) {
@@ -445,6 +446,11 @@ extension Controller {
     ]
   }
 
+  /// As Arbor ships, with `floatingWindowsMakeWay` off, no view takes a floating window out of view: it stays where it is, behind
+  /// whatever came forward, and gets no frame and no raise. Only one that is out of view all the same (a change of displays, an
+  /// Arbor that died) is put back (`moveKeepingItsFrame`). In both, what `summon` sent away stays away, a pinned window is kept in
+  /// view, and what a hold keeps out waits. The rest is how it is with the setting on.
+  ///
   /// Floating windows live on the Desktop. When the camera moves and the Desktop is no longer part of the view they
   /// are parked; when it is again they return to where the user left them. A Desktop too small to use, a tile, is
   /// part of the view like any other: after "show everything" nothing is out of view. While it is usable, the
@@ -477,7 +483,6 @@ extension Controller {
         continue
       }
       guard case .place(var target, let room) = move else {
-        noteWhereItLeavesFrom(window, on: displayID)
         park(window, on: display)
         continue
       }
@@ -549,7 +554,7 @@ extension Controller {
     case park
     /// All over the Desktop, which is this rectangle, or as near to that as its app lets it come (Controller+SoleFloat.swift).
     case fill(CGRect)
-    /// In view again, at the frame it had when it left (Controller+OwnFrames.swift).
+    /// In view again, at its own frame: what no view of Arbor's took away (Controller+OwnFrames.swift), or what filled the view.
     case putBack(CGRect)
     /// All over the view, which is this rectangle, because its person asked for that (Controller+Fill.swift).
     case fillTheView(CGRect)
@@ -572,7 +577,12 @@ extension Controller {
     let alone = windowThatTakesDesktop(of: displayID)
     let desktopIsPartOfTheView = workspace.tree.subtree(layout.camera, contains: workspace.tree.desktop)
     for (window, preferred) in workspace.floating.sorted(by: { $0.key < $1.key }) where window != drag?.window {
-      guard let current = windows[window], current.isPresent, isManaged(window), !holdKeepsOut(window) else { continue }
+      guard let current = windows[window], current.isPresent, isManaged(window) else { continue }
+      if holdKeepsOut(window) {
+        // macOS sometimes pulls a window that is mostly off screen back onto it.
+        if holdKeepsOutAnArrival(window), parked.contains(window), hasLeftItsCorner(window) { moves.append((window, .park)) }
+        continue
+      }
       if leavingView.contains(window) {
         if !parked.contains(window) { moves.append((window, .park)) }
         continue
@@ -596,9 +606,7 @@ extension Controller {
       guard !placedOnPurpose.contains(window) || showsOnlyASliver(window) else { continue }
       // As Arbor ships, that is all: its frame is its person's (Controller+OwnFrames.swift).
       if !settings.floatingWindowsMakeWay {
-        let move = moveKeepingItsFrame(
-          window, floatingAt: preferred, in: workspace, layout: layout, desktopIsInView: desktopIsPartOfTheView, reason: reason,
-          isTheFirstLayout: previous == nil, on: display)
+        let move = moveKeepingItsFrame(window, floatingAt: preferred, isTheFirstLayout: previous == nil, on: display)
         if let move { moves.append((window, move)) }
         continue
       }
@@ -842,14 +850,29 @@ extension Controller {
     // pinned window, which is still in view: keys meant for the window that arrived must not end up in a call.
     // An app can go on naming a window in the Dock as its focused one. A number Arbor does not know is a free-standing panel or
     // dialog, which stays where it is whatever the view does: somebody has the keyboard. (A sheet is answered with its window's number.)
+    // A floating window that is no part of the view that arrived is still in view too: no view takes it away. Arbor takes the keyboard
+    // only from a window that it takes out of view, so whoever types there and presses a key that only moves the view goes on
+    // typing there. But what names a place takes the keyboard there (`Following.namesAPlace`).
     let named = system.focusedWindow()
     let nobody =
       named.flatMap { windows[$0]?.id }.map {
         parked.contains($0) || (alsoFromNothing && windows[$0]?.isMinimized == true)
           // And out of a window that fills the view, behind which the view would move unseen (Controller+Fill.swift).
           || (alsoFromAPinnedWindow && (staysInView($0) || isFilled($0)))
+          // (Also where the view is on that place already: it was named all the same.)
+          || (following.namesAPlace && floatsBesideTheView($0, on: displayID))
       } ?? (alsoFromNothing && (following.namesAPlace || (named == nil && nobodyHasTheKeyboard)))
     return nobody && giveTheKeyboardToTheView(on: displayID, asAnHeir: asAnHeir, whichHasMoved: alsoFromAPinnedWindow, notTo: asked)
+  }
+
+  /// Whether `window` floats on `displayID` and is in view only because no view takes a floating window away (Controller+OwnFrames.swift):
+  /// the view there shows neither the Desktop nor the space it opened over.
+  func floatsBesideTheView(_ window: WindowID, on displayID: DisplayID) -> Bool {
+    guard !settings.floatingWindowsMakeWay, let workspace = workspaces[displayID], workspace.isFloating(window),
+      !workspace.staysInView(window), !workspace.isFilled(window), let layout = layouts[displayID]
+    else { return false }
+    return !workspace.tree.subtree(layout.camera, contains: workspace.tree.desktop)
+      && hostInView(of: window, in: workspace, layout: layout) == nil
   }
 
   /// "No focused window that I know" is not "nobody has the keyboard". A menu bar app's window, a launcher that comes
@@ -878,13 +901,14 @@ extension Controller {
     // The layout can be a moment behind the windows (an app being hidden is laid out once all are reported).
     var candidates = layout.windowFrames.filter { windows[$0.key]?.isPresent == true }
     // Not a pinned window: it did not just arrive, and keys typed into a call by surprise do harm. Nor, where the view has
-    // moved, one that fills it: it was there before.
-    for window in workspace.floating.keys
-    where !parked.contains(window) && !workspace.staysInView(window) && !(afterAMoveOfTheView && workspace.isFilled(window)) {
-      if let frame = windows[window]?.frame, windows[window]?.isPresent == true {
-        candidates[window] = frame
-      }
+    // moved, one that fills it: it was there before. Nor one that merely lies there whatever the view shows: given the keyboard it
+    // would come to the front, and no command has named it. Unless there is nobody else.
+    let floating = workspace.floating.keys.filter {
+      !parked.contains($0) && !workspace.staysInView($0) && !(afterAMoveOfTheView && workspace.isFilled($0))
+        && windows[$0]?.isPresent == true
     }
+    let withTheView = floating.filter { !floatsBesideTheView($0, on: displayID) }
+    for window in withTheView.isEmpty && candidates.isEmpty ? floating : withTheView { candidates[window] = windows[window]?.frame }
     // But where nothing has arrived it is what there is to type into.
     if candidates.isEmpty {
       for window in workspace.filledWindows where windows[window]?.isPresent == true { candidates[window] = windows[window]?.frame }

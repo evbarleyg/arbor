@@ -106,7 +106,8 @@ extension Controller {
       toPutBack = [(window, frame)]
       stayWithTheView(window, on: displayID)
     }
-    // Otherwise both are out of view, and the window waits for the Desktop. Only a window that has been given a place
+    // Otherwise both are out of view. As Arbor ships the layout brings the window in, at its own frame (`moveKeepingItsFrame`). With
+    // `floatingWindowsMakeWay` it waits for the Desktop. Only a window that has been given a place
     // is left alone by the layout: should the Desktop come into view after all, better squeezed onto it than nowhere.
     placedOnPurpose = Set(toPutBack.map(\.window))
     defer { placedOnPurpose = [] }
@@ -140,9 +141,9 @@ extension Controller {
     return true
   }
 
-  /// A window that starts to float while the Desktop is out of view would be gone at the next move of the view, and
-  /// Back would not bring it back. Like a new window that opens over a framed one, it is a guest of the
+  /// A window that starts to float while the Desktop is out of view is, like a new window that opens over a framed one, a guest of the
   /// view it floats over (Controller+Guests.swift), unless the setting for those says that floating windows belong to the Desktop.
+  /// With `floatingWindowsMakeWay` it would otherwise be gone at the next move of the view, and Back would not bring it back.
   ///
   /// A Desktop without room is not out of view for having no rectangle: where it is part of the view, what floats is in view with it.
   func stayWithTheView(_ window: WindowID, on displayID: DisplayID) {

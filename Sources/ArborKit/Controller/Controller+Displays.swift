@@ -62,6 +62,7 @@ extension Controller {
     // (Not one that filled the view there: its size is Arbor's doing, and where it is filed next no fill is marked.)
     let floatedOnWhatWent = Set(removed.flatMap { id in workspaces[id].map { gone in gone.floating.keys.filter { !gone.isFilled($0) } } ?? [] })
     for id in removed { arriving += retireWorkspace(of: id, whichWasAt: before.first { $0.id == id }?.frame.origin) }
+    let sentOver = Set(arriving)
     // macOS clears a display that goes at once. A floating window it has brought where somebody can get hold of it is not placed once more.
     // Unless the view is held, which gives nothing away: there it waits out of view like every arrival, and where macOS brought it is its place.
     let broughtOver = takeFloatingWindowsFromWhereTheyAre(movedByMacOS, only: floatedOnWhatWent.intersection(arriving))
@@ -77,7 +78,7 @@ extension Controller {
     layouts = layouts.filter { current.contains($0.key) }
     keyframes = keyframes.filter { current.contains($0.key) }
     standingGaps = standingGaps.filter { current.contains($0.key) }
-    let arrivingInView = placeArrivingWindows(arriving, parkingLater: true)
+    let arrivingInView = placeArrivingWindows(arriving, parkingLater: true, sentOverByADisplayThatWent: sentOver)
 
     // A drag may be over, or have moved windows on, a display that went away or changed shape.
     displaysChangedDuringDrag()
@@ -553,12 +554,16 @@ extension Controller {
 
   /// Sends windows that changed workspace because of a display change where
   /// that workspace wants them. Docked windows are left to the next relayout,
-  /// which puts them in their slots or parks them. Floating windows go onto
-  /// the Desktop if it is in view and out of view if it is not, like the
-  /// other floating windows there. With `parkingLater` none is moved yet: they only count as out of view, for a caller
+  /// which puts them in their slots or parks them. Floating windows come into
+  /// view whatever the view shows, like the other floating windows there. Only
+  /// during a hold do those that another display sent over (`fromAnotherDisplay`) wait out of view, until the hold ends. With
+  /// `floatingWindowsMakeWay` they go onto the Desktop if it is in view and out of view if it is not. One that `summon` sent
+  /// away stays away either way. With `parkingLater` none is moved yet: they only count as out of view, for a caller
   /// that may still move the view, then lays out, and ends with `parkAgain`. Returns the ones the next layout puts in view.
   @discardableResult
-  func placeArrivingWindows(_ arriving: [WindowID], parkingLater: Bool = false) -> Set<WindowID> {
+  func placeArrivingWindows(
+    _ arriving: [WindowID], parkingLater: Bool = false, sentOverByADisplayThatWent sentOver: Set<WindowID> = []
+  ) -> Set<WindowID> {
     var desktopInView: [DisplayID: Bool] = [:]
     var inViewSoon: Set<WindowID> = []
     // The window in the user's hand stays there, whichever workspace it belongs to now.
@@ -572,17 +577,26 @@ extension Controller {
       }
       // As a tile too (`floatingMoves`).
       let tree = workspaces[displayID]!.tree
-      let inView =
-        desktopInView[displayID] ?? layout(of: displayID).map { tree.subtree($0.camera, contains: tree.desktop) } ?? false
-      desktopInView[displayID] = inView
+      let desktopShows = desktopInView[displayID] ?? layout(of: displayID).map { tree.subtree($0.camera, contains: tree.desktop) } ?? false
+      desktopInView[displayID] = desktopShows
       let stashed = workspaces[displayID]!.isStashed(window)
+      // Whatever the view shows, unless floating windows make way: no view takes one away. But a hold is its person's word that
+      // nothing comes into view: what a display that goes sends over waits like a window that opens off screen (`holdKeepsOut`).
+      // (A held view that has emptied shows nothing, whatever a layout made now would show.) Only that: what goes home to a display
+      // that is back was in view there, one that waited here too.
+      let waits =
+        sentOver.contains(window) && isHeld && (!desktopShows || displaysHeldEmpty.contains(displayID)) && !stashed && !staysInView(window)
+      if !settings.floatingWindowsMakeWay { holdKeepsOutWhatArrived(window, if: waits) }
+      let inView = settings.floatingWindowsMakeWay ? desktopShows : !waits
       if inView, !stashed { inViewSoon.insert(window) }
       if !parkingLater, !inView || stashed, windows[window]?.isPresent == true, !staysInView(window) {
         park(window, on: display)
-      } else {
-        // relayout moves parked floating windows to their frame on the Desktop.
+      } else if settings.floatingWindowsMakeWay || !inView || stashed || windows[window]?.isPresent == true {
+        // relayout moves parked floating windows to their own frames (those that make way: onto the Desktop, once it is in view).
         parked.insert(window)
       }
+      // (One in the Dock, hidden or on another Space is placed by no layout. It does not count as out of view till it is back: it may be on its
+      // way already, and would show while the books say otherwise. Back where no display shows it, it is fetched: `moveKeepingItsFrame`.)
     }
     return inViewSoon
   }
@@ -660,6 +674,14 @@ extension Controller {
       guard let displayID = workspaceID(containing: window), let display = display(displayID),
         let frame = windows[window]?.frame
       else { continue }
+      // A floating window only counts as out of view, for a layout to put it where it belongs: this one's, or the next, when it is out of the
+      // Dock or its app answers. Nothing takes it away meanwhile. But for one that was sent away by name, and during a hold, which lets
+      // nothing into view and some layouts not through.
+      if !settings.floatingWindowsMakeWay, !isHeld, let workspace = workspaces[displayID], workspace.isFloating(window),
+        !workspace.isStashed(window)
+      {
+        continue
+      }
       // macOS stops a window short of the corner (`parkingOrigin`). One that is where it would stop again stays. So does one in
       // another of the places, chosen before its title bar was known, if no less of it would show in the one chosen now. Of a
       // window found out of view at a start, its place says how high its title bar is; where it does not, the guess stands.

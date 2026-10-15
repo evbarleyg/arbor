@@ -122,8 +122,9 @@ public enum SettingsSchema {
       .choice(
         "newWindowsWhileFramed", \.newWindowsWhileFramed,
         ["guest": "Stay with that view", "float": "Belong to the Desktop"], "New windows while framed",
-        "A window that opens over a view that does not show the Desktop (a framed window, a group) can go out of view and "
-          + "come back with that view, or belong to the Desktop like any floating window."),
+        "A window that opens over a view that does not show the Desktop (a framed window, a group) can belong to that view, "
+          + "and have the keyboard again when the view comes back (if floating windows make way, it also goes out of view and "
+          + "comes back with it), or belong to the Desktop like any floating window."),
       .number(
         "tileRetryMinutes", \.tileRetryMinutes, min: 0, max: 1440, step: 5, unit: "min", "Ask tiles again after",
         "A window that is a tile because it once refused the size of its space is asked again, out of view, after this "
@@ -178,8 +179,8 @@ public enum SettingsSchema {
       .toggle(
         "floatingWindowsMakeWay", \.floatingWindowsMakeWay, "Floating windows make way",
         "Docked windows push floating windows aside and squeeze them, so that they stay on the Desktop. Off, a floating "
-          + "window stays exactly where you put it, over docked windows too: it only goes out of view with the Desktop and "
-          + "comes back to the same place.", advanced: true),
+          + "window stays exactly where you put it, over docked windows too, wherever the view goes. On, it also leaves the "
+          + "view with the Desktop and comes back with it.", advanced: true),
       .toggle(
         "desktopColumn", \.desktopColumn, "A column for the Desktop",
         "The Desktop keeps a share of the display among docked windows: two docked windows and the Desktop are thirds, and "

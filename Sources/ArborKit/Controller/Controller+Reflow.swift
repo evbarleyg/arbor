@@ -119,9 +119,10 @@ extension Controller {
     workspaces[displayID] = lent
     if let shown = drag?.reflow.trials[displayID] { layouts[displayID] = shown }
     placeFloatingWindows(on: displayID, layout: layout, reason: .structure)
-    if !showsWhatFloats(layout, in: lent) {
+    if settings.floatingWindowsMakeWay, !showsWhatFloats(layout, in: lent) {
       // A change of the arrangement takes no floating window out of view. But the ones an earlier trial
       // brought in with the Desktop were out of view before the drag, and leave with the Desktop.
+      // (Only floating windows that make way leave with it: Controller+OwnFrames.swift.)
       for window in lent.floating.keys.sorted()
       where window != drag?.window && drag?.reflow.floatsBefore[window]?.isParked == true && !parked.contains(window)
         && hostInView(of: window, in: lent, layout: layout) == nil

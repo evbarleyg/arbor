@@ -85,7 +85,8 @@ extension Controller {
           away: windows[id]?.isPresent != true)
         if let frame = returnToOpeningFrame(id) { workspaces[dockedOn]!.floating[id] = frame }
       }
-      // Before the layout, which moves a floating window onto the Desktop and leaves a pinned one where it is.
+      // Before the layout, which with `floatingWindowsMakeWay` moves a floating window onto the Desktop and leaves a pinned one
+      // where it is.
       if rule.action == .pin {
         workspaces[display]?.pin(id)
         logRule(index, "keeping \(id) in view")
@@ -370,8 +371,8 @@ extension Controller {
     if isBack {
       // Should it show after all, whoever called lays out, from the same gaps.
       guard let skipped = layOutOnPaper(display), skipped.windowFrames[id] == nil else { return false }
-      // From here on as if that layout had been carried out: whether the Desktop comes into view, and gathers what floats, is judged
-      // by what the display would have shown, not by what it showed before the window was there.
+      // From here on as if that layout had been carried out: whether the Desktop comes into view, and with `floatingWindowsMakeWay`
+      // gathers what floats, is judged by what the display would have shown, not by what it showed before the window was there.
       layouts[display] = skipped
       // After the gaps that stood have come back: they are known by the arrangement, of which the tab in front is a part.
       if byName { workspaces[display]?.tree.activate(id) }
