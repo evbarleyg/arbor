@@ -19,6 +19,8 @@ extension FakeWindowSystem {
   /// aside, or, if they are, come back. All that is reported is what such a click always brings: the press, and, if
   /// that is news, Finder in front and the keyboard with none of the known windows.
   public func clickOnTheWallpaper() {
+    beginBurst()
+    defer { endBurst() }
     mouseDown = true
     events?.pointerPressed()
     mouseDown = false
@@ -48,6 +50,8 @@ extension FakeWindowSystem {
     resting seconds: Double = 0
   ) {
     guard let listed = sweptAside?[window], let frame = frame(of: window), let display = display(of: frame) else { return }
+    whatWasAskedHasHappened()
+    defer { timeHasPassed() }
     // Between the menu bar and the bottom of the display.
     var shows = display.frame
     shows.origin.y = display.visibleFrame.minY

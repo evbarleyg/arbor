@@ -576,7 +576,9 @@ private final class Listener {
     let listener = try Listener(feed, "watch window layout")
     _ = try listener.take()
     func states() throws -> [WindowID: ArborEvent.Window.State] {
-      turn(h)
+      // Long enough for a feed that found a layout still to come and looks again (`EventFeed.waitForLayout`): which of the two is put
+      // off first goes by the order of macOS's reports.
+      h.scheduler.advance(by: 0.1)
       let changes = try listener.takeChanges()
       #expect(changes.allSatisfy { $0.change == .state })
       return Dictionary(uniqueKeysWithValues: changes.map { ($0.window.id, $0.window.state) })

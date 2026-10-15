@@ -89,7 +89,7 @@ private let side = DisplaySnapshot(
   /// Right after launch: one window has the keyboard, and Arbor has seen no other have it.
   @Test func theFocusedWindowIsNeverFirst() {
     let (h, safari, notes, mail, terminal) = makeHarness()
-    h.system.focus(safari)
+    h.system.focused = safari
     h.run("find")
     #expect(listedWindows(h) == [notes, safari, mail, terminal])
     h.overlays.chooseInFinder()
@@ -101,7 +101,7 @@ private let side = DisplaySnapshot(
     let alone = Harness()
     let only = alone.system.open(app: "Safari")
     alone.start()
-    alone.system.focus(only)
+    alone.system.focused = only
     alone.run("find")
     #expect(listedWindows(alone) == [only])
   }
@@ -109,7 +109,7 @@ private let side = DisplaySnapshot(
   @Test func aFocusedWindowArborNeverSawGetFocusStillCountsAsTheCurrentOne() {
     let (h, safari, notes, mail, terminal) = makeHarness()
     h.system.userFocus(mail)
-    h.system.focus(safari)  // no report, as for a window that was focused before Arbor started
+    h.system.focused = safari  // no report, as for a window that was focused before Arbor started
     h.run("find")
     #expect(listedWindows(h) == [mail, safari, notes, terminal])
   }
@@ -692,7 +692,7 @@ private let side = DisplaySnapshot(
   @Test func revealWithoutAWindowMeansTheFocusedOne() {
     let (h, safari, notes, _, _) = makeHarness()
     h.run("zoom \(safari.rawValue)")
-    h.system.focus(notes)  // as after ⌘Tab, before macOS has reported it
+    h.system.focused = notes  // as after ⌘Tab, before macOS has reported it
     #expect(h.run("reveal").ok)
     #expect(h.system.isVisible(notes))
     h.system.focused = nil
@@ -1181,6 +1181,8 @@ private let side = DisplaySnapshot(
     h.controller.finderChose(.space(main.id, column))
     #expect(h.overlays.finder == nil)
     #expect(h.workspace.camera == column)
+    // Nobody opens it again before the keyboard has got to where the choice sent it.
+    h.system.deliverEchoes()
     h.run("find")
     h.controller.finderChose(.space(main.id, NodeID(999)))
     #expect(h.overlays.finder?.message == "That space no longer exists")

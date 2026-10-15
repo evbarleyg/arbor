@@ -46,11 +46,14 @@ extension FakeWindowSystem {
   }
 
   /// Whether `appsReact()` has anything to deliver.
-  public var hasHeldEchoes: Bool { !undelivered.isEmpty }
+  public var hasHeldEchoes: Bool { !undelivered.isEmpty || owesSomething }
 
   /// Delivers the echoes held back since the last call (`holdsEchoes`), in order; what Arbor's reactions queue
   /// meanwhile waits for the next call. A window that snaps back does so instead of echoing, which looks like a user's move.
   public func appsReact() {
+    beginBurst()
+    defer { endBurst() }
+    settleLateAnswers()
     let echoes = undelivered
     undelivered.removeAll()
     var snappedBack: Set<WindowID> = []
@@ -83,11 +86,15 @@ extension FakeWindowSystem {
     minimumSize: CGSize = .zero, maximumSize: CGSize? = nil, behaviour: Behaviour = .normal
   ) {
     guard !existingWindowIDs().contains(id) else { return }
+    // Before the window is there.
+    whatWasAskedHasHappened()
     nextID = max(nextID, id.rawValue &+ 1)
     let snapshot = WindowSnapshot(id: id, pid: pid, bundleID: bundleID, appName: app, title: title, frame: frame)
     windows[id] = FakeWindow(
       snapshot: snapshot, minimumSize: minimumSize, maximumSize: maximumSize, behaviour: behaviour)
     guard started else { return }
+    beginBurst()
+    defer { endBurst() }
     // As in `open(app:)`.
     if echoes.keyboard {
       focused = id
@@ -100,7 +107,10 @@ extension FakeWindowSystem {
 
   /// The app quits: its windows go one after the other, as `AXWindowSystem.forget(pid:)` reports it.
   public func quitApp(pid: Int32) {
+    beginBurst()
+    defer { endBurst() }
     for id in windows.keys.sorted() where windows[id]!.snapshot.pid == pid { close(id) }
+    forgetNumbers(of: pid)
   }
 
   /// Gives a window a new number without telling anyone, as restarting its app (or the Mac) does
@@ -181,6 +191,8 @@ extension FakeWindowSystem {
 
   /// The late notification for a window that moved: it carries the frame the window has by now.
   public func report(_ window: WindowID, userInitiated: Bool) {
+    whatWasAskedHasHappened()
+    defer { timeHasPassed() }
     guard let snapshot = windows[window]?.snapshot else { return }
     events?.windowChanged(snapshot, userInitiated: userInitiated)
   }
@@ -189,6 +201,11 @@ extension FakeWindowSystem {
   public func forgetSession() {
     inHand = nil
     undelivered.removeAll()
+    // What it asked for before it ended happens all the same. Nobody is there to hear of it.
+    let listening = listener
+    listener = nil
+    whatWasAskedHasHappened()
+    listener = listening
     mouseDown = false
     resizing = nil
   }

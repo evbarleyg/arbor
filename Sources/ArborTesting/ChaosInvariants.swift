@@ -586,7 +586,8 @@ extension ChaosRunner {
     guard case .palette(.choose) = action, case .window(let window)? = chosenInThePalette, harness.overlays.finder == nil,
       let fake = system.windows[window], controller.windows[window] != nil
     else { return }
-    if system.focused != window { problems.append(.init("palette", "\(window) was chosen in Go to… and \(system.focused.map(\.description) ?? "nothing") has the keyboard")) }
+    // Asked for and on its way (`Rudeness.focusesLate`) is all Arbor can answer for.
+    if system.focused != window, system.lateFocus.last != window { problems.append(.init("palette", "\(window) was chosen in Go to… and \(system.focused.map(\.description) ?? "nothing") has the keyboard")) }
     // On its own Space macOS shows it; a window Arbor leaves alone stays where it is; and so does one whose app does not do as
     // it is asked, or does not answer at all: that one follows when its app answers again.
     guard fake.snapshot.isOnActiveSpace, !fake.snapshot.isFullScreen, controller.filter.manages(fake.snapshot), cooperates(fake)

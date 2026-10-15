@@ -8,6 +8,8 @@ extension FakeWindowSystem {
 
   /// Delivers the reports `restoresLate` held back.
   public func finishRestoring() {
+    beginBurst()
+    defer { endBurst() }
     let windows = lateRestores
     lateRestores.removeAll()
     for window in windows {

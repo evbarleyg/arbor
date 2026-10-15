@@ -23,10 +23,22 @@ extension FakeWindowSystem {
   /// already, takes the keyboard; the button comes up. With `release: false` it stays down.
   public func userClick(_ window: WindowID, release: Bool = true) {
     guard windows[window] != nil else { return }
+    // Until the reports are out: a rude fake delivers them when this ends, not when `userFocus` does.
+    let before = secondsSinceInput
+    secondsSinceInput = 0
+    defer { secondsSinceInput = before }
+    beginBurst()
+    defer { endBurst() }
     mouseDown = true
     events?.pointerPressed()
     if focused == window { bringToFront(window) } else { userFocus(window) }
     if release { mouseDown = false }
+  }
+
+  /// The window server brings a window to the front and nobody reports it: a clicked window was seen to take the keyboard first and come forward afterwards.
+  public func comesToTheFront(_ window: WindowID) {
+    guard windows[window] != nil else { return }
+    bringToFront(window)
   }
 
   func bringToFront(_ window: WindowID) {

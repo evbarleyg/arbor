@@ -27,6 +27,7 @@ lint:
 	@python3 scripts/newcomer/score.py --self-test > /dev/null || python3 scripts/newcomer/score.py --self-test
 	@python3 scripts/newcomer/rehearse.py
 	@python3 scripts/mac-shell/walk.py 4711 --acts 100 | cmp -s - scripts/mac-shell/walk-sample.sh || { echo "scripts/mac-shell/walk-sample.sh is not what walk.py 4711 --acts 100 writes"; exit 1; }
+	@python3 scripts/rude.py --self-test && python3 scripts/rude.py --lint
 
 # Reads what this branch adds (lines, file names, commit messages, its own name) for what should stay private, and checks
 # that its history begins where the public repository's does. Before every push (docs/PUBLIC.md).
@@ -208,6 +209,13 @@ polish-selftest:
 # Hostile and broken clients against the control socket of arbor-sim --serve, for half a minute (scripts/socket-attack.py).
 attack: build
 	@python3 scripts/socket-attack.py
+
+# On Linux: the tests, the scenarios and random walks against a fake that behaves as badly as macOS is known to, one bad manner at a time
+# (docs/TESTING.md, "The rude fake"). Half an hour on four cores. make rude MANNERS="order slow" for some. Fails on what
+# collab/evidence/rude-known.txt does not list, and on what it lists and no longer fails.
+.PHONY: rude
+rude:
+	@python3 scripts/rude.py --check $(MANNERS)
 
 clean:
 	rm -rf .build build

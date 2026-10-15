@@ -132,7 +132,7 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
 
   @Test func theMessageNamesTheFocusedWindowACommandActedOn() {
     let (h, _, b, _) = makeHarness()
-    h.system.focus(b)
+    h.system.focused = b
     h.run("dock right")
     #expect(h.run("undo").message == "undid dock \(b) right")
   }

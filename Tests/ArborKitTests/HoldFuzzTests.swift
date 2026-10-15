@@ -124,6 +124,8 @@ import Testing
       case 9:
         trail.append("close \(any)")
         h.system.close(any)
+        // Its number may come round again, for a window that is another.
+        outOfView.remove(any)
       case 10:
         trail.append("minimize \(any)")
         h.system.setMinimized(any, true)

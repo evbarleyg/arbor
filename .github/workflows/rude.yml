@@ -1,0 +1,72 @@
+name: Rude
+
+# The tests, the scenarios and random walks against a stand-in for macOS that behaves as badly as macOS is known to
+# (docs/TESTING.md, "The rude fake"; scripts/rude.py). Three quarters of an hour of one machine, so not for every push: once a
+# night, when work reaches main, and by hand. Built once, then three jobs side by side. It fails on a failure that collab/evidence/rude-known.txt does not list, and on a
+# line there that no longer fails.
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  push:
+    # lab/rude…: to try this file itself.
+    branches: [main, "lab/rude**"]
+  workflow_dispatch:
+
+concurrency:
+  group: rude-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # Built once, for all the manners.
+  build:
+    runs-on: ubuntu-24.04
+    container: swift:6.4-noble
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Build the tests and the simulator
+        run: |
+          swift build --build-tests
+          swift build --product arbor-sim
+      - name: Pack what the manners start
+        run: |
+          products=$(readlink -f .build/debug)
+          tar -C "$products" -czf products.tar.gz ArborKitTests-test-runner arbor-sim $(cd "$products" && ls | grep '\.so$' || true)
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: products
+          path: products.tar.gz
+          retention-days: 1
+
+  manners:
+    needs: build
+    runs-on: ubuntu-24.04
+    container: swift:6.4-noble
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      # Three machines of the fifteen there are for everybody, four rounds each: every job also runs the polite control, and `order` has three seeds.
+      matrix:
+        manners: ["ahead twice closes", "order", "slow numbers small"]
+    steps:
+      # The same commit at the same path: the tests find docs/ and collab/ by the place of their own source.
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: What the image lacks
+        run: |
+          apt-get update -qq && apt-get install -y -qq python3 make
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: products
+      - name: Unpack
+        run: |
+          mkdir -p .build/debug
+          tar -C .build/debug -xzf products.tar.gz
+      - name: Tests, scenarios and walks under these manners
+        env:
+          MANNERS: ${{ matrix.manners }}
+        # Unquoted: several words.
+        run: ./scripts/ci-step.py "rude $MANNERS" python3 scripts/rude.py --no-build --check $MANNERS

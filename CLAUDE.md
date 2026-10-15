@@ -51,6 +51,7 @@ make attack     # hostile and broken clients against the control socket, for hal
 make scenarios  # the documenter's user journeys (collab/scenarios); VERBOSE=1 for arbor-sim's output
 make parity     # score Arbor against TrellisWM; regenerates docs/FEATURES.md
 make fuzz       # start Arbor on damaged state.json and settings.json files (a sample; docs/TESTING.md)
+make rude       # on Linux: tests, scenarios and walks against a stand-in as rude as macOS; scripts/rude.py --suite YourTests takes seconds (docs/TESTING.md)
 make linux      # check, scenarios and parity in the Linux image CI uses (needs Docker)
 make clean      # remove .build and build
 make hooks      # first thing in a clone: git then runs the next line's check before every push; looks for foreign history in the clone
@@ -89,6 +90,7 @@ new. See "Executors without a Mac" in `collab/README.md`.
 | `collab/` | Board, questions, ideas, scenarios, parity data, evidence | See `collab/README.md` |
 | `collab/parity.json`, `collab/reality.json`, `scripts/mergeable.py`, `.gitattributes` | The files nearly every pull request adds to, and what makes that merge: a key and a name to a line, sorted (the ledger: its cases by id), and after `make hooks` a merge by meaning (items by id, lists as sets) in every rebase | Edited one by hand: `scripts/mergeable.py --tidy`. `make lint` holds them to the shape. The generated `docs/FEATURES.md` and `docs/REALITY.md` stay as they are in a rebase: make them again. |
 | `collab/reality.json`, generated `docs/REALITY.md` | Every known case where real macOS differed from the stand-ins or from what a test expected, and what guards it | A real Mac surprised you: add an entry and run `scripts/reality-ledger.py`. `make lint` fails on a name that is gone or a stale page: you renamed a test or reworded a step that a case names, and the line under each ✘ says what to put where. |
+| `collab/evidence/rude-known.txt` | What fails when the stand-in for macOS is as rude as macOS (`make rude`, `ARBOR_RUDE`; `docs/TESTING.md`, "The rude fake"): faults of Arbor's that wait for their cure | It only shrinks: `make lint` fails on a new line. Delete a line with its cure. |
 
 ## How to verify your work without permissions
 
@@ -102,7 +104,8 @@ against fakes.
    `h.system.drag/userMove/userFocus/setMinimized`, then assert on
    `h.frame(_:)`, `h.workspace`, `h.layout`, `h.overlays`. See
    `ControllerTests.swift` for the pattern. End a scenario with `expectWindowsMatchLayout(h)` (`ScenarioHelpers.swift`): it lays
-   the arrangement out afresh, so it also catches a command that forgot to lay out.
+   the arrangement out afresh, so it also catches a command that forgot to lay out. Then, on Linux, `scripts/rude.py --suite YourTests`: a
+   new test has to hold when the fake reports ahead of time, twice, out of order, and gives the keyboard late, as macOS does.
 3. **arbor-sim** to see what happens: `make sim ARGS='"open A" "open B" "dock 101 left" "state"'`.
 4. **Traces** of real windows and real apps in `collab/evidence/traces/`: `make replay FILE=…` shows what macOS reported and
    what the apps answered, line by line, and replays it against your controller (`docs/TRACES.md`).
