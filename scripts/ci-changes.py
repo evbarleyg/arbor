@@ -9,6 +9,9 @@ A Mac is left out when it could prove nothing new, or nothing that will not be p
      with them lib.sh and its tools; and `swift test` on a Mac type-checks every helper tool there, *.swift and *.m),
      the Mac shell workflow, these rules, scripts/mac-queue.py and the tools' self-tests, which run on Linux,
      the Makefile, which the macOS job does not use, and what looks after the repository itself (scripts/public-*, git-hooks, .claude …);
+     or a script that the macOS job cannot reach. Nobody keeps a list of those: what the job can reach is read off the checkout. It is
+     every file under scripts/ that the job's own steps in ci.yml, the actions it uses or a test name, and whatever those files name in
+     turn. A mention in a remark counts, so it errs towards the Mac; a new script that nothing of all this names asks for none;
   2. or, in an ordinary pull request, all the rest of it is code that also builds and is tested on
      Linux (the core, the controller, the platform protocols, the fakes, arbor-sim, the tests);
   3. or only prose has changed since the nearest earlier commit that passed the macOS job. That covers
@@ -45,6 +48,7 @@ Whoever reads them takes anything but `mac-only` for `full`, and anything but `u
     scripts/ci-changes.py
 """
 
+import glob
 import json
 import os
 import re
@@ -85,8 +89,58 @@ LISTED_AT_MOST = 300
 NAMES = "[.[] | .filename, (.previous_filename // empty)]"
 
 
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+JOB = "macos"
+
+
 class Unclear(Exception):
     pass
+
+
+def text_of(path):
+    with open(path, encoding="utf-8", errors="replace") as handle:
+        return handle.read()
+
+
+def checkout(root=ROOT):
+    """What the reach of the macOS job is read off: where it starts (texts), and {path: text} of every file under scripts/."""
+    workflow = text_of(os.path.join(root, ".github", "workflows", "ci.yml"))
+    job = re.search(rf"^  {JOB}:\n(.*?)(?=^  [\w-]+:\n|\Z)", workflow, re.S | re.M)
+    tests = glob.glob(os.path.join(root, "Tests", "**", "*.swift"), recursive=True)
+    if not job or not tests:
+        raise Unclear(f"no job {JOB} in ci.yml, or no tests, in {root}")
+    starts = [job.group(1)] + [text_of(path) for path in glob.glob(os.path.join(root, ".github", "actions", "*", "action.yml")) + tests]
+    scripts = {os.path.relpath(path, root).replace(os.sep, "/"): text_of(path)
+               for path in glob.glob(os.path.join(root, "scripts", "**"), recursive=True) if os.path.isfile(path)}
+    return starts, scripts
+
+
+def reach(starts, scripts):
+    """The files of `scripts` that the texts in `starts` name, by their file name or as a Python module, and what those name in turn."""
+    names = {}
+    for path in scripts:
+        base = os.path.basename(path)
+        pattern = r"(?<![\w.-])" + re.escape(base) + r"(?![\w-])"
+        if base.endswith(".py"):
+            pattern += r"|\b(?:import|from)\s+" + re.escape(base[:-3].replace("-", "_")) + r"\b"
+        names[path] = re.compile(pattern)
+    reached, waiting = set(), list(starts)
+    while waiting:
+        text = waiting.pop()
+        for path, pattern in names.items():
+            if path not in reached and pattern.search(text):
+                reached.add(path)
+                waiting.append(scripts[path])
+    return reached
+
+
+def out_of_reach():
+    """A pattern for the paths under scripts/ that the macOS job cannot reach. If that cannot be told, for none."""
+    try:
+        reached = reach(*checkout())
+    except (Unclear, OSError):
+        return re.compile(r"(?!)")
+    return re.compile(r"^scripts/(?!(?:%s)$)" % "|".join(re.escape(path[len("scripts/"):]) for path in sorted(reached)))
 
 
 def api(path, jq, paginate=False):
@@ -165,25 +219,26 @@ def decide(name, event, repo, sha):
     except Unclear:
         names = []  # a new branch has no commit before it, say; the last rule may still apply
     how = FRESH if integration else UPON
+    prose = (PROSE, out_of_reach())
     if LABEL in labels:
         return how, f'{ASKED_FOR}: the pull request has the label "{LABEL}"; {HOW[how]}'
     if MARKER in words:
         return how, f"{ASKED_FOR}: the head commit's subject says {MARKER}; {HOW[how]}"
-    if names and not beyond(names, PROSE):
-        return None, f"{whole} changes only prose and data that the Linux job checks too"
-    if names and not integration and not beyond(names, PROSE, HEADLESS):
+    if names and not beyond(names, *prose):
+        return None, f"{whole} changes only prose, data that the Linux job checks too, and scripts the macOS job cannot reach"
+    if names and not integration and not beyond(names, *prose, HEADLESS):
         return None, f"{whole} changes only code that Linux builds and tests too; a Mac sees it when it is integrated"
 
     check, passed = (FRESH_CHECK, "passed, built from nothing") if integration else (CHECK, "passed")
     for commit in recent_commits(repo, head):
         if passed_on_a_mac(repo, commit, check):
-            since = beyond(files_between(repo, commit, head), PROSE)
+            since = beyond(files_between(repo, commit, head), *prose)
             if since:
                 return how, f"changed since {commit[:7]} {passed}: {some(since)}; {HOW[how]}"
             return None, f"nothing a Mac could check has changed since {commit[:7]} {passed}"
     if not names:
         return FULL, f"it is unclear what changed, and none of the last {LOOK_BACK} commits has {passed} on a Mac: every test, built from nothing"
-    what = some(beyond(names, PROSE) if integration else beyond(names, PROSE, HEADLESS))
+    what = some(beyond(names, *prose) if integration else beyond(names, *prose, HEADLESS))
     return how, f"changed: {what}; none of the last {LOOK_BACK} commits has {passed} on a Mac; {HOW[how]}"
 
 

@@ -43,7 +43,11 @@ jobs:
     steps:
       - uses: actions/checkout@v5
         with:
-          sparse-checkout: scripts
+          # The rules, and what they read off which scripts the macOS job can reach.
+          sparse-checkout: |
+            scripts
+            .github
+            Tests
       - name: Does this run need a Mac?
         id: decide
         env:

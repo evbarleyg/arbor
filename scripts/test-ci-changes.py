@@ -46,6 +46,12 @@ TABLE = [
         "scripts/ci-changes.py", "scripts/test-ci-changes.py", "scripts/test-tooling.py", "scripts/test-ci-tests.py"])),
     (NO, "trunk: the same", TRUNK, dict(files=[".github/workflows/mac-shell.yml", "scripts/ci-changes.py"])),
     (NO, "the look at the queue for the Macs, and its self-test", pull(), dict(files=["scripts/mac-queue.py", "scripts/test-mac-queue.py"])),
+    (NO, "scripts the macOS job cannot reach, with prose", pull(), dict(files=["scripts/census.py", "scripts/tools/ledger.py", DOC, "CLAUDE.md"])),
+    (NO, "trunk: the same", TRUNK, dict(files=["scripts/census.py"])),
+    (NO, "such a script and code that builds on Linux", pull(), dict(files=["scripts/census.py", CORE])),
+    (FRESH, "trunk: such a script and code that builds on Linux", TRUNK, dict(files=["scripts/census.py", CORE])),
+    (UPON, "such a script and macOS-only code", pull(), dict(files=["scripts/census.py", UI])),
+    (NO, "only such a script since the pass", pull(), dict(files=[UI, "scripts/census.py"], passed={"P1"}, between={("P1", "H"): ["scripts/census.py"]})),
     (UPON, "a script that only sounds like it", pull(), dict(files=["scripts/mac-queue.py.sh"])),
     (UPON, "the set-up of a hosted Mac, which CI's job begins with", pull(), dict(files=[".github/actions/mac-setup/action.yml"])),
     (UPON, "what keeps a build", pull(), dict(files=[".github/actions/mac-keep-build/action.yml"])),
@@ -128,6 +134,25 @@ OUTPUT = [
 ]
 
 
+# What the macOS job can reach: where it starts, the files under scripts/, and which of them it reaches.
+A_JOB = "run: ./scripts/ci-step.py build ./scripts/build.sh\n"
+REACH = [
+    ("what a step names", [A_JOB], {"scripts/build.sh": "", "scripts/ci-step.py": "", "scripts/census.py": ""}, ["scripts/build.sh", "scripts/ci-step.py"]),
+    ("and what that names in turn", [A_JOB], {"scripts/build.sh": "exec \"$(dirname \"$0\")/tools/inner.sh\"", "scripts/tools/inner.sh": "third.sh", "scripts/third.sh": ""},
+     ["scripts/build.sh", "scripts/third.sh", "scripts/tools/inner.sh"]),
+    ("a Python module that is imported", [A_JOB], {"scripts/ci-step.py": "from parity import ANSI\nimport lint_imports\n", "scripts/parity.py": "",
+                                                  "scripts/lint-imports.py": "", "scripts/other.py": ""},
+     ["scripts/ci-step.py", "scripts/lint-imports.py", "scripts/parity.py"]),
+    ("what a test names", ["let path = \"scripts/mac-shell/pointer.swift\""], {"scripts/mac-shell/pointer.swift": "", "scripts/mac-shell/other.swift": ""},
+     ["scripts/mac-shell/pointer.swift"]),
+    ("a remark counts: it errs towards the Mac", ["# see census.py"], {"scripts/census.py": ""}, ["scripts/census.py"]),
+    ("two that name each other", ["a.sh"], {"scripts/a.sh": "b.sh", "scripts/b.sh": "a.sh"}, ["scripts/a.sh", "scripts/b.sh"]),
+    ("a name inside a longer one is another name", ["test-build.sh my_build.sh build.shx build.sh-old x.build.sh"], {"scripts/build.sh": ""}, []),
+    ("at the end of a sentence it is the name", ["It calls build.sh."], {"scripts/build.sh": ""}, ["scripts/build.sh"]),
+    ("nothing names it", [A_JOB], {"scripts/census.py": "build.sh"}, []),
+]
+
+
 def pretend(files=None, between=None, passed=(), fresh=(), subject="feat: x"):
     def files_of_pull_request(_repo, _number):
         if files is None:
@@ -147,6 +172,22 @@ def pretend(files=None, between=None, passed=(), fresh=(), subject="feat: x"):
     # A Mac that passed after building from nothing has passed.
     rules.passed_on_a_mac = lambda _repo, sha, check: sha in fresh or (check == rules.CHECK and sha in passed)
     rules.subject = lambda _repo, _sha: subject
+    # Of the scripts in the table these two are out of the macOS job's reach.
+    rules.out_of_reach = lambda: rules.re.compile(r"^scripts/(census\.py|tools/ledger\.py)$")
+
+
+real_reach, real_checkout, real_out_of_reach = rules.reach, rules.checkout, rules.out_of_reach
+
+
+def real_pattern_without_a_checkout():
+    def nothing(root=None):
+        raise rules.Unclear("nothing there")
+
+    rules.checkout = nothing
+    try:
+        return real_out_of_reach()
+    finally:
+        rules.checkout = real_checkout
 
 
 def main():
@@ -162,7 +203,26 @@ def main():
         if lines != expected:
             wrong += 1
             print(f"✘ {situation}: expected {expected}, got {lines}")
-    count = len(TABLE) + len(OUTPUT)
+    for situation, starts, scripts, expected in REACH:
+        got = sorted(real_reach(starts, scripts))
+        if got != expected:
+            wrong += 1
+            print(f"✘ reach: {situation}: expected {expected}, got {got}")
+    # The real thing. What ci.yml's job plainly runs is within reach, and a script that nothing names is not.
+    starts, scripts = real_checkout()
+    reached = real_reach(starts, {**scripts, "scripts/nobody-names-this-one.py": ""})
+    plain = {"scripts/ci-step.py", "scripts/ci-build.sh", "scripts/ci-tests.py", "scripts/parity.py", "scripts/e2e.sh", "scripts/sim-smoke.sh",
+             "scripts/scenarios.sh", "scripts/release-tools-test.sh", "scripts/ci-toolchain.sh", "scripts/ci-mtimes.py", "scripts/ci-build-key.sh",
+             "scripts/mac-shell/e2e-drag.sh", "scripts/mac-shell/lib.sh", "scripts/mac-shell/compile-tools.sh", "scripts/mac-shell/pointer.swift"}
+    for situation, got, expected in [
+        ("this repository: what the job plainly runs", sorted(plain - reached), []),
+        ("this repository: a script nothing names", "scripts/nobody-names-this-one.py" in reached, False),
+        ("a checkout without the workflow or the tests: everything counts as within reach", bool(real_pattern_without_a_checkout().search("scripts/census.py")), False),
+    ]:
+        if got != expected:
+            wrong += 1
+            print(f"✘ reach: {situation}: expected {expected}, got {got}")
+    count = len(TABLE) + len(OUTPUT) + len(REACH) + 3
     print(f"{count - wrong} of {count} situations decided as expected")
     return 1 if wrong else 0
 
