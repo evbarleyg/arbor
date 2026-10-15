@@ -41,19 +41,24 @@ So it answers for its own permission, and the script's tools (children of the ru
 | `by_the_row` / `row` | the row deleted, tccd killed, nothing said | 4 to 16 s later, or not within 30 s |
 | `by_the_row_announced` / `announced` | the same, and the notification | 2 to 6 s later |
 
-The switch in System Settings is the road a person takes; `probe-the-switch.sh` tries whether a script can take it.
+The switch in System Settings is the road a person takes. **A script cannot take it on a hosted Mac** (`probe-the-switch.sh`, 2026-10-15, macOS 26.6.2): the pane opens, both bundles are listed, their switches are found by what Accessibility says
+(`<name>_Toggle`), the click lands, and a sheet comes down: "Privacy & Security is trying to modify your system settings. Enter your password to allow this." The row stays as it was. The script stops there and does not try to get round it. So in which order the
+word, the flag and the right go for a person is still not known, and can only be seen on a Mac whose owner types the password.
 
 ## Which lines of arbor.log the scripts go by
 
-- **"noticed" and "taps gone"** are one moment: the first of `Accessibility permission is gone (…): removed the pinch and rectangle event taps` (`PointerInput.checkPermission`, a one-second timer on the main run loop) and
+- **"noticed" and "taps gone"** are one moment in the code of 2026-10-15: the first of `Accessibility permission is gone (…): removed the pinch and rectangle event taps` (`PointerInput.checkPermission`, a one-second timer on the main run loop) and
   `ERROR Accessibility permission was taken away with N window(s) out of view` (the controller). Either can come first. What stands in brackets says who said no: `AXIsProcessTrusted says no`, or `AXIsProcessTrusted says yes, but macOS refused a tap`.
 - `stopped; no window was moved` follows within milliseconds. That the taps are really gone is asked of the window server's list (`witness taps`).
 - A tap that macOS told "disabled": `the … event tap was off`, `switched it back on`, `too slow`, `of user input`. The scripts count these lines in each round. **A count of zero up to 2026-10-15 proves less than it seems:** the code of
   that day ignored, without a line, a word of macOS's that found the tap switched on. The bare tapper writes down every such word (`switched-off by timeout`, `by user input`).
 - **After the cure of the board's 1.46** (the check moves to the taps' own thread), which the scripts read as well:
   - the "gone" line keeps its words and is written by the tap thread the moment the taps are out; the controller's ERROR line follows when the main thread gets to it;
-  - a third reason in its brackets, `macOS has not said for 0.2 s whether Arbor still may`, is a **doubt**. A **false doubt** is one after which `Accessibility permission is back after N ms (…)` follows with nothing having been taken. Each round prints the doubts, the "is back" lines, and
-    how many doubts came before the deed. So "noticed" is the first "gone" or ERROR line **at or after the deed**, never one before it;
+  - a third reason in its brackets, `macOS has not said in time whether Arbor still may`, is a **doubt**; `Accessibility permission is back after N ms (macOS has not said in time …)` makes it a **false alarm**. Each round prints the doubts, the "is back" lines, the false alarms and
+    how many doubts came before the deed. So "noticed" is the first "gone" line **at or after the deed**, never one before it;
+  - after a silence the controller is not told, so its ERROR line may come up to 3 s later or, after a false alarm, never: **"noticed" and "taps gone" are taken from the taps' own line and the tap list**, from the controller's line only where there is no other (an Arbor without taps; the code of
+    2026-10-15, in which the controller was now and then the first), and then the round says so;
+  - `macOS took N ms to say whether Arbor still may`: every N of a round is listed;
   - `macOS says that it switched the <name> event tap off because it was too slow | of user input`: counted with the lines above;
   - a line after "gone" that says how often macOS was asked, with the mean and the worst in µs: printed.
 - `pinch began` (debug) proves that the gesture tap had traffic.
@@ -72,19 +77,22 @@ after the taps were gone: 1395 arrived of 1395 posted, longest hole 122 ms, …
   posted, because `CGEventPost` blocked the poster. That happens with nobody running at all, seconds after tccd was killed, and is no fault of Arbor's.
 - A plain beat shows as a hole of 50 to 130 ms on a hosted Mac. With nothing taken from anybody, events have been 85 ms late there. So lateness and holes are compared with the same Mac's stretch before the loss; "nothing lost" and "nothing stuck" are absolute.
 - `INVALID` means the round proves nothing (could not post, nothing arrived before the loss, the tap in question was not on, Arbor began without the permission) and is a ✘. `FINDING` means Arbor never noticed within the stream.
-- The variants: `arbor`, `arbor-without-taps` (ARBOR_NO_HOTKEYS=1), `nobody`, `bare-tapper` (what macOS does to any tapper that does nothing), `arbor-stopped` (sabotage).
+- The variants: `arbor`, `arbor-without-taps` (ARBOR_NO_HOTKEYS=1), `nobody`, `bare-tapper` (what macOS does to any tapper that does nothing), `bare-monitor` (no tap, but a global NSEvent monitor, which Arbor has beside its scroll tap and takes out in the same turn), `arbor-stopped` (sabotage).
 - A hole belongs to the stretch its middle lies in, an event to the stretch it was due in by the stream's beat. A silence that lasts to the end of the stream is printed as `NOTHING ARRIVED from … to the end of the stream` and counts as a hole of the last stretch.
 - `ROUNDS="<road>:<variant>[:sampled] …"`, `BEAT=<ms>` and `KINDS=click,key,wheel` in the environment play other rounds; `run.sh` passes no environment, so a wrapper sets them (`probe-tapper-questions.sh`).
 - `sampled` rounds have `sample` looking at Arbor from the deed on (`sample-<n>.txt`); it halts Arbor at every look, so their figures do not count.
 
 ## How the verdict is read (the rule as it stood at 02:15 UTC on 2026-10-15)
 
-1. **The marks are absolute**, and are held on tccutil's road, where the right goes first, which is the worst case: the hole at most 300 ms when macOS answers Arbor's question, 550 ms when it does not; no up lost whose down arrived; lost no more than the beats that fit the hole.
+1. **The marks are absolute**, and are held on tccutil's road, where the right goes first, which is the worst case: the hole at most 300 ms when macOS answers Arbor's question, 550 ms when it does not; lost no more than the beats that fit the hole.
+   (The cure's beat is 0.15 s, 2.5 beats at worst without an answer; a plain beat of the stream shows as 120 to 138 ms with nobody running: so 280 and 505 ms are expected.) While the permission is gone the clock beats once a second.
    There is no floor to be measured against: a bare tapper that does nothing loses the Mac its input for ever.
-2. **The verdict needs both roads**: tccutil's, and **the switch itself** clicked by the pointer (`probe-the-switch.sh`), which is what a person does and decides what the notes may say. The gentlest road (`by_the_row_and_a_word`) stays as the control that shows that Arbor
+2. **The verdict needs both roads**: tccutil's, and **the switch itself**, which is what a person does and decides what the notes may say; no script can click it on a hosted Mac (above). The gentlest road (`by_the_row_and_a_word`) stays as the control that shows that Arbor
    leaves of its own accord when told; the two roads that kill tccd stay as controls for the poster's own hole.
-3. **Nothing stuck is the question that matters most**: `probe-nothing-stuck.sh`, ten rounds or more; round c of `probe-loss-under-traffic.sh`. Nothing held down at the end, no band or panel left, the next click whole.
-4. **False doubts** are counted in every stream, also in the controls where nothing is taken (`nothing:arbor`).
+3. **NOTHING STAYS STUCK** is the first mark and the question that matters most. Not "no up is lost whose down arrived": with any hole above zero a release can fall into it, and Arbor cannot post one without the permission. But: after the hole the next press and release arrive whole, and the window
+   server's and the app's idea of what is down is right again after that one act, for the button, a key and a modifier; no drag goes on with nobody holding; no key repeats. `probe-nothing-stuck.sh`, ten rounds or more, prints the table per kind: what was believed after a lost up, for how long, what put it right.
+   Round c of `probe-loss-under-traffic.sh`: no band or panel left, the next click and drag whole.
+4. **False alarms** are counted in every stream, also in the controls where nothing is taken (`nothing:arbor`): `Accessibility permission is back after N ms (macOS has not said in time …)`. If the late answer was a no, the brackets carry the real reason and the line does not count. And the slow answers, `macOS took N ms to say whether Arbor still may` (over a quarter of a beat): every N is listed, which shows how near a healthy Mac comes to a false alarm.
 5. **"After no later than before" is read at the median, by kind of event, with 10 ms to spare.** The worst value and the 99th percentile of a hosted Mac say more about the Mac: with nobody running they have been 61 ms and 9.5 ms. They are printed beside, marked "(at the worst)" and "(the first bar)".
 6. **The taps' own cost** is Arbor with taps against Arbor without taps on a release build, at the 99th percentile, 10 ms; a debug build is a sign and no verdict.
 7. **Sabotage** (`by_tccutil:arbor-stopped`): nobody is there to take the taps out. Today the whole process is halted with SIGSTOP two seconds before the deed and killed twenty seconds after it, so that the Mac is given back whatever happens; `nothing:arbor-stopped` is its control.
@@ -96,6 +104,10 @@ after the taps were gone: 1395 arrived of 1395 posted, longest hole 122 ms, …
 
 From the moment macOS withdraws the right until Arbor removes its taps, every event of every kind is dropped: 5 to 100 of them, 85 to 1091 ms, in fifteen rounds of sixteen with taps on the roads that withdraw; none in eight rounds with nobody and none in
 three with an Arbor without taps. The length is the wait for the next tick of the one-second check. Before and after, nothing is lost.
+**The drop begins at the first event that a switched-on tap has asked for**, not at the withdrawal: in eleven rounds of eleven with downs and ups 400 ms apart the first event lost was a press of the button, and releases and keys posted up to 772 ms after the deed, before that press, arrived. So
+whoever only types loses nothing until the next press (or gesture); the button's own down is the first thing lost, and what can stick is a key or a modifier that is down at that press.
+**Of five questions only a trial `tapCreate` turns** at the withdrawal, 0 to 33 ms after the first dropped event, at 0.25 to 0.5 ms a call (99th 1.5 to 5 ms, worst 6 to 24, once 80). `tapIsEnabled` of the tapper's own tap, `AXIsProcessTrusted`, `CGPreflightListenEventAccess` and `CGPreflightPostEventAccess` never
+turn on tccutil's road. On the gentlest road the flag turns first and the right goes two thirds of a second later, and only if somebody asks.
 **The floor is for ever.** A bare tapper that does nothing loses the Mac all its input until it is killed (785 of 785 events in 8 s, 2400 of 2400 in 24 s). Its callback is told nothing, neither "by timeout" nor "by user input", and the window server's list goes on
 calling its tap enabled. So removal is what counts, and nobody will say when.
 **The flag and the right to tap are two things.** With the row deleted, the notification posted and tccd left alone, the flag says no, Arbor takes its taps out of its own accord, and nothing is lost in four rounds of four: macOS had withdrawn nothing (the bare tapper keeps working on that road).
@@ -107,6 +119,7 @@ The taps' own cost on a release build: 1.7 to 3.0 ms at the median, 6 ms at the 
 
 - **The bundle must not lie under /tmp.** `tccutil` finds it by its identifier in Launch Services' list and says "No such bundle identifier" (-10814) of one that does, registered or not.
 - **`tccutil` without `sudo`.** Launch Services' list is kept per user.
+- **Name the output branch with every result**: `mac-shell-out/<tag>`; tags differ from run to run, and where branches cannot be deleted the old ones stay.
 - **`run.sh` cuts a script's name to 16 characters for the tag**, and a second dispatch under the same tag cancels the first: `probe-permission-loss` and `probe-permission-grant` are one tag. Set `MAC_SHELL_TAG`.
 - **A job checks out the branch's head when it starts**, not when it was dispatched: a push while it waits changes what it runs.
 - **A listener must end with its stream**, or be cut to it: one that lives on overhears the next stream, whose numbers begin at 1 again.

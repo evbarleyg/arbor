@@ -1,18 +1,21 @@
 #!/bin/bash
 # When Arbor loses the Accessibility permission with its taps in, macOS drops every event until the taps are gone. What is left stuck?
 #
-#   scripts/mac-shell/run.sh scripts/mac-shell/probe-nothing-stuck.sh      (about nine minutes; README-permission-probes.md says how to read it)
+#   scripts/mac-shell/run.sh scripts/mac-shell/probe-nothing-stuck.sh      (about eleven minutes; README-permission-probes.md says how to read it)
 #
-# probe-permission-loss.sh posts each down with its up in the same beat, so both are lost or neither. Here the button, the key F19 and ⇧ are each down for 400 ms and
-# up for 400 ms, a third of that apart (asker.swift, `pairs`), so that the withdrawal falls between a down and its up in most rounds. The moment of the deed moves through
-# the cycle from round to round.
+# What is known (README-permission-probes.md): after the right to tap is withdrawn events go on arriving until one comes that a switched-on tap has asked for, which for Arbor at rest is a press of
+# the button; from that press on everything is dropped until the taps are out. So the button's own down is the first thing lost, and what can stick is whatever is DOWN AT THAT PRESS: a key, a modifier.
 #
-# Who is asked: the listener at the far end of the taps (what got through); an app of the script's own under the pointer (`asker window`: what IT was given, and
-# whether a key repeats); and, every 20 ms, the window server's own idea of what is down (CGEventSource's button, key and flags state) and AppKit's.
-# For each round: which events were lost; every down that arrived whose up did not (THE QUESTION), and for how long the window server then held it to be down;
-# every up that arrived without its down; what is held down a second after the stream has let go of everything; whether the next plain click arrives whole.
+# The stream (asker.swift, `pairs`): the key F19, ⇧ and the button, each down for 400 ms of a cycle of 800; the key and ⇧ go down before the button and come up after it has gone down. At the deed the
+# stream is told to wind up: one more press of the button, and its cycle to the end. Then one thing at a time, to see WHAT PUTS RIGHT what is stuck: three seconds of silence, a move of the pointer, a notch of the wheel, one press and
+# release of the button, of the key, of ⇧, a second apart. The moment of the deed moves through the cycle from round to round.
 #
-# By tccutil's road, which is felt at once and kills no daemon. The controls: nobody running; a bare tapper, which never lets go of its tap (the floor).
+# Who is asked: the listener at the far end of the taps (what got through); an app of the script's own under the pointer (`asker window`: what IT was given, whether a key repeats, whether it is given drags,
+# where its window is: the button is pressed on its title bar); and, every 20 ms, the window server's own idea of what is down (CGEventSource's button, key and flags state) and AppKit's.
+# THE MARK: NOTHING STAYS STUCK: after the hole the next press and release arrive whole, and the window server's and the app's idea of what is down is right again after that one act, for the button, a key
+# and a modifier; no drag goes on with nobody holding; no key repeats. THE TABLE, per kind: what was believed after a lost up, for how long, and what put it right.
+#
+# By tccutil's road, which is felt at once and kills no daemon. The controls: nobody running; a bare tapper, which never lets go of its tap.
 # What a hosted Mac cannot say: whether real keys and buttons are dropped as posted ones are, and whether a real key whose up is lost goes on repeating
 # (the keyboard's repeat is made below where events are posted).
 source "$(dirname "$0")/lib.sh"
@@ -87,47 +90,85 @@ def seconds(text):
     hours, minutes, rest = text.split(":")
     return int(hours) * 3600 + int(minutes) * 60 + float(rest)
 
-stream, arrivals, window, taken, noticed = sys.argv[1:6]
+stream, arrivals, window, taken, noticed, label = sys.argv[1:7]
 taken = seconds(taken)
 posted = {}  # number -> (time, what)
 for line in open(stream):
     match = re.match(r"(\S+) posted n=(\d+) (\S+)", line)
     if match:
         posted[int(match.group(2))] = (seconds(match.group(1)), match.group(3))
+over = re.search(r"(\S+) the cycles are over", open(stream).read())
+over = seconds(over.group(1)) if over else float("inf")
 arrived = {int(match.group(2)): seconds(match.group(1)) for match in (re.match(r"(\S+) \S+ n=(\d+) ", line) for line in open(arrivals)) if match}
 saw = {int(match.group(2)): seconds(match.group(1)) for match in (re.match(r"(\S+) saw \S+ n=(\d+) ", line) for line in open(window)) if match}
-repeats = sum(1 for line in open(window) if "repeat=true" in line)
 held = [(seconds(match.group(1)), dict(pair.split("=") for pair in match.group(2).split())) for match in (re.match(r"(\S+) held (.*)", line) for line in open(window)) if match]
 lost = sorted(number for number in posted if number not in arrived)
 print(f"posted {len(posted)}, arrived at the end of the taps {len(arrived)}, given to the app {len(saw)}, lost {len(lost)}"
-      + (": " + ", ".join(f"n={number} {posted[number][1]}" for number in lost) if lost else ""))
+      + (": " + ", ".join(f"n={number} {posted[number][1]}" for number in lost[:14]) + (" …" if len(lost) > 14 else "") if lost else ""))
 if lost:
-    first, last = posted[lost[0]][0], posted[lost[-1]][0]
-    print(f"the first that was lost was posted {(first - taken) * 1000:.0f} ms after the deed began, the last {(last - taken) * 1000:.0f} ms after it"
-          + (f"; Arbor noticed {(seconds(noticed) - taken) * 1000:.0f} ms after it" if noticed != "-" else ""))
-# A down is followed by its up three numbers later.
-state_of = {"down": "button", "key-down": "f19", "shift-down": "shift-key"}
-orphans, widows = [], []
-for number, (time, what) in sorted(posted.items()):
-    if what in state_of and number + 3 in posted:
-        if number in arrived and number + 3 not in arrived:
-            orphans.append(number)
-            name = state_of[what]
-            later = [moment for moment, state in held if moment > time and state.get(name) == "up"]
-            print(f"  A DOWN WHOSE UP WAS LOST: n={number} {what} at {(time - taken) * 1000:+.0f} ms; the window server held {name} to be down for "
-                  + (f"{(later[0] - time) * 1000:.0f} ms (400 is right)" if later else "EVER: it never came up again"))
-        if number not in arrived and number + 3 in arrived:
-            widows.append(number + 3)
-            print(f"  an up without its down: n={number + 3} {posted[number + 3][1]}")
+    print(f"the first that was lost was posted {(posted[lost[0]][0] - taken) * 1000:+.0f} ms from the beginning of the deed, the last {(posted[lost[-1]][0] - taken) * 1000:+.0f} ms"
+          + (f"; Arbor's taps were out at {(seconds(noticed) - taken) * 1000:+.0f} ms" if noticed != "-" else ""))
+
+def cleared(name, since):
+    """When the window server or AppKit next held it to be up."""
+    return next((moment for moment, state in held if moment > since and state.get(name) in ("up", "off")), None)
+
+def cause(moment, kind):
+    """What arrived in the 70 ms before: that is what put it right."""
+    near = [(time, number) for number, time in arrived.items() if moment - 0.07 <= time <= moment + 0.005]
+    if not near:
+        return "nothing: it came right by itself"
+    what = posted[max(near)[1]][1]
+    return f"{what}, " + ("of the same kind" if what in kinds[kind][:2] else "another kind of event")
+
+def lasted(moment, since):
+    return "to the end of the record" if moment is None else f"{(moment - since) * 1000:.0f} ms"
+
+kinds = {"button": ("down", "up", ["button", "appkit-button"]), "key": ("key-down", "key-up", ["f19"]), "modifier": ("shift-down", "shift-up", ["shift-key", "shift-flag", "appkit-shift"])}
+rows, orphans, widows, slow = [], 0, 0, 0
+for kind, (down, up, names) in kinds.items():
+    numbers = sorted(number for number, (_, what) in posted.items() if what in (down, up))
+    for first, second in zip(numbers, numbers[1:]):
+        if posted[first][1] != down or posted[second][1] != up:
+            continue
+        if first in arrived and second not in arrived:
+            orphans += 1
+            since = posted[second][0]
+            print(f"  A LOST UP WHOSE DOWN ARRIVED: the {kind}, n={first} and n={second}, which was posted {(since - taken) * 1000:+.0f} ms from the deed")
+            for name in names:
+                moment = cleared(name, since)
+                print(f"    {name} was held to be down for {lasted(moment, since)} after that" + (f"; put right by: {cause(moment, kind)}" if moment else ""))
+                rows.append(f"{label} {kind} {name} {lasted(moment, since).replace(' ', '-')} | {cause(moment, kind) if moment else 'NOTHING'}")
+                # The one act: the first press and release of that kind after the silence.
+                act = [number for number in numbers if posted[number][0] > over and posted[number][1] == up and number in arrived]
+                if moment is None or (act and moment > arrived[act[0]] + 0.1):
+                    slow += 1
+            later = [time for number, time in saw.items() if posted[number][1] == up and time > since]
+            print(f"    the app was given the down and no up; the next up of that kind it was given came {lasted(later[0] if later else None, since)} after")
+        if first not in arrived and second in arrived:
+            widows += 1
+            print(f"  an up without its down: the {kind}, n={second}")
+text = open(window).read()
+repeats = len(re.findall(r"repeat=true", text))
+drags = sum(1 for match in re.finditer(r"(\S+) saw dragged", text) if seconds(match.group(1)) > over)
+places = [state.get("window") for moment, state in held if moment > over]
+moved = len(set(places)) > 1
 last = held[-1][1] if held else {}
 stuck = sorted(name for name, value in last.items() if value in ("down", "on"))
-print("held down at the end: " + (", ".join(stuck) if stuck else "nothing") + f"; key repeats the app was given: {repeats}")
-print("facts", len(posted), len(lost), len(orphans), len(widows), len(stuck), sum(1 for number in arrived if posted.get(number, (taken,))[0] < taken), repeats)
+print("held down at the end: " + (", ".join(stuck) if stuck else "nothing") + f"; key-downs with the repeat flag the app was given: {repeats}; drags it was given after the cycles, with nobody holding: {drags}; "
+      + ("ITS WINDOW MOVED after the cycles: " + " ".join(dict.fromkeys(places)) if moved else "its window stayed where it was"))
+final = sorted(number for number, (time, _) in posted.items() if time > over)
+print(f"after the silence: {sum(1 for number in final if number in arrived)} of {len(final)} arrived (a move, a notch, three presses and releases)")
+for row in rows:
+    print("row " + row)
+print("facts", len(posted), len(lost), orphans, widows, len(stuck), sum(1 for number in arrived if posted.get(number, (taken,))[0] < taken), repeats, drags, int(moved), slow,
+      sum(1 for number in final if number not in arrived))
 PYTHON
 
 # The app under the pointer: in the lower right, clear of the test window.
 WX=600 WY=380 WW=320 WH=220
-PX=$((WX + WW / 2)) PY=$((WY + WH / 2))
+# On its title bar: were the button held to be down with nobody holding, the window would follow the pointer.
+PX=$((WX + WW / 2)) PY=$((WY + 14))
 
 # one_round <number> <arbor|nobody|bare-tapper>
 one_round() {
@@ -152,7 +193,7 @@ one_round() {
       eventually status_starts running || { invalid "Arbor has the permission at launch"; kill_started "$ARBOR_PID"; ARBOR_PID=""; return; } ;;
     bare-tapper)
       : > "$ARBOR_OUT/tapper-$round.txt"
-      limit 20 open -n "$tapper" --args tap 22 "$ARBOR_OUT/tapper-$round.txt"
+      limit 20 open -n "$tapper" --args tap 30 "$ARBOR_OUT/tapper-$round.txt"
       eventually grep -q tap-ready "$ARBOR_OUT/tapper-$round.txt" || { invalid "the bare tapper has its tap"; return; }
       pid=$(sed -n 's/.*tap-ready pid=//p' "$ARBOR_OUT/tapper-$round.txt")
       started "$pid" ;;
@@ -161,26 +202,24 @@ one_round() {
   mark=$(wc -l < "$ARBOR_HOME/arbor.log")
 
   : > "$ARBOR_OUT/window-$round.txt"
-  "$ASKER" window 17 "$ARBOR_OUT/window-$round.txt" $WX $WY $WW $WH > /dev/null 2>&1 &
+  "$ASKER" window 24 "$ARBOR_OUT/window-$round.txt" $WX $WY $WW $WH > /dev/null 2>&1 &
   started $!
   eventually grep -q window-ready "$ARBOR_OUT/window-$round.txt" || { invalid "the app under the pointer opened its window"; return; }
   : > "$ARBOR_OUT/arrivals-$round.txt"
-  "$ASKER" arrivals 15 >> "$ARBOR_OUT/arrivals-$round.txt" 2>&1 &
+  "$ASKER" arrivals 22 >> "$ARBOR_OUT/arrivals-$round.txt" 2>&1 &
   started $!
   eventually grep -q arrivals-ready "$ARBOR_OUT/arrivals-$round.txt" || { invalid "the listener at the end of the taps started"; return; }
   pointer move "$PX" "$PY"
-  "$ASKER" pairs 8 "$PX" "$PY" > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
+  "$ASKER" pairs 6 "$PX" "$PY" > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
   stream=$!
   started "$stream"
   # Through the cycle of 800 ms in steps of 70 ms, from round to round.
   tenths=$((round * 7 % 80))
   sleep "2.$(printf '%02d' "$tenths")"
+  kill -USR1 "$stream"
   taken=$("$ASKER" now)
   tccutil reset Accessibility "$id"
-  ended "$stream" 120 || invalid "the stream came to its end"
-  sleep 1
-  echo "## afterwards" >> "$ARBOR_OUT/arrivals-$round.txt"
-  pointer click "$PX" "$PY"
+  ended "$stream" 200 || invalid "the stream came to its end"
   sleep 0.5
   if [ "$who" = arbor ]; then
     # Not before the deed: an Arbor that takes its taps out when macOS is slow to answer (a doubt) writes the same line.
@@ -192,19 +231,20 @@ one_round() {
     [ -n "$noticed" ] || { echo "FINDING: Arbor has not noticed by the end of the stream; its taps: $(taps_of "$pid")"; noticed=-; }
   fi
   [ "$who" != bare-tapper ] || grep -E "switched-off|question|the end" "$ARBOR_OUT/tapper-$round.txt"
-  python3 "$ARBOR_SESSION_DIR/stuck.py" "$ARBOR_OUT/stream-$round.txt" "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/window-$round.txt" "$taken" "$noticed" \
+  python3 "$ARBOR_SESSION_DIR/stuck.py" "$ARBOR_OUT/stream-$round.txt" "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/window-$round.txt" "$taken" "$noticed" "$round-$who" \
     > "$ARBOR_SESSION_DIR/verdict"
-  grep -v "^facts " "$ARBOR_SESSION_DIR/verdict"
-  read -r _ posted lost orphans widows stuck before repeats <<< "$(grep "^facts " "$ARBOR_SESSION_DIR/verdict")"
+  grep -v -E "^(facts|row) " "$ARBOR_SESSION_DIR/verdict"
+  grep "^row " "$ARBOR_SESSION_DIR/verdict" | cut -c 5- >> "$ARBOR_OUT/rows.txt"
+  read -r _ posted lost orphans widows stuck before repeats drags moved slow unheard <<< "$(grep "^facts " "$ARBOR_SESSION_DIR/verdict")"
   echo "the button a second after the stream, by the window server: $(pointer where)"
-  echo "the next plain click, at the end of the taps: $(awk '/^## afterwards/ { on = 1; next } on' "$ARBOR_OUT/arrivals-$round.txt" | grep -c -E " (down|up) other") of 2"
-  [ "${posted:-0}" -ge 50 ] || invalid "the stream posted its events (${posted:-0})"
-  [ "${before:-0}" -ge 10 ] || invalid "events arrived before the deed (${before:-0})"
-  check "round $round: NO UP WAS LOST WHOSE DOWN ARRIVED (${orphans:-?} were)" test "${orphans:-1}" -eq 0
+  [ "${posted:-0}" -ge 25 ] || invalid "the stream posted its events (${posted:-0})"
+  [ "${before:-0}" -ge 8 ] || invalid "events arrived before the deed (${before:-0})"
+  check "round $round: NOTHING STAYS STUCK: whatever was held after a lost up is right again after one press and release of its kind at the latest (${slow:-?} were not)" test "${slow:-1}" -eq 0
   check "round $round: nothing is held down at the end" test "${stuck:-1}" -eq 0
-  check "round $round: the next plain click arrives whole" \
-    test "$(awk '/^## afterwards/ { on = 1; next } on' "$ARBOR_OUT/arrivals-$round.txt" | grep -c -E " (down|up) other")" -eq 2
-  echo "$round $who lost=${lost:-?} downs-without-up=${orphans:-?} ups-without-down=${widows:-?} held-at-the-end=${stuck:-?} repeats=${repeats:-?}" >> "$ARBOR_OUT/table.txt"
+  check "round $round: after the hole the move, the notch and the three presses and releases all arrive (${unheard:-?} did not)" test "${unheard:-1}" -eq 0
+  check "round $round: no key repeats" test "${repeats:-1}" -eq 0
+  check "round $round: no drag goes on with nobody holding" test "${drags:-1}" -eq 0 -a "${moved:-1}" -eq 0
+  echo "$round $who lost=${lost:-?} lost-ups-whose-down-arrived=${orphans:-?} ups-without-down=${widows:-?} not-right-after-one-act=${slow:-?} held-at-the-end=${stuck:-?} repeats=${repeats:-?} drags=${drags:-?} window-moved=${moved:-?}" >> "$ARBOR_OUT/table.txt"
   if [ "$who" = arbor ]; then
     "$ARBOR_BIN/arborctl" quit > /dev/null 2>&1
     eventually gone "$ARBOR_PID" || kill_started "$ARBOR_PID"
@@ -214,6 +254,7 @@ one_round() {
 }
 
 : > "$ARBOR_OUT/table.txt"
+: > "$ARBOR_OUT/rows.txt"
 number=0
 for who in ${ROUNDS:-nobody bare-tapper arbor arbor arbor arbor arbor arbor bare-tapper arbor arbor arbor arbor arbor arbor nobody}; do
   number=$((number + 1))
@@ -222,5 +263,8 @@ done
 
 step "side by side"
 cat "$ARBOR_OUT/table.txt"
+echo
+echo "THE TABLE: round and variant, kind, who believed it, for how long after the lost up | what put it right"
+cat "$ARBOR_OUT/rows.txt"
 arbor_log
 arbor_close_windows

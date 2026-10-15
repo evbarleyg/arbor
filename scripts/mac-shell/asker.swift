@@ -29,8 +29,9 @@ let usage = """
                                     unless told otherwise), a whole small pinch. ⌃⌥ go down <from> seconds in and up at <until>
     arrivals <seconds>              print each of those that reaches the end of the taps: the time, its kind, its number, how late, its modifiers;
                                     and every other press, drag, key, scroll and gesture, as other=…
-    pairs <seconds> <x> <y>         the button, the key F19 and ⇧, each down for 400 ms and up for 400 ms, a third of that apart from one another, numbered: so that
-                                    at any moment something is down. Ends with everything up
+    pairs <seconds> <x> <y>         the key F19, ⇧ and the button, each down for 400 ms of a cycle of 800, numbered; the key and ⇧ go down BEFORE the button and come up after it
+                                    has gone down, so that both are held at every press. At SIGUSR1, or after <seconds>: on to the end of the cycle with the next press, then three seconds of
+                                    silence, a move of the pointer, a notch of the wheel, and one press and release of the button, the key and ⇧, a second apart
     window <seconds> <file> x y w h an app with one window there (global top-left coordinates) that appends to <file> every press, release, drag, key and change of
                                     modifiers IT is given, and, whenever one of them changes, what the window server holds to be down
     tap <seconds> <file>            install one active tap on mouse-downs, at the head of the session's taps as Arbor's are, pass everything on, and never let
@@ -190,7 +191,10 @@ func stream(seconds: Double, every milliseconds: Double, at point: CGPoint, kind
   print("\(now()) stream ends: \(number) events posted")
 }
 
-/// Downs and ups far apart, so that whatever happens in between falls between them.
+/// Set by SIGUSR1: the deed is being done, wind the cycles up.
+nonisolated(unsafe) var windUp: sig_atomic_t = 0
+
+/// Downs and ups far apart, so that whatever happens in between falls between them; and afterwards one thing at a time, to see what puts right what is stuck.
 func pairs(seconds: Double, at point: CGPoint) {
   let source = CGEventSource(stateID: .hidSystemState)
   var number: Int64 = 0
@@ -213,22 +217,39 @@ func pairs(seconds: Double, at point: CGPoint) {
     event?.flags = flags
     post(event, down ? "shift-down" : "shift-up")
   }
-  // In sixths of a cycle of 800 ms: the button goes down at 0 and up at 3, the key at 1 and 4, ⇧ at 2 and 5.
+  signal(SIGUSR1) { _ in windUp = 1 }
+  // In sixths of a cycle of 800 ms: the key goes down at 0 and up at 3, ⇧ at 1 and 4, the button at 2 and 5. What macOS drops begins with a press of the button.
   let began = Date()
   var step = 0
+  var last: Int?
   print("\(now()) stream begins")
-  while Date().timeIntervalSince(began) < seconds || step % 6 != 0 {
+  while true {
+    // So that exactly one press of the button follows the signal, and the silence follows that press's cycle: a further cycle would put right what the silence is there to show.
+    if last == nil, windUp != 0 || Date().timeIntervalSince(began) >= seconds { last = (step / 6 + (step % 6 <= 1 ? 1 : 2)) * 6 }
+    if let last, step >= last { break }
     switch step % 6 {
-    case 0: button(true)
-    case 1: key(true)
-    case 2: modifier(true)
-    case 3: button(false)
-    case 4: key(false)
-    default: modifier(false)
+    case 0: key(true)
+    case 1: modifier(true)
+    case 2: button(true)
+    case 3: key(false)
+    case 4: modifier(false)
+    default: button(false)
     }
     step += 1
     let wait = began.addingTimeInterval(Double(step) * 0.8 / 6).timeIntervalSinceNow
     if wait > 0 { Thread.sleep(forTimeInterval: wait) }
+  }
+  print("\(now()) the cycles are over after n=\(number)")
+  Thread.sleep(forTimeInterval: 3)
+  post(CGEvent(mouseEventSource: source, mouseType: .mouseMoved, mouseCursorPosition: CGPoint(x: point.x + 40, y: point.y + 30), mouseButton: .left), "move")
+  Thread.sleep(forTimeInterval: 1)
+  post(CGEvent(scrollWheelEvent2Source: source, units: .line, wheelCount: 1, wheel1: 1, wheel2: 0, wheel3: 0), "wheel")
+  Thread.sleep(forTimeInterval: 1)
+  for act in [button, key, modifier] {
+    act(true)
+    Thread.sleep(forTimeInterval: 0.1)
+    act(false)
+    Thread.sleep(forTimeInterval: 1)
   }
   print("\(now()) stream ends: \(number) events posted")
 }
@@ -290,6 +311,7 @@ final class Onlooker: NSObject, NSApplicationDelegate {
       "button=\(CGEventSource.buttonState(server, button: .left) ? "down" : "up") appkit-button=\(NSEvent.pressedMouseButtons & 1 != 0 ? "down" : "up")"
       + " f19=\(CGEventSource.keyState(server, key: 80) ? "down" : "up") shift-key=\(CGEventSource.keyState(server, key: 56) ? "down" : "up")"
       + " shift-flag=\(CGEventSource.flagsState(server).contains(.maskShift) ? "on" : "off") appkit-shift=\(NSEvent.modifierFlags.contains(.shift) ? "on" : "off")"
+      + " window=\(Int(window?.frame.minX ?? 0)),\(Int(window?.frame.minY ?? 0))"
     if state != held {
       held = state
       write("held \(state)")
