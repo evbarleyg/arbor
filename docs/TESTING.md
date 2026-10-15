@@ -485,8 +485,9 @@ with its modifiers, click count, whether Arbor re-posted it, and how long it too
 that a ⌃⌥-drag reaches no app at all, that a ⌃⌥-click arrives once and in order, that a plain drag is
 untouched, what a click costs with Arbor running, and what happens to input when Arbor is stopped or
 killed in the middle of a gesture. `witness taps` lists every process's taps and whether each is switched on;
-`witness pinch x y <magnification> [--opt] [--rotate]` posts a pinch; `witness scroll x y <dx> <dy> [--opt] [--ctrl] [--momentum n]` a two-finger
-scroll; `witness wheel x y <notches> [--opt] [--ctrl]` turns a mouse wheel; `witness hold-space <n>` holds ⌃⌥Space down.
+`witness pinch x y <magnification> [--opt] [--rotate]` posts a pinch; `witness scroll x y <dx> <dy> [--ctrl] [--opt] [--shift] [--cmd] [--momentum n]` a two-finger
+scroll; `witness wheel x y <notches>` with the same keys turns a mouse wheel; `witness hold-space <n>` holds ⌃⌥Space down. Ended by a signal or by a
+mistake on its command line, it first lets go of the keys it holds and ends the gesture it has begun.
 The script clicks at places it takes to be empty, so outside GitHub's Macs it refuses to run unless told to (see its header).
 
 **Measuring.** `scripts/mac-shell/perf.sh` times camera moves over twelve real windows of one app and of four, using
@@ -699,7 +700,7 @@ holds for the commit named (second reading, 10:45 UTC) and says what the script 
 | `check-F21.sh` | #102 `9acaae38` | safe, parts skip themselves | two clicks, five keys | The virtual display; Arbor over every window; apps opened |
 | `film-F16.sh` | #98 `a2e34e43` | safe, steps skip themselves | 3 min | Reduce Motion. Pinches and ⌃⌥-scrolls over a test window, each after the net was asked; the helper is on record |
 | `perf.sh` | #45 `fbd7e3b5` | safe, steps skip themselves | one drag | By the second reading, not read again since |
-| `input-taps.sh`, `witness.swift` | trunk and #193, #204 | **never without the switch**; with it, not before the fixes | | A witness that is killed leaves ⌃, ⌥ or Space down and a gesture unfinished; ⌃ with a wheel is macOS's zoom |
+| `input-taps.sh`, `witness.swift` | trunk | **never without the switch** | | A witness that is ended lets go of ⌃, ⌥ and Space and ends its gesture first (not one that is killed outright, with KILL); the step with ⌃ and a wheel is skipped where that is macOS's zoom. Neither has been seen on a Mac yet |
 | `suite.sh`, `suite/*.sh` | trunk | safe, steps skip themselves | 16 min on a hosted Mac | One supervised run with one curtain. Docking at a screen edge where macOS tiles, `open arbor://…`, Launch at Login, ⌘Tab, and every press or pinch on the bare Desktop, which is behind the curtain |
 | `suite-twice.sh` | trunk | **never**: ends with 77 | | An hour, against a curtain and a sweep that reckon with half of one |
 
@@ -1197,7 +1198,7 @@ windows are out of view; nothing Arbor placed is lost beyond the displays; overl
 preview without a drag; one focus ring, around the window that has the keyboard; a floating window in view goes out of view only
 when the camera moves; a pinned window is always in view; Go to… is open only while Arbor runs, on a display that is there and with nothing being
 dragged, and the window chosen in it has the keyboard and is in view; a saved slot that waits for its window is in a tree and has a timer that ends the
-wait; Arbor gives up only on windows that something keeps moving; only known timers, and they run dry; windows Arbor does not arrange are never moved;
+wait; the shortcuts the app was last told to register and the settings its taps were last told to follow are the ones Arbor wants now; Arbor gives up only on windows that something keeps moving; only known timers, and they run dry; windows Arbor does not arrange are never moved;
 `state` and state.json survive JSON; after `quit` or `pause` everything is back in view; a restart keeps the shape of every tree).
 
 **Running it**

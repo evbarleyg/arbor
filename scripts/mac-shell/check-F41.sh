@@ -137,7 +137,8 @@ grep -E "code=(3|49|36|123) " "$KEYS_LOG"
 shot 01-listed-app-in-front
 
 step "a ⌃⌥-drag inside the app is the app's too"
-drag $((KEYS_X - 60)) $((KEYS_Y - 20)) $((KEYS_X + 60)) $((KEYS_Y + 40)) --mods ctrl+opt
+# A drag that the harness's nets declined proves nothing about who got it.
+drag $((KEYS_X - 60)) $((KEYS_Y - 20)) $((KEYS_X + 60)) $((KEYS_Y + 40)) --mods ctrl+opt || check "the drag was let through by the harness" false
 sleep 0.5
 check "nothing was framed" all_on_screen
 check "no frame-rect command ran" mentions_are "frame-rect" 0
