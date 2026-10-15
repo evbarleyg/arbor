@@ -26,6 +26,7 @@ install_hook() {
   fi
   mkdir -p "$common/hooks" "$common/arbor-public-check" &&
     cp "$here/../public-check.py" "$here/../public-check.allow" "$common/arbor-public-check/" &&
+    rm -rf "$common/arbor-public-check"/integrated-* &&
     cp "$here/pre-push" "$common/hooks/pre-push" &&
     chmod +x "$common/hooks/pre-push" &&
     echo "git now runs scripts/public-check.py before every push from this clone"

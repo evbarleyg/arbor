@@ -7,11 +7,43 @@ own="$top/scripts/public-check.py"
 # Whether the rules have changed is asked of the copy `make hooks` kept, which came with this hook: the branch that is checked out
 # may be from before anybody thought of asking.
 said=$(python3 "$kept" --rules) || { echo "$said"; echo "public-check: nothing was pushed."; exit 1; }
-# The newer of the two checks does the reading. A branch from before a hole was mended, or from before there was a check at all, is as
+# The newest check does the reading. First of the two that are files here. A branch from before a hole was mended, or from before there was a check at all, is as
 # public as any other; and a clone whose kept copy has grown old has the newer one in its tree.
 version() { number=$(sed -n 's/^VERSION = \([0-9][0-9]*\)$/\1/p' "$1" 2>/dev/null | head -n 1); echo "${number:-0}"; }
 check=$kept
 [ "$(version "$own")" -gt "$(version "$kept")" ] && check=$own
+# A clone that only ever fetches, as one that work is landed from may, has old files and an old kept copy, and nothing tells it. But it
+# knows what the public repository has integrated: if the check there is newer still, that one reads. Only the public repository's:
+# what some other remote calls its trunk is a stranger's program. So the address is held to the whole of a pattern, and the first address, which is
+# where git fetches from; and a branch is asked for by its full name and must be there, or git would guess, and take a tag that is called so.
+here=$(version "$check") newest=$here from= whose=
+for remote in $(git remote); do
+  git config --get-all "remote.$remote.url" | head -n 1 |
+    grep -Eqi '^(https://([^/@]*@)?|(ssh://)?git@)(ssh\.)?github\.com(:[0-9]+)?[:/]+evbarleyg/arbor(\.git)?/?$' || continue
+  git remote | grep -q "^$remote/" && continue  # another remote's branches would lie among this one's
+  for branch in swarm/trunk main; do
+    git show-ref --verify --quiet "refs/remotes/$remote/$branch" || continue
+    theirs=$(git cat-file blob "refs/remotes/$remote/$branch:scripts/public-check.py" 2>/dev/null | sed -n 's/^VERSION = \([0-9][0-9]*\)$/\1/p' | head -n 1)
+    [ "${theirs:-0}" -gt "$newest" ] || continue
+    newest=$theirs from="refs/remotes/$remote/$branch:scripts/public-check" whose="$remote's $branch"
+  done
+done
+if [ -n "$from" ]; then
+  # It is written to a folder named after what is in it, which appears whole or not at all: pushes from several worktrees at once share it, and
+  # a check that is half written reads nothing and finds nothing. A newer check that is known and cannot be had: no push.
+  integrated="$common/arbor-public-check/integrated-$(git rev-parse --verify --quiet "$from.py")-$(git rev-parse --verify --quiet "$from.allow")"
+  if [ ! -d "$integrated" ]; then
+    mkdir -p "$integrated.$$" && git cat-file blob "$from.py" > "$integrated.$$/public-check.py" && git cat-file blob "$from.allow" > "$integrated.$$/public-check.allow" &&
+      python3 -c 'import os, sys; os.rename(sys.argv[1], sys.argv[2])' "$integrated.$$" "$integrated" 2>/dev/null
+    rm -rf "$integrated.$$"
+  fi
+  if [ ! -f "$integrated/public-check.py" ]; then
+    echo "public-check: $whose has a newer check (version $newest) than this clone (version $here), and it could not be written to $integrated. Nothing was pushed." >&2
+    exit 1
+  fi
+  echo "public-check: this clone's own check is version $here and $whose has version $newest, which does the reading. To bring the clone up to date: check out something newer, then make hooks" >&2
+  check="$integrated/public-check.py"
+fi
 # (The exceptions are those of the commit being pushed, which the check reads from it.)
 # Which remote, and where it is, go by the environment too: no check, however old, trips over that.
 PUBLIC_CHECK_REMOTE="$1" PUBLIC_CHECK_TO="$2" exec python3 "$check" --pre-push

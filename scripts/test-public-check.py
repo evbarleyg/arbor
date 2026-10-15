@@ -14,6 +14,7 @@ import importlib.util
 import io
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -964,8 +965,105 @@ def check_hook():
         repository.write("scripts/public-check.py", f"VERSION = {check.VERSION + 1}\n" + lets_all_pass)
         row("the hook: a newer one on the branch does", push().returncode, 0)
         os.remove(os.path.join(repository.path, "scripts", "public-check.py"))
+        # A clone that only fetches: its files and its kept copy are old, and what it knows of the public repository's trunk is not.
+        says_so = ("import os, sys\nwith open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'public-check.allow')) as handle:\n"
+                   "    print('read by version', VERSION, 'with', handle.read().strip(), 'and told', len(sys.stdin.read().split()), 'words')\nsys.exit(VERDICT)\n")
+
+        def integrated(ref, version, verdict=1, exceptions=True):
+            repository.git("checkout", "--quiet", "--detach")
+            repository.write("scripts/public-check.py", f"VERSION = {version}\nVERDICT = {verdict}\n" + says_so)
+            if exceptions:
+                repository.write("scripts/public-check.allow", f"exceptions-{version}\n")
+            repository.git("update-ref", ref, repository.commit("chore: a check"))
+            repository.git("checkout", "--quiet", "--force", "fix/something")
+
+        def pushed_with():
+            """Whether the push was refused, which version read it (counted from this one), and whether the clone was told."""
+            done = push()
+            said = done.stdout + done.stderr
+            return done.returncode != 0, [int(number) - check.VERSION for number in re.findall(r"read by version (\d+)", said)], "does the reading" in said
+        own_reads = (True, [], False)
+        trunk, public = "refs/remotes/origin/swarm/trunk", "https://github.com/evbarleyg/arbor.git"
+        kept_folder = os.path.join(repository.path, ".git", "arbor-public-check")
+        repository.write("docs/y.md", "fine\n")
+        repository.commit()  # something to push, which the kept copy refuses as it refuses every history made here
+        integrated(trunk, check.VERSION + 1)
+        row("the hook: a remote that is not the public repository has a newer check on its trunk: a stranger's program is not run", pushed_with(), own_reads)
+        for address in ("https://evil.net/github.com/evbarleyg/arbor", "https://notgithub.com/evbarleyg/arbor", "https://not.github.com/evbarleyg/arbor", "https://github.com.evil.net/evbarleyg/arbor",
+                        "https://evil.net/x@github.com:evbarleyg/arbor", "evil.net:github.com/evbarleyg/arbor", "/tmp/github.com/evbarleyg/arbor", "https://github.com/evbarleyg/arbor-fork",
+                        "https://github.com/someone/evbarleyg/arbor", "https://github.com@evil.net/evbarleyg/arbor", "ext::sh -c x github.com/evbarleyg/arbor",
+                        "https://evil.net/?https://github.com/evbarleyg/arbor", "evil.net:git@github.com:evbarleyg/arbor", "https://githubXcom/evbarleyg/arbor"):
+            repository.git("config", f"url.{repository.origin}.insteadOf", address)
+            repository.git("config", "remote.origin.url", address)
+            row(f"the hook: an address that only looks like the public repository's: {address}", pushed_with(), own_reads)
+            repository.git("config", "--unset", f"url.{repository.origin}.insteadOf")
+        for address in (public, "https://github.com/evbarleyg/arbor", "https://someone@github.com/evbarleyg/arbor/", "git@github.com:evbarleyg/arbor.git", "ssh://git@github.com/evbarleyg/arbor",
+                        "ssh://git@ssh.github.com:443/evbarleyg/arbor.git", "https://GitHub.com/Evbarleyg/Arbor.git"):
+            repository.git("config", f"url.{repository.origin}.insteadOf", address)
+            repository.git("config", "remote.origin.url", address)
+            row(f"the hook: the public repository's trunk, as this clone knows it, has a newer check: that one reads, and the clone is told: {address}", pushed_with(), (True, [1], True))
+            repository.git("config", "--unset", f"url.{repository.origin}.insteadOf")
+        repository.git("config", f"url.{repository.origin}.insteadOf", public)
+        repository.git("config", "remote.origin.url", public)
+        done = push()
+        said = done.stdout + done.stderr
+        row("the hook: it says which version the clone has and which one read", f"this clone's own check is version {check.VERSION} and origin's swarm/trunk has version {check.VERSION + 1}," in said, True)
+        row("the hook: that check has its own exceptions beside it, and is told what git tells the hook", re.findall(r"with .* words", said), [f"with exceptions-{check.VERSION + 1} and told 4 words"])
+        row("the hook: it lies in one folder, and nothing is left of the writing", len([name for name in os.listdir(kept_folder) if name.startswith("integrated-")]), 1)
+        folder_of = lambda: os.path.join(kept_folder, [name for name in os.listdir(kept_folder) if name.startswith("integrated-")][0])
+        stamp = os.stat(os.path.join(folder_of(), "public-check.py")).st_mtime_ns
+        push()
+        row("the hook: what is there is not written again under a push that may be reading it", os.stat(os.path.join(folder_of(), "public-check.py")).st_mtime_ns, stamp)
+        integrated(trunk, check.VERSION)
+        row("the hook: one of the same age there: the clone's own reads, and not a word", pushed_with(), own_reads)
+        integrated("refs/remotes/origin/main", check.VERSION + 2)
+        row("the hook: main's counts as well", pushed_with(), (True, [2], True))
+        integrated(trunk, check.VERSION + 3)
+        row("the hook: of the two, the newer, and one line about it", (pushed_with(), push().stderr.count("does the reading")), ((True, [3], True), 1))
+        integrated(trunk, check.VERSION)
+        repository.git("update-ref", "-d", "refs/remotes/origin/main")
+        integrated("refs/remotes/origin/fix/other", check.VERSION + 4)
+        row("the hook: a plain branch's does not count", pushed_with(), own_reads)
+        integrated("refs/tags/refs/remotes/origin/main", check.VERSION + 4)
+        integrated("refs/heads/refs/remotes/origin/main", check.VERSION + 4)
+        row("the hook: nor a tag or a branch that is called as origin's main would be, which came from who knows where", pushed_with(), own_reads)
+        integrated("refs/tags/origin/swarm/trunk", check.VERSION + 4)
+        row("the hook: nor a tag that git would take for origin's trunk if it were asked by the short name", pushed_with(), own_reads)
+        integrated(trunk, check.VERSION + 1)
+        row("the hook: what is written is the trunk's as well, not that tag's", pushed_with(), (True, [1], True))
+        integrated(trunk, check.VERSION)
+        repository.git("remote", "add", "fork", repository.origin)
+        integrated("refs/remotes/fork/swarm/trunk", check.VERSION + 4)
+        row("the hook: nor another remote's trunk", pushed_with(), own_reads)
+        repository.git("config", "--add", "remote.fork.url", public)
+        row("the hook: whose second address is the public repository's: git fetches from the first", pushed_with(), own_reads)
+        repository.git("config", "--replace-all", "remote.fork.url", public)
+        row("the hook: the public repository under another name", pushed_with(), (True, [4], True))
+        repository.git("remote", "remove", "fork")
+        repository.git("remote", "add", "origin/swarm", repository.origin)
+        integrated(trunk, check.VERSION + 1)
+        row("the hook: a remote whose branches lie among origin's: origin's are not gone by", pushed_with(), own_reads)
+        repository.git("remote", "remove", "origin/swarm")
+        integrated(trunk, check.VERSION + 5, exceptions=False)
+        done = push()
+        row("the hook: a newer check that is known and cannot be had whole: no push, and no older check reads instead",
+            (done.returncode != 0, "could not be written" in done.stderr, "does the reading" in done.stderr, "read by" in done.stdout + done.stderr, "does not descend" in done.stdout + done.stderr),
+            (True, True, False, False, False))
+        integrated(trunk, check.VERSION + 6)
+        in_the_way = os.path.join(kept_folder, "integrated-" + "-".join(repository.git("rev-parse", f"{trunk}:scripts/public-check.{kind}") for kind in ("py", "allow")))
+        with open(in_the_way, "w", encoding="utf-8") as handle:
+            handle.write("something else\n")
+        done = push()
+        os.remove(in_the_way)
+        row("the hook: nor where it cannot be written; and nothing is left of the attempt",
+            (done.returncode != 0, "could not be written" in done.stderr, "read by" in done.stdout + done.stderr, [name for name in os.listdir(kept_folder) if os.path.basename(in_the_way) in name]),
+            (True, True, False, []))
+        integrated(trunk, check.VERSION + 7, verdict=0)
+        row("the hook: what that check says goes: it lets this push pass", pushed_with(), (False, [7], True))
+        repository.git("update-ref", "-d", trunk)
+        repository.git("config", "remote.origin.url", repository.origin)
         again = subprocess.run([install], cwd=repository.path, env=repository.environment, capture_output=True, check=False).returncode
-        row("make hooks: a second time renews it", again, 2)
+        row("make hooks: a second time renews it, and clears away what was written meanwhile", (again, [name for name in os.listdir(kept_folder) if name.startswith("integrated-")]), (2, []))
         with open(os.path.join(HERE, "git-hooks", "pre-push"), encoding="utf-8") as handle:
             calls = [line.split("python3")[1].split() for line in handle if 'python3 "$check"' in line]
         row("the hook hands the check no argument that an older copy would not know", calls, [['"$check"', "--pre-push"]])
