@@ -699,7 +699,7 @@ copy from before the repository was public, and say what the script does once it
 | `check-keyboard-returns.sh` | trunk | **never**: ends with 77 | | Plain letters typed after each of Arbor's panels has closed: with a fault in Arbor they land in whichever app has the keyboard |
 | `probe-mission-control.sh` | trunk | **never**: ends with 77 | | Mission Control opened five times, and clicks on whatever window's picture lies where a test window's is said to be |
 | `film-mission-control.sh` (`lib-apps.sh`) | trunk | **never**: ends with 77 | | Reduce Motion switched off, five stock apps opened and quit, Mission Control opened and a window picked in it |
-| `probe-whose-key.sh`, `probe-fn-bit.sh` (`lib-ears.sh`) | trunk | **never**: ends with 77 | | Every shortcut pressed a dozen times over into whatever is in front, with and without Arbor; event taps that listen; secure input; the display put to sleep; an entry in the permission database, as root |
+| `probe-whose-key.sh`, `probe-fn-bit.sh`, `probe-wake.sh` (`lib-ears.sh`) | trunk | **never**: ends with 77 | | Every shortcut pressed a dozen times over into whatever is in front, with and without Arbor; event taps that listen; secure input; the display put to sleep, and by `probe-wake.sh` the Mac; an entry in the permission database, as root |
 | `first-dock.sh` (`first-dock.py`) | trunk | **never**: ends with 77 | | Nine real apps opened and quit, every window arranged, Reduce Motion, the display's size |
 | `check-F52.sh`, `check-F63.sh` | not landed, trunk | **never**: end with 77 | | Virtual displays, Accessibility taken from every app |
 | `check-F59.sh` | not landed | safe | 30 s | During a carry nobody's app gets arrows, ↩ or ⎋ |
