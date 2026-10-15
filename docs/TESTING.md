@@ -413,6 +413,7 @@ for a second display, `check-desktop.sh` those for dark mode, wallpapers and Spa
 | | |
 |---|---|
 | `arbor_start [count] [NAME=value…]` | Shortcuts, event taps and the menu bar item are off unless you pass `ARBOR_NO_HOTKEYS=0`, `ARBOR_NO_STATUS_ITEM=0`. `ARBOR_APPEARANCE=dark` draws Arbor's own windows and menus dark. `ARBOR_TEST_WINDOWS_ARGS="--min-size 3:700x500"` makes the third window refuse to shrink. After `arbor_stop` a script can start another session. |
+| `arbor_settings "{$ARBOR_GESTURES_ON}"` | With `lib-gestures.sh` sourced after `lib.sh`. Before `arbor_start`, in a script about the pinch, ⌃⌥ + scroll, the ⌃⌥ rectangle, ⇧-drag on the Desktop or the event taps themselves: it asks for all four, whatever Arbor ships with. Every session has a home of its own, so every session asks again |
 | `ctl`, `summary`, `state` | `arborctl` on the session's socket; the state as readable lines; as JSON |
 | `shot`, `shot_after <s>`, `film <name> <n>` | A picture once things have settled (0.7 s, `ARBOR_SETTLE`); after exactly that long; a burst |
 | `drag`, `release`, `click`, `dblclick`, `rightclick`, `move`, `key` | Real events (`pointer.swift`): `drag x1 y1 x2 y2 [--steps n] [--duration s] [--hold s] [--no-release] [--mods shift+cmd]`, `key ctrl+opt+space`. A key can stay down: `key ctrl+opt+space --down`, later `--up`; `key ctrl+opt+left --held` presses only ← while ⌃⌥ are down; `--repeat n` sends auto-repeat |

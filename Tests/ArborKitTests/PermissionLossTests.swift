@@ -9,7 +9,7 @@ import Testing
 @Suite @MainActor struct PermissionLossTests {
   /// [Safari | Desktop | Mail / Notes] with Slack floating on the Desktop. Framed on Notes unless `framed` is
   /// false: Safari, Mail and Slack are then out of view.
-  func makeHarness(framed: Bool = true, settings: Settings = Settings())
+  func makeHarness(framed: Bool = true, settings: Settings = .withGestures)  // whose taps go with the permission
     -> (Harness, safari: WindowID, mail: WindowID, notes: WindowID, slack: WindowID)
   {
     let h = Harness(settings: settings)

@@ -411,11 +411,12 @@ private let side = DisplaySnapshot(
 
   /// One harness with the line up, one with the panel of shortcuts: the panel takes the line's place.
   private func withEachPanelUp(_ body: (Harness) -> Void) {
-    let (line, _, _, _) = makeHarness()
+    // With the gestures on: the zones they ask for have a timer of their own, and "nor any timer" is about every timer.
+    let (line, _, _, _) = makeHarness(settings: .withGestures)
     line.run("out", from: .shortcut)
     #expect(line.overlays.headsUp.count == 1)
     body(line)
-    let (panel, _, _, _) = makeHarness()
+    let (panel, _, _, _) = makeHarness(settings: .withGestures)
     panel.run("show-shortcuts", from: .shortcut)
     #expect(panel.overlays.cheatSheets.count == 1)
     body(panel)

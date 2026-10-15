@@ -17,6 +17,7 @@
 #            while its window is out of view
 # Session 4  a docked window goes full screen and comes back (docs/features/F30-full-screen-windows.md)
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-gestures.sh"
 
 echo "# proof.sh $(date -u +%Y-%m-%dT%H:%MZ) on macOS $(sw_vers -productVersion), commit $(git rev-parse --short HEAD), real pointer and keys"
 arbor_build
@@ -231,6 +232,8 @@ fi
 step "session 2: the published keyboard, on [ [W1 / W3] | Desktop | W2 ] with W4 floating"
 # The fourth window refuses to be smaller than 700×500, for the tile further down.
 ARBOR_TEST_WINDOWS_ARGS="--min-size 4:700x500"
+# For the ⌃⌥ rectangle further down.
+arbor_settings "{$ARBOR_GESTURES_ON}"
 arbor_start 4 ARBOR_NO_HOTKEYS=0
 ctl dock "$W1" left
 ctl dock "$W2" right

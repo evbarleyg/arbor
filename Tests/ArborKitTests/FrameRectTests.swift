@@ -178,7 +178,7 @@ import Testing
 
   @Test func aPauseLeavesNoWayToDrawARectangle() {
     // While paused no event may pass through Arbor, so both ways must be off for the taps to go.
-    let h = Harness()
+    let h = Harness(settings: .withGestures)
     h.start()
     h.run("pause")
     var gesture = RectangleGesture()

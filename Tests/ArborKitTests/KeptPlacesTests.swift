@@ -40,6 +40,7 @@ import Testing
     let (h, safari, notes, _) = pausedHarness()
     let before = frames(h)
     let again = restartAfterACrash(h)
+    again.controller.apply(settings: .withGestures)  // which a pause switches off
     again.start()
     again.scheduler.advance(by: 5)
     #expect(again.controller.isPaused)
