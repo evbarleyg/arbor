@@ -54,7 +54,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 
 | Kind | Cases | Hurt 1 | Stand-ins play it | partly | not yet | cannot | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded | Arbor does not cope yet, or nobody knows |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| [order-of-reports](#order-of-reports) | 28 | 3 | 9 | 9 | 5 | 5 | 16 | 1 | 3 | 8 | 4 |
+| [order-of-reports](#order-of-reports) | 28 | 3 | 9 | 10 | 4 | 5 | 17 | 1 | 3 | 7 | 4 |
 | [missing-report](#missing-report) | 43 | 7 | 13 | 7 | 4 | 19 | 23 | 1 | 5 | 14 | 11 |
 | [extra-report](#extra-report) | 9 | 0 | 3 | 3 | 1 | 2 | 6 | 0 | 0 | 3 | 1 |
 | [late-or-partial-answer](#late-or-partial-answer) | 46 | 9 | 11 | 16 | 6 | 13 | 28 | 0 | 6 | 12 | 15 |
@@ -67,14 +67,14 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 45 | 1 | 0 | 1 | 4 | 40 | 26 | 1 | 2 | 16 | 7 |
-| **all** | 462 | 62 | 91 | 124 | 70 | 177 | 237 | 19 | 60 | 146 | 109 |
+| **all** | 462 | 62 | 91 | 125 | 69 | 177 | 238 | 19 | 60 | 145 | 109 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 144 | 89 | 46 | 13 | 33 | 52 |
-| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 163 | 97 | 122 | 0 | 11 | 30 |
+| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 163 | 97 | 123 | 0 | 11 | 29 |
 | controller | in the controller or the core, given reports that were right | 28 | 15 | 16 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 81 | 0 | 26 | 5 | 11 | 39 |
 | machine | in the machine, the toolchain or the way things are built and installed | 46 | 3 | 27 | 1 | 4 | 14 |
@@ -542,10 +542,10 @@ Order of reports: what belongs together arrives in another order than expected.
 *hurt 4 · at the seam*
 
 - **Expected:** The echoes of one layout, each a `windowChanged`, arrive in the order of Arbor's calls. `FakeWindowSystem.deliverEchoes` works its queue off from the front.
-- **Happened:** They arrive as the apps get round to them: one app's windows before another's, whatever the order of the calls.
+- **Happened:** They arrive as the apps get round to them, whatever the order of the calls. Read again in later recordings: one app's reports keep their order (calls on windows 29, 30, 31 of one process came back 29, 30, 30, 30, 31), and two apps take turns: calls on 41, 41, 42 of one app and 43 of another came back 41, 43, 41, 43, 41, 42, 42. So in eight of ten layouts of two apps' windows; in two, all of one app's came first and the other's 40 ms later. A reading of the cause: each app has an observer of its own on Arbor's run loop, which serves one after the other. `FakeWindowSystem.deliverEchoes` worked its queue off from the front. No test fell when it was made to let apps take turns.
 - **Found by:** The first comparison, line by line, of one script played on a hosted Mac (six runs, macOS 26.6.2, one display of 1024×768) and in a rehearsal on Linux. The difference was seen; its cause is a reading.
-- **Stand-ins play it:** **no**
-- **Guard:** **none**
+- **Stand-ins play it:** partly (`FakeWindowSystem.takeNextEcho`, `FakeWindowSystem.deliverEchoes`, `FakeWindowSystem.appsReact`)
+- **Guard:** `test: theReportsOfTwoAppsTakeTurns`
 - **Arbor copes:** EchoFilter.judge takes each report by its own window and time, so the order between windows is nothing to it.
 - **Read in:** `Sources/ArborTesting/FakeWindowSystem.swift`, `Sources/ArborCore/EchoFilter.swift`
 

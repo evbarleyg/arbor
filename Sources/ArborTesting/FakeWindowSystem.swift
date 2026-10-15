@@ -913,10 +913,11 @@ extension FakeWindowSystem {
     guard !holdsEchoes else { return 0 }
     var focusReports = 0
     var rounds = 0
+    var hadTheirTurn: Set<Int32> = []
     // Up to three reports for each window of a layout, and some for what Arbor does about them. More would be Arbor chasing its own tail.
     while !undelivered.isEmpty, rounds < 100 + 3 * windows.count {
       rounds += 1
-      switch undelivered.removeFirst() {
+      switch takeNextEcho(&hadTheirTurn) {
       case .focus(let window):
         // Also when the keyboard has moved on since: macOS does not take a report back.
         guard windows[window] != nil else { continue }
@@ -931,6 +932,25 @@ extension FakeWindowSystem {
       }
     }
     return focusReports
+  }
+
+  /// Takes the echo that comes next off the queue. An app's reports come in their order, and apps take turns: each has an observer of
+  /// its own on Arbor's run loop, which serves one after the other. So Arbor's calls A A A B B come back as A B A B A (seen in eight
+  /// of ten layouts of two apps' windows on a hosted Mac; in two, all of the one app's came first and the other's 40 ms later).
+  /// Nothing overtakes the word that the keyboard has moved, and it overtakes nothing: it was last in every recording.
+  func takeNextEcho(_ hadTheirTurn: inout Set<Int32>) -> Echo {
+    func app(_ echo: Echo) -> Int32? {
+      switch echo {
+      case .focus(let window), .frame(let window): windows[window]?.snapshot.pid
+      case .keyboardMoved: nil
+      }
+    }
+    let apps = undelivered.prefix { app($0) != nil }.compactMap(app)
+    guard !apps.isEmpty else { return undelivered.removeFirst() }
+    var next = apps.firstIndex { !hadTheirTurn.contains($0) }
+    if next == nil { (next, hadTheirTurn) = (0, []) }
+    hadTheirTurn.insert(apps[next!])
+    return undelivered.remove(at: next!)
   }
 
   /// The name this had when focus was the only echo.

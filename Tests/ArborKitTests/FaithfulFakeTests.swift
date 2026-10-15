@@ -415,6 +415,22 @@ private final class Recorder: WindowSystemEvents {
     #expect(recorder.log == Array(repeating: "changed \(window) echo", count: 2))
   }
 
+  /// Two apps' reports take turns, each app's in their order. As recorded: one window of one app and two of another, laid out in one go.
+  @Test func theReportsOfTwoAppsTakeTurns() {
+    let system = FakeWindowSystem(displays: [Self.hosted])
+    let recorder = Recorder()
+    system.events = recorder
+    let a = system.open(app: "Safari", pid: 1, frame: CGRect(x: 100, y: 100, width: 300, height: 200))
+    let b = system.open(app: "Safari", pid: 1, frame: CGRect(x: 120, y: 120, width: 300, height: 200))
+    let c = system.open(app: "Mail", pid: 2, frame: CGRect(x: 140, y: 140, width: 300, height: 200))
+    system.start()
+    for (index, window) in [a, b, c].enumerated() {
+      system.setFrame(CGRect(x: 12 + 330 * CGFloat(index), y: 43, width: 320, height: 300), of: window)
+    }
+    system.deliverEchoes()
+    #expect(recorder.log == [a, c, a, c, b, b].map { "changed \($0) echo" })
+  }
+
   /// The rule, held against every recording of real windows on one display. Calls on one window less than 1.5 s apart count together: their
   /// reports cannot be told apart, and come up to 0.7 s late where Arbor is busy. Left out: what a hand, a drag, a display that comes or
   /// goes, the window's end or the end of the session cuts across; a window that is minimized, hidden, in full screen or on its way out of

@@ -51,8 +51,8 @@ extension FakeWindowSystem {
   /// Delivers the echoes held back since the last call (`holdsEchoes`), in order; what Arbor's reactions queue
   /// meanwhile waits for the next call. A window that snaps back does so instead of echoing, which looks like a user's move.
   public func appsReact() {
-    let echoes = undelivered
-    undelivered.removeAll()
+    var (echoes, hadTheirTurn): ([Echo], Set<Int32>) = ([], [])
+    while !undelivered.isEmpty { echoes.append(takeNextEcho(&hadTheirTurn)) }
     var snappedBack: Set<WindowID> = []
     for echo in echoes {
       switch echo {
