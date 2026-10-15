@@ -971,7 +971,8 @@ private let b = WindowID(102)
     return script.flatMap { runner.step(ChaosAction(text: $0)).map(\.rule) }
   }
 
-  @Test func centredOntoTheMiddleThirdThenAPauseAndQuit() {
+  /// On the middle third where the Desktop lies between the two; over its neighbour where it does not.
+  @Test func centredThenAPauseAndQuit() {
     #expect(rulesBroken(Self.twoDocked + ["focus 101", "ask-macos 101 centre", "settle", "advance 2"] + Self.thereAndBackAndOut) == [])
   }
 

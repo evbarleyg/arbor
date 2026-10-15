@@ -318,9 +318,10 @@ import Testing
     #expect(moves(h, of: windows[0]) == 0)
   }
 
-  /// Two docked with the Desktop between them: centred, the left one lands on the middle third, which looks like a tile. macOS gave it no
-  /// size: moved alone it is let be, wherever it lands.
-  @Test func movedAloneItIsNeverOut() {
+  /// A slot of Arbor's, less its gap, is as large as one of macOS's tiles with margins: a third where the Desktop lies between two docked windows (there
+  /// Window ▸ Center lands on the middle third), a half where there is no such column. Moved by its own width it lies where a tile would. macOS gave
+  /// it no size: moved alone it is let be, wherever it lands.
+  @Test func movedAloneItIsNeverOut() throws {
     let h = Harness()
     let windows = ["TextEdit", "Mail"].enumerated().map { index, app in
       h.system.open(app: app, pid: 1000 + Int32(index), frame: CGRect(x: 80 + 60 * CGFloat(index), y: 90, width: 400, height: 420))
@@ -330,10 +331,13 @@ import Testing
     h.scheduler.advance(by: 5)
     h.system.clearFrameLog()
     let slot = h.frame(windows[0])!
-    let centred = CGRect(x: h.visibleFrame.midX - slot.width / 2, y: h.visibleFrame.midY - slot.height / 2, width: slot.width, height: slot.height)
-    #expect(MacTiling.isTile(centred, of: h.visibleFrame), "the test's own premise: \(centred)")
-    moved(h, windows[0], to: centred, after: 0.4)
+    // Whatever the arrangement makes of two docks: a third or a half of the screen further on.
+    let elsewhere = try #require(
+      [3, 2].map { slot.offsetBy(dx: h.visibleFrame.width / $0, dy: 0) }.first { MacTiling.isTile($0, of: h.visibleFrame) },
+      "the test's own premise: no tile is as large as \(slot)")
+    moved(h, windows[0], to: elsewhere, after: 0.4)
     h.scheduler.advance(by: 5)
+    #expect(h.frame(windows[0]) == elsewhere)
     #expect(h.workspace.isDocked(windows[0]), "not out")
     #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]])
     #expect(h.system.frameLog.isEmpty, "nobody else moves")
@@ -373,7 +377,8 @@ import Testing
     let frame = h.frame(windows[0])!
     #expect(frame.size == CGSize(width: 640, height: 420), "its own size: \(frame)")
     #expect(frame.minY == there.minY && Self.side.frame.contains(frame), "where macOS put it: \(frame)")
-    #expect(movesWithoutWaste(h, of: windows[1], since: mark) == 1, "the neighbour takes the room, in one move")
+    // What room there is to take is the arrangement's business (`expectWindowsMatchLayout`); how often it may be asked is this rule's.
+    #expect((movesWithoutWaste(h, of: windows[1], since: mark) ?? 9) <= 1, "the neighbour is moved once at the most, and nothing twice")
     expectWindowsMatchLayout(h, on: h.display)
     // A key that names somebody else leaves it where its person sent it.
     h.system.userFocus(windows[2])

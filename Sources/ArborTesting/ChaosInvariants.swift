@@ -152,8 +152,11 @@ extension ChaosRunner {
         var inPlace = actual.approximatelyEquals(slot, tolerance: Self.slotTolerance)
         var exactly = actual.approximatelyEquals(slot, tolerance: 1)
         var refused = false
-        // A window that cannot grow to its slot is asked to sit in the middle of it.
-        if !inPlace, let request = fake.lastRequest, slot.insetBy(dx: -1, dy: -1).contains(request.asked.origin) {
+        // A window that cannot grow to its slot is asked to sit in the middle of it. Not one that is let be: a resume puts it back where it was let be,
+        // which may begin inside its slot and lie over a neighbour, as it did before the pause.
+        if !inPlace, !controller.windowsLeftWhereADoubleClickPutThem.contains(window), let request = fake.lastRequest,
+          slot.insetBy(dx: -1, dy: -1).contains(request.asked.origin)
+        {
           inPlace = actual.approximatelyEquals(request.took, tolerance: Self.slotTolerance)
           exactly = actual == request.took
           refused = request.took.width > slot.width || request.took.height > slot.height
