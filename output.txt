@@ -1,0 +1,554 @@
+# mac-shell: scripts/mac-shell/probe-glide.sh at d7742f8, macOS 26.6.2, 2026-10-15T09:26Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64, 3 cores
+built the tools in 12s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+Reduce Motion: false
+the sampler writes mac-shell/samples.log (pid 6868), the witness mac-shell/witness.log (pid 6882)
+
+== The apps are open already
+
+-- 1 open-finder: opens finder
+> open -g -b com.apple.finder /tmp/arbor-apps.06ZG5p/scratch/told/…-grove
+pid 363 lists (id role subrole x y w h flags):
+  31 AXWindow AXStandardWindow 340 120 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1600 900 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+  w31 is finder
+  (quiet:540 ms) setup=1
+
+-- 2 open-safari: opens safari
+> open -g -b com.apple.Safari /tmp/arbor-apps.06ZG5p/scratch/told/…-page.html
+pid 7251 lists (id role subrole x y w h flags):
+  35 AXWindow AXStandardWindow 138 31 1324 791 main,toolbar
+  w35 is safari
+  (quiet:500 ms) setup=1
+
+-- 3 open-textedit: opens textedit
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.06ZG5p/scratch/told/…-oak.txt
+pid 7530 lists (id role subrole x y w h flags):
+  45 AXWindow AXStandardWindow 165 65 673 439 main
+  w45 is textedit
+  (quiet:1174 ms) setup=1
+
+-- 4 open-terminal: opens terminal
+> open -g -b com.apple.Terminal 
+pid 7701 lists (id role subrole x y w h flags):
+  51 AXWindow AXStandardWindow 40 51 877 499 main
+  w51 is terminal
+  (quiet:459 ms) setup=1
+
+-- 5 open-notes: opens notes
+> open -g -b com.apple.Notes 
+pid 8015 lists (id role subrole x y w h flags):
+  52 AXWindow AXStandardWindow 300 105 1000 660 main,close-disabled,sheets=1
+  w52 is notes
+something is in the way:
+  AXWindow/AXStandardWindow 300 105 1000 660
+    AXButton/AXCloseButton 308 113 16 16
+    AXButton/AXZoomButton 354 113 16 16
+    AXButton/AXMinimizeButton 331 113 16 16
+    AXSheet/- 563 135 475 600
+      AXButton/- 934 686 85 30 "Continue"
+pressed "Continue": 0
+pressed "Cancel": 0
+  (quiet:460 ms) setup=1
+
+-- 6 open-calendar: opens calendar
+> open -g -b com.apple.iCal 
+pid 8179 lists (id role subrole x y w h flags):
+  58 AXWindow AXStandardWindow 200 86 935 598 main,toolbar
+  w58 is calendar
+  (quiet:1202 ms) setup=1
+
+-- 7 open-settings: opens settings
+> open -g -b com.apple.systempreferences 
+pid 8529 lists (id role subrole x y w h flags):
+  59 AXWindow AXStandardWindow 437 85 723 625 main,toolbar
+  w59 is settings
+  (quiet:606 ms) setup=1
+
+-- 8 open-preview: opens preview
+> open -g -b com.apple.Preview /tmp/arbor-apps.06ZG5p/scratch/told/…-leaf.png
+pid 8612 lists (id role subrole x y w h flags):
+  63 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w63 is preview
+  (quiet:773 ms) setup=1
+
+-- 9 open-mail: opens mail
+> open -g -b com.apple.mail 
+pid 8699 lists (id role subrole x y w h flags):
+  65 AXWindow AXStandardWindow 240 72 1120 630 main,close-disabled,sheets=1,toolbar
+  w65 is mail
+  (quiet:734 ms) setup=1
+the cast: finder safari textedit terminal notes calendar settings preview mail
+  finder is com.apple.finder, pid 363, w31
+  safari is com.apple.Safari, pid 7251, w35
+  textedit is com.apple.TextEdit, pid 7530, w45
+  terminal is com.apple.Terminal, pid 7701, w51
+  notes is com.apple.Notes, pid 8015, w52
+  calendar is com.apple.iCal, pid 8179, w58
+  settings is com.apple.systempreferences, pid 8529, w59
+  preview is com.apple.Preview, pid 8612, w63
+  mail is com.apple.mail, pid 8699, w65
+  ✔ all nine apps opened a window
+with nothing moving the window server uses 13 % of a core
+
+== finder alone (w31)
+glide finder.1: 1 steps in 0 ms, place-first: w31 2 askings, 21.95 ms each, the worst 43.16, off by 0.00
+glide finder.2: 1 steps in 0 ms, place-first: w31 2 askings, 10.48 ms each, the worst 20.26, off by 0.00
+glide finder.3: 1 steps in 0 ms, size-first: w31 2 askings, 30.69 ms each, the worst 31.68, off by 0.00
+glide finder.4: 1 steps in 0 ms, size-first: w31 2 askings, 21.07 ms each, the worst 28.37, off by 0.00
+glide finder.5: 18 steps in 300 ms, by-edges: w31 36 askings, 16.21 ms each, the worst 35.87, off by 0.00
+glide finder.6: 18 steps in 300 ms, by-edges: w31 36 askings, 13.65 ms each, the worst 32.88, off by 0.00
+glide finder.7: 12 steps in 200 ms, by-edges: w31 12 askings, 1.22 ms each, the worst 4.07, off by 0.00
+glide finder.8: 1 steps in 0 ms, place-first: w31 2 askings, 29.61 ms each, the worst 58.47, off by 0.00
+glide finder.9: 1 steps in 0 ms, place-first: w31 2 askings, 13.56 ms each, the worst 25.88, off by 0.00
+glide finder.10: 1 steps in 0 ms, size-first: w31 2 askings, 24.87 ms each, the worst 38.83, off by 0.00
+glide finder.11: 1 steps in 0 ms, size-first: w31 2 askings, 13.17 ms each, the worst 18.23, off by 0.00
+glide finder.12: 18 steps in 300 ms, by-edges: w31 36 askings, 10.74 ms each, the worst 26.01, off by 0.00
+glide finder.13: 18 steps in 300 ms, by-edges: w31 36 askings, 10.84 ms each, the worst 29.82, off by 0.00
+glide finder.14: 18 steps in 300 ms, place-first: w31 36 askings, 12.03 ms each, the worst 31.98, off by 0.00
+glide finder.15: 18 steps in 300 ms, place-first: w31 36 askings, 10.57 ms each, the worst 28.68, off by 0.00
+glide finder.16: 18 steps in 300 ms, size-first: w31 36 askings, 11.47 ms each, the worst 35.92, off by 0.00
+glide finder.17: 18 steps in 300 ms, size-first: w31 36 askings, 11.86 ms each, the worst 33.40, off by 0.00
+glide finder.18: macOS took w31 from 640 80 560 400 to 0 31 800 791
+
+== safari alone (w35)
+glide safari.19: 1 steps in 0 ms, place-first: w35 2 askings, 15.01 ms each, the worst 25.25, off by 0.00
+glide safari.20: 1 steps in 0 ms, place-first: w35 2 askings, 17.02 ms each, the worst 29.26, off by 14.00
+glide safari.21: 1 steps in 0 ms, size-first: w35 2 askings, 18.19 ms each, the worst 18.75, off by 0.00
+glide safari.22: 1 steps in 0 ms, size-first: w35 2 askings, 20.14 ms each, the worst 23.07, off by 14.00
+glide safari.23: 18 steps in 300 ms, by-edges: w35 36 askings, 15.65 ms each, the worst 44.17, off by 0.00
+glide safari.24: 18 steps in 300 ms, by-edges: w35 36 askings, 11.52 ms each, the worst 27.08, off by 14.00
+glide safari.25: 12 steps in 200 ms, by-edges: w35 24 askings, 7.67 ms each, the worst 39.50, off by 14.00
+glide safari.26: 1 steps in 0 ms, place-first: w35 2 askings, 15.85 ms each, the worst 29.39, off by 0.00
+glide safari.27: 1 steps in 0 ms, place-first: w35 2 askings, 9.42 ms each, the worst 16.11, off by 14.00
+glide safari.28: 1 steps in 0 ms, size-first: w35 2 askings, 15.02 ms each, the worst 18.33, off by 0.00
+glide safari.29: 1 steps in 0 ms, size-first: w35 2 askings, 14.93 ms each, the worst 18.55, off by 14.00
+glide safari.30: 18 steps in 300 ms, by-edges: w35 36 askings, 8.56 ms each, the worst 17.04, off by 0.00
+glide safari.31: 18 steps in 300 ms, by-edges: w35 36 askings, 8.65 ms each, the worst 24.90, off by 14.00
+glide safari.32: 18 steps in 300 ms, place-first: w35 36 askings, 10.34 ms each, the worst 19.45, off by 0.00
+glide safari.33: 18 steps in 300 ms, place-first: w35 36 askings, 6.77 ms each, the worst 17.31, off by 14.00
+glide safari.34: 18 steps in 300 ms, size-first: w35 36 askings, 11.26 ms each, the worst 20.31, off by 0.00
+glide safari.35: 18 steps in 300 ms, size-first: w35 36 askings, 8.65 ms each, the worst 21.75, off by 14.00
+glide safari.36: macOS took w35 from 640 80 574 400 to 0 31 800 791
+
+== textedit alone (w45)
+glide textedit.37: 1 steps in 0 ms, place-first: w45 2 askings, 1.59 ms each, the worst 2.76, off by 0.00
+glide textedit.38: 1 steps in 0 ms, place-first: w45 2 askings, 1.68 ms each, the worst 2.94, off by 0.00
+glide textedit.39: 1 steps in 0 ms, size-first: w45 2 askings, 3.38 ms each, the worst 4.22, off by 0.00
+glide textedit.40: 1 steps in 0 ms, size-first: w45 2 askings, 3.19 ms each, the worst 3.74, off by 0.00
+glide textedit.41: 18 steps in 300 ms, by-edges: w45 36 askings, 1.39 ms each, the worst 4.71, off by 0.00
+glide textedit.42: 18 steps in 300 ms, by-edges: w45 36 askings, 1.86 ms each, the worst 5.07, off by 0.00
+glide textedit.43: 12 steps in 200 ms, by-edges: w45 12 askings, 0.32 ms each, the worst 0.87, off by 0.00
+glide textedit.44: 1 steps in 0 ms, place-first: w45 2 askings, 1.15 ms each, the worst 1.94, off by 0.00
+glide textedit.45: 1 steps in 0 ms, place-first: w45 2 askings, 1.48 ms each, the worst 2.40, off by 0.00
+glide textedit.46: 1 steps in 0 ms, size-first: w45 2 askings, 2.98 ms each, the worst 3.62, off by 0.00
+glide textedit.47: 1 steps in 0 ms, size-first: w45 2 askings, 2.27 ms each, the worst 2.33, off by 0.00
+glide textedit.48: 18 steps in 300 ms, by-edges: w45 36 askings, 1.22 ms each, the worst 4.85, off by 0.00
+glide textedit.49: 18 steps in 300 ms, by-edges: w45 36 askings, 1.52 ms each, the worst 3.79, off by 0.00
+glide textedit.50: 18 steps in 300 ms, place-first: w45 36 askings, 1.34 ms each, the worst 4.77, off by 0.00
+glide textedit.51: 18 steps in 300 ms, place-first: w45 36 askings, 1.13 ms each, the worst 2.93, off by 0.00
+glide textedit.52: 18 steps in 300 ms, size-first: w45 36 askings, 1.33 ms each, the worst 3.75, off by 0.00
+glide textedit.53: 18 steps in 300 ms, size-first: w45 36 askings, 1.27 ms each, the worst 4.42, off by 0.00
+glide textedit.54: macOS took w45 from 640 80 560 400 to 0 31 800 791
+
+== terminal alone (w51)
+glide terminal.55: 1 steps in 0 ms, place-first: w51 2 askings, 1.84 ms each, the worst 3.01, off by 1.00
+glide terminal.56: 1 steps in 0 ms, place-first: w51 2 askings, 1.59 ms each, the worst 2.55, off by 6.00
+glide terminal.57: 1 steps in 0 ms, size-first: w51 2 askings, 3.51 ms each, the worst 4.10, off by 1.00
+glide terminal.58: 1 steps in 0 ms, size-first: w51 2 askings, 1.50 ms each, the worst 2.58, off by 6.00
+glide terminal.59: 18 steps in 300 ms, by-edges: w51 36 askings, 1.47 ms each, the worst 4.31, off by 1.00
+glide terminal.60: 18 steps in 300 ms, by-edges: w51 36 askings, 1.97 ms each, the worst 6.20, off by 6.00
+glide terminal.61: 12 steps in 200 ms, by-edges: w51 24 askings, 1.04 ms each, the worst 2.42, off by 6.00
+glide terminal.62: 1 steps in 0 ms, place-first: w51 2 askings, 1.57 ms each, the worst 2.61, off by 6.00
+glide terminal.63: 1 steps in 0 ms, place-first: w51 2 askings, 2.12 ms each, the worst 2.97, off by 6.00
+glide terminal.64: 1 steps in 0 ms, size-first: w51 2 askings, 9.44 ms each, the worst 14.30, off by 6.00
+glide terminal.65: 1 steps in 0 ms, size-first: w51 2 askings, 9.14 ms each, the worst 10.30, off by 6.00
+glide terminal.66: 18 steps in 300 ms, by-edges: w51 36 askings, 2.29 ms each, the worst 6.87, off by 6.00
+glide terminal.67: 18 steps in 300 ms, by-edges: w51 36 askings, 1.90 ms each, the worst 4.27, off by 6.00
+glide terminal.68: 18 steps in 300 ms, place-first: w51 36 askings, 2.13 ms each, the worst 9.02, off by 6.00
+glide terminal.69: 18 steps in 300 ms, place-first: w51 36 askings, 1.99 ms each, the worst 6.50, off by 6.00
+glide terminal.70: 18 steps in 300 ms, size-first: w51 36 askings, 2.03 ms each, the worst 7.43, off by 6.00
+glide terminal.71: 18 steps in 300 ms, size-first: w51 36 askings, 2.11 ms each, the worst 6.55, off by 6.00
+glide terminal.72: macOS took w51 from 640 80 562 394 to 0 35 800 784
+
+== notes alone (w52)
+glide notes.73: 1 steps in 0 ms, place-first: w52 2 askings, 19.88 ms each, the worst 38.23, off by 0.00
+glide notes.74: 1 steps in 0 ms, place-first: w52 2 askings, 8.28 ms each, the worst 13.90, off by 149.00
+glide notes.75: 1 steps in 0 ms, size-first: w52 2 askings, 13.67 ms each, the worst 20.28, off by 0.00
+glide notes.76: 1 steps in 0 ms, size-first: w52 2 askings, 11.23 ms each, the worst 13.62, off by 149.00
+glide notes.77: 18 steps in 300 ms, by-edges: w52 36 askings, 7.67 ms each, the worst 14.08, off by 0.00
+glide notes.78: 18 steps in 300 ms, by-edges: w52 36 askings, 4.99 ms each, the worst 15.58, off by 149.00
+glide notes.79: 12 steps in 200 ms, by-edges: w52 24 askings, 0.98 ms each, the worst 2.62, off by 149.00
+glide notes.80: 1 steps in 0 ms, place-first: w52 2 askings, 15.11 ms each, the worst 28.65, off by 0.00
+glide notes.81: 1 steps in 0 ms, place-first: w52 2 askings, 14.09 ms each, the worst 27.10, off by 149.00
+glide notes.82: 1 steps in 0 ms, size-first: w52 2 askings, 14.60 ms each, the worst 21.25, off by 0.00
+glide notes.83: 1 steps in 0 ms, size-first: w52 2 askings, 15.87 ms each, the worst 22.28, off by 149.00
+glide notes.84: 18 steps in 300 ms, by-edges: w52 36 askings, 6.22 ms each, the worst 12.68, off by 0.00
+glide notes.85: 18 steps in 300 ms, by-edges: w52 36 askings, 3.00 ms each, the worst 19.65, off by 149.00
+glide notes.86: 18 steps in 300 ms, place-first: w52 36 askings, 5.82 ms each, the worst 14.21, off by 0.00
+glide notes.87: 18 steps in 300 ms, place-first: w52 36 askings, 5.45 ms each, the worst 20.53, off by 149.00
+glide notes.88: 18 steps in 300 ms, size-first: w52 36 askings, 13.74 ms each, the worst 34.61, off by 0.00
+glide notes.89: 18 steps in 300 ms, size-first: w52 36 askings, 3.29 ms each, the worst 14.59, off by 149.00
+glide notes.90: macOS took w52 from 640 80 709 400 to 0 31 800 791
+
+== calendar alone (w58)
+glide calendar.91: 1 steps in 0 ms, place-first: w58 2 askings, 8.61 ms each, the worst 15.84, off by 0.00
+glide calendar.92: 1 steps in 0 ms, place-first: w58 2 askings, 6.43 ms each, the worst 11.80, off by 120.00
+glide calendar.93: 1 steps in 0 ms, size-first: w58 2 askings, 11.98 ms each, the worst 13.74, off by 0.00
+glide calendar.94: 1 steps in 0 ms, size-first: w58 2 askings, 10.42 ms each, the worst 11.56, off by 120.00
+glide calendar.95: 18 steps in 300 ms, by-edges: w58 36 askings, 12.80 ms each, the worst 40.19, off by 0.00
+glide calendar.96: 18 steps in 300 ms, by-edges: w58 36 askings, 2.45 ms each, the worst 15.99, off by 120.00
+glide calendar.97: 12 steps in 200 ms, by-edges: w58 24 askings, 1.30 ms each, the worst 7.45, off by 120.00
+glide calendar.98: 1 steps in 0 ms, place-first: w58 2 askings, 11.54 ms each, the worst 21.89, off by 103.00
+glide calendar.99: 1 steps in 0 ms, place-first: w58 2 askings, 11.83 ms each, the worst 22.10, off by 120.00
+glide calendar.100: 1 steps in 0 ms, size-first: w58 2 askings, 11.35 ms each, the worst 17.41, off by 103.00
+glide calendar.101: 1 steps in 0 ms, size-first: w58 2 askings, 10.47 ms each, the worst 15.72, off by 120.00
+glide calendar.102: 18 steps in 300 ms, by-edges: w58 36 askings, 5.44 ms each, the worst 13.26, off by 103.00
+glide calendar.103: 18 steps in 300 ms, by-edges: w58 36 askings, 2.73 ms each, the worst 13.52, off by 120.00
+glide calendar.104: 18 steps in 300 ms, place-first: w58 36 askings, 4.50 ms each, the worst 10.15, off by 103.00
+glide calendar.105: 18 steps in 300 ms, place-first: w58 36 askings, 2.14 ms each, the worst 9.72, off by 120.00
+glide calendar.106: 18 steps in 300 ms, size-first: w58 36 askings, 4.55 ms each, the worst 12.43, off by 103.00
+glide calendar.107: 18 steps in 300 ms, size-first: w58 36 askings, 1.83 ms each, the worst 10.89, off by 120.00
+glide calendar.108: macOS took w58 from 640 80 680 503 to 0 31 800 791
+
+== settings alone (w59)
+glide settings.109: 1 steps in 0 ms, place-first: w59 2 askings, 5.83 ms each, the worst 9.44, off by 77.00
+glide settings.110: 1 steps in 0 ms, place-first: w59 2 askings, 32.60 ms each, the worst 61.19, off by 163.00
+glide settings.111: 1 steps in 0 ms, size-first: w59 2 askings, 3.68 ms each, the worst 6.51, off by 77.00
+glide settings.112: 1 steps in 0 ms, size-first: w59 2 askings, 5.41 ms each, the worst 5.94, off by 163.00
+glide settings.113: 18 steps in 300 ms, by-edges: w59 36 askings, 3.58 ms each, the worst 8.63, off by 77.00
+glide settings.114: 18 steps in 300 ms, by-edges: w59 36 askings, 2.19 ms each, the worst 10.95, off by 163.00
+glide settings.115: 12 steps in 200 ms, by-edges: w59 24 askings, 0.91 ms each, the worst 3.16, off by 163.00
+glide settings.116: 1 steps in 0 ms, place-first: w59 2 askings, 1.52 ms each, the worst 2.61, off by 237.00
+glide settings.117: 1 steps in 0 ms, place-first: w59 2 askings, 3.06 ms each, the worst 3.53, off by 163.00
+glide settings.118: 1 steps in 0 ms, size-first: w59 2 askings, 1.39 ms each, the worst 2.33, off by 237.00
+glide settings.119: 1 steps in 0 ms, size-first: w59 2 askings, 0.77 ms each, the worst 1.20, off by 163.00
+glide settings.120: 18 steps in 300 ms, by-edges: w59 36 askings, 0.86 ms each, the worst 3.11, off by 237.00
+glide settings.121: 18 steps in 300 ms, by-edges: w59 36 askings, 1.10 ms each, the worst 5.91, off by 163.00
+glide settings.122: 18 steps in 300 ms, place-first: w59 36 askings, 0.65 ms each, the worst 2.31, off by 237.00
+glide settings.123: 18 steps in 300 ms, place-first: w59 36 askings, 0.89 ms each, the worst 2.71, off by 163.00
+glide settings.124: 18 steps in 300 ms, size-first: w59 36 askings, 0.72 ms each, the worst 2.30, off by 237.00
+glide settings.125: 18 steps in 300 ms, size-first: w59 36 askings, 1.04 ms each, the worst 5.33, off by 163.00
+glide settings.126: macOS took w59 from 640 80 723 470 to 0 31 723 791
+
+== preview alone (w63)
+glide preview.127: 1 steps in 0 ms, place-first: w63 2 askings, 10.00 ms each, the worst 17.87, off by 0.00
+glide preview.128: 1 steps in 0 ms, place-first: w63 2 askings, 6.96 ms each, the worst 12.91, off by 148.00
+glide preview.129: 1 steps in 0 ms, size-first: w63 2 askings, 4.87 ms each, the worst 9.51, off by 0.00
+glide preview.130: 1 steps in 0 ms, size-first: w63 2 askings, 6.67 ms each, the worst 10.25, off by 148.00
+glide preview.131: 18 steps in 300 ms, by-edges: w63 36 askings, 5.01 ms each, the worst 16.87, off by 0.00
+glide preview.132: 18 steps in 300 ms, by-edges: w63 36 askings, 5.73 ms each, the worst 20.28, off by 148.00
+glide preview.133: 12 steps in 200 ms, by-edges: w63 24 askings, 0.39 ms each, the worst 0.84, off by 148.00
+glide preview.134: 1 steps in 0 ms, place-first: w63 2 askings, 12.35 ms each, the worst 24.29, off by 0.00
+glide preview.135: 1 steps in 0 ms, place-first: w63 2 askings, 8.16 ms each, the worst 15.87, off by 148.00
+glide preview.136: 1 steps in 0 ms, size-first: w63 2 askings, 14.23 ms each, the worst 24.95, off by 0.00
+glide preview.137: 1 steps in 0 ms, size-first: w63 2 askings, 7.80 ms each, the worst 12.01, off by 148.00
+glide preview.138: 18 steps in 300 ms, by-edges: w63 36 askings, 2.99 ms each, the worst 10.08, off by 0.00
+glide preview.139: 18 steps in 300 ms, by-edges: w63 36 askings, 2.24 ms each, the worst 18.44, off by 148.00
+glide preview.140: 18 steps in 300 ms, place-first: w63 36 askings, 3.26 ms each, the worst 11.92, off by 0.00
+glide preview.141: 18 steps in 300 ms, place-first: w63 36 askings, 1.68 ms each, the worst 10.53, off by 148.00
+glide preview.142: 18 steps in 300 ms, size-first: w63 36 askings, 3.71 ms each, the worst 14.21, off by 0.00
+glide preview.143: 18 steps in 300 ms, size-first: w63 36 askings, 1.52 ms each, the worst 10.43, off by 148.00
+glide preview.144: macOS took w63 from 640 80 708 400 to 0 31 800 791
+
+== mail alone (w65)
+glide mail.145: 1 steps in 0 ms, place-first: w65 2 askings, 13.45 ms each, the worst 26.20, off by 81.00
+glide mail.146: 1 steps in 0 ms, place-first: w65 2 askings, 11.34 ms each, the worst 22.04, off by 321.00
+glide mail.147: 1 steps in 0 ms, size-first: w65 2 askings, 13.36 ms each, the worst 23.36, off by 81.00
+glide mail.148: 1 steps in 0 ms, size-first: w65 2 askings, 12.55 ms each, the worst 20.97, off by 321.00
+glide mail.149: 18 steps in 300 ms, by-edges: w65 36 askings, 14.67 ms each, the worst 36.11, off by 81.00
+glide mail.150: 18 steps in 300 ms, by-edges: w65 36 askings, 14.60 ms each, the worst 31.44, off by 321.00
+glide mail.151: 12 steps in 200 ms, by-edges: w65 24 askings, 0.65 ms each, the worst 1.24, off by 321.00
+glide mail.152: 1 steps in 0 ms, place-first: w65 2 askings, 19.51 ms each, the worst 38.11, off by 0.00
+glide mail.153: 1 steps in 0 ms, place-first: w65 2 askings, 16.62 ms each, the worst 32.63, off by 321.00
+glide mail.154: 1 steps in 0 ms, size-first: w65 2 askings, 21.42 ms each, the worst 33.20, off by 0.00
+glide mail.155: 1 steps in 0 ms, size-first: w65 2 askings, 26.64 ms each, the worst 42.25, off by 321.00
+glide mail.156: 18 steps in 300 ms, by-edges: w65 36 askings, 14.85 ms each, the worst 39.60, off by 0.00
+glide mail.157: 18 steps in 300 ms, by-edges: w65 36 askings, 3.15 ms each, the worst 44.13, off by 321.00
+glide mail.158: 18 steps in 300 ms, place-first: w65 36 askings, 16.02 ms each, the worst 46.46, off by 0.00
+glide mail.159: 18 steps in 300 ms, place-first: w65 36 askings, 2.79 ms each, the worst 49.74, off by 321.00
+glide mail.160: 18 steps in 300 ms, size-first: w65 36 askings, 14.21 ms each, the worst 35.68, off by 0.00
+glide mail.161: 18 steps in 300 ms, size-first: w65 36 askings, 2.61 ms each, the worst 33.18, off by 321.00
+glide mail.162: macOS took w65 from 640 80 881 400 to 0 31 881 791
+
+== how long pictures take
+scale 1.0
+list 23.5 19
+list 8.8 19
+window 31 800x791
+window 35 800x791
+window 45 800x791
+window 51 800x784
+window 52 800x791
+window 58 800x791
+window 59 723x791
+window 63 800x791
+window 65 881x791
+round 1
+pictures 1 in-turn 127.9 0 each 127.6
+pictures 1 at-once 21.9 0
+pictures 4 in-turn 77.6 0 each 16.5 18.0 25.6 17.3
+pictures 4 at-once 64.1 0
+pictures 8 in-turn 126.4 0 each 21.8 18.2 12.2 12.2 20.5 14.0 12.9 14.3
+pictures 8 at-once 84.0 0
+round 2
+pictures 1 in-turn 21.7 0 each 21.7
+pictures 1 at-once 15.5 0
+pictures 4 in-turn 58.2 0 each 17.0 16.0 12.2 12.8
+pictures 4 at-once 45.8 0
+pictures 8 in-turn 134.0 0 each 15.8 25.8 16.5 14.3 16.5 14.1 14.6 16.1
+pictures 8 at-once 89.6 0
+round 3
+pictures 1 in-turn 22.5 0 each 22.4
+pictures 1 at-once 17.6 0
+pictures 4 in-turn 69.2 0 each 22.3 15.1 16.0 15.7
+pictures 4 at-once 48.3 0
+pictures 8 in-turn 119.1 0 each 16.6 14.7 11.8 13.1 16.6 16.7 14.8 14.6
+pictures 8 at-once 87.4 0
+
+== pair1: finder glides, safari jumps
+glide pair1.163: 18 steps in 300 ms, by-edges: w31 36 askings, 6.98 ms each, the worst 18.02, off by 0.00; w35 2 askings, 6.13 ms each, the worst 10.87, off by 19.00
+glide pair1.164: 18 steps in 300 ms, by-edges: w31 36 askings, 6.42 ms each, the worst 13.74, off by 0.00; w35 2 askings, 6.63 ms each, the worst 8.84, off by 54.00
+
+== pair2: textedit glides, terminal jumps
+glide pair2.165: 18 steps in 300 ms, by-edges: w45 36 askings, 1.63 ms each, the worst 6.70, off by 0.00; w51 2 askings, 2.10 ms each, the worst 3.48, off by 25.00
+glide pair2.166: 18 steps in 300 ms, by-edges: w45 36 askings, 1.61 ms each, the worst 5.59, off by 0.00; w51 2 askings, 2.84 ms each, the worst 3.11, off by 0.00
+
+== pair3: notes glides, calendar jumps
+glide pair3.167: 18 steps in 300 ms, by-edges: w52 36 askings, 9.72 ms each, the worst 29.36, off by 0.00; w58 2 askings, 1.13 ms each, the worst 1.62, off by 163.00
+glide pair3.168: 18 steps in 300 ms, by-edges: w52 36 askings, 4.98 ms each, the worst 11.81, off by 149.00; w58 2 askings, 0.88 ms each, the worst 1.42, off by 203.00
+
+== pair4: settings glides, preview jumps
+glide pair4.169: 18 steps in 300 ms, by-edges: w59 36 askings, 4.56 ms each, the worst 15.38, off by 77.00; w63 2 askings, 3.14 ms each, the worst 4.19, off by 88.00
+glide pair4.170: 18 steps in 300 ms, by-edges: w59 36 askings, 3.37 ms each, the worst 27.14, off by 163.00; w63 2 askings, 6.23 ms each, the worst 8.27, off by 188.00
+
+== film: finder glides, safari jumps
+glide film.171: 18 steps in 300 ms, by-edges: w31 36 askings, 23.27 ms each, the worst 93.36, off by 0.00; w35 2 askings, 18.16 ms each, the worst 33.12, off by 19.00
+film: 6 pictures in 1.61 s
+shot: mac-shell/film-glide-1.png
+shot: mac-shell/film-glide-2.png
+shot: mac-shell/film-glide-3.png
+shot: mac-shell/film-glide-4.png
+shot: mac-shell/film-glide-5.png
+shot: mac-shell/film-glide-6.png
+glide film.172: 18 steps in 300 ms, by-edges: w31 36 askings, 10.51 ms each, the worst 30.35, off by 0.00; w35 2 askings, 9.99 ms each, the worst 13.54, off by 54.00
+
+== the judge
+172 acts; the sampler ran at 120 Hz (samples 12227 seconds 192.2 hz 63.6 cost-ms 2.10 late 2836 longest-gap-ms 1613); it was blind 2836 times
+
+who       kind                road       acts asking: mean    p95  worst late  reached  gap  step wrong   by outw  off  took  jump  app server glide
+finder    control place-first all edges     2         16.2   43.2   43.2    0    2/2     36   240     0    0    0    0    66     0   50     65    10
+finder    control size-first  all edges     2         25.9   31.7   31.7    0    2/2     53   240     0    0    0    0    74     0   60    130    14
+finder    18 by-edges         all edges     2         14.9   32.0   35.9   36   23/36    69    50     0    0    0    0   686     0  560    390    23
+finder    12 by-edges         place only    1          1.2    4.1    4.1    8    6/12   105     0     0    0    0    0   291     0   30    150    16
+finder    control place-first far stand     2         21.6   58.5   58.5    0    2/2    108   400     2  400  400    0   116     0   70    100    15
+finder    control size-first  far stand     2         19.0   38.8   38.8    0    2/2     75     0     0    0    0    0    76     0   45     75    14
+finder    18 by-edges         far stand     2         10.8   24.4   29.8   36   16/34    57    83    15   83    0    0   517     0  425    250    17
+finder    18 place-first      far stand     2         11.3   27.6   32.0   36   24/34    57    83    12   83   83    0   535     0  455    270    18
+finder    18 size-first       far stand     2         11.7   29.1   35.9   36    9/34    72    65    20   65   65    0   586     0  455    295    23
+finder    macos               all edges     1          0.0    0.0    0.0    0    7/0     69     0     0    0    0    0   310     0  500    350    17
+  finder: STUTTERS, 2 of 5 glides at fault; 5 were disturbed
+    finder.12 (18 by-edges, far stand): 3 wrong states were seen, an edge up to 31 points off its road
+    finder.13 (18 by-edges, far stand): 12 wrong states were seen, an edge up to 83 points off its road
+
+who       kind                road       acts asking: mean    p95  worst late  reached  gap  step wrong   by outw  off  took  jump  app server glide
+safari    control place-first all edges     3         16.0   29.4   29.4    0    2/3     52   386     1  386    0   14    53     0  303    117    19
+safari    control size-first  all edges     3         17.8   23.1   23.1    0    2/3     49   386     1  386  386   14    77     0   43     87    16
+safari    18 by-edges         all edges     3         11.9   23.8   44.2   54   28/53    67    47     5   35    0   14   686     0  427    227    18
+safari    12 by-edges         all edges     1          7.7   31.8   39.5   12    0/12    46    14     2   14   14   14   332     0  100    160    32
+safari    control place-first far stand     1          9.4   16.1   16.1    0    0/1     13   400     2  400  400   14    26     0   40     90    17
+safari    control size-first  far stand     1         14.9   18.6   18.6    0    0/1     22   386     2  386   14   14    43     0   50     90    16
+safari    18 by-edges         far stand     1          8.7   20.0   24.9   18    5/17    49    83     8   83   14   14   488     0  300    160    14
+safari    18 place-first      all edges     1         10.3   18.9   19.4   18    5/17    71    63     7   52    0    0   546     0  380    150    12
+safari    18 place-first      far stand     1          6.8   16.0   17.3   18    6/17    50    83     6   83   83   14   408     0  250    150    12
+safari    18 size-first       all edges     1         11.3   18.8   20.3   18   10/17    69    30     5   21   21    0   507     0  400    140    14
+safari    18 size-first       far stand     1          8.6   17.4   21.8   18    3/17    60    83    12   83   14   14   368     0  300    150    12
+safari    macos               all edges     1          0.0    0.0    0.0    0   14/0     50     0     0    0    0    0   319     0  320    200     8
+  safari: STUTTERS, 4 of 5 glides at fault; 5 were disturbed
+    safari.24 (18 by-edges, all edges): it ended 14 points from the frame it was asked for
+    safari.25 (12 by-edges, all edges): 2 wrong states were seen, an edge up to 14 points off its road
+    safari.30 (18 by-edges, all edges): 5 wrong states were seen, an edge up to 35 points off its road
+    safari.31 (18 by-edges, far stand): 8 wrong states were seen, an edge up to 83 points off its road; it ended 14 points from the frame it was asked for
+
+who       kind                road       acts asking: mean    p95  worst late  reached  gap  step wrong   by outw  off  took  jump  app server glide
+textedit  control place-first all edges     2          1.6    2.9    2.9    0    2/2     78   240     0    0    0    0    82     0   10     50    11
+textedit  control size-first  all edges     2          3.3    4.2    4.2    0    2/2     17   240     0    0    0    0    27     0   10     65     9
+textedit  18 by-edges         all edges     2          1.6    4.7    5.1   29   12/36    55    34     0    0    0    0   335     0   85     85    12
+textedit  12 by-edges         place only    1          0.3    0.9    0.9   10    4/12   100     0     0    0    0    0   292     0   10     90    12
+textedit  control place-first far stand     2          1.3    2.4    2.4    0    2/2     39     0     0    0    0    0    39     0   10     55    11
+textedit  control size-first  far stand     2          2.6    3.6    3.6    0    2/2     27     0     0    0    0    0    27     0    5     40    13
+textedit  18 by-edges         far stand     2          1.4    3.0    4.8   28   10/34    79    65     8   65    0    0   341     0   60     95    12
+textedit  18 place-first      far stand     2          1.2    2.9    4.8   26   12/34    93    58     5   58   58    0   388     0   70     80    13
+textedit  18 size-first       far stand     2          1.3    2.9    4.4   32    7/34    98    41     6   41   41    0   363     0   55     80    14
+textedit  macos               all edges     1          0.0    0.0    0.0    0   17/0     51     0     0    0    0    0   318     0  130    160    12
+  textedit: STUTTERS, 2 of 5 glides at fault; 5 were disturbed
+    textedit.48 (18 by-edges, far stand): 2 wrong states were seen, an edge up to 19 points off its road
+    textedit.49 (18 by-edges, far stand): 6 wrong states were seen, an edge up to 65 points off its road
+
+who       kind                road       acts asking: mean    p95  worst late  reached  gap  step wrong   by outw  off  took  jump  app server glide
+terminal  control place-first all edges     4          1.8    3.0    3.0    0    0/4     27   400     3  400  400    6    30     0   12     40    11
+terminal  control size-first  all edges     4          5.9   14.3   14.3    0    0/4     28   399     3  399  399    6    48     0   17     58    15
+terminal  18 by-edges         all edges     4          1.9    4.4    6.9   57    0/70   128    15     7   13    2    6   424     0   83     90    17
+terminal  12 by-edges         all edges     1          1.0    2.1    2.4   11    0/12    94     6     1    2    2    6   255     0   30    130    24
+terminal  18 place-first      all edges     2          2.1    6.5    9.0   29    0/34   106    28     9   27   27    6   348     0  100     80    15
+terminal  18 size-first       all edges     2          2.1    5.1    7.4   33    0/34    88    62     5   62   62    6   329     0   90     75    14
+terminal  macos               all edges     1          0.0    0.0    0.0    0   12/0     78     0     0    1    1    0   289     0  150    150    15
+  terminal: STUTTERS, 4 of 5 glides at fault; 5 were disturbed
+    terminal.60 (18 by-edges, all edges): 1 wrong states were seen, an edge up to 6 points off its road
+    terminal.61 (12 by-edges, all edges): 1 wrong states were seen, an edge up to 2 points off its road; it ended 6 points from the frame it was asked for
+    terminal.66 (18 by-edges, all edges): 4 wrong states were seen, an edge up to 13 points off its road
+    terminal.67 (18 by-edges, all edges): 2 wrong states were seen, an edge up to 11 points off its road
+
+who       kind                road       acts asking: mean    p95  worst late  reached  gap  step wrong   by outw  off  took  jump  app server glide
+notes     control place-first all edges     3         14.4   38.2   38.2    0    2/3     68   251     1  251    0  149    71     0  127    103    13
+notes     control size-first  all edges     3         13.2   21.2   21.2    0    2/3     63   160     0    0    0  149    80     0  117     97    10
+notes     18 by-edges         all edges     3          6.3   12.7   15.6   50   24/52    67    64     0    0    0  149   350     0  297    160    12
+notes     12 by-edges         all edges     1          1.0    1.8    2.6    9    0/12    65   149     4  149  149  149   285     0   30     60    10
+notes     control place-first far stand     1         14.1   27.1   27.1    0    0/1     41   149     1  149  149  149    41     0  110     90     9
+notes     control size-first  far stand     1         15.9   22.3   22.3    0    0/1     37   251     2  251  149  149    72     0  100     90    11
+notes     18 by-edges         far stand     1          3.0   13.7   19.6   16    0/17    76   149     6  149  149  149   333     0  180    120    12
+notes     18 place-first      all edges     1          5.8   13.1   14.2   17    8/17    67    37     0    0    0    0   373     0  280    140    12
+notes     18 place-first      far stand     1          5.4   20.5   20.5   14    3/17    48   149     7  149  149  149   302     0  300    210    16
+notes     18 size-first       all edges     1         13.7   29.1   34.6   18    8/17    63    52     2   22   22    0   593     0  490    210    19
+notes     18 size-first       far stand     1          3.3   14.2   14.6   17    1/17    67   149     7  149  149  149   324     0  190    120    11
+notes     macos               all edges     1          0.0    0.0    0.0    0   12/0     70     0     0    0    0    0   298     0  290    190     9
+  notes: STUTTERS, 2 of 5 glides at fault; 5 were disturbed
+    notes.79 (12 by-edges, all edges): 4 wrong states were seen, an edge up to 149 points off its road
+    notes.85 (18 by-edges, far stand): 6 wrong states were seen, an edge up to 149 points off its road; it ended 149 points from the frame it was asked for
+
+who       kind                road       acts asking: mean    p95  worst late  reached  gap  step wrong   by outw  off  took  jump  app server glide
+calendar  control place-first all edges     4          9.6   22.1   22.1    0    1/4     31   400     3  400  400  120    35     0   33     35    12
+calendar  control size-first  all edges     4         11.1   17.4   17.4    0    1/4     44   280     2  280  120  120    66     0   35     35    13
+calendar  18 by-edges         all edges     4          5.9   22.9   40.2   69   14/70    83   120     7  120  120  120   606     0  205     90    14
+calendar  12 by-edges         all edges     1          1.3    4.8    7.5   11    0/12   120   120     3  120  120  120   282     0   20     50    11
+calendar  18 place-first      all edges     2          3.3    9.2   10.2   32    0/34   114   120     5  120  120  120   344     0  120     60    11
+calendar  18 size-first       all edges     2          3.2    9.8   12.4   28    0/34   116   120     8  120  120  120   336     0  115     60    12
+calendar  macos               all edges     1          0.0    0.0    0.0    0   13/0     65     0     0    0    0    0   340     0  220    120    10
+  calendar: STUTTERS, 3 of 5 glides at fault; 5 were disturbed
+    calendar.97 (12 by-edges, all edges): 3 wrong states were seen, an edge up to 120 points off its road
+    calendar.102 (18 by-edges, all edges): it ended 103 points from the frame it was asked for
+    calendar.103 (18 by-edges, all edges): 7 wrong states were seen, an edge up to 120 points off its road
+
+who       kind                road       acts asking: mean    p95  worst late  reached  gap  step wrong   by outw  off  took  jump  app server glide
+settings  control place-first all edges     4         10.7   61.2   61.2    0    4/4    127     0     0    0    0    0   132     0   15     20    12
+settings  control size-first  all edges     4          2.8    6.5    6.5    0    4/4     49     0     0    0    0    0    49     0   10     20    10
+settings  18 by-edges         all edges     4          1.9    7.2   10.9   55   31/69   136     0     0    0    0    0   349     0   75     65    13
+settings  12 by-edges         all edges     1          0.9    1.6    3.2   10    7/12    76     0     0    0    0    0   267     0   30     40    11
+settings  18 place-first      all edges     2          0.8    2.3    2.7   30   16/34   106     0     0    0    0    0   383     0   25     55    12
+settings  18 size-first       all edges     2          0.9    2.3    5.3   33   13/34   119     0     0    0    0    0   357     0   25     60    15
+settings  macos               all edges     1          0.0    0.0    0.0    0    9/0     69     0     0    0    0    0   314     0  190    100    10
+  its controls end with another size than asked for: it is judged by its left and top edges alone
+  settings: not judged, 0 of 5 glides at fault; 5 were disturbed
+
+who       kind                road       acts asking: mean    p95  worst late  reached  gap  step wrong   by outw  off  took  jump  app server glide
+preview   control place-first all edges     3          9.8   24.3   24.3    0    2/3     44   160     0    0    0  148    45     0  113     80    12
+preview   control size-first  all edges     3          8.6   24.9   24.9    0    2/3     58   160     0    0    0  148    58     0  100     80    11
+preview   18 by-edges         all edges     3          4.6   12.8   20.3   47   15/52   123    58     0    0    0  148   330     0  280    160    16
+preview   12 by-edges         all edges     1          0.4    0.8    0.8   10    0/12    90   148     4  148  148  148   231     0   30     60    14
+preview   control place-first far stand     1          8.2   15.9   15.9    0    0/1     25   148     1  148  148  148    25     0  110     80    11
+preview   control size-first  far stand     1          7.8   12.0   12.0    0    0/1     21   252     2  252  148  148    36     0  100     90    13
+preview   18 by-edges         far stand     1          2.2   15.9   18.4   16    0/17    77   148     5  148  148  148   316     0  190    130    14
+preview   18 place-first      all edges     1          3.3    8.9   11.9   15    6/17    62     2     0    1    0    0   305     0  240    150    12
+preview   18 place-first      far stand     1          1.7    8.6   10.5   16    1/17    88   148     7  148  148  148   328     0  180    150    15
+preview   18 size-first       all edges     1          3.7   13.9   14.2   17    2/17    54    36     2   35   35    0   328     0  220    110    13
+preview   18 size-first       far stand     1          1.5    9.5   10.4   16    0/17   118   148     3  148  148  148   310     0  170    130    11
+preview   macos               all edges     1          0.0    0.0    0.0    0   12/0     61     0     0    0    0    0   291     0  240    310    11
+  preview: STUTTERS, 2 of 5 glides at fault; 5 were disturbed
+    preview.133 (12 by-edges, all edges): 4 wrong states were seen, an edge up to 148 points off its road; it ended 148 points from the frame it was asked for
+    preview.139 (18 by-edges, far stand): 5 wrong states were seen, an edge up to 148 points off its road
+
+who       kind                road       acts asking: mean    p95  worst late  reached  gap  step wrong   by outw  off  took  jump  app server glide
+mail      control place-first all edges     3         14.8   38.1   38.1    0    1/3     46   321     2   81   81  321    53     0   40     77    11
+mail      control size-first  all edges     3         15.8   33.2   33.2    0    1/3     52   321     2   81   81  321    60     0   40     87    10
+mail      18 by-edges         all edges     3         14.7   31.4   39.6   54    8/52    74   124    11   81   81  321   652     0  517    207    15
+mail      12 by-edges         all edges     1          0.7    1.1    1.2    9    0/12   108   321     4  321  321  321   226     0   20    110    14
+mail      control place-first far stand     1         16.6   32.6   32.6    0    0/1     52   321     1  321  321  321    53     0   40     70    11
+mail      control size-first  far stand     1         26.6   42.2   42.2    0    0/1     55   321     2  321  321  321    71     0   50    110    10
+mail      18 by-edges         far stand     1          3.2   30.1   44.1   15    0/17   152   321     6  321  321  321   392     0  120    120    11
+mail      18 place-first      all edges     1         16.0   37.5   46.5   18   10/17    63    17     0    0    0    0   660     0  570    230    10
+mail      18 place-first      far stand     1          2.8   30.1   49.7   17    0/17    88   321     4  321  321  321   342     0  100    140    13
+mail      18 size-first       all edges     1         14.2   34.9   35.7   18   11/17    55    17     0    0    0    0   650     0  500    220    13
+mail      18 size-first       far stand     1          2.6   32.9   33.2   15    0/17    64   321     7  321  321  321   335     0  100    180    14
+mail      macos               all edges     1          0.0    0.0    0.0    0    8/0     76     0     0    0    0    0   341     0  400    290    12
+  mail: STUTTERS, 3 of 5 glides at fault; 5 were disturbed
+    mail.149 (18 by-edges, all edges): 11 wrong states were seen, an edge up to 81 points off its road
+    mail.151 (12 by-edges, all edges): 4 wrong states were seen, an edge up to 321 points off its road
+    mail.157 (18 by-edges, far stand): 6 wrong states were seen, an edge up to 321 points off its road; it ended 321 points from the frame it was asked for
+
+who       kind                road       acts asking: mean    p95  worst late  reached  gap  step wrong   by outw  off  took  jump  app server glide
+pair1     18 by-edges         all edges     2          6.7   13.2   18.0   36   23/36    49    54     2   54   54   54   417     0  315    210    14
+
+who       kind                road       acts asking: mean    p95  worst late  reached  gap  step wrong   by outw  off  took  jump  app server glide
+pair2     18 by-edges         all edges     2          1.7    3.9    6.7   31   11/36   117   100     3  100    0   25   383    24   85     70    12
+
+who       kind                road       acts asking: mean    p95  worst late  reached  gap  step wrong   by outw  off  took  jump  app server glide
+pair3     18 by-edges         all edges     2          7.0   20.7   29.4   35   12/35    60   203     2  160  160  203   457     0  325    195    15
+
+who       kind                road       acts asking: mean    p95  worst late  reached  gap  step wrong   by outw  off  took  jump  app server glide
+pair4     18 by-edges         all edges     2          4.0   14.0   27.1   31    0/35   106   188     1  188  188  188   386     0  160    120    18
+
+who       kind                road       acts asking: mean    p95  worst late  reached  gap  step wrong   by outw  off  took  jump  app server glide
+film      18 by-edges         all edges     2         16.7   42.9   93.4   36   26/36   119    54     2   54   54   54   981     0  630    545    23
+
+Each app's glides in the order by-edges, place and size at every step: the worst of them, wrong states in all; of a core, over the time they were to take. Beside it THE BAR, on the same window
+                reached    gap  out of step   wrong  ends off   took      app   server   glide               macOS: seen  gap  wrong  took
+finder         5 of 17      69           83      15         0    686    164 %    107 %     7 %   STUTTERS          7   69      0   310
+safari         0 of 12      67           83      15        14    686    120 %     71 %     7 %   STUTTERS         14   50      0   319
+textedit       5 of 17      79           65       8         0    341     24 %     30 %     4 %   STUTTERS         17   51      0   318
+terminal       0 of 18     128           15       8         6    424     26 %     35 %     7 %   STUTTERS         12   78      0   289
+notes          0 of 12      76          149      10       149    350     79 %     47 %     4 %   STUTTERS         12   70      0   298
+calendar       0 of 12     120          120      10       120    606     60 %     29 %     5 %   STUTTERS         13   65      0   340
+settings       5 of 17     136            0       0         0    349     24 %     21 %     4 %   not judged        9   69      0   314
+preview        0 of 12     123          148       9       148    330     76 %     48 %     5 %   STUTTERS         12   61      0   291
+mail           0 of 17     152          321      21       321    652    121 %     61 %     5 %   STUTTERS          8   76      0   341
+
+How long ScreenCaptureKit takes (picture-time.swift's header has the grammar):
+  scale 1.0
+  list 23.5 19
+  list 8.8 19
+  window 31 800x791
+  window 35 800x791
+  window 45 800x791
+  window 51 800x784
+  window 52 800x791
+  window 58 800x791
+  window 59 723x791
+  window 63 800x791
+  window 65 881x791
+  round 1
+  pictures 1 in-turn 127.9 0 each 127.6
+  pictures 1 at-once 21.9 0
+  pictures 4 in-turn 77.6 0 each 16.5 18.0 25.6 17.3
+  pictures 4 at-once 64.1 0
+  pictures 8 in-turn 126.4 0 each 21.8 18.2 12.2 12.2 20.5 14.0 12.9 14.3
+  pictures 8 at-once 84.0 0
+  round 2
+  pictures 1 in-turn 21.7 0 each 21.7
+  pictures 1 at-once 15.5 0
+  pictures 4 in-turn 58.2 0 each 17.0 16.0 12.2 12.8
+  pictures 4 at-once 45.8 0
+  pictures 8 in-turn 134.0 0 each 15.8 25.8 16.5 14.3 16.5 14.1 14.6 16.1
+  pictures 8 at-once 89.6 0
+  round 3
+  pictures 1 in-turn 22.5 0 each 22.4
+  pictures 1 at-once 17.6 0
+  pictures 4 in-turn 69.2 0 each 22.3 15.1 16.0 15.7
+  pictures 4 at-once 48.3 0
+  pictures 8 in-turn 119.1 0 each 16.6 14.7 11.8 13.1 16.6 16.7 14.8 14.6
+  pictures 8 at-once 87.4 0
+
+limits: seen 0.88, gap 2 steps and a sample, wrong 0, off 1, over 1.25, forgive 0, dead from 2 apps
+the bar: 0 of 9 of macOS's own glides stutter by this rule
+stutters: calendar finder mail notes preview safari terminal textedit; not judged: settings
+apps with a glide at fault, road by road: all edges 6 of 9, place only 0 of 2, far stand 6 of 6
+were each app forgiven one glide more: 8 of 8 apps
+stutter: 8 of 8 apps
+verdict: dead
+  ✔ the judge could read what the run leaves
+
+2 passed, 0 failed
+exit code 0
