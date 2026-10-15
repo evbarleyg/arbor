@@ -289,6 +289,8 @@ extension Controller {
     if asks { onTemporaryShortcuts?(wanted) }
     if outlineChanged, isRunning, let layout = layouts[session.display] {
       overlays.update(display: session.display, scene: overlayScene(for: layout, on: session.display))
+      // The line round the focused window goes while there is an outline, also from another display.
+      refreshFocusRing(.geometry)
     }
   }
 }

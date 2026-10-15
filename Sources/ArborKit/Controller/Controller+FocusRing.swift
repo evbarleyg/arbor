@@ -133,6 +133,9 @@ extension Controller {
       scheduleFocusRingReturn()
       return
     }
+    // One frame at a time: peek's outline says where letting go leads, in the same colour, and two of them ask the question
+    // each is there to answer. Like the mouse it only keeps the ring away: back round its window, it has not moved.
+    if peeking?.peek.shownOutline != nil { return }
 
     let previous = focusRing.lastWindow
     focusRing.lastWindow = nil

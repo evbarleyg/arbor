@@ -1076,4 +1076,78 @@ private let side = DisplaySnapshot(
     #expect(h.controller.workspaces[main.id] == mainBefore)
     #expect(h.system.focused == d)
   }
+
+  // MARK: One frame at a time
+
+  /// Seen on a hosted Mac: the line round the focused window and peek's outline, both in the accent colour, round two windows at
+  /// once. Each exists to answer "which of these is the one?".
+  @Test func whileAnOutlineShowsThereIsNoLineRoundTheFocusedWindow() {
+    let desk = Desk()
+    let rings = { desk.h.overlays.scenes.values.compactMap(\.focusRing) }
+    #expect(rings().map(\.window) == [desk.a])
+    desk.h.keyDown(space)
+    desk.h.scheduler.advance(by: 0.1)
+    #expect(desk.outline == nil && rings().map(\.window) == [desk.a], "a key that may yet be a tap takes nothing away")
+    desk.h.scheduler.advance(by: 0.3)
+    #expect(desk.outline != nil)
+    #expect(rings().isEmpty)
+    desk.point(at: desk.b)
+    #expect(desk.outline == desk.place(desk.b))
+    #expect(rings().isEmpty)
+    // What would bring it back at any other time.
+    desk.h.controller.keyboardFocusMoved()
+    desk.h.scheduler.advance(by: 0.3)
+    #expect(desk.outline != nil && rings().isEmpty)
+  }
+
+  @Test func itComesBackWithTheEndOfThePeekRoundWhoeverHasTheKeyboardThen() {
+    let desk = Desk()
+    let rings = { desk.h.overlays.scenes.values.compactMap(\.focusRing) }
+    desk.hold()
+    desk.point(at: desk.b)
+    desk.h.keyUp(space)
+    desk.h.scheduler.advance(by: 0.5)
+    desk.expectNoTrace()
+    #expect(desk.h.system.focused == desk.b)
+    #expect(rings().map(\.window) == [desk.b])
+    #expect(rings().first?.frame == desk.h.frame(desk.b))
+  }
+
+  @Test func afterAPeekThatGoesBackItIsWhereItWasAndDoesNotFlash() throws {
+    let desk = Desk()
+    let ring = { desk.h.overlays.scenes[desk.h.display]?.focusRing }
+    let before = try #require(ring())
+    desk.hold()
+    desk.h.scheduler.advance(by: 2)
+    #expect(ring() == nil)
+    desk.h.keyUp(space)
+    desk.h.scheduler.advance(by: 0.5)
+    desk.expectNoTrace()
+    #expect(desk.h.workspace.camera == desk.leaf(desk.a))
+    #expect(ring() == before, "the same window, the same place, no pulse")
+  }
+
+  @Test func aLineOnAnotherDisplayGoesToo() {
+    let h = Harness(displays: [main, side])
+    let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 500, height: 400))
+    let b = h.system.open(app: "Notes", frame: CGRect(x: 700, y: 100, width: 500, height: 400))
+    let c = h.system.open(app: "Mail", frame: CGRect(x: 1500, y: 100, width: 500, height: 400))
+    h.start()
+    for (window, edge) in [(a, "left"), (b, "right"), (c, "left")] { h.run("dock \(window.rawValue) \(edge)") }
+    h.run("zoom \(a.rawValue)")
+    // The keyboard is on the side display, and the pointer, which says where a peek looks, on the main one.
+    h.system.userFocus(c)
+    h.scheduler.advance(by: 5)
+    h.system.cursor = CGPoint(x: 400, y: 400)
+    #expect(h.overlays.scenes[side.id]?.focusRing?.window == c)
+    h.keyDown(space)
+    h.scheduler.advance(by: 0.4)
+    let outlines = h.overlays.scenes.values.compactMap(\.peekOutline)
+    #expect(outlines.count == 1)
+    #expect(h.overlays.scenes.values.compactMap(\.focusRing).isEmpty)
+    h.keyUp(space)
+    h.scheduler.advance(by: 0.5)
+    #expect(h.overlays.scenes.values.compactMap(\.peekOutline).isEmpty)
+    #expect(h.overlays.scenes.values.compactMap(\.focusRing).count == 1)
+  }
 }
