@@ -93,6 +93,7 @@ public struct OnboardingModel: Equatable, Sendable {
   public struct Row: Equatable, Sendable, Identifiable {
     public enum ID: String, Sendable, CaseIterable {
       case accessibility, screenRecording, desktopAndDock, competingApps, voiceOver, inputSources, ownShortcuts
+      case lostShortcuts
     }
 
     public enum State: Sendable {
@@ -234,7 +235,7 @@ public struct OnboardingModel: Equatable, Sendable {
     switchesGivenBack: [MacSwitch] = [],
     fixSetupFailure: String? = nil, menuBarIsOneIcon: Bool = true, menuBarIcon: MenuBarModel.Icon = MenuBarModel.Icon(),
     desktops: [CGRect] = [], isNewcomer: Bool = false,
-    isPaused: Bool = false,
+    isPaused: Bool = false, lostShortcuts: [String] = [],
     shortcut: (Command) -> String? = { _ in nil }
   ) {
     let flow = flow ?? .checkingSetup(isReady: facts.accessibility)
@@ -252,11 +253,12 @@ public struct OnboardingModel: Equatable, Sendable {
       told, windowsOutOfView: windowsOutOfView, offersScreenRecording: offersScreenRecording,
       appsWithOwnShortcuts: appsWithOwnShortcuts, canFixSetup: canFixSetup, changed: page == .setup ? switchesChangedByArbor : [],
       givenBack: page == .setup ? switchesGivenBack : [], isPaused: isPaused,
-      failure: fixSetupFailure, canDock: facts.accessibility && !isPaused, shortcut: shortcut)
+      failure: fixSetupFailure, canDock: facts.accessibility && !isPaused,
+      lostShortcuts: lostShortcuts, shortcut: shortcut)
     rows =
       page == .setup
       ? all
-      : all.filter { [.accessibility, .competingApps, .voiceOver].contains($0.id) || ($0.id == .desktopAndDock && !$0.isSatisfied) }
+      : all.filter { [.accessibility, .competingApps, .voiceOver, .lostShortcuts].contains($0.id) || ($0.id == .desktopAndDock && !$0.isSatisfied) }
     steps = Self.steps(flow.steps, shortcut: shortcut)
     // During the moves the window lies over the windows they are made on: whatever is not about them waits for the last tick.
     let isBusy = page == .firstSteps && !flow.steps.isComplete
@@ -422,7 +424,8 @@ public struct OnboardingModel: Equatable, Sendable {
 
   private static func rows(
     _ facts: SystemFacts, windowsOutOfView: Int, offersScreenRecording: Bool, appsWithOwnShortcuts apps: [String],
-    canFixSetup: Bool, changed: [MacSwitch], givenBack: [MacSwitch], isPaused: Bool, failure: String?, canDock: Bool, shortcut: (Command) -> String?
+    canFixSetup: Bool, changed: [MacSwitch], givenBack: [MacSwitch], isPaused: Bool, failure: String?, canDock: Bool,
+    lostShortcuts lost: [String], shortcut: (Command) -> String?
   ) -> [Row] {
     let settings = "Open Settings…"
     let stranded =
@@ -558,6 +561,18 @@ public struct OnboardingModel: Equatable, Sendable {
           state: .note, status: "Shares its keys",
           detail: "Arbor’s shortcuts come first, in every app. To give the keys back in \(several ? "one of them" : "it"), "
             + "bring it to the front and choose Shortcuts Off in “App” in Arbor’s menu.",
+          button: nil))
+    }
+    if !lost.isEmpty {
+      let several = lost.count > 1
+      rows.append(
+        Row(
+          id: .lostShortcuts,
+          title: (lost.count > 3 ? "\(lost.count) shortcuts" : sentenceList(lost)) + " \(several ? "are" : "is") not Arbor’s",
+          importance: "Best changed", state: .recommended, status: "Not registered",
+          detail: "Arbor does not hear \(several ? "them" : "it"), so what you press there goes elsewhere, most likely to the app in "
+            + "front, which may have a use of its own for it. Quit Arbor and open it again. If that does not help, give the "
+            + "command\(several ? "s" : "") another shortcut under Settings → Shortcuts.",
           button: nil))
     }
     return rows.map { row in

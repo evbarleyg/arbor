@@ -307,7 +307,7 @@ or add a `bindings` object to `settings.json` that maps a shortcut to a command
 - Entries Arbor cannot use are skipped and listed, with the reason, by
   `arborctl bindings` and in the log.
 
-`arborctl bindings` prints the shortcuts in effect; ⌃⌥⇧/ (or menu → Help → Keyboard Shortcuts…) shows them on screen, by name. `bindings` also lists the ones that macOS uses itself as things stand
+`arborctl bindings` prints the shortcuts in effect, and says at the end of its line of each that is not Arbor's at that moment, and why; ⌃⌥⇧/ (or menu → Help → Keyboard Shortcuts…) shows them on screen, by name. `bindings` also lists the ones that macOS uses itself as things stand
 (⌃⌥Space switches keyboards on a Mac with several input sources): one of the two does nothing, and it says where to change either.
 
 ### Arranging from the keyboard

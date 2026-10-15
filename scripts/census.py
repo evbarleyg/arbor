@@ -1518,7 +1518,7 @@ NOT_BY_TESTS = {
 }
 ANCHORS = [
     ("Sources/ArborKit/App/ArborApp.swift", r"if !environment\.noHotkeys \{\s*let input = PointerInput\("),
-    ("Sources/ArborKit/App/ArborApp.swift", r"let bindings = environment\.noHotkeys \? \[\] : controller\.activeBindings"),
+    ("Sources/ArborKit/App/ArborApp.swift", r"controller\.shortcutsAreDisabled = environment\.noHotkeys"),
     ("Sources/ArborKit/App/ArborApp.swift", r"if !environment\.noStatusItem \{ statusMenu = StatusMenu\("),
     ("Sources/ArborKit/App/ArborApp.swift", r"if environment\.onlyPIDs == nil \{\s*callSensor = CallSensor"),
     ("Sources/ArborKit/App/ArborApp.swift", r"if !environment\.noPrompt, let page = controller\.pageToWelcomeOn\(\)"),

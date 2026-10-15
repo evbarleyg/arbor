@@ -59,7 +59,7 @@ Differs from the text above, on purpose:
 - **Not quite "no shortcuts": `toggle-pause` (⌃⌥⎋) stays**, and so does any shortcut the user gives to `pass-through`. One key has to answer wherever you are, or a person who forgot the list has a dead
   keyboard and no clue; and a key that switched pass-through on must be there to switch it off. Whoever needs ⌃⌥⎋ in the app too removes it: `"ctrl+opt+escape": null`.
 - The frontmost app is reported by its own small watcher, not by `AXWindowSystem`, which stops observing during a pause: the pause for an app ends when the app leaves the front, so somebody has to be looking.
-- Hot key identifiers are never reused (`HotKeyCenter`). They used to be positions in the list, so a press still in the queue when the list changed would have run whichever command took over its number.
+- Hot key identifiers are never reused (`HotKeyTable`). They used to be positions in the list, so a press still in the queue when the list changed would have run whichever command took over its number. A key that stays registered keeps its number: a press on its way runs the command the key has when it arrives.
 
 Not shipped:
 

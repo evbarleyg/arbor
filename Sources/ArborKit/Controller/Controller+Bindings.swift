@@ -4,14 +4,16 @@ extension Controller {
   /// `bindings`: the shortcuts in effect, one `chord → command` per line sorted by command text,
   /// then the entries of settings.json's `bindings` that were skipped and why, and the shortcuts
   /// that macOS uses as well (Controller+SystemShortcuts.swift). A shortcut whose key
-  /// is labelled otherwise on the keyboard layout in use says so: `ctrl+opt+[ (⌃⌥Ü) → back`. A query, so it
-  /// works before `start()`.
+  /// is labelled otherwise on the keyboard layout in use says so: `ctrl+opt+[ (⌃⌥Ü) → back`. One that is not Arbor's at
+  /// this moment says that, and why, at the end of its line (`KeysHeld`). A query, so it works before `start()`.
   func listBindings() -> CommandResult {
     let (bindings, problems) = effectiveBindings
-    let rows = bindings.map { binding in
-      (
+    let held = keysHeld
+    let rows = held.keys.map { key in
+      let binding = key.binding
+      return (
         chord: binding.chord.text + (binding.label == binding.chord.label ? "" : " (\(binding.label))"),
-        command: binding.command.text
+        command: binding.command.text + (key.fate.mark.map { "  (\($0))" } ?? "")
       )
     }
     .sorted { ($0.command, $0.chord) < ($1.command, $1.chord) }
@@ -44,25 +46,28 @@ extension Controller {
           : "Letters, digits and signs mean their places on a US keyboard, because shortcutsFollowLayout is false.")
     }
     var message = "\(bindings.count) shortcuts"
-    var off: String?
-    if !settings.hotkeysEnabled {
-      off = "all off because hotkeysEnabled is false"
-    } else if !accessibilityGranted, !isPassingThrough {
-      // Said as it is: no app gets them, and nothing comes of them.
-      off = "Arbor takes them and can move nothing without Accessibility permission"
-    } else if !accessibilityGranted {
-      off = (activeBindings.isEmpty ? "all off" : "all but \(activeBindings.count) off") + " in \(frontmostAppName)"
-    } else if isPaused {
-      off = "all but \(activeBindings.count) off while Arbor is paused"
-    } else if isPassingThrough {
-      off = "all but \(activeBindings.count) off in \(frontmostAppName)"
+    let lost = held.lost
+    if !lost.isEmpty {
+      lines.append("")
+      // Not one by one if there are many: each has its mark above.
+      lines.append(
+        (lost.count > 3 ? "\(lost.count) shortcuts" : OnboardingModel.sentenceList(lost.map(\.label)))
+          + " \(lost.count == 1 ? "is" : "are") not Arbor's, though nobody asked for that: Arbor does not hear what is pressed "
+          + "there, and another app may. `doctor` says what to do.")
     }
+    let off =
+      whyKeysAreTheApps(appInFront: frontmostAppName).map {
+        (shortcutsWanted.isEmpty ? "all off" : "all but \(shortcutsWanted.count) off") + " " + $0
+      }
+      // Said as it is: no app gets them, and nothing comes of them.
+      ?? (accessibilityGranted ? nil : "Arbor takes them and can move nothing without Accessibility permission")
     if let off {
       message += ", " + off
       // In the text as well, and last, where a terminal leaves it in sight: `arborctl` prints only the text.
       lines.append("")
       lines.append("Right now: \(off).")
     }
+    if !lost.isEmpty { message += ", \(lost.count) not Arbor's" }
     if !problems.isEmpty { message += ", \(problems.count) skipped" }
     if !clashes.isEmpty { message += ", \(clashes.count) also macOS's" }
     return CommandResult(ok: true, message: message, text: lines.joined(separator: "\n"))

@@ -244,23 +244,44 @@ extension Controller {
       let wanted = effectiveBindings.bindings
       return report.add(.note, title, "\(wanted.count) in the settings, not registered yet")
     }
-    // What macOS said when the app asked, not a comparison with what the settings describe: Arbor holds fewer
+    // What the app holds against what Arbor wants to hold now, not against what the settings describe: it wants fewer
     // shortcuts, or other keys, during a pause, in an app that keeps its own ⌃⌥ and on another keyboard layout.
-    let refused = refusedBindings
-    if refused.isEmpty, isRunning, isPassingThrough {
+    let held = keysHeld
+    let refused = held.all(.refused)
+    let missing = held.all(.missing)
+    if !missing.isEmpty {
+      // Not one by one: if this ever happens it is likely to be all of them.
+      report.add(
+        .problem, title,
+        "\(registered.count) registered; \(missing.count) that Arbor wants "
+          + "\(missing.count == 1 ? "is" : "are") not, and \(missing.count == 1 ? "reaches" : "reach") the app in front",
+        notes: (refused.isEmpty ? [] : ["macOS refused \(refused.map(\.label).joined(separator: " "))"])
+          + ["Quit Arbor and open it again; its log says what macOS answered"])
+    } else if refused.isEmpty, isRunning, isPassingThrough {
       // Not a tick: whoever asks because the keys do nothing should read why. A terminal is a likely app to have them off in.
       report.add(
         .note, title,
         "all but \(registered.count) off in \(frontmostAppName), the app in front (`pass-through off` brings them back)")
+    } else if refused.isEmpty, !isPaused, let why = whyKeysAreTheApps(appInFront: frontmostAppName) {
+      // Not a tick either: Arbor is there and most of its keys are not.
+      report.add(.note, title, "\(registered.count) registered; the others are the apps’ \(why)")
     } else if refused.isEmpty {
-      report.add(.ok, title, "\(registered.count) registered" + (isPaused ? " while Arbor is paused" : ""))
+      // What the tick is worth is said under it: whoever asks because a key did something else somewhere should not be sent away by it.
+      report.add(
+        .ok, title, "\(registered.count) registered" + (isPaused ? " while Arbor is paused" : ""),
+        notes: registered.isEmpty ? [] : [Self.whatRegisteredIsWorth])
     } else {
       report.add(
         .problem, title,
-        "\(registered.count) registered; macOS refused \(refused.map(\.label).joined(separator: " ")) "
-          + "(another app may hold them)")
+        "\(registered.count) registered; macOS refused \(refused.map(\.label).joined(separator: " ")), "
+          + "which Arbor so does not hear",
+        notes: ["Give the command\(refused.count == 1 ? "" : "s") another shortcut (Settings → Shortcuts, or `bind`)"])
     }
   }
+
+  /// Seen on macOS 26: it says yes to Arbor whoever else holds the key (`KeysHeld`).
+  static let whatRegisteredIsWorth =
+    "macOS does not tell Arbor when another program has registered the same key: then both get it, or the other alone"
 
   /// The keyboard layout the shortcuts are made for (F44), and the apps that want ⌃⌥ for themselves (F41).
   private func checkKeyboard(_ facts: SystemFacts?, into report: inout DoctorReport) {

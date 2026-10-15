@@ -216,20 +216,11 @@ extension World {
     put(state: state)
   }
 
-  /// `ArborApp.registerHotKeys`, in a world where no other app holds a shortcut.
+  /// `ArborApp.registerHotKeys`, on a Mac that says yes to every shortcut, which is all a real one has been seen to do.
   private func registerHotKeys() {
     guard let arbor, arbor.controller.isRunning || arbor.controller.isPaused else { return }
-    let bindings = arbor.noHotkeys ? [] : arbor.controller.activeBindings
-    let problems = arbor.controller.effectiveBindings.problems
-    if let last = arbor.lastBindings, last.bindings == bindings, last.problems == problems,
-      arbor.activeBindings == bindings
-    {
-      return
-    }
-    arbor.lastBindings = (bindings, problems)
-    arbor.controller.logSkippedBindings()
-    arbor.activeBindings = bindings
-    if !bindings.isEmpty { Log.info("registered \(bindings.count) shortcuts in 900 µs") }
+    guard let bindings = arbor.controller.shortcutsToRegister() else { return }
+    arbor.controller.shortcutsWereRegistered(HotKeyOutcome(held: bindings), microseconds: arbor.noHotkeys ? 0 : 900)
   }
 
   /// `PointerInput.update`: `GestureTap.update`, then `RectangleFramer.update`.

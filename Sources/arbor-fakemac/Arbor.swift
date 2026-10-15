@@ -27,11 +27,8 @@ final class Arbor {
   var savesSeen = 0
 
   // ArborApp
-  var activeBindings: [KeyBinding] = [] {
-    // As `ArborApp` does: the menu, tooltips and `doctor` go by what is registered.
-    didSet { controller.registeredBindings = activeBindings }
-  }
-  var lastBindings: (bindings: [KeyBinding], problems: [String])?
+  /// What `HotKeyCenter` holds: the menu, tooltips and `doctor` go by it too.
+  var activeBindings: [KeyBinding] { controller.registeredBindings ?? [] }
   /// `UpdateWindow`: the answer to an update check that somebody asked for. An ordinary window with a title bar, which floats
   /// above the apps' windows. Nothing keeps it once it is closed, and every answer gets a new one. It never has the keyboard
   /// here: the real one activates Arbor and makes itself key, which macOS grants when it was asked for from the menu.
@@ -81,6 +78,7 @@ final class Arbor {
       overlays: RecordingOverlays(wrapping: overlays, recorder: recorder), store: store,
       scheduler: RecordingScheduler(wrapping: scheduler, recorder: recorder), settings: settings,
       filter: WindowFilter(onlyPIDs: onlyPIDs, ownPID: pid))
+    controller.shortcutsAreDisabled = noHotkeys
     // `SystemLoginItem`: only an app in a bundle can be a login item.
     if bundled { controller.loginItem = world.loginItem }
     // The little of `ArborApp.systemFacts()` that this Mac has an answer to.

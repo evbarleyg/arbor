@@ -28,14 +28,6 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
   private var server: ControlServer?
   private var statusMenu: StatusMenu?
   private var hotKeys: HotKeyCenter?
-  /// The shortcuts registered now. The controller is told, for menus, tooltips and `doctor`.
-  private(set) var activeBindings: [KeyBinding] = [] {
-    didSet { controller.registeredBindings = activeBindings }
-  }
-  /// What was last registered and logged, so applying settings that leave the shortcuts as they
-  /// were (`exclude`, say) neither registers them all again nor repeats the log lines. Shortcuts
-  /// that failed to register (another app holds them) are tried again.
-  private var lastBindings: (bindings: [KeyBinding], problems: [String])?
   /// True for as long as Arbor's item may be in the menu bar: from before it is made until Arbor quits. All that time Arbor holds what
   /// `Controller.activeBindings` says, whether or not it can act on a press.
   private var holdsKeys = false
@@ -77,6 +69,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     controller.saveSettings = { try SettingsFile.update(from: $0, to: $1) }
     controller.loadSettings = { try SettingsFile.read() }
     controller.systemShortcuts = { SystemShortcutReader.read() }
+    controller.shortcutsAreDisabled = environment.noHotkeys
     controller.onTemporaryShortcuts = { [weak self] in self?.hotKeys?.setTemporary($0) }
     controller.replaceSettingsFile = { try SettingsFile.replace(with: $0) }
     controller.keepCopyOfSettingsFile = { try SettingsFile.keepCopy() }
@@ -284,25 +277,13 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
   /// ones registered before, and logs the `bindings` entries that were skipped. Runs at start, after
   /// every settings change, which is how `reload-settings` picks up edited bindings, and when a
   /// pause, the frontmost app or another keyboard layout changes the answer.
+  ///
+  /// What to ask macOS for, what to try again and what to say of it the controller decides (Controller+KeysHeld.swift).
   private func registerHotKeys() {
     guard holdsKeys else { return }
-    let bindings = environment.noHotkeys ? [] : controller.activeBindings
-    let problems = controller.effectiveBindings.problems
-    if let last = lastBindings, last.bindings == bindings, last.problems == problems,
-      activeBindings == bindings
-    {
-      return
-    }
-    lastBindings = (bindings, problems)
-    controller.logSkippedBindings()
-    controller.logSystemShortcutClashes()
-
-    guard !bindings.isEmpty else {
-      hotKeys?.unregisterAll()
-      controller.refusedBindings = []
-      activeBindings = []
-      return
-    }
+    guard let bindings = controller.shortcutsToRegister() else { return }
+    // Nobody need talk to macOS, or listen to it.
+    guard !environment.noHotkeys else { return _ = controller.shortcutsWereRegistered(HotKeyOutcome(), microseconds: 0) }
     let center = hotKeys ?? HotKeyCenter { [weak self] binding, phase in
       guard let self else { return }
       let result = self.controller.shortcut(binding, phase, run: { self.handle($0, from: .shortcut) })
@@ -316,11 +297,8 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     }
     hotKeys = center
     let began = DispatchTime.now().uptimeNanoseconds
-    let failed = center.register(bindings)
-    controller.refusedBindings = failed
-    let microseconds = (DispatchTime.now().uptimeNanoseconds - began) / 1000
-    activeBindings = bindings.filter { !failed.contains($0) }
-    Log.info("registered \(activeBindings.count) shortcuts in \(microseconds) µs")
+    let outcome = center.register(bindings)
+    controller.shortcutsWereRegistered(outcome, microseconds: (DispatchTime.now().uptimeNanoseconds - began) / 1000)
   }
 
   /// Applies edits to settings.json as they are saved.
@@ -539,7 +517,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
       pane = "com.apple.Desktop-Settings.extension"
     case .inputSources:
       pane = "com.apple.Keyboard-Settings.extension"
-    case .competingApps, .voiceOver, .ownShortcuts:
+    case .competingApps, .voiceOver, .ownShortcuts, .lostShortcuts:
       return  // these rows have no button
     }
     Self.openPane(pane)

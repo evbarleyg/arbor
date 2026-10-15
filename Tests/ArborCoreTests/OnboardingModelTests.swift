@@ -582,6 +582,32 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(OnboardingModel(facts).opensAtLogin == true)
     #expect(OnboardingModel(facts).loginTitle == "Open at Login")
   }
+
+  /// A key that fingers know as Arbor's and that Arbor does not hear may do anything in the app in front.
+  @Test func shortcutsThatArborDoesNotHoldAreInTheWay() throws {
+    #expect(OnboardingModel(tuned, shortcut: defaults).row(.lostShortcuts) == nil)
+    let one = OnboardingModel(tuned, lostShortcuts: ["⌃⌥A"], shortcut: defaults)
+    let row = try #require(one.row(.lostShortcuts))
+    #expect(row.title == "⌃⌥A is not Arbor’s")
+    #expect(row.state == .recommended && row.needsAttention && !row.isSatisfied)
+    #expect(row.importance == "Best changed" && row.status == "Not registered")
+    #expect(row.detail.hasPrefix("Arbor does not hear it, so what you press there goes elsewhere, most likely to the app in front"))
+    #expect(row.detail.hasSuffix("give the command another shortcut under Settings → Shortcuts."))
+    #expect(row.button == nil, "no pane of System Settings helps")
+    #expect(one.rows.last?.id == .lostShortcuts)
+    #expect(one.page == .setup && one.title == "Ready, with one suggestion")
+    #expect(one.isReady, "Arbor arranges windows all the same")
+    // The welcome says little, but what would spoil the moves it teaches it does say, and they are keys.
+    let welcome = OnboardingModel(tuned, flow: OnboardingFlow(isReady: true), lostShortcuts: ["⌃⌥A"], shortcut: defaults)
+    #expect(welcome.page == .permissions && welcome.row(.lostShortcuts) == row)
+    #expect(OnboardingModel(tuned, flow: OnboardingFlow(isReady: true), shortcut: defaults).row(.lostShortcuts) == nil)
+    let three = OnboardingModel(tuned, lostShortcuts: ["⌃⌥A", "⌃⌥Z", "⌃⌥F"]).row(.lostShortcuts)
+    #expect(three?.title == "⌃⌥A, ⌃⌥Z and ⌃⌥F are not Arbor’s")
+    #expect(three?.detail.hasPrefix("Arbor does not hear them,") == true)
+    #expect(three?.detail.hasSuffix("give the commands another shortcut under Settings → Shortcuts.") == true)
+    // A title is one line.
+    #expect(OnboardingModel(tuned, lostShortcuts: ["1", "2", "3", "4"]).row(.lostShortcuts)?.title == "4 shortcuts are not Arbor’s")
+  }
 }
 
 /// The live ticks of the second page.
