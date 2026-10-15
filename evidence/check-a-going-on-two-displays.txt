@@ -1,0 +1,102 @@
+# check-a-going-on-two-displays 2026-10-15T14:11Z on macOS 26.6.2, commit e73b591
+
+== One display, both lists empty: the window in view that was used last gets the keyboard. The control for what follows
+  ✔ w2 has the keyboard
+  ✔ w1 is out of view
+  ✔ the other app's window has been used
+  ✔ w2 has the keyboard again
+  ✔ w1 stays out of view
+  ✔ a j lands in the other app's window
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== The same, and Arbor pauses for the other app: it is nobody's heir
+  ✔ w2 has the keyboard
+  ✔ w1 is out of view
+  ✔ the other app's window has been used
+  ✔ w2 has the keyboard again
+  ✔ w1 stays out of view
+  ✔ Arbor goes on running
+  ✔ a j lands in w3, the next in the order
+
+== A key of Arbor's held down: were it to repeat, the first press would be the next key and each repeat the key after it
+  ✔ it runs its command once
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== Two displays: the last window on one goes, and no view moves on the other
+  ✔ w2 is on the second display
+  ✔ v1 is framed on the main display
+  ✔ w1 is out of view
+  ✔ w2 has the keyboard
+  ✔ the main display's view stays: v1 framed, v2 out of view
+  ✔ w1, which macOS named, stays out of view
+  ✔ a j lands in v1, on the other display
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== The next key means the display where the window went, and the window it brings into view there gets the keyboard
+  ✔ w2 is on the second display
+  ✔ w1 is on the second display
+  ✔ w2 has the keyboard
+  ✔ v1 is framed on the main display
+  ✔ w1 is out of view
+  ✔ w2 has the keyboard
+  ✔ v1 has the keyboard, by Arbor's word
+  ✔ ⌃⌥Space shows everything on the second display: w1 is in view
+  ✔ the main display's view stays
+  ✔ a j lands in w1
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== Once: the key after it means the display the keyboard is on
+  ✔ w2 is on the second display
+  ✔ v1 is framed on the main display
+  ✔ w1 is out of view
+  ✔ w2 has the keyboard
+  ✔ v1 has the keyboard, by Arbor's word
+  ✔ ⌃⌥Space finds nothing to show on the second display, and the main display's view stays
+  ✔ ⌃⌥Space again shows everything on the main display
+  ✔ a j lands in v1
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== A letter typed into the window that got the keyboard ends it
+  ✔ w2 is on the second display
+  ✔ w1 is on the second display
+  ✔ w2 has the keyboard
+  ✔ v1 is framed on the main display
+  ✔ w1 is out of view
+  ✔ w2 has the keyboard
+  ✔ v1 has the keyboard, by Arbor's word
+  ✔ a j lands in v1
+  ✔ ⌃⌥Space shows everything on the main display
+  ✔ and w1 stays out of view on the second
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+73 passed, 0 failed

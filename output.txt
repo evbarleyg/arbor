@@ -1,0 +1,254 @@
+# mac-shell: scripts/mac-shell/check-a-going-on-two-displays.sh at e73b591, macOS 26.6.2, 2026-10-15T14:11Z
+built Arbor, the pointer tool and the app bundles in 8s
+
+== One display, both lists empty: the window in view that was used last gets the keyboard. The control for what follows
+session 1: Arbor pid 5569, test windows 28 29 30 31 (pid 5508,5551)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 28 left
+docked w28 at the left edge
+> click 524 330
+> click 248 383
+> click 528 496
+  ✔ w2 has the keyboard
+> desktop
+showing the Desktop
+  ✔ w1 is out of view
+> click 412 548
+  ✔ the other app's window has been used
+> click 672 370
+  ✔ w2 has the keyboard again
+> key cmd+w
+  ✔ w1 stays out of view
+> key j
+  ✔ a j lands in the other app's window
+shot: mac-shell/01-the-one-used-last.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== The same, and Arbor pauses for the other app: it is nobody's heir
+session 2: Arbor pid 6576, test windows 39 40 41 42 (pid 6522,6548)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 39 left
+docked w39 at the left edge
+> click 524 210
+> click 248 383
+> click 660 496
+  ✔ w2 has the keyboard
+> desktop
+showing the Desktop
+  ✔ w1 is out of view
+> click 412 548
+  ✔ the other app's window has been used
+> click 672 370
+  ✔ w2 has the keyboard again
+> set pauseForApps add dev.arbor.testwindows2
+Arbor pauses while ArborTestWindows2 is in front
+> key cmd+w
+  ✔ w1 stays out of view
+  ✔ Arbor goes on running
+> key j
+  ✔ a j lands in w3, the next in the order
+shot: mac-shell/02-not-the-app-arbor-pauses-for.png
+
+== A key of Arbor's held down: were it to repeat, the first press would be the next key and each repeat the key after it
+> key ctrl+opt+[ --down
+> key ctrl+opt+[ --repeat 10
+> key ctrl+opt+[ --up
+⌃⌥[ down, ten auto-repeats, up: back ran 1 time(s)
+  ✔ it runs its command once
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+> display_add 1280 800: display 2, 003AA9D6-9DC6-4547-AAB5-DD82A4B7B190
+> display_move right: now at 1920 0 1280 800
+
+== Two displays: the last window on one goes, and no view moves on the other
+session 3: Arbor pid 8178, test windows 62 63 64 65 (pid 8131,8159)
+running: 2 displays, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 64 left
+docked w64 at the left edge
+> dock 65 right
+docked w65 at the right edge
+> drag 646 504 2346 151
+  ✔ w2 is on the second display
+> dock 62 beside 65 bottom
+docked w62 below w65
+> zoom 64
+framed w64
+  ✔ v1 is framed on the main display
+  ✔ w1 is out of view
+> click 2162 329
+  ✔ w2 has the keyboard
+> move 960 516
+> key j
+> key cmd+w
+  ✔ the main display's view stays: v1 framed, v2 out of view
+  ✔ w1, which macOS named, stays out of view
+> key j
+  ✔ a j lands in v1, on the other display
+shot: mac-shell/03-no-view-moves.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== The next key means the display where the window went, and the window it brings into view there gets the keyboard
+session 4: Arbor pid 9231, test windows 78 79 80 81 (pid 9190,9216)
+running: 2 displays, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 80 left
+docked w80 at the left edge
+> dock 81 right
+docked w81 at the right edge
+> drag 646 504 2346 151
+  ✔ w2 is on the second display
+> test windows: front 78
+> click 412 722
+> drag 446 544 2773 231
+  ✔ w1 is on the second display
+> dock 78 left
+docked w78 at the left edge
+> test windows: front 79
+> click 2163 329
+  ✔ w2 has the keyboard
+> desktop
+showing the Desktop
+> zoom 80
+framed w80
+  ✔ v1 is framed on the main display
+  ✔ w1 is out of view
+> click 2163 329
+  ✔ w2 has the keyboard
+> move 960 516
+> key j
+> key cmd+w
+  ✔ v1 has the keyboard, by Arbor's word
+  pointer 1.44 keys 0.24 presses 10
+> key ctrl+opt+space
+  ✔ ⌃⌥Space shows everything on the second display: w1 is in view
+  ✔ the main display's view stays
+> key j
+  ✔ a j lands in w1
+shot: mac-shell/04-the-display-where-the-window-went.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== Once: the key after it means the display the keyboard is on
+session 5: Arbor pid 10759, test windows 95 96 97 98 (pid 10686,10734)
+running: 2 displays, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 97 left
+docked w97 at the left edge
+> dock 98 right
+docked w98 at the right edge
+> drag 646 504 2346 151
+  ✔ w2 is on the second display
+> dock 95 beside 98 bottom
+docked w95 below w98
+> zoom 97
+framed w97
+  ✔ v1 is framed on the main display
+  ✔ w1 is out of view
+> click 2162 329
+  ✔ w2 has the keyboard
+> key j
+> key cmd+w
+  ✔ v1 has the keyboard, by Arbor's word
+  pointer 1.51 keys 0.20 presses 14
+> key ctrl+opt+space
+  ✔ ⌃⌥Space finds nothing to show on the second display, and the main display's view stays
+  pointer 3.73 keys 1.92 presses 15
+> key ctrl+opt+space
+  ✔ ⌃⌥Space again shows everything on the main display
+> key j
+  ✔ a j lands in v1
+shot: mac-shell/05-once.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== A letter typed into the window that got the keyboard ends it
+session 6: Arbor pid 12296, test windows 111 112 113 114 (pid 12237,12280)
+running: 2 displays, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 113 left
+docked w113 at the left edge
+> dock 114 right
+docked w114 at the right edge
+> drag 646 504 2346 151
+  ✔ w2 is on the second display
+> test windows: front 111
+> click 412 722
+> drag 446 544 2773 231
+  ✔ w1 is on the second display
+> dock 111 left
+docked w111 at the left edge
+> test windows: front 112
+> click 2163 329
+  ✔ w2 has the keyboard
+> desktop
+showing the Desktop
+> zoom 113
+framed w113
+  ✔ v1 is framed on the main display
+  ✔ w1 is out of view
+> click 2163 329
+  ✔ w2 has the keyboard
+> key j
+> key cmd+w
+  ✔ v1 has the keyboard, by Arbor's word
+> key j
+  ✔ a j lands in v1
+  pointer 2.36 keys 0.76 presses 20
+> key ctrl+opt+space
+  ✔ ⌃⌥Space shows everything on the main display
+  ✔ and w1 stays out of view on the second
+shot: mac-shell/06-a-letter-ends-it.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+> display_remove
+
+73 passed, 0 failed
+exit code 0
