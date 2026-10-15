@@ -1,0 +1,143 @@
+# check-F49 2026-10-15T05:28Z on macOS 26.6.2, commit 54fee65
+
+== an editor and a browser from one app, a call from another; shortcuts and the menu bar item on
+  ✔ Arbor arranges the other app's window too
+  ✔ state says pinned
+  ✔ pinning alone brings it in front of the other app's windows
+  ✔ and does not give it the keyboard
+  ✔ the call lies over the browser
+  ✔ and not over the editor
+  ✔ after docking two windows under it: the call has not moved
+  ✔ after docking two windows under it: the call is not out of view
+  ✔ after docking two windows under it: Arbor does not count it as out of view
+  ✘ after docking two windows under it: nothing covers the call
+  ✔ after docking two windows under it: the keyboard is in 169
+
+== 1 and 2: camera moves
+  ✔ the browser went out of view
+  ✔ framed on the editor: the call has not moved
+  ✔ framed on the editor: the call is not out of view
+  ✔ framed on the editor: Arbor does not count it as out of view
+  ✘ framed on the editor: nothing covers the call
+  ✔ framed on the editor: the keyboard is in 168
+  ✔ on the Desktop (the keyboard stays in the editor, which is out of view): the call has not moved
+  ✔ on the Desktop (the keyboard stays in the editor, which is out of view): the call is not out of view
+  ✔ on the Desktop (the keyboard stays in the editor, which is out of view): Arbor does not count it as out of view
+  ✔ on the Desktop (the keyboard stays in the editor, which is out of view): nothing covers the call
+  ✔ on the Desktop (the keyboard stays in the editor, which is out of view): the keyboard is in 168
+  ✔ the editor went out of view
+  ✔ framed on the browser: the call has not moved
+  ✔ framed on the browser: the call is not out of view
+  ✔ framed on the browser: Arbor does not count it as out of view
+  ✘ framed on the browser: nothing covers the call
+  ✔ framed on the browser: the keyboard is in 169
+  ✔ framed again on the window that has the keyboard: the call has not moved
+  ✔ framed again on the window that has the keyboard: the call is not out of view
+  ✔ framed again on the window that has the keyboard: Arbor does not count it as out of view
+  ✘ framed again on the window that has the keyboard: nothing covers the call
+  ✔ framed again on the window that has the keyboard: the keyboard is in 169
+  ✔ showing everything: the call has not moved
+  ✔ showing everything: the call is not out of view
+  ✔ showing everything: Arbor does not count it as out of view
+  ✘ showing everything: nothing covers the call
+  ✔ showing everything: the keyboard is in 169
+
+== real clicks on the window under it
+  ✔ after clicking the editor, beside it: the call has not moved
+  ✔ after clicking the editor, beside it: the call is not out of view
+  ✔ after clicking the editor, beside it: Arbor does not count it as out of view
+  ✔ after clicking the editor, beside it: nothing covers the call
+  ✔ after clicking the editor, beside it: the keyboard is in 168
+  ✔ after clicking the browser, under it: the call has not moved
+  ✔ after clicking the browser, under it: the call is not out of view
+  ✔ after clicking the browser, under it: Arbor does not count it as out of view
+  ✘ after clicking the browser, under it: nothing covers the call
+  ✔ after clicking the browser, under it: the keyboard is in 169
+  ✔ after clicking the browser again: the call has not moved
+  ✔ after clicking the browser again: the call is not out of view
+  ✔ after clicking the browser again: Arbor does not count it as out of view
+  ✘ after clicking the browser again: nothing covers the call
+  ✔ after clicking the browser again: the keyboard is in 169
+
+== a real click on the call itself
+  ✔ framed
+  ✘ the call has the keyboard — the focused window is 168
+  ✔ the view did not move
+  ✔ the call has not moved
+  ✘ on the empty Desktop, where nothing arrives, the keyboard stays in it — the focused window is 168
+  ✔ the next move of the view takes the keyboard along to the browser
+  ✔ and the call has not moved
+
+== no storm: a second of rest raises nothing
+  ✔ nothing was raised meanwhile (37 so far)
+
+== 3: a real drag never docks it
+  ✔ over the editor's left edge: no preview
+  ✔ dropped there it still floats
+  ✔ and is still pinned
+  ✔ at the screen edge: no preview
+  ✔ dropped there it still floats
+  ✔ and is still pinned
+  ✔ where it was dropped, after the next camera move: the call has not moved
+  ✔ where it was dropped, after the next camera move: the call is not out of view
+  ✔ where it was dropped, after the next camera move: Arbor does not count it as out of view
+  ✘ where it was dropped, after the next camera move: nothing covers the call
+  ✔ where it was dropped, after the next camera move: the keyboard is in 168
+
+== the shortcut and the menu
+  ✔ the call has the keyboard
+  ✔ ⌃⌥⇧D (from bindings) unpins
+  ✔ and moves nothing
+  ✔ again pins
+
+== 3: dock unpins, pin floats
+  ✔ docked
+  ✔ no longer pinned
+  ✔ pinning floats it
+  ✔ pinned
+
+== float-all and pause leave it exactly where it is
+  ✔ float-all: the call has not moved
+  ✔ float-all: still pinned
+  ✔ framed
+  ✔ paused: the call has not moved
+  ✔ running again
+  ✔ resumed: still pinned
+  ✔ resumed: the call has not moved
+
+== a second display: the pin goes along, comes to the main display when it is unplugged, and goes back
+  ✔ Arbor arranges two displays
+  ✔ dragged there, the second display's workspace holds it
+  ✔ still pinned
+  ✔ framed on the main display
+  ✔ unplugged: the main display's workspace holds it
+  ✔ unplugged: still pinned
+  ✔ unplugged: in view, though the Desktop is not
+  ✔ unplugged: Arbor does not count it as out of view
+  ✘ unplugged: nothing covers it
+  ✔ plugged in again: back on the second display
+  ✔ plugged in again: still pinned
+  ✔ plugged in again: exactly where it was (2240 79 480 347)
+  ✔ dragged back
+
+== 5: quit and launch again on the same windows
+  ✔ framed
+  ✔ Arbor exits
+  ✘ quit: the call has not moved
+  ✔ running again
+  ✔ relaunched: still pinned
+  ✘ relaunched: the call has not moved
+  ✘ relaunched and framed on the editor: the call has not moved
+  ✔ relaunched and framed on the editor: the call is not out of view
+  ✔ relaunched and framed on the editor: Arbor does not count it as out of view
+  ✘ relaunched and framed on the editor: nothing covers the call
+  ✔ relaunched and framed on the editor: the keyboard is in 168
+
+== what the log says about raising and focus
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+99 passed, 15 failed
