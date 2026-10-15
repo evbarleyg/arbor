@@ -93,7 +93,10 @@ extension Controller {
       // The size a window had before it was docked goes along, for the day it floats again (F48).
       func ownFrames(of windows: [WindowID], from source: DisplayID, to destination: DisplayID) -> [WindowID: CGRect] {
         var frames: [WindowID: CGRect] = [:]
-        for window in windows { frames[window] = frameAfterTransfer(of: window, from: source, to: destination) }
+        for window in windows {
+          frames[window] = frameAfterTransfer(of: window, from: source, to: destination)
+          noteTransfer(of: window, from: source, to: destination, arrivingAt: frames[window])
+        }
         return frames
       }
       let (comingToB, comingToA) = (ownFrames(of: leavingA, from: a, to: b), ownFrames(of: leavingB, from: b, to: a))
@@ -417,7 +420,9 @@ extension Controller {
     var role = workspace.role(of: id)
     if case .summoned = role, workspaces[destination.id]?.summoned != nil { role = nil }
     if role == .stashed { role = nil }
-    let size = workspace.floating[id]?.size ?? windows[id]?.frame.size ?? CGSize(width: 800, height: 600)
+    let size = sizeToTakeAlong(
+      of: id, from: source,
+      remembered: workspace.floating[id]?.size ?? windows[id]?.frame.size ?? CGSize(width: 800, height: 600))
     let edge = DirectionalSearch.facingEdge(of: destination.frame, from: from.frame)
     // Asked before it leaves this display: a window that is refused there stays where it was.
     if wasDocked, let why = workspaces[destination.id]!.wouldDock(id, at: .cameraEdge(edge)).refusal(of: id) {
@@ -461,6 +466,7 @@ extension Controller {
       windows[id]?.frame = actual
       settled[id] = actual
       workspaces[destination.id]!.floating[id] = preferred
+      noteFit(of: id, own: size, into: preferred.size, on: destination.id)
       if role != nil { workspaces[destination.id]!.setRole(role, of: id) } else { receiveAsGuestOfTheView(id) }
       // Both Desktops have a different number of windows now (F18), which lays both displays out.
       floatingWindowMoved(id, from: source)

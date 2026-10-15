@@ -48,7 +48,9 @@ All five criteria, each with scenario tests (`Tests/ArborKitTests/PinTests.swift
 - A camera move never gives a pinned window the keyboard, and takes the keyboard along to the window that arrives, also out of a pinned window (the product owner's call).
 - `zoom` in a pinned window un-frames what is beneath it; `zoom <pinned>` fails. Docking says that the pin ended. `pin` records the frame the window has as its floating frame.
 - Dragging a pinned window moves it and never docks it; `arrange` leaves it out.
-- A docked window that would cover more than half the display when pinned takes half its width and height (until F48 remembers sizes).
+- A docked window that is pinned takes its own earlier size, however large (F48; `collab/QUESTIONS.md` Q20: Arbor picks no size for a floating window), wholly in view, in one move. Until 2026-10-14 one that would have
+  covered more than half the display took half its width and height, and Float All left it so. With nothing remembered it keeps its slot's size and does not move. If its app insists on more than its own size it is slid into view, a second move; if its
+  app does not answer at the pin, it takes its own size when the app does. A floating window that was both squeezed and mostly out of view comes into view at its own size.
 - A pin follows its window to another display, comes to the main display when its own is unplugged, and goes back with it.
 - After its app restarted, a pinned window is found again by app and title, as docked windows are.
 
@@ -56,6 +58,5 @@ All five criteria, each with scenario tests (`Tests/ArborKitTests/PinTests.swift
 
 - A default shortcut: ⌃⌥⇧D is reserved in `docs/KEYBOARD.md`, unbound.
 - A mark on the pinned window itself (a small pin in a corner); the menu's tick, `state` and `ascii` show it.
-- Remembered size when pinning a docked window: that is F48; `pin` goes through `floatingFrame(for:on:)`, where F48 will decide.
 - Pins waiting for an app that has not opened its window yet at login: a `pin` rule covers that.
 - Real windows: `scripts/mac-shell/check-F49.sh` is written and has not run.

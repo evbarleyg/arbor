@@ -409,6 +409,9 @@ public final class Controller {
   /// What the presenter has got ready for the next motion (Controller+Rehearsal.swift).
   var rehearsed = Rehearsed()
 
+  /// Windows on a display too small for their own size, which they take along when they leave it (Controller+UndockedFrames.swift).
+  var fittedToADisplay: [WindowID: FittedWindow] = [:]
+
   public init(
     system: any WindowSystem, overlays: any OverlayPresenter, store: any StateStore,
     scheduler: any Scheduler, settings: Settings = Settings(), filter: WindowFilter = WindowFilter()
@@ -493,6 +496,7 @@ public final class Controller {
     spokeOfItsPlace = spokeOfItsPlace.filter { windows[$0.key] != nil }
     landsAt = landsAt.filter { windows[$0.key] != nil }
     chosenOnShape = chosenOnShape.filter { windows[$0.key] != nil }
+    fittedToADisplay = fittedToADisplay.filter { windows[$0.key] != nil }
     keepOnlyWhatIsStillOwedAfterAStart()
     parkedAgain.removeAll()
     unplaced.removeAll()

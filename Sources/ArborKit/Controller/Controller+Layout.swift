@@ -554,6 +554,7 @@ extension Controller {
   /// over from a larger display, from another one, or from one that stood elsewhere. The note is not saved, and a frame
   /// written by anybody else no longer equals it. Where in doubt, the window is wholly in view.
   func noteWhereItsUserLeftIt(_ window: WindowID) {
+    forgetFitUnlessItStillHolds(window)
     guard let home = workspaceID(containing: window), let frame = workspaces[home]?.floating[window],
       let display = display(home)
     else { return chosenOnShape[window] = nil }

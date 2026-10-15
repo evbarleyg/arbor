@@ -23,12 +23,13 @@ extension Controller {
     }
     guard !workspaces[display]!.isPinned(id) else { return .failure("\(id) is already kept in view") }
     if workspaces[display]!.isDocked(id) {
-      let frame = pinnedFrame(ofDocked: id, on: display)
+      // Where `float` would put it, at its own size however large (F48; QUESTIONS Q20): Arbor picks no size for a floating window.
+      let frame = floatingFrame(for: id, on: display)
       workspaces[display]!.undock(id, floatingAt: frame, shareSpace: settings.shareRemovedSpace)
       workspaces[display]!.pin(id)
-      place(id, at: frame)
+      place(id, at: frame, on: display)
       // What macOS and the app made of it (whole points, a minimum size) is where it is.
-      if let actual = windows[id]?.frame, windows[id]?.isPresent == true { workspaces[display]!.floating[id] = actual }
+      rememberWhereItIs(id, on: display)
       relayout(display, reason: .structure)
     } else {
       // Nothing else has a reason to move.
@@ -38,12 +39,22 @@ extension Controller {
       if windows[id]?.isPresent == true { relayout(display, reason: .structure) }
       // Where it is pinned is where it stays, not where it was before docked windows pushed it aside: whatever
       // sends floating windows back to where the user left them (float-all, quitting) then leaves it alone.
-      if let snapshot = windows[id], snapshot.isPresent { workspaces[display]!.floating[id] = snapshot.frame }
+      rememberWhereItIs(id, on: display)
       desktopCompanyChanged(on: display)
       notify(.layout(display))
     }
     scheduleSave()
     return .success("keeping \(id) in view")
+  }
+
+  private func rememberWhereItIs(_ id: WindowID, on display: DisplayID) {
+    // One whose app did not answer is not where it belongs yet, nor the size: what is remembered says where it is to go.
+    guard let snapshot = windows[id], snapshot.isPresent, !unplaced.contains(id),
+      let remembered = workspaces[display]!.floating[id]
+    else { return }
+    let own = sizeToTakeAlong(of: id, from: display, remembered: remembered.size)
+    workspaces[display]!.floating[id] = snapshot.frame
+    noteFit(of: id, own: own, into: snapshot.frame.size, on: display)
   }
 
   /// The window stays where it is for now, like a new window: it goes out of view with the Desktop
@@ -122,20 +133,6 @@ extension Controller {
 
   // MARK: Staying in view
 
-  /// Where a docked window floats once it is pinned: where `float` would put it. One that would
-  /// cover most of the display (it was framed, or docked alone) takes half the display's width and
-  /// height at most, because it would hide everything it is meant to accompany.
-  private func pinnedFrame(ofDocked window: WindowID, on displayID: DisplayID) -> CGRect {
-    let frame = floatingFrame(for: window, on: displayID)
-    guard let visible = display(displayID)?.visibleFrame,
-      frame.width * frame.height > visible.width * visible.height / 2
-    else { return frame }
-    let size = CGSize(width: min(frame.width, visible.width / 2), height: min(frame.height, visible.height / 2))
-    return CGRect(
-      x: frame.midX - size.width / 2, y: frame.midY - size.height / 2, width: size.width, height: size.height
-    ).fitted(into: visible)
-  }
-
   /// What `pin` does for a window that floats, which is nearly always nothing.
   /// Where a floating window that is smaller than the size remembered for it would be at that size: around where it
   /// is, within the display. Nil if it is not smaller.
@@ -157,21 +154,29 @@ extension Controller {
   /// back, and when the display under it changed shape.
   func frameBringingIntoView(_ window: WindowID, on display: DisplaySnapshot) -> CGRect? {
     guard let current = windows[window], drag?.window != window else { return nil }
-    if parked.contains(window) {
+    // Out of view, or its app did not answer when it was to be placed.
+    if parked.contains(window) || windowsOwedAMove.contains(window) {
       return (workspaces[display.id]?.floating[window] ?? current.frame).fitted(into: display.visibleFrame)
     }
-    // Hanging over a screen edge is the user's business. Being mostly beyond it is not what they chose.
-    return isMostlyOffScreen(window)
-      ? current.frame.fitted(into: display.visibleFrame) : frameWithoutSqueeze(of: window, on: display)
+    // Hanging over a screen edge is the user's business. Being mostly beyond it is not what they chose. Squeezed as well, it
+    // comes at its own size: `pin` goes on to remember the size it has as its own.
+    return frameWithoutSqueeze(of: window, on: display)
+      ?? (isMostlyOffScreen(window) ? current.frame.fitted(into: display.visibleFrame) : nil)
   }
 
-  private func place(_ window: WindowID, at frame: CGRect) {
+  private func place(_ window: WindowID, at frame: CGRect, on displayID: DisplayID) {
     // A window being dragged stays in the user's hand, and takes the size when it is let go, as in `putBack`.
     if window == drag?.window {
       if frame.size != windows[window]?.frame.size { drag?.sizeOwed = frame.size }
       return
     }
-    if let actual = system.setFrame(frame, of: window) {
+    if var actual = system.setFrame(frame, of: window) {
+      // Its app insists on more by now, and it grew from the corner it was given: no way home would fetch what hangs over an
+      // edge. It is slid, at the size it insists on: what it has just refused is not asked of it again.
+      if actual.width > frame.width + 2 || actual.height > frame.height + 2, let visible = display(displayID)?.visibleFrame {
+        let slid = CGRect(origin: actual.fitted(into: visible).origin, size: actual.size)
+        if slid != actual { actual = system.setFrame(slid, of: window) ?? actual }
+      }
       windows[window]?.frame = actual
       settled[window] = actual
       parked.remove(window)

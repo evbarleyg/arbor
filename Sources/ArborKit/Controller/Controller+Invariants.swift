@@ -241,6 +241,7 @@ extension Controller {
     check("metAhead", metAhead.keys)
     check("windowsOwedAPlace", windowsOwedAPlace)
     check("chosenOnShape", chosenOnShape.keys)
+    check("fittedToADisplay", fittedToADisplay.keys)
     if Set(focusHistory).count != focusHistory.count {
       problems.append(.init("leak", "focusHistory lists a window twice: \(focusHistory)"))
     }

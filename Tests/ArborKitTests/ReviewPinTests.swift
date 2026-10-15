@@ -434,15 +434,16 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     #expect(h.layout?.windowFrames[browser] == nil)
   }
 
-  @Test func pinningAWideDockedWindowHalvesItsWidthAndItsHeightSeparately() {
+  /// It used to take half the display's width and half its height. Arbor picks no size for a floating window (QUESTIONS Q20).
+  @Test func pinningAWideDockedWindowKeepsItsWidthAndItsHeight() {
     let h = Harness()
     // The size it gets back when it leaves the arrangement (F48) covers more than half of the display.
     let wide = h.system.open(app: "Wide", frame: CGRect(x: 20, y: 100, width: 1400, height: 600))
     h.start()
     h.run("dock \(wide.rawValue) top")
     h.run("pin \(wide.rawValue)")
-    #expect(abs(h.frame(wide)!.width - h.visibleFrame.width / 2) <= 1)
-    #expect(abs(h.frame(wide)!.height - h.visibleFrame.height / 2) <= 1)
+    #expect(h.frame(wide)?.size == CGSize(width: 1400, height: 600))
+    #expect(h.visibleFrame.contains(h.frame(wide)!))
   }
 
   @Test func pinningAndUnpinningAreSavedWithoutAnythingElseHappening() {

@@ -617,19 +617,17 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     #expect(h.workspace.floating[editor] == frame)
   }
 
-  /// Its own size can be most of the display too. Then it would hide everything it is meant to accompany.
-  @Test func pinningADockedWindowWhoseOwnSizeIsMostOfTheDisplayHalvesIt() {
+  /// Its own size can be most of the display too. It used to be halved then, so as not to hide what it accompanies, and no way
+  /// home gave the size back. Arbor picks no size for a floating window (QUESTIONS Q20): one drag of its corner makes it smaller.
+  @Test func pinningADockedWindowWhoseOwnSizeIsMostOfTheDisplayKeepsThatSize() {
     let (h, _, _, _) = makeHarness()
     let large = h.system.open(app: "Keynote", pid: 1004, frame: CGRect(x: 40, y: 40, width: 1300, height: 820))
     h.run("dock \(large.rawValue) right")
     h.run("zoom \(large.rawValue)")
     #expect(h.run("pin \(large.rawValue)").ok)
     let frame = h.frame(large)!
-    // To the point: macOS places windows on whole points.
-    let half = CGRect(
-      x: h.visibleFrame.midX - h.visibleFrame.width / 4, y: h.visibleFrame.midY - h.visibleFrame.height / 4,
-      width: h.visibleFrame.width / 2, height: h.visibleFrame.height / 2)
-    #expect(frame.approximatelyEquals(half, tolerance: 1))
+    #expect(frame.size == CGSize(width: 1300, height: 820))
+    #expect(h.visibleFrame.contains(frame))
     #expect(h.workspace.floating[large] == frame)
   }
 

@@ -675,7 +675,7 @@ One line per product decision made while building, newest last.
 - F49: dragging a pinned window by its title bar only moves it: no preview, no docking, not even at a screen edge. It lives over docked windows, so nearly every nudge would otherwise dock it. `dock` and ⌃⌥⌘ + arrow dock it and end the pin.
 - F49: `arrange` and `arrange all` leave pinned windows out. `float-all`, `pause` and quitting do not touch them.
 - F49: `unpin` moves nothing: the window stays until the camera next moves, like a new window.
-- F49: pinning a docked window puts it where `float` would, but one that would cover more than half of the display takes at most half its width and height, centred on its old slot. F48 will make this rare.
+- F49: pinning a docked window puts it where `float` would, but one that would cover more than half of the display takes at most half its width and height, centred on its old slot. F48 will make this rare. **Overruled by Q20 on 2026-10-14:** it takes its own size, however large.
 - F49: pinning a floating window that is out of view brings it back to where it was last left, fitted into the display; the camera does not move.
 - F49: a pinned window may hang over a screen edge if the user puts it there; only when less than half of it is on any display (a display changed shape) is it brought back.
 - F49: a display is unplugged: its pinned windows come into view on the main display, still pinned, and return to their exact frames when it comes back. Unpinned meanwhile, they stay unpinned. A window pinned meanwhile stays where it was pinned instead of returning to its old slot, like a window docked meanwhile.

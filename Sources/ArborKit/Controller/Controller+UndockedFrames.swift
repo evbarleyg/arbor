@@ -107,7 +107,7 @@ extension Controller {
     of window: WindowID, on displayID: DisplayID?, at pointer: CGPoint?, sizeOwed: CGSize? = nil
   ) -> CGRect? {
     guard let pointer, let dragged = windows[window]?.frame, dragged.width > 0,
-      var size = sizeOwed ?? displayID.flatMap({ workspaces[$0]?.undockedFrame(of: window)?.size })
+      var size = sizeOwed ?? displayID.flatMap({ frameToTakeAlong(of: window, from: $0, ifDocked: true)?.size })
     else { return nil }
     // It may be dropped on a smaller display than the one it floated on.
     if let room = self.displayID(at: pointer).flatMap({ display($0) })?.visibleFrame.size {
@@ -257,15 +257,68 @@ extension Controller {
   /// far from the new display's corner as it was from the old one's; docking it remembers that.
   func transfer(_ window: WindowID, from source: DisplayID, to destination: DisplayID) {
     let frame = frameAfterTransfer(of: window, from: source, to: destination)
+    noteTransfer(of: window, from: source, to: destination, arrivingAt: frame)
     workspaces[source]?.forget(window, shareSpace: settings.shareRemovedSpace)
     if let frame { workspaces[destination]?.floating[window] = frame }
   }
 
-  /// The frame `transfer` lets `window` arrive at. A drop hands it to `Drop.arrivingFrame` instead.
+  /// The frame `transfer` lets `window` arrive at. A drop hands it to `Drop.arrivingFrame` instead. Only a question: a
+  /// drag asks it of every target it passes. Whoever lets the window go there says so with `noteTransfer`.
   func frameAfterTransfer(of window: WindowID, from source: DisplayID, to destination: DisplayID) -> CGRect? {
-    guard let frame = workspaces[source]?.undockedFrame(of: window) ?? workspaces[source]?.floating[window],
-      let old = display(source)?.visibleFrame, let new = display(destination)?.visibleFrame
+    guard let frame = frameToTakeAlong(of: window, from: source), let old = display(source)?.visibleFrame,
+      let new = display(destination)?.visibleFrame
     else { return nil }
     return frame.offsetBy(dx: new.minX - old.minX, dy: new.minY - old.minY).fitted(into: new)
+  }
+
+  func frameToTakeAlong(of window: WindowID, from source: DisplayID, ifDocked: Bool = false) -> CGRect? {
+    guard let frame = workspaces[source]?.undockedFrame(of: window) ?? (ifDocked ? nil : workspaces[source]?.floating[window])
+    else { return nil }
+    return CGRect(origin: frame.origin, size: sizeToTakeAlong(of: window, from: source, remembered: frame.size))
+  }
+
+  /// `window` leaves `source` for the frame `frameAfterTransfer` gave. Called while `source` still remembers it.
+  func noteTransfer(of window: WindowID, from source: DisplayID, to destination: DisplayID, arrivingAt frame: CGRect?) {
+    guard let frame, let own = frameToTakeAlong(of: window, from: source)?.size else { return }
+    noteFit(of: window, own: own, into: frame.size, on: destination)
+  }
+
+  /// A window that came to a display too small for its own size.
+  struct FittedWindow {
+    /// The size it had of its own on the display it came from.
+    var own: CGSize
+    /// What was left of it here. While that is still what is remembered as its size, `own` is what it takes along.
+    var fitted: CGSize
+    var display: DisplayID
+
+    func isStill(_ size: CGSize?) -> Bool {
+      size.map { abs(fitted.width - $0.width) <= 1 && abs(fitted.height - $0.height) <= 1 } ?? false
+    }
+  }
+
+  /// The size `window` goes to another display with: `size`, which is remembered as its own on this one, unless that is
+  /// only what this display had room for. There and back costs a window nothing. A size somebody has given it since is its own.
+  func sizeToTakeAlong(of window: WindowID, from source: DisplayID, remembered size: CGSize) -> CGSize {
+    guard let trip = fittedToADisplay[window], trip.display == source, trip.isStill(size) else { return size }
+    return trip.own
+  }
+
+  /// Called with the size that is remembered for a window from now on, on the display it has come to.
+  func noteFit(of window: WindowID, own: CGSize, into fitted: CGSize, on display: DisplayID) {
+    if fitted.width < own.width || fitted.height < own.height {
+      // A place that waits for its window has a number and no window: nobody would ever clear the note away.
+      if windows[window] != nil { fittedToADisplay[window] = FittedWindow(own: own, fitted: fitted, display: display) }
+    } else if fittedToADisplay[window]?.display == display {
+      // It has room here at the size it has by now. On any other display the note stays, and counts for nothing there: Undo
+      // may take the window back to where it does.
+      fittedToADisplay[window] = nil
+    }
+  }
+
+  /// A hand has had `window`. The size it has made it, or has taken to another display, is the window's own from now on.
+  func forgetFitUnlessItStillHolds(_ window: WindowID) {
+    guard let trip = fittedToADisplay[window], let workspace = workspaces[trip.display],
+      trip.isStill((workspace.undockedFrame(of: window) ?? workspace.floating[window])?.size)
+    else { return fittedToADisplay[window] = nil }
   }
 }

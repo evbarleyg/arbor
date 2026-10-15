@@ -58,6 +58,10 @@ Beyond the list above:
   Desktop as far as it fits, over the docked windows for the rest, kept on the display, and left alone by the layout that follows.
 - **With the Desktop out of view** a window that starts to float (by command or by a drop) is a guest of the view it floats over (F57), so it leaves and comes back with that view.
 - **A window that grows at the drop** slides back onto the display as far as the pointer stays on its title bar.
+- **To a smaller display and back costs nothing** (2026-10-14): a window that `move-to-display`, `swap`, `dock … beside`, a layout or a dock by drag takes to a display too small for its own size is fitted there. It takes its own size along when
+  one of these takes it away again, docked or floating, or when it is dragged out of its slot onto a display with room; Undo of the way back costs nothing either. A size somebody gives it meanwhile, by hand or by command, is its own from then on, and so is
+  the fitted size once a hand has carried it to another display. **Not shipped:** the note is kept while Arbor runs, not in `state.json`, so after a restart on the smaller display the fitted size is its size; `summon` across displays, and a drag out of a slot
+  that drops the window to float on a *smaller* display, fit it and remember nothing; a place that waits for its window takes nothing along.
 - **Slots that wait for their window** (the app shell review's pending slots) keep what is remembered, and `Workspace.repaired()` drops frames remembered for windows that are not docked.
 - **Windows that floated all along** are let go of too: one that docked windows pushed aside or squeezed to keep it on the Desktop goes back to where the user left it.
 - **A floating window that can no longer be as small as it was** (its app's minimum grew: a sidebar opened, a larger font): when it is pushed onto the Desktop and its app refuses the size, what is remembered grows on that side to the

@@ -332,7 +332,12 @@ extension Controller {
       summonedWindowIsCarried(window, to: display)
       // A drag by the title bar moves and never resizes (Controller+UndockedFrames.swift). Asked while it still floats there.
       let remembered = frameToRemember(of: window, movedFrom: current.frame, to: current.frame)
+      // Asked while the display it leaves still remembers it, and noted if it is docked on the other, which may be refused.
+      let own = home.flatMap { $0 == display ? nil : frameToTakeAlong(of: window, from: $0)?.size }
       changed = drop.apply(to: &workspaces)
+      if let own, let arrived = workspaces[display]?.undockedFrame(of: window) {
+        noteFit(of: window, own: own, into: arrived.size, on: display)
+      }
       // Out of its slot, it has shrunk back to the size it floated at (Controller+UndockedFrames.swift).
       if drop.frame != current.frame {
         shrinkDropped(window, to: drop.frame, on: display)

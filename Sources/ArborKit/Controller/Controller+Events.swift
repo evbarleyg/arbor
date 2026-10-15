@@ -46,6 +46,7 @@ extension Controller: WindowSystemEvents {
     appPlacedFrames[id] = nil
     spokeOfItsPlace[id] = nil
     shrunk[id] = nil
+    fittedToADisplay[id] = nil
     hints[id] = nil
     let hadKeyboard = hadKeyboard(id)
     unplaced.remove(id)

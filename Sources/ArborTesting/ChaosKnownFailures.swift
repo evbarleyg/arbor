@@ -310,40 +310,44 @@ extension ChaosRunner {
         launch
         """),
     ChaosKnownFailure(
-      rule: "size-not-given-back", owner: "rule 5: pin, and a trip to the other display", severity: 3,
-      story: "Pinning a docked window gives it half the display, and Float All leaves it so: its own size is forgotten. Also: sent to a smaller display and back, a "
-        + "window keeps the smaller size.",
+      rule: "size-not-given-back", owner: "rule 5: the displays come and go; Undo; carried to a smaller display by hand", severity: 3,
+      story: "The display a window is on goes and comes back, and the window keeps what the other had room for. Also: Undo takes back a resize that a hand made, and "
+        + "Float All leaves the older size. Also: taller than the smaller display, carried there by hand, docked and floated again, a window is fitted with nothing noted, and "
+        + "sent back it stays small (what `move-to-display`, `swap` or a dock takes there has its own size back).",
       script: """
-        open 107 Safari pid 1000 at 209 87 1176 832 min 574 240
-        focus 107
-        launch
-        key down dock right
-        via menu toggle-pin
+        displays main:-1440,0,1440,900:25,0,0,0 side:0,0,1920,1080:25,0,59,0* windows-never
+        open 101 Xcode pid 1004 at 392 95 1188 920 min 1188 685
+        displays main:0,0,1440,900:25,0,59,0* windows-silent
+        displays side:0,0,1920,1080:25,0,59,0* windows-first
         way-back float-all
         """,
       """
-        displays main:-1280,0,1280,800:25,0,0,0 side:0,0,3008,1692:25,0,70,0* windows-never
         launch
-        open 103 Xcode pid 1004 at 1435 753 1188 832 min 1188 685
-        via menu move-to-display next
+        open 101 Mail pid 1002 at 368 293 957 595 min 760 400
+        key down arrange
+        key down float-all
+        edge 101 368 293 1274 595
+        key down undo
+        key down undo
+        way-back float-all
+        """,
+      """
+        displays main:0,0,1280,800:25,0,0,0* side:150,-1080,1920,1080:25,0,0,0 windows-never
+        launch
+        open 107 Xcode pid 1004 at 414 -899 1188 896 min 1188 685
+        grab 107
+        carry 979 413
+        settle
+        key down toggle-float
+        key down float-all
         via menu move-to-display next
         way-back float-all
         """),
     ChaosKnownFailure(
       rule: "home-not-whole", owner: "the ways home", severity: 3,
-      story: "After a way home a window Arbor placed hangs over an edge further than anybody left it: a docked window that is pinned and will not be as small as the "
-        + "pin wants; old numbers given back on a smaller display; its own, larger size given back at the corner a hand gave.",
+      story: "After a way home a window Arbor placed hangs over an edge further than anybody left it: old numbers given back on a smaller display; its own, larger "
+        + "size given back at the corner a hand gave.",
       script: """
-        open 101 Xcode pid 1004 at 0 41 1280 685 min 1188 685
-        launch
-        grab 101
-        carry 714 28
-        release
-        tile main 1
-        via menu toggle-pin
-        way-back home
-        """,
-      """
         displays main:0,0,1512,982:37,0,0,0* side:-2560,323,2560,1440:25,0,0,0 windows-never
         open 101 Finder pid 1005 at 45 657 708 305 min 501 300
         open 104 Finder pid 1005 at -1592 412 810 523 min 501 300
