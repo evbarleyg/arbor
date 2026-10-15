@@ -187,7 +187,6 @@ Mends before features; what a person meets every day before what they meet once.
 | 4.9 | An unplugged display becomes a space (F52); places survive on other Spaces (F35) | **free**; the archive's newest F52 branch | Its tests; never a tile for the window being typed in | The cell `two` | `lost`, `focus` |
 | 4.10 | Arrange styles (F29), presets (F21) | **free**; archive `handover/F29-arrange-styles`, `handover/F21-presets` | Their tests | One script each with real apps | `jolt`; pictures |
 | 4.11 | Carry with the keyboard (F59), a command line that is pleasant to script (F50) | porters; archive `ready/F59-carry`, `pick/F50-on-trunk` | Their tests | F59: `check` script with real keys | `jolt` |
-
 | 4.12 | Three more from the rude stand-in: a summoned app's first window is not centred, and the wrong place is remembered for good; Go to… opened right after a key that moved the keyboard flashes up and closes; ⌘Tab to an app Arbor pauses for moves the view first, and Back leads elsewhere afterwards (decided: mend Arbor, not the test) | **free** | Each script, red on the trunk | `check-F53.sh`; `shots-finder.sh` | `flash`, `focus` |
 
 ## 5. Sent back: what only a person at a desk could check
