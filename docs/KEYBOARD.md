@@ -117,6 +117,105 @@ How sure: **high** = long-documented defaults; **medium** = from memory of curre
 | Design tools (Figma, Sketch, Photoshop) | ⇧⌘-drag adds to a deep selection | none since 2026-10-14: the rectangle's keys are ⌃⌥. Arbor swallowed the drag everywhere while they were ⇧⌘, and does again for whoever sets `frameRectangleModifier` to that | — |
 | Non-US keyboards | a key code names a **position**: 6 is Z on a US keyboard, Y on QWERTZ, W on AZERTY | none since F44: a letter, digit or sign is the key that types it on the layout in use, as in ⌘-shortcuts | what the layout cannot type alone (`[` `]` in Europe, digits in France) stays at its US position and is shown as printed there (⌃⌥Ü, ⌃⌥+; ⌃⌥1); two shortcuts that land on one key are reported by `bindings`; `us:z` and `shortcutsFollowLayout: false` ask for positions |
 
+## What other apps have on Arbor's keys: the census of menu bars
+
+A shortcut of Arbor's is taken from every app while Arbor holds it. The moment it does not (paused, quit, crashed) the same fingers reach the app in
+front, which does with the key whatever it does: on a tester's Mac that was something that could not be taken back (`collab/IDEAS.md`, I16). So
+**a key stays in the default map only while no app in this table has it on something that destroys or hides** (`collab/QUESTIONS.md`, Q29).
+
+**What was read, before anything else: every app at the first window it shows on a fresh Mac: no account, no document, no project. Nobody signs in anywhere.** So the tables below say what an app shows in its menu bar to
+somebody who has just opened it, and what some apps publish about themselves. They do not say what an app does once it is in use, and **they do not show that a census would have caught the fault it was built after**.
+
+**Which map.** The map at the head of this page is still the first build's, 52 keys, ⌃⌥A on `arrange` among them. Q29 has ruled nine keys on ⌃⌥ (← → ↩ Space [ Z F G ⎋), the rest to be switched on by whoever wants
+them, and ⌃⌥A never bound again; that change is on its way. The menu bars are held against **the whole map, whichever it is**; the second table, by the apps' own lists, was read for the nine and for ⌃⌥A, and
+says what else it met.
+
+### By their menu bars
+
+`scripts/mac-shell/census-menu-keys.sh` opens the apps on a hosted Mac, reads each menu bar through Accessibility and brings the numbers back; `collab/evidence/menu-keys/` keeps them, one file per app, without a
+single title; `MenuKeyCensusTests` holds the map against them in every `make check`, both ways: a clash that is not in its table fails, and so does a row of its table that is no longer found while Arbor has the key.
+Whoever adds a default that one of these apps has hears of it there, and writes it into both tables, the test's and this one.
+
+Read on 2026-10-15, macOS 26.6.2, US keyboard, in three runs: **82 menu bars**. 62 that a hosted Mac comes with (61 of Apple's apps and utilities: Finder, Mail, Messages, Notes, Safari, Terminal, Xcode and the rest; Chrome
+for Testing), Chrome, Firefox and Edge, and 17 widely used free apps from the package manager: Slack, Discord, Telegram, Signal, WhatsApp, Zoom, Visual Studio Code, Sublime Text, Zed, iTerm2, Notion, Obsidian, Figma,
+Spotify, Raycast, Postman, GitHub Desktop.
+
+| Arbor's key | App | What it is there |
+|---|---|---|
+| ⌃⌥⌘← `dock left` | Xcode | Show Previous Location in History |
+| ⌃⌥⌘→ `dock right` | Xcode | Show Next Location in History |
+| with a finger on fn: ⌃⌥⇧← ⌃⌥⇧→ ⌃⌥⇧↑ ⌃⌥⇧↓ `focus …` | 81 of the 82: macOS's own Window → Move & Resize | Left, Right, Top, Bottom & Quarters: it arranges the windows in front |
+
+**None of Arbor's shortcuts on ⌃⌥ and one key is in any of the 82**, the nine among them. ⌃⌥ without ⌘ is rare in menus: Xcode (⌃⌥; and ⌃⌥: walk the bookmarks), Sublime Text (⌃⌥⇥ and ⌃⌥⇧⇥: next and previous tab),
+Figma (⌃⌥⇧D: Save Debug Info…), Visual Studio Code (⌃⌥⇧`: New Terminal Window). ⌃⌥⌘ is busier: Finder (1 to 7, C), Xcode (twenty items), Mail ([ and ]), Terminal (R, L, /), Notes (Z), Photos (M), Activity Monitor (S),
+iTerm2 (two, with ⇧), Sublime Text and Visual Studio Code (one each).
+
+**Keys this page assigns or reserves that are not in the map**, and so not under the test: ⌃⌥⇥ and ⌃⌥⇧⇥ (F04) are Sublime Text's next and previous tab; ⌃⌥⇧D (F49) is Figma's Save Debug Info…; ⌃⌥⌘[ and ⌃⌥⌘] (F59) are
+Mail's previous and next unread mailbox and Xcode's previous and next destination. None destroys or hides. Whoever brings one of them into the map meets it in the test.
+
+| Not read | Why |
+|---|---|
+| VLC | no menu bar in two runs; in the second, ten readings over half a minute, hidden and shown. (So had Print Center in that run, which had one in the two before: its rows are from those) |
+| Warp | the download failed, in two runs |
+| PowerShell | a shell in a Terminal window: no menu bar of its own in two runs; left out of the third |
+| Screenshot | did not start as an app in two runs; left out of the third |
+| Siri, Launchpad, Mission Control, Time Machine, Apps | views of macOS's own: never opened |
+| Migration Assistant, Boot Camp Assistant, whatever is called Install… or Erase… | they log out, erase, migrate or install: never opened |
+| All Xcodes but the selected one | one of the many on a hosted Mac |
+| **Whatever an app shows only with an account, a document or a project** | Every app was read at the first window it shows on a fresh Mac: no Apple Account, nothing open, nobody signed in. That holds for the chat and call apps, for Notion, Figma, Spotify, Postman, GitHub Desktop and Raycast, and as much for Mail, Messages, Music or Xcode. **Nobody signs in anywhere: no account is made or borrowed for this** |
+
+How blind that last row makes it, this page can tell in one place: "Never bind by default", above, has from memory ⌃⌥⌘F, ⌃⌥⌘G, ⌃⌥⌘U and ⌃⌥⌘↩ for Xcode. The census found G and U there, not F and not ↩. Either memory
+is wrong or those two show only with a project open: not known.
+
+**⌃⌥A is in none of the 82 either.** So that a census would have caught the fault it was built after is **not shown**: whether the app of that complaint has the key in a menu at all, or only once signed in, is not known,
+and a hosted Mac cannot tell. What guards against that fault is not this table: it is that a key of Arbor's never reaches another app while Arbor's item is in the menu bar, and that ⌃⌥A leaves the map for good. The census
+guards the defaults against what can be read. Its own proof that it would find such a key is four real rows on other keys, and a made-up app in a test.
+
+**With a finger on fn.** On Apple's keyboards fn makes another key of ←, →, ↑, ↓ and ↩ (Home, End, Page Up, Page Down, Enter), and fn sits beside ⌃. Arbor does not hold ⌃⌥ with those five and will not: five more keys
+taken on a guess. For each of Arbor's keys on an arrow or ↩ the test looks for what fn makes of it, written either way: by the other key's code, or as macOS writes its own Window → Move & Resize, with the Globe key among the
+modifiers and the arrow's own code. **For ⌃⌥ alone: in no menu bar.** For ⌃⌥⇧ with an arrow: the third row of the table. Which of the two ways a real keyboard sends has not been tried with a finger. By their own lists (below), Zed
+has ⌃⌥Page Up and ⌃⌥Page Down: they scroll.
+
+### By their own lists
+
+A page in an app's window can take a shortcut and show it in no menu, so for widely used apps there is a second table: what the app's own default keymap, its in-app list of shortcuts or the source of its help page says
+about ⌃⌥ and one key on a Mac, read in the vendor's own repository or archive on 2026-10-15. **16 read; 14 not read: 12 could not be reached from where this was written, for 2 no list of their own was found. For
+those the table is empty, not clean.**
+
+| Key | Who has it, by its own list | Destroys or hides? |
+|---|---|---|
+| ⌃⌥←, ⌃⌥→ | Visual Studio Code and Zed: the cursor moves by part of a word (Zed's terminal: split the pane). JetBrains IDEs: resize the tool window. Rectangle: left and right half | no |
+| ⌃⌥↩ | Visual Studio Code: run a chat's code in the terminal. Zed: run in place, in a notebook. Rectangle: maximize | no; two of them run something |
+| ⌃⌥Space | Visual Studio Code: focus of the suggestion's details. JetBrains IDEs: class name completion | no |
+| ⌃⌥F | Zed, JetBrains IDEs, Xcode (its list of 2011): forward by a word, or part of one. Rectangle: the centre third | no |
+| ⌃⌥G | Rectangle: the last third | no |
+| ⌃⌥[, ⌃⌥Z, ⌃⌥⎋ | nobody | |
+| **⌃⌥D** `desktop`, in today's map and not among the nine | **Zed: deletes to the end of the part of a word.** JetBrains IDEs: Debug… | **yes, text, and ⌘Z brings it back** |
+| others of today's map, not among the nine | ⌃⌥↑ ⌃⌥↓: Zed's terminal (split), JetBrains (resize), Rectangle (halves). ⌃⌥N, ⌃⌥R: Visual Studio Code, JetBrains. ⌃⌥M: JetBrains. ⌃⌥0: Zed. ⌃⌥⇧ with arrows, F, R: Visual Studio Code, Zed, JetBrains, Rectangle | no |
+
+What else destroys or hides among all the ⌃⌥ chords read is on keys that are not Arbor's: ⌃⌥W closes a panel in Zed; ⌃⌥⌫ and ⌃⌥⌦ delete a word or part of one in Visual Studio Code, Zed and Xcode; ⌃⌥H does in Zed. "Never bind by
+default", above, has had ⌃⌥W and ⌃⌥⌫ from the start.
+
+- Read, with ⌃⌥ chords: Visual Studio Code, Zed, JetBrains IDEs (the macOS keymap), Xcode (only Apple's archived list of 2011), Rectangle, which is a window manager and takes its keys from every app, as Arbor does:
+  whoever runs two has chosen.
+- Read, none in its list: eleven more, chat apps, browsers (from their sources, not their help pages), a player, a notes app (editing shortcuts only), two terminals (one names few, the other's file calls itself incomplete) and
+  a Git client among them.
+- **Not read:** fourteen, most of the chat, call, design and mail apps built on web technology among them: the very apps this table was wanted for. What those of them that could be installed have in their menu bars is in
+  the first table; the rest is **not known**.
+
+### What the tables cannot say
+
+- The first sees what an app shows **in its menu bar**, at the first window it shows, on a US keyboard. An app whose window is a web page can take a shortcut in the page and show it in no menu.
+- **macOS does not tell Arbor when another program has registered the same key: then both get it, or the other alone.** Asked to register a hot key that another process already has, it says yes, in either
+  order (measured on the same day): both programs then hear every press and both act; and a program that registered its own as exclusive gets the press alone, while
+  Arbor goes on believing the key is its own. No list can show that, and `doctor` cannot either.
+- A menu bar differs a little from one launch to the next, and an app goes on building it after it has one. The third run read each app until two readings three seconds apart agreed; the first two read once. A file keeps
+  every shortcut ever read in that app, whatever the version: the README beside the files has the versions.
+
+**Arbor itself reads no other app's menu bar** (the product owner, 2026-10-15). A reader in the app was built and dropped: whoever asks `arborctl` is typing into a terminal, so the app in front, the one that
+would be read, is the terminal; and a menu bar was 41 to 894 items, and took an app between 30 ms and nine and a half seconds. The census guards the defaults, on GitHub's Macs and on nobody else's; a shortcut
+a person makes is their own.
+
 ## Other keyboard layouts
 
 A letter, digit or sign in a shortcut is the key that types it on the layout in use (F44, `KeyLayout.swift`). For whoever assigns the next default:

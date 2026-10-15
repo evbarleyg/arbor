@@ -1254,6 +1254,33 @@
    ]
   },
   {
+   "id": "a-menu-items-shortcut-is-not-written-as-the-headers-say",
+   "kind": "input",
+   "layer": "test",
+   "expected": "`AXMenuItemCmdModifiers` has four bits, as the header says: 1 is ⇧, 2 is ⌥, 4 is ⌃, 8 is no ⌘. `AXMenuItemCmdChar` is the character as the menu shows it, and ⇧ is among the modifiers whenever it has to be held. `AXMenuItemCmdVirtualKey` is the code of the key that the glyph shows. And an app that has a menu bar has all of it; an app that was opened and has none after some seconds is slow.",
+   "happened": "In 82 menu bars on hosted Macs (macOS 26.6.2; 5,384 rows, each distinct in its app): **a fifth bit, 16, is fn (the Globe key)**, in 1,445 rows; all but one of the menu bars have it, from macOS's own Window → Move & Resize, which writes fn⌃← as 28 with the arrow's own code 123 and not as Home. **A letter comes in capitals whatever ⇧ says.** **What ⇧ makes of a key comes either way**: as the sign that is typed, and then never with the bit for ⇧ (⌃⌥: is 14 with `:`, ⌘* is 0 with `*`; 161 rows), or as the key's plain character with the bit (72 rows in 26 apps, 29 of the 30 digits among them); one app has ⌘+ and ⇧⌘= side by side. Arrows, ↩, Space, ⎋, ⇥, ⌫ and the paging keys have a virtual key, with or without a character beside it; a letter, digit or sign never has one. **One item shows the glyph of Clear and gives virtual key 53, which is ⎋**, not 71. A first reading of the numbers that went by the header took fn⌃⌥⇧← for ⌃⌥⇧←, and lost ⌘* on a layout that says nothing about ⇧. **An app goes on building its menu bar after it has one**: of two runs one read 39 shortcuts in an app and the other 50, one 58 and the other none, and a large editor gave 5 of its 121. **And the three large browsers had none at all, in two runs, for another reason than the slowness it was first put down to**: the hosted image installs them from the package manager with the quarantine mark on, so macOS asks whether an app downloaded from the internet may be opened, and nobody is there to answer; the picture shows the three questions stacked.",
+   "found": "The census of menu bars, three runs on hosted Macs on 2026-10-15; the raw rows, without titles, are kept. The two misreadings were found by a reader who ran the comparison against those rows. The second run's picture, taken because a check failed, showed the questions.",
+   "modelled": "yes",
+   "knobs": [
+    "MenuShortcut"
+   ],
+   "guards": [
+    "test: whatNeedsTheGlobeKeyIsAnotherPress",
+    "test: whatShiftMakesOfAKeyComesEitherWay",
+    "test: everyRowIsAPress",
+    "test: theCensusIsThere",
+    "e2e: sixty menu bars or more were read"
+   ],
+   "copes": "Sources/ArborTesting/MenuShortcut.swift: `press(on:)` says what has to be pressed for a row, and `needsFn` whether the Globe key as well. Nothing in the app reads a menu bar.",
+   "hurt": 3,
+   "sources": [
+    "collab/evidence/menu-keys/README.md",
+    "scripts/mac-shell/menukeys.swift",
+    "docs/KEYBOARD.md",
+    "scripts/mac-shell/census-menu-keys.sh"
+   ]
+  },
+  {
    "id": "a-menu-taller-than-the-display-is-cut-off-and-its-rows-keep-their-places",
    "kind": "geometry",
    "layer": "test",
