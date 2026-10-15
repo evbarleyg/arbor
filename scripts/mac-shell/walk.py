@@ -20,7 +20,7 @@ import sys
 CASTS = {
     "stock": {"apps": ["finder", "safari", "textedit", "terminal", "notes", "calendar", "settings", "preview", "mail"],
               "new": ["safari", "textedit", "finder", "terminal"], "menu": ["safari", "finder", "textedit", "terminal"], "quit": ["textedit", "preview", "safari"]},
-    "browsers": {"apps": ["safari", "chrome", "firefox", "edge", "finder", "textedit"],
+    "browsers": {"apps": ["safari", "chrome", "firefox", "edge", "finder", "textedit", "terminal"],
                  "new": ["safari", "chrome", "firefox", "edge"], "menu": ["safari", "chrome", "firefox", "edge"], "quit": ["textedit", "safari"]},
     "awkward": {"apps": ["finder", "terminal", "textedit", "safari", "calculator", "books", "music", "stickies", "reminders"],
                 "new": ["finder", "terminal", "stickies", "safari"], "menu": ["finder", "terminal", "safari", "stickies"], "quit": ["safari"]},
@@ -68,7 +68,7 @@ def walk(seed, acts, two=False, cast="stock"):
     dice = Dice(seed)
     changes = Dice(f"{seed} displays")
     apps, new, menu, quit_ = (CASTS[cast][key] for key in ("apps", "new", "menu", "quit"))
-    lines, owed, count = [], [], 0
+    lines, owed, count, plugged = [], [], 0, False
     restart_at = acts // 2
 
     def say(line, worth=1):
@@ -82,9 +82,11 @@ def walk(seed, acts, two=False, cast="stock"):
     restarted = False
     while count < acts:
         # Before anything else, and not counted: what is owed comes due, and Arbor is started again, when it would have without.
-        if two and changes.roll(12) == 0:
-            lines.append(changes.weighted([("display plug", 4), ("display unplug", 2), ("display left", 1), ("display right", 1), ("display smaller", 1),
-                                           ("display larger", 1), ("send_across", 4)]))
+        if two and changes.roll(8) == 0:
+            # Only what applies: what cannot be played is left out on the Mac, and a gate would turn out short of what it believed it had.
+            lines.append("display plug" if not plugged else changes.weighted([
+                ("display unplug", 2), ("display left", 1), ("display right", 1), ("display smaller", 1), ("display larger", 1), ("send_across", 4)]))
+            plugged = lines[-1] != "display unplug"
             continue
         for debt in owed:
             debt[0] -= 1
@@ -208,6 +210,12 @@ def self_test():
         between = [line for line in lines[lines.index("full_screen on") + 1:][:1]] if "full_screen on" in lines else ["full_screen off"]
         if between != ["full_screen off"]:
             failures.append(f"seed {seed}: full screen is left with the next act")
+    for seed in range(200):
+        there = False
+        for line in walk(seed, 110, two=True):
+            if line.split()[0] in ("display", "send_across") and (line == "display plug") == there:
+                failures.append(f"seed {seed}: `{line}` with the second display {'plugged in' if there else 'not there'}")
+            there = line == "display plug" or (there and line != "display unplug")
     plain = [line for line in walk("4711", 110, two=True) if line.split()[0] not in ("display", "send_across")]
     if plain[:60] != walk("4711", 110)[:60]:
         failures.append("with a second display the rest of the walk is another walk")

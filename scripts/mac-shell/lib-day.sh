@@ -518,7 +518,11 @@ run = {"gate": 1, "started": True, "commit": commit, "run": os.environ.get("GITH
        "script": script, "settings": "shipped", "build": "debug", "macos": macos, "seconds": int(seconds)}
 for line in os.environ["DAY_MANIFEST"].splitlines():
     key, _, value = line.partition("=")
-    run[key] = json.loads(value)
+    # A value that cannot be read must not cost the whole manifest: without it the run would look as if it had never begun.
+    try:
+        run[key] = json.loads(value)
+    except ValueError:
+        run[key] = None
 # An act's id is its slug and which act of that slug it is in its run (viable.py).
 offences = []
 for word in os.environ["DAY_OFFENCES"].split():

@@ -806,7 +806,9 @@ def judge(step, world, by_number, own):
     if wants.get("act") in ARBORS_OWN and step.moved:
         changes = [entry[0] for window in step.moved for before, entry in zip(step.traces[window], step.traces[window][1:])
                    if entry[1] and before[1] and not entry[2] and differs(before[1], entry[1], by=0.6)]
-        asked = max((time for time in step.inputs if changes and time <= min(changes)), default=None)
+        # What Arbor answers in a drag is the drop. A click right after it asks for nothing, and must not shorten the time that is measured.
+        asks = [time for time in step.inputs if not wants.get("drags") or step.dropped is None or time <= step.dropped]
+        asked = max((time for time in asks if changes and time <= min(changes)), default=None)
         if changes and asked is not None:
             took = max(changes) - asked
             first = wants.get("first") == "1"
@@ -1329,6 +1331,12 @@ def self_test():
     detectors("macOS answered the drag, and a click right after does not take that back", to_the_edge + [
         "2240 W 50 5 0 -15 16 530 760 WindowManager", "2300 G 50", "2300 B up 12 110", "2320 W 1 10 0 0 30 400 300 One", "2600 B down 12 110", "2640 B up 12 110",
         "2900 W 1 10 0 12 42 400 300 One", "3900 M end 2 drags=1"], ["fought", "jolt"])
+    sluggish = glide + ["2260 W 51 99 3 0 30 500 700 Arbor", "2300 B up 460 110", "2310 G 51"]
+    settles = ["2700 W 1 10 0 100 60 480 680 One", "3300 W 1 10 0 12 42 476 676 One", "4400 M end 2 act=drag drags=1 docked=1"]
+    for name, click in (("a window that comes to rest a second after the drop is slow", []), ("… and a click right after the drop does not shorten that", ["2600 B down 460 110", "2640 B up 460 110"])):
+        found = [(finding["detector"], finding["level"]) for finding in play(sluggish + click + settles)[1][1].findings if finding["detector"] == "slow"]
+        if found != [("slow", "ODD")]:
+            failures.append(f"{name}: {found}")
     detectors("what the script hands on keeps its name", start + [
         "2000 M begin 2 idle", "2500 M finding 2 -:busy FAIL Arbor used 4 % of a core", "3000 M end 2"], ["busy"])
     to_edge = start + ["1250 M tiling defaults", "2000 M begin 2 drag", "2050 B down 300 110"]

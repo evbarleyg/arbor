@@ -102,7 +102,8 @@ members_of() {
   case "$1" in
     stock) echo finder safari textedit terminal notes calendar settings preview mail ;;
     # Toolkits that are not Apple's, and many windows of one app.
-    browsers) echo safari chrome firefox edge finder textedit ;;
+    # Six have to open a window, so there is one to spare.
+    browsers) echo safari chrome firefox edge finder textedit terminal ;;
     # Manners. One size only (Calculator); no narrower than 1001 and 980 points, over half a laptop's screen, each with a sheet (Books, Music); none smaller than
     # 768×692 (Reminders); two windows that cannot be minimized (Stickies). What walk_scene adds: tabs, an open panel, an app without a window.
     awkward) echo finder terminal textedit safari calculator books music stickies reminders ;;
@@ -293,6 +294,11 @@ minimize() {
   local window name
   window=$(front_window)
   name=$(name_of_pid "$(front_pid)") && [ "$window" = "$(window_of "$name")" ] || { left_out "minimize: the window in front is not a first window of the cast's"; return; }
+  # Stickies' notes have no yellow button, and ⌘M does something else to them.
+  if apptool windows "$(pid_of "$name")" 2> /dev/null | awk -v id="$window" '$1 == id' | grep -Eq "no-minimize|minimize-disabled"; then
+    left_out "minimize: $name's window cannot be minimized"
+    return
+  fi
   walk_act open-close "minimize-$name" "presses ⌘M"
   leaving "$name"
   key cmd+m
@@ -855,7 +861,7 @@ walk_open() {
     chrome | edge) set -- --args --no-first-run --no-default-browser-check "file://$document" ;;
     *) set -- ${document:+"$document"} ;;
   esac
-  if APP_WAIT=25 meet "$name" "$(bundle_of "$name")" "$@"; then
+  if APP_WAIT=25 APP_OPEN_LIMIT=90 meet "$name" "$(bundle_of "$name")" "$@"; then
     # Mail without an account asks for one in a sheet, and swaps its windows for others when the sheet is answered. It is left alone: a window with a sheet. So
     # are the sheets Books and Music greet with, which is what they are in their cast for.
     case "$name" in mail | books | music) ;; *) app_dismiss "$APP_PID" || echo "a sheet or dialog stayed in the way" ;; esac
@@ -869,7 +875,7 @@ walk_open() {
 
 # What a cast has besides its apps' first windows. All of it before anything counts.
 walk_scene() {
-  local name pid known
+  local name pid known shows
   case "$1" in
     browsers)
       # Several windows each.
@@ -891,6 +897,14 @@ walk_scene() {
         must dock_click "$(bundle_of "$name")"
         sleep 0.5
         key cmd+t
+        sleep 1
+        # The tab that shows is the app's window from now on: the one it opened with is listed still, and is on no screen.
+        shows=$(main_window_of "$(pid_of "$name")")
+        if [ -n "$shows" ] && [ "$shows" != "$(window_of "$name")" ]; then
+          label "$(window_of "$name")" "$name-tab-behind"
+          eval "W_$name=\$shows"
+          label "$shows" "$name"
+        fi
         acted setup=1
       done
       # An app with no window at all: it has a place in the Dock and under ⌘Tab, and nothing to arrange.
