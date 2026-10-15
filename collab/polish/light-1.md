@@ -46,7 +46,7 @@ Arbor not running; Window ▸ Move & Resize ▸ Left, Right, Return to Previous 
 
 | Act | What is seen |
 |---|---|
-| Left, Right, Fill, Return to Previous Size | **It is not at once. The real window glides and grows, in one piece, eased: 283 to 300 ms, 16 to 18 frames of sixty a second, none skipped.** The curve slows down like Arbor's own (0.2, 0, 0, 1) stretched to 290 to 300 ms: off by 1.5% of the road. All four edges in step. No stand-in: the window's own content, laid out afresh in every frame ![](light-1/06-macos-left.jpg) |
+| Left, Right, Fill, Return to Previous Size | **It is not at once. The real window glides and grows, in one piece, eased: 283 to 317 ms, 16 to 18 frames of the 18 to 20 that sixty a second would make.** There are waits of 33 ms: none in one glide, one in two, two in one, and 33, 33 and 50 ms in `macos-right`; the camera's own square has two of 33 ms on this Mac, so some are the runner's. The curve slows down like Arbor's own (0.2, 0, 0, 1) stretched to 290 to 300 ms: off by 1.5% of the road. All four edges in step. No stand-in: the window's own content, laid out afresh in every frame ![](light-1/06-macos-left.jpg) |
 | Left & Right | the window in front glides for 267 ms; the other one jumps to its half in one frame at the start |
 
 Third-party window tools jump. macOS's own tiling does not, and it is the bar. There "the window itself" moves, which is what the first person to use Arbor asked for.
