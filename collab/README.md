@@ -107,6 +107,8 @@ The documenter decides **what** and **in what order**; executors decide
 
 **A change is not measured by its own nets alone.** A landing that brought new detectors was praised for a fall from 8,170 to 160; by the old detectors, which count every change a person could see, the same landing went from 5,007 to 9,917, and a real Mac then showed the fault. When a change alters the nets it is measured by, the old nets are run on both sides too, and the report gives both pairs.
 
+**"Seen cured" means:** the same instrument on the fault and on the cure, on two hosted Macs at the same time; what was played read from the run itself; every answer that differs read by whoever gives the verdict; and what it does not show at the foot of the page. A fault masked is not a fault cured: a script taken off a list of known failures is replayed past the first rule it breaks.
+
 A report says what a change did to these. Parity stays as a list of what the reference has, and `make parity` goes on guarding that what is marked shipped is proven:
 
 `make parity` runs the test suite, reads the real-window evidence in
