@@ -417,7 +417,7 @@ private let side = DisplaySnapshot(
     #expect(main.frame.contains(h.frame(stray)!), "and it stays fetched: \(h.frame(stray)!)")
   }
 
-  /// B5's five roads: it hangs over the FAR edge of a side display, 64 % showing. The display goes; its app makes it
+  /// Five roads: it hangs over the FAR edge of a side display, 64 % showing. The display goes; its app makes it
   /// narrower; the display returns.
   @Test(arguments: ["replug", "a stranger between", "all gone", "paused"])
   func aDisplayThatReturnsDoesNotTakeANarrowerWindowBeyondItsFarEdge(road: String) {

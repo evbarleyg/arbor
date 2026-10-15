@@ -569,7 +569,7 @@ extension Harness {
   }
 
   /// Terminals size their windows in whole character cells and take the size nearest to the one asked for, which half the
-  /// time is the larger one. That is not a refusal (#89).
+  /// time is the larger one. That is not a refusal.
   @Test(arguments: [CGSize(width: 7, height: 15), CGSize(width: 8, height: 17), CGSize(width: 9, height: 19),
     CGSize(width: 11, height: 23), CGSize(width: 13, height: 27)], [8.0, 9, 10, 11, 12, 13])
   func aWindowThatComesInCharacterCellsDocksAllTheSame(cell: CGSize, gap: Double) {

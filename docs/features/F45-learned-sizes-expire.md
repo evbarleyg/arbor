@@ -39,7 +39,7 @@ The record is also forgotten outright:
 
 ## Shipped / Not shipped
 
-Two of the three ways out of a wrong record came with the controller review (#17): a window **seen smaller** than its record lowers it, whoever resized it (`lowerDisprovedMinimum`; three times at most for an app that bounces), and
+Two of the three ways out of a wrong record came with the controller review: a window **seen smaller** than its record lowers it, whoever resized it (`lowerDisprovedMinimum`; three times at most for an app that bounces), and
 **`relayout`** forgets every record (`forgetLearnedMinimums`). This item adds the third, **asking again where nobody can see** (`Controller+LearnedSizes.swift`), and tests all three against the criteria:
 
 1. `aWindowThatRefusedOnceIsAWindowAgainAtTheFirstLayoutTenMinutesLater`, `relayoutAsksAtOnce`, `itComesBackWithoutShowingAnywhereButInItsSlot`, `anyLayoutWillDo`.

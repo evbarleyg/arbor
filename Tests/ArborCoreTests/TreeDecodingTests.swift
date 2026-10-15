@@ -451,7 +451,7 @@ private func expectUsable(_ tree: LayoutTree, _ comment: Comment? = nil, at loca
     expectUsable(tree)
   }
 
-  /// Found by executor L's launch fuzzer. A count beyond the limit was brought down to the limit itself, so
+  /// Found by the launch fuzzer. A count beyond the limit was brought down to the limit itself, so
   /// the next node got an id that the next launch refused, and the count saved with it was too
   /// large again: every window docked from then on lost its place at every launch, for good.
   @Test(arguments: [Int.max, 1 << 48, (1 << 48) + 1, (1 << 48) - 1, (1 << 47) + 1])

@@ -145,7 +145,7 @@ private let side = DisplaySnapshot(
   // MARK: Opening apps
 
   /// `AXWindowSystem.launchApp` answers true as soon as `/usr/bin/open` has started, so for any name at all. This is what a
-  /// slip of the keyboard then does. It is written down here as it is, not as it should be: see the review of #48.
+  /// slip of the keyboard then does. It is written down here as it is, not as it should be: a review of the notation said so.
   @Test func withOpenAMisspeltLineStillTakesTheArrangementApart() {
     let h = harness()
     #expect(h.run("layout Safari | Mail | Notes").ok)

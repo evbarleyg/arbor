@@ -3,7 +3,7 @@
 Written by the executor swarm, 2026-10-14; for the documenter to review.
 
 Status: in progress (`feat/F60-guard-wallpaper-click`): the headless parts are done and tested; the macOS half has not been compiled or run on a Mac yet
-Depends on: B3's event-tap rules, F05's `RectangleFramer` (holding and replaying a press), #16's `PointerSurface`
+Depends on: the rules for event taps (board item B3), F05's `RectangleFramer` (holding and replaying a press), `PointerSurface`
 Size: small to medium; the decision is headless, the tap is macOS-only
 Supersedes the advice in F42, the README and the guide to change a system setting, which stays as the fallback
 

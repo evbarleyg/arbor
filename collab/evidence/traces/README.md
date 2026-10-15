@@ -14,9 +14,9 @@ Window ids, process ids, app names, bundle ids, frames and times; never window t
 
 All the rest were recorded on GitHub's macOS runner (macOS 26.6.2, one 1024×768 display) by `scripts/mac-shell/trace-demo.sh` on 2026-10-14, with a real
 pointer (`pointer.swift`). The header's `arbor` says which commit. **B1 to B7** are the bugs the first traces showed; a trace that
-shows one has a `problem` line in its `.expect` file and says when it is fixed. **B1, B5, B6 and B7 were fixed by the controller review (#17)**: their traces
-went red, the `problem` lines were deleted, and they are regression tests now. **B3 went the same way with the compatibility lab (#23).** B2 was fixed in `AXWindowSystem` (#24), below what a trace
-records; its two traces say what was done about that. **B5 came back with #101**, and `seam-drag-futile` has its `problem` line again.
+shows one has a `problem` line in its `.expect` file and says when it is fixed. **B1, B5, B6 and B7 were fixed by the controller review**: their traces
+went red, the `problem` lines were deleted, and they are regression tests now. **B3 went the same way with the compatibility lab.** B2 was fixed in `AXWindowSystem`, below what a trace
+records; its two traces say what was done about that. **B5 came back with a later change**, and `seam-drag-futile` has its `problem` line again.
 
 **Test windows and a real pointer** (`ArborTestWindows`)
 
@@ -27,7 +27,7 @@ records; its two traces say what was done about that. **B5 came back with #101**
 | `drag-onto-window` | A floating, unfocused window dragged onto the right part of a docked one: the focus event comes first. |
 | `edge-resize` | A docked window's right edge dragged 60 points toward its docked neighbour: focus, `resizeBegan`, "resized" in bursts, enforcement polling the button, `resizeEnded`, the neighbour giving way. |
 | `seam-drag` | The seam between two docked windows dragged 40 points: one `seamDragged` per mouse event, each with its layout. No raw mouse lines: the global monitor does not see events that go to Arbor's own panels. |
-| `seam-drag-futile` | The same in the first run, with a floating window (w30) that is too big for the Desktop: it got a `setFrame` it refuses at every step. **B5** (fixed in #17, back since #101; the `.expect` file says how). |
+| `seam-drag-futile` | The same in the first run, with a floating window (w30) that is too big for the Desktop: it got a `setFrame` it refuses at every step. **B5** (fixed, and back since a later change; the `.expect` file says how). |
 | `minimize-restore` | A docked window minimized with its yellow button and restored by its app. The Dock changes the visible frame both times. B7 (fixed). |
 | `close` | A framed, docked window closed with its red button: focus moves to the app's next window before the window is destroyed. |
 | `drag-out` | A docked window dragged by its title bar out onto the Desktop; the preview changes eight times on the way. (First run; a window Arbor believes parked is on screen, see B1.) |
@@ -46,8 +46,8 @@ records; its two traces say what was done about that. **B5 came back with #101**
 | `title-change` | The app renames a docked and a floating window. |
 | `self-move` | The app moves its own docked window without the mouse; Arbor puts it back 0.26 s later. |
 | `app-minimize` | The app minimizes and restores its own docked window. B7 (fixed). |
-| `stubborn-fast` | A window that goes back to its old frame 0.05 s after every move is docked. B2 (fixed in #24, below the seam: one line was added by hand, as the trace says, for what `AXWindowSystem` reports since). (First run.) |
-| `stubborn-slow` | The same at 0.4 s: two rounds of a fight, then B2 ended it (fixed in #24; one line added by hand, likewise). |
+| `stubborn-fast` | A window that goes back to its old frame 0.05 s after every move is docked. B2 (fixed below the seam: one line was added by hand, as the trace says, for what `AXWindowSystem` reports since). (First run.) |
+| `stubborn-slow` | The same at 0.4 s: two rounds of a fight, then B2 ended it (fixed; one line added by hand, likewise). |
 | `hide-unhide` | The app hides and unhides itself. B1 (fixed), **B4**. |
 | `app-switch-unreported` | Two apps: three docked windows of the first (29, 30, 31) and one of the other (75). 29 is framed, 75 is out of view, and the other app brings itself forward (arbor-e2e's "switch to the other app", cut after the switch). `didActivateApplication` came 5 ms before `frontmostApplication` named the app, so `AXWindowSystem` took it for an app in the background and dropped it: no `focused` line, only "the keyboard focus moved", twice, and the window had the keyboard out of view. One switch in three went like that. Fixed in `AXWindowSystem`, below what a trace records: one line was added by hand, as the trace says, for what it reports since. |
 
@@ -56,7 +56,7 @@ records; its two traces say what was done about that. **B5 came back with #101**
 | Trace | What it shows |
 |---|---|
 | `textedit-commands`, `finder-commands`, `settings-commands`, `terminal-commands`, `calculator-commands` | Dock left (a slot 494 wide), make the slot 250 narrower, frame, show the Desktop, show all, float: what each app answers to each size and to being parked. **B3** in Terminal's and Finder's. |
-| `terminal-rounds-up` | `terminal-commands` cut after its second command. B3 (fixed in #23). |
+| `terminal-rounds-up` | `terminal-commands` cut after its second command. B3 (fixed). |
 | `textedit-drag`, `finder-drag`, `terminal-drag` | Floating: dragged 150 points right and 60 down, then to the left screen edge. Finder ends as a tile for 7 points. |
 | `textedit-edge`, `finder-edge`, `terminal-edge`, `calculator-edge` | Docked in a slot 760 wide, the right edge dragged 80 points left. Terminal shrinks a character at a time and renames itself before each "resized". Calculator cannot be resized: nothing is reported. |
 | `textedit-drag-out`, `settings-drag-out`, `calculator-drag-out` | Docked, dragged by the title bar out onto the Desktop. |

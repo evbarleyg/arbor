@@ -47,6 +47,3 @@ echo "sim smoke test passed"
 # The same for the control socket: the real arborctl against the simulator.
 ./scripts/watch-smoke.sh
 ./scripts/cli-smoke.sh
-
-# On a Mac, the one commit that is the release candidate is also built the way `make install` builds it. The script says why.
-if [ "$(uname)" = Darwin ] && ./scripts/candidate-check.sh --is-candidate; then ./scripts/candidate-check.sh; fi

@@ -675,7 +675,7 @@ private let cameraCommands = [
     #expect(h.controller.holdMenu.first?.title == "The view is held: nothing moves it")
   }
 
-  /// #152's question, "was a layout forgotten?", has an answer on a held display too: it should look empty, and does.
+  /// A review's question, "was a layout forgotten?", has an answer on a held display too: it should look empty, and does.
   @Test func anEmptyHeldViewIsLaidOutAsItShouldBeAtEveryStep() {
     let s = stage()
     let h = s.h
@@ -866,7 +866,7 @@ private let cameraCommands = [
 
   /// `dock A beside B` takes A out first. A group of two used to be no group then, B joined the row around it and A after
   /// it, so the view could only have been on the whole row, and the command was refused. Since the core's second
-  /// round (#154) the group keeps its place through that: allowed, and nothing else comes in.
+  /// round the group keeps its place through that: allowed, and nothing else comes in.
   @Test func dockingOneOfTwoBesideTheOtherStaysInsideTheHeldView() {
     let s = stage()
     let h = s.h
@@ -1273,9 +1273,9 @@ private let cameraCommands = [
 
   // MARK: A display goes while its window is being typed in
 
-  /// The laptop's view is on one window, so its Desktop is not in view; he types on the big display and pulls the cable. What arrives from a
+  /// The laptop's view is on one window, so its Desktop is not in view; somebody types on the big display and pulls the cable. What arrives from a
   /// display that went counts as out of view, and here it is. Holding still took it for an app that had pushed itself forward: it stayed
-  /// out of view and his next words landed in the window in view. It has had the keyboard all along: the view follows it, as without a hold.
+  /// out of view and their next words landed in the window in view. It has had the keyboard all along: the view follows it, as without a hold.
   @Test(arguments: [nil, "hold still"], [false, true]) func holdingStillTheViewFollowsTheWindowBeingTypedInWhenItsDisplayGoes(hold: String?, docked: Bool) {
     let (s, xcode, _) = twoDisplays()
     let h = s.h

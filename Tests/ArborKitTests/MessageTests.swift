@@ -186,7 +186,7 @@ import Testing
     let (h, _, _, _, _) = makeHarness()
     // The app is called what people call it while one of its windows is open.
     #expect(h.run("exclude com.example.notes") == .success("no longer arranging Notes"))
-    // Asking again changes nothing, which is a failure like "already floating" (product owner on #172): on screen it
+    // Asking again changes nothing, which is a failure like "already floating" (the product owner): on screen it
     // shows as a problem, not as a change.
     #expect(h.run("exclude com.example.notes") == .failure("Arbor does not arrange Notes already"))
     #expect(h.run("include com.example.notes") == .success("arranging Notes again"))

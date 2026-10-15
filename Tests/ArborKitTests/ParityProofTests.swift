@@ -195,7 +195,7 @@ import Testing
   }
 
   /// T07, as macOS reports it: the focus change comes first, the un-minimize after it (collab/evidence/ax-events.txt,
-  /// "un-minimize 33"). Until #17 the camera zoomed onto the window. T07
+  /// "un-minimize 33"). Until the review of the controller the camera zoomed onto the window. T07
   /// goes back to shipped when the step "minimize a docked window and bring it back" of proof.sh has passed on a Mac.
   @Test func unMinimizingPutsTheWindowBackAndLeavesTheCameraAlone() {
     let (h, a, b, c) = makeHarness()

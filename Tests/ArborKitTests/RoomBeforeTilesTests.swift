@@ -455,7 +455,7 @@ import Testing
     }
   }
 
-  /// B13's: a fixed window and one of 538 points fill the display, a small panel opens, and the view goes away and comes back.
+  /// A reviewer's: a fixed window and one of 538 points fill the display, a small panel opens, and the view goes away and comes back.
   @Test func aPanelThatOpenedAWhileAgoCostsNobodyTheirPlace() {
     let h = Harness()
     let size = CGSize(width: 697, height: 640)

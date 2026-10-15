@@ -338,7 +338,7 @@ private let side = sideDisplay
     expectWindowsMatchLayout(h, on: h.display)
   }
 
-  /// The Desktop as a tile is still part of the view (#211): what floats on it is in view, over the docked windows, and is a
+  /// The Desktop as a tile is still part of the view: what floats on it is in view, over the docked windows, and is a
   /// stop itself. The tile holds nothing more to focus and is passed over.
   @Test func aDesktopTileIsNoStopWhatFloatsOnItIs() {
     let (h, w) = harness(["A", "B"], ["dock $0 left", "dock $1 right", "resize $0 right 250"])

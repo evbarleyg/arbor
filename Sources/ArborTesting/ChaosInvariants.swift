@@ -93,7 +93,7 @@ extension ChaosRunner {
   private func isDueForLayout(_ display: DisplayID) -> Bool {
     let timers = harness.scheduler.pendingKeys
     guard !timers.isEmpty else { return false }
-    // A window on its way back (from the Dock, full screen, a hidden app) is judged once it has landed (#150).
+    // A window on its way back (from the Dock, full screen, a hidden app) is judged once it has landed.
     return timers.contains("enforce-" + display.rawValue) || timers.contains("space-" + display.rawValue)
       || timers.contains("landed-" + display.rawValue)
   }

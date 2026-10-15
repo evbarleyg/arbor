@@ -100,7 +100,7 @@ extension Controller {
   }
 
   /// Whether entering the Desktop of `display` would bring a floating window into view. As a tile it is still part of the view
-  /// and what floats on it is in view already (#211), so this is for whatever is kept away all the same.
+  /// and what floats on it is in view already, so this is for whatever is kept away all the same.
   func hasFloatingWindowsOutOfView(on display: DisplayID) -> Bool {
     workspaces[display]?.floating.keys.contains {
       windows[$0]?.isPresent == true && isManaged($0) && parked.contains($0)

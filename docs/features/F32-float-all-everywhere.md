@@ -2,7 +2,7 @@
 
 Written by the executor swarm, 2026-10-14; for the documenter to review.
 
-Status: done (built by the product review, #15, from this text: `float-all` on every display, `float-all here`, `arrange all`, ⌃⌥⇧F)
+Status: done (built by the product review from this text: `float-all` on every display, `float-all here`, `arrange all`, ⌃⌥⇧F)
 Depends on: F01
 Reference items: T16, T17, T62
 

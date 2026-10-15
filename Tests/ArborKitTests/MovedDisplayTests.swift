@@ -33,7 +33,7 @@ private let everything = Side.allCases.flatMap { side in
 private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
 
 /// The frames a workspace remembers are global, and a display's place among the displays changes: with the lid, in
-/// clamshell, in System Settings. They go with it (bug bash of 2026-10-14; FRESH EYES 2 found the first of them).
+/// clamshell, in System Settings. They go with it (bug bash of 2026-10-14; a tester's day found the first of them).
 @Suite @MainActor struct MovedDisplayTests {
   /// What macOS does when another display becomes the main one: every window has new coordinates, and no app says so.
   func shiftEverything(_ h: Harness, by offset: CGPoint) {
@@ -52,9 +52,9 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
 
   func onStudio(_ h: Harness) -> Workspace? { h.controller.workspaces[studio.id] }
 
-  /// Where the lid (#298) meets "chosen on a display of another shape" (#289). A window somebody left hanging over the far edge keeps
+  /// Where the lid meets "chosen on a display of another shape". A window somebody left hanging over the far edge keeps
   /// its overhang when its display only moves: a display that moved has kept its shape. Taken for a place chosen on another shape, it
-  /// would be fitted onto the Desktop (B11's test; neither order of the two features' lines in `updateDisplays` passes it as they were).
+  /// would be fitted onto the Desktop (a reviewer's test; neither order of the two features' lines in `updateDisplays` passes it as they were).
   @Test func aWindowLeftHangingOverTheEdgeByHandStillHangsThereWhenItsDisplayOnlyMoves() {
     let h = Harness(displays: [laptop, studio])
     let s = h.system.open(app: "Safari", frame: CGRect(x: 1700, y: 200, width: 900, height: 600))
@@ -167,7 +167,7 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
 
   // MARK: A display that was away and comes back somewhere else
 
-  /// FRESH EYES 2's day, in its own words but for the names: in clamshell at the desk, the laptop alone, back at the desk
+  /// A tester's day, in their own words but for the names: in clamshell at the desk, the laptop alone, back at the desk
   /// with the lid open. A window left hanging over the bottom edge came back with a strip of 32 points showing.
   @Test func backAtTheDeskWithTheLidOpenAWindowIsWhereItWasLeftOnTheBigDisplay() {
     let desk = DisplaySnapshot(
@@ -222,7 +222,7 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
     for (window, spot) in zip(windows, spots) { #expect(h.frame(window) == spot.offsetBy(dx: 1440, dy: -323)) }
   }
 
-  // MARK: H2's runs of 13:25 UTC, by their letters: 700 wide at 2530,500, and `home` afterwards, which is what sends it
+  // MARK: The runs before the release, by their letters: 700 wide at 2530,500, and `home` afterwards, which is what sends it
 
   static let spot = CGRect(x: 2530, y: 500, width: 700, height: 400)
   static let inClamshell = spot.offsetBy(dx: -1440, dy: 0)
@@ -311,7 +311,7 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
     #expect(h.frame(n) == Self.spot)
   }
 
-  /// FRESH EYES 2, item 29: the laptop's scaling goes to More Space with the big display attached, whose corner goes from
+  /// A tester's day: the laptop's scaling goes to More Space with the big display attached, whose corner goes from
   /// 1728 to 2056. A window 72 points in ended at the display's left edge, and Float All sent it across both displays.
   @Test func whenTheLaptopsScalingChangesTheBigDisplaysWindowsKeepTheirPlacesOnIt() {
     let small = DisplaySnapshot(
@@ -349,7 +349,7 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
     [60, 500, 1000].map { y in CGRect(x: x, y: y, width: 600, height: 400) }
   }
 
-  /// As a Mac does it (R1): the windows have their new coordinates, Arbor hears of the displays, and only then may apps
+  /// As a Mac does it: the windows have their new coordinates, Arbor hears of the displays, and only then may apps
   /// say that their windows moved. What Arbor placed itself meanwhile is its own doing.
   func change(_ h: Harness, to displays: [DisplaySnapshot], shifting offset: CGPoint) {
     shiftEverything(h, by: offset)
@@ -410,7 +410,7 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
   /// The lab's `windows-first`: each app says where its window is now while the list of displays that Arbor can ask for is
   /// still the old one, so that no guard has anything to see (`knowsTheDisplays`). The report passes for the person's own
   /// move, the frame is in the new coordinates already, and it was moved AGAIN with the corner. Unlikely on a Mac, not
-  /// excluded, not measured (R1, B5). The window is the witness (R1, TRIAGE).
+  /// excluded, not measured. The window is the witness.
   func changeWithAppsSpeakingBeforeAnything(
     _ h: Harness, to displays: [DisplaySnapshot], shifting offset: CGPoint, who: (Int) -> Bool = { _ in true }
   ) {
@@ -433,7 +433,7 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
     id: DisplayID("builtin"), frame: CGRect(x: 0, y: 0, width: 1728, height: 1117),
     visibleFrame: CGRect(x: 0, y: 33, width: 1728, height: 1084), isMain: true)
 
-  /// FRESH EYES 2 on the frozen c1adfe81: the lid OPENS. 590,429 goes to 2318,106 with its display, and Arbor moved it a
+  /// A tester's day: the lid OPENS. 590,429 goes to 2318,106 with its display, and Arbor moved it a
   /// second time, to 4046,−217: a fifth of it in view, and ⌃⌥0, Go to…, ⌃⌥Z and ⌘Tab did not fetch it.
   @Test func theLidOpensAndTheAppSpeaksFirst() {
     let h = Harness(displays: [Self.desk])
@@ -446,7 +446,7 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
     #expect(h.frame(terminal) == CGRect(x: 2318, y: 106, width: 1164, height: 262))
   }
 
-  /// FRESH EYES 2, the lid CLOSES: Notes at 3300,400 belongs at 1572,723 and ended at −156,1046, half of it in view.
+  /// A tester's day, the lid CLOSES: Notes at 3300,400 belongs at 1572,723 and ended at −156,1046, half of it in view.
   @Test func theLidClosesAndTheAppSpeaksFirstOfAPlaceThatWasOnTheBigDisplay() {
     let h = Harness(displays: [Self.builtin, moved(Self.desk, to: CGPoint(x: 1728, y: -323), isMain: false)])
     let notes = h.system.open(app: "Notes", frame: CGRect(x: 3300, y: 400, width: 800, height: 600))
@@ -471,7 +471,7 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
     #expect(Self.desk.visibleFrame.contains(frame))
   }
 
-  /// B16's smallest: the same displays stay, and one corner moves by 300 points. All apps speak, or every other one.
+  /// The smallest case: the same displays stay, and one corner moves by 300 points. All apps speak, or every other one.
   @Test(arguments: [true, false]) func aCornerMovesByALittleAndAppsSpeakFirst(all: Bool) {
     let h = Harness(displays: [laptop, studio])
     let windows = Self.places.map { h.system.open(app: "Notes", frame: $0.offsetBy(dx: 1440, dy: 0)) }
@@ -501,7 +501,7 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
     }
   }
 
-  // MARK: The release manager's table
+  // MARK: The table drawn up before the release
 
   /// {the lid opens, the lid closes, a display dragged in System Settings} × {the app speaks first, late, never}, each ending
   /// in `home`. `never`: macOS has moved the window and its app says nothing at all.
@@ -544,7 +544,7 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
     #expect(onStudio(h)?.floating[n] == there)
   }
 
-  /// TRIAGE's play: the app speaks, time passes, and only then does Arbor hear of the displays. With two seconds' grace the
+  /// A play in three acts: the app speaks, time passes, and only then does Arbor hear of the displays. With two seconds' grace the
   /// cure held to 1.9 s and failed from 2.1 s on; a Mac can take longer (1.5 s after the LAST of several notices).
   @Test(arguments: [0, 1.9, 2.1, 5, 10, 29]) func theAppSpeaksAndTimePassesBeforeArborHears(seconds: Double) {
     let h = Harness(displays: [Self.desk])
@@ -560,7 +560,7 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
     #expect(h.frame(terminal) == there)
   }
 
-  /// However lately he dragged it: macOS then takes it along in silence, and it goes with the corner.
+  /// However lately somebody dragged it: macOS then takes it along in silence, and it goes with the corner.
   @Test(arguments: [0, 1, 3, 20]) func aDragAndThenTheCornerMoves(seconds: Double) {
     let h = Harness(displays: [laptop, studio])
     let n = h.system.open(app: "Notes", frame: CGRect(x: 2000, y: 500, width: 600, height: 400))
@@ -588,7 +588,7 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
   }
 
   /// An app that hangs: what is read of its window is what was read before, which equals what is remembered. It has not
-  /// spoken, so the place goes with the corner (R1).
+  /// spoken, so the place goes with the corner.
   @Test func aPlaceThatOnlySeemsToAgreeBecauseNothingNewCouldBeReadGoesWithTheCorner() {
     let h = Harness(displays: [laptop, studio])
     let spot = CGRect(x: 2530, y: 500, width: 600, height: 400)
@@ -681,7 +681,7 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
     }
   }
 
-  /// FRESH EYES 2: the big display is the MAIN display, so it is the laptop's corner that moves at every unplug and
+  /// A tester's day: the big display is the MAIN display, so it is the laptop's corner that moves at every unplug and
   /// replug, and the laptop's workspace is never away. Its floating windows were shoved about on every trip to a meeting.
   @Test func withTheBigDisplayAsTheMainOneTheLaptopsWindowsKeepTheirPlaces() {
     let builtin = DisplaySnapshot(

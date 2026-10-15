@@ -685,21 +685,20 @@ holds for the commit named (second reading, 10:45 UTC) and says what the script 
 | `check-F13-system.sh` | trunk | **never**: ends with 77 | | TCC.db as root, `tccutil`, login items, `make install` as a person runs it |
 | `check-F58.sh` (`share-probe.swift`) | trunk | safe, steps skip themselves | 2 min | ⌘Tab, the second display, the grey wallpaper; the pictures of single test windows only where Screen Recording is granted already. Two test apps have an icon in the Dock. A test window is put at and beyond the display's edges, so with two displays it shows on the other for a moment |
 | `shots-finder.sh` | trunk | safe, steps skip themselves | 3 min, mostly keys | ⌘Tab, Mission Control, the swipe to another Space. Types digits and letters with the palette open or its own test app in front, which has an icon in the Dock |
-| `watch.sh` | trunk | **not this copy**: #233's | 6 s; 10 min in all | On the trunk: `arborctl watch` without a limit, more than 900 s, and the end-to-end runner under a time limit. #233 `cea45a10`: safe |
+| `watch.sh` | trunk | **not this copy**: a later one, not landed | 6 s; 10 min in all | On the trunk: `arborctl watch` without a limit, more than 900 s, and the end-to-end runner under a time limit. The later copy: safe |
 | `shots-F10.sh` | trunk | safe, steps skip themselves | 5 min | The appearance, input sources, the Accessibility list, a stand-in for another window manager. No `shot` here whatever `ARBOR_SHOTS` says, and no picture of the welcome window: it shows what `doctor` found on the Mac. A bundle of its own under an identifier of its own is opened through Launch Services, which keeps the entry for a while. Arbor's item shows in the menu bar |
-| `desktop-facts.sh` | #197 `e75d37f8` | safe | none | It reads the window list, four preferences and three answers of Finder's, and names only Apple's own processes |
+| `desktop-facts.sh` | trunk | safe | none | It reads the window list, four preferences and three answers of Finder's, and names only Apple's own processes |
 | `check-resume.sh` | trunk | **never**: ends with 77 | | Calculator and TextEdit opened, brought forward in turn, and quit; `ARBOR_APPS_HERE=1` does not open it |
 | `shots-F15-apps.sh` | trunk | **never**: ends with 77 | | Ten real apps opened for their icons, and killed |
 | `first-dock.sh` (`first-dock.py`) | trunk | **never**: ends with 77 | | Nine real apps opened and quit, every window arranged, Reduce Motion, the display's size |
-| `check-F52.sh`, `check-F63.sh` | #59, #66 | **never**: end with 77 | | Virtual displays, Accessibility taken from every app |
-| `check-F59.sh` | #158 `6907ce87` | safe | 30 s | During a carry nobody's app gets arrows, ↩ or ⎋ |
-| `shots-F04.sh`, `shots-F34.sh` | #79 `32612c35`, #187 `acf72c67` | safe | 3 min, 60 s | Test windows go to the Dock and come back; one is closed by its tab's button |
+| `check-F52.sh`, `check-F63.sh` | not landed, trunk | **never**: end with 77 | | Virtual displays, Accessibility taken from every app |
+| `check-F59.sh` | not landed | safe | 30 s | During a carry nobody's app gets arrows, ↩ or ⎋ |
+| `shots-F04.sh`, `shots-F34.sh` | not landed | safe | 3 min, 60 s | Test windows go to the Dock and come back; one is closed by its tab's button |
 | `shots-F22.sh`, `shots-F19.sh` | trunk | safe | 90 s, 45 s | |
-| `check-F14.sh` | #204 `62e1fae1` | safe, steps skip themselves | 3 min | The double-click on the wallpaper, Safari, the survey of stock apps. A witness that only listens writes down every press of the button meanwhile, with its place. macOS zooms a floating test window to the full display |
-| `check-F21.sh` | #102 `9acaae38` | safe, parts skip themselves | two clicks, five keys | The virtual display; Arbor over every window; apps opened |
-| `film-F16.sh` | #98 `a2e34e43` | safe, steps skip themselves | 3 min | Reduce Motion. Pinches and ⌃⌥-scrolls over a test window, each after the net was asked; the helper is on record |
-| `perf.sh` | #45 `fbd7e3b5` | safe, steps skip themselves | one drag | By the second reading, not read again since |
-| `input-taps.sh`, `witness.swift` | trunk and #193, #204 | **never without the switch**; with it, not before the fixes | | A witness that is killed leaves ⌃, ⌥ or Space down and a gesture unfinished; ⌃ with a wheel is macOS's zoom |
+| `check-F14.sh` | not landed | safe, steps skip themselves | 3 min | The double-click on the wallpaper, Safari, the survey of stock apps. A witness that only listens writes down every press of the button meanwhile, with its place. macOS zooms a floating test window to the full display |
+| `check-F21.sh` | not landed | safe, parts skip themselves | two clicks, five keys | The virtual display; Arbor over every window; apps opened |
+| `film-F16.sh` | not landed | safe, steps skip themselves | 3 min | Reduce Motion. Pinches and ⌃⌥-scrolls over a test window, each after the net was asked; the helper is on record |
+| `input-taps.sh`, `witness.swift` | trunk, and later copies not landed | **never without the switch**; with it, not before the fixes | | A witness that is killed leaves ⌃, ⌥ or Space down and a gesture unfinished; ⌃ with a wheel is macOS's zoom |
 | `suite.sh`, `suite/*.sh` | trunk | safe, steps skip themselves | 16 min on a hosted Mac | One supervised run with one curtain. Docking at a screen edge where macOS tiles, `open arbor://…`, Launch at Login, ⌘Tab, and every press or pinch on the bare Desktop, which is behind the curtain |
 | `suite-twice.sh` | trunk | **never**: ends with 77 | | An hour, against a curtain and a sweep that reckon with half of one |
 
@@ -1271,7 +1270,7 @@ a command, and a command Arbor does not know does nothing, so a script with `via
 replays to "every invariant held" and proves nothing. A command spelt like an event (`release`, `focus 101`, `save`) is written `do release`.
 
 **Every walk ends in the three ways back** (`way-back float-all`, `way-back start-again`, `way-back quit`, each one step): after each, every window
-that Arbor put where it is can be got hold of (rule `out-of-reach`). This is the release manager's test for a known problem: a script that
+that Arbor put where it is can be got hold of (rule `out-of-reach`). This is the test for a known problem before a release: a script that
 breaks a rule and has a way back is a known problem; one that has none holds the tag. Before believing "none", run `replay --frames` and see
 whether the last move was Arbor's at all.
 
@@ -1476,7 +1475,7 @@ With `Arbor.app` running and permission granted:
   (Known to fail when it is docked by a command or shortcut: the camera jumps
   onto the window, and ⌃⌥Space then shows the tile.)
 - ⌘Tab to a window that is out of view: the camera moves to show it. (It failed in
-  `proof.sh`, "switching to an app whose window is out of view…", before #15 made Arbor observe app activation.)
+  `proof.sh`, "switching to an app whose window is out of view…", before Arbor observed app activation.)
 - Minimize a docked window and click it in the Dock: it returns to its slot and
   the camera stays. (Known to fail: the camera zooms onto it.)
 - Press a docked window's green button and leave full screen again: it returns to

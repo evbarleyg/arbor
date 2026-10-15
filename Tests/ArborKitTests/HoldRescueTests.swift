@@ -60,7 +60,7 @@ import Testing
     #expect(h.frame(message)!.size == CGSize(width: 500, height: 300))
   }
 
-  /// The release manager's table, in frames. Safari left, Terminal right, Safari framed; Terminal opens a second window beside its first, in
+  /// The table drawn up before the release, in frames. Safari left, Terminal right, Safari framed; Terminal opens a second window beside its first, in
   /// the corner. The ordinary case, and meant: it waits until the view next moves, or until one turns to it.
   @Test(arguments: ["hold", "hold still"]) func aSecondWindowOfAnAppThatIsOutOfViewWaitsUntilTheViewMoves(text: String) {
     func play(_ steps: [String]) -> (h: Harness, second: WindowID) {

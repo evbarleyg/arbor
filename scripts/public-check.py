@@ -29,7 +29,7 @@ Usage: scripts/public-check.py             what this branch adds to origin's mai
        … --rules                           only whether the rules have changed since this clone last said it had read them (below)
        … --text [FILE…]                    free text, from standard input without a file: read a pull request's body or a
                                            comment through this BEFORE posting it
-       … --tree                            every file at HEAD, old and new: an audit to read, not a gate
+       … --tree                            every file at HEAD, old and new: a row of `make lint`
        … --mask                            print findings without the words found (always so in GitHub Actions, whose
                                            logs and annotations are as public as the repository)
 

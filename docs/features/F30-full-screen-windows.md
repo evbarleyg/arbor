@@ -2,7 +2,7 @@
 
 Written by the executor swarm, 2026-10-14; for the documenter to review.
 
-Status: done, but for the proof on a real Mac (`fix/review-controller` #17, `feat/F17-hardening` #24, #54, `feat/F30-leftovers`)
+Status: done, but for the proof on a real Mac (`fix/review-controller`, `feat/F17-hardening`, `feat/F30-leftovers`)
 Depends on: F08
 Reference items: T63
 
@@ -107,8 +107,8 @@ end counts as the window's return (`AXWindowSystem`). What a person still sees i
 
 ## Shipped / Not shipped
 
-Shipped, by several hands: the controller's side and the fake's `setFullScreen` (#17), the Accessibility layer's side and two steps of `arbor-e2e --full-screen`
-(#24), the refusals (#54), and the simulator's `fullscreen <id> on|off` with the journey `collab/scenarios/30-the-green-button.sim` (`feat/F30-leftovers`).
+Shipped, by several hands: the controller's side and the fake's `setFullScreen`, the Accessibility layer's side and two steps of `arbor-e2e --full-screen`,
+the refusals, and the simulator's `fullscreen <id> on|off` with the journey `collab/scenarios/30-the-green-button.sim` (`feat/F30-leftovers`).
 
 | Criterion | Proof |
 |---|---|

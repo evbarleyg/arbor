@@ -119,7 +119,7 @@ private func reopen(_ old: Harness, in new: Harness) {
 
   // MARK: The window being typed in stays in view
 
-  /// FRESH EYES 2, 2026-10-14: in a call (so the view is held), typing on the big display, somebody pulls the cable. The window
+  /// A tester's day, 2026-10-14: in a call (so the view is held), typing on the big display, somebody pulls the cable. The window
   /// arrived on the laptop in full view, and the next words landed in Calendar: until the layout had placed it, it counted
   /// as out of view, and a hold gives the keyboard back from a window out of view that took it unasked.
   @Test(arguments: ["hold still", "hold", nil], [true, false])

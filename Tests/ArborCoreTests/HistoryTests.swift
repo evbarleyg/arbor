@@ -224,7 +224,7 @@ private let c = WindowID(3)
     expectClean(looked)
   }
 
-  /// Found by B11's random test. A dock outside the view widens the view onto the node that history
+  /// Found by a random test. A dock outside the view widens the view onto the node that history
   /// ends with; the next move of the view then listed that node again.
   @Test func aViewThatWidensOntoTheLastPlaceInHistoryDoesNotListItTwice() {
     var workspace = Workspace()

@@ -12,6 +12,7 @@ lint:
 	@python3 scripts/test-fast-tests.py
 	@python3 scripts/lint-paste-safe.py --self-test && python3 scripts/lint-paste-safe.py
 	@for test in scripts/test-public-*.py; do python3 $$test || exit 1; done
+	@python3 scripts/public-check.py --tree || [ $$? = 2 ]  # 2: it cannot tell (no git here, say) and has said so; CI can
 	@python3 scripts/gh-state.py --self-test
 	@python3 scripts/lint-workflows.py --self-test && python3 scripts/lint-workflows.py
 	@python3 scripts/reality-ledger.py --self-test && python3 scripts/reality-ledger.py --check

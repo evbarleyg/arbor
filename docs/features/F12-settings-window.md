@@ -89,9 +89,9 @@ Second half, the window and what the product owner asked of the commands:
 
 - Criterion 3: nobody has seen the window. It compiles and its tests pass on a Mac; the script that clicks through it and takes its
   pictures in light and dark has not been run.
-- `doctor`'s row and the menu's state line for a broken file wait for F10 (#73).
-- The Shortcuts pane names commands by their text (`show-all`); F43's `Command.title` (#37) gives them words when it lands.
-- No editor for `displays` (#80): a line with its length and Open the File.
+- `doctor`'s row and the menu's state line for a broken file wait for F10.
+- The Shortcuts pane names commands by their text (`show-all`); F43's `Command.title` gives them words when it lands.
+- No editor for `displays`: a line with its length and Open the File.
 - `arborctl --json` exits 0 after a refusal, and refusals go to stdout (with F50).
 - `excludedBundleIDs` is read as a whole: one entry that is not text costs the list (and `exclude` then refuses to write
   over it). `rules` and `bindings` skip bad entries one by one; the list of apps could too.

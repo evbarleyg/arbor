@@ -30,7 +30,7 @@ Directions are `left`, `right`, `up`, `down` (and every other word `dock` accept
    - then the **most recently focused**; then the topmost, then the leftmost.
 2. **A tile in the way is entered**: the camera moves onto it, and focus goes to the window there nearest the
    edge one came through. A tile for the Desktop is passed over: it is still part of the view, so what floats on it is in view,
-   over the docked windows, and is a stop itself (#211). Whenever the view moves, focus
+   over the docked windows, and is a stop itself. Whenever the view moves, focus
    goes to what arrived with it: to a pinned window (F49), which was there before, only if nothing else did.
 3. **From a floating window that lies over a docked one**, with nothing that way, focus goes to the window beneath it: that one
    has its turn before the view moves.

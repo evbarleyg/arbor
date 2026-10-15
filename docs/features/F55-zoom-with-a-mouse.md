@@ -23,7 +23,7 @@ Pinch is how TrellisWM and Arbor are meant to feel, and a Mac mini, Mac Studio o
 ## Design notes
 
 - `GestureInterpreter` grows a scroll input beside magnification: same claim rule, its own threshold; unit-tested.
-- The tap sees every scroll event on the system, so the callback must return at once when ⌃⌥ is not down: read the flags first (B3's rules for tap callbacks apply).
+- The tap sees every scroll event on the system, so the callback must return at once when ⌃⌥ is not down: read the flags first (the rules for tap callbacks, board item B3, apply).
 
 ## Acceptance criteria
 
@@ -33,7 +33,7 @@ Pinch is how TrellisWM and Arbor are meant to feel, and a Mac mini, Mac Studio o
 
 ## Shipped / Not shipped
 
-Shipped, on top of F16's input half (#39), which had the scroll tap, `ScrollClaim` and `GestureRouter`:
+Shipped, on top of F16's input half, which had the scroll tap, `ScrollClaim` and `GestureRouter`:
 
 - `ScrollZoom` (ArborCore): notches and points of travel into steps. One notch is one step whatever acceleration makes of its delta; travel steps once per `scrollZoomThreshold`, both ways; nothing is carried from one scroll to the next.
 - `GestureRouter.scroll` takes ⌃ as well: ⌃⌥ as a scroll begins makes it a zoom, and it stays one when the keys go up; its momentum reaches neither the app nor Arbor. A wheel has no beginning: each notch is on its own, so letting go of the keys gives the wheel back at once.

@@ -18,7 +18,7 @@ weights change inside the layout that follows the command, so a snapshot taken b
 ## Second round (2026-10-14, decided by the product owner between 12:21 and 13:27; it overrules the text below wherever they differ)
 
 1. **Docked windows come before the Desktop, always.** Somebody has asked for each docked window, nobody for the Desktop's points. It gives down to a tile whether or not something floats on it, and what floats on a Desktop that is a tile shows
-   over the arrangement (#211). **No docked window becomes a tile for the Desktop's sake**, at the dock or later. Being in use decides only that the Desktop is served first from what can be spared, and how much it then gets: up to an even
+   over the arrangement. **No docked window becomes a tile for the Desktop's sake**, at the dock or later. Being in use decides only that the Desktop is served first from what can be spared, and how much it then gets: up to an even
    share of its row and the size of the largest window floating on it. Pinned, summoned and stashed windows and guests of a space do not float on the Desktop.
 2. **Room goes back to whom it was taken from.** The tree keeps a ledger (`LayoutTree+Loans.swift`): who gave how much to whom, for whose sake. It is repaid when the window closes, floats or is docked elsewhere, and as soon as the window can spare it
    (a neighbour has closed, the display is larger); only windows whose minimum is known give back, so a launch moves nothing. So the arrangement is what the person made it plus the least its windows need, in whatever order things happened. What

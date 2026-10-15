@@ -33,7 +33,7 @@ nobody has seen on a Mac, is not a day-one default, and motion now shows where t
   - when Arbor starts or resumes, or a display is plugged in: what Arbor restores is not a move;
   - when no docked window takes up space on the display, so that the Desktop is all there is;
   - while Arbor is paused;
-  - while the view is held, at either strength (F58), once that is on the trunk: one gate, `minimapMayAppearUnasked`, which takes #61's `mayShowUnasked`.
+  - while the view is held, at either strength (F58), once that is on the trunk: one gate, `minimapMayAppearUnasked`, which takes F58's `mayShowUnasked`.
 - No click can hit it, it never takes the keyboard, and no window's frame depends on it.
 
 ### What it shows

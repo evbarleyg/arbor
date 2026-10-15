@@ -42,6 +42,10 @@ host   *   (.*\.)?example(\.(com|org|net|invalid))?
 host   *   .*\.(invalid|test|example)
 host   *   localhost|127\.0\.0\.1|0\.0\.0\.0
 
+# A link that is malformed on purpose: a command where a host belongs. Arbor must refuse it.
+host   Sources/ArborTesting/ChaosGenerator.swift     dock
+host   Tests/ArborCoreTests/CommandURLTests.swift    dock
+
 # This repository, and the tap `brew install` finds it through.
 repository   *   [^/]+/(arbor|homebrew-tap|tap)(\.git)?
 

@@ -58,7 +58,7 @@ board items. Keep each to a few lines: the idea, why it helps, and a rough size.
 - **I11: Hash the titles in `state.json`.** `hints` keeps window titles in clear text, while the log never does. Matching after a restart needs only equality, so a salted hash will do. Small. (product review, 2026-10-14)
 - **I12: Say what Arbor thinks is going on.** `arborctl why <window>`: docked or floating, in view or out of view and why (outside
   the view, in a tile because its app refused 464×319, on another macOS Space, minimized, full screen, ignored by rule 3,
-  excluded). Every real-window bug found on 2026-10-14 took a state dump and a reading of the source to explain. Small. (R6, 2026-10-14)
+  excluded). Every real-window bug found on 2026-10-14 took a state dump and a reading of the source to explain. Small. (A reviewer, 2026-10-14)
 - **I13: A picture overview.** Show Everything drawn from pictures of the windows, darkened, with icon and title, the real windows out of view meanwhile, as the reference does. Decided against as the default (QUESTIONS Q15).
   Only as an option, only where Screen Recording is granted already, only after `docs/VIABLE.md` has passed, and only if pictures hand over to the real windows without a jump that the detectors or the rubric can see. Large. (product owner, 2026-10-14)
 - **I14: Gather Floating Windows.** A command, in the menu and undoable, that moves what floats onto the Desktop between the docked windows: what Arbor did by itself at every dock until QUESTIONS Q20, now as something a person asks for. It moves and does not resize. Small, while the placing function is still there. (product owner, 2026-10-14)

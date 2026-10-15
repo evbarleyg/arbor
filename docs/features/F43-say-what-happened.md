@@ -22,7 +22,7 @@ focus or clicks, replaced at once by the next one. It shows the reply of a comma
 - it is a **teaching moment**, each at most three times ever (counted in `state.json`): the first times windows leave the view, "2 windows are out of view · ⌃⌥Space
   shows everything"; the first dock, "Docked. ⌃⌥↩ frames it"; the first time a tile appears, "Too small to show: click the tile to zoom in".
 
-Setting `messages`: `"all"` (also every success), `"helpful"` (default: the three cases above), `"off"`. Commands from `arborctl` and URLs never show it. (The menu is answered on screen: decided by the product owner on #37. Reload Settings lives only in the menu, and the alternative is a bare beep.)
+Setting `messages`: `"all"` (also every success), `"helpful"` (default: the three cases above), `"off"`. Commands from `arborctl` and URLs never show it. (The menu is answered on screen: decided by the product owner. Reload Settings lives only in the menu, and the alternative is a bare beep.)
 
 **The shortcuts on screen.** `show-shortcuts` (⌃⌥⇧/, that is ⌃⌥?) shows a panel with every shortcut in effect, grouped as in `docs/KEYBOARD.md` (Look, Arrange, Arbor
 itself), with the user's own bindings in place of the defaults. Any key or click dismisses it. The menu has **Keyboard Shortcuts…**.
@@ -62,7 +62,7 @@ itself), with the user's own bindings in place of the defaults. Any key or click
 - The panel has a fourth part, "Pointer and trackpad", for what is done without keys.
 - `float-all` counts as an unseen change (no window moves); `undo` and `redo` will as soon as they are commands.
 
-**Added after the product owner's review of #37**: a success that left the view, the arrangement, every window and the keyboard as they were is said, because it looks like a dead key; ⌃⌥↩ on a floating window says "Mail
+**Added after the product owner's review**: a success that left the view, the arrangement, every window and the keyboard as they were is said, because it looks like a dead key; ⌃⌥↩ on a floating window says "Mail
 floats · ⌃⌥⌘← docks it, then ⌃⌥↩ frames it"; apps are called by name, never by bundle id, and one that is excluded is "Arbor does not arrange Mail · Arrange Again in the menu"; landing by Arbor's own command in an app that keeps its own
 ⌃⌥ says "Shortcuts are off in Emacs · ⌘Tab leaves, ⌃⌥⎋ pauses", and the panel there lists everything under the heading "Off in Emacs, except ⌃⌥⎋"; which display a command chose is left to the line's place; "Resumed" shows where "Paused" did.
 

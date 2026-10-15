@@ -155,5 +155,5 @@ sessions that check the rules after every step, and the journey `collab/scenario
 ## Not shipped
 
 - **The field has not run on a Mac.** `UI/NamePanel.swift` (170 lines) and the rows in `StatusMenu.swift` are written and read, not compiled here. `scripts/mac-shell/check-F20.sh` tries them with real keys. A22 says `partial` until it has passed.
-- **Go to…** (F27, #77), **`watch`** (F24, #74), **the minimap** (F26) and **the menu bar model** (F10, #73) each have a place waiting for names.
+- **Go to…** (F27), **`watch`** (F24), **the minimap** (F26) and **the menu bar model** (F10) each have a place waiting for names.
 - Names in F54's notation and in presets; names of a display that F52 turns into a guest space. See `collab/QUESTIONS.md`.

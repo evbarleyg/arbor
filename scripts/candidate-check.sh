@@ -1,16 +1,13 @@
 #!/bin/bash
 # Builds this commit the way `make install` builds it, and looks at what comes out. On a Mac; about three minutes.
 #
-#   scripts/candidate-check.sh                  build and look
-#   scripts/candidate-check.sh --is-candidate   only say (by the exit code) whether this commit is the release candidate
+#   scripts/candidate-check.sh
 #
 # Why: every build CI makes is a debug build. What
 # a person installs is compiled with -c release, bundled, stamped and signed by scripts nothing else runs. A release
 # candidate ought to have been through that once before its first `make install` is somebody's morning.
 #
-# When: scripts/sim-smoke.sh runs this on a Mac for one commit only: the one
-# the branch mac-build/candidate points at. The release manager pushes a candidate there; nothing is ever merged from it.
-# A failure shows as a failed smoke test with the errors below it.
+# When: by hand, or from a Mac shell script, on the commit that is to be released. Nothing runs it by itself.
 #
 # It changes nothing outside this checkout (.build and build/, both ignored by Git) and a temporary folder of its own.
 # The signature is ad hoc (ARBOR_SIGN_IDENTITY=-), so that no keychain is even read. Nothing is installed, opened or started as
@@ -21,12 +18,7 @@
 set -uo pipefail
 cd "$(dirname "$0")/.." || exit 2
 
-if [ "${1:-}" = --is-candidate ]; then
-  candidate=$(git rev-parse --quiet --verify refs/remotes/origin/mac-build/candidate 2>/dev/null) || exit 1
-  [ "$(git rev-parse HEAD 2>/dev/null)" = "$candidate" ]
-  exit
-fi
-[ $# -eq 0 ] || { echo "usage: scripts/candidate-check.sh [--is-candidate]" >&2; exit 64; }
+[ $# -eq 0 ] || { echo "usage: scripts/candidate-check.sh" >&2; exit 64; }
 [ "$(uname)" = Darwin ] || { echo "candidate-check.sh: bundles and signatures exist only on macOS" >&2; exit 1; }
 
 work=$(mktemp -d /tmp/arbor-candidate.XXXXXX) || { echo "candidate-check.sh: no temporary folder" >&2; exit 2; }

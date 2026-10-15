@@ -159,7 +159,7 @@ to its slot with the keyboard.
 - The list does not follow changes while the palette is open, by design.
 - No VoiceOver support in the palette: the rows are drawn, not accessibility elements.
 - Dialogs, panels and the windows of apps without a Dock icon are not listed: Arbor does not hear of them.
-- **While one window is framed, choosing another steps out to the group that holds both.** Decided otherwise by the product owner: it should frame the chosen one. That is ⌘Tab's rule too, so it changes in `reveal(_:leaf:on:)`, for both, by its owner (R5).
+- **While one window is framed, choosing another steps out to the group that holds both.** Decided otherwise by the product owner: it should frame the chosen one. That is ⌘Tab's rule too, so it changes in `reveal(_:leaf:on:)`, for both, by its owner.
 - "Go to…" chosen from the menu bar: whether the palette keeps the keyboard when the menu's tracking ends has to be tried on a Mac (view review).
 - A click on an input method's candidate while composing is let through; not tried.
 - Recency is not saved: after a relaunch the list starts in layout order.

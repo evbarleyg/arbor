@@ -320,7 +320,7 @@ out again when the window is back or the hold ends. All this is in `relayout` be
 `HoldFuzzTests` walks random commands, keys and events against the promise: nothing that was outside the held spaces shows while the hold lasts, nor when it
 ends, unless a view had nothing left in it.
 Since F62 a group the view is on keeps its identity, so docking at the edge of a held view, turning a held group the other way and a close inside it no longer widen the view, and the
-rehearsal lets them through by itself; since #154 that goes for `dock A beside B` in a group of two as well. The fence and the rehearsal stay as the guarantee. Still refused: taking away
+rehearsal lets them through by itself; that goes for `dock A beside B` in a group of two as well. The fence and the rehearsal stay as the guarantee. Still refused: taking away
 the only window showing.
 
 ## Echo suppression

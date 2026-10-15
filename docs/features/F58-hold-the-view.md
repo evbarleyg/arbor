@@ -55,7 +55,7 @@ Shipped (2026-10-14): what is under Behaviour as the product owner changed it on
 3 `aDockRulesWindowFloatsWhileHeldAndDocksOnRelease`; 4, changed, `whenTheOnlyWindowInViewClosesTheViewStaysHeldAndEmpty`; 5, changed, `pauseWorksWhileHeldAndEndsTheHold`, `floatAllWorksWhileHeldAndEndsTheHold`,
 `fromTheMenuAndTheTerminalBothAreStillWaysOut`, `quittingWorksWhileHeldAndTheHoldIsNotKept`. Scenario `collab/scenarios/58-hold-the-view.sim`.
 
-**Changed on review** (product owner, pull request #61): three things showed an audience every window that was out of view, two of them as this spec asked.
+**Changed on review** (the product owner): three things showed an audience every window that was out of view, two of them as this spec asked.
 
 - **The end of a hold moves the view no more than the hold did** (criterion 3). It can come by itself. A rule that waited is applied only if a rehearsal leaves the view where it is and showing what it shows, and not to a
   window the user has moved; otherwise the window goes on floating and `release` says so. `aRuleThatWouldMoveTheViewIsNotAppliedOnReleaseAndTheReplySaysSo` and the six tests after it.
@@ -81,8 +81,8 @@ Not shipped:
 
 - **The line at the screen edge.** "One point of each" is not what macOS does: it stops a window with its title bar above the Dock, so four windows asked to go to 1023,767 wait at 1023,673 and show a line one point wide and 84 tall
   (`collab/evidence/screens/2026-10-14-F58-line-of-windows-out-of-view.png`, eight times enlarged, cut from a picture of an earlier run). Whether zero points, or a place beyond the shadow, is accepted and
-  safe is the first thing `scripts/mac-shell/check-F58.sh` measures. Parking was left alone meanwhile; #47 is changing `parkingOrigin` for the same clamp.
-- **F43's messages** are on another branch (#37). Whoever lands second: while `isHeld`, show only the line for a command that failed.
+  safe is the first thing `scripts/mac-shell/check-F58.sh` measures. Parking was left alone meanwhile; other work is changing `parkingOrigin` for the same clamp.
+- **F43's messages** are on another branch. Whoever lands second: while `isHeld`, show only the line for a command that failed.
 - Mirrored displays (`CGDisplayIsInMirrorSet`: a projector) as a sign of presenting.
 - **No hold has been tried on real windows.** `check-F58.sh` has not run yet. The macOS-only code (the lock icon, the menu,
   `AXWindowSystem.secondsSinceClickOrModifierKey()`, the observer in `ArborApp`, `App/CallSensor.swift`) has been built on a Mac, with the unit tests and the general e2e run passing, and

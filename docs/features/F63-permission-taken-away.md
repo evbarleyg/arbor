@@ -3,7 +3,7 @@
 Written by the executor swarm, 2026-10-14; for the documenter to review.
 
 Status: done headlessly (`feat/F63-permission-lost`); the macOS-only part compiles on a Mac; the switch itself has not been tried on one yet
-Depends on: F40 (stopping and starting in one process), the app shell review (#18: `start()` forgets what is transient; what is off screen at a start counts as out of view), F41 (`activeBindings`, `inputSettings`)
+Depends on: F40 (stopping and starting in one process), the app shell review (`start()` forgets what is transient; what is off screen at a start counts as out of view), F41 (`activeBindings`, `inputSettings`)
 Size: small to medium
 
 ## Summary

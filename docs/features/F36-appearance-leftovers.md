@@ -2,7 +2,7 @@
 
 Written by the executor swarm, 2026-10-14; for the documenter to review.
 
-Status: done except the manual look (`feat/F36-appearance-leftovers`, #175: headless parts tested; the view code type-checked, not yet built or seen on a Mac)
+Status: done except the manual look (`feat/F36-appearance-leftovers`: headless parts tested; the view code type-checked, not yet built or seen on a Mac)
 Depends on: F10, F15
 Reference items: T50, T54, T70
 

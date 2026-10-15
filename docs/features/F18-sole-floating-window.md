@@ -122,8 +122,8 @@ Shipped: everything above, with two steps in `arbor-e2e` and `scripts/mac-shell/
 
 Not shipped:
 
-- The arithmetic of `frame(ofSize:inPlaceOf:under:)` is F48's `droppedFrame` over again, for a window that is not docked. Worth one function once F09 (#49) has settled the drop.
-- **Waits for F53** (#62): summoned and stashed windows must not count either; `windowAloneOnDesktop(of:)` then asks `workspace.role(of:) == nil` instead of
+- The arithmetic of `frame(ofSize:inPlaceOf:under:)` is F48's `droppedFrame` over again, for a window that is not docked. Worth one function once F09 has settled the drop.
+- **Waits for F53**: summoned and stashed windows must not count either; `windowAloneOnDesktop(of:)` then asks `workspace.role(of:) == nil` instead of
   `!workspace.isPinned`. Its author does that on the rebase.
 - Which window its user has in hand is not saved, so after a relaunch Arbor fills again.
 - Dragging the edge of a window that fills the Desktop resizes only that window. It could move the gap beside it, as a docked window's edge does (F07).

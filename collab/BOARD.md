@@ -254,15 +254,15 @@ Numbers with a # in this table are pull requests of the project's private beginn
 | F07 Resize docked windows by their own edges | 2026-10-13 | real-window check pending |
 | F08 Display reconnects and Spaces | 2026-10-13 | real displays and Spaces pending |
 | F03 Trackpad pinch, F05 Drag a rectangle | 2026-10-14 (`5399672`) | manual checks pending |
-| S2 The headless stack builds and tests on Linux | 2026-10-14 (#4) | every test on Linux and macOS CI |
-| S1 Make scenarios executable | 2026-10-14 (#5) | 5 scenarios, 45 expectations |
-| P2 Mac shell workflow, P3 real windows in CI | 2026-10-14 (#2, #3) | `e2e` job passes 42/42 on every PR |
-| B2 Huge numbers crash Arbor | 2026-10-14 (#14) | two new real-window steps in CI |
-| B3 Event taps off the main thread | 2026-10-14 (#9) |  |
+| S2 The headless stack builds and tests on Linux | 2026-10-14 | every test on Linux and macOS CI |
+| S1 Make scenarios executable | 2026-10-14 | 5 scenarios, 45 expectations |
+| P2 Mac shell workflow, P3 real windows in CI | 2026-10-14 | `e2e` job passes 42/42 on every PR |
+| B2 Huge numbers crash Arbor | 2026-10-14 | two new real-window steps in CI |
+| B3 Event taps off the main thread | 2026-10-14 |  |
 | F11 follow-ups: `ignore` for windows already open, late titles | 2026-10-14 | real-window check pending |
 | B1 Hand-edited settings must survive rewrites | 2026-10-14 | three new real-window steps in CI |
-| `main` into `swarm/trunk`: the F11 follow-ups and B1, conflicts resolved by their author | 2026-10-14 (#44) | L does these merges from now on when they conflict |
-| B4 A damaged state.json must not crash or hang Arbor at launch | 2026-10-14 (#21, on `swarm/trunk`) | Built by the swarm's core review; checked by L with the B2 review's launch fuzzer: 32,144 launches on damaged files, no trap, no hang (713 and 72 in 5,720 without it). L's one finding (a huge `nextRawID` cost every later dock its place at each launch) merged with it |
-| F12, first half: settings as commands, one schema, live reload, folded together with B1. Covers **B5** (every number has a range) | 2026-10-14 (#87, on `swarm/trunk`) | an independent review and two fuzzers |
-| A window Arbor moved out of view could be taken by an `ignore` rule there and was lost (chaos lab, `parked-unmanaged`; L's own F11 follow-ups) | 2026-10-14 (#163, on `swarm/trunk`) | the lab's script and a 3,000-seed hunt with a control. Also #171: a test from #87 that failed one full run in five |
-| Rules, round 1: four more doors to the lost window behind an `ignore` rule and one regression (a review of #163); two identical rules in settings.json each keep their own text | 2026-10-14 (#214, on `swarm/trunk`) | ten mutants each caught, a 3,000-seed chaos hunt equal to its control, both settings fuzzers clean; Linux only when it merged |
+| `main` into `swarm/trunk`: the F11 follow-ups and B1, conflicts resolved by their author | 2026-10-14 | L does these merges from now on when they conflict |
+| B4 A damaged state.json must not crash or hang Arbor at launch | 2026-10-14 | Built by the swarm's core review; checked by L with the B2 review's launch fuzzer: 32,144 launches on damaged files, no trap, no hang (713 and 72 in 5,720 without it). L's one finding (a huge `nextRawID` cost every later dock its place at each launch) merged with it |
+| F12, first half: settings as commands, one schema, live reload, folded together with B1. Covers **B5** (every number has a range) | 2026-10-14 | an independent review and two fuzzers |
+| A window Arbor moved out of view could be taken by an `ignore` rule there and was lost (chaos lab, `parked-unmanaged`; L's own F11 follow-ups) | 2026-10-14 | the lab's script and a 3,000-seed hunt with a control. Also: a test of the settings that failed one full run in five |
+| Rules, round 1: four more doors to the lost window behind an `ignore` rule and one regression (a review of the row above); two identical rules in settings.json each keep their own text | 2026-10-14 | ten mutants each caught, a 3,000-seed chaos hunt equal to its control, both settings fuzzers clean; Linux only when it merged |

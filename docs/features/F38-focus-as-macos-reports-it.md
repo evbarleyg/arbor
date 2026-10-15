@@ -2,7 +2,7 @@
 
 Written by the executor swarm, 2026-10-14; for the documenter to review.
 
-Status: in progress (rule 1 is on the trunk since #15; rules 2 to 5 and the fake's reports are built on `fix/review-controller`, #17, and `feat/F17-hardening`, #24; use this as their checklist)
+Status: in progress (rule 1 is on the trunk; rules 2 to 5 and the fake's reports are built on `fix/review-controller` and `feat/F17-hardening`; use this as their checklist)
 Depends on: F01
 Reference items: T07, and QUESTIONS Q7's "focus must never jump to a parked window"
 

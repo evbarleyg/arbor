@@ -72,7 +72,7 @@ instead of halving the same slot five times.
 - What is known is tried on a copy first (`minimumUsableWidth` × `minimumUsableHeight`, and the minimum sizes learned so far).
 - A new window's own minimum is not known. So it is **offered its slot before anyone makes room**: Arbor resizes the new window alone. If it refuses (Safari will not go below 574 points wide, Notes 709, System
   Settings is 723 wide and nothing else), its size is learned and the next placement is worked out with it. The neighbours have not moved.
-  A window that comes out a little too large is first asked for less (`askForLess`, #89): a terminal takes the whole character cells nearest to what it is asked for, and that is not a refusal.
+  A window that comes out a little too large is first asked for less (`askForLess`): a terminal takes the whole character cells nearest to what it is asked for, and that is not a refusal.
 - A neighbour's minimum may not be known either. If, once docked, a neighbour refuses its half and something became a tile, the docking is **taken back** at once, what was learned stays, and the next placement is worked out.
 - A window that ends up floating is put back exactly where its app opened it.
 - **With F61 (room before tiles, `makeRoom`, on by default)** the layout after a docking moves gaps before it makes a tile, so the plan rehearses that too: a Notes that stops at 709 points gets them from its neighbour and still lands to its right. On
@@ -152,10 +152,10 @@ At most seven rounds; each but the last learns a width or a height of the new wi
   `case .dockAuto: return true` there would let such windows dock as those of other rules do. Proposed to F58's owner in bug bash 1.
 - **That a window opening over one in full screen is seen as such** rests on the fake: a full-screen window that its app lists is taken to be showing. No Mac has been asked.
 - An app that opens a window small and enlarges it a moment later has it float; one that moves its window right after opening it is put back in its slot by the usual enforcement.
-- An app that was too slow to be observed at launch and is taken on later has its windows announced as new (`AXWindowSystem.retryObserve`), so they dock. They should be `windowFound`, as should windows first listed because a focus report came before the Space switch was known, or because their app was unhidden: #115 (K050) makes a window new only if its app said that it was created, and takes this event over.
+- An app that was too slow to be observed at launch and is taken on later has its windows announced as new (`AXWindowSystem.retryObserve`), so they dock. They should be `windowFound`, as should windows first listed because a focus report came before the Space switch was known, or because their app was unhidden: K050 makes a window new only if its app said that it was created, and takes this event over.
 - A native tab is recognised by its frame (`NativeTabs`: same corner and width, height within 40 points). An app whose first tab changes the frame by more arrives as a new window and would dock beside its own group. Terminal is measured;
   Finder, Safari and Xcode are not.
 - `isResizable` is asked once, when a window is first seen. Whether a window first seen minimised, hidden or in full screen answers as it would when shown has not been measured; such a window is not docked by itself anyway.
-- **The empty Desktop gives way once, not for good** (product owner's note on #105). It gets `arrangeDesktopWeight` when the first window docks. Later windows halve each other's slots and leave it alone, and when a window that shared its row closes, the
+- **The empty Desktop gives way once, not for good** (the product owner's note). It gets `arrangeDesktopWeight` when the first window docks. Later windows halve each other's slots and leave it alone, and when a window that shared its row closes, the
   Desktop takes its part of the room like every neighbour (T06). Since F61 landed the empty Desktop also gives whatever windows are known to need, and gets back what Arbor took; it does not yet give way merely so that windows are larger
   than they must be. That is left for F29 (arrange styles).

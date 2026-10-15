@@ -124,7 +124,7 @@ import Testing
     #expect(notes.notes == [])
   }
 
-  /// What main's build of 2026-10-14 wrote after zoom, close and quit, in 6 of 120 everyday sessions (found by R3). The
+  /// What main's build of 2026-10-14 wrote after zoom, close and quit, in 6 of 120 everyday sessions (found by a review). The
   /// candidate greeted its owner with the repair notice as the menu's first line and an ERROR in the log.
   @Test func aFileThatOnlyNeedsTidyingRaisesNoAlarm() throws {
     let home = try Home()

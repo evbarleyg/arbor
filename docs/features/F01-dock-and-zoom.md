@@ -25,7 +25,7 @@ Desktop kept as a space, and a camera moves between spaces.
   Until 2026-10-14 that held on a real Mac only when the app's own focused window
   changed (⌘`, the Window menu): macOS posts no focus change when an app merely
   comes forward (⌘Tab, a Dock click, a click across apps), and the camera stayed
-  (`collab/evidence/gestures-latest.txt`). Since #15 Arbor observes app activation too.
+  (`collab/evidence/gestures-latest.txt`). Since then Arbor observes app activation too.
 - Floating windows live on the Desktop: they leave and return with it,
   remember where the user put them, and are pushed back onto the Desktop when
   docked space grows over part of them. One that docked space covers completely

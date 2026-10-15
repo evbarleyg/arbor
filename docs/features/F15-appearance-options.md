@@ -1,6 +1,6 @@
 # F15: Appearance options
 
-Status: done except the manual look (`feat/F15-appearance`, #78: headless parts tested; built, tested and run end to end on a Mac; nobody has seen it on a screen yet)
+Status: done except the manual look (`feat/F15-appearance`: headless parts tested; built, tested and run end to end on a Mac; nobody has seen it on a screen yet)
 Depends on: F01 (and F02 for the options that apply to moving windows)
 
 ## Summary

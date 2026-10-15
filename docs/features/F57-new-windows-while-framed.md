@@ -62,4 +62,4 @@ In every mode:
 - `"tab"` mode (criteria 2 and 4): needs F04's tab strips.
 - F43's first-time message.
 - A click on the host while both are in view raises it over its guest, as macOS does with any two windows. Arbor does not keep guests in front.
-- A window floated by command or dropped as floating over a view without the Desktop becomes a guest in F48 (#41).
+- A window floated by command or dropped as floating over a view without the Desktop becomes a guest in F48.

@@ -725,7 +725,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
     let h = withNothingRemembered(first)
     let size = h.frame(b)!.size
     h.run("zoom \(a.rawValue)")
-    // The keyboard is on the display that stays: a change of displays ends with the focused window in view (#267), and
+    // The keyboard is on the display that stays: a change of displays ends with the focused window in view, and
     // one that arrives floating would bring the Desktop, and b with it.
     h.system.userFocus(m)
     h.system.setDisplays([main])

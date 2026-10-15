@@ -40,7 +40,7 @@ the commits were made.
 | Before posting a pull request's body, an issue or a comment | `scripts/public-check.py --text body.md`, or pipe the text in |
 | After every push, of a branch or a tag, and on every pull request | The workflow `Public check`, on Linux, in seconds |
 | After every post and every edit of one: issues, pull requests, comments, reviews | The workflow `Public text` (`scripts/public-text.py`), see below |
-| To see what the whole tree holds, old lines too | `scripts/public-check.py --tree`: an audit to read, not a gate |
+| To see what the whole tree holds, old lines too | `scripts/public-check.py --tree`. It finds nothing, and `make lint` and CI keep it so |
 
 It prints the place, the rule, what to write instead, and the line with the find between » and «. In GitHub Actions, whose
 logs are as public as the rest, everything found is blanked out, in file and branch names too.

@@ -3,7 +3,7 @@
 Written by the executor swarm, 2026-10-14; for the documenter to review.
 
 Status: done (all headless; 33 core and 5 controller tests)
-Depends on: F01, and the review of the core (pull request #21: decoding, `Remap`)
+Depends on: F01, and the review of the core (decoding, `Remap`)
 Needed by: F20 named spaces, F52 an unplugged display becomes a space, F29 arrange styles, F58 hold the view, F59 carry, F04 tab groups, undo
 Size: medium, all headless
 
@@ -46,7 +46,7 @@ saved on the pair, and so would its name. Zoomed in on the column, ⌃⌥⌘← 
 - `LayoutTree.dock(…, groupingFor: Keeps?)` always makes a group of the target and the window: it wraps the target also where the parent runs along that axis, and keeps the new split for that reason. `.cameraEdge` uses it with `.view`; F20 can with `.name`.
 - `Remap.survivor(of:in:) -> NodeID?`: what holds the content a node held, or nil if the content is gone. `resolve` answers with the parent there, which suits a view and not a name.
 - Decoding spares kept splits, drops marks on anything that is not a split, and hands a soft mark to the child on a collapse, as the live tree does.
-- This replaces the first and last child that `Remap` remembered for merged splits in #21: keeping the target does the same and also covers the two edges across the axis.
+- This replaces the first and last child that `Remap` remembered for merged splits: keeping the target does the same and also covers the two edges across the axis.
 
 ## Acceptance criteria
 

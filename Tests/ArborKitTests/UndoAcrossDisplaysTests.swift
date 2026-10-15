@@ -111,7 +111,7 @@ private let studio = DisplaySnapshot(
 
   // MARK: What does not end it
 
-  /// H2's case (3), by hand and with one display: dock, change "Looks like" in System Settings, ⌃⌥Z. Safari went back to
+  /// A case from before the release, by hand and with one display: dock, change "Looks like" in System Settings, ⌃⌥Z. Safari went back to
   /// 1800,500 on a display now 1920 wide: 120 of its 700 points showed, and `home` did not fetch it.
   @Test func soDoesAnotherResolution() {
     let big = DisplaySnapshot(

@@ -50,7 +50,7 @@ Shipped: all of the above, plus `raw` lines (the Accessibility notifications and
 events of them), how long slow `setFrame` calls took, `problem <text>` in `.expect` files for traces of bugs nobody has fixed yet,
 and a strict record-and-replay pass over every scenario in `make scenarios`.
 
-Supersedes an earlier branch, `feat/S3-window-traces` (pull request #12), which is merged into this branch: same architecture; its path
+Supersedes an earlier branch, `feat/S3-window-traces`, which is merged into this branch: same architecture; its path
 helper, `make trace`, parity id and Q14 are kept, its format and replayer are replaced by the ones here (Q14 says why).
 
 Not shipped: a menu item; recording from before `Controller.start()`; overlay scenes; re-recording a strict baseline from a replay.

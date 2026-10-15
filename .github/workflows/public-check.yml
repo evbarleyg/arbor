@@ -61,3 +61,10 @@ jobs:
             check=$RUNNER_TEMP/check/public-check.py
           fi
           python3 "$check" ${BASE:+--base "$BASE"} ${BRANCH:+--branch "$BRANCH"} ${TAG:+--tag "$TAG"}
+      # The step above reads what is new. This one holds the sum to the same: two changes that are each clean, an exception that was
+      # taken away, a rule that learnt something. Only where work is integrated: a branch from before the tree read clean would stay red.
+      - name: Nothing private in the whole tree
+        if: github.event_name == 'push' && contains(fromJSON('["refs/heads/main", "refs/heads/swarm/trunk"]'), github.ref)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 scripts/public-check.py --tree

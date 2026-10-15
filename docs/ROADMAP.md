@@ -62,7 +62,7 @@ column "new" marks a file that does not exist yet.
 | [F57](features/F57-new-windows-while-framed.md) | New windows while a window is framed | F04, F31 | yes | `Controller+Rules.swift`, `Workspace.swift` |
 | [F58](features/F58-hold-the-view.md) | Hold the view (presenting) | F40 | yes | `Controller+Layout.swift` |
 | [F59](features/F59-carry-with-the-keyboard.md) | Carry a window with the keyboard | F09 | yes | new `Controller+Carry.swift`, `Drop.swift` |
-| [F60](features/F60-guard-the-wallpaper-click.md) | A click on the Desktop does not sweep the windows away | F05, #16 | the decision | `Input/RectangleFramer.swift`, new core state machine |
+| [F60](features/F60-guard-the-wallpaper-click.md) | A click on the Desktop does not sweep the windows away | F05 | the decision | `Input/RectangleFramer.swift`, new core state machine |
 | [F61](features/F61-room-before-tiles.md) | Make room before making a tile | F01 | yes | `LayoutTree.swift`, `Controller+Layout.swift`, `Workspace.swift` |
 | [F63](features/F63-permission-taken-away.md) | Accessibility permission taken away while Arbor runs | F40, F41 | the decisions | new `Controller+Permission.swift`, `PermissionWatch.swift`, `App/ArborApp.swift` |
 
