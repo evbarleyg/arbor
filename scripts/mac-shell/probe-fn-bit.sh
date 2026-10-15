@@ -8,7 +8,7 @@
 # looks for a hot key. On a laptop fn sits beside ⌃.
 #
 # Part 1 needs no Arbor: a process registers hot keys as Arbor does, in three ways: plainly; with kEventKeyModifierFnMask (1 << 17); both. Each key is then pressed plainly, with fn's flag alone, and
-# with an fn key going down before it (and once coming up again before the key does). Who hears, the press and the release: the plain registration, the one with the bit, the app in front?
+# with an fn key going down before it (and once coming up again before the key does, once going down only after the key has, and once with a repeat of the key after that). Who hears, the press and the release: the plain registration, the one with the bit, the app in front?
 # Part 2, with Arbor: ⌃⌥A twenty-five times a second, by one process, through what might make Arbor let go of its keys for a moment. At the first run the hammer made two a second, too
 # few to find a hole of less than half a second. A peek (⌃⌥Space held), whose shortcuts come and go, is among it now.
 #
@@ -42,22 +42,23 @@ printf '%s\n' "96 ctrl+opt ctrl+opt+f5" "115 ctrl+opt ctrl+opt+home" "119 ctrl+o
   "117 ctrl+opt ctrl+opt+forwarddelete" >> "$CODES"
 KEYS="$KEYS ctrl+opt+f5 ctrl+opt+home ctrl+opt+end ctrl+opt+pageup ctrl+opt+pagedown ctrl+opt+forwarddelete"
 
-# registered <name> <file of codes>: a process that holds those hot keys; then every key by three hands; then it goes.
+# registered <name> <file of codes>: a process that holds those hot keys; then every key by seven hands; then it goes.
 registered() {
-  local name=$1 hand mods chord code
+  local name=$1 hand mods chord code repeats
   "$EARS" rival "$HEARD" "$2" 9>&- 8>&- &
   RIVAL_PID=$!
   started "$RIVAL_PID"
   check "$name: the process is up" eventually says_in_log "rival ready pid=$RIVAL_PID"
   grep "rival ready pid=$RIVAL_PID" "$HEARD" | cut -c 14-
-  for hand in plain:lctrl,lopt fn-flag:fn,lctrl,lopt fn-key:fnkey,lctrl,lopt fn-up-before-the-key:fnfirst,lctrl,lopt pad-flag:pad,lctrl,lopt; do
-    mods=${hand#*:}
-    ROUND="$name.${hand%%:*}"
+  for hand in plain:lctrl,lopt fn-flag:fn,lctrl,lopt fn-key:fnkey,lctrl,lopt fn-up-before-the-key:fnfirst,lctrl,lopt pad-flag:pad,lctrl,lopt \
+    fn-down-after-the-key:fnlate,lctrl,lopt fn-down-then-a-repeat:fnlate,lctrl,lopt:1; do
+    IFS=: read -r hand mods repeats <<< "$hand"
+    ROUND="$name.$hand"
     for chord in $KEYS; do
       code=$(awk -v chord="$chord" '$3 == chord { print $1 }' "$CODES")
       front_again
       mark "$chord"
-      "$EARS" press "$code" "$mods" hid
+      "$EARS" press "$code" "$mods" hid "${repeats:-0}"
       sleep 0.2
     done
     mark -
@@ -111,9 +112,9 @@ for (round_, chord), heard in rows.items():
     up = ups[(round_, chord)]
     said = " and ".join(f"{who} x{times}" + (f" (up x{up[who]})" if who != "THE-APP" else "") for who, times in sorted(heard.items())) or "nobody"
     sums.setdefault((round_, kind), collections.Counter())[said] += 1
-print(f"{'registered . pressed':34}{'key':18}heard by (how many keys)")
+print(f"{'registered . pressed':40}{'key':18}heard by (how many keys)")
 for (round_, kind), counts in sums.items():
-    print(f"{round_:34}{kind:18}" + "; ".join(f"{who}: {count}" for who, count in counts.items()))
+    print(f"{round_:40}{kind:18}" + "; ".join(f"{who}: {count}" for who, count in counts.items()))
 odd = [(r, c, h) for (r, c), h in rows.items() if sum(h.values()) != 1]
 print("heard by none, by more than one, or more than once:" if odd else "each press was heard once, by one")
 for round_, chord, heard in odd:

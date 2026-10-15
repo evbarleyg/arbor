@@ -46,7 +46,7 @@ if command == "announce" {
 }
 // press <key code> <modifier keys, comma-separated> <road> [repeats]
 // hammer <key code> <modifier keys> <road> <seconds> <presses a second>: the same press over and over, in one process
-//   modifier keys  lctrl rctrl lopt ropt fnkey: the key goes down, with the bit that says which. fnfirst: an fn key that comes up again BEFORE the key does. ctrl opt: the flag alone, no key and no hand, as many tools post.
+//   modifier keys  lctrl rctrl lopt ropt fnkey: the key goes down, with the bit that says which. fnfirst: an fn key that comes up again BEFORE the key does. fnlate: one that goes down only AFTER the key has (repeats come after it). ctrl opt: the flag alone, no key and no hand, as many tools post.
 //                  caps fn pad: the flag alone (a Caps Lock really pressed would stay on)
 //   road           hid | session | annotated: the point at which the events are put in, from the keyboard inwards; or a process id, for postToPid
 func press(_ code: CGKeyCode, _ modifiers: String, _ road: String, repeats: Int = 0, pause: useconds_t = 8000, hold: useconds_t = 40000) {
@@ -71,7 +71,8 @@ func press(_ code: CGKeyCode, _ modifiers: String, _ road: String, repeats: Int 
   }
   var flags: UInt64 = 0
   var down: [(CGKeyCode, UInt64)] = []
-  for word in modifiers.split(separator: ",").map(String.init) {
+  let late = modifiers.split(separator: ",").contains("fnlate")
+  for word in modifiers.split(separator: ",").map(String.init) where word != "fnlate" {
     guard let key = keys[word] else { fail("no modifier \(word)") }
     flags |= key.flags
     if let code = key.code {
@@ -80,6 +81,12 @@ func press(_ code: CGKeyCode, _ modifiers: String, _ road: String, repeats: Int 
     }
   }
   post(code, true, flags)
+  if late {
+    usleep(hold)
+    flags |= 0x800000
+    post(63, true, flags)
+    down.append((63, 0x800000))
+  }
   for _ in 0..<repeats {
     usleep(30000)
     post(code, true, flags, repeating: true)
