@@ -141,13 +141,15 @@
     }
 
     /// The panel as it would look, on a plain backing with the panel's corners.
-    private func picture(_ model: MinimapModel, isDark: Bool = false, scale: CGFloat = 2) throws -> Canvas {
+    private func picture(_ model: MinimapModel, isDark: Bool = false, scale: CGFloat = 2, strong: Bool = false) throws -> Canvas {
       let canvas = try Canvas(size: model.frame.size, scale: scale)
       canvas.draw(isDark: isDark) {
         backing(isDark: isDark).colour.setFill()
         let radius = PanelLook.Corner.panel
         NSBezierPath(roundedRect: CGRect(origin: .zero, size: model.frame.size), xRadius: radius, yRadius: radius).fill()
-        MinimapDrawing.draw(model, accent: accent.colour, ink: ink(isDark: isDark).colour) { paint(of: $0).colour }
+        MinimapDrawing.draw(model, accent: accent.colour, ink: ink(isDark: isDark).colour, increasesContrast: strong) {
+          paint(of: $0).colour
+        }
       }
       return canvas
     }
@@ -185,6 +187,24 @@
       }
       #expect(!canvas.pixel(view.midX, view.minY + 3).isNear(accent), "the window's own colour shows inside")
       #expect(canvas.pixel(view.midX, view.minY - 5).isNear(backing(isDark: false)), "and nothing beyond the line")
+    }
+
+    /// Where the frame lies on a neighbour's fill the accent alone did not stand out.
+    @Test func withIncreaseContrastTheFrameOfTheViewHasAPointOfInkOutsideIt() throws {
+      let tree = threeWindows()
+      let model = try model(tree, camera: tree.leaf(containing: window(2)))
+      let view = model.highlight
+      for isDark in [false, true] {
+        let (plain, strong) = (try picture(model, isDark: isDark), try picture(model, isDark: isDark, strong: true))
+        for point in [
+          CGPoint(x: view.midX, y: view.minY - 3.5), CGPoint(x: view.midX, y: view.maxY + 3.5),
+          CGPoint(x: view.minX - 3.5, y: view.midY), CGPoint(x: view.maxX + 3.5, y: view.midY),
+        ] {
+          #expect(strong.pixel(point).isNear(ink(isDark: isDark), within: 0.1), "\(point), dark: \(isDark)")
+          #expect(!plain.pixel(point).isNear(ink(isDark: isDark), within: 0.1), "the control: \(point), dark: \(isDark)")
+        }
+        #expect(strong.pixel(view.midX, view.minY - 2).isNear(accent), "the accent's line is where it was")
+      }
     }
 
     /// Whatever its app's colour: one of the ground's own brightness was not there at all.
