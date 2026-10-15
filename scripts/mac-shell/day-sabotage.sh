@@ -15,49 +15,35 @@
 #
 # Only on GitHub's Macs: it opens real apps, moves and closes their windows, and switches the display's size.
 DAY_SABOTAGE=1
-source "$(dirname "${BASH_SOURCE[0]}")/lib-day.sh"
-needs_throwaway_mac "open real apps, move, cover and close their windows, click in the Dock, and switch the display's size"
+WALK_WITHOUT_ARBOR=1
+WALK_KIND=sabotage
+source "$(dirname "${BASH_SOURCE[0]}")/lib-walk.sh"
+needs_throwaway_mac "open real apps, move, cover and close their windows, hold back everybody's mouse-up for a moment, and switch the display's size"
 
 place() { apptool set-frame "$@" > /dev/null; }
 
-apps_watchdog 500
-step "the Mac"
-echo "macOS $(sw_vers -productVersion) ($(sw_vers -buildVersion)) on $(uname -m)"
-day_build_tools
-display_mode 1440x900 1600x900 1680x1050 1920x1080
-apps_scratch
-sampler_start
-day_manifest kind '"sabotage"'
-read -r _ dx dy dw dh _ <<< "$(pointer displays | head -n 1)"
+# The same Mac, the same cast and the same manifest as a day's, so that the run can be counted as one of its cell.
+walk_begin stock laptop defaults
+dx=$WALK_X dy=$WALK_Y dw=$WALK_W dh=$WALK_H
 
 chapter "The windows"
-act open-close open-textedit "opens a document in TextEdit"
-meet oak com.apple.TextEdit "$APPS_SCRATCH/oak.txt" || die "TextEdit opened no window"
-acted judge=no
-act open-close open-second "opens a second one"
-known=$(app_windows "$P_oak")
-open -g -b com.apple.TextEdit "$APPS_SCRATCH/elm.txt"
-app_await_window "$P_oak" "$known" 10 || die "TextEdit opened no second window"
+act open-close open-second "opens a second document in TextEdit"
+known=$(app_windows "$P_textedit")
+open -g -b com.apple.TextEdit "$DAY_DOCUMENTS/$APPS_CANARY-elm.txt"
+app_await_window "$P_textedit" "$known" 10 || die "TextEdit opened no second window"
 label "$NEW_WINDOW" elm
-acted judge=no
-act open-close open-finder "opens a folder in Finder"
-meet grove com.apple.finder "$APPS_SCRATCH/grove" || die "Finder opened no window"
-acted judge=no
-act open-close open-preview "opens a picture in Preview"
-meet leaf com.apple.Preview "$APPS_SCRATCH/leaf.png" || die "Preview opened no window"
-acted judge=no
-act open-close open-terminal "opens Terminal"
-meet shell com.apple.Terminal || die "Terminal opened no window"
-acted judge=no
-A=$W_oak E=$NEW_WINDOW B=$W_grove C=$W_leaf D=$W_shell
-act idle lay-out "puts them side by side"
+acted setup=1
+A=$W_textedit E=$NEW_WINDOW B=$W_finder C=$W_preview D=$W_terminal P_oak=$P_textedit P_shell=$P_terminal
+# The others are out of the way: what is played here is about five windows.
+act idle lay-out "hides the other apps and puts five windows side by side"
+for name in safari notes calendar settings mail; do apptool hide "$(pid_of "$name")"; done
 place "$A" 80 80 520 380
 place "$E" 140 500 520 300
 place "$B" 700 80 560 380
 place "$C" 760 500 480 320
 place "$D" 1000 300 420 260
 sleep 3
-acted judge=no own=all
+acted setup=1 own=all
 
 chapter "Honest steps and offences"
 act switch honest-switch "clicks TextEdit's icon in the Dock"
@@ -180,7 +166,9 @@ apptool close "$E"
 acted offence=lost
 
 chapter "What only Arbor's own process can do wrong"
-# Where Arbor's program would be, so that it is told by the same signs: the name of its process, the path it runs from.
+# Called what Arbor's program is called, so that it is told by the same signs: the name of its process, the folder it runs from. In a folder of its own: a
+# script after this one on the same Mac shares the build, and must find Arbor there and not this.
+ARBOR_BIN="$APPS_TEMP/impostor-bin"
 mkdir -p "$ARBOR_BIN"
 swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/impostor.swift" -o "$ARBOR_BIN/Arbor" > "$ARBOR_OUT/build-impostor.log" 2>&1 \
   || { cat "$ARBOR_OUT/build-impostor.log"; die "scripts/mac-shell/impostor.swift did not compile"; }
@@ -202,6 +190,16 @@ impostor
 act switch honest-click-5 "clicks the first document's title bar, with something that passes for Arbor running"
 must click_window "$A"
 acted front="$A"
+act dock-key under-the-stage "a panel covers the whole display, as Arbor's stage does, and under it a window goes about before it ends up: nobody sees that"
+tell panel 4 "$dx" "$dy" "$dw" "$dh"
+sleep 0.5
+read -r fx fy fw fh <<< "$(real_of "$A")"
+place "$A" "$((fx + 300))" "$((fy + 200))" "$fw" "$fh"
+sleep 0.4
+place "$A" "$((fx + 40))" "$fy" "$fw" "$fh"
+sleep 0.2
+tell unpanel
+acted moves="$A"
 act switch held-back "OFFENCE: the button comes up, and an event tap keeps that from the apps for a fifth of a second"
 tell hold 200 4
 sleep 0.5

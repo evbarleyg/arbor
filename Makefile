@@ -17,6 +17,8 @@ lint:
 	@python3 scripts/reality-ledger.py --self-test && python3 scripts/reality-ledger.py --check
 	@python3 scripts/mac-shell/jolts.py --self-test > /dev/null || python3 scripts/mac-shell/jolts.py --self-test
 	@python3 scripts/mac-shell/viable.py --self-test > /dev/null || python3 scripts/mac-shell/viable.py --self-test
+	@python3 scripts/mac-shell/walk.py --self-test > /dev/null || python3 scripts/mac-shell/walk.py --self-test
+	@python3 scripts/mac-shell/walk.py 4711 --acts 100 | cmp -s - scripts/mac-shell/walk-sample.sh || { echo "scripts/mac-shell/walk-sample.sh is not what walk.py 4711 --acts 100 writes"; exit 1; }
 
 # Reads what this branch adds (lines, file names, commit messages, its own name) for what should stay private, and checks
 # that its history begins where the public repository's does. Before every push (docs/PUBLIC.md).
