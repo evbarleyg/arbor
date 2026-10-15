@@ -1,0 +1,197 @@
+# mac-shell: scripts/mac-shell/check-menu-height.sh at ab8e77e, macOS 26.6.2, 2026-10-15T06:18Z
+built Arbor, the pointer tool and the app bundles in 5s
+session 1: Arbor pid 11046, test windows 29 30 31 (pid 10981)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+the display: 0 0 1024 768; between the menu bar and the Dock: 0 31 1024 674
+> trace on menu-height
+recording /tmp/arbor-shell.Ci8eLp/home/traces/2026-10-15-061853-menu-height.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> click 410 394
+
+== nothing docked
+> click 782 15 --right
+  ✔ 10-nothing-docked: the menu opens
+10-nothing-docked: the menu is at 745 31, 273 wide and 486 high; the model says 486; the display shows down to 705
+  ✔ 10-nothing-docked: macOS makes it as high as the model says
+  ✔ 10-nothing-docked: at most 600 points
+  ✔ 10-nothing-docked: it ends above the Dock
+shot: mac-shell/10-nothing-docked.png
+shot: mac-shell/10-nothing-docked-own.png
+> key escape
+
+== an ordinary day, and every submenu
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+> click 732 15 --right
+  ✔ 20-ordinary: the menu opens
+20-ordinary: the menu is at 651 31, 273 wide and 486 high; the model says 486; the display shows down to 705
+  ✔ 20-ordinary: macOS makes it as high as the model says
+  ✔ 20-ordinary: at most 600 points
+  ✔ 20-ordinary: it ends above the Dock
+shot: mac-shell/20-ordinary.png
+shot: mac-shell/20-ordinary-own.png
+> move 787 144
+  ✔ Saved Views opens a submenu
+Saved Views: its submenu is at 436 127 220 285
+shot: mac-shell/21-saved-views.png
+> move 787 168
+  ✔ View opens a submenu
+View: its submenu is at 473 151 183 200
+shot: mac-shell/22-view.png
+> move 787 203
+  ✔ Dock Focused Window opens a submenu
+Dock Focused Window: its submenu is at 508 186 148 106
+shot: mac-shell/23-dock.png
+> move 787 251
+  ✔ Focused Window opens a submenu
+Focused Window: its submenu is at 400 234 256 93
+shot: mac-shell/24-focused-window.png
+> move 787 382
+  ✔ Arrangement opens a submenu
+Arrangement: its submenu is at 432 365 224 211
+shot: mac-shell/25-arrangement.png
+> move 787 441
+  ✔ Help opens a submenu
+Help: its submenu is at 427 424 229 224
+shot: mac-shell/26-help.png
+> key escape
+
+== much of everything: nine saved views, three named spaces, twelve apps that are not arranged
+> zoom 29
+framed w29
+> name Space 29
+named ArborTestWindows (n1): Space 29
+> zoom 30
+framed w30
+> name Space 30
+named ArborTestWindows (n3): Space 30
+> show-all
+showing everything
+> name All of it
+named everything: All of it
+> click 631 15 --right
+  ✔ 30-much: the menu opens
+30-much: the menu is at 449 31, 336 wide and 486 high; the model says 486; the display shows down to 705
+  ✔ 30-much: macOS makes it as high as the model says
+  ✔ 30-much: at most 600 points
+  ✔ 30-much: it ends above the Dock
+shot: mac-shell/30-much.png
+shot: mac-shell/30-much-own.png
+> move 617 144
+  ✔ Saved Views opens a submenu
+Saved Views: its submenu is at 780 91 227 608
+shot: mac-shell/31-much-saved-views.png
+> move 617 382
+  ✔ Arrangement opens a submenu
+Arrangement: its submenu is at 780 165 224 534
+shot: mac-shell/32-much-arrangement.png
+> key escape
+
+== the state with the most lines: the view is held and settings.json has a mistake
+> reload-settings
+arborctl: settings.json cannot be read, keeping the settings in use: line 2, column 3: expected a key in quotes, found `oops`
+  ✔ the menu says that settings.json has a mistake
+> hold
+holding this view until `release`
+  ✔ and that the view is held
+> click 780 15 --right
+  ✔ 40-most-lines: the menu opens
+40-most-lines: the menu is at 623 31, 395 wide and 593 high; the model says 593; the display shows down to 705
+  ✔ 40-most-lines: macOS makes it as high as the model says
+  ✔ 40-most-lines: at most 600 points
+  ✔ 40-most-lines: it ends above the Dock
+shot: mac-shell/40-most-lines.png
+shot: mac-shell/40-most-lines-own.png
+> key escape
+> click 780 15 --right
+  ✔ the menu opens
+Release is at 820 72; the menu ends at 624, the display shows down to 705
+> click 820 72
+  ✔ the click on Release closed the menu
+  ✔ Release let go of the view
+  ✔ and the line is gone
+> reload-settings
+settings reloaded
+
+== the first way out: Show Everything
+> zoom 29
+framed w29
+  ✔ the second window is out of view
+> click 631 15 --right
+  ✔ the menu opens
+Show Everything is at 617 48; the menu ends at 517, the display shows down to 705
+> click 617 48
+  ✔ the click on Show Everything closed the menu
+  ✔ it is back in view
+
+== the second: Float All Windows
+> zoom 29
+framed w29
+  ✔ the second window is out of view
+> click 631 15 --right
+  ✔ the menu opens
+Float All Windows is at 617 358; the menu ends at 517, the display shows down to 705
+> click 617 358
+  ✔ the click on Float All Windows closed the menu
+  ✔ the first window floats
+  ✔ the second window floats
+  ✔ and is in view
+
+== the third: Pause Arbor, and Resume
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+> click 732 15 --right
+  ✔ the menu opens
+Pause Arbor is at 787 476; the menu ends at 517, the display shows down to 705
+> click 787 476
+  ✔ the click on Pause Arbor closed the menu
+  ✔ Arbor is paused
+> click 782 15 --right
+  ✔ 50-paused: the menu opens
+50-paused: the menu is at 593 31, 425 wide and 152 high; the model says 152; the display shows down to 705
+  ✔ 50-paused: macOS makes it as high as the model says
+  ✔ 50-paused: at most 600 points
+  ✔ 50-paused: it ends above the Dock
+shot: mac-shell/50-paused.png
+shot: mac-shell/50-paused-own.png
+> key escape
+> click 782 15 --right
+  ✔ the menu opens
+Resume is at 805 72; the menu ends at 183, the display shows down to 705
+> click 805 72
+  ✔ the click on Resume closed the menu
+  ✔ Arbor runs again
+
+== the fourth: Quit Arbor, with a window out of view
+> dock 29 left
+arborctl: w29 is already at the left edge
+> dock 30 right
+arborctl: w30 is already at the right edge
+> zoom 29
+framed w29
+  ✔ the second window is out of view
+> trace off
+arborctl: not recording; last trace /tmp/arbor-shell.Ci8eLp/home/traces/2026-10-15-061853-menu-height.jsonl: 1512 lines, Arbor stopped
+> click 732 15 --right
+  ✔ the menu opens
+Quit Arbor is at 787 500; the menu ends at 517, the display shows down to 705
+> click 787 500
+  ✔ the click on Quit Arbor closed the menu
+  ✔ Arbor exits
+
+▸ quitting puts every window back in view
+> quit
+arborctl: Arbor is not running (no control socket at /tmp/arbor-shell.Ci8eLp/home/arbor.sock); start it with `open -a Arbor`
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/60-after-quit.png
+
+58 passed, 0 failed
+exit code 0
