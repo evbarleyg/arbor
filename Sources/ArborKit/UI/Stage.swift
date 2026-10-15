@@ -6,8 +6,8 @@ import QuartzCore
 struct Costume {
   /// A still picture of the window, if Arbor has one.
   var picture: CGImage?
-  /// The app's colour and icon, for the cover. Nil if the cover will not be seen.
-  var colour: CGColor?
+  /// A tile's colours and the app's icon, for the cover. Nil if the cover will not be seen.
+  var palette: TilePalette?
   var icon: CGImage?
 }
 
@@ -111,6 +111,7 @@ final class Stage {
         standIns[item.window] = standIn
       }
       standIn.layer.zPosition = CGFloat(index)
+      standIn.hairline = 1 / max(panel.backingScaleFactor, 1)
     }
     for (window, standIn) in standIns where !cast.contains(window) { standIn.freeze() }
     CATransaction.commit()
@@ -198,11 +199,11 @@ final class Stage {
   }
 
   /// Dresses a stand-in that set off as a plain card: its app's colour and icon have only just been made.
-  func show(_ cover: Wardrobe.Cover, of window: WindowID) {
+  func show(_ cover: Costume, of window: WindowID) {
     guard isUp, let standIn = standIns[window] else { return }
     CATransaction.begin()
     CATransaction.setAnimationDuration(0.1)
-    standIn.wear(Costume(picture: nil, colour: cover.colour, icon: cover.icon))
+    standIn.wear(cover)
     CATransaction.commit()
   }
 
@@ -265,20 +266,24 @@ private final class StagePanel: OverlayPanel {
 
 /// The layers that stand for one window: its picture over its cover, and a shadow.
 @MainActor
-private final class StandIn {
-  /// About what macOS gives its windows.
-  static var cornerRadius: CGFloat {
-    if #available(macOS 26.0, *) { return 16 }
-    return 10
-  }
+final class StandIn {
+  /// A real window's, as of everything that stands for one: a card and the window it becomes have the same corners.
+  static var cornerRadius: CGFloat { ContinuousCorners.windowRadius }
 
   /// Moves and fades as a whole.
   let layer = CALayer()
-  private let cover = CALayer()
+  /// **The card is the tile** (`TilePalette`, `TileMetrics.iconSide`): the same plate, lit from above, with the same hairline
+  /// and an icon of the same size. In the app's full colour with an icon that grew with it, a red window turned dark
+  /// green and back (seen on a hosted Mac). No caption while it moves.
+  private let cover = CAGradientLayer()
   private let icon = CALayer()
   private let picture = CALayer()
   /// The look last asked for, which a picture that arrives late has to respect.
   private var look = Plane.Look.picture
+  /// One pixel of the display, in points: the width of the line just inside the cover's edge.
+  var hairline: CGFloat = 1 {
+    didSet { cover.borderWidth = hairline }
+  }
 
   init() {
     layer.shadowColor = NSColor.black.cgColor
@@ -286,12 +291,16 @@ private final class StandIn {
     layer.shadowRadius = 14
     layer.shadowOffset = CGSize(width: 0, height: -6)
     cover.cornerRadius = Self.cornerRadius
+    cover.cornerCurve = .continuous
     cover.borderWidth = 1
-    cover.borderColor = NSColor.white.withAlphaComponent(0.25).cgColor
+    // From the top down. The layers' y grows upward.
+    cover.startPoint = CGPoint(x: 0.5, y: 1)
+    cover.endPoint = CGPoint(x: 0.5, y: 0)
     icon.contentsGravity = .resizeAspect
     // Stand-ins scale by stretching, as TrellisWM's do.
     picture.contentsGravity = .resize
     picture.cornerRadius = Self.cornerRadius
+    picture.cornerCurve = .continuous
     picture.masksToBounds = true
     cover.addSublayer(icon)
     layer.addSublayer(cover)
@@ -299,7 +308,10 @@ private final class StandIn {
   }
 
   func wear(_ costume: Costume) {
-    if let colour = costume.colour { cover.backgroundColor = colour }
+    if let palette = costume.palette {
+      cover.colors = [palette.top.nsColor.cgColor, palette.bottom.nsColor.cgColor]
+      cover.borderColor = palette.border.nsColor.cgColor
+    }
     if let image = costume.icon { icon.contents = image }
     if let image = costume.picture { picture.contents = image }
   }
@@ -322,7 +334,7 @@ private final class StandIn {
     layer.shadowPath = CGPath(rect: bounds, transform: nil)
     cover.frame = bounds
     picture.frame = bounds
-    let side = min(bounds.width, bounds.height) * 0.45
+    let side = TileMetrics.iconSide(for: bounds.size)
     icon.frame = CGRect(x: bounds.midX - side / 2, y: bounds.midY - side / 2, width: side, height: side)
   }
 

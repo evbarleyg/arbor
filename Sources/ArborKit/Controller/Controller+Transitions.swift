@@ -66,6 +66,8 @@ extension Controller {
       return nil
     }
     fit(&transition, to: stack)
+    let look = settings.appearanceOptions
+    transition.cover = Transition.Cover(usesAppColour: look.usesAppColours, colourAmount: look.appColourAmount)
     overlays.animate(transition)
     rehearsalWaits(for: transition.duration)
     return StagedTransition(before: before, stack: stack, sent: transition, began: now())

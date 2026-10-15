@@ -17,6 +17,8 @@ final class StageDirector {
   private let wardrobe = Wardrobe()
   /// The stand-ins of each display's last motion that set off without their cover, by app.
   private var undressed: [DisplayID: [Rehearsal.App: [WindowID]]] = [:]
+  /// How covers look in the motion each display last played.
+  private var looks: [DisplayID: Transition.Cover] = [:]
   private var mouseMonitors: [Any] = []
   private var observers: [NSObjectProtocol] = []
   /// When the last transition began, in seconds since the Mac started, as events are stamped.
@@ -35,7 +37,8 @@ final class StageDirector {
     wardrobe.onCover = { [weak self] app, cover in
       guard let self else { return }
       for (display, cast) in self.undressed {
-        for window in cast[app] ?? [] { self.stages[display]?.show(cover, of: window) }
+        let costume = Costume(palette: self.palette(of: cover, on: display), icon: cover.icon)
+        for window in cast[app] ?? [] { self.stages[display]?.show(costume, of: window) }
         self.undressed[display]?[app] = nil
       }
     }
@@ -89,6 +92,7 @@ final class StageDirector {
     let wasUp = stage.isUp
     marks.append(uptime)
     var costumes: [WindowID: Costume] = [:]
+    looks[display] = transition.cover
     undressed[display] = [:]
     for item in transition.items { costumes[item.window] = costume(for: item, on: display) }
     let plainCards = undressed[display]?.values.reduce(0) { $0 + $1.count } ?? 0
@@ -201,7 +205,13 @@ final class StageDirector {
     // Never waited for: see `Wardrobe`.
     let cover = wardrobe.cover(of: item.app)
     if cover == nil { undressed[display, default: [:]][item.app, default: []].append(item.window) }
-    return Costume(picture: picture, colour: (cover ?? Wardrobe.plain).colour, icon: cover?.icon)
+    return Costume(picture: picture, palette: palette(of: cover ?? Wardrobe.plain, on: display), icon: cover?.icon)
+  }
+
+  /// A tile's, by the look of the motion that is playing on `display`.
+  private func palette(of cover: Wardrobe.Cover, on display: DisplayID) -> TilePalette {
+    (looks[display] ?? Transition.Cover()).palette(
+      appColour: cover.colour, isDark: NSApp.effectiveAppearance.bestMatch(from: [.aqua, .darkAqua]) == .darkAqua)
   }
 
   // MARK: A click during an animation ends it

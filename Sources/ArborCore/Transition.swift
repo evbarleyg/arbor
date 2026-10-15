@@ -61,6 +61,24 @@ public struct Transition: Equatable, Sendable {
   /// Where the stage stays open, so that the real window there is seen, live, in front of everything
   /// that moves (`leaveOpen`). They may overlap.
   public var holes: [CGRect]
+  /// How a window's cover looks. **The card is the tile**: what stands for a window has one look, at rest and on its way.
+  public var cover = Cover()
+
+  /// What the tiles take from the settings too (`appColours`, `appColourAmount`). The planner leaves it as it ships.
+  public struct Cover: Equatable, Sendable {
+    public var usesAppColour: Bool
+    public var colourAmount: Double
+
+    public init(usesAppColour: Bool = true, colourAmount: Double = 0.25) {
+      self.usesAppColour = usesAppColour
+      self.colourAmount = colourAmount
+    }
+
+    /// The colours of the cover of a window of an app of that colour: a tile's.
+    public func palette(appColour: RGBA?, isDark: Bool) -> TilePalette {
+      TilePalette(appColour: usesAppColour ? appColour : nil, amount: colourAmount, isDark: isDark)
+    }
+  }
 
   public init(display: DisplayID, frame: CGRect, duration: Double, items: [Item], holes: [CGRect] = []) {
     self.display = display
