@@ -1,0 +1,2041 @@
+# mac-shell: scripts/mac-shell/shots-gallery-moves.sh at fc61f58, macOS 26.6.2, 2026-10-15T13:36Z
+
+== the Mac
+macOS 26.6.2
+built Arbor, the pointer tool and the app bundles in 7s
+Arbor runs from a bundle: Arbor 0.9.0 (build 0)
+as the Mac comes:
+Reduce Motion: true
+Increase Contrast: false
+Reduce Transparency: false
+com.apple.WindowManager EnableStandardClickToShowDesktop: 0
+Reduce Motion: true
+
+== motion (17 s into the run)
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+/Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+> appearance light: now light
+Increase Contrast: false
+Reduce Transparency: false
+Reduce Motion: false
+session 1: Arbor pid 29044, test windows 301 302 303 304 (pid 29021)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor 0.9.0 (build 0)
+> trace on gallery-motion
+recording /tmp/arbor-shell.1VCHif/home/traces/2026-10-15-133625-gallery-motion.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> move 984 70
+
+▸ motion: framing a window, and back
+> dock 301 left
+docked w301 at the left edge
+> dock 302 right
+docked w302 at the right edge
+> dock 303 beside 302 bottom
+docked w303 below w302
+> zoom 301
+framed w301
+film: 6 pictures in .93 s
+shot: mac-shell/motion-1-frame-1.png
+shot: mac-shell/motion-1-frame-2.png
+shot: mac-shell/motion-1-frame-3.png
+shot: mac-shell/motion-1-frame-4.png
+shot: mac-shell/motion-1-frame-5.png
+shot: mac-shell/motion-1-frame-6.png
+> show-all
+showing everything
+film: 6 pictures in .76 s
+shot: mac-shell/motion-2-everything-1.png
+shot: mac-shell/motion-2-everything-2.png
+shot: mac-shell/motion-2-everything-3.png
+shot: mac-shell/motion-2-everything-4.png
+shot: mac-shell/motion-2-everything-5.png
+shot: mac-shell/motion-2-everything-6.png
+
+▸ motion: docking
+> dock 304 beside 301 bottom
+docked w304 below w301
+film: 6 pictures in .79 s
+shot: mac-shell/motion-3-dock-1.png
+shot: mac-shell/motion-3-dock-2.png
+shot: mac-shell/motion-3-dock-3.png
+shot: mac-shell/motion-3-dock-4.png
+shot: mac-shell/motion-3-dock-5.png
+shot: mac-shell/motion-3-dock-6.png
+  ✔ nothing of the stage is left
+> trace off
+trace saved: /tmp/arbor-shell.1VCHif/home/traces/2026-10-15-133625-gallery-motion.jsonl: 390 lines, trace off
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+Reduce Motion: true
+
+== large (33 s into the run)
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+/Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+> appearance light: now light
+Increase Contrast: false
+Reduce Transparency: false
+session 2: Arbor pid 29806, test windows 317 318 319 320 321 (pid 29783)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor 0.9.0 (build 0)
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> trace on gallery-large
+recording /tmp/arbor-shell.juNgNJ/home/traces/2026-10-15-133642-gallery-large.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> move 984 70
+> display_add 1440 900: display 2, DD12C736-5FAE-4DBA-806D-BF81B26BD432
+> display_move right: now at 1920 0 1440 900
+the main display's visible frame: 0 30 1920 972; the Retina one's: 1920 30 1440 870
+
+▸ large: the whole menu, and its submenus
+> dock 321 left
+docked w321 at the left edge
+> click 483 516
+> click 1628 15 --right
+  ✔ a right click opens it
+shot: mac-shell/large-01-menu.png and large-01-menu-d2.png
+shot: mac-shell/large-01-menu-alone-1.png
+shot: mac-shell/large-01-menu-on-glass-1.png
+> key s
+> key a
+> key right
+shot: mac-shell/large-02-saved-views.png and large-02-saved-views-d2.png
+shot: mac-shell/large-02-saved-views-alone-1.png
+shot: mac-shell/large-02-saved-views-on-glass-1.png
+shot: mac-shell/large-02-saved-views-alone-2.png
+shot: mac-shell/large-02-saved-views-on-glass-2.png
+> key left
+> key d
+> key o
+> key right
+shot: mac-shell/large-03-dock.png and large-03-dock-d2.png
+shot: mac-shell/large-03-dock-alone-1.png
+shot: mac-shell/large-03-dock-on-glass-1.png
+shot: mac-shell/large-03-dock-alone-2.png
+shot: mac-shell/large-03-dock-on-glass-2.png
+> key left
+> key a
+> key d
+> key right
+shot: mac-shell/large-04-adjust.png and large-04-adjust-d2.png
+shot: mac-shell/large-04-adjust-alone-1.png
+shot: mac-shell/large-04-adjust-on-glass-1.png
+> key left
+> key h
+> key e
+> key right
+shot: mac-shell/large-05-help.png and large-05-help-d2.png
+shot: mac-shell/large-05-help-alone-1.png
+shot: mac-shell/large-05-help-on-glass-1.png
+shot: mac-shell/large-05-help-alone-2.png
+shot: mac-shell/large-05-help-on-glass-2.png
+> key left
+> key h
+> key e
+> key right
+> key a
+> key b
+> key return
+shot: mac-shell/large-06-about.png and large-06-about-d2.png
+shot: mac-shell/large-06-about-alone-1.png
+shot: mac-shell/large-06-about-on-glass-1.png
+
+▸ retina: the line round the focused window, the surface, tiles
+> move-to-display 2 317
+moved w317 to display 2
+> move-to-display 2 318
+moved w318 to display 2
+> move-to-display 2 319
+moved w319 to display 2
+> move-to-display 2 320
+moved w320 to display 2
+> dock 317 left
+docked w317 at the left edge
+> dock 318 right
+docked w318 at the right edge
+> dock 319 beside 318 bottom
+docked w319 below w318
+> click 2164 465
+> move 3320 70
+shot: mac-shell/retina-01-docked.png and retina-01-docked-d2.png
+  ✔ the window is on the Retina display
+shot: mac-shell/retina-02-ring-top-left.png
+shot: mac-shell/retina-03-ring-bottom-right.png
+> drag 2676 303 2164 676 --steps 90 --no-release
+shot: mac-shell/retina-04-drop-preview.png and retina-04-drop-preview-d2.png
+  ✔ it shows while the button is held
+shot: mac-shell/retina-05-drop-preview-corner.png
+> release
+> set minimumUsableHeight 600
+minimumUsableHeight = 600 (was 160)
+> set tileStyle name
+tileStyle = name (was icon)
+> move 3320 70
+shot: mac-shell/retina-06-tiles.png and retina-06-tiles-d2.png
+shot: mac-shell/retina-07-tile.png
+> reset minimumUsableHeight
+minimumUsableHeight = 160, the default (was 600)
+> reset tileStyle
+tileStyle = icon, the default (was name)
+
+▸ retina: the panels
+> click 2164 250
+> key ctrl+opt+shift+/
+shot: mac-shell/retina-08-shortcuts.png and retina-08-shortcuts-d2.png
+shot: mac-shell/retina-08-shortcuts-alone-1.png
+shot: mac-shell/retina-08-shortcuts-on-glass-1.png
+> key escape
+> key ctrl+opt+g
+shot: mac-shell/retina-09-go-to.png and retina-09-go-to-d2.png
+shot: mac-shell/retina-09-go-to-alone-1.png
+shot: mac-shell/retina-09-go-to-on-glass-1.png
+> key escape
+> minimap
+showing the minimap
+shot: mac-shell/retina-10-minimap.png and retina-10-minimap-d2.png
+shot: mac-shell/retina-10-minimap-alone-1.png
+shot: mac-shell/retina-10-minimap-on-glass-1.png
+> minimap
+put the minimap away
+> key ctrl+opt+n
+> key w
+> key r
+> key i
+> key t
+> key i
+> key n
+> key g
+shot: mac-shell/retina-11-name.png and retina-11-name-d2.png
+shot: mac-shell/retina-11-name-alone-1.png
+shot: mac-shell/retina-11-name-on-glass-1.png
+> key escape
+> set messages helpful
+messages = helpful (was off)
+> key ctrl+opt+return
+shot: mac-shell/retina-12-line-hint.png and retina-12-line-hint-d2.png
+shot: mac-shell/retina-12-line-hint-alone-1.png
+shot: mac-shell/retina-12-line-hint-on-glass-1.png
+> show-all
+showing everything
+
+▸ retina: the handle in a gap, peek's outline, the menu
+> move 2402 180
+shot: mac-shell/retina-13-handle-hovered.png
+> drag 2402 180 2422 180 --no-release
+shot: mac-shell/retina-14-handle-dragged.png
+> release
+> zoom 317
+framed w317
+> key ctrl+opt+space --down
+> move 2174 250
+shot: mac-shell/retina-15-peek-top-left.png
+> key ctrl+opt+space --up
+> show-all
+showing everything
+> display_remove
+> trace off
+trace saved: /tmp/arbor-shell.juNgNJ/home/traces/2026-10-15-133642-gallery-large.jsonl: 1723 lines, trace off
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+shot: mac-shell/large-99-after-quit.png
+
+== apps-light (113 s into the run)
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+/Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+> appearance light: now light
+Increase Contrast: false
+Reduce Transparency: false
+Reduce Motion: false
+session 3: Arbor pid 34844, test windows 480 (pid 34691,34141,34145,34148,34160,34187,34240,34263,34306,34336,34358)
+running: 1 display, 0 docked and 11 floating, 0 out of view
+Arbor 0.9.0 (build 0)
+> trace on gallery-apps-light
+recording /tmp/arbor-shell.xoQ7ua/home/traces/2026-10-15-133857-gallery-apps-light.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> move 984 70
+
+▸ real apps: arranged, and as tiles  (light)
+> arrange
+arranged 11 windows
+shot: mac-shell/apps-light-01-arranged.png
+> set minimumUsableWidth 100
+minimumUsableWidth = 100 (was 240)
+> set minimumUsableHeight 400
+minimumUsableHeight = 400 (was 160)
+shot: mac-shell/apps-light-02-window-tiles.png
+> set tileStyle icon
+tileStyle is already icon
+shot: mac-shell/apps-light-03-window-tiles-icons-alone.png
+> reset tileStyle
+tileStyle is already the default, icon
+> set minimumUsableWidth 2000
+arborctl: `minimumUsableWidth` must be from 0 to 1000 pt, got 2000
+shot: mac-shell/apps-light-04-group-tiles.png
+> reset minimumUsableWidth
+minimumUsableWidth = 240, the default (was 100)
+> reset minimumUsableHeight
+minimumUsableHeight = 160, the default (was 400)
+
+▸ real apps: Go to… and the minimap  (light)
+> click 700 538
+> key ctrl+opt+g
+shot: mac-shell/apps-light-05-go-to.png
+shot: mac-shell/apps-light-05-go-to-alone-1.png
+> key escape
+> minimap
+showing the minimap
+shot: mac-shell/apps-light-06-minimap.png
+shot: mac-shell/apps-light-06-minimap-alone-1.png
+> minimap
+put the minimap away
+
+▸ real apps: motion  (light)
+> zoom 480
+framed w480
+film: 6 pictures in 1.27 s
+shot: mac-shell/apps-light-07-frame-1.png
+shot: mac-shell/apps-light-07-frame-2.png
+shot: mac-shell/apps-light-07-frame-3.png
+shot: mac-shell/apps-light-07-frame-4.png
+shot: mac-shell/apps-light-07-frame-5.png
+shot: mac-shell/apps-light-07-frame-6.png
+> show-all
+showing everything
+film: 6 pictures in 1.51 s
+shot: mac-shell/apps-light-08-everything-1.png
+shot: mac-shell/apps-light-08-everything-2.png
+shot: mac-shell/apps-light-08-everything-3.png
+shot: mac-shell/apps-light-08-everything-4.png
+shot: mac-shell/apps-light-08-everything-5.png
+shot: mac-shell/apps-light-08-everything-6.png
+> trace off
+trace saved: /tmp/arbor-shell.xoQ7ua/home/traces/2026-10-15-133857-gallery-apps-light.jsonl: 476 lines, trace off
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+Reduce Motion: true
+
+== apps-dark (208 s into the run)
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-night.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-night.png
+/Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+> appearance dark: now dark
+Increase Contrast: false
+Reduce Transparency: false
+Reduce Motion: false
+session 4: Arbor pid 37331, test windows 583 (pid 37268,37042,37045,37049,37103,37107,37110,37113,37122,37125,37128)
+running: 1 display, 0 docked and 11 floating, 0 out of view
+Arbor 0.9.0 (build 0)
+> trace on gallery-apps-dark
+recording /tmp/arbor-shell.qnVO9K/home/traces/2026-10-15-133955-gallery-apps-dark.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> move 984 70
+
+▸ real apps: arranged, and as tiles  (dark)
+> arrange
+arranged 11 windows
+shot: mac-shell/apps-dark-01-arranged.png
+> set minimumUsableWidth 100
+minimumUsableWidth = 100 (was 240)
+> set minimumUsableHeight 400
+minimumUsableHeight = 400 (was 160)
+shot: mac-shell/apps-dark-02-window-tiles.png
+> set tileStyle icon
+tileStyle is already icon
+shot: mac-shell/apps-dark-03-window-tiles-icons-alone.png
+> reset tileStyle
+tileStyle is already the default, icon
+> set minimumUsableWidth 2000
+arborctl: `minimumUsableWidth` must be from 0 to 1000 pt, got 2000
+shot: mac-shell/apps-dark-04-group-tiles.png
+> reset minimumUsableWidth
+minimumUsableWidth = 240, the default (was 100)
+> reset minimumUsableHeight
+minimumUsableHeight = 160, the default (was 400)
+
+▸ real apps: Go to… and the minimap  (dark)
+state.py: window 583 is out of view
+> click
+pointer: expected x and y
+usage: pointer <command>
+  move x y                      glide the pointer there
+  click x y [count] [--right]   click (count 2 is a double-click), with the right button if asked
+      [--quick]                 the button comes up at once, as with tap to click (otherwise after 0.04 s)
+  drag x1 y1 x2 y2              press at the first point, drag to the second, release
+      [--steps n]               intermediate events (default 30)
+      [--duration s]            how long the movement takes (default 0.6)
+      [--hold s]                wait at the end before releasing (default 0.2)
+      [--no-release]            leave the button down; finish with `release`
+      [--no-settle]             without the small movement at the end that lets Arbor catch up
+  drag-on x y                   with the button down since a `drag --no-release`: carry on to that point and rest there
+      [--steps n] [--duration s] [--hold s]      as for drag
+  release [x y]                 release the button there (default: where the pointer is)
+      [--timed]                 print how many milliseconds later the login session had the button up, as apps are told it
+                                (1000: not within a second). An event tap that keeps the release to itself shows here
+      [--then-click x,y]        click there as soon as the pointer is there, 0.3 s after the release at the earliest, and print, on the same
+                                line, how many milliseconds after it the button went down: about 500 on a hosted Mac, where two
+                                calls of this tool lie 600 to 800 apart
+  key <chord>                   press a shortcut, e.g. ctrl+opt+space, cmd+shift+f5, escape
+      [--down]                  press the modifiers and the key, and leave them all down
+      [--up]                    release the key, then the modifiers (modifiers alone, or a key alone, work too)
+      [--held]                  press and release the key only: its modifiers are down already, and stay down
+      [--repeat n]              n more key-down events marked as auto-repeat, as a key that is held sends
+  calm                          let go of every mouse button and key that is down, and say which, if any: for the end of a run
+  pinch x y <amount>            spread two fingers there (negative: pinch them together) by that much
+      [--steps n]               magnification, in that many events (default 10)
+  where                         the pointer's position and whether the left button is down
+  activity                      seconds since the pointer was used, seconds since a key was released, and the count
+                                of key presses, as Arbor reads them (AXWindowSystem+Input.swift)
+  displays                      id x y w h pixel-width pixel-height scale, one line per display
+  windows [--pid n]             id pid layer x y w h on|off owner, as the window server sees them
+      [--on-screen]             only those on screen, from the frontmost to the one at the back
+  frame <window id>             x y w h, as the window server sees it
+  visible <window id>           the share of the window that is on some display, 0 to 1; 0 when the window
+                                server does not show it (minimized, hidden, on another Space)
+  grab <window id>              x y: a point on its title bar that no other window covers
+  spot <window id>              x y: a point on its content that no other window covers
+  button <window id> <which>    x y: the middle of its close, minimize or zoom button
+  ax <window id>                its Accessibility role and subrole, e.g. AXWindow AXStandardWindow
+  front                         the process id of the app in front, which has the keyboard
+  status-item <pid> [--frame]   x y: the middle of that process's menu bar item (--frame: x y w h)
+  menu-item <pid> <title>       x y: the middle of the item of its open menu whose title starts so
+  menu-mark <pid> <title>       that item's mark, e.g. ✓, or - when it has none
+  keyboard                      the process id of the app in front, then the number of its window that
+                                keys go to; - for none
+  button <pid> x y <name>       x y: the middle of the close, minimize or zoom button of that process's
+                                window whose top-left corner is nearest the point
+  screen-access | ax-access     true or false: Screen Recording, Accessibility
+  reduce-motion                 true or false: what an app launched now is told about Reduce Motion
+  increase-contrast | reduce-transparency       the same about those two
+  asleep                        true or false: whether the main display is asleep
+  picture <file> <w> <h> <#rrggbb> [<#rrggbb>]
+                                write a PNG: one colour, or a gradient between two under a grid
+  wallpaper [file]              show that picture on the desktop of every display; print what each shows
+click, drag, release and pinch take --mods <chord of modifiers>, e.g. --mods shift+cmd, held meanwhile.
+Every command that posts events takes --tap session, to post them after the window server's own handling.
+> key ctrl+opt+g
+shot: mac-shell/apps-dark-05-go-to.png
+shot: mac-shell/apps-dark-05-go-to-alone-1.png
+> key escape
+> minimap
+showing the minimap
+shot: mac-shell/apps-dark-06-minimap.png
+shot: mac-shell/apps-dark-06-minimap-alone-1.png
+> minimap
+put the minimap away
+
+▸ real apps: motion  (dark)
+> zoom 583
+framed w583
+film: 6 pictures in 1.37 s
+shot: mac-shell/apps-dark-07-frame-1.png
+shot: mac-shell/apps-dark-07-frame-2.png
+shot: mac-shell/apps-dark-07-frame-3.png
+shot: mac-shell/apps-dark-07-frame-4.png
+shot: mac-shell/apps-dark-07-frame-5.png
+shot: mac-shell/apps-dark-07-frame-6.png
+> show-all
+showing everything
+film: 6 pictures in 1.92 s
+shot: mac-shell/apps-dark-08-everything-1.png
+shot: mac-shell/apps-dark-08-everything-2.png
+shot: mac-shell/apps-dark-08-everything-3.png
+shot: mac-shell/apps-dark-08-everything-4.png
+shot: mac-shell/apps-dark-08-everything-5.png
+shot: mac-shell/apps-dark-08-everything-6.png
+> trace off
+trace saved: /tmp/arbor-shell.qnVO9K/home/traces/2026-10-15-133955-gallery-apps-dark.jsonl: 384 lines, trace off
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+Reduce Motion: true
+
+== grounds-light-opaque (261 s into the run)
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+/Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+> appearance light: now light
+Increase Contrast: false
+Reduce Transparency: true
+session 5: Arbor pid 39487, test windows 618 619 (pid 39467)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor 0.9.0 (build 0)
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> trace on gallery-grounds-light-opaque
+recording /tmp/arbor-shell.MuDSm6/home/traces/2026-10-15-134030-gallery-grounds-light-opaque.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> move 984 71
+> dock 618 left
+docked w618 at the left edge
+> dock 619 right
+docked w619 at the right edge
+> resize 618 right -80
+resized w618
+> resize 619 left -80
+resized w619
+> set messages helpful
+messages = helpful (was off)
+
+▸ over red  (light-opaque)
+> wallpaper #ff383c
+/Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+> desktop
+showing the Desktop
+> move 984 71
+> show-shortcuts
+Look
+  ⌃⌥Space                  Show Everything
+  ⌃⌥0                      Show Everything on All Displays
+  ⌃⌥↑                      Step Out
+  ⌃⌥↓                      Step In
+  ⌃⌥←                      Space to the Left
+  ⌃⌥→                      Space to the Right
+  ⌃⌥[                      Back
+  ⌃⌥]                      Forward
+  ⌃⌥↩                      Frame Focused Window
+  ⌃⌥D                      Show the Desktop
+  ⌃⌥⇧1–9                   Save the View
+  ⌃⌥1–9                    Go to a Saved View
+  ⌃⌥N                      Name This Space
+  ⌃⌥⇧ + arrow              Neighboring Window
+  ⌃⌥G                      Go to…
+  ⌃⌥M                      Show Minimap
+
+Arrange
+  ⌃⌥⌘ + arrow              Dock Focused Window, or Move It
+  ⌃⌥F                      Float or Dock Focused Window
+  ⌃⌥A                      Arrange Windows
+  ⌃⌥⇧F                     Float All Windows
+  ⌃⌥Z                      Undo
+  ⌃⌥⇧Z                     Redo
+  ⌃⌥⌘=                     Grow
+  ⌃⌥⌘-                     Shrink
+  ⌃⌥⌘0                     Balance Sizes
+  ⌃⌥R                      Rotate Group
+  ⌃⌥⇧R                     Mirror Group
+
+Arbor itself
+  ⌃⌥⎋                      Pause or Resume Arbor
+  ⌃⌥⇧/                     Keyboard Shortcuts
+  ⌃⌥,                      Settings
+
+Pointer and trackpad
+  Drag to a screen edge    Dock
+  Drag to a window’s edge  Dock Beside It
+  Drag a gap               Resize Both Sides
+  Click a tile             Zoom In on It
+  ⌥ + pinch                Zoom
+  ⌃⌥ + drag                Frame What Is Inside
+  ⇧ + drag on the Desktop  Frame What Is Inside
+shot: mac-shell/light-opaque-on-red-1-shortcuts.png
+  ✔ the panel of shortcuts is up
+> key escape
+> find
+Go to… is open
+shot: mac-shell/light-opaque-on-red-2-go-to.png
+> key b
+> key r
+> key e
+shot: mac-shell/light-opaque-on-red-3-go-to-typed.png
+> key cmd+return
+> key down
+> key cmd+return
+shot: mac-shell/light-opaque-on-red-3b-go-to-ticked.png
+> key z
+> key z
+> key z
+> key z
+shot: mac-shell/light-opaque-on-red-3c-go-to-nothing-matches.png
+> key delete
+> key delete
+> key delete
+> key delete
+> key b
+> key a
+> key l
+shot: mac-shell/light-opaque-on-red-3d-go-to-commands.png
+> key escape
+> minimap
+showing the minimap
+shot: mac-shell/light-opaque-on-red-4-minimap.png
+> minimap
+put the minimap away
+> show-all
+showing everything
+> ask-name
+type a name for everything
+shot: mac-shell/light-opaque-on-red-5-name.png
+> key w
+> key r
+> key i
+> key t
+> key i
+> key n
+> key g
+shot: mac-shell/light-opaque-on-red-5b-name-typed.png
+> key space
+> key a
+> key n
+> key d
+> key space
+> key e
+> key v
+> key e
+> key r
+> key y
+> key t
+> key h
+> key i
+> key n
+> key g
+> key space
+> key e
+> key l
+> key s
+> key e
+> key space
+> key t
+> key h
+> key a
+> key t
+> key space
+> key h
+> key a
+> key s
+> key space
+> key t
+> key o
+> key space
+> key b
+> key e
+> key space
+> key d
+> key o
+> key n
+> key e
+> key space
+> key b
+> key y
+> key space
+> key t
+> key h
+> key e
+> key n
+shot: mac-shell/light-opaque-on-red-5c-name-problem.png
+> key escape
+> key ctrl+opt+space
+shot: mac-shell/light-opaque-on-red-6-line-problem.png
+> click 134 371
+> move 984 71
+> key ctrl+opt+return
+> desktop
+showing the Desktop
+shot: mac-shell/light-opaque-on-red-6b-line-hint.png
+
+▸ over blue  (light-opaque)
+> wallpaper #0088ff
+/Users/runner/work/arbor/arbor/.build/mac-shell/wallpaper-ff383c.png
+> desktop
+showing the Desktop
+> move 984 71
+> show-shortcuts
+Look
+  ⌃⌥Space                  Show Everything
+  ⌃⌥0                      Show Everything on All Displays
+  ⌃⌥↑                      Step Out
+  ⌃⌥↓                      Step In
+  ⌃⌥←                      Space to the Left
+  ⌃⌥→                      Space to the Right
+  ⌃⌥[                      Back
+  ⌃⌥]                      Forward
+  ⌃⌥↩                      Frame Focused Window
+  ⌃⌥D                      Show the Desktop
+  ⌃⌥⇧1–9                   Save the View
+  ⌃⌥1–9                    Go to a Saved View
+  ⌃⌥N                      Name This Space
+  ⌃⌥⇧ + arrow              Neighboring Window
+  ⌃⌥G                      Go to…
+  ⌃⌥M                      Show Minimap
+
+Arrange
+  ⌃⌥⌘ + arrow              Dock Focused Window, or Move It
+  ⌃⌥F                      Float or Dock Focused Window
+  ⌃⌥A                      Arrange Windows
+  ⌃⌥⇧F                     Float All Windows
+  ⌃⌥Z                      Undo
+  ⌃⌥⇧Z                     Redo
+  ⌃⌥⌘=                     Grow
+  ⌃⌥⌘-                     Shrink
+  ⌃⌥⌘0                     Balance Sizes
+  ⌃⌥R                      Rotate Group
+  ⌃⌥⇧R                     Mirror Group
+
+Arbor itself
+  ⌃⌥⎋                      Pause or Resume Arbor
+  ⌃⌥⇧/                     Keyboard Shortcuts
+  ⌃⌥,                      Settings
+
+Pointer and trackpad
+  Drag to a screen edge    Dock
+  Drag to a window’s edge  Dock Beside It
+  Drag a gap               Resize Both Sides
+  Click a tile             Zoom In on It
+  ⌥ + pinch                Zoom
+  ⌃⌥ + drag                Frame What Is Inside
+  ⇧ + drag on the Desktop  Frame What Is Inside
+shot: mac-shell/light-opaque-on-blue-1-shortcuts.png
+  ✔ the panel of shortcuts is up
+> key escape
+> find
+Go to… is open
+shot: mac-shell/light-opaque-on-blue-2-go-to.png
+> key b
+> key r
+> key e
+shot: mac-shell/light-opaque-on-blue-3-go-to-typed.png
+> key cmd+return
+> key down
+> key cmd+return
+shot: mac-shell/light-opaque-on-blue-3b-go-to-ticked.png
+> key z
+> key z
+> key z
+> key z
+shot: mac-shell/light-opaque-on-blue-3c-go-to-nothing-matches.png
+> key delete
+> key delete
+> key delete
+> key delete
+> key b
+> key a
+> key l
+shot: mac-shell/light-opaque-on-blue-3d-go-to-commands.png
+> key escape
+> minimap
+showing the minimap
+shot: mac-shell/light-opaque-on-blue-4-minimap.png
+> minimap
+put the minimap away
+> show-all
+showing everything
+> ask-name
+type a name for everything
+shot: mac-shell/light-opaque-on-blue-5-name.png
+> key w
+> key r
+> key i
+> key t
+> key i
+> key n
+> key g
+shot: mac-shell/light-opaque-on-blue-5b-name-typed.png
+> key space
+> key a
+> key n
+> key d
+> key space
+> key e
+> key v
+> key e
+> key r
+> key y
+> key t
+> key h
+> key i
+> key n
+> key g
+> key space
+> key e
+> key l
+> key s
+> key e
+> key space
+> key t
+> key h
+> key a
+> key t
+> key space
+> key h
+> key a
+> key s
+> key space
+> key t
+> key o
+> key space
+> key b
+> key e
+> key space
+> key d
+> key o
+> key n
+> key e
+> key space
+> key b
+> key y
+> key space
+> key t
+> key h
+> key e
+> key n
+shot: mac-shell/light-opaque-on-blue-5c-name-problem.png
+> key escape
+> key ctrl+opt+space
+shot: mac-shell/light-opaque-on-blue-6-line-problem.png
+> click 134 371
+> move 984 71
+> key ctrl+opt+return
+> desktop
+showing the Desktop
+shot: mac-shell/light-opaque-on-blue-6b-line-hint.png
+
+▸ over white  (light-opaque)
+> wallpaper #ffffff
+/Users/runner/work/arbor/arbor/.build/mac-shell/wallpaper-0088ff.png
+> desktop
+showing the Desktop
+> move 984 71
+> show-shortcuts
+Look
+  ⌃⌥Space                  Show Everything
+  ⌃⌥0                      Show Everything on All Displays
+  ⌃⌥↑                      Step Out
+  ⌃⌥↓                      Step In
+  ⌃⌥←                      Space to the Left
+  ⌃⌥→                      Space to the Right
+  ⌃⌥[                      Back
+  ⌃⌥]                      Forward
+  ⌃⌥↩                      Frame Focused Window
+  ⌃⌥D                      Show the Desktop
+  ⌃⌥⇧1–9                   Save the View
+  ⌃⌥1–9                    Go to a Saved View
+  ⌃⌥N                      Name This Space
+  ⌃⌥⇧ + arrow              Neighboring Window
+  ⌃⌥G                      Go to…
+  ⌃⌥M                      Show Minimap
+
+Arrange
+  ⌃⌥⌘ + arrow              Dock Focused Window, or Move It
+  ⌃⌥F                      Float or Dock Focused Window
+  ⌃⌥A                      Arrange Windows
+  ⌃⌥⇧F                     Float All Windows
+  ⌃⌥Z                      Undo
+  ⌃⌥⇧Z                     Redo
+  ⌃⌥⌘=                     Grow
+  ⌃⌥⌘-                     Shrink
+  ⌃⌥⌘0                     Balance Sizes
+  ⌃⌥R                      Rotate Group
+  ⌃⌥⇧R                     Mirror Group
+
+Arbor itself
+  ⌃⌥⎋                      Pause or Resume Arbor
+  ⌃⌥⇧/                     Keyboard Shortcuts
+  ⌃⌥,                      Settings
+
+Pointer and trackpad
+  Drag to a screen edge    Dock
+  Drag to a window’s edge  Dock Beside It
+  Drag a gap               Resize Both Sides
+  Click a tile             Zoom In on It
+  ⌥ + pinch                Zoom
+  ⌃⌥ + drag                Frame What Is Inside
+  ⇧ + drag on the Desktop  Frame What Is Inside
+shot: mac-shell/light-opaque-on-white-1-shortcuts.png
+  ✔ the panel of shortcuts is up
+> key escape
+> find
+Go to… is open
+shot: mac-shell/light-opaque-on-white-2-go-to.png
+> key b
+> key r
+> key e
+shot: mac-shell/light-opaque-on-white-3-go-to-typed.png
+> key cmd+return
+> key down
+> key cmd+return
+shot: mac-shell/light-opaque-on-white-3b-go-to-ticked.png
+> key z
+> key z
+> key z
+> key z
+shot: mac-shell/light-opaque-on-white-3c-go-to-nothing-matches.png
+> key delete
+> key delete
+> key delete
+> key delete
+> key b
+> key a
+> key l
+shot: mac-shell/light-opaque-on-white-3d-go-to-commands.png
+> key escape
+> minimap
+showing the minimap
+shot: mac-shell/light-opaque-on-white-4-minimap.png
+> minimap
+put the minimap away
+> show-all
+showing everything
+> ask-name
+type a name for everything
+shot: mac-shell/light-opaque-on-white-5-name.png
+> key w
+> key r
+> key i
+> key t
+> key i
+> key n
+> key g
+shot: mac-shell/light-opaque-on-white-5b-name-typed.png
+> key space
+> key a
+> key n
+> key d
+> key space
+> key e
+> key v
+> key e
+> key r
+> key y
+> key t
+> key h
+> key i
+> key n
+> key g
+> key space
+> key e
+> key l
+> key s
+> key e
+> key space
+> key t
+> key h
+> key a
+> key t
+> key space
+> key h
+> key a
+> key s
+> key space
+> key t
+> key o
+> key space
+> key b
+> key e
+> key space
+> key d
+> key o
+> key n
+> key e
+> key space
+> key b
+> key y
+> key space
+> key t
+> key h
+> key e
+> key n
+shot: mac-shell/light-opaque-on-white-5c-name-problem.png
+> key escape
+> key ctrl+opt+space
+shot: mac-shell/light-opaque-on-white-6-line-problem.png
+> click 134 371
+> move 984 71
+> key ctrl+opt+return
+> desktop
+showing the Desktop
+shot: mac-shell/light-opaque-on-white-6b-line-hint.png
+
+▸ over black  (light-opaque)
+> wallpaper #000000
+/Users/runner/work/arbor/arbor/.build/mac-shell/wallpaper-ffffff.png
+> desktop
+showing the Desktop
+> move 984 71
+> show-shortcuts
+Look
+  ⌃⌥Space                  Show Everything
+  ⌃⌥0                      Show Everything on All Displays
+  ⌃⌥↑                      Step Out
+  ⌃⌥↓                      Step In
+  ⌃⌥←                      Space to the Left
+  ⌃⌥→                      Space to the Right
+  ⌃⌥[                      Back
+  ⌃⌥]                      Forward
+  ⌃⌥↩                      Frame Focused Window
+  ⌃⌥D                      Show the Desktop
+  ⌃⌥⇧1–9                   Save the View
+  ⌃⌥1–9                    Go to a Saved View
+  ⌃⌥N                      Name This Space
+  ⌃⌥⇧ + arrow              Neighboring Window
+  ⌃⌥G                      Go to…
+  ⌃⌥M                      Show Minimap
+
+Arrange
+  ⌃⌥⌘ + arrow              Dock Focused Window, or Move It
+  ⌃⌥F                      Float or Dock Focused Window
+  ⌃⌥A                      Arrange Windows
+  ⌃⌥⇧F                     Float All Windows
+  ⌃⌥Z                      Undo
+  ⌃⌥⇧Z                     Redo
+  ⌃⌥⌘=                     Grow
+  ⌃⌥⌘-                     Shrink
+  ⌃⌥⌘0                     Balance Sizes
+  ⌃⌥R                      Rotate Group
+  ⌃⌥⇧R                     Mirror Group
+
+Arbor itself
+  ⌃⌥⎋                      Pause or Resume Arbor
+  ⌃⌥⇧/                     Keyboard Shortcuts
+  ⌃⌥,                      Settings
+
+Pointer and trackpad
+  Drag to a screen edge    Dock
+  Drag to a window’s edge  Dock Beside It
+  Drag a gap               Resize Both Sides
+  Click a tile             Zoom In on It
+  ⌥ + pinch                Zoom
+  ⌃⌥ + drag                Frame What Is Inside
+  ⇧ + drag on the Desktop  Frame What Is Inside
+shot: mac-shell/light-opaque-on-black-1-shortcuts.png
+  ✔ the panel of shortcuts is up
+> key escape
+> find
+Go to… is open
+shot: mac-shell/light-opaque-on-black-2-go-to.png
+> key b
+> key r
+> key e
+shot: mac-shell/light-opaque-on-black-3-go-to-typed.png
+> key cmd+return
+> key down
+> key cmd+return
+shot: mac-shell/light-opaque-on-black-3b-go-to-ticked.png
+> key z
+> key z
+> key z
+> key z
+shot: mac-shell/light-opaque-on-black-3c-go-to-nothing-matches.png
+> key delete
+> key delete
+> key delete
+> key delete
+> key b
+> key a
+> key l
+shot: mac-shell/light-opaque-on-black-3d-go-to-commands.png
+> key escape
+> minimap
+showing the minimap
+shot: mac-shell/light-opaque-on-black-4-minimap.png
+> minimap
+put the minimap away
+> show-all
+showing everything
+> ask-name
+type a name for everything
+shot: mac-shell/light-opaque-on-black-5-name.png
+> key w
+> key r
+> key i
+> key t
+> key i
+> key n
+> key g
+shot: mac-shell/light-opaque-on-black-5b-name-typed.png
+> key space
+> key a
+> key n
+> key d
+> key space
+> key e
+> key v
+> key e
+> key r
+> key y
+> key t
+> key h
+> key i
+> key n
+> key g
+> key space
+> key e
+> key l
+> key s
+> key e
+> key space
+> key t
+> key h
+> key a
+> key t
+> key space
+> key h
+> key a
+> key s
+> key space
+> key t
+> key o
+> key space
+> key b
+> key e
+> key space
+> key d
+> key o
+> key n
+> key e
+> key space
+> key b
+> key y
+> key space
+> key t
+> key h
+> key e
+> key n
+shot: mac-shell/light-opaque-on-black-5c-name-problem.png
+> key escape
+> key ctrl+opt+space
+shot: mac-shell/light-opaque-on-black-6-line-problem.png
+> click 134 371
+> move 984 71
+> key ctrl+opt+return
+> desktop
+showing the Desktop
+shot: mac-shell/light-opaque-on-black-6b-line-hint.png
+> trace off
+trace saved: /tmp/arbor-shell.MuDSm6/home/traces/2026-10-15-134030-gallery-grounds-light-opaque.jsonl: 1077 lines, trace off
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== grounds-dark-opaque (428 s into the run)
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-night.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-night.png
+/Users/runner/work/arbor/arbor/.build/mac-shell/wallpaper-000000.png
+> appearance dark: now dark
+Increase Contrast: false
+Reduce Transparency: true
+session 6: Arbor pid 47862, test windows 698 699 (pid 47784)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor 0.9.0 (build 0)
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> trace on gallery-grounds-dark-opaque
+recording /tmp/arbor-shell.7OtM3p/home/traces/2026-10-15-134316-gallery-grounds-dark-opaque.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> move 984 71
+> dock 698 left
+docked w698 at the left edge
+> dock 699 right
+docked w699 at the right edge
+> resize 698 right -80
+resized w698
+> resize 699 left -80
+resized w699
+> set messages helpful
+messages = helpful (was off)
+
+▸ over red  (dark-opaque)
+> wallpaper #ff383c
+/Users/runner/work/arbor/arbor/.build/mac-shell/scenery-night.png
+> desktop
+showing the Desktop
+> move 984 71
+> show-shortcuts
+Look
+  ⌃⌥Space                  Show Everything
+  ⌃⌥0                      Show Everything on All Displays
+  ⌃⌥↑                      Step Out
+  ⌃⌥↓                      Step In
+  ⌃⌥←                      Space to the Left
+  ⌃⌥→                      Space to the Right
+  ⌃⌥[                      Back
+  ⌃⌥]                      Forward
+  ⌃⌥↩                      Frame Focused Window
+  ⌃⌥D                      Show the Desktop
+  ⌃⌥⇧1–9                   Save the View
+  ⌃⌥1–9                    Go to a Saved View
+  ⌃⌥N                      Name This Space
+  ⌃⌥⇧ + arrow              Neighboring Window
+  ⌃⌥G                      Go to…
+  ⌃⌥M                      Show Minimap
+
+Arrange
+  ⌃⌥⌘ + arrow              Dock Focused Window, or Move It
+  ⌃⌥F                      Float or Dock Focused Window
+  ⌃⌥A                      Arrange Windows
+  ⌃⌥⇧F                     Float All Windows
+  ⌃⌥Z                      Undo
+  ⌃⌥⇧Z                     Redo
+  ⌃⌥⌘=                     Grow
+  ⌃⌥⌘-                     Shrink
+  ⌃⌥⌘0                     Balance Sizes
+  ⌃⌥R                      Rotate Group
+  ⌃⌥⇧R                     Mirror Group
+
+Arbor itself
+  ⌃⌥⎋                      Pause or Resume Arbor
+  ⌃⌥⇧/                     Keyboard Shortcuts
+  ⌃⌥,                      Settings
+
+Pointer and trackpad
+  Drag to a screen edge    Dock
+  Drag to a window’s edge  Dock Beside It
+  Drag a gap               Resize Both Sides
+  Click a tile             Zoom In on It
+  ⌥ + pinch                Zoom
+  ⌃⌥ + drag                Frame What Is Inside
+  ⇧ + drag on the Desktop  Frame What Is Inside
+shot: mac-shell/dark-opaque-on-red-1-shortcuts.png
+  ✔ the panel of shortcuts is up
+> key escape
+> find
+Go to… is open
+shot: mac-shell/dark-opaque-on-red-2-go-to.png
+> key b
+> key r
+> key e
+shot: mac-shell/dark-opaque-on-red-3-go-to-typed.png
+> key cmd+return
+> key down
+> key cmd+return
+shot: mac-shell/dark-opaque-on-red-3b-go-to-ticked.png
+> key z
+> key z
+> key z
+> key z
+shot: mac-shell/dark-opaque-on-red-3c-go-to-nothing-matches.png
+> key delete
+> key delete
+> key delete
+> key delete
+> key b
+> key a
+> key l
+shot: mac-shell/dark-opaque-on-red-3d-go-to-commands.png
+> key escape
+> minimap
+showing the minimap
+shot: mac-shell/dark-opaque-on-red-4-minimap.png
+> minimap
+put the minimap away
+> show-all
+showing everything
+> ask-name
+type a name for everything
+shot: mac-shell/dark-opaque-on-red-5-name.png
+> key w
+> key r
+> key i
+> key t
+> key i
+> key n
+> key g
+shot: mac-shell/dark-opaque-on-red-5b-name-typed.png
+> key space
+> key a
+> key n
+> key d
+> key space
+> key e
+> key v
+> key e
+> key r
+> key y
+> key t
+> key h
+> key i
+> key n
+> key g
+> key space
+> key e
+> key l
+> key s
+> key e
+> key space
+> key t
+> key h
+> key a
+> key t
+> key space
+> key h
+> key a
+> key s
+> key space
+> key t
+> key o
+> key space
+> key b
+> key e
+> key space
+> key d
+> key o
+> key n
+> key e
+> key space
+> key b
+> key y
+> key space
+> key t
+> key h
+> key e
+> key n
+shot: mac-shell/dark-opaque-on-red-5c-name-problem.png
+> key escape
+> key ctrl+opt+space
+shot: mac-shell/dark-opaque-on-red-6-line-problem.png
+> click 134 371
+> move 984 71
+> key ctrl+opt+return
+> desktop
+showing the Desktop
+shot: mac-shell/dark-opaque-on-red-6b-line-hint.png
+
+▸ over blue  (dark-opaque)
+> wallpaper #0088ff
+/Users/runner/work/arbor/arbor/.build/mac-shell/wallpaper-ff383c.png
+> desktop
+showing the Desktop
+> move 984 71
+> show-shortcuts
+Look
+  ⌃⌥Space                  Show Everything
+  ⌃⌥0                      Show Everything on All Displays
+  ⌃⌥↑                      Step Out
+  ⌃⌥↓                      Step In
+  ⌃⌥←                      Space to the Left
+  ⌃⌥→                      Space to the Right
+  ⌃⌥[                      Back
+  ⌃⌥]                      Forward
+  ⌃⌥↩                      Frame Focused Window
+  ⌃⌥D                      Show the Desktop
+  ⌃⌥⇧1–9                   Save the View
+  ⌃⌥1–9                    Go to a Saved View
+  ⌃⌥N                      Name This Space
+  ⌃⌥⇧ + arrow              Neighboring Window
+  ⌃⌥G                      Go to…
+  ⌃⌥M                      Show Minimap
+
+Arrange
+  ⌃⌥⌘ + arrow              Dock Focused Window, or Move It
+  ⌃⌥F                      Float or Dock Focused Window
+  ⌃⌥A                      Arrange Windows
+  ⌃⌥⇧F                     Float All Windows
+  ⌃⌥Z                      Undo
+  ⌃⌥⇧Z                     Redo
+  ⌃⌥⌘=                     Grow
+  ⌃⌥⌘-                     Shrink
+  ⌃⌥⌘0                     Balance Sizes
+  ⌃⌥R                      Rotate Group
+  ⌃⌥⇧R                     Mirror Group
+
+Arbor itself
+  ⌃⌥⎋                      Pause or Resume Arbor
+  ⌃⌥⇧/                     Keyboard Shortcuts
+  ⌃⌥,                      Settings
+
+Pointer and trackpad
+  Drag to a screen edge    Dock
+  Drag to a window’s edge  Dock Beside It
+  Drag a gap               Resize Both Sides
+  Click a tile             Zoom In on It
+  ⌥ + pinch                Zoom
+  ⌃⌥ + drag                Frame What Is Inside
+  ⇧ + drag on the Desktop  Frame What Is Inside
+shot: mac-shell/dark-opaque-on-blue-1-shortcuts.png
+  ✔ the panel of shortcuts is up
+> key escape
+> find
+Go to… is open
+shot: mac-shell/dark-opaque-on-blue-2-go-to.png
+> key b
+> key r
+> key e
+shot: mac-shell/dark-opaque-on-blue-3-go-to-typed.png
+> key cmd+return
+> key down
+> key cmd+return
+shot: mac-shell/dark-opaque-on-blue-3b-go-to-ticked.png
+> key z
+> key z
+> key z
+> key z
+shot: mac-shell/dark-opaque-on-blue-3c-go-to-nothing-matches.png
+> key delete
+> key delete
+> key delete
+> key delete
+> key b
+> key a
+> key l
+shot: mac-shell/dark-opaque-on-blue-3d-go-to-commands.png
+> key escape
+> minimap
+showing the minimap
+shot: mac-shell/dark-opaque-on-blue-4-minimap.png
+> minimap
+put the minimap away
+> show-all
+showing everything
+> ask-name
+type a name for everything
+shot: mac-shell/dark-opaque-on-blue-5-name.png
+> key w
+> key r
+> key i
+> key t
+> key i
+> key n
+> key g
+shot: mac-shell/dark-opaque-on-blue-5b-name-typed.png
+> key space
+> key a
+> key n
+> key d
+> key space
+> key e
+> key v
+> key e
+> key r
+> key y
+> key t
+> key h
+> key i
+> key n
+> key g
+> key space
+> key e
+> key l
+> key s
+> key e
+> key space
+> key t
+> key h
+> key a
+> key t
+> key space
+> key h
+> key a
+> key s
+> key space
+> key t
+> key o
+> key space
+> key b
+> key e
+> key space
+> key d
+> key o
+> key n
+> key e
+> key space
+> key b
+> key y
+> key space
+> key t
+> key h
+> key e
+> key n
+shot: mac-shell/dark-opaque-on-blue-5c-name-problem.png
+> key escape
+> key ctrl+opt+space
+shot: mac-shell/dark-opaque-on-blue-6-line-problem.png
+> click 134 371
+> move 984 71
+> key ctrl+opt+return
+> desktop
+showing the Desktop
+shot: mac-shell/dark-opaque-on-blue-6b-line-hint.png
+
+▸ over white  (dark-opaque)
+> wallpaper #ffffff
+/Users/runner/work/arbor/arbor/.build/mac-shell/wallpaper-0088ff.png
+> desktop
+showing the Desktop
+> move 984 71
+> show-shortcuts
+Look
+  ⌃⌥Space                  Show Everything
+  ⌃⌥0                      Show Everything on All Displays
+  ⌃⌥↑                      Step Out
+  ⌃⌥↓                      Step In
+  ⌃⌥←                      Space to the Left
+  ⌃⌥→                      Space to the Right
+  ⌃⌥[                      Back
+  ⌃⌥]                      Forward
+  ⌃⌥↩                      Frame Focused Window
+  ⌃⌥D                      Show the Desktop
+  ⌃⌥⇧1–9                   Save the View
+  ⌃⌥1–9                    Go to a Saved View
+  ⌃⌥N                      Name This Space
+  ⌃⌥⇧ + arrow              Neighboring Window
+  ⌃⌥G                      Go to…
+  ⌃⌥M                      Show Minimap
+
+Arrange
+  ⌃⌥⌘ + arrow              Dock Focused Window, or Move It
+  ⌃⌥F                      Float or Dock Focused Window
+  ⌃⌥A                      Arrange Windows
+  ⌃⌥⇧F                     Float All Windows
+  ⌃⌥Z                      Undo
+  ⌃⌥⇧Z                     Redo
+  ⌃⌥⌘=                     Grow
+  ⌃⌥⌘-                     Shrink
+  ⌃⌥⌘0                     Balance Sizes
+  ⌃⌥R                      Rotate Group
+  ⌃⌥⇧R                     Mirror Group
+
+Arbor itself
+  ⌃⌥⎋                      Pause or Resume Arbor
+  ⌃⌥⇧/                     Keyboard Shortcuts
+  ⌃⌥,                      Settings
+
+Pointer and trackpad
+  Drag to a screen edge    Dock
+  Drag to a window’s edge  Dock Beside It
+  Drag a gap               Resize Both Sides
+  Click a tile             Zoom In on It
+  ⌥ + pinch                Zoom
+  ⌃⌥ + drag                Frame What Is Inside
+  ⇧ + drag on the Desktop  Frame What Is Inside
+shot: mac-shell/dark-opaque-on-white-1-shortcuts.png
+  ✔ the panel of shortcuts is up
+> key escape
+> find
+Go to… is open
+shot: mac-shell/dark-opaque-on-white-2-go-to.png
+> key b
+> key r
+> key e
+shot: mac-shell/dark-opaque-on-white-3-go-to-typed.png
+> key cmd+return
+> key down
+> key cmd+return
+shot: mac-shell/dark-opaque-on-white-3b-go-to-ticked.png
+> key z
+> key z
+> key z
+> key z
+shot: mac-shell/dark-opaque-on-white-3c-go-to-nothing-matches.png
+> key delete
+> key delete
+> key delete
+> key delete
+> key b
+> key a
+> key l
+shot: mac-shell/dark-opaque-on-white-3d-go-to-commands.png
+> key escape
+> minimap
+showing the minimap
+shot: mac-shell/dark-opaque-on-white-4-minimap.png
+> minimap
+put the minimap away
+> show-all
+showing everything
+> ask-name
+type a name for everything
+shot: mac-shell/dark-opaque-on-white-5-name.png
+> key w
+> key r
+> key i
+> key t
+> key i
+> key n
+> key g
+shot: mac-shell/dark-opaque-on-white-5b-name-typed.png
+> key space
+> key a
+> key n
+> key d
+> key space
+> key e
+> key v
+> key e
+> key r
+> key y
+> key t
+> key h
+> key i
+> key n
+> key g
+> key space
+> key e
+> key l
+> key s
+> key e
+> key space
+> key t
+> key h
+> key a
+> key t
+> key space
+> key h
+> key a
+> key s
+> key space
+> key t
+> key o
+> key space
+> key b
+> key e
+> key space
+> key d
+> key o
+> key n
+> key e
+> key space
+> key b
+> key y
+> key space
+> key t
+> key h
+> key e
+> key n
+shot: mac-shell/dark-opaque-on-white-5c-name-problem.png
+> key escape
+> key ctrl+opt+space
+shot: mac-shell/dark-opaque-on-white-6-line-problem.png
+> click 134 371
+> move 984 71
+> key ctrl+opt+return
+> desktop
+showing the Desktop
+shot: mac-shell/dark-opaque-on-white-6b-line-hint.png
+
+▸ over black  (dark-opaque)
+> wallpaper #000000
+/Users/runner/work/arbor/arbor/.build/mac-shell/wallpaper-ffffff.png
+> desktop
+showing the Desktop
+> move 984 71
+> show-shortcuts
+Look
+  ⌃⌥Space                  Show Everything
+  ⌃⌥0                      Show Everything on All Displays
+  ⌃⌥↑                      Step Out
+  ⌃⌥↓                      Step In
+  ⌃⌥←                      Space to the Left
+  ⌃⌥→                      Space to the Right
+  ⌃⌥[                      Back
+  ⌃⌥]                      Forward
+  ⌃⌥↩                      Frame Focused Window
+  ⌃⌥D                      Show the Desktop
+  ⌃⌥⇧1–9                   Save the View
+  ⌃⌥1–9                    Go to a Saved View
+  ⌃⌥N                      Name This Space
+  ⌃⌥⇧ + arrow              Neighboring Window
+  ⌃⌥G                      Go to…
+  ⌃⌥M                      Show Minimap
+
+Arrange
+  ⌃⌥⌘ + arrow              Dock Focused Window, or Move It
+  ⌃⌥F                      Float or Dock Focused Window
+  ⌃⌥A                      Arrange Windows
+  ⌃⌥⇧F                     Float All Windows
+  ⌃⌥Z                      Undo
+  ⌃⌥⇧Z                     Redo
+  ⌃⌥⌘=                     Grow
+  ⌃⌥⌘-                     Shrink
+  ⌃⌥⌘0                     Balance Sizes
+  ⌃⌥R                      Rotate Group
+  ⌃⌥⇧R                     Mirror Group
+
+Arbor itself
+  ⌃⌥⎋                      Pause or Resume Arbor
+  ⌃⌥⇧/                     Keyboard Shortcuts
+  ⌃⌥,                      Settings
+
+Pointer and trackpad
+  Drag to a screen edge    Dock
+  Drag to a window’s edge  Dock Beside It
+  Drag a gap               Resize Both Sides
+  Click a tile             Zoom In on It
+  ⌥ + pinch                Zoom
+  ⌃⌥ + drag                Frame What Is Inside
+  ⇧ + drag on the Desktop  Frame What Is Inside
+shot: mac-shell/dark-opaque-on-black-1-shortcuts.png
+  ✔ the panel of shortcuts is up
+> key escape
+> find
+Go to… is open
+shot: mac-shell/dark-opaque-on-black-2-go-to.png
+> key b
+> key r
+> key e
+shot: mac-shell/dark-opaque-on-black-3-go-to-typed.png
+> key cmd+return
+> key down
+> key cmd+return
+shot: mac-shell/dark-opaque-on-black-3b-go-to-ticked.png
+> key z
+> key z
+> key z
+> key z
+shot: mac-shell/dark-opaque-on-black-3c-go-to-nothing-matches.png
+> key delete
+> key delete
+> key delete
+> key delete
+> key b
+> key a
+> key l
+shot: mac-shell/dark-opaque-on-black-3d-go-to-commands.png
+> key escape
+> minimap
+showing the minimap
+shot: mac-shell/dark-opaque-on-black-4-minimap.png
+> minimap
+put the minimap away
+> show-all
+showing everything
+> ask-name
+type a name for everything
+shot: mac-shell/dark-opaque-on-black-5-name.png
+> key w
+> key r
+> key i
+> key t
+> key i
+> key n
+> key g
+shot: mac-shell/dark-opaque-on-black-5b-name-typed.png
+> key space
+> key a
+> key n
+> key d
+> key space
+> key e
+> key v
+> key e
+> key r
+> key y
+> key t
+> key h
+> key i
+> key n
+> key g
+> key space
+> key e
+> key l
+> key s
+> key e
+> key space
+> key t
+> key h
+> key a
+> key t
+> key space
+> key h
+> key a
+> key s
+> key space
+> key t
+> key o
+> key space
+> key b
+> key e
+> key space
+> key d
+> key o
+> key n
+> key e
+> key space
+> key b
+> key y
+> key space
+> key t
+> key h
+> key e
+> key n
+shot: mac-shell/dark-opaque-on-black-5c-name-problem.png
+> key escape
+> key ctrl+opt+space
+shot: mac-shell/dark-opaque-on-black-6-line-problem.png
+> click 134 371
+> move 984 71
+> key ctrl+opt+return
+> desktop
+showing the Desktop
+shot: mac-shell/dark-opaque-on-black-6b-line-hint.png
+> trace off
+trace saved: /tmp/arbor-shell.7OtM3p/home/traces/2026-10-15-134316-gallery-grounds-dark-opaque.jsonl: 1080 lines, trace off
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+landscape: /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png (1024×768)
+> wallpaper /Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+/Users/runner/work/arbor/arbor/.build/mac-shell/scenery-day.png
+> appearance light: now light
+Increase Contrast: false
+Reduce Transparency: false
+
+▸ a title is drawn and nothing else
+  ✔ the word in every title is in nothing the run brings back but the pictures
+ 
+454745 apps-dark-01-arranged.png
+473562 apps-dark-02-window-tiles.png
+473084 apps-dark-03-window-tiles-icons-alone.png
+473280 apps-dark-04-group-tiles.png
+53909 apps-dark-05-go-to-alone-1.png
+440098 apps-dark-05-go-to.png
+8359 apps-dark-06-minimap-alone-1.png
+469625 apps-dark-06-minimap.png
+216500 apps-dark-07-frame-1.png
+118844 apps-dark-07-frame-2.png
+128352 apps-dark-07-frame-3.png
+128335 apps-dark-07-frame-4.png
+129088 apps-dark-07-frame-5.png
+129355 apps-dark-07-frame-6.png
+253950 apps-dark-08-everything-1.png
+297601 apps-dark-08-everything-2.png
+456311 apps-dark-08-everything-3.png
+456496 apps-dark-08-everything-4.png
+456318 apps-dark-08-everything-5.png
+456192 apps-dark-08-everything-6.png
+482342 apps-light-01-arranged.png
+505874 apps-light-02-window-tiles.png
+505952 apps-light-03-window-tiles-icons-alone.png
+505942 apps-light-04-group-tiles.png
+53659 apps-light-05-go-to-alone-1.png
+466217 apps-light-05-go-to.png
+8305 apps-light-06-minimap-alone-1.png
+459895 apps-light-06-minimap.png
+188722 apps-light-07-frame-1.png
+162341 apps-light-07-frame-2.png
+139537 apps-light-07-frame-3.png
+139905 apps-light-07-frame-4.png
+139652 apps-light-07-frame-5.png
+140904 apps-light-07-frame-6.png
+330797 apps-light-08-everything-1.png
+391101 apps-light-08-everything-2.png
+469158 apps-light-08-everything-3.png
+468998 apps-light-08-everything-4.png
+468734 apps-light-08-everything-5.png
+469085 apps-light-08-everything-6.png
+7808 arbor-shots-gallery-2.log
+5095 arbor-shots-gallery-3.log
+5424 arbor-shots-gallery-4.log
+9481 arbor-shots-gallery-5.log
+9478 arbor-shots-gallery-6.log
+4281 arbor-shots-gallery.log
+0 arbor-stderr-shots-gallery-2.log
+0 arbor-stderr-shots-gallery-3.log
+0 arbor-stderr-shots-gallery-4.log
+0 arbor-stderr-shots-gallery-5.log
+0 arbor-stderr-shots-gallery-6.log
+0 arbor-stderr-shots-gallery.log
+0 build-axfind.log
+287 build-bundles.log
+0 build-scenery.log
+78 build.log
+158939 dark-opaque-on-black-1-shortcuts.png
+108014 dark-opaque-on-black-2-go-to.png
+103722 dark-opaque-on-black-3-go-to-typed.png
+107347 dark-opaque-on-black-3b-go-to-ticked.png
+85550 dark-opaque-on-black-3c-go-to-nothing-matches.png
+91324 dark-opaque-on-black-3d-go-to-commands.png
+82608 dark-opaque-on-black-4-minimap.png
+102557 dark-opaque-on-black-5-name.png
+103229 dark-opaque-on-black-5b-name-typed.png
+107333 dark-opaque-on-black-5c-name-problem.png
+97567 dark-opaque-on-black-6-line-problem.png
+79783 dark-opaque-on-black-6b-line-hint.png
+177991 dark-opaque-on-blue-1-shortcuts.png
+127311 dark-opaque-on-blue-2-go-to.png
+122640 dark-opaque-on-blue-3-go-to-typed.png
+126662 dark-opaque-on-blue-3b-go-to-ticked.png
+104294 dark-opaque-on-blue-3c-go-to-nothing-matches.png
+109286 dark-opaque-on-blue-3d-go-to-commands.png
+101523 dark-opaque-on-blue-4-minimap.png
+204085 dark-opaque-on-blue-5-name.png
+205219 dark-opaque-on-blue-5b-name-typed.png
+209918 dark-opaque-on-blue-5c-name-problem.png
+194023 dark-opaque-on-blue-6-line-problem.png
+105906 dark-opaque-on-blue-6b-line-hint.png
+179569 dark-opaque-on-red-1-shortcuts.png
+128579 dark-opaque-on-red-2-go-to.png
+123997 dark-opaque-on-red-3-go-to-typed.png
+128029 dark-opaque-on-red-3b-go-to-ticked.png
+105589 dark-opaque-on-red-3c-go-to-nothing-matches.png
+110755 dark-opaque-on-red-3d-go-to-commands.png
+103089 dark-opaque-on-red-4-minimap.png
+206467 dark-opaque-on-red-5-name.png
+207530 dark-opaque-on-red-5b-name-typed.png
+212168 dark-opaque-on-red-5c-name-problem.png
+195865 dark-opaque-on-red-6-line-problem.png
+107496 dark-opaque-on-red-6b-line-hint.png
+167424 dark-opaque-on-white-1-shortcuts.png
+116164 dark-opaque-on-white-2-go-to.png
+111945 dark-opaque-on-white-3-go-to-typed.png
+115267 dark-opaque-on-white-3b-go-to-ticked.png
+94263 dark-opaque-on-white-3c-go-to-nothing-matches.png
+99603 dark-opaque-on-white-3d-go-to-commands.png
+91125 dark-opaque-on-white-4-minimap.png
+180070 dark-opaque-on-white-5-name.png
+180969 dark-opaque-on-white-5b-name-typed.png
+185520 dark-opaque-on-white-5c-name-problem.png
+171270 dark-opaque-on-white-6-line-problem.png
+96431 dark-opaque-on-white-6b-line-hint.png
+96 evidence
+35032 large-01-menu-alone-1.png
+353831 large-01-menu-d2.png
+83006 large-01-menu-on-glass-1.png
+459396 large-01-menu.png
+61032 large-02-saved-views-alone-1.png
+61026 large-02-saved-views-alone-2.png
+354195 large-02-saved-views-d2.png
+88007 large-02-saved-views-on-glass-1.png
+64304 large-02-saved-views-on-glass-2.png
+482263 large-02-saved-views.png
+53862 large-03-dock-alone-1.png
+53849 large-03-dock-alone-2.png
+353813 large-03-dock-d2.png
+86419 large-03-dock-on-glass-1.png
+37969 large-03-dock-on-glass-2.png
+474858 large-03-dock.png
+36904 large-04-adjust-alone-1.png
+353905 large-04-adjust-d2.png
+82526 large-04-adjust-on-glass-1.png
+458790 large-04-adjust.png
+63392 large-05-help-alone-1.png
+63392 large-05-help-alone-2.png
+353916 large-05-help-d2.png
+84460 large-05-help-on-glass-1.png
+54408 large-05-help-on-glass-2.png
+491159 large-05-help.png
+21717 large-06-about-alone-1.png
+353905 large-06-about-d2.png
+38100 large-06-about-on-glass-1.png
+414158 large-06-about.png
+303711 large-99-after-quit.png
+156147 light-opaque-on-black-1-shortcuts.png
+107134 light-opaque-on-black-2-go-to.png
+103227 light-opaque-on-black-3-go-to-typed.png
+106470 light-opaque-on-black-3b-go-to-ticked.png
+85362 light-opaque-on-black-3c-go-to-nothing-matches.png
+91270 light-opaque-on-black-3d-go-to-commands.png
+82279 light-opaque-on-black-4-minimap.png
+103648 light-opaque-on-black-5-name.png
+104339 light-opaque-on-black-5b-name-typed.png
+108194 light-opaque-on-black-5c-name-problem.png
+99018 light-opaque-on-black-6-line-problem.png
+79810 light-opaque-on-black-6b-line-hint.png
+175408 light-opaque-on-blue-1-shortcuts.png
+126164 light-opaque-on-blue-2-go-to.png
+121522 light-opaque-on-blue-3-go-to-typed.png
+125494 light-opaque-on-blue-3b-go-to-ticked.png
+104086 light-opaque-on-blue-3c-go-to-nothing-matches.png
+108873 light-opaque-on-blue-3d-go-to-commands.png
+101598 light-opaque-on-blue-4-minimap.png
+204845 light-opaque-on-blue-5-name.png
+205675 light-opaque-on-blue-5b-name-typed.png
+210137 light-opaque-on-blue-5c-name-problem.png
+194618 light-opaque-on-blue-6-line-problem.png
+105256 light-opaque-on-blue-6b-line-hint.png
+176745 light-opaque-on-red-1-shortcuts.png
+127032 light-opaque-on-red-2-go-to.png
+122692 light-opaque-on-red-3-go-to-typed.png
+126595 light-opaque-on-red-3b-go-to-ticked.png
+104835 light-opaque-on-red-3c-go-to-nothing-matches.png
+109885 light-opaque-on-red-3d-go-to-commands.png
+102814 light-opaque-on-red-4-minimap.png
+207342 light-opaque-on-red-5-name.png
+208174 light-opaque-on-red-5b-name-typed.png
+212437 light-opaque-on-red-5c-name-problem.png
+197129 light-opaque-on-red-6-line-problem.png
+106552 light-opaque-on-red-6b-line-hint.png
+164657 light-opaque-on-white-1-shortcuts.png
+114633 light-opaque-on-white-2-go-to.png
+111019 light-opaque-on-white-3-go-to-typed.png
+113923 light-opaque-on-white-3b-go-to-ticked.png
+93913 light-opaque-on-white-3c-go-to-nothing-matches.png
+99256 light-opaque-on-white-3d-go-to-commands.png
+90546 light-opaque-on-white-4-minimap.png
+175209 light-opaque-on-white-5-name.png
+176018 light-opaque-on-white-5b-name-typed.png
+180018 light-opaque-on-white-5c-name-problem.png
+166614 light-opaque-on-white-6-line-problem.png
+95466 light-opaque-on-white-6b-line-hint.png
+212443 motion-1-frame-1.png
+183585 motion-1-frame-2.png
+173912 motion-1-frame-3.png
+143472 motion-1-frame-4.png
+143408 motion-1-frame-5.png
+143442 motion-1-frame-6.png
+207772 motion-2-everything-1.png
+256041 motion-2-everything-2.png
+254180 motion-2-everything-3.png
+261152 motion-2-everything-4.png
+254785 motion-2-everything-5.png
+254785 motion-2-everything-6.png
+280419 motion-3-dock-1.png
+317702 motion-3-dock-2.png
+305012 motion-3-dock-3.png
+298763 motion-3-dock-4.png
+286892 motion-3-dock-5.png
+287004 motion-3-dock-6.png
+51159 output.txt
+372864 retina-01-docked-d2.png
+352658 retina-01-docked.png
+30407 retina-02-ring-top-left.png
+18271 retina-03-ring-bottom-right.png
+410132 retina-04-drop-preview-d2.png
+350425 retina-04-drop-preview.png
+28277 retina-05-drop-preview-corner.png
+283860 retina-06-tiles-d2.png
+350425 retina-06-tiles.png
+104538 retina-07-tile.png
+300879 retina-08-shortcuts-alone-1.png
+574467 retina-08-shortcuts-d2.png
+695591 retina-08-shortcuts-on-glass-1.png
+350425 retina-08-shortcuts.png
+136621 retina-09-go-to-alone-1.png
+485068 retina-09-go-to-d2.png
+327152 retina-09-go-to-on-glass-1.png
+350489 retina-09-go-to.png
+18003 retina-10-minimap-alone-1.png
+438850 retina-10-minimap-d2.png
+41251 retina-10-minimap-on-glass-1.png
+350489 retina-10-minimap.png
+23256 retina-11-name-alone-1.png
+434775 retina-11-name-d2.png
+61959 retina-11-name-on-glass-1.png
+350425 retina-11-name.png
+25137 retina-12-line-hint-alone-1.png
+183453 retina-12-line-hint-d2.png
+37070 retina-12-line-hint-on-glass-1.png
+350520 retina-12-line-hint.png
+37648 retina-13-handle-hovered.png
+38907 retina-14-handle-dragged.png
+35775 retina-15-peek-top-left.png
+0 screencapture.log
+0 test-windows.log
+1024 traces
+0 vdisplay.log
+
+34 passed, 0 failed
+mac-shell: put back after shots-gallery-moves.sh: window-manager
+exit code 0
