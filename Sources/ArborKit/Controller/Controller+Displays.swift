@@ -26,6 +26,10 @@ extension Controller {
     overlays.finishAnimations()
     let previous = Set(workspaces.keys)
     let before = displays
+    // By the displays as they were, and in their coordinates.
+    let showed = workspaces.values.reduce(into: [WindowID: CGFloat]()) { all, workspace in
+      for (window, place) in workspace.floating { all[window] = areaShowing(of: place) }
+    }
     displays = system.displays()
     followDisplaysThatMoved(since: before)
     endUndoHistoryIfDisplaysMoved(
@@ -62,6 +66,8 @@ extension Controller {
     Log.info("displays changed: \(displays.count) display(s), \(dormant.count) remembered")
     // A lower resolution or a display that moved can leave windows beyond the edges of them all.
     treatStrandedWindowsAsParked()
+    // Books too, and no frame is set: so also before Arbor lets go, which gives every window its remembered place.
+    keepWhatMacOSRescued(whichShowed: showed)
     guard !lettingGo else { return }
     // A display that came or went sent windows to another arrangement, whose view may not include the one being
     // typed in. As after a resume, it ends with that window in view. Before anything is laid out, so that every
@@ -115,9 +121,47 @@ extension Controller {
         appPlacedFrames[window] = appPlacedFrames[window].map(moved)
         settled[window] = settled[window].map(moved)
         misfits[window] = misfits[window].map { (moved($0.slot), moved($0.frame)) }
-        chosenOnShape[window] = chosenOnShape[window].map { (moved($0.frame), moved($0.display)) }
+        chosenOnShape[window] = chosenOnShape[window].map { (moved($0.frame), moved($0.display), $0.showing) }
       }
       for (window, frame) in owedTheWayBack where old.contains(frame.center) { owedTheWayBack[window] = moved(frame) }
+    }
+  }
+
+  // MARK: What macOS rescued stays rescued
+
+  /// macOS brings the windows of a display that goes wholly onto one that stays, and takes a window for the display's that shows most
+  /// of it. Arbor files it under the display it was let go on, where the pointer was. Let go with its title bar on one and its body
+  /// on the other, it is this display's to Arbor and that one's to macOS: that one goes, macOS fetches the window, and the layout
+  /// that follows gave it back the place remembered here, of which a strip was left (random walks, 2026-10-15: 5 % showed).
+  ///
+  /// So where the change took from the place remembered for a floating window in view, and more shows of the window where it really
+  /// is, that is its place from now on, on the display it is on: no frame is set. Fitting the old place instead would bring it into
+  /// view too, by a second move. Only where the change took something: this is called at every report, the Dock's and the menu
+  /// bar's too, and a window that macOS merely shuffled on a display that stays goes back where its person left it, hanging over
+  /// an edge or not. Not where Arbor itself put the window, aside for a docked one: nobody has moved anything then. And only at
+  /// the size remembered: macOS moves, and a window that Arbor has made smaller has a size of its own to go back to. What
+  /// came from a display that went, or goes home to one that is back, counts as out of view by now and is the layout's to place.
+  private func keepWhatMacOSRescued(whichShowed showed: [WindowID: CGFloat]) {
+    for home in workspaces.keys.sorted() {
+      for (window, remembered) in workspaces[home]!.floating.sorted(by: { $0.key < $1.key }) where window != drag?.window {
+        guard let real = windows[window]?.frame, windows[window]?.isPresent == true, isManaged(window), !parked.contains(window),
+          let before = showed[window], areaShowing(of: remembered) < before - 1,
+          areaShowing(of: real) > areaShowing(of: remembered) + 1,
+          settled[window]?.approximatelyEquals(real, tolerance: 1) != true,
+          abs(real.width - remembered.width) <= 1, abs(real.height - remembered.height) <= 1
+        else { continue }
+        let destination = displayID(at: real.center).flatMap { workspaces[$0] == nil ? nil : $0 } ?? home
+        // As when a hand takes it there (`windowMoved`). On its own display it goes on floating: whatever stops, if only for a
+        // moment, is no longer anybody's guest.
+        let role = workspaces[home]!.role(of: window)
+        summonedWindowIsCarried(window, to: destination)
+        if destination != home { workspaces[home]!.floating[window] = nil }
+        workspaces[destination]!.floating[window] = real
+        if destination != home {
+          workspaces[destination]!.setRole(role, of: window)
+          notify(.windows)
+        }
+      }
     }
   }
 

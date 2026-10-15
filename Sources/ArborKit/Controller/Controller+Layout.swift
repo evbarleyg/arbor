@@ -571,18 +571,31 @@ extension Controller {
   /// as it is shaped and placed at this moment. That a frame overlaps a display by a strip says nothing: it may be left
   /// over from a larger display, from another one, or from one that stood elsewhere. The note is not saved, and a frame
   /// written by anybody else no longer equals it. Where in doubt, the window is wholly in view.
+  ///
+  /// And only while as much of it shows as its user left showing, or at least half. What hangs over the edge of its own display
+  /// may lie on the one next to it: let go with its title bar here and its body there, all of it was to be seen. When that
+  /// neighbour goes, this display is as it was, and of the window a strip is left that nobody chose. One that only reached
+  /// over a little stays, lid shut or open: nothing is fitted of which half shows (QUESTIONS, Q20).
   func noteWhereItsUserLeftIt(_ window: WindowID) {
     forgetFitUnlessItStillHolds(window)
     guard let home = workspaceID(containing: window), let frame = workspaces[home]?.floating[window],
       let display = display(home)
-    else { return chosenOnShape[window] = nil }
-    chosenOnShape[window] = (frame, display.frame)
+    else {
+      // Docked, it keeps the note of where it floated, which an undo takes it back to. It vouches for that frame and no other.
+      if workspaces.values.contains(where: { $0.isDocked(window) }) { return }
+      return chosenOnShape[window] = nil
+    }
+    chosenOnShape[window] = (frame, display.frame, areaShowing(of: frame))
   }
 
   func wasLeftThereByItsUser(_ preferred: CGRect, of window: WindowID, on display: DisplaySnapshot) -> Bool {
-    guard let chosen = chosenOnShape[window] else { return false }
-    return chosen.frame == preferred && chosen.display == display.frame
+    guard let chosen = chosenOnShape[window], chosen.frame == preferred, chosen.display == display.frame else { return false }
+    let showing = areaShowing(of: preferred)
+    return showing >= chosen.showing - 1 || showing * 2 >= preferred.area
   }
+
+  /// How much of `frame` the displays show, all together, in square points.
+  func areaShowing(of frame: CGRect) -> CGFloat { displays.map { frame.intersection($0.frame).area }.reduce(0, +) }
 
   /// The narrowest strip of a window that counts as a place for it: about a title bar's height, both ways.
   static let leastStrip: CGFloat = 24

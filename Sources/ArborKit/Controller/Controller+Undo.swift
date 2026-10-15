@@ -513,7 +513,10 @@ extension Controller {
         if window == alone { plan.inHand = window }
         // Where its app opened it is not a place anybody chose: layouts move it onto the Desktop from there.
         let whereItsAppPutIt = appPlacedFrames[window] == preferred
-        let room = whereItsAppPutIt ? desktop : reach(of: desktop, for: preferred, on: display)
+        // Nor may any other hang over the edge of the screen, as in `floatingMoves`: of a place left across two displays, one of which
+        // has gone since, a strip would show. (This display's history outlives the other display.)
+        let leftThere = !whereItsAppPutIt && wasLeftThereByItsUser(preferred, of: window, on: display)
+        let room = leftThere ? reach(of: desktop, for: preferred, on: display) : desktop
         let home = floatingFrame(preferred, on: room, of: display, minimum: minimumSizes[window])
         if let known, !known.approximatelyEquals(home, tolerance: 2), !whereItsAppPutIt {
           plan.places[window] = known

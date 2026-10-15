@@ -1,0 +1,37 @@
+# Proposed by a fixer (2026-10-15, found by random walks); the documenter may edit or drop it.
+# Story: at the desk, the big display above and the laptop's below it. Notes is let go across the two, its title bar on the
+# upper display and its body on the lower: all of it is to be seen. The lid shuts. macOS brings the window wholly onto the display
+# that is left, and there it stays. Arbor used to push it back to where it had been let go, where a strip of it showed, and
+# neither ⌃⌥0 nor Show Everything nor a click in the Dock fetched it. Nothing is docked in this story.
+# Decision: collab/QUESTIONS.md, Q20 (a floating window's frame is its person's; the one exception is the fit).
+# Window ids start at 101.
+quiet
+displays 2 below
+open Notes 800x600
+open Mail 600x200
+move 102 300 660 600 200
+drag 101 700 880
+wait 3
+loud
+expect floating 101
+expect visible 101
+# The lid shuts. By the time Arbor hears of the displays macOS has moved the window. No hand did that, so it is no new place to Arbor.
+macos-moves 101 300 25
+displays 1
+wait 3
+expect visible 101
+# Where macOS put it, above Mail, and not merely somewhere in view: a second move would be a jolt.
+expect above 101 102
+home
+wait 3
+expect above 101 102
+# The lid opens and Notes is let go across the two again. This time nobody rescues it, which no Mac does; Arbor copes anyway:
+# of a window that nobody left so, less than half is never all that shows.
+displays 2 below
+wait 3
+drag 101 700 880
+wait 3
+expect visible 101
+displays 1
+wait 3
+expect visible 101

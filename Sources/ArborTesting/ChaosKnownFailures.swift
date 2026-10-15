@@ -632,35 +632,6 @@ extension ChaosRunner {
         toggle-pause
         """),
     ChaosKnownFailure(
-      rule: "placed-mostly-out", owner: "displays: what macOS rescued is not sent back", severity: 1,
-      story: "One display above another. A window is dragged so that its title bar is on the upper one and its body on the lower one, which then goes. macOS brings "
-        + "the window wholly into view, and Arbor pushes it back down: a strip of 32 points shows. Nothing need be docked. ⌃⌥0, Show Everything, Float All, "
-        + "turning to it and starting again do not fetch it; quit and pause do.",
-      script: """
-        displays main:0,0,2560,1440:25,0,0,0* side:524,1440,1512,982:0,0,0,0 windows-never
-        launch
-        open 101 Notes pid 1001 at 300 200 800 600 min 709 300
-        settle
-        grab 101
-        carry 1200 1425
-        release
-        settle
-        displays main:0,0,2560,1440:25,0,0,0* windows-late
-        settle
-        """,
-      """
-        displays main:0,0,2560,1440:25,0,0,0* side:524,1440,1512,982:0,0,0,0 windows-never
-        launch
-        open 101 Notes pid 1001 at 300 200 800 600 min 709 300
-        settle
-        grab 101
-        carry 1200 1425
-        release
-        settle
-        displays main:0,0,2560,1440:25,0,0,0* windows-silent
-        settle
-        """),
-    ChaosKnownFailure(
       rule: "displays-left-mostly-out", owner: "displays: afterwards nothing is lost", severity: 2,
       story: "The same story seen at rest; and: a display changes side and shrinks in one step and the windows' own reports come first: 7 % of a floating window "
         + "shows, Arbor makes no move, and ⌃⌥0, Show Everything and Float All do not fetch it.",

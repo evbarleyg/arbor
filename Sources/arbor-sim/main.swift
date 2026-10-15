@@ -58,7 +58,8 @@ import Foundation
 //                                arbor-sim exit with code 1 at the end
 //   hide <App> | unhide <App>    hide or show an app (⌘H); each app name is its own process
 //   background-focus <id>        an app that is not frontmost changes its focused window
-//   displays <0|1|2>             unplug or plug in a 1920x1080 display to the right of the main one; 0: none at all
+//   displays <0|1|2> [below]     unplug or plug in a 1920x1080 display to the right of the main one, or below it; 0: none at all
+//   macos-moves <id> <x> <y>     macOS moves the window, as when its display goes, and its app says so: no hand did it. Before `displays`
 //   display-size <WxH> [<bar>]   the main display is this large, with a menu bar that high (1440x900 and 25 to begin with)
 //   plug | unplug | make-main | move-display | quietly … | report-displays | max | where
 //                                displays that change, one step at a time, told to Arbor at once or later: see Displays.swift
@@ -494,8 +495,15 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     return ("\(id.rawValue) became its app's focused window, in the background", true)
   // `displays` on its own is Arbor's query (the displays and the options in effect on each).
   case "displays" where words.count > 1:
-    guard let count = Int(words[1]), (0...2).contains(count) else { return usage("displays <0|1|2>") }
-    system.setDisplays(Array(simulatedDisplays.prefix(count)))
+    guard let count = Int(words[1]), (0...2).contains(count), words.count == 2 || words.dropFirst(2) == ["below"] else {
+      return usage("displays <0|1|2> [below]")
+    }
+    var list = Array(simulatedDisplays.prefix(count))
+    if words.count == 3, count == 2 {
+      let corner = CGPoint(x: list[0].frame.minX, y: list[0].frame.maxY)
+      (list[1].frame.origin, list[1].visibleFrame.origin) = (corner, corner)
+    }
+    system.setDisplays(list)
     return ("\(count) display(s)", true)
   case "macos":
     // What `doctor` and the welcome window are told about this Mac. Until this line: nothing ("unknown here").
@@ -528,6 +536,14 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
       _ = system.setFrame(CGRect(origin: CGPoint(x: x, y: y), size: size), of: id)
     }
     return ("\(id.rawValue) was moved the way Arbor moves windows", true)
+  case "macos-moves":
+    guard let id = window(1), let x = number(2), let y = number(3), let size = system.frame(of: id)?.size else {
+      return usage("macos-moves <id> <x> <y>")
+    }
+    system.moveSilently(id, to: CGRect(origin: CGPoint(x: x, y: y), size: size))
+    // Said, so that a trace has it: a replay answers `allWindows` from the events it has played, not from what was recorded.
+    system.report(id, userInitiated: false)
+    return ("macOS moved \(id.rawValue)", true)
   case "health":
     return (health(of: harness), true)
   case "quit-check":

@@ -407,9 +407,9 @@ public final class Controller {
   /// Windows a pause could not bring into view (Controller+LeftInFullScreen.swift).
   var leftInFullScreen = LeftInFullScreen()
 
-  /// Floating windows whose remembered frame their user's own hand gave them, with the frame their display had then
-  /// (`noteWhereItsUserLeftIt`).
-  var chosenOnShape: [WindowID: (frame: CGRect, display: CGRect)] = [:]
+  /// Floating windows whose remembered frame their user's own hand gave them, with the frame their display had then and how
+  /// much of the window showed, in square points, on all displays together (`noteWhereItsUserLeftIt`).
+  var chosenOnShape: [WindowID: (frame: CGRect, display: CGRect, showing: CGFloat)] = [:]
 
   /// The window ⌃⌥F floated last, and where it was docked (Controller+FloatAndBack.swift).
   var floatedOut: FloatedOut?
