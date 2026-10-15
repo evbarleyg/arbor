@@ -109,6 +109,8 @@ struct Pointer {
                                     write a PNG: one colour, or a gradient between two under a grid
       wallpaper [file]              show that picture on the desktop of every display; print what each shows
     click, drag, release and pinch take --mods <chord of modifiers>, e.g. --mods shift+cmd, held meanwhile.
+    drag also takes --then-mods <chord of modifiers>: they go down a quarter of the way, with the thing already in the hand, and
+    stay down like the others. (⌘ held from before the press means something to macOS: a window behind is moved without coming forward.)
     Every command that posts events takes --tap session, to post them after the window server's own handling.
     """
 
@@ -558,6 +560,7 @@ struct Pointer {
       let wait = option("--hold").map { max(0, min(30, number($0))) } ?? 0.2
       let release = !flag("--no-release")
       let settles = !flag("--no-settle")
+      let late = option("--then-mods").map { parse(chord: $0).modifiers } ?? []
       let start = point(at: 0)
       let end = point(at: 2)
       // A misspelt option would otherwise be a drag that quietly does something else.
@@ -566,12 +569,21 @@ struct Pointer {
       hold(held)
       mouse(.leftMouseDown, at: start, clicks: 1)
       rest(0.15)  // AppKit decides what the press means before the first movement
-      glide(.leftMouseDragged, from: start, to: end, steps: steps, duration: duration)
+      if late.isEmpty {
+        glide(.leftMouseDragged, from: start, to: end, steps: steps, duration: duration)
+      } else {
+        let first = max(steps / 4, 1)
+        let share = CGFloat(first) / CGFloat(max(steps, first + 1))
+        let onTheWay = CGPoint(x: start.x + (end.x - start.x) * share, y: start.y + (end.y - start.y) * share)
+        glide(.leftMouseDragged, from: start, to: onTheWay, steps: first, duration: duration * Double(share))
+        hold(late)
+        glide(.leftMouseDragged, from: onTheWay, to: end, steps: max(steps - first, 1), duration: duration * Double(1 - share))
+      }
       if settles { settle(at: end) }
       rest(wait)
       if release {
         mouse(.leftMouseUp, at: end, clicks: 1)
-        letGo(held)
+        letGo(held + late)
       }
 
     case "drag-on":

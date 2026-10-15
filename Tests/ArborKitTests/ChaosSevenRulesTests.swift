@@ -847,7 +847,7 @@ private let b = WindowID(102)
 
   @Test func aPlainDragOfAFloatingWindowIsWhatItIsWithoutArbor() {
     // To the middle of a desk on which nothing is docked.
-    let inHand = twoFloating + ["grab 102", "carry 700 450"]
+    let inHand = twoFloating + ["grab 102 plain", "carry 700 450"]
     #expect(plainDrag(inHand, then: "release").isEmpty)
     #expect(plainDrag(inHand, then: "release") { _ = $0.system.setFrame(self.rect(120, 100, 500, 400), of: a) } == ["plain-drag-moved-another"])
     #expect(plainDrag(inHand, then: "release") { _ = $0.system.setFrame(self.rect(300, 300, 500, 400), of: b) } == ["plain-drag-moved-it"])
@@ -858,18 +858,18 @@ private let b = WindowID(102)
 
   /// It has Arbor's size, as a docked window has: the one resize at the release and Undo's step for it are decided (board 0.16).
   @Test func aWindowThatFillsTheViewComesOutOfThatLikeADockedOne() {
-    let inHand = twoFloating + ["focus 102", "zoom 102", "settle", "grab 102", "carry 700 450"]
+    let inHand = twoFloating + ["focus 102", "zoom 102", "settle", "grab 102 plain", "carry 700 450"]
     #expect(plainDrag(inHand, then: "release").isEmpty)
     // The controls: nobody else is moved for it, and it does not keep the size that was Arbor's.
     #expect(plainDrag(inHand, then: "release") { _ = $0.system.setFrame(self.rect(120, 100, 500, 400), of: a) } == ["plain-drag-moved-another"])
     #expect(plainDrag(inHand, then: "release") { _ = $0.system.setFrame(self.rect(100, 300, 1416, 851), of: b) }.contains("plain-drag-not-its-own-size"))
     // And without the fill the same resize is still a fault.
-    let plain = twoFloating + ["focus 102", "settle", "grab 102", "carry 700 450"]
+    let plain = twoFloating + ["focus 102", "settle", "grab 102 plain", "carry 700 450"]
     #expect(plainDrag(plain, then: "release") { _ = $0.system.setFrame(self.rect(300, 300, 500, 400), of: b) } == ["plain-drag-moved-it"])
   }
 
   @Test func aDockedWindowDraggedOutMovesWhatIsDockedAndNothingElse() {
-    let both = oneDocked + ["open 103 Safari pid 1000 at 300 200 600 400", "dock 103 right", "settle", "grab 101", "carry 700 450"]
+    let both = oneDocked + ["open 103 Safari pid 1000 at 300 200 600 400", "dock 103 right", "settle", "grab 101 plain", "carry 700 450"]
     // Its place closes: the other docked window may move.
     #expect(!plainDrag(both, then: "release").contains("plain-drag-moved-it"))
     #expect(plainDrag(both, then: "release") { _ = $0.system.setFrame(self.rect(820, 320, 500, 400), of: b) }.contains("plain-drag-moved-another"))
@@ -883,7 +883,7 @@ private let b = WindowID(102)
   }
 
   @Test func aPlainDragStartsNoTimer() {
-    let inHand = twoFloating + ["grab 102", "carry 700 450"]
+    let inHand = twoFloating + ["grab 102 plain", "carry 700 450"]
     #expect(!plainDrag(inHand, then: "carry 710 450").contains("plain-drag-started-a-timer"))
     #expect(plainDrag(inHand, then: "carry 710 450") { $0.harness.scheduler.schedule("drag-dwell", after: 0.3) {} }.contains("plain-drag-started-a-timer"))
   }
@@ -919,7 +919,7 @@ private let b = WindowID(102)
         script.append(action)
         _ = runner.step(action)
         switch action {
-        case .grab: (drags, acts) = (drags + 1, acts + 1)
+        case .grab, .grabPlainly: (drags, acts) = (drags + 1, acts + 1)
         case .key(let line, .pressed):
           keys.insert(line)
           acts += 1
@@ -933,14 +933,15 @@ private let b = WindowID(102)
     #expect(keys.count == 7)
     #expect(drags * 4 > acts, "\(drags) drags in \(acts) acts")
     #expect((ChaosRunner.questionsAsked["plain-drag"] ?? 0) - (before["plain-drag"] ?? 0) > 1000)
-    // Since a floating window's frame is its person's, Arbor moves one only out of view and back.
-    #expect((ChaosRunner.questionsAsked["floating"] ?? 0) - (before["floating"] ?? 0) > 5)
+    // Since a floating window's frame is its person's, Arbor moves one only out of view and back. And since a plain drag docks nothing, there is
+    // less docked to zoom in on: these twenty walks ask five times.
+    #expect((ChaosRunner.questionsAsked["floating"] ?? 0) - (before["floating"] ?? 0) > 2)
   }
 
   /// Seeds beyond the frozen versions restart the Mac now and then: every window closes, Arbor starts, and the windows open again under their titles and new numbers.
   @Test func walksBeyondTheFrozenVersionsRestartTheMac() {
     var (restarts, returns, lateNames) = (0, 0, 0)
-    for seed in UInt64(5_000_001)...5_000_030 {
+    for seed in UInt64(5_000_001)...5_000_060 {
       let runner = ChaosRunner()
       var generator = ChaosGenerator(seed: seed, ordinary: true)
       var titles = Set<String>()

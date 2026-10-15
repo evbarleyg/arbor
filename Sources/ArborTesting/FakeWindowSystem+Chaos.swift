@@ -166,9 +166,9 @@ extension FakeWindowSystem {
   public var dragging: WindowID? { inHand?.window }
 
   /// `beginDrag`, if nothing else is being dragged or resized and the button is up.
-  public func grab(_ window: WindowID) {
+  public func grab(_ window: WindowID, plainly: Bool = false) {
     guard windows[window] != nil, dragging == nil, resizing == nil, !mouseDown else { return }
-    beginDrag(window)
+    beginDrag(window, plainly: plainly)
   }
 
   /// Moves the pointer, and the window it holds, to `point`.
@@ -227,7 +227,7 @@ extension FakeWindowSystem {
 
   /// Forgets the mouse and whatever was queued: Arbor's process ended, and its next run sees neither.
   public func forgetSession() {
-    inHand = nil
+    (inHand, heldForTheDrag) = (nil, [])
     undelivered.removeAll()
     mouseDown = false
     resizing = nil

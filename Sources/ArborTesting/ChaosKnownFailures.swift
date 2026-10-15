@@ -844,38 +844,6 @@ extension ChaosRunner {
         settle
         """),
     ChaosKnownFailure(
-      rule: "plain-drag-showed-a-preview", owner: "less by default (Q29, board 0.4): a plain drag docks nothing", severity: 2,
-      story: "A floating window is dragged to the foot of the display with no key held, and Arbor shows where it would dock.",
-      script: """
-        launch
-        open 101 Notes pid 1001 at 300 200 800 500 min 709 300
-        open 102 Safari pid 1000 at 100 100 900 600 min 574 240
-        grab 101
-        carry 700 896
-        """),
-    ChaosKnownFailure(
-      rule: "plain-drag-docked", owner: "less by default (Q29, board 0.4): a plain drag docks nothing", severity: 2,
-      story: "It is let go there, and is docked.",
-      script: """
-        launch
-        open 101 Notes pid 1001 at 300 200 800 500 min 709 300
-        open 102 Safari pid 1000 at 100 100 900 600 min 574 240
-        grab 101
-        carry 700 896
-        release
-        """),
-    ChaosKnownFailure(
-      rule: "plain-drag-moved-it", owner: "less by default (Q29, board 0.4): a plain drag docks nothing", severity: 2,
-      story: "Let go there, it is taken from where its person left it, to a slot.",
-      script: """
-        launch
-        open 101 Notes pid 1001 at 300 200 800 500 min 709 300
-        open 102 Safari pid 1000 at 100 100 900 600 min 574 240
-        grab 101
-        carry 700 896
-        release
-        """),
-    ChaosKnownFailure(
       rule: "own-frame-back", owner: "a floating window's frame is its person's: what macOS answers to \"back where it was\" is where it was", severity: 3,
       story: "A floating window is pushed down by hand until less than its title bar shows. It goes out of view with the view and comes back a little short, because macOS puts no window there "
         + "by request. The second time it comes back 140 points to the left and 319 up, fitted in: for the place it was stopped at no hand is on record. New since floating windows "
@@ -956,20 +924,7 @@ extension ChaosRunner {
         way-back pause
         """),
     ChaosKnownFailure(
-      rule: "plain-drag-moved-another", owner: "less by default (Q29, board 0.4): a plain drag docks nothing", severity: 2,
-      story: "Notes are docked at the right. A floating window is dragged to the foot of the display with no key held and let go: it docks, and the notes, which nobody touched, are made lower.",
-      script: """
-        launch
-        open 101 Notes pid 1001 at 300 200 800 500 min 709 300
-        open 102 Safari pid 1000 at 100 100 900 600 min 574 240
-        focus 101
-        key down dock right
-        grab 102
-        carry 700 896
-        release
-        """),
-    ChaosKnownFailure(
-      rule: "plain-drag-moved-another-making-way", owner: "F18, with floating windows making way: both are options", severity: 4,
+      rule: "plain-drag-across-displays-moved-another-making-way", owner: "F18, with floating windows making way: both are options", severity: 4,
       story: "Two windows float beside a docked one. One is dragged to the other display with no key held: the one that is left, alone on its Desktop now, is stretched over it.",
       script: """
         displays main:0,0,1440,900:25,0,0,0* side:1440,0,1280,800:0,0,0,0 windows-never
@@ -980,7 +935,7 @@ extension ChaosRunner {
         open 105 Terminal pid 1003 at 800 300 462 440
         open 106 Notes pid 1001 at 900 200 315 286
         settle
-        grab 106
+        grab 106 plain
         carry 1800 300
         release
         settle
@@ -999,68 +954,6 @@ extension ChaosRunner {
         displays side:0,0,1920,1080:25,0,48,0* windows-first
         toggle-pause
         key down home
-        """),
-    ChaosKnownFailure(
-      rule: "plain-drag-started-a-timer", owner: "less by default (Q29, board 0.4): a plain drag docks nothing", severity: 3,
-      story: "A window is dragged over another with no key held, and Arbor begins to wait for it to rest there.",
-      script: """
-        settings {"desktopColumn":true}
-        launch
-        open 101 Notes pid 1001 at 300 200 800 500 min 709 300
-        open 102 Safari pid 1000 at 100 100 900 600 min 574 240
-        dock 101 left
-        dock 102 right
-        settle
-        grab 101
-        carry 1000 450
-        """),
-    ChaosKnownFailure(
-      rule: "plain-drag-left-it-docked", owner: "less by default (Q29, board 0.4): a plain drag docks nothing", severity: 2,
-      story: "A docked window is dragged away with no key held and let go over its neighbour: it goes back into the arrangement. It should float, at its own size, where it was let go.",
-      script: """
-        launch
-        open 101 Notes pid 1001 at 300 200 800 500 min 709 300
-        open 102 Safari pid 1000 at 100 100 900 600 min 574 240
-        dock 101 left
-        dock 102 right
-        settle
-        grab 101
-        carry 1000 450
-        advance 0.3
-        release
-        settle
-        """),
-    ChaosKnownFailure(
-      rule: "plain-drag-not-its-own-size", owner: "rule 5, as `size-not-given-back`: what a hand did while Arbor was not looking is undone; Undo", severity: 3,
-      story: "A window is made larger by hand while Arbor is paused. Resumed, docked and dragged out again, it has the size from before the pause.",
-      script: """
-        displays main:0,0,1512,982:37,0,86,0* side:1512,-200,1920,1080:25,0,0,0 windows-never
-        open 101 Music pid 1006 at 285 132 1088 672 min 680 480
-        launch
-        focus 101
-        toggle-pause
-        edge 101 2344 208 1092 809
-        toggle-pause
-        key down toggle-float
-        grab 101
-        carry 397 383
-        release
-        react
-        """,
-      """
-        displays main:-1280,-150,1280,800:25,0,0,0 side:0,0,1920,1080:25,86,0,0* windows-never
-        launch
-        open 104 Music pid 1006 at 1052 70 706 660 min 680 480
-        grab 104
-        carry -950 320
-        release
-        edge 104 -1303 310 663 660
-        key down undo
-        key down dock right
-        grab 104
-        carry -490 108
-        release
-        react
         """),
     ChaosKnownFailure(
       rule: "switched-to-partly-out", owner: "follows from where Arbor placed it: the pin, a slot narrower than what shows", severity: 3,
@@ -1289,6 +1182,89 @@ extension ChaosRunner {
         cursor 540 961
         undo
         key down show-all
+        """),
+    ChaosKnownFailure(
+      rule: "plain-drag-moved-another", owner: "the chaos lab: what was owed before the drag comes due during it; Keep in View", severity: 4,
+      story: "What is left since a plain drag docks nothing: a move that Arbor owed another window for something that happened before (an app that woke, a "
+        + "window gone into full screen, a Space) falls into the drag. And a window kept in view that its person left hanging over the edge is fetched at the "
+        + "next layout, which a slip's way back is.",
+      script: """
+        open 102 Music pid 1006 at 71 445 980 630 min 980 600
+        open 103 Notes pid 1001 at 144 415 864 552 min 709 320
+        launch
+        restore 103
+        via menu toggle-pin
+        focus 102
+        key down dock left
+        grab 103 plain
+        carry 593 686
+        release
+        grab 102 plain
+        release
+        """,
+      """
+        launch
+        open 101 Music pid 1006 at 166 135 1166 600 min 980 600
+        open 102 Music pid 1006 at 160 304 980 714 min 980 600
+        via menu arrange
+        open 103 Music pid 1006 at 556 125 1117 600 min 980 600
+        full-screen 102 on
+        advance 1
+        grab 103 plain
+        carry 1905 209
+        advance 0.3
+        release
+        """,
+      """
+        launch
+        displays side:-137,1080,1080,1920:37,0,0,40 third:0,0,1920,1080:37,0,0,0* windows-late
+        open 105 Mail pid 1002 at 1628 215 448 277 min 448 277
+        open 107 Safari pid 1000 at 42 1306 452 314
+        hang 1002
+        displays main:0,0,1440,900:25,0,89,0* windows-silent
+        space 107 off
+        wake 1002
+        grab 107 plain
+        advance 0.3
+        """),
+    ChaosKnownFailure(
+      rule: "plain-drag-left-it-docked", owner: "the chaos lab: a hand that takes hold of nothing", severity: 4,
+      story: "What is left since a plain drag takes a docked window out: the walk takes hold of a window that is a tile or a tab behind another, so nothing is "
+        + "in the hand, and the window ends elsewhere than it was by Arbor's own layout.",
+      script: """
+        launch
+        open 103 Mail pid 1002 at 565 1282 453 491 max 275 777 title Draft grid
+        arrange
+        tile main 0
+        react
+        grab 103 plain
+        """,
+      """
+        open 111 Preview pid 1007 at 1138 31 1079 734 min 1079 734 max 1079 1396
+        tab-open 112 in 111
+        open 114 Xcode pid 1004 at 1450 804 499 523
+        launch
+        arrange all
+        react
+        grab 112 plain
+        """),
+    ChaosKnownFailure(
+      rule: "plain-drag-across-displays-moved-another", owner: "the controller: a floating window that leaves a display", severity: 3,
+      story: "A floating window is carried to another display with nothing held. The display it left is laid out again, and that layout is not "
+        + "the one that stood: two docked windows move by three points. Older than the net that found it: so it was when every drag could dock.",
+      script: """
+        launch
+        open 103 Xcode pid 1004 at 671 1775 741 632 min 210 119
+        dock 103 top
+        open 105 Music pid 1006 at 232 537 323 545 min 147 373 max 814 624
+        zoom 103
+        open 107 Notes pid 1001 at -232 487 525 252
+        dock bottom
+        displays side:1920,129,1080,1920:37,0,0,85 main:0,0,1920,1080:37,0,0,0* windows-late
+        home
+        grab 105 plain
+        carry 2009 430
+        release
         """),
   ]
 

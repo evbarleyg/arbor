@@ -10,58 +10,58 @@ open Mail
 dock 101 left
 expect docked 101
 # The bottom edge is Arbor's.
-drag 102 1000 897
+drag 102 1000 897 cmd
 expect docked 102
 expect preview none
 # Let go at once, before any target has woken up.
-drag 103 300 850 quick
+drag 103 300 850 quick cmd
 expect preview none
-# With ⌘ nothing docks and nothing is offered.
-drag 103 1000 897 cmd
+# Without ⌘ nothing docks and nothing is offered.
+drag 103 1000 897
 expect floating 103
 expect preview none
 # It lies at the bottom edge now. Taken hold of there and only nudged, it has not been carried to that edge: nothing is offered.
-pick-up 103 1010 897
+pick-up 103 1010 897 cmd
 expect preview none
 let-go
 expect floating 103
-drag 103 1100 200
+drag 103 1100 200 cmd
 expect floating 103
 # Out of a slot and back onto the Desktop.
-drag 102 1000 300
+drag 102 1000 300 cmd
 expect floating 102
 expect preview none
 # Dropped on another window's edge.
-drag 102 300 850
+drag 102 300 850 cmd
 expect docked 102
 expect preview none
 # The control: while a window is held over a target of Arbor's there is a preview to lose.
-pick-up 103 1000 897
+pick-up 103 1000 897 cmd
 expect preview showing
 let-go
 expect docked 103
 expect preview none
 # Along macOS's edges there is none to lose, on the way there or at the last point, and none afterwards.
 float 103
-pick-up 103 1435 400
+pick-up 103 1435 400 cmd
 expect preview none
 let-go
 expect floating 103
 expect preview none
-pick-up 103 1439 400
+pick-up 103 1439 400 cmd
 expect preview none
 let-go
 wait 1
 expect floating 103
 expect preview none
-pick-up 103 700 0
+pick-up 103 700 0 cmd
 expect preview none
 let-go
 wait 1
 expect floating 103
 expect preview none
 # Arbor is paused with a window in the hand, over a target of its own.
-pick-up 103 1000 897
+pick-up 103 1000 897 cmd
 expect preview showing
 pause
 expect preview none

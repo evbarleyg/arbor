@@ -409,6 +409,7 @@ private let side = DisplaySnapshot(
 
   @Test func itDoesNotOpenWhileAWindowIsDragged() {
     let (h, safari, _, _, _) = makeHarness()
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(safari, at: CGPoint(x: 200, y: 50))
     #expect(h.run("find").message.contains("dragged"))
     #expect(h.overlays.finder == nil)
@@ -419,6 +420,7 @@ private let side = DisplaySnapshot(
   @Test func itClosesWhenAWindowIsDragged() {
     let (h, safari, _, _, _) = makeHarness()
     h.run("find")
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(safari, at: CGPoint(x: 200, y: 50))
     #expect(h.overlays.finder == nil)
     h.controller.dragEnded(safari, at: CGPoint(x: 200, y: 50))
@@ -744,6 +746,7 @@ private let side = DisplaySnapshot(
     let (h, safari, _, mail, terminal) = makeHarness()
     h.run("zoom \(safari.rawValue)")
     let camera = h.workspace.camera
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(safari, at: CGPoint(x: 700, y: 50))
     let result = h.run("reveal \(mail.rawValue)")
     #expect(!result.ok)

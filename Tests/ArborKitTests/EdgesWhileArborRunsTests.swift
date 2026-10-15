@@ -423,7 +423,7 @@ import Testing
     #expect(
       row.done
         == "While Arbor runs, 3 settings of macOS are off. Quit or pause Arbor, and your Mac is as it was. To end that for good: here, or later "
-        + "under Help → Check Setup… in Arbor’s menu. A window dragged to a screen edge docks now.")
+        + "under Help → Check Setup… in Arbor’s menu. To dock a window there, hold ⌘ and drag it to a screen edge.")
 
     // Paused: neither a tick, which would say "off", nor advice. Arbor is keeping its word.
     h.run("pause")

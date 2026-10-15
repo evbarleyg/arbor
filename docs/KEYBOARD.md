@@ -112,7 +112,7 @@ use exactly this key. **reserved**: keep free for that purpose, bound to nothing
 | ⇧-drag starting on the Desktop | frame the rectangle | T; shipped |
 | ⌃⌥-drag anywhere | frame the rectangle | shipped (⇧⌘ until 2026-10-14; `frameRectangleModifier`) |
 | **⌃⌥** + two fingers sideways; two fingers during a pinch of Arbor's | slide the view | assigned (F16). ⌥ + scroll **alone is never Arbor's**: editors, design tools, timelines and terminals use it, and ⌃⌥ is Arbor, with the pointer too |
-| **⌘** held while dragging a window | do not dock, just move | shipped (F09), **instead of ⌥**; see "Conflicts" |
+| **⌘** held while dragging a window | dock: the previews come with the key and go with it. A plain drag only moves the window | shipped (Q29; until 2026-10-15 the other way round, F09), **instead of ⌥**; see "Conflicts". `dragDocks`: `held`, `always`, `never` |
 
 The first five need an event tap. `pointerGestures` ("Trackpad and mouse gestures" in the settings window) is the one switch above them: off, no tap is installed, whatever their own settings say. **It ships off** (Q26), so none of the five works until it is switched on.
 

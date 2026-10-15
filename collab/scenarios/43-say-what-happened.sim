@@ -9,9 +9,9 @@ open Notes
 # The first key they try does nothing, and says what to do instead.
 press in
 expect fail
-expect said Nothing is docked yet: drag a window to a screen edge, or try ⌃⌥←
+expect said Nothing is docked yet: hold ⌘ and drag a window to a screen edge, or try ⌃⌥←
 # They drag a window to the left edge. No command ran, and the moment is explained all the same.
-drag 101 3 400
+drag 101 3 400 cmd
 expect docked 101
 expect said Docked · ⌃⌥↩ frames it
 # They press those keys. The other windows vanish: the sentence that keeps a newcomer.

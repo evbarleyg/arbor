@@ -1382,6 +1382,7 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
   @Test func notWhileAWindowIsInTheHand() {
     let h = harness("Safari", "Mail")
     h.system.mouseDown = true
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(w(101), at: CGPoint(x: 600, y: 210))
     let result = h.run("layout Safari | Mail")
     #expect(!result.ok)

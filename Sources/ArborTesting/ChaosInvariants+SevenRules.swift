@@ -100,6 +100,7 @@ extension ChaosRunner {
     /// (As floating windows do: one that fills the view has Arbor's size, and comes out of that like a docked window out of its slot.)
     var dragged: WindowID?
     var draggedWasFloating = false
+    var displayAtTheGrab: DisplayID?
     var frameAtTheGrab: CGRect?
     var undoStepsAtTheGrab = 0
     /// Windows whose app has refused to go below a size, or above one, in an earlier step: Arbor has had its chance to learn.
@@ -186,9 +187,12 @@ extension ChaosRunner {
     default: seven.somebodyAskedArbor = action.isACommand
     }
     switch action {
-    case .grab(let window):
+    // `grab 101` is by a hand that means to dock, which holds what Arbor is set to ask for. And where every drag docks, none is plain.
+    // A window kept in view or summoned lives by rules of its own.
+    case .grabPlainly(let window) where !aDragIsOfferedPlaces && !controller.workspaces.values.contains { $0.role(of: window) != nil }:
       (seven.dragged, seven.draggedWasFloating) = (isRunning && system.windows[window] != nil ? window : nil, controller.workspaces.values.contains { $0.isFloating(window) && !$0.isFilled(window) })
       seven.frameAtTheGrab = system.windows[window]?.snapshot.frame
+      seven.displayAtTheGrab = controller.workspaceID(containing: window)
       seven.undoStepsAtTheGrab = undoSteps
     case .carry, .release, .cursor, .settle: break
     default: seven.dragged = nil
@@ -246,7 +250,7 @@ extension ChaosRunner {
       .behave(let window, _), .move(let window, _), .focus(let window), .switchApp(let window), .backgroundFocus(let window),
       .listed(let window, _), .doubleClick(let window), .askMacOS(let window, _):
       return [window]
-    case .grab(let window), .edge(let window, _, _): return inHand.union([window])
+    case .grab(let window), .grabPlainly(let window), .edge(let window, _, _): return inHand.union([window])
     // The pointer does not leave a window it is holding behind.
     case .carry, .cursor, .release, .loseRelease, .settle: return inHand
     case .hide(let pid, _), .hang(let pid, _), .appForward(let pid): return windows(of: pid)
@@ -1160,6 +1164,9 @@ extension ChaosRunner {
 
   /// With Arbor running, a plain drag of a floating window is what it is without Arbor: nothing shows, nothing else moves, Arbor sets no frame, and
   /// letting go docks nothing. A docked window dragged plainly comes out and its place closes, which moves what is docked and nothing else.
+  /// Whether a window dragged at this moment is offered anywhere to dock: how Arbor is set, and what is held.
+  var aDragIsOfferedPlaces: Bool { DragDocks(setting: controller.settings.dragDocks).docks(holding: system.modifierKeysDown()) }
+
   func plainDragViolations(_ problems: inout [InvariantViolation]) {
     guard let dragged = seven.dragged, isRunning, let fake = system.windows[dragged], cooperates(fake), controller.filter.manages(fake.snapshot) else { return }
     asked("plain-drag")
@@ -1168,9 +1175,16 @@ extension ChaosRunner {
         if seven.draggedWasFloating {
           problems.append(.init("plain-drag-moved-it", "\(dragged) floated and was dragged, and Arbor moved it from \(move.before.brief) to \(move.after.brief)"))
         }
+      } else if !seven.draggedWasFloating, !isInView(move.before), isInView(move.after) {
+        // The view was on the docked window that has left it. What it kept out of view is back: that is the view's doing
+        // (`floating-taken-out-of-view` counts the way out).
       } else if seven.draggedWasFloating || workspacesBefore.values.contains(where: { $0.isFloating(move.window) }) {
+        // Carried to another display it leaves one Desktop and comes to another: a fault of its own, older than this net (`knownFailures`).
+        let crossed = controller.workspaceID(containing: dragged) != seven.displayAtTheGrab
         problems.append(
-          .init("plain-drag-moved-another", "\(dragged) was dragged, and Arbor moved \(move.window) from \(move.before.brief) to \(move.after.brief)"))
+          .init(
+            crossed ? "plain-drag-across-displays-moved-another" : "plain-drag-moved-another",
+            "\(dragged) was dragged, and Arbor moved \(move.window) from \(move.before.brief) to \(move.after.brief)"))
       }
     }
     if system.dragging == dragged, harness.overlays.preview != nil {
@@ -1197,7 +1211,11 @@ extension ChaosRunner {
     else { return }
     seven.dragged = nil
     let letGo = fake.home ?? fake.snapshot.frame
-    guard hypot(letGo.minX - from.minX, letGo.minY - from.minY) >= 24, fake.snapshot.isPresent, !fake.snapshot.isFullScreen else { return }
+    // Both the window and the hand, which took it by the middle of its title bar: a window that its app had not yet brought to its slot when
+    // it was taken ends somewhere else without having been carried anywhere.
+    guard hypot(letGo.minX - from.minX, letGo.minY - from.minY) >= 24, hypot(system.cursor.x - from.midX, system.cursor.y - (from.minY + 10)) >= 24,
+      fake.snapshot.isPresent, !fake.snapshot.isFullScreen
+    else { return }
     asked("dragged-out")
     if controller.workspaces.values.contains(where: { $0.isDocked(dragged) }) {
       problems.append(.init("plain-drag-left-it-docked", "\(dragged) was docked, was dragged away with no key held and let go, and is docked"))

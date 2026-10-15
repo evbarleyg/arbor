@@ -337,7 +337,7 @@ extension Controller {
           layout: layout)
     else {
       guard !workspace.tree.allWindows.isEmpty else {
-        return .failure("nothing is docked yet: drag a window to a screen edge, or try `dock left`")
+        return .failure("nothing is docked yet: \(howToDockAFirstWindow)")
       }
       return .failure("nothing to step into: \(name(of: workspace.camera, on: display)) fills the view" + onPointerDisplay)
     }

@@ -271,6 +271,7 @@ import Testing
     let (h, _, _, c, _) = makeHarness()
     h.run("show-all")
     h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
+    h.system.heldModifiers = DragDocks.key  // held by whoever means to dock, as Arbor ships
     h.controller.dragBegan(c, at: CGPoint(x: 1200, y: 600))
     h.controller.dragMoved(c, to: CGPoint(x: 3, y: 400))
     #expect(h.overlays.preview != nil)

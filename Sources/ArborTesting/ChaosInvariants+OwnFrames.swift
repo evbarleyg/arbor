@@ -186,6 +186,7 @@ extension ChaosRunner {
   static let rulesThatMakingWayBreaks: Set = [
     "moved-unasked", "moved-before-any-dock", "grown-while-hanging", "left-its-place", "parked-beside-another-display",
     "displays-left-mostly-out", "moved-at-launch-after-a-crash", "moved-twice-floating-windows-first", "plain-drag-moved-another",
+    "plain-drag-across-displays-moved-another",
   ]
 
   func nameWhatComesOfMakingWay(_ problems: inout [InvariantViolation]) {

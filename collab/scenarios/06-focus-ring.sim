@@ -39,7 +39,7 @@ expect ring none
 focus 102
 expect ring 102
 # Dragged to the other side, it has its ring again when the mouse lets go.
-drag 102 3 400
+drag 102 3 400 cmd
 expect docked 102
 expect ring 102
 # Back to a normal Mac: the ring goes with the arrangement.

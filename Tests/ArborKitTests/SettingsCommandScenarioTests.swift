@@ -403,6 +403,7 @@ private final class Fixture {
     let f = Fixture()
     let c = f.h.system.open(app: "Mail", frame: CGRect(x: 500, y: 300, width: 500, height: 300))
     let edge = CGPoint(x: 720, y: f.h.visibleFrame.maxY - 2)
+    f.h.system.heldModifiers = DragDocks.key  // held by whoever means to dock, as Arbor ships
     f.h.controller.dragBegan(c, at: CGPoint(x: 700, y: 310))
     f.h.controller.dragMoved(c, to: edge)
     #expect(f.h.run("set gap 40").ok)

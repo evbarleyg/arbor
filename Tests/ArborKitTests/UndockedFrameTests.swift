@@ -244,9 +244,8 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
         h.run("float \(safari.rawValue)")
       } else {
         let slot = try #require(h.frame(safari))
-        // Arranged, the windows leave the Desktop no room to drop it on: only ⌘ takes a docked window out (F09).
-        h.system.heldModifiers = .command
-        h.system.drag(safari, through: [CGPoint(x: slot.midX, y: slot.minY + 10), CGPoint(x: 1380, y: 300)])
+        // Arranged, the windows leave the Desktop no room to drop it on: a plain drag takes a docked window out anywhere.
+        h.system.drag(safari, through: [CGPoint(x: slot.midX, y: slot.minY + 10), CGPoint(x: 1380, y: 300)], plainly: true)
       }
       #expect(h.workspace.isFloating(safari), "\(way)")
       #expect(h.frame(safari)?.size == safariFrame.size, "\(way)")
@@ -308,9 +307,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     let leaf = try #require(h.workspace.tree.leaf(containing: notes))
     h.run("zoom-node \(try #require(h.workspace.tree.parent(of: leaf)).rawValue)")
     let slot = try #require(h.frame(notes))
-    // With the Desktop out of view only ⌘ takes a docked window out of the arrangement (F09).
-    h.system.heldModifiers = .command
-    h.system.drag(notes, through: [CGPoint(x: slot.midX, y: slot.minY + 10), try #require(h.frame(mail)).center])
+    h.system.drag(notes, through: [CGPoint(x: slot.midX, y: slot.minY + 10), try #require(h.frame(mail)).center], plainly: true)
     #expect(h.workspace.isFloating(notes))
     #expect(h.workspace.guests?[notes] != nil)
   }
@@ -460,6 +457,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     let grab = CGPoint(x: slot.minX + slot.width / 10, y: slot.minY + 14)
     let drop = CGPoint(x: 900, y: 400)
     h.system.mouseDown = true
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(notes, at: grab)
     h.system.cursor = drop
     h.system.userMove(notes, to: slot.offsetBy(dx: drop.x - grab.x, dy: drop.y - grab.y))
@@ -505,6 +503,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     h.run("dock \(safari.rawValue) beside \(notes.rawValue) bottom")
     // macOS reports moves a few times a second: here, none since the drag began.
     let drop = CGPoint(x: 760, y: 500)
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(notes, at: CGPoint(x: 200, y: 50))
     h.controller.dragEnded(notes, at: drop)
     let frame = try #require(h.frame(notes))
@@ -518,9 +517,8 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")
     let target = try #require(h.frame(safari)).center
-    h.system.heldModifiers = .command
-    h.system.drag(notes, through: [CGPoint(x: 300, y: 60), target])
-    #expect(h.workspace.isFloating(notes), "with ⌘ held it floats anywhere (F09)")
+    h.system.drag(notes, through: [CGPoint(x: 300, y: 60), target], plainly: true)
+    #expect(h.workspace.isFloating(notes), "dragged plainly it floats anywhere")
     let frame = try #require(h.frame(notes))
     #expect(frame.size == notesFrame.size)
     #expect(frame.midX == target.x)
@@ -565,6 +563,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     h.run("dock \(notes.rawValue) left")
     let slot = try #require(h.frame(notes))
     h.system.mouseDown = true
+    h.system.heldModifiers = DragDocks.key  // held by whoever means to dock, as Arbor ships
     h.controller.dragBegan(notes, at: CGPoint(x: slot.midX, y: slot.minY + 10))
     h.system.userMove(notes, to: slot.offsetBy(dx: 300, dy: 100))
     h.system.mouseDown = false
@@ -1238,9 +1237,8 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   @Test func withNothingRememberedADraggedWindowKeepsItsSizeAndPlace() throws {
     let (h, notes, _) = try harnessWithNothingRemembered()
     let slot = try #require(h.frame(notes))
-    // Two halves leave the Desktop no room to drop it on: only ⌘ takes a docked window out (F09).
-    h.system.heldModifiers = .command
-    h.system.drag(notes, through: [CGPoint(x: 300, y: 60), CGPoint(x: 720, y: 200)])
+    // Two halves leave the Desktop no room to drop it on: a plain drag takes a docked window out anywhere.
+    h.system.drag(notes, through: [CGPoint(x: 300, y: 60), CGPoint(x: 720, y: 200)], plainly: true)
     #expect(h.workspace.isFloating(notes))
     #expect(h.frame(notes)?.height == slot.height)
   }

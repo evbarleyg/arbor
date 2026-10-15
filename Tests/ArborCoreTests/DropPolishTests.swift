@@ -19,6 +19,40 @@ private func workspaces() -> [DisplayID: Workspace] {
   return [main: workspace, side: Workspace()]
 }
 
+/// When a dragged window docks (`dragDocks`).
+@Suite struct DragDocksTests {
+  @Test func aPlainDragDocksOnlyWhereThatIsSet() {
+    let keys: [(KeyChord.Modifiers, isTheKey: Bool)] = [
+      ([], false), (.command, true), ([.command, .shift], true), ([.command, .option], true), ([.command, .control], true),
+      ([.control, .option, .command], false), ([.control, .option, .shift, .command], false),
+      (.option, false), (.shift, false), (.control, false), ([.control, .option], false),
+    ]
+    for (held, isTheKey) in keys {
+      #expect(DragDocks.isKeyHeld(held) == isTheKey, "\(held)")
+      #expect(DragDocks.held.docks(holding: held) == isTheKey, "\(held)")
+      #expect(DragDocks.always.docks(holding: held) == !isTheKey, "\(held)")
+      #expect(!DragDocks.never.docks(holding: held), "\(held)")
+    }
+  }
+
+  @Test func arborShipsWithTheKeyAndTakesNonsenseForThat() {
+    #expect(Settings().dragDocks == "held")
+    #expect(DragDocks(setting: Settings().dragDocks) == .held)
+    for setting in DragDocks.allCases { #expect(DragDocks(setting: setting.rawValue) == setting) }
+    for nonsense in ["", "Held", "sometimes", "true"] { #expect(DragDocks(setting: nonsense) == .held, "\(nonsense)") }
+  }
+
+  /// A file written by a build that did not know the key: it loads, and the drag is as Arbor ships now.
+  @Test func aSettingsFileWithoutTheKeyLoads() throws {
+    let old = try JSONDecoder().decode(Settings.self, from: Data(#"{"gap": 12, "previewDrags": false}"#.utf8))
+    #expect(old.gap == 12)
+    #expect(old.dragDocks == "held")
+    let chosen = try JSONDecoder().decode(Settings.self, from: Data(#"{"dragDocks": "always"}"#.utf8))
+    #expect(chosen.dragDocks == "always")
+    #expect(try JSONDecoder().decode(Settings.self, from: JSONEncoder().encode(chosen)) == chosen)
+  }
+}
+
 /// F09: which targets have to be held, and for how long.
 @Suite struct DropDwellTests {
   @Test func onlyWindowsAndTilesHaveToBeHeld() {

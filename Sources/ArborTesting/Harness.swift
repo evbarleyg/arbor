@@ -83,6 +83,10 @@ public final class Harness {
     mac.didChange = { [unowned mac, unowned system] in system.tiling = MacTiling(mac.on) }
     // Time also passes while a simulated drag rests at a point.
     system.passTime = { [scheduler] in scheduler.advance(by: $0) }
+    // Whoever drags a window to dock it holds what this Arbor asks for, as it is set at that moment (docs/TESTING.md).
+    system.keysThatDock = { [weak controller] in
+      controller.map { DragDocks(setting: $0.settings.dragDocks) } == .held ? DragDocks.key : []
+    }
     firstMark = system.moveLog.count
   }
 

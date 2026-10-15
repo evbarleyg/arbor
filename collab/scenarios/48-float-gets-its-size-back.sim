@@ -26,7 +26,7 @@ expect visible 103
 
 # Dragged out of its slot and dropped on the Desktop.
 dock 101 left
-drag 101 720 300
+drag 101 720 300 cmd
 expect floating 101
 expect size 101 400x300
 
@@ -37,7 +37,7 @@ float 102
 expect size 102 800x600
 expect visible 102
 arrange
-drag 102 1300 300
+drag 102 1300 300 cmd
 expect floating 102
 expect size 102 800x600
 expect visible 102

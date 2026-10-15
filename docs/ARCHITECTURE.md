@@ -543,11 +543,21 @@ seconds (the scheduler key `drag-dwell`; no wait without `previewDrags`, when
 nothing would show that it is over). Moving to another target starts the
 wait again and hides the preview. A release counts only on the target that
 was held; before that a floating window stays where it is and a docked one goes
-back to its slot (`cancelDrag()`). While ⌘ is down
-(`WindowSystem.modifierKeysDown`, looked at on every move, when the wait ends and
-on release) every target is "float", even the window's own slot. During a mouse
-event `AXWindowSystem` answers with that event's own flags: people let go of key
-and button together, and the key can be up by the time the mouse-up arrives.
+back to its slot (`cancelDrag()`).
+
+All of that only while ⌘ is down (`dragDocks`, `DragDocks.docks(holding:)`;
+`WindowSystem.modifierKeysDown`, looked at on every move, when the wait ends and
+on release). In a plain drag every target is "float", even the window's own slot,
+and nothing is shown (`dropTarget(for:at:offering: false)`, so that what cannot be
+still is not: a held view is not emptied, nothing is dropped on a display that has
+gone). Only a docked window that was carried less than `Controller.slip` from its
+place goes back (`isASlip`). A drag that ends without a release goes by what it was
+when Arbor last looked (`DragSession.wasPlain`): the keys are long up by then. No
+event tap is needed for any of it:
+presses, moves and modifier keys reach `AXWindowSystem` through a global `NSEvent`
+monitor, which reports a key that goes down or up in mid-drag as a move to the same
+point. During a mouse event it answers with that event's own flags: people let go
+of key and button together, and the key can be up by the time the mouse-up arrives.
 
 **Where macOS tiles, Arbor stands aside.** macOS 15 and later tile a dragged window themselves, a Mac comes with that
 switched on, and macOS asks nobody. `WindowSystem.macTiling()` says which of its three switches are on; it is asked

@@ -413,10 +413,10 @@ public final class ChaosRunner {
     case .backgroundFocus(let window): system.backgroundFocus(window)
     case .press:
       if system.dragging == nil, system.resizing == nil { system.mouseDown = true }
-    case .grab(let window):
+    case .grab(let window), .grabPlainly(let window):
       // Only a window that can be seen can be picked up.
       if let snapshot = system.windows[window]?.snapshot, snapshot.isPresent, isReachable(snapshot.frame), !system.displayList.isEmpty {
-        system.grab(window)
+        system.grab(window, plainly: action == .grabPlainly(window))
       }
     case .doubleClick(let window):
       // Only a title bar that can be seen, and only with a button that is up.

@@ -379,6 +379,7 @@ private let tenMinutes = 600.0
     h.system.clearFrameLog()
     let start = try #require(h.frame(floating))
     h.system.mouseDown = true
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(floating, at: CGPoint(x: start.midX, y: start.minY + 10))
     h.run("show-all")
     #expect(h.system.frameLog.filter { $0.window == c }.count == 1, "the way out")
@@ -458,6 +459,7 @@ private let tenMinutes = 600.0
     h.scheduler.advance(by: tenMinutes)
     let start = h.frame(a)!
     h.system.mouseDown = true
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(a, at: CGPoint(x: start.midX, y: start.minY + 10))
     layOutAgain(h)
     #expect(isTile(h, c), "drop targets must not change under the pointer")

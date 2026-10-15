@@ -37,6 +37,7 @@ Yes or no: exit code 0 or 1, and on 1 a line that says why.
   state.py tile_shown <window>              a window of Arbor's own (ARBOR_PID) is on screen where that tile should be
   state.py no_overlaps                      no two docked windows or tiles in view overlap
   state.py layout_matches                   every docked window in view is where the layout puts it
+  state.py title_bar_at x y                 a press there takes an app's window by its title bar
   state.py ready <count>        exit code 0 when Arbor runs and manages that many windows, 3 when it lacks
                                 Accessibility permission, otherwise 1
 
@@ -357,6 +358,21 @@ def layout_matches(world):
     return not wrong, "; ".join(wrong)
 
 
+def title_bar_at(world, x, y):
+    """The window server lists windows from front to back: the first app's window that holds the point gets the press."""
+    for number, entry in world.real.items():
+        left, top, width, height = entry["frame"]
+        if not entry["on"] or entry["layer"] != 0 or str(entry["pid"]) == os.environ.get("ARBOR_PID"):
+            continue
+        if not (left <= x < left + width and top <= y < top + height):
+            continue
+        # Whether Arbor arranges it is not asked: paused it arranges none, and whether it then leaves a ⌘-drag alone is what a script is after.
+        # Below the strip along the top edge that resizes, clear of the corners, and no lower than a title bar reaches.
+        on_the_bar = 3 <= y - top <= 32 and x - left >= 8 and left + width - x >= 8
+        return on_the_bar, f"{words([x, y])} is not on the title bar of window {number} at {words(entry['frame'])}"
+    return False, f"no window lies at {words([x, y])}"
+
+
 def predicate(world, query, arguments):
     """Returns (holds, why not), or None when `query` is no predicate."""
 
@@ -426,6 +442,8 @@ def predicate(world, query, arguments):
         return no_overlaps(world)
     if query == "layout_matches":
         return layout_matches(world)
+    if query == "title_bar_at" and len(arguments) >= 2:
+        return title_bar_at(world, float(arguments[0]), float(arguments[1]))
     return None
 
 

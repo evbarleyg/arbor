@@ -80,8 +80,10 @@ public struct CheatSheetModel: Equatable, Sendable {
   /// adds its row at the end.
   public static func pointerRows(settings: Settings) -> [Row] {
     var rows: [Row] = []
-    if settings.dropOptions.offersScreenEdges { rows.append(Row(keys: "Drag to a screen edge", title: "Dock")) }
-    if settings.dropOptions.offersWindowEdges { rows.append(Row(keys: "Drag to a window’s edge", title: "Dock Beside It")) }
+    let docks = DragDocks(setting: settings.dragDocks)
+    let drag = docks == .held ? "⌘ + drag" : "Drag"
+    if docks != .never, settings.dropOptions.offersScreenEdges { rows.append(Row(keys: "\(drag) to a screen edge", title: "Dock")) }
+    if docks != .never, settings.dropOptions.offersWindowEdges { rows.append(Row(keys: "\(drag) to a window’s edge", title: "Dock Beside It")) }
     rows += [Row(keys: "Drag a gap", title: "Resize Both Sides"), Row(keys: "Click a tile", title: "Zoom In on It")]
     if settings.gesturesEnabled { rows.append(Row(keys: "⌥ + pinch", title: "Zoom")) }
     if let held = RectangleGesture.Modifiers(text: settings.frameRectangleModifier), !held.isEmpty {

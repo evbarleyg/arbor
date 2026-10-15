@@ -15,7 +15,7 @@ is in [KEYBOARD.md](KEYBOARD.md). Pictures will replace the drawings.
 
 **Arrange windows side by side once. Fill the screen with any one, and one key brings the arrangement back. Your Mac's own tiling forgets an arrangement; Arbor keeps it.**
 
-A Mac's windows pile up. Arbor lets you give some of them a *place*: drag a window to a screen edge and it **docks** there, sharing the screen with whatever else is docked. Nothing docked overlaps. What the docked
+A Mac's windows pile up. Arbor lets you give some of them a *place*: hold ⌘, drag a window to a screen edge and it **docks** there, sharing the screen with whatever else is docked. Nothing docked overlaps. What the docked
 windows leave over is **the Desktop**: one docked window takes a half and leaves the other half, two take it all. All your other windows **float** exactly as they always
 have: on the Desktop and, where nothing is left over, in front of what is docked or behind it, like any two windows on a Mac.
 
@@ -55,8 +55,8 @@ That is all of it: **dock**, **float**, **zoom**. Everything else is a faster wa
 
 | | Pointer | Keys |
 |---|---|---|
-| Dock | drag to a screen edge, or hold over another docked window's edge until the preview shows | ⌃⌥←, ⌃⌥→ |
-| Float | drag onto the Desktop, or anywhere with ⌘ held (in a view without the Desktop, only ⌘ takes a window out: let go without it, the window goes back to its place) | ⌃⌥F |
+| Dock | hold ⌘ and drag to a screen edge, or hold over another docked window's edge until the preview shows. The key may go down on the way: at a screen edge the preview is there at once, beside a window after the same short hold, counted from the key. What docks is what was shown: no preview, no dock. Let go of the window first, then of the key | ⌃⌥←, ⌃⌥→ |
+| Float | drag it anywhere: a plain drag only moves a window, and a docked one comes out at the size it had before (a click that slips by a few points takes nothing out) | ⌃⌥F |
 | Fill the screen with one window, docked or floating | | ⌃⌥↩ (again to return) |
 | Step out, step in | with [the gestures switched on](#6-on-its-way): ⌥ + pinch, or pinch on the Desktop; with a mouse, ⌃⌥ + scroll down or up: a notch is one step, a flick goes all the way | no key: menu → Step Out, Step In |
 | Show everything | | ⌃⌥Space |
@@ -124,14 +124,14 @@ Nothing moves when permission arrives. Arbor arranges nothing until you ask.
 
 ### Four moves
 
-1. **Dock.** Click any window and press **⌃⌥⌘←**. (Or drag it by its title bar to the left edge of the screen; a preview shows where it will land. With macOS's own tiling on, that edge is macOS's: the key works at every setting.)
+1. **Dock.** Click any window and press **⌃⌥⌘←**. (Or hold ⌘ and drag it by its title bar to the left edge of the screen; a preview shows where it will land. Without ⌘ a drag only moves the window, as on any Mac. With macOS's own tiling on, that edge is macOS's: the key works at every setting.)
 2. **Dock a second.** Click another and press **⌃⌥⌘→**. It takes the other half, and the first does not move. Nor does any other window: what floated where the docked ones now sit is still there, exactly as you left it.
 3. **Frame.** Click one of the docked windows and press **⌃⌥↩**. It fills the screen. **Your other windows are out of view, not closed.**
 4. **And back.** Press **⌃⌥↩** again (or ⌃⌥Space). The arrangement is back.
 
 ⌃⌥↩ works on a window you never docked, too. It grows to fill the screen and stays there, whatever else opens or closes; it is still a floating window, and nothing else moves. ⌃⌥↩ again, and it is exactly where and as large as it was. So it is after ⌃⌥Z, a pause or Quit. Drag it away by its title bar and it comes out in its own size; give it another size by hand and that is its size from then on. An app that will not grow that far goes as far as it can, in the middle. ⌃⌥Space shows everything, so it gives that window its own size back too. Any other move of the view (⌃⌥[, Go to…) brings what arrives to the front; the filled window waits behind it, still filled.
 
-Now try: ⌃⌥← and ⌃⌥→ in a docked window, to move it one place. ⌃⌥[ to go back to where the view was, like a browser. Drag the gap between two docked windows to resize both. Drag a third window onto the **bottom edge of a docked window** to put it underneath: that makes a group, and Step Out (in the menu) from either
+Now try: ⌃⌥← and ⌃⌥→ in a docked window, to move it one place. ⌃⌥[ to go back to where the view was, like a browser. Drag the gap between two docked windows to resize both. With ⌘ held, drag a third window onto the **bottom edge of a docked window** to put it underneath: that makes a group, and Step Out (in the menu) from either
 of its windows, framed, shows the group.
 
 Arbor talks you through these the first few times, in a line low on the display: "Docked · ⌃⌥↩ frames it", "Your other windows are out of view, not closed · ⌃⌥Space shows
@@ -159,7 +159,7 @@ Always in this order:
 Browser on the left, terminal on the right, chat under the terminal. Everything else floats where you left it, and **Show the Desktop**, in the menu, shows the Desktop with all of it.
 
 - Click the browser, **⌃⌥←**. Click the terminal, **⌃⌥→**.
-- Drag the chat window onto the lower part of the terminal and let go when the preview covers its bottom half.
+- Hold ⌘, drag the chat window onto the lower part of the terminal and let go when the preview covers its bottom half.
 - Drag the gaps until the proportions suit you.
 
 **⌘H and ⌘M work as ever.** A docked window that is hidden or minimized keeps its place; its docked neighbours close up meanwhile, and when it comes back it has its place again and they their exact sizes, in whatever order several went and came. If you change the arrangement yourself meanwhile (a gap, a dock, a window closed), that is the arrangement from then on.
@@ -394,7 +394,7 @@ Arrange the windows by hand once, ask for the line, and bind it to a shortcut: `
 | **Only ⌃⌥Space does nothing**, or ⌃⌥Space no longer switches keyboards | With several keyboards or input methods set up, macOS uses the same keys for "Select next source in Input menu", and only one of the two gets them (on the one Mac where it was measured, Arbor) | Show Everything is in the menu too. Free the key on either side: System Settings → Keyboard → Keyboard Shortcuts → Input Sources, or `arborctl unbind ctrl+opt+space` |
 | **Show Everything springs back** when the keys come up | They were held for a second or more, or the pointer moved meanwhile, which is a peek: letting go returns to the outlined view | Let go within a second with the pointer at rest, or choose Show Everything from the menu, which never peeks. `"peek": false` in `settings.json` turns peeking off |
 | **Clicks, scrolling or pinches feel late or go missing**, in any app, since you switched the gestures on | For the pinch, ⌃⌥ + scroll and the rectangle macOS shows Arbor each press, scroll and pinch first, and holds it until Arbor has answered | Settings… → Gestures → **Trackpad and mouse gestures** off, or `arborctl set pointerGestures false`: nothing waits for Arbor any more. Keys, the menu and dragging windows, gaps and tiles work as before. If that cures it, please tell us |
-| **A beep** | The shortcut has nothing to do here, and `messages` is "off" | Set `messages` to "helpful" and Arbor says why on screen; or ask `arborctl` with the same command: `arborctl in` → "nothing is docked yet: drag a window to a screen edge…" |
+| **A beep** | The shortcut has nothing to do here, and `messages` is "off" | Set `messages` to "helpful" and Arbor says why on screen; or ask `arborctl` with the same command: `arborctl in` → "nothing is docked yet: hold ⌘ and drag a window to a screen edge…" |
 | **A window pushed against the edge takes half the screen**, or all of it at the top, and is not docked | With macOS's own tiling on, the left, right and top edges are macOS's, and Arbor stands aside | ⌃⌥← or ⌃⌥→ docks it at once; for the top, menu → Dock Focused Window ▸ Top. Or Help → Check Setup… → Switch Off macOS Tiling (or the three switches in section 2 by hand), and every edge is Arbor's |
 | **A docked window covers the others** after a double-click on its title bar, ⌥-click on its green button, or Window ▸ Zoom or Fill | macOS's own doing (for the double-click: System Settings → Desktop & Dock → "Double-click a window's title bar to"). You asked macOS for it, so Arbor leaves the window where macOS put it, whatever other windows open, close or hide meanwhile | Press ⌃⌥Space: the window is back in its place. With macOS set to zoom, a second double-click does the same; set to fill, it does nothing |
 | **A docked window is no longer docked** after Window ▸ Move & Resize, Window ▸ Move to another display, or one of macOS's own tiling keys | You asked macOS for one of its tiles, or for another display, so the window is macOS's: it floats there, and its neighbours take the room | ⌃⌥Z undoes it; or dock the window again |

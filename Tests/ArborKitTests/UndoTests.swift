@@ -1940,6 +1940,7 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     h.run("dock \(a.rawValue) left")
     let start = h.frame(b)!
     h.system.mouseDown = true
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(b, at: CGPoint(x: start.midX, y: start.minY + 10))
     let result = h.run("undo")
     #expect(!result.ok)
@@ -1966,6 +1967,7 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     let (h, a, b, _) = makeHarness()
     h.run("dock \(a.rawValue) left")
     h.system.mouseDown = true
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(b, at: h.frame(b)!.center)
     h.system.mouseDown = false  // the mouse-up never reached Arbor
     #expect(h.run("undo").ok)

@@ -61,6 +61,16 @@ Arbor's own panels, Arbor puts no panel that takes the mouse under the pointer a
   (F17's lost release, another drag, the window closing or becoming a native tab, pause, quit)
   ends in the same place: a docked window goes back to its slot, a floating one stays.
 
+**Turned round on 2026-10-15** (QUESTIONS Q29, 3; IDEAS I20 b): a plain drag docks nothing and shows nothing; **⌘ held during the drag
+docks**. Everything above holds while the key is down. It may go down at any time during the drag; what is held at the release
+counts; when it comes up the preview goes at once. A docked window dragged plainly comes out wherever it is let go, at its own size,
+and its neighbours move once; carried less than 24 points (a click that slipped) it goes back and nothing else moves; so it does from
+under a held view, which it would empty (F58). A plain drag whose release is lost still means out; one that a pause or a quit cuts short is not over, and every window takes its own frame in one move (F40). `dragDocks`:
+`held` (ships), `always` (as above, ⌘ turns docking off), `never`. The key is a new one, so the default reaches every Mac. Where macOS
+tiles it still asks nobody, ⌘ or not (Q23); its line is said only to whoever held ⌘. No event tap: it works with `pointerGestures` off.
+Not shipped with it: deeper zones along the screen's edges while ⌘ is held, so that a first ⌘-drag finds a target at macOS's defaults;
+a grace for a key that comes up a moment before the button (then nothing docks, which moves nothing: Finder's ⌥-drag is as strict).
+
 Not shipped: `previewStyle` (there is one style); a setting for the suppress key; the outline of the region the Desktop
 keeps when a drop docks beside it (T11).
 Seen on real windows in three Mac shell runs of `scripts/mac-shell/check-F09.sh`: the dwell, ⌘, the fades and live reflow. What

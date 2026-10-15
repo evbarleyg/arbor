@@ -294,6 +294,7 @@ import Testing
             let frame = h.frame(next)
           {
             leftByTheUser.insert(next)
+            h.system.heldModifiers = DragDocks.key
             h.controller.dragBegan(next, at: frame.center)
             h.system.mouseDown = false
             h.controller.dragEnded(next, at: frame.center)

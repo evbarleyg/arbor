@@ -235,6 +235,9 @@ public struct Settings: Codable, Equatable, Sendable {
   /// docks are two halves and Arrange Windows leaves nothing over (collab/QUESTIONS.md, Q28 and Q29). A key of its own because a
   /// settings.json may hold the old width at its floor as somebody's choice, and would keep the column they wanted to be rid of.
   public var desktopColumn: Bool = false
+  /// When a window dragged by its title bar docks: `"held"`, only while ⌘ is held, so that a plain drag is macOS's own and nothing
+  /// else; `"always"`, wherever there is a target, and ⌘ turns that off; `"never"`. Anything else means `"held"` (`DragDocks`).
+  public var dragDocks: String = DragDocks.held.rawValue
 
   public init() {}
 
@@ -320,6 +323,7 @@ public struct Settings: Codable, Equatable, Sendable {
     case pointerGestures
     case floatingWindowsMakeWay
     case desktopColumn
+    case dragDocks
   }
 
   public init(from decoder: any Decoder) throws {
@@ -429,5 +433,6 @@ public struct Settings: Codable, Equatable, Sendable {
     try read(.pointerGestures, into: &pointerGestures)
     try read(.floatingWindowsMakeWay, into: &floatingWindowsMakeWay)
     try read(.desktopColumn, into: &desktopColumn)
+    try read(.dragDocks, into: &dragDocks)
   }
 }

@@ -124,6 +124,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   @Test func turningThePreviewOffDuringADragHidesIt() {
     let (h, a, _, _) = makeHarness()
     h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
+    h.system.heldModifiers = DragDocks.key  // held by whoever means to dock, as Arbor ships
     h.controller.dragBegan(a, at: CGPoint(x: 400, y: 110))
     h.controller.dragMoved(a, to: CGPoint(x: 3, y: 450))
     #expect(h.overlays.preview != nil)

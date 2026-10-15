@@ -477,7 +477,9 @@ drag_onto() {
     *) die "drag_onto: left, right, top or bottom, not $3" ;;
   esac
   walk_act drag "drag-$1-onto-$2-$3" "drags $1 by its title bar onto the $3 part of $2 and lets go"
-  must drag_window "$window" "$px" "$py"
+  # ⌘ goes down once the window is in the hand: that is what asks Arbor to dock (`dragDocks`). Said outright: an app's toolbar can be
+  # taller than what lib.sh takes for a title bar.
+  must drag_window "$window" "$px" "$py" --then-mods cmd
   changed
   [ -n "$DAY_UNDONE" ] || want "it is docked" eventually is docked "$window"
   acted drags="$window" moves=docked front="$window"
@@ -491,7 +493,7 @@ drag_out() {
   [ -n "${w:-}" ] || { left_out "drag_out $1: the Desktop is out of view"; return; }
   window=$(window_of "$1")
   walk_act drag "drag-$1-out" "drags $1 out of the arrangement onto the Desktop and lets go"
-  must drag_window "$window" "$((x + w / 2))" "$((y + h / 3))"
+  must drag_window "$window" "$((x + w / 2))" "$((y + h / 3))" --plain
   changed
   [ -n "$DAY_UNDONE" ] || want "it floats" eventually is floating "$window"
   acted drags="$window" moves=docked front="$window" restores="$window" place="$window"
@@ -509,7 +511,7 @@ drag_by() {
     || { left_out "drag_by $*: that would end at an edge"; return; }
   # The point is one of its title bar's at which nothing but the window answers, so the click after the drop does nothing but arrive.
   walk_act drag "drag-$1-by" "drags $1, which floats, by its title bar $2 across and $3 down${4:+, and clicks there 0.3 s after letting go}"
-  must drag_window "$window" "$x" "$y" ${4:+--then-click}
+  must drag_window "$window" "$x" "$y" --plain ${4:+--then-click}
   changed
   [ -z "$WALK_PAUSED" ] || WALK_MOVED_IN_PAUSE="${WALK_MOVED_IN_PAUSE:+$WALK_MOVED_IN_PAUSE,}$window"
   # Its size too: macOS gives a window it had tiled its earlier size back under the hand.
@@ -527,7 +529,8 @@ drag_edge() {
     *) die "drag_edge: left, right or top, not $2" ;;
   esac
   walk_act drag-where-macos-tiles "drag-$1-to-$2-edge" "drags $1 by its title bar against the $2 edge of the screen and lets go"
-  must drag_window "$window" "$px" "$py" --hold 1
+  # With nothing held, as with no Arbor on the Mac: whoever pushes a window against an edge means macOS.
+  must drag_window "$window" "$px" "$py" --plain --hold 1
   changed
   # Docked by Arbor, or tiled by macOS with Arbor standing aside: then that is where its person put it, and its own frame from now on.
   if ! { with_arbor && arbor_answers && eventually is docked "$window"; }; then own="own=$window"; fi

@@ -11,7 +11,7 @@ open Calculator 300x400
 # No drop preview: a drag to the left screen edge still docks.
 set previewDrags false
 expect ok
-drag 103 3 450
+drag 103 3 450 cmd
 expect docked 103
 dock 102 left
 dock 101 left

@@ -583,6 +583,7 @@ private let above = DisplaySnapshot(
           dragged = id
           h.system.mouseDown = true
           h.system.cursor = CGPoint(x: frame.midX, y: frame.minY + 10)
+          h.system.heldModifiers = DragDocks.key
           h.controller.dragBegan(id, at: h.system.cursor)
           let target = point()
           steps.append("(drag \(id) to \(target) and hold)")

@@ -956,6 +956,7 @@ private let side = DisplaySnapshot(
     desk.h.run("show-all")
     desk.h.run("zoom \(desk.a.rawValue)")
     desk.h.system.mouseDown = true
+    desk.h.system.heldModifiers = DragDocks.key
     desk.h.controller.dragBegan(desk.a, at: CGPoint(x: 700, y: 40))
     #expect(desk.h.keyDown(space)?.ok == true, "the command ran")
     desk.h.scheduler.advance(by: 0.5)

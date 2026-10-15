@@ -1198,5 +1198,7 @@ private struct RecordedSettings: Decodable {
     let written = try decoder.container(keyedBy: StringKey.self)
     func isMissing(_ key: String) -> Bool { !written.contains(StringKey(key)) }
     if isMissing("desktopColumn") { settings.desktopColumn = true }
+    // Until there was a key, a plain drag docked.
+    if isMissing("dragDocks") { settings.dragDocks = DragDocks.always.rawValue }
   }
 }

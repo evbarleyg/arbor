@@ -613,6 +613,7 @@ import Testing
     h.run("dock \(mail.rawValue) beside \(activity.rawValue) bottom")
     #expect(isTile(h, notes) && isTile(h, safari), "740 and 574 are more than there is")
     let start = try #require(h.frame(mail))
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(mail, at: CGPoint(x: start.midX, y: start.minY + 10))
     let tree = h.workspace.tree
     // Activity Monitor goes into the Dock: there would be room for Safari now.

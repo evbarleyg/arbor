@@ -341,9 +341,13 @@ private let side = DisplaySnapshot(
 
 // MARK: ⌘ suppresses docking
 
+/// Where a plain drag docks (`dragDocks` "always", as in the first build). As Arbor ships it is the other way round:
+/// APlainDragFloatsTests.
 @Suite @MainActor struct DragSuppressTests {
+  static let always: (inout Settings) -> Void = { $0 = $0.withPlainDragsDocking }
+
   @Test func withCommandHeldADropOverAnyTargetFloatsTheWindow() {
-    let s = DragScene()
+    let s = DragScene(Self.always)
     s.h.system.heldModifiers = .command
     for point in [CGPoint(x: 3, y: 450), s.edge(.bottom, of: s.b), s.edge(.left, of: s.a)] {
       s.h.system.drag(s.c, through: [s.frame(s.c).center, point])
@@ -355,7 +359,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func withCommandHeldADockedWindowIsUndockedEvenOverItsOwnSlot() {
-    let s = DragScene()
+    let s = DragScene(Self.always)
     let slot = s.frame(s.a)
     s.h.system.heldModifiers = .command
     s.h.system.drag(s.a, through: [CGPoint(x: slot.midX, y: slot.minY + 10), CGPoint(x: slot.midX + 30, y: slot.midY)])
@@ -366,7 +370,7 @@ private let side = DisplaySnapshot(
 
   /// As far as Arbor is concerned. With "Hold ⌥ key while dragging windows to tile" on, ⌥ makes the window macOS's (MacTilingTests).
   @Test func theOtherModifiersDoNotSuppressDocking() {
-    let s = DragScene()
+    let s = DragScene(Self.always)
     s.h.system.tiling.optionKey = false
     s.h.system.heldModifiers = [.option, .shift, .control]
     s.h.system.drag(s.c, through: [s.frame(s.c).center, s.edge(.bottom, of: s.b)])
@@ -377,7 +381,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func commandAtTheMomentOfReleaseIsEnough() {
-    let s = DragScene()
+    let s = DragScene(Self.always)
     s.h.system.beginDrag(s.c)
     s.h.system.moveDrag(to: s.edge(.bottom, of: s.b), holding: 0.3)
     #expect(s.h.overlays.preview != nil)
@@ -388,7 +392,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func pressingCommandHidesThePreviewAndLettingGoOfItStartsTheHoldAgain() {
-    let s = DragScene()
+    let s = DragScene(Self.always)
     s.h.system.beginDrag(s.c)
     s.h.system.moveDrag(to: s.edge(.bottom, of: s.b), holding: 0.3)
     #expect(s.h.overlays.preview != nil)
@@ -405,7 +409,7 @@ private let side = DisplaySnapshot(
   /// ⌃⌥⌘ + arrow moves the focused window. Pressed with a window in the hand it is a command, not "do not dock".
   /// With macOS's ⌥ switch off: with it on, macOS tiles a window let go with ⌃⌥⌘ held, as it was seen to (MacTilingTests).
   @Test func arborsOwnShortcutsHeldDuringADragDoNotTurnDockingOff() {
-    let s = DragScene()
+    let s = DragScene(Self.always)
     s.h.system.tiling.optionKey = false
     s.h.system.beginDrag(s.c)
     s.h.system.moveDrag(to: s.edge(.bottom, of: s.b), holding: 0.3)
@@ -423,7 +427,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func commandPressedWhileHoldingKeepsTheTargetFromActivating() {
-    let s = DragScene()
+    let s = DragScene(Self.always)
     s.h.system.beginDrag(s.c)
     s.h.system.moveDrag(to: s.edge(.bottom, of: s.b), holding: 0.1)
     // No event tells the controller; it has to look when the hold is over.
@@ -599,11 +603,11 @@ private let side = DisplaySnapshot(
     let before = s.outcome
     #expect(!s.h.system.isVisible(s.c))
 
-    s.h.system.beginDrag(s.a)
-    s.h.system.holdModifierKeys(.command)
+    s.h.system.beginDrag(s.a, plainly: true)
+    s.h.system.moveDrag(to: CGPoint(x: s.h.system.cursor.x + 30, y: s.h.system.cursor.y + 30))
     #expect(s.h.system.isVisible(s.c), "let go now, a would leave the view it fills, which falls back to everything")
     #expect(s.h.system.isVisible(s.b))
-    s.h.system.holdModifierKeys([])
+    s.h.system.holdModifierKeys(.command)
     #expect(!s.h.system.isVisible(s.c) && !s.h.system.isVisible(s.b), "they leave again while a is still held")
     s.h.system.endDrag()
     #expect(s.outcome == before)
@@ -912,9 +916,7 @@ private let side = DisplaySnapshot(
     s.h.run("dock \(s.a.rawValue) left")
     column(s)
     #expect(s.h.workspace.undockedFrame(of: s.a)?.size == s.frame(s.a).size)
-    s.h.system.heldModifiers = .command
-    s.h.system.drag(s.a, through: [s.frame(s.a).center, CGPoint(x: s.frame(s.a).midX + 5, y: s.frame(s.a).midY + 5)])
-    s.h.system.heldModifiers = []
+    s.h.system.drag(s.a, through: [s.frame(s.a).center, CGPoint(x: s.frame(s.a).midX + 30, y: s.frame(s.a).midY + 30)], plainly: true)
     #expect(s.h.workspace.isFloating(s.a))
     #expect(s.h.workspace.guests?[s.a] != nil)
     s.h.run("show-all")
@@ -1074,6 +1076,7 @@ private let side = DisplaySnapshot(
     s.h.system.beginDrag(s.a)
     s.h.system.moveDrag(to: s.edge(.bottom, of: s.b), holding: active ? 0.3 : 0.05)
     // The mouse-up was lost; the next thing Arbor hears is another drag.
+    s.h.system.heldModifiers = DragDocks.key
     s.h.controller.dragBegan(s.c, at: grab)
     #expect(s.outcome == before, "a is back in its slot and nothing else has moved")
     s.expectNothingLeftBehind()

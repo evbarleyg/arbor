@@ -665,6 +665,7 @@ private func reopen(_ old: Harness, in new: Harness) {
     let (h, a, _, _) = makeHarness()
     let start = h.frame(a)!
     h.system.mouseDown = true
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(a, at: CGPoint(x: start.midX, y: start.minY + 10))
     h.system.setDisplays([main])
     h.system.mouseDown = false

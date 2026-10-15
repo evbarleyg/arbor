@@ -88,15 +88,19 @@
 #   forget_window <id>              it was closed: arbor_stop no longer expects it back
 #   events_of <id> <kind>           how many down, up, dragged, key or magnify events the window's content got
 #                                     (as a check: received <id> <kind> -gt 0)
-# Real input (pointer.swift has the options: --steps, --duration, --hold, --no-release, --mods)
+# Real input (pointer.swift has the options: --steps, --duration, --hold, --no-release, --mods, --then-mods)
 #   drag x1 y1 x2 y2 [options] | release [x y] | click x y | dblclick x y | rightclick x y | move x y | key <chord>
+#                                   A DRAG THAT TAKES A WINDOW BY ITS TITLE BAR IS BY A HAND THAT MEANS TO DOCK: as Arbor ships a plain drag
+#                                     only moves a window, so ⌘ goes down once the window is in the hand and comes up after the button
+#                                     (with --no-release: at `release`). --plain: nothing is held, as whoever only moves a window.
+#                                     A drag with --mods of its own is left as it is; `key cmd --up` lets go of the key on the way
 #   drag_on x y [options]           after `drag … --no-release`: carry on to that point with the button down, and rest there
 #   key <chord> --down | --up | --held | --repeat n   hold a shortcut, let go of it later, press another key
 #                                     meanwhile, send its auto-repeat (pointer.swift)
 #   key_to <id> <chord>             the same key, but only once that window has the keyboard: for ⌘W, ⌘M, ⌘H and whatever
 #                                     else would hit a person's own window if the click before it had missed
 #   pinch x y <amount> [options]    spread (positive) or pinch two fingers there
-#   drag_window <id> x y [options]  by its title bar, from a point that nothing covers (clicks it forward first if needed)
+#   drag_window <id> x y [options]  by its title bar, from a point that nothing covers (clicks it forward first if needed); --plain as above
 #   click_window <id>               on a part of its content that nothing covers (its app brings it forward first if all is)
 #   click_button <id> <which>       its close, minimize or zoom button
 #   open_menu                       opens Arbor's menu, as a right click on its menu bar item does whatever that shows
@@ -723,7 +727,7 @@ arbor_release_keys() {
   while read -r chord; do
     "$ARBOR_POINTER" key "$chord" --up 2>/dev/null # safe anywhere: letting go harms nobody
   done < "$ARBOR_LEDGER/keys"
-  rm -f "$ARBOR_LEDGER/keys"
+  rm -f "$ARBOR_LEDGER/keys" "$ARBOR_LEDGER/hand"
 }
 
 # arbor_signal <signal> <pid…>, one process at a time: never a group, never a name, never a pattern.
@@ -2249,14 +2253,74 @@ dblclick() {
   shift 2
   arbor_input click "$x" "$y" 2 "$@"
 }
-drag() { arbor_input drag "$@"; }
-drag_on() { arbor_input drag-on "$@"; }
-release() { arbor_input release "$@"; }
+# The hand (docs/TESTING.md, "Who holds ⌘ while a test drags"). What it holds is what the Arbor that runs asks for: nothing where
+# `dragDocks` is set otherwise, or where no Arbor runs. $@: the words of a drag.
+arbor_hand_means_to_dock() {
+  local why
+  case " $* " in *" --plain "* | *" --mods "* | *" --then-mods "*) return 1 ;; esac
+  [ "$("$ARBOR_BIN/arborctl" get dragDocks 2>/dev/null)" = held ] || return 1
+  # Which window gets the press is a matter of what lies in front. Front to back is the order of the list of what is on screen; of the list
+  # of everything, which `arbor_ask` reads, nobody promises that: on a hosted Mac two drags of forty-five went without the key.
+  why=$({ "$ARBOR_BIN/arborctl" state && "$ARBOR_POINTER" windows --on-screen; } \
+    | ARBOR_PID="$ARBOR_PID" ARBOR_GAP="$ARBOR_GAP" python3 "$ARBOR_STATE_PY" title_bar_at "$1" "$2" 2>&1) && return 0
+  # Said, so that a drag that was meant to dock and went without the key can be told from one that Arbor did not answer.
+  echo "  (the hand holds nothing: ${why:-no answer})" >&3
+  return 1
+}
+drag() {
+  local word words=() late="" after=""
+  # Whatever an earlier drag left on record is over: a button cannot go down twice.
+  rm -f "$ARBOR_LEDGER/hand"
+  for word in "$@"; do
+    [ "$after" = --then-mods ] && late=$word
+    after=$word
+    [ "$word" = --plain ] || words+=("$word")
+  done
+  if arbor_hand_means_to_dock "$@"; then
+    late=cmd
+    words+=(--then-mods cmd)
+  fi
+  arbor_input drag "${words[@]}" || return
+  # Left down with the button: `release` lets go of both, and so does whatever tidies up after a script that was killed.
+  case "$late: $* " in ?*:*" --no-release "*) echo "$late" | tee "$ARBOR_LEDGER/hand" >> "$ARBOR_LEDGER/keys" ;; esac
+  return 0
+}
+# The button stays down, and so does what the hand holds: every event on the way carries it.
+drag_on() {
+  if [ -f "$ARBOR_LEDGER/hand" ]; then
+    case " $* " in *" --mods "*) ;; *) set -- "$@" --mods "$(cat "$ARBOR_LEDGER/hand")" ;; esac
+  fi
+  arbor_input drag-on "$@"
+}
+# For a script that calls `pointer release` itself: what the hand still holds, as that call's option, which lets go of it after the button.
+arbor_hand_lets_go() {
+  [ -f "$ARBOR_LEDGER/hand" ] || return 0
+  echo "--mods $(cat "$ARBOR_LEDGER/hand")"
+  rm -f "$ARBOR_LEDGER/hand"
+}
+release() {
+  local late="" code=0
+  if [ -f "$ARBOR_LEDGER/hand" ]; then
+    late=$(cat "$ARBOR_LEDGER/hand")
+    rm -f "$ARBOR_LEDGER/hand"
+  fi
+  case "$late: $* " in
+    :*) arbor_input release "$@" || code=$? ;;
+    # It names keys of its own to let go of: the hand's come up after them.
+    *" --mods "*)
+      arbor_input release "$@" || code=$?
+      "$ARBOR_POINTER" key "$late" --up 2>/dev/null ;; # safe anywhere: letting go harms nobody
+    *) arbor_input release "$@" --mods "$late" || code=$? ;;
+  esac
+  return "$code"
+}
 # A key left down would outlive the script, as a button would: whatever `key … --down` pressed is let go of when the
 # session stops or the script ends, interrupted or not. Letting go of a key that is up already does nothing.
 # On the run's record, so that the supervisor can do it for a script that was killed; `pointer calm` goes by what macOS says is down.
 key() {
   case " $* " in *" --down "*) echo "$1" >> "$ARBOR_LEDGER/keys" ;; esac
+  # The hand lets go of its key on the way, or presses it: `release` lets go of what is down by then.
+  case " $* " in " cmd --up ") rm -f "$ARBOR_LEDGER/hand" ;; " cmd --down ") echo cmd > "$ARBOR_LEDGER/hand" ;; esac
   arbor_input key "$@"
 }
 pinch() { arbor_input pinch "$@"; }

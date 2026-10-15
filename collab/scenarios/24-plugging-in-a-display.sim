@@ -20,7 +20,7 @@ back
 expect visible 102
 expect visible 103
 # Notes moves to the monitor, which is then unplugged and plugged back in.
-drag 102 1445 500
+drag 102 1445 500 cmd
 expect docked 102
 displays 1
 expect floating 102
