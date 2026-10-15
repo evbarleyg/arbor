@@ -1674,6 +1674,34 @@
    ]
   },
   {
+   "id": "a-panel-shown-again-costs-a-hosted-mac-a-second",
+   "kind": "timing",
+   "layer": "machine",
+   "expected": "Ordering a panel in costs what it cost the first time or less, and whatever it costs is the process's own time: the display goes on showing what everybody else draws. Films in which the display showed one picture for up to a second in the middle of a motion were therefore read as a fault of Arbor's: of the stage coming down too early, of handing the keyboard to another app while the stage is up, of a tile's fade.",
+   "happened": "The first time in a process's life that a panel which draws itself in `draw(_:)` is shown again after seconds out of view, a hosted Mac's display stands still for most of a second. For Arbor that is the first way back to a view with a tile in it, once after every start: 433 to 1,450 ms in 15 of 18 fresh starts filmed over three runs (250, 250 and 134 in the others), with motion and without; the 22 later ways back took 33 to 50 ms, but for one of 134. **A plain tool with no Arbor anywhere gets the same, five times of five**: it shows a panel call for call as `TilePanel.show` does, puts it away for 3.4 s and shows it again: 1,234 and 1,133 ms, and 784, 880 and 900 when it also does to three windows all that Arbor does in that act; once the display stood still for 0.8 s after the tool had ended. It needs nobody to film it: of five such starts with no stream of the display, in three the window list was kept waiting 754 to 800 ms, and in two of those a key that the tool lets go of at once was held for 0.9 s. While a stream runs it is mostly the stream that stops, and the list, the display's beat and the key go on. One sign goes with it every time, in the 18 processes of the third run, Arbor's thirteen and the tool's five: with the act (in Arbor's, 12 to 98 ms after the command, on the system log's one clock) Core Animation sets up drawing through the GPU in that process (`TileView.draw`, `NSViewBackingLayer`, `CABackingStore`, `CA::CG::Queue`, `new_metal_context`, `AppleParavirtGPU`) and logs *Precompiled pipelines disabled on unsupported hardware*. After one of the longest the window server wrote of its own threads *Timer delayed by 1.01s* and *Render::Server callback delayed by 1.04s*, having used next to no processor. Refuted on the way, each by a record: activation (the tool with AXMain, AXRaise and `activate`: 117 ms at most in 18 films; an Arbor that never activates stood still for 1,034 ms; from the Desktop and back the controller asks for no keyboard at all), the fade (later rounds are calm with it), the stage (the same without motion), the order of the starts, and a hold on screen updates (`NSDisableScreenUpdates` does nothing any more: a hold of 1.6 s read 34 ms). Drawing a view again that is in view does not bring it about; nor does a panel out of view for 40 ms, so that two warm-ups after the start, a scratch view and a real tile at a hundredth of its opacity, changed nothing and were taken out again. **Whether a person's Mac does it nobody knows**: the sign names the virtual GPU, and there is no other Mac to ask.",
+   "found": "Films of a hosted Mac in which each scene was played once on a fresh Mac, so that \"the first time\" looked like \"always in these two scenes\". Then three runs on hosted Macs in the night of 2026-10-15 (macOS 26.6.2, VirtualMac2,1): a strip on top of everything whose squares never stop, so that a wait between two frames is a display that stood still also where nothing is meant to move; each act played several times from fresh starts, filmed and unfilmed in turns; the system's log on one clock; and a control without Arbor, which was calm, and proved nothing by it, until it did everything Arbor does.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [
+    "e2e: the first way out, which costs what macOS makes it cost, took no more than that",
+    "e2e: the strip is seen to move, and the display does not stand still by itself",
+    "tool: mac-shell/standstill.py"
+   ],
+   "copes": "scripts/mac-shell/check-standstill.sh measures and prints every way back, fails on a later one that stands still for 0.3 s and on a first one over 1.5 s, and has the plain tool's figures beside them, so that a standstill that is Arbor's own would show. Arbor itself does nothing about it. Whoever films or times Arbor on a hosted Mac plays an act once before it counts, and prints what that first play took. A cure that might hold, tried in the plain tool only: draw into a bitmap in memory and hand that over as the layer's contents, so that Core Animation has nothing to draw.",
+   "hurt": 3,
+   "touches": [
+    "input-held",
+    "slow"
+   ],
+   "sources": [
+    "scripts/mac-shell/check-standstill.sh",
+    "scripts/mac-shell/mover.swift",
+    "scripts/mac-shell/pulse.swift",
+    "scripts/mac-shell/framewatch.swift",
+    "Sources/ArborKit/UI/AppKitOverlays.swift"
+   ]
+  },
+  {
    "id": "a-panel-stays-on-the-space-it-was-first-shown-on",
    "kind": "looks",
    "layer": "below the seam",
