@@ -31,11 +31,12 @@ import Testing
     h.run("exclude com.apple.Music")
     #expect(
       h.run("menu").text == """
-          ✓ Show Everything  ⌃⌥Space
+            Arrange Windows  ⌃⌥A
             Windows ▸
               ✓ Safari: Safari 101
                 Notes: Notes 102
                 Mail: Mail 103
+          ✓ Show Everything  ⌃⌥Space
             Frame Focused Window  ⌃⌥↩
             Go to…  ⌃⌥G
             Saved Views ▸
@@ -79,7 +80,6 @@ import Testing
         -----
             Undo Dock  ⌃⌥Z
             Redo  ⌃⌥⇧Z  (gray)
-            Arrange Windows  ⌃⌥A
             Float All Windows  ⌃⌥⇧F
             Arrangement ▸
                     Grow  ⌃⌥⌘=
@@ -207,7 +207,7 @@ import Testing
   /// What no command ends stays a line of text, and the only rows of a state that are text are those.
   @Test(arguments: MenuHeightTests.running + MenuHeightTests.notRunning) func onlyNewsIsALineOfText(state: String) {
     let model = MenuHeightTests().harness(in: state).controller.menuModel()
-    guard model.sections.first?.items.first?.title != "Show Everything" else { return }
+    guard model.sections.first?.items.first?.title != "Arrange Windows" else { return }
     for row in model.sections.first?.items ?? [] where row.action == .text {
       #expect(!row.title.contains(" · "), "\(row.title)")
       let news = ["Arbor is starting…", "out of view", "come back as soon as", "comes back as soon as", "The saved arrangement needed"]
@@ -233,10 +233,13 @@ import Testing
   }
 
   /// docs/MENU.md, rule 1: always at the top level, always in the same place, never greyed out while Arbor runs.
+  /// Ruled by the product owner, 2026-10-15 (QUESTIONS Q29, point 2): the menu begins with Arrange Windows, Windows ▸, Show Everything. What the rule
+  /// protects is the place, not the first place: Show Everything is the third row in every state in which the first two are there, a state's
+  /// lines above the group move all three alike, and where Arrange Windows is greyed out it keeps its row.
   @Test(arguments: ["everything", "framed", "floating", "nothing docked", "no windows"])
   func theWaysBackAreAlwaysThere(state: String) {
     let menu = harness(in: state).controller.menuModel()
-    #expect(menu.sections.first?.items.first?.title == "Show Everything", "the first command in the menu")
+    #expect(menu.sections.first?.items.prefix(3).map(\.title) == ["Arrange Windows", "Windows", "Show Everything"], "the first three rows")
     #expect(menu.sections.last?.items.map(\.title) == ["Pause Arbor", "Quit Arbor"], "the last two rows")
     #expect(menu.sections.contains { $0.items.map(\.title).suffix(2) == ["Float All Windows", "Arrangement"] }, "in its group")
     for title in ["Show Everything", "Float All Windows", "Pause Arbor", "Quit Arbor"] {
@@ -485,7 +488,7 @@ import Testing
     let menu = h.controller.menuModel()
     #expect(menu.sections.first?.items.map(\.title) == ["Shortcuts are off in “Safari” · Turn On"])
     #expect(menu.sections.first?.items.first?.command == row?.command, "it does what the ticked row does: no key helps here")
-    #expect(menu.sections.dropFirst().first?.items.first?.title == "Show Everything", "and the rest is where it was")
+    #expect(menu.sections.dropFirst().first?.items.first?.title == "Arrange Windows", "and the rest is where it was")
     #expect(menu.item("Shortcuts Off in “Safari”")?.isTicked == true)
     #expect(menu.allItems.compactMap(\.shortcut?.label) == ["⌃⌥⎋", "⌘Q"], "the one that still works, and the menu's own")
   }
@@ -587,7 +590,7 @@ import Testing
     let problem = try #require(h.controller.settingsFileProblem)
     let line = "Settings.json has a mistake: " + String(problem.split(separator: ":", maxSplits: 1)[0]) + " · Settings File…"
     #expect(h.controller.menuModel().sections.first?.items.map(\.title) == [line])
-    #expect(h.controller.menuModel().sections.dropFirst().first?.items.first?.title == "Show Everything")
+    #expect(h.controller.menuModel().sections.dropFirst().first?.items.first?.title == "Arrange Windows")
 
     // After another state it is the second…
     let (other, _, _, _) = makeHarness()
@@ -630,7 +633,7 @@ import Testing
     #expect(lines?.map(\.title) == [news])
     #expect(lines?.first?.isEnabled == false)
     #expect(lines?.first?.help == h.controller.notices[0] && lines?.first?.help?.contains("state.before-repair.json") == true)
-    #expect(h.controller.menuModel().sections.dropFirst().first?.items.first?.title == "Show Everything")
+    #expect(h.controller.menuModel().sections.dropFirst().first?.items.first?.title == "Arrange Windows")
     h.run("pause")
     #expect(
       h.controller.menuModel().sections.first?.items.map(\.title)
