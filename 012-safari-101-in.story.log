@@ -1,0 +1,100 @@
+12 safari-101-in: presses ⌃⌘F in safari
+expected: {'act': 'macos-own', 'settled': 'quiet:0', 'moves': 'any', 'leaves': 'any', 'judge': 'no', 'floating': ''}
+ODD rule -: w31 is in view for Arbor but the window server does not show it
+ODD rule -: w31 is docked and not parked, but has neither a slot nor a tile
+ODD rule -: w35 is docked and not parked, but has neither a slot nor a tile
+ODD rule -: w45 is in view for Arbor but the window server does not show it
+ODD rule -: w45 is docked and not parked, but has neither a slot nor a tile
+
+02:05:10.126 SCREEN -- begin 12 safari-101-in
+02:05:10.126 SCREEN -- text 12 presses ⌃⌘F in safari
+02:05:10.189 SCREEN (nothing was seen for 63 ms)
+02:05:10.260 SCREEN (nothing was seen for 67 ms)
+02:05:10.328 SCREEN (nothing was seen for 64 ms)
+02:05:10.469 SCREEN (nothing was seen for 58 ms)
+02:05:10.518 MACOS pid 9070 AXWindowCreated w75 AXWindow/AXUnknown 0 0 1600 900
+02:05:10.519 DEBUG w35 is no longer listed
+02:05:10.520 DEBUG w35 entered full screen
+02:05:10.520 MACOS pid 9070 AXResized w35 AXWindow/AXStandardWindow 0 0 1600 900 fullscreen
+02:05:10.536 SCREEN (nothing was seen for 63 ms)
+02:05:10.536 SCREEN w75 of Safari 0,0 1600×900
+02:05:10.536 SCREEN safari (w35) left the screen
+02:05:10.536 SCREEN front to back: w58 w75 textedit finder w52 w71 w57 w67 w72
+02:05:10.548 SCREEN w58 of Arbor left the screen
+02:05:10.548 SCREEN front to back: w75 textedit finder w52 w71 w57 w67 w72
+02:05:10.622 SCREEN (nothing was seen for 73 ms)
+02:05:10.622 SCREEN finder (w31) 12,43 619×767
+02:05:10.753 MACOS pid 357 AXResized w31 AXWindow/AXStandardWindow 12 43 619 767
+02:05:10.755 SCREEN (nothing was seen for 133 ms)
+02:05:10.800 SCREEN textedit (w45) 969,43 397×767
+02:05:10.801 MACOS pid 9265 AXResized w45 AXWindow/AXStandardWindow 969 43 619 767
+02:05:10.806 MACOS pid 9265 AXMoved w45 AXWindow/AXStandardWindow 969 43 619 767
+02:05:10.818 MACOS pid 9265 AXResized w45 AXWindow/AXStandardWindow 969 43 619 767
+02:05:10.847 SCREEN textedit (w45) 969,43 619×767
+02:05:10.847 SCREEN w57 of Arbor 631,43 12×767
+02:05:10.847 SCREEN w67 of Arbor 957,43 12×767
+02:05:10.847 SCREEN w72 of Arbor left the screen
+02:05:10.847 SCREEN front to back: w75 textedit finder w52 w71 w57 w67
+02:05:10.992 SCREEN (nothing was seen for 68 ms)
+02:05:11.034 SCREEN w71 of Arbor left the screen
+02:05:11.034 SCREEN front to back: w75 textedit finder w52 w57 w67
+02:05:11.140 SCREEN (nothing was seen for 77 ms)
+02:05:11.140 SCREEN w76 of Safari 0,0 1600×52
+02:05:11.140 SCREEN safari (w35) 0,0 1600×900
+02:05:11.140 SCREEN w57 of Arbor left the screen
+02:05:11.140 SCREEN w52 of Arbor left the screen
+02:05:11.140 SCREEN finder (w31) left the screen
+02:05:11.140 SCREEN w75 of Safari left the screen
+02:05:11.140 SCREEN w67 of Arbor left the screen
+02:05:11.140 SCREEN textedit (w45) left the screen
+02:05:11.140 SCREEN front to back: w76 safari
+02:05:11.211 MACOS pid 9070 AXMoved w0 ?/- no frame
+02:05:11.212 MACOS pid 9070 AXUIElementDestroyed w75
+02:05:11.216 SCREEN (nothing was seen for 75 ms)
+02:05:11.216 DEBUG w31 is no longer listed
+02:05:11.217 DEBUG w45 is no longer listed
+02:05:11.219 DEBUG w35 is listed again
+02:05:11.219 DEBUG focus is on w35
+02:05:11.223 DEBUG focus report for w35, which does not have the keyboard or takes no space; 4 checks left
+02:05:11.260 SCREEN (nothing was seen for 44 ms)
+02:05:11.325 SCREEN (nothing was seen for 52 ms)
+02:05:11.381 SCREEN (nothing was seen for 47 ms)
+02:05:11.440 SCREEN (nothing was seen for 52 ms)
+02:05:11.476 SCREEN w59 of Arbor left the screen
+02:05:11.543 SCREEN (nothing was seen for 62 ms)
+02:05:11.554 DEBUG focus report for w35, which does not have the keyboard or takes no space; 3 checks left
+02:05:11.596 SCREEN (nothing was seen for 49 ms)
+02:05:11.669 SCREEN (nothing was seen for 69 ms)
+02:05:11.782 SCREEN (nothing was seen for 77 ms)
+02:05:11.876 DEBUG focus report for w35, which does not have the keyboard or takes no space; 2 checks left
+02:05:11.915 SCREEN (nothing was seen for 59 ms)
+02:05:11.994 SCREEN (nothing was seen for 77 ms)
+02:05:12.051 SCREEN (nothing was seen for 50 ms)
+02:05:12.145 DEBUG focus report for w35, which does not have the keyboard or takes no space; 1 checks left
+02:05:12.156 SCREEN (nothing was seen for 67 ms)
+02:05:12.258 SCREEN (nothing was seen for 65 ms)
+02:05:12.344 SCREEN (nothing was seen for 45 ms)
+02:05:12.419 DEBUG focus report for w35, which does not have the keyboard or takes no space; 0 checks left
+02:05:12.433 SCREEN (nothing was seen for 52 ms)
+02:05:12.485 SCREEN (nothing was seen for 46 ms)
+02:05:12.611 SCREEN (nothing was seen for 58 ms)
+02:05:12.667 SCREEN (nothing was seen for 52 ms)
+02:05:12.888 SCREEN (nothing was seen for 53 ms)
+02:05:12.939 SCREEN (nothing was seen for 45 ms)
+02:05:13.011 SCREEN (nothing was seen for 67 ms)
+02:05:13.128 SCREEN (nothing was seen for 44 ms)
+02:05:13.180 SCREEN (nothing was seen for 45 ms)
+02:05:13.282 SCREEN (nothing was seen for 43 ms)
+02:05:13.381 SCREEN (nothing was seen for 59 ms)
+02:05:13.464 SCREEN -- finding 12 - ODD w31 is in view for Arbor but the window server does not show it
+02:05:13.464 SCREEN -- finding 12 - ODD w31 is docked and not parked, but has neither a slot nor a tile
+02:05:13.465 SCREEN -- finding 12 - ODD w35 is docked and not parked, but has neither a slot nor a tile
+02:05:13.465 SCREEN -- finding 12 - ODD w45 is in view for Arbor but the window server does not show it
+02:05:13.465 SCREEN -- finding 12 - ODD w45 is docked and not parked, but has neither a slot nor a tile
+02:05:13.468 SCREEN (nothing was seen for 44 ms)
+02:05:13.519 SCREEN (nothing was seen for 44 ms)
+02:05:13.534 SCREEN -- end 12 act=macos-own settled=quiet:0 moves=any leaves=any judge=no floating=
+02:05:13.742 SCREEN (nothing was seen for 50 ms)
+02:05:13.793 SCREEN (nothing was seen for 47 ms)
+02:05:13.842 SCREEN (nothing was seen for 42 ms)
+02:05:14.032 SCRIPT == 13 safari-101-arbor-out

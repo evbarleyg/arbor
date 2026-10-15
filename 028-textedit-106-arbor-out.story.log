@@ -1,0 +1,86 @@
+28 textedit-106-arbor-out: presses ⌃⌘F again
+expected: {'act': 'macos-own', 'settled': 'quiet:0', 'moves': 'any', 'leaves': 'any', 'comes': '45', 'front': '45', 'floating': ''}
+ODD rule 4: the window in front changed 3 times: w220 of TextEdit → w236 of TextEdit → safari (w35) → textedit (w45)
+
+02:06:00.157 SCREEN -- begin 28 textedit-106-arbor-out
+02:06:00.157 SCREEN -- text 28 presses ⌃⌘F again
+02:06:00.218 SCREEN (nothing was seen for 64 ms)
+02:06:00.272 SCREEN (nothing was seen for 48 ms)
+02:06:00.327 SCREEN (nothing was seen for 42 ms)
+02:06:00.400 SCREEN (nothing was seen for 68 ms)
+02:06:00.494 SCREEN (nothing was seen for 59 ms)
+02:06:00.494 SCREEN w236 of TextEdit 0,0 1600×900
+02:06:00.494 SCREEN safari (w35) 1014,43 574×767
+02:06:00.494 SCREEN finder (w31) 12,43 517×767
+02:06:00.494 SCREEN w52 of Arbor 520,121 560×434
+02:06:00.494 SCREEN w220 of TextEdit left the screen
+02:06:00.494 SCREEN textedit (w45) left the screen
+02:06:00.494 SCREEN front to back: w236 safari finder w52
+02:06:00.597 MACOS pid 9265 AXWindowCreated w236 AXWindow/AXUnknown 0 0 1600 900
+02:06:00.618 MACOS pid 9265 AXResized w45 AXWindow/AXStandardWindow 165 65 656 422
+02:06:00.619 MACOS pid 9265 AXMoved w45 AXWindow/AXStandardWindow 165 65 656 422
+02:06:00.620 DEBUG w45 is no longer listed
+02:06:00.621 DEBUG w45 left full screen
+02:06:00.622 INFO  made room for w35, w31
+02:06:00.634 SCREEN (nothing was seen for 139 ms)
+02:06:00.674 DEBUG w45 is on its way out of full screen; asked for (1203,43 385×767), it has (1203,43 385×767)
+02:06:00.674 MACOS pid 9265 AXResized w45 AXWindow/AXStandardWindow 1203 43 385 767
+02:06:00.676 MACOS pid 9265 AXMoved w45 AXWindow/AXStandardWindow 1203 43 385 767
+02:06:00.677 MACOS pid 9265 AXResized w45 AXWindow/AXStandardWindow 1203 43 385 767
+02:06:00.938 SCREEN (nothing was seen for 61 ms)
+02:06:01.067 SCREEN (nothing was seen for 122 ms)
+02:06:01.078 DEBUG w31 is listed again
+02:06:01.079 DEBUG w35 is listed again
+02:06:01.100 DEBUG the stand-in w236 is gone: the way out of full screen is over
+02:06:01.100 MACOS pid 9265 AXUIElementDestroyed w236
+02:06:01.103 SCREEN w236 of TextEdit left the screen
+02:06:01.103 SCREEN front to back: safari finder w52
+02:06:01.108 DEBUG w45 is listed again
+02:06:01.109 DEBUG focus is on w45
+02:06:01.110 INFO  made room for w35, w31
+02:06:01.127 SCREEN textedit (w45) 1203,43 385×767
+02:06:01.127 SCREEN front to back: textedit safari finder w52
+02:06:01.184 MACOS pid 357 AXResized w31 AXWindow/AXStandardWindow 12 43 501 767
+02:06:01.196 SCREEN safari (w35) 617,43 574×767
+02:06:01.196 SCREEN finder (w31) 12,43 501×767
+02:06:01.196 MACOS pid 9070 AXMoved w35 AXWindow/AXStandardWindow 617 43 574 767
+02:06:01.209 DEBUG w45 has the keyboard
+02:06:01.272 SCREEN (nothing was seen for 60 ms)
+02:06:01.272 SCREEN w58 of Arbor 1194,34 403×785
+02:06:01.272 SCREEN w71 of Arbor 525,43 80×767
+02:06:01.272 SCREEN w57 of Arbor 513,43 12×767
+02:06:01.272 SCREEN w67 of Arbor 605,43 12×767
+02:06:01.272 SCREEN w72 of Arbor 1191,43 12×767
+02:06:01.272 SCREEN w59 of Arbor 0,31 1600×791 (level -2147483602)
+02:06:01.272 SCREEN front to back: w58 textedit safari finder w52 w71 w57 w67 w72
+02:06:01.412 SCREEN (nothing was seen for 50 ms)
+02:06:01.467 SCREEN (nothing was seen for 49 ms)
+02:06:01.516 SCREEN (nothing was seen for 42 ms)
+02:06:01.609 SCREEN (nothing was seen for 52 ms)
+02:06:01.716 SCREEN (nothing was seen for 51 ms)
+02:06:01.817 SCREEN (nothing was seen for 50 ms)
+02:06:01.905 SCREEN (nothing was seen for 43 ms)
+02:06:01.956 SCREEN (nothing was seen for 45 ms)
+02:06:02.021 SCREEN (nothing was seen for 58 ms)
+02:06:02.090 SCREEN (nothing was seen for 65 ms)
+02:06:02.265 SCREEN (nothing was seen for 58 ms)
+02:06:02.338 SCREEN (nothing was seen for 68 ms)
+02:06:02.399 SCREEN (nothing was seen for 55 ms)
+02:06:02.457 SCREEN (nothing was seen for 51 ms)
+02:06:02.516 SCREEN (nothing was seen for 52 ms)
+02:06:02.590 SCREEN (nothing was seen for 70 ms)
+02:06:02.817 SCREEN (nothing was seen for 51 ms)
+02:06:02.937 SCREEN (nothing was seen for 52 ms)
+02:06:02.984 SCREEN (nothing was seen for 42 ms)
+02:06:03.054 SCREEN (nothing was seen for 61 ms)
+02:06:03.172 SCREEN -- end 28 act=macos-own settled=quiet:0 moves=any leaves=any comes=45 front=45 floating=
+02:06:03.184 SCREEN (nothing was seen for 77 ms)
+02:06:03.242 SCREEN (nothing was seen for 48 ms)
+02:06:03.527 SCREEN (nothing was seen for 44 ms)
+02:06:03.627 SCREEN -- chapter With Arbor: safari, round 107
+02:06:03.641 INFO  trace day-7 ended: 228 lines, trace off
+02:06:03.661 INFO  trace day-8: recording to /tmp/arbor-shell.rBkOoM/home/traces/2026-10-15-020603-day-8.jsonl
+02:06:03.668 SCREEN (nothing was seen for 62 ms)
+02:06:03.767 SCREEN (nothing was seen for 43 ms)
+02:06:03.823 SCREEN (nothing was seen for 49 ms)
+02:06:03.845 SCRIPT == 29 reach-safari-107

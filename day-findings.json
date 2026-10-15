@@ -1,0 +1,1489 @@
+{
+ "sampler": "samples 5621 seconds 159.5 hz 35.3 cost-ms 2.95 late 1626 longest-gap-ms 1238",
+ "steps": [
+  {
+   "number": 1,
+   "slug": "open-finder",
+   "chapter": "The apps are open",
+   "text": "opens finder",
+   "act": "open-close",
+   "judged": false,
+   "began": 1792029869516,
+   "milliseconds": 2916,
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 2,
+   "slug": "open-safari",
+   "chapter": "The apps are open",
+   "text": "opens safari",
+   "act": "open-close",
+   "judged": false,
+   "began": 1792029873381,
+   "milliseconds": 7715,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 3,
+   "slug": "open-textedit",
+   "chapter": "The apps are open",
+   "text": "opens textedit",
+   "act": "open-close",
+   "judged": false,
+   "began": 1792029883488,
+   "milliseconds": 4077,
+   "moved": {
+    "45": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 4,
+   "slug": "launch",
+   "chapter": "With Arbor",
+   "text": "starts Arbor",
+   "act": "quit-and-start",
+   "judged": false,
+   "began": 1792029890352,
+   "milliseconds": 2651,
+   "moved": {
+    "52": [
+     1,
+     3,
+     81
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 5,
+   "slug": "reach-finder-100",
+   "chapter": "With Arbor",
+   "text": "clicks finder's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792029893425,
+   "milliseconds": 1863,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 6,
+   "slug": "dock-finder-left",
+   "chapter": "With Arbor",
+   "text": "presses ⌃⌥⌘←",
+   "act": "dock-key",
+   "judged": false,
+   "began": 1792029895742,
+   "milliseconds": 2906,
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "took more than a second longer to agree with the screen: w31 is at 340,120 920×436 but Arbor believes 12,43 782×767",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 7,
+   "slug": "reach-safari-100",
+   "chapter": "With Arbor",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792029898985,
+   "milliseconds": 1932,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 8,
+   "slug": "dock-safari-right",
+   "chapter": "With Arbor",
+   "text": "presses ⌃⌥⌘→",
+   "act": "dock-key",
+   "judged": false,
+   "began": 1792029901173,
+   "milliseconds": 1946,
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     3,
+     37
+    ],
+    "45": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 9,
+   "slug": "reach-textedit-100",
+   "chapter": "With Arbor",
+   "text": "clicks textedit's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792029903468,
+   "milliseconds": 1875,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 10,
+   "slug": "dock-textedit-right",
+   "chapter": "With Arbor",
+   "text": "presses ⌃⌥⌘→",
+   "act": "dock-key",
+   "judged": false,
+   "began": 1792029905627,
+   "milliseconds": 1641,
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     2,
+     14
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 11,
+   "slug": "reach-safari-101",
+   "chapter": "With Arbor: safari, round 101",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792029907689,
+   "milliseconds": 2029,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 12,
+   "slug": "safari-101-in",
+   "chapter": "With Arbor: safari, round 101",
+   "text": "presses ⌃⌘F in safari",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792029910126,
+   "milliseconds": 3408,
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     2,
+     47
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 13,
+   "slug": "safari-101-arbor-out",
+   "chapter": "With Arbor: safari, round 101",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792029914049,
+   "milliseconds": 2881,
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 14,
+   "slug": "reach-safari-102",
+   "chapter": "With Arbor: safari, round 102",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792029917431,
+   "milliseconds": 2042,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 15,
+   "slug": "safari-102-in",
+   "chapter": "With Arbor: safari, round 102",
+   "text": "presses ⌃⌘F in safari",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792029919982,
+   "milliseconds": 3023,
+   "moved": {
+    "45": [
+     1,
+     2,
+     66
+    ],
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 16,
+   "slug": "safari-102-arbor-out",
+   "chapter": "With Arbor: safari, round 102",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792029923378,
+   "milliseconds": 2739,
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     2,
+     82
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 17,
+   "slug": "reach-textedit-103",
+   "chapter": "With Arbor: textedit, round 103",
+   "text": "clicks textedit's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792029926490,
+   "milliseconds": 1852,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 18,
+   "slug": "textedit-103-in",
+   "chapter": "With Arbor: textedit, round 103",
+   "text": "presses ⌃⌘F in textedit",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792029928563,
+   "milliseconds": 3292,
+   "moved": {
+    "45": [
+     1,
+     1,
+     0
+    ],
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 19,
+   "slug": "textedit-103-arbor-out",
+   "chapter": "With Arbor: textedit, round 103",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792029932197,
+   "milliseconds": 2737,
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 20,
+   "slug": "reach-safari-104",
+   "chapter": "With Arbor: safari, round 104",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792029935467,
+   "milliseconds": 1883,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 21,
+   "slug": "safari-104-in",
+   "chapter": "With Arbor: safari, round 104",
+   "text": "presses ⌃⌘F in safari",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792029937724,
+   "milliseconds": 3258,
+   "moved": {
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     2,
+     21
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 22,
+   "slug": "safari-104-arbor-out",
+   "chapter": "With Arbor: safari, round 104",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792029941332,
+   "milliseconds": 2671,
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 23,
+   "slug": "reach-safari-105",
+   "chapter": "With Arbor: safari, round 105",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792029944334,
+   "milliseconds": 2005,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 24,
+   "slug": "safari-105-in",
+   "chapter": "With Arbor: safari, round 105",
+   "text": "presses ⌃⌘F in safari",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792029946564,
+   "milliseconds": 3202,
+   "moved": {
+    "45": [
+     1,
+     1,
+     0
+    ],
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 25,
+   "slug": "safari-105-arbor-out",
+   "chapter": "With Arbor: safari, round 105",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792029950207,
+   "milliseconds": 2893,
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     2,
+     29
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 26,
+   "slug": "reach-textedit-106",
+   "chapter": "With Arbor: textedit, round 106",
+   "text": "clicks textedit's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792029953722,
+   "milliseconds": 2014,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 27,
+   "slug": "textedit-106-in",
+   "chapter": "With Arbor: textedit, round 106",
+   "text": "presses ⌃⌘F in textedit",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792029956146,
+   "milliseconds": 3249,
+   "moved": {
+    "45": [
+     1,
+     1,
+     0
+    ],
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 28,
+   "slug": "textedit-106-arbor-out",
+   "chapter": "With Arbor: textedit, round 106",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792029960157,
+   "milliseconds": 3015,
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "4",
+     "level": "ODD",
+     "window": null,
+     "what": "the window in front changed 3 times: w220 of TextEdit → w236 of TextEdit → safari (w35) → textedit (w45)",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 29,
+   "slug": "reach-safari-107",
+   "chapter": "With Arbor: safari, round 107",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792029963861,
+   "milliseconds": 2146,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 30,
+   "slug": "safari-107-in",
+   "chapter": "With Arbor: safari, round 107",
+   "text": "presses ⌃⌘F in safari",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792029966393,
+   "milliseconds": 3348,
+   "moved": {
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 31,
+   "slug": "safari-107-arbor-out",
+   "chapter": "With Arbor: safari, round 107",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792029970110,
+   "milliseconds": 2790,
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 32,
+   "slug": "reach-safari-108",
+   "chapter": "With Arbor: safari, round 108",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792029973332,
+   "milliseconds": 1890,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 33,
+   "slug": "safari-108-in",
+   "chapter": "With Arbor: safari, round 108",
+   "text": "presses ⌃⌘F in safari",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792029975630,
+   "milliseconds": 3345,
+   "moved": {
+    "45": [
+     1,
+     2,
+     17
+    ],
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 34,
+   "slug": "safari-108-arbor-out",
+   "chapter": "With Arbor: safari, round 108",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792029979467,
+   "milliseconds": 2814,
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 35,
+   "slug": "reach-textedit-109",
+   "chapter": "With Arbor: textedit, round 109",
+   "text": "clicks textedit's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792029982778,
+   "milliseconds": 1931,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 36,
+   "slug": "textedit-109-in",
+   "chapter": "With Arbor: textedit, round 109",
+   "text": "presses ⌃⌘F in textedit",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792029985140,
+   "milliseconds": 3276,
+   "moved": {
+    "45": [
+     1,
+     1,
+     0
+    ],
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 37,
+   "slug": "textedit-109-arbor-out",
+   "chapter": "With Arbor: textedit, round 109",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792029989047,
+   "milliseconds": 2973,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "4",
+     "level": "FAIL",
+     "window": "textedit (w45)",
+     "what": "is not in front: w305 of TextEdit ahead of it, none of which covers it",
+     "trace": null
+    },
+    {
+     "rule": "4",
+     "level": "FAIL",
+     "window": "textedit (w45)",
+     "what": "is not wholly in view: 88% of it, at 0,0 1600×900 in 0,31 1600×791",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 38,
+   "slug": "reach-safari-110",
+   "chapter": "With Arbor: safari, round 110",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792029992552,
+   "milliseconds": 2021,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 39,
+   "slug": "safari-110-in",
+   "chapter": "With Arbor: safari, round 110",
+   "text": "presses ⌃⌘F in safari",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792029995040,
+   "milliseconds": 3245,
+   "moved": {
+    "45": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "31": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 40,
+   "slug": "reach-safari-111",
+   "chapter": "With Arbor: safari, round 111",
+   "text": "clicks safari's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792029998805,
+   "milliseconds": 1977,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 41,
+   "slug": "safari-111-in",
+   "chapter": "With Arbor: safari, round 111",
+   "text": "presses ⌃⌘F in safari",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792030001242,
+   "milliseconds": 3205,
+   "moved": {
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 42,
+   "slug": "safari-111-arbor-out",
+   "chapter": "With Arbor: safari, round 111",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792030004903,
+   "milliseconds": 2831,
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 43,
+   "slug": "reach-textedit-112",
+   "chapter": "With Arbor: textedit, round 112",
+   "text": "clicks textedit's title bar, or its Dock icon if that is covered",
+   "act": "switch",
+   "judged": false,
+   "began": 1792030008236,
+   "milliseconds": 1928,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 44,
+   "slug": "textedit-112-in",
+   "chapter": "With Arbor: textedit, round 112",
+   "text": "presses ⌃⌘F in textedit",
+   "act": "macos-own",
+   "judged": false,
+   "began": 1792030010483,
+   "milliseconds": 3195,
+   "moved": {
+    "45": [
+     1,
+     1,
+     0
+    ],
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w31 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is in view for Arbor but the window server does not show it",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w35 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "level": "ODD",
+     "window": null,
+     "what": "w45 is docked and not parked, but has neither a slot nor a tile",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 45,
+   "slug": "textedit-112-arbor-out",
+   "chapter": "With Arbor: textedit, round 112",
+   "text": "presses ⌃⌘F again",
+   "act": "macos-own",
+   "judged": true,
+   "began": 1792030014035,
+   "milliseconds": 2658,
+   "moved": {
+    "31": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "45": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 46,
+   "slug": "quit",
+   "chapter": "With Arbor: textedit, round 112",
+   "text": "quits Arbor",
+   "act": "quit-and-start",
+   "judged": false,
+   "began": 1792030017034,
+   "milliseconds": 1344,
+   "moved": {
+    "35": [
+     1,
+     2,
+     47
+    ],
+    "31": [
+     1,
+     2,
+     29
+    ],
+    "45": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  }
+ ]
+}
