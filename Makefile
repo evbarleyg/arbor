@@ -15,6 +15,7 @@ lint:
 	@for test in scripts/test-public-*.py; do python3 $$test || exit 1; done
 	@python3 scripts/public-check.py --tree || [ $$? = 2 ]  # 2: it cannot tell (no git here, say) and has said so; CI can
 	@python3 scripts/gh-state.py --self-test
+	@python3 scripts/make-way.py --self-test
 	@python3 scripts/lint-workflows.py --self-test && python3 scripts/lint-workflows.py
 	@python3 scripts/reality-ledger.py --self-test && python3 scripts/reality-ledger.py --check
 	@python3 scripts/mac-shell/jolts.py --self-test > /dev/null || python3 scripts/mac-shell/jolts.py --self-test

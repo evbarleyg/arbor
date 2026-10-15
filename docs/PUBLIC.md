@@ -61,6 +61,8 @@ reason, and the hold ends by itself: when `main` is there or past it, when the t
 a half old, whatever is wrong with it. It does not hold whoever lands, a fork, what starts no checks (a branch deleted, a tag, the output
 of a Mac shell run), or `git -c arbor.ignoreHold=true push …` for a push that was asked for. `scripts/public-check.py --rules` tells of a
 hold too: ask it before starting a run on a Mac.
+`scripts/make-way.py --for <branch> --until "main is <commit>"` writes the hold, cancels what stands in the way of that branch's checks and
+writes down what it cancelled; `--back` starts the Mac shell runs among them again and takes the hold away.
 
 ## The clone itself
 
