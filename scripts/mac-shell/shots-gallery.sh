@@ -90,7 +90,21 @@ session() {
     ARBOR_RELEASES_URL=http://127.0.0.1:8765/latest.json
   read -r sx sy sw sh <<< "$(arbor_ask screen)"
   ctl trace on "gallery-$1"
+  retitle
   pointer_away
+}
+
+# Titles as people's windows have them, for Go to…, the minimap and the tiles to show, each with a word in it that must turn up
+# nowhere but in the pictures (docs/VIABLE.md, `told`).
+CANARY=quokkadoo
+TITLES=("Train times to the coast" "Bread without kneading" "Inbox" "Budget" "Notes on oaks" "Untitled")
+retitle() {
+  local id index=0
+  for id in $ARBOR_WINDOW_IDS; do
+    echo "title $id $CANARY ${TITLES[index % ${#TITLES[@]}]}" >&9
+    index=$((index + 1))
+  done
+  sleep 0.4
 }
 
 session_over() {
@@ -527,4 +541,8 @@ for part in $PARTS; do
   esac
 done
 scene light
+
+claim "a title is drawn and nothing else"
+told=$(grep -rIl "$CANARY" "$ARBOR_OUT" 2> /dev/null | sed "s|$ARBOR_OUT/||" | tr '\n' ' ')
+check "the word in every title is in nothing the run brings back but the pictures${told:+: $told}" test -z "$told"
 ls -l "$ARBOR_OUT" | awk '{ print $5, $9 }'
