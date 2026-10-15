@@ -492,8 +492,10 @@ extension FakeMac {
     public var policy: Policy
     public internal(set) var isAlive = true
     public internal(set) var isHidden = false
-    /// Its main thread is stuck: it answers no call and posts nothing.
-    public internal(set) var isHung = false
+    /// Its main thread is taken: it answers no call and posts nothing. Over something of its own (`hang`), or because one of its windows is on its way to the Dock or out of it (`minimize`).
+    public var isHung: Bool { hangsByItself || windowsInFlight > 0 }
+    public internal(set) var hangsByItself = false
+    public internal(set) var windowsInFlight = 0
     /// Every window it has, in the order they were made, those it has put away included.
     public internal(set) var windows: [Window] = []
     /// Its key window: where the keyboard is while the app is in front.
@@ -611,6 +613,9 @@ extension FakeMac {
     var owesMovedReport = false
     /// Until then it is in the middle of an animation (into the Dock, out of it, into full screen), and nobody can get hold of it.
     public internal(set) var isBusyUntil: TimeInterval = 0
+    /// On its way to the Dock, or out of it (`minimize`).
+    public internal(set) var isInFlight = false
+    var isFlyingOut = false
     /// It has closed, and "destroyed" was never posted or got lost.
     public internal(set) var closedWithoutAWord = false
     /// By how much it is taller than the other tabs of its group (Terminal's first tab and its later ones differ by the tab bar).

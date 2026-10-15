@@ -71,7 +71,7 @@ extension FakeMac {
       all.append(
         Listed(
           number: window.number, pid: window.app.pid, ownerName: window.app.name, layer: 0, bounds: listedBounds(of: window), alpha: window.alpha,
-          isOnScreen: isShowing(window)))
+          isOnScreen: isShowing(window) || (window.isFlyingOut && window.isOpen && window.bounds != window.frame)))
     }
     all += things.filter { !$0.isInFront }.map(listed)
     if let only { return all.filter { $0.number == only } }

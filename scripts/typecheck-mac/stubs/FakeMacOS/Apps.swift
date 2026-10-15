@@ -26,7 +26,8 @@ extension FakeMac {
     guard app.isAlive else { return }
     note("\(app.name) (pid \(app.pid)) ends\(announced ? "" : ", and nothing says so")")
     app.isAlive = false
-    app.isHung = false
+    app.hangsByItself = false
+    app.windowsInFlight = 0
     app.backlog.removeAll()
     for window in app.windows {
       window.isOpen = false
@@ -75,7 +76,7 @@ extension FakeMac {
     activationHistory.insert(app, at: 0)
     if raisingAll { raiseAll(of: app) }
     // Arbor asks an app that fell silent whether it is back every half second here, every second and a half on a Mac.
-    app.hasHungInFront = app.isHung || now - app.wokeAt < 2
+    app.hasHungInFront = app.hangsByItself || now - app.wokeAt < 2
     app.noticeOutranTheProperty = false
 
     let lag = frontmostLagsNoticeBy > 0 ? frontmostLagsNoticeBy : manners.lag(upTo: manners.staleness)
@@ -147,20 +148,26 @@ extension FakeMac {
   /// The app's main thread is stuck. It answers no call and posts nothing; the window server goes on showing and moving its windows.
   /// `for`: it wakes by itself so much later.
   public func hang(_ app: App, for seconds: TimeInterval? = nil) {
-    guard app.isAlive, !app.isHung else { return }
+    guard app.isAlive, !app.hangsByItself else { return }
     if let seconds { send(after: seconds, from: .system, "") { [self] in wake(app) } }
     note("\(app.name) (pid \(app.pid)) hangs")
-    app.isHung = true
+    app.hangsByItself = true
     app.secondsWaitedForInThisHang = 0
     if frontmost === app { app.hasHungInFront = true }
   }
 
   /// It goes on where it was: the calls that timed out are still in its queue and are carried out now, in order, each with its reports.
   public func wake(_ app: App) {
-    guard app.isAlive, app.isHung else { return }
+    guard app.isAlive, app.hangsByItself else { return }
     note("\(app.name) (pid \(app.pid)) wakes")
-    app.isHung = false
+    app.hangsByItself = false
     app.wokeAt = now
+    seeToTheQueue(of: app)
+  }
+
+  /// Unless something else still takes its main thread.
+  func seeToTheQueue(of app: App) {
+    guard !app.isHung else { return }
     let backlog = app.backlog
     app.backlog.removeAll()
     for item in backlog {
@@ -188,7 +195,8 @@ extension FakeMac {
       return
     }
     if focusChanges, reportingFocus { report("AXFocusedWindowChanged", about: window) }
-    if mainChanges { report("AXMainWindowChanged", about: window, after: timing.betweenReports) }
+    // Posted by the app a moment later: if something takes its main thread in between, it is held back (`minimize`).
+    if mainChanges { appDoes(app, after: timing.betweenReports, "") { [self] in report("AXMainWindowChanged", about: window) } }
   }
 
   /// The app's key window is gone, minimized or behind another tab: the frontmost of its others that show takes over. With none left the app

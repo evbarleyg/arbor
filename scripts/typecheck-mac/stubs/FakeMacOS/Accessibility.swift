@@ -203,7 +203,18 @@ extension FakeMac {
       }
       return .success
     }
-    return carryOut(value, attribute, element, app)
+    let answer = carryOut(value, attribute, element, app)
+    // That the call which sends a window to the Dock, or fetches it, returns only when the flight is over is a GUESS, from `AXRaise`, which does (`perform`): the probe did not time it.
+    if attribute == "AXMinimized", answer == .success, app.windowsInFlight > 0 { return waitForTheFlight(of: app, timeout: timeout) }
+    return answer
+  }
+
+  /// The call that set a flight off is answered when it is over.
+  private func waitForTheFlight(of app: App, timeout: TimeInterval?) -> Answer {
+    // A job of the global pool runs on the main thread here, which cannot wait in its stead.
+    guard Worker.holder != nil || !Pump.isOffTheMainThread else { return .cannotComplete }
+    wait(until: now + (timeout.flatMap { $0 > 0 ? $0 : nil } ?? processTimeout)) { !app.isHung || !app.isAlive }
+    return app.isHung ? .cannotComplete : .success
   }
 
   /// Whether a message now would lie in the queue of an app that hangs.
@@ -231,7 +242,8 @@ extension FakeMac {
         setSize(size, of: window)
       }
     case ("AXMinimized", .bool(let minimized)): minimized ? minimize(window) : restore(window)
-    case ("AXMain", .bool(true)): makeKey(window)
+    // To a window in the Dock it does nothing, and says success within 7 ms: just landed or at rest there, test windows and TextEdit, their app in front (the probe of `minimize`: 8 of 8).
+    case ("AXMain", .bool(true)): if !window.isMinimized { makeKey(window) }
     case ("AXFullScreen", .bool(let full)): full ? enterFullScreen(window) : leaveFullScreen(window)
     default: return .attributeUnsupported
     }
@@ -253,6 +265,12 @@ extension FakeMac {
     }
     guard let window = window(for: element), window.isOpen else { return .invalidUIElement }
     guard action == "AXRaise" else { return .actionUnsupported }
+    if window.isMinimized, let app = app(pid) {
+      // It FETCHES THE WINDOW OUT OF THE DOCK, and returns when the flight out is over, after 0.53 to 0.58 s: just landed (16 of 16) or at rest there (4 of 4); test windows and TextEdit, their app in front (the probe of
+      // `minimize`). With the app in the background: not measured. A caller with less patience than the flight gives up, and the flight goes on.
+      restore(window)
+      return waitForTheFlight(of: app, timeout: timeout)
+    }
     raise(window)
     return .success
   }

@@ -357,7 +357,7 @@ final class Walk {
     case .hang:
       guard let app = pick(awake, a) else { return }
       mac.hang(app)
-    case .wake: if let app = pick(apps.filter(\.isHung), a) { mac.wake(app) }
+    case .wake: if let app = pick(apps.filter(\.hangsByItself), a) { mac.wake(app) }
     case .space: mac.switchSpace(to: 1 + a % 3, lists: mac.manners.staleness > 0 && b % 2 == 0 ? .neither : .right, appComesForwardFirst: b % 3 != 0)
     case .tab:
       guard mac.stack.count < 12, let window = pick(showing.filter { $0.isStandard && !$0.isFullScreen }, a) else { return }

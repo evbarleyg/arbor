@@ -134,38 +134,93 @@ extension FakeMac {
   // MARK: Minimizing
 
   /// The yellow button, ⌘M, or `AXMinimized`. Trace `minimize-restore`: "miniaturized" comes when the animation is over, 0.55 s later, and 15 to 20 ms
-  /// after that Arbor's layer of the day said that the displays had changed, because the Dock had grown. If the window had its app's keyboard the next one's focus is reported first
-  /// (`Timing.focusBeforeMiniaturized`).
+  /// after that Arbor's layer of the day said that the displays had changed, because the Dock had grown.
+  ///
+  /// THE FLIGHT, measured without Arbor by a probe on a hosted Mac (macOS 26.6.2, 2026-10-15; origin/mac-shell-out/probe.flight, 63 rounds that count). VARIED: plain AppKit test windows and TextEdit; ⌘M by a posted key,
+  /// the yellow button by a posted click, `AXMinimized` set from another process; Reduce Motion on and off. NOT VARIED, so a guess wherever it matters: the app was always IN FRONT, always had TWO windows, the one that
+  /// flew had the keyboard; the Dock at the bottom with the genie, windows not minimized into their app's icon; an idle Mac; no other app.
+  /// - It takes 0.50 to 0.66 s, with Reduce Motion as without.
+  /// - THE WHOLE APP IS DEAF MEANWHILE: a question about its OTHER window, asked in flight, is answered when the flight is over (after 474 to 743 ms). Here: the app hangs for as long (`App.windowsInFlight`).
+  /// - At the end, in this order: "focused window changed" and "main window changed" of the next window, "miniaturized"; 0 to 32 ms from first to last, mostly 1 to 4 (6.6 in another recording: `Timing`).
+  /// - From the first of these on the window answers `AXMinimized` = yes (20 of 20, within 2 ms).
+  /// - The window server lists it on screen all the way, in a box that changes from 25 to 90 ms after the hand (twice later), and drops it within 30 ms or so of the first report (`boxInFlight`).
+  /// What waits in the app's queue is served after the landing: a GUESS as to the order.
   public func minimize(_ window: Window) {
-    guard window.isOpen, !window.isMinimized else { return }
+    guard window.isOpen, !window.isMinimized, !window.isInFlight else { return }
     note("w\(window.number) is being minimized")
-    window.isBusyUntil = now + timing.minimizing + 0.05
-    appDoes(window.app, after: timing.minimizing, "") { [self] in
+    fly(window, out: false) { [self] in
       guard window.isOpen, !window.isMinimized else { return }
       window.isMinimized = true
       let hadTheKeyboard = window.app.focused === window
       nextWindowBecomesKey(in: window.app, insteadOf: window)
-      report("AXWindowMiniaturized", about: window, after: hadTheKeyboard && window.app.focused != nil ? timing.focusBeforeMiniaturized : 0)
+      // Posted by the app a moment after the focus. Whatever takes its main thread in between holds it back.
+      appDoes(window.app, after: hadTheKeyboard && window.app.focused != nil ? timing.focusBeforeMiniaturized : 0, "") { [self] in report("AXWindowMiniaturized", about: window) }
       dockChanged(by: 2)
     }
   }
 
   /// Its app brings it back, or, `byHand`, a click on it in the Dock, which brings the app forward as well (that it does so at the click, not at the end of the flight, is a GUESS). The focus is reported first,
-  /// 4 to 8 ms before "deminiaturized" (`minimize-restore`, `app-minimize`: both the app's own call).
+  /// 4 to 8 ms before "deminiaturized" (`minimize-restore`, `app-minimize`: both the app's own call); 1 ms before it after `AXRaise` (the probe).
+  ///
+  /// The flight out was measured only as `AXRaise` sets it off (`perform`): 0.53 to 0.58 s, the boxes of the way in backwards from some 70 ms on. That the app is deaf on the way out too is taken from the call's not
+  /// returning before the end. What was held back comes first: a raise between the focus report and "miniaturized" gave "main window changed" of the sibling, "miniaturized", then "focused", "main", "deminiaturized" of the
+  /// window, all within 2 ms, at the end of the flight out (20 of 20).
   public func restore(_ window: Window, byHand: Bool = false) {
-    guard window.isOpen, window.isMinimized else { return }
+    guard window.isOpen, window.isMinimized, !window.isInFlight else { return }
     note("w\(window.number) is being restored")
     if byHand, frontmost !== window.app { activate(window.app) }
-    window.isBusyUntil = now + timing.minimizing + 0.05
-    appDoes(window.app, after: timing.minimizing, "") { [self] in
+    fly(window, out: true) { [self] in
       guard window.isOpen, window.isMinimized else { return }
       window.isMinimized = false
       window.space = activeSpace
       raise(window)
       makeKey(window)
-      report("AXWindowDeminiaturized", about: window, after: timing.focusBeforeDeminiaturized)
+      appDoes(window.app, after: timing.focusBeforeDeminiaturized, "") { [self] in report("AXWindowDeminiaturized", about: window) }
       dockChanged(by: -2)
     }
+  }
+
+  /// A window is on its way to the Dock or out of it, and its app's main thread with it.
+  private func fly(_ window: Window, out: Bool, landing: @escaping () -> Void) {
+    let app = window.app
+    window.isBusyUntil = now + timing.minimizing + 0.05
+    window.isInFlight = true
+    window.isFlyingOut = out
+    app.windowsInFlight += 1
+    let (first, step) = (out ? 0.07 : 0.045, 0.016)
+    let steps = Int((timing.minimizing - first - 0.005) / step)
+    for number in 0...steps {
+      send(after: first + Double(number) * step, from: .system, "") { [self] in
+        guard window.isOpen, window.isInFlight else { return }
+        let part = Double(number) / Double(steps)
+        window.bounds = boxInFlight(of: window.frame, part: out ? 1 - part : part)
+      }
+    }
+    send(after: timing.minimizing, from: .system, "") { [self] in
+      guard app.isAlive else { return }
+      window.isInFlight = false
+      window.isFlyingOut = false
+      window.bounds = window.frame
+      app.windowsInFlight = max(0, app.windowsInFlight - 1)
+      if out { seeToTheQueue(of: app) }
+      landing()
+      seeToTheQueue(of: app)
+    }
+  }
+
+  /// The box the window server gives for a window so far on its way into the Dock: the genie's. A sketch of what was measured for a window at 170,220 480×348 on a display of 1024×768: it stays where it is and widens towards
+  /// the Dock's slot (to 712 points, two fifths of the way), then its far corner is at the slot's and its near corner follows (234,314 700×349; 629,503 322×243; 904,674 47×72; at last 916,717 35×29). Where the
+  /// slot is with other windows in the Dock, or another Dock, nobody has measured.
+  func boxInFlight(of frame: CGRect, part: Double) -> CGRect {
+    let screen = screen(of: frame).frame
+    let slot = CGRect(x: screen.maxX - 108, y: screen.maxY - 51, width: 35, height: 29)
+    let widest = max(frame.width, (slot.maxX - frame.minX) * 0.91)
+    guard part > 0.4 else { return CGRect(x: frame.minX, y: frame.minY, width: (frame.width + (widest - frame.width) * CGFloat(part / 0.4)).rounded(), height: frame.height) }
+    let rest = CGFloat((part - 0.4) / 0.6)
+    let (near, far) = (rest * rest, min(1, rest * 2))
+    let origin = CGPoint(x: frame.minX + (slot.minX - frame.minX) * near, y: frame.minY + (slot.minY - frame.minY) * near)
+    let corner = CGPoint(x: frame.minX + widest + (slot.maxX - frame.minX - widest) * far, y: frame.maxY + (slot.maxY - frame.maxY) * far)
+    return CGRect(x: origin.x.rounded(), y: origin.y.rounded(), width: max(slot.width, (corner.x - origin.x).rounded()), height: max(slot.height, (corner.y - origin.y).rounded()))
   }
 
   // MARK: Spaces

@@ -4,7 +4,7 @@
 - Branch: test/the-real-ax-layer-on-linux, then test/mac-on-linux-round-2 and -round-3
 - What: `make mac-on-linux` (scripts/mac-on-linux/README.md; docs/TESTING.md, section 9)
 
-`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 326 stories (1,321 ✔, 105 ✘ known, on the trunk at 361a635; 181 stories at the end of round 1) and a random walk under four kinds of bad manners, at both storeys, five seconds to run. The run enters 92 % of the lines and 81 % of
+`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 336 stories (1,368 ✔, 111 ✘ known, on the trunk at f116af2; 181 stories at the end of round 1) and a random walk under four kinds of bad manners, at both storeys, five seconds to run. The run enters 92 % of the lines and 81 % of
 the regions of `AXWindowSystem.swift` (`COVERAGE=1`). Twenty-three changes that take known cures out of a copy of the layer all turn their stories red (`make mac-on-linux-selftest`).
 
 This report is what it found. Nothing in the layer was changed. Each finding says what a person would see, the lines concerned, and how sure the model is of the manners that bring it out: SEEN on a Mac, or GUESS. Every red check is listed in
@@ -205,6 +205,24 @@ TO CONSIDER: strike a window off only once its app has answered something since 
 ### For whoever keeps a request for the keyboard until an app answers again
 Six stories: "an app in front begins to hang, Arbor is asked to give the keyboard to another of its windows, and … before it wakes": nothing else happens (the window gets it); the person goes to another app with ⌘Tab; the same, and the workspace's notice of it is lost (a GUESS that this happens); clicks in another app's window; Arbor is asked for another app's window; the person asks the app for a third window with ⌘`. All
 green on the trunk, which keeps nothing: its request lies in the app's queue in its turn. Two are traps. The key lies in the queue too (a GUESS), is obeyed at the wake, and a request made afresh after that takes the keyboard back. And after an activation that Arbor never hears of, a kept request brings the app forward over the one the person went to.
+
+## The flight to the Dock (round 3; `tests/Flight.swift`)
+A probe without Arbor measured it on a hosted Mac (`origin/mac-shell-out/probe.flight`; what was varied and what was not stands with `FakeMac.minimize`). The model had it wrong by omission: nothing waited during a flight, and `AXRaise` left a minimized window in the Dock. Now the window's whole app is deaf for the 0.55 s, the window
+server has the genie's boxes, the three reports come at the end, `AXRaise` fetches a minimized window out and returns when it has landed, holding back what the app had still to post, and `AXMain` alone does nothing to it. One story holds the model to the probe, call for call.
+
+| story | the trunk | each app on a lane of its own (f396381) |
+|---|---|---|
+| the window that fills the view is minimized by hand | stays in the Dock; the keyboard is in view | the same |
+| **…, and the view is held** | **it is out again after 0.55 s, which Arbor's main thread waits out** (0.57 s) | the same (0.56 s) |
+| a window goes to the Dock, and Arbor is asked to give it the keyboard as soon as its sibling is reported focused (storey one) | **out again; 0.55 s** | the same |
+| … a second after it has landed | out, with the keyboard, as asked; **0.55 s of main thread** | the same |
+| a window flies to the Dock, and Arbor moves its sibling in mid-flight (storey one) | the move waits out the rest of the flight on the main thread (0.45 s), is carried out, counts as Arbor's own; the app is not written off | the same |
+| the view moves 0.1 / 0.4 s into the flight of a docked window | answered at the end of the flight; everything in its place | the same |
+| the view moves 0.01 s into a flight of 0.66 s, the longest measured | 0.65 s | **the lane is late** (patience 0.5 s): answered after 0.5 s, everything in its place afterwards |
+
+The held view's fault was found on a hosted Mac by others, who took the half second for a report that came early; the probe showed that it is Arbor's own raise. WHY: the keyboard goes to a sibling out of view; a held view sends it home; home is the window that has just landed; `focus` makes it main and raises it without asking whether it is minimized.
+Arbor's own `minimize` and its undoing cost the main thread a flight each (1.1 s in "Arbor minimizes a window and brings it back") IF the call that sets `AXMinimized` returns only at the end: a GUESS, from `AXRaise`.
+The polite walk stayed clean with the flight in the model; under bad manners the counts moved by a seed or three, and no rule broke that had not broken before, but for one's twin "though an app has hung" (N1, 1 of 400 seeds upstairs).
 
 ## What the walk at storey two found (round 3)
 

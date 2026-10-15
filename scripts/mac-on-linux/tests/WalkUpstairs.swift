@@ -203,7 +203,7 @@ final class WalkUpstairs: Walking {
       guard let app = pick(apps.filter { !$0.isHung }, a) else { return }
       hasHung.insert(app.pid)
       mac.hang(app)
-    case .wake: if let app = pick(apps.filter(\.isHung), a) { mac.wake(app) }
+    case .wake: if let app = pick(apps.filter(\.hangsByItself), a) { mac.wake(app) }
     case .space: mac.switchSpace(to: mac.activeSpace == 1 ? 2 : 1)
     case .dock: if let window = pick(showing, a) { ask("dock \(window.number) \(["left", "right", "top", "bottom"][b % 4])") }
     case .float: if let window = pick(showing, a) { ask("float \(window.number)") }
