@@ -132,6 +132,9 @@ import Testing
     #expect(!keys { $0.frameRectangleModifier = "none" }.contains { $0.hasSuffix("+ drag") })
     #expect(!keys { $0.frameRectangleModifier = "nonsense" }.contains { $0.hasSuffix("+ drag") })
     #expect(keys { _ in }.first == "Drag to a screen edge")
+    // A band of 0 is off.
+    #expect(keys { $0.screenEdgeBand = 0 }.first == "Drag to a window’s edge")
+    #expect(!keys { $0.windowEdgeFraction = 0 }.contains("Drag to a window’s edge"))
   }
 
   @Test func sectionsStayInOrderWhateverTheColumns() {

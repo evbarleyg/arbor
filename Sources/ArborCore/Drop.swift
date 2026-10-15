@@ -15,10 +15,10 @@ public enum DropTarget: Equatable, Sendable, Codable {
 }
 
 public struct DropOptions: Equatable, Sendable {
-  /// How close to a screen edge the pointer must be to dock at the camera edge.
+  /// How close to a screen edge the pointer must be to dock at the camera edge. 0: no edge is ever offered.
   public var screenEdgeBand: CGFloat
   /// The band along a window's edges, as a fraction of its size, that docks
-  /// beside it. The middle docks as a tab (if enabled) or floats.
+  /// beside it. The middle docks as a tab (if enabled) or floats. 0: no window's edge is ever offered.
   public var windowEdgeFraction: CGFloat
   public var tabsEnabled: Bool
   /// How long, in seconds, the pointer must rest on a window or tile before it becomes the drop
@@ -38,6 +38,15 @@ public struct DropOptions: Equatable, Sendable {
     self.dwell = dwell
     self.silentEdges = silentEdges
   }
+
+  /// Whether a drag to a screen edge docks at all. A band of 0 is asked for by whoever wants none of it: who keeps macOS's
+  /// own tiling, for one.
+  public var offersScreenEdges: Bool { screenEdgeBand > 0 }
+  /// Whether a drop near a window's edge docks beside it.
+  public var offersWindowEdges: Bool { windowEdgeFraction > 0 }
+  /// How wide the strip along a silent edge is. As wide as Arbor's own band there, and no narrower where Arbor has none: it is
+  /// kept clear for macOS's sake, which tiles there whatever Arbor offers.
+  var silentStrip: CGFloat { offersScreenEdges ? screenEdgeBand : DropOptions().screenEdgeBand }
 }
 
 public enum DropResolver {
@@ -50,9 +59,16 @@ public enum DropResolver {
     ]
   }
 
+  /// The screen edges in whose band `point` lies, with how far it is from each. A band of 0 is no band: beyond the
+  /// visible frame, in the menu bar or over the Dock, a pointer is less than nothing from the edge.
+  private static func bands(around point: CGPoint, visibleFrame: CGRect, options: DropOptions) -> [(Edge, CGFloat)] {
+    guard options.offersScreenEdges else { return [] }
+    return distances(from: point, toTheEdgesOf: visibleFrame).filter { $0.1 < options.screenEdgeBand }
+  }
+
   /// The screen edges in whose band `point` lies: two in a corner.
   public static func screenEdges(near point: CGPoint, visibleFrame: CGRect, options: DropOptions = .init()) -> Set<Edge> {
-    Set(distances(from: point, toTheEdgesOf: visibleFrame).filter { $0.1 < options.screenEdgeBand }.map(\.0))
+    Set(bands(around: point, visibleFrame: visibleFrame, options: options).map(\.0))
   }
 
   /// Decides the drop target for `window` released at `point`.
@@ -70,11 +86,14 @@ public enum DropResolver {
       return .none
     }
 
-    let edgeDistances = distances(from: point, toTheEdgesOf: visibleFrame).filter { $0.1 < options.screenEdgeBand }
+    let edgeDistances = bands(around: point, visibleFrame: visibleFrame, options: options)
+    let silent = distances(from: point, toTheEdgesOf: visibleFrame).contains {
+      $0.1 < options.silentStrip && options.silentEdges.contains($0.0)
+    }
     // A pointer travels. On its way to the last point of an edge, which is macOS's, it crosses this band, and a preview that comes up
     // there goes again as macOS's comes: two promises for one drag. So the whole band is macOS's, in the corners too, and
     // whatever else lies in it. Let go there, short of macOS's own point, the window floats where it is.
-    if edgeDistances.contains(where: { options.silentEdges.contains($0.0) }) { return .float }
+    if silent { return .float }
     if let nearest = edgeDistances.min(by: { $0.1 < $1.1 }) { return .cameraEdge(nearest.0) }
 
     guard let node = layout.leafOrTile(at: point, in: tree), node != ownLeaf,
@@ -89,7 +108,8 @@ public enum DropResolver {
       (.bottom, (frame.maxY - point.y) / frame.height),
     ]
     let nearest = fractions.min(by: { $0.1 < $1.1 })!
-    if nearest.1 <= options.windowEdgeFraction { return .beside(node, nearest.0) }
+    // A window's first line of points is nothing from its edge, and a band of 0 is no band.
+    if options.offersWindowEdges, nearest.1 <= options.windowEdgeFraction { return .beside(node, nearest.0) }
     if options.tabsEnabled, tree.isStack(node) { return .stack(node) }
     return .float
   }

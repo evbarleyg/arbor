@@ -140,4 +140,67 @@ private struct Fixture {
       point: layout.desktopFrame!.center, window: WindowID(9), layout: layout, tree: f.tree, visibleFrame: screen)
     #expect(target == .float)
   }
+
+  /// 0 means off. Beyond the visible frame, in the menu bar or over the Dock, the pointer is less than nothing from
+  /// the edge.
+  @Test func aScreenEdgeBandOfNoughtOffersNoEdge() {
+    let f = Fixture()
+    let off = DropOptions(screenEdgeBand: 0)
+    for point in [
+      CGPoint(x: 720, y: 20), CGPoint(x: 720, y: 25), CGPoint(x: 720, y: 0), CGPoint(x: 720, y: 905),
+      CGPoint(x: -3, y: 400), CGPoint(x: 0, y: 400), CGPoint(x: 1443, y: 400), CGPoint(x: -3, y: 20),
+    ] {
+      let target = DropResolver.resolve(
+        point: point, window: WindowID(9), layout: f.layout(), tree: f.tree, visibleFrame: screen, options: off)
+      #expect(target == .float, "\(point)")
+      #expect(DropResolver.screenEdges(near: point, visibleFrame: screen, options: off).isEmpty, "\(point)")
+    }
+    // With any band at all they are the edge's, as they were.
+    let thin = DropOptions(screenEdgeBand: 1)
+    #expect(
+      DropResolver.resolve(
+        point: CGPoint(x: 720, y: 20), window: WindowID(9), layout: f.layout(), tree: f.tree, visibleFrame: screen,
+        options: thin) == .cameraEdge(.top))
+    #expect(DropResolver.screenEdges(near: CGPoint(x: -3, y: 20), visibleFrame: screen, options: thin) == [.left, .top])
+  }
+
+  /// The strip along a silent edge is kept clear for macOS's sake, so it is as wide as ever where Arbor has no band.
+  @Test func aSilentEdgeKeepsItsStripWhereArborHasNoBand() {
+    let f = Fixture()
+    let layout = LayoutEngine.layout(
+      f.tree, camera: f.tree.root, in: screen, options: LayoutOptions(gap: 0), isPresent: everyone)
+    for band: CGFloat in [0, 12] {
+      let target = DropResolver.resolve(
+        point: CGPoint(x: 2, y: 200), window: WindowID(9), layout: layout, tree: f.tree, visibleFrame: screen,
+        options: DropOptions(screenEdgeBand: band, silentEdges: [.left]))
+      #expect(target == .float, "band \(band)")
+    }
+    // Past the strip the window there has its edge as ever.
+    #expect(
+      DropResolver.resolve(
+        point: CGPoint(x: 20, y: 200), window: WindowID(9), layout: layout, tree: f.tree, visibleFrame: screen,
+        options: DropOptions(screenEdgeBand: 0, silentEdges: [.left])) == .beside(f.leafA, .left))
+  }
+
+  /// 0 means off here too: a window's first line of points is nothing from its edge.
+  @Test func aWindowEdgeBandOfNoughtOffersNoWindowsEdge() {
+    let f = Fixture()
+    let layout = f.layout()
+    let frame = layout.windowFrames[b]!
+    for point in [
+      CGPoint(x: frame.minX, y: frame.midY), CGPoint(x: frame.midX, y: frame.minY),
+      CGPoint(x: frame.minX, y: frame.minY), CGPoint(x: frame.minX + 1, y: frame.midY),
+    ] {
+      let target = DropResolver.resolve(
+        point: point, window: WindowID(9), layout: layout, tree: f.tree, visibleFrame: screen,
+        options: DropOptions(screenEdgeBand: 0, windowEdgeFraction: 0))
+      #expect(target == .float, "\(point)")
+    }
+    // The least there is still has that line.
+    #expect(
+      DropResolver.resolve(
+        point: CGPoint(x: frame.minX, y: frame.midY), window: WindowID(9), layout: layout, tree: f.tree,
+        visibleFrame: screen, options: DropOptions(screenEdgeBand: 0, windowEdgeFraction: 0.05))
+        == .beside(f.leafB, .left))
+  }
 }

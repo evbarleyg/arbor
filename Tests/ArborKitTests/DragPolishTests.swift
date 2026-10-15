@@ -218,6 +218,52 @@ private let side = DisplaySnapshot(
     s.expectNothingLeftBehind()
   }
 
+  /// 0 means off, for whoever wants no docking at the screen's edges or beside windows: no preview, and a floating window
+  /// stays where it is let go of.
+  @Test(arguments: [false, true]) func withBothBandsAtNoughtNoDragDocks(reflow: Bool) {
+    let s = DragScene {
+      $0.screenEdgeBand = 0
+      $0.windowEdgeFraction = 0
+      $0.dropDwell = 0
+      $0.reflowWhileDragging = reflow
+    }
+    s.h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
+    let slot = s.frame(s.b)
+    for point in [
+      CGPoint(x: 720, y: 20),  // in the menu bar
+      CGPoint(x: 720, y: s.h.visibleFrame.minY), CGPoint(x: 0, y: 450), CGPoint(x: slot.minX, y: slot.midY),
+      CGPoint(x: slot.midX, y: slot.minY),
+    ] {
+      s.h.system.clearFrameLog()
+      s.h.system.beginDrag(s.c)
+      s.h.system.moveDrag(to: point)
+      #expect(s.h.overlays.preview == nil, "\(point)")
+      let held = s.frame(s.c)
+      s.h.system.endDrag()
+      s.h.scheduler.advance(by: 3)
+      #expect(s.h.workspace.isFloating(s.c) && s.frame(s.c) == held, "\(point)")
+      #expect(s.h.system.frameLog.isEmpty, "Arbor moved nothing: \(s.h.system.frameLog)")
+    }
+    // A docked window carried into the menu bar is docked nowhere else: it goes back to its slot.
+    let own = s.frame(s.a)
+    s.h.system.drag(s.a, through: [own.center, CGPoint(x: 720, y: 300), CGPoint(x: 720, y: 20)])
+    s.h.scheduler.advance(by: 3)
+    #expect(s.h.workspace.isDocked(s.a) && s.frame(s.a) == own)
+    s.expectNothingLeftBehind()
+  }
+
+  /// A display can have a band of its own, and so none of its own.
+  @Test func aDisplayWithABandOfNoughtOffersNoEdgeOfItsOwn() {
+    let s = DragScene { $0.displays = [DisplayOptions(match: .main, screenEdgeBand: 0)] }
+    s.h.system.tiling = .off
+    s.h.system.beginDrag(s.c)
+    s.h.system.moveDrag(to: CGPoint(x: 3, y: 450))
+    #expect(s.h.overlays.preview == nil)
+    s.h.system.endDrag()
+    #expect(s.h.workspace.isFloating(s.c))
+    s.expectNothingLeftBehind()
+  }
+
   @Test func aDwellOfZeroActivatesEveryTargetAtOnce() {
     let s = DragScene { $0.dropDwell = 0 }
     s.h.system.beginDrag(s.c)

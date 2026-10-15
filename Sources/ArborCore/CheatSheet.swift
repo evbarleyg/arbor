@@ -79,12 +79,10 @@ public struct CheatSheetModel: Equatable, Sendable {
   /// What the pointer and the trackpad do under these settings, as in docs/KEYBOARD.md. A feature that adds a gesture
   /// adds its row at the end.
   public static func pointerRows(settings: Settings) -> [Row] {
-    var rows = [
-      Row(keys: "Drag to a screen edge", title: "Dock"),
-      Row(keys: "Drag to a window’s edge", title: "Dock Beside It"),
-      Row(keys: "Drag a gap", title: "Resize Both Sides"),
-      Row(keys: "Click a tile", title: "Zoom In on It"),
-    ]
+    var rows: [Row] = []
+    if settings.dropOptions.offersScreenEdges { rows.append(Row(keys: "Drag to a screen edge", title: "Dock")) }
+    if settings.dropOptions.offersWindowEdges { rows.append(Row(keys: "Drag to a window’s edge", title: "Dock Beside It")) }
+    rows += [Row(keys: "Drag a gap", title: "Resize Both Sides"), Row(keys: "Click a tile", title: "Zoom In on It")]
     if settings.gesturesEnabled { rows.append(Row(keys: "⌥ + pinch", title: "Zoom")) }
     if let held = RectangleGesture.Modifiers(text: settings.frameRectangleModifier), !held.isEmpty {
       rows.append(Row(keys: held.label + " + drag", title: "Frame What Is Inside"))

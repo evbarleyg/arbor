@@ -430,4 +430,35 @@ import Testing
       }
     }
   }
+
+  /// Whoever set the band to 0 meant no edge of Arbor's, very likely so as to keep macOS's tiling: nothing stood aside, and there
+  /// is nothing to change.
+  @Test func withNoEdgesOfArborsNobodyIsToldThatItStoodAside() {
+    let s = DragScene { $0.screenEdgeBand = 0 }
+    s.h.system.tiling = .on
+    s.h.system.drag(s.c, through: [s.frame(s.c).center, CGPoint(x: 700, y: 300), CGPoint(x: 700, y: 0)])
+    s.h.scheduler.advance(by: 8)
+    #expect(s.frame(s.c) == CGRect(x: 0, y: 25, width: 1440, height: 875), "macOS tiled it")
+    #expect(s.h.overlays.messages.isEmpty, "\(s.h.overlays.messages.map(\.model.line))")
+    #expect(s.h.controller.headsUp.hintsShown[HeadsUpHint.leftToMacOS.rawValue] == nil)
+  }
+
+  /// The strip along macOS's edges is kept clear for macOS's sake, so it is there whatever Arbor's own band is. With narrow gaps a
+  /// docked window reaches into it, and its edge would be offered two points from where macOS tiles.
+  @Test func withNoEdgesOfArborsTheStripAlongMacOSsEdgesIsStillKeptClear() {
+    let s = DragScene {
+      $0.screenEdgeBand = 0
+      $0.gap = 0
+      $0.dropDwell = 0
+    }
+    s.h.system.tiling = .on
+    s.h.system.beginDrag(s.c)
+    s.h.system.moveDrag(to: CGPoint(x: 700, y: 450), holding: 0.3)
+    s.h.system.moveDrag(to: CGPoint(x: 2, y: 450), holding: 1)
+    #expect(s.h.overlays.preview == nil, "two promises for one drag")
+    s.h.system.endDrag()
+    s.h.scheduler.advance(by: 3)
+    #expect(s.h.workspace.isFloating(s.c))
+    s.expectNothingLeftBehind()
+  }
 }

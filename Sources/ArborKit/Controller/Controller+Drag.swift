@@ -292,8 +292,9 @@ extension Controller {
     noteWhereItsUserLeftIt(session.window)
     // Whoever meant Arbor's edge and got macOS's tile is told where that can be changed. Whoever held ⌥ asked macOS. Said once macOS
     // has moved the window, which it does not always do: thrown into the menu bar and let go at once, it stays as it is.
+    // Whoever has no edges of Arbor's there (a band of 0) meant none.
     if let claim = hover.leftToMacOS, claim != .optionKey, let display = hover.display,
-      let letGo = windows[session.window]?.frame
+      options(for: display).dropOptions.offersScreenEdges, let letGo = windows[session.window]?.frame
     {
       scheduler.schedule(Self.leftToMacOSKey, after: 0.5) { [weak self] in
         guard let self, let now = self.windows[session.window]?.frame, now != letGo else { return }

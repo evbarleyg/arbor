@@ -143,11 +143,12 @@ public enum SettingsSchema {
     [
       .number(
         "screenEdgeBand", \.screenEdgeBand, min: 0, max: 100, step: 1, unit: "pt", "Screen edge band",
-        "How close to a screen edge the pointer must come for a dragged window to dock there.", advanced: true),
+        "How close to a screen edge the pointer must come for a dragged window to dock there. At 0 none ever does.",
+        advanced: true),
       .number(
         "windowEdgeFraction", \.windowEdgeFraction, min: 0, max: 0.5, step: 0.05, unit: "", "Window edge band",
-        "The band along a window's edges, as a share of its size, where a dropped window docks beside it.",
-        advanced: true
+        "The band along a window's edges, as a share of its size, where a dropped window docks beside it. At 0 none ever "
+          + "does.", advanced: true
       ).share(),
       .number(
         "dropDwell", \.dropDwell, min: 0, max: 2, step: 0.05, unit: "s", "Hold over a target",

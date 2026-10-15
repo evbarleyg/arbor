@@ -404,7 +404,8 @@ first of these that applies: on the window's own slot → snap back; within
 `screenEdgeBand` of an edge of the display's visible frame → dock at the
 camera's edge; within `windowEdgeFraction` of a window's edge → dock beside it;
 the middle of a window → float (or tab, with `tabsEnabled`); the Desktop →
-float. The controller narrows "float" for a docked window (`dropTarget(for:at:)`):
+float. Either band at 0 is off: no edge of that kind is ever offered (`DropOptions.offersScreenEdges`,
+`offersWindowEdges`). The controller narrows "float" for a docked window (`dropTarget(for:at:)`):
 only the Desktop takes it out of the arrangement; over the middle of another
 window or a gap, where nothing is previewed, it goes back to its slot
 (`Hover.isNowhere`). The preview frame comes from trying the drop on a copy of

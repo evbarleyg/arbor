@@ -64,8 +64,8 @@ File). There are four ways to change one, and each takes effect at once and show
 
 | Key | Default | Values | What it does |
 |---|---|---|---|
-| `screenEdgeBand` | `12` | 0 to 100 pt | **Screen edge band.** How close to a screen edge the pointer must come for a dragged window to dock there. *Advanced.* |
-| `windowEdgeFraction` | `0.3` | 0 to 0.5 | **Window edge band.** The band along a window's edges, as a share of its size, where a dropped window docks beside it. *Advanced.* |
+| `screenEdgeBand` | `12` | 0 to 100 pt | **Screen edge band.** How close to a screen edge the pointer must come for a dragged window to dock there. At 0 none ever does. *Advanced.* |
+| `windowEdgeFraction` | `0.3` | 0 to 0.5 | **Window edge band.** The band along a window's edges, as a share of its size, where a dropped window docks beside it. At 0 none ever does. *Advanced.* |
 | `dropDwell` | `0.15` | 0 to 2 s | **Hold over a target.** How long a dragged window must be held over a window or tile before it can be dropped there. Screen edges never wait. *Advanced.* |
 | `previewDrags` | `true` | true or false | **Drop preview.** Show where a dragged window will land. Without it nothing has to be held either. *Advanced.* |
 | `reflowWhileDragging` | `false` | true or false | **Make room while dragging.** While you drag, the other windows close up and make room, showing what letting go would do. *Not in the settings window.* |

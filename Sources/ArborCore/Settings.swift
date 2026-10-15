@@ -13,9 +13,9 @@ public struct Settings: Codable, Equatable, Sendable {
   /// Nodes smaller than this become tiles showing the app colour and icon.
   public var minimumUsableWidth: Double = 240
   public var minimumUsableHeight: Double = 160
-  /// How close to a screen edge a dragged window's pointer must be to dock there.
+  /// How close to a screen edge a dragged window's pointer must be to dock there. 0: none ever does.
   public var screenEdgeBand: Double = 12
-  /// The band along a window's edges (fraction of its size) that docks beside it.
+  /// The band along a window's edges (fraction of its size) that docks beside it. 0: none ever does.
   public var windowEdgeFraction: Double = 0.3
   /// Dropping a window on the middle of another stacks them as tabs. There is
   /// no tab strip yet (see docs/features/F04-tab-groups.md), so this is off.
