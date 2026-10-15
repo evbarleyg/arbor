@@ -89,7 +89,11 @@ extension Controller {
     guard value != old || entry.hasProblem(in: settings) else {
       return .success("\(entry.key) is already \(value.text)" + ownValuesNote(for: entry.key))
     }
-    let note = value == .bool(false) ? entry.whenOff.map { "; \($0)" } ?? "" : ""
+    var note = value == .bool(false) ? entry.whenOff.map { "; \($0)" } ?? "" : ""
+    // Arbor sizes no floating window unless they make way (Controller+OwnFrames.swift).
+    if entry.key == "soleFloatTakesDesktop", value == .bool(true), !settings.floatingWindowsMakeWay {
+      note += "; it does nothing until floatingWindowsMakeWay is true as well"
+    }
     return sayingWhoKeepsTheirOwn(entry.key) {
       change(message: "\(entry.key) = \(value.text) (was \(old.text))\(note)") { try entry.set(value, in: &$0) }
     }

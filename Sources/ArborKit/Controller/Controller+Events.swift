@@ -49,6 +49,7 @@ extension Controller: WindowSystemEvents {
     metAhead[id] = nil
     leftInFullScreen.notes[id] = nil
     chosenOnShape[id] = nil
+    fittedFrames[id] = nil
     appPlacedFrames[id] = nil
     spokeOfItsPlace[id] = nil
     shrunk[id] = nil

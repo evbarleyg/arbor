@@ -98,6 +98,7 @@ extension Controller {
       guard let actual = system.setFrame(frame, of: window) else { continue }
       couldNotComeBack[window] = nil
       leftAt?[window] = actual
+      noteThatThePauseFetched(window, to: actual)
       Log.info("\(window)'s app answers again; brought the window into view, as the pause promised")
     }
     savePause()
@@ -176,6 +177,7 @@ extension Controller {
     soleFloatReplaced(old, by: window.id)
     shrunk[window.id] = shrunk.removeValue(forKey: old)
     fittedToADisplay[window.id] = fittedToADisplay.removeValue(forKey: old)
+    fittedFrames[window.id] = fittedFrames.removeValue(forKey: old)
     hints[window.id] = WindowHint(bundleID: window.bundleID, title: window.title)
     focusHistory.removeAll { $0 == window.id }
     if let index = focusHistory.firstIndex(of: old) { focusHistory[index] = window.id }

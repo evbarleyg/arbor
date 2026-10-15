@@ -82,7 +82,8 @@ extension Controller {
 
   /// - Parameter docking: a floating window about to be docked, for a preview: it no longer counts as on the Desktop.
   func roomTerms(on displayID: DisplayID, docking: WindowID? = nil) -> MakeRoom.Terms {
-    let onDesktop = windowsOnDesktop(of: displayID, without: docking)
+    // Windows that keep their frames need no Desktop of any size: it counts as not in use, and docked windows come first.
+    let onDesktop = settings.floatingWindowsMakeWay ? windowsOnDesktop(of: displayID, without: docking) : []
     let frames = onDesktop.compactMap { workspaces[displayID]?.floating[$0] }
     return MakeRoom.Terms(
       desktopIsInUse: !onDesktop.isEmpty,

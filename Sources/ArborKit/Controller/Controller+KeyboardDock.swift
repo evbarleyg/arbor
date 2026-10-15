@@ -182,7 +182,7 @@ extension Controller {
   /// it lacks is taken from the neighbour that has most to give.
   func keepingDesktopUsable(_ candidate: Workspace, on display: DisplayID) -> Workspace {
     let holdsWindows = candidate.floating.keys.contains { windows[$0]?.isPresent == true && !parked.contains($0) }
-    guard holdsWindows, layouts[display]?.desktopFrame != nil, let trial = trialLayout(of: candidate, on: display),
+    guard settings.floatingWindowsMakeWay, holdsWindows, layouts[display]?.desktopFrame != nil, let trial = trialLayout(of: candidate, on: display),
       let tile = trial.tiles.first(where: { $0.kind == .desktop })
     else { return candidate }
     let desktop = candidate.tree.desktop

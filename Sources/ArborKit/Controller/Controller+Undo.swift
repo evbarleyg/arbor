@@ -512,6 +512,16 @@ extension Controller {
         } else if !floatsInView {
           plan.homes[window] = preferred.fitted(into: display.visibleFrame)
         }
+      } else if !settings.floatingWindowsMakeWay,
+        // By what shows, as a layout goes (`moveKeepingItsFrame`): more than the view is on, while that has nothing to show.
+        layout.map({ workspace.tree.subtree($0.camera, contains: workspace.tree.desktop) }) ?? desktopIsPartOfTheView
+      {
+        // Its frame is its person's (Controller+OwnFrames.swift), and the restored workspace has it: the one the step took it from, or,
+        // if it was moved since, the one it was moved to. Where it happened to be on screen when the step was saved says no more.
+        // One that floats in view, and of which the step changes nothing, is left where it is: what is remembered can be behind it.
+        if !floatsInView || previous?.floating[window] != preferred {
+          plan.homes[window] = whereItWas(preferred, of: window, on: display)
+        }
       } else if window == alone, desktop != nil, restoration.frames[window] == nil {
         // Alone on the Desktop, it takes all of it, which is for the layout to see to (Controller+SoleFloat.swift).
       } else if let desktop {

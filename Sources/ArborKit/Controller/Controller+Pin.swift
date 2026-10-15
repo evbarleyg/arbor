@@ -158,8 +158,8 @@ extension Controller {
   /// own size again. Both commands go on to remember where the window is as its own frame: without this, the size
   /// Arbor happened to give it would be its size for good.
   func frameWithoutSqueeze(of window: WindowID, on display: DisplaySnapshot) -> CGRect? {
-    guard let current = windows[window]?.frame, let own = workspaces[display.id]?.floating[window]?.size,
-      own.width > current.width || own.height > current.height
+    guard settings.floatingWindowsMakeWay, let current = windows[window]?.frame,
+      let own = workspaces[display.id]?.floating[window]?.size, own.width > current.width || own.height > current.height
     else { return nil }
     let size = CGSize(width: max(own.width, current.width), height: max(own.height, current.height))
     return CGRect(x: (current.midX - size.width / 2).rounded(), y: current.minY, width: size.width, height: size.height)

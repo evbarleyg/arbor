@@ -205,8 +205,9 @@ extension Controller {
         workspaces[displayID]?.floating[window].map { (window, $0) }
       }
     }
-    // The Desktop is too small to use. What is in view stays in view, over the docked windows, at its own size.
-    let toPutBack = layoutToCome(on: displayID)?.desktopFrame == nil ? inView() : []
+    // The Desktop is too small to use, or floating windows keep their frames whatever is docked (Controller+OwnFrames.swift). What is
+    // in view stays in view, over the docked windows, at its own size.
+    let toPutBack = !settings.floatingWindowsMakeWay || layoutToCome(on: displayID)?.desktopFrame == nil ? inView() : []
     placedOnPurpose = Set(toPutBack.map(\.window))
     displayArrangedAnew = displayID
     defer { (placedOnPurpose, displayArrangedAnew) = ([], nil) }

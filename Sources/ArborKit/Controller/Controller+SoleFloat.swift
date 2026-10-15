@@ -2,7 +2,7 @@ import ArborCore
 import CoreGraphics
 
 /// A window that floats alone takes the whole Desktop (docs/features/F18-sole-floating-window.md; the setting
-/// `soleFloatTakesDesktop`, off by default).
+/// `soleFloatTakesDesktop`, off by default, and only while `floatingWindowsMakeWay` is on as well: `soleFloatIsOn`).
 ///
 /// Nothing more is remembered about the window. `Workspace.floating` goes on holding the frame its user gave it, as
 /// it does for a floating window that docked windows have pushed aside, and filling the Desktop is only another answer
@@ -40,7 +40,7 @@ extension Controller {
 
   /// The window that should fill the Desktop of `displayID`, if any. Changes nothing: plans ask too (`floatingMoves`).
   func windowThatTakesDesktop(of displayID: DisplayID) -> WindowID? {
-    guard settings.soleFloatTakesDesktop, let workspace = workspaces[displayID],
+    guard soleFloatIsOn, let workspace = workspaces[displayID],
       let alone = windowAloneOnDesktop(of: displayID), alone != windowStillInHand(on: displayID),
       alone != soleFloats.dragged?.window,
       // Where no docked window takes up room (none is docked, or this is a macOS Space of its own) Arbor has
@@ -54,7 +54,7 @@ extension Controller {
   /// itself away (minimized, hidden, on another macOS Space) nothing has happened that its user would call a reason
   /// to undo their choice.
   private func windowStillInHand(on displayID: DisplayID) -> WindowID? {
-    guard settings.soleFloatTakesDesktop, let held = soleFloats.inHand[displayID] else { return nil }
+    guard soleFloatIsOn, let held = soleFloats.inHand[displayID] else { return nil }
     if held == windowAloneOnDesktop(of: displayID) { return held }
     return windows[held]?.isPresent == false && workspaces[displayID]?.isFloating(held) == true ? held : nil
   }
@@ -124,7 +124,7 @@ extension Controller {
   /// is the size it took when Arbor last placed it, or, when that has been forgotten (a crash leaves it stretched, and the
   /// launch that follows knows nothing of it), the Desktop's.
   private func ownFrameOfStretchedWindow(on displayID: DisplayID) -> (window: WindowID, frame: CGRect)? {
-    guard settings.soleFloatTakesDesktop, let window = windowAloneOnDesktop(of: displayID),
+    guard soleFloatIsOn, let window = windowAloneOnDesktop(of: displayID),
       window != soleFloats.inHand[displayID], !parked.contains(window), let current = windows[window]?.frame,
       let own = workspaces[displayID]?.floating[window], !current.approximatelyEquals(own, tolerance: 1)
     else { return nil }
@@ -145,7 +145,7 @@ extension Controller {
 
   /// A window was adopted. If it floats, the one that was alone until now is not any more, or this one is.
   func floatingWindowArrived(_ window: WindowID) {
-    guard settings.soleFloatTakesDesktop, let display = workspaceID(containing: window),
+    guard soleFloatIsOn, let display = workspaceID(containing: window),
       workspaces[display]?.isFloating(window) == true
     else { return }
     if soleFloats.isWaitingAfterLaunch { fillOnceWindowsHaveTurnedUp() }
@@ -160,7 +160,7 @@ extension Controller {
   /// at once, and the window that looks docked should not sit there small until some unrelated command stretches it. So
   /// it takes the Desktop once, when no window has turned up for a while. Called by `start()`.
   func fillOnceWindowsHaveTurnedUp() {
-    guard settings.soleFloatTakesDesktop else { return }
+    guard soleFloatIsOn else { return }
     soleFloats.isWaitingAfterLaunch = true
     scheduler.schedule(Self.afterLaunchKey, after: 2) { [weak self] in
       guard let self else { return }
@@ -191,7 +191,7 @@ extension Controller {
   /// A floating window on `display` was pinned, unpinned or summoned, which lays nothing out: it left the Desktop, or is
   /// back on it.
   func desktopCompanyChanged(on display: DisplayID) {
-    guard settings.soleFloatTakesDesktop else { return }
+    guard soleFloatIsOn else { return }
     relayout(display, reason: .structure)
   }
 
@@ -234,7 +234,7 @@ extension Controller {
   /// The user moved or resized a floating window, which was on `source`, without dragging it by its title bar. Its
   /// new frame has been recorded as its own.
   func floatingWindowMoved(_ window: WindowID, from source: DisplayID) {
-    guard settings.soleFloatTakesDesktop, let display = workspaceID(containing: window) else { return }
+    guard soleFloatIsOn, let display = workspaceID(containing: window) else { return }
     if windowAloneOnDesktop(of: display) == window { soleFloats.inHand[display] = window }
     // From one Desktop to another: both have a different number of windows now, and nothing has been laid out.
     guard display != source else { return }
@@ -251,7 +251,7 @@ extension Controller {
   /// `soleFloatDropped` can say so, which is why the drag is remembered until then.
   func soleFloatTakenInHand(_ window: WindowID) {
     soleFloats.dragged = nil
-    guard settings.soleFloatTakesDesktop, let display = workspaceID(containing: window) else { return }
+    guard soleFloatIsOn, let display = workspaceID(containing: window) else { return }
     let stretched = ownFrameOfStretchedWindow(on: display)
     soleFloats.dragged = (window, stretched?.window == window ? stretched?.frame.size : nil)
   }
@@ -261,7 +261,7 @@ extension Controller {
   func soleFloatDropped(_ window: WindowID, from source: DisplayID?, leftToMacOS: Bool = false) {
     let ownSize = soleFloats.dragged?.window == window ? soleFloats.dragged?.ownSize : nil
     soleFloats.dragged = nil
-    guard settings.soleFloatTakesDesktop, let displayID = workspaceID(containing: window) else { return }
+    guard soleFloatIsOn, let displayID = workspaceID(containing: window) else { return }
     if windowAloneOnDesktop(of: displayID) == window { soleFloats.inHand[displayID] = window }
     // Dragged off the Desktop it filled and still floating, it is its old size again, as a window dragged out of
     // macOS's own tiling is, with the pointer where it was along the title bar.

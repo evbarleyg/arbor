@@ -175,6 +175,8 @@ extension Controller {
         frames[window] = nil
       case .fill(let desktop):
         frames[window] = frameWhenFilling(desktop, with: window, on: display)
+      case .putBack(let frame):
+        frames[window] = frame
       }
     }
     for (window, frame) in puttingBack {

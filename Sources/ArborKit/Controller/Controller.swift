@@ -64,6 +64,7 @@ public struct WindowFilter: Sendable, Equatable {
 /// - Controller+Pin.swift: floating windows that stay in view wherever the camera goes
 /// - Controller+Hold.swift: moving nothing uninvited during calls and on shared screens
 /// - Controller+UndockedFrames.swift: giving windows that leave the arrangement their own size back
+/// - Controller+OwnFrames.swift: leaving floating windows exactly where their person put them
 /// - Controller+Switches.swift: what the behaviour switches need (parking small, windows left parked)
 /// - Controller+Transitions.swift: showing changes as motion
 /// - Controller+Updates.swift: the version, and asking whether a newer release exists
@@ -447,6 +448,10 @@ public final class Controller {
   /// much of the window showed, in square points, on all displays together (`noteWhereItsUserLeftIt`).
   var chosenOnShape: [WindowID: (frame: CGRect, display: CGRect, showing: CGFloat)] = [:]
 
+  /// Floating windows that are where Arbor fitted them because the displays had changed, not at their own frames
+  /// (Controller+OwnFrames.swift). An entry counts for as long as its window is at that frame.
+  var fittedFrames: [WindowID: CGRect] = [:]
+
   /// The window ⌃⌥F floated last, and where it was docked (Controller+FloatAndBack.swift).
   var floatedOut: FloatedOut?
 
@@ -560,6 +565,7 @@ public final class Controller {
     landsAt = landsAt.filter { windows[$0.key] != nil }
     chosenOnShape = chosenOnShape.filter { windows[$0.key] != nil }
     fittedToADisplay = fittedToADisplay.filter { windows[$0.key] != nil }
+    fittedFrames = fittedFrames.filter { windows[$0.key] != nil }
     keepOnlyWhatIsStillOwedAfterAStart()
     parkedAgain.removeAll()
     unplaced.removeAll()
@@ -576,6 +582,7 @@ public final class Controller {
     // A run that did not quit cleanly leaves its parked windows out of view.
     treatStrandedWindowsAsParked()
     if afterAccident { showEverythingWhereTheViewWouldTakeAWindowOutOfView() }
+    sendBackWhatThePauseFetched()
     isRunning = true
     Log.info("started: \(displays.count) display(s), \(managedWindowIDs.count) managed window(s)")
     letTheViewFollowTheKeyboardBeforeTheFirstLayout()
@@ -685,6 +692,7 @@ public final class Controller {
       for (window, preferred) in workspace.floating.sorted(by: { $0.key < $1.key })
       where parked.contains(window) || wasPushedAside(window, from: preferred) {
         putBack(window, at: whereItWasLeft(window, preferred, on: display), on: display)
+        noteThatItWasFetched(window)
       }
     }
     // Whatever the bookkeeping says, nothing Arbor arranges is left out of view: a window can be in the
@@ -702,6 +710,7 @@ public final class Controller {
       else { continue }
       frame.size = sizeInView(of: id) ?? frame.size
       placeVisibly(id, at: frame, on: display)
+      noteThatItWasFetched(id)
     }
     // With no display at all the windows are in no workspace. They go where the main display was, which is where
     // one is most likely to be again.
@@ -762,6 +771,8 @@ public final class Controller {
     traceRecorder?.settingsWillApply(newSettings)
     // With pictures of windows the presenter needs other things for a motion than without.
     if newSettings.windowPictures != settings.windowPictures { forgetRehearsal() }
+    // Asked while they still make way.
+    let pushedAside = newSettings.floatingWindowsMakeWay ? [] : windowsPushedAside()
     settings = newSettings
     filter.excludedBundleIDs = Set(newSettings.excludedBundleIDs)
     stopWatchingTitles()
@@ -772,6 +783,7 @@ public final class Controller {
     adoptNewlyManagedWindows()
     // The displays may have changed while Arbor was not arranging a window it has just taken on.
     treatStrandedWindowsAsParked()
+    giveBackTheirOwnFrames(to: pushedAside)
     relayoutAll(reason: .structure, motion: .instant)
     refreshHoldCaller()
     scheduleSave()

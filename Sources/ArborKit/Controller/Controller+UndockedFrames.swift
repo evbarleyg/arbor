@@ -58,7 +58,7 @@ extension Controller {
       // Onto the Desktop. A window floated by command is put there on purpose, like one that is dropped: if the
       // Desktop is smaller than it (the narrow one `arrange` makes), it keeps its own size and hangs over the docked windows.
       if !standsWhereItFloats {
-        frame = floatingFrame(frame, on: floatingRegion(desktop, on: display), of: display, minimum: frame.size)
+        frame = floatingFrame(frame, on: roomToFloat(desktop, on: display), of: display, minimum: frame.size)
       }
       workspaces[displayID]!.floating[window] = frame
       // Alone there and about to take all of it (Controller+SoleFloat.swift), it is not made its own size first.
@@ -195,8 +195,15 @@ extension Controller {
 
   /// Whether a floating window is somewhere else than `preferred`, where the user left it: docked windows
   /// pushed it aside or squeezed it to keep it on the Desktop. Letting go means undoing that as well.
+  /// (Also asked of a docked window, which is in its slot and not where it floated.) No floating window is pushed aside unless
+  /// they make way: where one is then is where its person has it. But in another size than its own it is as Arbor had it: found in
+  /// the shape of a slot after a run that did not quit (Controller+FoundAtAStart.swift). (Fitted, it is small for the displays' sake.)
   func wasPushedAside(_ window: WindowID, from preferred: CGRect) -> Bool {
-    windows[window].map { !$0.frame.approximatelyEquals(preferred, tolerance: 1) } ?? false
+    if !settings.floatingWindowsMakeWay, workspaces.values.contains(where: { $0.isFloating(window) }) {
+      guard fittedFrames[window] == nil, let size = windows[window]?.frame.size else { return false }
+      return abs(size.width - preferred.width) > 1 || abs(size.height - preferred.height) > 1
+    }
+    return windows[window].map { !$0.frame.approximatelyEquals(preferred, tolerance: 1) } ?? false
   }
 
   /// Moves a window to exactly `frame`, which is in view as far as it should be (`placeVisibly` would pull all
@@ -250,7 +257,8 @@ extension Controller {
   /// little further. It keeps its own size to go back to, from where it is now, on the display as far as `frame` is.
   /// `ownSize`: if that is not the size remembered where it floats now.
   func frameToRemember(of window: WindowID, movedFrom before: CGRect?, to frame: CGRect, ownSize: CGSize? = nil) -> CGRect {
-    guard let before, abs(before.width - frame.width) <= 1, abs(before.height - frame.height) <= 1,
+    guard settings.floatingWindowsMakeWay || ownSize != nil, let before, abs(before.width - frame.width) <= 1,
+      abs(before.height - frame.height) <= 1,
       let own = ownSize ?? workspaceID(containing: window).flatMap({ workspaces[$0]?.floating[window]?.size }), own != frame.size,
       // Squeezed, not stretched: one that fills the Desktop and is taken in hand stays as it is (Controller+SoleFloat.swift).
       own.width >= frame.width, own.height >= frame.height

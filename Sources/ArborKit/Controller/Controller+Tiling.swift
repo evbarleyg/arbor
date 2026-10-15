@@ -360,7 +360,7 @@ extension Controller {
     }
     // A window on the Desktop stays on it: grown over its docked neighbours, it would be squeezed back at the next
     // change of the arrangement (`placeFloatingWindows`). One the user put elsewhere has the whole display.
-    let desktop = layouts[displayID]?.desktopFrame.map { floatingRegion($0, on: display) }
+    let desktop = layouts[displayID]?.desktopFrame.map { roomToFloat($0, on: display) }
     let isOnDesktop = desktop?.insetBy(dx: -1, dy: -1).contains(current) == true && !isPinned(id)
     let room = isOnDesktop ? desktop ?? display.visibleFrame : display.visibleFrame
     func side(_ length: CGFloat, limit: CGFloat) -> CGFloat {
@@ -440,7 +440,7 @@ extension Controller {
     } else {
       // On the Desktop if it is in view; otherwise in front of the view, like a window that just opened.
       let desktop = layouts[destination.id]?.desktopFrame
-      let room = desktop.map { floatingRegion($0, on: destination) } ?? destination.visibleFrame
+      let room = desktop.map { roomToFloat($0, on: destination) } ?? destination.visibleFrame
       let middle = (desktop ?? room).center
       // The frame it has when there is room for it. On a smaller Desktop it is squeezed, as by `placeFloatingWindows`.
       let preferred = CGRect(
@@ -471,7 +471,7 @@ extension Controller {
       if role != nil { workspaces[destination.id]!.setRole(role, of: id) } else { receiveAsGuestOfTheView(id) }
       // Both Desktops have a different number of windows now (F18), which lays both displays out.
       floatingWindowMoved(id, from: source)
-      if !settings.soleFloatTakesDesktop {
+      if !soleFloatIsOn {
         // Without F18 too: a Desktop with nothing on it gives up room that one in use keeps (F61).
         relayout(source, reason: .structure)
         relayout(destination.id, reason: .structure)

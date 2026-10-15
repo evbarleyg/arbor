@@ -418,7 +418,12 @@ extension Controller {
         fill(desktop, with: window, on: display)
         continue
       }
+      if case .putBack(let frame) = move {
+        putBackWhereItWas(window, at: frame, on: display)
+        continue
+      }
       guard case .place(var target, let room) = move else {
+        noteWhereItLeavesFrom(window, on: displayID)
         park(window, on: display)
         continue
       }
@@ -490,6 +495,8 @@ extension Controller {
     case park
     /// All over the Desktop, which is this rectangle, or as near to that as its app lets it come (Controller+SoleFloat.swift).
     case fill(CGRect)
+    /// In view again, at the frame it had when it left (Controller+OwnFrames.swift).
+    case putBack(CGRect)
   }
 
   /// The floating windows `placeFloatingWindows` sees to, and what it does to each. Deciding is kept
@@ -526,6 +533,14 @@ extension Controller {
       // What has just left the user's hand, or gone back to where it was, is not snatched away.
       // (Nobody puts a window where no display shows it.)
       guard !placedOnPurpose.contains(window) || showsOnlyASliver(window) else { continue }
+      // As Arbor ships, that is all: its frame is its person's (Controller+OwnFrames.swift).
+      if !settings.floatingWindowsMakeWay {
+        let move = moveKeepingItsFrame(
+          window, floatingAt: preferred, in: workspace, layout: layout, desktopIsInView: desktopIsPartOfTheView, reason: reason,
+          isTheFirstLayout: previous == nil, on: display)
+        if let move { moves.append((window, move)) }
+        continue
+      }
       // A window too large for the Desktop hangs over its edge, but it is Arbor that put it there.
       let whereArborPutIt = settled[window]?.approximatelyEquals(current.frame, tolerance: 2) == true
       // Where its app opened it is not a place anybody chose. Only a move or a resize by the user is.

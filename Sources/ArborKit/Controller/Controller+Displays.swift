@@ -20,6 +20,7 @@ extension Controller {
   /// With `lettingGo` only the books are brought up to date and nothing is moved, raised or focused: for `shutdown`, which
   /// moves every window itself, once (`lookAtTheDisplaysBeforeLettingGo`).
   func updateDisplays(lettingGo: Bool = false) {
+    let asItWas = noteBeforeTheDisplaysChange()
     // If windows were moved behind Arbor's back, here is the report after all. What follows looks after every window.
     // Moved with this change of displays, as far as can be told: those, and below whatever is not where Arbor knew it.
     var movedByMacOS = movedBehindArborsBack
@@ -74,13 +75,16 @@ extension Controller {
     treatStrandedWindowsAsParked()
     // Books too, and no frame is set: so also before Arbor lets go, which gives every window its remembered place.
     keepWhatMacOSRescued(whichShowed: showed)
+    let displaced = countAsOutOfViewWhatTheDisplaysDisplaced(since: asItWas)
     guard !lettingGo else { return }
     // A display that came or went sent windows to another arrangement, whose view may not include the one being
     // typed in. As after a resume, it ends with that window in view. Before anything is laid out, so that every
     // window moves once. Any other report moves no window and no view. Nor is there anything to do for a window that
     // arrives on a Desktop in view: it only counts as out of view until the layout below has placed it, and a hold would
     // take it for a window out of view that took the keyboard unasked, and give the keyboard to another.
-    if !added.isEmpty || !removed.isEmpty, let focused = system.focusedWindow(), !arrivingInView.contains(focused) {
+    if !added.isEmpty || !removed.isEmpty, let focused = system.focusedWindow(), !arrivingInView.contains(focused),
+      !displaced.contains(focused)
+    {
       bringIntoViewIfFocused(focused)
     }
     relayoutAll(reason: .camera, motion: .instant)
@@ -128,6 +132,7 @@ extension Controller {
         settled[window] = settled[window].map(moved)
         misfits[window] = misfits[window].map { (moved($0.slot), moved($0.frame)) }
         chosenOnShape[window] = chosenOnShape[window].map { (moved($0.frame), moved($0.display), $0.showing) }
+        fittedFrames[window] = fittedFrames[window].map(moved)
       }
       for (window, frame) in owedTheWayBack where old.contains(frame.center) { owedTheWayBack[window] = moved(frame) }
     }
