@@ -613,6 +613,8 @@ private let oneLayout: Set<String> = [
     _ = h.system.open(app: "Preview", pid: 1007, frame: CGRect(x: 300, y: 200, width: 700, height: 557), minimumSize: CGSize(width: 702, height: 419))
     let safari = h.system.open(app: "Safari", pid: 1000, frame: CGRect(x: 300, y: 200, width: 1000, height: 700), minimumSize: CGSize(width: 574, height: 240))
     h.start()
+    // A tile by its record alone: where room is made, the window with the keyboard gets it at a neighbour's cost and is never the tile.
+    runOK(h, "set makeRoom false")
     runOK(h, "dock \(pages.rawValue) top")
     runOK(h, "dock \(notes.rawValue) beside \(pages.rawValue) left")
     runOK(h, "dock \(safari.rawValue) left")
