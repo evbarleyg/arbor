@@ -1,0 +1,116 @@
+# 12-dwell 2026-10-15T12:38Z on macOS 26.6.2, commit 66a3a07
+
+▸ hold ⌘, sweep a window over a docked window's edge and let go without stopping: no preview shows, and it floats where it was let go
+  ✔ the window is in the hand
+  ✔ no preview is on screen
+  ✔ the window floats
+  ✔ Arbor saw it let go, and docked nothing
+  ✔ it has stayed where it was let go
+  ✔ which is over the docked window
+  ✔ the docked window has not moved
+  ✔ two are docked
+  ✔ windows match Arbor's layout
+
+▸ hold ⌘ and sweep a docked window the same way: it goes back into its slot
+  ✔ the window has left its slot with the pointer
+  ✔ it is back exactly where it was
+  ✔ it is still docked
+  ✔ no preview is on screen
+  ✔ the other docked window has not moved
+  ✔ two are docked
+  ✔ windows match Arbor's layout
+
+▸ with no key held, hold a window over a docked window's edge: no preview shows, and let go there it floats
+  ✔ the window is over the docked one
+  ✔ no preview shows, however long it is held
+  ✔ the window floats
+  ✔ where it was let go
+  ✔ Arbor saw it let go, and docked nothing
+  ✔ the docked window has not moved
+  ✔ two are docked
+
+▸ with no key held, drag a window to the screen edge: no preview shows, and let go there it floats
+  ✔ no preview shows
+  ✔ the window floats
+  ✔ Arbor saw it let go, and docked nothing
+  ✔ two are docked
+  ✔ windows match Arbor's layout
+
+▸ with no key held, a press on a docked window's title bar slips a few points: it goes back into its slot
+  ✔ it is back exactly where it was
+  ✔ it is still docked
+  ✔ the other docked window has not moved
+  ✔ windows match Arbor's layout
+
+▸ with no key held, carry a docked window a little further and let go over its own slot: it comes out, at the size it had before
+  ✔ no preview shows
+  ✔ the window floats
+  ✔ and stays out
+  ✔ as wide as it was
+  ✔ and as high
+  ✔ one is docked
+  ✔ windows match Arbor's layout
+
+▸ hold a window over a docked window's edge and only then press ⌘, without moving the pointer: the preview comes; let go of ⌘: it goes; press it again: the window docks there
+  ✔ with no key held no preview shows
+  ✔ with ⌘ down a preview shows
+  ✔ with ⌘ up it goes
+  ✔ and stays away, however long the window is held
+  ✔ with ⌘ down it comes back
+  ✔ where it was
+  ✔ the window is docked
+  ✔ it landed exactly where the preview was
+  ✔ the preview is gone
+  ✔ windows match Arbor's layout
+
+▸ let go of ⌘ while a preview shows, and then of the window: it floats, and nothing else has moved
+  ✔ a preview shows
+  ✔ with ⌘ up it goes
+  ✔ the window floats
+  ✔ Arbor saw it let go, and docked nothing
+  ✔ the first docked window has not moved
+  ✔ nor the second
+  ✔ two are docked
+  ✔ windows match Arbor's layout
+
+▸ hold ⌘ and hold a window over one edge of a docked window, then over another: the preview shows the new place, and the window docks there
+  ✔ a preview shows
+  ✔ a preview shows at the other edge
+  ✔ and not where the first was
+  ✔ the window docked below the other
+  ✔ it landed exactly where the second preview was
+  ✔ the preview is gone
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+▸ hold ⌘ and hold a window over a docked window's edge: the preview waits until the hold is over
+  ✔ at first no preview shows
+  ✔ then it does
+  ✔ the window is docked
+  ✔ above the other
+  ✔ it landed exactly where the preview was
+  ✔ windows match Arbor's layout
+
+▸ hold ⌘ and let go of a window over a docked window's edge before the hold is over: it floats
+  ✔ the window floats
+  ✔ no preview is on screen
+  ✔ two are docked
+
+▸ hold ⌘ and drag a window to the screen edge: the preview does not wait for the hold
+  ✔ a preview shows long before the hold would be over
+  ✔ the window is docked
+  ✔ it reaches the bottom edge of the screen
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+85 passed, 0 failed

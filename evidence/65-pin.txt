@@ -1,0 +1,104 @@
+# 65-pin 2026-10-15T12:47Z on macOS 26.6.2, commit 66a3a07
+
+▸ choose Keep … in View from the menu: the focused floating window is pinned where it is, and the item is ticked
+  ✔ the other app's window has the keyboard
+  ✔ the submenu's item can be clicked
+  ✔ Arbor ran toggle-pin
+  ✔ Arbor calls it pinned
+  ✔ it still floats
+  ✔ it has not moved
+  ✔ its submenu opens
+  ✔ the item is ticked
+
+▸ drag a pinned window over a docked one: no preview shows, and it lies where it was dropped, still pinned
+  ✔ no drop preview shows
+  ✔ it still floats
+  ✔ it is still pinned
+  ✔ two are docked, as before
+  ✔ it lies over the docked window
+  ✔ the docked window has not made way
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥↩, ⌃⌥→ and ⌃⌥0 move the view: the pinned window keeps its place in front, other floating windows leave
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the first window fills the screen
+  ✔ the floating window that is not pinned left with the Desktop
+  ✔ framed on the first window: the pinned window has not moved
+  ✔ framed on the first window: it is in view
+  ✘ framed on the first window: nothing covers it — another window lies over it, or it is not on screen (known: a pinned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; Q25 in collab/QUESTIONS.md decides what is to become of it)
+  ✔ framed on the first window: it has not taken the keyboard
+  ✔ ⌃⌥→ reaches Arbor
+  ✔ ⌃⌥→ again
+  ✔ the second window fills the screen
+  ✔ framed on the second window: the pinned window has not moved
+  ✔ framed on the second window: it is in view
+  ✘ framed on the second window: nothing covers it — another window lies over it, or it is not on screen (known: a pinned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; Q25 in collab/QUESTIONS.md decides what is to become of it)
+  ✔ framed on the second window: it has not taken the keyboard
+  ✔ ⌃⌥0 reaches Arbor
+  ✔ the camera is on everything
+  ✔ showing everything: the pinned window has not moved
+  ✔ showing everything: it is in view
+  ✘ showing everything: nothing covers it — another window lies over it, or it is not on screen (known: a pinned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; Q25 in collab/QUESTIONS.md decides what is to become of it)
+  ✔ showing everything: it has not taken the keyboard
+  ✔ windows match Arbor's layout
+
+▸ click the docked window under a pinned one: the pinned window is in front again, the keyboard stays in the other
+  ✔ the first window has the keyboard
+  ✔ the window under it has the keyboard
+  ✘ nothing covers the pinned window — another window lies over it, or it is not on screen (known: a pinned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; Q25 in collab/QUESTIONS.md decides what is to become of it)
+  ✘ it stays so — another window lies over it, or it is not on screen (known: a pinned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; Q25 in collab/QUESTIONS.md decides what is to become of it)
+  ✔ the keyboard is still in the clicked window
+  ✔ its app is still the one in front
+  ✔ the pinned window has not moved
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⇧D, bound to toggle-pin in settings.json, unpins: the window leaves with the Desktop when the view next moves
+  ✔ the pinned window has the keyboard
+  ✔ ⌃⌥⇧D reaches Arbor
+  ✔ it is no longer pinned
+  ✔ it has not moved
+  ✔ its submenu opens
+  ✔ the menu's item is no longer ticked
+  ✔ a click on the docked window under it now leaves it covered
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the first window fills the screen
+  ✔ the window that was pinned is out of view
+  ✔ ⌃⌥0 reaches Arbor
+  ✔ it comes back with the Desktop
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⇧D pins again; quit Arbor and start it again: the window is still pinned, in the same place
+  ✔ ⌃⌥⇧D reaches Arbor
+  ✔ it is pinned
+  ✔ the first window fills the screen
+  ✔ Arbor exits within 5 s of quit
+  ✔ quitting leaves it where it is
+  ✔ it is still pinned
+  ✔ the camera shows everything
+  ✔ one step back the first window fills the screen
+  ✔ the pinned window has not moved
+  ✔ it is in view
+  ✘ nothing covers it — another window lies over it, or it is not on screen (known: a pinned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; Q25 in collab/QUESTIONS.md decides what is to become of it)
+  ✔ windows match Arbor's layout
+
+▸ dock a pinned window by command and the pin ends; pin a docked window by command and it floats, pinned
+  ✔ dock succeeds
+  ✔ it is docked
+  ✔ it is no longer pinned
+  ✔ pin succeeds
+  ✔ it floats
+  ✔ it is pinned
+  ✔ at its own size
+  ✔ its slot has closed: the window above has the whole column
+  ✔ unpin succeeds
+  ✔ it is no longer pinned
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+79 passed, 6 failed

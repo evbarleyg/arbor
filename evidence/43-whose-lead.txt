@@ -1,0 +1,54 @@
+# 43-whose-lead 2026-10-15T12:43Z on macOS 26.6.2, commit 66a3a07
+
+▸ click a window, push the pointer aside onto another and type: ⌃⌥↓ steps in toward the window being typed in
+  ✔ the clicked window has the keyboard
+  ✔ what is typed reaches the clicked window
+  ✔ ⌃⌥↓ reaches Arbor
+  ✔ the window being typed in fills the screen, the one under the pointer is out of view
+  ✔ ⌃⌥↑ reaches Arbor
+  ✔ both are back
+  ✔ windows match Arbor's layout
+
+▸ point at the other window and press ⌃⌥↓: the pointer moved last, so the view steps in toward the window under it
+  ✔ the keyboard is still in the window that was typed in
+  ✔ ⌃⌥↓ reaches Arbor
+  ✔ the window under the pointer fills the screen, the one that was typed in is out of view
+  ✔ ⌃⌥↑ reaches Arbor
+  ✔ both are back
+  ✔ windows match Arbor's layout
+
+▸ type in the other window and run arborctl in, by command: it chooses as the shortcut does
+  ✔ what is typed reaches the clicked window
+  ✔ in succeeds
+  ✔ the window being typed in fills the screen
+  ✔ windows match Arbor's layout
+
+▸ set stepInToward to focus by command: ⌃⌥↓ steps in toward the focused window even straight after pointing at another
+  ✔ set stepInToward focus succeeds
+  ✔ the clicked window has the keyboard
+  ✔ ⌃⌥↓ reaches Arbor
+  ✔ the focused window fills the screen, the one under the pointer is out of view
+  ✔ ⌃⌥↑ reaches Arbor
+  ✔ both are back
+  ✔ windows match Arbor's layout
+
+▸ with stepInToward on focus, hold ⌥ and spread two fingers over the other window: a pinch follows the pointer all the same
+  ✔ the keyboard is in the window that was clicked
+  ✔ Arbor stepped in
+  ✔ the window under the fingers fills the screen, the focused one is out of view
+  ✔ windows match Arbor's layout
+
+▸ set stepInToward to pointer by command: ⌃⌥↓ steps in toward the window under the pointer even straight after typing in another
+  ✔ set stepInToward pointer succeeds
+  ✔ what is typed reaches the clicked window
+  ✔ ⌃⌥↓ reaches Arbor
+  ✔ the window under the pointer fills the screen, the one being typed in is out of view
+  ✔ set stepInToward auto succeeds
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+37 passed, 0 failed

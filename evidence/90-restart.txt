@@ -1,0 +1,110 @@
+# 90-restart 2026-10-15T12:50Z on macOS 26.6.2, commit 66a3a07
+
+▸ quit Arbor, move the windows about, start it again: the arrangement is back
+  ✔ Arbor exits within 5 s of quit
+  ✔ three are docked
+  ✔ the first window is back in its place, seam and all
+  ✔ the second
+  ✔ the third
+  ✔ the fourth still floats
+  ✔ the camera shows everything
+  ✔ the saved view is still there
+  ✔ and frames the same window
+  ✔ windows match Arbor's layout
+
+▸ quit Arbor while zoomed in and start it again: it shows everything, takes no window out of view, and Back returns to the old view
+  ✔ the window fills the screen
+  ✔ Arbor exits within 5 s of quit
+  ✔ quitting brought the others back into view
+  ✔ the camera shows everything
+  ✔ the first window stays in view
+  ✔ the window that was framed is in its slot
+  ✔ the one that floats is in view
+  ✔ there is a view to go back to
+  ✔ which is the one Arbor stopped in
+  ✔ the others are out of view there
+  ✔ and come back with show-all
+  ✔ windows match Arbor's layout
+
+▸ the apps restarted too: their new windows are matched by app and title
+  ✔ Arbor exits within 5 s of quit
+  ✔ three are docked
+  ✔ the window with the first title has the first place
+  ✔ the second
+  ✔ the third
+  ✔ windows match Arbor's layout
+
+▸ a saved window number that now belongs to another app is not trusted
+  ✔ Arbor exits within 5 s of quit
+  ✔ the window with the reused number is not docked
+  ✔ the others are
+  ✔ it was left where it was
+  ✔ windows match Arbor's layout
+
+▸ kill Arbor while zoomed in: the windows it had moved away are stranded
+  ✔ the others are out of view
+  ✔ the floating one too
+  ✔ nothing brought them back
+
+▸ start Arbor after the crash: every window is within reach again
+  ✔ Arbor arranges all four
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the floating window is in view
+  ✔ windows match Arbor's layout
+
+▸ kill Arbor the moment it zooms in, before it has saved: the next launch still strands nothing
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the floating window is in view
+  ✔ windows match Arbor's layout
+
+▸ kill Arbor while zoomed in and lose its saved state: the next launch rescues the stranded windows
+  ✔ the others are out of view
+  ✔ the log says it rescued windows
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the floating window is in view
+  ✔ nothing is docked: there was no arrangement to restore
+
+▸ a damaged state file cannot stop Arbor, and is kept for whoever wants to look
+  ✔ Arbor exits within 5 s of quit
+  ✔ Arbor runs and arranges all four
+  ✔ it starts afresh: nothing is docked
+  ✔ the damaged file was set aside
+  ✔ every window is in view
+
+▸ a state file from a newer Arbor is not overwritten
+  ✔ Arbor exits within 5 s of quit
+  ✔ Arbor runs
+  ✔ the newer file was set aside as it was
+  ✔ the log says why
+
+▸ end Arbor with SIGTERM while zoomed in: it puts every window back first
+  ✔ the others are out of view
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the fourth window is in view
+  ✔ the log says so
+
+▸ float-all while zoomed in: every window is in view and nothing is docked
+  ✔ the others are out of view
+  ✔ float-all succeeds
+  ✔ nothing is docked
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the fourth window is in view
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+81 passed, 0 failed

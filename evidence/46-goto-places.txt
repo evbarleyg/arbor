@@ -1,0 +1,92 @@
+# 46-goto-places 2026-10-15T12:44Z on macOS 26.6.2, commit 66a3a07
+
+▸ go to a window that is in the Dock: it comes back framed, with the keyboard, and its own place is still its own
+  ✔ Arbor sees the window minimized
+  ✔ ⌃⌥G opens the palette
+  ✔ the palette is gone
+  ✔ the window is out of the Dock
+  ✔ it fills the screen, alone, as the first window did
+  ✔ the next letter goes to it, without a click
+  ✔ the pointer has not moved
+  ✔ with everything in view it is where it was
+  ✔ to be seen there
+  ✔ as a window, not as a tile
+  ✔ windows match Arbor's layout
+
+▸ go to a window of a hidden app: the app comes back, and the window has its own place and the keyboard
+  ✔ Arbor knows the window by the title its app gave it since
+  ✔ macOS hides the app
+  ✔ Arbor sees the other app's window hidden
+  ✔ the first app is in front
+  ✔ ⌃⌥G opens the palette
+  ✔ the palette is gone
+  ✔ the app is no longer hidden
+  ✔ its window is where it was
+  ✔ to be seen there
+  ✔ its app is in front
+  ✔ the next letter goes to the window, without a click
+  ✔ the camera stayed on everything
+  ✔ windows match Arbor's layout
+
+▸ go to a floating window from a framed one: the Desktop is framed, with the window on it and the keyboard in it
+  ✔ the floating window is out of view
+  ✔ ⌃⌥G opens the palette
+  ✔ the palette is gone
+  ✔ the camera is on the Desktop
+  ✔ the floating window is in view
+  ✔ the framed window has left
+  ✔ the next letter goes to the floating window
+
+▸ go to a saved view by its number and to a named space by its name: the view moves there
+  ✔ ⌃⌥G opens the palette
+  ✔ the palette is gone
+  ✔ the saved view's windows are in view
+  ✔ both of them
+  ✔ the framed window has left
+  ✔ windows match Arbor's layout
+  ✔ ⌃⌥G opens the palette
+  ✔ the palette is gone
+  ✔ the named space's windows are in view
+  ✔ both of them
+  ✔ the saved view's have left
+  ✔ spaces says that it is in view
+  ✔ windows match Arbor's layout
+
+▸ choose Go to… from the menu: the palette opens with the keyboard, and what is typed finds a window
+  ✔ the row can be clicked
+  ✔ Arbor ran find
+  ✔ the palette is on screen
+  ✔ the app in front stays in front
+  ✔ the palette is gone
+  ✔ the window found fills the screen, alone
+  ✔ the window left behind saw none of the typing
+  ✔ windows match Arbor's layout
+
+▸ find and reveal, by command: the best match comes into view with the keyboard and no palette, and what matches nothing is refused
+  ✔ find with a part of a title succeeds
+  ✔ no palette shows
+  ✔ the window found fills the screen, alone
+  ✔ it has the keyboard
+  ✔ what matches nothing is refused, in words
+  ✔ with exit code 1
+  ✔ the view stayed
+  ✔ reveal succeeds
+  ✔ the window asked for fills the screen, alone
+  ✔ it has the keyboard
+  ✔ windows match Arbor's layout
+
+▸ after all that finding, no title and nothing that was typed is in Arbor's log
+  ✔ the log has lines about Go to…
+  ✔ none of the first app's titles
+  ✔ nor the other app's
+  ✔ nor what was looked for by command
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+
+73 passed, 0 failed
