@@ -181,7 +181,9 @@ and `arbor-e2e` executables, and adds a module named CoreGraphics that re-export
 Foundation (`Sources/LinuxShims`), so `import CoreGraphics` works on both platforms.
 
 **On Linux**, `make check`, `make scenarios`, `make parity` and `make sim` work as
-on a Mac, so run them before pushing. A machine with Docker but no Swift (or a
+on a Mac, so run them before pushing. **`make gate` runs all of it, with `make typecheck-mac` and `make lint`, in a third of
+the time**: the tests once instead of twice, and on every core instead of one (`scripts/gate.sh`, `scripts/fast-tests.py`;
+`make test-fast` for the tests alone). A machine with Docker but no Swift (or a
 Mac, to check that the Linux build still works) runs the first three in the image
 CI uses with `make linux`, or any command with `./scripts/linux.sh <command>`.
 

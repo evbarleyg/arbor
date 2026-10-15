@@ -809,6 +809,25 @@ Such tests run inside an ordinary `swift test`, and **leave their pictures in `.
   need real windows (section 5).
 - On Linux the files are skipped (`#if os(macOS)`); nothing type-checks them there yet.
 
+## The tests on every core (`make test-fast`, `make gate`)
+
+`swift test` compiles the tests on every core and then runs them on one: nearly every test is bound to the main actor, so they
+queue. On Linux `scripts/fast-tests.py run` (`make test-fast`) gives each test file a process of its own, as many at a time as there
+are cores, the biggest files first, each with a temporary folder of its own: 100 seconds instead of 330 on four cores, and the same tests
+with the same outcomes. A file that passes prints nothing (`--verbose` if it should); a file that fails prints what `swift test` would
+have. Afterwards each file is held to its source: as many tests must have run as it declares for Linux, so a filter that matches
+nothing, which `swift test` lets pass, fails here; and the sources are held to what was built. A compile-time condition in a test
+file that it cannot answer for Linux is refused, with the file and the line: add the answer to `ON_LINUX`. **A test may not read the
+sources of the tests** (`Tests/…`): where the tests are divided among machines it would see another text than in the checkout.
+
+`make gate` (`scripts/gate.sh`; `make check-fast` is the same) is everything a change must pass on Linux, each thing once: lint, the build,
+the tests as above, the smoke runs and the scenarios, then side by side the type-check of the macOS-only code, the tools' self-test and
+parity, which reads what the tests left instead of running them again. One line for each step; all output in `.build/gate/`. It goes on
+after a failure, so one round tells all. A step added to `make check` must be added there too: `make lint` says so.
+
+The same script can divide the tests among several machines, the compiling too (`plan`, `cut`, `join`, `same`): its header says how.
+`scripts/test-fast-tests.py`, part of `make lint`, holds it to a table of Swift it must read rightly or refuse.
+
 ## The tools test themselves (`scripts/test-tooling.py`)
 
 `parity.py`, `ci-step.py`, `scenarios.sh` with arbor-sim, `lint-imports.py`, `lint-mac-shell.py`, `mutate.py` and `fuzz-launch.py` are what says "all is well", so each is given

@@ -8,6 +8,7 @@ lint:
 	@python3 scripts/lint-share-space.py --self-test && python3 scripts/lint-share-space.py
 	@python3 scripts/lint-mac-shell.py --self-test > /dev/null || python3 scripts/lint-mac-shell.py --self-test
 	@python3 scripts/lint-mac-shell.py
+	@python3 scripts/test-fast-tests.py
 	@python3 scripts/lint-paste-safe.py --self-test && python3 scripts/lint-paste-safe.py
 	@for test in scripts/test-public-*.py; do python3 $$test || exit 1; done
 	@python3 scripts/gh-state.py --self-test
@@ -36,6 +37,17 @@ check: lint build test
 	@./scripts/scenarios.sh
 	@python3 scripts/test-tooling.py
 	@./scripts/release-tools-test.sh
+
+# On Linux: all that a change must pass before it is pushed (check, scenarios, parity, typecheck-mac, lint), each thing once and
+# on every core: four minutes where those take fourteen. CHECK=1: fail if docs/FEATURES.md is out of date, as CI does.
+.PHONY: gate check-fast test-fast
+gate:
+	@./scripts/gate.sh $(if $(CHECK),--check)
+check-fast: gate
+
+# On Linux: the tests alone, a process to a file, as many at a time as there are cores (scripts/fast-tests.py).
+test-fast:
+	@./scripts/fast-tests.py run
 
 # make sim ARGS='"open Safari" "dock 101 left"'
 sim: build
