@@ -88,6 +88,13 @@ func tellOfSlowApps(_ book: Book) {
       two.mac.pass(10)
       story.check("the app is awake again", !busy.isHung)
       story.check("in the end all its windows are in view: nothing that was asked of it in vain takes one away after Arbor is gone", theirs.allSatisfy { two.isInView($0) }, places(two, theirs))
+      // The end does not show it where word is left at a quit, which fetches the window again. An app that hangs before the move begins is
+      // asked a question first, and sent nothing when that goes unanswered.
+      if calls == nil {
+        story.check(
+          "and it was never told to take one out of view: it hung before the move began",
+          !two.mac.journal.contains { $0.contains("what was asked of it while it hung: AXPosition = point(Foundation.CGPoint(x: 1023.0") })
+      }
     }
   }
 

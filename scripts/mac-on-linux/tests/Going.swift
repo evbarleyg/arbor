@@ -157,7 +157,7 @@ func tellOfGoing(_ book: Book) {
     let began = one.mac.now
     let first = one.layer.setFrame(CGRect(x: 10, y: 40, width: 500, height: 500), of: WindowID(a.number))
     story.check("asked to move a window, the layer says that it does not know what came of it", first == nil)
-    story.check("after waiting for one call, a second, and not for six", abs(one.mac.now - began - 1) < 0.01, "\(one.mac.now - began) s")
+    story.check("after waiting half a second, its patience, and not for six calls", abs(one.mac.now - began - 0.5) < 0.01, "\(one.mac.now - began) s")
     let again = one.mac.now
     let second = one.layer.setFrame(CGRect(x: 10, y: 40, width: 500, height: 500), of: WindowID(b.number))
     one.layer.focus(WindowID(b.number))
@@ -169,7 +169,7 @@ func tellOfGoing(_ book: Book) {
     story.check(
       "while it hangs no window of its is reported gone or changed",
       one.heard.outline.isEmpty && !one.heard.all.contains { if case .changed = $0 { true } else { false } }, one.heard.texts)
-    story.check("and Arbor's main thread has waited one second in all", one.mac.secondsWaitedInVain == 1, "\(one.mac.secondsWaitedInVain) s")
+    story.check("and Arbor's main thread has waited for no call to it: a lane has", one.mac.secondsWaitedInVain == 0, "\(one.mac.secondsWaitedInVain) s")
     one.mac.wake(a.app)
     one.mac.pass(1)
     story.check(
