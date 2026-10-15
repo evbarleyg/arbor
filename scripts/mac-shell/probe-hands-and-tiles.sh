@@ -32,7 +32,11 @@
 #   held: x y w h               just before the button comes up
 #   let go: x y w h             0.1 s after
 #   rest: x y w h               2 s after
-# `off the tile:` is the frame after a hand has dragged the window off a tile, before its app gives it its own size again.
+# In A's names the number is how far above the visible frame's bottom the window's top is let go: -15 is 15 points below it, behind the Dock.
+# B prints `step: pointer x y down window x y w h` after every five points down (drag_on: one movement, then a point aside and back).
+# C has no hand: `ask: x y w h`, through Accessibility `answer: x y w h` (what it says at once), then `let go:` and `rest:` as above.
+# `off the tile: x y w h window <id>`, before a trial: the frame after a hand has dragged that window off the tile an earlier trial left it on,
+# before its app gives it the trial's frame to the point.
 # `clock:` ends each group. `SKIPPED` names a trial the clock left no time for (PROBE_BUDGET, seconds since the script began).
 # `NOT MEASURED` names what a missing tool took away.
 PROBE_GROUPS=${PROBE_GROUPS:-A E E4 D B C}
@@ -181,7 +185,7 @@ put() {
     # shellcheck disable=SC2046
     drag $(grab_of "$id") "$centre" $((vy + 112)) --duration 0.25 --steps 12 --hold 0 > /dev/null
     sleep 0.3
-    echo "off the tile: $(real_frame_of "$id")"
+    echo "off the tile: $(real_frame_of "$id") window $id"
   fi
   tw move "$id" "$@" > /dev/null
   sleep 0.3
@@ -194,8 +198,9 @@ showing() {
   echo "macOS shows${1:+ [$1]}: $(echo "$list" | awk '$9 == "WindowManager" { printf "%s %s %s %s %s %s; ", $1, $3, $4, $5, $6, $7 }')"
   rest=$(echo "$list" | awk -v arbor="$ARBOR_PID" '$2 == arbor { printf "%s %s %s %s %s %s; ", $1, $3, $4, $5, $6, $7 }')
   [ -z "$rest" ] || echo "ARBOR SHOWS${1:+ [$1]}: $rest"
-  rest=$(echo "$list" | awk -v arbor="$ARBOR_PID" '$2 != arbor' \
-    | grep -v -E " (ArborTestWindows|WindowManager|Dock|Finder|Window Server|Control Cent(er|re)|Spotlight|Notification Cent(er|re)|Wallpaper|SystemUIServer|loginwindow)$" \
+  # Of the test windows' app only what is no ordinary window: a menu that ⌃ and a press opened, say.
+  rest=$(echo "$list" | awk -v arbor="$ARBOR_PID" '$2 != arbor && !($9 == "ArborTestWindows" && $3 == 0)' \
+    | grep -v -E " (WindowManager|Dock|Finder|Window Server|Control Cent(er|re)|Spotlight|Notification Cent(er|re)|Wallpaper|SystemUIServer|loginwindow)$" \
     | awk '{ printf "%s %s %s %s %s %s %s; ", $1, $3, $4, $5, $6, $7, $9 }')
   [ -z "$rest" ] || echo "also on the screen${1:+ [$1]}: $rest"
 }
@@ -451,7 +456,7 @@ if [ -n "$SAMPLER_PID" ] && kill -0 "$SAMPLER_PID" 2>/dev/null; then
   ended "$SAMPLER_PID" 30 || kill_started "$SAMPLER_PID"
 fi
 [ -z "$WATCHER" ] || kill_started "$WATCHER"
-echo "ax-events.txt: $(wc -l < "$EVENTS" | tr -d ' ') lines; samples.log: $(wc -l < "$ARBOR_OUT/samples.log" 2>/dev/null | tr -d ' ') lines"
+echo "ax-events.txt: $(grep -c "" "$EVENTS") lines; samples.log: $(grep -c "" "$ARBOR_OUT/samples.log" 2>/dev/null || true) lines"
 ctl resume
 arbor_stop
 echo "clock: all done ${SECONDS}s after the script began"

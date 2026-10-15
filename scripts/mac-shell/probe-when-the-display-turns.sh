@@ -1,7 +1,7 @@
 #!/bin/bash
 # For how long after a window has changed display is its size still judged by the display it came from? ARBOR IS NOT RUNNING.
 #
-#   scripts/mac-shell/run.sh scripts/mac-shell/probe-when-the-display-turns.sh          about eight minutes
+#   scripts/mac-shell/run.sh scripts/mac-shell/probe-when-the-display-turns.sh          about ten minutes
 #
 # probe-how-far-a-window-grows.sh found it: macOS lets a window grow as far as the edges of its display, and a size call made 0.5 to 5.6 ms after the position call that took the
 # window to another display was held to the edges of the OLD display, 10 times of 10; 200 ms after, to those of the new one, 4 of 4. So a window that goes from a small display to a slot on a
@@ -20,11 +20,11 @@
 # Before that, on one display, what the first probe left open. I: a bottom edge in the Dock's strip and just past the display's bottom: from where on is it free to grow?
 # K: a window cannot grow into a frame that hangs over an edge once it has been moved there (position, size ended 1 short of a frame 1 point over the right edge, 4 times of 4, where size,
 # position, size got it whole, having sized the window where there was room). Does size, position, size always get such a frame where there was room at the old place, and what where there was none?
-# And at the end Chrome, which `open -b` did not open then: is a Chromium window clipped like the others, and does it move late?
+# And at the end Chrome, Firefox, Visual Studio Code if it is there, and Edge, which did not open then: are a Chromium, a Gecko and an Electron window clipped like the others, and do they move late?
 #
 # What comes back: turn.jsonl, as grow.swift printed it; output.txt, a line for each journey and the tables. It judges nothing. Exit code 0 unless a tool did not compile.
 source "$(dirname "${BASH_SOURCE[0]}")/lib-apps.sh"
-needs_throwaway_mac "plug in a virtual display, at which macOS moves every window, and open and quit real apps"
+needs_throwaway_mac "plug in a virtual display, at which macOS moves every window, take the quarantine mark off browsers, and open and quit real apps"
 
 GROW="$ARBOR_ROOT/.build/mac-shell/grow"
 RESULTS="$ARBOR_OUT/turn.jsonl"
@@ -39,7 +39,7 @@ if ! wait "$GROW_COMPILER"; then
   grep -A 6 "error:" "$ARBOR_OUT/build-grow.log" | head -n 60
   die "scripts/mac-shell/grow.swift did not compile"
 fi
-apps_watchdog 900
+apps_watchdog 1050
 
 cat > "$STEPS/strip" << 'STEPS'
 round I in the strip of the Dock and past the bottom of the display
@@ -195,27 +195,48 @@ for (label, name, order), waits in table.items():
 print("started where it should: %d of %d" % (sum(o["placedRight"] for o in rows), len(rows)))
 PYTHON
 
-step "Chrome"
-began=$SECONDS
-CHROME=""
-if bounded 60 open -g -a "/Applications/Google Chrome.app" --args --no-first-run --no-default-browser-check "file://$APPS_SCRATCH/page.html"; then
-  tries=0
-  until CHROME=$(apptool pid com.google.Chrome 2>/dev/null); do
+# stranger <label> <bundle id> <path> [argument for the app…]: an app that came from the Internet. The hosted image installs these with the quarantine mark on, at which macOS asks "… is an app downloaded from
+# the Internet. Are you sure you want to open it?", and nobody is there to answer: that is why `open` got nowhere with them before. So the mark comes off first.
+stranger() {
+  local label=$1 bundle=$2 path=$3 pid="" tries=0 began=$SECONDS lines
+  shift 3
+  step "$label opens"
+  [ -d "$path" ] || { echo "  there is no $path"; return; }
+  echo "  quarantine: $(xattr -p com.apple.quarantine "$path" 2>&1)"
+  xattr -dr com.apple.quarantine "$path" 2> /dev/null || sudo -n xattr -dr com.apple.quarantine "$path" 2>&1 | tail -n 2
+  echo "  and now: $(xattr -p com.apple.quarantine "$path" 2>&1)"
+  bounded 60 open -g -a "$path" --args "$@" || echo "  open: exit code $?"
+  until pid=$(apptool pid "$bundle" 2>/dev/null); do
     [ "$tries" -ge 100 ] && break
     sleep 0.1
     tries=$((tries + 1))
   done
-fi
-if [ -n "$CHROME" ]; then
-  apps_remember "$CHROME"
-  apptool wait-window "$CHROME" 20 | sed 's/^/  /'
-  echo "open after $((SECONDS - began)) s"
+  if [ -z "$pid" ]; then
+    echo "  $label did not start within 10 s. On the screen:"
+    pointer windows --on-screen | sed 's/^/    /'
+    snap_now "$label-did-not-start"
+    return
+  fi
+  apps_remember "$pid"
+  lines=$(apptool wait-window "$pid" 15)
   sleep 2
-  ask chrome "$CHROME" first app
-  app_quit "$CHROME"
-else
-  echo "Chrome did not open"
-fi
+  apptool windows "$pid" | sed 's/^/  /'
+  echo "  after $((SECONDS - began)) s"
+  if [ -z "$(app_windows "$pid")" ]; then
+    echo "  $label has no standard window (at first it listed: ${lines:-nothing}). On the screen:"
+    pointer windows --on-screen | sed 's/^/    /'
+    snap_now "$label-has-no-window"
+  else
+    ask "$label" "$pid" first app
+    snap_now "$label"
+  fi
+  app_quit "$pid"
+}
+
+stranger chrome com.google.Chrome "/Applications/Google Chrome.app" --no-first-run --no-default-browser-check "file://$APPS_SCRATCH/page.html"
+stranger firefox org.mozilla.firefox "/Applications/Firefox.app" "file://$APPS_SCRATCH/page.html"
+stranger vscode com.microsoft.VSCode "/Applications/Visual Studio Code.app"
+stranger edge com.microsoft.edgemac "/Applications/Microsoft Edge.app" --no-first-run --no-default-browser-check "file://$APPS_SCRATCH/page.html"
 
 step "done"
 echo "$(grep -c '"kind":"turn"' "$RESULTS") journeys between displays, $(grep -c '"kind":"result"' "$RESULTS") other results in turn.jsonl"
