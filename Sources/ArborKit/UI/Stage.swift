@@ -31,6 +31,8 @@ final class Stage {
 
   /// Called whenever the stage has come down.
   var onDown: (() -> Void)?
+  /// Writes down what the stage shows, while a trace is recorded.
+  var sampler: StageSampler?
   private(set) var isUp = false
 
   private let panel = StagePanel()
@@ -150,6 +152,7 @@ final class Stage {
     // Common modes, so that an open menu does not keep the stage up.
     RunLoop.main.add(timer, forMode: .common)
     self.timer = timer
+    sampler?.began(transition, retargeted: wasUp, layers: standIns.mapValues(\.layer))
     Log.debug("stage \(wasUp ? "retargeted" : "up") on \(transition.display): \(items.count) stand-ins, \(transition.duration) s")
   }
 
@@ -209,6 +212,7 @@ final class Stage {
   /// The motion is over: fades the stage out and takes it down.
   private func lift(_ expected: Int) {
     guard isUp, expected == generation else { return }
+    sampler?.lifting()
     generation += 1
     let generation = self.generation
     timer?.invalidate()
@@ -232,6 +236,7 @@ final class Stage {
     timer?.invalidate()
     timer = nil
     guard isUp else { return }
+    sampler?.comingDown()
     isUp = false
     panel.orderOut(nil)
     CATransaction.begin()

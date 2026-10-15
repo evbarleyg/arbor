@@ -17,6 +17,12 @@ extension AppKitOverlays {
     set { director.onDisplayOptionsChanged = newValue }
   }
 
+  /// The recorder of traces, as `AXWindowSystem` has it: while it records, each stage logs its own frames.
+  public var recorder: TraceRecorder? {
+    get { director.recorder }
+    set { director.recorder = newValue }
+  }
+
   /// The `windowPictures` setting: whether stand-ins may be pictures of their windows.
   public var takesPicturesOfWindows: Bool {
     get { director.pictures.isWanted }

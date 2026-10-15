@@ -26,6 +26,11 @@ enum ScreenGeometry {
     CGRect(x: rect.minX - container.minX, y: container.maxY - rect.maxY, width: rect.width, height: rect.height)
   }
 
+  /// The other way: `rect` is in the coordinates of a view or layer that fills `container`.
+  static func global(fromLocal rect: CGRect, in container: CGRect) -> CGRect {
+    CGRect(x: rect.minX + container.minX, y: container.maxY - rect.maxY, width: rect.width, height: rect.height)
+  }
+
   static func screen(for display: DisplayID) -> NSScreen? {
     NSScreen.screens.first { displayID(for: $0) == display }
   }

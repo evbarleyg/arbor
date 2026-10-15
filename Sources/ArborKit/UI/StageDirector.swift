@@ -9,6 +9,8 @@ import ArborCore
 @MainActor
 final class StageDirector {
   let pictures = WindowPictures()
+  /// Where the stages log their frames while a trace is recorded (`StageSampler`).
+  var recorder: TraceRecorder?
 
   private var stages: [DisplayID: Stage] = [:]
   /// The windows each display's last transition left showing as themselves, largest first. Their
@@ -136,6 +138,7 @@ final class StageDirector {
 
   private func makeStage(for display: DisplayID) -> Stage {
     let stage = Stage()
+    stage.sampler = recorder.map { StageSampler(recorder: $0) }
     stage.onDown = { [weak self] in self?.stageCameDown(on: display) }
     stages[display] = stage
     return stage
