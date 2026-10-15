@@ -1,0 +1,158 @@
+name: Newcomer
+run-name: "Newcomer: ${{ github.ref_name }}"
+
+# The newcomer's eval (scripts/newcomer/README.md): a hosted Mac that somebody who knows nothing about Arbor sees only in pictures and
+# touches only with real keys, clicks and drags, one act at a time, through two branches of this repository. It is scored
+# against the same tasks played with macOS alone.
+#
+# Started by a push to newcomer-start/<run> (scripts/newcomer/start.sh), which costs no call to GitHub's API and works from a branch
+# that has not landed: a push runs the workflow of the commit that is pushed. Only who may push here can start it, and only
+# who may push here can tell the Mac what to do. What is asked for stands in the commit's subject and is checked letter by letter.
+#
+# One at a time: there are five Macs for everybody, and this one is held for up to two hours.
+
+on:
+  push:
+    branches: ["newcomer-start/*"]
+
+concurrency:
+  group: newcomer
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  mac:
+    runs-on: macos-26
+    timeout-minutes: 120
+    permissions:
+      contents: write # to push mac-shell-out/newcomer.<run>.screen and .record, and to delete newcomer-start/<run>; nothing else is written
+    steps:
+      - name: Check what was asked for
+        id: asked
+        env:
+          BRANCH: ${{ github.ref_name }}
+          MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          set -f
+          name=${BRANCH#newcomer-start/}
+          [[ "$name" =~ ^[A-Za-z0-9-]{1,20}$ ]] || { echo "::error::a run's name is 1 to 20 letters, digits and dashes"; exit 2; }
+          subject=$(printf '%s\n' "$MESSAGE" | head -n 1)
+          arm="" build="" mark=no
+          case "$subject" in "newcomer: "*) ;; *) echo "::error::the commit's subject begins 'newcomer: ' (scripts/newcomer/start.sh writes it)"; exit 2 ;; esac
+          for word in ${subject#newcomer: }; do
+            case "$word" in
+              arm=arbor | arm=macos) arm=${word#arm=} ;;
+              mark=yes | mark=no) mark=${word#mark=} ;;
+              build=*) build=${word#build=} ;;
+              *) echo "::error::arm=arbor|macos, build=<commit or branch>, mark=yes|no, and nothing else"; exit 2 ;;
+            esac
+          done
+          [ -n "$arm" ] || { echo "::error::arm=arbor or arm=macos"; exit 2; }
+          if [ "$arm" = arbor ]; then
+            case "$build" in
+              "" | /* | -* | *..* | *[!A-Za-z0-9._/-]* | refs/pull/* | pull/*) echo "::error::build= takes a commit or a branch of this repository"; exit 2 ;;
+            esac
+          fi
+          {
+            echo "run=$name"
+            echo "arm=$arm"
+            echo "build=$build"
+            echo "mark=$mark"
+            # Twenty minutes short of the job's own limit: whatever happens, what was seen comes back.
+            echo "until=$(($(date +%s) + 6000))"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false # nothing on this Mac but the courier gets a token
+
+      - name: The Arbor under test
+        if: steps.asked.outputs.arm == 'arbor'
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          ref: ${{ steps.asked.outputs.build }}
+          path: product
+          fetch-depth: 0 # the build's number is the number of commits that lead to it
+          persist-credentials: false
+      - name: Which Git need not see
+        run: echo product >> .git/info/exclude
+
+      - name: Set up
+        uses: ./.github/actions/mac-setup
+        with:
+          # Without Arbor only the tools are compiled, and the runner's own compiler will do.
+          swift: ${{ steps.asked.outputs.arm == 'arbor' && '6.4' || '' }}
+
+      # What a stranger gets: an app somebody else has built, zipped. There is no release to download it from, so it is built here.
+      - name: Build it, as a release is built
+        if: steps.asked.outputs.arm == 'arbor'
+        working-directory: product
+        run: |
+          swift --version
+          make app || ARBOR_CONFIGURATION=debug make app
+          ditto -c -k --keepParent build/Arbor.app "$RUNNER_TEMP/Arbor.zip"
+          ls -l "$RUNNER_TEMP/Arbor.zip"
+
+      # As root, with the token on its standard input: see the header of courier.sh. It outlives this step and ends with the next but one.
+      - name: The courier
+        env:
+          TOKEN: ${{ github.token }}
+          NAME: ${{ steps.asked.outputs.run }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/box"
+          printf '%s\n' "$TOKEN" | sudo nohup bash scripts/newcomer/courier.sh "$RUNNER_TEMP/box" "https://github.com/$GITHUB_REPOSITORY.git" "$NAME" \
+            > "$RUNNER_TEMP/courier.log" 2>&1 &
+          sleep 1
+
+      - name: The newcomer's hours
+        timeout-minutes: 108
+        env:
+          NEWCOMER_RUN: ${{ steps.asked.outputs.run }}
+          NEWCOMER_ARM: ${{ steps.asked.outputs.arm }}
+          NEWCOMER_MARK: ${{ steps.asked.outputs.mark }}
+          NEWCOMER_UNTIL: ${{ steps.asked.outputs.until }}
+        run: |
+          export NEWCOMER_BOX="$RUNNER_TEMP/box" NEWCOMER_ZIP="$RUNNER_TEMP/Arbor.zip" NEWCOMER_README="$PWD/product/README.md"
+          [ "$NEWCOMER_ARM" != arbor ] || NEWCOMER_BUILD=$(git -C product rev-parse --short HEAD)
+          export NEWCOMER_BUILD
+          # The loop ends by itself when its time is up; this is for a loop that does not.
+          export MAC_SHELL_LIMIT=$((NEWCOMER_UNTIL - $(date +%s) + 240)) ARBOR_TIME_LIMIT=$((NEWCOMER_UNTIL - $(date +%s) + 200))
+          scripts/ci-mac-shell.sh scripts/mac-shell/newcomer.sh
+
+      - name: The courier goes home
+        if: always()
+        run: |
+          touch "$RUNNER_TEMP/box/stop"
+          sleep 2
+          cat "$RUNNER_TEMP/courier.log" || true
+
+      # All of it, where the courier has pushed the journal alone so far; and the branch that started the run has done its work.
+      - name: Push the record
+        if: always() && steps.asked.outcome == 'success'
+        env:
+          TOKEN: ${{ github.token }}
+          NAME: ${{ steps.asked.outputs.run }}
+        run: |
+          export GIT_TERMINAL_PROMPT=0
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0="http.https://github.com/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$TOKEN" | base64 | tr -d '\n')"
+          git push --quiet --delete "https://github.com/$GITHUB_REPOSITORY.git" "refs/heads/newcomer-start/$NAME" || echo "::warning::newcomer-start/$NAME is still there"
+          if [ ! -f mac-shell/journal.jsonl ]; then
+            # Cut off before the loop could hand it over.
+            mkdir -p mac-shell
+            cp "$RUNNER_TEMP/box/record/journal.jsonl" mac-shell/ || { echo "::warning::there is no journal"; exit 0; }
+          fi
+          out=$(mktemp -d)
+          cp -R mac-shell/. "$out/"
+          cd "$out"
+          gzip -9 samples.log witness.log 2>/dev/null || true
+          find . -type f -size +20m -print -delete | sed 's/^/::warning::left out, over 20 MB: /'
+          git init --quiet --initial-branch=out
+          git add --all
+          git -c user.name="mac-shell" -c user.email="mac-shell@users.noreply.github.com" \
+            commit --quiet --message "mac-shell: newcomer $NAME, the record (run $GITHUB_RUN_ID)"
+          git push --quiet --force "https://github.com/$GITHUB_REPOSITORY.git" "out:refs/heads/mac-shell-out/newcomer.$NAME.record"
+          echo "::notice title=newcomer::mac-shell-out/newcomer.$NAME.record ($(git ls-files | wc -l | tr -d ' ') files, $(du -sm . | cut -f 1) MB)"
