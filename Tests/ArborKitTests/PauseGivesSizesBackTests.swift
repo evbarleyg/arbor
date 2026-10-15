@@ -22,8 +22,12 @@ import Testing
     /// The windows Arbor has moved or resized.
     var touched: [WindowID] { all.filter { h.frame($0) != own[$0] } }
     func frames() -> [WindowID: CGRect] { Dictionary(uniqueKeysWithValues: all.map { ($0, h.frame($0)!) }) }
-    /// How often each window has been moved since the log was cleared.
-    func moves() -> [WindowID: Int] { h.system.frameLog.reduce(into: [:]) { $0[$1.window, default: 0] += 1 } }
+    /// How often each window has been moved since the log was cleared, besides a question put to it where it stood
+    /// (Controller+AskFirst.swift). Whatever was done twice or for nothing counts.
+    func moves() -> [WindowID: Int] {
+      let log = h.system.moveLog[h.system.movesWhenTheFrameLogWasCleared...]
+      return Dictionary(grouping: log, by: \.window).mapValues { $0.count - Budget.tally($0).questions }
+    }
   }
 
   func makeDesk(settings: Settings = Settings(), watchingThePermission: Bool = false) -> Desk {

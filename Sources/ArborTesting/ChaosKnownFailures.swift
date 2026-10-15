@@ -245,21 +245,6 @@ extension ChaosRunner {
         displays main:0,0,1512,982:25,0,58,0* windows-silent
         """),
     ChaosKnownFailure(
-      rule: "moved-twice-floating", owner: "rule 3: a floating window's frame is its person's", severity: 2,
-      story: "A floating window is pushed aside twice by one command.",
-      script: """
-        launch
-        open 103 Xcode pid 1004 at 1372 303 824 577 title Draft
-        open 104 Mail pid 1002 at -413 158 554.5 698.25 title Untitled
-        layout Xcode | Terminal
-        """,
-      """
-        open 103 Preview pid 1007 at -542 781 695.5 279.25 max 345 972
-        open 104 Music pid 1006 at -25 551 420 443 title Untitled
-        launch
-        layout Notes / Preview
-        """),
-    ChaosKnownFailure(
       rule: "moved-twice-sizing", owner: "rule 3: one thing that happens is one layout", severity: 3,
       story: "A docked window goes to another display and turns out unable to grow there: corner, then middle. It is not asked where it stands, because macOS lets a "
         + "window be only as large as the display it is on allows. Once per window.",

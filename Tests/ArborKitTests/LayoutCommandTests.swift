@@ -305,11 +305,13 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
   /// What Arbor has asked of each window since the log was last cleared: "w103 (960,200 480×420)".
   func given(_ h: Harness) -> [String] { h.system.frameLog.map { "\($0.window) \($0.frame.brief)" } }
 
-  /// None of `windows` has been given more than one frame since the log was last cleared, and each is where that one put it.
+  /// None of `windows` has been moved more than once since the log was last cleared, besides a question put to it where it stood
+  /// (Controller+AskFirst.swift), nothing was done twice or for nothing, and each is where the last frame put it.
   func expectMovedAtMostOnce(_ h: Harness, _ windows: [WindowID], _ story: String, sourceLocation: SourceLocation = #_sourceLocation) {
     for window in windows {
       let frames = h.system.frameLog.filter { $0.window == window }.map(\.frame)
-      #expect(frames.count <= 1, "\(story): \(window) was given \(frames.map(\.brief))", sourceLocation: sourceLocation)
+      let moves = movesWithoutWaste(h, of: window, since: h.system.movesWhenTheFrameLogWasCleared)
+      #expect((moves ?? 2) <= 1, "\(story): \(window) was given \(frames.map(\.brief))", sourceLocation: sourceLocation)
       if let last = frames.last { #expect(h.frame(window) == last, "\(story): \(window)", sourceLocation: sourceLocation) }
     }
   }

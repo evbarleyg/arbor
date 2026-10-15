@@ -566,7 +566,12 @@ public final class FakeWindowSystem: WindowSystem {
     return displayList.contains { frame.fractionInside($0.frame) >= 0.5 }
   }
 
-  public func clearFrameLog() { frameLog.removeAll() }
+  public func clearFrameLog() {
+    frameLog.removeAll()
+    movesWhenTheFrameLogWasCleared = moveLog.count
+  }
+  /// How long `moveLog`, which is never cleared, was at the last `clearFrameLog()`: the same moment in the fuller log.
+  public private(set) var movesWhenTheFrameLogWasCleared = 0
   public func clearSightings() { sightings.removeAll() }
   public func sightings(of window: WindowID) -> [CGRect] { sightings.filter { $0.window == window }.map(\.frame) }
 
