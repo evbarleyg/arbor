@@ -1,0 +1,57 @@
+# shots-F48 2026-10-15T15:59Z on macOS 26.6.2, commit 0804b13
+
+== float: the old size, centred on the slot
+  ✔ the floated window has its old size
+
+== float a framed window: the old size, and the Desktop in view
+  ✔ the floated window has its old size
+  ✔ the Desktop is in view
+  ✔ another floating window is back in view with it
+
+== drag it out of its slot, slowly, grabbed in the middle
+  ✘ it floats — it is managed docked at 12 43 494 650
+  ✘ it has its old size
+  ✘ the pointer is still on its title bar
+  ✘ about half way along, as it was grabbed
+
+== drag it out fast, grabbed near the left end, released without a pause
+  ✘ it floats — it is managed docked at 12 43 494 650
+  ✘ it has its old size
+  ✘ the pointer is still on its title bar
+  ✘ about as far along as it was grabbed
+
+== arrange, frame one, float-all: everything exactly where it was
+  ✘ w105 is where it was dropped
+  ✔ w106 is where it started
+  ✔ w107 (cannot grow) is where it started
+  ✔ w108 is where it started
+
+== framed on a window, a pause lets go as a quit does: every window is back where it was, at its own size
+  ✔ the framed window is where it started
+  ✘ w105 is back where it was
+  ✔ w108 is back where it was
+  ✔ the framed window is framed again
+  ✔ w105 is out of view again
+
+== a minimized window comes back as it was, not in the shape of its slot
+  ✔ restored, it is where it started
+
+== kill -9 with windows out of view, start again: the sizes are still known
+  ✔ Arbor is back
+  ✔ w105 is still docked
+  ✔ floated after the relaunch, it has its old size
+
+== quit: everything exactly where it was
+  ✔ Arbor exits within 5 s of quit
+  ✔ w105 is where it floated last
+  ✔ w106 is where it started
+  ✔ w107 is where it started
+
+== quit during a pause: the pause has left no window in the shape of its slot, and the quit moves nothing
+  ✔ in view, w144 is where it started as soon as Arbor is paused
+  ✔ Arbor exits within 5 s of quit
+  ✔ w144 is where it started
+  ✔ w145 is where it started
+  ✔ w146 is where it started
+
+24 passed, 10 failed
