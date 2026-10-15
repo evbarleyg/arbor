@@ -360,6 +360,8 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
   private func waitForAccessibility() {
     controller.accessibilityGranted = false
     Log.info("waiting for Accessibility permission")
+    // However the last run ended: an Arbor that may not arrange windows has no use for them.
+    controller.giveMacSwitchesBack()
     timesAskedForPermission = 0
     // The window explains first; macOS's own prompt comes when the user clicks its button.
     if !environment.noPrompt { showWelcomeWindow() }

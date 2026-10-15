@@ -230,6 +230,8 @@ import Testing
       "update", "tryAgain", "begin", "end", "refresh", "go", "noteWelcomed",
       // F42. `OnboardingSession` is told how the command of a row's button ended, to say so in the window. The command itself went through `perform`.
       "actionEnded",
+      // F42. macOS's own switches go back as they were. No window, view or layout depends on it; a drag asks `macTiling()`, which is recorded.
+      "giveMacSwitchesBack",
       "invariantViolations", "expectedTilesAndSeams",
       // F26. Where the minimap is, for whatever shares the bottom of the display with it.
       "minimapFrame",

@@ -30,7 +30,7 @@ import Testing
     let fixed = h.run("fix-setup")
     #expect(fixed.ok)
     #expect(
-      fixed.message == "switched off 3 settings of macOS under Desktop & Dock; `fix-setup undo` puts them back as they were")
+      fixed.message == "switched off 3 settings of macOS under Desktop & Dock for as long as Arbor runs; `fix-setup undo` puts them back as they were for good")
     #expect(h.mac.on == [.clickWallpaper], "which is left as its owner has it")
     #expect(h.mac.values == [.screenEdges: false, .menuBar: false, .optionKey: false])
     #expect(h.mac.before == Self.tiling.map { MacSwitchRecord($0, stored: nil) })
@@ -71,8 +71,10 @@ import Testing
   @Test func oneSettingIsOneSetting() {
     let h = makeHarness()
     h.mac.values = [.menuBar: false, .optionKey: false]
+    h.start()
     #expect(
-      h.run("fix-setup").message == "switched off 1 setting of macOS under Desktop & Dock; `fix-setup undo` puts it back as it was")
+      h.run("fix-setup").message
+        == "switched off 1 setting of macOS under Desktop & Dock for as long as Arbor runs; `fix-setup undo` puts it back as it was for good")
     #expect(h.run("fix-setup undo").message == "put 1 setting of macOS under Desktop & Dock back as it was")
   }
 
@@ -80,6 +82,7 @@ import Testing
   @Test func stageManagerIsItsOwnersToSwitchOff() {
     let h = makeHarness()
     h.mac.values = [.stageManager: true, .screenEdges: false, .menuBar: false, .optionKey: false]
+    h.start()
     let result = h.run("fix-setup")
     #expect(!result.ok)
     #expect(result.message == "Stage Manager is yours to switch off: System Settings → Desktop & Dock")
@@ -126,6 +129,7 @@ import Testing
   /// The first answer is the one that counts: how the Mac was before Arbor touched it.
   @Test func aSecondRoundKeepsWhatTheFirstOneWroteDown() {
     let h = makeHarness()
+    h.start()
     h.run("fix-setup")
     // Switched on again in System Settings, which stores it.
     h.mac.values[.screenEdges] = true
@@ -142,6 +146,7 @@ import Testing
     let h = makeHarness()
     h.mac.values = [.optionKey: true]
     h.mac.managed = [.screenEdges]
+    h.start()
     let result = h.run("fix-setup")
     #expect(!result.ok)
     #expect(
@@ -157,6 +162,7 @@ import Testing
   /// A failed second round costs nothing of what the first one wrote down.
   @Test func aFailedRoundLeavesTheEarlierRecordAlone() {
     let h = makeHarness()
+    h.start()
     h.run("fix-setup")
     let first = h.mac.before
     h.mac.values[.menuBar] = true
@@ -168,6 +174,7 @@ import Testing
   /// The way back is checked as the step is. What did not go back is still owed, and stays written down.
   @Test func whatMacOSDoesNotTakeBackStaysWrittenDown() {
     let h = makeHarness()
+    h.start()
     h.run("fix-setup")
     h.mac.managed = [.menuBar]
     let result = h.run("fix-setup undo")
@@ -199,6 +206,7 @@ import Testing
   @Test func whatCannotBeWrittenDownIsNotChanged() {
     let h = makeHarness()
     h.mac.cannotKeep = true
+    h.start()
     let result = h.run("fix-setup")
     #expect(!result.ok)
     #expect(result.message == "could not write down how the settings are, so nothing was changed; try System Settings → Desktop & Dock")
@@ -209,9 +217,10 @@ import Testing
     let h = makeHarness()
     h.controller.accessibilityGranted = false
     #expect(h.run("fix-setup").ok)
-    #expect(h.mac.on == [.clickWallpaper])
+    #expect(h.mac.on == Self.asAMacComes && h.mac.before.count == 3, "a choice, acted on when Arbor arranges windows (EdgesWhileArborRunsTests)")
     h.controller.accessibilityGranted = true
     h.start()
+    #expect(h.mac.on == [.clickWallpaper])
     h.run("pause")
     #expect(h.run("fix-setup undo").ok)
   }
@@ -236,8 +245,9 @@ import Testing
     next.mac.values = h.mac.values
     next.mac.before = h.mac.before
     next.start()
+    #expect(next.mac.on == [.clickWallpaper], "as chosen once (EdgesWhileArborRunsTests)")
     #expect(next.run("fix-setup undo").ok)
-    #expect(next.mac.values.isEmpty)
+    #expect(next.mac.values.isEmpty && next.mac.before.isEmpty)
   }
 
   /// Anything can open a URL, and this changes settings of the Mac's.
@@ -274,7 +284,7 @@ import Testing
     let row = try #require(session.model.row(.desktopAndDock))
     #expect(row.isSatisfied && row.action == nil)
     #expect(
-      row.done == "Arbor switched off 3 settings of macOS for you. They stay off, even after you quit Arbor, until you put them back: here, or "
+      row.done == "While Arbor runs, 3 settings of macOS are off. Quit or pause Arbor, and your Mac is as it was. To end that for good: here, or "
         + "later under Help → Check Setup… in Arbor’s menu. A window dragged to a screen edge docks now.")
     #expect(session.model.page == .permissions, "it stays, so that what was done can be read")
 
@@ -291,7 +301,7 @@ import Testing
   /// Before Arbor runs there is no display to say anything on, and a button that seems dead gets pressed again.
   @Test func aStepThatFailsIsSaidInTheWindow() throws {
     let h = makeHarness()
-    h.controller.accessibilityGranted = false
+    h.start()
     h.mac.managed = [.menuBar]
     var shown = 0
     let session = OnboardingSession(controller: h.controller) { _ in shown += 1 }
@@ -319,6 +329,7 @@ import Testing
   @Test func theWayBackIsOfferedAlsoWhileSomethingIsInTheWay() throws {
     let h = makeHarness()
     h.mac.values = [.stageManager: true]
+    h.start()
     h.run("fix-setup")
     var facts = try #require(h.controller.systemFacts?())
     #expect(facts.switches == [.clickWallpaper, .stageManager])
@@ -326,7 +337,7 @@ import Testing
     #expect(row.state == .recommended && row.action == nil)
     #expect(row.undo?.title == "Put Them Back")
     #expect(
-      row.done == "Arbor switched off 3 settings of macOS for you. They stay off, even after you quit Arbor, until you put them back: here, or "
+      row.done == "While Arbor runs, 3 settings of macOS are off. Quit or pause Arbor, and your Mac is as it was. To end that for good: here, or "
         + "later under Help → Check Setup… in Arbor’s menu. A window dragged to a screen edge docks now.")
 
     // One is switched on again by hand: the step for that one, and the way back for all.
@@ -393,14 +404,15 @@ import Testing
     h.start()
     let before = try #require(h.controller.doctorReport().check("Desktop & Dock settings"))
     #expect(before.mark == .problem)
-    #expect(before.detail.contains("`fix-setup` switches them off"))
+    #expect(before.detail.contains("`fix-setup` keeps them off for you while Arbor runs (and `fix-setup undo` ends that)"))
     #expect(before.notes.count == 4, "the three, and a note on the click on the wallpaper")
 
     h.run("fix-setup")
     let after = try #require(h.controller.doctorReport().check("Desktop & Dock settings"))
     #expect(after.mark == .ok)
     #expect(after.detail == "none in the way")
-    #expect(after.notes.last == "Arbor switched off 3 of them; `fix-setup undo` puts them back as they were")
+    #expect(
+      after.notes.last == "Arbor keeps 3 of them off while it runs, and gives them back at a quit and at a pause; `fix-setup undo` ends that")
 
     h.run("fix-setup undo")
     #expect(h.controller.doctorReport().check("Desktop & Dock settings")?.mark == .problem)

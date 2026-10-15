@@ -115,6 +115,7 @@ extension Controller {
     }
 
     if let switches = facts.switches {
+      let lent = macSwitchesLent
       let inTheWay = macSwitchesInTheWay(facts) ?? switches
       // Nothing to put right, only something to know (Q24), the more so while Arbor keeps those clicks from macOS itself (F60).
       let guardNote =
@@ -129,20 +130,24 @@ extension Controller {
             "“\(MacSwitch.clickWallpaper.label)” is on: a click on the wallpaper sweeps the windows aside, and the next one brings "
               + "them back where they were. “Only in Stage Manager” switches that off"
           ]
-      // What Arbor did for somebody is said for as long as it can be undone.
-      let changed = macSwitchesChangedByArbor.count
+      // What Arbor does for somebody is said for as long as it does it.
+      // One that somebody has switched on again by hand is theirs.
+      let changed = macSwitchesChangedByArbor.filter { !inTheWay.contains($0) }.count
       let undoNote =
         changed == 0
         ? []
         : [
-          "Arbor switched off \(changed) of them; `fix-setup undo` puts \(changed == 1 ? "it back as it was" : "them back as they were")"
+          lent.isEmpty
+            ? "Arbor keeps \(changed) of them off while it runs, and gives \(changed == 1 ? "it" : "them") back at a quit and at a pause; "
+              + "`fix-setup undo` ends that"
+            : "macOS has \(lent.count) of them back until Arbor arranges windows again; `fix-setup undo` leaves \(lent.count == 1 ? "it" : "them") on"
         ]
       if inTheWay.isEmpty {
         report.add(.ok, titles.switches, "none in the way", notes: guardNote + undoNote)
       } else {
         let oneStep =
           macSwitchboard != nil && inTheWay.contains(where: \.canBeSwitchedOffForYou)
-          ? "`fix-setup` switches them off for you (and `fix-setup undo` puts them back), or do it in" : "In"
+          ? "`fix-setup` keeps them off for you while Arbor runs (and `fix-setup undo` ends that), or do it in" : "In"
         report.add(
           .problem, titles.switches,
           "as they stand, macOS reacts to the same clicks and drags as Arbor. \(oneStep) System Settings → Desktop & Dock:",

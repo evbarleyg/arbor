@@ -154,6 +154,8 @@ public final class Controller {
     didSet { desktopGuardZonesMayHaveChanged() }
   }
   public internal(set) var isRunning = false
+  /// `start()` or `shutdown()` is under way, and `isRunning` says what was or what will be (`macSwitchesLent`).
+  var isTurning = false
 
   /// Sizes apps refused to shrink below, learned when a frame does not stick.
   var minimumSizes: [WindowID: CGSize] = [:]
@@ -263,6 +265,8 @@ public final class Controller {
   public var systemFacts: (() -> SystemFacts)?
   /// macOS's own switches under Desktop & Dock, for `fix-setup` (Controller+FixSetup.swift). Nil where they cannot be changed.
   public var macSwitchboard: (any MacSwitchboard)?
+  /// Arbor has changed them, or what it has written down about them. The welcome window looks again at once.
+  public var macSwitchesDidChange: (() -> Void)?
   /// The name of an installed app, from its bundle id, for an app that has no window open to ask (Controller+Menu.swift).
   public var nameOfApp: ((String) -> String?)?
   /// Whether the welcome window and `doctor` speak of Screen Recording. Pictures of moving windows are all Arbor wants that
@@ -476,6 +480,8 @@ public final class Controller {
   public func start() {
     let afterAccident = restartedAfterAccident
     guard !isRunning, !comesBackPaused() else { return }
+    isTurning = true
+    defer { isTurning = false }
     // Not always the first start of the process: Arbor also starts after a pause, and after losing and
     // regaining Accessibility permission. Nobody told it what happened meanwhile, so what it knew about
     // windows, displays and frames is forgotten here, whoever stopped it.
@@ -586,6 +592,8 @@ public final class Controller {
     followFrontmostApp()
     scheduleUpdateChecks()
     if isRunning, !isResuming { keyboardAfterAStart(byAPerson: byAPerson) }
+    isTurning = false
+    takeMacSwitchesAgain()
   }
 
   /// After an accident the windows the view leaves out are still in their corners, and keeping the view moves nothing. But the
@@ -604,6 +612,10 @@ public final class Controller {
   /// no window is left parked off-screen. A pause stops the same way (Controller+Pause.swift). Without `movingWindows`
   /// nothing is moved: for when nothing can be (Controller+Permission.swift).
   public func shutdown(movingWindows: Bool = true) {
+    // First thing: whatever becomes of the rest, somebody who quits has their Mac back.
+    isTurning = true
+    defer { isTurning = false }
+    giveMacSwitchesBack()
     guard isRunning else {
       letGoAfterPause()
       return

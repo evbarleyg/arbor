@@ -130,7 +130,9 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
   @Test func theRowOffersToSwitchThemOffAndSaysHowToUndoIt() throws {
     let row = try #require(OnboardingModel(fresh, canFixSetup: true).row(.desktopAndDock))
     #expect(row.action == OnboardingModel.Row.Action("Switch Off macOS Tiling", .fixSetup(undo: false)))
-    #expect(row.detail.hasSuffix("You can put it back at any time."), "which makes it a small thing to ask: said in the text, not the small print")
+    #expect(
+      row.detail.hasSuffix("It is off only while Arbor runs: quit Arbor, and your Mac is as it was."),
+      "which makes it a small thing to ask: said in the text, not the small print")
     #expect(
       row.afterword == "Changes 3 settings in Desktop & Dock, nothing else: “Drag windows to left or right edge of screen to tile”, “Drag "
         + "windows to menu bar to fill screen”, “Hold ⌥ key while dragging windows to tile”. A Put Them Back button appears here afterwards.")
@@ -170,7 +172,7 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
       OnboardingModel(tuned, canFixSetup: true, switchesChangedByArbor: [.screenEdges, .menuBar]).row(.desktopAndDock))
     #expect(row.isSatisfied && row.importance == "Off")
     let two =
-      "Arbor switched off 2 settings of macOS for you. They stay off, even after you quit Arbor, until you put them back: here, or later "
+      "While Arbor runs, 2 settings of macOS are off. Quit or pause Arbor, and your Mac is as it was. To end that for good: here, or later "
       + "under Help → Check Setup… in Arbor’s menu."
     #expect(row.done == two + " A window dragged to a screen edge docks now.")
     #expect(row.undo == OnboardingModel.Row.Action("Put Them Back", .fixSetup(undo: true)) && row.action == nil)
@@ -182,12 +184,14 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     var facts = tuned
     #expect(done(facts, isPaused: true) == two)
     facts.switches = [.menuBar]
-    #expect(done(facts) == two, "switched on again by hand: the top edge is macOS's")
+    #expect(
+      done(facts) == two.replacingOccurrences(of: "2 settings of macOS are off", with: "1 setting of macOS is off"),
+      "switched on again by hand: the top edge is macOS's, and that switch its owner's")
     facts = tuned
     facts.accessibility = false
     #expect(done(facts) == two, "nothing docks yet")
     let one = try #require(OnboardingModel(tuned, canFixSetup: true, switchesChangedByArbor: [.menuBar]).row(.desktopAndDock))
-    #expect(one.done.hasPrefix("Arbor switched off 1 setting of macOS for you. It stays off, even after you quit Arbor, until you put it back: "))
+    #expect(one.done.hasPrefix("While Arbor runs, 1 setting of macOS is off. Quit or pause Arbor, and your Mac is as it was. "))
     #expect(one.undo?.title == "Put It Back")
     // In order by their owner's own hand: nothing to say.
     let own = try #require(OnboardingModel(tuned, canFixSetup: true).row(.desktopAndDock))
@@ -515,7 +519,9 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(model().step(.dockThird) == third)
     #expect(
       model().offer
-        == OnboardingModel.Offer(text: "Want to dock with the mouse too?", action: .init("Switch Off macOS Tiling", .fixSetup(undo: false))))
+        == OnboardingModel.Offer(
+          text: "Want to dock with the mouse too? Only while Arbor runs: quit, and your Mac is as it was.",
+          action: .init("Switch Off macOS Tiling", .fixSetup(undo: false))))
     #expect(model(failure: "no").offer?.failure == "That did not work: no.")
     #expect(model(isPaused: true).offer == nil)
     // Only the edges are what the mouse needs.
@@ -529,7 +535,8 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(
       model(changed: [.screenEdges, .menuBar, .optionKey]).offer
         == OnboardingModel.Offer(
-          text: "macOS tiling is off: drag a window to a screen edge, and it docks.", action: .init("Put Them Back", .fixSetup(undo: true))))
+          text: "macOS tiling is off while Arbor runs: drag a window to a screen edge, and it docks.",
+          action: .init("Put Them Back", .fixSetup(undo: true))))
 
     workspace.dock(WindowID(3), at: .cameraEdge(.right))
     flow.steps.observe([DisplayID("main"): workspace])

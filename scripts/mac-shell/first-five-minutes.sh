@@ -10,7 +10,7 @@
 #   4  the one step: Switch Off macOS Tiling, and whether macOS obeys at once
 #   5  the four moves as the window words them then, the drags ending at the very edge, where a hand ends them
 #   6  afterwards: the menu, Check Setup…, Put Them Back
-#   7  quitting: every window as it was found
+#   7  quitting: every window as it was found, and macOS's settings too
 #
 # Arbor is a copy of the app under an identifier of its own, opened as Finder opens it, so that it answers for its own permissions.
 # The grant is written into the permission database, which is what the switch in System Settings does.
@@ -323,9 +323,16 @@ if press "Switch Off macOS Tiling"; then
   check "the three switches are off" all_switches_are 0
   check "and the click on the wallpaper is left as it was found" test -z "$(defaults read $DOMAIN EnableStandardClickToShowDesktop 2>/dev/null)"
   echo "what Arbor wrote down:"; cat "$ARBOR_HOME/macos-settings-before.json"; echo
-  check "the window says what was done" says "Arbor switched off 3 settings of macOS for you"
+  check "the window says what was done" says "While Arbor runs, 3 settings of macOS are off"
   check "and how to undo it" says "Put Them Back"
   "$ARBOR_BIN/arborctl" doctor 2>&1 | head -n 8 | cut -c 1-240
+  # Only while Arbor runs. A pause is a quit that comes back.
+  ctl pause
+  check "a pause gives macOS its tiling back" eventually all_switches_are "not set"
+  see 42-paused
+  check "and the window says so" says "Arbor is paused, so macOS has its tiling back"
+  ctl resume
+  check "resuming takes it again, unasked" eventually all_switches_are 0
 fi
 check "no window moved for it" test "$(frames)" = "$before_the_step"
 
@@ -363,7 +370,7 @@ check "and is where Arbor put it" eventually is in_slot "$SECOND"
 check "the second move is ticked" eventually ticked 2
 see 55-side-by-side
 frame_and_show_everything 56
-check "the way back is at hand where the moves end" says "macOS tiling is off: drag a window to a screen edge, and it docks."
+check "the way back is at hand where the moves end" says "macOS tiling is off while Arbor runs: drag a window to a screen edge, and it docks."
 # The fifth, for whoever likes: the window that was left lying, onto the lower edge of the one docked at the right.
 echo "the third window is at $(real_frame_of "$THIRD"), the welcome window at $(welcome_frame)"
 # shellcheck disable=SC2046
@@ -414,9 +421,15 @@ mkdir -p "$ARBOR_OUT/traces"
 cp "$ARBOR_HOME"/traces/*.jsonl "$ARBOR_OUT/traces/" 2>/dev/null
 
 step "7  quitting"
+# With the choice standing: back to normal is one thing.
+ctl fix-setup
+check "the three switches are off" all_switches_are 0
 echo "before: $(frames)"
 "$ARBOR_BIN/arborctl" quit
 sleep 2.5
+switches
+check "quitting leaves macOS's settings as they were found" all_switches_are "not set"
+echo "what stays written down is the choice:"; cat "$ARBOR_HOME/macos-settings-before.json"; echo
 echo "after:  $(frames)"
 echo "found:  $found"
 # Arbor itself has moved it, onto the Desktop and out of view and back.

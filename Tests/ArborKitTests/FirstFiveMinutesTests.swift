@@ -39,7 +39,7 @@ import Testing
         → Accessibility (Required)  [Open Settings…]
             macOS asks your permission before an app may move other apps’ windows. Arbor reads only each window’s position and title, and nothing leaves your Mac. Flip the switch next to Arbor in System Settings. This window comes back by itself.
         * macOS tiling (Recommended)
-            Your Mac has window tiling of its own: drag a window to a screen edge, and macOS reacts before Arbor can. Switch it off, and you dock with the mouse. Leave it on, and you dock with the keyboard. You can put it back at any time.
+            Your Mac has window tiling of its own: drag a window to a screen edge, and macOS reacts before Arbor can. Switch it off, and you dock with the mouse. Leave it on, and you dock with the keyboard. It is off only while Arbor runs: quit Arbor, and your Mac is as it was.
             [Switch Off macOS Tiling] [Or do it yourself in Desktop & Dock…]
             Changes 3 settings in Desktop & Dock, nothing else: “Drag windows to left or right edge of screen to tile”, “Drag windows to menu bar to fill screen”, “Hold ⌥ key while dragging windows to tile”. A Put Them Back button appears here afterwards.
 
@@ -68,7 +68,7 @@ import Testing
     #expect(h.welcome.click("Switch Off macOS Tiling"))
     #expect(h.mac.on == [.clickWallpaper], "the three, and nothing else")
     #expect(h.welcome.text?.contains("✔ macOS tiling (Off)  [Put Them Back]") == true)
-    #expect(h.welcome.text?.contains("Arbor switched off 3 settings of macOS for you.") == true)
+    #expect(h.welcome.text?.contains("While Arbor runs, 3 settings of macOS are off. Quit or pause Arbor, and your Mac is as it was.") == true)
     #expect(h.welcome.text?.contains("A window dragged to a screen edge docks now.") == true)
     #expect(nothingHasMoved(h, windows, found))
 
@@ -97,7 +97,7 @@ import Testing
     #expect(h.welcome.model.title == "That is all there is to it")
     #expect(h.welcome.model.footnote.contains("Right-click it for all commands"), "the item is a row of buttons now")
     // The way back is at hand where the moves end, too.
-    #expect(h.welcome.text?.contains("macOS tiling is off: drag a window to a screen edge, and it docks. [Put Them Back]") == true)
+    #expect(h.welcome.text?.contains("macOS tiling is off while Arbor runs: drag a window to a screen edge, and it docks. [Put Them Back]") == true)
 
     // One more, for whoever likes: the window that was left lying.
     #expect(h.welcome.model.steps.map(\.isDone) == [true, true, true, true, false])
@@ -112,6 +112,24 @@ import Testing
     // It has been seen, and does not open by itself again.
     #expect(h.controller.pageToWelcomeOn() == nil)
     expectWindowsMatchLayout(h)
+  }
+
+  /// Somebody who takes the step first and grants the permission second. Nothing of macOS's changes until Arbor may arrange windows.
+  @Test func theStepTakenBeforeThePermissionWaitsForIt() {
+    let (h, windows, found) = makeDesk()
+    h.launchForTheFirstTime()
+    #expect(h.welcome.click("Switch Off macOS Tiling"))
+    #expect(h.mac.writes.isEmpty)
+    #expect(h.welcome.text?.contains("i macOS tiling (On for now)") == true)
+    #expect(
+      h.welcome.text?.contains(
+        "Until Arbor may arrange windows, macOS keeps its tiling. Arbor switches it off when it starts, and only while it runs. [Leave Them On]")
+        == true)
+    h.permissionArrives()
+    #expect(h.mac.on == [.clickWallpaper])
+    #expect(h.welcome.model.page == .firstSteps, "nothing is left to decide on the first page")
+    #expect(h.welcome.model.step(.dock)?.lead == "Drag a window to the left edge of the screen")
+    #expect(nothingHasMoved(h, windows, found))
   }
 
   /// Somebody who passes the offer by. No move is taught that cannot work on this Mac as it is set (Q23), and nothing reminds them.
@@ -133,7 +151,9 @@ import Testing
     h.key("ctrl+opt+space")
     #expect(h.welcome.model.steps.map(\.isDone) == [true, true, true, true, false])
     // The offer once more, where it is understood. It is passed by again.
-    #expect(h.welcome.text?.contains("Want to dock with the mouse too? [Switch Off macOS Tiling]") == true)
+    #expect(
+      h.welcome.text?.contains("Want to dock with the mouse too? Only while Arbor runs: quit, and your Mac is as it was. [Switch Off macOS Tiling]")
+        == true)
     #expect(h.welcome.click("Done"))
 
     #expect(h.mac.writes.isEmpty, "declined is declined")
@@ -161,7 +181,7 @@ import Testing
     #expect(h.welcome.click("Switch Off macOS Tiling"))
     #expect(h.mac.on == [.clickWallpaper])
     #expect(h.welcome.model.page == .firstSteps, "it stays where it was clicked")
-    #expect(h.welcome.text?.contains("macOS tiling is off: drag a window to a screen edge, and it docks. [Put Them Back]") == true)
+    #expect(h.welcome.text?.contains("macOS tiling is off while Arbor runs: drag a window to a screen edge, and it docks. [Put Them Back]") == true)
     #expect(h.welcome.click("Put Them Back"))
     #expect(h.mac.values.isEmpty && h.mac.before.isEmpty)
     #expect(h.welcome.text?.contains("Want to dock with the mouse too?") == true)
@@ -189,7 +209,8 @@ import Testing
     h.key("ctrl+opt+cmd+right")
     h.key("ctrl+opt+return")
     h.key("ctrl+opt+space")
-    #expect(h.welcome.model.offer?.text == "Want to dock with the mouse too?" && h.welcome.model.offer?.failure.isEmpty == true)
+    #expect(h.welcome.model.offer?.text == "Want to dock with the mouse too? Only while Arbor runs: quit, and your Mac is as it was.")
+    #expect(h.welcome.model.offer?.failure.isEmpty == true)
   }
 
   /// A hand that has read nothing drags to the edge all the same. macOS takes the window, Arbor stands aside and says who took it and where

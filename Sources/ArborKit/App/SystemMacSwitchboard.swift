@@ -12,12 +12,9 @@ import Foundation
 @MainActor
 final class SystemMacSwitchboard: MacSwitchboard {
   private let ledger: MacSwitchLedger
-  /// What the ledger says, read once: only Arbor writes it, and the welcome window asks every second.
-  private var known: [MacSwitchRecord]?
 
   init(ledger: MacSwitchLedger = MacSwitchLedger(file: ArborPaths.home.appendingPathComponent(MacSwitchLedger.fileName))) {
     self.ledger = ledger
-    known = ledger.read()
   }
 
   func stored(_ item: MacSwitch) -> Bool? { MacFacts.stored(item.defaultsKey) }
@@ -33,14 +30,14 @@ final class SystemMacSwitchboard: MacSwitchboard {
     defaults.synchronize()
   }
 
-  func records() -> [MacSwitchRecord]? { known }
+  /// Read every time, small as it is: `Arbor --fix-setup undo` is another process, and what it took back a paused Arbor must not take again.
+  func records() -> [MacSwitchRecord]? { ledger.read() }
 
   func keep(_ records: [MacSwitchRecord]) -> Bool {
     guard (try? ArborPaths.ensureHome()) != nil, ledger.write(records) else {
       Log.error("could not write \(MacSwitchLedger.fileName)")
       return false
     }
-    known = records
     return true
   }
 }

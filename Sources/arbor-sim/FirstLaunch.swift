@@ -93,9 +93,19 @@ final class FirstLaunch {
       }
       mac.values[item] = words[2] == "unset" ? nil : words[2] == "on"
       return ("“\(item.label)” is \(words[2])", true)
+    case "quit" where words.count == 1:
+      // As the app does: `quit` is answered, then the app ends, which shuts the controller down.
+      let reply = harness.run("quit")
+      harness.controller.shutdown()
+      return (reply.message, reply.ok)
+    case "relaunch":
+      // The window and the words above are wired to this process.
+      return ("first-launch plays one launch, the first; `quit` ends it", false)
     case "mac-switches":
       let stored = MacSwitch.allCases.map { "\($0.defaultsKey): \(mac.values[$0].map(String.init) ?? "not set")" }
-      let written = mac.before.map { "\($0.item.defaultsKey) was \($0.stored.map(String.init) ?? "not set")" }
+      let written = mac.before.map {
+        "\($0.item.defaultsKey) was \($0.stored.map(String.init) ?? "not set")" + ($0.isGivenBack ? " (given back for now)" : "")
+      }
       return ((stored + [written.isEmpty ? "Arbor has written nothing down" : "written down: " + written.joined(separator: ", ")]).joined(separator: "\n"), true)
     default:
       return nil

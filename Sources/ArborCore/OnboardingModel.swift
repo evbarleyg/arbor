@@ -220,7 +220,8 @@ public struct OnboardingModel: Equatable, Sendable {
   ///   - offersScreenRecording: whether the optional permission has a row. Only where Arbor makes good use of it.
   ///   - appsWithOwnShortcuts: the names of open apps known to use ⌃⌥ themselves, for which nothing has been decided (F41).
   ///   - canFixSetup: Arbor can switch macOS's own settings off for whoever asks (`fix-setup`).
-  ///   - switchesChangedByArbor: the ones it has switched off and not put back.
+  ///   - switchesChangedByArbor: the ones it keeps off while it runs, because somebody asked it to.
+  ///   - switchesGivenBack: those of them macOS has back for the time being: Arbor is paused, or may not arrange windows.
   ///   - fixSetupFailure: what `fix-setup` answered when it last failed in this showing of the window.
   ///   - menuBarIsOneIcon: the menu bar item is Arbor's icon alone, which a plain click opens; with something docked it is a row of buttons.
   ///   - desktops: see `desktops`.
@@ -232,6 +233,7 @@ public struct OnboardingModel: Equatable, Sendable {
   public init(
     _ facts: SystemFacts, flow: OnboardingFlow? = nil, windowsOutOfView: Int = 0, offersScreenRecording: Bool = false,
     appsWithOwnShortcuts: [String] = [], canFixSetup: Bool = false, switchesChangedByArbor: [MacSwitch] = [],
+    switchesGivenBack: [MacSwitch] = [],
     fixSetupFailure: String? = nil, menuBarIsOneIcon: Bool = true, desktops: [CGRect] = [], isNewcomer: Bool = false,
     isPaused: Bool = false,
     shortcut: (Command) -> String? = { _ in nil }
@@ -242,10 +244,11 @@ public struct OnboardingModel: Equatable, Sendable {
     let whereArborLives = Self.whereArborLives(isOneIcon: menuBarIsOneIcon)
     rows = Self.rows(
       facts, windowsOutOfView: windowsOutOfView, offersScreenRecording: offersScreenRecording,
-      appsWithOwnShortcuts: appsWithOwnShortcuts, canFixSetup: canFixSetup, changed: switchesChangedByArbor,
+      appsWithOwnShortcuts: appsWithOwnShortcuts, canFixSetup: canFixSetup, changed: switchesChangedByArbor, givenBack: switchesGivenBack, isPaused: isPaused,
       failure: fixSetupFailure, canDock: facts.accessibility && !isPaused, isNewcomer: isNewcomer, shortcut: shortcut)
-    steps = Self.steps(
-      flow.steps, macOSTakesTheEdges: facts.switches?.contains(.screenEdges) == true, shortcut: shortcut)
+    // What is only lent is Arbor's again by the time a move can be made.
+    let macOSTakesTheEdges = facts.switches?.contains(.screenEdges) == true && !switchesGivenBack.contains(.screenEdges)
+    steps = Self.steps(flow.steps, macOSTakesTheEdges: macOSTakesTheEdges, shortcut: shortcut)
     // During the moves the window lies over the windows they are made on: whatever is not about them waits for the last tick.
     let isBusy = page == .firstSteps && !flow.steps.isComplete
     opensAtLogin = isBusy ? nil : facts.opensAtLogin
@@ -257,7 +260,7 @@ public struct OnboardingModel: Equatable, Sendable {
     waysBack = [
       named("Show Everything", .showAll),
       named("Float All Windows", .floatAll) + " puts your Mac back to normal",
-      "Quitting Arbor brings every window back into view",
+      "Quitting Arbor brings every window back into view" + (switchesChangedByArbor.isEmpty ? "" : ", and macOS tiling back"),
     ]
     keysLegend = Self.legend(for: steps.flatMap { $0.isNext ? [$0.lead, $0.text] : [$0.lead] } + waysBack)
 
@@ -298,11 +301,14 @@ public struct OnboardingModel: Equatable, Sendable {
       footnote = isBusy ? Self.whereArborLivesInShort : whereArborLives
       footnoteShowsMark = true
       if flow.steps.isComplete, !isPaused, let row = row(.desktopAndDock) {
-        if let action = row.action, facts.switches?.contains(.screenEdges) == true {
-          offer = Offer(text: "Want to dock with the mouse too?", action: action, failure: row.failure)
+        if let action = row.action, macOSTakesTheEdges {
+          offer = Offer(
+            text: "Want to dock with the mouse too? Only while Arbor runs: quit, and your Mac is as it was.", action: action,
+            failure: row.failure)
         } else if let undo = row.undo, switchesChangedByArbor.contains(.screenEdges), row.isSatisfied {
           // What the step did, and the way back where it was taken.
-          offer = Offer(text: "macOS tiling is off: drag a window to a screen edge, and it docks.", action: undo, failure: row.failure)
+          offer = Offer(
+            text: "macOS tiling is off while Arbor runs: drag a window to a screen edge, and it docks.", action: undo, failure: row.failure)
         }
       }
     }
@@ -416,7 +422,7 @@ public struct OnboardingModel: Equatable, Sendable {
 
   private static func rows(
     _ facts: SystemFacts, windowsOutOfView: Int, offersScreenRecording: Bool, appsWithOwnShortcuts apps: [String],
-    canFixSetup: Bool, changed: [MacSwitch], failure: String?, canDock: Bool, isNewcomer: Bool, shortcut: (Command) -> String?
+    canFixSetup: Bool, changed: [MacSwitch], givenBack: [MacSwitch], isPaused: Bool, failure: String?, canDock: Bool, isNewcomer: Bool, shortcut: (Command) -> String?
   ) -> [Row] {
     let settings = "Open Settings…"
     let stranded =
@@ -450,7 +456,9 @@ public struct OnboardingModel: Equatable, Sendable {
     if let all = facts.switches?.filter(\.isInArborsWay) {
       // What a newcomer is about to run into comes first: the first thing they will try is a drag.
       let order: [MacSwitch] = [.screenEdges, .menuBar, .optionKey, .stageManager]
-      let switches = order.filter(all.contains) + all.filter { !order.contains($0) }
+      // What Arbor has given back for the time being is on by Arbor's own doing, and in nobody's way: Arbor is not arranging windows.
+      let lent = givenBack
+      let switches = (order.filter(all.contains) + all.filter { !order.contains($0) }).filter { !lent.contains($0) }
       let mine = switches.filter(\.canBeSwitchedOffForYou).count
       // While macOS's switch for an edge is on, that whole edge is macOS's (collab/QUESTIONS.md, Q23).
       let takesEdges = switches.contains(.screenEdges) || switches.contains(.menuBar)
@@ -469,7 +477,8 @@ public struct OnboardingModel: Equatable, Sendable {
               // Spelled out: the key to the signs is on the next page.
               + (shortcut(.dock(nil, .left)).map { " (\(spelledOut($0)))" } ?? "") + ".")
         }
-        if offers { sentences.append("You can put it back at any time.") }
+        // The smaller the thing asked, the easier the answer: back to normal is one thing, Quit.
+        if offers { sentences.append("It is off only while Arbor runs: quit Arbor, and your Mac is as it was.") }
       }
       if switches.contains(.stageManager) { sentences.append("Stage Manager moves windows itself: use one or the other.") }
       let names = switches.filter(\.canBeSwitchedOffForYou).map(\.named)
@@ -488,13 +497,30 @@ public struct OnboardingModel: Equatable, Sendable {
       }
       if canFixSetup, !changed.isEmpty {
         // A tick says enough, except of what Arbor did to somebody's Mac. Whatever else the row has to say: the way back was promised here.
-        let one = changed.count == 1
-        row.done =
-          "Arbor switched off \(changed.count) setting\(one ? "" : "s") of macOS for you. \(one ? "It stays" : "They stay") off, even after you quit "
-          + "Arbor, until you put \(one ? "it" : "them") back: here, or later under Help → Check Setup… in Arbor’s menu."
-          // What it was for, where that has come true: every edge is Arbor's, and Arbor may and does move windows.
-          + (changed.contains(.screenEdges) && !takesEdges && canDock ? " A window dragged to a screen edge docks now." : "")
-        row.undo = Row.Action(one ? "Put It Back" : "Put Them Back", .fixSetup(undo: true))
+        // One that somebody has switched on again by hand is theirs.
+        let off = changed.filter { !switches.contains($0) }.count
+        let one = off == 1
+        if lent.isEmpty, off > 0 {
+          row.done =
+            "While Arbor runs, \(off) setting\(one ? "" : "s") of macOS \(one ? "is" : "are") off. Quit or pause Arbor, and your Mac is as "
+            + "it was. To end that for good: here, or later under Help → Check Setup… in Arbor’s menu."
+            // What it was for, where that has come true: every edge is Arbor's, and Arbor may and does move windows.
+            + (changed.contains(.screenEdges) && !takesEdges && canDock ? " A window dragged to a screen edge docks now." : "")
+          row.undo = Row.Action(one ? "Put It Back" : "Put Them Back", .fixSetup(undo: true))
+        } else if !lent.isEmpty {
+          // Neither a tick, which would say "off", nor advice: this is Arbor keeping its word.
+          if switches.isEmpty {
+            row.state = .note
+            row.status = "On for now"
+            row.importance = row.status
+            row.button = nil
+          }
+          row.done =
+            isPaused
+            ? "Arbor is paused, so macOS has its tiling back. Arbor switches it off again when it resumes."
+            : "Until Arbor may arrange windows, macOS keeps its tiling. Arbor switches it off when it starts, and only while it runs."
+          row.undo = Row.Action(lent.count == 1 ? "Leave It On" : "Leave Them On", .fixSetup(undo: true))
+        }
       }
       if let failure { row.failure = "That did not work: \(failure)." }
       rows.append(row)

@@ -227,7 +227,7 @@ func runSimulation() {
       print("")
       continue
     }
-    if words == ["relaunch"] || words == ["relaunch", "quit"] {
+    if firstLaunch == nil, words == ["relaunch"] || words == ["relaunch", "quit"] {
       // As the app does: `quit` is answered, then the app ends, which shuts the controller down. Then somebody starts Arbor.
       _ = harness.run("quit")
       harness.controller.shutdown()

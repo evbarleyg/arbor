@@ -21,7 +21,7 @@ public final class Harness {
   public let releases = FakeReleaseFeed()
   public let loginItem = FakeLoginItem()
   /// The switches under Desktop & Dock, as a Mac comes.
-  public let mac = FakeMacSwitchboard()
+  public let mac: FakeMacSwitchboard
   /// The welcome window. Made, and wired to the controller, when it is first asked for.
   public private(set) lazy var welcome = FakeWelcomeWindow(controller: controller)
   /// Records traces into memory (`trace on`, then `lastTrace`).
@@ -30,12 +30,15 @@ public final class Harness {
   /// `interpose` puts a window system between the controller and the fake one; trace replays use it.
   /// - Parameter system: the windows and displays of an earlier harness, for a new run of Arbor
   ///   on the same Mac; `displays` is then ignored.
+  /// - Parameter mac: that Mac's switches, and what Arbor wrote down about them.
   public init(
     displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Settings(),
-    saved: PersistedState? = nil, system: FakeWindowSystem? = nil,
+    saved: PersistedState? = nil, system: FakeWindowSystem? = nil, mac: FakeMacSwitchboard? = nil,
     interpose: ((FakeWindowSystem) -> any WindowSystem)? = nil
   ) {
     self.system = system ?? FakeWindowSystem(displays: displays)
+    self.mac = mac ?? FakeMacSwitchboard()
+    let mac = self.mac
     let system = self.system
     overlays = FakeOverlays()
     store = MemoryStateStore(saved: saved)
@@ -94,7 +97,7 @@ public final class Harness {
     system.events = nil
     system.stop()
     system.forgetSession()
-    let (new, ended) = (Harness(settings: controller.settings, saved: store.saved, system: system), controller.now())
+    let (new, ended) = (Harness(settings: controller.settings, saved: store.saved, system: system, mac: mac), controller.now())
     new.controller.now = { [scheduler = new.scheduler] in ended.addingTimeInterval(scheduler.now) }
     new.controller.restartedAfterAccident = byTheWatchdog
     return new

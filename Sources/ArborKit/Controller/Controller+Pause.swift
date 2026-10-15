@@ -139,6 +139,8 @@ extension Controller {
       scheduler.schedule("resume", after: left) { [weak self] in self?.timedPauseEnded() }
     }
     Log.info("paused, as before Arbor ended without quitting")
+    // However it ended: a paused Arbor has no use for them.
+    giveMacSwitchesBack()
     notify(.lifecycle)
     // The app the pause was for may not be in front any more.
     followFrontmostApp()

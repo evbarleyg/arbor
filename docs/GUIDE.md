@@ -108,7 +108,7 @@ One more is good to know and nothing to change: with **Click wallpaper to reveal
 
 Arbor checks all of this for you before it arranges anything, and changes none of it unasked: the welcome window lists what stands in the way, worst first, and so do **Check Setup…** (menu → Help) and `arborctl doctor` at any later time.
 
-**Or in one step.** The row has a button, **Switch Off macOS Tiling** (`arborctl fix-setup`). It switches off the three above, as far as they are on, and nothing else; macOS obeys at once, nothing restarts and no window moves. Arbor writes down how each was. **Put Them Back**, in the same row afterwards (`arborctl fix-setup undo`), restores exactly that, next week as well as now, and so does uninstalling. Stage Manager is not part of it: whoever has it on chose it.
+**Or in one step.** The row has a button, **Switch Off macOS Tiling** (`arborctl fix-setup`). It switches off the three above, as far as they are on, and nothing else; macOS obeys at once, nothing restarts and no window moves. Arbor writes down how each was. **They are off only while Arbor runs**: quit or pause Arbor and your Mac is exactly as it was; start or resume it and they are off again, without another question. A switch you flip yourself in the meantime is yours, and Arbor leaves it alone from then on. **Put Them Back**, in the same row afterwards (`arborctl fix-setup undo`), ends that for good, and so does uninstalling. Stage Manager is not part of it: whoever has it on chose it.
 
 ### Launch and permission
 

@@ -6,10 +6,13 @@ public struct MacSwitchRecord: Equatable, Sendable {
   public var item: MacSwitch
   /// Nil: nothing was stored, as on a Mac whose owner never touched the switch, and macOS went by its default.
   public var stored: Bool?
+  /// It is as it was, for the time being: Arbor has quit, is paused or may not arrange windows, and switches it off again when it starts.
+  public var isGivenBack: Bool
 
-  public init(_ item: MacSwitch, stored: Bool?) {
+  public init(_ item: MacSwitch, stored: Bool?, isGivenBack: Bool = false) {
     self.item = item
     self.stored = stored
+    self.isGivenBack = isGivenBack
   }
 }
 
@@ -36,7 +39,8 @@ public protocol MacSwitchboard: AnyObject {
 /// settings and the saved arrangement and part of neither.
 ///
 /// A list of `{"key": "EnableTilingByEdgeDrag", "stored": true}`, without `stored` where nothing was stored: by macOS's own names, so
-/// that whoever finds the file can put things back by hand (`defaults delete com.apple.WindowManager <key>`). No file: nothing is owed.
+/// that whoever finds the file can put things back by hand (`defaults delete com.apple.WindowManager <key>`). With `"givenBack": true` the
+/// switch is as it was and only the choice is on record. No file: nothing is owed, and nothing was chosen.
 public struct MacSwitchLedger: Sendable {
   public static let fileName = "macos-settings-before.json"
   public let file: URL
@@ -46,7 +50,7 @@ public struct MacSwitchLedger: Sendable {
   /// Nil if there is a file that cannot be read as such a list: what it says is owed all the same.
   public func read() -> [MacSwitchRecord]? {
     entries()?.compactMap { entry in
-      Self.item(of: entry).map { MacSwitchRecord($0, stored: entry["stored"] as? Bool) }
+      Self.item(of: entry).map { MacSwitchRecord($0, stored: entry["stored"] as? Bool, isGivenBack: entry["givenBack"] as? Bool ?? false) }
     }
   }
 
@@ -59,6 +63,7 @@ public struct MacSwitchLedger: Sendable {
       + records.map { record in
         var entry: [String: Any] = ["key": record.item.defaultsKey]
         if let stored = record.stored { entry["stored"] = stored }
+        if record.isGivenBack { entry["givenBack"] = true }
         return entry
       }
     do {

@@ -1391,7 +1391,9 @@ All three show state, so each is a headless model that the app only draws.
 - **The one step.** `fix-setup` (`Controller+FixSetup.swift`) switches off the Desktop & Dock settings that are in the way, through the seam
   `MacSwitchboard` (`SystemMacSwitchboard`: the `com.apple.WindowManager` defaults, which macOS follows within a second with nothing restarted), after writing
   down how each was stored (`macos-settings-before.json` beside the settings, part of neither them nor the saved arrangement); `fix-setup undo` and
-  `Arbor --fix-setup undo` (`make uninstall`) put them back. Only when asked. An Arbor limited to some processes (`ARBOR_ONLY_PIDS`) has no switchboard,
+  `Arbor --fix-setup undo` (`make uninstall`) put them back for good. Only when asked, and only while Arbor runs: `shutdown()` (a quit, a pause, the permission
+  gone) gives them back and marks the records `givenBack`, `start()` takes them again, each only where the switch still stands as Arbor left it; the order of
+  writing is such that wherever Arbor ends, nothing is off that is not written down as owed. An Arbor limited to some processes (`ARBOR_ONLY_PIDS`) has no switchboard,
   so its window shows no such button, unless `ARBOR_MAC_SWITCHES=1`.
 - **`doctor`** is `Controller.doctorReport()`: the same facts plus the settings, the shortcuts and the displays. It calls a shortcut
   refused only if macOS refused it when the app asked (`refusedBindings`), and misses a gesture's event tap only if `inputSettings` wants

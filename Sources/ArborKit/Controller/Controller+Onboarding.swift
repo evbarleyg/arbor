@@ -17,7 +17,8 @@ extension Controller {
     facts.accessibility = hasPermission(facts)
     return OnboardingModel(
       facts, flow: flow, windowsOutOfView: permissionLoss?.windows ?? 0, offersScreenRecording: offersScreenRecording, appsWithOwnShortcuts: passThroughSuggestions.map(\.name),
-      canFixSetup: macSwitchboard != nil, switchesChangedByArbor: macSwitchesChangedByArbor, fixSetupFailure: fixSetupFailure,
+      canFixSetup: macSwitchboard != nil, switchesChangedByArbor: macSwitchesChangedByArbor, switchesGivenBack: macSwitchesLent,
+      fixSetupFailure: fixSetupFailure,
       menuBarIsOneIcon: menuBarIsSurelyOneIcon, desktops: desktopsBetweenWhatIsDocked,
       isNewcomer: isFirstLaunch && workspaces.values.allSatisfy { $0.tree.allWindows.isEmpty }, isPaused: isPaused && accessibilityGranted,
       shortcut: { KeyBindings.label(for: $0, in: bindings) })
@@ -92,6 +93,8 @@ public final class OnboardingSession {
     flow = OnboardingFlow(isReady: facts.accessibility)
     model = controller.onboardingModel(facts, flow: flow)
     controller.observe { [weak self] _ in self?.arrangementChanged() }
+    // With the facts of a second ago the window would hold what Arbor has just done against the Mac.
+    controller.macSwitchesDidChange = { [weak self] in self?.refresh() }
   }
 
   private static func facts(of controller: Controller) -> SystemFacts {

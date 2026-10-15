@@ -723,7 +723,7 @@ public enum Command: Equatable, Sendable, Codable {
       watch [events…] [--titles]                 stream changes as lines of JSON (docs/SCRIPTING.md)
       doctor                                     check permissions, macOS settings, shortcuts and settings.json
       check-setup | welcome                      open the welcome window: what matters on this Mac | four moves to try
-      fix-setup [undo]                           switch off the macOS settings `doctor` finds in Arbor's way | put them back as they were
+      fix-setup [undo]                           keep the macOS settings `doctor` finds in Arbor's way off while Arbor runs | leave them alone again
       menu-bar | menu                            the buttons the menu bar item shows, and where each is | its menu, as text
       stats [reset]                              what commands and calls to other apps cost | start counting afresh
       spaces                                     the named spaces, what they hold and where they are

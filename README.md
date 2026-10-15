@@ -160,8 +160,8 @@ and shows what matters, with a live tick on everything that is in order and a bu
   changed: switch it off and on again ([docs/INSTALL.md](docs/INSTALL.md) has how to sign so that this does not happen).
 - **macOS tiling** (recommended): macOS's own tiling, three settings under Desktop & Dock, reacts to the same drags as Arbor, and before it. **Switch Off macOS Tiling** in
   the row does it in one step (`arborctl fix-setup`): it changes those settings and nothing else, takes effect at once, and writes down how they
-  were, so that **Put Them Back** in the same row (Help → Check Setup…, or `arborctl fix-setup undo`) and `make uninstall` leave the Mac as
-  Arbor found it. Nothing is changed unasked. By hand: under Windows,
+  were. They are off **only while Arbor runs**: a quit or a pause leaves the Mac as Arbor found it, and the next start switches them off again.
+  **Put Them Back** in the same row (Help → Check Setup…, or `arborctl fix-setup undo`) and `make uninstall` end that for good. Nothing is changed unasked. By hand: under Windows,
   switch off "Drag windows to left or right edge of screen to tile", "Drag windows to menu bar to fill screen" and "Hold ⌥ key
   while dragging windows to tile" (macOS 15 and later). The row names the ones that are still on. Stage Manager itself moves
   windows too: use one or the other. "Click wallpaper to reveal desktop" (macOS 14 and later) is left alone, and is only a note in `arborctl doctor`:
