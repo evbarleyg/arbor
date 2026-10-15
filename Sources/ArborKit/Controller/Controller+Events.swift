@@ -102,11 +102,14 @@ extension Controller: WindowSystemEvents {
       if claimPendingSlot(for: window) { return }
     }
 
-    // A Space switch reports each window separately: see Controller+Spaces.swift.
+    // A Space switch reports each window separately: see Controller+Spaces.swift. What has gone away nobody sees, so the layout can wait
+    // to hear why: a window on its way into full screen leaves its app's list a moment before it says so.
     if previous?.isOnActiveSpace != window.isOnActiveSpace {
-      scheduleSpaceRelayout(display)
+      scheduleSpaceRelayout(display, after: window.isOnActiveSpace ? 0 : Self.timeToSayWhyItWent)
       return
     }
+
+    if neighboursWaitWhileItGoesIntoFullScreen(window, was: previous, on: display) { return }
 
     // Hiding or showing an app also reports each of its windows separately. Laying out after each would move
     // windows of the app that is being hidden, and their neighbours once per window.
