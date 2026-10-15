@@ -610,28 +610,6 @@
    ]
   },
   {
-   "id": "on-the-way-out-of-full-screen-the-space-notice-may-come-a-moment-too-early",
-   "kind": "order-of-reports",
-   "layer": "below the seam",
-   "expected": "When macOS says that the active Space has changed, a window that has left full screen is on its app's list again, so the look at the lists which that notice starts finds it.",
-   "happened": "While a window leaves full screen its app lists a stand-in in its place. In one day's run the notice came 0.14 s after the stand-in's end. In 2 rounds of 4 it came a few milliseconds before it: the look at the lists then misses the window, and Arbor hears of it only from the second look a second later (`rescanSoon`), 1.07 s after the window is on screen. Its neighbours, the focus and the ring are all a second late.",
-   "found": "Traces and samples of a docked window leaving full screen, four rounds and a day with real apps, on hosted Macs.",
-   "modelled": "no",
-   "knobs": [],
-   "guards": [],
-   "copes": "open",
-   "hurt": 2,
-   "touches": [
-    "focus",
-    "slow"
-   ],
-   "sources": [
-    "Sources/ArborKit/AX/AXWindowSystem.swift",
-    "docs/features/F30-full-screen-windows.md",
-    "Sources/ArborTesting/FakeWindowSystem.swift"
-   ]
-  },
-  {
    "id": "echoes-come-app-by-app-not-in-the-order-of-the-calls",
    "kind": "order-of-reports",
    "layer": "at the seam",
