@@ -306,7 +306,8 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     let layout = FinderLayout(screen: screen, rows: 4, hasMessage: false)
     #expect(layout.panel.width == 600)
     #expect(layout.panel.midX == screen.midX)
-    #expect(layout.panel.minY == (25 + 875.0 / 4).rounded())
+    // The type is said: inside `#expect`, Swift 6.2 on Linux takes the sum for a Double and finds it unequal to a CGFloat of the same value.
+    #expect(layout.panel.minY == CGFloat((25 + 875.0 / 4).rounded()))
     #expect(layout.panel.height == CGFloat(56 + 16 + 4 * 38))
   }
 
