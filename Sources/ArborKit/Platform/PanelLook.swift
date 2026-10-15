@@ -92,10 +92,11 @@ public enum PanelLook {
     /// ground's colour was not either. With Increase Contrast a whole line.
     public static func plateEdge(increasesContrast: Bool) -> Double { increasesContrast ? 1 : 0.7 }
 
-    /// Of the Desktop's outline.
+    /// Of the Desktop's outline, which is all there is of it: so out of view it is the line that is fainter, and still a line. At 0.3
+    /// it stood beside windows' lines of twice that, and out from the map by 2.1 to 2.7.
     public static func desktopLine(isInView: Bool, increasesContrast: Bool) -> Double {
       if increasesContrast { return 1 }
-      return isInView ? 0.6 : 0.3
+      return isInView ? plateEdge(increasesContrast: false) : 0.5
     }
   }
 

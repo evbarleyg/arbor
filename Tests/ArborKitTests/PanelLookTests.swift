@@ -192,6 +192,16 @@ import Testing
     }
   }
 
+  @Test(arguments: underAHeadsUpPanel) func soHasTheDesktopAndOutOfViewAFainterOne(ground: Ground) {
+    let under = PanelLook.veil(isDark: ground.isDark).over(ground.colour)
+    func stands(_ strength: Double) -> Double { RGBA(white: ground.isDark ? 1 : 0, alpha: strength).over(under).contrast(with: under) }
+    let (inView, away) = (
+      PanelLook.Map.desktopLine(isInView: true, increasesContrast: false),
+      PanelLook.Map.desktopLine(isInView: false, increasesContrast: false)
+    )
+    #expect(stands(inView) >= 3 && stands(away) >= 3 && away < inView, "\(ground), dark: \(ground.isDark)")
+  }
+
   /// The control: a window in view had its colour alone. Of these apps on these grounds more than half did not stand out by 3, and a
   /// fifth not by 1.5.
   @Test func withoutALineAWindowInViewOftenDidNot() {
@@ -219,9 +229,8 @@ import Testing
         let desktop = PanelLook.Map.desktopLine(isInView: isInView, increasesContrast: true)
         #expect(RGBA(white: isDark ? 1 : 0, alpha: desktop).over(ground).contrast(with: ground) >= 3)
       }
-      // The control: the setting changed nothing. The ruler read 2.08 and 2.71 off the Desktop's rectangle.
-      let before = PanelLook.Map.desktopLine(isInView: false, increasesContrast: false)
-      #expect(RGBA(white: isDark ? 1 : 0, alpha: before).over(ground).contrast(with: ground) < 3)
+      // The control: at 0.3, which the setting did not change. The ruler read 2.08 and 2.71 off the Desktop's rectangle.
+      #expect(RGBA(white: isDark ? 1 : 0, alpha: 0.3).over(ground).contrast(with: ground) < 3)
     }
   }
 

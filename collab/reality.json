@@ -11749,6 +11749,26 @@
    ]
   },
   {
+   "id": "what-lies-behind-docked-windows-is-under-their-shadows",
+   "kind": "looks",
+   "layer": "below the seam",
+   "expected": "A colour Arbor draws in a gap between docked windows comes out on screen as that colour.",
+   "happened": "The gap's handle and the surface are ordered behind the docked windows, and macOS draws the windows' shadows over whatever lies behind them. In a gap of 12 points everything came out multiplied by about 0.70 in the light look and 0.49 in the dark one: the accent (0,64,221) as (0,45,156), (23,116,218) as (11,56,107); a white line is 179 of 255 at most in the light look. The surface itself runs from (72,101,81) beside a window to (96,133,108) sixty pixels away. So black and white, 21 to 1 apart on paper, are 10 apart there in the light look and 5 in the dark one, and over a wallpaper of middling brightness in the dark look no colour reaches 3 to 1.",
+   "found": "The judges' ruler on pictures from a hosted Mac (macOS 26.6) of the handle with Increase Contrast, and a reader's arithmetic on the raw pixels, counted twice.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [
+    "test: inTheGapOneOfThemStillStandsOutUnderTheWindowsShadows"
+   ],
+   "copes": "Sources/ArborKit/Platform/PanelLook.swift: with Increase Contrast what Arbor draws on other apps' ground has a point of black and a point of white, the two tones farthest apart; the test reckons them under the shadows on the grounds that were measured. What colour cannot cure stays: it would take the handle in front of the windows.",
+   "hurt": 4,
+   "sources": [
+    "Sources/ArborKit/Platform/PanelLook.swift",
+    "Sources/ArborKit/UI/AppKitOverlays.swift",
+    "Tests/ArborKitTests/PanelLookTests.swift"
+   ]
+  },
+  {
    "id": "what-macos-zooms-a-window-to-is-its-apps-to-say",
    "kind": "second-actor",
    "layer": "at the seam",

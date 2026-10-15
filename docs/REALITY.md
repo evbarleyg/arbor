@@ -64,16 +64,16 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [permissions](#permissions) | 23 | 8 | 6 | 3 | 3 | 11 | 12 | 2 | 2 | 7 | 4 |
 | [timing](#timing) | 54 | 7 | 7 | 16 | 9 | 22 | 29 | 4 | 7 | 14 | 10 |
 | [input](#input) | 59 | 8 | 7 | 15 | 13 | 24 | 23 | 6 | 8 | 22 | 11 |
-| [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
+| [looks](#looks) | 22 | 0 | 0 | 0 | 1 | 21 | 3 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 45 | 1 | 0 | 1 | 4 | 40 | 26 | 1 | 2 | 16 | 7 |
-| **all** | 461 | 62 | 90 | 124 | 70 | 177 | 234 | 19 | 60 | 148 | 109 |
+| **all** | 462 | 62 | 90 | 124 | 70 | 178 | 235 | 19 | 60 | 148 | 109 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
-| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 144 | 89 | 46 | 13 | 33 | 52 |
+| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 145 | 89 | 47 | 13 | 33 | 52 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 163 | 97 | 121 | 0 | 11 | 31 |
 | controller | in the controller or the core, given reports that were right | 27 | 14 | 15 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 81 | 0 | 25 | 5 | 11 | 40 |
@@ -5064,6 +5064,18 @@ Looks: what is on the screen is not what the model said.
 - **Guard:** **none**
 - **Arbor copes:** **not yet**
 - **Read in:** `Sources/arbor-fakemac/Arbor.swift`, `Sources/arbor-fakemac/World+Pointer.swift`, `Sources/ArborKit/UI/BackdropPanel.swift`, `Sources/ArborKit/UI/HeadsUpPanel.swift`, `scripts/mac-shell/lib.sh`
+
+### what-lies-behind-docked-windows-is-under-their-shadows
+
+*hurt 4 · below the seam*
+
+- **Expected:** A colour Arbor draws in a gap between docked windows comes out on screen as that colour.
+- **Happened:** The gap's handle and the surface are ordered behind the docked windows, and macOS draws the windows' shadows over whatever lies behind them. In a gap of 12 points everything came out multiplied by about 0.70 in the light look and 0.49 in the dark one: the accent (0,64,221) as (0,45,156), (23,116,218) as (11,56,107); a white line is 179 of 255 at most in the light look. The surface itself runs from (72,101,81) beside a window to (96,133,108) sixty pixels away. So black and white, 21 to 1 apart on paper, are 10 apart there in the light look and 5 in the dark one, and over a wallpaper of middling brightness in the dark look no colour reaches 3 to 1.
+- **Found by:** The judges' ruler on pictures from a hosted Mac (macOS 26.6) of the handle with Increase Contrast, and a reader's arithmetic on the raw pixels, counted twice.
+- **Stand-ins play it:** cannot: it lies below or beside the seam
+- **Guard:** `test: inTheGapOneOfThemStillStandsOutUnderTheWindowsShadows`
+- **Arbor copes:** Sources/ArborKit/Platform/PanelLook.swift: with Increase Contrast what Arbor draws on other apps' ground has a point of black and a point of white, the two tones farthest apart; the test reckons them under the shadows on the grounds that were measured. What colour cannot cure stays: it would take the handle in front of the windows.
+- **Read in:** `Sources/ArborKit/Platform/PanelLook.swift`, `Sources/ArborKit/UI/AppKitOverlays.swift`, `Tests/ArborKitTests/PanelLookTests.swift`
 
 ### what-the-window-server-adds-cannot-be-drawn-off-screen
 
