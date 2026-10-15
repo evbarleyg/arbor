@@ -3,11 +3,12 @@
 #
 #   scripts/mac-shell/rehearse.sh scripts/mac-shell/films-arms.sh     on Linux, first, for nothing (one arm, a test window for Safari)
 #   scripts/mac-shell/run.sh scripts/mac-shell/films-arms.sh          about a quarter of an hour on a hosted Mac
-#   scripts/polish/judge.py acts .mac-shell/films-arms-<run id>       anywhere, afterwards
+#   scripts/polish/arms.py .mac-shell/films-arms-<run id> test|safari   anywhere, afterwards
 #
-# A count of requests on Linux says how often Arbor asks. It cannot say what a person sees: whether a Mac draws the state between two askings. So: one Safari window on a page of one flat
-# colour, which the judge's ruler can follow; the acts by real keys, without motion; each arm's Arbor built here from its own commit, so that Mac, macOS, Safari and camera are the same for all;
-# and macOS's own tiling of the same window, with no Arbor running, as the bar. What is counted, act by act: the frames in which the window is seen at the size of the end
+# A count of requests on Linux says how often Arbor asks. It cannot say what a person sees: whether a Mac draws the state between two askings. That depends on how long the state lasts and on how
+# fast the app draws. So the acts are played twice: on a test window, which draws at once and so shows every state (the strict judge: a cure is held to it), and on one Safari window on a page of
+# one flat colour (the lenient one: a cure is shown on it). By real keys, without motion; each arm's Arbor built here from its own commit, so that Mac, macOS, apps and camera are the same for all;
+# and macOS's own tiling of the same Safari window, with no Arbor running, as the bar. What is counted, act by act: the frames in which the window is seen at the size of the end
 # and the place of the start, or anywhere outside what its old frame and its new one cover.
 #
 # ARMS: name=commit, in the order they are played. `head` is the commit under test, whose build the harness has made anyway. A commit must be given in full: the Mac's clone is one commit deep.
@@ -46,8 +47,8 @@ arms_restore() { git -C "$ARBOR_ROOT" reset --quiet --hard HEAD; }
 
 front() {
   local point
-  point=$("$FILM_APPTOOL" grab "$SAFARI" 2>/dev/null | cut -d ' ' -f 1,2)
-  [ -n "$point" ] || point=$(titlebar_of "$SAFARI")
+  point=$("$FILM_APPTOOL" grab "$TARGET" 2>/dev/null | cut -d ' ' -f 1,2)
+  [ -n "$point" ] || point=$(titlebar_of "$TARGET")
   # shellcheck disable=SC2086
   click $point
   sleep 0.6
@@ -59,49 +60,56 @@ act() {
   scene_end 1.6
 }
 
-# The acts of one arm. A size that Arbor has not seen in this run is asked for differently from one it has: so every side once, then a quit and a launch, and the first side again.
+# Where every playing begins: floating, in the middle, at a size that is no slot's.
+home() {
+  ctl float-all
+  sleep 1
+  if [ "$TARGET" = "$W1" ]; then
+    tell 1 "move $W1 260 120 574 380"
+  else
+    "$FILM_APPTOOL" set-frame "$TARGET" 260 120 574 380 > /dev/null
+    # The harness's own test window, out of the way.
+    tell 1 "move $W1 760 560 240 130"
+  fi
+  sleep 1.2
+}
+
+# play <arm> test|safari: the acts of one arm on one window. A size that Arbor has not seen in this run is asked for differently from one it has: so every side once, then a quit and a launch,
+# and the first side again.
 play() {
-  local arm=$1
+  local arm=$1 cast=$2 p="$1-$2"
   ARBOR_BIN="$ARMS_DIR/$arm"
   [ -n "${ARBOR_REHEARSAL:-}" ] && ARBOR_BIN=$HEAD_BIN
   arbor_settings "$LIGHT"
-  ARBOR_EXTRA_PIDS=$SAFARI_PID
+  ARBOR_EXTRA_PIDS=""
+  [ "$cast" = test ] || ARBOR_EXTRA_PIDS=$SAFARI_PID
   arbor_start 1 $FACE
-  [ -n "$SAFARI" ] || SAFARI=$W1
+  TARGET=$W1
+  [ "$cast" = test ] || [ -z "$SAFARI" ] || TARGET=$SAFARI
   sleep 3
-  # The harness's own test window, out of the way.
-  [ "$SAFARI" = "$W1" ] || tell 1 "move $W1 760 560 240 130"
-  ctl trace on "arm-$arm" || true
-  tell_safari_home
+  ctl trace on "arm-$p" || true
+  home
   front
-  act "$arm-1-dock-left" "docks Safari at the left" ctrl+opt+cmd+left
-  act "$arm-2-float" "floats it" ctrl+opt+f
-  act "$arm-3-dock-right" "docks it at the right" ctrl+opt+cmd+right
-  act "$arm-4-float" "floats it" ctrl+opt+f
-  act "$arm-5-dock-top" "docks it at the top" ctrl+opt+cmd+up
+  act "$p-1-dock-left" "docks it at the left" ctrl+opt+cmd+left
+  act "$p-2-float" "floats it" ctrl+opt+f
+  act "$p-3-dock-right" "docks it at the right" ctrl+opt+cmd+right
+  act "$p-4-float" "floats it" ctrl+opt+f
+  act "$p-5-dock-top" "docks it at the top" ctrl+opt+cmd+up
   summary
   sleep 1
   ctl trace off || true
-  scene "$arm-6-quit" instant "quits Arbor"
+  scene "$p-6-quit" instant "quits Arbor"
   ctl quit
   scene_end 1.6
   arbor_ended
-  scene "$arm-7-launch" instant "starts Arbor again"
+  scene "$p-7-launch" instant "starts Arbor again"
   arbor_relaunch
   scene_end 2.5
   front
-  act "$arm-8-float" "floats it" ctrl+opt+f
-  act "$arm-9-dock-left" "docks it at the left: the first dock after a launch" ctrl+opt+cmd+left
+  act "$p-8-float" "floats it" ctrl+opt+f
+  act "$p-9-dock-left" "docks it at the left: the first dock after a launch" ctrl+opt+cmd+left
   summary
   arbor_stop
-}
-
-# Where every arm begins: floating, in the middle, at a size that is no slot's.
-tell_safari_home() {
-  ctl float-all
-  sleep 1
-  [ -n "${ARBOR_REHEARSAL:-}" ] || "$FILM_APPTOOL" set-frame "$SAFARI" 260 120 520 380 > /dev/null
-  sleep 1.2
 }
 
 macos() {
@@ -150,8 +158,13 @@ ARBOR_TEST_WINDOWS_ARGS="--regular"
 step "the camera's own square"
 metronome good
 
+SAFARI="" SAFARI_PID="" TARGET=""
+for arm in $PLAYED; do
+  step "arm $arm, a test window"
+  play "$arm" test
+done
+
 step "Safari, on a page of one colour"
-SAFARI="" SAFARI_PID=""
 if [ -z "${ARBOR_REHEARSAL:-}" ]; then
   scratch_dir arms-page PAGE_DIR
   printf '<!doctype html><title>page</title><body style="margin:0;background:#ff8d28"></body>\n' > "$PAGE_DIR/page.html"
@@ -167,12 +180,13 @@ if [ -z "${ARBOR_REHEARSAL:-}" ]; then
 fi
 
 for arm in $PLAYED; do
-  step "arm $arm"
-  play "$arm"
+  step "arm $arm, Safari"
+  play "$arm" safari
 done
 
 step "macOS alone, the same window: no Arbor is running"
-[ -n "${ARBOR_REHEARSAL:-}" ] || "$FILM_APPTOOL" set-frame "$SAFARI" 260 120 520 380 > /dev/null
+TARGET=$SAFARI
+[ -n "${ARBOR_REHEARSAL:-}" ] || "$FILM_APPTOOL" set-frame "$SAFARI" 260 120 574 380 > /dev/null
 sleep 1.2
 if [ -z "${ARBOR_REHEARSAL:-}" ]; then
   macos macos-left "chooses Window ▸ Move & Resize ▸ Left" "Left"

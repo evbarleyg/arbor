@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """Lays the arms of scripts/mac-shell/films-arms.sh side by side: the same acts on one Mac by Arbor as built from several commits.
 
-  arms.py <run folder> [#rrggbb]        the table, act by act and arm by arm, then the count
+  arms.py <run folder> test|safari      the table, act by act and arm by arm, then the count: of the acts on the test window, or of those on Safari
   arms.py --self-test
 
-A real app's window is no flat rectangle with a plain title bar, so the judge's ruler does not follow it. But the films show one window on a page of one colour (films-arms.sh: #ff8d28), which
-macOS carries up into the toolbar: so the box of everything near that colour, in every frame, is the window as the display drew it. From those boxes, for every act: in how many pieces it arrived
+A real app's window is no flat rectangle with a plain title bar, so the judge's ruler does not follow it. But the films show one window of one colour (the test window's own; Safari on a page of
+one colour, which macOS carries up into the toolbar): so the box of everything near that colour, in every frame, is the window, less its title bar if that is plain, as the display drew it. From those boxes, for every act: in how many pieces it arrived
 and how long that took; the display's frames in which the window had the size of the end at the place of the start; those in which it covered what neither its old frame nor its new one covers.
 
 Needs numpy and Pillow (and no Mac).
@@ -71,13 +71,24 @@ def act(sequence, ends):
     return {"states": states, "pieces": len(states), "took": states[-1][0] - states[0][0], "sized": sized, "outside": out, "end": new}
 
 
-def table(folder, colour, out=sys.stdout):
-    films, acts, arms = os.path.join(folder, "films"), {}, []
+# The colours as a hosted Mac's display shows them.
+CAST = {"test": (255, 56, 60), "safari": (255, 141, 40)}
+
+
+def table(folder, cast, out=sys.stdout):
+    films, acts, arms, colour = os.path.join(folder, "films"), {}, [], CAST[cast]
     for name in sorted(os.listdir(films)):
         if not os.path.isfile(os.path.join(films, name, "film.log")) or name.startswith(("metronome-", "ground")):
             continue
-        film = Film(os.path.join(films, name))
         arm, _, what = name.partition("-")
+        # <arm>-<cast>-<act>; films of the first run have no cast in their names and are Safari's.
+        if what.startswith(("test-", "safari-")):
+            if not what.startswith(cast + "-"):
+                continue
+            what = what.partition("-")[2]
+        elif cast != "safari":
+            continue
+        film = Film(os.path.join(films, name))
         said = act(boxes(film, colour), film.ends)
         if said is not None:
             acts.setdefault(what if arm != "macos" else name, {})[arm] = said
@@ -134,8 +145,7 @@ def main(arguments):
         return 0
     if arguments[0] == "--self-test":
         return self_test()
-    text = (arguments[1] if len(arguments) > 1 else "#ff8d28").lstrip("#")
-    return table(arguments[0], tuple(int(text[place:place + 2], 16) for place in (0, 2, 4)))
+    return table(arguments[0], arguments[1] if len(arguments) > 1 else "safari")
 
 
 if __name__ == "__main__":
