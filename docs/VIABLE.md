@@ -209,7 +209,7 @@ Each window at most once, straight to where it ends up: that holds in every row,
 | A dock, by key or by a drag with ⌘ held | that window and the docked windows. **No floating window, ever** (Q20) |
 | A float; a docked window closes, is minimized or hidden, or comes back | that window and the docked windows. There and back is nothing: hidden and unhidden, every window is where it was |
 | A drag | the dragged window goes where the pointer goes. Everything else waits for the button (`reflowWhileDragging` ships false). **A plain drag of a floating window is what it is without Arbor** (Q29): nothing of Arbor's shows, nothing else moves at the release. A docked window dragged plainly comes out, and the docked windows close its place |
-| A move of the view; a switch to a window out of view | the docked windows. **No floating window** (Q29 withdraws Q20's one exception) |
+| A move of the view; a switch to a window out of view | the docked windows. **No floating window** (Q29 withdraws what Q20 calls "the one thing Arbor does": taking them out of view. The fit after a change of displays, Q20's "one exception", stands) |
 | What a person asks macOS for: a double-click on a title bar, full screen, a size or a place set by hand | what macOS makes of it. **Arbor reverses none of it** (IDEAS I25 a) |
 | A gap or an edge is dragged | the windows on both sides of it |
 | A window is kept in view, let go of again, or dragged or resized while it is kept in view | a docked window that is pinned goes to its own earlier size, once; after that the pinned window moves by the hand only. The docked windows, which make room beside it (Q25) |
