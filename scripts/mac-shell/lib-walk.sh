@@ -62,7 +62,7 @@ WALK_LEFT_OUT=0
 WALK_NEW=""
 WALK_MINIMIZED=""
 WALK_HIDDEN=""
-WALK_PAUSED=""
+WALK_PAUSED="" WALK_BEFORE_PAUSE="" WALK_MOVED_IN_PAUSE=""
 WALK_FULL_SCREEN=""
 # Whether this walk may have a second display, and whether it is plugged in.
 WALK_TWO=""
@@ -147,6 +147,8 @@ back_home() { [ -n "$WALK_HOME" ] && echo "returns=$WALK_HOME"; }
 
 walk_act() {
   WALK_ACTS=$((WALK_ACTS + 1))
+  # During a pause, anything but these changes what there is to come back to. The one drag that can be played then is of a floating window.
+  case "$1" in idle | drag | way-out) ;; *) WALK_BEFORE_PAUSE="" ;; esac
   act "$@"
 }
 
@@ -444,6 +446,7 @@ drag_by() {
   walk_act drag "drag-$1-by" "drags $1, which floats, by its title bar $2 across and $3 down"
   must drag_window "$window" "$x" "$y"
   changed
+  [ -z "$WALK_PAUSED" ] || WALK_MOVED_IN_PAUSE="${WALK_MOVED_IN_PAUSE:+$WALK_MOVED_IN_PAUSE,}$window"
   # Its size too: macOS gives a window it had tiled its earlier size back under the hand.
   acted drags="$window" front="$window" own="$window"
 }
@@ -693,13 +696,16 @@ send_across() {
 
 # MARK: The ways out
 
+# A pause is as if Arbor had quit, and it comes back (QUESTIONS Q21): every window at its own frame and nothing raised, then everything as it was.
 pause() {
+  local front
   arbor_acts || { left_out "pause: Arbor is not acting"; return; }
+  front=$(front_window)
   walk_act way-out pause "presses ⌃⌥⎋"
   key ctrl+opt+escape
-  WALK_PAUSED=yes
+  WALK_PAUSED=yes WALK_BEFORE_PAUSE=$((DAY_STEP - 1)) WALK_MOVED_IN_PAUSE=""
   changed
-  acted moves=any restores=all everything=1
+  acted moves=any restores=all places=1 everything=1 ${front:+front="$front"}
 }
 
 resume() {
@@ -707,7 +713,9 @@ resume() {
   walk_act way-out resume "presses ⌃⌥⎋"
   key ctrl+opt+escape
   WALK_PAUSED=""
-  acted moves=any
+  # A floating window its person moved meanwhile stays where they put it.
+  acted moves=any ${WALK_BEFORE_PAUSE:+returns="$WALK_BEFORE_PAUSE" ${WALK_MOVED_IN_PAUSE:+but="$WALK_MOVED_IN_PAUSE"}}
+  WALK_BEFORE_PAUSE=""
   # The pause ended the trace.
   day_trace
 }
@@ -750,7 +758,7 @@ walk_quit() {
   walk_act quit-and-start quit "chooses Quit Arbor in Arbor's menu"
   must arbor_menu up return
   want "Arbor ends within five seconds" day_gone
-  WALK_PAUSED=""
+  WALK_PAUSED="" WALK_BEFORE_PAUSE=""
   acted moves=any restores=all places=1 everything=1
 }
 
