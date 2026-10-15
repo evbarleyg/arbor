@@ -1,24 +1,24 @@
 #!/bin/bash
-# The films that docs/POLISH.md is scored on: everything of Arbor's that moves, done as a person does it, in one run.
+# The films of the second column of docs/POLISH.md, the options: everything of Arbor's that moves once motion is switched on, done as a person does it, in one run.
+# (What ships is films-light.sh's.)
 #
 #   scripts/mac-shell/rehearse.sh scripts/mac-shell/films.sh      on Linux, first, for nothing
 #   scripts/mac-shell/run.sh scripts/mac-shell/films.sh           about a quarter of an hour on a hosted Mac
-#   scripts/polish/judge.py score .mac-shell/films-<run id>       anywhere, afterwards
+#   scripts/polish/judge.py score --options .mac-shell/films-<run id>     anywhere, afterwards
 #
 # What only a Mac can answer: what the display really showed, frame by frame, while Arbor moved things. What the sandbox judges
 # afterwards: all of it. The script checks only that its scenes played; it has no opinion on how they looked.
 #
 # 1. The metronome: the camera and the judge are tried on a motion that is known, right once and wrong in five ways.
-# 2. Arbor as it ships, at macOS's default settings (GitHub's Macs come with Reduce Motion and Reduce Transparency on: both are switched
-#    off). The moves (below), whether or not they do anything as shipped, then
+# 2. Motion, the ring and the menu bar's buttons on, in so many words (OPTIONS), everything else as it ships, at macOS's default settings (GitHub's Macs come with
+#    Reduce Motion and Reduce Transparency on: both are switched off). The moves (below), whether or not they do anything so, then
 #    the rest of the camera, peek, a seam, Arbor's own panels, quitting; then docking by key, floating, undo and closing.
 # 3. A window too large for its slot: the tile, and opening it.
 # 4. The moves again in dark mode, on a light wallpaper, where shadows and dark lines show.
 # 5. With Reduce Motion on: the same result at once, and no stage.
 # 6. With pictures of the windows (`windowPictures`, which ships off): judged, not counted.
 # 7. Eight windows on a large display.
-# 8. The moves again, light and dark, with everything on: "Trackpad and mouse gestures", and macOS's own tiling off. The laboratory's own
-#    column: how good a move is once it ships. No gate reads it.
+# 8. The moves again, light and dark, with "Trackpad and mouse gestures" on as well, and macOS's own tiling off: where a move was filmed so, that film counts.
 ARBOR_TIME_LIMIT=1120
 source "$(dirname "$0")/lib-film.sh"
 needs_throwaway_mac "film the whole display, and change Reduce Motion, the appearance, the wallpaper and the display's size"
@@ -146,6 +146,8 @@ moves() {
 # Four floating windows that lie beside one another, and still do once one of them is docked at the left: of windows that
 # overlap, the judge's ruler can tell neither where one ends nor which is which.
 spread() {
+  ctl float-all
+  sleep 1
   tell 4 "move $W4 40 70 300 200"
   tell 1 "move $W1 400 70 300 190"
   tell 2 "move $W2 400 285 300 190"
@@ -187,11 +189,14 @@ sampler_start
 ARBOR_TEST_WINDOWS_ARGS="--regular"
 # Shortcuts on, as a person has them; and the two panels that keep out of shared screens let the camera see them.
 FACE="ARBOR_NO_HOTKEYS=0 ARBOR_PANELS_IN_PICTURES=1"
+# The options these films are about, in so many words, whatever ships: motion, the ring, the menu bar's buttons.
+OPTIONS='"animationDuration": 0.46, "focusRing": true, "menuBarControls": true'
 
 step "1. the metronome"
 for kind in good linear slow twice hop flash; do metronome "$kind"; done
 
-step "2. Arbor as it ships"
+step "2. motion, the ring and the buttons on; everything else as it ships"
+arbor_settings "{$OPTIONS}"
 cast_start 4 $FACE ARBOR_NO_STATUS_ITEM=0
 # The Dock grows by an icon, which changes the room there is.
 sleep 3
@@ -320,6 +325,7 @@ scene_end
 cast_stop
 
 step "2b. the keys that change the arrangement, on windows that do not overlap"
+arbor_settings "{$OPTIONS}"
 cast_start 4 $FACE
 sleep 3
 spread
@@ -350,6 +356,7 @@ cast_stop
 
 step "3. a window too large for its slot"
 ARBOR_TEST_WINDOWS_ARGS="--regular --min-size 3:700x500"
+arbor_settings "{$OPTIONS}"
 cast_start 3 $FACE
 sleep 3
 ctl dock "$W1" left
@@ -375,6 +382,7 @@ ARBOR_TEST_WINDOWS_ARGS="--regular"
 step "4. dark, on a light wallpaper"
 appearance dark
 wallpaper "#b9bec6"
+arbor_settings "{$OPTIONS}"
 cast_start 4 $FACE ARBOR_NO_STATUS_ITEM=0
 sleep 3
 moves dark- shipped
@@ -385,6 +393,7 @@ wallpaper "#000000"
 
 step "5. with Reduce Motion"
 macos_reduce_motion on
+arbor_settings "{$OPTIONS}"
 cast_start 4 $FACE
 sleep 3
 three_moves reduced instant instant
@@ -407,7 +416,7 @@ cast_stop
 macos_reduce_motion off
 
 step "6. with pictures of the windows"
-arbor_settings '{"windowPictures": true}'
+arbor_settings "{$OPTIONS, \"windowPictures\": true}"
 cast_start 4 $FACE
 sleep 3
 three_moves pictures structure camera
@@ -415,6 +424,7 @@ cast_stop
 
 step "7. eight windows on a large display"
 display_size 1920 1080
+arbor_settings "{$OPTIONS}"
 cast_start 8 $FACE
 sleep 3
 ctl arrange
@@ -433,14 +443,14 @@ display_size 1024 768
 
 step "8. the moves with everything on: Arbor's gestures, and every edge Arbor's"
 macos_tiling off
-arbor_settings "{$ARBOR_GESTURES_ON}"
+arbor_settings "{$OPTIONS, $ARBOR_GESTURES_ON}"
 cast_start 4 $FACE ARBOR_NO_STATUS_ITEM=0
 sleep 3
 moves on- on
 cast_stop
 appearance dark
 wallpaper "#b9bec6"
-arbor_settings "{$ARBOR_GESTURES_ON}"
+arbor_settings "{$OPTIONS, $ARBOR_GESTURES_ON}"
 cast_start 4 $FACE ARBOR_NO_STATUS_ITEM=0
 sleep 3
 moves on-dark- on
