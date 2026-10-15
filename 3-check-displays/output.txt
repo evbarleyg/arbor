@@ -1,0 +1,472 @@
+# mac-shell: scripts/mac-shell/check-displays.sh at 8aa9e10, macOS 26.6.2, 2026-10-15T00:23Z
+built Arbor and the pointer tool in 3s
+displays (id uuid x y w h scale main vendor model serial):
+1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1024 768 1 main 0 0 305419896
+
+== one display: five windows, one docked
+session 1: Arbor pid 18847, test windows 67 68 69 70 71 (pid 18825)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 67 left
+docked w67 at the left edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          518 43 494 650
+  w67 12 43 494 650        docked focused
+  w68 518 180 480 348      floating
+  w69 518 140 480 348      floating
+  w70 518 100 480 348      floating
+  w71 518 60 480 348       floating
+
+== plug a display in on the right
+> display_add 1280 800: display 2, AA940218-3BE5-4AB5-9CCC-A2DAF4F396F5
+> display_move right: now at 1920 0 1280 800
+  ✔ Arbor arranges two displays
+  ✔ Arbor knows the new display by its UUID
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          966 43 942 947
+display 2 1920 0 1280 800, visible 1920 31 1280 769, camera n0, back no
+  Desktop          1932 43 1256 745
+  w67 12 43 942 947        display 1, docked focused
+  w68 966 180 480 348      display 1, floating
+  w69 966 140 700 500      display 1, floating
+  w70 966 100 480 348      display 1, floating
+  w71 966 60 480 348       display 1, floating
+5A42259C-47B8-4590-9762-97DBE4FE7F1B 1 1
+AA940218-3BE5-4AB5-9CCC-A2DAF4F396F5 1 1
+shot: mac-shell/plugged-in.png and plugged-in-d2.png
+
+== drag three windows across: one dropped in the middle, one at the far edge, one to become a tile
+> drag 1206 72 2560 415
+  ✔ dropped on the second display it belongs to the second display
+> dock 71 left
+docked w71 at the left edge
+  ✔ docked with a command it stays on the second display
+> drag 1206 112 3197 415
+  ✘ dropped at the second display's right edge it docks there
+> drag 1316 152 2560 415
+  ✔ the third window went across too
+> dock 69 beside 71 bottom
+docked w69 below w71
+> move 2560 415
+> show-all
+showing everything
+state.py: no tile holds window 69
+  ✘ the window that cannot shrink is a tile on the second display
+> dock 68 right
+docked w68 at the right edge
+
+== right: where everything is
+shot: mac-shell/right-all.png
+shot: mac-shell/right-1-arranged.png and right-1-arranged-d2.png
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          648 43 624 947
+display 2 1920 0 1280 800, visible 1920 31 1280 769, camera n2, back no
+  Desktop          2644 43 544 745
+  w67 12 43 624 947        display 1, docked
+  w68 1284 43 624 947      display 1, docked focused
+  w69 1932 288 700 500     display 2, docked
+  w70 3024 403 480 348     display 2, floating
+  w71 1932 43 700 233      display 2, docked
+macOS: 0 0 1920 1080 main;1920 0 1280 800 -;
+  ✔ right: Arbor's frame for the second display is macOS's
+  ✔ right: window 67 is in its slot (12 43 624 947)
+  ✔ right: window 68 is in its slot (1284 43 624 947)
+  ✔ right: window 69 is in its slot (1932 288 700 500)
+  ✔ right: window 71 is in its slot (1932 43 700 233)
+  ✔ right: every overlay lies within a display
+
+== right: zoom on the second display leaves the main one alone
+> zoom 71
+framed w71
+shot: mac-shell/right-2-zoom-second.png and right-2-zoom-second-d2.png
+  ✔ right: the zoomed window fills the second display
+  ✔ right: the main display's windows did not move
+  ✔ right: parked window 70 shows on no display (it is at 3199 772 480 348)
+> move 2560 415
+> back
+back to everything
+  ✘ right: back on the second display brings its window back
+
+== right: zoom on the main display, with a neighbour to park beside
+> zoom 67
+framed w67
+shot: mac-shell/right-3-zoom-main.png and right-3-zoom-main-d2.png
+  ✔ right: the second display's windows did not move
+  ✔ right: parked window 68 shows on no display (it is at 1919 974 624 947)
+> move 960 516
+> back
+back to everything
+  ✔ right: back on the main display brings its window back
+
+== right: drag a window from the second display to the main one and back to the far edge
+> drag 3264 415 960 516
+  ✘ right: dropped on the main display it floats there
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          648 43 624 947
+display 2 1920 0 1280 800, visible 1920 31 1280 769, camera n2, back no
+  Desktop          2644 43 544 745
+  w67 12 43 624 947        display 1, docked focused
+  w68 1284 43 624 947      display 1, docked
+  w69 1932 288 700 500     display 2, docked
+  w70 3024 403 480 348     display 2, floating
+  w71 1932 43 700 233      display 2, docked
+shot: mac-shell/right-4-dragged-to-main.png and right-4-dragged-to-main-d2.png
+> drag 3264 415 3197 415 --no-release
+shot: mac-shell/right-5-preview.png and right-5-preview-d2.png
+the preview is at: nowhere
+  ✘ right: the drop preview lies on the second display
+> release
+  ✘ right: released there it docks on the second display
+  ✘ right: and lands where the preview was
+
+== right: where everything is afterwards
+shot: mac-shell/right-6-afterwards.png and right-6-afterwards-d2.png
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          648 43 624 947
+display 2 1920 0 1280 800, visible 1920 31 1280 769, camera n2, back no
+  Desktop          2644 43 544 745
+  w67 12 43 624 947        display 1, docked focused
+  w68 1284 43 624 947      display 1, docked
+  w69 1932 288 700 500     display 2, docked
+  w70 3024 403 480 348     display 2, floating
+  w71 1932 43 700 233      display 2, docked
+macOS: 0 0 1920 1080 main;1920 0 1280 800 -;
+  ✔ right: Arbor's frame for the second display is macOS's
+  ✔ right: window 67 is in its slot (12 43 624 947)
+  ✔ right: window 68 is in its slot (1284 43 624 947)
+  ✔ right: window 69 is in its slot (1932 288 700 500)
+  ✔ right: window 71 is in its slot (1932 43 700 233)
+  ✔ right: every overlay lies within a display
+
+== unplug the display
+state.py: window 70 has no slot in view
+state.py: no tile holds window 69
+> display_remove
+  ✔ Arbor arranges one display
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w67 12 43 325 650        docked focused
+  w68 687 43 325 650       docked
+  w69 162 205 700 500      floating
+  w70 349 357 326 348      floating
+  w71 349 357 326 348      floating
+shot: mac-shell/unplugged.png
+  ✔ unplugged: window 67 is on the screen that is left
+  ✔ unplugged: window 67 belongs to the main display
+  ✔ unplugged: window 68 is on the screen that is left
+  ✔ unplugged: window 68 belongs to the main display
+  ✔ unplugged: window 69 is on the screen that is left
+  ✔ unplugged: window 69 belongs to the main display
+  ✔ unplugged: window 70 is on the screen that is left
+  ✔ unplugged: window 70 belongs to the main display
+  ✔ unplugged: window 71 is on the screen that is left
+  ✔ unplugged: window 71 belongs to the main display
+  ✔ unplugged: window 67 is in its slot
+  ✔ unplugged: window 68 is in its slot
+
+== plug it in again
+> display_add 1280 800: display 3, AA940218-3BE5-4AB5-9CCC-A2DAF4F396F5
+> display_move right: now at 1920 0 1280 800
+the UUID was AA940218-3BE5-4AB5-9CCC-A2DAF4F396F5 and is AA940218-3BE5-4AB5-9CCC-A2DAF4F396F5
+  ✔ a virtual display with the same serial number keeps its UUID
+  ✔ Arbor arranges two displays again
+shot: mac-shell/plugged-in-again.png and plugged-in-again-d2.png
+  ✔ replugged: window 69 is docked on the second display again
+  ✘ replugged: window 70 is docked on the second display again
+  ✔ replugged: window 71 is docked on the second display again
+arranged before:  / 1932 43 700 233 / 
+state.py: window 70 has no slot in view
+state.py: no tile holds window 69
+arranged now:     / 1932 43 700 233 / 
+state.py: window 70 has no slot in view
+state.py: no tile holds window 69
+  ✔ replugged: the arrangement is the one that went away
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          648 43 624 947
+display 2 1920 0 1280 800, visible 1920 31 1280 769, camera n2, back no
+  Desktop          2644 43 544 745
+  w67 12 43 624 947        display 1, docked focused
+  w68 1284 43 624 947      display 1, docked
+  w69 1932 288 700 500     display 2, docked
+  w70 3024 403 480 348     display 2, floating
+  w71 1932 43 700 233      display 2, docked
+macOS: 0 0 1920 1080 main;1920 0 1280 800 -;
+  ✔ replugged: Arbor's frame for the second display is macOS's
+  ✔ replugged: window 67 is in its slot (12 43 624 947)
+  ✔ replugged: window 68 is in its slot (1284 43 624 947)
+  ✔ replugged: window 69 is in its slot (1932 288 700 500)
+  ✔ replugged: window 71 is in its slot (1932 43 700 233)
+  ✔ replugged: every overlay lies within a display
+
+== move the display to the left of the main one (negative x)
+> display_move left: now at -1280 0 1280 800
+
+== left: where everything is
+shot: mac-shell/left-all.png
+shot: mac-shell/left-1-arranged.png and left-1-arranged-d2.png
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          648 43 624 947
+display 2 -1280 0 1280 800, visible -1280 31 1280 769, camera n2, back no
+  Desktop          -556 43 544 745
+  w67 12 43 624 947        display 1, docked focused
+  w68 1284 43 624 947      display 1, docked
+  w69 -1268 288 700 500    display 2, docked
+  w70 847 155 480 348      display 2, floating
+  w71 -1268 43 700 233     display 2, docked
+macOS: 0 0 1920 1080 main;-1280 0 1280 800 -;
+  ✔ left: Arbor's frame for the second display is macOS's
+  ✔ left: window 67 is in its slot (12 43 624 947)
+  ✔ left: window 68 is in its slot (1284 43 624 947)
+  ✔ left: window 69 is in its slot (-1268 288 700 500)
+  ✔ left: window 71 is in its slot (-1268 43 700 233)
+  ✔ left: every overlay lies within a display
+
+== left: zoom on the second display leaves the main one alone
+> zoom 71
+framed w71
+shot: mac-shell/left-2-zoom-second.png and left-2-zoom-second-d2.png
+  ✔ left: the zoomed window fills the second display
+  ✔ left: the main display's windows did not move
+  ✔ left: parked window 70 shows on no display (it is at -1759 772 480 348)
+> move -640 415
+> back
+back to everything
+  ✘ left: back on the second display brings its window back
+
+== left: zoom on the main display, with a neighbour to park beside
+> zoom 67
+framed w67
+shot: mac-shell/left-3-zoom-main.png and left-3-zoom-main-d2.png
+  ✔ left: the second display's windows did not move
+  ✔ left: parked window 68 shows on no display (it is at 1919 974 624 947)
+> move 960 516
+> back
+back to everything
+  ✔ left: back on the main display brings its window back
+
+== left: drag a window from the second display to the main one and back to the far edge
+> drag 64 415 960 516
+  ✘ left: dropped on the main display it floats there
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          648 43 624 947
+display 2 -1280 0 1280 800, visible -1280 31 1280 769, camera n2, back no
+  Desktop          -556 43 544 745
+  w67 12 43 624 947        display 1, docked focused
+  w68 1284 43 624 947      display 1, docked
+  w69 -1268 288 700 500    display 2, docked
+  w70 -176 403 480 348     display 2, floating
+  w71 -1268 43 700 233     display 2, docked
+shot: mac-shell/left-4-dragged-to-main.png and left-4-dragged-to-main-d2.png
+> drag 64 415 -1277 415 --no-release
+shot: mac-shell/left-5-preview.png and left-5-preview-d2.png
+the preview is at: nowhere
+  ✘ left: the drop preview lies on the second display
+> release
+  ✘ left: released there it docks on the second display
+  ✘ left: and lands where the preview was
+
+== left: where everything is afterwards
+shot: mac-shell/left-6-afterwards.png and left-6-afterwards-d2.png
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          648 43 624 947
+display 2 -1280 0 1280 800, visible -1280 31 1280 769, camera n2, back no
+  Desktop          -556 43 544 745
+  w67 12 43 624 947        display 1, docked focused
+  w68 1284 43 624 947      display 1, docked
+  w69 -1268 288 700 500    display 2, docked
+  w70 -176 403 480 348     display 2, floating
+  w71 -1268 43 700 233     display 2, docked
+macOS: 0 0 1920 1080 main;-1280 0 1280 800 -;
+  ✔ left: Arbor's frame for the second display is macOS's
+  ✔ left: window 67 is in its slot (12 43 624 947)
+  ✔ left: window 68 is in its slot (1284 43 624 947)
+  ✔ left: window 69 is in its slot (-1268 288 700 500)
+  ✔ left: window 71 is in its slot (-1268 43 700 233)
+  ✔ left: every overlay lies within a display
+
+== move the display above the main one (negative y)
+> display_move above: now at 0 -800 1280 800
+
+== above: where everything is
+shot: mac-shell/above-all.png
+shot: mac-shell/above-1-arranged.png and above-1-arranged-d2.png
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          648 43 624 947
+display 2 0 -800 1280 800, visible 0 -769 1280 769, camera n2, back no
+  Desktop          724 -757 544 745
+  w67 12 43 624 947        display 1, docked focused
+  w68 1284 43 624 947      display 1, docked
+  w69 12 -512 700 500      display 2, docked
+  w70 847 155 480 348      display 2, floating
+  w71 12 -757 700 233      display 2, docked
+macOS: 0 0 1920 1080 main;0 -800 1280 800 -;
+  ✔ above: Arbor's frame for the second display is macOS's
+  ✔ above: window 67 is in its slot (12 43 624 947)
+  ✔ above: window 68 is in its slot (1284 43 624 947)
+  ✔ above: window 69 is in its slot (12 -512 700 500)
+  ✔ above: window 71 is in its slot (12 -757 700 233)
+  ✔ above: every overlay lies within a display
+
+== above: zoom on the second display leaves the main one alone
+> zoom 71
+framed w71
+shot: mac-shell/above-2-zoom-second.png and above-2-zoom-second-d2.png
+  ✔ above: the zoomed window fills the second display
+  ✔ above: the main display's windows did not move
+  ✔ above: parked window 70 shows on no display (it is at -479 31 480 348)
+> move 640 -385
+> back
+back to everything
+  ✘ above: back on the second display brings its window back
+
+== above: zoom on the main display, with a neighbour to park beside
+> zoom 67
+framed w67
+shot: mac-shell/above-3-zoom-main.png and above-3-zoom-main-d2.png
+  ✔ above: the second display's windows did not move
+  ✔ above: parked window 68 shows on no display (it is at 1919 974 624 947)
+> move 960 516
+> back
+back to everything
+  ✔ above: back on the main display brings its window back
+
+== above: drag a window from the second display to the main one and back to the far edge
+> drag 1344 -385 960 516
+  ✘ above: dropped on the main display it floats there
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          648 43 624 947
+display 2 0 -800 1280 800, visible 0 -769 1280 769, camera n2, back no
+  Desktop          724 -757 544 745
+  w67 12 43 624 947        display 1, docked focused
+  w68 1284 43 624 947      display 1, docked
+  w69 12 -512 700 500      display 2, docked
+  w70 1104 -397 480 348    display 2, floating
+  w71 12 -757 700 233      display 2, docked
+shot: mac-shell/above-4-dragged-to-main.png and above-4-dragged-to-main-d2.png
+> drag 1344 -385 1277 -385 --no-release
+shot: mac-shell/above-5-preview.png and above-5-preview-d2.png
+the preview is at: nowhere
+  ✘ above: the drop preview lies on the second display
+> release
+  ✘ above: released there it docks on the second display
+  ✘ above: and lands where the preview was
+
+== above: where everything is afterwards
+shot: mac-shell/above-6-afterwards.png and above-6-afterwards-d2.png
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          648 43 624 947
+display 2 0 -800 1280 800, visible 0 -769 1280 769, camera n2, back no
+  Desktop          724 -757 544 745
+  w67 12 43 624 947        display 1, docked focused
+  w68 1284 43 624 947      display 1, docked
+  w69 12 -512 700 500      display 2, docked
+  w70 1104 -397 480 348    display 2, floating
+  w71 12 -757 700 233      display 2, docked
+macOS: 0 0 1920 1080 main;0 -800 1280 800 -;
+  ✔ above: Arbor's frame for the second display is macOS's
+  ✔ above: window 67 is in its slot (12 43 624 947)
+  ✔ above: window 68 is in its slot (1284 43 624 947)
+  ✔ above: window 69 is in its slot (12 -512 700 500)
+  ✔ above: window 71 is in its slot (12 -757 700 233)
+  ✔ above: every overlay lies within a display
+
+== move the display low on the right, over the corner where the main display parks
+> display_move right 400: now at 1920 400 1280 800
+shot: mac-shell/right-low-all.png
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          648 43 624 947
+display 2 1920 400 1280 800, visible 1920 431 1280 769, camera n2, back no
+  Desktop          2644 443 544 745
+  w67 12 43 624 947        display 1, docked focused
+  w68 1284 43 624 947      display 1, docked
+  w69 1932 688 700 500     display 2, docked
+  w70 3024 803 480 348     display 2, floating
+  w71 1932 443 700 233     display 2, docked
+macOS: 0 0 1920 1080 main;1920 400 1280 800 -;
+  ✔ right-low: Arbor's frame for the second display is macOS's
+  ✔ right-low: window 67 is in its slot (12 43 624 947)
+  ✔ right-low: window 68 is in its slot (1284 43 624 947)
+  ✔ right-low: window 69 is in its slot (1932 688 700 500)
+  ✔ right-low: window 71 is in its slot (1932 443 700 233)
+  ✔ right-low: every overlay lies within a display
+
+== right-low: zoom on the second display leaves the main one alone
+> zoom 71
+framed w71
+shot: mac-shell/right-low-2-zoom-second.png and right-low-2-zoom-second-d2.png
+  ✔ right-low: the zoomed window fills the second display
+  ✔ right-low: the main display's windows did not move
+  ✔ right-low: parked window 70 shows on no display (it is at 3199 1172 480 348)
+> move 2560 815
+> back
+back to everything
+  ✘ right-low: back on the second display brings its window back
+
+== right-low: zoom on the main display, with a neighbour to park beside
+> zoom 67
+framed w67
+shot: mac-shell/right-low-3-zoom-main.png and right-low-3-zoom-main-d2.png
+  ✔ right-low: the second display's windows did not move
+  ✔ right-low: parked window 68 shows on no display (it is at -623 974 624 947)
+> move 960 516
+> back
+back to everything
+  ✔ right-low: back on the main display brings its window back
+
+== swap it for a Retina display
+> display_remove
+  ✔ Arbor arranges one display
+> display_add 1280 800: display 4, E5232363-F4CD-495A-965A-63C1D954F20B
+> display_move right: now at 1920 0 1280 800
+1 5A42259C-47B8-4590-9762-97DBE4FE7F1B 0 0 1920 1080 1 main 0 0 305419896
+4 E5232363-F4CD-495A-965A-63C1D954F20B 1920 0 1280 800 2 - 42928 1 2
+  ✔ another serial number is another display
+  ✔ Arbor arranges two displays
+> dock 71 left
+docked w71 at the left edge
+> drag 244 55 1923 415 --no-release
+shot: mac-shell/retina-1-preview.png and retina-1-preview-d2.png
+> release
+  ✔ retina: dropped at the left edge the window docks there
+shot: mac-shell/retina-2-docked.png and retina-2-docked-d2.png
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          648 43 624 947
+display 2 1920 0 1280 800, visible 1920 31 1280 769, camera n2, back no
+  Desktop          2566 43 622 745
+  w67 12 43 624 947        display 1, docked
+  w68 1284 43 624 947      display 1, docked
+  w69 1017 283 700 500     display 1, floating
+  w70 847 155 480 348      display 1, floating
+  w71 1932 43 622 745      display 2, docked focused
+macOS: 0 0 1920 1080 main;1920 0 1280 800 -;
+  ✔ retina: Arbor's frame for the second display is macOS's
+  ✔ retina: window 67 is in its slot (12 43 624 947)
+  ✔ retina: window 68 is in its slot (1284 43 624 947)
+  ✔ retina: window 71 is in its slot (1932 43 622 745)
+  ✔ retina: every overlay lies within a display
+
+== quit with two displays, then unplug
+   1 INFO  started: 1 display(s), 5 managed window(s)
+   1 INFO  displays changed: 2 display(s), 0 remembered
+   1 INFO  display AA940218-3BE5-4AB5-9CCC-A2DAF4F396F5 disconnected; remembering 3 window(s)
+   1 INFO  displays changed: 1 display(s), 1 remembered
+   1 INFO  display AA940218-3BE5-4AB5-9CCC-A2DAF4F396F5 reconnected; 3 window(s) returned to it
+   4 INFO  displays changed: 2 display(s), 0 remembered
+   1 INFO  display AA940218-3BE5-4AB5-9CCC-A2DAF4F396F5 disconnected; remembering 3 window(s)
+   1 INFO  displays changed: 1 display(s), 1 remembered
+   1 INFO  displays changed: 2 display(s), 1 remembered
+   1 INFO  dropped w71 on cameraEdge(ArborCore.Edge.left), display E5232363-F4CD-495A-965A-63C1D954F20B
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 67 is back on screen after quitting
+  ✔ window 68 is back on screen after quitting
+  ✔ window 69 is back on screen after quitting
+  ✔ window 70 is back on screen after quitting
+  ✔ window 71 is back on screen after quitting
+shot: mac-shell/after-quit.png and after-quit-d2.png
+> display_remove
+
+110 passed, 19 failed
+exit code 1

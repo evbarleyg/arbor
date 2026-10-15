@@ -1,0 +1,204 @@
+# mac-shell: scripts/mac-shell/check-F51.sh at 8aa9e10, macOS 26.6.2, 2026-10-15T00:18Z
+built Arbor and the pointer tool in 9s
+session 1: Arbor pid 4346, test windows 28 29 30 (pid 4262)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 28 left
+docked w28 at the left edge
+> dock 29 right
+docked w29 at the right edge
+> dock 30 beside 28 bottom
+docked w30 below w28
+
+== A tap shows everything, and it stays
+> show-all
+showing everything
+> zoom 28
+framed w28
+> click 512 368
+> key ctrl+opt+space
+  ✔ everything shows
+  ✔ and still does a second later
+  ✔ no outline
+> back
+back to ArborTestWindows (n1)
+  ✔ back returns to w1
+
+== A tap with ⌃⌥ kept down, as between two shortcuts
+> show-all
+showing everything
+> zoom 28
+framed w28
+> click 512 368
+> key ctrl+opt --down
+> key ctrl+opt+space --held
+  ✔ everything shows a second after the tap
+  ✔ no outline
+> key ctrl+opt --up
+  ✔ and does not spring back when ⌃⌥ come up
+
+== Hold, point, let go
+> show-all
+showing everything
+> zoom 28
+framed w28
+> click 512 368
+> key ctrl+opt+space --down
+  ✔ everything shows while the keys are down
+  ✔ an outline shows
+shot: mac-shell/01-held-outline-where-i-came-from.png
+> move 849 368
+shot: mac-shell/02-outline-follows-the-pointer.png
+> key ctrl+opt+space --up
+  ✔ letting go frames the window under the pointer
+  ✔ which has the keyboard
+  ✔ the outline is gone
+> back
+back to ArborTestWindows (n1)
+  ✔ back returns to the view before the peek
+
+== A slow press: held for half a second, nothing chosen
+> show-all
+showing everything
+> zoom 28
+framed w28
+> click 512 368
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+  ✔ everything stays
+  ✔ and does not spring back
+
+== Hold for a good look and let go without moving
+> show-all
+showing everything
+> zoom 28
+framed w28
+> click 512 368
+> key ctrl+opt+space --down
+> key ctrl+opt+space --up
+  ✔ the original view is back
+> back
+back to everything
+  ✔ and history has no entry for it: back goes to everything, where start_over came from
+
+== ⎋
+> show-all
+showing everything
+> zoom 28
+framed w28
+> click 512 368
+> key ctrl+opt+space --down
+> move 849 368
+> key ctrl+opt+escape --held
+  ✔ ⌃⌥⎋ returns to the original view
+  ✔ and does not pause
+> key ctrl+opt+space --up
+  ✔ letting go afterwards changes nothing
+
+== The arrow keys
+> show-all
+showing everything
+> zoom 28
+framed w28
+> click 512 368
+> key ctrl+opt+space --down
+> key ctrl+opt+down --held
+shot: mac-shell/03-outline-moved-by-an-arrow.png
+  ✔ ⌃⌥↓ did not step in
+> key ctrl+opt+space --up
+  ✔ letting go frames the window below
+
+== ⌃⌥ come up before Space
+> show-all
+showing everything
+> zoom 28
+framed w28
+> click 512 368
+> key ctrl+opt+space --down
+> move 849 368
+> key ctrl+opt --up
+  ✔ that ends the hold
+> key space --up
+  ✔ and Space coming up changes nothing
+
+== Auto-repeat
+> show-all
+showing everything
+> zoom 28
+framed w28
+> click 512 368
+> key ctrl+opt+space --down
+> key ctrl+opt+space --repeat 40
+  ✔ everything shows
+  ✔ the outline shows
+> key ctrl+opt+space --up
+  ✔ letting go returns to the original view
+
+== A click
+> show-all
+showing everything
+> zoom 28
+framed w28
+> click 512 368
+> key ctrl+opt+space --down
+> click 849 368
+  ✔ the clicked window is framed with Space still down
+  ✔ and no app was hidden by an ⌥-click
+> key ctrl+opt+space --up
+  ✔ letting go afterwards changes nothing
+
+== Another shortcut during the hold
+> show-all
+showing everything
+> zoom 28
+framed w28
+> click 512 368
+> key ctrl+opt+space --down
+> key ctrl+opt+d --held
+> key ctrl+opt+space --up
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back yes
+  Desktop          12 43 1000 650
+  w28 1023 677 325 319     docked parked focused
+  w29 1023 677 325 650     docked parked
+  w30 1023 677 325 319     docked parked
+  ✔ nothing is left of the peek
+
+== What the log says
+33:2026-10-15T00:19:03.434Z DEBUG peek: the key came up
+42:2026-10-15T00:19:06.913Z DEBUG peek: the key came up
+48:2026-10-15T00:19:10.656Z DEBUG peek: held
+49:2026-10-15T00:19:14.448Z DEBUG peek: the key came up
+51:2026-10-15T00:19:14.461Z INFO  peek: framed ArborTestWindows (n3)
+66:2026-10-15T00:19:16.976Z DEBUG peek: held
+67:2026-10-15T00:19:17.314Z DEBUG peek: the key came up
+73:2026-10-15T00:19:20.379Z DEBUG peek: held
+74:2026-10-15T00:19:21.966Z DEBUG peek: the key came up
+76:2026-10-15T00:19:21.978Z INFO  peek: back to ArborTestWindows (n1)
+84:2026-10-15T00:19:24.095Z DEBUG peek: held
+86:2026-10-15T00:19:25.066Z INFO  peek: back to ArborTestWindows (n1)
+87:2026-10-15T00:19:25.514Z DEBUG peek: the key came up
+94:2026-10-15T00:19:28.394Z DEBUG peek: held
+95:2026-10-15T00:19:30.083Z DEBUG peek: the key came up
+97:2026-10-15T00:19:30.095Z INFO  peek: framed ArborTestWindows (n4)
+110:2026-10-15T00:19:32.192Z DEBUG peek: held
+111:2026-10-15T00:19:33.178Z DEBUG peek: the keys were found up
+113:2026-10-15T00:19:33.193Z INFO  peek: framed ArborTestWindows (n3)
+126:2026-10-15T00:19:36.139Z DEBUG peek: held
+127:2026-10-15T00:19:41.585Z DEBUG peek: the key came up
+129:2026-10-15T00:19:41.625Z INFO  peek: back to ArborTestWindows (n1)
+136:2026-10-15T00:19:44.021Z DEBUG peek: held
+138:2026-10-15T00:19:45.453Z INFO  peek: framed ArborTestWindows (n3)
+141:2026-10-15T00:19:45.786Z DEBUG peek: the key came up
+152:2026-10-15T00:19:48.839Z DEBUG peek: held
+156:2026-10-15T00:19:50.064Z DEBUG peek: the key came up
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 28 is back on screen after quitting
+  ✔ window 29 is back on screen after quitting
+  ✔ window 30 is back on screen after quitting
+shot: mac-shell/04-after-quit.png
+
+35 passed, 0 failed
+exit code 0
