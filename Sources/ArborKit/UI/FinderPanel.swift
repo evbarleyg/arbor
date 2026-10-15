@@ -318,8 +318,8 @@ private final class FinderView: NSView {
     let list = geometry.list
     drawGlyph(in: geometry.glyph)
     if list.height > 0 {
-      // Not macOS's separator colour, one grey whatever the ground: with Reduce Transparency it stood out by 1.01 to 1.
-      PanelInk.second.withAlphaComponent(effectiveAppearance.increasesContrast ? 0.6 : 0.25).setFill()
+      PanelLook.rule(isDark: effectiveAppearance.isDark, increasesContrast: effectiveAppearance.increasesContrast).nsColor
+        .setFill()
       NSBezierPath(rect: NSRect(x: 0, y: list.minY, width: bounds.width, height: 1)).fill()
     }
     for (place, item) in items.enumerated() {

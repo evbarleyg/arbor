@@ -108,7 +108,7 @@ enum PanelInk {
   static let main = colour(.main)
   static let second = colour(.second)
 
-  private static func colour(_ ink: PanelLook.Ink) -> NSColor {
+  static func colour(_ ink: PanelLook.Ink) -> NSColor {
     NSColor(name: nil) { appearance in
       PanelLook.ink(ink, isDark: appearance.isDark, increasesContrast: appearance.increasesContrast).nsColor
     }

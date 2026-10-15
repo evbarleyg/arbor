@@ -56,7 +56,7 @@ enum AccentInk {
   }
 
   /// With Increase Contrast: the lines outside the accent's, each a point wide, from the outside in.
-  static let strongLines: [NSColor] = [.black, .white]
+  static let strongLines: [NSColor] = PanelLook.strongLines.map(\.nsColor)
 
   /// A hint of an edge on most things, and the whole edge on a few.
   static func secondLine(inside accent: NSColor) -> NSColor {

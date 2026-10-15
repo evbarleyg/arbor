@@ -434,21 +434,15 @@ private final class SeamView: NSView {
     guard showsHandle, isHovered || isDragged, let seam, let pill = SeamHandle.pill(in: bounds, axis: seam.axis)
     else { return }
     let fill = isDragged ? NSColor.controlAccentColor : NSColor.white.withAlphaComponent(0.9)
-    guard effectiveAppearance.increasesContrast else {
+    let shapes = effectiveAppearance.increasesContrast ? SeamHandle.strongShapes(pill: pill, in: bounds) : []
+    guard !shapes.isEmpty else {
       TileDrawing.softShadow(RGBA.black.withAlpha(0.45)).set()
       fill.setFill()
       NSBezierPath.make(RoundedPath.capsule(pill)).fill()
       return
     }
-    // A soft shadow is no edge. A point of black round a point of white: one of the two stands out from anything. Shapes filled
-    // one in the other, on whole points: a line stroked along the edge fell on two rows of pixels at half strength (seen).
-    let whole = NSRect(
-      x: pill.minX.rounded(), y: pill.minY.rounded(), width: pill.width.rounded(), height: pill.height.rounded())
-    // The black lies round the pill where the gap has the room, and else takes the pill's own outermost point.
-    let outer = bounds.contains(whole.insetBy(dx: -1, dy: -1)) ? whole.insetBy(dx: -1, dy: -1) : whole
-    for (inset, colour) in [(0, NSColor.black), (1, NSColor.white), (2, fill.withAlphaComponent(1))] as [(CGFloat, NSColor)] {
-      let shape = outer.insetBy(dx: inset, dy: inset)
-      guard shape.width >= 1, shape.height >= 1 else { continue }
+    // A soft shadow is no edge. A point of black round a point of white: one of the two stands out from anything.
+    for (shape, colour) in zip(shapes, AccentInk.strongLines + [fill.withAlphaComponent(1)]) {
       colour.setFill()
       NSBezierPath.make(RoundedPath.capsule(shape)).fill()
     }

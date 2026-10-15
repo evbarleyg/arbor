@@ -40,7 +40,7 @@ public enum PanelLook {
   public enum Ink: CaseIterable, Sendable {
     /// Words a person must read to act: a shortcut, a window's title, what the line says.
     case main
-    /// All other words: headings, notes, what a field is for.
+    /// All other words: headings over groups of rows, notes beside a title, a placeholder under a heading.
     case second
   }
 
@@ -63,4 +63,48 @@ public enum PanelLook {
   public static func ink(onSelection fill: RGBA) -> RGBA {
     RGBA.white.contrast(with: fill) >= 4.5 ? .white : fill.ink
   }
+
+  /// The field for a name. What counts is what words are for: the heading is the field's only label, and the note alone says
+  /// which space gets the name, so both are read to act (in the second ink 4.1 to 1 in the dark look over a white window, by the
+  /// judges' ruler on a hosted Mac). The heading lets the placeholder off.
+  public enum NameField {
+    public static let heading = Ink.main
+    public static let note = Ink.main
+    public static let placeholder = Ink.second
+  }
+
+  /// The line under Go to…'s field. Not macOS's separator colour, one grey whatever the ground: with Reduce Transparency that stood out
+  /// by 1.01 to 1.
+  public static func rule(isDark: Bool, increasesContrast: Bool = false) -> RGBA {
+    RGBA(white: isDark ? 1 : 0, alpha: increasesContrast ? 0.6 : 0.25)
+  }
+
+  // MARK: The minimap
+
+  /// How strong things on the minimap are. The lines' are shares of black or white, whichever the look's ink is.
+  public enum Map {
+    /// Of its app's colour, in a window out of view: still there, only fainter.
+    public static let fillOutOfView = 0.45
+
+    /// Of the line round a window; nil: it has none. Fainter must not mean gone: at 0.3 a window of the ground's own brightness was
+    /// still not there, 1.02 to 1 its fill and 1.9 its line in the light look over black (the judges' ruler, on a hosted Mac). With
+    /// Increase Contrast every window has a line, and a whole one.
+    public static func line(isInView: Bool, increasesContrast: Bool) -> Double? {
+      if increasesContrast { return 1 }
+      return isInView ? nil : 0.6
+    }
+
+    /// Of the Desktop's outline.
+    public static func desktopLine(isInView: Bool, increasesContrast: Bool) -> Double {
+      if increasesContrast { return 1 }
+      return isInView ? 0.6 : 0.3
+    }
+  }
+
+  // MARK: Lines on other apps' windows
+
+  /// With Increase Contrast: the lines outside the accent's, each a point wide, from the outside in. Of two tones R to 1 apart the better
+  /// one stands out from the worst ground by the root of R: the accent and white, 4.6 apart in the dark look, left every ground of
+  /// middling brightness under 3 (a bright red window 2.9, a cyan one 2.8). Black and white are 21 apart: 4.58 on anything.
+  public static let strongLines: [RGBA] = [.black, .white]
 }

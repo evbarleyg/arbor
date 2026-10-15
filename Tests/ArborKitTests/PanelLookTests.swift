@@ -110,7 +110,149 @@ import Testing
     for fill in [blue, purple, yellow, green] {
       let ink = PanelLook.ink(onSelection: fill)
       #expect(ink.contrast(with: fill) >= 4.5, "\(fill)")
-      #expect(ink.withAlpha(0.85).over(fill).contrast(with: fill) >= 3, "the note: \(fill)")
+    }
+  }
+
+  /// macOS's colour for a selected row with Increase Contrast, light and dark, read off pictures from a hosted Mac (run
+  /// 38685258262). White on it is macOS's own pair and the measure; what Arbor makes fainter than that counts against Arbor.
+  @Test func nothingOnASelectedRowIsThinned() {
+    let light = RGBA(red: 0, green: 64 / 255, blue: 221 / 255), dark = RGBA(red: 23 / 255, green: 116 / 255, blue: 218 / 255)
+    for fill in [light, dark] { #expect(PanelLook.ink(onSelection: fill) == .white) }
+    #expect(RGBA.white.contrast(with: light) >= 7)
+    // The control: the row's note at 0.85 of it, as it was. The ruler read 5.79 and 3.75.
+    #expect(RGBA.white.withAlpha(0.85).over(light).contrast(with: light) < 6)
+    #expect(RGBA.white.withAlpha(0.85).over(dark).contrast(with: dark) < 4)
+  }
+
+  // MARK: The field for a name
+
+  static let underAHeadsUpPanel = (measured + overWallpapers).filter { !$0.description.hasPrefix("popover") }
+  static let underGoTo = (measured + overWallpapers).filter { !$0.description.hasPrefix("hudWindow") }
+
+  @Test(arguments: underAHeadsUpPanel) func theNameFieldsHeadingAndNoteAreReadToAct(ground: Ground) {
+    for ink in [PanelLook.NameField.heading, PanelLook.NameField.note] {
+      #expect(contrast(of: ink, on: ground) >= 4.5 * Self.lostToThinStrokes, "\(ground), dark: \(ground.isDark)")
+    }
+    #expect(contrast(of: PanelLook.NameField.placeholder, on: ground) >= 3 * Self.lostToThinStrokes, "\(ground)")
+  }
+
+  /// The control. The ruler read 4.09 off the picture.
+  @Test func inTheSecondInkTheyCouldNotBeOverAWhiteWindowInTheDarkLook() throws {
+    let worst = try #require(Self.underAHeadsUpPanel.min { contrast(of: .second, on: $0) < contrast(of: .second, on: $1) })
+    #expect(worst.description == "hudWindow over white" && worst.isDark)
+    #expect(abs(contrast(of: .second, on: worst) - 4.14) < 0.01)
+  }
+
+  // MARK: The line under Go to…'s field
+
+  /// No mark is set for it. Half as much again as its ground is a line one finds when looking for it.
+  @Test(arguments: underGoTo) func theLineUnderTheFieldCanBeSeen(ground: Ground) {
+    let under = PanelLook.veil(isDark: ground.isDark).over(ground.colour)
+    #expect(PanelLook.rule(isDark: ground.isDark).over(under).contrast(with: under) >= 1.5, "\(ground), dark: \(ground.isDark)")
+    // The control: macOS's separator colour is the look's ink at a tenth.
+    #expect(RGBA(white: ground.isDark ? 1 : 0, alpha: 0.1).over(under).contrast(with: under) < 1.5)
+  }
+
+  // MARK: With Increase Contrast
+
+  /// What the panels' grounds were with it on: 229 and 22 of 255 (the same run).
+  static func flat(isDark: Bool) -> RGBA { RGBA(white: (isDark ? 22 : 229) / 255) }
+
+  @Test func withIncreaseContrastTheLineUnderTheFieldIsALine() {
+    for isDark in [false, true] {
+      let ground = Self.flat(isDark: isDark)
+      #expect(PanelLook.rule(isDark: isDark, increasesContrast: true).over(ground).contrast(with: ground) >= 3)
+    }
+  }
+
+  // MARK: The minimap
+
+  /// White, black, a grey, and strong and dark colours of apps.
+  static let apps: [RGBA] = [
+    .white, .black, RGBA(white: 0.5), RGBA(red: 1, green: 0.22, blue: 0.24), RGBA(red: 0, green: 0.53, blue: 1),
+    RGBA(red: 0.08, green: 0.12, blue: 0.31), RGBA(red: 1, green: 0.8, blue: 0),
+  ]
+
+  /// The line round a window of `app`'s, as it comes out on the window's own fill, against the map's ground.
+  func line(_ strength: Double, round app: RGBA, isInView: Bool, on ground: RGBA, isDark: Bool) -> Double {
+    let fill = app.withAlpha(isInView ? 1 : PanelLook.Map.fillOutOfView).over(ground)
+    return RGBA(white: isDark ? 1 : 0, alpha: strength).over(fill).contrast(with: ground)
+  }
+
+  @Test(arguments: underAHeadsUpPanel) func aWindowOutOfViewHasALineThatStandsOutFromTheMap(ground: Ground) throws {
+    let under = PanelLook.veil(isDark: ground.isDark).over(ground.colour)
+    let strength = try #require(PanelLook.Map.line(isInView: false, increasesContrast: false))
+    // Also an app of the ground's own colour: its fill is not there at all.
+    for app in Self.apps + [under] {
+      #expect(
+        line(strength, round: app, isInView: false, on: under, isDark: ground.isDark) >= 3,
+        "\(app) on \(ground), dark: \(ground.isDark)")
+    }
+  }
+
+  /// The control: at 0.3, as it was. The ruler read 1.91 in the light look over black.
+  @Test func atAThirdItDidNot() throws {
+    let ground = try #require(Self.overWallpapers.first { $0.description == "hudWindow over black" && !$0.isDark })
+    let under = PanelLook.veil(isDark: false).over(ground.colour)
+    #expect(abs(line(0.3, round: under, isInView: false, on: under, isDark: false) - 1.95) < 0.02)
+  }
+
+  @Test func withIncreaseContrastEveryWindowOnTheMapAndTheDesktopHaveAWholeLine() throws {
+    for isDark in [false, true] {
+      let ground = Self.flat(isDark: isDark)
+      for isInView in [false, true] {
+        let strength = try #require(PanelLook.Map.line(isInView: isInView, increasesContrast: true))
+        for app in Self.apps + [ground] {
+          #expect(line(strength, round: app, isInView: isInView, on: ground, isDark: isDark) >= 3, "\(app), dark: \(isDark)")
+        }
+        let desktop = PanelLook.Map.desktopLine(isInView: isInView, increasesContrast: true)
+        #expect(RGBA(white: isDark ? 1 : 0, alpha: desktop).over(ground).contrast(with: ground) >= 3)
+      }
+      // The control: the setting changed nothing. The ruler read 2.08 and 2.71 off the Desktop's rectangle.
+      let before = PanelLook.Map.desktopLine(isInView: false, increasesContrast: false)
+      #expect(RGBA(white: isDark ? 1 : 0, alpha: before).over(ground).contrast(with: ground) < 3)
+    }
+    #expect(PanelLook.Map.line(isInView: true, increasesContrast: false) == nil, "without it a window in view has its colour alone")
+  }
+
+  // MARK: Lines on other apps' windows
+
+  func best(of lines: [RGBA], on ground: RGBA) -> Double { lines.map { $0.contrast(with: ground) }.max() ?? 1 }
+
+  @Test func withIncreaseContrastOneOfTheLinesStandsOutFromAnyGround() {
+    var worst = 21.0
+    for white in 0...255 { worst = min(worst, best(of: PanelLook.strongLines, on: RGBA(white: Double(white) / 255))) }
+    for red in stride(from: 0.0, through: 255, by: 15) {
+      for green in stride(from: 0.0, through: 255, by: 15) {
+        for blue in stride(from: 0.0, through: 255, by: 15) {
+          worst = min(worst, best(of: PanelLook.strongLines, on: RGBA(red: red / 255, green: green / 255, blue: blue / 255)))
+        }
+      }
+    }
+    #expect(worst >= 4.5, "\(worst)")
+  }
+
+  /// The control: the accent colour as Increase Contrast makes it in the dark look, with a white line inside it, over the two windows
+  /// of the picture. The ruler read 2.94 and 2.78.
+  @Test func theAccentAndWhiteDidNot() {
+    let accent = RGBA(red: 23 / 255, green: 116 / 255, blue: 218 / 255)
+    let red = RGBA(red: 1, green: 97 / 255, blue: 101 / 255), cyan = RGBA(red: 59 / 255, green: 221 / 255, blue: 236 / 255)
+    #expect(abs(best(of: [accent, .white], on: red) - 2.94) < 0.01)
+    #expect(abs(best(of: [accent, .white], on: cyan) - 2.8) < 0.01)
+    for window in [red, cyan] { #expect(best(of: PanelLook.strongLines, on: window) >= 7) }
+  }
+
+  /// The gap's handle is ordered behind the docked windows, and their shadows fall on it as on the wallpaper beside it: the accent
+  /// (0, 64, 221) came out as (0, 45, 156) in the light look, (23, 116, 218) as (11, 56, 107) in the dark one (the same run). So white
+  /// is a grey there. The grounds are what lay beside the handle in those pictures.
+  @Test func inTheGapOneOfThemStillStandsOutUnderTheWindowsShadows() {
+    let pictures: [(left: Double, grounds: [RGBA])] = [
+      (0.705, [RGBA(red: 73 / 255, green: 101 / 255, blue: 81 / 255), RGBA(red: 77 / 255, green: 107 / 255, blue: 86 / 255)]),
+      (0.49, [RGBA(red: 19 / 255, green: 19 / 255, blue: 41 / 255), RGBA(red: 23 / 255, green: 23 / 255, blue: 49 / 255)]),
+    ]
+    for (left, grounds) in pictures {
+      let shaded = PanelLook.strongLines.map { $0.mixed(with: .black, amount: 1 - left) }
+      for ground in grounds { #expect(best(of: shaded, on: ground) >= 3, "\(ground): \(best(of: shaded, on: ground))") }
     }
   }
 

@@ -153,11 +153,7 @@ private final class MinimapView: NSView {
 /// that a test can have the real thing drawn into a bitmap, in colours it knows, and look at it (MinimapDrawingTests).
 @MainActor
 enum MinimapDrawing {
-  /// What is out of view is still there, only fainter.
-  static let outOfViewAlpha: CGFloat = 0.45
-  /// How strong the line round a window out of view is. At 0.3 one of the ground's own brightness was still not there: 1.02 to 1 its
-  /// fill, 1.9 its line, in the light look over black (the judges' ruler, on a hosted Mac).
-  static let outOfViewEdgeAlpha: CGFloat = 0.6
+  static let outOfViewAlpha = CGFloat(PanelLook.Map.fillOutOfView)
   static let highlightFillAlpha: CGFloat = 0.12
 
   /// `accent` frames the space in view, `ink` is for the Desktop's outline, the outline under the pointer and the caption, and
@@ -168,7 +164,8 @@ enum MinimapDrawing {
   ) {
     if let desktop = model.desktop {
       let outline = NSBezierPath(roundedRect: desktop.insetBy(dx: 0.5, dy: 0.5), xRadius: 2.5, yRadius: 2.5)
-      ink.withAlphaComponent(increasesContrast ? 1 : model.desktopIsInView ? 0.6 : 0.3).setStroke()
+      let strength = PanelLook.Map.desktopLine(isInView: model.desktopIsInView, increasesContrast: increasesContrast)
+      ink.withAlphaComponent(CGFloat(strength)).setStroke()
       outline.lineWidth = 1
       outline.stroke()
     }
@@ -176,11 +173,11 @@ enum MinimapDrawing {
     for item in model.items {
       colour(item).withAlphaComponent(item.isInView ? 1 : outOfViewAlpha).setFill()
       NSBezierPath(roundedRect: item.frame, xRadius: 2.5, yRadius: 2.5).fill()
-      // Fainter must not mean gone: a dark app's window out of view merged with a dark ground (seen on a hosted Mac). With Increase
-      // Contrast every window has a line, and a whole one.
-      guard !item.isInView || increasesContrast, item.frame.width > 2, item.frame.height > 2 else { continue }
+      guard let strength = PanelLook.Map.line(isInView: item.isInView, increasesContrast: increasesContrast),
+        item.frame.width > 2, item.frame.height > 2
+      else { continue }
       let edge = NSBezierPath(roundedRect: item.frame.insetBy(dx: 0.5, dy: 0.5), xRadius: 2, yRadius: 2)
-      ink.withAlphaComponent(increasesContrast ? 1 : outOfViewEdgeAlpha).setStroke()
+      ink.withAlphaComponent(CGFloat(strength)).setStroke()
       edge.lineWidth = 1
       edge.stroke()
     }
