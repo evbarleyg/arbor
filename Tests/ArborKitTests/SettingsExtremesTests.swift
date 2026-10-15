@@ -497,7 +497,7 @@ import Testing
     h.controller.takeInSettingsFile()
     let model = self.model(h)
     everything(model)
-    #expect(h.controller.settings == Settings(), "nothing is changed while nothing can be saved")
+    #expect(h.controller.settings == Harness.settingsWhenNoneAreGiven, "nothing is changed while nothing can be saved")
     #expect(model.fileProblem != nil)
   }
 

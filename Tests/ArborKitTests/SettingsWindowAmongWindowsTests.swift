@@ -99,7 +99,7 @@ import Testing
     w.close()
     #expect(w.h.run("settings-window close").ok)
     #expect(shown == [nil, .shortcuts] && closed == 1)
-    #expect(w.commands.isEmpty && w.h.controller.settings == Settings())
+    #expect(w.commands.isEmpty && w.h.controller.settings == Harness.settingsWhenNoneAreGiven)
     #expect(w.moves().isEmpty, "\(w.h.system.frameLog)")
     #expect(w.h.system.focusRequests.count == asked && w.h.system.raiseLog.count == raised)
     #expect(w.h.system.focusedWindow() == w.docked[0], "the window that had the keyboard")
