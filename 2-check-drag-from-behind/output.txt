@@ -1,0 +1,206 @@
+# mac-shell: scripts/mac-shell/check-drag-from-behind.sh at 48bcf72, macOS 26.6.2, 2026-10-15T09:16Z
+built Arbor, the pointer tool and the app bundles in 7s
+session 1: Arbor pid 10839, test windows 74 75 76 77 (pid 10784,10816)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+> dock 74 left
+docked w74 at the left edge
+> test windows: move 75 518 63 156 220
+> test windows: move 76 682 63 156 220
+> test windows: move 77 847 63 156 220
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          518 43 494 650
+  w74 12 43 494 650        docked focused
+  w75 518 63 156 220       floating
+  w76 682 63 156 220       floating
+  w77 847 63 156 220       floating
+
+▸ the window in front is dragged onto the side of a docked window
+> click 598 187
+  ✔ it has the keyboard
+> drag 632 75 445 368 --steps 24 --duration 0.7 --no-release
+  ✔ in front: Arbor sees a drag
+  ✔ in front: a preview shows where it would go
+shot: mac-shell/preview-75.png
+> release
+  ✔ in front: let go, it is docked
+    (the button went down at 632,75, the pointer is at 632,75: it is on w75)
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          524 43 488 650
+  w74 12 43 244 650        docked
+  w75 268 43 244 650       docked focused
+  w76 682 63 156 220       floating
+  w77 847 63 156 220       floating
+> float 75
+w75 is floating
+> test windows: move 75 518 63 156 220
+> test windows: move 76 682 63 156 220
+> test windows: move 77 847 63 156 220
+
+▸ another window of the app in front is dragged onto the side of a docked window, without a click first
+> click 260 383
+  ✔ the docked window has the keyboard
+> drag 796 75 445 368 --steps 24 --duration 0.7 --no-release
+  ✔ of the same app: Arbor sees a drag
+  ✔ of the same app: a preview shows where it would go
+shot: mac-shell/preview-76.png
+> release
+  ✔ of the same app: let go, it is docked
+    (the button went down at 796,75, the pointer is at 796,75: it is on w76)
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          524 43 488 650
+  w74 12 43 244 650        docked
+  w75 524 63 156 220       floating
+  w76 268 43 244 650       docked focused
+  w77 847 63 156 220       floating
+> float 76
+w76 is floating
+> test windows: move 75 518 63 156 220
+> test windows: move 76 682 63 156 220
+> test windows: move 77 847 63 156 220
+
+▸ a window of an app in the background is dragged onto the side of a docked window, without a click first
+> click 260 383
+  ✔ the docked window has the keyboard
+> drag 961 75 445 368 --steps 24 --duration 0.7 --no-release
+  ✔ of another app: Arbor sees a drag
+  ✔ of another app: a preview shows where it would go
+shot: mac-shell/preview-77.png
+> release
+  ✔ of another app: let go, it is docked
+    (the button went down at 961,75, the pointer is at 961,75: it is on w77)
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          524 43 488 650
+  w74 12 43 244 650        docked
+  w75 524 63 156 220       floating
+  w76 682 63 156 220       floating
+  w77 268 43 244 650       docked focused
+> float 77
+w77 is floating
+> test windows: move 75 518 63 156 220
+> test windows: move 76 682 63 156 220
+> test windows: move 77 847 63 156 220
+
+▸ the window in front is dragged to the bottom edge of the screen
+> click 598 187
+  ✔ it has the keyboard
+> drag 632 75 512 702 --steps 24 --duration 0.7 --no-release
+  ✔ in front: Arbor sees a drag
+  ✔ in front: a preview shows where it would go
+shot: mac-shell/preview-75.png
+> release
+  ✔ in front: let go, it is docked
+    (the button went down at 632,75, the pointer is at 632,75: it is on w75)
+display 0 0 1024 768, visible 0 31 1024 674, camera n7, back no
+  Desktop          518 43 494 319
+  w74 12 43 494 319        docked
+  w75 12 374 1000 319      docked focused
+  w76 682 63 156 220       floating
+  w77 847 63 156 220       floating
+> float 75
+w75 is floating
+> test windows: move 75 518 63 156 220
+> test windows: move 76 682 63 156 220
+> test windows: move 77 847 63 156 220
+
+▸ another window of the app in front is dragged to the bottom edge of the screen, without a click first
+> click 260 383
+  ✔ the docked window has the keyboard
+> drag 796 75 512 702 --steps 24 --duration 0.7 --no-release
+  ✔ of the same app: Arbor sees a drag
+  ✔ of the same app: a preview shows where it would go
+shot: mac-shell/preview-76.png
+> release
+  ✔ of the same app: let go, it is docked
+    (the button went down at 796,75, the pointer is at 796,75: it is on w76)
+display 0 0 1024 768, visible 0 31 1024 674, camera n9, back no
+  Desktop          518 43 494 319
+  w74 12 43 494 319        docked
+  w75 518 63 156 220       floating
+  w76 12 374 1000 319      docked focused
+  w77 847 63 156 220       floating
+> float 76
+w76 is floating
+> test windows: move 75 518 63 156 220
+> test windows: move 76 682 63 156 220
+> test windows: move 77 847 63 156 220
+
+▸ a window of an app in the background is dragged to the bottom edge of the screen, without a click first
+> click 260 383
+  ✔ the docked window has the keyboard
+> drag 961 75 512 702 --steps 24 --duration 0.7 --no-release
+  ✔ of another app: Arbor sees a drag
+  ✔ of another app: a preview shows where it would go
+shot: mac-shell/preview-77.png
+> release
+  ✔ of another app: let go, it is docked
+    (the button went down at 961,75, the pointer is at 961,75: it is on w77)
+display 0 0 1024 768, visible 0 31 1024 674, camera n11, back no
+  Desktop          518 43 494 319
+  w74 12 43 494 319        docked
+  w75 518 63 156 220       floating
+  w76 682 63 156 220       floating
+  w77 12 374 1000 319      docked focused
+> float 77
+w77 is floating
+> test windows: move 75 518 63 156 220
+> test windows: move 76 682 63 156 220
+> test windows: move 77 847 63 156 220
+
+▸ another window of the app in front is dragged with ⌘ held from before the press: macOS does not bring it forward
+> click 260 383
+  ✔ the docked window has the keyboard
+> drag 796 75 556 255 --steps 24 --duration 0.7 --mods cmd
+  ✔ ⌘ from the first: Arbor sees a drag
+    (the button went down at 796,75, the pointer is at 796,75: it is on w76)
+it is managed at 516 243 156 220
+> test windows: move 75 518 63 156 220
+> test windows: move 76 682 63 156 220
+> test windows: move 77 847 63 156 220
+
+▸ another window of the app in front is dragged, and ⌘ goes down on the way
+> click 260 383
+  ✔ the docked window has the keyboard
+> drag 796 75 756 105 --steps 5 --duration 0.2 --no-release
+> release 556 255 --mods cmd
+  ✔ ⌘ on the way: Arbor sees a drag
+    (the button went down at 796,75, the pointer is at 796,75: it is on w76)
+it is managed at 275 243 156 220
+> test windows: move 75 518 63 156 220
+> test windows: move 76 682 63 156 220
+> test windows: move 77 847 63 156 220
+
+▸ a window of an app in the background is dragged with ⌘ held from before the press: macOS does not bring it forward
+> click 260 383
+  ✔ the docked window has the keyboard
+> drag 961 75 721 255 --steps 24 --duration 0.7 --mods cmd
+  ✔ ⌘ from the first: Arbor sees a drag
+    (the button went down at 961,75, the pointer is at 961,75: it is on w77)
+it is managed at 675 243 156 220
+> test windows: move 75 518 63 156 220
+> test windows: move 76 682 63 156 220
+> test windows: move 77 847 63 156 220
+
+▸ a window of an app in the background is dragged, and ⌘ goes down on the way
+> click 260 383
+  ✔ the docked window has the keyboard
+> drag 961 75 921 105 --steps 5 --duration 0.2 --no-release
+> release 721 255 --mods cmd
+  ✔ ⌘ on the way: Arbor sees a drag
+    (the button went down at 961,75, the pointer is at 961,75: it is on w77)
+it is managed at 439 243 156 220
+> test windows: move 75 518 63 156 220
+> test windows: move 76 682 63 156 220
+> test windows: move 77 847 63 156 220
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+37 passed, 0 failed
+exit code 0

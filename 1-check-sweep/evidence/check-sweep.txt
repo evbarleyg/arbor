@@ -1,0 +1,89 @@
+# check-sweep 2026-10-15T09:13Z on macOS 26.6.2, commit 48bcf72
+
+== s1 a click on the wallpaper, and another
+  ✔ Arbor goes on believing them where they are
+  ✔ they are back
+  ✔ every window is where it was, by the window server
+  ✔ and where Arbor believes it
+  ✔ the arrangement is what it was
+
+== s2 a click on a docked window's strip that slips by three points
+  ✔ no drop preview shows while the button is down
+  ✔ they are back
+  ✔ every window is where it was, by the window server
+  ✔ and where Arbor believes it
+  ✔ the arrangement is what it was
+  ✔ 30 is docked
+
+== s3 a press on a floating window's strip that slips and rests, longer than a drop target takes
+  ✔ no drop preview shows while the button is down
+  ✔ they are back
+  ✔ every window is where it was, by the window server
+  ✔ and where Arbor believes it
+  ✔ the arrangement is what it was
+  ✔ 32 is floating
+  ✔ 33 is floating
+
+== s4 somebody tries to pull a docked window in by its strip
+  ✔ no drop preview shows while the button is down
+  ✔ they are back
+  ✔ every window is where it was, by the window server
+  ✔ and where Arbor believes it
+  ✔ the arrangement is what it was
+  ✔ 31 is docked
+
+== s5 and a floating one
+  ✔ no drop preview shows while the button is down
+  ✔ they are back
+  ✔ every window is where it was, by the window server
+  ✔ and where Arbor believes it
+  ✔ the arrangement is what it was
+  ✔ 32 is floating
+  ✔ 33 is floating
+
+== s6 the control: with nothing swept, a layout is shown as motion
+  ✔ the stage went up
+
+== s7 the same while they are aside: unseen
+  ✔ no stage went up over the bare desktop
+  ✔ they are still aside
+  ✔ Arbor has laid out meanwhile
+  ✔ no drop preview shows while the button is down
+  ✔ they are back
+  ✔ every window is where Arbor put it meanwhile, by the window server
+  ✔ and where Arbor believes it
+  ✔ the arrangement is what it was
+
+== s8 the control: a real drag is still a drag
+  ✔ the window went along, sixty points down
+
+== s9 the control: so is one that is flung
+  ✔ the window went along, sixty points up
+
+== s10 a command given while they are aside does what it says, and brings them back
+  ✔ they are back
+  ✔ every window is where it was, by the window server
+  ✔ and where Arbor believes it
+  ✔ the arrangement is what it was
+  ✔ 31 has the keyboard
+
+== s11 the end
+  ✔ from the first click to the last pull Arbor was told of no drag
+  ✔ of no resize by hand
+  ✔ and of no window moved by hand
+  ✔ it showed no drop preview
+  ✔ and it set no frame
+  ✔ nor was it told of a drag of the window that came back with another size
+  ✔ or of a resize by hand
+  ✔ and it showed no drop preview
+  ✔ the two real drags were drags
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+
+62 passed, 0 failed
