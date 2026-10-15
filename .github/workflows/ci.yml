@@ -166,10 +166,11 @@ jobs:
         run: ./scripts/ci-step.py scenarios ./scripts/scenarios.sh
       - name: Release tooling
         run: ./scripts/ci-step.py --summary '✘|release tools test' release-tools ./scripts/release-tools-test.sh
-      # It wants the log of every test. Linux has one wherever there is a verdict, and checks the same.
-      - name: Parity (no shipped feature may break; FEATURES.md must be current)
+      # It wants the log of every test. Whether docs/FEATURES.md is current is Linux's to say (linux / verdict): the real-window run of this very
+      # job has just left fresh evidence, so the page made here counts and names it and can never be the committed one.
+      - name: Parity (no shipped feature may break)
         if: env.TESTS == 'full'
-        run: ./scripts/ci-step.py parity python3 scripts/parity.py --report mac.tsv.events --check
+        run: ./scripts/ci-step.py parity python3 scripts/parity.py --report mac.tsv.events
 
       - name: What real windows said
         id: verdict

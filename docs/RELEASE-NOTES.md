@@ -17,7 +17,7 @@ Nothing here has been used by a person for a working day yet. All real-Mac evide
 
 ## Build 2, the candidate (2026-10-15)
 
-**Arbor now does almost nothing you did not ask for.** That is what the first person to work with Build 1 asked of it. One of their complaints is not cured yet: it heads the second list, and its cure follows within hours.
+**Arbor now does almost nothing you did not ask for.** That is what the first person to work with Build 1 asked of it.
 
 **After installing or updating:** System Settings → Privacy & Security → Accessibility: switch Arbor on; if it looks on already, off and on again; if that does not help, remove it there with the − button and let Arbor ask again.
 
@@ -28,6 +28,7 @@ Nothing here has been used by a person for a working day yet. All real-Mac evide
 | Too many keys; one archived a conversation in the app in front | **Nine keys**, each ⌃⌥ and one key: ← → dock, ↩ fills the screen and comes back, Space shows everything, [ goes back, Z undoes, F floats, G is Go to…, ⎋ pauses. ⌃⌥A is never bound again |
 | A window dragged near an edge gets docked | **A plain drag only moves the window.** Hold ⌘ to dock. A docked window dragged plainly comes out at its own size |
 | Docking one window rearranges the others | **Docking touches only what is docked** |
+| Filling the screen sends my other windows away | **Arbor never takes a floating window out of view** (no Mac has played this one yet) |
 | An empty column for the Desktop | **None.** Two docks are two halves |
 | A ring, cards, three icons, motion | **Nothing is drawn unasked.** All still there as options |
 | My double-click to fill the screen was undone | **What you ask of macOS stays**, on a docked window too |
@@ -36,7 +37,6 @@ Nothing here has been used by a person for a working day yet. All real-Mac evide
 
 ### What you will still meet, and the way round
 
-- **⌃⌥↩ on a docked window still takes floating windows out of view.** *⌃⌥↩ again brings everything back.*
 - **Two apps too wide to stand side by side overlap,** as with macOS's own tiling, and the one behind may show little. *Click it, or ⌃⌥G.*
 - **⌘M or ⌘H on one of two halves:** the other takes the whole width until the first returns. *Nothing is lost.*
 - **A display unplugged, or a lid shut and opened beside a monitor:** a floating window may be moved though nobody asked. *Drag it back.*
