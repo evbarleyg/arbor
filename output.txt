@@ -1,0 +1,708 @@
+# mac-shell: scripts/mac-shell/check-the-keyboard-goes-to-the-window-named.sh at 1b9745a, macOS 26.6.2, 2026-10-15T14:27Z
+built Arbor, the pointer tool and the app bundles in 7s
+
+== 1  two test apps
+session 1: Arbor pid 5204, test windows 29 30 31 (pid 5020,5118)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> arrange
+arranged 3 windows
+> float 30
+w30 is floating
+> float 31
+w31 is floating
+  ✔ A's first window is docked
+  ✔ A's second floats
+  ✔ B's floats
+shot: mac-shell/1-the-stage.png
+A is process 5020: docked 29, floating and named 30. B is process 5118: floating 31
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          683 43 329 655
+  w29 12 43 659 655        docked focused
+  w30 370 197 480 348      floating
+  w31 102 362 480 347      floating
+
+== test-apps-with-b-1
+> show-all
+showing everything
+> click 344 389
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"with-b","time":1,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-with-b-1: the docked window had the keyboard to begin with
+  ✔ test-apps-with-b-1: the window named is in view
+  ✔ test-apps-with-b-1: the window named has the keyboard, at once and for good, and gets the x
+> test windows: minimize 31
+
+== test-apps-control-1
+> show-all
+showing everything
+> click 344 389
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"control","time":1,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-control-1: the docked window had the keyboard to begin with
+  ✔ test-apps-control-1: the window named is in view
+  ✔ test-apps-control-1: the window named has the keyboard, at once and for good, and gets the x
+> test windows: restore 31
+
+== test-apps-with-b-2
+> show-all
+showing everything
+> click 344 353
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"with-b","time":2,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-with-b-2: the docked window had the keyboard to begin with
+  ✔ test-apps-with-b-2: the window named is in view
+  ✔ test-apps-with-b-2: the window named has the keyboard, at once and for good, and gets the x
+> test windows: minimize 31
+
+== test-apps-control-2
+> show-all
+showing everything
+> click 344 389
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"control","time":2,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-control-2: the docked window had the keyboard to begin with
+  ✔ test-apps-control-2: the window named is in view
+  ✔ test-apps-control-2: the window named has the keyboard, at once and for good, and gets the x
+> test windows: restore 31
+
+== test-apps-with-b-3
+> show-all
+showing everything
+> click 344 353
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"with-b","time":3,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-with-b-3: the docked window had the keyboard to begin with
+  ✔ test-apps-with-b-3: the window named is in view
+  ✔ test-apps-with-b-3: the window named has the keyboard, at once and for good, and gets the x
+> test windows: minimize 31
+
+== test-apps-control-3
+> show-all
+showing everything
+> click 344 389
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"control","time":3,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-control-3: the docked window had the keyboard to begin with
+  ✔ test-apps-control-3: the window named is in view
+  ✔ test-apps-control-3: the window named has the keyboard, at once and for good, and gets the x
+> test windows: restore 31
+
+== test-apps-with-b-4
+> show-all
+showing everything
+> click 344 353
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"with-b","time":4,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-with-b-4: the docked window had the keyboard to begin with
+  ✔ test-apps-with-b-4: the window named is in view
+  ✔ test-apps-with-b-4: the window named has the keyboard, at once and for good, and gets the x
+> test windows: minimize 31
+
+== test-apps-control-4
+> show-all
+showing everything
+> click 344 389
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"control","time":4,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-control-4: the docked window had the keyboard to begin with
+  ✔ test-apps-control-4: the window named is in view
+  ✔ test-apps-control-4: the window named has the keyboard, at once and for good, and gets the x
+> test windows: restore 31
+
+== test-apps-with-b-5
+> show-all
+showing everything
+> click 344 353
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"with-b","time":5,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-with-b-5: the docked window had the keyboard to begin with
+  ✔ test-apps-with-b-5: the window named is in view
+  ✔ test-apps-with-b-5: the window named has the keyboard, at once and for good, and gets the x
+> test windows: minimize 31
+
+== test-apps-control-5
+> show-all
+showing everything
+> click 344 389
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"control","time":5,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-control-5: the docked window had the keyboard to begin with
+  ✔ test-apps-control-5: the window named is in view
+  ✔ test-apps-control-5: the window named has the keyboard, at once and for good, and gets the x
+> test windows: restore 31
+
+== test-apps-with-b-6
+> show-all
+showing everything
+> click 344 353
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"with-b","time":6,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-with-b-6: the docked window had the keyboard to begin with
+  ✔ test-apps-with-b-6: the window named is in view
+  ✔ test-apps-with-b-6: the window named has the keyboard, at once and for good, and gets the x
+> test windows: minimize 31
+
+== test-apps-control-6
+> show-all
+showing everything
+> click 344 389
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"control","time":6,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-control-6: the docked window had the keyboard to begin with
+  ✔ test-apps-control-6: the window named is in view
+  ✔ test-apps-control-6: the window named has the keyboard, at once and for good, and gets the x
+> test windows: restore 31
+
+== test-apps-with-b-7
+> show-all
+showing everything
+> click 344 353
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"with-b","time":7,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-with-b-7: the docked window had the keyboard to begin with
+  ✔ test-apps-with-b-7: the window named is in view
+  ✔ test-apps-with-b-7: the window named has the keyboard, at once and for good, and gets the x
+> test windows: minimize 31
+
+== test-apps-control-7
+> show-all
+showing everything
+> click 344 389
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"control","time":7,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-control-7: the docked window had the keyboard to begin with
+  ✔ test-apps-control-7: the window named is in view
+  ✔ test-apps-control-7: the window named has the keyboard, at once and for good, and gets the x
+> test windows: restore 31
+
+== test-apps-with-b-8
+> show-all
+showing everything
+> click 344 353
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"with-b","time":8,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-with-b-8: the docked window had the keyboard to begin with
+  ✔ test-apps-with-b-8: the window named is in view
+  ✔ test-apps-with-b-8: the window named has the keyboard, at once and for good, and gets the x
+> test windows: minimize 31
+
+== test-apps-control-8
+> show-all
+showing everything
+> click 344 389
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"control","time":8,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-control-8: the docked window had the keyboard to begin with
+  ✔ test-apps-control-8: the window named is in view
+  ✔ test-apps-control-8: the window named has the keyboard, at once and for good, and gets the x
+> test windows: restore 31
+
+== test-apps-with-b-9
+> show-all
+showing everything
+> click 344 353
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"with-b","time":9,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-with-b-9: the docked window had the keyboard to begin with
+  ✔ test-apps-with-b-9: the window named is in view
+  ✔ test-apps-with-b-9: the window named has the keyboard, at once and for good, and gets the x
+> test windows: minimize 31
+
+== test-apps-control-9
+> show-all
+showing everything
+> click 344 389
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"control","time":9,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-control-9: the docked window had the keyboard to begin with
+  ✔ test-apps-control-9: the window named is in view
+  ✔ test-apps-control-9: the window named has the keyboard, at once and for good, and gets the x
+> test windows: restore 31
+
+== test-apps-with-b-10
+> show-all
+showing everything
+> click 344 353
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"with-b","time":10,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-with-b-10: the docked window had the keyboard to begin with
+  ✔ test-apps-with-b-10: the window named is in view
+  ✔ test-apps-with-b-10: the window named has the keyboard, at once and for good, and gets the x
+> test windows: minimize 31
+
+== test-apps-control-10
+> show-all
+showing everything
+> click 344 389
+> zoom 30
+filled the screen with w30
+> key x
+{"kind":"round","part":"test-apps","with":"control","time":10,"a":5020,"b":5118,"docked":29,"named":30,"other":31,"began":"5020 29","once":"5020 30","at200":"5020 30","at1000":"5020 30","front":"5020","arbor":"30","inView":"yes","landed":"named","verdict":"right"}
+  ✔ test-apps-control-10: the docked window had the keyboard to begin with
+  ✔ test-apps-control-10: the window named is in view
+  ✔ test-apps-control-10: the window named has the keyboard, at once and for good, and gets the x
+> test windows: restore 31
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+test-apps  with-b   10 of 10 right, 0 wrong, 0 flipped and came back, 0 late, 0 void (the docked window had not the keyboard to begin with)
+test-apps  control  10 of 10 right, 0 wrong, 0 flipped and came back, 0 late, 0 void (the docked window had not the keyboard to begin with)
+
+== 2  TextEdit with two documents, Script Editor with one
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.ALEAHE/scratch/oak.txt /tmp/arbor-apps.ALEAHE/scratch/elm.txt
+pid 13725 lists (id role subrole x y w h flags):
+  56 AXWindow AXStandardWindow 108 85 673 439 main
+  55 AXWindow AXStandardWindow 79 56 673 439 -
+> open -g -b com.apple.ScriptEditor2 /tmp/arbor-apps.ALEAHE/scratch/hello.applescript
+pid 13767 lists (id role subrole x y w h flags):
+  58 AXWindow AXStandardWindow 20 31 700 677 main,toolbar
+session 2: Arbor pid 13834, ARBOR_ONLY_PIDS=13725,13767: running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+> arrange
+arranged 3 windows
+> float 55
+w55 is floating
+> float 58
+w58 is floating
+  ✔ TextEdit's first document is docked
+  ✔ its second floats
+  ✔ Script Editor's floats
+shot: mac-shell/2-the-stage.png
+A is process 13725: docked 56, floating and named 55. B is process 13767: floating 58
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          683 43 329 655
+  w55 0 271 673 438        floating
+  w56 12 43 659 655        docked focused
+  w58 0 32 700 677         floating
+
+== real-apps-with-b-1
+> show-all
+showing everything
+> click 344 389
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"with-b","time":1,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 56","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"right"}
+  ✔ real-apps-with-b-1: the docked window had the keyboard to begin with
+  ✔ real-apps-with-b-1: the window named is in view
+  ✔ real-apps-with-b-1: the window named has the keyboard, at once and for good, and gets the x
+
+== real-apps-control-1
+> show-all
+showing everything
+> click 344 251
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"control","time":1,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 56","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"right"}
+  ✔ real-apps-control-1: the docked window had the keyboard to begin with
+  ✔ real-apps-control-1: the window named is in view
+  ✔ real-apps-control-1: the window named has the keyboard, at once and for good, and gets the x
+
+== real-apps-with-b-2
+> show-all
+showing everything
+> test windows: front 56
+> test windows: front 56
+  ✘ the window can be clicked (pointer: no part of window 56 is in reach)
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-1.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+      |   Desktop          683 43 329 655
+      |   w55 0 271 673 439        floating focused
+      |   w56 12 43 659 655        docked
+      |   w58 0 32 700 677         floating
+      log | INFO  trace check-the-keyboard-goes-to-the-2-47 ended: 13 lines, another trace was started
+      log | INFO  trace check-the-keyboard-goes-to-the-2-48: recording to /tmp/arbor-shell.eQ3MVO/home/traces/2026-10-15-143009-check-the-keyboard-goes-to-the-2-48.jsonl
+      log | INFO  show-all: showing everything
+      log | INFO  displays changed: 1 display(s), 0 remembered
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"with-b","time":2,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 55","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"void"}
+  ✘ real-apps-with-b-2: the docked window had the keyboard to begin with
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-2.png
+  ✔ real-apps-with-b-2: the window named is in view
+  ✘ real-apps-with-b-2: the window named has the keyboard, at once and for good, and gets the x
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-3.png
+
+== real-apps-control-2
+> show-all
+showing everything
+> click 344 251
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"control","time":2,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 56","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"right"}
+  ✔ real-apps-control-2: the docked window had the keyboard to begin with
+  ✔ real-apps-control-2: the window named is in view
+  ✔ real-apps-control-2: the window named has the keyboard, at once and for good, and gets the x
+
+== real-apps-with-b-3
+> show-all
+showing everything
+> test windows: front 56
+> test windows: front 56
+  ✘ the window can be clicked (pointer: no part of window 56 is in reach)
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-4.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+      |   Desktop          683 43 329 655
+      |   w55 0 271 673 439        floating focused
+      |   w56 12 43 659 655        docked
+      |   w58 0 32 700 677         floating
+      log | INFO  trace check-the-keyboard-goes-to-the-2-51 ended: 13 lines, another trace was started
+      log | INFO  trace check-the-keyboard-goes-to-the-2-52: recording to /tmp/arbor-shell.eQ3MVO/home/traces/2026-10-15-143023-check-the-keyboard-goes-to-the-2-52.jsonl
+      log | INFO  displays changed: 1 display(s), 0 remembered
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  show-all: showing everything
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"with-b","time":3,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 55","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"void"}
+  ✘ real-apps-with-b-3: the docked window had the keyboard to begin with
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-5.png
+  ✔ real-apps-with-b-3: the window named is in view
+  ✘ real-apps-with-b-3: the window named has the keyboard, at once and for good, and gets the x
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-6.png
+
+== real-apps-control-3
+> show-all
+showing everything
+> click 344 251
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"control","time":3,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 56","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"right"}
+  ✔ real-apps-control-3: the docked window had the keyboard to begin with
+  ✔ real-apps-control-3: the window named is in view
+  ✔ real-apps-control-3: the window named has the keyboard, at once and for good, and gets the x
+
+== real-apps-with-b-4
+> show-all
+showing everything
+> test windows: front 56
+> test windows: front 56
+  ✘ the window can be clicked (pointer: no part of window 56 is in reach)
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-7.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+      |   Desktop          683 43 329 655
+      |   w55 0 271 673 439        floating focused
+      |   w56 12 43 659 655        docked
+      |   w58 0 32 700 677         floating
+      log | INFO  trace check-the-keyboard-goes-to-the-2-55 ended: 20 lines, another trace was started
+      log | INFO  trace check-the-keyboard-goes-to-the-2-56: recording to /tmp/arbor-shell.eQ3MVO/home/traces/2026-10-15-143036-check-the-keyboard-goes-to-the-2-56.jsonl
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  show-all: showing everything
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"with-b","time":4,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 55","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"void"}
+  ✘ real-apps-with-b-4: the docked window had the keyboard to begin with
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-8.png
+  ✔ real-apps-with-b-4: the window named is in view
+  ✘ real-apps-with-b-4: the window named has the keyboard, at once and for good, and gets the x
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-9.png
+
+== real-apps-control-4
+> show-all
+showing everything
+> click 344 251
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"control","time":4,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 56","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"right"}
+  ✔ real-apps-control-4: the docked window had the keyboard to begin with
+  ✔ real-apps-control-4: the window named is in view
+  ✔ real-apps-control-4: the window named has the keyboard, at once and for good, and gets the x
+
+== real-apps-with-b-5
+> show-all
+showing everything
+> test windows: front 56
+> test windows: front 56
+  ✘ the window can be clicked (pointer: no part of window 56 is in reach)
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-10.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+      |   Desktop          683 43 329 655
+      |   w55 0 271 673 439        floating focused
+      |   w56 12 43 659 655        docked
+      |   w58 0 32 700 677         floating
+      log | INFO  displays changed: 1 display(s), 0 remembered
+      log | INFO  trace check-the-keyboard-goes-to-the-2-59 ended: 20 lines, another trace was started
+      log | INFO  trace check-the-keyboard-goes-to-the-2-60: recording to /tmp/arbor-shell.eQ3MVO/home/traces/2026-10-15-143050-check-the-keyboard-goes-to-the-2-60.jsonl
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  show-all: showing everything
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"with-b","time":5,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 55","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"void"}
+  ✘ real-apps-with-b-5: the docked window had the keyboard to begin with
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-11.png
+  ✔ real-apps-with-b-5: the window named is in view
+  ✘ real-apps-with-b-5: the window named has the keyboard, at once and for good, and gets the x
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-12.png
+
+== real-apps-control-5
+> show-all
+showing everything
+> click 344 251
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"control","time":5,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 56","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"right"}
+  ✔ real-apps-control-5: the docked window had the keyboard to begin with
+  ✔ real-apps-control-5: the window named is in view
+  ✔ real-apps-control-5: the window named has the keyboard, at once and for good, and gets the x
+
+== real-apps-with-b-6
+> show-all
+showing everything
+> test windows: front 56
+> test windows: front 56
+  ✘ the window can be clicked (pointer: no part of window 56 is in reach)
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-13.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+      |   Desktop          683 43 329 655
+      |   w55 0 271 673 439        floating focused
+      |   w56 12 43 659 655        docked
+      |   w58 0 32 700 677         floating
+      log | INFO  displays changed: 1 display(s), 0 remembered
+      log | INFO  trace check-the-keyboard-goes-to-the-2-63 ended: 20 lines, another trace was started
+      log | INFO  trace check-the-keyboard-goes-to-the-2-64: recording to /tmp/arbor-shell.eQ3MVO/home/traces/2026-10-15-143103-check-the-keyboard-goes-to-the-2-64.jsonl
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  show-all: showing everything
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"with-b","time":6,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 55","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"void"}
+  ✘ real-apps-with-b-6: the docked window had the keyboard to begin with
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-14.png
+  ✔ real-apps-with-b-6: the window named is in view
+  ✘ real-apps-with-b-6: the window named has the keyboard, at once and for good, and gets the x
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-15.png
+
+== real-apps-control-6
+> show-all
+showing everything
+> click 344 251
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"control","time":6,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 56","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"right"}
+  ✔ real-apps-control-6: the docked window had the keyboard to begin with
+  ✔ real-apps-control-6: the window named is in view
+  ✔ real-apps-control-6: the window named has the keyboard, at once and for good, and gets the x
+
+== real-apps-with-b-7
+> show-all
+showing everything
+> test windows: front 56
+> test windows: front 56
+  ✘ the window can be clicked (pointer: no part of window 56 is in reach)
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-16.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+      |   Desktop          683 43 329 655
+      |   w55 0 271 673 439        floating focused
+      |   w56 12 43 659 655        docked
+      |   w58 0 32 700 677         floating
+      log | INFO  trace check-the-keyboard-goes-to-the-2-67 ended: 13 lines, another trace was started
+      log | INFO  trace check-the-keyboard-goes-to-the-2-68: recording to /tmp/arbor-shell.eQ3MVO/home/traces/2026-10-15-143116-check-the-keyboard-goes-to-the-2-68.jsonl
+      log | INFO  show-all: showing everything
+      log | INFO  displays changed: 1 display(s), 0 remembered
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"with-b","time":7,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 55","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"void"}
+  ✘ real-apps-with-b-7: the docked window had the keyboard to begin with
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-17.png
+  ✔ real-apps-with-b-7: the window named is in view
+  ✘ real-apps-with-b-7: the window named has the keyboard, at once and for good, and gets the x
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-18.png
+
+== real-apps-control-7
+> show-all
+showing everything
+> click 344 251
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"control","time":7,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 56","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"right"}
+  ✔ real-apps-control-7: the docked window had the keyboard to begin with
+  ✔ real-apps-control-7: the window named is in view
+  ✔ real-apps-control-7: the window named has the keyboard, at once and for good, and gets the x
+
+== real-apps-with-b-8
+> show-all
+showing everything
+> test windows: front 56
+> test windows: front 56
+  ✘ the window can be clicked (pointer: no part of window 56 is in reach)
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-19.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+      |   Desktop          683 43 329 655
+      |   w55 0 271 673 439        floating focused
+      |   w56 12 43 659 655        docked
+      |   w58 0 32 700 677         floating
+      log | INFO  displays changed: 1 display(s), 0 remembered
+      log | INFO  trace check-the-keyboard-goes-to-the-2-71 ended: 20 lines, another trace was started
+      log | INFO  trace check-the-keyboard-goes-to-the-2-72: recording to /tmp/arbor-shell.eQ3MVO/home/traces/2026-10-15-143130-check-the-keyboard-goes-to-the-2-72.jsonl
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  show-all: showing everything
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"with-b","time":8,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 55","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"void"}
+  ✘ real-apps-with-b-8: the docked window had the keyboard to begin with
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-20.png
+  ✔ real-apps-with-b-8: the window named is in view
+  ✘ real-apps-with-b-8: the window named has the keyboard, at once and for good, and gets the x
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-21.png
+
+== real-apps-control-8
+> show-all
+showing everything
+> click 344 251
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"control","time":8,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 56","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"right"}
+  ✔ real-apps-control-8: the docked window had the keyboard to begin with
+  ✔ real-apps-control-8: the window named is in view
+  ✔ real-apps-control-8: the window named has the keyboard, at once and for good, and gets the x
+
+== real-apps-with-b-9
+> show-all
+showing everything
+> test windows: front 56
+> test windows: front 56
+  ✘ the window can be clicked (pointer: no part of window 56 is in reach)
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-22.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+      |   Desktop          683 43 329 655
+      |   w55 0 271 673 439        floating focused
+      |   w56 12 43 659 655        docked
+      |   w58 0 32 700 677         floating
+      log | INFO  trace check-the-keyboard-goes-to-the-2-75 ended: 13 lines, another trace was started
+      log | INFO  trace check-the-keyboard-goes-to-the-2-76: recording to /tmp/arbor-shell.eQ3MVO/home/traces/2026-10-15-143145-check-the-keyboard-goes-to-the-2-76.jsonl
+      log | INFO  displays changed: 1 display(s), 0 remembered
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  show-all: showing everything
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"with-b","time":9,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 55","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"void"}
+  ✘ real-apps-with-b-9: the docked window had the keyboard to begin with
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-23.png
+  ✔ real-apps-with-b-9: the window named is in view
+  ✘ real-apps-with-b-9: the window named has the keyboard, at once and for good, and gets the x
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-24.png
+
+== real-apps-control-9
+> show-all
+showing everything
+> click 344 251
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"control","time":9,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 56","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"right"}
+  ✔ real-apps-control-9: the docked window had the keyboard to begin with
+  ✔ real-apps-control-9: the window named is in view
+  ✔ real-apps-control-9: the window named has the keyboard, at once and for good, and gets the x
+
+== real-apps-with-b-10
+> show-all
+showing everything
+> test windows: front 56
+> test windows: front 56
+  ✘ the window can be clicked (pointer: no part of window 56 is in reach)
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-25.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+      |   Desktop          683 43 329 655
+      |   w55 0 271 673 439        floating focused
+      |   w56 12 43 659 655        docked
+      |   w58 0 32 700 677         floating
+      log | INFO  trace check-the-keyboard-goes-to-the-2-79 ended: 13 lines, another trace was started
+      log | INFO  trace check-the-keyboard-goes-to-the-2-80: recording to /tmp/arbor-shell.eQ3MVO/home/traces/2026-10-15-143158-check-the-keyboard-goes-to-the-2-80.jsonl
+      log | INFO  show-all: showing everything
+      log | INFO  displays changed: 1 display(s), 0 remembered
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"with-b","time":10,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 55","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"void"}
+  ✘ real-apps-with-b-10: the docked window had the keyboard to begin with
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-26.png
+  ✔ real-apps-with-b-10: the window named is in view
+  ✘ real-apps-with-b-10: the window named has the keyboard, at once and for good, and gets the x
+      picture: mac-shell/fail-check-the-keyboard-goes-to-the-window-named-27.png
+
+== real-apps-control-10
+> show-all
+showing everything
+> click 344 251
+> zoom 55
+filled the screen with w55
+> key x
+{"kind":"round","part":"real-apps","with":"control","time":10,"a":13725,"b":13767,"docked":56,"named":55,"other":58,"began":"13725 56","once":"13725 55","at200":"13725 55","at1000":"13725 55","front":"13725","arbor":"55","inView":"yes","landed":"named","verdict":"right"}
+  ✔ real-apps-control-10: the docked window had the keyboard to begin with
+  ✔ real-apps-control-10: the window named is in view
+  ✔ real-apps-control-10: the window named has the keyboard, at once and for good, and gets the x
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+
+== the tally
+test-apps  with-b   10 of 10 right, 0 wrong, 0 flipped and came back, 0 late, 0 void (the docked window had not the keyboard to begin with)
+test-apps  control  10 of 10 right, 0 wrong, 0 flipped and came back, 0 late, 0 void (the docked window had not the keyboard to begin with)
+real-apps  with-b   1 of 10 right, 0 wrong, 0 flipped and came back, 0 late, 9 void (the docked window had not the keyboard to begin with)
+real-apps  control  10 of 10 right, 0 wrong, 0 flipped and came back, 0 late, 0 void (the docked window had not the keyboard to begin with)
+
+113 passed, 27 failed
+still running when the script had ended, and stopped now:
+  5016 sleep
+exit code 1
