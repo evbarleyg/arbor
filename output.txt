@@ -1,0 +1,783 @@
+# mac-shell: scripts/mac-shell/probe-across-rounds.sh at 40006cb, macOS 26.6.2, 2026-10-15T15:10Z
+built Arbor, the pointer tool and the app bundles in 5s
+com.apple.WindowManager EnableTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+> display_add 1280 720: display 2, C18C6FA5-05DD-4A89-A300-5B42E939BEA7
+> display_move right: now at 1920 0 1280 720
+displays (id uuid x y w h scale main vendor model serial):
+1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1920 1080 1 main 0 0 305419896
+2 C18C6FA5-05DD-4A89-A300-5B42E939BEA7 1920 0 1280 720 1 - 42928 1 1
+session 1: Arbor pid 2889, test windows 44 45 46 (pid 2836)
+running: 2 displays, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n0, back no
+  Desktop          12 43 1896 947
+display 2 1920 0 1280 720, visible 1920 31 1280 689, camera n0, back no
+  Desktop          1932 43 1256 665
+  w44 170 532 480 348      display 1, floating
+  w45 220 492 480 348      display 1, floating
+  w46 270 452 480 348      display 1, floating
+
+== the large display: W3 at its right end, along the border
+> dock 46 right
+docked w46 at the right edge
+W3's slot ends at 1908; the border is at about 1920; the hand lets go at 1870 516
+
+== a floating window, dropped over the border: round 1
+> float 45
+arborctl: w45 is already floating
+> move-to-display next 45
+moved w45 to display 2
+  ✔ it floats on the small display
+taken at 2410 214; it is 480 wide, so it should reach from 1780 to 2260 when it is let go
+> drag 2410 214 1870 516 --hold 1
+its way (ms x y w h):
+  17 2320 202 480 348 
+  837 2302 212 480 348 
+  1016 2284 222 480 348 
+  1082 2266 232 480 348 
+  1167 2248 242 480 348 
+  1246 2230 252 480 348 
+  1320 2212 262 480 348 
+  1422 2194 272 480 348 
+  1507 2176 282 480 348 
+  1541 2158 292 480 348 
+  1607 2140 302 480 348 
+  1633 2122 312 480 348 
+  1693 2104 322 480 348 
+  1723 2086 332 480 348 
+  1833 2050 353 480 348 
+  1960 2032 363 480 348 
+  2033 2014 372 480 348 
+  2105 1996 372 480 348 
+  2216 1978 372 480 348 
+  2259 1960 372 480 348 
+  2359 1942 372 480 348 
+  2417 1924 372 480 348 
+  2487 1920 372 480 348 
+  2592 1902 372 480 348 
+  2709 1848 382 480 348 
+  2832 1830 412 480 348 
+  2922 1830 423 480 348 
+  4501 1830 423 468 348 
+  5581 1440 178 468 677 
+its slot: 1440 43 468 947
+  ✘ float-drop-1: whole within a second and a half, one further change, never off its slot's corner — it does not end in its slot [1440, 43, 468, 947]: [1440, 178, 468, 677]
+      picture: mac-shell/fail-probe-across-rounds-1.png
+      | display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+      |   Desktop          12 43 936 947
+      | display 2 1920 0 1280 720, visible 1920 31 1280 689, camera n0, back no
+      |   Desktop          1932 43 1256 665
+      |   w44 170 532 480 348      display 1, floating
+      |   w45 1440 178 468 677     display 1, docked focused
+      |   w46 960 43 468 947       display 1, docked
+      log | DEBUG float 45 failed: w45 is already floating
+      log | DEBUG w45 has the keyboard
+      log | INFO  move-to-display next 45: moved w45 to display 2
+      log | DEBUG focus is on w45
+      log | DEBUG w45 has the keyboard
+      log | INFO  trace float-drop-1: recording to /tmp/arbor-shell.Pkec3r/home/traces/2026-10-15-151031-float-drop-1.jsonl
+      log | DEBUG the button went down at 2410,214, the pointer is at 2410,214: it is on w45
+      log | DEBUG w45 is being dragged
+      log | DEBUG drag of w45: on float
+      log | DEBUG drag of w45: on cameraEdge(ArborCore.Edge.left)
+      log | DEBUG drag of w45: waiting over beside(n1, ArborCore.Edge.right)
+      log | DEBUG drag of w45: on beside(n1, ArborCore.Edge.right)
+      log | INFO  dropped w45 on beside(n1, ArborCore.Edge.right), display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Docked · ⌃⌥↩ frames it
+      log | INFO  trace float-drop-1 ended: 218 lines, trace off
+  ✘ float-drop-1: and ten seconds later
+      picture: mac-shell/fail-probe-across-rounds-2.png
+  ✘ float-drop-1: nothing is written down of where it stopped — stopped at: {'45': [0, 677]}
+      picture: mac-shell/fail-probe-across-rounds-3.png
+  ✔ float-drop-1: it did not take the third asking
+  call t 4.5736 asked [1830, 423, 468, 348] took [1830, 423, 468, 348]
+  call t 5.5902 asked [1440, 43, 468, 947] took [1440, 43, 468, 677]  SHORT
+  call t 5.5913 asked [1440, 178, 468, 677] took [1440, 178, 468, 677]
+  calls: whole never
+  ✔ it is docked on the large display
+
+== a floating window, dropped over the border: round 2
+> float 45
+w45 is floating
+> move-to-display next 45
+moved w45 to display 2
+  ✔ it floats on the small display
+taken at 2410 214; it is 480 wide, so it should reach from 1780 to 2260 when it is let go
+> drag 2410 214 1870 516 --hold 1
+its way (ms x y w h):
+  13 2320 202 480 348 
+  739 2302 212 480 348 
+  788 2284 222 480 348 
+  907 2266 232 480 348 
+  957 2248 242 480 348 
+  993 2230 252 480 348 
+  1037 2212 262 480 348 
+  1062 2194 272 480 348 
+  1122 2176 282 480 348 
+  1156 2158 292 480 348 
+  1326 2122 312 480 348 
+  1402 2104 322 480 348 
+  1467 2086 332 480 348 
+  1504 2050 353 480 348 
+  1554 2032 363 480 348 
+  1613 2014 372 480 348 
+  1646 1996 372 480 348 
+  1739 1978 372 480 348 
+  1841 1960 372 480 348 
+  1918 1942 372 480 348 
+  2020 1924 372 480 348 
+  2078 1920 372 480 348 
+  2265 1866 372 480 348 
+  2355 1848 372 480 348 
+  2482 1830 372 480 348 
+  4016 1440 43 468 947 
+its slot: 1440 43 468 947
+  ✔ float-drop-2: whole within a second and a half, one further change, never off its slot's corner
+  ✔ float-drop-2: and ten seconds later
+  ✔ float-drop-2: nothing is written down of where it stopped
+  ✔ float-drop-2: it did not take the third asking
+  call t 4.0535 asked [1440, 178, 468, 947] took [1440, 178, 468, 823]  SHORT
+  call t 4.0544 asked [1440, 43, 468, 947] took [1440, 43, 468, 947]
+  calls: whole 1 ms after the first call
+  ✔ it is docked on the large display
+
+== a floating window, dropped over the border: round 3
+> float 45
+w45 is floating
+> move-to-display next 45
+moved w45 to display 2
+  ✔ it floats on the small display
+taken at 2410 214; it is 480 wide, so it should reach from 1780 to 2260 when it is let go
+> drag 2410 214 1870 516 --hold 1
+its way (ms x y w h):
+  7 2320 202 480 348 
+  785 2302 212 480 348 
+  859 2284 222 480 348 
+  898 2266 232 480 348 
+  992 2248 242 480 348 
+  1083 2230 252 480 348 
+  1116 2212 262 480 348 
+  1179 2194 272 480 348 
+  1248 2176 282 480 348 
+  1295 2158 292 480 348 
+  1340 2140 302 480 348 
+  1409 2122 312 480 348 
+  1503 2104 322 480 348 
+  1578 2086 332 480 348 
+  1661 2068 342 480 348 
+  1763 2050 353 480 348 
+  1796 2032 363 480 348 
+  1873 2014 372 480 348 
+  1962 1996 372 480 348 
+  2013 1978 372 480 348 
+  2091 1960 372 480 348 
+  2158 1942 372 480 348 
+  2188 1924 372 480 348 
+  2220 1888 402 480 348 
+  2320 1870 412 480 348 
+  2424 1852 422 480 348 
+  2516 1834 432 480 348 
+  2551 1798 452 480 348 
+  2592 1780 463 480 348 
+  2833 1781 463 480 348 
+  4109 1440 43 468 348 
+  4181 1440 43 468 947 
+its slot: 1440 43 468 947
+  ✔ float-drop-3: whole within a second and a half, one further change, never off its slot's corner
+  ✔ float-drop-3: and ten seconds later
+  ✔ float-drop-3: nothing is written down of where it stopped
+  ✔ float-drop-3: it did not take the third asking
+  call t 4.1467 asked [1440, 43, 468, 947] took [1440, 43, 468, 947]
+  calls: whole 0 ms after the first call
+  ✔ it is docked on the large display
+
+== a floating window, dropped over the border: round 4
+> float 45
+w45 is floating
+> move-to-display next 45
+moved w45 to display 2
+  ✔ it floats on the small display
+taken at 2410 214; it is 480 wide, so it should reach from 1780 to 2260 when it is let go
+> drag 2410 214 1870 516 --hold 1
+its way (ms x y w h):
+  6 2320 202 480 348 
+  707 2302 212 480 348 
+  756 2284 222 480 348 
+  852 2266 232 480 348 
+  882 2248 242 480 348 
+  909 2230 252 480 348 
+  975 2212 262 480 348 
+  1052 2194 272 480 348 
+  1087 2176 282 480 348 
+  1158 2158 292 480 348 
+  1181 2140 302 480 348 
+  1215 2122 312 480 348 
+  1248 2104 322 480 348 
+  1301 2086 332 480 348 
+  1383 2068 342 480 348 
+  1439 2050 353 480 348 
+  1558 2032 363 480 348 
+  1596 2014 372 480 348 
+  1664 1996 372 480 348 
+  1732 1978 372 480 348 
+  1832 1960 372 480 348 
+  1929 1942 372 480 348 
+  1951 1924 372 480 348 
+  1996 1920 372 480 348 
+  2030 1902 372 480 348 
+  2057 1866 372 480 348 
+  2174 1848 372 480 348 
+  2230 1830 372 480 348 
+  2432 1812 372 480 348 
+  2729 1795 372 480 348 
+  2857 1794 372 480 348 
+  3974 1440 43 468 348 
+  4025 1440 43 468 947 
+its slot: 1440 43 468 947
+  ✔ float-drop-4: whole within a second and a half, one further change, never off its slot's corner
+  ✔ float-drop-4: and ten seconds later
+  ✔ float-drop-4: nothing is written down of where it stopped
+  ✔ float-drop-4: it did not take the third asking
+  call t 3.9897 asked [1440, 43, 468, 947] took [1440, 43, 468, 947]
+  calls: whole 0 ms after the first call
+  ✔ it is docked on the large display
+
+== a floating window, dropped over the border: round 5
+> float 45
+w45 is floating
+> move-to-display next 45
+moved w45 to display 2
+  ✔ it floats on the small display
+taken at 2410 214; it is 480 wide, so it should reach from 1780 to 2260 when it is let go
+> drag 2410 214 1870 516 --hold 1
+its way (ms x y w h):
+  10 2320 202 480 348 
+  702 2302 212 480 348 
+  799 2266 232 480 348 
+  825 2248 242 480 348 
+  898 2230 252 480 348 
+  1002 2212 262 480 348 
+  1071 2194 272 480 348 
+  1151 2176 282 480 348 
+  1203 2158 292 480 348 
+  1259 2140 302 480 348 
+  1343 2122 312 480 348 
+  1403 2104 322 480 348 
+  1499 2086 332 480 348 
+  1582 2068 342 480 348 
+  1656 2050 353 480 348 
+  1692 2032 363 480 348 
+  1714 2014 372 480 348 
+  1782 1996 372 480 348 
+  1848 1978 372 480 348 
+  1926 1960 372 480 348 
+  2038 1942 372 480 348 
+  2126 1924 372 480 348 
+  2201 1920 372 480 348 
+  2332 1902 372 480 348 
+  2418 1866 372 480 348 
+  2446 1848 372 480 348 
+  2485 1830 372 480 348 
+  2552 1812 372 480 348 
+  2886 1795 372 480 348 
+  2974 1794 372 480 348 
+  4144 1440 43 468 947 
+its slot: 1440 43 468 947
+  ✔ float-drop-5: whole within a second and a half, one further change, never off its slot's corner
+  ✔ float-drop-5: and ten seconds later
+  ✔ float-drop-5: nothing is written down of where it stopped
+  ✔ float-drop-5: it did not take the third asking
+  call t 4.1471 asked [1440, 43, 468, 947] took [1440, 43, 468, 947]
+  calls: whole 0 ms after the first call
+  ✔ it is docked on the large display
+> float 45
+w45 is floating
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          12 43 942 947
+display 2 1920 0 1280 720, visible 1920 31 1280 689, camera n0, back no
+  Desktop          1932 43 1256 665
+  w44 170 532 480 348      display 1, floating
+  w45 1434 343 480 348     display 1, floating focused
+  w46 966 43 942 947       display 1, docked
+
+== a docked window, dropped over the border: round 1
+it is managed at 1434 343 480 348
+> dock 45 left
+docked w45 at the left edge
+> move-to-display next 45
+moved w45 to display 2
+  ✔ it is docked on the small display
+taken at 2022 55; it is 622 wide, so it should reach from 1780 to 2402 when it is let go
+> drag 2022 55 1870 516 --hold 1
+its way (ms x y w h):
+  18 1932 43 622 665 
+  851 1926 55 622 665 
+  914 1921 70 622 665 
+  964 1920 101 622 665 
+  1026 1920 116 622 665 
+  1075 1920 131 622 665 
+  1165 1920 162 622 665 
+  1218 1920 177 622 665 
+  1324 1920 193 622 665 
+  1393 1920 224 622 665 
+  1524 1920 254 622 665 
+  1597 1920 270 622 665 
+  1646 1920 285 622 665 
+  1680 1920 300 622 665 
+  1782 1920 316 622 665 
+  1849 1920 331 622 665 
+  1922 1920 346 622 665 
+  1990 1920 362 622 665 
+  2098 1920 377 622 665 
+  2132 1920 393 622 665 
+  2175 1920 408 622 665 
+  2307 1920 423 622 665 
+  2356 1920 439 622 665 
+  2447 1920 454 622 665 
+  2499 1920 469 622 665 
+  2599 1920 485 622 665 
+  2704 1920 500 622 665 
+  2781 1914 516 622 665 
+  3047 1909 516 622 665 
+  4267 1440 43 468 947 
+its slot: 1440 43 468 947
+  ✔ dock-drop-1: whole within a second and a half, one further change, never off its slot's corner
+  ✔ dock-drop-1: and ten seconds later
+  ✔ dock-drop-1: nothing is written down of where it stopped
+  ✔ dock-drop-1: it did not take the third asking
+  call t 4.2975 asked [1440, 43, 468, 947] took [1440, 43, 468, 947]
+  calls: whole 0 ms after the first call
+  ✔ it is docked on the large display
+
+== a docked window, dropped over the border: round 2
+> move-to-display next 45
+moved w45 to display 2
+  ✔ it is docked on the small display
+taken at 2022 55; it is 622 wide, so it should reach from 1780 to 2402 when it is let go
+> drag 2022 55 1870 516 --hold 1
+its way (ms x y w h):
+  10 1932 43 622 665 
+  804 1926 55 622 665 
+  924 1921 55 622 665 
+  990 1920 55 622 665 
+  1025 1920 70 622 665 
+  1122 1920 101 622 665 
+  1226 1920 117 622 665 
+  1294 1920 132 622 665 
+  1365 1920 147 622 665 
+  1430 1920 163 622 665 
+  1517 1920 178 622 665 
+  1609 1920 194 622 665 
+  1658 1920 209 622 665 
+  1763 1920 224 622 665 
+  1806 1920 240 622 665 
+  1864 1920 255 622 665 
+  1901 1920 270 622 665 
+  1934 1920 286 622 665 
+  1973 1920 301 622 665 
+  2055 1920 316 622 665 
+  2141 1920 332 622 665 
+  2215 1920 347 622 665 
+  2258 1920 363 622 665 
+  2371 1920 378 622 665 
+  2418 1920 393 622 665 
+  2526 1920 409 622 665 
+  2594 1920 424 622 665 
+  2659 1920 439 622 665 
+  2750 1920 455 622 665 
+  2845 1920 470 622 665 
+  2914 1914 486 622 665 
+  3124 1909 486 622 665 
+  4383 1440 43 468 947 
+its slot: 1440 43 468 947
+  ✔ dock-drop-2: whole within a second and a half, one further change, never off its slot's corner
+  ✔ dock-drop-2: and ten seconds later
+  ✔ dock-drop-2: nothing is written down of where it stopped
+  ✔ dock-drop-2: it did not take the third asking
+  call t 4.4113 asked [1440, 43, 468, 947] took [1440, 43, 468, 947]
+  calls: whole 0 ms after the first call
+  ✔ it is docked on the large display
+
+== a docked window, dropped over the border: round 3
+> move-to-display next 45
+moved w45 to display 2
+  ✔ it is docked on the small display
+taken at 2022 55; it is 622 wide, so it should reach from 1780 to 2402 when it is let go
+> drag 2022 55 1870 516 --hold 1
+its way (ms x y w h):
+  11 1932 43 622 665 
+  649 1926 55 622 665 
+  680 1921 70 622 665 
+  706 1920 101 622 665 
+  778 1920 116 622 665 
+  801 1920 131 622 665 
+  850 1920 147 622 665 
+  879 1920 162 622 665 
+  929 1920 177 622 665 
+  989 1920 193 622 665 
+  1045 1920 208 622 665 
+  1082 1920 224 622 665 
+  1148 1920 239 622 665 
+  1273 1920 254 622 665 
+  1309 1920 270 622 665 
+  1415 1920 285 622 665 
+  1446 1920 300 622 665 
+  1538 1920 316 622 665 
+  1569 1920 331 622 665 
+  1666 1920 346 622 665 
+  1786 1920 362 622 665 
+  1863 1920 377 622 665 
+  1959 1920 408 622 665 
+  2007 1920 423 622 665 
+  2108 1920 439 622 665 
+  2214 1920 454 622 665 
+  2284 1920 469 622 665 
+  2378 1920 485 622 665 
+  2413 1920 500 622 665 
+  2499 1914 516 622 665 
+  2700 1911 516 622 665 
+  2818 1881 516 622 665 
+  3970 1780 516 622 665 
+  4033 1780 516 468 485 
+  4116 1440 43 468 947 
+its slot: 1440 43 468 947
+  ✔ dock-drop-3: whole within a second and a half, one further change, never off its slot's corner
+  ✔ dock-drop-3: and ten seconds later
+  ✔ dock-drop-3: nothing is written down of where it stopped
+  ✔ dock-drop-3: it did not take the third asking
+  call t 4.1222 asked [1440, 43, 468, 947] took [1440, 43, 468, 947]
+  calls: whole 0 ms after the first call
+  ✔ it is docked on the large display
+
+== a docked window, dropped over the border: round 4
+> move-to-display next 45
+moved w45 to display 2
+  ✔ it is docked on the small display
+taken at 2022 55; it is 622 wide, so it should reach from 1780 to 2402 when it is let go
+> drag 2022 55 1870 516 --hold 1
+its way (ms x y w h):
+  8 1932 43 622 665 
+  747 1926 55 622 665 
+  832 1921 55 622 665 
+  920 1920 55 622 665 
+  978 1920 70 622 665 
+  1065 1920 101 622 665 
+  1149 1920 117 622 665 
+  1243 1920 132 622 665 
+  1302 1920 147 622 665 
+  1329 1920 163 622 665 
+  1362 1920 178 622 665 
+  1419 1920 194 622 665 
+  1523 1920 209 622 665 
+  1562 1920 224 622 665 
+  1646 1920 240 622 665 
+  1753 1920 270 622 665 
+  1843 1920 286 622 665 
+  1874 1920 301 622 665 
+  1914 1920 316 622 665 
+  1993 1920 332 622 665 
+  2073 1920 363 622 665 
+  2189 1920 378 622 665 
+  2287 1920 409 622 665 
+  2395 1920 424 622 665 
+  2495 1920 439 622 665 
+  2565 1920 455 622 665 
+  2670 1914 486 622 665 
+  3000 1909 486 622 665 
+  4259 1440 43 468 947 
+its slot: 1440 43 468 947
+  ✔ dock-drop-4: whole within a second and a half, one further change, never off its slot's corner
+  ✔ dock-drop-4: and ten seconds later
+  ✔ dock-drop-4: nothing is written down of where it stopped
+  ✔ dock-drop-4: it did not take the third asking
+  call t 4.3020 asked [1440, 43, 468, 947] took [1440, 43, 468, 947]
+  calls: whole 0 ms after the first call
+  ✔ it is docked on the large display
+
+== a docked window, dropped over the border: round 5
+> move-to-display next 45
+moved w45 to display 2
+  ✔ it is docked on the small display
+taken at 2022 55; it is 622 wide, so it should reach from 1780 to 2402 when it is let go
+> drag 2022 55 1870 516 --hold 1
+its way (ms x y w h):
+  10 1932 43 622 665 
+  718 1926 55 622 665 
+  778 1921 55 622 665 
+  862 1920 55 622 665 
+  891 1920 70 622 665 
+  948 1920 101 622 665 
+  1037 1920 117 622 665 
+  1124 1920 132 622 665 
+  1152 1920 147 622 665 
+  1268 1920 163 622 665 
+  1345 1920 178 622 665 
+  1375 1920 194 622 665 
+  1453 1920 209 622 665 
+  1565 1920 224 622 665 
+  1643 1920 240 622 665 
+  1697 1920 255 622 665 
+  1784 1920 270 622 665 
+  1893 1920 286 622 665 
+  1923 1920 301 622 665 
+  2009 1920 316 622 665 
+  2113 1920 332 622 665 
+  2150 1920 363 622 665 
+  2188 1920 378 622 665 
+  2282 1920 409 622 665 
+  2395 1920 424 622 665 
+  2470 1920 439 622 665 
+  2534 1920 455 622 665 
+  2619 1920 470 622 665 
+  2700 1914 486 622 665 
+  2940 1909 486 622 665 
+  4105 1909 486 480 348 
+  4812 1440 178 468 677 
+its slot: 1440 43 468 947
+  ✘ dock-drop-5: whole within a second and a half, one further change, never off its slot's corner — it does not end in its slot [1440, 43, 468, 947]: [1440, 178, 468, 677]
+      picture: mac-shell/fail-probe-across-rounds-4.png
+      | display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+      |   Desktop          12 43 936 947
+      | display 2 1920 0 1280 720, visible 1920 31 1280 689, camera n0, back no
+      |   Desktop          1932 43 1256 665
+      |   w44 170 532 480 348      display 1, floating
+      |   w45 1440 178 468 677     display 1, docked focused
+      |   w46 960 43 468 947       display 1, docked
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  move-to-display next 45: moved w45 to display 2
+      log | INFO  trace dock-drop-5: recording to /tmp/arbor-shell.Pkec3r/home/traces/2026-10-15-151418-dock-drop-5.jsonl
+      log | DEBUG the button went down at 2022,55, the pointer is at 2022,55: it is on w45
+      log | DEBUG w45 is being dragged
+      log | DEBUG drag of w45: on none
+      log | DEBUG drag of w45: on cameraEdge(ArborCore.Edge.left)
+      log | DEBUG drag of w45: on cameraEdge(ArborCore.Edge.right)
+      log | DEBUG drag of w45: waiting over beside(n1, ArborCore.Edge.right)
+      log | DEBUG drag of w45: on beside(n1, ArborCore.Edge.right)
+      log | INFO  dropped w45 on beside(n1, ArborCore.Edge.right), display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  trace dock-drop-5 ended: 231 lines, trace off
+  ✘ dock-drop-5: and ten seconds later
+      picture: mac-shell/fail-probe-across-rounds-5.png
+  ✘ dock-drop-5: nothing is written down of where it stopped — stopped at: {'45': [0, 677]}
+      picture: mac-shell/fail-probe-across-rounds-6.png
+  ✔ dock-drop-5: it did not take the third asking
+  call t 4.7980 asked [1440, 43, 468, 947] took [1440, 43, 468, 677]  SHORT
+  call t 4.8204 asked [1440, 178, 468, 677] took [1440, 178, 468, 677]
+  calls: whole never
+  ✔ it is docked on the large display
+> float 45
+w45 is floating
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          12 43 942 947
+display 2 1920 0 1280 720, visible 1920 31 1280 689, camera n0, back no
+  Desktop          1932 43 1256 665
+  w44 170 532 480 348      display 1, floating
+  w45 1434 343 480 348     display 1, floating focused
+  w46 966 43 942 947       display 1, docked
+> dock 44 left
+docked w44 at the left edge
+
+== by the command: round 1
+> move-to-display next 44
+moved w44 to display 2
+  ✔ it is docked on the small display
+> move-to-display next 44
+moved w44 to display 1
+its way (ms x y w h):
+  36 1284 43 624 947 
+its slot: 1284 43 624 947
+  ✔ command-1: whole within a second and a half, one further change, never off its slot's corner
+  ✔ command-1: and ten seconds later
+  ✘ command-1: nothing is written down of where it stopped — stopped at: {'45': [0, 677]}
+      picture: mac-shell/fail-probe-across-rounds-7.png
+      | display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+      |   Desktop          12 43 624 947
+      | display 2 1920 0 1280 720, visible 1920 31 1280 689, camera n0, back no
+      |   Desktop          1932 43 1256 665
+      |   w44 1284 43 624 947      display 1, docked focused
+      |   w45 1434 343 480 348     display 1, floating
+      |   w46 648 43 624 947       display 1, docked
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  move-to-display next 44: moved w44 to display 2
+      log | INFO  trace command-1: recording to /tmp/arbor-shell.Pkec3r/home/traces/2026-10-15-151445-command-1.jsonl
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  move-to-display next 44: moved w44 to display 1
+      log | INFO  trace command-1 ended: 37 lines, trace off
+      log | INFO  trace command-1-learnt: recording to /tmp/arbor-shell.Pkec3r/home/traces/2026-10-15-151500-command-1-learnt.jsonl
+      log | INFO  trace command-1-learnt ended: 3 lines, trace off
+  ✔ command-1: it did not take the third asking
+  call t 0.0692 asked [1284, 43, 624, 947] took [1284, 43, 624, 677]  SHORT
+  call t 0.0773 asked [1284, 43, 624, 947] took [1284, 43, 624, 947]
+  calls: whole 8 ms after the first call
+  ✔ it is docked on the large display
+
+== by the command: round 2
+> move-to-display next 44
+moved w44 to display 2
+  ✔ it is docked on the small display
+> move-to-display next 44
+moved w44 to display 1
+its way (ms x y w h):
+  8 1284 178 624 677 
+its slot: 1284 43 624 947
+  ✘ command-2: whole within a second and a half, one further change, never off its slot's corner — it does not end in its slot [1284, 43, 624, 947]: [1284, 178, 624, 677]
+      picture: mac-shell/fail-probe-across-rounds-8.png
+      | display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+      |   Desktop          12 43 624 947
+      | display 2 1920 0 1280 720, visible 1920 31 1280 689, camera n0, back no
+      |   Desktop          1932 43 1256 665
+      |   w44 1284 178 624 677     display 1, docked focused
+      |   w45 1434 343 480 348     display 1, floating
+      |   w46 648 43 624 947       display 1, docked
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  move-to-display next 44: moved w44 to display 2
+      log | INFO  trace command-2: recording to /tmp/arbor-shell.Pkec3r/home/traces/2026-10-15-151503-command-2.jsonl
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  move-to-display next 44: moved w44 to display 1
+      log | INFO  trace command-2 ended: 38 lines, trace off
+  ✘ command-2: and ten seconds later
+      picture: mac-shell/fail-probe-across-rounds-9.png
+  ✘ command-2: nothing is written down of where it stopped — stopped at: {'44': [0, 677], '45': [0, 677]}
+      picture: mac-shell/fail-probe-across-rounds-10.png
+  ✔ command-2: it did not take the third asking
+  call t 0.0170 asked [1284, 43, 624, 947] took [1284, 43, 624, 677]  SHORT
+  call t 0.0188 asked [1284, 43, 624, 947] took [1284, 43, 624, 677]  SHORT
+  call t 0.0193 asked [1284, 178, 624, 677] took [1284, 178, 624, 677]
+  calls: whole never
+  ✔ it is docked on the large display
+
+== by the command: round 3
+> move-to-display next 44
+moved w44 to display 2
+  ✔ it is docked on the small display
+> move-to-display next 44
+moved w44 to display 1
+its way (ms x y w h):
+  9 1284 43 624 947 
+its slot: 1284 43 624 947
+  ✔ command-3: whole within a second and a half, one further change, never off its slot's corner
+  ✔ command-3: and ten seconds later
+  ✘ command-3: nothing is written down of where it stopped — stopped at: {'45': [0, 677]}
+      picture: mac-shell/fail-probe-across-rounds-11.png
+      | display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+      |   Desktop          12 43 624 947
+      | display 2 1920 0 1280 720, visible 1920 31 1280 689, camera n0, back no
+      |   Desktop          1932 43 1256 665
+      |   w44 1284 43 624 947      display 1, docked focused
+      |   w45 1434 343 480 348     display 1, floating
+      |   w46 648 43 624 947       display 1, docked
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  move-to-display next 44: moved w44 to display 2
+      log | INFO  trace command-3: recording to /tmp/arbor-shell.Pkec3r/home/traces/2026-10-15-151522-command-3.jsonl
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  move-to-display next 44: moved w44 to display 1
+      log | INFO  trace command-3 ended: 41 lines, trace off
+      log | INFO  trace command-3-learnt: recording to /tmp/arbor-shell.Pkec3r/home/traces/2026-10-15-151536-command-3-learnt.jsonl
+      log | INFO  trace command-3-learnt ended: 3 lines, trace off
+  ✔ command-3: it did not take the third asking
+  call t 0.0279 asked [1284, 178, 624, 947] took [1284, 178, 624, 823]  SHORT
+  call t 0.0393 asked [1284, 43, 624, 947] took [1284, 43, 624, 947]
+  calls: whole 11 ms after the first call
+  ✔ it is docked on the large display
+
+== by the command: round 4
+> move-to-display next 44
+moved w44 to display 2
+  ✔ it is docked on the small display
+> move-to-display next 44
+moved w44 to display 1
+its way (ms x y w h):
+  10 1284 43 624 947 
+its slot: 1284 43 624 947
+  ✔ command-4: whole within a second and a half, one further change, never off its slot's corner
+  ✔ command-4: and ten seconds later
+  ✘ command-4: nothing is written down of where it stopped — stopped at: {'45': [0, 677]}
+      picture: mac-shell/fail-probe-across-rounds-12.png
+      | display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+      |   Desktop          12 43 624 947
+      | display 2 1920 0 1280 720, visible 1920 31 1280 689, camera n0, back no
+      |   Desktop          1932 43 1256 665
+      |   w44 1284 43 624 947      display 1, docked focused
+      |   w45 1434 343 480 348     display 1, floating
+      |   w46 648 43 624 947       display 1, docked
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  move-to-display next 44: moved w44 to display 2
+      log | INFO  trace command-4: recording to /tmp/arbor-shell.Pkec3r/home/traces/2026-10-15-151540-command-4.jsonl
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  move-to-display next 44: moved w44 to display 1
+      log | INFO  trace command-4 ended: 37 lines, trace off
+      log | INFO  trace command-4-learnt: recording to /tmp/arbor-shell.Pkec3r/home/traces/2026-10-15-151554-command-4-learnt.jsonl
+      log | INFO  trace command-4-learnt ended: 3 lines, trace off
+  ✔ command-4: it did not take the third asking
+  call t 0.0238 asked [1284, 43, 624, 947] took [1284, 43, 624, 677]  SHORT
+  call t 0.0260 asked [1284, 43, 624, 947] took [1284, 43, 624, 947]
+  calls: whole 2 ms after the first call
+  ✔ it is docked on the large display
+
+== by the command: round 5
+> move-to-display next 44
+moved w44 to display 2
+  ✔ it is docked on the small display
+> move-to-display next 44
+moved w44 to display 1
+its way (ms x y w h):
+  24 1284 43 624 947 
+its slot: 1284 43 624 947
+  ✔ command-5: whole within a second and a half, one further change, never off its slot's corner
+  ✔ command-5: and ten seconds later
+  ✘ command-5: nothing is written down of where it stopped — stopped at: {'45': [0, 677]}
+      picture: mac-shell/fail-probe-across-rounds-13.png
+      | display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+      |   Desktop          12 43 624 947
+      | display 2 1920 0 1280 720, visible 1920 31 1280 689, camera n0, back no
+      |   Desktop          1932 43 1256 665
+      |   w44 1284 43 624 947      display 1, docked focused
+      |   w45 1434 343 480 348     display 1, floating
+      |   w46 648 43 624 947       display 1, docked
+      log | DEBUG no stage: Reduce motion is on
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  move-to-display next 44: moved w44 to display 2
+      log | INFO  trace command-5: recording to /tmp/arbor-shell.Pkec3r/home/traces/2026-10-15-151558-command-5.jsonl
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  move-to-display next 44: moved w44 to display 1
+      log | INFO  trace command-5 ended: 37 lines, trace off
+      log | INFO  trace command-5-learnt: recording to /tmp/arbor-shell.Pkec3r/home/traces/2026-10-15-151612-command-5-learnt.jsonl
+      log | INFO  trace command-5-learnt ended: 3 lines, trace off
+  ✔ command-5: it did not take the third asking
+  call t 0.0225 asked [1284, 43, 624, 947] took [1284, 43, 624, 677]  SHORT
+  call t 0.0245 asked [1284, 43, 624, 947] took [1284, 43, 624, 947]
+  calls: whole 2 ms after the first call
+  ✔ it is docked on the large display
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          12 43 624 947
+display 2 1920 0 1280 720, visible 1920 31 1280 689, camera n0, back no
+  Desktop          1932 43 1256 665
+  w44 1284 43 624 947      display 1, docked focused
+  w45 1434 343 480 348     display 1, floating
+  w46 648 43 624 947       display 1, docked
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+> display_remove
+
+81 passed, 13 failed
+exit code 1
