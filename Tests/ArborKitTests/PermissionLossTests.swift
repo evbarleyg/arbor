@@ -882,13 +882,16 @@ import Testing
     let (h, _, _, _, slack) = makeHarness(framed: false, settings: settings)
     h.system.userFocus(slack)
     #expect(h.controller.isPausedForApp)
+    let starts = h.system.starts
     h.revokeAccessibility()
-    h.scheduler.advance(by: 3)
+    // It takes a person a while to find the switch. A doubt that passes ends nothing.
+    h.scheduler.advance(by: 20)
     #expect(!h.controller.isPaused && !h.controller.isPausedForApp)
     h.grantAccessibility()
     h.scheduler.advance(by: 1)
     #expect(h.controller.accessibilityGranted)
     #expect(h.controller.isPausedForApp)
+    #expect(h.system.starts == starts + 1, "ended, and begun again")
   }
 
   // MARK: Quitting

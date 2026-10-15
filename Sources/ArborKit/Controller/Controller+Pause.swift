@@ -56,7 +56,16 @@ extension Controller {
   }
 
   func resume() -> CommandResult {
-    guard isPaused else { return .failure(isRunning ? "not paused" : statusText) }
+    guard isPaused else {
+      // Said while the permission is in doubt. Arbor can do nothing yet, and says so; but they said it themselves, so the pause is not
+      // kept for the case that the doubt passes (Controller+Permission.swift), and the keys are Arbor's again.
+      if permissionLoss?.pause != nil {
+        permissionLoss?.pause = nil
+        permissionLoss?.duringAPause = false
+        notify(.input)
+      }
+      return .failure(isRunning ? "not paused" : statusText)
+    }
     scheduler.cancel("resume")
     isPaused = false
     isPausedForApp = false
@@ -86,7 +95,7 @@ extension Controller {
     return .success("resumed")
   }
 
-  func togglePause() -> CommandResult { isPaused ? resume() : pause(minutes: nil) }
+  func togglePause() -> CommandResult { isPaused || permissionLoss?.pause != nil ? resume() : pause(minutes: nil) }
 
   /// Whether the pause that is ending took floating `window` off the Desktop, to where its user had left it, and nobody has
   /// moved it since. A launch leaves floating windows where it finds them; a resume brings back what the pause undid.

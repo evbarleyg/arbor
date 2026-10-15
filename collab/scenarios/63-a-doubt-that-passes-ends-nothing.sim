@@ -1,0 +1,47 @@
+# Story: paused for a film in full screen. The Mac's privacy daemon restarts: for a second Arbor doubts its Accessibility permission, and the doubt
+# passes by itself. Nobody granted anything, so nothing ends: the pause goes on, no window moves, the keys stay given away, and what the pause
+# still owes is still paid: the window that was in full screen comes into view when the film is over (F63, criterion 7; board 0.21).
+open Safari
+open Mail
+dock 101 left
+dock 102 right
+zoom 101
+expect hidden 102
+fullscreen 102 on
+pause
+expect ok
+expect shortcut ctrl+opt+escape on
+expect shortcut ctrl+opt+left off
+wait 5
+revoke
+wait 2.6
+status
+expect replied taken away
+expect shortcut ctrl+opt+left off
+grant
+wait 1
+expect still
+status
+expect replied paused
+expect shortcut ctrl+opt+escape on
+expect shortcut ctrl+opt+left off
+key ctrl+opt+left
+expect app-got ctrl+opt+left
+expect silent
+fullscreen 102 off where-it-was
+wait 10
+expect visible 102
+expect visible 101
+# The one thing that counts in a doubt is the person's own word.
+revoke
+wait 2.6
+key ctrl+opt+escape
+expect fail
+expect said Arbor needs the Accessibility permission
+expect shortcut ctrl+opt+left on
+grant
+wait 1
+status
+expect replied running
+expect silent
+expect count docked 2

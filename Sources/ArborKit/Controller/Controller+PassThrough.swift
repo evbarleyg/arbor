@@ -28,8 +28,8 @@ extension Controller {
     let bindings = effectiveBindings.bindings
     // A pause the person took. Not the one Arbor takes at a logout, which any app can cancel: nobody said anything then.
     if isPaused, !pauseIsArborsOwn { return KeyBindings.whilePaused(bindings) }
-    // The permission went during such a pause, or was doubted for a second. The pause is over (F63), and the keys stay given away until Arbor can
-    // do something with them again.
+    // The permission went during such a pause, or was doubted for a second. Whether the pause is over shows when it returns (F63); until then the
+    // keys stay given away, unless the person says resume.
     if permissionLoss?.duringAPause == true { return KeyBindings.whilePaused(bindings) }
     // While Arbor is not running it pauses for nobody, and the list is the person's word all the same.
     if isPassingThrough || (!isRunning && settings.pausesFor(frontmostApp?.bundleID)) {

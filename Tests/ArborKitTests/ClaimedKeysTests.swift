@@ -233,8 +233,8 @@ import Testing
     #expect(h.system.keysTheAppInFrontGot.map(\.text) == ["ctrl+opt+z"])
   }
 
-  /// The person paused Arbor, and then the permission goes, or is doubted for a second. The pause is over by F63; the keys they gave away are not
-  /// taken back behind their back while nothing can be done with them.
+  /// The person paused Arbor, and then the permission goes, or is doubted for a second. The keys they gave away are not taken back behind their
+  /// back while nothing can be done with them.
   @Test func theLossThatStrikesDuringAPauseByHandTakesNoKeyBack() {
     let h = Harness()
     h.watchAccessibility()

@@ -7,7 +7,7 @@ import Foundation
 /// Without it Arbor can move nothing, not even back into view. So it notices quickly, stops without touching
 /// a window, says what happened and what to do, and starts again, as at launch, when the permission returns.
 /// Stopping is `shutdown` without the moves and recovering is `start`: paths that quitting, pausing and
-/// launching exercise all the time.
+/// launching exercise all the time. The one exception: a doubt that passes by itself ends no pause (`goOnPausing`).
 extension Controller {
   /// What was out of view, and so out of reach, when the permission went.
   public struct PermissionLoss: Equatable, Sendable {
@@ -18,18 +18,28 @@ extension Controller {
     public var since: Date
     /// Whether the person had paused Arbor, and so given its keys away.
     public var duringAPause = false
-  }
+    /// When macOS last said no: as far as Arbor knows, the loss lasted from `since` until then.
+    var lastNo: Date
+    /// The pause that was on, for the case that nobody took anything away (`regainAccessibility`).
+    var pause: Pause?
+    /// The app Arbor pauses for in which it ran all the same, because its person had resumed it there by hand.
+    var resumedInside: String?
 
-  /// A pause as it was when the permission went.
-  struct PauseTheLossEnded {
-    var until: Date?
-    var forApp: Bool
-    var isArborsOwn: Bool
-    var frames: [WindowID: CGRect]
+    /// A pause as it was when the permission went. Its end stays where it is, in `pauseEnd`.
+    struct Pause: Equatable, Sendable {
+      var forApp: Bool
+      var isArborsOwn: Bool
+      var frames: [WindowID: CGRect]
+    }
+
+    /// Whether it was over so soon that nobody can have mended it: the privacy daemon restarted, say. Arbor cannot tell a person's grant from a
+    /// doubt that passes but by the time it lasted. Measured to the last no, not to the yes, which is heard up to a second late: so
+    /// no loss that was really shorter counts as longer. One that was a little longer may count as a doubt, which is the milder error.
+    var wasADoubt: Bool { lastNo.timeIntervalSince(since) < Controller.shortestLossWorthAFuss }
   }
 
   /// A loss shorter than this is taken for a false alarm, or for a slip of the finger: the view stays as it was.
-  static let shortestLossWorthAFuss: TimeInterval = 3
+  nonisolated static let shortestLossWorthAFuss: TimeInterval = 3
   /// The ways home lead to the Accessibility pane at most this often, however hard they are hammered.
   static let secondsBetweenVisitsToSettings: TimeInterval = 10
   static let secondsAThoroughYesHolds: TimeInterval = 1
@@ -70,6 +80,7 @@ extension Controller {
     } else if thoroughly {
       lastThoroughYes = now()
     }
+    if !answer { permissionLoss?.lastNo = now() }
     switch permissionWatch.heard(answer, beyondDoubt: beyondDoubt) {
     case .lost: loseAccessibility()
     case .returned: regainAccessibility()
@@ -105,16 +116,16 @@ extension Controller {
 
   private func loseAccessibility() {
     let apps = Set(parked.compactMap { windows[$0]?.appName }).sorted()
+    // Granting it again means wanting Arbor, as launching it does: a pause does not outlive this. Unless nobody granted anything, so the pause
+    // is kept aside: see `regainAccessibility`.
     let loss = PermissionLoss(
-      windows: parked.count, apps: apps, since: now(), duringAPause: isPaused && !isPausedForApp && !pauseIsArborsOwn)
+      windows: parked.count, apps: apps, since: now(), duringAPause: isPaused && !isPausedForApp && !pauseIsArborsOwn, lastNo: now(),
+      pause: isPaused ? .init(forApp: isPausedForApp, isArborsOwn: pauseIsArborsOwn, frames: pausedFrames) : nil,
+      resumedInside: isRunning && frontmostAppPaused ? frontmostApp?.bundleID : nil)
     // Set first: observers of the `.lifecycle` change read them.
     accessibilityGranted = false
     permissionLoss = loss
     Log.error("Accessibility permission was taken away with \(loss.windows) window(s) out of view")
-    // Granting it again means wanting Arbor, as launching it does: a pause does not outlive this. Unless nobody granted anything: see
-    // `regainAccessibility`.
-    pauseTheLossEnded =
-      isPaused ? PauseTheLossEnded(until: pauseEnd, forApp: isPausedForApp, isArborsOwn: pauseIsArborsOwn, frames: pausedFrames) : nil
     scheduler.cancel("resume")
     isPausedForApp = false
     pauseIsArborsOwn = false
@@ -123,6 +134,8 @@ extension Controller {
     if isPaused {
       isPaused = false
       pausedFrames.removeAll()
+      // Nothing is shut down here that would take the pause's own line away, and whoever hears of this forgets that it is up.
+      hideHeadsUp()
       notify(.lifecycle)
     } else if isRunning {
       overlays.showDropPreview(nil)
@@ -144,37 +157,40 @@ extension Controller {
     isListedUnderAccessibility = true
     permissionLoss = nil
     Log.info("Accessibility permission is back")
-    let pause = pauseTheLossEnded
-    pauseTheLossEnded = nil
-    // A doubt that passes by itself ends nothing. Nobody granted anything, so nobody said that they want Arbor back: to run now would end the pause
-    // they asked for, take their keys back and lay their windows out, in the middle of the game: three unasked acts from one false alarm.
-    if let pause, let loss, now().timeIntervalSince(loss.since) < Self.shortestLossWorthAFuss { return goOnPausing(pause) }
+    // A doubt that passes by itself ends nothing. Nobody granted anything, so nobody said that they want Arbor back: to run now would end the
+    // pause they asked for, take their keys back and lay their windows out, in the middle of the game: three unasked acts from one false alarm.
+    if let loss, loss.wasADoubt, let pause = loss.pause { return goOnPausing(pause) }
+    // Nor is it a new way into an app Arbor pauses for (`followFrontmostApp`).
+    if let loss, loss.wasADoubt, let app = loss.resumedInside, app == frontmostApp?.bundleID { frontmostAppPaused = true }
     start()
     filter.ignoredWindowIDs.formIntersection(windows.keys)
     lastVisitToSettings = nil
     // They were promised their windows back. Back returns to the view this replaces. Not after a false alarm, which
     // is over in a second: nobody read a promise, and the view must not change for nothing.
-    if let loss, loss.windows > 0, isRunning, now().timeIntervalSince(loss.since) >= Self.shortestLossWorthAFuss {
+    if let loss, loss.windows > 0, isRunning, !loss.wasADoubt {
       _ = home()
     }
     // As after a pause: Arbor was not looking when the keyboard went where it is now.
     if isRunning, let focused = system.focusedWindow() { keyboardIs(in: focused, saysMacOS: false) }
   }
 
-  /// The pause goes on as if nothing had been: no window is touched, no key taken.
-  private func goOnPausing(_ pause: PauseTheLossEnded) {
+  /// The pause goes on: no window is touched, no key taken.
+  private func goOnPausing(_ pause: PermissionLoss.Pause) {
     isPaused = true
     isPausedForApp = pause.forApp
     pauseIsArborsOwn = pause.isArborsOwn
-    pauseEnd = pause.until
     pausedFrames = pause.frames
-    lastVisitToSettings = nil
     Log.info("still paused: the permission was gone for a moment only")
+    // What a key was told meanwhile is no longer true, and nothing starts here that would take it away by the way.
+    hideHeadsUp()
     notify(.lifecycle)
-    if let until = pause.until {
+    if let pauseEnd {
       // Its end may have come meanwhile.
-      scheduler.schedule("resume", after: max(until.timeIntervalSince(now()), 0)) { [weak self] in self?.timedPauseEnded() }
+      scheduler.schedule("resume", after: max(pauseEnd.timeIntervalSince(now()), 0)) { [weak self] in self?.timedPauseEnded() }
     }
+    // What the pause still owes. Each of these looks again only while there is a pause, so a look that fell into the doubt was the last.
+    lookOutForWindowsLeftInFullScreen()
+    lookOutForWhatCouldNotComeBack()
     // The app it was for may have left the front meanwhile.
     followFrontmostApp()
   }
