@@ -49,16 +49,18 @@ arbor_start 2
 "$ARBOR_BIN/arborctl" quit > /dev/null
 ended "$ARBOR_PID" || die "the session's own Arbor did not quit"
 ARBOR_PID=""
-app="$ARBOR_SESSION_DIR/Arbor.app"
+# Not in the session's folder: tccutil finds a bundle by its identifier in Launch Services' list, and of one under /tmp it says "No such bundle identifier",
+# as the user and as root, registered or not.
+app="$HOME/Applications/ArborProbeLossUnderTraffic.app"
+at_exit 'rm -rf "${app:?}"'
+rm -rf "${app:?}"
 mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$ARBOR_BIN/Arbor" "$app/Contents/MacOS/Arbor"
 cp Resources/Info.plist "$app/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_ID" -c "Delete :CFBundleURLTypes" "$app/Contents/Info.plist" \
   || die "could not edit Info.plist"
 codesign --force --sign - --identifier "$BUNDLE_ID" "$app" || die "codesign failed"
-# tccutil finds a bundle by its identifier in Launch Services' list, which is kept for each user: as root it knows nothing of a bundle this user opened.
 /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$app" || echo "lsregister could not register the bundle"
-sudo /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$app" || echo "lsregister could not register the bundle for root"
 codesign --display --requirements - "$app" 2>/dev/null | sed -n 's/^\(# \)\{0,1\}designated => //p' > "$ARBOR_SESSION_DIR/requirement.txt"
 csreq -r "$ARBOR_SESSION_DIR/requirement.txt" -b "$ARBOR_SESSION_DIR/requirement.bin" || die "csreq could not read the bundle's requirement"
 REQUIREMENT="X'$(xxd -p "$ARBOR_SESSION_DIR/requirement.bin" | tr -d '\n')'"
@@ -97,6 +99,11 @@ for name, start, end in stretches:
     facts[name] = (len(part), round(hole * 1000), sum(1 for e in part if e[3] > 10000), round(late / 1000))
     print(f"{'+'.join(always)} {name}: {len(part)} arrived, LONGEST HOLE {hole * 1000:.0f} ms, worst lateness {late / 1000:.1f} ms, more than 10 ms late: {facts[name][2]}")
 
+def stamp(time):
+    return f"{int(time // 3600):02d}:{int(time % 3600 // 60):02d}:{time % 60:06.3f}"
+for earlier, later in zip(steady, steady[1:]):
+    if later[0] - earlier[0] > 0.15:
+        print(f"  a hole of {(later[0] - earlier[0]) * 1000:.0f} ms from {stamp(earlier[0])} (n={earlier[2]}) to {stamp(later[0])} (n={later[2]})")
 # Every event has a number, and a beat posts its kinds in a fixed order, so which numbers are of which kind is read off what arrived.
 numbers = {e[2] for e in found}
 lost_after, first_after, met = 0, -1, 0
@@ -195,8 +202,9 @@ between() { [ "$ROAD" = row ] && echo "FROM THE ROW'S DELETION UNTIL ARBOR NOTIC
 afterwards() {
   tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -E "ermission|event tap|stopped|ERROR" | cut -c 12-220 | tail -n 8
   check "round $round: Arbor has no event tap left" eventually no_taps
-  REMOVED=$(tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -m 1 "permission is gone" | cut -c 12-23)
-  [ -n "$REMOVED" ] || { invalid "Arbor's log says when the taps went"; REMOVED=$TAKEN; }
+  # Whichever noticed first: the taps' own check, or the controller.
+  REMOVED=$(tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -m 1 -E "permission is gone|permission was taken away" | cut -c 12-23)
+  [ -n "$REMOVED" ] || { invalid "Arbor's log says when it noticed"; REMOVED=$TAKEN; }
   "$ARBOR_BIN/arborctl" status | head -n 1 | cut -c 1-120
   echo "the tools' own permission afterwards: $(pointer ax-access)"
 }
