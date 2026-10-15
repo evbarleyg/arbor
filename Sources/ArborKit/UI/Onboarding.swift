@@ -43,7 +43,7 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
   }
 
   /// Opens the window on `page`, or turns it to that page and brings it to the front.
-  /// - Parameter page: nil for no page in particular: an open window stays as it is, a new one starts at the first.
+  /// - Parameter page: nil for no page in particular: an open window stays as it is, a new one opens where the session says.
   func show(_ page: OnboardingFlow.Page?) {
     guard let session else { return }
     let window = self.window ?? makeWindow(session)
@@ -51,7 +51,7 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
     if window.isVisible {
       if let page { session.go(to: page) }
     } else {
-      session.begin(on: page ?? .permissions)
+      session.begin(on: page)
       staysPut = false
       shown = nil
       render()
@@ -245,13 +245,14 @@ struct OnboardingView: View {
   var body: some View {
     VStack(alignment: .leading, spacing: isCompact ? 12 : 20) {
       header
-      if model.page == .permissions {
+      if model.page != .firstSteps {
         if let rowsHeight {
           ScrollView { rows }
             .frame(height: rowsHeight)
         } else {
           rows
         }
+        keys
       } else {
         if !model.keysLegend.isEmpty {
           Text(model.keysLegend)
@@ -261,8 +262,10 @@ struct OnboardingView: View {
             .padding(.bottom, -6)
         }
         steps
-        offer
-        waysBack
+        Text(model.wayBack)
+          .font(.callout)
+          .fixedSize(horizontal: false, vertical: true)
+          .padding(.horizontal, 12)
         loginBox
       }
       footer
@@ -274,21 +277,63 @@ struct OnboardingView: View {
   /// For the moves: the window lies over the windows they are made on.
   private var isCompact: Bool { model.page == .firstSteps }
 
-  private var header: some View {
-    HStack(alignment: .center, spacing: isCompact ? 10 : 14) {
-      Image(nsImage: icon)
-        .resizable()
-        .frame(width: isCompact ? 36 : 76, height: isCompact ? 36 : 76)
-        .accessibilityHidden(true)
-      VStack(alignment: .leading, spacing: isCompact ? 1 : 4) {
-        Text(model.title)
-          .font(isCompact ? .title3.bold() : .title.bold())
-        Text(model.summary)
-          .font(isCompact ? .caption : .body)
-          .foregroundStyle(.secondary)
-          .fixedSize(horizontal: false, vertical: true)
+  @ViewBuilder private var header: some View {
+    if model.page == .permissions {
+      VStack(alignment: .leading, spacing: 14) {
+        drawing
+        headings
+      }
+    } else {
+      HStack(alignment: .center, spacing: isCompact ? 10 : 14) {
+        Image(nsImage: icon)
+          .resizable()
+          .frame(width: isCompact ? 36 : 76, height: isCompact ? 36 : 76)
+          .accessibilityHidden(true)
+        headings
       }
     }
+  }
+
+  private var headings: some View {
+    VStack(alignment: .leading, spacing: isCompact ? 1 : 4) {
+      Text(model.title)
+        .font(isCompact ? .title3.bold() : .title.bold())
+      Text(model.summary)
+        .font(isCompact ? .caption : .body)
+        .foregroundStyle(.secondary)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+  }
+
+  /// What Arbor is for, without a word: two windows side by side, one of them filling the screen, both back. Six readers of six missed
+  /// "a small picture of the result".
+  private var drawing: some View {
+    HStack(spacing: 10) {
+      screen(both: true)
+      arrow
+      screen(both: false)
+      arrow
+      screen(both: true)
+    }
+    .accessibilityElement(children: .ignore)
+    .accessibilityLabel("Two windows side by side. One fills the screen. Both are back.")
+  }
+
+  private var arrow: some View {
+    Image(systemName: "arrow.right")
+      .font(.system(size: 13, weight: .semibold))
+      .foregroundStyle(.secondary)
+  }
+
+  private func screen(both: Bool) -> some View {
+    HStack(spacing: 3) {
+      RoundedRectangle(cornerRadius: 3).fill(Color.accentColor)
+      if both { RoundedRectangle(cornerRadius: 3).fill(Color.secondary.opacity(0.55)) }
+    }
+    .padding(4)
+    .frame(width: 92, height: 58)
+    .background(RoundedRectangle(cornerRadius: 6).fill(Color.primary.opacity(0.05)))
+    .overlay(RoundedRectangle(cornerRadius: 6).stroke(Color.primary.opacity(0.2), lineWidth: 1))
   }
 
   // MARK: The first page
@@ -303,6 +348,19 @@ struct OnboardingView: View {
       }
     }
     .modifier(Box())
+  }
+
+  /// The keys in a sentence, and what their signs are called.
+  @ViewBuilder private var keys: some View {
+    if !model.keysLine.isEmpty {
+      VStack(alignment: .leading, spacing: 3) {
+        Text(model.keysLine)
+          .fixedSize(horizontal: false, vertical: true)
+        Text(model.keysLegend)
+          .font(.caption)
+          .foregroundStyle(.secondary)
+      }
+    }
   }
 
   private func rowView(_ row: OnboardingModel.Row) -> some View {
@@ -446,44 +504,6 @@ struct OnboardingView: View {
       }
     }
     .modifier(Box())
-  }
-
-  @ViewBuilder private var offer: some View {
-    if let offer = model.offer {
-      VStack(alignment: .leading, spacing: 4) {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-          Text(offer.text)
-            .font(.callout)
-            .fixedSize(horizontal: false, vertical: true)
-          Spacer(minLength: 0)
-          Button(offer.action.title) { onAction(offer.action.command) }
-        }
-        if !offer.failure.isEmpty {
-          Text(offer.failure)
-            .font(.callout)
-            .foregroundStyle(.red)
-            .fixedSize(horizontal: false, vertical: true)
-        }
-      }
-      .padding(.horizontal, 12)
-    }
-  }
-
-  private var waysBack: some View {
-    VStack(alignment: .leading, spacing: 5) {
-      Text(model.waysBackTitle)
-        .font(.headline)
-      ForEach(model.waysBack, id: \.self) { way in
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-          Text("•")
-            .foregroundStyle(.secondary)
-          Text(way)
-            .font(.callout)
-            .fixedSize(horizontal: false, vertical: true)
-        }
-      }
-    }
-    .padding(.horizontal, 12)
   }
 
   /// A tick box in all but name: a real one wants a binding, and the state is macOS's, not this view's.

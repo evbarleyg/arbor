@@ -423,6 +423,10 @@ public final class Controller {
   var permissionWatch = PermissionWatch()
   /// When a failed shortcut last opened the Accessibility pane.
   var lastVisitToSettings: Date?
+  /// macOS's part in sending somebody to the Accessibility pane (`sendToAccessibilitySettings`).
+  public var accessibilityErrand: AccessibilityErrand?
+  /// macOS has been asked to put this Arbor in the list under Accessibility, or Arbor has had the permission: it is in the list.
+  var isListedUnderAccessibility = false
   /// True from the first `start()` with a probe.
   var isWatchingPermission = false
   /// True during `shutdown(movingWindows: false)`: `placeVisibly` and `putBack`, through which it moves windows, do nothing.
@@ -482,6 +486,7 @@ public final class Controller {
     guard !isRunning, !comesBackPaused() else { return }
     isTurning = true
     defer { isTurning = false }
+    isListedUnderAccessibility = true
     // Not always the first start of the process: Arbor also starts after a pause, and after losing and
     // regaining Accessibility permission. Nobody told it what happened meanwhile, so what it knew about
     // windows, displays and frames is forgotten here, whoever stopped it.

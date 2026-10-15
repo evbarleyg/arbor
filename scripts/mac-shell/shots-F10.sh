@@ -367,11 +367,16 @@ ctl welcome
 check "welcome opens the window on the four moves" eventually on_second_page
 check "where it waits at the right of the display, clear of the left edge" eventually rests_at_the_right
 ctl check-setup
-check "check-setup turns it to the first page" eventually on_first_page
+check "check-setup turns it to a wide page" eventually on_first_page
 check "the welcome window is on screen" eventually welcome_frame
 echo "the welcome window is at: $(welcome_frame)"
 overlays
-check "it opens on its first page" on_first_page
+shot 40-check-setup
+look_welcome 40-check-setup-own
+ctl welcome
+check "welcome turns it to the moves" eventually on_second_page
+press_button "Back"
+check "Back turned to the welcome" eventually on_first_page
 shot 40-welcome-ready
 look_welcome 40-welcome-ready-own
 press_button "Continue"
@@ -558,13 +563,13 @@ shot 72-after-ctrl-opt-space
 ctl check-setup
 shot 73-dark-welcome
 look_welcome 73-dark-welcome-own
-# Five rows are more than this display is tall: they scroll, and Continue stays above the Dock.
+# Five rows are more than this display is tall: they scroll, and Done stays above the Dock.
 read -r _ vy _ vh <<< "$(arbor_ask screen)"
 read -r wx wy ww wh <<< "$(welcome_frame)"
 echo "the welcome window is at: $wx $wy $ww $wh; the display shows $vy to $((vy + vh))"
 check "the welcome window fits between the menu bar and the Dock" test "$((wy + wh))" -le "$((vy + vh))"
-press_button "Continue"
-sleep 0.5
+ctl welcome
+sleep 0.8
 shot 74-dark-first-steps
 look_welcome 74-dark-first-steps-own
 # shellcheck disable=SC2046

@@ -264,16 +264,16 @@ import Testing
     #expect(throws: (any Error).self) { try Command.parse("fix-setup now") }
   }
 
-  // MARK: In the welcome window
+  // MARK: In Check Setup…
 
-  /// The whole of it as a newcomer meets it: the row, the button, the tick, the way back.
+  /// The whole of it as whoever asks meets it: the row, the button, the tick, the way back.
   @Test func theWelcomeWindowsButtonTakesTheStepAndThenOffersTheWayBack() throws {
     let h = makeHarness()
     let a = h.system.open(app: "Safari")
     let before = h.frame(a)
     h.start()
     let session = OnboardingSession(controller: h.controller) { _ in }
-    session.begin()
+    session.begin(on: .setup)
     #expect(session.model.title == "Ready, with one suggestion")
     let step = try #require(session.model.row(.desktopAndDock)?.action)
     #expect(step.title == "Switch Off macOS Tiling")
@@ -286,7 +286,7 @@ import Testing
     #expect(
       row.done == "While Arbor runs, 3 settings of macOS are off. Quit or pause Arbor, and your Mac is as it was. To end that for good: here, or "
         + "later under Help → Check Setup… in Arbor’s menu. A window dragged to a screen edge docks now.")
-    #expect(session.model.page == .permissions, "it stays, so that what was done can be read")
+    #expect(session.model.page == .setup, "it stays, so that what was done can be read")
 
     let back = try #require(row.undo)
     #expect(back.title == "Put Them Back")
@@ -305,7 +305,8 @@ import Testing
     h.mac.managed = [.menuBar]
     var shown = 0
     let session = OnboardingSession(controller: h.controller) { _ in shown += 1 }
-    session.begin()
+    session.begin(on: .setup)
+    shown = 0
     let step = try #require(session.model.row(.desktopAndDock)?.action)
     session.actionEnded(h.controller.perform(step.command, from: .menu))
     #expect(shown == 1)
@@ -321,7 +322,7 @@ import Testing
     session.actionEnded(h.run("fix-setup undo"))
     #expect(session.model.row(.desktopAndDock)?.failure.isEmpty == false)
     session.end()
-    session.begin()
+    session.begin(on: .setup)
     #expect(session.model.row(.desktopAndDock)?.failure.isEmpty == true)
   }
 
@@ -350,17 +351,20 @@ import Testing
 
   /// Rule 2, said to whom it is true of: Arbor has never run here and nothing is docked.
   @Test func aNewcomerIsPromisedThatNothingMoves() throws {
-    let promise = "Nothing moves until you “dock” a window: put it at a side of the screen."
+    let promise = "Nothing moves until you ask. "
     let h = makeHarness()
     let a = h.system.open(app: "Safari")
-    func summary() throws -> String { h.controller.onboardingModel(try #require(h.controller.systemFacts?())).summary }
-    #expect(try !summary().contains(promise), "a later start brings back what was docked")
+    func keys() throws -> String {
+      let facts = try #require(h.controller.systemFacts?())
+      return h.controller.onboardingModel(facts, flow: OnboardingFlow(isReady: facts.accessibility)).keysLine
+    }
+    #expect(try !keys().isEmpty && !keys().contains(promise), "a later start brings back what was docked")
     h.controller.isFirstLaunch = true
-    #expect(try summary().hasSuffix(promise))
+    #expect(try keys().hasPrefix(promise))
     h.start()
-    #expect(try summary().hasSuffix(promise))
+    #expect(try keys().hasPrefix(promise))
     h.run("dock \(a.rawValue) left")
-    #expect(try !summary().contains(promise), "it has been kept, and is over")
+    #expect(try !keys().contains(promise), "it has been kept, and is over")
   }
 
   /// An Arbor under test on somebody's Mac has no switchboard, and shows no button a script's click could land on.
@@ -372,16 +376,17 @@ import Testing
     #expect(row.action == nil && row.state == .recommended)
   }
 
-  /// The window looks at the Mac once a second, so the first move follows the switch.
-  @Test func theFirstMoveBecomesTheDragOnceTheStepIsTaken() {
+  /// The moves are keys, which work however the switches stand (Q29, 11).
+  @Test func theMovesDoNotMindTheStep() {
     let h = makeHarness()
     h.start()
     let session = OnboardingSession(controller: h.controller) { _ in }
     session.begin(on: .firstSteps)
-    #expect(session.model.step(.dock)?.lead == "Click a window and press ⌃⌥⌘←")
+    let moves = session.model.steps
+    #expect(moves.first?.lead == "Click a window and press ⌃⌥⌘←")
     h.run("fix-setup")
     session.refresh()
-    #expect(session.model.step(.dock)?.lead == "Drag a window to the left edge of the screen")
+    #expect(session.model.steps == moves)
   }
 
   // MARK: In the menu

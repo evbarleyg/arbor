@@ -221,7 +221,7 @@ import Testing
       // ADD NEW ONES BELOW, EACH FEATURE ON A LINE OF ITS OWN: two branches that each add a line merge by themselves.
       // It asks macOS for the Accessibility permission and writes the answer into the trace as a read, which a replay is given. It is called from
       // scheduled work, commands and events, which are recorded. The other only keeps count of visits to System Settings.
-      "askAboutAccessibility", "shouldOpenAccessibilitySettings",
+      "askAboutAccessibility", "shouldOpenAccessibilitySettings", "sendToAccessibilitySettings",
       // F10, F42, F46. What the menu bar item, the menu, `doctor` and the welcome window show: they ask, and write to the log.
       "menuBarModel", "menuModel", "describe", "doctorReport", "check", "logSetupProblems", "logSkippedBindings", "onboardingModel", "pageToWelcomeOn",
       // The same files' `MenuBarWatcher` and `OnboardingSession`, and `noteWelcomed`: they change only what Arbor knows about its own

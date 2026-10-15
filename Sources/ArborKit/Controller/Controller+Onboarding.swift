@@ -8,10 +8,11 @@ extension Controller {
   public func onboardingModel(
     _ facts: SystemFacts, flow: OnboardingFlow? = nil, fixSetupFailure: String? = nil
   ) -> OnboardingModel {
-    // During a pause nearly every shortcut is handed back; the window names the ones that will be there again.
+    // During a pause nearly every shortcut is handed back, and before Arbor may arrange windows none is taken; the window names the ones
+    // that will be there.
     let bindings =
       facts.inputDisabled || !settings.hotkeysEnabled
-      ? [] : isPaused ? effectiveBindings.bindings : bindingsInEffect
+      ? [] : isPaused || !isRunning ? effectiveBindings.bindings : bindingsInEffect
     var facts = facts
     facts.switches = macSwitchesInTheWay(facts)
     facts.accessibility = hasPermission(facts)
@@ -53,12 +54,19 @@ extension Controller {
 
   /// The page to open the welcome window on by itself, now that Arbor arranges windows, or nil if this person has seen
   /// it. With the permission already there a first launch changes nothing on the display, and the one new icon may be
-  /// behind a notch. What there is to put right comes first; with nothing of the kind, the four moves.
+  /// behind a notch. A newcomer is told what Arbor is for; whoever used Arbor before there was such a window gets what would spoil the
+  /// moves or, with nothing of the kind, the moves.
   public func pageToWelcomeOn() -> OnboardingFlow.Page? {
     guard isRunning, !hasWelcomed else { return nil }
     let facts =
       systemFacts?() ?? SystemFacts(accessibility: accessibilityGranted, screenRecording: false, switches: nil)
-    return onboardingModel(facts).pageToOpenOn
+    return onboardingModel(facts, flow: OnboardingFlow(isReady: facts.accessibility)).pageToOpenOn
+  }
+
+  /// The page for whoever only wants the window (Arbor was opened again: the way in when the icon is hidden). How things stand, which
+  /// also has the way back from whatever Arbor did to this Mac; the welcome for a newcomer, and while there is a permission to ask for.
+  var pageWhenNoneIsAskedFor: OnboardingFlow.Page {
+    accessibilityGranted && !(isFirstLaunch && workspaces.values.allSatisfy { $0.tree.allWindows.isEmpty }) ? .setup : .permissions
   }
 
   /// The welcome window is on the display, whoever opened it.
@@ -107,8 +115,10 @@ public final class OnboardingSession {
   }
 
   /// The window opens: start over on `page`, with nothing ticked but what is already so.
-  public func begin(on page: OnboardingFlow.Page = .permissions) {
+  /// - Parameter page: nil for no page in particular (`Controller.pageWhenNoneIsAskedFor`).
+  public func begin(on page: OnboardingFlow.Page? = nil) {
     guard let controller else { return }
+    let page = page ?? controller.pageWhenNoneIsAskedFor
     isOpen = true
     facts = Self.facts(of: controller)
     flow = OnboardingFlow(isReady: facts.accessibility)
@@ -126,7 +136,9 @@ public final class OnboardingSession {
     guard isOpen, let controller else { return }
     facts = Self.facts(of: controller)
     let page = flow.page
-    flow.update(isReady: facts.accessibility, needsAttention: controller.onboardingModel(facts).needsAttention)
+    flow.update(
+      isReady: facts.accessibility,
+      needsAttention: controller.onboardingModel(facts, flow: OnboardingFlow(isReady: facts.accessibility)).needsAttention)
     if flow.page != page { failure = nil }
     publish()
   }

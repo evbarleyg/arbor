@@ -152,8 +152,18 @@ although System Settings shows it switched on.
 
 ### First run
 
-Arbor lives in the menu bar and has no Dock icon. The first time, and whenever the permission is missing, a welcome window opens
-and shows what matters, with a live tick on everything that is in order and a button that opens the right pane of System Settings:
+Arbor lives in the menu bar and has no Dock icon. The first time, and whenever the permission is missing, a **welcome window** opens. It
+says what Arbor is for, in a small drawing and three sentences, names the keys, and asks for one thing: the Accessibility permission. **The first
+minute asks for nothing else.** (If another window manager is running, or VoiceOver is on, it says so there too: they take the same keys.)
+
+When the permission arrives the window comes forward and goes on by itself to **four moves to try** on your own windows, all of them keys, ticked
+off as you make them: click a window and press ⌃⌥⌘←, click another and press ⌃⌥⌘→, ⌃⌥↩ to fill the screen with one, ⌃⌥↩ again to have the
+arrangement back. The window words them from the shortcuts in effect. For the moves it is small, explains only the next one, and waits low over the
+Desktop until you put it elsewhere. It names one way back: ⌃⌥⎋ pauses Arbor and every window is as it was; Quit does the same. After the moves the
+same page has the box for Open at Login, which is also in the settings window, under General.
+
+**Help → Check Setup…** is for whoever asks: everything on this Mac that matters to Arbor, with a live tick on what is in order and a button that
+opens the right pane of System Settings:
 
 - **Accessibility** (required): macOS lets an app move other apps' windows only with this permission (System Settings →
   Privacy & Security → Accessibility). If the switch is on there and Arbor still says it has no permission, the build's signature has
@@ -171,16 +181,7 @@ and shows what matters, with a live tick on everything that is in order and a bu
   VoiceOver is on (⌃⌥ is its modifier), when there are several input sources, which macOS can switch with ⌃⌥Space, and when an
   app that uses ⌃⌥ itself is open (Emacs, a virtual machine, a JetBrains IDE).
 
-When the permission arrives the window comes forward. If something on its first page is still in the way it waits there, because
-that is where the offer is made; Continue goes on. Otherwise it goes on by itself, to **four moves to try** on your own windows, ticked off as you
-make them, in any order: drag a window to the left edge of the screen, another to the right edge, ⌃⌥↩ to frame one, ⌃⌥Space to show everything. For the moves the
-window is small, says nothing but the moves and the ways back, explains only the next one, and waits low over the Desktop until you put it elsewhere. After the last tick it offers one more (a third window onto the edge of a docked one) and, to whoever made the moves with the keys, the one step once more. It never teaches a move
-that cannot work on the Mac as it is set: while macOS's own tiling has the screen edges, the two docks are "Click a window and press ⌃⌥⌘←" and "Click another and press ⌃⌥⌘→", and
-it changes its words the moment the edges are Arbor's. There are always three ways
-back: Show Everything, Float All Windows (your Mac is back to normal), and quitting Arbor, which brings every window
-back into view. After the moves the same page has the box for Open at Login, which is also in the settings window, under General.
-
-To see the window again, choose Help → Check Setup… (the first page) or Help → Welcome… (the four moves) in Arbor's menu, open
+To see the window again, choose Help → Check Setup… or Help → Welcome… (the four moves) in Arbor's menu, open
 Arbor again (the way in when a crowded menu bar hides its item behind the notch), or run `arborctl check-setup` or
 `arborctl welcome`.
 `arborctl doctor` checks all of the above and more, one

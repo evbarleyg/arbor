@@ -10,6 +10,12 @@ public final class FakeWelcomeWindow {
   public private(set) var timesComeForward = 0
   /// The panes of System Settings its buttons have opened, in order.
   public private(set) var panesOpened: [OnboardingModel.Row.ID] = []
+  /// How often macOS has been asked to put Arbor in the list under Accessibility.
+  public private(set) var timesMacOSWasAsked = 0
+  /// macOS answers that with a dialog of its own. False: this once it does not.
+  public var macOSAnswersWithItsDialog = true
+  /// That dialog is on the screen. Its button opens the pane and puts it away (`clickOpenSystemSettingsInMacOSsDialog`).
+  public private(set) var macOSsDialogIsOpen = false
   /// Called whenever it shows something else, opens or closes.
   public var onChange: (() -> Void)?
 
@@ -23,6 +29,14 @@ public final class FakeWelcomeWindow {
     session = OnboardingSession(controller: controller) { [weak self] _ in self?.render() }
     controller.openWelcomeWindow = { [weak self] page in self?.show(page) }
     controller.askForAccessibility = { [weak self] in self?.show(nil) }
+    controller.accessibilityErrand = AccessibilityErrand(
+      askMacOS: { [weak self] in
+        guard let self else { return }
+        self.timesMacOSWasAsked += 1
+        self.macOSsDialogIsOpen = self.macOSAnswersWithItsDialog
+      },
+      macOSIsAsking: { [weak self] in self?.macOSsDialogIsOpen ?? false },
+      openPane: { [weak self] in self?.panesOpened.append(.accessibility) })
   }
 
   public var model: OnboardingModel { session.model }
@@ -35,11 +49,18 @@ public final class FakeWelcomeWindow {
       if let page { session.go(to: page) }
     } else {
       isOpen = true
-      session.begin(on: page ?? .permissions)
+      session.begin(on: page)
       shown = session.model
       onChange?()
     }
     controller.noteWelcomed()
+  }
+
+  /// The person does what macOS's dialog asks.
+  public func clickOpenSystemSettingsInMacOSsDialog() {
+    guard macOSsDialogIsOpen else { return }
+    macOSsDialogIsOpen = false
+    panesOpened.append(.accessibility)
   }
 
   /// A second passes: the window looks at the Mac again.
@@ -59,10 +80,9 @@ public final class FakeWelcomeWindow {
   public var buttons: [String] {
     guard isOpen else { return [] }
     var titles: [String] = []
-    if model.page == .permissions {
+    if model.page != .firstSteps {
       for row in model.rows { titles += [row.action?.title, row.button, row.undo?.title].compactMap { $0 } }
     }
-    if let offer = model.offer { titles.append(offer.action.title) }
     titles += [model.backButton, model.isPrimaryEnabled ? model.primaryButton : nil].compactMap { $0 }
     return titles
   }
@@ -71,21 +91,19 @@ public final class FakeWelcomeWindow {
   @discardableResult
   public func click(_ title: String) -> Bool {
     guard buttons.contains(title) else { return false }
-    if model.page == .permissions {
+    if model.page != .firstSteps {
       for row in model.rows {
         if let action = [row.action, row.undo].compactMap({ $0 }).first(where: { $0.title == title }) {
           session.actionEnded(controller.perform(action.command, from: .script))
           return true
         }
         if row.button == title {
-          panesOpened.append(row.id)
+          if row.id == .accessibility { controller.sendToAccessibilitySettings() } else { panesOpened.append(row.id) }
           return true
         }
       }
     }
-    if let offer = model.offer, offer.action.title == title {
-      session.actionEnded(controller.perform(offer.action.command, from: .script))
-    } else if title == model.backButton {
+    if title == model.backButton {
       session.go(to: .permissions)
     } else if model.page == .permissions {
       session.go(to: .firstSteps)

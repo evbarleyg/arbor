@@ -4,13 +4,13 @@
 #
 #   scripts/mac-shell/run.sh scripts/mac-shell/first-five-minutes.sh
 #
-#   1  the launch: nothing moves, the welcome window opens, the menu bar says what is missing
-#   2  the permission: Open Settings…, the grant, and whether the window is to be seen afterwards
-#   3  somebody who passes the offer by: the four moves as the window words them with macOS's own tiling on, and no reminder afterwards
-#   4  the one step: Switch Off macOS Tiling, and whether macOS obeys at once
-#   5  the four moves as the window words them then, the drags ending at the very edge, where a hand ends them
-#   6  afterwards: the menu, Check Setup…, Put Them Back
-#   7  quitting: every window as it was found, and macOS's settings too
+#   1  the launch: nothing moves, the welcome window opens and asks for the permission and nothing else
+#   2  the permission: Open Settings…, macOS's own dialog and what becomes of it, the grant, whether the window is to be seen afterwards
+#   3  the four moves as the window words them, all keys, with macOS's settings as they come; the one way back it names
+#   4  a hand that drags to the edge all the same: macOS takes the window, and Arbor says who did and where that can be changed
+#   5  Check Setup…: Switch Off macOS Tiling, whether macOS obeys at once; a pause, a resume; Put Them Back
+#   6  the menu
+#   7  quitting with the choice standing: every window as it was found, and macOS's settings too
 #
 # Arbor is a copy of the app under an identifier of its own, opened as Finder opens it, so that it answers for its own permissions.
 # The grant is written into the permission database, which is what the switch in System Settings does.
@@ -113,12 +113,6 @@ rests_right_of() {
   read -r x y w h <<< "$(real_frame_of "$1")"
   [ "$wx" -ge "$((${x%.*} + ${w%.*}))" ]
 }
-rests_in_the_middle() {
-  local frame wx wy ww wh
-  frame=$(welcome_frame) || return 1
-  read -r wx wy ww wh <<< "$frame"
-  [ "$((2 * wx + ww - screen_width))" -ge -4 ] && [ "$((2 * wx + ww - screen_width))" -le 4 ]
-}
 menu_is_open() { pointer windows | awk '$3 == 101 && $8 == "on" { found = 1 } END { exit !found }'; }
 menu_is_closed() { ! menu_is_open; }
 close_menu() { menu_is_open || return 0; key escape; eventually menu_is_closed; }
@@ -155,8 +149,8 @@ at_exit "tcc \"DELETE FROM access WHERE client = '$BUNDLE_ID';\"; for name in $K
 step "1  the launch"
 ARBOR_BUNDLE=$app ARBOR_MAY_LACK_PERMISSION=1 ARBOR_TEST_WINDOWS_ARGS="--regular" \
   arbor_start 4 ARBOR_NO_PROMPT=0 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_MAC_SWITCHES=1
-# The moves are made on three of them, front to back; the one at the back no hand touches.
-FIRST=$W4 SECOND=$W3 THIRD=$W2
+# The moves are made on two of them, front to back; the two at the back no hand touches.
+FIRST=$W4 SECOND=$W3
 found=$(frames)
 echo "the windows as they were found: $found"
 ctl status
@@ -164,7 +158,9 @@ check "the welcome window opens by itself" eventually welcome_frame
 see 10-launch
 check "nothing has moved" nothing_moved
 check "it names the permission" says "Accessibility"
-check "and macOS's own tiling, before anything is arranged" says "macOS tiling"
+check "and nothing else: not macOS's own tiling" says_not "macOS tiling"
+check "what Arbor is for, and what it has over macOS's tiling" says "Arbor keeps it."
+check "the keys, in a sentence" says "put a window left or right"
 "$ARBOR_BIN/arborctl" doctor 2>&1 | cut -c 1-240
 if item=$(status_item); then
   # shellcheck disable=SC2086
@@ -176,9 +172,28 @@ if item=$(status_item); then
 fi
 
 step "2  the permission"
+# macOS's own dialog, a window of a process of its own.
+asking_pid() { pointer windows --on-screen | awk '$9 == "universalAccessAuthWarn" { print $2; found = 1; exit } END { exit !found }'; }
+macos_asks() { asking_pid > /dev/null; }
+macos_asks_no_more() { ! macos_asks; }
+settings_are_open() { pointer windows --on-screen | awk '$9 == "System" && $10 == "Settings" { found = 1 } END { exit !found }'; }
 press "Open Settings…"
+check "macOS asks, with its own dialog" eventually macos_asks
+sleep 2.5
+shot 20-macos-asks
+settings_are_closed() { ! settings_are_open; }
+check "and Arbor has not opened System Settings over it" settings_are_closed
+if where=$("$AXFIND" "$(asking_pid)" point AXButton "Open System Settings" 2>/dev/null); then
+  # shellcheck disable=SC2086
+  click $where
+else
+  check "the dialog has a button Open System Settings" false
+  open "x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"
+fi
 sleep 8
-shot 20-system-settings
+shot 21-system-settings
+check "its button opens System Settings" settings_are_open
+check "and the dialog is gone: nothing is left lying over the person's windows" eventually macos_asks_no_more
 echo "on the screen, front to back:"; pointer windows --on-screen | awk '$3 >= 0 && $3 < 20'
 codesign --display --requirements - "$app" 2>/dev/null | sed -n 's/^\(# \)\{0,1\}designated => //p' | csreq -r- -b "$ARBOR_SESSION_DIR/requirement.bin"
 hex=$(xxd -p "$ARBOR_SESSION_DIR/requirement.bin" | tr -d '\n')
@@ -209,116 +224,128 @@ if ! noticed; then
 fi
 echo "what it took for Arbor to see the grant: $took"
 sleep 1.5
-see 21-granted
+see 22-granted
 echo "on the screen, front to back:"; pointer windows --on-screen | awk '$3 >= 0 && $3 < 20'
 if [ "$took" = "a relaunch" ]; then
   echo "NOT ANSWERED HERE: whether a running Arbor notices the permission by itself, and whether its window then comes in front of System Settings"
+  ctl welcome
 else
   check "Arbor noticed the permission by itself" status_starts running
   check "the welcome window is in front of System Settings" welcome_is_in_front
 fi
-check "it has not gone on past the offer" says "Switch Off macOS Tiling"
-check "and is headed by what Arbor is for" says "Arbor keeps your windows arranged"
+check "with nothing else to decide it has gone on to the moves" eventually says "Four moves to try"
 check "nothing has moved" nothing_moved
 killall "System Settings" 2>/dev/null
 sleep 1
-"$ARBOR_BIN/arborctl" doctor 2>&1 | cut -c 1-240
 
-# The moves are made exactly as the window words them: what it says is read from the window, and a move it does not name is not made.
+# The moves are made exactly as the window words them: the keys are read from the window, so they are whatever keys ship.
 ticks() { ax tree 2>/dev/null | grep AXImage | grep -c '"Done"'; }
 ticked() { [ "$(ticks)" = "$1" ]; }
-frame_and_show_everything() {
-  check "the third move is worded with the keys" says "Then press ⌃⌥↩"
-  key ctrl+opt+return
-  check "⌃⌥↩ framed the window docked last: the other is out of view" eventually is parked "$FIRST"
-  check "and so is the one that was never docked" eventually is parked "$THIRD"
-  check "the third move is ticked" eventually ticked 3
-  see "$1-framed"
-  check "the fourth move is worded with the keys" says "Then press ⌃⌥Space"
-  key ctrl+opt+space
-  check "⌃⌥Space showed everything" eventually is on_screen "$FIRST"
-  check "the window that was never docked as well" eventually is on_screen "$THIRD"
-  check "the fourth move is ticked" eventually ticked 4
-  see "$1-everything"
+# keys_after <words>: the shortcut that follows those words in the window, as `key` wants it: "⌃⌥⌘←" as ctrl+opt+cmd+left.
+keys_after() {
+  ax tree 2>/dev/null | grep -o "$1 [^ \"]*" | head -n 1 | sed "s/^$1 //" \
+    | sed 's/⌃/ctrl+/; s/⌥/opt+/; s/⇧/shift+/; s/⌘/cmd+/; s/←/left/; s/→/right/; s/↩/return/; s/⎋/escape/; s/Space/space/' | tr 'A-Z' 'a-z'
+}
+make_move() {
+  local keys
+  keys=$(keys_after "$1")
+  check "the window names the keys after “$1”" test -n "$keys"
+  [ -n "$keys" ] && key "$keys"
 }
 
-step "3  somebody who passes the offer by: the four moves with macOS's tiling on"
-ctl trace on first-five-minutes
-press "Continue"
-sleep 1
-see 30-moves-with-tiling-on
+step "3  the four moves, with macOS's settings as they come"
+ctl trace on first-five-minutes-moves
+see 30-moves
 check "nothing is ticked yet" ticked 0
-check "the first move is one that works on this Mac as it is set" says "Click a window and press ⌃⌥⌘←"
-check "and no drag to an edge is taught" says_not "Drag a window to the left edge of the screen"
+check "no drag is taught" says_not "Drag"
 # shellcheck disable=SC2046
 uncover $(inside_of "$FIRST")
 # shellcheck disable=SC2046
 click $(inside_of "$FIRST")
-key ctrl+opt+cmd+left
+make_move "Click a window and press"
 check "the window docked" eventually is docked "$FIRST"
 check "the first move is ticked" eventually ticked 1
 see 31-docked
 [ "$pushed" -gt 0 ] || check "the welcome window has gone over the Desktop, beside the docked window" eventually rests_right_of "$FIRST"
-check "the second move is made with the keys as well" says "Click another and press ⌃⌥⌘→"
 echo "the second window is at $(real_frame_of "$SECOND"), the welcome window at $(welcome_frame)"
 # shellcheck disable=SC2046
 uncover $(grab_of "$SECOND")
 # shellcheck disable=SC2046
 click $(grab_of "$SECOND")
-key ctrl+opt+cmd+right
+make_move "Click another and press"
 check "the second window docked" eventually is docked "$SECOND"
 check "the second move is ticked" eventually ticked 2
 see 32-side-by-side
-[ "$pushed" -gt 0 ] || check "the welcome window is between the two" eventually rests_in_the_middle
-check "during the moves it says little but the moves" says_not "Can’t see the icon?"
-frame_and_show_everything 33
-check "after the last tick the offer is made once more, where it is understood" says "Want to dock with the mouse too?"
-check "and one more move, for whoever likes" says "One more, if you like: drag a third onto the edge of a docked one"
-check "and what to do when the icon cannot be seen" says "Can’t see the icon?"
-# What a hand does that has read nothing: all the way to the edge. Also the control for step 5: here macOS must be seen to tile. The window
-# in front, whose title bar nothing covers.
-ctl float-all
+arranged=$(frames)
+third=$(keys_after "Then press")
+make_move "Then press"
+check "it fills the screen: the other is out of view" eventually is parked "$FIRST"
+check "the third move is ticked" eventually ticked 3
+see 33-fills-the-screen
+keys=$(keys_after "Press")
+check "the fourth move is the same key again" test -n "$keys" -a "$keys" = "$third"
+[ -n "$keys" ] && key "$keys"
+check "the other is back" eventually is on_screen "$FIRST"
+check "the fourth move is ticked" eventually ticked 4
 sleep 1
-held_from=$(real_frame_of "$FIRST")
-# shellcheck disable=SC2046
-uncover $(grab_of "$FIRST")
-# shellcheck disable=SC2046
-drag $(grab_of "$FIRST") 0 400 --hold 1.2 --no-release
-check "the window came along" test "$(real_frame_of "$FIRST")" != "$held_from"
-shot 34-held-at-the-edge-with-tiling-on
-check "with its tiling on, macOS shows its preview at the edge" macos_preview
-echo "Arbor shows a preview too: $(arbor_preview && echo yes || echo no)"
-release
-film 35-let-go 6
-sleep 1.5
-shot 36-let-go
-echo "the window ended at $(real_frame_of "$FIRST"); Arbor says $(frame_of "$FIRST"), $(is docked "$FIRST" && echo docked || echo floating)"
-tail -n 8 "$ARBOR_HOME/arbor.log" | cut -c 12-220
-is docked "$FIRST" && ctl float "$FIRST"
-# shellcheck disable=SC2046
-uncover $(grab_of "$FIRST")
-# shellcheck disable=SC2046
-drag $(grab_of "$FIRST") 380 152
+check "the arrangement is back, to the point" test "$(frames)" = "$arranged"
+see 34-back
+check "after the last tick: what to do when the icon cannot be seen" says "Can’t see the icon?"
+check "macOS's settings have not been touched" all_switches_are "not set"
+check "and nothing is written down" test ! -e "$ARBOR_HOME/macos-settings-before.json"
+# The one way back the window names.
+make_move_back=$(ax tree 2>/dev/null | grep -o '[^ "]* pauses Arbor' | head -n 1 | sed 's/ pauses Arbor//' \
+  | sed 's/⌃/ctrl+/; s/⌥/opt+/; s/⇧/shift+/; s/⌘/cmd+/; s/⎋/escape/' | tr 'A-Z' 'a-z')
+check "it names one way back, with its key" test -n "$make_move_back"
+[ -n "$make_move_back" ] && key "$make_move_back"
+check "the key pauses Arbor" eventually status_starts paused
+sleep 1
+echo "paused: $(frames)"
+echo "found:  $found"
+check "and every window is as it was" nothing_moved
+shot 35-paused
+[ -n "$make_move_back" ] && key "$make_move_back"
+check "the same key resumes" eventually status_starts running
+# A trace ends when Arbor stops.
+cp "$ARBOR_HOME"/traces/*.jsonl "$ARBOR_OUT/" 2>/dev/null
+ctl trace on first-five-minutes-drags
+ctl float-all
 sleep 1
 press "Done"
 check "Done closes the window" eventually no_welcome_window
-if item=$(status_item); then
-  # shellcheck disable=SC2086
-  click $item
-  check "a click on the menu bar item opens the menu" eventually menu_is_open
-  shot 37-menu-with-the-offer-declined
-  "$ARBOR_BIN/arborctl" menu | head -n 6
-  close_menu
-fi
 
-step "4  the one step"
+step "4  a hand that drags to the edge all the same"
+# Also the control for step 5: here macOS must be seen to tile.
+held_from=$(real_frame_of "$FIRST")
+# shellcheck disable=SC2046
+drag $(grab_of "$FIRST") 0 400 --hold 1.2 --no-release
+check "the window came along" test "$(real_frame_of "$FIRST")" != "$held_from"
+shot 40-held-at-the-edge
+check "with its tiling on, macOS shows its preview at the edge" macos_preview
+echo "Arbor shows a preview too: $(arbor_preview && echo yes || echo no)"
+release
+film 41-let-go 6
+sleep 1.5
+shot 42-let-go
+echo "the window ended at $(real_frame_of "$FIRST"); Arbor says $(frame_of "$FIRST"), $(is docked "$FIRST" && echo docked || echo floating)"
+tail -n 8 "$ARBOR_HOME/arbor.log" | cut -c 12-220
+check "Arbor says on screen who took the window, and where that can be changed" grep -q "said on .*macOS tiled this window; Arbor stood aside.*Check Setup" "$ARBOR_HOME/arbor.log"
+is docked "$FIRST" && ctl float "$FIRST"
+# shellcheck disable=SC2046
+drag $(grab_of "$FIRST") 430 112
+# macOS gives the window its size back with a motion of its own.
+sleep 2
+
+step "5  Check Setup…"
 ctl check-setup
 check "Check Setup… opens the window" eventually welcome_frame
-see 40-before-the-step
+see 50-check-setup
+check "here macOS's tiling is spoken of" says "Your Mac tiles a window dragged to a screen edge, before Arbor gets it."
+check "with the three settings by their names" says "Drag windows to menu bar to fill screen"
 before_the_step=$(frames)
 if press "Switch Off macOS Tiling"; then
   sleep 1.5
-  see 41-after-the-step
+  see 51-after-the-step
   switches
   check "the three switches are off" all_switches_are 0
   check "and the click on the wallpaper is left as it was found" test -z "$(defaults read $DOMAIN EnableStandardClickToShowDesktop 2>/dev/null)"
@@ -326,97 +353,53 @@ if press "Switch Off macOS Tiling"; then
   check "the window says what was done" says "While Arbor runs, 3 settings of macOS are off"
   check "and how to undo it" says "Put Them Back"
   "$ARBOR_BIN/arborctl" doctor 2>&1 | head -n 8 | cut -c 1-240
-  # Only while Arbor runs. A pause is a quit that comes back.
-  ctl pause
-  check "a pause gives macOS its tiling back" eventually all_switches_are "not set"
-  see 42-paused
-  check "and the window says so" says "Arbor is paused, so macOS has its tiling back"
-  ctl resume
-  check "resuming takes it again, unasked" eventually all_switches_are 0
 fi
 check "no window moved for it" test "$(frames)" = "$before_the_step"
-
-step "5  the four moves with the screen edges Arbor's"
-press "Continue"
-sleep 1
-see 50-moves-with-tiling-off
-check "nothing is ticked yet" ticked 0
-check "the first move is the drag now" says "Drag a window to the left edge of the screen"
 # shellcheck disable=SC2046
 uncover $(grab_of "$FIRST")
 # shellcheck disable=SC2046
 drag $(grab_of "$FIRST") 0 400 --hold 1.2 --no-release
-shot 51-held-at-the-edge
+shot 52-held-at-the-edge
 check "macOS is seen to have stopped tiling: it shows no preview" no_macos_preview
+# "A window dragged to a screen edge docks now", says the row.
 check "Arbor shows where the window will land" arbor_preview
 release
-film 52-let-go 6
 check "the window docked" eventually is docked "$FIRST"
 check "and is where Arbor put it" eventually is in_slot "$FIRST"
-check "the first move is ticked" eventually ticked 1
-see 53-docked
-check "the second move is a drag as well" says "Drag another to the right edge"
-echo "the second window is at $(real_frame_of "$SECOND"), the welcome window at $(welcome_frame)"
-# shellcheck disable=SC2046
-uncover $(grab_of "$SECOND")
-# shellcheck disable=SC2046
-drag $(grab_of "$SECOND") "$((screen_width - 1))" 400 --hold 1.2 --no-release
-shot 54-held-at-the-right-edge
-check "macOS shows no preview there either" no_macos_preview
-check "Arbor shows where the window will land" arbor_preview
-release
-check "the second window docked" eventually is docked "$SECOND"
-check "and is where Arbor put it" eventually is in_slot "$SECOND"
-check "the second move is ticked" eventually ticked 2
-see 55-side-by-side
-frame_and_show_everything 56
-check "the way back is at hand where the moves end" says "macOS tiling is off while Arbor runs: drag a window to a screen edge, and it docks."
-# The fifth, for whoever likes: the window that was left lying, onto the lower edge of the one docked at the right.
-echo "the third window is at $(real_frame_of "$THIRD"), the welcome window at $(welcome_frame)"
-# shellcheck disable=SC2046
-uncover $(grab_of "$THIRD")
-read -r x y w h <<< "$(real_frame_of "$SECOND")"
-# shellcheck disable=SC2046
-drag $(grab_of "$THIRD") "$((${x%.*} + ${w%.*} / 2))" "$((${y%.*} + ${h%.*} - 20))" --hold 1.5 --no-release
-shot 57-held-over-a-docked-windows-edge
-check "Arbor shows where the window will land" arbor_preview
-release
-check "the third window docked" eventually is docked "$THIRD"
-check "the fifth move is ticked" eventually ticked 5
-see 58-three-docked
-press "Done"
-check "Done closes the window" eventually no_welcome_window
-shot 59-after-the-window
-echo "on a display of $screen_width by $screen_height the welcome window had to be pushed aside $pushed times"
-
-step "6  afterwards"
-if item=$(status_item); then
-  # shellcheck disable=SC2086
-  rightclick $item
-  check "a right click on the menu bar item opens the menu" eventually menu_is_open
-  shot 60-menu
-  close_menu
-fi
+shot 53-let-go
+ctl float-all
+sleep 1
+# Only while Arbor arranges windows. A pause is a quit that comes back.
+before_the_pause=$(frames)
+ctl pause
+check "a pause gives macOS its tiling back" eventually all_switches_are "not set"
+see 54-paused
+check "and the window says so" says "Arbor is paused, so macOS has its tiling back"
+check "a pause moves no floating window" test "$(frames)" = "$before_the_pause"
+ctl resume
+check "resuming takes it again, unasked" eventually all_switches_are 0
+# Check Setup… is an ordinary window, and the window that was dragged lies over it by now. A person would fetch it from the menu.
 ctl check-setup
-check "Check Setup… opens the window" eventually welcome_frame
-see 61-check-setup
+check "asked for again, Check Setup… comes to the front" eventually welcome_is_in_front
 if press "Put Them Back"; then
   sleep 1.5
-  see 62-put-back
+  see 55-put-back
   switches
   check "every switch is as it was found" all_switches_are "not set"
   check "and nothing is left written down" test ! -e "$ARBOR_HOME/macos-settings-before.json"
 fi
-# The words follow the switch on a window that is showing, whoever flips it.
-press "Continue"
-check "with the switches back on, the first move is made with the keys again" eventually says "Click a window and press ⌃⌥⌘←"
-ctl fix-setup
-check "flipped from a terminal while the moves are showing: the words change at once" eventually says "Drag a window to the left edge of the screen"
-see 63-words-follow-the-switch
-ctl fix-setup undo
-check "and back" eventually says "Click a window and press ⌃⌥⌘←"
-check "every switch is as it was found" all_switches_are "not set"
-ctl trace off
+press "Done"
+check "Done closes the window" eventually no_welcome_window
+
+step "6  the menu"
+if item=$(status_item); then
+  # shellcheck disable=SC2086
+  click $item
+  check "a click on the menu bar item opens the menu" eventually menu_is_open
+  shot 60-menu
+  "$ARBOR_BIN/arborctl" menu | head -n 12
+  close_menu
+fi
 mkdir -p "$ARBOR_OUT/traces"
 cp "$ARBOR_HOME"/traces/*.jsonl "$ARBOR_OUT/traces/" 2>/dev/null
 
@@ -432,12 +415,12 @@ check "quitting leaves macOS's settings as they were found" all_switches_are "no
 echo "what stays written down is the choice:"; cat "$ARBOR_HOME/macos-settings-before.json"; echo
 echo "after:  $(frames)"
 echo "found:  $found"
-# Arbor itself has moved it, onto the Desktop and out of view and back.
-check "the window that no hand touched is exactly where it was found" test "$(real_frame_of "$W1")" = "${found%% | *}"
+# Arbor itself has moved them, onto the Desktop and out of view and back.
+check "the two windows that no hand touched are exactly where they were found" test "$(real_frame_of "$W1") | $(real_frame_of "$W2")" = "$(echo "$found" | cut -d '|' -f 1-2 | sed 's/ $//')"
 size_of() { real_frame_of "$1" | awk '{ print int($3), int($4) }'; }
-# All three were opened at one size.
+# All four were opened at one size.
 own_size=$(echo "${found##* | }" | awk '{ print int($3), int($4) }')
-for id in "$FIRST" "$SECOND" "$THIRD"; do
+for id in "$FIRST" "$SECOND"; do
   check "window $id, docked and dragged, has its own size back" test "$(size_of "$id")" = "$own_size"
 done
 arbor_stop 70-after-quit

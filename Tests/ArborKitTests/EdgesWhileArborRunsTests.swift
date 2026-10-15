@@ -380,20 +380,18 @@ import Testing
     #expect(h.mac.values == Self.off)
   }
 
-  /// Somebody who has chosen is not sent back to choose, and the window does not come forward over what Arbor did itself.
-  @Test func theMovesAreWordedByWhatIsNotMerelyLent() {
+  /// The window does not come forward over what Arbor did itself.
+  @Test func theWindowDoesNotComeForwardOverAPauseAndAResume() {
     let h = makeHarness()
-    let a = h.system.open(app: "Safari"), b = h.system.open(app: "Mail")
+    h.system.open(app: "Safari")
     h.launchForTheFirstTime(permitted: true)
+    h.run("check-setup")
     h.welcome.click("Switch Off macOS Tiling")
-    h.welcome.click("Continue")
-    h.run("dock \(a.rawValue) left")
-    h.run("dock \(b.rawValue) right")
     let forward = h.welcome.timesComeForward
     h.run("pause")
-    #expect(h.welcome.model.step(.dock)?.lead == "Drag a window to the left edge of the screen")
+    #expect(h.welcome.model.row(.desktopAndDock)?.state == .note)
     h.run("resume")
-    #expect(h.welcome.model.step(.dock)?.lead == "Drag a window to the left edge of the screen")
+    #expect(h.welcome.model.row(.desktopAndDock)?.isSatisfied == true, "at once, not at the next look at the Mac")
     h.welcome.tick()
     #expect(h.welcome.timesComeForward == forward)
   }
@@ -417,8 +415,7 @@ import Testing
     h.start()
     func model() throws -> OnboardingModel { try self.model(h) }
     var row = try tilingRow(h)
-    #expect(row.detail.hasSuffix("It is off only while Arbor runs: quit Arbor, and your Mac is as it was."))
-    #expect(try model().waysBack.last == "Quitting Arbor brings every window back into view")
+    #expect(row.detail.hasSuffix("Switch that off, only while Arbor runs, and Arbor has the edges."))
 
     h.run("fix-setup")
     row = try tilingRow(h)
@@ -427,7 +424,6 @@ import Testing
       row.done
         == "While Arbor runs, 3 settings of macOS are off. Quit or pause Arbor, and your Mac is as it was. To end that for good: here, or later "
         + "under Help → Check Setup… in Arbor’s menu. A window dragged to a screen edge docks now.")
-    #expect(try model().waysBack.last == "Quitting Arbor brings every window back into view, and macOS tiling back")
 
     // Paused: neither a tick, which would say "off", nor advice. Arbor is keeping its word.
     h.run("pause")

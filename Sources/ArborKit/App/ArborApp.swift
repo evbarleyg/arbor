@@ -130,6 +130,11 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     // From the first start on the controller watches the permission itself (Controller+Permission.swift).
     // The taps' own check: the flag, and a tap made and thrown away. It talks to no app, so none can keep it waiting.
     controller.accessibilityProbe = { thoroughly in thoroughly ? EventTap.isPermitted() : AXIsProcessTrusted() }
+    controller.accessibilityErrand = AccessibilityErrand(
+      // The literal is kAXTrustedCheckOptionPrompt; the global is not concurrency-safe in Swift 6.
+      askMacOS: { _ = AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary) },
+      macOSIsAsking: { Self.macOSIsAskingForAccessibility },
+      openPane: { Self.openPane("com.apple.preference.security?Privacy_Accessibility") })
     // The window explains first; macOS's own prompt comes when the user clicks its button.
     controller.askForAccessibility = { [weak self] in
       if self?.environment.noPrompt == false { self?.showWelcomeWindow() }
@@ -504,7 +509,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
 
   // MARK: The welcome window
 
-  /// - Parameter page: the page to open it on, or turn it to. Without the permission it is the first whatever is asked
+  /// - Parameter page: the page to open it on, or turn it to. Without the permission it is the welcome whatever is asked
   ///   for. Nil when Arbor only wants it seen: an open window comes forward as it is.
   func showWelcomeWindow(_ page: OnboardingFlow.Page? = nil) {
     if onboarding == nil {
@@ -526,9 +531,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     let pane: String
     switch row {
     case .accessibility:
-      // The literal is kAXTrustedCheckOptionPrompt; the global is not concurrency-safe in Swift 6.
-      AXIsProcessTrustedWithOptions(["AXTrustedCheckOptionPrompt": true] as CFDictionary)
-      pane = "com.apple.preference.security?Privacy_Accessibility"
+      return controller.sendToAccessibilitySettings()
     case .screenRecording:
       CGRequestScreenCaptureAccess()
       pane = "com.apple.preference.security?Privacy_ScreenCapture"
@@ -539,7 +542,17 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     case .competingApps, .voiceOver, .ownShortcuts:
       return  // these rows have no button
     }
+    Self.openPane(pane)
+  }
+
+  private static func openPane(_ pane: String) {
     if let url = URL(string: "x-apple.systempreferences:" + pane) { NSWorkspace.shared.open(url) }
+  }
+
+  /// Its dialog is a window of a process of its own. Owners' names need no permission.
+  private static var macOSIsAskingForAccessibility: Bool {
+    let windows = CGWindowListCopyWindowInfo([.optionOnScreenOnly], kCGNullWindowID) as? [[String: Any]] ?? []
+    return windows.contains { $0[kCGWindowOwnerName as String] as? String == "universalAccessAuthWarn" }
   }
 
   /// What only macOS knows, read afresh: for `doctor` and, once a second, the welcome window.

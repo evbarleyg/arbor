@@ -125,7 +125,7 @@ most, which rule 3 counts on.
 | 7 | `settings.json` cannot be read | `Settings.json has a mistake: line 3` | `Settings File…` | |
 | 8 | A place is kept, or an arrangement was set aside | one line, as in `status` | | |
 
-macOS's own tiling being on is not a state either (Q23): whoever passed the welcome window's offer by has declined it, and is not reminded by the menu or the icon. **Help ▸** `Check Setup…` has the
+macOS's own tiling being on is not a state either (Q23): nobody is reminded of it by the menu or the icon. **Help ▸** `Check Setup…` has the
 offer whenever they want it.
 
 An update is not a state: `Update Available…` takes the place of `Check for Updates…`, and **Help ▸** gets a dot. Nothing opens by itself.

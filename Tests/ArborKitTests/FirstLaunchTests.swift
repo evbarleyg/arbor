@@ -18,9 +18,11 @@ import Testing
   /// With the permission already there nothing on the display changes at launch, and the icon may be behind a notch.
   @Test func aNewcomerWhoHasThePermissionIsWelcomedOnce() {
     let h = makeHarness()
+    // As the app finds it: there is no state file.
+    h.controller.isFirstLaunch = true
     h.start()
-    #expect(h.controller.pageToWelcomeOn() == .firstSteps, "nothing to put right, so straight to the four moves")
-    #expect(h.controller.pageToWelcomeOn() == .firstSteps, "asking is not showing")
+    #expect(h.controller.pageToWelcomeOn() == .permissions, "what Arbor is for comes first")
+    #expect(h.controller.pageToWelcomeOn() == .permissions, "asking is not showing")
     h.controller.noteWelcomed()
     #expect(h.controller.pageToWelcomeOn() == nil)
     h.scheduler.advance(by: 1)
@@ -47,9 +49,10 @@ import Testing
     #expect(other.controller.pageToWelcomeOn() == .firstSteps)
   }
 
-  /// A Mac comes with macOS's own tiling and the wallpaper click switched on. A newcomer hears of it before anything is
-  /// arranged: nothing has moved by then, and nothing moves until they dock a window.
-  @Test func onAMacAsItComesTheFirstThingShownIsWhatMacOSWantsForItself() throws {
+  /// A Mac comes with macOS's own tiling and the wallpaper click switched on. Arbor has looked before anything is arranged, and Check
+  /// Setup… says what it found; the first minute asks for the permission and nothing else (Q29, 11). Nothing has moved by then, and
+  /// nothing moves until they dock a window.
+  @Test func onAMacAsItComesCheckSetupNamesWhatMacOSWantsForItself() throws {
     var facts = Self.healthy
     facts.switches = MacSwitch.inTheWay(macOS: 26) { _ in nil }
     let h = makeHarness(facts: facts)
@@ -57,7 +60,10 @@ import Testing
     let before = windows.map { h.frame($0) }
     h.start()
     h.scheduler.advance(by: 5)
-    #expect(h.controller.pageToWelcomeOn() == .permissions)
+    #expect(h.controller.pageToWelcomeOn() == .firstSteps, "to whoever has used Arbor before: nothing is in the way of the moves, which are keys")
+    h.controller.isFirstLaunch = true
+    #expect(h.controller.pageToWelcomeOn() == .permissions, "to a newcomer: what Arbor is for")
+    #expect(h.controller.onboardingModel(facts, flow: OnboardingFlow(isReady: true)).rows.map(\.id) == [.accessibility], "and nothing of macOS's")
     let row = try #require(h.controller.onboardingModel(facts).row(.desktopAndDock))
     #expect(row.state == .recommended)
     for tiling in [MacSwitch.screenEdges, .menuBar, .optionKey] { #expect(row.afterword.contains(tiling.named)) }

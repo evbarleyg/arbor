@@ -453,7 +453,7 @@ import Testing
   @Test func theWelcomeWindowCountsTheWindowsThatAreOutOfView() {
     let (h, _, _, _, _) = makeHarness()
     let facts = SystemFacts(accessibility: false, screenRecording: false, switches: [])
-    #expect(h.controller.onboardingModel(facts).title == "Welcome to Arbor")
+    #expect(h.controller.onboardingModel(facts).title == "Arbor needs one permission")
     h.revokeAccessibility()
     h.scheduler.advance(by: 3)
     #expect(h.controller.onboardingModel(facts).title == "Arbor needs its permission back")

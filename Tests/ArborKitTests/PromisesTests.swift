@@ -36,13 +36,17 @@ import Testing
   /// The switches as macOS comes: nobody has written a value.
   static let macOSDefaults = MacSwitch.inTheWay(macOS: 26) { _ in nil }
 
-  /// Before anything is arranged: the first launch opens on what there is to put right, and has moved nothing.
-  @Test func atMacOSDefaultsTheFirstLaunchBeginsWithWhatIsInTheWayAndMovesNothing() {
+  /// Before anything is arranged Arbor has looked, and whoever asks is told (`doctor`, Check Setup…). The first minute does not speak of it:
+  /// its moves are keys, which fight nothing of macOS's (Q29, 11). Nothing has moved.
+  @Test func atMacOSDefaultsArborHasLookedBeforeAnythingIsArrangedAndMovesNothing() {
     let (h, _) = mac()
-    h.controller.systemFacts = { SystemFacts(accessibility: true, screenRecording: true, switches: Self.macOSDefaults, inputSources: 1) }
+    let facts = SystemFacts(accessibility: true, screenRecording: true, switches: Self.macOSDefaults, inputSources: 1)
+    h.controller.systemFacts = { facts }
+    h.controller.isFirstLaunch = true
     h.start()
     settle(h)
-    #expect(h.controller.pageToWelcomeOn() == .permissions)
+    #expect(h.controller.onboardingModel(facts, flow: OnboardingFlow(isReady: true)).rows.map(\.id) == [.accessibility])
+    #expect(h.controller.onboardingModel(facts).row(.desktopAndDock)?.state == .recommended, "Check Setup…")
     #expect(h.system.moveLog.isEmpty, "\(h.system.moveLog)")
     let report = h.run("doctor")
     #expect(!report.ok)

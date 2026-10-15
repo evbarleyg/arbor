@@ -56,7 +56,7 @@ extension Controller {
     case .doctor:
       return doctor()
     case .checkSetup:
-      return showWelcomeWindow(.permissions)
+      return showWelcomeWindow(.setup)
     case .welcome:
       return showWelcomeWindow(.firstSteps)
     case .menuBar:

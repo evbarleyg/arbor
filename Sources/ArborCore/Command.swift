@@ -59,8 +59,8 @@ public enum Command: Equatable, Sendable, Codable {
   case arrangeAll
   /// A query: one line per thing that can keep Arbor from working (see Controller+Doctor.swift).
   case doctor
-  /// Opens the welcome window on its first page: permissions, macOS settings and other apps that matter, with
-  /// whether each is in order. Works before Arbor has any permission.
+  /// Opens the welcome window on Check Setup…: permissions, macOS settings and other apps that matter, with
+  /// whether each is in order. Before Arbor has its permission: on the welcome, which asks for it.
   case checkSetup
   /// Opens the welcome window on its second page, four moves to try (or the first, while Arbor may not move windows).
   case welcome

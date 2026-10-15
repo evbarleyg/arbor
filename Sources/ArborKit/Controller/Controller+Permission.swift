@@ -129,6 +129,7 @@ extension Controller {
   private func regainAccessibility() {
     let loss = permissionLoss
     accessibilityGranted = true
+    isListedUnderAccessibility = true
     permissionLoss = nil
     Log.info("Accessibility permission is back")
     start()
@@ -154,6 +155,27 @@ extension Controller {
     lastVisitToSettings = now()
     return true
   }
+
+  /// "Open Settings…" in the permission's row, and a shortcut that failed for want of it.
+  ///
+  /// An app is in the list under Accessibility only once macOS has been asked about it, and macOS answers with a dialog of its own, whose
+  /// button opens the pane. With the pane opened from here as well, that dialog is covered, and is left lying over the person's windows
+  /// long after the grant (seen on a hosted Mac). So an Arbor that is not in the list leaves it to macOS, and opens the pane only if macOS
+  /// has not asked after all. One that is in the list opens the pane and asks nothing.
+  public func sendToAccessibilitySettings() {
+    guard let errand = accessibilityErrand else { return }
+    scheduler.cancel(Self.paneKey)
+    guard !isListedUnderAccessibility else { return errand.openPane() }
+    isListedUnderAccessibility = true
+    errand.askMacOS()
+    scheduler.schedule(Self.paneKey, after: Self.secondsMacOSHasToAsk) { [weak self] in
+      guard let self, !self.accessibilityGranted, !errand.macOSIsAsking() else { return }
+      errand.openPane()
+    }
+  }
+
+  private static let paneKey = "accessibility-pane"
+  static let secondsMacOSHasToAsk: TimeInterval = 2
 
   // MARK: Saying so
 
@@ -206,5 +228,22 @@ extension Controller {
       names.count < 2 ? names.joined() : names.dropLast().joined(separator: ", ") + " and " + names[names.count - 1]
     return count(loss.windows, "window") + (list.isEmpty ? "" : " (\(list))") + (loss.windows == 1 ? " is" : " are")
       + " out of view"
+  }
+}
+
+/// What only the app can do about the Accessibility pane.
+public struct AccessibilityErrand {
+  /// Has macOS put Arbor in the list; it answers with its own dialog.
+  public var askMacOS: @MainActor () -> Void
+  /// Whether that dialog is on the screen.
+  public var macOSIsAsking: @MainActor () -> Bool
+  public var openPane: @MainActor () -> Void
+
+  public init(
+    askMacOS: @escaping @MainActor () -> Void, macOSIsAsking: @escaping @MainActor () -> Bool, openPane: @escaping @MainActor () -> Void
+  ) {
+    self.askMacOS = askMacOS
+    self.macOSIsAsking = macOSIsAsking
+    self.openPane = openPane
   }
 }

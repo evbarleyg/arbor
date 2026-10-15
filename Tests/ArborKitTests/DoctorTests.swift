@@ -456,11 +456,11 @@ import Testing
     var opened: [OnboardingFlow.Page] = []
     h.controller.openWelcomeWindow = { opened.append($0) }
     #expect(h.run("check-setup").ok)
-    #expect(opened == [.permissions])
+    #expect(opened == [.setup])
     h.controller.accessibilityGranted = true
     h.start()
     #expect(h.run("welcome").ok)
-    #expect(opened == [.permissions, .firstSteps])
+    #expect(opened == [.setup, .firstSteps])
   }
 
   @Test func theCommandsSaySoWhereThereIsNoWindow() {
@@ -487,7 +487,7 @@ import Testing
     let model = h.controller.onboardingModel(facts)
     #expect(model.rows.map(\.isSatisfied) == [false, false])
     // Nothing is registered before Arbor starts, so the window shows what the settings promise.
-    #expect(model.steps.map(\.lead) == ["Drag a window to the left edge of the screen", "Drag another to the right edge", "Then press ⌃⌥↩", "Then press ⌃⌥Space"])
+    #expect(model.steps.map(\.lead) == ["Click a window and press ⌃⌥⌘←", "Click another and press ⌃⌥⌘→", "Then press ⌃⌥↩", "Press ⌃⌥↩ again"])
 
     var settings = Settings()
     settings.bindings = ["ctrl+opt+return": nil, "ctrl+opt+z": "zoom"]
@@ -524,18 +524,10 @@ import Testing
     session.refresh()
     #expect(shown.isEmpty, "nothing has changed, so nothing is drawn again")
 
-    // One switch at a time in Desktop & Dock: the row follows.
+    // The welcome does not speak of Desktop & Dock (Q29, 11), so nothing there is anything to it.
     mac.facts.switches = [.optionKey]
     session.refresh()
-    #expect(shown.count == 1)
-    #expect(shown.last?.row(.desktopAndDock)?.afterword.hasPrefix("Changes 1 setting in Desktop & Dock, nothing else: \(MacSwitch.optionKey.named).") == true)
-
-    // The last one.
-    mac.facts.switches = []
-    session.refresh()
-    #expect(shown.count == 2)
-    #expect(shown.last?.row(.desktopAndDock)?.isSatisfied == true)
-    #expect(session.model.page == .permissions)
+    #expect(shown.isEmpty && session.model.rows.map(\.id) == [.accessibility])
 
     // The permission arrives; the app starts the controller.
     mac.facts.accessibility = true
@@ -555,44 +547,86 @@ import Testing
     h.run("zoom")
     #expect(ticks(session.model) == [true, true, true, false])
     h.run("show-all")
-    #expect(ticks(session.model) == [true, true, true, true, false], "the four, and one more for whoever likes")
+    #expect(ticks(session.model) == [true, true, true, true])
     #expect(session.model.title == "That is all there is to it")
     #expect(shown.last == session.model)
   }
 
-  /// Whoever comes back from granting the permission has looked at nothing else on the page, and the offer to have the screen edges, which
-  /// macOS as it comes keeps for itself, is made there: so the window waits at what is in the way (F46, "Setup: only the
-  /// problems. Skipped when there are none"), and nothing has been arranged by then.
+  /// Whoever comes back from granting the permission has looked at nothing else on the page: so the window waits at what is in the way of
+  /// the moves (F46, "Setup: only the problems. Skipped when there are none"), and nothing has been arranged by then. macOS's own tiling is
+  /// not in their way: they are keys (Q29, 11).
   @Test func withThePermissionThereTheWindowWaitsAtWhatIsStillInTheWay() throws {
     let h = Harness()
     let a = h.system.open(app: "Safari")
     let before = h.frame(a)
     let mac = Mac()
     mac.facts.switches = MacSwitch.inTheWay(macOS: 26) { _ in nil }
+    mac.facts.competingApps = ["Rectangle"]
     h.controller.accessibilityGranted = false
     h.controller.systemFacts = { mac.facts }
     let session = OnboardingSession(controller: h.controller) { _ in }
     session.begin()
-    #expect(session.model.title == "Welcome to Arbor")
+    #expect(session.model.title == "Arbor keeps your windows arranged")
 
     mac.facts.accessibility = true
     h.controller.accessibilityGranted = true
     h.start()
     session.refresh()
     #expect(session.model.page == .permissions)
-    #expect(session.model.title == "Ready, with one suggestion")
     #expect(session.model.row(.accessibility)?.isSatisfied == true)
-    #expect(session.model.row(.desktopAndDock)?.state == .recommended)
+    #expect(session.model.row(.competingApps)?.state == .recommended && session.model.row(.desktopAndDock) == nil)
     #expect(session.model.isPrimaryEnabled, "it is advice: nobody is held up")
     #expect(h.frame(a) == before && h.system.frameLog.isEmpty && h.workspace.isFloating(a), "nothing has moved")
 
-    // Put right while the window waits: it says so and stays, so that what was done can be read. Continue goes on.
-    mac.facts.switches = []
+    // Put right while the window waits: it stays, so that what was done can be read. Continue goes on.
+    mac.facts.competingApps = []
     session.refresh()
-    #expect(session.model.page == .permissions)
-    #expect(session.model.title == "Arbor is ready")
+    #expect(session.model.page == .permissions && !session.model.needsAttention)
     session.go(to: .firstSteps)
     #expect(session.model.page == .firstSteps)
+  }
+
+  /// On a Mac as it comes nothing is in the way of the moves, so the window goes on to them by itself.
+  @Test func onAMacAsItComesTheWindowGoesOnWhenThePermissionArrives() {
+    let h = Harness()
+    let mac = Mac()
+    mac.facts.switches = MacSwitch.inTheWay(macOS: 26) { _ in nil }
+    h.controller.accessibilityGranted = false
+    h.controller.systemFacts = { mac.facts }
+    let session = OnboardingSession(controller: h.controller) { _ in }
+    session.begin()
+    mac.facts.accessibility = true
+    h.controller.accessibilityGranted = true
+    h.start()
+    session.refresh()
+    #expect(session.model.page == .firstSteps)
+  }
+
+  /// An open Check Setup… follows Desktop & Dock one switch at a time, whoever flips them.
+  @Test func checkSetupFollowsTheSwitchesAsTheyAreFlipped() {
+    let h = Harness()
+    let mac = Mac()
+    mac.facts.accessibility = true
+    h.controller.systemFacts = { mac.facts }
+    h.start()
+    var shown: [OnboardingModel] = []
+    let session = OnboardingSession(controller: h.controller) { shown.append($0) }
+    session.begin(on: .setup)
+    shown = []
+    session.refresh()
+    #expect(shown.isEmpty, "nothing has changed, so nothing is drawn again")
+
+    mac.facts.switches = [.optionKey]
+    session.refresh()
+    #expect(shown.count == 1)
+    #expect(shown.last?.row(.desktopAndDock)?.afterword == "Changes 1 setting in Desktop & Dock, nothing else: \(MacSwitch.optionKey.named).")
+
+    // The last one.
+    mac.facts.switches = []
+    session.refresh()
+    #expect(shown.count == 2)
+    #expect(shown.last?.row(.desktopAndDock)?.isSatisfied == true)
+    #expect(session.model.page == .setup && session.model.title == "Arbor is ready")
   }
 
   @Test func aPausedArborSaysSoInsteadOfPromisingMovesThatDoNothing() {
@@ -609,6 +643,8 @@ import Testing
     #expect(session.model.step(.frame)?.lead == "Then press ⌃⌥↩", "the shortcut that will be there again")
     session.go(to: .permissions)
     #expect(session.model.title == "Arbor is paused")
+    session.go(to: .setup)
+    #expect(session.model.title == "Arbor is paused")
     h.run("resume")
     session.refresh()
     #expect(session.model.title == "Arbor is ready")
@@ -621,8 +657,8 @@ import Testing
     session.begin(on: .firstSteps)
     #expect(session.model.page == .firstSteps)
     session.end()
-    session.begin(on: .permissions)
-    #expect(session.model.page == .permissions)
+    session.begin(on: .setup)
+    #expect(session.model.page == .setup)
     session.end()
 
     // Without the permission there is nothing to try, whatever was asked for.
@@ -631,21 +667,17 @@ import Testing
     #expect(session.model.page == .permissions)
   }
 
-  @Test func theWaysBackNameTheShortcutsInEffect() {
+  @Test func theWayBackNamesTheShortcutInEffect() {
     let model = Harness().controller.onboardingModel(DoctorTests.healthy)
-    #expect(
-      model.waysBack == [
-        "Show Everything (⌃⌥Space)", "Float All Windows (⌃⌥⇧F) puts your Mac back to normal",
-        "Quitting Arbor brings every window back into view",
-      ])
+    #expect(model.wayBack == "⌃⌥⎋ pauses Arbor: every window is as it was. Quit does the same.")
   }
 
   @Test func theButtonsTurnThePages() {
     let h = Harness()
     h.start()
     let session = OnboardingSession(controller: h.controller) { _ in }
-    session.begin()
-    #expect(session.model.page == .permissions, "opened from the menu")
+    session.begin(on: .permissions)
+    #expect(session.model.page == .permissions)
     #expect(session.model.isPrimaryEnabled)
     session.go(to: .firstSteps)
     #expect(session.model.page == .firstSteps)
@@ -669,7 +701,7 @@ import Testing
     session.end()
 
     session.begin()
-    #expect(session.model.page == .permissions)
+    #expect(session.model.page == .setup, "no page was asked for, by somebody who has used Arbor: how things stand")
     session.go(to: .firstSteps)
     #expect(ticks(session.model) == [true, false, false, false], "a window is docked already; the other moves are to be made again")
   }

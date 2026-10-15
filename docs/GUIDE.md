@@ -76,7 +76,7 @@ Arbor was inspired by TrellisWM and is not a copy of it. Three things are differ
 
 Seven things you can hold Arbor to. Each has a story of its own that is played after every change to Arbor (`collab/scenarios/rule-1…` to `rule-7…`), and examples beside it. Where today's build is known to fall short, it says so here; the whole list is section 1 of `collab/BOARD.md`.
 
-1. **It does not fight macOS.** macOS has tiling of its own, and as it comes it wants the same screen edges and the same drags. Arbor looks before it arranges anything and tells you what it found (the welcome window; menu → Help → Check Setup…; `arborctl doctor`). While macOS's own tiling is on, Arbor stands aside wherever macOS acts: one preview at a time, and what it shows is what happens.
+1. **It does not fight macOS.** macOS has tiling of its own, and as it comes it wants the same screen edges and the same drags. Arbor looks before it arranges anything and tells whoever asks what it found (menu → Help → Check Setup…; `arborctl doctor`); the moves it teaches first are keys, which fight nothing. While macOS's own tiling is on, Arbor stands aside wherever macOS acts: one preview at a time, and what it shows is what happens.
    *Not yet:* putting the switches right is still a walk through System Settings; Arbor will offer to do it in one step, and to put them back.
 2. **Nothing moves until you dock something.** Starting Arbor for the first time moves nothing; a later start puts back what you had docked, shows everything, and takes nothing out of view. Nor does a window that opens, closes, goes to the Dock or comes back, an app that is hidden, or time that passes. A window you have not docked is yours: it floats where you left it, at the size you gave it.
    *Not yet:* a dock still pushes floating windows out of its way and can make them narrower, and a window that hangs over the edge of the screen is pulled in the first time anything else changes.
@@ -106,13 +106,13 @@ Quit other window managers (Rectangle, Magnet, Amethyst and others use the same 
 
 One more is good to know and nothing to change: with **Click wallpaper to reveal desktop** as macOS comes, one click on the Desktop, or in a gap between docked windows, sweeps every window off to the sides. It looks as if Arbor lost them. It has not: a second click brings them back where they were. "Only in Stage Manager" switches it off, if you would rather.
 
-Arbor checks all of this for you before it arranges anything, and changes none of it unasked: the welcome window lists what stands in the way, worst first, and so do **Check Setup…** (menu → Help) and `arborctl doctor` at any later time.
+Arbor checks all of this for you before it arranges anything, and changes none of it unasked: **Check Setup…** (menu → Help) lists what stands in the way, worst first, and so does `arborctl doctor`.
 
 **Or in one step.** The row has a button, **Switch Off macOS Tiling** (`arborctl fix-setup`). It switches off the three above, as far as they are on, and nothing else; macOS obeys at once, nothing restarts and no window moves. Arbor writes down how each was. **They are off only while Arbor runs**: quit or pause Arbor and your Mac is exactly as it was; start or resume it and they are off again, without another question. A switch you flip yourself in the meantime is yours, and Arbor leaves it alone from then on. **Put Them Back**, in the same row afterwards (`arborctl fix-setup undo`), ends that for good, and so does uninstalling. Stage Manager is not part of it: whoever has it on chose it.
 
 ### Launch and permission
 
-Arbor has no Dock icon. At the first launch a **welcome window** opens by itself, with the permission it needs, what competes with it, and four moves to try, each ticked off as you make it on your own windows. After that Arbor is the small icon of three columns in the menu bar. On a MacBook with a notch and many menu bar icons it may be hidden behind the notch: quit a few, or hold ⌘ and drag icons to reorder them; opening Arbor again brings the welcome window back, as menu → Help → Welcome… does.
+Arbor has no Dock icon. At the first launch a **welcome window** opens by itself. It says what Arbor is for, asks for the one permission it needs and for nothing else, and then has four moves to try, all keys, each ticked off as you make it on your own windows. After that Arbor is the small icon of three columns in the menu bar. On a MacBook with a notch and many menu bar icons it may be hidden behind the notch: quit a few, or hold ⌘ and drag icons to reorder them; opening Arbor again brings the welcome window back, as menu → Help → Welcome… does.
 
 Once something is docked the icon grows into a row of small **buttons for where you are**: back, forward, the Desktop, everything, one for each saved view, and the menu. A right click anywhere on them opens the menu too. If the menu bar has no room, Arbor goes back to the single icon by itself; `arborctl set menuBarControls false` keeps it so.
 
@@ -123,10 +123,10 @@ Nothing moves when permission arrives. Arbor arranges nothing until you ask.
 
 ### Four moves
 
-1. **Dock.** Drag any window by its title bar to the left edge of the screen. (With macOS's own tiling on, that edge is macOS's: click the window and press **⌃⌥⌘←** instead, which works at every setting. The welcome window words this move as your Mac is set.) A preview shows where it will land; let go.
-2. **Dock a second.** Drag another to the right edge (or click it and press **⌃⌥⌘→**). Windows that were floating where the docked ones now sit are nudged onto the Desktop between them.
+1. **Dock.** Click any window and press **⌃⌥⌘←**. (Or drag it by its title bar to the left edge of the screen; a preview shows where it will land. With macOS's own tiling on, that edge is macOS's: the key works at every setting.)
+2. **Dock a second.** Click another and press **⌃⌥⌘→**. Windows that were floating where the docked ones now sit are nudged onto the Desktop between them.
 3. **Frame.** Click one of the docked windows and press **⌃⌥↩**. It fills the screen. **Your other windows are out of view, not closed.**
-4. **Show everything.** Press **⌃⌥Space** (or ⌃⌥↩ again). Everything is back.
+4. **And back.** Press **⌃⌥↩** again (or ⌃⌥Space). The arrangement is back.
 
 Now try: ⌃⌥← and ⌃⌥→ while framed, to walk to the neighbouring space. ⌃⌥[ to go back, like a browser. Drag the gap between two docked windows to resize both. Drag a third window onto the **bottom edge of a docked window** to put it underneath: that makes a group, and ⌃⌥↑ from either
 of its windows, framed, shows the group.
