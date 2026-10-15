@@ -392,7 +392,7 @@ Order of reports: what belongs together arrives in another order than expected.
 
 ### the-space-change-can-be-reported-before-the-stand-in-leaves-the-list
 
-*hurt 2 · below the seam*
+*hurt 2 · below the seam · touches `jolt`*
 
 - **Expected:** When the change of Space is reported after full screen, the app lists the window that came out of it.
 - **Happened:** macOS's stand-in is on the app's list in the window's place until the animation ends. The change of Space was reported 0.14 s after that in one run, and a few milliseconds BEFORE it in two rounds of four. Then the lists were read too early, the window was missed, and Arbor heard of it from its second look: 1.07 s after it was on the screen. Its neighbours, the focus report and the ring were all a second late. When the stand-in is destroyed the window is listed again, and so are the other apps' windows: 16 rounds of 16.
@@ -1280,7 +1280,7 @@ Late or partial answers: a call returns before the deed, after it, with half of 
 
 ### on-its-way-out-of-full-screen-one-app-hears-at-once-and-another-only-later
 
-*hurt 2 · at the seam*
+*hurt 2 · at the seam · touches `jolt`*
 
 - **Expected:** A window on its way out of full screen either takes a frame or does not, whatever its app.
 - **Happened:** The window is hidden behind macOS's stand-in for 0.5 to 0.7 s and can be asked meanwhile. TextEdit takes the frame at once, keeps it and lands there. Safari, which shows its own way out, answers success to all three calls, reads back the old frame, and lands there, if it is asked before it has placed the window once more itself (a "moved" report 0.06 to 0.17 s after the first report). Asked after that it takes the frame and keeps it. Asked only when the stand-in has gone, both take it at once, and TextEdit was seen at the old frame for 44 ms first.
@@ -1999,12 +1999,12 @@ Geometry: displays, bars, sizes and coordinates that are not what was assumed.
 *hurt 2 · at the seam · touches `moved-unasked`, `jolt`*
 
 - **Expected:** A window that leaves full screen comes back to the frame it had.
-- **Happened:** It came back at a frame macOS chose: once the visible frame, once the frame the window had before Arbor ever moved it. The change of Space followed 0.45 s later, and nothing put the window back.
-- **Found by:** The proof script and a recording of Accessibility's reports on a hosted Mac (macOS 26.6).
-- **Stand-ins play it:** partly (`FakeWindowSystem.setFullScreen`, `Echoes.flightFromFullScreen`)
-- **Guard:** `test: whileArborRunsItIsLaidOutWhenItComesBack`; `test: stillOnItsWayItIsAskedAgain`; `test: theWayBackFromFullScreenTakesLonger`; `e2e: leave full screen` (on CI's Macs)
-- **Arbor copes:** Sources/ArborKit/Controller/Controller+LeftInFullScreen.swift lays out again when the window is present again, and asks again while it is still on its way.
-- **Read in:** `docs/features/F30-full-screen-windows.md`, `Sources/ArborTesting/FakeWindowSystem.swift`
+- **Happened:** It came back at a frame macOS chose: once the visible frame, once the frame the window had before Arbor ever moved it. The change of Space followed 0.45 s later, and nothing put the window back. Looked at closely with Safari and TextEdit: it is the frame from before ANY move through Accessibility, six control rounds of six, though a tool had put both windows elsewhere before every round. So a docked window landed at its old own frame in plain view, and went to its slot 282 ms later.
+- **Found by:** The proof script and a recording of Accessibility's reports on a hosted Mac (macOS 26.6). Then a day with real apps under a sampler of the window server's frames, and a probe that asked a window for a frame at one chosen moment per round (macOS 26.6.2).
+- **Stand-ins play it:** partly (`FakeWindowSystem.setFullScreen`, `FakeWindowSystem.leaveFullScreen`, `FakeWindowSystem.sightings`, `Echoes.flightFromFullScreen`)
+- **Guard:** `test: aDockedWindowThatLeavesFullScreenIsSeenInItsSlotAndNowhereElse`; `test: itsSlotIsTheOneItWillHaveNotTheOneItHad`; `test: whatIsDockedOnAThirdSpaceDoesNotCountAsBack`; `test: whileArborRunsItIsLaidOutWhenItComesBack`; `test: stillOnItsWayItIsAskedAgain`; `test: theWayBackFromFullScreenTakesLonger`; `e2e: leave full screen` (on CI's Macs); `scenario: 30-the-green-button.sim`
+- **Arbor copes:** Controller.meetAtItsSlotIfItLeftFullScreen gives a docked window its slot's frame while macOS's stand-in still hides it. Sources/ArborKit/Controller/Controller+LeftInFullScreen.swift lays out again when the window is present again, and asks again while it is still on its way. `FakeWindowSystem.setFullScreen` by itself still gives back the frame the window had last.
+- **Read in:** `docs/features/F30-full-screen-windows.md`, `Sources/ArborTesting/FakeWindowSystem.swift`, `Sources/ArborKit/Controller/Controller+OnTheWayBack.swift`
 
 ### macos-tiles-only-from-the-outermost-point
 
@@ -3019,10 +3019,10 @@ Timing: how long things take, and what can happen meanwhile.
 *hurt 2 · at the seam · K963 · M1406 · touches `lost`, `size-lost`*
 
 - **Expected:** A window reported as back takes the frame it is asked for; one that does not take it refuses it.
-- **Happened:** The way back from full screen is reported as over when it begins, and takes 0.7 to 1 s. Asked for its slot meanwhile, the window answers with the frame it has. That read as a refusal: a minimum was learned and the window became a tile.
-- **Found by:** A note on the second round of the cure gives the 0.7 to 1 s and names no run. arbor-e2e leaves full screen on real windows.
-- **Stand-ins play it:** yes (`Echoes.flightFromFullScreen`)
-- **Guard:** `test: theWayBackFromFullScreenTakesLonger`; `test: stillOnItsWayItIsAskedAgain`; `e2e: it is a window, not a tile` (on CI's Macs)
+- **Happened:** The way back from full screen is reported as over when it begins, and takes 0.5 to 0.7 s (16 rounds). Asked for its slot meanwhile, the window was expected to answer with the frame it has all the way, which would read as a refusal: a minimum learned, a tile. What was seen is kinder, and differs by app: see `on-its-way-out-of-full-screen-one-app-hears-at-once-and-another-only-later`.
+- **Found by:** A note on the second round of the cure gives 0.7 to 1 s and names no run. arbor-e2e leaves full screen on real windows. Measured since with a probe on a hosted Mac (macOS 26.6.2).
+- **Stand-ins play it:** yes (`Echoes.flightFromFullScreen`, `FakeWindowSystem.leaveFullScreen`)
+- **Guard:** `test: theWayBackFromFullScreenTakesLonger`; `test: stillOnItsWayItIsAskedAgain`; `test: oneThatTakesNoFrameOnItsWayOutStillEndsInItsSlot`; `e2e: it is a window, not a tile` (on CI's Macs)
 - **Arbor copes:** Controller.timeToLandFromFullScreen: for 1.2 s nothing is concluded from a frame the returning window does not take; it is asked once more and then believed.
 - **Read in:** `collab/QUESTIONS.md`, `Sources/ArborKit/Controller/Controller+OnTheWayBack.swift`, `Sources/ArborTesting/FakeWindowSystem.swift`, `collab/BACKLOG.md`
 
