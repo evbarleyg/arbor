@@ -1,0 +1,47 @@
+# check-desktop 2026-10-15T13:58Z on macOS 26.6.2, commit 5cc2149
+
+== as the Mac comes
+  ✔ a tile, a docked window and the Desktop are in view
+
+== dark mode
+  ✔ the system says dark
+
+== a wallpaper: a gradient under a grid, then one colour
+  ✔ the desktop shows the gradient
+  ✔ the system says light
+  ✔ the desktop shows the colour
+
+== Reduce Motion
+  ✔ an app launched now is told that motion is fine
+
+== Spaces: a second one, there and back, with a tile and seams on the first
+  ✔ the main display has one Space more
+  ✔ ⌃→ shows the second Space
+  ✔ ⌃← shows the first Space again
+  ✔ both docked windows are back in their slots
+  ✔ and the slots are the ones they had
+
+== Spaces: there and back with one window framed
+  ✔ the window fills the screen
+  ✔ its neighbour is out of view
+  ✔ ⌃→ shows the second Space
+  ✔ ⌃← shows the first Space again
+  ✔ the window is still framed
+  ✔ and stays so
+  ✔ its neighbour is still out of view
+  ✔ with everything in view both are in the slots they had
+
+== Spaces: carry a docked window to the second Space, as a person does: hold its title bar and press ⌃→
+  ✔ the second Space shows
+  ✔ the window that stayed is in its slot
+  ✔ the first Space shows, and the window with it
+
+== Mission Control with a tile on the screen
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+26 passed, 0 failed
