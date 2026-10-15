@@ -270,8 +270,27 @@ summary
 press "$W8"
 act eight-fill "fills the screen with one of eight" "$(key_for zoom)"
 act eight-everything "shows everything again" "$(key_for show-all)"
+# The first Arrange of a session asks each window for its size where it stands and then moves it; later ones ask once. Two different acts: both are filmed.
+ctl float-all
+sleep 1.5
+press "$W8"
+from_menu eight-arrange-again "chooses Arrange Windows for the second time in this session" "Arrange Windows"
 cast_stop
 display_size 1024 768
+
+step "6. eight windows on a display that has no room for them"
+# What is made for the first time at a new size takes longer than it ever will again: Arrange as the first act of the session that cannot give every window its room, and once more.
+arbor_settings "$LIGHT"
+cast_start 8 $FACE
+sleep 3
+press "$W8"
+from_menu crowd-arrange "chooses Arrange Windows: eight floating windows, more than the display has room for" "Arrange Windows"
+summary
+ctl float-all
+sleep 1.5
+press "$W8"
+from_menu crowd-arrange-again "does the same for the second time in this session" "Arrange Windows"
+cast_stop
 
 sampler_stop
 camera_stop

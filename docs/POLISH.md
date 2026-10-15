@@ -202,7 +202,8 @@ light one, where shadows and dark lines show. The keys are asked of Arbor (`bind
 | `drag-out` | out | drags a docked window out, plainly: nothing of Arbor's shows meanwhile; it floats at its own size where it was let go, and its place closes at once | ✔ |
 | `dock-third`, `dock-fourth`, `dock-fourth-again` | instant | more docks than the display has room for: every window becomes a tile; the same a second time in the session | |
 | `close`, `quit` | closes, told | closes a docked window (macOS fades it out over whatever Arbor does beneath: no ruler can part the two, so R1, R4 and R5 are not asked); quits Arbor: every window gets its own size back (no key says when: M1 is not asked) | |
-| `eight-arrange`, `eight-fill`, `eight-everything` | instant | the same with eight windows on a display of 1920 × 1080 | |
+| `eight-arrange`, `eight-fill`, `eight-everything`, `eight-arrange-again` | instant | the same with eight windows on a display of 1920 × 1080. The first Arrange of a session asks each window for its size where it stands and then moves it, later ones ask once: two different acts, both filmed | |
+| `crowd-arrange`, `crowd-arrange-again` | instant | Arrange Windows with eight windows on a display of 1024 × 768, which has no room for them, as the first act of its session that meets that, and once more | |
 | `macos-left`, `macos-right`, `macos-fill`, `macos-previous`, `macos-left-and-right` | bare | macOS's own tiling of the same windows, Arbor not running: the bar. Not counted | |
 | `ground`, `dark-ground` | bare | the bare desk, before a session's first window opens: the wallpaper as the display shows it, which the judge cannot tell any more once shadows lie on what is left of it. Not counted | |
 | `metronome-…` | control | the camera's own square: tests the instruments, not counted | |
