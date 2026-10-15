@@ -61,6 +61,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
     let recorder = TraceRecorder()
     let windowSystem = AXWindowSystem(onlyPIDs: environment.onlyPIDs)
     windowSystem.recorder = recorder
+    overlays.recorder = recorder
     let controller = Controller(
       system: RecordingWindowSystem(wrapping: windowSystem, recorder: recorder),
       overlays: RecordingOverlays(wrapping: overlays, recorder: recorder),

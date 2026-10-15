@@ -48,6 +48,9 @@ public final class TraceRecorder {
   }()
 
   public private(set) var isRecording = false
+  /// How many traces have been begun. Whoever writes something that has a beginning and an end can tell whether the trace that is
+  /// being recorded is still the one that has the beginning.
+  public private(set) var tracesBegun = 0
   /// The sink of the trace being recorded, or of the last one.
   public private(set) var sink: (any TraceSink)?
   /// How the last trace ended, for `trace status`.
@@ -100,6 +103,7 @@ public final class TraceRecorder {
     lastAnswers = [:]
     lastKept = [:]
     isRecording = true
+    tracesBegun += 1
     do {
       let header = header(&titles)
       appNames = Set(header.windows.map(\.app))
@@ -239,6 +243,17 @@ public final class TraceRecorder {
     guard isRecording else { return }
     guard let thinKey else { return record(.raw(text)) }
     thin(TraceEntry(t: elapsed, line: .raw(text)), key: thinKey)
+  }
+
+  /// Records a line of a stage's log of its frames, as a `raw` line. It takes the line and not its text, so that no words can be sent
+  /// this way: a `StageLog.Line` holds numbers, and its text them and a few fixed words. So it is not searched for titles and
+  /// names as free text is, which would damage it (a space can be named `1`) and take time, sixty times a second, on the very thread whose
+  /// stalls the log is there to show. Never thinned.
+  public func stage(_ line: StageLog.Line) {
+    guard isRecording else { return }
+    reactingToHeld = nil
+    flush()
+    emit(TraceEntry(t: elapsed, line: .raw(line.text)))
   }
 
   /// The controller is about to apply these settings.
