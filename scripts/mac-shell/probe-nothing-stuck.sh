@@ -184,10 +184,11 @@ one_round() {
   sleep 0.5
   if [ "$who" = arbor ]; then
     # Not before the deed: an Arbor that takes its taps out when macOS is slow to answer (a doubt) writes the same line.
-    noticed=$(tail -n "+$((mark + 1))" "$ARBOR_HOME/arbor.log" \
-      | awk -v taken="$taken" 'substr($0, 12, 12) >= taken && /permission is gone|permission was taken away/ { print substr($0, 12, 12); exit }')
+    noticed=$(tail -n "+$((mark + 1))" "$ARBOR_HOME/arbor.log" | awk -v taken="$taken" 'substr($0, 12, 12) >= taken && /permission is gone/ { print substr($0, 12, 12); exit }')
+    [ -n "$noticed" ] \
+      || noticed=$(tail -n "+$((mark + 1))" "$ARBOR_HOME/arbor.log" | awk -v taken="$taken" 'substr($0, 12, 12) >= taken && /permission was taken away/ { print substr($0, 12, 12); exit }')
     tail -n "+$((mark + 1))" "$ARBOR_HOME/arbor.log" | grep -E "permission is gone|permission was taken away|permission is back|macOS was asked" | cut -c 12-170 | head -n 5
-    echo "doubts (\"macOS has not said for …\"): $(tail -n "+$((mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c "macOS has not said for")"
+    echo "doubts (\"macOS has not said …\"): $(tail -n "+$((mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c "macOS has not said")"
     [ -n "$noticed" ] || { echo "FINDING: Arbor has not noticed by the end of the stream; its taps: $(taps_of "$pid")"; noticed=-; }
   fi
   [ "$who" != bare-tapper ] || grep -E "switched-off|question|the end" "$ARBOR_OUT/tapper-$round.txt"

@@ -36,6 +36,8 @@ let usage = """
     tap <seconds> <file>            install one active tap on mouse-downs, at the head of the session's taps as Arbor's are, pass everything on, and never let
                                     go of it; append to <file> when it is in, whenever macOS switches it off, and, asked every 10 ms on another thread, whenever one
                                     of the cheap questions changes its answer; at the end what one call of each costs
+    monitor <seconds> <file>        no tap at all, but a global NSEvent monitor for presses and changes of modifiers, as Arbor has beside its taps; append to <file> when it
+                                    is in, and how many events it was given, once a second
     now                             the time as all of these write it, and as arbor.log does
   """
 
@@ -399,6 +401,26 @@ func tap(seconds: Double, into path: String) {
   file.write(Data("\(now()) the end: the tap is \(CGEvent.tapIsEnabled(tap: port) ? "on" : "off")\n".utf8))
 }
 
+// MARK: A bare monitor
+
+/// Arbor's scroll tap lives together with a global monitor, and both go in the same turn: is it the taps' going that gives input back, or the monitor's?
+func monitor(seconds: Double, into path: String) -> Never {
+  if !FileManager.default.fileExists(atPath: path) { FileManager.default.createFile(atPath: path, contents: nil) }
+  guard let file = FileHandle(forWritingAtPath: path) else { fail("cannot write \(path)") }
+  file.seekToEndOfFile()
+  let application = NSApplication.shared
+  application.setActivationPolicy(.accessory)
+  final class Count: @unchecked Sendable { var value = 0 }  // both closures run on the main thread
+  let given = Count()
+  let token = NSEvent.addGlobalMonitorForEvents(matching: [.flagsChanged, .leftMouseDown]) { _ in given.value += 1 }
+  file.write(Data("\(now()) monitor-ready pid=\(getpid()) \(token == nil ? "REFUSED" : "in")\n".utf8))
+  let timer = Timer(timeInterval: 1, repeats: true) { _ in file.write(Data("\(now()) given \(given.value) events so far\n".utf8)) }
+  RunLoop.main.add(timer, forMode: .common)
+  DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { exit(0) }
+  application.run()
+  exit(0)
+}
+
 // MARK: Go
 
 var arguments = Array(CommandLine.arguments.dropFirst())
@@ -439,6 +461,9 @@ case "window":
 case "tap":
   guard arguments.count == 3 else { fail(usage) }
   tap(seconds: number(1), into: arguments[2])
+case "monitor":
+  guard arguments.count == 3 else { fail(usage) }
+  monitor(seconds: number(1), into: arguments[2])
 case "now":
   print(now())
 default:

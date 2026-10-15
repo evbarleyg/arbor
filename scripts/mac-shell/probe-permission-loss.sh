@@ -154,7 +154,8 @@ by_the_row_and_a_word() {
 
 # arbor-stopped is sabotage: the whole process is halted (SIGSTOP) two seconds before the deed, so that nobody is there to take the taps out, which is the nearest there is today to
 # "the thread that keeps the permission's clock sleeps for good". How long until input is back? The Mac is given back whatever happens: twenty seconds after the deed Arbor is killed.
-# one_round <number> <how the permission goes> [arbor|arbor-without-taps|nobody|bare-tapper|arbor-stopped] [sampled]: all but the first are controls. If input stands still without
+# one_round <number> <how the permission goes> [arbor|arbor-without-taps|nobody|bare-tapper|bare-monitor|arbor-stopped] [sampled]: all but the first are controls.
+# bare-monitor is the tapper's bundle with no tap but a global NSEvent monitor, which Arbor has beside its scroll tap and takes out in the same turn: is anything dropped for that? If input stands still without
 # Arbor's taps as well, it is not the taps' doing. sampled: `sample` looks at Arbor from the deed on, for what its main thread is doing meanwhile; it halts
 # Arbor at every look, so such a round's figures are not to be compared with the others'.
 one_round() {
@@ -171,9 +172,16 @@ one_round() {
   step "round $round: $how, with $who${sampled:+, sampled}"
   # Whose entry is written and taken.
   BUNDLE_ID=$ARBOR_ID REQUIREMENT=$ARBOR_REQUIREMENT
-  [ "$who" = bare-tapper ] && BUNDLE_ID=$TAPPER_ID REQUIREMENT=$TAPPER_REQUIREMENT
+  case "$who" in bare-*) BUNDLE_ID=$TAPPER_ID REQUIREMENT=$TAPPER_REQUIREMENT ;; esac
   grant
-  if [ "$who" = bare-tapper ]; then
+  if [ "$who" = bare-monitor ]; then
+    : > "$ARBOR_OUT/monitor-$round.txt"
+    limit 20 open -n "$tapper" --args monitor "$((length + 5))" "$ARBOR_OUT/monitor-$round.txt"
+    eventually grep -q monitor-ready "$ARBOR_OUT/monitor-$round.txt" || { invalid "the bare monitor is in"; return; }
+    TAPPER_PID=$(sed -n 's/.*monitor-ready pid=\([0-9]*\).*/\1/p' "$ARBOR_OUT/monitor-$round.txt")
+    started "$TAPPER_PID"
+    head -n 1 "$ARBOR_OUT/monitor-$round.txt"
+  elif [ "$who" = bare-tapper ]; then
     : > "$ARBOR_OUT/tapper-$round.txt"
     limit 20 open -n "$tapper" --args tap "$((length + 5))" "$ARBOR_OUT/tapper-$round.txt"
     eventually grep -q tap-ready "$ARBOR_OUT/tapper-$round.txt" || { cat "$ARBOR_OUT/tapper-$round.txt"; invalid "the bare tapper has its tap"; return; }
@@ -240,6 +248,9 @@ one_round() {
   if [ "$who" = arbor-stopped ]; then
     removed=$killed
     ARBOR_PID=""
+  elif [ "$who" = bare-monitor ]; then
+    echo "the monitor's own words:"; cat "$ARBOR_OUT/monitor-$round.txt"
+    kill_started "$TAPPER_PID"
   elif [ "$who" = bare-tapper ]; then
     # It ends by itself a few seconds after the stream, and says then what its questions cost.
     for _ in 1 2 3 4 5 6 7 8 9 10; do grep -q "the end" "$ARBOR_OUT/tapper-$round.txt" && break; sleep 1; done
@@ -249,14 +260,20 @@ one_round() {
     kill_started "$TAPPER_PID"
   elif [ "$who" != nobody ]; then
     "$ARBOR_BIN/arborctl" status | head -n 1 | cut -c 1-100
-    # Whichever noticed first: the taps' own check, or the controller.
-    # Not before the deed: an Arbor that takes its taps out when macOS is slow to answer (a doubt) writes the same line.
-    removed=$(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" \
-      | awk -v taken="$taken" 'substr($0, 12, 12) >= taken && /permission is gone|permission was taken away/ { print substr($0, 12, 12); exit }')
-    echo "doubts (\"macOS has not said for …\"): $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c "macOS has not said for"); \"permission is back\": $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c "permission is back"); of them before the deed: $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | awk -v taken="$taken" 'substr($0, 12, 12) < taken && /macOS has not said for/' | wc -l | tr -d ' ')"
+        # Not before the deed: an Arbor that takes its taps out when macOS is slow to answer (a doubt) writes the same line.
+    # From the line of whoever takes the taps out. The controller's comes later, after the cure up to 3 s later or never; it serves only where there is no other
+    # (an Arbor without taps; the code of 2026-10-15, in which the controller was now and then the first).
+    removed=$(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | awk -v taken="$taken" 'substr($0, 12, 12) >= taken && /permission is gone/ { print substr($0, 12, 12); exit }')
+    if [ -z "$removed" ]; then
+      removed=$(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | awk -v taken="$taken" 'substr($0, 12, 12) >= taken && /permission was taken away/ { print substr($0, 12, 12); exit }')
+      [ -z "$removed" ] || echo "(\"noticed\" is the controller's line: there is no line about the taps' going)"
+    fi
+    echo "doubts (\"macOS has not said …\"): $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c "macOS has not said"); \"permission is back\": $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c "permission is back"); of them before the deed: $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | awk -v taken="$taken" 'substr($0, 12, 12) < taken && /macOS has not said/' | wc -l | tr -d ' ')"
+    echo "false alarms (\"permission is back after N ms (macOS has not said in time …\"): $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c "permission is back after .*macOS has not said")"
+    echo "slow answers (\"macOS took N ms to say …\"), N: $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | sed -n 's/.*macOS took \([0-9.]*\) ms to say.*/\1/p' | tr '\n' ' ')"
     tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -E "macOS was asked|permission is back" | cut -c 12-200 | head -n 4
-    echo "lines about a tap that macOS switched off: $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c -E "event tap was off|switched (it|them) back on|too slow|of user input")"
-    tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -E "event tap was off|switched (it|them) back on|too slow|of user input" | cut -c 12-200 | head -n 5
+    echo "lines about a tap that macOS switched off: $(tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -c -E "event tap was off|switched (it|them) back on|too slow|of user input|switched the .* event tap off")"
+    tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -E "event tap was off|switched (it|them) back on|too slow|of user input|switched the .* event tap off" | cut -c 12-200 | head -n 5
     [ -z "$removed" ] || check "round $round: Arbor has no event tap left" eventually no_taps
     if [ -z "$removed" ]; then
       echo "FINDING: $((length - 4)) s after the deed Arbor has not noticed. Its taps: $(arbor_taps | wc -l | tr -d ' '). Whether input suffered meanwhile is below: everything after the deed counts as \"after\"."
