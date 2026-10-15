@@ -8,6 +8,7 @@ before starting many runs, and when a run seems stuck.
 
 Usage: scripts/mac-queue.py [--minutes N] [--alarm N] [--json] [--repo owner/name]
        scripts/mac-queue.py --turn 1|2|3 --for <branch>      for scripts/mac-shell/run.sh: may a run of that priority start now?
+       scripts/mac-queue.py --started N --for <branch>       likewise: it has just started a run on N Macs
   --minutes N        how far to look back, 60 by default
   --alarm N          the mean wait, in minutes, above which it says ALARM, 5 by default
   --json             the same facts as one JSON object; every length of time in it is in seconds
@@ -34,6 +35,8 @@ run (of those the run's own state tells enough). With $ARBOR_MAC_QUEUE_CACHE nam
 reads the answer there and asks GitHub nothing: for several checkouts, containers or people on one machine or one shared folder.
 With $ARBOR_STATE_BRANCH naming the branch the poller at GitHub publishes to (scripts/gh-state.py; `state/github`), that file is first brought
 up to date from there by `git fetch`, which no limit counts: then nobody who waits for a turn asks GitHub's API anything.
+--started writes a run that has just been started into that file, as waiting, and asks GitHub nothing: or everybody who was holding back
+would read "nobody waits" in the same look at an emptied queue, and start together. The next real look replaces it with the run itself.
 
 What GitHub's answers mean, found by looking at them on 2026-10-14 while five jobs ran and five waited:
 
@@ -191,6 +194,29 @@ def shared(repo, now, look, path=None, fetch=fetched):
     except OSError:
         pass  # a cache that cannot be written costs requests, nothing else
     return runs
+
+
+def note_started(repo, now, branch, macs, path=None):
+    """Adds a run on so many Macs, just started for `branch`, to what the cache holds. Without a cache, or one of this repository, nothing."""
+    path = os.environ.get("ARBOR_MAC_QUEUE_CACHE", "") if path is None else path
+    try:
+        with open(path, encoding="utf-8") as handle:
+            kept = json.load(handle)
+        if kept["repo"] != repo:
+            return False
+        for number in range(macs):
+            run = {
+                "id": f"just started {stamp(now)} {os.getpid()} {number}", "path": ".github/workflows/mac-shell.yml", "status": "queued", "head_branch": branch,
+                "display_title": f"Mac shell: just started at {branch} [?]", "html_url": "", "updated_at": stamp(now), "created_at": stamp(now),
+                "run_started_at": stamp(now),
+            }
+            kept["runs"].append({**run, "jobs": [stands_for(run)]})
+        with open(f"{path}.{os.getpid()}", "w", encoding="utf-8") as handle:
+            json.dump(kept, handle)
+        os.replace(f"{path}.{os.getpid()}", path)
+        return True
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return False
 
 
 def left_this_hour():
@@ -442,12 +468,16 @@ def main():
     parser.add_argument("--json", action="store_true", help="the same facts as one JSON object")
     parser.add_argument("--repo", help="owner/name, instead of what origin points to")
     parser.add_argument("--turn", type=int, choices=sorted(MAY_WAIT), help="may a run of this priority start now?")
-    parser.add_argument("--for", dest="branch", default="", help="with --turn: the branch the run is for")
+    parser.add_argument("--started", type=int, metavar="N", help="a run on N Macs has just been started: let whoever shares the cache know")
+    parser.add_argument("--for", dest="branch", default="", help="with --turn and --started: the branch the run is for")
     args = parser.parse_args()
 
     try:
         repo = args.repo or repository()
         now = datetime.now(timezone.utc)
+        if args.started:
+            note_started(repo, now, args.branch, args.started)
+            return 0
         runs = shared(repo, now, lambda: fetch_now(repo)) if args.turn else fetch(repo, now, args.minutes)
         found = facts(runs, now, args.minutes, args.alarm)
     except Unanswered as error:
