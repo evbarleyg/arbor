@@ -1,7 +1,7 @@
 #!/bin/bash
 # Settings from the command line: set, get, settings, reset, bind, unbind and rule, what they refuse and why, what they
 # leave of the file a person wrote, and the file applied as it is saved. Then a second copy of Arbor on the same home folder.
-# A17 every setting is scriptable and checked, A13 only one Arbor at a time.
+# A17 every setting is scriptable and checked, A03 configurable shortcuts (saved in the file), A13 only one Arbor at a time.
 source "$(dirname "$0")/../lib.sh"
 arbor_build
 
@@ -180,6 +180,19 @@ printf '{"gap": 28}\n' > "$file"
 check "mended, it applies" eventually inset_is 28
 check "and set works again" ctl set gap 12
 check "the docked window starts 12 points from the edge" eventually inset_is 12
+settled
+
+claim "save a shortcut in settings.json from an editor: it works without a reload, the menu shows it, and taken out again it is gone"
+proves A03 A17
+check "before, ⌃⌥⌘H is no shortcut of Arbor's" fails says "ctrl+opt+cmd+h" arborctl bindings
+# A command that moves no window: the claims after this one go by where the windows are.
+printf '{"gap": 12, "bindings": {"ctrl+opt+cmd+h": "show-all"}}\n' > "$file"
+check "arborctl bindings lists it" eventually says "ctrl+opt+cmd+h" arborctl bindings
+check "⌃⌥⌘H runs show-all" pressed ctrl+opt+cmd+h show-all
+check "the menu shows the keys beside Show Everything" says "Show Everything  ⌃⌥⌘H" arborctl menu
+printf '{"gap": 12}\n' > "$file"
+check "taken out of the file, it is no longer listed" eventually fails says "ctrl+opt+cmd+h" arborctl bindings
+check "and the menu shows the default again" says "Show Everything  ⌃⌥Space" arborctl menu
 settled
 
 claim "start a second copy of Arbor on the same home folder: it explains itself and leaves, and the first goes on"

@@ -87,6 +87,20 @@ drag "$x" "$y" "$((x + 60))" "$((y + 40))"
 check "the app saw the drag" eventually received "$W3" dragged -gt "$dragged"
 check "the camera stayed" camera_on root
 
+claim "a ⇧⌘-drag and a ⇧⌘-click over a window belong to the app"
+proves T38
+dragged=$(events_of "$W3" dragged)
+take "x y" center_of "$W3"
+drag "$x" "$y" "$((x + 80))" "$((y + 60))" --mods shift+cmd --no-release
+check "no band is on screen while the button is held" stays fails has_overlay 3
+release --mods shift+cmd
+check "the app saw the drag" eventually received "$W3" dragged -gt "$dragged"
+downs=$(events_of "$W3" down)
+click "$x" "$y" --mods shift+cmd
+check "the app got the click" eventually received "$W3" down -gt "$downs"
+check "Arbor framed nothing" fails logged "frame-rect "
+check "the camera stayed" stays camera_on root
+
 # No public API makes gesture events: pointer.swift fills in the fields a trackpad's events carry.
 claim "hold ⌥ and spread two fingers over a window: the camera steps in toward it"
 proves T36
@@ -113,6 +127,17 @@ if desktop_is_bare; then
   check "Arbor stepped in" eventually ran in
   check "the camera is on the Desktop" eventually camera_on desktop
   ctl show-all
+
+  claim "pinch two fingers together over the Desktop, without ⌥: the camera steps out to everything"
+  proves T36
+  ctl desktop
+  check "the docked windows are out of view" eventually out_of_view "$W1"
+  # shellcheck disable=SC2046
+  pinch $(desktop_point) -0.3
+  check "Arbor stepped out" eventually ran out
+  check "everything is in view" eventually camera_on root
+  check "the docked windows are back" eventually in_view "$W1"
+  settled
 fi
 
 claim "a pinch over a window without ⌥ belongs to the app"
