@@ -1000,6 +1000,7 @@ public final class Controller {
       state.named = workspace.names.values.sorted()
       state.undo = nextStepLabel(.undo, on: display.id)
       state.redo = nextStepLabel(.redo, on: display.id)
+      state.mirrored = display.isMirrored
       return state
     }
     // One pass over the workspaces instead of a search of every tree for every window.

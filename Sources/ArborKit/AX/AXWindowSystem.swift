@@ -226,7 +226,8 @@ public final class AXWindowSystem: WindowSystem {
         id: ScreenGeometry.displayID(for: screen),
         frame: ScreenGeometry.global(fromAppKit: screen.frame),
         visibleFrame: ScreenGeometry.global(fromAppKit: screen.visibleFrame),
-        isMain: index == 0, name: screen.localizedName, isBuiltIn: ScreenGeometry.isBuiltIn(screen))
+        isMain: index == 0, name: screen.localizedName, isBuiltIn: ScreenGeometry.isBuiltIn(screen),
+        isMirrored: ScreenGeometry.directID(for: screen).map { CGDisplayIsInMirrorSet($0) != 0 } ?? false)
     }
   }
 

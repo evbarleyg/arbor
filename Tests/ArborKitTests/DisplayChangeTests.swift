@@ -23,6 +23,17 @@ import Testing
     #expect(DisplayChange.settleTime(from: [main], to: [taller]) == DisplayChange.visibleFrameOnly)
   }
 
+  /// Mirroring to a projector that was not a display of its own changes nothing else about the Mac's display.
+  @Test func mirroringBeginningOrEndingIsReportedSoon() {
+    var mirrored = main
+    mirrored.isMirrored = true
+    #expect(DisplayChange.settleTime(from: [main], to: [mirrored]) == DisplayChange.visibleFrameOnly)
+    #expect(DisplayChange.settleTime(from: [mirrored], to: [main]) == DisplayChange.visibleFrameOnly)
+    #expect(DisplayChange.settleTime(from: [mirrored], to: [mirrored]) == nil)
+    // A second display that becomes a mirror of the first goes away as a display.
+    #expect(DisplayChange.settleTime(from: [main, side], to: [mirrored]) == DisplayChange.comingAndGoing)
+  }
+
   @Test func aDisplayComingOrGoingIsGivenTimeToChangeItsMind() {
     #expect(DisplayChange.settleTime(from: [main, side], to: [main]) == DisplayChange.comingAndGoing)
     #expect(DisplayChange.settleTime(from: [main], to: [main, side]) == DisplayChange.comingAndGoing)

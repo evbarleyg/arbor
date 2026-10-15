@@ -1,0 +1,58 @@
+# Proposed by the executor who built K160 (2026-10-14); for the documenter to adopt or change.
+#
+# Someone plugs the Mac into a projector and mirrors the display. Keynote is framed; Mail and Slack are docked out of
+# view. From that moment nothing may move that they did not ask for, and their own keys go on working.
+# The setting is off out of the box, until somebody has seen it at work on a Mac.
+quiet
+set holdStillWhileMirroring true
+open Keynote
+open Mail
+open Slack
+dock 101 left
+dock 102 right
+dock 103 beside 102 bottom
+zoom 101
+focus 101
+expect fills 101
+expect held no
+
+projector on
+expect held still
+expect fills 101
+expect hidden 102
+expect hidden 103
+
+# Slack brings itself forward: the audience does not see it.
+comes-forward 103
+expect focused 101
+expect fills 101
+expect hidden 103
+
+# Walking the windows is asked for, and works.
+press show-all
+expect visible 101
+expect visible 102
+expect visible 103
+press zoom 101
+expect fills 101
+
+# Let go by hand, it stays let go for as long as the projector is on.
+release
+expect held no
+display-size 1440x880
+expect held no
+display-size 1440x900
+expect held no
+
+projector off
+expect held no
+projector on
+expect held still
+
+# A hold of one's own outlives the projector.
+hold
+expect held view
+projector off
+expect held view
+release
+expect held no

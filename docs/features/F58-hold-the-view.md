@@ -83,7 +83,7 @@ Not shipped:
   (`collab/evidence/screens/2026-10-14-F58-line-of-windows-out-of-view.png`, eight times enlarged, cut from a picture of an earlier run). Whether zero points, or a place beyond the shadow, is accepted and
   safe is the first thing `scripts/mac-shell/check-F58.sh` measures. Parking was left alone meanwhile; other work is changing `parkingOrigin` for the same clamp.
 - **F43's messages** are on another branch. Whoever lands second: while `isHeld`, show only the line for a command that failed.
-- Mirrored displays (`CGDisplayIsInMirrorSet`: a projector) as a sign of presenting.
+- ~~Mirrored displays (`CGDisplayIsInMirrorSet`: a projector) as a sign of presenting.~~ Built as K160: `holdStillWhileMirroring` (ships off like the other signs; the first to be switched on, once somebody has mirrored a display and seen the icon fill in and empty again), `MirroringTests`, scenario `58-mirrored-to-a-projector.sim`.
 - **No hold has been tried on real windows.** `check-F58.sh` has not run yet. The macOS-only code (the lock icon, the menu,
   `AXWindowSystem.secondsSinceClickOrModifierKey()`, the observer in `ArborApp`, `App/CallSensor.swift`) has been built on a Mac, with the unit tests and the general e2e run passing, and
   nobody has looked at it. Whether "Hey Siri", Voice Control or a virtual audio device keep a microphone "running" for ever is not known, nor whether a shortcut that is kept down repeats (it is guarded against either way).

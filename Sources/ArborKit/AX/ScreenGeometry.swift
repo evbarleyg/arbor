@@ -36,9 +36,12 @@ enum ScreenGeometry {
   }
 
   static func displayID(for screen: NSScreen) -> DisplayID {
-    guard let number = screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber
-    else { return DisplayID("unknown") }
-    return displayID(for: CGDirectDisplayID(number.uint32Value))
+    guard let directID = directID(for: screen) else { return DisplayID("unknown") }
+    return displayID(for: directID)
+  }
+
+  static func directID(for screen: NSScreen) -> CGDirectDisplayID? {
+    (screen.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber).map { CGDirectDisplayID($0.uint32Value) }
   }
 
   static func displayID(for directID: CGDirectDisplayID) -> DisplayID {
