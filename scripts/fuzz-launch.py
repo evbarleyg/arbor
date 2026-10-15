@@ -301,9 +301,11 @@ def judge(code, output, script):
     """("ok",), ("refused",), or (what is wrong, the detail)."""
     if code == "hang":
         return "HANG", last_line(output)
-    if code != 0:
-        return "CRASH", last_line(output)
     lines = output.splitlines()
+    # arbor-sim ends with 1 where a line moved a window twice. It ran to the end: that is no crash, least of all one of the last line.
+    twice = next((at for at, line in enumerate(lines) if line.startswith("MOVED TWICE:")), None)
+    if code != 0 and (code != 1 or twice is None):
+        return "CRASH", last_line(output)
     health = [line for line in lines if line.startswith("HEALTH")]
     for line in health:
         if line != "HEALTH ok":
@@ -315,6 +317,9 @@ def judge(code, output, script):
             return "LOST AT QUIT", line[5:170]
     if len(health) != script.count("health") or "QUIT ok" not in lines:
         return "CUT SHORT", "%d of %d health lines" % (len(health), script.count("health"))
+    if twice is not None:
+        # The line without the name of a file, which is another every time: findings are told apart by how they begin.
+        return "MOVED TWICE", "%s: %s" % (re.sub(r"/\S+", "…", last_line("\n".join(lines[:twice]))), lines[twice][13:].split(" went from")[0])
     return ("refused",) if "STATE refused" in lines else ("ok",)
 
 
@@ -544,6 +549,7 @@ def situations():
     script = ["quiet", "health", "dock 101 left", "health", "quit-check"]
     good = "STATE read\n> quiet\n> health\nHEALTH ok\n> dock 101 left\n> health\nHEALTH ok\n> quit-check\nQUIT ok\n"
     second = "> health\nHEALTH ok\n> quit"
+    jolt = "MOVED TWICE: w101 went from a by way of b to c (a known fault is answered for with `expect jolt 101`)\n"
     for what, code, output, expected in [
         ("all is well", 0, good, ("ok",)),
         ("the file was refused, and all is well", 0, good.replace("STATE read", "STATE refused"), ("refused",)),
@@ -556,6 +562,13 @@ def situations():
          ("LOST AT QUIT", "1 out of view: w101")),
         ("a health line is missing", 0, good.replace(second, "> quit"), ("CUT SHORT", "1 of 2 health lines")),
         ("it ended before quitting", 0, good.replace("QUIT ok\n", ""), ("CUT SHORT", "2 of 2 health lines")),
+        ("a window was moved twice", 1, good.replace(second, jolt + second), ("MOVED TWICE", "dock 101 left: w101")),
+        ("moved twice, and a rule is broken: the worse of the two", 1,
+         good.replace(second, jolt + second).replace("HEALTH ok\n> quit", "HEALTH 1: w101 is lost\n> quit"), ("UNHEALTHY", "1: w101 is lost")),
+        ("moved twice by a line that names a file", 1, good.replace("dock 101 left", "settings-file /tmp/x/y.json").replace(second, jolt + second),
+         ("MOVED TWICE", "settings-file …: w101")),
+        ("it gave up with 1 and says nothing of a move", 1, good, ("CRASH", "quit-check")),
+        ("moved twice, and then killed", -11, good[:good.index(second)] + jolt, ("CRASH", "dock 101 left")),
     ]:
         yield "fuzz-launch.py: " + what, judge(code, output, script), expected
 

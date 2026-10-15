@@ -1493,7 +1493,7 @@ becomes empty, invisible, 200,000 characters long or another's (`strings`); or t
 **What it checks.** No crash, no hang (30 seconds), and every `health` line in the script says `HEALTH ok`: no rule of `Controller.invariantViolations()`
 is broken (but for the chaos test's known failures), no frame is infinite or absurdly far, `state` can be written, and **what would be saved reads
 back as it is, without a repair**: otherwise Arbor wrote damage, and the next start tells the person that their arrangement was damaged. No display is left
-un-laid-out after a line, and after `quit-check` every window is in view. The audit asks of each damaged file: if it was refused, was it set aside byte for
+un-laid-out after a line, no line moves a window twice where once would have done, and after `quit-check` every window is in view. The audit asks of each damaged file: if it was refused, was it set aside byte for
 byte? If a repair was noted, was the copy made? And if nothing was noted, is there anything in the file, beyond the damaged place, that would not be
 in the next save? Nothing noted means no copy, so that would be gone for good.
 
@@ -1507,8 +1507,8 @@ scripts/fuzz-launch.py audit --keep /tmp/found       # keep the files that found
 scripts/fuzz-launch.py all --timeout 90 --jobs 2     # on a busy machine, where a slow start would count as a hang
 ```
 
-**When it finds something** it prints what (`CRASH`, `HANG`, `UNHEALTHY`, `STALE LAYOUT`, `LOST AT QUIT`, `CUT SHORT`, `FILE`; `REFUSED AND NOT KEPT`, `NOTED AND NOT KEPT`,
-`SILENT LOSS`), the last line that ran, the damage, and the file, once for each distinct finding. To see it happen:
+**When it finds something** it prints what (`CRASH`, `HANG`, `UNHEALTHY`, `STALE LAYOUT`, `LOST AT QUIT`, `CUT SHORT`, `MOVED TWICE`, `FILE`; `REFUSED AND NOT KEPT`, `NOTED AND NOT KEPT`,
+`SILENT LOSS`), the last line that ran (of `MOVED TWICE`: the line that did it), the damage, and the file, once for each distinct finding. To see it happen:
 
 ```bash
 .build/debug/arbor-sim launch --state /tmp/found/stateA-numbers-1.json --windows 7 --displays 2 health "dock 107 left" health
