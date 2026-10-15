@@ -9,6 +9,10 @@
 //     one-by-one-in-two, side-by-side-in-two    the same with two calls where two will do: what grows is moved and then grows, what
 //                   shrinks shrinks and is then moved, so that no state lies outside both the old frame and the new
 //
+//   BREATH_OBSERVED=main | thread    listen to the windows' moves and resizes meanwhile, as Arbor does: with the listener on the main run
+//                   loop, which stands still while the main thread waits for an answer (Arbor today), or on a thread of its own, which
+//                   never does. Does an app that has somebody to tell take longer to answer, and does it matter who is listening?
+//
 // Each round takes the windows from a pile to a grid or back. `grid` or `pile` for a number: that one act from wherever the windows
 // are, for a film. Meanwhile a thread of its own asks the window server for these windows'
 // bounds as fast as it answers. A line a round: how long the calls took, when the first and the last change showed, in how many
@@ -151,6 +155,24 @@ final class Watcher: @unchecked Sendable {
   }
 }
 
+// MARK: Listening, as Arbor does
+
+nonisolated(unsafe) var heard = 0
+nonisolated(unsafe) var observers: [AXObserver] = []
+
+func listen(to windows: [Window], on loop: CFRunLoop) {
+  for (pid, own) in Dictionary(grouping: windows, by: \.pid) {
+    var made: AXObserver?
+    guard AXObserverCreate(pid, { _, _, _, _ in heard += 1 }, &made) == .success, let observer = made else { continue }
+    for window in own {
+      AXObserverAddNotification(observer, window.element, kAXMovedNotification as CFString, nil)
+      AXObserverAddNotification(observer, window.element, kAXResizedNotification as CFString, nil)
+    }
+    CFRunLoopAddSource(loop, AXObserverGetRunLoopSource(observer), .commonModes)
+    observers.append(observer)
+  }
+}
+
 // MARK: The rounds
 
 let arguments = Array(CommandLine.arguments.dropFirst())
@@ -185,18 +207,41 @@ let pile = all.indices.map { index in
 }
 let apps = Dictionary(grouping: all.indices, by: { all[$0].pid }).values.map { $0.sorted() }.sorted { $0[0] < $1[0] }
 
+let observed = ProcessInfo.processInfo.environment["BREATH_OBSERVED"] ?? "nobody"
+switch observed {
+case "main":
+  listen(to: all, on: CFRunLoopGetMain())
+case "thread":
+  let ready = DispatchSemaphore(value: 0)
+  let thread = Thread {
+    listen(to: all, on: CFRunLoopGetCurrent())
+    ready.signal()
+    CFRunLoopRun()
+  }
+  thread.qualityOfService = .userInteractive
+  thread.start()
+  ready.wait()
+default:
+  break
+}
+/// Between two acts the main run loop turns, as an app's does.
+func rest(_ seconds: Double) {
+  if observed == "main" { CFRunLoopRunInMode(.defaultMode, seconds, false) } else { Thread.sleep(forTimeInterval: seconds) }
+}
+
 if oneAct == nil {
   for (index, window) in all.enumerated() { move(window, to: pile[index]) }
-  Thread.sleep(forTimeInterval: 0.5)
+  rest(0.5)
 }
-print("\(name): \(all.count) windows of \(apps.count) apps, cells of \(Int(cell.width))×\(Int(cell.height))")
+print("\(name), \(observed) listening: \(all.count) windows of \(apps.count) apps, cells of \(Int(cell.width))×\(Int(cell.height))")
 
 for round in 1...rounds {
   let toTheGrid = oneAct.map { $0 == "grid" } ?? (round % 2 == 1)
   let targets = toTheGrid ? grid : pile
   let watcher = Watcher(all.map(\.id))
   watcher.start()
-  Thread.sleep(forTimeInterval: 0.1)
+  rest(0.1)
+  let before = heard
   let began = now()
   var sent = began
   switch way {
@@ -218,7 +263,7 @@ for round in 1...rounds {
     for window in all { _ = frame(of: window.element) }
   }
   let answered = now()
-  Thread.sleep(forTimeInterval: 0.4)
+  rest(0.4)
   let (changes, looks) = watcher.stop()
   let final = Watcher.bounds(of: all.map(\.id))
   let arrived = all.indices.filter { index in
@@ -234,5 +279,5 @@ for round in 1...rounds {
     "  round \(round) to the \(toTheGrid ? "grid" : "pile"): answered \(ms(answered)) ms"
       + (way == "no-wait" ? " (sent \(ms(sent)))" : "")
       + ", first change \(after.first.map { ms($0.at) } ?? "-"), last \(after.last.map { ms($0.at) } ?? "-"), span \(span) ms, "
-      + "\(pieces) pieces, \(after.count) changes, \(arrived) of \(all.count) arrived, \(looks) looks")
+      + "\(pieces) pieces, \(after.count) changes, \(arrived) of \(all.count) arrived, \(looks) looks, \(heard - before) heard")
 }

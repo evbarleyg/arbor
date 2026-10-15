@@ -49,11 +49,15 @@ sleep 1
 if [ -n "${ARBOR_BUILT:-}" ]; then
   echo "a rehearsal has no Accessibility to ask: the tool is type-checked, not run"
 else
-  for way in one-by-one side-by-side no-wait one-by-one side-by-side no-wait one-by-one; do
-    step "$way"
-    # shellcheck disable=SC2086
-    limit 60 "$BREATH" "$way" 6 $PIDS
-    sleep 1
+  # The first run's answer: side by side halves the wait and hardly changes what shows. But Arbor's own eight calls take 94 ms where
+  # these take 15 to 34. What Arbor has and this had not: it listens to the windows it moves.
+  for turn in 1 2 3; do
+    for pair in one-by-one:nobody one-by-one:main one-by-one:thread side-by-side:main side-by-side:thread; do
+      step "${pair%%:*}, ${pair##*:} listening, turn $turn"
+      # shellcheck disable=SC2086
+      BREATH_OBSERVED=${pair##*:} limit 60 "$BREATH" "${pair%%:*}" 6 $PIDS
+      sleep 1
+    done
   done
 fi
 
