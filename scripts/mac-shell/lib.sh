@@ -1245,7 +1245,7 @@ arbor_launch() {
         # With ARBOR_RECORD=1 every launch on a throwaway Mac is recorded (docs/TRACES.md): what macOS reported and what Arbor asked of
         # it comes back in mac-shell/traces/ and replays on Linux from then on. Never on a person's Mac: a trace holds every press
         # of the button, wherever it landed.
-        if [ "${ARBOR_RECORD:-}" = 1 ] && on_throwaway_mac && [ -z "${ARBOR_REHEARSAL:-}" ]; then
+        if [ "${ARBOR_RECORD:-1}" = 1 ] && on_throwaway_mac && [ -z "${ARBOR_REHEARSAL:-}" ]; then
           ARBOR_LAUNCHES=$((${ARBOR_LAUNCHES:-0} + 1))
           "$ARBOR_BIN/arborctl" trace on "$ARBOR_NAME-$ARBOR_LAUNCHES" > /dev/null 2>&1 || echo "note: this launch is not recorded"
         fi
