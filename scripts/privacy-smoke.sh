@@ -76,19 +76,21 @@ cat > "$files/settings.json" <<'JSON'
 JSON
 # OWNWORD stands where one of Arbor's own words was wanted (an action, a style, a key, a number): a slip is something a person typed too. The
 # log says where it is, `doctor` says what. Not tried: a word where a bundle id was wanted. The log holds bundle ids, by design.
-words="OWNWORD RULEWORD DISPLAYWORD HOLDWORD BINDWORD TITLEWORD NAMEWORD QUERYWORD"
+words="HOMEWORD OWNWORD RULEWORD DISPLAYWORD HOLDWORD BINDWORD TITLEWORD NAMEWORD QUERYWORD"
 
 # A state.json with names in it, as Arbor writes it, and one of them damaged by hand afterwards.
 ARBOR_HOME=$home/first "$sim" quiet "open Safari" "open Notes" "open Mail" "dock 101 left" "dock 102 right" "zoom 101" "name NAMEWORD one" \
   "show-all" "zoom 102" "name NAMEWORD two" "show-all" "save-state $files/state.json" > /dev/null 2>&1
 grep -q NAMEWORD "$files/state.json" || { echo "privacy smoke test FAILED: the names are not in state.json, so nothing was tried"; exit 1; }
 
-second=$home/second
+# Arbor's folder is in the home folder, whose name is the account's, which is a person's as often as not.
+second=$home/HOMEWORD/second
+mkdir -p "$home/HOMEWORD"
 for state in sound damaged unreadable; do
   [ "$state" != damaged ] || sed -i.bak 's/"NAMEWORD two"/["NAMEWORD two"]/' "$files/state.json"
   # A quote too few, inside a title: Arbor says where it stopped reading, and quotes the place to whoever asks.
   [ "$state" != unreadable ] || sed -i.bak 's/"RULEWORD one"/"RULEWORD one/' "$files/settings.json"
-  ARBOR_HOME=$second ARBOR_DEBUG=1 "$sim" launch --state "$files/state.json" --settings "$files/settings.json" --windows 3 --displays 2 quiet \
+  HOME=$home/HOMEWORD ARBOR_HOME=$second ARBOR_DEBUG=1 "$sim" launch --state "$files/state.json" --settings "$files/settings.json" --windows 3 --displays 2 quiet \
     "trace on files" "settings-file $files/settings.json" \
     "title 101 TITLEWORD one" "title 102 TITLEWORD two" "doctor" "status" "settings" "rules" "displays" "bindings" "spaces" "menu" "state" \
     "reload-settings" "doctor" "key ctrl+opt+j" "key ctrl+opt+k" "key ctrl+opt+l" "key ctrl+opt+m" "key ctrl+opt+n" "key ctrl+opt+p" "key ctrl+opt+y" \
@@ -101,7 +103,7 @@ for state in sound damaged unreadable; do
     "pause" "resume" "hold" "release" "health" "trace off" "quit-check" >> "$home/out2.txt" 2>&1
 done
 
-for word in OWNWORD BINDWORD RULEWORD DISPLAYWORD HOLDWORD NAMEWORD; do
+for word in HOMEWORD OWNWORD BINDWORD RULEWORD DISPLAYWORD HOLDWORD NAMEWORD; do
   grep -q "$word" "$home/out2.txt" || { echo "privacy smoke test FAILED: $word never arrived: no reply says it, so nothing was tried"; exit 1; }
 done
 [ -s "$second/arbor.log" ] || { echo "privacy smoke test FAILED: act two logged nothing"; exit 1; }

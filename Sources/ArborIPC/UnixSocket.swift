@@ -32,7 +32,7 @@ public enum UnixSocket {
     guard result == 0 else {
       close(fd)
       throw ControlClient.Failure(
-        description: "Arbor is not running (no control socket at \(path)); start it with `open -a Arbor`")
+        description: "Arbor is not running (no control socket at \(ArborPaths.withoutHomeFolder(path))); start it with `open -a Arbor`")
     }
     return fd
   }
@@ -46,7 +46,7 @@ public enum UnixSocket {
     var address = try address(for: path)
     if let other = try? connected(to: path) {
       close(other)
-      throw ControlClient.Failure(description: "somebody is already listening at \(path)")
+      throw ControlClient.Failure(description: "somebody is already listening at \(ArborPaths.withoutHomeFolder(path))")
     }
     unlink(path)
     let fd = try newStream()
@@ -58,13 +58,13 @@ public enum UnixSocket {
     guard bound == 0 else {
       let reason = errnoText()
       close(fd)
-      throw ControlClient.Failure(description: "could not bind \(path): \(reason)")
+      throw ControlClient.Failure(description: "could not bind \(ArborPaths.withoutHomeFolder(path)): \(reason)")
     }
     chmod(path, 0o600)
     guard listen(fd, backlog) == 0 else {
       let reason = errnoText()
       close(fd)
-      throw ControlClient.Failure(description: "could not listen at \(path): \(reason)")
+      throw ControlClient.Failure(description: "could not listen at \(ArborPaths.withoutHomeFolder(path)): \(reason)")
     }
     setNonBlocking(fd, true)
     return fd
@@ -133,7 +133,7 @@ public enum UnixSocket {
     let capacity = MemoryLayout.size(ofValue: address.sun_path)
     guard bytes.count < capacity else {
       throw ControlClient.Failure(
-        description: "socket path is \(bytes.count) bytes; the system allows \(capacity - 1): \(path)")
+        description: "socket path is \(bytes.count) bytes; the system allows \(capacity - 1): \(ArborPaths.withoutHomeFolder(path))")
     }
     withUnsafeMutableBytes(of: &address.sun_path) { raw in
       raw.copyBytes(from: bytes)

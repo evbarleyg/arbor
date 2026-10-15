@@ -138,6 +138,49 @@ import Testing
     for word in ["the", "this", "window", "arbor", "edge", "space", "frame", "zom", "", "…"] { #expect(!Command.isVerb(word), "\(word)") }
   }
 
+  /// An account's name is a person's name as often as not, and every path in the home folder begins with it.
+  @Test(arguments: [
+    ("home /Users/jo/Library/Application Support/Arbor", "home ~/Library/Application Support/Arbor"),
+    ("/Users/jo", "~"), ("\"/Users/jo\"", "\"~\""), ("at /Users/jo: gone", "at ~: gone"), ("(/Users/jo/a, /Users/al/b)", "(~/a, ~/b)"),
+    ("file:///Users/jo/x.json", "file://~/x.json"), ("“/Users/jo/x” couldn’t be opened", "“~/x” couldn’t be opened"),
+    // Anybody's, not only whoever runs Arbor.
+    ("/Users/jojo/x", "~/x"),
+    // Nobody's.
+    ("/Users/Shared/x", "/Users/Shared/x"), ("/Users/", "/Users/"), ("/Users", "/Users"),
+    // A folder like any other.
+    ("/opt/Users/jo/x", "/opt/Users/jo/x"), ("x/Users/jo", "x/Users/jo"),
+    ("dock 101 left", "dock 101 left"), ("a/b", "a/b"), ("", ""), ("/", "/"), ("arbor://dock/left", "arbor://dock/left"),
+  ]) func aHomeFolderIsWrittenAsATilde(text: String, written: String) {
+    #expect(ArborPaths.withoutHomeFolder(text, homes: ["/Users/jo"]) == written)
+  }
+
+  /// A home folder need not be under `/Users`.
+  @Test func aHomeFolderThatIsSomewhereElse() {
+    #expect(ArborPaths.withoutHomeFolder("in /root/x and /root, not /rootfs/x or /var/root/x", homes: ["/root"]) == "in ~/x and ~, not /rootfs/x or /var/root/x")
+    #expect(ArborPaths.withoutHomeFolder("/tmp/x/home/y and /tmp/x", homes: ["/tmp/x/home", "/tmp/x"]) == "~/y and ~", "two names for it: the longer first")
+    #expect(ArborPaths.withoutHomeFolder("/a/b", homes: []) == "/a/b")
+    #expect(ArborPaths.homeFolders.allSatisfy { $0.count > 1 && $0.hasPrefix("/") && !$0.hasSuffix("/") }, "a home that is the root of everything says nothing")
+  }
+
+  /// In the one place every line goes through, so that it holds for lines nobody has written yet, and for the words of macOS's errors.
+  @Test func noLineOfTheLogHoldsTheHomeFolder() throws {
+    let mark = "mark \(UUID().uuidString)"
+    Log.info(mark)
+    Log.error("could not save state: “\(NSHomeDirectory())/Library/x.json” and /Users/okapiword/y")
+    let log = try logged(since: mark)
+    #expect(log.contains("could not save state: “~/Library/x.json” and ~/y"), "\(log)")
+  }
+
+  /// What `arborctl` answers when Arbor is not running is the line most often pasted into an issue.
+  @Test func whatArborctlSaysOfTheSocketHoldsNoHomeFolder() {
+    #expect(throws: ControlClient.Failure.self) { try ControlClient.send("status", socketPath: "/Users/okapiword/none/arbor.sock") }
+    do {
+      _ = try ControlClient.send("status", socketPath: "/Users/okapiword/none/arbor.sock")
+    } catch {
+      #expect("\(error)".contains("no control socket at ~/none/arbor.sock"), "\(error)")
+    }
+  }
+
   /// One list, for URLs that are refused and for shortcuts that cannot be read.
   @Test func theCommandsThatCanHoldPrivateWords() {
     for verb in ["rule", "bind", "layout", "name", "unname", "go", "Layout", "GO"] { #expect(Command.mayHoldPrivateWords(verb: verb), "\(verb)") }
