@@ -1,0 +1,27 @@
+34 double-click-mail: double-clicks mail's title bar: macOS zooms the window
+expected: {'act': 'macos-own', 'settled': 'quiet:401', 'zooms': '66', 'front': '66'}
+ODD rule 2: w68 of Mail moved along with a window of its app
+
+07:08:23.511 SCREEN -- begin 34 double-click-mail
+07:08:23.511 SCREEN -- text 34 double-clicks mail's title bar: macOS zooms the window
+07:08:23.935 SCREEN (nothing was seen for 141 ms)
+07:08:24.112 SCREEN the button is down 758 84
+07:08:24.190 SCREEN the button is up 758 84
+07:08:24.353 SCREEN the button is down 758 84
+07:08:24.492 SCREEN the button is up 758 84
+07:08:24.540 SCREEN mail (w66) 238,71 1124×632
+07:08:24.656 SCREEN w68 of Mail 565,185 470×416
+07:08:24.656 SCREEN mail (w66) 204,66 1192×654
+07:08:24.728 SCREEN w68 of Mail 565,212 470×416
+07:08:24.728 SCREEN mail (w66) 41,38 1518×764
+07:08:24.849 SCREEN (nothing was seen for 121 ms)
+07:08:24.849 SCREEN w68 of Mail 565,218 470×416
+07:08:24.849 SCREEN mail (w66) 0,31 1600×791
+07:08:24.953 SCREEN (nothing was seen for 104 ms)
+07:08:24.960 MACOS pid 5066 AXResized w66 AXWindow/AXStandardWindow 0 31 1600 791
+07:08:24.961 MACOS pid 5066 AXResized w66 AXWindow/AXStandardWindow 0 31 1600 791
+07:08:24.961 MACOS pid 5066 AXResized w66 AXWindow/AXStandardWindow 0 31 1600 791
+07:08:24.963 MACOS pid 5066 AXResized w66 AXWindow/AXStandardWindow 0 31 1600 791
+07:08:24.963 MACOS pid 5066 AXResized w66 AXWindow/AXStandardWindow 0 31 1600 791
+07:08:25.900 SCREEN -- end 34 act=macos-own settled=quiet:401 zooms=66 front=66
+07:08:26.344 SCRIPT == 35 double-click-mail-again

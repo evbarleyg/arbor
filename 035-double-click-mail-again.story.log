@@ -1,0 +1,27 @@
+35 double-click-mail-again: double-clicks it again: macOS takes the window back
+expected: {'act': 'macos-own', 'settled': 'quiet:766', 'zooms': '66', 'front': '66', 'returns': '32'}
+ODD rule 2: w68 of Mail moved along with a window of its app
+
+07:08:26.346 SCREEN -- begin 35 double-click-mail-again
+07:08:26.346 SCREEN -- text 35 double-clicks it again: macOS takes the window back
+07:08:26.898 SCREEN the button is down 770 43
+07:08:26.990 SCREEN the button is up 770 43
+07:08:27.181 SCREEN the button is down 770 43
+07:08:27.230 SCREEN the button is up 770 43
+07:08:27.347 SCREEN w68 of Mail 565,211 470×416
+07:08:27.347 SCREEN mail (w66) 43,38 1514×763
+07:08:27.498 SCREEN w68 of Mail 565,197 470×416
+07:08:27.498 SCREEN mail (w66) 127,52 1346×707
+07:08:27.556 SCREEN w68 of Mail 565,186 470×416
+07:08:27.556 SCREEN mail (w66) 198,65 1204×658
+07:08:27.628 SCREEN w68 of Mail 565,179 470×416
+07:08:27.628 SCREEN mail (w66) 236,71 1128×633
+07:08:27.703 MACOS pid 5066 AXResized w66 AXWindow/AXStandardWindow 240 72 1120 630
+07:08:27.703 MACOS pid 5066 AXResized w66 AXWindow/AXStandardWindow 240 72 1120 630
+07:08:27.704 MACOS pid 5066 AXResized w66 AXWindow/AXStandardWindow 240 72 1120 630
+07:08:27.704 MACOS pid 5066 AXResized w66 AXWindow/AXStandardWindow 240 72 1120 630
+07:08:27.704 MACOS pid 5066 AXResized w66 AXWindow/AXStandardWindow 240 72 1120 630
+07:08:27.705 MACOS pid 5066 AXResized w66 AXWindow/AXStandardWindow 240 72 1120 630
+07:08:27.708 SCREEN mail (w66) 240,72 1120×630
+07:08:28.744 SCREEN -- end 35 act=macos-own settled=quiet:766 zooms=66 front=66 returns=32
+07:08:28.979 SCRIPT == 36 dock-icon-safari

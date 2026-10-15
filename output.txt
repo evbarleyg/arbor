@@ -1,0 +1,541 @@
+# mac-shell: scripts/mac-shell/stranger-3deb36a.3-docked-control.sh at 480957b, macOS 26.6.2, 2026-10-15T07:05Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64
+built the tools in 45s
+1600 900 1600 900
+display: 1 0 0 1600 900 1600 900 1
+macOS's own window management, as it comes:
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+com.apple.WindowManager EnableStandardClickToShowDesktop: not set
+Reduce Motion: false
+the sampler writes mac-shell/samples.log (pid 3723), the witness mac-shell/witness.log (pid 3732)
+
+== Before Arbor: the apps are open already
+
+-- 1 open-finder: opens finder
+> open -g -b com.apple.finder /tmp/arbor-apps.yfEfN9/scratch/told/…-grove
+pid 360 lists (id role subrole x y w h flags):
+  31 AXWindow AXStandardWindow 340 120 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1600 900 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+  w31 is finder
+  (quiet:665 ms) setup=1
+
+-- 2 open-safari: opens safari
+> open -g -b com.apple.Safari /tmp/arbor-apps.yfEfN9/scratch/told/…-page.html
+pid 3824 lists (id role subrole x y w h flags):
+  34 AXWindow AXStandardWindow 138 31 1324 791 main,toolbar
+  w34 is safari
+  (quiet:438 ms) setup=1
+
+-- 3 open-textedit: opens textedit
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.yfEfN9/scratch/told/…-oak.txt
+pid 4021 lists (id role subrole x y w h flags):
+  44 AXWindow AXStandardWindow 165 65 673 439 main
+  w44 is textedit
+  (quiet:1560 ms) setup=1
+
+-- 4 open-terminal: opens terminal
+> open -g -b com.apple.Terminal 
+pid 4081 lists (id role subrole x y w h flags):
+  48 AXWindow AXStandardWindow 40 51 877 499 main
+  w48 is terminal
+  (quiet:1101 ms) setup=1
+
+-- 5 open-notes: opens notes
+> open -g -b com.apple.Notes 
+pid 4196 lists (id role subrole x y w h flags):
+  51 AXWindow AXStandardWindow 300 105 1000 660 main,close-disabled,sheets=1
+  w51 is notes
+something is in the way:
+  AXWindow/AXStandardWindow 300 105 1000 660
+    AXButton/AXCloseButton 308 113 16 16
+    AXButton/AXZoomButton 354 113 16 16
+    AXButton/AXMinimizeButton 331 113 16 16
+    AXSheet/- 563 135 475 600
+      AXButton/- 934 686 85 30 "Continue"
+pressed "Continue": 0
+pressed "Cancel": 0
+  (quiet:362 ms) setup=1
+
+-- 6 open-calendar: opens calendar
+> open -g -b com.apple.iCal 
+pid 4540 lists (id role subrole x y w h flags):
+  57 AXWindow AXStandardWindow 200 86 935 598 main,toolbar
+  w57 is calendar
+  (quiet:916 ms) setup=1
+
+-- 7 open-settings: opens settings
+> open -g -b com.apple.systempreferences 
+pid 4624 lists (id role subrole x y w h flags):
+  58 AXWindow AXStandardWindow 437 85 723 625 main,toolbar
+  w58 is settings
+  (quiet:460 ms) setup=1
+
+-- 8 open-preview: opens preview
+> open -g -b com.apple.Preview /tmp/arbor-apps.yfEfN9/scratch/told/…-leaf.png
+pid 4715 lists (id role subrole x y w h flags):
+  62 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+  w62 is preview
+  (quiet:638 ms) setup=1
+
+-- 9 open-mail: opens mail
+> open -g -b com.apple.mail 
+pid 5066 lists (id role subrole x y w h flags):
+  66 AXWindow AXStandardWindow 240 72 1120 630 main,close-disabled,sheets=1,toolbar
+  w66 is mail
+  (quiet:534 ms) setup=1
+the cast: finder safari textedit terminal notes calendar settings preview mail
+
+-- 10 tiling-acts: without Arbor: drags a window by its title bar against the menu bar and lets go
+> click 635 854
+> move 635 654
+> drag 536 98 800 0 --no-release
+> release
+  (quiet:1415 ms) setup=1
+
+-- 11 tiling-acts-back: drags it away again, a hand's breadth down
+> drag 672 43 800 130 --no-release
+> release
+  (quiet:1117 ms) setup=1
+macOS's tiling was seen to act: true
+  ✔ macOS's own tiling acts
+
+-- 12 look-around: looks at the screen
+  (quiet:395 ms) setup=1 own=all
+
+-- 13 input-before: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+> click 1076 43
+> click 102 47
+  8 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:666 ms) round=before posted=press:8,up:8
+
+== The walk
+
+-- 14 click-preview: clicks preview's title bar
+> click 312 47
+> move 312 167
+  (quiet:372 ms) front=62
+
+-- left out: dock_key left: Arbor is not acting
+
+-- 15 dock-icon-notes: clicks notes's icon in the Dock
+> click 803 854
+> move 803 654
+  (quiet:427 ms) front=51
+
+-- left out: dock_key right: Arbor is not acting
+
+-- 16 click-safari: clicks safari's title bar
+> click 1076 43
+> move 1076 163
+  (quiet:364 ms) front=34
+
+-- 17 hide-safari: presses ⌘H
+> key cmd+h
+  (quiet:751 ms) moves=,, leaves=34,
+
+-- 18 dock-icon-terminal: clicks terminal's icon in the Dock
+> click 1276 854
+> move 1276 654
+  (quiet:356 ms) front=48
+
+-- 19 new-window-terminal: presses ⌘N in terminal
+> key cmd+n
+  w102 is terminal-new-19
+  (quiet:1137 ms) front=102
+
+-- 20 cmd-tab-1: holds ⌘ and presses Tab 1 time(s)
+> key cmd+tab --down
+> key cmd+tab --up
+  (quiet:409 ms) front=51
+
+-- 21 unhide-safari: clicks its icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:359 ms) moves=,, comes=34 front=34
+
+-- 22 cmd-tab-1: holds ⌘ and presses Tab 1 time(s)
+> key cmd+tab --down
+> key cmd+tab --up
+  (quiet:489 ms) front=51
+
+-- left out: close_new: no window that open_new opened is within reach
+
+-- 23 dock-icon-calendar: clicks calendar's icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:397 ms) front=57
+
+-- 24 dock-icon-calendar: clicks calendar's icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:357 ms) front=57
+
+-- 25 drag-safari-by: drags safari, which floats, by its title bar 143 across and 156 down
+> drag 1076 43 1219 199 --no-release
+> release
+  (quiet:1047 ms) drags=34 front=34 own=34 first=1
+
+-- 26 dock-icon-settings: clicks settings's icon in the Dock
+> click 1139 854
+> move 1139 654
+  (quiet:441 ms) front=58
+
+-- 27 drag-settings-by: drags settings, which floats, by its title bar -175 across and 148 down
+> drag 801 97 626 245 --no-release
+> release
+  (quiet:1043 ms) drags=58 front=58 own=58
+
+-- 28 cmd-tab-1: holds ⌘ and presses Tab 1 time(s)
+> key cmd+tab --down
+> key cmd+tab --up
+  (quiet:358 ms) front=34
+
+-- 29 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:387 ms) front=44
+
+-- 30 drag-textedit-to-top-edge: drags textedit by its title bar against the top edge of the screen and lets go
+> drag 501 77 800 0 --no-release
+> release
+  (quiet:1470 ms) drags=44 moves=,, front=44 own=44
+
+-- 31 cmd-tab-1: holds ⌘ and presses Tab 1 time(s)
+> key cmd+tab --down
+> key cmd+tab --up
+  (quiet:377 ms) front=34
+
+-- 32 cmd-tab-1: holds ⌘ and presses Tab 1 time(s)
+> key cmd+tab --down
+> key cmd+tab --up
+  (quiet:376 ms) front=44
+
+-- 33 dock-icon-mail: clicks mail's icon in the Dock
+> click 355 854
+> move 355 654
+  (quiet:434 ms) front=68
+
+-- 34 double-click-mail: double-clicks mail's title bar: macOS zooms the window
+> click 758 84 2
+> move 758 204
+  (quiet:401 ms) zooms=66 front=66
+
+-- 35 double-click-mail-again: double-clicks it again: macOS takes the window back
+> click 770 43 2
+> move 770 163
+  (quiet:766 ms) zooms=66 front=66 returns=32
+
+-- 36 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:356 ms) front=34
+
+-- 37 quit-safari: presses ⌘Q in safari
+> key cmd+q
+  (quiet:1035 ms) moves=,, leaves=34,
+
+-- 38 dock-icon-mail: clicks mail's icon in the Dock
+> click 355 854
+> move 355 654
+  (quiet:412 ms) front=68
+
+-- 39 reopen-safari: opens safari's document again
+> open -g -b com.apple.Safari /tmp/arbor-apps.yfEfN9/scratch/told/…-page.html
+pid 10994 lists (id role subrole x y w h flags):
+  145 AXWindow AXStandardWindow 276 31 1324 791 main,toolbar
+  w145 is safari
+  (quiet:383 ms) moves=,, front=145
+
+-- 40 dock-icon-terminal: clicks terminal's icon in the Dock
+> click 1276 854
+> move 1276 654
+  (quiet:361 ms) front=102
+
+-- 41 hide-terminal: presses ⌘H
+> key cmd+h
+  (quiet:827 ms) moves=,, leaves=102,48,
+
+-- 42 quit-safari: presses ⌘Q in safari
+> key cmd+q
+  (quiet:810 ms) moves=,, leaves=145,
+
+-- 43 click-mail: clicks mail's title bar
+> click 758 84
+> move 758 204
+  (quiet:406 ms) front=66
+
+-- 44 unhide-terminal: clicks its icon in the Dock
+> click 1276 854
+> move 1276 654
+  (quiet:430 ms) moves=,, comes=48 front=102
+
+-- 45 reopen-safari: opens safari's document again
+> open -g -b com.apple.Safari /tmp/arbor-apps.yfEfN9/scratch/told/…-page.html
+pid 11601 lists (id role subrole x y w h flags):
+  157 AXWindow AXStandardWindow 276 31 1324 791 main,focused,toolbar
+  w157 is safari
+  (quiet:389 ms) moves=,, front=157
+
+-- 46 leave-alone: does nothing for half a minute
+  (quiet:392 ms)
+
+-- 47 dock-icon-calendar: clicks calendar's icon in the Dock
+> click 635 854
+> move 635 654
+  (quiet:471 ms) front=57
+
+-- 48 double-click-calendar: double-clicks calendar's title bar: macOS zooms the window
+> click 740 127 2
+> move 740 247
+  (quiet:723 ms) zooms=57 front=57
+
+-- 49 double-click-calendar-again: double-clicks it again: macOS takes the window back
+> click 672 43 2
+> move 672 163
+  (quiet:890 ms) zooms=57 front=57 returns=46
+
+-- 50 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:441 ms) front=44
+
+-- 51 quit-textedit: presses ⌘Q in textedit
+> key cmd+q
+  (quiet:822 ms) moves=,, leaves=44,
+
+-- 52 reopen-textedit: opens textedit's document again
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.yfEfN9/scratch/told/…-oak.txt
+pid 13960 lists (id role subrole x y w h flags):
+  174 AXWindow AXStandardWindow 165 65 673 439 main
+  w174 is textedit
+  (quiet:712 ms) moves=,, front=174
+
+-- 53 drag-textedit-by: drags textedit, which floats, by its title bar -93 across and 125 down, and clicks there 0.3 s after letting go
+> drag 501 77 408 202 --no-release
+> release
+> click 408 202
+  (quiet:978 ms) drags=174 front=174 own=174
+
+-- 54 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:381 ms) front=157
+
+-- 55 full-screen: presses ⌃⌘F in Safari
+> key ctrl+cmd+f
+  (quiet:407 ms) moves=any leaves=any
+
+-- 56 leave-full-screen: presses ⌃⌘F again
+> key ctrl+cmd+f
+  (quiet:415 ms) moves=any leaves=any comes=157 front=157 returns=54
+
+-- left out: switch_click preview: no free point of its title bar shows
+
+-- 57 double-click-terminal: double-clicks terminal's title bar: macOS zooms the window
+> click 250 63 2
+> move 250 183
+  (quiet:731 ms) zooms=48 front=48
+
+-- 58 double-click-terminal-again: double-clicks it again: macOS takes the window back
+> click 798 43 2
+> move 798 163
+  (quiet:649 ms) zooms=48 front=48 returns=56
+
+-- 59 dock-icon-mail: clicks mail's icon in the Dock
+> click 355 854
+> move 355 654
+  (quiet:428 ms) front=68
+
+-- 60 drag-mail-by: drags mail, which floats, by its title bar -106 across and 8 down, and clicks there 0.3 s after letting go
+> drag 758 84 652 92 --no-release
+> release
+> click 652 92
+  (quiet:956 ms) drags=66 front=66 own=66
+
+-- 61 cmd-tab-1: holds ⌘ and presses Tab 1 time(s)
+> key cmd+tab --down
+> key cmd+tab --up
+  (quiet:449 ms) front=48
+
+-- 62 dock-icon-finder: clicks finder's icon in the Dock
+> click 131 854
+> move 131 654
+  (quiet:513 ms) front=31
+
+-- 63 drag-finder-by: drags finder, which floats, by its title bar 203 across and -36 down
+> drag 802 132 1005 96 --no-release
+> release
+  (quiet:1059 ms) drags=31 front=31 own=31
+
+-- 64 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:428 ms) front=174
+
+-- 65 window-menu-textedit: chooses textedit's first window in the Window menu
+> click 351 15
+> click 442 391
+  (quiet:895 ms) front=174
+
+-- 66 dock-icon-safari: clicks safari's icon in the Dock
+> click 243 854
+> move 243 654
+  (quiet:411 ms) front=157
+
+-- 67 full-screen: presses ⌃⌘F in Safari
+> key ctrl+cmd+f
+  (quiet:402 ms) moves=any leaves=any
+
+-- 68 leave-full-screen: presses ⌃⌘F again
+> key ctrl+cmd+f
+  (quiet:373 ms) moves=any leaves=any comes=157 front=157 returns=66
+
+-- 69 dock-icon-preview: clicks preview's icon in the Dock
+> click 1332 854
+> move 1332 654
+  (quiet:450 ms) front=62
+
+-- 70 minimize-preview: presses ⌘M
+> key cmd+m
+  (quiet:985 ms) moves=,, leaves=62
+
+-- 71 restore-preview: clicks its miniature in the Dock
+> click 1441 854
+> move 1441 654
+  (quiet:771 ms) moves=,, comes=62 front=62 returns=69
+
+-- 72 drag-preview-to-right-edge: drags preview by its title bar against the right edge of the screen and lets go
+> drag 312 47 1599 450 --no-release
+> release
+  (quiet:1346 ms) drags=62 moves=,, front=62 own=62
+
+-- 73 drag-textedit-to-top-edge: drags textedit by its title bar against the top edge of the screen and lets go
+> drag 254 202 800 0 --no-release
+> release
+  (quiet:1430 ms) drags=174 moves=,, front=174 own=174
+
+-- 74 cmd-tab-1: holds ⌘ and presses Tab 1 time(s)
+> key cmd+tab --down
+> key cmd+tab --up
+  (quiet:501 ms) front=62
+
+-- 75 drag-preview-to-right-edge: drags preview by its title bar against the right edge of the screen and lets go
+> drag 1108 43 1599 450 --no-release
+> release
+  (quiet:1390 ms) drags=62 moves=,, front=62 own=62
+
+-- 76 click-textedit: clicks textedit's title bar
+> click 770 43
+> move 770 163
+  (quiet:426 ms) front=174
+
+-- 77 minimize-textedit: presses ⌘M
+> key cmd+m
+  (quiet:1005 ms) moves=,, leaves=174
+
+-- 78 restore-textedit: clicks its miniature in the Dock
+> click 1441 854
+> move 1441 654
+  (quiet:546 ms) moves=,, comes=174 front=174 returns=76
+
+-- 79 drag-textedit-by: drags textedit, which floats, by its title bar -138 across and 121 down
+> drag 798 43 660 164 --no-release
+> release
+  (quiet:1090 ms) drags=174 front=174 own=174
+
+-- 80 drag-safari-to-top-edge: drags safari by its title bar against the top edge of the screen and lets go
+> drag 654 43 800 0 --no-release
+> release
+  (quiet:1053 ms) drags=157 moves=,, front=157 own=157
+
+-- 81 dock-icon-textedit: clicks textedit's icon in the Dock
+> click 1220 854
+> move 1220 654
+  (quiet:414 ms) front=174
+
+-- 82 quit-textedit: presses ⌘Q in textedit
+> key cmd+q
+  (quiet:753 ms) moves=,, leaves=174,
+
+-- 83 reopen-textedit: opens textedit's document again
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.yfEfN9/scratch/told/…-oak.txt
+pid 19820 lists (id role subrole x y w h flags):
+  290 AXWindow AXStandardWindow 165 65 673 439 main
+  w290 is textedit
+  (quiet:508 ms) moves=,, front=290
+
+-- 84 input-after: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+> click 1326 43
+> click 138 63
+> click 1326 43
+> click 362 63
+> click 1326 43
+> click 362 63
+> click 1326 43
+> click 362 63
+  8 presses on windows behind; textedit shows no free point of its title bar, so that is all
+  (quiet:396 ms) round=after posted=press:8,up:8
+
+70 acts, 4 left out because they did not apply
+
+== the report (all of it: mac-shell/day-report.md)
+84 steps in 326 s, 64 of them judged, 2 with a rule broken. The sampler: samples 9308 seconds 263.2 hz 35.4 cost-ms 2.87 late 50 longest-gap-ms 1353 whole-samples 11553 whole-seconds 326.7 whole-late 89.
+Input: 491 presses, releases, keys and scrolls reached the apps, half of them within 585 µs, 99 in 100 within 66744 µs, the latest after 227885 µs.
+By kind, listed only (events, half within, 99 in 100 within, µs): down 47, 678, 13582; dragged 363, 594, 6302; forward 7, 51316, 77032; key 20, 500, 2379; up 54, 443, 227885. `forward`: a press on a window of an app that was not in front.
+The round of input `before` (events, half within µs): forward 8, 31385; up 8, 345.
+The round of input `after` (events, half within µs): forward 8, 44181; up 8, 2077.
+Judged: no kind. Not down: fewer than 10 such events in a round without Arbor. Not forward: fewer than 10 such events in a round without Arbor. Not up: fewer than 10 such events in a round without Arbor. Not key: fewer than 10 such events in a round without Arbor. Not dragged: fewer than 10 such events in a round without Arbor. Not scroll: fewer than 10 such events in a round without Arbor.
+
+## Per rule
+
+| Rule | | Steps that checked it | Steps that broke it | Which |
+|---|---|---|---|---|
+| 1 | never fight macOS: where it answers a drag, Arbor stands aside | 17 | 0 |  |
+| 2 | nothing moves that the person did not move | 70 | 0 |  |
+| 3 | no jolts: a window moves once, to where it ends up | 72 | 1 | 60 drag-mail-by |
+| 4 | the window you switch to comes to the front and into view | 60 | 0 |  |
+| 5 | quitting, Float All and pause give windows their own sizes back | 0 | 0 |  |
+| 6 | what a person presses reaches the apps, at once | 47 | 1 | 33 dock-icon-mail |
+| L | no window is lost or stuck | 72 | 0 |  |
+| - | what the script itself checked | 72 | 0 |  |
+
+## Findings
+
+### Rule 2: nothing moves that the person did not move
+
+- ~ **34 double-click-mail** (double-clicks mail's title bar: macOS zooms the window): w68 of Mail moved along with a window of its app [moved-unasked]
+  - +0 ms 565,179 470×416 · +1145 ms 565,185 470×416 · +1217 ms 565,212 470×416 · +1338 ms 565,218 470×416
+- ~ **35 double-click-mail-again** (double-clicks it again: macOS takes the window back): w68 of Mail moved along with a window of its app [moved-unasked]
+  - +0 ms 565,218 470×416 · +1001 ms 565,211 470×416 · +1152 ms 565,197 470×416 · +1210 ms 565,186 470×416 · +1282 ms 565,179 470×416
+- ~ **60 drag-mail-by** (drags mail, which floats, by its title bar -106 across and 8 down, and clicks there 0.3 s after letting go): w68 of Mail moved along with a window of its app [moved-unasked]
+  - +0 ms 565,179 470×416 · +852 ms 561,179 470×416 · +893 ms 557,179 470×416 · +974 ms 554,179 470×416 · +1071 ms 550,180 470×416 · +1138 ms 547,180 470×416 · … 20 more … · +2300 ms 466,186 470×416 · +2395 ms 462,186 470×416 · +2506 ms 459,187 470×416 · +2776 ms 460,187 470×416 · +3490 ms 459,187 470×416
+
+### Rule 3: no jolts: a window moves once, to where it ends up
+
+- ✘ **60 drag-mail-by** (drags mail, which floats, by its title bar -106 across and 8 down, and clicks there 0.3 s after letting go): w68 of Mail moved 3 times [jolt]
+  - +0 ms 565,179 470×416 · +852 ms 561,179 470×416 · +893 ms 557,179 470×416 · +974 ms 554,179 470×416 · +1071 ms 550,180 470×416 · +1138 ms 547,180 470×416 · … 20 more … · +2300 ms 466,186 470×416 · +2395 ms 462,186 470×416 · +2506 ms 459,187 470×416 · +2776 ms 460,187 470×416 · +3490 ms 459,187 470×416
+- ~ **75 drag-preview-to-right-edge** (drags preview by its title bar against the right edge of the screen and lets go): preview (w62) changed its size while it was being dragged [jolt]
+  - +0 ms 800,44 800×791 · +92 ms 800,72 800×791 · +143 ms 832,58 763×642 · +205 ms 878,85 730×511 · +209 ms 881,85 724×486 · +250 ms 884,85 716×454 · … 22 more … · +1813 ms 1247,383 709×425 · +1863 ms 1264,397 709×425 · +1932 ms 1297,424 709×425 · +2194 ms 1298,424 709×425 · +2273 ms 1297,424 709×425
+- ~ **79 drag-textedit-by** (drags textedit, which floats, by its title bar -138 across and 121 down): textedit (w174) changed its size while it was being dragged [jolt]
+  - +0 ms -5,35 1600×791 · +73 ms -14,44 1600×791 · +127 ms 80,39 1419×723 · +134 ms 152,43 1264×664 · +157 ms 223,43 1122×610 · +174 ms 281,43 1004×565 · … 25 more … · +1670 ms 334,139 674×440 · +1721 ms 330,143 674×440 · +1787 ms 325,147 674×440 · +2100 ms 326,147 674×440 · +2200 ms 325,147 674×440
+
+### Rule 6: what a person presses reaches the apps, at once
+
+- ✘ **33 dock-icon-mail** (clicks mail's icon in the Dock): the button came up, and the apps heard of it 227 ms later [input-held]
+
+
+1 passed, 1 failed
+still running when the script had ended, and stopped now:
+  2223 sleep
+exit code 1
