@@ -204,7 +204,8 @@ extension Controller {
 
   /// True of what Arbor has looked at: not of a window it left where macOS had put it.
   private var whatThePauseDid: String {
-    "windows are back in view, in their own sizes" + (letBeWhenThePauseBegan.isEmpty ? "" : "; what macOS zoomed for you stays as it is")
+    "windows are back in view, in their own sizes"
+      + (letBeWhenThePauseBegan.values.contains { $0.asThePauseLeftIt == nil } ? "; what macOS zoomed for you stays as it is" : "")
   }
 
   static func minutesText(_ minutes: Double) -> String {

@@ -21,6 +21,10 @@ extension ChaosRunner {
     var layoutsBefore: [DisplayID: Layout] = [:]
     /// The windows that were where a double-click had put them.
     var letBeBefore: Set<WindowID> = []
+    /// The last size Arbor gave each of them, which is its slot's as its app took it.
+    var slotSizesOfThoseLetBe: [WindowID: CGSize] = [:]
+    /// The size macOS gave a docked window at its person's asking, until it is known what became of it (Controller+AskedOfMacOS.swift).
+    var givenByMacOSAtAsking: [WindowID: CGSize] = [:]
     var focusedBefore: WindowID?
     var pausedBefore = false
     var fullScreenBefore: Set<WindowID> = []
@@ -149,6 +153,7 @@ extension ChaosRunner {
     seven.focusLogMark = system.focusLog.count
     seven.layoutsBefore = controller.layouts
     seven.letBeBefore = controller.windowsLeftWhereADoubleClickPutThem
+    seven.slotSizesOfThoseLetBe = seven.letBeBefore.reduce(into: [:]) { $0[$1] = system.windows[$1]?.lastRequest?.took.size }
     seven.focusedBefore = system.focused
     seven.focusCallsBefore = system.focusLog.count
     seven.nobodyBefore = system.focused == nil
@@ -234,7 +239,7 @@ extension ChaosRunner {
     case .close, .quitApp, .focusNothing, .press, .commandKey, .macTiling, .save, .flush, .advance, .react: return []
     case .minimize(let window, _), .space(let window, _), .fullScreen(let window, _), .title(let window, _), .limits(let window, _, _),
       .behave(let window, _), .move(let window, _), .focus(let window), .switchApp(let window), .backgroundFocus(let window),
-      .listed(let window, _), .doubleClick(let window):
+      .listed(let window, _), .doubleClick(let window), .askMacOS(let window, _):
       return [window]
     case .grab(let window), .edge(let window, _, _): return inHand.union([window])
     // The pointer does not leave a window it is holding behind.
@@ -336,6 +341,22 @@ extension ChaosRunner {
         seven.earlierOwnSizes[id] = nil
       }
     }
+    // What macOS gave a docked window at its person's asking is its own once it has left the arrangement with it: one of macOS's tiles. (Let be, it
+    // is docked still, and back in its slot it has the own size it had.)
+    if case .askMacOS(let id, _) = action, wasRunningBefore, workspacesBefore.values.contains(where: { $0.isDocked(id) }),
+      let now = system.windows[id]?.snapshot.frame.size, let before = framesBefore[id]?.size, now != before
+    {
+      seven.givenByMacOSAtAsking[id] = now
+    }
+    for (id, size) in seven.givenByMacOSAtAsking {
+      guard let fake = system.windows[id], fake.snapshot.frame.size == size, isRunning else {
+        seven.givenByMacOSAtAsking[id] = nil
+        continue
+      }
+      if controller.workspaces.values.contains(where: { $0.isFloating(id) }) {
+        (seven.ownSizes[id], seven.earlierOwnSizes[id], seven.givenByMacOSAtAsking[id]) = (size, nil, nil)
+      }
+    }
     // A size its user asked Arbor for is its own as well.
     if let command = action.parsedCommand {
       switch command {
@@ -384,7 +405,7 @@ extension ChaosRunner {
       || harness.scheduler.pendingKeys.contains { key in
         // Not the focus ring's own timers, which are pending after most acts and lay nothing out.
         if key.hasPrefix("focus-ring") { return false }
-        return ["space-", "enforce-", "landed-", "displays-blinked", "focus", "back-from-full-screen", "summon-wait", "pending-slots", "sole-float-after-launch", "meet-",
+        return ["space-", "enforce-", "landed-", "asked-of-macos", "displays-blinked", "focus", "back-from-full-screen", "summon-wait", "pending-slots", "sole-float-after-launch", "meet-",
           "fill-in-hand-", "awaited-back", "awaited-landed"]
           .contains { key.hasPrefix($0) }
       }
@@ -746,6 +767,9 @@ extension ChaosRunner {
     asked("let-be")
     for window in seven.letBeBefore.intersection(movesSeenInThisStep.map(\.window)).sorted() {
       guard let fake = isFairGame(window), let before = framesBefore[window], before != fake.snapshot.frame, !controller.parked.contains(window),
+        // Taken to another display by macOS it leaves the arrangement, and a slot's size is never a window's own: it gets its own there.
+        !(controller.workspaces.contains { $0.value.isFloating(window) && workspacesBefore[$0.key]?.isDocked(window) != true }
+          && seven.slotSizesOfThoseLetBe[window].map { abs($0.width - before.width) <= 4 && abs($0.height - before.height) <= 4 } == true),
         // Nothing is let be where nobody can reach it: less than half of it showed, and it covered less than half a display.
         system.displayList.contains(where: { display in
           let showing = before.intersection(display.frame)
@@ -1301,7 +1325,11 @@ extension ChaosRunner {
       }
       guard givesSizesBack, let own = seven.ownSizes[window] else { continue }
       // A pause and Quit give back what Arbor took. What its person had macOS zoom is left as it is (Q22); Float All names every window.
-      if !isRunning, seven.letBeBefore.contains(window) {
+      // In a size macOS or its app gave it. A slot's size is never a window's own: in the last size Arbor gave it, it is asked for its own like the rest.
+      if !isRunning, seven.letBeBefore.contains(window),
+        let was = framesBefore[window]?.size, let given = seven.slotSizesOfThoseLetBe[window],
+        abs(was.width - given.width) > 4 || abs(was.height - given.height) > 4
+      {
         if let before = framesBefore[window], before != frame, movedNow.contains(window) {
           problems.append(.init("moved-out-of-its-zoom", "\(name) moved \(window) from \(before.brief), where a double-click had put it, to \(frame.brief)"))
         }

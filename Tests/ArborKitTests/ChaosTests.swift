@@ -152,7 +152,15 @@ private let steps = environment("ARBOR_CHAOS_STEPS") ?? 200
   @Test func actionsRoundTripThroughTheirText() {
     for seed in UInt64(101)...102 {
       var lines: [String] = []
-      _ = ChaosRunner.run(seed: seed, steps: 150, echo: { lines.append($0) })
+      // What is tried here is the text. A walk ends at the first rule it breaks, and which seed meets which fault changes with every action
+      // the walks learn: that is `randomActionsKeepEveryInvariant`'s business. So a rule that ends this walk is excused, and it sets out again.
+      var excused = ChaosRunner.knownRules
+      while true {
+        lines = []
+        guard let failure = ChaosRunner.run(seed: seed, steps: 150, excusing: excused, echo: { lines.append($0) }),
+          excused.insert(failure.rule).inserted
+        else { break }
+      }
       #expect(lines.count >= 150)
       for line in lines { #expect(ChaosAction(text: line).text == line) }
     }

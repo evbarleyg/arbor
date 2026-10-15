@@ -442,7 +442,25 @@ has moved from the first report of its way back, and is put into its slot a quar
 In the Dock, hidden or on another Space it stays let be, and so does another tab of its group in its stead. A pause and Quit leave it where
 it is (`letGo`); a start that nobody asked for and that finds it untouched lets it be again (`letBeAgainWhatWasLetBe`): the end of a pause, a doubt about the
 permission that has passed, the watchdog after a crash. Who is let be, and where, is in what is saved (`zoomedByMacOS` in `state.json`), which such a
-start reads. A person who starts Arbor gets what was docked docked: nothing is let be across a quit and a start. Not covered: ⌥-click on the green button and the tiles in its menu, which no press tells apart from an app's whim.
+start reads. A person who starts Arbor gets what was docked docked: nothing is let be across a quit and a start.
+
+There are more ways of asking macOS than a double-click, and no press tells them from an app's whim: ⌥-click on the green button; Window ▸ Zoom,
+Fill, Move & Resize; the keys macOS has for its own tiling. But a menu is a click, ⌥-click is a click, and the keys hold fn and ⌃. So a docked
+window whose frame changes within a second of a click or a modifier key (`secondsSinceClickOrModifierKey()`), Arbor having asked nothing, is
+taken for its person's asking macOS (`Controller+AskedOfMacOS.swift`). "Arbor having asked nothing": no layout of that display in the half second
+before, because Arbor's own commands come with a key and apps answer late; no hand on that window in that second, whose reports trail it; and no
+window on its way out of full screen. The second is asked
+of the first frame only; the window is let be from then on, so that nothing is set while macOS moves it, and a quarter of a second after the last
+frame Arbor looks where it ended. Home comes first, because a slot of Arbor's, less its gap, cannot be told from a tile with margins. In one of macOS's tiles (`MacTiling.isTile`: a half, a quarter or a third of the visible frame, with or without
+macOS's margins), in another size than it stood at, it leaves the arrangement by the road of a drag that was left to macOS, floats there, and its
+neighbours take the room. Moved alone it is never out for where it lands: centred, a window a third wide lies on the middle third. On another display than
+its own it is out as well: nobody is let be there, where a hole would be left behind and a key that names somebody else would fetch it back. And
+a slot's size is never a window's own (`hasTheSizeOfItsSlot`): out in that size, it gets its own, as a window dragged out does; let be in that size, it
+gets its own at a pause and at Quit, where it lies (`letGo`), and a resume that finds it so puts it back where it was let be. Anywhere
+else it stays docked and let be: ⌘+ in a terminal is a word to the app and none about the neighbours. What is said on screen is said once an act, when
+it is over, the double-click's too: "macOS zoomed this window" where Arbor heard the double-click and the window grew, or the frame is as large as the screen,
+"Left as it is" everywhere else, because Arbor does not know who did it. The times were measured on a Mac
+(`scripts/mac-shell/probe-macos-own-moves.sh`); macOS's tiling keys were not: a posted fn is not obeyed on a hosted Mac.
 
 ## Drag and drop
 

@@ -72,6 +72,8 @@ extension Controller: WindowSystemEvents {
     enforcement.reset([id])
     if appsDoubleClick?.window == id { appsDoubleClick = nil }
     whereAZoomBegan[id] = nil
+    actsOfMacOS[id] = nil
+    handWasOn[id] = nil
     forgetRuleState(of: id)
     releasePendingSlot(of: id, away: wasAway)
     if drag?.window == id { cancelDrag() }
@@ -243,9 +245,11 @@ extension Controller: WindowSystemEvents {
       // Where it is let be is written down, for a start after a crash, and macOS takes a third of a second to get there.
       if enforcement.leftAlone.contains(window.id) { scheduleSave() }
       noteWhetherItIsBackInItsSlot(window, on: display)
+      followsWhatIsAskedOfMacOS(window, on: display)
       return
     }
     if standsAsideAfterADoubleClick(on: window, display: display) { return }
+    if standsAsideForWhatWasAskedOfMacOS(window, on: display) { return }
     scheduleEnforce(display)
   }
 

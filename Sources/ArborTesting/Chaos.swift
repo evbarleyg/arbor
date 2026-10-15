@@ -108,6 +108,8 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
   case release
   /// Double-clicks a window's title bar, and macOS zooms the window, or returns it to where it was before.
   case doubleClick(WindowID)
+  /// Asks macOS for another frame for a window, with its menu, its keys or ⌥-click on the green button.
+  case askMacOS(WindowID, FakeWindowSystem.AskOfMacOS)
   /// The button comes up and nobody sees it: the drag ends without a drop.
   case loseRelease
   /// ⌘ goes down, or comes up. Held during a drag, it turns docking off (F09).
@@ -278,6 +280,7 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
     case .press: return "press"
     case .grab(let window): return "grab \(window.rawValue)"
     case .doubleClick(let window): return "double-click \(window.rawValue)"
+    case .askMacOS(let window, let what): return "ask-macos \(window.rawValue) \(what.rawValue)"
     case .carry(let point): return "carry \(n(point.x)) \(n(point.y))"
     case .release: return "release"
     case .loseRelease: return "lose-release"
@@ -443,6 +446,9 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
     case ("focus", 2): return window(1).map { .focus($0) }
     case ("switch-app", 2): return window(1).map { .switchApp($0) }
     case ("double-click", 2): return window(1).map { .doubleClick($0) }
+    case ("ask-macos", 3):
+      guard let id = window(1), let what = FakeWindowSystem.AskOfMacOS(rawValue: String(words[2])) else { return nil }
+      return .askMacOS(id, what)
     case ("focus-nothing", 1): return .focusNothing
     case ("background-focus", 2): return window(1).map { .backgroundFocus($0) }
     case ("press", 1): return .press

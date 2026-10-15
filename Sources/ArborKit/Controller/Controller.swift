@@ -218,6 +218,11 @@ public final class Controller {
   var displaysWhenThePauseBegan: [DisplaySnapshot] = []
   /// While `start()` runs, if nobody asked for it, though a command may be what noticed that it was due.
   var isStartingUnasked = false
+  /// See Controller+AskedOfMacOS.swift: the windows macOS is moving at their person's asking; when each display was last laid out; when a hand
+  /// last let go of each window.
+  var actsOfMacOS: [WindowID: ActOfMacOS] = [:]
+  var laidOutAt: [DisplayID: Date] = [:]
+  var handWasOn: [WindowID: Date] = [:]
 
   /// Managed windows, most recently focused first. `dock beside` rules use it
   /// to pick which of an app's windows to dock beside (Controller+Rules.swift).
@@ -560,6 +565,7 @@ public final class Controller {
     floatingEdgeInHand = nil
     appsDoubleClick = nil
     whereAZoomBegan.removeAll()
+    forgetTheActsOfMacOS()
     system.start()
     let shapes = Dictionary(displays.map { ($0.id, $0.frame) }, uniquingKeysWith: { first, _ in first })
     displays = system.displays()
@@ -690,6 +696,7 @@ public final class Controller {
     defer { isStoppingWithoutMoving = false }
     if movingWindows { cancelDragLettingGo() } else { cancelDrag() }
     appsDoubleClick = nil
+    forgetTheActsOfMacOS()
     if movingWindows { lookAtTheDisplaysBeforeLettingGo() }
     dropOverdueSlotsBeforeAStop()
     scheduler.cancel("save")

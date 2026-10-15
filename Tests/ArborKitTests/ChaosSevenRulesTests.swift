@@ -955,4 +955,45 @@ private let b = WindowID(102)
     "once": 500, "before-any-dock": 1000, "unasked": 1800, "launch-or-resume": 3, "switched-to": 280, "way-home": 400, "sizes": 220, "start": 20,
     "there-and-back": 20, "pause-and-resume": 1,
   ]
+
+  // MARK: What a person asks of macOS (Controller+AskedOfMacOS.swift): the product owner's stories, as they were played
+
+  static let twoDocked = [
+    "launch", "open 101 Safari pid 1000 at 100 100 700 500 min 300 200", "open 102 Notes pid 1001 at 300 200 600 400 min 200 200", "do dock 101 left",
+    "do dock 102 right", "settle", "advance 2",
+  ]
+  static let twoDisplays = "displays main:0,0,1512,982:37,0,0,0* side:1512,-200,2560,1440:25,0,0,0 windows-never"
+  static let thereAndBackAndOut = ["toggle-pause", "settle", "toggle-pause", "settle", "quit"]
+
+  func rulesBroken(_ script: [String]) -> [String] {
+    let runner = ChaosRunner()
+    // Every rule, the listed ones too: `size-not-given-back`, which these stories are about, is one of them.
+    return script.flatMap { runner.step(ChaosAction(text: $0)).map(\.rule) }
+  }
+
+  @Test func centredOntoTheMiddleThirdThenAPauseAndQuit() {
+    #expect(rulesBroken(Self.twoDocked + ["focus 101", "ask-macos 101 centre", "settle", "advance 2"] + Self.thereAndBackAndOut) == [])
+  }
+
+  /// What macOS gave at its person's asking is its own: a true tile stays through a pause and Quit, and the nets know it.
+  @Test func aTrueTileThenAPauseAndQuit() {
+    #expect(rulesBroken(Self.twoDocked + ["focus 102", "ask-macos 102 top", "settle", "advance 2"] + Self.thereAndBackAndOut) == [])
+  }
+
+  @Test func sentToTheOtherDisplayThenAPauseAndQuit() {
+    #expect(rulesBroken([Self.twoDisplays] + Self.twoDocked + ["focus 101", "ask-macos 101 elsewhere", "settle", "advance 2"] + Self.thereAndBackAndOut) == [])
+  }
+
+  /// The net's excuse for a window that is let be is as narrow as the ruling: a slot's size is never a window's own.
+  @Test func theNetAsksForItsOwnSizeOfAWindowLetBeInItsSlotsSize() {
+    let runner = ChaosRunner()
+    for line in Self.twoDocked + ["open 103 Music pid 1002 at 500 300 500 350 min 300 200", "do dock 103 right", "settle", "advance 2", "focus 101", "ask-macos 101 centre", "settle", "advance 2"] {
+      _ = runner.step(ChaosAction(text: line))
+    }
+    #expect(runner.controller.windowsLeftWhereADoubleClickPutThem == [WindowID(101)], "the test's own premise")
+    // As if Quit had left it as it is.
+    let asItIs = runner.system.windows[WindowID(101)]!.snapshot.frame
+    runner.beforeTheNextCheck = { _ = $0.system.setFrame(asItIs, of: WindowID(101)) }
+    #expect(runner.step(ChaosAction(text: "quit")).map(\.rule).contains("size-not-given-back"))
+  }
 }

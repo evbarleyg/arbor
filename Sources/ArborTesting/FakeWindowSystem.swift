@@ -52,6 +52,8 @@ public final class FakeWindowSystem: WindowSystem {
     var zoom: (to: CGRect, from: CGRect)?
     /// How often it has been double-clicked.
     public internal(set) var doubleClicks = 0
+    /// How often its person has asked macOS for another frame for it in some other way.
+    public internal(set) var asksOfMacOS = 0
 
     public static func == (a: FakeWindow, b: FakeWindow) -> Bool {
       a.snapshot == b.snapshot && a.minimumSize == b.minimumSize && a.maximumSize == b.maximumSize
@@ -1269,6 +1271,7 @@ extension FakeWindowSystem {
     (windows[id]!.sizeStep, windows[id]!.sizeMargin) = (front.sizeStep, front.sizeMargin)
     // One window to macOS's zoom, and to whoever double-clicked it.
     (windows[id]!.zoom, windows[id]!.doubleClicks) = (growth == 0 ? front.zoom : nil, front.doubleClicks)
+    windows[id]!.asksOfMacOS = front.asksOfMacOS
     if focused == window { focused = id }
     events?.windowReplaced(window, by: snapshot)
     return id
@@ -1278,7 +1281,7 @@ extension FakeWindowSystem {
   public func selectTab(_ tab: WindowID, insteadOf front: WindowID) {
     guard var fake = backgroundTabs.removeValue(forKey: tab), let old = windows.removeValue(forKey: front) else { return }
     fake.snapshot.frame = old.snapshot.frame
-    (fake.zoom, fake.doubleClicks) = (old.zoom, old.doubleClicks)
+    (fake.zoom, fake.doubleClicks, fake.asksOfMacOS) = (old.zoom, old.doubleClicks, old.asksOfMacOS)
     backgroundTabs[front] = old
     windows[tab] = fake
     if focused == front { focused = tab }

@@ -90,6 +90,8 @@ public struct PersistedState: Codable, Equatable, Sendable {
     /// Where it was before, which is where macOS's own way back leads, and the slot it had then.
     public var began: CGRect?
     public var slot: CGRect?
+    /// What a pause made of it, if it was still as large as its slot, which is no size of its own: the resume undoes that. Older files do not have it.
+    public var asThePauseLeftIt: CGRect?
 
     public init(frame: CGRect, began: CGRect?, slot: CGRect?) {
       self.frame = frame

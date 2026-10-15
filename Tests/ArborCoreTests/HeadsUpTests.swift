@@ -263,7 +263,7 @@ import Testing
     for hint in HeadsUpHint.allCases {
       let bare = hint.model(facts: two) { _ in nil }
       // The two whose second half names a way that is there whatever the keys are.
-      #expect((bare.hint == nil) == (hint != .leftToMacOS && hint != .zoomedByMacOS))
+      #expect((bare.hint == nil) == (hint != .leftToMacOS && hint != .zoomedByMacOS && hint != .leftAsItIs))
       #expect(bare.kind == .hint)
       #expect(!bare.text.isEmpty)
     }

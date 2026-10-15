@@ -248,6 +248,8 @@ extension Controller {
     check("givenUp", enforcement.givenUp)
     check("appsDoubleClick", [appsDoubleClick?.window].compactMap { $0 })
     check("whereAZoomBegan", whereAZoomBegan.keys)
+    check("actsOfMacOS", actsOfMacOS.keys)
+    check("handWasOn", handWasOn.keys)
     check("letBeWhenThePauseBegan", letBeWhenThePauseBegan.keys.filter { !pendingSlots.contains($0) })
     check("floatingEdgeInHand", [floatingEdgeInHand].compactMap { $0 })
     check("focusHistory", focusHistory)

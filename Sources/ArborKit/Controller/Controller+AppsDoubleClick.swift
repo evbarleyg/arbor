@@ -37,8 +37,8 @@ extension Controller {
     enforcement.leave(window.id)
     if let stood = began ?? slot { whereAZoomBegan[window.id] = (stood, slot) }
     scheduleSave()
-    // It covers its neighbours now. The first few times, how to get them back. Not for whatever else an app made of it.
-    if let slot, window.frame.width > slot.width + 4 || window.frame.height > slot.height + 4 { teach(.zoomedByMacOS, on: display) }
+    // What is said about it is said once, when macOS has stopped moving it (Controller+AskedOfMacOS.swift).
+    anActOfMacOSBeganWithADoubleClick(on: window.id)
     Log.info("\(window.id) has a new frame after a double-click; it stays there until it is back in its slot or somebody asks for a layout")
     return true
   }
@@ -137,11 +137,18 @@ extension Controller {
   /// `window` is listed: at the resume, or later, when its person comes to the Space it is on (macOS lists only what shows, and its slot
   /// has waited for it: `claimPendingSlot`). One that anybody has moved or sized meanwhile is an ordinary docked window.
   func letBeAgainIfThePauseLeftItAlone(_ window: WindowSnapshot) {
-    guard let note = letBeWhenThePauseBegan.removeValue(forKey: window.id), window.frame.approximatelyEquals(note.frame, tolerance: 2),
-      workspaces.values.contains(where: { $0.isDocked(window.id) })
-    else { return }
+    guard let note = letBeWhenThePauseBegan.removeValue(forKey: window.id), workspaces.values.contains(where: { $0.isDocked(window.id) }) else { return }
+    if let left = note.asThePauseLeftIt, window.frame.approximatelyEquals(left, tolerance: 2),
+      let lies = displayID(at: note.frame.center).flatMap({ display($0) })
+    {
+      // The pause gave it its own size, because its slot's is none (`letGo`). Taken back, it is where it was let be, as large as it was.
+      putBack(window.id, at: note.frame, on: lies)
+    } else if !window.frame.approximatelyEquals(note.frame, tolerance: 2) {
+      return
+    }
     enforcement.leave(window.id)
-    settled[window.id] = window.frame
+    settled[window.id] = windows[window.id]?.frame ?? window.frame
+    judgeWhatThePauseCutShort(window.id)
     whereAZoomBegan[window.id] = note.began.map { ($0, note.slot) }
   }
 
@@ -155,6 +162,7 @@ extension Controller {
     guard enforcement.leftAlone.contains(old) else { return }
     enforcement.leave(window)
     whereAZoomBegan[window] = whereAZoomBegan.removeValue(forKey: old)
+    actsOfMacOS[window] = actsOfMacOS.removeValue(forKey: old)
   }
 
   /// A hand has taken `window` by its title bar: where it ends up is for the hand to say, and for the layout that follows when it lets
@@ -191,6 +199,9 @@ extension Controller {
       scheduleEnforce(display)
     }
   }
+
+  /// For whoever takes it out of the arrangement.
+  func endLettingBe(_ window: WindowID) { isADockedWindowAgain(window) }
 
   private func isADockedWindowAgain(_ window: WindowID) {
     enforcement.reset([window])

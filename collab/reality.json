@@ -701,7 +701,7 @@
     "e2e: no seam moved",
     "e2e: the window went one way, and did not turn round"
    ],
-   "copes": "WindowGrab.classify: only a press within 10 points of the border begins an edge resize. Controller.standsAsideAfterADoubleClick: what macOS makes of a docked window after a double-click stays, until it is back in its slot or the layout changes. ⌥-click on the green button is still put back, and floating windows keep macOS's behaviour by decision.",
+   "copes": "WindowGrab.classify: only a press within 10 points of the border begins an edge resize. Controller.standsAsideAfterADoubleClick: what macOS makes of a docked window after a double-click stays, until it is back in its slot or the layout changes. ⌥-click on the green button has a case of its own (macos-moves-a-window-at-its-menu-its-keys-and-the-green-button), and floating windows keep macOS's behaviour by decision.",
    "hurt": 2,
    "touches": [
     "jolt",
@@ -7630,6 +7630,41 @@
     "M1071"
    ],
    "certainty": "suspected"
+  },
+  {
+   "id": "macos-moves-a-window-at-its-menu-its-keys-and-the-green-button",
+   "kind": "second-actor",
+   "layer": "at the seam",
+   "expected": "A docked window that changes its frame without a drag was moved by its app or by another tool, and is put back a quarter of a second later.",
+   "happened": "macOS has more ways of moving a window at its person's asking than a drag and a double-click: ⌥-click on the green button, Window ▸ Zoom, Fill and Move & Resize, and keys for its own tiling. No press tells them from an app's whim. Measured on macOS 26 with the real pointer on TextEdit and Terminal, in milliseconds after the release: ⌥-click on the green button, the first new frame after 59 to 110, in one step; Window ▸ Zoom after 399 to 408 (the menu blinks first), in one step; Fill in ten steps to 724; Move & Resize ▸ Left from 409 to 735, in ten to twelve steps no more than 75 apart. Docked, Arbor put the window back in every one: a third of a second after a zoom, and a left half stood a full second and was then pulled back in two visible steps. Not measured: macOS's tiling keys. A posted fn is not obeyed on a hosted Mac: fn ⌃ ←, →, F, C and R did nothing, fn ⌃ ↑ and ↓ arrived as Mission Control. Return to Previous Size did nothing where it was tried.",
+   "found": "A probe on a hosted Mac, asked for by the product owner after the double-click had been cured and the maintainer had gone back to macOS's own tiling.",
+   "modelled": "partly",
+   "knobs": [
+    "FakeWindowSystem.askMacOS",
+    "FakeWindowSystem.secondsSinceInput",
+    "FakeWindowSystem.userMove"
+   ],
+   "guards": [
+    "test: madeAsLargeAsTheScreenItStays",
+    "test: inOneOfMacOSsTilesItLeavesTheArrangement",
+    "test: anyOtherFrameIsLeftAsItIs",
+    "test: withoutAClickOrAKeyInTheSecondBeforeItIsPutBackAsEver",
+    "test: aLateAnswerToACommandOfArborsIsNobodyAskingMacOS",
+    "test: whatAMacWasSeenToDo"
+   ],
+   "copes": "Controller.standsAsideForWhatWasAskedOfMacOS: a docked window whose frame changes within a second of a click or a modifier key, Arbor having laid nothing out in the half second before and no hand having been on it in that second, is let be from the first frame on. A quarter of a second after the last frame: in one of macOS's tiles (MacTiling.isTile) it leaves the arrangement and floats there; anywhere else it stays docked and let be.",
+   "hurt": 1,
+   "touches": [
+    "fought",
+    "moved-unasked"
+   ],
+   "sources": [
+    "scripts/mac-shell/probe-macos-own-moves.sh",
+    "Sources/ArborKit/Controller/Controller+AskedOfMacOS.swift",
+    "Sources/ArborCore/MacTiling.swift",
+    "Sources/ArborTesting/FakeWindowSystem+DoubleClick.swift"
+   ],
+   "backlog": []
   },
   {
    "id": "macos-moves-windows-at-once-and-arbor-hears-of-the-displays-later",

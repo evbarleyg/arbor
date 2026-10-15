@@ -464,7 +464,7 @@ public struct ChaosGenerator {
       case open, close, quitApp, minimize, hide, space, spaceSwitch, fullScreen, title, limits, behave, move, react
       case cursor, focus, switchApp, focusNothing, backgroundFocus, press, drag, carry, release, edge, tile, palette, seam, command, nonsense, url
       case displays, settings, flush, advance, settle, save, crash
-      case loseRelease, via, key, pinch, activate, hang, openTab, selectTab, closeTab, list, doubleClick
+      case loseRelease, via, key, pinch, activate, hang, openTab, selectTab, closeTab, list, doubleClick, askMacOS
     }
     let tabs = system.backgroundTabs.count
     let kind =
@@ -516,6 +516,7 @@ public struct ChaosGenerator {
         (tabs > 0 ? 8 : 0, .closeTab),
         (system.unlisted.isEmpty ? 0 : 20, .list),
         (down ? 0 : 16, .doubleClick),
+        (down ? 0 : 16, .askMacOS),
       ]) ?? .flush
 
     switch kind {
@@ -526,6 +527,8 @@ public struct ChaosGenerator {
       return .open(new)
     case .loseRelease: return .loseRelease
     case .doubleClick: return .doubleClick(window(in: world, random.chance(90) ? .inView : .any))
+    case .askMacOS:
+      return .askMacOS(window(in: world, random.chance(90) ? .inView : .any), random.pick(FakeWindowSystem.AskOfMacOS.allCases)!)
     case .via:
       return .via(random.pick([.shortcut, .shortcut, .menu, .gesture])!, command(random.pick(weighted: weightedKinds)!, in: world).text)
     case .key:

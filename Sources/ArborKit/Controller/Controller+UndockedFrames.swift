@@ -200,8 +200,23 @@ extension Controller {
 
   /// Lets go of a docked window: back to where it floated, or, if that is not known, into view at `slot`.
   func letGo(of window: WindowID, on display: DisplaySnapshot, otherwiseAt slot: CGRect?) {
-    // What is given back is what Arbor took. Its person's last word about this one was said to macOS (Controller+AppsDoubleClick.swift).
-    guard !enforcement.leftAlone.contains(window) else { return }
+    // What is given back is what Arbor took. Its person's last word about this one was said to macOS (Controller+AppsDoubleClick.swift): where
+    // it is, and its size if macOS gave it one. A size that is still its slot's is Arbor's, and goes back to its own where the window lies.
+    if enforcement.leftAlone.contains(window) {
+      guard let snapshot = windows[window], hasTheSizeOfItsSlot(snapshot),
+        let frame = droppedFrame(of: window, on: display.id, at: Self.middleOfTheTitleBar(of: snapshot)),
+        let lies = displayID(at: snapshot.frame.center).flatMap({ self.display($0) }),
+        // Of a window that is as large as that wherever it is, Arbor took nothing. (Its own size as it is, not as a display has room for it.)
+        let own = frameToTakeAlong(of: window, from: display.id, ifDocked: true)?.size,
+        abs(own.width - snapshot.frame.width) > 1 || abs(own.height - snapshot.frame.height) > 1
+      else { return }
+      // No hand holds it there: higher than its slot was, it is slid up as far as it takes.
+      putBack(window, at: frame.fitted(into: lies.visibleFrame), on: lies)
+      // There and back a pause is nothing: the resume finds it as this left it, and puts it where it was let be.
+      letBeWhenThePauseBegan[window]?.asThePauseLeftIt = windows[window]?.frame
+      resumeState?.zoomedByMacOS?[window]?.asThePauseLeftIt = windows[window]?.frame
+      return
+    }
     if let frame = frameAsItWas(of: window, on: display.id) {
       putBack(window, at: frame, on: display)
     } else if let slot {

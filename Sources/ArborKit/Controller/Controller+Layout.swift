@@ -75,6 +75,7 @@ extension Controller {
     // However this ends: a window that was promised a place gets it.
     defer { putBackWhatWaits() }
     guard isRunning, holdFences(displayID) else { return }
+    laidOutAt[displayID] = now()
     lettingBeEndsIfItNoLongerApplies()
     aLayoutSomebodyAskedForEndsLettingBe(on: displayID)
     refreshVisibleFrame(of: displayID)

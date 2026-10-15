@@ -312,6 +312,7 @@ extension Controller {
     guard let session = drag else { return }
     scheduler.cancel(Self.dragDwellKey)
     drag = nil
+    aHandWasOn(session.window)
     overlays.showDropPreview(nil)
     // The hand slipped on a window that fills the view: it has been carried nowhere, and goes on filling it.
     let hover = isFilled(session.window) && isASlip(session) ? Hover(display: session.sourceDisplay, target: .none) : hover
@@ -335,10 +336,13 @@ extension Controller {
   /// Puts `window` where letting go of it over `hover` puts it, and lays out what that changes. The one place where a
   /// window changes its place because it was let go somewhere, whatever carried it there. `pointer` is where the
   /// pointer let go of it, if one did; `sizeOwed` and `reflow` are the drag session's.
+  /// `settling: false`: whoever drops several windows at once lays out once, afterwards, the displays this returns. `whole`: no hand holds it, so
+  /// in its own size it is slid onto the display as far as it takes.
+  @discardableResult
   func finishDrop(
     _ window: WindowID, on hover: Hover, at pointer: CGPoint? = nil, sizeOwed: CGSize? = nil,
-    after reflow: Reflow = Reflow()
-  ) {
+    after reflow: Reflow = Reflow(), settling: Bool = true, whole: Bool = false
+  ) -> [DisplayID] {
     let undoScope = beginUndoStep(dropping: window, on: hover.target, of: hover.display)
     defer { endUndoStep(undoScope) }
     // While the drop is laid out, a window dropped to float stays where it was dropped (`placeFloatingWindows`).
@@ -355,7 +359,8 @@ extension Controller {
       !current.isMinimized, !current.isHidden, !current.isFullScreen,
       let display = hover.display ?? workspaceID(containing: window) ?? mainDisplayID,
       let drop = drop(
-        of: window, on: hover.target, display: display, at: pointer, sizeOwed: sizeOwed, leftToMacOS: hover.leftToMacOS != nil)
+        of: window, on: hover.target, display: display, at: pointer, sizeOwed: sizeOwed, leftToMacOS: hover.leftToMacOS != nil,
+        whole: whole)
     {
       let wasDocked = workspaces.values.contains { $0.isDocked(window) }
       let home = workspaceID(containing: window)
@@ -395,8 +400,9 @@ extension Controller {
     if parked.remove(window) != nil, let home = workspaceID(containing: window), !changed.contains(home) {
       changed.append(home)
     }
-    settle(reflow, layingOut: changed)
+    if settling { settle(reflow, layingOut: changed) }
     scheduleSave()
+    return changed
   }
 
   /// What letting go of `window` over `target` on `display` would do, for the real drop and for live reflow's trials.
@@ -404,7 +410,7 @@ extension Controller {
   /// `leftToMacOS`: it floats as it is, because macOS is about to give it a frame.
   func drop(
     of window: WindowID, on target: DropTarget, display: DisplayID, at pointer: CGPoint?, sizeOwed: CGSize? = nil,
-    leftToMacOS: Bool = false
+    leftToMacOS: Bool = false, whole: Bool = false
   ) -> Drop? {
     guard let current = windows[window]?.frame else { return nil }
     let home = workspaceID(containing: window)
@@ -415,7 +421,7 @@ extension Controller {
     case .float:
       drop.frame = droppedFrame(of: window, on: home, at: pointer, sizeOwed: sizeOwed) ?? current
       // A hand on its title bar keeps some of a window on a display, unless the display has gone meanwhile.
-      if isOutOfView(drop.frame), let visible = self.display(display)?.visibleFrame {
+      if whole || isOutOfView(drop.frame), let visible = self.display(display)?.visibleFrame {
         drop.frame = drop.frame.fitted(into: visible)
       }
       // One that filled the view shrinks at the drop, which is Arbor's doing: not to where less than half of it shows.

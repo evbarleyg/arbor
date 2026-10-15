@@ -337,6 +337,8 @@ import Testing
     let line = "macOS zoomed this window · ⌃⌥Space puts it back"
     for round in 1...4 {
       h.system.doubleClickTitleBar(of: a)
+      // Once macOS has stopped moving it.
+      h.scheduler.advance(by: 0.3)
       #expect((h.overlays.headsUp[h.display]?.line == line) == (round <= 3), "round \(round)")
       h.system.doubleClickTitleBar(of: a)
       #expect(h.overlays.headsUp[h.display] == nil, "back in its slot, the line has nothing left to say (round \(round))")
@@ -344,13 +346,15 @@ import Testing
     }
   }
 
-  @Test func whateverElseAnAppMakesOfADoubleClickGetsNoLine() {
+  /// Arbor does not know who did it, so it does not say.
+  @Test func ofWhateverElseAnAppMakesOfADoubleClickArborSaysOnlyThatItLeftIt() {
     let (h, a, _) = makeHarness()
     let slot = h.frame(a)!
     h.system.doubleClick(at: slot.center)
     h.system.userMove(a, to: slot.insetBy(dx: 40, dy: 60))
     #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [a])
-    #expect(h.overlays.headsUp[h.display] == nil)
+    h.scheduler.advance(by: 0.3)
+    #expect(h.overlays.headsUp[h.display]?.line == "Left as it is · ⌃⌥Space puts it back in its place")
   }
 
   /// The random walks double-click too, and their rules know a window that is let be from one Arbor gave up on.

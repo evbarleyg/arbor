@@ -12,7 +12,7 @@ import Foundation
 /// name the window, node or display in the message. The order of the problems does not matter: they are sorted.
 extension ChaosRunner {
   /// Timers the controller may have pending, by prefix. A key that matches none has leaked.
-  static let knownTimers = ["save", "undo-continuation", "enforce-", "space-", "resume", "focus", "rule-title-", "pending-slots", "peek", "raise-pins",
+  static let knownTimers = ["save", "asked-of-macos", "undo-continuation", "enforce-", "space-", "resume", "focus", "rule-title-", "pending-slots", "peek", "raise-pins",
     "settings-file", "update-check", "summon-wait", "accessibility",
     "landed-", "drag-dwell", "sole-float-after-launch", "layout-open ", "release", "call-over",
     "events", "control-connection-", "awaited-back", "awaited-landed",
@@ -163,7 +163,7 @@ extension ChaosRunner {
             // Arbor stops putting back a window that something keeps moving. Not one that was moved once or twice,
             // unless by macOS at a double-click on its title bar.
             if controller.windowsLeftWhereADoubleClickPutThem.contains(window) {
-              if fake.doubleClicks == 0 {
+              if fake.doubleClicks + fake.asksOfMacOS == 0 {
                 problems.append(.init("left-alone", "Arbor leaves \(window) out of its slot as after a double-click, and there was none"))
               }
             } else if fake.movesNotArbors < 3 {

@@ -53,6 +53,51 @@ extension FakeWindowSystem {
     userMove(window, to: zoomed)
   }
 
+  /// What a person can ask of macOS about a window without touching its title bar twice: ⌥-click on the green button, the Window menu, the keys
+  /// macOS has for its own tiling.
+  public enum AskOfMacOS: String, CaseIterable, Sendable {
+    case fill, left, right, top, bottom, quarter, centre
+    /// Window ▸ Move to the other display: as large as it is.
+    case elsewhere
+  }
+
+  /// The person asks, with a click or a key, and macOS moves the window, which its app reports. In one step: whoever wants a Mac's ten
+  /// plays them with `secondsSinceInput` and `userMove`. A window whose app does not let it take the size is moved as it is.
+  public func askMacOS(for what: AskOfMacOS, about window: WindowID) {
+    guard let fake = windows[window], fake.snapshot.isPresent, !fake.snapshot.isFullScreen,
+      let visible = (displayList.first { $0.frame.contains(fake.snapshot.frame.center) } ?? displayList.first)?.visibleFrame
+    else { return }
+    let (w, h) = (visible.width, visible.height)
+    var frame: CGRect =
+      switch what {
+      case .fill: visible
+      case .left: CGRect(x: visible.minX, y: visible.minY, width: w / 2, height: h)
+      case .right: CGRect(x: visible.midX, y: visible.minY, width: w / 2, height: h)
+      case .top: CGRect(x: visible.minX, y: visible.minY, width: w, height: h / 2)
+      case .bottom: CGRect(x: visible.minX, y: visible.midY, width: w, height: h / 2)
+      case .quarter: CGRect(x: visible.midX, y: visible.minY, width: w / 2, height: h / 2)
+      case .centre:
+        CGRect(
+          x: visible.midX - fake.snapshot.frame.width / 2, y: visible.midY - fake.snapshot.frame.height / 2,
+          width: fake.snapshot.frame.width, height: fake.snapshot.frame.height)
+      case .elsewhere:
+        displayList.first { !$0.frame.contains(fake.snapshot.frame.center) }.map {
+          CGRect(origin: CGPoint(x: $0.visibleFrame.minX + 100, y: $0.visibleFrame.minY + 60), size: fake.snapshot.frame.size)
+        } ?? fake.snapshot.frame
+      }
+    if let most = fake.maximumSize { frame.size = CGSize(width: min(frame.width, most.width), height: min(frame.height, most.height)) }
+    frame.size = CGSize(width: max(frame.width, fake.minimumSize.width), height: max(frame.height, fake.minimumSize.height))
+    // macOS puts no title bar under the menu bar, however large the window.
+    if what != .elsewhere { frame.origin.y = max(frame.origin.y, visible.minY) }
+    guard frame != fake.snapshot.frame else { return }
+    windows[window]!.asksOfMacOS += 1
+    windows[window]!.zoom = nil
+    let before = secondsSinceInput
+    secondsSinceInput = 0.4
+    defer { secondsSinceInput = before }
+    userMove(window, to: frame)
+  }
+
   private func window(under point: CGPoint) -> WindowID? {
     windowsFrontToBack().first { windows[$0]?.snapshot.isPresent == true && windows[$0]!.snapshot.frame.contains(point) }
   }

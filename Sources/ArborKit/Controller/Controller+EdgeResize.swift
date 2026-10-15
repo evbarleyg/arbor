@@ -33,6 +33,7 @@ extension Controller {
     defer { actsOfAHand -= 1 }
     if edgeResize?.window == id { edgeResize = nil }
     floatingEdgeInHand = nil
+    aHandWasOn(id)
     guard isRunning, isManaged(id) else { return }
     if workspaces.values.contains(where: { $0.isFloating(id) }) { aHandHasPlaced(id) }
     recordingUndo("resize \(id) by its edges", title: "Resize") { applyEdgeResize(of: id) }

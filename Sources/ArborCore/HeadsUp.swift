@@ -193,6 +193,9 @@ public enum HeadsUpHint: String, Sendable, CaseIterable {
   case leftToMacOS
   /// macOS made a docked window big at a double-click on its title bar, and Arbor stood aside (`AppsDoubleClick`).
   case zoomedByMacOS
+  /// A docked window has another frame within a second of a click or a modifier key, and Arbor let it be. Who did it, macOS or its app, Arbor
+  /// does not know, so it does not say.
+  case leftAsItIs
 
   /// How often each is shown before Arbor takes it as read. More than once, because a line that fades
   /// after a few seconds is easily missed the first time.
@@ -222,6 +225,10 @@ public enum HeadsUpHint: String, Sendable, CaseIterable {
       return HeadsUpModel(
         kind: .hint, text: "macOS zoomed this window",
         hint: shortcut(.showAll).map { "\($0) puts it back" } ?? "Show Everything in the menu puts it back")
+    case .leftAsItIs:
+      return HeadsUpModel(
+        kind: .hint, text: "Left as it is",
+        hint: shortcut(.showAll).map { "\($0) puts it back in its place" } ?? "Show Everything in the menu puts it back in its place")
     }
   }
 }

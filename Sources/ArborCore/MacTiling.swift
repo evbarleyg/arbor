@@ -83,3 +83,55 @@ public struct MacTiling: Equatable, Sendable, Codable {
     return nil
   }
 }
+
+extension MacTiling {
+  /// How far a tile's edges lie inside the part of the screen it stands for, at the most: macOS's own margins ("Tiled windows have margins")
+  /// and an app that rounds its size.
+  public static let tileMargin: CGFloat = 12
+
+  /// Whether `frame` is one of the places macOS's own tiling puts a window on a display whose visible frame is `visible`: a half, a quarter or
+  /// a third of it, with or without macOS's margins. Not the whole of it, which is filling, and not the middle, which is centring.
+  ///
+  /// Measured on macOS 26 on a visible frame of 0,31 1024×677: Window ▸ Move & Resize ▸ Left ends at 0,31 513×677.
+  public static func isTile(_ frame: CGRect, of visible: CGRect) -> Bool {
+    guard visible.width > 0, visible.height > 0 else { return false }
+    let across = Span.all.filter { $0.isFilled(from: frame.minX, to: frame.maxX, within: visible.minX, length: visible.width) }
+    let down = Span.all.filter { $0.isFilled(from: frame.minY, to: frame.maxY, within: visible.minY, length: visible.height) }
+    return across.contains { x in
+      down.contains { y in
+        if x.isWhole && y.isWhole { return false }
+        // Thirds are columns or rows: macOS has no ninth, and no sixth.
+        if x.isThird { return y.isWhole }
+        if y.isThird { return x.isWhole }
+        return true
+      }
+    }
+  }
+
+  /// Whether `frame` is as large as the screen: the whole of `visible`, with or without macOS's margins. By its edges, like a tile.
+  public static func fillsTheScreen(_ frame: CGRect, of visible: CGRect) -> Bool {
+    guard visible.width > 0, visible.height > 0 else { return false }
+    return Span.all[0].isFilled(from: frame.minX, to: frame.maxX, within: visible.minX, length: visible.width)
+      && Span.all[0].isFilled(from: frame.minY, to: frame.maxY, within: visible.minY, length: visible.height)
+  }
+
+  /// The part of a display's width, or of its height, that a tile can have.
+  private struct Span {
+    var from: CGFloat
+    var to: CGFloat
+    var isWhole: Bool { to - from == 1 }
+    var isThird: Bool { to - from < 0.4 }
+
+    static let all: [Span] = [
+      Span(from: 0, to: 1), Span(from: 0, to: 0.5), Span(from: 0.5, to: 1),
+      Span(from: 0, to: 1.0 / 3), Span(from: 1.0 / 3, to: 2.0 / 3), Span(from: 2.0 / 3, to: 1),
+    ]
+
+    /// Inside it by no more than the margin, and over it by no more than a rounding.
+    func isFilled(from start: CGFloat, to end: CGFloat, within origin: CGFloat, length: CGFloat) -> Bool {
+      let first = origin + from * length
+      let last = origin + to * length
+      return start >= first - 2 && start <= first + MacTiling.tileMargin && end <= last + 2 && end >= last - MacTiling.tileMargin
+    }
+  }
+}
