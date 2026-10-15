@@ -115,6 +115,26 @@ import Testing
     #expect(!h.scheduler.pendingKeys.contains { $0.hasPrefix("meet") }, "and Arbor stops looking")
   }
 
+  @Test func anAppTooBusyToAnswerAtFirstIsAskedAgain() {
+    let (h, a, b, f) = makeHarness()
+    let slot = h.frame(a)!
+    let pid = h.system.windows[a]!.snapshot.pid
+    enterFullScreen(h, a, others: [b, f])
+    h.system.setUnresponsive(pid: pid, true)
+    // It answers again a quarter of a second into its way out.
+    var asked = 0
+    h.system.willSetFrame = { [system = h.system] window, _ in
+      guard window == a else { return }
+      asked += 1
+      if asked == 3 { system.setUnresponsive(pid: pid, false) }
+    }
+    h.system.clearSightings()
+    h.system.leaveFullScreen(a, with: [b, f], deafFor: 0)
+    h.scheduler.advance(by: 2)
+    #expect(h.system.sightings(of: a) == [slot], "\(h.system.sightings(of: a))")
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
   @Test func anAppThatMakesSomethingElseOfTheFrameIsNotAskedAgainAndAgain() {
     let (h, a, b, f) = makeHarness()
     enterFullScreen(h, a, others: [b, f])

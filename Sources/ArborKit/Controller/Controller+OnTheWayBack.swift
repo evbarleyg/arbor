@@ -58,8 +58,10 @@ extension Controller {
   private func seeThatItHasItsSlot(_ window: WindowID) {
     guard isRunning, let meeting = metAhead[window], meeting.looks < Self.looksOnTheWayOut else { return metAhead[window] = nil }
     metAhead[window]?.looks += 1
-    if let before = windows[window]?.frame, !before.approximatelyEquals(meeting.target, tolerance: 1) {
-      guard let actual = system.setFrame(meeting.target, of: window) else { return metAhead[window] = nil }
+    // An app busy with its own way out may not answer in time: that is not heard either, and the next look asks again.
+    if let before = windows[window]?.frame, !before.approximatelyEquals(meeting.target, tolerance: 1),
+      let actual = system.setFrame(meeting.target, of: window)
+    {
       // It has heard, whatever it made of the frame: an app that rounds sizes or has limits is not asked seven times.
       let heard = !actual.approximatelyEquals(before, tolerance: 1)
       if heard { metAhead[window]?.target = actual }

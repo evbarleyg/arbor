@@ -50,30 +50,30 @@ differed becomes cases of the other kinds, what held is said, and the entry goes
 
 | Kind | Cases | Hurt 1 | Stand-ins play it | partly | not yet | cannot | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded | Arbor does not cope yet, or nobody knows |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| [order-of-reports](#order-of-reports) | 24 | 3 | 8 | 6 | 5 | 5 | 14 | 1 | 0 | 9 | 3 |
+| [order-of-reports](#order-of-reports) | 25 | 3 | 8 | 6 | 5 | 6 | 14 | 1 | 0 | 10 | 3 |
 | [missing-report](#missing-report) | 37 | 6 | 12 | 6 | 3 | 16 | 21 | 1 | 1 | 14 | 7 |
 | [extra-report](#extra-report) | 8 | 0 | 1 | 4 | 1 | 2 | 5 | 0 | 0 | 3 | 0 |
-| [late-or-partial-answer](#late-or-partial-answer) | 37 | 8 | 9 | 12 | 6 | 10 | 26 | 0 | 2 | 9 | 9 |
+| [late-or-partial-answer](#late-or-partial-answer) | 38 | 8 | 10 | 12 | 6 | 10 | 27 | 0 | 2 | 9 | 9 |
 | [second-actor](#second-actor) | 39 | 6 | 11 | 16 | 7 | 5 | 26 | 0 | 2 | 11 | 5 |
 | [geometry](#geometry) | 26 | 0 | 7 | 12 | 5 | 2 | 15 | 1 | 2 | 8 | 5 |
 | [identity](#identity) | 26 | 4 | 6 | 5 | 6 | 9 | 11 | 1 | 0 | 14 | 6 |
 | [permissions](#permissions) | 17 | 6 | 5 | 3 | 3 | 6 | 10 | 2 | 2 | 3 | 1 |
 | [timing](#timing) | 33 | 6 | 3 | 13 | 8 | 9 | 18 | 4 | 1 | 10 | 3 |
 | [input](#input) | 49 | 5 | 5 | 11 | 11 | 22 | 19 | 6 | 5 | 19 | 7 |
-| [looks](#looks) | 16 | 0 | 0 | 0 | 1 | 15 | 1 | 2 | 3 | 10 | 4 |
+| [looks](#looks) | 17 | 0 | 0 | 0 | 1 | 16 | 1 | 2 | 3 | 11 | 4 |
 | [never-exercised](#never-exercised) | 16 | 7 | 2 | 13 | 0 | 1 | 0 | 0 | 15 | 1 | 16 |
-| [toolchain](#toolchain) | 36 | 1 | 0 | 1 | 3 | 32 | 22 | 1 | 0 | 13 | 4 |
-| **all** | 364 | 52 | 69 | 102 | 59 | 134 | 188 | 19 | 33 | 124 | 70 |
+| [toolchain](#toolchain) | 37 | 1 | 0 | 1 | 4 | 32 | 22 | 1 | 0 | 14 | 5 |
+| **all** | 368 | 52 | 70 | 102 | 60 | 136 | 189 | 19 | 33 | 127 | 71 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
-| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 116 | 73 | 39 | 13 | 19 | 45 |
-| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 136 | 82 | 100 | 0 | 7 | 29 |
+| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 118 | 74 | 39 | 13 | 19 | 47 |
+| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 137 | 83 | 101 | 0 | 7 | 29 |
 | controller | in the controller or the core, given reports that were right | 17 | 9 | 13 | 0 | 1 | 3 |
 | test | in a test, a script or a harness that expected the wrong thing | 63 | 0 | 17 | 5 | 4 | 37 |
-| machine | in the machine, the toolchain or the way things are built and installed | 32 | 3 | 19 | 1 | 2 | 10 |
+| machine | in the machine, the toolchain or the way things are built and installed | 33 | 3 | 19 | 1 | 2 | 11 |
 
 Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
 
@@ -154,6 +154,7 @@ No guard, or only a script that somebody has to start.
 | [secure-text-entry-keeps-the-keyboard-from-a-panel](#secure-text-entry-keeps-the-keyboard-from-a-panel) | 2 | below the seam | cannot | not guarded |
 | [the-created-report-carries-no-window-number](#the-created-report-carries-no-window-number) | 2 | below the seam | cannot | not guarded |
 | [the-resize-may-come-before-the-full-screen-flag](#the-resize-may-come-before-the-full-screen-flag) | 2 | at the seam | no | not guarded |
+| [the-space-change-can-be-reported-before-the-stand-in-leaves-the-list](#the-space-change-can-be-reported-before-the-stand-in-leaves-the-list) | 2 | below the seam | cannot | not guarded |
 | [a-permission-belongs-to-a-signature](#a-permission-belongs-to-a-signature) | 2 | machine | cannot | only when somebody starts a script |
 | [events-arbor-posts-pass-its-own-taps-again](#events-arbor-posts-pass-its-own-taps-again) | 2 | below the seam | cannot | only when somebody starts a script |
 | [taps-see-every-gesture-as-event-type-29](#taps-see-every-gesture-as-event-type-29) | 2 | below the seam | cannot | only when somebody starts a script |
@@ -388,6 +389,18 @@ Order of reports: what belongs together arrives in another order than expected.
 - **Guard:** **none**
 - **Arbor copes:** AXWindowSystem.rescan compares each listed window's full-screen flag with what is remembered and reports a difference. Until then the window is pulled at: arbor-pulls-at-a-window-on-its-way-into-full-screen.
 - **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `docs/features/F30-full-screen-windows.md`, `Sources/ArborTesting/FakeWindowSystem.swift`
+
+### the-space-change-can-be-reported-before-the-stand-in-leaves-the-list
+
+*hurt 2 · below the seam*
+
+- **Expected:** When the change of Space is reported after full screen, the app lists the window that came out of it.
+- **Happened:** macOS's stand-in is on the app's list in the window's place until the animation ends. The change of Space was reported 0.14 s after that in one run, and a few milliseconds BEFORE it in two rounds of four. Then the lists were read too early, the window was missed, and Arbor heard of it from its second look: 1.07 s after it was on the screen. Its neighbours, the focus report and the ring were all a second late. When the stand-in is destroyed the window is listed again, and so are the other apps' windows: 16 rounds of 16.
+- **Found by:** Arbor's log beside Accessibility's reports and the window server's frames, four rounds with Safari and TextEdit on a hosted Mac, macOS 26.6.2.
+- **Stand-ins play it:** cannot: it lies below or beside the seam
+- **Guard:** **none**
+- **Arbor copes:** AXWindowSystem.watchIfItStandsInOnTheWayOutOfFullScreen subscribes to the end of a helper as large as the window that its app makes while the window is in full screen, and reads every app's list then.
+- **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `docs/features/F30-full-screen-windows.md`
 
 ### the-window-and-its-app-report-in-either-order
 
@@ -1264,6 +1277,18 @@ Late or partial answers: a call returns before the deed, after it, with half of 
 - **Guard:** `test: theKeyboardStaysInASheet`
 - **Arbor copes:** **not yet**
 - **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `Tests/ArborKitTests/ReviewTilingTests.swift`, `collab/BACKLOG.md`
+
+### on-its-way-out-of-full-screen-one-app-hears-at-once-and-another-only-later
+
+*hurt 2 · at the seam*
+
+- **Expected:** A window on its way out of full screen either takes a frame or does not, whatever its app.
+- **Happened:** The window is hidden behind macOS's stand-in for 0.5 to 0.7 s and can be asked meanwhile. TextEdit takes the frame at once, keeps it and lands there. Safari, which shows its own way out, answers success to all three calls, reads back the old frame, and lands there, if it is asked before it has placed the window once more itself (a "moved" report 0.06 to 0.17 s after the first report). Asked after that it takes the frame and keeps it. Asked only when the stand-in has gone, both take it at once, and TextEdit was seen at the old frame for 44 ms first.
+- **Found by:** A probe that asked at one chosen moment per round (in full screen, at the stand-in, at the report, at the landing), with a sampler of the window server's frames beside it; then four rounds with Arbor. A hosted Mac, macOS 26.6.2.
+- **Stand-ins play it:** yes (`FakeWindowSystem.leaveFullScreen`, `FakeWindowSystem.sightings`)
+- **Guard:** `test: aDockedWindowThatLeavesFullScreenIsSeenInItsSlotAndNowhereElse`; `test: anAppThatTakesTheFrameAtOnceIsAskedOnce`; `test: anAppThatMakesSomethingElseOfTheFrameIsNotAskedAgainAndAgain`; `test: oneThatTakesNoFrameOnItsWayOutStillEndsInItsSlot`
+- **Arbor copes:** Controller.looksOnTheWayOut: from the report on Arbor looks ten times a second, for as long as the way takes, and asks again while the window is somewhere else than its slot. Nothing is concluded from what it answers.
+- **Read in:** `docs/features/F30-full-screen-windows.md`, `Sources/ArborKit/Controller/Controller+OnTheWayBack.swift`, `Sources/ArborTesting/FakeWindowSystem.swift`
 
 ### open-says-yes-to-any-name
 
@@ -3885,6 +3910,18 @@ Looks: what is on the screen is not what the model said.
 - **Arbor copes:** Sources/ArborKit/UI/AppKitOverlays.swift: tiles, gap handles, backdrop, ring, heads-up line, minimap and palette are `.transient`. The stage, the peek's outline and the rectangle's band, up for a moment only, are still `.stationary`.
 - **Read in:** `Sources/ArborKit/UI/AppKitOverlays.swift`, `Sources/ArborKit/UI/HeadsUpPanel.swift`, `Sources/ArborKit/UI/BackdropPanel.swift`, `Sources/ArborKit/UI/PeekOutlinePanel.swift`, `collab/BACKLOG.md`
 
+### the-animation-out-of-full-screen-aims-at-the-old-frame-whatever-the-window-does
+
+*hurt 3 · below the seam*
+
+- **Expected:** A window that has its slot's frame before it lands is seen to arrive in its slot.
+- **Happened:** The animation is a picture in macOS's stand-in, and where it goes is settled when the way out begins: at the frame from before any move through Accessibility. In full screen the window cannot be asked (the position is refused, the size accepted and forgotten), so nobody outside the app can change that. The picture arrives at the old frame and, as it ends, the window stands in its slot: a cut.
+- **Found by:** Bursts of screenshots during the way out, Safari and TextEdit, a hosted Mac, macOS 26.6.2.
+- **Stand-ins play it:** cannot: it lies below or beside the seam
+- **Guard:** **none**
+- **Arbor copes:** docs/features/F30-full-screen-windows.md says what is seen. The product owner accepts the cut, because no window is at rest in a wrong place; a glide of Arbor's own from the old frame to the slot would be polish.
+- **Read in:** `docs/features/F30-full-screen-windows.md`
+
 ### the-welcome-window-was-taller-than-a-small-display
 
 *hurt 3 · below the seam · K911*
@@ -4240,6 +4277,18 @@ Toolchain and machines: compilers, runners and shells that differ from the ones 
 - **Guard:** `tool: lint-paste-safe.py`
 - **Arbor copes:** scripts/lint-paste-safe.py keeps `#` out of the blocks of the pages a person installs Arbor from.
 - **Read in:** `scripts/lint-paste-safe.py`, `docs/INSTALL.md`, `docs/TRACES.md`, `docs/RELEASE-NOTES.md`, `collab/BACKLOG.md`
+
+### a-c-callback-may-not-read-what-a-top-level-guard-bound
+
+*hurt 4 · machine*
+
+- **Expected:** A helper tool that passes the type-check against the stand-ins for Apple's frameworks compiles on a Mac.
+- **Happened:** In a program of one file, what a `guard let` binds at the top level is a local variable. A function that reads one captures it and cannot be handed to C as a callback (`AXObserverCreate`). The compiler says so only when it generates code, which the type-check never does, and the stand-in's callback is an ordinary closure. The run on the Mac ended at the first compile.
+- **Found by:** A probe's first run on a hosted Mac; the same error from two small files on Linux with `-emit-sil`.
+- **Stand-ins play it:** **no**
+- **Guard:** **none**
+- **Arbor copes:** **not yet**
+- **Read in:** `scripts/typecheck-mac/README.md`, `scripts/typecheck-mac/check.sh`
 
 ### a-display-mode-is-undone-when-the-process-exits
 
