@@ -1660,6 +1660,11 @@ tap or hold, what the pointer, the arrow keys, ⎋, a click, another command and
   peek stay on everything. Whatever ends the peek puts the camera back (`returnFromALook`), without laying anything out, and then
   makes one ordinary move: one history entry, or none. A peek that nobody ends (a pause, a display unplugged, a crash or a quit with the keys down) becomes a stay (`stayAfterALook`). `moveCamera` calls `peekYields(on:)` first, so a camera moved by anything
   else (a clicked tile, a window that took the keyboard) counts as the landing. `perform(_:from:)` interrupts a peek before any command that is not a query.
+- The peek is in place **before** its own move to everything (`PeekSession.arrival`), because that move can lead on by itself: a window that was let be goes
+  into its tile with the keyboard in it, nobody in view can take the keyboard, and the view goes after it (`theKeyboardLeavesTheTile`). Only the move to everything
+  passes `peekYields`; one that comes before it is over is a landing like any other: the view is put back, one ordinary move follows, and the key is spent until
+  it comes up. The line on screen looks once at what came of the key (`summingUpForTheLine`), and that is news like any other (`aPeekHasBegun`). Until
+  everything shows the peek holds no clock and no pointer worth reading, and macOS is asked for neither: what the key asks stands in every recording.
 - The arrow keys and ⎋ arrive with the held modifiers, as ⌃⌥← and so on, which are bound by default; a peek takes those chords by their keys,
   whatever they are bound to. Chords that are bound to nothing are registered for the length of the hold
   (`KeyBindings.whilePeeking`, `onTemporaryShortcuts`, `HotKeyCenter.setTemporary`) without touching the others: unregistering a shortcut whose key is down would lose its release.

@@ -22,6 +22,9 @@ extension Controller {
     var temporary: [KeyBinding] = []
     var tookKeys = false
     var shownOutline: NodeID?
+    /// The move to everything that begins the peek: the one move of the view that is no landing.
+    enum Arrival { case toCome, underWay, over }
+    var arrival: Arrival
   }
 
   static let peekInterval = 1.0 / 30
@@ -30,6 +33,8 @@ extension Controller {
   public var temporaryShortcuts: [KeyBinding] { peeking?.temporary ?? [] }
   /// Whether a shortcut is being held to look.
   public var isPeeking: Bool { peeking?.peek.phase == .holding }
+  /// The move to everything is over, wherever it has led, and the key may still be down. What that move brings about is news like any other.
+  var aPeekHasBegun: Bool { peeking?.arrival == .over }
 
   /// A registered shortcut's key went down or came up. Every shortcut comes through here. Runs its command with
   /// `run` (by default `perform(_:from:)`) and returns the reply, unless a peek takes the key, or it came up.
@@ -107,15 +112,27 @@ extension Controller {
     // (Controller+Hold.swift).
     if holdLevel == nil { holdFetchesWhatWaited(on: nil) }
     workspaces[display]?.beginLook()
-    moveCamera(on: display, to: workspace.tree.root, record: false)
+    // In place before the view moves, because the move can lead on by itself: a window that was let be goes into its tile with
+    // the keyboard in it, nobody in view can take the keyboard, and the view goes after it (Controller+LetBe.swift). That is
+    // a landing like any other, and has to find a peek to end (`peekYields`). Begun afterwards, the peek took everything to
+    // be showing, and a tap wrote that down without laying anything out. Where the pointer is is not asked yet: nobody reads it.
+    let (origin, root) = (workspace.camera, workspace.tree.root)
+    peeking = PeekSession(
+      peek: Peek(origin: origin, root: root, at: peekTime, pointer: .zero, buttonDown: false), display: display, chord: chord,
+      arrival: .toCome)
+    // One key, one look at what came of it: everything, shown on the way to somewhere else, is no news.
+    summingUpForTheLine(on: display) { moveCamera(on: display, to: root, record: false) }
+    peeking?.arrival = .over
+    // The key has led somewhere, and is spent: nothing is left to hold, or to come back from.
+    guard peeking?.peek.phase == .pressed else {
+      Log.info("show-all: the view went on, after the keyboard")
+      return true
+    }
     Log.info("show-all: showing everything")
     // The clock starts once everything shows. Laying out many windows takes a while, and a release that
     // waited in the queue meanwhile is a tap however late it is heard.
-    peeking = PeekSession(
-      peek: Peek(
-        origin: workspace.camera, root: workspace.tree.root, at: peekTime, pointer: system.cursorLocation(),
-        buttonDown: system.isMouseButtonDown()),
-      display: display, chord: chord)
+    peeking?.peek = Peek(
+      origin: origin, root: root, at: peekTime, pointer: system.cursorLocation(), buttonDown: system.isMouseButtonDown())
     scheduler.schedule("peek", after: Self.peekInterval) { [weak self] in self?.peekTick() }
     return true
   }
@@ -180,6 +197,8 @@ extension Controller {
     guard let session = peeking, session.display == display,
       session.peek.phase == .pressed || session.peek.phase == .holding
     else { return }
+    // The peek's own move to everything. Another that comes before that one is over is where it has led.
+    guard session.arrival != .toCome else { return peeking!.arrival = .underWay }
     returnFromPeek(session)
     updatePeek {
       $0.yielded()

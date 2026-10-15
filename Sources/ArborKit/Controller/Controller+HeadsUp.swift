@@ -203,7 +203,7 @@ extension Controller {
       // A command sums up once it is done; the layouts on the way there are not news.
       // Nor is the end of a peek: whoever held ⌃⌥Space to look around and let go knows where the windows went, and how to get them back.
       guard headsUp.source == nil, headsUp.trying == 0, let moment = noteFacts(on: [display]), settings.messageLevel != .off,
-        peeking == nil
+        !aPeekHasBegun
       else { return }
       teach(moment)
     case .input:
@@ -287,7 +287,7 @@ extension Controller {
 
   /// A teaching moment that is an event and no change of the facts. Shown as often as the others.
   func teach(_ hint: HeadsUpHint, on display: DisplayID) {
-    guard headsUp.source == nil, headsUp.trying == 0, peeking == nil, settings.messageLevel != .off,
+    guard headsUp.source == nil, headsUp.trying == 0, !aPeekHasBegun, settings.messageLevel != .off,
       headsUp.hintsShown[hint.rawValue, default: 0] < HeadsUpHint.timesShown, let facts = facts(on: display)
     else { return }
     teach(Moment(hint: hint, display: display, facts: facts))
