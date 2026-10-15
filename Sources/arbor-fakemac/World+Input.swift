@@ -130,9 +130,11 @@ extension World {
         break
       }
     }
+    pressIsTold = false
     land(at: point, clicks: clicks, secondary: right || !modifiers.isDisjoint(with: [.control, .option]))
-    // What the Accessibility layer's monitor of the mouse passes on.
-    system.events?.pointerPressed()
+    // What the Accessibility layer's monitor of the mouse passes on. Where the press gives a window the keyboard it has its place among
+    // the reports of that (`giveKeyboard`, `FakeWindowSystem.press`).
+    if !pressIsTold { system.events?.pointerPressed() }
     reportDoubleClick(clicks)
   }
 
@@ -260,13 +262,13 @@ extension World {
         // The three buttons work without bringing their window forward.
         held = .button(window, name)
       case .border(let edges):
-        giveKeyboard(to: window)
+        giveKeyboard(to: window, byAPress: true)
         held = .resize(window, edges: edges, from: point, frame: frame)
       case .title:
-        giveKeyboard(to: window)
+        giveKeyboard(to: window, byAPress: true)
         held = .title(window, grip: grip, moved: false, clicks: clicks)
       case .content:
-        giveKeyboard(to: window)
+        giveKeyboard(to: window, byAPress: true)
         count("down", for: id)
         held = .content(id)
       }
@@ -489,6 +491,8 @@ extension World {
       // for as long as another key is held with them.
       system.hold(chord)
       arbor.controller.shortcut(binding, .pressed, run: { [self] in handle($0, from: .shortcut) })
+      // A key stays down for a tenth of a second or so, and the reports of what it did are in after some hundredths.
+      system.deliverEchoes()
       system.letGo(chord, keepingModifiers: !heldShortcuts.isEmpty)
       self.arbor?.controller.shortcut(binding, .released, run: { [self] in handle($0, from: .shortcut) })
       return

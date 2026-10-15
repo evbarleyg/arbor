@@ -33,7 +33,7 @@ extension FakeWindowSystem {
   /// window. On one of another app macOS brings the app forward first and passes the press on afterwards: the window is reported
   /// with the button down already, its app says that it is active, then the press is heard of, and the app that was in front
   /// says last that it no longer is (two in three; most of the others begin with the press).
-  func press(on window: WindowID) {
+  public func press(on window: WindowID) {
     mouseDown = true
     guard focused != window, !heldModifiers.contains(.command) else {
       events?.pointerPressed()

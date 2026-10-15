@@ -120,6 +120,8 @@ final class World {
   var recentApps: [Int32] = [World.finderPID]
   /// The window that had the keyboard when the world last looked (`followKeyboard`).
   private var keyboardSeen: WindowID?
+  /// Whether the press in progress has been reported already, among the reports of the keyboard it moved (`press(at:)`).
+  var pressIsTold = false
   var held = Held.nothing
   /// Arbor's shortcuts that went down with `key … --down` and have not come up.
   var heldShortcuts: [KeyChord.Key: KeyBinding] = [:]
@@ -491,7 +493,8 @@ final class World {
 
   /// The user, or the window's own app while it is in front, gives a window the keyboard. Arbor hears of it
   /// when that is news. `byItself`: an app in the background took it and nobody had touched anything.
-  func giveKeyboard(to window: WindowID, byItself: Bool = false) {
+  /// `byAPress`: the button has just gone down on it, which is told of in the order of a Mac.
+  func giveKeyboard(to window: WindowID, byItself: Bool = false, byAPress: Bool = false) {
     guard let pid = system.windows[window]?.snapshot.pid else { return }
     raise(.window(window.rawValue))
     bringForward(app: pid)
@@ -499,7 +502,14 @@ final class World {
     isSwept = false
     keyboardSeen = window
     if system.focused != window {
-      if byItself { system.comesForward(window) } else { system.userFocus(window) }
+      if byItself {
+        system.comesForward(window)
+      } else if byAPress, !system.heldModifiers.contains(.command) {
+        pressIsTold = true
+        system.press(on: window)
+      } else {
+        system.userFocus(window)
+      }
     }
     // Arbor may have sent the keyboard back while it was told, and then that window and its app are in front.
     followKeyboard()
