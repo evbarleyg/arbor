@@ -65,6 +65,8 @@ final class Runner {
   /// A second app, for the sessions in Misbehaving.swift.
   var other: OtherApp?
   var arbor: Process?
+  /// Held open for as long as this process lives; see `startGuardian`.
+  var guardianInput: Pipe?
   var helperPID: Int32 = 0
   var testWindows: [WindowID] = []
   var gap: CGFloat = 12
@@ -136,11 +138,16 @@ final class Runner {
     testWindows = hello.windows.map { WindowID($0) }
   }
 
+  /// With its watchdog, as a person's Arbor has one, unless told otherwise.
   @discardableResult
-  func launchArbor(asSecondCopy: Bool = false) throws -> Process {
+  func launchArbor(asSecondCopy: Bool = false, withWatchdog: Bool = true) throws -> Process {
     let process = Process()
     process.executableURL = binaries.appendingPathComponent("Arbor")
     var environment = ProcessInfo.processInfo.environment
+    environment["ARBOR_NO_WATCHDOG"] = withWatchdog ? nil : "1"
+    // Whatever the caller's shell has: this is a person's start.
+    environment["ARBOR_RESTARTS"] = nil
+    environment["ARBOR_RESCUE"] = nil
     environment["ARBOR_HOME"] = home.path
     environment["ARBOR_SOCKET"] = socket
     environment["ARBOR_ONLY_PIDS"] = ([helperPID] + (other.map { [$0.pid] } ?? [])).map(String.init).joined(separator: ",")
@@ -189,7 +196,8 @@ final class Runner {
       print("\n--- arbor.log (last 100 lines) ---")
       print(forOthersToRead(text))
     }
-    try? FileManager.default.removeItem(at: home)
+    // Where there is a guardian the folder is its to remove, when it has seen the last Arbor: one on its way would make the folder anew.
+    if guardianInput == nil { try? FileManager.default.removeItem(at: home) }
   }
 
   // MARK: Talking to Arbor
@@ -406,6 +414,7 @@ final class Runner {
   // MARK: The scenario
 
   func run() throws -> Int32 {
+    try startGuardian()
     try launchHelper()
     print("test windows: \(testWindows.map(\.description).joined(separator: " ")) (pid \(helperPID))")
     // In every report: a run that passes with the screen locked says as much as one that fails.
@@ -679,6 +688,12 @@ final class Runner {
     try Data(Self.handEditedSettings.utf8).write(to: settingsFile)
     _ = try send("reload-settings")
 
+    // Without one, what is said of the watchdog after the quit would hold whatever Arbor did.
+    print("\n▸ the watchdog before the quit  (no command)")
+    noteWhereTheLogIs()
+    let watchdog = watchdogPID()
+    check("Arbor's watchdog stands by", watchdog.map { kill($0, 0) == 0 } ?? false, "pid \(watchdog.map(String.init) ?? "unknown")")
+
     print("\n▸ quit Arbor  (quit)")
     noteWhereTheLogIs()
     _ = try? send("quit")
@@ -700,6 +715,7 @@ final class Runner {
     check("quitting is the last event", watcher.events.last == .quitting, watcher.lines.last ?? "nothing")
 
     check("the watchdog does not start Arbor again after a quit", !poll(2) { (try? self.send("status")) != nil })
+    check("the watchdog has left as well", poll(5) { watchdog.map { kill($0, 0) != 0 } ?? false })
 
     try accidents()
 
@@ -874,6 +890,8 @@ func readLine(from handle: FileHandle) -> String {
   return String(decoding: data, as: UTF8.self)
 }
 
+// Line by line also into a file or a pipe: what a run had said when it was killed is what tells how far it got.
+setvbuf(stdout, nil, _IOLBF, 0)
 let code: Int32
 do {
   let runner = try Runner()

@@ -6,6 +6,8 @@ scripts/mac-shell/lib.sh each get situations that must come out as failures (a m
 commands do nothing) next to ones that must pass. Every row here passed when it should have failed
 before 2026-10-14.
 
+arbor-e2e's guardian gets its situations too; test-e2e-guardian.py has them.
+
 `make check` runs this. The scenario rows need .build/debug/arbor-sim and are skipped, loudly, without it.
 The rows for lib.sh run small scripts for real, against stand-ins for a Mac, under `bash` or $ARBOR_TEST_BASH (macOS has 3.2).
 Exit code 1 when a row comes out wrong.
@@ -1273,6 +1275,14 @@ def check_e2e():
         (5, ["arbor-e2e: no verdict (exit 5): set-up failed: no windows", "  screen locked: yes", "  error -25204"], 2, None))
 
 
+def check_e2e_guardian():
+    spec = importlib.util.spec_from_file_location("e2e_guardian", os.path.join(HERE, "test-e2e-guardian.py"))
+    guardian = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(guardian)
+    for situation in guardian.situations():
+        row(*situation)
+
+
 def check_makefile():
     row("Makefile: a target whose rule a merge dropped", targets_without_a_rule(".PHONY: build e2e\nbuild:\n\tswift build\n"), ["e2e"])
     with open(os.path.join(os.path.dirname(HERE), "Makefile"), encoding="utf-8") as handle:
@@ -1882,6 +1892,7 @@ def main():
     check_run_list()
     check_install()
     check_e2e()
+    check_e2e_guardian()
     check_ci_mtimes()
     check_ci_build_key()
     check_mac_shell_batch()

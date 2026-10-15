@@ -82,9 +82,10 @@ extension Runner {
     (try? String(contentsOf: home.appendingPathComponent("arbor.log"), encoding: .utf8)) ?? ""
   }
 
-  /// Starts Arbor and waits until it manages `count` windows.
+  /// Starts Arbor and waits until it manages `count` windows. Without its watchdog, which is not what these sessions try: an Arbor that
+  /// ends in one of them stays away and is missed, where one started in its place might pass for it.
   func startArbor(managing count: Int) throws {
-    try launchArbor()
+    try launchArbor(withWatchdog: false)
     guard poll(10, { (try? self.send("status")) != nil }) else {
       throw Setup(description: "Arbor did not open its control socket")
     }

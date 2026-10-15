@@ -239,6 +239,19 @@ Accessibility are asked who has the keyboard), closes on command and when anothe
 Dock to its slot and another from ⌘H. No key is pressed: the runner posts no input, so that it can run on a Mac somebody is
 using. While the palette is open, for a second or so each time, it has the keyboard.
 
+**It leaves no Arbor behind, however it ends** (`Guardian.swift`). First thing, the runner starts a guardian: a few lines of Perl in a session of their own that wait at the
+far end of a pipe for the runner to end (finished, interrupted, or killed by a caller's time limit with a signal nobody can catch). It goes by the lock that keeps a second
+Arbor out of the run's folder, which the kernel keeps, and reads no list of processes: while somebody holds the lock, the number in the file is the holder's, who is asked to quit and,
+five seconds later, killed. Then the guardian takes the lock itself and holds it for fifteen seconds, which is what the runner gives an Arbor that a watchdog starts: one that
+is still on its way finds the lock held and leaves, having started nothing. Last it removes the run's folder, which is nobody else's to remove: an Arbor on its way would make it anew,
+with a lock in it that nobody holds. The runner starts nothing before the guardian says that it is in its session, and does not run without it; and it prints line by line also into a file, so
+that what a run had said when it was killed tells how far it got. `scripts/test-e2e-guardian.py`,
+part of `make check`, reads the program out of the Swift file and holds it to a table of endings against stand-ins for Arbor and its watchdog, on Linux too: killed alone or with its
+group, an Arbor deaf to SIGTERM, one killed a moment before, a next one that is slow to reach the lock, a file with somebody else's number in it, each kind beside a control that
+comes out badly. `scripts/mac-shell/check-e2e-guardian.sh` ends the real runner on a Mac. What is still left behind: an Arbor that needs more than fifteen seconds to reach the lock.
+The first session, the accidents and the start after the rescue run Arbor with its watchdog, as a person's has one, and the first checks that it stands by before the quit and has
+left after it. The sessions that follow run without: an Arbor that ends in one of them stays away and is missed, where one started in its place might pass for it.
+
 Then it starts Arbor again, twice, in the same home folder (so each start restores what the last
 one saved), and has the windows do what real apps and their users do; `ArborTestWindows` takes
 commands on stdin for that (listed at the head of its `main.swift`). A docked window is minimized
@@ -297,7 +310,7 @@ logged nothing, which is a finding too.
 from a terminal (standard input is no terminal, as in a loop that builds one commit after another) starts only after 60 seconds without
 input, and ends as soon as somebody touches the keyboard or the pointer: exit code 3, "nothing was started" or "somebody is using this Mac".
 `ARBOR_BUSY_OK=1` runs it all the same. Everywhere, a run ends by itself after 15 minutes (7), and ⌃C, `kill` and a closed terminal (128 + the signal)
-make it quit Arbor, close the test windows and remove its folder first; only `kill -9` and a crash of the runner still leave an Arbor behind.
+make it quit Arbor, close the test windows and remove its folder first; after `kill -9` and a crash of the runner its guardian does (above).
 Off GitHub's Macs its Arbor takes no pictures of windows (`ARBOR_NO_PICTURES=1`): they would be of every app's. Nor does it open an app (`ARBOR_NO_OPENING=1`).
 
 CI runs it too: GitHub's macOS runners grant Accessibility to their own
@@ -713,6 +726,7 @@ copy from before the repository was public, and say what the script does once it
 | `check-F12.sh` | trunk | safe | none | |
 | `perf.sh` | trunk | safe, steps skip themselves | one drag | `footprint`, `heap`, `leaks` where developer mode is off (macOS would ask for a password) |
 | `check-F13-system.sh` | trunk | **never**: ends with 77 | | TCC.db as root, `tccutil`, login items, `make install` as a person runs it |
+| `check-e2e-guardian.sh` | trunk | **never**: ends with 77 | | Ends `arbor-e2e` four times in the middle of a run, three of them with `kill -9`, to see whether an Arbor is left: where one is, it stays on the Mac |
 | `check-F58.sh` (`share-probe.swift`) | trunk | safe, steps skip themselves | 2 min | ⌘Tab, the second display, the grey wallpaper; the pictures of single test windows only where Screen Recording is granted already. Two test apps have an icon in the Dock. A test window is put at and beyond the display's edges, so with two displays it shows on the other for a moment |
 | `shots-finder.sh` | trunk | safe, steps skip themselves | 3 min, mostly keys | ⌘Tab, Mission Control, the swipe to another Space. Types digits and letters with the palette open or its own test app in front, which has an icon in the Dock |
 | `watch.sh` | trunk | **not this copy**: a later one, not landed | 6 s; 10 min in all | On the trunk: `arborctl watch` without a limit, more than 900 s, and the end-to-end runner under a time limit. The later copy: safe |
