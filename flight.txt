@@ -1,0 +1,3368 @@
+# probe-flight.sh 2026-10-15T04:50Z on macOS 26.6.2, commit 2efab56
+
+=== Reduce Motion: true
+
+--- test windows, key, poll
+    14.2  flight  watching w29 of 36439, mode poll; AXMinimized no
+    14.6  asked   AXMinimized no, asked at 14.2, 0.4 ms
+    22.3  server  on screen alpha 1.00 at 170,220 480x348
+   655.2  hand    a key went down 8 ms ago, a button came up 2398 ms ago
+   805.3  server  on screen alpha 1.00 at 170,220 497x348
+   835.8  server  on screen alpha 1.00 at 170,220 520x348
+   845.7  server  on screen alpha 1.00 at 170,220 530x348
+   869.0  server  on screen alpha 1.00 at 170,220 563x348
+   886.8  server  on screen alpha 1.00 at 170,220 575x348
+   906.9  server  on screen alpha 1.00 at 170,220 613x348
+   923.1  server  on screen alpha 1.00 at 170,220 625x349
+   942.7  server  on screen alpha 1.00 at 171,233 666x349
+   956.4  server  on screen alpha 1.00 at 172,240 681x349
+   972.2  server  on screen alpha 1.00 at 181,261 703x349
+   989.4  server  on screen alpha 1.00 at 200,286 712x349
+  1010.1  server  on screen alpha 1.00 at 241,319 696x349
+  1021.9  server  on screen alpha 1.00 at 268,336 677x349
+  1028.4  server  on screen alpha 1.00 at 299,354 650x349
+  1042.2  server  on screen alpha 1.00 at 336,374 615x349
+  1060.2  server  on screen alpha 1.00 at 425,415 526x331
+  1087.1  server  on screen alpha 1.00 at 568,477 383x269
+  1094.4  server  on screen alpha 1.00 at 615,497 336x249
+  1112.6  server  on screen alpha 1.00 at 663,518 288x228
+  1135.4  server  on screen alpha 1.00 at 783,577 168x169
+  1152.2  server  on screen alpha 1.00 at 841,613 110x133
+  1171.2  server  on screen alpha 1.00 at 880,645 71x101
+  1189.2  server  on screen alpha 1.00 at 902,672 49x74
+  1204.0  server  on screen alpha 1.00 at 909,683 42x63
+  1224.5  server  on screen alpha 1.00 at 916,708 35x38
+  1244.4  server  on screen alpha 1.00 at 916,716 35x30
+  1254.9  server  on screen alpha 1.00 at 916,717 35x29
+  1275.4  server  not listed
+  1398.5  asked   the other window's AXMinimized no, asked at 655.1, 743.3 ms
+  1399.2  app     AXFocusedWindowChanged w31
+  1399.4  asked   AXMinimized yes, asked at 1398.6, 0.7 ms
+  1401.2  app     AXMainWindowChanged w31
+  1401.3  app     AXWindowMiniaturized w29
+  2615.6  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, sparse
+     8.4  flight  watching w29 of 36439, mode sparse; AXMinimized no
+     9.2  asked   AXMinimized no, asked at 8.4, 0.8 ms
+    22.1  server  on screen alpha 1.00 at 170,220 480x348
+   650.2  hand    a key went down 5 ms ago, a button came up 2239 ms ago
+   721.8  server  on screen alpha 1.00 at 170,220 483x348
+   736.8  server  on screen alpha 1.00 at 170,220 486x348
+   743.6  server  on screen alpha 1.00 at 170,220 492x348
+   752.6  server  on screen alpha 1.00 at 170,220 498x348
+   770.3  server  on screen alpha 1.00 at 170,220 512x348
+   788.4  server  on screen alpha 1.00 at 170,220 531x348
+   798.0  server  on screen alpha 1.00 at 170,220 542x348
+   817.5  server  on screen alpha 1.00 at 170,220 565x348
+   835.9  server  on screen alpha 1.00 at 170,220 590x348
+   854.9  server  on screen alpha 1.00 at 170,220 615x349
+   873.1  server  on screen alpha 1.00 at 170,223 641x349
+   892.6  server  on screen alpha 1.00 at 171,235 671x349
+   911.4  server  on screen alpha 1.00 at 177,253 696x349
+   925.3  server  on screen alpha 1.00 at 183,264 705x349
+   945.8  server  on screen alpha 1.00 at 206,291 711x349
+   967.7  server  on screen alpha 1.00 at 248,324 691x349
+   988.1  server  on screen alpha 1.00 at 348,379 603x349
+  1008.3  server  on screen alpha 1.00 at 434,420 517x326
+  1024.9  server  on screen alpha 1.00 at 531,461 420x285
+  1035.0  server  on screen alpha 1.00 at 581,482 370x264
+  1053.9  server  on screen alpha 1.00 at 677,524 274x222
+  1073.6  server  on screen alpha 1.00 at 760,564 191x182
+  1081.4  server  on screen alpha 1.00 at 795,583 156x163
+  1091.7  server  on screen alpha 1.00 at 824,602 127x144
+  1106.5  server  on screen alpha 1.00 at 849,619 102x127
+  1120.3  server  on screen alpha 1.00 at 886,651 65x95
+  1139.8  server  on screen alpha 1.00 at 905,677 46x69
+  1148.2  server  on screen alpha 1.00 at 911,688 40x58
+  1167.4  server  on screen alpha 1.00 at 915,703 36x43
+  1186.5  server  on screen alpha 1.00 at 916,714 35x32
+  1204.0  server  on screen alpha 1.00 at 916,717 35x29
+  1221.3  asked   the other window's AXMinimized no, asked at 747.8, 473.5 ms
+  1221.6  app     AXFocusedWindowChanged w31
+  1221.7  asked   AXMinimized yes, asked at 1221.6, 0.1 ms
+  1221.8  app     AXMainWindowChanged w31
+  1221.8  app     AXWindowMiniaturized w29
+  1305.9  server  not listed
+  2610.2  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, read
+     9.5  flight  watching w29 of 36439, mode read; AXMinimized no
+    18.7  server  on screen alpha 1.00 at 170,220 480x348
+   663.6  hand    a key went down 4 ms ago, a button came up 2322 ms ago
+   702.4  server  on screen alpha 1.00 at 170,220 483x348
+   720.0  server  on screen alpha 1.00 at 170,220 491x348
+   736.7  server  on screen alpha 1.00 at 170,220 499x348
+   757.3  server  on screen alpha 1.00 at 170,220 522x348
+   779.2  server  on screen alpha 1.00 at 170,220 541x348
+   790.5  server  on screen alpha 1.00 at 170,220 552x348
+   808.4  server  on screen alpha 1.00 at 170,220 578x348
+   822.8  server  on screen alpha 1.00 at 170,220 594x348
+   841.3  server  on screen alpha 1.00 at 170,220 621x349
+   858.4  server  on screen alpha 1.00 at 170,225 649x349
+   875.0  server  on screen alpha 1.00 at 171,233 667x349
+   895.9  server  on screen alpha 1.00 at 176,250 693x349
+   922.6  server  on screen alpha 1.00 at 208,294 711x349
+   943.6  server  on screen alpha 1.00 at 253,327 688x349
+   955.5  server  on screen alpha 1.00 at 290,349 659x349
+   961.3  server  on screen alpha 1.00 at 328,370 623x349
+   982.2  server  on screen alpha 1.00 at 421,414 530x332
+  1007.5  server  on screen alpha 1.00 at 536,463 415x283
+  1014.6  server  on screen alpha 1.00 at 590,486 361x260
+  1037.8  server  on screen alpha 1.00 at 696,533 255x213
+  1055.6  server  on screen alpha 1.00 at 779,574 172x172
+  1075.0  server  on screen alpha 1.00 at 840,612 111x134
+  1094.5  server  on screen alpha 1.00 at 880,644 71x102
+  1114.9  server  on screen alpha 1.00 at 904,674 47x72
+  1139.0  server  on screen alpha 1.00 at 914,698 37x48
+  1156.4  server  on screen alpha 1.00 at 916,706 35x40
+  1175.8  server  on screen alpha 1.00 at 916,715 35x31
+  1191.9  server  on screen alpha 1.00 at 916,717 35x29
+  1296.9  server  not listed
+  1307.8  app     AXFocusedWindowChanged w31
+  1308.5  probe   read AXMinimized of the other window -> no, asked at 1308.0, 0.3 ms
+  1308.6  probe   read AXMinimized -> yes, asked at 1308.5, 0.1 ms
+  1309.5  app     AXMainWindowChanged w31
+  1309.6  app     AXWindowMiniaturized w29
+  2618.0  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, both
+    17.3  flight  watching w29 of 36439, mode both; AXMinimized no
+    36.1  server  on screen alpha 1.00 at 170,220 480x348
+   758.8  hand    a key went down 7 ms ago, a button came up 2437 ms ago
+   800.6  server  on screen alpha 1.00 at 170,220 483x348
+   821.3  server  on screen alpha 1.00 at 170,220 491x348
+   839.7  server  on screen alpha 1.00 at 170,220 504x348
+   855.6  server  on screen alpha 1.00 at 170,220 512x348
+   869.8  server  on screen alpha 1.00 at 170,220 531x348
+   891.3  server  on screen alpha 1.00 at 170,220 553x348
+   905.3  server  on screen alpha 1.00 at 170,220 577x348
+   923.0  server  on screen alpha 1.00 at 170,220 602x348
+   951.3  server  on screen alpha 1.00 at 170,221 628x349
+   966.6  server  on screen alpha 1.00 at 170,229 660x349
+   985.1  server  on screen alpha 1.00 at 173,244 686x349
+  1006.3  server  on screen alpha 1.00 at 184,266 706x349
+  1022.3  server  on screen alpha 1.00 at 208,293 711x349
+  1039.5  server  on screen alpha 1.00 at 251,326 690x349
+  1056.0  server  on screen alpha 1.00 at 287,347 661x349
+  1077.9  server  on screen alpha 1.00 at 368,389 583x349
+  1103.4  server  on screen alpha 1.00 at 514,454 437x292
+  1120.6  server  on screen alpha 1.00 at 618,498 333x248
+  1140.9  server  on screen alpha 1.00 at 681,526 270x220
+  1154.6  server  on screen alpha 1.00 at 764,566 187x180
+  1171.5  server  on screen alpha 1.00 at 808,591 143x155
+  1192.9  server  on screen alpha 1.00 at 877,642 74x104
+  1202.8  server  on screen alpha 1.00 at 891,657 60x89
+  1222.8  server  on screen alpha 1.00 at 903,673 48x73
+  1239.1  server  on screen alpha 1.00 at 913,695 38x51
+  1253.8  server  on screen alpha 1.00 at 916,709 35x37
+  1267.4  server  on screen alpha 1.00 at 916,714 35x32
+  1285.3  server  on screen alpha 1.00 at 916,717 35x29
+  1373.3  server  not listed
+  1378.2  app     AXFocusedWindowChanged w31
+  1378.8  probe   set AXMain -> error 0, asked at 1378.3, 0.6 ms
+  1406.0  server  on screen alpha 1.00 at 916,716 35x30
+  1422.8  server  on screen alpha 1.00 at 916,709 35x37
+  1445.6  server  on screen alpha 1.00 at 912,693 39x53
+  1467.5  server  on screen alpha 1.00 at 901,670 50x76
+  1485.1  server  on screen alpha 1.00 at 877,642 74x104
+  1505.1  server  on screen alpha 1.00 at 824,601 127x145
+  1525.9  server  on screen alpha 1.00 at 755,562 196x184
+  1543.6  server  on screen alpha 1.00 at 655,514 296x232
+  1555.9  server  on screen alpha 1.00 at 605,492 346x254
+  1573.0  server  on screen alpha 1.00 at 506,450 445x296
+  1588.9  server  on screen alpha 1.00 at 456,429 495x317
+  1611.5  server  on screen alpha 1.00 at 360,385 591x349
+  1637.1  server  on screen alpha 1.00 at 245,322 694x349
+  1655.7  server  on screen alpha 1.00 at 204,290 712x349
+  1677.4  server  on screen alpha 1.00 at 180,259 702x349
+  1695.4  server  on screen alpha 1.00 at 172,238 677x349
+  1723.3  server  on screen alpha 1.00 at 170,224 643x349
+  1746.5  server  on screen alpha 1.00 at 170,220 616x349
+  1754.0  server  on screen alpha 1.00 at 170,220 603x348
+  1772.7  server  on screen alpha 1.00 at 170,220 576x348
+  1794.2  server  on screen alpha 1.00 at 170,220 551x348
+  1817.2  server  on screen alpha 1.00 at 170,220 518x348
+  1837.9  server  on screen alpha 1.00 at 170,220 500x348
+  1849.5  server  on screen alpha 1.00 at 170,220 493x348
+  1870.4  server  on screen alpha 1.00 at 170,220 484x348
+  1878.7  server  on screen alpha 1.00 at 170,220 482x348
+  1899.6  server  on screen alpha 1.00 at 170,220 480x348
+  1911.1  probe   AXRaise -> error 0, asked at 1378.9, 532.1 ms
+  1912.7  app     AXMainWindowChanged w31
+  1912.9  app     AXWindowMiniaturized w29
+  1913.1  app     AXFocusedWindowChanged w29
+  1913.6  app     AXMainWindowChanged w29
+  1913.6  app     AXWindowDeminiaturized w29
+  2625.7  flight  the end: AXMinimized no
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, key, guarded
+     8.7  flight  watching w29 of 36439, mode guarded; AXMinimized no
+    16.4  server  on screen alpha 1.00 at 170,220 480x348
+   661.2  hand    a key went down 3 ms ago, a button came up 2379 ms ago
+   702.1  server  on screen alpha 1.00 at 170,220 483x348
+   725.3  server  on screen alpha 1.00 at 170,220 493x348
+   742.6  server  on screen alpha 1.00 at 170,220 500x348
+   760.3  server  on screen alpha 1.00 at 170,220 519x348
+   776.1  server  on screen alpha 1.00 at 170,220 538x348
+   792.0  server  on screen alpha 1.00 at 170,220 551x348
+   808.6  server  on screen alpha 1.00 at 170,220 579x348
+   828.3  server  on screen alpha 1.00 at 170,220 607x348
+   849.2  server  on screen alpha 1.00 at 170,220 624x349
+   864.5  server  on screen alpha 1.00 at 170,226 651x349
+   881.0  server  on screen alpha 1.00 at 172,240 680x349
+   900.3  server  on screen alpha 1.00 at 182,262 704x349
+   913.9  server  on screen alpha 1.00 at 194,279 712x349
+   930.8  server  on screen alpha 1.00 at 212,297 710x349
+   953.4  server  on screen alpha 1.00 at 292,351 657x349
+   980.4  server  on screen alpha 1.00 at 375,393 576x349
+   996.3  server  on screen alpha 1.00 at 469,435 482x311
+  1015.0  server  on screen alpha 1.00 at 578,481 373x265
+  1031.0  server  on screen alpha 1.00 at 638,507 313x239
+  1047.0  server  on screen alpha 1.00 at 735,551 216x195
+  1064.4  server  on screen alpha 1.00 at 780,575 171x171
+  1077.8  server  on screen alpha 1.00 at 841,613 110x133
+  1092.7  server  on screen alpha 1.00 at 868,634 83x112
+  1112.9  server  on screen alpha 1.00 at 897,664 54x82
+  1129.6  server  on screen alpha 1.00 at 910,687 41x59
+  1157.4  server  on screen alpha 1.00 at 915,705 36x41
+  1177.6  server  on screen alpha 1.00 at 916,715 35x31
+  1196.6  server  on screen alpha 1.00 at 916,717 35x29
+  1235.1  server  not listed
+  1238.5  app     AXFocusedWindowChanged w31
+  1238.8  probe   read AXMinimized -> yes, asked at 1238.6, 0.1 ms
+  1238.8  probe   left alone
+  1241.9  app     AXMainWindowChanged w31
+  1242.2  app     AXWindowMiniaturized w29
+  2619.1  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, late
+     7.6  flight  watching w29 of 36439, mode late; AXMinimized no
+    12.9  server  on screen alpha 1.00 at 170,220 480x348
+   670.9  hand    a key went down 9 ms ago, a button came up 2172 ms ago
+   695.3  server  on screen alpha 1.00 at 170,220 481x348
+   716.3  server  on screen alpha 1.00 at 170,220 487x348
+   729.5  server  on screen alpha 1.00 at 170,220 494x348
+   748.0  server  on screen alpha 1.00 at 170,220 509x348
+   769.6  server  on screen alpha 1.00 at 170,220 531x348
+   781.7  server  on screen alpha 1.00 at 170,220 541x348
+   798.3  server  on screen alpha 1.00 at 170,220 565x348
+   813.4  server  on screen alpha 1.00 at 170,220 579x348
+   831.6  server  on screen alpha 1.00 at 170,220 605x348
+   848.6  server  on screen alpha 1.00 at 170,221 632x349
+   866.5  server  on screen alpha 1.00 at 170,227 652x349
+   882.7  server  on screen alpha 1.00 at 170,232 666x349
+   894.4  server  on screen alpha 1.00 at 176,252 695x349
+   915.3  server  on screen alpha 1.00 at 192,276 710x349
+   931.1  server  on screen alpha 1.00 at 206,291 711x349
+   948.0  server  on screen alpha 1.00 at 254,327 687x349
+   968.6  server  on screen alpha 1.00 at 318,364 632x349
+   994.0  server  on screen alpha 1.00 at 453,428 498x318
+  1014.3  server  on screen alpha 1.00 at 554,471 397x275
+  1031.9  server  on screen alpha 1.00 at 658,515 293x231
+  1053.3  server  on screen alpha 1.00 at 758,563 193x183
+  1074.3  server  on screen alpha 1.00 at 828,604 123x142
+  1099.0  server  on screen alpha 1.00 at 876,641 75x105
+  1116.5  server  on screen alpha 1.00 at 901,671 50x75
+  1128.4  server  on screen alpha 1.00 at 908,683 43x63
+  1135.3  server  on screen alpha 1.00 at 913,693 38x53
+  1149.8  server  on screen alpha 1.00 at 915,701 36x45
+  1163.9  server  on screen alpha 1.00 at 916,713 35x33
+  1183.9  server  on screen alpha 1.00 at 916,717 35x29
+  1200.0  server  not listed
+  1204.1  app     AXFocusedWindowChanged w31
+  1204.4  app     AXMainWindowChanged w31
+  1204.5  app     AXWindowMiniaturized w29
+  1308.3  probe   read AXMinimized -> yes, asked at 1307.8, 0.4 ms
+  1308.4  probe   left alone
+  2623.9  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, main
+    10.1  flight  watching w29 of 36439, mode main; AXMinimized no
+    19.1  server  on screen alpha 1.00 at 170,220 480x348
+   667.4  hand    a key went down 10 ms ago, a button came up 2272 ms ago
+   700.9  server  on screen alpha 1.00 at 170,220 483x348
+   725.2  server  on screen alpha 1.00 at 170,220 493x348
+   742.6  server  on screen alpha 1.00 at 170,220 500x348
+   764.2  server  on screen alpha 1.00 at 170,220 519x348
+   785.2  server  on screen alpha 1.00 at 170,220 552x348
+   795.6  server  on screen alpha 1.00 at 170,220 565x348
+   812.9  server  on screen alpha 1.00 at 170,220 580x348
+   827.0  server  on screen alpha 1.00 at 170,220 606x348
+   842.1  server  on screen alpha 1.00 at 170,220 623x349
+   863.4  server  on screen alpha 1.00 at 170,227 652x349
+   873.4  server  on screen alpha 1.00 at 171,234 669x349
+   883.5  server  on screen alpha 1.00 at 173,242 682x349
+   891.1  server  on screen alpha 1.00 at 176,251 695x349
+   910.6  server  on screen alpha 1.00 at 192,277 711x349
+   925.2  server  on screen alpha 1.00 at 213,297 709x349
+   934.0  server  on screen alpha 1.00 at 237,316 698x349
+   961.8  server  on screen alpha 1.00 at 308,359 642x349
+   980.2  server  on screen alpha 1.00 at 387,398 564x348
+   995.9  server  on screen alpha 1.00 at 489,443 462x303
+  1013.1  server  on screen alpha 1.00 at 534,462 417x284
+  1030.1  server  on screen alpha 1.00 at 635,505 316x241
+  1050.0  server  on screen alpha 1.00 at 724,546 227x200
+  1063.5  server  on screen alpha 1.00 at 805,589 146x157
+  1079.7  server  on screen alpha 1.00 at 835,609 116x137
+  1096.0  server  on screen alpha 1.00 at 878,643 73x103
+  1117.4  server  on screen alpha 1.00 at 905,676 46x70
+  1127.7  server  on screen alpha 1.00 at 910,687 41x59
+  1148.1  server  on screen alpha 1.00 at 915,706 36x40
+  1160.0  server  on screen alpha 1.00 at 916,711 35x35
+  1176.5  server  on screen alpha 1.00 at 916,715 35x31
+  1195.9  server  not listed
+  1200.6  app     AXFocusedWindowChanged w31
+  1201.1  probe   set AXMain -> error 0, asked at 1200.8, 0.2 ms
+  1201.2  app     AXMainWindowChanged w31
+  1201.3  app     AXWindowMiniaturized w29
+  2610.9  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, raise
+     9.6  flight  watching w29 of 36439, mode raise; AXMinimized no
+    18.7  server  on screen alpha 1.00 at 170,220 480x348
+   692.1  hand    a key went down 11 ms ago, a button came up 2409 ms ago
+   723.3  server  on screen alpha 1.00 at 170,220 481x348
+   743.5  server  on screen alpha 1.00 at 170,220 483x348
+   755.1  server  on screen alpha 1.00 at 170,220 492x348
+   776.5  server  on screen alpha 1.00 at 170,220 506x348
+   788.9  server  on screen alpha 1.00 at 170,220 516x348
+   809.5  server  on screen alpha 1.00 at 170,220 537x348
+   825.5  server  on screen alpha 1.00 at 170,220 562x348
+   845.3  server  on screen alpha 1.00 at 170,220 588x348
+   859.8  server  on screen alpha 1.00 at 170,220 601x348
+   872.6  server  on screen alpha 1.00 at 170,220 615x349
+   886.5  server  on screen alpha 1.00 at 170,224 643x349
+   905.3  server  on screen alpha 1.00 at 171,235 672x349
+   922.3  server  on screen alpha 1.00 at 174,246 688x349
+   942.6  server  on screen alpha 1.00 at 188,271 709x349
+   957.6  server  on screen alpha 1.00 at 217,301 708x349
+   975.1  server  on screen alpha 1.00 at 245,322 694x349
+   992.1  server  on screen alpha 1.00 at 308,359 642x349
+  1011.2  server  on screen alpha 1.00 at 403,406 548x340
+  1027.0  server  on screen alpha 1.00 at 448,426 503x320
+  1039.5  server  on screen alpha 1.00 at 549,469 402x277
+  1058.9  server  on screen alpha 1.00 at 651,512 300x234
+  1076.6  server  on screen alpha 1.00 at 699,534 252x212
+  1090.4  server  on screen alpha 1.00 at 780,575 171x171
+  1108.9  server  on screen alpha 1.00 at 841,613 110x133
+  1124.8  server  on screen alpha 1.00 at 870,636 81x110
+  1142.0  server  on screen alpha 1.00 at 898,666 53x80
+  1159.4  server  on screen alpha 1.00 at 908,681 43x65
+  1172.8  server  on screen alpha 1.00 at 914,700 37x46
+  1183.1  server  on screen alpha 1.00 at 916,708 35x38
+  1203.9  server  on screen alpha 1.00 at 916,716 35x30
+  1221.5  server  on screen alpha 1.00 at 916,717 35x29
+  1232.0  app     AXFocusedWindowChanged w31
+  1259.6  server  not listed
+  1273.3  server  on screen alpha 1.00 at 916,717 35x29
+  1282.9  server  on screen alpha 1.00 at 916,716 35x30
+  1306.5  server  on screen alpha 1.00 at 916,706 35x40
+  1326.0  server  on screen alpha 1.00 at 911,689 40x57
+  1343.0  server  on screen alpha 1.00 at 904,674 47x72
+  1358.1  server  on screen alpha 1.00 at 880,645 71x101
+  1369.9  server  on screen alpha 1.00 at 860,627 91x119
+  1387.0  server  on screen alpha 1.00 at 831,606 120x140
+  1408.5  server  on screen alpha 1.00 at 750,559 201x187
+  1425.1  server  on screen alpha 1.00 at 662,517 289x229
+  1442.9  server  on screen alpha 1.00 at 563,475 388x271
+  1461.6  server  on screen alpha 1.00 at 502,449 449x297
+  1473.3  server  on screen alpha 1.00 at 406,407 545x339
+  1492.7  server  on screen alpha 1.00 at 349,380 602x349
+  1508.9  server  on screen alpha 1.00 at 278,342 669x349
+  1526.4  server  on screen alpha 1.00 at 220,303 707x349
+  1537.2  server  on screen alpha 1.00 at 204,289 712x349
+  1558.7  server  on screen alpha 1.00 at 182,262 704x349
+  1574.2  server  on screen alpha 1.00 at 172,241 682x349
+  1588.4  server  on screen alpha 1.00 at 170,231 663x349
+  1607.2  server  on screen alpha 1.00 at 170,221 633x349
+  1627.0  server  on screen alpha 1.00 at 170,220 616x349
+  1649.3  server  on screen alpha 1.00 at 170,220 575x348
+  1676.5  server  on screen alpha 1.00 at 170,220 547x348
+  1700.1  server  on screen alpha 1.00 at 170,220 524x348
+  1722.2  server  on screen alpha 1.00 at 170,220 498x348
+  1733.7  server  on screen alpha 1.00 at 170,220 491x348
+  1756.6  server  on screen alpha 1.00 at 170,220 483x348
+  1777.7  server  on screen alpha 1.00 at 170,220 480x348
+  1784.2  probe   AXRaise -> error 0, asked at 1232.2, 552.0 ms
+  1786.9  app     AXMainWindowChanged w31
+  1787.2  app     AXWindowMiniaturized w29
+  1787.3  app     AXFocusedWindowChanged w29
+  1787.4  app     AXMainWindowChanged w29
+  1787.4  app     AXWindowDeminiaturized w29
+  2616.5  flight  the end: AXMinimized no
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, key, rest-main
+     9.3  flight  watching w29 of 36439, mode rest-main; AXMinimized no
+    15.6  server  on screen alpha 1.00 at 170,220 480x348
+   576.7  hand    a key went down 2 ms ago, a button came up 2152 ms ago
+   608.5  server  on screen alpha 1.00 at 170,220 481x348
+   625.2  server  on screen alpha 1.00 at 170,220 486x348
+   645.9  server  on screen alpha 1.00 at 170,220 496x348
+   666.1  server  on screen alpha 1.00 at 170,220 511x348
+   678.6  server  on screen alpha 1.00 at 170,220 520x348
+   697.9  server  on screen alpha 1.00 at 170,220 551x348
+   721.3  server  on screen alpha 1.00 at 170,220 575x348
+   741.3  server  on screen alpha 1.00 at 170,220 600x348
+   755.0  server  on screen alpha 1.00 at 170,220 626x349
+   766.1  server  on screen alpha 1.00 at 170,223 639x349
+   785.4  server  on screen alpha 1.00 at 171,233 667x349
+   793.0  server  on screen alpha 1.00 at 172,241 681x349
+   813.9  server  on screen alpha 1.00 at 181,261 703x349
+   826.2  server  on screen alpha 1.00 at 190,273 709x349
+   840.2  server  on screen alpha 1.00 at 218,302 708x349
+   854.8  server  on screen alpha 1.00 at 237,316 699x349
+   869.0  server  on screen alpha 1.00 at 293,351 656x349
+   885.9  server  on screen alpha 1.00 at 364,387 587x349
+   902.9  server  on screen alpha 1.00 at 453,428 498x318
+   922.8  server  on screen alpha 1.00 at 551,470 400x276
+   941.2  server  on screen alpha 1.00 at 652,513 299x233
+   959.6  server  on screen alpha 1.00 at 738,553 213x193
+   974.8  server  on screen alpha 1.00 at 776,573 175x173
+   989.2  server  on screen alpha 1.00 at 835,609 116x137
+  1006.6  server  on screen alpha 1.00 at 877,642 74x104
+  1025.1  server  on screen alpha 1.00 at 900,669 51x77
+  1035.3  server  on screen alpha 1.00 at 907,680 44x66
+  1051.4  server  on screen alpha 1.00 at 912,691 39x55
+  1071.2  server  on screen alpha 1.00 at 916,711 35x35
+  1091.1  server  on screen alpha 1.00 at 916,717 35x29
+  1108.0  server  not listed
+  1115.3  app     AXFocusedWindowChanged w31
+  1115.6  app     AXMainWindowChanged w31
+  1115.7  app     AXWindowMiniaturized w29
+  1618.5  probe   set AXMain -> error 0, asked at 1618.2, 0.2 ms
+  2613.4  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, rest-raise
+     9.3  flight  watching w29 of 36439, mode rest-raise; AXMinimized no
+    15.2  server  on screen alpha 1.00 at 170,220 480x348
+   694.4  hand    a key went down 18 ms ago, a button came up 2410 ms ago
+   715.5  server  on screen alpha 1.00 at 170,220 483x348
+   723.7  server  on screen alpha 1.00 at 170,220 487x348
+   740.0  server  on screen alpha 1.00 at 170,220 493x348
+   756.7  server  on screen alpha 1.00 at 170,220 508x348
+   777.6  server  on screen alpha 1.00 at 170,220 528x348
+   796.5  server  on screen alpha 1.00 at 170,220 550x348
+   816.2  server  on screen alpha 1.00 at 170,220 575x348
+   825.6  server  on screen alpha 1.00 at 170,220 587x348
+   843.9  server  on screen alpha 1.00 at 170,220 612x348
+   860.0  server  on screen alpha 1.00 at 170,221 628x349
+   875.7  server  on screen alpha 1.00 at 170,228 657x349
+   898.1  server  on screen alpha 1.00 at 173,244 686x349
+   924.6  server  on screen alpha 1.00 at 194,279 712x349
+   945.3  server  on screen alpha 1.00 at 234,314 700x349
+   966.1  server  on screen alpha 1.00 at 294,351 655x349
+   975.0  server  on screen alpha 1.00 at 329,370 622x349
+   991.5  server  on screen alpha 1.00 at 385,397 566x349
+  1012.7  server  on screen alpha 1.00 at 478,439 473x307
+  1023.9  server  on screen alpha 1.00 at 527,459 424x287
+  1037.1  server  on screen alpha 1.00 at 629,503 322x243
+  1059.7  server  on screen alpha 1.00 at 724,546 227x200
+  1075.1  server  on screen alpha 1.00 at 800,586 151x160
+  1090.7  server  on screen alpha 1.00 at 836,610 115x136
+  1096.6  server  on screen alpha 1.00 at 860,627 91x119
+  1107.0  server  on screen alpha 1.00 at 878,643 73x103
+  1127.5  server  on screen alpha 1.00 at 904,674 47x72
+  1142.2  server  on screen alpha 1.00 at 910,686 41x60
+  1158.3  server  on screen alpha 1.00 at 915,704 36x42
+  1175.5  server  on screen alpha 1.00 at 916,712 35x34
+  1193.6  server  on screen alpha 1.00 at 916,717 35x29
+  1211.8  server  not listed
+  1219.3  app     AXFocusedWindowChanged w31
+  1219.7  app     AXMainWindowChanged w31
+  1219.7  app     AXWindowMiniaturized w29
+  1743.7  server  on screen alpha 1.00 at 916,716 35x30
+  1759.9  server  on screen alpha 1.00 at 916,713 35x33
+  1777.2  server  on screen alpha 1.00 at 915,702 36x44
+  1792.2  server  on screen alpha 1.00 at 909,683 42x63
+  1812.6  server  on screen alpha 1.00 at 891,657 60x89
+  1826.6  server  on screen alpha 1.00 at 877,642 74x104
+  1843.9  server  on screen alpha 1.00 at 835,609 116x137
+  1865.6  server  on screen alpha 1.00 at 768,568 183x178
+  1873.2  server  on screen alpha 1.00 at 729,548 222x198
+  1892.1  server  on screen alpha 1.00 at 677,524 274x222
+  1905.4  server  on screen alpha 1.00 at 576,480 375x266
+  1925.6  server  on screen alpha 1.00 at 467,434 484x312
+  1942.9  server  on screen alpha 1.00 at 375,393 576x349
+  1964.6  server  on screen alpha 1.00 at 298,354 651x349
+  1971.9  server  on screen alpha 1.00 at 267,336 678x349
+  1989.2  server  on screen alpha 1.00 at 238,317 698x349
+  2009.0  server  on screen alpha 1.00 at 195,280 711x349
+  2027.0  server  on screen alpha 1.00 at 177,253 696x349
+  2043.6  server  on screen alpha 1.00 at 173,242 683x349
+  2062.3  server  on screen alpha 1.00 at 170,228 657x349
+  2077.0  server  on screen alpha 1.00 at 170,221 629x349
+  2094.4  server  on screen alpha 1.00 at 170,220 602x348
+  2106.7  server  on screen alpha 1.00 at 170,220 589x348
+  2127.1  server  on screen alpha 1.00 at 170,220 564x348
+  2141.2  server  on screen alpha 1.00 at 170,220 540x348
+  2162.5  server  on screen alpha 1.00 at 170,220 516x348
+  2173.8  server  on screen alpha 1.00 at 170,220 508x348
+  2190.8  server  on screen alpha 1.00 at 170,220 499x348
+  2210.2  server  on screen alpha 1.00 at 170,220 488x348
+  2229.0  server  on screen alpha 1.00 at 170,220 481x348
+  2243.6  server  on screen alpha 1.00 at 170,220 480x348
+  2254.7  probe   AXRaise -> error 0, asked at 1721.0, 533.6 ms
+  2255.5  app     AXFocusedWindowChanged w29
+  2256.4  app     AXMainWindowChanged w29
+  2256.5  app     AXWindowDeminiaturized w29
+  2622.6  flight  the end: AXMinimized no
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, button, poll
+    14.8  flight  watching w29 of 36439, mode poll; AXMinimized no
+    15.5  asked   AXMinimized no, asked at 14.9, 0.6 ms
+    24.4  server  on screen alpha 1.00 at 170,220 480x348
+  1127.4  hand    a key went down 7286 ms ago, a button came up 15 ms ago
+  1160.8  server  on screen alpha 1.00 at 170,220 484x348
+  1172.2  server  on screen alpha 1.00 at 170,220 492x348
+  1192.5  server  on screen alpha 1.00 at 170,220 506x348
+  1209.1  server  on screen alpha 1.00 at 170,220 517x348
+  1225.1  server  on screen alpha 1.00 at 170,220 537x348
+  1233.3  server  on screen alpha 1.00 at 170,220 550x348
+  1257.3  server  on screen alpha 1.00 at 170,220 574x348
+  1272.6  server  on screen alpha 1.00 at 170,220 599x348
+  1287.9  server  on screen alpha 1.00 at 170,220 615x349
+  1308.8  server  on screen alpha 1.00 at 170,224 644x349
+  1313.9  server  on screen alpha 1.00 at 170,229 659x349
+  1323.7  server  on screen alpha 1.00 at 171,236 673x349
+  1344.6  server  on screen alpha 1.00 at 175,248 690x349
+  1365.4  server  on screen alpha 1.00 at 200,285 712x349
+  1386.0  server  on screen alpha 1.00 at 237,316 698x349
+  1407.4  server  on screen alpha 1.00 at 294,351 655x349
+  1425.5  server  on screen alpha 1.00 at 373,392 578x349
+  1441.9  server  on screen alpha 1.00 at 427,416 524x330
+  1458.7  server  on screen alpha 1.00 at 527,459 424x287
+  1478.5  server  on screen alpha 1.00 at 633,505 318x241
+  1492.1  server  on screen alpha 1.00 at 692,531 259x215
+  1509.1  server  on screen alpha 1.00 at 777,573 174x173
+  1524.9  server  on screen alpha 1.00 at 834,608 117x138
+  1540.9  server  on screen alpha 1.00 at 865,631 86x115
+  1559.5  server  on screen alpha 1.00 at 895,661 56x85
+  1576.9  server  on screen alpha 1.00 at 910,687 41x59
+  1598.0  server  on screen alpha 1.00 at 915,705 36x41
+  1621.1  server  on screen alpha 1.00 at 916,715 35x31
+  1638.5  server  on screen alpha 1.00 at 916,717 35x29
+  1677.9  server  not listed
+  1680.9  asked   the other window's AXMinimized no, asked at 1132.9, 547.9 ms
+  1681.0  app     AXFocusedWindowChanged w31
+  1681.1  asked   AXMinimized yes, asked at 1680.9, 0.2 ms
+  1681.8  app     AXMainWindowChanged w31
+  1681.8  app     AXWindowMiniaturized w29
+  2621.7  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, button, both
+    14.8  flight  watching w29 of 36439, mode both; AXMinimized no
+    21.3  server  on screen alpha 1.00 at 170,220 480x348
+  1134.1  hand    a key went down 14418 ms ago, a button came up 3 ms ago
+  1168.3  server  on screen alpha 1.00 at 170,220 483x348
+  1185.7  server  on screen alpha 1.00 at 170,220 486x348
+  1205.5  server  on screen alpha 1.00 at 170,220 503x348
+  1227.8  server  on screen alpha 1.00 at 170,220 520x348
+  1233.7  server  on screen alpha 1.00 at 170,220 530x348
+  1249.3  server  on screen alpha 1.00 at 170,220 541x348
+  1264.0  server  on screen alpha 1.00 at 170,220 565x348
+  1279.8  server  on screen alpha 1.00 at 170,220 577x348
+  1299.5  server  on screen alpha 1.00 at 170,220 602x348
+  1313.4  server  on screen alpha 1.00 at 170,220 627x349
+  1332.5  server  on screen alpha 1.00 at 170,228 656x349
+  1347.3  server  on screen alpha 1.00 at 171,234 670x349
+  1367.8  server  on screen alpha 1.00 at 182,263 705x349
+  1386.6  server  on screen alpha 1.00 at 206,291 711x349
+  1397.6  server  on screen alpha 1.00 at 224,306 705x349
+  1417.2  server  on screen alpha 1.00 at 282,345 666x349
+  1437.3  server  on screen alpha 1.00 at 355,383 596x349
+  1456.2  server  on screen alpha 1.00 at 443,423 508x323
+  1476.5  server  on screen alpha 1.00 at 540,465 411x281
+  1493.9  server  on screen alpha 1.00 at 638,507 313x239
+  1502.2  server  on screen alpha 1.00 at 684,527 267x219
+  1511.4  server  on screen alpha 1.00 at 727,548 224x198
+  1521.1  server  on screen alpha 1.00 at 766,567 185x179
+  1542.9  server  on screen alpha 1.00 at 830,606 121x140
+  1563.7  server  on screen alpha 1.00 at 873,638 78x108
+  1577.9  server  on screen alpha 1.00 at 899,666 52x80
+  1593.4  server  on screen alpha 1.00 at 906,679 45x67
+  1606.7  server  on screen alpha 1.00 at 914,699 37x47
+  1615.3  server  on screen alpha 1.00 at 915,705 36x41
+  1633.8  server  on screen alpha 1.00 at 916,715 35x31
+  1653.5  server  on screen alpha 1.00 at 916,717 35x29
+  1666.5  server  not listed
+  1694.5  app     AXFocusedWindowChanged w31
+  1696.2  probe   set AXMain -> error 0, asked at 1695.0, 1.2 ms
+  1715.3  server  on screen alpha 1.00 at 916,717 35x29
+  1730.1  server  on screen alpha 1.00 at 916,714 35x32
+  1739.4  server  on screen alpha 1.00 at 916,709 35x37
+  1759.7  server  on screen alpha 1.00 at 913,695 38x51
+  1779.3  server  on screen alpha 1.00 at 904,675 47x71
+  1799.7  server  on screen alpha 1.00 at 883,648 68x98
+  1816.0  server  on screen alpha 1.00 at 847,617 104x129
+  1833.1  server  on screen alpha 1.00 at 822,600 129x146
+  1849.6  server  on screen alpha 1.00 at 758,563 193x183
+  1861.6  server  on screen alpha 1.00 at 675,523 276x223
+  1880.2  server  on screen alpha 1.00 at 579,481 372x265
+  1899.9  server  on screen alpha 1.00 at 475,437 476x309
+  1916.2  server  on screen alpha 1.00 at 427,416 524x330
+  1935.4  server  on screen alpha 1.00 at 341,376 610x349
+  1949.5  server  on screen alpha 1.00 at 271,338 675x349
+  1967.7  server  on screen alpha 1.00 at 221,304 707x349
+  1982.9  server  on screen alpha 1.00 at 204,289 711x349
+  1990.1  server  on screen alpha 1.00 at 191,275 710x349
+  1997.1  server  on screen alpha 1.00 at 182,263 704x349
+  2013.2  server  on screen alpha 1.00 at 173,242 682x349
+  2027.9  server  on screen alpha 1.00 at 171,234 669x349
+  2043.6  server  on screen alpha 1.00 at 170,224 642x349
+  2060.2  server  on screen alpha 1.00 at 170,220 616x349
+  2077.3  server  on screen alpha 1.00 at 170,220 604x348
+  2087.3  server  on screen alpha 1.00 at 170,220 579x348
+  2105.1  server  on screen alpha 1.00 at 170,220 556x348
+  2114.3  server  on screen alpha 1.00 at 170,220 545x348
+  2133.0  server  on screen alpha 1.00 at 170,220 524x348
+  2150.9  server  on screen alpha 1.00 at 170,220 507x348
+  2160.0  server  on screen alpha 1.00 at 170,220 500x348
+  2179.9  server  on screen alpha 1.00 at 170,220 488x348
+  2199.2  server  on screen alpha 1.00 at 170,220 482x348
+  2215.9  server  on screen alpha 1.00 at 170,220 480x348
+  2225.0  probe   AXRaise -> error 0, asked at 1696.3, 528.8 ms
+  2227.1  app     AXMainWindowChanged w31
+  2227.6  app     AXWindowMiniaturized w29
+  2227.8  app     AXFocusedWindowChanged w29
+  2228.1  app     AXMainWindowChanged w29
+  2228.1  app     AXWindowDeminiaturized w29
+  2617.8  flight  the end: AXMinimized no
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, button, guarded
+    15.4  flight  watching w29 of 36439, mode guarded; AXMinimized no
+    22.1  server  on screen alpha 1.00 at 170,220 480x348
+  1066.7  hand    a key went down 21409 ms ago, a button came up 4 ms ago
+  1114.5  server  on screen alpha 1.00 at 170,220 481x348
+  1134.6  server  on screen alpha 1.00 at 170,220 487x348
+  1153.0  server  on screen alpha 1.00 at 170,220 498x348
+  1172.3  server  on screen alpha 1.00 at 170,220 514x348
+  1181.3  server  on screen alpha 1.00 at 170,220 524x348
+  1202.3  server  on screen alpha 1.00 at 170,220 545x348
+  1222.1  server  on screen alpha 1.00 at 170,220 569x348
+  1241.2  server  on screen alpha 1.00 at 170,220 595x348
+  1254.5  server  on screen alpha 1.00 at 170,220 613x348
+  1271.6  server  on screen alpha 1.00 at 170,220 626x349
+  1280.2  server  on screen alpha 1.00 at 170,223 639x349
+  1291.6  server  on screen alpha 1.00 at 171,234 669x349
+  1313.7  server  on screen alpha 1.00 at 178,255 698x349
+  1334.8  server  on screen alpha 1.00 at 195,280 711x349
+  1342.2  server  on screen alpha 1.00 at 210,295 710x349
+  1363.5  server  on screen alpha 1.00 at 253,327 688x349
+  1386.7  server  on screen alpha 1.00 at 321,366 630x349
+  1403.4  server  on screen alpha 1.00 at 405,407 546x339
+  1423.2  server  on screen alpha 1.00 at 506,450 445x296
+  1431.0  server  on screen alpha 1.00 at 556,472 395x274
+  1451.6  server  on screen alpha 1.00 at 658,515 293x231
+  1471.4  server  on screen alpha 1.00 at 745,556 206x190
+  1492.5  server  on screen alpha 1.00 at 813,595 138x151
+  1508.4  server  on screen alpha 1.00 at 866,632 85x114
+  1525.0  server  on screen alpha 1.00 at 883,648 68x98
+  1541.3  server  on screen alpha 1.00 at 905,676 46x70
+  1558.4  server  on screen alpha 1.00 at 911,690 40x56
+  1574.1  server  on screen alpha 1.00 at 916,707 35x39
+  1591.6  server  on screen alpha 1.00 at 916,716 35x30
+  1612.0  server  on screen alpha 1.00 at 916,717 35x29
+  1630.4  app     AXFocusedWindowChanged w31
+  1661.0  probe   read AXMinimized -> yes, asked at 1658.7, 2.1 ms
+  1661.2  probe   left alone
+  1662.2  server  not listed
+  1662.5  app     AXMainWindowChanged w31
+  1662.6  app     AXWindowMiniaturized w29
+  2618.5  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, ax, poll
+     8.9  flight  watching w29 of 36439, mode poll; AXMinimized no
+    10.2  asked   AXMinimized no, asked at 9.0, 1.1 ms
+    15.7  server  on screen alpha 1.00 at 170,220 480x348
+   594.3  server  on screen alpha 1.00 at 170,220 483x348
+   610.9  server  on screen alpha 1.00 at 170,220 491x348
+   616.1  server  on screen alpha 1.00 at 170,220 496x348
+   634.5  server  on screen alpha 1.00 at 170,220 511x348
+   644.7  server  on screen alpha 1.00 at 170,220 519x348
+   653.0  server  on screen alpha 1.00 at 170,220 529x348
+   671.9  server  on screen alpha 1.00 at 170,220 551x348
+   681.6  server  on screen alpha 1.00 at 170,220 563x348
+   700.8  server  on screen alpha 1.00 at 170,220 588x348
+   711.6  server  on screen alpha 1.00 at 170,220 600x348
+   719.3  server  on screen alpha 1.00 at 170,220 613x348
+   744.5  server  on screen alpha 1.00 at 170,223 639x349
+   761.6  server  on screen alpha 1.00 at 171,235 670x349
+   780.5  server  on screen alpha 1.00 at 177,253 696x349
+   797.6  server  on screen alpha 1.00 at 185,267 706x349
+   814.3  server  on screen alpha 1.00 at 214,299 710x349
+   833.8  server  on screen alpha 1.00 at 258,330 685x349
+   851.1  server  on screen alpha 1.00 at 334,372 617x349
+   872.9  server  on screen alpha 1.00 at 413,410 538x336
+   885.1  server  on screen alpha 1.00 at 459,430 492x316
+   898.1  server  on screen alpha 1.00 at 562,474 389x272
+   908.5  server  on screen alpha 1.00 at 619,498 332x248
+   917.9  server  on screen alpha 1.00 at 666,519 285x227
+   930.8  server  on screen alpha 1.00 at 719,543 232x203
+   948.7  server  on screen alpha 1.00 at 768,568 183x178
+   965.3  server  on screen alpha 1.00 at 837,610 114x136
+   971.8  server  on screen alpha 1.00 at 860,627 91x119
+  1001.8  server  on screen alpha 1.00 at 895,661 56x85
+  1023.6  server  on screen alpha 1.00 at 913,696 38x50
+  1033.1  server  on screen alpha 1.00 at 915,704 36x42
+  1050.9  server  on screen alpha 1.00 at 916,711 35x35
+  1066.3  server  on screen alpha 1.00 at 916,717 35x29
+  1096.7  app     AXFocusedWindowChanged w31
+  1097.0  asked   the other window's AXMinimized no, asked at 560.7, 536.1 ms
+  1097.1  app     AXMainWindowChanged w31
+  1097.2  app     AXWindowMiniaturized w29
+  1097.3  server  not listed
+  1097.4  asked   AXMinimized yes, asked at 1097.0, 0.3 ms
+  2611.7  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, ax, both
+     9.8  flight  watching w29 of 36439, mode both; AXMinimized no
+    16.4  server  on screen alpha 1.00 at 170,220 480x348
+   634.5  server  on screen alpha 1.00 at 170,220 481x348
+   649.6  server  on screen alpha 1.00 at 170,220 487x348
+   666.4  server  on screen alpha 1.00 at 170,220 494x348
+   683.0  server  on screen alpha 1.00 at 170,220 508x348
+   699.8  server  on screen alpha 1.00 at 170,220 528x348
+   712.2  server  on screen alpha 1.00 at 170,220 538x348
+   728.1  server  on screen alpha 1.00 at 170,220 560x348
+   746.3  server  on screen alpha 1.00 at 170,220 576x348
+   766.2  server  on screen alpha 1.00 at 170,220 604x348
+   772.3  server  on screen alpha 1.00 at 170,220 619x349
+   799.7  server  on screen alpha 1.00 at 170,227 652x349
+   816.1  server  on screen alpha 1.00 at 172,241 681x349
+   832.9  server  on screen alpha 1.00 at 177,253 696x349
+   846.4  server  on screen alpha 1.00 at 184,266 707x349
+   868.0  server  on screen alpha 1.00 at 231,312 702x349
+   878.3  server  on screen alpha 1.00 at 256,329 686x349
+   897.0  server  on screen alpha 1.00 at 290,349 659x349
+   913.7  server  on screen alpha 1.00 at 376,393 575x349
+   933.0  server  on screen alpha 1.00 at 473,436 478x310
+   951.4  server  on screen alpha 1.00 at 582,483 369x263
+   968.8  server  on screen alpha 1.00 at 677,524 274x222
+   983.1  server  on screen alpha 1.00 at 722,545 229x201
+   999.5  server  on screen alpha 1.00 at 800,586 151x160
+  1016.1  server  on screen alpha 1.00 at 834,608 117x138
+  1029.9  server  on screen alpha 1.00 at 877,642 74x104
+  1039.6  server  on screen alpha 1.00 at 892,658 59x88
+  1065.2  server  on screen alpha 1.00 at 910,686 41x60
+  1081.4  server  on screen alpha 1.00 at 914,697 37x49
+  1100.4  server  on screen alpha 1.00 at 916,712 35x34
+  1120.3  server  on screen alpha 1.00 at 916,717 35x29
+  1141.0  server  not listed
+  1154.5  app     AXFocusedWindowChanged w31
+  1155.0  probe   set AXMain -> error 0, asked at 1154.7, 0.3 ms
+  1162.1  server  off screen alpha 1.00 at 916,717 35x29
+  1178.0  server  on screen alpha 1.00 at 916,716 35x30
+  1190.9  server  on screen alpha 1.00 at 916,711 35x35
+  1211.8  server  on screen alpha 1.00 at 914,697 37x49
+  1229.0  server  on screen alpha 1.00 at 904,674 47x72
+  1249.1  server  on screen alpha 1.00 at 880,645 71x101
+  1266.5  server  on screen alpha 1.00 at 857,625 94x121
+  1281.6  server  on screen alpha 1.00 at 801,587 150x159
+  1300.0  server  on screen alpha 1.00 at 752,560 199x186
+  1314.9  server  on screen alpha 1.00 at 661,517 290x229
+  1332.0  server  on screen alpha 1.00 at 593,487 358x259
+  1349.6  server  on screen alpha 1.00 at 493,445 458x301
+  1370.2  server  on screen alpha 1.00 at 377,394 574x349
+  1383.0  server  on screen alpha 1.00 at 336,374 615x349
+  1393.9  server  on screen alpha 1.00 at 291,350 658x349
+  1412.8  server  on screen alpha 1.00 at 233,314 701x349
+  1429.9  server  on screen alpha 1.00 at 210,294 710x349
+  1451.3  server  on screen alpha 1.00 at 184,265 705x349
+  1472.1  server  on screen alpha 1.00 at 171,235 671x349
+  1495.3  server  on screen alpha 1.00 at 170,223 638x349
+  1513.5  server  on screen alpha 1.00 at 170,220 622x349
+  1533.9  server  on screen alpha 1.00 at 170,220 594x348
+  1549.5  server  on screen alpha 1.00 at 170,220 568x348
+  1564.9  server  on screen alpha 1.00 at 170,220 553x348
+  1583.3  server  on screen alpha 1.00 at 170,220 529x348
+  1599.0  server  on screen alpha 1.00 at 170,220 510x348
+  1613.0  server  on screen alpha 1.00 at 170,220 499x348
+  1621.8  server  on screen alpha 1.00 at 170,220 492x348
+  1631.7  server  on screen alpha 1.00 at 170,220 487x348
+  1646.1  server  on screen alpha 1.00 at 170,220 484x348
+  1668.1  server  on screen alpha 1.00 at 170,220 481x348
+  1680.0  probe   AXRaise -> error 0, asked at 1155.0, 524.9 ms
+  1682.8  app     AXMainWindowChanged w31
+  1683.1  app     AXWindowMiniaturized w29
+  1683.5  app     AXFocusedWindowChanged w29
+  1683.7  app     AXMainWindowChanged w29
+  1683.7  app     AXWindowDeminiaturized w29
+  1702.1  server  on screen alpha 1.00 at 170,220 480x348
+  2620.4  flight  the end: AXMinimized no
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, ax, guarded
+     8.5  flight  watching w29 of 36439, mode guarded; AXMinimized no
+    14.4  server  on screen alpha 1.00 at 170,220 480x348
+   585.6  server  on screen alpha 1.00 at 170,220 484x348
+   609.8  server  on screen alpha 1.00 at 170,220 494x348
+   625.5  server  on screen alpha 1.00 at 170,220 502x348
+   644.9  server  on screen alpha 1.00 at 170,220 524x348
+   663.2  server  on screen alpha 1.00 at 170,220 534x348
+   682.1  server  on screen alpha 1.00 at 170,220 560x348
+   697.8  server  on screen alpha 1.00 at 170,220 586x348
+   705.4  server  on screen alpha 1.00 at 170,220 599x348
+   727.6  server  on screen alpha 1.00 at 170,220 625x349
+   735.4  server  on screen alpha 1.00 at 170,223 639x349
+   747.9  server  on screen alpha 1.00 at 170,227 654x349
+   764.8  server  on screen alpha 1.00 at 173,243 684x349
+   785.0  server  on screen alpha 1.00 at 184,266 707x349
+   805.2  server  on screen alpha 1.00 at 211,296 710x349
+   826.2  server  on screen alpha 1.00 at 255,328 687x349
+   845.7  server  on screen alpha 1.00 at 320,365 631x349
+   865.1  server  on screen alpha 1.00 at 411,409 540x337
+   885.3  server  on screen alpha 1.00 at 521,457 430x289
+   898.7  server  on screen alpha 1.00 at 570,478 381x268
+   916.0  server  on screen alpha 1.00 at 679,525 272x221
+   931.3  server  on screen alpha 1.00 at 725,546 226x200
+   950.2  server  on screen alpha 1.00 at 805,589 146x157
+   964.9  server  on screen alpha 1.00 at 833,607 118x139
+   977.8  server  on screen alpha 1.00 at 876,642 75x104
+   998.2  server  on screen alpha 1.00 at 902,671 49x75
+  1015.0  server  on screen alpha 1.00 at 910,687 41x59
+  1031.2  server  on screen alpha 1.00 at 915,704 36x42
+  1051.4  server  on screen alpha 1.00 at 916,715 35x31
+  1065.7  server  on screen alpha 1.00 at 916,717 35x29
+  1085.5  server  not listed
+  1087.9  app     AXFocusedWindowChanged w31
+  1088.5  probe   read AXMinimized -> yes, asked at 1088.0, 0.4 ms
+  1088.5  probe   left alone
+  1088.6  app     AXMainWindowChanged w31
+  1088.6  app     AXWindowMiniaturized w29
+  2616.5  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- TextEdit, key, poll
+     7.8  flight  watching w37 of 36537, mode poll; AXMinimized no
+     8.3  asked   AXMinimized no, asked at 8.0, 0.3 ms
+    15.7  server  on screen alpha 1.00 at 108,85 673x439
+   533.3  asked   the other window's AXMinimized no, asked at 474.5, 58.7 ms
+   687.6  hand    a key went down 2 ms ago, a button came up 2308 ms ago
+   720.2  asked   the other window's AXMinimized no, asked at 707.3, 12.9 ms
+   778.9  server  on screen alpha 1.00 at 108,85 677x439
+   794.2  server  on screen alpha 1.00 at 108,85 679x439
+   811.7  server  on screen alpha 1.00 at 108,85 686x439
+   826.0  server  on screen alpha 1.00 at 108,85 696x439
+   847.6  server  on screen alpha 1.00 at 108,85 709x439
+   862.6  server  on screen alpha 1.00 at 108,85 716x439
+   878.1  server  on screen alpha 1.00 at 108,85 731x439
+   895.3  server  on screen alpha 1.00 at 108,85 738x439
+   908.2  server  on screen alpha 1.00 at 108,85 752x440
+   928.8  server  on screen alpha 1.00 at 108,93 767x440
+   942.3  server  on screen alpha 1.00 at 108,101 776x440
+   961.6  server  on screen alpha 1.00 at 113,122 788x440
+   978.2  server  on screen alpha 1.00 at 128,151 791x440
+   996.3  server  on screen alpha 1.00 at 159,189 776x440
+  1012.7  server  on screen alpha 1.00 at 189,215 754x440
+  1026.3  server  on screen alpha 1.00 at 255,261 695x440
+  1047.8  server  on screen alpha 1.00 at 349,316 602x429
+  1068.3  server  on screen alpha 1.00 at 460,373 491x372
+  1074.4  server  on screen alpha 1.00 at 514,400 437x345
+  1096.2  server  on screen alpha 1.00 at 636,462 315x283
+  1109.5  server  on screen alpha 1.00 at 690,491 261x254
+  1125.9  server  on screen alpha 1.00 at 742,521 209x224
+  1142.9  server  on screen alpha 1.00 at 821,575 130x170
+  1149.7  server  on screen alpha 1.00 at 850,599 101x146
+  1174.4  server  on screen alpha 1.00 at 891,644 60x101
+  1194.8  server  on screen alpha 1.00 at 909,677 42x68
+  1202.7  server  on screen alpha 1.00 at 913,691 38x54
+  1224.3  server  on screen alpha 1.00 at 916,709 35x36
+  1241.6  server  on screen alpha 1.00 at 916,715 35x30
+  1262.7  server  on screen alpha 1.00 at 916,718 35x27
+  1274.0  server  not listed
+  1393.8  app     AXFocusedWindowChanged w38
+  1394.5  asked   the other window's AXMinimized no, asked at 739.4, 655.0 ms
+  1402.8  app     AXMainWindowChanged w38
+  1403.1  app     AXWindowMiniaturized w37
+  1407.7  asked   AXMinimized yes, asked at 1407.5, 0.2 ms
+  2611.5  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, sparse
+     8.8  flight  watching w37 of 36537, mode sparse; AXMinimized no
+     9.2  asked   AXMinimized no, asked at 9.2, 0.0 ms
+    15.0  server  on screen alpha 1.00 at 108,85 673x439
+   631.4  hand    a key went down 4 ms ago, a button came up 2141 ms ago
+   666.1  server  on screen alpha 1.00 at 108,85 674x439
+   687.9  server  on screen alpha 1.00 at 108,85 677x439
+   707.7  server  on screen alpha 1.00 at 108,85 684x439
+   715.3  server  on screen alpha 1.00 at 108,85 688x439
+   735.8  server  on screen alpha 1.00 at 108,85 697x439
+   758.1  server  on screen alpha 1.00 at 108,85 711x439
+   778.1  server  on screen alpha 1.00 at 108,85 727x439
+   800.7  server  on screen alpha 1.00 at 108,85 743x439
+   827.3  server  on screen alpha 1.00 at 108,89 760x440
+   844.1  server  on screen alpha 1.00 at 109,102 776x440
+   859.4  server  on screen alpha 1.00 at 111,115 785x440
+   878.8  server  on screen alpha 1.00 at 123,144 792x440
+   893.0  server  on screen alpha 1.00 at 136,162 788x440
+   910.6  server  on screen alpha 1.00 at 173,201 766x440
+   932.5  server  on screen alpha 1.00 at 269,270 681x440
+   944.3  server  on screen alpha 1.00 at 312,295 639x440
+   959.3  server  on screen alpha 1.00 at 374,330 577x415
+   988.1  server  on screen alpha 1.00 at 552,419 399x326
+  1009.6  server  on screen alpha 1.00 at 656,472 295x273
+  1027.7  server  on screen alpha 1.00 at 743,522 208x223
+  1034.3  server  on screen alpha 1.00 at 786,549 165x196
+  1044.9  server  on screen alpha 1.00 at 819,573 132x172
+  1063.9  server  on screen alpha 1.00 at 869,617 82x128
+  1074.5  server  on screen alpha 1.00 at 885,636 66x109
+  1091.6  server  on screen alpha 1.00 at 897,654 54x91
+  1109.5  server  on screen alpha 1.00 at 911,683 40x62
+  1127.0  server  on screen alpha 1.00 at 915,704 36x41
+  1144.7  server  on screen alpha 1.00 at 916,716 35x29
+  1157.5  server  on screen alpha 1.00 at 916,718 35x27
+  1177.5  server  not listed
+  1212.7  app     AXFocusedWindowChanged w38
+  1213.1  app     AXMainWindowChanged w38
+  1213.1  app     AXWindowMiniaturized w37
+  1213.4  asked   the other window's AXMinimized no, asked at 640.7, 572.7 ms
+  1213.5  asked   AXMinimized yes, asked at 1213.4, 0.1 ms
+  2611.0  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, read
+     8.1  flight  watching w37 of 36537, mode read; AXMinimized no
+    15.5  server  on screen alpha 1.00 at 108,85 673x439
+   663.0  hand    a key went down 4 ms ago, a button came up 2077 ms ago
+   704.9  server  on screen alpha 1.00 at 108,85 674x439
+   721.2  server  on screen alpha 1.00 at 108,85 677x439
+   740.7  server  on screen alpha 1.00 at 108,85 683x439
+   761.8  server  on screen alpha 1.00 at 108,85 692x439
+   769.3  server  on screen alpha 1.00 at 108,85 697x439
+   788.2  server  on screen alpha 1.00 at 108,85 704x439
+   802.3  server  on screen alpha 1.00 at 108,85 717x439
+   819.2  server  on screen alpha 1.00 at 108,85 725x439
+   833.6  server  on screen alpha 1.00 at 108,85 740x439
+   852.9  server  on screen alpha 1.00 at 108,86 756x440
+   871.7  server  on screen alpha 1.00 at 108,92 766x440
+   886.7  server  on screen alpha 1.00 at 110,108 781x440
+   904.9  server  on screen alpha 1.00 at 118,134 791x440
+   919.0  server  on screen alpha 1.00 at 128,152 791x440
+   937.7  server  on screen alpha 1.00 at 161,191 775x440
+   954.7  server  on screen alpha 1.00 at 191,216 752x440
+   972.6  server  on screen alpha 1.00 at 265,267 685x440
+   988.3  server  on screen alpha 1.00 at 351,317 600x428
+  1007.4  server  on screen alpha 1.00 at 471,379 480x366
+  1028.2  server  on screen alpha 1.00 at 588,437 363x308
+  1052.7  server  on screen alpha 1.00 at 698,495 253x250
+  1071.9  server  on screen alpha 1.00 at 780,545 171x200
+  1088.4  server  on screen alpha 1.00 at 821,574 130x171
+  1108.3  server  on screen alpha 1.00 at 884,635 67x110
+  1121.4  server  on screen alpha 1.00 at 896,652 55x93
+  1138.0  server  on screen alpha 1.00 at 910,680 41x65
+  1152.2  server  on screen alpha 1.00 at 913,692 38x53
+  1172.5  server  on screen alpha 1.00 at 916,714 35x31
+  1202.6  server  not listed
+  1231.7  app     AXFocusedWindowChanged w38
+  1234.3  probe   read AXMinimized of the other window -> no, asked at 1231.9, 2.3 ms
+  1234.4  probe   read AXMinimized -> yes, asked at 1234.3, 0.1 ms
+  1234.5  app     AXMainWindowChanged w38
+  1234.5  app     AXWindowMiniaturized w37
+  2616.9  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, both
+     9.3  flight  watching w37 of 36537, mode both; AXMinimized no
+    16.8  server  on screen alpha 1.00 at 108,85 673x439
+   689.3  hand    a key went down 5 ms ago, a button came up 2349 ms ago
+   728.2  server  on screen alpha 1.00 at 108,85 674x439
+   745.5  server  on screen alpha 1.00 at 108,85 675x439
+   758.3  server  on screen alpha 1.00 at 108,85 680x439
+   773.9  server  on screen alpha 1.00 at 108,85 684x439
+   791.3  server  on screen alpha 1.00 at 108,85 693x439
+   811.9  server  on screen alpha 1.00 at 108,85 704x439
+   829.6  server  on screen alpha 1.00 at 108,85 719x439
+   844.8  server  on screen alpha 1.00 at 108,85 725x439
+   863.0  server  on screen alpha 1.00 at 108,85 739x439
+   885.4  server  on screen alpha 1.00 at 108,86 754x440
+   907.7  server  on screen alpha 1.00 at 109,102 776x440
+   928.2  server  on screen alpha 1.00 at 114,124 789x440
+   944.6  server  on screen alpha 1.00 at 130,155 791x440
+   965.2  server  on screen alpha 1.00 at 162,192 774x440
+   990.6  server  on screen alpha 1.00 at 250,258 700x440
+  1007.6  server  on screen alpha 1.00 at 287,280 664x440
+  1026.2  server  on screen alpha 1.00 at 377,331 574x414
+  1046.0  server  on screen alpha 1.00 at 534,410 417x335
+  1065.3  server  on screen alpha 1.00 at 642,465 309x280
+  1078.6  server  on screen alpha 1.00 at 692,492 259x253
+  1084.8  server  on screen alpha 1.00 at 736,518 215x227
+  1106.1  server  on screen alpha 1.00 at 812,568 139x177
+  1123.5  server  on screen alpha 1.00 at 841,591 110x154
+  1145.0  server  on screen alpha 1.00 at 896,652 55x93
+  1157.4  server  on screen alpha 1.00 at 905,668 46x77
+  1173.9  server  on screen alpha 1.00 at 914,693 37x52
+  1193.5  server  on screen alpha 1.00 at 916,711 35x34
+  1207.9  server  on screen alpha 1.00 at 916,717 35x28
+  1219.9  server  on screen alpha 1.00 at 916,718 35x27
+  1292.3  app     AXFocusedWindowChanged w38
+  1293.2  probe   set AXMain -> error 0, asked at 1293.0, 0.1 ms
+  1295.2  server  not listed
+  1311.4  server  on screen alpha 1.00 at 916,718 35x27
+  1319.1  server  on screen alpha 1.00 at 916,717 35x28
+  1338.4  server  on screen alpha 1.00 at 916,712 35x33
+  1356.2  server  on screen alpha 1.00 at 914,697 37x48
+  1371.9  server  on screen alpha 1.00 at 906,670 45x75
+  1396.0  server  on screen alpha 1.00 at 885,636 66x109
+  1411.9  server  on screen alpha 1.00 at 848,597 103x148
+  1430.4  server  on screen alpha 1.00 at 779,545 172x200
+  1446.4  server  on screen alpha 1.00 at 741,521 210x224
+  1460.1  server  on screen alpha 1.00 at 643,466 308x279
+  1481.9  server  on screen alpha 1.00 at 573,430 378x315
+  1492.3  server  on screen alpha 1.00 at 466,376 485x369
+  1512.9  server  on screen alpha 1.00 at 397,341 554x404
+  1534.0  server  on screen alpha 1.00 at 255,261 695x440
+  1558.5  server  on screen alpha 1.00 at 179,207 762x440
+  1578.9  server  on screen alpha 1.00 at 135,161 789x440
+  1590.4  server  on screen alpha 1.00 at 124,146 792x440
+  1606.5  server  on screen alpha 1.00 at 117,130 790x440
+  1622.0  server  on screen alpha 1.00 at 109,104 778x440
+  1645.6  server  on screen alpha 1.00 at 108,89 760x440
+  1662.6  server  on screen alpha 1.00 at 108,85 746x439
+  1678.5  server  on screen alpha 1.00 at 108,85 738x439
+  1696.3  server  on screen alpha 1.00 at 108,85 723x439
+  1711.4  server  on screen alpha 1.00 at 108,85 709x439
+  1728.7  server  on screen alpha 1.00 at 108,85 701x439
+  1745.2  server  on screen alpha 1.00 at 108,85 690x439
+  1762.0  server  on screen alpha 1.00 at 108,85 684x439
+  1778.0  server  on screen alpha 1.00 at 108,85 678x439
+  1792.3  server  on screen alpha 1.00 at 108,85 675x439
+  1813.8  server  on screen alpha 1.00 at 108,85 673x439
+  1849.6  probe   AXRaise -> error 0, asked at 1293.2, 529.1 ms
+  1851.4  app     AXMainWindowChanged w38
+  1851.5  app     AXWindowMiniaturized w37
+  1851.5  app     AXFocusedWindowChanged w37
+  1851.6  app     AXMainWindowChanged w37
+  1851.6  app     AXWindowDeminiaturized w37
+  2620.1  flight  the end: AXMinimized no
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, key, guarded
+     7.7  flight  watching w37 of 36537, mode guarded; AXMinimized no
+    16.8  server  on screen alpha 1.00 at 108,85 673x439
+   591.8  hand    a key went down 10 ms ago, a button came up 2094 ms ago
+   615.1  server  on screen alpha 1.00 at 108,85 674x439
+   631.4  server  on screen alpha 1.00 at 108,85 677x439
+   648.8  server  on screen alpha 1.00 at 108,85 680x439
+   660.5  server  on screen alpha 1.00 at 108,85 688x439
+   671.3  server  on screen alpha 1.00 at 108,85 694x439
+   692.1  server  on screen alpha 1.00 at 108,85 705x439
+   711.9  server  on screen alpha 1.00 at 108,85 719x439
+   732.9  server  on screen alpha 1.00 at 108,85 727x439
+   748.3  server  on screen alpha 1.00 at 108,85 742x439
+   770.9  server  on screen alpha 1.00 at 108,88 758x440
+   794.4  server  on screen alpha 1.00 at 110,108 781x440
+   808.9  server  on screen alpha 1.00 at 113,122 788x440
+   829.8  server  on screen alpha 1.00 at 131,156 790x440
+   847.6  server  on screen alpha 1.00 at 169,198 769x440
+   861.7  server  on screen alpha 1.00 at 203,225 742x440
+   882.5  server  on screen alpha 1.00 at 274,273 676x440
+   894.3  server  on screen alpha 1.00 at 326,303 625x440
+   911.3  server  on screen alpha 1.00 at 430,358 521x387
+   931.4  server  on screen alpha 1.00 at 537,412 414x333
+   950.0  server  on screen alpha 1.00 at 657,473 294x272
+   962.2  server  on screen alpha 1.00 at 704,499 247x246
+   980.7  server  on screen alpha 1.00 at 794,555 157x190
+   999.5  server  on screen alpha 1.00 at 851,599 100x146
+  1015.1  server  on screen alpha 1.00 at 871,620 80x125
+  1031.4  server  on screen alpha 1.00 at 899,658 52x87
+  1046.0  server  on screen alpha 1.00 at 908,675 43x70
+  1064.6  server  on screen alpha 1.00 at 915,699 36x46
+  1086.1  server  on screen alpha 1.00 at 916,715 35x30
+  1102.2  server  on screen alpha 1.00 at 916,718 35x27
+  1137.7  app     AXFocusedWindowChanged w38
+  1137.9  probe   read AXMinimized -> yes, asked at 1137.8, 0.1 ms
+  1137.9  probe   left alone
+  1138.0  app     AXMainWindowChanged w38
+  1138.0  app     AXWindowMiniaturized w37
+  1138.3  server  not listed
+  2610.3  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, late
+    11.2  flight  watching w37 of 36537, mode late; AXMinimized no
+    23.9  server  on screen alpha 1.00 at 108,85 673x439
+   691.0  hand    a key went down 15 ms ago, a button came up 2062 ms ago
+   731.3  server  on screen alpha 1.00 at 108,85 676x439
+   746.9  server  on screen alpha 1.00 at 108,85 681x439
+   759.3  server  on screen alpha 1.00 at 108,85 685x439
+   780.0  server  on screen alpha 1.00 at 108,85 694x439
+   797.1  server  on screen alpha 1.00 at 108,85 706x439
+   810.2  server  on screen alpha 1.00 at 108,85 714x439
+   819.1  server  on screen alpha 1.00 at 108,85 722x439
+   843.0  server  on screen alpha 1.00 at 108,85 738x439
+   864.1  server  on screen alpha 1.00 at 108,85 753x440
+   880.1  server  on screen alpha 1.00 at 108,90 763x440
+   895.5  server  on screen alpha 1.00 at 109,105 779x440
+   912.9  server  on screen alpha 1.00 at 116,130 791x440
+   934.4  server  on screen alpha 1.00 at 139,167 787x440
+   958.0  server  on screen alpha 1.00 at 179,206 762x440
+   963.2  server  on screen alpha 1.00 at 207,228 739x440
+   979.9  server  on screen alpha 1.00 at 240,251 709x440
+  1002.9  server  on screen alpha 1.00 at 323,302 628x440
+  1027.7  server  on screen alpha 1.00 at 486,386 465x359
+  1048.5  server  on screen alpha 1.00 at 589,438 362x307
+  1063.5  server  on screen alpha 1.00 at 690,491 261x254
+  1081.2  server  on screen alpha 1.00 at 785,548 166x197
+  1097.1  server  on screen alpha 1.00 at 818,572 133x173
+  1103.9  server  on screen alpha 1.00 at 848,597 103x148
+  1111.4  server  on screen alpha 1.00 at 869,618 82x127
+  1126.0  server  on screen alpha 1.00 at 890,642 61x103
+  1147.4  server  on screen alpha 1.00 at 908,676 43x69
+  1165.9  server  on screen alpha 1.00 at 915,701 36x44
+  1175.7  server  on screen alpha 1.00 at 916,709 35x36
+  1184.8  server  on screen alpha 1.00 at 916,714 35x31
+  1209.9  server  on screen alpha 1.00 at 916,718 35x27
+  1253.2  app     AXFocusedWindowChanged w38
+  1258.9  app     AXMainWindowChanged w38
+  1259.5  app     AXWindowMiniaturized w37
+  1260.0  server  not listed
+  1364.9  probe   read AXMinimized -> yes, asked at 1364.7, 0.2 ms
+  1365.0  probe   left alone
+  2623.3  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, main
+    12.4  flight  watching w37 of 36537, mode main; AXMinimized no
+    26.7  server  on screen alpha 1.00 at 108,85 673x439
+   661.6  hand    a key went down 15 ms ago, a button came up 2042 ms ago
+   699.3  server  on screen alpha 1.00 at 108,85 674x439
+   719.3  server  on screen alpha 1.00 at 108,85 677x439
+   729.1  server  on screen alpha 1.00 at 108,85 683x439
+   753.1  server  on screen alpha 1.00 at 108,85 693x439
+   761.2  server  on screen alpha 1.00 at 108,85 699x439
+   786.5  server  on screen alpha 1.00 at 108,85 712x439
+   805.3  server  on screen alpha 1.00 at 108,85 727x439
+   824.9  server  on screen alpha 1.00 at 108,85 742x439
+   837.2  server  on screen alpha 1.00 at 108,85 751x440
+   858.5  server  on screen alpha 1.00 at 108,93 767x440
+   879.3  server  on screen alpha 1.00 at 111,114 784x440
+   902.1  server  on screen alpha 1.00 at 124,145 792x440
+   925.2  server  on screen alpha 1.00 at 151,180 781x440
+   939.5  server  on screen alpha 1.00 at 198,222 746x440
+   959.3  server  on screen alpha 1.00 at 278,275 673x440
+   980.0  server  on screen alpha 1.00 at 376,331 575x414
+  1006.0  server  on screen alpha 1.00 at 499,393 452x352
+  1024.8  server  on screen alpha 1.00 at 611,449 340x296
+  1041.2  server  on screen alpha 1.00 at 708,501 243x244
+  1057.9  server  on screen alpha 1.00 at 750,526 201x219
+  1072.9  server  on screen alpha 1.00 at 817,571 134x174
+  1091.3  server  on screen alpha 1.00 at 867,615 84x130
+  1113.8  server  on screen alpha 1.00 at 896,652 55x93
+  1138.1  server  on screen alpha 1.00 at 914,694 37x51
+  1158.7  server  on screen alpha 1.00 at 916,711 35x34
+  1175.5  server  on screen alpha 1.00 at 916,716 35x29
+  1192.2  server  on screen alpha 1.00 at 916,718 35x27
+  1248.4  app     AXFocusedWindowChanged w38
+  1248.9  probe   set AXMain -> error 0, asked at 1248.6, 0.3 ms
+  1257.9  app     AXMainWindowChanged w38
+  1258.2  app     AXWindowMiniaturized w37
+  1259.3  server  not listed
+  2616.4  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, raise
+     7.3  flight  watching w37 of 36537, mode raise; AXMinimized no
+    13.8  server  on screen alpha 1.00 at 108,85 673x439
+   704.1  hand    a key went down 10 ms ago, a button came up 2050 ms ago
+   726.6  server  on screen alpha 1.00 at 108,85 674x439
+   742.4  server  on screen alpha 1.00 at 108,85 677x439
+   760.1  server  on screen alpha 1.00 at 108,85 683x439
+   779.1  server  on screen alpha 1.00 at 108,85 691x439
+   797.8  server  on screen alpha 1.00 at 108,85 696x439
+   808.1  server  on screen alpha 1.00 at 108,85 708x439
+   826.5  server  on screen alpha 1.00 at 108,85 714x439
+   840.7  server  on screen alpha 1.00 at 108,85 728x439
+   857.5  server  on screen alpha 1.00 at 108,85 742x439
+   875.6  server  on screen alpha 1.00 at 108,87 756x440
+   897.1  server  on screen alpha 1.00 at 108,97 772x440
+   910.1  server  on screen alpha 1.00 at 109,105 779x440
+   922.2  server  on screen alpha 1.00 at 116,129 790x440
+   939.5  server  on screen alpha 1.00 at 124,145 792x440
+   960.0  server  on screen alpha 1.00 at 150,180 782x440
+   977.8  server  on screen alpha 1.00 at 195,219 749x440
+   993.6  server  on screen alpha 1.00 at 262,265 688x440
+  1013.0  server  on screen alpha 1.00 at 348,315 603x430
+  1034.0  server  on screen alpha 1.00 at 445,366 506x379
+  1057.5  server  on screen alpha 1.00 at 604,445 347x300
+  1077.5  server  on screen alpha 1.00 at 704,499 247x246
+  1094.0  server  on screen alpha 1.00 at 784,548 167x197
+  1110.9  server  on screen alpha 1.00 at 843,593 108x152
+  1129.1  server  on screen alpha 1.00 at 882,632 69x113
+  1141.7  server  on screen alpha 1.00 at 895,650 56x95
+  1157.0  server  on screen alpha 1.00 at 910,679 41x66
+  1173.6  server  on screen alpha 1.00 at 913,691 38x54
+  1194.6  server  on screen alpha 1.00 at 916,714 35x31
+  1210.5  server  on screen alpha 1.00 at 916,717 35x28
+  1227.0  server  not listed
+  1282.4  app     AXFocusedWindowChanged w38
+  1311.5  server  off screen alpha 1.00 at 916,718 35x27
+  1325.6  server  on screen alpha 1.00 at 916,717 35x28
+  1343.4  server  on screen alpha 1.00 at 916,709 35x36
+  1360.4  server  on screen alpha 1.00 at 913,691 38x54
+  1374.2  server  on screen alpha 1.00 at 904,665 47x80
+  1398.6  server  on screen alpha 1.00 at 882,632 69x113
+  1422.8  server  on screen alpha 1.00 at 816,571 135x174
+  1443.8  server  on screen alpha 1.00 at 745,523 206x222
+  1460.9  server  on screen alpha 1.00 at 655,472 296x273
+  1477.2  server  on screen alpha 1.00 at 551,419 400x326
+  1493.1  server  on screen alpha 1.00 at 501,394 450x351
+  1510.1  server  on screen alpha 1.00 at 396,341 555x404
+  1525.0  server  on screen alpha 1.00 at 302,289 649x440
+  1547.1  server  on screen alpha 1.00 at 225,241 723x440
+  1560.8  server  on screen alpha 1.00 at 170,199 768x440
+  1579.2  server  on screen alpha 1.00 at 134,161 790x440
+  1596.1  server  on screen alpha 1.00 at 124,144 791x440
+  1604.8  server  on screen alpha 1.00 at 116,129 790x440
+  1621.1  server  on screen alpha 1.00 at 109,106 779x440
+  1641.6  server  on screen alpha 1.00 at 108,91 764x440
+  1658.1  server  on screen alpha 1.00 at 108,85 749x440
+  1674.4  server  on screen alpha 1.00 at 108,85 735x439
+  1693.4  server  on screen alpha 1.00 at 108,85 721x439
+  1713.6  server  on screen alpha 1.00 at 108,85 709x439
+  1727.7  server  on screen alpha 1.00 at 108,85 703x439
+  1744.5  server  on screen alpha 1.00 at 108,85 692x439
+  1759.1  server  on screen alpha 1.00 at 108,85 687x439
+  1776.6  server  on screen alpha 1.00 at 108,85 680x439
+  1782.4  server  on screen alpha 1.00 at 108,85 677x439
+  1791.0  server  on screen alpha 1.00 at 108,85 675x439
+  1806.9  server  on screen alpha 1.00 at 108,85 674x439
+  1816.7  server  on screen alpha 1.00 at 108,85 673x439
+  1864.1  probe   AXRaise -> error 0, asked at 1282.6, 581.3 ms
+  1866.3  app     AXMainWindowChanged w38
+  1866.4  app     AXWindowMiniaturized w37
+  1866.5  app     AXFocusedWindowChanged w37
+  1866.6  app     AXMainWindowChanged w37
+  1866.6  app     AXWindowDeminiaturized w37
+  2610.4  flight  the end: AXMinimized no
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, key, rest-main
+    16.9  flight  watching w37 of 36537, mode rest-main; AXMinimized no
+    25.0  server  on screen alpha 1.00 at 108,85 673x439
+   670.7  hand    a key went down 7 ms ago, a button came up 2211 ms ago
+   725.6  server  on screen alpha 1.00 at 108,85 675x439
+   743.3  server  on screen alpha 1.00 at 108,85 680x439
+   760.4  server  on screen alpha 1.00 at 108,85 687x439
+   776.3  server  on screen alpha 1.00 at 108,85 693x439
+   791.6  server  on screen alpha 1.00 at 108,85 700x439
+   809.1  server  on screen alpha 1.00 at 108,85 713x439
+   830.0  server  on screen alpha 1.00 at 108,85 727x439
+   844.3  server  on screen alpha 1.00 at 108,85 742x439
+   855.7  server  on screen alpha 1.00 at 108,85 749x440
+   874.0  server  on screen alpha 1.00 at 108,92 765x440
+   893.0  server  on screen alpha 1.00 at 110,108 780x440
+   904.3  server  on screen alpha 1.00 at 112,118 786x440
+   920.7  server  on screen alpha 1.00 at 124,146 792x440
+   933.7  server  on screen alpha 1.00 at 138,165 788x440
+   940.7  server  on screen alpha 1.00 at 155,184 778x440
+   954.6  server  on screen alpha 1.00 at 176,204 764x440
+   973.3  server  on screen alpha 1.00 at 243,253 706x440
+   992.8  server  on screen alpha 1.00 at 327,304 624x440
+  1013.8  server  on screen alpha 1.00 at 446,366 505x379
+  1036.6  server  on screen alpha 1.00 at 567,427 384x318
+  1045.1  server  on screen alpha 1.00 at 630,459 321x286
+  1059.1  server  on screen alpha 1.00 at 679,485 272x260
+  1075.5  server  on screen alpha 1.00 at 769,538 182x207
+  1093.1  server  on screen alpha 1.00 at 809,565 142x180
+  1108.9  server  on screen alpha 1.00 at 862,611 89x134
+  1117.5  server  on screen alpha 1.00 at 884,635 67x110
+  1125.6  server  on screen alpha 1.00 at 895,650 56x95
+  1136.3  server  on screen alpha 1.00 at 904,666 47x79
+  1155.5  server  on screen alpha 1.00 at 913,692 38x53
+  1175.9  server  on screen alpha 1.00 at 916,711 35x34
+  1195.7  server  on screen alpha 1.00 at 916,718 35x27
+  1214.7  server  not listed
+  1278.3  app     AXFocusedWindowChanged w38
+  1279.8  app     AXMainWindowChanged w38
+  1279.9  app     AXWindowMiniaturized w37
+  1792.6  probe   set AXMain -> error 0, asked at 1792.2, 0.3 ms
+  2620.8  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, rest-raise
+    11.8  flight  watching w37 of 36537, mode rest-raise; AXMinimized no
+    21.9  server  on screen alpha 1.00 at 108,85 673x439
+   725.5  hand    a key went down 13 ms ago, a button came up 2318 ms ago
+   765.8  server  on screen alpha 1.00 at 108,85 674x439
+   778.7  server  on screen alpha 1.00 at 108,85 677x439
+   788.3  server  on screen alpha 1.00 at 108,85 679x439
+   808.7  server  on screen alpha 1.00 at 108,85 683x439
+   824.7  server  on screen alpha 1.00 at 108,85 692x439
+   839.0  server  on screen alpha 1.00 at 108,85 703x439
+   856.2  server  on screen alpha 1.00 at 108,85 709x439
+   874.2  server  on screen alpha 1.00 at 108,85 727x439
+   890.3  server  on screen alpha 1.00 at 108,85 737x439
+   907.9  server  on screen alpha 1.00 at 108,85 752x440
+   925.1  server  on screen alpha 1.00 at 108,89 761x440
+   941.1  server  on screen alpha 1.00 at 109,103 777x440
+   953.5  server  on screen alpha 1.00 at 111,115 785x440
+   974.5  server  on screen alpha 1.00 at 123,144 792x440
+   994.6  server  on screen alpha 1.00 at 152,181 780x440
+  1018.2  server  on screen alpha 1.00 at 200,223 745x440
+  1028.4  server  on screen alpha 1.00 at 273,272 677x440
+  1048.4  server  on screen alpha 1.00 at 369,327 582x418
+  1070.7  server  on screen alpha 1.00 at 475,381 476x364
+  1091.7  server  on screen alpha 1.00 at 588,437 363x308
+  1105.4  server  on screen alpha 1.00 at 650,469 301x276
+  1126.9  server  on screen alpha 1.00 at 778,544 173x201
+  1145.1  server  on screen alpha 1.00 at 811,567 140x178
+  1155.5  server  on screen alpha 1.00 at 862,610 89x135
+  1177.2  server  on screen alpha 1.00 at 896,653 55x92
+  1197.1  server  on screen alpha 1.00 at 911,683 40x62
+  1220.4  server  on screen alpha 1.00 at 916,706 35x39
+  1247.5  server  on screen alpha 1.00 at 916,718 35x27
+  1268.7  server  not listed
+  1421.2  app     AXFocusedWindowChanged w38
+  1426.7  app     AXMainWindowChanged w38
+  1426.8  app     AXWindowMiniaturized w37
+  1956.5  server  on screen alpha 1.00 at 916,718 35x27
+  1974.9  server  on screen alpha 1.00 at 916,714 35x31
+  1991.4  server  on screen alpha 1.00 at 915,700 36x45
+  2009.1  server  on screen alpha 1.00 at 909,678 42x67
+  2024.7  server  on screen alpha 1.00 at 894,648 57x97
+  2041.0  server  on screen alpha 1.00 at 880,630 71x115
+  2047.7  server  on screen alpha 1.00 at 863,612 88x133
+  2069.9  server  on screen alpha 1.00 at 814,569 137x176
+  2090.3  server  on screen alpha 1.00 at 743,521 208x224
+  2110.7  server  on screen alpha 1.00 at 602,444 349x301
+  2124.6  server  on screen alpha 1.00 at 549,418 402x327
+  2137.9  server  on screen alpha 1.00 at 441,364 510x381
+  2158.1  server  on screen alpha 1.00 at 345,314 606x431
+  2165.5  server  on screen alpha 1.00 at 300,289 651x440
+  2176.6  server  on screen alpha 1.00 at 264,266 686x440
+  2192.0  server  on screen alpha 1.00 at 196,220 748x440
+  2203.6  server  on screen alpha 1.00 at 170,199 768x440
+  2214.9  server  on screen alpha 1.00 at 150,179 781x440
+  2224.6  server  on screen alpha 1.00 at 134,161 790x440
+  2241.2  server  on screen alpha 1.00 at 116,129 790x440
+  2256.1  server  on screen alpha 1.00 at 112,116 785x440
+  2270.1  server  on screen alpha 1.00 at 108,97 772x440
+  2278.3  server  on screen alpha 1.00 at 108,90 763x440
+  2298.0  server  on screen alpha 1.00 at 108,85 748x440
+  2312.0  server  on screen alpha 1.00 at 108,85 741x439
+  2339.0  server  on screen alpha 1.00 at 108,85 721x439
+  2357.7  server  on screen alpha 1.00 at 108,85 708x439
+  2368.5  server  on screen alpha 1.00 at 108,85 702x439
+  2375.3  server  on screen alpha 1.00 at 108,85 696x439
+  2392.1  server  on screen alpha 1.00 at 108,85 687x439
+  2408.6  server  on screen alpha 1.00 at 108,85 683x439
+  2424.5  server  on screen alpha 1.00 at 108,85 677x439
+  2439.7  server  on screen alpha 1.00 at 108,85 674x439
+  2457.9  server  on screen alpha 1.00 at 108,85 673x439
+  2467.4  probe   AXRaise -> error 0, asked at 1932.0, 535.3 ms
+  2505.5  app     AXFocusedWindowChanged w37
+  2505.6  app     AXMainWindowChanged w37
+  2505.6  app     AXWindowDeminiaturized w37
+  2615.4  flight  the end: AXMinimized no
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, button, poll
+    21.5  flight  watching w37 of 36537, mode poll; AXMinimized no
+    22.7  asked   AXMinimized no, asked at 22.1, 0.6 ms
+    34.8  server  on screen alpha 1.00 at 108,85 673x439
+  1184.7  hand    a key went down 7428 ms ago, a button came up 15 ms ago
+  1219.0  server  on screen alpha 1.00 at 108,85 675x439
+  1235.4  server  on screen alpha 1.00 at 108,85 679x439
+  1251.9  server  on screen alpha 1.00 at 108,85 683x439
+  1268.3  server  on screen alpha 1.00 at 108,85 692x439
+  1285.2  server  on screen alpha 1.00 at 108,85 699x439
+  1301.6  server  on screen alpha 1.00 at 108,85 712x439
+  1313.6  server  on screen alpha 1.00 at 108,85 720x439
+  1331.0  server  on screen alpha 1.00 at 108,85 734x439
+  1351.8  server  on screen alpha 1.00 at 108,85 750x440
+  1368.5  server  on screen alpha 1.00 at 108,88 760x440
+  1383.0  server  on screen alpha 1.00 at 108,101 776x440
+  1401.6  server  on screen alpha 1.00 at 111,114 784x440
+  1415.0  server  on screen alpha 1.00 at 122,141 791x440
+  1435.3  server  on screen alpha 1.00 at 150,179 781x440
+  1455.8  server  on screen alpha 1.00 at 196,220 748x440
+  1463.9  server  on screen alpha 1.00 at 227,243 721x440
+  1480.2  server  on screen alpha 1.00 at 265,267 685x440
+  1499.1  server  on screen alpha 1.00 at 369,327 582x418
+  1518.4  server  on screen alpha 1.00 at 478,382 473x363
+  1535.4  server  on screen alpha 1.00 at 590,438 361x307
+  1551.5  server  on screen alpha 1.00 at 653,471 298x274
+  1568.4  server  on screen alpha 1.00 at 750,526 201x219
+  1584.6  server  on screen alpha 1.00 at 801,559 150x186
+  1589.7  server  on screen alpha 1.00 at 830,582 121x163
+  1601.8  server  on screen alpha 1.00 at 855,604 96x141
+  1618.9  server  on screen alpha 1.00 at 879,629 72x116
+  1635.2  server  on screen alpha 1.00 at 903,664 48x81
+  1651.8  server  on screen alpha 1.00 at 913,691 38x54
+  1668.4  server  on screen alpha 1.00 at 915,704 36x41
+  1685.7  server  on screen alpha 1.00 at 916,715 35x30
+  1708.0  server  on screen alpha 1.00 at 916,718 35x27
+  1820.8  app     AXFocusedWindowChanged w38
+  1821.2  asked   the other window's AXMinimized no, asked at 1175.9, 645.3 ms
+  1821.4  asked   AXMinimized yes, asked at 1821.3, 0.1 ms
+  1825.0  app     AXMainWindowChanged w38
+  1825.2  app     AXWindowMiniaturized w37
+  1831.8  server  not listed
+  2628.8  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, button, both
+    15.5  flight  watching w37 of 36537, mode both; AXMinimized no
+    31.7  server  on screen alpha 1.00 at 108,85 673x439
+  1121.8  hand    a key went down 14608 ms ago, a button came up 3 ms ago
+  1177.4  server  on screen alpha 1.00 at 108,85 675x439
+  1197.9  server  on screen alpha 1.00 at 108,85 680x439
+  1223.1  server  on screen alpha 1.00 at 108,85 687x439
+  1242.8  server  on screen alpha 1.00 at 108,85 697x439
+  1259.0  server  on screen alpha 1.00 at 108,85 709x439
+  1266.9  server  on screen alpha 1.00 at 108,85 717x439
+  1276.3  server  on screen alpha 1.00 at 108,85 723x439
+  1296.7  server  on screen alpha 1.00 at 108,85 730x439
+  1305.7  server  on screen alpha 1.00 at 108,85 745x439
+  1325.4  server  on screen alpha 1.00 at 108,88 760x440
+  1336.9  server  on screen alpha 1.00 at 108,94 768x440
+  1355.0  server  on screen alpha 1.00 at 110,111 783x440
+  1376.0  server  on screen alpha 1.00 at 119,137 792x440
+  1382.6  server  on screen alpha 1.00 at 129,152 790x440
+  1391.9  server  on screen alpha 1.00 at 142,170 786x440
+  1409.2  server  on screen alpha 1.00 at 160,190 775x440
+  1431.0  server  on screen alpha 1.00 at 250,258 700x440
+  1453.0  server  on screen alpha 1.00 at 334,308 617x437
+  1473.1  server  on screen alpha 1.00 at 445,366 506x379
+  1492.4  server  on screen alpha 1.00 at 559,423 392x322
+  1514.5  server  on screen alpha 1.00 at 687,489 264x256
+  1537.0  server  on screen alpha 1.00 at 772,540 179x205
+  1556.4  server  on screen alpha 1.00 at 838,588 113x157
+  1574.4  server  on screen alpha 1.00 at 882,632 69x113
+  1592.8  server  on screen alpha 1.00 at 899,656 52x89
+  1599.0  server  on screen alpha 1.00 at 907,674 44x71
+  1620.6  server  on screen alpha 1.00 at 915,699 36x46
+  1641.4  server  on screen alpha 1.00 at 916,713 35x32
+  1655.5  server  on screen alpha 1.00 at 916,718 35x27
+  1760.6  app     AXFocusedWindowChanged w38
+  1762.5  probe   set AXMain -> error 0, asked at 1760.9, 1.5 ms
+  1773.8  server  not listed
+  1794.7  server  on screen alpha 1.00 at 916,718 35x27
+  1809.0  server  on screen alpha 1.00 at 916,714 35x31
+  1825.9  server  on screen alpha 1.00 at 916,709 35x36
+  1842.8  server  on screen alpha 1.00 at 913,690 38x55
+  1865.7  server  on screen alpha 1.00 at 901,660 50x85
+  1888.7  server  on screen alpha 1.00 at 856,604 95x141
+  1908.9  server  on screen alpha 1.00 at 798,558 153x187
+  1925.6  server  on screen alpha 1.00 at 749,525 202x220
+  1946.3  server  on screen alpha 1.00 at 647,468 304x277
+  1961.6  server  on screen alpha 1.00 at 540,413 411x332
+  1977.0  server  on screen alpha 1.00 at 487,387 464x358
+  2002.8  server  on screen alpha 1.00 at 329,305 622x440
+  2023.2  server  on screen alpha 1.00 at 242,252 707x440
+  2031.8  server  on screen alpha 1.00 at 202,225 743x440
+  2055.0  server  on screen alpha 1.00 at 149,178 782x440
+  2076.3  server  on screen alpha 1.00 at 122,141 791x440
+  2096.2  server  on screen alpha 1.00 at 110,110 782x440
+  2119.8  server  on screen alpha 1.00 at 108,92 765x440
+  2139.6  server  on screen alpha 1.00 at 108,85 749x440
+  2159.2  server  on screen alpha 1.00 at 108,85 733x439
+  2169.8  server  on screen alpha 1.00 at 108,85 727x439
+  2181.1  server  on screen alpha 1.00 at 108,85 720x439
+  2204.8  server  on screen alpha 1.00 at 108,85 706x439
+  2223.2  server  on screen alpha 1.00 at 108,85 694x439
+  2241.3  server  on screen alpha 1.00 at 108,85 685x439
+  2259.2  server  on screen alpha 1.00 at 108,85 678x439
+  2275.0  server  on screen alpha 1.00 at 108,85 675x439
+  2293.6  server  on screen alpha 1.00 at 108,85 674x439
+  2306.2  server  on screen alpha 1.00 at 108,85 673x439
+  2310.8  probe   AXRaise -> error 0, asked at 1762.6, 547.9 ms
+  2331.0  app     AXMainWindowChanged w38
+  2331.1  app     AXWindowMiniaturized w37
+  2331.1  app     AXFocusedWindowChanged w37
+  2331.2  app     AXMainWindowChanged w37
+  2331.2  app     AXWindowDeminiaturized w37
+  2625.9  flight  the end: AXMinimized no
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, button, guarded
+    17.5  flight  watching w37 of 36537, mode guarded; AXMinimized no
+    23.9  server  on screen alpha 1.00 at 108,85 673x439
+  1254.8  hand    a key went down 21827 ms ago, a button came up 13 ms ago
+  1288.7  server  on screen alpha 1.00 at 108,85 675x439
+  1305.7  server  on screen alpha 1.00 at 108,85 678x439
+  1319.6  server  on screen alpha 1.00 at 108,85 684x439
+  1328.8  server  on screen alpha 1.00 at 108,85 688x439
+  1352.3  server  on screen alpha 1.00 at 108,85 700x439
+  1362.6  server  on screen alpha 1.00 at 108,85 707x439
+  1379.5  server  on screen alpha 1.00 at 108,85 714x439
+  1407.9  server  on screen alpha 1.00 at 108,85 735x439
+  1423.4  server  on screen alpha 1.00 at 108,85 748x440
+  1438.6  server  on screen alpha 1.00 at 108,87 757x440
+  1443.6  server  on screen alpha 1.00 at 108,92 765x440
+  1462.4  server  on screen alpha 1.00 at 110,110 782x440
+  1482.8  server  on screen alpha 1.00 at 119,135 791x440
+  1500.6  server  on screen alpha 1.00 at 140,167 787x440
+  1516.4  server  on screen alpha 1.00 at 157,187 777x440
+  1535.5  server  on screen alpha 1.00 at 216,235 731x440
+  1556.3  server  on screen alpha 1.00 at 290,282 661x440
+  1569.1  server  on screen alpha 1.00 at 386,335 565x410
+  1587.9  server  on screen alpha 1.00 at 453,370 498x375
+  1609.0  server  on screen alpha 1.00 at 611,449 340x296
+  1622.5  server  on screen alpha 1.00 at 661,475 290x270
+  1629.8  server  on screen alpha 1.00 at 717,506 234x239
+  1640.5  server  on screen alpha 1.00 at 760,533 191x212
+  1659.9  server  on screen alpha 1.00 at 829,581 122x164
+  1685.7  server  on screen alpha 1.00 at 879,629 72x116
+  1706.1  server  on screen alpha 1.00 at 903,664 48x81
+  1729.1  server  on screen alpha 1.00 at 915,700 36x45
+  1751.0  server  on screen alpha 1.00 at 916,714 35x31
+  1772.1  server  on screen alpha 1.00 at 916,718 35x27
+  1785.1  server  not listed
+  1809.9  app     AXFocusedWindowChanged w38
+  1810.2  probe   read AXMinimized -> yes, asked at 1810.1, 0.1 ms
+  1810.2  probe   left alone
+  1812.2  app     AXMainWindowChanged w38
+  1812.3  app     AXWindowMiniaturized w37
+  2623.2  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, ax, poll
+    14.9  flight  watching w37 of 36537, mode poll; AXMinimized no
+    15.5  asked   AXMinimized no, asked at 15.4, 0.0 ms
+    25.0  server  on screen alpha 1.00 at 108,85 673x439
+   644.0  server  on screen alpha 1.00 at 108,85 675x439
+   662.1  server  on screen alpha 1.00 at 108,85 677x439
+   683.5  server  on screen alpha 1.00 at 108,85 687x439
+   707.1  server  on screen alpha 1.00 at 108,85 698x439
+   715.3  server  on screen alpha 1.00 at 108,85 705x439
+   729.1  server  on screen alpha 1.00 at 108,85 711x439
+   745.4  server  on screen alpha 1.00 at 108,85 725x439
+   758.6  server  on screen alpha 1.00 at 108,85 734x439
+   778.4  server  on screen alpha 1.00 at 108,85 749x440
+   801.3  server  on screen alpha 1.00 at 108,94 768x440
+   825.5  server  on screen alpha 1.00 at 111,114 785x440
+   846.7  server  on screen alpha 1.00 at 122,142 792x440
+   863.1  server  on screen alpha 1.00 at 135,162 789x440
+   878.9  server  on screen alpha 1.00 at 171,200 768x440
+   894.0  server  on screen alpha 1.00 at 234,247 715x440
+   910.3  server  on screen alpha 1.00 at 285,279 666x440
+   928.9  server  on screen alpha 1.00 at 382,334 569x411
+   945.5  server  on screen alpha 1.00 at 449,368 502x377
+   967.6  server  on screen alpha 1.00 at 617,452 334x293
+   992.7  server  on screen alpha 1.00 at 733,516 218x229
+  1012.2  server  on screen alpha 1.00 at 814,569 137x176
+  1028.8  server  on screen alpha 1.00 at 848,597 103x148
+  1045.6  server  on screen alpha 1.00 at 889,642 62x103
+  1066.9  server  on screen alpha 1.00 at 909,677 42x68
+  1079.2  server  on screen alpha 1.00 at 913,689 38x56
+  1096.5  server  on screen alpha 1.00 at 916,708 35x37
+  1112.4  server  on screen alpha 1.00 at 916,714 35x31
+  1132.4  server  on screen alpha 1.00 at 916,718 35x27
+  1166.6  app     AXFocusedWindowChanged w38
+  1169.0  asked   the other window's AXMinimized no, asked at 596.0, 572.9 ms
+  1169.3  app     AXMainWindowChanged w38
+  1169.5  app     AXWindowMiniaturized w37
+  1169.7  asked   AXMinimized yes, asked at 1169.1, 0.5 ms
+  1169.8  server  not listed
+  2621.0  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, ax, both
+     9.7  flight  watching w37 of 36537, mode both; AXMinimized no
+    26.3  server  on screen alpha 1.00 at 108,85 673x439
+   637.4  server  on screen alpha 1.00 at 108,85 674x439
+   652.4  server  on screen alpha 1.00 at 108,85 675x439
+   671.1  server  on screen alpha 1.00 at 108,85 680x439
+   677.3  server  on screen alpha 1.00 at 108,85 684x439
+   688.0  server  on screen alpha 1.00 at 108,85 688x439
+   705.6  server  on screen alpha 1.00 at 108,85 697x439
+   723.3  server  on screen alpha 1.00 at 108,85 705x439
+   739.3  server  on screen alpha 1.00 at 108,85 718x439
+   758.1  server  on screen alpha 1.00 at 108,85 732x439
+   771.5  server  on screen alpha 1.00 at 108,85 739x439
+   791.9  server  on screen alpha 1.00 at 108,86 754x440
+   808.5  server  on screen alpha 1.00 at 108,96 771x440
+   825.0  server  on screen alpha 1.00 at 109,104 778x440
+   841.9  server  on screen alpha 1.00 at 116,129 790x440
+   864.8  server  on screen alpha 1.00 at 149,179 782x440
+   889.1  server  on screen alpha 1.00 at 206,228 740x440
+   908.3  server  on screen alpha 1.00 at 288,281 663x440
+   925.2  server  on screen alpha 1.00 at 344,313 607x432
+   947.5  server  on screen alpha 1.00 at 448,367 503x378
+   975.8  server  on screen alpha 1.00 at 618,453 333x292
+   992.4  server  on screen alpha 1.00 at 714,505 237x240
+  1013.1  server  on screen alpha 1.00 at 804,562 147x183
+  1021.4  server  on screen alpha 1.00 at 834,585 117x160
+  1041.4  server  on screen alpha 1.00 at 879,629 72x116
+  1057.5  server  on screen alpha 1.00 at 897,653 54x92
+  1071.8  server  on screen alpha 1.00 at 906,670 45x75
+  1093.1  server  on screen alpha 1.00 at 915,698 36x47
+  1111.0  server  on screen alpha 1.00 at 916,713 35x32
+  1125.5  server  on screen alpha 1.00 at 916,718 35x27
+  1181.7  app     AXFocusedWindowChanged w38
+  1182.5  probe   set AXMain -> error 0, asked at 1181.9, 0.5 ms
+  1189.8  server  not listed
+  1208.4  server  on screen alpha 1.00 at 916,718 35x27
+  1225.3  server  on screen alpha 1.00 at 916,717 35x28
+  1238.5  server  on screen alpha 1.00 at 916,705 35x40
+  1248.4  server  on screen alpha 1.00 at 914,694 37x51
+  1258.3  server  on screen alpha 1.00 at 911,682 40x63
+  1275.2  server  on screen alpha 1.00 at 903,665 48x80
+  1292.0  server  on screen alpha 1.00 at 880,630 71x115
+  1308.2  server  on screen alpha 1.00 at 855,604 96x141
+  1325.1  server  on screen alpha 1.00 at 794,555 157x190
+  1346.9  server  on screen alpha 1.00 at 695,494 256x251
+  1357.8  server  on screen alpha 1.00 at 644,466 307x279
+  1378.1  server  on screen alpha 1.00 at 570,428 381x317
+  1391.5  server  on screen alpha 1.00 at 451,369 500x376
+  1411.1  server  on screen alpha 1.00 at 351,317 600x428
+  1426.0  server  on screen alpha 1.00 at 305,292 646x440
+  1441.8  server  on screen alpha 1.00 at 223,240 725x440
+  1456.3  server  on screen alpha 1.00 at 186,213 756x440
+  1472.8  server  on screen alpha 1.00 at 140,168 787x440
+  1491.5  server  on screen alpha 1.00 at 124,145 792x440
+  1509.2  server  on screen alpha 1.00 at 112,117 786x440
+  1524.7  server  on screen alpha 1.00 at 108,96 771x440
+  1543.1  server  on screen alpha 1.00 at 108,90 763x440
+  1563.5  server  on screen alpha 1.00 at 108,85 740x439
+  1589.5  server  on screen alpha 1.00 at 108,85 725x439
+  1613.4  server  on screen alpha 1.00 at 108,85 712x439
+  1640.5  server  on screen alpha 1.00 at 108,85 694x439
+  1661.1  server  on screen alpha 1.00 at 108,85 681x439
+  1671.8  server  on screen alpha 1.00 at 108,85 678x439
+  1689.5  server  on screen alpha 1.00 at 108,85 675x439
+  1704.3  server  on screen alpha 1.00 at 108,85 674x439
+  1745.7  probe   AXRaise -> error 0, asked at 1182.6, 537.4 ms
+  1746.6  server  on screen alpha 1.00 at 108,85 673x439
+  1746.9  app     AXMainWindowChanged w38
+  1747.0  app     AXWindowMiniaturized w37
+  1747.1  app     AXFocusedWindowChanged w37
+  1747.2  app     AXMainWindowChanged w37
+  1747.3  app     AXWindowDeminiaturized w37
+  2617.6  flight  the end: AXMinimized no
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, ax, guarded
+     9.2  flight  watching w37 of 36537, mode guarded; AXMinimized no
+    15.6  server  on screen alpha 1.00 at 108,85 673x439
+   655.1  server  on screen alpha 1.00 at 108,85 674x439
+   675.8  server  on screen alpha 1.00 at 108,85 677x439
+   692.4  server  on screen alpha 1.00 at 108,85 680x439
+   709.3  server  on screen alpha 1.00 at 108,85 688x439
+   725.1  server  on screen alpha 1.00 at 108,85 693x439
+   742.1  server  on screen alpha 1.00 at 108,85 705x439
+   756.0  server  on screen alpha 1.00 at 108,85 718x439
+   775.1  server  on screen alpha 1.00 at 108,85 726x439
+   791.1  server  on screen alpha 1.00 at 108,85 740x439
+   808.6  server  on screen alpha 1.00 at 108,87 756x440
+   825.6  server  on screen alpha 1.00 at 108,91 764x440
+   839.2  server  on screen alpha 1.00 at 109,106 780x440
+   858.6  server  on screen alpha 1.00 at 117,132 791x440
+   875.1  server  on screen alpha 1.00 at 126,148 791x440
+   892.1  server  on screen alpha 1.00 at 157,186 777x440
+   909.2  server  on screen alpha 1.00 at 208,229 738x440
+   925.2  server  on screen alpha 1.00 at 251,259 699x440
+   941.9  server  on screen alpha 1.00 at 339,310 612x435
+   958.2  server  on screen alpha 1.00 at 446,366 505x379
+   975.2  server  on screen alpha 1.00 at 519,403 432x342
+   991.9  server  on screen alpha 1.00 at 626,457 325x288
+  1009.1  server  on screen alpha 1.00 at 691,491 260x254
+  1025.6  server  on screen alpha 1.00 at 778,544 173x201
+  1041.7  server  on screen alpha 1.00 at 820,574 131x171
+  1058.5  server  on screen alpha 1.00 at 868,617 83x128
+  1069.1  server  on screen alpha 1.00 at 884,634 67x111
+  1085.1  server  on screen alpha 1.00 at 905,668 46x77
+  1104.6  server  on screen alpha 1.00 at 914,697 37x48
+  1120.3  server  on screen alpha 1.00 at 916,707 35x38
+  1140.8  server  on screen alpha 1.00 at 916,718 35x27
+  1158.9  server  not listed
+  1206.8  app     AXFocusedWindowChanged w38
+  1207.1  probe   read AXMinimized -> yes, asked at 1207.0, 0.1 ms
+  1207.1  probe   left alone
+  1207.1  app     AXMainWindowChanged w38
+  1207.2  app     AXWindowMiniaturized w37
+  2621.0  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+=== Reduce Motion: false
+
+--- test windows, key, poll
+  (the window could not be given the keyboard by a click)
+     8.9  flight  watching w29 of 36439, mode poll; AXMinimized no
+     9.6  asked   AXMinimized no, asked at 8.7, 0.3 ms
+    16.3  server  on screen alpha 1.00 at 170,220 480x348
+   696.8  hand    a key went down 5 ms ago, a button came up 8117 ms ago
+  1333.3  asked   the other window's AXMinimized no, asked at 1319.5, 13.8 ms
+  2615.0  flight  the end: AXMinimized no
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, key, sparse
+     9.2  flight  watching w29 of 36439, mode sparse; AXMinimized no
+    10.1  asked   AXMinimized no, asked at 9.3, 0.8 ms
+    15.6  server  on screen alpha 1.00 at 170,220 480x348
+   723.8  hand    a key went down 12 ms ago, a button came up 2261 ms ago
+   743.9  server  on screen alpha 1.00 at 170,220 481x348
+   765.1  server  on screen alpha 1.00 at 170,220 488x348
+   784.8  server  on screen alpha 1.00 at 170,220 499x348
+   810.4  server  on screen alpha 1.00 at 170,220 517x348
+   831.1  server  on screen alpha 1.00 at 170,220 536x348
+   838.6  server  on screen alpha 1.00 at 170,220 548x348
+   853.6  server  on screen alpha 1.00 at 170,220 573x348
+   876.8  server  on screen alpha 1.00 at 170,220 598x348
+   897.6  server  on screen alpha 1.00 at 170,220 625x349
+   914.0  server  on screen alpha 1.00 at 170,227 654x349
+   934.6  server  on screen alpha 1.00 at 172,241 683x349
+   948.1  server  on screen alpha 1.00 at 176,250 694x349
+   972.1  server  on screen alpha 1.00 at 207,292 713x349
+   983.0  server  on screen alpha 1.00 at 224,307 708x349
+  1004.0  server  on screen alpha 1.00 at 272,339 676x349
+  1025.7  server  on screen alpha 1.00 at 344,377 609x349
+  1046.1  server  on screen alpha 1.00 at 451,427 503x319
+  1063.4  server  on screen alpha 1.00 at 550,469 404x277
+  1079.8  server  on screen alpha 1.00 at 654,514 300x233
+  1098.7  server  on screen alpha 1.00 at 744,556 210x191
+  1114.6  server  on screen alpha 1.00 at 783,576 171x171
+  1129.3  server  on screen alpha 1.00 at 845,614 109x133
+  1148.3  server  on screen alpha 1.00 at 873,636 81x111
+  1164.4  server  on screen alpha 1.00 at 901,666 53x81
+  1170.2  server  on screen alpha 1.00 at 910,678 44x69
+  1195.0  server  on screen alpha 1.00 at 918,700 36x47
+  1215.9  server  on screen alpha 1.00 at 920,713 34x34
+  1231.9  server  on screen alpha 1.00 at 920,718 34x29
+  1254.2  server  not listed
+  1277.6  app     AXFocusedWindowChanged w31
+  1278.2  asked   the other window's AXMinimized no, asked at 764.4, 513.4 ms
+  1278.6  asked   AXMinimized yes, asked at 1278.2, 0.4 ms
+  1278.6  app     AXMainWindowChanged w31
+  1278.7  app     AXWindowMiniaturized w29
+  2614.4  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, read
+     7.8  flight  watching w29 of 36439, mode read; AXMinimized no
+    15.8  server  on screen alpha 1.00 at 170,220 480x348
+   709.8  hand    a key went down 11 ms ago, a button came up 2187 ms ago
+   763.1  server  on screen alpha 1.00 at 170,220 483x348
+   774.9  server  on screen alpha 1.00 at 170,220 486x348
+   790.4  server  on screen alpha 1.00 at 170,220 496x348
+   809.3  server  on screen alpha 1.00 at 170,220 511x348
+   823.2  server  on screen alpha 1.00 at 170,220 520x348
+   839.2  server  on screen alpha 1.00 at 170,220 540x348
+   857.3  server  on screen alpha 1.00 at 170,220 564x348
+   864.0  server  on screen alpha 1.00 at 170,220 576x348
+   883.9  server  on screen alpha 1.00 at 170,220 601x348
+   891.0  server  on screen alpha 1.00 at 170,220 614x348
+   904.1  server  on screen alpha 1.00 at 170,220 627x349
+   927.4  server  on screen alpha 1.00 at 170,227 654x349
+   947.6  server  on screen alpha 1.00 at 175,250 694x349
+   967.2  server  on screen alpha 1.00 at 189,273 711x349
+   974.9  server  on screen alpha 1.00 at 201,286 714x349
+  1001.3  server  on screen alpha 1.00 at 239,317 699x349
+  1007.9  server  on screen alpha 1.00 at 265,335 682x349
+  1020.1  server  on screen alpha 1.00 at 295,352 657x349
+  1025.1  server  on screen alpha 1.00 at 331,371 622x349
+  1039.6  server  on screen alpha 1.00 at 412,409 542x337
+  1068.6  server  on screen alpha 1.00 at 556,472 398x274
+  1087.2  server  on screen alpha 1.00 at 653,514 301x233
+  1098.8  server  on screen alpha 1.00 at 700,534 254x213
+  1120.2  server  on screen alpha 1.00 at 783,576 171x171
+  1126.5  server  on screen alpha 1.00 at 815,594 139x153
+  1141.4  server  on screen alpha 1.00 at 842,612 112x135
+  1156.7  server  on screen alpha 1.00 at 883,645 71x102
+  1162.6  server  on screen alpha 1.00 at 896,659 58x88
+  1183.6  server  on screen alpha 1.00 at 912,683 42x64
+  1191.3  server  on screen alpha 1.00 at 916,693 38x54
+  1211.4  server  on screen alpha 1.00 at 920,708 34x39
+  1236.7  server  on screen alpha 1.00 at 920,718 34x29
+  1286.4  server  not listed
+  1290.2  app     AXFocusedWindowChanged w31
+  1290.5  probe   read AXMinimized of the other window -> no, asked at 1290.3, 0.2 ms
+  1290.7  probe   read AXMinimized -> yes, asked at 1290.6, 0.1 ms
+  1292.1  app     AXMainWindowChanged w31
+  1292.2  app     AXWindowMiniaturized w29
+  2611.2  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, both
+    15.1  flight  watching w29 of 36439, mode both; AXMinimized no
+    26.5  server  on screen alpha 1.00 at 170,220 480x348
+   683.2  hand    a key went down 8 ms ago, a button came up 2422 ms ago
+   734.9  server  on screen alpha 1.00 at 170,220 483x348
+   754.3  server  on screen alpha 1.00 at 170,220 491x348
+   770.9  server  on screen alpha 1.00 at 170,220 497x348
+   786.9  server  on screen alpha 1.00 at 170,220 514x348
+   804.7  server  on screen alpha 1.00 at 170,220 534x348
+   823.5  server  on screen alpha 1.00 at 170,220 548x348
+   843.6  server  on screen alpha 1.00 at 170,220 585x348
+   853.2  server  on screen alpha 1.00 at 170,220 597x348
+   871.4  server  on screen alpha 1.00 at 170,220 623x349
+   887.2  server  on screen alpha 1.00 at 170,222 635x349
+   904.7  server  on screen alpha 1.00 at 170,231 665x349
+   920.0  server  on screen alpha 1.00 at 175,249 694x349
+   938.3  server  on screen alpha 1.00 at 180,260 704x349
+   954.6  server  on screen alpha 1.00 at 202,288 714x349
+   971.0  server  on screen alpha 1.00 at 245,322 696x349
+   987.8  server  on screen alpha 1.00 at 277,342 672x349
+  1000.8  server  on screen alpha 1.00 at 352,381 601x349
+  1020.9  server  on screen alpha 1.00 at 444,423 510x323
+  1039.0  server  on screen alpha 1.00 at 544,467 410x279
+  1054.0  server  on screen alpha 1.00 at 594,488 360x258
+  1074.8  server  on screen alpha 1.00 at 696,533 258x214
+  1088.6  server  on screen alpha 1.00 at 780,574 174x173
+  1108.8  server  on screen alpha 1.00 at 844,614 110x133
+  1131.7  server  on screen alpha 1.00 at 884,646 70x101
+  1142.8  server  on screen alpha 1.00 at 898,662 56x85
+  1152.1  server  on screen alpha 1.00 at 907,674 47x73
+  1170.9  server  on screen alpha 1.00 at 917,695 37x52
+  1188.5  server  on screen alpha 1.00 at 920,711 34x36
+  1210.4  server  on screen alpha 1.00 at 920,718 34x29
+  1233.5  server  not listed
+  1298.8  app     AXFocusedWindowChanged w31
+  1299.9  probe   set AXMain -> error 0, asked at 1299.0, 0.8 ms
+  1321.7  server  on screen alpha 1.00 at 920,718 34x29
+  1336.4  server  on screen alpha 1.00 at 920,717 34x30
+  1353.7  server  on screen alpha 1.00 at 920,709 34x38
+  1371.3  server  on screen alpha 1.00 at 916,692 38x55
+  1382.3  server  on screen alpha 1.00 at 911,680 43x67
+  1399.6  server  on screen alpha 1.00 at 902,667 52x80
+  1420.8  server  on screen alpha 1.00 at 871,634 83x113
+  1434.6  server  on screen alpha 1.00 at 824,600 130x147
+  1454.5  server  on screen alpha 1.00 at 751,559 203x188
+  1473.5  server  on screen alpha 1.00 at 653,514 301x233
+  1494.4  server  on screen alpha 1.00 at 545,467 409x279
+  1515.5  server  on screen alpha 1.00 at 448,426 506x320
+  1535.4  server  on screen alpha 1.00 at 353,382 600x349
+  1554.5  server  on screen alpha 1.00 at 274,340 675x349
+  1575.2  server  on screen alpha 1.00 at 218,302 710x349
+  1586.2  server  on screen alpha 1.00 at 201,287 714x349
+  1604.4  server  on screen alpha 1.00 at 186,269 710x349
+  1621.0  server  on screen alpha 1.00 at 174,246 690x349
+  1638.5  server  on screen alpha 1.00 at 170,228 658x349
+  1660.4  server  on screen alpha 1.00 at 170,220 625x349
+  1687.9  server  on screen alpha 1.00 at 170,220 594x348
+  1703.9  server  on screen alpha 1.00 at 170,220 567x348
+  1723.9  server  on screen alpha 1.00 at 170,220 542x348
+  1733.2  server  on screen alpha 1.00 at 170,220 532x348
+  1750.8  server  on screen alpha 1.00 at 170,220 519x348
+  1771.4  server  on screen alpha 1.00 at 170,220 500x348
+  1786.3  server  on screen alpha 1.00 at 170,220 488x348
+  1810.3  server  on screen alpha 1.00 at 170,220 482x348
+  1831.0  server  on screen alpha 1.00 at 170,220 480x348
+  1838.3  probe   AXRaise -> error 0, asked at 1300.4, 537.9 ms
+  1840.2  app     AXMainWindowChanged w31
+  1840.4  app     AXWindowMiniaturized w29
+  1840.9  app     AXFocusedWindowChanged w29
+  1841.1  app     AXMainWindowChanged w29
+  1841.1  app     AXWindowDeminiaturized w29
+  2619.8  flight  the end: AXMinimized no
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, key, guarded
+     7.4  flight  watching w29 of 36439, mode guarded; AXMinimized no
+    14.3  server  on screen alpha 1.00 at 170,220 480x348
+   703.7  hand    a key went down 3 ms ago, a button came up 2039 ms ago
+   725.8  server  on screen alpha 1.00 at 170,220 481x348
+   735.5  server  on screen alpha 1.00 at 170,220 483x348
+   759.6  server  on screen alpha 1.00 at 170,220 493x348
+   768.6  server  on screen alpha 1.00 at 170,220 500x348
+   789.4  server  on screen alpha 1.00 at 170,220 517x348
+   809.2  server  on screen alpha 1.00 at 170,220 537x348
+   828.7  server  on screen alpha 1.00 at 170,220 562x348
+   844.0  server  on screen alpha 1.00 at 170,220 575x348
+   865.1  server  on screen alpha 1.00 at 170,220 602x348
+   876.7  server  on screen alpha 1.00 at 170,220 627x349
+   895.6  server  on screen alpha 1.00 at 170,224 645x349
+   913.0  server  on screen alpha 1.00 at 171,236 675x349
+   930.5  server  on screen alpha 1.00 at 179,257 702x349
+   944.1  server  on screen alpha 1.00 at 188,271 710x349
+   961.2  server  on screen alpha 1.00 at 217,301 710x349
+   981.6  server  on screen alpha 1.00 at 266,335 681x349
+   996.6  server  on screen alpha 1.00 at 298,354 654x349
+  1017.4  server  on screen alpha 1.00 at 378,394 575x349
+  1043.5  server  on screen alpha 1.00 at 544,467 410x279
+  1061.6  server  on screen alpha 1.00 at 649,512 305x235
+  1079.2  server  on screen alpha 1.00 at 696,533 258x214
+  1095.3  server  on screen alpha 1.00 at 779,574 175x173
+  1112.7  server  on screen alpha 1.00 at 841,611 113x136
+  1129.5  server  on screen alpha 1.00 at 869,632 85x115
+  1145.7  server  on screen alpha 1.00 at 899,663 55x84
+  1163.4  server  on screen alpha 1.00 at 915,690 39x57
+  1189.8  server  on screen alpha 1.00 at 920,707 34x40
+  1210.3  server  on screen alpha 1.00 at 920,717 34x30
+  1227.1  server  on screen alpha 1.00 at 920,718 34x29
+  1266.9  server  not listed
+  1268.6  app     AXFocusedWindowChanged w31
+  1268.9  probe   read AXMinimized -> yes, asked at 1268.7, 0.2 ms
+  1269.0  probe   left alone
+  1269.7  app     AXMainWindowChanged w31
+  1269.8  app     AXWindowMiniaturized w29
+  2616.8  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, late
+     9.4  flight  watching w29 of 36439, mode late; AXMinimized no
+    18.1  server  on screen alpha 1.00 at 170,220 480x348
+   706.7  hand    a key went down 4 ms ago, a button came up 2398 ms ago
+   733.5  server  on screen alpha 1.00 at 170,220 481x348
+   748.4  server  on screen alpha 1.00 at 170,220 486x348
+   766.3  server  on screen alpha 1.00 at 170,220 491x348
+   787.4  server  on screen alpha 1.00 at 170,220 513x348
+   812.0  server  on screen alpha 1.00 at 170,220 534x348
+   830.1  server  on screen alpha 1.00 at 170,220 558x348
+   849.6  server  on screen alpha 1.00 at 170,220 585x348
+   868.4  server  on screen alpha 1.00 at 170,220 611x348
+   878.3  server  on screen alpha 1.00 at 170,220 624x349
+   897.3  server  on screen alpha 1.00 at 170,226 652x349
+   918.3  server  on screen alpha 1.00 at 172,240 681x349
+   939.5  server  on screen alpha 1.00 at 182,263 706x349
+   962.9  server  on screen alpha 1.00 at 210,294 712x349
+   969.8  server  on screen alpha 1.00 at 229,310 705x349
+   978.6  server  on screen alpha 1.00 at 253,327 690x349
+   999.4  server  on screen alpha 1.00 at 325,368 628x349
+  1020.2  server  on screen alpha 1.00 at 405,406 549x340
+  1033.3  server  on screen alpha 1.00 at 452,427 502x319
+  1047.1  server  on screen alpha 1.00 at 555,471 399x275
+  1066.4  server  on screen alpha 1.00 at 619,499 335x248
+  1082.7  server  on screen alpha 1.00 at 716,542 238x205
+  1100.5  server  on screen alpha 1.00 at 801,586 153x161
+  1116.1  server  on screen alpha 1.00 at 835,607 119x140
+  1132.8  server  on screen alpha 1.00 at 881,644 73x103
+  1150.1  server  on screen alpha 1.00 at 899,663 55x84
+  1167.3  server  on screen alpha 1.00 at 914,688 40x59
+  1183.4  server  on screen alpha 1.00 at 918,700 36x47
+  1198.6  server  on screen alpha 1.00 at 920,714 34x33
+  1217.4  server  on screen alpha 1.00 at 920,718 34x29
+  1238.3  server  not listed
+  1263.4  app     AXFocusedWindowChanged w31
+  1264.8  app     AXMainWindowChanged w31
+  1264.9  app     AXWindowMiniaturized w29
+  1376.4  probe   read AXMinimized -> yes, asked at 1376.0, 0.3 ms
+  1376.5  probe   left alone
+  2615.5  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, main
+    12.2  flight  watching w29 of 36439, mode main; AXMinimized no
+    20.5  server  on screen alpha 1.00 at 170,220 480x348
+   685.3  hand    a key went down 13 ms ago, a button came up 2405 ms ago
+   703.0  server  on screen alpha 1.00 at 170,220 481x348
+   719.7  server  on screen alpha 1.00 at 170,220 484x348
+   741.4  server  on screen alpha 1.00 at 170,220 492x348
+   764.3  server  on screen alpha 1.00 at 170,220 508x348
+   781.0  server  on screen alpha 1.00 at 170,220 529x348
+   799.5  server  on screen alpha 1.00 at 170,220 551x348
+   820.3  server  on screen alpha 1.00 at 170,220 577x348
+   836.9  server  on screen alpha 1.00 at 170,220 592x348
+   857.6  server  on screen alpha 1.00 at 170,221 632x349
+   871.5  server  on screen alpha 1.00 at 170,225 646x349
+   887.2  server  on screen alpha 1.00 at 171,237 677x349
+   907.2  server  on screen alpha 1.00 at 175,248 691x349
+   934.5  server  on screen alpha 1.00 at 203,288 714x349
+   954.2  server  on screen alpha 1.00 at 245,322 696x349
+   968.3  server  on screen alpha 1.00 at 306,358 647x349
+   986.7  server  on screen alpha 1.00 at 359,385 594x349
+  1002.7  server  on screen alpha 1.00 at 438,421 516x325
+  1019.9  server  on screen alpha 1.00 at 531,461 423x285
+  1037.1  server  on screen alpha 1.00 at 638,507 316x240
+  1050.5  server  on screen alpha 1.00 at 695,532 259x215
+  1071.9  server  on screen alpha 1.00 at 780,574 174x173
+  1080.5  server  on screen alpha 1.00 at 815,595 139x152
+  1100.9  server  on screen alpha 1.00 at 866,630 88x117
+  1108.8  server  on screen alpha 1.00 at 886,648 68x99
+  1133.1  server  on screen alpha 1.00 at 910,680 44x67
+  1150.5  server  on screen alpha 1.00 at 915,690 39x57
+  1170.1  server  on screen alpha 1.00 at 920,712 34x35
+  1189.1  server  on screen alpha 1.00 at 920,718 34x29
+  1251.7  server  not listed
+  1253.5  app     AXFocusedWindowChanged w31
+  1253.9  probe   set AXMain -> error 0, asked at 1253.7, 0.2 ms
+  1254.7  app     AXMainWindowChanged w31
+  1254.8  app     AXWindowMiniaturized w29
+  2621.9  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, raise
+    12.4  flight  watching w29 of 36439, mode raise; AXMinimized no
+    21.1  server  on screen alpha 1.00 at 170,220 480x348
+   648.5  hand    a key went down 5 ms ago, a button came up 2325 ms ago
+   669.6  server  on screen alpha 1.00 at 170,220 481x348
+   690.4  server  on screen alpha 1.00 at 170,220 487x348
+   703.8  server  on screen alpha 1.00 at 170,220 494x348
+   723.9  server  on screen alpha 1.00 at 170,220 508x348
+   739.2  server  on screen alpha 1.00 at 170,220 518x348
+   754.5  server  on screen alpha 1.00 at 170,220 538x348
+   772.1  server  on screen alpha 1.00 at 170,220 551x348
+   789.5  server  on screen alpha 1.00 at 170,220 579x348
+   803.4  server  on screen alpha 1.00 at 170,220 604x348
+   824.4  server  on screen alpha 1.00 at 170,221 633x349
+   837.4  server  on screen alpha 1.00 at 170,226 650x349
+   846.3  server  on screen alpha 1.00 at 170,232 667x349
+   876.3  server  on screen alpha 1.00 at 176,251 695x349
+   890.6  server  on screen alpha 1.00 at 190,274 712x349
+   906.9  server  on screen alpha 1.00 at 222,305 708x349
+   934.7  server  on screen alpha 1.00 at 271,338 677x349
+   945.9  server  on screen alpha 1.00 at 353,382 600x349
+   971.3  server  on screen alpha 1.00 at 461,431 493x315
+   989.0  server  on screen alpha 1.00 at 566,476 388x270
+  1007.3  server  on screen alpha 1.00 at 662,518 292x229
+  1029.3  server  on screen alpha 1.00 at 746,557 208x190
+  1035.2  server  on screen alpha 1.00 at 783,576 171x171
+  1044.5  server  on screen alpha 1.00 at 817,595 137x152
+  1069.1  server  on screen alpha 1.00 at 872,635 82x112
+  1088.5  server  on screen alpha 1.00 at 900,664 54x83
+  1102.9  server  on screen alpha 1.00 at 908,675 46x72
+  1123.6  server  on screen alpha 1.00 at 919,703 35x44
+  1140.4  server  on screen alpha 1.00 at 920,714 34x33
+  1158.7  server  on screen alpha 1.00 at 920,718 34x29
+  1176.4  server  not listed
+  1202.7  app     AXFocusedWindowChanged w31
+  1223.0  server  on screen alpha 1.00 at 920,718 34x29
+  1229.8  server  on screen alpha 1.00 at 920,717 34x30
+  1251.4  server  on screen alpha 1.00 at 920,710 34x37
+  1260.2  server  on screen alpha 1.00 at 919,704 35x43
+  1269.6  server  on screen alpha 1.00 at 917,696 37x51
+  1290.1  server  on screen alpha 1.00 at 908,675 46x72
+  1301.8  server  on screen alpha 1.00 at 899,663 55x84
+  1314.2  server  on screen alpha 1.00 at 872,635 82x112
+  1336.1  server  on screen alpha 1.00 at 829,603 125x144
+  1353.1  server  on screen alpha 1.00 at 766,567 188x180
+  1374.0  server  on screen alpha 1.00 at 687,529 267x218
+  1385.6  server  on screen alpha 1.00 at 600,490 354x257
+  1406.1  server  on screen alpha 1.00 at 502,448 452x298
+  1423.9  server  on screen alpha 1.00 at 406,407 548x339
+  1435.7  server  on screen alpha 1.00 at 363,387 590x349
+  1445.0  server  on screen alpha 1.00 at 325,368 628x349
+  1454.4  server  on screen alpha 1.00 at 290,349 661x349
+  1473.9  server  on screen alpha 1.00 at 236,316 701x349
+  1491.1  server  on screen alpha 1.00 at 199,285 714x349
+  1508.2  server  on screen alpha 1.00 at 179,257 701x349
+  1523.1  server  on screen alpha 1.00 at 174,247 690x349
+  1528.5  server  on screen alpha 1.00 at 171,238 677x349
+  1539.5  server  on screen alpha 1.00 at 170,231 665x349
+  1546.5  server  on screen alpha 1.00 at 170,226 650x349
+  1554.6  server  on screen alpha 1.00 at 170,222 636x349
+  1573.8  server  on screen alpha 1.00 at 170,220 610x348
+  1590.1  server  on screen alpha 1.00 at 170,220 597x348
+  1606.4  server  on screen alpha 1.00 at 170,220 572x348
+  1623.5  server  on screen alpha 1.00 at 170,220 549x348
+  1639.1  server  on screen alpha 1.00 at 170,220 527x348
+  1658.1  server  on screen alpha 1.00 at 170,220 509x348
+  1668.1  server  on screen alpha 1.00 at 170,220 501x348
+  1677.8  server  on screen alpha 1.00 at 170,220 495x348
+  1686.3  server  on screen alpha 1.00 at 170,220 489x348
+  1706.1  server  on screen alpha 1.00 at 170,220 483x348
+  1722.7  server  on screen alpha 1.00 at 170,220 480x348
+  1732.5  probe   AXRaise -> error 0, asked at 1202.9, 529.6 ms
+  1736.9  app     AXMainWindowChanged w31
+  1737.1  app     AXWindowMiniaturized w29
+  1737.2  app     AXFocusedWindowChanged w29
+  1737.6  app     AXMainWindowChanged w29
+  1737.6  app     AXWindowDeminiaturized w29
+  2837.6  flight  the end: AXMinimized no
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, key, rest-main
+    10.5  flight  watching w29 of 36439, mode rest-main; AXMinimized no
+    18.1  server  on screen alpha 1.00 at 170,220 480x348
+   729.1  hand    a key went down 4 ms ago, a button came up 2272 ms ago
+   764.9  server  on screen alpha 1.00 at 170,220 481x348
+   786.9  server  on screen alpha 1.00 at 170,220 488x348
+   802.7  server  on screen alpha 1.00 at 170,220 493x348
+   825.9  server  on screen alpha 1.00 at 170,220 508x348
+   847.7  server  on screen alpha 1.00 at 170,220 536x348
+   857.5  server  on screen alpha 1.00 at 170,220 550x348
+   881.9  server  on screen alpha 1.00 at 170,220 579x348
+   890.8  server  on screen alpha 1.00 at 170,220 592x348
+   915.1  server  on screen alpha 1.00 at 170,220 621x349
+   936.0  server  on screen alpha 1.00 at 170,225 649x349
+   952.8  server  on screen alpha 1.00 at 172,238 677x349
+   974.5  server  on screen alpha 1.00 at 181,260 704x349
+  1003.9  server  on screen alpha 1.00 at 217,301 710x349
+  1015.2  server  on screen alpha 1.00 at 238,317 700x349
+  1022.2  server  on screen alpha 1.00 at 261,332 685x349
+  1036.6  server  on screen alpha 1.00 at 330,370 623x349
+  1057.8  server  on screen alpha 1.00 at 426,416 528x330
+  1080.2  server  on screen alpha 1.00 at 535,462 419x284
+  1088.8  server  on screen alpha 1.00 at 588,485 366x261
+  1109.4  server  on screen alpha 1.00 at 690,530 264x217
+  1119.0  server  on screen alpha 1.00 at 733,550 221x197
+  1139.7  server  on screen alpha 1.00 at 813,593 141x154
+  1165.1  server  on screen alpha 1.00 at 867,631 87x116
+  1186.5  server  on screen alpha 1.00 at 900,664 54x83
+  1201.1  server  on screen alpha 1.00 at 914,688 40x59
+  1219.3  server  on screen alpha 1.00 at 919,705 35x42
+  1233.1  server  on screen alpha 1.00 at 920,711 34x36
+  1252.5  server  on screen alpha 1.00 at 920,718 34x29
+  1270.8  server  not listed
+  1276.1  app     AXFocusedWindowChanged w31
+  1276.5  app     AXMainWindowChanged w31
+  1276.5  app     AXWindowMiniaturized w29
+  1781.4  probe   set AXMain -> error 0, asked at 1780.9, 0.5 ms
+  2624.7  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, rest-raise
+    14.6  flight  watching w29 of 36439, mode rest-raise; AXMinimized no
+    25.2  server  on screen alpha 1.00 at 170,220 480x348
+   691.5  hand    a key went down 3 ms ago, a button came up 2300 ms ago
+   730.6  server  on screen alpha 1.00 at 170,220 484x348
+   748.1  server  on screen alpha 1.00 at 170,220 493x348
+   764.3  server  on screen alpha 1.00 at 170,220 500x348
+   785.1  server  on screen alpha 1.00 at 170,220 519x348
+   801.7  server  on screen alpha 1.00 at 170,220 540x348
+   815.0  server  on screen alpha 1.00 at 170,220 555x348
+   833.0  server  on screen alpha 1.00 at 170,220 580x348
+   850.3  server  on screen alpha 1.00 at 170,220 595x348
+   870.1  server  on screen alpha 1.00 at 170,220 621x349
+   891.9  server  on screen alpha 1.00 at 170,231 665x349
+   916.6  server  on screen alpha 1.00 at 176,251 696x349
+   936.8  server  on screen alpha 1.00 at 192,277 712x349
+   951.5  server  on screen alpha 1.00 at 210,295 712x349
+   965.2  server  on screen alpha 1.00 at 254,327 690x349
+   986.0  server  on screen alpha 1.00 at 326,368 627x349
+  1001.0  server  on screen alpha 1.00 at 371,391 582x349
+  1022.3  server  on screen alpha 1.00 at 465,433 489x313
+  1044.0  server  on screen alpha 1.00 at 576,480 378x266
+  1056.7  server  on screen alpha 1.00 at 675,523 279x224
+  1069.8  server  on screen alpha 1.00 at 723,546 231x201
+  1080.5  server  on screen alpha 1.00 at 773,571 181x176
+  1087.7  server  on screen alpha 1.00 at 805,588 149x159
+  1108.6  server  on screen alpha 1.00 at 862,627 92x120
+  1117.8  server  on screen alpha 1.00 at 881,643 73x104
+  1137.5  server  on screen alpha 1.00 at 906,672 48x75
+  1148.5  server  on screen alpha 1.00 at 912,683 42x64
+  1165.9  server  on screen alpha 1.00 at 917,694 37x53
+  1185.4  server  on screen alpha 1.00 at 920,711 34x36
+  1199.7  server  on screen alpha 1.00 at 920,718 34x29
+  1220.5  server  not listed
+  1228.3  app     AXFocusedWindowChanged w31
+  1228.7  app     AXMainWindowChanged w31
+  1228.8  app     AXWindowMiniaturized w29
+  1746.6  server  off screen alpha 1.00 at 920,718 34x29
+  1766.6  server  on screen alpha 1.00 at 920,715 34x32
+  1783.9  server  on screen alpha 1.00 at 919,704 35x43
+  1803.9  server  on screen alpha 1.00 at 913,685 41x62
+  1816.4  server  on screen alpha 1.00 at 906,672 48x75
+  1833.4  server  on screen alpha 1.00 at 883,645 71x102
+  1846.6  server  on screen alpha 1.00 at 860,625 94x122
+  1854.5  server  on screen alpha 1.00 at 835,607 119x140
+  1874.9  server  on screen alpha 1.00 at 768,568 186x179
+  1885.0  server  on screen alpha 1.00 at 727,547 227x200
+  1903.9  server  on screen alpha 1.00 at 677,524 277x223
+  1924.7  server  on screen alpha 1.00 at 526,459 428x287
+  1947.4  server  on screen alpha 1.00 at 428,416 526x330
+  1965.7  server  on screen alpha 1.00 at 336,373 617x349
+  1986.5  server  on screen alpha 1.00 at 260,331 685x349
+  2003.3  server  on screen alpha 1.00 at 233,314 703x349
+  2017.5  server  on screen alpha 1.00 at 197,283 714x349
+  2034.1  server  on screen alpha 1.00 at 179,257 701x349
+  2053.3  server  on screen alpha 1.00 at 172,238 677x349
+  2070.3  server  on screen alpha 1.00 at 170,228 658x349
+  2086.6  server  on screen alpha 1.00 at 170,220 628x349
+  2104.7  server  on screen alpha 1.00 at 170,220 601x348
+  2124.6  server  on screen alpha 1.00 at 170,220 575x348
+  2149.0  server  on screen alpha 1.00 at 170,220 547x348
+  2167.8  server  on screen alpha 1.00 at 170,220 524x348
+  2187.5  server  on screen alpha 1.00 at 170,220 505x348
+  2203.5  server  on screen alpha 1.00 at 170,220 497x348
+  2218.4  server  on screen alpha 1.00 at 170,220 486x348
+  2236.9  server  on screen alpha 1.00 at 170,220 483x348
+  2248.9  server  on screen alpha 1.00 at 170,220 480x348
+  2260.1  probe   AXRaise -> error 0, asked at 1729.5, 530.5 ms
+  2261.1  app     AXFocusedWindowChanged w29
+  2262.6  app     AXMainWindowChanged w29
+  2262.8  app     AXWindowDeminiaturized w29
+  2618.8  flight  the end: AXMinimized no
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, button, poll
+    15.9  flight  watching w29 of 36439, mode poll; AXMinimized no
+    16.3  asked   AXMinimized no, asked at 15.8, 0.2 ms
+    25.4  server  on screen alpha 1.00 at 170,220 480x348
+  1082.1  hand    a key went down 7741 ms ago, a button came up 19 ms ago
+  1123.5  server  on screen alpha 1.00 at 170,220 483x348
+  1137.4  server  on screen alpha 1.00 at 170,220 492x348
+  1156.3  server  on screen alpha 1.00 at 170,220 505x348
+  1172.6  server  on screen alpha 1.00 at 170,220 515x348
+  1184.8  server  on screen alpha 1.00 at 170,220 535x348
+  1206.6  server  on screen alpha 1.00 at 170,220 561x348
+  1227.4  server  on screen alpha 1.00 at 170,220 589x348
+  1254.9  server  on screen alpha 1.00 at 170,220 619x349
+  1272.6  server  on screen alpha 1.00 at 170,224 646x349
+  1278.2  server  on screen alpha 1.00 at 170,229 660x349
+  1300.5  server  on screen alpha 1.00 at 173,245 688x349
+  1306.8  server  on screen alpha 1.00 at 178,255 699x349
+  1321.5  server  on screen alpha 1.00 at 186,268 709x349
+  1340.8  server  on screen alpha 1.00 at 211,296 712x349
+  1355.5  server  on screen alpha 1.00 at 257,329 688x349
+  1369.3  server  on screen alpha 1.00 at 296,352 656x349
+  1387.3  server  on screen alpha 1.00 at 338,375 615x349
+  1405.8  server  on screen alpha 1.00 at 444,423 510x323
+  1421.0  server  on screen alpha 1.00 at 545,467 409x279
+  1443.3  server  on screen alpha 1.00 at 663,518 291x229
+  1468.1  server  on screen alpha 1.00 at 766,567 188x180
+  1488.8  server  on screen alpha 1.00 at 835,607 119x140
+  1507.6  server  on screen alpha 1.00 at 881,643 73x104
+  1522.6  server  on screen alpha 1.00 at 895,657 59x90
+  1539.5  server  on screen alpha 1.00 at 912,683 42x64
+  1556.5  server  on screen alpha 1.00 at 917,696 37x51
+  1567.3  server  on screen alpha 1.00 at 920,710 34x37
+  1588.8  server  on screen alpha 1.00 at 920,718 34x29
+  1616.2  server  not listed
+  1616.9  asked   the other window's AXMinimized no, asked at 1078.9, 538.0 ms
+  1617.8  app     AXFocusedWindowChanged w31
+  1618.3  app     AXMainWindowChanged w31
+  1618.4  asked   AXMinimized yes, asked at 1617.0, 1.3 ms
+  1618.6  app     AXWindowMiniaturized w29
+  2618.7  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, button, both
+    16.9  flight  watching w29 of 36439, mode both; AXMinimized no
+    25.0  server  on screen alpha 1.00 at 170,220 480x348
+  1027.8  hand    a key went down 14750 ms ago, a button came up 17 ms ago
+  1053.6  server  on screen alpha 1.00 at 170,220 483x348
+  1074.6  server  on screen alpha 1.00 at 170,220 494x348
+  1091.6  server  on screen alpha 1.00 at 170,220 509x348
+  1111.7  server  on screen alpha 1.00 at 170,220 529x348
+  1126.2  server  on screen alpha 1.00 at 170,220 540x348
+  1142.4  server  on screen alpha 1.00 at 170,220 564x348
+  1158.6  server  on screen alpha 1.00 at 170,220 582x348
+  1181.0  server  on screen alpha 1.00 at 170,220 607x348
+  1209.8  server  on screen alpha 1.00 at 170,226 652x349
+  1226.3  server  on screen alpha 1.00 at 172,240 681x349
+  1243.3  server  on screen alpha 1.00 at 181,260 704x349
+  1258.9  server  on screen alpha 1.00 at 191,275 711x349
+  1275.7  server  on screen alpha 1.00 at 223,306 708x349
+  1293.1  server  on screen alpha 1.00 at 254,327 690x349
+  1316.2  server  on screen alpha 1.00 at 321,366 632x349
+  1341.7  server  on screen alpha 1.00 at 464,432 490x314
+  1356.9  server  on screen alpha 1.00 at 517,455 437x291
+  1372.1  server  on screen alpha 1.00 at 632,504 322x243
+  1392.6  server  on screen alpha 1.00 at 728,548 226x199
+  1411.1  server  on screen alpha 1.00 at 810,592 144x155
+  1426.3  server  on screen alpha 1.00 at 839,610 115x137
+  1440.4  server  on screen alpha 1.00 at 881,643 73x104
+  1461.6  server  on screen alpha 1.00 at 908,675 46x72
+  1476.0  server  on screen alpha 1.00 at 913,686 41x61
+  1491.3  server  on screen alpha 1.00 at 919,704 35x43
+  1512.5  server  on screen alpha 1.00 at 920,716 34x31
+  1530.0  server  on screen alpha 1.00 at 920,718 34x29
+  1542.8  server  not listed
+  1548.5  app     AXFocusedWindowChanged w31
+  1548.9  probe   set AXMain -> error 0, asked at 1548.7, 0.1 ms
+  1570.1  server  off screen alpha 1.00 at 920,718 34x29
+  1589.6  server  on screen alpha 1.00 at 920,715 34x32
+  1600.2  server  on screen alpha 1.00 at 920,709 34x38
+  1622.2  server  on screen alpha 1.00 at 916,692 38x55
+  1642.5  server  on screen alpha 1.00 at 905,671 49x76
+  1664.4  server  on screen alpha 1.00 at 877,639 77x108
+  1669.9  server  on screen alpha 1.00 at 858,623 96x124
+  1689.3  server  on screen alpha 1.00 at 802,587 152x160
+  1704.5  server  on screen alpha 1.00 at 765,566 189x181
+  1710.5  server  on screen alpha 1.00 at 717,543 237x204
+  1730.5  server  on screen alpha 1.00 at 622,500 332x247
+  1742.9  server  on screen alpha 1.00 at 571,478 383x268
+  1760.4  server  on screen alpha 1.00 at 507,451 447x295
+  1771.4  server  on screen alpha 1.00 at 410,409 544x337
+  1789.2  server  on screen alpha 1.00 at 363,387 590x349
+  1809.5  server  on screen alpha 1.00 at 277,342 672x349
+  1826.4  server  on screen alpha 1.00 at 225,307 707x349
+  1846.5  server  on screen alpha 1.00 at 191,275 712x349
+  1861.7  server  on screen alpha 1.00 at 176,252 697x349
+  1882.6  server  on screen alpha 1.00 at 171,233 669x349
+  1895.9  server  on screen alpha 1.00 at 170,227 653x349
+  1909.4  server  on screen alpha 1.00 at 170,222 637x349
+  1926.4  server  on screen alpha 1.00 at 170,220 610x348
+  1943.5  server  on screen alpha 1.00 at 170,220 582x348
+  1958.2  server  on screen alpha 1.00 at 170,220 567x348
+  1975.7  server  on screen alpha 1.00 at 170,220 543x348
+  1993.0  server  on screen alpha 1.00 at 170,220 530x348
+  2009.1  server  on screen alpha 1.00 at 170,220 511x348
+  2026.3  server  on screen alpha 1.00 at 170,220 495x348
+  2043.8  server  on screen alpha 1.00 at 170,220 485x348
+  2053.3  server  on screen alpha 1.00 at 170,220 482x348
+  2074.5  server  on screen alpha 1.00 at 170,220 480x348
+  2088.6  probe   AXRaise -> error 0, asked at 1548.9, 539.6 ms
+  2093.0  app     AXMainWindowChanged w31
+  2093.2  app     AXWindowMiniaturized w29
+  2093.4  app     AXFocusedWindowChanged w29
+  2093.5  app     AXMainWindowChanged w29
+  2093.6  app     AXWindowDeminiaturized w29
+  2631.2  flight  the end: AXMinimized no
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, button, guarded
+    13.7  flight  watching w29 of 36439, mode guarded; AXMinimized no
+    22.7  server  on screen alpha 1.00 at 170,220 480x348
+   983.1  hand    a key went down 21443 ms ago, a button came up 9 ms ago
+  1000.7  server  on screen alpha 1.00 at 170,220 481x348
+  1009.4  server  on screen alpha 1.00 at 170,220 483x348
+  1026.4  server  on screen alpha 1.00 at 170,220 486x348
+  1036.5  server  on screen alpha 1.00 at 170,220 496x348
+  1061.2  server  on screen alpha 1.00 at 170,220 510x348
+  1066.5  server  on screen alpha 1.00 at 170,220 519x348
+  1076.1  server  on screen alpha 1.00 at 170,220 528x348
+  1084.7  server  on screen alpha 1.00 at 170,220 539x348
+  1107.7  server  on screen alpha 1.00 at 170,220 562x348
+  1123.5  server  on screen alpha 1.00 at 170,220 588x348
+  1140.3  server  on screen alpha 1.00 at 170,220 613x348
+  1155.3  server  on screen alpha 1.00 at 170,220 626x349
+  1160.0  server  on screen alpha 1.00 at 170,223 639x349
+  1173.1  server  on screen alpha 1.00 at 170,227 653x349
+  1187.7  server  on screen alpha 1.00 at 172,240 681x349
+  1201.3  server  on screen alpha 1.00 at 175,248 692x349
+  1221.8  server  on screen alpha 1.00 at 197,282 713x349
+  1237.5  server  on screen alpha 1.00 at 212,296 711x349
+  1242.7  server  on screen alpha 1.00 at 231,312 704x349
+  1253.6  server  on screen alpha 1.00 at 255,328 689x349
+  1259.0  server  on screen alpha 1.00 at 285,346 665x349
+  1276.7  server  on screen alpha 1.00 at 355,383 598x349
+  1288.8  server  on screen alpha 1.00 at 398,403 556x343
+  1316.3  server  on screen alpha 1.00 at 538,464 416x282
+  1333.4  server  on screen alpha 1.00 at 631,504 323x243
+  1341.7  server  on screen alpha 1.00 at 678,525 276x222
+  1356.6  server  on screen alpha 1.00 at 722,545 232x202
+  1367.7  server  on screen alpha 1.00 at 761,565 193x182
+  1377.8  server  on screen alpha 1.00 at 823,600 131x147
+  1405.5  server  on screen alpha 1.00 at 886,648 68x99
+  1415.9  server  on screen alpha 1.00 at 898,661 56x86
+  1437.5  server  on screen alpha 1.00 at 912,684 42x63
+  1455.1  server  on screen alpha 1.00 at 919,702 35x45
+  1469.9  server  on screen alpha 1.00 at 920,714 34x33
+  1488.3  server  on screen alpha 1.00 at 920,718 34x29
+  1509.7  server  not listed
+  1568.8  app     AXFocusedWindowChanged w31
+  1569.2  probe   read AXMinimized -> yes, asked at 1568.9, 0.3 ms
+  1569.2  probe   left alone
+  1570.2  app     AXMainWindowChanged w31
+  1570.3  app     AXWindowMiniaturized w29
+  2616.4  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, ax, poll
+     9.0  flight  watching w29 of 36439, mode poll; AXMinimized no
+     9.5  asked   AXMinimized no, asked at 9.1, 0.2 ms
+    15.7  server  on screen alpha 1.00 at 170,220 480x348
+   585.8  server  on screen alpha 1.00 at 170,220 481x348
+   605.7  server  on screen alpha 1.00 at 170,220 488x348
+   623.1  server  on screen alpha 1.00 at 170,220 499x348
+   644.1  server  on screen alpha 1.00 at 170,220 517x348
+   654.7  server  on screen alpha 1.00 at 170,220 528x348
+   672.5  server  on screen alpha 1.00 at 170,220 542x348
+   695.1  server  on screen alpha 1.00 at 170,220 566x348
+   720.1  server  on screen alpha 1.00 at 170,220 605x348
+   736.6  server  on screen alpha 1.00 at 170,221 632x349
+   756.0  server  on screen alpha 1.00 at 170,226 649x349
+   772.9  server  on screen alpha 1.00 at 172,239 678x349
+   789.0  server  on screen alpha 1.00 at 180,260 704x349
+   805.8  server  on screen alpha 1.00 at 190,275 712x349
+   822.2  server  on screen alpha 1.00 at 222,305 708x349
+   840.0  server  on screen alpha 1.00 at 280,344 670x349
+   860.3  server  on screen alpha 1.00 at 354,382 599x349
+   878.3  server  on screen alpha 1.00 at 444,424 510x322
+   886.9  server  on screen alpha 1.00 at 492,444 462x302
+   903.0  server  on screen alpha 1.00 at 543,466 411x280
+   922.2  server  on screen alpha 1.00 at 647,511 307x236
+   939.4  server  on screen alpha 1.00 at 741,554 213x193
+   959.5  server  on screen alpha 1.00 at 824,600 130x147
+   971.9  server  on screen alpha 1.00 at 850,618 104x129
+   988.6  server  on screen alpha 1.00 at 888,650 66x97
+  1002.0  server  on screen alpha 1.00 at 903,668 51x79
+  1023.4  server  on screen alpha 1.00 at 917,694 37x53
+  1033.0  server  on screen alpha 1.00 at 919,702 35x45
+  1051.8  server  on screen alpha 1.00 at 920,714 34x33
+  1070.2  server  on screen alpha 1.00 at 920,718 34x29
+  1094.5  asked   the other window's AXMinimized no, asked at 564.5, 530.0 ms
+  1095.0  app     AXFocusedWindowChanged w31
+  1095.1  asked   AXMinimized yes, asked at 1094.6, 0.5 ms
+  1095.2  app     AXMainWindowChanged w31
+  1095.2  app     AXWindowMiniaturized w29
+  1115.3  server  not listed
+  2616.6  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, ax, both
+     7.9  flight  watching w29 of 36439, mode both; AXMinimized no
+    14.8  server  on screen alpha 1.00 at 170,220 480x348
+   642.8  server  on screen alpha 1.00 at 170,220 481x348
+   659.9  server  on screen alpha 1.00 at 170,220 487x348
+   669.6  server  on screen alpha 1.00 at 170,220 494x348
+   690.5  server  on screen alpha 1.00 at 170,220 509x348
+   707.8  server  on screen alpha 1.00 at 170,220 519x348
+   723.0  server  on screen alpha 1.00 at 170,220 540x348
+   743.0  server  on screen alpha 1.00 at 170,220 565x348
+   760.1  server  on screen alpha 1.00 at 170,220 593x348
+   781.0  server  on screen alpha 1.00 at 170,220 619x349
+   789.9  server  on screen alpha 1.00 at 170,221 632x349
+   805.6  server  on screen alpha 1.00 at 170,226 649x349
+   826.5  server  on screen alpha 1.00 at 172,240 681x349
+   846.4  server  on screen alpha 1.00 at 180,260 704x349
+   859.6  server  on screen alpha 1.00 at 191,275 711x349
+   880.3  server  on screen alpha 1.00 at 241,319 698x349
+   894.7  server  on screen alpha 1.00 at 268,336 679x349
+   899.5  server  on screen alpha 1.00 at 301,355 651x349
+   920.9  server  on screen alpha 1.00 at 384,397 569x349
+   939.9  server  on screen alpha 1.00 at 478,438 476x308
+   948.9  server  on screen alpha 1.00 at 538,464 416x282
+   976.5  server  on screen alpha 1.00 at 657,515 297x232
+   993.0  server  on screen alpha 1.00 at 748,558 206x189
+  1009.3  server  on screen alpha 1.00 at 799,585 155x162
+  1014.6  server  on screen alpha 1.00 at 829,603 125x144
+  1040.1  server  on screen alpha 1.00 at 879,641 75x106
+  1057.1  server  on screen alpha 1.00 at 904,670 50x77
+  1075.4  server  on screen alpha 1.00 at 916,692 38x55
+  1096.7  server  on screen alpha 1.00 at 920,709 34x38
+  1116.8  server  on screen alpha 1.00 at 920,717 34x30
+  1141.1  server  on screen alpha 1.00 at 920,718 34x29
+  1152.7  app     AXFocusedWindowChanged w31
+  1153.1  probe   set AXMain -> error 0, asked at 1152.8, 0.2 ms
+  1167.0  server  not listed
+  1189.4  server  on screen alpha 1.00 at 920,714 34x33
+  1206.9  server  on screen alpha 1.00 at 920,708 34x39
+  1228.6  server  on screen alpha 1.00 at 911,682 43x65
+  1239.0  server  on screen alpha 1.00 at 904,670 50x77
+  1248.9  server  on screen alpha 1.00 at 892,654 62x93
+  1272.4  server  on screen alpha 1.00 at 856,622 98x125
+  1279.2  server  on screen alpha 1.00 at 829,603 125x144
+  1293.0  server  on screen alpha 1.00 at 800,585 154x162
+  1307.3  server  on screen alpha 1.00 at 757,562 197x185
+  1328.3  server  on screen alpha 1.00 at 623,500 331x247
+  1348.8  server  on screen alpha 1.00 at 574,479 380x267
+  1373.4  server  on screen alpha 1.00 at 413,410 541x336
+  1394.2  server  on screen alpha 1.00 at 330,371 623x349
+  1411.3  server  on screen alpha 1.00 at 261,332 685x349
+  1426.1  server  on screen alpha 1.00 at 214,298 711x349
+  1440.4  server  on screen alpha 1.00 at 196,281 713x349
+  1457.0  server  on screen alpha 1.00 at 178,256 700x349
+  1475.1  server  on screen alpha 1.00 at 173,242 683x349
+  1493.1  server  on screen alpha 1.00 at 170,228 657x349
+  1513.2  server  on screen alpha 1.00 at 170,220 628x349
+  1527.2  server  on screen alpha 1.00 at 170,220 601x348
+  1543.0  server  on screen alpha 1.00 at 170,220 588x348
+  1557.6  server  on screen alpha 1.00 at 170,220 562x348
+  1577.1  server  on screen alpha 1.00 at 170,220 538x348
+  1595.9  server  on screen alpha 1.00 at 170,220 517x348
+  1610.1  server  on screen alpha 1.00 at 170,220 509x348
+  1626.2  server  on screen alpha 1.00 at 170,220 493x348
+  1641.2  server  on screen alpha 1.00 at 170,220 487x348
+  1659.8  server  on screen alpha 1.00 at 170,220 482x348
+  1666.8  server  on screen alpha 1.00 at 170,220 481x348
+  1686.8  probe   AXRaise -> error 0, asked at 1153.1, 533.6 ms
+  1690.2  server  on screen alpha 1.00 at 170,220 480x348
+  1690.5  app     AXMainWindowChanged w31
+  1690.6  app     AXWindowMiniaturized w29
+  1690.8  app     AXFocusedWindowChanged w29
+  1691.2  app     AXMainWindowChanged w29
+  1691.3  app     AXWindowDeminiaturized w29
+  2622.1  flight  the end: AXMinimized no
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, ax, guarded
+    10.3  flight  watching w29 of 36439, mode guarded; AXMinimized no
+    16.7  server  on screen alpha 1.00 at 170,220 480x348
+   648.1  server  on screen alpha 1.00 at 170,220 481x348
+   665.9  server  on screen alpha 1.00 at 170,220 484x348
+   682.5  server  on screen alpha 1.00 at 170,220 493x348
+   703.2  server  on screen alpha 1.00 at 170,220 506x348
+   718.1  server  on screen alpha 1.00 at 170,220 525x348
+   739.9  server  on screen alpha 1.00 at 170,220 551x348
+   753.2  server  on screen alpha 1.00 at 170,220 563x348
+   770.3  server  on screen alpha 1.00 at 170,220 578x348
+   791.5  server  on screen alpha 1.00 at 170,220 618x349
+   817.0  server  on screen alpha 1.00 at 170,225 649x349
+   822.0  server  on screen alpha 1.00 at 170,231 664x349
+   849.1  server  on screen alpha 1.00 at 175,249 693x349
+   865.9  server  on screen alpha 1.00 at 188,272 711x349
+   886.3  server  on screen alpha 1.00 at 222,305 708x349
+   894.1  server  on screen alpha 1.00 at 248,324 694x349
+   903.5  server  on screen alpha 1.00 at 276,341 673x349
+   913.9  server  on screen alpha 1.00 at 310,360 643x349
+   930.8  server  on screen alpha 1.00 at 348,379 605x349
+   952.0  server  on screen alpha 1.00 at 486,442 468x304
+   970.8  server  on screen alpha 1.00 at 586,485 368x261
+   987.1  server  on screen alpha 1.00 at 638,507 316x240
+  1004.1  server  on screen alpha 1.00 at 731,549 223x198
+  1019.5  server  on screen alpha 1.00 at 805,589 149x158
+  1032.8  server  on screen alpha 1.00 at 835,607 119x140
+  1048.4  server  on screen alpha 1.00 at 877,640 77x107
+  1069.6  server  on screen alpha 1.00 at 904,669 50x78
+  1082.8  server  on screen alpha 1.00 at 913,684 41x63
+  1101.5  server  on screen alpha 1.00 at 919,703 35x44
+  1119.7  server  on screen alpha 1.00 at 920,715 34x32
+  1135.5  server  on screen alpha 1.00 at 920,718 34x29
+  1152.4  server  not listed
+  1155.9  app     AXFocusedWindowChanged w31
+  1156.3  probe   read AXMinimized -> yes, asked at 1156.1, 0.2 ms
+  1156.4  probe   left alone
+  1156.4  app     AXMainWindowChanged w31
+  1156.5  app     AXWindowMiniaturized w29
+  2614.6  flight  the end: AXMinimized yes
+  afterwards: 29 170 220 480 348 minimized
+
+--- TextEdit, key, poll
+     8.6  flight  watching w37 of 36537, mode poll; AXMinimized no
+    10.9  asked   AXMinimized no, asked at 10.0, 0.8 ms
+    18.1  server  on screen alpha 1.00 at 108,85 673x439
+   701.4  hand    a key went down 15 ms ago, a button came up 2176 ms ago
+   727.6  server  on screen alpha 1.00 at 108,85 674x439
+   750.0  server  on screen alpha 1.00 at 108,85 677x439
+   772.6  server  on screen alpha 1.00 at 108,85 687x439
+   791.2  server  on screen alpha 1.00 at 108,85 697x439
+   810.9  server  on screen alpha 1.00 at 108,85 704x439
+   823.9  server  on screen alpha 1.00 at 108,85 717x439
+   840.6  server  on screen alpha 1.00 at 108,85 730x439
+   850.5  server  on screen alpha 1.00 at 108,85 738x439
+   861.4  server  on screen alpha 1.00 at 108,85 746x439
+   877.9  server  on screen alpha 1.00 at 108,85 753x440
+   890.3  server  on screen alpha 1.00 at 108,94 769x440
+   912.2  server  on screen alpha 1.00 at 111,115 785x440
+   927.2  server  on screen alpha 1.00 at 115,127 790x440
+   944.3  server  on screen alpha 1.00 at 134,160 789x440
+   958.7  server  on screen alpha 1.00 at 152,181 780x440
+   978.2  server  on screen alpha 1.00 at 202,224 743x440
+  1005.5  server  on screen alpha 1.00 at 324,302 627x440
+  1028.2  server  on screen alpha 1.00 at 430,358 521x387
+  1045.0  server  on screen alpha 1.00 at 537,412 414x333
+  1064.0  server  on screen alpha 1.00 at 661,475 290x270
+  1084.5  server  on screen alpha 1.00 at 758,531 193x214
+  1109.9  server  on screen alpha 1.00 at 832,583 119x162
+  1126.8  server  on screen alpha 1.00 at 878,628 73x117
+  1144.1  server  on screen alpha 1.00 at 893,648 58x97
+  1158.3  server  on screen alpha 1.00 at 909,678 42x67
+  1177.0  server  on screen alpha 1.00 at 915,701 36x44
+  1193.9  server  on screen alpha 1.00 at 916,711 35x34
+  1215.2  server  on screen alpha 1.00 at 916,718 35x27
+  1281.1  app     AXFocusedWindowChanged w38
+  1283.5  asked   the other window's AXMinimized no, asked at 692.3, 591.2 ms
+  1283.7  asked   AXMinimized yes, asked at 1283.5, 0.2 ms
+  1284.2  app     AXMainWindowChanged w38
+  1284.3  app     AXWindowMiniaturized w37
+  1284.4  server  not listed
+  2610.2  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, sparse
+     9.4  flight  watching w37 of 36537, mode sparse; AXMinimized no
+     9.6  asked   AXMinimized no, asked at 9.4, 0.0 ms
+    15.4  server  on screen alpha 1.00 at 108,85 673x439
+   622.2  hand    a key went down 8 ms ago, a button came up 2081 ms ago
+   645.8  server  on screen alpha 1.00 at 108,85 674x439
+   656.5  server  on screen alpha 1.00 at 108,85 677x439
+   677.7  server  on screen alpha 1.00 at 108,85 684x439
+   698.1  server  on screen alpha 1.00 at 108,85 693x439
+   721.2  server  on screen alpha 1.00 at 108,85 705x439
+   740.3  server  on screen alpha 1.00 at 108,85 718x439
+   757.8  server  on screen alpha 1.00 at 108,85 732x439
+   778.3  server  on screen alpha 1.00 at 108,85 747x440
+   790.7  server  on screen alpha 1.00 at 108,86 755x440
+   798.8  server  on screen alpha 1.00 at 108,90 763x440
+   807.3  server  on screen alpha 1.00 at 108,96 771x440
+   815.7  server  on screen alpha 1.00 at 109,103 777x440
+   840.3  server  on screen alpha 1.00 at 117,130 790x440
+   847.3  server  on screen alpha 1.00 at 124,145 792x440
+   860.4  server  on screen alpha 1.00 at 136,162 788x440
+   866.6  server  on screen alpha 1.00 at 152,181 780x440
+   891.9  server  on screen alpha 1.00 at 211,232 735x440
+   909.1  server  on screen alpha 1.00 at 289,281 662x440
+   924.3  server  on screen alpha 1.00 at 350,317 601x428
+   943.7  server  on screen alpha 1.00 at 467,377 484x368
+   963.5  server  on screen alpha 1.00 at 578,432 373x313
+   984.7  server  on screen alpha 1.00 at 690,491 261x254
+  1010.6  server  on screen alpha 1.00 at 777,544 174x201
+  1026.9  server  on screen alpha 1.00 at 839,589 112x156
+  1047.9  server  on screen alpha 1.00 at 883,634 68x111
+  1057.1  server  on screen alpha 1.00 at 896,651 55x94
+  1078.3  server  on screen alpha 1.00 at 910,680 41x65
+  1083.6  server  on screen alpha 1.00 at 914,694 37x51
+  1107.5  server  on screen alpha 1.00 at 916,711 35x34
+  1123.9  server  on screen alpha 1.00 at 916,718 35x27
+  1144.4  server  not listed
+  1168.2  app     AXFocusedWindowChanged w38
+  1177.0  asked   the other window's AXMinimized no, asked at 644.2, 532.8 ms
+  1178.0  app     AXMainWindowChanged w38
+  1179.4  asked   AXMinimized yes, asked at 1177.0, 2.4 ms
+  1180.1  app     AXWindowMiniaturized w37
+  2610.0  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, read
+    10.6  flight  watching w37 of 36537, mode read; AXMinimized no
+    17.2  server  on screen alpha 1.00 at 108,85 673x439
+   657.2  hand    a key went down 1 ms ago, a button came up 2244 ms ago
+   699.4  server  on screen alpha 1.00 at 108,85 674x439
+   710.3  server  on screen alpha 1.00 at 108,85 675x439
+   727.5  server  on screen alpha 1.00 at 108,85 678x439
+   748.3  server  on screen alpha 1.00 at 108,85 688x439
+   767.3  server  on screen alpha 1.00 at 108,85 698x439
+   781.0  server  on screen alpha 1.00 at 108,85 704x439
+   797.5  server  on screen alpha 1.00 at 108,85 717x439
+   815.6  server  on screen alpha 1.00 at 108,85 726x439
+   836.4  server  on screen alpha 1.00 at 108,85 741x439
+   847.9  server  on screen alpha 1.00 at 108,86 755x440
+   865.5  server  on screen alpha 1.00 at 108,92 766x440
+   881.9  server  on screen alpha 1.00 at 110,110 782x440
+   895.3  server  on screen alpha 1.00 at 113,122 788x440
+   915.6  server  on screen alpha 1.00 at 128,152 791x440
+   932.4  server  on screen alpha 1.00 at 161,190 775x440
+   950.9  server  on screen alpha 1.00 at 192,217 751x440
+   965.8  server  on screen alpha 1.00 at 259,263 691x440
+   982.0  server  on screen alpha 1.00 at 347,315 604x430
+   999.0  server  on screen alpha 1.00 at 416,351 535x394
+  1016.2  server  on screen alpha 1.00 at 522,404 429x341
+  1032.1  server  on screen alpha 1.00 at 627,457 324x288
+  1048.5  server  on screen alpha 1.00 at 689,491 262x254
+  1054.4  server  on screen alpha 1.00 at 733,516 218x229
+  1067.0  server  on screen alpha 1.00 at 773,541 178x204
+  1084.7  server  on screen alpha 1.00 at 843,593 108x152
+  1099.4  server  on screen alpha 1.00 at 865,613 86x132
+  1115.3  server  on screen alpha 1.00 at 897,654 54x91
+  1126.5  server  on screen alpha 1.00 at 905,669 46x76
+  1144.5  server  on screen alpha 1.00 at 914,694 37x51
+  1163.2  server  on screen alpha 1.00 at 916,711 35x34
+  1182.0  server  on screen alpha 1.00 at 916,718 35x27
+  1236.2  app     AXFocusedWindowChanged w38
+  1236.9  probe   read AXMinimized of the other window -> no, asked at 1236.4, 0.5 ms
+  1237.0  probe   read AXMinimized -> yes, asked at 1236.9, 0.1 ms
+  1237.1  app     AXMainWindowChanged w38
+  1237.1  app     AXWindowMiniaturized w37
+  1237.4  server  not listed
+  2615.5  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, both
+    10.2  flight  watching w37 of 36537, mode both; AXMinimized no
+    19.0  server  on screen alpha 1.00 at 108,85 673x439
+   631.0  hand    a key went down 8 ms ago, a button came up 2318 ms ago
+   666.8  server  on screen alpha 1.00 at 108,85 674x439
+   677.3  server  on screen alpha 1.00 at 108,85 676x439
+   697.1  server  on screen alpha 1.00 at 108,85 682x439
+   713.3  server  on screen alpha 1.00 at 108,85 685x439
+   731.6  server  on screen alpha 1.00 at 108,85 694x439
+   744.7  server  on screen alpha 1.00 at 108,85 705x439
+   760.9  server  on screen alpha 1.00 at 108,85 717x439
+   779.8  server  on screen alpha 1.00 at 108,85 730x439
+   790.4  server  on screen alpha 1.00 at 108,85 736x439
+   811.0  server  on screen alpha 1.00 at 108,85 750x440
+   827.5  server  on screen alpha 1.00 at 108,92 765x440
+   852.6  server  on screen alpha 1.00 at 112,118 786x440
+   871.1  server  on screen alpha 1.00 at 124,145 791x440
+   891.7  server  on screen alpha 1.00 at 149,178 782x440
+   900.6  server  on screen alpha 1.00 at 167,196 770x440
+   916.8  server  on screen alpha 1.00 at 221,238 726x440
+   933.5  server  on screen alpha 1.00 at 257,262 693x440
+   947.0  server  on screen alpha 1.00 at 344,313 607x432
+   963.8  server  on screen alpha 1.00 at 403,344 548x401
+   983.6  server  on screen alpha 1.00 at 533,410 418x335
+  1001.7  server  on screen alpha 1.00 at 656,473 295x272
+  1023.1  server  on screen alpha 1.00 at 757,530 194x215
+  1033.4  server  on screen alpha 1.00 at 796,556 155x189
+  1052.2  server  on screen alpha 1.00 at 835,586 116x159
+  1074.1  server  on screen alpha 1.00 at 882,632 69x113
+  1086.4  server  on screen alpha 1.00 at 904,666 47x79
+  1096.8  server  on screen alpha 1.00 at 910,680 41x65
+  1116.9  server  on screen alpha 1.00 at 915,703 36x42
+  1130.9  server  on screen alpha 1.00 at 916,712 35x33
+  1150.6  server  on screen alpha 1.00 at 916,718 35x27
+  1171.2  server  not listed
+  1193.3  app     AXFocusedWindowChanged w38
+  1201.1  probe   set AXMain -> error 0, asked at 1193.9, 7.1 ms
+  1232.1  server  on screen alpha 1.00 at 916,717 35x28
+  1250.2  server  on screen alpha 1.00 at 916,705 35x40
+  1257.4  server  on screen alpha 1.00 at 914,694 37x51
+  1280.4  server  on screen alpha 1.00 at 903,665 48x80
+  1300.0  server  on screen alpha 1.00 at 879,629 72x116
+  1316.9  server  on screen alpha 1.00 at 860,608 91x137
+  1328.8  server  on screen alpha 1.00 at 806,563 145x182
+  1349.3  server  on screen alpha 1.00 at 724,510 227x235
+  1368.0  server  on screen alpha 1.00 at 672,481 279x264
+  1384.1  server  on screen alpha 1.00 at 568,428 383x317
+  1390.6  server  on screen alpha 1.00 at 504,395 447x350
+  1413.6  server  on screen alpha 1.00 at 387,336 564x409
+  1433.6  server  on screen alpha 1.00 at 291,283 660x440
+  1451.6  server  on screen alpha 1.00 at 211,231 735x440
+  1467.2  server  on screen alpha 1.00 at 181,208 760x440
+  1489.5  server  on screen alpha 1.00 at 128,152 791x440
+  1519.3  server  on screen alpha 1.00 at 113,120 787x440
+  1529.7  server  on screen alpha 1.00 at 108,99 774x440
+  1546.8  server  on screen alpha 1.00 at 108,91 764x440
+  1565.5  server  on screen alpha 1.00 at 108,85 749x440
+  1584.1  server  on screen alpha 1.00 at 108,85 735x439
+  1600.1  server  on screen alpha 1.00 at 108,85 720x439
+  1621.4  server  on screen alpha 1.00 at 108,85 707x439
+  1644.8  server  on screen alpha 1.00 at 108,85 695x439
+  1665.4  server  on screen alpha 1.00 at 108,85 685x439
+  1680.2  server  on screen alpha 1.00 at 108,85 678x439
+  1700.2  server  on screen alpha 1.00 at 108,85 674x439
+  1730.5  probe   AXRaise -> error 0, asked at 1201.2, 529.1 ms
+  1737.0  app     AXMainWindowChanged w38
+  1737.4  app     AXWindowMiniaturized w37
+  1737.6  app     AXFocusedWindowChanged w37
+  1737.7  server  on screen alpha 1.00 at 108,85 673x439
+  1737.8  app     AXMainWindowChanged w37
+  1737.9  app     AXWindowDeminiaturized w37
+  2617.4  flight  the end: AXMinimized no
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, key, guarded
+     9.8  flight  watching w37 of 36537, mode guarded; AXMinimized no
+    16.9  server  on screen alpha 1.00 at 108,85 673x439
+   726.8  hand    a key went down 15 ms ago, a button came up 2365 ms ago
+   749.3  server  on screen alpha 1.00 at 108,85 674x439
+   758.5  server  on screen alpha 1.00 at 108,85 675x439
+   779.9  server  on screen alpha 1.00 at 108,85 680x439
+   797.4  server  on screen alpha 1.00 at 108,85 684x439
+   816.9  server  on screen alpha 1.00 at 108,85 695x439
+   822.7  server  on screen alpha 1.00 at 108,85 701x439
+   845.1  server  on screen alpha 1.00 at 108,85 715x439
+   866.0  server  on screen alpha 1.00 at 108,85 728x439
+   882.8  server  on screen alpha 1.00 at 108,85 745x439
+   898.6  server  on screen alpha 1.00 at 108,85 753x440
+   915.6  server  on screen alpha 1.00 at 108,94 768x440
+   930.9  server  on screen alpha 1.00 at 109,105 778x440
+   948.5  server  on screen alpha 1.00 at 115,126 789x440
+   964.2  server  on screen alpha 1.00 at 134,160 789x440
+   979.8  server  on screen alpha 1.00 at 157,187 777x440
+   997.0  server  on screen alpha 1.00 at 209,230 737x440
+  1012.7  server  on screen alpha 1.00 at 258,262 692x440
+  1032.4  server  on screen alpha 1.00 at 360,322 591x423
+  1049.6  server  on screen alpha 1.00 at 421,354 530x391
+  1073.2  server  on screen alpha 1.00 at 584,436 367x309
+  1082.0  server  on screen alpha 1.00 at 635,462 316x283
+  1101.4  server  on screen alpha 1.00 at 732,515 219x230
+  1122.5  server  on screen alpha 1.00 at 812,568 139x177
+  1133.3  server  on screen alpha 1.00 at 844,594 107x151
+  1145.6  server  on screen alpha 1.00 at 866,614 85x131
+  1153.3  server  on screen alpha 1.00 at 885,636 66x109
+  1180.6  server  on screen alpha 1.00 at 908,674 43x71
+  1199.0  server  on screen alpha 1.00 at 915,699 36x46
+  1216.4  server  on screen alpha 1.00 at 916,709 35x36
+  1235.3  server  on screen alpha 1.00 at 916,718 35x27
+  1252.4  server  not listed
+  1279.8  app     AXFocusedWindowChanged w38
+  1280.4  probe   read AXMinimized -> yes, asked at 1280.0, 0.4 ms
+  1280.4  probe   left alone
+  1281.1  app     AXMainWindowChanged w38
+  1281.1  app     AXWindowMiniaturized w37
+  2616.3  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, late
+    10.0  flight  watching w37 of 36537, mode late; AXMinimized no
+    16.9  server  on screen alpha 1.00 at 108,85 673x439
+   674.9  hand    a key went down 6 ms ago, a button came up 2049 ms ago
+   715.4  server  on screen alpha 1.00 at 108,85 674x439
+   729.4  server  on screen alpha 1.00 at 108,85 675x439
+   747.5  server  on screen alpha 1.00 at 108,85 681x439
+   763.4  server  on screen alpha 1.00 at 108,85 685x439
+   777.4  server  on screen alpha 1.00 at 108,85 694x439
+   794.3  server  on screen alpha 1.00 at 108,85 701x439
+   814.7  server  on screen alpha 1.00 at 108,85 714x439
+   819.9  server  on screen alpha 1.00 at 108,85 721x439
+   846.5  server  on screen alpha 1.00 at 108,85 738x439
+   862.9  server  on screen alpha 1.00 at 108,85 752x440
+   882.0  server  on screen alpha 1.00 at 108,90 762x440
+   901.9  server  on screen alpha 1.00 at 109,104 778x440
+   923.9  server  on screen alpha 1.00 at 123,143 791x440
+   944.4  server  on screen alpha 1.00 at 150,180 782x440
+   962.8  server  on screen alpha 1.00 at 176,204 764x440
+   982.8  server  on screen alpha 1.00 at 276,274 675x440
+   998.3  server  on screen alpha 1.00 at 318,299 633x440
+  1012.9  server  on screen alpha 1.00 at 416,351 535x394
+  1023.6  server  on screen alpha 1.00 at 474,380 477x365
+  1041.1  server  on screen alpha 1.00 at 584,435 367x310
+  1061.6  server  on screen alpha 1.00 at 688,490 263x255
+  1070.0  server  on screen alpha 1.00 at 732,515 219x230
+  1094.4  server  on screen alpha 1.00 at 811,567 140x178
+  1101.0  server  on screen alpha 1.00 at 843,592 108x153
+  1110.7  server  on screen alpha 1.00 at 865,613 86x132
+  1126.6  server  on screen alpha 1.00 at 887,639 64x106
+  1142.2  server  on screen alpha 1.00 at 899,656 52x89
+  1158.7  server  on screen alpha 1.00 at 912,687 39x58
+  1177.0  server  on screen alpha 1.00 at 916,706 35x39
+  1194.0  server  on screen alpha 1.00 at 916,717 35x28
+  1212.6  server  on screen alpha 1.00 at 916,718 35x27
+  1224.8  server  not listed
+  1259.0  app     AXFocusedWindowChanged w38
+  1260.2  app     AXMainWindowChanged w38
+  1260.3  app     AXWindowMiniaturized w37
+  1363.5  probe   read AXMinimized -> yes, asked at 1363.3, 0.2 ms
+  1363.6  probe   left alone
+  2612.4  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, main
+     7.6  flight  watching w37 of 36537, mode main; AXMinimized no
+    16.3  server  on screen alpha 1.00 at 108,85 673x439
+   684.0  hand    a key went down 4 ms ago, a button came up 2221 ms ago
+   717.3  server  on screen alpha 1.00 at 108,85 674x439
+   728.1  server  on screen alpha 1.00 at 108,85 675x439
+   746.4  server  on screen alpha 1.00 at 108,85 680x439
+   768.4  server  on screen alpha 1.00 at 108,85 687x439
+   789.0  server  on screen alpha 1.00 at 108,85 696x439
+   803.8  server  on screen alpha 1.00 at 108,85 707x439
+   822.7  server  on screen alpha 1.00 at 108,85 720x439
+   839.5  server  on screen alpha 1.00 at 108,85 733x439
+   867.6  server  on screen alpha 1.00 at 108,86 754x440
+   888.2  server  on screen alpha 1.00 at 108,95 769x440
+   906.2  server  on screen alpha 1.00 at 111,113 783x440
+   923.4  server  on screen alpha 1.00 at 120,139 792x440
+   937.6  server  on screen alpha 1.00 at 130,154 790x440
+   955.0  server  on screen alpha 1.00 at 161,191 775x440
+   969.4  server  on screen alpha 1.00 at 185,212 757x440
+   989.6  server  on screen alpha 1.00 at 289,281 662x440
+  1006.1  server  on screen alpha 1.00 at 332,306 619x439
+  1020.9  server  on screen alpha 1.00 at 430,358 521x387
+  1034.0  server  on screen alpha 1.00 at 482,385 469x360
+  1046.3  server  on screen alpha 1.00 at 589,438 362x307
+  1066.8  server  on screen alpha 1.00 at 688,490 263x255
+  1083.6  server  on screen alpha 1.00 at 767,537 184x208
+  1104.2  server  on screen alpha 1.00 at 831,583 120x162
+  1122.9  server  on screen alpha 1.00 at 875,624 76x121
+  1143.4  server  on screen alpha 1.00 at 900,658 51x87
+  1156.9  server  on screen alpha 1.00 at 912,686 39x59
+  1171.1  server  on screen alpha 1.00 at 914,697 37x48
+  1187.5  server  on screen alpha 1.00 at 916,712 35x33
+  1208.0  server  on screen alpha 1.00 at 916,718 35x27
+  1226.2  server  not listed
+  1254.8  app     AXFocusedWindowChanged w38
+  1260.2  probe   set AXMain -> error 0, asked at 1255.0, 5.2 ms
+  1260.9  app     AXMainWindowChanged w38
+  1260.9  app     AXWindowMiniaturized w37
+  2614.8  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, raise
+     9.6  flight  watching w37 of 36537, mode raise; AXMinimized no
+    17.1  server  on screen alpha 1.00 at 108,85 673x439
+   690.5  hand    a key went down 16 ms ago, a button came up 2229 ms ago
+   727.8  server  on screen alpha 1.00 at 108,85 675x439
+   747.1  server  on screen alpha 1.00 at 108,85 679x439
+   758.7  server  on screen alpha 1.00 at 108,85 682x439
+   779.5  server  on screen alpha 1.00 at 108,85 691x439
+   800.6  server  on screen alpha 1.00 at 108,85 701x439
+   827.8  server  on screen alpha 1.00 at 108,85 719x439
+   840.5  server  on screen alpha 1.00 at 108,85 733x439
+   862.6  server  on screen alpha 1.00 at 108,85 747x440
+   879.3  server  on screen alpha 1.00 at 108,89 762x440
+   891.2  server  on screen alpha 1.00 at 108,95 770x440
+   921.0  server  on screen alpha 1.00 at 115,125 788x440
+   936.6  server  on screen alpha 1.00 at 130,155 791x440
+   964.1  server  on screen alpha 1.00 at 186,213 756x440
+   979.9  server  on screen alpha 1.00 at 249,257 701x440
+   998.2  server  on screen alpha 1.00 at 332,306 619x439
+  1008.6  server  on screen alpha 1.00 at 379,332 572x413
+  1018.2  server  on screen alpha 1.00 at 430,358 521x387
+  1043.4  server  on screen alpha 1.00 at 537,412 414x333
+  1062.9  server  on screen alpha 1.00 at 683,487 268x258
+  1081.3  server  on screen alpha 1.00 at 765,536 186x209
+  1099.7  server  on screen alpha 1.00 at 830,582 121x163
+  1120.5  server  on screen alpha 1.00 at 874,623 77x122
+  1141.5  server  on screen alpha 1.00 at 899,656 52x89
+  1162.8  server  on screen alpha 1.00 at 911,684 40x61
+  1173.9  server  on screen alpha 1.00 at 916,704 35x41
+  1192.4  server  on screen alpha 1.00 at 916,716 35x29
+  1208.8  server  on screen alpha 1.00 at 916,718 35x27
+  1286.1  server  not listed
+  1292.1  app     AXFocusedWindowChanged w38
+  1327.9  server  on screen alpha 1.00 at 916,718 35x27
+  1344.2  server  on screen alpha 1.00 at 916,714 35x31
+  1361.8  server  on screen alpha 1.00 at 915,702 36x43
+  1380.3  server  on screen alpha 1.00 at 910,681 41x64
+  1391.7  server  on screen alpha 1.00 at 905,667 46x78
+  1409.2  server  on screen alpha 1.00 at 884,635 67x110
+  1428.9  server  on screen alpha 1.00 at 846,596 105x149
+  1460.0  server  on screen alpha 1.00 at 752,527 199x218
+  1480.8  server  on screen alpha 1.00 at 663,477 288x268
+  1501.8  server  on screen alpha 1.00 at 513,400 438x345
+  1511.8  server  on screen alpha 1.00 at 460,373 491x372
+  1532.3  server  on screen alpha 1.00 at 357,320 594x425
+  1548.7  server  on screen alpha 1.00 at 270,270 680x440
+  1567.1  server  on screen alpha 1.00 at 201,224 744x440
+  1587.3  server  on screen alpha 1.00 at 153,182 780x440
+  1606.4  server  on screen alpha 1.00 at 125,147 792x440
+  1625.0  server  on screen alpha 1.00 at 113,119 786x440
+  1646.0  server  on screen alpha 1.00 at 108,99 774x440
+  1663.4  server  on screen alpha 1.00 at 108,87 758x440
+  1679.3  server  on screen alpha 1.00 at 108,85 751x440
+  1697.1  server  on screen alpha 1.00 at 108,85 731x439
+  1712.3  server  on screen alpha 1.00 at 108,85 724x439
+  1725.5  server  on screen alpha 1.00 at 108,85 711x439
+  1745.3  server  on screen alpha 1.00 at 108,85 699x439
+  1766.0  server  on screen alpha 1.00 at 108,85 688x439
+  1779.3  server  on screen alpha 1.00 at 108,85 684x439
+  1799.7  server  on screen alpha 1.00 at 108,85 678x439
+  1812.2  server  on screen alpha 1.00 at 108,85 674x439
+  1841.6  probe   AXRaise -> error 0, asked at 1292.5, 549.1 ms
+  1886.8  app     AXMainWindowChanged w38
+  1887.7  app     AXWindowMiniaturized w37
+  1887.9  app     AXFocusedWindowChanged w37
+  1887.9  app     AXMainWindowChanged w37
+  1888.0  app     AXWindowDeminiaturized w37
+  1891.7  server  on screen alpha 1.00 at 108,85 673x439
+  2620.9  flight  the end: AXMinimized no
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, key, rest-main
+     6.8  flight  watching w37 of 36537, mode rest-main; AXMinimized no
+    13.7  server  on screen alpha 1.00 at 108,85 673x439
+   693.4  hand    a key went down 10 ms ago, a button came up 2128 ms ago
+  1046.5  server  on screen alpha 1.00 at 108,85 674x439
+  1063.3  server  on screen alpha 1.00 at 108,85 677x439
+  1085.1  server  on screen alpha 1.00 at 108,85 683x439
+  1097.0  server  on screen alpha 1.00 at 108,85 692x439
+  1105.9  server  on screen alpha 1.00 at 108,85 697x439
+  1117.3  server  on screen alpha 1.00 at 108,85 703x439
+  1133.1  server  on screen alpha 1.00 at 108,85 709x439
+  1147.8  server  on screen alpha 1.00 at 108,85 721x439
+  1168.3  server  on screen alpha 1.00 at 108,85 735x439
+  1176.9  server  on screen alpha 1.00 at 108,85 742x439
+  1198.1  server  on screen alpha 1.00 at 108,86 756x440
+  1211.7  server  on screen alpha 1.00 at 108,97 771x440
+  1232.6  server  on screen alpha 1.00 at 111,114 785x440
+  1249.1  server  on screen alpha 1.00 at 121,140 792x440
+  1268.1  server  on screen alpha 1.00 at 145,174 784x440
+  1294.3  server  on screen alpha 1.00 at 218,236 729x440
+  1303.1  server  on screen alpha 1.00 at 253,259 697x440
+  1310.6  server  on screen alpha 1.00 at 292,284 659x440
+  1327.2  server  on screen alpha 1.00 at 336,309 615x436
+  1338.6  server  on screen alpha 1.00 at 435,361 516x384
+  1361.2  server  on screen alpha 1.00 at 541,414 410x331
+  1377.2  server  on screen alpha 1.00 at 641,465 310x280
+  1391.0  server  on screen alpha 1.00 at 689,491 262x254
+  1411.0  server  on screen alpha 1.00 at 772,540 179x205
+  1427.2  server  on screen alpha 1.00 at 833,584 118x161
+  1445.7  server  on screen alpha 1.00 at 876,625 75x120
+  1464.6  server  on screen alpha 1.00 at 900,659 51x86
+  1482.9  server  on screen alpha 1.00 at 912,686 39x59
+  1499.7  server  on screen alpha 1.00 at 916,706 35x39
+  1514.6  server  on screen alpha 1.00 at 916,716 35x29
+  1534.2  server  on screen alpha 1.00 at 916,718 35x27
+  1550.1  server  not listed
+  1594.2  app     AXFocusedWindowChanged w38
+  1597.0  app     AXMainWindowChanged w38
+  1597.1  app     AXWindowMiniaturized w37
+  2098.8  probe   set AXMain -> error 0, asked at 2098.7, 0.1 ms
+  2608.2  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, rest-raise
+    11.4  flight  watching w37 of 36537, mode rest-raise; AXMinimized no
+    17.8  server  on screen alpha 1.00 at 108,85 673x439
+   669.6  hand    a key went down 12 ms ago, a button came up 2147 ms ago
+   691.8  server  on screen alpha 1.00 at 108,85 674x439
+   706.7  server  on screen alpha 1.00 at 108,85 675x439
+   725.7  server  on screen alpha 1.00 at 108,85 679x439
+   746.6  server  on screen alpha 1.00 at 108,85 690x439
+   757.3  server  on screen alpha 1.00 at 108,85 695x439
+   776.6  server  on screen alpha 1.00 at 108,85 706x439
+   791.4  server  on screen alpha 1.00 at 108,85 712x439
+   808.7  server  on screen alpha 1.00 at 108,85 725x439
+   821.6  server  on screen alpha 1.00 at 108,85 732x439
+   842.5  server  on screen alpha 1.00 at 108,86 753x440
+   850.2  server  on screen alpha 1.00 at 108,89 761x440
+   869.0  server  on screen alpha 1.00 at 109,102 776x440
+   892.0  server  on screen alpha 1.00 at 114,123 788x440
+   909.2  server  on screen alpha 1.00 at 129,153 791x440
+   929.0  server  on screen alpha 1.00 at 159,189 776x440
+   944.2  server  on screen alpha 1.00 at 211,232 735x440
+   953.7  server  on screen alpha 1.00 at 245,255 704x440
+   974.1  server  on screen alpha 1.00 at 327,304 624x440
+   991.5  server  on screen alpha 1.00 at 424,355 527x390
+  1010.1  server  on screen alpha 1.00 at 530,408 421x337
+  1018.8  server  on screen alpha 1.00 at 583,435 368x310
+  1040.8  server  on screen alpha 1.00 at 683,487 268x258
+  1058.8  server  on screen alpha 1.00 at 764,535 187x210
+  1074.1  server  on screen alpha 1.00 at 800,559 151x186
+  1085.0  server  on screen alpha 1.00 at 854,602 97x143
+  1106.4  server  on screen alpha 1.00 at 889,641 62x104
+  1120.6  server  on screen alpha 1.00 at 906,671 45x74
+  1140.3  server  on screen alpha 1.00 at 914,695 37x50
+  1158.9  server  on screen alpha 1.00 at 916,711 35x34
+  1177.0  server  on screen alpha 1.00 at 916,718 35x27
+  1196.2  server  not listed
+  1218.8  app     AXFocusedWindowChanged w38
+  1219.2  app     AXMainWindowChanged w38
+  1219.2  app     AXWindowMiniaturized w37
+  1740.1  server  on screen alpha 1.00 at 916,718 35x27
+  1757.3  server  on screen alpha 1.00 at 916,714 35x31
+  1773.8  server  on screen alpha 1.00 at 916,708 35x37
+  1793.5  server  on screen alpha 1.00 at 909,679 42x66
+  1812.9  server  on screen alpha 1.00 at 896,651 55x94
+  1833.4  server  on screen alpha 1.00 at 867,615 84x130
+  1853.9  server  on screen alpha 1.00 at 822,576 129x169
+  1861.2  server  on screen alpha 1.00 at 791,553 160x192
+  1874.8  server  on screen alpha 1.00 at 713,504 238x241
+  1894.3  server  on screen alpha 1.00 at 618,452 333x293
+  1914.5  server  on screen alpha 1.00 at 513,400 438x345
+  1933.2  server  on screen alpha 1.00 at 409,347 542x398
+  1953.7  server  on screen alpha 1.00 at 313,296 638x440
+  1974.1  server  on screen alpha 1.00 at 234,247 715x440
+  1986.4  server  on screen alpha 1.00 at 202,224 743x440
+  2007.8  server  on screen alpha 1.00 at 137,165 788x440
+  2024.0  server  on screen alpha 1.00 at 118,133 791x440
+  2033.2  server  on screen alpha 1.00 at 113,120 787x440
+  2046.2  server  on screen alpha 1.00 at 110,109 781x440
+  2062.0  server  on screen alpha 1.00 at 108,93 767x440
+  2080.0  server  on screen alpha 1.00 at 108,85 752x440
+  2096.5  server  on screen alpha 1.00 at 108,85 745x439
+  2111.4  server  on screen alpha 1.00 at 108,85 731x439
+  2132.1  server  on screen alpha 1.00 at 108,85 718x439
+  2145.3  server  on screen alpha 1.00 at 108,85 705x439
+  2163.9  server  on screen alpha 1.00 at 108,85 694x439
+  2184.4  server  on screen alpha 1.00 at 108,85 685x439
+  2201.4  server  on screen alpha 1.00 at 108,85 678x439
+  2220.1  server  on screen alpha 1.00 at 108,85 675x439
+  2240.1  server  on screen alpha 1.00 at 108,85 673x439
+  2249.0  probe   AXRaise -> error 0, asked at 1721.2, 527.5 ms
+  2252.4  app     AXFocusedWindowChanged w37
+  2252.6  app     AXMainWindowChanged w37
+  2252.7  app     AXWindowDeminiaturized w37
+  2612.7  flight  the end: AXMinimized no
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, button, poll
+    10.1  flight  watching w37 of 36537, mode poll; AXMinimized no
+    12.6  asked   AXMinimized no, asked at 12.1, 0.3 ms
+    24.4  server  on screen alpha 1.00 at 108,85 673x439
+  1162.0  hand    a key went down 7282 ms ago, a button came up 16 ms ago
+  1185.4  server  on screen alpha 1.00 at 108,85 674x439
+  1200.7  server  on screen alpha 1.00 at 108,85 677x439
+  1209.1  server  on screen alpha 1.00 at 108,85 679x439
+  1218.6  server  on screen alpha 1.00 at 108,85 682x439
+  1235.8  server  on screen alpha 1.00 at 108,85 686x439
+  1246.7  server  on screen alpha 1.00 at 108,85 695x439
+  1263.3  server  on screen alpha 1.00 at 108,85 699x439
+  1282.9  server  on screen alpha 1.00 at 108,85 718x439
+  1303.9  server  on screen alpha 1.00 at 108,85 731x439
+  1319.9  server  on screen alpha 1.00 at 108,85 745x439
+  1332.5  server  on screen alpha 1.00 at 108,85 752x440
+  1338.4  server  on screen alpha 1.00 at 108,88 759x440
+  1363.8  server  on screen alpha 1.00 at 108,100 775x440
+  1375.5  server  on screen alpha 1.00 at 110,109 781x440
+  1397.1  server  on screen alpha 1.00 at 126,148 791x440
+  1414.2  server  on screen alpha 1.00 at 151,181 781x440
+  1434.8  server  on screen alpha 1.00 at 198,222 746x440
+  1449.0  server  on screen alpha 1.00 at 266,268 684x440
+  1469.0  server  on screen alpha 1.00 at 353,318 598x427
+  1485.9  server  on screen alpha 1.00 at 402,344 549x401
+  1504.9  server  on screen alpha 1.00 at 560,423 391x322
+  1519.2  server  on screen alpha 1.00 at 612,450 339x295
+  1535.8  server  on screen alpha 1.00 at 708,501 243x244
+  1552.4  server  on screen alpha 1.00 at 784,548 167x197
+  1565.8  server  on screen alpha 1.00 at 816,571 135x174
+  1585.7  server  on screen alpha 1.00 at 863,611 88x134
+  1602.4  server  on screen alpha 1.00 at 894,648 57x97
+  1619.3  server  on screen alpha 1.00 at 909,678 42x67
+  1637.1  server  on screen alpha 1.00 at 915,700 36x45
+  1650.9  server  on screen alpha 1.00 at 916,708 35x37
+  1672.0  server  on screen alpha 1.00 at 916,718 35x27
+  1690.1  server  not listed
+  1724.6  app     AXFocusedWindowChanged w38
+  1725.6  app     AXMainWindowChanged w38
+  1725.7  asked   the other window's AXMinimized no, asked at 1162.3, 563.4 ms
+  1726.1  app     AXWindowMiniaturized w37
+  1726.2  asked   AXMinimized yes, asked at 1725.7, 0.5 ms
+  2610.9  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, button, both
+     8.1  flight  watching w37 of 36537, mode both; AXMinimized no
+    17.3  server  on screen alpha 1.00 at 108,85 673x439
+  1261.2  hand    a key went down 14334 ms ago, a button came up 5 ms ago
+  1310.5  server  on screen alpha 1.00 at 108,85 675x439
+  1326.9  server  on screen alpha 1.00 at 108,85 679x439
+  1349.6  server  on screen alpha 1.00 at 108,85 686x439
+  1366.3  server  on screen alpha 1.00 at 108,85 695x439
+  1383.5  server  on screen alpha 1.00 at 108,85 706x439
+  1399.6  server  on screen alpha 1.00 at 108,85 719x439
+  1415.0  server  on screen alpha 1.00 at 108,85 725x439
+  1431.9  server  on screen alpha 1.00 at 108,85 739x439
+  1448.7  server  on screen alpha 1.00 at 108,86 753x440
+  1468.4  server  on screen alpha 1.00 at 108,94 769x440
+  1473.8  server  on screen alpha 1.00 at 109,102 776x440
+  1502.9  server  on screen alpha 1.00 at 120,137 791x440
+  1516.4  server  on screen alpha 1.00 at 129,153 791x440
+  1533.1  server  on screen alpha 1.00 at 160,189 775x440
+  1539.8  server  on screen alpha 1.00 at 183,210 758x440
+  1549.1  server  on screen alpha 1.00 at 211,231 735x440
+  1566.3  server  on screen alpha 1.00 at 245,254 704x440
+  1578.2  server  on screen alpha 1.00 at 327,304 624x440
+  1594.8  server  on screen alpha 1.00 at 374,329 577x416
+  1605.0  server  on screen alpha 1.00 at 477,382 474x363
+  1627.6  server  on screen alpha 1.00 at 583,435 368x310
+  1633.4  server  on screen alpha 1.00 at 634,461 317x284
+  1644.2  server  on screen alpha 1.00 at 683,487 268x258
+  1661.4  server  on screen alpha 1.00 at 767,537 184x208
+  1680.0  server  on screen alpha 1.00 at 832,583 119x162
+  1699.9  server  on screen alpha 1.00 at 874,623 77x122
+  1716.4  server  on screen alpha 1.00 at 889,641 62x104
+  1736.2  server  on screen alpha 1.00 at 912,685 39x60
+  1745.6  server  on screen alpha 1.00 at 914,696 37x49
+  1760.1  server  on screen alpha 1.00 at 916,705 35x40
+  1777.5  server  on screen alpha 1.00 at 916,716 35x29
+  1793.7  server  on screen alpha 1.00 at 916,718 35x27
+  1802.0  server  not listed
+  1847.5  app     AXFocusedWindowChanged w38
+  1848.2  probe   set AXMain -> error 0, asked at 1848.0, 0.1 ms
+  1883.3  server  on screen alpha 1.00 at 916,718 35x27
+  1898.9  server  on screen alpha 1.00 at 916,714 35x31
+  1916.6  server  on screen alpha 1.00 at 915,702 36x43
+  1927.8  server  on screen alpha 1.00 at 913,692 38x53
+  1935.3  server  on screen alpha 1.00 at 910,680 41x65
+  1949.9  server  on screen alpha 1.00 at 904,667 47x78
+  1966.3  server  on screen alpha 1.00 at 883,634 68x111
+  1972.7  server  on screen alpha 1.00 at 867,615 84x130
+  1994.7  server  on screen alpha 1.00 at 819,573 132x172
+  2012.2  server  on screen alpha 1.00 at 748,525 203x220
+  2027.2  server  on screen alpha 1.00 at 705,499 246x246
+  2045.2  server  on screen alpha 1.00 at 608,447 343x298
+  2065.9  server  on screen alpha 1.00 at 502,394 449x351
+  2083.0  server  on screen alpha 1.00 at 404,345 547x400
+  2098.9  server  on screen alpha 1.00 at 309,293 642x440
+  2116.4  server  on screen alpha 1.00 at 231,245 717x440
+  2132.4  server  on screen alpha 1.00 at 173,201 766x440
+  2150.7  server  on screen alpha 1.00 at 136,163 789x440
+  2166.5  server  on screen alpha 1.00 at 125,146 791x440
+  2183.1  server  on screen alpha 1.00 at 112,118 787x440
+  2203.9  server  on screen alpha 1.00 at 108,99 774x440
+  2213.2  server  on screen alpha 1.00 at 108,92 765x440
+  2229.1  server  on screen alpha 1.00 at 108,85 750x440
+  2234.9  server  on screen alpha 1.00 at 108,85 743x439
+  2253.6  server  on screen alpha 1.00 at 108,85 730x439
+  2267.9  server  on screen alpha 1.00 at 108,85 723x439
+  2282.2  server  on screen alpha 1.00 at 108,85 710x439
+  2300.0  server  on screen alpha 1.00 at 108,85 699x439
+  2319.8  server  on screen alpha 1.00 at 108,85 689x439
+  2332.2  server  on screen alpha 1.00 at 108,85 685x439
+  2349.8  server  on screen alpha 1.00 at 108,85 678x439
+  2366.6  server  on screen alpha 1.00 at 108,85 674x439
+  2385.2  server  on screen alpha 1.00 at 108,85 673x439
+  2423.8  probe   AXRaise -> error 0, asked at 1848.2, 575.5 ms
+  2431.9  app     AXMainWindowChanged w38
+  2432.0  app     AXWindowMiniaturized w37
+  2432.1  app     AXFocusedWindowChanged w37
+  2432.2  app     AXMainWindowChanged w37
+  2432.4  app     AXWindowDeminiaturized w37
+  2612.3  flight  the end: AXMinimized no
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, button, guarded
+    10.0  flight  watching w37 of 36537, mode guarded; AXMinimized no
+    20.8  server  on screen alpha 1.00 at 108,85 673x439
+  1215.7  hand    a key went down 20965 ms ago, a button came up 13 ms ago
+  1238.9  server  on screen alpha 1.00 at 108,85 674x439
+  1245.3  server  on screen alpha 1.00 at 108,85 675x439
+  1254.5  server  on screen alpha 1.00 at 108,85 677x439
+  1263.9  server  on screen alpha 1.00 at 108,85 679x439
+  1283.3  server  on screen alpha 1.00 at 108,85 686x439
+  1299.5  server  on screen alpha 1.00 at 108,85 691x439
+  1319.9  server  on screen alpha 1.00 at 108,85 701x439
+  1327.7  server  on screen alpha 1.00 at 108,85 707x439
+  1333.6  server  on screen alpha 1.00 at 108,85 713x439
+  1340.0  server  on screen alpha 1.00 at 108,85 719x439
+  1349.8  server  on screen alpha 1.00 at 108,85 726x439
+  1361.1  server  on screen alpha 1.00 at 108,85 733x439
+  1372.3  server  on screen alpha 1.00 at 108,85 740x439
+  1385.6  server  on screen alpha 1.00 at 108,86 754x440
+  1394.7  server  on screen alpha 1.00 at 108,89 761x440
+  1404.3  server  on screen alpha 1.00 at 108,95 769x439
+  1422.3  server  on screen alpha 1.00 at 109,102 776x440
+  1437.9  server  on screen alpha 1.00 at 114,124 789x440
+  1455.8  server  on screen alpha 1.00 at 129,153 791x440
+  1472.3  server  on screen alpha 1.00 at 160,190 775x440
+  1488.9  server  on screen alpha 1.00 at 212,232 734x440
+  1505.7  server  on screen alpha 1.00 at 246,255 704x440
+  1525.9  server  on screen alpha 1.00 at 375,330 576x415
+  1538.0  server  on screen alpha 1.00 at 425,356 526x389
+  1554.0  server  on screen alpha 1.00 at 532,409 419x336
+  1572.0  server  on screen alpha 1.00 at 585,436 366x309
+  1590.1  server  on screen alpha 1.00 at 683,487 268x258
+  1610.1  server  on screen alpha 1.00 at 802,560 149x185
+  1619.5  server  on screen alpha 1.00 at 832,583 119x162
+  1628.8  server  on screen alpha 1.00 at 856,605 95x140
+  1649.2  server  on screen alpha 1.00 at 890,642 61x103
+  1666.1  server  on screen alpha 1.00 at 907,673 44x72
+  1675.6  server  on screen alpha 1.00 at 912,686 39x59
+  1694.6  server  on screen alpha 1.00 at 916,705 35x40
+  1703.7  server  on screen alpha 1.00 at 916,712 35x33
+  1722.2  server  on screen alpha 1.00 at 916,718 35x27
+  1787.2  app     AXFocusedWindowChanged w38
+  1789.0  probe   read AXMinimized -> yes, asked at 1787.4, 1.5 ms
+  1789.0  probe   left alone
+  1789.7  app     AXMainWindowChanged w38
+  1789.8  app     AXWindowMiniaturized w37
+  1789.9  server  not listed
+  2614.8  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, ax, poll
+     9.1  flight  watching w37 of 36537, mode poll; AXMinimized no
+     9.5  asked   AXMinimized no, asked at 9.0, 0.0 ms
+    18.5  server  on screen alpha 1.00 at 108,85 673x439
+   627.0  server  on screen alpha 1.00 at 108,85 674x439
+   647.6  server  on screen alpha 1.00 at 108,85 677x439
+   665.1  server  on screen alpha 1.00 at 108,85 682x439
+   685.5  server  on screen alpha 1.00 at 108,85 690x439
+   697.0  server  on screen alpha 1.00 at 108,85 701x439
+   710.3  server  on screen alpha 1.00 at 108,85 706x439
+   717.6  server  on screen alpha 1.00 at 108,85 713x439
+   725.7  server  on screen alpha 1.00 at 108,85 719x439
+   742.5  server  on screen alpha 1.00 at 108,85 726x439
+   760.4  server  on screen alpha 1.00 at 108,85 740x439
+   777.0  server  on screen alpha 1.00 at 108,86 754x440
+   791.9  server  on screen alpha 1.00 at 108,95 769x440
+   809.4  server  on screen alpha 1.00 at 110,111 783x440
+   827.0  server  on screen alpha 1.00 at 119,136 791x440
+   845.3  server  on screen alpha 1.00 at 140,168 787x440
+   860.3  server  on screen alpha 1.00 at 157,187 777x440
+   873.3  server  on screen alpha 1.00 at 205,227 740x440
+   893.6  server  on screen alpha 1.00 at 277,274 674x440
+   901.0  server  on screen alpha 1.00 at 318,299 633x440
+   910.3  server  on screen alpha 1.00 at 365,324 586x421
+   925.8  server  on screen alpha 1.00 at 414,350 537x395
+   943.7  server  on screen alpha 1.00 at 518,403 433x342
+   957.3  server  on screen alpha 1.00 at 623,456 328x289
+   976.9  server  on screen alpha 1.00 at 718,507 233x238
+   995.4  server  on screen alpha 1.00 at 795,555 156x190
+  1012.9  server  on screen alpha 1.00 at 848,597 103x148
+  1030.7  server  on screen alpha 1.00 at 885,636 66x109
+  1049.1  server  on screen alpha 1.00 at 905,668 46x77
+  1070.6  server  on screen alpha 1.00 at 914,693 37x52
+  1087.5  server  on screen alpha 1.00 at 916,710 35x35
+  1104.7  server  on screen alpha 1.00 at 916,715 35x30
+  1114.6  server  on screen alpha 1.00 at 916,718 35x27
+  1156.4  app     AXFocusedWindowChanged w38
+  1156.8  app     AXMainWindowChanged w38
+  1156.9  app     AXWindowMiniaturized w37
+  1157.9  asked   the other window's AXMinimized no, asked at 611.5, 546.4 ms
+  1158.0  asked   AXMinimized yes, asked at 1157.9, 0.1 ms
+  1158.8  server  not listed
+  2610.0  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, ax, both
+     7.8  flight  watching w37 of 36537, mode both; AXMinimized no
+    14.5  server  on screen alpha 1.00 at 108,85 673x439
+   646.2  server  on screen alpha 1.00 at 108,85 674x439
+   661.7  server  on screen alpha 1.00 at 108,85 677x439
+   679.4  server  on screen alpha 1.00 at 108,85 679x439
+   692.7  server  on screen alpha 1.00 at 108,85 686x439
+   708.7  server  on screen alpha 1.00 at 108,85 695x439
+   729.4  server  on screen alpha 1.00 at 108,85 707x439
+   746.1  server  on screen alpha 1.00 at 108,85 713x439
+   757.5  server  on screen alpha 1.00 at 108,85 726x439
+   777.2  server  on screen alpha 1.00 at 108,85 740x439
+   794.0  server  on screen alpha 1.00 at 108,86 754x440
+   812.9  server  on screen alpha 1.00 at 108,95 770x440
+   830.7  server  on screen alpha 1.00 at 109,103 777x440
+   846.1  server  on screen alpha 1.00 at 115,126 789x440
+   859.5  server  on screen alpha 1.00 at 131,156 790x440
+   879.3  server  on screen alpha 1.00 at 164,193 772x440
+   896.1  server  on screen alpha 1.00 at 188,214 755x440
+   915.7  server  on screen alpha 1.00 at 292,283 659x440
+   935.6  server  on screen alpha 1.00 at 383,334 568x411
+   944.2  server  on screen alpha 1.00 at 434,360 517x385
+   963.6  server  on screen alpha 1.00 at 536,411 415x334
+   984.2  server  on screen alpha 1.00 at 635,461 316x284
+  1007.1  server  on screen alpha 1.00 at 728,513 223x232
+  1028.1  server  on screen alpha 1.00 at 832,583 119x162
+  1046.1  server  on screen alpha 1.00 at 875,624 76x121
+  1066.6  server  on screen alpha 1.00 at 900,659 51x86
+  1082.6  server  on screen alpha 1.00 at 912,686 39x59
+  1110.6  server  on screen alpha 1.00 at 916,712 35x33
+  1119.7  server  on screen alpha 1.00 at 916,716 35x29
+  1129.4  server  on screen alpha 1.00 at 916,718 35x27
+  1183.4  app     AXFocusedWindowChanged w38
+  1183.7  probe   set AXMain -> error 0, asked at 1183.5, 0.1 ms
+  1185.9  server  not listed
+  1225.0  server  on screen alpha 1.00 at 916,717 35x28
+  1239.7  server  on screen alpha 1.00 at 916,708 35x37
+  1246.7  server  on screen alpha 1.00 at 915,701 36x44
+  1261.5  server  on screen alpha 1.00 at 913,690 38x55
+  1278.4  server  on screen alpha 1.00 at 903,664 48x81
+  1297.0  server  on screen alpha 1.00 at 881,631 70x114
+  1312.6  server  on screen alpha 1.00 at 841,591 110x154
+  1331.6  server  on screen alpha 1.00 at 781,546 170x199
+  1347.2  server  on screen alpha 1.00 at 743,522 208x223
+  1359.7  server  on screen alpha 1.00 at 653,471 298x274
+  1374.0  server  on screen alpha 1.00 at 603,445 348x300
+  1390.5  server  on screen alpha 1.00 at 499,393 452x352
+  1396.7  server  on screen alpha 1.00 at 446,366 505x379
+  1407.7  server  on screen alpha 1.00 at 394,340 557x405
+  1428.3  server  on screen alpha 1.00 at 300,289 651x440
+  1448.9  server  on screen alpha 1.00 at 224,241 724x440
+  1465.6  server  on screen alpha 1.00 at 168,197 770x440
+  1486.1  server  on screen alpha 1.00 at 134,160 789x440
+  1507.5  server  on screen alpha 1.00 at 116,129 790x440
+  1524.9  server  on screen alpha 1.00 at 109,106 779x440
+  1537.2  server  on screen alpha 1.00 at 108,91 764x440
+  1557.6  server  on screen alpha 1.00 at 108,85 750x440
+  1575.2  server  on screen alpha 1.00 at 108,85 736x439
+  1594.7  server  on screen alpha 1.00 at 108,85 722x439
+  1615.2  server  on screen alpha 1.00 at 108,85 710x439
+  1629.8  server  on screen alpha 1.00 at 108,85 698x439
+  1648.9  server  on screen alpha 1.00 at 108,85 688x439
+  1658.2  server  on screen alpha 1.00 at 108,85 684x439
+  1673.4  server  on screen alpha 1.00 at 108,85 681x439
+  1685.7  server  on screen alpha 1.00 at 108,85 676x439
+  1703.6  server  on screen alpha 1.00 at 108,85 674x439
+  1723.2  server  on screen alpha 1.00 at 108,85 673x439
+  1724.0  probe   AXRaise -> error 0, asked at 1183.7, 540.3 ms
+  1731.1  app     AXMainWindowChanged w38
+  1731.2  app     AXWindowMiniaturized w37
+  1731.3  app     AXFocusedWindowChanged w37
+  1731.4  app     AXMainWindowChanged w37
+  1731.4  app     AXWindowDeminiaturized w37
+  2612.5  flight  the end: AXMinimized no
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, ax, guarded
+    11.9  flight  watching w37 of 36537, mode guarded; AXMinimized no
+    21.6  server  on screen alpha 1.00 at 108,85 673x439
+   635.0  server  on screen alpha 1.00 at 108,85 674x439
+   647.4  server  on screen alpha 1.00 at 108,85 677x439
+   658.4  server  on screen alpha 1.00 at 108,85 679x439
+   666.1  server  on screen alpha 1.00 at 108,85 682x439
+   677.5  server  on screen alpha 1.00 at 108,85 686x439
+   696.4  server  on screen alpha 1.00 at 108,85 695x439
+   716.8  server  on screen alpha 1.00 at 108,85 707x439
+   731.9  server  on screen alpha 1.00 at 108,85 719x439
+   741.1  server  on screen alpha 1.00 at 108,85 726x439
+   761.5  server  on screen alpha 1.00 at 108,85 740x439
+   778.1  server  on screen alpha 1.00 at 108,85 747x440
+   795.7  server  on screen alpha 1.00 at 108,89 761x440
+   817.1  server  on screen alpha 1.00 at 111,112 783x440
+   834.6  server  on screen alpha 1.00 at 120,138 791x440
+   850.0  server  on screen alpha 1.00 at 129,154 791x440
+   866.8  server  on screen alpha 1.00 at 161,190 775x440
+   885.4  server  on screen alpha 1.00 at 213,233 734x440
+   900.1  server  on screen alpha 1.00 at 286,280 665x440
+   915.1  server  on screen alpha 1.00 at 326,303 625x440
+   935.1  server  on screen alpha 1.00 at 423,355 528x390
+   955.2  server  on screen alpha 1.00 at 529,408 422x337
+   966.7  server  on screen alpha 1.00 at 634,461 317x284
+   983.4  server  on screen alpha 1.00 at 682,487 269x258
+  1002.7  server  on screen alpha 1.00 at 801,560 150x185
+  1014.3  server  on screen alpha 1.00 at 831,582 120x163
+  1031.1  server  on screen alpha 1.00 at 874,623 77x122
+  1050.0  server  on screen alpha 1.00 at 900,658 51x87
+  1062.9  server  on screen alpha 1.00 at 907,673 44x72
+  1073.3  server  on screen alpha 1.00 at 912,686 39x59
+  1094.0  server  on screen alpha 1.00 at 916,705 35x40
+  1114.5  server  on screen alpha 1.00 at 916,718 35x27
+  1134.8  server  not listed
+  1163.9  app     AXFocusedWindowChanged w38
+  1166.0  probe   read AXMinimized -> yes, asked at 1164.1, 1.9 ms
+  1166.2  probe   left alone
+  1169.1  app     AXMainWindowChanged w38
+  1169.2  app     AXWindowMiniaturized w37
+  2616.5  flight  the end: AXMinimized yes
+  afterwards: 37 108 85 673 439 minimized

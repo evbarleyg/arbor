@@ -1,0 +1,403 @@
+# mac-shell: scripts/mac-shell/probe-flight.sh at 2efab56, macOS 26.6.2, 2026-10-15T04:49Z
+built Arbor, the pointer tool and the app bundles in 5s
+# probe-flight.sh 2026-10-15T04:50Z on macOS 26.6.2, commit 2efab56
+companions: pid 36439, 3 windows
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.1JxS3T/scratch/oak.txt /tmp/arbor-apps.1JxS3T/scratch/elm.txt
+pid 36537 lists (id role subrole x y w h flags):
+  37 AXWindow AXStandardWindow 108 85 673 439 main
+  38 AXWindow AXStandardWindow 79 56 673 439 -
+
+== Reduce Motion on
+
+=== Reduce Motion: true
+
+--- test windows, key, poll
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, sparse
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, read
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, both
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, key, guarded
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, late
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, main
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, raise
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, key, rest-main
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, rest-raise
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, button, poll
+> click 408 232
+> move 408 352
+> move 204 234
+> click 204 234
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, button, both
+> click 408 232
+> move 408 352
+> move 204 234
+> click 204 234
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, button, guarded
+> click 408 232
+> move 408 352
+> move 204 234
+> click 204 234
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, ax, poll
+> click 408 232
+> move 408 352
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, ax, both
+> click 408 232
+> move 408 352
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, ax, guarded
+> click 408 232
+> move 408 352
+  afterwards: 29 170 220 480 348 minimized
+
+--- TextEdit, key, poll
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, sparse
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, read
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, both
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, key, guarded
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, late
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, main
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, raise
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, key, rest-main
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, rest-raise
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, button, poll
+> click 444 97
+> move 444 217
+> move 147 101
+> click 147 101
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, button, both
+> click 444 97
+> move 444 217
+> move 147 101
+> click 147 101
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, button, guarded
+> click 444 97
+> move 444 217
+> move 147 101
+> click 147 101
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, ax, poll
+> click 444 97
+> move 444 217
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, ax, both
+> click 444 97
+> move 444 217
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, ax, guarded
+> click 444 97
+> move 444 217
+  afterwards: 37 108 85 673 439 minimized
+
+== Reduce Motion off
+
+=== Reduce Motion: false
+
+--- test windows, key, poll
+  (the window could not be given the keyboard by a click)
+> key cmd+m
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, key, sparse
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, read
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, both
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, key, guarded
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, late
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, main
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, raise
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, key, rest-main
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, key, rest-raise
+> click 408 232
+> move 408 352
+> key cmd+m
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, button, poll
+> click 408 232
+> move 408 352
+> move 204 234
+> click 204 234
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, button, both
+> click 408 232
+> move 408 352
+> move 204 234
+> click 204 234
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, button, guarded
+> click 408 232
+> move 408 352
+> move 204 234
+> click 204 234
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, ax, poll
+> click 408 232
+> move 408 352
+  afterwards: 29 170 220 480 348 minimized
+
+--- test windows, ax, both
+> click 408 232
+> move 408 352
+  afterwards: 29 170 220 480 348 main,focused
+
+--- test windows, ax, guarded
+> click 408 232
+> move 408 352
+  afterwards: 29 170 220 480 348 minimized
+
+--- TextEdit, key, poll
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, sparse
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, read
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, both
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, key, guarded
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, late
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, main
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, raise
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, key, rest-main
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, key, rest-raise
+> click 444 97
+> move 444 217
+> key cmd+m
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, button, poll
+> click 444 97
+> move 444 217
+> move 147 101
+> click 147 101
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, button, both
+> click 444 97
+> move 444 217
+> move 147 101
+> click 147 101
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, button, guarded
+> click 444 97
+> move 444 217
+> move 147 101
+> click 147 101
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, ax, poll
+> click 444 97
+> move 444 217
+  afterwards: 37 108 85 673 439 minimized
+
+--- TextEdit, ax, both
+> click 444 97
+> move 444 217
+  afterwards: 37 108 85 673 439 main
+
+--- TextEdit, ax, guarded
+> click 444 97
+> move 444 217
+  afterwards: 37 108 85 673 439 minimized
+read mac-shell/flight.txt
+still running when the script had ended, and stopped now:
+  36429 sleep
+exit code 0
