@@ -64,6 +64,8 @@ private func relaunchAfterCrash(_ old: Harness, settings: Settings, nothingRemem
       app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
     if window.isMinimized { new.system.setMinimized(id, true) }
   }
+  // Whoever had the keyboard has it still: Arbor's end is nothing to the apps.
+  new.system.focused = old.system.focused
   new.controller.restartedAfterAccident = true
   new.start()
   return new
@@ -209,6 +211,8 @@ private func echo(_ h: Harness, _ window: WindowID, from old: CGRect) {
       let windows = (0..<3).map { docked.system.open(app: "App\($0)", pid: Int32(1001 + $0)) }
       docked.start()
       for window in windows.reversed() { docked.run("dock \(window.rawValue) left") }
+      // With the keyboard in one of them, the start would bring that one into view.
+      docked.system.userFocusesNothing()
       let h = relaunchAfterCrash(docked, settings: settings, nothingRemembered: true)
       let tiles = h.layout!.tiles.filter { $0.kind == .window }
       #expect(tiles.count == 3)
@@ -233,6 +237,7 @@ private func echo(_ h: Harness, _ window: WindowID, from old: CGRect) {
       docked.run("dock \(c.rawValue) left")
       docked.run("dock \(a.rawValue) left")
       docked.run("dock \(b.rawValue) beside \(a.rawValue) bottom")
+      docked.system.userFocusesNothing()
       let h = relaunchAfterCrash(docked, settings: settings, nothingRemembered: true)
       let group = h.layout!.tiles.first { $0.kind == .group }
       #expect(group?.windows == [a, b])

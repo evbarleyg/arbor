@@ -281,6 +281,21 @@ private final class Recorder: WindowSystemEvents {
     #expect(recorder.log == ["focused \(a)", "keyboard moved", "keyboard moved"])
   }
 
+  /// What macOS does by itself does not wait for Arbor. A window that opens takes the keyboard and lies in front, and ⌘M hands the keyboard
+  /// on within the app, whether or not anybody listens. So somebody has the keyboard when Arbor starts, unless a scene says otherwise.
+  @Test func whoHasTheKeyboardDoesNotHangOnArborRunning() {
+    let system = FakeWindowSystem()
+    let (a, b, c) = (system.open(app: "Terminal"), system.open(app: "Terminal"), system.open(app: "Notes"))
+    #expect(system.focused == c && system.windowsFrontToBack().first == c)
+    system.userFocus(b)
+    system.setMinimized(b, true)
+    #expect(system.focused == a && system.windowsFrontToBack().first == a, "the app's next window")
+    system.setMinimized(b, false)
+    #expect(system.focused == b)
+    system.userFocusesNothing()
+    #expect(system.focused == nil, "on the Desktop, as after a click on the wallpaper")
+  }
+
   @Test func everySwitchCanBeTurnedOff() {
     let (system, recorder, a, b, _) = make(.none)
     system.focus(b)

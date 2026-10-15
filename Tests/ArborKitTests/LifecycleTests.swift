@@ -27,6 +27,8 @@ import Testing
       #expect(id == window.id)
       if window.isMinimized { again.system.setMinimized(id, true) }
     }
+    // Whoever had the keyboard has it still: Arbor's end is nothing to the apps.
+    again.system.focused = h.system.focused
     return again
   }
 

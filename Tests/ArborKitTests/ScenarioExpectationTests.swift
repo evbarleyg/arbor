@@ -192,6 +192,7 @@ import Testing
     let h = Harness()
     let a = h.system.open(app: "Safari")
     let b = h.system.open(app: "Notes")
+    h.system.userFocusesNothing()
     h.start()
     #expect(expect("focused \(a.rawValue)", h) == "no window has the keyboard, not w\(a.rawValue)")
     h.system.userFocus(b)

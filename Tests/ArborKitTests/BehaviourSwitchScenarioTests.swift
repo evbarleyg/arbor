@@ -63,6 +63,8 @@ private func relaunchAfterCrash(
     new.system.open(
       app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
   }
+  // Whoever had the keyboard has it still: Arbor's end is nothing to the apps.
+  new.system.focused = old.system.focused
   new.controller.restartedAfterAccident = true
   new.start()
   return new

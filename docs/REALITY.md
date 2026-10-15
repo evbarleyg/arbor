@@ -58,7 +58,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [missing-report](#missing-report) | 43 | 7 | 13 | 7 | 4 | 19 | 23 | 1 | 5 | 14 | 11 |
 | [extra-report](#extra-report) | 9 | 0 | 3 | 3 | 1 | 2 | 6 | 0 | 0 | 3 | 1 |
 | [late-or-partial-answer](#late-or-partial-answer) | 46 | 9 | 11 | 16 | 6 | 13 | 28 | 0 | 6 | 12 | 15 |
-| [second-actor](#second-actor) | 53 | 6 | 17 | 20 | 9 | 7 | 34 | 0 | 4 | 15 | 10 |
+| [second-actor](#second-actor) | 54 | 6 | 18 | 20 | 9 | 7 | 35 | 0 | 4 | 15 | 10 |
 | [geometry](#geometry) | 35 | 2 | 11 | 15 | 7 | 2 | 24 | 1 | 2 | 8 | 6 |
 | [identity](#identity) | 31 | 4 | 7 | 6 | 7 | 11 | 13 | 1 | 4 | 13 | 9 |
 | [permissions](#permissions) | 23 | 8 | 6 | 3 | 3 | 11 | 12 | 2 | 2 | 7 | 4 |
@@ -67,7 +67,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 45 | 1 | 0 | 1 | 4 | 40 | 26 | 1 | 2 | 16 | 7 |
-| **all** | 462 | 62 | 92 | 126 | 67 | 177 | 239 | 19 | 60 | 144 | 109 |
+| **all** | 463 | 62 | 93 | 126 | 67 | 177 | 240 | 19 | 60 | 144 | 109 |
 
 **Where the difference bit**
 
@@ -76,7 +76,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 144 | 89 | 46 | 13 | 33 | 52 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 163 | 97 | 124 | 0 | 11 | 28 |
 | controller | in the controller or the core, given reports that were right | 28 | 15 | 16 | 0 | 1 | 11 |
-| test | in a test, a script or a harness that expected the wrong thing | 81 | 0 | 26 | 5 | 11 | 39 |
+| test | in a test, a script or a harness that expected the wrong thing | 82 | 0 | 27 | 5 | 11 | 39 |
 | machine | in the machine, the toolchain or the way things are built and installed | 46 | 3 | 27 | 1 | 4 | 14 |
 
 Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
@@ -2232,6 +2232,18 @@ A second actor: macOS, an app or another tool moves things too.
 - **Guard:** `e2e: starting Arbor did not move it` (by hand); `e2e: a sheet or dialog stayed in the way` (by hand)
 - **Arbor copes:** Settings.newWindows: new windows float unless a rule or this setting says otherwise, and sheets are left alone.
 - **Read in:** `scripts/mac-shell/lib-apps.sh`, `scripts/mac-shell/compat.sh`
+
+### somebody-has-the-keyboard-when-arbor-starts
+
+*hurt 3 · test · touches `focus`*
+
+- **Expected:** What a stand-in plays of macOS's own doings does not depend on whether Arbor runs.
+- **Happened:** `FakeWindowSystem.open` gave a new window the keyboard, and `setMinimized` handed it on to the app's next window, only while Arbor was started. So every scene whose windows are opened before the start began with the keyboard nowhere, and copies of a world made for a relaunch lost who had it. On a Mac that is one state of several: the keyboard is on the Desktop after a click on the wallpaper, and otherwise in some window. In a walk played without Arbor as a control, an app's second window never came forward at ⌘M on its first, and with Arbor it did: one act in 5,378 was booked against Arbor that was the fake's. When both were made to happen regardless, 17 tests of 6,843 fell: ten scenes meant "nobody has had the keyboard", or one window in particular, and now say so; seven copied a world and now carry over who had it.
+- **Found by:** A walk of plain acts on the stand-ins, with Arbor and without.
+- **Stand-ins play it:** yes (`FakeWindowSystem.open`, `FakeWindowSystem.setMinimized`, `FakeWindowSystem.userFocusesNothing`)
+- **Guard:** `test: whoHasTheKeyboardDoesNotHangOnArborRunning`
+- **Arbor copes:** Controller.letTheWindowWithTheKeyboardBe asks who has the keyboard before the first layout of a start, and does not send that window away.
+- **Read in:** `Sources/ArborTesting/FakeWindowSystem.swift`
 
 ### two-previews-for-one-drag
 

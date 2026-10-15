@@ -93,12 +93,12 @@ extension FakeWindowSystem {
       snapshot: snapshot, minimumSize: minimumSize, maximumSize: maximumSize, behaviour: behaviour)
     if let cells { (windows[id]!.sizeStep, windows[id]!.sizeMargin) = (cells.step, cells.margin) }
     windows[id]!.idealSize = idealSize
-    guard started else { return }
     // As in `open(app:)`.
     if echoes.keyboard {
       focused = id
       bringToFront(id)
     }
+    guard started else { return }
     events?.windowAppeared(snapshot)
     if echoes.keyboard { giveKeyboard(to: id) }
     deliverEchoes()

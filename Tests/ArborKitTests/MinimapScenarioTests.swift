@@ -238,6 +238,7 @@ private let side = DisplaySnapshot(
         again.system.open(
           app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
       }
+      again.system.focused = h.system.focused
       again.controller.restartedAfterAccident = byTheWatchdog
       again.start()
       // The view of a moment ago, or everything.

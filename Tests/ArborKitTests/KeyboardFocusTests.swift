@@ -326,6 +326,8 @@ private let side = sideDisplay
     let minimum = CGSize(width: 900, height: 600)
     let x1 = h.system.open(app: "X1", frame: CGRect(x: 200, y: 100, width: 900, height: 600), minimumSize: minimum)
     let x2 = h.system.open(app: "X2", frame: CGRect(x: 300, y: 100, width: 900, height: 600), minimumSize: minimum)
+    // Neither of the two has had the keyboard as far as Arbor knows: of two equals it would go to the one that had it last.
+    h.system.userFocus(a)
     h.start()
     for command in [
       "dock \(a.rawValue) left", "dock \(x1.rawValue) right", "dock \(x2.rawValue) beside \(x1.rawValue) bottom",

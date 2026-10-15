@@ -386,10 +386,11 @@ private let above = DisplaySnapshot(
   }
 
   @Test func withoutAFocusHistoryTheTopLeftWindowGetsFocus() {
-    // Just launched: nothing has had focus since.
+    // Just launched, with the keyboard on the Desktop: nothing has had focus since.
     let h = Harness(displays: [main, side])
     h.system.open(app: "Low", frame: CGRect(x: 100, y: 500, width: 400, height: 300))
     let top = h.system.open(app: "Top", frame: CGRect(x: 700, y: 100, width: 400, height: 300))
+    h.system.userFocusesNothing()
     h.start()
     h.system.cursor = CGPoint(x: 2000, y: 400)
     #expect(runOK(h, "focus-display next").message == "focused \(top) on display 1", "counting from the pointer's display")

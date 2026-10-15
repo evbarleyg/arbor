@@ -825,8 +825,8 @@ extension ChaosRunner {
         + "and the monitor is empty.",
       script: """
         displays main:0,0,1512,982:37,0,48,0* side:-1920,-200,1920,1080:25,0,0,0 windows-never
-        open 103 Safari pid 1000 at 89 107 1416 784 min 574 240
         open 104 Safari pid 1000 at -1318 -171 1152 816 min 574 240
+        open 103 Safari pid 1000 at 89 107 1416 784 min 574 240
         launch
         via shortcut arrange
         key down zoom

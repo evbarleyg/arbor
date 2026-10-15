@@ -545,12 +545,12 @@ public final class FakeWindowSystem: WindowSystem {
       title: title ?? "\(app) \(id.rawValue)", frame: frame, isResizable: isResizable)
     windows[id] = FakeWindow(
       snapshot: snapshot, minimumSize: isResizable ? minimumSize : frame.size, maximumSize: isResizable ? nil : frame.size)
-    guard started else { return id }
-    // By the time anybody hears of a new window it has the keyboard and is in front.
+    // By the time anybody hears of a new window it has the keyboard and is in front. That is macOS's doing, whether or not Arbor runs.
     if echoes.keyboard {
       focused = id
       bringToFront(id)
     }
+    guard started else { return id }
     events?.windowAppeared(snapshot)
     // Created, then focused, in the same millisecond.
     if echoes.keyboard { giveKeyboard(to: id) }
@@ -574,7 +574,7 @@ public final class FakeWindowSystem: WindowSystem {
   public func setMinimized(_ window: WindowID, _ minimized: Bool) {
     guard windows[window] != nil else { return }
     // Either way the focus report comes first: of the app's next window, or of the window flying out of the Dock.
-    if echoes.keyboard, started {
+    if echoes.keyboard {
       if !minimized {
         giveKeyboard(to: window)
       } else if focused == window {

@@ -22,6 +22,8 @@ import Testing
     h.system.open(app: "Notes", title: "Shopping", pid: 12, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
     h.system.open(app: "Mail", title: "Inbox", pid: 13, frame: CGRect(x: 500, y: 300, width: 600, height: 400))
     h.system.open(app: "Terminal", title: "zsh", pid: 14, frame: CGRect(x: 560, y: 300, width: 300, height: 200))
+    // The keyboard is on the Desktop when Arbor starts, as after a click on the wallpaper: none of the four has had it.
+    h.system.userFocusesNothing()
     h.start()
     return (h, safari, notes, mail, terminal)
   }

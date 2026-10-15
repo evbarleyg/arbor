@@ -477,6 +477,7 @@ private let side = DisplaySnapshot(
       h.system.open(
         app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
     }
+    h.system.focused = old.system.focused
     h.controller.restartedAfterAccident = true
     h.start()
     #expect(!h.system.isVisible(f), "the view is still on Safari")
