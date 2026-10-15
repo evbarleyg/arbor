@@ -1,0 +1,71 @@
+37 back-to-the-desktop: presses ⌃←: the desktop comes back without Safari
+expected: {'act': 'macos-own', 'settled': 'quiet:0', 'moves': 'any', 'leaves': 'any', 'judge': 'no', 'floating': ''}
+ODD rule -: w34 is in view for Arbor but the window server does not show it
+ODD rule -: w34 is docked and not parked, but has neither a slot nor a tile
+
+02:51:26.518 SCREEN -- begin 37 back-to-the-desktop
+02:51:26.518 SCREEN -- text 37 presses ⌃←: the desktop comes back without Safari
+02:51:26.559 SCREEN (nothing was seen for 52 ms)
+02:51:26.610 SCREEN (nothing was seen for 44 ms)
+02:51:26.629 SCREEN textedit (w45) 1203,43 385×767
+02:51:26.629 SCREEN finder (w31) 12,43 501×767
+02:51:26.629 SCREEN w52 of Arbor 520,121 560×434
+02:51:26.629 SCREEN front to back: w304 safari textedit finder w52
+02:51:26.678 SCREEN (nothing was seen for 49 ms)
+02:51:26.726 SCREEN (nothing was seen for 47 ms)
+02:51:26.834 SCREEN (nothing was seen for 66 ms)
+02:51:26.892 SCREEN (nothing was seen for 52 ms)
+02:51:26.945 SCREEN (nothing was seen for 44 ms)
+02:51:27.001 SCREEN (nothing was seen for 48 ms)
+02:51:27.067 SCREEN (nothing was seen for 60 ms)
+02:51:27.131 SCREEN (nothing was seen for 58 ms)
+02:51:27.223 SCREEN (nothing was seen for 89 ms)
+02:51:27.223 SCREEN in front: process 17986 com.apple.TextEdit
+02:51:27.223 SCREEN safari (w34) left the screen
+02:51:27.223 SCREEN w304 of Safari left the screen
+02:51:27.223 SCREEN front to back: textedit finder w52
+02:51:27.223 MACOS pid 17986 AXApplicationActivated
+02:51:27.224 MACOS workspace didActivate pid 17986 com.apple.TextEdit regular
+02:51:27.225 MACOS workspace didDeactivate pid 17605 com.apple.Safari regular
+02:51:27.225 MACOS pid 17605 AXApplicationDeactivated
+02:51:27.251 DEBUG w34 is no longer listed
+02:51:27.252 DEBUG w31 is listed again
+02:51:27.252 DEBUG w45 is listed again
+02:51:27.253 DEBUG focus is on w45
+02:51:27.329 SCREEN (nothing was seen for 76 ms)
+02:51:27.329 SCREEN textedit (w45) 969,43 397×767
+02:51:27.329 SCREEN finder (w31) 12,43 619×767
+02:51:27.381 MACOS pid 395 AXResized w31 AXWindow/AXStandardWindow 12 43 619 767
+02:51:27.386 MACOS pid 17986 AXResized w45 AXWindow/AXStandardWindow 969 43 619 767
+02:51:27.387 MACOS pid 17986 AXMoved w45 AXWindow/AXStandardWindow 969 43 619 767
+02:51:27.389 SCREEN (nothing was seen for 60 ms)
+02:51:27.389 MACOS pid 17986 AXResized w45 AXWindow/AXStandardWindow 969 43 619 767
+02:51:27.398 DEBUG w45 has the keyboard
+02:51:27.401 SCREEN textedit (w45) 969,43 619×767
+02:51:27.434 SCREEN w58 of Arbor 960,34 637×785
+02:51:27.434 SCREEN w57 of Arbor 631,43 12×767
+02:51:27.434 SCREEN w67 of Arbor 957,43 12×767
+02:51:27.434 SCREEN w59 of Arbor 0,31 1600×791 (level -2147483602)
+02:51:27.434 SCREEN front to back: w58 textedit finder w52 w57 w67
+02:51:27.504 SCREEN (nothing was seen for 66 ms)
+02:51:27.571 SCREEN (nothing was seen for 41 ms)
+02:51:27.626 SCREEN (nothing was seen for 48 ms)
+02:51:27.746 SCREEN (nothing was seen for 44 ms)
+02:51:27.986 SCREEN (nothing was seen for 49 ms)
+02:51:28.099 SCREEN (nothing was seen for 44 ms)
+02:51:28.150 SCREEN (nothing was seen for 43 ms)
+02:51:28.200 SCREEN (nothing was seen for 42 ms)
+02:51:28.414 SCREEN (nothing was seen for 51 ms)
+02:51:28.468 SCREEN (nothing was seen for 47 ms)
+02:51:28.577 SCREEN (nothing was seen for 53 ms)
+02:51:28.685 SCREEN (nothing was seen for 67 ms)
+02:51:28.736 SCREEN (nothing was seen for 42 ms)
+02:51:28.917 SCREEN (nothing was seen for 44 ms)
+02:51:29.062 SCREEN (nothing was seen for 62 ms)
+02:51:29.112 SCREEN -- finding 37 - ODD w34 is in view for Arbor but the window server does not show it
+02:51:29.112 SCREEN -- finding 37 - ODD w34 is docked and not parked, but has neither a slot nor a tile
+02:51:29.177 SCREEN -- end 37 act=macos-own settled=quiet:0 moves=any leaves=any judge=no floating=
+02:51:29.281 SCREEN (nothing was seen for 47 ms)
+02:51:29.468 SCREEN (nothing was seen for 48 ms)
+02:51:29.612 SCREEN (nothing was seen for 54 ms)
+02:51:29.705 SCRIPT == 38 forth-to-safari
