@@ -1,0 +1,121 @@
+# 48-hold 2026-10-15T08:03Z on macOS 26.6.2, commit 8ea73d0
+
+▸ choose Hold This View from the menu with a window framed: no shortcut moves the view, and a line says why and what releases it
+  ✔ the others are out of view
+  ✔ the item can be clicked
+  ✔ Arbor ran hold
+  ✔ status says that the view is held
+  ✔ the framed window has the keyboard
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ Arbor says on screen why nothing happened
+  ✔ ⌃⌥↑ reaches Arbor
+  ✔ ⌃⌥D reaches Arbor
+  ✔ ⌃⌥⇧F reaches Arbor
+  ✔ the framed window still fills the screen
+  ✔ the other app's window is still out of view
+  ✔ and so is the floating one
+  ✔ all three are still docked
+  ✔ the menu's first line says that the view is held
+  ✔ Hold This View is ticked
+
+▸ an app comes forward by itself while the view is held: its window stays out of view and the keyboard goes back
+  ✔ Arbor saw it take the keyboard
+  ✔ the keyboard is back in the framed window
+  ✔ its app is in front again
+  ✔ the window that came forward stays out of view
+  ✔ the framed window still fills the screen
+  ✔ nothing is said about it on the shared screen
+
+▸ ⌃⌥F on the only window of a held view, which would float it and widen the view: it stays docked, and a line says why
+  ✔ ⌃⌥F reaches Arbor
+  ✔ Arbor says on screen why nothing happened
+  ✔ it is still docked
+  ✔ it still fills the screen
+  ✔ the other app's window is still out of view
+
+▸ ⌘-drag the only window of a held view out of its slot: nothing else comes into view
+  ✔ it follows the pointer while the button is held
+  ✔ the window below it stays out of view meanwhile
+  ✔ let go, the window below it stays out of view
+  ✔ and so does the other app's
+  ✔ and the floating one
+  ✔ the dragged window is in view
+  ✔ the view is still held
+
+▸ hold a column of two windows: they can still be dragged beside and below each other, and nothing else comes into view
+  ✔ the column is in view
+  ✔ the other app's window is not
+  ✔ the view is held
+  ✔ over the left part of the other window a preview shows
+  ✔ it docks on the left of the other
+  ✔ the other app's window is still out of view
+  ✔ over the lower part of the other window a preview shows
+  ✔ it docks below the other
+  ✔ the other app's window is out of view as before
+  ✔ and so is the floating one
+  ✔ the view is still held
+  ✔ windows match Arbor's layout
+
+▸ ⌘M on the only window of a held view: nothing else comes into view, and the menu says that nothing is in it
+  ✘ it is minimized — it is managed docked at 12 43 1000 650
+  ✔ the other window of its column stays out of view
+  ✔ and so does the other app's
+  ✔ and the floating one
+  ✔ the view is still held
+  ✘ the menu says that nothing is in the view — pointer: process 26503 shows no menu item starting with The view is held: nothing is in it
+  ✔ restored, it fills the screen as before
+  ✔ the other app's window is still out of view
+
+▸ ⌃⌥⎋ on a held view releases it and moves nothing; pressed again it pauses
+  ✔ ⌃⌥⎋ reaches Arbor
+  ✔ the view is no longer held
+  ✔ Arbor is not paused
+  ✔ Arbor says on screen that the same key again pauses
+  ✔ the framed window still fills the screen
+  ✔ the other app's window is still out of view
+  ✔ pressed again, it pauses
+  ✔ and every window comes into view
+  ✔ a third press resumes
+  ✔ with the view it had
+  ✔ ⌃⌥Space works again
+  ✔ everything is in view
+  ✔ windows match Arbor's layout
+
+▸ choose Hold Still from the menu: an app that comes forward by itself is turned away, said once; one's own keys still move the view
+  ✔ ⌃⌥↩ frames the focused window
+  ✔ the other app's window is out of view
+  ✔ the item can be clicked
+  ✔ Arbor ran hold still
+  ✔ status says that Arbor holds still
+  ✔ Arbor saw it take the keyboard
+  ✔ the keyboard is back in the framed window
+  ✔ the window that came forward stays out of view
+  ✔ Arbor says on screen what it turned away
+  ✔ it comes forward again, and is turned away again
+  ✔ the keyboard goes back once more
+  ✔ it still is out of view
+  ✔ and that is not said again
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ and shows everything
+  ✔ Arbor still holds still
+  ✔ Hold Still is ticked
+  ✔ Release can be clicked
+  ✔ it ends
+  ✔ windows match Arbor's layout
+
+▸ put a window on holdStillFor in settings.json: Arbor holds still while it is open, and no longer
+  ✔ reload-settings succeeds
+  ✔ the app's other window does not count
+  ✔ status says why Arbor holds still
+  ✔ so does the menu
+  ✔ closed, it ends
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+96 passed, 2 failed
