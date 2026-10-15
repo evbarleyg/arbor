@@ -1,0 +1,40 @@
+A change that landed green on Linux and was wrong on a Mac, kept as the proof of `scripts/reality-ledger.py --for`.
+
+It is cut down from 98206418, "fix: a refused size costs nobody a second move", of 2026-10-15: the two functions that ask a window for a size
+where it stands. The size a window may take depends on where it stands, so a plain first dock on a Mac ended short of its slot. The ledger
+had the rule, as a case the stand-ins did not play. `scripts/reality-ledger.py` holds this diff against collab/reality.json at every run:
+the cases that say so have to stand where whoever lands such a change reads them (PROOF in that script).
+
+diff --git a/Sources/ArborKit/Controller/Controller+AskFirst.swift b/Sources/ArborKit/Controller/Controller+AskFirst.swift
+new file mode 100644
+--- /dev/null
++++ b/Sources/ArborKit/Controller/Controller+AskFirst.swift
+@@ -0,0 +1,28 @@
++extension Controller {
++  /// `size`, where the window stands. Nil if it cannot be asked there, and is offered its slot like anybody. In the corner to the
++  /// left of a display what shows of a window depends on its width, so it would grow into view or shrink out of reach. And a
++  /// window its person has left lower than macOS lets anybody put one would not stay where it stands.
++  private func question(_ window: WindowSnapshot, toTake size: CGSize) -> CGRect? {
++    let question = CGRect(origin: window.frame.origin, size: size)
++    guard parked.contains(window.id) else { return whereItStops(question.origin) == question.origin ? question : nil }
++    return isOutOfView(question.union(window.frame)) && displays.contains { question.overlaps($0.frame) } ? question : nil
++  }
++
++  /// Puts a question. Returns true if the window refused to be that small (a new minimum size was learned).
++  func ask(_ window: WindowID, _ question: CGRect, on displayID: DisplayID) -> Bool {
++    // Its app does not answer: `place` finds that out as well, and sees to it.
++    guard let was = windows[window]?.frame.size, var actual = system.setFrame(question, of: window) else { return false }
++    actual = askForLess(window, slot: question, took: actual)
++    windows[window]?.frame = actual
++    settled[window] = actual
++    justAnswered[window] = question.size
++    // Only just back, it may not be ready to take a frame, and answers with the one it has (Controller+OnTheWayBack.swift). It goes
++    // where the size it has belongs, and nothing is concluded. One that has changed its size has heard the question.
++    if abs(actual.width - question.width) > 1 || abs(actual.height - question.height) > 1,
++      abs(actual.width - was.width) <= 1, abs(actual.height - was.height) <= 1, postponesJudgement(of: window, on: displayID)
++    {
++      return false
++    }
++    return learn(from: window, was: was, took: actual.size, offered: question.size)
++  }
++}
