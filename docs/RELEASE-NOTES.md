@@ -3,7 +3,7 @@
 A running draft of what the first release can honestly say. A line moves up only when its code has merged, and changes its mark only when there is evidence.
 `docs/FEATURES.md` (generated) has the item-by-item comparison; `CHANGELOG.md` is the documenter's.
 
-Last brought up to date: 2026-10-15, the section "Build 1". The rest is as it stood at the third freeze of 2026-10-14.
+Last brought up to date: 2026-10-15, the sections "On the way to the second build" and "Build 1". The rest is as it stood at the third freeze of 2026-10-14.
 
 **How sure we are**
 
@@ -14,6 +14,43 @@ Last brought up to date: 2026-10-15, the section "Build 1". The rest is as it st
 | ○ | Built, with no test that reaches it. Treat as unproven |
 
 Nothing here has been used by a person for a working day yet. All real-Mac evidence is from test windows on macOS 26.6; none is from Safari, Slack, Terminal or Zoom.
+
+## On the way to the second build: not it (`main`, 2026-10-15, in the morning)
+
+**This is not the second build.** It is what of it was finished, gated together and seen on hosted Macs by the morning of 2026-10-15, brought to `main` because a cure that is not in the build a person tries is worth nothing to them. It is better than Build 1 in everything that was played and worse in nothing we know of. The second build is cut when its whole list is in; `collab/BOARD.md`, section 0, has the list.
+
+**Installed over an earlier build:** switch Arbor off and on again under System Settings → Privacy & Security → Accessibility. macOS asks anew after every update of a build without a certificate.
+
+### What is in
+
+- **While Arbor's item is in the menu bar and nobody has paused it or given an app its keys, a key of Arbor's no longer lands in the app in front.** Where the permission is missing, in doubt or belongs to an earlier build, every shortcut is still taken, moves nothing and is answered by one line on screen. On hosted Macs, beside Build 1, with posted events and no real keyboard: 52 of 52 shortcuts reached the app in front; now 0 of 52. ●
+- **Docking touches only what is docked.** A floating window stays where it is, at its own size, whatever is docked beside or under it; a window pushed aside by hand stays there through a pause, a quit and a start. One setting (`floatingWindowsMakeWay`) brings the old conduct back. ◐; five journeys with test windows on a hosted Mac went as their rehearsal did, no floating window elsewhere than foretold (once; two steps of one journey, a drop onto a docked window and a drag out, moved nothing there and say nothing).
+- **A docked window fills its place.** A change of the night before left docked windows short of their places on a Mac while every test on Linux passed; the simulated Mac now refuses what a Mac refuses. On hosted Macs: 30 of 82 looks at a docked window found it short; now 0 of 82 with the Dock at the bottom, and none short with the Dock at either side (test windows, each way once). On its way a window may still be seen to change twice, first its size and then its place; filmed: no frame in which it covers what neither its old nor its new place covers, in 18 acts of 18. ●
+- **A double-click on a docked window's title bar is macOS's**, whatever it is set to, and what it did stays through everything nobody asked for: a neighbour minimized, hidden or closed, a Space and back, a pause. A second double-click undoes it. ●
+- **Easier to find your way.** The menu lists every open window and fetches whichever is chosen; its ways out are never below the fold of a small display; a state is one row that can be clicked ("Arbor is paused · Resume"). The first run asks for the permission and nothing else. There is a settings window. Go to… finds commands too, and Return alone never runs one. ● for the list and the first run, ◐ for the rest; Return in the real palette is being played on a hosted Mac as this is written.
+
+### What you will still meet, though its cure is built
+
+Each of these is built; some are approved and seen on a hosted Mac; none had been through the gate together with the rest by the morning.
+
+- A plain drag still docks. (To come: it only moves the window; ⌘ held docks.)
+- The old map of some fifty shortcuts. (To come: nine, each ⌃⌥ and one key; one setting brings the rest back.)
+- The ring round the window with the keyboard, the darker wallpaper, the motion, up to three menu bar icons. (To come: none of them unless asked for; one icon.)
+- ⌘M on an app's only window brings another app forward. (To come: after a person's own ⌘M, ⌘W, ⌘H or quit macOS decides who has the keyboard, as without Arbor.)
+- A docked terminal twitches by a row of characters.
+- The Desktop has a column of its own between docked windows.
+- A window kept in view can be covered by another app's.
+
+### Known, and not cured yet
+
+- **Two docks whose smallest widths do not fit side by side send the first out of view**, as a tile: an editor and a mail app on a laptop are enough. Decided: nobody goes out of view, they overlap, as with macOS's own tiling. Being built; the second build waits for it. Until then a click on its tile, or on its row under Windows in the menu, brings the window back.
+- **A floating window still goes out of view when the view moves**, for example when another window fills the screen; it comes back with the view. Decided: Arbor never takes a floating window out of view. Not in yet.
+- **Two displays of different sizes:** a docked window that Arbor takes from the smaller to the larger can end short of its place, in the middle of it. Seen once on a hosted Mac, by a command; by the simulated Mac a drop by hand near the border and a start can do it too, and a trip out of view and back mends it. Build 1 has this too. The second build waits for its cure.
+- **The Dock at the right:** of every window that is out of view a corner some 40 by 28 points, with its three buttons, shows at the bottom right. By the window server's frames, 20 of 20; no picture of it yet.
+- At the first Arrange Windows of a run the desk can be empty for nearly a second before the tiles come. Seen on a hosted Mac; whether a person's Mac does it nobody knows.
+- Once after each start, the first time a tile shows again, the screen may stand still for about a second. Seen on hosted Macs only, which are virtual ones, and with a plain tool without Arbor as well. If yours does, tell us.
+
+**Who has tried it.** Programs only, as before. Of the fourteen features that are on as Arbor ships, each has had its script played to its last line on a hosted Mac at least once; six have been green in a whole run; none has been played on this very commit. No person has used it, and no newcomer, human or otherwise, has been put in front of it.
 
 ## Build 1, cut on 2026-10-15 at about 03:00 UTC
 
