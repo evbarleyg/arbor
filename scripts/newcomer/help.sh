@@ -54,6 +54,15 @@ grant() {
   osascript -l JavaScript -e 'ObjC.import("Foundation"); $.NSDistributedNotificationCenter.defaultCenter.postNotificationNameObjectUserInfoDeliverImmediately("com.apple.accessibility.api", $(), $(), true)' > /dev/null
 }
 
+heard() {
+  local tries=0
+  until "$app/Contents/Helpers/arborctl" status 2>/dev/null | grep -E "^(running|paused)" > /dev/null; do
+    [ "$tries" -lt 16 ] || return 1
+    sleep 0.5
+    tries=$((tries + 1))
+  done
+}
+
 case "$how" in
   password)
     asking || { echo "nobody is asking for a password"; exit 0; }
@@ -62,7 +71,10 @@ case "$how" in
     if [ "$app" != - ]; then
       ours "$app" || { echo "typed for you; macOS did not take it"; exit 0; }
       [ "$settings" -gt 0 ] || { echo "typed for you; nothing came of it"; exit 0; }
-      grant "$app" && echo "typed for you, and accepted" || echo "typed for you; macOS did not take it"
+      grant "$app" || { echo "typed for you; macOS did not take it"; exit 0; }
+      # The process that waited hears of it within seconds. One that does not is started again, as macOS itself offers to after that switch ("Quit & Reopen").
+      heard || { "$app/Contents/Helpers/arborctl" quit > /dev/null 2>&1; sleep 1; pkill -f "Arbor.app/Contents/MacOS/Arbor"; sleep 1; open "$app"; heard; }
+      echo "typed for you, and accepted"
     elif app=$(found) && xattr -p com.apple.quarantine "$app" > /dev/null 2>&1; then
       xattr -dr com.apple.quarantine "$app"
       open "$app"
