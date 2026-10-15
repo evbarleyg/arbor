@@ -11,7 +11,8 @@ import Foundation
 // arbor-sim knows, `expect` included. Without `--out` the frames go to standard output and the story to standard error.
 //
 // Exits with code 1 if a line failed that `expect fail` does not answer for, or an expectation did not hold: a film shows what
-// Arbor does, so a script Arbor refuses makes no film. 2 if the script or the output cannot be opened.
+// Arbor does, so a script Arbor refuses makes no film. The frames are then at `<frames.jsonl>.failed`, to see what went wrong, and
+// nothing is at the path that was asked for. 2 if the script or the output cannot be opened.
 
 @MainActor
 func runFilm(_ arguments: [String]) -> Never {
@@ -113,6 +114,11 @@ func runFilm(_ arguments: [String]) -> Never {
   sink.write(waiting)
   try? sink.close()
   tell(String(format: "%d frames, %.2f s at %d frames a second", director.frames, Double(director.frames) / Double(fps), fps))
-  if failures > 0 { tell("\(failures) problem(s)") }
+  if let out {
+    // Nobody paints by mistake what Arbor refused, or what an earlier run left.
+    try? FileManager.default.removeItem(atPath: out + ".failed")
+    if failures > 0 { try? FileManager.default.moveItem(atPath: out, toPath: out + ".failed") }
+  }
+  if failures > 0 { tell("\(failures) problem(s)" + (out.map { "; the frames are at \($0).failed" } ?? "")) }
   exit(failures > 0 ? 1 : 0)
 }

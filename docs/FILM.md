@@ -16,7 +16,7 @@ swift build --product arbor-sim
 ```
 
 It exits with 1 if Arbor refused a line (unless `expect fail` follows it) or an `expect` did not hold: a film shows what Arbor does, so a script
-that Arbor refuses makes no film.
+that Arbor refuses makes no film. The frames are then at `frames.jsonl.failed`, to see what went wrong, and nothing is at the path that was asked for.
 
 ## What is real and what is a stand-in
 
