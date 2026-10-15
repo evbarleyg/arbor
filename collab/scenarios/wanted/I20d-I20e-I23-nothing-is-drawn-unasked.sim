@@ -13,3 +13,8 @@ expect replied false
 # The reply names the value that was: `animationDuration = 0 (was 0)`.
 set animationDuration 0
 expect replied was 0)
+# Nor is the wallpaper darkened behind docked windows, nor a hairline drawn round the Desktop.
+set dimBehindArranged 0
+expect replied was 0)
+set desktopEdge 0
+expect replied was 0)
