@@ -1159,7 +1159,7 @@ public final class Controller {
   /// Tries again for `only`, or for all that are owed it.
   func payTheWayBack(to only: WindowID? = nil) {
     for (window, place) in owedTheWayBack.sorted(by: { $0.key < $1.key }) where only == nil || only == window {
-      guard let actual = system.setFrame(place, of: window) else { continue }
+      guard let actual = give(place, to: window)?.frame else { continue }
       windows[window]?.frame = actual
       owedTheWayBack[window] = nil
     }

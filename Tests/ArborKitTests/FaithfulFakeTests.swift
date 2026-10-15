@@ -80,9 +80,27 @@ private final class Recorder: WindowSystemEvents {
     #expect(system.setFrame(rect(1023, 767, 325, 484), of: a)?.size == CGSize(width: 325, height: 484))
     let corner = system.windows[a]!.snapshot.frame.origin
     #expect(system.setFrame(CGRect(origin: corner, size: CGSize(width: 1000, height: 650)), of: a)?.size == CGSize(width: 1000, height: 650))
+    // Each side is free only once it is off the display: with its bottom in the Dock's strip a window keeps its height.
+    for y in [356, 357, 358] as [CGFloat] {
+      #expect(system.setFrame(rect(100, y, 400, 348), of: a) == rect(100, y, 400, 348))
+      #expect(system.setFrame(rect(100, y, 400, 448), of: a) == rect(100, y, 400, 348), "its bottom at \(y + 348)")
+    }
+    // A frame that ends on the visible bottom is a point short above a Dock, one that ends a point higher is whole.
+    #expect(system.setFrame(rect(12, 43, 400, 662), of: a) == rect(12, 43, 400, 661))
+    #expect(system.setFrame(rect(12, 43, 400, 300), of: a) == rect(12, 43, 400, 300))
+    #expect(system.setFrame(rect(12, 43, 400, 661), of: a) == rect(12, 43, 400, 661))
     // What its app insists on wins.
     let large = system.open(app: "Large", frame: rect(578, 220, 700, 500), minimumSize: CGSize(width: 700, height: 500))
     #expect(system.setFrame(rect(578, 220, 446, 348), of: large) == rect(578, 220, 700, 500))
+    // With the Dock at the side or hidden the visible bottom is the display's, and growth goes all the way to it.
+    let hidden = FakeWindowSystem(displays: [
+      DisplaySnapshot(
+        id: DisplayID("small"), frame: CGRect(x: 0, y: 0, width: 1024, height: 768),
+        visibleFrame: CGRect(x: 0, y: 31, width: 1024, height: 737), isMain: true)
+    ])
+    let b = hidden.open(app: "B", frame: rect(170, 220, 480, 348))
+    #expect(hidden.setFrame(rect(170, 220, 480, 650), of: b) == rect(170, 220, 480, 548), "its bottom at 768")
+    #expect(hidden.setFrame(rect(0, 31, 1024, 737), of: b) == rect(0, 31, 1024, 737))
     system.echoes.growsNoFurtherThanTheScreen = false
     #expect(system.setFrame(rect(687, 300, 300, 300), of: a) == rect(687, 300, 300, 300))
     #expect(system.setFrame(rect(687, 300, 400, 650), of: a) == rect(687, 300, 400, 650))

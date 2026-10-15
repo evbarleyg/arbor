@@ -448,10 +448,11 @@ extension Controller {
       }
       if let current = windows[window], !isInPlace(current, at: target) {
         // Its app does not answer, so it is where it was, out of view if it was. It is placed when the app answers.
-        guard var actual = system.setFrame(target, of: window) else {
+        guard let given = give(target, to: window) else {
           unplaced.insert(window)
           continue
         }
+        var actual = given.frame
         unplaced.remove(window)
         // A few points over can be the nearest character cell, not a refusal (Controller+SizeSteps.swift), as in `apply`.
         actual = askForLess(window, slot: target, took: actual)
@@ -477,7 +478,7 @@ extension Controller {
             target = informed
             actual = system.setFrame(target, of: window) ?? actual
           }
-        } else if actual.width < target.width - 2 || actual.height < target.height - 2, showsLessThanHalf(actual) {
+        } else if actual.width < target.width - 2 || actual.height < target.height - 2, given.own.size == actual.size, showsLessThanHalf(actual) {
           // The app will not make it that large any more. A window shrinks towards its top-left corner, so one that
           // hung over the left edge of the screen has gone beyond it. The frame it had is no frame to go back to: it
           // floats on the display from now on. One that took the frame it was asked to goes on hanging, whatever shows.

@@ -237,7 +237,9 @@ import Testing
   @Test func aWindowFloatedByCommandTakesItsOwnSizeAndIsNotSqueezedOntoTheDesktop() {
     let desk = makeArrangedDesk()
     desk.h.run("float \(desk.safari.rawValue)")
-    #expect(desk.h.frame(desk.safari)?.size == CGSize(width: 1324, height: 791), "\(String(describing: desk.h.frame(desk.safari)))")
+    // A point short of its own 791, which is the height of the visible frame: an app can make itself that high, but asked to grow, a window
+    // stops a point above the Dock, in whatever order it is sized and moved (970 of 971 on a hosted Mac).
+    #expect(desk.h.frame(desk.safari)?.size == CGSize(width: 1324, height: 790), "\(String(describing: desk.h.frame(desk.safari)))")
     #expect(Self.display.visibleFrame.contains(desk.h.frame(desk.safari)!))
     expectUntouched(desk, "after Safari was floated")
   }

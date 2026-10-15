@@ -107,14 +107,15 @@ extension Controller {
   /// (measured on macOS 26: at 170,220, asked to be 650 high above a Dock that begins at 705, a window became 484 high). That is
   /// the room there was, not what the window can do; taken for that, it left every window docked from lower down short of its
   /// slot. And a window that grows where it stands lies over its neighbours, in neither its old frame nor its new one. So each side is
-  /// only asked to shrink. A window past both those lines, which is where Arbor parks them, was seen to grow as it is asked to.
+  /// only asked to shrink. A window off the display on both those sides, which is where Arbor parks all but the lowest of them, grows as it is
+  /// asked to; with its foot in the Dock's strip it keeps its height (`ScreenLines`).
   ///
   /// In the corner to the left of a display what shows of a window depends on its width, so it would grow into view or shrink
   /// out of reach. And a window its person has left lower than macOS lets anybody put one would not stay where it stands.
   private func question(_ window: WindowSnapshot, toTake size: CGSize) -> CGRect? {
     let has = window.frame
     let growsAsAsked =
-      parked.contains(window.id) && stopper(of: has.origin).map { has.maxX > $0.frame.maxX && has.maxY > $0.visibleFrame.maxY } == true
+      parked.contains(window.id) && stopper(of: has.origin).map { has.maxX > $0.frame.maxX && has.maxY > $0.frame.maxY } == true
     let question = CGRect(
       origin: has.origin,
       size: growsAsAsked ? size : CGSize(width: min(size.width, has.width), height: min(size.height, has.height)))
@@ -126,14 +127,11 @@ extension Controller {
     return isOutOfView(question.union(has)) && displays.contains { question.overlaps($0.frame) } ? question : nil
   }
 
-  /// Whether it may have been the screen that kept a window from growing to `asked` while it stood at `origin`: it `took` as much as ends
-  /// on a line macOS lets no window grow across where it stands (`question`). Those lines are where they are at that moment,
-  /// whatever Arbor has been told: the Dock's was seen to move by two points a third of a second before the news came.
+  /// Whether it may have been the screen that kept a window from growing to `asked` while it stood at `origin`: it `took` as much as macOS lets
+  /// a window have there (`sidesTheScreenKept`). A point or two short is nobody's refusal.
   func mayHaveBeenStoppedByTheScreen(_ took: CGSize, shortOf asked: CGSize, at origin: CGPoint) -> Bool {
-    guard let display = stopper(of: origin) else { return false }
-    func ends(_ edge: CGFloat, on lines: CGFloat...) -> Bool { lines.contains { abs(edge - $0) <= 4 } }
-    return took.height < asked.height - 2 && ends(origin.y + took.height, on: display.visibleFrame.maxY)
-      || took.width < asked.width - 2 && ends(origin.x + took.width, on: display.frame.maxX, display.visibleFrame.maxX)
+    let kept = sidesTheScreenKept(of: took, shortOf: asked, at: [origin])
+    return kept.height && took.height < asked.height - 2 || kept.width && took.width < asked.width - 2
   }
 
   /// Puts a question. Returns true if the window refused to be that small (a new minimum size was learned).

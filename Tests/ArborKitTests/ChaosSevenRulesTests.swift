@@ -228,6 +228,33 @@ private let b = WindowID(102)
     #expect(nets(after: floating, then: "cursor 10 10", fault: hop(to: rect(827, 37, 500, 851))).contains("moved-twice-sizing-floating"))
   }
 
+  /// Nobody can grow into a frame that hangs over the edge of the screen. A window is sized where the size fits, straight above, and then
+  /// only moved, and only that is let pass: where one request could not have done it, and no further out of the way than it takes.
+  @Test func onlyTheWayByWhereTheSizeFitsIsLetPass() {
+    // Low on the display, 200 points above its bottom, and low itself.
+    let low = ["launch", "open 101 Notes pid 1001 at 100 100 500 400", "open 102 Mail pid 1002 at 800 700 500 150", "settle"]
+    let high = ["launch", "open 101 Notes pid 1001 at 100 100 500 400", "open 102 Mail pid 1002 at 800 100 500 150", "settle"]
+    func hop(by via: CGRect) -> (FakeWindowSystem) -> Void {
+      {
+        _ = $0.setFrame(via, of: b)
+        _ = $0.setFrame(self.rect(800, 700, 500, 600), of: b)
+      }
+    }
+    func jolts(after lines: [String], _ fault: @escaping (FakeWindowSystem) -> Void) -> Set<String> {
+      nets(after: lines, then: "cursor 10 10", fault: fault).filter { $0.hasPrefix("moved-twice") || $0.hasPrefix("sized-") }
+    }
+    #expect(jolts(after: low, hop(by: rect(800, 300, 500, 600))).isEmpty, "the hop itself")
+    #expect(jolts(after: low, hop(by: rect(800, 200, 500, 600))) == ["moved-twice-floating"], "further up than it takes")
+    #expect(jolts(after: low, hop(by: rect(700, 300, 500, 600))) == ["moved-twice-floating"], "and sideways")
+    #expect(jolts(after: high, hop(by: rect(800, 300, 500, 600))) == ["moved-twice-floating"], "there was room where it stood: one request would have done")
+    #expect(
+      !jolts(after: low) {
+        hop(by: self.rect(800, 300, 500, 600))($0)
+        _ = $0.setFrame(self.rect(800, 700, 500, 150), of: b)
+        hop(by: self.rect(800, 300, 500, 600))($0)
+      }.isEmpty, "twice")
+  }
+
   /// A terminal is a few points short of any slot, and that it is set right in it has a name and an owner of its own.
   @Test func aTerminalSetRightInItsSlotHasAName() {
     let terminal = ["launch", "open 101 Terminal pid 1001 at 100 100 500 400", "behave 101 grid", "open 102 Mail pid 1002 at 800 300 500 400", "settle"]

@@ -94,7 +94,7 @@ extension Controller {
     system.start()
     defer { system.stop() }
     for (window, frame) in couldNotComeBack.sorted(by: { $0.key < $1.key }) {
-      guard let actual = system.setFrame(frame, of: window) else { continue }
+      guard let actual = give(frame, to: window)?.frame else { continue }
       couldNotComeBack[window] = nil
       leftAt?[window] = actual
       noteThatThePauseFetched(window, to: actual)

@@ -85,7 +85,7 @@ extension Controller {
     workspaces[id]?.rememberUndockedFrames(ofArrivals: [state.window: state.stood])
     // It was offered its place, because nobody knew that it would not fit, and is wherever that left it: with a slot
     // on the right, mostly off the display.
-    if windows[state.window]?.frame != state.stood, let actual = system.setFrame(state.stood, of: state.window) {
+    if windows[state.window]?.frame != state.stood, let actual = give(state.stood, to: state.window)?.frame {
       windows[state.window]?.frame = actual
     }
   }

@@ -87,11 +87,7 @@ import Testing
     #expect(hanging.maxX > FakeWindowSystem.standardDisplay.frame.maxX)
     let h = away(how, old) { $0.system.userMove(browser, to: hanging) }
     h.run("pause")
-    #expect(h.frame(browser)?.origin == hanging.origin)
-    // A window cannot grow past the screen where it stands, on a Mac and, since the cure of the short window, here: it comes back cut at the edge.
-    withKnownIssue("board 0.22, first half: nobody takes the screen's answer for the window's") {
-      #expect(h.frame(browser) == hanging)
-    }
+    #expect(h.frame(browser) == hanging)
   }
 
   /// One window floats where it is, in its own size (F48), which is the new one.

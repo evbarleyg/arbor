@@ -23,6 +23,14 @@ import Testing
     /// The windows Arbor has moved or resized.
     var touched: [WindowID] { all.filter { h.frame($0) != own[$0] } }
     func frames() -> [WindowID: CGRect] { Dictionary(uniqueKeysWithValues: all.map { ($0, h.frame($0)!) }) }
+    /// Whether it has its own frame again. Safari had made itself as high as the visible frame. Nobody else can: asked to grow, a window
+    /// stops a point above the Dock, in whatever order it is sized and moved (970 of 971 on a hosted Mac). That point is borne.
+    func hasItsOwnFrame(_ window: WindowID) -> Bool {
+      guard let frame = h.frame(window), let own = own[window] else { return false }
+      let visible = PauseGivesSizesBackTests.display.visibleFrame
+      let aPointShort = CGRect(x: own.minX, y: own.minY, width: own.width, height: own.height - 1)
+      return frame == own || (own.minY == visible.minY && own.maxY == visible.maxY && frame == aPointShort)
+    }
     /// How often each window has been moved since the log was cleared, besides a question put to it where it stood
     /// (Controller+AskFirst.swift). Whatever was done twice or for nothing counts.
     func moves() -> [WindowID: Int] {
@@ -82,7 +90,7 @@ import Testing
 
     #expect(desk.h.press("toggle-pause").ok)
     for window in desk.all {
-      #expect(desk.h.frame(window) == desk.own[window], "\(window)")
+      #expect(desk.hasItsOwnFrame(window), "\(window)")
       #expect(desk.h.frame(window)!.fractionInside(Self.display.frame) > 0.99, "\(window) is in view")
     }
     #expect(desk.moves() == Dictionary(uniqueKeysWithValues: touched.map { ($0, 1) }), "one move each, and none for the rest")
@@ -116,7 +124,7 @@ import Testing
     desk.h.system.clearFrameLog()
 
     desk.h.press("toggle-pause")
-    for window in desk.all { #expect(desk.h.frame(window) == desk.own[window], "\(window)") }
+    for window in desk.all { #expect(desk.hasItsOwnFrame(window), "\(window)") }
     #expect(desk.moves().values.allSatisfy { $0 == 1 }, "\(desk.moves())")
 
     desk.h.system.clearFrameLog()
@@ -362,7 +370,7 @@ import Testing
     let desk = makeDesk()
     let frames = desk.frames()
     desk.h.run("pause 5")
-    for window in desk.all { #expect(desk.h.frame(window) == desk.own[window], "\(window)") }
+    for window in desk.all { #expect(desk.hasItsOwnFrame(window), "\(window)") }
     desk.h.scheduler.advance(by: 5 * 60)
     #expect(desk.frames() == frames)
   }
@@ -375,7 +383,7 @@ import Testing
 
     desk.h.controller.applicationActivated(FrontmostApp(bundleID: "com.example.game", name: "Game"))
     #expect(desk.h.controller.isPausedForApp)
-    for window in desk.all { #expect(desk.h.frame(window) == desk.own[window], "\(window)") }
+    for window in desk.all { #expect(desk.hasItsOwnFrame(window), "\(window)") }
 
     desk.h.controller.applicationActivated(FrontmostApp(bundleID: "com.example.safari", name: "Safari"))
     #expect(desk.h.controller.isRunning)
@@ -457,7 +465,7 @@ import Testing
     #expect(desk.h.frame(desk.finder) == desk.own[desk.finder])
     #expect(desk.moves().values.allSatisfy { $0 == 1 }, "\(desk.moves())")
     #expect(desk.h.overlays.preview == nil && desk.h.controller.draggedWindow == nil)
-    for window in desk.all { #expect(desk.h.frame(window) == desk.own[window], "\(window)") }
+    for window in desk.all { #expect(desk.hasItsOwnFrame(window), "\(window)") }
   }
 
   /// A floating window is where the hand has it, and that is its own place from then on.

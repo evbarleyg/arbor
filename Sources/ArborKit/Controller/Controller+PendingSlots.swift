@@ -386,7 +386,7 @@ extension Controller {
       // The one that came first is a new window after all. It floats where its app had put it.
       let home = displayID(at: held.openedAt.center).flatMap { workspaces[$0] == nil ? nil : $0 } ?? display
       workspaces[home]!.floating[holder] = held.openedAt
-      if let actual = system.setFrame(held.openedAt, of: holder) { windows[holder]?.frame = actual }
+      if let actual = give(held.openedAt, to: holder)?.frame { windows[holder]?.frame = actual }
       parked.remove(holder)
       settled[holder] = nil
       misfits[holder] = nil

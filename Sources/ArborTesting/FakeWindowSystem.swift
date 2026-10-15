@@ -451,15 +451,39 @@ public final class FakeWindowSystem: WindowSystem {
     displayList.first { $0.frame.contains(origin) } ?? displayList.min { $0.frame.distance(to: origin) < $1.frame.distance(to: origin) }
   }
 
-  /// What macOS passes on of a `size` asked of a window that stands at `standing` (`echoes.growsNoFurtherThanTheScreen`). Its
+  /// What macOS passes on of a `size` asked of a window that stands at `standing` (`echoes.growsNoFurtherThanTheScreen`, `ScreenLines`). Its
   /// app has its say afterwards: a minimum size wins.
   private func sizeMacOSAllows(_ size: CGSize, to standing: CGRect) -> CGSize {
-    guard echoes.growsNoFurtherThanTheScreen, let display = display(stopping: standing.origin) else { return size }
-    let (right, bottom) = (display.frame.maxX, display.visibleFrame.maxY)
-    return CGSize(
-      width: standing.maxX > right ? size.width : min(size.width, max(standing.width, right - standing.minX)),
-      height: standing.maxY > bottom || standing.minY + size.height <= bottom
-        ? size.height : min(size.height, max(standing.height, bottom - 1 - standing.minY)))
+    lines(at: standing.origin)?.allows(size, to: standing) ?? size
+  }
+
+  private func lines(at origin: CGPoint) -> ScreenLines? {
+    guard echoes.growsNoFurtherThanTheScreen else { return nil }
+    return display(stopping: origin).map { ScreenLines(frame: $0.frame, visibleFrame: $0.visibleFrame) }
+  }
+
+  /// Whether `move` and `next` are a window **sized where its size fits and then only moved**, because no one request could have given it the
+  /// frame it ends at: that hangs over a line, and there was no room for the size where the window stood either
+  /// (Controller+TheScreensAnswer.swift). It went no further out of its way than it had to: straight above or beside where it ends up, up
+  /// against the line. Those who count a window's moves count these two as one.
+  public func isSizedWhereItFits(_ move: Move, then next: Move) -> Bool {
+    let (asked, via, end) = (move.requested, move.after, next.after)
+    // To a point: half points are rounded on the way.
+    func same(_ a: CGFloat, _ b: CGFloat) -> Bool { abs(a - b) <= 1 }
+    guard same(via.minX, asked.minX), same(via.minY, asked.minY), next.before == via, end.approximatelyEquals(next.requested, tolerance: 1),
+      end.size == via.size, let display = display(stopping: end.origin),
+      // It took what it was asked for, or, from the very edge of the display, all there is room for.
+      same(via.width, asked.width) || same(via.minX, display.frame.minX), same(via.height, asked.height) || same(via.minY, display.visibleFrame.minY)
+    else { return false }
+    // What it has by going there that one request would not have given it.
+    let last = ScreenLines.sizeAfterOneRequest(
+      for: CGRect(origin: end.origin, size: asked.size), from: move.before,
+      rooms: displayList.map { FramePlan.room(onDisplay: $0.frame, visible: $0.visibleFrame) }, lines: lines(at:))
+    let (narrow, low) = (last.width < via.width - 1, last.height < via.height - 1)
+    return (narrow || low)
+      && (narrow ? abs(display.visibleFrame.maxX - via.maxX) <= 5 && via.minX < end.minX : same(via.minX, end.minX))
+      // (As far above a Dock as Arbor keeps, `Controller.theDocksPlay`, and the point.)
+      && (low ? abs(display.visibleFrame.maxY - via.maxY) <= 5 && via.minY < end.minY : same(via.minY, end.minY))
   }
 
   public func focus(_ window: WindowID) {
@@ -946,12 +970,13 @@ extension FakeWindowSystem {
     /// 1023,767 on a display whose visible frame ends at 705, it stops at 1023,677, its title bar's 28 points above (`setTitleBar`).
     /// Nor does a new window open with its title bar under the menu bar (`whereItOpens`).
     public var titleBarStaysReachable = true
-    /// A window whose size is set grows no further than to the bottom of the visible frame, less a point, and to the right edge
-    /// of its display: at 170,220 on a display whose visible frame ends at 705, asked to be 650 high, it becomes 484 high;
-    /// at 687,106 on one 1024 wide, asked to be 494 wide, 337 wide (25 answers on macOS 26). It is never made smaller by it. One
-    /// that is past both already, as in the corner where Arbor parks windows, grows as it is asked to. Not seen, and a guess
-    /// here: past one of them and not the other, each side goes by itself; asked to end on the very line, it does; with several
-    /// displays, the one its corner is on counts; a Dock at the side.
+    /// A window whose size is set grows no further than to the bottom of the visible frame, less a point above a Dock, and to the right
+    /// edge of its display: at 170,220 on a display whose visible frame ends at 705, asked to be 650 high, it becomes 484 high; at
+    /// 687,106 on one 1024 wide, asked to be 494 wide, 337 wide. So a frame that ends on the visible bottom is a point short above a
+    /// Dock, and whole with the Dock at the side or hidden. It is never made smaller by it. Each side goes by itself, and is free only
+    /// once it is off the display, as in the corner where Arbor parks windows: with its bottom in the Dock's strip a window keeps its
+    /// height. (Recordings and a probe of bare calls on hosted Macs, macOS 26; real apps alike.) A guess here: where in the
+    /// strip that turns (seen: held down to 729 of 768, free from 900); with several displays, that the one its corner is on counts.
     public var growsNoFurtherThanTheScreen = true
     /// For this many seconds after a window leaves the Dock it is still flying: asked for a frame, it answers with the
     /// one it has and keeps it. 0, the default: not seen on a Mac so far (the report of the un-minimize seems to come

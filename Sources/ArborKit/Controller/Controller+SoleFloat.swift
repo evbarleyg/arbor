@@ -272,7 +272,8 @@ extension Controller {
     {
       let size = CGSize(width: min(ownSize.width, room.width), height: min(ownSize.height, room.height))
       let frame = Self.frame(ofSize: size, inPlaceOf: dropped, under: system.cursorLocation())
-      if var actual = system.setFrame(frame, of: window) {
+      if let given = give(frame, to: window) {
+        var actual = given.frame
         // Its app may not let it be that size (any more), and keeps the corner it was given, which was reckoned for another
         // width: the window would jump away from under the pointer, off the display if it is near the edge.
         if abs(actual.width - size.width) > 2 || abs(actual.height - size.height) > 2 {
@@ -280,7 +281,7 @@ extension Controller {
           actual = system.setFrame(again, of: window) ?? actual
         }
         windows[window]?.frame = actual
-        workspaces[displayID]?.floating[window] = actual
+        workspaces[displayID]?.floating[window] = CGRect(origin: actual.origin, size: actual.size == given.frame.size ? given.own.size : actual.size)
       }
     }
     // From one Desktop to another, as above.

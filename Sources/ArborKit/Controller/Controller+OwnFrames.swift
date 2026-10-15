@@ -56,6 +56,11 @@ extension Controller {
     // Where Arbor fitted it, it is for the displays' sake, and its own frame is still its own, as long as it will be fitted
     // to the same place again.
     if fittedFrames[window] == frame, whereItWas(own, of: window, on: display).approximatelyEquals(frame, tolerance: 1) { return }
+    // Nor is the point its own that the screen keeps from a window which ends on the Dock's line (Controller+TheScreensAnswer.swift): it would
+    // lose one every time it went out of view.
+    if own.width - frame.width <= 2, own.height - frame.height <= 2, ownFrame(of: frame, askedFor: own.size).approximatelyEquals(own, tolerance: 0.99) {
+      return
+    }
     workspaces[displayID]?.floating[window] = frame
   }
 

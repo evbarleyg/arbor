@@ -148,7 +148,7 @@ extension Controller {
     let own = home.flatMap { workspaces[$0]!.floating[window] } ?? snapshot.frame
     let whereItIs =
       home.map { windowThatTakesDesktop(of: $0) == window || workspaces[$0]!.isFilled(window) } == true
-      ? own : frameWithoutSqueeze(of: window, on: display) ?? snapshot.frame
+      ? own : frameWithoutSqueeze(of: window, on: display) ?? ownFrame(of: snapshot.frame, askedFor: own.size)
     let size = own.size
     // In view with the keyboard in it already: someone is using it there, and it must not jump.
     let inUseHere =
@@ -167,11 +167,12 @@ extension Controller {
     for other in workspaces.keys.sorted() where other != displayID { workspaces[other]!.floating[window] = nil }
     let replaced = workspaces[displayID]!.summon(window, app: app, at: frame)
     if let replaced, windows[replaced]?.isPresent == true { park(replaced, on: display) }
-    if let actual = system.setFrame(frame, of: window) {
+    if let given = give(frame, to: window) {
+      let actual = given.frame
       windows[window]?.frame = actual
       settled[window] = actual
       // What the app made of it is where it is, and where it will be next time.
-      workspaces[displayID]!.floating[window] = actual
+      workspaces[displayID]!.floating[window] = given.own
       parked.remove(window)
       unplaced.remove(window)
     } else {

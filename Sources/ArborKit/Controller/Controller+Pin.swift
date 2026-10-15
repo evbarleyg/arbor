@@ -54,7 +54,8 @@ extension Controller {
       let remembered = workspaces[display]!.floating[id]
     else { return }
     let own = sizeToTakeAlong(of: id, from: display, remembered: remembered.size)
-    workspaces[display]!.floating[id] = snapshot.frame
+    // But for what the screen kept from it: a point above the Dock, pin after pin.
+    workspaces[display]!.floating[id] = ownFrame(of: snapshot.frame, askedFor: remembered.size)
     noteFit(of: id, own: own, into: snapshot.frame.size, on: display)
   }
 
@@ -188,7 +189,7 @@ extension Controller {
       if frame.size != windows[window]?.frame.size { drag?.sizeOwed = frame.size }
       return
     }
-    if var actual = system.setFrame(frame, of: window) {
+    if var actual = give(frame, to: window)?.frame {
       // Its app insists on more by now, and it grew from the corner it was given: no way home would fetch what hangs over an
       // edge. It is slid, at the size it insists on: what it has just refused is not asked of it again.
       if actual.width > frame.width + 2 || actual.height > frame.height + 2, let visible = display(displayID)?.visibleFrame {
