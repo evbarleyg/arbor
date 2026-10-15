@@ -36,7 +36,11 @@ runs() {
 has_rule() { "$ARBOR_BIN/arborctl" rules | grep -Fq "$1"; }
 window_count() { state | python3 -c 'import json, sys; print(len(json.load(sys.stdin)["windows"]))'; }
 window_is_open() { ax window "$TITLE" > /dev/null 2>&1; }
-front_pid() { pointer front 2> /dev/null; }
+# Accessibility names no app with the keyboard on GitHub's Macs ("no app has the keyboard"), so LaunchServices is asked there.
+front_pid() {
+  pointer front 2> /dev/null && return
+  on_throwaway_mac && lsappinfo info -only pid "$(lsappinfo front)" | tr -dc '0-9'
+}
 front_is() { [ "$(front_pid)" = "$1" ]; }
 level_is() { [ "$(overlays | awk -v id="$(ax window "$TITLE")" '$1 == id { print $3 }')" = "$1" ]; }
 
@@ -86,22 +90,20 @@ enter() {
 # A picture of the settings window alone, so it is taken on anybody's Mac: nothing else that is open is in it (behind the
 # sidebar's frosted glass are this script's test windows, which fill the display).
 wshot() {
-  local id log="$ARBOR_OUT/window-pictures.log"
-  sleep "${ARBOR_SETTLE:-0.7}"
+  local id
   id=$(ax window "$TITLE" 2> /dev/null) || { echo "wshot $1: there is no settings window"; return 1; }
-  # safe anywhere: -l takes one window by its number, Arbor's own, and nothing of what lies around it
-  if ! screencapture -x -o "-l$id" "$ARBOR_OUT/$1.png" 2>> "$log" || [ ! -s "$ARBOR_OUT/$1.png" ]; then
-    echo "wshot $1: no picture ($(tail -n 1 "$log"))"
-    return 1
-  fi
-  arbor_finish_shot "$1"
+  # lib.sh's: only a window of a process this run started, and only with Screen Recording granted already
+  look "$1" "$id"
 }
 
 # The window as text: every control with its place and value. Without the menus' items, which name running apps.
 tree() { ax tree | grep -v AXMenuItem > "$ARBOR_OUT/$1.txt"; }
 
+# On a display 1024 points wide four columns are 241 points each: with the usual smallest usable width any wider gap makes tiles of them
+# all, and a tile's window is out of view.
 SETTINGS='{
   "focusRing": false,
+  "minimumUsableWidth": 100,
   "bindings": { "ctrl+opt+shift+f9": "desktop", "ctrl+opt+shift+f6": "set gap 0", "ctrl+opt+d": null },
   "rules": [
     { "app": "com.example.mail", "title": "Inbox", "action": "dock left" },
@@ -123,13 +125,44 @@ session() {
   check "the settings window opens" eventually window_is_open
 }
 
-# panes <prefix>: a picture and the text of each pane. A section with nothing to show is no pane, and is refused.
+# whole <name>: a pane from top to bottom: <name>, and <name>-2, <name>-3… for as long as there is more below. A click in the
+# scroll bar under its knob goes on by a page, as it does for a person.
+whole() {
+  local x y w h page=1
+  wshot "$1"
+  while [ "$page" -lt 9 ]; do
+    read -r x y w h <<< "$(ax frame AXScrollBar "" 2> /dev/null)"
+    [ -n "${h:-}" ] || return 0
+    awk -v at="$(ax value AXScrollBar "")" 'BEGIN { exit !(at >= 0.99) }' && return 0
+    click $((x + w / 2)) $((y + h - 8)) > /dev/null || return 1
+    page=$((page + 1))
+    wshot "$1-$page"
+  done
+}
+
+advanced_is_open() { [ "$(ax value AXDisclosureTriangle "" 2> /dev/null)" = 1 ]; }
+
+# fresh <pane>: the pane from its top. A pane that is left and come back to is drawn anew. Fails where there is no such pane.
+fresh() {
+  "$ARBOR_BIN/arborctl" settings-window "$([ "$1" = rules ] && echo general || echo rules)" > /dev/null 2>&1
+  "$ARBOR_BIN/arborctl" settings-window "$1" > /dev/null 2>&1
+}
+
+# panes <prefix>: pictures and the text of each pane, and the same with its Advanced open, if it has one. A section with
+# nothing to show is no pane, and is refused.
 panes() {
   local pane
-  for pane in general windows dragging tabs gestures appearance menu-bar scripting shortcuts rules apps; do
-    "$ARBOR_BIN/arborctl" settings-window "$pane" > /dev/null 2>&1 || continue
-    wshot "$1-$pane"
+  for pane in general windows dragging tabs gestures calls appearance menu-bar apps scripting shortcuts rules; do
+    fresh "$pane" || continue
+    whole "$1-$pane"
     tree "$1-$pane"
+    # Now the foot of the pane is in view, where Advanced is.
+    shows AXDisclosureTriangle "" || continue
+    advanced_is_open || press AXDisclosureTriangle "" > /dev/null
+    eventually advanced_is_open || { echo "  $pane: Advanced did not open"; continue; }
+    fresh "$pane"
+    whole "$1-$pane-advanced"
+    tree "$1-$pane-advanced"
   done
 }
 
@@ -144,20 +177,46 @@ check "the window floats while it has the keyboard" eventually level_is 3
 check "Arbor knows three windows, not its own" [ "$(window_count)" -eq 3 ]
 shot 01-over-three-columns
 
-step "light: every pane"
-panes light
-
-step "Advanced opens"
+step "Advanced opens at a click on the word, and closes at another"
 ctl settings-window windows
-check "arrangeDesktopWeight is behind Advanced" not shows AXTextField arrangeDesktopWeight.field
+check "autoDockMinimumWidth is behind Advanced" not shows AXTextField autoDockMinimumWidth.field
+# The middle of what Accessibility calls the triangle, which is the triangle and the word: the click lands on the word.
 press AXDisclosureTriangle ""
-check "and shows after a click on the triangle" eventually shows AXTextField arrangeDesktopWeight.field
-wshot light-windows-advanced
+check "and shows after the click" eventually shows AXTextField autoDockMinimumWidth.field
+press AXDisclosureTriangle ""
+check "and is behind it again after another" eventually not shows AXTextField autoDockMinimumWidth.field
+
+# The pictures come first, in both looks: whatever goes wrong further down, they are taken.
+step "light: every pane, from top to bottom, and with Advanced open"
+panes light
+arbor_stop
+
+step "dark: every pane, a refusal, a clash and the banner"
+session dark
+panes dark
+ctl settings-window windows
+enter gap.field 500
+check "the reason stands in the window" eventually shows AXStaticText "Must be from 0 to 100"
+wshot dark-gap-refused
+ctl settings-window shortcuts
+press AXButton record.show-all
+key ctrl+opt+shift+f9
+check "the window says who has the keys" eventually shows AXStaticText "runs Show the Desktop now"
+wshot dark-clash
+press AXButton Cancel
+ctl settings-window general
+printf '{"gap": 40,\n' > "$ARBOR_HOME/settings.json"
+check "the banner is up" eventually shows AXStaticText "settings.json cannot be read"
+wshot dark-file-broken
+arbor_stop
 
 step "a number typed into Gap moves real windows; one out of range is refused under the field"
+session light
+ctl settings-window windows
 enter gap.field 40
 check "gap is 40" eventually setting_is gap 40
-check "the real window starts 40 points from the edge" eventually inset_is 40
+check "the real window starts 40 points from the edge" eventually inset_is 40 \
+  || echo "  it is at $(real_frame_of "$W1"), the screen at $(arbor_ask screen)"
 check "the window is still above the gap handles, which were drawn again" level_is 3
 enter gap.field 500
 check "500 is refused" setting_is gap 40
@@ -171,6 +230,7 @@ if check "the slider is found" [ -n "${sh:-}" ]; then
   drag $((sx + sw * 2 / 5)) $((sy + sh / 2)) $((sx + sw * 4 / 5)) $((sy + sh / 2)) --no-release
   check "held: gap is still 40" setting_is gap 40
   check "held: the field follows the slider" not field_is gap.field 40
+  echo "  held: the field says $(ax value AXTextField gap.field 2>&1)"
   wshot light-slider-held
   release
   check "let go: gap has changed" eventually not setting_is gap 40
@@ -180,11 +240,15 @@ check "the refusal is gone after the next change" not shows AXStaticText "Must b
 
 step "a change from outside shows in the open window"
 ctl set gap 20
-check "the field says 20" eventually field_is gap.field 20
+check "the field says 20" eventually field_is gap.field 20 || echo "  it says $(ax value AXTextField gap.field 2>&1)"
 printf '{"gap": 28, "focusRing": false}\n' > "$ARBOR_HOME/settings.json"
 check "and 28 after an edit of the file" eventually field_is gap.field 28
 arbor_settings "$SETTINGS"
 check "and 12 when the file no longer names it" eventually field_is gap.field 12
+# Leaving the pane hands over what was typed, and nothing was: what the field was given to show meanwhile is no typing.
+ctl settings-window general
+ctl settings-window windows
+check "leaving the pane with the keyboard in the field changes nothing" setting_is gap 12
 
 step "a switch, and Restore Defaults"
 ctl settings-window gestures
@@ -230,6 +294,9 @@ check "and changed nothing" runs ctrl+opt+shift+f9 show-all
 key ctrl+opt+shift+f6
 check "Arbor has its shortcuts again: ⌃⌥⇧F6 ran set gap 0" eventually setting_is gap 0
 press AXButton record.show-all
+# Whatever ends the script from here on: ⌘W must not stay Arbor's for as long as this Arbor runs.
+# (Not by `ctl`, which ends the script where nobody watches it any more, and the rest of the clean-up with it.)
+at_exit '"$ARBOR_BIN/arborctl" reset bindings > /dev/null 2>&1'
 key cmd+w
 check "⌘W did not close the window" window_is_open
 check "it was recorded" eventually runs cmd+w show-all
@@ -266,13 +333,14 @@ check "it asks first" eventually shows AXButton question.yes
 check "and has replaced nothing yet" shows AXStaticText "settings.json cannot be read"
 wshot light-file-broken-question
 press AXButton question.yes
-check "the banner is gone" eventually not shows AXStaticText "settings.json cannot be read"
+check "the banner is gone, and the refusal that spoke of the same" eventually not shows AXStaticText "settings.json cannot be read"
 check "the old file is kept beside the new one" [ -s "$ARBOR_HOME/settings.unreadable.json" ]
 check "the new one can be read" python3 -c 'import json, sys; json.load(open(sys.argv[1]))' "$ARBOR_HOME/settings.json"
 printf '{"gap": 500, "focusRingColour": "mauve", "focusRing": false}\n' > "$ARBOR_HOME/settings.json"
 check "values that could not be used are listed" eventually shows AXStaticText "could not be used as written"
 wshot light-values-unusable
 arbor_settings "$SETTINGS"
+check "the file is read again" eventually setting_is gap 12
 
 step "⌘W closes the window and the app from before has the keyboard again; what was being typed is handed over"
 # shellcheck disable=SC2046
@@ -295,23 +363,4 @@ check "33, typed and not entered, was handed over" eventually setting_is gap 33
 ctl settings-window
 check "it opens again" eventually window_is_open
 check "and shows what is so" eventually field_is gap.field 33
-arbor_stop
-
-step "dark: every pane, a refusal, a clash and the banner"
-session dark
-panes dark
-ctl settings-window windows
-enter gap.field 500
-check "the reason stands in the window" eventually shows AXStaticText "Must be from 0 to 100"
-wshot dark-gap-refused
-ctl settings-window shortcuts
-press AXButton record.show-all
-key ctrl+opt+shift+f9
-check "the window says who has the keys" eventually shows AXStaticText "runs Show the Desktop now"
-wshot dark-clash
-press AXButton Cancel
-ctl settings-window general
-printf '{"gap": 40,\n' > "$ARBOR_HOME/settings.json"
-check "the banner is up" eventually shows AXStaticText "settings.json cannot be read"
-wshot dark-file-broken
 arbor_stop
