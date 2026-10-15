@@ -20,7 +20,12 @@ extension AXWindowSystem {
   }
 
   public func isHolding(_ chord: KeyChord) -> Bool {
-    guard CGEventSource.keyState(.combinedSessionState, key: CGKeyCode(truncatingIfNeeded: chord.key.code)) else {
+    // Down by either table of keys. The session's has what other software posts as well. But to an Arbor that
+    // was granted its permission while it waited for it, it said of a key that was down that it was up, with
+    // another app having the keyboard, and a hold was a tap; the keyboard's own was right (hosted Macs,
+    // 2026-10-15, a script's grant: 233 looks of 233 in one process). Both say up once the key is up.
+    let code = CGKeyCode(truncatingIfNeeded: chord.key.code)
+    guard CGEventSource.keyState(.hidSystemState, key: code) || CGEventSource.keyState(.combinedSessionState, key: code) else {
       return false
     }
     let (modifiers, flags) = (chord.modifiers, NSEvent.modifierFlags)

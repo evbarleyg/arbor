@@ -17,6 +17,7 @@
 # system setting it would change (Reduce Motion) is left alone anywhere but on GitHub's Macs: `macos_reduce_motion` declines.
 ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-person.sh"
 
 # The panel keeps out of shared screens and recordings as far as macOS lets it (`sharingType`), and so out of these pictures, unless told
 # otherwise: every arbor_start below says ARBOR_PANELS_IN_PICTURES=1.
@@ -61,7 +62,8 @@ macos_reduce_motion off
 
 step "session 1: an arrangement worth a map: two columns, one of them split"
 arbor_settings '{"minimapDuration": 3}'
-arbor_start 4 ARBOR_NO_HOTKEYS=0 ARBOR_PANELS_IN_PICTURES=1
+# As a person starts it: this is the session in which the keys are held (lib-person.sh).
+arbor_start_as_a_person 4 ARBOR_NO_HOTKEYS=0 ARBOR_PANELS_IN_PICTURES=1
 read -r sx sy sw sh <<< "$(arbor_ask screen)"
 arrange
 check "docking from the widest view brings no minimap up" minimap_gone

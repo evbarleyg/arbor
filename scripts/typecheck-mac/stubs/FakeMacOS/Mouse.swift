@@ -23,6 +23,8 @@ extension FakeMac {
     var eventCounts: [UInt32: UInt32] = [:]
     /// The keys that are down, by virtual key code.
     public var keysDown: Set<UInt16> = []
+    /// Those that a program posted from a source of its own.
+    var keysPosted: Set<UInt16> = []
   }
 
   struct Grab {
@@ -95,6 +97,26 @@ extension FakeMac {
   }
 
   // MARK: What a hand does
+
+  /// A key that is no modifier goes down. `bySoftware`: posted by a program from a source of its own, as a remapper or a remote hand may: A GUESS, seen on no Mac:
+  /// such a key is in the session's table and not in the keyboard's.
+  public func pressKey(_ code: UInt16, bySoftware: Bool = false) {
+    if bySoftware { mouse.keysPosted.insert(code) } else { mouse.keysDown.insert(code) }
+  }
+  public func releaseKey(_ code: UInt16) {
+    mouse.keysDown.remove(code)
+    mouse.keysPosted.remove(code)
+  }
+
+  public enum TableOfKeys { case keyboards, sessions, ofTheAskersOwn }
+  /// What `CGEventSource.keyState` answers Arbor.
+  public func keyIsDown(_ code: UInt16, by table: TableOfKeys) -> Bool {
+    switch table {
+    case .keyboards: mouse.keysDown.contains(code)
+    case .sessions: !sessionsTableHidesKeys && (mouse.keysDown.contains(code) || mouse.keysPosted.contains(code))
+    case .ofTheAskersOwn: false
+    }
+  }
 
   /// A modifier key goes down or comes up.
   public func setModifierFlags(_ flags: UInt) {

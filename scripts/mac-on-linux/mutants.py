@@ -446,6 +446,41 @@ MUTANTS = [
         "new": "      if false, draggingWindow == nil, resizingWindow == nil, press?.memory.isBelowTheTop == true {\n",
         "red": ["a window is taken by its background, the hand goes 6 points, trembles for 62 movements at sixty a second, flicks it away in 32 ms and lets go: the drag is reported to begin"],
     },
+    {
+        # As it was until 2026-10-15: a held shortcut was a tap in an Arbor that had been granted its permission while it waited.
+        "name": "whether a shortcut is held is asked of the session's table",
+        "file": "ArborKit/AX/AXWindowSystem+Input.swift",
+        "old": "    guard CGEventSource.keyState(.hidSystemState, key: code) || CGEventSource.keyState(.combinedSessionState, key: code) else {\n",
+        "new": "    guard CGEventSource.keyState(.combinedSessionState, key: code) else {\n",
+        "red": [
+            "⌃⌥Space is held, and the session's table hides the key from Arbor: at the first look it is held",
+            "⌃⌥Space is held, and the session's table hides the key from Arbor: and a second later",
+            "⌃⌥Space is held to look and let go, and the session's table hides the key from Arbor: the hold is seen as a hold",
+            "⌃⌥Space is held to look and let go, and the session's table hides the key from Arbor: let go, the view is back where it was",
+            "⌃⌥Space is held to look and ⌃⌥⎋ gives it up, and the session's table hides the key from Arbor: Arbor is not paused",
+        ],
+    },
+    {
+        # The other way round: a look that never says "up" leaves a peek standing after a release that macOS does not report.
+        "name": "a key is never looked at, only the modifiers",
+        "file": "ArborKit/AX/AXWindowSystem+Input.swift",
+        "old": "    guard CGEventSource.keyState(.hidSystemState, key: code) || CGEventSource.keyState(.combinedSessionState, key: code) else {\n",
+        "new": "    guard code < CGKeyCode.max else {\n",
+        "red": [
+            "⌃⌥Space is held, told truly: nor with ⌃⌥ alone",
+            "⌃⌥Space is held, told truly: once the key is up it is not, with ⌃⌥ still down",
+            "⌃⌥Space is held, and the session's table hides the key from Arbor: nor with ⌃⌥ alone",
+            "⌃⌥Space is held, and the session's table hides the key from Arbor: once the key is up it is not, with ⌃⌥ still down",
+        ],
+    },
+    {
+        # What a program posts from a source of its own is, by a guess, in the session's table alone.
+        "name": "whether a shortcut is held is asked of the keyboard's table alone",
+        "file": "ArborKit/AX/AXWindowSystem+Input.swift",
+        "old": "    guard CGEventSource.keyState(.hidSystemState, key: code) || CGEventSource.keyState(.combinedSessionState, key: code) else {\n",
+        "new": "    guard CGEventSource.keyState(.hidSystemState, key: code) else {\n",
+        "red": ["⌃⌥Space is held by a program that posts it: it is held"],
+    },
 ]
 
 

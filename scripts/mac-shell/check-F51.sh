@@ -7,19 +7,21 @@
 #   - Carbon reports a hot key's release (kEventHotKeyReleased), with the modifiers still down and without;
 #   - ⌃⌥ + arrow and ⌃⌥⎋ fire while Space is down;
 #   - what a held key's auto-repeat does;
-#   - CGEventSource.keyState and NSEvent.modifierFlags see a key that a hot key swallowed;
+#   - CGEventSource.keyState and NSEvent.modifierFlags see a key that a hot key swallowed, also when an Arbor asks that was granted its permission late (lib-person.sh);
 #   - what the outline looks like.
 # arbor.log (debug) says "peek: held", "peek: the key came up" (Carbon said so) and "peek: the keys were found up" (the
 # timer noticed first); the end of this script prints those lines.
 #
-# Safe on a person's Mac: it touches its own test windows, the pointer and the keyboard, and changes no setting.
+# Safe on a person's Mac: it touches its own test windows, the pointer and the keyboard, and changes no setting. On GitHub's Macs alone it starts Arbor as a
+# person does, which takes an entry in the permission database, removed at the end.
 ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-person.sh"
 
 SPACE=ctrl+opt+space
 
 arbor_build
-arbor_start 3 ARBOR_NO_HOTKEYS=0
+arbor_start_as_a_person 3 ARBOR_NO_HOTKEYS=0
 
 framed() {
   local id
@@ -171,6 +173,40 @@ key $SPACE --up
 sleep 0.5
 summary
 check "nothing is left of the peek" not has_overlay 3
+
+# Not grep -q: it leaves at the first match, `tail` dies of that, and under pipefail a line that is there would count as missing.
+logged_since() { arbor_log_since "$1" | grep "$2" > /dev/null; }
+
+step "A release that is never reported: the shortcut is unbound while its key is down"
+# The look that is the net under this must say both: down while the key is down, up once it is up.
+start_over
+mark=$(arbor_log_lines)
+hold
+check "the hold is seen" logged_since "$mark" "peek: held"
+ctl unbind $SPACE
+sleep 0.6
+check "while the key is down no look finds it up" not logged_since "$mark" "the keys were found up"
+# Space alone, ⌃⌥ still down: let go together, the modifiers would say "up" for a table of keys that never does.
+key space --up
+check "once it is up a look finds it up, with ⌃⌥ still down" eventually logged_since "$mark" "the keys were found up"
+key ctrl+opt --up
+check "and macOS had reported no release" not logged_since "$mark" "peek: the key came up"
+check "nothing is left of the peek" eventually not has_overlay 3
+ctl bind $SPACE show-all
+sleep 0.4
+
+step "As on any later day: the same Arbor started again, with the permission in place from before it starts"
+arbor_quit
+arbor_relaunch_as_a_person
+start_over
+mark=$(arbor_log_lines)
+hold
+check "the hold is seen" logged_since "$mark" "peek: held"
+check "and no look found the keys up" not logged_since "$mark" "the keys were found up"
+# Well over a second in all: let go sooner with nothing chosen, a hold is a slow tap and everything stays.
+sleep 1
+key $SPACE --up
+check "letting go returns to the original view" eventually framed "$W1"
 
 step "What the log says"
 arbor_log

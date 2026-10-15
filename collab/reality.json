@@ -4659,6 +4659,31 @@
    "certainty": "suspected"
   },
   {
+   "id": "an-arbor-that-was-granted-late-is-told-that-a-held-key-is-up",
+   "kind": "permissions",
+   "layer": "below the seam",
+   "expected": "`CGEventSource.keyState(.combinedSessionState, key:)` says of a key that is down that it is down, whoever asks, also of a key whose press a hot key swallowed. A script had asked a hosted Mac exactly that (`check-F51.sh`: \"what only a Mac can say\") and was told yes, run after run.",
+   "happened": "It depends on who asks. **To an Arbor that was started without the Accessibility permission and granted it while it waited, the session's table said that the key was up, with another app having the keyboard**: 233 looks of 233 with the key down, in one process, ⌃⌥Space and ⌃⌥A alike; at the same instant the keyboard's own table (`hidSystemState`) told that process the truth (233 of 233), and a second process that sampled every 2 ms was told the truth by both. ⌃ and ⌥ were told truly by every source that was asked. With Arbor's own window having the keyboard the session's table was right as well (59 of 59, one process). The same app started with the grant in place: both tables right, 314 of 314, one process. The bare binary as the shell's child, which is how nearly every script starts Arbor: 288 of 288, one process. So the look that is the net under a release macOS never reports said \"up\" 37 ms after the press, the peek ended itself with its key down, **and a hold was a tap**: everything shows and stays; and ⌃⌥⎋, which gives a peek up, found none and paused Arbor. It is not the presser: two tools that press differently, alive through the hold or gone, with a plain key before or without, 14 rounds of 14. **The units are processes:** three of them by one script's road on three runs, and by another hand's road the peek's and the minimap's own scripts, 27 checks red that are green in the shell's child. **What is not separated:** every such process also lived through a killed daemon, a hand-written row and a posted word. Whether the fault outlasts Arbor's own window having had the keyboard after the grant was not tried. **What cannot be tried:** the start is a person's (the app, through Launch Services), the grant is a script's, and no script can click the switch in System Settings on a hosted Mac. So this may be every person's first session, and the first after every update of a build without a certificate; it cannot be shown to be. And every key in all of this was posted from a source made as the keyboard's.",
+   "found": "The Mac that another cure was owed before it landed said no (2026-10-15, macOS 26.6.2, posted events, a debug build): a key reached the app in front though every test and the product owner's own playing were green. The run's trace had the press, a look that said \"not held\" 38 ms later, and the hot key's release a second after that. Two probes then took out, one at a time, what differed from the script that was green, with both tables logged at every look and sampled from outside.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [
+    "e2e: the hold is seen",
+    "e2e: while the key is down no look finds it up",
+    "e2e: once it is up a look finds it up, with ⌃⌥ still down",
+    "tool: mac-on-linux/build.sh"
+   ],
+   "copes": "AXWindowSystem.isHolding takes a key for down if either table says so. It can only add a \"down\": what other software posts, which the session's table is asked for, goes on as before. In both kinds of process one of the two said down at every look with the key down (547), and both said up at the first look after it was up: two looks, 30 ms and 315 ms after, the second having itself come late. `scripts/mac-shell/lib-person.sh` starts Arbor as a person does, and the peek's and the minimap's scripts start it so: a script that starts Arbor as nobody does could not see this. The model of a Mac has the two tables and who asks.",
+   "hurt": 2,
+   "sources": [
+    "Sources/ArborKit/AX/AXWindowSystem+Input.swift",
+    "scripts/mac-on-linux/mutants.py",
+    "scripts/mac-on-linux/tests/HeldKeys.swift",
+    "scripts/mac-shell/check-F51.sh",
+    "scripts/mac-shell/lib-person.sh"
+   ]
+  },
+  {
    "id": "an-edge-in-the-docks-strip-is-held-and-only-one-off-the-display-is-free",
    "kind": "geometry",
    "layer": "at the seam",

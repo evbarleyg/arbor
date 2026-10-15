@@ -61,19 +61,19 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [second-actor](#second-actor) | 60 | 8 | 25 | 19 | 9 | 7 | 41 | 1 | 4 | 14 | 10 |
 | [geometry](#geometry) | 42 | 2 | 18 | 14 | 8 | 2 | 31 | 1 | 2 | 8 | 7 |
 | [identity](#identity) | 32 | 4 | 7 | 7 | 7 | 11 | 14 | 1 | 4 | 13 | 8 |
-| [permissions](#permissions) | 23 | 7 | 5 | 4 | 3 | 11 | 12 | 2 | 3 | 6 | 4 |
+| [permissions](#permissions) | 24 | 7 | 5 | 4 | 3 | 12 | 12 | 2 | 4 | 6 | 4 |
 | [timing](#timing) | 58 | 7 | 9 | 15 | 11 | 23 | 35 | 4 | 6 | 13 | 9 |
 | [input](#input) | 60 | 8 | 8 | 14 | 14 | 24 | 25 | 6 | 8 | 21 | 10 |
 | [looks](#looks) | 21 | 0 | 1 | 0 | 0 | 20 | 3 | 2 | 3 | 13 | 5 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 52 | 1 | 0 | 2 | 4 | 46 | 28 | 1 | 2 | 21 | 10 |
-| **all** | 492 | 63 | 113 | 124 | 71 | 184 | 267 | 20 | 61 | 144 | 107 |
+| **all** | 493 | 63 | 113 | 124 | 71 | 185 | 267 | 20 | 62 | 144 | 107 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
-| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 145 | 90 | 48 | 13 | 33 | 51 |
+| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 146 | 91 | 48 | 13 | 34 | 51 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 177 | 104 | 140 | 1 | 10 | 26 |
 | controller | in the controller or the core, given reports that were right | 31 | 16 | 19 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 90 | 0 | 32 | 5 | 13 | 40 |
@@ -179,6 +179,7 @@ No guard, or only a script that somebody has to start.
 | [the-created-report-carries-no-window-number](#the-created-report-carries-no-window-number) | 2 | below the seam | cannot | not guarded |
 | [a-new-window-gets-its-subrole-a-moment-late](#a-new-window-gets-its-subrole-a-moment-late) | 2 | below the seam | cannot | only when somebody starts a script |
 | [a-permission-belongs-to-a-signature](#a-permission-belongs-to-a-signature) | 2 | machine | cannot | only when somebody starts a script |
+| [an-arbor-that-was-granted-late-is-told-that-a-held-key-is-up](#an-arbor-that-was-granted-late-is-told-that-a-held-key-is-up) | 2 | below the seam | cannot | only when somebody starts a script |
 | [events-arbor-posts-pass-its-own-taps-again](#events-arbor-posts-pass-its-own-taps-again) | 2 | below the seam | cannot | only when somebody starts a script |
 | [taps-see-every-gesture-as-event-type-29](#taps-see-every-gesture-as-event-type-29) | 2 | below the seam | cannot | only when somebody starts a script |
 | [the-resize-may-come-before-the-full-screen-flag](#the-resize-may-come-before-the-full-screen-flag) | 2 | at the seam | no | only when somebody starts a script |
@@ -3547,6 +3548,18 @@ Permissions: what macOS allows, to whom, and how it says no.
 - **Guard:** `test: aRequestForFocusThatNeverComesTrueIsForgotten`; `e2e: framing another app's window gives it the keyboard` (on CI's Macs); `e2e: in front after asking from outside` (on CI's Macs); `e2e: the keyboard crossed over to the first app` (on CI's Macs); `e2e: frame the other app's window` (on CI's Macs); `e2e: the other app came to the front` (on CI's Macs); `e2e: close the settings window` (on CI's Macs)
 - **Arbor copes:** AXWindowSystem.focus sets AXFrontmost through Accessibility if no app has come forward 0.3 s after the request. The settings window makes way for the app that was in front before it, and the test app comes forward by itself on a signal. The fake can leave a request unanswered; the rehearsal's focus always succeeds.
 - **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `scripts/mac-shell/proof.sh`, `collab/evidence/gestures-latest.txt`, `Sources/ArborKit/UI/SettingsWindow.swift`, `collab/BACKLOG.md`
+
+### an-arbor-that-was-granted-late-is-told-that-a-held-key-is-up
+
+*hurt 2 · below the seam*
+
+- **Expected:** `CGEventSource.keyState(.combinedSessionState, key:)` says of a key that is down that it is down, whoever asks, also of a key whose press a hot key swallowed. A script had asked a hosted Mac exactly that (`check-F51.sh`: "what only a Mac can say") and was told yes, run after run.
+- **Happened:** It depends on who asks. **To an Arbor that was started without the Accessibility permission and granted it while it waited, the session's table said that the key was up, with another app having the keyboard**: 233 looks of 233 with the key down, in one process, ⌃⌥Space and ⌃⌥A alike; at the same instant the keyboard's own table (`hidSystemState`) told that process the truth (233 of 233), and a second process that sampled every 2 ms was told the truth by both. ⌃ and ⌥ were told truly by every source that was asked. With Arbor's own window having the keyboard the session's table was right as well (59 of 59, one process). The same app started with the grant in place: both tables right, 314 of 314, one process. The bare binary as the shell's child, which is how nearly every script starts Arbor: 288 of 288, one process. So the look that is the net under a release macOS never reports said "up" 37 ms after the press, the peek ended itself with its key down, **and a hold was a tap**: everything shows and stays; and ⌃⌥⎋, which gives a peek up, found none and paused Arbor. It is not the presser: two tools that press differently, alive through the hold or gone, with a plain key before or without, 14 rounds of 14. **The units are processes:** three of them by one script's road on three runs, and by another hand's road the peek's and the minimap's own scripts, 27 checks red that are green in the shell's child. **What is not separated:** every such process also lived through a killed daemon, a hand-written row and a posted word. Whether the fault outlasts Arbor's own window having had the keyboard after the grant was not tried. **What cannot be tried:** the start is a person's (the app, through Launch Services), the grant is a script's, and no script can click the switch in System Settings on a hosted Mac. So this may be every person's first session, and the first after every update of a build without a certificate; it cannot be shown to be. And every key in all of this was posted from a source made as the keyboard's.
+- **Found by:** The Mac that another cure was owed before it landed said no (2026-10-15, macOS 26.6.2, posted events, a debug build): a key reached the app in front though every test and the product owner's own playing were green. The run's trace had the press, a look that said "not held" 38 ms later, and the hot key's release a second after that. Two probes then took out, one at a time, what differed from the script that was green, with both tables logged at every look and sampled from outside.
+- **Stand-ins play it:** cannot: it lies below or beside the seam
+- **Guard:** `e2e: the hold is seen` (by hand); `e2e: while the key is down no look finds it up` (by hand); `e2e: once it is up a look finds it up, with ⌃⌥ still down` (by hand); `tool: mac-on-linux/build.sh` (by hand)
+- **Arbor copes:** AXWindowSystem.isHolding takes a key for down if either table says so. It can only add a "down": what other software posts, which the session's table is asked for, goes on as before. In both kinds of process one of the two said down at every look with the key down (547), and both said up at the first look after it was up: two looks, 30 ms and 315 ms after, the second having itself come late. `scripts/mac-shell/lib-person.sh` starts Arbor as a person does, and the peek's and the minimap's scripts start it so: a script that starts Arbor as nobody does could not see this. The model of a Mac has the two tables and who asks.
+- **Read in:** `Sources/ArborKit/AX/AXWindowSystem+Input.swift`, `scripts/mac-on-linux/mutants.py`, `scripts/mac-on-linux/tests/HeldKeys.swift`, `scripts/mac-shell/check-F51.sh`, `scripts/mac-shell/lib-person.sh`
 
 ### a-keychain-a-test-makes-has-no-partition-lists-and-the-login-keychain-has
 

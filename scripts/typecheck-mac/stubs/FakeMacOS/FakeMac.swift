@@ -72,6 +72,12 @@ public final class FakeMac: @unchecked Sendable {
 
   public internal(set) var screens: [Screen] = [Screen.hostedMac]
   public internal(set) var mouse = Mouse()
+  /// Who asks. To an Arbor that was granted its permission while it waited (by a script's grant), the session's table of keys (`combinedSessionState`) said of a key
+  /// that was down that it was up, with another app having the keyboard; the keyboard's own table (`hidSystemState`) told it the truth, and another process was told the
+  /// truth by both. (Hosted Macs, 2026-10-15, the app opened by Launch Services: 233 looks of 233 in one process, ⌃⌥Space and ⌃⌥A alike. The same app started with the
+  /// permission in place: both tables right, 314 of 314. The shell's child, as most scripts start Arbor: 288 of 288.) Here: for as long as the switch is on, whoever
+  /// has the keyboard.
+  public var sessionsTableHidesKeys = false
   /// A loaded Mac. The monitors hear of a mouse-down so much later than usual; what follows it queues up behind it.
   public var mouseDownIsLateBy: TimeInterval = 0
   /// A loaded Mac. The window server begins to move a window that is dragged so long after the press, and then catches up with the pointer.

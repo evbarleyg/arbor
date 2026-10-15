@@ -253,7 +253,9 @@ public typealias CGEventTapCallBack = (CGEventTapProxy, CGEventType, CGEvent, Un
 public final class CGEventSource {
   public init?(stateID: CGEventSourceStateID) {}
   public class func buttonState(_ stateID: CGEventSourceStateID, button: CGMouseButton) -> Bool { false }
-  public class func keyState(_ stateID: CGEventSourceStateID, key: CGKeyCode) -> Bool { FakeMac.current.mouse.keysDown.contains(key) }
+  public class func keyState(_ stateID: CGEventSourceStateID, key: CGKeyCode) -> Bool {
+    FakeMac.current.keyIsDown(key, by: stateID == .hidSystemState ? .keyboards : stateID == .combinedSessionState ? .sessions : .ofTheAskersOwn)
+  }
   public class func flagsState(_ stateID: CGEventSourceStateID) -> CGEventFlags { [] }
   public class func secondsSinceLastEventType(_ stateID: CGEventSourceStateID, eventType: CGEventType) -> CFTimeInterval {
     FakeMac.current.secondsSinceLastEvent(eventType.rawValue)
