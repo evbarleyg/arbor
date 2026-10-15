@@ -56,6 +56,9 @@ cp Resources/Info.plist "$app/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_ID" -c "Delete :CFBundleURLTypes" "$app/Contents/Info.plist" \
   || die "could not edit Info.plist"
 codesign --force --sign - --identifier "$BUNDLE_ID" "$app" || die "codesign failed"
+# tccutil finds a bundle by its identifier in Launch Services' list, which is kept for each user: as root it knows nothing of a bundle this user opened.
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$app" || echo "lsregister could not register the bundle"
+sudo /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$app" || echo "lsregister could not register the bundle for root"
 codesign --display --requirements - "$app" 2>/dev/null | sed -n 's/^\(# \)\{0,1\}designated => //p' > "$ARBOR_SESSION_DIR/requirement.txt"
 csreq -r "$ARBOR_SESSION_DIR/requirement.txt" -b "$ARBOR_SESSION_DIR/requirement.bin" || die "csreq could not read the bundle's requirement"
 REQUIREMENT="X'$(xxd -p "$ARBOR_SESSION_DIR/requirement.bin" | tr -d '\n')'"
@@ -90,7 +93,7 @@ for name, start, end in stretches:
     part = [e for e in steady if start <= e[0] < end]
     holes = [later[0] - earlier[0] for earlier, later in zip(steady, steady[1:]) if start <= earlier[0] < end]
     hole, late = max(holes, default=0), max((e[3] for e in part), default=0)
-    facts[name] = (len(part), round(hole * 1000), sum(1 for e in part if e[3] > 10000))
+    facts[name] = (len(part), round(hole * 1000), sum(1 for e in part if e[3] > 10000), round(late / 1000))
     print(f"{'+'.join(always)} {name}: {len(part)} arrived, LONGEST HOLE {hole * 1000:.0f} ms, worst lateness {late / 1000:.1f} ms, more than 10 ms late: {facts[name][2]}")
 
 # Every event has a number, and a beat posts its kinds in a fixed order, so which numbers are of which kind is read off what arrived.
@@ -122,7 +125,8 @@ else:
     lost_after = sum(1 for number in range(1, posted + 1) if number not in numbers)
     print(f"lost altogether: {lost_after}")
 print("facts", posted, facts["before the loss"][0], facts["after the taps were gone"][0], facts["from the loss until the taps were gone"][1],
-      facts["after the taps were gone"][1], facts["after the taps were gone"][2], lost_after, first_after, met, facts.get("clean", -1), facts.get("plain", -1))
+      facts["after the taps were gone"][1], facts["after the taps were gone"][2], lost_after, first_after, met, facts.get("clean", -1), facts.get("plain", -1),
+      facts["before the loss"][1], facts["before the loss"][3], facts["after the taps were gone"][3])
 PYTHON
 
 grant() {
@@ -168,7 +172,7 @@ begin() {
 }
 take() {
   TAKEN=$("$ASKER" now)
-  sudo tccutil reset Accessibility "$BUNDLE_ID"
+  tccutil reset Accessibility "$BUNDLE_ID" || sudo tccutil reset Accessibility "$BUNDLE_ID"
   echo "the permission was taken between $TAKEN and $("$ASKER" now)"
 }
 # What Arbor's log says of it, and when the taps went.
@@ -183,7 +187,8 @@ afterwards() {
 # bars: what both streams are held to, from the line of facts.
 bars() {
   grep -v "^facts " "$ARBOR_SESSION_DIR/verdict"
-  read -r _ posted before after hole_during hole_after late_after lost first met clean plain <<< "$(grep "^facts " "$ARBOR_SESSION_DIR/verdict")"
+  read -r _ posted before after hole_during hole_after late_after lost first met clean plain hole_before worst_before worst_after \
+    <<< "$(grep "^facts " "$ARBOR_SESSION_DIR/verdict")"
   [ "${posted:-0}" -ge 400 ] || invalid "the stream posted its events (${posted:-0})"
   [ "${before:-0}" -ge 80 ] || invalid "events arrived before the loss (${before:-0})"
   [ "${after:-0}" -ge 80 ] || invalid "events arrived after the taps were gone (${after:-0})"
@@ -191,6 +196,11 @@ bars() {
   check "round $round: no hole after that (${hole_after:-?} ms; a beat is 50)" test "${hole_after:-9999}" -le 150
   check "round $round: nothing more than 10 ms late after that" test "${late_after:-1}" -eq 0
   check "round $round: nothing lost after that" test "${lost:-1}" -eq 0
+  # A hosted Mac is never quite still: with nothing taken from anybody, events have been 85 ms late and 200 ms apart there. So, beside the bars:
+  check "round $round: no later after that (${worst_after:-?} ms) than this Mac was before the loss (${worst_before:-?} ms), or 10 ms" \
+    test "${worst_after:-9999}" -le "$((${worst_before:-0} > 10 ? ${worst_before:-0} : 10))"
+  check "round $round: no longer a hole after that (${hole_after:-?} ms) than before the loss (${hole_before:-?} ms), or 150 ms" \
+    test "${hole_after:-9999}" -le "$((${hole_before:-0} > 150 ? ${hole_before:-0} : 150))"
 }
 
 round_a() {

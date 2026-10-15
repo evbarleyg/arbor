@@ -144,6 +144,7 @@ func stream(seconds: Double, every milliseconds: Double, at point: CGPoint, kind
   let began = Date()
   let end = began.addingTimeInterval(seconds)
   var up = true
+  var beat = 0.0
   print("\(now()) stream begins")
   while Date() < end {
     if let held {
@@ -171,7 +172,10 @@ func stream(seconds: Double, every milliseconds: Double, at point: CGPoint, kind
       magnify(0.01, phase: 2)
       magnify(0, phase: 4)
     }
-    Thread.sleep(forTimeInterval: milliseconds / 1000)
+    // By the clock and not by a pause after each beat: posting takes its time too, on a hosted Mac as long again as the pause.
+    beat += 1
+    let wait = began.addingTimeInterval(beat * milliseconds / 1000).timeIntervalSinceNow
+    if wait > 0 { Thread.sleep(forTimeInterval: wait) }
   }
   if !flags.isEmpty { modifiers(down: false) }
   print("\(now()) stream ends: \(number) events posted")

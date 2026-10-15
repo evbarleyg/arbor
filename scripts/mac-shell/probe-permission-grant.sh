@@ -55,6 +55,10 @@ cat > "$asker_app/Contents/Info.plist" <<PLIST
 </dict></plist>
 PLIST
 codesign --force --sign - --identifier "$ASKER_ID" "$asker_app" || die "codesign failed"
+# tccutil finds a bundle by its identifier in Launch Services' list, which is kept for each user: as root it knows nothing of a bundle this user opened.
+LSREGISTER=/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister
+"$LSREGISTER" -f "$asker_app" || echo "lsregister could not register the asker"
+sudo "$LSREGISTER" -f "$asker_app" || echo "lsregister could not register the asker for root"
 ASKER_REQUIREMENT=$(requirement_of "$asker_app")
 at_exit "tcc \"DELETE FROM access WHERE client IN ('$ASKER_ID', '$ARBOR_ID');\""
 
@@ -69,7 +73,7 @@ denied() { tcc "UPDATE access SET auth_value = 0 WHERE service = 'kTCCServiceAcc
 deleted() { tcc "DELETE FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$CLIENT';"; }
 tccd_restarted() { sudo killall -9 tccd 2>/dev/null; }
 announced() { "$ASKER" announce > /dev/null; }
-reset_by_tccutil() { sudo tccutil reset Accessibility "$CLIENT"; }
+reset_by_tccutil() { tccutil reset Accessibility "$CLIENT" || sudo tccutil reset Accessibility "$CLIENT"; }
 
 # changes <file>: the first line, and every line at which an answer differs from the line before.
 changes() { awk '{ answer = $3 " " $4 " " $5 } answer != last { print "    " $1, answer } { last = answer }' "$1"; }

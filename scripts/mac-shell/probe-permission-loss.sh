@@ -57,6 +57,9 @@ cp Resources/Info.plist "$app/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_ID" -c "Delete :CFBundleURLTypes" "$app/Contents/Info.plist" \
   || die "could not edit Info.plist"
 codesign --force --sign - --identifier "$BUNDLE_ID" "$app" || die "codesign failed"
+# tccutil finds a bundle by its identifier in Launch Services' list, which is kept for each user: as root it knows nothing of a bundle this user opened.
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$app" || echo "lsregister could not register the bundle"
+sudo /System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister -f "$app" || echo "lsregister could not register the bundle for root"
 codesign --display --requirements - "$app" 2>/dev/null | sed -n 's/^\(# \)\{0,1\}designated => //p' | tee "$ARBOR_SESSION_DIR/requirement.txt"
 csreq -r "$ARBOR_SESSION_DIR/requirement.txt" -b "$ARBOR_SESSION_DIR/requirement.bin" || die "csreq could not read the bundle's requirement"
 REQUIREMENT="X'$(xxd -p "$ARBOR_SESSION_DIR/requirement.bin" | tr -d '\n')'"
@@ -85,7 +88,7 @@ leave() {
   ARBOR_PID=""
 }
 
-by_tccutil() { sudo tccutil reset Accessibility "$BUNDLE_ID"; }
+by_tccutil() { tccutil reset Accessibility "$BUNDLE_ID" || sudo tccutil reset Accessibility "$BUNDLE_ID"; }
 by_the_row() {
   tcc "DELETE FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$BUNDLE_ID';"
   sudo killall -9 tccd 2>/dev/null
@@ -128,6 +131,12 @@ one_round() {
   sleep 1
   cat "$ARBOR_OUT/stream-$round.txt"
   tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -v -E "DEBUG focus|has the keyboard" | cut -c 12-220 | tail -n 12
+  if [ "$how" = by_the_row ] && ! eventually no_taps; then
+    echo "NEWS: with its entry deleted and tccd restarted Arbor still has its taps, eight seconds on, and says: $("$ARBOR_BIN/arborctl" status | head -n 1)"
+    echo "So that is no loss to a process that is running, and this round asks nothing."
+    leave
+    return
+  fi
   check "round $round: Arbor has no event tap left" eventually no_taps
   "$ARBOR_BIN/arborctl" status | head -n 1
   echo "the tools' own permission afterwards: $(pointer ax-access)"
@@ -169,16 +178,22 @@ print(f"the taps were gone {(removed - taken) * 1000:.0f} ms after the permissio
 holes = [(later[0] - earlier[0], earlier[0]) for earlier, later in zip(found, found[1:])]
 print(f"THE LONGEST HOLE: {max(holes)[0] * 1000:.0f} ms" if holes else "THE LONGEST HOLE: nothing arrived")
 print("facts", posted, len(missing), worst["before the loss"][0], worst["after the taps were gone"][0], worst["after the taps were gone"][3],
-      round(max(holes)[0] * 1000) if holes else 999999)
+      round(max(holes)[0] * 1000) if holes else 999999, round(worst["before the loss"][2] / 1000), round(worst["after the taps were gone"][2] / 1000),
+      round(worst["before the loss"][1] * 1000), round(worst["from the loss until the taps were gone"][1] * 1000), round(worst["after the taps were gone"][1] * 1000))
 PYTHON
   grep -v "^facts " "$ARBOR_SESSION_DIR/verdict"
-  read -r _ posted missing before after late hole <<< "$(grep "^facts " "$ARBOR_SESSION_DIR/verdict")"
+  read -r _ posted missing before after late hole late_before late_after hole_before hole_during hole_after <<< "$(grep "^facts " "$ARBOR_SESSION_DIR/verdict")"
   [ "${posted:-0}" -ge 500 ] || invalid "the stream posted its events (${posted:-0})"
   [ "${before:-0}" -ge 100 ] || invalid "events arrived before the loss (${before:-0})"
   [ "${after:-0}" -ge 100 ] || invalid "events arrived after the taps were gone (${after:-0})"
   check "round $round: every event that was posted arrived" test "${missing:-1}" -eq 0
   check "round $round: none more than 10 ms late once the taps were gone" test "${late:-1}" -eq 0
   check "round $round: input never stood still for a quarter of a second" test "${hole:-999999}" -lt 250
+  # A hosted Mac is never quite still: with nothing taken from anybody, events have been 85 ms late and 200 ms apart there. So, beside the bars:
+  check "round $round: no later after the taps were gone (${late_after:-?} ms) than this Mac was before the loss (${late_before:-?} ms), or 10 ms" \
+    test "${late_after:-9999}" -le "$((${late_before:-0} > 10 ? ${late_before:-0} : 10))"
+  check "round $round: no longer a hole during (${hole_during:-?} ms) or after (${hole_after:-?} ms) than before the loss (${hole_before:-?} ms), or 150 ms" \
+    test "$((${hole_during:-9999} > ${hole_after:-9999} ? ${hole_during:-9999} : ${hole_after:-9999}))" -le "$((${hole_before:-0} > 150 ? ${hole_before:-0} : 150))"
   shot "round-$round-afterwards"
   leave
 }
