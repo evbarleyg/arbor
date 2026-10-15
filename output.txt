@@ -1,0 +1,45 @@
+# mac-shell: scripts/mac-shell/probe-the-switch.sh at 791a346, macOS 26.6.2, 2026-10-15T02:22Z
+built Arbor and the pointer tool in 6s
+
+== the two bundles, granted
+session 1: Arbor pid 9037, test windows 31 (pid 8866)
+running: 1 display, 0 docked and 1 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+/Users/runner/Applications/ArborProbeTheSwitch.app: replacing existing signature
+/Users/runner/Applications/ArborProbeSwitchTapper.app: replacing existing signature
+
+== the pane
+shot: mac-shell/01-the-pane.png
+tree: mac-shell/01-the-pane.txt, 205 elements
+142:                      AXCheckBox ankarund_Toggle "" "1" 807 160 36 16
+145:                      AXStaticText ArborProbeSwitchTapper_Title "" "ArborProbeSwitchTapper" 402 196 185 24
+146:                      AXCheckBox ArborProbeSwitchTapper_Toggle "" "1" 807 202 36 16
+149:                      AXStaticText ArborProbeTheSwitch_Title "" "ArborProbeTheSwitch" 402 238 166 24
+150:                      AXCheckBox ArborProbeTheSwitch_Toggle "" "1" 807 244 36 16
+154:                      AXCheckBox bash_Toggle "" "1" 807 286 36 16
+158:                      AXCheckBox hosted-compute-agent_Toggle "" "1" 807 328 36 16
+162:                      AXCheckBox osascript_Toggle "" "1" 807 370 36 16
+166:                      AXCheckBox provisioner_Toggle "" "1" 807 412 36 16
+170:                      AXCheckBox runprovisioner.sh_Toggle "" "1" 807 454 36 16
+174:                      AXCheckBox sshd-keygen-wrapper_Toggle "" "1" 807 496 36 16
+178:                      AXCheckBox start_hca.sh_Toggle "" "1" 807 538 36 16
+182:                      AXCheckBox Terminal_Toggle "" "1" 807 580 36 16
+186:                      AXCheckBox Xcode Helper_Toggle "" "1" 807 622 36 16
+
+== the bare tapper's switch, off: one click gives the order
+tree: mac-shell/02-tapper-before.txt, 206 elements
+the switch of ArborProbeSwitchTapper is at 825 210; row (com.evbarleyg.arbor.probe-switch-tapper|2|3); taps of pid 9628: 1
+clicked at 02:24:12.646
+shot: mac-shell/02-tapper-after-the-click.png
+windows that are neither the run's nor the furniture's (id pid level x y w h on owner):
+6.5 s after the click: row (com.evbarleyg.arbor.probe-switch-tapper|2|3); taps of pid 9628: 1
+tree: mac-shell/02-tapper-after.txt, 215 elements
+ANSWER: macOS ASKS FOR A PASSWORD OR TOUCH ID before it lets the switch be moved (picture 02-tapper-after-the-click.png). A script cannot take this road on a hosted Mac, and this one does not try to get round it.
+                AXStaticText com.apple.Touch-ID-Settings.extension*TouchIDPasswordPrefs "" "Login Password" 0 768 0 0
+    AXStaticText - "" "Enter your password to allow this." 403 361 218 18
+    AXTextField - "Password" "" 396 430 232 26
+02:23:55.086 listening
+still running when the script had ended, and stopped now:
+  9196 asker
+exit code 1
