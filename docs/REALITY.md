@@ -291,12 +291,12 @@ Order of reports: what belongs together arrives in another order than expected.
 
 *hurt 2 · at the seam · K1805 · touches `focus`*
 
-- **Expected:** At the moment a new window is reported, "the focused window" is the one the person was working in. The stand-in reports a new window first and gives it the keyboard and the front place afterwards.
+- **Expected:** At the moment a new window is reported, "the focused window" is the one the person was working in. The stand-in reported a new window first and gave it the keyboard and the front place afterwards; now it gives both first, and the reports come in the order they came in.
 - **Happened:** "Created" and "focused window changed" arrive in the same millisecond. By the time Arbor hears of a new window it has the keyboard already, so "focused" has to mean "focused until a moment ago". In a burst of new windows the focus reports lag behind the windows.
 - **Found by:** A recording of Accessibility notifications on a hosted Mac, and building automatic docking against the real-window run's session on new windows. That the stand-in raises a new window only after reporting it came out of random walks.
 - **Stand-ins play it:** partly (`FakeWindowSystem.open`, `FakeWindowSystem.focused`, `Echoes.keyboard`)
-- **Guard:** `test: theWindowThatHadTheKeyboardLastCountsAlthoughTheNewOneHasItAlready`; `test: afterTheBurstTheFocusedWindowCountsAgain`; `test: aBurstLargerThanTheDisplayLeavesTheRestFloating`; `test: aNewWindowIsCreatedThenFocused`; `e2e: a new window docks beside the focused one` (on CI's Macs)
-- **Arbor copes:** Sources/ArborKit/Controller/Controller+AutoDock.swift reads "focused" from the focus history: the docked window showing in the view that had the keyboard last. For a second a window docked this way heads that history.
+- **Guard:** `test: theWindowThatHadTheKeyboardLastCountsAlthoughTheNewOneHasItAlready`; `test: afterTheBurstTheFocusedWindowCountsAgain`; `test: aBurstLargerThanTheDisplayLeavesTheRestFloating`; `test: aNewWindowIsCreatedThenFocused`; `test: aNewWindowHasTheKeyboardBeforeAnybodyHearsOfIt`; `test: itGoesStraightToWhereItEndsUp`; `e2e: a new window docks beside the focused one` (on CI's Macs)
+- **Arbor copes:** Sources/ArborKit/Controller/Controller+AutoDock.swift reads "focused" from the focus history: the docked window showing in the view that had the keyboard last. For a second a window docked this way heads that history. Sources/ArborKit/Controller/Controller+Rules.swift makes use of it: a window that a rule docks where it is too small to show, and that has the keyboard already, gets the view before the one layout and not after a first.
 - **Read in:** `docs/features/F38-focus-as-macos-reports-it.md`, `docs/features/F23-automatic-docking.md`, `collab/QUESTIONS.md`, `Tests/ArborKitTests/AutomaticDockingTests.swift`, `Sources/ArborTesting/FakeWindowSystem.swift`
 
 ### a-space-switch-brings-an-app-forward-before-or-after-its-windows-are-known
@@ -1787,7 +1787,7 @@ A second actor: macOS, an app or another tool moves things too.
 - **Happened:** macOS gives a new window the keyboard, so the view goes to it. A new window that a rule docked, and that became a tile, pulled the view onto it.
 - **Found by:** The real-window suite and a table of recorded notifications.
 - **Stand-ins play it:** yes (`Echoes.keyboard`, `FakeWindowSystem.giveKeyboard`)
-- **Guard:** `test: aNewWindowIsCreatedThenFocused`; `test: aLateFloatOfAWindowTheViewWentToIsBackWhereItOpened`
+- **Guard:** `test: aNewWindowIsCreatedThenFocused`; `test: aLateFloatOfAWindowTheViewWentToIsBackWhereItOpened`; `test: fromAViewOnOneWindowNobodyElseComesAndGoes`
 - **Arbor copes:** Controller.bringIntoViewIfFocused: the view follows a window that really has the keyboard, by decision; docking by command does not pull the view.
 - **Read in:** `Sources/ArborTesting/FakeWindowSystem.swift`, `collab/BACKLOG.md`
 
