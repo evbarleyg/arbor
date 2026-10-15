@@ -1,0 +1,128 @@
+# mac-shell: scripts/mac-shell/probe-permission-loss.sh at d6fd7db, macOS 26.6.2, 2026-10-15T01:17Z
+built Arbor and the pointer tool in 5s
+the tools' own permission: true
+
+== the bundle
+session 1: Arbor pid 6478, test windows 31 32 (pid 6441)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+/tmp/arbor-shell.1DWBNQ/Arbor.app: replacing existing signature
+cdhash H"d7f99154742a244b60f04efd3252c1908403076a"
+
+== round 1: by_tccutil
+Arbor pid 6606, entry: com.evbarleyg.arbor.probe-permission-loss|2
+tap 1189641421 pid=6606 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 596516649 pid=6606 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1649760492 pid=6606 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 719885386 pid=6606 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+docked w31 at the left edge
+tccutil: No such bundle identifier "com.evbarleyg.arbor.probe-permission-loss": The operation couldn’t be completed. (OSStatus error -10814.)
+the permission was taken between 01:18:12.122 and 01:18:12.366
+01:18:07.942 stream begins
+01:18:20.022 stream ends: 550 events posted
+  ✘ round 1: Arbor has no event tap left
+running: 1 display, 1 docked and 1 floating, 0 out of view
+the tools' own permission afterwards: true
+INVALID: Arbor's log says when the taps went
+  ✘ round 1 is valid: Arbor's log says when the taps went
+posted 550, arrived 550, missing 0
+arrived by kind: down 110, up 110, key-down 110, key-up 110, wheel 110
+before the loss: 175 arrived, longest hole 203 ms, worst lateness 84.8 ms, more than 10 ms late: 54
+from the loss until the taps were gone: 10 arrived, longest hole 132 ms, worst lateness 13.9 ms, more than 10 ms late: 5
+after the taps were gone: 365 arrived, longest hole 176 ms, worst lateness 66.8 ms, more than 10 ms late: 26
+the taps were gone 244 ms after the permission began to go
+THE LONGEST HOLE: 203 ms
+  ✔ round 1: every event that was posted arrived
+  ✘ round 1: none more than 10 ms late once the taps were gone
+  ✔ round 1: input never stood still for a quarter of a second
+shot: mac-shell/round-1-afterwards.png
+
+== round 2: by_tccutil
+Arbor pid 7817, entry: com.evbarleyg.arbor.probe-permission-loss|2
+tap 2038664370 pid=7817 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 149798315 pid=7817 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1973594324 pid=7817 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1734575198 pid=7817 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+arborctl: w31 is already at the left edge
+tccutil: No such bundle identifier "com.evbarleyg.arbor.probe-permission-loss": The operation couldn’t be completed. (OSStatus error -10814.)
+the permission was taken between 01:18:36.952 and 01:18:37.047
+01:18:32.829 stream begins
+01:18:44.883 stream ends: 615 events posted
+  ✘ round 2: Arbor has no event tap left
+running: 1 display, 1 docked and 1 floating, 0 out of view
+the tools' own permission afterwards: true
+INVALID: Arbor's log says when the taps went
+  ✘ round 2 is valid: Arbor's log says when the taps went
+posted 615, arrived 615, missing 0
+arrived by kind: down 123, up 123, key-down 123, key-up 123, wheel 123
+before the loss: 215 arrived, longest hole 128 ms, worst lateness 12.1 ms, more than 10 ms late: 3
+from the loss until the taps were gone: 5 arrived, longest hole 56 ms, worst lateness 6.4 ms, more than 10 ms late: 0
+after the taps were gone: 395 arrived, longest hole 224 ms, worst lateness 45.4 ms, more than 10 ms late: 22
+the taps were gone 95 ms after the permission began to go
+THE LONGEST HOLE: 224 ms
+  ✔ round 2: every event that was posted arrived
+  ✘ round 2: none more than 10 ms late once the taps were gone
+  ✔ round 2: input never stood still for a quarter of a second
+shot: mac-shell/round-2-afterwards.png
+
+== round 3: by_tccutil
+Arbor pid 8892, entry: com.evbarleyg.arbor.probe-permission-loss|2
+tap 709393584 pid=8892 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1780695788 pid=8892 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1889947178 pid=8892 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 945117276 pid=8892 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+arborctl: w31 is already at the left edge
+tccutil: No such bundle identifier "com.evbarleyg.arbor.probe-permission-loss": The operation couldn’t be completed. (OSStatus error -10814.)
+the permission was taken between 01:19:00.615 and 01:19:00.687
+01:18:56.504 stream begins
+01:19:08.532 stream ends: 635 events posted
+  ✘ round 3: Arbor has no event tap left
+running: 1 display, 1 docked and 1 floating, 0 out of view
+the tools' own permission afterwards: true
+INVALID: Arbor's log says when the taps went
+  ✘ round 3 is valid: Arbor's log says when the taps went
+posted 635, arrived 635, missing 0
+arrived by kind: down 127, up 127, key-down 127, key-up 127, wheel 127
+before the loss: 215 arrived, longest hole 125 ms, worst lateness 10.7 ms, more than 10 ms late: 1
+from the loss until the taps were gone: 5 arrived, longest hole 95 ms, worst lateness 2.8 ms, more than 10 ms late: 0
+after the taps were gone: 415 arrived, longest hole 128 ms, worst lateness 13.3 ms, more than 10 ms late: 3
+the taps were gone 72 ms after the permission began to go
+THE LONGEST HOLE: 128 ms
+  ✔ round 3: every event that was posted arrived
+  ✘ round 3: none more than 10 ms late once the taps were gone
+  ✔ round 3: input never stood still for a quarter of a second
+shot: mac-shell/round-3-afterwards.png
+
+== round 4: by_the_row
+Arbor pid 10412, entry: com.evbarleyg.arbor.probe-permission-loss|2
+tap 270744729 pid=10412 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 221558440 pid=10412 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1947346619 pid=10412 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 364228444 pid=10412 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+arborctl: w31 is already at the left edge
+the entry deleted, tccd restarted
+the permission was taken between 01:19:23.598 and 01:19:23.714
+01:19:19.515 stream begins
+01:19:31.562 stream ends: 625 events posted
+  ✘ round 4: Arbor has no event tap left
+running: 1 display, 1 docked and 1 floating, 0 out of view
+the tools' own permission afterwards: true
+INVALID: Arbor's log says when the taps went
+  ✘ round 4 is valid: Arbor's log says when the taps went
+posted 625, arrived 625, missing 0
+arrived by kind: down 125, up 125, key-down 125, key-up 125, wheel 125
+before the loss: 210 arrived, longest hole 139 ms, worst lateness 21.6 ms, more than 10 ms late: 2
+from the loss until the taps were gone: 10 arrived, longest hole 116 ms, worst lateness 3.8 ms, more than 10 ms late: 0
+after the taps were gone: 405 arrived, longest hole 126 ms, worst lateness 7.4 ms, more than 10 ms late: 0
+the taps were gone 116 ms after the permission began to go
+THE LONGEST HOLE: 139 ms
+  ✔ round 4: every event that was posted arrived
+  ✔ round 4: none more than 10 ms late once the taps were gone
+  ✔ round 4: input never stood still for a quarter of a second
+shot: mac-shell/round-4-afterwards.png
+
+== the end
+
+9 passed, 11 failed
+exit code 1
