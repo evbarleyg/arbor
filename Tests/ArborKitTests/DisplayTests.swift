@@ -324,21 +324,28 @@ private func reopen(_ old: Harness, in new: Harness) {
   /// reported, so nothing ever is (`DisplayChange`).
   func sideIsBackWithoutAWord(_ h: Harness) { h.system.displayList = [main, side] }
 
-  @Test func afterABlinkWhatMacOSMovedIsPutBack() {
+  /// What is docked. What macOS did to a floating window is macOS's, in a blink too (board 0.23): it is where macOS left it, and belongs to
+  /// the display it is on.
+  @Test func afterABlinkWhatIsDockedGoesBackAndWhatFloatsIsMacOSs() {
     let (h, a, b, c) = makeHarness()
-    let spot = CGRect(x: 1900, y: 100, width: 300, height: 200)
-    let d = h.system.open(app: "Terminal", frame: spot)
+    let d = h.system.open(app: "Terminal", frame: CGRect(x: 1900, y: 100, width: 300, height: 200))
     let before = h.controller.workspaces
     let slots = h.controller.layouts[side.id]!.windowFrames
     #expect(!slots.isEmpty)
 
     unplugSideWithoutAWord(h, moving: [a, b, c, d])
+    let macOSs = h.frame(d)!
+    h.system.clearFrameLog()
     h.scheduler.advance(by: 1)
     sideIsBackWithoutAWord(h)
     h.scheduler.advance(by: 3)
-    #expect(h.controller.workspaces == before)
+    var expected = before
+    expected[side.id]!.floating[d] = nil
+    expected[main.id]!.floating[d] = macOSs
+    #expect(h.controller.workspaces == expected)
     for (window, slot) in slots { #expect(h.frame(window) == slot, "\(window)") }
-    #expect(h.frame(d) == spot)
+    #expect(h.frame(d) == macOSs)
+    #expect(!h.system.frameLog.contains { $0.window == d }, "\(h.system.frameLog)")
     #expect(h.controller.dormant.isEmpty)
   }
 
@@ -368,17 +375,22 @@ private func reopen(_ old: Harness, in new: Harness) {
     #expect(h.store.saveCount == saves)
   }
 
-  @Test func aWindowOnTheDisplayThatStaysThatMacOSShuffledIsPutBackWithTheReport() {
+  /// It used to be put back with the report. Decided otherwise (board 0.23): what macOS does to a floating window at a change of displays is macOS's.
+  @Test func aWindowOnTheDisplayThatStaysThatMacOSShuffledStaysWhereMacOSPutIt() {
     let (h, a, b, c) = makeHarness()
     let spot = CGRect(x: 700, y: 300, width: 300, height: 200)
     let d = h.system.open(app: "Terminal", frame: spot)
     #expect(h.workspace.floating[d] == spot)
 
     unplugSideWithoutAWord(h, moving: [a, b, c, d])
+    let macOSs = h.frame(d)!
+    #expect(macOSs != spot)
+    h.system.clearFrameLog()
     h.scheduler.advance(by: 1.5)
     h.system.setDisplays([main])
-    #expect(h.workspace.floating[d] == spot)
-    #expect(h.frame(d) == spot)
+    #expect(h.workspace.floating[d] == macOSs)
+    #expect(h.frame(d) == macOSs)
+    #expect(!h.system.frameLog.contains { $0.window == d }, "\(h.system.frameLog)")
     // It was no blink, so nobody looks for one any more.
     #expect(!h.scheduler.pendingKeys.contains("displays-blinked"))
     h.system.clearFrameLog()

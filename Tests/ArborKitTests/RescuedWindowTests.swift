@@ -450,13 +450,13 @@ private func rect(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloa
     #expect(h.controller.workspaces[main.id]?.floating[n]?.size == own.size)
   }
 
-  /// Only where the change took something. Left by hand with a sliver of it over the bottom edge of the display that stays; the other display
-  /// goes, and macOS shuffles this window too. More shows of it there, but its place has lost nothing: it goes back, as one wholly in
-  /// view does (`aWindowOnTheDisplayThatStaysThatMacOSShuffledIsPutBackWithTheReport`).
-  @Test func whatMacOSOnlyShuffledGoesBackThoughItHangsOverAnEdge() {
+  /// Left by hand with a sliver of it over the bottom edge of the display that stays; the other display goes, and macOS shuffles this window too.
+  /// Its place has lost nothing, and it used to go back for that. Decided otherwise (board 0.23): what macOS does to a floating window at a
+  /// change of displays is macOS's, as for one wholly in view (`aWindowOnTheDisplayThatStaysThatMacOSShuffledStaysWhereMacOSPutIt`).
+  @Test func whatMacOSOnlyShuffledStaysThoughItsPlaceHadLostNothing() {
     let main = FakeWindowSystem.standardDisplay
     let side = DisplaySnapshot(id: DisplayID("side"), frame: rect(1440, 0, 1920, 1080), visibleFrame: rect(1440, 0, 1920, 1080), isMain: false)
-    let h = Harness(displays: [main, side])
+    let h = Harness(displays: [main, side], settings: Settings())
     let d = h.system.open(app: "Terminal", frame: rect(700, 300, 300, 200))
     h.start()
     let spot = rect(700, 720, 300, 200)
@@ -465,15 +465,19 @@ private func rect(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloa
 
     h.system.displayList = [main]
     h.system.userMove(d, to: rect(220, 60, 300, 200))
+    h.system.clearFrameLog()
     h.scheduler.advance(by: 1.5)
     h.system.setDisplays([main])
-    #expect(h.workspace.floating[d] == spot)
-    #expect(h.frame(d) == spot)
+    #expect(h.workspace.floating[d] == rect(220, 60, 300, 200))
+    #expect(h.frame(d) == rect(220, 60, 300, 200))
+    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
   }
 
-  /// And only where more shows. Let go with 73 % of it on the upper display; something pushes it almost out of sight and nobody says so; the
-  /// lid shuts, which takes from its place. Where it is now is no rescue: its place is still the one its person gave it.
-  @Test func aPlaceThatShowsLessIsNotTakenInstead() {
+  /// Let go with 73 % of it on the upper display; something pushes it almost out of sight and nobody says so; the lid shuts, which takes from its
+  /// place. Where it is now is no rescue, and its place used to stay the one its person gave it. Decided otherwise (board 0.23): a floating
+  /// window in view is taken from where it is, whoever took it there, as long as a hand can get hold of it: sixty points of its title bar show.
+  /// (That is about the books. The window itself is then fitted, because less than half of it shows: another clause, and another's to take out.)
+  @Test func aPlaceThatShowsLessIsTheWindowsAllTheSame() {
     let world = played(
       """
       \(Self.desk)
@@ -488,7 +492,7 @@ private func rect(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloa
     world.system.moveSilently(a, to: rect(2500, 1000, 800, 600))
     var later = world
     later.play(Self.theLidShuts("never") + "\nsettle")
-    #expect(later.runner.controller.workspaces[DisplayID("main")]?.floating[a] == rect(800, 1000, 800, 600))
+    #expect(later.runner.controller.workspaces[DisplayID("main")]?.floating[a] == rect(2500, 1000, 800, 600))
   }
 
   /// Nor at a report that is only about the Dock, which comes many times a day.

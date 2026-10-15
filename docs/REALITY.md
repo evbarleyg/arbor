@@ -58,7 +58,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [missing-report](#missing-report) | 44 | 7 | 14 | 7 | 4 | 19 | 24 | 1 | 5 | 14 | 11 |
 | [extra-report](#extra-report) | 10 | 0 | 4 | 3 | 1 | 2 | 6 | 0 | 0 | 4 | 1 |
 | [late-or-partial-answer](#late-or-partial-answer) | 46 | 9 | 12 | 15 | 6 | 13 | 29 | 0 | 6 | 11 | 14 |
-| [second-actor](#second-actor) | 58 | 8 | 20 | 21 | 10 | 7 | 38 | 0 | 4 | 16 | 10 |
+| [second-actor](#second-actor) | 59 | 8 | 21 | 21 | 10 | 7 | 39 | 0 | 4 | 16 | 10 |
 | [geometry](#geometry) | 36 | 2 | 13 | 14 | 7 | 2 | 25 | 1 | 2 | 8 | 6 |
 | [identity](#identity) | 32 | 4 | 7 | 7 | 7 | 11 | 14 | 1 | 4 | 13 | 9 |
 | [permissions](#permissions) | 23 | 8 | 6 | 3 | 3 | 11 | 12 | 2 | 3 | 6 | 4 |
@@ -67,14 +67,14 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 45 | 1 | 0 | 2 | 4 | 39 | 27 | 1 | 1 | 16 | 7 |
-| **all** | 472 | 64 | 100 | 127 | 69 | 176 | 250 | 19 | 60 | 143 | 107 |
+| **all** | 473 | 64 | 101 | 127 | 69 | 176 | 251 | 19 | 60 | 143 | 107 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 146 | 91 | 47 | 13 | 34 | 52 |
-| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 166 | 99 | 129 | 0 | 10 | 27 |
+| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 167 | 100 | 130 | 0 | 10 | 27 |
 | controller | in the controller or the core, given reports that were right | 30 | 16 | 18 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 83 | 0 | 29 | 5 | 11 | 38 |
 | machine | in the machine, the toolchain or the way things are built and installed | 47 | 3 | 27 | 1 | 4 | 15 |
@@ -1859,8 +1859,8 @@ A second actor: macOS, an app or another tool moves things too.
 - **Happened:** When a display goes, macOS moves its windows onto the displays that remain at once. The Accessibility layer holds its report of the displays back until 1.5 s after the last of several notices, so the windows' own reports reach the controller first; it was feared that they are judged by the old displays. Taken for the person's own moves, they gave floating and pinned windows a new home, which did not go back with their display, and docked windows were sent to where no display was. After a display that only blinked there is no report at all, so nothing put the windows back. **Recorded since** (17 traces, one virtual display on a hosted Mac). A display comes: the active Space changes at 0.139 s, the screens' word at 0.178, all five windows' moves and resizes at 0.299 to 0.304, within 5 ms of one another, and Arbor's `displaysChanged` at 1.827. It goes: the word at 0.105, the windows one after another from 0.122 to 0.218, a second word at 0.215 in the midst of them, `displaysChanged` at 1.770. In all: the screens' word first; the windows 20 to 150 ms after it, within 5 to 100 ms of one another; all before the controller hears `displaysChanged`, 1.65 s after the word, which is Arbor's own wait; and every such report reaches the controller as a hand's. But macOS's own list of displays is already the new one at the first window's report, in all 17, so `Controller.knowsTheDisplays` sees that it does not know them and turns those reports away. That is none of the stand-ins' three guesses as they stand: their "windows first" reports while the stand-in's list is still the old one, which no recording has; what it finds beyond the recorded order (a shift made twice, a hop, a wrong display) is the lab's alone until a real cable, dock or lid says otherwise. Windows that never speak were not seen. What else macOS does then: macos-puts-windows-back-on-a-display-that-returns. **A second recording**, by a session that did not know of the first: macOS's raw notice at 55.286 s, fourteen reports of a changed window, each as a hand's, from 55.302 to 55.373, and the settled report of the displays at 57.199.
 - **Found by:** Reading the Accessibility layer and the controller side by side, then rehearsals of two check scripts on the fake Mac and the chaos lab. On a hosted Mac plugging in the virtual display was seen to shuffle the windows. Then traces of each change, recorded by the script for two displays on a hosted Mac; they are to be committed. A real unplug has never been tried.
 - **Stand-ins play it:** partly (`FakeWindowSystem.displayList`, `FakeWindowSystem.moveSilently`, `FakeWindowSystem.userMove`, `FakeWindowSystem.report`, `FakeWindowSystem.setDisplays`, `ChaosAction.WindowsFollow`, `ChaosRunner.change`, `FakeWindow.groundHasShifted`)
-- **Guard:** `test: aFloatingWindowThatMacOSMovedBeforeTheUnplugWasReportedStillGoesBack`; `test: dockedWindowsThatMacOSMovedAreNotPutBackOnADisplayThatIsGone`; `test: movedByMacOSBeforeTheUnplugWasReportedItStillGoesBackPinned`; `test: afterABlinkWhatMacOSMovedIsPutBack`; `test: aDisplayMovedInSystemSettingsWithAppsThatSpeakFirst`; `test: aDisplayChangesSidesAndShrinks`; `test: floatingWindowsKeepTheirPlacesAlsoIfTheirAppsSpeakFirst`; `test: launchedWithoutTheDisplayItWasPinnedOnItIsStillPinned`; `test: theAppSpeaksAndTimePassesBeforeArborHears`
-- **Arbor copes:** Controller.knowsTheDisplays: while the displays macOS has are not the ones Arbor was told of (ids and frames), a window that moves was moved by macOS, and the move gives nothing a new home. Two seconds after the last such move Arbor puts back what macOS has not (`displays-blinked`).
+- **Guard:** `test: aFloatingWindowThatMacOSMovedBeforeTheUnplugWasReportedStillGoesBack`; `test: dockedWindowsThatMacOSMovedAreNotPutBackOnADisplayThatIsGone`; `test: movedByMacOSBeforeTheUnplugWasReportedItStillGoesBackPinned`; `test: afterABlinkWhatIsDockedGoesBackAndWhatFloatsIsMacOSs`; `test: aDisplayMovedInSystemSettingsWithAppsThatSpeakFirst`; `test: aDisplayChangesSidesAndShrinks`; `test: floatingWindowsKeepTheirPlacesAlsoIfTheirAppsSpeakFirst`; `test: launchedWithoutTheDisplayItWasPinnedOnItIsStillPinned`; `test: theAppSpeaksAndTimePassesBeforeArborHears`
+- **Arbor copes:** Controller.knowsTheDisplays: while the displays macOS has are not the ones Arbor was told of (ids and frames), a window that moves was moved by macOS, and the move by itself gives nothing a new home. Two seconds after the last such move Arbor looks after them (`displays-blinked`): docked windows go back to their slots, and what floats in view is taken from where it is, as at a change that is reported.
 - **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `collab/QUESTIONS.md`, `docs/ARCHITECTURE.md`, `Tests/ArborKitTests/DisplayTests.swift`, `Sources/ArborTesting/Chaos.swift`
 
 ### stage-manager-rearranges-windows-on-its-own
@@ -2006,6 +2006,18 @@ A second actor: macOS, an app or another tool moves things too.
 - **Guard:** `test: aBackgroundAppChangingItsFocusedWindowDoesNotMoveTheCamera`; `test: aBackgroundAppsReportDoesNotPutOffTheLookAfterALoss`; `test: aBackgroundAppsReportDoesNotPutOffTheSecondLookAtTheWindowTakingTheKeyboard`; `test: aFocusReportFromTheBackgroundDoesNotTakeTheLeadFromThePointer`; `e2e: an app in the background changes its focused window` (on CI's Macs); `e2e: the camera stays where the user is` (on CI's Macs); `tool: mac-on-linux/build.sh` (by hand)
 - **Arbor copes:** AXWindowSystem.reportFocus passes on only what the app in front says; the controller asks `focusedWindow()` before it believes a report, and each look waits under a key of its own (`focus-after-loss`, `focus-again-<window>`).
 - **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `Sources/ArborTesting/FakeWindowSystem.swift`, `docs/ARCHITECTURE.md`, `collab/QUESTIONS.md`, `docs/features/F37-focus-ring.md`, `scripts/mac-on-linux/mutants.py`
+
+### at-a-plug-and-an-unplug-macos-moves-windows-on-the-display-that-stays
+
+*hurt 2 · at the seam · touches `moved-unasked`, `jolt`*
+
+- **Expected:** A change of displays moves the windows of the display that comes or goes. Those on the display that stays lie still, and one that is found elsewhere afterwards has been shuffled by accident and belongs where its person left it.
+- **Happened:** With nothing docked and eleven windows of real apps floating, macOS itself moved or resized windows on the display that stays at every plug and unplug of a virtual second display, on two hosted Macs: a terminal 737,300 to 1000,300 and back, a calendar 937x790 to 937x600, an editor 673x439 to 656x422, a mail window 872x791 to 1576x767. Nobody touched them. Arbor set them back to the frame it remembered if their report came after macOS's word about its screens, 22 of 24, and took macOS's frame for the person's own if it came before, 0 of 8 set back: ten windows were where they had been and one was not, by a toss of some hundredths of a second. Two controls with no Arbor running, the window server sampled at 40 Hz: macOS alone is not still either. For windows that have to do with the second display it keeps a place for each set of displays (back to the point it had with that set 5 of 6 times at a plug, 10 of 14 at an unplug, within a second), so a put-back works against that. Windows wholly on the display that stays it shuffles without such a memory: a calendar as wide as the display flips between x 128 and x 0 at most changes, the editor shrinks once and stays. All displays were virtual; no cable, dock or lid has been recorded.
+- **Found by:** Reading the recorded changes of displays of two journeys with real apps on hosted Macs (macOS 26.6.2), step by step, beside two controls without Arbor.
+- **Stand-ins play it:** yes (`FakeWindowSystem.changeDisplaysAsAMacDoes`)
+- **Guard:** `test: whatMacOSDoesToAFloatingWindowAtAChangeOfDisplaysIsMacOSs`; `test: oneWindowSpeaksBeforeTheListIsNew`; `test: inABlinkTooTheEndIsTheSame`
+- **Arbor copes:** Controller.takeFloatingWindowsFromWhereTheyAre, since it is decided that none is put back: once Arbor is told of the displays, and after a blink, a floating window in view that is not kept in view, summoned or stashed, that Arbor has not fitted, and whose title bar is within reach is taken from where it is, by the displays that are: its place, its size and the display it belongs to. No frame is set. So too one that comes from a display that went, where macOS has brought it within reach, unless the view is held. Whoever speaks first, the end is the same for a window moved or resized on the display that stays. Where a display goes, or one comes and the window ends astride its border, a window that speaks before macOS's list is new is still filed by the old geometry: known issues in SpokeAheadTests. One in the Dock, hidden or on another Space is not taken.
+- **Read in:** `Sources/ArborKit/Controller/Controller+Displays.swift`, `Sources/ArborTesting/FakeWindowSystem+Displays.swift`, `Tests/ArborKitTests/DisplaysAsRecordedTests.swift`, `Tests/ArborKitTests/SpokeAheadTests.swift`
 
 ### enhanced-user-interface-animates-every-move
 
@@ -2315,7 +2327,7 @@ A second actor: macOS, an app or another tool moves things too.
 - **Happened:** They lie in a heap: a script has to dock a window by command first, which brings it to the front, before its title bar can be grabbed. For the second and a half for which `displaysChanged` is held back, macOS's own pile of windows is what the person sees.
 - **Found by:** The displays script with a virtual second display on a hosted Mac.
 - **Stand-ins play it:** partly (`ChaosRunner.change`)
-- **Guard:** `test: dockedWindowsThatMacOSMovedAreNotPutBackOnADisplayThatIsGone`; `test: afterABlinkWhatMacOSMovedIsPutBack`
+- **Guard:** `test: dockedWindowsThatMacOSMovedAreNotPutBackOnADisplayThatIsGone`; `test: afterABlinkWhatIsDockedGoesBackAndWhatFloatsIsMacOSs`
 - **Arbor copes:** Sources/ArborKit/Controller/Controller+Displays.swift moves arrangements off a display that went and back again itself, once the displays have settled.
 - **Read in:** `scripts/mac-shell/check-displays.sh`, `Sources/ArborTesting/ChaosRunner.swift`, `collab/BACKLOG.md`
 
@@ -3639,8 +3651,8 @@ Timing: how long things take, and what can happen meanwhile.
 - **Happened:** On wake, and when a laptop is docked, displays vanish and are back within a second or two. macOS may clear the display meanwhile. Acting at once would evacuate every window and bring it back, racing macOS's own restoration.
 - **Found by:** The review of the Accessibility layer; the comments name no run.
 - **Stand-ins play it:** partly (`FakeWindowSystem.displayList`)
-- **Guard:** `test: aDisplayComingOrGoingIsGivenTimeToChangeItsMind`; `test: afterABlinkWhatMacOSMovedIsPutBack`; `test: afterABlinkWhatMacOSPutBackItselfIsLeftAlone`; `test: aBlinkInWhichNothingMovedCostsNothing`; `tool: mac-on-linux/build.sh` (by hand)
-- **Arbor copes:** DisplayChange.comingAndGoing: 1.5 s of waiting, then a second look; no `displaysChanged` is sent if the displays are as they were, and the controller puts back what macOS moved and did not bring back.
+- **Guard:** `test: aDisplayComingOrGoingIsGivenTimeToChangeItsMind`; `test: afterABlinkWhatIsDockedGoesBackAndWhatFloatsIsMacOSs`; `test: afterABlinkWhatMacOSPutBackItselfIsLeftAlone`; `test: aBlinkInWhichNothingMovedCostsNothing`; `tool: mac-on-linux/build.sh` (by hand)
+- **Arbor copes:** DisplayChange.comingAndGoing: 1.5 s of waiting, then a second look; no `displaysChanged` is sent if the displays are as they were, and the controller puts docked windows back that macOS moved and did not bring back. What floats in view is taken from where macOS left it (`takeFloatingWindowsFromWhereTheyAre`).
 - **Read in:** `Sources/ArborKit/Platform/DisplayChange.swift`, `Sources/ArborKit/AX/AXWindowSystem.swift`, `docs/ARCHITECTURE.md`, `scripts/mac-on-linux/mutants.py`
 
 ### every-display-notice-restarts-the-wait

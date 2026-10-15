@@ -14,7 +14,7 @@ public struct Workspace: Codable, Sendable, Equatable {
   public private(set) var lookingFrom: NodeID?
   /// Saved camera positions keyed by slot ("1"…"9").
   public private(set) var savedViews: [String: NodeID] = [:]
-  /// Floating windows and the frame each was last placed at by the user.
+  /// Floating windows and the frame each was last placed at by the user, or by macOS at a change of displays.
   public var floating: [WindowID: CGRect] = [:] {
     // Only a floating window can be pinned or a guest: however one stops floating here, that goes with it.
     didSet {

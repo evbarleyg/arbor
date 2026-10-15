@@ -20,10 +20,10 @@ extension Controller {
   /// With `lettingGo` only the books are brought up to date and nothing is moved, raised or focused: for `shutdown`, which
   /// moves every window itself, once (`lookAtTheDisplaysBeforeLettingGo`).
   func updateDisplays(lettingGo: Bool = false) {
-    let asItWas = noteBeforeTheDisplaysChange()
     // If windows were moved behind Arbor's back, here is the report after all. What follows looks after every window.
     // Moved with this change of displays, as far as can be told: those, and below whatever is not where Arbor knew it.
     var movedByMacOS = movedBehindArborsBack
+    let somethingMovedBehindArborsBack = !movedBehindArborsBack.isEmpty
     movedBehindArborsBack = []
     scheduler.cancel("displays-blinked")
     overlays.finishAnimations()
@@ -59,7 +59,13 @@ extension Controller {
     // new main display is one of them.
     for id in added { workspaces[id] = Workspace() }
     var arriving: [WindowID] = []
+    // (Not one that filled the view there: its size is Arbor's doing, and where it is filed next no fill is marked.)
+    let floatedOnWhatWent = Set(removed.flatMap { id in workspaces[id].map { gone in gone.floating.keys.filter { !gone.isFilled($0) } } ?? [] })
     for id in removed { arriving += retireWorkspace(of: id, whichWasAt: before.first { $0.id == id }?.frame.origin) }
+    // macOS clears a display that goes at once. A floating window it has brought where somebody can get hold of it is not placed once more.
+    // Unless the view is held, which gives nothing away: there it waits out of view like every arrival, and where macOS brought it is its place.
+    let broughtOver = takeFloatingWindowsFromWhereTheyAre(movedByMacOS, only: floatedOnWhatWent.intersection(arriving))
+    if holdLevel != .view { arriving.removeAll { broughtOver.contains($0) } }
     // A display that has only just come takes nothing away. Its arrangement sleeps on, for the next start: windows that
     // lie still are not sent over to it a moment before they are let go of.
     if !lettingGo { for id in added { arriving += restoreDormantWorkspace(of: id, movedByMacOS: movedByMacOS) } }
@@ -79,8 +85,11 @@ extension Controller {
     // A lower resolution or a display that moved can leave windows beyond the edges of them all.
     treatStrandedWindowsAsParked()
     // Books too, and no frame is set: so also before Arbor lets go, which gives every window its remembered place.
+    // Not at a report that is only about the Dock or the menu bar, which comes many times a day. Unless it comes upon a blink, whose look-out it
+    // has just called off: then nobody else would.
+    if !Self.areTheSame(before, displays) || somethingMovedBehindArborsBack { takeFloatingWindowsFromWhereTheyAre(movedByMacOS) }
     keepWhatMacOSRescued(whichShowed: showed)
-    let displaced = countAsOutOfViewWhatTheDisplaysDisplaced(since: asItWas)
+    let displaced = countAsOutOfViewWhatTheDisplaysDisplaced()
     guard !lettingGo else { return }
     // A display that came or went sent windows to another arrangement, whose view may not include the one being
     // typed in. As after a resume, it ends with that window in view. Before anything is laid out, so that every
@@ -143,6 +152,79 @@ extension Controller {
     }
   }
 
+  // MARK: What macOS does to a floating window is macOS's
+
+  /// At every plug and unplug macOS itself moves and resizes windows on the display that stays: it keeps a place for each set of displays for
+  /// some, and shuffles others. Arbor used to set them back, if their report came after macOS's word about its screens, and took the new frame
+  /// for the person's own if it came before: on two hosted Macs with nothing docked 22 of 24 and 0 of 8, a toss of some hundredths of a second.
+  ///
+  /// Decided (board 0.23): none is put back. Once Arbor is told of the displays, a floating window in view is taken from where it is, by the
+  /// displays that are: its place, its size, and the display it belongs to. No frame is set. Whatever a report booked while the old
+  /// list stood, a place in the new coordinates among old ones and a home by the old geometry, is overtaken here: whoever speaks first, the end
+  /// is the same for a window moved or resized on the display that stays. (Not yet where a display goes, or one comes and the window ends astride
+  /// its border: `SpokeAheadTests`.)
+  ///
+  /// What stays Arbor's: whatever it has out of view, what goes home to a display that is back, and what came from one that went and macOS has
+  /// not brought within reach (the layout's to place: they count as out of view by now), windows kept in view, summoned or stashed, one that fills
+  /// the view, which is where Arbor put it (Controller+Fill.swift), what it fitted for the displays' sake, whose own frame is still its own,
+  /// and a window that nobody could get hold of. And everything where floating windows make way: there the layout places them. A guest of a
+  /// view is taken like any other: left out, it would lie where macOS put it all the same, and the books would say otherwise. Nor is one
+  /// taken that is in the Dock, hidden, on another Space or in full screen.
+  ///
+  /// Only a window that is known to have moved (`moved`) or has spoken of its place lately. Of an app that hangs, what is read is what was read
+  /// before, which says nothing of where its window is: its place goes with its display's corner. And one that lies where the books say
+  /// keeps its home. Left by hand hanging over an edge, with a display plugged in just there, most of it lies on the newcomer, and it
+  /// is still the window of the display it was let go on. Unless nothing of it shows there: then a report filed it by displays that are no more.
+  ///
+  /// `only`: no others are looked at, and of these no such sign is asked. They come from a display that went: their old place is no place any more, and where
+  /// the main display changes with it macOS may leave a window's numbers as they are. Returns those that are where the books say now, taken or
+  /// found so.
+  @discardableResult
+  func takeFloatingWindowsFromWhereTheyAre(_ moved: Set<WindowID>, only: Set<WindowID>? = nil) -> Set<WindowID> {
+    guard !settings.floatingWindowsMakeWay else { return [] }
+    var inPlace: Set<WindowID> = []
+    let lately = now().addingTimeInterval(-Self.spokenLately)
+    for home in workspaces.keys.sorted() {
+      for (window, remembered) in workspaces[home]!.floating.sorted(by: { $0.key < $1.key }) where window != drag?.window {
+        guard only?.contains(window) != false,
+          only != nil || moved.contains(window) || spokeOfItsPlace[window].map({ $0 >= lately }) == true,
+          workspaces[home]!.role(of: window) == nil, !workspaces[home]!.isFilled(window), !parked.contains(window),
+          isManaged(window), let current = windows[window],
+          current.isPresent, !isAsArborFittedIt(window, at: current.frame, whoseOwnSizeIs: remembered.size),
+          titleBarIsWithinReach(current.frame)
+        else { continue }
+        inPlace.insert(window)
+        // (macOS puts windows on whole points, whatever was asked for. A whole point off is another place.)
+        let isWhereTheBooksSay = remembered.approximatelyEquals(current.frame, tolerance: 0.99)
+        guard !isWhereTheBooksSay || display(home).map({ current.frame.overlaps($0.frame) }) != true else { continue }
+        let destination = displayID(at: current.frame.center).flatMap { workspaces[$0] == nil ? nil : $0 } ?? home
+        guard destination != home || !isWhereTheBooksSay else { continue }
+        if destination != home { workspaces[home]!.floating[window] = nil }
+        workspaces[destination]!.floating[window] = current.frame
+        // What Arbor once fitted it to is over. macOS may take it to that very frame one day, and it would pass for fitted.
+        // (A hand's note stays: it is about one frame, says nothing while the window is elsewhere, and macOS may bring it back there.)
+        fittedFrames[window] = nil
+        if destination != home {
+          // The view there may be on something else than the Desktop, and the first layout of a display that has only just come would send it out of
+          // view with the Desktop, the keyboard in it or not. It stays, as a window that opens over such a view does. Not under a hold.
+          if holdLevel != .view { receiveAsGuestOfTheView(window) }
+          notify(.windows)
+        }
+        // After a blink nobody else would.
+        scheduleSave()
+      }
+    }
+    return inPlace
+  }
+
+  /// Whether `window` still is as Arbor fitted it for the displays' sake: at that very frame, or, moved on by macOS since, at a size that Arbor gave it and
+  /// that is not its own. What macOS does to a window is macOS's. What Arbor did to it is given back: such a window is not taken from where it is, and
+  /// goes back to its own frame once that is a place again (`countAsOutOfViewWhatTheDisplaysDisplaced`).
+  func isAsArborFittedIt(_ window: WindowID, at frame: CGRect, whoseOwnSizeIs own: CGSize) -> Bool {
+    guard let fitted = fittedFrames[window] else { return false }
+    return fitted == frame || (fitted.size == frame.size && fitted.size != own)
+  }
+
   // MARK: What macOS rescued stays rescued
 
   /// macOS brings the windows of a display that goes wholly onto one that stays, and takes a window for the display's that shows most
@@ -153,8 +235,9 @@ extension Controller {
   /// So where the change took from the place remembered for a floating window in view, and more shows of the window where it really
   /// is, that is its place from now on, on the display it is on: no frame is set. Fitting the old place instead would bring it into
   /// view too, by a second move. Only where the change took something: this is called at every report, the Dock's and the menu
-  /// bar's too, and a window that macOS merely shuffled on a display that stays goes back where its person left it, hanging over
-  /// an edge or not. Not where Arbor itself put the window, aside for a docked one: nobody has moved anything then. And only at
+  /// bar's too. (As Arbor ships, most have been taken from where they are already, whatever the change took:
+  /// `takeFloatingWindowsFromWhereTheyAre`. This is for the others, and for where floating windows make way.) Not where Arbor itself
+  /// put the window, aside for a docked one: nobody has moved anything then. And only at
   /// the size remembered: macOS moves, and a window that Arbor has made smaller has a size of its own to go back to. What
   /// came from a display that went, or goes home to one that is back, counts as out of view by now and is the layout's to place.
   private func keepWhatMacOSRescued(whichShowed showed: [WindowID: CGFloat]) {
@@ -221,9 +304,11 @@ extension Controller {
   /// until Arbor hears, what apps say of their windows is in coordinates it cannot read: it would take the move for the
   /// person's own, judge by the old frames which display the window is on, and move the frame again with the corner.
   /// Not their order, which is never reported by itself, nor the Dock and the menu bar.
-  var knowsTheDisplays: Bool {
+  var knowsTheDisplays: Bool { Self.areTheSame(system.displays(), displays) }
+
+  static func areTheSame(_ one: [DisplaySnapshot], _ other: [DisplaySnapshot]) -> Bool {
     func frames(_ list: [DisplaySnapshot]) -> [DisplayID: CGRect] { Dictionary(list.map { ($0.id, $0.frame) }) { first, _ in first } }
-    return frames(system.displays()) == frames(displays)
+    return frames(one) == frames(other)
   }
 
   /// Look before letting go. Arbor hears of a change of displays only once it has settled, a second and a half after
@@ -235,13 +320,15 @@ extension Controller {
   /// It brings its books up to date and moves nothing: which displays there are, whose arrangement sleeps, who has to come
   /// over. A layout now would move windows that are moved again a moment later, follow the keyboard, and park.
   ///
-  /// Only if a display it believes in is gone, or is elsewhere or of another size: one that has only just come takes
-  /// nothing away. And not while there is no display at all, as for a moment on wake and when docking: then there is
-  /// nothing to go by, and what Arbor believes in is the best guess at what comes back.
+  /// Also for a display that has only just come. It takes nothing away, but macOS has moved windows for it, on the display that stays and
+  /// onto the new one. That is macOS's: found elsewhere than the books say, such a window would pass for one that Arbor had pushed
+  /// aside, and be given back a place it has left. Not at an ordinary quit or pause, with the displays as Arbor knows them. And not
+  /// while there is no display at all, as for a moment on wake and when docking: then there is nothing to go by, and what Arbor
+  /// believes in is the best guess at what comes back.
   func lookAtTheDisplaysBeforeLettingGo() {
     guard isRunning else { return }
-    let real = Dictionary(system.displays().map { ($0.id, $0.frame) }) { first, _ in first }
-    guard !real.isEmpty, displays.contains(where: { real[$0.id] != $0.frame }) else { return }
+    let real = system.displays()
+    guard !real.isEmpty, !Self.areTheSame(real, displays) else { return }
     Log.info("letting go before a change of displays was reported: looking at the displays first")
     updateDisplays(lettingGo: true)
   }
@@ -306,9 +393,9 @@ extension Controller {
   }
 
   /// macOS moved `window` because a display came or went that Arbor has not heard of yet. If the report comes,
-  /// `updateDisplays` puts every window where it belongs. If the display only blinked, on wake or while a dock
+  /// `updateDisplays` looks after every window. If the display only blinked, on wake or while a dock
   /// negotiates, there never is a report (`DisplayChange`), and nobody else would: the move was not the user's, so nothing
-  /// followed it, and it is not put back at once, because there may be no display to put it back on.
+  /// followed it, and nothing is done about it at once, because there may be no display to go by.
   func noteMoveBehindArborsBack(of window: WindowID) {
     movedBehindArborsBack.insert(window)
     noteThatTheDisplaysAreUnknown()
@@ -334,6 +421,8 @@ extension Controller {
       return
     }
     displaysUnknownSince = nil
+    // What macOS did to a floating window in view is macOS's, in a blink as at a change that is reported.
+    takeFloatingWindowsFromWhereTheyAre(movedBehindArborsBack)
     // What macOS has put back itself by now is left alone: a docked window in its slot by the layout, a floating one here.
     let moved = movedBehindArborsBack.sorted().filter { window in
       guard let home = workspaceID(containing: window).flatMap({ workspaces[$0]!.floating[window] }) else { return true }
