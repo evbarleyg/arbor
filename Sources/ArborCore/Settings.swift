@@ -217,7 +217,7 @@ public struct Settings: Codable, Equatable, Sendable {
   /// its own because a settings.json written by an earlier build holds theirs as they were then, and cannot hold this one
   /// (collab/QUESTIONS.md, Q26).
   /// Off as Arbor ships: no tap goes in at launch until all its checks of the taps on a Mac are green.
-  public var pointerGestures: Bool = false
+  public var pointerGestures: Bool = true
 
   public init() {}
 
