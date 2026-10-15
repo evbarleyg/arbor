@@ -41,7 +41,7 @@ import Testing
 /// been cured is held to them here (`ChaosKnownFailures.swift`, "one thing that happens is one layout").
 private let oneLayout: Set<String> = [
   "moved-twice", "moved-twice-sizing", "moved-twice-sizing-again", "moved-again", "moved-again-sizing", "moved-again-sizing-again",
-  "flashed-into-view", "flashed-out-of-view", "moved-over-and-over", "sized-there-and-back",
+  "flashed-into-view", "flashed-out-of-view", "moved-over-and-over", "sized-there-and-back", "moved-twice-floating-making-way",
 ]
 
 /// Replays a script of the walks. At its last line, which is what the script is about, none of those rules is excused.
@@ -784,6 +784,27 @@ private let oneLayout: Set<String> = [
     minimize 103
     advance 1
     restore 103
+    """,
+    // With `floatingWindowsMakeWay` on, which ships off: a floating window was pushed aside for the one layout and sent out of view by the
+    // other. It stood among the known failures until there was one layout.
+    """
+    settings {"floatingWindowsMakeWay":true}
+    launch
+    displays main:0,0,2560,1440:25,0,86,0* side:2560,-170,1280,800:0,0,0,0 windows-never
+    open 101 Music pid 1006 at 1518 281 353 294
+    grab 101
+    carry 2724 -15
+    release
+    double-click 101
+    behave 101 frozen
+    undo
+    space 101 off
+    space 101 on
+    flush
+    minimize 101
+    via shortcut layout Music
+    open 107 Notes pid 1001 at 2676 12 380 315 min 255 117 max 255 968 title Inbox
+    restore 101
     """,
   ]) func theWalksOwnScripts(_ script: String) { expectOneLayoutAtTheEnd(of: script) }
 }

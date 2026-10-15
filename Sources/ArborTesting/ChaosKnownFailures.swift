@@ -900,28 +900,6 @@ extension ChaosRunner {
         release
         """),
     ChaosKnownFailure(
-      rule: "moved-twice-floating-making-way", owner: "rule 3: a floating window's frame is its person's", severity: 4,
-      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). A floating window is pushed aside and, in the same breath, sent out of view, when a docked window comes out of the Dock.",
-      script: """
-        settings {"floatingWindowsMakeWay":true}
-        launch
-        displays main:0,0,2560,1440:25,0,86,0* side:2560,-170,1280,800:0,0,0,0 windows-never
-        open 101 Music pid 1006 at 1518 281 353 294
-        grab 101
-        carry 2724 -15
-        release
-        double-click 101
-        behave 101 frozen
-        undo
-        space 101 off
-        space 101 on
-        flush
-        minimize 101
-        via shortcut layout Music
-        open 107 Notes pid 1001 at 2676 12 380 315 min 255 117 max 255 968 title Inbox
-        restore 101
-        """),
-    ChaosKnownFailure(
       rule: "moved-before-any-dock", owner: "rule 2: the displays change during a pause", severity: 3,
       story: "Nothing was ever docked. A window is dragged to the foot of the monitor; Arbor is paused, the laptop goes, Arbor is resumed; ⌃⌥0 pulls the window up by 377 points.",
       script: """

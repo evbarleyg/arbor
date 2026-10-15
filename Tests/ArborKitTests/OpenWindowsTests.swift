@@ -476,11 +476,8 @@ import Testing
     expectInFrontAndWhole(h, window)
   }
 
-  /// A docked window that went to the Dock in view, or was hidden with its app, and is asked back while the view is elsewhere.
-  nonisolated static let askedBackFromElsewhere: [Kind] = [.minimizedWhileFramedElsewhere, .hiddenWhileFramedElsewhere]
-
   /// Rule 3: a window moves once, to where it ends up.
-  @Test(arguments: Kind.allCases.filter { !askedBackFromElsewhere.contains($0) }) func nothingIsSeenToMoveTwice(kind: Kind) {
+  @Test(arguments: Kind.allCases) func nothingIsSeenToMoveTwice(kind: Kind) {
     let (h, window) = make(kind)
     h.scheduler.advance(by: 2)
     let mark = h.system.moveLog.count
@@ -488,16 +485,16 @@ import Testing
     #expect(h.system.jolts(since: mark) == [])
   }
 
-  /// Known, and not the list's: `reveal 103`, Go to… and a click in the Dock (`restore 103`) do the same. In the order a Mac reports in, `reveal`
-  /// moves the view to a window that is not back yet, so its neighbour fills the screen until it lands. Told at once that it is
-  /// back, Arbor lays out with the old view first: the window itself is sent to the corner and fetched from there.
-  /// **Whoever mends it deletes the `withKnownIssue`**, which fails once nothing jolts, and puts the two kinds among the others above.
-  @Test(arguments: askedBackFromElsewhere, [false, true]) func aWindowAskedBackWhileTheViewIsElsewhereJolts(kind: Kind, prompt: Bool) {
+  /// A docked window that went to the Dock in view, or was hidden with its app, and is asked back while the view is elsewhere: in both
+  /// orders. In the order a Mac reports in, the view waits for the window, so no neighbour fills the screen until it lands. Told at
+  /// once that it is back, the view goes first, so the window is not sent to the corner and fetched (Controller+OneLayout.swift).
+  @Test(arguments: [Kind.minimizedWhileFramedElsewhere, .hiddenWhileFramedElsewhere], [false, true])
+  func aWindowAskedBackWhileTheViewIsElsewhereMovesOnce(kind: Kind, prompt: Bool) {
     let (h, window) = make(kind)
     h.scheduler.advance(by: 2)
     let mark = h.system.moveLog.count
     click(h, window, prompt: prompt)
-    withKnownIssue("rule 3: it, or its neighbour, is seen to move twice") { #expect(h.system.jolts(since: mark) == []) }
+    #expect(h.system.jolts(since: mark) == [])
   }
 
   /// A size is its person's (Q20): a click fetches a floating window, it does not shape it.
