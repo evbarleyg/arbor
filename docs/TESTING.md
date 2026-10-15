@@ -25,6 +25,9 @@ Why it is there: on 2026-10-15 "a refused size costs nobody a second move" passe
 How much it talks, measured that day: of the last thirty changes to the trunk that touch `Sources/` it has nothing to say to twenty, and ten cases at most; of the twenty newest
 branches, nothing to sixteen, and two lists were cut (25 and 70 cases: they touch the panels and `AXWindowSystem.swift`). By every file a case cites the same thirty gave 32 cases in the middle and
 172 at most, since everybody cites the backlog; by every Swift file that ships, 3 and 19, much of it by way of `Settings.swift` and `ArborApp.swift`.
+A call that stood there before is told apart: where every hunk that adds a member takes it out as often, the line was only reworded, so the case comes last, marked "read there before", and a list of
+nothing else does not speak of a Mac run; a call that leaves one hunk and arrives in another counts as new, because on 2026-10-15 moving the call was the fault. Of the ten lists for those thirty changes
+two are wholly of that kind, and so was the first list a pull request ever got: six cases for one `if` that had gained a clause.
 **Silence is no clean bill.** A change that leans on a report rather than a call (full screen, a display that goes, an app that hides) names no member of the seam, and a case that does not
 name the call it is about is not found. So a case about a call does well to name it in backticks.
 

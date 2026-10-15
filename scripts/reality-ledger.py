@@ -42,7 +42,8 @@ rings.json; given a file it puts that key into it and keeps the others. It refus
 `git diff` (`origin/swarm/trunk...HEAD`), a file that holds a diff, or `-` for a diff on standard input; without it, what this branch and the working tree add to the trunk. It
 lists the cases that are played partly, not at all, or never can be, and that the change leans on: a line it adds to the code that ships calls or writes a member of the seam
 (the protocols in Sources/ArborKit/Platform) that the case names, in backticks or as `Type.member`; or it touches a file of the macOS-only code that the case cites. The first
-kind comes first; then the worst hurt, what crosses the seam, what is not played at all. A dozen lines at most; `--all` for the rest. So a case that is about a call does well
+kind comes first; then the worst hurt, what crosses the seam, what is not played at all. Last, and marked "read there before", come the cases whose member the change only
+takes out and puts in again within one hunk: a line reworded leans on nothing new, and a list of nothing else is no argument for a Mac. A dozen lines at most; `--all` for the rest. So a case that is about a call does well
 to name it.
 
 Exit code 1 if a name is not found or, with --check, the page does not say what reality.json says; 2 if reality.json itself is wrong. A page whose
@@ -106,6 +107,8 @@ BELOW = ("Sources/ArborKit/AX/", "Sources/ArborKit/UI/", "Sources/ArborKit/Input
 UNPLAYED = ["no", "partly", "cannot"]
 TRUNKS = ("origin/swarm/trunk", "origin/main")
 DOZEN = 12
+# How a change comes to a case, the most telling first.
+BY_NAME, BY_FILE, AS_BEFORE = range(3)
 # How well an entry is guarded, best first. Every entry is in exactly one.
 WATCHES = collections.OrderedDict([
     ("linux", "Guarded without a Mac"),
@@ -665,17 +668,21 @@ def seam_of(tree):
 
 
 def read_diff(diff):
-    """The lines a unified diff adds, by file, and every file it touches."""
-    added, touched, file = collections.defaultdict(list), set(), None
-    for line in diff.split("\n"):
-        if line.startswith(("--- ", "+++ ")):
+    """The hunks of a unified diff, each with its file, the lines it adds and the lines it takes out; and every file the diff touches."""
+    hunks, touched, file = [], set(), None
+    lines = diff.split("\n")
+    for index, line in enumerate(lines):
+        # `--- ` is a file's head only with `+++ ` under it: within a hunk it may be a line that began with two dashes and was taken out.
+        if (line.startswith("--- ") and lines[index + 1:index + 2] and lines[index + 1].startswith("+++ ")) or (line.startswith("+++ ") and index and lines[index - 1].startswith("--- ")):
             path = line[4:].split("\t")[0]
             path = None if path == "/dev/null" else path[2:] if path.startswith(("a/", "b/")) else path
             touched.update({path} - {None})
-            file = path if line.startswith("+++ ") else file
-        elif line.startswith("+") and file:
-            added[file].append(line[1:])
-    return added, touched
+            file = path if line.startswith("+++ ") else None
+        elif line.startswith("@@"):
+            hunks.append((file, [], []))
+        elif line.startswith(("+", "-")) and hunks and file:
+            hunks[-1][1 if line.startswith("+") else 2].append(line[1:])
+    return [hunk for hunk in hunks if hunk[0]], touched
 
 
 def leans_on(entries, tree, diff):
@@ -685,18 +692,24 @@ def leans_on(entries, tree, diff):
     - above it, by name: a line the change adds calls a member of the seam on one who holds it (`system.setFrame(`), or writes one (`func setFrame(`), and the case names that
       member, in backticks or as `Type.member`.
     - below it, by file: the change touches a file that no test on Linux runs (BELOW), and the case cites that file under `sources`.
+    A call that stood there before is no new leaning: where every hunk that adds a member takes it out as often, the line was only reworded, and the case comes last and is marked.
+    It is counted hunk by hunk, because a call that goes from one place to another is new where it arrives: on 2026-10-15 moving the call was the fault.
     What each was measured to say, and the wider roads that were tried and said too much, is in docs/TESTING.md. A third road, by the detectors a case touches, is not taken: a
     change to a detector's code is a change to a tool, and to tools this has nothing to say."""
-    added, touched = read_diff(diff)
-    ships = lambda path: path.startswith(SHIPS) and path.endswith(".swift")
+    hunks, touched = read_diff(diff)
     members, holders = seam_of(tree)
     every = set().union(*members.values()) if members else set()
-    called = set()
-    for path, lines in added.items():
-        if ships(path):
-            code = without_comments("\n".join(lines))
-            called.update(member for holder, member in re.findall(r"\b(\w+)[?!]?\.(\w+)", code) if any(member in members[protocol] for protocol in holders.get(holder, ())))
-            called.update(member for member in re.findall(r"\bfunc\s+`?(\w+)", code) if member in every)
+
+    def calls(lines):
+        code = without_comments("\n".join(lines))
+        return collections.Counter([member for holder, member in re.findall(r"\b(\w+)[?!]?\.(\w+)", code) if any(member in members[protocol] for protocol in holders.get(holder, ()))]
+                                   + [member for member in re.findall(r"\bfunc\s+`?(\w+)", code) if member in every])
+    called, anew = set(), set()
+    for path, added, removed in hunks:
+        if path.startswith(SHIPS) and path.endswith(".swift"):
+            now, then = calls(added), calls(removed)
+            called.update(now)
+            anew.update(member for member in now if now[member] > then[member])
     found = []
     for entry in entries:
         if entry["modelled"] not in UNPLAYED:
@@ -704,8 +717,12 @@ def leans_on(entries, tree, diff):
         words = " ".join(entry[key] for key in ("expected", "happened", "found", "copes"))
         named = sorted(member for member in called if re.search(rf"`[^`]*\b{member}\b[^`]*`|\w\.{member}\b", words))
         cited = sorted(source for source in entry["sources"] if source.startswith(BELOW) and source.endswith(".swift") and source in touched)
-        if named or cited:
-            found.append((entry, ", ".join(named or [os.path.basename(source) for source in cited]), not named))
+        if anew.intersection(named):
+            found.append((entry, ", ".join(named), BY_NAME))
+        elif cited:
+            found.append((entry, ", ".join(os.path.basename(source) for source in cited), BY_FILE))
+        elif named:
+            found.append((entry, ", ".join(named) + ", read there before", AS_BEFORE))
     nearest = ["at the seam"] + [layer for layer in LAYERS if layer != "at the seam"]
     return sorted(found, key=lambda one: (one[2], one[0]["hurt"], nearest.index(one[0]["layer"]), UNPLAYED.index(one[0]["modelled"])))
 
@@ -718,7 +735,10 @@ def reading_list(root, diff, everything=False):
         return []
     shown = found if everything or len(found) < DOZEN else found[:DOZEN - 2]
     played = {"no": "not played", "partly": "played partly", "cannot": "cannot be played"}
-    lines = [f"Green on Linux cannot tell you these: {len(found)} case{'s' if len(found) > 1 else ''} in docs/REALITY.md that the stand-ins do not play and this change leans on. The argument for a Mac run before it lands."]
+    old = sum(1 for one in found if one[2] == AS_BEFORE)
+    lines = [f"Green on Linux cannot tell you these: {len(found)} case{'s' if len(found) > 1 else ''} in docs/REALITY.md that the stand-ins do not play"
+             + (". This change touches lines that lean on them, as they did before." if old == len(found) else
+                " and this change leans on" + (f", {old} of them as the lines it touches did before" if old else "") + ". The argument for a Mac run before it lands.")]
     for entry, why, _ in shown:
         # The first sentence, and the next while that says as little as "It does."
         first = ""
@@ -1144,6 +1164,34 @@ def self_test():
                 failures.append(f"silence must be possible: a change to {name} is told {said}")
         if not any("a-size-set" in line for line in listed(elsewhere("Sources/ArborKit/AX/Real.swift", "+  public func setFrame(_ frame: CGRect, of window: WindowID) -> CGRect? {"))):
             failures.append("whoever writes a member of the seam anew is not told what is known of it")
+        # A call that stood there before. The first use of the list gave a change six cases for one line that had read the keyboard before the change too: it only added a clause to the `if`.
+        def hunks(*them, path="Sources/ArborKit/C.swift"):
+            return f"diff --git a/{path} b/{path}\n--- a/{path}\n+++ b/{path}\n" + "".join(f"@@ -{10 * number},3 +{10 * number},3 @@\n context\n{hunk}\n" for number, hunk in enumerate(them, 1))
+
+        argument, before = "The argument for a Mac run before it lands.", "focus, read there before)"
+        same = hunks("-    if ready { system.focus(window) }\n+    if ready, awake { system.focus(window) }")
+        lines = listed(same)
+        if len(lines) != 2 or not lines[1].startswith("  about-the-keyboard ") or not lines[1].endswith(before) or argument in lines[0] or "as they did before" not in lines[0]:
+            failures.append(f"a hunk that takes a call out and puts the same call in leans on nothing new: the case stays, is marked, and is no argument for a Mac: {lines}")
+        lines = listed(same + asked + elsewhere("Sources/ArborKit/AX/Real.swift", "+    let sum = 1 + 1"))
+        if [line.split()[0] for line in lines[1:]] != ["worse-and-partly", "a-size-set-at-the-old-place-is-cut-to-what-fits-there", "by-its-file", "about-the-keyboard"] \
+                or not lines[-1].endswith(before) or sum("read there before" in line for line in lines[1:]) != 1 or argument not in lines[0] or "1 of them" not in lines[0]:
+            failures.append(f"what was read there before comes last, after what is new, and the head tells the two apart: {lines}")
+        for name, diff in [
+            ("taken out in one hunk and put in in another", hunks("-    system.focus(window)", "+    system.focus(window)")),
+            ("taken out of one file and put into another", hunks("-    system.focus(window)") + hunks("+    system.focus(window)", path="Sources/ArborKit/D.swift")),
+            ("taken out once and put in twice in one hunk", hunks("-    system.focus(window)\n+    system.focus(window)\n+    system.focus(other)")),
+            ("put in beside another member that is taken out", hunks("-    system.setFrame(frame, of: window)\n+    system.focus(window)")),
+        ]:
+            lines = listed(diff)
+            if len(lines) != 2 or not lines[1].startswith("  about-the-keyboard ") or not lines[1].endswith("; focus)") or argument not in lines[0]:
+                failures.append(f"a call that is {name} is new there, and moving a call was the fault of 2026-10-15: {lines}")
+        lines = listed(hunks("-    system.focus(window)\n-    system.focus(other)\n+    system.focus(window)"))
+        if len(lines) != 2 or not lines[1].endswith(before):
+            failures.append(f"fewer calls than before are no new call: {lines}")
+        lines = listed(asked)
+        if any("there before" in line or "did before" in line for line in lines) or argument not in lines[0] or not lines[1:]:
+            failures.append(f"the change of 2026-10-15 wrote its calls anew, and is told so: {lines}")
         many = [dict(cut, id=f"case-{number:02}", hurt=1 + number % 4) for number in range(40)]
         lines = listed(asked, many)
         if len(lines) != 12 or "and 30 more" not in lines[-1] or "40" not in lines[0] or not all("hurt 1" in line for line in lines[1:11]):
