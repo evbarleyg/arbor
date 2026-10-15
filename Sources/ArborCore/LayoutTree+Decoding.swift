@@ -203,7 +203,7 @@ extension LayoutTree {
           kept[only]!.parent = parent
           kept[only]!.weight = weight
           // As in `settle`: what pointed at the split points at the child now.
-          if let keeps = node.keeps, case .split = kept[only]!.kind {
+          if let keeps = node.keeps, !keeps.isEmpty, case .split = kept[only]!.kind {
             kept[only]!.keeps = (kept[only]!.keeps ?? []).union(keeps)
           }
           return only

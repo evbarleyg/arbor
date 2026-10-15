@@ -81,7 +81,9 @@ private func expectUsable(_ tree: LayoutTree, _ comment: Comment? = nil, at loca
   let saved = try? JSONDecoder().decode(LayoutTree.self, from: JSONEncoder().encode(tree))
   #expect(saved == tree, "what was saved after the repair does not read back equal", sourceLocation: location)
   for window in tree.allWindows { tree.remove(window) }
-  #expect(tree.root == tree.desktop, comment, sourceLocation: location)
+  // Only the Desktop is left, and the groups around it that are kept firmly (somebody named "everything").
+  #expect(tree.allWindows.isEmpty, comment, sourceLocation: location)
+  #expect(tree.nodes.count == 1 + tree.kept(for: .firm).count, comment, sourceLocation: location)
   #expect(tree.invariantViolations() == [], comment, sourceLocation: location)
 }
 
@@ -301,6 +303,27 @@ private func expectUsable(_ tree: LayoutTree, _ comment: Comment? = nil, at loca
     #expect(tree[f.leafB]!.weight == 1 && !notes.isEmpty)
     file.edit(f.leafB) { $0["weight"] = 1e12 }
     #expect(try file.read().tree.invariantViolations() == [])
+  }
+
+  /// A split that gives way to its only child hands it its reasons to be kept. `"keeps": 0` is no reason, and a child
+  /// kept for no reason was neither tidied nor merged into a parent on its own axis.
+  @Test func aSplitKeptForNothingHandsNothingOn() throws {
+    // A column whose last place is the row [ (a / b) | c ], and c is lost: the column a / b takes the row's place,
+    // in a column.
+    var tree = LayoutTree()
+    tree.dock(WindowID(9), beside: tree.root, edge: .top)
+    let last = tree.dock(c, beside: tree.root, edge: .bottom)
+    let column = tree.dock(a, beside: last, edge: .left)
+    tree.dock(b, beside: column, edge: .bottom)
+    let row = try #require(tree.parent(of: last))
+    var file = try TreeFile(tree)
+    file.edit(row) { $0["keeps"] = 0 }
+    file.nodes[String(last.rawValue)] = nil
+    let (read, _) = try file.read()
+    #expect(read.invariantViolations() == [])
+    #expect(read.allWindows == [WindowID(9), a, b])
+    #expect(try TreeFile(read).read().notes == [], "and what is written then needs no repair")
+    expectUsable(read)
   }
 
   @Test func sameAxisNestingIsFlattenedKeepingProportions() throws {
@@ -540,7 +563,7 @@ private func expectUsable(_ tree: LayoutTree, _ comment: Comment? = nil, at loca
   }
 
   /// Random damage: whatever is done to the file, reading it either throws or gives a usable tree.
-  @Test(arguments: Array<UInt64>(1...60)) func randomDamageNeverGivesABrokenTree(seed: UInt64) throws {
+  @Test(arguments: Array<UInt64>(1...200)) func randomDamageNeverGivesABrokenTree(seed: UInt64) throws {
     var random = SeededRandom(seed: seed)
     let original = LayoutTree.random(seed: seed, windows: 12)
     var file = try TreeFile(original)
@@ -551,7 +574,7 @@ private func expectUsable(_ tree: LayoutTree, _ comment: Comment? = nil, at loca
     for _ in 0..<Int.random(in: 1...6, using: &random) {
       let victim = ids.randomElement(using: &random)!
       guard file.nodes[String(victim.rawValue)] != nil else { continue }
-      switch Int.random(in: 0..<9, using: &random) {
+      switch Int.random(in: 0..<12, using: &random) {
       case 0: file.nodes[String(victim.rawValue)] = nil
       case 1: file.edit(victim) { $0["weight"] = [0, -3, 1e-300, 1e300, 5].randomElement(using: &random)! }
       case 2: file.edit(victim) { $0["parent"] = anyID().rawValue }
@@ -564,6 +587,15 @@ private func expectUsable(_ tree: LayoutTree, _ comment: Comment? = nil, at loca
       case 5: file.edit(victim) { $0["kind"] = ["desktop": [:] as [String: Any]] }
       case 6: file.object["root"] = anyID().rawValue
       case 7: file.object["desktop"] = anyID().rawValue
+      // Every field a node or a tree has gained since belongs in here too.
+      case 8, 9:
+        let marks: [Any] = [0, 1, 2, 3, 4, 7, 8, 9, 16, 255, -1, "view", 1.5]
+        file.edit(victim) { $0["keeps"] = marks.randomElement(using: &random)! }
+      case 10:
+        let row = (0..<Int.random(in: 0...4, using: &random)).map { _ in anyID().rawValue }
+        let weights = row.map { _ in [0.5, 1, -1, 1e300].randomElement(using: &random)! }
+        let visit: [String: Any] = ["guest": anyID().rawValue, "host": anyID().rawValue, "row": row, "weights": weights]
+        file.object["visits"] = [[visit], [visit, visit], 7, [7], []].randomElement(using: &random)!
       default: file.object["nextRawID"] = Int.random(in: -1...30, using: &random)
       }
     }
