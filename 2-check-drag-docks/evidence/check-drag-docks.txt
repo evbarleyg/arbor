@@ -1,0 +1,55 @@
+# check-drag-docks 2026-10-15T11:28Z on macOS 26.6.2, commit 2f616bb
+
+▸ a window of an app in the background, dragged plainly, is seen as dragged and floats where it is let go
+  ✔ another app's window has the keyboard
+  ✔ the window is in the hand
+  ✔ Arbor knows that it is dragged
+  ✔ no preview
+  ✔ it floats
+  ✔ where it was let go
+
+▸ docked, in the background and dragged plainly, it comes out
+  ✔ docked
+  ✔ another app's window has the keyboard
+  ✔ it floats
+  ✔ and stays out
+  ✔ at the size it had before it was docked
+  ✔ the other docked window is in its slot
+
+▸ ⌘ down from before the press, on a window of an app in the background: it docks
+  ✔ another app's window has the keyboard
+  ✔ the window is in the hand
+  ✔ Arbor knows that it is dragged
+  ✔ a preview shows
+  ✔ it docks
+  ✔ in its slot
+
+▸ ⌘ down from before the press, on the window in front: it docks
+  ✔ a preview shows
+  ✔ it docks
+
+▸ the key comes up a hair before the button: nothing docks, and nothing else moves
+  ✔ a preview shows
+  ✔ it floats
+  ✔ no preview is left
+  ✔ the others are where they were
+
+▸ the button comes up first: it docks
+  ✔ it docks
+
+▸ dragDocks always: a plain drag docks, and ⌘ turns that off
+  ✔ with ⌘ it floats
+  ✔ a preview shows with nothing held
+  ✔ it docks
+
+▸ dragDocks never: no drag docks
+  ✔ no preview with ⌘
+  ✔ it floats
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+34 passed, 0 failed

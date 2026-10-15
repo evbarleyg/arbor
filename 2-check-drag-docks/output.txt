@@ -1,0 +1,132 @@
+# mac-shell: scripts/mac-shell/check-drag-docks.sh at 2f616bb, macOS 26.6.2, 2026-10-15T11:28Z
+built Arbor, the pointer tool and the app bundles in 5s
+session 1: Arbor pid 21802, test windows 60 61 62 (pid 21612,21737)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> test windows: move 60 30 71 400 260
+> test windows: move 61 30 361 400 260
+> test windows: move 62 520 111 420 300
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w60 30 71 400 260        floating
+  w61 30 361 400 260       floating
+  w62 520 111 420 300      floating
+
+▸ a window of an app in the background, dragged plainly, is seen as dragged and floats where it is let go
+> click 230 219
+  ✔ another app's window has the keyboard
+> drag 766 123 512 702 --hold 0.6 --no-release
+  ✔ the window is in the hand
+  ✔ Arbor knows that it is dragged
+  ✔ no preview
+> release
+  ✔ it floats
+  ✔ where it was let go
+> drag 635 654 614 255
+
+▸ docked, in the background and dragged plainly, it comes out
+> dock 62 left
+docked w62 at the left edge
+> dock 61 right
+docked w61 at the right edge
+  ✔ docked
+> click 350 219
+  ✔ another app's window has the keyboard
+> drag 174 55 614 255 --hold 0.6
+  ✔ it floats
+  ✔ and stays out
+  ✔ at the size it had before it was docked
+  ✔ the other docked window is in its slot
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          12 43 494 650
+  w60 30 71 400 260        floating
+  w61 518 43 494 650       docked
+  w62 385 195 420 300      floating focused
+
+▸ ⌘ down from before the press, on a window of an app in the background: it docks
+> click 230 219
+  ✔ another app's window has the keyboard
+> drag 631 207 512 702 --mods cmd --hold 0.6 --no-release
+  ✔ the window is in the hand
+  ✔ Arbor knows that it is dragged
+  ✔ a preview shows
+> release --mods cmd
+  ✔ it docks
+  ✔ in its slot
+who has the keyboard afterwards: 60
+front to back:
+64 21802 0 21 62 418 278 on Arbor
+60 21612 0 30 71 400 260 on ArborTestWindows
+62 21737 0 12 374 1000 319 on ArborTestWindows2
+61 21612 0 518 43 494 319 on ArborTestWindows
+66 21802 0 506 43 12 319 on Arbor
+63 21802 0 12 362 1000 12 on Arbor
+display 0 0 1024 768, visible 0 31 1024 674, camera n5, back no
+  Desktop          12 43 494 319
+  w60 30 71 400 260        floating focused
+  w61 518 43 494 319       docked
+  w62 12 374 1000 319      docked
+
+▸ ⌘ down from before the press, on the window in front: it docks
+> float 62
+w62 is floating
+> drag 264 83 614 255
+> drag 534 135 512 702 --mods cmd --hold 0.6 --no-release
+  ✔ a preview shows
+> release --mods cmd
+  ✔ it docks
+> float 60
+w60 is floating
+
+▸ the key comes up a hair before the button: nothing docks, and nothing else moves
+> drag 546 416 614 255
+> drag 614 255 512 702 --hold 0.6 --no-release --then-mods cmd
+  ✔ a preview shows
+> key cmd --up
+> release
+  ✔ it floats
+  ✔ no preview is left
+  ✔ the others are where they were
+
+▸ the button comes up first: it docks
+> drag 512 669 614 255
+> drag 614 255 512 702 --hold 0.6 --then-mods cmd
+  ✔ it docks
+> float 60
+w60 is floating
+
+▸ dragDocks always: a plain drag docks, and ⌘ turns that off
+> set dragDocks always
+dragDocks = always (was held)
+> drag 546 416 614 255 --mods cmd
+  ✔ with ⌘ it floats
+> drag 614 255 512 702 --hold 0.6 --no-release
+  ✔ a preview shows with nothing held
+> release
+  ✔ it docks
+> float 60
+w60 is floating
+
+▸ dragDocks never: no drag docks
+> set dragDocks never
+dragDocks = never (was always)
+> drag 546 416 614 255
+> drag 614 255 512 702 --mods cmd --hold 0.6 --no-release
+  ✔ no preview with ⌘
+> release --mods cmd
+  ✔ it floats
+> drag 512 669 614 255
+> set dragDocks held
+dragDocks = held (was never)
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+34 passed, 0 failed
+exit code 0
