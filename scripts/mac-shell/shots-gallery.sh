@@ -6,7 +6,8 @@
 #
 #   shots-gallery.sh          the tour, light and dark
 #   shots-gallery-moves.sh    motion; a large display and a Retina one; real apps, light and dark
-#   shots-gallery-looks.sh    the tour with Increase Contrast, light and dark, and with Reduce Transparency
+#   shots-gallery-looks.sh    the tour with Increase Contrast, light and dark, and with Reduce Transparency; the panels over the
+#                             worst there is behind them
 #   shots-offscreen.sh        what the macOS-only tests draw off screen, at 2x
 #
 # Four scripts because each has twenty minutes on a hosted Mac; one run, because they share the Mac, the checkout and the build.
@@ -32,7 +33,7 @@ needs_throwaway_mac "switch dark mode, the wallpaper, Increase Contrast, Reduce 
 SCENERY="$ARBOR_ROOT/.build/mac-shell/scenery"
 AXFIND="$ARBOR_ROOT/.build/mac-shell/axfind"
 TITLE="Arbor Settings"
-# What to take: looks (light, dark, each also -contrast and -opaque), and the sessions motion, large, apps-light and apps-dark.
+# What to take: looks (light, dark, each also -contrast and -opaque), and the sessions motion, large, apps-<look> and grounds-<look>.
 PARTS=${GALLERY_PARTS:-light dark}
 mkdir -p "$ARBOR_OUT/traces"
 
@@ -59,6 +60,16 @@ both() {
     ARBOR_SETTLE=0 look "$1-alone-$number" "$id"
     number=$((number + 1))
   done
+}
+
+# A newer release to be told about: one answer to one question. Not `python3 -m http.server`: as it starts it asks macOS for this
+# Mac's name, which brings up "Allow Python to find devices on local networks?", in front of everything for the rest of the job.
+answer_about_releases() {
+  local body='{"tag_name": "v9.9.9", "html_url": "https://example.invalid/ignored"}'
+  [ -z "${ARBOR_REHEARSAL:-}" ] || return 0
+  printf 'HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: %s\r\nConnection: close\r\n\r\n%s' "${#body}" "$body" \
+    | nc -l 127.0.0.1 8765 > /dev/null 2>&1 &
+  started $!
 }
 
 # scene <look>: the Mac's settings for it. Apps read them as they start.
@@ -154,12 +165,12 @@ tour() {
 
   session "$p" 6
 
-  claim "$p: the menu bar item, and nothing else, before anything is docked"
+  claim "the menu bar item, and nothing else, before anything is docked  ($p)"
   shot "$p-01-nothing-docked"
   check "the menu bar item shows" status_item
   check "no surface behind the windows yet" not surface_shows
 
-  claim "$p: the surface behind docked windows, and the line round the focused one"
+  claim "the surface behind docked windows, and the line round the focused one  ($p)"
   ctl dock "$W1" left
   ctl dock "$W2" right
   # shellcheck disable=SC2046
@@ -168,7 +179,7 @@ tour() {
   shot "$p-02-two-columns"
   check "the surface is on screen" eventually surface_shows
 
-  claim "$p: the drop preview"
+  claim "the drop preview  ($p)"
   read -r x y w h <<< "$(frame_of "$W1")"
   # The last window is in front of the other floating ones, so its title bar is free.
   # shellcheck disable=SC2046
@@ -179,7 +190,7 @@ tour() {
   check "the window docked where it showed" eventually is docked "$W6"
   is docked "$W6" || ctl dock "$W6" beside "$W1" bottom
 
-  claim "$p: tiles: a window's, a group's, the Desktop's"
+  claim "tiles: a window's, a group's, the Desktop's  ($p)"
   ctl dock "$W5" beside "$W6" right
   ctl dock "$W3" beside "$W2" bottom
   ctl dock "$W4" beside "$W3" right
@@ -206,14 +217,14 @@ tour() {
   ctl release
   pointer_away
 
-  claim "$p: the handle in a gap"
+  claim "the handle in a gap  ($p)"
   read -r gx gy <<< "$(seam_below "$W1")"
   # Beside the handle, which sits in the middle of the gap: the pointer would cover it.
   move "$((gx - 70))" "$gy"
   shot "$p-06-gap-hover"
   pointer_away
 
-  claim "$p: the panel of shortcuts"
+  claim "the panel of shortcuts  ($p)"
   # shellcheck disable=SC2046
   click $(center_of "$W1")
   before=$(ids_on)
@@ -223,19 +234,19 @@ tour() {
   key escape
   check "⎋ puts it away" eventually not has_come "$before"
 
-  claim "$p: Go to…"
+  claim "Go to…  ($p)"
   before=$(ids_on)
   key ctrl+opt+g
   both "$p-08-go-to" "$before"
   check "it is up" has_come "$before"
-  type_text 3
+  type_text bre
   both "$p-09-go-to-typed" "$before"
   type_text zz
   both "$p-10-go-to-nothing-matches" "$before"
   key escape
   check "⎋ puts it away" eventually not has_come "$before"
 
-  claim "$p: the minimap"
+  claim "the minimap  ($p)"
   ctl zoom "$W1"
   before=$(ids_on)
   ctl minimap
@@ -243,7 +254,7 @@ tour() {
   check "it is up" has_come "$before"
   ctl minimap
 
-  claim "$p: the field for a name"
+  claim "the field for a name  ($p)"
   before=$(ids_on)
   key ctrl+opt+n
   both "$p-12-name-empty" "$before"
@@ -252,7 +263,7 @@ tour() {
   both "$p-13-name-typed" "$before"
   key escape
 
-  claim "$p: peek's outline"
+  claim "peek's outline  ($p)"
   before=$(ids_on)
   key ctrl+opt+space --down
   sleep 0.6
@@ -264,7 +275,7 @@ tour() {
   key ctrl+opt+space --up
   ctl show-all
 
-  claim "$p: the menu"
+  claim "the menu  ($p)"
   # shellcheck disable=SC2046
   click $(center_of "$W1")
   before=$(ids_on)
@@ -277,7 +288,7 @@ tour() {
 
   # A rehearsal has no Accessibility to find the window by.
   if [ -z "${ARBOR_REHEARSAL:-}" ]; then
-    claim "$p: the settings window, every pane"
+    claim "the settings window, every pane  ($p)"
     ctl settings-window
     check "it opens" eventually ax window "$TITLE"
     shot "$p-16-settings-on-screen"
@@ -294,14 +305,20 @@ tour() {
     check "it closes" eventually not ax window "$TITLE"
   fi
 
-  claim "$p: the answer to Check for Updates…"
+  claim "the answer to Check for Updates…  ($p)"
   before=$(ids_on)
+  answer_about_releases
   ctl check-for-updates
   both "$p-18-update" "$before" 2
   check "a window answers" has_come "$before"
-  key escape
+  # By its button: ⎋ reaches it only if macOS let Arbor, asked from a terminal, have the keyboard.
+  if [ -z "${ARBOR_REHEARSAL:-}" ]; then
+    # shellcheck disable=SC2046
+    click $(ax point AXButton Later)
+    check "Later puts it away" eventually not has_come "$before"
+  fi
 
-  claim "$p: the line on screen"
+  claim "the line on screen  ($p)"
   ctl set messages helpful
   # shellcheck disable=SC2046
   click $(center_of "$W1")
@@ -314,14 +331,67 @@ tour() {
   key ctrl+opt+return
   both "$p-21-line-hint" "$before" 0.5
 
-  claim "$p: paused"
+  claim "paused  ($p)"
   key ctrl+opt+escape
   both "$p-22-paused" "$before" 0.5
   key ctrl+opt+escape
 
+  if [ "$p" = light ]; then
+    claim "for comparison: how macOS writes the arrow keys in a menu of its own"
+    click 260 14
+    shot "$p-24-finders-go-menu"
+    key escape
+  fi
+
   echo "everything Arbor said on screen in this look:"
   grep -F "said on" "$ARBOR_HOME/arbor.log" | sed 's/.*said on [^:]*: /  /'
   session_over "$p-23-after-quit"
+}
+
+# MARK: The worst there is behind a panel
+
+# grounds <look>: every panel that holds words over a saturated red, a saturated blue, white and black, to be measured: words a
+# person must read to act at least 4.5 to 1, all others at least 3 (docs/POLISH.md). The Desktop is in view, so the wallpaper
+# is all there is behind them.
+grounds() {
+  local ground hex before
+  session "grounds-$1" 2
+  ctl dock "$W1" left
+  ctl dock "$W2" right
+  # The field for a name is 380 points wide and stands over the middle: the Desktop's column has to be wider than that.
+  ctl resize "$W1" right -80
+  ctl resize "$W2" left -80
+  ctl set messages helpful
+  for ground in red:ff383c blue:0088ff white:ffffff black:000000; do
+    hex=${ground#*:}
+    ground=${ground%:*}
+    claim "over $ground  ($1)"
+    wallpaper "#$hex"
+    ctl desktop
+    sleep 1
+    pointer_away
+    before=$(ids_on)
+    key ctrl+opt+shift+/
+    shot "$1-on-$ground-1-shortcuts"
+    check "the panel of shortcuts is up" has_come "$before"
+    key escape
+    key ctrl+opt+g
+    shot "$1-on-$ground-2-go-to"
+    type_text bre
+    shot "$1-on-$ground-3-go-to-typed"
+    key escape
+    ctl minimap
+    shot "$1-on-$ground-4-minimap"
+    ctl minimap
+    ctl show-all
+    key ctrl+opt+n
+    shot "$1-on-$ground-5-name"
+    key escape
+    ctl desktop
+    key ctrl+opt+d
+    shot_after 0.4 "$1-on-$ground-6-line"
+  done
+  session_over
 }
 
 # MARK: Motion
@@ -414,8 +484,9 @@ large() {
   closeup retina-03-ring-bottom-right "$((x + w - 184))" "$((y + h - 104))" 200 120
 
   # shellcheck disable=SC2046
-  drag $(titlebar_of "$W4") "$((x + w / 2))" "$((y + h - 40))" --no-release
+  drag $(titlebar_of "$W4") "$((x + w / 2))" "$((y + h * 3 / 4))" --steps 90 --no-release
   shot retina-04-drop-preview
+  check "it shows while the button is held" has_overlay 3
   closeup retina-05-drop-preview-corner "$((x - 16))" "$((y + h / 2 - 40))" 300 160
   release
   sleep 0.5
@@ -452,7 +523,10 @@ large() {
   ctl show-all
 
   display_remove
-  session_over
+  # Arbor hears of a display that went a second and a half after macOS's last word on it, and a quit before that puts windows
+  # back on the display that is gone (seen in this script's first run; known).
+  sleep 3
+  session_over large-99-after-quit
 }
 
 # MARK: Real apps
@@ -470,7 +544,7 @@ apps() {
   ARBOR_EXTRA_PIDS=$pids
   session "apps-$1" 1
 
-  claim "apps-$1: arranged, and as tiles"
+  claim "real apps: arranged, and as tiles  ($1)"
   ctl arrange
   sleep 1
   shot "apps-$1-01-arranged"
@@ -489,7 +563,7 @@ apps() {
   ctl reset minimumUsableHeight
   sleep 1
 
-  claim "apps-$1: Go to… and the minimap"
+  claim "real apps: Go to… and the minimap  ($1)"
   # shellcheck disable=SC2046
   click $(center_of "$W1")
   before=$(ids_on)
@@ -500,7 +574,7 @@ apps() {
   both "apps-$1-06-minimap" "$before"
   ctl minimap
 
-  claim "apps-$1: motion"
+  claim "real apps: motion  ($1)"
   ctl zoom "$W1" &
   film "apps-$1-07-frame" 6
   wait $!
@@ -536,12 +610,6 @@ macos_reduce_motion
 macos_increase_contrast
 macos_reduce_transparency
 
-# A newer release to be told about.
-scratch_dir gallery-feed FEED
-echo '{"tag_name": "v9.9.9", "html_url": "https://example.invalid/ignored"}' > "$FEED/latest.json"
-(cd "$FEED" && exec python3 -m http.server 8765 --bind 127.0.0.1 > /dev/null 2>&1) &
-started $!
-
 # A click on the wallpaper would sweep every window aside, and a pointer that misses a window by a point does click there.
 macos_click_wallpaper off
 macos_reduce_motion on
@@ -557,6 +625,7 @@ for part in $PARTS; do
       large
       ;;
     apps-*) scene "${part#apps-}"; apps "${part#apps-}" ;;
+    grounds-*) scene "${part#grounds-}"; grounds "${part#grounds-}" ;;
     *) scene "$part"; tour "$part" ;;
   esac
 done
