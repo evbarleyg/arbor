@@ -19,6 +19,8 @@ extension Controller {
     guard isRunning || isPaused else { return .failure(statusText) }
     // Asked for by hand, even during a pause for an app: from now on only `resume` or its own end ends it.
     isPausedForApp = forApp
+    let keysChange = isPaused && pauseIsArborsOwn
+    pauseIsArborsOwn = false
     // Both before `shutdown` saves, so that one write says it all.
     pauseEnd = minutes.map { now().addingTimeInterval($0 * 60) }
     if !isPaused {
@@ -42,6 +44,8 @@ extension Controller {
       lookOutForWhatCouldNotComeBack()
       Log.info("paused")
     }
+    // The person takes over the pause Arbor took at a logout: now the keys are given away.
+    if keysChange { notify(.input) }
     // A second `pause` replaces the first one's end.
     scheduler.cancel("resume")
     savePause()
@@ -55,6 +59,7 @@ extension Controller {
     scheduler.cancel("resume")
     isPaused = false
     isPausedForApp = false
+    pauseIsArborsOwn = false
     pauseEnd = nil
     scheduler.cancel(Self.lookForFullScreenReturnsKey)
     // Windows and displays came and went unobserved. Start from what was saved and what exists
@@ -148,6 +153,9 @@ extension Controller {
     guard isRunning else { return }
     Log.info("the session is ending")
     _ = pause(minutes: Self.sessionEndPause)
+    // Nobody asked for it, so no key is given away (`activeBindings`).
+    pauseIsArborsOwn = true
+    notify(.input)
   }
 
   /// Quitting during a pause. The pause has let go of every window as a quit does, so nothing is left but to stop looking

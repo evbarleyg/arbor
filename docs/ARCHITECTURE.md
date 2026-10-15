@@ -1386,7 +1386,7 @@ Accessibility can be taken away while Arbor runs, and then nothing can be moved,
 asks `accessibilityProbe` (set by the app: `EventTap.isPermitted()`) through the scheduler every 2 s, before every command that is not a
 query (within a second of a thorough yes only `AXIsProcessTrusted()`: commands can come tens to the second), when the taps' watchdog or a refused call (`accessibilityWasRefused()`) raises a doubt, and every second while the permission is missing. `PermissionWatch` (ArborCore) turns the
 answers into "lost" and "returned". Lost is `shutdown(movingWindows: false)`: saved, stopped, nothing touched; `permissionLoss` says what was out of view. Returned is
-`start()`, then `home` if anything was. `activeBindings`, `inputSettings` and `statusText` know about it, so the app only follows `.lifecycle` while `isInBusiness`
+`start()`, then `home` if anything was. `activeBindings`, `inputSettings` and `statusText` know about it, so the app only follows `.lifecycle`: for the taps while `isInBusiness`, for the shortcuts from before its menu bar item is made until it quits, since Arbor keeps its keys wherever nobody gave them away
 (`Controller+Permission.swift`, `docs/features/F63-permission-taken-away.md`).
 
 ## Peek

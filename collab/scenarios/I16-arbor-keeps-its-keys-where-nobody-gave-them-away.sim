@@ -1,0 +1,55 @@
+# Story: a chat app is in front, and has shortcuts of its own on ⌃⌥ and a letter; one of them puts the open conversation away. Arbor's icon is in the
+# menu bar, so the fingers believe that Arbor's keys are Arbor's. On a tester's Mac one of them reached the app, twice (IDEAS I16).
+# The rule (QUESTIONS Q29, 2; board 0.1): while Arbor's item is in the menu bar a key of the map in effect never reaches another app, unless the person
+# said so themselves: for an app, for all, or by pausing Arbor. Where nobody said anything and Arbor merely cannot act, it keeps its keys,
+# takes the press, does nothing and says why.
+open Chat
+open Notes
+focus 101
+# The control: Arbor runs. Its keys are its own, and a key that is not Arbor's goes to the app.
+key ctrl+opt+space
+expect app-got nothing
+key ctrl+opt+shift+cmd+f12
+expect app-got ctrl+opt+shift+cmd+f12
+
+# 1. The permission is taken away, with nothing out of view. Nobody tells Arbor; it asks every two seconds.
+revoke
+wait 10
+expect shortcut ctrl+opt+left on
+key ctrl+opt+left
+expect fail
+expect said Arbor needs the Accessibility permission
+expect still
+# Still the one from the control: nothing has come after it.
+expect app-got ctrl+opt+shift+cmd+f12
+grant
+wait 2
+expect shortcut ctrl+opt+left on
+
+# 2. A start without the permission: a first launch, and every launch of a new build whose signature the old grant does not fit, while
+# the switch in System Settings still looks on.
+revoke
+relaunch
+expect replied waiting for Accessibility permission
+expect shortcut ctrl+opt+left on
+key ctrl+opt+left
+expect fail
+expect said Arbor needs the Accessibility permission
+expect still
+expect app-got ctrl+opt+shift+cmd+f12
+# It starts by itself when the permission comes, and the key works.
+grant
+wait 2
+status
+expect replied running
+expect shortcut ctrl+opt+left on
+
+# 3. A pause: the person said so. The keys are the apps' again, which the line says, but for the one that ends the pause.
+key ctrl+opt+escape
+expect said its keys are the apps’ again
+expect shortcut ctrl+opt+left off
+expect shortcut ctrl+opt+escape on
+key ctrl+opt+left
+expect app-got ctrl+opt+left
+key ctrl+opt+escape
+expect shortcut ctrl+opt+left on

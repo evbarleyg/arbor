@@ -123,8 +123,9 @@ public enum KeyBindings {
     bindings.filter(\.command.worksInPassThroughApps)
   }
 
-  /// The shortcuts to keep registered while Arbor has lost Accessibility permission with windows out of view:
-  /// the ones a person who misses a window presses. They cannot help; they are there to say why.
+  /// The shortcuts to keep registered in an app that keeps its own ⌃⌥ while Arbor has lost Accessibility permission with windows out of
+  /// view: the ones a person who misses a window presses. They cannot help; they are there to say why. (In every other app
+  /// Arbor keeps all its keys then: `Controller.activeBindings`.)
   public static func whileWindowsAreOutOfReach(_ bindings: [KeyBinding]) -> [KeyBinding] {
     bindings.filter(\.command.bringsWindowsBack)
   }

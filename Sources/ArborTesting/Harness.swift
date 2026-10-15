@@ -64,6 +64,21 @@ public final class Harness {
 
   public func start() { controller.start() }
 
+  /// What the app does when it is launched (`ArborApp.applicationDidFinishLaunching`): with the Accessibility permission Arbor starts. Without, which
+  /// is every first launch, and every launch of a new build whose signature an old grant does not fit, it waits, with its item in the menu bar,
+  /// looks once a second, and starts by itself.
+  public func launch() {
+    // `FrontmostAppWatcher.start` reports at once, before the first registration.
+    controller.applicationActivated(system.frontmost)
+    guard system.isDenied else { return start() }
+    controller.accessibilityGranted = false
+    scheduler.schedule("the app waits for the permission", after: 1) { [weak self] in
+      guard let self else { return }
+      if !self.system.isDenied { self.controller.accessibilityGranted = true }
+      self.launch()
+    }
+  }
+
   /// A new run of Arbor on the same Mac, not started yet: the windows and displays as they are now, the settings in use, what this run
   /// saved, and a clock that goes on. It knows nothing else of this run, which has quit (`controller.shutdown()`) or counts
   /// as killed, and must not be used any more.
@@ -132,17 +147,19 @@ public final class Harness {
   public func keyDown(_ text: String) -> CommandResult? {
     guard let chord = try? KeyChord(text: text) else { return .failure("cannot read the shortcut \(text)") }
     system.hold(chord)
-    guard let binding = registeredShortcuts.first(where: { $0.chord == chord }) else { return nil }
+    guard let binding = registeredShortcuts.first(where: { $0.chord == chord }) else {
+      system.giveToTheAppInFront(chord)
+      return nil
+    }
     defer { system.reportFocus() }
     return controller.shortcut(binding, .pressed)
   }
 
   /// A key that is held sends its press again and again.
   public func keyRepeat(_ text: String) {
-    guard let chord = try? KeyChord(text: text),
-      let binding = registeredShortcuts.first(where: { $0.chord == chord })
-    else { return }
+    guard let chord = try? KeyChord(text: text) else { return }
     system.keyDown()
+    guard let binding = registeredShortcuts.first(where: { $0.chord == chord }) else { return system.giveToTheAppInFront(chord) }
     controller.shortcut(binding, .pressed)
   }
 

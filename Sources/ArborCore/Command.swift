@@ -171,6 +171,14 @@ public enum Command: Equatable, Sendable, Codable {
     }
   }
 
+  /// Whether the command can begin a pause.
+  public var beginsPause: Bool {
+    switch self {
+    case .pause, .togglePause: true
+    default: false
+    }
+  }
+
   /// Whether the command ends a pause. Shortcuts for these stay registered while Arbor is paused;
   /// all the others are handed back to the apps.
   public var endsPause: Bool {

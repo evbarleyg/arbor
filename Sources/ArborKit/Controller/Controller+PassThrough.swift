@@ -15,15 +15,30 @@ extension Controller {
   /// Whether the frontmost app keeps its own ⌃⌥.
   public var isPassingThrough: Bool { settings.passesThrough(frontmostApp?.bundleID) }
 
-  /// The shortcuts to hold right now: the ones in effect, less what a pause or the frontmost app takes away.
+  /// The shortcuts to hold right now: the ones in effect, less what the person has given away.
+  ///
+  /// **While Arbor's item is in the menu bar, a key of the map in effect never reaches another app, unless the person said so themselves**: for
+  /// an app (`passThroughApps`, `pauseForApps`), for all (`hotkeysEnabled`), or by pausing Arbor. The icon says that Arbor is there, and the
+  /// fingers believe it: on a tester's Mac a key of Arbor's ran what the app in front has on that key, which could not be taken back
+  /// (collab/IDEAS.md, I16). So where nobody said anything and Arbor merely cannot act (it waits for the Accessibility permission, at a first launch
+  /// or as a new build that an old grant does not fit; the permission was taken away, or seems to have been for a second) it keeps its keys, takes the
+  /// press, does nothing and says why (`whyAKeyDidNothing`). A hot key needs no permission.
   public var activeBindings: [KeyBinding] {
     guard settings.hotkeysEnabled, !isRecordingShortcut else { return [] }
     let bindings = effectiveBindings.bindings
-    guard accessibilityGranted else {
-      return (permissionLoss?.windows ?? 0) > 0 ? KeyBindings.whileWindowsAreOutOfReach(bindings) : []
+    // A pause the person took. Not the one Arbor takes at a logout, which any app can cancel: nobody said anything then.
+    if isPaused, !pauseIsArborsOwn { return KeyBindings.whilePaused(bindings) }
+    // The permission went during such a pause, or was doubted for a second. The pause is over (F63), and the keys stay given away until Arbor can
+    // do something with them again.
+    if permissionLoss?.duringAPause == true { return KeyBindings.whilePaused(bindings) }
+    // While Arbor is not running it pauses for nobody, and the list is the person's word all the same.
+    if isPassingThrough || (!isRunning && settings.pausesFor(frontmostApp?.bundleID)) {
+      // The app's own. But for the keys of someone who misses a window: they are there to say why it stays away.
+      guard accessibilityGranted else {
+        return (permissionLoss?.windows ?? 0) > 0 ? KeyBindings.whileWindowsAreOutOfReach(bindings) : []
+      }
+      return bindings.filter { $0.command.worksInPassThroughApps || sendsAwayWhatIsSummoned($0.command) }
     }
-    if isPaused { return KeyBindings.whilePaused(bindings) }
-    if isPassingThrough { return bindings.filter { $0.command.worksInPassThroughApps || sendsAwayWhatIsSummoned($0.command) } }
     return bindings
   }
 

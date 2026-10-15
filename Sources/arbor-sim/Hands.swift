@@ -26,7 +26,11 @@ func simulateHands(_ words: [String], harness: Harness) -> (String, Bool)? {
       harness.keyUp(words[1])
       return ("let go of \(words[1])", true)
     }
+    let handedOver = harness.system.keysTheAppInFrontGot.count
     let result = words[0] == "key" ? harness.key(words[1]) : harness.keyDown(words[1])
+    if harness.system.keysTheAppInFrontGot.count > handedOver {
+      return ("pressed \(words[1]): Arbor does not hold it, so the app in front gets it", true)
+    }
     return result.map(report) ?? ("pressed \(words[1])", true)
   case "mouse":
     guard words.count == 2, ["down", "up"].contains(words[1]) else { return ("usage: mouse down|up", false) }

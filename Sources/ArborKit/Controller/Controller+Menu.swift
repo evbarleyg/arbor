@@ -30,11 +30,11 @@ extension Controller {
           quit
         })
     } else {
-      // Nothing that would need a running Arbor: what it waits for is above, and these always work. Settings… without its
-      // shortcut, which Arbor does not hold now.
+      // Nothing that would need a running Arbor: what it waits for is above, and these always work. Settings… shows its shortcut where
+      // Arbor holds it: not in a pause.
       sections += [
         Section {
-          settingsWindow.withoutShortcut()
+          settingsWindow
           help
         }, Section { quit },
       ]

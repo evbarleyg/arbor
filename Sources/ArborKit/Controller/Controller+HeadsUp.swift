@@ -99,6 +99,8 @@ extension Controller {
       if !command.isQuery, !command.opensItsOwnAnswer { hideHeadsUp() }
       return
     }
+    // Only for what failed for want of the permission: whatever else goes wrong meanwhile has a reason of its own.
+    if !result.ok, result.message == statusText, let why = whyAKeyDidNothing { return showWithoutLooking(why) }
     guard let display = display ?? cameraDisplay()?.0 ?? pointerDisplayID else { return }
     if var line = lineOfItsOwn(for: command, result, changedNothing: changedNothing) {
       line.kind = kind
@@ -157,6 +159,20 @@ extension Controller {
     let ok = result.ok
     // Said in front of an audience, so in as few words as will do. The reply ends in a command to type.
     if !ok, result.message == heldMessage { return HeadsUpModel(kind: .problem, text: "The view is held", hint: wayOutOfAHold) }
+    // The pause Arbor took by itself at a logout that somebody cancelled: its keys are still its own, and do nothing.
+    if !ok, isPaused, result.message == statusText {
+      let keys = [Command.togglePause, .resume].lazy.compactMap(shortcutLabel(for:)).first
+      return HeadsUpModel(kind: .problem, text: "Arbor is paused", hint: keys.map { "\($0) resumes" } ?? "Resume from Arbor’s menu")
+    }
+    // From here on the keys land in whatever app is in front, and some apps do with them what cannot be taken back. So that is what is said:
+    // that the windows are back in their own sizes can be seen.
+    if ok, isPaused, !isPausedForApp, command.beginsPause {
+      let length = pauseEnd == nil ? "" : result.message.split(separator: ";").first.map { " " + $0.dropFirst("paused ".count) } ?? ""
+      let keys = [Command.togglePause, .resume].lazy.compactMap(shortcutLabel(for:)).first
+      return HeadsUpModel(
+        kind: .change, text: "Arbor is paused\(length): its keys are the apps’ again",
+        hint: keys.map { "\($0) resumes" } ?? "Resume from Arbor’s menu")
+    }
     guard isRunning, command.actsOnTheFocusedWindow, let id = system.focusedWindow(), let window = windows[id] else {
       return nil
     }
@@ -207,6 +223,8 @@ extension Controller {
     case .lifecycle:
       // A pause hears of no display that goes. What it said may be on one.
       if let gone = headsUp.showing, display(gone) == nil { hideHeadsUp() }
+      // Arbor has started: that it needs the permission, or is paused, is no longer true.
+      if headsUp.line?.kind == .problem { hideHeadsUp() }
     default:
       break
     }
@@ -282,8 +300,23 @@ extension Controller {
   /// `inTheLog`: the same words made from what the log may hold, where the line repeats a command's reply. Arbor's own
   /// sentences hold app names at most, and `HeadsUpText` has no way to learn a window's title.
   func showHeadsUp(_ model: HeadsUpModel, on id: DisplayID, inTheLog: String? = nil) {
+    guard let display = display(id) else { return }
+    showHeadsUp(model, on: display, inTheLog: inTheLog)
+  }
+
+  /// Without the permission Arbor is not looking, and before its first start it never has. So where the line goes is asked now, which needs no
+  /// permission. `displays` stays what it was when Arbor stopped: `start()` holds the displays it finds against it.
+  private func showWithoutLooking(_ model: HeadsUpModel) {
+    let found = system.displays()
+    let pointer = system.cursorLocation()
+    guard let display = found.first(where: { $0.frame.contains(pointer) }) ?? found.first(where: \.isMain) ?? found.first else { return }
+    showHeadsUp(model, on: display)
+  }
+
+  private func showHeadsUp(_ model: HeadsUpModel, on display: DisplaySnapshot, inTheLog: String? = nil) {
+    let id = display.id
     // During a hold only the reason why a key did nothing: the rest is Arbor speaking unasked on a screen that may be shared.
-    guard mayShowUnasked || model.kind == .problem, let display = display(id) else { return }
+    guard mayShowUnasked || model.kind == .problem else { return }
     if let old = headsUp.showing, old != id { overlays.showHeadsUp(nil, on: old) }
     headsUp.showing = id
     var placed = model.placed(in: display.visibleFrame, above: minimapFrame(on: id))

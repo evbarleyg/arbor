@@ -47,8 +47,11 @@ extension Controller {
     var off: String?
     if !settings.hotkeysEnabled {
       off = "all off because hotkeysEnabled is false"
+    } else if !accessibilityGranted, !isPassingThrough {
+      // Said as it is: no app gets them, and nothing comes of them.
+      off = "Arbor takes them and can move nothing without Accessibility permission"
     } else if !accessibilityGranted {
-      off = (activeBindings.isEmpty ? "all off" : "all but \(activeBindings.count) off") + " without Accessibility permission"
+      off = (activeBindings.isEmpty ? "all off" : "all but \(activeBindings.count) off") + " in \(frontmostAppName)"
     } else if isPaused {
       off = "all but \(activeBindings.count) off while Arbor is paused"
     } else if isPassingThrough {

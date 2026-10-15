@@ -50,6 +50,7 @@ expect_status() {
   until_status "$2" || result=1
   check "$1" test "$result" = 0
 }
+not_bindings_say() { ! bindings_say "$1"; }
 bindings_say() { "$ARBOR_BIN/arborctl" bindings 2>&1 | tail -n 1 | grep -q "$1"; }
 
 arbor_build
@@ -106,7 +107,7 @@ expect_status "Arbor notices" "Arbor's Accessibility permission was taken away"
 ctl status
 check "it counts the windows out of view" status_starts "Arbor's Accessibility permission was taken away, so it cannot move windows. 2 windows (ArborTestWindows) are out of view"
 check "no event tap is left" eventually taps_are 0
-check "only the four ways home are registered" eventually last_registered_is 4
+check "the shortcuts are still Arbor's: none of them reaches another app" eventually bindings_say "Arbor takes them and can move nothing without Accessibility permission"
 check "none of Arbor's own windows is on screen" test -z "$(overlays | awk '$8 == "on"')"
 ctl show-all
 check "a command fails" test "$("$ARBOR_BIN/arborctl" show-all > /dev/null 2>&1; echo $?)" = 1
@@ -120,7 +121,7 @@ allow 2
 expect_status "Arbor starts again" "running"
 check "every window is in view" eventually all_on_screen
 check "the event taps are back" eventually has_taps
-check "all the shortcuts are registered again" eventually last_registered_is "[0-9][0-9]"
+check "and the shortcuts work again" eventually not_bindings_say "Right now"
 summary
 shot 03-back
 ctl back
@@ -133,7 +134,7 @@ check "⌃⌥Space shows everything, with a real key" eventually all_on_screen
 step "with nothing out of view Arbor keeps quiet"
 allow 0
 expect_status "Arbor notices" "Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again"
-check "no shortcut is left" eventually bindings_say "all off without Accessibility permission"
+check "the shortcuts are still Arbor's" eventually bindings_say "Arbor takes them and can move nothing without Accessibility permission"
 shot 04-lost-with-nothing-missing
 allow 2
 expect_status "Arbor starts again" "running"
