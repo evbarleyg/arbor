@@ -1,0 +1,27 @@
+Building for production...
+[Computing dependencies]
+[1 / 4] Arbor-product
+[2 / 5] Arbor-product
+[4 / 5] Arbor-product
+[5 / 5] Arbor-product
+Build complete! (5.29 sec)
+Building for production...
+[Using on-disk description]
+Build complete! (0.70 sec)
+drew /private/tmp/arbor-f13.kc3ncI/src/build/Arbor.iconset
+build/Arbor.app/Contents/Helpers/arborctl: replacing existing signature
+build/Arbor.app: replacing existing signature
+Signed build/Arbor.app ad hoc. The signature changes with every build, so each new build has to be given
+  Accessibility permission again. scripts/make-signing-identity.sh, run once, ends that (docs/INSTALL.md).
+Built build/Arbor.app, version 0.9.0 (build 1, 48a928d)
+Asked the running Arbor to quit; it puts every window back in view first
+Installed /private/tmp/arbor-f13.kc3ncI/home/Applications/Arbor.app, version 0.9.0 (build 1, 48a928d)
+Linked /private/tmp/arbor-f13.kc3ncI/home/.local/bin/arborctl
+Started Arbor: waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+  Switch Arbor on there. If it is on already and Arbor keeps waiting, the entry belongs to a build with another
+  signature: run  tccutil reset Accessibility com.evbarleyg.arbor  and switch it on again (docs/INSTALL.md).
+
+NOTE: THIS BUILD IS SIGNED AD HOC. To macOS it is a new app, so macOS will ask for the Accessibility permission again,
+  now and after every `make install`. An entry an older build left under Accessibility looks switched on and does nothing:
+    tccutil reset Accessibility com.evbarleyg.arbor     then switch Arbor on again
+  To be asked once more and never again:  ./scripts/make-signing-identity.sh  then  make install  (docs/INSTALL.md).

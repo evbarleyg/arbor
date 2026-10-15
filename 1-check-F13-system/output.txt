@@ -1,0 +1,190 @@
+# mac-shell: scripts/mac-shell/check-F13-system.sh at 48a928d, macOS 26.6.2, 2026-10-15T12:54Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64; bash 3.2.57(1)-release; GNU Make 3.81
+Apple Swift version 6.4.1 (swift-6.4.1-RELEASE)
+/usr/bin/openssl: LibreSSL 3.3.6
+System Integrity Protection status: disabled.; curl 8.7.1; Python 3.14.7
+one of GitHub's throwaway Macs
+the place apart: /private/tmp/arbor-f13.kc3ncI
+
+== a clone to build in
+HEAD 48a928d, 1 commits (a shallow checkout has 1); version.sh: 0.9.0 (build 1, 48a928d)
+
+== 1  the identity, in a keychain on the search list
+
+== a keychain of its own
+under the throwaway HOME the search list reads: 
+after making /private/tmp/arbor-f13.kc3ncI/signing.keychain-db:     "/private/tmp/arbor-f13.kc3ncI/signing.keychain-db"
+  ✔ the account's own search list and default keychain are as they were
+the search list:     "/private/tmp/arbor-f13.kc3ncI/signing.keychain-db"
+Made the code-signing certificate "Arbor Local Signing" in /private/tmp/arbor-f13.kc3ncI/signing.keychain-db
+  SHA-1 E5499073E18E78C6691B1B3F73B1949610AFC80C, valid until Oct 12 12:54:48 2036 GMT
+/var/folders/36/tjdph2t965j8snz9_vkdnw0r0000gn/T/tmp.V3xGIHxotM/probe: replacing existing signature
+codesign can sign with it. What macOS will remember about a build signed this way:
+  identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"e5499073e18e78c6691b1b3f73b1949610afc80c"
+
+`make app` and `make install` sign with it from now on.
+The first build signed this way needs Accessibility permission once more. If an older build is listed there, clear
+its entry, but NOT YET: an Arbor that is running needs it to bring its windows back when it quits. In this order:
+  make install LAUNCH=0
+  tccutil reset Accessibility com.evbarleyg.arbor
+  open ~/Applications/Arbor.app
+Remove the certificate with scripts/make-signing-identity.sh --remove.
+
+Policy: Code Signing
+  Matching identities
+  1) E5499073E18E78C6691B1B3F73B1949610AFC80C "Arbor Local Signing" (CSSMERR_TP_NOT_TRUSTED)
+     1 identities found
+
+  Valid identities only
+     0 valid identities found
+  ✔ codesign could use the key at once, without a dialog
+  ✔ the identity is found through the search list, as sign.sh looks for it
+
+== 2  make install, as a person runs it
+Signed build/Arbor.app with "Arbor Local Signing", this Mac's own certificate: Accessibility permission, once given
+  to a build signed with it, carries over to the next.
+Installed /private/tmp/arbor-f13.kc3ncI/home/Applications/Arbor.app, version 0.9.0 (build 1, 48a928d)
+Linked /private/tmp/arbor-f13.kc3ncI/home/.local/bin/arborctl
+Started Arbor: waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+  Switch Arbor on there. If it is on already and Arbor keeps waiting, the entry belongs to a build with another
+  signature: run  tccutil reset Accessibility com.evbarleyg.arbor  and switch it on again (docs/INSTALL.md).
+  ✔ it found the identity by itself
+  ✔ it starts Arbor and prints its status
+  ✔ Arbor runs from ~/Applications
+  ✔ to this shell, as to a person's, arborctl is the link in ~/.local/bin
+  the watchdog, by the log number 15612: /tmp/arbor-f13.kc3ncI/home/Applications/Arbor.app/Contents/MacOS/Arbor --watchdog 15606
+  all that runs of this copy: 15606 /private/tmp/arbor-f13.kc3ncI/home/Applications/Arbor.app/Contents/MacOS/Arbor|15612 /tmp/arbor-f13.kc3ncI/home/Applications/Arbor.app/Contents/MacOS/Arbor --watchdog 15606|
+  ✔ its watchdog runs beside it
+  ✔ and is found by where it runs from, as the clean-up and every "nothing is left running" look for it
+  ✔ the running app reports its version
+  without ARBOR_SOCKET, under this shell's HOME: waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+
+== 3  does the permission survive a rebuild?
+columns: service client client_type auth_value auth_reason auth_version csreq policy_id indirect_object_identifier_type indirect_object_identifier indirect_object_code_identity flags last_modified pid pid_version boot_uuid last_reminded
+  ✔ started by macOS and never granted anything, Arbor waits for permission
+granted to this build: kTCCServiceAccessibility|com.evbarleyg.arbor|0|2|3|76
+  what it took for Arbor to see the grant: the row, a restart of tccd, and the notice System Settings posts
+  running: 1 display, 0 docked and 0 floating, 0 out of view
+  ✔ with the grant, this build runs
+Signed build/Arbor.app with "Arbor Local Signing", this Mac's own certificate: Accessibility permission, once given
+Asked the running Arbor to quit; it puts every window back in view first
+Installed /private/tmp/arbor-f13.kc3ncI/home/Applications/Arbor.app, version 0.9.0 (build 1, 48a928d-dirty)
+Started Arbor: running: 1 display, 0 docked and 0 floating, 0 out of view
+  the grant was made to the build with cdhash 59305edd9d773533427d2bf2ef20814dda38e80f; installed now is 739578d07baafc694b619eaf93e631f2c351bb88
+  ✔ what is installed now is different code
+  ✔ THE NEXT BUILD, SIGNED WITH THE SAME IDENTITY, RUNS WITHOUT BEING GRANTED ANYTHING
+  running: 1 display, 0 docked and 0 floating, 0 out of view|Arbor 0.9.0 (build 1, 48a928d-dirty)|
+Signed build/Arbor.app ad hoc. The signature changes with every build, so each new build has to be given
+  Accessibility permission again. scripts/make-signing-identity.sh, run once, ends that (docs/INSTALL.md).
+Asked the running Arbor to quit; it puts every window back in view first
+Installed /private/tmp/arbor-f13.kc3ncI/home/Applications/Arbor.app, version 0.9.0 (build 1, 48a928d)
+Started Arbor: waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+  Switch Arbor on there. If it is on already and Arbor keeps waiting, the entry belongs to a build with another
+  signature: run  tccutil reset Accessibility com.evbarleyg.arbor  and switch it on again (docs/INSTALL.md).
+  now and after every `make install`. An entry an older build left under Accessibility looks switched on and does nothing:
+    tccutil reset Accessibility com.evbarleyg.arbor     then switch Arbor on again
+  To be asked once more and never again:  ./scripts/make-signing-identity.sh  then  make install  (docs/INSTALL.md).
+  ✔ an ad-hoc build does not inherit the grant: the stale-signature case
+  ✔ make install explains that case
+  the entry after that (the fourth field: 2 allowed, 0 denied): kTCCServiceAccessibility|com.evbarleyg.arbor|0|0|4|76
+shot: mac-shell/03-stale-signature.png
+tccutil: No such bundle identifier "com.evbarleyg.arbor": The operation couldn’t be completed. (OSStatus error -10814.)
+  ✘ tccutil reset removes the entry — (known: tccutil knows no bundle under /tmp, where this copy is installed, lsregister or not; it does know one in ~/Applications (docs/REALITY.md: tccutil-knows-a-bundle-only-from-where-and-by-whom-it-was-opened))
+      picture: mac-shell/fail-check-F13-system-1.png
+      log | INFO  Accessibility permission granted
+      log | INFO  started: 1 display(s), 0 managed window(s)
+      log | ERROR setup: Desktop & Dock settings: as they stand, macOS reacts to the same clicks and drags as Arbor. `fix-setup` keeps them off for you while Arbor runs (and `fix-setup undo` ends that), or do it in Sy
+      log | INFO  stopped; all windows returned to view
+      log | INFO  Arbor quit
+      log | INFO  Arbor 0.9.0 (build 1, 48a928d-dirty) starting, pid 17260, home /Users/runner/Library/Application Support/Arbor
+      log | INFO  watchdog started, pid 17273
+      log | INFO  control socket at /Users/runner/Library/Application Support/Arbor/arbor.sock
+      log | INFO  keyboard layout: U.S.
+      log | INFO  registered 52 shortcuts in 4444 µs
+      log | INFO  the menu bar item is up
+      log | INFO  started: 1 display(s), 0 managed window(s)
+      log | ERROR setup: Desktop & Dock settings: as they stand, macOS reacts to the same clicks and drags as Arbor. `fix-setup` keeps them off for you while Arbor runs (and `fix-setup undo` ends that), or do it in Sy
+      log | INFO  stopped; all windows returned to view
+      log | INFO  Arbor quit
+      log | INFO  Arbor 0.9.0 (build 1, 48a928d) starting, pid 17965, home /Users/runner/Library/Application Support/Arbor
+      log | INFO  watchdog started, pid 17975
+      log | INFO  control socket at /Users/runner/Library/Application Support/Arbor/arbor.sock
+      log | INFO  keyboard layout: U.S.
+      log | INFO  registered 52 shortcuts in 5625 µs
+      log | INFO  the menu bar item is up
+      log | INFO  waiting for Accessibility permission
+
+== 4  launch at login
+Signed build/Arbor.app with "Arbor Local Signing", this Mac's own certificate: Accessibility permission, once given
+Installed /private/tmp/arbor-f13.kc3ncI/home/Applications/Arbor.app, version 0.9.0 (build 1, 48a928d)
+Started Arbor: waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+  off
+  ✔ off to begin with
+  Arbor opens at login
+  ✔ launch-at-login on, from ~/Applications
+  ✔ the binary agrees, without asking the running app
+  ✔ and macOS's own list of login items has the entry enabled
+       Developer Name: (null)
+                 Type: app (0x2)
+          Disposition: [enabled, allowed, notified] (0xb)
+           Identifier: 2.com.evbarleyg.arbor
+                  URL: file:///private/tmp/arbor-f13.kc3ncI/home/Applications/Arbor.app/
+    Bundle Identifier: com.evbarleyg.arbor
+                 Name: Veertu Inc
+       Developer Name: Veertu Inc
+                 Type: developer (0x20)
+          Disposition: [disabled, allowed, not notified] (0x2)
+           Identifier: Veertu Inc
+                  URL: (null)
+Installed /private/tmp/arbor-f13.kc3ncI/home/Applications/Arbor.app, version 0.9.0 (build 1, 48a928d)
+Started Arbor: waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+  after installing again: on
+  ✔ the entry survives a new build copied over the old one
+
+== 5  the menu
+> click 780 15
+shot: mac-shell/05-menu.png
+> key escape
+Asked the running Arbor to quit; it puts every window back in view first
+Arbor does not open at login
+Removed /private/tmp/arbor-f13.kc3ncI/home/Applications/Arbor.app
+Removed /private/tmp/arbor-f13.kc3ncI/home/.local/bin/arborctl
+Left alone:
+  /private/tmp/arbor-f13.kc3ncI/home/Library/Application Support/Arbor   settings.json, state.json (your arrangement) and arbor.log
+  Arbor's entry under Accessibility           tccutil reset Accessibility com.evbarleyg.arbor
+  the signing certificate, if you made one    scripts/make-signing-identity.sh --remove
+  ✔ make uninstall removed the login item
+  ✔ asked Arbor to quit
+  ✔ removed the app
+  ✔ nothing of it is left running
+  what macOS's list of login items says of Arbor's entries now: [disabled, allowed, notified] (0xa);
+  ✔ none of them is enabled: Arbor does not open at the next login
+  ✔ settings are still there
+
+== 6  a downloaded copy
+Signed build/Arbor.app ad hoc. The signature changes with every build, so each new build has to be given
+    assessments enabled
+    /private/tmp/arbor-f13.kc3ncI/download/Arbor.app: rejected
+shot: mac-shell/06-first-launch-of-a-download.png
+  running after that? 19995 /private/var/folders/36/tjdph2t965j8snz9_vkdnw0r0000gn/T/AppTranslocation/ABF85DB7-0ABB-4916-AD1C-DA2E23F1DD9C/d/Arbor.app/Contents/MacOS/Arbor
+ 
+140966 03-stale-signature.png
+154149 05-menu.png
+104384 06-first-launch-of-a-download.png
+0 build-notice.log
+0 build-pointer.log
+96 evidence
+141031 fail-check-F13-system-1.png
+950 identity.txt
+1722 install-adhoc.txt
+2604 install.txt
+779 login-item.txt
+11370 output.txt
+0 screencapture.log
+557 uninstall.txt
+
+27 passed, 1 failed
+1 of the failures are known
+exit code 0

@@ -1,0 +1,13 @@
+Made the code-signing certificate "Arbor Local Signing 2" in /private/tmp/arbor-signing.NSqoCU/fourth.keychain-db
+  SHA-1 601E774A7121C3BB3E0A8382E53CD0B0BBD6BA5D, valid until Oct 12 13:02:17 2036 GMT
+/var/folders/36/tjdph2t965j8snz9_vkdnw0r0000gn/T/tmp.JfmFZR8Hkz/probe: replacing existing signature
+codesign can sign with it. What macOS will remember about a build signed this way:
+  identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"601e774a7121c3bb3e0a8382e53cd0b0bbd6ba5d"
+
+To sign with it: ARBOR_SIGN_IDENTITY="Arbor Local Signing 2" make install
+The first build signed this way needs Accessibility permission once more. If an older build is listed there, clear
+its entry, but NOT YET: an Arbor that is running needs it to bring its windows back when it quits. In this order:
+  make install LAUNCH=0
+  tccutil reset Accessibility com.evbarleyg.arbor
+  open ~/Applications/Arbor.app
+Remove the certificate with scripts/make-signing-identity.sh --remove.
