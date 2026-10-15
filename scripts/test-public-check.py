@@ -1040,10 +1040,15 @@ def check_hook():
         repository.git("config", "--replace-all", "remote.fork.url", public)
         row("the hook: the public repository under another name", pushed_with(), (True, [4], True))
         repository.git("remote", "remove", "fork")
-        repository.git("remote", "add", "origin/swarm", repository.origin)
-        integrated(trunk, check.VERSION + 1)
-        row("the hook: a remote whose branches lie among origin's: origin's are not gone by", pushed_with(), own_reads)
-        repository.git("remote", "remove", "origin/swarm")
+        try:
+            repository.git("remote", "add", "origin/swarm", repository.origin)
+        except RuntimeError as refused:
+            # A newer git than 2.43, GitHub's runners' among them, makes no such remote, so there the situation cannot come about.
+            row("the hook: a remote whose branches would lie among origin's: this git makes none", "is a subset of existing remote" in str(refused), True)
+        else:
+            integrated(trunk, check.VERSION + 1)
+            row("the hook: a remote whose branches lie among origin's: origin's are not gone by", pushed_with(), own_reads)
+            repository.git("remote", "remove", "origin/swarm")
         integrated(trunk, check.VERSION + 5, exceptions=False)
         done = push()
         row("the hook: a newer check that is known and cannot be had whole: no push, and no older check reads instead",
