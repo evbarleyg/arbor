@@ -13,10 +13,10 @@ close_new
 switch_dock notes
 hide
 unhide notes
-switch_dock finder
+focus_key up
 switch_to finder
 dock_key left
-switch_dock preview
+switch_backtick
 view desktop
 view in
 close_new
@@ -30,7 +30,7 @@ reopen preview
 switch_dock safari
 full_screen on
 full_screen off
-switch_dock mail
+switch_cmdtab 1
 restore calendar
 switch_dock textedit
 view frame
@@ -39,18 +39,18 @@ reopen safari
 drag_onto safari mail top
 idle_act
 quit_app preview
-switch_click notes
-switch_backtick
+switch_cmdtab 3
+switch_click finder
 reopen preview
-switch_dock preview
+switch_menu safari
 view desktop
 idle_act
 view out
-switch_click mail
-tile_click 1
-switch_click settings
+switch_cmdtab 2
+switch_cmdtab 3
+switch_dock settings
 view in
-focus_key up
+tile_click 1
 switch_to mail
 redo
 quit_and_start
@@ -67,12 +67,12 @@ switch_dock safari
 full_screen on
 full_screen off
 switch_click notes
-switch_dock preview
+tile_click 2
 quit_app textedit
-focus_key down
+tile_click 1
 drag_onto terminal mail top
 reopen textedit
-switch_menu textedit
+switch_dock notes
 switch_dock notes
 minimize
 view left

@@ -1,5 +1,5 @@
 #!/bin/bash
-# A sit: an arrangement is made, a window is framed, and then nobody touches the Mac for seven minutes. What only the clock brings: apps going about
+# A sit: an arrangement is made, a window is framed, and then nobody touches the Mac for six minutes. What only the clock brings: apps going about
 # their business, Arbor with nothing to do (docs/VIABLE.md, "A synthetic user-hour").
 #
 #   scripts/mac-shell/run.sh scripts/mac-shell/day-sit.sh
