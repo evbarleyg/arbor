@@ -1479,94 +1479,79 @@ names the entries that nothing met.
 **Extending it.** A new field in state.json: make one of the two sessions in `BASE_SESSIONS` produce it and add it to `EXPECTED_KEYS`. A new command worth
 running on damaged files: a line in `STATE_SCRIPT` or `SETTINGS_SCRIPT`. A new file Arbor reads at launch: an option in `Launch.swift` and a campaign beside the three.
 
-## Manual checks (the parts no automation covers)
+## What only real windows can show, and which script shows it
 
-A Mac shell script (section 5) can now make most of these; the real-window suite (section 10) makes a dozen of them as claims whose
-evidence counts, `shots-demo.sh` covers the edge drag, the seam, the window edge, the tile, shortcuts, the ⌃⌥ rectangle, the menu and
-quitting, on test windows, and `input-taps.sh` the pinch and the rectangle. What is left for a person: other apps' windows, a real
-trackpad, taking Accessibility away, and how it feels.
+This was a list of a hundred things for somebody to try by hand. Nobody is asked to any more: what could only be checked at a desk counts as not
+done. Everything below runs unattended on one of GitHub's Macs (one display of 1024×768, no trackpad, test windows and Apple's stock
+apps, input posted by `pointer.swift` and `witness.swift`). A ✔ comes from a `check`; a picture or a film comes back in `mac-shell/` and is
+judged afterwards by whoever started the run, who writes what was seen into the report. Only claims of the suite (section 10) count for
+`make parity`: a feature whose row names no `suite/` file is tested, not verified.
 
-With `Arbor.app` running and permission granted:
+| What | Claims and checks | Pictures and films to judge |
+|---|---|---|
+| Dragging: edges, beside, middle, previews, the hold, ⌘, reflow | `suite/10-edges` `12-dwell` `20-beside`; `check-F09.sh` | `check-F09.sh` 10-fade-in, 12-fade-out; `shots-F15.sh` 02 |
+| Gaps, a window's own edges, handles, floating windows over them | `suite/30-seams` `60-tiles`; `arbor-e2e` | `shots-F15.sh` 04–07 |
+| Every shortcut, peek, whose lead, tiling keys | `suite/40-keys` `41-tiling-keys` `42-peek` `43-whose-lead`; `check-F51.sh` `shots-F22.sh` | `check-F51.sh` 01–03 |
+| Undo | `suite/32-undo`; `shots-F19.sh` | `shots-F19.sh` 01, 11 |
+| ⌃⌥N, Go to…, the minimap | `suite/44-name` `46-goto` `46-goto-places` `46-goto-closes`; `check-F20.sh` `shots-finder.sh` `shots-minimap.sh` | all of their shots, light and dark; off screen: Finder- and MinimapDrawingTests |
+| Pause, apps that keep their keys, layouts, macOS's own shortcuts | `suite/45-pause` `47-whose-keys`; `check-F41.sh` `check-F44.sh` | `shots-F10.sh` 25, 26 |
+| Hold the view, hold still, what a share shows | `suite/48-hold`; `check-F58.sh` | `check-F58.sh` share-*, held-* |
+| Minimize, hide, close, tabs, hangs, full screen, ⌘Tab | `suite/50-lifecycle` `55-apps` `95-focus` `97-fullscreen` | |
+| Tiles, sizes, pin, summon | `suite/60-tiles` `62-sizes` `65-pin` `66-summon` | `shots-F15.sh` 03, `shots-F48.sh` |
+| arborctl, URLs, the menu, settings.json, settings by command | `suite/70-cli` `75-menu` `80-settings` `82-settings-commands`; `check-F12.sh` | |
+| What Arbor says on screen | `suite/77-says`; `shots-F43.sh` | `shots-F43.sh` tours and films; HeadsUpPictureTests |
+| Rectangle, pinch, scroll, the Desktop guard, what reaches apps | `suite/85-pointer`; `input-taps.sh` | `input-taps.sh` 01–06 |
+| Restart, crash, damaged files | `suite/90-restart` | |
+| Accessibility taken away | `check-F63.sh`; `input-taps.sh` session 4 | `check-F63.sh` 00–05 |
+| Motion | `shots-F02.sh` (the stage comes down, a click ends it, off by setting and by Reduce Motion) | every film of `shots-F02.sh` |
+| How it looks: backdrop, blur, tint, ring | `suite/35-ring`; `shots-F15.sh` `shots-focus-ring.sh` | both, light and dark; `check-desktop.sh` mission-control |
+| The settings window | `shots-F12.sh` | every pane, light and dark; SettingsWindowPictureTests |
+| The menu bar item, the welcome window, `doctor` | `shots-F10.sh` | `shots-F10.sh` 05–74; MenuBarDrawingTests |
+| Two displays, Spaces | `check-displays.sh` `check-F56.sh` `check-F49.sh` `check-desktop.sh` | their panoramas |
+| Signing, installing, login item, updates | `check-F13.sh` `check-F13-system.sh`; `suite/75-menu` | 03, 05, 06 |
+| Real apps (13 stock apps × 28 steps; tabs, sheets, full screen) | `compat.sh` `compat-extras.sh`; `check-F54.sh` for `--open` | `matrix.md`, `extras.md`, `compat-pictures.sh`, `shots-F15-apps.sh` |
 
-- Drag a window by its title bar to the left screen edge: a translucent
-  preview in the accent colour appears and the window docks on release.
-- Drag a window onto the right third of a docked window and hold it there: after
-  a moment the preview fades in, and on release it docks beside it. Move to
-  another edge of that window: the preview fades out and, after the same
-  moment, in again. Sweep across the window and let go without stopping: no
-  preview, and the window stays where you let go; a docked one goes back to its slot.
-- Let go of a docked window over the middle of another one: it goes back to its
-  slot. Over the Desktop it floats.
-- Along the screen edges the preview appears at once; round a corner of the
-  screen it glides from one edge's place to the other's instead of jumping.
-- Hold ⌘ while dragging: no preview anywhere, and the window floats on release,
-  even a docked one let go over its own slot. Press ⌘ while a preview shows,
-  without moving: it goes; release ⌘: it comes back after the hold.
-- With "Reduce motion" on (Accessibility → Display) the preview appears and
-  disappears without fading.
-- Set `"reflowWhileDragging": true` and reload: drag a docked window out of its
-  slot and its neighbours close up at once; hold over another window's edge and
-  it makes room where the preview is; go back over the old slot and the gap
-  opens again. The dragged window never jumps out of your hand, and letting go
-  anywhere leaves everything as it does with the setting off.
-- ⌃⌥↩ frames the focused window; ⌃⌥Space shows everything; ⌃⌥[ goes back.
-- ⌃⌥N (`check-F20.sh` covers test windows): the field appears in the upper middle, over the space; typing goes into it and not into the app behind; the line under it changes
-  as you type; ↩ names, ⎋ cancels, a click elsewhere, ⌘Tab and a swipe to another macOS Space close it; afterwards the app you were in has the keyboard without a click.
-  Try an input method (compose, then ↩ twice) and dark mode.
-- Drag the gap between two docked windows: both resize.
-- Drag the edge of a docked window toward its neighbour: nothing else moves
-  until you release, then the neighbour gives up the space. Drag an edge that
-  is against the screen: it snaps back on release.
-- Dock a window that refuses to shrink (e.g. System Settings) into a small
-  slot: it becomes a tile with its icon; clicking the tile zooms onto it.
-  (Known to fail when it is docked by a command or shortcut: the camera jumps
-  onto the window, and ⌃⌥Space then shows the tile.)
-- ⌘Tab to a window that is out of view: the camera moves to show it. (It failed in
-  `proof.sh`, "switching to an app whose window is out of view…", before Arbor observed app activation.)
-- Minimize a docked window and click it in the Dock: it returns to its slot and
-  the camera stays. (Known to fail: the camera zooms onto it.)
-- Press a docked window's green button and leave full screen again: it returns to
-  its slot. (Known to fail: F30.)
-- Dock a small window, then drag it out by its title bar and drop it on the Desktop: it shrinks to the size it
-  had, with the pointer still on its title bar. ⌃⌥F on a docked window does the same where its slot was.
-  Arrange Windows, then Float All Windows (or quit): every window is back exactly where it was.
-- `arborctl layout --open "Safari | (Mail / Notes)"` with Mail and Notes not running: both open without
-  taking the keyboard, and each window goes to its place as it appears. Try an app with a splash screen.
-- ⌥ + spread two fingers over a window: the camera steps in to it; pinch on
-  the wallpaper without ⌥: it steps out to everything; pinch over Safari
-  without ⌥: the page zooms and Arbor does nothing.
-- With a wheel mouse, ⌃⌥ held, over a docked window: one notch up steps in toward it, one notch down steps out. Without the keys, and
-  with ⌃ or ⌥ alone, pages scroll as ever and no slower. On a Magic Mouse or trackpad a short stroke with ⌃⌥ is one step, and
-  nothing follows when the fingers lift. Let go of the keys in mid-stroke: the page under the pointer still does not scroll.
-  With ⌃⌥⌘, or ⌃⌥⇧ on a trackpad, the page scrolls and Arbor does nothing. Open Arbor's menu with ⌃⌥ held, let go of the keys, close it: the next ⌃⌥ + scroll works at the first attempt. Hold ⌃⌥, rest two fingers on
-  a page, scroll, lift: its scrollers fade as usual.
-- **First of all for F55**: in System Settings → Accessibility → Zoom switch on "Use scroll gesture with modifier keys to zoom", with ⌃. ⌃ + scroll zooms
-  the screen. ⌃⌥ + scroll must step Arbor's view and leave the screen's zoom alone. If both happen, `docs/KEYBOARD.md`'s "⌃⌥ + scroll is nobody's" is wrong.
-- ⌃⌥-drag a rectangle around a window: a translucent band follows the
-  pointer, nothing under it is selected, and release frames the window.
-  No contextual menu opens. A ⌃⌥-click without a drag still opens the app's contextual menu, and ⇧⌘-drag in a design
-  tool and ⇧⌘-click on a link in Safari are the apps' own again. **Not seen on a Mac since the default became ⌃⌥.**
-- Begin such a rectangle and let go of ⌃⌥ before the button: the band goes, the view stays, and the app under the pointer notices
-  nothing (no selection, no menu, no drag left hanging). The same with ⇧ on the Desktop. **Not seen on a Mac.**
-- Hold ⌃⌥Space until the outline shows and click a window carelessly, the pointer moving some ten points between press and release:
-  the view goes to that window, as after a clean click. **Not seen on a Mac.**
-- ⇧-drag from the wallpaper over a window: the same band, and release frames
-  the window. ⇧-drag inside a document still extends the selection, and
-  ⇧-click on an icon on the Desktop still adds it to the selection, and
-  ⇧-drag that starts on an icon drags the icon.
-- With "Click wallpaper to reveal desktop" at its default and something docked: a click on
-  the wallpaper or in a gap moves nothing (`guardDesktopClicks` true; it is off by default). A drag there draws
-  Finder's selection rectangle; an icon, a widget and a stack of icons still take clicks, double-clicks and drags.
-  **Then each of these, closed by a click on the wallpaper:** an app's menu, the Apple menu, Finder's context menu on the
-  Desktop, Arbor's own menu (and click one of its items where it hangs over the Desktop), a Dock stack, Control
-  Centre, Notification Centre, Spotlight, a popover, the name of an icon being edited. In Mission Control, click a
-  thumbnail that lies over what is really bare Desktop. ⌘⇧4 and drag from the wallpaper. Force-click an icon. Tap to
-  click. With `ARBOR_DEBUG=1` the log names the level, pid and size of whatever made Arbor leave a press alone.
-- Frame a window, then switch Arbor off in Accessibility while it runs: the mouse, trackpad and
-  keyboard keep working, the log says the event taps were removed, within three seconds the menu bar icon is a warning
-  sign and the welcome window asks for the permission back, counting the windows; the menu counts the windows out of view and its Quit says that they would stay there;
-  ⌃⌥Space beeps and opens the settings; ⌃⌥↩ reaches the frontmost app. Switch it on: every window is in view within a second or
-  two, and ⌃⌥[ returns to the framed window. Also with the − button instead of the switch. With nothing out of view: only the icon changes.
+**Still owed**, each with the script that will judge it:
+- The screen's left, right and top edges with macOS's tiling as a Mac comes, where Arbor stands aside: the suite switches the tiling off on a
+  hosted Mac (`screen_edges_dock`). Claims of their own in `suite/10-edges`.
+- Round a corner of the screen the preview glides; with Reduce Motion it neither fades nor glides; with `reflowWhileDragging`, back over the old
+  slot the gap opens again: films and a step in `check-F09.sh`, with `drag_on`.
+- While ⌃⌥Space is held, a careless click that slips ten points, and a click on another app's window: `suite/42-peek`.
+- The Dock hidden and `relayout`: `suite/50-lifecycle`.
+- `focus-display`, `move-to-display` and the menu bar item on the second display: `check-displays.sh`.
+- Without the permission, Quit says how many windows would stay out of view: `check-F63.sh`. One of macOS's shortcuts unticked while Arbor
+  runs: `check-F44.sh`.
+- A ⇧-click on a Desktop icon, Finder's menu on the Desktop, the menu of the app in front; ⌃⌥⌘ and ⌃⌥⇧ + scroll, and keys let go in
+  mid-stroke, once `witness.swift` can post them: `input-taps.sh`.
+- A click during the motion lands in the window that is really there; a window with a dialog in the motion: `shots-F02.sh`.
+- The open menu against `arborctl menu`, row by row; `doctor` with the menu bar hidden and in a full-screen Space; the welcome window
+  reopened on its second page and called to another Space; Open at Login ticked on its second page: `shots-F10.sh`.
+- With the camera and microphone sensors on, an idle Mac is no call, and macOS asks nothing on Arbor's account: `check-F58.sh`.
+- Go to… and the line Arbor says things on over another app's full screen; Go to… a window on another Space while holding still:
+  `shots-finder.sh`, `shots-F43.sh`.
+- The fades of the backdrop and of tile and window; light to dark while Arbor runs: films in `shots-F15.sh`.
+- A tab torn off a docked Terminal window: `compat-extras.sh`.
+- ⇧⌘4 then Space over the focused window picks the window, not the ring: `shots-focus-ring.sh`.
+
+**Struck out**, and why:
+1. A real trackpad, a Magic Mouse, force click, fading scrollers: the Macs have no such hardware; the same events are posted with the fields
+   a trackpad's carry.
+2. A camera, a microphone, Zoom, Meet, Teams, Slack, a share watched on a second device: not to be had there. So
+   `holdStillWhileCameraIsOn` and `holdStillWhileMicrophoneIsOn` are not done and stay off; the example title in `holdStillFor` is unverified.
+   What any picker is told is measured by `share-probe`.
+3. Electron apps, Emacs, design tools, Rectangle, editors by name: not stock apps, and Arbor does not know one app from another.
+4. Logging out and in, switching users, locking the screen, display sleep: they end the session the script runs in.
+5. A notch, a built-in Retina panel: hardware. Scale 2 is drawn off screen and on a virtual display.
+6. Input methods: `keys.swift` selects layouts; nothing has composed text on a hosted Mac.
+7. VoiceOver: speech cannot be judged; what it would read is the Accessibility tree, which `shots-F12.sh` writes out and drives.
+8. Beeps: they take ears, and Arbor does not log them.
+9. A click on a Dock item: no tool finds one.
+10. macOS's keychain dialog: it asks for its owner's password.
+11. Questions ("how old is the picture?", "are two seconds enough?") and known defects (About Arbor takes the keyboard): they belong on
+    the board.
+12. The Accessibility switch clicked by a hand: macOS asks for a password, so no script can. What a script can take away it does
+    (`check-F63.sh`, `input-taps.sh`). The one recipe that is kept, for the record:
+
 - **The switch, measured.** For whoever has a Mac and likes to try; nobody is asked to, and nothing waits for it. No script can click that switch: macOS asks for a password (`scripts/mac-shell/README-permission-probes.md`). So in which order the word, the flag and the
   right to tap go for a person, and whether a click is lost meanwhile, has never been seen. No `sudo`, nothing written to the permission database: only Arbor as installed, with `"pointerGestures": true` in its settings so that it has its taps, the switch, and one tool built from the checkout:
   `swiftc -O -swift-version 5 scripts/mac-shell/asker.swift -o /tmp/asker` (the terminal needs Accessibility, to post the key).
@@ -1574,199 +1559,8 @@ With `Arbor.app` running and permission granted:
   pane's empty part, a second apart; switch it on again.
   `heard.txt` says when `com.apple.accessibility.api` was posted; a number missing from `arrivals.txt` is an event that was dropped, and the clicks are its lines with `other=`; Arbor's log has "Accessibility permission is gone (…)" with who said no. The three files hold times, kinds of events, numbers and
   modifiers: no window title, no app's name, and no key but F19, which the tool itself posts (other keys pressed meanwhile appear as `key-down other=0`, without saying which). Delete the files and `/tmp/asker` afterwards; nothing else was changed. A result goes into `collab/reality.json`.
-- Quit Arbor from the menu: every window is visible afterwards.
-- Motion (`scripts/mac-shell/shots-F02.sh` films most of this). ⌃⌥↩ on one of several docked windows: it grows
-  to fill the view while the others slide out past the screen edges, behind the Dock and the menu bar; ⌃⌥Space
-  brings them back the same way. At the first and last moment nothing jumps, flashes or changes
-  brightness: not the wallpaper, not desktop icons, not window shadows, not text. ⌃⌥Space and ⌃⌥↩ in quick
-  succession: the motion turns round from where it is, and nothing is left on screen afterwards. Click in
-  mid-motion: the real windows are there at once and the click lands on what is really under the pointer.
-  Type into a window, press ⌃⌥↩ straight away: how old is the picture, and when does the new one come?
-  Without Screen Recording permission: the same with app colours and icons. With a video playing, a
-  picture-in-picture window, an open dialog or sheet: what happens to them for that half second?
-  With "Reduce motion" on, or `"animationDuration": 0`: everything is applied at once.
-- ⌃⌥⎋ while framed on a window: it goes back to where it was before it was docked, in its own size, and stays in front; so do the others, behind it, each in one move; tiles and gap handles go, the menu bar icon dims, and ⌃⌥F now
-  reaches the frontmost app (try it in a terminal running Emacs or `cat -v`). Move, close and open windows:
-  Arbor does nothing. ⌃⌥⎋ again: the arrangement and the view come back without the closed windows.
-- In Terminal (running `cat -v`) or Emacs choose Shortcuts Off in “Terminal” from Arbor's menu: ⌃⌥F and ⌃⌥Space now reach the
-  app, ⌃⌥-drag is its own, its windows stay docked, and the menu item has a tick. ⌃⌥⎋ still pauses. ⌘Tab away and
-  ⌃⌥Space shows everything. `scripts/mac-shell/check-F41.sh` does this with an app that writes down the keys it gets.
-- Add German in System Settings → Keyboard → Input Sources and select it in the menu bar: ⌃⌥ and the key labelled Z does what
-  ⌃⌥Z is bound to (bind it first: `"ctrl+opt+z": "desktop"`), Arbor's menu shows Back as ⌃⌥Ü, and `arborctl bindings` names the layout.
-  `scripts/mac-shell/check-F44.sh` does this for German, French, Dvorak and Russian.
-- With that second input source still there: `arborctl bindings` ends with a sentence about ⌃⌥Space and "Select next source in Input menu". Press ⌃⌥Space: which of
-  the two happens? (On macOS 26.6.2 Arbor got the key.) Untick the shortcut under Keyboard Shortcuts → Input Sources: the sentence is gone, without restarting Arbor.
-- Put a game's bundle id into `pauseForApps`: bringing it to the front pauses Arbor (dimmed icon), leaving it resumes.
-- With a window of another app out of view, ⌘Tab to that app (and click its Dock icon): the view moves to show it.
-- The settings window (`SettingsWindowPictureTests`, part of `swift test` on a Mac, draws every pane off screen, in light and dark, into
-  `.build/pictures/F12/`: look at them; `scripts/mac-shell/shots-F12.sh` makes these checks on test windows): ⌃⌥, opens it in front of
-  docked windows, with the keyboard; every pane reads well in light and dark and no text is cut off; dragging Gap's slider moves
-  the windows when it is let go of; 500 typed into Gap is refused under the field; recording ⌃⌥D for another command asks before taking
-  it, and does not show the Desktop; ⌘W closes the window and the app from before has the keyboard. For a person: Open at
-  Login in a bundled app, the menus of running apps in Rules and Apps, VoiceOver through a pane, the window on a second display.
-- Frame a window, hold ⌃⌥Space: everything shows and, a moment later, an outline where you came from. Point at another window and let go:
-  it is framed and has the keyboard; ⌃⌥[ returns. Hold again and let go at once after the outline shows: back where you were. Hold, ⎋: the
-  same, and Arbor is not paused. Hold and press arrows: the outline walks. Hold and click a window of **another app**: it is framed, no contextual
-  menu opens, and no app is hidden. Tap ⌃⌥Space with ⌃⌥ kept down for two seconds: the view stays on everything when they come up.
-- Frame a window, choose Hold This View: the menu bar icon is a lock and the view commands in the menu are grey. ⌘Tab to an app that is out of view: the
-  menu bar flickers to that app and back, nothing else changes, and typing goes on in the framed window. ⌃⌥Space beeps. Have a chat app
-  mention you. Drag the framed window to a screen edge: no preview, and it goes back. ⌃⌥⇧F beeps. ⌘M on the framed window: the wallpaper and nothing
-  else, and the menu says "The view is held: nothing is in it"; click it in the Dock: as before. Keep ⌃⌥⎋ down for three seconds: the lock goes, nothing
-  moves, and Arbor is **not** paused; press it again: paused. `scripts/mac-shell/check-F58.sh` does the first half of this on test windows.
-- **`holdStillWhileMicrophoneIsOn` ships false until both of these have been seen** with it set to true. (1) On an idle Mac with "Hey Siri" and dictation
-  enabled, `arborctl status` does not say "holding still". (2) In a call with the camera off, in each of Zoom, Meet, Teams and Slack: mute, wait ten
-  seconds, unmute. `arborctl status` says "holding still" throughout: muting must not end it in the middle of a call.
-- **`holdStillWhileCameraIsOn` and `holdStillFor` ship off and empty until the next two have been seen.** `arborctl set holdStillWhileCameraIsOn true`, then
-  open Photo Booth: at once the icon is filled in and the menu says "Holding still while the camera is on". ⌘Tab and Dock clicks still bring windows
-  into view; an app that comes forward by itself does not. Quit it: the icon is back to normal within six seconds. Nothing else appears and nothing sounds, at either end. The same with Voice Memos recording ("the microphone"), with its switch on.
-  Then the false alarms: is the icon filled in with "Hey Siri" or Voice Control on and nothing else? While music plays through AirPods, a USB headset, a display's speakers?
-  No prompt for the camera or the microphone may ever appear, and no orange or green dot because of Arbor.
-- Join a Zoom meeting and read its window's title off the Mac: the example "us.zoom.xos Zoom Meeting" was written from memory. With that entry in `holdStillFor` and the
-  camera's and the microphone's switches off: "Holding still while zoom.us is open".
-- Holding still, open an app with Spotlight or a launcher, run `open https://example.com` in a terminal, click a link in a chat: which are turned away? Each must be said on
-  screen ("Safari is out of view: holding still · ⌘Tab or ⌃⌥G goes there"), once. Note how long after the key each report comes: what counts as asking is to grow from that.
-- Holding still, ⌃⌥G to a window on another macOS Space: macOS slides over and stays there, and the window is in view. Are two seconds enough?
-- Share the whole screen in Zoom, Meet or Teams with four windows out of view and look at the share on another device: what is there in the bottom corner? Open
-  their window pickers: how do the windows that are out of view look? Share one of them.
-- Dock two windows, left and right: the wallpaper behind them is a shade darker, with rounded corners, and the Desktop between them is not. Icons on the Desktop can
-  still be clicked and dragged, also where it is darker. Zoom, go back, float, close: the shape follows with a short fade. Drag the gap beside the Desktop: the edge follows
-  the pointer without smearing. `"blurBehindArranged": 1`, Reload Settings: the wallpaper is blurred there. Switch between light and dark mode: tiles change at once.
-  `"tintBehindArranged": 0.3`: it takes on the accent colour, and follows when another accent is chosen in System Settings. `"desktopEdge": 0.5`: a thin line runs round the Desktop between
-  the windows. Squeeze a window until it is a tile and widen it again: tile and window fade into each other.
-  Mission Control: the shape goes with the windows. Pause and quit: nothing is left. `scripts/mac-shell/shots-F15.sh` takes pictures of most of this in both modes.
-- Move a floating (or pinned) window across a gap and across a tile, then resize a docked window by command or go out and in again: the floating window stays in front of the tile, and every point of it
-  takes clicks and drags; none of them resizes the docked windows.
-- Point at the gap between two docked windows: a small white handle shows in its middle, in the accent colour while it is dragged. (The pointer stays an arrow: macOS takes
-  a cursor only from the active app, which Arbor never is.)
-- ⌃⌥↑ while everything is showing: "Already showing everything" in a line low on the display, which fades after a second and a half. ⌃⌥↩ twice: framed, then back where you were.
-- The line and the panel of shortcuts drawn off screen: `swift test --filter HeadsUpPictureTests` on a Mac draws the real views into bitmaps in memory (no window, nothing on or from the screen), checks
-  that the letters stand out and stay inside, and leaves PNGs in `.build/pictures/F43/`, light and dark, at scale 1 and 2. The translucent background is a plain plate in them: an effect view draws nothing off screen.
-- The line (F43; `scripts/mac-shell/shots-F43.sh` takes the pictures): legible on a light and on a dark wallpaper and over windows, in light and in dark mode; typing goes on in the
-  focused window while it shows; a click on it lands on what is under it; it does not show over another app's full-screen Space; with "Reduce motion" on it appears and
-  disappears without fading. With `"messages": "off"` there is a beep instead.
-- With a fresh `state.json`: the first dock, the first ⌃⌥↩ and the first tile are each explained, three times and not a fourth, also after quitting and starting Arbor again.
-- ⌃⌥⇧/: the panel of shortcuts, with your own `bindings` in place of the defaults. Type a letter: the panel goes and the letter is **not** typed into the document behind. The next letter is.
-  Also ended by a click on it, a click elsewhere, the same keys, any other Arbor shortcut (which does its job), ⌃⌥⎋.
-- Dock Calculator or System Settings: it sits in the middle of its slot and does not twitch when a neighbour is resized.
-- Quit Arbor, then `arborctl help` prints the commands and `arborctl status` says how to start Arbor.
-- ⌘Tab between apps, ⌘` between an app's windows, click the desktop: the focus ring is around the
-  window that takes your typing, and gone when none does. A picture-in-picture video or a popover that overlaps the
-  window's edge covers the ring. ⇧⌘4 then Space over the focused window picks the window, not the ring.
-- Dock two windows, drag the gap between them back and forth, release, press ⌃⌥Z once: the gap is back
-  where it was before the drag. ⌃⌥A, then ⌃⌥Z: everything is back, floating windows included. The menu's Undo
-  and Redo name the step ("Undo Arrange") and are greyed out when there is nothing to undo or redo
-  (`scripts/mac-shell/shots-F19.sh` does all of this on a cloud Mac).
-- Go to… (`scripts/mac-shell/shots-finder.sh` does the first four with real keys on test windows; `arbor-e2e` posts no input, so it only sees
-  the palette come, have the keyboard and go). With real apps:
-  - ⌃⌥G while typing in an app: the palette appears a quarter of the way down the display you are typing on and takes the keyboard; the app's
-    window keeps looking active and its name stays in the menu bar. Escape: typing goes on in the app where it stopped.
-  - Work in three apps for a while, then ⌃⌥G: the list starts with the window you were in before this one. Return goes there; ⌃⌥G Return comes back.
-  - Type a few letters of a title: the row is on top, its matched letters set off; long titles end in "…" before the note at the right.
-  - Click another window, a tile or a gap handle, ⌘Tab, swipe to another macOS Space, open Mission Control, lock the screen: the palette closes each
-    time and never stays behind. In a password field (secure text entry) ⌃⌥G may not get the keyboard: the next key then closes it.
-  - Choose a minimised window, a window of an app hidden with ⌘H, a tab behind another, a window on another display and one on another macOS Space:
-    each ends in view, in its own place and not as a tile, with the keyboard. The pointer does not move.
-  - After going to a window on the other display without touching the mouse, ⌃⌥↑ zooms that display, not the one under the pointer.
-  - Frame a window, swipe to another macOS Space and back: it is still framed.
-  - Type with an input method (Japanese, Korean, Pinyin): composing works, and Return confirms the composition before it chooses a row.
-  - Light and dark appearance, a bright and a dark window behind the palette, "Reduce transparency" and "Increase contrast" on: everything stays readable.
-  - Over an app in full screen: the palette shows there too.
-- With three or four real apps docked, ⌃⌥M: the minimap fades in low on the display, the apps can be told apart by colour, and the accent frame is where
-  you are. Click a window in it: that window is framed and takes your typing, and no other app came forward. Hold ⌃⌥M, point, let go: the same. Open
-  Mission Control while it is up: it is not there. In another app's full screen: it does not show. ⌃⌥⇧1 while it is up: the line sits above it. Then
-  `arborctl set minimapDuration 0.9` and zoom about: it comes and goes after every move, and a click where it is reaches the window below.
-- Add `"bindings": {"ctrl+opt+cmd+h": "dock left", "ctrl+opt+d": null}` to
-  settings.json and save it (no reload needed): ⌃⌥⌘H docks the focused window on
-  the left, ⌃⌥D does nothing, and the menu shows ⌃⌥⌘H next to Dock Focused
-  Window → Left and no shortcut next to Show the Desktop.
-- `./scripts/make-signing-identity.sh` in Terminal, pressing Return at its question: macOS asks in a dialog of its own, once, and
-  after Always Allow never again. Then
-  `tccutil reset Accessibility com.evbarleyg.arbor`, `make install`, switch Arbor on under Accessibility: `arborctl status` says
-  `running` a second later. Change a source file and `make install` again: it says `running` at once, and nothing asks.
-- The same (after `--remove`) giving the login password instead of Return: no dialog appears.
-- Menu → Help → Check for Updates…: a small window says "No update information" (while the repository is private); windows
-  of other apps can still be docked while it is open. About Arbor shows the version.
-- Settings… → General → Open at Login, log out and in: Arbor is running. `make uninstall`: Arbor is gone from System Settings →
-  General → Login Items & Extensions.
-- With windows docked, open settings.json in your own editor (TextEdit, VS Code, vim), change `gap` and save:
-  the windows move within a second. Break the JSON and save: nothing moves, arbor.log says once why the file
-  cannot be read, and `arborctl set gap 20` refuses and leaves the file as you left it. Mend it: it applies.
 
-- Keyboard tiling, with windows of **different apps** docked left and right and one floating between them:
-  ⌃⌥⇧→ walks from window to window (the menu bar shows each app in turn) and ⌃⌥⇧← walks back. Frame one window
-  (⌃⌥↩): ⌃⌥⇧→ moves the camera to the next space and focuses what is there.
-- ⌃⌥⌘= and ⌃⌥⌘- grow and shrink the focused window. Hold ⌃⌥⌘- on Safari or Xcode: it stops at the smallest size
-  the app allows and never turns into a tile. ⌃⌥⌘0 balances the sizes; ⌃⌥R rotates, and again rotates back; ⌃⌥⇧R mirrors.
-- With two displays: bind a key to `focus-display next` and press it: a window there has the keyboard, the pointer has not
-  moved, and ⌃⌥↑ then acts on that display.
-  `arborctl move-to-display next` sends the focused window across, docked or floating as it was. ⌃⌥⇧→ at the last
-  window of the left display crosses to the right one.
-
-Real apps, which the test windows cannot stand in for (F17):
-
-- Drag-to-dock works in Safari, Finder, Terminal, an Electron app (VS Code or Slack) and System Settings.
-- ⌘T in a docked Terminal or Finder window: the new tab is in the same slot, nothing else moves. Click the
-  first tab, ⌘W the second, drag a tab out: the slot stays with the group, the torn-off tab floats.
-- The green button on a docked window: the others share its space; leaving full screen gives it its slot
-  back, as a window, not a tile.
-- ⌘Tab between two apps with one of them out of view, with several Spaces, and with a window on another display.
-- Stop an app (`kill -STOP <pid>`) that has docked windows and move the camera: Arbor reacts within about a
-  second; `kill -CONT` and the windows go where they belong.
-- Resize the Dock, or set it to hide, then `arborctl relayout`: the layout uses the new space.
-
-With macOS's own window tiling on, as a Mac comes, the left, right and top edges of the screen are macOS's
-(`MacTiling`), so try the edges both ways: System Settings → Desktop & Dock → Windows. Stage Manager rearranges windows on its own and cannot be used with Arbor.
-
-How the menu bar item, the icon and the welcome window look can be seen without a screen: `Tests/ArborKitTests/MenuBarDrawingTests.swift` (macOS only, part
-of `swift test`) draws them with the real AppKit and SwiftUI code into bitmaps in memory, checks pixels and sizes, and leaves pictures of every
-state in `.build/pictures/F10/`, light and dark, at scale 1 and 2. No window is shown, nothing is captured and no input is sent, so nothing of
-the Mac's owner can be in them. What it cannot show: the menu itself (read `arborctl menu`), `appearsDisabled` on a real status bar button, and where macOS puts the item.
-
-The menu bar item and the welcome window. `scripts/mac-shell/shots-F10.sh` does the first five on GitHub's Mac (one
-display at scale 1, macOS 26) with real clicks and keys; the rest need a person:
-
-- With nothing docked the item is Arbor's mark, and a click opens the menu. Dock a window: the buttons appear.
-- Save two views and move about: the button for where you are is filled in, back and forward grey out when there is
-  nowhere to go, and a click on each button goes there. Hovering shows what each does. The last button (…) opens the menu.
-- A right click, a ⌃-click and an ⌥-click anywhere on the item open the menu; shortcuts are right-aligned, the place you
-  are at is ticked.
-- `"menuBarControls": false` and Reload Settings: a single icon, and a plain click opens the menu.
-- Take Accessibility away from Arbor and launch it: the welcome window opens by itself, Continue is grey, the
-  menu bar shows a warning sign, the menu offers Check Setup… first. Grant it: within a second or two the window comes in front of System Settings. On a Mac
-  as it comes it stays on its first page, headed "One thing is in the way" (the Desktop & Dock row), with Continue enabled; with nothing in the way it turns to
-  "Three moves to try" and floats above other windows. Dock, frame, show everything: each is ticked as it happens.
-- Close the window and open Arbor.app again from Finder: it comes back.
-- Quit Arbor, delete `"welcomed"` from `state.json` (or the file) and launch it with the permission granted: the window opens by itself, on
-  the three moves if nothing is in the way, at the right of the display. Quit and launch again: it does not. The arrangement survives both.
-- **On a Retina display, and on light and dark wallpapers**: the glyphs are sharp and turn white on a dark menu bar.
-- **With two displays**: click the item in the second display's menu bar. The click must land on the button under the pointer
-  (`ARBOR_DEBUG=1` logs "menu bar click: x … by the event, … by the screen"), act on that display, and the item must then
-  show that display's buttons.
-- **On a notched MacBook with a full menu bar**: nine saved views make the item 320 points wide. Save views until macOS leaves it out: within
-  two seconds Arbor's single icon must appear in its place, `arborctl menu-bar` says "macOS has no room in the menu bar for the buttons" and
-  `arborctl doctor` "showing as a single icon". Quit a few menu bar apps and `arborctl reload-settings`: the buttons are back. With `ARBOR_DEBUG=1` nothing
-  more is logged; `arborctl doctor` is the window into it. **If `doctor` says "not showing, as far as macOS says" while the item is plainly there**, the question
-  Arbor asks (`occlusionState` of the button's window) means nothing on that macOS: nothing is taken away, and it wants reporting. If macOS hides even the
-  single icon, opening Arbor again must still show the welcome window.
-- With "Automatically hide and show the menu bar" on, and in a full screen Space: `doctor` says "Menu bar item: unknown here" and the buttons stay.
-- Let the displays sleep and wake them, and switch to another user and back: the buttons are as they were. (A lock screen or a screen saver without
-  display sleep sends neither notice: if a window event has the item drawn just then, the single icon stays until the settings or the displays change.)
-- Help → About Arbor makes Arbor the active app. Close the panel: until a click or ⌘Tab "the focused window" is nobody's, and the rows under Focused
-  Window are grey. Known, low; the way out is a panel of Arbor's own that is ordered front without activating, as the update window is.
-- With the welcome window open, set "Click wallpaper to reveal desktop" to "Only in Stage Manager" and flip the three switches
-  under Desktop & Dock → Windows: the row lists only what is still in the way, and gets its tick when nothing is. Switch
-  Stage Manager on: it is listed. Start Rectangle, switch VoiceOver on: a row appears for each.
-- In the bundled app, tick Open at Login on the second page: the box follows, and so do Login Items in System Settings
-  and Open at Login in the settings window.
-- Pause Arbor: the icon dims (as a single icon too), the menu begins with a line that says so and Resume with ⌃⌥⎋.
-- Compare the open menu with `arborctl menu`, line by line, with a docked window focused, a floating one, and none.
-- With the welcome window open on its second page, open Arbor.app again: the window comes forward as it is. Leave it open, switch to
-  another of the macOS Spaces and choose Help → Welcome…: it comes over.
-- Click Open Settings… in the Accessibility row on a Mac that has never run Arbor: macOS's own prompt appears once and
-  Arbor is in the list, switched off.
-- With VoiceOver, press the item (VO-Space): the menu opens.
-- `make app`: Arbor.app has the green icon in Finder, in Login Items and in the Accessibility list.
-
-`arborctl doctor` lists the settings under System Settings → Desktop & Dock that compete with Arbor as they stand ("Click
-wallpaper to reveal desktop", the two "Drag windows to…" switches, "Hold ⌥ key while dragging windows to tile", Stage
-Manager) and what to do about each.
+With macOS's own window tiling on, as a Mac comes, the left, right and top edges of the screen are macOS's (`MacTiling`). Stage Manager
+rearranges windows on its own and cannot be used with Arbor. `arborctl doctor` lists the settings under System Settings → Desktop & Dock that
+compete with Arbor as they stand ("Click wallpaper to reveal desktop", the two "Drag windows to…" switches, "Hold ⌥ key while dragging
+windows to tile", Stage Manager) and what to do about each.
