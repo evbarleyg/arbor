@@ -2,7 +2,7 @@
 """Does a real window whose frame is set once for every frame of the display glide as macOS's own tiling does, or does it stutter?
 Reads what probe-glide.sh brought back from a Mac. Needs no Mac.
 
-  judge-glide.py <folder> [--seen 0.88] [--gap 2] [--wrong 0] [--off 1] [--over 1.25] [--forgive 0] [--dead 2] [--blind 0]
+  judge-glide.py <folder> [--seen 0.88] [--gap 2] [--no-bar] [--wrong 0] [--off 1] [--over 1.25] [--forgive 0] [--dead 2] [--blind 0]
   judge-glide.py --self-test
 
 In the folder: glide.log (glide.swift's header has its grammar: every asking, with what it cost and how late it began), samples.log (sampler.swift's: what the
@@ -23,13 +23,16 @@ A row of the tables pools the acts of one kind on one kind of road, there and ba
   jump       of a pair: when the window that is set once was seen at its end
   app, server, glide      processor time an act cost the apps, the window server and the tool. 30 ms are 10 % of a core for 0.3 s
 
-THE VERDICT goes by macOS's own glide: 16 to 18 frames in some 295 ms, none skipped, four edges in step. A glide (not a control) STUTTERS if fewer than --seen of the frames asked
-for were reached; or the gap is over --gap steps and one sample; or more than --wrong wrong states were seen; or it ended more than --off from the frame asked for; or it took over
+THE VERDICT goes by macOS's own glide. Counted from films of five of them on one hosted Mac: 16 to 18 frames in 283 to 317 ms, four edges in step, never past the end, and in four of the
+five one to three waits of 33 ms, once of 50: it does skip frames, and part of that is the hosted Mac's. A glide (not a control) STUTTERS if fewer than --seen of the frames asked
+for were reached; or the gap is over --gap steps and one sample, OR OVER THE LONGEST GAP OF THE BAR ON THE SAME WINDOW IN THE SAME RUN and one sample, whichever is more (a line says when that raised it; --no-bar: --gap alone); or more than --wrong wrong states were seen; or it ended more than --off from the frame asked for; or it took over
 --over times as long as it was to; or one asking took longer than the whole glide was to. An app whose CONTROLS end with another size than asked for has its own mind about sizes
 (one size only, whole character cells): it is judged by its left and top edges alone. Where the controls end elsewhere too, ending elsewhere is no stutter.
 A glide is DISTURBED if the sampler was blind meanwhile (its L lines, those of --blind ms and more), or if glide itself overslept: a step began over half a step late although its
 thread had nothing else to do. That is the Mac's doing, so frames not reached, gaps and time are not held against such a glide, and an app all of whose glides were disturbed is not
 judged. ONLY GLIDES OF ONE WINDOW ALONE IN THE ORDER by-edges HAVE A VOTE: the other orders are there to be compared with. An app stutters if more than --forgive of them do.
+THE BAR IS THE CONTROL OF THE VERDICT: macOS's own glides in the folder are held to the same rule, by --gap alone and 18 frames in 300 ms, and a line says how many of them stutter by it. A rule that
+macOS fails is too hard, or the sampler sees less of macOS's glide than of Arbor's. A bar that was disturbed raises no limit. Without a bar a line says that the verdict has no control.
 The sampler looks twice as often as the display shows, so it sees about twice the wrong states a person could.
 The last two lines are made to grep for: `stutter: N of 9 apps`, and `verdict: dead` from --dead apps on, else `verdict: alive`.
 Exit code 0 whatever the verdict, 2 if there is nothing to judge.
@@ -129,9 +132,11 @@ def read_samples(folder, least=0):
     return frames, blind, hertz, last
 
 
-def look(act, frames, blind, hertz, limits, count=4):
-    """What was seen of an act: a dictionary of numbers, with "faults", the reasons for which it stutters. count=2: only the left and top edges are looked at."""
-    step = act.duration / max(act.steps, 1)
+def look(act, frames, blind, hertz, limits, count=4, still=0):
+    """What was seen of an act: a dictionary of numbers, with "faults", the reasons for which it stutters. count=2: only the left and top edges are looked at.
+    still: it may stand still for that many ms, if that is more than the limits allow. The bar is held to what is asked of the glides: 18 frames in 300 ms."""
+    steps, duration = (act.steps, act.duration) if act.steps else (18, 300.0)
+    step = duration / steps
     found = {"wrong": 0, "beyond": 0.0, "outwards": 0.0, "out": 0.0, "off": 0.0, "size_off": 0.0, "jump": 0.0, "faults": []}
     for window, journey in act.journeys.items():
         states = [state for state in frames.get(window, []) if act.time < state[0] <= act.until]
@@ -170,17 +175,17 @@ def look(act, frames, blind, hertz, limits, count=4):
     found.update(calls=[call[3] for call in calls], errors=sum(call[4] != 0 for call in calls),
                  disturbed=any(start < act.done + 50 and end > act.time for start, end in blind) or overslept > step / 2,
                  end_unseen=any(start < act.until <= end for start, end in blind))
-    if act.steps > 1:
-        allowed = limits.gap * step + 1000 / hertz
-        if found["reached"] < limits.seen * found["asked"] and not found["disturbed"]:
-            found["faults"].append(f"only {found['reached']} of {found['asked']} frames were reached")
+    if steps > 1:
+        allowed = max(limits.gap * step + 1000 / hertz, still)
+        if found["reached"] < limits.seen * (found["asked"] or steps) and not found["disturbed"]:
+            found["faults"].append(f"only {found['reached']} of {found['asked'] or steps} frames were reached")
         if found["gap"] > allowed and not found["disturbed"]:
             found["faults"].append(f"it stood still for {found['gap']:.0f} ms (allowed: {allowed:.0f})")
-        if found["took"] > limits.over * act.duration and not found["disturbed"]:
-            found["faults"].append(f"it took {found['took']:.0f} ms (allowed: {limits.over * act.duration:.0f})")
+        if found["took"] > limits.over * duration and not found["disturbed"]:
+            found["faults"].append(f"it took {found['took']:.0f} ms (allowed: {limits.over * duration:.0f})")
         if found["wrong"] > limits.wrong:
             found["faults"].append(f"{found['wrong']} wrong states were seen, an edge up to {found['beyond']:.0f} points off its road")
-        if max(found["calls"], default=0) > act.duration:
+        if max(found["calls"], default=0) > duration:
             found["faults"].append(f"an asking took {max(found['calls']):.0f} ms, longer than the whole glide")
     return found
 
@@ -209,12 +214,17 @@ def judge(folder, limits, out=print):
     frames, blind, hertz, last = read_samples(folder, limits.blind)
     out(f"{len(acts)} acts; the sampler ran at {hertz:.0f} Hz" + (f" ({last})" if last else "") + f"; it was blind {len(blind)} times")
     verdicts, summary, roads = {}, [], defaultdict(lambda: [0, 0])
+    # THE CONTROL OF THE VERDICT: macOS's own glides of the same windows, in the same run, seen by the same sampler, held to the same rule.
+    bars = {act.name: look(act, frames, blind, hertz, limits) for act in acts if act.order == "macos"}
+    plain = limits.gap * 300 / 18 + 1000 / hertz
     for who in dict.fromkeys(act.who for act in acts):
         mine = [act for act in acts if act.who == who]
+        # Of the same window, not of the whole run: one slow app's bar would excuse all the others.
+        still = 0 if limits.no_bar else max([bars[act.name]["gap"] + 1000 / hertz for act in mine if act.name in bars and not bars[act.name]["disturbed"]], default=0)
         # The control says what the app does when it is asked ONCE. What it does then too is not the steps' doing.
         controls = [look(act, frames, blind, hertz, limits) for act in mine if act.steps == 1]
         wilful = bool(controls) and min(control["size_off"] for control in controls) > limits.off
-        looks = {act.name: look(act, frames, blind, hertz, limits, 2 if wilful else 4) for act in mine}
+        looks = {act.name: look(act, frames, blind, hertz, limits, 2 if wilful else 4, still) for act in mine}
         placeable = not controls or min(looks[act.name]["off"] for act in mine if act.steps == 1) <= limits.off
         out("")
         out(HEAD)
@@ -224,6 +234,8 @@ def judge(folder, limits, out=print):
         errors = sum(looks[act.name]["errors"] for act in mine)
         if errors:
             out(f"  {errors} askings came back with an AXError")
+        if still > plain:
+            out(f"  macOS's own glide of this window stood still for {still - 1000 / hertz:.0f} ms: so may its glides, and one sample ({still:.0f} ms, not {plain:.0f}). --no-bar goes by --gap alone")
         if wilful:
             out("  its controls end with another size than asked for: it is judged by its left and top edges alone")
         if not placeable:
@@ -266,6 +278,12 @@ def judge(folder, limits, out=print):
     stutter = sorted(who for who, word in apps.items() if word == "STUTTERS")
     out("")
     out(f"limits: seen {limits.seen}, gap {limits.gap} steps and a sample, wrong {limits.wrong}, off {limits.off}, over {limits.over}, forgive {limits.forgive}, dead from {limits.dead} apps")
+    if bars:
+        out(f"the bar: {sum(bool(bar['faults']) for bar in bars.values())} of {len(bars)} of macOS's own glides stutter by this rule")
+        for name, bar in [(name, bar) for name, bar in bars.items() if bar["faults"]][:9]:
+            out(f"    {name}: " + "; ".join(bar["faults"]))
+    else:
+        out("the verdict has no control: there is no glide of macOS's own in the folder, so nobody knows whether macOS itself would pass on that Mac")
     out("stutters: " + (" ".join(stutter) or "none") + "".join(f"; not judged: {who}" for who, (word, _) in verdicts.items() if word == "not judged"))
     out("apps with a glide at fault, road by road: " + ", ".join(f"{road} {bad} of {count}" for road, (bad, count) in roads.items()))
     out(f"were each app forgiven one glide more: {sum(verdicts[who][1] > limits.forgive + 1 for who in apps)} of {len(apps)} apps")
@@ -275,20 +293,22 @@ def judge(folder, limits, out=print):
 
 
 def parse(arguments):
-    parser = argparse.ArgumentParser(usage="judge-glide.py <folder> [--seen 0.88] [--gap 2] [--wrong 0] [--off 1] [--over 1.25] [--forgive 0] [--dead 2] [--blind 0] | --self-test   (its header says more)")
+    parser = argparse.ArgumentParser(usage="judge-glide.py <folder> [--seen 0.88] [--gap 2] [--no-bar] [--wrong 0] [--off 1] [--over 1.25] [--forgive 0] [--dead 2] [--blind 0] | --self-test   (its header says more)")
     parser.add_argument("folder")
     for name, kind, value in (("seen", float, 0.88), ("gap", float, 2), ("wrong", int, 0), ("off", float, 1), ("over", float, 1.25), ("forgive", int, 0), ("dead", int, 2), ("blind", float, 0)):
         parser.add_argument(f"--{name}", type=kind, default=value)
+    parser.add_argument("--no-bar", action="store_true")
     return parser.parse_args(arguments)
 
 
 # MARK: The self-test
 
-def make_up(folder, cast, blind=()):
+def make_up(folder, cast, blind=(), bar=None):
     """Logs as a Mac would leave them. cast: {name: manner}. Each app plays a control and two glides of 18 steps in 300 ms in which its left edge moves and its right edge is to stand
     still, and the sampler looks 120 times a second. Manners: smooth (both askings show at once); torn (the second asking takes 10 ms, and what lies between shows); late (20 ms an
     asking); slow (one asking of 350 ms); elsewhere (20 points off a moment after the end); never (so after its control too); skips (the window server shows every third frame);
-    fixed (it keeps its size, whatever is asked); overslept (not the app: the tool begins a step 60 ms late)."""
+    fixed (it keeps its size, whatever is asked); overslept (not the app: the tool begins a step 60 ms late); a number (one asking takes so long that the window stands still for that
+    many ms). bar: macOS's own glide of the last window, 18 frames with one wait of that many ms."""
     log, shown, clock = [], defaultdict(list), 1_000_000.0
     text = lambda frame: " ".join(f"{number:.0f}" for number in frame)  # noqa: E731
     for index, (name, manner) in enumerate(cast.items()):
@@ -305,7 +325,7 @@ def make_up(folder, cast, blind=()):
                 following = (left, 80.0, 1200.0 - left, 400.0)
                 for turn, kind in enumerate(("place", "size") if goal[2] > frame[2] else ("size", "place")):
                     began = max(due, free) + (60 if manner == "overslept" and step == 4 and turn == 0 else 0)
-                    took = 350.0 if manner == "slow" and step == 3 and turn == 0 else 20.0 if manner == "late" else 10.0 if manner == "torn" and turn == 1 else 1.0
+                    took = manner - 300 / 18 if isinstance(manner, int) and step == 9 and turn == 0 else 350.0 if manner == "slow" and step == 3 and turn == 0 else 20.0 if manner == "late" else 10.0 if manner == "torn" and turn == 1 else 1.0
                     log.append(f"{began:.2f} call {act} {window} {kind} {step} {took:.2f} 0 {began - due:.2f} {text(following)}")
                     free = began + took
                     if manner == "torn" and turn == 0:
@@ -317,6 +337,13 @@ def make_up(folder, cast, blind=()):
                 shown[window].append((free + 30, (goal[0], goal[1] + 20, goal[2], goal[3])))
             log.append(f"{free:.2f} done {act} 5.00")
             frame, clock = goal, free + 600
+    if bar is not None:
+        log += [f"{clock:.2f} act {name}.4 0 0 macos", f"{clock:.2f} ask {name}.4 {window} 7 glides {text(frame)} 0 31 720 800"]
+        for step in range(1, 19):
+            share = step / 18
+            shown[window].append((clock + 20 + 300 * share + (bar - 300 / 18 if step > 9 else 0), tuple(round(a + (b - a) * share) for a, b in zip(frame, (0.0, 31.0, 720.0, 800.0)))))
+        log.append(f"{clock + 900:.2f} done {name}.4 5.00")
+        clock += 1500
     samples = ["999000 M sampler at 120 Hz"] + [f"{end:.0f} L {end - start:.0f}" for start, end in blind]
     for window, states in shown.items():
         last = None
@@ -335,12 +362,12 @@ def self_test():
     import tempfile
     failures = []
 
-    def expect(what, cast, stutter, verdict, options=(), blind=()):
+    def expect(what, cast, stutter, verdict, options=(), blind=(), bar=None, says=""):
         with tempfile.TemporaryDirectory() as folder:
-            make_up(folder, cast, blind)
+            make_up(folder, cast, blind, bar)
             said = []
             found, judged = judge(folder, parse([folder, *options]), said.append)
-            if found != sorted(stutter) or said[-1] != f"verdict: {verdict}" or said[-2] != f"stutter: {len(stutter)} of {len(judged)} apps":
+            if found != sorted(stutter) or said[-1] != f"verdict: {verdict}" or said[-2] != f"stutter: {len(stutter)} of {len(judged)} apps" or not any(says in line for line in said):
                 failures.append(f"{what}: {found}, {said[-2]}, {said[-1]}\n" + "\n".join(said))
 
     long = [(1_000_500.0, 1_003_000.0)]
@@ -362,6 +389,14 @@ def self_test():
     expect("unless gaps of that length are to be passed over", {"a": "smooth"}, ["a"], "alive", ["--blind", "3000"], blind=long)
     expect("nor one in which the tool overslept", {"a": "overslept"}, [], "alive")
     expect("but where it ended is seen all the same", {"a": "elsewhere"}, ["a"], "alive", blind=[(1_000_700.0, 1_000_800.0), (1_001_600.0, 1_001_700.0)])
+    expect("a wait of 50 ms is a stutter beside a bar that is clean", {"a": 50}, ["a"], "alive", bar=17, says="the bar: 0 of 1 of macOS's own glides stutter by this rule")
+    expect("and none beside a bar that waits 50 ms itself", {"a": 50}, [], "alive", bar=50, says="the bar: 1 of 1 of macOS's own glides stutter by this rule")
+    expect("which is said", {"a": 50}, [], "alive", bar=50, says="macOS's own glide of this window stood still for")
+    expect("a wait of 67 ms is one all the same", {"a": 67}, ["a"], "alive", bar=50)
+    expect("one app's bar excuses no other app", {"a": 50, "b": "smooth"}, ["a"], "alive", bar=50)
+    expect("the bar can be left out of the limit", {"a": 50}, ["a"], "alive", ["--no-bar"], bar=50)
+    expect("a bar the sampler did not see raises nothing", {"a": 50}, ["a"], "alive", bar=50, blind=[(1_002_650.0, 1_002_670.0)])
+    expect("without a bar the verdict has no control, and says so", {"a": "smooth"}, [], "alive", says="the verdict has no control")
     with tempfile.TemporaryDirectory() as folder:
         if main([folder]) != 2:
             failures.append("an empty folder must come out as 2")
