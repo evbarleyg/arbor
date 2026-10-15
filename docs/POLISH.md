@@ -210,3 +210,4 @@ Restated on 2026-10-15 under the table as it is now (S4 on glass and S7 added; t
 |---|---|---|---|---|---|---|
 | 2026-10-14 23:27 | `a391fe4` | **36.9** | 36.9 | 50% | 36 | Run 1 (`collab/polish/run-1.md`). Tabs, double clicks, the followed pinch and all stills unseen; four films void |
 | 2026-10-15 01:38 | `302a0b0` | **42.7** | 42.7 | 55% | 40 | Run 2 (`collab/polish/run-2.md`). A cast of four apps, panels in the picture; two films void |
+| 2026-10-15 04:20 | `302a0b0`, pictures of `5f18637` | **45.9** | 45.9 | 60% | 41 | Run 2's films, and for the first time the pictures at rest (`collab/polish/stills-1.md`): 64 of 125 cells seen, 45 pass |
