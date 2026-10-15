@@ -396,13 +396,11 @@ extension Controller {
         }
         settled[window] = actual
         misfits[window] = actual.approximatelyEquals(target, tolerance: 1) ? nil : (target, actual)
-        if room != nil, !actual.approximatelyEquals(current.frame, tolerance: 1) {
-          raiseIfLeftHangingOverDockedWindows(window, at: actual, in: layout)
-        }
       }
-      // A guest that comes back: its host may have been raised since (that is how ⌘Tab brings a view back), and
-      // would cover it.
-      if parked.remove(window) != nil, room == nil { system.raise(window) }
+      // Back in view, at the place in macOS's order that it had. A guest raised over its host would cover the very
+      // window its person has just switched to, which is how ⌘Tab brings a view back. ⌃⌥D shows all that floats.
+      // Only a window kept in view is raised: pinned while it was out of view, this is the raise at the pin.
+      if parked.remove(window) != nil, workspace.staysInView(window) { system.raise(window) }
     }
   }
 
@@ -499,8 +497,8 @@ extension Controller {
         }
         moves.append((window, .place(frame, fitting: room)))
       } else if desktopIsPartOfTheView || hostInView(of: window, in: workspace, layout: layout) != nil {
-        // The Desktop is in the view, only too small to use: its windows are in view all the same, over the docked
-        // ones. So is a guest of a space in view (Controller+Guests.swift). Each is where the user last had it.
+        // The Desktop is in the view, only too small to use: its windows are in view all the same, where the docked
+        // ones are. So is a guest of a space in view (Controller+Guests.swift). Each is where the user last had it.
         guard drag?.window != window,
           parked.contains(window) || showsOnlyASliver(window) || isBackFromThePause(window)
             || (reason == .camera && whereArborPutIt)
@@ -635,7 +633,8 @@ extension Controller {
   }
 
   /// If the focused window was just parked, or nothing is focused, focuses a window in view: the one used last. Of
-  /// windows never used, the one under the pointer (a floating one lies in front), or the top-left one.
+  /// windows never used, the one under the pointer (a floating one first: more often than not it lies in
+  /// front), or the top-left one.
   /// Returns whether it did.
   ///
   /// The one used last is also the one that was in front when the view left. Focusing raises, so a framed window

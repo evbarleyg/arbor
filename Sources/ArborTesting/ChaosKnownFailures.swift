@@ -567,22 +567,6 @@ extension ChaosRunner {
         advance 1
         """),
     ChaosKnownFailure(
-      rule: "switched-to-behind", owner: "rule 4: Arbor raises nothing else", severity: 3,
-      story: "A window opens over a framed one. Away to another window and back to the framed one: it has the keyboard, and the window that lay over it is raised in "
-        + "front of it on purpose, as a guest that comes back with its view.",
-      script: """
-        open 101 Xcode pid 1004 at 70 31 1188 776 min 1188 685
-        open 102 Terminal pid 1003 at 197 324 991 444 min 177 60
-        launch
-        key down arrange
-        key down in
-        open 103 Terminal pid 1003 at 152 278 965 394 min 177 60
-        focus 101
-        focus 102
-        react
-        advance 1
-        """),
-    ChaosKnownFailure(
       rule: "moved-at-launch", owner: "rule 2: nothing moves at a start", severity: 2,
       story: "Quit at the desk, started on the lap: the displays change while Arbor is away, its person puts a floating window where they want it, and the start "
         + "sends it to where it lay on this display the last time Arbor saw it.",

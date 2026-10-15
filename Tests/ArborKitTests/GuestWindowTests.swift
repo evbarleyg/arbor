@@ -239,7 +239,11 @@ import Testing
   }
 
   /// ⌘Tab or a click in the Dock: macOS has raised the host before Arbor hears of it and brings the guest back.
-  @Test func switchingToTheHostFromElsewhereLeavesItsGuestInFront() {
+  ///
+  /// Rewritten to the decision. This test said that the guest ends in front, which took a raise over the very window its person had just
+  /// switched to. QUESTIONS Q20 and Q25: the window switched to comes to the front, Arbor raises nothing else, and going out of view
+  /// and coming back changes no window's place in the order. The ways to the guest are in `RaisesNothingElseTests`.
+  @Test func switchingToTheHostFromElsewhereLeavesTheHostInFront() {
     let h = Harness()
     let ids = ["A", "B", "C", "D", "E"].map { h.system.open(app: $0) }
     h.start()
@@ -249,12 +253,16 @@ import Testing
     h.run("zoom \(ids[4].rawValue)")
     h.scheduler.advance(by: 1)
     #expect(!h.system.isVisible(new))
+    h.system.clearRaiseLog()
     h.system.userFocus(ids[0])
     #expect(h.system.isVisible(new))
     #expect(h.frame(new)!.overlaps(h.frame(ids[0])!))
     #expect(h.system.focusedWindow() == ids[0], "the focus stays where the user put it")
-    let above = h.system.windowsFrontToBack().prefix { $0 != new }
-    #expect(!above.contains { h.frame($0)!.overlaps(h.frame(new)!) }, "in view, but behind \(above)")
+    #expect(h.system.windowsFrontToBack().first == ids[0], "and so does the front: \(h.system.windowsFrontToBack())")
+    #expect(h.system.raiseLog.isEmpty)
+    // A switch to the guest brings it to the front, and the view stays.
+    h.system.userFocus(new)
+    #expect(h.system.windowsFrontToBack().first == new && h.workspace.camera == h.workspace.tree.leaf(containing: ids[0]))
   }
 
   @Test func aHostThatWasUsedLastGetsTheFocusBack() {

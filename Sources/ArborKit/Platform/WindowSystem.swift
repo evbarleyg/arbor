@@ -114,7 +114,8 @@ public protocol WindowSystem: AnyObject {
   func isHolding(_ chord: KeyChord) -> Bool
 
   /// Brings the window in front of the others. Unlike `focus`, the keyboard stays where it is
-  /// and the window's app is not activated.
+  /// and the window's app is not activated. Only for a window kept in view: the order is macOS's, and Arbor
+  /// raises nothing else (collab/QUESTIONS.md, Q20 and Q25). It cannot lift a window over the active app's key window.
   func raise(_ window: WindowID)
 
   /// How the windows on screen are stacked, frontmost first. It may list windows nobody asked

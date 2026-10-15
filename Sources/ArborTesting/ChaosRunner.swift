@@ -90,6 +90,8 @@ public final class ChaosRunner {
   var theChangeChangedNothing = false
   /// What the nets for the product's seven rules remember (ChaosInvariants+SevenRules.swift).
   var seven = SevenRules()
+  /// How many windows had been raised when the step began (ChaosInvariants+Raises.swift).
+  var raiseLogMark = 0
   /// The displays there were last, for as long as there are none.
   private var lastDisplays: [DisplaySnapshot] = []
   var owedTheWayBackBefore: Set<WindowID> = []
@@ -215,13 +217,14 @@ public final class ChaosRunner {
     let movesBefore = system.windows.mapValues(\.movesNotArbors)
     inHandBefore = system.dragging ?? system.resizing
     noteBeforeTheSevenRules(action)
+    raiseLogMark = system.raiseLog.count
     perform(action)
     listen()
     beforeTheNextCheck?(self)
     beforeTheNextCheck = nil
     noteWhereItsUserLeftEachWindow(after: action, movesBefore: movesBefore)
     noteAfterTheSevenRules(action, movesBefore: movesBefore)
-    return found + wayHomeViolations(after: action) + check(after: action)
+    return found + wayHomeViolations(after: action) + raiseViolations(after: action) + check(after: action)
   }
 
   /// Where somebody other than Arbor last put each window, as seen from the corner of the display that shows most of it, and

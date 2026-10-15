@@ -24,4 +24,12 @@ zoom 101
 expect hidden 106
 home
 expect visible 106
+# Until 2026-10-15 this ended `expect in-front 106`, which took a raise. It is gone on purpose; putting it back is no fix. Arbor raises nothing but
+# a window kept in view, and going out of view and coming back changes no window's place in macOS's order (QUESTIONS Q20, Q25). Why: it is what
+# the Mac would do without Arbor. A window that gets the keyboard comes over whatever floated above it, so the note lies under the window somebody
+# has just worked in and over the other four as before: the order is what their own acts made it. The same raise put a guest over the
+# window its person had just switched to. "In view" is a place, not a promise that nothing covers it.
+# ⌃⌥D, or a click on the Desktop's tile, shows all that floats.
+desktop
+expect visible 106
 expect in-front 106

@@ -49,7 +49,8 @@ In every mode:
   still shows every floating window, guests included.
 - Switching to a guest that is out of view (⌘Tab) frames its host. So does `zoom <guest>`; the shortcut for framing, pressed with a guest focused over its framed host, leaves the framed view like a second press on the host.
 - Coming back to a view, the window in it that was used last gets the focus (`ensureFocusIsVisible`, `zoom <host>`). Focusing raises, so a guest that was in front of its host is in front again.
-- A guest that comes back into view is raised (`raise(_:)`, the focus stays where it is): ⌘Tab to the host raises the host before Arbor brings the guest back.
+- A guest that comes back into view keeps its place in macOS's order; it is not raised (QUESTIONS Q20 and Q25, 2026-10-15; until then it was). ⌘Tab to the host leaves the host in front, which is the window switched to, and the guest behind it where it was.
+  The ways to it: a switch to it (⌘Tab, ⌘`, the Dock, Go to…), `focus` or `zoom` with its number, and ⌃⌥D, which shows all that floats (`RaisesNothingElseTests`).
 - A group left with one member hands that member its guests, as it does its saved views.
 - `state` says `guestOf`; an unknown value of the setting is named in the log and means `"guest"`.
 - The visit ends when the guest is docked, pinned, closed or moved to another display, its host closes, or `arrange` or `float-all` runs. Moving it on its display does not end it; its new place is remembered. A host that is

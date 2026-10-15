@@ -93,8 +93,9 @@ it aside or shrink it and it goes back as they make room. On the sides where not
 is docked beside the Desktop they may reach the edge of the screen. When the camera
 moves and the Desktop is no longer part of the view its windows are parked; when it is
 again they return. A Desktop too small to use, a tile, is part of the view like any other:
-its windows are in view at their own frames, over the docked ones and in front of them, so
-that after "show everything" nothing is out of view. Nothing is pushed there.
+its windows are in view at their own frames, where the docked ones are too, so
+that after "show everything" nothing is out of view. Nothing is pushed there, and nothing is raised: which lies in
+front is macOS's order (QUESTIONS Q20, Q25), and ⌃⌥D or a click on the tile shows all that floats.
 Only a camera move parks or returns: a change of the arrangement can turn the
 Desktop into a tile and back, and must not make the window someone is typing in shrink
 or vanish. A window the user moved over docked windows on purpose is left alone until

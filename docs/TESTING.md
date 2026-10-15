@@ -1247,6 +1247,10 @@ done to the world as if Arbor had done it, at which the net has to speak, beside
 | Quitting, Float All and pause give windows their own sizes back | `size-not-given-back` | `size-lost` |
 | After any way home no window shows less than its person left showing; after a change of displays none is mostly out of view | `home-not-whole`, `home-behind-the-dock`, `home-leaves-out`; `displays-left-mostly-out` | `lost` |
 
+**Arbor raises nothing else** (`ChaosInvariants+Raises.swift`, QUESTIONS Q20 and Q25): `raised-unasked` speaks at any raise, which is a window brought to the front without the keyboard, of a window that is neither kept in view nor summoned, at the step in which it is made,
+and at any raise at all by an Arbor that has paused or quit. `switched-to-behind` sees the harm only where the raised window happens to lie over the one just switched to. `asked: raised` counts how often a floating window that nothing keeps in view
+came back into view, which is where Arbor used to raise. Its controls and its floor are in `RaisesNothingElseTests`.
+
 The ways home (`way-back home`, `show-all`, `pause`, `float-all`, `start-again`, `quit`) are each taken at the end of every walk, the ones that leave the arrangement alone first.
 A hunt ends with `asked: <net> <n> times`: **a net that never asks its question catches nothing**, and `ordinaryWalksReachEveryQuestion` holds each to a floor.
 

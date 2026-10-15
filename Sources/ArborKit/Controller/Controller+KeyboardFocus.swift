@@ -245,7 +245,7 @@ extension Controller {
   /// one out of view): what is under the pointer, or else nearest the top left.
   private func startingPoint(among candidates: [FocusCandidate]) -> FocusCandidate? {
     let cursor = system.cursorLocation()
-    // Floating windows come last in the list and sit in front of docked ones, hence `reversed`.
+    // Floating windows come last in the list and more often than not lie in front of docked ones, hence `reversed`.
     return candidates.reversed().filter { $0.frame.contains(cursor) }.min { $0.recency < $1.recency }
       ?? candidates.min { ($0.frame.minY, $0.frame.minX) < ($1.frame.minY, $1.frame.minX) }
   }

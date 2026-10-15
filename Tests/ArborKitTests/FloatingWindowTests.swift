@@ -290,7 +290,10 @@ import Testing
     #expect(h.visibleFrame.contains(h.frame(f)!), "ten points are too little to see and grab: \(h.frame(f)!)")
   }
 
-  // MARK: Floating means on top (K087)
+  // MARK: The order is macOS's (K087 said "floating means on top"; overruled by QUESTIONS Q20 and Q25)
+  //
+  // The first test below is rewritten to the decision. The five after it were the exceptions to K087's raise. They are left as they were: with no
+  // raise to be excepted from they say less than they did, and each still names a moment at which a raise would do harm, should one come back.
 
   /// `[a | c | Desktop | b]`, and `f`, which cannot be narrower than 700, in the middle of a Desktop that is narrower: it
   /// hangs over `c` and `b`, and is behind them. `focused` says which of `a`, `c` and `f` has the keyboard.
@@ -315,16 +318,25 @@ import Testing
     return (h, a, b, c, f)
   }
 
-  @Test func leftHangingOverADockedWindowByALayoutItIsBroughtToTheFront() {
+  /// Rewritten to the decision. This test said that it is brought to the front (K087). Q25: "the raise of windows left hanging over docked
+  /// ones goes": Arbor raises nothing but a window kept in view. It keeps its place in the order, and can be had as any window
+  /// that another one partly covers: what shows of it is there to be clicked, and ⌃⌥D shows all that floats.
+  @Test func leftHangingOverADockedWindowByALayoutItKeepsItsPlaceInTheOrder() {
     let (h, a, b, c, f) = withAWindowTooWideForTheDesktop { a, _, _ in a }
     let before = h.frame(f)
+    let order = h.system.windowsFrontToBack()
+    for docked in [b, c] { #expect(order.firstIndex(of: f)! > order.firstIndex(of: docked)!, "it is behind both") }
     // The Desktop moves, and Xcode with it.
     h.run("resize \(c.rawValue) right 60")
     #expect(h.frame(f) != before)
-    #expect(h.system.raiseLog == [f])
+    #expect(h.system.raiseLog.isEmpty)
+    #expect(h.system.windowsFrontToBack() == order)
     #expect(h.system.focusedWindow() == a, "the keyboard stays where it is")
-    let order = h.system.windowsFrontToBack()
-    for docked in [b, c] { #expect(order.firstIndex(of: f)! < order.firstIndex(of: docked)!) }
+    let showing = h.frame(f)!.intersection(h.layout!.desktopFrame!)
+    #expect(showing.width >= 100 && showing.height >= 100, "enough of it shows between them to be clicked: \(h.ascii())")
+    h.run("desktop")
+    #expect(h.system.isVisible(f) && ![a, b, c].contains { h.system.isVisible($0) }, "and on the Desktop nothing covers it")
+    #expect(h.system.raiseLog.isEmpty)
   }
 
   @Test func notOverTheWindowThatHasTheKeyboard() {
@@ -585,12 +597,18 @@ import Testing
       #expect(h.layout!.desktopFrame == nil && h.layout!.tiles.map(\.kind) == [.desktop])
       h.run("zoom \(a.rawValue)")
       #expect(!h.system.isVisible(f), "the Desktop is not part of this view")
+      let order = h.system.windowsFrontToBack()
+      h.system.clearRaiseLog()
       h.run(command)
       #expect(h.workspace.camera == h.workspace.tree.root)
-      #expect(h.frame(f) == place, "`\(command)`: at its own frame, over the docked windows")
-      let above = h.system.windowsFrontToBack().prefix { $0 != f }
-      #expect(!above.contains { h.frame($0)!.overlaps(place) }, "and in front of them")
+      #expect(h.frame(f) == place, "`\(command)`: at its own frame, where the docked windows are too")
+      // Rewritten to the decision. This said "and in front of them", which took a raise. Q20: "taking a window out of view and bringing it
+      // back does not change its place in the order"; at Show Everything loose and docked windows may overlap; ⌃⌥D shows all that floats.
+      #expect(h.system.windowsFrontToBack() == order && h.system.raiseLog.isEmpty, "`\(command)`: \(h.system.raiseLog)")
       #expect(h.layout!.tiles.map(\.kind) == [.desktop], "the arrangement is not touched, and the tile stays")
+      h.run("desktop")
+      let above = h.system.windowsFrontToBack().prefix { $0 != f }
+      #expect(h.system.isVisible(f) && !above.contains { h.system.isVisible($0) && h.frame($0)!.overlaps(h.frame(f)!) }, "⌃⌥D after `\(command)`")
     }
   }
 
