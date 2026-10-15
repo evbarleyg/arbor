@@ -31,8 +31,9 @@ received_is() { [ "$(received "$1")" = "$2" ]; }
 # Window levels: the field is the only one of Arbor's windows at the level of a modal panel; Go to…, the panel of shortcuts and the minimap share one.
 field() { has_overlay 8; }
 panel() { has_overlay 5; }
-# The settings window is an ordinary window of Arbor's.
-window() { has_overlay 0; }
+# The settings window floats for as long as it has the keyboard (SettingsWindow.swift). Nothing else of Arbor's is at that level unless a drag or a peek is
+# under way. At the normal level it could not be told from the handles in the gaps.
+window() { has_overlay 3; }
 gone() { ! "$1"; }
 
 # reaches "<when>": a plain x gets to the app, which is in front.
