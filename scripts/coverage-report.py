@@ -294,6 +294,14 @@ def self_test():
                 [14, 9, 0, True, True, False], [16, 4, 1, True, False, False], [17, 2, 0, False, False, False]]
     expect("lines from segments: a line ran if any part of it did", lines_of(segments), (8, 4))
     expect("no segments, no lines", lines_of([]), (0, 0))
+    # Line 30 `func g() {`, 31 `if x { a() }; b()`, 32 `}`, 33 and 34 a comment, 35 `func h() {`, 36 `}`: g ran, `a()` and h never did.
+    apart = [[30, 10, 2, True, True, False], [31, 8, 0, True, True, False], [31, 15, 2, True, False, False], [32, 2, 0, False, False, False],
+             [35, 10, 0, True, True, False], [36, 2, 0, False, False, False]]
+    expect("a line's last segment goes on into the next line, and nothing counts between two functions", lines_of(apart), (5, 3))
+    # As llvm-cov gave it. Line 21 `func f() {`, 23 to 26 `#if NEVER … #endif`, 27 `#if os(Linux)`, 28 `y += 3`, 29 to 31 `#else … #endif`, 33 `}`.
+    left_out = [[21, 32, 1, True, True, False], [23, 3, 0, False, True, False], [26, 9, 1, True, False, False], [27, 3, 0, False, True, False],
+                [27, 16, 1, True, False, False], [29, 3, 0, False, True, False], [31, 9, 1, True, False, False], [33, 2, 0, False, False, False]]
+    expect("what an #if leaves out counts nowhere, nor do the lines of the #if itself", lines_of(left_out), (5, 5))
     once = measure({"files": [{"filename": "Sources/ArborKit/UI/View.swift", "summary": summary(11, 4, 2, 1, 4, 2), "segments": segments}]})
     expect("an export's lines are counted once, whatever its summary adds up", closing(once),
            "real-window coverage: 4 of 8 lines (50.0 %) of the macOS-only code; 1 functions never run")

@@ -55,7 +55,7 @@ scratch_dir coverage COVERAGE_DIR
 
 # tables <measurement> <part…>: merges what the Arbors of those parts left and writes mac-shell/coverage/<measurement>/.
 tables() {
-  local name=$1 out="$COVERAGE_OUT/$1" data="$COVERAGE_DIR/$1.profdata" part began=$SECONDS
+  local name=$1 out="$COVERAGE_OUT/$1" data="$COVERAGE_DIR/$1.profdata" part began=$SECONDS closing
   shift
   mkdir -p "$out/lines"
   for part in "$@"; do
@@ -74,8 +74,11 @@ tables() {
   python3 "$ARBOR_ROOT/scripts/coverage-report.py" --functions "$out/export.json" | "$SWIFT_DEMANGLE" -simplified > "$out/functions.txt"
   # llvm-cov repeats the whole path of each source under its output folder.
   find "$COVERAGE_DIR/$name.lines" -name "*.swift.txt" -exec mv {} "$out/lines/" \;
+  # llvm-cov may have read the profiles and still have written nothing: then this is no measurement, and must not pass for one.
+  closing=$(python3 "$ARBOR_ROOT/scripts/coverage-report.py" "$out/export.json" | tail -n 1) \
+    || { echo "$name: llvm-cov wrote no tables: $(tail -n 1 "$out/merge.log")"; return 1; }
   echo "$name ($(wc -l < "$COVERAGE_DIR/$name.list" | tr -d ' ') profiles, $(grep -c -i "warning\|error" "$out/merge.log") complaints in merge.log," \
-    "$((SECONDS - began)) s): $(python3 "$ARBOR_ROOT/scripts/coverage-report.py" "$out/export.json" | tail -n 1)"
+    "$((SECONDS - began)) s): $closing"
 }
 
 # MARK: Parts
@@ -214,10 +217,12 @@ part drag 200 bash scripts/mac-shell/e2e-drag.sh
 check "e2e-drag.sh passed, as it must in CI" [ $? -eq 0 ]
 
 step "what the two executed"
-tables e2e e2e
-tables drag drag
+# Only what was measured: a check that never got as far as an Arbor leaves no tables, and must not cost the report on the other.
+measured=""
+tables e2e e2e && measured="$measured $COVERAGE_OUT/e2e/export.json"
+tables drag drag && measured="$measured $COVERAGE_OUT/drag/export.json"
 tables both e2e drag || die "no tables"
-measured="$COVERAGE_OUT/e2e/export.json $COVERAGE_OUT/drag/export.json $COVERAGE_OUT/both/export.json"
+measured="$measured $COVERAGE_OUT/both/export.json"
 
 # MARK: What one session nearer to a person's would add
 
