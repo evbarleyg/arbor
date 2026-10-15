@@ -21,6 +21,12 @@
 //                                                   waits: milliseconds, 0,10,25; n: how often the whole is made; orders: PS position, WAIT, size; SP size, WAIT, position; SPSS size,
 //                                                   position, size back to back, WAIT, size once more. Nothing is read between the calls. The waits are spun, and the result says how long they really were:
 //                                                   "waited" from the return of the call before the wait, "sincePosition" from the return of the position call, to the start of the last call
+//   put <name> <x y w h>                            put the window there, and say where it is then
+//   look <name>                                     where the window is by Accessibility and by the window server, where the pointer is, whether the button is down
+//   chain <name> [after-release <ms>] (size <w> <h> | pos <x> <y>)…      those calls back to back where the window is, nothing read between them; then the frame at once and 50, 200 and 500 ms after the
+//                                                   last call returned (spun, so on time), each with the pointer and the button. For a window that a hand holds. after-release: first wait
+//                                                   until the left button comes up, and that many milliseconds more
+// With GROW_BRIEF in the environment the lines about the window and the displays are left out.
 // A number is a sum of numbers and of these, for display 1 (the main one) and 2: l1 t1 r1 b1 (its frame's edges) and vl1 vt1 vr1 vb1 (its
 // visible frame's), in global coordinates, y down: `vb1-12.5`, `r1-494`. A step that names a display that is not there is skipped, and says so.
 //
@@ -47,7 +53,11 @@ let began = Date()
 func now() -> Double { Date().timeIntervalSince(began) }
 func round3(_ value: Double) -> Double { (value * 1000).rounded() / 1000 }
 
+let brief = !(ProcessInfo.processInfo.environment["GROW_BRIEF"] ?? "").isEmpty
+func epoch(_ time: Double) -> Double { ((began.timeIntervalSince1970 + time) * 1000 * 1000).rounded() / 1000 }
+
 func emit(_ object: [String: Any]) {
+  if brief, let kind = object["kind"] as? String, kind == "window" || kind == "displays" { return }
   guard let data = try? JSONSerialization.data(withJSONObject: object, options: [.sortedKeys]) else { return }
   print(String(decoding: data, as: UTF8.self))
   fflush(stdout)
@@ -344,6 +354,54 @@ func turn(_ name: String, from start: CGRect, to target: CGRect, order: String, 
   emit(line)
 }
 
+/// The window by both accounts, the pointer and the button, now.
+func glance(since time: Double) -> [String: Any] {
+  let asked = now()
+  let ax = frame(of: window)
+  let answered = now()
+  let place = CGEvent(source: nil)?.location
+  return [
+    "at": round3((asked - time) * 1000), "axTook": round3((answered - asked) * 1000), "ax": list(ax), "ws": list(serverFrame(of: windowID)),
+    "pointer": place.map { [Double($0.x), Double($0.y)] as Any } ?? NSNull(), "button": CGEventSource.buttonState(.hidSystemState, button: .left),
+  ]
+}
+
+func chain(_ name: String, _ plan: [Call], afterRelease: Double?) {
+  var line: [String: Any] = ["kind": "hand", "label": label, "name": name]
+  if let afterRelease {
+    let patience = now() + 15
+    while CGEventSource.buttonState(.hidSystemState, button: .left), now() < patience {}
+    let up = now()
+    spin(until: up + afterRelease / 1000)
+    line["afterRelease"] = afterRelease
+    line["epochRelease"] = epoch(up)
+    line["sinceRelease"] = round3((now() - up) * 1000)
+  } else {
+    line["before"] = glance(since: now())
+  }
+  _ = notes.take()
+  let time = now()
+  var made: [[String: Any]] = []
+  for call in plan {
+    make(call, reads: false, quiet: true)
+    made.append(["call": call.word, "asked": call.asked, "epoch": epoch(begun), "began": round3((begun - time) * 1000), "ms": round3((returned - begun) * 1000)])
+  }
+  let last = returned
+  line["once"] = glance(since: last)
+  var later: [[String: Any]] = []
+  for after in [0.05, 0.2, 0.5] {
+    spin(until: last + after)
+    var seen = glance(since: last)
+    seen["after"] = Int(after * 1000)
+    later.append(seen)
+  }
+  line["epoch"] = epoch(time)
+  line["calls"] = made
+  line["later"] = later
+  line["notes"] = notes.take().map { [round3(($0.0 - time) * 1000), $0.1] as [Any] }
+  emit(line)
+}
+
 func finish(_ name: String, start: CGRect, placed: CGRect?, target: CGRect?, halfway: [Any], began: Double) {
   let atOnce = frame(of: window)
   let atOnceServer = serverFrame(of: windowID)
@@ -492,6 +550,41 @@ while let raw = readLine() {
     context["name"] = nil
     context["order"] = nil
     context["reads"] = nil
+
+  case "put":
+    guard words.count == 6 else { fail("put <name> <x y w h>: \(text)") }
+    guard let wanted = rect(words[2...5]) else { fail("put: \(text)") }
+    let placed = place(wanted)
+    emit(["kind": "put", "label": label, "name": words[1], "epoch": epoch(now()), "wanted": list(wanted), "ax": list(placed), "ws": list(serverFrame(of: windowID)), "right": same(placed, wanted)])
+
+  case "look":
+    guard words.count == 2 else { fail("look <name>") }
+    var line = glance(since: now())
+    line["kind"] = "look"
+    line["label"] = label
+    line["name"] = words[1]
+    line["epoch"] = epoch(now())
+    line["notes"] = notes.take().count
+    emit(line)
+
+  case "chain":
+    var rest = Array(words.dropFirst(2))
+    var wait: Double?
+    if rest.first == "after-release", rest.count > 2 {
+      wait = Double(rest[1])
+      rest.removeFirst(2)
+    }
+    var plan: [Call] = []
+    while rest.count >= 3, let a = value(rest[1]), let b = value(rest[2]) {
+      switch rest[0] {
+      case "size": plan.append(.size(CGSize(width: a, height: b)))
+      case "pos": plan.append(.position(CGPoint(x: a, y: b)))
+      default: fail("chain: size or pos, not \(rest[0])")
+      }
+      rest.removeFirst(3)
+    }
+    guard words.count > 2, !plan.isEmpty, rest.isEmpty else { fail("chain <name> [after-release <ms>] (size <w> <h> | pos <x> <y>)…: \(text)") }
+    chain(words[1], plan, afterRelease: wait)
 
   case "turn":
     guard words.count == 13, let times = Int(words[11]) else { fail("turn <name> <x y w h> <x y w h> <waits> <n> <orders>: \(text)") }
