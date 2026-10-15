@@ -7,8 +7,9 @@ here means: an act, a user-hour, a cell, a cast, a detector, a run that counts.
   viable.py ledger <commit> <directory…> [-o <file>]   makes the ledger from runs' directories, each with the `run.json` its script wrote
                                                        and, if it got that far, the findings `jolts.py report --json` wrote
                                                        (`day-findings.json`). A `rings.json` in one of them or beside it is taken along
-  viable.py check <ledger> [--runs <file>]             the table, the reasons and the verdict. `--runs`: every run of the gate's workflow
-                                                       on that commit as GitHub lists them, one per line, `<id> <attempts>`.
+  viable.py check <ledger> [--runs <file>]             the table, the reasons and the verdict. `--runs`: every job of the gate's workflow on that
+                                                       commit that got a Mac, as GitHub lists them, a line for each job and attempt with the
+                                                       parts it was given: `<run id> <attempt> <first part>-<last part>`.
                                                        Without it the verdict is never VIABLE: nobody has looked for runs that were left out
   viable.py --self-test
 
@@ -172,7 +173,7 @@ def journey(manifest):
 
 
 def judge(ledger, gate, listed=None):
-    """(verdict, reasons, lines of the table). `listed`: {GitHub's run id: how many attempts it has had}, or None if nobody asked."""
+    """(verdict, reasons, lines of the table). `listed`: {(GitHub's run id, attempt): the parts whose jobs got a Mac}, or None if nobody asked."""
     if not isinstance(ledger, dict) or not isinstance(ledger.get("runs"), list) or not isinstance(ledger.get("rings"), dict):
         raise Unreadable("a ledger has `runs`, a list, and `rings`")
     commit = ledger.get("commit")
@@ -204,32 +205,38 @@ def judge(ledger, gate, listed=None):
         key = playing(run["manifest"])[:3]
         if key in seen:
             invalid.append(f"{name_of(run)} is in the ledger twice")
+        if not isinstance(run["manifest"].get("started"), bool):
+            raise Unreadable(f"{name_of(run)} does not say whether its script began")
         seen[key] = run
-    started = {}
-    for (identifier, attempt, part), run in seen.items():
-        started.setdefault((identifier, attempt), {})[part] = playing(run["manifest"])[3]
-    for (identifier, attempt), parts in sorted(started.items()):
-        for earlier in range(1, attempt):
-            if (identifier, earlier) not in started:
-                reasons.append(f"run {identifier} was started {attempt} times, and the ledger leaves out attempt {earlier}")
-        # How many scripts a run plays is written down before the first begins, so that none can be left out afterwards.
-        if len(set(parts.values())) > 1:
-            invalid.append(f"run {identifier}.{attempt}: its parts do not agree how many they are")
-        for part in range(1, max(parts.values()) + 1):
-            if part not in parts:
-                reasons.append(f"run {identifier}.{attempt} played {max(parts.values())} scripts, and the ledger leaves out part {part}")
+    # How many scripts a run plays is written down before the first begins, so that none can be left out afterwards. It is the same in every attempt.
+    sizes = {}
+    for (identifier, _, _), run in seen.items():
+        sizes.setdefault(identifier, set()).add(playing(run["manifest"])[3])
+    # A hosted Mac's failure does not sink a commit: a part whose script never began may be played in a later attempt of the same run. That it never began is
+    # said by the stub the job left in its place, or by GitHub, which gave its job no Mac. An absence says nothing.
+    played = {(identifier, part) for (identifier, _, part), run in seen.items() if run["manifest"]["started"]}
+    for identifier, found in sorted(sizes.items()):
+        if len(found) > 1:
+            invalid.append(f"run {identifier}: its parts do not agree how many they are")
+        for part in range(1, max(found) + 1):
+            if (identifier, part) not in played:
+                reasons.append(f"run {identifier} has {max(found)} parts, and no attempt played part {part}")
     if listed is None:
-        reasons.append("nobody compared the ledger with GitHub's list of runs (--runs), so runs may have been left out")
+        reasons.append("nobody compared the ledger with GitHub's list of jobs (--runs), so runs may have been left out")
     else:
-        for identifier, attempts in sorted(listed.items()):
-            for attempt in range(1, attempts + 1):
-                if (identifier, attempt) not in started:
-                    reasons.append(f"GitHub knows run {identifier}.{attempt} on this commit, and the ledger leaves it out")
-        for identifier, attempt in sorted(started):
-            if attempt > listed.get(identifier, 0):
-                invalid.append(f"the ledger has run {identifier}.{attempt}, of which GitHub knows nothing")
+        for (identifier, attempt), parts in sorted(listed.items()):
+            for part in sorted(parts):
+                if (identifier, attempt, part) not in seen:
+                    reasons.append(f"in run {identifier}.{attempt} a job got a Mac for part {part}, and the ledger leaves it out: there is not even a stub")
+        for identifier, attempt, part in sorted(seen):
+            if part not in listed.get((identifier, attempt), ()):
+                invalid.append(f"the ledger has part {part} of run {identifier}.{attempt}, and GitHub knows of no job that got a Mac for it")
+    for (identifier, attempt, part), run in sorted(seen.items()):
+        if not run["manifest"]["started"]:
+            table.append(f"  never began: part {part} of run {identifier}.{attempt}" + (", played in another attempt" if (identifier, part) in played else ""))
 
-    runs = list(seen.values())
+    # What began counts, in every attempt, and nothing replaces it.
+    runs = [run for run in seen.values() if run["manifest"]["started"]]
     excuses = {id(run): why_not(run, gate, commit) for run in runs}
     # What the Mac does by itself: found at the same act of the same journey with Arbor not running.
     alone = {}
@@ -424,21 +431,27 @@ def read_json(path):
 
 
 def read_listed(path):
-    """{run id: attempts} from lines `<id> <attempts>`."""
+    """{(run id, attempt): parts} from lines `<run id> <attempt> <first part>-<last part>`, one for each job that got a Mac."""
     listed = {}
     try:
         with open(path, encoding="utf-8") as handle:
             for line in handle:
-                words = line.split()
-                if not words:
+                if not line.strip():
                     continue
-                if len(words) > 2 or not words[0].isdigit() or not words[-1].isdigit() or int(words[-1]) < 1:
-                    raise Unreadable(f"{path}: “{line.strip()}” is not `<id> <attempts>`")
-                listed[words[0]] = max(listed.get(words[0], 0), int(words[1]) if len(words) == 2 else 1)
+                found = re.fullmatch(r"(\d+) (\d+) (\d+)-(\d+)", line.strip())
+                if not found:
+                    raise Unreadable(f"{path}: “{line.strip()}” is not `<run id> <attempt> <first part>-<last part>`")
+                attempt, first, last = (int(word) for word in found.groups()[1:])
+                if not 1 <= attempt <= MOST or not 1 <= first <= last <= MOST:
+                    raise Unreadable(f"{path}: “{line.strip()}”: attempts and parts are numbers from 1 to {MOST}, the first part not after the last")
+                parts = listed.setdefault((found.group(1), attempt), set())
+                if parts & set(range(first, last + 1)):
+                    raise Unreadable(f"{path}: “{line.strip()}”: two jobs of one attempt were given the same part")
+                parts.update(range(first, last + 1))
     except OSError as problem:
         raise Unreadable(f"{path}: {problem}") from problem
     if not listed:
-        raise Unreadable(f"{path} lists no run at all: a gate has runs, so the listing went wrong")
+        raise Unreadable(f"{path} lists no job at all: a gate has runs, so the listing went wrong")
     return listed
 
 
@@ -530,7 +543,7 @@ def perfect(gate):
 
     def manifest(number, kind, cell, cast):
         return {
-            "gate": gate["gate"], "commit": commit, "run": str(1000 + number), "attempt": 1, "part": 1, "parts": 1, "script": f"{kind}.sh", "kind": kind, "seed": None,
+            "gate": gate["gate"], "started": True, "commit": commit, "run": str(1000 + number), "attempt": 1, "part": 1, "parts": 1, "script": f"{kind}.sh", "kind": kind, "seed": None,
             "tiling": cell[0], "tiling_seen_to_act": True, "display": cell[1], "cast": cast, "apps": apps, "settings": "shipped",
             "seconds": gate["run_seconds_max"], "reduce_motion": False, "stage_seen": kind != "control",
         }
@@ -576,7 +589,7 @@ def perfect(gate):
 def self_test():
     gate = numbers()
     good = perfect(gate)
-    everything = {run["manifest"]["run"]: 1 for run in good["runs"]}
+    everything = {(run["manifest"]["run"], 1): {1} for run in good["runs"]}
     failures = []
 
     def expect(name, change, verdict, words, listed=everything, page=gate):
@@ -590,7 +603,7 @@ def self_test():
             failures.append(f"{name}: {got}, wanted {verdict} with “{words}”; its reasons: {reasons[:4]}")
 
     def every(ledger, *kinds):
-        return [run for run in ledger["runs"] if run["manifest"]["kind"] in kinds]
+        return [run for run in ledger["runs"] if run["manifest"].get("kind") in kinds]
 
     def find(ledger, kind, **finding):
         run = every(ledger, kind)[0]
@@ -628,8 +641,8 @@ def self_test():
         control = twin(ledger, "control", run="8000", **{key: run["manifest"][key] for key in ("script", "seed", "tiling", "display", "cast", "reduce_motion")})
         control["findings"] = [dict(finding, id=finding["id"] if same_act else "elsewhere#1")]
 
-    expect("what the run without Arbor shows too", the_mac_does_it_alone, "VIABLE", "", listed={**everything, "8000": 1})
-    expect("what it shows at another act", lambda l: the_mac_does_it_alone(l, same_act=False), "NOT VIABLE", "jolt in run", listed={**everything, "8000": 1})
+    expect("what the run without Arbor shows too", the_mac_does_it_alone, "VIABLE", "", listed={**everything, ("8000", 1): {1}})
+    expect("what it shows at another act", lambda l: the_mac_does_it_alone(l, same_act=False), "NOT VIABLE", "jolt in run", listed={**everything, ("8000", 1): {1}})
     expect("a cell nobody played", lambda l: l.update(runs=[r for r in l["runs"] if r["manifest"]["kind"] not in COUNTED or (r["manifest"]["tiling"], r["manifest"]["display"]) != last_cell]),
            "NOT VIABLE", f"the cell {last_cell[0]} / {last_cell[1]} has 0.0", listed=None)
     expect("a cell without its control", lambda l: amend(l, ["control"], display=gate["display"][0]), "NOT VIABLE", "times without Arbor")
@@ -659,7 +672,7 @@ def self_test():
         control = twin(ledger, "control", run="8000", **{key: run["manifest"][key] for key in ("script", "seed", "tiling", "display", "cast")})
         control["findings"] = [dict(finding)]
 
-    expect("a control played with Reduce Motion off excuses nothing seen with it on", a_control_with_the_stage, "NOT VIABLE", "jolt in run", listed={**everything, "8000": 1})
+    expect("a control played with Reduce Motion off excuses nothing seen with it on", a_control_with_the_stage, "NOT VIABLE", "jolt in run", listed={**everything, ("8000", 1): {1}})
     expect("too few apps", lambda l: amend(l, KINDS, apps=good["runs"][0]["manifest"]["apps"][:gate["apps_per_run_min"]]), "NOT VIABLE", "different apps")
     expect("acts that were not judged", lambda l: [act.update(judged=False) for run in every(l, *COUNTED) for act in run["acts"][:len(run["acts"]) // 20]], "NOT VIABLE", "are asked for")
 
@@ -697,13 +710,13 @@ def self_test():
         extra = twin(ledger, "day", run="9999", seconds=gate["run_seconds_max"] * 2)
         extra["findings"] = [{"detector": "crash", "level": "FAIL", "id": "idle#3", "what": "Arbor ended"}]
 
-    expect("a crash in a run that does not count", crash_in_a_run_that_does_not_count, "NOT VIABLE", "counts although the run does not", listed={**everything, "9999": 1})
+    expect("a crash in a run that does not count", crash_in_a_run_that_does_not_count, "NOT VIABLE", "counts although the run does not", listed={**everything, ("9999", 1): {1}})
 
     expect("nobody asked GitHub", nothing, "NOT VIABLE", "nobody compared the ledger", listed=None)
-    expect("a run left out", nothing, "NOT VIABLE", "the ledger leaves it out", listed={**everything, "4242": 1})
-    expect("a first attempt left out", lambda l: l["runs"][0]["manifest"].update(attempt=2), "NOT VIABLE", "leaves out attempt 1", listed={**everything, "1000": 2})
-    expect("a first attempt left out, GitHub listing the run once", nothing, "NOT VIABLE", "1000.2", listed={**everything, "1000": 2})
-    expect("both attempts there", lambda l: twin(l, "walk", attempt=2), "VIABLE", "", listed={**everything, "1000": 2})
+    expect("a run left out", nothing, "NOT VIABLE", "the ledger leaves it out", listed={**everything, ("4242", 1): {1}})
+    expect("a first attempt left out", lambda l: l["runs"][0]["manifest"].update(attempt=2), "NOT VIABLE", "in run 1000.1 a job got a Mac for part 1, and the ledger leaves it out", listed={**everything, ("1000", 2): {1}})
+    expect("a first attempt left out, GitHub listing the run once", nothing, "NOT VIABLE", "1000.2", listed={**everything, ("1000", 2): {1}})
+    expect("both attempts there", lambda l: twin(l, "walk", attempt=2), "VIABLE", "", listed={**everything, ("1000", 2): {1}})
     def batch(ledger, parts=2, keep=(1, 2)):
         """The first two counted runs become two scripts of one run of GitHub's."""
         first, second = every(ledger, "walk")[:2]
@@ -712,12 +725,46 @@ def self_test():
         second["manifest"].update(part=2, parts=parts)
         ledger["runs"] = [run for run in ledger["runs"] if run not in (first, second) or run["manifest"]["part"] in keep]
 
-    batched = {identifier: 1 for identifier in everything if identifier != "1001"}
+    batched = {key: {1, 2} if key[0] == "1000" else parts for key, parts in everything.items() if key[0] != "1001"}
     expect("two scripts in one run of GitHub's", batch, "VIABLE", "", listed=batched)
-    expect("… of which one is left out", lambda l: batch(l, keep=(1,)), "NOT VIABLE", "the ledger leaves out part 2", listed=batched)
-    expect("… of three", lambda l: batch(l, parts=3), "NOT VIABLE", "the ledger leaves out part 3", listed=batched)
+    expect("… of which one is left out", lambda l: batch(l, keep=(1,)), "NOT VIABLE", "no attempt played part 2", listed=batched)
+    expect("… of three", lambda l: batch(l, parts=3), "NOT VIABLE", "no attempt played part 3", listed=batched)
     expect("… which do not agree how many they are", lambda l: (batch(l), every(l, "walk")[0]["manifest"].update(parts=3)), "INVALID", "do not agree how many", listed=batched)
     expect("… both calling themselves the first", lambda l: (batch(l), every(l, "walk")[1]["manifest"].update(part=1)), "INVALID", "is in the ledger twice", listed=batched)
+
+    # A hosted Mac's failure does not sink a commit, and who says that a part never ran is GitHub or the batch, never an absence.
+    def stub(ledger, part=2, attempt=1, **more):
+        """The manifest a job leaves in the place of a part before its first script begins."""
+        first = every(ledger, "walk")[0]["manifest"]
+        ledger["runs"].append({"manifest": {"gate": first["gate"], "started": False, "commit": first["commit"], "run": first["run"], "attempt": attempt, "part": part,
+                                            "parts": first["parts"], **more}, "sampler": {}, "acts": [], "findings": []})
+
+    def again(ledger, part=2, attempt=2):
+        every(ledger, "walk")[part - 1]["manifest"].update(attempt=attempt)
+
+    once, twice = batched, {**batched, ("1000", 2): {2}}
+    expect("the batch was stopped before part 2, which was played in a second attempt", lambda l: (batch(l), again(l), stub(l)), "VIABLE", "never began: part 2 of run 1000.1, played in another", listed=twice)
+    expect("… and nobody played it again", lambda l: (batch(l, keep=(1,)), stub(l)), "NOT VIABLE", "no attempt played part 2", listed=once)
+    expect("… and the second attempt was stopped before it too", lambda l: (batch(l, keep=(1,)), stub(l), stub(l, attempt=2)), "NOT VIABLE", "no attempt played part 2", listed=twice)
+    expect("its job never got a Mac, says GitHub, and a second attempt played it", lambda l: (batch(l), again(l)), "VIABLE", "", listed={**batched, ("1000", 1): {1}, ("1000", 2): {2}})
+    expect("a first attempt that got a Mac is left out, and the second passed off as the first playing", lambda l: (batch(l), again(l)), "NOT VIABLE",
+           "in run 1000.1 a job got a Mac for part 2, and the ledger leaves it out", listed=twice)
+    def both_attempts(ledger, finding=None):
+        batch(ledger)
+        extra = twin(ledger, "walk", attempt=2)
+        if finding:
+            every(ledger, "walk")[0]["findings"].append({"id": extra["acts"][0]["id"], "what": "w", **finding})
+    expect("what began is never replaced: a jolt in the first attempt stays, however clean the second", lambda l: both_attempts(l, {"detector": "jolt", "level": "FAIL"}),
+           "NOT VIABLE", "jolt in run 1000.1", listed={**batched, ("1000", 2): {1}})
+    expect("a stub and a manifest for one part of one attempt", lambda l: (batch(l), stub(l)), "INVALID", "is in the ledger twice", listed=once)
+    expect("a stub for a part no job was given", lambda l: (batch(l), again(l), stub(l)), "INVALID", "the ledger has part 2 of run 1000.1, and GitHub knows of no job",
+           listed={**batched, ("1000", 1): {1}, ("1000", 2): {2}})
+    expect("a second attempt GitHub knows nothing of", lambda l: (batch(l), again(l), stub(l)), "INVALID", "the ledger has part 2 of run 1000.2", listed=once)
+    expect("a stub is no run: it neither counts nor falls out", lambda l: [stub(l, part=1, run=str(9100 + n), parts=1) for n in range(len(l["runs"]))], "NOT VIABLE", "no attempt played part 1",
+           listed={**everything, **{(str(9100 + n), 1): {1} for n in range(len(good["runs"]))}})
+    expect("the stubs of a second attempt disagree with the first on how many parts there are", lambda l: (batch(l), again(l), stub(l, parts=3)), "INVALID", "do not agree how many", listed=twice)
+    expect("a manifest that does not say whether its script began", lambda l: l["runs"][0]["manifest"].pop("started"), "UNREADABLE", "does not say whether its script began")
+    expect("… or says it in words", lambda l: l["runs"][0]["manifest"].update(started="yes"), "UNREADABLE", "does not say whether its script began")
     expect("part 3 of 2", lambda l: l["runs"][0]["manifest"].update(part=3, parts=2), "UNREADABLE", "part 3 of 2")
     expect("a part that is no number", lambda l: l["runs"][0]["manifest"].update(part="first"), "UNREADABLE", "part is 'first'")
     expect("parts that are no number, and a finding by nobody", lambda l: (l["runs"][0]["manifest"].update(parts="two"), l["runs"][0]["findings"].append({"level": "FAIL"})), "UNREADABLE", "parts is 'two'")
@@ -725,7 +772,7 @@ def self_test():
     expect("a run that does not say of how many", lambda l: l["runs"][0]["manifest"].pop("parts"), "UNREADABLE", "parts is None")
     expect("a run id where the parts belong", lambda l: l["runs"][0]["manifest"].update(parts=2000000000), "UNREADABLE", "parts is 2000000000")
     expect("a time where the attempt belongs", lambda l: l["runs"][0]["manifest"].update(attempt=1760000000), "UNREADABLE", "attempt is 1760000000")
-    expect("a run GitHub never heard of", lambda l: twin(l, "day", run="31337"), "INVALID", "of which GitHub knows nothing")
+    expect("a run GitHub never heard of", lambda l: twin(l, "day", run="31337"), "INVALID", "GitHub knows of no job that got a Mac for it")
     expect("half the acts, every run twice", lambda l: ([run.update(acts=run["acts"][::2]) for run in every(l, *COUNTED)], l["runs"].extend(copy.deepcopy(every(l, *COUNTED)))),
            "INVALID", "is in the ledger twice")
 
@@ -778,7 +825,7 @@ def self_test():
                         (["reduce_motion", "acts_that_move_per_tiling_min"], 200)]:
         page = with_number(path, value)
         other = perfect(page)
-        verdict, reasons, _ = judge(other, page, {run["manifest"]["run"]: 1 for run in other["runs"]})
+        verdict, reasons, _ = judge(other, page, {(run["manifest"]["run"], 1): {1} for run in other["runs"]})
         if verdict != "VIABLE":
             failures.append(f"with {'.'.join(path)} at {value} the perfect ledger is {verdict}: {reasons[:3]}")
     unread = sorted(set(gate.leaves()) - gate.used - set(READ_ELSEWHERE))
@@ -825,7 +872,7 @@ def self_test():
                 put(f"{directory}/run.json", dict(run["manifest"], offences=[dict(o, id=o["id"].replace("#", "-") + "#1") for o in run["manifest"]["offences"]]))
             put(f"{directory}/day-findings.json", {"sampler": "samples 30000 seconds 540.0 hz 55.5 cost-ms 1.20 late 10 longest-gap-ms 200", "steps": steps})
         put("runs/rings.json", good["rings"])
-        listing = put("listed.txt", "".join(f"{identifier} 1\n" for identifier in everything))
+        listing = put("listed.txt", "".join(f"{identifier} {attempt} 1-1\n" for identifier, attempt in everything))
         ledger = os.path.join(scratch, "ledger.json")
         expect_call("a ledger from directories", ["ledger", commit, *directories, "-o", ledger], 0, "")
         expect_call("… is viable", ["check", ledger, "--runs", listing], 0, "\nVIABLE")
@@ -845,8 +892,12 @@ def self_test():
         expect_call("findings that name no detector", ["ledger", commit, os.path.join(scratch, "old")], 2, "a finding without `detector`")
         expect_call("a ledger that is not there", ["check", os.path.join(scratch, "no.json")], 2, "no.json")
         expect_call("a ledger cut short", ["check", put("short.json", '{"gate": 1,')], 2, "short.json")
-        expect_call("a listing with a heading", ["check", ledger, "--runs", put("heading.txt", "id attempt\n1000 1\n")], 2, "is not `<id> <attempts>`")
-        expect_call("an empty listing", ["check", ledger, "--runs", put("none.txt", "")], 2, "lists no run at all")
+        expect_call("a listing with a heading", ["check", ledger, "--runs", put("heading.txt", "id attempt parts\n1000 1 1-1\n")], 2, "is not `<run id> <attempt> <first part>-<last part>`")
+        for name, text, words in (("the old form", "1000 1\n", "is not `<run id>"), ("parts the wrong way round", "1000 1 3-2\n", "the first part not after the last"),
+                                  ("part nought", "1000 1 0-2\n", "numbers from 1 to"), ("a run id where the parts belong", "1000 1 1-2000000000\n", "numbers from 1 to"),
+                                  ("attempt nought", "1000 0 1-1\n", "numbers from 1 to"), ("one part given to two jobs", "1000 1 1-4\n1000 1 4-8\n", "were given the same part")):
+            expect_call(f"a listing with {name}", ["check", ledger, "--runs", put("odd.txt", text)], 2, words)
+        expect_call("an empty listing", ["check", ledger, "--runs", put("none.txt", "")], 2, "lists no job at all")
         expect_call("-o and nothing after it", ["ledger", commit, directories[0], "-o"], 2, "viable.py ledger")
         expect_call("no such command", ["verdict"], 2, "viable.py ledger")
 
