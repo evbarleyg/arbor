@@ -8,8 +8,8 @@ import CoreGraphics
 /// did exactly as it was asked, nobody else touched the window, and before the command or event was over Arbor asked
 /// the same window for another frame. Not a jolt: asking again because the app answered with another size than it was asked for
 /// (nobody can know an app's limits before asking), two moves of which a person sees one, because the
-/// place in between is out of view like the place before or after it, and a question: a window Arbor does not know is asked for
-/// a size where it stands and goes to its place afterwards, which is one road (Roads.swift), and how any window is moved on a Mac.
+/// place in between is out of view like the place before or after it, and a question: a window of which Arbor does not know how small
+/// it goes is asked to shrink where it stands and goes to its place afterwards, which is one road (Roads.swift).
 public struct Jolt: Equatable, Sendable, CustomStringConvertible {
   public var window: WindowID
   public var from: CGRect

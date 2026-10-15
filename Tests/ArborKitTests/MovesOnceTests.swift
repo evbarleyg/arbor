@@ -33,6 +33,23 @@ import Testing
     }
   }
 
+  /// Nobody in view is asked to grow where it stands: a window grows in its slot, and one that turns out unable to goes on to the middle of
+  /// it, as it is. `road` without the slot's corner, if that is how it ends; nil otherwise.
+  func withoutTheWayToTheMiddle(_ road: [CGRect], of slot: CGRect?) -> [CGRect]? {
+    guard let slot, road.count >= 3, let last = road.last else { return nil }
+    let corner = road[road.count - 2]
+    guard corner.origin == slot.origin, corner.size == last.size, slot.contains(corner), slot.contains(last), isCentred(last, in: slot)
+    else { return nil }
+    return road.dropLast(2) + [last]
+  }
+
+  /// How far a coordinate went beyond the straight way, there and back, as `FakeWindowSystem.detour` measures it.
+  func excess(_ road: [CGRect], _ coordinate: KeyPath<CGRect, CGFloat>) -> CGFloat {
+    guard let first = road.first, let last = road.last else { return 0 }
+    return zip(road, road.dropFirst()).map { abs($1[keyPath: coordinate] - $0[keyPath: coordinate]) }.reduce(0, +)
+      - abs(last[keyPath: coordinate] - first[keyPath: coordinate])
+  }
+
   func isCentred(_ frame: CGRect?, in slot: CGRect?) -> Bool {
     guard let frame, let slot else { return false }
     return abs(frame.midX - slot.midX) <= 1 && abs(frame.midY - slot.midY) <= 1
@@ -228,17 +245,23 @@ import Testing
     #expect(h.frame(fixed)?.size == CGSize(width: 230, height: 408))
   }
 
-  /// A first meeting with a window that has one fixed side, like a settings window, or two, and does not say so.
+  /// A first meeting with a window that has one fixed side, like a settings window, or two, and does not say so. That shows in its
+  /// slot, where it grows: corner, then middle, both within the slot. Nobody else pays for it.
   @Test(arguments: ["left", "right", "top", "bottom"], [CGSize(width: 500, height: 2000), CGSize(width: 3000, height: 400), CGSize(width: 500, height: 400)])
-  func aWindowThatTurnsOutUnableToGrowGoesStraightToTheMiddle(side: String, most: CGSize) throws {
+  func aWindowThatTurnsOutUnableToGrowGoesOnToTheMiddleWithinItsSlot(side: String, most: CGSize) throws {
     let h = Harness()
     let a = h.system.open(app: "A")
     let settings = h.system.open(app: "Settings", frame: CGRect(x: 400, y: 200, width: 500, height: 400))
     h.system.setMaximumSize(settings, most)
     h.start()
     h.run("dock \(a.rawValue) left")
-    let roads = roads(h) { h.run("dock \(settings.rawValue) beside \(a.rawValue) \(side)") }
+    var roads = roads(h) { h.run("dock \(settings.rawValue) beside \(a.rawValue) \(side)") }
     #expect(isCentred(h.frame(settings), in: h.layout?.windowFrames[settings]))
+    let road = try #require(roads[settings])
+    // Where its slot asks for nothing it cannot do it fills the slot, and there is no such hop.
+    if h.frame(settings) != h.layout?.windowFrames[settings] {
+      roads[settings] = try #require(withoutTheWayToTheMiddle(road, of: h.layout?.windowFrames[settings]), "\(road)")
+    }
     expectStraightRoads(roads)
     #expect(h.staleLayouts() == [])
   }
@@ -269,7 +292,7 @@ import Testing
     #expect(h.staleLayouts() == [])
   }
 
-  /// Found by a random walk: corner, then middle, and again when it was docked on the other side.
+  /// Found by a random walk: corner, then middle, and again when it was docked on the other side. The first time nobody could know.
   @Test func aPreviewWindowDockedLeftAndThenRight() throws {
     let h = Harness()
     h.start()
@@ -277,6 +300,7 @@ import Testing
     h.system.setMaximumSize(preview, CGSize(width: 500, height: 2000))
     h.system.userFocus(preview)
     var all = roads(h) { h.run("dock left") }
+    all[preview] = try #require(withoutTheWayToTheMiddle(all[preview] ?? [], of: h.layout?.windowFrames[preview]), "\(all)")
     expectStraightRoads(all)
     #expect(isCentred(h.frame(preview), in: h.layout?.windowFrames[preview]))
     all = roads(h) { h.run("toggle-float") }
@@ -343,7 +367,8 @@ import Testing
   // MARK: What must not be taken for a limit
 
   /// A terminal takes whole character cells, a few points short of its slot. That is not a window that cannot grow: sent to
-  /// the middle for the size it had, it would land far from where it ends up.
+  /// the middle for the size it had, it would land far from where it ends up. How many cells go into a slot shows in the slot, where
+  /// it grows, so it is set right there, by less than half a cell.
   @Test(arguments: [CGSize(width: 10, height: 15), CGSize(width: 7, height: 15)]) func aTerminalGrowsWithoutADetour(cell: CGSize) throws {
     let h = Harness()
     let terminal = h.system.open(app: "Terminal")
@@ -353,7 +378,13 @@ import Testing
     h.start()
     func step(_ body: () -> Void, sourceLocation: SourceLocation = #_sourceLocation) {
       let mark = h.system.moveLog.count
-      expectStraightRoads(roads(h, during: body), placesOnly: true, sourceLocation: sourceLocation)
+      var roads = roads(h, during: body)
+      if let road = roads.removeValue(forKey: terminal) {
+        #expect(
+          FakeWindowSystem.changesOfPlace(road) <= 1 && excess(road, \.minX) <= cell.width && excess(road, \.minY) <= cell.height, "\(road)",
+          sourceLocation: sourceLocation)
+      }
+      expectStraightRoads(roads, placesOnly: true, sourceLocation: sourceLocation)
       let sizes = h.system.moveLog[mark...].filter { $0.window == terminal }.map { "\($0.requested.size)" }
       #expect(Set(sizes).count == sizes.count, "no size is asked for twice: \(sizes)", sourceLocation: sourceLocation)
     }
@@ -365,17 +396,54 @@ import Testing
     #expect(slot.width - frame.width < cell.width + 1 && slot.height - frame.height < cell.height + 1, "\(frame) in \(slot)")
   }
 
-  /// At a first meeting it rounds up and is talked down once, where it stands, not again in its slot.
+  /// At a first meeting it rounds up and is talked down once.
   @Test func aTerminalIsTalkedDownOnce() throws {
     let h = Harness()
     let terminal = h.system.open(app: "Terminal")
     h.system.setSizeStep(terminal, CGSize(width: 7, height: 15))
     h.start()
     let mark = h.system.moveLog.count
-    let all = roads(h) { h.run("dock \(terminal.rawValue) right") }
-    expectStraightRoads(all, placesOnly: true)
+    let road = try #require(roads(h) { h.run("dock \(terminal.rawValue) right") }[terminal])
+    #expect(FakeWindowSystem.changesOfPlace(road) == 1 && excess(road, \.minX) <= 7 && excess(road, \.minY) <= 15, "\(road)")
     let sizes = h.system.moveLog[mark...].filter { $0.window == terminal }.map(\.requested.size)
     #expect(Set(sizes.map { "\($0)" }).count == sizes.count, "no size is asked for twice: \(sizes)")
+  }
+
+  /// It is a few points short of any slot, so a slot that only becomes narrower is higher than it is. The width it has answered for where it stood
+  /// is not offered again with the height, or it would round up and be talked down a second time.
+  @Test func aSideThatHasAnsweredIsNotOfferedAgain() throws {
+    let h = Harness()
+    let terminal = h.system.open(app: "Terminal")
+    let a = h.system.open(app: "A")
+    h.system.setSizeStep(terminal, CGSize(width: 7, height: 15))
+    h.start()
+    h.run("dock \(terminal.rawValue) left")
+    let mark = h.system.moveLog.count
+    let road = try #require(roads(h) { h.run("dock \(a.rawValue) beside \(terminal.rawValue) right") }[terminal])
+    let slot = try #require(h.layout?.windowFrames[terminal])
+    #expect(try #require(h.frame(terminal)).height < slot.height - 2, "the case: \(road) in \(slot)")
+    let offers = h.system.moveLog[mark...].filter { $0.window == terminal && $0.requested.width == slot.width }
+    #expect(offers.count == 1, "\(h.system.moveLog[mark...].filter { $0.window == terminal }.map(\.requested))")
+    #expect(excess(road, \.width) == 0, "\(road)")
+  }
+
+  /// How many cells go into a slot shows only in the slot, where it grows, and the terminal is set right by less than a cell. Once: what
+  /// it made of this size is remembered.
+  @Test func aTerminalIsSetRightInItsSlotByLessThanACellOnce() throws {
+    let h = Harness()
+    let cell = CGSize(width: 7, height: 15)
+    let terminal = h.system.open(app: "Terminal", frame: CGRect(x: 300, y: 200, width: 640, height: 420))
+    h.system.setSizeStep(terminal, cell)
+    h.start()
+    let first = try #require(roads(h) { h.run("dock \(terminal.rawValue) right") }[terminal])
+    #expect(FakeWindowSystem.changesOfPlace(first) == 1, "\(first)")
+    let highest = try #require(first.map(\.minY).min())
+    #expect(try #require(first.last).minY - highest < cell.height, "\(first)")
+    #expect(isCentred(h.frame(terminal), in: h.layout?.windowFrames[terminal]))
+    h.run("float \(terminal.rawValue)")
+    h.system.userMove(terminal, to: CGRect(x: 300, y: 200, width: 640, height: 420))
+    expectStraightRoads(roads(h) { h.run("dock \(terminal.rawValue) right") }, placesOnly: true)
+    #expect(isCentred(h.frame(terminal), in: h.layout?.windowFrames[terminal]))
   }
 
   /// Accessibility said its size cannot be changed when it was first seen: a splash window that has become a main window since.
@@ -471,8 +539,8 @@ import Testing
     expectWindowsMatchLayout(h)
   }
 
-  /// And one that cannot grow goes to the middle at once, though nothing is concluded yet, and is not walked about when it is.
-  @Test func aWindowJustBackThatCannotGrowGoesStraightToTheMiddle() throws {
+  /// And one that cannot grow goes on to the middle at once, though nothing is concluded yet, and is not walked about again when it is.
+  @Test func aWindowJustBackThatCannotGrowIsNotWalkedAboutWhenTheMomentIsOver() throws {
     let h = Harness()
     let preview = h.system.open(app: "Preview", frame: CGRect(x: 468, y: 62, width: 723, height: 650))
     h.system.setMinimumSize(preview, CGSize(width: 723, height: 400))
@@ -480,10 +548,11 @@ import Testing
     h.start()
     h.system.setMinimized(preview, true)
     h.system.setMinimized(preview, false)
-    let all = roads(h) {
+    var all = roads(h) {
       h.run("dock \(preview.rawValue) top")
       h.scheduler.advance(by: 1)
     }
+    all[preview] = try #require(withoutTheWayToTheMiddle(all[preview] ?? [], of: h.layout?.windowFrames[preview]), "\(all)")
     expectStraightRoads(all)
     #expect(isCentred(h.frame(preview), in: h.layout?.windowFrames[preview]))
   }
@@ -538,5 +607,165 @@ import Testing
     #expect(!roads.isEmpty, "the trial was shown")
     expectStraightRoads(roads)
     h.system.endDrag()
+  }
+
+  // MARK: Nobody in view is asked to grow where it stands
+
+  /// The display of the recording that showed it: 1024×768, a Dock at the bottom.
+  static let withADock = DisplaySnapshot(
+    id: DisplayID("with-a-dock"), frame: CGRect(x: 0, y: 0, width: 1024, height: 768),
+    visibleFrame: CGRect(x: 0, y: 31, width: 1024, height: 674), isMain: true)
+
+  func expectEveryDockedWindowFillsItsSlot(_ h: Harness, _ what: String, sourceLocation: SourceLocation = #_sourceLocation) {
+    for (window, slot) in (h.layout?.windowFrames ?? [:]).sorted(by: { $0.key < $1.key }) {
+      #expect(h.frame(window) == slot, "\(window) after \(what)", sourceLocation: sourceLocation)
+    }
+  }
+
+  /// macOS does not let a window grow across the bottom of the visible frame where it stands. That says nothing about
+  /// the window: recorded on a Mac, where each of these windows ended up short of its slot, in the middle of it.
+  @Test func aWindowThatStandsLowFillsItsSlotAtTheFirstLayout() {
+    let h = Harness(displays: [Self.withADock])
+    let a = h.system.open(app: "A", frame: CGRect(x: 170, y: 220, width: 480, height: 348))
+    let b = h.system.open(app: "B", frame: CGRect(x: 220, y: 180, width: 480, height: 348))
+    let c = h.system.open(app: "C", frame: CGRect(x: 270, y: 140, width: 480, height: 348))
+    h.start()
+    let journey = [
+      "dock \(a.rawValue) left", "dock \(b.rawValue) right", "dock \(c.rawValue) beside \(a.rawValue) bottom", "zoom \(a.rawValue)",
+      "back", "resize \(a.rawValue) right 100", "float \(b.rawValue)", "arrange", "desktop", "show-all", "zoom \(c.rawValue)", "back",
+    ]
+    for command in journey {
+      let mark = h.system.moveLog.count
+      let roads = roads(h) { h.run(command) }
+      expectEveryDockedWindowFillsItsSlot(h, command)
+      // But for a slot that begins where the window stands.
+      for move in h.system.moveLog[mark...]
+      where move.requested.origin == move.before.origin && Self.withADock.frame.contains(move.before)
+        && move.requested != h.layout?.windowFrames[move.window]
+      {
+        #expect(
+          move.requested.width <= move.before.width + 1 && move.requested.height <= move.before.height + 1,
+          "\(move.window) was asked for \(move.requested) at \(move.before) by \(command)")
+      }
+      for (window, road) in roads.sorted(by: { $0.key < $1.key }) where h.workspace.isDocked(window) {
+        if let detour = detour(road) { Issue.record("\(window) \(detour) at \(command)") }
+      }
+      expectWindowsMatchLayout(h)
+    }
+  }
+
+  /// By hand as by command.
+  @Test func aWindowDroppedFromLowOnTheDisplayFillsItsSlot() throws {
+    let h = Harness(displays: [Self.withADock])
+    let a = h.system.open(app: "A", frame: CGRect(x: 300, y: 330, width: 480, height: 348))
+    h.start()
+    h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
+    h.system.drag(a, through: [CGPoint(x: 400, y: 340), CGPoint(x: 200, y: 400), CGPoint(x: 3, y: 450)])
+    try #require(h.workspace.isDocked(a), "it docked")
+    expectEveryDockedWindowFillsItsSlot(h, "the drop")
+  }
+
+  /// That a window cannot grow shows in its slot, then. It goes on to the middle, within the slot, and never again by that way.
+  @Test func aWindowThatTurnsOutUnableToGrowGoesOnToTheMiddleWithinItsSlotOnce() throws {
+    let h = Harness(displays: [Self.withADock])
+    let limited = h.system.open(app: "Limited", frame: CGRect(x: 170, y: 220, width: 400, height: 300))
+    h.system.setMaximumSize(limited, CGSize(width: 440, height: 348))
+    h.start()
+    let first = try #require(roads(h) { h.run("dock \(limited.rawValue) left") }[limited])
+    let slot = try #require(h.layout?.windowFrames[limited])
+    #expect(first.count == 3 && first.dropFirst().allSatisfy { slot.contains($0) }, "\(first) in \(slot)")
+    #expect(h.frame(limited)?.size == CGSize(width: 440, height: 348) && isCentred(h.frame(limited), in: slot))
+    h.run("float \(limited.rawValue)")
+    h.system.userMove(limited, to: CGRect(x: 170, y: 220, width: 400, height: 300))
+    expectStraightRoads(roads(h) { h.run("dock \(limited.rawValue) left") })
+    #expect(isCentred(h.frame(limited), in: h.layout?.windowFrames[limited]))
+  }
+
+  /// An app that carries out a move late is still at its old place when it is asked for the size, and takes the room there is there. Taken
+  /// for a refusal that would be remembered, and the window short of every slot from then on.
+  @Test func anAnswerThatEndsOnTheLineOfWhereTheWindowStoodIsNoRefusal() throws {
+    let h = Harness(displays: [Self.withADock])
+    let slow = h.system.open(app: "Slow", frame: CGRect(x: 170, y: 220, width: 480, height: 348))
+    h.system.movesLate = [slow]
+    h.start()
+    let mark = h.system.moveLog.count
+    h.run("dock \(slow.rawValue) left")
+    let first = try #require(h.system.moveLog[mark...].first { $0.window == slow })
+    #expect(first.after.height == 484 && first.after.origin == first.requested.origin, "the stand-in plays it: \(first)")
+    expectEveryDockedWindowFillsItsSlot(h, "it was asked once more, in the slot")
+    // Nor is anything remembered of it.
+    h.system.movesLate = []
+    h.run("float \(slow.rawValue)")
+    h.system.userMove(slow, to: CGRect(x: 170, y: 220, width: 480, height: 348))
+    let roads = roads(h) { h.run("dock \(slow.rawValue) right") }
+    expectEveryDockedWindowFillsItsSlot(h, "the next docking")
+    expectStraightRoads(roads)
+  }
+
+  /// With no gap a slot ends on the line itself, and a terminal in it a few points above: an answer that looks like the screen's. In the slot
+  /// it cannot be, so it is believed, and the terminal is left in peace from then on.
+  @Test func aTerminalWhoseSlotEndsOnTheLineIsNotWalkedAbout() throws {
+    var settings = Settings()
+    settings.gap = 0
+    let h = Harness(settings: settings)
+    let terminal = h.system.open(app: "Terminal")
+    let a = h.system.open(app: "A")
+    h.system.setSizeStep(terminal, CGSize(width: 10, height: 15))
+    h.start()
+    h.run("dock \(terminal.rawValue) left")
+    h.run("dock \(a.rawValue) beside \(terminal.rawValue) right")
+    let rests = try #require(h.frame(terminal))
+    #expect(h.visibleFrame.maxY - rests.maxY <= 4, "the case: \(rests)")
+    for command in ["show-all", "home", "zoom \(a.rawValue)", "back"] {
+      let road = roads(h) { h.run(command) }[terminal] ?? []
+      // Where it rests, or out of view.
+      #expect(road.allSatisfy { $0 == rests || $0.minX >= h.visibleFrame.maxX - 2 } && road.count <= 2, "\(command): \(road)")
+    }
+  }
+
+  /// What was learnt can stop being true by half: it grows further than it did, far from any line, and that is its answer. It is not sent
+  /// to the slot's corner to be asked again.
+  @Test func oneThatCanGrowALittleFurtherIsBelievedWhereItIsAsked() throws {
+    let h = Harness()
+    let editor = h.system.open(app: "Editor", frame: CGRect(x: 400, y: 100, width: 500, height: 300))
+    let notes = h.system.open(app: "Notes")
+    h.system.setMaximumSize(editor, CGSize(width: 2000, height: 300))
+    h.start()
+    h.run("dock \(editor.rawValue) left")
+    h.system.setMaximumSize(editor, CGSize(width: 2000, height: 400))
+    let road = try #require(roads(h) { h.run("dock \(notes.rawValue) beside \(editor.rawValue) right") }[editor])
+    let slot = try #require(h.layout?.windowFrames[editor])
+    #expect(h.frame(editor)?.height == 400 && isCentred(h.frame(editor), in: slot))
+    #expect(!road.dropFirst().contains { $0.minY == slot.minY }, "\(road) in \(slot)")
+  }
+
+  /// One request, as before anybody was asked anything.
+  @Test func aWindowThatOnlyHasToGrowIsMovedWithOneRequest() throws {
+    let h = Harness(displays: [Self.withADock])
+    let a = h.system.open(app: "A", frame: CGRect(x: 170, y: 356, width: 480, height: 348))
+    h.start()
+    let mark = h.system.moveLog.count
+    let roads = roads(h) { h.run("dock \(a.rawValue) left") }
+    expectEveryDockedWindowFillsItsSlot(h, "dock")
+    expectStraightRoads(roads)
+    #expect(movesWithoutWaste(h, of: a, since: mark) == 1)
+  }
+
+  /// A window that has to become narrower and higher: the width is what the others wait for, and only that is asked where it stands.
+  @Test func theSideThatShrinksIsAskedWhereItStandsAndTheOtherGrowsInTheSlot() throws {
+    let h = Harness(displays: [Self.withADock])
+    let a = h.system.open(app: "A", frame: CGRect(x: 20, y: 60, width: 480, height: 348))
+    h.start()
+    h.run("dock \(a.rawValue) left")
+    let wide = h.system.open(
+      app: "Wide", frame: CGRect(x: 300, y: 300, width: 700, height: 348), minimumSize: CGSize(width: 600, height: 200))
+    let mark = h.system.moveLog.count
+    let roads = roads(h) { h.run("dock \(wide.rawValue) right") }
+    let question = try #require(h.system.moveLog[mark...].first { $0.window == wide })
+    #expect(question.requested.origin == question.before.origin && question.requested.height == 348 && question.requested.width < 600)
+    let slot = try #require(h.layout?.windowFrames[wide], "room was made for it")
+    #expect(slot.width >= 600 && h.frame(wide) == slot)
+    expectEveryDockedWindowFillsItsSlot(h, "dock")
+    expectStraightRoads(roads)
   }
 }

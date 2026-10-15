@@ -79,6 +79,9 @@ public final class FakeWindowSystem: WindowSystem {
   public fileprivate(set) var sightings: [(window: WindowID, frame: CGRect)] = []
   /// Windows that take only half of the next frame they are asked for (`leaveFullScreen`).
   fileprivate var hearHalfNext: Set<WindowID> = []
+  /// Windows whose app carries out a move a moment late, as those do that animate every move: when the last of the three calls a frame
+  /// is set with arrives, the window is still where it was, and grows as far as it may there. It has moved by the time it is looked at.
+  public var movesLate: Set<WindowID> = []
   /// Windows that are on the screen again after full screen, and that their apps do not list yet.
   fileprivate var inSightUnlisted: Set<WindowID> = []
   /// As on a Mac, `focus` takes effect only a moment later: at `finishSlowFocus()`.
@@ -294,8 +297,16 @@ public final class FakeWindowSystem: WindowSystem {
     // Its app places it between two of the calls a frame is set with: the size is taken, the position is the app's again.
     if hearHalfNext.remove(window) != nil { frame.origin = fake.snapshot.frame.origin }
     var applied = Self.accepted(frame, by: fake)
-    if fake.behaviour != .frozen { applied = whereMacOSPuts(applied, titleBar: fake.titleBar) }
-    let (before, changed) = (fake.snapshot.frame, fake.snapshot.frame != applied)
+    let before = fake.snapshot.frame
+    if fake.behaviour != .frozen {
+      // Size, position, size (`FramePlan`): how far a window may grow depends on where it is when it is asked to.
+      let first = Self.accepted(CGRect(origin: before.origin, size: sizeMacOSAllows(frame.size, to: before)), by: fake)
+      let moved = whereMacOSPuts(CGRect(origin: frame.origin, size: first.size), titleBar: fake.titleBar)
+      let isAt = movesLate.contains(window) ? CGRect(origin: before.origin, size: first.size) : moved
+      applied = whereMacOSPuts(
+        Self.accepted(CGRect(origin: frame.origin, size: sizeMacOSAllows(frame.size, to: isAt)), by: fake), titleBar: fake.titleBar)
+    }
+    let changed = before != applied
     moveLog.append(Move(window: window, requested: frame, before: before, after: applied, together: together))
     let (home, moves) = (fake.home ?? fake.snapshot.frame, fake.movesNotArbors)
     fake.snapshot.frame = applied
@@ -318,10 +329,8 @@ public final class FakeWindowSystem: WindowSystem {
   /// comes when the new size does not fit on the display at the old place: macOS cuts the first resize short, though never below the
   /// window's minimum, and the last step makes up for it. A window that hung over that edge already is not cut short. The layer reads
   /// the frame when a report arrives, which is after the call, so they all say the same. And no report stands for two calls.
-  /// Measured with one display. With several, that the display with the window's middle is the one that counts is a guess.
+  /// Measured with one display (`sizeMacOSAllows`).
   public func reports(ofTheWayFrom old: CGRect, to new: CGRect, atLeast minimum: CGSize = .zero) -> Int {
-    let middle = CGPoint(x: old.midX, y: old.midY)
-    let room = (displayList.first { $0.frame.contains(middle) } ?? displayList.first { $0.frame.overlaps(old) })?.visibleFrame
     var (frame, count) = (old, 0)
     for (index, step) in FramePlan.steps(from: old, to: new).enumerated() {
       var next = frame
@@ -329,9 +338,9 @@ public final class FakeWindowSystem: WindowSystem {
       case .position: next.origin = new.origin
       case .size:
         next.size = new.size
-        guard index == 0, let room else { break }
-        if frame.maxX <= room.maxX { next.size.width = max(min(next.width, room.maxX - frame.minX), minimum.width) }
-        if frame.maxY <= room.maxY { next.size.height = max(min(next.height, room.maxY - frame.minY), minimum.height) }
+        guard index == 0 else { break }
+        let allowed = sizeMacOSAllows(new.size, to: frame)
+        next.size = CGSize(width: max(allowed.width, minimum.width), height: max(allowed.height, minimum.height))
       }
       if next != frame { count += 1 }
       frame = next
@@ -352,11 +361,7 @@ public final class FakeWindowSystem: WindowSystem {
   /// with a title bar this high.
   public func whereMacOSPuts(_ frame: CGRect, titleBar: CGFloat) -> CGRect {
     var applied = frame
-    // The display the window's corner is on stops it. A point on a shared edge belongs to the display it is inside.
-    if echoes.titleBarStaysReachable,
-      let display = displayList.first(where: { $0.frame.contains(applied.origin) })
-        ?? displayList.min(by: { $0.frame.distance(to: applied.origin) < $1.frame.distance(to: applied.origin) })
-    {
+    if echoes.titleBarStaysReachable, let display = display(stopping: applied.origin) {
       applied.origin.y = min(applied.minY, display.visibleFrame.maxY - titleBar)
     }
     if echoes.wholePoints {
@@ -365,6 +370,22 @@ public final class FakeWindowSystem: WindowSystem {
         height: applied.height.rounded(.down))
     }
     return applied
+  }
+
+  /// The display a window's corner is on stops it, or the nearest. A point on a shared edge belongs to the display it is inside.
+  private func display(stopping origin: CGPoint) -> DisplaySnapshot? {
+    displayList.first { $0.frame.contains(origin) } ?? displayList.min { $0.frame.distance(to: origin) < $1.frame.distance(to: origin) }
+  }
+
+  /// What macOS passes on of a `size` asked of a window that stands at `standing` (`echoes.growsNoFurtherThanTheScreen`). Its
+  /// app has its say afterwards: a minimum size wins.
+  private func sizeMacOSAllows(_ size: CGSize, to standing: CGRect) -> CGSize {
+    guard echoes.growsNoFurtherThanTheScreen, let display = display(stopping: standing.origin) else { return size }
+    let (right, bottom) = (display.frame.maxX, display.visibleFrame.maxY)
+    return CGSize(
+      width: standing.maxX > right ? size.width : min(size.width, max(standing.width, right - standing.minX)),
+      height: standing.maxY > bottom || standing.minY + size.height <= bottom
+        ? size.height : min(size.height, max(standing.height, bottom - 1 - standing.minY)))
   }
 
   public func focus(_ window: WindowID) {
@@ -776,6 +797,13 @@ extension FakeWindowSystem {
     /// A window cannot be moved so low that its title bar is under the Dock or below the display: asked for
     /// 1023,767 on a display whose visible frame ends at 705, it stops at 1023,677, its title bar's 28 points above (`setTitleBar`).
     public var titleBarStaysReachable = true
+    /// A window whose size is set grows no further than to the bottom of the visible frame, less a point, and to the right edge
+    /// of its display: at 170,220 on a display whose visible frame ends at 705, asked to be 650 high, it becomes 484 high;
+    /// at 687,106 on one 1024 wide, asked to be 494 wide, 337 wide (25 answers on macOS 26). It is never made smaller by it. One
+    /// that is past both already, as in the corner where Arbor parks windows, grows as it is asked to. Not seen, and a guess
+    /// here: past one of them and not the other, each side goes by itself; asked to end on the very line, it does; with several
+    /// displays, the one its corner is on counts; a Dock at the side.
+    public var growsNoFurtherThanTheScreen = true
     /// For this many seconds after a window leaves the Dock it is still flying: asked for a frame, it answers with the
     /// one it has and keeps it. 0, the default: not seen on a Mac so far (the report of the un-minimize seems to come
     /// when the flight is over), but nobody has looked at a slow Mac or with ⇧ held.
@@ -789,7 +817,7 @@ extension FakeWindowSystem {
     public static var none: Echoes {
       var echoes = Echoes()
       (echoes.focus, echoes.frames, echoes.keyboard, echoes.wholePoints) = (false, false, false, false)
-      echoes.titleBarStaysReachable = false
+      (echoes.titleBarStaysReachable, echoes.growsNoFurtherThanTheScreen) = (false, false)
       return echoes
     }
   }

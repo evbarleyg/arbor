@@ -97,7 +97,8 @@ inputActivity isHolding frame isVisible clearFrameLog existingWindowIDs launchAp
 install place remove hasHeldEchoes dragging frameAfterResizing openApplication raise windowsFrontToBack clearRaiseLog
 snapshot minimumSize maximumSize sizeStep behaviour lastRequest placeIsArborsDoing groundHasShifted movesNotArbors
 changedItsWays window requested before after together wasFocused focus frames keyboard wholePoints
-titleBarStaysReachable flightFromTheDock flightFromFullScreen none jolts titleBar usualTitleBar measuredTitleBars reports
+titleBarStaysReachable growsNoFurtherThanTheScreen movesLate flightFromTheDock flightFromFullScreen none jolts titleBar usualTitleBar
+measuredTitleBars reports
 """.split()
 
 # A hand on one of Arbor's own panels: the fake calls the action the real panel would call.

@@ -13,7 +13,7 @@ extension Controller {
 
   /// The display that stops a window on its way down to `origin`: the one its corner is on, or the nearest. With one display that is
   /// what was measured, with several it is a guess that the fake window system shares.
-  private func stopper(of origin: CGPoint) -> DisplaySnapshot? {
+  func stopper(of origin: CGPoint) -> DisplaySnapshot? {
     displays.first { $0.frame.contains(origin) }
       ?? displays.min { $0.frame.distance(to: origin) < $1.frame.distance(to: origin) }
   }

@@ -53,6 +53,41 @@ private final class Recorder: WindowSystemEvents {
     return (system, recorder, a, b, c)
   }
 
+  /// Answers recorded on macOS 26 (1024×768, the visible frame ends at 705), as they came.
+  @Test func aWindowGrowsNoFurtherThanTheScreenWhereItStands() {
+    let system = FakeWindowSystem(displays: [
+      DisplaySnapshot(
+        id: DisplayID("small"), frame: CGRect(x: 0, y: 0, width: 1024, height: 768),
+        visibleFrame: CGRect(x: 0, y: 31, width: 1024, height: 674), isMain: true)
+    ])
+    func rect(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloat) -> CGRect {
+      CGRect(x: x, y: y, width: width, height: height)
+    }
+    let a = system.open(app: "A", frame: rect(170, 220, 480, 348))
+    #expect(system.setFrame(rect(170, 220, 494, 650), of: a) == rect(170, 220, 494, 484), "where it stands")
+    #expect(system.setFrame(rect(12, 126, 494, 484), of: a) == rect(12, 126, 494, 484))
+    #expect(system.setFrame(rect(12, 126, 325, 650), of: a) == rect(12, 126, 325, 578), "from higher up, further")
+    // Size, position, size: what the first does not reach the second does.
+    #expect(system.setFrame(rect(12, 43, 325, 650), of: a) == rect(12, 43, 325, 650), "on its way up, all the way")
+    // Past the line already it grows as it is asked to, and keeps that on its way back.
+    #expect(system.setFrame(rect(1023, 767, 325, 524), of: a)?.size == CGSize(width: 325, height: 524))
+    #expect(system.setFrame(rect(687, 106, 325, 650), of: a) == rect(687, 106, 325, 650), "its bottom at 756")
+    // Each side by itself: as wide as to the right edge.
+    #expect(system.setFrame(rect(687, 106, 494, 650), of: a) == rect(687, 106, 337, 650), "its right edge at 1024")
+    #expect(system.setFrame(rect(249, 356, 446, 348), of: a) == rect(249, 356, 446, 348))
+    #expect(system.setFrame(rect(249, 356, 273, 650), of: a) == rect(249, 356, 273, 348), "at the line already")
+    // In the corner, past both.
+    #expect(system.setFrame(rect(1023, 767, 325, 484), of: a)?.size == CGSize(width: 325, height: 484))
+    let corner = system.windows[a]!.snapshot.frame.origin
+    #expect(system.setFrame(CGRect(origin: corner, size: CGSize(width: 1000, height: 650)), of: a)?.size == CGSize(width: 1000, height: 650))
+    // What its app insists on wins.
+    let large = system.open(app: "Large", frame: rect(578, 220, 700, 500), minimumSize: CGSize(width: 700, height: 500))
+    #expect(system.setFrame(rect(578, 220, 446, 348), of: large) == rect(578, 220, 700, 500))
+    system.echoes.growsNoFurtherThanTheScreen = false
+    #expect(system.setFrame(rect(687, 300, 300, 300), of: a) == rect(687, 300, 300, 300))
+    #expect(system.setFrame(rect(687, 300, 400, 650), of: a) == rect(687, 300, 400, 650))
+  }
+
   @Test func aNewWindowIsCreatedThenFocused() {
     let (system, recorder, _, _, _) = make()
     let new = system.open(app: "Safari", pid: 1)

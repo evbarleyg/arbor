@@ -19,7 +19,7 @@ private let b = WindowID(102)
     let runner = ChaosRunner()
     for line in lines { _ = runner.step(ChaosAction(text: line)) }
     if let fault { runner.beforeTheNextCheck = { fault($0.system) } }
-    let prefixes = ["flashed-", "moved-", "sized-", "fetched-", "switched-to-", "app-switch-", "size-", "home-", "there-and-back-", "start-", "pause-and-", "quit-", "displays-", "dragged-"]
+    let prefixes = ["flashed-", "moved-", "sized-", "set-right-", "fetched-", "switched-to-", "app-switch-", "size-", "home-", "there-and-back-", "start-", "pause-and-", "quit-", "displays-", "dragged-"]
     return Set(([last] + later).flatMap { runner.step(ChaosAction(text: $0)) }.map(\.rule).filter { rule in prefixes.contains { rule.hasPrefix($0) } })
   }
 
@@ -106,7 +106,7 @@ private let b = WindowID(102)
 
   @Test func anAppThatRefusesASizeIsToldApartAndOnlyTheFirstTimeIsNews() {
     let narrow = ["launch", "open 101 Notes pid 1001 at 100 100 500 400 max 500 2000", "open 102 Mail pid 1002 at 800 300 500 400", "settle"]
-    #expect(nets(after: narrow, then: "dock 101 left").isEmpty, "asked where it stands, and then straight to the middle")
+    #expect(nets(after: narrow, then: "dock 101 left").isEmpty, "it grows in its slot; that it cannot shows there, the first time")
     // Into the corner of its slot, and from there to its middle.
     let byWayOfTheCorner: (CGFloat) -> (FakeWindowSystem) -> Void = { x in
       {
@@ -118,6 +118,48 @@ private let b = WindowID(102)
     let again = narrow + ["dock 101 left", "settle", "float 101", "settle"]
     #expect(nets(after: again, then: "dock 101 right").isEmpty)
     #expect(nets(after: again, then: "dock 101 right", fault: byWayOfTheCorner(726)).contains("moved-twice-sizing-again"))
+  }
+
+  /// A window grows in its slot. The first time it turns out unable to, it goes on to the middle of the slot as it is, and only that is let pass.
+  @Test func onlyTheWayToTheMiddleOfWhatItWasOfferedIsLetPass() {
+    // Docked, and unable to grow since. Nobody has met that yet.
+    let limited = oneDocked + ["limits 101 min 100 100 max 500 2000"]
+    func hop(to second: CGRect) -> (FakeWindowSystem) -> Void {
+      {
+        _ = $0.setFrame(self.rect(726, 37, 702, 851), of: a)
+        _ = $0.setFrame(second, of: a)
+      }
+    }
+    func jolts(_ fault: @escaping (FakeWindowSystem) -> Void) -> Set<String> {
+      nets(after: limited, then: "cursor 10 10", fault: fault).filter { $0.hasPrefix("moved-twice") || $0.hasPrefix("sized-") || $0.hasPrefix("set-right-") }
+    }
+    #expect(jolts(hop(to: rect(827, 37, 500, 851))).isEmpty, "the hop itself")
+    #expect(jolts(hop(to: rect(400, 37, 500, 851))) == ["moved-twice-sizing"], "out of what it was offered")
+    #expect(jolts(hop(to: rect(827, 37, 400, 851))) == ["moved-twice-sizing"], "at another size")
+    #expect(
+      jolts {
+        hop(to: self.rect(827, 37, 500, 851))($0)
+        hop(to: self.rect(827, 37, 500, 851))($0)
+      } == ["moved-twice-sizing"], "twice")
+    // A floating window has no slot.
+    let floating = twoFloating + ["limits 101 min 100 100 max 500 2000"]
+    #expect(nets(after: floating, then: "cursor 10 10", fault: hop(to: rect(827, 37, 500, 851))).contains("moved-twice-sizing-floating"))
+  }
+
+  /// A terminal is a few points short of any slot, and that it is set right in it has a name and an owner of its own.
+  @Test func aTerminalSetRightInItsSlotHasAName() {
+    let terminal = ["launch", "open 101 Terminal pid 1001 at 100 100 500 400", "behave 101 grid", "open 102 Mail pid 1002 at 800 300 500 400", "settle"]
+    let below = terminal + ["dock 102 left", "settle"]
+    #expect(nets(after: below, then: "dock 101 beside 102 bottom").isEmpty, "the first time nobody could know")
+    // It grows to a height it has not been seen at.
+    #expect(nets(after: below + ["dock 101 beside 102 bottom", "settle"], then: "float 102") == ["set-right-by-less-than-a-cell"])
+    // A window that stops a few points short of its slot for another reason is not a terminal.
+    let short = ["launch", "open 101 Notes pid 1001 at 100 100 500 400 max 680 2000", "open 102 Mail pid 1002 at 800 300 500 400", "dock 101 left", "settle", "float 101", "settle"]
+    #expect(
+      nets(after: short, then: "dock 101 right") {
+        _ = $0.setFrame(self.rect(726, 37, 702, 851), of: a)
+        _ = $0.setFrame(self.rect(737, 37, 680, 851), of: a)
+      }.contains("moved-twice-sizing-again"))
   }
 
   /// A window Arbor does not know is asked for a size where it stands, and goes to its place afterwards. That is two requests and

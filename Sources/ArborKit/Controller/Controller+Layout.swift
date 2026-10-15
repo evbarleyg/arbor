@@ -139,7 +139,8 @@ extension Controller {
     var learnedMinimum = false
     // However this ends, an answer holds for the layout it was given in: next time a sheet may have closed.
     defer { justAnswered.removeAll() }
-    // Of some nobody knows whether they can grow as far as their slot, and where they go depends on it (Controller+AskFirst.swift).
+    // Of some that are out of view nobody knows whether they can grow as far as their slot, and where they go depends on it
+    // (Controller+AskFirst.swift).
     var unknown: [(window: WindowID, slot: CGRect, question: CGRect)] = []
     // A window being dragged stays in the user's hand whatever happens to the layout meanwhile.
     for (window, target) in layout.windowFrames.sorted(by: { $0.key < $1.key }) where window != drag?.window {
@@ -181,7 +182,7 @@ extension Controller {
       if isInPlace(current, at: target) || enforcement.givenUp.contains(window) { settled[window] = current.frame }
       return false
     }
-    let asked = request(for: current, in: target)
+    let (asked, expected) = (request(for: current, in: target), expectedFrame(of: current, in: target).size)
     // It has answered where it stood, and that is where the answer belongs: there is nothing left to ask for.
     let isThere = justAnswered[window] != nil && !parked.contains(window) && asked.approximatelyEquals(current.frame, tolerance: 1)
     guard var actual = isThere ? current.frame : system.setFrame(asked, of: window) else {
@@ -189,9 +190,30 @@ extension Controller {
       return false
     }
     unplaced.remove(window)
+    let hasHeard = !actual.approximatelyEquals(current.frame, tolerance: 1)
     // One that was only moved, at the size it has, has been through this where it stood.
+    let isOnlyMoved = asked.size == current.frame.size
     // Where it was asked, not by way of the slot's corner.
-    if asked.size == target.size { actual = askForLess(window, slot: asked, took: actual) }
+    if !isOnlyMoved { actual = askForLess(window, slot: asked, took: actual) }
+    // An answer the screen may have given is no refusal (`mayHaveBeenStoppedByTheScreen`). It can be, anywhere but in the slot, which
+    // lies on the screen: where the window stood, if its app carries out a move late and was still there when it was asked for the
+    // size; and where it answers from, if it was not expected to grow, was asked lower than its slot begins, and has grown. Not
+    // the answer that was expected: a window known not to grow may happen to have stood on the line.
+    func mayBeTheScreens(_ answer: CGRect, whichStoodAt stood: CGPoint) -> Bool {
+      guard abs(answer.width - expected.width) > 2 || abs(answer.height - expected.height) > 2 else { return false }
+      return [stood, answer.origin].contains { place in
+        (abs(place.x - target.minX) > 1 || abs(place.y - target.minY) > 1)
+          && mayHaveBeenStoppedByTheScreen(answer.size, shortOf: target.size, at: place)
+      }
+    }
+    // So it is asked once more, in the slot.
+    var saysNothing = false
+    if !isOnlyMoved, mayBeTheScreens(actual, whichStoodAt: current.frame.origin) {
+      let stood = actual.origin
+      actual = system.setFrame(target, of: window) ?? actual
+      actual = askForLess(window, slot: target, took: actual)
+      saysNothing = mayBeTheScreens(actual, whichStoodAt: stood)
+    }
     // A window that cannot grow to its slot (Calculator, System Settings) sits in the middle of it,
     // which looks meant, rather than in its top-left corner, which looks broken.
     if actual.width < target.width - 2 || actual.height < target.height - 2 {
@@ -205,10 +227,21 @@ extension Controller {
     parked.remove(window)
     windows[window]?.frame = actual
     settled[window] = actual
-    misfits[window] = actual.approximatelyEquals(target, tolerance: 1) ? nil : (target, actual)
+    misfits[window] = saysNothing || actual.approximatelyEquals(target, tolerance: 1) ? nil : (target, actual)
+    // Still not in its slot when it was asked there: of the sides that fell short nothing is known, as if they had been offered no more. It is
+    // asked again at the next layout, which the report of its late move brings.
+    var offered = target.size
+    if saysNothing { offered = CGSize(width: min(offered.width, max(actual.width, 1)), height: min(offered.height, max(actual.height, 1))) }
     // Only just back, it may not be ready to take a frame (Controller+OnTheWayBack.swift).
-    if misfits[window] != nil, postponesJudgement(of: window, on: displayID) { return false }
-    return learn(from: window, was: current.frame.size, took: actual.size, offered: target.size)
+    if misfits[window] != nil, postponesJudgement(of: window, on: displayID) {
+      // Where it stopped growing only says where it is sent next, still asked for the whole size. Without that it would go by way of
+      // the slot's corner once more when the moment is over.
+      if hasHeard, actual.width <= target.width + 2, actual.height <= target.height + 2 {
+        _ = learn(from: window, was: current.frame.size, took: actual.size, offered: target.size)
+      }
+      return false
+    }
+    return learn(from: window, was: current.frame.size, took: actual.size, offered: offered)
   }
 
   /// Whether a window already sits where it belongs, so there is no need to move it.

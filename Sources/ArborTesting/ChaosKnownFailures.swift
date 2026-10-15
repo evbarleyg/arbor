@@ -203,6 +203,20 @@ extension ChaosRunner {
         key down arrange
         """),
     ChaosKnownFailure(
+      rule: "set-right-by-less-than-a-cell", owner: "board 1.62: Arbor knows a terminal's character cell", severity: 4,
+      story: "A terminal takes whole character cells. Nobody in view is asked to grow where it stands, so how many cells go into a slot shows in the slot, and the "
+        + "terminal is moved to the middle of it afterwards: less than half a cell, within the slot, at every size it has not been seen at. It ends when Arbor "
+        + "knows the cell, and foretells the place for any slot.",
+      script: """
+        launch
+        open 101 Terminal pid 1001 at 100 100 500 400
+        behave 101 grid
+        open 102 Mail pid 1002 at 800 300 500 400
+        dock 102 left
+        dock 101 beside 102 bottom
+        float 102
+        """),
+    ChaosKnownFailure(
       rule: "sized-there-and-back-floating", owner: "rule 3: a floating window's frame is its person's", severity: 3,
       story: "A floating window is squeezed onto the Desktop and given some of it back by the same command.",
       script: """
@@ -246,14 +260,17 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "moved-twice-sizing", owner: "rule 3: one thing that happens is one layout", severity: 3,
-      story: "A docked window goes to another display and turns out unable to grow there: corner, then middle. It is not asked where it stands, because macOS lets a "
-        + "window be only as large as the display it is on allows. Once per window.",
+      story: "A window its person has left lower than macOS lets anybody put one cannot be asked where it stands, for it would not stay there. That it will not be "
+        + "as narrow as its slot shows in the slot, and it is a tile a moment later. Once per window.",
       script: """
-        displays main:0,0,1280,800:25,0,0,0* side:-3008,0,3008,1692:25,0,0,0 windows-never
+        displays main:0,0,1512,982:37,0,0,70* side:0,-1440,2560,1440:25,0,0,0 windows-never
+        open 101 Mail pid 1002 at 130 202 1298 700 min 760 400
+        open 104 Safari pid 1000 at 17 209 1380 664 min 574 240
         launch
-        open 103 Preview pid 1007 at 48 115 723 663 min 723 400 max 723 2000
-        key down toggle-float
-        via menu move-to-display next
+        grab 101
+        carry 390 967
+        release
+        key down arrange
         """),
     ChaosKnownFailure(
       rule: "moved-twice-sizing-floating", owner: "rule 3: a floating window's frame is its person's", severity: 2,
@@ -272,8 +289,17 @@ extension ChaosRunner {
     ChaosKnownFailure(
       rule: "moved-twice-sizing-again", owner: "rule 3: one thing that happens is one layout", severity: 3,
       story: "A window that cannot grow comes from the corner to the left of a display, where it cannot be asked for a size: corner of its slot, then middle. Also: a window "
-        + "comes back out of the Dock, and its neighbour goes into the slot that is left and is a tile a moment later.",
+        + "comes back out of the Dock, and its neighbour goes into the slot that is left and is a tile a moment later. Also: a window of one width first meets a slot "
+        + "a few points wider, which is what a terminal's rounding looks like, so nobody calls that a limit; in view nobody is asked to grow where it stands, so "
+        + "that it is one shows in the next, wider slot: corner, then middle, once.",
       script: """
+        displays main:0,0,1512,982:37,0,0,0* windows-never
+        launch
+        open 104 Preview pid 1007 at 619 182 723 767 min 723 400 max 723 2000
+        key down dock right
+        key down dock top
+        """,
+      """
         displays main:-1512,-150,1512,982:37,0,0,0 side:0,0,1920,1080:25,70,0,0* windows-never
         launch
         open 107 Preview pid 1007 at -1371 -97 723 767 min 723 400 max 723 2000
@@ -313,6 +339,25 @@ extension ChaosRunner {
         key down shrink
         """),
     ChaosKnownFailure(
+      rule: "moved-again", owner: "rule 3: one thing that happens is one layout", severity: 4,
+      story: "A window only just back out of the Dock is docked and will not be as narrow as its slot. Asked where it stands it keeps its size, which is also what one "
+        + "that is not ready yet does, so nothing is concluded, and room is made for it when the moment is over: nine points, a second later.",
+      script: """
+        displays main:0,0,1512,982:37,0,0,48* side:1512,-200,3008,1692:25,0,0,0 windows-never
+        open 101 Preview pid 1007 at 1697 691 723 501 min 723 400 max 723 2000
+        launch
+        restore 101
+        grab 101
+        carry 67 449
+        release
+        key down dock bottom
+        key down undo
+        minimize 101
+        restore 101
+        key down toggle-float
+        advance 1
+        """),
+    ChaosKnownFailure(
       rule: "moved-again-floating", owner: "rule 3: a floating window's frame is its person's", severity: 3,
       story: "As `moved-twice-floating`, in a layout that a timer runs.",
       script: """
@@ -334,20 +379,6 @@ extension ChaosRunner {
         zoom-node 0
         space 111 on
         settle
-        """),
-    ChaosKnownFailure(
-      rule: "moved-again-sizing", owner: "rule 3: one thing that happens is one layout", severity: 3,
-      story: "As `moved-twice-sizing`, in a layout that a timer runs: a window docked while its macOS Space was away comes back on other displays.",
-      script: """
-        launch
-        displays side:0,0,1080,1920:37,57,0,0* main:-185,1920,1280,800:0,0,0,0 third:-1625,115,1440,900:0,0,0,0 windows-silent
-        open 109 Safari pid 1000 at 265 1470 766 255 max 347 222
-        space 109 off
-        dock top
-        displays main:0,0,1920,1080:37,0,0,0* windows-silent
-        displays main:0,0,1080,1920:37,0,0,0* side:-8,1920,1280,800:37,0,0,0 windows-first
-        space 109 on
-        flush
         """),
     ChaosKnownFailure(
       rule: "moved-again-sizing-again", owner: "rule 3: one thing that happens is one layout", severity: 3,
@@ -374,20 +405,6 @@ extension ChaosRunner {
         wake 1000
         limits 108 min 1579 1480
         settle
-        """),
-    ChaosKnownFailure(
-      rule: "moved-again-sizing-again-floating", owner: "rule 3: a floating window's frame is its person's", severity: 3,
-      story: "The same, though its app has refused in the same way before.",
-      script: """
-        launch
-        open 109 Mail pid 1002 at 864 572 1103 322 min 1103 322 title Übersicht
-        arrange
-        space 109 off
-        displays third:0,0,2560,1440:25,63,0,0* windows-late
-        open 112 Mail pid 1002 at 536 1243 2062 1095 min 2062 1095 max 2062 1847
-        dock 112 top
-        space 109 on
-        flush
         """),
     ChaosKnownFailure(
       rule: "moved-unasked", owner: "rule 2: a floating window's frame is its person's", severity: 2,
@@ -480,29 +497,35 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "home-not-whole", owner: "the ways home", severity: 3,
-      story: "After a way home a window Arbor placed hangs over an edge further than anybody left it: old numbers given back on a smaller display; its own, larger "
-        + "size given back at the corner a hand gave.",
+      story: "After a way home a window Arbor placed hangs over an edge further than anybody left it: its own, larger size given back at the corner a hand gave.",
       script: """
-        displays main:0,0,1512,982:37,0,0,0* side:-2560,323,2560,1440:25,0,0,0 windows-never
-        open 101 Finder pid 1005 at 45 657 708 305 min 501 300
-        open 104 Finder pid 1005 at -1592 412 810 523 min 501 300
+        displays main:0,0,1728,1117:37,0,59,0* windows-never
+        open 101 Music pid 1006 at 240 65 1049 678 min 680 480
+        open 103 Notes pid 1001 at 454 516 927 534 min 709 300
         launch
-        key down arrange
-        displays side:0,0,2560,1440:25,0,0,0* windows-first
-        displays main:0,0,1512,982:37,0,0,0* windows-late
-        way-back float-all
+        focus 103
+        key down dock right
+        advance 1
+        grab 101
+        carry 1304 619
+        release
+        key down float-all
         """),
     ChaosKnownFailure(
       rule: "home-behind-the-dock", owner: "the ways home", severity: 4,
       story: "The Dock has come to this display since the window was last its person's: Float All gives the old frame back, part of it behind the Dock.",
       script: """
-        displays main:0,0,1280,800:25,0,86,0* side:0,-1440,2560,1440:25,0,0,0 windows-never
+        displays main:0,1692,1728,1117:37,0,0,0 side:0,0,3008,1692:25,0,70,0* windows-never
         launch
-        open 102 Mail pid 1002 at 136 -767 1122 693 min 760 400
-        key down dock bottom
-        displays main:0,0,1280,800:25,0,86,0* windows-silent
-        displays side:0,0,2560,1440:25,0,86,0* windows-first
-        way-back float-all
+        open 104 Xcode pid 1004 at 20 501 1188 784 min 1188 685
+        grab 104
+        carry 1653 2610
+        release
+        via menu toggle-pin
+        key down dock right
+        displays main:0,0,1728,1117:37,0,70,0* windows-first
+        advance 0.3
+        key down float-all
         """),
     ChaosKnownFailure(
       rule: "there-and-back-moved", owner: "rule 2: there and back is nothing", severity: 2,
