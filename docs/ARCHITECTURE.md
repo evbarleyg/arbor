@@ -447,9 +447,11 @@ nobody sees move. What it must not do is believe the window server:
 
 - A press on the strip of a window that still shows brings them all back with the button
   down, so the window under the pointer leaps across the display in the list. Taken for a drag,
-  that is one at the edge of the display, where Arbor docks. So a press on a window that is listed
-  elsewhere than Accessibility last had it takes hold of nothing (`WindowGrab.isListedElsewhere`,
-  asked by `makePress`), and the last rule above catches a leap from whatever cause.
+  that is one at the edge of the display, where Arbor docks. So while the desktop is shown a press on
+  a window that is listed elsewhere than Accessibility last had it takes hold of nothing
+  (`WindowGrab.hold`), and the last rule above catches a leap from whatever cause. Only then: the
+  list is also behind for a moment (up to 0.2 s) after a frame was set through Accessibility, by Arbor
+  as by anybody, and a window that has just been laid out is a window.
 - A busy Mac serves a press late: the place of the press is of a while ago, and the window server's list
   is of now. A window that is in the hand by then is listed elsewhere than its app last said as well, or
   has left the place of the press, with another window showing there. `makePress` reads what shows at

@@ -358,4 +358,46 @@ func tellOfLatePresses(_ book: Book) {
       }
     }
   }
+
+  // Arbor lays out, and the window server's list is behind for 150 ms (seen on a Mac): listed is where the window WAS, its app's word where Arbor has just put it. That is what a window in the hand
+  // looks like, if the pointer happens to go from the new place towards the old one. A layout keeps Arbor's main thread, so a press made meanwhile is served right after it, late, and within those 150 ms.
+  // By the title bar it is a drag, whatever the frames say. In a field of a toolbar, 40 points below the top, it is none.
+  for (way, dx, dy) in [("towards where it was", -1, 0), ("away from where it was", 1, 0), ("across", 0, 1)] as [(String, CGFloat, CGFloat)] {
+    for grip in [true, false] {
+      // Late, but served while the list is still behind.
+      let within: [(String, (FakeMac) -> Void)] = [
+        ("served on time", { _ in }), ("the press heard 60 ms late", { $0.mouseDownIsLateBy = 0.06 }), ("the press heard 100 ms late", { $0.mouseDownIsLateBy = 0.1 }),
+        ("Arbor busy for 100 ms, then byTime", { $0.arborIsBusy(for: 0.1, then: .byTime) }),
+        ("Arbor busy for 100 ms, then accessibilityFirst", { $0.arborIsBusy(for: 0.1, then: .accessibilityFirst) }),
+        ("Arbor busy for 100 ms, then mouseFirst", { $0.arborIsBusy(for: 0.1, then: .mouseFirst) }),
+      ]
+      for (name, prepare) in within {
+        book.story("Arbor moves a window 80 points, 20 ms later the button goes down \(grip ? "on its title bar" : "in a field of its toolbar") and the pointer goes \(way), \(name)") { story in
+          let (one, window) = stage(story, frame: CGRect(x: 200, y: 200, width: 400, height: 300))
+          one.mac.serverListsACallAfter = 0.15
+          _ = one.layer.setFrame(CGRect(x: 280, y: 200, width: 400, height: 300), of: WindowID(window.number))
+          one.mac.pass(0.02)
+          one.heard.clear()
+          prepare(one.mac)
+          // Where both the old frame and the new one have the window.
+          let start = CGPoint(x: 440, y: grip ? 212 : 240)
+          one.mac.drag(from: start, to: CGPoint(x: start.x + 90 * dx, y: start.y + 90 * dy), steps: 6, interval: 0.015, rest: 0.01)
+          // And on, slowly: what comes right after a move of Arbor's own is taken for its echo, whatever it says, so a gesture that is over in a tenth of a second is another story.
+          for step in 1...8 {
+            one.mac.moveMouse(to: CGPoint(x: start.x + (90 + 10 * CGFloat(step)) * dx, y: start.y + (90 + 10 * CGFloat(step)) * dy))
+            one.mac.pass(0.08)
+          }
+          one.mac.pass(0.3)
+          one.mac.release()
+          one.mac.pass(3)
+          if grip {
+            drags(story, one, window)
+          } else {
+            story.check("no drag and no resize is made of it", one.heard.outline.isEmpty, one.heard.outline.map(\.text).joined(separator: ", "))
+            story.check("the window is where Arbor put it", window.bounds == CGRect(x: 280, y: 200, width: 400, height: 300), window.bounds.text)
+          }
+        }
+      }
+    }
+  }
 }
