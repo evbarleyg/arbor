@@ -9,7 +9,8 @@ here means: an act, a user-hour, a cell, a cast, a detector, a run that counts.
                                                        (`day-findings.json`). A `rings.json` in one of them or beside it is taken along
   viable.py check <ledger> [--runs <file>]             the table, the reasons and the verdict. `--runs`: every job of the gate's workflow on that
                                                        commit that got a Mac, as GitHub lists them, a line for each job and attempt with the
-                                                       parts it was given: `<run id> <attempt> <first part>-<last part>`.
+                                                       parts it was given: `<run id> <attempt> <first part>-<last part>`; of an attempt in which no
+                                                       job got one, `<run id> <attempt> -`. Every attempt of a run has a line.
                                                        Without it the verdict is never VIABLE: nobody has looked for runs that were left out
   viable.py --self-test
 
@@ -243,11 +244,19 @@ def judge(ledger, gate, listed=None):
             for part in sorted(parts):
                 if (identifier, attempt, part) not in seen:
                     reasons.append(f"in run {identifier}.{attempt} a job got a Mac for part {part}, and the ledger leaves it out: there is not even a stub")
+        # An attempt that is nowhere may be the one that went badly. GitHub lists a run's latest attempt unless it is asked for all.
+        for identifier, attempt in sorted(set(listed) | {key[:2] for key in seen}):
+            for earlier in range(1, attempt):
+                if (identifier, earlier) not in listed:
+                    reasons.append(f"run {identifier} has an attempt {attempt}, and GitHub's list says nothing of attempt {earlier}: not even that no job of it got a Mac")
         for identifier, attempt, part in sorted(seen):
             if part not in listed.get((identifier, attempt), ()):
                 invalid.append(f"the ledger has part {part} of run {identifier}.{attempt}, and GitHub knows of no job that got a Mac for it")
     for (identifier, attempt, part), run in sorted(seen.items()):
         if not run["manifest"]["started"]:
+            # Its script never began, it says, and here is what the script saw.
+            if run.get("acts") or run.get("findings") or run.get("sampler") or run.get("input"):
+                invalid.append(f"part {part} of run {identifier}.{attempt} says that its script never began, and brought back what a script brings back")
             table.append(f"  never began: part {part} of run {identifier}.{attempt}" + (", played in another attempt" if (identifier, part) in played else ""))
 
     # What began counts, in every attempt, and nothing replaces it.
@@ -474,12 +483,16 @@ def read_json(path):
 
 
 def read_listed(path):
-    """{(run id, attempt): parts} from lines `<run id> <attempt> <first part>-<last part>`, one for each job that got a Mac."""
+    """{(run id, attempt): parts} from lines `<run id> <attempt> <first part>-<last part>`, one for each job that got a Mac; `<run id> <attempt> -` for an attempt in which none did."""
     listed = {}
     try:
         with open(path, encoding="utf-8") as handle:
             for line in handle:
                 if not line.strip():
+                    continue
+                nobody = re.fullmatch(r"(\d+) (\d+) -", line.strip())
+                if nobody and 1 <= int(nobody.group(2)) <= MOST:
+                    listed.setdefault((nobody.group(1), int(nobody.group(2))), set())
                     continue
                 found = re.fullmatch(r"(\d+) (\d+) (\d+)-(\d+)", line.strip())
                 if not found:
@@ -852,6 +865,15 @@ def self_test():
             every(ledger, "walk")[0]["findings"].append({"id": extra["acts"][0]["id"], "what": "w", **finding})
     expect("what began is never replaced: a jolt in the first attempt stays, however clean the second", lambda l: both_attempts(l, {"detector": "jolt", "level": "FAIL"}),
            "NOT VIABLE", "jolt in run 1000.1", listed={**batched, ("1000", 2): {1}})
+    expect("a second attempt alone, in the ledger and in GitHub's list: where is the first?", lambda l: l["runs"][0]["manifest"].update(attempt=2), "NOT VIABLE",
+           "GitHub's list says nothing of attempt 1", listed={**{key: parts for key, parts in everything.items() if key[0] != "1000"}, ("1000", 2): {1}})
+    expect("… in which no job got a Mac, says GitHub", lambda l: l["runs"][0]["manifest"].update(attempt=2), "VIABLE", "",
+           listed={**{key: parts for key, parts in everything.items() if key[0] != "1000"}, ("1000", 1): set(), ("1000", 2): {1}})
+    expect("a third attempt, and nothing of the second", lambda l: l["runs"][0]["manifest"].update(attempt=3), "NOT VIABLE", "GitHub's list says nothing of attempt 2",
+           listed={**{key: parts for key, parts in everything.items() if key[0] != "1000"}, ("1000", 1): set(), ("1000", 3): {1}})
+    for what, brought in (("acts", {"acts": [{"id": "idle#1", "act": "idle", "judged": True}]}), ("a finding", {"findings": [{"detector": "jolt", "level": "FAIL", "id": "idle#1", "what": "w"}]}),
+                          ("the sampler's account", {"sampler": {"samples": 10, "late": 0}}), ("the witness's", {"input": {"kinds": {}, "events": 1}})):
+        expect(f"a stub that brought back {what}", lambda l, brought=brought: (batch(l), again(l), stub(l), l["runs"][-1].update(brought)), "INVALID", "brought back what a script brings back", listed=twice)
     expect("a stub and a manifest for one part of one attempt", lambda l: (batch(l), stub(l)), "INVALID", "is in the ledger twice", listed=once)
     expect("a stub for a part no job was given", lambda l: (batch(l), again(l), stub(l)), "INVALID", "the ledger has part 2 of run 1000.1, and GitHub knows of no job",
            listed={**batched, ("1000", 1): {1}, ("1000", 2): {2}})
@@ -979,6 +1001,8 @@ def self_test():
         ledger = os.path.join(scratch, "ledger.json")
         expect_call("a ledger from directories", ["ledger", commit, *directories, "-o", ledger], 0, "")
         expect_call("… is viable", ["check", ledger, "--runs", listing], 0, "\nVIABLE")
+        with open(listing, encoding="utf-8") as handle:
+            expect_call("… also with a run of which no job ever got a Mac", ["check", ledger, "--runs", put("dash.txt", handle.read() + "4242 1 -\n")], 0, "\nVIABLE")
         expect_call("… and not without the listing", ["check", ledger], 1, "NOT VIABLE")
         expect_call("the same directory twice", ["ledger", commit, *directories, directories[0], "-o", ledger], 0, "")
         expect_call("… is found out", ["check", ledger, "--runs", listing], 2, "is in the ledger twice")
@@ -998,7 +1022,7 @@ def self_test():
         expect_call("a listing with a heading", ["check", ledger, "--runs", put("heading.txt", "id attempt parts\n1000 1 1-1\n")], 2, "is not `<run id> <attempt> <first part>-<last part>`")
         for name, text, words in (("the old form", "1000 1\n", "is not `<run id>"), ("parts the wrong way round", "1000 1 3-2\n", "the first part not after the last"),
                                   ("part nought", "1000 1 0-2\n", "numbers from 1 to"), ("a run id where the parts belong", "1000 1 1-2000000000\n", "numbers from 1 to"),
-                                  ("attempt nought", "1000 0 1-1\n", "numbers from 1 to"), ("one part given to two jobs", "1000 1 1-4\n1000 1 4-8\n", "were given the same part")):
+                                  ("attempt nought", "1000 0 1-1\n", "numbers from 1 to"), ("attempt nought in which nobody got a Mac", "1000 0 -\n", "is not `<run id>"), ("one part given to two jobs", "1000 1 1-4\n1000 1 4-8\n", "were given the same part")):
             expect_call(f"a listing with {name}", ["check", ledger, "--runs", put("odd.txt", text)], 2, words)
         expect_call("an empty listing", ["check", ledger, "--runs", put("none.txt", "")], 2, "lists no job at all")
         expect_call("-o and nothing after it", ["ledger", commit, directories[0], "-o"], 2, "viable.py ledger")
