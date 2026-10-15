@@ -19,8 +19,8 @@ sources="$root/Sources"
 if [ -n "${REF:-}" ]; then
   # A work folder of its own, so that going to and fro between two commits compiles nothing twice.
   work="$root/.build/mac-on-linux-$(git -C "$root" rev-parse --short "$REF")" || exit 2
-  # Not the module cache, which knows where it lives.
-  if [ ! -d "$work" ] && [ -d "$root/.build/mac-on-linux" ]; then cp -R "$root/.build/mac-on-linux" "$work" && rm -rf "$work/module-cache"; fi
+  # Nothing is taken over from the checkout's own work folder: what the compiler notes about an object names the modules it depends on by
+  # their place THERE, so in a copy it would not see that Arbor's modules have changed, and would link stories compiled for other types.
   rm -rf "$work/checkout"
   mkdir -p "$work/checkout"
   git -C "$root" archive "$REF" Sources | tar -x -C "$work/checkout" || { echo "no such commit: $REF"; exit 2; }
@@ -156,7 +156,9 @@ copy_sources || exit 1
 
 if [ "${1:-}" = --self-test ]; then
   rm -f self-test-failed
-  "$here/mutants.py" --list | while IFS=$'\t' read -r -a fields; do
+  # First the whole list: a list that cannot be had, or is empty, is no self-test that passed.
+  "$here/mutants.py" --list > mutants.txt && [ -s mutants.txt ] || { echo "✘ scripts/mac-on-linux/mutants.py lists no change to make"; exit 1; }
+  while IFS=$'\t' read -r -a fields <&3; do
     name=${fields[0]}
     expected=()
     for check in "${fields[@]:1}"; do expected+=(--expect-red "$check"); done
@@ -172,9 +174,10 @@ if [ "${1:-}" = --self-test ]; then
       continue
     fi
     touch self-test-failed
-  done
+  done 3< mutants.txt
   take_over
   if [ -e self-test-failed ]; then rm -f self-test-failed; exit 1; fi
+  echo "all $(wc -l < mutants.txt | tr -d ' ') changes were noticed"
   exit 0
 fi
 
