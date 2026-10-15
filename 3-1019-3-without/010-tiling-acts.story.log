@@ -1,0 +1,56 @@
+10 tiling-acts: without Arbor: drags a window by its title bar against the menu bar and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:1385', 'judge': 'no', 'performed': 'no', 'undone': 'drag_window', 'setup': '1'}
+ODD rule -: the act was not performed: drag_window could not be done
+
+14:47:34.482 SCREEN -- begin 10 tiling-acts
+14:47:34.482 SCREEN -- text 10 without Arbor: drags a window by its title bar against the menu bar and lets go
+14:47:35.073 SCREEN the button is down 635 854
+14:47:35.193 SCREEN the button is up 635 854
+14:47:35.193 SCREEN in front: process 50091 com.apple.iCal
+14:47:35.193 MACOS pid 49349 AXApplicationDeactivated
+14:47:35.195 MACOS workspace didActivate pid 50091 com.apple.iCal regular
+14:47:35.195 MACOS workspace didDeactivate pid 49349 com.apple.TextEdit regular
+14:47:35.250 SCREEN front to back: calendar textedit w1034 mail preview settings notes terminal finder safari
+14:47:35.250 MACOS pid 50091 AXApplicationActivated
+14:47:36.477 SCRIPT drag w1025 from 800,43 to 800,0
+14:47:36.969 SCREEN the button is down 800 43
+14:47:37.936 SCREEN w1043 of WindowManager -15,16 1630×821
+14:47:37.936 SCREEN w1042 of WindowManager -15,16 1630×821
+14:47:37.936 SCREEN front to back: w1043 calendar w1042 textedit w1034 mail preview settings notes terminal finder safari
+14:47:39.148 SCREEN calendar (w1025) 465,31 937×600
+14:47:39.250 MACOS pid 50091 AXMoved w1025 AXWindow/AXStandardWindow 465 31 937 600
+14:47:39.334 SCREEN calendar (w1025) 464,31 937×600
+14:47:39.375 MACOS pid 50091 AXMoved w1025 AXWindow/AXStandardWindow 464 31 937 600
+14:47:39.820 SCREEN w1042 of WindowManager left the screen
+14:47:39.820 SCREEN w1043 of WindowManager left the screen
+14:47:39.820 SCREEN front to back: calendar textedit w1034 mail preview settings notes terminal finder safari
+14:47:39.820 SCREEN the button is up 800 0
+14:47:39.890 SCREEN calendar (w1025) 340,31 1113×651
+14:47:39.893 SCREEN calendar (w1025) 264,31 1222×683
+14:47:39.911 SCREEN calendar (w1025) 198,31 1317×710
+14:47:39.927 SCREEN calendar (w1025) 145,31 1393×732
+14:47:39.940 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 340 31 1222 683
+14:47:39.941 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 104 31 1452 749
+14:47:39.941 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 104 31 1452 749
+14:47:39.942 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 104 31 1452 749
+14:47:39.942 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 104 31 1452 749
+14:47:39.943 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 104 31 1452 749
+14:47:39.943 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 104 31 1452 749
+14:47:39.973 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 51 31 1527 770
+14:47:39.997 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 24 31 1565 781
+14:47:39.998 SCREEN calendar (w1025) 24,31 1565×781
+14:47:40.010 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 16 31 1577 785
+14:47:40.030 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 11 31 1584 787
+14:47:40.045 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 7 31 1590 788
+14:47:40.062 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 5 31 1593 789
+14:47:40.070 SCREEN calendar (w1025) 5,31 1593×789
+14:47:40.078 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 3 31 1596 790
+14:47:40.095 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 2 31 1597 791
+14:47:40.104 SCREEN calendar (w1025) 2,31 1597×791
+14:47:40.113 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 1 31 1598 791
+14:47:40.131 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 1 31 1599 791
+14:47:40.142 SCREEN calendar (w1025) 1,31 1599×791
+14:47:40.147 MACOS pid 50091 AXResized w1025 AXWindow/AXStandardWindow 0 31 1600 791
+14:47:40.169 SCREEN calendar (w1025) 0,31 1600×791
+14:47:41.191 SCREEN -- end 10 act=drag-where-macos-tiles settled=quiet:1385 judge=no performed=no undone=drag_window setup=1
+14:47:41.431 SCRIPT == 11 tiling-acts-back

@@ -1,0 +1,12 @@
+23 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:361', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: notes (w1022) went 10 points out of its way before it ended up
+
+14:48:42.111 SCREEN -- begin 23 display-unplug
+14:48:42.111 SCREEN -- text 23 the second display: unplug
+14:48:42.118 SCREEN notes (w1022) 456,213 1000×600
+14:48:42.339 MACOS pid 49930 AXMoved w1022 AXWindow/AXStandardWindow 456 208 1000 600
+14:48:42.342 SCREEN (nothing was seen for 223 ms)
+14:48:42.342 SCREEN notes (w1022) 456,208 1000×600
+14:48:44.788 SCREEN -- end 23 act=display-change settled=quiet:361 moves=any leaves=any
+14:48:45.043 SCRIPT == 24 dock-icon-settings

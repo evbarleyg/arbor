@@ -1,0 +1,20 @@
+28 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:405', 'moves': 'any', 'leaves': 'any', 'floating': '461,464,475,480,483,484,487,489,492', 'docked': ''}
+FAIL rule 3: notes (w483) went 200 points out of its way before it ended up
+
+14:42:05.632 SCREEN -- begin 28 display-unplug
+14:42:05.632 SCREEN -- text 28 the second display: unplug
+14:42:05.633 SCREEN notes (w483) 776,308 1000×600
+14:42:05.779 MACOS pid 23743 AXMoved w483 AXWindow/AXStandardWindow 300 165 1000 600
+14:42:05.780 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 0 31 1600 791
+14:42:05.780 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 1600 791
+14:42:05.780 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 0 31 1600 791
+14:42:05.781 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 1600 791
+14:42:05.782 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 1600 791
+14:42:05.782 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 1600 791
+14:42:05.789 SCREEN (nothing was seen for 156 ms)
+14:42:05.789 SCREEN notes (w483) 300,165 1000×600
+14:42:07.399 INFO  displays changed: 1 display(s), 0 remembered
+14:42:07.402 DEBUG w483 has the keyboard
+14:42:08.359 SCREEN -- end 28 act=display-change settled=quiet:405 moves=any leaves=any floating=461,464,475,480,483,484,487,489,492 docked=
+14:42:08.695 SCRIPT == 29 view-home

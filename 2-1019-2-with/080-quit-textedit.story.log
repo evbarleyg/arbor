@@ -1,0 +1,39 @@
+80 quit-textedit: presses ⌘Q in textedit
+expected: {'act': 'open-close', 'settled': 'quiet:963', 'moves': '461,464,480,487,461,464,480,487,', 'leaves': '475,', 'floating': '483,484,489,492', 'docked': '461,464,480,487'}
+FAIL rule 2: calendar (w484) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w489) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w492) a floating window, moved, and the step did not name it
+ODD rule 2: w495 of Mail moved along with a window of its app
+
+14:44:46.498 SCREEN -- begin 80 quit-textedit
+14:44:46.498 SCREEN -- text 80 presses ⌘Q in textedit
+14:44:46.710 SCREEN (nothing was seen for 102 ms)
+14:44:46.710 SCREEN textedit (w475) left the screen
+14:44:46.710 SCREEN front to back: terminal w907 settings finder safari notes calendar w495 mail preview
+14:44:46.713 MACOS pid 23567 AXApplicationActivated
+14:44:46.714 MACOS workspace didActivate pid 23567 com.apple.Terminal regular
+14:44:46.714 MACOS workspace didDeactivate pid -1 ? unknown
+14:44:46.714 MACOS workspace didTerminate pid 23248 com.apple.TextEdit regular
+14:44:46.715 SCREEN in front: process 23567 com.apple.Terminal
+14:44:46.725 DEBUG focus is on w480
+14:44:46.725 DEBUG w480 has the keyboard
+14:44:46.740 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 7 stand-ins, 0.46 s
+14:44:46.740 DEBUG the stage kept the windows waiting 5 ms: its panel 0, 7 costumes 0 (0 not ready), the desktop 1, going up 3
+14:44:46.744 MACOS pid 23567 AXMoved w480 AXWindow/AXStandardWindow 12 43 1576 767
+14:44:46.744 MACOS pid 23801 AXMoved w484 AXWindow/AXStandardWindow -936 770 937 600
+14:44:46.746 MACOS pid 24218 AXMoved w489 AXWindow/AXStandardWindow -707 770 708 424
+14:44:46.756 MACOS pid 24337 AXMoved w492 AXWindow/AXStandardWindow -1119 770 1120 630
+14:44:46.759 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 7 stand-ins, 0.4438709831237793 s
+14:44:46.797 SCREEN w887 of Arbor 0,0 1600×900 (level 4)
+14:44:46.797 SCREEN w907 of Arbor 3,34 1594×785
+14:44:46.797 SCREEN terminal (w480) 12,43 1576×767
+14:44:46.797 SCREEN calendar (w484) -936,770 937×600
+14:44:46.797 SCREEN w495 of Mail -794,877 470×416
+14:44:46.797 SCREEN mail (w492) -1119,770 1120×630
+14:44:46.797 SCREEN preview (w489) -707,770 708×424
+14:44:46.797 SCREEN w908 of Arbor 0,31 1600×791 (level -2147483602)
+14:44:46.797 SCREEN front to back: w907 terminal settings finder safari notes calendar w495 mail preview
+14:44:47.375 DEBUG stage down
+14:44:47.389 SCREEN w887 of Arbor left the screen
+14:44:48.144 SCREEN -- end 80 act=open-close settled=quiet:963 moves=461,464,480,487,461,464,480,487, leaves=475, floating=483,484,489,492 docked=461,464,480,487
+14:44:48.830 SCRIPT == 81 reopen-textedit

@@ -1,0 +1,62 @@
+74 launch: starts Arbor
+expected: {'act': 'quit-and-start', 'settled': 'quiet:584', 'moves': ',461,464,480,487,', 'everything': '1', 'floating': '475,483,484,489,492', 'docked': '461,464,480,487'}
+FAIL rule 3: settings (w487) moved 2 times
+FAIL rule L: safari (w464) is out of view: 0% of it is on a display, at -573,770 574×791
+
+14:44:25.973 SCREEN -- begin 74 launch
+14:44:25.973 SCREEN -- text 74 starts Arbor
+14:44:26.107 INFO  Arbor dev starting, pid 38421, home /tmp/arbor-shell.8T663J/home
+14:44:26.108 INFO  opened by a hand, as far as macOS says
+14:44:26.110 INFO  control socket at /tmp/arbor-shell.8T663J/home/arbor.sock
+14:44:26.116 INFO  keyboard layout: U.S.
+14:44:26.129 INFO  registered 9 shortcuts in 793 µs
+14:44:26.208 INFO  the menu bar item is up
+14:44:26.298 INFO  started: 2 display(s), 9 managed window(s)
+14:44:26.311 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 0 31 346 767
+14:44:26.313 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 346 767
+14:44:26.347 SCREEN terminal (w480) 0,31 346×767
+14:44:26.363 SCREEN safari (w464) 276,109 574×791
+14:44:26.373 MACOS pid 23175 AXResized w464 AXWindow/AXStandardWindow 276 109 574 791
+14:44:26.398 MACOS pid 23863 AXResized w487 AXWindow/AXStandardWindow 437 85 723 470
+14:44:26.414 INFO  made room for w487
+14:44:26.455 SCREEN settings (w487) 437,85 723×470
+14:44:26.486 MACOS pid 21277 AXResized w461 AXWindow/AXStandardWindow 340 120 501 436
+14:44:26.511 MACOS pid 21277 AXMoved w461 AXWindow/AXStandardWindow 729 43 501 767
+14:44:26.512 MACOS pid 21277 AXResized w461 AXWindow/AXStandardWindow 729 43 501 767
+14:44:26.515 MACOS pid 23567 AXMoved w480 AXWindow/AXStandardWindow 1242 43 346 767
+14:44:26.525 MACOS pid 23175 AXMoved w464 AXWindow/AXStandardWindow -573 770 574 791
+14:44:26.528 SCREEN terminal (w480) 1242,43 346×767
+14:44:26.528 SCREEN finder (w461) 729,43 501×767
+14:44:26.555 SCREEN safari (w464) -573,770 574×791
+14:44:26.672 INFO  w487 has the keyboard and would be a tile: let be where it stands
+14:44:26.715 MACOS pid 23863 AXResized w487 AXWindow/AXStandardWindow 437 85 723 625
+14:44:26.716 DEBUG w487 has the keyboard
+14:44:26.725 SCREEN settings (w487) 437,85 723×625
+14:44:26.748 ERROR setup: Desktop & Dock settings: as they stand, macOS reacts to the same clicks and drags as Arbor. `fix-setup` keeps them off for you while Arbor runs (and `fix-setup undo` ends that), or do it in System Settings → Desktop & Dock: | “Drag windows to left or right edge of screen to tile”: switch it off | “Drag windows to menu bar to fill screen”: switch it off | “Hold ⌥ key while dragging windows to tile”: switch it off | “Click wallpaper to reveal desktop” is on: a click on the wallpaper sweeps the windows aside, and the next one brings them back where they were. “Only in Stage Manager” switches that off
+14:44:26.793 SCREEN w885 of Arbor 428,76 741×643
+14:44:26.793 SCREEN w881 of Arbor 370,421 347×12
+14:44:26.793 SCREEN w882 of Arbor 358,43 12×767
+14:44:26.793 SCREEN w883 of Arbor 717,43 12×767
+14:44:26.793 SCREEN w884 of Arbor 1230,43 12×767
+14:44:26.793 SCREEN w886 of Arbor 0,31 1600×791 (level -2147483602)
+14:44:26.793 SCREEN front to back: w885 settings terminal finder safari notes calendar textedit w495 mail preview w881 w882 w883 w884
+14:44:26.839 SCREEN w879 of Arbor 12,43 346×767
+14:44:26.839 SCREEN w880 of Arbor 370,433 347×377
+14:44:26.839 SCREEN front to back: w885 settings terminal finder safari notes calendar textedit w495 mail preview w879 w880 w881 w882 w883 w884
+14:44:27.091 DEBUG got ready the stage of 07230EFA-7A8D-4E37-845C-19CC8737EEF5 in 88 ms, the desktop 23 of them
+14:44:27.237 DEBUG got ready the stage of F8CE4CF5-73EA-45EC-8480-8D0C6874F2B3 in 63 ms, the desktop 28 of them
+14:44:27.249 INFO  trace 1019-2-02: recording to /tmp/arbor-shell.8T663J/home/traces/2026-10-15-144427-1019-2-02.jsonl
+14:44:27.251 SCREEN -- arbor 38421
+14:44:27.267 INFO  trace 1019-2-02 ended: 4 lines, trace off
+14:44:27.275 DEBUG got ready the costume of com.apple.finder in 9 ms
+14:44:27.282 INFO  trace day-2: recording to /tmp/arbor-shell.8T663J/home/traces/2026-10-15-144427-day-2.jsonl
+14:44:27.283 DEBUG got ready the costume of com.apple.Safari in 4 ms
+14:44:27.298 DEBUG got ready the costume of com.apple.TextEdit in 5 ms
+14:44:27.333 DEBUG got ready the costume of com.apple.Terminal in 5 ms
+14:44:27.350 DEBUG got ready the costume of com.apple.Notes in 6 ms
+14:44:27.369 DEBUG got ready the costume of com.apple.iCal in 7 ms
+14:44:27.379 DEBUG got ready the costume of com.apple.systempreferences in 3 ms
+14:44:27.393 DEBUG got ready the costume of com.apple.Preview in 5 ms
+14:44:27.408 DEBUG got ready the costume of com.apple.mail in 5 ms
+14:44:27.981 SCREEN -- end 74 act=quit-and-start settled=quiet:584 moves=,461,464,480,487, everything=1 floating=475,483,484,489,492 docked=461,464,480,487
+14:44:28.694 SCRIPT == 75 pause

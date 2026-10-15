@@ -1,0 +1,29 @@
+16 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:352', 'moves': 'any', 'leaves': 'any', 'floating': '461,464,475,480,483,484,487,489,492', 'docked': ''}
+FAIL rule 3: terminal (w480) moved 2 times
+
+14:41:16.434 SCREEN -- begin 16 display-plug
+14:41:16.434 SCREEN -- text 16 the second display: plug
+14:41:16.484 SCREEN front to back: terminal w516 calendar textedit w495 mail preview settings notes finder safari
+14:41:16.902 SCREEN (nothing was seen for 418 ms)
+14:41:16.902 SCREEN terminal (w480) 0,31 1598×784
+14:41:16.902 SCREEN textedit (w475) 165,65 656×422
+14:41:17.267 MACOS pid 23567 AXMoved w480 AXWindow/AXStandardWindow 0 31 1598 784
+14:41:17.268 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 0 31 1598 784
+14:41:17.268 MACOS pid 23248 AXMoved w475 AXWindow/AXStandardWindow 165 65 656 422
+14:41:17.269 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 1598 784
+14:41:17.269 MACOS pid 23248 AXResized w475 AXWindow/AXStandardWindow 165 65 656 422
+14:41:17.271 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 0 31 1598 784
+14:41:17.271 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 1598 784
+14:41:17.272 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 1598 784
+14:41:17.572 SCREEN (nothing was seen for 669 ms)
+14:41:17.701 DEBUG focus is on w480
+14:41:17.702 DEBUG w480 has the keyboard
+14:41:19.294 INFO  displays changed: 2 display(s), 0 remembered
+14:41:19.295 DEBUG w480 has the keyboard
+14:41:19.333 DEBUG got ready the stage of F8CE4CF5-73EA-45EC-8480-8D0C6874F2B3 in 14 ms, the desktop 1 of them
+14:41:22.110 SCREEN (nothing was seen for 139 ms)
+14:41:22.110 SCREEN terminal (w480) 0,31 1600×791
+14:41:22.120 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 1600 791
+14:41:23.488 SCREEN -- end 16 act=display-change settled=quiet:352 moves=any leaves=any floating=461,464,475,480,483,484,487,489,492 docked=
+14:41:23.974 SCRIPT == 17 view-home

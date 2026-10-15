@@ -1,0 +1,43 @@
+69 dock-left: presses ctrl+opt+left
+expected: {'act': 'dock-key', 'settled': 'quiet:918', 'moves': '461,480,487,461,464,480,487,', 'front': '464', 'floating': '475,483,484,489,492', 'docked': '461,464,480,487'}
+ODD rule 3: the last window came to rest 736 ms after the key or the button
+FAIL rule 4: safari (w464) is not wholly in view: 0% of it, at -573,770 574×791 in 0,31 1600×791 and 1600,31 1920×1049
+
+14:44:13.605 SCREEN -- begin 69 dock-left
+14:44:13.605 SCREEN -- text 69 presses ctrl+opt+left
+14:44:13.771 INFO  made room for w461
+14:44:13.775 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 8 stand-ins, 0.46 s
+14:44:13.775 DEBUG the stage kept the windows waiting 3 ms: its panel 0, 8 costumes 0 (0 not ready), the desktop 1, going up 2
+14:44:13.780 SCREEN w517 of Arbor 0,0 1600×900 (level 4)
+14:44:13.815 MACOS pid 23175 AXResized w464 AXWindow/AXStandardWindow 276 109 574 791
+14:44:13.826 INFO  made room for w461
+14:44:13.853 MACOS pid 21277 AXResized w461 AXWindow/AXStandardWindow 729 43 501 767
+14:44:13.854 MACOS pid 21277 AXMoved w461 AXWindow/AXStandardWindow 729 43 501 767
+14:44:13.855 SCREEN safari (w464) 276,109 574×791
+14:44:13.855 SCREEN finder (w461) 747,43 501×767
+14:44:13.863 MACOS pid 23567 AXMoved w480 AXWindow/AXStandardWindow 1242 43 346 767
+14:44:13.863 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 1242 43 346 767
+14:44:13.863 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 1242 43 346 767
+14:44:13.870 MACOS pid 23175 AXMoved w464 AXWindow/AXStandardWindow -573 770 574 791
+14:44:13.877 MACOS pid 23863 AXMoved w487 AXWindow/AXStandardWindow -722 770 723 470
+14:44:13.883 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 8 stand-ins, 0.35686894416809084 s
+14:44:13.895 INFO  dock left: docked w464 at the left edge; its space is too small to show it, so it is a tile, and so is 1 other window now
+14:44:13.896 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Too small to show: click the tile to zoom in · ⌃⌥G goes there too
+14:44:13.897 SCREEN safari (w464) -573,770 574×791
+14:44:13.897 SCREEN terminal (w480) 1242,43 346×767
+14:44:13.897 SCREEN finder (w461) 729,43 501×767
+14:44:13.897 SCREEN settings (w487) -722,770 723×470
+14:44:14.112 SCREEN (nothing was seen for 147 ms)
+14:44:14.437 SCREEN w842 of Arbor 554,728 493×38 (level 6)
+14:44:14.437 SCREEN w857 of Arbor 12,43 346×767
+14:44:14.437 SCREEN w858 of Arbor 370,433 347×377
+14:44:14.437 SCREEN w828 of Arbor 370,421 347×12
+14:44:14.437 SCREEN w859 of Arbor 358,43 12×767
+14:44:14.437 SCREEN w841 of Arbor 717,43 12×767
+14:44:14.437 SCREEN w848 of Arbor 1230,43 12×767
+14:44:14.437 SCREEN w829 of Arbor left the screen
+14:44:14.437 SCREEN front to back: safari notes terminal finder settings calendar textedit w516 w495 mail preview w857 w858 w828 w859 w841 w848
+14:44:14.506 DEBUG stage down
+14:44:14.516 SCREEN w517 of Arbor left the screen
+14:44:15.651 SCREEN -- end 69 act=dock-key settled=quiet:918 moves=461,480,487,461,464,480,487, front=464 floating=475,483,484,489,492 docked=461,464,480,487
+14:44:16.123 SCRIPT == 70 quit

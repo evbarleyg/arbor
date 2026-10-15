@@ -1,0 +1,13 @@
+27 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:355', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: notes (w1022) went 486 points out of its way before it ended up
+
+14:48:50.854 SCREEN -- begin 27 display-plug
+14:48:50.854 SCREEN -- text 27 the second display: plug
+14:48:50.882 SCREEN notes (w1022) 2299,332 1000×600
+14:48:51.060 SCREEN (nothing was seen for 177 ms)
+14:48:51.060 SCREEN notes (w1022) 2056,208 1000×600
+14:48:51.060 MACOS pid 49930 AXMoved w1022 AXWindow/AXStandardWindow 2056 208 1000 600
+14:48:51.252 SCREEN (nothing was seen for 176 ms)
+14:48:56.791 SCREEN -- end 27 act=display-change settled=quiet:355 moves=any leaves=any
+14:48:57.163 SCRIPT == 28 click-notes

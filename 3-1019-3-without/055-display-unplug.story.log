@@ -1,0 +1,19 @@
+55 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:361', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: calendar (w1025) went 88 points out of its way before it ended up
+
+14:51:17.525 SCREEN -- begin 55 display-unplug
+14:51:17.525 SCREEN -- text 55 the second display: unplug
+14:51:17.868 SCREEN (nothing was seen for 351 ms)
+14:51:17.868 SCREEN notes (w1022) 456,208 1000×600
+14:51:17.868 SCREEN calendar (w1025) 420,59 938×601
+14:51:17.868 SCREEN textedit (w1382) 165,65 656×422
+14:51:17.868 SCREEN terminal (w1021) 0,31 1600×791
+14:51:17.870 MACOS pid 49930 AXMoved w1022 AXWindow/AXStandardWindow 456 208 1000 600
+14:51:17.870 MACOS pid 60514 AXMoved w1382 AXWindow/AXStandardWindow 165 65 656 422
+14:51:17.871 MACOS pid 49617 AXResized w1021 AXWindow/AXStandardWindow 0 31 1600 791
+14:51:17.960 MACOS pid 50091 AXMoved w1025 AXWindow/AXStandardWindow 464 31 938 601
+14:51:17.961 MACOS pid 60514 AXResized w1382 AXWindow/AXStandardWindow 165 65 656 422
+14:51:17.987 SCREEN calendar (w1025) 464,31 938×601
+14:51:20.385 SCREEN -- end 55 act=display-change settled=quiet:361 moves=any leaves=any
+14:51:20.622 SCRIPT == 56 input-after

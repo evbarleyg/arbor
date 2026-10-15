@@ -1,0 +1,37 @@
+75 pause: presses ⌃⌥⎋
+expected: {'act': 'way-out', 'settled': 'quiet:1078', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1', 'front': '487', 'floating': '', 'docked': '', 'first': '1'}
+FAIL rule 5: textedit (w475) is 165,65 656×422; its own size was 165,65 673×439
+FAIL rule 5: terminal (w480) is 0,31 1600×790; its own size was 1,35 1598×784
+
+14:44:28.715 SCREEN -- begin 75 pause
+14:44:28.715 SCREEN -- text 75 presses ⌃⌥⎋
+14:44:29.000 MACOS pid 21277 AXResized w461 AXWindow/AXStandardWindow 340 120 501 436
+14:44:29.003 SCREEN finder (w461) 729,43 501×436
+14:44:29.127 MACOS pid 21277 AXMoved w461 AXWindow/AXStandardWindow 340 120 501 436
+14:44:29.128 MACOS pid 21277 AXResized w461 AXWindow/AXStandardWindow 340 120 920 436
+14:44:29.135 SCREEN finder (w461) 340,120 920×436
+14:44:29.195 SCREEN safari (w464) -573,770 1324×791
+14:44:29.226 MACOS pid 23175 AXResized w464 AXWindow/AXStandardWindow 276 109 1324 791
+14:44:29.227 MACOS pid 23175 AXMoved w464 AXWindow/AXStandardWindow 276 109 1324 791
+14:44:29.260 MACOS pid 23567 AXMoved w480 AXWindow/AXStandardWindow 0 31 1600 790
+14:44:29.261 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 0 31 1600 790
+14:44:29.262 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 1600 790
+14:44:29.281 SCREEN terminal (w480) 0,31 1600×790
+14:44:29.281 SCREEN safari (w464) 276,109 1324×791
+14:44:29.326 INFO  trace day-2 ended: 49 lines, Arbor stopped
+14:44:29.336 INFO  registered 1 shortcuts in 8814 µs: 8 of the map's 9 are the apps' while Arbor is paused
+14:44:29.337 INFO  stopped; all windows returned to view
+14:44:29.337 INFO  paused
+14:44:29.342 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Arbor is paused: its keys are the apps’ again · ⌃⌥⎋ resumes
+14:44:29.396 SCREEN w893 of Arbor 566,728 469×38 (level 6)
+14:44:29.396 SCREEN w882 of Arbor left the screen
+14:44:29.396 SCREEN w881 of Arbor left the screen
+14:44:29.396 SCREEN w886 of Arbor left the screen
+14:44:29.396 SCREEN w883 of Arbor left the screen
+14:44:29.396 SCREEN w884 of Arbor left the screen
+14:44:29.396 SCREEN w880 of Arbor left the screen
+14:44:29.396 SCREEN w885 of Arbor left the screen
+14:44:29.396 SCREEN w879 of Arbor left the screen
+14:44:29.396 SCREEN front to back: settings terminal finder safari notes calendar textedit w495 mail preview
+14:44:30.568 SCREEN -- end 75 act=way-out settled=quiet:1078 moves=any restores=all places=1 everything=1 front=487 floating= docked= first=1
+14:44:30.930 SCRIPT == 76 drag-terminal-to-top-edge

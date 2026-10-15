@@ -1,0 +1,35 @@
+26 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:407', 'moves': 'any', 'leaves': 'any', 'floating': '461,464,475,480,483,484,487,489,492', 'docked': ''}
+FAIL rule 3: terminal (w480) moved 2 times
+FAIL rule 3: notes (w483) moved 3 times
+
+14:41:48.647 SCREEN -- begin 26 display-plug
+14:41:48.647 SCREEN -- text 26 the second display: plug
+14:41:48.674 SCREEN notes (w483) -1140,115 1000×600
+14:41:48.782 MACOS pid 23743 AXMoved w483 AXWindow/AXStandardWindow -1140 115 1000 600
+14:41:48.874 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 0 31 1600 791
+14:41:48.874 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 1600 791
+14:41:48.874 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 0 31 1600 791
+14:41:48.875 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 1600 791
+14:41:48.875 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 1600 791
+14:41:48.876 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 1600 791
+14:41:48.882 SCREEN (nothing was seen for 208 ms)
+14:41:49.069 SCREEN (nothing was seen for 186 ms)
+14:41:49.322 SCREEN notes (w483) 1740,115 1000×600
+14:41:49.322 SCREEN terminal (w480) 0,31 1598×784
+14:41:49.408 MACOS pid 23743 AXMoved w483 AXWindow/AXStandardWindow 1740 115 1000 600
+14:41:49.408 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 0 31 1598 784
+14:41:49.409 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 1598 784
+14:41:49.409 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 0 31 1598 784
+14:41:49.409 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 1598 784
+14:41:49.416 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 1598 784
+14:41:49.436 SCREEN (nothing was seen for 113 ms)
+14:41:49.670 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 31 1600 791
+14:41:49.671 SCREEN terminal (w480) 0,31 1600×791
+14:41:51.318 INFO  display F8CE4CF5-73EA-45EC-8480-8D0C6874F2B3 reconnected; 1 window(s) returned to it
+14:41:51.319 INFO  displays changed: 2 display(s), 0 remembered
+14:41:51.323 MACOS pid 23743 AXMoved w483 AXWindow/AXStandardWindow 2056 208 1000 600
+14:41:51.326 SCREEN notes (w483) 2056,208 1000×600
+14:41:51.356 DEBUG got ready the stage of F8CE4CF5-73EA-45EC-8480-8D0C6874F2B3 in 13 ms, the desktop 5 of them
+14:41:56.880 SCREEN -- end 26 act=display-change settled=quiet:407 moves=any leaves=any floating=461,464,475,480,483,484,487,489,492 docked=
+14:41:57.173 SCRIPT == 27 view-home

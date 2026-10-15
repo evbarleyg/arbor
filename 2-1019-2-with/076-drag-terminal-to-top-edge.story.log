@@ -1,0 +1,122 @@
+76 drag-terminal-to-top-edge: drags terminal by its title bar against the top edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:422', 'drags': '480', 'moves': ',,', 'front': '480', 'own': '480', 'floating': '', 'docked': ''}
+ODD rule 3: terminal (w480) changed its size while it was being dragged
+
+14:44:30.940 SCREEN -- begin 76 drag-terminal-to-top-edge
+14:44:30.940 SCREEN -- text 76 drags terminal by its title bar against the top edge of the screen and lets go
+14:44:30.989 SCRIPT drag w480 from 798,43 to 800,0
+14:44:31.681 SCREEN front to back: terminal settings finder safari notes calendar textedit w495 mail preview
+14:44:31.681 SCREEN the button is down 798 43
+14:44:31.702 SCREEN in front: process 23567 com.apple.Terminal
+14:44:31.750 MACOS pid 23567 AXApplicationActivated
+14:44:31.750 MACOS workspace didActivate pid 23567 com.apple.Terminal regular
+14:44:31.751 MACOS workspace didDeactivate pid 23863 com.apple.systempreferences regular
+14:44:31.798 MACOS pid 23863 AXApplicationDeactivated
+14:44:32.026 SCREEN terminal (w480) 1,31 1600×790
+14:44:32.114 MACOS pid 23567 AXMoved w480 AXWindow/AXStandardWindow 1 31 1600 790
+14:44:32.573 SCREEN w896 of WindowManager -15,16 1630×821
+14:44:32.573 SCREEN w895 of WindowManager -15,16 1630×821
+14:44:32.573 SCREEN front to back: w896 terminal w895 settings finder safari notes calendar textedit w495 mail preview
+14:44:32.864 SCREEN terminal (w480) 2,31 1600×790
+14:44:32.935 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 1 31 1585 785
+14:44:32.935 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 1 31 1585 785
+14:44:32.959 SCREEN terminal (w480) 9,31 1585×785
+14:44:32.986 SCREEN terminal (w480) 55,31 1492×748
+14:44:33.023 SCREEN terminal (w480) 294,31 1013×559
+14:44:33.054 MACOS pid 23567 AXMoved w480 AXWindow/AXStandardWindow 2 31 1252 653
+14:44:33.055 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 2 31 969 541
+14:44:33.057 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 2 31 969 541
+14:44:33.094 SCREEN terminal (w480) 332,31 937×529
+14:44:33.102 SCREEN terminal (w480) 344,31 914×520
+14:44:33.106 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 2 31 937 529
+14:44:33.107 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 294 31 898 513
+14:44:33.117 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 294 31 887 509
+14:44:33.117 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 294 31 887 509
+14:44:33.117 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 294 31 887 509
+14:44:33.118 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 294 31 887 509
+14:44:33.118 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 294 31 887 509
+14:44:33.119 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 294 31 887 509
+14:44:33.119 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 294 31 887 509
+14:44:33.119 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 294 31 887 509
+14:44:33.120 MACOS pid 23567 AXMoved w480 AXWindow/AXStandardWindow 294 31 887 509
+14:44:33.120 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 294 31 887 509
+14:44:33.121 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 294 31 887 509
+14:44:33.121 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 294 31 887 509
+14:44:33.121 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 294 31 887 509
+14:44:33.122 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 294 31 887 509
+14:44:33.122 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 294 31 887 509
+14:44:33.123 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 294 31 887 509
+14:44:33.123 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 294 31 887 509
+14:44:33.137 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 294 31 880 506
+14:44:33.139 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 294 31 880 506
+14:44:33.143 SCREEN terminal (w480) 361,31 880×506
+14:44:33.153 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 294 31 874 504
+14:44:33.153 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 294 31 874 504
+14:44:33.171 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 294 31 871 502
+14:44:33.189 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 294 31 868 501
+14:44:33.190 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 294 31 868 501
+14:44:33.199 MACOS pid 23567 AXMoved w480 AXWindow/AXStandardWindow 361 31 867 501
+14:44:33.200 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 361 31 867 501
+14:44:33.212 SCREEN terminal (w480) 367,31 867×501
+14:44:33.212 SCREEN w893 of Arbor left the screen
+14:44:33.220 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 361 31 866 500
+14:44:33.235 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 361 31 865 500
+14:44:33.251 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 361 31 864 500
+14:44:33.265 SCREEN terminal (w480) 369,31 864×500
+14:44:33.328 MACOS pid 23567 AXMoved w480 AXWindow/AXStandardWindow 369 31 864 500
+14:44:34.009 SCREEN terminal (w480) 370,31 864×500
+14:44:34.100 MACOS pid 23567 AXMoved w480 AXWindow/AXStandardWindow 370 31 864 500
+14:44:34.165 SCREEN terminal (w480) 369,31 864×500
+14:44:34.223 MACOS pid 23567 AXMoved w480 AXWindow/AXStandardWindow 369 31 864 500
+14:44:35.632 SCREEN the button is up 800 0
+14:44:35.674 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 330 31 942 531
+14:44:35.675 SCREEN terminal (w480) 330,31 942×531
+14:44:35.675 SCREEN w896 of WindowManager left the screen
+14:44:35.675 SCREEN w895 of WindowManager left the screen
+14:44:35.675 SCREEN front to back: terminal settings finder safari notes calendar textedit w495 mail preview
+14:44:35.684 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 330 31 1061 577
+14:44:35.684 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 270 31 1061 577
+14:44:35.685 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 270 31 1061 577
+14:44:35.685 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 270 31 1061 577
+14:44:35.702 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 210 33 1181 623
+14:44:35.702 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 210 33 1181 623
+14:44:35.712 SCREEN terminal (w480) 210,33 1181×623
+14:44:35.718 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 157 33 1286 664
+14:44:35.718 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 157 33 1286 664
+14:44:35.736 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 115 33 1371 697
+14:44:35.737 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 115 33 1371 697
+14:44:35.752 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 82 33 1435 722
+14:44:35.753 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 82 33 1435 722
+14:44:35.774 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 58 34 1483 740
+14:44:35.783 SCREEN terminal (w480) 58,34 1483×740
+14:44:35.791 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 58 34 1483 740
+14:44:35.822 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 28 33 1561 771
+14:44:35.823 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 19 33 1561 771
+14:44:35.824 SCREEN terminal (w480) 19,33 1561×771
+14:44:35.826 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 19 33 1561 771
+14:44:35.839 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 13 34 1573 775
+14:44:35.839 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 13 34 1573 775
+14:44:35.839 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 13 34 1573 775
+14:44:35.841 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 13 34 1573 775
+14:44:35.842 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 13 34 1573 775
+14:44:35.857 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 9 33 1582 779
+14:44:35.858 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 9 33 1582 779
+14:44:35.880 SCREEN terminal (w480) 6,34 1587×781
+14:44:35.918 SCREEN terminal (w480) 3,34 1594×783
+14:44:35.921 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 6 34 1587 781
+14:44:35.922 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 2 34 1596 784
+14:44:35.923 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 2 34 1596 784
+14:44:35.924 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 2 34 1596 784
+14:44:35.934 SCREEN terminal (w480) 2,34 1596×784
+14:44:35.937 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 2 34 1596 784
+14:44:35.938 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 1 34 1597 785
+14:44:35.939 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 1 34 1597 785
+14:44:35.940 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 1 34 1597 785
+14:44:35.947 SCREEN terminal (w480) 1,34 1597×785
+14:44:35.957 MACOS pid 23567 AXTitleChanged w480 AXWindow/AXStandardWindow 1 34 1598 785
+14:44:35.959 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 1 34 1598 785
+14:44:35.976 SCREEN terminal (w480) 1,34 1598×785
+14:44:35.985 MACOS pid 23567 AXResized w480 AXWindow/AXStandardWindow 0 34 1599 785
+14:44:35.993 SCREEN terminal (w480) 0,34 1599×785
+14:44:39.584 SCREEN -- end 76 act=drag-where-macos-tiles settled=quiet:422 drags=480 moves=,, front=480 own=480 floating= docked=
+14:44:39.900 SCRIPT == 77 resume

@@ -1,0 +1,24 @@
+55 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:363', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 3: calendar (w60) moved 2 times
+
+14:39:43.035 SCREEN -- begin 55 display-unplug
+14:39:43.035 SCREEN -- text 55 the second display: unplug
+14:39:43.036 SCREEN calendar (w60) 421,130 936×599
+14:39:43.802 MACOS pid 5193 AXMoved w51 AXWindow/AXStandardWindow 0 31 1600 791
+14:39:43.803 MACOS pid 6020 AXMoved w60 AXWindow/AXStandardWindow 464 31 936 599
+14:39:43.803 MACOS pid 5193 AXTitleChanged w51 AXWindow/AXStandardWindow 0 31 1600 791
+14:39:43.804 MACOS pid 16295 AXMoved w423 AXWindow/AXStandardWindow 165 65 656 422
+14:39:43.804 MACOS pid 5193 AXResized w51 AXWindow/AXStandardWindow 0 31 1600 791
+14:39:43.804 MACOS pid 16295 AXResized w423 AXWindow/AXStandardWindow 165 65 656 422
+14:39:43.805 MACOS pid 5193 AXTitleChanged w51 AXWindow/AXStandardWindow 0 31 1600 791
+14:39:43.805 MACOS pid 5193 AXResized w51 AXWindow/AXStandardWindow 0 31 1600 791
+14:39:43.806 MACOS pid 5193 AXResized w51 AXWindow/AXStandardWindow 0 31 1600 791
+14:39:43.806 MACOS pid 5193 AXResized w51 AXWindow/AXStandardWindow 0 31 1600 791
+14:39:43.807 SCREEN (nothing was seen for 771 ms)
+14:39:43.807 SCREEN calendar (w60) 464,31 936×599
+14:39:43.807 SCREEN textedit (w423) 165,65 656×422
+14:39:43.807 SCREEN terminal (w51) 0,31 1600×791
+14:39:46.312 SCREEN -- end 55 act=display-change settled=quiet:363 moves=any leaves=any
+14:39:46.841 SCREEN (nothing was seen for 164 ms)
+14:39:46.901 SCRIPT == 56 input-after

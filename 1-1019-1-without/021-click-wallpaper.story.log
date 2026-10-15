@@ -1,0 +1,38 @@
+21 click-wallpaper: clicks on the wallpaper
+expected: {'act': 'macos-own', 'settled': 'quiet:383', 'moves': 'any', 'leaves': 'any'}
+FAIL rule 6: the button came up, and the apps heard of it 108 ms later
+
+14:36:53.640 SCREEN -- begin 21 click-wallpaper
+14:36:53.640 SCREEN -- text 21 clicks on the wallpaper
+14:36:54.376 SCREEN the button is down 1520 60
+14:36:54.560 MACOS pid 358 AXApplicationActivated
+14:36:54.568 SCREEN (nothing was seen for 169 ms)
+14:36:54.568 SCREEN the button is up 1520 60
+14:36:54.568 MACOS pid 358 AXFocusedWindowChanged
+14:36:54.568 MACOS pid 358 AXMainWindowChanged
+14:36:54.901 MACOS pid 5387 AXApplicationDeactivated
+14:36:54.919 MACOS workspace didActivate pid 358 com.apple.finder regular
+14:36:54.926 MACOS workspace didDeactivate pid 5387 com.apple.Notes regular
+14:36:54.942 SCREEN (nothing was seen for 374 ms)
+14:36:54.942 SCREEN notes (w54) -988,165 1000×600
+14:36:54.942 SCREEN preview (w65) -696,-106 708×424
+14:36:54.942 SCREEN safari (w35) -1312,-56 1324×791
+14:36:54.942 SCREEN calendar (w60) -924,-3 936×599
+14:36:54.942 SCREEN textedit (w46) -644,-96 656×422
+14:36:54.942 SCREEN w71 of Mail -783,15 470×416
+14:36:54.942 SCREEN mail (w69) -1108,-92 1120×630
+14:36:54.942 SCREEN settings (w63) -711,-35 723×625
+14:36:54.942 SCREEN terminal (w51) -851,-100 863×499
+14:36:54.942 SCREEN finder (w32) -908,-127 920×436
+14:36:54.942 SCREEN in front: process 358 com.apple.finder
+14:36:55.243 SCREEN (nothing was seen for 285 ms)
+14:36:55.283 SCREEN w278 of WindowManagerShowDesktopEducati 304,41 384×146
+14:36:55.283 SCREEN front to back: notes w278 preview safari calendar textedit w71 mail settings terminal finder
+14:36:55.382 SCREEN w278 of WindowManagerShowDesktopEducati 303,41 386×146
+14:36:55.406 SCREEN w278 of WindowManagerShowDesktopEducati 302,41 388×146
+14:36:55.427 SCREEN w278 of WindowManagerShowDesktopEducati 301,40 390×148
+14:36:55.557 SCREEN (nothing was seen for 105 ms)
+14:36:55.557 SCREEN w278 of WindowManagerShowDesktopEducati 300,40 392×148
+14:36:55.888 SCREEN (nothing was seen for 132 ms)
+14:36:56.709 SCREEN -- end 21 act=macos-own settled=quiet:383 moves=any leaves=any
+14:36:57.234 SCRIPT == 22 click-wallpaper-again

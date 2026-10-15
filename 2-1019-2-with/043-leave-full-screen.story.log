@@ -1,0 +1,43 @@
+43 leave-full-screen: presses ⌃⌘F again
+expected: {'act': 'macos-own', 'settled': 'quiet:405', 'moves': 'any', 'leaves': 'any', 'comes': '464', 'front': '464', 'returns': '41', 'floating': '461,464,475,480,483,484,487,489,492', 'docked': ''}
+FAIL rule 2: safari (w464) is not back where it was after step 41: 138,31 1324×791, it was at 12,43 1576×767
+
+14:42:40.210 SCREEN -- begin 43 leave-full-screen
+14:42:40.210 SCREEN -- text 43 presses ⌃⌘F again
+14:42:40.481 MACOS pid 23175 AXWindowCreated w800 AXWindow/AXUnknown 0 0 1600 900
+14:42:40.489 SCREEN w800 of Safari 0,0 1600×900
+14:42:40.489 SCREEN w779 of Safari left the screen
+14:42:40.489 SCREEN safari (w464) left the screen
+14:42:40.489 SCREEN front to back: w800 notes
+14:42:40.495 DEBUG w464 is no longer listed
+14:42:40.495 MACOS pid 23175 AXResized w464 AXWindow/AXStandardWindow 138 31 1324 791
+14:42:40.496 DEBUG w464 left full screen
+14:42:40.517 SCREEN settings (w487) 437,85 723×625
+14:42:40.517 SCREEN terminal (w480) 0,31 1600×791
+14:42:40.517 SCREEN w516 of Arbor 520,168 560×379
+14:42:40.517 SCREEN calendar (w484) 403,115 937×600
+14:42:40.517 SCREEN textedit (w475) 165,65 656×422
+14:42:40.517 SCREEN w495 of Mail 565,179 470×416
+14:42:40.517 SCREEN mail (w492) 240,72 1120×630
+14:42:40.517 SCREEN preview (w489) 4,35 708×424
+14:42:40.517 SCREEN finder (w461) 340,120 920×436
+14:42:40.517 SCREEN front to back: w800 notes settings terminal w516 calendar textedit w495 mail preview finder
+14:42:40.589 MACOS pid 23175 AXMoved w464 AXWindow/AXStandardWindow 138 31 1324 791
+14:42:40.590 MACOS pid 23175 AXMoved w800 AXWindow/AXUnknown 0 0 1600 900
+14:42:41.097 MACOS pid 23175 AXUIElementDestroyed w800
+14:42:41.132 DEBUG w461 is listed again
+14:42:41.133 DEBUG w464 is listed again
+14:42:41.134 DEBUG w475 is listed again
+14:42:41.138 DEBUG w480 is listed again
+14:42:41.139 DEBUG w484 is listed again
+14:42:41.139 DEBUG w487 is listed again
+14:42:41.139 DEBUG w489 is listed again
+14:42:41.140 DEBUG w492 is listed again
+14:42:41.142 DEBUG focus is on w464
+14:42:41.144 DEBUG w464 has the keyboard
+14:42:41.155 DEBUG the stand-in w800 is gone: the way out of full screen is over
+14:42:41.172 SCREEN safari (w464) 138,31 1324×791
+14:42:41.172 SCREEN w800 of Safari left the screen
+14:42:41.172 SCREEN front to back: safari notes settings terminal w516 calendar textedit w495 mail preview finder
+14:42:43.373 SCREEN -- end 43 act=macos-own settled=quiet:405 moves=any leaves=any comes=464 front=464 returns=41 floating=461,464,475,480,483,484,487,489,492 docked=
+14:42:43.820 SCRIPT == 44 view-all
