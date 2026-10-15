@@ -190,6 +190,11 @@ tour() {
   ctl set tileStyle name
   shot "$p-05-tiles-with-names"
   ctl reset tileStyle
+  # The pointer rests on a tile: its help tag has the caption, drawn or not.
+  # shellcheck disable=SC2046
+  move $(tile_of "$W6")
+  shot_after 2.5 "$p-05b-tile-help-tag"
+  pointer_away
 
   claim "$p: the handle in a gap"
   read -r gx gy <<< "$(seam_below "$W1")"
