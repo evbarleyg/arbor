@@ -92,9 +92,14 @@ extension Controller {
     }
     guard
       let kind = HeadsUpPolicy.kind(
-        of: command, ok: result.ok, from: source, level: level, changedNothing: changedNothing, namesALoss: loss),
-      let display = display ?? cameraDisplay()?.0 ?? pointerDisplayID
-    else { return }
+        of: command, ok: result.ok, from: source, level: level, changedNothing: changedNothing, namesALoss: loss)
+    else {
+      // The line that is up answered the last thing this person asked. What they asked now has changed something, so
+      // it may no longer be true: "out of view, not closed" with everything in view again.
+      if !command.isQuery, !command.opensItsOwnAnswer { hideHeadsUp() }
+      return
+    }
+    guard let display = display ?? cameraDisplay()?.0 ?? pointerDisplayID else { return }
     if var line = lineOfItsOwn(for: command, result, changedNothing: changedNothing) {
       line.kind = kind
       showHeadsUp(line, on: display)

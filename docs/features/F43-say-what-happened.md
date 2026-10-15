@@ -70,6 +70,9 @@ floats · ⌃⌥⌘← docks it, then ⌃⌥↩ frames it"; apps are called by n
 window `summon` sent away is not what "out of view, not closed" is about; ⌃⌥N is "Name This Space" in the panel, and every command with a default shortcut must have a title somebody chose; the debug log gets the line without
 the names of spaces, and no word of the reply to a command that changes settings.
 
+**Decided on 2026-10-14 by the product owner, after the first look at it on a hosted Mac**: the next thing a person asks for that changes something puts the line away, whether or not it earns a line of its own. Until then such a command left the last line up, and
+"Your other windows are out of view, not closed" stood on screen with every window in view again. A question, a script's command and a panel that opens leave it alone.
+
 **Added after bug bash 1**: Go to… is its own answer; one panel has the keyboard at a time; a hold takes away what was said before it, a held view's refusal is "The view is held · ⌃⌥⎋ releases it", and what holding still
 turns away is said once per app and hold; a success that took something along ("…; 2 saved views are gone") is said at every level but `off`, before any hint, with "⌃⌥Z takes it back"; the end of a peek, an empty Desktop's tile and a
 place that automatic docking tries and takes back teach nothing; the hint about tiles names ⌃⌥G; any change of displays puts the line and the panel away; titles are cut at 48 characters; names of spaces are said as written.
