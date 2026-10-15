@@ -11,7 +11,7 @@
 #   4  a different build signed with the identity has another hash and the very same designated requirement;
 #      installing it quits the running copy first, in good order: its watchdog does not start it again
 #   5  `make uninstall`
-#   6  update checks against GitHub (404 while the repository is private) and against a stand-in with a newer release
+#   6  update checks against GitHub (404 while no release is published) and against a stand-in with a newer release
 #   7  an identity that is neither ad hoc nor the local one gets the hardened runtime, and Arbor runs under it
 #   8  `make release`: universal binaries, zip, disk image, checksums, cask, notes; what Gatekeeper says to a download
 #   9  what the scripts rely on in `security` and `openssl`
@@ -66,7 +66,9 @@ tail -n 6 "$ARBOR_OUT/install-adhoc.txt"
 check "make install says aloud that the build is signed ad hoc" says "$ARBOR_OUT/install-adhoc.txt" "NOTE: THIS BUILD IS SIGNED AD HOC"
 check "and what that costs" says "$ARBOR_OUT/install-adhoc.txt" "macOS will ask for the Accessibility permission again"
 start_copy "$installed"
-check "doctor names it" with "$(ask doctor)" "– Signature: ad hoc, so to macOS every build is a new app"
+# With a ✘ among its rows `doctor` fails, and arborctl writes the answer of a command that failed to the other output. A Mac as it comes has
+# such a row: macOS's own tiling is on.
+check "doctor names it" with "$(ask doctor 2>&1)" "– Signature: ad hoc, so to macOS every build is a new app"
 stop_copy
 check "the property list is still valid" plutil -lint "$app/Contents/Info.plist"
 
@@ -106,13 +108,12 @@ check "the bundle says so itself" same "$(stamp ArborSignature "$installed")" lo
 check "the app is in ~/Applications" test -x "$installed/Contents/MacOS/Arbor"
 check "the installed copy verifies (--deep --strict)" codesign --verify --deep --strict "$installed"
 check "arborctl is linked into ~/.local/bin" same "$(readlink "$home/.local/bin/arborctl")" "$installed/$tool"
-check "LAUNCH=0 leaves it at that" gone "^$installed/Contents/MacOS/Arbor"
+check "LAUNCH=0 leaves it at that" gone "$installed"
+check "to this shell, as to a person's, arborctl is that link" same "$(command -v arborctl)" "$home/.local/bin/arborctl"
 start_copy "$installed" ARBOR_NO_WATCHDOG=0
 check "the installed app starts and answers" within 10 arborctl status
-check "its watchdog runs beside it" pgrep -f "^$installed/Contents/MacOS/Arbor --watchdog"
-# safe anywhere: the pattern is a path in this run's folder, so it lists the copy and its watchdog
-echo "  pgrep: $(pgrep -fl "^$installed/Contents/MacOS/Arbor" | tr '\n' '|')"
-check "it runs from ~/Applications" pgrep -f "^$installed/Contents/MacOS/Arbor"
+check_watchdog "$ARBOR_HOME/arbor.log" "$installed" "$copy_pid"
+check "what runs from ~/Applications is the copy that was started" same "$(app_pid "$installed")" "$copy_pid"
 echo "  arborctl --version:  $(arborctl --version | tr '\n' '|')"
 echo "  arborctl version:    $(arborctl version | tr '\n' '|')"
 echo "  arborctl status:     $(arborctl status | tr '\n' '|')"
@@ -121,7 +122,7 @@ check "arborctl --version, through the link, knows its version, and has nothing 
 check "the running app reports the same" same "$(arborctl version | head -n 1)" "Arbor $expected"
 check "status shows it, on a line of its own" same "$(arborctl status | tail -n 1)" "Arbor $expected"
 check "so does the binary itself, beside the running copy" same "$("$installed/Contents/MacOS/Arbor" --version)" "Arbor $expected"
-check "doctor names the signature" with "$(arborctl doctor)" "✔ Signature: this Mac’s own certificate"
+check "doctor names the signature" with "$(arborctl doctor 2>&1)" "✔ Signature: this Mac’s own certificate"
 echo "  launch at login, only asked about: $(arborctl launch-at-login)"
 
 step "4  a different build, the same requirement"
@@ -151,9 +152,10 @@ restore_the_source
 check "installing asked the running copy to quit" says "$ARBOR_OUT/install-over.txt" "Asked the running Arbor to quit"
 check "and did not have to stop it" without "$(cat "$ARBOR_OUT/install-over.txt")" "still running"
 check "the copy has gone" copy_has_gone
+copy_pid=""  # `check` asks in a shell of its own, and a number that is kept may be somebody else's process by the time the script ends
 # The watchdog starts Arbor again 0.3 s after an end it takes for an accident.
 sleep 2
-check "nothing of the old copy is left running, and its watchdog started nothing" gone "^$installed/Contents/MacOS/Arbor"
+check "nothing of the old copy is left running, and its watchdog started nothing" gone "$installed"
 check "the watchdog took it for a proper end" without "$(cat "$ARBOR_HOME/arbor.log")" "ended without quitting"
 check "what is installed is the second build" same "$(cdhash "$installed")" "$second_cdhash"
 start_copy "$installed" ARBOR_NO_WATCHDOG=0
@@ -164,10 +166,11 @@ step "5  uninstalling"
 uninstall_here 2>&1 | tee "$ARBOR_OUT/uninstall.txt"
 check "it asked Arbor to quit" says "$ARBOR_OUT/uninstall.txt" "Asked the running Arbor to quit"
 check "the copy has gone" copy_has_gone
+copy_pid=""  # `check` asks in a shell of its own, and a number that is kept may be somebody else's process by the time the script ends
 check "it removed the app" test ! -e "$installed"
 check "and the link" test ! -L "$home/.local/bin/arborctl"
 sleep 2
-check "nothing of it is left running, and its watchdog started nothing" gone "^$installed/Contents/MacOS/Arbor"
+check "nothing of it is left running, and its watchdog started nothing" gone "$installed"
 check "the watchdog took it for a proper end" without "$(cat "$ARBOR_HOME/arbor.log")" "ended without quitting"
 check "it says where settings and state are" says "$ARBOR_OUT/uninstall.txt" "Library/Application Support/Arbor"
 check "settings are still there" test -f "$ARBOR_HOME/settings.json"
@@ -185,8 +188,8 @@ start_copy "$app"
 echo "  $(ask status | tr '\n' '|')"
 echo "  before: $(ask version | tail -n 1)"
 echo "  $(ask check-for-updates)"
-# 404 while the repository is private; GitHub may also turn a shared address away with 403, which reads the same to the user.
-check "what GitHub answers about a private repository is no update information, not an error" within 20 updates_say "no update information"
+# 404 while no release is published; GitHub may also turn a shared address away with 403, which reads the same to the user.
+check "what GitHub answers while no release is published is no update information, not an error" within 20 updates_say "no update information"
 echo "  after:  $(ask version | tail -n 1)"
 window_shot 06-no-update-information
 stop_copy

@@ -121,8 +121,8 @@ latest release, compares versions, and offers to open the release page if there 
 installs nothing. Nothing is asked unless you ask: with `"automaticUpdateChecks": true` in `settings.json` Arbor also asks
 a minute after it starts and once a week from then on. Such a check never opens a window; when it finds a newer
 release the menu item reads *Update Available…*, and `arborctl version` says which. The request is one unauthenticated
-GET that carries Arbor's version and nothing about you. While the repository is private GitHub answers as if it did
-not exist, and Arbor says "no update information".
+GET that carries Arbor's version and nothing about you. While no release is published GitHub has none to name, and Arbor
+says "no update information".
 
 ## Launch at login
 

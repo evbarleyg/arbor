@@ -1295,6 +1295,62 @@ def check_install():
     row("install.sh: where nobody can say, as before", (uninstalled("exit 2"), uninstalled("echo nonsense")), ((0, False, False), (0, False, False)))
 
 
+def check_f13_lib():
+    """How check-F13.sh and check-F13-system.sh find what runs from their folder. lib-F13.sh's own functions, over stand-ins for pgrep, pkill and
+    ps that answer from a list: no process is started, looked for or stopped."""
+    folder = os.path.join(HERE, "mac-shell")
+    with open(os.path.join(folder, "lib-F13.sh"), encoding="utf-8") as file:
+        text = file.read()
+    stand_ins = r"""
+sandbox=/private/tmp/arbor-f13.AbCdEf
+matching() {
+  local pid rest found=1
+  while read -r pid rest; do if [[ $rest =~ $1 ]]; then echo "$pid $rest"; found=0; fi; done <<< "$PROCESSES"
+  return $found
+}
+pgrep() { [ -z "${PGREP_FAILS:-}" ] || return 2; matching "${@: -1}"; }
+pkill() { matching "${@: -1}" | sed 's/ .*//; s/^/stopped /'; }
+ps() { matching "" | sed -n "s/^${@: -1} //p" | grep .; }
+check() { local what=${1%% *}; shift; if "$@" > /dev/null 2>&1; then echo "yes $what"; else echo "no $what"; fi; }
+"""
+    helpers = stand_ins + text[text.index("with() {"):text.index("# In the clone.")]
+    ours = "/private/tmp/arbor-f13.AbCdEf/home/Applications/Arbor.app"
+    program = "arbor-f13.AbCdEf/home/Applications/Arbor.app/Contents/MacOS/Arbor"
+    # A person's own Arbor, a run beside this one, a folder that only ends like ours and one that only begins like it.
+    others = ["11 /Applications/Arbor.app/Contents/MacOS/Arbor", "12 /Applications/Arbor.app/Contents/MacOS/Arbor --watchdog 11",
+              "13 /private/tmp/arbor-f13.ZyXwVu/home/Applications/Arbor.app/Contents/MacOS/Arbor --watchdog 1", f"14 /Users/you/tmp/{program} --watchdog 1",
+              "15 /private/tmp/arbor-f13.AbCdEfgh/Arbor.app/Contents/MacOS/Arbor --watchdog 1"]
+    app, near, far = f"21 /private/tmp/{program}", f"22 /private/tmp/{program} --watchdog 21", f"23 /tmp/{program} --watchdog 21"
+
+    def asked(script, processes=(), **more):
+        done = subprocess.run([BASH, "-c", helpers + script], capture_output=True, text=True,
+                              env={**os.environ, "PROCESSES": "\n".join(others + list(processes)), "WHERE": ours, **more})
+        return done.stdout.split()
+
+    state = 'for ask in runs watchdog_runs gone; do $ask "$WHERE" && echo yes || echo no; done; app_pid "$WHERE"'
+    row("lib-F13.sh: the app, its watchdog under either of the folder's names, both, neither; beside a person's own Arbor and another run's",
+        [asked(state, found) for found in ((), (app,), (near,), (far,), (app, far), (far, app))],
+        [["no", "no", "yes"], ["yes", "no", "no", "21"], ["no", "yes", "no"], ["no", "yes", "no"], ["yes", "yes", "no", "21"], ["yes", "yes", "no", "21"]])
+    row("lib-F13.sh: where nobody could look nothing counts as gone: no path, a path that is not in the folder, a pgrep that fails",
+        [asked(state, (), WHERE=""), asked(state, (), WHERE="/Applications/Arbor.app"), asked(state, (), PGREP_FAILS="1")], [["no", "no", "no"]] * 3)
+    row("lib-F13.sh: only this copy's watchdog is stopped, however it is spelled, and the app is not; of no path or somebody's, nothing; and the clean-up goes on",
+        [asked('stop_watchdog "$WHERE"; echo on', (app, near, far), WHERE=where)
+         for where in (ours, "", "/Applications/Arbor.app", "/private/tmp/arbor-f13.AbCdEf", "/private/tmp/arbor-f13.AbCdEfgh/Arbor.app")],
+        [["stopped", "22", "stopped", "23", "on"], ["on"], ["on"], ["on"], ["on"]])
+    row("lib-F13.sh: were the folder's name lost, no pattern would come out at all: nothing is stopped, and nothing counts as gone",
+        asked('unset sandbox; stop_watchdog "$WHERE"; gone "$WHERE" && echo gone; echo "went on"', (app, near)), ["went", "on"])
+    log = 'check_watchdog <(printf "%s\\n" "T INFO  watchdog started, pid 12" "T INFO  started: 1 display(s)" "T INFO  watchdog started, pid $LOGGED" "T INFO  Arbor quit") "$WHERE" 21 | grep -E "^(yes|no) "'
+    row("lib-F13.sh: the watchdog is the one the log names last, alive, and this app's; one that is spelled otherwise is told from one that is not there",
+        [asked(log, found, LOGGED=logged) for found, logged in (((app, far), "23"), ((app,), "23"), ((app, "24 /somewhere/else/Contents/MacOS/Arbor --watchdog 21"), "24"), ((app, near), "12"))],
+        [["yes", "its", "yes", "and"], ["no", "its", "no", "and"], ["yes", "its", "no", "and"], ["no", "its", "yes", "and"]])
+    direct = []
+    for name in ("lib-F13.sh", "check-F13.sh", "check-F13-system.sh"):
+        with open(os.path.join(folder, name), encoding="utf-8") as file:
+            direct += [f"{name}: {line.strip()}" for line in file if re.search(r"\bp(grep|kill) ", line.split("#")[0]) and not re.search(r'\bp(grep|kill) -fl? "\$\{(pattern|all):\?\}"', line)]
+    row("check-F13: every search but one goes by a pattern that `spelled` made; that one, for a Mac that is thrown away, looks where macOS may have moved a download",
+        direct, ['check-F13-system.sh: echo "  running after that? $(listed "$download" | grep . || pgrep -fl "/AppTranslocation/[^ ]*/Arbor.app/Contents/MacOS/Arbor" || echo no)"'])
+
+
 def check_e2e():
     """Whoever quotes a report quotes its beginning."""
     steps = "".join(f"\n▸ step {n}  (command {n})\n  ✔ it works\n" + ("  ✘ late — 3 is not 4\n  ✘ later still\n" if n == 180 else "") for n in range(1, 201))
@@ -2302,6 +2358,7 @@ def main():
     check_makefile()
     check_run_list()
     check_install()
+    check_f13_lib()
     check_e2e()
     check_e2e_guardian()
     check_ci_mtimes()
