@@ -67,6 +67,7 @@
 #   arbor_settings '<json>'         settings.json for the next arbor_start (or `ctl reload-settings`)
 #                                   In a section of the suite $ARBOR_EVERYTHING_ON goes under it, which switches on what ships off
 #                                   ("Which Arbor", below); ARBOR_SWITCHES=shipped above arbor_start: Arbor as a person gets it
+#   ARBOR_SHORTCUTS=all             BEFORE sourcing this file, in a script that is no section and presses keys of the whole map: nine ship ("Which Arbor")
 #   arbor_start [count] [NAME=v…]   test windows W1…Wcount (default 4), then Arbor limited to them. With ARBOR_BUNDLE=<a copy of Arbor.app in
 #                                     the session's folder> that copy is opened as Finder would: it has no permissions of its own
 #   arbor_stop [name]               quit Arbor, check that every test window is back on screen (and take the
@@ -631,16 +632,23 @@ at_exit() { ARBOR_AT_EXIT="$1"$'\n'"$ARBOR_AT_EXIT"; }
 #   ARBOR_SWITCHES=shipped   nothing is added. What every other script gets if nothing is said. Above `arbor_start` for one session of a section, or in
 #                            the environment for a whole run (`ARBOR_SWITCHES=shipped make suite`): what leans on a switch that ships off is red then.
 #
+#   ARBOR_SHORTCUTS=all      BEFORE this file is sourced, in a script that is no section and presses keys of the whole map: that one switch and no other.
+#                            Nine keys ship (docs/KEYBOARD.md). A file the script writes by other means than arbor_settings says it for itself.
+#
 # To go between the braces of a settings.json; what a script passes to arbor_settings comes after it and wins. Empty: no file is written
 # for a session that asks for none.
-ARBOR_EVERYTHING_ON=''
+ARBOR_EVERYTHING_ON='"shortcuts": "all"'
 
 arbor_switches() {
   local which=${ARBOR_SWITCHES:-}
   if [ -z "$which" ]; then
     case "$0" in */suite/[0-9]*.sh) which=all ;; *) which=shipped ;; esac
   fi
-  [ "$which" != all ] || printf '%s' "$ARBOR_EVERYTHING_ON"
+  if [ "$which" = all ]; then
+    printf '%s' "$ARBOR_EVERYTHING_ON"
+  elif [ "${ARBOR_SHORTCUTS:-core}" = all ]; then
+    printf '%s' '"shortcuts": "all"'
+  fi
 }
 
 arbor_new_home() {

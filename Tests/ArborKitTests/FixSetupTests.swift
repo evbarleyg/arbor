@@ -383,7 +383,7 @@ import Testing
     let session = OnboardingSession(controller: h.controller) { _ in }
     session.begin(on: .firstSteps)
     let moves = session.model.steps
-    #expect(moves.first?.lead == "Click a window and press ⌃⌥⌘←")
+    #expect(moves.first?.lead == "Click a window and press ⌃⌥←")
     h.run("fix-setup")
     session.refresh()
     #expect(session.model.steps == moves)

@@ -1,25 +1,57 @@
 # The keyboard map
 
-Every default shortcut on one page: what is bound, what is set aside for features being built, what must
-never be bound, and why. **Take keys from this page, not from what looks free in `KeyBindings.swift`.** A
-global shortcut is taken away from every app on the Mac, so each one has to earn its place.
+Every shortcut of Arbor's own on one page: the nine that ship, the whole map that one setting brings back, what is set aside for
+features being built, what must never be bound, and why. **Take keys from this page, not from what looks free in
+`KeyBindings.swift`.** A global shortcut is taken away from every app on the Mac, so each one has to earn its place.
 
-Written by the executor swarm, 2026-10-14 (product review); for the documenter to review.
+## The nine
 
-## Five rules
+As Arbor ships it takes nine keys, each ⌃⌥ and one key (`collab/QUESTIONS.md`, Q29; `collab/IDEAS.md`, I22). Nothing else is bound: no third
+modifier, no digit, no other letter.
 
-1. **⌃⌥ is Arbor.** Every default shortcut contains ⌃⌥, and TrellisWM's published table works unchanged.
+| Keys | Does | Command |
+|---|---|---|
+| ⌃⌥← / ⌃⌥→ | Dock the window in front at that side, or move it one place | `dock left` / `dock right` |
+| ⌃⌥↩ | Frame it: it has the screen to itself. Again, and it is back | `zoom` |
+| ⌃⌥Space | Show everything. Held: a peek, which has all four arrows and ⎋ for as long as it lasts (F51). ⌃⌥← and ⌃⌥→ dock nothing while the key is down: pressed early they begin the hold, pressed after ⎋ they do nothing | `show-all` |
+| ⌃⌥[ | Back to where the view was | `back` |
+| ⌃⌥Z | Undo the last change to the arrangement | `undo` |
+| ⌃⌥F | Float the window in front, or take it back in | `toggle-float` |
+| ⌃⌥G | Go to…: a window, a named space or a saved view, by typing | `find` |
+| ⌃⌥⎋ | Pause and resume. **The one key that answers everywhere**: in a pause, and in apps that keep their own ⌃⌥ (F41) | `toggle-pause` |
+
+- **The arrows dock** because docking is what a newcomer came for, and because it is what ⌃⌥ and an arrow do in the window tools people
+  already know.
+- **The rest is in the menu.** A command without a key shows none there, in the panel of shortcuts or in a line on screen. Three kinds have no row either, being
+  nothing without a key: `neighbor`, `focus <direction>` and `home`. `arborctl` runs them, and `bind` gives them a key.
+- **More keys, one at a time:** `arborctl bind ctrl+opt+d desktop`, the Shortcuts page of the settings window, or `bindings` in settings.json. The
+  README has recipes.
+- **More keys, all at once:** `arborctl set shortcuts all` ("Shortcuts: All of them" in the settings window) binds the whole map below instead of
+  the nine; `set shortcuts core` goes back. `bindings` changes single keys on top of either.
+- **The budget** (I25): at most ten, none with a modifier besides ⌃⌥. `LessByDefaultTests` fails on an eleventh: it takes the place of another. The
+  tenth place stays free until use asks for it.
+- **⌃⌥A is never bound again**, in either map (I16). With a widely used chat app in front it archived the open conversation there. Whatever
+  the cause, the habit outlives Arbor: paused, quit or crashed, the same fingers reach the app. Arrange Windows is in the menu.
+- **On other keyboards** eight of the nine are letters, arrows and keys that are the same everywhere. `[` is not one key in most of Europe: it stays where
+  a US keyboard has it and is shown as what is printed there (⌃⌥Ü in Germany, ⌃⌥^ in France); see "Other keyboard layouts".
+
+## The whole map: five rules
+
+The rest of this page is about the whole map (`shortcuts` set to `all`), which shipped until the nine did. It is TrellisWM's published table and what
+grew around it. There ⌃⌥ with an arrow looks and ⌃⌥⌘ with an arrow docks; the other seven of the nine are the same keys in both.
+
+1. **⌃⌥ is Arbor.** Every shortcut contains ⌃⌥, and TrellisWM's published table works unchanged.
 2. **⌃⌥ looks.** With arrows, Space, ↩, brackets, digits, `-`, `=`: the camera moves, the arrangement never changes.
 3. **Add ⌘ to move.** The same key, applied to the focused window: ⌃⌥→ looks right, ⌃⌥⌘→ moves the window
    right; ⌃⌥0 resets the zoom, ⌃⌥⌘0 resets the sizes.
 4. **Add ⇧ for the counterpart.** Recall and save, next and previous, undo and redo, one and all.
-5. **⌃⌥ + letter is a verb by its initial.** No default uses ⌃⌥⌘ + letter (Xcode's territory) or all four
+5. **⌃⌥ + letter is a verb by its initial.** Nothing uses ⌃⌥⌘ + letter (Xcode's territory) or all four
    modifiers (people map those to a hyper key for their own use).
 
 ## The map
 
-Status: **T** published by TrellisWM, frozen. **shipped** in Arbor today. **assigned** to a feature being built:
-use exactly this key. **reserved**: keep free for that purpose, bound to nothing by default.
+Status: **T** published by TrellisWM, frozen. **shipped**: bound in the whole map today. **assigned** to a feature being built:
+use exactly this key. **reserved**: keep free for that purpose, bound to nothing. A new feature's key goes into the whole map, never among the nine.
 
 ### Look (the camera)
 
@@ -51,7 +83,7 @@ use exactly this key. **reserved**: keep free for that purpose, bound to nothing
 | ⌃⌥⌘Space | `carry`: pick the focused window up and choose among the targets a drag has, with the arrows (⌃⌥Space looks at everything; add ⌘ and it moves anywhere) | reserved (F59) |
 | ⌃⌥⌘[ / ⌃⌥⌘] | previous / next display, for a window | reserved (F59) |
 | ⌃⌥F / ⌃⌥⇧F | `toggle-float` / `float-all` | shipped |
-| ⌃⌥A | `arrange` | shipped |
+| none | `arrange`. It had ⌃⌥A until I16 | shipped, unbound on purpose |
 | ⌃⌥⇧A | `toggle-auto-dock`: auto-docking on and off; a tick in the menu is enough for a switch flipped once a week | reserved (F23 ships the command and the menu item, unbound) |
 | ⌃⌥Z / ⌃⌥⇧Z | `undo` / `redo` | shipped (F19) |
 | ⌃⌥R / ⌃⌥⇧R | `rotate` the focused window's group (side by side ↔ stacked; again, and it is as it was) / `mirror` it | shipped (F22) |
@@ -88,6 +120,7 @@ The first five need an event tap. `pointerGestures` ("Trackpad and mouse gesture
 
 | Keys | Why |
 |---|---|
+| ⌃⌥A | a widely used chat app archives the open conversation with it (I16) |
 | ⌃⌥⌘8, ⌃⌥⌘`,`, ⌃⌥⌘`.` | macOS Accessibility: invert colours, contrast down and up |
 | ⌃⌥⌘ + letter, ⌃⌥⌘↩ | Xcode: ⌃⌥⌘F fix all issues, ⌃⌥⌘G test again, ⌃⌥⌘U run the test at the cursor, ⌃⌥⌘↩ assistant editor |
 | ⌃⌥⇧⌘ + anything | the "hyper key" people build with Karabiner-Elements for their own shortcuts |

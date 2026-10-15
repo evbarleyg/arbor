@@ -16,6 +16,7 @@
 # check-F41.sh's first run on a Mac showed Arbor handing the keyboard to a docked window on the strength of that.
 #
 # Only on GitHub's Macs: it types plain letters, which land in whatever has the keyboard if Arbor has a fault here.
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
 needs_throwaway_mac "type plain letters, which land in whichever app has the keyboard"
 

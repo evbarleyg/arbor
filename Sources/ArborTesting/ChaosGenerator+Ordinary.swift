@@ -97,7 +97,7 @@ extension ChaosGenerator {
 
   /// The keys a person presses, by how often.
   private static let keys: [(weight: Int, value: String)] = [
-    (12, "dock left"), (12, "dock right"), (6, "dock top"), (8, "dock bottom"), (12, "toggle-float"), (5, "arrange"), (4, "float-all"),
+    (12, "dock left"), (12, "dock right"), (6, "dock top"), (8, "dock bottom"), (12, "toggle-float"), (4, "float-all"),
     (12, "zoom"), (8, "out"), (6, "in"), (6, "neighbor left"), (6, "neighbor right"), (10, "home"), (10, "show-all"), (6, "desktop"),
     (6, "back"), (3, "forward"), (4, "focus left"), (4, "focus right"), (3, "focus up"), (3, "focus down"), (4, "grow"), (4, "shrink"),
     (2, "balance"), (2, "rotate"), (2, "mirror"), (10, "undo"), (3, "redo"), (2, "save-view 1"), (3, "view 1"), (1, "save-view 2"),
@@ -107,7 +107,7 @@ extension ChaosGenerator {
   /// What is in the menu and on no key, or is refused as a key by the harness.
   private static let menu: [(weight: Int, value: String)] = [
     (4, "toggle-pin"), (3, "toggle-pause"), (2, "hold"), (2, "release"), (6, "move-to-display next"), (2, "float-all here"), (1, "quit"),
-    (2, "arrange all"),
+    (2, "arrange all"), (5, "arrange"),
   ]
 
   mutating func startOrdinaryWalk() {

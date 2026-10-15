@@ -200,7 +200,7 @@ extension ChaosRunner {
         open 103 Notes pid 1001 at 838 122 801 648 min 709 300
         open 104 Notes pid 1001 at 351 78 709 714 min 709 300
         launch
-        key down arrange
+        via shortcut arrange
         """),
     ChaosKnownFailure(
       rule: "set-right-by-less-than-a-cell", owner: "board 1.62: Arbor knows a terminal's character cell", severity: 4,
@@ -245,7 +245,7 @@ extension ChaosRunner {
         open 101 Finder pid 1005 at 148 53 975 358 min 501 300
         open 102 Music pid 1006 at 159 70 862 558 min 680 480
         launch
-        key down arrange
+        via shortcut arrange
         minimize 101
         restore 101
         """,
@@ -284,7 +284,7 @@ extension ChaosRunner {
         grab 101
         carry 390 967
         release
-        key down arrange
+        via shortcut arrange
         """),
     ChaosKnownFailure(
       rule: "moved-twice-sizing-floating", owner: "rule 3: a floating window's frame is its person's", severity: 2,
@@ -325,7 +325,7 @@ extension ChaosRunner {
         open 102 Preview pid 1007 at 606 305 723 585 min 723 400 max 723 2000
         open 103 Mail pid 1002 at 185 136 1100 798 min 760 400
         launch
-        key down arrange
+        via shortcut arrange
         key down rotate
         minimize 103
         restore 103
@@ -465,7 +465,7 @@ extension ChaosRunner {
       """
         launch
         open 101 Mail pid 1002 at 368 293 957 595 min 760 400
-        key down arrange
+        via shortcut arrange
         key down float-all
         edge 101 368 293 1274 595
         key down undo
@@ -597,7 +597,7 @@ extension ChaosRunner {
         launch
         open 102 Xcode pid 1004 at 76 25 1248 875 min 1188 685
         open 103 Mail pid 1002 at 138 215 1166 511 min 760 400
-        key down arrange
+        via shortcut arrange
         key down dock top
         key down shrink
         """,

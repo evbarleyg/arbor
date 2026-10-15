@@ -8,8 +8,9 @@ import Testing
 @Suite @MainActor struct LayoutShortcutTests {
   func chord(_ text: String) throws -> KeyChord { try KeyChord(text: text) }
 
+  /// On the whole map, for its signs, digits and ⇧, where layouts differ. `NineKeysTests` has the nine on every keyboard.
   func settings(_ bindings: [String: String?], follow: Bool = true) -> Settings {
-    var settings = Settings()
+    var settings = Settings.withEveryKey
     settings.bindings = bindings
     settings.shortcutsFollowLayout = follow
     return settings
@@ -74,7 +75,7 @@ import Testing
   }
 
   @Test func theUSLayoutAsMacOSReportsItChangesNothing() {
-    for binding in KeyBindings.effective(settings: Settings(), layout: SampleKeyLayouts.us).bindings {
+    for binding in KeyBindings.effective(settings: .withEveryKey, layout: SampleKeyLayouts.us).bindings {
       #expect(binding.keyCode == binding.chord.key.code, "\(binding.chord.text)")
       #expect(binding.label == binding.chord.label, "\(binding.chord.text)")
     }
@@ -87,17 +88,17 @@ import Testing
       #expect(russian.code(for: key) == key.code, "\(key.name)")
     }
     #expect(try chord("ctrl+opt+z").label(in: russian) == "⌃⌥Я")
-    let (bindings, problems) = KeyBindings.effective(settings: Settings(), layout: russian)
+    let (bindings, problems) = KeyBindings.effective(settings: .withEveryKey, layout: russian)
     #expect(problems.isEmpty)
-    #expect(bindings.count == KeyBindings.defaults.count)
+    #expect(bindings.count == KeyBindings.all.count)
   }
 
   @Test(arguments: ["us", "german", "french", "dvorak", "russian"])
   func everyDefaultShortcutWorksOnEveryLayoutAndNoTwoShareAKey(name: String) throws {
     let layout = try #require(SampleKeyLayouts.byName[name])
-    let (bindings, problems) = KeyBindings.effective(settings: Settings(), layout: layout)
+    let (bindings, problems) = KeyBindings.effective(settings: .withEveryKey, layout: layout)
     #expect(problems.isEmpty, "\(problems)")
-    #expect(bindings.map(\.chord) == KeyBindings.defaults.map(\.chord))
+    #expect(bindings.map(\.chord) == KeyBindings.all.map(\.chord))
     #expect(Set(bindings.map { "\($0.keyCode) \($0.modifiers.rawValue)" }).count == bindings.count)
     #expect(Set(bindings.map(\.label)).count == bindings.count, "no two look alike in the menu")
   }
@@ -145,10 +146,10 @@ import Testing
   func theHelpShortcutCollidesWithNoDefault(name: String) throws {
     let layout = try #require(SampleKeyLayouts.byName[name])
     // ⌃⌥⇧/ is a default since F43.
-    #expect(KeyBindings.defaults.contains { $0.command == .showShortcuts })
-    let (bindings, problems) = KeyBindings.effective(settings: Settings(), layout: layout)
+    #expect(KeyBindings.all.contains { $0.command == .showShortcuts })
+    let (bindings, problems) = KeyBindings.effective(settings: .withEveryKey, layout: layout)
     #expect(problems.isEmpty, "\(problems)")
-    #expect(bindings.count == KeyBindings.defaults.count)
+    #expect(bindings.count == KeyBindings.all.count)
   }
 
   // MARK: Keys named by what they type
@@ -195,16 +196,16 @@ import Testing
     #expect(replaced.problems.isEmpty, "\(replaced.problems)")
     #expect(!replaced.bindings.contains { $0.command == .back })
     #expect(replaced.bindings.first { $0.keyCode == 33 }?.command == .arrange)
-    #expect(replaced.bindings.count == KeyBindings.defaults.count)
+    #expect(replaced.bindings.count == KeyBindings.all.count)
     let freed = KeyBindings.effective(settings: settings(["ctrl+opt+ü": nil]), layout: german)
     #expect(freed.problems.isEmpty)
     #expect(!freed.bindings.contains { $0.keyCode == 33 })
-    #expect(freed.bindings.count == KeyBindings.defaults.count - 1)
+    #expect(freed.bindings.count == KeyBindings.all.count - 1)
 
     // On another layout the entry cannot be read, is reported, and Back is back.
     let elsewhere = KeyBindings.effective(settings: settings(["ctrl+opt+ü": nil]), layout: SampleKeyLayouts.us)
     #expect(elsewhere.problems.count == 1 && elsewhere.problems[0].hasPrefix("ctrl+opt+ü: unknown key `ü`"))
-    #expect(elsewhere.bindings.count == KeyBindings.defaults.count)
+    #expect(elsewhere.bindings.count == KeyBindings.all.count)
   }
 
   // MARK: Two shortcuts on one key
@@ -219,7 +220,7 @@ import Testing
       ])
     #expect(try binding("ctrl+opt+-", in: bindings)?.command == .stepOut)
     #expect(try binding("ctrl+opt+/", in: bindings) == nil)
-    #expect(bindings.count == KeyBindings.defaults.count + 1)
+    #expect(bindings.count == KeyBindings.all.count + 1)
     // The same settings on a US keyboard are fine.
     #expect(KeyBindings.effective(settings: settings(["ctrl+opt+-": "out", "ctrl+opt+/": "in"])).problems.isEmpty)
   }
@@ -272,14 +273,14 @@ import Testing
   }
 
   @Test func aLayoutThatLeavesEveryShortcutWhereItIsCostsNothing() {
-    let h = Harness()
+    let h = Harness(settings: .withEveryKey)
     h.start()
     var changes = 0
     h.controller.observe { if $0 == .input { changes += 1 } }
     // What the app reports at launch on a US keyboard, which is more than `KeyLayout.us` knows.
     h.controller.keyboardLayoutChanged(SampleKeyLayouts.us)
     #expect(changes == 0)
-    #expect(h.controller.activeBindings == KeyBindings.defaults)
+    #expect(h.controller.activeBindings == KeyBindings.all)
   }
 
   @Test func withTheSettingOffShortcutsArePositionsWithTheirUSLabels() throws {
@@ -310,7 +311,7 @@ import Testing
     let text = try #require(result.text)
     #expect(text.contains("ctrl+opt+[ (⌃⌥Ü)"))
     #expect(text.contains("ctrl+opt+] (⌃⌥+)"))
-    #expect(text.contains("ctrl+opt+a  "), "a letter is itself")
+    #expect(text.contains("ctrl+opt+d  "), "a letter is itself")
     #expect(text.contains("skipped ctrl+opt+/: the same key as ctrl+opt+- on the German keyboard layout"))
     #expect(text.contains("mean the keys that type them on the German keyboard layout."))
     #expect(result.message.hasSuffix(", 1 skipped"))
@@ -332,7 +333,7 @@ import Testing
   }
 
   @Test func scenariosCanAskWhereAShortcutIsAndHowItShows() {
-    let h = Harness()
+    let h = Harness(settings: .withEveryKey)
     h.start()
     func expect(_ line: String) -> String? {
       ScenarioExpectation.check(line.split(separator: " ").map(String.init), harness: h, lastCommandOK: true)
@@ -342,10 +343,10 @@ import Testing
     #expect(expect("shortcut ctrl+opt+[ shows ⌃⌥Ü") == nil)
     #expect(expect("shortcut ctrl+opt+[ shows ⌃⌥[") == "ctrl+opt+[ shows as ⌃⌥Ü, not ⌃⌥[")
     #expect(expect("shortcut ctrl+opt+[ key 33") == nil)
-    #expect(expect("shortcut ctrl+opt+a key 12") == "ctrl+opt+a is key 0, not 12")
+    #expect(expect("shortcut ctrl+opt+d key 4") == "ctrl+opt+d is key 2, not 4")
     #expect(expect("shortcut ctrl+opt+q key 12") == "ctrl+opt+q is not a shortcut in effect")
-    #expect(expect("shortcut ctrl+opt+a key twelve")?.hasPrefix("cannot read") == true)
-    #expect(expect("shortcut ctrl+opt+a smells nice")?.hasPrefix("cannot read") == true)
+    #expect(expect("shortcut ctrl+opt+d key twelve")?.hasPrefix("cannot read") == true)
+    #expect(expect("shortcut ctrl+opt+d smells nice")?.hasPrefix("cannot read") == true)
   }
 
   // MARK: Against macOS

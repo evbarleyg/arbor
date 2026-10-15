@@ -27,8 +27,8 @@ using the same command text as `arborctl`.
   `/`, `;`, `'`, `` ` ``, `\`, `tab`, `escape`, `delete`, `f1`–`f12`),
   joined by `+`, case-insensitive.
 - Values are command text (`Command.parse`). `null` removes a default binding.
-- User bindings are merged over `KeyBindings.defaults`: same chord replaces,
-  `null` removes, new chords add.
+- User bindings are merged over Arbor's own map, which the setting `shortcuts` chooses (`KeyBindings.standard`: the nine
+  that ship, or the whole map; docs/KEYBOARD.md): same chord replaces, `null` removes, new chords add.
 - Invalid chords or commands are skipped and logged with the reason; they do
   not stop the rest from loading.
 - `reload-settings` re-registers shortcuts.
@@ -88,6 +88,11 @@ A UI for editing bindings (F12).
   off.
 - `bindings` query (`arborctl bindings`, help text): the effective table, one
   `chord → command` per line sorted by command text, then the skipped entries.
+
+- **Two maps (2026-10-15; `collab/QUESTIONS.md`, Q29; `collab/IDEAS.md`, I22).** Arbor's own shortcuts are `KeyBindings.core`, nine keys that are each ⌃⌥ and one
+  key, or `KeyBindings.all`, the whole map that shipped before. The setting `shortcuts` (`core`, which ships, or `all`) chooses; `bindings`, `bind`, `unbind` and
+  the settings window's page go by the one chosen. ⌃⌥A is in neither. `bindings` and the panel of shortcuts say how to get more while the nine are in
+  use. `docs/KEYBOARD.md` has both maps and the reasons; `LessByDefaultTests` holds what ships to ten keys and to ⌃⌥.
 
 ## Not shipped
 

@@ -563,10 +563,10 @@ private final class Panel {
     p.model.search = "behindarr"
     #expect(p.model.found.sections.flatMap(\.rows).map(\.key).contains("dimBehindArranged"))
     // One field, one rule: the lines of the Shortcuts pane and the panes themselves are found the same way.
-    p.model.search = "range"
-    #expect(p.model.found.shortcuts.isEmpty, "not Arrange Windows")
-    p.model.search = "arr"
-    #expect(p.model.found.shortcuts.map(\.title) == ["Arrange Windows"])
+    p.model.search = "thing"
+    #expect(p.model.found.shortcuts.isEmpty, "not Show Everything")
+    p.model.search = "every"
+    #expect(p.model.found.shortcuts.map(\.title) == ["Show Everything"])
     p.model.search = "cuts"
     #expect(p.model.found.panes.isEmpty, "not Shortcuts")
     p.model.search = "short"
@@ -600,7 +600,7 @@ private final class Panel {
   }
 
   @Test func shortcutsAreFoundByCommandAndByKeys() throws {
-    let p = Panel()
+    let p = Panel(settings: .withEveryKey)
     p.model.search = "desktop"
     #expect(p.model.found.shortcuts.map(\.command.text) == ["desktop"])
     p.model.search = "⌃⌥d"
@@ -633,7 +633,7 @@ private final class Panel {
     #expect(!p.model.found.isEmpty && p.model.found.panes.isEmpty && p.model.found.shortcuts.isEmpty)
     p.model.search = "rules are checked"
     #expect(!p.model.found.isEmpty && p.model.found.sections.isEmpty && p.model.found.shortcuts.isEmpty)
-    p.model.search = "float-all"
+    p.model.search = "toggle-float"
     #expect(!p.model.found.isEmpty && p.model.found.sections.isEmpty && p.model.found.panes.isEmpty)
     p.model.search = "   "
     #expect(!p.model.isSearching)
@@ -714,13 +714,31 @@ private final class Panel {
 }
 
 @Suite @MainActor struct SettingsPanelShortcutTests {
+  /// What ships. The tests below that need a line only the whole map has (`desktop`, mostly) ask for that map.
+  @Test func asItShipsThePageHasTheNineAndTheChoiceAboveThem() throws {
+    let p = Panel()
+    #expect(p.model.shortcutRows.map(\.command) == KeyBindings.core.map(\.command))
+    #expect(p.model.shortcutRows.compactMap(\.chord) == KeyBindings.core.map(\.chord))
+    #expect(p.model.shortcutRows.allSatisfy { $0.chord == $0.standard && !$0.isChanged })
+    guard case .choice(let value, let choices)? = p.model.shortcutsMapRow?.control else {
+      throw Settings.FileError("no such line")
+    }
+    #expect(value == "core" && choices.map(\.value) == ["core", "all"])
+    // It decides the lines under it, at once.
+    p.model.set("shortcuts", to: "all")
+    #expect(p.commands == ["set shortcuts all"] && p.model.errors.isEmpty)
+    #expect(p.model.shortcutRows.map(\.command) == KeyBindings.all.map(\.command))
+    #expect(p.model.shortcutRows.compactMap(\.chord) == KeyBindings.all.map(\.chord))
+    #expect(p.model.shortcutRows.allSatisfy { $0.chord == $0.standard && !$0.isChanged })
+  }
+
   @Test func theTableHasEveryDefaultInOrderThenTheUsersOwn() {
-    var settings = Settings()
+    var settings = Settings.withEveryKey
     settings.bindings = ["ctrl+opt+x": "float-all", "ctrl+opt+cmd+h": "dock left"]
     let p = Panel(settings: settings)
     let rows = p.model.shortcutRows
-    #expect(rows.prefix(KeyBindings.defaults.count).map(\.command) == KeyBindings.defaults.map(\.command))
-    #expect(rows.prefix(KeyBindings.defaults.count).allSatisfy { $0.chord == $0.standard && !$0.isChanged })
+    #expect(rows.prefix(KeyBindings.all.count).map(\.command) == KeyBindings.all.map(\.command))
+    #expect(rows.prefix(KeyBindings.all.count).allSatisfy { $0.chord == $0.standard && !$0.isChanged })
     #expect(rows.suffix(2).map(\.command.text) == ["dock left", "float-all"])
     #expect(rows.suffix(2).allSatisfy { $0.standard == nil && $0.isChanged })
     #expect(Set(rows.map(\.id)).count == rows.count)
@@ -729,7 +747,7 @@ private final class Panel {
 
   /// `out`, `in` and `neighbor left` are what a script types. A person knows them from the menu and the panel of shortcuts.
   @Test func aLineIsCalledWhatTheMenuCallsIt() throws {
-    let p = Panel()
+    let p = Panel(settings: .withEveryKey)
     #expect(p.shortcut("out")?.title == "Step Out" && p.shortcut("show-all")?.title == "Show Everything")
     #expect(p.shortcut("toggle-float")?.title == "Float or Dock Focused Window")
     for row in p.model.shortcutRows {
@@ -742,7 +760,7 @@ private final class Panel {
 
   /// Fifty lines in a row are a wall. The panel of shortcuts and docs/KEYBOARD.md have three groups.
   @Test func theLinesStandInTheGroupsOfThePanelOfShortcuts() throws {
-    let p = Panel()
+    let p = Panel(settings: .withEveryKey)
     #expect(p.model.shortcutSections.map(\.title) == ["Look", "Arrange", "Arbor itself"])
     #expect(p.model.shortcutSections.flatMap(\.rows).map(\.id).sorted() == p.model.shortcutRows.map(\.id).sorted(), "each once")
     let look = try #require(p.model.shortcutSections.first)
@@ -756,7 +774,7 @@ private final class Panel {
   }
 
   @Test func aShortcutThatTakesKeysFromEveryAppSaysSoOnItsLine() throws {
-    let p = Panel()
+    let p = Panel(settings: .withEveryKey)
     #expect(p.model.shortcutRows.allSatisfy { $0.caution == nil }, "no default needs a warning")
     p.model.startRecording(try #require(p.shortcut("show-all")))
     try p.press("cmd+w")
@@ -781,7 +799,7 @@ private final class Panel {
         #expect(KeyChord(code: code, modifiers: [.control, .option], layout: layout) != nil, "\(name) \(code)")
       }
       // Pressing a default shortcut as it is registered gives that shortcut back under its own name.
-      for binding in KeyBindings.effective(settings: Settings(), layout: layout).bindings {
+      for binding in KeyBindings.effective(settings: .withEveryKey, layout: layout).bindings {
         let recorded = KeyChord(code: binding.keyCode, modifiers: binding.modifiers, layout: layout)
         #expect(recorded == binding.chord, "\(name): \(binding.chord.text) came back as \(recorded?.text ?? "nothing")")
       }
@@ -790,7 +808,7 @@ private final class Panel {
 
   @Test func aDefaultShortcutRecordedAgainLeavesNothingChanged() throws {
     for (name, layout) in SampleKeyLayouts.byName {
-      let p = Panel()
+      let p = Panel(settings: .withEveryKey)
       p.h.controller.keyboardLayoutChanged(layout)
       for binding in p.h.controller.effectiveBindings.bindings {
         let row = try #require(p.model.shortcutRows.first { $0.standard == binding.chord })
@@ -820,7 +838,7 @@ private final class Panel {
   }
 
   @Test func theTableAndTheRecorderFollowTheKeyboardLayout() throws {
-    let p = Panel()
+    let p = Panel(settings: .withEveryKey)
     p.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
     #expect(p.shortcut("back")?.label == "⌃⌥Ü" && p.shortcut("back")?.isChanged == false)
     p.model.startRecording(try #require(p.shortcut("desktop")))
@@ -837,7 +855,7 @@ private final class Panel {
   }
 
   @Test func twoNamesForOneKeyClash() throws {
-    var settings = Settings()
+    var settings = Settings.withEveryKey
     settings.bindings = ["ctrl+opt+us:z": "float-all"]  // the key labelled Y in Germany
     let p = Panel(settings: settings)
     p.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
@@ -852,7 +870,7 @@ private final class Panel {
   }
 
   @Test func arborHoldsNoShortcutWhileOneIsRecorded() throws {
-    let p = Panel()
+    let p = Panel(settings: .withEveryKey)
     var changes: [Controller.Change] = []
     p.h.controller.observe { changes.append($0) }
     #expect(!p.h.controller.activeBindings.isEmpty)
@@ -870,7 +888,7 @@ private final class Panel {
   }
 
   @Test func recordingGivesACommandNewKeysOnTheSameLine() throws {
-    let p = Panel()
+    let p = Panel(settings: .withEveryKey)
     var recordings: [Bool] = []
     p.model.onRecordingChanged = { recordings.append($0) }
     let row = try #require(p.shortcut("desktop"))
@@ -882,7 +900,7 @@ private final class Panel {
     let after = try #require(p.shortcut("desktop"))
     #expect(after.chord?.text == "ctrl+opt+y" && after.standard?.text == "ctrl+opt+d" && after.isChanged)
     #expect(after.id == row.id, "the line stays where it was")
-    #expect(p.model.shortcutRows.count == KeyBindings.defaults.count)
+    #expect(p.model.shortcutRows.count == KeyBindings.all.count)
   }
 
   @Test func keysPressedWhenNothingIsRecordingAreNotTheWindowsBusiness() throws {
@@ -892,7 +910,7 @@ private final class Panel {
   }
 
   @Test func escapeAloneCancels() throws {
-    let p = Panel()
+    let p = Panel(settings: .withEveryKey)
     p.model.startRecording(try #require(p.shortcut("desktop")))
     #expect(p.redraws == 1, "the button asks for keys")
     #expect(try p.press("escape"))
@@ -905,27 +923,27 @@ private final class Panel {
   }
 
   @Test func theSameKeysAgainChangeNothing() throws {
-    let p = Panel()
+    let p = Panel(settings: .withEveryKey)
     p.model.startRecording(try #require(p.shortcut("desktop")))
     try p.press("ctrl+opt+d")
     #expect(p.model.recording == nil && p.commands.isEmpty && p.model.clash == nil)
   }
 
   @Test func keysAnotherCommandHasAreFlaggedAndTakenOnlyOnRequest() throws {
-    let p = Panel()
+    let p = Panel(settings: .withEveryKey)
     let row = try #require(p.shortcut("desktop"))
     p.model.startRecording(row)
-    try p.press("ctrl+opt+a")
+    try p.press("ctrl+opt+r")
     let clash = try #require(p.model.clash)
-    #expect(clash.row == row && clash.chord.text == "ctrl+opt+a" && clash.holder == .arrange)
-    #expect(clash.message == "⌃⌥A runs Arrange Windows now.")
+    #expect(clash.row == row && clash.chord.text == "ctrl+opt+r" && clash.holder == .rotate)
+    #expect(clash.message == "⌃⌥R runs Rotate Group now.")
     #expect(p.commands.isEmpty && p.model.recording == nil)
     p.model.cancelRecording()
     #expect(p.model.clash == nil && p.commands.isEmpty)
 
     // Turning to another line drops the question too.
     p.model.startRecording(row)
-    try p.press("ctrl+opt+a")
+    try p.press("ctrl+opt+r")
     p.model.startRecording(try #require(p.shortcut("back")))
     #expect(p.model.clash == nil && p.model.recording?.command == .back)
     p.model.replaceHolder()
@@ -933,16 +951,16 @@ private final class Panel {
     p.model.cancelRecording()
 
     p.model.startRecording(row)
-    try p.press("ctrl+opt+a")
+    try p.press("ctrl+opt+r")
     p.model.replaceHolder()
     #expect(p.model.clash == nil)
-    #expect(p.shortcut("desktop")?.chord?.text == "ctrl+opt+a")
-    let loser = try #require(p.shortcut("arrange"))
-    #expect(loser.chord == nil && loser.standard?.text == "ctrl+opt+a" && loser.isChanged)
+    #expect(p.shortcut("desktop")?.chord?.text == "ctrl+opt+r")
+    let loser = try #require(p.shortcut("rotate"))
+    #expect(loser.chord == nil && loser.standard?.text == "ctrl+opt+r" && loser.isChanged)
   }
 
   @Test func keysThatCannotBeAShortcutAreRefusedOnTheLineAndTheOldOnesStay() throws {
-    let p = Panel()
+    let p = Panel(settings: .withEveryKey)
     let row = try #require(p.shortcut("desktop"))
     p.model.startRecording(row)
     try p.press("shift+a")
@@ -955,7 +973,7 @@ private final class Panel {
   }
 
   @Test func removeLeavesTheLineWithoutKeysAndRestoreBringsThemBack() throws {
-    let p = Panel()
+    let p = Panel(settings: .withEveryKey)
     p.model.removeShortcut(try #require(p.shortcut("desktop")))
     let removed = try #require(p.shortcut("desktop"))
     #expect(removed.chord == nil && removed.isChanged)
@@ -966,7 +984,7 @@ private final class Panel {
   }
 
   @Test func restoreUndoesAMove() throws {
-    let p = Panel()
+    let p = Panel(settings: .withEveryKey)
     p.model.startRecording(try #require(p.shortcut("desktop")))
     try p.press("ctrl+opt+y")
     p.model.restoreShortcut(try #require(p.shortcut("desktop")))
@@ -1000,7 +1018,7 @@ private final class Panel {
   }
 
   @Test func leavingThePaneEndsTheRecording() throws {
-    let p = Panel()
+    let p = Panel(settings: .withEveryKey)
     p.model.pane = .shortcuts
     var recordings: [Bool] = []
     p.model.onRecordingChanged = { recordings.append($0) }

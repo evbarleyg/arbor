@@ -40,7 +40,9 @@ import Testing
       AppRule(app: "com.example.console", action: .dockBeside(bundleID: "com.example.app1", dice.pick(Edge.allCases))),
     ]
     let two = dice.roll(3) == 0
-    let h = Harness(displays: two ? [FakeWindowSystem.standardDisplay, Self.side] : [FakeWindowSystem.standardDisplay], settings: settings)
+    // With the whole map: the slips further down are on its keys.
+    let h = Harness(
+      displays: two ? [FakeWindowSystem.standardDisplay, Self.side] : [FakeWindowSystem.standardDisplay], settings: settings.withEveryKey)
     h.start()
     var trail: [String] = []
     func run(_ text: String) {

@@ -32,19 +32,21 @@ independent implementation and is not affiliated with it.
   window; a preview shows where it will land. Drop it on the Desktop to float it
   again, at the size it had before. Let go anywhere else, where no preview shows,
   and a docked window goes back to its place. Hold ⌘ while dragging and nothing
-  docks: the window floats. The keyboard docks too: ⌃⌥⌘ + arrow.
+  docks: the window floats. The keyboard docks too: ⌃⌥← and ⌃⌥→.
 - **The Desktop stays**: windows you have not docked float on the Desktop, between
   the docked ones. They make way when a window docks and go back to where you
   put them when there is room again.
-- **Zoom**: ⌃⌥↩ frames the focused window (again to return), ⌃⌥↑ steps out a level, ⌃⌥↓ steps
-  in toward the window you are typing in (or pointing at), ⌃⌥Space shows everything, ⌃⌥[ and ⌃⌥] go back and forward.
+- **Zoom**: ⌃⌥↩ frames the focused window (again to return), ⌃⌥Space shows everything, ⌃⌥[ goes back. In the menu, Step Out
+  goes out a level, Step In goes in toward the window you are typing in (or pointing at), and Forward goes where Back came from.
 - **Peek**: hold ⌃⌥Space instead of tapping it. Everything shows while the keys are down; point at a window, or walk to it with
   the arrow keys, and let go: it is framed. One gesture from any window to any other, by where it is.
 - **Motion that shows where things went**: every zoom, dock and close plays as one short motion.
   Zooming in enlarges the whole arrangement, so the other windows slide out past the screen edges;
   zooming out brings them back from there. A click ends it at once, a second shortcut carries on
   from where things are, and macOS's "Reduce motion" switches it off.
-- **Stay on the keyboard**: ⌃⌥⇧ + arrow moves focus to the nearest window that way, into tiles, on to the
+- **Nine keys, or all of them**: Arbor takes nine shortcuts, each ⌃⌥ and one key; the menu has the rest. One setting
+  binds some fifty: `arborctl set shortcuts all`. See [Keyboard](#keyboard).
+- **Stay on the keyboard**: with all of them bound, ⌃⌥⇧ + arrow moves focus to the nearest window that way, into tiles, on to the
   next space and the next display. ⌃⌥⌘= and ⌃⌥⌘- grow and shrink the focused window, ⌃⌥⌘0 balances the
   sizes, ⌃⌥R rotates a row into a column and back. See [Arranging from the keyboard](#arranging-from-the-keyboard).
 - **Pinch and frame**: with ⌥ held, or over the Desktop, pinch on the trackpad
@@ -77,8 +79,8 @@ independent implementation and is not affiliated with it.
 - **One surface**: behind docked windows the wallpaper is a shade darker, with rounded corners, so that what is docked
   reads as one thing and the Desktop between it as another. It can be blurred as well, or left alone
   (see `dimBehindArranged` under [Settings](#settings)).
-- **Saved views**: ⌃⌥⇧1–9 saves where you are looking, ⌃⌥1–9 goes back there.
-- **Named spaces**: ⌃⌥N gives the space you are looking at a name. `arborctl go writing`, `arbor://go/writing` or the
+- **Saved views**: Saved Views in the menu saves where you are looking under a number, 1 to 9, and goes back there.
+- **Named spaces**: Name This Space…, in the same submenu, gives the space you are looking at a name. `arborctl go writing`, `arbor://go/writing` or the
   menu take you there from anywhere, on any display. A named group stays itself while windows come and go.
 - **Go to anything**: ⌃⌥G, a few letters, Return, and the view moves to that window and focuses it, whatever
   kept it out of view: another space, another tab, the Dock, ⌘H, another display. Saved views are in the same
@@ -86,11 +88,11 @@ independent implementation and is not affiliated with it.
 - **See where you type**: a line in your accent colour surrounds the focused window, in the
   gap, so it covers nothing. It flashes when a shortcut moved the focus.
 - **Undo**: ⌃⌥Z takes back the last change to the arrangement, whether you made it with a shortcut, a drag or
-  a command; ⌃⌥⇧Z puts it back.
+  a command; Redo, in the menu, puts it back.
 - **It says what happened**: a key that can do nothing where you are says why, in a line low on the display; so does
-  anything that changes unseen (a saved view, a pause). ⌃⌥⇧/ shows every shortcut on screen.
-- **See where you are**: ⌃⌥M shows a minimap of the whole arrangement low on the display, with the space in view marked. Click a
-  window in it to frame that window, or hold the keys, point and let go. It can also show by itself after each move of the view.
+  anything that changes unseen (a saved view, a pause). Keyboard Shortcuts… in the menu shows every shortcut on screen.
+- **See where you are**: Show Minimap, in the menu, shows a minimap of the whole arrangement low on the display, with the space in view marked. Click a
+  window in it to frame that window; or give it a key, hold that, point and let go. It can also show by itself after each move of the view.
 - **Scriptable**: every action is a command: `arborctl dock left`, or the URL
   `arbor://dock/left` from Raycast, Alfred, Shortcuts or a Stream Deck
   (see [URLs](#urls)). A whole arrangement is a line of text:
@@ -115,8 +117,8 @@ independent implementation and is not affiliated with it.
 
 ### If you get lost
 
-1. **Show Everything**: ⌃⌥Space, or ⌃⌥0 for every display at once, or the menu bar icon.
-2. **Float All Windows**: ⌃⌥⇧F or the menu. Nothing is docked any more, and every window is back where
+1. **Show Everything**: ⌃⌥Space, or the menu bar icon, or `arborctl home` for every display at once.
+2. **Float All Windows**, in the menu. Nothing is docked any more, and every window is back where
    it was before it was docked: a normal Mac.
 3. **Quit Arbor**: every window comes back into view, where it was before it was docked.
 
@@ -218,33 +220,24 @@ when a window closes and when Arbor pauses or quits.
 
 ## Keyboard
 
-| Keys | Action |
-|---|---|
-| ⌃⌥Space | Show everything; held, peek (below) |
-| ⌃⌥0 | Show everything on every display |
-| ⌃⌥↑ / ⌃⌥↓ | Step out / step in |
-| ⌃⌥← / ⌃⌥→ | Neighbouring space |
-| ⌃⌥⇧ + arrow | Focus the nearest window that way; with none in view, the neighbouring space |
-| ⌃⌥↩ | Frame the focused window; again to return |
-| ⌃⌥[ / ⌃⌥] | Back / forward |
-| ⌃⌥D | Desktop |
-| ⌃⌥G | Go to…: find a window, a named space, a saved view or a command by typing |
-| ⌃⌥M | Minimap: click a window in it to frame it; again to put it away. Held: let go over a window to frame it, ⎋ to give up |
-| ⌃⌥⌘ + arrow | Dock the focused window at that edge, or move it one place |
-| ⌃⌥F / ⌃⌥⇧F | Float or dock the focused window / float all windows |
-| ⌃⌥A | Arrange every window in a grid |
-| ⌃⌥⌘= / ⌃⌥⌘- | Grow / shrink the focused window |
-| ⌃⌥⌘0 | Balance: equal sizes for everything in view |
-| ⌃⌥R / ⌃⌥⇧R | Rotate the focused window's group (row ↔ column) / mirror it |
-| ⌃⌥⇧1–9 / ⌃⌥1–9 | Save / recall a view |
-| ⌃⌥N | Name the space in view (↩ names it, an empty field removes the name, ⎋ cancels) |
-| ⌃⌥⎋ | Pause / resume Arbor |
-| ⌃⌥Z / ⌃⌥⇧Z | Undo / redo the last change to the arrangement |
-| ⌃⌥⇧/ | The shortcuts in effect, on screen; any key or click puts them away |
-| ⌃⌥, | Settings… |
+Arbor takes nine keys, each ⌃⌥ and one key. Nothing else is bound: no third modifier, no digit, no other letter.
+
+| Keys | Action | Command |
+|---|---|---|
+| ⌃⌥← / ⌃⌥→ | Dock the window in front at that side, or move it one place | `dock left` / `dock right` |
+| ⌃⌥↩ | Frame the focused window; again to return | `zoom` |
+| ⌃⌥Space | Show everything; held, peek (below) | `show-all` |
+| ⌃⌥[ | Back to where the view was | `back` |
+| ⌃⌥Z | Undo the last change to the arrangement | `undo` |
+| ⌃⌥F | Float the focused window, or dock it again | `toggle-float` |
+| ⌃⌥G | Go to…: find a window, a named space, a saved view or a command by typing | `find` |
+| ⌃⌥⎋ | Pause / resume Arbor | `toggle-pause` |
+
+The rest is in Arbor's menu, docking at the top and the bottom too (Dock Focused Window); ⌃⌥G finds it by name (`bal` ↩ balances
+the sizes); and every command runs as `arborctl <command>`. Any of it can have a key, one at a time or all at once: see [More keys](#more-keys).
 
 **Keys follow the keyboard, gestures follow the pointer.** With two displays, a shortcut changes the view of the display
-you are typing on, wherever the pointer was left, and ⌃⌥↓ steps in toward the focused window. If you have moved
+you are typing on, wherever the pointer was left, and Step In goes toward the focused window. If you have moved
 the pointer since you last typed or switched windows, you are pointing at something, and the shortcut means that display and
 that window instead. A pinch always means what is under the pointer, and the menu the display whose menu bar you
 clicked. `arborctl` and URLs choose as shortcuts do. To settle it one way for good, set `stepInToward` to
@@ -261,12 +254,12 @@ the left"), which fades after a moment and takes neither clicks nor the keyboard
 (a saved view, a pause, an app no longer arranged), says so when a key worked but had nothing to change ("Showing everything"), and, three times each and never again, explains the moments that
 puzzle newcomers: the first dock, the first time windows go out of view, the first tile. What you can see for yourself is not
 announced. `"messages": "all"` in `settings.json` shows every reply, `"off"` none (a shortcut that cannot act then beeps).
-If macOS uses ⌃⌥Space to switch keyboards (it does when several input sources are set up), only one of the two gets the keys: ⌃⌥0 shows everything too.
+If macOS uses ⌃⌥Space to switch keyboards (it does when several input sources are set up), only one of the two gets the keys. Show Everything is in the menu too, and `arborctl bind ctrl+opt+0 home` makes ⌃⌥0 a second key for it.
 [docs/GUIDE.md](docs/GUIDE.md) is the user's guide: the idea on one page, the first ten minutes, recipes for a working day, and what to do when something is wrong.
 [docs/KEYBOARD.md](docs/KEYBOARD.md) has the whole map, the reasoning, and the known clashes with macOS and other apps.
 
-Letters, digits and signs mean the keys that type them on your keyboard layout, as in every ⌘-shortcut: ⌃⌥A is the key
-labelled A on a French keyboard too. A sign your layout cannot type on its own (`[` and `]` on most European
+Letters, digits and signs mean the keys that type them on your keyboard layout, as in every ⌘-shortcut: ⌃⌥Z is the key
+labelled Z on a French keyboard too. A sign your layout cannot type on its own (`[` and `]` on most European
 keyboards) stays where a US keyboard has it, and the menu shows what is printed on that key: Back is ⌃⌥Ü in Germany.
 
 A global shortcut is taken from every app. For an app that uses ⌃⌥ itself, bring it to the front and choose
@@ -275,23 +268,50 @@ A global shortcut is taken from every app. For an app that uses ⌃⌥ itself, b
 elsewhere and they are back. Only ⌃⌥⎋ keeps working there, so that one key answers wherever you are; to give that up as well, set
 `"ctrl+opt+escape": null` in `bindings`. And a key of yours that summons the app (`summon Terminal`) goes on working while it is summoned, to send it away again.
 
-To change them, open Settings… → Shortcuts, click a shortcut and press the new keys; or run
-`arborctl bind ctrl+opt+cmd+h dock left` and `arborctl unbind ctrl+opt+d` (`⌃⌥⌘H` is read too);
-or add a `bindings` object to `settings.json` that maps a shortcut to a command
-(the same text `arborctl` takes); Arbor applies the file as soon as you save it:
+### More keys
 
+**One at a time.** Open Settings… → Shortcuts, click a shortcut and press the new keys; the box at the bottom gives a shortcut to
+any command. Or run `arborctl bind ctrl+opt+d desktop` and `arborctl unbind ctrl+opt+g` (`⌃⌥D` is read too). The ones people
+are likeliest to want:
+
+| For | Run |
+|---|---|
+| Show the Desktop | `arborctl bind ctrl+opt+d desktop` |
+| Step Out | `arborctl bind ctrl+opt+up out` |
+| Step In | `arborctl bind ctrl+opt+down in` |
+| Saved view 1: go there | `arborctl bind ctrl+opt+1 view 1` |
+| Saved view 1: save it | `arborctl bind ctrl+opt+shift+1 save-view 1` |
+| Show Minimap | `arborctl bind ctrl+opt+m minimap` |
+| Redo | `arborctl bind ctrl+opt+shift+z redo` |
+| Show everything on every display | `arborctl bind ctrl+opt+0 home` |
+
+Or add a `bindings` object to `settings.json` that maps a shortcut to a command
+(the same text `arborctl` takes); Arbor applies the file as soon as you save it. The same eight:
+
+<!-- settings -->
 ```json
 "bindings": {
-  "ctrl+opt+cmd+h": "dock left",
-  "ctrl+opt+space": "arrange",
-  "ctrl+opt+d": null
+  "ctrl+opt+d": "desktop",
+  "ctrl+opt+up": "out",
+  "ctrl+opt+down": "in",
+  "ctrl+opt+1": "view 1",
+  "ctrl+opt+shift+1": "save-view 1",
+  "ctrl+opt+m": "minimap",
+  "ctrl+opt+shift+z": "redo",
+  "ctrl+opt+0": "home"
 }
 ```
 
-- A shortcut that has a default gets your command instead, `null` removes a
-  default, and any other shortcut is added. Defaults you do not mention stay.
+**All at once.** `arborctl set shortcuts all` (Settings… → General → Shortcuts: All of them) binds [the whole map](#the-whole-map-shortcuts-all) instead of the
+nine; `arborctl set shortcuts core` (The nine) goes back. Your own `bindings` go on top of either. Earlier builds bound the whole
+map: after one of those, Arbor has the nine from its next start, and this setting brings the rest back.
+
+**What `bindings` takes:**
+
+- A shortcut that Arbor binds itself gets your command instead (`"ctrl+opt+space": "arrange"`), `null` removes
+  it (`"ctrl+opt+g": null`), and any other shortcut is added. Those you do not mention stay.
 - A shortcut is modifiers and one key joined by `+`, in any order and case. What a menu shows
-  can be pasted as it is: `⌃⌥Space`, `⌃⌥⌘←`.
+  can be pasted as it is: `⌃⌥Space`, `⌃⌥←`.
   Modifiers: `ctrl`, `opt`, `cmd`, `shift` (or `control`, `option`, `alt`,
   `command`, `⌃`, `⌥`, `⌘`, `⇧`). Keys: `a`–`z`, `0`–`9`, `f1`–`f12`, `space`,
   `return` (or `enter`), `tab`, `escape`, `delete`, `left`, `right`, `up`, `down`,
@@ -307,14 +327,47 @@ or add a `bindings` object to `settings.json` that maps a shortcut to a command
 - Entries Arbor cannot use are skipped and listed, with the reason, by
   `arborctl bindings` and in the log.
 
-`arborctl bindings` prints the shortcuts in effect; ⌃⌥⇧/ (or menu → Help → Keyboard Shortcuts…) shows them on screen, by name. `bindings` also lists the ones that macOS uses itself as things stand
+`arborctl bindings` prints the shortcuts in effect; menu → Help → Keyboard Shortcuts… shows them on screen, by name. `bindings` also lists the ones that macOS uses itself as things stand
 (⌃⌥Space switches keyboards on a Mac with several input sources): one of the two does nothing, and it says where to change either.
+
+### The whole map (`shortcuts`: `all`)
+
+Here ⌃⌥ + arrow looks and ⌃⌥⌘ + arrow docks. The other seven of the nine are the same keys in both.
+
+| Keys | Action |
+|---|---|
+| ⌃⌥Space | Show everything; held, peek (above) |
+| ⌃⌥0 | Show everything on every display |
+| ⌃⌥↑ / ⌃⌥↓ | Step out / step in |
+| ⌃⌥← / ⌃⌥→ | Neighbouring space |
+| ⌃⌥⇧ + arrow | Focus the nearest window that way; with none in view, the neighbouring space |
+| ⌃⌥↩ | Frame the focused window; again to return |
+| ⌃⌥[ / ⌃⌥] | Back / forward |
+| ⌃⌥D | Desktop |
+| ⌃⌥G | Go to…: find a window, a named space or a saved view by typing |
+| ⌃⌥M | Minimap: click a window in it to frame it; again to put it away. Held: let go over a window to frame it, ⎋ to give up |
+| ⌃⌥⌘ + arrow | Dock the focused window at that edge, or move it one place |
+| ⌃⌥F / ⌃⌥⇧F | Float or dock the focused window / float all windows |
+| ⌃⌥⌘= / ⌃⌥⌘- | Grow / shrink the focused window |
+| ⌃⌥⌘0 | Balance: equal sizes for everything in view |
+| ⌃⌥R / ⌃⌥⇧R | Rotate the focused window's group (row ↔ column) / mirror it |
+| ⌃⌥⇧1–9 / ⌃⌥1–9 | Save / recall a view |
+| ⌃⌥N | Name the space in view (↩ names it, an empty field removes the name, ⎋ cancels) |
+| ⌃⌥⎋ | Pause / resume Arbor |
+| ⌃⌥Z / ⌃⌥⇧Z | Undo / redo the last change to the arrangement |
+| ⌃⌥⇧/ | The shortcuts in effect, on screen; any key or click puts them away |
+| ⌃⌥, | Settings… |
+
+`arrange` has no key in either map: with a widely used chat app in front, ⌃⌥A archived the open conversation there. Arrange Windows
+is in the menu.
 
 ### Arranging from the keyboard
 
-For people who come from yabai, AeroSpace, Amethyst or i3. Directions are `left`, `right`, `up`, `down`.
+For people who come from yabai, AeroSpace, Amethyst or i3. Directions are `left`, `right`, `up`, `down`. The keys in this table belong
+to the whole map (`arborctl set shortcuts all`), or bind the ones you want singly ([More keys](#more-keys)). The menu has Grow,
+Shrink, Balance Sizes, Rotate Group and Mirror Group either way, under Adjust.
 
-| Command | Default key | What it does |
+| Command | Key in the whole map | What it does |
 |---|---|---|
 | `focus <direction>` | ⌃⌥⇧ + arrow | Focus the nearest window that way, docked or floating. A tile in the way is zoomed into. With no window that way in view, the view moves to the neighbouring space; past the last space, focus crosses to the next display |
 | `focus next`, `focus previous` | | Cycle through the windows in view |
@@ -356,7 +409,7 @@ wrong for the few that accompany whatever you are doing. Pin those: focus the wi
   it the keyboard, and a command that moves the view takes the keyboard along to the window that arrives, also out of
   a pinned window you had clicked in: keys meant for your editor do not end up in a call.
 - ⌃⌥↩ in a pinned window un-frames what is beneath it. A pinned window has no place of its own to frame.
-- Dragging moves it and never docks it. `dock` (⌃⌥⌘ + arrow) and ⌃⌥F dock it, which ends the pin, and the reply
+- Dragging moves it and never docks it. `dock` (⌃⌥← and ⌃⌥→) and ⌃⌥F dock it, which ends the pin, and the reply
   says so. Pinning a docked window floats it first.
 - Arrange Windows leaves it out. Float All Windows, pausing and quitting leave it exactly where it is.
 - Pins are saved with the arrangement. If the window's app restarted, the pin goes to its window with the
@@ -385,7 +438,7 @@ of each row is where the window is now: in view, out of view, tab, tile, floatin
 which display if there are several.
 
 **It finds commands too.** Type what a thing is called in the menu: `bal` ↩ is Arrangement ▸ Balance Sizes, `dock left` Dock Focused Window ▸ Left, `float all` Float All Windows. Every row of
-the menu that runs a command is there, and the commands that have a shortcut but no row (Space to the Left, Window Above). A command's row says `command` at the right, with its shortcut if it has one, or `not now` where
+the menu that runs a command is there, and the commands that have no row there (Space to the Left, Window Above). A command's row says `command` at the right, with its shortcut if it has one, or `not now` where
 the menu would grey it out. It acts on the window you were in. Before you type, the list holds places only, and a piece of a window's name still finds the window first.
 
 A shortcut can go straight to a window: `"ctrl+opt+cmd+f1": "find mail inbox"` in `bindings`. (`find` with text goes to places; it never runs a command.)
@@ -405,7 +458,7 @@ Desktop means a trip there and back. Give each a shortcut in `settings.json` ins
 - The same command again sends it out of view and gives the keyboard back to the window that had it. Turning to another
   app's window sends it away too; `"summonStays": true` keeps it until you summon it away.
 - Once summoned, a window no longer lives on the Desktop: sent away, it stays out of view in every view, Show
-  Everything (⌃⌥Space) included, until you summon it again or switch to it (⌘Tab, its Dock icon), which summons it. ⌃⌥0, the way back
+  Everything (⌃⌥Space) included, until you summon it again or switch to it (⌘Tab, its Dock icon), which summons it. `arborctl home`, the way back
   for a window you cannot find, puts it back on the Desktop as an ordinary window; so do docking it, pinning it and Float All Windows. Pausing
   and quitting bring it into view like every other window, and after a quit it stays there: the next launch has it as an ordinary window.
 - If the app has no window, is hidden, or is not running, it is opened as a click on its Dock icon would, and its window is summoned if it
@@ -516,11 +569,11 @@ arborctl undo                 # "undid arrange": every window, size and saved vi
 arborctl redo                 # "redid arrange"
 ```
 
-⌃⌥Z and ⌃⌥⇧Z step through the last 50 changes to the arrangement of the display you are working on: docking,
+⌃⌥Z and Redo, in the menu, step through the last 50 changes to the arrangement of the display you are working on: docking,
 moving, floating, Arrange Windows, Float All Windows, resizing (one drag of a gap or of a window's edge is one
 step, and so are quick repeats of `resize` on one edge), dropping a dragged window, and windows docked by a rule.
 
-- Moving the view is not a change to the arrangement: that is what ⌃⌥[ and ⌃⌥] are for. Undo leaves the view
+- Moving the view is not a change to the arrangement: that is what Back (⌃⌥[) and Forward are for. Undo leaves the view
   where it is, unless the change itself moved it or the space it shows no longer exists. If nothing of the change
   would show in the view (one window is framed, the change was elsewhere), the view steps out just far
   enough to show it, and ⌃⌥[ goes back.
@@ -535,7 +588,7 @@ step, and so are quick repeats of `resize` on one edge), dropping a dragged wind
 
 ## Settings
 
-**Settings…** in the menu, or ⌃⌥, (Arbor is never the app in front, so ⌘, cannot reach it), opens a window with the everyday
+**Settings…** in the menu (Arbor is never the app in front, so ⌘, cannot reach it) opens a window with the everyday
 settings by section, the rarer ones behind Advanced, a search field, and editors for your shortcuts, your rules and the
 lists of apps (the ones Arbor does not arrange, for one). A value Arbor cannot use is refused under its control, with the reason.
 `arborctl settings-window shortcuts` opens it at a pane.
@@ -556,6 +609,7 @@ version changes one. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete refere
 | `tabsEnabled` | false | Dropping on a window's middle stacks them (no tab strip yet) |
 | `excludedBundleIDs` | [] | Apps Arbor never arranges |
 | `hotkeysEnabled` | true | Global shortcuts |
+| `shortcuts` | "core" | Which shortcuts Arbor binds itself. "core": the nine, each ⌃⌥ and one key. "all": the whole map, some fifty, with ⇧ and ⌘ as well. `bindings` changes single keys on top of either (see [Keyboard](#keyboard)) |
 | `arrangeDesktopWeight` | 0.5 | Width of the Desktop column made by Arrange, in window columns; also by `layout` when the line does not mention the Desktop |
 | `bindings` | {} | Changes to the keyboard shortcuts (see [Keyboard](#keyboard)) |
 | `rules` | [] | What happens to new windows of an app (below) |
@@ -569,7 +623,7 @@ version changes one. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete refere
 | `focusRingColour` | "accent" | "accent" (from System Settings), "#RRGGBB" or "#RRGGBBAA" |
 | `focusRingRadius` | 0 | The radius of the window corners it follows; 0 picks 17 on macOS 26 and 10 before |
 | `newWindowsWhileFramed` | "guest" | A window that opens over a view that does not show the Desktop (a framed window, a group) stays with that view: it goes out of view and comes back with it. "float": it belongs to the Desktop like any floating window |
-| `shareRemovedSpace` | true | A window that leaves (closed, floated, dragged out, minimized, hidden with ⌘H) gives its space to everyone in its group; false gives it to the neighbour before it, and nothing else moves (except where ⌃⌥⌘ + arrow has to take a little from everyone to keep a window usable) |
+| `shareRemovedSpace` | true | A window that leaves (closed, floated, dragged out, minimized, hidden with ⌘H) gives its space to everyone in its group; false gives it to the neighbour before it, and nothing else moves (except where `dock <edge>` has to take a little from everyone to keep a window usable) |
 | `shrinkOutOfView` | false | Windows out of view are also made small, 320 × 200 at most, until they come back (some apps rearrange their contents when they are made small) |
 | `ruleTitleWait` | 2 | Seconds (at most 60) a new window's title is checked against rules with a `title`; 0 checks only its first title |
 | `frameRectangleOnDesktop` | true | While something is docked on a display, ⇧-drag that starts on the bare Desktop, in a gap or on a tile there also frames a rectangle |
@@ -579,7 +633,7 @@ version changes one. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete refere
 | `scrollOnDesktopZooms` | false | Scrolling on the Desktop, in a gap or on a tile zooms without the keys. Every scroll on the Mac then passes through Arbor |
 | `continuousZoom` | false | Not finished: the view will follow the fingers during a pinch, and slide with ⌃⌥ and two fingers sideways. For now a pinch steps as before |
 | `tileRetryMinutes` | 10 | A window that is a tile because it refused the size of its space is asked again, out of view, this many minutes later; 0 never asks (`arborctl relayout` always does) |
-| `stepInToward` | "auto" | Which display a shortcut acts on, and what ⌃⌥↓ steps toward: "auto" (the focused window, or the pointer if it moved last), "pointer" or "focus" (see [Keyboard](#keyboard)) |
+| `stepInToward` | "auto" | Which display a shortcut acts on, and what Step In steps toward: "auto" (the focused window, or the pointer if it moved last), "pointer" or "focus" (see [Keyboard](#keyboard)) |
 | `peek` | true | Holding the Show Everything shortcut peeks: let go to frame what is outlined (see [Keyboard](#keyboard)) |
 | `passThroughApps` | [] | Apps (bundle ids) that keep their own ⌃⌥: no shortcuts but ⌃⌥⎋ and no gestures in them (see [Keyboard](#keyboard)) |
 | `shortcutsFollowLayout` | true | A letter, digit or sign in a shortcut is the key that types it on the keyboard layout in use; false: its place on a US keyboard |
@@ -612,7 +666,7 @@ version changes one. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete refere
 | `tileFade` | 0.2 | Seconds a tile takes to fade in and out, from 0 (at once) to 1 |
 | `newWindows` | "float" | What a new window does when no rule matches it. "dock": it docks beside the focused window (below). The menu's "Dock New Windows" and `toggle-auto-dock` switch it |
 | `autoDockMinimumWidth` / `autoDockMinimumHeight` | 400 / 300 | A window that opens smaller than this is never docked by `dock auto` or by a rule for `*` |
-| `minimapDuration` | 0 | Seconds (at most 10) the minimap shows by itself after the view has moved; 0 is off, ⌃⌥M shows it either way |
+| `minimapDuration` | 0 | Seconds (at most 10) the minimap shows by itself after the view has moved; 0 is off, Show Minimap shows it either way |
 | `pointerGestures` | false | The one switch above the pinch, ⌃⌥ + scroll, both ways to draw a rectangle and `guardDesktopClicks`. false: Arbor installs no event tap, so it holds back no click, scroll or pinch of the Mac, whatever their own settings say. Dragging windows, gaps and tiles works either way |
 
 The file is yours. When a command changes a setting (`set`, `bind`, `rule add`, "Don't Arrange"…), Arbor
@@ -729,7 +783,7 @@ in `bindings` if you want one). While either is on:
 
 **Hold This View** also refuses everything that moves the view ("the view is held"), switches pinch and ⌃⌥-drag off, and lets you
 rearrange only the windows that are in view, and only in ways that bring nothing else in. The menu bar icon turns into a lock.
-The keyboard goes on working among them: ⌃⌥⇧ + arrow goes from window to window and stops at the edge of the view, and `swap`, `grow`,
+The keyboard goes on working among them: `focus <direction>` (⌃⌥⇧ + arrow in the whole map) goes from window to window and stops at the edge of the view, and `swap`, `grow`,
 `shrink`, `balance`, `rotate` and `mirror` do what they always do; a tile is passed over, and nothing crosses to another display.
 
 - **It never widens by itself.** If the only window in view is minimized, hidden or closed (⌘M, ⌘H and ⌘W are pressed without a thought), goes
@@ -737,7 +791,7 @@ The keyboard goes on working among them: ⌃⌥⇧ + arrow goes from window to w
   you release. The menu says "The view is held: nothing is in it".
 - **A slip on a key does not end it in front of everybody.** Pause and Float All Windows bring every window into view. From the menu
   and from `arborctl` they work and end the hold. On the keyboard, **⌃⌥⎋ releases the hold** and moves nothing (press it again to
-  pause), and ⌃⌥⇧F is refused like every other key.
+  pause), and a key bound to Float All Windows is refused like every other key.
 - It ends with **Release** in the menu, ⌃⌥⎋, `release`, Pause or Float All Windows from the menu, quitting, or `hold <minutes>` running out.
 
 **Hold Still** is for calls: choose it from the menu when you share, or run `hold still`. Your own keys, gestures, ⌘Tab, Dock clicks and Go to… work as ever;

@@ -119,10 +119,10 @@ everything_is_back() {
   check "the other app's" eventually is_at "$V1" $other
 }
 
-claim "⌃⌥A arranges every window, ⌃⌥⇧F floats them all: each is back exactly where it was"
+claim "Arrange Windows docks every window, ⌃⌥⇧F floats them all: each is back exactly where it was"
 proves A48
 click_window "$W2"
-check "⌃⌥A reaches Arbor" pressed ctrl+opt+a arrange
+check "arrange succeeds" ctl arrange
 check "all four are docked" eventually count docked 4
 # shellcheck disable=SC2086
 check "the first window has left its place" eventually fails is_at "$W1" $first

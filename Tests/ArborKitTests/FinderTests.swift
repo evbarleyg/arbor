@@ -18,13 +18,16 @@ private let side = DisplaySnapshot(
 @Suite @MainActor struct FinderTests {
   /// Safari | Desktop | Notes over Mail, with Terminal floating on the Desktop. The arrangement comes from a saved
   /// state rather than from commands, so no window has had the keyboard yet.
-  func makeHarness(displays: [DisplaySnapshot] = [main]) -> (Harness, WindowID, WindowID, WindowID, WindowID) {
+  func makeHarness(
+    displays: [DisplaySnapshot] = [main], settings: Settings = Settings()
+  ) -> (Harness, WindowID, WindowID, WindowID, WindowID) {
     let (safari, notes, mail, terminal) = (WindowID(101), WindowID(102), WindowID(103), WindowID(104))
     var tree = LayoutTree()
     tree.dock(safari, beside: tree.root, edge: .left)
     let right = tree.dock(notes, beside: tree.root, edge: .right)
     tree.dock(mail, beside: right, edge: .bottom)
-    let h = Harness(displays: displays, saved: PersistedState(workspaces: [main.id: Workspace(tree: tree)], hints: [:]))
+    let h = Harness(
+      displays: displays, settings: settings, saved: PersistedState(workspaces: [main.id: Workspace(tree: tree)], hints: [:]))
     h.system.open(app: "Safari", title: "Arbor docs", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     h.system.open(app: "Notes", title: "Shopping", pid: 12, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
     h.system.open(app: "Mail", title: "Inbox", pid: 13, frame: CGRect(x: 500, y: 300, width: 600, height: 400))
@@ -382,8 +385,8 @@ private let side = DisplaySnapshot(
 
   /// Pressed as keys: a shortcut can do its work beside `perform`, as ⌃⌥Space does while it waits to see whether it is held.
   @Test func everyShortcutClosesIt() {
-    for binding in KeyBindings.defaults {
-      let (h, safari, _, _, _) = makeHarness()
+    for binding in KeyBindings.all {
+      let (h, safari, _, _, _) = makeHarness(settings: .withEveryKey)
       h.run("zoom \(safari.rawValue)")
       h.run("find")
       h.key(binding.chord.text)
@@ -1465,8 +1468,8 @@ private let side = DisplaySnapshot(
   }
 
   @Test func controlOptionGOpensIt() throws {
-    #expect(KeyBindings.label(for: .find(nil)) == "⌃⌥G")
-    #expect(KeyBindings.defaults.filter { $0.chord == KeyChord([.control, .option], .g) }.map(\.command) == [.find(nil)])
+    #expect(KeyBindings.label(for: .find(nil), in: KeyBindings.all) == "⌃⌥G")
+    #expect(KeyBindings.all.filter { $0.chord == KeyChord([.control, .option], .g) }.map(\.command) == [.find(nil)])
     // It can be moved, and a shortcut can go straight to a window.
     var settings = Settings()
     settings.bindings = ["ctrl+opt+g": nil, "ctrl+opt+p": "find", "ctrl+opt+cmd+f1": "find mail inbox"]

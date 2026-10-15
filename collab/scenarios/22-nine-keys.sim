@@ -1,0 +1,93 @@
+# Story: someone who has read nothing but the nine lines of the panel of shortcuts, on Arbor as it ships. Each key is ⌃⌥ and one key.
+# What Arbor used to take besides is the apps' again, and one setting brings it back.
+# Written by an executor (collab/IDEAS.md, I22; collab/QUESTIONS.md, Q29); for the documenter to review. Window ids start at 101.
+open Safari
+open Mail
+open Notes
+# ⌃⌥← and ⌃⌥→ dock the window in front. Nobody asked for Notes.
+focus 101
+key ctrl+opt+left
+expect docked 101
+focus 102
+key ctrl+opt+right
+expect docked 102
+expect left-of 101 102
+expect floating 103
+# ⌃⌥↩: Mail has the screen to itself; again, and it is back.
+key ctrl+opt+return
+expect fills 102
+key ctrl+opt+return
+expect camera root
+expect left-of 101 102
+# ⌃⌥Space shows everything, ⌃⌥[ goes back to where the view was.
+key ctrl+opt+return
+key ctrl+opt+space
+expect camera root
+key ctrl+opt+[
+expect camera 102
+key ctrl+opt+space
+# ⌃⌥F floats, ⌃⌥Z takes that back.
+key ctrl+opt+f
+expect floating 102
+key ctrl+opt+z
+expect docked 102
+# ⌃⌥G is Go to…, and again puts it away.
+key ctrl+opt+g
+expect ok
+key ctrl+opt+g
+expect ok
+# ⌃⌥⎋ pauses: Arbor lets go of the other eight. The same key brings them back.
+key ctrl+opt+escape
+expect shortcut ctrl+opt+escape on
+expect shortcut ctrl+opt+left off
+expect shortcut ctrl+opt+space off
+key ctrl+opt+escape
+expect shortcut ctrl+opt+left on
+# Held, ⌃⌥Space peeks, and all four arrows are the peek's for as long: they dock nothing.
+focus 102
+key ctrl+opt+return
+keydown ctrl+opt+space
+wait 0.5
+expect shortcut ctrl+opt+left on
+key ctrl+opt+left
+key ctrl+opt+left
+keyup ctrl+opt+space
+expect camera 101
+expect shortcut ctrl+opt+up off
+key ctrl+opt+space
+expect left-of 101 102
+expect count docked 2
+# What the whole map took is the apps' again.
+expect shortcut ctrl+opt+a off
+expect shortcut ctrl+opt+d off
+expect shortcut ctrl+opt+up off
+expect shortcut ctrl+opt+1 off
+expect shortcut ctrl+opt+shift+1 off
+expect shortcut ctrl+opt+cmd+left off
+expect shortcut ctrl+opt+shift+/ off
+expect shortcut ctrl+opt+, off
+# A key of one's own goes on top.
+bind ctrl+opt+d desktop
+expect shortcut ctrl+opt+d on
+unbind ctrl+opt+d
+expect shortcut ctrl+opt+d off
+# On a German keyboard Back is where a US keyboard has [, and is shown as what is printed there. Z is the key that types Z.
+keyboard german
+expect shortcut ctrl+opt+[ key 33
+expect shortcut ctrl+opt+[ shows ⌃⌥Ü
+expect shortcut ctrl+opt+z key 16
+expect shortcut ctrl+opt+z shows ⌃⌥Z
+keyboard us
+# One setting brings the whole map back, less ⌃⌥A: there the arrows look, and ⌘ docks.
+set shortcuts all
+expect shortcut ctrl+opt+cmd+left on
+expect shortcut ctrl+opt+1 on
+expect shortcut ctrl+opt+a off
+focus 101
+key ctrl+opt+return
+key ctrl+opt+right
+expect camera desktop
+key ctrl+opt+space
+expect left-of 101 102
+set shortcuts core
+expect shortcut ctrl+opt+cmd+left off

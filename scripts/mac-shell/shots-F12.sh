@@ -17,6 +17,7 @@
 # list running apps, never clicks Open the File (that would start the person's editor), and the shortcuts it presses
 # (⌃⌥⇧F6, F8 and F9, and once ⌃⌥,) are no default of Arbor's but the last, in case an installed Arbor is running too. A beep is
 # to be expected: Arbor beeps when settings.json breaks.
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
 
 AXFIND="$ARBOR_ROOT/.build/mac-shell/axfind"

@@ -325,7 +325,7 @@ private let above = DisplaySnapshot(
   @Test func theMenuOffersTheOtherDisplayOnlyWhereThereIsOne() {
     let (h, a, _, _, _) = makeHarness()
     h.system.userFocus(a)
-    #expect(h.run("menu").text?.contains("Bottom  ⌃⌥⌘↓\n    -----\n        Move to Next Display\n") == true)
+    #expect(h.run("menu").text?.contains("Bottom\n    -----\n        Move to Next Display\n") == true)
     let (single, w) = tilingScenario(["A"], ["dock $0 left"])
     single.system.userFocus(w[0])
     #expect(single.run("menu").text?.contains("Move to Next Display") == false)

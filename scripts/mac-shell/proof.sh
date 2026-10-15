@@ -16,6 +16,7 @@
 # Session 3  two apps: Arbor focusing the other app's window, and the other app coming forward by itself
 #            while its window is out of view
 # Session 4  a docked window goes full screen and comes back (docs/features/F30-full-screen-windows.md)
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
 source "$(dirname "$0")/lib-gestures.sh"
 

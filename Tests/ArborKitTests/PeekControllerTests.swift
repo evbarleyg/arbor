@@ -280,7 +280,7 @@ private let side = DisplaySnapshot(
   // MARK: The arrow keys
 
   @Test func theArrowKeysMoveTheOutlineInsteadOfTheView() {
-    let desk = Desk()
+    let desk = Desk(settings: .withEveryKey)
     let before = desk.h.workspace
     desk.hold()
     desk.h.key("ctrl+opt+down")
@@ -322,7 +322,7 @@ private let side = DisplaySnapshot(
 
   @Test func anArrowWithinTheFirstMomentDoesWhatItAlwaysDid() {
     // ⌃⌥Space ⌃⌥↓ rolled off the fingers, the second key down before the first is up.
-    let desk = Desk()
+    let desk = Desk(settings: .withEveryKey)
     let before = desk.h.workspace
     desk.h.keyDown(space)
     desk.h.scheduler.advance(by: 0.1)
@@ -624,8 +624,8 @@ private let side = DisplaySnapshot(
 
   // MARK: Acceptance 4: temporary shortcuts
 
-  @Test func withTheDefaultShortcutsNoneAreNeeded() {
-    let desk = Desk()
+  @Test func withTheWholeMapNoneAreNeeded() {
+    let desk = Desk(settings: .withEveryKey)
     desk.hold()
     #expect(desk.h.controller.temporaryShortcuts.isEmpty, "⌃⌥ + arrows and ⌃⌥⎋ are registered anyway")
     #expect(desk.asked.calls.isEmpty)
@@ -640,7 +640,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func chordsBoundToNothingAreRegisteredForAsLongAsTheHoldLasts() {
-    let desk = Desk(settings: sparse)
+    let desk = Desk(settings: sparse.withEveryKey)
     #expect(desk.h.key("ctrl+opt+left") == nil, "not Arbor's")
     desk.h.keyDown(space)
     desk.h.scheduler.advance(by: 0.2)
@@ -674,7 +674,7 @@ private let side = DisplaySnapshot(
           $0.h.scheduler.advance(by: 0.1)
         }
       ),
-      ("another shortcut", { $0.h.key("ctrl+opt+d") }),
+      ("another shortcut", { $0.h.key("ctrl+opt+return") }),
       ("a command from a script", { $0.h.run("desktop", from: .script) }),
       ("a pinch", { $0.h.run("in", from: .gesture) }),
       ("pausing", { $0.h.run("pause", from: .menu) }),
@@ -899,7 +899,7 @@ private let side = DisplaySnapshot(
   // MARK: Things that get in the way
 
   @Test func anotherShortcutDuringTheHoldRunsFromEverythingAndTheReleaseDoesNothing() {
-    let desk = Desk()
+    let desk = Desk(settings: .withEveryKey)
     let before = desk.h.workspace
     desk.hold()
     desk.point(at: desk.b)
@@ -914,7 +914,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func arrangingDuringTheHoldKeepsEverythingInView() {
-    let desk = Desk()
+    let desk = Desk(settings: .withEveryKey)
     desk.hold()
     #expect(desk.h.key("ctrl+opt+cmd+right")?.ok == true)
     #expect(desk.h.workspace.camera == desk.root)
@@ -994,7 +994,7 @@ private let side = DisplaySnapshot(
     desk.point(at: desk.b)
     #expect(!desk.h.controller.isPeeking)
     #expect(desk.outline == nil)
-    #expect(desk.h.key("ctrl+opt+down")?.ok == true, "the arrows keep their meaning")
+    #expect(desk.h.key("ctrl+opt+right")?.ok == true, "the arrows keep their meaning")
     desk.h.run("show-all")
     desk.h.keyUp(space)
     #expect(desk.h.workspace.camera == desk.root)
@@ -1014,14 +1014,14 @@ private let side = DisplaySnapshot(
       ], "the arrows arrive with the modifiers that are held")
     desk.h.key("ctrl+cmd+down")
     #expect(desk.outline == desk.place(desk.c))
-    #expect(desk.h.key("ctrl+opt+down")?.ok == true, "other modifiers: another shortcut, which gets in the way")
+    #expect(desk.h.key("ctrl+opt+right")?.ok == true, "other modifiers: another shortcut, which gets in the way")
     #expect(!desk.h.controller.isPeeking)
     desk.h.keyUp("ctrl+cmd+e")
     desk.expectNoTrace()
   }
 
   @Test func onlyShowEverythingPeeks() {
-    let desk = Desk()
+    let desk = Desk(settings: .withEveryKey)
     #expect(desk.h.keyDown("ctrl+opt+0")?.ok == true)
     desk.h.scheduler.advance(by: 1)
     #expect(!desk.h.controller.isPeeking)

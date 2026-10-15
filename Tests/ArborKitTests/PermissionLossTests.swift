@@ -587,15 +587,16 @@ import Testing
   }
 
   /// In an app that keeps its own ⌃⌥ by the person's word, only the keys of someone who misses a window.
-  @Test func inAnAppThatKeepsItsOwnKeysOnlyTheWaysHomeAreHeld() {
-    let (h, _, _, _, _) = makeHarness()
+  /// Of the nine that ship two are such keys; the whole map has four.
+  @Test(arguments: [false, true]) func inAnAppThatKeepsItsOwnKeysOnlyTheWaysHomeAreHeld(everyKey: Bool) {
+    let (h, _, _, _, _) = makeHarness(settings: everyKey ? Settings.withGestures.withEveryKey : .withGestures)
     h.run("pass-through com.example.editor on")
     h.revokeAccessibility()
     h.scheduler.advance(by: 3)
     h.controller.applicationActivated(FrontmostApp(bundleID: "com.example.editor", name: "Editor"))
-    #expect(
-      h.controller.activeBindings.map(\.command.text).sorted() == ["float-all", "home", "show-all", "toggle-pause"])
-    #expect(h.run("bindings").message.hasSuffix(", all but 4 off in Editor"))
+    let held = everyKey ? ["float-all", "home", "show-all", "toggle-pause"] : ["show-all", "toggle-pause"]
+    #expect(h.controller.activeBindings.map(\.command.text).sorted() == held)
+    #expect(h.run("bindings").message.hasSuffix(", all but \(held.count) off in Editor"))
   }
 
   @Test func everythingIsHeldAgainAfterwards() {
@@ -604,7 +605,7 @@ import Testing
     h.scheduler.advance(by: 3)
     h.grantAccessibility()
     h.scheduler.advance(by: 1)
-    #expect(h.controller.activeBindings == KeyBindings.defaults)
+    #expect(h.controller.activeBindings == KeyBindings.core)
     #expect(h.controller.inputSettings == h.controller.settings)
   }
 

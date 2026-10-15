@@ -12,6 +12,7 @@
 # On somebody's own Mac it touches only its test windows, the pointer and the keyboard focus. There the harness leaves out
 # the grey wallpaper, the virtual display and every picture of the whole screen (ARBOR_SHOTS=1 takes those), and with the
 # pictures the measuring in parts 1 and 2; everything that is a check still runs. Quit your own Arbor first: both would take ⌃⌥.
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
 
 arbor_build
@@ -260,7 +261,7 @@ else
 fi
 
 step "3d. held: keys and drags that would move the view"
-for chord in ctrl+opt+space ctrl+opt+up ctrl+opt+right ctrl+opt+0 ctrl+opt+d ctrl+opt+a; do
+for chord in ctrl+opt+space ctrl+opt+up ctrl+opt+right ctrl+opt+0 ctrl+opt+d; do
   # A key that was declined (⌃⌥Space always is where several input sources are on) proves nothing by changing nothing.
   key "$chord" || { check "$chord could be pressed" false; continue; }
   sleep 0.3

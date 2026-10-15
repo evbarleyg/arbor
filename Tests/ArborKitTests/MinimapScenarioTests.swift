@@ -27,7 +27,7 @@ private let side = DisplaySnapshot(
 
   func map(_ h: Harness) -> MinimapModel? { h.overlays.minimaps[h.display] }
   func timers(_ h: Harness) -> [String] { h.scheduler.pendingKeys.filter { $0.hasPrefix("minimap") } }
-  /// As it ships: only ⌃⌥M brings it up.
+  /// As it ships: only asking for it brings it up.
   var off: Settings { Settings() }
   var passing: Settings {
     var settings = Settings()
@@ -563,7 +563,7 @@ private let side = DisplaySnapshot(
     empty.start()
     #expect(try !row(empty).isEnabled && !empty.run("minimap").ok, "nothing is docked")
 
-    let (h, a, b, _) = makeHarness()
+    let (h, a, b, _) = makeHarness(settings: passing.withEveryKey)
     #expect(try row(h).isEnabled)
     #expect(try row(h).shortcut?.label == "⌃⌥M")
     h.run("minimap")
@@ -783,7 +783,7 @@ private let side = DisplaySnapshot(
   // MARK: Holding the keys
 
   @Test func aTapBringsItUpForItsFiveSeconds() throws {
-    let (h, _, _, _) = makeHarness()
+    let (h, _, _, _) = makeHarness(settings: passing.withEveryKey)
     #expect(h.key("ctrl+opt+m")?.ok == true)
     #expect(try #require(map(h)).takesClicks)
     h.scheduler.advance(by: 4.9)
@@ -797,7 +797,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func heldItStaysForAsLongAsTheKeysAreDown() {
-    let (h, a, _, _) = makeHarness()
+    let (h, a, _, _) = makeHarness(settings: passing.withEveryKey)
     h.run("zoom \(a.rawValue)")
     h.keyDown("ctrl+opt+m")
     h.scheduler.advance(by: 12)
@@ -809,7 +809,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func lettingGoLandsOnWhatThePointerIsOver() throws {
-    let (h, a, b, _) = makeHarness()
+    let (h, a, b, _) = makeHarness(settings: passing.withEveryKey)
     h.run("zoom \(a.rawValue)")
     h.keyDown("ctrl+opt+m")
     let model = try #require(map(h))
@@ -828,7 +828,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func letGoBeforeItCountsAsHeldThePointerDecidesNothing() throws {
-    let (h, a, _, _) = makeHarness()
+    let (h, a, _, _) = makeHarness(settings: passing.withEveryKey)
     h.run("zoom \(a.rawValue)")
     h.keyDown("ctrl+opt+m")
     let model = try #require(map(h))
@@ -840,7 +840,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func lettingGoOverWhereTheViewAlreadyIsPutsItAway() throws {
-    let (h, a, _, _) = makeHarness()
+    let (h, a, _, _) = makeHarness(settings: passing.withEveryKey)
     h.run("zoom \(a.rawValue)")
     h.keyDown("ctrl+opt+m")
     let model = try #require(map(h))
@@ -852,7 +852,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aReleaseNobodyReportsIsFound() throws {
-    let (h, a, b, _) = makeHarness()
+    let (h, a, b, _) = makeHarness(settings: passing.withEveryKey)
     h.run("zoom \(a.rawValue)")
     h.keyDown("ctrl+opt+m")
     let model = try #require(map(h))
@@ -865,7 +865,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func autoRepeatDoesNotToggleIt() {
-    let (h, _, _, _) = makeHarness()
+    let (h, _, _, _) = makeHarness(settings: passing.withEveryKey)
     h.keyDown("ctrl+opt+m")
     for _ in 0..<5 {
       h.scheduler.advance(by: 0.1)
@@ -876,7 +876,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aClickWhileHoldingDecidesAndTheReleaseDoesNothingMore() throws {
-    let (h, a, b, _) = makeHarness()
+    let (h, a, b, _) = makeHarness(settings: passing.withEveryKey)
     h.run("zoom \(a.rawValue)")
     h.keyDown("ctrl+opt+m")
     let model = try #require(map(h))
@@ -895,7 +895,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func afterAClickWhileHoldingTheMapGoesInItsOwnTimeThoughTheKeysAreStillDown() throws {
-    let (h, a, b, _) = makeHarness()
+    let (h, a, b, _) = makeHarness(settings: passing.withEveryKey)
     h.run("zoom \(a.rawValue)")
     h.keyDown("ctrl+opt+m")
     let model = try #require(map(h))
@@ -910,7 +910,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aHoldOnOneDisplayLeavesTheOthersMinimapToItsOwnTime() {
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: passing)
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: passing.withEveryKey)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 1600, y: 100, width: 600, height: 400))
     h.start()
@@ -932,7 +932,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func theKeyThatPutsAwayWhatACommandBroughtUpHoldsNothing() {
-    let (h, _, _, _) = makeHarness()
+    let (h, _, _, _) = makeHarness(settings: passing.withEveryKey)
     h.run("minimap")
     #expect(h.keyDown("ctrl+opt+m")?.message == "put the minimap away")
     #expect(map(h) == nil)
@@ -955,7 +955,7 @@ private let side = DisplaySnapshot(
     ]
     for (name, ending) in endings {
       for reported in [true, false] {
-        let (h, _, _, c) = makeHarness()
+        let (h, _, _, c) = makeHarness(settings: passing.withEveryKey)
         h.keyDown("ctrl+opt+m")
         h.scheduler.advance(by: 0.5)
         ending(h)
@@ -971,7 +971,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func withPeekingOffHeldIsTapped() throws {
-    var settings = passing
+    var settings = passing.withEveryKey
     settings.peek = false
     let (h, a, _, _) = makeHarness(settings: settings)
     h.run("zoom \(a.rawValue)")
@@ -997,7 +997,7 @@ private let side = DisplaySnapshot(
   /// wants out of a minimap. In a peek the same gesture gives up.
   @Test func escapeWhileHoldingPutsItAwayAndPausesNothing() {
     for held in [0.1, 0.5, 8] {
-      let (h, a, b, _) = makeHarness()
+      let (h, a, b, _) = makeHarness(settings: passing.withEveryKey)
       h.run("zoom \(a.rawValue)")
       h.keyDown("ctrl+opt+m")
       h.scheduler.advance(by: held)
@@ -1012,7 +1012,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func escapeOnceItHasGoneAndWhenNothingIsHeldPausesAsEver() {
-    let (h, _, _, _) = makeHarness()
+    let (h, _, _, _) = makeHarness(settings: passing.withEveryKey)
     h.keyDown("ctrl+opt+m")
     h.scheduler.advance(by: 0.5)
     h.key("ctrl+opt+escape")
@@ -1105,7 +1105,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func walkingWhileHolding() throws {
-    let (h, a, b, _) = makeHarness()
+    let (h, a, b, _) = makeHarness(settings: passing.withEveryKey)
     h.run("zoom \(a.rawValue)")
     h.keyDown("ctrl+opt+m")
     h.scheduler.advance(by: 0.5)
@@ -1119,7 +1119,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func theDisplayGoingAwayEndsTheHold() {
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: passing)
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: passing.withEveryKey)
     let b = h.system.open(app: "Notes", frame: CGRect(x: 1600, y: 100, width: 600, height: 400))
     h.start()
     h.run("dock \(b.rawValue) left")
@@ -1178,7 +1178,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aMinimapThatWasAskedForStaysThroughAPeek() throws {
-    let (h, a, _, _) = makeHarness()
+    let (h, a, _, _) = makeHarness(settings: passing.withEveryKey)
     h.run("zoom \(a.rawValue)")
     h.key("ctrl+opt+m")
     h.keyDown("ctrl+opt+space")
@@ -1350,7 +1350,7 @@ private let side = DisplaySnapshot(
 
   /// A click in the minimap and a held shortcut are things a person did: a trace has to carry them, or its replay ends somewhere else.
   @Test func aRecordedSessionWithTheMinimapReplaysToTheSameEnd() throws {
-    let (h, a, b, _) = makeHarness()
+    let (h, a, b, _) = makeHarness(settings: passing.withEveryKey)
     h.run("zoom \(a.rawValue)")
     h.scheduler.advance(by: 2)
     h.run("trace on minimap")
@@ -1391,8 +1391,8 @@ private let side = DisplaySnapshot(
     #expect(Command.minimap.isAllowedFromURL, "it only looks")
     #expect(!Command.minimap.endsPause)
     #expect(throws: Command.ParseError.self) { try Command.parse("minimap now") }
-    #expect(KeyBindings.label(for: .minimap) == "⌃⌥M")
-    #expect(KeyBindings.defaults.filter { $0.label == "⌃⌥M" }.count == 1, "nothing else has the key")
+    #expect(KeyBindings.label(for: .minimap, in: KeyBindings.all) == "⌃⌥M")
+    #expect(KeyBindings.all.filter { $0.label == "⌃⌥M" }.count == 1, "nothing else has the key")
     #expect(Command.helpText.contains("\n  minimap "))
   }
 }

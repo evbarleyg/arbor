@@ -60,8 +60,18 @@ extension Controller {
       }
       return true
     }
-    guard phase == .pressed, session.peek.takesKeys, binding.chord.modifiers == session.chord.modifiers else {
-      return false
+    guard phase == .pressed, binding.chord.modifiers == session.chord.modifiers else { return false }
+    if !session.peek.takesKeys {
+      // Before the hold counts and after it is decided the keys mean what they are bound to. Harmless where an arrow looks, as in the whole
+      // map. Of the nine, ⌃⌥← and ⌃⌥→ dock: with everything showing and the key still down that would move a window of somebody
+      // who believes they are peeking. So an arrow that arranges is the peek's for as long as the key is down: early, it begins the
+      // hold; late, it does nothing.
+      guard [.left, .right, .up, .down].contains(binding.chord.key), binding.command.group == .arrange else { return false }
+      guard session.peek.phase == .pressed else { return true }
+      updatePeek {
+        $0.heldForAnArrow()
+        return nil
+      }
     }
     switch binding.chord.key {
     case .left: movePeekOutline(.left)

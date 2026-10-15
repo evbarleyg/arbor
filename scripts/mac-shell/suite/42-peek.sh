@@ -1,6 +1,7 @@
 #!/bin/bash
 # Peek: hold ⌃⌥Space to look, let go to land. The keys go down with one line and come up with a later one.
 # A51 peek: hold to look, let go to land.
+ARBOR_SWITCHES=shipped  # it is about the keys that ship
 source "$(dirname "$0")/../lib.sh"
 arbor_build
 

@@ -312,7 +312,7 @@ import Testing
   // MARK: What the app registers
 
   @Test func onlyTheShortcutsThatEndThePauseStayRegistered() {
-    let kept = KeyBindings.whilePaused(KeyBindings.defaults)
+    let kept = KeyBindings.whilePaused(KeyBindings.all)
     #expect(kept.map(\.chord.text) == ["ctrl+opt+escape"])
     #expect(kept.allSatisfy { $0.command == .togglePause })
     var settings = Settings()

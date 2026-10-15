@@ -167,7 +167,7 @@ private func refusal(_ text: String) -> String? {
         == "`hyper+x` is not a shortcut: unknown modifier `hyper`; use ctrl, opt, cmd or shift")
     #expect(refusal("unbind ctrl+") == "`ctrl+` is not a shortcut: missing key after the last +")
     #expect(refusal("bind ctrl+opt+h") == "usage: bind <shortcut> <command>, e.g. bind ctrl+opt+h dock left")
-    #expect(refusal("unbind") == "usage: unbind <shortcut>, e.g. unbind ctrl+opt+d")
+    #expect(refusal("unbind") == "usage: unbind <shortcut>, e.g. unbind ctrl+opt+g")
     #expect(refusal("unbind ctrl+opt+d now") != nil)
   }
 

@@ -20,6 +20,7 @@
 # 8. The moves again, light and dark, with everything on: "Trackpad and mouse gestures", and macOS's own tiling off. The laboratory's own
 #    column: how good a move is once it ships. No gate reads it.
 ARBOR_TIME_LIMIT=1120
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib-film.sh"
 needs_throwaway_mac "film the whole display, and change Reduce Motion, the appearance, the wallpaper and the display's size"
 

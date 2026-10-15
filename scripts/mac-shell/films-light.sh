@@ -93,13 +93,13 @@ cast_start 4 $FACE
 sleep 3
 spread
 press "$W4"
-act light-dock-first "docks a floating window at the left (⌃⌥⌘←): the first dock" ctrl+opt+cmd+left
+act light-dock-first "docks a floating window at the left (⌃⌥←): the first dock" ctrl+opt+left
 press "$W3"
-act light-dock-second "docks a second window at the right (⌃⌥⌘→)" ctrl+opt+cmd+right
+act light-dock-second "docks a second window at the right (⌃⌥→)" ctrl+opt+right
 press "$W2"
-act light-dock-third "docks a third window at the right (⌃⌥⌘→)" ctrl+opt+cmd+right
+act light-dock-third "docks a third window at the right (⌃⌥→)" ctrl+opt+right
 press "$W1"
-act light-dock-fourth "docks a fourth window at the left (⌃⌥⌘←)" ctrl+opt+cmd+left
+act light-dock-fourth "docks a fourth window at the left (⌃⌥←)" ctrl+opt+left
 summary
 
 arrange

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Every keyboard shortcut, pressed for real, with the shortcuts switched on.
+# Every keyboard shortcut of the whole map, pressed for real, with the shortcuts switched on. The nine that ship: 41-nine-keys.sh.
 # T30 show everything, T31 step out and in, T32 frame one window, T33 neighbouring space, T34 back and forward,
 # T35 saved views, T52 windows outside the view, T16 arrange, A01 keyboard docking and moving.
 source "$(dirname "$0")/../lib.sh"
@@ -137,11 +137,11 @@ check "⌃⌥F again" pressed ctrl+opt+f toggle-float
 check "the window is docked" eventually is docked "$W2"
 settled
 
-claim "⌃⌥A arranges every window"
+claim "Arrange Windows docks every window"
 proves T16
 ctl float-all
 check "nothing is docked" eventually count docked 0
-check "⌃⌥A reaches Arbor" pressed ctrl+opt+a arrange
+check "arrange succeeds" ctl arrange
 check "all three are docked" eventually count docked 3
 check "nothing overlaps" eventually no_overlaps
 check "the first window is in view" eventually in_view "$W1"
@@ -151,6 +151,12 @@ claim "the app with the keyboard sees none of Arbor's shortcuts"
 check "the first window got no key press" test "$(events_of "$W1" key)" = 0
 check "the second window got no key press" test "$(events_of "$W2" key)" = 0
 check "the third window got no key press" test "$(events_of "$W3" key)" = 0
+
+claim "⌃⌥A is the app's, in the whole map too"
+click_window "$W1"
+key_to "$W1" ctrl+opt+a
+check "the app with the keyboard gets the key" eventually received "$W1" key -gt 0
+check "Arbor arranges nothing" stays fails ran arrange
 
 # Whatever features add to the defaults is pressed too. Only that Arbor runs the command is checked: what each
 # does has its own step, here or in its feature's section.

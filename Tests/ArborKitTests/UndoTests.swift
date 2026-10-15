@@ -360,8 +360,8 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
   }
 
   @Test func theDefaultKeysAreControlOptionZ() {
-    #expect(KeyBindings.label(for: .undo) == "⌃⌥Z")
-    #expect(KeyBindings.label(for: .redo) == "⌃⌥⇧Z")
+    #expect(KeyBindings.label(for: .undo, in: KeyBindings.all) == "⌃⌥Z")
+    #expect(KeyBindings.label(for: .redo, in: KeyBindings.all) == "⌃⌥⇧Z")
   }
 
   @Test func stateSaysWhatUndoAndRedoWouldDo() throws {

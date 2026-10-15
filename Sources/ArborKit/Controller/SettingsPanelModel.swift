@@ -574,18 +574,22 @@ public final class SettingsPanelModel {
   /// Where a refusal about a line is shown: on the line, or on the pane if it has none yet.
   private func place(of row: ShortcutRow) -> String { row.isNew ? Pane.shortcuts.id : row.id }
 
-  /// Every default shortcut in its usual order, each with what runs its command now, then the user's own
-  /// by command. A default whose command was moved to other keys stays one line.
+  /// The nine or all of them: the setting `shortcuts`, which the page of shortcuts shows above its lines as well, since it decides them.
+  public var shortcutsMapRow: Row? { (try? SettingsSchema.entry(named: "shortcuts")).flatMap(row(for:)) }
+
+  /// Every shortcut of Arbor's own map in use (`KeyBindings.standard`) in its usual order, each with what runs its command now, then the
+  /// user's own by command. One whose command was moved to other keys stays one line.
   public var shortcutRows: [ShortcutRow] {
     var free = controller.effectiveBindings.bindings
     func take(where matches: (KeyBinding) -> Bool) -> KeyBinding? {
       free.firstIndex(where: matches).map { free.remove(at: $0) }
     }
     // The untouched ones first, so that none of them is taken for the new keys of another line.
-    let untouched = KeyBindings.defaults.map { standard in
+    let own = KeyBindings.standard(settings)
+    let untouched = own.map { standard in
       take { $0.chord == standard.chord && $0.command == standard.command }
     }
-    var rows = zip(KeyBindings.defaults, untouched).map { standard, same in
+    var rows = zip(own, untouched).map { standard, same in
       let now = same ?? take { $0.command == standard.command }
       return ShortcutRow(command: standard.command, chord: now?.chord, standard: standard.chord, label: now?.label)
     }

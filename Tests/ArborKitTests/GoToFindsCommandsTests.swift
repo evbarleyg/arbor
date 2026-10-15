@@ -97,7 +97,7 @@ import Testing
     let inTheMenu = Set(menuRows(h).compactMap(\.item.command?.text))
     h.run("find")
     var besides = 0
-    for command in KeyBindings.defaults.map(\.command) where !isAPlaceOrThePalette(command) {
+    for command in KeyBindings.all.map(\.command) where !isAPlaceOrThePalette(command) {
       let listed = try #require(h.overlays.finder?.model.commands.filter { $0.destination == .command(command.text) })
       #expect(listed.count >= 1, "\(command.text)")
       guard !inTheMenu.contains(command.text) else { continue }

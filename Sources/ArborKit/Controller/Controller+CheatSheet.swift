@@ -21,6 +21,7 @@ extension Controller {
       shortcuts: shortcuts.map { ($0.chord, $0.command) }, pointer: CheatSheetModel.pointerRows(settings: inputSettings),
       layout: layoutInEffect)
     model.area = display.visibleFrame
+    if !settings.bindsTheWholeMap { model.footer = "The menu has more, and Settings… more keys · " + model.footer }
     var message = "showing \(Self.count(shortcuts.count, "shortcut"))"
     if isPassingThrough {
       let held = activeBindings.map(\.label)

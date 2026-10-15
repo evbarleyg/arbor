@@ -31,6 +31,7 @@
 #
 # Only on GitHub's Macs: what it writes down is compared with a rehearsal of their display, and it takes the pointer and the keyboard for minutes.
 ARBOR_TIME_LIMIT=1080
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
 needs_throwaway_mac "take the pointer and the keyboard for ten minutes, to write down what means something only on the display a rehearsal has"
 

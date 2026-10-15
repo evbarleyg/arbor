@@ -129,7 +129,7 @@ check "settings.json was not applied again" [ "$(logged "settings.json read and 
 
 step "shortcuts and rules by command"
 ctl bind ctrl+opt+h dock left
-ctl unbind ctrl+opt+d
+ctl unbind ctrl+opt+g
 ctl rule add com.apple.Terminal dock right title Build log
 ctl get bindings
 ctl get rules

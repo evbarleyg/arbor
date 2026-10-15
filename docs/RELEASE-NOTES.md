@@ -15,6 +15,13 @@ Last brought up to date: 2026-10-15, the section "Build 1". The rest is as it st
 
 Nothing here has been used by a person for a working day yet. All real-Mac evidence is from test windows on macOS 26.6; none is from Safari, Slack, Terminal or Zoom.
 
+## Build 2, in the making: less by default
+
+What the first person to work with Arbor said of build 1: it does too much by itself (`collab/QUESTIONS.md`, Q29). A line stands here once its code is on the trunk.
+
+- **Nine keys instead of fifty.** Each is ⌃⌥ and one key: ⌃⌥← and ⌃⌥→ dock the window in front, ⌃⌥↩ frames it and goes back, ⌃⌥Space shows everything, ⌃⌥[ goes back, ⌃⌥Z undoes, ⌃⌥F floats, ⌃⌥G is Go to…, ⌃⌥⎋ pauses. Every other key is the apps' again, and the menu has the rest. **Coming from build 1:** the nine are what you get at the next start, and ⌃⌥← and ⌃⌥→ now dock where they used to look. `arborctl set shortcuts all` (Settings… → Shortcuts → All of them) brings the whole map back as it was; shortcuts of your own in `bindings` stay as they are. ◐
+- **⌃⌥A is never bound again**, in either map. With a widely used chat app in front it archived the open conversation there. Arrange Windows is in the menu. ◐
+
 ## Build 1, cut on 2026-10-15 at about 03:00 UTC
 
 For whoever tries it first, in plain words. It is a build to try, not a release: `docs/VIABLE.md` says what a release takes, and this build has not been put to that gate.

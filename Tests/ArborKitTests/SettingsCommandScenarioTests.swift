@@ -217,9 +217,9 @@ private final class Fixture {
     f.h.controller.onCloseSettingsWindow = { closed += 1 }
     #expect(f.h.run("settings-window close").message == "the settings window is closed")
     #expect(closed == 1 && f.saved.isEmpty)
-    // ⌃⌥, by default, since ⌘, cannot reach an app that is never the active one.
+    // ⌃⌥, in the whole map, since ⌘, cannot reach an app that is never the active one.
     let comma = try KeyChord(text: "⌃⌥,")
-    #expect(KeyBindings.defaults.first { $0.chord == comma }?.command == .settings(.showWindow()))
+    #expect(KeyBindings.all.first { $0.chord == comma }?.command == .settings(.showWindow()))
   }
 
   @Test func theWindowOpensBeforeArborMayArrangeWindowsAndDuringAPause() throws {
@@ -234,7 +234,7 @@ private final class Fixture {
     #expect(paused.h.run("pause").ok)
     #expect(paused.h.run("settings-window rules").ok && opened == 2)
     // From the menu, that is: a pause gives every ⌃⌥ shortcut back but the ones that end it.
-    #expect(!KeyBindings.whilePaused(KeyBindings.defaults).contains { $0.command == .settings(.showWindow()) })
+    #expect(!KeyBindings.whilePaused(KeyBindings.all).contains { $0.command == .settings(.showWindow()) })
   }
 
   @Test func noURLCanChangeASettingUnlessTheUserSaidSo() {
@@ -476,12 +476,12 @@ private final class Fixture {
 
   @Test func unbindRemovesADefaultWithNull() throws {
     let f = Fixture()
-    #expect(f.h.run("unbind ctrl+opt+d").message == "ctrl+opt+d no longer runs `desktop`; no shortcut does now")
-    #expect(f.settings.bindings == ["ctrl+opt+d": nil])
-    #expect(try command("ctrl+opt+d", f) == nil)
-    #expect(f.h.run("unbind ctrl+opt+d").message == "ctrl+opt+d already runs nothing")
+    #expect(f.h.run("unbind ctrl+opt+z").message == "ctrl+opt+z no longer runs `undo`; no shortcut does now")
+    #expect(f.settings.bindings == ["ctrl+opt+z": nil])
+    #expect(try command("ctrl+opt+z", f) == nil)
+    #expect(f.h.run("unbind ctrl+opt+z").message == "ctrl+opt+z already runs nothing")
     // Binding its default command again is how it comes back.
-    #expect(f.h.run("bind ctrl+opt+d desktop").ok)
+    #expect(f.h.run("bind ctrl+opt+z undo").ok)
     #expect(f.settings.bindings.isEmpty)
   }
 
@@ -494,9 +494,9 @@ private final class Fixture {
 
   @Test func unbindSilencesAReboundDefaultAltogether() throws {
     let f = Fixture()
-    f.h.run("bind ctrl+opt+space arrange")
+    f.h.run("bind ctrl+opt+space undo")
     #expect(
-      f.h.run("unbind ctrl+opt+space").message == "ctrl+opt+space no longer runs `arrange`; ctrl+opt+a still does")
+      f.h.run("unbind ctrl+opt+space").message == "ctrl+opt+space no longer runs `undo`; ctrl+opt+z still does")
     #expect(try command("ctrl+opt+space", f) == nil)
   }
 
@@ -523,11 +523,11 @@ private final class Fixture {
   }
 
   @Test func resetBindingsBringsEveryDefaultBack() {
-    let f = Fixture()
+    let f = Fixture(settings: .withEveryKey)
     f.h.run("bind ctrl+opt+space arrange")
     f.h.run("unbind ctrl+opt+d")
     #expect(f.h.run("reset bindings").ok)
-    #expect(KeyBindings.effective(settings: f.settings).bindings == KeyBindings.defaults)
+    #expect(KeyBindings.effective(settings: f.settings).bindings == KeyBindings.all)
   }
 }
 

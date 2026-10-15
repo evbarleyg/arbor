@@ -133,6 +133,12 @@ public struct Peek: Equatable, Sendable {
     return end(outline == origin ? .goBack : .land(outline))
   }
 
+  /// An arrow key came while it was too early to tell a tap from a hold, and left to itself it would rearrange windows. Whoever presses
+  /// an arrow with the key down is holding it: the hold begins now.
+  public mutating func heldForAnArrow() {
+    if phase == .pressed { phase = .holding }
+  }
+
   /// An arrow key, while `takesKeys`. `space` is where it leads from the outline (`Peek.step`), nil if nowhere.
   public mutating func arrow(to space: NodeID?, pointer: CGPoint) {
     guard phase == .holding else { return }

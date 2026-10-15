@@ -50,10 +50,15 @@ would fail, and whatever would do something else than its title says.
 
 `▸` opens a submenu, `✓` is a tick when on. "Shipped" means on `swarm/trunk` when this was written.
 
+**The Shortcut column is the whole map's** (`shortcuts` set to `all`; `docs/KEYBOARD.md`). As Arbor ships nine keys are bound: ⌃⌥Space, ⌃⌥↩, ⌃⌥[, ⌃⌥G,
+⌃⌥F, ⌃⌥Z and ⌃⌥⎋ stand at the rows they have below, and ⌃⌥← and ⌃⌥→ at `Left` and `Right` of Dock Focused Window. **A row whose command has no key
+shows none.** The menu is then the way to everything else, so a command that loses its key must have a row. Three kinds have none, being nothing without
+a key: `neighbor`, `focus <direction>` and `home` (`NineKeysTests.whatHasNoKeyIsInTheMenu` keeps the list).
+
 | # | Row | Shortcut | Command | From | Notes |
 |---|---|---|---|---|---|
 | | *state lines, if any, and a separator* | | | | see [States](#states) |
-| 1 | Show Everything | ⌃⌥Space | `show-all` | shipped | ✓ when that is the view. With several displays, holding ⌥ turns it into **Show Everything on All Displays** (⌃⌥0, `home`) |
+| 1 | Show Everything | ⌃⌥Space | `show-all` | shipped | ✓ when that is the view. |
 | 2 | Show the Desktop | ⌃⌥D | `desktop` | shipped | ✓ when that is the view. The same title in the shortcuts panel. The way to see everything that floats |
 | 3 | Frame Focused Window | ⌃⌥↩ | `zoom` | shipped | ✓ when it is framed; choosing it again un-frames, as the key does |
 | 4 | Go to… | ⌃⌥G | `find` | F27 | |
@@ -66,7 +71,7 @@ would fail, and whatever would do something else than its title says.
 | | *separator* | | | | |
 | 10 | Undo Dock | ⌃⌥Z | `undo` | shipped | names the step it takes back; "Undo" greyed out when there is none |
 | 11 | Redo Dock | ⌃⌥⇧Z | `redo` | shipped | |
-| 12 | Arrange Windows | ⌃⌥A | `arrange` | shipped | |
+| 12 | Arrange Windows | | `arrange` | shipped | no key in either map: ⌃⌥A is never bound again (`docs/KEYBOARD.md`) |
 | 13 | Float All Windows | ⌃⌥⇧F | `float-all` | shipped | |
 | 14 | Arrangement ▸ | | | | |
 | | *separator* | | | | |

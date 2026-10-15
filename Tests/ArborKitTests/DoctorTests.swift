@@ -39,7 +39,7 @@ import Testing
         ✔ VoiceOver: off
         ✔ Input sources: 1
         ✔ Gestures: pinch, scroll, rectangle
-        ✔ Shortcuts: \(KeyBindings.defaults.count) registered
+        ✔ Shortcuts: 9 registered
         ✔ Keyboard layout: US
         ✔ settings.json: no problems
         ✔ Displays: 1 (1440×900 main)
@@ -82,6 +82,11 @@ import Testing
     h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
     #expect(
       check(h, "Keyboard layout")
+        == .init(mark: .ok, title: "Keyboard layout", detail: "German; it does not type [ alone, so `back` is ⌃⌥Ü"))
+    let whole = makeHarness(settings: .withEveryKey)
+    whole.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    #expect(
+      check(whole, "Keyboard layout")
         == .init(
           mark: .ok, title: "Keyboard layout",
           detail: "German; it does not type [, ], / and = alone, so `back` is ⌃⌥Ü, `forward` is ⌃⌥+, `show-shortcuts` is ⌃⌥⇧ß, `grow` is ⌃⌥⌘´"))
@@ -214,7 +219,7 @@ import Testing
     #expect(check(h, "Arbor") == nil)
     h.run("pause")
     // The app hands back every shortcut but the ones that end the pause, and both taps.
-    h.controller.registeredBindings = KeyBindings.whilePaused(KeyBindings.defaults)
+    h.controller.registeredBindings = KeyBindings.whilePaused(KeyBindings.all)
     #expect(check(h, "Arbor")?.detail.hasPrefix("paused") == true)
     #expect(check(h, "Gestures")?.detail == "off while Arbor is paused")
     #expect(check(h, "Shortcuts")?.mark == .ok)
@@ -269,8 +274,11 @@ import Testing
     let h = makeHarness(facts)
     #expect(check(h, "Input sources")?.mark == .note)
     #expect(check(h, "Input sources")?.detail.hasPrefix("2, so macOS may keep ⌃⌥Space (`show-all`)") == true)
-    #expect(check(h, "Input sources")?.detail.hasSuffix("; ⌃⌥0 shows everything too") == true, "the way round it")
+    #expect(check(h, "Input sources")?.detail.contains("shows everything too") == false, "among the nine no other key does")
     #expect(h.run("doctor").ok, "nobody has seen who wins, and macOS's shortcut can be off")
+    let whole = check(makeHarness(facts, settings: .withEveryKey), "Input sources")
+    #expect(whole?.detail.hasPrefix("2, so macOS may keep ⌃⌥Space (`show-all`)") == true)
+    #expect(whole?.detail.hasSuffix("; ⌃⌥0 shows everything too") == true, "the way round it")
 
     var settings = Settings()
     settings.bindings = ["ctrl+opt+space": nil]
@@ -347,19 +355,19 @@ import Testing
 
   @Test func shortcutsMacOSRefusedAreNamed() {
     let h = makeHarness()
-    h.controller.registeredBindings = KeyBindings.defaults.filter { ![.showAll, .arrange].contains($0.command) }
-    h.controller.refusedBindings = KeyBindings.defaults.filter { [.showAll, .arrange].contains($0.command) }
+    h.controller.registeredBindings = KeyBindings.core.filter { ![.showAll, .undo].contains($0.command) }
+    h.controller.refusedBindings = KeyBindings.core.filter { [.showAll, .undo].contains($0.command) }
     #expect(check(h, "Shortcuts")?.mark == .problem)
     #expect(
       check(h, "Shortcuts")?.detail
-        == "\(KeyBindings.defaults.count - 2) registered; macOS refused ⌃⌥Space ⌃⌥A (another app may hold them)")
+        == "\(KeyBindings.core.count - 2) registered; macOS refused ⌃⌥Space ⌃⌥Z (another app may hold them)")
   }
 
   /// Arbor itself asks for fewer shortcuts, or for other keys, than the settings describe: during a pause, in an app
   /// that keeps its own ⌃⌥ (F41), on another keyboard layout (F44). None of that is a refusal.
   @Test func shortcutsArborDidNotAskForWereNotRefused() {
     let h = makeHarness()
-    h.controller.registeredBindings = Array(KeyBindings.defaults.prefix(3))
+    h.controller.registeredBindings = Array(KeyBindings.all.prefix(3))
     #expect(check(h, "Shortcuts") == .init(mark: .ok, title: "Shortcuts", detail: "3 registered"))
     h.controller.registeredBindings = []
     #expect(check(h, "Shortcuts")?.mark == .ok)
@@ -445,7 +453,7 @@ import Testing
       #expect(report.check(title) == .init(mark: .note, title: title, detail: "unknown here"))
     }
     #expect(report.check("Accessibility")?.mark == .ok, "the controller knows that much itself")
-    #expect(report.check("Shortcuts")?.detail == "\(KeyBindings.defaults.count) in the settings, not registered yet")
+    #expect(report.check("Shortcuts")?.detail == "\(KeyBindings.core.count) in the settings, not registered yet")
   }
 
   // MARK: The welcome window
@@ -487,7 +495,7 @@ import Testing
     let model = h.controller.onboardingModel(facts)
     #expect(model.rows.map(\.isSatisfied) == [false, false])
     // Nothing is registered before Arbor starts, so the window shows what the settings promise.
-    #expect(model.steps.map(\.lead) == ["Click a window and press ⌃⌥⌘←", "Click another and press ⌃⌥⌘→", "Then press ⌃⌥↩", "Press ⌃⌥↩ again"])
+    #expect(model.steps.map(\.lead) == ["Click a window and press ⌃⌥←", "Click another and press ⌃⌥→", "Then press ⌃⌥↩", "Press ⌃⌥↩ again"])
 
     var settings = Settings()
     settings.bindings = ["ctrl+opt+return": nil, "ctrl+opt+z": "zoom"]
@@ -632,12 +640,12 @@ import Testing
   @Test func aPausedArborSaysSoInsteadOfPromisingMovesThatDoNothing() {
     let h = Harness()
     h.start()
-    h.controller.registeredBindings = KeyBindings.defaults
+    h.controller.registeredBindings = KeyBindings.all
     let session = OnboardingSession(controller: h.controller) { _ in }
     session.begin()
     session.go(to: .firstSteps)
     h.run("pause")
-    h.controller.registeredBindings = KeyBindings.whilePaused(KeyBindings.defaults)
+    h.controller.registeredBindings = KeyBindings.whilePaused(KeyBindings.all)
     session.refresh()
     #expect(session.model.summary.contains("Resume"))
     #expect(session.model.step(.frame)?.lead == "Then press ⌃⌥↩", "the shortcut that will be there again")

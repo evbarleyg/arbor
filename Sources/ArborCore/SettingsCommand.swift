@@ -21,7 +21,7 @@ public enum SettingsCommand: Equatable, Sendable, Codable {
   case resetAll(everything: Bool)
   /// `bind ctrl+opt+h dock left`: makes a shortcut run a command, in place of whatever it ran.
   case bind(chord: String, command: String)
-  /// `unbind ctrl+opt+d`: the shortcut does nothing any more, even if it has a default.
+  /// `unbind ctrl+opt+g`: the shortcut does nothing any more, even if it is one of Arbor's own.
   case unbind(chord: String)
   /// `rule add com.apple.mail dock left title Inbox`: adds a rule after the others.
   case addRule(AppRule)
@@ -142,7 +142,7 @@ public enum SettingsCommand: Equatable, Sendable, Codable {
       guard args[1].lowercased() != "bind" else { throw ParseError("a shortcut cannot run `bind`") }
       return .bind(chord: try chord(args[0]), command: try Command.parse(words: Array(args.dropFirst())).text)
     case "unbind":
-      guard args.count == 1 else { throw ParseError("usage: unbind <shortcut>, e.g. unbind ctrl+opt+d") }
+      guard args.count == 1 else { throw ParseError("usage: unbind <shortcut>, e.g. unbind ctrl+opt+g") }
       return .unbind(chord: try chord(args[0]))
     case "rule":
       return try parseRule(args)

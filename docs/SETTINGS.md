@@ -6,7 +6,7 @@
 Arbor keeps its settings in `~/Library/Application Support/Arbor/settings.json` (menu → Open Settings
 File). There are four ways to change one, and each takes effect at once and shows in the others:
 
-- **The settings window**: Settings… in the menu, or ⌃⌥,. It has the sections below, the settings marked
+- **The settings window**: Settings… in the menu. It has the sections below, the settings marked
   *Advanced* behind a disclosure, a search field, and panes for your shortcuts and rules. A few settings are not
   in it, for the few who look for them; they are marked too.
 - **A command**: `arborctl set gap 16`. `arborctl get gap` prints one value, `arborctl settings` lists them
@@ -29,7 +29,8 @@ File). There are four ways to change one, and each takes effect at once and show
 
 | Key | Default | Values | What it does |
 |---|---|---|---|
-| `hotkeysEnabled` | `true` | true or false | **Use keyboard shortcuts.** Global keyboard shortcuts: ⌃⌥ moves the view and ⌃⌥⌘ moves windows, unless you change them. |
+| `hotkeysEnabled` | `true` | true or false | **Use keyboard shortcuts.** Global keyboard shortcuts, each ⌃⌥ and one key unless you change them. |
+| `shortcuts` | `core` | core or all | **Shortcuts.** The nine, each ⌃⌥ and one key: dock left and right, frame a window and go back, show everything, back, undo, float, Go to… and pause. The menu has more. All of them: some fifty, with ⇧ and ⌘ as well; there ⌃⌥ and an arrow looks, ⌃⌥⌘ and an arrow docks. For none, switch off Use keyboard shortcuts. `core`: The nine. `all`: All of them. |
 | `peek` | `true` | true or false | **Hold Show Everything to peek.** While the Show Everything shortcut is held everything shows, and letting go frames the outlined space. Off, holding it does the same as a tap. |
 | `messages` | `helpful` | helpful or all or off | **Messages on screen.** A line on screen after a shortcut, a gesture or a menu item: what went wrong, what changed out of view, and a few hints for newcomers. `helpful`: When it helps. `all`: After every command. `off`: Never. |
 | `automaticUpdateChecks` | `false` | true or false | **Check for updates.** Ask GitHub for a newer release a minute after starting and once a week. No window opens: the menu then offers the update, and nothing is ever downloaded. Off, Arbor uses the network only when asked to. |
@@ -54,7 +55,7 @@ File). There are four ways to change one, and each takes effect at once and show
 | `summonStays` | `false` | true or false | **Summoned windows stay.** A summoned window stays over the view when another window gets the keyboard, until it is summoned away. Off, turning to another window sends it out of view. *Advanced.* |
 | `shareRemovedSpace` | `true` | true or false | **Share a leaving window's space.** The space of a window that leaves is shared by its whole group. Off, it goes to the neighbor before it and nothing else moves. *Advanced.* |
 | `arrangeDesktopWeight` | `0.5` | 0.1 to 3 | **Desktop width in Arrange.** How wide Arrange Windows leaves the Desktop, relative to the windows beside it. *Advanced.* |
-| `resizeStep` | `40` | 1 to 1000 pt | **Grow and Shrink by.** How much bigger or smaller Grow and Shrink (⌃⌥⌘= and ⌃⌥⌘-) make the focused window at a time. *Advanced.* |
+| `resizeStep` | `40` | 1 to 1000 pt | **Grow and Shrink by.** How much bigger or smaller Grow and Shrink make the focused window at a time. *Advanced.* |
 | `displays` | `[]` | a list of entries: `match` and the settings that differ there | **Options per display.** Other values of the gap, the smallest usable size and the screen edge band for particular displays. The first entry that matches a display and sets a value gives it. Change it with a text editor; `displays` shows what is in effect on each display. *Advanced.* |
 | `ruleTitleWait` | `2` | 0 to 60 s | **Wait for a window's title.** How long a new window's title is checked against rules that have a title: browsers and editors set the real title a moment after the window opens. 0 checks only the first title. *Not in the settings window.* |
 | `tileRetryMinutes` | `10` | 0 to 1440 min | **Ask tiles again after.** A window that is a tile because it once refused the size of its space is asked again, out of view, after this long. 0 never asks; `relayout` always does. *Not in the settings window.* |

@@ -277,7 +277,7 @@
           facts, flow: flow, appsWithOwnShortcuts: apps, canFixSetup: true, switchesChangedByArbor: changed, isNewcomer: isNewcomer,
           isPaused: isPaused
         ) { command in
-          KeyBindings.label(for: command)
+          KeyBindings.label(for: command, in: KeyBindings.all)
         }
       }
       let tiling: [MacSwitch] = [.screenEdges, .menuBar, .optionKey]

@@ -100,7 +100,7 @@ extension Controller {
   }
 
   /// What to do about an edge or a neighbour that is not in view, after "…".
-  var adviceToStepOut: String { holdLevel == .view ? ", and \(heldMessage)" : "; step out first" }
+  var adviceToStepOut: String { holdLevel == .view ? ", and \(heldMessage)" : "; `show-all` first" }
 
   /// How firmly the view is held now, or nil.
   public var holdLevel: HoldLevel? {

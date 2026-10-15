@@ -40,8 +40,8 @@ import Testing
         → Accessibility (Required)  [Open Settings…]
             macOS asks your permission before an app may move other apps’ windows. Arbor reads only each window’s position and title, and nothing leaves your Mac. Flip the switch next to Arbor in System Settings. This window comes back by itself.
 
-        Nothing moves until you ask. ⌃⌥⌘← and ⌃⌥⌘→ put a window left or right. ⌃⌥↩ fills the screen with it, and brings both back.
-        ⌃ is Control, ⌥ Option, ⌘ Command, ↩ Return.
+        Nothing moves until you ask. ⌃⌥← and ⌃⌥→ put a window left or right. ⌃⌥↩ fills the screen with it, and brings both back.
+        ⌃ is Control, ⌥ Option, ↩ Return.
 
         Arbor lives in the menu bar, under this icon.
         (Continue)
@@ -72,15 +72,15 @@ import Testing
     // The four moves, each made as it is worded.
     #expect(
       h.welcome.model.steps.map(\.lead) == [
-        "Click a window and press ⌃⌥⌘←", "Click another and press ⌃⌥⌘→", "Then press ⌃⌥↩", "Press ⌃⌥↩ again",
+        "Click a window and press ⌃⌥←", "Click another and press ⌃⌥→", "Then press ⌃⌥↩", "Press ⌃⌥↩ again",
       ])
     #expect(h.welcome.model.footnote == "Arbor lives in the menu bar, under this icon.", "during the moves, little but the moves")
     h.system.userFocus(windows[2])
-    h.key("ctrl+opt+cmd+left")
+    h.key("ctrl+opt+left")
     #expect(h.workspace.isDocked(windows[2]))
     #expect(h.welcome.model.steps.map(\.isDone) == [true, false, false, false])
     h.system.userFocus(windows[1])
-    h.key("ctrl+opt+cmd+right")
+    h.key("ctrl+opt+right")
     #expect(h.workspace.isDocked(windows[1]) && h.workspace.isFloating(windows[0]))
     #expect(h.welcome.model.steps.map(\.isDone) == [true, true, false, false])
     // The window keeps to the Desktop, which lies between the two, where the third window is. It follows at once.
@@ -114,9 +114,9 @@ import Testing
     h.welcome.click("Continue")
     #expect(h.welcome.model.wayBack == "⌃⌥⎋ pauses Arbor: every window is as it was. Quit does the same.")
     h.system.userFocus(windows[2])
-    h.key("ctrl+opt+cmd+left")
+    h.key("ctrl+opt+left")
     h.system.userFocus(windows[1])
-    h.key("ctrl+opt+cmd+right")
+    h.key("ctrl+opt+right")
     h.key("ctrl+opt+escape")
     #expect(h.controller.isPaused)
     #expect(windows.map { h.frame($0) } == found)
@@ -160,7 +160,7 @@ import Testing
     h.scheduler.advance(by: 2)
     #expect(h.workspace.isFloating(windows[2]))
     #expect(h.welcome.model.steps.map(\.isDone) == [false, false, false, false])
-    #expect(h.overlays.messages.last?.model.line == "macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu")
+    #expect(h.overlays.messages.last?.model.line == "macOS tiled this window; Arbor stood aside · ⌃⌥← docks it · Check Setup… in the menu")
 
     h.run("check-setup")
     #expect(h.welcome.model.page == .setup && h.welcome.model.title == "Ready, with one suggestion")

@@ -309,9 +309,10 @@ import Testing
 
   // MARK: 7. There is always a way back
 
-  /// By the keys the guide names, from a view three steps in.
+  /// From a view three steps in. ⌃⌥Space is one of the nine, and is pressed on Arbor as it ships; the other two are keys of the whole map,
+  /// for which the guide names the menu and `arborctl home`.
   @Test(arguments: ["ctrl+opt+space", "ctrl+opt+0", "ctrl+opt+shift+f"]) func eachWayBackShowsEveryWindow(key: String) {
-    let (h, windows) = mac()
+    let (h, windows) = mac(settings: key == "ctrl+opt+space" ? Settings() : .withEveryKey)
     h.start()
     h.run("dock \(windows[0].rawValue) left")
     h.run("dock \(windows[1].rawValue) right")

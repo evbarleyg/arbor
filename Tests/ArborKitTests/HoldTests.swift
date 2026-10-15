@@ -1155,7 +1155,7 @@ private let cameraCommands = [
   }
 
   @Test func theKeyThatFloatsEverythingIsRefusedLikeTheOthers() {
-    let s = stage()
+    let s = stage { $0 = $0.withEveryKey }
     s.h.run("hold")
     let before = picture(s.h)
     let result = s.h.key("ctrl+opt+shift+f")
@@ -1983,8 +1983,8 @@ private let cameraCommands = [
   /// "Step out first" is advice that would be refused.
   @Test func adviceThatCannotBeFollowedWhileHeldIsNotGiven() {
     let s = stage()
-    #expect(s.h.run("resize \(s.keynote.rawValue) right 40").message == "that edge is not in view; step out first")
-    #expect(s.h.run("dock \(s.keynote.rawValue) right").message.hasSuffix("fills the view; step out first"))
+    #expect(s.h.run("resize \(s.keynote.rawValue) right 40").message == "that edge is not in view; `show-all` first")
+    #expect(s.h.run("dock \(s.keynote.rawValue) right").message.hasSuffix("fills the view; `show-all` first"))
     s.h.run("hold")
     for text in ["resize \(s.keynote.rawValue) right 40", "dock \(s.keynote.rawValue) right"] {
       let message = s.h.run(text).message

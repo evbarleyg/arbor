@@ -163,8 +163,8 @@ extension Controller {
     // The command is left out of the log: it can be `rule add …` with part of a window title in it.
     return change(message: message, log: "bound \(chord.text)") { updated in
       updated.removeBindings(for: chord)
-      // No entry is needed to say what the defaults already say.
-      if !KeyBindings.defaults.contains(KeyBinding(chord, command)) {
+      // No entry is needed to say what Arbor's own map already says.
+      if !KeyBindings.standard(updated).contains(KeyBinding(chord, command)) {
         updated.bindings[chord.text] = command.text
       }
       // One set of rules for shortcuts wherever they come from: what settings.json may not bind (a
@@ -188,8 +188,9 @@ extension Controller {
       + (others.first.map { "; \($0.chord.text) still does" } ?? "; no shortcut does now")
     return change(message: message, log: "unbound \(chord.text)") { updated in
       updated.removeBindings(for: chord)
-      // A default comes back when settings.json says nothing about its shortcut; null is what removes it.
-      if KeyBindings.defaults.contains(where: { $0.chord == chord }) {
+      // One of Arbor's own comes back when settings.json says nothing about its shortcut; null is what removes it. In either map: whoever
+      // has freed the keys wants them free after `set shortcuts` as well.
+      if (KeyBindings.core + KeyBindings.all).contains(where: { $0.chord == chord }) {
         updated.bindings.updateValue(nil, forKey: chord.text)
       }
     }
