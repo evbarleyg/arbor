@@ -348,6 +348,19 @@ public final class FakeMac: @unchecked Sendable {
   public struct Defaults {
     let domain: String
     public func object(forKey key: String) -> Any? { FakeMac.current.preferences[domain]?[key] }
+    /// A word counts as `NSString.boolValue` has it: yes for what begins with Y, y, T, t or a digit from 1 to 9.
+    public func bool(forKey key: String) -> Bool {
+      switch object(forKey: key) {
+      case let value as Bool: return value
+      case let value as Int: return value != 0
+      case let value as String: return value.first.map { "YyTt123456789".contains($0) } ?? false
+      default: return false
+      }
+    }
+    public func set(_ value: Bool, forKey key: String) { FakeMac.current.preferences[domain, default: [:]][key] = value }
+    public func removeObject(forKey key: String) { FakeMac.current.preferences[domain]?[key] = nil }
+    /// What is written is there at once: macOS obeys these switches within a second, and nothing here is told at that grain.
+    @discardableResult public func synchronize() -> Bool { true }
   }
   public static func defaults(suiteName: String) -> Defaults? { Defaults(domain: suiteName) }
 

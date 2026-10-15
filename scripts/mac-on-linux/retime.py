@@ -25,6 +25,7 @@ REWRITES = [
     (re.compile(r"\bDispatchTime\b"), "FakeDispatchTime"),
     # What the person has set in System Settings is the model's to say.
     (re.compile(r"\bUserDefaults\(suiteName:"), "FakeMac.defaults(suiteName:"),
+    (re.compile(r"\bUserDefaults\?"), "FakeMac.Defaults?"),
 ]
 
 # Other threads than the main one, and the main one's waiting for them (stubs/FakeMacOS/Threads.swift). Only where the clock must be the model's: elsewhere a queue is for files.
