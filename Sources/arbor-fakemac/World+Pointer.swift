@@ -163,6 +163,23 @@ extension World {
       arbor?.scheduler.advance(by: 0.25 + Double(hold))
       if release { lift(at: end) }
 
+    case "drag-on":
+      let steps = try arguments.option("--steps").map { max(1, min(1000, Int(try arguments.number($0)))) } ?? 30
+      _ = try arguments.option("--duration").map { try arguments.number($0) }
+      let hold = try arguments.option("--hold").map { try arguments.number($0) } ?? 0.2
+      let (start, end) = (system.cursor, try arguments.point(at: 0))
+      try arguments.expect(atMost: 2, for: command)
+      guard isButtonDown else {
+        throw Refusal(message: "pointer (rehearsal): drag-on, but the button is not down; was the drag --no-release?")
+      }
+      for step in 1...steps {
+        let share = CGFloat(step) / CGFloat(steps)
+        drag(to: CGPoint(x: start.x + (end.x - start.x) * share, y: start.y + (end.y - start.y) * share))
+      }
+      drag(to: CGPoint(x: end.x + 1, y: end.y))
+      drag(to: end)
+      arbor?.scheduler.advance(by: 0.25 + Double(hold))
+
     case "release":
       let target = arguments.words.count >= 2 ? try arguments.point(at: 0) : system.cursor
       try arguments.expect(atMost: 2, for: command)

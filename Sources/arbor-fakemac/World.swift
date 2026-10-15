@@ -250,7 +250,7 @@ final class World {
     switch fields[0] {
     case "pointer":
       if words.first == "wallpaper" { return words.count == 1 }
-      return !["move", "click", "drag", "release", "calm", "key", "pinch"].contains(words.first ?? "")
+      return !["move", "click", "drag", "drag-on", "release", "calm", "key", "pinch"].contains(words.first ?? "")
     case "arborctl":
       let arguments = words.first == "--json" ? Array(words.dropFirst()) : words
       // What cannot be read is refused before it gets to the controller.
