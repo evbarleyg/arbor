@@ -1,0 +1,104 @@
+# mac-shell: scripts/mac-shell/probe-idle.sh at 7826461, macOS 26.6.2, 2026-10-15T05:03Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64, 3 cores
+processes: 533; of them apps that Launch Services knows: 32
+built Arbor, the pointer tool and the app bundles in 6s
+
+== round: as-it-is
+session 1: Arbor pid 3603, test windows 29 30 31 32 (pid 3565)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+Arbor's own windows (id pid layer x y w h on owner):
+34 3603 0 232 91 560 434 on Arbor
+as-it-is: with nothing to do Arbor used 0.10 % of a core (0.03 s in 30 s)
+as-it-is: with nothing to do Arbor used 0.10 % of a core (0.03 s in 30 s)
+milliseconds of fifteen seconds in which the main thread was seen in:
+28 OnboardingSession.refresh()  Controller+Onboarding.swift:103
+18 ArborApp.systemFacts()  ArborApp.swift:510
+18 TCCAccessPreflight
+10 ArborApp.systemFacts()  ArborApp.swift:513
+10 static MacFacts.competingApps.getter  MacFacts.swift:49
+9 closure #1 in static MacFacts.competingApps.getter  MacFacts.swift:49
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+== built again with nothing kept
+
+== round: as-it-was
+session 2: Arbor pid 7773, test windows 36 37 38 39 (pid 7748)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+Arbor's own windows (id pid layer x y w h on owner):
+40 7773 0 232 91 560 434 on Arbor
+as-it-was: with nothing to do Arbor used 0.43 % of a core (0.13 s in 30 s)
+as-it-was: with nothing to do Arbor used 0.67 % of a core (0.20 s in 30 s)
+milliseconds of fifteen seconds in which the main thread was seen in:
+218 OnboardingSession.refresh()  Controller+Onboarding.swift:103
+184 ArborApp.systemFacts()  ArborApp.swift:513
+184 static MacFacts.competingApps.getter  MacFacts.swift:49
+184 closure #1 in static MacFacts.competingApps.getter  MacFacts.swift:49
+30 ArborApp.systemFacts()  ArborApp.swift:510
+30 TCCAccessPreflight
+2 ArborApp.systemFacts()  ArborApp.swift:511
+1 static MacFacts.switches.getter  MacFacts.swift:13
+1 static MacFacts.switches.getter  MacFacts.swift:13
+1 ArborApp.systemFacts()  ArborApp.swift:512
+1 ArborApp.systemFacts()  ArborApp.swift:512
+1 static MacFacts.readInputSources()  MacFacts.swift:38
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+== built again as it is
+
+== round: as-it-is-again
+session 3: Arbor pid 11867, test windows 44 45 46 47 (pid 11844)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+Arbor's own windows (id pid layer x y w h on owner):
+48 11867 0 232 91 560 434 on Arbor
+as-it-is-again: with nothing to do Arbor used 0.30 % of a core (0.09 s in 30 s)
+as-it-is-again: with nothing to do Arbor used 0.17 % of a core (0.05 s in 30 s)
+milliseconds of fifteen seconds in which the main thread was seen in:
+26 OnboardingSession.refresh()  Controller+Onboarding.swift:103
+22 ArborApp.systemFacts()  ArborApp.swift:510
+22 TCCAccessPreflight
+2 ArborApp.systemFacts()  ArborApp.swift:511
+2 static MacFacts.switches.getter  MacFacts.swift:13
+1 closure #1 in static MacFacts.switches.getter  MacFacts.swift:14
+1 ArborApp.systemFacts()  ArborApp.swift:512
+1 ArborApp.systemFacts()  ArborApp.swift:513
+1 static MacFacts.competingApps.getter  MacFacts.swift:48
+3 OnboardingSession.refresh()  Controller+Onboarding.swift:105
+3 OnboardingSession.refresh()  Controller+Onboarding.swift:103
+3 ArborApp.systemFacts()  ArborApp.swift:510
+3 TCCAccessPreflight
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+15 passed, 0 failed
+exit code 0
