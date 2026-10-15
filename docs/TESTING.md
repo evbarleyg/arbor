@@ -1018,6 +1018,7 @@ make suite                                                       # on a Mac: twe
 ARBOR_KEEP_EVIDENCE=1 scripts/mac-shell/run.sh --macs 2 scripts/mac-shell/suite.sh   # all of it on two of GitHub's Macs, side by side, from anywhere
 scripts/mac-shell/run.sh scripts/mac-shell/suite/30-seams.sh     # one section, about a minute
 scripts/mac-shell/rehearse.sh                                    # all of it against stand-ins, on Linux, for nothing
+scripts/mac-shell/rehearse.sh --jobs 4                           # the same on four fake Macs side by side, in under half the time
 scripts/mac-shell/rehearse.sh scripts/mac-shell/suite/30-seams.sh
 ```
 

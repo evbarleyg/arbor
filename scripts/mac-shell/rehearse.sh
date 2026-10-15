@@ -2,6 +2,8 @@
 # A rehearsal: runs Mac shell scripts (built on lib.sh) unchanged, without a Mac, against stand-ins. ON LINUX ONLY.
 #
 #   scripts/mac-shell/rehearse.sh <script…>        without arguments: suite.sh, where there is one
+#   scripts/mac-shell/rehearse.sh --jobs 4         suite.sh on four fake Macs side by side, each with every fourth section, as `run.sh --macs 4`
+#                                                  shares them out among real ones. A rehearsal waits for nothing, so it takes a core.
 #
 # A run on a Mac takes minutes, or somebody's Mac. This takes seconds and catches what has nothing to do
 # with real windows: typos, bash mistakes, wrong geometry, and wrong expectations of the controller. Exits with the
@@ -40,7 +42,7 @@
 # the finer points of which window is in front, the Dock growing and shrinking, Spaces, full
 # screen, or what anything looks like (every picture is one black pixel). A ✔ here proves the script, not Arbor.
 #
-# Left behind in .build/rehearsal/: out/ (what a Mac would send back: logs, "pictures") and worlds/ (every
+# Left behind in .build/rehearsal/ (with --jobs: .build/rehearsal-1/, -2/ …, and what each printed in log.txt there): out/ (what a Mac would send back: logs, "pictures") and worlds/ (every
 # session's history; `.build/debug/arbor-fakemac replay <file>` prints each line with what it answered).
 set -uo pipefail
 
@@ -50,9 +52,23 @@ if [ "$(uname -s)" != Linux ]; then
   exit 77
 fi
 
+side_by_side=1
+if [ "${1:-}" = --jobs ]; then
+  case "${2:-}" in
+    [1-9] | [1-9][0-9]) side_by_side=$2 ;;
+    *) echo "usage: scripts/mac-shell/rehearse.sh --jobs <how many>" >&2; exit 64 ;;
+  esac
+  shift 2
+  if [ $# -gt 0 ]; then
+    echo "rehearse.sh: --jobs shares out the sections of the suite, and takes no scripts" >&2
+    exit 64
+  fi
+fi
+
 root=$(cd "$(dirname "$0")/../.." && pwd) || exit 2
 here="${root:?}/scripts/mac-shell/rehearse"
-work="${root:?}/.build/rehearsal"
+# Each of several side by side has a folder of its own, which is also how the stand-ins tell one fake Mac's processes from another's.
+work="${root:?}/.build/rehearsal${ARBOR_REHEARSAL_MAC:+-$ARBOR_REHEARSAL_MAC}"
 fakemac="$root/.build/debug/arbor-fakemac"
 cd "${root:?}" || exit 2
 mkdir -p "$work"
@@ -72,6 +88,31 @@ fi
 if [ ! -x "$fakemac" ]; then
   echo "rehearse.sh: there is no $fakemac and no swift to build it with" >&2
   exit 2
+fi
+
+if [ "$side_by_side" -gt 1 ]; then
+  began=$SECONDS
+  macs=""
+  mac=1
+  while [ "$mac" -le "$side_by_side" ]; do
+    mkdir -p "$work-$mac"
+    ARBOR_REHEARSAL_MAC=$mac MAC_SHELL_SHARE=$mac/$side_by_side "$0" > "$work-$mac/log.txt" 2>&1 &
+    macs="$macs $!"
+    mac=$((mac + 1))
+  done
+  worst=0
+  mac=1
+  for process in $macs; do
+    wait "$process"
+    code=$?
+    [ "$code" -gt "$worst" ] && worst=$code
+    cat "$work-$mac/log.txt"
+    mac=$((mac + 1))
+  done
+  echo
+  echo "on $side_by_side fake Macs side by side, in $((SECONDS - began)) s:"
+  grep -h -E '^(failed: |suite: )' "$work"-[0-9]*/log.txt
+  exit "$worst"
 fi
 
 # The stand-ins under the names and in the places lib.sh expects them.
