@@ -24,7 +24,8 @@ ARBOR_TIME_LIMIT=1150
 source "$(dirname "$0")/lib-film.sh"
 needs_throwaway_mac "film the whole display, open Safari, and build other commits in this clone"
 
-LIGHT='{"animationDuration": 0, "focusRing": false, "menuBarControls": false}'
+# The same in every arm, whatever each ships: the five switches of the second build (`second_build` in lib-film.sh), so that the ground between the windows is the bare wallpaper.
+LIGHT='{"animationDuration": 0, "focusRing": false, "menuBarControls": false, "dimBehindArranged": 0, "desktopEdge": 0}'
 FACE="ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0"
 ARMS_DIR="$ARBOR_ROOT/.build/arms"
 HEAD_BIN=$ARBOR_BIN

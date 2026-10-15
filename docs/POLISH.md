@@ -27,7 +27,7 @@ second column, *the options*, judged by the same rules and read by no gate. And 
 
 **What could not be seen counts as a miss.** A film that was not shot, a film in which nothing happens or that does not show its scene, a scene for a
 feature that has not landed, a window the judge lost track of, a sheet nobody has gone through: all score nothing. So the score cannot be raised by looking at less, and
-the scenes for tabs, double clicks and continuous zoom are in the sum from the first day. **A score that has seen under half of what it is about says so in its first line.**
+the scenes for tabs, double clicks and continuous zoom are in the sum from the first day. **A score that has seen under half of what it is about says so in its first line; so does one whose instruments failed, and one whose films are not yet of what ships.**
 
 ## The laboratory
 
@@ -35,7 +35,7 @@ the scenes for tabs, double clicks and continuous zoom are in the sum from the f
   its default settings (its own edge tiling on, click-wallpaper on): the runners come with Reduce Motion and Reduce Transparency on, and the script switches both off.
 - **Arbor, in two columns.** **As it ships** (`scripts/mac-shell/films-light.sh`): every switch of Arbor's and of macOS's as it comes. This is the score, and what the gate reads. An act that does nothing as shipped is filmed doing
   nothing, and scores nothing. **The options** (`scripts/mac-shell/films.sh`): motion, the ring, the menu bar's buttons, the whole map of keys, the gestures, each switched on in so many words; the gestures with macOS's own tiling off (`on-…`). It says how good
-  an option is for whoever switches it on, and how good it will be the day it ships; it passes no gate. Until the second build's defaults are on the trunk its switches are written out in `films-light.sh`, one key fewer with every default that lands.
+  an option is for whoever switches it on, and how good it will be the day it ships; it passes no gate. Until the second build's defaults are on the trunk, `films-light.sh` writes out those of its switches that the commit under test does not ship yet (it reads the defaults in the sources), and names what no switch can give; both go with the films (`films/ships.json`), and the score says them in its first lines.
 - **The look that is scored first is the one a Mac comes with**: Reduce Transparency off. The flat look is second, being what a person with Reduce Transparency sees.
 - **macOS alone**: in every run, after Arbor has quit, the same windows are tiled by macOS itself from each app's Window menu (`macos-…`). Filmed, measured, not counted: it is the bar. As first measured (`collab/polish/light-1.md`): the real window glides and grows in one
   piece, eased, 283 to 317 ms, 16 to 18 frames of the 18 to 20 that sixty a second would make (waits of 33 ms, as the camera's own square has there), on a curve like Arbor's own stretched to 0.3 s; of two windows tiled at once the one in front glides and the other jumps.
@@ -203,7 +203,8 @@ light one, where shadows and dark lines show. The keys are asked of Arbor (`bind
 | `dock-third`, `dock-fourth`, `dock-fourth-again` | instant | more docks than the display has room for: every window becomes a tile; the same a second time in the session | |
 | `close`, `quit` | closes, told | closes a docked window (macOS fades it out over whatever Arbor does beneath: no ruler can part the two, so R1, R4 and R5 are not asked); quits Arbor: every window gets its own size back (no key says when: M1 is not asked) | |
 | `eight-arrange`, `eight-fill`, `eight-everything`, `eight-arrange-again` | instant | the same with eight windows on a display of 1920 × 1080. The first Arrange of a session asks each window for its size where it stands and then moves it, later ones ask once: two different acts, both filmed | |
-| `crowd-arrange`, `crowd-arrange-again` | instant | Arrange Windows with eight windows on a display of 1024 × 768, which has no room for them, as the first act of its session that meets that, and once more | |
+| `crowd-arrange`, `crowd-arrange-again` | instant | Arrange Windows with twelve windows on a display of 1024 × 768, which has no room for them (the script checks that it has none), as the first act of its session, and once more | |
+| `eight-arrange-told`, `eight-arrange-told-again`, `crowd-arrange-told`, `crowd-arrange-told-again` | told | the same four by command, each pair in a session of its own. Arrange Windows has no key: a person chooses it from the menu, which macOS fades out over whatever moves beneath, and there the ruler cannot look. So the four above are for eyes, and these, with nothing over the windows, for the ruler. Before each the windows lie beside one another, none over another: the ruler follows a window only while it sees all of it | |
 | `macos-left`, `macos-right`, `macos-fill`, `macos-previous`, `macos-left-and-right` | bare | macOS's own tiling of the same windows, Arbor not running: the bar. Not counted | |
 | `ground`, `dark-ground` | bare | the bare desk, before a session's first window opens: the wallpaper as the display shows it, which the judge cannot tell any more once shadows lie on what is left of it. Not counted | |
 | `metronome-…` | control | the camera's own square: tests the instruments, not counted | |

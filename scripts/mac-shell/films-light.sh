@@ -259,38 +259,72 @@ cast_stop
 appearance light
 wallpaper "#000000"
 
+# Arrange Windows has no key: a person chooses it from the menu, which macOS then fades out over whatever moves beneath, and there the ruler cannot look. So each is filmed twice, in a session of its
+# own each time, since the first Arrange of a session asks each window for its size where it stands and then moves it, and later ones ask once: as a person does it, for eyes; and by command,
+# with nothing over the windows, for the ruler.
+# many <prefix> <windows> <columns> <width> <height> <step right> <step down>
+many() {
+  local p=$1 count=$2 last
+  shift 2
+  for way in menu told; do
+    arbor_settings "$LIGHT"
+    # shellcheck disable=SC2086
+    cast_start "$count" $FACE
+    sleep 3
+    eval "last=\$W$count"
+    for again in "" -again; do
+      ctl float-all
+      sleep 1
+      grid "$count" "$@"
+      press "$last"
+      if [ "$way" = menu ]; then
+        from_menu "$p-arrange$again" "chooses Arrange Windows: $count floating windows at once${again:+, for the second time in this session}" "Arrange Windows"
+      else
+        scene "$p-arrange-told$again" told "the same by command, with no menu over the windows${again:+, for the second time in this session}"
+        ctl arrange
+        scene_end 1.8
+      fi
+      [ -n "$again" ] || summary
+      [ -n "$again" ] || [ "$p" != crowd ] || check "$p-arrange ($way): the display has no room for $count windows: some are tiles" some_tile
+    done
+    if [ "$way" = menu ] && [ "$p" = eight ]; then
+      press "$last"
+      act eight-fill "fills the screen with one of eight" "$(key_for zoom)"
+      act eight-everything "shows everything again" "$(key_for show-all)"
+    fi
+    cast_stop
+  done
+}
+
+some_tile() { summary | grep -q parked; }
+
+# grid <windows> <columns> <width> <height> <step right> <step down>: floating windows that lie beside one another, none over another: the ruler follows a window only while it sees all of it.
+grid() {
+  local count=$1 columns=$2 w=$3 h=$4 dx=$5 dy=$6 n=1 id
+  while [ "$n" -le "$count" ]; do
+    eval "id=\$W$n"
+    tell "$n" "move $id $((20 + (n - 1) % columns * dx)) $((50 + (n - 1) / columns * dy)) $w $h"
+    n=$((n + 1))
+  done
+  # A word to a test window is not answered: the film waits until each has the size it was sent.
+  n=$count
+  while [ "$n" -ge 1 ]; do
+    eval "id=\$W$n"
+    eventually sized "$id" "$w $h" > /dev/null || echo "grid: window $n has not the size it was sent: $(real_frame_of "$id")"
+    n=$((n - 1))
+  done
+  sleep 1.5
+}
+sized() { case "$(real_frame_of "$1")" in *" $2") ;; *) return 1 ;; esac; }
+
 step "5. eight windows on a large display"
 display_size 1920 1080
-arbor_settings "$LIGHT"
-cast_start 8 $FACE
-sleep 3
-press "$W8"
-from_menu eight-arrange "chooses Arrange Windows: eight floating windows at once" "Arrange Windows"
-summary
-press "$W8"
-act eight-fill "fills the screen with one of eight" "$(key_for zoom)"
-act eight-everything "shows everything again" "$(key_for show-all)"
-# The first Arrange of a session asks each window for its size where it stands and then moves it; later ones ask once. Two different acts: both are filmed.
-ctl float-all
-sleep 1.5
-press "$W8"
-from_menu eight-arrange-again "chooses Arrange Windows for the second time in this session" "Arrange Windows"
-cast_stop
+many eight 8 4 300 200 350 260
 display_size 1024 768
 
-step "6. eight windows on a display that has no room for them"
+step "6. twelve windows on a display that has no room for them"
 # What is made for the first time at a new size takes longer than it ever will again: Arrange as the first act of the session that cannot give every window its room, and once more.
-arbor_settings "$LIGHT"
-cast_start 8 $FACE
-sleep 3
-press "$W8"
-from_menu crowd-arrange "chooses Arrange Windows: eight floating windows, more than the display has room for" "Arrange Windows"
-summary
-ctl float-all
-sleep 1.5
-press "$W8"
-from_menu crowd-arrange-again "does the same for the second time in this session" "Arrange Windows"
-cast_stop
+many crowd 12 4 230 190 250 225
 
 sampler_stop
 camera_stop

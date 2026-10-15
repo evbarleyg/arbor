@@ -31,7 +31,7 @@
 #   cast_stop [name]                arbor_stop, and the cast goes home
 #   tell <n> <command…>             a command for the app of the nth window (Sources/ArborTestWindows/Commands.swift)
 #   trace_ends                      end the session's trace now and keep it (cast_stop does; a scene that quits Arbor has to, before)
-#   second_build                    LIGHT = the second build's switches that the commit under test does not ship yet, as JSON; says which
+#   second_build                    LIGHT = the second build's switches that the commit under test does not ship yet, as JSON; says which, and what no switch can give; films/ships.json
 #   key_for <command…>              the shortcut that runs it in the map in effect, or nothing: so that a film follows the keys that ship
 #   view_now                        the node the camera is at, for `played`
 #   played "<scene>" <view before>  a check that the camera went somewhere: a film in which nothing happens is a Mac's time for nothing
@@ -425,22 +425,35 @@ trace_ends() {
 }
 
 # What the second build ships, for whichever of it the commit under test does not ship yet: the settings to write out, as JSON, into LIGHT. It reads the defaults in the sources, so a film is of what
-# ships from the day a default lands, with nobody having to remember; and it says which switches it had to write, so that nobody takes a film of switches for a film of what ships.
+# ships from the day a default lands, with nobody having to remember. What no switch can give (there is no such key yet, or it does not go that far) is still the first build's in every film. Both are
+# said aloud, and left in films/ships.json for the judge, so that nobody takes a film of switches, or of the first build, for a film of what ships.
 second_build() {
-  LIGHT=$(python3 - "$ARBOR_ROOT/Sources/ArborCore/Settings.swift" <<'PYTHON'
+  mkdir -p "$ARBOR_OUT/films"
+  LIGHT=$(python3 - "$ARBOR_ROOT/Sources/ArborCore/Settings.swift" "$ARBOR_OUT/films/ships.json" <<'PYTHON'
 import json, re, sys
-wanted = {"animationDuration": 0, "focusRing": False, "menuBarControls": False, "dimBehindArranged": 0}
+wanted = {"animationDuration": 0, "focusRing": False, "menuBarControls": False, "dimBehindArranged": 0, "desktopEdge": 0}
 source = open(sys.argv[1], encoding="utf-8").read()
-written = {}
-for key, value in wanted.items():
-    found = re.search(rf"public var {key}: \w+ = (\S+)", source)
-    ships = None if not found else {"true": True, "false": False}.get(found.group(1), None if not re.fullmatch(r"[0-9.]+", found.group(1)) else float(found.group(1)))
-    if ships is None or ships != value:
-        written[key] = value
+def ships(key):
+    found = re.search(rf"^\s*public var {key}: \w+ = (\S+)", source, re.M)
+    if not found:
+        return None
+    word = found.group(1)
+    return {"true": True, "false": False}.get(word, float(word) if re.fullmatch(r"[0-9.]+", word) else word)
+written = {key: value for key, value in wanted.items() if ships(key) is None or ships(key) != value}
+still = []
+if ships("dragDocks") is None:
+    still.append("a plain drag docks")
+if ships("arrangeDesktopWeight") != 0:
+    still.append("a column is kept for the Desktop")
+if ships("windowsThatDoNotFit") is None:
+    still.append("what does not fit becomes a tile")
+json.dump({"written": written, "still": still}, open(sys.argv[2], "w", encoding="utf-8"))
 print(json.dumps(written))
 PYTHON
   ) || die "second_build: the defaults cannot be read"
-  if [ "$LIGHT" = "{}" ]; then echo "as it ships: no switch is written out"; else echo "NOT YET AS IT SHIPS: written out, because the commit under test ships otherwise: $LIGHT"; fi
+  if [ "$LIGHT" = "{}" ]; then echo "no switch is written out"; else echo "NOT YET AS IT SHIPS: written out, because the commit under test ships otherwise: $LIGHT"; fi
+  python3 -c 'import json, sys; still = json.load(open(sys.argv[1]))["still"]; print("STILL THE FIRST BUILD\x27S, and no switch can change it: " + "; ".join(still) if still else "nothing is left of the first build")' \
+    "$ARBOR_OUT/films/ships.json"
 }
 
 # The line is `<chord> → <command>`; on a keyboard that is not a US one `<chord> (<as it is typed there>) → <command>`.

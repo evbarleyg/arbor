@@ -817,6 +817,7 @@ SHIPS = GATE_FILMED_TWICE + [("dark-" + name, kind, gate) for name, kind, gate i
     ("dock-third", "instant", 0), ("dock-fourth", "instant", 0), ("dock-fourth-again", "instant", 0), ("close", "closes", 0), ("quit", "told", 0),
     ("eight-arrange", "instant", 0), ("eight-fill", "instant", 0), ("eight-everything", "instant", 0), ("eight-arrange-again", "instant", 0),
     ("crowd-arrange", "instant", 0), ("crowd-arrange-again", "instant", 0),
+    ("eight-arrange-told", "told", 0), ("eight-arrange-told-again", "told", 0), ("crowd-arrange-told", "told", 0), ("crowd-arrange-told-again", "told", 0),
 ]
 
 # The laboratory's own column: the same table, with every scene of the moves taken from the session in which Arbor's gestures are on and
@@ -1091,22 +1092,39 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout, without=(), 
     gate = [cell for cell in cells if cell[4] and cell[3] <= 2 and cell[5].status != PASS]
     worst = sum(1 for cell in cells if cell[5].status == MISS and cell[3] == 1)
     print(f"\n## Score: {number:.1f} of 100 ({earned} of {total} points); seen {100 * seen / total:.0f}%; {worst} misses of severity 1", file=out)
-    print("That is Arbor as it ships, on a Mac as it comes." if which == "ships" else "That is the options, each switched on: the second column, which no gate reads.", file=out)
+    # What the films themselves say they are of (films/ships.json, from `second_build`): a film of switches, or of what is left of the first build, is not a film of what ships.
+    told = {}
+    if which == "ships" and os.path.isfile(os.path.join(films, "ships.json")):
+        with open(os.path.join(films, "ships.json"), encoding="utf-8") as file:
+            told = json.load(file)
+    short = []
+    if told.get("written"):
+        short.append("written out, because the commit filmed ships otherwise: " + ", ".join(f"{key} {json.dumps(value)}" for key, value in told["written"].items()))
+    if told.get("still"):
+        short.append("still the first build's, and no switch can change it: " + "; ".join(told["still"]))
+    if which != "ships":
+        print("That is the options, each switched on: the second column, which no gate reads.", file=out)
+    elif short:
+        print("That is NOT YET Arbor as the second build ships: " + ". And ".join(short) + ".", file=out)
+    else:
+        print("That is Arbor as it ships, on a Mac as it comes." + ("" if told else " (By the films' own word there is none: they say nothing of what was switched.)"), file=out)
     excused = [cell[0] for cell in cells if cell[1] == "R5" and "the exception for what grows where it cannot" in cell[5].said]
     print(f"The one exception to R5, for what grows where it cannot, was used in {len(excused)} scenes" + (f": {', '.join(excused)}." if excused else "."), file=out)
     if pictures:
         print(f"The pictures at rest are of {pictures['commit']}: {pictures['from']}." + (f" Left out, because what draws them has changed since: {', '.join(without)}." if without else ""), file=out)
     print(f"The rubric {'PASSES' if not gate and number >= 90 else 'does not pass'}: {len(gate)} cells of severity 1 or 2 in what the gate asks for "
           "miss or are unseen.", file=out)
+    # What whoever reads one line must know comes first: that the instruments failed; that under half was seen; that it is not what ships.
     if not trusted:
-        print("\nTHE INSTRUMENTS FAILED THEIR OWN TEST: the score above is not to be believed.", file=out)
-    # A gate that has seen under half of what it is about says so in its first line.
+        print("**THE INSTRUMENTS FAILED THEIR OWN TEST: the score below is not to be believed.**\n", file=first)
+    if short:
+        print("**NOT YET WHAT SHIPS: " + ". And ".join(short) + ".**\n", file=first)
     if 2 * seen < total:
-        print(f"**SEEN: {100 * seen / total:.0f}% OF {'WHAT SHIPS' if which == 'ships' else 'THE OPTIONS'}, UNDER HALF. Whatever follows is about that part; the rest counts as missed.**\n", file=first)
+        print(f"**SEEN: {100 * seen // total}% OF {'WHAT SHIPS' if which == 'ships' else 'THE OPTIONS'}, UNDER HALF. Whatever follows is about that part; the rest counts as missed.**\n", file=first)
     first.write(out.getvalue())
     return {
         "score": round(number, 1), "everything_on": round(lab_number, 1), "earned": earned, "total": total, "seen": round(100 * seen / total, 1), "trusted": trusted,
-        "leeway": allow, "gate": len(gate), "severity1": worst, "pictures": pictures.get("commit"),
+        "leeway": allow, "ships": told, "gate": len(gate), "severity1": worst, "pictures": pictures.get("commit"),
         "cells": [{"where": name, "check": identifier, "severity": severity, "move": move, "status": verdict.status, "said": verdict.said,
                    "frames": [int(frame) for frame in verdict.frames]}
                   for name, identifier, _, severity, move, verdict in cells],
