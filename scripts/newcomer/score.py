@@ -41,6 +41,8 @@ COUNTED = ("acts", "wrong", "stuck", "surprised", "lookup", "untouched", "unaske
 JUDGED = ("acts", "dead", "untouched")
 HEADS = ("done", "acts", "wrong turns", "stuck", "surprised", "looked up", "moved untouched", "unasked", "seconds")
 # Commands of Arbor's that name every window (docs/VIABLE.md, section 6).
+# What else its log says at that level: how it started, what it found.
+NO_COMMAND = ("Arbor", "watchdog", "control", "keyboard", "started", "registered", "setup", "trace", "update", "permission", "display", "displays")
 NAME_ALL = ("arrange", "pause", "resume", "float-all", "quit", "undo", "redo")
 NO_ACT = ("wait", "ready")
 
@@ -69,7 +71,7 @@ def commands(entry):
     found = []
     for line in entry.get("said") or []:
         words = line.split(" INFO ", 1)[1].split(":")[0].split()
-        if words:
+        if words and words[0] not in NO_COMMAND:
             found.append(words[0])
     return found
 

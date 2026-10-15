@@ -142,7 +142,7 @@ def parse_line(line, width, height):
         x, y = point(0, ", then how many notches")
         if len(rest) < 3:
             raise Nonsense("scroll takes x, y and how many notches: positive is up")
-        notches = number(rest[2], "the number of notches", -20, 20)
+        notches = number(rest[2], "the number of notches", -60, 60)
         if notches == 0:
             raise Nonsense("scroll by 0 does nothing")
         held = options(3, ("holding",))

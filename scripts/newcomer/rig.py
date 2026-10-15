@@ -154,8 +154,9 @@ class RealMac:
         app = self.arbor_app()
         if not app:
             return "none"
+        # A process is listed from the moment macOS looks the app over, long before it may run, and while Gatekeeper's dialog stands: only an answer says that Arbor runs.
         code, out = run([app + "/Contents/Helpers/arborctl", "status"], timeout=4, env=self.clean)
-        return "running" if out.startswith(b"running") or out.startswith(b"paused") else "waiting"
+        return "running" if out.startswith((b"running", b"paused")) else "waiting" if out.startswith(b"waiting") else "none"
 
     def docked(self):
         """The ids Arbor has docked, by its own account. What it may move when it is asked to dock, float or look elsewhere (docs/VIABLE.md, section 6)."""
@@ -264,8 +265,15 @@ class RealMac:
         return self.help("password")
 
     def help(self, how):
-        code, out = run(["bash", os.path.join(HERE, "help.sh"), how, self.tools, self.cdhash or "-", self.arbor_app() or "-"], timeout=90, env=self.clean)
+        app = self.arbor_app() if self.arbor() != "none" else None
+        code, out = run(["bash", os.path.join(HERE, "help.sh"), how, self.tools, self.cdhash or "-", app or "-"], timeout=90, env=self.clean)
         return out.decode("utf-8", "replace").strip().split("\n")[-1] or "nothing"
+
+
+def pile(look):
+    """The windows people arrange, from the frontmost to the one at the back. Not the menu bar's items and the like, which come and go by themselves."""
+    people = tasks.ordinary(look, without=())
+    return [each for each in look["order"] if each in people]
 
 
 def bitmap(data):
@@ -556,7 +564,7 @@ class Rig:
         self.write("round", task=task, round=answered, line=line, verb=act["verb"], fine=fine, helped=helped, pressed=pressed,
                    touched=sorted(each for each in touched if each), moved=moved, gone=gone, come=come,
                    idle_moved=idle[0], idle_gone=idle[1], cells=changed_cells(glance, self.cells), timing=timing, arbor=after["arbor"],
-                   turned=before["focused"] != after["focused"] or before["order"][:12] != after["order"][:12],
+                   turned=before["focused"] != after["focused"] or pile(before) != pile(after),
                    docked=sorted(set(before.get("docked", [])) | set(after.get("docked", []))), said=self.mac.said())
         return after
 
