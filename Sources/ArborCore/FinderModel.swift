@@ -37,7 +37,7 @@ public enum FinderPlace: String, Codable, Sendable, CaseIterable {
   /// Brought over the view by `summon` (F53), and sent away again: not even the Desktop shows it then.
   case summoned
   case stashed = "out of view until summoned"
-  case minimized = "minimised"
+  case minimized = "minimized"
   /// Its app is hidden (⌘H), the one case that is called hidden.
   case hiddenApp = "hidden"
   /// In macOS's own full screen, on a Space to itself.

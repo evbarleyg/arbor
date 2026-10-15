@@ -232,7 +232,7 @@ import Testing
     #expect(tile.plate.top == TilePalette.tray(isDark: false).top)
     #expect(tile.caption == nil && tile.glyph == nil)
 
-    // The miniature is inset evenly, and each window has its app's colour and icon.
+    // The miniature is inset evenly, and each window has its app's color and icon.
     let bounds = CGRect(origin: .zero, size: model.frame.size)
     #expect(tile.cells.count == 2)
     #expect(tile.cells[0].frame.union(tile.cells[1].frame) == bounds.insetBy(dx: 8, dy: 8))

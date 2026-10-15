@@ -649,7 +649,7 @@ public enum Command: Equatable, Sendable, Codable {
       home                         show everything on every display: the way back from anywhere
       out | in                     step out a level | step in, toward the focused window or the pointer,
                                    whichever you touched last (also zoom-out, zoom-in)
-      neighbor <edge>              move to the neighbouring space
+      neighbor <edge>              move to the neighboring space
       back | forward               where the view has been
       zoom [window]                frame one window on its own; without a window, again to return
       zoom-node <node>             frame a space by its node number from `state`
@@ -659,13 +659,13 @@ public enum Command: Equatable, Sendable, Codable {
       go <name>                    go to the space of that name, or the only one that begins so (go <edge>: neighbor)
       name <text> | unname [name]  name the space in view | take the name off it, or off the space of that name
       ask-name [cancel]            show a field to type the name into | close it
-      focus <direction>            focus the nearest window that way; with none in view, go to the neighbouring
+      focus <direction>            focus the nearest window that way; with none in view, go to the neighboring
                                    space, and past the last space to the next display
       focus next | focus previous  go through the windows in view
       focus <window>               focus a window and bring it into view
       focus-display <next|previous|n>  focus the window that display had in focus last
       find [text…]                 open Go to…, or go to the window, space or saved view that matches best
-      reveal [window]              bring a window into view, un-minimised and unhidden, and focus it
+      reveal [window]              bring a window into view, un-minimized and unhidden, and focus it
       minimap                      the whole arrangement in small, with the view marked; click a window in it to
                                    frame it; again to put it away
 

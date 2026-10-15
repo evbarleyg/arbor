@@ -124,9 +124,9 @@ public struct CheatSheetModel: Equatable, Sendable {
     let digits: [KeyChord.Key] = [.digit1, .digit2, .digit3, .digit4, .digit5, .digit6, .digit7, .digit8, .digit9]
     return [
       Family(
-        title: "Neighbouring Space", keys: " + arrow", members: Edge.allCases.map { (.neighbor($0), arrow($0)) }),
+        title: "Neighboring Space", keys: " + arrow", members: Edge.allCases.map { (.neighbor($0), arrow($0)) }),
       Family(
-        title: "Neighbouring Window", keys: " + arrow", members: Edge.allCases.map { (.focus(.direction($0)), arrow($0)) }),
+        title: "Neighboring Window", keys: " + arrow", members: Edge.allCases.map { (.focus(.direction($0)), arrow($0)) }),
       Family(
         title: "Dock Focused Window, or Move It", keys: " + arrow",
         members: Edge.allCases.map { (.dock(nil, $0), arrow($0)) }),
