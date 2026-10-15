@@ -48,7 +48,7 @@ apps_picture "$APPS_TEMP/wallpaper.png" 1600 900
 wallpaper "$APPS_TEMP/wallpaper.png"
 cat > "$APPS_SCRATCH/page.html" << 'HTML'
 <!doctype html><meta charset="utf-8"><title>Arbor</title>
-<body style="font: 19px/1.5 system-ui; margin: 3em auto; max-width: 30em; color: #223">
+<body style="font: 19px/1.5 system-ui; margin: 3em auto; max-width: 30em; color: #222233">
 <h1 style="font-size: 2.6em; margin: 0">Arbor</h1>
 <p>Your real windows dock into nested splits, with the Desktop kept as a space between them, and a camera zooms
 between those spaces: frame one window, step out to its group, step out again to see everything.</p>

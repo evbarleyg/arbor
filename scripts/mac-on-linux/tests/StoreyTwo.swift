@@ -43,6 +43,7 @@ final class StoreyTwo {
     controller.accessibilityProbe = { _ in AXIsProcessTrusted() }
     watcher = FrontmostAppWatcher { [weak controller] app in controller?.applicationActivated(app) }
     mac.note("Arbor starts")
+    story.listens(heard, storey: 2, from: mac.now)
     watcher.start()
     controller.start()
     mac.pass(1)

@@ -337,7 +337,7 @@ for keys in --ctrl --opt; do
   check "$keys alone leaves it paused" tap_is 0x400000 false
   wait $!
 done
-# R1's and R2's finding on #68: a key that goes up unheard must not make Arbor deaf to the next press.
+# Two reviewers' finding: a key that goes up unheard must not make Arbor deaf to the next press.
 "$WITNESS" hold 0.5 --ctrl --opt &
 sleep 0.2
 wait $!
@@ -420,7 +420,7 @@ mark "a plain scroll afterwards"
 "$WITNESS" scroll "$cx" "$cy" 0 -120 --steps 6
 check "the next plain scroll is the app's again (8 events)" test "$(count '^scroll ')" -eq 8
 
-# The product owner's question on #68. Many people with big displays have "Use scroll gesture with modifier keys to zoom" on, with ⌃.
+# The product owner's question. Many people with big displays have "Use scroll gesture with modifier keys to zoom" on, with ⌃.
 # The switch is the person's to set, so this part runs only where there is no person.
 if on_throwaway_mac; then
   step "F55: with macOS's own zoom on ⌃ + scroll, whose is ⌃⌥ + scroll?"

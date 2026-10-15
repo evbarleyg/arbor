@@ -130,7 +130,7 @@ open class NSEvent: NSObject {
   @MainActor open func allTouches() -> Set<NSTouch> { [] }
   open class var mouseLocation: NSPoint {
     let mac = FakeMac.current
-    return NSPoint(x: mac.mouse.location.x, y: (mac.screens.first?.frame.height ?? 0) - mac.mouse.location.y)
+    return NSPoint(x: mac.mouse.locationByAppKit.x, y: (mac.screens.first?.frame.height ?? 0) - mac.mouse.locationByAppKit.y)
   }
   open class var modifierFlags: ModifierFlags { ModifierFlags(rawValue: FakeMac.current.mouse.flags) }
   open class var pressedMouseButtons: Int { FakeMac.current.mouse.isDownByAppKit ? 1 : 0 }

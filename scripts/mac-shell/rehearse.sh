@@ -32,6 +32,9 @@
 #                                              Default "1024x768 31 63", GitHub's runner.
 #   ARBOR_REHEARSAL_BASH=<path>                a bash 3.2, which is what macOS has: runs the scripts, and whatever
 #                                              they run as `bash`.
+#   ARBOR_REHEARSAL_AS=person                  as on somebody's own Mac: lib.sh's gates stay shut, its nets look at every press
+#                                              and key, and a curtain hangs behind the test windows. Shows what a script
+#                                              skips there, and what it loses to the nets.
 #
 # What it cannot tell you: anything about AppKit's and Accessibility's timing and order of events, animations,
 # the finer points of which window is in front, the Dock growing and shrinking, Spaces, full
@@ -85,7 +88,7 @@ ln -s "$here/test-windows" "$stand_ins/bin/ArborTestWindows"
 ln -s "$here/test-windows" "$stand_ins/ArborTestWindows"
 ln -s "$here/test-windows" "$stand_ins/ArborTestWindows2"
 # safe anywhere: these are names for links to the stand-in, and none of the tools is run
-for tool in screencapture sips sw_vers defaults killall launchctl system_profiler; do
+for tool in screencapture sips sw_vers defaults killall launchctl system_profiler pgrep; do
   ln -s "$here/mac-tools" "$stand_ins/path/$tool"
 done
 sysctl -n hw.ncpu > /dev/null 2>&1 || ln -s "$here/mac-tools" "$stand_ins/path/sysctl"
@@ -107,6 +110,14 @@ export ARBOR_REHEARSAL=1
 # Nothing is more of a throwaway Mac than one that does not exist: what lib.sh keeps from people's Macs is
 # rehearsed too.
 export GITHUB_ACTIONS=true
+if [ "${ARBOR_REHEARSAL_AS:-}" = person ]; then
+  # People set CI; it must open nothing.
+  unset GITHUB_ACTIONS
+  export CI=true
+  ln -s "$here/mac-tools" "$stand_ins/curtain"
+  # Containers run as root, as whom nothing starts on a person's Mac.
+  ln -s "$here/mac-tools" "$stand_ins/path/id"
+fi
 # What a script does to ~/Applications, ~/Library or ~/Desktop stays in here.
 export HOME="$work/home" # safe anywhere: on Linux only, as the top of this file sees to
 export ARBOR_BUILT=1

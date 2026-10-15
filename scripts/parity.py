@@ -11,9 +11,10 @@ collab/evidence/*-latest.txt, and works out a level for every item:
             runner has a step of that name
   otherwise the item's status (partial, review, in-progress, planned, missing, not-planned)
 
-Real-window steps are the `▸` headings that arbor-e2e (`make e2e`) and scripts/mac-shell/proof.sh print. A
-step has passed when the evidence shows at least one ✔ and no ✘ under it. A step that a runner
-has but the evidence does not is simply not counted yet.
+Real-window steps are the `▸` headings that arbor-e2e (`make e2e`), scripts/mac-shell/proof.sh and the real-window
+suite (scripts/mac-shell/suite.sh) print. A step has passed when the evidence shows at least one ✔ and no ✘ under
+it. A step that a runner has but the evidence does not is simply not counted yet, and neither is the
+last step of a run that was cut off (its output does not end with the count of its checks).
 
 The record of a test run is what Swift Testing writes for tools (`make test` asks for it: one line of JSON for every test
 there is and for everything that happened to it; each test process writes a file, and `swift test` puts the files together). What
@@ -55,7 +56,8 @@ REFERENCE_IDS = set(
     "T00 T01 T02 T03 T04 T05 T06 T07 T08 T09 T10 T11 T12 T13 T14 T15 T16 T17 T18 T19 T20 T21 T30 T31 T32 T33 T34 T35 T36 T37 T38 T39 T40 T41 T42 T43 T44 T50 T51 T52 T53 T54 T60 T61 T62 T63 T64 T70 T71 T72 T73 T74 T75 T76 T77".split()
 )
 # Where real-window steps are defined: step("title", …) and print("\n▸ title …") in Swift, claim "title" in shell.
-RUNNERS = [os.path.join(ROOT, "Sources", "arbor-e2e", "*.swift"), os.path.join(ROOT, "scripts", "mac-shell", "*.sh")]
+RUNNERS = [os.path.join(ROOT, "Sources", "arbor-e2e", "*.swift"), os.path.join(ROOT, "scripts", "mac-shell", "*.sh"),
+           os.path.join(ROOT, "scripts", "mac-shell", "suite", "*.sh")]
 FEATURES = os.path.join(ROOT, "docs", "FEATURES.md")
 REPORT = os.path.join(ROOT, ".build", "test-report.jsonl")
 SPECS = os.path.join(ROOT, "docs", "features")
@@ -64,6 +66,9 @@ SPECS = os.path.join(ROOT, "docs", "features")
 ANSI = re.compile(r"\x1b\[[0-9;]*m|\x1b\]8;;.*?\x1b\\")
 PLATFORM_LINE = re.compile(r"Target Platform:\s*(\S+)")
 STEP_LINE = re.compile(r"^▸ (.+?)(?:\s{2}\(.*\))?\s*$")
+COUNT_LINE = re.compile(r"^\d+ passed, \d+ failed\s*$")
+# A section of the suite: `# 10-edges 2026-10-14T09:12Z on macOS 26.6.2, commit abc1234`
+SECTION_HEADER = re.compile(r"^\S+ (\S+Z) (on macOS .*)$")
 STEP_SOURCE = re.compile(r'(?:\bstep\(|^\s*claim |▸ )"?([^"\\(]+?)(?:"|\s{2}\(|\s*$)', re.MULTILINE)
 
 SHIPPED_LEVELS = {"verified", "tested", "unproven"}
@@ -193,7 +198,7 @@ def read_reports(paths):
 
 def parse_evidence(path):
     """Returns ({step title: passed}, header line) from the output of a real-window runner."""
-    marks, order, header, current = {}, [], None, None
+    marks, order, header, current, last, finished = {}, [], None, None, None, False
     with open(path, encoding="utf-8") as handle:
         for line in handle:
             line = line.rstrip("\n")
@@ -203,29 +208,42 @@ def parse_evidence(path):
             match = STEP_LINE.match(line)
             if match:
                 # A title that comes again (one per session, say) adds to what it has.
-                current = match.group(1).strip()
+                current = last = match.group(1).strip()
+                finished = False
                 if current not in marks:
                     marks[current] = ""
                     order.append(current)
                 continue
+            if COUNT_LINE.match(line):
+                finished = True
             if line.startswith("== "):
                 current = None  # a heading of lib.sh's: what follows is preparation, not the step before
                 continue
             mark = re.match(r"^\s+([✔✘])", line)
             if current and mark:
                 marks[current] += mark.group(1)
+    if last and not finished and "✘" not in marks[last]:
+        marks[last] = ""  # cut off: nobody knows what the rest of the step would have said
     # A step with nothing under it is where the run died, or one that checked nothing.
     return {step: "✘" not in marks[step] for step in order if marks[step]}, header
 
 
 def read_evidence(pattern=EVIDENCE):
-    steps, headers = {}, []
+    steps, headers, sections = {}, [], []
     for path in sorted(glob.glob(pattern)):
         found, header = parse_evidence(path)
+        if "REHEARSAL" in (header or ""):
+            sys.exit(f"{os.path.relpath(path, ROOT)} is a rehearsal's output, which is no evidence; remove it")
         for step, passed in found.items():
             steps[step] = passed and steps.get(step, True)
-        if header:
+        section = SECTION_HEADER.match(header or "") if os.path.basename(path).startswith("suite-") else None
+        if section:
+            sections.append(section.groups())
+        elif header:
             headers.append(header)
+    if sections:
+        # One line for the suite's many files.
+        headers.append(f"the real-window suite, {len(sections)} sections, the newest {' '.join(max(sections))}")
     return steps, headers
 
 

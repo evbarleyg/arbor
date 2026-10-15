@@ -5,6 +5,10 @@ extension FakeMac {
   public struct Mouse {
     /// Global coordinates, top-left origin.
     public internal(set) var location = CGPoint(x: 10, y: 10)
+    /// Where it was one movement ago.
+    var previousLocation = CGPoint(x: 10, y: 10)
+    /// What `NSEvent.mouseLocation` says.
+    public internal(set) var locationByAppKit = CGPoint(x: 10, y: 10)
     public internal(set) var isDown = false
     /// What `NSEvent.pressedMouseButtons` says, which with bad manners (ii) lags.
     public internal(set) var isDownByAppKit = false
@@ -74,7 +78,7 @@ extension FakeMac {
     mouse.eventCounts[type, default: 0] += 1
   }
 
-  public func secondsSinceLastEvent(_ type: UInt32) -> TimeInterval { now - (mouse.lastEvent[type] ?? Self.dawn - 3600) }
+  public func secondsSinceLastEvent(_ type: UInt32) -> TimeInterval { now - (mouse.lastEvent[type] ?? dawn - 3600) }
   public func eventCount(_ type: UInt32) -> UInt32 { mouse.eventCounts[type] ?? 0 }
 
   private func setButton(_ down: Bool) {
@@ -102,6 +106,8 @@ extension FakeMac {
   /// `onArborsPanel`: on a tile, a gap handle or the menu of Arbor's, which lie over the windows and which only a local monitor hears of.
   public func press(at point: CGPoint, onArborsPanel: Bool = false) {
     mouse.location = point
+    mouse.previousLocation = point
+    mouse.locationByAppKit = point
     note("the button goes down at \(Int(point.x)),\(Int(point.y))")
     setButton(true)
     if onArborsPanel {
@@ -109,6 +115,12 @@ extension FakeMac {
       return tellMonitors(.leftMouseDown, toArbor: true)
     }
     tellMonitors(.leftMouseDown, toArbor: false, after: mouseDownIsLateBy)
+    // What lies above the apps' windows gets the press: the menu bar, a system alert. It belongs to another process, so the global monitor hears of it like of any other; no window
+    // comes forward, and none is in hand.
+    if (furnitureAtRest() + furniture).contains(where: { $0.isInFront && $0.layer > 0 && $0.alpha > 0 && $0.pid != arbor.pid && $0.bounds.contains(point) }) {
+      mouse.grab = Grab(kind: .nothing, window: nil, pressedAt: point, frameAtPress: .zero, time: now)
+      return
+    }
     // The resize area reaches a few points outside the frame.
     guard let window = windowShowing(at: point, reach: 4) else {
       mouse.grab = Grab(kind: .nothing, window: nil, pressedAt: point, frameAtPress: .zero)
@@ -139,7 +151,16 @@ extension FakeMac {
   /// The window server puts a window that is held by its title bar where the pointer has taken it.
   private func serverFollowsPointer(_ grab: Grab, _ window: Window) {
     guard now >= grab.time + serverFollowsPointerAfter else { return }
-    let point = mouse.location
+    var point = mouse.location
+    if serverRunsAStepAhead {
+      point.x += mouse.location.x - mouse.previousLocation.x
+      point.y += mouse.location.y - mouse.previousLocation.y
+    }
+    guard serverLagsPointerBy > 0 else { return serverPuts(window, where: point, hasTakenIt: grab) }
+    send(after: serverLagsPointerBy, from: .system, "") { [self] in if window.isOpen { serverPuts(window, where: point, hasTakenIt: grab) } }
+  }
+
+  private func serverPuts(_ window: Window, where point: CGPoint, hasTakenIt grab: Grab) {
     var origin = CGPoint(x: grab.frameAtPress.minX + point.x - grab.pressedAt.x, y: grab.frameAtPress.minY + point.y - grab.pressedAt.y)
     origin.y = max(origin.y, screen(of: CGRect(origin: point, size: .zero)).visibleFrame.minY)
     guard window.bounds.origin != origin else { return }
@@ -155,10 +176,12 @@ extension FakeMac {
 
   /// The pointer moves.
   ///
-  /// By its title bar the window server moves a window itself, at once. The app learns of it about a tenth of a second later and posts eight to ten "moved"
+  /// By its title bar the window server moves a window itself, at once. The app learns of it about a tenth of a second later and posts five to nine "moved"
   /// a second; some apps post none until the drag is over. An app that hangs learns nothing, and its window moves all the same.
   /// By an edge it is the app that follows the pointer, so a hung app's window does not change.
   public func moveMouse(to point: CGPoint) {
+    mouse.locationByAppKit = pointerIsReadOneStepLate && mouse.isDown ? mouse.location : point
+    mouse.previousLocation = mouse.location
     mouse.location = point
     guard mouse.isDown, let grab = mouse.grab else { return happened(UInt32(MouseEvent.mouseMoved.rawValue)) }
     if case .arborsPanel = grab.kind { return happened(UInt32(MouseEvent.leftMouseDragged.rawValue)) }
@@ -199,6 +222,7 @@ extension FakeMac {
     guard mouse.isDown else { return }
     note("the button comes up at \(Int(mouse.location.x)),\(Int(mouse.location.y))\(release == .lost ? ", and no monitor hears of it" : "")")
     setButton(false)
+    mouse.locationByAppKit = mouse.location
     let grab = mouse.grab
     // However late it began, the window server leaves the window where the pointer let go of it.
     if case .titleBar? = grab?.kind, let grab, let window = grab.window, window.isOpen {
@@ -224,7 +248,7 @@ extension FakeMac {
     }
   }
 
-  /// Eight to ten "moved" a second, however often the window moves; but the last place is always reported in the end (`flick-to-edge`: one more 30 ms after
+  /// Five to nine "moved" a second, however often the window moves; but the last place is always reported in the end (`flick-to-edge`: one more 30 ms after
   /// the release).
   private func reportMoved(_ window: Window) {
     // The one that is owed will tell of this move too.

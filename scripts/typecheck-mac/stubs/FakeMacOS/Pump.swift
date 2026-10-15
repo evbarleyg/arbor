@@ -13,7 +13,8 @@ public enum Pump {
   nonisolated(unsafe) private static var elsewhere: [UnownedJob] = []
   nonisolated(unsafe) private static var isRunning = false
   /// True while a job runs that on a Mac would be on another thread than the main one.
-  nonisolated(unsafe) public private(set) static var isOffTheMainThread = false
+  nonisolated(unsafe) private static var runsAJobOfTheGlobalPool = false
+  public static var isOffTheMainThread: Bool { runsAJobOfTheGlobalPool || Worker.holder != nil }
 
   private final class OtherThread: SerialExecutor, @unchecked Sendable {
     func enqueue(_ job: consuming ExecutorJob) { Pump.elsewhere.append(UnownedJob(job)) }
@@ -59,9 +60,9 @@ public enum Pump {
       if mainQueueHasWork() {
         mainQueue.drain(nil)
       } else if !elsewhere.isEmpty {
-        isOffTheMainThread = true
+        runsAJobOfTheGlobalPool = true
         elsewhere.removeFirst().runSynchronously(on: otherThread.asUnownedSerialExecutor())
-        isOffTheMainThread = false
+        runsAJobOfTheGlobalPool = false
       } else {
         return
       }

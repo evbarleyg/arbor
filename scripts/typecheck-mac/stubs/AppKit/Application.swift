@@ -69,7 +69,7 @@ open class NSRunningApplication: NSObject, @unchecked Sendable {
   open class func runningApplications(withBundleIdentifier bundleIdentifier: String) -> [NSRunningApplication] {
     FakeMac.current.apps.filter { $0.bundleID == bundleIdentifier }.map { NSRunningApplication(_pid: $0.pid) }
   }
-  open class var current: NSRunningApplication { NSRunningApplication(_pid: getpid()) }
+  open class var current: NSRunningApplication { NSRunningApplication(_pid: FakeMac.getpid()) }
   open class func terminateAutomaticallyTerminableApplications() {}
   open var processIdentifier: pid_t { _pid }
   open var bundleIdentifier: String? { _app?.bundleID }

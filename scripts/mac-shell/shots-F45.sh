@@ -44,7 +44,8 @@ ask_test_windows() {
 }
 
 arbor_build
-arbor_settings '{"tileRetryMinutes": 0.05}'
+# On a large screen Arbor would make room for it instead (F61), and there would be no tile to show.
+arbor_settings '{"tileRetryMinutes": 0.05, "makeRoom": false}'
 # The third window refuses to be smaller than 700×500.
 ARBOR_TEST_WINDOWS_ARGS=${ARBOR_TEST_WINDOWS_ARGS:---min-size 3:700x500}
 arbor_start 3

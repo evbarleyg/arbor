@@ -70,6 +70,29 @@ func tellOfComingForward(_ book: Book) {
     }
   }
 
+  // The other kind of switch, the first in the trace `app-switch-unreported`: Arbor itself asks for a window of an app in the background. The reports of the focus come twice over, after the notice, and
+  // "application activated" 44 ms after it.
+  for lag in [0.0, 0.005, 0.05] {
+    book.story("Arbor gives the keyboard to another window of another app, which reports the focus twice and late\(lag > 0 ? ", and NSWorkspace lags by \(Int(lag * 1000)) ms" : "")") { story in
+      var mine: FakeMac.Window!, first: FakeMac.Window!, second: FakeMac.Window!
+      let one = StoreyOne(story) { mac in
+        let app = mac.launch("Other")
+        second = mac.open("second", in: app)
+        first = mac.open("first", in: app)
+        mine = mac.open("mine", in: mac.launch("Mine"))
+      }
+      second.app.reportsFocusTwiceAndLate = true
+      one.mac.frontmostLagsNoticeBy = lag
+      one.layer.focus(WindowID(second.number))
+      one.mac.pass(2)
+      let focused = one.heard.all.filter { if case .focused = $0 { true } else { false } }
+      story.check("the window has the keyboard", one.mac.keyWindow === second)
+      story.check("it is reported focused", focused.contains(.focused(second.number)), one.heard.texts)
+      story.check("no other window is", !focused.contains(.focused(first.number)) && !focused.contains(.focused(mine.number)), one.heard.texts)
+      story.check("for four reports and a notice it is said once", focused.count == 1, one.heard.texts)
+    }
+  }
+
   // Two quick switches: there and back again before NSWorkspace has named the first.
   for lag in [0.0, 0.05, 0.2] {
     for gap in [0.03, 0.1, 0.3] {

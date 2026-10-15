@@ -99,8 +99,46 @@ func tellOfPlacing(_ book: Book) {
     }
   }
 
-  // Traces `stubborn-fast` and `stubborn-slow`.
-  for delay in [0.05, 0.4] {
+  // Echoes usually come 2 to 15 ms after the call. In `stubborn-slow` a `setFrame` logged at 0.0125 is echoed at 0.2582, 246 ms later and past the echo filter's blanket of 0.15 s; Finder and
+  // Terminal take 0.3 to 0.55 s.
+  for late in [0.246, 0.55] {
+    book.story("the echoes of a move come \(Int(late * 1000)) ms late") { story in
+      let (one, window) = stage(story)
+      window.app.reportsLateBy = late
+      let target = CGRect(x: 12, y: 43, width: 500, height: 650)
+      story.check("the layer answers with the frame the window took", one.layer.setFrame(target, of: WindowID(window.number)) == target)
+      one.mac.pass(late / 2)
+      story.check("for a while nothing is heard", one.heard.all.isEmpty, one.heard.texts)
+      one.mac.pass(2)
+      story.check("then the echoes come, and count as echoes", !one.heard.all.isEmpty && !one.heard.all.contains(where: isByUser), one.heard.texts)
+    }
+
+    book.story("the echoes of a move come \(Int(late * 1000)) ms late, after Arbor has moved the window on") { story in
+      let (one, window) = stage(story)
+      window.app.reportsLateBy = late
+      _ = one.layer.setFrame(CGRect(x: 12, y: 43, width: 500, height: 650), of: WindowID(window.number))
+      one.mac.pass(0.1)
+      let second = CGRect(x: 512, y: 43, width: 400, height: 500)
+      _ = one.layer.setFrame(second, of: WindowID(window.number))
+      one.mac.pass(2)
+      story.check("none of them counts as the person's doing", !one.heard.all.contains(where: isByUser), one.heard.texts)
+      story.check("Arbor knows where the window is", one.snapshot(window)?.frame == second, "\(one.snapshot(window)?.frame.text ?? "")")
+    }
+
+    book.story("a docked window's echoes come \(Int(late * 1000)) ms late") { story in
+      var window: FakeMac.Window!
+      let two = StoreyTwo(story) { mac in window = mac.open("window", in: mac.launch("Finder"), frame: CGRect(x: 300, y: 130, width: 400, height: 300)) }
+      window.app.reportsLateBy = late
+      story.check("it is docked", two.run("dock \(window.number) left", then: 3).ok)
+      let asked = window.timesAskedForAFrame
+      two.mac.pass(3)
+      story.check("Arbor does not go on pulling at it", window.timesAskedForAFrame == asked, "asked \(window.timesAskedForAFrame - asked) times more")
+      story.check("it is still docked", two.isDocked(window))
+    }
+  }
+
+  // Traces `stubborn-fast`, whose window was back 0.11 s after the call though told to wait 0.05, and `stubborn-slow`: 0.474 s, then 0.196.
+  for delay in [0.05, 0.11, 0.2, 0.4, 0.47] {
     book.story("a window goes back to its old frame \(delay) s after every move") { story in
       let (one, window) = stage(story)
       let home = window.frame

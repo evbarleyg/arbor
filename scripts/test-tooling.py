@@ -508,7 +508,7 @@ esac
     "pmset": '#!/bin/bash\necho "   PreventUserIdleDisplaySleep    $(cat "$FAKE/awake" 2>/dev/null || echo 0)"\necho "Listed by owning process:"\n'
              'cat "$FAKE/awake-owners" 2>/dev/null\nexit 0\n',
     "defaults": '#!/bin/bash\n[ "$1" = read ] || exit 0\ncat "$FAKE/defaults-${2#-}" 2>/dev/null || exit 1\n',
-    "security": "#!/bin/bash\necho '\"/Users/x/Library/Keychains/login.keychain-db\"'\n",
+    "security": "#!/bin/bash\necho '\"/Users/you/Library/Keychains/login.keychain-db\"'\n",
     "lsappinfo": "#!/bin/bash\nexit 0\n",
     "launchctl": "#!/bin/bash\nexit 0\n",
 }
@@ -880,7 +880,7 @@ kill $mine
     def discreet(mac):
         mac.environment["HOME"] = os.path.join(mac.folder, "home of mine")
         os.makedirs(mac.environment["HOME"])
-        said = 'echo "in $ARBOR_ROOT/Sources and /private$ARBOR_ROOT/x, $HOME/Documents/tax.pdf, /Users/jo/Library and \\"/Users/al\\": done"'
+        said = 'echo "in $ARBOR_ROOT/Sources and /private$ARBOR_ROOT/x, $HOME/Documents/tax.pdf, /Users/you/Library and \\"/Users/you\\": done"'
         setup = ('echo "2026-10-14T11:00:00.000Z ERROR setup: Other window managers: Secret Tiler is running | quit it"\n'
                  'echo "2026-10-14T11:00:00.000Z INFO  shortcuts: Secret Tiler keys is a shortcut of macOS\'s as well, so one of the two does nothing"')
         code, output = mac.run(f'{said}\n{said} >&2\n{said} > "$ARBOR_OUT/build.log"\n{said} > "$ARBOR_OUT/picture.png"\nyes | head -n 1\n'
@@ -889,7 +889,7 @@ kill $mine
         return [("lib.sh: on somebody's Mac what a run prints, on either output, says neither where the checkout nor where the home folder is",
                  (code, [line for line in output.splitlines() if line.startswith("in ") or line == "y"]), (3, [clean, clean, "y"])),
                 ("lib.sh: nor do the logs it leaves; other files are left as they are",
-                 (mac.read("out/build.log").strip(), "/Users/jo" in mac.read("out/picture.png")), (clean, True)),
+                 (mac.read("out/build.log").strip(), "/Users/you" in mac.read("out/picture.png")), (clean, True)),
                 ("lib.sh: what Arbor logs about the person's setup keeps its heading and loses the rest, in the output and in the log",
                  ("setup: Other window managers: (stays on this Mac)" in output, "Secret Tiler" in output + mac.read("out/arbor.log")), (True, False))]
 

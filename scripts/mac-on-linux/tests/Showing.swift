@@ -180,6 +180,10 @@ func tellOfShowing(_ book: Book) {
       "then it is reported minimized", one.snapshot(window)?.isMinimized == true && one.heard.all.contains(.changed(window.number, byUser: true)),
       one.heard.texts)
     story.check("the app's other window gets the keyboard", one.lastWordOnTheKeyboard == other.number, one.heard.texts)
+    // A recording of a hosted Mac: the next window's focus 6.6 ms before "miniaturized", at the end of the flight.
+    story.check(
+      "which is reported first, as at a close", one.heard.all.firstIndex(of: .focused(other.number)) ?? .max < one.heard.all.firstIndex(of: .changed(window.number, byUser: true)) ?? .min,
+      one.heard.texts)
     story.check(
       "the Dock has grown, which is reported once as a change of the displays", one.heard.all.filter { $0 == .displaysChanged }.count == 1,
       one.heard.texts)
@@ -256,7 +260,7 @@ func tellOfShowing(_ book: Book) {
           "it has its old frame", one.snapshot(window)?.frame == CGRect(x: 100, y: 100, width: 600, height: 400),
           "\(one.snapshot(window)?.frame.text ?? "")")
         story.check("both windows show", one.snapshot(window)?.isOnActiveSpace == true && one.snapshot(other)?.isOnActiveSpace == true)
-        story.check("nothing is reported gone or new", !one.heard.outline.contains { if case .focused = $0 { false } else { true } }, one.heard.texts)
+        story.check("and again nothing is reported gone or new", !one.heard.outline.contains { if case .focused = $0 { false } else { true } }, one.heard.texts)
       }
     }
   }

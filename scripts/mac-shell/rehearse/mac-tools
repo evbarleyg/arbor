@@ -12,6 +12,31 @@ refuse() {
 }
 
 case "$tool" in
+  curtain)
+    # curtain <pid> <seconds> <file>: the visible frame goes into the file. The window itself is arbor-fakemac's, which lists one
+    # behind everything else for the process that $ARBOR_CURTAIN_PID names.
+    read -r size bar dock <<< "${ARBOR_REHEARSAL_DISPLAY:-1024x768 31 63}"
+    echo "0 $bar ${size%x*} $((${size#*x} - bar - dock))" > "$3"
+    # The real one: `sleep` is a stand-in here, which takes no time.
+    exec /bin/sleep "$2"
+    ;;
+
+  id)
+    [ "$*" = -u ] || refuse "$@"
+    echo 501
+    ;;
+
+  pgrep)
+    # By exact name: only what this rehearsal started is on this Mac. Another rehearsal on the same machine is another Mac, and a
+    # process that has ended and waits for a parent that never asks (containers have such parents) runs nowhere.
+    [ "${1:-}" = -x ] && [ $# -eq 2 ] || exec /usr/bin/pgrep "$@"
+    ps -eo pid=,stat=,args= | awk -v folder="$ARBOR_REHEARSAL_DIR/" -v name="$2" '
+      $2 !~ /^Z/ && index($0, folder) {
+        for (i = 3; i <= NF; i++) if (index($i, folder) == 1) { count = split($i, part, "/"); if (part[count] == name) { print $1; found = 1 }; break }
+      }
+      END { exit !found }'
+    ;;
+
   screencapture)
     # The path comes last. A black pixel: a picture of a Mac that is not there.
     for path in "$@"; do :; done
@@ -56,6 +81,7 @@ case "$tool" in
         case "${4:-}" in
           -bool) case "${5:-}" in true | yes | 1) echo 1 ;; *) echo 0 ;; esac > "$store/$2.$3" ;;
           -int | -string | -float) echo "${5:-}" > "$store/$2.$3" ;;
+          -dict-add) ;;
           *) refuse "$@" ;;
         esac
         ;;

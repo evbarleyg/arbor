@@ -41,7 +41,7 @@ extension FakeWindowSystem {
       applied.size.width = min(applied.width, maximum.width)
       applied.size.height = min(applied.height, maximum.height)
     }
-    if let step = fake.sizeStep { applied.size = rounded(applied.size, toStepsOf: step) }
+    if let step = fake.sizeStep { applied.size = rounded(applied.size, toStepsOf: step, margin: fake.sizeMargin) }
     return applied
   }
 
@@ -77,13 +77,19 @@ extension FakeWindowSystem {
   /// deleting steps from a script does not renumber the windows opened later.
   public func open(
     id: WindowID, app: String, bundleID: String?, title: String, pid: Int32, frame: CGRect,
-    minimumSize: CGSize = .zero, maximumSize: CGSize? = nil, behaviour: Behaviour = .normal
+    minimumSize: CGSize = .zero, maximumSize: CGSize? = nil, behaviour: Behaviour = .normal, cells: RealApp.Cells? = nil,
+    idealSize: CGSize? = nil
   ) {
     guard !existingWindowIDs().contains(id) else { return }
     nextID = max(nextID, id.rawValue &+ 1)
+    var frame = frame
+    // It opens with whole steps, as it has them ever after.
+    if let cells { frame.size = Self.rounded(frame.size, toStepsOf: cells.step, margin: cells.margin) }
     let snapshot = WindowSnapshot(id: id, pid: pid, bundleID: bundleID, appName: app, title: title, frame: frame)
     windows[id] = FakeWindow(
       snapshot: snapshot, minimumSize: minimumSize, maximumSize: maximumSize, behaviour: behaviour)
+    if let cells { (windows[id]!.sizeStep, windows[id]!.sizeMargin) = (cells.step, cells.margin) }
+    windows[id]!.idealSize = idealSize
     guard started else { return }
     events?.windowAppeared(snapshot)
     if echoes.keyboard { giveKeyboard(to: id) }
@@ -93,6 +99,43 @@ extension FakeWindowSystem {
   /// The app quits: its windows go one after the other, as `AXWindowSystem.forget(pid:)` reports it.
   public func quitApp(pid: Int32) {
     for id in windows.keys.sorted() where windows[id]!.snapshot.pid == pid { close(id) }
+  }
+
+  /// A click on its icon in the Dock, or ⌘Tab: all of an app's windows come to lie in front of the others', in the order they had among themselves. Which of them
+  /// gets the keyboard is another matter, and is reported.
+  public func bringForward(pid: Int32) {
+    for id in windowsFrontToBack().filter({ windows[$0]?.snapshot.pid == pid }).reversed() { bringToFront(id) }
+  }
+
+  /// A double-click on a title bar, as a Mac comes: macOS zooms the window. It fills the space between the menu bar and the Dock, or takes the size its app thinks right where
+  /// it stands (a Finder window shrinks to what it holds); a second one takes it back to the very frame. As seen on hosted Macs: over a third of a second, its app
+  /// reporting on the way. A window that somebody has moved since is zoomed afresh.
+  public func macZoom(_ window: WindowID) {
+    guard let fake = windows[window], fake.snapshot.isPresent, dragging == nil, resizing == nil,
+      let visible = (displayList.first { $0.frame.contains(fake.snapshot.frame.center) } ?? displayList.first)?.visibleFrame
+    else { return }
+    let start = fake.snapshot.frame
+    var target: CGRect
+    if let zoom = fake.zoom, zoom.to == start {
+      target = zoom.from
+      windows[window]!.zoom = nil
+    } else {
+      target = fake.idealSize.map { CGRect(origin: start.origin, size: $0) } ?? visible
+      let largest = fake.maximumSize ?? target.size
+      target.size = CGSize(
+        width: max(min(target.width, largest.width), fake.minimumSize.width), height: max(min(target.height, largest.height), fake.minimumSize.height))
+      if let step = fake.sizeStep { target.size = Self.rounded(target.size, toStepsOf: step, margin: fake.sizeMargin) }
+      guard target != start else { return }
+      windows[window]!.zoom = (start, target)
+    }
+    let halfway = CGRect(
+      x: (start.minX + target.minX) / 2, y: (start.minY + target.minY) / 2, width: (start.width + target.width) / 2, height: (start.height + target.height) / 2
+    ).integral
+    for step in [halfway, target] {
+      passTime?(0.15)
+      guard windows[window] != nil else { return }
+      userMove(window, to: step)
+    }
   }
 
   /// Gives a window a new number without telling anyone, as restarting its app (or the Mac) does

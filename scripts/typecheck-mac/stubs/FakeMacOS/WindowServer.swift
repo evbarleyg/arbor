@@ -113,6 +113,7 @@ extension FakeMac {
     }
     mouse.location.x += dx
     mouse.location.y += dy
+    mouse.locationByAppKit = mouse.location
   }
 
   func screensNotice(after delay: TimeInterval) {

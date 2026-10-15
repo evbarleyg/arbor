@@ -25,6 +25,12 @@ public final class FakeWindowSystem: WindowSystem {
     public var maximumSize: CGSize?
     /// The app sizes the window in steps of this (a terminal's character cells), see `setSizeStep`.
     public var sizeStep: CGSize?
+    /// What its app takes for the right size for what it shows, which is what macOS's zoom gives it. Nil: as much as the screen has.
+    public var idealSize: CGSize?
+    /// Where macOS's zoom found it, and where it put it: the next zoom takes it back if it is still there.
+    var zoom: (from: CGRect, to: CGRect)?
+    /// What a window that comes in steps has besides them: a terminal's is so many characters wide and high, and a few points more.
+    public var sizeMargin: CGSize = .zero
     /// How the app treats the frames Arbor asks for (`FakeWindowSystem+Chaos.swift`).
     public var behaviour: Behaviour = .normal
     /// Where a window that snaps back returns to: the last frame it or the user chose.
@@ -43,7 +49,7 @@ public final class FakeWindowSystem: WindowSystem {
 
     public static func == (a: FakeWindow, b: FakeWindow) -> Bool {
       a.snapshot == b.snapshot && a.minimumSize == b.minimumSize && a.maximumSize == b.maximumSize
-        && a.sizeStep == b.sizeStep && a.behaviour == b.behaviour
+        && a.sizeStep == b.sizeStep && a.sizeMargin == b.sizeMargin && a.behaviour == b.behaviour
     }
   }
 
@@ -683,6 +689,13 @@ extension FakeWindowSystem {
       frame.origin.y = topDragged ? requested.maxY - height : requested.minY
       frame.size.height = height
     }
+    // Under the hand too a window that comes in steps has whole ones. The edge that is not being dragged stays.
+    if let step = fake.sizeStep {
+      let whole = rounded(frame.size, toStepsOf: step, margin: fake.sizeMargin)
+      if abs(requested.minX - current.minX) > abs(requested.maxX - current.maxX) { frame.origin.x = frame.maxX - whole.width }
+      if abs(requested.minY - current.minY) > abs(requested.maxY - current.maxY) { frame.origin.y = frame.maxY - whole.height }
+      frame.size = whole
+    }
     return frame
   }
 }
@@ -921,6 +934,7 @@ extension FakeWindowSystem {
     snapshot.title = title ?? "\(front.snapshot.appName) \(id.rawValue)"
     backgroundTabs[window] = windows.removeValue(forKey: window)
     windows[id] = FakeWindow(snapshot: snapshot, minimumSize: front.minimumSize, maximumSize: front.maximumSize)
+    (windows[id]!.sizeStep, windows[id]!.sizeMargin) = (front.sizeStep, front.sizeMargin)
     if focused == window { focused = id }
     events?.windowReplaced(window, by: snapshot)
     return id
@@ -966,14 +980,15 @@ extension FakeWindowSystem {
 extension FakeWindowSystem {
   /// Makes `window` take only sizes that are whole steps, as Terminal does with its character cells. Like
   /// Terminal, it takes the size nearest to the one it is asked for, which can be the larger one.
-  public func setSizeStep(_ window: WindowID, _ step: CGSize?) {
+  public func setSizeStep(_ window: WindowID, _ step: CGSize?, margin: CGSize = .zero) {
     windows[window]?.sizeStep = step
+    windows[window]?.sizeMargin = margin
   }
 
-  static func rounded(_ size: CGSize, toStepsOf step: CGSize) -> CGSize {
+  static func rounded(_ size: CGSize, toStepsOf step: CGSize, margin: CGSize = .zero) -> CGSize {
     CGSize(
-      width: max(1, (size.width / step.width).rounded()) * step.width,
-      height: max(1, (size.height / step.height).rounded()) * step.height)
+      width: max(1, ((size.width - margin.width) / step.width).rounded()) * step.width + margin.width,
+      height: max(1, ((size.height - margin.height) / step.height).rounded()) * step.height + margin.height)
   }
 }
 
@@ -1143,9 +1158,10 @@ extension FakeWindowSystem {
     if claim == .menuBar, clock() - (inMenuBarSince ?? clock()) < MacTiling.menuBarRest { return }
     if claim == .optionKey, fake.maximumSize == fake.minimumSize { return }
     let largest = fake.maximumSize ?? tile.size
-    let size = CGSize(
+    var size = CGSize(
       width: max(min(tile.width, largest.width), fake.minimumSize.width),
       height: max(min(tile.height, largest.height), fake.minimumSize.height))
+    if let step = fake.sizeStep { size = Self.rounded(size, toStepsOf: step, margin: fake.sizeMargin) }
     if size.width < tile.width {
       tile.origin.x = claim == .menuBar ? (tile.midX - size.width / 2).rounded() : tile.minX > start.midX ? tile.maxX - size.width : tile.minX
     }
@@ -1177,5 +1193,9 @@ extension FakeWindowSystem {
     guard let (window, start, grab) = inHand, windows[window] != nil else { return }
     windows[window]!.snapshot.frame.origin = CGPoint(
       x: start.minX + point.x - grab.x, y: start.minY + point.y - grab.y)
+    // The pointer goes up to the menu bar and into it. The window it holds stays below.
+    if let top = displayList.first(where: { $0.frame.contains(point) })?.visibleFrame.minY {
+      windows[window]!.snapshot.frame.origin.y = max(windows[window]!.snapshot.frame.minY, top)
+    }
   }
 }

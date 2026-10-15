@@ -9,7 +9,8 @@ import Foundation
 /// find has to be looked at for how a person would get there.
 ///
 /// `ARBOR_CHAOS_DESK=laptop|desk|both` chooses the displays (`both`: a laptop and an external display that comes and goes, in the orders a Mac
-/// has), `ARBOR_CHAOS_DOCK=bottom|left|right|hidden` the side of the Dock. Left out, the seed chooses.
+/// has), `ARBOR_CHAOS_DOCK=bottom|left|right|hidden` the side of the Dock, `ARBOR_CHAOS_TILING=on|off` whether macOS's own tiling is as a Mac comes or
+/// switched off. Left out, the seed chooses: half the walks each way.
 extension ChaosGenerator {
   struct Desk {
     enum Kind: String, CaseIterable { case laptop, desk, both }
@@ -26,6 +27,7 @@ extension ChaosGenerator {
     var dock: Edge?
     var dockSize: CGFloat
     var plugged: Plugged
+    var macTiling: Bool
 
     init(_ random: inout ChaosRandom) {
       let environment = ProcessInfo.processInfo.environment
@@ -47,6 +49,9 @@ extension ChaosGenerator {
       }
       dockSize = random.pick([48, 59, 70, 86])!
       plugged = kind == .laptop ? .laptopAlone : kind == .desk ? .externalAlone : .both
+      // Drawn last, so that a seed's desk is what it was. Its walk is another all the same: half are taken without macOS's tiling now.
+      let drawn = random.chance(50)
+      macTiling = environment["ARBOR_CHAOS_TILING"].map { $0 != "off" } ?? drawn
     }
 
     /// The main display has its corner at 0,0, the menu bar is on both, the Dock on the main one.
@@ -87,18 +92,8 @@ extension ChaosGenerator {
     }
   }
 
-  /// What real apps refuse to go below, and about how large they open. The order is that of `apps`.
-  private static let realApps: [(name: String, minimum: CGSize, opens: CGSize, maximum: CGSize?)] = [
-    ("Safari", CGSize(width: 574, height: 240), CGSize(width: 1200, height: 800), nil),
-    ("Notes", CGSize(width: 709, height: 300), CGSize(width: 900, height: 600), nil),
-    ("Mail", CGSize(width: 760, height: 400), CGSize(width: 1100, height: 700), nil),
-    ("Terminal", CGSize(width: 177, height: 60), CGSize(width: 877, height: 499), nil),
-    ("Xcode", CGSize(width: 1188, height: 685), CGSize(width: 1300, height: 800), nil),
-    ("Finder", CGSize(width: 501, height: 300), CGSize(width: 920, height: 436), nil),
-    ("Music", CGSize(width: 680, height: 480), CGSize(width: 980, height: 600), nil),
-    // As wide as it is, whatever anybody asks: a settings window.
-    ("Preview", CGSize(width: 723, height: 400), CGSize(width: 723, height: 650), CGSize(width: 723, height: 2000)),
-  ]
+  /// What real apps refuse to go below, and about how large they open.
+  private static let realApps = RealApp.ordinary
 
   /// The keys a person presses, by how often.
   private static let keys: [(weight: Int, value: String)] = [
@@ -116,7 +111,7 @@ extension ChaosGenerator {
   ]
 
   mutating func startOrdinaryWalk() {
-    planned = [.displays(desk.displays, .never)]
+    planned = [.displays(desk.displays, .never), .macTiling(on: desk.macTiling)]
     let before = random.int(0...4)
     for _ in 0..<before { planned.append(.open(ordinaryWindow(on: desk.displays))) }
     planned.append(.launch)
@@ -136,7 +131,7 @@ extension ChaosGenerator {
       x: random.points(visible.minX, max(visible.minX, visible.maxX - size.width)), y: random.points(visible.minY, max(visible.minY, visible.maxY - size.height)))
     var new = ChaosAction.NewWindow(id: WindowID(nextWindow), app: app.name, pid: Int32(1000 + index), frame: CGRect(origin: origin, size: size))
     nextWindow += 1
-    (new.minimum, new.maximum) = (app.minimum, app.maximum)
+    (new.minimum, new.maximum, new.cells) = (app.minimum, app.maximum, app.cells)
     return new
   }
 

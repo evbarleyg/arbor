@@ -7,7 +7,7 @@ before. A controller call that leaves it out therefore compiles, and is wrong on
 the setting off: the whole group moves where only the neighbour should. No test of the new code would notice.
 This check does. Part of `make lint`.
 
-    scripts/lint-share-space.py              check Sources/ArborKit/Controller
+    scripts/lint-share-space.py              check Sources/ArborKit/Controller and Sources/ArborCore/Drop.swift
     scripts/lint-share-space.py --self-test  check the check
 """
 
@@ -67,7 +67,9 @@ def main():
     if "--self-test" in sys.argv:
         return self_test()
     problems = []
-    for path in sorted(glob.glob(os.path.join(ROOT, "Sources/ArborKit/Controller/*.swift"))):
+    # And a drop, which removes on the controller's behalf in the core.
+    paths = glob.glob(os.path.join(ROOT, "Sources/ArborKit/Controller/*.swift")) + [os.path.join(ROOT, "Sources/ArborCore/Drop.swift")]
+    for path in sorted(paths):
         with open(path, encoding="utf-8") as handle:
             problems += problems_in(handle.read(), os.path.relpath(path, ROOT))
     for problem in problems:

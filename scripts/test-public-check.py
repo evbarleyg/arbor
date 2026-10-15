@@ -493,6 +493,22 @@ def check_history():
         code, _, output = repository.run("--pre-push", **more)
         row("pre-push: to a remote nothing is known of, the first public commit is still not new", (code, "(1 new commit)" in output), (0, True))
 
+    def made_to_look_sound(r):
+        elsewhere(r)
+        foreign_root = r.git("rev-list", "--max-parents=0", "HEAD")
+        r.git("replace", "--graft", foreign_root, r.root)
+    with tempfile.TemporaryDirectory() as folder:
+        repository = Repository(folder)
+        made_to_look_sound(repository)
+        code, _, output = repository.run()
+        row("history from elsewhere that `git replace` makes look sound", (code, "does not descend" in output), (1, True))
+
+    def grafted(r):
+        elsewhere(r)
+        with open(os.path.join(r.path, ".git", "info", "grafts"), "w", encoding="utf-8") as handle:
+            handle.write(f"{r.git('rev-list', '--max-parents=0', 'HEAD')} {r.root}\n")
+    situation("the same by the older way, a file of grafts: it cannot tell", (2, []), grafted)
+
     def shallow(r):
         clean(r)
         r.git("push", "--quiet", "origin", "fix/something")
@@ -556,6 +572,97 @@ def check_history():
     situation("pre-push: to that second remote itself, which has it", (0, []), second_remote_has_it(pushing_to="archive"), "--pre-push")
     situation("pre-push: to one's fork, what the public repository has under another name is not new", (0, []),
               second_remote_has_it("upstream", "https://github.com/evbarleyg/arbor.git", pushing_to="origin"), "--pre-push")
+
+    # The exceptions belong to the commit.
+    def brings_its_own(standing_elsewhere):
+        def prepare(r):
+            r.write("scripts/public-check.allow", "person docs/x.md h.s\n")
+            line(r)
+            sha = r.git("rev-parse", "HEAD")
+            if standing_elsewhere:
+                r.git("checkout", "--quiet", "main")
+            return {"standard_input": f"refs/heads/x {sha} refs/heads/x {'0' * 40}\n"}
+        return prepare
+    situation("pre-push: a commit that brings its own honest exception", (0, []), brings_its_own(False), "--pre-push")
+    situation("pre-push: the same, pushed from a clone that stands somewhere else", (0, []), brings_its_own(True), "--pre-push")
+
+    def exception_elsewhere(r):
+        line(r)
+        sha = r.git("rev-parse", "HEAD")
+        r.git("checkout", "--quiet", "-b", "other", "main")
+        r.write("scripts/public-check.allow", "person docs/x.md h.s\n")
+        r.commit("chore: an exception on another branch")
+        return {"standard_input": f"refs/heads/x {sha} refs/heads/x {'0' * 40}\n"}
+    situation("pre-push: an exception where the clone stands does nothing for a commit that does not carry it", (1, ["person"]), exception_elsewhere, "--pre-push")
+
+    def compared(r):
+        brings_its_own(True)(r)
+    situation("--head: what is compared is held to its own exceptions too", (0, []), compared, "--base", "origin/main", "--head", "fix/something")
+
+    # Where work is integrated.
+    HERE_URL, FORK_URL = "https://github.com/evbarleyg/arbor", "https://github.com/someone/arbor.git"
+
+    def landing(to="swarm/trunk", may=None, prepare=clean, there=None, delete=False):
+        def prepared(r):
+            prepare(r)
+            if may is not None:
+                r.git("config", "arbor.mayLand", may)
+            sha = "0" * 40 if delete else r.git("rev-parse", "HEAD")
+            return {"standard_input": f"refs/heads/x {sha} refs/heads/{to} {there(r) if there else r.root}\n"}
+        return prepared
+
+    def said(what, expected, prepare, *arguments):
+        with tempfile.TemporaryDirectory() as folder:
+            repository = Repository(folder)
+            code, _, output = repository.run("--pre-push", *arguments, **prepare(repository))
+            row(what, (code, [words for words in ("by nobody else", "never deleted", "only ever moves forward") if words in output]), expected)
+    said("pre-push: an executor's push to swarm/trunk", (1, ["by nobody else"]), landing(), "--to", HERE_URL)
+    said("pre-push: to main", (1, ["by nobody else"]), landing("main"), "--to", HERE_URL)
+    said("pre-push: over ssh", (1, ["by nobody else"]), landing(), "--to", "git@github.com:evbarleyg/arbor.git")
+    said("pre-push: from a hook that does not say where to", (1, ["by nobody else"]), landing())
+    said("pre-push: with the switch set to false", (1, ["by nobody else"]), landing(may="false"), "--to", HERE_URL)
+    said("pre-push: to main of one's own fork", (0, []), landing("main"), "--to", FORK_URL)
+    said("pre-push: to a branch that only begins like it", (0, []), landing("swarm/trunk-2"), "--to", HERE_URL)
+    said("pre-push: by whoever lands, forward", (0, []), landing(may="true"), "--to", HERE_URL)
+
+    def rewritten(r):
+        clean(r)
+        r.there = r.git("rev-parse", "HEAD")
+        r.git("commit", "--quiet", "--amend", "--message", "fix: otherwise")
+    said("pre-push: by whoever lands, leaving out what is there", (1, ["only ever moves forward"]), landing(may="true", prepare=rewritten, there=lambda r: r.there), "--to", HERE_URL)
+    said("pre-push: over something this clone has never seen", (1, ["only ever moves forward"]), landing(may="true", there=lambda r: "0123456789" * 4), "--to", HERE_URL)
+    said("pre-push: deleting it, by an executor", (1, ["by nobody else"]), landing(delete=True), "--to", HERE_URL)
+    said("pre-push: deleting it, by whoever lands", (1, ["never deleted"]), landing(may="true", delete=True), "--to", HERE_URL)
+    said("pre-push: what is landed is read like anything else", (1, []), landing(may="true", prepare=line), "--to", HERE_URL)
+
+    # Rules that change while agents are deep in work.
+    def rules(version="7 12:00 UTC patches go up by hand-over only: read section 3 again", read=None, words=True):
+        def prepare(r):
+            clean(r)
+            r.write("../notes/words.txt", "quux7\n")
+            if version is not None:
+                r.write("../notes/rules-version.txt", version + "\nolder lines, which nobody reads\n")
+            if words:
+                r.git("config", "arbor.privateWords", os.path.join(os.path.dirname(r.path), "notes", "words.txt"))
+            if read is not None:
+                r.git("config", "arbor.rulesRead", read)
+            return {"standard_input": f"refs/heads/x {r.git('rev-parse', 'HEAD')} refs/heads/x {'0' * 40}\n"}
+        return prepare
+
+    def told(what, expected, prepare, *arguments):
+        with tempfile.TemporaryDirectory() as folder:
+            repository = Repository(folder)
+            more = prepare(repository)
+            code, _, output = repository.run(*(arguments or ("--pre-push",)), **(more if not arguments else {}))
+            row(what, (code, "by hand-over only: read section 3 again" in output, "git config arbor.rulesRead 7" in output), expected)
+    told("the rules have changed and this clone has never read any: refused, with the sentence and the way on", (1, True, True), rules())
+    told("it has read an earlier version", (1, True, True), rules(read="6"))
+    told("it has read this one", (0, False, False), rules(read="7"))
+    told("there is no such file", (0, False, False), rules(version=None))
+    told("the file is empty", (0, False, False), rules(version=""))
+    told("a stranger's clone, which knows of no private words: not a word", (0, False, False), rules(words=False))
+    told("--rules: the same question, for whoever is about to do something else than push", (1, True, True), rules(read="6"), "--rules")
+    told("--rules: read", (0, False, False), rules(read="7"), "--rules")
 
     situation("--text: what somebody is about to post", (1, ["person", "session"]),
               lambda r: {"standard_input": "It failed on his Mac.\n\nhttps://claude.ai/code/session_01AbCdEfGhIjKlMnOpQrStUv\n"}, "--text")
@@ -630,7 +737,8 @@ def check_hook():
         # This repository has no scripts/public-check.py, like a branch from before there was one, so the hook falls back on the
         # copy the installer kept. That copy knows the real first commit, so every history made here is foreign to it.
         install = os.path.join(HERE, "git-hooks", "install.sh")
-        subprocess.run([install], cwd=repository.path, env=repository.environment, capture_output=True, check=True)
+        first = subprocess.run([install], cwd=repository.path, env=repository.environment, capture_output=True, text=True, check=False)
+        row("make hooks: it goes on to look through the clone, and of this one it cannot tell", (first.returncode, "public-clone: cannot tell" in first.stdout), (2, True))
         repository.write("docs/x.md", "fine\n")
         repository.commit()
         done = subprocess.run(["git", "push", "origin", "fix/something"], cwd=repository.path, env=repository.environment,
@@ -639,8 +747,34 @@ def check_hook():
                                env=repository.environment, capture_output=True, check=False).returncode == 0
         row("make hooks: git calls the hook, and a refusal stops the push",
             (done.returncode != 0, "does not descend" in done.stdout + done.stderr, there), (True, True, False))
+        # A branch whose own check is from before the rules were asked about: the hook asks all the same.
+        lets_all_pass = "import sys\nsys.exit(0)\n"
+        repository.write("scripts/public-check.py", lets_all_pass)
+        repository.write("../notes/words.txt", "quux7\n")
+        repository.write("../notes/rules-version.txt", "7 12:00 UTC read section 3 again\n")
+        repository.git("config", "arbor.privateWords", os.path.join(folder, "notes", "words.txt"))
+        push = lambda: subprocess.run(["git", "push", "origin", "fix/something"], cwd=repository.path, env=repository.environment, capture_output=True, text=True, check=False)
+        done = push()
+        row("the hook: the rules have changed, and the branch's own check knows nothing of rules", (done.returncode != 0, "read section 3 again" in done.stdout + done.stderr), (True, True))
+        repository.git("config", "arbor.rulesRead", "7")
+        done = push()
+        row("the hook: read; and the branch's own check, which is older than the kept copy, does not do the reading", (done.returncode != 0, "does not descend" in done.stdout + done.stderr), (True, True))
+        repository.write("scripts/public-check.py", f"VERSION = {check.VERSION}\n" + lets_all_pass)
+        row("the hook: nor one of the same age", push().returncode != 0, True)
+        repository.write("scripts/public-check.allow", "nonsense\n")
+        row("the hook: exceptions that lie in the working tree and are in no commit count for nothing", "three fields are wanted" in push().stdout + push().stderr, False)
+        repository.commit("chore: exceptions that cannot be read")
+        done = push()
+        row("the hook: the exceptions are those of the commit being pushed", "three fields are wanted" in done.stdout + done.stderr, True)
+        repository.git("reset", "--quiet", "--hard", "HEAD~1")
+        repository.write("scripts/public-check.py", f"VERSION = {check.VERSION + 1}\n" + lets_all_pass)
+        row("the hook: a newer one on the branch does", push().returncode, 0)
+        os.remove(os.path.join(repository.path, "scripts", "public-check.py"))
         again = subprocess.run([install], cwd=repository.path, env=repository.environment, capture_output=True, check=False).returncode
-        row("make hooks: a second time renews it", again, 0)
+        row("make hooks: a second time renews it", again, 2)
+        with open(os.path.join(HERE, "git-hooks", "pre-push"), encoding="utf-8") as handle:
+            calls = [line.split("python3")[1].split() for line in handle if 'python3 "$check"' in line]
+        row("the hook hands the check no argument that an older copy would not know", calls, [['"$check"', "--pre-push"]])
         hook = os.path.join(repository.path, ".git", "hooks", "pre-push")
         with open(hook, "w", encoding="utf-8") as handle:
             handle.write("#!/bin/sh\necho mine\n")

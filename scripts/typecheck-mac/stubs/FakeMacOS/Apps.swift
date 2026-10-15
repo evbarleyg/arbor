@@ -10,8 +10,8 @@ extension FakeMac {
   public func launch(
     _ name: String, bundleID: String? = nil, policy: Policy = .regular, announced: Bool = true, readyAfter: TimeInterval = 0, comesForward: Bool = true
   ) -> App {
-    lastPID += 1
-    let app = App(pid: lastPID, name: name, bundleID: bundleID ?? "test.\(name.lowercased())", policy: policy)
+    Self.lastPID += 1
+    let app = App(pid: Self.lastPID, name: name, bundleID: bundleID ?? "test.\(name.lowercased())", policy: policy)
     app.refusesObserversUntil = now + readyAfter
     apps.append(app)
     note("\(name) is launched, pid \(app.pid)")
@@ -86,8 +86,15 @@ extension FakeMac {
     workspaceNotice("NSWorkspaceDidActivateApplicationNotification", app, after: notice) { [self] in
       if frontmost === app, frontmostByWorkspace !== app { app.noticeOutranTheProperty = true }
     }
-    if let old, old.isAlive { report("AXApplicationDeactivated", about: old, after: notice + timing.deactivatedAfterNotice - timing.report) }
-    report("AXApplicationActivated", about: app, after: notice + timing.activatedAfterNotice - timing.report)
+    let (deactivated, activated) = app.reportsFocusTwiceAndLate ? (0.0045, 0.0443) : (timing.deactivatedAfterNotice, timing.activatedAfterNotice)
+    if let old, old.isAlive { report("AXApplicationDeactivated", about: old, after: notice + deactivated - timing.report) }
+    report("AXApplicationActivated", about: app, after: notice + activated - timing.report)
+    // "When switching to an application, switch to a Space with open windows", which is how macOS comes.
+    if !stack.contains(where: { $0.app === app && isShowing($0) }),
+      let elsewhere = stack.first(where: { $0.app === app && $0.isOpen && $0.isFrontTab && !$0.isMinimized && $0.space != activeSpace && $0.canTakeKeyboard })
+    {
+      switchSpace(to: elsewhere.space)
+    }
   }
 
   /// `NSRunningApplication.activate()`, which since macOS 14 is only a request.
@@ -133,10 +140,13 @@ extension FakeMac {
   // MARK: Hanging
 
   /// The app's main thread is stuck. It answers no call and posts nothing; the window server goes on showing and moving its windows.
-  public func hang(_ app: App) {
+  /// `for`: it wakes by itself so much later.
+  public func hang(_ app: App, for seconds: TimeInterval? = nil) {
     guard app.isAlive, !app.isHung else { return }
+    if let seconds { send(after: seconds, from: .system, "") { [self] in wake(app) } }
     note("\(app.name) (pid \(app.pid)) hangs")
     app.isHung = true
+    app.secondsWaitedForInThisHang = 0
     if frontmost === app { app.hasHungInFront = true }
   }
 
@@ -164,12 +174,20 @@ extension FakeMac {
     let (focusChanges, mainChanges) = (app.focused !== window, app.main !== window)
     app.focused = window
     app.main = window
+    if app.reportsFocusTwiceAndLate, focusChanges, reportingFocus {
+      // Counted from the notice that the app came forward, which follows Arbor's call by some 5 ms here.
+      let notice = 0.005 - timing.report
+      for (name, delay) in [("AXFocusedWindowChanged", 0.0085), ("AXMainWindowChanged", 0.0266), ("AXFocusedWindowChanged", 0.0345), ("AXMainWindowChanged", 0.0413)] {
+        report(name, about: window, after: notice + delay)
+      }
+      return
+    }
     if focusChanges, reportingFocus { report("AXFocusedWindowChanged", about: window) }
     if mainChanges { report("AXMainWindowChanged", about: window, after: timing.betweenReports) }
   }
 
   /// The app's key window is gone, minimized or behind another tab: the frontmost of its others that show takes over. With none left the app
-  /// has no key window, and posts nothing about that (AppKit reports a window that becomes key, not one that stops being it).
+  /// has no key window, and posts nothing about that (AppKit reports a window that becomes key, not one that stops being it): a GUESS; the recordings all have a sibling.
   func nextWindowBecomesKey(in app: App, insteadOf old: Window) {
     guard app.focused === old || app.main === old else { return }
     if let next = stack.first(where: { $0.app === app && $0 !== old && isShowing($0) && $0.canTakeKeyboard }) {

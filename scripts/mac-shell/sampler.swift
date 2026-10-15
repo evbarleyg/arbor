@@ -12,7 +12,8 @@
 // apps have windows on the screen, so what it writes on a person's Mac is that person's. lib-day.sh compiles and wraps it.
 //
 // The log has one line per change, `<milliseconds since 1970> <kind> …`, in global points, origin top-left, y down:
-//   W id pid layer x y w h owner   a window came on screen, or its frame changed (spaces in the owner's name are _)
+//   W id pid layer x y w h owner   a window came on screen, or its frame changed (spaces in the owner's name are _). One that is wholly
+//                                  transparent is not on the screen: nobody sees it
 //   G id                           it left the screen: closed, hidden, minimized, or on another Space
 //   Z id,id,…                      the order of the ordinary windows (layer 0) changed: from the frontmost to the one at the back
 //   A pid bundle-id                another app came to the front
@@ -21,12 +22,13 @@
 //   K n                            n keys went down since the last sample. Never which
 //   D x y w h                      the main display
 //   V x y w h                      the main display between the menu bar and the Dock
+//   Y id x y w h vx vy vw vh       another display: all of it, and the part of it between its menu bar and the Dock. `Y id` alone: it has gone
 //   M text                         a mark of the script's
-//   L ms                           this sample came late: nothing was seen for that long
+//   L ms                           this sample came late, over 100 ms after the one before (docs/VIABLE.md, sampler.late_ms): nothing was seen for that long
 //   S …                            at the end: how many samples, how long one took, how many came late
 //
 // The grammar stays as it is: other tools write files in it that are merged with this one by time. A new kind is a new capital
-// letter, and a reader skips the kinds it does not know. Taken besides the ones above: F, by whoever films the screen.
+// letter, and a reader skips the kinds it does not know. Taken besides the ones above: F, by whoever films the screen; E, by witness.swift.
 //
 // Commands, one per line:
 //   mark <text>                    write an M line
@@ -99,6 +101,8 @@ struct Seen: Equatable {
 }
 
 final class Sampler {
+  /// A person sees a gap of this many milliseconds. One or two frames more or less they do not.
+  static let late = 100.0
   private var windows: [Int: Seen] = [:]
   private var order: [Int] = []
   private var buttonIsDown = false
@@ -112,7 +116,7 @@ final class Sampler {
 
   func sample(gap: Double, period: Double) {
     let started = now()
-    if gap > period * 2.5 {
+    if gap > Sampler.late {
       late += 1
       write(started, "L \(Int(gap))")
     }
@@ -124,7 +128,9 @@ final class Sampler {
     for case let info as NSDictionary in list {
       guard let id = (info[kCGWindowNumber] as? NSNumber)?.intValue,
         let bounds = info[kCGWindowBounds] as? NSDictionary,
-        let frame = CGRect(dictionaryRepresentation: bounds as CFDictionary)
+        let frame = CGRect(dictionaryRepresentation: bounds as CFDictionary),
+        // Arbor rehearses its stage after a start with a panel nobody can see, and apps keep such windows about.
+        ((info[kCGWindowAlpha] as? NSNumber)?.doubleValue ?? 1) > 0
       else { continue }
       let seen = Seen(
         pid: (info[kCGWindowOwnerPID] as? NSNumber)?.intValue ?? 0, layer: (info[kCGWindowLayer] as? NSNumber)?.intValue ?? 0,
@@ -268,6 +274,7 @@ let awake = ProcessInfo.processInfo.beginActivity(
 @MainActor final class Display {
   private var bounds = CGRect.null
   private var visible = CGRect.null
+  private var others: [String: String] = [:]
 
   func note() {
     let whole = CGDisplayBounds(CGMainDisplayID())
@@ -283,6 +290,16 @@ let awake = ProcessInfo.processInfo.beginActivity(
       visible = flipped
       write(now(), "V \(text(flipped))")
     }
+    var present: [String: String] = [:]
+    for other in NSScreen.screens.dropFirst() {
+      let id = (other.deviceDescription[NSDeviceDescriptionKey("NSScreenNumber")] as? NSNumber)?.stringValue ?? "?"
+      let all = CGRect(x: other.frame.minX, y: screen.frame.maxY - other.frame.maxY, width: other.frame.width, height: other.frame.height)
+      let part = other.visibleFrame
+      present[id] = "\(text(all)) \(text(CGRect(x: part.minX, y: screen.frame.maxY - part.maxY, width: part.width, height: part.height)))"
+    }
+    for (id, said) in present where others[id] != said { write(now(), "Y \(id) \(said)") }
+    for id in others.keys where present[id] == nil { write(now(), "Y \(id)") }
+    others = present
   }
 }
 let display = MainActor.assumeIsolated { Display() }

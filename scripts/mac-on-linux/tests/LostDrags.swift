@@ -22,7 +22,7 @@ private func account(_ one: StoreyOne, _ window: FakeMac.Window, pressedAt: Time
   let began = one.mac.journal.first { $0.contains("reports: drag began w\(window.number)") }.flatMap { Double($0.trimmingCharacters(in: .whitespaces).prefix(while: { $0 != " " })) }
   let moved = one.heard.all.filter { $0 == .dragMoved(window.number) }.count
   let changes = one.heard.all.filter { $0 == .changed(window.number, byUser: true) }.count
-  return began.map { "drag began \(Int((($0 + 10_000) - pressedAt) * 1000)) ms after the press, \(moved) moves" } ?? "NO DRAG; \(changes) reports that the window changed, not by Arbor"
+  return began.map { "drag began \(Int((($0 + one.mac.dawn) - pressedAt) * 1000)) ms after the press, \(moved) moves" } ?? "NO DRAG; \(changes) reports that the window changed, not by Arbor"
 }
 
 /// A slow drag (a second, 200 points) or a flick (a quarter of a second).
@@ -100,12 +100,140 @@ func tellOfLostDrags(_ book: Book) {
     }
   }
 
+  // Coarse steps, as scripts/mac-shell/pointer.swift makes them of a long drag: 30 steps of 42 and of 66 points, a tenth of a second apart. On a hosted Mac three of four such drags were
+  // never taken for drags.
+  let large = FakeMac.Screen(id: 1, name: "Large", frame: CGRect(x: 0, y: 0, width: 2560, height: 1440), visibleFrame: CGRect(x: 0, y: 31, width: 2560, height: 1340))
+  let lateness: [(words: String, start: TimeInterval, always: TimeInterval)] = [
+    ("on time", 0, 0), ("50 ms late to start", 0.05, 0), ("100 ms late to start", 0.1, 0), ("50 ms behind all the way", 0, 0.05), ("100 ms behind all the way", 0, 0.1),
+  ]
+  for step in [42, 66] {
+    for late in lateness {
+      for ahead in [
+        "", ", the pointer read a step late", ", and then a step ahead of the pointer", ", and then a step ahead of the pointer, and the app says nothing until it is over",
+      ] {
+        let words = "a window is dragged in 30 steps of \(step) points, the window server \(late.words)\(ahead)"
+        book.story(words) { story in
+          var window: FakeMac.Window!
+          let one = StoreyOne(story) { mac in
+            mac.setScreens([large], notices: 1)
+            window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300))
+          }
+          one.mac.serverFollowsPointerAfter = late.start
+          one.mac.serverLagsPointerBy = late.always
+          one.mac.pointerIsReadOneStepLate = ahead.contains("read")
+          one.mac.serverRunsAStepAhead = ahead.contains("ahead")
+          window.app.isSilentDuringDrags = ahead.contains("nothing")
+          let further = ahead.contains("ahead") ? CGPoint(x: CGFloat(step), y: 10) : .zero
+          let pressed = one.mac.now
+          one.mac.drag(from: grip, to: CGPoint(x: grip.x + CGFloat(step * 30), y: grip.y + 300), steps: 30, interval: 0.1, rest: 0.02)
+          one.mac.release()
+          one.mac.pass(3)
+          let short = account(one, window, pressedAt: pressed)
+          story.check("the window has moved", window.bounds.origin == CGPoint(x: 100 + CGFloat(step * 30) + further.x, y: 400 + further.y), window.bounds.text)
+          story.check("the drag is reported to begin", one.heard.all.contains(.dragBegan(window.number)), short)
+          story.check("and to end, so that there is a drop to act on", one.heard.all.contains(.dragEnded(window.number)), short)
+          story.check("Arbor knows where the window is", one.snapshot(window)?.frame == window.bounds, "\(one.snapshot(window)?.frame.text ?? "")")
+          one.mac.note("IN SHORT: \(short)")
+        }
+      }
+    }
+  }
+
+  // The hand is quick and then rests; the window comes after it in one leap. No movement of the mouse follows that could prompt a look at the window server.
+  for silent in [false, true] {
+    for goesOn in [false, true] {
+      let words = "a window is dragged 120 points in 80 ms, the hand rests, and the window comes after it in one leap 300 ms after the press"
+        + (silent ? ", its app saying nothing until it is over" : "") + (goesOn ? "; a second later the hand goes on" : "")
+      book.story(words) { story in
+        let (one, window) = stage(story)
+        window.app.isSilentDuringDrags = silent
+        one.mac.serverFollowsPointerAfter = 0.3
+        let pressed = one.mac.now
+        one.mac.drag(from: grip, to: CGPoint(x: grip.x + 120, y: grip.y + 40), steps: 4, interval: 0.02, rest: 0.01)
+        one.mac.pass(1)
+        if goesOn {
+          for part in 1...4 {
+            one.mac.moveMouse(to: CGPoint(x: grip.x + 120 + CGFloat(part) * 20, y: grip.y + 40))
+            one.mac.pass(0.08)
+          }
+        }
+        one.mac.release()
+        one.mac.pass(3)
+        let short = account(one, window, pressedAt: pressed)
+        story.check("the drag is reported to begin", one.heard.all.contains(.dragBegan(window.number)), short)
+        story.check("and to end, so that there is a drop to act on", one.heard.all.contains(.dragEnded(window.number)), short)
+        story.check("Arbor knows where the window is", one.snapshot(window)?.frame == window.bounds, "\(one.snapshot(window)?.frame.text ?? "")")
+        one.mac.note("IN SHORT: \(short)")
+      }
+    }
+  }
+
+  // The other side of the same coin: a selection, during which the window does something by itself. Never a drag, never a resize.
+  let own: [(words: String, change: (CGRect) -> CGRect)] = [
+    ("moves the pointer's way", { $0.offsetBy(dx: 40, dy: 0) }), ("moves the pointer's way, as far as the pointer has gone", { $0.offsetBy(dx: 80, dy: 0) }),
+    ("jumps to within 24 points of the pointer's own travel", { $0.offsetBy(dx: 100, dy: 0) }), ("moves against the pointer", { $0.offsetBy(dx: -40, dy: 0) }), ("moves across the pointer's way", { $0.offsetBy(dx: 0, dy: 40) }),
+    ("moves aslant, half the pointer's way", { $0.offsetBy(dx: 30, dy: 30) }), ("is resized", { CGRect(x: $0.minX, y: $0.minY, width: $0.width + 40, height: $0.height) }),
+  ]
+  for what in own {
+    book.story("text is selected over 120 points, and meanwhile the window \(what.words), by itself") { story in
+      let (one, window) = stage(story)
+      one.mac.press(at: CGPoint(x: 200, y: 250))
+      one.mac.pass(0.15)
+      for part in 1...12 {
+        one.mac.moveMouse(to: CGPoint(x: 200 + CGFloat(part) * 10, y: 250))
+        one.mac.pass(0.05)
+        if part == 8 { one.mac.appMoves(window, to: what.change(window.frame)) }
+      }
+      one.mac.pass(0.3)
+      one.mac.release()
+      one.mac.pass(2)
+      story.check("it is not taken for a drag", !one.heard.all.contains(.dragBegan(window.number)), one.heard.texts)
+      story.check("nor for a resize by hand", !one.heard.all.contains(.resizeBegan(window.number)), one.heard.texts)
+      story.check("Arbor knows where the window is", one.snapshot(window)?.frame == window.frame, "\(one.snapshot(window)?.frame.text ?? "")")
+    }
+  }
+
+  // Seen late in a job on a hosted Mac: a system alert, a window of another process at the level of modal panels, 260 by 250 at 382,118, lay over the title bar where the script pressed.
+  for storey in [1, 2] {
+    book.story("a system alert lies over the title bar where the button goes down\(storey == 2 ? ", and the window is docked" : "")") { story in
+      var window: FakeMac.Window!
+      let frame = CGRect(x: 300, y: 130, width: 400, height: 300)
+      let (mac, heard, layer): (FakeMac, Listener, AXWindowSystem)
+      var two: StoreyTwo?
+      if storey == 1 {
+        let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: frame) }
+        (mac, heard, layer) = (one.mac, one.heard, one.layer)
+      } else {
+        let stage = StoreyTwo(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: frame) }
+        stage.run("dock \(window.number) left")
+        (mac, heard, layer, two) = (stage.mac, stage.heard, stage.layer, stage)
+      }
+      let home = window.frame
+      // Over the title bar, wherever the window is by now.
+      let alert = FakeMac.Furniture(number: 60, pid: 95, layer: 8, bounds: CGRect(x: home.midX - 130, y: home.minY - 12, width: 260, height: 250))
+      mac.furniture.append(alert)
+      heard.clear()
+      mac.drag(from: CGPoint(x: home.midX, y: home.minY + 12), to: CGPoint(x: home.midX + 200, y: home.minY + 160))
+      mac.release()
+      mac.pass(2)
+      story.check("the alert gets the press: the window stays where it is", window.frame == home, window.frame.text)
+      story.check("the press is reported, for the monitor hears of it as of any other", heard.all.contains(.pressed), heard.texts)
+      story.check("no drag and no resize is made of it", heard.outline.isEmpty, heard.texts)
+      story.check("nothing is said about the window or the keyboard", heard.all == [.pressed], heard.texts)
+      story.check("the alert is not among what Arbor takes for windows on screen", !layer.stackedWindows().contains { $0.id.rawValue == alert.number })
+      if let two { story.check("the window is still docked", two.isDocked(window)) }
+    }
+  }
+
   // What a person sees of it.
   for wait in [0, 100] {
     let words = wait > 0 ? ", and the window server begins to move it \(wait) ms after the press, with the pointer 40 points away" : ""
-    book.story("a floating window is dragged briskly to the left edge of the screen\(words)") { story in
+    book.story("with macOS's tiling off, a floating window is dragged briskly to the left edge of the screen\(words)") { story in
       var window: FakeMac.Window!
-      let two = StoreyTwo(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 300, y: 130, width: 400, height: 300)) }
+      let two = StoreyTwo(story) { mac in
+        mac.macOSTilesDraggedWindows = false
+        window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 300, y: 130, width: 400, height: 300))
+      }
       two.mac.serverFollowsPointerAfter = Double(wait) / 1000
       two.mac.drag(from: CGPoint(x: 510, y: 148), to: CGPoint(x: 3, y: 368), steps: 12, interval: 0.04, rest: 0.02)
       two.mac.pass(0.3)

@@ -29,14 +29,21 @@ while !arguments.isEmpty {
     book.options.only.append(key.components(separatedBy: ": ")[0])
   case "--list": book.options.listsOnly = true
   case "--seeds":
-    let bounds = value().components(separatedBy: "-").compactMap { UInt64($0) }
-    guard let first = bounds.first, let last = bounds.last, first <= last else {
-      print("--seeds wants a range, like 1-500")
+    let words = value().components(separatedBy: "-")
+    let bounds = words.compactMap { UInt64($0) }
+    guard bounds.count == words.count, (1...2).contains(bounds.count), let first = bounds.first, let last = bounds.last, first <= last else {
+      print("--seeds wants a range, like 1-500, or one seed")
       exit(2)
     }
     book.options.walkSeeds = first...last
-  case "--steps": book.options.walkSteps = Int(value()) ?? 40
+  case "--steps":
+    guard let steps = Int(value()), steps > 0 else {
+      print("--steps wants a number of steps, 1 or more")
+      exit(2)
+    }
+    book.options.walkSteps = steps
   case "--replay": book.options.replay = value()
+  case "--heard": book.options.heardFile = value()
   case "--help":
     print(
       """
@@ -49,6 +56,7 @@ while !arguments.isEmpty {
       --seeds 1-500   the seeds of the rude walk (1-40), with --only walk for the walk alone
       --steps 40      how many steps each walk has
       --replay TEXT   one walk, as a failing one prints it, with everything that happened
+      --heard FILE    the file of what the layer was heard to report; a run of everything rewrites it if it is out of date, and fails that once
       """)
     exit(0)
   default:
@@ -87,6 +95,49 @@ func checkThePump() {
 }
 checkThePump()
 
+/// Likewise the threads that pass one baton (stubs/FakeMacOS/Threads.swift): a queue's call to an app that hangs takes a second of the model's time, during which the main thread waits only as long as it
+/// said it would, goes on, and hears of the outcome later; two queues wait side by side, not one after the other.
+func checkTheThreads() {
+  let mac = FakeMac()
+  FakeMac.current = mac
+  let (hung, well) = (mac.launch("Hung"), mac.launch("Well"))
+  mac.open("a", in: hung)
+  mac.open("b", in: well)
+  mac.pass(1)
+  mac.hang(hung)
+  nonisolated(unsafe) var seen: [String] = []
+  let start = mac.now
+  @Sendable func at() -> String { String(format: "%.2f", mac.now - start) }
+  let done = FakeDispatchSemaphore(value: 0)
+  let all = FakeDispatchGroup()
+  for app in [hung, well, hung] {
+    // Two queues for the app that hangs: their waits must overlap.
+    let (pid, name) = (app.pid, app.name)
+    FakeDispatchQueue(label: "check.\(seen.count)").async(group: all) {
+      let answer = mac.read("AXRole", of: .app(pid), timeout: 1).answer
+      seen.append("\(name) \(answer) at \(at()), on the main thread: \(Thread.isMainThread)")
+      FakeMac.mainAsync { seen.append("the main queue hears of \(name) at \(at())") }
+      if name == "Well" { done.signal() }
+    }
+  }
+  seen.append("the semaphore: \(done.wait(timeout: .now() + 0.15)) at \(at())")
+  seen.append("the group after 0.15 s more: \(all.wait(timeout: .now() + 0.15)) at \(at())")
+  let began = Date()
+  mac.pass(2)
+  seen.append("the group in the end: \(all.wait(timeout: .now())) at \(at())")
+  mac.end()
+  let expected = [
+    "Well success at 0.00, on the main thread: false", "the semaphore: success at 0.00", "the group after 0.15 s more: timedOut at 0.15", "the main queue hears of Well at 0.15",
+    "Hung cannotComplete at 1.00, on the main thread: false", "Hung cannotComplete at 1.00, on the main thread: false", "the main queue hears of Hung at 1.00",
+    "the main queue hears of Hung at 1.00", "the group in the end: success at 2.15",
+  ]
+  guard seen == expected, Date().timeIntervalSince(began) < 1 else {
+    print("the threads of the model do not work with this toolchain (scripts/typecheck-mac/stubs/FakeMacOS/Threads.swift):\n  " + seen.joined(separator: "\n  "))
+    exit(3)
+  }
+}
+checkTheThreads()
+
 book.readKnownFailures()
 tellOfOpening(book)
 tellOfOddOpenings(book)
@@ -97,6 +148,7 @@ tellOfDragging(book)
 tellOfLostDrags(book)
 tellOfPlacing(book)
 tellOfArrangements(book)
+tellOfSlowApps(book)
 tellOfTheWalk(book)
 if let replay = book.options.replay { exit(replayWalk(replay)) }
 exit(book.tellAll())

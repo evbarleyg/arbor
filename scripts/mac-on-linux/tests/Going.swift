@@ -24,6 +24,45 @@ func tellOfGoing(_ book: Book) {
     story.check("Arbor knows the one that is left", one.known == [first.number])
   }
 
+  // Safari and Finder: the closing window is off the list, and no longer valid, when the next one's focus is reported; the raw "destroyed" comes after everything.
+  for slow in [false, true] {
+    book.story("a window closes in an app that drops it from its list at once\(slow ? ", and answers slowly, as big apps do" : "")") { story in
+      var first: FakeMac.Window!, second: FakeMac.Window!
+      let one = StoreyOne(story) { mac in
+        let app = mac.launch("Safari")
+        first = mac.open("first", in: app)
+        second = mac.open("second", in: app)
+      }
+      first.app.dropsAClosingWindowAtOnce = true
+      // Some twenty-five calls for one focus report: 100 to 190 ms were seen.
+      if slow { first.app.answersIn = 0.005 }
+      one.mac.close(second)
+      one.mac.pass(2)
+      story.check(
+        "the window is reported gone first, as in the recordings, then the app's next window focused", one.heard.outline == [.destroyed(second.number), .focused(first.number)],
+        one.heard.texts)
+      story.check("the \"destroyed\" that comes after both says nothing a second time", one.heard.all.filter { $0 == .destroyed(second.number) }.count == 1, one.heard.texts)
+      story.check("Arbor knows the one that is left", one.known == [first.number])
+    }
+  }
+
+  book.story("a docked window closes in an app that drops it from its list at once") { story in
+    var left: FakeMac.Window!, right: FakeMac.Window!
+    let two = StoreyTwo(story) { mac in
+      let app = mac.launch("Safari")
+      right = mac.open("right", in: app, frame: CGRect(x: 500, y: 100, width: 400, height: 300))
+      left = mac.open("left", in: app, frame: CGRect(x: 60, y: 100, width: 400, height: 300))
+    }
+    story.check("two windows are arranged", two.run("arrange").ok)
+    left.app.dropsAClosingWindowAtOnce = true
+    let (goes, stays): (FakeMac.Window, FakeMac.Window) = (left, right)
+    let half = stays.frame.width
+    two.mac.close(goes)
+    two.mac.pass(2)
+    story.check("its neighbour gets the room", stays.frame.width > half * 1.5, two.whereabouts(stays))
+    story.check("and the focus ring, with the keyboard", two.ring == stays.number, "\(String(describing: two.ring))")
+  }
+
   book.story("a window closes and the notification never comes") { story in
     var first: FakeMac.Window!, second: FakeMac.Window!
     let one = StoreyOne(story) { mac in
@@ -252,6 +291,47 @@ func tellOfGoing(_ book: Book) {
     one.mac.pass(3)
     story.check("once the app wakes the window is announced as new", one.heard.all.contains(.appeared(window.number)), one.heard.texts)
     story.check("and is said to have the keyboard", one.lastWordOnTheKeyboard == window.number, one.heard.texts)
+  }
+
+  // What was on its way when the app hung is all Arbor will hear of it.
+  for ahead in [0.001, 0.05] {
+    book.story("an app moves its window \(Int(ahead * 1000)) ms before it hangs for 5 s") { story in
+      var window: FakeMac.Window!
+      let one = StoreyOne(story) { mac in
+        window = mac.open("theirs", in: mac.launch("Busy"))
+        mac.open("mine", in: mac.launch("Mine"))
+      }
+      let moved = CGRect(x: 20, y: 110, width: 260, height: 200)
+      one.mac.appMoves(window, to: moved)
+      one.mac.pass(ahead)
+      one.mac.hang(window.app, for: 5)
+      one.mac.pass(5)
+      story.check("while it hangs Arbor's main thread waits two seconds for it at most", one.mac.secondsWaitedInVain <= 2, "\(one.mac.secondsWaitedInVain) s")
+      one.mac.pass(5)
+      story.check("once it has woken Arbor knows where the window is", one.snapshot(window)?.frame == moved, "\(one.snapshot(window)?.frame.text ?? "") against \(moved.text)")
+      story.check("and has said so", one.heard.all.contains(.changed(window.number, byUser: true)), one.heard.texts)
+    }
+  }
+
+  // At a launch, and at the end of a pause.
+  for seconds in [5.0, 60.0] {
+    book.story("Arbor starts while an app hangs, which wakes \(Int(seconds)) s later") { story in
+      var theirs: FakeMac.Window!, mine: FakeMac.Window!
+      let one = StoreyOne(story) { mac in
+        theirs = mac.open("theirs", in: mac.launch("Busy"))
+        mine = mac.open("mine", in: mac.launch("Mine"))
+        mac.hang(theirs.app)
+      }
+      story.check("the other app's window is known from the start", one.known == [mine.number], "\(one.known)")
+      one.mac.pass(seconds)
+      story.check("while it hangs Arbor's main thread waits two seconds for it at most", one.mac.secondsWaitedInVain <= 2, "\(one.mac.secondsWaitedInVain) s")
+      one.mac.wake(theirs.app)
+      one.mac.pass(3)
+      story.check("three seconds after it has woken its window is known", one.known.contains(theirs.number), "\(one.known)")
+      one.mac.pass(30)
+      story.check("half a minute after, at the latest", one.known.contains(theirs.number), "\(one.known)")
+      story.check("announced as one that was open all along", one.heard.all.contains(.found(theirs.number)) && !one.heard.all.contains(.appeared(theirs.number)), one.heard.texts)
+    }
   }
 
   book.story("three docked windows of an app that hangs") { story in

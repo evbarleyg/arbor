@@ -52,7 +52,7 @@ Not there at all yet: IOKit, CoreImage, CoreText, Metal, AVFoundation, Security.
 
 What Arbor's Accessibility layer calls (the Accessibility API, `NSWorkspace`, `NSRunningApplication`, `NSScreen`, `NSEvent`'s monitors and class properties, `CGWindowListCopyWindowInfo`, `CGEventSource`, type ids, booleans and run loop sources of Core Foundation) has bodies that ask a model of a
 Mac, `stubs/FakeMacOS`, which comes first in `check.sh`'s order. `make mac-on-linux` compiles these same files for real, links them with the layer and runs it (`scripts/mac-on-linux/README.md`). To this tool it makes no difference: it reads what is declared. **Keep the declarations as the SDK has them**; what the
-model needs besides begins with an underscore (`_stands`, `_pid`, `_onRunLoop`), and Arbor's code must not use it.
+model needs besides begins with an underscore (`_stands`, `_pid`, `_onRunLoop`). Some of it has to be public, one module to the next; `prepare.py` reports it, and `import FakeMacOS`, wherever Arbor's sources, tests or helpers use it: no Mac has it.
 
 ## When it complains about something Apple does have
 

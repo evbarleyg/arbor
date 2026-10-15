@@ -7,8 +7,10 @@ here means: an act, a user-hour, a cell, a cast, a detector, a run that counts.
   viable.py ledger <commit> <directory…> [-o <file>]   makes the ledger from runs' directories, each with the `run.json` its script wrote
                                                        and, if it got that far, the findings `jolts.py report --json` wrote
                                                        (`day-findings.json`). A `rings.json` in one of them or beside it is taken along
-  viable.py check <ledger> [--runs <file>]             the table, the reasons and the verdict. `--runs`: every run of the gate's workflow
-                                                       on that commit as GitHub lists them, one per line, `<id> <attempts>`.
+  viable.py check <ledger> [--runs <file>]             the table, the reasons and the verdict. `--runs`: every job of the gate's workflow on that
+                                                       commit that got a Mac, as GitHub lists them, a line for each job and attempt with the
+                                                       parts it was given: `<run id> <attempt> <first part>-<last part>`; of an attempt in which no
+                                                       job got one, `<run id> <attempt> -`. Every attempt of a run has a line.
                                                        Without it the verdict is never VIABLE: nobody has looked for runs that were left out
   viable.py --self-test
 
@@ -53,6 +55,10 @@ MOST = 64
 READ_ELSEWHERE = {
     "sampler.blind_ms_max": "jolts.py: an act during which the sampler was blind for longer is not judged",
     "sampler.late_ms": "sampler.swift: a sample that comes later than this after the one before is counted as late",
+    "input.release_ms_max": "jolts.py: a single release that reaches the apps later than this, with a process of Arbor's there, is input-held",
+    "input.p50_more_ms_max": "jolts.py: half of the events of a kind reach the apps at most this much later in a round of input with Arbor than in the one without beside it",
+    "input.forward_p50_more_ms_max": "jolts.py: the same for presses on a window of an app that is not in front, which macOS itself holds",
+    "input.events_per_kind_min": "jolts.py: fewer events of a kind than this in a round say nothing",
 }
 
 
@@ -76,6 +82,10 @@ class Numbers(dict):
 
     def items(self):
         return [(key, self[key]) for key in self]
+
+    def plain(self):
+        """A copy in ordinary dictionaries. It asks nothing: `json.dumps` goes through `items` and leaves every number looking read."""
+        return {key: Numbers(value).plain() if isinstance(value, dict) else copy.deepcopy(value) for key, value in dict.items(self)}
 
     def leaves(self):
         for key in self:
@@ -158,6 +168,8 @@ def why_not(run, gate, commit):
         return "the sampler gave no account of itself"
     if count(sampler["late"], "late") / sampler["samples"] > gate["sampler"]["share_of_samples_late_max"]:
         return f"{sampler['late']} of {sampler['samples']} samples came late"
+    if manifest["kind"] in COUNTED and heard(run) is None:
+        return "it does not say of which kinds of input its rounds say anything: the witness saw nothing, or no round was played"
     # In a run without Arbor there is nothing of Arbor's to judge: it is there to be compared with.
     if manifest["kind"] != "control":
         judged = sum(1 for act in acts if act.get("judged") is True)
@@ -166,13 +178,28 @@ def why_not(run, gate, commit):
     return None
 
 
+def heard(run):
+    """The kinds of input of which a journey's own rounds say something, as jolts.py found (`"judged"`). None if the run does not say."""
+    kinds = (run.get("input") or {}).get("judged")
+    if not isinstance(kinds, list) or not all(isinstance(kind, str) for kind in kinds):
+        return None
+    return set(kinds)
+
+
+def did(act, run):
+    """Whether an act was performed. It has to say."""
+    if not isinstance(act.get("performed"), bool):
+        raise Unreadable(f"{name_of(run)}: {act.get('id')} does not say whether it was performed")
+    return act["performed"]
+
+
 def journey(manifest):
     """What has to be the same for two runs to have played the same acts."""
     return tuple(manifest.get(key) for key in ("script", "seed", "tiling", "display", "cast", "reduce_motion"))
 
 
 def judge(ledger, gate, listed=None):
-    """(verdict, reasons, lines of the table). `listed`: {GitHub's run id: how many attempts it has had}, or None if nobody asked."""
+    """(verdict, reasons, lines of the table). `listed`: {(GitHub's run id, attempt): the parts whose jobs got a Mac}, or None if nobody asked."""
     if not isinstance(ledger, dict) or not isinstance(ledger.get("runs"), list) or not isinstance(ledger.get("rings"), dict):
         raise Unreadable("a ledger has `runs`, a list, and `rings`")
     commit = ledger.get("commit")
@@ -204,32 +231,46 @@ def judge(ledger, gate, listed=None):
         key = playing(run["manifest"])[:3]
         if key in seen:
             invalid.append(f"{name_of(run)} is in the ledger twice")
+        if not isinstance(run["manifest"].get("started"), bool):
+            raise Unreadable(f"{name_of(run)} does not say whether its script began")
         seen[key] = run
-    started = {}
-    for (identifier, attempt, part), run in seen.items():
-        started.setdefault((identifier, attempt), {})[part] = playing(run["manifest"])[3]
-    for (identifier, attempt), parts in sorted(started.items()):
-        for earlier in range(1, attempt):
-            if (identifier, earlier) not in started:
-                reasons.append(f"run {identifier} was started {attempt} times, and the ledger leaves out attempt {earlier}")
-        # How many scripts a run plays is written down before the first begins, so that none can be left out afterwards.
-        if len(set(parts.values())) > 1:
-            invalid.append(f"run {identifier}.{attempt}: its parts do not agree how many they are")
-        for part in range(1, max(parts.values()) + 1):
-            if part not in parts:
-                reasons.append(f"run {identifier}.{attempt} played {max(parts.values())} scripts, and the ledger leaves out part {part}")
+    # How many scripts a run plays is written down before the first begins, so that none can be left out afterwards. It is the same in every attempt.
+    sizes = {}
+    for (identifier, _, _), run in seen.items():
+        sizes.setdefault(identifier, set()).add(playing(run["manifest"])[3])
+    # A hosted Mac's failure does not sink a commit: a part whose script never began may be played in a later attempt of the same run. That it never began is
+    # said by the stub the job left in its place, or by GitHub, which gave its job no Mac. An absence says nothing.
+    played = {(identifier, part) for (identifier, _, part), run in seen.items() if run["manifest"]["started"]}
+    for identifier, found in sorted(sizes.items()):
+        if len(found) > 1:
+            invalid.append(f"run {identifier}: its parts do not agree how many they are")
+        for part in range(1, max(found) + 1):
+            if (identifier, part) not in played:
+                reasons.append(f"run {identifier} has {max(found)} parts, and no attempt played part {part}")
     if listed is None:
-        reasons.append("nobody compared the ledger with GitHub's list of runs (--runs), so runs may have been left out")
+        reasons.append("nobody compared the ledger with GitHub's list of jobs (--runs), so runs may have been left out")
     else:
-        for identifier, attempts in sorted(listed.items()):
-            for attempt in range(1, attempts + 1):
-                if (identifier, attempt) not in started:
-                    reasons.append(f"GitHub knows run {identifier}.{attempt} on this commit, and the ledger leaves it out")
-        for identifier, attempt in sorted(started):
-            if attempt > listed.get(identifier, 0):
-                invalid.append(f"the ledger has run {identifier}.{attempt}, of which GitHub knows nothing")
+        for (identifier, attempt), parts in sorted(listed.items()):
+            for part in sorted(parts):
+                if (identifier, attempt, part) not in seen:
+                    reasons.append(f"in run {identifier}.{attempt} a job got a Mac for part {part}, and the ledger leaves it out: there is not even a stub")
+        # An attempt that is nowhere may be the one that went badly. GitHub lists a run's latest attempt unless it is asked for all.
+        for identifier, attempt in sorted(set(listed) | {key[:2] for key in seen}):
+            for earlier in range(1, attempt):
+                if (identifier, earlier) not in listed:
+                    reasons.append(f"run {identifier} has an attempt {attempt}, and GitHub's list says nothing of attempt {earlier}: not even that no job of it got a Mac")
+        for identifier, attempt, part in sorted(seen):
+            if part not in listed.get((identifier, attempt), ()):
+                invalid.append(f"the ledger has part {part} of run {identifier}.{attempt}, and GitHub knows of no job that got a Mac for it")
+    for (identifier, attempt, part), run in sorted(seen.items()):
+        if not run["manifest"]["started"]:
+            # Its script never began, it says, and here is what the script saw.
+            if run.get("acts") or run.get("findings") or run.get("sampler") or run.get("input"):
+                invalid.append(f"part {part} of run {identifier}.{attempt} says that its script never began, and brought back what a script brings back")
+            table.append(f"  never began: part {part} of run {identifier}.{attempt}" + (", played in another attempt" if (identifier, part) in played else ""))
 
-    runs = list(seen.values())
+    # What began counts, in every attempt, and nothing replaces it.
+    runs = [run for run in seen.values() if run["manifest"]["started"]]
     excuses = {id(run): why_not(run, gate, commit) for run in runs}
     # What the Mac does by itself: found at the same act of the same journey with Arbor not running.
     alone = {}
@@ -237,6 +278,33 @@ def judge(ledger, gate, listed=None):
         if run["manifest"].get("kind") == "control" and not excuses[id(run)]:
             found = alone.setdefault(journey(run["manifest"]), set())
             found.update((finding["detector"], finding["id"]) for finding in run.get("findings") or [])
+
+    journeys = [run for run in runs if run["manifest"].get("kind") in COUNTED and not excuses[id(run)]]
+    # Who holds input back is asked within each journey, in rounds of the same events with and without Arbor on the same Mac, and what is found there is a finding like any other.
+    # A journey may say nothing of a kind: too few events, or the Mac itself moved. Silence is not read in the commit's favour.
+    for kind in gate["input"]["kinds"]:
+        spoke = sum(1 for run in journeys if kind in heard(run))
+        if spoke < gate["input"]["share_of_journeys_that_judge_a_kind_min"] * len(journeys) or not journeys:
+            invalid.append(f"only {spoke} of {len(journeys)} journeys say whether input of the kind {kind} is held back")
+    # A control is the same journey with Arbor not running. One that is nobody's excuses nothing and shows nothing.
+    performed_alone = {}
+    for run in runs:
+        if run["manifest"].get("kind") == "control" and not excuses[id(run)]:
+            if not any(journey(other["manifest"]) == journey(run["manifest"]) for other in journeys):
+                reasons.append(f"{name_of(run)} is the control of no journey that counts: there is nothing to compare it with")
+            performed_alone.setdefault(journey(run["manifest"]), set()).update(act["id"] for act in run["acts"] if did(act, run))
+    # An act that could not be performed is not judged. A press that does not take hold of a title bar happens without Arbor too. But where the same act was performed in the journey's own
+    # control, something took the window from under the pointer; and too many of them, and either the instrument is sick or Arbor does that, and nobody can tell which from a count.
+    undone = [(run, act) for run in journeys for act in run["acts"] if not did(act, run)]
+    for run, act in undone:
+        if act["id"] in performed_alone.get(journey(run["manifest"]), ()):
+            fails += 1
+            reasons.append(f"{act['id']} could not be performed in {name_of(run)}, and was performed in the same journey without Arbor")
+    everything_asked = sum(len(run["acts"]) for run in journeys)
+    if undone:
+        table.append(f"  not performed, so not judged: {len(undone)} of {everything_asked} acts")
+    if everything_asked and len(undone) / everything_asked > gate["share_of_acts_not_performed_max"]:
+        invalid.append(f"{len(undone)} of {everything_asked} acts could not be performed: the instrument is sick, or Arbor takes windows from under the pointer")
 
     for run in runs:
         manifest, findings = run["manifest"], run.get("findings") or []
@@ -424,21 +492,31 @@ def read_json(path):
 
 
 def read_listed(path):
-    """{run id: attempts} from lines `<id> <attempts>`."""
+    """{(run id, attempt): parts} from lines `<run id> <attempt> <first part>-<last part>`, one for each job that got a Mac; `<run id> <attempt> -` for an attempt in which none did."""
     listed = {}
     try:
         with open(path, encoding="utf-8") as handle:
             for line in handle:
-                words = line.split()
-                if not words:
+                if not line.strip():
                     continue
-                if len(words) > 2 or not words[0].isdigit() or not words[-1].isdigit() or int(words[-1]) < 1:
-                    raise Unreadable(f"{path}: “{line.strip()}” is not `<id> <attempts>`")
-                listed[words[0]] = max(listed.get(words[0], 0), int(words[1]) if len(words) == 2 else 1)
+                nobody = re.fullmatch(r"(\d+) (\d+) -", line.strip())
+                if nobody and 1 <= int(nobody.group(2)) <= MOST:
+                    listed.setdefault((nobody.group(1), int(nobody.group(2))), set())
+                    continue
+                found = re.fullmatch(r"(\d+) (\d+) (\d+)-(\d+)", line.strip())
+                if not found:
+                    raise Unreadable(f"{path}: “{line.strip()}” is not `<run id> <attempt> <first part>-<last part>`")
+                attempt, first, last = (int(word) for word in found.groups()[1:])
+                if not 1 <= attempt <= MOST or not 1 <= first <= last <= MOST:
+                    raise Unreadable(f"{path}: “{line.strip()}”: attempts and parts are numbers from 1 to {MOST}, the first part not after the last")
+                parts = listed.setdefault((found.group(1), attempt), set())
+                if parts & set(range(first, last + 1)):
+                    raise Unreadable(f"{path}: “{line.strip()}”: two jobs of one attempt were given the same part")
+                parts.update(range(first, last + 1))
     except OSError as problem:
         raise Unreadable(f"{path}: {problem}") from problem
     if not listed:
-        raise Unreadable(f"{path} lists no run at all: a gate has runs, so the listing went wrong")
+        raise Unreadable(f"{path} lists no job at all: a gate has runs, so the listing went wrong")
     return listed
 
 
@@ -458,19 +536,22 @@ def account(sampler):
 
 def run_from(directory):
     """One run of the ledger, from what its script and jolts.py left in a directory."""
-    run = {"manifest": read_json(os.path.join(directory, "run.json")), "sampler": {}, "acts": [], "findings": []}
+    run = {"manifest": read_json(os.path.join(directory, "run.json")), "sampler": {}, "input": None, "acts": [], "findings": []}
     path = os.path.join(directory, "day-findings.json")
     # A run that ended before its report is in the ledger all the same: it was started, so it is accounted for.
     if not os.path.exists(path):
         return run
     found = read_json(path)
     run["sampler"] = account(found.get("sampler"))
+    run["input"] = found.get("input")
     times = {}
     for step in found.get("steps") or []:
         slug = step.get("slug") or "?"
         times[slug] = times.get(slug, 0) + 1
         identifier = f"{slug}#{times[slug]}"
-        run["acts"].append({"id": identifier, "act": step.get("act"), "judged": step.get("judged") is True})
+        # A round of input is an instrument, not an act: it counts towards nothing, and what is found during it is found.
+        if step.get("act") != "instrument":
+            run["acts"].append({"id": identifier, "act": step.get("act"), "judged": step.get("judged") is True, "performed": step.get("performed")})
         for finding in step.get("findings") or []:
             if not finding.get("detector"):
                 raise Unreadable(f"{path}: step {step.get('number')}: a finding without `detector`: {finding.get('what')}")
@@ -526,34 +607,38 @@ def perfect(gate):
     wanted += ["switch"] * (len(plan) * per_run - len(wanted))
     walks = -(-len(plan) * gate["share_of_acts_from_walks_min"] // 1)
     sampler = {"samples": 30000, "late": 0}
+    arrived = {"judged": list(gate["input"]["kinds"])}
     runs = []
 
     def manifest(number, kind, cell, cast):
         return {
-            "gate": gate["gate"], "commit": commit, "run": str(1000 + number), "attempt": 1, "part": 1, "parts": 1, "script": f"{kind}.sh", "kind": kind, "seed": None,
+            "gate": gate["gate"], "started": True, "commit": commit, "run": str(1000 + number), "attempt": 1, "part": 1, "parts": 1, "script": f"{kind}.sh", "kind": kind, "seed": None,
             "tiling": cell[0], "tiling_seen_to_act": True, "display": cell[1], "cast": cast, "apps": apps, "settings": "shipped",
             "seconds": gate["run_seconds_max"], "reduce_motion": False, "stage_seen": kind != "control",
         }
 
     still = dict.fromkeys(gate["tiling"], gate["reduce_motion"]["acts_that_move_per_tiling_min"])
     for number, (cell, cast) in enumerate(plan):
-        acts = [{"id": f"{kind}#{index}", "act": kind, "judged": True} for index, kind in enumerate(wanted[number * per_run:(number + 1) * per_run])]
-        runs.append({"manifest": manifest(number, "walk" if number < walks else "day", cell, cast), "sampler": dict(sampler), "acts": acts, "findings": []})
+        acts = [{"id": f"{kind}#{index}", "act": kind, "judged": True, "performed": True} for index, kind in enumerate(wanted[number * per_run:(number + 1) * per_run])]
+        runs.append({"manifest": manifest(number, "walk" if number < walks else "day", cell, cast), "sampler": dict(sampler), "input": copy.deepcopy(arrived), "acts": acts, "findings": []})
         moving = sum(1 for act in acts if act["act"] in gate["reduce_motion"]["kinds_that_move"])
         if still[cell[0]] > 0 and moving:
             still[cell[0]] -= moving
             runs[-1]["manifest"].update(reduce_motion=True, stage_seen=False)
     for again in range(gate["controls"]["without_arbor_per_cell_min"]):
         for number, cell in enumerate(cells):
+            # The same journey as one in its cell, with Arbor not running.
+            model = next(run["manifest"] for run in runs if (run["manifest"]["tiling"], run["manifest"]["display"]) == cell)
             runs.append({
-                "manifest": manifest(5000 + again * len(cells) + number, "control", cell, gate["cast"][0]), "sampler": dict(sampler),
-                "acts": [{"id": "switch#0", "act": "switch", "judged": False}], "findings": [],
+                "manifest": dict(manifest(5000 + again * len(cells) + number, "control", cell, model["cast"]), script=model["script"], seed=model["seed"],
+                                 reduce_motion=model["reduce_motion"]),
+                "sampler": dict(sampler), "input": copy.deepcopy(arrived), "acts": [{"id": "switch#0", "act": "switch", "judged": False, "performed": True}], "findings": [],
             })
     for again in range(gate["controls"]["sabotage_runs_min"]):
         offences = [{"detector": detector, "id": f"idle#{index}"} for index, detector in enumerate(gate["detectors"])]
         runs.append({
             "manifest": dict(manifest(6000 + again, "sabotage", (gate["tiling"][-1], gate["display"][0]), gate["cast"][0]), offences=offences),
-            "sampler": dict(sampler), "acts": [{"id": offence["id"], "act": "idle", "judged": True} for offence in offences],
+            "sampler": dict(sampler), "acts": [{"id": offence["id"], "act": "idle", "judged": True, "performed": True} for offence in offences],
             "findings": [dict(offence, level="FAIL", what="planted") for offence in offences],
         })
     polish = [
@@ -576,7 +661,7 @@ def perfect(gate):
 def self_test():
     gate = numbers()
     good = perfect(gate)
-    everything = {run["manifest"]["run"]: 1 for run in good["runs"]}
+    everything = {(run["manifest"]["run"], 1): {1} for run in good["runs"]}
     failures = []
 
     def expect(name, change, verdict, words, listed=everything, page=gate):
@@ -590,7 +675,7 @@ def self_test():
             failures.append(f"{name}: {got}, wanted {verdict} with “{words}”; its reasons: {reasons[:4]}")
 
     def every(ledger, *kinds):
-        return [run for run in ledger["runs"] if run["manifest"]["kind"] in kinds]
+        return [run for run in ledger["runs"] if run["manifest"].get("kind") in kinds]
 
     def find(ledger, kind, **finding):
         run = every(ledger, kind)[0]
@@ -628,8 +713,8 @@ def self_test():
         control = twin(ledger, "control", run="8000", **{key: run["manifest"][key] for key in ("script", "seed", "tiling", "display", "cast", "reduce_motion")})
         control["findings"] = [dict(finding, id=finding["id"] if same_act else "elsewhere#1")]
 
-    expect("what the run without Arbor shows too", the_mac_does_it_alone, "VIABLE", "", listed={**everything, "8000": 1})
-    expect("what it shows at another act", lambda l: the_mac_does_it_alone(l, same_act=False), "NOT VIABLE", "jolt in run", listed={**everything, "8000": 1})
+    expect("what the run without Arbor shows too", the_mac_does_it_alone, "VIABLE", "", listed={**everything, ("8000", 1): {1}})
+    expect("what it shows at another act", lambda l: the_mac_does_it_alone(l, same_act=False), "NOT VIABLE", "jolt in run", listed={**everything, ("8000", 1): {1}})
     expect("a cell nobody played", lambda l: l.update(runs=[r for r in l["runs"] if r["manifest"]["kind"] not in COUNTED or (r["manifest"]["tiling"], r["manifest"]["display"]) != last_cell]),
            "NOT VIABLE", f"the cell {last_cell[0]} / {last_cell[1]} has 0.0", listed=None)
     expect("a cell without its control", lambda l: amend(l, ["control"], display=gate["display"][0]), "NOT VIABLE", "times without Arbor")
@@ -659,7 +744,7 @@ def self_test():
         control = twin(ledger, "control", run="8000", **{key: run["manifest"][key] for key in ("script", "seed", "tiling", "display", "cast")})
         control["findings"] = [dict(finding)]
 
-    expect("a control played with Reduce Motion off excuses nothing seen with it on", a_control_with_the_stage, "NOT VIABLE", "jolt in run", listed={**everything, "8000": 1})
+    expect("a control played with Reduce Motion off excuses nothing seen with it on", a_control_with_the_stage, "NOT VIABLE", "jolt in run", listed={**everything, ("8000", 1): {1}})
     expect("too few apps", lambda l: amend(l, KINDS, apps=good["runs"][0]["manifest"]["apps"][:gate["apps_per_run_min"]]), "NOT VIABLE", "different apps")
     expect("acts that were not judged", lambda l: [act.update(judged=False) for run in every(l, *COUNTED) for act in run["acts"][:len(run["acts"]) // 20]], "NOT VIABLE", "are asked for")
 
@@ -697,13 +782,13 @@ def self_test():
         extra = twin(ledger, "day", run="9999", seconds=gate["run_seconds_max"] * 2)
         extra["findings"] = [{"detector": "crash", "level": "FAIL", "id": "idle#3", "what": "Arbor ended"}]
 
-    expect("a crash in a run that does not count", crash_in_a_run_that_does_not_count, "NOT VIABLE", "counts although the run does not", listed={**everything, "9999": 1})
+    expect("a crash in a run that does not count", crash_in_a_run_that_does_not_count, "NOT VIABLE", "counts although the run does not", listed={**everything, ("9999", 1): {1}})
 
     expect("nobody asked GitHub", nothing, "NOT VIABLE", "nobody compared the ledger", listed=None)
-    expect("a run left out", nothing, "NOT VIABLE", "the ledger leaves it out", listed={**everything, "4242": 1})
-    expect("a first attempt left out", lambda l: l["runs"][0]["manifest"].update(attempt=2), "NOT VIABLE", "leaves out attempt 1", listed={**everything, "1000": 2})
-    expect("a first attempt left out, GitHub listing the run once", nothing, "NOT VIABLE", "1000.2", listed={**everything, "1000": 2})
-    expect("both attempts there", lambda l: twin(l, "walk", attempt=2), "VIABLE", "", listed={**everything, "1000": 2})
+    expect("a run left out", nothing, "NOT VIABLE", "the ledger leaves it out", listed={**everything, ("4242", 1): {1}})
+    expect("a first attempt left out", lambda l: l["runs"][0]["manifest"].update(attempt=2), "NOT VIABLE", "in run 1000.1 a job got a Mac for part 1, and the ledger leaves it out", listed={**everything, ("1000", 2): {1}})
+    expect("a first attempt left out, GitHub listing the run once", nothing, "NOT VIABLE", "1000.2", listed={**everything, ("1000", 2): {1}})
+    expect("both attempts there", lambda l: twin(l, "walk", attempt=2), "VIABLE", "", listed={**everything, ("1000", 2): {1}})
     def batch(ledger, parts=2, keep=(1, 2)):
         """The first two counted runs become two scripts of one run of GitHub's."""
         first, second = every(ledger, "walk")[:2]
@@ -712,12 +797,124 @@ def self_test():
         second["manifest"].update(part=2, parts=parts)
         ledger["runs"] = [run for run in ledger["runs"] if run not in (first, second) or run["manifest"]["part"] in keep]
 
-    batched = {identifier: 1 for identifier in everything if identifier != "1001"}
+    batched = {key: {1, 2} if key[0] == "1000" else parts for key, parts in everything.items() if key[0] != "1001"}
     expect("two scripts in one run of GitHub's", batch, "VIABLE", "", listed=batched)
-    expect("… of which one is left out", lambda l: batch(l, keep=(1,)), "NOT VIABLE", "the ledger leaves out part 2", listed=batched)
-    expect("… of three", lambda l: batch(l, parts=3), "NOT VIABLE", "the ledger leaves out part 3", listed=batched)
+    expect("… of which one is left out", lambda l: batch(l, keep=(1,)), "NOT VIABLE", "no attempt played part 2", listed=batched)
+    expect("… of three", lambda l: batch(l, parts=3), "NOT VIABLE", "no attempt played part 3", listed=batched)
     expect("… which do not agree how many they are", lambda l: (batch(l), every(l, "walk")[0]["manifest"].update(parts=3)), "INVALID", "do not agree how many", listed=batched)
     expect("… both calling themselves the first", lambda l: (batch(l), every(l, "walk")[1]["manifest"].update(part=1)), "INVALID", "is in the ledger twice", listed=batched)
+
+    # Who holds input back is asked within each journey. Here: whether enough journeys say anything, and what became of the acts that could not be performed.
+    def pair(ledger):
+        """A control, and the journeys it is the control of."""
+        control = every(ledger, "control")[0]
+        return control, [run for run in every(ledger, *COUNTED) if journey(run["manifest"]) == journey(control["manifest"])]
+
+    def one_more(ledger, of, **changes):
+        """The same journey, or its control, played once more in a run of its own, which the gate does not need."""
+        extra = copy.deepcopy(of)
+        extra["manifest"].update(run="8200", **changes)
+        ledger["runs"].append(extra)
+        return extra
+
+    and_8200 = {**everything, ("8200", 1): {1}}
+
+    def silent(ledger, kind, share):
+        """So many of the journeys say nothing of that kind of input."""
+        journeys = every(ledger, *COUNTED)
+        for run in journeys[:int(share * len(journeys))]:
+            run["input"]["judged"].remove(kind)
+
+    least = gate["input"]["share_of_journeys_that_judge_a_kind_min"]
+    many = len(every(good, *COUNTED))
+    expect("as many journeys as may be say nothing of scrolls", lambda l: silent(l, "scroll", (many - -(-least * many // 1)) / many), "VIABLE", "")
+    expect("… and one more", lambda l: silent(l, "scroll", (many - -(-least * many // 1) + 1) / many), "INVALID", "say whether input of the kind scroll is held back")
+    expect("no journey says anything of keys", lambda l: silent(l, "key", 1), "INVALID", f"only 0 of {many} journeys say whether input of the kind key")
+    expect("input held back in a round is a finding like any other", lambda l: every(l, "walk")[0]["findings"].append({"detector": "input-held", "level": "FAIL", "id": "input-started#1", "what": "w"}),
+           "NOT VIABLE", "input-held in run")
+    expect("a journey that does not say of which kinds it says anything", lambda l: every(l, "walk")[0].update(input=None), "NOT VIABLE", "the witness saw nothing, or no round was played")
+    expect("… or says it in words", lambda l: every(l, "walk")[0].update(input={"judged": "all"}), "NOT VIABLE", "the witness saw nothing, or no round was played")
+    expect("… or in numbers", lambda l: every(l, "walk")[0].update(input={"judged": [1, 2]}), "NOT VIABLE", "the witness saw nothing, or no round was played")
+    expect("a control need not say it: it is there for what windows do by themselves", lambda l: pair(l)[0].update(input=None), "VIABLE", "")
+    expect("a journey that does not count says nothing for anybody", lambda l: (silent(l, "up", 1), [one_more(l, every(l, "walk")[0], settings="mine")["input"].update(judged=list(gate["input"]["kinds"]))]),
+           "INVALID", "input of the kind up", listed=and_8200)
+    expect("a control of no journey", lambda l: pair(l)[0]["manifest"].update(seed="another"), "NOT VIABLE", "is the control of no journey that counts")
+
+    def undone(ledger, how_many, of=None):
+        """So many acts, spread over the journeys, could not be performed."""
+        acts = [act for run in (of or every(ledger, *COUNTED)) for act in run["acts"]]
+        for act in acts[::max(1, len(acts) // how_many)][:how_many]:
+            act.update(performed=False, judged=False)
+
+    asked = sum(len(run["acts"]) for run in every(good, *COUNTED))
+    most = int(gate["share_of_acts_not_performed_max"] * asked)
+    expect("one act could not be performed", lambda l: undone(l, 1), "NOT VIABLE", f"not performed, so not judged: 1 of {asked} acts")
+    expect("too many acts could not be performed", lambda l: undone(l, most + 1), "INVALID", "the instrument is sick, or Arbor takes windows from under the pointer")
+
+    def taken_from_under_the_pointer(ledger, also_alone):
+        control, journeys = pair(ledger)
+        act = journeys[0]["acts"][0]
+        act.update(performed=False, judged=False)
+        control["acts"].append({"id": act["id"], "act": act["act"], "judged": False, "performed": not also_alone})
+
+    expect("an act that could not be performed, and was in the journey's control", lambda l: taken_from_under_the_pointer(l, False), "NOT VIABLE", "was performed in the same journey without Arbor")
+    def spare_journey(ledger, in_its_control=None, in_another=None):
+        """A journey the gate does not need, in which one act could not be performed. `in_its_control`, `in_another`: whether that act was performed there, if it is there at all."""
+        control, journeys = pair(ledger)
+        extra = one_more(ledger, journeys[0])
+        extra["acts"].append({"id": "drag#999", "act": "drag", "judged": False, "performed": False})
+        for where, performed in ((control, in_its_control), (every(ledger, "control")[1], in_another)):
+            if performed is not None:
+                where["acts"].append({"id": "drag#999", "act": "drag", "judged": False, "performed": performed})
+
+    expect("it could not be performed in the control either", lambda l: spare_journey(l, in_its_control=False), "VIABLE", "not performed, so not judged: 1 of", listed=and_8200)
+    expect("it was performed in the control", lambda l: spare_journey(l, in_its_control=True), "NOT VIABLE", "drag#999 could not be performed in run 8200", listed=and_8200)
+    expect("it was performed in another journey's control", lambda l: spare_journey(l, in_another=True), "VIABLE", "not performed, so not judged: 1 of", listed=and_8200)
+    expect("an act that does not say whether it was performed", lambda l: every(l, "walk")[0]["acts"][0].pop("performed"), "UNREADABLE", "does not say whether it was performed")
+    expect("… or says it in words", lambda l: every(l, "walk")[0]["acts"][0].update(performed="yes"), "UNREADABLE", "does not say whether it was performed")
+
+    # A hosted Mac's failure does not sink a commit, and who says that a part never ran is GitHub or the batch, never an absence.
+    def stub(ledger, part=2, attempt=1, **more):
+        """The manifest a job leaves in the place of a part before its first script begins."""
+        first = every(ledger, "walk")[0]["manifest"]
+        ledger["runs"].append({"manifest": {"gate": first["gate"], "started": False, "commit": first["commit"], "run": first["run"], "attempt": attempt, "part": part,
+                                            "parts": first["parts"], **more}, "sampler": {}, "acts": [], "findings": []})
+
+    def again(ledger, part=2, attempt=2):
+        every(ledger, "walk")[part - 1]["manifest"].update(attempt=attempt)
+
+    once, twice = batched, {**batched, ("1000", 2): {2}}
+    expect("the batch was stopped before part 2, which was played in a second attempt", lambda l: (batch(l), again(l), stub(l)), "VIABLE", "never began: part 2 of run 1000.1, played in another", listed=twice)
+    expect("… and nobody played it again", lambda l: (batch(l, keep=(1,)), stub(l)), "NOT VIABLE", "no attempt played part 2", listed=once)
+    expect("… and the second attempt was stopped before it too", lambda l: (batch(l, keep=(1,)), stub(l), stub(l, attempt=2)), "NOT VIABLE", "no attempt played part 2", listed=twice)
+    expect("its job never got a Mac, says GitHub, and a second attempt played it", lambda l: (batch(l), again(l)), "VIABLE", "", listed={**batched, ("1000", 1): {1}, ("1000", 2): {2}})
+    expect("a first attempt that got a Mac is left out, and the second passed off as the first playing", lambda l: (batch(l), again(l)), "NOT VIABLE",
+           "in run 1000.1 a job got a Mac for part 2, and the ledger leaves it out", listed=twice)
+    def both_attempts(ledger, finding=None):
+        batch(ledger)
+        extra = twin(ledger, "walk", attempt=2)
+        if finding:
+            every(ledger, "walk")[0]["findings"].append({"id": extra["acts"][0]["id"], "what": "w", **finding})
+    expect("what began is never replaced: a jolt in the first attempt stays, however clean the second", lambda l: both_attempts(l, {"detector": "jolt", "level": "FAIL"}),
+           "NOT VIABLE", "jolt in run 1000.1", listed={**batched, ("1000", 2): {1}})
+    expect("a second attempt alone, in the ledger and in GitHub's list: where is the first?", lambda l: l["runs"][0]["manifest"].update(attempt=2), "NOT VIABLE",
+           "GitHub's list says nothing of attempt 1", listed={**{key: parts for key, parts in everything.items() if key[0] != "1000"}, ("1000", 2): {1}})
+    expect("… in which no job got a Mac, says GitHub", lambda l: l["runs"][0]["manifest"].update(attempt=2), "VIABLE", "",
+           listed={**{key: parts for key, parts in everything.items() if key[0] != "1000"}, ("1000", 1): set(), ("1000", 2): {1}})
+    expect("a third attempt, and nothing of the second", lambda l: l["runs"][0]["manifest"].update(attempt=3), "NOT VIABLE", "GitHub's list says nothing of attempt 2",
+           listed={**{key: parts for key, parts in everything.items() if key[0] != "1000"}, ("1000", 1): set(), ("1000", 3): {1}})
+    for what, brought in (("acts", {"acts": [{"id": "idle#1", "act": "idle", "judged": True}]}), ("a finding", {"findings": [{"detector": "jolt", "level": "FAIL", "id": "idle#1", "what": "w"}]}),
+                          ("the sampler's account", {"sampler": {"samples": 10, "late": 0}}), ("the witness's", {"input": {"kinds": {}, "events": 1}})):
+        expect(f"a stub that brought back {what}", lambda l, brought=brought: (batch(l), again(l), stub(l), l["runs"][-1].update(brought)), "INVALID", "brought back what a script brings back", listed=twice)
+    expect("a stub and a manifest for one part of one attempt", lambda l: (batch(l), stub(l)), "INVALID", "is in the ledger twice", listed=once)
+    expect("a stub for a part no job was given", lambda l: (batch(l), again(l), stub(l)), "INVALID", "the ledger has part 2 of run 1000.1, and GitHub knows of no job",
+           listed={**batched, ("1000", 1): {1}, ("1000", 2): {2}})
+    expect("a second attempt GitHub knows nothing of", lambda l: (batch(l), again(l), stub(l)), "INVALID", "the ledger has part 2 of run 1000.2", listed=once)
+    expect("a stub is no run: it neither counts nor falls out", lambda l: [stub(l, part=1, run=str(9100 + n), parts=1) for n in range(len(l["runs"]))], "NOT VIABLE", "no attempt played part 1",
+           listed={**everything, **{(str(9100 + n), 1): {1} for n in range(len(good["runs"]))}})
+    expect("the stubs of a second attempt disagree with the first on how many parts there are", lambda l: (batch(l), again(l), stub(l, parts=3)), "INVALID", "do not agree how many", listed=twice)
+    expect("a manifest that does not say whether its script began", lambda l: l["runs"][0]["manifest"].pop("started"), "UNREADABLE", "does not say whether its script began")
+    expect("… or says it in words", lambda l: l["runs"][0]["manifest"].update(started="yes"), "UNREADABLE", "does not say whether its script began")
     expect("part 3 of 2", lambda l: l["runs"][0]["manifest"].update(part=3, parts=2), "UNREADABLE", "part 3 of 2")
     expect("a part that is no number", lambda l: l["runs"][0]["manifest"].update(part="first"), "UNREADABLE", "part is 'first'")
     expect("parts that are no number, and a finding by nobody", lambda l: (l["runs"][0]["manifest"].update(parts="two"), l["runs"][0]["findings"].append({"level": "FAIL"})), "UNREADABLE", "parts is 'two'")
@@ -725,7 +922,7 @@ def self_test():
     expect("a run that does not say of how many", lambda l: l["runs"][0]["manifest"].pop("parts"), "UNREADABLE", "parts is None")
     expect("a run id where the parts belong", lambda l: l["runs"][0]["manifest"].update(parts=2000000000), "UNREADABLE", "parts is 2000000000")
     expect("a time where the attempt belongs", lambda l: l["runs"][0]["manifest"].update(attempt=1760000000), "UNREADABLE", "attempt is 1760000000")
-    expect("a run GitHub never heard of", lambda l: twin(l, "day", run="31337"), "INVALID", "of which GitHub knows nothing")
+    expect("a run GitHub never heard of", lambda l: twin(l, "day", run="31337"), "INVALID", "GitHub knows of no job that got a Mac for it")
     expect("half the acts, every run twice", lambda l: ([run.update(acts=run["acts"][::2]) for run in every(l, *COUNTED)], l["runs"].extend(copy.deepcopy(every(l, *COUNTED)))),
            "INVALID", "is in the ledger twice")
 
@@ -752,13 +949,17 @@ def self_test():
 
     # Numbers that change on the page change the verdict: none is written down here a second time.
     def with_number(path, value):
-        values = json.loads(json.dumps(gate))
+        values = gate.plain()
         target = values
         for key in path[:-1]:
             target = target[key]
         target[path[-1]] = value
         return Numbers(values)
 
+    expect("the page is content with fewer journeys that say something of a kind", lambda l: silent(l, "scroll", 0.75), "VIABLE", "",
+           page=with_number(["input", "share_of_journeys_that_judge_a_kind_min"], 0.2))
+    expect("the page knows one kind of input more", nothing, "INVALID", "input of the kind pinch", page=with_number(["input", "kinds"], [*gate["input"]["kinds"], "pinch"]))
+    expect("the page allows no act at all to go unperformed", lambda l: undone(l, 1), "INVALID", "the instrument is sick", page=with_number(["share_of_acts_not_performed_max"], 0))
     expect("the page allows one oddity", lambda l: find(l, "walk", detector="focus", level="ODD"), "VIABLE", "", page=with_number(["odd_unexplained_max"], 1))
     expect("the page allows one failure", lambda l: find(l, "day", detector="jolt", level="FAIL"), "VIABLE", "", page=with_number(["fail_max"], 1))
     expect("the page asks for more apps a run", nothing, "INVALID", "too many fell out", page=with_number(["apps_per_run_min"], len(good["runs"][0]["manifest"]["apps"]) + 1))
@@ -778,9 +979,15 @@ def self_test():
                         (["reduce_motion", "acts_that_move_per_tiling_min"], 200)]:
         page = with_number(path, value)
         other = perfect(page)
-        verdict, reasons, _ = judge(other, page, {run["manifest"]["run"]: 1 for run in other["runs"]})
+        verdict, reasons, _ = judge(other, page, {(run["manifest"]["run"], 1): {1} for run in other["runs"]})
         if verdict != "VIABLE":
             failures.append(f"with {'.'.join(path)} at {value} the perfect ledger is {verdict}: {reasons[:3]}")
+    fresh = numbers()
+    if fresh.plain() != json.loads(json.dumps(numbers())) or fresh.used:
+        failures.append(f"a copy of the page's block is another block, or leaves numbers looking read: {sorted(fresh.used)[:4]}")
+    # What only another tool reads is never asked for here. If it looks read, something has walked over the whole block, and the test below has no teeth.
+    if set(READ_ELSEWHERE) & gate.used:
+        failures.append(f"numbers that only another tool reads look read here: {', '.join(sorted(set(READ_ELSEWHERE) & gate.used))}")
     unread = sorted(set(gate.leaves()) - gate.used - set(READ_ELSEWHERE))
     if unread:
         failures.append(f"numbers on the page that nothing reads: {', '.join(unread)}")
@@ -816,19 +1023,28 @@ def self_test():
             steps, by_id = [], {}
             for number, act in enumerate(run["acts"]):
                 # Each act's slug is its own, so `#1` follows; the offences and findings are written to match.
-                step = {"number": number, "slug": act["id"].replace("#", "-"), "act": act["act"], "judged": act["judged"], "findings": []}
+                step = {"number": number, "slug": act["id"].replace("#", "-"), "act": act["act"], "judged": act["judged"], "performed": act["performed"], "findings": []}
                 by_id[act["id"]] = step
                 steps.append(step)
+            # Rounds of input, which are no acts: were they taken for acts, these would be acts that are not judged, and too many of them.
+            steps += [{"number": 9000 + n, "slug": f"input-{n}", "act": "instrument", "judged": False, "performed": True, "findings": []} for n in range(len(run["acts"]))]
             for finding in run["findings"]:
                 by_id[finding["id"]]["findings"].append({"detector": finding["detector"], "rule": "3", "level": finding["level"], "what": finding["what"]})
             if "offences" in run["manifest"]:
                 put(f"{directory}/run.json", dict(run["manifest"], offences=[dict(o, id=o["id"].replace("#", "-") + "#1") for o in run["manifest"]["offences"]]))
-            put(f"{directory}/day-findings.json", {"sampler": "samples 30000 seconds 540.0 hz 55.5 cost-ms 1.20 late 10 longest-gap-ms 200", "steps": steps})
+            put(f"{directory}/day-findings.json", {"sampler": "samples 30000 seconds 540.0 hz 55.5 cost-ms 1.20 late 10 longest-gap-ms 200", "input": run.get("input"), "steps": steps})
+        put("undone/run.json", good["runs"][0]["manifest"])
+        put("undone/day-findings.json", {"sampler": "", "steps": [{"number": 1, "slug": "drag", "act": "drag", "judged": False, "performed": False, "findings": []},
+                                                                 {"number": 2, "slug": "idle", "act": "idle", "judged": True, "performed": True, "findings": []}]})
+        if [act["performed"] for act in run_from(os.path.join(scratch, "undone"))["acts"]] != [False, True]:
+            failures.append("the ledger does not carry whether an act was performed")
         put("runs/rings.json", good["rings"])
-        listing = put("listed.txt", "".join(f"{identifier} 1\n" for identifier in everything))
+        listing = put("listed.txt", "".join(f"{identifier} {attempt} 1-1\n" for identifier, attempt in everything))
         ledger = os.path.join(scratch, "ledger.json")
         expect_call("a ledger from directories", ["ledger", commit, *directories, "-o", ledger], 0, "")
         expect_call("… is viable", ["check", ledger, "--runs", listing], 0, "\nVIABLE")
+        with open(listing, encoding="utf-8") as handle:
+            expect_call("… also with a run of which no job ever got a Mac", ["check", ledger, "--runs", put("dash.txt", handle.read() + "4242 1 -\n")], 0, "\nVIABLE")
         expect_call("… and not without the listing", ["check", ledger], 1, "NOT VIABLE")
         expect_call("the same directory twice", ["ledger", commit, *directories, directories[0], "-o", ledger], 0, "")
         expect_call("… is found out", ["check", ledger, "--runs", listing], 2, "is in the ledger twice")
@@ -845,8 +1061,12 @@ def self_test():
         expect_call("findings that name no detector", ["ledger", commit, os.path.join(scratch, "old")], 2, "a finding without `detector`")
         expect_call("a ledger that is not there", ["check", os.path.join(scratch, "no.json")], 2, "no.json")
         expect_call("a ledger cut short", ["check", put("short.json", '{"gate": 1,')], 2, "short.json")
-        expect_call("a listing with a heading", ["check", ledger, "--runs", put("heading.txt", "id attempt\n1000 1\n")], 2, "is not `<id> <attempts>`")
-        expect_call("an empty listing", ["check", ledger, "--runs", put("none.txt", "")], 2, "lists no run at all")
+        expect_call("a listing with a heading", ["check", ledger, "--runs", put("heading.txt", "id attempt parts\n1000 1 1-1\n")], 2, "is not `<run id> <attempt> <first part>-<last part>`")
+        for name, text, words in (("the old form", "1000 1\n", "is not `<run id>"), ("parts the wrong way round", "1000 1 3-2\n", "the first part not after the last"),
+                                  ("part nought", "1000 1 0-2\n", "numbers from 1 to"), ("a run id where the parts belong", "1000 1 1-2000000000\n", "numbers from 1 to"),
+                                  ("attempt nought", "1000 0 1-1\n", "numbers from 1 to"), ("attempt nought in which nobody got a Mac", "1000 0 -\n", "is not `<run id>"), ("one part given to two jobs", "1000 1 1-4\n1000 1 4-8\n", "were given the same part")):
+            expect_call(f"a listing with {name}", ["check", ledger, "--runs", put("odd.txt", text)], 2, words)
+        expect_call("an empty listing", ["check", ledger, "--runs", put("none.txt", "")], 2, "lists no job at all")
         expect_call("-o and nothing after it", ["ledger", commit, directories[0], "-o"], 2, "viable.py ledger")
         expect_call("no such command", ["verdict"], 2, "viable.py ledger")
 

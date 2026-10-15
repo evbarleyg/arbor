@@ -21,7 +21,7 @@ On Linux only (in the container CI uses: `make linux` has the image). It works i
 | | |
 |---|---|
 | Unchanged | `Sources/ArborKit/AX` (all of it), `Controller`, `Platform`, `Support`, `Trace`, `App/FrontmostAppWatcher.swift`, `App/ArborEnvironment.swift`, `App/MacFacts.swift`; `ArborCore`, `ArborIPC`, `ArborTesting` |
-| Rewritten in a copy, line for line | What `scripts/typecheck-mac/prepare.py` does for any Linux compiler (`@objc`, `#if os(macOS)`…), and four things by `retime.py`: `Task.sleep` → `FakeMac.sleep`, `ProcessInfo.processInfo.systemUptime` → `FakeMac.uptime`, `….operatingSystemVersion` → `FakeMac.operatingSystemVersion` (macOS 26.6), `kill(` → `FakeMac.kill(` |
+| Rewritten in a copy, line for line | What `scripts/typecheck-mac/prepare.py` does for any Linux compiler (`@objc`, `#if os(macOS)`…), and by `retime.py`: `Task.sleep` → `FakeMac.sleep`, `ProcessInfo.processInfo.systemUptime` → `FakeMac.uptime`, `DispatchTime` → `FakeDispatchTime`, `….operatingSystemVersion` → `FakeMac.operatingSystemVersion` (macOS 26.6), `kill(` → `FakeMac.kill(`, `getpid()` → `FakeMac.getpid()` (a fixed number: the test's own could be one of the model's apps'), `UserDefaults(suiteName:` → `FakeMac.defaults(suiteName:` (what the person has set in System Settings: macOS's own tiling is on, as a Mac comes, unless a story switches it off); and in the layer, for threads of its own, `DispatchQueue(label:)`, `DispatchSemaphore`, `DispatchGroup` and `DispatchQueue.main.async` → the model's |
 | In place of Apple's frameworks | The stand-ins of `scripts/typecheck-mac/stubs`. The functions the layer calls have bodies that ask the model, `stubs/FakeMacOS`; the rest still does nothing |
 | Left out | `UI`, `Input`, the rest of `App`: their stand-ins do nothing, so running them would show nothing |
 
@@ -31,7 +31,10 @@ app's own `MainQueueScheduler` and `FrontmostAppWatcher`; only what draws (`Fake
 **Time** is the model's. A story says `mac.pass(0.3)` and whatever falls due is delivered in order, with no real waiting. A call to an app that hangs moves the clock by the whole messaging timeout, and what fell due meanwhile is
 delivered afterwards, as to a busy main thread. After each delivery Arbor's tasks run until none is runnable (`stubs/FakeMacOS/Pump.swift`): jobs for the main actor are taken from libdispatch's main queue the way CoreFoundation's run loop takes them; jobs for the
 global pool (`Task.detached`) are caught by the runtime's hook and run on the same thread, marked as being off the main one. Everything is a function of the story: no thread, no clock, no chance. The program checks at its start that the pump
-works with this toolchain and refuses to go on if not. `retime.py` fails the build if the layer waits or tells the time in a way it does not know (`asyncAfter`, `Timer`, `Date()`…): such code would stand still while the model's time passes.
+works with this toolchain and refuses to go on if not. `retime.py` fails the build if anything in ArborKit waits or tells the time in a way it does not know (`asyncAfter`, `Timer`, `Date()`, `usleep`…): such code would stand still while the model's time passes. The three places that may are listed there, each with its reason.
+
+**Other threads** than the main one (`stubs/FakeMacOS/Threads.swift`) are real threads that pass ONE BATON: a queue's thread runs only while it holds it, and gives it back when its block is done or when it waits for an app, which takes the model's time. So a call on a queue to an app that hangs takes a second during which the main thread, the other
+queues and the Mac go on, and still every run is the same. While the main thread waits (on a semaphore, a group, or in a call of its own to an app that hangs) nothing is delivered to it; it is served afterwards. The trunk's layer has no such threads yet; the program proves at its start that they work.
 
 ## Has it been right?
 
@@ -43,6 +46,8 @@ A model is worth what it foretells. So far (2026-10-15):
 - **A drag of any length that is never seen** (the window server a moment late, the pointer more than 24 points from the press, nothing logged) was found here on a guess about loaded Macs, and **has since been seen on a hosted Mac**, independently: three of four drags of 1,244 to 1,991 points in 30 steps were never taken for
   drags, and nothing was logged.
 - **A regression** came to light at the rebase that brought another cure in: since 37d0f05 a press has the place where it happened, while the window under it is looked for in the window server's list of the moment it is served. Not seen on a Mac yet.
+- **An order it was not built for.** Told only that Safari and Finder drop a closing window from their list at once, the real layer on the model says `destroyed` and then `focused`, 15 to 20 ms apart: the order, and about the gap, of the recordings (4 to 13 ms, once 91).
+- A review held its delays against the traces it cites and found six that said more, or other, than the trace; a recording settled one guess the other way round (at a minimize the next window's focus comes BEFORE "miniaturized"). All corrected on 2026-10-15; no story changed its verdict.
 - It has been **wrong** as well, always in the same way: the model was ruder, or tidier, than a Mac, and a story or the polite walk said so. "Moved" reports whose last one was swallowed; tabs that kept their own size; a helper window that took the keyboard; ⌘T 50 ms after a drag. Hence the polite control, and the habit of reading the account of a
   green story once.
 
@@ -53,15 +58,16 @@ A model is worth what it foretells. So far (2026-10-15):
 | | Seen (trace in `collab/evidence/traces`, or the place it is written down) | Guess |
 |---|---|---|
 | Opening | "focused" a millisecond before "created" in a running app; subrole a moment late; tooltips and helpers reported created; apps refuse observers while launching; one-window apps show the same number again | What the subrole is before it comes; that a refusal is `cannotComplete`, at once |
-| Closing, quitting | focus of the next window 12 ms before "destroyed" (`close`); no "destroyed" at a quit (`app-quits`); an end nobody reports, calls then fail at once; a window that closes without a notice | What a closed window answers to a *set* |
-| Coming forward | `didActivate`, "deactivated" 0.6 ms later, "activated" 8 ms later, nothing more; `frontmostApplication` still naming the old app | 4 ms from the switch to the notice; **how long the property lags** (a knob; stories play 5 to 600 ms) |
-| Minimize, hide | 0.55 s; the screens' notice 15 to 20 ms later and 2 points of visible frame; focus 1 to 4 ms before "deminiaturized"; AXDialog for every minimized or hidden window; unhiding brings windows back (`minimize-restore`, `hide-unhide`) | Which windows count as nearly off screen |
+| Closing, quitting | Plain AppKit windows: focus of the next window 12 ms before "destroyed", the closing one still valid in between (`close`). Safari and Finder: off the list and invalid by the focus report, the raw "destroyed" after everything, so that the layer says `destroyed` before `focused` (recordings on `origin/mac-shell-out/*`; a switch on the app, both ways told); no "destroyed" at a quit (`app-quits`); an end nobody reports, calls then fail at once; a window that closes without a notice | What a closed window answers to a *set*; how long after "destroyed" comes in Safari (0.2 s here) |
+| Coming forward | Two kinds, both in `app-switch-unreported`. An app brings itself forward, its focused window unchanged: `didActivate`, "deactivated" 0.6 ms later, "activated" 7.8 ms later, nothing more. Arbor asks for a window of an app in the background: "deactivated" 4.5 ms, "focused" 8.5, "main" 26.6, "focused" again 34.5, "main" again 41.3, "activated" 44.3 ms after the notice. `frontmostApplication` still naming the old app: **measured by kind of activation**: one a PROGRAM asks for 5 to 107 ms behind; through LaunchServices 0 of 12; a real click 1 in about 24 (17 ms); a real ⌘Tab 0 of 6 | 4 ms from the switch to the notice. The lag is a knob; stories play 5 to 600 ms, and call it ⌘Tab where a Mac has shown it only for programs |
+| Minimize, hide | 0.55 s; at the end of the flight the next window's focus 6.6 ms BEFORE "miniaturized" (a recording, `origin/mac-shell-out/sweep.proof`); 2 points of visible frame, and Arbor's own `displaysChanged` of the day 13.6 to 24.4 ms after; focus 4.1 and 8.3 ms before "deminiaturized"; AXDialog for every minimized or hidden window; unhiding brings windows back (`minimize-restore`, `app-minimize`, `hide-unhide`) | When the screens' notice itself comes (in no trace); what is posted when the LAST window with the keyboard is minimized (nothing, here); which windows count as nearly off screen |
 | Spaces, full screen | The notice in mid-transition, apps listing neither old nor new windows; two AXUnknown helpers; "resized" before `AXFullScreen` says yes | The lengths; **in which order the focus report and the notice come** (both are played) |
 | Native tabs | Only the front tab is listed; a new tab is a new window; choosing posts only "main window changed"; successor first; Terminal's 31 points | |
-| Frames | Whole points, which way halves go; the title bar stays above the Dock; minimum sizes; size, position, size; echoes 2 to 15 ms later; windows that go back (`*-commands`, `stubborn-*`) | How "enhanced user interface" animates |
-| Hanging | Every call waits the timeout; a timeout belongs to one element object, the system-wide one's to the process; 0 means six seconds; calls that timed out are carried out on waking | That `_AXUIElementGetWindow` waits like any call |
-| The mouse | The window server moves a dragged window at once, the app hears 0.1 s later, eight to ten "moved" a second or none; mouse-up twice; monitors deaf to Arbor's own panels; releases that are swallowed (`drag-to-edge`, `flick-to-edge`, `click-title-bar`); an event has the place where it happened, however late it is served | 1 ms to a monitor; that a loaded window server starts late and catches up in one jump |
-| The window server | What a Mac at rest lists, at which levels, not sorted by level; `kCGWindowIsOnscreen` only for what shows; no list at all | |
+| Frames | Whole points, which way halves go; the title bar stays above the Dock; minimum sizes; size, position, size; echoes 2 to 15 ms later as a rule, 246 ms in `stubborn-slow`, 0.3 to 0.55 s for Finder and Terminal (told at 246 and 550 ms); windows that go back, 0.11 s after the call in `stubborn-fast`, 0.474 and 0.196 s in `stubborn-slow` (told at 0.05 to 0.47 s) (`*-commands`, `stubborn-*`) | How "enhanced user interface" animates |
+| Hanging | Every call waits the timeout (1.06 s on the main thread of a hosted Mac); the system-wide element's timeout covers every element, and a window's element does not go by its app's (`docs/features/F17`, H3); calls that timed out are carried out on waking, a park as well as a fetch | That `_AXUIElementGetWindow` waits like any call. **That 0 means the default, and that the default is six seconds**: Apple's header; the one measurement, of window elements without a timeout of their own, gave 1.55 s |
+| The mouse | The window server moves a dragged window at once, the app hears 0.1 s later, five to nine "moved" a second (0.113 to 0.201 s apart, 6.6 on average) or none; mouse-up twice; monitors deaf to Arbor's own panels; releases that are swallowed (`drag-to-edge`, `flick-to-edge`, `click-title-bar`); an event has the place where it happened, however late it is served | 1 ms to a monitor; that a loaded window server starts late and catches up in one jump |
+| The window server | What a Mac at rest lists, at which levels, not sorted by level; `kCGWindowIsOnscreen` only for what shows; no list at all; a system alert of another process, at the level of modal panels, over a title bar | |
+| How long Arbor's own work takes | 2 ms for a `setFrame` of six or seven calls (`took` in the traces); with Safari and Finder 100 to 190 ms for one focus report (a knob on the app) | |
 
 **What is NOT modelled, plainly.** Event taps, hot keys, gestures, the menu bar, panels, drawing, Screen Recording: nothing of `Input` and `UI`. Sheets and drawers. Stage Manager, Mission Control, "Displays have separate Spaces", macOS's own tiling. Several Spaces showing at once on several displays. Apps that are
 really odd (Electron, Java, X11). Sleep, lock, fast user switching. A call from another thread to an app that hangs fails at once instead of waiting (one clock cannot wait in two places), so Arbor's "are you back?" comes every 0.5 s here and every 1.5 s on a Mac. `launchApp` and
@@ -95,13 +101,21 @@ Then take the cure the story is about out of the layer, see it go red, and keep 
 
 ## Known failures
 
-`known-failures.txt` lists the checks that are red on the trunk, each with a word on it. **The run fails when a check that is not listed fails, and when one that is listed passes**, so whoever lands a cure deletes its lines in the same pull request; and when a line matches no check any more. `sometimes: ` marks what
-only some seeds of the walk show.
+`known-failures.txt` lists the checks that are red on the trunk, each with a word on it. **The run fails when a check that is not listed fails, and when one that is listed passes**, so whoever lands a cure deletes its lines in the same pull request; and when a line matches no check any more, and when two checks of a story have
+one name. The list excuses what it was written for and nothing else. A rule of the walk is listed with the number of the usual seeds that break it, `[8 of 40 seeds]`: another number is news. `sometimes: ` marks what only other seeds (`--seeds`) show; with the usual ones, where every run is the same, it excuses nothing.
+Where a listed fault has spoilt the layer's picture of the Mac, whatever broke next might follow from it; there the walk stops and starts the layer, as a pause does, and goes on. (It used to end there, and known faults made the net smaller: 969 of 1,600 steps under all four.) The run says how many steps each kind of manners
+took and how often it started afresh. Going on found three faults at once that no walk had reached: of a start while an app hangs, of a window put away before the start, and of a move that a hang swallows.
+
+## What was heard
+
+A run of everything writes down every call of `WindowSystemEvents` the layer made, story by story, and for the walk which kind followed which: `collab/evidence/mac-on-linux/heard.jsonl`, with a README. It is for those who keep stand-ins at the seam, and it shows in a diff what a change to the layer does to what the controller
+hears. If the reports in the file are out of date the run rewrites it and fails that once: look at the difference and commit it. For other milliseconds alone, which every change to the controller's timing brings, it is left as it is.
 
 ## Does the net hold? (`make mac-on-linux-selftest`)
 
-A story that stays green without the cure it is about proves nothing. `mutants.py` has twenty-one small changes to the copy, each of which takes one cure out of the layer again (the count of windows that tells a new one from a found one, the looks at an app macOS does not name in front yet, the watch for a lost release, the second reading of the lists after a Space switch, the
-look at the window server during a drag…), and names the checks that must go red. Only the changed file is compiled again: eight seconds each. A change that no longer fits the sources is reported: write it anew, or delete it with its story.
+A story that stays green without the cure it is about proves nothing. `mutants.py` has twenty-three small changes to the copy, each of which takes one cure out of the layer again (the count of windows that tells a new one from a found one, the looks at an app macOS does not name in front yet, the watch for a lost release, the second reading of the lists after a Space switch, the
+look at the window server during a drag…), and names the checks that must go red, **and be news: one that the list of known failures excuses does not count**. Only the changed file is compiled again: eight seconds each. Before that it holds the program to its own book-keeping: arguments that select nothing or cannot be read
+(`--only zzzzz`, `--seeds 3-x`, `--steps 0`, a `--replay` with a step it does not know) are refused with exit code 2, and a listed line with another number of seeds, or with `sometimes: `, excuses nothing. A change that no longer fits the sources is reported: write it anew, or delete it with its story.
 
 ## The rude walk (`tests/Walk.swift`)
 
@@ -117,7 +131,7 @@ one pair of hands are a quarter of a second apart; what happens by itself may co
 | late calls | A call may be carried out up to 80 ms after it returned |
 
 After each step two seconds pass in which Arbor's main thread was not held up, and the rules are checked (`Rule` in `Walk.swift`): Arbor knows every standard window that shows, and none that has closed, with the right flags and frames; every window is announced once, as new if it has just opened; none is reported gone
-that is open; nothing is reported about a stranger; the last word on the keyboard is right, and whoever got the keyboard was reported focused; no drag or resize is left open with the button up; the main thread waits at most two seconds for one hang. Each kind of manners is a story and each rule a check: it holds if no
+that is open; nothing is reported about a stranger; the last word on the keyboard is right, and whoever got the keyboard was reported focused; no drag or resize is left open with the button up; the main thread waits at most two seconds for one hang of one app. Each kind of manners is a story and each rule a check: it holds if no
 seed breaks it. A breach prints how many seeds show it and the shortest script that deleting steps gives:
 
 ```
@@ -144,7 +158,7 @@ now, and lines in `known-failures.txt` that say which lines of the layer are con
 | The self-test | 3 minutes |
 | 400 seeds of the walk | 1 minute |
 
-The stand-ins are compiled whole, with a stamp as in `check.sh`. Arbor's modules and the stories are compiled incrementally, as `swift build` does it: the copy is brought up to date file by file, touching only those whose text differs.
+`REF=` and `SOURCES=` build in a work folder of their own, from nothing the first time (2 minutes). A second run in the same work folder waits for the first. The stand-ins are compiled whole, with a stamp as in `check.sh`. Arbor's modules and the stories are compiled incrementally, as `swift build` does it: the copy is brought up to date file by file, touching only those whose text differs.
 
 ## When it breaks
 

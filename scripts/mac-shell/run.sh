@@ -31,6 +31,8 @@
 # the workflow pushed its output to into .mac-shell/<script>-<run id>/ in this worktree, deletes that branch,
 # and prints the folder, the exit code and the end of the output. Exits with the script's exit code (of several: the first that is
 # not 0), or with 96 (not through the pre-flight), 97 (could not start), 98 (timed out) or 99 (the run produced no output).
+# With ARBOR_KEEP_EVIDENCE=1 the evidence of the real-window suite's sections (scripts/mac-shell/suite/) is copied to
+# collab/evidence/suite-<section>-latest.txt, where `make parity` reads it; commit it when it should count.
 #
 # Needs only git and `gh api` (REST), so it works where logs and artifacts cannot be downloaded. GitHub allows an account 5,000 REST calls an
 # hour, for everything everybody does under it, and a dozen copies of this script asking every ten seconds have used them up and
@@ -254,6 +256,18 @@ if [ ! -d "$directory" ]; then
   exit 99
 fi
 
+# A section that never got to a claim says nothing new, so it does not replace what is there.
+copied=""
+if [ "${ARBOR_KEEP_EVIDENCE:-}" = 1 ]; then
+  # One Mac's output lies in the folder itself, that of several in mac-1/, mac-2/…
+  for evidence in "$directory"/evidence/*.txt "$directory"/mac-*/evidence/*.txt; do
+    section=$(basename "$evidence" .txt)
+    if [ -f "$evidence" ] && [ -f "scripts/mac-shell/suite/$section.sh" ] && grep -q '^▸ ' "$evidence"; then
+      cp "$evidence" "collab/evidence/suite-$section-latest.txt" && copied="$copied $section"
+    fi
+  done
+fi
+
 echo
 if [ ${#scripts[@]} -eq 1 ] && [ "$macs" -eq 1 ]; then
   echo "--- end of $directory/output.txt"
@@ -264,6 +278,7 @@ else
 fi
 echo "output: $PWD/$directory"
 ls "$directory" | sed 's/^/  /'
+[ -z "$copied" ] || echo "evidence copied to collab/evidence/suite-*-latest.txt:$copied (next: scripts/mac-shell/suite-parity.py)"
 if [ "$missing" -gt 0 ] || [ -z "$code" ]; then
   echo "exit code: unknown (cut off, or a Mac brought nothing back: $conclusion)"
   exit 99

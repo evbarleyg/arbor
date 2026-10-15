@@ -8,7 +8,7 @@
 #   act open-close open-textedit "opens TextEdit";    meet textedit com.apple.TextEdit "$APPS_SCRATCH/oak.txt";  acted judge=no
 #   act quit-and-start launch "starts Arbor";         day_launch;                      acted
 #   act switch click-textedit "clicks its title bar"; click_window "$W_textedit";      acted front="$W_textedit"
-#   act dock-key dock-left "presses ⌃⌥⌘←";            key ctrl+opt+cmd+left;           acted moves=docked yields=floating front="$W_textedit"
+#   act dock-key dock-left "presses ⌃⌥⌘←";            key ctrl+opt+cmd+left;           acted moves=docked front="$W_textedit"
 #   day_report
 #
 # A check asks where a window is once things have settled. A person also sees how it got there. So sampler.swift asks the
@@ -17,8 +17,9 @@
 # which windows moved, how many times, by which road, and which rule of the product's that broke (its header lists them).
 #
 #   day_build                       apps_build, and compile sampler.swift
-#   day_build_tools                 only the tools (pointer, apptool, sampler), for a script in which Arbor does not run
-#   sampler_start | sampler_stop    write mac-shell/samples.log from now on | stop
+#   day_build_tools                 only the tools (pointer, apptool, sampler, witness), for a script in which Arbor does not run
+#   sampler_start | sampler_stop    write mac-shell/samples.log from now on | stop. With it goes the witness (witness.swift log): mac-shell/witness.log, how late
+#                                     every press, release and key reached the far end of the event taps (`input-held`)
 #   note <text…>                    a mark in the samples (jolts.py's header lists the marks it reads)
 #   quiet [ms] [limit ms]           wait until no window has moved, come, gone or changed its place in the pile for that long
 #                                     (1000, at most 8000). Sets QUIET to `quiet:<waited ms>` or `restless:<waited ms>`
@@ -29,14 +30,14 @@
 #   meet <name> <bundle id> [file…] app_open, and label what opened: sets P_<name>, W_<name> (its first standard window). Fails
 #                                     when no standard window came
 #   act <kind> <slug> "<what the person does>"        a step begins. The kinds are docs/VIABLE.md's: switch open-close dock-key drag
-#                                     drag-where-macos-tiles view resize macos-own way-out quit-and-start display-change idle
+#                                     drag-where-macos-tiles view resize macos-own way-out quit-and-start display-change tile-click idle
 #   want "<what should hold>" <command…>              inside a step: a finding of the script's own when it does not
 #   must <command…>                 inside a step: what the person does. When it cannot be done (no free point of a title bar, no icon in the
 #                                     Dock) the step is a finding of the script's own and is not judged: an act that was not performed passes nothing
 #   acted [key=value…]              waits for quiet, compares Arbor's belief with the screen (audit), takes the picture
 #                                     mac-shell/<nnn>-<slug>.jpg and ends the step. The keys are jolts.py's, and besides ids
-#                                     `moves=` takes `docked`: whatever is docked before or after the step; `yields=` takes
-#                                     `floating`: whatever floats before or after it. `audit=no` leaves the comparison out, for a step
+#                                     `moves=` takes `docked`: whatever is docked before or after the step. `tiles=ok`, with everything=1 after Show
+#                                     Everything: a tile may stand in for a window (jolts.py's tiles= and keyboard=). `audit=no` leaves the comparison out, for a step
 #                                     in which macOS holds the windows where Arbor cannot know them to be. What the comparison
 #                                     found after the step before as well is not said again
 #   day_scratch                     apps_scratch, and the same documents under names with a canary word in them ($DAY_DOCUMENTS/$APPS_CANARY-oak.txt, -elm.txt,
@@ -66,6 +67,8 @@ DAY_SAMPLER="$ARBOR_ROOT/.build/mac-shell/sampler"
 DAY_JOLTS="$ARBOR_ROOT/scripts/mac-shell/jolts.py"
 DAY_SAMPLES="$ARBOR_OUT/samples.log"
 DAY_SAMPLER_PID=""
+DAY_WITNESS="$ARBOR_ROOT/.build/mac-shell/witness"
+DAY_WITNESS_PID=""
 DAY_STEP=0
 DAY_TRACES=0
 DAY_QUESTIONS=0
@@ -76,29 +79,38 @@ APPS_CANARY=quokkadoo
 DAY_SLUG=""
 DAY_KIND=""
 DAY_DOCKED_BEFORE=""
-DAY_FLOATING_BEFORE=""
+DAY_OFFENCES=""
+# Arbor's own acts since it started.
+DAY_SINCE_START=0
 DAY_MANIFEST=""
 DAY_AUDIT_BEFORE=""
 DAY_FACE="ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_NO_PROMPT=0"
 QUIET=""
 
 day_build() {
-  local compiler
+  local compiler second
   mkdir -p "$(dirname "$DAY_SAMPLER")"
   swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/sampler.swift" -o "$DAY_SAMPLER" \
     > "$ARBOR_OUT/build-sampler.log" 2>&1 &
   compiler=$!
+  swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/witness.swift" -o "$DAY_WITNESS" \
+    > "$ARBOR_OUT/build-witness.log" 2>&1 &
+  second=$!
   apps_build
   if ! wait "$compiler"; then
     grep -A 6 "error:" "$ARBOR_OUT/build-sampler.log" | head -n 80
     die "scripts/mac-shell/sampler.swift did not compile"
+  fi
+  if ! wait "$second"; then
+    grep -A 6 "error:" "$ARBOR_OUT/build-witness.log" | head -n 80
+    die "scripts/mac-shell/witness.swift did not compile"
   fi
 }
 
 day_build_tools() {
   local started=$SECONDS tool jobs=""
   mkdir -p "$(dirname "$DAY_SAMPLER")"
-  for tool in pointer apptool sampler; do
+  for tool in pointer apptool sampler witness; do
     swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/$tool.swift" -o "$ARBOR_ROOT/.build/mac-shell/$tool" \
       > "$ARBOR_OUT/build-$tool.log" 2>&1 &
     jobs="$jobs $tool:$!"
@@ -130,7 +142,12 @@ sampler_start() {
   DAY_SAMPLER_PID=$!
   started "$DAY_SAMPLER_PID"
   exec 6> "$APPS_TEMP/sampler-in" 5< "$APPS_TEMP/sampler-out"
-  echo "the sampler writes mac-shell/samples.log (pid $DAY_SAMPLER_PID)"
+  # The same tiers: what it writes down is how late an event reached it, and its own waking up late would count as the event's.
+  # shellcheck disable=SC2086
+  $tiers "$DAY_WITNESS" log "$ARBOR_OUT/witness.log" 2>> "$ARBOR_OUT/sampler.log" 5<&- 6>&- 8>&- 9>&- &
+  DAY_WITNESS_PID=$!
+  started "$DAY_WITNESS_PID"
+  echo "the sampler writes mac-shell/samples.log (pid $DAY_SAMPLER_PID), the witness mac-shell/witness.log (pid $DAY_WITNESS_PID)"
 }
 
 sampler_stop() {
@@ -139,6 +156,8 @@ sampler_stop() {
   exec 6>&- 5<&-
   apps_end "$DAY_SAMPLER_PID"
   DAY_SAMPLER_PID=""
+  kill_started "$DAY_WITNESS_PID"
+  DAY_WITNESS_PID=""
 }
 
 note() { [ -n "$DAY_SAMPLER_PID" ] && echo "mark $*" >&6; }
@@ -209,19 +228,22 @@ meet() {
 
 arbor_answers() { [ -n "$ARBOR_PID" ] && kill -0 "$ARBOR_PID" 2>/dev/null; }
 
-# One question to Arbor for both lists: sets DAY_DOCKED and DAY_FLOATING, to nothing while Arbor does not run.
+# One question to Arbor for all three: sets DAY_DOCKED, DAY_FLOATING and DAY_TILES (<window>@x:y:w:h,…), to nothing while Arbor does not run.
 day_ids() {
-  DAY_DOCKED="" DAY_FLOATING=""
+  DAY_DOCKED="" DAY_FLOATING="" DAY_TILES=""
   arbor_answers || return 0
-  read -r DAY_DOCKED DAY_FLOATING <<< "$("$ARBOR_BIN/arborctl" state 2>/dev/null | python3 -c '
+  read -r DAY_DOCKED DAY_FLOATING DAY_TILES <<< "$("$ARBOR_BIN/arborctl" state 2>/dev/null | python3 -c '
 import json, sys
 try:
-    windows = [window for window in json.load(sys.stdin)["state"]["windows"] if window["managed"]]
+    state = json.load(sys.stdin)["state"]
+    windows = [window for window in state["windows"] if window["managed"]]
 except (ValueError, KeyError):
     sys.exit(0)
 for docked in (True, False):
-    print(",".join(str(window["id"]) for window in windows if window["docked"] == docked) or "-", end=" ")')"
-  DAY_DOCKED=${DAY_DOCKED#-} DAY_FLOATING=${DAY_FLOATING#-}
+    print(",".join(str(window["id"]) for window in windows if window["docked"] == docked) or "-", end=" ")
+print(",".join("%d@%s" % (window, ":".join(str(round(number)) for pair in tile["frame"] for number in pair))
+               for display in state["displays"] for tile in display["tiles"] for window in tile["windows"]) or "-")')"
+  DAY_DOCKED=${DAY_DOCKED#-} DAY_FLOATING=${DAY_FLOATING#-} DAY_TILES=${DAY_TILES#-}
 }
 docked_ids() { day_ids; echo "$DAY_DOCKED"; }
 floating_ids() { day_ids; echo "$DAY_FLOATING"; }
@@ -234,7 +256,7 @@ act() {
   DAY_SLUG=$1
   DAY_UNDONE=""
   day_ids
-  DAY_DOCKED_BEFORE=$DAY_DOCKED DAY_FLOATING_BEFORE=$DAY_FLOATING
+  DAY_DOCKED_BEFORE=$DAY_DOCKED
   echo
   echo "-- $DAY_STEP $1: $2"
   mark "== $DAY_STEP $1"
@@ -273,18 +295,20 @@ must() {
 
 acted() {
   local word wants="" findings line code audit=yes
+  [ -z "${DAY_NO_AUDIT:-}" ] || audit=""
   quiet || echo "  ~ windows were still moving after ${QUIET#*:} ms"
   day_ids
   if [ -n "$DAY_UNDONE" ]; then
     echo "  ✘ the act was not performed:$DAY_UNDONE"
-    note "finding $DAY_STEP - FAIL the act was not performed:$DAY_UNDONE could not be done"
-    wants=" judge=no"
+    # Not judged, and listed: a press that does not take hold of a title bar happens without Arbor too, once in fifty acts. How many there may be in a gate is viable.py's to say.
+    wants=" judge=no performed=no undone=$(echo $DAY_UNDONE | tr ' ' ',')"
   fi
   for word in "$@"; do
     case "$word" in
-      moves=docked) word="moves=$DAY_DOCKED_BEFORE,$DAY_DOCKED" ;;
+      moves=docked | moves=docked,*) word="moves=$DAY_DOCKED_BEFORE,$DAY_DOCKED,${word#moves=docked}" ;;
       audit=no) audit=""; continue ;;
-      yields=floating) word="yields=$DAY_FLOATING_BEFORE,$DAY_FLOATING" ;;
+      tiles=ok) word="tiles=$DAY_TILES keyboard=$(apptool focused 2>/dev/null | cut -d ' ' -f 1)" ;;
+      offence=*) DAY_OFFENCES="$DAY_OFFENCES ${word#offence=}:$DAY_SLUG" ;;
       # Nothing would be checked, and it would look like a pass.
       front= | comes= | drags=) note "finding $DAY_STEP - FAIL the script could not tell which window ${word%=} is about"; continue ;;
     esac
@@ -303,6 +327,14 @@ acted() {
     fi
     while IFS= read -r line; do
       case $'\n'"$DAY_AUDIT_BEFORE"$'\n' in *$'\n'"$line"$'\n'*) continue ;; esac
+      # A floating window's frame is its person's, so it may lie over docked ones.
+      case "$line" in "ODD floating "*" overlap by "*) continue ;; esac
+      # A floating window hangs over an edge where its person left it hanging, and Arbor has no business there (QUESTIONS Q20). What the samples show of it is jolts.py's to judge.
+      case "$line" in
+        "FAIL w"*" is in view for Arbor but only "*)
+          word=${line#FAIL w}
+          case ",$DAY_FLOATING," in *",${word%% *},"*) continue ;; esac ;;
+      esac
       case "$line" in
         FAIL*) echo "  ✘ ${line#FAIL }"; note "finding $DAY_STEP - FAIL ${line#FAIL }" ;;
         ODD*) echo "  ~ ${line#ODD }"; note "finding $DAY_STEP - ODD ${line#ODD }" ;;
@@ -316,6 +348,11 @@ acted() {
     tail -n 20 "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>/dev/null
     ARBOR_PID=""
   fi
+  case "$DAY_KIND" in
+    dock-key | view | resize | way-out | drag | tile-click)
+      DAY_SINCE_START=$((DAY_SINCE_START + 1))
+      [ "$DAY_SINCE_START" -ne 1 ] || wants="$wants first=1" ;;
+  esac
   note "end $DAY_STEP act=$DAY_KIND settled=$QUIET$wants"
   echo "  ($QUIET ms)$wants"
   snap_now "$(printf '%03d-%s' "$DAY_STEP" "$DAY_SLUG")" > /dev/null
@@ -327,7 +364,10 @@ day_launch() {
   # shellcheck disable=SC2086
   arbor_start_apps all $DAY_FACE "$@" || return 1
   note "arbor $ARBOR_PID"
+  DAY_SINCE_START=0
   day_trace
+  # Arbor has started, whatever became of the trace.
+  return 0
 }
 
 day_gone() {
@@ -335,10 +375,14 @@ day_gone() {
   [ -n "$pid" ] || return 0
   ended "$pid" 50 || return 1
   ARBOR_PID=""
+  note "arbor gone"
   left=$(ps -A -o pid=,comm= | grep -F "$ARBOR_BIN/Arbor" | awk '{ printf "%s ", $1 }')
   [ -z "$left" ] || note "finding $DAY_STEP -:left-behind FAIL after Quit a process of Arbor's is still there: $left"
   left=$(pointer windows --pid "$pid" | wc -l | tr -d ' ')
   [ "$left" -eq 0 ] || note "finding $DAY_STEP -:left-behind FAIL after Quit $left windows of Arbor's are still there"
+  # The window server drops a process's taps when it ends. One that is still listed would go on holding every event of the Mac's.
+  left=$("$DAY_WITNESS" taps 2> /dev/null | awk -v pid="pid=$pid" '$3 == pid' | wc -l | tr -d ' ')
+  [ "$left" -eq 0 ] || note "finding $DAY_STEP -:left-behind FAIL after Quit $left event taps of Arbor's are still there"
 }
 
 # MARK: What a person does
@@ -352,13 +396,38 @@ click_window() {
   move "$x" "$((y + 120))"
 }
 
+# Not every point that looks free moves the window: a toolbar has controls Accessibility does not call controls. So the button stays down until the window is
+# seen to have followed; a press that did not take hold of it is let go, and the drag was not performed.
 drag_window() {
-  local window=$1 x y role
-  shift
+  local window=$1 to_x=$2 to_y=$3 x y role before hold=0.2 keep="" again="" options=""
+  shift 3
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --hold) hold=$2; shift ;;
+      --no-release) keep=yes ;;
+      --then-click) again=yes ;;
+      *) options="$options $1" ;;
+    esac
+    shift
+  done
   read -r x y role <<< "$(apptool grab "$window" 2>/dev/null)"
   [ -n "${x:-}" ] || { echo "no free point of w$window's title bar shows"; return 1; }
-  mark "drag w$window from $x,$y to $1,$2"
-  drag "$x" "$y" "$@"
+  mark "drag w$window from $x,$y to $to_x,$to_y"
+  before=$(real_frame_of "$window")
+  # shellcheck disable=SC2086
+  drag "$x" "$y" "$to_x" "$to_y" --no-release $options
+  if [ "$(real_frame_of "$window")" = "$before" ]; then
+    release
+    echo "the press at $x,$y ($role) did not take hold of w$window"
+    return 1
+  fi
+  [ -n "$keep" ] && return 0
+  sleep "$hold"
+  release
+  [ -n "$again" ] || return 0
+  # An impatient hand: whoever still holds the drag's events back, or takes the next press for more of the drag, shows it now (`input-held`).
+  sleep 0.3
+  click "$to_x" "$to_y"
 }
 
 dock_click() {
@@ -444,15 +513,31 @@ bare_spot() {
 day_manifest() { DAY_MANIFEST="$DAY_MANIFEST$1=$2"$'\n'; }
 
 day_write_manifest() {
-  DAY_MANIFEST=$DAY_MANIFEST python3 - "$ARBOR_OUT/run.json" "$(git -C "$ARBOR_ROOT" rev-parse HEAD)" "$(basename "$ARBOR_SCRIPT")" \
+  # The first time the tools are not built yet.
+  [ ! -x "$ARBOR_POINTER" ] || day_manifest reduce_motion "$("$ARBOR_POINTER" reduce-motion)"
+  DAY_MANIFEST=$DAY_MANIFEST DAY_OFFENCES=$DAY_OFFENCES python3 - "$ARBOR_OUT/run.json" "$(git -C "$ARBOR_ROOT" rev-parse HEAD)" "$(basename "$ARBOR_SCRIPT")" \
     "$(sw_vers -productVersion) ($(sw_vers -buildVersion))" "$SECONDS" << 'PYTHON'
 import json, os, sys
 path, commit, script, macos, seconds = sys.argv[1:]
-run = {"gate": 1, "commit": commit, "run": os.environ.get("GITHUB_RUN_ID", ""), "attempt": int(os.environ.get("GITHUB_RUN_ATTEMPT", "1")),
+# Several scripts can share one run of the workflow: which of them this is, and of how many, is for the batch to say before the first begins.
+# "started": whoever hands out the parts leaves a manifest that says false in each one's place, so that a part nobody played is told from one that is kept back.
+run = {"gate": 1, "started": True, "commit": commit, "run": os.environ.get("GITHUB_RUN_ID", ""), "attempt": int(os.environ.get("GITHUB_RUN_ATTEMPT", "1")),
+       "part": int(os.environ.get("MAC_SHELL_PART", "1")), "parts": int(os.environ.get("MAC_SHELL_PARTS", "1")),
        "script": script, "settings": "shipped", "build": "debug", "macos": macos, "seconds": int(seconds)}
 for line in os.environ["DAY_MANIFEST"].splitlines():
     key, _, value = line.partition("=")
-    run[key] = json.loads(value)
+    # A value that cannot be read must not cost the whole manifest: without it the run would look as if it had never begun.
+    try:
+        run[key] = json.loads(value)
+    except ValueError:
+        run[key] = None
+# An act's id is its slug and which act of that slug it is in its run (viable.py).
+offences = []
+for word in os.environ["DAY_OFFENCES"].split():
+    detector, _, slug = word.partition(":")
+    offences.append({"detector": detector, "id": f"{slug}#1"})
+if offences:
+    run["offences"] = offences
 with open(path, "w", encoding="utf-8") as handle:
     json.dump(run, handle, indent=1)
     handle.write("\n")
@@ -465,19 +550,24 @@ day_report() {
   if arbor_answers; then "$ARBOR_BIN/arborctl" trace off > /dev/null 2>&1; fi
   # One home for the whole day, so one log, whatever the number of the session.
   if [ -f "$ARBOR_HOME/arbor.log" ]; then cp "$ARBOR_HOME/arbor.log" "$ARBOR_OUT/arbor.log"; fi
-  if [ -d "$ARBOR_HOME/traces" ]; then cp -R "$ARBOR_HOME/traces" "$ARBOR_OUT/traces"; fi
+  # What is in it, not the folder: somebody else may have made mac-shell/traces already, and then the folder would come to lie inside it.
+  if [ -d "$ARBOR_HOME/traces" ]; then mkdir -p "$ARBOR_OUT/traces" && cp -R "$ARBOR_HOME/traces/." "$ARBOR_OUT/traces/"; fi
   # While the sampler still takes marks: what only shows once everything has been gathered counts for the last step.
   if on_throwaway_mac && cp "$HOME"/Library/Logs/DiagnosticReports/Arbor*.ips "$ARBOR_OUT/" 2>/dev/null; then
     note "finding $DAY_STEP -:crash FAIL macOS wrote a crash report of Arbor's"
   fi
   # -I: not the pictures, which show the titles as the screen did.
+  # A witness that macOS refused, or that died, would leave a rule unchecked and nobody the wiser.
+  [ -s "$ARBOR_OUT/witness.log" ] || note "finding $DAY_STEP - FAIL the witness at the end of the event taps saw nothing all day"
   told=$(grep -rIl "$APPS_CANARY" "$ARBOR_OUT" 2>/dev/null | sed "s|$ARBOR_OUT/||" | tr '\n' ' ')
   [ -z "$told" ] || note "finding $DAY_STEP -:told FAIL a window's title is in what the run brings back: $told"
   sampler_stop
-  day_write_manifest
   logs=$(ls "$ARBOR_OUT/arbor.log" "$ARBOR_OUT/day-macos.log" 2>/dev/null | tr '\n' ' ')
   python3 "$DAY_JOLTS" report "$DAY_SAMPLES" --json "$ARBOR_OUT/day-findings.json" > "$ARBOR_OUT/day-report.md"
   code=$?
+  # Only the samples know whether Arbor's stage was ever up.
+  day_manifest stage_seen "$(python3 -c 'import json, sys; print(json.dumps(json.load(open(sys.argv[1]))["stage_seen"]))' "$ARBOR_OUT/day-findings.json" 2>/dev/null || echo null)"
+  day_write_manifest
   step "the report (all of it: mac-shell/day-report.md)"
   sed -n '1,/^## Every step/p' "$ARBOR_OUT/day-report.md" | sed '$d'
   if [ -n "${DAY_SABOTAGE:-}" ]; then
@@ -508,3 +598,6 @@ day_last_words() {
   return "$code"
 }
 trap 'day_last_words; apps_exit' EXIT
+
+# Written when the run begins and completed when it ends: a script that is stopped before it can say a last word has still been started, and counts as that.
+day_write_manifest

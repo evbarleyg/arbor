@@ -100,6 +100,7 @@ import Foundation
 //
 //   swift run -c release arbor-sim bench [sizes…]   count and time everyday commands (Bench.swift)
 // `arbor-sim chaos|hunt|shrink …`, and `replay` without a file, are the chaos test's modes: see ChaosModes.swift.
+// `arbor-sim walk …` writes walks for a hosted Mac and plays them here: see WalkModes.swift.
 
 @MainActor
 func runSimulation() {
@@ -118,6 +119,7 @@ func runSimulation() {
   // `replay <file>` replays a trace; `replay` alone, a chaos script from standard input.
   if lines.first == "replay", lines.dropFirst().contains(where: { !$0.hasPrefix("--") }) { runReplay(Array(lines.dropFirst())) }
   if let code = runChaosMode(lines) { exit(code) }
+  if let code = runWalkMode(lines) { exit(code) }
   let launch = LaunchOptions(taking: &lines)
   if lines.isEmpty, launch?.audit != true {
     while let line = readLine() { lines.append(line) }

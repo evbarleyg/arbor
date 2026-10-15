@@ -8,6 +8,7 @@
 //   Apps.swift            what apps and the people in front of them do: launch, quit, come forward, hide, hang
 //   Windows.swift         open, close, minimize, full screen, tabs, Spaces
 //   Mouse.swift           presses, drags, releases
+//   Threads.swift         other threads than Arbor's main one, on the model's clock
 //
 // Every delay and every order of reports here says where it was seen. "Guess" marks what nobody has measured.
 import Foundation
@@ -20,17 +21,18 @@ public final class FakeMac: @unchecked Sendable {
   public nonisolated(unsafe) static var current = FakeMac()
 
   public init() {
-    arbor = App(pid: getpid(), name: "Arbor", bundleID: "com.evbarleyg.arbor", policy: .accessory)
+    arbor = App(pid: Self.getpid(), name: "Arbor", bundleID: "com.evbarleyg.arbor", policy: .accessory)
     apps = [arbor]
   }
 
   // MARK: What it consists of
 
-  /// Arbor itself: the process that runs the test. An accessory app, never in front unless a story says so.
+  /// Arbor itself. An accessory app, never in front unless a story says so.
   public let arbor: App
   /// The apps that run, in the order they were launched.
   public internal(set) var apps: [App]
-  var lastPID: pid_t = 500
+  /// No two Macs have a process of the same number: what Arbor keeps for the whole of its own process, by pid, must not colour the next story.
+  nonisolated(unsafe) static var lastPID: pid_t = 500
   var lastWindowNumber: UInt32 = 100
   var windowsMade = 0
   var windowsBySerial: [Int: Window] = [:]
@@ -66,6 +68,14 @@ public final class FakeMac: @unchecked Sendable {
   public var mouseDownIsLateBy: TimeInterval = 0
   /// A loaded Mac. The window server begins to move a window that is dragged so long after the press, and then catches up with the pointer.
   public var serverFollowsPointerAfter: TimeInterval = 0
+  /// A loaded Mac. The window server has a dragged window where the pointer was so long ago, all through the drag. (A hosted Mac: 27 points at the first look, the
+  /// window still in its place.)
+  public var serverLagsPointerBy: TimeInterval = 0
+  /// With the button down `NSEvent.mouseLocation` says where the pointer was one movement ago, so that a dragged window is a step ahead of the pointer as read. Guess.
+  public var pointerIsReadOneStepLate = false
+  /// The window server has a dragged window one movement further than the pointer has gone, and leaves it there. (A hosted Mac: the window ended 67 points further than
+  /// the pointer travelled, which was one step of that drag. Why is not known.)
+  public var serverRunsAStepAhead = false
   /// Whether Arbor has the Accessibility permission. Without it every call is refused with `apiDisabled`.
   public var isTrusted = true
 
@@ -76,17 +86,26 @@ public final class FakeMac: @unchecked Sendable {
   public var timing = Timing()
   public var manners = Manners()
 
-  /// How long a call waits for an app whose element has no timeout of its own: what was set on the system-wide element, else six seconds.
+  /// How long a call waits for an app whose element has no timeout of its own: what was set on the system-wide element, which a Mac showed to cover every element
+  /// (docs/features/F17, H3). Else six seconds, which is a GUESS from Apple's header: the one measurement there is, of window elements without a timeout of their own, gave 1.55 s.
   var processTimeout: TimeInterval = 6
   /// How many Accessibility calls Arbor has made, and how long it waited in them for apps that did not answer.
   public internal(set) var calls = 0
   public internal(set) var secondsWaitedInVain: TimeInterval = 0
+  /// The most it has waited in vain for one app in one hang.
+  public internal(set) var longestWaitForOneHang: TimeInterval = 0
+  /// How long Arbor's main thread has stood still in all: in calls to apps that did not answer, and waiting for its own other threads.
+  public internal(set) var secondsTheMainThreadWaited: TimeInterval = 0
+  var workers: [Worker] = []
+  /// What is put on Arbor's main dispatch queue has its turn so much later. To the run loop the queue is one source among others.
+  public var mainQueueIsLateBy: TimeInterval = 0
 
   // MARK: The clock
 
   /// Seconds since this Mac started. It moves only in `pass`, and inside an Accessibility call.
-  public internal(set) var now: TimeInterval = FakeMac.dawn
-  static let dawn: TimeInterval = 10_000
+  public internal(set) var now: TimeInterval = 10_000
+  /// When this Mac started. The same for every Mac, so that a story's times are the same to the last digit whatever was told before it.
+  public let dawn: TimeInterval = 10_000
 
   /// What `ProcessInfo.processInfo.systemUptime` becomes in the copy of Arbor's sources (scripts/mac-on-linux/retime.py).
   public static var uptime: TimeInterval { current.now }
@@ -113,6 +132,10 @@ public final class FakeMac: @unchecked Sendable {
     case system
     /// A task of Arbor's that sleeps. Each is a source of its own.
     case sleeper(Int)
+    /// Arbor's main dispatch queue.
+    case mainQueue
+    /// A thread of Arbor's that is not the main one (Threads.swift).
+    case thread(Int)
   }
 
   struct Pending {
@@ -133,14 +156,20 @@ public final class FakeMac: @unchecked Sendable {
 
   public func note(_ text: @autoclosure () -> String) {
     guard keepsJournal else { return }
-    journal.append(String(format: "%9.4f  ", now - Self.dawn) + text())
+    journal.append(String(format: "%9.4f  ", now - dawn) + text())
   }
 
   /// Sends something on its way. With `manners.overtaking` it may be held up, so that what another source sent later arrives first.
   func send(after delay: TimeInterval, from source: Source, _ label: String, _ run: @escaping () -> Void) {
     var due = now + max(delay, 0)
-    if case .sleeper = source {
-      // Arbor's own timers are not macOS's to delay.
+    guard !hasEnded, !(arborHasGone && (isForTheMainThread(source) || { if case .thread = source { true } else { false } }())) else { return }
+    var isArborsOwn = false
+    switch source {
+    case .sleeper, .thread: isArborsOwn = true
+    default: break
+    }
+    if isArborsOwn {
+      // Arbor's own timers and threads are not macOS's to delay.
     } else {
       if manners.overtaking > 0 { due += manners.fraction() * manners.overtaking }
       due = max(due, lastDue[source] ?? 0)
@@ -150,9 +179,11 @@ public final class FakeMac: @unchecked Sendable {
     pending.append(Pending(due: due, order: sent, source: source, label: label, run: run))
   }
 
-  private func takeNext(until end: TimeInterval) -> Pending? {
+  /// `forTheMainThread: false`: the main thread is waiting, and what is meant for it stays where it is.
+  func takeNext(until end: TimeInterval, forTheMainThread: Bool = true) -> Pending? {
     var best: (index: Int, key: (TimeInterval, Int, TimeInterval, Int))?
     for (index, item) in pending.enumerated() {
+      if !forTheMainThread, isForTheMainThread(item.source) { continue }
       let key = turn(of: item)
       guard key.0 <= end else { continue }
       if let best, best.key <= key { continue }
@@ -180,15 +211,22 @@ public final class FakeMac: @unchecked Sendable {
     backlogOrder = order
   }
 
+  private func isForTheMainThread(_ source: Source) -> Bool {
+    switch source {
+    case .accessibility, .mouse, .workspace, .screens, .sleeper, .mainQueue: true
+    case .workspaceCache, .mouseCache, .app, .system, .thread: false
+    }
+  }
+
   /// When an item's turn comes, and among those whose turn comes at the same time, which goes first.
   private func turn(of item: Pending) -> (TimeInterval, Int, TimeInterval, Int) {
     let rank: Int
     switch item.source {
     case .accessibility: rank = backlogOrder == .accessibilityFirst ? 0 : 1
     case .mouse: rank = backlogOrder == .mouseFirst ? 0 : 1
-    case .workspace, .screens, .sleeper: rank = 1
-    // The Mac's own business waits for nobody.
-    case .workspaceCache, .mouseCache, .app, .system: return (item.due, 0, item.due, item.order)
+    case .workspace, .screens, .sleeper, .mainQueue: rank = 1
+    // The Mac's own business waits for nobody, nor do Arbor's other threads.
+    case .workspaceCache, .mouseCache, .app, .system, .thread: return (item.due, 0, item.due, item.order)
     }
     guard item.due < arborIsBusyUntil else { return (item.due, 0, item.due, item.order) }
     return (arborIsBusyUntil, backlogOrder == .byTime ? 0 : rank, item.due, item.order)
@@ -217,7 +255,7 @@ public final class FakeMac: @unchecked Sendable {
 
   private var sleepers: [Int: UnsafeContinuation<Void, any Error>] = [:]
   private var sleepersMade = 0
-  private var hasEnded = false
+  private(set) var hasEnded = false
 
   /// What `Task.sleep(nanoseconds:)` becomes in the copy. Like the real one it ends early, with an error, when its task is cancelled.
   public static func sleep(nanoseconds: UInt64) async throws { try await current.sleep(Double(nanoseconds) / 1e9) }
@@ -241,6 +279,29 @@ public final class FakeMac: @unchecked Sendable {
     }
   }
 
+  // MARK: Arbor ends, the Mac goes on
+
+  public private(set) var arborHasGone = false
+
+  /// Arbor's process ends. Its threads, timers, observers and monitors go with it, and what was on its way to it reaches nobody. What it has sent is sent: an app that hangs still finds it in its
+  /// queue when it wakes.
+  public func arborIsGone() {
+    note("Arbor is gone")
+    arborHasGone = true
+    pending.removeAll { item in
+      if case .thread = item.source { return true }
+      return isForTheMainThread(item.source)
+    }
+    sleepers.removeAll()
+    for worker in workers { worker.finish() }
+    workers.removeAll()
+    observers.removeAll()
+    monitors.removeAll()
+  }
+
+  /// Something happens on this Mac so much later, whatever Arbor's main thread is doing by then.
+  public func later(_ seconds: TimeInterval, _ action: @escaping () -> Void) { send(after: seconds, from: .system, "", action) }
+
   /// The story is over: nothing more is delivered, and whoever sleeps is never woken. Waking them would run what they were waiting to do, on a Mac
   /// that is no more, and a timer that winds itself up again would never let go.
   public func end() {
@@ -248,6 +309,9 @@ public final class FakeMac: @unchecked Sendable {
     hasEnded = true
     pending.removeAll()
     sleepers.removeAll()
+    for worker in workers { worker.finish() }
+    workers.removeAll()
+    Pump.runTasks()
   }
 
   // MARK: Which macOS
@@ -257,6 +321,31 @@ public final class FakeMac: @unchecked Sendable {
   public static var operatingSystemVersion: OperatingSystemVersion { current.macOS }
 
   // MARK: Processes
+
+  // MARK: The person's settings
+
+  /// What other processes' preferences hold, by domain and key. A key that is not there has never been touched: the setting is as a Mac comes.
+  public var preferences: [String: [String: Any]] = [:]
+
+  /// Desktop & Dock: "Drag windows to left or right edge of screen to tile", "Drag windows to menu bar to fill screen", "Hold ⌥ key while dragging windows to tile". On, as a Mac comes, since macOS 15. The model
+  /// does not tile anything itself: macOS acts only at the last point of an edge, where no story lets go.
+  public var macOSTilesDraggedWindows: Bool {
+    get { preferences["com.apple.WindowManager"]?["EnableTilingByEdgeDrag"] as? Bool ?? true }
+    set {
+      for key in ["EnableTilingByEdgeDrag", "EnableTopTilingByEdgeDrag", "EnableTilingOptionAccelerator"] { preferences["com.apple.WindowManager", default: [:]][key] = newValue }
+    }
+  }
+
+  /// What `UserDefaults(suiteName:)` becomes in the copy: another process's domain, on the model and not on this machine.
+  public struct Defaults {
+    let domain: String
+    public func object(forKey key: String) -> Any? { FakeMac.current.preferences[domain]?[key] }
+  }
+  public static func defaults(suiteName: String) -> Defaults? { Defaults(domain: suiteName) }
+
+  /// What `getpid()` becomes in the copy: Arbor's own number on the model. Not that of the process the test runs in, which in a fresh container may be any small number, one of the
+  /// model's apps' among them.
+  public static func getpid() -> pid_t { 400 }
 
   /// What `kill(pid, 0)` becomes in the copy: whether the process is there. The model's pids are nobody's on the machine the test runs on.
   public static func kill(_ pid: pid_t, _ signal: Int32) -> Int32 {
@@ -277,13 +366,15 @@ public final class FakeMac: @unchecked Sendable {
 extension FakeMac {
   /// How long things take on a Mac that behaves. From the traces in collab/evidence/traces (macOS 26.6 on a hosted Mac) where one is named.
   public struct Timing {
-    /// From an app's posting a notification to Arbor's observer. Echoes come 2 to 15 ms after the call (traces/README.md, row 1).
+    /// From an app's posting a notification to Arbor's observer. Echoes usually come 2 to 15 ms after the call, but 246 ms after it in `stubborn-slow`, and 0.3 to 0.55 s for
+    /// Finder and Terminal (traces/README.md, row 1): `App.reportsLateBy`.
     public var report: TimeInterval = 0.002
     /// Between two notifications an app posts for one change. `minimize-restore`: 0.1 to 0.4 ms between echoes.
     public var betweenReports: TimeInterval = 0.0003
     /// From an app's coming forward to `didActivateApplication`. Guess; only what follows was measured.
     public var activationNotice: TimeInterval = 0.004
-    /// `AXApplicationDeactivated` came 0.6 ms after `didActivateApplication`, `AXApplicationActivated` 8 ms after it (hosted Macs, 2026-10-14).
+    /// `app-switch-unreported`, its second switch (an app brings itself forward, its focused window unchanged): `AXApplicationDeactivated` 0.6 ms after `didActivateApplication`,
+    /// `AXApplicationActivated` 7.8 ms after it. Its first switch, where Arbor had asked for another window of the app, is another matter: `App.reportsFocusTwiceAndLate`.
     public var deactivatedAfterNotice: TimeInterval = 0.0006
     public var activatedAfterNotice: TimeInterval = 0.008
     /// From an event to the monitors. Guess.
@@ -291,19 +382,23 @@ extension FakeMac {
     /// The second mouse-up: `click-title-bar` 15 ms after the first, `flick-to-edge` 33 ms.
     public var secondMouseUp: TimeInterval = 0.015
     /// `minimize-restore`: "miniaturized" 0.55 s after the click, "deminiaturized" 0.54 s after the app's call.
+    /// At the end of the flight, if the window had its app's keyboard, the next window's focus is reported first: "focused window changed", "main window changed" 5.4 ms later, "miniaturized" 6.6 ms
+    /// after the first; nothing in the 0.67 s before (a recording of a hosted Mac: origin/mac-shell-out/sweep.proof, sweep.jsonl, "s6 the control").
+    public var focusBeforeMiniaturized: TimeInterval = 0.0066
     public var minimizing: TimeInterval = 0.55
-    /// `minimize-restore`: the screens' notice 15 to 20 ms after "miniaturized".
+    /// What was seen is Arbor's own `displaysChanged`, of a layer that passed every notice on at once: 20.4 and 15.3 ms after "miniaturized", 13.6 and 24.4 ms after
+    /// "deminiaturized" (`minimize-restore`, `app-minimize`). The notice itself is in no trace.
     public var dockAfterMinimizing: TimeInterval = 0.018
-    /// `minimize-restore`: "focused window changed" 4 ms before "deminiaturized"; `app-minimize` 1 to 2 ms.
-    public var focusBeforeDeminiaturized: TimeInterval = 0.002
-    /// `close`: "focused window changed" to the next window 12 ms before "destroyed".
+    /// "Focused window changed" before "deminiaturized", raw line to raw line: 4.1 ms (`minimize-restore`), 8.3 ms (`app-minimize`).
+    public var focusBeforeDeminiaturized: TimeInterval = 0.004
+    /// `close` (plain AppKit windows): "focused window changed" to the next window 12 ms before "destroyed". Safari and Finder are otherwise: `App.dropsAClosingWindowAtOnce`.
     public var focusBeforeDestroyed: TimeInterval = 0.012
     /// `app-quits`: the window was reported gone 36 ms after the note that the app was told to quit.
     public var terminationNotice: TimeInterval = 0.036
     /// Guess.
     public var launchNotice: TimeInterval = 0.05
     /// The app learns of a drag about a tenth of a second after the window server (`drag-to-edge`: first "moved" 0.1 s after the first
-    /// mouse-dragged), and posts eight to ten "moved" a second (0.11 to 0.2 s apart there).
+    /// mouse-dragged), and posts five to nine "moved" a second: 0.113 to 0.201 s apart there, 6.6 a second on average. This is the least gap.
     public var dragReachesApp: TimeInterval = 0.1
     public var betweenMovedReports: TimeInterval = 0.11
     /// A Space transition, and where in it the notice comes ("in the middle": docs/ARCHITECTURE.md). The lengths are guesses.
@@ -371,6 +466,17 @@ extension FakeMac {
     public var reportsFocusBeforeCreated = false
     /// Posts no "created" for its new windows. Nobody has seen such an app; the layer must not depend on there being none.
     public var doesNotReportCreated = false
+    /// A window that closes is off its list, and its element no longer valid, by the time the next window's focus is reported; "destroyed" comes a good while after. Safari and Finder, ⌘W on a
+    /// second window, in recordings of hosted Macs (origin/mac-shell-out/test-an-ordinary-day.day and others): the layer, looking through the app's windows at the focus report, missed the closing
+    /// one and said `destroyed` 4 to 13 ms, once 91 ms, BEFORE `focused`; the raw "destroyed" arrived only after both.
+    public var dropsAClosingWindowAtOnce = false
+    /// One call that it answers takes so long, instead of `Timing.answer`. With Safari and Finder the layer's work for one focus report took 100 to 190 ms (the same recordings).
+    public var answersIn: TimeInterval?
+    /// Everything it posts reaches Arbor so much later than usual (`Timing.report`).
+    public var reportsLateBy: TimeInterval = 0
+    /// A change of its focused window is posted twice over, and late: as in the first switch of `app-switch-unreported`, where Arbor had asked for a window of an app in the background. After
+    /// `didActivateApplication`: "deactivated" of the other app 4.5 ms, "focused window changed" 8.5, "main window changed" 26.6, "focused" again 34.5, "main" again 41.3, "activated" 44.3 ms.
+    public var reportsFocusTwiceAndLate = false
     /// New windows get their subrole so long after they are created.
     public var subroleComesAfter: TimeInterval = 0
     /// Its list of windows is so long behind every change. A window in plain view has been seen missing from its app's list (AXWindowSystem.swift, `rescan`); for
@@ -392,6 +498,9 @@ extension FakeMac {
     var wokeAt: TimeInterval = 0
     /// When the notice that it came forward was delivered, `NSWorkspace` still named another app.
     public internal(set) var noticeOutranTheProperty = false
+
+    /// How long Arbor's main thread has waited for it in vain since it last began to hang.
+    public internal(set) var secondsWaitedForInThisHang: TimeInterval = 0
 
     /// What was asked of it, and what it would have posted, while it hung.
     var backlog: [(label: String, run: () -> Void)] = []

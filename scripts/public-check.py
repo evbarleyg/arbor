@@ -9,7 +9,8 @@ sentence about one person's Mac. Those were looked for by hand; this looks for t
 It checks two things.
 
   History   Everything being pushed goes back to the repository's first public commit and to no other beginning (a clone
-            can hold history from elsewhere), and every new commit and tag was made under a no-reply address.
+            can hold history from elsewhere), and every new commit and tag was made under a no-reply address. As the hook it also
+            keeps `main` and `swarm/trunk` of the repository itself for whoever lands work there, and only ever moving forward.
   Words     The lines, file names, commit messages, authors' names, branch and tag names that are new. RULES below says
             what is looked for and what to write instead. Each new commit is read by itself, merges too: what one commit
             adds and the next takes out again is still in the history.
@@ -18,16 +19,24 @@ The rules name kinds of things, never the things themselves, so that reading thi
 the project has not linked to before, not a list of hosts to avoid; the name in LICENSE, read from LICENSE; this
 machine's own ids, read from its environment. There is no list of forbidden words here, not even in disguise. Words no
 kind covers go, one to a line, in a file of your own outside the repository (`git config arbor.privateWords <path>`), or
-in $PUBLIC_CHECK_WORDS. Honest exceptions are in public-check.allow, each with its reason.
+in $PUBLIC_CHECK_WORDS. Honest exceptions are in public-check.allow, each with its reason. They belong to the commit: what is pushed or
+compared is held to the exceptions it carries itself, wherever the clone happens to stand.
 
 Usage: scripts/public-check.py             what this branch adds to origin's main and swarm/trunk (`make public-check`)
        … --base REF [--head REF] [--branch NAME] [--tag NAME]   what REF..head adds (head: HEAD); CI's way
-       … --pre-push                        as git's pre-push hook, which says on standard input what is being pushed
+       … --pre-push [--to URL]             as git's pre-push hook, which says on standard input what is being pushed; where to is
+                                           in $PUBLIC_CHECK_TO or after --to
+       … --rules                           only whether the rules have changed since this clone last said it had read them (below)
        … --text [FILE…]                    free text, from standard input without a file: read a pull request's body or a
                                            comment through this BEFORE posting it
-       … --tree                            every file at HEAD, old and new: an audit to read, not a gate
+       … --tree                            every file at HEAD, old and new: a row of `make lint`
        … --mask                            print findings without the words found (always so in GitHub Actions, whose
                                            logs and annotations are as public as the repository)
+
+Rules that change. Agents who work to a brief kept outside the repository are deep in long work when a rule changes, and a message does
+not reach them until they look up. So the change is enforced where the act happens. Beside the file of private words lies
+`rules-version.txt`; its first line is a number, a time, and a sentence on what changed and what to read again. The hook compares the
+number with `git config arbor.rulesRead` and refuses the push while they differ. No such file, as in a stranger's clone: not a word.
 
 Exit code 0 when nothing was found, 1 when something was, 2 when it could not tell.
 scripts/test-public-check.py holds it to a table of situations; `make lint` runs that.
@@ -45,6 +54,9 @@ import sys
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# Raise it whenever the check gets stricter or a hole in it is mended. The hook has two copies to choose from, the one `make hooks` kept
+# and the one on the branch that is checked out, and lets the newer do the reading.
+VERSION = 5
 # The first public commit. All history begins here.
 ROOT_COMMIT = "51b162d5f28c02846134c1f4a113c787f5164602"
 # Where work is integrated: what these hold on origin has been read before.
@@ -259,9 +271,11 @@ class Checker:
 
 # MARK: git
 
-def git(*arguments, cwd=None, check=True):
-    result = subprocess.run(["git", "-c", "core.quotepath=off", *arguments], cwd=cwd, capture_output=True, text=True,
-                            errors="replace", check=False)
+def git(*arguments, cwd=None, check=True, said=None):
+    """git's output; with check=False its exit code too. `said` goes to its standard input."""
+    # History as it is, not as `git replace` makes it look: a push sends the real objects.
+    result = subprocess.run(["git", "-c", "core.quotepath=off", *arguments], cwd=cwd, capture_output=True, text=True, input=said,
+                            errors="replace", check=False, env=dict(os.environ, GIT_NO_REPLACE_OBJECTS="1"))
     if check and result.returncode != 0:
         raise Unclear(f"git {' '.join(arguments[:3])}…: {result.stderr.strip()[:300]}")
     return result.stdout if check else (result.returncode, result.stdout)
@@ -271,6 +285,9 @@ def history_problems(head, cwd=None):
     """Why `head` may not be pushed, going by where its history begins."""
     if git("rev-parse", "--is-shallow-repository", cwd=cwd).strip() == "true":
         raise Unclear("this clone is shallow, so nobody can tell where its history begins: git fetch --unshallow origin")
+    grafts = os.path.join(cwd or ".", git("rev-parse", "--git-common-dir", cwd=cwd).strip(), "info", "grafts")
+    if os.path.exists(grafts):
+        raise Unclear(f"{grafts} makes history look other than it is, so nobody can tell where it begins: remove the file")
     roots = git("rev-list", "--max-parents=0", head, cwd=cwd).split()
     foreign = [root for root in roots if root != ROOT_COMMIT]
     way_out = "Start again from origin's branch (git checkout -b <name> origin/swarm/trunk) and bring the work over as a patch you have read"
@@ -413,8 +430,14 @@ def highest_number(cwd=None):
 
 # MARK: the command line
 
-def checker_for(top, here=None):
-    """The checker for a clone. `here`: what this machine would give away, where its environment is not the place to look."""
+def lines_of(text):
+    return [line for line in (line.strip() for line in text.splitlines()) if line and not line.startswith("#")]
+
+
+def checker_for(top, here=None, commit=None):
+    """The checker for a clone. `here`: what this machine would give away, where its environment is not the place to look. `commit`: whose
+    exceptions hold; without one, or where it has none, those beside this script."""
+    none, carried = git("show", f"{commit}:scripts/public-check.allow", cwd=top, check=False) if commit else (1, "")
     private = os.environ.get("PUBLIC_CHECK_WORDS", "").split("\n")
     code, path = git("config", "--get", "arbor.privateWords", cwd=top, check=False)
     if code == 0 and path.strip():
@@ -429,7 +452,7 @@ def checker_for(top, here=None):
     if highest is None:
         print("public-check: could not ask origin for its newest pull request, so numbers like #123 were not checked", file=sys.stderr)
     return Checker(
-        allowed=read_lines(os.path.join(HERE, "public-check.allow")), licence=licence, highest=highest,
+        allowed=read_lines(os.path.join(HERE, "public-check.allow")) if none else lines_of(carried), licence=licence, highest=highest,
         owner=os.environ.get("GITHUB_REPOSITORY_OWNER") or (owner.group(1) if owner else None),
         here=told_by_this_machine(os.environ, socket.gethostname()) if here is None else here, private=[word.strip() for word in private if word.strip()])
 
@@ -466,15 +489,53 @@ def new_commits(count):
     return f"{count} new commit{'' if count == 1 else 's'}"
 
 
-def pre_push(top, lines, masked):
-    checker, code = None, 0
+def unread_rules(top):
+    """What to tell whoever has not read the rules as they now are; None when there is nothing to tell."""
+    code, words = git("config", "--get", "arbor.privateWords", cwd=top, check=False)
+    if code != 0 or not words.strip():
+        return None
+    try:
+        with open(os.path.join(os.path.dirname(os.path.expanduser(words.strip())), "rules-version.txt"), encoding="utf-8") as handle:
+            number, _, what = handle.readline().strip().partition(" ")
+    except OSError:
+        return None
+    if not number or git("config", "--get", "arbor.rulesRead", cwd=top, check=False)[1].strip() == number:
+        return None
+    return (f"THE RULES YOU WORK TO HAVE CHANGED, and this clone has not said that it has read them. Version {number}: {what}\n"
+            f"Read your inbox and what that sentence names, now. Then: git config arbor.rulesRead {number}")
+
+
+def landing_problems(top, name, commit, there):
+    """Why this push to a branch where work is integrated may not happen. `commit` is None when the branch is being deleted."""
+    if git("config", "--type=bool", "--get", "arbor.mayLand", cwd=top, check=False)[1].strip() != "true":
+        return [f"{name} is moved by whoever lands work, and by nobody else: hand in a pull request against swarm/trunk (CLAUDE.md). "
+                "If landing is your job: git config arbor.mayLand true"]
+    if commit is None:
+        return [f"{name} is never deleted"]
+    if not ZERO.match(there) and git("merge-base", "--is-ancestor", there, commit, cwd=top, check=False)[0] != 0:
+        return [f"{name} only ever moves forward, and this push would leave out what is there now ({there[:8]}): git fetch, rebase, and push again, without force"]
+    return []
+
+
+def pre_push(top, lines, masked, url=None):
+    unread = unread_rules(top)
+    if unread:
+        print(f"✘ {unread}\npublic-check: nothing was pushed.")
+        return 1
+    code = 0
     for line in lines:
         fields = line.split()
-        if len(fields) != 4 or ZERO.match(fields[1]):  # a branch being deleted adds nothing
+        if len(fields) != 4:
             continue
-        _, sha, remote_ref, _ = fields
-        checker = checker or checker_for(top)
+        _, sha, remote_ref, there = fields
+        # A fork's branches are its owner's business.
+        guarded = remote_ref.replace("refs/heads/", "", 1) if remote_ref.startswith("refs/heads/") and (url is None or UPSTREAM.search(url)) else None
+        if ZERO.match(sha):  # a branch being deleted adds nothing
+            if guarded in INTEGRATION:
+                code |= report(checker_for(top), landing_problems(top, guarded, None, there), [], f"branch {guarded}", masked)
+            continue
         commit = git("rev-parse", "--verify", sha + "^{commit}", cwd=top).strip()
+        checker = checker_for(top, commit=commit)
         problems, findings, count = check_range(checker, [commit, "--not", *public_already(top)], commit, top)
         if remote_ref.startswith("refs/tags/"):
             kind, name = "tag", remote_ref[len("refs/tags/"):]
@@ -483,6 +544,8 @@ def pre_push(top, lines, masked):
         else:
             kind, name = "branch", remote_ref.replace("refs/heads/", "", 1)
             findings += checker.check("branch", name, numbered=False)
+            if guarded in INTEGRATION:
+                problems += landing_problems(top, guarded, commit, there)
         shown = checker.fit_to_print(kind, name) if masked else name
         code |= report(checker, problems, findings, f"{kind} {shown} ({new_commits(count)})", masked)
     if code:
@@ -492,9 +555,9 @@ def pre_push(top, lines, masked):
 
 def main(arguments=None, cwd=None):
     parser = argparse.ArgumentParser(usage="see the top of scripts/public-check.py", add_help=False)
-    for flag in ("--base", "--head", "--branch", "--tag"):
+    for flag in ("--base", "--head", "--branch", "--tag", "--to"):
         parser.add_argument(flag)
-    for flag in ("--pre-push", "--text", "--tree", "--mask", "--help"):
+    for flag in ("--pre-push", "--rules", "--text", "--tree", "--mask", "--help"):
         parser.add_argument(flag, action="store_true")
     parser.add_argument("files", nargs="*")
     options = parser.parse_args(arguments)
@@ -506,9 +569,13 @@ def main(arguments=None, cwd=None):
         if options.files and not options.text:
             raise Unclear(f"what is to be done with {options.files[0]}? --text reads files; without it a branch is read")
         top = git("rev-parse", "--show-toplevel", cwd=cwd).strip()
+        if options.rules:
+            unread = unread_rules(top)
+            print(f"✘ {unread}" if unread else "public-check: the rules are as this clone last read them, or there are none to read")
+            return 1 if unread else 0
         if options.pre_push:
-            return pre_push(top, sys.stdin.read().splitlines(), masked)
-        checker = checker_for(top)
+            return pre_push(top, sys.stdin.read().splitlines(), masked, options.to or os.environ.get("PUBLIC_CHECK_TO"))
+        checker = checker_for(top) if options.text or options.tree else None
         if options.text:
             findings = []
             for name in options.files or ["-"]:
@@ -535,6 +602,7 @@ def main(arguments=None, cwd=None):
             return report(checker, [], findings, "the whole tree", masked)
 
         head = git("rev-parse", "--verify", (options.head or "HEAD") + "^{commit}", cwd=top).strip()
+        checker = checker_for(top, commit=head)
         if options.base and not ZERO.match(options.base):  # all noughts: a branch's first push has nothing before it
             selection = [head, "^" + git("rev-parse", "--verify", options.base + "^{commit}", cwd=top).strip()]
         else:

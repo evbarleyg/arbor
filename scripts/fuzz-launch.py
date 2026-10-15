@@ -86,13 +86,13 @@ SETTINGS_SCRIPT = [
 
 KNOWN = [
     ("lopsided-weight", "UNHEALTHY", r"tree\.nodes\.\*\.weight$", r"does not read back as it is",
-     "R4", "A weight up to 1e12, or down to 5e-324, is believed. Beside ordinary ones it leaves slots of no width, whose frames are then remembered."),
+     "the core", "A weight up to 1e12, or down to 5e-324, is believed. Beside ordinary ones it leaves slots of no width, whose frames are then remembered."),
     ("returns-as-a-guest", "UNHEALTHY", r"workspaces\.main\.floating", r"\[parked[a-z-]*\] w\d+ floats on side, whose Desktop is in view, but is parked",
-     "R5", "A window that only the arrangement of a display that was unplugged lists, started with that display back and the main one framing a "
+     "the controller", "A window that only the arrangement of a display that was unplugged lists, started with that display back and the main one framing a "
      "window: `reconcile` takes it in as having opened unseen (`placedOnPurpose`), then it returns to its display's arrangement, where the first "
      "layout leaves it alone. It stays where it is, on the main display, and counts as out of view on the other until that is laid out again."),
     ("slot-in-no-tree", "UNHEALTHY", r"^workspaces\.main$", r"\[pending\] the waiting slot w\d+ is in no tree",
-     "R3", "A file that lists one display both as connected and as unplugged, started without its windows: the remembered arrangement is discarded, and "
+     "the app shell", "A file that lists one display both as connected and as unplugged, started without its windows: the remembered arrangement is discarded, and "
      "the slots that waited in it are still on the list until the next timer runs. Nobody sees it."),
     ("blind-beside-1e999", "SILENT LOSS", r"", r"^beside a number like 1e999",
      "L", "`PersistedState.keysLeftOut` reads the file with JSONSerialization, which refuses it whole for one number out of range, where the decoders "
