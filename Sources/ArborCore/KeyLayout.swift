@@ -159,32 +159,43 @@ extension KeyChord {
     do {
       try self.init(text: text)
     } catch let error as ParseError {
-      var modifiers: Modifiers = []
-      var strangers: [Substring] = []
-      var compact = text.filter { !$0.isWhitespace }.lowercased()
-      // A German keyboard has a key for +, which also joins the parts: ⌃⌥+, ctrl+opt++.
-      if compact.hasSuffix("+") {
-        compact.removeLast()
-        if compact.hasSuffix("+") { compact.removeLast() }
-        strangers.append("+")
-      }
-      for part in compact.split(separator: "+", omittingEmptySubsequences: false) {
-        // Glyphs may be run together and onto the key, as in `init(text:)`.
-        var rest = part
-        while let modifier = rest.first.flatMap({ Self.modifierNames[String($0)] }) {
-          modifiers.insert(modifier)
-          rest.removeFirst()
-        }
-        if rest.isEmpty, !part.isEmpty { continue }
-        if let modifier = Self.modifierNames[String(rest)] { modifiers.insert(modifier) } else { strangers.append(rest) }
-      }
-      guard strangers.count == 1, strangers[0].count == 1, let character = strangers[0].first,
-        let code = layout.code(typing: character)
+      guard let (modifiers, character) = Self.modifiersAndOneCharacter(in: text), let code = layout.code(typing: character)
       else { throw error }
       guard let key = Key.allCases.first(where: { $0.code == code && $0.character != nil }) else {
         throw ParseError("`\(character)` is on a key that only some keyboards have, which Arbor cannot bind")
       }
       self.init(modifiers, key, positional: true)
     }
+  }
+
+  /// Modifiers and one single character besides, in lower case, if that is all the text holds: `Opt + Ctrl + Ö`, `⌃⌥Ü`,
+  /// `ctrl+opt++`. Whether the character names a key depends on the layout.
+  public static func modifiersAndOneCharacter(in text: String) -> (modifiers: Modifiers, character: Character)? {
+    var modifiers: Modifiers = []
+    var strangers: [Substring] = []
+    var compact = text.filter { !$0.isWhitespace }.lowercased()
+    // A German keyboard has a key for +, which also joins the parts: ⌃⌥+, ctrl+opt++.
+    if compact.hasSuffix("+") {
+      compact.removeLast()
+      if compact.hasSuffix("+") { compact.removeLast() }
+      strangers.append("+")
+    }
+    for part in compact.split(separator: "+", omittingEmptySubsequences: false) {
+      // Glyphs may be run together and onto the key, as in `init(text:)`.
+      var rest = part
+      while let modifier = rest.first.flatMap({ Self.modifierNames[String($0)] }) {
+        modifiers.insert(modifier)
+        rest.removeFirst()
+      }
+      if rest.isEmpty, !part.isEmpty { continue }
+      if let modifier = Self.modifierNames[String(rest)] { modifiers.insert(modifier) } else { strangers.append(rest) }
+    }
+    guard strangers.count == 1, strangers[0].count == 1, let character = strangers[0].first else { return nil }
+    return (modifiers, character)
+  }
+
+  /// How such a shortcut is written, tidied: `ctrl+opt+ö`.
+  public static func text(_ modifiers: Modifiers, typing character: Character) -> String {
+    String(KeyChord(modifiers, .a).text.dropLast()) + String(character)
   }
 }

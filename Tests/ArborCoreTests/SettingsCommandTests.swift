@@ -15,6 +15,7 @@ private func refusal(_ text: String) -> String? {
 @Suite struct SettingsCommandTests {
   static let mail = AppRule(app: "com.apple.mail", title: "Inbox (3) / Work", action: .dock(.left))
   static let samples: [SettingsCommand] = [
+    .bind(chord: "ctrl+opt+ö", command: "desktop"), .unbind(chord: "ö"), .unbind(chord: "ctrl+opt+\""), .unbind(chord: "ctrl+opt++"),
     .set(key: "gap", value: "16"), .set(key: "windowEdgeFraction", value: "0.25"),
     .set(key: "tabsEnabled", value: "true"),
     .set(key: "frameRectangleModifier", value: "ctrl+opt"), .get(key: "gap"), .get(key: "rules"),
@@ -169,6 +170,22 @@ private func refusal(_ text: String) -> String? {
     #expect(refusal("bind ctrl+opt+h") == "usage: bind <shortcut> <command>, e.g. bind ctrl+opt+h dock left")
     #expect(refusal("unbind") == "usage: unbind <shortcut>, e.g. unbind ctrl+opt+d")
     #expect(refusal("unbind ctrl+opt+d now") != nil)
+  }
+
+  /// Which characters name a key depends on the keyboard layout, which the parser does not know: it tidies, the controller judges.
+  @Test func aShortcutMayNameItsKeyByOneCharacterAndNothingElseGetsThrough() throws {
+    #expect(try Command.parse("bind Opt+Ctrl+Ö desktop") == .settings(.bind(chord: "ctrl+opt+ö", command: "desktop")))
+    #expect(try Command.parse("unbind ö+ctrl+control") == .settings(.unbind(chord: "ctrl+ö")))
+    #expect(try Command.parse("unbind ⌃+⌥+ß") == .settings(.unbind(chord: "ctrl+opt+ß")))
+    // As a menu shows them in Germany.
+    #expect(try Command.parse("unbind ⌃⌥Ü") == .settings(.unbind(chord: "ctrl+opt+ü")))
+    #expect(try Command.parse("unbind ⌃⌥+") == .settings(.unbind(chord: "ctrl+opt++")))
+    #expect(try Command.parse("unbind ctrl+opt++") == .settings(.unbind(chord: "ctrl+opt++")))
+    #expect(refusal("unbind ctrl+opt+foo")?.contains("unknown key `foo`") == true)
+    #expect(refusal("unbind ctrl+opt+") == "`ctrl+opt+` is not a shortcut: missing key after the last +")
+    for text in ["ctrl++opt", "+", "ctrl+ü+ö", "hyper+x", "ctrl+opt+us:ö", "ctrl+opt", "ctrl+opt+üü", "ctrl+opt+⌃"] {
+      #expect(refusal("unbind \(text)") != nil, "\(text)")
+    }
   }
 
   @Test func bindCannotBeNested() {

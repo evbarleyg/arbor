@@ -430,6 +430,269 @@ private final class Fixture {
     #expect(KeyBindings.effective(settings: f.settings).problems.isEmpty)
   }
 
+  // MARK: On another keyboard layout
+
+  /// What is registered for the key where `text` is on a German keyboard.
+  private func german(_ f: Fixture, _ text: String) throws -> KeyBinding? {
+    let chord = try KeyChord(text: text, layout: SampleKeyLayouts.german)
+    return f.h.controller.effectiveBindings.bindings.first {
+      $0.modifiers == chord.modifiers && $0.keyCode == chord.code(in: SampleKeyLayouts.german)
+    }
+  }
+
+  /// settings.json takes `ctrl+opt+ö` on a German keyboard, and so must the commands that write it.
+  @Test func aKeyCanBeNamedByWhatItTypes() throws {
+    let f = Fixture()
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    let result = f.h.run("bind ctrl+opt+ö desktop")
+    #expect(result.ok && result.message == "ctrl+opt+ö runs `desktop`", "\(result.message)")
+    #expect(f.settings.bindings == ["ctrl+opt+ö": "desktop"], "written as it was named, not as a place on a US keyboard")
+    let binding = try #require(try german(f, "ctrl+opt+ö"))
+    #expect(binding.command == .desktop && binding.label == "⌃⌥Ö" && binding.keyCode == KeyChord.Key.semicolon.code)
+    #expect(f.h.run("bind Opt+Ctrl+Ö desktop").message == "ctrl+opt+ö already runs `desktop`")
+    #expect(f.h.run("unbind ctrl+opt+ö").message == "ctrl+opt+ö no longer runs `desktop`; ctrl+opt+d still does")
+    #expect(f.settings.bindings.isEmpty)
+    #expect(f.h.run("unbind ctrl+opt+ö").message == "ctrl+opt+ö already runs nothing")
+  }
+
+  @Test func onAUSKeyboardThatCharacterIsStillRefused() {
+    let f = Fixture()
+    #expect(!f.h.run("bind ctrl+opt+ö desktop").ok)
+    #expect(!f.h.run("unbind ctrl+opt+ö").ok)
+    #expect(f.saved.isEmpty)
+  }
+
+  /// Back is `ctrl+opt+[`, which a German keyboard cannot type alone: it stays where a US keyboard has it, on the key marked Ü.
+  @Test func theDefaultThatSitsOnThatKeyIsSeenReplacedAndRemoved() throws {
+    let f = Fixture()
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    #expect(try german(f, "ctrl+opt+ü")?.command == .back)
+    #expect(f.h.run("bind ctrl+opt+ü back").message == "ctrl+opt+ü already runs `back`")
+    #expect(f.h.run("bind ctrl+opt+ü arrange").message == "ctrl+opt+ü runs `arrange` (it ran `back`)")
+    #expect(try german(f, "ctrl+opt+ü")?.command == .arrange)
+    #expect(f.h.controller.effectiveBindings.problems.isEmpty)
+    #expect(f.h.run("unbind ctrl+opt+ü").message == "ctrl+opt+ü no longer runs `arrange`; ctrl+opt+a still does")
+    #expect(try german(f, "ctrl+opt+ü") == nil, "the default does not come back")
+    #expect(f.settings.bindings == ["ctrl+opt+[": nil], "under the default's own name, which holds on every layout")
+  }
+
+  @Test func theTwoWaysOfNamingAKeyAreOneShortcut() throws {
+    var settings = Settings()
+    settings.bindings = ["ctrl+opt+us:;": "arrange"]
+    let f = Fixture(settings: settings)
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    #expect(f.h.run("bind ctrl+opt+ö desktop").message == "ctrl+opt+ö runs `desktop` (it ran `arrange`)")
+    #expect(f.settings.bindings == ["ctrl+opt+ö": "desktop"])
+    #expect(f.h.run("unbind ctrl+opt+us:;").message == "ctrl+opt+us:; no longer runs `desktop`; ctrl+opt+d still does")
+    #expect(f.settings.bindings.isEmpty)
+    // And the other way round.
+    f.h.run("bind ctrl+opt+ö arrange")
+    #expect(f.h.run("bind ctrl+opt+us:; desktop").message == "ctrl+opt+us:; runs `desktop` (it ran `arrange`)")
+    #expect(f.settings.bindings == ["ctrl+opt+us:;": "desktop"])
+    #expect(f.h.controller.effectiveBindings.problems.isEmpty)
+  }
+
+  /// `-` is typed by the key where a US keyboard has `/`, and an entry for `/`, which a German keyboard cannot type alone, sits there.
+  @Test func bindingAKeyTakesItFromWhateverHasItHoweverThatIsWritten() throws {
+    var settings = Settings()
+    settings.bindings = ["ctrl+opt+us:z": "float-all", "ctrl+opt+/": "arrange"]
+    let f = Fixture(settings: settings)
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    #expect(f.h.run("bind ctrl+opt+y desktop").message.hasPrefix("ctrl+opt+y runs `desktop` (it ran `float-all`)"))
+    #expect(f.h.run("bind ctrl+opt+- home").message.hasPrefix("ctrl+opt+- runs `home` (it ran `arrange`)"))
+    #expect(f.settings.bindings == ["ctrl+opt+y": "desktop", "ctrl+opt+-": "home"])
+    #expect(f.h.controller.effectiveBindings.problems.isEmpty)
+  }
+
+  /// The key marked Z on a German keyboard is where a US keyboard has Y.
+  @Test func unbindingAKeyByItsPlaceRemovesTheEntryThatNamesItByItsLetter() {
+    var settings = Settings()
+    settings.bindings = ["ctrl+opt+z": "desktop"]
+    let f = Fixture(settings: settings)
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    #expect(f.h.run("unbind ctrl+opt+us:y").message == "ctrl+opt+us:y no longer runs `desktop`; ctrl+opt+d still does")
+    // The entry is gone. Undo is on ⌃⌥Z by default and would come back to the key, so null stands there, under the default's own name.
+    #expect(f.settings.bindings == ["ctrl+opt+z": nil])
+    #expect(!f.h.controller.effectiveBindings.bindings.contains { $0.keyCode == KeyChord.Key.y.code && $0.modifiers == [.control, .option] })
+    #expect(f.h.controller.effectiveBindings.problems.isEmpty)
+  }
+
+  /// `z` is the key that types z. What is said about it has to be about that key.
+  @Test func aLetterMeansTheKeyThatTypesItWhenAskingWhatItRan() throws {
+    var settings = Settings()
+    settings.bindings = ["ctrl+opt+z": "desktop", "ctrl+opt+y": "arrange"]
+    let f = Fixture(settings: settings)
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    #expect(f.h.run("bind ctrl+opt+z home").message == "ctrl+opt+z runs `home` (it ran `desktop`)")
+    #expect(f.h.run("unbind ctrl+opt+y").message == "ctrl+opt+y no longer runs `arrange`; ctrl+opt+a still does")
+    #expect(f.settings.bindings == ["ctrl+opt+z": "home"])
+  }
+
+  @Test func withShortcutsFollowLayoutOffCharactersOfTheLayoutAreNotKeyNames() {
+    var settings = Settings()
+    settings.shortcutsFollowLayout = false
+    let f = Fixture(settings: settings)
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    #expect(!f.h.run("bind ctrl+opt+ö desktop").ok)
+  }
+
+  // MARK: What is said is what has happened
+
+  /// A key that was freed can be bound again, under whichever of its names.
+  @Test func aKeyFreedUnderOneNameCanBeBoundUnderTheOther() throws {
+    let f = Fixture()
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    #expect(f.h.run("unbind ctrl+opt+ü").ok)
+    #expect(f.h.run("bind ctrl+opt+[ back").ok)
+    #expect(try german(f, "ctrl+opt+ü")?.command == .back, "it said that it runs `back`")
+    #expect(f.settings.bindings.isEmpty, "\(f.settings.bindings)")
+    #expect(f.h.run("unbind ctrl+opt+us:y").ok)  // Undo, on the key marked Z
+    #expect(f.h.run("bind ctrl+opt+z undo").ok)
+    #expect(try german(f, "ctrl+opt+z")?.command == .undo)
+    #expect(f.settings.bindings.isEmpty, "\(f.settings.bindings)")
+    #expect(f.h.controller.effectiveBindings.problems.isEmpty)
+  }
+
+  /// ' is typed by the key with 4 on it on a French keyboard, where ⌃⌥4 falls back to; and ' is a US key's name, so no place.
+  @Test func aDefaultThatFellBackOntoAKeyWithAUSNameIsFreedAndReplacedToo() {
+    func onTheKey(_ f: Fixture) -> [Command] {
+      f.h.controller.effectiveBindings.bindings.filter { $0.modifiers == [.control, .option] && $0.keyCode == 21 }.map(\.command)
+    }
+    let f = Fixture()
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.french)
+    #expect(onTheKey(f) == [.goToView(4)])
+    #expect(f.h.run("unbind ctrl+opt+'").message.hasPrefix("ctrl+opt+' no longer runs `view 4`"))
+    #expect(onTheKey(f).isEmpty, "it said so: Arbor must not go on holding the key")
+    #expect(f.h.run("unbind ctrl+opt+'").message == "ctrl+opt+' already runs nothing")
+    let g = Fixture()
+    g.h.controller.keyboardLayoutChanged(SampleKeyLayouts.french)
+    #expect(g.h.run("bind ctrl+opt+' desktop").message.hasPrefix("ctrl+opt+' runs `desktop` (it ran `view 4`)"))
+    #expect(onTheKey(g) == [.desktop])
+    #expect(g.h.controller.effectiveBindings.problems.isEmpty, "\(g.h.controller.effectiveBindings.problems)")
+  }
+
+  /// A key that was freed stays free when the keyboard layout changes: the default is named by its own name.
+  @Test func aKeyThatWasFreedStaysFreeOnAnotherLayout() throws {
+    let f = Fixture()
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    #expect(f.h.run("unbind ctrl+opt+ü").message == "ctrl+opt+ü no longer runs `back`; no shortcut does now")
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.us)
+    #expect(!f.h.controller.effectiveBindings.bindings.contains { $0.command == .back })
+    #expect(f.h.controller.effectiveBindings.problems.isEmpty, "\(f.h.controller.effectiveBindings.problems)")
+  }
+
+  /// `-` and `/` are one key on a German keyboard; `bindings` says that the second is skipped.
+  @Test func unbindingTheEntryThatWasSkippedLeavesTheOneThatWorks() {
+    var settings = Settings()
+    settings.bindings = ["ctrl+opt+-": "out", "ctrl+opt+/": "in"]
+    let f = Fixture(settings: settings)
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    #expect(f.h.controller.effectiveBindings.problems.count == 1)
+    let result = f.h.run("unbind ctrl+opt+/")
+    #expect(result.ok && result.message == "ctrl+opt+/ ran nothing: ctrl+opt+- has that key, and still runs `out`", "\(result.message)")
+    #expect(f.settings.bindings == ["ctrl+opt+-": "out"])
+    #expect(f.h.controller.effectiveBindings.problems.isEmpty)
+  }
+
+  /// The same command under the key's other name: the file is tidied, and nothing is said to have changed hands.
+  @Test func bindingWhatTheKeyAlreadyRunsUnderItsOtherNameRewritesTheEntry() {
+    var settings = Settings()
+    settings.bindings = ["ctrl+opt+us:d": "desktop"]
+    let f = Fixture(settings: settings)
+    #expect(f.h.run("bind ctrl+opt+d desktop").message == "ctrl+opt+d runs `desktop`")
+    #expect(f.settings.bindings.isEmpty, "the default says it")
+  }
+
+  /// `bind ctrl+opt+' …` on a French keyboard frees ⌃⌥4 under its own name. That null is no entry that lost the key.
+  @Test func unbindingTheDefaultsOwnNameDoesNotBringTheDefaultBack() {
+    let f = Fixture()
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.french)
+    #expect(f.h.run("bind ctrl+opt+' desktop").ok)
+    #expect(f.settings.bindings == ["ctrl+opt+4": nil, "ctrl+opt+'": "desktop"])
+    #expect(f.h.run("unbind ctrl+opt+4").message.hasPrefix("ctrl+opt+4 no longer runs `desktop`"))
+    #expect(f.h.controller.effectiveBindings.problems.isEmpty, "\(f.h.controller.effectiveBindings.problems)")
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.us)
+    #expect(!f.h.controller.effectiveBindings.bindings.contains { $0.command == .goToView(4) }, "unbind gave ⌃⌥4 back to Arbor")
+  }
+
+  /// Written by hand, `"ctrl+opt+'": null` frees nothing there: ' is no place. The command has to.
+  @Test func aNullThatFreesNothingDoesNotStandInTheWayOfFreeing() {
+    var settings = Settings()
+    settings.bindings = ["ctrl+opt+'": nil]
+    let f = Fixture(settings: settings)
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.french)
+    #expect(f.h.run("unbind ctrl+opt+'").ok)
+    #expect(!f.h.controller.effectiveBindings.bindings.contains { $0.modifiers == [.control, .option] && $0.keyCode == 21 })
+  }
+
+  @Test func anEntryThatIsSkippedIsNotSaidToRun() {
+    var settings = Settings()
+    settings.bindings = ["ctrl+opt+x": "state", "x": "desktop"]
+    let f = Fixture(settings: settings)
+    for text in ["bind ctrl+opt+x state", "bind x desktop"] {
+      let result = f.h.run(text)
+      #expect(!result.ok, "\(text): \(result.message)")
+    }
+  }
+
+  /// `us:z` is the place whatever the layout: that is the point of writing it, also where a default sits there today.
+  @Test func aPlaceAskedForOutrightIsWrittenThoughTheDefaultSitsThereToday() {
+    let f = Fixture()
+    #expect(f.h.run("bind ctrl+opt+us:z undo").ok)
+    #expect(f.settings.bindings == ["ctrl+opt+us:z": "undo"], "\(f.settings.bindings)")
+    #expect(f.h.run("bind ctrl+opt+us:z undo").message == "ctrl+opt+us:z already runs `undo`")  // a set-up script, run twice
+    #expect(f.settings.bindings == ["ctrl+opt+us:z": "undo"], "\(f.settings.bindings)")
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    #expect(f.h.controller.effectiveBindings.bindings.first { $0.command == .undo }?.keyCode == KeyChord.Key.z.code)
+  }
+
+  /// `ü` cannot be read on a US keyboard. The default whose key it took must not come back there.
+  @Test func aDefaultWhoseKeyWasGivenAwayStaysAwayOnAnotherLayout() {
+    let f = Fixture()
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    #expect(f.h.run("unbind ctrl+opt+ü").ok)
+    #expect(f.h.run("bind ctrl+opt+ü arrange").ok)
+    #expect(f.settings.bindings == ["ctrl+opt+[": nil, "ctrl+opt+ü": "arrange"])
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.us)
+    #expect(!f.h.controller.effectiveBindings.bindings.contains { $0.command == .back })
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    #expect(f.h.run("bind ctrl+opt+ü back").ok)
+    #expect(f.settings.bindings.isEmpty, "and all of it goes when the default is asked for again: \(f.settings.bindings)")
+  }
+
+  @Test func whatToMindNamesTheKeyAsItIsPrinted() {
+    let f = Fixture()
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    #expect(f.h.run("bind cmd+ö desktop").message == "cmd+ö runs `desktop`; mind that no app gets ⌘Ö while Arbor runs")
+  }
+
+  @Test func aKeyNamedByWhatItTypesStillNeedsAModifierAndACommandThatIsNoQuery() {
+    let f = Fixture()
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    for text in ["bind ö desktop", "bind shift+ö desktop", "bind ctrl+opt+ö state", "bind ctrl+opt+😀 desktop", "bind ctrl+opt+^ desktop"] {
+      #expect(!f.h.run(text).ok, "\(text)")
+    }
+    #expect(f.saved.isEmpty && f.settings.bindings.isEmpty)
+  }
+
+  /// What menus and `bindings` show can be typed back. Forward is ⌃⌥+ in Germany.
+  @Test func labelsOfTheLayoutAreReadToo() throws {
+    let f = Fixture()
+    f.h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    #expect(f.h.run("bind ⌃⌥Ü arrange").message == "ctrl+opt+ü runs `arrange` (it ran `back`)")
+    #expect(try german(f, "ctrl+opt+ü")?.command == .arrange)
+    #expect(f.settings.bindings == ["ctrl+opt+[": nil, "ctrl+opt+ü": "arrange"])
+    #expect(f.h.run("unbind ctrl+opt++").message.hasPrefix("ctrl+opt++ no longer runs `forward`"))
+    #expect(!f.h.controller.effectiveBindings.bindings.contains { $0.command == .forward })
+  }
+
+  @Test func nonsenseIsRefusedInTheOldWords() {
+    let f = Fixture()
+    #expect(f.h.run("unbind ctrl+opt+").message == "`ctrl+opt+` is not a shortcut: missing key after the last +")
+    #expect(f.h.run("unbind ctrl+opt+foo").message.contains("unknown key `foo`"))
+    #expect(f.saved.isEmpty)
+  }
+
   @Test func bindReplacesWhatTheShortcutRan() throws {
     let f = Fixture()
     #expect(

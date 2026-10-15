@@ -113,7 +113,10 @@ public struct KeyChord: Hashable, Sendable, CustomStringConvertible {
   /// What someone should hear before making this a global shortcut, which takes the keys away from every
   /// app; nil for most. One line for each row of "Never bind by default" in docs/KEYBOARD.md that names a hazard (⌃⌥H/J/K/L
   /// as arrows is a matter of economy, and a recipe in the README). Nothing is refused: the keys are the user's.
-  public var caution: String? {
+  public var caution: String? { caution(shownAs: label) }
+
+  /// - Parameter label: the shortcut as menus show it on the keyboard layout in use (`label(in:)`).
+  public func caution(shownAs label: String) -> String? {
     // ⌃⌥ together is what apps leave alone and Arbor builds on.
     guard modifiers.isSuperset(of: [.control, .option]) else { return "no app gets \(label) while Arbor runs" }
     let isLetter = key.character?.isLetter == true
