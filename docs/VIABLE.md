@@ -269,6 +269,14 @@ only outside `Sources`, `Resources` and `Package.swift` inherits its ledger.
 
 Only on a commit whose rings 1 to 3 are green. The rubric itself is `docs/POLISH.md`, kept by lane Q; the gate asks that **no row fails, on any of the five moves, in light and in dark, in the look that ships** (colour and icon: Q15).
 
+**What the gate asks for since the first person used Arbor** (decided 2026-10-15; `collab/QUESTIONS.md`, Q29). Issue #4's sentence names five moves; the maintainer's notes after a day with the first build ask that most of what those moves need be off until asked for. Both are the maintainer's word, and the later one is about what ships. A gate that reads films of Arbor as it ships cannot ask for moves that do not ship switched on. So:
+
+> The polish rubric passes when, in films of Arbor as it ships on a hosted Mac at macOS's defaults, in light and in dark, no check of severity 1 or 2 misses or goes unseen in what the gate asks for: the nine keys (dock left and right, fill and back again, everything, back, undo, float and back in, Go to…, pause and resume), Arrange Windows from the menu with its one icon, a plain drag (nothing of Arbor's on screen; the window where it was let go), a drag with the key held, a docked window dragged out; and the score of what ships is at least 90. The options are scored by the same rules in a second column that no gate reads. macOS's own tiling of the same windows is filmed in every run as the bar.
+
+The five moves below are that second column: filmed and scored in every run, so that the day one of them ships switched on its score is known. What follows about them, and the sentence that a move Arbor cannot make counts as failed, holds for that column. That the gate's words have changed in this way is told to the maintainer in the digest; it is not asked.
+
+**In one piece** (severity 1; the board's 0.18). As it ships Arbor moves windows at once, without motion. Between an act's first piece and its last there is no frame with a hole (ground where a window is both before and after, over 1 % of the room), none with an empty desk, and none in which a window covers what neither its old nor its new frame covers (over 400 square points). On the films of the morning this was written, by key with four windows, it passed in 4 of 11 acts: fill, everything, back, float. And by eye, in every scene: name each thing of Arbor's in the frames; would it be missed?
+
 The five moves are those of the reference's public how-it-works page, watched and never copied: no assets, no code, no wording. In Arbor's words and the page's order:
 
 1. make a tab group by dropping one window on another (F04, F34);
@@ -285,7 +293,7 @@ Every measure is first tried on a metronome: a square of the camera's own that m
 
 **Both looks are scored.** Hosted Macs come with Reduce Transparency switched on, which is why every system material came out there as one flat colour and this page once said that no hosted Mac can show glass. Switched off, they draw blur and translucency. So the look that ships is scored, and the flat look beside it, which is what a person with Reduce Transparency sees; nothing in Arbor may rest on translucency (`collab/QUESTIONS.md`, "materials"). In the look that ships, over the worst grounds (a saturated red, a saturated blue, white, black), measured on pictures: words a person must read to act are at least 4.5 to 1, secondary words at least 3 to 1, and nothing Arbor draws as text is under 3. Seen so, each blurred and tinted by what lies behind it, in light and dark, at 1x and on a virtual Retina display: the line on screen, the shortcuts, the minimap, the name field, Go to…, the settings window's sidebar and macOS's own menus and alerts; not yet `blurBehindArranged`. **The look a Mac comes with, Reduce Transparency off, is scored first.** Two cautions: Increase Contrast switches Reduce Transparency on again by itself; and a window's own picture from the window server shows the material without what lies behind it, so legibility on glass is measured on pictures of the screen.
 
-What the product owner asks of the rubric, whatever else it holds. The first five are measured, from the sampler, the stage's own log of frames and the film; the rest are judged from the film by an agent that has the rubric and no stake in the answer.
+What the product owner asks of the rubric, whatever else it holds. The rows about a motion (length, curve, cadence, hand-over) are the second column's while `animationDuration` ships at 0. The first five are measured, from the sampler, the stage's own log of frames and the film; the rest are judged from the film by an agent that has the rubric and no stake in the answer.
 
 | Row | Passes when |
 |---|---|
