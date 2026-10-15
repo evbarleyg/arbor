@@ -38,6 +38,11 @@ class Film:
         self.after = {}
         self.how = {}
         self.overlays = []
+        # What the fingers had said so far, event by event, where the script wrote it down: (time, magnification, pan x, pan y).
+        self.fingers = []
+        if os.path.isfile(os.path.join(folder, "fingers.log")):
+            with open(os.path.join(folder, "fingers.log"), encoding="utf-8") as log:
+                self.fingers = [(int(words[0]), *(float(word) for word in words[2:5])) for words in map(str.split, log) if len(words) >= 5 and words[1] == "G"]
         numbered = []
         with open(os.path.join(folder, "film.log"), encoding="utf-8") as log:
             for line in log:
