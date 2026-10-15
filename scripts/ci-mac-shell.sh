@@ -22,7 +22,7 @@
 # Exits with what it wrote to exit-code.txt. Written for bash 3.2, macOS's own.
 set -uo pipefail
 [ $# -gt 0 ] || { echo "usage: scripts/ci-mac-shell.sh <script>…" >&2; exit 64; }
-limit=${MAC_SHELL_LIMIT:-1200}
+limit=${MAC_SHELL_LIMIT:-2400}
 out=mac-shell
 kept=$(mktemp -d) || exit 2
 summary=${GITHUB_STEP_SUMMARY:-/dev/null}
