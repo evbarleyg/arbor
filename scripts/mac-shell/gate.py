@@ -27,10 +27,11 @@ sys.path.insert(0, HERE)
 import walk  # noqa: E402
 
 # What a walk is asked for. The beginning and the end add fifteen (Arbor is started, its welcome closed, it is quit, every app is called up once more).
-ACTS = 125
+ACTS = 120
 JOURNEYS_PER_CELL = 4
-# Measured on hosted Macs (116 acts in 394 s, 101 in 324 s): the scene takes 50 s to set, an act 2.4 s, one in which nobody does anything 31 s.
-SCENE, ACT, IDLE = 50, 2.4, 31
+# Measured on hosted Macs (116 acts in 394 s, 101 in 324 s): the scene takes 50 s to set, an act 2.4 s, one in which nobody does anything 31 s. Four rounds of input, which are no
+# acts, take some 13 s each (reckoned, not measured yet).
+SCENE, ACT, IDLE = 50 + 4 * 13, 2.4, 31
 # Of the acts a walk is written with, this share is played and judged, at the least. Measured: 101 of 116 applied when their turn came, and 96 % of those were
 # judged (the sampler is blind at times): 0.84.
 # One share for every kind of act, which is too simple: of the few drags onto a window and clicks on a tile that first walk was written with, none applied when its turn came.

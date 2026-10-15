@@ -3203,7 +3203,7 @@ Timing: how long things take, and what can happen meanwhile.
 - **Found by:** A listen-only tap at the tail of the session's taps, over presses and releases without Arbor in five scripts on two hosted Macs, macOS 26.6.2, on 2026-10-15.
 - **Stand-ins play it:** cannot: it lies below or beside the seam
 - **Guard:** `tool: mac-shell/jolts.py`
-- **Arbor copes:** scripts/mac-shell/jolts.py gives a single release 100 ms and asks only while a process of Arbor's exists; what is systematic and smaller is compared with the run without Arbor.
+- **Arbor copes:** scripts/mac-shell/jolts.py gives a single release 100 ms and asks only while a process of Arbor's exists, or in a run that never had one; what is systematic and smaller is asked by the median, in rounds of input.
 - **Read in:** `scripts/mac-shell/jolts.py`, `scripts/mac-shell/witness.swift`, `docs/VIABLE.md`
 
 ### a-real-key-stays-down-while-the-reports-come-in
@@ -3830,9 +3830,9 @@ Input: where presses, keys and gestures really go.
 - **Happened:** A press on a window of an app that is not in front is passed on only when macOS has brought that app forward: 17 to 137 ms later with no Arbor running, half of them within 77 ms on one Mac. A press on the app in front, or on an icon in the Dock, takes 1 ms. An ordinary day with Arbor was full of the first kind and the runs without Arbor had two of them, so a 99th percentile of 69 ms against 21 was reported as a fault of Arbor's. With the same sixteen presses in every round, the round without Arbor was the slowest of seven.
 - **Found by:** A probe in rounds on two hosted Macs, macOS 26.6.2, on 2026-10-15. Its first run had a baseline that was none: after Quit one window covered the others, and every click fell on the app in front already.
 - **Stand-ins play it:** cannot: it lies below or beside the seam
-- **Guard:** `tool: mac-shell/jolts.py`; `tool: mac-shell/viable.py`
-- **Arbor copes:** scripts/mac-shell/jolts.py counts lateness by kind of event, with a kind of its own for such a press, and scripts/mac-shell/viable.py compares a journey only with its own control, kind by kind.
-- **Read in:** `scripts/mac-shell/probe-presses.sh`, `scripts/mac-shell/jolts.py`, `scripts/mac-shell/viable.py`, `docs/TESTING.md`
+- **Guard:** `tool: mac-shell/jolts.py`
+- **Arbor copes:** scripts/mac-shell/jolts.py counts lateness by kind of event, with a kind of its own for such a press, and judges only rounds of the same events played with and without Arbor on the same Mac, minutes apart (scripts/mac-shell/lib-walk.sh, input_round).
+- **Read in:** `scripts/mac-shell/probe-presses.sh`, `scripts/mac-shell/jolts.py`, `scripts/mac-shell/lib-walk.sh`, `docs/VIABLE.md`, `docs/TESTING.md`
 
 ### posted-arrow-keys-need-the-flags-a-keyboard-adds
 
