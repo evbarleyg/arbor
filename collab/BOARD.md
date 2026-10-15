@@ -90,6 +90,18 @@ The walks and their rules are on the trunk since 2026-10-15 (`docs/TESTING.md`, 
 | `focus`, `behind` | `switched-to-out-of-view` 45 (mostly the net's own fault, being read) · `switched-to-behind` 30 (real; L is fixing it) · `switched-to-partly-out` 15 | L |
 | | `slot` 10 | **free** |
 
+### Ring 2: where the stand-ins do not yet tell the truth
+
+`python3 scripts/reality-ledger.py --rings` gives the number the gate reads (`docs/REALITY.md`). **2026-10-15: 98 cases touch a detector and are open**: Arbor does not cope yet, or nobody knows, or the stand-ins play the case partly or not at all. "Nobody knows" is no pass. It has to reach nought.
+
+| Detector | Open + not played | | Detector | Open + not played |
+|---|---|---|---|---|
+| `moved-unasked` | 11 + 13 | | `fought` | 3 + 6 |
+| `focus` | 10 + 10 | | `slow` | 4 + 5 |
+| `lost` | 9 + 7 | | `size-lost` | 3 + 5 |
+| `jolt` | 4 + 12 | | `stuck`, `behind` | 3 + 4 each |
+| `input-held` | 9 + 0 | | `flash` 1 + 4 · `pulled` 0 + 2 · `crash` 1 · `left-behind` 1 | |
+
 ## 2. The instruments
 
 | What | Who | Done when |
