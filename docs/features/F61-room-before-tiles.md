@@ -39,6 +39,23 @@ weights change inside the layout that follows the command, so a snapshot taken b
 5. A gap moved by hand marks only the slots it made short, or shorter, as squeezed; it cancels what the Desktop is owed only if it is one of the Desktop's own gaps; looking at the Desktop cancels nothing; `layout <line>` starts afresh like `arrange` (all
    four from the review by R6).
 
+## Third round: there and back is nothing (2026-10-14; the decision is the product owner's, `collab/QUESTIONS.md` Q20; this is what was built)
+
+Seen with real apps on a hosted Mac: Finder 501, the Desktop 175, Safari 574 and TextEdit 290 points wide on 1600; ⌘H in Finder and a click on its Dock icon left the Desktop at 80 and TextEdit at 385. While Finder was away Safari could spare what TextEdit had lent it and paid it back (round 2, point 2); on the way
+back it borrowed afresh, from the Desktop first.
+
+Shipped: `Controller+ThereAndBack.swift`, `LayoutTree.takeGaps(from:)`, scenario 66, `ThereAndBackTests`. The gaps and the ledger as they stood after the person's last change to the arrangement are kept, with the docked windows that took space then; the layout for a docked window that has gone or come back
+(hidden, minimized, another macOS Space) starts from them. With the same windows, view, display and known sizes the layout that stood stands, and no room is made. As built:
+
+- A size learned meanwhile, or a display that changed, is an occasion to make room as ever.
+- The window somebody is typing in does not leave the view for this (round 2, point 3): then the gaps go on from where they are, and that is the arrangement from then on.
+- A window that was away at the person's last change belongs, once it is back, to the windows whose gaps come back.
+- No gap moves for this under a hand, nor when a window is only put back in its place: the next layout does it.
+
+Not shipped: kept across a restart (`state.json` has the gaps as they stand). A change that Arbor tries, lays out and takes back (a `rotate` that is refused) counts as somebody's. A drop that changes nothing lays nothing out, so for whoever went during the drag the neighbours close up at the next layout. While somebody is
+away a move of the view goes on from the gaps as they are. A window that comes back as a tile with the keyboard in it is framed after the layout that gave it its tile, so its neighbours move twice. `reveal` and Go to… pick the view for a window on its way back by the gaps as they are, not as they will be. Frame and Show
+Everything, and floating windows, are not this fix's.
+
 ## Summary
 
 Dock Notes on the left and Safari on the right of a MacBook Air's screen. The result is **two tiles and an empty Desktop**. Nothing is wrong by the rules: the Desktop keeps a column of its own between docked windows (T03), so

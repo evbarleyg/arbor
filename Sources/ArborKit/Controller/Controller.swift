@@ -292,6 +292,8 @@ public final class Controller {
   var leavingView: Set<WindowID> = []
   /// Each display's tree as it was when Arbor first moved its gaps to make room (F61) during the change being recorded.
   var treesBeforeRoomWasMade: [DisplayID: LayoutTree] = [:]
+  /// Each display's gaps as they stood when somebody last changed its arrangement (Controller+ThereAndBack.swift).
+  var standingGaps: [DisplayID: StandingGaps] = [:]
   /// What the menu called the step the last `undo` or `redo` took; nil if it took none.
   var titleOfTheStepJustTaken: String?
   /// The palette of "Go to…"; nil while it is closed (Controller+Finder.swift).

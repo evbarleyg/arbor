@@ -66,9 +66,11 @@ extension Controller {
     // Not when a window is only put back where it was: that moves nothing else.
     if reason != .enforce { dropOverdueSlots(on: displayID) }
     refreshVisibleFrame(of: displayID)
+    // Before anything goes by what is known of the windows' sizes.
+    noteFixedSizes(of: workspaces[displayID]?.tree.allWindows ?? [])
+    let stood = startFromTheGapsThatStood(on: displayID, for: reason)
     let before = workspaces[displayID]
-    noteFixedSizes(of: before?.tree.allWindows ?? [])
-    guard var layout = roomyLayout(of: displayID, for: reason) else { return }
+    guard var layout = stood ?? roomyLayout(of: displayID, for: reason) else { return }
     // Before anything is moved (Controller+Hold.swift). A new node alone is no move of the view: docking a window at the edge of the
     // view makes a group of the two, with the same things to see, and a rule that waited does that at the very end of a hold.
     if reason == .camera, holdLevel != .view, layouts[displayID]?.camera != layout.camera { holdLetsInWhatWaited(on: displayID) }
@@ -103,6 +105,7 @@ extension Controller {
       again = apply(layout, on: displayID)
     }
     rememberSqueezes(in: layout, on: displayID)
+    noteWhereTheGapsStand(in: layout, on: displayID, for: reason)
     placeFloatingWindows(on: displayID, layout: layout, reason: reason)
     layouts[displayID] = layout
     settleTransition(staged, on: displayID, layout: layout)

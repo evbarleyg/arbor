@@ -59,6 +59,7 @@ extension Controller {
     restoreRoles(of: homeless)
     layouts = layouts.filter { current.contains($0.key) }
     keyframes = keyframes.filter { current.contains($0.key) }
+    standingGaps = standingGaps.filter { current.contains($0.key) }
     let arrivingInView = placeArrivingWindows(arriving, parkingLater: true)
 
     // A drag may be over, or have moved windows on, a display that went away or changed shape.

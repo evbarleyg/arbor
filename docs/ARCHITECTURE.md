@@ -53,6 +53,17 @@ root  split(horizontal)
   proportional to weights, which is what lets a gap follow the pointer. Not while the person's own
   hand is on a gap (`byHand`). A Desktop squeezed into a tile that way takes a usable size back
   once a window floats on it (`Workspace.desktopIsOwedRoom`).
+- **There and back is nothing** (`Controller+ThereAndBack.swift`): a docked window that is hidden, minimized or on another
+  Space and comes back, nothing else having changed, gets its place back and its neighbours their exact sizes. A plain
+  layout does that by itself, because an absent window keeps its weight. Room before tiles moves weights, from where it
+  finds them, so by itself it depends on the way there. So the controller keeps each display's gaps as they stood, with the docked
+  windows that took space, when somebody last changed the arrangement (`standingGaps`), and the layout after a
+  window has gone or come starts from those: the same windows give the same frames, in whatever order they went. If
+  the windows, the view, the display and what is known of the windows' sizes are what they were, the layout that stood
+  stands and no room is made. Any other change to the tree starts the memory afresh, which is found out by comparing the
+  tree with what Arbor's own layouts last left. No gap moves for it under a hand, nor when a window is only put back
+  in its place: the next layout does it. The window being typed in does not leave the view for it: then the gaps go on
+  from where they are. Not saved.
 - **Remap**: tree removals delete and merge nodes; `Remap` says where
   references (camera, history, saved views, drop targets) should point now.
 
@@ -585,7 +596,7 @@ do the same. Scopes nest (the outermost records) and never stay open across even
 **A layout may change a tree by itself**: it moves gaps to make room for a window that would otherwise be a tile (F61). In the same breath as a
 change somebody made, that is part of the step. By itself (the view moved, and from further out a column is too narrow) it is not
 a step: `roomyLayout` calls `noteThatRoomIsMade(on:)` first, and `endUndoStep` passes over a display on which nothing else happened. Whatever
-else teaches layouts to change a workspace does the same.
+else teaches layouts to change a workspace does the same, as `startFromTheGapsThatStood(on:)` does.
 
 A change is first tried out: if undoing it at once would change nothing (a window that closed stays closed, `exclude`
 takes windows an undo could not bring back) it is no step. If it changed what is docked all the same, it is kept as a

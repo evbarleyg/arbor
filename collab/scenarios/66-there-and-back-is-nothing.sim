@@ -1,0 +1,75 @@
+# Proposed by the swarm (2026-10-14); the documenter may edit or drop it.
+# Story: on a display 1600 points wide somebody has Finder, Safari and TextEdit docked side by side, with a Terminal
+# floating. Safari will not go under 574 points, so it has borrowed from the Desktop and from TextEdit. They press ⌘H in
+# Finder, look at something, and click Finder's icon in the Dock. Seen with the real apps on a hosted Mac: TextEdit, 290 points
+# wide before, was 385 afterwards and stayed so. There and back is nothing: everybody has the place and the size they had.
+# Reference: T07, F61.
+display-size 1600x900 31
+open Finder 920x436 min 501x300
+open Safari 1324x791 min 574x240
+open TextEdit 673x439 min 115x100
+open Terminal 877x499
+dock 101 left
+dock 102 right
+dock 103 right
+expect size 101 501x845
+expect size 102 574x845
+expect size 103 290x845
+# ⌘H in Finder. The neighbours close up meanwhile.
+focus 101
+hide Finder
+flush
+expect hidden 101
+expect size 102 717x845
+expect size 103 574x845
+unhide Finder
+flush
+expect visible 101
+expect size 101 501x845
+expect size 102 574x845
+expect size 103 290x845
+expect left-of 101 102
+expect left-of 102 103
+# ⌘M in Safari, and back out of the Dock.
+minimize 102
+expect hidden 102
+restore 102
+expect size 101 501x845
+expect size 102 574x845
+expect size 103 290x845
+# Two of them, and the one that went first comes back first. What it looks like meanwhile depends on who is away, not on
+# the order: with Safari alone away it is what it was a moment ago.
+hide Finder
+flush
+minimize 102
+unhide Finder
+flush
+expect size 101 501x845
+expect size 103 467x845
+restore 102
+expect size 101 501x845
+expect size 102 574x845
+expect size 103 290x845
+# Looking around meanwhile changes nothing: the view is not the arrangement.
+minimize 103
+zoom 102
+show-all
+restore 103
+show-all
+expect size 101 501x845
+expect size 102 574x845
+expect size 103 290x845
+# A gap moved by hand meanwhile is the person's. Finder takes its share of the row as it stands, and from then on that is the
+# arrangement that comes back.
+hide Finder
+flush
+resize 103 left 100
+expect size 103 674x845
+unhide Finder
+flush
+expect visible 101
+expect visible 102
+expect size 103 385x845
+minimize 102
+restore 102
+expect size 103 385x845
