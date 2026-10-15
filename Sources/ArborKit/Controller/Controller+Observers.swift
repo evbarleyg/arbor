@@ -42,6 +42,7 @@ extension Controller {
   func notify(_ change: Change) {
     if change.mayChangeDesktopGuardZones { desktopGuardZonesAreAnnounced() }
     keepPinsInFront(after: change)
+    keepHandlesInOrder(after: change)
     summonNotices(change)
     headsUpNoticed(change)
     for observer in observers { observer(change) }

@@ -24,6 +24,7 @@ extension ChaosRunner {
     "rehearsal",
     "meet-",
     "fill-in-hand-",
+    "order-handles",
   ]
 
   /// How far a docked window may sit from its slot: 4 points of the app rounding its size
@@ -70,6 +71,7 @@ extension ChaosRunner {
       frameViolations(settled: action == .settle, &problems)
       overlayViolations(&problems)
       backdropViolations(&problems)
+      handleOrderViolations(settled: action == .settle, &problems)
     }
     focusRingViolations(&problems)
     // A trial that shows the Desktop brings floating windows into view. Called off, they go again.
@@ -282,7 +284,8 @@ extension ChaosRunner {
     let scenes = harness.overlays.scenes
     for display in controller.displays {
       let expected = controller.expectedTilesAndSeams(on: display.id)
-      if scenes[display.id]?.tiles != expected?.tiles || scenes[display.id]?.seams != expected?.seams {
+      // Where the gaps are. What their handles lie below has a rule of its own.
+      if scenes[display.id]?.tiles != expected?.tiles || harness.overlays.seams[display.id] != expected?.seams {
         problems.append(.init("overlays", "the tiles and seams drawn on \(display.id) are not the ones its layout calls for"))
       }
     }
@@ -293,6 +296,34 @@ extension ChaosRunner {
     }
     if controller.draggedWindow == nil, let preview = harness.overlays.preview {
       problems.append(.init("preview", "a drop preview is showing at \(preview.brief) and nothing is being dragged"))
+    }
+  }
+
+  /// At rest the handle of every gap names the rearmost of the windows beside it, as the windows are stacked now and not as Arbor last
+  /// saw them (Controller+SeamOrder.swift): what lies behind both does not get the press meant for the gap. And Arbor has seen them
+  /// as they are stacked now, and said so to whoever draws: a handle may name the right window and have been left behind by it.
+  func handleOrderViolations(settled: Bool, _ problems: inout [InvariantViolation]) {
+    guard settled, !system.mouseDown, !harness.scheduler.pendingKeys.contains("order-handles") else { return }
+    let order = system.stackedWindows().map(\.id)
+    var handles = 0
+    for display in controller.displays {
+      guard let layout = controller.layouts[display.id], let scene = harness.overlays.scenes[display.id] else { continue }
+      for seam in scene.seams {
+        let rearmost = layout.windowOverTheHandle(of: seam, frontToBack: order)
+        if seam.liesBelow != rearmost {
+          let (named, wanted) = (seam.liesBelow.map { "\($0)" } ?? "everything", rearmost.map { "\($0)" } ?? "everything")
+          problems.append(.init("handle-order", "the handle of the gap at \(seam.frame.brief) on \(display.id) lies below \(named), not \(wanted)"))
+        }
+        if seam.liesBelow != nil { handles += 1 }
+      }
+      if scene.seams.contains(where: { $0.liesBelow != nil }), scene.stackingSeen != controller.stackingSeenForHandles.changes {
+        problems.append(.init("handle-order", "the handles on \(display.id) were put in place before the windows were last seen in another order"))
+      }
+    }
+    // A window that has come since comes in front, and one that has gone leaves the others as they lie.
+    let seen = controller.stackingSeenForHandles.frontToBack
+    if handles > 0, seen.filter(order.contains) != order.filter(seen.contains) {
+      problems.append(.init("handle-order", "the windows lie \(order), and Arbor last saw them lie \(seen)"))
     }
   }
 

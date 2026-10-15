@@ -13,9 +13,9 @@ public final class AppKitOverlays: OverlayPresenter {
   /// Panels are kept when they go out of use and handed out again (`ReusePool` says why).
   private var tilePanels = ReusePool<TileKey, TilePanel>(sparesKept: 32)
   private var seamPanels = ReusePool<SeamKey, SeamPanel>(sparesKept: 32)
-  /// The tiles and seams each display shows, whether the seams show their handles, and how many Space switches there had
-  /// been when they were shown.
-  private var shown: [DisplayID: (tiles: [TileModel], seams: [Seam], handles: Bool, spaceSwitches: Int)] = [:]
+  /// The tiles and seams each display shows, whether the seams show their handles, how many Space switches there had
+  /// been when they were shown, and the scene's `stackingSeen`.
+  private var shown: [DisplayID: (tiles: [TileModel], seams: [Seam], handles: Bool, spaceSwitches: Int, stackingSeen: Int)] = [:]
   /// A panel belongs to the Space it was shown on. After a switch everything is shown again, as it always was.
   private var spaceSwitches = 0
   private var spaceObserver: NSObjectProtocol?
@@ -122,12 +122,14 @@ public final class AppKitOverlays: OverlayPresenter {
   private func showTilesAndSeams(of scene: OverlayScene, on display: DisplayID) {
     // Most layouts leave them as they are, and every panel touched is a call to the window server.
     let again = shown[display]?.spaceSwitches != spaceSwitches
-    if !again, let shown = shown[display], shown.tiles == scene.tiles, shown.seams == scene.seams,
+    // A handle lies by its neighbours' places among the windows, and stays behind when they come forward.
+    let restack = shown[display]?.stackingSeen != scene.stackingSeen
+    if !again, !restack, let shown = shown[display], shown.tiles == scene.tiles, shown.seams == scene.seams,
       shown.handles == scene.showsSeamHandles
     {
       return
     }
-    shown[display] = (scene.tiles, scene.seams, scene.showsSeamHandles, spaceSwitches)
+    shown[display] = (scene.tiles, scene.seams, scene.showsSeamHandles, spaceSwitches, scene.stackingSeen)
 
     let tileKeys = scene.tiles.map { TileKey(display: display, node: $0.node) }
     let tileChange = tilePanels.use(tileKeys, replacing: { $0.display == display }, make: { TilePanel() })
@@ -147,7 +149,7 @@ public final class AppKitOverlays: OverlayPresenter {
     for (key, seam) in zip(seamKeys, seams) {
       guard let panel = seamPanels.inUse[key] else { continue }
       panel.onDrag = { [weak self] seam, delta in self?.actions?.seamDragged(display: display, seam: seam, by: delta) }
-      panel.show(seam, showsHandle: scene.showsSeamHandles, again: again)
+      panel.show(seam, showsHandle: scene.showsSeamHandles, again: again, inItsPlaceAgain: restack)
     }
   }
 
@@ -210,9 +212,9 @@ class OverlayPanel: NSPanel {
   override func constrainFrameRect(_ frameRect: NSRect, to screen: NSScreen?) -> NSRect { frameRect }
 
   /// Puts the panel on screen behind every other window of its level, or sends it back there. For panels that stand where
-  /// no docked window is: tiles and gap handles. Whatever else lies there (a floating or pinned window, a window
-  /// Arbor does not arrange) was put there by somebody and stays in front, in view and within reach of the mouse. In front
-  /// of it a tile would hide it, and a gap handle, which cannot even be seen, would take a strip of its clicks.
+  /// no docked window is: tiles, and the handles of gaps that have no window on one side. Whatever else lies there (a floating or
+  /// pinned window, a window Arbor does not arrange) was put there by somebody and stays in front, in view and within reach of the
+  /// mouse. In front of it a tile would hide it, and a gap handle, which cannot even be seen, would take a strip of its clicks.
   func orderInBehind() {
     order(.below, relativeTo: 0)
   }
@@ -351,12 +353,20 @@ final class SeamPanel: OverlayPanel {
       guard let self, let seam = self.seamView.seam else { return }
       self.onDrag?(seam, delta)
     }
+    // A press brings forward what it lands on, and nothing the controller looks at tells of it: its list of windows leaves Arbor's
+    // overlays out. Left in front, the handle would take a strip of the clicks of whatever lies across the gap. Again on the next
+    // turn of the run loop, for what AppKit does about the press once this has returned.
+    seamView.onRelease = { [weak self] in
+      self?.goBackToItsPlace()
+      DispatchQueue.main.async { [weak self] in MainActor.assumeIsolated { self?.goBackToItsPlace() } }
+    }
   }
 
-  /// With `again`, also when it shows this very seam already.
-  func show(_ seam: Seam, showsHandle: Bool, again: Bool) {
+  /// With `again`, also when it shows this very seam already, and as if it were not on screen: it may be on another Space. With
+  /// `inItsPlaceAgain`, also when it shows this very seam already.
+  func show(_ seam: Seam, showsHandle: Bool, again: Bool, inItsPlaceAgain: Bool) {
     seamView.showsHandle = showsHandle
-    if !again, isVisible, seamView.seam == seam { return }
+    if !again, !inItsPlaceAgain, isVisible, seamView.seam == seam { return }
     // It may have been put away, or handed over from another gap, in the middle of a drag.
     if let old = seamView.seam,
       !isVisible || old.split != seam.split || old.leading != seam.leading || old.trailing != seam.trailing
@@ -365,7 +375,21 @@ final class SeamPanel: OverlayPanel {
     }
     seamView.seam = seam
     setFrame(ScreenGeometry.appKit(fromGlobal: seam.frame), display: false)
-    orderInBehind()
+    takeItsPlace(comingIn: again || !isVisible)
+  }
+
+  /// The gap between two docked windows is the arrangement's: what lies behind both shows through it and does not get the press
+  /// meant for it, and what lies in front of either keeps its clicks.
+  private func takeItsPlace(comingIn: Bool = false) {
+    guard let neighbour = seamView.seam?.liesBelow else { return orderInBehind() }
+    // On screen first, so that it is there whatever has become of the window it names.
+    if comingIn { orderInBehind() }
+    order(.below, relativeTo: Int(neighbour.rawValue))
+  }
+
+  /// Not one that was put away meanwhile.
+  private func goBackToItsPlace() {
+    if isVisible { takeItsPlace() }
   }
 }
 
@@ -374,6 +398,8 @@ private final class SeamView: NSView {
     didSet { cursor = seam?.axis == .vertical ? .resizeUpDown : .resizeLeftRight }
   }
   var onDrag: ((CGFloat) -> Void)?
+  /// The button has come up after a press on the handle.
+  var onRelease: (() -> Void)?
   /// Whether a pill shows in the middle of the seam while the pointer is over it or dragging it.
   var showsHandle = true {
     didSet { if showsHandle != oldValue { needsDisplay = true } }
@@ -424,6 +450,7 @@ private final class SeamView: NSView {
 
   override func mouseUp(with event: NSEvent) {
     lastLocation = nil
+    onRelease?()
   }
 
   /// Nothing at rest; a pill under the pointer; the pill in the accent colour while it is dragged. The gap

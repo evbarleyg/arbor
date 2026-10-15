@@ -35,11 +35,12 @@ private func expectSameOutcome(
   }
   #expect(replayed.ascii() == original.ascii(), sourceLocation: sourceLocation)
   // Tiles, gap handles, the focus ring: everything Arbor draws at rest. The ring's pulse is a counter that means nothing
-  // beyond changing, and a trace started in the middle of a session starts counting afresh.
+  // beyond changing, and a trace started in the middle of a session starts counting afresh. So is `stackingSeen`.
   func scenes(_ h: Harness) -> [DisplayID: OverlayScene] {
     h.overlays.scenes.mapValues { scene in
       var scene = scene
       scene.focusRing?.pulse = 0
+      scene.stackingSeen = 0
       return scene
     }
   }
@@ -1374,7 +1375,7 @@ private let second = DisplaySnapshot(
     #expect(story.contains("    2    0.000  # drag Safari to the left edge"))
     #expect(story.contains { $0.hasSuffix("    0.500  drag of w101 began at 620,210") })
     #expect(story.contains { $0.hasSuffix("    setFrame w101 12,37 702×851 (taken)") })
-    #expect(story.contains { $0.contains("… 2 line(s)") })
+    #expect(story.contains { $0.contains("… 4 line(s)") })
     #expect(!story.contains { $0.contains("moved to") })
     // The layout before and after, and none in between.
     #expect(story.filter { $0.hasPrefix("display main\n") }.count == 2)

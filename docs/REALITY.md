@@ -4472,7 +4472,7 @@ Input: where presses, keys and gestures really go.
 - **Found by:** An independent review, from reading the macOS-only code; the two real-window steps written with the cure have passed on a Mac.
 - **Stand-ins play it:** cannot: it lies below or beside the seam
 - **Guard:** `e2e: move the floating window across two gaps` (on CI's Macs); `e2e: resize under the floating window` (on CI's Macs)
-- **Arbor copes:** OverlayPanel.orderInBehind puts tiles and gap handles behind every other window of their level.
+- **Arbor copes:** OverlayPanel.orderInBehind puts tiles behind every other window of their level. A gap's handle lies just below the rearmost of the windows beside it (Seam.liesBelow), under whatever is in front of either; behind everything where one side has no window.
 - **Read in:** `Sources/ArborKit/UI/AppKitOverlays.swift`, `Sources/arbor-e2e/main.swift`, `collab/BACKLOG.md`
 
 ### clicks-fall-through-what-a-panel-does-not-draw

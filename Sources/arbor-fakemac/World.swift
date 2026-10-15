@@ -455,6 +455,13 @@ final class World {
     order.insert(contentsOf: own, at: behind)
   }
 
+  /// `NSWindow.order(.below, relativeTo:)`. Where the other is not there, `thing` stays where it is.
+  func lower(_ thing: Thing, justBelow other: Thing) {
+    guard thing != other, order.contains(other) else { return }
+    order.removeAll { $0 == thing }
+    order.insert(thing, at: order.firstIndex(of: other)! + 1)
+  }
+
   /// The app's windows come forward together, in the order they had.
   func raiseAll(of pid: Int32) {
     let own = order.filter { thing in

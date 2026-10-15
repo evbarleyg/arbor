@@ -324,6 +324,8 @@ public final class Controller {
   var pinChecksLeft = 0
   /// The window a command is on its way to (`onTheWay(to:)`).
   var namedWindow: WindowID?
+  /// How the windows were stacked when Arbor last looked for the sake of the gaps' handles (Controller+SeamOrder.swift).
+  var stacking = Stacking()
   /// Whether and how the view is held (Controller+Hold.swift).
   var hold = Hold()
   /// The shortcut that released a held view, until it comes up. It outlives the hold.

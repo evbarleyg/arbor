@@ -243,6 +243,8 @@ public final class FakeWindowSystem: WindowSystem {
   public private(set) var moveLog: [Move] = []
   public private(set) var focusLog: [Focus] = []
   public private(set) var focusedWindowReads = 0
+  /// How often `stackedWindows` was asked for. On a Mac each is a list of every window on screen.
+  public private(set) var stackedWindowsReads = 0
   /// Lets simulated time pass while a drag rests at a point. `Harness` points it at its scheduler.
   public var passTime: ((Double) -> Void)?
   /// The window being dragged by its title bar, from `beginDrag` to `endDrag`: where it was and
@@ -1390,7 +1392,8 @@ extension FakeWindowSystem {
 
 extension FakeWindowSystem {
   public func stackedWindows() -> [StackedWindow] {
-    strangers
+    stackedWindowsReads += 1
+    return strangers
       + windowsFrontToBack().compactMap { id in
         guard let snapshot = windows[id]?.snapshot, snapshot.isPresent else { return nil }
         // What a hand or an app has done since, the window server did itself.

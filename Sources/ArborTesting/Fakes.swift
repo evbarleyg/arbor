@@ -12,7 +12,16 @@ public final class FakeOverlays: OverlayPresenter {
   /// The scene last shown on each display.
   public private(set) var scenes: [DisplayID: OverlayScene] = [:]
   public var tiles: [DisplayID: [TileModel]] { scenes.mapValues(\.tiles) }
-  public var seams: [DisplayID: [Seam]] { scenes.mapValues(\.seams) }
+  /// The gaps shown, as a layout has them: where they are and what they part. What each one's handle lies below is in `scenes`.
+  public var seams: [DisplayID: [Seam]] {
+    scenes.mapValues { scene in
+      scene.seams.map { seam in
+        var gap = seam
+        gap.liesBelow = nil
+        return gap
+      }
+    }
+  }
   /// Every transition the controller asked for, oldest first.
   public private(set) var transitions: [Transition] = []
   /// How many times the controller dropped the stages.

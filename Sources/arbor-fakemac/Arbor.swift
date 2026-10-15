@@ -234,6 +234,10 @@ final class WatchedOverlays: OverlayPresenter {
   /// The panel of shortcuts (`CheatSheetPanel`), likewise, but that it has the keyboard and takes clicks while it is up.
   private(set) var shortcutsPanel: (id: UInt32, frame: CGRect, shown: Bool)?
 
+  /// The handles that lie by a window's place, as they were last put there, and the `stackingSeen` of the scene that did it.
+  private var handles: [World.SeamKey: Seam] = [:]
+  private var stackingSeen = 0
+
   init(world: World) { self.world = world }
 
   var actions: (any OverlayActions)? {
@@ -275,8 +279,11 @@ final class WatchedOverlays: OverlayPresenter {
     for tile in scene.tiles { shown.insert(.tile(tile.node)) }
     for seam in drawn(scene.seams) { shown.insert(.seam(World.SeamKey(seam))) }
     for thing in panels where !shown.contains(thing) { world.forget(thing) }
+    handles = handles.filter { shown.contains(.seam($0.key)) }
     for tile in scene.tiles { show(.tile(tile.node)) }
-    for seam in drawn(scene.seams) { show(.seam(World.SeamKey(seam))) }
+    let restack = stackingSeen != scene.stackingSeen
+    stackingSeen = scene.stackingSeen
+    for seam in drawn(scene.seams) { show(seam, again: restack) }
     // Last, as in `AppKitOverlays.update`: on a Mac the backdrop's number follows that of the first gap's handle.
     if let backdrop = scene.backdrop {
       backdropPanel = (backdropPanel?.id ?? world.newOverlayID(), backdrop.frame, true)
@@ -289,8 +296,22 @@ final class WatchedOverlays: OverlayPresenter {
   /// windows first.
   private func show(_ thing: World.Thing) {
     _ = world.overlayID(of: thing)
-    // `OverlayPanel.orderInBehind`: tiles and gap handles go behind whatever else lies there.
+    // `OverlayPanel.orderInBehind`: tiles, and the handles of gaps with no window on one side, go behind whatever else lies there.
     world.lower(thing)
+  }
+
+  /// `SeamPanel.show`. A handle that names a window goes just below it, and then stays where it is, while windows come forward past
+  /// it, until its model is another or the windows have been seen in another order.
+  private func show(_ seam: Seam, again: Bool) {
+    let key = World.SeamKey(seam)
+    guard let neighbour = seam.liesBelow else {
+      handles[key] = nil
+      return show(.seam(key))
+    }
+    if !again, handles[key] == seam { return }
+    if handles[key] == nil { show(.seam(key)) }
+    handles[key] = seam
+    world.lower(.seam(key), justBelow: .window(neighbour.rawValue))
   }
 
   /// Recorded and not shown: nothing in this world takes time, so the stage would be down again before anyone could look.
@@ -348,6 +369,7 @@ final class WatchedOverlays: OverlayPresenter {
   func removeAll() {
     fake.removeAll()
     for thing in panels { world.forget(thing) }
+    handles.removeAll()
     previewPanel = nil
     ringPanel = nil
     outlinePanel = nil
