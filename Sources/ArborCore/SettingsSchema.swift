@@ -32,8 +32,8 @@ public enum SettingsSchema {
     ],
     .windows: [
       "gap", "minimumUsableWidth", "minimumUsableHeight", "newWindows", "newWindowsWhileFramed", "rules",
-      "autoDockMinimumWidth", "autoDockMinimumHeight", "makeRoom", "soleFloatTakesDesktop", "summonStays", "shareRemovedSpace",
-      "arrangeDesktopWeight", "resizeStep", "displays", "ruleTitleWait", "tileRetryMinutes", "shrinkOutOfView",
+      "autoDockMinimumWidth", "autoDockMinimumHeight", "makeRoom", "floatingWindowsMakeWay", "soleFloatTakesDesktop", "summonStays",
+      "shareRemovedSpace", "arrangeDesktopWeight", "resizeStep", "displays", "ruleTitleWait", "tileRetryMinutes", "shrinkOutOfView",
     ],
     .dragging: ["previewDrags", "dropDwell", "screenEdgeBand", "windowEdgeFraction", "reflowWhileDragging", "keepPushed"],
     .tabs: ["tabsEnabled"],
@@ -133,7 +133,8 @@ public enum SettingsSchema {
       .toggle(
         "soleFloatTakesDesktop", \.soleFloatTakesDesktop, "Lone window fills the Desktop",
         "Beside docked windows, the only floating window takes the whole Desktop and follows it. It has its own size "
-          + "back as soon as a second window floats. Moved or resized by hand, it stays as you leave it.",
+          + "back as soon as a second window floats. Moved or resized by hand, it stays as you leave it. Only with "
+          + "Floating windows make way.",
         advanced: true),
       .number(
         "resizeStep", \.resizeStep, min: 1, max: 1000, step: 10, unit: "pt", "Grow and Shrink by",
@@ -167,6 +168,11 @@ public enum SettingsSchema {
       .toggle(
         "shrinkOutOfView", \.shrinkOutOfView, "Shrink windows out of view",
         "Windows that go out of view are also shrunk, to 320 by 200 points at most, until they come back.", hidden: true),
+      .toggle(
+        "floatingWindowsMakeWay", \.floatingWindowsMakeWay, "Floating windows make way",
+        "Docked windows push floating windows aside and squeeze them, so that they stay on the Desktop. Off, a floating "
+          + "window stays exactly where you put it, over docked windows too: it only goes out of view with the Desktop and "
+          + "comes back to the same place.", advanced: true),
     ])
 
   private static let dragging = section(
@@ -193,7 +199,8 @@ public enum SettingsSchema {
         "While you drag, the other windows close up and make room, showing what letting go would do.", hidden: true),
       .toggle(
         "keepPushed", \.keepPushed, "Pushed windows stay aside",
-        "With reflowWhileDragging: floating windows pushed aside stay there until the drag ends.", hidden: true),
+        "With reflowWhileDragging and floatingWindowsMakeWay: floating windows pushed aside stay there until the drag ends.",
+        hidden: true),
     ])
 
   private static let tabs = section(

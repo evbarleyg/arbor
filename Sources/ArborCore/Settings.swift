@@ -138,8 +138,8 @@ public struct Settings: Codable, Equatable, Sendable {
   /// While a window is dragged, the other windows move to show the arrangement that letting go
   /// would produce: they close up when it leaves its slot and make room where it would land.
   public var reflowWhileDragging: Bool = false
-  /// With `reflowWhileDragging`: floating windows pushed off docked space stay where they were
-  /// pushed until the drag ends, instead of moving back and forth as the target changes.
+  /// With `reflowWhileDragging` and `floatingWindowsMakeWay`: floating windows pushed off docked space stay where they
+  /// were pushed until the drag ends, instead of moving back and forth as the target changes.
   public var keepPushed: Bool = true
   /// Show where a dragged window would land.
   public var previewDrags: Bool = true
@@ -147,7 +147,7 @@ public struct Settings: Codable, Equatable, Sendable {
   /// it and take the missing points from the Desktop and from neighbours that can spare them (F61).
   public var makeRoom = true
   /// A window that floats alone on a display where something is docked takes the whole Desktop, and gets its
-  /// own frame back as soon as it has company (docs/features/F18-sole-floating-window.md).
+  /// own frame back as soon as it has company (docs/features/F18-sole-floating-window.md). Only with `floatingWindowsMakeWay`.
   public var soleFloatTakesDesktop: Bool = false
   /// Options for particular displays, checked in order; the first match wins, key by key. See DisplayOptions.swift.
   public var displays: [DisplayOptions] = []
@@ -218,6 +218,10 @@ public struct Settings: Codable, Equatable, Sendable {
   /// (collab/QUESTIONS.md, Q26).
   /// Off as Arbor ships: no tap goes in at launch until all its checks of the taps on a Mac are green.
   public var pointerGestures: Bool = false
+  /// Floating windows are kept on the Desktop: docked windows push them aside and squeeze them, and they go back as room
+  /// returns. Off, as it ships, a floating window's frame is its person's: Arbor sets it only to take the window out
+  /// of view and to put it back exactly where it was (collab/QUESTIONS.md, Q20).
+  public var floatingWindowsMakeWay: Bool = false
 
   public init() {}
 
@@ -293,6 +297,7 @@ public struct Settings: Codable, Equatable, Sendable {
     case minimapDuration
     case shareRemovedSpace, shrinkOutOfView
     case pointerGestures
+    case floatingWindowsMakeWay
   }
 
   public init(from decoder: any Decoder) throws {
@@ -399,5 +404,6 @@ public struct Settings: Codable, Equatable, Sendable {
     try read(.shareRemovedSpace, into: &shareRemovedSpace)
     try read(.shrinkOutOfView, into: &shrinkOutOfView)
     try read(.pointerGestures, into: &pointerGestures)
+    try read(.floatingWindowsMakeWay, into: &floatingWindowsMakeWay)
   }
 }

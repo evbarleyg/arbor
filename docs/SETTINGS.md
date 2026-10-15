@@ -50,7 +50,8 @@ File). There are four ways to change one, and each takes effect at once and show
 | `autoDockMinimumWidth` | `400` | 0 to 3000 pt | **Narrowest window docked.** Where new windows dock by themselves, one that opens narrower than this floats. That is `dock auto` and a rule for `*`; a rule that names an app docks its windows whatever their size. *Advanced.* |
 | `autoDockMinimumHeight` | `300` | 0 to 3000 pt | **Shortest window docked.** Where new windows dock by themselves, one that opens shorter than this floats. That is `dock auto` and a rule for `*`; a rule that names an app docks its windows whatever their size. *Advanced.* |
 | `makeRoom` | `true` | true or false | **Make room before making a tile.** Before a window becomes a tile because its app will not shrink that far, move the gaps around it and take the room from the Desktop and from neighbors that can spare it. *Advanced.* |
-| `soleFloatTakesDesktop` | `false` | true or false | **Lone window fills the Desktop.** Beside docked windows, the only floating window takes the whole Desktop and follows it. It has its own size back as soon as a second window floats. Moved or resized by hand, it stays as you leave it. *Advanced.* |
+| `floatingWindowsMakeWay` | `false` | true or false | **Floating windows make way.** Docked windows push floating windows aside and squeeze them, so that they stay on the Desktop. Off, a floating window stays exactly where you put it, over docked windows too: it only goes out of view with the Desktop and comes back to the same place. *Advanced.* |
+| `soleFloatTakesDesktop` | `false` | true or false | **Lone window fills the Desktop.** Beside docked windows, the only floating window takes the whole Desktop and follows it. It has its own size back as soon as a second window floats. Moved or resized by hand, it stays as you leave it. Only with Floating windows make way. *Advanced.* |
 | `summonStays` | `false` | true or false | **Summoned windows stay.** A summoned window stays over the view when another window gets the keyboard, until it is summoned away. Off, turning to another window sends it out of view. *Advanced.* |
 | `shareRemovedSpace` | `true` | true or false | **Share a leaving window's space.** The space of a window that leaves is shared by its whole group. Off, it goes to the neighbor before it and nothing else moves. *Advanced.* |
 | `arrangeDesktopWeight` | `0.5` | 0.1 to 3 | **Desktop width in Arrange.** How wide Arrange Windows leaves the Desktop, relative to the windows beside it. *Advanced.* |
@@ -69,7 +70,7 @@ File). There are four ways to change one, and each takes effect at once and show
 | `screenEdgeBand` | `12` | 0 to 100 pt | **Screen edge band.** How close to a screen edge the pointer must come for a dragged window to dock there. At 0 none ever does. *Advanced.* |
 | `windowEdgeFraction` | `0.3` | 0 to 0.5 | **Window edge band.** The band along a window's edges, as a share of its size, where a dropped window docks beside it. At 0 none ever does. *Advanced.* |
 | `reflowWhileDragging` | `false` | true or false | **Make room while dragging.** While you drag, the other windows close up and make room, showing what letting go would do. *Not in the settings window.* |
-| `keepPushed` | `true` | true or false | **Pushed windows stay aside.** With reflowWhileDragging: floating windows pushed aside stay there until the drag ends. *Not in the settings window.* |
+| `keepPushed` | `true` | true or false | **Pushed windows stay aside.** With reflowWhileDragging and floatingWindowsMakeWay: floating windows pushed aside stay there until the drag ends. *Not in the settings window.* |
 
 ## Tabs
 
