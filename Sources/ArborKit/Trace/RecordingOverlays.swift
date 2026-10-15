@@ -62,7 +62,7 @@ extension RecordingOverlays: OverlayActions {
     }
   }
 
-  /// What was typed into the finder stays in the finder. What was chosen is a number.
+  /// What was typed into the finder stays in the finder. What was chosen is a number, or a command's text.
   public func finderChose(_ destination: FinderDestination) {
     recorder.action("finderChose", [TraceFinderDestination(destination)]) { actions?.finderChose(destination) }
   }

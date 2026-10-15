@@ -267,7 +267,7 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
       FinderPlace.allCases.map(\.rawValue) == [
         "in view", "out of view", "tile", "tab", "floating", "floating, out of view", "kept in view", "summoned",
         "out of view until summoned", "minimized", "hidden",
-        "full screen", "on another macOS Space", "not arranged", "saved view", "space",
+        "full screen", "on another macOS Space", "not arranged", "saved view", "space", "command",
       ])
   }
 
@@ -388,5 +388,148 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
       _ = layout.row(at: CGPoint(x: 5, y: 5))
       _ = FinderLayout(screen: screen, rows: -4, hasMessage: false)
     }
+  }
+}
+
+/// Go to… finds commands (board 0.14).
+@Suite struct FinderCommandRowTests {
+  private let places = [window(102, "Notes", "Shopping"), window(103, "Docker", "Containers"), view(3, "Mail")]
+  private let commands: [FinderModel.Row] = [
+    .command(.dock(nil, .left), name: "Dock Focused Window ▸ Left", shortcut: "⌃⌥←", display: main),
+    .command(.undo, name: "Undo Dock", shortcut: "⌃⌥Z", display: main),
+    .command(.toggleAutoDock, name: "Dock New Windows", isOn: true, display: main),
+    .command(.equalize(all: false), name: "Adjust ▸ Balance Sizes", display: main),
+    .command(.saveView(3), name: "Saved Views ▸ Save This View As ▸ View 3", display: main),
+  ]
+
+  private func session(places: [FinderModel.Row]? = nil) -> FinderSession {
+    FinderSession(model: FinderModel(display: main, screen: screen, rows: places ?? self.places, commands: commands))
+  }
+
+  @Test func beforeAnythingIsTypedItListsPlacesAndNoCommand() {
+    var session = session()
+    #expect(session.items.map(\.row) == places)
+    session.type("bal")
+    #expect(session.items.map(\.row.name) == ["Adjust ▸ Balance Sizes"])
+    session.type("  ")
+    #expect(session.items.map(\.row) == places, "spaces ask for nothing")
+    session.type("")
+    #expect(session.items.map(\.row) == places)
+  }
+
+  @Test func aCommandIsFoundByAnyOfTheWordsOfItsWayThroughTheMenu() {
+    var session = session()
+    session.type("left")
+    #expect(session.selected == .command("dock left"))
+    session.type("focused left")
+    #expect(session.selected == .command("dock left"))
+    session.type("save 3")
+    #expect(session.selected == .command("save-view 3"))
+    session.type("sizes")
+    #expect(session.selected == .command(Command.equalize(all: false).text))
+  }
+
+  /// In a title, where a letter is worth what a command's is; and with far more left over than the command has.
+  @Test func aPlaceAndACommandThatMatchEquallyWellAreThePlaceFirst() {
+    let twins = [window(101, "Numbers", "Balance sheet for the year, third draft, with the auditor's remarks")]
+    var session = FinderSession(
+      model: FinderModel(
+        display: main, screen: screen, rows: twins, commands: [.command(.equalize(all: false), name: "Balance", display: main)]))
+    session.type("bal")
+    #expect(session.items.map(\.row.destination) == [.window(WindowID(101)), .command(Command.equalize(all: false).text)])
+  }
+
+  /// Until commands were listed, Return went to these windows. A word of a command begins with the letters, which scores higher.
+  @Test func lettersThatStandTogetherInsideAWordOfAPlaceAreThatPlace() {
+    let commands: [FinderModel.Row] = [
+      .command(.hold(minutes: nil), name: "Hold This View", display: main), .command(.floatAll, name: "Float All Windows", display: main),
+      .command(.back, name: "Back", display: main), .command(.rotate, name: "Adjust ▸ Rotate Group", display: main),
+    ]
+    let places = [
+      window(101, "Preview", "scan.pdf"), window(102, "Finder", "Wallpaper"), window(103, "Mail", "Feedback"), window(104, "Notes", "Carrot cake"),
+    ]
+    var session = FinderSession(model: FinderModel(display: main, screen: screen, rows: places, commands: commands))
+    for (typed, window) in [("vie", 101), ("all", 102), ("back", 103), ("rot", 104)] {
+      session.type(typed)
+      #expect(session.selected == .window(WindowID(UInt32(window))), "\(typed)")
+      #expect(session.items.count == 2, "the command comes after it: \(typed)")
+    }
+    // Scattered letters are no such claim.
+    session.type("hv")
+    #expect(session.selected == .command("hold"))
+  }
+
+  @Test func noCommandComesBeforeAPlaceThatIsBetterThanOneFoundInOnePiece() {
+    // `rot`: scattered through an app's name, where letters are worth more, and together inside a word of a title.
+    let places = [window(101, "Carrot", ""), window(102, "Remote Desktop", "")]
+    var session = FinderSession(
+      model: FinderModel(display: main, screen: screen, rows: places, commands: [.command(.rotate, name: "Rotate Group", display: main)]))
+    session.type("rot")
+    #expect(session.items.last?.row.destination == .command("rotate"))
+    #expect(Set(session.items.dropLast().map(\.row.destination)) == [.window(WindowID(101)), .window(WindowID(102))])
+  }
+
+  @Test func amongEquallyGoodCommandsTheMenusOrderDecides() {
+    let commands: [FinderModel.Row] = [
+      .command(.toggleFloat(nil), name: "Float Focused Window", display: main), .command(.floatAll, name: "Float All Windows", display: main),
+    ]
+    var session = FinderSession(model: FinderModel(display: main, screen: screen, rows: places, commands: commands))
+    session.type("float")
+    #expect(session.items.map(\.row.name) == ["Float Focused Window", "Float All Windows"], "though the second is shorter")
+  }
+
+  /// Found by the rehearsal of scripts/mac-shell/shots-finder.sh: `3`, Return, meant for the window, saved view 3.
+  @Test func aLetterOfATitleIsWorthWhatALetterOfACommandIs() {
+    var session = session(places: [window(101, "Numbers", "Report 1"), window(103, "Numbers", "Report 3, the long one, with a good deal after it")])
+    session.type("3")
+    #expect(session.items.map(\.row.destination) == [.window(WindowID(103)), .command("save-view 3")])
+    session.type("left")
+    #expect(session.selected == .command("dock left"), "scattered through a title the letters are worth less than together")
+  }
+
+  @Test func theBetterMatchComesFirstWhicheverKindItIs() {
+    var session = session()
+    session.type("dock")
+    // The app whose name it nearly is; then what begins with the word, in the menu's order; last what only holds it.
+    #expect(
+      session.items.map(\.row.name) == ["Docker", "Dock Focused Window ▸ Left", "Dock New Windows", "Undo Dock"])
+    session.type("view 3")
+    #expect(session.items.map(\.row.name) == ["View 3", "Saved Views ▸ Save This View As ▸ View 3"])
+  }
+
+  @Test func theNoteSaysThatItIsACommandWithTheMenusTickAndTheKeyInEffect() {
+    #expect(commands.map(\.note) == ["command, ⌃⌥←", "command, ⌃⌥Z", "command ✓", "command", "command"])
+    #expect(FinderModel.Row.command(.stepOut, name: "Step Out", shortcut: "⌃⌥↑", isAvailable: false, display: main).note == "command, not now")
+    #expect(commands.allSatisfy { $0.badge == "⌘" && $0.pid == nil && $0.detail.isEmpty })
+  }
+
+  @Test func theLogIsGivenTheFirstWordOfACommandAndNoMore() {
+    #expect(FinderDestination.command("dock left").description == "command dock")
+    #expect(FinderDestination.command(Command.unname("Taxes 2026").text).description == "command unname")
+    #expect(FinderDestination.command("").description == "command ")
+  }
+
+  @Test func withNoPlaceLeftItSaysSoUntilACommandIsFound() {
+    var session = session(places: [])
+    #expect(session.items.isEmpty && session.message == "No windows")
+    session.type("undo")
+    #expect(session.selected == .command("undo") && session.message == nil)
+    session.type("zzz")
+    #expect(session.items.isEmpty && session.message == "No windows")
+  }
+
+  @Test func aFreshListKeepsTheCommandThatWasSelected() {
+    var session = session()
+    session.type("dock")
+    session.moveSelection(by: 1)
+    #expect(session.selected == .command("dock left"))
+    session.replace(model: FinderModel(display: main, screen: screen, rows: [places[0]], commands: commands))
+    #expect(session.query == "dock" && session.selected == .command("dock left"))
+  }
+
+  @Test func asTextARowShowsItsFirstWordItsNameAndItsNote() {
+    var session = session()
+    session.type("new")
+    #expect(session.text == "go to: new\n> 1 command toggle-auto-dock  Dock New Windows  (command ✓)")
   }
 }

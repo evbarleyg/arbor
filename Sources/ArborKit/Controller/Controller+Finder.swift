@@ -170,7 +170,9 @@ extension Controller {
   func finderModel(on id: DisplayID, notice: String? = nil) -> FinderModel? {
     // The display the palette opened on may have gone since.
     guard let display = display(id) ?? commandDisplayID().flatMap({ self.display($0) }) else { return nil }
-    return FinderModel(display: display.id, screen: display.visibleFrame, rows: finderRows(), notice: notice)
+    return FinderModel(
+      display: display.id, screen: display.visibleFrame, rows: finderRows(), commands: paletteCommands(on: display.id).map(\.row),
+      notice: notice)
   }
 
   /// The palette while it is open.
@@ -228,6 +230,9 @@ extension Controller {
       } else {
         result = .failure("that space no longer exists")
       }
+    case .command:
+      // `finderChose` runs those. Nothing else that goes somewhere is given one.
+      result = .failure("that is a command, not a place")
     }
     // Replies call a named space by its name; the log does not (F20).
     let message = Self.withoutNames(result.message, everyName())
@@ -307,6 +312,9 @@ extension Controller {
       gone = workspaces[display]?.savedView(slot: slot) != nil ? nil : "That saved view no longer exists"
     case .space(let display, let node):
       gone = workspaces[display]?.tree.contains(node) == true ? nil : "That space no longer exists"
+    case .command(let text):
+      runFromThePalette(text, on: display)
+      return
     }
     if let gone {
       // The list is a snapshot from when the palette opened. Say so, and show what there is now.

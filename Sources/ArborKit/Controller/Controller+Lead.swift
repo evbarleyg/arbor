@@ -14,6 +14,9 @@ extension Controller {
     var source: CommandSource = .script
     /// Whether a command is being performed, as opposed to a question being asked: see `currentLead()`.
     var decides = false
+    /// The display that whoever runs the command, or asks, has said it is about: Go to…'s rows are about the display the palette is on,
+    /// wherever the pointer rests and whoever has the keyboard by then (`on(_:_:)`).
+    var display: DisplayID?
     var lead = InputLead()
     /// What the keyboard focus last went to (nil: nothing Arbor knows), and when.
     var focus: (window: WindowID?, since: Date)?
@@ -45,6 +48,14 @@ extension Controller {
     let outer = following.source
     following.source = source
     defer { following.source = outer }
+    return body()
+  }
+
+  /// Does `body` as something that is about `display`: commands that name no display act there, and the menu's rows are about it.
+  func on<Result>(_ display: DisplayID, _ body: () -> Result) -> Result {
+    let outer = following.display
+    following.display = display
+    defer { following.display = outer }
     return body()
   }
 
@@ -109,6 +120,7 @@ extension Controller {
   /// call in an app set to Don't Arrange): whoever types there is looking at that display. With no
   /// focused window the pointer decides.
   func commandDisplayID() -> DisplayID? {
+    if let said = following.display, display(said) != nil { return said }
     if currentLead() == .keyboard, let display = focusedDisplayID { return display }
     return pointerDisplayID
   }

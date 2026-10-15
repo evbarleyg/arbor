@@ -1,19 +1,23 @@
 import CoreGraphics
 
-/// Somewhere the finder ("Go to…") can take the user.
+/// Somewhere the finder ("Go to…") can take the user, or something it can do for them.
 public enum FinderDestination: Hashable, Sendable, CustomStringConvertible {
   case window(WindowID)
   /// A saved view: one of a display's slots 1–9.
   case view(DisplayID, slot: Int)
   /// A named space: a node of a display's tree.
   case space(DisplayID, NodeID)
+  /// A command, in its text form (`Command.text`): `dock left`.
+  case command(String)
 
-  /// For messages and the log: `w101`, `view 3`, `space n4`. Never a title or a name.
+  /// For messages and the log: `w101`, `view 3`, `space n4`, `command dock`. Never a title or a name: of a command only its
+  /// first word, since what follows can be a name somebody gave.
   public var description: String {
     switch self {
     case .window(let window): "\(window)"
     case .view(_, let slot): "view \(slot)"
     case .space(_, let node): "space \(node)"
+    case .command(let text): "command \(text.prefix { $0 != " " })"
     }
   }
 }
@@ -47,6 +51,8 @@ public enum FinderPlace: String, Codable, Sendable, CaseIterable {
   case notArranged = "not arranged"
   case savedView = "saved view"
   case namedSpace = "space"
+  /// No place: a row that does something.
+  case command
 }
 
 /// What the finder shows when it opens: everywhere it can go, in the order an empty query lists it.
@@ -66,6 +72,11 @@ public struct FinderModel: Equatable, Sendable {
     /// For a window: the process whose icon to show, and its app.
     public var pid: Int32?
     public var bundleID: String?
+    /// For a command: the key in effect that runs it, as the menu shows it, whether the menu ticks it, and whether it can be chosen
+    /// there now or is greyed out.
+    public var shortcut: String?
+    public var isOn = false
+    public var isAvailable = true
 
     public init(
       destination: FinderDestination, name: String, detail: String, place: FinderPlace, display: DisplayID,
@@ -83,21 +94,36 @@ public struct FinderModel: Equatable, Sendable {
 
     /// What is searched. Only a space's name is a person's own word for a place: typed in full, it is what they mean.
     public var candidate: FinderCandidate {
-      FinderCandidate(name: name, detail: detail, isAName: place == .namedSpace)
+      FinderCandidate(name: name, detail: detail, isAName: place == .namedSpace, isACommand: place == .command)
     }
 
-    /// The short note at the end of a row: "out of view", "minimised, on Studio Display".
+    /// A row that runs `command`. `name` is what the menu calls it.
+    public static func command(
+      _ command: Command, name: String, shortcut: String? = nil, isOn: Bool = false, isAvailable: Bool = true, display: DisplayID
+    ) -> Row {
+      var row = Row(
+        destination: .command(command.text), name: FinderCandidate.line(name, limit: FinderCandidate.nameLimit), detail: "",
+        place: .command, display: display)
+      (row.shortcut, row.isOn, row.isAvailable) = (shortcut, isOn, isAvailable)
+      return row
+    }
+
+    /// The short note at the end of a row: "out of view", "minimised, on Studio Display", "command ✓, ⌃⌥F", "command, not now".
     public var note: String {
-      displayName.map { "\(place.rawValue), on \($0)" } ?? place.rawValue
+      if place == .command {
+        return place.rawValue + (isOn ? " ✓" : "") + (isAvailable ? shortcut.map { ", \($0)" } ?? "" : ", not now")
+      }
+      return displayName.map { "\(place.rawValue), on \($0)" } ?? place.rawValue
     }
 
     /// What stands where a window has its app's icon: the view's number (the digit that recalls it with ⌃⌥),
-    /// or the first letter of the space's name.
+    /// the first letter of the space's name, or the sign of a command.
     public var badge: String? {
       switch destination {
       case .window: nil
       case .view(_, let slot): String(slot)
       case .space: name.first.map { String($0).uppercased() } ?? ""
+      case .command: "⌘"
       }
     }
   }
@@ -107,15 +133,21 @@ public struct FinderModel: Equatable, Sendable {
   public var display: DisplayID
   public var screen: CGRect
   public var rows: [Row]
+  /// What it can do besides. Go to… is about places: a command is not listed until it is called by name.
+  public var commands: [Row]
   /// Something the user has to be told, with a beep: what they chose has gone.
   public var notice: String?
 
-  public init(display: DisplayID, screen: CGRect, rows: [Row], notice: String? = nil) {
+  public init(display: DisplayID, screen: CGRect, rows: [Row], commands: [Row] = [], notice: String? = nil) {
     self.display = display
     self.screen = screen
     self.rows = rows
+    self.commands = commands
     self.notice = notice
   }
+
+  /// All that can be found: the places, then the commands.
+  var everything: [Row] { rows + commands }
 }
 
 /// The finder while it is open: the list, what has been typed, what matches and what is selected. All
@@ -123,20 +155,34 @@ public struct FinderModel: Equatable, Sendable {
 /// `FakeOverlays` behaves the same in tests.
 public struct FinderSession: Equatable, Sendable {
   /// What the empty field says.
-  public static let placeholder = "Go to a window, a space or a saved view"
+  public static let placeholder = "A window, a space, a saved view or a command"
 
   public private(set) var model: FinderModel
   public private(set) var query = ""
-  /// The rows that match `query`, best first. `index` points into `model.rows`.
+  /// The rows that match `query`, best first. `index` counts through `model.rows` and on through `model.commands`.
   public private(set) var matches: [FinderMatch]
   public private(set) var selection: FinderSelection
   private var candidates: [FinderCandidate]
+  private var everything: [FinderModel.Row]
 
   public init(model: FinderModel) {
     self.model = model
-    candidates = model.rows.map(\.candidate)
-    matches = FinderQuery("").rank(candidates)
+    everything = model.everything
+    candidates = everything.map(\.candidate)
+    matches = Self.rank("", candidates, places: model.rows.count)
     selection = FinderSelection(count: matches.count, pageSize: FinderLayout.pageSize(on: model.screen))
+  }
+
+  /// Best first (`FinderQuery`), but for this: **letters that stand together in a place are that place.** `vie` is Preview, though the word
+  /// View begins with it and Hold This View would score higher. Until commands were listed, Return went to Preview, and whoever types
+  /// a piece of a name or a title and presses Return must not have run something instead. So no command comes before such a place,
+  /// nor before the places that are better still. The places keep their order among themselves, and so do the commands.
+  private static func rank(_ text: String, _ candidates: [FinderCandidate], places: Int) -> [FinderMatch] {
+    let query = FinderQuery(text)
+    guard !query.isEmpty else { return query.rank(Array(candidates.prefix(places))) }
+    let ranked = query.rank(candidates)
+    guard let last = ranked.lastIndex(where: { $0.index < places && query.foundInOnePiece($0) }) else { return ranked }
+    return ranked[...last].filter { $0.index < places } + ranked[...last].filter { $0.index >= places } + ranked[(last + 1)...]
   }
 
   /// The text in the field changed: match again and select the best. A notice has been read by then.
@@ -147,7 +193,7 @@ public struct FinderSession: Equatable, Sendable {
 
   private mutating func match(_ text: String) {
     query = text
-    matches = FinderQuery(text).rank(candidates)
+    matches = Self.rank(text, candidates, places: model.rows.count)
     selection = FinderSelection(count: matches.count, pageSize: selection.pageSize)
   }
 
@@ -159,7 +205,7 @@ public struct FinderSession: Equatable, Sendable {
     let row = selection.index
     self = FinderSession(model: newModel)
     match(text)
-    selection.select(matches.firstIndex { model.rows[$0.index].destination == destination } ?? row)
+    selection.select(matches.firstIndex { everything[$0.index].destination == destination } ?? row)
   }
 
   public mutating func moveSelection(by rows: Int) { selection.move(by: rows) }
@@ -175,25 +221,25 @@ public struct FinderSession: Equatable, Sendable {
   /// The rows that show, from the top.
   public var items: [Item] {
     selection.visible.map { place in
-      Item(row: model.rows[matches[place].index], match: matches[place], isSelected: place == selection.selected)
+      Item(row: everything[matches[place].index], match: matches[place], isSelected: place == selection.selected)
     }
   }
 
   /// What Return would choose.
   public var selected: FinderDestination? {
-    selection.selected.map { model.rows[matches[$0].index].destination }
+    selection.selected.map { everything[matches[$0].index].destination }
   }
 
   /// What shows at `place` from the top, counted from 0: what a click there, or ⌘ and the digit
   /// `place + 1`, chooses.
   public func destination(atVisible place: Int) -> FinderDestination? {
-    selection.row(atVisible: place).map { model.rows[matches[$0].index].destination }
+    selection.row(atVisible: place).map { everything[matches[$0].index].destination }
   }
 
   /// A line to show under the rows, if there is something to say.
   public var message: String? {
     if let notice = model.notice { return notice }
-    if model.rows.isEmpty { return "No windows" }
+    if model.rows.isEmpty, matches.isEmpty { return "No windows" }
     return matches.isEmpty ? "Nothing matches" : nil
   }
 
