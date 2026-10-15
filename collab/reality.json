@@ -783,6 +783,30 @@
    ]
   },
   {
+   "id": "a-dragged-window-stays-below-the-menu-bar",
+   "kind": "geometry",
+   "layer": "at the seam",
+   "expected": "A window follows the pointer that holds it.",
+   "happened": "The pointer goes into the menu bar, which is where macOS fills the screen; the window it holds stops below the bar. The stand-in's went on, to ten points above the top of the screen, and reported that frame to Arbor.",
+   "found": "The samples of a drag against the top edge, on a hosted Mac and on the stand-ins, side by side, on 2026-10-15.",
+   "modelled": "yes",
+   "knobs": [
+    "FakeWindowSystem.moveDrag"
+   ],
+   "guards": [
+    "test: aDraggedWindowStaysBelowTheMenuBarIntoWhichThePointerGoes"
+   ],
+   "copes": "FakeWindowSystem.moveDrag keeps the window below the bar of the display the pointer is on.",
+   "hurt": 4,
+   "touches": [
+    "pulled",
+    "fought"
+   ],
+   "sources": [
+    "Sources/ArborTesting/FakeWindowSystem.swift"
+   ]
+  },
+  {
    "id": "a-false-drag-when-swept-windows-fly-back",
    "kind": "second-actor",
    "layer": "below the seam",
@@ -1802,6 +1826,31 @@
    "certainty": "suspected"
   },
   {
+   "id": "a-press-on-a-title-bar-brings-the-window-forward-before-it-moves",
+   "kind": "order-of-reports",
+   "layer": "at the seam",
+   "expected": "A stand-in's window that is taken by its title bar and dragged is as a real one: in front, with the keyboard, its app in front.",
+   "happened": "`FakeWindowSystem.grab` takes hold and changes neither the pile nor the keyboard. On a Mac the press alone does both, before the window has moved a point. Judged by the gate's own detectors, every drag on the stand-ins ended with the dragged window behind others and another app in front.",
+   "found": "scripts/mac-shell/jolts.py over the first walks played on the stand-ins, on 2026-10-15: `behind` and `focus` at every drag, which no run on a Mac shows.",
+   "modelled": "partly",
+   "knobs": [
+    "FakeWindowSystem.grab"
+   ],
+   "guards": [
+    "test: theSamplesAreInTheSamplersGrammarWithLibDaysMarks"
+   ],
+   "copes": "WalkPlayer.drag gives the window the keyboard before it takes hold. The chaos lab's own walks do not.",
+   "hurt": 4,
+   "touches": [
+    "behind",
+    "focus"
+   ],
+   "sources": [
+    "Sources/ArborTesting/WalkPlayer.swift",
+    "Sources/ArborTesting/FakeWindowSystem+Chaos.swift"
+   ]
+  },
+  {
    "id": "a-press-on-the-name-field-stops-at-the-field",
    "kind": "input",
    "layer": "test",
@@ -2257,6 +2306,28 @@
    ]
   },
   {
+   "id": "a-second-tab-posted-too-soon-after-command-tab-does-not-count",
+   "kind": "timing",
+   "layer": "test",
+   "expected": "⌘ held and Tab posted n times leads to the n-th app down the list of those that were last in front.",
+   "happened": "One press led one app on, five times out of five. A second press did not count when it came 235 to 314 ms after the first (four times), and did at 394 ms (once); a third, half a second after the first, always did. macOS's switcher is not up yet when the early one arrives. The script sleeps 150 ms between presses, and the rest is how long the Mac takes to start the tool that posts them. An app that has just quit is no longer in the list.",
+   "found": "The apps that came to the front and the keys that went down (the sampler's A and K lines) in two walks and a day on hosted Macs, macOS 26.6.2, on 2026-10-15, held against the order in which the apps had been in front.",
+   "modelled": "partly",
+   "knobs": [
+    "WalkPlayer.appBehindCmdTab"
+   ],
+   "guards": [
+    "tool: mac-shell/walk-diff.py"
+   ],
+   "copes": "WalkPlayer.appBehindCmdTab goes where the Mac mostly went, and WalkWriter writes ⌘Tab with one press only. scripts/mac-shell/lib-walk.sh asks afterwards which app is in front, so its act is judged rightly either way.",
+   "hurt": 4,
+   "sources": [
+    "scripts/mac-shell/lib-day.sh",
+    "Sources/ArborTesting/WalkPlayer+Words.swift",
+    "Sources/ArborTesting/WalkWriter.swift"
+   ]
+  },
+  {
    "id": "a-shortcuts-release-may-never-be-reported",
    "kind": "missing-report",
    "layer": "at the seam",
@@ -2683,6 +2754,31 @@
    ]
   },
   {
+   "id": "a-terminals-window-has-a-margin-besides-its-characters",
+   "kind": "late-or-partial-answer",
+   "layer": "at the seam",
+   "expected": "A window whose size comes in steps takes the nearest multiple of the step, as the stand-in's did.",
+   "happened": "Terminal's window is so many characters of 7 by 15 points and 2 by 4 points more: asked for 369×247 it answered 366×244, for 242×767 240×769. 24 answers out of 24 fit, rounded to the nearest. With plain multiples every docked Terminal window was up to three points off, and a walk's two playings parted at the first ⌃⌥A.",
+   "found": "scripts/mac-shell/walk-diff.py over a walk on a hosted Mac, macOS 26.6.2, on 2026-10-15, and the questions and answers in its traces.",
+   "modelled": "partly",
+   "knobs": [
+    "FakeWindowSystem.setSizeStep",
+    "RealApp.cells"
+   ],
+   "guards": [
+    "test: aTerminalsWindowComesInCharactersAndALittleBesides"
+   ],
+   "copes": "FakeWindowSystem.setSizeStep takes the margin, a script says `cells 7 15 2 4`, and both kinds of walk open Terminal so: at opening, in answers to Arbor, under a hand on an edge, in a tile of macOS's and in a native tab. That its window grows by the tab bar at the first ⌘T is not played in a walk's scene.",
+   "hurt": 4,
+   "touches": [
+    "jolt"
+   ],
+   "sources": [
+    "Sources/ArborTesting/RealApps.swift",
+    "Sources/ArborTesting/FakeWindowSystem.swift"
+   ]
+  },
+  {
    "id": "a-timeout-belongs-to-one-element",
    "kind": "timing",
    "layer": "below the seam",
@@ -2960,6 +3056,31 @@
     "K109"
    ],
    "certainty": "suspected"
+  },
+  {
+   "id": "a-window-dragged-off-a-tile-of-macos-lies-under-the-pointer-as-it-was-held",
+   "kind": "geometry",
+   "layer": "at the seam",
+   "expected": "A window that macOS had tiled gets its own size back when it is dragged off, centred under the pointer.",
+   "happened": "Calendar, filling a screen 1,600 wide and taken by the middle of its title bar, had its 909 points back with the pointer 385 points from its left edge, not 454: 69 points further right than the stand-in puts it, and 5 higher.",
+   "found": "The first comparison of a walk's two playings (scripts/mac-shell/walk-diff.py): what a hosted Mac, macOS 26.6.2, brought back on 2026-10-15, beside the same walk on the stand-ins.",
+   "modelled": "no",
+   "knobs": [
+    "FakeWindowSystem.beginDrag"
+   ],
+   "guards": [
+    "tool: mac-shell/walk-diff.py"
+   ],
+   "copes": "WalkScene.atTheStart: a playing that is compared with a run takes the frames the run began with, after macOS's tiling had been tried. Later drags off a tile still differ.",
+   "hurt": 4,
+   "touches": [
+    "pulled",
+    "stuck"
+   ],
+   "sources": [
+    "Sources/ArborTesting/WalkPlayer.swift",
+    "Sources/ArborTesting/FakeWindowSystem.swift"
+   ]
   },
   {
    "id": "a-window-macos-tiled-gets-its-old-size-back-in-the-hand",
@@ -3553,6 +3674,26 @@
     "Sources/ArborKit/App/FrontmostAppWatcher.swift",
     "Sources/ArborKit/Trace/RecordingWindowSystem.swift",
     "docs/TRACES.md"
+   ]
+  },
+  {
+   "id": "an-app-opened-again-opens-where-it-first-opened",
+   "kind": "second-actor",
+   "layer": "at the seam",
+   "expected": "An app that quit with its window somewhere opens it there again.",
+   "happened": "TextEdit quit with its window docked at 1203,43 385×767, and squeezed to 165,31 673×297 another time, and opened the same document at 165,65 673×439 both times: where it had opened in the morning. Preview and Safari came back where they had been, which was the same place.",
+   "found": "The first comparison of a walk's two playings (scripts/mac-shell/walk-diff.py): what a hosted Mac, macOS 26.6.2, brought back on 2026-10-15, beside the same walk on the stand-ins.",
+   "modelled": "yes",
+   "knobs": [
+    "WalkScene.windows"
+   ],
+   "guards": [
+    "tool: mac-shell/walk-diff.py"
+   ],
+   "copes": "WalkPlayer opens an app again at the frame it opened with.",
+   "hurt": 4,
+   "sources": [
+    "Sources/ArborTesting/WalkPlayer+Words.swift"
    ]
   },
   {
@@ -7541,6 +7682,27 @@
    ]
   },
   {
+   "id": "no-two-runs-on-a-hosted-mac-begin-alike",
+   "kind": "second-actor",
+   "layer": "test",
+   "expected": "A hosted Mac is fresh, so a script's apps open where they always open.",
+   "happened": "Scripts that share a Mac leave their traces: Notes opened at 0,31 800×791, where macOS had tiled it for the script before, and at 300,105 1000×660 in another run; Terminal at 97,238 and at 740,300. Apps are opened in the background, so the pile and the order under ⌘Tab are not the order of opening either.",
+   "found": "The opening frames of a day and a walk on one hosted Mac on 2026-10-15.",
+   "modelled": "yes",
+   "knobs": [
+    "WalkScene"
+   ],
+   "guards": [
+    "test: aPlayingBeginsWhereARunOnAMacBegan"
+   ],
+   "copes": "WalkScene reads the beginning out of a run's own samples (`arbor-sim walk --rehearse --scene`): display, frames, pile, who had been in front.",
+   "hurt": 4,
+   "sources": [
+    "Sources/ArborTesting/WalkPlayer.swift",
+    "docs/TESTING.md"
+   ]
+  },
+  {
    "id": "nobody-has-the-keyboard-also-means-a-launcher-has-it",
    "kind": "late-or-partial-answer",
    "layer": "at the seam",
@@ -8481,6 +8643,26 @@
    ]
   },
   {
+   "id": "safaris-new-window-is-as-large-as-the-one-in-front-and-29-points-on",
+   "kind": "second-actor",
+   "layer": "at the seam",
+   "expected": "⌘N opens a window of the app's usual size.",
+   "happened": "Safari's new window has the size of the one in front, docked or squeezed as that may be, 29 points further right and down; where that would reach beyond the screen it begins at the left, or at the top, again. Three times out of three.",
+   "found": "The first comparison of a walk's two playings (scripts/mac-shell/walk-diff.py): what a hosted Mac, macOS 26.6.2, brought back on 2026-10-15, beside the same walk on the stand-ins.",
+   "modelled": "partly",
+   "knobs": [
+    "WalkPlayer.play"
+   ],
+   "guards": [
+    "tool: mac-shell/walk-diff.py"
+   ],
+   "copes": "WalkPlayer places Safari's new windows so. Of TextEdit, the Finder and Terminal nothing has been seen yet: they get their usual size, 29 points on.",
+   "hurt": 4,
+   "sources": [
+    "Sources/ArborTesting/WalkPlayer+Words.swift"
+   ]
+  },
+  {
    "id": "scripts-press-beside-their-goal-on-1024-points",
    "kind": "geometry",
    "layer": "test",
@@ -8743,6 +8925,32 @@
     "K203",
     "K538",
     "K537"
+   ]
+  },
+  {
+   "id": "stock-apps-stop-at-other-sizes-than-the-table-said",
+   "kind": "geometry",
+   "layer": "at the seam",
+   "expected": "The smallest sizes in the table of real apps that the walks on Linux are taken with: Mail 760×400, System Settings 723×400, Notes 709×300, Finder 501×300, Safari 574×240, Music 680×480.",
+   "happened": "Asked for less, Mail answered 871×236, System Settings 723×470, Notes 709×320, Calendar 680×503, the Finder 501×252, Safari 574×220, Preview 708 wide; a survey of other apps found Music at 980×600. TextEdit took whatever it was asked for, 244 wide and 161 high among it. A dock at the bottom of the screen therefore left every other window 70 points less than the stand-ins showed.",
+   "found": "The first comparison of a walk's two playings (scripts/mac-shell/walk-diff.py), then every question Arbor asked and every answer it got in the traces of three journeys on hosted Macs, and scripts/mac-shell/survey-casts.sh, macOS 26.6.2, on 2026-10-15.",
+   "modelled": "partly",
+   "knobs": [
+    "RealApp.minimum"
+   ],
+   "guards": [
+    "tool: mac-shell/walk-diff.py"
+   ],
+   "copes": "Sources/ArborTesting/RealApps.swift has what the apps answered. How small Terminal, TextEdit and Preview go, and the three browsers that are not Apple's, nobody has asked.",
+   "hurt": 4,
+   "touches": [
+    "jolt",
+    "moved-unasked"
+   ],
+   "sources": [
+    "Sources/ArborTesting/RealApps.swift",
+    "scripts/mac-shell/walk-diff.py",
+    "docs/TESTING.md"
    ]
   },
   {
@@ -9750,6 +9958,30 @@
     "Sources/ArborKit/UI/CheatSheetPanel.swift",
     "Sources/ArborKit/UI/FinderPanel.swift",
     "Sources/ArborKit/UI/NamePanel.swift"
+   ]
+  },
+  {
+   "id": "the-keyboard-arbor-gives-a-window-brings-its-app-forward",
+   "kind": "missing-report",
+   "layer": "at the seam",
+   "expected": "After Arbor has given a window of another app the keyboard, the stand-in's app in front is that window's.",
+   "happened": "`FakeWindowSystem.focus` moves the keyboard and the pile and leaves `frontmost` as it was. macOS brings the app forward. A script that asked for the front app's focused window got none after ⌃⌥⇧ and an arrow, in 30 acts of 2,600.",
+   "found": "Walks played on the stand-ins on 2026-10-15: the script could not tell which window should be in front.",
+   "modelled": "partly",
+   "knobs": [
+    "FakeWindowSystem.frontmost"
+   ],
+   "guards": [
+    "test: aFewWalksTogetherHaveTheirShareOfEveryKindAndHardlyAnActIsLeftOut"
+   ],
+   "copes": "WalkPlayer.frontApp goes by the window that has the keyboard, and so does WalkSamples. The stand-in itself still says nothing of the app.",
+   "hurt": 4,
+   "touches": [
+    "focus"
+   ],
+   "sources": [
+    "Sources/ArborTesting/WalkPlayer.swift",
+    "Sources/ArborTesting/WalkSamples.swift"
    ]
   },
   {

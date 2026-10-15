@@ -300,6 +300,11 @@ public final class ManualScheduler: Scheduler {
   }
 }
 
+extension ManualScheduler {
+  /// When the earliest piece of work falls due, by `now`'s clock. Whoever writes down what happens when goes from one to the next.
+  public var nextDue: Double? { pending.values.map(\.due).min() }
+}
+
 // MARK: Traces
 
 extension ManualScheduler {
