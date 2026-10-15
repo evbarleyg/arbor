@@ -1,0 +1,45 @@
+# check-across-displays 2026-10-15T14:07Z on macOS 26.6.2, commit 3aa6b58
+
+== the large display: W3 at its right end, along the border; W1 and W2 go to the small one
+
+== 5. from the large display to the small one
+  ✔ to-the-small-one: whole within a second and a half, one further change, never off its slot's corner
+  ✔ to-the-small-one: and ten seconds later
+  ✔ to-the-small-one: nothing is written down of where it stopped
+  ✔ to-the-small-one: it did not take the third asking
+  ✔ it is docked there
+  ✔ so is the second, in its slot
+
+== 2. let go by hand near the border, held at the left of its title bar: its larger part is still over the small display
+  ✔ most of it will hang over the small display
+  ✔ drop: whole within a second and a half, one further change, never off its slot's corner
+  ✔ drop: and ten seconds later
+  ✔ drop: nothing is written down of where it stopped
+  ✔ drop: it did not take the third asking
+  ✔ it is docked on the large display
+
+== 1. sent to the large display by the command
+  ✔ command: whole within a second and a half, one further change, never off its slot's corner
+  ✔ command: and ten seconds later
+  ✔ command: nothing is written down of where it stopped
+  ✔ command: it did not take the third asking
+  ✔ it is docked on the large display
+
+== 4. its own size, after a journey
+  ✔ it is docked on the small display
+  ✔ let go of right after the journey: as wide as it was
+  ✔ and as high
+  ✔ docked and floated again: as wide as it was
+  ✔ and as high: nothing short was written down as its own
+
+== 4b. sent across floating, there and back
+  ✔ back on the large display it is as wide as it was
+  ✔ and as high
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+28 passed, 0 failed
