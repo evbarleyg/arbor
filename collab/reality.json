@@ -4096,11 +4096,17 @@
    "kind": "order-of-reports",
    "layer": "at the seam",
    "expected": "A switch of apps is one report, the window that has the keyboard now. `FakeWindowSystem.userFocus` sends `windowFocused` and nothing else, `userSwitchesApp` one `keyboardFocusMoved` and no window, and the fake Mac's `World.bringForward` reports nothing of the keyboard.",
-   "happened": "When an app comes forward or steps back (`AXApplicationDeactivated`, `AXApplicationActivated`, the workspace's notice) the Mac's layer reports `keyboardFocusMoved`, up to three times. On a real switch two of them can reach the controller before `windowFocused`, by up to 50 ms: for that long the controller knows that the keyboard moved and not where to. The fakes send `windowFocused` first, or no window at all: no stand-in plays that order.",
+   "happened": "When an app comes forward or steps back (`AXApplicationDeactivated`, `AXApplicationActivated`, the workspace's notice) the Mac's layer reports `keyboardFocusMoved`, up to three times. On a real switch two of them can reach the controller before `windowFocused`, by up to 50 ms: for that long the controller knows that the keyboard moved and not where to. Counted in the recordings where nobody pressed anything and Arbor had not asked: of 15 changes of app, twice in 10, and in 7 of those as the window, moved, moved; once in 3, never in 1, three times in 1; one of them before the window in 5. Within an app the window alone, 31 of 34. `FakeWindowSystem.userFocus` now plays the most common order, and the fake Mac with it, since `World.giveKeyboard` goes through it. No stand-in plays a \"moved\" before the window.",
    "found": "The first comparison, line by line, of one script played on a hosted Mac (six runs, macOS 26.6.2, one display of 1024×768) and in a rehearsal on Linux. The difference was seen; its cause is a reading. And the traces beside the probe builds that led to the cure of the lost switch of apps, on hosted Macs.",
-   "modelled": "no",
-   "knobs": [],
-   "guards": [],
+   "modelled": "partly",
+   "knobs": [
+    "FakeWindowSystem.userFocus",
+    "FakeWindowSystem.appWithTheKeyboard"
+   ],
+   "guards": [
+    "test: aKeyboardThatChangesAppIsSaidToHaveMovedTwice",
+    "test: aPressBringsItsWindowForwardFirst"
+   ],
    "copes": "Controller.keyboardFocusMoved moves no view and no window, whenever it comes.",
    "hurt": 3,
    "touches": [

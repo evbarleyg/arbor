@@ -260,6 +260,27 @@ private final class Recorder: WindowSystemEvents {
     #expect(system.focused == a && system.windowsFrontToBack().first == a)
   }
 
+  /// Whoever turns to another app's window, by a click, ⌘Tab or the Dock, and an app that pushes itself forward: the window, and twice that
+  /// the keyboard has moved, for the app that comes and for the app that goes. Within an app the window alone.
+  @Test func aKeyboardThatChangesAppIsSaidToHaveMovedTwice() {
+    let (system, recorder, a, b, c) = make()
+    system.userFocus(b)
+    #expect(recorder.log == ["focused \(b)"], "within one app")
+    recorder.log.removeAll()
+    system.userFocus(c)
+    #expect(recorder.log == ["focused \(c)", "keyboard moved", "keyboard moved"], "to another app")
+    recorder.log.removeAll()
+    system.comesForward(a)
+    #expect(recorder.log == ["focused \(a)", "keyboard moved", "keyboard moved"], "an app that comes forward by itself")
+    // An app whose last window has gone stays in front, so from there it is a change of app as well.
+    system.userFocus(c)
+    system.close(c)
+    #expect(system.focused == nil)
+    recorder.log.removeAll()
+    system.userFocus(a)
+    #expect(recorder.log == ["focused \(a)", "keyboard moved", "keyboard moved"])
+  }
+
   @Test func everySwitchCanBeTurnedOff() {
     let (system, recorder, a, b, _) = make(.none)
     system.focus(b)

@@ -40,14 +40,11 @@ extension FakeWindowSystem {
       if !heldModifiers.contains(.command) { bringToFront(window) }
       return
     }
-    guard focused.flatMap({ windows[$0]?.snapshot.pid }) != windows[window]?.snapshot.pid else {
+    guard appWithTheKeyboard != nil, appWithTheKeyboard != windows[window]?.snapshot.pid else {
       events?.pointerPressed()
       return userFocus(window)
     }
-    userFocus(window)
-    events?.keyboardFocusMoved()
-    events?.pointerPressed()
-    events?.keyboardFocusMoved()
+    userFocus(window) { events?.pointerPressed() }
   }
 
   func bringToFront(_ window: WindowID) {
@@ -62,10 +59,9 @@ extension FakeWindowSystem {
   public func userClickBringsAppForward(_ window: WindowID) {
     guard windows[window] != nil else { return }
     mouseDown = true
-    userFocus(window)
-    events?.keyboardFocusMoved()
-    mouseDown = false
-    events?.pointerPressed()
-    events?.keyboardFocusMoved()
+    userFocus(window) {
+      mouseDown = false
+      events?.pointerPressed()
+    }
   }
 }

@@ -66,8 +66,11 @@ public final class FakeWindowSystem: WindowSystem {
       guard let focused else { return }
       keyboardOrder.removeAll { $0 == focused }
       keyboardOrder.insert(focused, at: 0)
+      if let app = windows[focused]?.snapshot.pid { appWithTheKeyboard = app }
     }
   }
+  /// The process whose window had the keyboard last. It stays in front when its last window goes.
+  private(set) var appWithTheKeyboard: Int32?
   public var cursor: CGPoint = CGPoint(x: 720, y: 450) {
     didSet {
       pointerUsedAt = clock()
@@ -632,16 +635,26 @@ public final class FakeWindowSystem: WindowSystem {
     events?.windowChanged(windows[window]!.snapshot, userInitiated: false)
   }
 
-  /// The user clicks a window or switches to it.
-  public func userFocus(_ window: WindowID) {
+  /// The user clicks a window or switches to it. If it is another app's, that app comes forward and the one in front steps back, and the
+  /// Accessibility layer makes "the keyboard has moved" of either. Recorded on hosted Macs where nobody pressed anything and Arbor had
+  /// not asked: twice in 10 of 15, and in 7 of those in this order: the window, moved, moved. (Once in 3, never in 1, three times in 1;
+  /// one of them before the window in 5.) Within an app: the window alone, 31 of 34.
+  public func userFocus(_ window: WindowID) { userFocus(window, betweenTheApps: {}) }
+
+  /// `betweenTheApps`: what is heard of after the one app has said that it is active and before the other says that it no longer is.
+  func userFocus(_ window: WindowID, betweenTheApps: () -> Void) {
     let before = secondsSinceInput
     if !nobodyTouchedAnything { secondsSinceInput = 0 }
     defer { secondsSinceInput = before }
+    let changesApp = appWithTheKeyboard != nil && appWithTheKeyboard != windows[window]?.snapshot.pid
     focused = window
     undelivered.removeAll { if case .focus = $0 { true } else { false } }
     activateApp(of: window)
     bringToFront(window)
     events?.windowFocused(window)
+    if changesApp { events?.keyboardFocusMoved() }
+    betweenTheApps()
+    if changesApp { events?.keyboardFocusMoved() }
     deliverEchoes()
   }
 
