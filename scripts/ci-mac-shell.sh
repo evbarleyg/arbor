@@ -25,6 +25,9 @@
 #
 # EACH SCRIPT FINDS THE MAC AS THE FIRST ONE FOUND IT, or results would depend on the order. After every script but the last the Mac is looked over:
 #   put back, and said so      macOS's own tiling and the click on the wallpaper (com.apple.WindowManager), Reduce Motion, light or dark
+#   taken off the screen,      a question macOS asks in a window of its own ("Allow … to find devices on local networks?"). It lies in the middle of the
+#   and said so                screen, over whatever the next script presses with the pointer, and no script sees it: a whole night's lost drags were
+#                              one of these. A picture of it stays with the script that left it: left-on-the-screen.png. One that will not go cannot be put back.
 #   cannot be put back         Accessibility for the runner's processes is gone (`tccutil reset`), there is another number of Spaces or of displays.
 #                              What would run on such a Mac would say nothing about Arbor, so the scripts that are left do not run: each says why, and
 #                              ends with exit code 75. Give a script that does such a thing the last place, or a run of its own.
@@ -65,6 +68,10 @@ for_good_now() {
   echo "Spaces: $(tool vdisplay spaces | tr '\n' ';')"
   echo "displays: $(tool pointer displays | wc -l | tr -d ' ')"
 }
+# The questions macOS has on the screen, each in a window of its asker's: "<asker> <x> <y> <width> <height>".
+questions_now() {
+  tool pointer windows | awk '$8 == "on" && NF == 9 && $9 ~ /^(UserNotificationCenter|CoreServicesUIAgent|SecurityAgent|universalAccessAuthWarn)$/ { print $9, $4, $5, $6, $7 }'
+}
 mac_note() {
   command -v defaults > /dev/null 2>&1 || return 0
   settings_now > "$kept/.settings"
@@ -91,6 +98,21 @@ mac_put_back() {
     esac
     echo "mac-shell: put back after $1: $name"
   done < "$kept/.settings"
+  local asked asker
+  asked=$(questions_now)
+  if [ -n "$asked" ]; then
+    echo "$asked" | sed "s/^/mac-shell: LEFT ON THE SCREEN by $1, over whatever lies there: /"
+    # Only where nobody has anything open: what it says is in no list of windows.
+    [ "${GITHUB_ACTIONS:-}" != true ] || screencapture -x "$out/left-on-the-screen.png" 2>/dev/null
+    # Whoever asked takes it for no answer; launchd starts the asker again when it is next needed.
+    for asker in $(echo "$asked" | cut -d ' ' -f 1 | sort -u); do killall "$asker" 2>/dev/null; done
+    sleep 2
+    if [ -n "$(questions_now)" ]; then
+      echo "mac-shell: and it will not go"
+      return 1
+    fi
+    echo "mac-shell: taken off the screen after $1"
+  fi
   if ! for_good_now | cmp -s - "$kept/.for-good"; then
     for_good_now | diff "$kept/.for-good" - | sed -n 's/^< /mac-shell: it was:  /p; s/^> /mac-shell: it is:   /p'
     return 1

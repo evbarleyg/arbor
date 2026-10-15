@@ -1499,7 +1499,8 @@ def check_mac_shell_batch():
             os.makedirs(state)
             os.makedirs(os.path.join(folder, "bin"))
             os.makedirs(os.path.join(folder, ".build", "mac-shell"))
-            for name, value in {"reduceMotion": "1", "tiling": "on", "ax": "true", "spaces": "1", "displays": "1"}.items():
+            always = "26 340 25 799 0 31 30 on Control Center\n15 161 24 0 0 1024 30 on Window Server\n6 339 20 0 0 1024 768 on Dock\n40 900 8 382 118 260 250 off UserNotificationCenter"
+            for name, value in {"reduceMotion": "1", "tiling": "on", "ax": "true", "spaces": "1", "displays": "1", "windows": always}.items():
                 with open(os.path.join(state, name), "w", encoding="utf-8") as handle:
                     handle.write(value + "\n")
             stand_ins = {
@@ -1513,8 +1514,8 @@ def check_mac_shell_batch():
   "export com.apple.WindowManager "*) cp "$STATE/tiling" "$3" ;;
   "import com.apple.WindowManager "*) cp "$3" "$STATE/tiling" ;;
 esac""",
-                "bin/killall": 'echo "$*" >> "$STATE/killed"',
-                ".build/mac-shell/pointer": 'case "$1" in ax-access) cat "$STATE/ax" ;; displays) seq "$(cat "$STATE/displays")" ;; esac',
+                "bin/killall": 'echo "$*" >> "$STATE/killed"\n[ -e "$STATE/stubborn" ] || { grep -v " $1\\$" "$STATE/windows" > "$STATE/windows.new"; mv "$STATE/windows.new" "$STATE/windows"; }',
+                ".build/mac-shell/pointer": 'case "$1" in ax-access) cat "$STATE/ax" ;; displays) seq "$(cat "$STATE/displays")" ;; windows) cat "$STATE/windows" ;; esac',
                 ".build/mac-shell/vdisplay": """case "$*" in spaces) cat "$STATE/spaces" ;; "appearance dark") echo Dark > "$STATE/style" ;; "appearance light") rm -f "$STATE/style" ;; esac""",
             }
             for path, text in stand_ins.items():
@@ -1537,7 +1538,13 @@ esac""",
                 with open(os.path.join(where, "exit-code.txt"), encoding="utf-8") as handle:
                     codes.append(handle.read().strip())
             hidden = [name for name in os.listdir(os.path.join(folder, "mac-shell")) if name.startswith(".")]
-            return done.returncode, found, codes, os.path.exists(os.path.join(state, "killed")), hidden
+            said = []
+            for number in range(len(names) if len(names) > 1 else 0):
+                with open(os.path.join(folder, "mac-shell", f"{number + 1}-s{number}", "output.txt"), encoding="utf-8") as handle:
+                    said += [f"{number + 1}: {line[11:]}" for line in handle.read().splitlines() if line.startswith("mac-shell: ") and ("screen" in line.lower() or "will not go" in line)]
+            with open(os.path.join(state, "windows"), encoding="utf-8") as handle:
+                on_screen = sum(" on UserNotificationCenter" in line or " on SecurityAgent" in line for line in handle)
+            return done.returncode, found, codes, os.path.exists(os.path.join(state, "killed")), hidden, said, on_screen
 
     as_it_was = "1 Light on true"
     row("ci-mac-shell.sh: scripts that change nothing: nothing is put back, nothing restarted", between("true", "true")[:4], (0, [as_it_was] * 2, ["0", "0"], False))
@@ -1555,6 +1562,19 @@ esac""",
     for what, change in [("Accessibility is gone", 'echo false > "$STATE/ax"'), ("one more Space", 'echo 2 > "$STATE/spaces"'), ("a display that stayed", 'echo 2 > "$STATE/displays"')]:
         row(f"ci-mac-shell.sh: {what}: that cannot be put back, and the scripts after it do not run", between("true", change, "true", "true")[:3],
             (75, [as_it_was, as_it_was, "did not run", "did not run"], ["0", "0", "75", "75"]))
+    # A question macOS asks lies over what the next script presses.
+    ask = 'echo "63 26066 8 382 118 260 250 on UserNotificationCenter" >> "$STATE/windows"'
+    answer = between(ask, "true", "true")
+    row("ci-mac-shell.sh: a question left on the screen is taken off it, and all the scripts run", (answer[:3], answer[6]), ((0, [as_it_was] * 3, ["0"] * 3), 0))
+    row("ci-mac-shell.sh: it is said who left it, whose it is and where it lay, with the script that left it, and once", answer[5],
+        ["1: LEFT ON THE SCREEN by s0.sh, over whatever lies there: UserNotificationCenter 382 118 260 250", "1: taken off the screen after s0.sh"])
+    row("ci-mac-shell.sh: two askers: both go", between(ask + '; echo "64 70 8 300 200 400 200 on SecurityAgent" >> "$STATE/windows"', "true")[6], 0)
+    answer = between("true", ask + '; : > "$STATE/stubborn"', "true", "true")
+    row("ci-mac-shell.sh: one that will not go: the scripts after it do not run", (answer[:3], answer[5][-1]),
+        ((75, [as_it_was, as_it_was, "did not run", "did not run"], ["0", "0", "75", "75"]), "2: and it will not go"))
+    row("ci-mac-shell.sh: what a Mac always has on its screen is no question, nor is an asker's window that is not on it", between("true", "true")[3:6:2], (False, []))
+    row("ci-mac-shell.sh: an app of that name within another's is no asker",
+        between('echo "70 71 0 0 0 500 500 on Not UserNotificationCenter" >> "$STATE/windows"', "true")[3:6:2], (False, []))
     row("ci-mac-shell.sh: in the last place such a script costs nobody anything", between("true", 'echo false > "$STATE/ax"')[:3], (0, [as_it_was] * 2, ["0", "0"]))
     row("ci-mac-shell.sh: a script by itself is not looked after", between('echo off > "$STATE/tiling"')[:4], (0, [as_it_was], ["0"], False))
     row("ci-mac-shell.sh: the notes it keeps for this do not come back with the output", between("true", "true")[4], [])
