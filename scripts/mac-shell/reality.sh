@@ -18,9 +18,9 @@
 #   edges      title-bar drags with the real pointer all the way to the left, top and right screen edge, each looked at while held and after. With
 #              macOS's tiling on, as a Mac comes, those edges are macOS's: Arbor stands aside, macOS tiles, and the question is whether the
 #              stand-ins tile as macOS does
-#   pointer    e2e-drag.sh's steps and a few more: to the bottom edge, a window's edge, onto another window, a double-click and another, a press inside, a
-#              seam where a floating window lies behind it (first of all, after a press on its handle, after clicks elsewhere, after a layout) and where nothing
-#              does, a click on that window in front of the gap, out of the arrangement, a click on a tile
+#   pointer    e2e-drag.sh's steps and a few more: to the bottom edge, a window's edge, onto another window with nothing held and to dock, a double-click and
+#              another, a press inside, a seam where a floating window lies behind it (first of all, after a press on its handle, after clicks elsewhere, after a
+#              layout) and where nothing does, a click on that window in front of the gap, out of the arrangement, a click on a tile
 #   keys       a click on a window, then shortcuts on the real keyboard
 # REALITY_JOURNEYS="commands keys" plays only those: for a rehearsal while working on one of them. A Mac plays them all.
 #
@@ -223,8 +223,15 @@ in_the_gap() {
   check "W1 lies across the gap at ${x:-?},${y:-?}" test "$(top_at "${x:-0}" "${y:-0}")" = "$W1"
   does "$1" drag "$x" "$y" $((x + $2)) "$y"
 }
-# What `drag` is told for a hand that only moves a window and means to dock it nowhere: ⌘ held, or nothing at all where a plain drag only moves (`dragDocks`).
-only_moving() { if [ "$("$ARBOR_BIN/arborctl" get dragDocks 2>/dev/null)" = held ]; then echo --plain; else echo --mods cmd; fi; }
+# What `drag` is told of the hand, going by what the Arbor that runs asks for (`dragDocks`). Said at every drag of a title bar: left unsaid, lib.sh makes up its own
+# mind from where the press lands, and a journey would tell another story with nobody the wiser.
+#   to_dock      it means to dock the window: ⌘ goes down once the window is in the hand. Where every drag docks: nothing
+#   plainly      nothing is held, as by whoever only moves a window
+#   only_moving  it means to dock it nowhere: nothing is held. Where every drag docks: ⌘, which turns that off
+cmd_docks() { [ "$("$ARBOR_BIN/arborctl" get dragDocks 2>/dev/null)" = held ]; }
+to_dock() { ! cmd_docks || echo --then-mods cmd; }
+plainly() { ! cmd_docks || echo --plain; }
+only_moving() { if cmd_docks; then echo --plain; else echo --mods cmd; fi; }
 # carried "<step>" <name> <window> <x> <y> [what else `drag` takes]: by its title bar to that point and let go, and a check that it went.
 carried() {
   local before
@@ -239,16 +246,17 @@ in_front() { [ "$(pointer keyboard | cut -d ' ' -f 1)" = "$1" ]; }
 # On screen: a test window that was closed stays in the window server's list.
 has_windows() { [ "$(pointer windows --pid "$ARBOR_WINDOWS_PID" --on-screen | wc -l | tr -d ' ')" -ge "$1" ]; }
 
-# pushed <name> <window> <edge> <x> <y>: by its title bar all the way to a screen edge, looked at while held and after. Its app brings it forward
+# pushed <name> <window> <edge> <x> <y>: by its title bar all the way to a screen edge, nothing held, looked at while held and after. Its app brings it forward
 # first: the window pushed before it lies where macOS has tiled it, over this one's title bar as likely as not, and would be what the press takes.
 pushed() {
   local before
   does "the app brings $1 forward" tw front "$2"
   before=$(real_frame_of "$2")
   # shellcheck disable=SC2046
-  does "$1 held at the $3 edge" drag $(title_of "$2") "$4" "$5" --no-release
+  does "$1 held at the $3 edge" drag $(title_of "$2") "$4" "$5" --no-release $(plainly)
   check "$1 came along to the $3 edge" test "$(real_frame_of "$2")" != "$before"
   does "$1 let go at the $3 edge" release
+  check "Arbor has not docked $1" not is docked "$2"
 }
 
 # MARK: The journeys
@@ -352,15 +360,26 @@ if wanted pointer; then
   ARBOR_TEST_WINDOWS_ARGS="--min-size 1:700x500"
   journey pointer 3
   ARBOR_TEST_WINDOWS_ARGS=""
-  carried "drag W3 to the bottom edge" W3 "$W3" $((sx + sw / 2)) $((sy + sh - 3))
+  # shellcheck disable=SC2046
+  carried "drag W3 to the bottom edge" W3 "$W3" $((sx + sw / 2)) $((sy + sh - 3)) $(to_dock)
+  check "W3 is docked" is docked "$W3"
   # The bottom edge is the one that is Arbor's whatever macOS tiles. The rest wants the window on the left, which is macOS's to drag to.
   does "dock W3 left" ctl dock "$W3" left
   # shellcheck disable=SC2046
   meets W3 "$W3" $(at "$W3" "x + w - 1" "y + h / 2")
   # shellcheck disable=SC2046
   does "drag W3's right edge 60 to the right" drag $(at "$W3" "x + w - 1" "y + h / 2") $(at "$W3" "x + w + 59" "y + h / 2")
+  # What most drags are: a window moved from one place to another, over a docked one as it happens. Where every drag docks there is no such drag to play.
+  if cmd_docks; then
+    # shellcheck disable=SC2046
+    carried "drag W2 onto W3, nothing held" W2 "$W2" $(at "$W3" "x + w * 3 / 4" "y + h / 2") $(plainly)
+    check "W2 floats as before" is floating "$W2"
+  else
+    echo "skipped: drag W2 onto W3, nothing held: in this Arbor every drag docks"
+  fi
   # shellcheck disable=SC2046
-  carried "drag W2 onto the right of W3" W2 "$W2" $(at "$W3" "x + w * 85 / 100" "y + h / 2")
+  carried "drag W2 onto the right of W3" W2 "$W2" $(at "$W3" "x + w * 85 / 100" "y + h / 2") $(to_dock)
+  check "W2 is docked" is docked "$W2"
   # shellcheck disable=SC2046
   meets W3 "$W3" $(title_of "$W3")
   # shellcheck disable=SC2046
