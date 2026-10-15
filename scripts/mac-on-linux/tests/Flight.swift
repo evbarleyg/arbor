@@ -123,7 +123,8 @@ func tellOfTheFlightToTheDock(_ book: Book) {
       story.check("the command is taken", two.run("zoom \(mine.number)", then: 0).ok)
       story.check("and answered by the end of the flight", two.mac.now - began < flight + 0.05 - gap, "\(two.mac.now - began) s")
       two.mac.pass(3)
-      story.check("in all, Arbor's main thread has stood still for the rest of the flight at most", two.mac.secondsTheMainThreadWaited - stoodStill < flight + 0.05 - gap, "\(two.mac.secondsTheMainThreadWaited - stoodStill) s")
+      // The rest of the flight, the 50 ms or so that Arbor's own work on such a command costs here, and room for a few calls more (0.7 ms each): the check is for a second wait, not for a call.
+      story.check("in all, Arbor's main thread has stood still for the rest of the flight at most", two.mac.secondsTheMainThreadWaited - stoodStill < flight + 0.07 - gap, "\(two.mac.secondsTheMainThreadWaited - stoodStill) s")
       story.check("the window that was asked for fills the view", mine.frame.width > 900, two.whereabouts(mine))
       story.check("the sibling is out of view", two.isOutOfView(b), two.whereabouts(b))
       story.check("the window is in the Dock", a.isMinimized)

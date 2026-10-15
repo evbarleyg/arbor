@@ -4,7 +4,7 @@
 - Branch: test/the-real-ax-layer-on-linux, then test/mac-on-linux-round-2 and -round-3
 - What: `make mac-on-linux` (scripts/mac-on-linux/README.md; docs/TESTING.md, section 9)
 
-`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 349 stories (1,394 ✔, 143 ✘ known, on the trunk at f116af2; 181 stories at the end of round 1) and a random walk under four kinds of bad manners, at both storeys, five seconds to run. The run enters 92 % of the lines and 81 % of
+`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 368 stories (1,483 ✔, 149 ✘ known, on the trunk at f116af2; 181 stories at the end of round 1) and a random walk under four kinds of bad manners, at both storeys, five seconds to run. The run enters 92 % of the lines and 81 % of
 the regions of `AXWindowSystem.swift` (`COVERAGE=1`). Twenty-three changes that take known cures out of a copy of the layer all turn their stories red (`make mac-on-linux-selftest`).
 
 This report is what it found. Nothing in the layer was changed. Each finding says what a person would see, the lines concerned, and how sure the model is of the manners that bring it out: SEEN on a Mac, or GUESS. Every red check is listed in
@@ -32,6 +32,7 @@ forty lines further down now. **The findings of round 2 (N9 to N15, the addition
 | N15 | a command answers after 3.3 s because one app is slow | an app that takes 0.1 s over a call | the layer's own logic; slow answers seen |
 | N16 | a floating window comes back from out of view moved and shrunk; Arbor's own moves count as the person's | an app that carries out a moment late what it says yes to | seen of Safari leaving full screen; in general a guess |
 | N17 | **Arbor is paused while a park waits in the queue of an app that hangs: the window goes out of view when the app wakes, and stays there until `resume`** | a hang between the layer's question and its move; a pause during the hang | the controller's own logic; that a park is carried out on waking with Arbor alive is seen |
+| N18 | `float-all`, `float` or `undo` while an app hangs: its windows keep the shape of their slots for good | a hang; a polite Mac | the controller's own logic |
 | U1 | **a window dropped where there is no room for it goes out of view, as a tile, and what is typed goes into it** | nothing: a polite Mac, 1024 points, three windows | the controller's; the stand-ins show the same; no net asks |
 | U2 | a window that opened over a docked one jumps, and shrinks, when something else happens | nothing: a polite Mac | the controller's; known to the chaos lab (`moved-unasked`, severity 2) |
 | U3 | the view goes to an empty Desktop, and what is typed goes into a window out of view | nothing: `arrange`, `desktop` | the controller's; the stand-ins show the same; no net asks |
@@ -201,6 +202,16 @@ WHY: `Controller+Hardening.swift`, `tryWhatCouldNotComeBack`: the look-out first
 pause not one wait for the app, so no try ever got as far as asking it.
 HOW SURE: the controller's own logic. That a park which timed out is carried out on waking while Arbor lives: SEEN on hosted Macs. The look-out itself is held to two logs of hosted Macs ("as on a hosted Mac: … and half a second later Arbor is paused"): three tries, each held up a second by the app, as there.
 TO CONSIDER: strike a window off only once its app has answered something since the note was made; or leave word at a pause, after whatever may be in the queue (a change under review does, and both stories are green with it).
+
+### N18. The ways out while an app hangs: the shape of the slot for good   (told for a change under review; the trunk has it)
+WHAT A PERSON SEES: `float-all`, `float` or `undo` while an app beachballs: when it wakes its windows float, in view, in the shape of their slots (12,374 390×319 instead of 500,60 400×300), and nothing ever gives them their own frames back: no layout moves a floating window that is in view.
+STORIES: "`float-all` while an app with two docked windows hangs for 6 s, and … meanwhile": nothing else happens; the view goes to my window and comes back, or stays there; one of them is docked again, moved by hand, closes; Arbor is paused, or paused and resumed; they are arranged again. The same with an app that takes 0.8 s over every move, which
+the trunk waits out. Each ends with another hang, with the view away and back, which would show a debt that was neither paid nor forgotten.
+FOR WHOEVER REMEMBERS THE DEBT: pay it once; not after a dock, a hand's move, a close; not into view while the Desktop is out of view; and mind that it dies at a pause.
+
+### For whoever spares a call because the window is there already
+"apps carry out 50 ms late what they are asked, and Arbor is asked for a floating window of an app in the background whose docked window had its keyboard": green on the trunk, which always sends the place. What is read back right after a move of such an app is the old frame; a fetch that is spared on that belief leaves the window where the park, still to be
+carried out, takes it: at the corner, with the keyboard. Found by the walk upstairs under all four (7 of 600 seeds on a change under review, none on the trunk).
 
 ### For whoever keeps a request for the keyboard until an app answers again
 Six stories: "an app in front begins to hang, Arbor is asked to give the keyboard to another of its windows, and … before it wakes": nothing else happens (the window gets it); the person goes to another app with ⌘Tab; the same, and the workspace's notice of it is lost (a GUESS that this happens); clicks in another app's window; Arbor is asked for another app's window; the person asks the app for a third window with ⌘`. All

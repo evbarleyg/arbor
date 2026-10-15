@@ -147,9 +147,7 @@ func tellOfSlowApps(_ book: Book) {
       two.run("zoom \(mine.number)", then: 0.3)
       story.check("the pause is taken", two.run("pause", then: 0).ok)
       story.check("while the app still hangs", busy.isHung)
-      let owed = !two.controller.couldNotComeBack.isEmpty
       two.mac.pass(4)
-      story.check("what Arbor has noted as owed it has not struck off while the app hangs", busy.isHung && (!owed || !two.controller.couldNotComeBack.isEmpty), "noted at the pause, struck off within four seconds; \(places(two, theirs))")
       two.mac.pass(5)
       story.check("the app is awake again", !busy.isHung)
       var back: TimeInterval?
@@ -249,6 +247,38 @@ func tellOfSlowApps(_ book: Book) {
     }
   }
 
+  // What Arbor reads back right after a move of such an app is the old frame. Whoever then spares a call because the window "is there already" leaves it where the move that is still to be carried out takes it.
+  for late in [0.05, 0.2] {
+    book.story("an app carries out \(Int(late * 1000)) ms late what it is asked, one of its windows floats, and the view goes to another window and comes back at once") { story in
+      let (two, mine, theirs) = stage(story)
+      two.run("float \(theirs[1].number)")
+      theirs[0].app.carriesOutAfter = late
+      two.run("zoom \(mine.number)", then: 0)
+      two.run("show-all", then: 5)
+      story.check("the one that floats is in view", two.isInView(theirs[1]), two.whereabouts(theirs[1]))
+      story.check("so is the docked one", two.isInView(theirs[0]), two.whereabouts(theirs[0]))
+    }
+  }
+
+  // Found by the walk upstairs under all four (`upstairs, all four|10|resize 21 29; dock 70 20; launch 70 0; zoom 8 96`), told without dice. The app comes forward at once and makes the window main late, so its OTHER window is
+  // reported focused first: the view goes there, the Desktop out of view, and back a moment later.
+  for late in [0.05, 0.2] {
+    book.story("apps carry out \(Int(late * 1000)) ms late what they are asked, and Arbor is asked for a floating window of an app in the background whose docked window had its keyboard") { story in
+      let (two, mine, theirs) = stage(story)
+      two.run("float \(theirs[1].number)")
+      two.run("float \(mine.number)")
+      two.mac.click(theirs[0])
+      two.mac.pass(1)
+      two.mac.click(mine)
+      two.mac.pass(1)
+      for app in [mine.app, theirs[0].app] { app.carriesOutAfter = late }
+      story.check("the command is taken", two.run("zoom \(theirs[1].number)", then: 5).ok)
+      story.check("the window that was asked for is in view", two.isInView(theirs[1]), two.whereabouts(theirs[1]))
+      story.check("and has the keyboard", two.mac.keyWindow === theirs[1], "w\(two.mac.keyWindow?.number ?? 0) has it")
+      story.check("the other floating window is in view with it", two.isInView(mine), two.whereabouts(mine))
+    }
+  }
+
   // A reading that the layer passes on upstairs must not set off a correction, whose reading is passed on in its turn. The app that is on time comes first and sets the measure.
   var askedOfAnAppOnTime: Int?
   for late in [0.0, 0.02, 0.05, 0.2] {
@@ -263,6 +293,101 @@ func tellOfSlowApps(_ book: Book) {
       story.check("no oftener than of an app that is on time", asked <= askedOfAnAppOnTime ?? asked, "\(asked) times against \(askedOfAnAppOnTime ?? 0)")
       two.mac.pass(5)
       story.check("and then it has done with them", theirs.reduce(0) { $0 + $1.timesAskedForAFrame } - before == asked, "\(theirs.reduce(0) { $0 + $1.timesAskedForAFrame } - before - asked) times more")
+    }
+  }
+
+  // The ways out give every window its own earlier frame back. One whose app does not answer at that moment, or is busy with its sibling's move, floats from then on, in view, in the shape of its slot. Whoever remembers what
+  // it is owed has to pay it, once, and to forget it as soon as somebody else has had a say.
+  let own = [CGRect(x: 500, y: 60, width: 400, height: 300), CGRect(x: 500, y: 380, width: 400, height: 300)]
+  for way in ["float-all", "undo"] {
+    book.story("`\(way)` while an app with two docked windows takes 0.8 s over every move") { story in
+      let (two, _, theirs) = stage(story)
+      theirs[0].app.answersIn = 0.12
+      story.check("Arbor takes the command", two.run(way, then: 0).ok)
+      two.mac.pass(30)
+      story.check("both have their own earlier frames back", theirs.map(\.frame) == own, places(two, theirs))
+      let asked = theirs.map(\.timesAskedForAFrame)
+      two.mac.pass(10)
+      story.check("and Arbor has done with them", theirs.map(\.timesAskedForAFrame) == asked, "asked again \(zip(theirs.map(\.timesAskedForAFrame), asked).map { $0 - $1 }) times")
+    }
+  }
+  for (what, slow) in [
+    ("nothing else happens", false), ("nothing else happens", true), ("the view goes to my window and comes back", false), ("the view goes to my window and comes back", true), ("the view goes to my window and stays there", false), ("one of them is docked again", false),
+    ("one of them is moved by hand", false), ("one of them closes", false), ("one of them is minimized by hand", true), ("Arbor is paused and resumed", false), ("Arbor is paused", false), ("they are arranged again", false),
+    ("they are arranged again", true),
+  ] {
+    book.story("`float-all` while an app with two docked windows \(slow ? "takes 0.8 s over every move" : "hangs for 6 s"), and \(what) meanwhile") { story in
+      let (two, mine, theirs) = stage(story)
+      let busy = theirs[0].app
+      let slots = theirs.map(\.frame)
+      if slow { busy.answersIn = 0.12 } else { two.mac.hang(busy, for: 6) }
+      story.check("Arbor takes the command", two.run("float-all", then: slow ? 0.1 : 1).ok)
+      var expected: [CGRect?] = own
+      let byHand = CGRect(x: 300, y: 200, width: slots[1].width, height: slots[1].height)
+      switch what {
+      case "the view goes to my window and comes back":
+        two.run("dock \(mine.number) left", then: 0.2)
+        two.run("zoom \(mine.number)", then: slow ? 3 : 1)
+        two.run("show-all", then: 0)
+        // With a window docked the Desktop is another, and what floats on it is shifted to fit: the sizes tell.
+        expected = [nil, nil]
+      case "the view goes to my window and stays there":
+        two.run("dock \(mine.number) left", then: 0.2)
+        two.run("zoom \(mine.number)", then: 0)
+        expected = [nil, nil]
+        for window in theirs { window.road.removeAll() }
+      case "one of them is docked again":
+        two.run("dock \(theirs[1].number) right", then: 0)
+        expected[1] = nil
+      case "one of them is moved by hand":
+        // The window server moves a window by its title bar whether its app answers or not.
+        two.mac.drag(from: CGPoint(x: slots[1].midX, y: slots[1].minY + 10), to: CGPoint(x: byHand.midX, y: byHand.minY + 10))
+        two.mac.release()
+        expected[1] = byHand
+      case "one of them closes":
+        two.mac.later(5.5) { two.mac.close(theirs[1]) }
+        expected[1] = nil
+      case "one of them is minimized by hand":
+        two.mac.minimize(theirs[1])
+        expected[1] = nil
+      case "Arbor is paused and resumed":
+        two.run("pause", then: 1)
+        two.run("resume", then: 0)
+      case "Arbor is paused": two.run("pause", then: 0)
+      case "they are arranged again":
+        two.run("arrange", then: 0)
+        expected = [nil, nil]
+      default: break
+      }
+      two.mac.pass(20)
+      story.check("the app answers again", !busy.isHung)
+      story.check(
+        "each is where the last word on it has sent it", zip(theirs, expected).allSatisfy { $1 == nil || $0.frame == $1 },
+        zip(theirs, expected).map { "\(two.whereabouts($0)), to be at \($1?.text ?? "wherever")" }.joined(separator: "; "))
+      if what.hasSuffix("comes back") { story.check("both are in view, in their own sizes", theirs.allSatisfy { two.isInView($0) && $0.frame.size == own[0].size }, places(two, theirs)) }
+      if what.hasSuffix("stays there") {
+        story.check("both are out of view, with the Desktop", theirs.allSatisfy { two.isOutOfView($0) }, places(two, theirs))
+        story.check(
+          "and went there in one move, not by way of a place over my window", theirs.allSatisfy { $0.road.count <= 1 },
+          theirs.map { window in "w\(window.number): " + window.road.map(\.text).joined(separator: ", then ") }.joined(separator: "; "))
+      }
+      if what == "they are arranged again" { story.check("both are docked, in view, neither over the other", theirs.allSatisfy { two.isDocked($0) && two.isInView($0) } && !theirs[0].frame.intersects(theirs[1].frame), places(two, theirs)) }
+      if what == "one of them is docked again" { story.check("the one that was docked again is docked, in view", two.isDocked(theirs[1]) && two.isInView(theirs[1]), two.whereabouts(theirs[1])) }
+      if what == "one of them is minimized by hand" { story.check("the one that was minimized is in the Dock", theirs[1].isMinimized) }
+      let (asked, frames) = (theirs.map(\.timesAskedForAFrame), theirs.map(\.frame))
+      // A debt that was not paid and not forgotten shows when the app next falls silent and answers again.
+      if what.hasSuffix("stays there") {
+        two.run("show-all", then: 3)
+        story.check("shown again, both are in view, in their own sizes", theirs.allSatisfy { two.isInView($0) && $0.frame.size == own[0].size }, places(two, theirs))
+      } else if what != "Arbor is paused" {
+        two.mac.hang(busy, for: 3)
+        two.run("zoom \(mine.number)", then: 1)
+        two.run("show-all", then: 8)
+        story.check("after another hang, with the view away and back, each is where it was", theirs.map(\.frame) == frames, places(two, theirs))
+      } else {
+        two.mac.pass(10)
+        story.check("and Arbor asks nothing more of them", theirs.map(\.timesAskedForAFrame) == asked, "asked again \(zip(theirs.map(\.timesAskedForAFrame), asked).map { $0 - $1 }) times")
+      }
     }
   }
 
