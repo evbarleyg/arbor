@@ -1,0 +1,184 @@
+# mac-shell: scripts/mac-shell/check-F20.sh at 4ff9daa, macOS 26.6.2, 2026-10-15T12:49Z
+built Arbor, the pointer tool and the app bundles in 6s
+
+== three windows: [1 | Desktop | 2 / 3], shortcuts and the menu bar item on
+session 1: Arbor pid 13063, test windows 92 93 94 (pid 12942)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 92 left
+docked w92 at the left edge
+> dock 93 right
+docked w93 at the right edge
+> dock 94 beside 93 bottom
+docked w94 below w93
+> click 849 536
+> zoom 94
+framed w94
+> out
+stepped out to 2 ArborTestWindows windows (n5)
+display 0 0 1024 768, visible 0 31 1024 677, camera n5, back yes
+  w92 1023 680 325 653     docked parked
+  w93 12 43 1000 321       docked
+  w94 12 376 1000 320      docked focused
+  ✔ the tool says who is in front
+
+== ⌃⌥N, type, ↩
+> key ctrl+opt+n
+  ✔ ⌃⌥N shows the field
+shot: mac-shell/01-field-empty.png
+  ✔ the app in front stays in front
+  ✔ its window is still the focused window
+> key shift+p
+> key a
+> key i
+> key r
+shot: mac-shell/02-field-typed.png
+> key return
+  ✔ ↩ closes the field
+  ✔ and names the space, with the capital
+  ✔ no window moved: 2 and 3 are in their slots
+  ✔ the app in front is the same as before
+> spaces
+Pair   2 ArborTestWindows windows (n5)   in view
+> ascii
+display 5A42259C-47B8-4590-9762-97DBE4FE7F1B
++----------------------------------------------------------------------+
+|w93 ArborTestWindows                                                  |
+|                                                                      |
+|                                                                      |
+|                                                                      |
+|                                                                      |
+|                                                                      |
+|                                                                      |
+|                                                                      |
+|                                                                      |
++----------------------------------------------------------------------+
++----------------------------------------------------------------------+
+|w94 ArborTestWindows                                                  |
+|                                                                      |
+|                                                                      |
+|                                                                      |
+|                                                                      |
+|                                                                      |
+|                                                                      |
+|                                                                      |
+|                                                                      |
++----------------------------------------------------------------------+
+camera n5 Pair  hidden: w92 ArborTestWindows
+spaces: Pair n5
+
+== the keyboard is back with the app
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ frames window 3, which has the keyboard again
+> back
+back to Pair (n5)
+
+== a name that is refused keeps the field open; ⎋ closes it
+> key ctrl+opt+n
+  ✔ the field is open
+shot: mac-shell/03-field-rename.png
+> key u
+> key p
+shot: mac-shell/04-field-refused.png
+> key return
+  ✔ the name up is refused and the field stays
+> key escape
+  ✔ ⎋ closes it
+  ✔ the name is as it was
+
+== ⌃⌥N again, and a click elsewhere, close it
+> key ctrl+opt+n
+  ✔ open
+> key ctrl+opt+n
+  ✔ ⌃⌥N again closes it
+> key ctrl+opt+n
+  ✔ open
+> click 32 344
+  ✔ a click in a window closes it
+
+== it closes when the view leaves its space
+> key ctrl+opt+n
+  ✔ open
+> key ctrl+opt+space
+  ✔ ⌃⌥Space shows everything and the field is gone
+  ✔ everything is in view
+
+== go, by the beginning of the name
+> go pa
+moved to Pair (n5)
+  ✔ the view is on Pair
+  ✔ window 1 is out of view
+
+== the menu
+> click 688 15 --right
+shot: mac-shell/05-menu.png
+> key escape
+
+== an empty field removes the name
+> key ctrl+opt+n
+  ✔ open, with the name selected
+> key delete
+shot: mac-shell/06-field-emptied.png
+> key return
+  ✔ ↩ on an empty field closes it
+  ✔ and the name is gone
+
+== pause closes it
+> key ctrl+opt+n
+  ✔ open
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+  ✔ pausing closes the field
+> resume
+resumed
+  ✔ and it does not come back
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/07-quit.png
+
+== the field drawn dark: empty, with a name, and with the red line under a name that is refused
+session 2: Arbor pid 14820, test windows 138 139 140 (pid 14794)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 138 left
+docked w138 at the left edge
+> dock 139 right
+docked w139 at the right edge
+> click 849 369
+> key ctrl+opt+n
+  ✔ ⌃⌥N shows the field
+shot: mac-shell/08-dark-empty.png
+> key shift+p
+> key a
+> key i
+> key r
+shot: mac-shell/09-dark-typed.png
+> key return
+  ✔ ↩ names the space
+> key ctrl+opt+n
+  ✔ the field is open again, with the name
+> key u
+> key p
+shot: mac-shell/10-dark-refused.png
+> key escape
+  ✔ ⎋ closes it
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/11-dark-quit.png
+
+40 passed, 0 failed
+exit code 0
