@@ -105,6 +105,8 @@ The documenter decides **what** and **in what order**; executors decide
 
 **A ruling does not turn a test round.** After two rulings against the trunk the tests, a scenario and a check on CI's Macs went on asking for what had been overruled: green meant that the fault was there, and the first person to try the build met both. So a ruling against what the trunk does comes with three things the same day, from whoever rules: its red scenario in `collab/scenarios/wanted/`; the list, by grep, of the tests, scenarios and Mac checks that hold Arbor to what was overruled; and a mark on each, so that their green is not counted as proof. And what is decided against a rule goes to the head of the line: a decision that is not in the build a person tries is worth nothing to them.
 
+**A change is not measured by its own nets alone.** A landing that brought new detectors was praised for a fall from 8,170 to 160; by the old detectors, which count every change a person could see, the same landing went from 5,007 to 9,917, and a real Mac then showed the fault. When a change alters the nets it is measured by, the old nets are run on both sides too, and the report gives both pairs.
+
 A report says what a change did to these. Parity stays as a list of what the reference has, and `make parity` goes on guarding that what is marked shipped is proven:
 
 `make parity` runs the test suite, reads the real-window evidence in
