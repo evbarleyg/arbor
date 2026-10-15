@@ -80,22 +80,24 @@ real_keychain_settings() {
   HOME=$real_home security default-keychain -d user 2>&1
 }
 
-# A keychain file of this run's own, unlocked and without a time limit. Nothing puts it on a search list or makes it
-# the default: see f13_make_keychain for what guards the account's own settings.
+# A keychain file of this run's own, unlocked and without a time limit. Nothing makes it the default, and the only search list it
+# is put on is the throwaway HOME's (search_list): see f13_make_keychain for what guards the account's own settings.
 new_keychain() {
   # safe anywhere: a new file in this run's folder in /tmp, under the throwaway HOME
   security create-keychain -p "$password" "$1" || return 1
   # safe anywhere: that file's own settings
   security set-keychain-settings "$1"
+  # A keychain that has just been made is unlocked. macOS 26 refuses, for a file named login.keychain-db, the very password it was made with.
   # safe anywhere: that file
-  security unlock-keychain -p "$password" "$1"
+  security unlock-keychain -p "$password" "$1" || true
 }
 # safe anywhere: only a file that new_keychain made
 drop_keychain() { security delete-keychain "$1"; }
-# Lets codesign use every signing key in a keychain of this run's own, whatever its label.
-allow_every_key() {
-  # safe anywhere: only a file that new_keychain made
-  security set-key-partition-list -S apple-tool:,apple: -s -k "$password" "$1"
+# search_list <keychain…>: codesign finds an identity only in a keychain on the search list, whatever --keychain says, and follows HOME
+# to the list as `security` does (check-signing.sh, step 3).
+search_list() {
+  # safe anywhere: f13_make_keychain has stopped the script by now if `security` does not follow HOME, so this is the throwaway HOME's list
+  security list-keychains -d user -s "$@"
 }
 
 # Into the throwaway HOME. arborctl, with this ARBOR_HOME, cannot reach an Arbor that was running before, so none is quit.
@@ -207,6 +209,7 @@ f13_make_keychain() {
     die "security does not follow HOME on this Mac, so this script might touch the account's keychain search list; stopping"
   fi
   new_keychain "$keychain" || die "could not make a keychain"
+  search_list "$keychain"
   echo "after making $keychain: $(security list-keychains -d user | tr -d '\n')"
   if ! check "the account's own search list and default keychain are as they were" unchanged "$real_settings" "$(real_keychain_settings)"; then
     echo "they were:"
