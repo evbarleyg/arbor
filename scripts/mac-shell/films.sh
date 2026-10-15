@@ -48,16 +48,17 @@ arrange() {
 moves() {
   local p=$1 x y w h x2 y2 w2 h2
   read -r x y w h <<< "$(screen_of 1)"
-  scene "${p}dock-drag-edge" drag "drags a window by its title bar to the right edge, waits, lets go"
+  # The bottom edge: with macOS's own tiling on, as a Mac comes, the other three are macOS's, and Arbor stands aside there.
+  scene "${p}dock-drag-edge" drag "drags a window by its title bar to the bottom edge, waits, lets go"
   # shellcheck disable=SC2046
-  hold_drag $(titlebar_of "$W4") $((x + w - 3)) $((y + h / 2)) --duration 0.8
+  hold_drag $(titlebar_of "$W4") $((x + w / 2)) $((y + h - 3)) --duration 0.8
   scene_end
   check "the dragged window docked" is docked "$W4"
 
   read -r x y w h <<< "$(frame_of "$W4")"
-  scene "${p}dock-drag-beside" drag "drags a window onto the lower part of a docked one, waits, lets go"
+  scene "${p}dock-drag-beside" drag "drags a window onto the right part of a docked one, waits, lets go"
   # shellcheck disable=SC2046
-  hold_drag $(titlebar_of "$W3") $((x + w / 2)) $((y + h - 60)) --duration 0.8
+  hold_drag $(titlebar_of "$W3") $((x + w - 120)) $((y + h / 2)) --duration 0.8
   scene_end
   check "it docked" is docked "$W3"
 
