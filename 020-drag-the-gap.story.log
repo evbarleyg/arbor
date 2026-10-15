@@ -1,0 +1,17 @@
+20 drag-the-gap: drags the gap at the right of Notes 300 points to the left
+expected: {'act': 'resize', 'settled': 'quiet:428', 'moves': '30', 'everything': '1', 'floating': '40', 'docked': '30'}
+FAIL rule -: not so: the gap followed the pointer under the window: the place is some 300 points short
+FAIL rule 4: the app in front changed (to process 6136), and nobody switched
+
+15:36:46.688 SCREEN -- begin 20 drag-the-gap
+15:36:46.688 SCREEN -- text 20 drags the gap at the right of Notes 300 points to the left
+15:36:47.347 DEBUG the button went down at 731,354, the pointer is at 731,354: it is on a window Arbor does not arrange
+15:36:47.398 SCREEN the button is down 731 354
+15:36:50.150 SCREEN (nothing was seen for 118 ms)
+15:36:50.150 SCREEN front to back: w42 mail w51 notes w47 w50
+15:36:50.150 SCREEN the button is up 431 354
+15:36:50.154 SCREEN in front: process 6136 com.apple.mail
+15:36:50.205 SCREEN w51 of Arbor left the screen
+15:36:50.205 SCREEN front to back: w42 mail notes w47 w50
+15:36:50.797 SCREEN -- finding 20 - FAIL not so: the gap followed the pointer under the window: the place is some 300 points short
+15:36:51.331 SCREEN -- end 20 act=resize settled=quiet:428 moves=30 everything=1 floating=40 docked=30

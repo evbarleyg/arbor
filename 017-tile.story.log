@@ -1,0 +1,18 @@
+17 tile: asks for tiles, and docks Mail at the right
+expected: {'act': 'dock-key', 'settled': 'quiet:1029', 'moves': '30,40', 'tiles': '40@985:43:347:623', 'keyboard': '30', 'leaves': 'any', 'floating': '', 'docked': '30,40'}
+ODD rule 2: w42 of Mail moved along with a window of its app
+
+15:36:39.128 SCREEN -- begin 17 tile
+15:36:39.128 SCREEN -- text 17 asks for tiles, and docks Mail at the right
+15:36:39.147 INFO  settings: windowsThatDoNotFit = tile (was overlap)
+15:36:39.159 INFO  made room for w30, the Desktop
+15:36:39.160 DEBUG no stage: Reduce motion is on
+15:36:39.223 INFO  made room for w30, the Desktop
+15:36:39.229 DEBUG no stage: Reduce motion is on
+15:36:39.279 SCREEN w42 of Mail 1549,683 470×416
+15:36:39.279 SCREEN mail (w40) 1343,626 881×530
+15:36:39.286 INFO  dock 40 right: docked w40 at the right edge; its space is too small to show it, so it is a tile
+15:36:39.308 SCREEN w76 of Arbor 985,43 347×623
+15:36:39.308 SCREEN w77 of Arbor 973,43 12×623
+15:36:39.308 SCREEN front to back: w51 notes w42 mail w47 w76 w50 w77
+15:36:40.571 SCREEN -- end 17 act=dock-key settled=quiet:1029 moves=30,40 tiles=40@985:43:347:623 keyboard=30 leaves=any floating= docked=30,40

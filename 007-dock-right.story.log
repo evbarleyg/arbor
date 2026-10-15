@@ -1,0 +1,21 @@
+7 dock-right: presses ⌃⌥→
+expected: {'act': 'dock-key', 'settled': 'quiet:386', 'moves': '30,40', 'docked': '30', 'front': '40', 'everything': '1', 'floating': '40'}
+FAIL rule -: not so: Mail is docked
+FAIL rule -: not so: Mail is in view
+FAIL rule -: not so: state says that one of them hangs over its place
+FAIL rule -: not so: the one the key named lies in front
+
+15:35:55.030 SCREEN -- begin 7 dock-right
+15:35:55.030 SCREEN -- text 7 presses ⌃⌥→
+15:35:55.270 DEBUG dock right failed: there is no window w42 (`state` lists their ids)
+15:35:55.273 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: There is no window 42
+15:35:55.291 SCREEN w53 of Arbor 575,584 194×38 (level 6)
+15:35:56.814 SCREEN w53 of Arbor left the screen
+15:35:59.439 SCREEN -- finding 7 - FAIL not so: Mail is docked
+15:35:59.902 SCREEN -- finding 7 - FAIL not so: Mail is in view
+15:36:00.364 SCREEN -- finding 7 - FAIL not so: state says that one of them hangs over its place
+15:36:00.733 SCREEN -- finding 7 - FAIL not so: the one the key named lies in front
+15:36:01.281 SCREEN -- end 7 act=dock-key settled=quiet:386 moves=30,40 docked=30,40 front=40 everything=1 floating=40 docked=30
+15:36:01.919 SCREEN -- chapter Which lies in front later is macOS's business
+15:36:01.934 INFO  trace day-1 ended: 247 lines, trace off
+15:36:01.952 INFO  trace day-2: recording to /tmp/arbor-shell.H4jlps/home/traces/2026-10-15-153601-day-2.jsonl

@@ -1,0 +1,18 @@
+13 frame-again: and again
+expected: {'act': 'view', 'settled': 'quiet:528', 'moves': '30,30,', 'everything': '1', 'floating': '40', 'docked': '30'}
+FAIL rule 2: mail (w40) a floating window, moved, and the step did not name it
+ODD rule 2: w42 of Mail moved along with a window of its app
+
+15:36:32.981 SCREEN -- begin 13 frame-again
+15:36:32.981 SCREEN -- text 13 and again
+15:36:33.231 DEBUG no stage: Reduce motion is on
+15:36:33.272 SCREEN notes (w30) 12,43 709×623
+15:36:33.272 SCREEN w42 of Mail 437,118 470×416
+15:36:33.272 SCREEN mail (w40) 201,61 941×530
+15:36:33.295 INFO  zoom: back to everything
+15:36:33.314 SCREEN w51 of Arbor 3,34 727×641
+15:36:33.314 SCREEN w50 of Arbor 721,43 12×623
+15:36:33.314 SCREEN w53 of Arbor left the screen
+15:36:33.314 SCREEN front to back: w51 notes w42 mail w47 w50
+15:36:33.588 SCREEN (nothing was seen for 169 ms)
+15:36:34.494 SCREEN -- end 13 act=view settled=quiet:528 moves=30,30, everything=1 floating=40 docked=30

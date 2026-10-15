@@ -1,0 +1,542 @@
+{
+ "sampler": "samples 2731 seconds 75.0 hz 36.4 cost-ms 2.48 late 7 longest-gap-ms 227 whole-samples 3102 whole-seconds 85.2 whole-late 15",
+ "input": {
+  "events": 47,
+  "p50_us": 486,
+  "p99_us": 122846,
+  "max_us": 122846,
+  "kinds": {
+   "down": {
+    "events": 1,
+    "p50_us": 3582,
+    "p99_us": 3582,
+    "max_us": 3582
+   },
+   "dragged": {
+    "events": 32,
+    "p50_us": 348,
+    "p99_us": 3524,
+    "max_us": 3524
+   },
+   "forward": {
+    "events": 4,
+    "p50_us": 117628,
+    "p99_us": 122846,
+    "max_us": 122846
+   },
+   "key": {
+    "events": 5,
+    "p50_us": 486,
+    "p99_us": 551,
+    "max_us": 551
+   },
+   "up": {
+    "events": 5,
+    "p50_us": 7663,
+    "p99_us": 81886,
+    "max_us": 81886
+   }
+  },
+  "rounds": {},
+  "judged": [],
+  "silent": {
+   "down": "fewer than 10 such events in a round without Arbor",
+   "forward": "fewer than 10 such events in a round without Arbor",
+   "up": "fewer than 10 such events in a round without Arbor",
+   "key": "fewer than 10 such events in a round without Arbor",
+   "dragged": "fewer than 10 such events in a round without Arbor",
+   "scroll": "fewer than 10 such events in a round without Arbor"
+  }
+ },
+ "stage_seen": false,
+ "witnessed": true,
+ "steps": [
+  {
+   "number": 3,
+   "slug": "launch",
+   "chapter": "The coach's first two keys",
+   "text": "starts Arbor",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792078542293,
+   "milliseconds": 1903,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 4,
+   "slug": "click-notes",
+   "chapter": "The coach's first two keys",
+   "text": "clicks Notes' title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792078548305,
+   "milliseconds": 1959,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 5,
+   "slug": "dock-left",
+   "chapter": "The coach's first two keys",
+   "text": "presses ⌃⌥←",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792078550520,
+   "milliseconds": 1628,
+   "moved": {
+    "30": [
+     1,
+     2,
+     27
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 6,
+   "slug": "click-mail",
+   "chapter": "The coach's first two keys",
+   "text": "clicks Mail's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792078552594,
+   "milliseconds": 2056,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 7,
+   "slug": "dock-right",
+   "chapter": "The coach's first two keys",
+   "text": "presses ⌃⌥→",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792078555030,
+   "milliseconds": 6251,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "FAIL",
+     "window": null,
+     "what": "not so: Mail is docked",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "FAIL",
+     "window": null,
+     "what": "not so: Mail is in view",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "FAIL",
+     "window": null,
+     "what": "not so: state says that one of them hangs over its place",
+     "trace": null
+    },
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "FAIL",
+     "window": null,
+     "what": "not so: the one the key named lies in front",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 8,
+   "slug": "click-the-one-behind",
+   "chapter": "Which lies in front later is macOS's business",
+   "text": "clicks the part of Notes that shows",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792078562030,
+   "milliseconds": 4152,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 9,
+   "slug": "click-back",
+   "chapter": "Which lies in front later is macOS's business",
+   "text": "clicks the part of Mail that shows",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792078566621,
+   "milliseconds": 8338,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "FAIL",
+     "window": null,
+     "what": "not so: Mail lies in front",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 10,
+   "slug": "cmd-tab",
+   "chapter": "Which lies in front later is macOS's business",
+   "text": "presses ⌘Tab",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792078575815,
+   "milliseconds": 3092,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 11,
+   "slug": "idle",
+   "chapter": "Which lies in front later is macOS's business",
+   "text": "does nothing for ten seconds",
+   "act": "idle",
+   "judged": true,
+   "performed": true,
+   "began": 1792078579465,
+   "milliseconds": 10923,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 12,
+   "slug": "frame",
+   "chapter": "Framed and back, and one step back",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792078590889,
+   "milliseconds": 1873,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "40": [
+     1,
+     1,
+     0
+    ],
+    "42": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w40)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 201,61 941×530 · +455 ms 1343,626 941×530"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w42 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 437,118 470×416 · +455 ms 1579,683 470×416",
+     "explained": "follows its window"
+    }
+   ]
+  },
+  {
+   "number": 13,
+   "slug": "frame-again",
+   "chapter": "Framed and back, and one step back",
+   "text": "and again",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792078592981,
+   "milliseconds": 1513,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "40": [
+     1,
+     1,
+     0
+    ],
+    "42": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w40)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 1343,626 941×530 · +291 ms 201,61 941×530"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w42 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 1579,683 470×416 · +291 ms 437,118 470×416",
+     "explained": "follows its window"
+    }
+   ]
+  },
+  {
+   "number": 14,
+   "slug": "undo",
+   "chapter": "Framed and back, and one step back",
+   "text": "takes the last dock back",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792078594734,
+   "milliseconds": 1267,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 15,
+   "slug": "redo",
+   "chapter": "Framed and back, and one step back",
+   "text": "and docks it again",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792078596310,
+   "milliseconds": 1389,
+   "moved": {
+    "30": [
+     1,
+     2,
+     63
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 16,
+   "slug": "float-mail",
+   "chapter": "It ends when the neighbour goes",
+   "text": "floats Mail",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792078598026,
+   "milliseconds": 786,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 17,
+   "slug": "tile",
+   "chapter": "The option: the tile, as it was",
+   "text": "asks for tiles, and docks Mail at the right",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792078599128,
+   "milliseconds": 1443,
+   "moved": {
+    "40": [
+     1,
+     1,
+     0
+    ],
+    "42": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w42 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 437,118 470×416 · +151 ms 1549,683 470×416",
+     "explained": "follows its window"
+    }
+   ]
+  },
+  {
+   "number": 18,
+   "slug": "overlap-again",
+   "chapter": "The option: the tile, as it was",
+   "text": "asks for the overlap again",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792078600768,
+   "milliseconds": 3933,
+   "moved": {
+    "40": [
+     1,
+     1,
+     0
+    ],
+    "42": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "FAIL",
+     "window": null,
+     "what": "not so: the overlap is as it was",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w42 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 1549,683 470×416 · +123 ms 657,146 470×416",
+     "explained": "follows its window"
+    }
+   ]
+  },
+  {
+   "number": 19,
+   "slug": "float-mail-again",
+   "chapter": "A gap dragged until it lies under a window",
+   "text": "floats Mail",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792078604910,
+   "milliseconds": 1588,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "40": [
+     1,
+     2,
+     47
+    ],
+    "42": [
+     1,
+     2,
+     47
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w42 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 657,146 470×416 · +114 ms 609,147 470×416 · +161 ms 639,147 470×416",
+     "explained": "follows its window"
+    }
+   ]
+  },
+  {
+   "number": 20,
+   "slug": "drag-the-gap",
+   "chapter": "A gap dragged until it lies under a window",
+   "text": "drags the gap at the right of Notes 300 points to the left",
+   "act": "resize",
+   "judged": true,
+   "performed": true,
+   "began": 1792078606688,
+   "milliseconds": 4643,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "FAIL",
+     "window": null,
+     "what": "not so: the gap followed the pointer under the window: the place is some 300 points short",
+     "trace": null
+    },
+    {
+     "rule": "4",
+     "detector": "focus",
+     "level": "FAIL",
+     "window": null,
+     "what": "the app in front changed (to process 6136), and nobody switched",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 21,
+   "slug": "idle-after-the-drag",
+   "chapter": "A gap dragged until it lies under a window",
+   "text": "does nothing for three seconds",
+   "act": "idle",
+   "judged": true,
+   "performed": true,
+   "began": 1792078611599,
+   "milliseconds": 3744,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 22,
+   "slug": "quit",
+   "chapter": "The way out",
+   "text": "quits Arbor",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792078615653,
+   "milliseconds": 1228,
+   "moved": {
+    "30": [
+     1,
+     2,
+     75
+    ]
+   },
+   "findings": []
+  }
+ ]
+}

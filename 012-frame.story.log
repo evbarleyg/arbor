@@ -1,0 +1,18 @@
+12 frame: presses ⌃⌥↩
+expected: {'act': 'view', 'settled': 'quiet:999', 'moves': '30,30,', 'leaves': 'any', 'floating': '40', 'docked': '30'}
+FAIL rule 2: mail (w40) a floating window, moved, and the step did not name it
+ODD rule 2: w42 of Mail moved along with a window of its app
+
+15:36:30.889 SCREEN -- begin 12 frame
+15:36:30.889 SCREEN -- text 12 presses ⌃⌥↩
+15:36:31.169 DEBUG no stage: Reduce motion is on
+15:36:31.287 SCREEN notes (w30) 12,43 1320×623
+15:36:31.344 SCREEN w42 of Mail 1579,683 470×416
+15:36:31.344 SCREEN mail (w40) 1343,626 941×530
+15:36:31.369 INFO  zoom: framed w30
+15:36:31.370 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Your other window is out of view, not closed · ⌃⌥Space shows everything
+15:36:31.403 SCREEN w53 of Arbor 393,584 558×38 (level 6)
+15:36:31.403 SCREEN w51 of Arbor 3,34 1338×641
+15:36:31.403 SCREEN w50 of Arbor left the screen
+15:36:31.403 SCREEN front to back: w51 notes w42 mail w47
+15:36:32.762 SCREEN -- end 12 act=view settled=quiet:999 moves=30,30, leaves=any floating=40 docked=30

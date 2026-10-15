@@ -1,0 +1,20 @@
+18 overlap-again: asks for the overlap again
+expected: {'act': 'dock-key', 'settled': 'quiet:370', 'moves': '30,40', 'everything': '1', 'floating': '', 'docked': '30,40'}
+FAIL rule -: not so: the overlap is as it was
+ODD rule 2: w42 of Mail moved along with a window of its app
+
+15:36:40.768 SCREEN -- begin 18 overlap-again
+15:36:40.768 SCREEN -- text 18 asks for the overlap again
+15:36:40.789 INFO  made room for w40
+15:36:40.854 INFO  settings: windowsThatDoNotFit = overlap (was tile)
+15:36:40.891 SCREEN w42 of Mail 657,146 470×416
+15:36:40.891 SCREEN mail (w40) 451,43 881×623
+15:36:40.891 SCREEN w76 of Arbor 733,43 80×623
+15:36:40.891 SCREEN w77 of Arbor left the screen
+15:36:40.891 SCREEN w50 of Arbor left the screen
+15:36:40.891 SCREEN front to back: w51 notes w42 mail w47 w76
+15:36:44.237 SCREEN -- finding 18 - FAIL not so: the overlap is as it was
+15:36:44.701 SCREEN -- end 18 act=dock-key settled=quiet:370 moves=30,40 everything=1 floating= docked=30,40
+15:36:44.841 SCREEN -- chapter A gap dragged until it lies under a window
+15:36:44.850 INFO  trace day-5 ended: 92 lines, trace off
+15:36:44.861 INFO  trace day-6: recording to /tmp/arbor-shell.H4jlps/home/traces/2026-10-15-153644-day-6.jsonl

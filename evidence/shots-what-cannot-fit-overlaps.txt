@@ -1,0 +1,49 @@
+# shots-what-cannot-fit-overlaps 2026-10-15T15:34Z on macOS 26.6.2, commit 05d113e
+
+== the Mac
+
+== Before Arbor: two apps are open
+
+== The coach's first two keys
+  ✔ Notes is docked
+  ✘ Mail is docked — it is managed at 201 61 941 530
+  ✔ Notes is in view
+  ✘ Mail is in view
+  ✔ neither is parked
+  ✔ they overlap
+  ✘ state says that one of them hangs over its place
+  ✘ the one the key named lies in front
+
+== Which lies in front later is macOS's business
+  ✔ Notes lies in front
+  ✔ no window has moved or changed its size
+  ✘ Mail lies in front
+  ✔ no window has moved or changed its size
+  ✔ Notes lies in front
+  ✔ no window has moved or changed its size
+  ✔ no window has moved or changed its size
+
+== Framed and back, and one step back
+  ✔ the overlap is as it was
+  ✔ Mail floats
+  ✔ the overlap is as it was
+
+== It ends when the neighbour goes
+  ✔ nobody hangs over
+
+== The option: the tile, as it was
+  ✔ one of the two is out of view
+  ✘ the overlap is as it was
+
+== A gap dragged until it lies under a window
+  ✔ Notes is in view
+  ✔ Notes stands where it stood, as large
+  ✘ the gap followed the pointer under the window: the place is some 300 points short — /Users/runner/work/arbor/arbor/scripts/mac-shell/lib.sh: line 1915: test: : integer expression expected
+  ✔ nothing has moved
+
+== The way out
+  ✔ Arbor ends within five seconds
+
+== the report (all of it: mac-shell/day-report.md)
+
+19 passed, 8 failed

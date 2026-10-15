@@ -1,0 +1,19 @@
+19 float-mail-again: floats Mail
+expected: {'act': 'dock-key', 'settled': 'quiet:1269', 'moves': '30,40', 'restores': '40', 'everything': '1', 'floating': '40', 'docked': '30'}
+ODD rule 2: w42 of Mail moved along with a window of its app
+
+15:36:44.910 SCREEN -- begin 19 float-mail-again
+15:36:44.910 SCREEN -- text 19 floats Mail
+15:36:44.923 DEBUG no stage: Reduce motion is on
+15:36:45.024 SCREEN w42 of Mail 609,147 470×416
+15:36:45.024 SCREEN mail (w40) 403,90 881×530
+15:36:45.071 SCREEN w42 of Mail 639,147 470×416
+15:36:45.071 SCREEN mail (w40) 403,90 941×530
+15:36:45.099 INFO  float 40: w40 is floating
+15:36:45.129 SCREEN w51 of Arbor 3,34 731×641
+15:36:45.129 SCREEN notes (w30) 12,43 713×623
+15:36:45.129 SCREEN w50 of Arbor 725,43 12×623
+15:36:45.129 SCREEN front to back: w51 notes w42 mail w47 w76 w50
+15:36:45.334 SCREEN w76 of Arbor left the screen
+15:36:45.334 SCREEN front to back: w51 notes w42 mail w47 w50
+15:36:46.498 SCREEN -- end 19 act=dock-key settled=quiet:1269 moves=30,40 restores=40 everything=1 floating=40 docked=30

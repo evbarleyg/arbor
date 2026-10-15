@@ -1,0 +1,16 @@
+9 click-back: clicks the part of Mail that shows
+expected: {'act': 'switch', 'settled': 'quiet:373', 'moves': 'none', 'front': '40', 'everything': '1', 'floating': '40', 'docked': '30'}
+FAIL rule -: not so: Mail lies in front
+
+15:36:06.621 SCREEN -- begin 9 click-back
+15:36:06.621 SCREEN -- text 9 clicks the part of Mail that shows
+15:36:07.479 SCREEN front to back: w42 mail w51 notes w47 w50
+15:36:07.479 SCREEN the button is down 1027 73
+15:36:07.479 SCREEN the button is up 1027 73
+15:36:07.602 SCREEN in front: process 6136 com.apple.mail
+15:36:07.706 SCREEN (nothing was seen for 227 ms)
+15:36:07.749 SCREEN w51 of Arbor left the screen
+15:36:07.749 SCREEN front to back: w42 mail notes w47 w50
+15:36:07.755 DEBUG the button went down at 1027,73, the pointer is at 1027,73: it is on w40
+15:36:12.599 SCREEN -- finding 9 - FAIL not so: Mail lies in front
+15:36:14.959 SCREEN -- end 9 act=switch settled=quiet:373 moves=none front=40 everything=1 floating=40 docked=30
