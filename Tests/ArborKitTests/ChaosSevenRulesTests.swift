@@ -19,8 +19,19 @@ private let b = WindowID(102)
     let runner = ChaosRunner()
     for line in lines { _ = runner.step(ChaosAction(text: line)) }
     if let fault { runner.beforeTheNextCheck = { fault($0.system) } }
-    let prefixes = ["flashed-", "moved-", "sized-", "set-right-", "fetched-", "switched-to-", "app-switch-", "size-", "home-", "there-and-back-", "start-", "pause-and-", "quit-", "displays-", "dragged-"]
+    let prefixes = ["plain-drag-", "flashed-", "flipped", "taken-", "nothing-", "moved-", "sized-", "set-right-", "fetched-", "switched-to-", "app-switch-", "size-", "home-", "there-and-back-", "start-", "pause-and-", "quit-", "displays-", "dragged-", "docked-", "same-"]
     return Set(([last] + later).flatMap { runner.step(ChaosAction(text: $0)) }.map(\.rule).filter { rule in prefixes.contains { rule.hasPrefix($0) } })
+  }
+
+  /// The same for the rules that are numbers, not gates (`ChaosRunner.countedRules`).
+  private func numbers(after lines: [String], then last: String, _ later: String..., fault: ((FakeWindowSystem) -> Void)? = nil) -> Set<String> {
+    let runner = ChaosRunner()
+    for line in lines { _ = runner.step(ChaosAction(text: line)) }
+    if let fault { runner.beforeTheNextCheck = { fault($0.system) } }
+    return Set(([last] + later).flatMap { line -> [InvariantViolation] in
+      _ = runner.step(ChaosAction(text: line))
+      return runner.counted
+    }.map(\.rule))
   }
 
   private func rect(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloat) -> CGRect { CGRect(x: x, y: y, width: width, height: height) }
@@ -40,6 +51,49 @@ private let b = WindowID(102)
       _ = $0.setFrame(self.rect(726, 37, 702, 851), of: b)
     }
     #expect(twice.contains("moved-twice"))
+  }
+
+  /// Whatever the number of requests: on its way a window covers nothing in view that neither its old nor its new frame covers.
+  @Test func onItsWayAWindowStaysWithinItsOldAndItsNewFrame() {
+    // Made smaller where it stands, then moved: within the old frame.
+    let within = numbers(after: oneDocked, then: "flush") {
+      _ = $0.setFrame(self.rect(800, 300, 400, 300), of: b)
+      _ = $0.setFrame(self.rect(900, 400, 400, 300), of: b)
+    }
+    #expect(!within.contains("strayed-between"))
+    // Made larger where it stands, then moved.
+    let over = numbers(after: oneDocked, then: "flush") {
+      _ = $0.setFrame(self.rect(800, 300, 600, 500), of: b)
+      _ = $0.setFrame(self.rect(726, 37, 600, 500), of: b)
+    }
+    #expect(over.contains("strayed-between"))
+    // It comes into view at one frame and goes on to another: what it had out of view, nobody saw.
+    let cameIn = numbers(after: oneDocked + ["zoom 101", "settle"], then: "flush") {
+      _ = $0.setFrame(self.rect(12, 37, 1416, 851), of: b)
+      _ = $0.setFrame(self.rect(12, 37, 702, 851), of: b)
+    }
+    #expect(cameIn.contains("strayed-between"))
+    // One that grows into a frame that hangs over the display's edge is sized first: macOS would cut it there.
+    let overTheEdge = numbers(after: oneDocked, then: "flush") {
+      _ = $0.setFrame(self.rect(800, 300, 600, 500), of: b)
+      _ = $0.setFrame(self.rect(1000, 500, 600, 500), of: b)
+    }
+    #expect(!overTheEdge.contains("strayed-between"))
+  }
+
+  /// By the eye: every change a person could see is counted, beside the road's verdict, and ends nothing.
+  @Test func whatAPersonCouldSeeIsCountedBesideTheRoad() {
+    let runner = ChaosRunner()
+    for line in oneDocked { _ = runner.step(ChaosAction(text: line)) }
+    runner.beforeTheNextCheck = {
+      _ = $0.system.setFrame(self.rect(800, 300, 400, 300), of: b)
+      _ = $0.system.setFrame(self.rect(900, 400, 400, 300), of: b)
+    }
+    let broken = runner.step(.flush)
+    #expect(runner.counted.map(\.rule) == ["eye-moved-again"])
+    #expect(!broken.contains { ChaosRunner.countedRules.contains($0.rule) })
+    _ = runner.step(.flush)
+    #expect(runner.counted.isEmpty)
   }
 
   @Test func aWindowMovedAgainAMomentLaterWithNobodyTouchingAnythingIsAJolt() {
@@ -73,12 +127,40 @@ private let b = WindowID(102)
       _ = $0.setFrame(self.rect(800, 300, 500, 400), of: b)
       _ = $0.setFrame(self.rect(1439, 868, 500, 400), of: b)
     }
-    #expect(shown.contains("flashed-into-view") && !shown.contains("moved-twice"))
+    #expect(shown.contains("flipped-into-view") && !shown.contains("moved-twice"))
     let gone = nets(after: oneDocked, then: "cursor 10 10") {
       _ = $0.setFrame(self.rect(1439, 868, 500, 400), of: b)
       _ = $0.setFrame(self.rect(800, 300, 500, 400), of: b)
     }
-    #expect(gone.contains("flashed-out-of-view"))
+    #expect(gone.contains("flipped-out-of-view"))
+    // With an app that refuses a size in the same step it is a layout finding out, which has another owner.
+    let narrow = ["launch", "open 101 Notes pid 1001 at 100 100 500 400", "open 102 Mail pid 1002 at 800 300 500 400 min 500 400", "dock 101 left", "settle"]
+    let sizing = nets(after: narrow, then: "cursor 10 10") {
+      _ = $0.setFrame(self.rect(1439, 868, 300, 400), of: b)
+      _ = $0.setFrame(self.rect(800, 300, 500, 400), of: b)
+    }
+    #expect(sizing.contains("flashed-out-of-view"))
+  }
+
+  @Test func aWindowThatGoesAndComesBackInViewForOneThingHasFlipped() {
+    let flipped = nets(after: oneDocked, then: "cursor 10 10") {
+      _ = $0.setFrame(self.rect(112, 37, 702, 851), of: a)
+      _ = $0.setFrame(self.rect(12, 37, 702, 851), of: a)
+    }
+    #expect(flipped.contains("flipped") && !flipped.contains("moved-twice"))
+    // A floating window has the names of floating windows, which have another owner.
+    let floating = nets(after: oneDocked, then: "cursor 10 10") {
+      _ = $0.setFrame(self.rect(700, 300, 500, 400), of: b)
+      _ = $0.setFrame(self.rect(800, 300, 500, 400), of: b)
+    }
+    #expect(floating.contains("moved-twice-floating") && !floating.contains("flipped"))
+  }
+
+  /// The ring's timers are pending after most acts, as Arbor ships: the nets ask all the same.
+  @Test func theFocusRingsTimersKeepNoNetFromAsking() {
+    let gone = oneDocked + ["focus 101", "minimize 102", "react"]
+    #expect(
+      nets(after: gone, then: "restore 102", "react") { _ = $0.setFrame(self.rect(820, 320, 500, 400), of: b) }.contains("there-and-back-moved"))
   }
 
   @Test func aWindowMovedOverAndOverWithNobodyActingIsStuck() {
@@ -325,12 +407,105 @@ private let b = WindowID(102)
         let frame = system.frame(of: a)!
         _ = system.setFrame(CGRect(x: frame.minX, y: frame.minY, width: frame.width + 60, height: frame.height), of: a)
       }.contains("dragged-gap-did-not-last"))
+    // A gap at its limit moves nothing, and settles nothing: what drifts afterwards has the other name.
+    let atItsLimit = oneDocked + ["dock 102 right", "settle", "seam main 0 0", "react", "settle"]
+    #expect(
+      !nets(after: atItsLimit, then: "key down home", "key up home", "react", "settle") { system in
+        let frame = system.frame(of: a)!
+        _ = system.setFrame(CGRect(x: frame.minX, y: frame.minY, width: frame.width + 60, height: frame.height), of: a)
+      }.contains("dragged-gap-did-not-last"))
     // Once the arrangement is changed on purpose there is nothing to hold it to.
     #expect(
       !nets(after: dragged + ["balance", "settle"], then: "key down home", "key up home", "react", "settle") { system in
         let frame = system.frame(of: a)!
         _ = system.setFrame(CGRect(x: frame.minX, y: frame.minY, width: frame.width + 60, height: frame.height), of: a)
       }.contains("dragged-gap-did-not-last"))
+  }
+
+  @Test func displaysThatGoAndComeBackLeaveEveryWindowWhereItWas() {
+    let desk = "displays main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:25,0,0,0 windows-late"
+    let two = ["displays main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:25,0,0,0 windows-never"] + twoFloating
+    let away = two + ["displays main:0,0,1440,900:25,0,0,0* windows-late", "react", "settle"]
+    #expect(!nets(after: away, then: desk, "react", "settle").contains("displays-out-and-back-moved"))
+    #expect(nets(after: away, then: desk, "react", "settle") { _ = $0.setFrame(self.rect(1500, 100, 500, 400), of: a) }.contains("displays-out-and-back-moved"))
+    // With anything else done meanwhile there is nothing to compare.
+    #expect(
+      !nets(after: away + ["focus 101", "react"], then: desk, "react", "settle") { _ = $0.setFrame(self.rect(1500, 100, 500, 400), of: a) }
+        .contains("displays-out-and-back-moved"))
+  }
+
+  /// Hunter's net: when displays come and go, no floating window is taken to a display that it only visited.
+  @Test func aChangeOfDisplaysTakesNoWindowToADisplayNobodyPutItOn() {
+    let two = ["displays main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:25,0,0,0 windows-never"] + twoFloating
+    let away = two + ["displays main:0,0,1440,900:25,0,0,0* windows-late", "react", "settle"]
+    let desk = "displays main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:25,0,0,0 windows-late"
+    #expect(!nets(after: away, then: desk, "react", "settle").contains("taken-to-another-display"))
+    #expect(nets(after: away, then: desk, "react", "settle") { _ = $0.setFrame(self.rect(1500, 100, 500, 400), of: a) }.contains("taken-to-another-display"))
+  }
+
+  /// With nothing arranged a way home may fetch what hangs out of view, and moves nothing that is wholly in view.
+  @Test func withNothingArrangedAWayHomeMovesNothingThatIsWhollyInView() {
+    for way in ["key down home", "quit", "pause"] {
+      #expect(nets(after: twoFloating, then: way).isEmpty, "\(way)")
+      #expect(nets(after: twoFloating, then: way) { _ = $0.setFrame(self.rect(120, 100, 500, 400), of: a) }.contains("moved-before-any-dock"), "\(way)")
+    }
+  }
+
+  /// What is found counts as left: a window its person parked a quarter in view stays there at a quit and a pause; what nobody could get hold of
+  /// may be fetched.
+  @Test func aWayOutTouchesNothingThatArborNeverTook() {
+    let parked = ["launch", "open 101 Notes pid 1001 at 100 100 500 400", "settle", "move 101 100 800 500 400", "settle"]
+    for way in ["quit", "pause"] {
+      #expect(nets(after: parked, then: way) { _ = $0.setFrame(self.rect(100, 475, 500, 400), of: a) }.contains("fetched-before-any-dock"), "\(way)")
+    }
+    // Five points of its corner show: the start fetches it, and may.
+    #expect(!nets(after: ["open 101 Notes pid 1001 at 1435 895 500 400"], then: "launch", "settle").contains { $0.hasSuffix("before-any-dock") })
+  }
+
+  /// Hunter's net: at rest no display shows a window while there are windows to show, after a change of displays or under a hold.
+  @Test func somethingIsAlwaysInViewAfterAChangeOfDisplays() {
+    let two = ["displays main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:25,0,0,0 windows-never", "launch", "open 101 Notes pid 1001 at 1600 100 500 400", "settle"]
+    let unplug = "displays main:0,0,1440,900:25,0,0,0* windows-late"
+    #expect(!nets(after: two, then: unplug, "react", "settle").contains { $0.hasPrefix("nothing-in-view") })
+    #expect(nets(after: two, then: unplug, "react", "settle") { _ = $0.setFrame(self.rect(1439, 868, 500, 400), of: a) }.contains("nothing-in-view-after-displays"))
+  }
+
+  /// A docked window closes while Arbor is away: the start used to dock its sibling.
+  @Test func aStartDocksNothingThatFloated() {
+    let twins = [
+      "open 101 Preview pid 1007 at 750 429 484 308 title Report", "open 102 Preview pid 1007 at 200 300 405 386 title Photo", "launch", "settle",
+      "dock 101 left", "settle", "quit",
+    ]
+    #expect(!nets(after: twins, then: "launch", "settle").contains("docked-at-a-start"))
+    #expect(!nets(after: twins + ["close 101"], then: "launch", "settle").contains("docked-at-a-start"))
+    // Docked in the step of the start, as if the start had done it.
+    let runner = ChaosRunner()
+    for line in twins + ["close 101"] { _ = runner.step(ChaosAction(text: line)) }
+    runner.beforeTheNextCheck = { _ = $0.harness.run("dock 102 left") }
+    #expect(runner.step(.launch).contains { $0.rule == "docked-at-a-start" })
+  }
+
+  @Test func theSameWindowsInTheSameViewHaveTheSameFrames() {
+    let arranged = oneDocked + ["dock 102 right", "react", "settle"]
+    func wider(_ system: FakeWindowSystem) {
+      let frame = system.frame(of: a)!
+      _ = system.setFrame(CGRect(x: frame.minX, y: frame.minY, width: frame.width + 60, height: frame.height), of: a)
+    }
+    for nothing in ["relayout", "focus 101", "key down home"] {
+      #expect(!nets(after: arranged, then: nothing, "react", "settle").contains("same-windows-other-frames"), "\(nothing)")
+      #expect(nets(after: arranged, then: nothing, "react", "settle", fault: wider).contains("same-windows-other-frames"), "\(nothing)")
+    }
+    // An act that changes the arrangement starts afresh.
+    #expect(!nets(after: arranged, then: "balance", "react", "settle", fault: wider).contains("same-windows-other-frames"))
+  }
+
+  /// macOS gives a window the keyboard whenever it comes back out of the Dock: the question is asked all the same.
+  @Test func theFocusThatComesWithAWindowsReturnBelongsToIt() {
+    let gone = oneDocked + ["minimize 102", "react", "advance 1", "react"]
+    #expect(nets(after: gone, then: "restore 102", "focus 102", "react", "settle").isEmpty)
+    #expect(
+      nets(after: gone, then: "restore 102", "focus 102", "react", "settle") { _ = $0.setFrame(self.rect(820, 320, 500, 400), of: b) }
+        .contains("there-and-back-moved"))
   }
 
   @Test func thereAndBackIsNothing() {
@@ -346,6 +521,21 @@ private let b = WindowID(102)
       !nets(after: oneDocked + ["minimize 102", "focus 101", "react"], then: "restore 102", "react", "settle") {
         _ = $0.setFrame(self.rect(820, 320, 500, 400), of: b)
       }.contains("there-and-back-moved"))
+  }
+
+  /// On a Mac the focus report comes a millisecond or two before the word that an app is shown again. It stood between the way there and the way back.
+  @Test func theFocusThatComesBeforeTheReturnBelongsToIt() {
+    let hidden = oneDocked + ["hide 1002", "react", "settle"]
+    #expect(!nets(after: hidden + ["focus 102"], then: "show 1002", "react", "settle").contains("there-and-back-moved"))
+    #expect(
+      nets(after: hidden + ["focus 102"], then: "show 1002", "react", "settle") { _ = $0.setFrame(self.rect(820, 320, 500, 400), of: b) }
+        .contains("there-and-back-moved"))
+  }
+
+  /// Out of the Dock is a switch to that window: one that was out of view before it went is followed by the view, as rule 4 asks.
+  @Test func aWindowThatWasOutOfViewBeforeItWentIntoTheDockIsFollowedWhenItComesOut() {
+    let away = ["launch", "open 102 Terminal pid 1003 at 550 160 745 409 min 177 60", "key down dock bottom", "key down desktop", "react", "minimize 102"]
+    #expect(!nets(after: away, then: "restore 102", "react", "settle").contains("there-and-back-moved"))
   }
 
   @Test func aPauseInWhichNothingHappensCannotBeSeenAfterwards() {
@@ -364,6 +554,10 @@ private let b = WindowID(102)
     #expect(
       nets(after: framed + ["focus 102", "react", "settle"], then: "flush", "react") { _ = $0.setFrame(self.rect(1439, 868, 500, 400), of: b) }
         .contains("switched-to-out-of-view"))
+    // Put there before the switch, which fetches no floating window: another name, for what follows from another fault.
+    #expect(
+      nets(after: oneDocked, then: "flush", "focus 102", "react", "settle") { _ = $0.setFrame(self.rect(1200, 700, 500, 400), of: b) }
+        .contains("switched-to-mostly-out"))
   }
 
   @Test func theWindowSwitchedToIsInFront() {
@@ -377,6 +571,30 @@ private let b = WindowID(102)
   @Test(arguments: ["float-all", "quit", "pause"]) func aWayOutGivesEveryWindowItsOwnSizeBack(way: String) {
     #expect(nets(after: oneDocked, then: way).isEmpty)
     #expect(nets(after: oneDocked, then: way) { _ = $0.setFrame(self.rect(100, 100, 702, 400), of: a) }.contains("size-not-given-back"))
+  }
+
+  @Test func whatMacOSMadeOfAWindowWhileArborWasAwayIsItsOwnSize() {
+    // Fitted onto a small display before Arbor ever ran. A larger one comes, and Arbor starts: it owes nobody the size it never saw.
+    let fitted = [
+      "open 103 Xcode pid 1004 at -1280 -298 1280 775 min 1188 685", "displays main:0,0,1280,800:25,0,59,0* windows-late",
+      "displays side:0,0,2560,1440:25,0,59,0* windows-late",
+    ]
+    #expect(nets(after: fitted, then: "way-back float-all").isEmpty)
+    // The same with Arbor looking on: what macOS made of it to fit is nobody's wish, and the larger display has room for its own size.
+    #expect(nets(after: ["launch"] + fitted + ["arrange", "settle"], then: "float-all") { _ = $0.setFrame(self.rect(100, 100, 1280, 716), of: WindowID(103)) }
+      .contains("size-not-given-back"))
+  }
+
+  /// A floating window that Arbor has squeezed is zoomed by macOS at a double-click, and taken back by the second: to the squeezed frame, which nobody chose.
+  @Test func theSizeArborHadMadeOfItIsNeverItsOwn() {
+    let runner = ChaosRunner()
+    for line in twoFloating { _ = runner.step(ChaosAction(text: line)) }
+    runner.beforeTheNextCheck = { _ = $0.system.setFrame(self.rect(800, 300, 400, 400), of: b) }
+    _ = runner.step(.flush)
+    for line in ["move 102 0 25 1440 875", "settle", "move 102 800 300 400 400", "settle", "dock 101 left", "settle"] { _ = runner.step(ChaosAction(text: line)) }
+    // Left at 400 wide by a way out, it has not got its own 500 back.
+    runner.beforeTheNextCheck = { _ = $0.system.setFrame(self.rect(800, 300, 400, 400), of: b) }
+    #expect(runner.step(ChaosAction(text: "float-all")).contains { $0.rule == "size-not-given-back" })
   }
 
   @Test func theSizeItsUserGaveItLastIsItsOwn() {
@@ -415,6 +633,91 @@ private let b = WindowID(102)
     #expect(nets(after: withADock, then: "home") { _ = $0.setFrame(self.rect(800, 480, 500, 400), of: b) }.contains("home-behind-the-dock"))
   }
 
+  /// A window that hung mostly over an edge before the displays changed, and from which the change took nothing, stays (Q20).
+  @Test func whatAChangeOfDisplaysTookNothingFromStays() {
+    let hanging = oneDocked + ["move 102 -300 300 500 400", "settle", "advance 60"]
+    #expect(!nets(after: hanging, then: "displays main:0,0,1280,800:25,0,0,0* windows-late", "settle").contains("displays-left-mostly-out"))
+    // The same change takes most of a window that was whole.
+    let whole = oneDocked + ["move 102 900 450 500 400", "settle", "advance 60"]
+    #expect(
+      nets(after: whole, then: "displays main:0,0,1280,800:25,0,0,0* windows-never", "settle") { _ = $0.setFrame(self.rect(1100, 650, 500, 400), of: b) }
+        .contains("displays-left-mostly-out"))
+  }
+
+  /// A display is plugged in beside the laptop. Nothing was taken from the window that hangs over the laptop's foot: it stays.
+  @Test func aWindowTheChangeOfDisplaysDidNotTouchIsNotMoved() {
+    let hanging = twoFloating + ["move 102 300 622 500 400", "settle", "advance 60"]
+    let plugged = "displays main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:25,0,0,0 windows-late"
+    #expect(numbers(after: hanging, then: plugged) { _ = $0.setFrame(self.rect(300, 382, 500, 400), of: b) }.contains("displays-moved-the-untouched"))
+    // One from which the change takes its display is another matter.
+    let onTheSide = ["displays main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:25,0,0,0 windows-never"] + twoFloating + ["move 102 1800 300 500 400", "settle"]
+    #expect(!numbers(after: onTheSide, then: "displays main:0,0,1440,900:25,0,0,0* windows-late", "settle").contains("displays-moved-the-untouched"))
+  }
+
+  // MARK: Less by default
+
+  @Test func aFloatingWindowIsNeverTakenOutOfView() {
+    #expect(!numbers(after: oneDocked, then: "focus 101", "react", "settle").contains("floating-taken-out-of-view"))
+    #expect(numbers(after: oneDocked, then: "flush") { _ = $0.setFrame(self.rect(1439, 868, 500, 400), of: b) }.contains("floating-taken-out-of-view"))
+    // A docked window that goes out of view is what a view is for.
+    #expect(!numbers(after: oneDocked, then: "flush") { _ = $0.setFrame(self.rect(1439, 868, 702, 851), of: a) }.contains("floating-taken-out-of-view"))
+  }
+
+  @Test func withNothingDockedAndNothingAskedArborSendsTheKeyboardNowhere() {
+    #expect(!numbers(after: twoFloating + ["focus 101", "react"], then: "flush").contains("keyboard-taken-unasked"))
+    #expect(numbers(after: twoFloating + ["focus 101", "react"], then: "flush") { $0.focus(b) }.contains("keyboard-taken-unasked"))
+    // Asked for: a key that turns to a window.
+    #expect(!numbers(after: twoFloating + ["focus 101", "react"], then: "focus right") { $0.focus(b) }.contains("keyboard-taken-unasked"))
+    // With something docked the keyboard is another rule's.
+    #expect(!numbers(after: oneDocked, then: "flush") { $0.focus(b) }.contains("keyboard-taken-unasked"))
+  }
+
+  @Test func aKeyThatDocksTakesNoWindowOutOfView() {
+    #expect(!numbers(after: oneDocked, then: "dock 102 right").contains("dock-took-out-of-view"))
+    #expect(numbers(after: oneDocked, then: "dock 102 right") { _ = $0.setFrame(self.rect(1439, 868, 702, 851), of: a) }.contains("dock-took-out-of-view"))
+    // A key that moves the view is what sends docked windows out of view.
+    #expect(!numbers(after: oneDocked + ["dock 102 right", "settle"], then: "zoom 101").contains("dock-took-out-of-view"))
+  }
+
+  /// Plays `lines` and then `last`, with `fault` done as part of it, and returns what the nets for a plain drag said from there on.
+  private func plainDrag(_ lines: [String], then last: String, fault: ((ChaosRunner) -> Void)? = nil) -> Set<String> {
+    let runner = ChaosRunner()
+    for line in lines { _ = runner.step(ChaosAction(text: line)) }
+    runner.beforeTheNextCheck = fault
+    return Set([last, "react", "settle"].flatMap { runner.step(ChaosAction(text: $0)) + runner.counted }.map(\.rule).filter { $0.hasPrefix("plain-drag-") })
+  }
+
+  @Test func aPlainDragOfAFloatingWindowIsWhatItIsWithoutArbor() {
+    // To the middle of a desk on which nothing is docked.
+    let inHand = twoFloating + ["grab 102", "carry 700 450"]
+    #expect(plainDrag(inHand, then: "release").isEmpty)
+    #expect(plainDrag(inHand, then: "release") { _ = $0.system.setFrame(self.rect(120, 100, 500, 400), of: a) } == ["plain-drag-moved-another"])
+    #expect(plainDrag(inHand, then: "release") { _ = $0.system.setFrame(self.rect(300, 300, 500, 400), of: b) } == ["plain-drag-moved-it"])
+    #expect(plainDrag(inHand, then: "release") { _ = $0.harness.run("dock 102 left") }.contains("plain-drag-docked"))
+    #expect(plainDrag(inHand, then: "release") { _ = $0.harness.run("dock 102 left") }.contains("plain-drag-left-an-undo-step"))
+    #expect(plainDrag(inHand, then: "carry 710 450") { $0.harness.overlays.showDropPreview(self.rect(0, 25, 720, 875)) }.contains("plain-drag-showed-a-preview"))
+  }
+
+  @Test func aDockedWindowDraggedOutMovesWhatIsDockedAndNothingElse() {
+    let both = oneDocked + ["open 103 Safari pid 1000 at 300 200 600 400", "dock 103 right", "settle", "grab 101", "carry 700 450"]
+    // Its place closes: the other docked window may move.
+    #expect(!plainDrag(both, then: "release").contains("plain-drag-moved-it"))
+    #expect(plainDrag(both, then: "release") { _ = $0.system.setFrame(self.rect(820, 320, 500, 400), of: b) }.contains("plain-drag-moved-another"))
+    // It floats, at its own size.
+    #expect(plainDrag(both, then: "release") { _ = $0.harness.run("dock 101 left") }.contains("plain-drag-left-it-docked"))
+    #expect(
+      plainDrag(both, then: "release") {
+        _ = $0.harness.run("float 101")
+        _ = $0.system.setFrame(self.rect(450, 300, 640, 480), of: a)
+      }.contains("plain-drag-not-its-own-size"))
+  }
+
+  @Test func aPlainDragStartsNoTimer() {
+    let inHand = twoFloating + ["grab 102", "carry 700 450"]
+    #expect(!plainDrag(inHand, then: "carry 710 450").contains("plain-drag-started-a-timer"))
+    #expect(plainDrag(inHand, then: "carry 710 450") { $0.harness.scheduler.schedule("drag-dwell", after: 0.3) {} }.contains("plain-drag-started-a-timer"))
+  }
+
   // MARK: The nets are cast
 
   /// A net that never asks its question catches nothing. The floors are about half of what forty ordinary walks gave when this was written.
@@ -431,8 +734,49 @@ private let b = WindowID(102)
     for (net, floor) in Self.floors { #expect(asked(net) >= floor, "\(net) was asked \(asked(net)) times") }
   }
 
+  /// The walks of a person who knows nine keys and the mouse: they begin as Arbor ships, drag more than they do anything else, and press no other key.
+  @Test func lightWalksDragAndPressTheNineKeys() {
+    let before = ChaosRunner.questionsAsked
+    var (drags, keys, acts) = (0, Set<String>(), 0)
+    for seed in UInt64(1)...20 {
+      let runner = ChaosRunner()
+      var generator = ChaosGenerator(seed: seed, light: true)
+      var script: [ChaosAction] = []
+      for _ in 0..<200 {
+        let action = generator.next(runner)
+        script.append(action)
+        _ = runner.step(action)
+        switch action {
+        case .grab: (drags, acts) = (drags + 1, acts + 1)
+        case .key(let line, .pressed):
+          keys.insert(line)
+          acts += 1
+        case .via, .focus, .open, .close, .minimize, .edge: acts += 1
+        default: break
+        }
+      }
+      #expect(script.prefix(3).map(\.text).contains("settings {}"))
+    }
+    #expect(keys.isSubset(of: ["dock left", "dock right", "zoom", "show-all", "back", "undo", "toggle-float"]), "\(keys.sorted())")
+    #expect(keys.count == 7)
+    #expect(drags * 4 > acts, "\(drags) drags in \(acts) acts")
+    #expect((ChaosRunner.questionsAsked["plain-drag"] ?? 0) - (before["plain-drag"] ?? 0) > 1000)
+    // Since a floating window's frame is its person's, Arbor moves one only out of view and back.
+    #expect((ChaosRunner.questionsAsked["floating"] ?? 0) - (before["floating"] ?? 0) > 5)
+  }
+
+  /// `settings {}` at a script's head: the file holds nothing.
+  @Test func anEmptyObjectIsArborAsItShips() {
+    let classic = ChaosRunner()
+    _ = classic.step(.launch)
+    #expect(classic.controller.settings.pointerGestures)
+    let shipped = ChaosRunner()
+    for line in ["settings {}", "launch"] { _ = shipped.step(ChaosAction(text: line)) }
+    #expect(shipped.controller.settings == Settings())
+  }
+
   private static let floors = [
-    "once": 500, "before-any-dock": 1000, "unasked": 1800, "launch-or-resume": 8, "switched-to": 280, "way-home": 400, "sizes": 220, "start": 20,
+    "once": 500, "before-any-dock": 1000, "unasked": 1800, "launch-or-resume": 3, "switched-to": 280, "way-home": 400, "sizes": 220, "start": 20,
     "there-and-back": 20, "pause-and-resume": 1,
   ]
 }

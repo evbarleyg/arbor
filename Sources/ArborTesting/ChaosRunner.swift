@@ -85,6 +85,8 @@ public final class ChaosRunner {
   var inHandBefore: WindowID?
   /// For the harness's own tests: something done as part of the next step, as if Arbor had done it.
   public var beforeTheNextCheck: ((ChaosRunner) -> Void)?
+  /// What the last step broke of `countedRules`.
+  public private(set) var counted: [InvariantViolation] = []
   /// Windows that somebody other than Arbor has ever left across the edge of a display: hanging over it, or straddling two.
   var leftAcrossAnEdge: Set<WindowID> = []
   var theChangeChangedNothing = false
@@ -161,6 +163,7 @@ public final class ChaosRunner {
       if trace { FileHandle.standardError.write(Data("chaos seed \(seed) step \(runner.script.count + 1): \(action.text)\n".utf8)) }
       echo?(action.text)
       var violations = runner.step(action)
+      for violation in runner.counted where told.insert(violation.rule).inserted { known?(violation.rule) }
       if !violations.isEmpty, !excused.isEmpty {
         for violation in violations where excused.contains(violation.rule) && told.insert(violation.rule).inserted {
           known?(violation.rule)
@@ -198,6 +201,15 @@ public final class ChaosRunner {
   }
 
   public static func replay(_ text: String) -> ChaosFailure? { replay(ChaosAction.script(text)) }
+
+  /// Plays a script to its end whatever breaks, as `arbor-sim replay --go-on` does, and says what broke at which step (from 1).
+  public static func replayToTheEnd(_ script: [ChaosAction]) -> [(step: Int, act: ChaosAction, rule: String)] {
+    Log.silenced {
+      let runner = ChaosRunner()
+      runner.checksFilesAtEveryStep = true
+      return script.enumerated().flatMap { index, action in runner.step(action).map { (index + 1, action, $0.rule) } }
+    }
+  }
 
   /// Applies one action and returns the rules that do not hold afterwards.
   public func step(_ done: ChaosAction) -> [InvariantViolation] {
@@ -238,7 +250,10 @@ public final class ChaosRunner {
     beforeTheNextCheck = nil
     noteWhereItsUserLeftEachWindow(after: action, movesBefore: movesBefore)
     noteAfterTheSevenRules(action, movesBefore: movesBefore)
-    return found + wayHomeViolations(after: action) + raiseViolations(after: action) + check(after: action)
+    let all = found + wayHomeViolations(after: action) + raiseViolations(after: action) + check(after: action)
+    // Numbers, not gates: no walk, replay or test ends at them.
+    counted = all.filter { Self.countedRules.contains($0.rule) }
+    return counted.isEmpty ? all : all.filter { !Self.countedRules.contains($0.rule) }
   }
 
   /// Where somebody other than Arbor last put each window, as seen from the corner of the display that shows most of it, and
@@ -270,8 +285,15 @@ public final class ChaosRunner {
       }
       userPlaces[id, default: []].append(place)
     }
+    // A native tab, or a window under a new number, is where its group or its old number was left. First of all: what follows notes under the new number.
+    switch action {
+    case .openTab(let new, let old), .selectTab(let new, let old), .renumber(let old, let new):
+      if userPlaces[new] == nil, movesBefore[new] == nil { userPlaces[new] = userPlaces[old] }
+      if leftAcrossAnEdge.contains(old) { leftAcrossAnEdge.insert(new) }
+    default: break
+    }
     // Also where Arbor has moved it on in the same step: `home` is the last frame that was not Arbor's.
-    for (id, fake) in system.windows where fake.movesNotArbors != movesBefore[id] { if let home = fake.home { note(id, home) } }
+    for (id, fake) in system.windows where fake.movesNotArbors != movesBefore[id] && movesBefore[id] != nil { if let home = fake.home { note(id, home) } }
     // Where its app opened it, or where it is when Arbor starts, counts as a place given it, if more than half of it shows there or 24 points of
     // its title bar are within reach: what is found counts as left (the product owner). What shows less is fetched.
     if case .open(let new) = action {
@@ -468,7 +490,8 @@ public final class ChaosRunner {
     case .displays(let displays, let follow): change(displays: displays, follow: follow)
     case .settings(let json):
       guard let object = try? JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any] else { return }
-      settingsFile.merge(object) { $1 }
+      // An empty object: the file holds nothing, which is Arbor as it ships. At a script's head it makes a walk at the switches that ship.
+      if object.isEmpty { settingsFile = [:] } else { settingsFile.merge(object) { $1 } }
       harness.run("reload-settings")
     case .flush: harness.scheduler.runPending()
     case .advance(let seconds): harness.scheduler.advance(by: min(max(seconds, 0), 60))
@@ -543,10 +566,16 @@ public final class ChaosRunner {
   /// that fights back never lets that happen, so the rounds are limited.
   private func settle() {
     system.letGo()
-    for _ in 0..<8 {
+    // The presenter is told of one display or one app at a time (Controller+Rehearsal.swift): a timer that comes back once for each
+    // and then ends is not restless.
+    let pieces = system.displayList.count + Set(system.windows.values.map(\.snapshot.pid)).count
+    // So is the look at a window on its way out of full screen, a dozen times (Controller+OnTheWayBack.swift), with what each look sets going.
+    for round in 0..<(8 + pieces + 16) {
       system.appsReact()
       harness.scheduler.runPending()
-      if !system.hasHeldEchoes, harness.scheduler.pendingKeys.isEmpty { break }
+      let pending = harness.scheduler.pendingKeys
+      if !system.hasHeldEchoes, pending.isEmpty { break }
+      if round >= 7, !pending.contains(where: { $0 == "rehearsal" || $0.hasPrefix("meet-") }) { break }
     }
   }
 
@@ -613,6 +642,8 @@ public final class ChaosRunner {
       let placed = Set(system.frameLog[mark...].map(\.window))
       for move in moves { system.report(move.window, userInitiated: !placed.contains(move.window)) }
     }
+    // While Arbor is away nothing it once asked for says where a window is on the new displays.
+    if !isRunning { for id in system.windows.keys { system.windows[id]!.groundHasShifted = true } }
     restingPlaces = [:]
     (displaysBeforeTheChange, theChangeChangedNothing) = (Set(old.map(\.id)), old == displays)
     for (id, frame) in resting { if let fake = system.windows[id] { restingPlaces[id] = (frame, fake.movesNotArbors) } }

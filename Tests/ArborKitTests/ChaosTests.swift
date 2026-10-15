@@ -107,6 +107,48 @@ private let steps = environment("ARBOR_CHAOS_STEPS") ?? 200
     #expect(rules(["move 101 1200 200 400 300"], then: CGRect(x: 1200, y: 200, width: 700, height: 300)) == ["grown-while-hanging"])
   }
 
+  /// The presenter hears of one display or one app at a time, so that timer comes back once for each. Ten pieces are not restless;
+  /// a timer that comes back for ever is.
+  @Test func aTimerThatEndsAfterOnePieceForEachDisplayAndAppIsNotRestless() {
+    let apps = (0..<8).map { "open \(101 + $0) App\($0) pid \(1000 + $0) at \(140 + 40 * $0) \(130 + 30 * $0) 700 500" }
+    let desk = ["displays main:0,0,1512,982:37,0,0,0* side:1512,-200,2560,1440:25,0,0,0 windows-never"] + apps + ["launch"]
+    let runner = ChaosRunner()
+    for line in desk { #expect(runner.step(ChaosAction(text: line)).isEmpty) }
+    #expect(runner.step(.settle).isEmpty)
+
+    let other = ChaosRunner()
+    for line in desk { _ = other.step(ChaosAction(text: line)) }
+    let scheduler = other.harness.scheduler
+    @MainActor func again() { scheduler.schedule("rehearsal", after: 0.01) { again() } }
+    again()
+    #expect(other.step(.settle).map(\.rule) == ["restless-rehearsal"])
+  }
+
+  /// Whoever adds a command or a setting changes no walk of a frozen seed, wherever in its list the new word stands.
+  @Test func aWordThatIsAddedChangesNoOldWalk() {
+    let frozen = [["a", "b"], ["c"]]
+    func words(_ seed: UInt64, _ all: [String]) -> [String] { ChaosGenerator.vocabulary(for: seed, of: all, frozen: frozen) { $0 } }
+    #expect(words(5, ["a", "b", "c"]) == ["a", "b"])
+    #expect(words(5, ["new", "a", "newer", "b", "c", "newest"]) == ["a", "b"])
+    #expect(words(1_000_005, ["new", "a", "b", "c"]) == ["a", "b", "c"])
+    // Beyond the last version: everything, what no version lists at the end.
+    #expect(words(2_000_000, ["new", "a", "b", "c", "newest"]) == ["a", "b", "c", "new", "newest"])
+    // A word that is taken away is not drawn.
+    #expect(words(5, ["b"]) == ["b"])
+  }
+
+  @Test func theFrozenWordsAreWordsAndNoneIsListedTwice() {
+    let kinds = Set(ChaosGenerator.CommandKind.allCases.map { "\($0)" })
+    let listed = Array(ChaosGenerator.frozenCommandKinds.joined())
+    #expect(listed.filter { !kinds.contains($0) }.isEmpty)
+    #expect(Set(listed).count == listed.count)
+    let keys = Set(SettingsSchema.entries.map(\.key))
+    let settings = Array(ChaosGenerator.frozenSettings.joined())
+    #expect(settings.filter { !keys.contains($0) }.isEmpty)
+    #expect(Set(settings).count == settings.count)
+    #expect(ChaosGenerator.frozenCommandKinds.count == ChaosGenerator.frozenSettings.count)
+  }
+
   @Test func actionsRoundTripThroughTheirText() {
     for seed in UInt64(101)...102 {
       var lines: [String] = []
