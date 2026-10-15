@@ -238,7 +238,7 @@ extension Controller {
     let present = presentWindowIDs()
     let minimums = minimumSizes
     return workspace.previewFrame(
-      for: window, at: target, in: display.visibleFrame, options: options(for: displayID).layoutOptions,
+      for: window, at: target, in: roomForViews(on: display), options: options(for: displayID).layoutOptions,
       isPresent: { present.contains($0) }, minimumSize: { minimums[$0] },
       makingRoom: settings.makeRoom ? roomTerms(on: displayID, docking: window) : nil)
   }
@@ -361,7 +361,25 @@ extension Controller {
     if parked.remove(window) != nil, let home = workspaceID(containing: window), !changed.contains(home) {
       changed.append(home)
     }
-    settle(reflow, layingOut: changed)
+    // Kept in view, it has been let go: the docked windows make room where it lies now, and take back what it left.
+    guard isPinned(window) else {
+      settle(reflow, layingOut: changed)
+      return scheduleSave()
+    }
+    // Whatever move Arbor still owed it (its app did not answer), it is where its person's hand has left it now.
+    unplaced.remove(window)
+    owedMoves.remove(window)
+    // Where macOS takes it, that is about to give it another frame: the others go once, to where that leaves them.
+    guard hover.leftToMacOS == nil else {
+      settle(reflow, layingOut: changed)
+      for display in workspaces.keys.sorted() { keptWindowMoved(on: display, asked: true) }
+      return scheduleSave()
+    }
+    for display in workspaces.keys.sorted() where !changed.contains(display) {
+      if let snapshot = self.display(display), layouts[display]?.frame != roomForViews(on: snapshot) { changed.append(display) }
+    }
+    for display in changed { scheduler.cancel("pinned-room-\(display.rawValue)") }
+    sayingWhoLostItsRoom { settle(reflow, layingOut: changed) }
     scheduleSave()
   }
 

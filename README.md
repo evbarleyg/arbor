@@ -350,10 +350,20 @@ Floating windows live on the Desktop, so they go out of view when you zoom in on
 wrong for the few that accompany whatever you are doing. Pin those: focus the window and choose
 **Keep This Window in View** from the menu (a tick shows that it is on), or run `arborctl pin`, `unpin` or `toggle-pin`.
 
-- A pinned window floats and keeps its place on the display through every change of view. Docked windows
-  neither avoid it nor push it: it overlaps them, which is the point.
-- Arbor brings it to the front again when the view changes or a click on another window covers it. It never gives
-  it the keyboard, and a command that moves the view takes the keyboard along to the window that arrives, also out of
+- A pinned window floats and keeps its place on the display through every change of view. Arbor never moves or
+  sizes it: where you put it is where it is.
+- **It has room of its own**, as the Dock has: a strip of the display, from the window's inner edge to the screen's edge,
+  whichever of the four costs the least. Every view, a window that fills the screen, a group, everything, is laid
+  out in what is left, so neither covers the other. The docked windows move once: when you pin or unpin, when you let go after
+  dragging or resizing the pinned window, when it goes into the Dock and comes back, and when its own app has resized it.
+- **Where there is no room:** if even the cheapest strip would take more than four tenths of the screen (a window in the middle,
+  or a very large one), none is reserved. The window still never leaves the view, but others can cover it, and Arbor says so:
+  in a line on screen, in the menu's row ("Can Be Covered Here"), and `arborctl state` has `"covered": true` whenever another
+  window really lies over it. Drag it near a screen edge and room is made. Two pinned windows each have their strip while
+  the two together stay under four tenths; the one pinned first comes first.
+- Only docked windows keep clear of the strip. Other floating windows may lie in it.
+- Arbor brings it to the front once, as you pin it, and never gives it the keyboard. A command that moves the view takes
+  the keyboard along to the window that arrives, also out of
   a pinned window you had clicked in: keys meant for your editor do not end up in a call.
 - ⌃⌥↩ in a pinned window un-frames what is beneath it. A pinned window has no place of its own to frame.
 - Dragging moves it and never docks it. `dock` (⌃⌥⌘ + arrow) and ⌃⌥F dock it, which ends the pin, and the reply
@@ -364,9 +374,10 @@ wrong for the few that accompany whatever you are doing. Pin those: focus the wi
 - A rule pins a window as it opens: `{ "app": "us.zoom.xos", "title": "Meeting", "action": "pin" }`.
 - There is no default shortcut. To have one: `"bindings": { "ctrl+opt+shift+d": "toggle-pin" }`.
 
-What it cannot do: macOS does not let one app change the level of another app's window. So a pinned window is
-covered for a moment when you click the window under it, menus and other apps' always-on-top panels
-stay above it, and it follows you neither into another app's full screen nor to another of the macOS Spaces
+What it cannot do: macOS does not let one app change the level of another app's window, nor lift it over the window
+you are typing in. That is why Arbor makes room instead of fighting for the front. A floating window, a window Arbor does not
+arrange, menus and other apps' always-on-top panels
+can still lie over a pinned window, and it follows you neither into another app's full screen nor to another of the macOS Spaces
 (for that, right-click the app in the Dock: Options → All Desktops).
 ## Go to…
 

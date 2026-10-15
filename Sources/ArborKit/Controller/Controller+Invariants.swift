@@ -148,11 +148,14 @@ extension Controller {
     for (id, layout) in layouts {
       guard let display = display(id) else { continue }
       // While a key is held to look (F51) the display shows everything and the view is where it was.
-      if !awaitingLayout.contains(id), peeking == nil, let fresh = freshLayout(of: id), fresh != layout {
+      // While the view is held the docked windows do not follow what its own app does to a window kept in view (Controller+PinnedRoom.swift).
+      if !awaitingLayout.contains(id), peeking == nil, let fresh = freshLayout(of: id), fresh != layout,
+        !(isHeld && fresh.frame != layout.frame)
+      {
         problems.append(.init("stale-layout", "\(id): \(Self.difference(between: layout, and: fresh))"))
       }
       // Rounding each boundary to whole points can push an edge half a point past a fractional frame.
-      let bounds = display.visibleFrame.insetBy(dx: -1, dy: -1)
+      let bounds = layout.frame.intersection(display.visibleFrame).insetBy(dx: -1, dy: -1)
       var rects: [(window: WindowID?, node: NodeID?, rect: CGRect)] = layout.windowFrames.map { ($0.key, nil, $0.value) }
       for tile in layout.tiles { rects.append((nil, tile.node, tile.frame)) }
       if let desktop = layout.desktopFrame { rects.append((nil, nil, desktop)) }
@@ -165,7 +168,7 @@ extension Controller {
           problems.append(.init("finite", "\(id): the slot of \(name(index)) is \(rect.brief)"))
         } else if !bounds.contains(rect) {
           problems.append(
-            .init("slot-outside", "\(id): the slot of \(name(index)), \(rect.brief), leaves \(display.visibleFrame.brief)"))
+            .init("slot-outside", "\(id): the slot of \(name(index)), \(rect.brief), leaves \(layout.frame.brief)"))
         }
         for other in (index + 1)..<rects.count where rect.overlaps(rects[other].rect) {
           let pair = [name(index) + " at " + rect.brief, name(other) + " at " + rects[other].rect.brief].sorted()

@@ -1,0 +1,84 @@
+# Story: someone pins a call in the top right corner and lets the editor fill the screen. On a Mac the call used to lie
+# wholly behind the editor, while the menu's tick said "kept in view": macOS lets nobody lift another app's window over
+# the one that has the keyboard. Now the call has room of its own beside every view, as the Dock has, and nothing is raised.
+# Reference: F49, collab/QUESTIONS.md Q25, board 1.25. Window ids start at 101. The display is 1440x900, visible 0,25 1440x875.
+mac-tiling off
+open Editor
+open Browser
+open Zoom 320x240
+move 103 1090 50 320 240
+pin 103
+expect replied keeping w103 in view
+dock 101 left
+dock 102 right
+expect clear 103
+# The editor has the keyboard and fills the screen: all that is left of it. The call is behind it in macOS's order, and all of it shows.
+focus 101
+zoom
+expect fills 101
+expect clear 103
+expect in-front 103
+expect covered 103 no
+expect at 103 1090 50
+expect focused 101
+# Every other view too: the neighbour, the Desktop, everything.
+neighbor right
+expect clear 103
+neighbor right
+expect fills 102
+expect clear 103
+show-all
+expect clear 103
+expect at 103 1090 50
+# Clicking about raises nothing and covers nothing.
+focus 102
+focus 101
+expect in-front 103
+# Dragged to the other side: the docked windows wait until it is let go, and then move once.
+pick-up 103 700 400
+expect still 101
+expect still 102
+let-go
+drag 103 180 70
+expect moved-once
+expect clear 103
+expect left-of 103 101
+expect pinned 103
+# In the middle there is no room to make: more than four tenths of the screen would go. It stays in view, and Arbor says what is so.
+drag 103 720 340
+expect said Zoom stays in view, but other windows can cover it here
+zoom 101
+expect fills 101
+expect visible 103
+expect covered 103 yes
+show-all
+# Back at an edge it has its room again.
+drag 103 1250 60
+expect clear 103
+zoom 101
+expect clear 103
+expect covered 103 no
+show-all
+# In the Dock its room goes back to the others, and comes again with it: there and back is nothing.
+minimize 103
+flush
+zoom 101
+expect fills 101
+show-all
+restore 103
+flush
+expect clear 103
+# Its own app makes it larger, in steps, as when somebody shares a screen: the others follow once it stands still.
+move 103 1060 50 350 260
+move 103 1030 50 380 280
+move 103 1000 50 410 300
+expect still 101
+wait 0.4
+expect moved-once
+expect clear 103
+# Taking the pin off gives the room back.
+unpin 103
+expect ok
+zoom 101
+expect fills 101
+expect hidden 103

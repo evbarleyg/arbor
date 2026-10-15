@@ -242,6 +242,8 @@ import Testing
       // What the presenter is told ahead of a motion is said again. No window, view or layout depends on it, and its scheduled work (`rehearsal`)
       // only tells the presenter.
       "rehearseAfresh",
+      // Whether another window lies over one that is kept in view, for `state` and the menu: it asks for the stacking.
+      "isKeptInViewButCovered",
     ]
     /// Everything they do, they do by calling `perform`. A gesture that moves the view by itself (F16) will have to be recorded.
     let endAsCommands: Set = ["gesture"]

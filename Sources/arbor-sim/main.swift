@@ -274,7 +274,7 @@ func runSimulation() {
     linesPrinted = harness.overlays.messages.count
     // Whatever the line did, a display whose arrangement or view changed has been laid out, or will be by a timer.
     // Not while macOS has displays that Arbor has not been told of (`quietly`): it cannot have laid them out.
-    if harness.controller.isRunning, !harness.scheduler.pendingKeys.contains(where: { $0.hasPrefix("space-") }),
+    if harness.controller.isRunning, !harness.scheduler.pendingKeys.contains(where: { $0.hasPrefix("space-") || $0.hasPrefix("pinned-room-") }),
       harness.controller.displays == harness.system.displayList
     {
       for problem in harness.staleLayouts() {

@@ -118,14 +118,18 @@ A window that opens over a view the Desktop is not part of is a **guest** of tha
 **Pinned windows** (`Workspace.pinned`, `Controller+Pin.swift`) are floating windows that none of this applies to:
 the plan for floating windows (`floatingMoves`) asks `frameBringingIntoView`, which moves one only if it is out of view (it
 was until it was pinned, or its display went away or changed shape) or smaller than its own size (a small Desktop had
-squeezed it until it was pinned). Being in view is worth little behind another window, and macOS
-has no way to keep another app's window above the rest, so `notify` tells `keepPinsInFront` of every change. After a
-camera move, a layout, or another window taking the keyboard, Arbor asks the window server how windows are stacked
-(`windowsFrontToBack`) and raises the pinned windows that another window covers (`WindowSystem.raise`: `kAXRaiseAction`
-without activating the app): once the command or event under way is over, and twice more at intervals of 0.2 s,
-because a clicked window comes to the front after it has taken the keyboard. A click in the window that has the keyboard
-already changes nothing that is reported, so the window system also says when the button goes down (`pointerPressed`), and Arbor
-goes on looking until it is up. A pin lives and dies with
+squeezed it until it was pinned), and the latter only in the layout of the `pin` itself (`comingIntoView`): once pinned, a window is
+where and as large as its person has it. Being in view is worth little behind another window, and macOS lets nobody lift another
+app's window over the one that has the keyboard (`kAXRaiseAction` stops behind it; seen on a hosted Mac, and `FakeWindowSystem.raise`
+does the same). So **Keep in View makes room** (`PinnedRoom` in ArborCore, `Controller+PinnedRoom.swift`; QUESTIONS Q25): each pinned window
+reserves the cheapest strip of its display, in the order pinned, while all strips together take no more than four tenths.
+**Every layout of docked windows, real or tried, is made in `roomForViews(on:)`, never in `display.visibleFrame`**: `Layout.frame` is that
+room. What is about floating windows, panels and the screen's own edges goes on asking for the visible frame. The room is a function of
+where the pinned windows are, with three exceptions that keep every docked window to one move: while the mouse button is down it is as
+it was last laid out (`pinnedRoomsLaidOut`); a window on its way is counted where it is going (`frameBringingIntoView`,
+`keptWindowsGoTo`); and after a move that no hand ended (its own app's) the layout waits until the window has stood still
+(`keptWindowMoved`, the timer `pinned-room-<display>`; while the view is held that timer lays nothing out unless a person stands behind it, `asked`). It is raised once, by `pin`, if something covers it; what covers it later is told
+(`isKeptInViewButCovered`: `state`, and the menu's row where it has no room) and not fought. A pin lives and dies with
 `Workspace.floating[window]`: whatever removes that entry removes the pin, and code that moves a floating window
 from one display's workspace to another takes the pin along.
 

@@ -32,6 +32,8 @@ extension Controller {
     let showed = workspaces.values.reduce(into: [WindowID: CGFloat]()) { all, workspace in
       for (window, place) in workspace.floating { all[window] = areaShowing(of: place) }
     }
+    // Judged by the displays and the frames as they were.
+    let showedMostOfIt = windows.keys.filter { staysInView($0) && !isMostlyOffScreen($0) }
     displays = system.displays()
     followDisplaysThatMoved(since: before)
     endUndoHistoryIfDisplaysMoved(
@@ -83,7 +85,15 @@ extension Controller {
     if !added.isEmpty || !removed.isEmpty, let focused = system.focusedWindow(), !arrivingInView.contains(focused) {
       bringIntoViewIfFocused(focused)
     }
+    // A window kept in view of which the change has taken more than half comes wholly into view, in one move. One that its
+    // person had pushed further out than that before is as they left it (collab/QUESTIONS.md Q20).
+    comingIntoView = Set(showedMostOfIt.filter(isMostlyOffScreen))
+    // What was laid out is in the coordinates of the displays as they were.
+    pinnedRoomsLaidOut = [:]
     relayoutAll(reason: .camera, motion: .instant)
+    comingIntoView = []
+    // With the button down nobody has been given room (Controller+PinnedRoom.swift).
+    if system.isMouseButtonDown() { for id in workspaces.keys.sorted() where workspaces[id]?.pinned != nil { keptWindowMoved(on: id) } }
     parkAgain()
     scheduleSave()
   }

@@ -33,6 +33,8 @@ extension Controller {
     var trying = 0
     /// The last line as the log got it.
     var logged = ""
+    /// The window kept in view that the command under way has left without room of its own (Controller+PinnedRoom.swift).
+    var lostItsRoom: WindowID?
   }
 
   /// The inside of `perform(_:from:)` (Controller+Lead.swift): runs a command and, when a person asked for it with keys, a
@@ -85,6 +87,16 @@ extension Controller {
     guard source.isAnsweredOnScreen, level != .off else { return }
     // What was lost comes before what a newcomer might like to know. The hint keeps its showing for the next time.
     let loss = result.ok && HeadsUpText.namesALoss(result.message)
+    // Whatever else the command did, and whether or not that earns a line: a window kept in view can be covered from now on. Before any hint,
+    // which keeps its showing for the next time. After a command that failed, why it failed comes first, and this waits for the next one.
+    if let loser = headsUp.lostItsRoom {
+      if !isPinned(loser) || hasRoomOfItsOwn(loser) {
+        headsUp.lostItsRoom = nil
+      } else if result.ok, !loss, let home = workspaceID(containing: loser), let line = lineSayingItCanBeCovered(loser) {
+        headsUp.lostItsRoom = nil
+        return showHeadsUp(line, on: home)
+      }
+    }
     // Whoever went back or forth is told what was taken back or put back, not taught what a dock is (F19).
     if result.ok, let moment, !loss, command != .undo, command != .redo {
       teach(moment)

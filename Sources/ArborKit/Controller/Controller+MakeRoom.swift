@@ -44,7 +44,7 @@ extension Controller {
     terms.emptyDesktopAsksNobody = reason == .camera
     // `plain` has looked for the view among the windows that are there.
     let (served, roomy, gaveBack) = MakeRoom.serve(
-      &workspace.tree, camera: late.isEmpty ? workspace.camera : plain.camera, in: display.visibleFrame,
+      &workspace.tree, camera: late.isEmpty ? workspace.camera : plain.camera, in: roomForViews(on: display),
       options: options(for: displayID).layoutOptions, isPresent: { present.contains($0) },
       minimumSize: { minimums[$0] }, terms: terms)
     guard !served.isEmpty || gaveBack else { return plain }
@@ -75,7 +75,7 @@ extension Controller {
     let present = presentWindowIDs()
     let minimums = minimumSizes
     let (_, roomy, _) = MakeRoom.serve(
-      &tree, camera: plain.camera, in: display.visibleFrame, options: options(for: displayID).layoutOptions,
+      &tree, camera: plain.camera, in: roomForViews(on: display), options: options(for: displayID).layoutOptions,
       isPresent: { present.contains($0) }, minimumSize: { minimums[$0] }, terms: roomTerms(on: displayID))
     return roomy.windowFrames[window] != nil
   }

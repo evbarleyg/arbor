@@ -93,7 +93,7 @@ about to share a screen looks under View; once the view is held, the line that s
 **Dock Focused Window ▸** (7): `Left` ⌃⌥⌘←, `Right` ⌃⌥⌘→, `Top` ⌃⌥⌘↑, `Bottom` ⌃⌥⌘↓ | `Carry…` ⌃⌥⌘Space (F59) | with a second display,
 `Move to Next Display` (F22).
 
-**Focused Window ▸** (9): `Keep This Window in View` ✓ (`pin`, F49. No app's name: it pins one window; the app is what a rule is for) |
+**Focused Window ▸** (9): `Keep This Window in View` ✓ (`pin`, F49. No app's name: it pins one window; the app is what a rule is for. Where no room can be made for the focused window that is kept in view, the ticked row reads **Keep This Window in View (Can Be Covered Here)** and its help says why: QUESTIONS Q25) |
 `Don’t Arrange “Zoom”` (`exclude`), `Shortcuts Off in “Zoom”` ✓ (`pass-through`, F41) | heading *Tab Group* (F04; neither heading nor rows while
 `tabsEnabled` is off): `Next Tab` ⌃⌥⇥, `Previous Tab` ⌃⌥⇧⇥, `Move Tab Left`, `Move Tab Right`, `Take Window Out of Tab Group`, and, where there was a
 submenu of a submenu, up to four plain rows: `Make a Tab Group With the Window to the Left`, `… to the Right`, `… Above`, `… Below`, each shown only

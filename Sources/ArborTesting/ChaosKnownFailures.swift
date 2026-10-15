@@ -218,23 +218,20 @@ extension ChaosRunner {
         """),
     ChaosKnownFailure(
       rule: "sized-there-and-back-floating", owner: "rule 3: a floating window's frame is its person's", severity: 3,
-      story: "A floating window is squeezed onto the Desktop and given some of it back by the same command.",
+      story: "A floating window is squeezed onto the Desktop, or made smaller by a key, and put somewhere else at that size by the same command.",
       script: """
-        settings {"arrangeDesktopWeight":1}
+        open 101 Finder pid 1005 at 320 488 938 327 min 501 300
         launch
-        open 106 Preview pid 1007 at -439 605 752 321 title Draft
-        arrange
-        open 109 Xcode pid 1004 at 874 45 848 418 title ~
-        layout Xcode | Notes
+        via menu arrange all
+        key down toggle-float
+        key down shrink
         """,
       """
-        displays main:0,0,1728,1117:37,86,0,0* side:1728,323,3008,1692:25,0,0,0 windows-never
+        displays main:0,0,1512,982:37,70,0,0* windows-never
         launch
-        open 103 Preview pid 1007 at 953 480 723 624 min 723 400 max 723 2000
-        key down toggle-float
-        open 105 Notes pid 1001 at 3622 617 981 624 min 709 300
-        via menu toggle-pin
-        via menu move-to-display next
+        open 107 Safari pid 1000 at 129 159 864 592 min 574 240
+        open 108 Xcode pid 1004 at 70 56 1442 800 min 1188 685
+        key down dock top
         """),
     ChaosKnownFailure(
       rule: "moved-twice", owner: "rule 3: one thing that happens is one layout", severity: 2,
@@ -508,9 +505,8 @@ extension ChaosRunner {
         launch
         open 104 Xcode pid 1004 at 20 501 1188 784 min 1188 685
         grab 104
-        carry 1653 2610
+        carry 894 2030
         release
-        via menu toggle-pin
         key down dock right
         displays main:0,0,1728,1117:37,0,70,0* windows-first
         advance 0.3
@@ -674,30 +670,6 @@ extension ChaosRunner {
         toggle-pause
         react
         advance 1
-        """),
-    ChaosKnownFailure(
-      rule: "moved-at-launch-after-a-crash", owner: "rule 2: nothing moves at a start, after a run that did not quit", severity: 3,
-      story: "Arbor is killed and nothing starts it again. Its person makes a window that is kept in view smaller, and starts Arbor: the window is blown up to the "
-        + "size remembered for it. Only a quit and a pause write down where they left each window; after a crash Arbor cannot tell a size its person chose from "
-        + "one it had squeezed the window to itself. (After a quit or a pause the size is learnt.)",
-      script: """
-        launch
-        open 106 Xcode pid 1004 at 300 150 840 440
-        pin 106
-        settle
-        crash
-        edge 106 300 150 600 440
-        launch
-        settle
-        """,
-      """
-        launch
-        open 116 Preview pid 1007 at 2059 599 822 562 min 369 88
-        pin 116
-        flush
-        crash
-        move 116 326 132 635 221
-        launch
         """),
     ChaosKnownFailure(
       rule: "quit-left-out-of-reach", owner: "the ways home: quitting while an app hangs (K003)", severity: 1,

@@ -11,12 +11,14 @@ private let side = DisplaySnapshot(
   visibleFrame: CGRect(x: 1440, y: 0, width: 1280, height: 800), isMain: false)
 @MainActor private let main = FakeWindowSystem.standardDisplay
 
-/// Where the call sits in these tests: the top right corner of the main display, over the browser.
+/// Where the call sits in these tests: the top right corner of the main display.
 private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
+/// What its strip leaves of that display for views (KeepInViewMakesRoomTests has the rule's own tests).
+private let beside = CGRect(x: 0, y: 25, width: 1090, height: 875)
 
 /// Pinned windows (docs/features/F49-pin.md).
 @Suite @MainActor struct PinTests {
-  /// [editor | Desktop | browser] with a video call pinned in the top right corner, over the browser.
+  /// [editor | Desktop | browser] with a video call pinned in the top right corner, beside the browser.
   func makeHarness(
     displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Settings()
   ) -> (Harness, editor: WindowID, browser: WindowID, call: WindowID) {
@@ -38,6 +40,9 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
 
   /// Only what Arbor put off until the command or event was over.
   func finishEvent(_ h: Harness) { h.scheduler.advance(by: 0) }
+
+  /// No timer is due that looks after windows kept in view: none that would raise one, none that would lay out around one.
+  func nobodyIsLooking(_ h: Harness) -> Bool { !h.scheduler.pendingKeys.contains { $0.hasPrefix("raise") || $0.hasPrefix("pinned-room") } }
 
   /// Whether another window lies over part of `window`.
   func isCovered(_ window: WindowID, _ h: Harness) -> Bool {
@@ -84,15 +89,16 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     #expect(h.system.isVisible(call) && !h.system.isVisible(notes))
   }
 
-  @Test func dockedWindowsDoNotAvoidItAndDoNotPushIt() {
+  @Test func dockedWindowsKeepClearOfItAndDoNotPushIt() {
     let (h, _, browser, call) = makeHarness()
-    #expect(h.frame(browser)!.overlaps(corner), "it overlaps, which is the point")
+    #expect(!h.frame(browser)!.overlaps(corner), "neither covers the other, which is the point (collab/QUESTIONS.md Q25)")
     let mail = h.system.open(app: "Mail")
     h.run("dock \(mail.rawValue) right")
     h.run("resize \(browser.rawValue) left 200")
     h.run("relayout")
     #expect(h.frame(call) == corner)
     #expect(moves(of: call, h).isEmpty)
+    for window in [browser, mail] { #expect(!h.frame(window)!.overlaps(corner)) }
   }
 
   @Test func pinningAWindowThatIsOutOfViewBringsItBackWithoutMovingTheCamera() {
@@ -106,7 +112,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     #expect(h.frame(call) == corner, "where it was last left")
     #expect(!h.controller.parked.contains(call))
     #expect(h.workspace.camera == camera)
-    #expect(h.frame(editor) == h.visibleFrame.insetBy(dx: 12, dy: 12))
+    #expect(h.frame(editor) == beside.insetBy(dx: 12, dy: 12))
   }
 
   @Test func itStaysWhenTheDesktopIsSqueezedIntoATile() {
@@ -123,7 +129,11 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     #expect(moves(of: call, h).isEmpty)
   }
 
-  // MARK: 2. It is not buried, and does not take the keyboard
+  // MARK: 2. It is not covered, and does not take the keyboard
+  //
+  // Until 2026-10-15 these said that Arbor raised it after whatever had covered it. On a Mac that raise stops behind the window that has
+  // the keyboard (collab/QUESTIONS.md Q25), so docked windows keep clear of it instead and nothing is raised. What each guards is
+  // the same: after this, all of the call is to be seen.
 
   @Test func afterEachCameraMoveItIsInFrontAndTheKeyboardIsWhereTheMovePutIt() {
     let (h, editor, browser, call) = makeHarness()
@@ -137,14 +147,14 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
       #expect(h.run(step).ok, "\(step)")
       settle(h)
       #expect(!isCovered(call, h), "after \(step)")
-      #expect(h.system.raiseLog.count <= 1, "raised at most once after \(step)")
+      #expect(h.system.raiseLog.isEmpty, "and nothing had to be raised after \(step)")
       #expect(h.system.focused == keyboard, "the keyboard after \(step)")
     }
   }
 
   @Test func whileTheWindowsMoveItsStandInIsInFrontToo() throws {
-    // The editor was clicked last, and beside the call it covers none of it, so the call is left behind it in the stacking. Framed, the
-    // editor reaches under the call: on the stage, which is stacked before anything moves, the call must not be buried for the time of the motion.
+    // The editor was clicked last, so the call is behind it in the stacking. On its way to filling what is left the editor's stand-in
+    // must not pass over the one thing that stands still.
     let (h, editor, _, call) = makeHarness()
     h.system.userFocus(editor)
     settle(h)
@@ -156,31 +166,32 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     }
     #expect(!h.overlays.transitions.isEmpty)
     settle(h)
-    #expect(h.system.windowsFrontToBack().first == call, "which is how the real windows end up")
+    #expect(!isCovered(call, h), "which is how the real windows end up")
   }
 
-  @Test func framingTheWindowThatAlreadyHasTheKeyboardDoesNotBuryIt() {
+  @Test func framingTheWindowThatAlreadyHasTheKeyboardDoesNotCoverIt() {
     // macOS reports no focus change here, though focusing the window again puts it in front.
     let (h, editor, _, call) = makeHarness()
     h.system.userFocus(editor)
     settle(h)
     h.run("zoom")
-    #expect(h.system.windowsFrontToBack().first == editor, "the command's last step is to focus the window")
     settle(h)
-    #expect(h.system.windowsFrontToBack().first == call)
+    #expect(h.system.windowsFrontToBack().first == editor, "the command's last step is to focus the window, and there it stays")
+    #expect(!isCovered(call, h))
     #expect(h.system.focused == editor)
   }
 
-  @Test func clickingAnotherWindowDoesNotBuryIt() {
+  @Test func clickingAnotherWindowDoesNotCoverIt() {
     let (h, _, browser, call) = makeHarness()
+    h.system.clearRaiseLog()
     h.system.userFocus(browser)
-    #expect(h.system.windowsFrontToBack().first == browser)
     settle(h)
-    #expect(h.system.windowsFrontToBack().prefix(2) == [call, browser])
+    #expect(h.system.windowsFrontToBack().first == browser, "the window switched to stays in front")
+    #expect(!isCovered(call, h) && h.system.raiseLog.isEmpty)
     #expect(h.system.focused == browser, "typing goes on in the window that was clicked")
   }
 
-  @Test func aClickedWindowThatComesToTheFrontLateIsStillPutBehindIt() {
+  @Test func aClickedWindowThatComesToTheFrontLateDoesNotCoverItEither() {
     // Seen on macOS 26: a clicked window takes the keyboard first and comes to the front afterwards.
     let (h, _, browser, call) = makeHarness()
     h.system.clearRaiseLog()
@@ -188,36 +199,28 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     h.system.focused = browser
     h.controller.windowFocused(browser)
     finishEvent(h)
-    #expect(h.system.raiseLog.isEmpty, "nothing covers it yet")
-    // A long press: Arbor goes on looking for as long as the button is down.
+    // A long press.
     h.scheduler.advance(by: 3)
     h.system.focus(browser)
-    #expect(isCovered(call, h))
     h.system.mouseDown = false
-    h.scheduler.advance(by: 0.2)
-    #expect(!isCovered(call, h))
-    #expect(h.system.raiseLog == [call])
-    #expect(h.system.focused == browser)
-
-    // Then it stops looking.
     h.scheduler.advance(by: 1)
-    #expect(!h.scheduler.pendingKeys.contains("raise-pins"))
+    #expect(!isCovered(call, h))
+    #expect(h.system.raiseLog.isEmpty)
+    #expect(h.system.focused == browser)
+    #expect(nobodyIsLooking(h), "nobody is looking")
   }
 
-  @Test func clickingInTheWindowThatAlreadyHasTheKeyboardDoesNotBuryIt() {
+  @Test func clickingInTheWindowThatAlreadyHasTheKeyboardDoesNotCoverIt() {
     // Every click in the editor one is working in: it comes to the front, and macOS reports no change of focus.
     let (h, _, browser, call) = makeHarness()
     h.system.userFocus(browser)
     settle(h)
     h.system.clearRaiseLog()
     h.system.userClick(browser)
-    #expect(isCovered(call, h))
-    finishEvent(h)
     #expect(!isCovered(call, h))
-    #expect(h.system.raiseLog == [call])
-    #expect(h.system.focused == browser)
     settle(h)
-    #expect(h.system.raiseLog == [call], "once")
+    #expect(!isCovered(call, h) && h.system.raiseLog.isEmpty)
+    #expect(h.system.focused == browser)
   }
 
   @Test func whileTheButtonStaysDownInThatWindowItIsNotLeftCovered() {
@@ -230,39 +233,39 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     #expect(!isCovered(call, h))
     h.system.mouseDown = false
     settle(h)
-    #expect(!h.scheduler.pendingKeys.contains("raise-pins"), "and then it stops looking")
+    #expect(nobodyIsLooking(h), "and then it stops looking")
   }
 
-  @Test func aLookThatFindsNothingCoveredAsksNoApp() {
+  @Test func aPressAsksNoAppAnything() {
     // Selecting text for three seconds in the window beside it. Who has the keyboard is a question to the app in
-    // front, the one being worked in, and it only matters when something is to be raised.
+    // front, the one being worked in.
     let (h, editor, _, call) = makeHarness()
     h.system.userFocus(editor)
     settle(h)
+    let asked = h.system.focusedWindowReads
     h.system.userClick(editor, release: false)
     finishEvent(h)
     #expect(!isCovered(call, h))
-    let asked = h.system.focusedWindowReads
     h.scheduler.advance(by: 3)
-    #expect(h.scheduler.pendingKeys.contains("raise-pins"), "it goes on looking")
-    #expect(h.system.focusedWindowReads == asked)
+    #expect(nobodyIsLooking(h), "nobody goes on looking")
     h.system.mouseDown = false
     settle(h)
     #expect(h.system.focusedWindowReads == asked)
   }
 
-  @Test func ofTwoPinnedWindowsOnlyTheOneThatIsCoveredIsRaised() {
+  @Test func ofTwoPinnedWindowsNeitherIsCoveredAndNeitherIsRaised() {
     let (h, editor, browser, call) = makeHarness()
-    // Over the editor, as the call is over the browser.
-    let player = h.system.open(app: "Music", pid: 1004, frame: CGRect(x: 40, y: 600, width: 200, height: 120))
+    // By the left edge, as the call is by the right one.
+    let player = h.system.open(app: "Music", pid: 1004, frame: CGRect(x: 0, y: 600, width: 200, height: 120))
     h.run("pin \(player.rawValue)")
     h.system.userFocus(editor)
     settle(h)
-    #expect(h.frame(player)!.overlaps(h.frame(editor)!) && !h.frame(player)!.overlaps(h.frame(browser)!))
+    #expect(!h.frame(player)!.overlaps(h.frame(editor)!) && !h.frame(call)!.overlaps(h.frame(browser)!))
     h.system.clearRaiseLog()
     h.system.userFocus(browser)
     settle(h)
-    #expect(h.system.raiseLog == [call], "raising asks a window's app, which may be busy")
+    #expect(h.system.raiseLog.isEmpty, "raising asks a window's app, which may be busy")
+    #expect(!isCovered(call, h) && !isCovered(player, h))
   }
 
   @Test func clicksWithNothingPinnedCostNothing() {
@@ -270,7 +273,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     h.run("unpin \(call.rawValue)")
     settle(h)
     h.system.userClick(browser)
-    #expect(!h.scheduler.pendingKeys.contains("raise-pins"))
+    #expect(nobodyIsLooking(h))
   }
 
   @Test func aPinnedWindowThatNothingCoversIsNotRaised() {
@@ -284,13 +287,14 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     #expect(h.system.raiseLog.isEmpty, "the editor is docked on the left, the call is in the top right corner")
   }
 
-  @Test func whenTheStackingCannotBeToldItIsRaisedAnyway() {
-    let (h, _, browser, call) = makeHarness()
+  @Test func whenTheStackingCannotBeToldNothingIsRaisedLaterEither() {
+    // At the pin it is (KeepInViewMakesRoomTests).
+    let (h, _, browser, _) = makeHarness()
     h.system.clearRaiseLog()
     h.system.stackingIsUnknown = true
     h.system.userFocus(browser)
-    finishEvent(h)
-    #expect(h.system.raiseLog == [call])
+    settle(h)
+    #expect(h.system.raiseLog.isEmpty)
   }
 
   @Test func clickingThePinnedWindowGivesItTheKeyboardAndMovesNothing() {
@@ -393,7 +397,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     #expect(h.system.focused == editor, "and goes to the window that arrives")
   }
 
-  @Test func thePinnedWindowUsedLastIsInFrontOfTheOtherPinnedWindows() {
+  @Test func whichPinnedWindowLiesOverWhichIsLeftToMacOS() {
     let (h, _, browser, call) = makeHarness()
     let timer = h.system.open(app: "Timer", frame: CGRect(x: 1200, y: 100, width: 200, height: 100))
     h.run("pin \(timer.rawValue)")
@@ -403,8 +407,8 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     h.system.clearRaiseLog()
     h.system.userFocus(browser)
     settle(h)
-    #expect(h.system.windowsFrontToBack().prefix(3) == [call, timer, browser])
-    #expect(h.system.raiseLog == [timer, call], "once each: pinned windows do not count as covering each other")
+    #expect(h.system.windowsFrontToBack().prefix(3) == [browser, call, timer], "the order the person's own acts made")
+    #expect(h.system.raiseLog.isEmpty)
     h.system.userFocus(timer)
     settle(h)
     #expect(h.system.windowsFrontToBack().first == timer, "the other pinned window is not raised over it")
@@ -435,7 +439,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     settle(h)
     h.system.clearRaiseLog()
     for window in [call, chat] { h.controller.windowFocused(window) }
-    #expect(!h.scheduler.pendingKeys.contains("raise-pins"))
+    #expect(nobodyIsLooking(h))
     settle(h)
     #expect(h.system.raiseLog.isEmpty)
   }
@@ -446,7 +450,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     h.system.mouseDown = true
     for _ in 0..<5 {
       h.overlays.dragSeam(h.layout!.seams[0], by: 4)
-      #expect(!h.scheduler.pendingKeys.contains("raise-pins"))
+      #expect(nobodyIsLooking(h))
     }
     h.system.mouseDown = false
     settle(h)
@@ -460,7 +464,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     h.system.clearRaiseLog()
     h.run("zoom \(editor.rawValue)")
     h.system.userFocus(browser)
-    #expect(!h.scheduler.pendingKeys.contains("raise-pins"))
+    #expect(nobodyIsLooking(h))
     settle(h)
     #expect(h.system.raiseLog.isEmpty)
   }
@@ -613,7 +617,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     // Its own size again (F48), in the middle of what it filled.
     let frame = h.frame(editor)!
     #expect(frame.size == CGSize(width: 640, height: 420))
-    #expect(abs(frame.midX - h.visibleFrame.midX) <= 0.5 && abs(frame.midY - h.visibleFrame.midY) <= 0.5)
+    #expect(abs(frame.midX - beside.midX) <= 0.5 && abs(frame.midY - beside.midY) <= 0.5)
     #expect(h.workspace.floating[editor] == frame)
   }
 
@@ -655,7 +659,8 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     #expect(h.frame(call) == dropped)
   }
 
-  @Test func pinningAndUnpinningMoveNothing() {
+  @Test func pinningAndUnpinningMoveNoFloatingWindow() {
+    // The docked ones make room and take it back (KeepInViewMakesRoomTests).
     let (h, _, _, call) = makeHarness()
     // Half on the Desktop, half over the browser, like the call; put there by hand since the last layout.
     let notes = h.system.open(app: "Notes")
@@ -666,7 +671,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     h.run("unpin \(call.rawValue)")
     h.run("pin \(call.rawValue)")
     h.run("toggle-pin \(call.rawValue)")
-    #expect(h.system.frameLog.isEmpty)
+    #expect(moves(of: call, h).isEmpty && moves(of: notes, h).isEmpty)
   }
 
   @Test func unpinningLeavesItWhereItIsUntilTheCameraNextMoves() {
@@ -1193,7 +1198,27 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     #expect(expect("in-front \(a.rawValue)", h) == nil)
     #expect(expect("in-front \(b.rawValue)", h) == "\(a) covers \(b)")
     #expect(expect("in-front 999", h) == "there is no window w999")
-    h.scheduler.advance(by: 0)
-    #expect(expect("in-front \(b.rawValue)", h) == nil)
+    h.scheduler.advance(by: 1)
+    #expect(expect("in-front \(b.rawValue)", h) == "\(a) covers \(b)", "Arbor does not fight for the front")
+    #expect(expect("covered \(b.rawValue) yes", h) == nil)
+    #expect(expect("covered \(b.rawValue) no", h) == "`state` says that \(b) is covered")
+    #expect(expect("covered \(a.rawValue) yes", h) == "`state` does not say that \(a) is covered")
+    #expect(expect("covered 999 no", h) == "there is no window w999")
+    #expect(expect("covered \(b.rawValue)", h)?.hasPrefix("cannot read `covered") == true)
+  }
+
+  @Test func clearOfDockedWindows() {
+    let h = Harness()
+    let a = h.system.open(app: "Editor")
+    let b = h.system.open(app: "Zoom", frame: corner)
+    h.start()
+    h.run("dock \(a.rawValue) left")
+    h.run("zoom \(a.rawValue)")
+    #expect(expect("clear 999", h) == "there is no window w999")
+    _ = h.system.setFrame(corner, of: b)
+    #expect(expect("clear \(b.rawValue)", h)?.hasSuffix("overlap") == true)
+    h.run("pin \(b.rawValue)")
+    #expect(expect("clear \(b.rawValue)", h) == nil)
+    #expect(expect("fills \(a.rawValue)", h) == nil, "all that is left")
   }
 }

@@ -446,7 +446,8 @@ extension Controller {
       let preferred = CGRect(
         x: middle.x - size.width / 2, y: middle.y - size.height / 2, width: size.width, height: size.height
       ).integralRounded.fitted(into: destination.visibleFrame)
-      var wanted = floatingFrame(preferred, on: room, of: destination, minimum: minimumSizes[id])
+      // One that stays in view does not live on the Desktop: it comes at its own size, in one move, and nothing gives that back later.
+      var wanted = role == nil ? floatingFrame(preferred, on: room, of: destination, minimum: minimumSizes[id]) : preferred
       // It is placed before the layouts below; a motion still playing would end on a window that has left.
       overlays.finishAnimations()
       // Asked before anything is written down: a window whose app does not answer is where it was.
@@ -460,7 +461,7 @@ extension Controller {
         minimumSizes[id] = CGSize(
           width: actual.width > wanted.width + 2 ? actual.width : minimumSizes[id]?.width ?? 0,
           height: actual.height > wanted.height + 2 ? actual.height : minimumSizes[id]?.height ?? 0)
-        wanted = floatingFrame(preferred, on: room, of: destination, minimum: minimumSizes[id])
+        wanted = floatingFrame(preferred, on: role == nil ? room : destination.visibleFrame, of: destination, minimum: minimumSizes[id])
         actual = system.setFrame(wanted, of: id) ?? actual
       }
       windows[id]?.frame = actual

@@ -310,7 +310,7 @@ private let side = DisplaySnapshot(
     settle(h)
     #expect(h.frame(terminal) == middle)
     #expect(h.workspace.isSummoned(terminal))
-    #expect(h.system.windowsFrontToBack().first == terminal, "and is not buried by the click, like a pinned window")
+    #expect(h.system.windowsFrontToBack().first == editor, "the window switched to is in front: no raise could lift it over that (Q25)")
     #expect(h.system.focused == editor)
 
     // Through camera moves as well.
@@ -325,8 +325,9 @@ private let side = DisplaySnapshot(
     #expect(h.system.focused == keyboard, "the keyboard was elsewhere already")
   }
 
-  @Test func withSummonStaysAClickInTheWindowThatAlreadyHasTheKeyboardDoesNotBuryIt() {
-    // Every click in the editor one is working in: it comes to the front, and macOS reports no change of focus.
+  @Test func withSummonStaysAClickInTheWindowThatAlreadyHasTheKeyboardRaisesNothing() {
+    // Every click in the editor one is working in: it comes to the front, and macOS reports no change of focus. A summoned window that
+    // stays goes by the pin's rule: it came to the front as it was summoned, and Arbor does not fight for the front (Q25).
     var settings = Settings()
     settings.summonStays = true
     let (h, editor, _, terminal) = makeHarness(settings: settings)
@@ -335,10 +336,9 @@ private let side = DisplaySnapshot(
     settle(h)
     h.system.clearRaiseLog()
     h.system.userClick(editor)
-    #expect(h.system.windowsFrontToBack().first == editor)
     settle(h)
-    #expect(h.system.windowsFrontToBack().first == terminal)
-    #expect(h.system.raiseLog == [terminal], "once")
+    #expect(h.system.windowsFrontToBack().first == editor)
+    #expect(h.system.raiseLog.isEmpty)
     #expect(h.system.focused == editor)
     #expect(h.workspace.isSummoned(terminal))
   }

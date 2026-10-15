@@ -9,8 +9,8 @@
 # - pressed again, is it out of view and the keyboard back in the window that had it?
 # - does a real click on another app's window send it away?
 # - dragged by its title bar, does it come back to that place, also after Arbor is launched again?
-# - with summonStays, does it survive a click, in front?
-# - with summonStays, is it covered after a click in the window that has the keyboard already?
+# - with summonStays, does it survive a click? (Not in front: macOS lets nobody lift another app's window over the one that has the keyboard,
+#   and Arbor no longer tries, collab/QUESTIONS.md Q25. It is covered, and `state` says so.)
 # - pause, resume, quit: in view when Arbor lets go.
 # - does opening an app by name work (Calculator; on GitHub's throwaway Macs only)?
 #
@@ -216,20 +216,21 @@ arbor_settings '{"bindings": {"ctrl+opt+`": "summon '$APP'"}, "summonStays": tru
 ctl reload-settings
 key 'ctrl+opt+`'
 here "summoned"
-# Or "nothing covers it" could not fail.
 check "it lies over the editor" overlap "$SCRATCH" "$W1"
+check "state does not call it covered" eventually fails trait "$SCRATCH" covered
 # shellcheck disable=SC2046
 click $(in_the_editor)
 check "after a click on the editor the editor has the keyboard" eventually is focused "$W1"
 check "it is still summoned" stays trait "$SCRATCH" summoned
 check "where it was" at "$SCRATCH" "$chosen"
-check "and nothing covers it" eventually uncovered "$SCRATCH"
+check "the editor, which was clicked, lies over it" eventually fails uncovered "$SCRATCH"
+check "and state says covered" eventually trait "$SCRATCH" covered
 shot 06-stays
-# The window that has the keyboard already: no focus change is reported, only the press tells Arbor to look.
+raised=$(grep -c "raised" "$ARBOR_HOME/arbor.log")
 # shellcheck disable=SC2046
 click $(in_the_editor)
 sleep 1
-check "after a second click on the editor nothing covers it either" eventually uncovered "$SCRATCH"
+check "a second click on the editor raises nothing" test "$(grep -c "raised" "$ARBOR_HOME/arbor.log")" = "$raised"
 check "the editor still has the keyboard" is focused "$W1"
 key 'ctrl+opt+`'
 gone "summoned away" "$W1"

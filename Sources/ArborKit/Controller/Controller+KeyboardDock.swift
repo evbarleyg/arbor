@@ -213,7 +213,7 @@ extension Controller {
     let present = presentWindowIDs()
     let minimums = minimumSizes
     return LayoutEngine.layout(
-      workspace.tree, camera: workspace.camera, in: display.visibleFrame, options: options(for: displayID).layoutOptions,
+      workspace.tree, camera: workspace.camera, in: roomForViews(on: display), options: options(for: displayID).layoutOptions,
       isPresent: { present.contains($0) }, minimumSize: { minimums[$0] })
   }
 }

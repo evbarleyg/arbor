@@ -32,6 +32,7 @@ extension Controller {
     if edgeResize?.window == id { edgeResize = nil }
     guard isRunning, isManaged(id) else { return }
     if workspaces.values.contains(where: { $0.isFloating(id) }) { aHandHasPlaced(id) }
+    if isPinned(id), let display = workspaceID(containing: id) { return makeRoomWhereKeptWindowsAre(on: [display], asked: true) }
     recordingUndo("resize \(id) by its edges", title: "Resize") { applyEdgeResize(of: id) }
   }
 

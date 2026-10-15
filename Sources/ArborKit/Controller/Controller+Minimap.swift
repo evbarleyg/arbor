@@ -234,7 +234,7 @@ extension Controller {
     let present = presentWindowIDs()
     guard
       let map = Minimap.make(
-        workspace.tree, camera: workspace.camera, area: display.visibleFrame.size, isPresent: { present.contains($0) })
+        workspace.tree, camera: workspace.camera, area: roomForViews(on: display).size, isPresent: { present.contains($0) })
     else { return nil }
     let model = MinimapModel(
       map, on: displayID, in: display.visibleFrame, caption: minimapCaption(for: map.view, in: workspace),

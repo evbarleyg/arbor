@@ -23,9 +23,9 @@ public struct Workspace: Codable, Sendable, Equatable {
       followSummonedWindows()
     }
   }
-  /// Floating windows that stay in view wherever the camera goes (see "Pins" below). Nil when there
-  /// are none, as in files written before pins existed.
-  public private(set) var pinned: Set<WindowID>?
+  /// Floating windows that stay in view wherever the camera goes (see "Pins" below), in the order they were pinned: the
+  /// first comes first where room is short (`PinnedRoom`). Nil when there are none, as in files written before pins existed.
+  public private(set) var pinned: [WindowID]?
   /// Floating windows that belong to a space instead of the Desktop: they opened over it while it was framed, and
   /// go out of view and come back with it (F57). Keyed by window; the value is the space, their host.
   /// Nil when there are none, and in files written before this existed.
@@ -516,8 +516,9 @@ public struct Workspace: Codable, Sendable, Equatable {
     }
     guests = staying.isEmpty ? nil : staying
 
-    let pins = read(.pinned, or: Set<WindowID>())
-    let kept = pins.filter { floating[$0] != nil }
+    let pins = read(.pinned, or: [WindowID]())
+    var kept: [WindowID] = []
+    for window in pins where floating[window] != nil && !kept.contains(window) { kept.append(window) }
     if kept.count < pins.count { tidied.append("dropped pins of windows that do not float here") }
     pinned = kept.isEmpty ? nil : kept
 
@@ -584,7 +585,8 @@ extension Workspace {
   /// Whether `window` floats here and stays in view wherever the camera goes.
   public func isPinned(_ window: WindowID) -> Bool { pinned?.contains(window) == true && isFloating(window) }
 
-  public var pinnedWindows: [WindowID] { (pinned ?? []).filter(isFloating).sorted() }
+  /// In the order they were pinned.
+  public var pinnedWindows: [WindowID] { (pinned ?? []).filter(isFloating) }
 
   /// Pins a window that floats here. Returns false, changing nothing, for any other window.
   @discardableResult
@@ -593,14 +595,14 @@ extension Workspace {
     // It belongs to the display now, not to the space it opened over.
     endVisit(of: window)
     forgetSummon(of: window)
-    setPins((pinned ?? []).union([window]))
+    if pinned?.contains(window) != true { setPins((pinned ?? []) + [window]) }
     return true
   }
 
-  public mutating func unpin(_ window: WindowID) { setPins(pinned?.subtracting([window])) }
+  public mutating func unpin(_ window: WindowID) { setPins(pinned?.filter { $0 != window }) }
 
   /// No pins is always nil, so that pinning and unpinning leaves a workspace equal to what it was.
-  private mutating func setPins(_ pins: Set<WindowID>?) { pinned = pins?.isEmpty == false ? pins : nil }
+  private mutating func setPins(_ pins: [WindowID]?) { pinned = pins?.isEmpty == false ? pins : nil }
 }
 
 // MARK: Summoning
@@ -809,8 +811,8 @@ extension Workspace {
     let (floats, nodes) = (result.floating, result.tree)
     result.keepGuests { window, host in floats[window] != nil && nodes.contains(host) }
     let (pinnedNow, pinnedThen) = (current.pinned ?? [], reference.pinned ?? [])
-    let pins = (pinned ?? []).union(pinnedNow.subtracting(pinnedThen)).subtracting(pinnedThen.subtracting(pinnedNow))
-    result.setPins(pins.filter { floats[$0] != nil })
+    let pins = (pinned ?? []) + pinnedNow.filter { !pinnedThen.contains($0) && pinned?.contains($0) != true }
+    result.setPins(pins.filter { floats[$0] != nil && (pinnedNow.contains($0) || !pinnedThen.contains($0)) })
     // Summoning (F53). A floating window has one role at most, and when in doubt it is not stashed: a stashed window
     // stays out of view whatever the camera shows.
     if current.summoned != reference.summoned { result.summoned = current.summoned }
@@ -850,10 +852,12 @@ extension Workspace {
     if isDocked(old) {
       replaceWindow(old, with: new)
     } else {
-      let (role, host) = (role(of: old), guests?[old])
+      let (role, host, pins) = (role(of: old), guests?[old], pinned)
       floating[new] = floating.removeValue(forKey: old)
       if let host { receive(new, asGuestOf: host) }
       if role != nil { setRole(role, of: new) }
+      // At its place in the order, which says who has room (`PinnedRoom`).
+      if role == .pinned { setPins(pins?.map { $0 == old ? new : $0 }) }
     }
   }
 }

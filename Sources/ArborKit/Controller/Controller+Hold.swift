@@ -308,6 +308,8 @@ extension Controller {
     // A view with nothing in it has to go somewhere now.
     for display in empty.sorted() { relayout(display, reason: .structure) }
     var leftFloating: [WindowID] = []
+    // What its app did to a window kept in view meanwhile is followed now (Controller+PinnedRoom.swift).
+    if level == nil { makeRoomWhereKeptWindowsAre(on: workspaces.keys.sorted()) }
     if level == nil {
       let putOff = hold.putOff
       let (caller, dismissed, keptOut, dialogsWait) = (hold.caller, hold.callerDismissed, hold.keptOut, hold.dialogsWait)
@@ -741,7 +743,7 @@ extension Controller {
       let display = display(displayID)
     else { return nil }
     // The view is where it was; an ordinary layout would fall back on the nearest space around it that has something in it.
-    var nothing = Layout(camera: workspace.camera, frame: display.visibleFrame)
+    var nothing = Layout(camera: workspace.camera, frame: roomForViews(on: display))
     nothing.hiddenWindows = Set(workspace.tree.allWindows).intersection(presentWindowIDs())
     return nothing
   }

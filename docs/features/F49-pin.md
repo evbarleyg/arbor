@@ -54,9 +54,30 @@ All five criteria, each with scenario tests (`Tests/ArborKitTests/PinTests.swift
 - A pin follows its window to another display, comes to the main display when its own is unplugged, and goes back with it.
 - After its app restarted, a pinned window is found again by app and title, as docked windows are.
 
+### Keep in View makes room (2026-10-15, `collab/QUESTIONS.md` Q25; board 1.25)
+
+Overrules, in the text above: "Docked windows do not avoid it … it overlaps, which is the point", "Arbor raises pinned windows after a camera move", acceptance criterion 2's raise, and the first point under "Shipped" (three looks within half a second).
+Seen on hosted Macs: the Accessibility raise lifts another app's window over everything but the window that has the keyboard, so a pinned call lay wholly behind the window that filled the screen; one run counted 36 raises in vain.
+
+- A pinned window reserves a strip of its display: from its inner edge to the display's edge, over the whole height or width, the cheapest of the four (`PinnedRoom`, ArborCore). Every layout of docked windows, real or tried (previews, live reflow,
+  automatic docking, `layout`, Quit's places, the minimap's shape), is made in what is left: `Controller.roomForViews(on:)`, which is `Layout.frame`. `state` has it as `displays[].room`. What hangs over the display's edge needs no room.
+- All strips of a display together take at most four tenths of it, in the order pinned, which is saved (`Workspace.pinned` is a list now; old files load). A window that lies in another's strip needs none.
+- Without room: the reply and the line on screen say "… stays in view, but other windows can cover it here. Near a screen edge they make room for it."; the menu's ticked row reads "(Can Be Covered Here)"; `state` has `"covered": true` whenever another window really lies over a pinned or summoned window. The line is said again when a pin loses its room: dragged to the middle, or grown too large.
+- Docked windows move once: at `pin` and `unpin`; when a drag or a resize of the pinned window ends (while the button is down they wait, whatever else lays out); when it is minimized, hidden or closed, and when it is back; after a command that moved or sized it (`grow`, `shrink`,
+  `move-to-display`, undo); and a third of a second after its own app last moved or sized it, whatever that move is taken for. Let go where macOS's own tiling takes it, they go once, to where macOS's frame leaves them.
+- While the view is held, at either strength, what the window's own app does brings no layout about: the docked windows follow when the hold ends, at the person's next command (not a script's), when their hand lets go of it, or with whatever else lays the display out. In macOS's full screen, and on its way out of it, it keeps its strip.
+- One raise, at `pin`, and only if something covers the window then. No looks, no timers, nothing at a press of the mouse. A summoned window reserves nothing and is not raised: it comes with the keyboard.
+- Once pinned, Arbor never moves or sizes it: not one that a hand pushed more than half over an edge, not one made smaller while Arbor was paused or not running; Quit, Float All and a pause leave it where it is, whoever moved it there. Two exceptions: it comes into view, at its own size,
+  as it is pinned (not one that its person's own hand left mostly over an edge); and a change of the displays that takes more than half of it brings it wholly into view, in one move. `move-to-display` brings it at its own size, in one move: it is not squeezed onto a Desktop it does not live on. `unpin` neither moves nor sizes it. Where its person pinned or left it hanging over an edge, it hangs there again when its display comes back.
+- The stand-in's `raise` stops behind the window that has the keyboard, as a Mac's does, so no test is green by a raise that no Mac would honour. New net in the walks: `pinned-room`; `raised-unasked` now excuses only the raise in the very step that pins or summons.
+- Tests: `PinnedRoomTests` (core), `KeepInViewMakesRoomTests`, `collab/scenarios/49-the-call-has-room-of-its-own.sim`; `scripts/mac-shell/check-F49.sh` and the real-window suite's `65-pin.sh` ask the window server.
+
 ## Not shipped
 
+- The docked windows go to their places beside a strip at once, without the motion every other act has: two layouts of different rooms are not views of one plane (`stageTransition`). Accepted for now (Q25, point 6).
+- On a small display a strip can leave three columns too narrow, and they become tiles: on 1024 points a strip of 340 leaves three of 212, under `minimumUsableWidth`. It dissolves with halves and no Desktop column (Q29); Q25, point 9, has the guard if it does not.
+- A window that lies across two displays has room only on the one it belongs to.
 - A default shortcut: ⌃⌥⇧D is reserved in `docs/KEYBOARD.md`, unbound.
 - A mark on the pinned window itself (a small pin in a corner); the menu's tick, `state` and `ascii` show it.
 - Pins waiting for an app that has not opened its window yet at login: a `pin` rule covers that.
-- Real windows: `scripts/mac-shell/check-F49.sh` is written and has not run.
+- Real windows: `scripts/mac-shell/check-F49.sh` ran on a hosted Mac on 2026-10-15 before the strip: ten checks of the name "nothing covers the call" were red.

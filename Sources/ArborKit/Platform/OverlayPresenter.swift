@@ -39,7 +39,7 @@ public struct TileModel: Equatable, Sendable {
 
 /// The surface behind docked windows: where the wallpaper is darkened and blurred, and by how much.
 public struct BackdropModel: Equatable, Sendable {
-  /// The display's visible frame, which the surface never leaves.
+  /// What the display's visible frame has for views (all of it, less the room of windows kept in view), which the surface never leaves.
   public var frame: CGRect
   /// The surface, as rectangles that do not overlap (`BackdropShape.surface`), in global coordinates.
   public var rects: [CGRect]

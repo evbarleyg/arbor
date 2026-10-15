@@ -20,9 +20,9 @@ Printing something:
   state.py display <window>     the number of the display whose workspace holds the window
 
 Yes or no: exit code 0 or 1, and on 1 a line that says why.
-  state.py is <window> <what>   docked floating parked managed minimized hidden fullScreen pinned letBe tile focused known
-  state.py at_edge <window> <edge>          it reaches that edge of the screen, a gap away
-  state.py fills <window>                   it fills the screen, a gap away from every edge
+  state.py is <window> <what>   docked floating parked managed minimized hidden fullScreen pinned covered letBe tile focused known
+  state.py at_edge <window> <edge>          it reaches that edge of the screen, a gap away (of what windows kept in view leave of it)
+  state.py fills <window>                   it fills the screen, a gap away from every edge (of what windows kept in view leave of it)
   state.py in_slot <window>                 it is where the layout puts it
   state.py frame_is <window> x y w h
   state.py corner_is <window> x y           its top-left corner
@@ -47,6 +47,7 @@ The gap comes from the environment (ARBOR_GAP, default 12).
 """
 
 import json
+import math
 import os
 import sys
 
@@ -138,6 +139,24 @@ class World:
     def visible(self, display=None):
         return rect((display or self.display())["visibleFrame"])
 
+    def room(self, display=None):
+        """What is left of the visible frame for views: windows kept in view reserve strips along its edges (F49).
+
+        Worked out here, from where the window server has the pinned window, so that Arbor is not measured by its own word. With several
+        pinned windows the order they were pinned in decides, which `state` does not tell: then it is Arbor's word."""
+        display = display or self.display()
+        said = rect(display.get("room") or display["visibleFrame"])
+        pins = [
+            window for window in self.state["windows"]
+            if window.get("pinned") and window.get("display") == display["id"]
+            and not any(window.get(away) for away in ("minimized", "hidden", "fullScreen", "parked"))
+        ]
+        # (One in macOS's full screen keeps its room, at a frame the window server no longer has.)
+        if len(pins) != 1 or any(window.get("pinned") and window.get("fullScreen") for window in self.state["windows"]):
+            return said
+        real = self.real.get(pins[0]["id"])
+        return room_beside(rect(display["visibleFrame"]), real["frame"] if real else rect(pins[0]["frame"]))
+
     def slot(self, wanted):
         for display in self.state["displays"]:
             slot = display["windowFrames"].get(str(wanted))
@@ -221,6 +240,23 @@ def nth_display(state, arguments):
     return state["displays"][number - 1]
 
 
+def room_beside(visible, pin):
+    """`PinnedRoom.reserve` (Sources/ArborCore) for one window: the cheapest of the four strips from its inner edge to the display's edge,
+    unless that takes more than four tenths."""
+    x, y, width, height = visible
+    left, top = max(pin[0], x), max(pin[1], y)
+    right, bottom = min(pin[0] + pin[2], x + width), min(pin[1] + pin[3], y + height)
+    if right <= left or bottom <= top:
+        return visible
+    left, top, right, bottom = math.floor(left), math.floor(top), math.ceil(right), math.ceil(bottom)
+    rooms = [
+        [right, y, x + width - right, height], [x, y, left - x, height],
+        [x, bottom, width, y + height - bottom], [x, y, width, top - y],
+    ]
+    best = max(rooms, key=lambda room: room[2] * room[3])
+    return best if width * height - best[2] * best[3] <= 0.4 * width * height else visible
+
+
 def summary(world):
     state = world.state
     lines = []
@@ -229,7 +265,8 @@ def summary(world):
         lines.append(
             f"display {number if several else ''} {words(rect(display['frame']))}, ".replace("  ", " ")
             + f"visible {words(rect(display['visibleFrame']))}, "
-            f"camera n{display['camera']}, back {'yes' if display['canGoBack'] else 'no'}"
+            + (f"room {words(world.room(display))}, " if world.room(display) != world.visible(display) else "")
+            + f"camera n{display['camera']}, back {'yes' if display['canGoBack'] else 'no'}"
         )
         if display.get("desktopFrame"):
             lines.append(f"  Desktop          {words(rect(display['desktopFrame']))}")
@@ -237,7 +274,7 @@ def summary(world):
             inside = " ".join(f"w{window}" for window in tile["windows"]) or "-"
             lines.append(f"  tile n{tile['node']} {tile['kind']:<8} {words(rect(tile['frame']))}  holds {inside}")
     for window in state["windows"]:
-        traits = [name for name in ("docked", "parked", "minimized", "hidden", "fullScreen", "pinned", "letBe") if window.get(name)]
+        traits = [name for name in ("docked", "parked", "minimized", "hidden", "fullScreen", "pinned", "covered", "letBe") if window.get(name)]
         if not window["docked"]:
             traits.insert(0, "floating" if window["managed"] else "not managed")
         if state.get("focused") == window["id"]:
@@ -262,7 +299,7 @@ def is_what(world, wanted, what):
         answer = world.tile(wanted) is not None
     elif what == "focused":
         return world.state.get("focused") == wanted, f"the focused window is {world.state.get('focused')}"
-    elif what in ("docked", "parked", "managed", "minimized", "hidden", "fullScreen", "pinned", "letBe"):
+    elif what in ("docked", "parked", "managed", "minimized", "hidden", "fullScreen", "pinned", "covered", "letBe"):
         answer = window.get(what, False)
     else:
         fail(f"cannot tell whether a window is `{what}`")
@@ -272,7 +309,7 @@ def is_what(world, wanted, what):
 
 def at_edge(world, wanted, edge):
     x, y, width, height = world.seen(wanted)
-    vx, vy, vwidth, vheight = world.visible(world.display_of(wanted))
+    vx, vy, vwidth, vheight = world.room(world.display_of(wanted))
     pairs = {
         "left": (x, vx + GAP), "right": (x + width, vx + vwidth - GAP),
         "top": (y, vy + GAP), "up": (y, vy + GAP),
@@ -285,7 +322,7 @@ def at_edge(world, wanted, edge):
 
 
 def fills(world, wanted):
-    vx, vy, vwidth, vheight = world.visible(world.display_of(wanted))
+    vx, vy, vwidth, vheight = world.room(world.display_of(wanted))
     expected = [vx + GAP, vy + GAP, vwidth - 2 * GAP, vheight - 2 * GAP]
     actual = world.frame(wanted)
     return same(actual, expected), f"it is at {words(actual)}, not {words(expected)}"

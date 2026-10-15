@@ -329,11 +329,12 @@ import Testing
   @Test func theNetIsSilentAtARaiseOfAWindowKeptInView() {
     let desk = ["launch", "open 101 Notes pid 1001 at 100 100 500 400", "open 102 Mail pid 1002 at 800 300 500 400", "dock 101 left", "settle"]
     #expect(!theNetSpeaks(after: desk, then: "pin 102", raising: WindowID(102)), "the raise at the pin")
-    #expect(!theNetSpeaks(after: desk + ["pin 102", "settle"], then: "zoom 101", raising: WindowID(102)))
-    #expect(!theNetSpeaks(after: desk + ["pin 102", "settle"], then: "unpin 102", raising: WindowID(102)), "a look that was still due")
+    #expect(theNetSpeaks(after: desk + ["pin 102", "settle"], then: "zoom 101", raising: WindowID(102)), "there are no retries")
+    #expect(theNetSpeaks(after: desk + ["pin 102", "settle"], then: "unpin 102", raising: WindowID(102)))
     #expect(theNetSpeaks(after: desk + ["pin 102", "settle", "unpin 102", "settle"], then: "zoom 101", raising: WindowID(102)), "no longer")
     #expect(theNetSpeaks(after: desk + ["pin 102", "settle"], then: "zoom 101", raising: WindowID(101)), "the other one is not")
-    #expect(!theNetSpeaks(after: desk + ["summon Mail", "settle"], then: "zoom 101", raising: WindowID(102)), "nor at one that is summoned")
+    #expect(!theNetSpeaks(after: desk, then: "summon Mail", raising: WindowID(102)), "nor at one as it is summoned")
+    #expect(theNetSpeaks(after: desk + ["set summonStays true", "summon Mail", "settle"], then: "zoom 101", raising: WindowID(102)), "later it is")
     #expect(theNetSpeaks(after: desk + ["summon Mail", "settle", "summon Mail", "settle"], then: "zoom 101", raising: WindowID(102)), "sent away again")
     // An Arbor that has paused or quit raises nothing, whatever it kept in view.
     for way in ["pause", "quit"] {
@@ -343,24 +344,21 @@ import Testing
     }
   }
 
-  /// As 10,000 walks found it: a false alarm of this net. `way-back pause` lets everything come to rest and then pauses, in one step. The look at
-  /// the pin that was due raises it while Arbor runs, which it may. Taken apart, the same story: the raise is at `settle`, and none after `pause`.
-  @Test func aLookAtAPinThatFallsDueOnAWayBackIsNoRaiseByAPausedArbor() {
+  /// As 10,000 walks found it: a false alarm of this net, while Arbor still looked at a pin a moment after whatever might have covered it, and
+  /// `way-back pause` let that look fall due and then paused, in one step. There are no such looks any more (Q25): the story raises nothing.
+  @Test func aPinThatIsCoveredIsRaisedOnNoWayBack() {
     let covered = [
       "open 102 Mail pid 1002 at 78 171 1265 623 min 760 400", "open 104 Preview pid 1007 at 222 109 723 553 min 723 400 max 723 2000", "launch",
       "via menu arrange all", "via menu toggle-pin", "focus 102",
     ]
-    let endings: [(lines: [String], theLookFallsDue: Bool)] = [
-      (["way-back pause"], true), (["settle", "pause", "settle"], true), (["pause", "settle"], false), (["way-back quit"], false), (["quit", "settle"], false),
-    ]
-    for (ending, theLookFallsDue) in endings {
+    let endings = [["way-back pause"], ["settle", "pause", "settle"], ["pause", "settle"], ["way-back quit"], ["quit", "settle"]]
+    for ending in endings {
       let runner = ChaosRunner()
       for line in covered { _ = runner.step(ChaosAction(text: line)) }
       let raisedBefore = runner.system.raiseLog.count
       let found = ending.flatMap { runner.step(ChaosAction(text: $0)) }.filter { $0.rule == "raised-unasked" }.map { "\($0)" }
       #expect(found == [], "\(ending)")
-      // Without a raise the first two would prove nothing. In the others the look comes after the pause or the quit, and raises nothing.
-      #expect((runner.system.raiseLog.count > raisedBefore) == theLookFallsDue, "\(ending): \(runner.system.raiseLog)")
+      #expect(runner.system.raiseLog.count == raisedBefore, "\(ending): \(runner.system.raiseLog)")
     }
     // A window that nothing keeps in view is not excused on a way back either.
     #expect(theNetSpeaks(after: covered + ["unpin 104", "settle"], then: "way-back pause", raising: WindowID(104)))

@@ -281,8 +281,19 @@ public final class Controller {
   var hasWelcomed = false
   /// Opens the welcome window on a page, for `check-setup` and `welcome`.
   public var openWelcomeWindow: ((OnboardingFlow.Page) -> Void)?
-  /// How many more times to look whether a pinned window is covered (Controller+Pin.swift).
-  var pinChecksLeft = 0
+  /// Windows that stay in view for which the layout under way is the moment to come wholly into view, at their own size: as
+  /// they are pinned or summoned, and when a change of the displays took more than half of one (`frameBringingIntoView`).
+  var comingIntoView: Set<WindowID> = []
+  /// Windows kept in view that are on their way out of full screen, and until when that is believed (Controller+PinnedRoom.swift).
+  var keptWindowsLeavingFullScreen: [WindowID: Date] = [:]
+  /// The displays whose timer `pinned-room-…` a person stands behind (Controller+PinnedRoom.swift).
+  var pinnedRoomIsAskedFor: Set<DisplayID> = []
+  /// The window that the command under way pins: the one window Arbor raises, once (Controller+Pin.swift).
+  var beingPinned: WindowID?
+  /// Where windows kept in view are about to be put by whoever lays out next (an undo), so that room is made there at once.
+  var keptWindowsGoTo: [WindowID: CGRect] = [:]
+  /// What each display's docked windows were last laid out beside, and the visible frame it had then (Controller+PinnedRoom.swift).
+  var pinnedRoomsLaidOut: [DisplayID: (visibleFrame: CGRect, kept: PinnedRoom)] = [:]
   /// Whether and how the view is held (Controller+Hold.swift).
   var hold = Hold()
   /// The shortcut that released a held view, until it comes up. It outlives the hold.
@@ -560,6 +571,9 @@ public final class Controller {
     landsAt = landsAt.filter { windows[$0.key] != nil }
     chosenOnShape = chosenOnShape.filter { windows[$0.key] != nil }
     fittedToADisplay = fittedToADisplay.filter { windows[$0.key] != nil }
+    pinnedRoomsLaidOut = [:]
+    pinnedRoomIsAskedFor = []
+    keptWindowsLeavingFullScreen = keptWindowsLeavingFullScreen.filter { windows[$0.key] != nil }
     keepOnlyWhatIsStillOwedAfterAStart()
     parkedAgain.removeAll()
     unplaced.removeAll()
@@ -658,7 +672,7 @@ public final class Controller {
         workspace.tree, camera: workspace.tree.root, on: display, options: withoutTiles, present: present
       ).late
       let layout = LayoutEngine.layout(
-        workspace.tree, camera: workspace.tree.root, in: display.visibleFrame, options: withoutTiles,
+        workspace.tree, camera: workspace.tree.root, in: roomForViews(on: display), options: withoutTiles,
         isPresent: { present.contains($0) || late.contains($0) }
       ).leavingOpen(late, in: workspace.tree)
       // Each goes back to where it floated before it was docked (Controller+UndockedFrames.swift), or
@@ -676,7 +690,7 @@ public final class Controller {
       // when Arbor is gone, and should not do so in the shape of a slot, let alone in the corner. If it is not
       // known where one floated and it is parked, it goes where it would sit if everything were present.
       let everything = LayoutEngine.layout(
-        workspace.tree, camera: workspace.tree.root, in: display.visibleFrame, options: withoutTiles,
+        workspace.tree, camera: workspace.tree.root, in: roomForViews(on: display), options: withoutTiles,
         isPresent: { _ in true })
       for window in workspace.tree.allWindows where !present.contains(window) {
         let slot = workspace.tree.leaf(containing: window).flatMap { everything.nodeFrames[$0] }
@@ -1113,6 +1127,7 @@ public final class Controller {
         canGoForward: workspace.canGoForward, savedViews: workspace.savedViews)
       state.names = workspace.names
       state.named = workspace.names.values.sorted()
+      state.room = layout?.frame ?? display.visibleFrame
       state.undo = nextStepLabel(.undo, on: display.id)
       state.redo = nextStepLabel(.redo, on: display.id)
       return state
@@ -1142,6 +1157,7 @@ public final class Controller {
     for index in snapshot.windows.indices {
       let role = role(of: snapshot.windows[index].id)
       snapshot.windows[index].pinned = role == .pinned
+      if role != nil, role != .stashed { snapshot.windows[index].covered = isKeptInViewButCovered(snapshot.windows[index].id) }
       snapshot.windows[index].stashed = role == .stashed
       if case .summoned = role { snapshot.windows[index].summoned = true }
       snapshot.windows[index].letBe = snapshot.windows[index].docked && enforcement.givenUp.contains(snapshot.windows[index].id)
@@ -1162,6 +1178,7 @@ public final class Controller {
       }
       let drawing = AsciiRenderer.render(
         layout, tree: workspace.tree, floating: floating, columns: columns, rows: rows, names: workspace.names,
+        canvas: display.visibleFrame,
         label: { [windows] id in "\(id) \(Self.word(for: workspace.role(of: id)))\(windows[id]?.appName ?? "")" })
       return "display \(display.id)\n" + drawing
     }.joined(separator: "\n\n")

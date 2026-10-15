@@ -142,9 +142,8 @@ check "it is where it was put before" eventually is_at "$V1" $place
 check "it has the keyboard" eventually is focused "$V1"
 check "the view has not moved" camera_on "$W1"
 
-claim "with summonStays a click on another window leaves the summoned window in view, in front, until it is summoned away"
+claim "with summonStays a click on another window leaves the summoned window in view until it is summoned away; the clicked window lies over it, and Arbor says so"
 proves A53
-known "a summoned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; Q25 in collab/QUESTIONS.md decides what is to become of it"
 arbor_settings "{\"bindings\": {\"ctrl+opt+\`\": \"summon $ARBOR_TEST_BUNDLE_2\"}, \"summonStays\": true}"
 ctl reload-settings
 click_window "$W1"
@@ -152,7 +151,8 @@ check "the clicked window has the keyboard" eventually is focused "$W1"
 check "the summoned window is still summoned" stays role_is "$V1" summoned
 # shellcheck disable=SC2086
 check "where it was" is_at "$V1" $place
-check "nothing covers it" eventually uncovered "$V1"
+check "the window that was clicked lies over it" eventually fails uncovered "$V1"
+check "state says covered" eventually is covered "$V1"
 check "⌃⌥\` reaches Arbor" summon_key
 check "it is out of view" eventually out_of_view "$V1"
 check "the keyboard stays where it was" is focused "$W1"

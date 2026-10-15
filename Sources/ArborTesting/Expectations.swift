@@ -16,7 +16,7 @@ public enum ScenarioExpectation {
     + "shortcut <keys> key <code>, app-got <keys>|nothing, pinned <id>, in-front <id>, size <id> <w>x<h>, summoned <id>, space <name>, no-space <name>, "
     + "field open|closed, held view|still|no, focused <id>, said <words>, silent, "
     + "minimap none|everything|desktop|<id>, still [<id>], moved-once, jolt <id>, at <id> <x> <y>, "
-    + "replied <words>, preview none|showing"
+    + "replied <words>, preview none|showing, clear <id>, covered <id> yes|no"
 
   /// Checks the words after `expect`. `lastCommandOK` is whether the previous
   /// command succeeded, for `ok` and `fail`. Returns nil when the expectation
@@ -68,7 +68,11 @@ public enum ScenarioExpectation {
         let frame = frame(id)
       else { return "\(id) is not on any display" }
       let gap = CGFloat(controller.options(for: displayID).gap)
-      let expected = display.visibleFrame.insetBy(dx: gap, dy: gap)
+      // All that windows kept in view leave, by where those really are.
+      let kept = (controller.workspaces[displayID]?.pinnedWindows ?? []).compactMap { pin in
+        controller.windows[pin]?.isPresent == true ? h.system.frame(of: pin).map { (window: pin, frame: $0) } : nil
+      }
+      let expected = PinnedRoom.reserve(in: display.visibleFrame, for: kept).room.insetBy(dx: gap, dy: gap)
       return frame.approximatelyEquals(expected, tolerance: 1)
         ? nil : "\(id) is at \(describe(frame)), not \(describe(expected))"
 
@@ -147,6 +151,20 @@ public enum ScenarioExpectation {
       guard controller.windows[id] != nil else { return "there is no window \(id)" }
       return controller.isPinned(id) ? nil : "\(id) is not pinned"
 
+    case ("clear", 2):
+      guard let id = window(1) else { return usage(words) }
+      guard let own = frame(id) else { return "there is no window \(id)" }
+      let docked = controller.workspaces.values.flatMap(\.tree.allWindows).sorted()
+      // (Of a window out of view a point shows in a corner.)
+      return docked.first { controller.windows[$0]?.isPresent == true && !controller.parked.contains($0) && frame($0)?.overlaps(own) == true }
+        .map { "\(place($0)), which is docked, and \(place(id)) overlap" }
+
+    case ("covered", 3):
+      guard let id = window(1), ["yes", "no"].contains(words[2].lowercased()) else { return usage(words) }
+      guard let state = controller.snapshot().windows.first(where: { $0.id == id }) else { return "there is no window \(id)" }
+      if state.covered == (words[2].lowercased() == "yes") { return nil }
+      return state.covered ? "`state` says that \(id) is covered" : "`state` does not say that \(id) is covered"
+
     case ("summoned", 2):
       guard let id = window(1) else { return usage(words) }
       guard controller.windows[id] != nil else { return "there is no window \(id)" }
@@ -156,7 +174,8 @@ public enum ScenarioExpectation {
     case ("in-front", 2):
       guard let id = window(1) else { return usage(words) }
       guard let own = frame(id) else { return "there is no window \(id)" }
-      let above = h.system.windowsFrontToBack().prefix { $0 != id }
+      // (Of a window out of view a point shows in a corner.)
+      let above = h.system.windowsFrontToBack().prefix { $0 != id }.filter { !controller.parked.contains($0) }
       return above.first { frame($0)?.overlaps(own) == true }.map { "\($0) covers \(id)" }
 
     case ("ok", 1):
@@ -306,7 +325,7 @@ public enum ScenarioExpectation {
       let verbs = [
         "docked", "floating", "visible", "hidden", "tile", "fills", "left-of", "above", "camera", "count", "ok", "fail", "ring", "minimap", "outline", "shortcut", "app-got", "pinned", "in-front", "size",
         "summoned", "space", "no-space", "field", "said", "silent",
-        "held", "focused", "still", "moved-once", "jolt", "at", "replied", "preview",
+        "held", "focused", "still", "moved-once", "jolt", "at", "replied", "preview", "clear", "covered",
       ]
       if let verb = words.first?.lowercased(), verbs.contains(verb) { return usage(words) }
       return "unknown expectation `\(words.joined(separator: " "))`; the forms are: \(forms)"

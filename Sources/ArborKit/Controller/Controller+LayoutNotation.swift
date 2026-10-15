@@ -179,14 +179,14 @@ extension Controller {
     let here = options(for: displayID)
     func trial(_ tree: LayoutTree) -> Layout {
       LayoutEngine.layout(
-        tree, camera: tree.root, in: display.visibleFrame, options: here.layoutOptions, isPresent: { present.contains($0) },
+        tree, camera: tree.root, in: roomForViews(on: display), options: here.layoutOptions, isPresent: { present.contains($0) },
         minimumSize: { minimums[$0] })
     }
     let before = trial(usual)
     guard before.desktopFrame == nil else { return usual }
     // Beside n places of average size 1, a Desktop of size s gets s / (n + s) of the room.
     let beside = Double(max(usual.places(in: usual.root, along: .horizontal) - 1, 1))
-    let room = Double(display.visibleFrame.width) - here.gap * (beside + 2)
+    let room = Double(roomForViews(on: display).width) - here.gap * (beside + 2)
     let needed = here.minimumUsableWidth + 2
     guard room > needed else { return usual }
     let wider = spec.tree(filling: windows, recent: recent, desktopSize: beside * needed / (room - needed))

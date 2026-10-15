@@ -369,7 +369,7 @@ private let b = WindowID(102)
   @Test func theWindowSwitchedToIsInFront() {
     let overlapping = ["launch", "open 101 Notes pid 1001 at 100 100 500 400", "open 102 Mail pid 1002 at 300 200 500 400", "settle"]
     #expect(nets(after: overlapping + ["focus 101", "react"], then: "settle").isEmpty)
-    #expect(nets(after: overlapping + ["focus 101", "react"], then: "settle") { $0.raise(b) }.contains("switched-to-behind"))
+    #expect(nets(after: overlapping + ["focus 101", "react"], then: "settle") { $0.bringToFront(b) }.contains("switched-to-behind"))
   }
 
   // MARK: The ways home

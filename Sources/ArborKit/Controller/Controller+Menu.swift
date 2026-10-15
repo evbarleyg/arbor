@@ -242,11 +242,16 @@ extension Controller {
         sections: [
           Section {
             // No app's name: it pins a window. The app is what a rule is for.
-            Item.command("Keep This Window in View", .togglePin(nil)).enabled(focused != nil)
+            // Where it lies too far from every edge, or is too large, no room is made for it, and the tick must not promise more than it keeps.
+            let canBeCovered = focused.map { isPinned($0.window.id) && !hasRoomOfItsOwn($0.window.id) } ?? false
+            Item.command("Keep This Window in View" + (canBeCovered ? " (Can Be Covered Here)" : ""), .togglePin(nil)).enabled(focused != nil)
               .ticked(focused.map { isPinned($0.window.id) } ?? false)
               .help(
-                "It keeps its place wherever you zoom. Dragging moves it and never docks it: to dock it, use Dock Focused "
-                  + "Window, or turn this off first.")
+                (canBeCovered
+                  ? "It stays in view, but other windows can cover it here: making room for it would take more than four tenths of the "
+                    + "screen. Near a screen edge they make room for it. "
+                  : "It keeps its place wherever you zoom, and docked windows make room beside it. ")
+                  + "Dragging moves it and never docks it: to dock it, use Dock Focused Window, or turn this off first.")
           },
           Section {
             if let window = focused?.window, let bundle = window.bundleID {
