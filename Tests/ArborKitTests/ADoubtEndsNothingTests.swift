@@ -112,6 +112,8 @@ import Testing
       let docked = h.system.open(app: "Safari")
       let floating = h.system.open(app: "Chat", frame: CGRect(x: 20, y: 60, width: 500, height: 400))
       h.start()
+      // Whether floating windows make way is about to become a setting that ships off. Until it is one this is refused, and they do.
+      h.run("set floatingWindowsMakeWay true")
       h.run("dock \(docked.rawValue) left")
       h.scheduler.advance(by: 1)
       var frames = [h.frame(floating)]
