@@ -357,7 +357,7 @@ else:
     code, said = gate()
     row("gate.sh: all is well", (code, said.count("✔"), "the gate is open" in said), (0, STEPS, True))
     row("gate.sh: every line of the recipe of `make check` is a step",
-        [line for line in RECIPE if f"✔ {os.path.splitext(os.path.basename(re.search(r'scripts/[\w./-]+', line).group()))[0]} " not in said], [])
+        [line for line in RECIPE if "✔ " + os.path.splitext(os.path.basename(re.search(r"scripts/[\w./-]+", line).group()))[0] + " " not in said], [])
     row("gate.sh: and nothing of the rule after it", "not-of-check" in said, False)
     code, said = gate(rule=CHECK + "\t@./scripts/brand-new.sh\n")
     row("gate.sh: a step added to `make check` is a step of it", (code, said.count("✔"), "✔ brand-new " in said), (0, STEPS + 1, True))
