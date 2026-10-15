@@ -152,16 +152,22 @@ by_the_row_and_a_word() {
   "$ASKER" announce
 }
 
-# one_round <number> <how the permission goes> [arbor|arbor-without-taps|nobody|bare-tapper] [sampled]: the last three are the controls. If input stands still without
+# arbor-stopped is sabotage: the whole process is halted (SIGSTOP) two seconds before the deed, so that nobody is there to take the taps out, which is the nearest there is today to
+# "the thread that keeps the permission's clock sleeps for good". How long until input is back? The Mac is given back whatever happens: twenty seconds after the deed Arbor is killed.
+# one_round <number> <how the permission goes> [arbor|arbor-without-taps|nobody|bare-tapper|arbor-stopped] [sampled]: all but the first are controls. If input stands still without
 # Arbor's taps as well, it is not the taps' doing. sampled: `sample` looks at Arbor from the deed on, for what its main thread is doing meanwhile; it halts
 # Arbor at every look, so such a round's figures are not to be compared with the others'.
 one_round() {
-  local how=$2 who=${3:-arbor} sampled=${4:-} x y w h log_mark taken back length=12 between
+  local how=$2 who=${3:-arbor} sampled=${4:-} x y w h log_mark taken back length=12 between killed=""
   round=$1
   # By that road the loss came 14 s after the deed: the stream has to last until then.
   [ "$how" = by_the_row ] && length=34
   between="from the loss until the taps were gone"
   [ "$how" = by_the_row ] && between="FROM THE ROW'S DELETION UNTIL ARBOR NOTICED"
+  if [ "$who" = arbor-stopped ]; then
+    length=30
+    between="FROM THE LOSS UNTIL ARBOR, HALTED, WAS KILLED"
+  fi
   step "round $round: $how, with $who${sampled:+, sampled}"
   # Whose entry is written and taken.
   BUNDLE_ID=$ARBOR_ID REQUIREMENT=$ARBOR_REQUIREMENT
@@ -175,7 +181,7 @@ one_round() {
     started "$TAPPER_PID"
     "$WITNESS" taps | grep "pid=$TAPPER_PID "
   elif [ "$who" != nobody ]; then
-    launch "$([ "$who" = arbor ] && echo 0 || echo 1)"
+    launch "$([ "$who" = arbor-without-taps ] && echo 1 || echo 0)"
     if ! eventually status_starts running; then
       "$ARBOR_BIN/arborctl" status
       invalid "Arbor has the permission at launch"
@@ -183,7 +189,7 @@ one_round() {
       return
     fi
     echo "Arbor pid $ARBOR_PID, entry: $(rows)"
-    if [ "$who" = arbor ]; then
+    if [ "$who" != arbor-without-taps ]; then
       eventually has_taps || { invalid "Arbor has its event taps"; leave; return; }
       arbor_taps
     else
@@ -201,7 +207,15 @@ one_round() {
   "$ASKER" stream "$length" "${BEAT:-50}" "$x" "$y" --kinds "${KINDS:-click,key,wheel}" > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
   stream=$!
   started "$stream"
-  sleep 4
+  if [ "$who" = arbor-stopped ]; then
+    sleep 2
+    at_exit "kill -9 $ARBOR_PID 2>/dev/null"
+    echo "$("$ASKER" now) Arbor is halted"
+    kill -STOP "$ARBOR_PID"
+    sleep 2
+  else
+    sleep 4
+  fi
   if [ -n "$sampled" ] && [ -n "$ARBOR_PID" ]; then
     sample "$ARBOR_PID" "$((length - 5))" 5 -file "$ARBOR_OUT/sample-$round.txt" > /dev/null 2>&1 &
     started $!
@@ -210,13 +224,23 @@ one_round() {
   "$how"
   back=$("$ASKER" now)
   echo "the permission was taken between $taken and $back"
+  if [ "$who" = arbor-stopped ]; then
+    sleep 20
+    echo "its taps, twenty seconds on:"; arbor_taps
+    killed=$("$ASKER" now)
+    kill -9 "$ARBOR_PID" 2>/dev/null
+    echo "$killed Arbor is killed"
+  fi
   ended "$stream" "$((length * 10 + 30))" || invalid "the stream came to its end"
   sleep 1
   cat "$ARBOR_OUT/stream-$round.txt"
   tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -E "ermission|event tap|stopped|ERROR" | cut -c 12-220 | tail -n 8
   echo "the tools' own permission afterwards: $(pointer ax-access)"
   removed=""
-  if [ "$who" = bare-tapper ]; then
+  if [ "$who" = arbor-stopped ]; then
+    removed=$killed
+    ARBOR_PID=""
+  elif [ "$who" = bare-tapper ]; then
     # It ends by itself a few seconds after the stream, and says then what its questions cost.
     for _ in 1 2 3 4 5 6 7 8 9 10; do grep -q "the end" "$ARBOR_OUT/tapper-$round.txt" && break; sleep 1; done
     echo "the tapper's own words:"; cat "$ARBOR_OUT/tapper-$round.txt"
@@ -240,7 +264,8 @@ one_round() {
   fi
 
   python3 - "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/stream-$round.txt" "$taken" "${removed:-$back}" "$between" \
-    $([ "$who" = bare-tapper ] && echo "$ARBOR_OUT/tapper-$round.txt ${BEAT:-50} $(echo "${KINDS:-click,key,wheel}" | awk -F, '{ n = 0; for (i = 1; i <= NF; i++) n += ($i == "wheel" ? 1 : $i == "pinch" ? 3 : 2); print n }')") \
+    "$([ "$who" = bare-tapper ] && echo "$ARBOR_OUT/tapper-$round.txt" || echo -)" "${BEAT:-50}" \
+    "$(echo "${KINDS:-click,key,wheel}" | awk -F, '{ n = 0; for (i = 1; i <= NF; i++) n += ($i == "wheel" ? 1 : $i == "pinch" ? 3 : 2); print n }')" \
     > "$ARBOR_SESSION_DIR/verdict" <<'PYTHON'
 import re, sys
 
@@ -248,10 +273,16 @@ def seconds(text):
     hours, minutes, rest = text.split(":")
     return int(hours) * 3600 + int(minutes) * 60 + float(rest)
 
-arrivals, stream, taken, removed, between = sys.argv[1:6]
+arrivals, stream, taken, removed, between, tapper = sys.argv[1:7]
+beat, each = float(sys.argv[7]) / 1000, int(sys.argv[8])
 taken, removed = seconds(taken), seconds(removed)
-posted = re.search(r"stream ends: (\d+) events posted", open(stream).read())
+text = open(stream).read()
+posted = re.search(r"stream ends: (\d+) events posted", text)
 posted = int(posted.group(1)) if posted else 0
+begins, ends = (seconds(re.search(r"(\S+) stream " + word, text).group(1)) for word in ("begins", "ends"))
+def due(number):
+    """When an event was to be posted, by the stream's own beat."""
+    return begins + (number - 1) // each * beat
 found = []
 for line in open(arrivals):
     match = re.match(r"(\S+) (\S+) n=(\d+) late_us=(-?\d+)", line)
@@ -266,43 +297,56 @@ spans = [("before the loss", float("-inf"), taken), (between, taken, removed), (
 worst = {}
 for name, start, end in spans:
     part = [entry for entry in found if start <= entry[0] < end]
-    holes = [(later[0] - earlier[0], earlier[0]) for earlier, later in zip(found, found[1:]) if start <= earlier[0] < end]
+    # A hole belongs to the stretch its middle lies in, an event to the one it was due in: the last beat before the deed is up to a beat older than the deed.
+    holes = [(later[0] - earlier[0], earlier[0]) for earlier, later in zip(found, found[1:]) if start <= (earlier[0] + later[0]) / 2 < end]
     hole = max(holes) if holes else (0, 0)
     late = max((entry[3] for entry in part), default=0)
     over = sum(1 for entry in part if entry[3] > 10000)
     worst[name] = (len(part), hole[0], late, over)
-    # Every event has its number, so what was posted from the first of a stretch up to the first of the next is known: what is lost at a seam counts for the stretch it ends.
-    later = [entry[2] for entry in found if entry[0] >= end]
-    due = (min(later) if later else posted + 1) - min(entry[2] for entry in part) if part else 0
-    print(f"{name}: {len(part)} arrived of {due} posted, longest hole {hole[0] * 1000:.0f} ms, worst lateness {late / 1000:.1f} ms, more than 10 ms late: {over}")
+    owed = [number for number in range(1, posted + 1) if start <= due(number) < end]
+    print(f"{name}: {sum(1 for number in owed if number in numbers)} arrived of {len(owed)} posted, longest hole {hole[0] * 1000:.0f} ms, worst lateness {late / 1000:.1f} ms, more than 10 ms late: {over}")
+# The comparison, as the rule reads it: at the median, by kind of event.
+def median(values):
+    values = sorted(values)
+    return values[len(values) // 2] / 1000 if values else 0
+worse = 0
+told = []
+for kind in kinds:
+    first, then = (median([entry[3] for entry in found if entry[1] == kind and start <= entry[0] < end]) for _, start, end in (spans[0], spans[2]))
+    if any(entry[1] == kind for entry in found):
+        told.append(f"{kind} {first:.2f} / {then:.2f}")
+        worse = max(worse, then - first)
+print("median lateness in ms, before the loss / after the taps were gone: " + ", ".join(told))
 def stamp(time):
     return f"{int(time // 3600):02d}:{int(time % 3600 // 60):02d}:{time % 60:06.3f}"
 for earlier, later in zip(found, found[1:]):
     if later[0] - earlier[0] > 0.15 or later[2] - earlier[2] > 1:
         print(f"  a hole of {(later[0] - earlier[0]) * 1000:.0f} ms from {stamp(earlier[0])} (n={earlier[2]}) to {stamp(later[0])} (n={later[2]}): {later[2] - earlier[2] - 1} events lost in it")
-text = open(stream).read()
-begins, ends = (seconds(re.search(r"(\S+) stream " + word, text).group(1)) for word in ("begins", "ends"))
 silence = ends - found[-1][0] if found else ends - begins
 if silence > 0.15:
+    last = spans[2][0]
+    worst[last] = (worst[last][0], max(worst[last][1], silence), worst[last][2], worst[last][3])
     print(f"  NOTHING ARRIVED from {stamp(found[-1][0]) if found else stamp(begins)} to the end of the stream, {silence * 1000:.0f} ms: {posted - (found[-1][2] if found else 0)} events lost in it")
-if missing and len(sys.argv) > 6:
-    # When the first event that was lost was due, by the stream's own beat; and how long after it each of the tapper's questions changed its answer.
-    beat, each = float(sys.argv[7]) / 1000, int(sys.argv[8])
-    due = begins + (missing[0] - 1) // each * beat
-    print(f"the first event that was lost (n={missing[0]}) was due at {stamp(due)}, {(due - taken) * 1000:.0f} ms after the deed began; the last to arrive before it came at {stamp(max(entry[0] for entry in found if entry[2] < missing[0]))}")
-    for line in open(sys.argv[6]):
+if missing:
+    first = due(missing[0])
+    print(f"the first event that was lost (n={missing[0]}) was due at {stamp(first)}, {(first - taken) * 1000:+.0f} ms from the beginning of the deed")
+if tapper != "-":
+    # How long after the first lost event (or, if none was, after the deed) each of the tapper's questions changed its answer; and what asking costs.
+    for line in open(tapper):
         match = re.match(r"(\S+) (question .*|switched-off .*)", line)
-        if match and seconds(match.group(1)) >= taken:
-            print(f"  {match.group(2)}: {(seconds(match.group(1)) - due) * 1000:+.0f} ms from the first lost event")
+        if match and seconds(match.group(1)) >= taken - 0.1:
+            print(f"  {match.group(2)}: {(seconds(match.group(1)) - (first if missing else taken)) * 1000:+.0f} ms from {'the first lost event' if missing else 'the deed'}")
+        if " cost " in line:
+            print("  " + line.split(" ", 1)[1].strip())
 print(f"the taps were gone {(removed - taken) * 1000:.0f} ms after the permission began to go")
 holes = [(later[0] - earlier[0], earlier[0]) for earlier, later in zip(found, found[1:])] + ([(silence, found[-1][0])] if found else [])
 print(f"THE LONGEST HOLE: {max(holes)[0] * 1000:.0f} ms" if holes else "THE LONGEST HOLE: nothing arrived")
 print("facts", posted, len(missing), worst["before the loss"][0], worst["after the taps were gone"][0], worst["after the taps were gone"][3],
       round(max(holes)[0] * 1000) if holes else 999999, round(worst["before the loss"][2] / 1000), round(worst["after the taps were gone"][2] / 1000),
-      round(worst["before the loss"][1] * 1000), round(worst[between][1] * 1000), round(worst["after the taps were gone"][1] * 1000))
+      round(worst["before the loss"][1] * 1000), round(worst[between][1] * 1000), round(worst["after the taps were gone"][1] * 1000), round(worse))
 PYTHON
   grep -v "^facts " "$ARBOR_SESSION_DIR/verdict"
-  read -r _ posted missing before after late hole late_before late_after hole_before hole_during hole_after <<< "$(grep "^facts " "$ARBOR_SESSION_DIR/verdict")"
+  read -r _ posted missing before after late hole late_before late_after hole_before hole_during hole_after median_worse <<< "$(grep "^facts " "$ARBOR_SESSION_DIR/verdict")"
   [ "${posted:-0}" -ge 500 ] || invalid "the stream posted its events (${posted:-0})"
   [ "${before:-0}" -ge 100 ] || invalid "events arrived before the loss (${before:-0})"
   # The bare tapper never lets go: that nothing arrives afterwards is what it is there to show.
@@ -310,7 +354,9 @@ PYTHON
   # The rule: three absolutes, and the comparison on the same Mac. A hosted Mac is never quite still: with nothing taken from anybody events have been 85 ms late there.
   check "round $round: NOTHING LOST: every event that was posted arrived (${missing:-?} did not)" test "${missing:-1}" -eq 0
   check "round $round: the hole while the permission went (${hole_during:-?} ms) is no longer than a second" test "${hole_during:-9999}" -le 1000
-  check "round $round: no later after the taps were gone (${late_after:-?} ms) than this Mac was before the loss (${late_before:-?} ms), or 10 ms" \
+  check "round $round: AT THE MEDIAN, by kind of event, no more than 10 ms later after the taps were gone than before the loss (${median_worse:-?} ms at most)" \
+    test "${median_worse:-99}" -le 10
+  check "round $round: (at the worst) no later after the taps were gone (${late_after:-?} ms) than this Mac was before the loss (${late_before:-?} ms), or 10 ms" \
     test "${late_after:-9999}" -le "$((${late_before:-0} > 10 ? ${late_before:-0} : 10))"
   check "round $round: no longer a hole after the taps were gone (${hole_after:-?} ms) than before the loss (${hole_before:-?} ms), or 150 ms" \
     test "${hole_after:-9999}" -le "$((${hole_before:-0} > 150 ? ${hole_before:-0} : 150))"
@@ -327,7 +373,8 @@ for each in ${ROUNDS:-by_tccutil:arbor by_tccutil:nobody by_tccutil:arbor-withou
   by_the_row_and_a_word:arbor by_the_row_and_a_word:nobody by_the_row_and_a_word:arbor-without-taps by_the_row_and_a_word:bare-tapper \
   by_the_row:arbor by_the_row:nobody by_the_row:bare-tapper \
   by_tccutil:arbor by_the_row_and_a_word:arbor by_tccutil:arbor by_the_row_and_a_word:arbor \
-  by_tccutil:arbor:sampled by_the_row_and_a_word:arbor:sampled by_the_row_announced:arbor:sampled}; do
+  by_tccutil:arbor:sampled by_the_row_and_a_word:arbor:sampled by_the_row_announced:arbor:sampled \
+  nothing:arbor-stopped by_tccutil:arbor-stopped}; do
   number=$((number + 1))
   IFS=: read -r how who sampled <<< "$each"
   one_round "$number" "$how" "$who" "$sampled"

@@ -99,6 +99,16 @@ for name, start, end in stretches:
     facts[name] = (len(part), round(hole * 1000), sum(1 for e in part if e[3] > 10000), round(late / 1000))
     print(f"{'+'.join(always)} {name}: {len(part)} arrived, LONGEST HOLE {hole * 1000:.0f} ms, worst lateness {late / 1000:.1f} ms, more than 10 ms late: {facts[name][2]}")
 
+# The comparison, as the rule reads it: at the median, by kind of event.
+def median(values):
+    values = sorted(values)
+    return values[len(values) // 2] / 1000 if values else 0
+worse, told = 0, []
+for kind in always:
+    first, then = (median([e[3] for e in found if e[1] == kind and start <= e[0] < end]) for _, start, end in (stretches[0], stretches[2]))
+    told.append(f"{kind} {first:.2f} / {then:.2f}")
+    worse = max(worse, then - first)
+print("median lateness in ms, before the loss / after the taps were gone: " + ", ".join(told))
 # A beat posts three events in a fixed order, so which numbers are of the kinds that must always arrive is read off those that did.
 places = {e[2] % 3 for e in steady}
 gone = [number for number in range(1, posted + 1) if number % 3 in places and number not in {e[2] for e in found}]
@@ -138,7 +148,7 @@ else:
     print(f"lost altogether: {lost_after}")
 print("facts", posted, facts["before the loss"][0], facts["after the taps were gone"][0], facts[between][1],
       facts["after the taps were gone"][1], facts["after the taps were gone"][2], lost_after, first_after, met, facts.get("clean", -1), facts.get("plain", -1),
-      facts["before the loss"][1], facts["before the loss"][3], facts["after the taps were gone"][3], len(gone))
+      facts["before the loss"][1], facts["before the loss"][3], facts["after the taps were gone"][3], len(gone), round(worse))
 PYTHON
 
 grant() {
@@ -224,7 +234,7 @@ afterwards() {
 # bars: what both streams are held to, from the line of facts.
 bars() {
   grep -v "^facts " "$ARBOR_SESSION_DIR/verdict"
-  read -r _ posted before after hole_during hole_after late_after lost first met clean plain hole_before worst_before worst_after gone \
+  read -r _ posted before after hole_during hole_after late_after lost first met clean plain hole_before worst_before worst_after gone median_worse \
     <<< "$(grep "^facts " "$ARBOR_SESSION_DIR/verdict")"
   [ "${posted:-0}" -ge 400 ] || invalid "the stream posted its events (${posted:-0})"
   [ "${before:-0}" -ge 80 ] || invalid "events arrived before the loss (${before:-0})"
@@ -235,7 +245,8 @@ bars() {
   check "round $round: nothing more than 10 ms late after that" test "${late_after:-1}" -eq 0
   check "round $round: nothing lost after that" test "${lost:-1}" -eq 0
   # A hosted Mac is never quite still: with nothing taken from anybody, events have been 85 ms late and 200 ms apart there. So, beside the bars:
-  check "round $round: no later after that (${worst_after:-?} ms) than this Mac was before the loss (${worst_before:-?} ms), or 10 ms" \
+  check "round $round: AT THE MEDIAN, by kind of event, no more than 10 ms later after that than before the loss (${median_worse:-?} ms at most)" test "${median_worse:-99}" -le 10
+  check "round $round: (at the worst) no later after that (${worst_after:-?} ms) than this Mac was before the loss (${worst_before:-?} ms), or 10 ms" \
     test "${worst_after:-9999}" -le "$((${worst_before:-0} > 10 ? ${worst_before:-0} : 10))"
   check "round $round: no longer a hole after that (${hole_after:-?} ms) than before the loss (${hole_before:-?} ms), or 150 ms" \
     test "${hole_after:-9999}" -le "$((${hole_before:-0} > 150 ? ${hole_before:-0} : 150))"

@@ -67,23 +67,30 @@ after the taps were gone: 1395 arrived of 1395 posted, longest hole 122 ms, …
   a hole of 997 ms from 01:37:08.956 (n=1910) to 01:37:09.953 (n=2006): 95 events lost in it
 ```
 
-- Three stretches, cut at the deed and at "noticed". What is lost at a seam is charged to the stretch it ends.
+- Three stretches, cut at the deed and at "noticed".
 - **Two kinds of hole.** Numbers **missing**: the events were posted and dropped, which is what the taps of a process without the permission do. Numbers **unbroken**, and the next event hardly late: nothing was
   posted, because `CGEventPost` blocked the poster. That happens with nobody running at all, seconds after tccd was killed, and is no fault of Arbor's.
 - A plain beat shows as a hole of 50 to 130 ms on a hosted Mac. With nothing taken from anybody, events have been 85 ms late there. So lateness and holes are compared with the same Mac's stretch before the loss; "nothing lost" and "nothing stuck" are absolute.
 - `INVALID` means the round proves nothing (could not post, nothing arrived before the loss, the tap in question was not on, Arbor began without the permission) and is a ✘. `FINDING` means Arbor never noticed within the stream.
-- The variants: `arbor`, `arbor-without-taps` (ARBOR_NO_HOTKEYS=1), `nobody`, `bare-tapper`. The last is the floor: what macOS does to any tapper that does nothing.
+- The variants: `arbor`, `arbor-without-taps` (ARBOR_NO_HOTKEYS=1), `nobody`, `bare-tapper` (what macOS does to any tapper that does nothing), `arbor-stopped` (sabotage).
+- A hole belongs to the stretch its middle lies in, an event to the stretch it was due in by the stream's beat. A silence that lasts to the end of the stream is printed as `NOTHING ARRIVED from … to the end of the stream` and counts as a hole of the last stretch.
+- `ROUNDS="<road>:<variant>[:sampled] …"`, `BEAT=<ms>` and `KINDS=click,key,wheel` in the environment play other rounds; `run.sh` passes no environment, so a wrapper sets them (`probe-tapper-questions.sh`).
 - `sampled` rounds have `sample` looking at Arbor from the deed on (`sample-<n>.txt`); it halts Arbor at every look, so their figures do not count.
 
-## How the verdict is read (the rule as it stood at 02:00 UTC on 2026-10-15)
+## How the verdict is read (the rule as it stood at 02:15 UTC on 2026-10-15)
 
-1. **tccutil's road is the road for the verdict**: it kills nothing and is felt at once. The two roads that kill tccd stay as controls for the poster's own hole.
-2. **Nothing stuck is the question that matters most**, and is absolute: no up is lost whose down arrived (`probe-nothing-stuck.sh`, ten rounds or more; round c of `probe-loss-under-traffic.sh`). Nothing held down at the end, no band or panel left, the next click whole.
-3. **The bare tapper is the floor**: what macOS does to any tapper that does nothing. Arbor is held to the floor, not to zero. It also says which cheap question turns at the instant of the withdrawal, how many milliseconds after the first dropped event, and what a call costs.
-4. **After the cure**: the hole at most 300 ms over the floor when macOS answers the question, 550 ms when it does not; lost no more than the beats that fit that hole; and the **false doubts** are counted in every stream, also in the controls where nothing is taken.
-5. **"After no later than before" is read at the median, by kind of event, with 10 ms to spare.** The worst value and the 99th percentile of a hosted Mac say more about the Mac: with nobody running they have been 61 ms and 9.5 ms.
-6. **The taps' own cost** is Arbor with taps against Arbor without taps on a release build, at the 99th percentile; a debug build is a sign and no verdict.
-7. **Open, and not to be settled on a hosted Mac**: whether real keys and buttons are dropped as posted ones are, and whether a real key whose up is lost goes on repeating.
+1. **The marks are absolute**, and are held on tccutil's road, where the right goes first, which is the worst case: the hole at most 300 ms when macOS answers Arbor's question, 550 ms when it does not; no up lost whose down arrived; lost no more than the beats that fit the hole.
+   There is no floor to be measured against: a bare tapper that does nothing loses the Mac its input for ever.
+2. **The verdict needs both roads**: tccutil's, and **the switch itself** clicked by the pointer (`probe-the-switch.sh`), which is what a person does and decides what the notes may say. The gentlest road (`by_the_row_and_a_word`) stays as the control that shows that Arbor
+   leaves of its own accord when told; the two roads that kill tccd stay as controls for the poster's own hole.
+3. **Nothing stuck is the question that matters most**: `probe-nothing-stuck.sh`, ten rounds or more; round c of `probe-loss-under-traffic.sh`. Nothing held down at the end, no band or panel left, the next click whole.
+4. **False doubts** are counted in every stream, also in the controls where nothing is taken (`nothing:arbor`).
+5. **"After no later than before" is read at the median, by kind of event, with 10 ms to spare.** The worst value and the 99th percentile of a hosted Mac say more about the Mac: with nobody running they have been 61 ms and 9.5 ms. They are printed beside, marked "(at the worst)" and "(the first bar)".
+6. **The taps' own cost** is Arbor with taps against Arbor without taps on a release build, at the 99th percentile, 10 ms; a debug build is a sign and no verdict.
+7. **Sabotage** (`by_tccutil:arbor-stopped`): nobody is there to take the taps out. Today the whole process is halted with SIGSTOP two seconds before the deed and killed twenty seconds after it, so that the Mac is given back whatever happens; `nothing:arbor-stopped` is its control.
+   Once there is a hook that puts only the thread with the permission's clock to sleep, that is the round to play. The mark, if a last net is built outside that thread: input back within 3 s.
+8. **The bare tapper's questions**: whichever turns at the instant of the withdrawal and is cheap is what the beat should go by (`probe-tapper-questions.sh`).
+9. **Open, and not to be settled on a hosted Mac**: whether real keys and buttons are dropped as posted ones are, and whether a real key whose up is lost goes on repeating.
 
 ## What was found by 02:00 UTC on 2026-10-15 (macOS 26.6.2, debug build)
 
