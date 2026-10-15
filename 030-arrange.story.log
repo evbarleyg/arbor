@@ -1,0 +1,62 @@
+30 arrange: chooses Arrange Windows
+expected: {'act': 'dock-key', 'settled': 'quiet:1067', 'moves': 'any', 'tiles': '71@732:43:178:767,54@732:43:178:767,60@732:43:178:767,63@922:43:574:248', 'keyboard': '67', 'floating': '', 'docked': '32,35,46,51,54,60,63,67,71'}
+FAIL rule 3: terminal (w51) moved 2 times
+FAIL rule 3: preview (w67) moved 2 times
+
+09:08:26.587 SCREEN -- begin 30 arrange
+09:08:26.587 SCREEN -- text 30 chooses Arrange Windows
+09:08:26.602 INFO  made room for w67, w35
+09:08:26.632 MACOS pid 6263 AXTitleChanged w51 AXWindow/AXStandardWindow 40 51 709 244
+09:08:26.635 MACOS pid 6263 AXResized w51 AXWindow/AXStandardWindow 40 51 709 244
+09:08:26.653 MACOS pid 7268 AXResized w67 AXWindow/AXStandardWindow 4 35 708 248
+09:08:26.660 SCREEN preview (w67) 4,35 708×248
+09:08:26.660 SCREEN terminal (w51) 40,51 709×244
+09:08:26.694 MACOS pid 342 AXResized w32 AXWindow/AXStandardWindow 12 43 501 252
+09:08:26.707 SCREEN finder (w32) 12,43 501×252
+09:08:26.725 INFO  made room for w67, w35, w32
+09:08:26.763 MACOS pid 5949 AXResized w35 AXWindow/AXStandardWindow 712 43 574 247
+09:08:26.770 SCREEN safari (w35) 712,43 574×247
+09:08:26.802 MACOS pid 6181 AXResized w46 AXWindow/AXStandardWindow 1298 43 290 248
+09:08:26.820 SCREEN textedit (w46) 1298,43 290×248
+09:08:26.897 MACOS pid 342 AXResized w32 AXWindow/AXStandardWindow 12 301 708 252
+09:08:26.897 MACOS pid 342 AXMoved w32 AXWindow/AXStandardWindow 12 301 708 252
+09:08:26.898 SCREEN finder (w32) 12,301 708×252
+09:08:26.911 MACOS pid 5949 AXMoved w35 AXWindow/AXStandardWindow 922 303 574 247
+09:08:26.927 MACOS pid 6181 AXResized w46 AXWindow/AXStandardWindow 922 562 302 248
+09:08:26.928 MACOS pid 6181 AXMoved w46 AXWindow/AXStandardWindow 922 562 574 248
+09:08:26.928 MACOS pid 6181 AXResized w46 AXWindow/AXStandardWindow 922 562 574 248
+09:08:26.939 MACOS pid 6263 AXMoved w51 AXWindow/AXStandardWindow 12 565 709 244
+09:08:26.951 MACOS pid 7268 AXResized w67 AXWindow/AXStandardWindow 12 43 708 246
+09:08:26.952 MACOS pid 7268 AXMoved w67 AXWindow/AXStandardWindow 12 43 708 246
+09:08:26.954 SCREEN safari (w35) 922,303 574×247
+09:08:26.954 SCREEN textedit (w46) 1298,43 302×248
+09:08:26.954 SCREEN terminal (w51) 12,565 709×244
+09:08:26.959 MACOS pid 6579 AXMoved w54 AXWindow/AXStandardWindow 1599 770 1000 660
+09:08:26.967 SCREEN textedit (w46) 922,562 574×248
+09:08:26.969 MACOS pid 6801 AXMoved w60 AXWindow/AXStandardWindow 1599 770 936 599
+09:08:26.976 MACOS pid 7119 AXMoved w63 AXWindow/AXStandardWindow 1599 770 723 625
+09:08:27.004 SCREEN preview (w67) 12,43 708×246
+09:08:27.004 SCREEN calendar (w60) 1599,770 936×599
+09:08:27.004 SCREEN w73 of Mail 1924,877 470×416
+09:08:27.004 SCREEN mail (w71) 1599,770 1120×630
+09:08:27.004 SCREEN settings (w63) 1599,770 723×625
+09:08:27.004 SCREEN notes (w54) 1599,770 1000×660
+09:08:27.026 MACOS pid 7455 AXMoved w71 AXWindow/AXStandardWindow 1599 770 1120 630
+09:08:27.061 INFO  arrange: arranged 9 windows; 1 saved view is gone
+09:08:27.903 SCREEN w118 of Arbor 732,43 178×767
+09:08:27.903 SCREEN w119 of Arbor 922,43 574×248
+09:08:27.903 SCREEN w112 of Arbor 1508,43 80×767
+09:08:27.903 SCREEN w113 of Arbor 12,289 708×12
+09:08:27.903 SCREEN w104 of Arbor 12,553 708×12
+09:08:27.903 SCREEN w110 of Arbor 922,291 574×12
+09:08:27.903 SCREEN w120 of Arbor 922,550 574×12
+09:08:27.903 SCREEN w121 of Arbor 720,43 12×767
+09:08:27.903 SCREEN w122 of Arbor 910,43 12×767
+09:08:27.903 SCREEN w123 of Arbor 1496,43 12×767
+09:08:27.903 SCREEN w105 of Arbor left the screen
+09:08:27.903 SCREEN front to back: preview safari textedit finder w98 calendar w73 mail settings notes terminal w118 w119 w112 w113 w104 w110 w120 w121 w122 w123
+09:08:29.196 SCREEN -- end 30 act=dock-key settled=quiet:1067 moves=any tiles=71@732:43:178:767,54@732:43:178:767,60@732:43:178:767,63@922:43:574:248 keyboard=67 floating= docked=32,35,46,51,54,60,63,67,71
+09:08:30.482 SCREEN -- chapter What the one icon says
+09:08:30.493 INFO  trace day-3 ended: 93 lines, trace off
+09:08:30.507 INFO  trace day-4: recording to /tmp/arbor-shell.S6K5Rj/home/traces/2026-10-15-090830-day-4.jsonl
+09:08:30.572 SCRIPT == 31 hold

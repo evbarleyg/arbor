@@ -1,0 +1,1916 @@
+{
+ "sampler": "samples 5317 seconds 170.1 hz 31.3 cost-ms 4.15 late 19 longest-gap-ms 248 whole-samples 7974 whole-seconds 255.1 whole-late 160",
+ "input": {
+  "events": 31,
+  "p50_us": 482,
+  "p99_us": 102159,
+  "max_us": 102159,
+  "kinds": {
+   "down": {
+    "events": 5,
+    "p50_us": 688,
+    "p99_us": 2712,
+    "max_us": 2712
+   },
+   "forward": {
+    "events": 1,
+    "p50_us": 81309,
+    "p99_us": 81309,
+    "max_us": 81309
+   },
+   "key": {
+    "events": 19,
+    "p50_us": 344,
+    "p99_us": 1032,
+    "max_us": 1032
+   },
+   "up": {
+    "events": 6,
+    "p50_us": 72884,
+    "p99_us": 102159,
+    "max_us": 102159
+   }
+  },
+  "rounds": {
+   "before": {
+    "forward": {
+     "events": 8,
+     "p50_us": 101795,
+     "p99_us": 197749,
+     "max_us": 197749
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 6377,
+     "p99_us": 9531,
+     "max_us": 9531
+    }
+   },
+   "started": {
+    "forward": {
+     "events": 8,
+     "p50_us": 90396,
+     "p99_us": 142307,
+     "max_us": 142307
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 5021,
+     "p99_us": 17016,
+     "max_us": 17016
+    }
+   },
+   "last": {
+    "forward": {
+     "events": 12,
+     "p50_us": 31849,
+     "p99_us": 75245,
+     "max_us": 75245
+    },
+    "up": {
+     "events": 12,
+     "p50_us": 946,
+     "p99_us": 6725,
+     "max_us": 6725
+    }
+   },
+   "after": {
+    "forward": {
+     "events": 8,
+     "p50_us": 38485,
+     "p99_us": 73254,
+     "max_us": 73254
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 1059,
+     "p99_us": 1690,
+     "max_us": 1690
+    }
+   }
+  },
+  "judged": [],
+  "silent": {
+   "down": "fewer than 10 such events in a round without Arbor",
+   "forward": "fewer than 10 such events in a round without Arbor",
+   "up": "fewer than 10 such events in a round without Arbor",
+   "key": "fewer than 10 such events in a round without Arbor",
+   "dragged": "fewer than 10 such events in a round without Arbor",
+   "scroll": "fewer than 10 such events in a round without Arbor"
+  }
+ },
+ "stage_seen": true,
+ "witnessed": true,
+ "steps": [
+  {
+   "number": 13,
+   "slug": "input-before",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792055231127,
+   "milliseconds": 14417,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 14,
+   "slug": "launch",
+   "chapter": "The walk",
+   "text": "starts Arbor",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792055246015,
+   "milliseconds": 2889,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 15,
+   "slug": "input-started",
+   "chapter": "The walk",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792055249660,
+   "milliseconds": 12872,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 16,
+   "slug": "dock-icon-finder",
+   "chapter": "Docks and moves of the view, as Arbor ships",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792055264160,
+   "milliseconds": 2452,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 17,
+   "slug": "dock-left",
+   "chapter": "Docks and moves of the view, as Arbor ships",
+   "text": "presses ⌃⌥⌘ and the left arrow",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792055267797,
+   "milliseconds": 2993,
+   "moved": {
+    "32": [
+     1,
+     2,
+     87
+    ],
+    "35": [
+     1,
+     2,
+     31
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ],
+    "51": [
+     1,
+     1,
+     0
+    ],
+    "54": [
+     1,
+     2,
+     46
+    ],
+    "60": [
+     1,
+     1,
+     0
+    ],
+    "63": [
+     1,
+     1,
+     0
+    ],
+    "67": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ],
+    "73": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "safari (w35)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 138,31 1324×791 · +743 ms 138,31 794×791 · +774 ms 806,31 794×791"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "textedit (w46)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 165,65 673×439 · +864 ms 806,65 673×439"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w51)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 40,51 877×499 · +949 ms 806,51 793×499"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w54)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 300,105 1000×660 · +1069 ms 300,105 794×660 · +1115 ms 806,105 794×660"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w60)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 404,115 936×599 · +1214 ms 806,115 794×599"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w63)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 437,85 723×625 · +1278 ms 806,85 723×625"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w67)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 4,35 708×424 · +1278 ms 806,35 708×424"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w71)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 240,72 1120×630 · +1473 ms 719,72 881×630"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w73 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 565,179 470×416 · +1473 ms 925,179 470×416",
+     "explained": "follows its window"
+    }
+   ]
+  },
+  {
+   "number": 18,
+   "slug": "dock-icon-safari",
+   "chapter": "Docks and moves of the view, as Arbor ships",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792055272936,
+   "milliseconds": 2100,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 19,
+   "slug": "dock-right",
+   "chapter": "Docks and moves of the view, as Arbor ships",
+   "text": "presses ⌃⌥⌘ and the right arrow",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792055276570,
+   "milliseconds": 1938,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     2,
+     53
+    ],
+    "46": [
+     1,
+     2,
+     12
+    ],
+    "51": [
+     1,
+     2,
+     32
+    ],
+    "54": [
+     1,
+     1,
+     0
+    ],
+    "60": [
+     1,
+     2,
+     56
+    ],
+    "63": [
+     1,
+     1,
+     0
+    ],
+    "67": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ],
+    "73": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "textedit (w46)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,65 673×439 · +555 ms 806,65 461×439 · +567 ms 541,65 461×439"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w51)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,51 793×499 · +597 ms 541,51 464×499 · +629 ms 541,51 457×499"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w54)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,105 794×660 · +700 ms 417,105 709×660"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w60)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,115 794×599 · +700 ms 806,115 680×599 · +756 ms 431,115 680×599"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w63)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,85 723×625 · +756 ms 410,85 723×625"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w67)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,35 708×424 · +756 ms 417,35 708×424"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w71)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 719,72 881×630 · +756 ms 331,72 881×630"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w73 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 925,179 470×416 · +756 ms 537,179 470×416",
+     "explained": "follows its window"
+    }
+   ]
+  },
+  {
+   "number": 20,
+   "slug": "dock-icon-textedit",
+   "chapter": "Docks and moves of the view, as Arbor ships",
+   "text": "clicks textedit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792055279918,
+   "milliseconds": 2148,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 21,
+   "slug": "dock-right",
+   "chapter": "Docks and moves of the view, as Arbor ships",
+   "text": "presses ⌃⌥⌘ and the right arrow",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792055282567,
+   "milliseconds": 1680,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     3,
+     90
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 22,
+   "slug": "click-safari",
+   "chapter": "Docks and moves of the view, as Arbor ships",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792055285954,
+   "milliseconds": 2099,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 23,
+   "slug": "view-frame",
+   "chapter": "Docks and moves of the view, as Arbor ships",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792055288407,
+   "milliseconds": 1796,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     2,
+     40
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ],
+    "51": [
+     1,
+     1,
+     0
+    ],
+    "54": [
+     1,
+     1,
+     0
+    ],
+    "60": [
+     1,
+     1,
+     0
+    ],
+    "63": [
+     1,
+     1,
+     0
+    ],
+    "67": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ],
+    "73": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 24,
+   "slug": "save-view-1",
+   "chapter": "Docks and moves of the view, as Arbor ships",
+   "text": "presses ⌃⌥⇧1",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792055291354,
+   "milliseconds": 1442,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 25,
+   "slug": "view-all",
+   "chapter": "Docks and moves of the view, as Arbor ships",
+   "text": "presses ⌃⌥Space",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792055293937,
+   "milliseconds": 1804,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ],
+    "51": [
+     1,
+     2,
+     9
+    ],
+    "54": [
+     1,
+     2,
+     14
+    ],
+    "60": [
+     1,
+     1,
+     0
+    ],
+    "63": [
+     1,
+     1,
+     0
+    ],
+    "67": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     2,
+     59
+    ],
+    "73": [
+     1,
+     2,
+     59
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "ODD",
+     "window": "w73 of Mail",
+     "what": "went 238 points out of its way before it ended up",
+     "trace": "+0 ms 1805,877 470×416 · +578 ms 1924,877 470×416 · +637 ms 565,179 470×416",
+     "explained": "follows its window"
+    }
+   ]
+  },
+  {
+   "number": 26,
+   "slug": "view-1",
+   "chapter": "Docks and moves of the view, as Arbor ships",
+   "text": "presses ⌃⌥1",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792055297052,
+   "milliseconds": 1755,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     2,
+     85
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ],
+    "51": [
+     1,
+     1,
+     0
+    ],
+    "54": [
+     1,
+     1,
+     0
+    ],
+    "60": [
+     1,
+     1,
+     0
+    ],
+    "63": [
+     1,
+     1,
+     0
+    ],
+    "67": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ],
+    "73": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 27,
+   "slug": "view-back",
+   "chapter": "Docks and moves of the view, as Arbor ships",
+   "text": "presses ⌃⌥[",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792055299939,
+   "milliseconds": 1392,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     2,
+     10
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ],
+    "51": [
+     1,
+     1,
+     0
+    ],
+    "54": [
+     1,
+     1,
+     0
+    ],
+    "60": [
+     1,
+     1,
+     0
+    ],
+    "63": [
+     1,
+     1,
+     0
+    ],
+    "67": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ],
+    "73": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 28,
+   "slug": "view-desktop",
+   "chapter": "Docks and moves of the view, as Arbor ships",
+   "text": "presses ⌃⌥D",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792055301642,
+   "milliseconds": 1725,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 29,
+   "slug": "view-all",
+   "chapter": "Docks and moves of the view, as Arbor ships",
+   "text": "presses ⌃⌥Space",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792055304523,
+   "milliseconds": 1445,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 30,
+   "slug": "arrange",
+   "chapter": "Every window at once: most of them become tiles",
+   "text": "chooses Arrange Windows",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792055306587,
+   "milliseconds": 2609,
+   "moved": {
+    "32": [
+     1,
+     2,
+     191
+    ],
+    "35": [
+     1,
+     2,
+     184
+    ],
+    "46": [
+     1,
+     3,
+     147
+    ],
+    "51": [
+     2,
+     2,
+     294
+    ],
+    "54": [
+     1,
+     1,
+     0
+    ],
+    "60": [
+     1,
+     1,
+     0
+    ],
+    "63": [
+     1,
+     1,
+     0
+    ],
+    "67": [
+     2,
+     2,
+     344
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ],
+    "73": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "terminal (w51)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 40,51 877×499 · +73 ms 40,51 709×244 · +367 ms 12,565 709×244"
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "preview (w67)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 4,35 708×424 · +73 ms 4,35 708×248 · +417 ms 12,43 708×246"
+    }
+   ]
+  },
+  {
+   "number": 31,
+   "slug": "hold",
+   "chapter": "What the one icon says",
+   "text": "holds the view",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792055310582,
+   "milliseconds": 545,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 32,
+   "slug": "release",
+   "chapter": "What the one icon says",
+   "text": "lets it go",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792055312472,
+   "milliseconds": 639,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 33,
+   "slug": "hold-still",
+   "chapter": "What the one icon says",
+   "text": "asks Arbor to hold still",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792055313726,
+   "milliseconds": 511,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 34,
+   "slug": "release-again",
+   "chapter": "What the one icon says",
+   "text": "lets it go",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792055315486,
+   "milliseconds": 508,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 35,
+   "slug": "pause",
+   "chapter": "What the one icon says",
+   "text": "presses ⌃⌥⎋",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792055316369,
+   "milliseconds": 1941,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     2,
+     101
+    ],
+    "46": [
+     1,
+     2,
+     13
+    ],
+    "51": [
+     1,
+     1,
+     0
+    ],
+    "54": [
+     1,
+     1,
+     0
+    ],
+    "60": [
+     1,
+     1,
+     0
+    ],
+    "63": [
+     1,
+     1,
+     0
+    ],
+    "67": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ],
+    "73": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 36,
+   "slug": "resume",
+   "chapter": "What the one icon says",
+   "text": "presses ⌃⌥⎋",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792055319518,
+   "milliseconds": 1643,
+   "moved": {
+    "32": [
+     1,
+     2,
+     61
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     2,
+     20
+    ],
+    "51": [
+     1,
+     1,
+     0
+    ],
+    "54": [
+     1,
+     1,
+     0
+    ],
+    "60": [
+     1,
+     1,
+     0
+    ],
+    "63": [
+     1,
+     1,
+     0
+    ],
+    "67": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ],
+    "73": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 37,
+   "slug": "float-all",
+   "chapter": "What the one icon says",
+   "text": "presses ⌃⌥⇧F",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792055322525,
+   "milliseconds": 1906,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     2,
+     63
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ],
+    "51": [
+     1,
+     1,
+     0
+    ],
+    "54": [
+     1,
+     1,
+     0
+    ],
+    "60": [
+     1,
+     1,
+     0
+    ],
+    "63": [
+     1,
+     1,
+     0
+    ],
+    "67": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ],
+    "73": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 38,
+   "slug": "dock-icon-finder",
+   "chapter": "Each is an option still",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792055325867,
+   "milliseconds": 2015,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 39,
+   "slug": "dock-left",
+   "chapter": "Each is an option still",
+   "text": "presses ⌃⌥⌘ and the left arrow",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792055328209,
+   "milliseconds": 1909,
+   "moved": {
+    "32": [
+     1,
+     2,
+     55
+    ],
+    "35": [
+     1,
+     2,
+     29
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ],
+    "51": [
+     1,
+     1,
+     0
+    ],
+    "54": [
+     1,
+     2,
+     49
+    ],
+    "60": [
+     1,
+     1,
+     0
+    ],
+    "63": [
+     1,
+     1,
+     0
+    ],
+    "67": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ],
+    "73": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "safari (w35)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 138,31 1324×790 · +349 ms 138,31 794×790 · +378 ms 806,31 794×790"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "textedit (w46)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 165,65 673×439 · +378 ms 806,65 673×439"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w51)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 40,51 877×499 · +378 ms 806,51 793×499"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w54)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 300,105 1000×660 · +475 ms 300,105 794×660 · +524 ms 806,105 794×660"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w60)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 404,115 936×599 · +524 ms 806,115 794×599"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w63)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 437,85 723×625 · +524 ms 806,85 723×625"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w67)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 4,35 708×424 · +524 ms 806,35 708×424"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w71)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 240,72 1120×630 · +688 ms 719,72 881×630"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w73 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 565,179 470×416 · +688 ms 925,179 470×416",
+     "explained": "follows its window"
+    }
+   ]
+  },
+  {
+   "number": 40,
+   "slug": "ring-on",
+   "chapter": "Each is an option still",
+   "text": "switches the focus ring on",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792055330650,
+   "milliseconds": 1227,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 41,
+   "slug": "backdrop-on",
+   "chapter": "Each is an option still",
+   "text": "darkens the wallpaper behind docked windows",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792055334155,
+   "milliseconds": 517,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 42,
+   "slug": "buttons-on",
+   "chapter": "Each is an option still",
+   "text": "switches the buttons on",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792055335818,
+   "milliseconds": 470,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 43,
+   "slug": "motion-on",
+   "chapter": "Each is an option still",
+   "text": "switches the motion on",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792055337361,
+   "milliseconds": 476,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 44,
+   "slug": "dock-icon-safari",
+   "chapter": "Each is an option still",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792055338136,
+   "milliseconds": 2197,
+   "moved": {},
+   "findings": [
+    {
+     "rule": "6",
+     "detector": "input-held",
+     "level": "FAIL",
+     "window": null,
+     "what": "the button came up, and the apps heard of it 102 ms later",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 45,
+   "slug": "dock-right",
+   "chapter": "Each is an option still",
+   "text": "presses ⌃⌥⌘ and the right arrow",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792055340723,
+   "milliseconds": 2179,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ],
+    "51": [
+     1,
+     1,
+     0
+    ],
+    "54": [
+     1,
+     1,
+     0
+    ],
+    "60": [
+     1,
+     1,
+     0
+    ],
+    "63": [
+     1,
+     1,
+     0
+    ],
+    "67": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ],
+    "73": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "textedit (w46)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,65 673×439 · +1068 ms 541,65 461×439"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w51)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,51 793×499 · +1068 ms 541,51 457×499"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "notes (w54)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,105 794×660 · +1068 ms 417,105 709×660"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "calendar (w60)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,115 794×599 · +1068 ms 431,115 680×599"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "settings (w63)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,85 723×625 · +1068 ms 410,85 723×625"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "preview (w67)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 806,35 708×424 · +1068 ms 417,35 708×424"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "mail (w71)",
+     "what": "a floating window, moved, and the step did not name it",
+     "trace": "+0 ms 719,72 881×630 · +1068 ms 331,72 881×630"
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "ODD",
+     "window": "w73 of Mail",
+     "what": "moved along with a window of its app",
+     "trace": "+0 ms 925,179 470×416 · +1068 ms 537,179 470×416",
+     "explained": "follows its window"
+    },
+    {
+     "rule": "3",
+     "detector": "slow",
+     "level": "ODD",
+     "window": null,
+     "what": "the last window came to rest 712 ms after the key or the button",
+     "trace": null,
+     "explained": "listed, and no reason, until the release build has answered"
+    }
+   ]
+  },
+  {
+   "number": 46,
+   "slug": "view-frame",
+   "chapter": "Each is an option still",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792055343212,
+   "milliseconds": 1720,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ],
+    "51": [
+     1,
+     1,
+     0
+    ],
+    "54": [
+     1,
+     1,
+     0
+    ],
+    "60": [
+     1,
+     1,
+     0
+    ],
+    "63": [
+     1,
+     1,
+     0
+    ],
+    "67": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ],
+    "73": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 47,
+   "slug": "view-all",
+   "chapter": "Each is an option still",
+   "text": "presses ⌃⌥Space",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792055345199,
+   "milliseconds": 1449,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     1,
+     0
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ],
+    "51": [
+     1,
+     1,
+     0
+    ],
+    "54": [
+     1,
+     1,
+     0
+    ],
+    "60": [
+     1,
+     1,
+     0
+    ],
+    "63": [
+     1,
+     1,
+     0
+    ],
+    "67": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ],
+    "73": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 48,
+   "slug": "reset-focusRing",
+   "chapter": "Each is an option still",
+   "text": "puts focusRing back",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792055347050,
+   "milliseconds": 1142,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 49,
+   "slug": "reset-dimBehindArranged",
+   "chapter": "Each is an option still",
+   "text": "puts dimBehindArranged back",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792055348434,
+   "milliseconds": 472,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 50,
+   "slug": "reset-menuBarControls",
+   "chapter": "Each is an option still",
+   "text": "puts menuBarControls back",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792055349141,
+   "milliseconds": 483,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 51,
+   "slug": "reset-animationDuration",
+   "chapter": "Each is an option still",
+   "text": "puts animationDuration back",
+   "act": "way-out",
+   "judged": true,
+   "performed": true,
+   "began": 1792055349892,
+   "milliseconds": 499,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 52,
+   "slug": "input-last",
+   "chapter": "The end",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792055351538,
+   "milliseconds": 14621,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 53,
+   "slug": "quit",
+   "chapter": "The end",
+   "text": "chooses Quit Arbor in Arbor's menu",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792055366511,
+   "milliseconds": 3629,
+   "moved": {
+    "32": [
+     1,
+     1,
+     0
+    ],
+    "35": [
+     1,
+     2,
+     50
+    ],
+    "46": [
+     1,
+     1,
+     0
+    ],
+    "51": [
+     1,
+     1,
+     0
+    ],
+    "54": [
+     1,
+     2,
+     43
+    ],
+    "60": [
+     1,
+     1,
+     0
+    ],
+    "63": [
+     1,
+     1,
+     0
+    ],
+    "67": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ],
+    "73": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "crash",
+     "level": "FAIL",
+     "window": null,
+     "what": "Arbor's process ended, and nobody asked it to",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 54,
+   "slug": "input-after",
+   "chapter": "The end",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792055370360,
+   "milliseconds": 11090,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 55,
+   "slug": "dock-icon-finder",
+   "chapter": "The end",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792055381793,
+   "milliseconds": 1764,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 56,
+   "slug": "dock-icon-safari",
+   "chapter": "The end",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792055383863,
+   "milliseconds": 1741,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 57,
+   "slug": "dock-icon-textedit",
+   "chapter": "The end",
+   "text": "clicks textedit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792055385810,
+   "milliseconds": 1931,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 58,
+   "slug": "dock-icon-terminal",
+   "chapter": "The end",
+   "text": "clicks terminal's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792055387945,
+   "milliseconds": 1887,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 59,
+   "slug": "dock-icon-notes",
+   "chapter": "The end",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792055390023,
+   "milliseconds": 1934,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 60,
+   "slug": "dock-icon-calendar",
+   "chapter": "The end",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792055392181,
+   "milliseconds": 1811,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 61,
+   "slug": "dock-icon-settings",
+   "chapter": "The end",
+   "text": "clicks settings's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792055394262,
+   "milliseconds": 1975,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 62,
+   "slug": "dock-icon-preview",
+   "chapter": "The end",
+   "text": "clicks preview's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792055396615,
+   "milliseconds": 1856,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 63,
+   "slug": "dock-icon-mail",
+   "chapter": "The end",
+   "text": "clicks mail's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792055398735,
+   "milliseconds": 1894,
+   "moved": {},
+   "findings": []
+  }
+ ]
+}
