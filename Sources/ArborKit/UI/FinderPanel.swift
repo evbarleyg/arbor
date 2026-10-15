@@ -35,6 +35,7 @@ final class FinderPanel: NSPanel, NSTextFieldDelegate {
   /// What watches, while the palette is open, for signs that the user has left it (`watchForLeaving`).
   private var eventMonitors: [Any] = []
   private var workspaceWatchers: [any NSObjectProtocol] = []
+  private let sightWatcher = SightWatcher()
 
   init() {
     super.init(
@@ -151,12 +152,16 @@ final class FinderPanel: NSPanel, NSTextFieldDelegate {
       return event
     }
     eventMonitors = [elsewhere, here].compactMap { $0 }
-    // ⌘Tab, a swipe to another macOS Space (the palette is on all of them, so it would come along), Mission Control's
-    // choice of one, the lock screen.
+    // A look at Mission Control; a swipe to another macOS Space (the palette is on all of them, so it would come along).
+    sightWatcher.begin(for: self) { [weak self] cause in
+      Log.debug("find: the palette is put away by \(cause)")
+      self?.dismiss()
+    }
+    // ⌘Tab, the lock screen.
     let center = NSWorkspace.shared.notificationCenter
     workspaceWatchers = [
-      NSWorkspace.didActivateApplicationNotification, NSWorkspace.activeSpaceDidChangeNotification,
-      NSWorkspace.sessionDidResignActiveNotification, NSWorkspace.screensDidSleepNotification,
+      NSWorkspace.didActivateApplicationNotification, NSWorkspace.sessionDidResignActiveNotification,
+      NSWorkspace.screensDidSleepNotification,
     ].map { name in
       center.addObserver(forName: name, object: nil, queue: .main) { [weak self] note in
         // Arbor itself coming forward (its settings window, say) is no reason.
@@ -176,6 +181,7 @@ final class FinderPanel: NSPanel, NSTextFieldDelegate {
     eventMonitors.removeAll()
     for watcher in workspaceWatchers { NSWorkspace.shared.notificationCenter.removeObserver(watcher) }
     workspaceWatchers.removeAll()
+    sightWatcher.end()
     orderOut(nil)
   }
 
