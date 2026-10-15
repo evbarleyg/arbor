@@ -784,6 +784,37 @@ private let b = WindowID(102)
     #expect(!numbers(after: oneDocked + ["dock 102 right", "settle"], then: "zoom 101").contains("dock-took-out-of-view"))
   }
 
+  /// A floating window on the display that stays, half over its right edge, its title bar in reach. The other display goes.
+  @Test func atAChangeOfDisplaysWhatIsWithinReachIsNotSet() {
+    let desk = [
+      "displays main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:25,0,0,0 windows-never", "launch", "open 101 Notes pid 1001 at 300 200 500 400", "settle",
+    ]
+    let unplug = "displays main:0,0,1440,900:25,0,0,0* windows-silent"
+    let rule = "displays-fetched-what-was-in-reach"
+    #expect(!numbers(after: desk, then: unplug).contains(rule))
+    #expect(numbers(after: desk, then: unplug) { _ = $0.setFrame(self.rect(320, 200, 500, 400), of: a) }.contains(rule))
+    // Out of reach where the change left it: that is what Arbor is there for.
+    let gone = desk + ["move 101 2000 300 500 400", "settle"]
+    #expect(!numbers(after: gone, then: "displays main:0,0,1440,900:25,0,0,0* windows-never") { _ = $0.setFrame(self.rect(320, 200, 500, 400), of: a) }.contains(rule))
+    // And a docked window is laid out, as ever.
+    #expect(!numbers(after: desk + ["dock 101 left", "settle"], then: unplug, "settle").contains(rule))
+  }
+
+  /// What macOS does to a floating window's size at a change of displays is macOS's. Arbor may leave it and may set it back; it may not shrink the window itself.
+  @Test func theSizeMacOSGaveAFloatingWindowAtAChangeOfDisplaysIsItsOwn() {
+    let small = [
+      "launch", "open 112 Music pid 1006 at 1071 744 874 588 min 755 588", "displays main:0,0,800,600:0,0,0,0* windows-late",
+      "displays third:-1440,-20,1440,900:0,0,0,78 side:265,1440,1920,1080:25,0,0,0 main:0,0,2560,1440:25,0,0,0* windows-late",
+    ]
+    #expect(!nets(after: small, then: "pause 1440").contains("size-not-given-back"))
+    // The same desk, and nothing of macOS's doing: Arbor makes the window narrower, and a pause leaves it so.
+    let runner = ChaosRunner()
+    for line in ["launch", "open 112 Music pid 1006 at 100 100 874 588 min 755 588", "settle"] { _ = runner.step(ChaosAction(text: line)) }
+    runner.beforeTheNextCheck = { _ = $0.system.setFrame(self.rect(100, 100, 800, 588), of: WindowID(112)) }
+    _ = runner.step(ChaosAction(text: "displays main:0,0,1440,900:25,0,0,40* windows-late"))
+    #expect(runner.step(ChaosAction(text: "pause 1440")).contains { $0.rule == "size-not-given-back" })
+  }
+
   /// A login: two docked windows closed with the Mac; Arbor starts; they open again under their titles.
   @Test func aWindowThatTakesItsKeptPlaceMovesAlone() {
     let login = [
@@ -905,7 +936,7 @@ private let b = WindowID(102)
 
   /// Seeds beyond the frozen versions restart the Mac now and then: every window closes, Arbor starts, and the windows open again under their titles and new numbers.
   @Test func walksBeyondTheFrozenVersionsRestartTheMac() {
-    var (restarts, returns) = (0, 0)
+    var (restarts, returns, lateNames) = (0, 0, 0)
     for seed in UInt64(5_000_001)...5_000_030 {
       let runner = ChaosRunner()
       var generator = ChaosGenerator(seed: seed, ordinary: true)
@@ -913,12 +944,15 @@ private let b = WindowID(102)
       for _ in 0..<300 {
         let action = generator.next(runner)
         if generator.isRestartingTheMac { restarts += 1 }
-        if case .open(let new) = action, let title = new.title { if !titles.insert(title).inserted { returns += 1 } }
+        if case .open(let new) = action, let title = new.title, title != "Untitled" { if !titles.insert(title).inserted { returns += 1 } }
+        // Some are slow to say who they are.
+        if case .title(_, let title) = action, titles.contains(title) { lateNames += 1 }
         _ = runner.step(action)
       }
     }
     #expect(restarts > 10)
     #expect(returns > 20)
+    #expect(lateNames > 2)
     // And no frozen seed does.
     var frozen = ChaosGenerator(seed: 7, ordinary: true)
     let runner = ChaosRunner()

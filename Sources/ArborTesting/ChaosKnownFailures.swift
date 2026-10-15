@@ -1319,6 +1319,7 @@ extension ChaosRunner {
     "eye-moved-twice", "eye-moved-twice-sizing", "eye-moved-again", "eye-moved-again-sizing",
     "floating-taken-out-of-view", "strayed-between", "dock-took-out-of-view", "displays-moved-the-untouched", "plain-drag-left-an-undo-step",
     "parked-before-any-dock", "arrival-moved-a-neighbour", "arrival-took-a-neighbour-out-of-view",
+    "displays-fetched-what-was-in-reach",
   ]
 
   /// The same without those that `ARBOR_CHAOS_GATES=rule,rule` makes gates for one run: they end walks there and are shrunk, which is how to read what is behind

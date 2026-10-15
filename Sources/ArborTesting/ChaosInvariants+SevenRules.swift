@@ -124,7 +124,7 @@ extension ChaosRunner {
   public nonisolated static func detector(for rule: String) -> String? {
     let table: [(prefix: String, detector: String)] = [
       ("moved-twice", "jolt"), ("moved-again", "jolt"), ("sized-there-and-back", "jolt"), ("set-right-", "jolt"), ("strayed-between", "jolt"), ("eye-", "jolt"), ("flashed-", "flash"), ("flipped", "jolt"), ("moved-over-and-over", "stuck"), ("moved-", "moved-unasked"), ("fetched-", "moved-unasked"), ("there-and-back", "moved-unasked"), ("dragged-gap", "moved-unasked"), ("same-windows", "moved-unasked"), ("displays-out-and-back", "moved-unasked"), ("taken-", "moved-unasked"), ("floating-taken", "lost"), ("parked-before", "lost"), ("arrival-moved", "moved-unasked"), ("arrival-took", "lost"), ("dock-took", "lost"), ("keyboard-taken", "focus"), ("plain-drag", "moved-unasked"), ("nothing-in-view", "lost"), ("docked-at-a-start", "moved-unasked"),
-      ("pause-and-resume", "moved-unasked"), ("left-its-place", "moved-unasked"), ("start-took", "lost"), ("quit-left", "lost"), ("displays-left", "lost"), ("switched-to-behind", "behind"),
+      ("pause-and-resume", "moved-unasked"), ("left-its-place", "moved-unasked"), ("start-took", "lost"), ("quit-left", "lost"), ("displays-left", "lost"), ("displays-fetched", "moved-unasked"), ("switched-to-behind", "behind"),
       ("switched-to", "focus"), ("app-switch", "focus"), ("keyboard-", "focus"), ("size-", "size-lost"), ("home-", "lost"), ("lost", "lost"), ("out-of-reach", "lost"),
       ("placed-", "lost"), ("vanished", "lost"), ("parked-on-the-desktop", "lost"), ("restless", "stuck"), ("given-up", "stuck"),
     ]
@@ -169,11 +169,16 @@ extension ChaosRunner {
     seven.askedForEverything = asksForEverything(action)
     seven.tookAWayHome = action.parsedCommand.map { $0.bringsWindowsBack && !isPaused || $0 == .quit || $0 == .relayout } ?? false
     seven.switchedTo = nil
-    if case .open(let new) = action { seven.arrived = new.id } else { seven.arrived = nil }
+    switch action {
+    case .open(let new): seven.arrived = new.id
+    case .title(let window, _): seven.arrived = window
+    default: seven.arrived = nil
+    }
     if isRunning { seven.windowsWhenArborLeft = Set(system.windows.keys) }
     switch action {
     case .launch: seven.isALogin = !isRunning && !isPaused && !seven.windowsWhenArborLeft.isEmpty && seven.windowsWhenArborLeft.isDisjoint(with: system.windows.keys)
-    case .open: break
+    // A window that says who it is belongs to its arrival.
+    case .open, .title: break
     default: seven.isALogin = false
     }
     switch action {
@@ -316,6 +321,14 @@ extension ChaosRunner {
       if case .displays = action {
         // But with Arbor away a window that had its own size has no other than the one Arbor is going to find.
         if !isRunning, !isPaused, framesBefore[id]?.size == known { (seven.ownSizes[id], seven.earlierOwnSizes[id]) = (fake.snapshot.frame.size, nil) }
+        // And what macOS does to a FLOATING window at a change of displays is macOS's, its size too (decided 2026-10-15): Arbor need not set it back, and may. Only
+        // where macOS gave it that size: an Arbor that shrinks a floating window itself is not let off.
+        if isRunning, wasRunningBefore, fake.movesNotArbors != movesBefore[id], let home = fake.home, home.size != known, framesBefore[id]?.size == known,
+          !movesSeenInThisStep.contains(where: { $0.window == id }), workspacesBefore.values.contains(where: { $0.isFloating(id) && !$0.isStashed(id) }),
+          !parkedBefore.contains(id), controller.workspaces.values.contains(where: { $0.isFloating(id) })
+        {
+          (seven.ownSizes[id], seven.earlierOwnSizes[id]) = (home.size, known)
+        }
         continue
       }
       // Full screen is no size of its own, and what macOS gives back afterwards is what the window had before.
@@ -430,6 +443,7 @@ extension ChaosRunner {
     parkedViolations(&problems)
     dockViolations(after: action, &problems)
     untouchedByTheChangeViolations(after: action, &problems)
+    fetchedAtAChangeViolations(after: action, &problems)
     keyboardViolations(after: action, &problems)
     plainDragViolations(&problems)
     handedOnViolations(after: action, &problems)
@@ -1085,6 +1099,27 @@ extension ChaosRunner {
           .init(
             "displays-moved-the-untouched",
             "the displays changed and took nothing from \(window) at \(move.before.brief), and Arbor moved it to \(system.windows[window]!.snapshot.frame.brief)"))
+      }
+    }
+  }
+
+  /// At a change of displays Arbor fits only what the change took out of reach (decided 2026-10-15): a floating window that nobody named, whose title bar is
+  /// within reach where macOS left it, is not set by Arbor at all, however little of it shows. Whoever misses it has a key.
+  func fetchedAtAChangeViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
+    guard belongsToAChangeOfDisplays(action), isRunning, wasRunningBefore, !system.displayList.isEmpty, !controller.settings.floatingWindowsMakeWay else { return }
+    var told = Set<WindowID>()
+    // The first move Arbor makes: where the window was then is where macOS had left it.
+    for move in movesSeenInThisStep where told.insert(move.window).inserted {
+      let window = move.window
+      guard isFairGame(window) != nil, workspacesBefore.values.contains(where: { $0.isFloating(window) && !$0.isStashed(window) && $0.role(of: window) == nil }),
+        !parkedBefore.contains(window), controller.workspaces.values.contains(where: { $0.isFloating(window) })
+      else { continue }
+      asked("fetched-at-a-change")
+      if titleBarIsWithinReach(move.before) {
+        problems.append(
+          .init(
+            "displays-fetched-what-was-in-reach",
+            "the displays changed, \(window) was at \(move.before.brief) with its title bar within reach, and Arbor moved it to \(system.windows[window]!.snapshot.frame.brief)"))
       }
     }
   }

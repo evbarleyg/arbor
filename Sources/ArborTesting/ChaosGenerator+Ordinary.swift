@@ -172,7 +172,16 @@ extension ChaosGenerator {
     var late: [ChaosAction.NewWindow] = []
     for new in again { if random.chance(25) { planned.append(.open(new)) } else { late.insert(new, at: random.int(0...late.count)) } }
     planned += [.launch, .advance(2)]
-    for new in late { planned += [.open(new), .react, .advance(random.pick([1, 2, 5])!), .react] }
+    for var new in late {
+      // One in five is slow to say who it is: it opens under a title that says nothing, and has its own a moment later. The rule by which a window may take the
+      // one place that waits for its app, whatever its title, was built for that.
+      if random.chance(20), let title = new.title {
+        new.title = "Untitled"
+        planned += [.open(new), .react, .advance(random.pick([0.3, 1, 2])!), .title(new.id, title), .react, .advance(random.pick([1, 2])!), .react]
+      } else {
+        planned += [.open(new), .react, .advance(random.pick([1, 2, 5])!), .react]
+      }
+    }
   }
 
   /// A moment goes by, as it does between two things a person does: macOS reports, short timers run.
