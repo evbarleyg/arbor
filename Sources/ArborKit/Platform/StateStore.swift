@@ -411,14 +411,9 @@ public enum SettingsFile {
   /// An error as it may be logged: without what it quotes from the file (`Settings.FileError`).
   static func forTheLog(_ error: any Error) -> String { (error as? Settings.FileError)?.forTheLog ?? "\(error)" }
 
-  /// One log line for everything in settings.json that Arbor could not use as written.
+  /// One log line for everything in settings.json that Arbor could not use as written: where, not what (`problemsForTheLog`).
   static func logProblems(in settings: Settings) {
-    for problem in settings.valueProblems { Log.error("settings.json: \(problem)") }
-    for reason in settings.skippedRules { Log.error("settings.json: skipped rules \(reason)") }
-    // By their numbers: what an entry matches can be a display's name, and that can be a person's.
-    for number in settings.skippedDisplayNumbers {
-      Log.error("settings.json: skipped entry \(number) of displays; `reload-settings` says where the reason is")
-    }
+    for problem in settings.problemsForTheLog { Log.error("settings.json: \(problem)") }
   }
 
   /// Writes a whole file where there is none, or only a blank one. Leaves any other file alone.

@@ -126,8 +126,7 @@ extension World {
       return Settings()
     }
     let settings = try Settings.read(data)
-    for reason in settings.skippedRules { Log.error("settings.json: skipped rules \(reason)") }
-    if let problem = settings.focusRingColourProblem { Log.error("settings.json: \(problem)") }
+    for problem in settings.problemsForTheLog { Log.error("settings.json: \(problem)") }
     return settings
   }
 
@@ -205,9 +204,7 @@ extension World {
       return
     }
     arbor.lastBindings = (bindings, problems)
-    for problem in KeyBindings.problemsForTheLog(problems, settings: arbor.controller.settings) {
-      Log.error("settings.json bindings: skipped \(problem)")
-    }
+    arbor.controller.logSkippedBindings()
     arbor.activeBindings = bindings
     if !bindings.isEmpty { Log.info("registered \(bindings.count) shortcuts in 900 µs") }
   }

@@ -223,7 +223,7 @@ import Testing
       // scheduled work, commands and events, which are recorded. The other only keeps count of visits to System Settings.
       "askAboutAccessibility", "shouldOpenAccessibilitySettings",
       // F10, F42, F46. What the menu bar item, the menu, `doctor` and the welcome window show: they ask, and write to the log.
-      "menuBarModel", "menuModel", "describe", "doctorReport", "check", "logSetupProblems", "onboardingModel", "pageToWelcomeOn",
+      "menuBarModel", "menuModel", "describe", "doctorReport", "check", "logSetupProblems", "logSkippedBindings", "onboardingModel", "pageToWelcomeOn",
       // The same files' `MenuBarWatcher` and `OnboardingSession`, and `noteWelcomed`: they change only what Arbor knows about its own
       // face (how wide an item the menu bar has room for, which page is open, that the window has been seen). No window, view or
       // layout depends on it. Their scheduled work (`menu-bar`, `menu-bar-room`, a `save`) has no effect a replay would miss.

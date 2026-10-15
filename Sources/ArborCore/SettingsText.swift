@@ -23,6 +23,23 @@ extension Settings {
     public static func == (a: FileError, b: FileError) -> Bool { a.description == b.description }
   }
 
+  /// What in `settings.json` could not be used as written, for the log: which key and which entry, never why. The reasons quote the
+  /// file ("`mauve` is not …"), and a wrong word where one of Arbor's own was wanted is still something a person typed; so is a number, and
+  /// so is what stands for a rule's app. A log is what people paste into a public issue. `doctor` gives the reasons to whoever sits there.
+  ///
+  /// Made from what Arbor knows, not by taking words out of the reasons: a key is written only if it is one of the schema's.
+  public var problemsForTheLog: [String] {
+    let keys = valueProblems.map { problem in (try? SettingsSchema.entry(named: String(problem.prefix { $0 != ":" })))?.key ?? "a key" }
+    // "entry 3 (com.apple.Notes): …", or a sentence about the whole list.
+    let rules = skippedRules.map { reason in
+      reason.hasPrefix("entry ") ? Int(reason.dropFirst(6).prefix(while: \.isNumber)).map { "entry \($0) of rules" } ?? "an entry of rules" : "rules"
+    }
+    // `doctor` does not list these; `displays` does.
+    let displays = skippedDisplays.isEmpty || !skippedDisplayNumbers.isEmpty ? skippedDisplayNumbers.map { "entry \($0) of displays" } : ["displays"]
+    return (keys + rules).map { "\($0) cannot be used as written; `doctor` says why" }
+      + displays.map { "\($0) cannot be used as written; `displays` says why" }
+  }
+
   // MARK: Reading
 
   /// Reads the contents of `settings.json`. Whatever `JSONDecoder` can read is read, as it always

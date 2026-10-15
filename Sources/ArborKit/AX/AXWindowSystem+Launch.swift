@@ -16,13 +16,14 @@ extension AXWindowSystem {
     process.standardOutput = FileHandle.nullDevice
     process.standardError = FileHandle.nullDevice
     process.terminationHandler = { finished in
-      if finished.terminationStatus != 0 { Log.error("macOS found no app called \(name) to open") }
+      // Without the name: what is no app's name is a word somebody typed.
+      if finished.terminationStatus != 0 { Log.error("macOS found no app of the name it was given to open") }
     }
     do {
       try process.run()
       return true
     } catch {
-      Log.error("could not open \(name): \(error)")
+      Log.error("could not open an app: \(error)")
       return false
     }
   }

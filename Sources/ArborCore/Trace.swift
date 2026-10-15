@@ -1087,13 +1087,9 @@ extension TitleTokens {
   /// built in code, which never went through the reader. What is written is no command either (`name …` would be one, so there the `…`
   /// comes first): a replay stops at it as it stopped at the text itself, and does nothing in its place.
   public static func unreadable(_ text: String) -> String {
-    guard let verb = text.split(whereSeparator: \.isWhitespace).first.map({ $0.lowercased() }), verbs.contains(verb) else { return "…" }
+    guard let verb = text.split(whereSeparator: \.isWhitespace).first.map({ $0.lowercased() }), Command.isVerb(verb) else { return "…" }
     return (try? Command.parse("\(verb) …")) == nil ? "\(verb) …" : "… \(verb)"
   }
-
-  /// The first words of the lines of `help`.
-  private static let verbs = Set(
-    Command.helpText.split(separator: "\n").compactMap { $0.split(whereSeparator: { !($0.isLetter || $0 == "-") }).first.map { $0.lowercased() } })
 
   /// `text` without `words`, whatever their capitals: `…` stands for each.
   public static func without(_ words: Set<String>, in text: String) -> String {

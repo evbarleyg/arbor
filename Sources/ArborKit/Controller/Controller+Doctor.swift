@@ -271,6 +271,13 @@ extension Controller {
     for line in setupProblemLines { Log.error(line) }
   }
 
+  /// The entries of `bindings` that were skipped go there too, whenever they change (`KeyBindings.problemsForTheLog`).
+  public func logSkippedBindings() {
+    for problem in KeyBindings.problemsForTheLog(effectiveBindings.problems, settings: settings, layout: layoutInEffect) {
+      Log.error("settings.json bindings: skipped \(problem)")
+    }
+  }
+
   /// One line per problem, with its notes. Names of apps and of settings, never a window's title.
   ///
   /// `doctor` answers whoever asks, on their own screen, and may quote their own file to them. The log is passed on. So of what is wrong in
@@ -308,7 +315,7 @@ extension Controller {
     }
   }
 
-  /// What Arbor could not use in settings.json. The same lines are in the log and in `rules` and `bindings`.
+  /// What Arbor could not use in settings.json. The same lines are in `rules` and `bindings`; the log says only where (`problemsForTheLog`).
   private func checkSettings(into report: inout DoctorReport) {
     if let problem = settingsFileProblem {
       return report.add(

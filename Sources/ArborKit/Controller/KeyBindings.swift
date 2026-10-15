@@ -217,16 +217,21 @@ public enum KeyBindings {
     var modifiers: KeyChord.Modifiers
   }
 
-  /// `problems` as the log may hold them. A person reads them whole in `bindings`; but the reason a command cannot be read quotes
-  /// it, and what a shortcut in settings.json was to run can hold part of a window title or a name a person gave.
-  public static func problemsForTheLog(_ problems: [String], settings: Settings) -> [String] {
-    problems.map { problem in
-      for case (let shortcut, let text?) in settings.bindings where problem.hasPrefix("\(shortcut): ") {
-        let verb = text.drop { $0 == "/" || $0.isWhitespace }.prefix { $0 != "/" && !$0.isWhitespace }
-        guard Command.mayHoldPrivateWords(verb: verb) else { break }
-        return "\(shortcut): its `\(verb.lowercased())` command; `bindings` says why"
-      }
-      return problem
+  /// `problems` as the log may hold them: which shortcut, never why. A person reads them whole in `bindings`; but the reasons quote the
+  /// file, and whatever stands there was typed by somebody: part of a window title, a name, or a slip that put any word where a command
+  /// or a key was wanted. So each line is made of Arbor's own words: the keys as Arbor writes them, if it can read them, and the
+  /// command's first word, if it is one of Arbor's.
+  public static func problemsForTheLog(_ problems: [String], settings: Settings, layout: KeyLayout = .us) -> [String] {
+    let entries = settings.bindings.map { ($0.key, $0.value) } + settings.unreadableBindings.map { ($0, nil) }
+    return problems.map { problem in
+      // The longest, so that `a: b` is not taken for `a`.
+      let entry = entries.filter { problem.hasPrefix("\($0.0): ") }.max { $0.0.count < $1.0.count }
+      // Without an entry it is one of Arbor's own making, about two entries that mean one key: `ctrl+opt+us:z: the same key as …`.
+      let keys = entry?.0 ?? problem.firstRange(of: ": ").map { String(problem[..<$0.lowerBound]) } ?? ""
+      let shortcut = (try? KeyChord(text: keys, layout: layout))?.text ?? "keys that cannot be read"
+      let verb = (entry?.1 ?? nil)?.drop { $0 == "/" || $0.isWhitespace }.prefix { $0 != "/" && !$0.isWhitespace }.lowercased()
+      let command = verb.map { Command.isVerb($0) ? ", for `\($0)`" : ", for what is no command" } ?? ""
+      return "\(shortcut)\(command); `bindings` says why"
     }
   }
 

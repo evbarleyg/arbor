@@ -266,9 +266,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
       return
     }
     lastBindings = (bindings, problems)
-    for problem in KeyBindings.problemsForTheLog(problems, settings: controller.settings) {
-      Log.error("settings.json bindings: skipped \(problem)")
-    }
+    controller.logSkippedBindings()
     controller.logSystemShortcutClashes()
 
     guard !bindings.isEmpty else {

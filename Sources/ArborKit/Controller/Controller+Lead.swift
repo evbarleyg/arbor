@@ -126,7 +126,7 @@ extension Controller {
     if StepInToward(rawValue: text.lowercased()) == nil, following.reportedRule != text {
       following.reportedRule = text
       let values = StepInToward.allCases.map(\.rawValue).joined(separator: ", ")
-      Log.error("settings.json: stepInToward is \"\(text)\", which is none of \(values); using auto")
+      Log.error("settings.json: stepInToward is none of \(values); using auto")
     }
     return StepInToward(setting: text)
   }

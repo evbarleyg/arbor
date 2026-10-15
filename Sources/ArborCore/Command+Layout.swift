@@ -96,9 +96,16 @@ extension Command {
     ["rule", "bind", "layout", "name", "unname", "go"].contains(verb.lowercased())
   }
 
+  /// Whether `word` is the first word of one of Arbor's commands. Of what a person typed, the log and a trace hold only what is one of
+  /// Arbor's own words: a slip can put anybody's word first.
+  public static func isVerb(_ word: some StringProtocol) -> Bool { verbs.contains(word.lowercased()) }
+
+  private static let verbs = Set(documentedVerbs.map { $0.lowercased() })
+
   /// `text` for the log: the same, without the parts of window titles an arrangement can hold, or `find` (`textForLog`).
   public var logText: String {
     guard case .layout(let spec, let display, let open) = self else { return textForLog }
-    return Self.layoutText(display: display, options: open ? ["open"] : [], line: spec.textWithoutTitles)
+    // A display goes by its number. Anything else is an id from `state`, or a word that is nobody's id.
+    return Self.layoutText(display: display.map { Int($0) == nil ? "…" : $0 }, options: open ? ["open"] : [], line: spec.textWithoutTitles)
   }
 }

@@ -31,6 +31,11 @@ extension Controller: TraceWordsSource {
       }
     case .unname(let typed?):
       if case .found(let space) = search(for: typed, wholeNameOnly: true) { return (.unname(space.name), true) }
+    // An id from `state` becomes the display's number, which means the same in a replay. A word that is no display's stays, and counts
+    // as a name (`namesInText`).
+    case .layout(let spec, let display?, let open) where Int(display) == nil:
+      guard case .display(let id) = chooseDisplay(display), let place = numberedDisplays.firstIndex(where: { $0.id == id }) else { break }
+      return resolved(.layout(spec, display: "\(place + 1)", open: open))
     case .layout(let spec, let display, let open) where spec.slots.contains { $0.title != nil }:
       return (.layout(withoutTitles(spec, on: display), display: display, open: open), true)
     // Their replies quote history, some of which the trace has rewritten: the line above, for one (F19).

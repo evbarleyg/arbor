@@ -125,8 +125,11 @@ func runSimulation() {
 
   var harness = launch?.harness() ?? Harness()
   begin(harness)
-  // As the app does at the end of its launch: what `doctor` finds wrong goes into the log, whoever asked or did not.
-  if launch != nil { harness.controller.logSetupProblems() }
+  // As the app does in its launch: what `doctor` finds wrong goes into the log, whoever asked or did not, and so do the shortcuts skipped.
+  if launch != nil {
+    harness.controller.logSkippedBindings()
+    harness.controller.logSetupProblems()
+  }
   var printLayout = true
   var lastCommandOK = true
   var lastReply = ""

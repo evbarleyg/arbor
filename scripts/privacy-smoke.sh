@@ -47,15 +47,15 @@ cat > "$files/settings.json" <<'JSON'
 {
   "rules": [
     {"app": "com.example.safari", "title": "RULEWORD one", "action": "float"},
-    {"app": "com.example.mail", "title": "RULEWORD two", "action": "no-such-action"},
+    {"app": "com.example.mail", "title": "RULEWORD two", "action": "OWNWORD"},
     {"title": "RULEWORD without an app", "action": "float"},
     {"app": "com.example.notes", "title": ["RULEWORD", "in a list"], "action": "float"},
     "RULEWORD that is no rule at all"
   ],
   "displays": [
     {"match": "DISPLAYWORD's iPad", "gap": 30},
-    {"match": "DISPLAYWORD two", "gap": "no-number"},
-    {"match": "DISPLAYWORD three", "noSuchKey": 1},
+    {"match": "DISPLAYWORD two", "gap": "OWNWORD"},
+    {"match": "DISPLAYWORD three", "OWNWORDKey": 1},
     {"match": "DISPLAYWORD four"},
     {"match": ["DISPLAYWORD"], "gap": 10},
     {"gap": 10, "remark": "DISPLAYWORD without a match"},
@@ -67,14 +67,16 @@ cat > "$files/settings.json" <<'JSON'
     "ctrl+opt+m": "rule add com.example.safari float title RULEWORD", "ctrl+opt+n": "BINDWORD", "ctrl+opt+o": "go",
     "ctrl+opt+p": "name BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD BINDWORD",
     "ctrl+opt+s": "bind ctrl+opt+t go NAMEWORD", "ctrl+opt+u": "bind ctrl+opt+v bind ctrl+opt+w find TITLEWORD", "ctrl+opt+x": "bind BINDWORD go NAMEWORD",
+    "ctrl+opt+y": "layout @OWNWORD Safari | Mail", "ctrl+opt+z": "the OWNWORD",
     "BINDWORD+j": "home", "ctrl+opt+q": 7, "ctrl+opt+r": ["BINDWORD"]
   },
-  "gap": "wide", "tileStyle": "no-such-style", "newWindows": ["float"], "noSuchKey": "x",
+  "gap": "OWNWORD", "tileStyle": "OWNWORD", "newWindows": ["OWNWORD"], "OWNWORDKey": "OWNWORD", "animationDuration": {"OWNWORD": 1},
   "excludedBundleIDs": ["com.example.books", 7]
 }
 JSON
-# Not among them: a wrong word where one of Arbor's own was wanted (an action, a style). The log quotes it, so that a typo can be found.
-words="RULEWORD DISPLAYWORD HOLDWORD BINDWORD TITLEWORD NAMEWORD QUERYWORD"
+# OWNWORD stands where one of Arbor's own words was wanted (an action, a style, a key, a number): a slip is something a person typed too. The
+# log says where it is, `doctor` says what. Not tried: a word where a bundle id was wanted. The log holds bundle ids, by design.
+words="OWNWORD RULEWORD DISPLAYWORD HOLDWORD BINDWORD TITLEWORD NAMEWORD QUERYWORD"
 
 # A state.json with names in it, as Arbor writes it, and one of them damaged by hand afterwards.
 ARBOR_HOME=$home/first "$sim" quiet "open Safari" "open Notes" "open Mail" "dock 101 left" "dock 102 right" "zoom 101" "name NAMEWORD one" \
@@ -89,18 +91,24 @@ for state in sound damaged unreadable; do
   ARBOR_HOME=$second ARBOR_DEBUG=1 "$sim" launch --state "$files/state.json" --settings "$files/settings.json" --windows 3 --displays 2 quiet \
     "trace on files" "settings-file $files/settings.json" \
     "title 101 TITLEWORD one" "title 102 TITLEWORD two" "doctor" "status" "settings" "rules" "displays" "bindings" "spaces" "menu" "state" \
-    "reload-settings" "doctor" "key ctrl+opt+j" "key ctrl+opt+k" "key ctrl+opt+l" "key ctrl+opt+m" "key ctrl+opt+n" "key ctrl+opt+p" \
+    "reload-settings" "doctor" "key ctrl+opt+j" "key ctrl+opt+k" "key ctrl+opt+l" "key ctrl+opt+m" "key ctrl+opt+n" "key ctrl+opt+p" "key ctrl+opt+y" \
     "open Safari" "open Zoom" "title 105 HOLDWORD meeting" "displays 1" "displays 2" "set gap 20" "get gap" "reset gap" \
     "rule move 1 2" "rule remove 1" "display main gap 30" "go NAMEWORD" "unname NAMEWORD one" "undo" "redo" \
+    "layout @OWNWORD Safari | Mail" "set tileStyle OWNWORD" "set gap OWNWORD" "set OWNWORD 3" "get OWNWORD" "reset OWNWORD" "dock 101 OWNWORD" "dock OWNWORD" "arrange OWNWORD" \
+    "display OWNWORD gap 3" "display main OWNWORD 3" "display main gap OWNWORD" "rule add com.example.books OWNWORD" "rule OWNWORD" \
+    "zoom OWNWORD" "resize OWNWORD 10" "resize left OWNWORD" "focus OWNWORD" "move OWNWORD" "bind OWNWORD home" \
+    "unbind OWNWORD" "key OWNWORD" "trace OWNWORD" "help OWNWORD" "OWNWORD" "OWNWORD OWNWORD" "set focusRingColour OWNWORD" "set newWindows OWNWORD" \
     "pause" "resume" "hold" "release" "health" "trace off" "quit-check" >> "$home/out2.txt" 2>&1
 done
 
-for word in RULEWORD DISPLAYWORD HOLDWORD NAMEWORD; do
+for word in OWNWORD BINDWORD RULEWORD DISPLAYWORD HOLDWORD NAMEWORD; do
   grep -q "$word" "$home/out2.txt" || { echo "privacy smoke test FAILED: $word never arrived: no reply says it, so nothing was tried"; exit 1; }
 done
 [ -s "$second/arbor.log" ] || { echo "privacy smoke test FAILED: act two logged nothing"; exit 1; }
 grep -q "cannot be read" "$home/out2.txt" || { echo "privacy smoke test FAILED: the settings.json that cannot be read was read"; exit 1; }
 grep -q "setup:" "$second/arbor.log" || { echo "privacy smoke test FAILED: what doctor finds wrong was not logged at launch, so that path was not tried"; exit 1; }
+grep -q "bindings: skipped" "$second/arbor.log" || { echo "privacy smoke test FAILED: the shortcuts skipped were not logged at launch, so that path was not tried"; exit 1; }
+grep -q "tileStyle cannot be used" "$second/arbor.log" || { echo "privacy smoke test FAILED: what is wrong in settings.json was not logged, so that path was not tried"; exit 1; }
 ls "$second"/traces/*.jsonl > /dev/null 2>&1 || { echo "privacy smoke test FAILED: no trace was recorded"; exit 1; }
 failed=0
 for word in $words; do

@@ -93,10 +93,11 @@ public enum SpaceName {
 }
 
 extension Command {
-  /// The texts in this command that are, or may be, names of spaces.
+  /// The texts in this command that are, or may be, names of spaces. And a word where a display's number was wanted: replies quote it alike.
   public var namesInText: Set<String> {
     switch self {
     case .name(let name), .goToSpace(let name), .unname(let name?): [name]
+    case .layout(_, let display?, _) where Int(display) == nil: [display]
     // What a shortcut is made to run is a command like any other.
     case .settings(.bind(_, let command)): (try? Command.parse(command))?.namesInText ?? []
     default: []

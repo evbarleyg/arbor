@@ -88,6 +88,6 @@ grep -i "open\|took its place" "$ARBOR_HOME/arbor.log" | tail -n 10
 step "an app that does not exist"
 ctl layout --open "Terminal | NoSuchAppAtAll"
 sleep 2
-check "the log says that macOS found none" grep -q "found no app called NoSuchAppAtAll" "$ARBOR_HOME/arbor.log"
+check "the log says that macOS found none" grep -q "found no app of the name it was given" "$ARBOR_HOME/arbor.log"
 arbor_stop 05-quit
 on_throwaway_mac && { pkill -x TextEdit; pkill -x Terminal; }
