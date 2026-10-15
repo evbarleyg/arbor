@@ -1,0 +1,114 @@
+# mac-shell: scripts/mac-shell/check-resume.sh at 4d5dc92, macOS 26.6.2, 2026-10-15T01:27Z
+built Arbor and the pointer tool in 8s
+
+== Calculator, TextEdit and a test window
+> open -g -b com.apple.calculator 
+pid 8113 lists (id role subrole x y w h flags):
+  31 AXWindow AXStandardWindow 62 352 230 408 main,fixed-size,zoom-disabled,toolbar
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.Srwzfs/scratch/oak.txt
+pid 8387 lists (id role subrole x y w h flags):
+  37 AXWindow AXStandardWindow 79 56 673 439 main
+companions: pid 8415, 1 windows
+session 1: Arbor pid 8444, ARBOR_ONLY_PIDS=8113,8387,8415: running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Calculator: pid 8113, window 31; TextEdit: pid 8387, window 37
+> dock 42 left
+docked w42 at the left edge
+> dock 37 right
+docked w37 at the right edge
+> set pauseForApps add com.apple.calculator
+Arbor pauses while Calculator is in front
+camera n2, visible 0,31 1024×680, Desktop 349,43 326×656
+  w31 com.apple.calculator 349,303 230×408: floating
+  w37 com.apple.TextEdit 687,43 325×656, slot 687,43 325×656: docked
+  w42 pid 8415 12,43 325×656, slot 12,43 325×656: docked
+
+== out of the app Arbor pauses for, to a window the view does not show (1 of 6)
+  ✔ TextEdit's window is out of view
+> open -b com.apple.calculator
+  ✔ Arbor pauses
+> open -b com.apple.TextEdit
+  ✔ Arbor runs again
+  ✔ TextEdit's window has the keyboard
+  ✔ and is in view
+  ✔ and stays there
+  ✔ Calculator's window was never taken for the one with the keyboard
+DEBUG w37 has the keyboard
+INFO  resumed
+
+== out of the app Arbor pauses for, to a window the view does not show (2 of 6)
+  ✔ TextEdit's window is out of view
+> open -b com.apple.calculator
+  ✔ Arbor pauses
+> open -b com.apple.TextEdit
+  ✔ Arbor runs again
+  ✔ TextEdit's window has the keyboard
+  ✔ and is in view
+  ✔ and stays there
+  ✔ Calculator's window was never taken for the one with the keyboard
+DEBUG w37 has the keyboard
+INFO  resumed
+
+== out of the app Arbor pauses for, to a window the view does not show (3 of 6)
+  ✔ TextEdit's window is out of view
+> open -b com.apple.calculator
+  ✔ Arbor pauses
+> open -b com.apple.TextEdit
+  ✔ Arbor runs again
+  ✔ TextEdit's window has the keyboard
+  ✔ and is in view
+  ✔ and stays there
+  ✔ Calculator's window was never taken for the one with the keyboard
+DEBUG w37 has the keyboard
+INFO  resumed
+
+== out of the app Arbor pauses for, to a window the view does not show (4 of 6)
+  ✔ TextEdit's window is out of view
+> open -b com.apple.calculator
+  ✔ Arbor pauses
+> open -b com.apple.TextEdit
+  ✔ Arbor runs again
+  ✔ TextEdit's window has the keyboard
+  ✔ and is in view
+  ✔ and stays there
+  ✔ Calculator's window was never taken for the one with the keyboard
+DEBUG w37 has the keyboard
+INFO  resumed
+
+== out of the app Arbor pauses for, to a window the view does not show (5 of 6)
+  ✔ TextEdit's window is out of view
+> open -b com.apple.calculator
+  ✔ Arbor pauses
+> open -b com.apple.TextEdit
+  ✔ Arbor runs again
+  ✔ TextEdit's window has the keyboard
+  ✔ and is in view
+  ✔ and stays there
+  ✔ Calculator's window was never taken for the one with the keyboard
+DEBUG w37 has the keyboard
+INFO  resumed
+
+== out of the app Arbor pauses for, to a window the view does not show (6 of 6)
+  ✔ TextEdit's window is out of view
+> open -b com.apple.calculator
+  ✔ Arbor pauses
+> open -b com.apple.TextEdit
+  ✔ Arbor runs again
+  ✔ TextEdit's window has the keyboard
+  ✔ and is in view
+  ✔ and stays there
+  ✔ Calculator's window was never taken for the one with the keyboard
+DEBUG w37 has the keyboard
+INFO  resumed
+
+macOS was behind with the app in front, in this session:
+  8 time(s) when it said that an app was active, which is what begins and ends a pause (12 of those here, at least)
+  8 time(s) when the Accessibility layer heard the same, which listens only while Arbor runs
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+
+43 passed, 0 failed
+still running when the script had ended, and stopped now:
+  8109 sleep
+exit code 0
