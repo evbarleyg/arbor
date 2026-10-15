@@ -513,6 +513,8 @@ SINGLE = [
      (5, "CI's macOS job for train/3 is waiting for a Mac, and a train goes first\n")),
     ("--turn: a train that is on its way ends it with 5 as well: what holds everybody back", lambda: ends_with(
         [run(branch="train/3", status="queued"), run(*[running("11:50:00", "11:50:10")] * 4, number=2, branch="theirs", status="in_progress")], "--turn", "1", "--for", "mine")[0], 5),
+    ("--turn: the branch's own runs end it with 6: waiting longer earns nothing", lambda: ends_with(
+        [run(running("11:50:00", "11:50:10"), branch="mine", status="in_progress", number=n) for n in (1, 2, 3)], "--turn", "3", "--for", "mine")[0], 6),
     ("--turn: a queue that is merely busy ends it with 4, as it did", lambda: ends_with(
         [run(waiting("11:59:00"), branch="theirs", status="in_progress")], "--turn", "3", "--for", "mine")[0], 4),
     ("whose turn: five of other branches run, none waits", lambda: [turn(n, 0, others=5) for n in (1, 2, 3)], ["", "", ""]),

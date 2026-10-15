@@ -22,7 +22,7 @@ a job that is still running counts up to now.
 
 Exit code 0; 3 with a line that starts with `ALARM:` when that mean is above --alarm; 1 when GitHub did not answer.
 
---turn prints nothing and exits with 0 when the run may start, or says what it should wait for and exits with 4 (5 if it is a train). GitHub hands its Macs
+--turn prints nothing and exits with 0 when the run may start, or says what it should wait for and exits with 4 (5 if it is a train, 6 if it is the branch's own runs). GitHub hands its Macs
 out in no particular order (see below), so whoever can wait does so before starting a run, where waiting takes nobody's place:
 priority 1 (a fault on real windows, a merge train) never waits for others, 2 waits while three or more jobs are waiting for a Mac,
 3 while any is. And nobody has more than two jobs for one branch running or waiting at a time (priority 3: one); what runs or waits under
@@ -96,12 +96,15 @@ INTEGRATED = re.compile(r"^(train/.+|swarm/trunk|main)$")
 # GitHub lends the repository five Macs at a time, of all kinds together (measured). For a train that is on its way one of them stays free.
 MACS, KEPT_FOR_A_TRAIN = 5, 1
 FOR_A_TRAIN = ("a train goes first", "one Mac is kept free for it")
+OF_ITS_OWN = "running or waiting already"
 # For so many seconds after a run was started a look may miss it.
 MISSED_FOR = 20
 ALARMED = 3
 NOT_YET = 4
 # Not yet, and for everybody alike: when this ends, all who waited would let go together.
 A_TRAIN = 5
+# Not yet, and for no fault of the queue's: waiting longer earns nothing.
+ITS_OWN = 6
 # How many jobs may be waiting for a Mac when a run of this priority starts, and how many jobs its branch may have already.
 MAY_WAIT = {1: None, 2: 2, 3: 0}
 OF_ONE_BRANCH = {1: 1, 2: 1, 3: 0}
@@ -449,7 +452,7 @@ def hold_back(found, priority, branch, tag=""):
     # A run started again under its tag cancels the one before (the workflow's concurrency group), so that one takes nobody's place.
     own = sum(1 for job in found["now"] if job["branch"] == branch and not (tag and job["script"].endswith(f" [{tag}]")))
     if own > OF_ONE_BRANCH[priority]:
-        return f"{count(own)} for {branch} {'is' if own == 1 else 'are'} running or waiting already"
+        return f"{count(own)} for {branch} {'is' if own == 1 else 'are'} {OF_ITS_OWN}"
     if MAY_WAIT[priority] is not None and found["waiting"] > MAY_WAIT[priority]:
         return f"{count(found['waiting'])} waiting for a Mac, and this has priority {priority}"
     return ""
@@ -543,7 +546,7 @@ def main():
     if args.turn:
         why = hold_back(found, args.turn, args.branch, args.tag)
         print(why, end="\n" if why else "")
-        return (A_TRAIN if why.endswith(FOR_A_TRAIN) else NOT_YET) if why else 0
+        return (A_TRAIN if why.endswith(FOR_A_TRAIN) else ITS_OWN if why.endswith(OF_ITS_OWN) else NOT_YET) if why else 0
     print(json.dumps({"repo": repo, **found}, indent=2) if args.json else report(found, repo, left_this_hour()))
     return ALARMED if found["alarm"] else 0
 
