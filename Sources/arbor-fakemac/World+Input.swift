@@ -394,6 +394,7 @@ extension World {
         switch setting?.trimmingCharacters(in: .whitespacesAndNewlines) {
         case "None": break
         case "Minimize": minimizeWindow(window)
+        case "Fill": system.zoomAsMacOSDoes(window, andBack: false)
         default: system.zoomAsMacOSDoes(window)
         }
       }

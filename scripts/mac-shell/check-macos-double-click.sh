@@ -95,10 +95,24 @@ title_bar_action() {
   echo "AppleActionOnDoubleClick: $(defaults read -g AppleActionOnDoubleClick 2>/dev/null || echo "not set")"
 }
 
+# Seen on macOS 26: set to fill, a second double-click leaves the window filled. Not set, and set to zoom, it returns it.
+fill_is_set() { [ "$(defaults read -g AppleActionOnDoubleClick 2>/dev/null)" = Fill ]; }
+
+# at_its_slot <window>: by its corner and its width. Not by its height: how a slot's height is met on a Mac is another script's question.
+at_its_slot() {
+  local sx sy sw fx fy fw
+  read -r sx sy sw _ <<< "$(arbor_ask slot "$1")"
+  read -r fx fy fw _ <<< "$(real_frame_of "$1")"
+  [ -n "$sw" ] && [ -n "$fw" ] && arbor_close "${sx} ${sy} ${sw} 0" "${fx} ${fy} ${fw} 0" \
+    || { echo "it is at $fx $fy, $fw wide; its slot at $sx $sy, $sw wide"; return 1; }
+}
+
 # there_and_back <name> <window> <neighbour>: both docked, everything in view.
 there_and_back() {
-  local name=$1 window=$2 neighbour=$3 slot beside zoomed
+  local name=$1 window=$2 neighbour=$3 slot beside zoomed stood=no
+  # Where it stands, which is where macOS will return it to. An app that rounds its size stands a few points out of its slot.
   slot=$(real_frame_of "$window")
+  is in_slot "$window" > /dev/null 2>&1 && stood=yes
   beside=$(real_frame_of "$neighbour")
   # Worked out before the trace starts, so that it holds what happened and not the script's questions.
   local bar
@@ -145,11 +159,20 @@ there_and_back() {
   # Whole points: on a Retina display the window server deals in halves.
   frames_during "$window" "$ARBOR_OUT/frames-$name-2.txt" must dblclick "$((${zx%.*} + ${zw%.*} / 2))" "$((${zy%.*} + 12))"
   trace_off "double-click-$name-again"
-  check "macOS returns it to its slot" eventually real_frame_is "$window" "$slot"
-  check "by one road" one_road "$ARBOR_OUT/frames-$name-2.txt"
   check "and Arbor set no frame" arbor_moved_nothing
-  check "from where Arbor keeps it like any docked window" eventually grep -q "w$window is back in its slot" "$ARBOR_HOME/arbor.log"
-  check "and says so" not is letBe "$window"
+  if fill_is_set; then
+    check "set to fill, macOS leaves it filled" stayed "$ARBOR_OUT/frames-$name-2.txt"
+    check "and Arbor goes on letting it be" is letBe "$window"
+  else
+    check "macOS returns it to where it stood" eventually real_frame_is "$window" "$slot"
+    check "by one road" one_road "$ARBOR_OUT/frames-$name-2.txt"
+    if [ "$stood" = yes ]; then
+      check "from where Arbor keeps it like any docked window" eventually grep -q "w$window is back in its slot" "$ARBOR_HOME/arbor.log"
+      check "and says so" not is letBe "$window"
+    else
+      echo "it did not stand in its slot before the zoom ($slot; its slot: $(arbor_ask slot "$window")): whether that counts as home is not asked here"
+    fi
+  fi
   shot "$name-2-back"
 
   step "$name: once more, and this time Arbor takes it back"
@@ -160,7 +183,8 @@ there_and_back() {
   trace_on "double-click-$name-show-all" "show-all takes the zoomed window back"
   frames_during "$window" "$ARBOR_OUT/frames-$name-3.txt" ctl show-all
   trace_off "double-click-$name-show-all"
-  check "showing everything puts it into its slot" eventually real_frame_is "$window" "$slot"
+  check "showing everything puts it at its slot" eventually at_its_slot "$window"
+  check "and Arbor lets it be no longer" not is letBe "$window"
   check "by one road" one_road "$ARBOR_OUT/frames-$name-3.txt"
   check "the neighbour did not move" real_frame_is "$neighbour" "$beside"
   echo "Arbor set the window's frame $(moves_of "$window") time(s)"
@@ -228,8 +252,14 @@ as_a_person_met_it() {
   sleep 2
   read -r zx zy zw _ <<< "$(real_frame_of "$W1")"
   frames_during "$W1" "$ARBOR_OUT/frames-$name-arranged-3.txt" must dblclick "$((${zx%.*} + ${zw%.*} / 2))" "$((${zy%.*} + 12))"
-  check "macOS returns it to its slot" eventually real_frame_is "$W1" "$slot"
-  check "by one road" one_road "$ARBOR_OUT/frames-$name-arranged-3.txt"
+  if fill_is_set; then
+    check "set to fill, macOS leaves it filled" stayed "$ARBOR_OUT/frames-$name-arranged-3.txt"
+    ctl show-all
+    check "and a key puts it back" eventually real_frame_is "$W1" "$slot"
+  else
+    check "macOS returns it to where it stood" eventually real_frame_is "$W1" "$slot"
+    check "by one road" one_road "$ARBOR_OUT/frames-$name-arranged-3.txt"
+  fi
   shot "$name-arranged-2-back"
 }
 

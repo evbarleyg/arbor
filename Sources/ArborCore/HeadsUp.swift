@@ -218,10 +218,10 @@ public enum HeadsUpHint: String, Sendable, CaseIterable {
       let ways = [shortcut(.dock(nil, .left)).map { "\($0) docks it" }, "Check Setup… in the menu"].compactMap { $0 }
       return HeadsUpModel(kind: .hint, text: "macOS tiled this window; Arbor stood aside", hint: ways.joined(separator: " · "))
     case .zoomedByMacOS:
-      // The first way back is no shortcut, so it is said whatever the keys are.
+      // Not "double-click again": seen on a Mac, that is a way back only while macOS is set to zoom. Set to fill, it leaves the window filled.
       return HeadsUpModel(
         kind: .hint, text: "macOS zoomed this window",
-        hint: shortcut(.showAll).map { "double-click again, or \($0), puts it back" } ?? "double-click again puts it back")
+        hint: shortcut(.showAll).map { "\($0) puts it back" } ?? "Show Everything in the menu puts it back")
     }
   }
 }

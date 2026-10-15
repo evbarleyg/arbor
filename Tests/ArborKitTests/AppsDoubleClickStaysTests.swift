@@ -332,7 +332,7 @@ import Testing
   /// It covers its neighbours, and whoever did not mean that wants to know the way back. Said the first three times.
   @Test func theFirstThreeTimesALineSaysHowToGetBack() {
     let (h, a, _) = makeHarness()
-    let line = "macOS zoomed this window · double-click again, or ⌃⌥Space, puts it back"
+    let line = "macOS zoomed this window · ⌃⌥Space puts it back"
     for round in 1...4 {
       h.system.doubleClickTitleBar(of: a)
       #expect((h.overlays.headsUp[h.display]?.line == line) == (round <= 3), "round \(round)")
