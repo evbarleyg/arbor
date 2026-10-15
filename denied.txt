@@ -1,0 +1,11 @@
+Made the code-signing certificate "Arbor Local Signing" in /Users/runner/Library/Keychains/login.keychain-db
+  SHA-1 32EC201AB54A1BFE4F9D4AF500067B48E25B8B36, valid until Oct 12 06:52:37 2036 GMT
+macOS will now ask for your login keychain's password, so that codesign may use Arbor's key. Choose Always Allow, and it
+will not ask again.
+  Its dialog calls the key "Arbor Local Signing". Allow: this once, and it asks again at every build, twice. Deny: nothing is signed.
+/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/tmp.FC3FhdOnm2/probe: replacing existing signature
+/var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/tmp.FC3FhdOnm2/probe: errSecInternalComponent
+make-signing-identity.sh: codesign cannot sign with the new certificate.
+  "errSecInternalComponent" is what codesign says when the dialog was answered Deny or closed: nothing was signed. It says the same
+  of a keychain that is locked, as it is over ssh: `security unlock-keychain`.
+  The certificate and its key were taken out of the keychain again: builds are signed ad hoc as before.
