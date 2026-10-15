@@ -116,6 +116,21 @@ The walks and their rules are on the trunk since 2026-10-15 (`docs/TESTING.md`, 
 | `jolt` | 4 + 12 | | `stuck`, `behind` | 3 + 4 each |
 | `input-held` | 9 + 0 | | `flash` 1 + 4 · `pulled` 0 + 2 · `crash` 1 · `left-behind` 1 | |
 
+**The ten jobs that cost least**, by the keeper of the ledger, least work first: ten jobs, eleven cases, each out of the count outright: 108 → 97. All **free**; each ends in `collab/reality.json` and a run of `scripts/reality-ledger.py`. Look first at the rude stand-in that is on its way to the trunk: where it has the manner already, the job is to let it land and name its switch.
+
+| # | Case in `docs/REALITY.md` | Frees | The job | How big |
+|---:|---|---|---|---|
+| 1 | `f22-the-tiling-keys-were-pressed-once-and-their-own-check-has-never-run` | `jolt`, `focus` | `shots-F22.sh` started once on a hosted Mac; each red becomes a case of its own kind | one run |
+| 2 | `command-and-shift-do-not-stop-macos-tiling` | `fought` | One test, one sentence in `docs/GUIDE.md`. **Accepted by the product owner**: ⌘ keeps Arbor from docking and does not stop macOS; since Arbor stands aside, nothing fights | 20 minutes |
+| 3 | `macos-half-tile-is-a-point-off` | `fought` | The stand-in's left half and left quarters begin one point left of the display, as measured | 20 minutes |
+| 4 | `with-option-held-macos-shows-its-preview-and-does-not-tile` | `fought` | With ⌥ alone held the stand-in's macOS does not tile | 30 minutes |
+| 5 | `a-title-bar-let-go-behind-the-dock-is-pulled-up` | `stuck` | After a release the stand-in puts the window where macOS would | 40 minutes |
+| 6 | `the-fake-says-the-person-did-it-where-the-mac-says-nobody-did` | `size-lost` | A title that changes and an app that hides are nobody's doing, as on a Mac | up to an hour of tests that follow |
+| 7 | `a-title-bar-never-goes-under-the-menu-bar` | `pulled` | The stand-in stops a dragged, a placed and a new window at the menu bar | 40 minutes |
+| 8 | `the-fake-says-the-keyboard-moved-from-within-every-focus-call` | `focus` | The report comes after the frames' echoes, and only across apps | an hour |
+| 9 | `two-previews-for-one-drag`, `option-held-in-a-drag-brings-up-macos-tiling-preview` | `fought`, twice | The fake Mac lists macOS's own preview, so a rehearsal has something to see | an hour |
+| 10 | `the-fake-mac-lists-no-window-for-four-of-arbors-panels` | `left-behind`, its only case | The fake Mac lists the line on screen, the panel of shortcuts, the backdrop and the update window | an hour and a half |
+
 ## 2. The instruments
 
 | What | Who | Done when |
