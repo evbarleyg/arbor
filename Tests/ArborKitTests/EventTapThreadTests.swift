@@ -68,8 +68,7 @@
       let tap = EventTap(name: "test", mask: 1 << CGEventType.leftMouseUp.rawValue) { _, _ in false }
       #expect(!tap.resume())
       tap.pause()
-      tap.reviveIfSwitchedOff()
-      EventTapThread.shared.sync {}  // the revive runs on the tap thread; wait for it
+      EventTapThread.shared.sync { tap.reviveIfSwitchedOff() }  // where the clock does it
       #expect(!tap.isInstalled)
     }
   }

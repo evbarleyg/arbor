@@ -331,7 +331,7 @@ import Testing
 
   @Test func aTapFoundOffWithoutAWordGoesBackOn() {
     // macOS 26 tells the callback only in place of the next event the tap would have had (seen on
-    // a real Mac, scripts/mac-shell/input-taps.sh). The check that runs every second is often first.
+    // a real Mac, scripts/mac-shell/input-taps.sh). The check at every beat of the taps' clock is often first.
     var health = TapHealth()
     #expect(health.foundOff(at: 50) == .switchOn)
     #expect(!health.isResting)
@@ -388,7 +388,7 @@ import Testing
       act(on: health.switchedOff(at: time), tap)
     }
 
-    /// `PointerInput` has every tap look at itself once a second.
+    /// At a beat of the thread's clock every tap looks at itself (`TapPermission.Order.lookAfter`).
     mutating func check(at time: Double) {
       for tap in isOn.indices where !isOn[tap] { act(on: health.foundOff(at: time), tap) }
     }

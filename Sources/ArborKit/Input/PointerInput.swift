@@ -9,10 +9,10 @@ import Foundation
 final class PointerInput {
   private let gestures: GestureTap
   private let framer: RectangleFramer
-  private var permissionCheck: Timer?
+  private var isWatchingPermission = false
   /// True after Accessibility permission went away; the taps stay removed until it returns.
   private var suspended = false
-  /// Called when the watchdog finds the permission gone, or back.
+  /// Called when macOS has told the taps' thread that the permission is gone, or back.
   var onPermissionChange: (@MainActor () -> Void)?
 
   init(
@@ -43,48 +43,35 @@ final class PointerInput {
   }
 
   func stop() {
-    permissionCheck?.invalidate()
-    permissionCheck = nil
     gestures.stop()
     framer.stop()
   }
 
-  /// Users switch a misbehaving window manager off in System Settings, and
-  /// macOS has been reported to stop all input when a process loses
-  /// Accessibility permission while it has an active event tap. So once a
-  /// second, while a tap is installed, Arbor checks that it still may, and
-  /// removes its taps at once if not; they come back when permission does.
-  /// The same check switches a tap back on that macOS left off.
+  /// Users switch a misbehaving window manager off in System Settings, and macOS 26 drops all input from the moment a
+  /// process with active event taps loses the right to them until its taps are gone. So the taps' own thread watches
+  /// over that, and removes them without waiting for this one (`TapPermission`, `EventTapThread`). Here, afterwards,
+  /// the owners forget the taps that are gone, and install them again when the permission is back.
   private func watchPermission() {
-    guard permissionCheck == nil else { return }
-    let timer = Timer(timeInterval: 1, repeats: true) { [weak self] _ in
-      MainActor.assumeIsolated { self?.checkPermission() }
+    guard !isWatchingPermission else { return }
+    isWatchingPermission = true
+    EventTapThread.onPermissionChange.withLock {
+      $0 = { [weak self] isGone, macOSSaidSo in
+        DispatchQueue.main.async { self?.permissionChanged(isGone: isGone, macOSSaidSo: macOSSaidSo) }
+      }
     }
-    // Lets macOS fire it together with other timers instead of waking the Mac just for this.
-    timer.tolerance = 0.2
-    RunLoop.main.add(timer, forMode: .common)
-    permissionCheck = timer
   }
 
-  private func checkPermission() {
-    guard suspended || gestures.isInstalled || framer.isInstalled else { return }
-    let refusal = EventTap.refusal()
-    let permitted = refusal == nil
-    if !permitted, !suspended {
-      suspended = true
+  private func permissionChanged(isGone: Bool, macOSSaidSo: Bool) {
+    suspended = isGone
+    if isGone {
       gestures.stop()
       framer.stop()
-      Log.info("Accessibility permission is gone (\(refusal ?? "")): removed the pinch and rectangle event taps")
-      onPermissionChange?()
-    } else if permitted, suspended {
-      suspended = false
-      Log.info("Accessibility permission is back: installing the pinch and rectangle event taps")
+    } else {
       gestures.update()
       framer.update()
-      onPermissionChange?()
-    } else if permitted {
-      gestures.revive()
-      framer.revive()
     }
+    // Taps that went because macOS said nothing in time are no second opinion. Whoever listens would believe the next no at
+    // once, which may be a daemon's that is just starting again, and would put the question that hangs on this thread.
+    if macOSSaidSo { onPermissionChange?() }
   }
 }

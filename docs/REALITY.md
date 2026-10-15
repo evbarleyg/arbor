@@ -567,11 +567,11 @@ Missing reports: something happens and nobody says so.
 *hurt 1 · at the seam · touches `lost`, `input-held`*
 
 - **Expected:** macOS tells an app when its Accessibility permission is granted or taken away.
-- **Happened:** Nothing announces either. Arbor has to ask: once a second while it waits for the permission, once a second while an event tap is installed, and from the controller while it runs.
+- **Happened:** Nothing announces either. Arbor has to ask: once a second while it waits for the permission, at every beat of the taps' clock while an event tap is installed, and from the controller while it runs.
 - **Found by:** Known of macOS when the feature was written. The scripts that take the permission away from the running app on a hosted Mac have not run yet.
 - **Stand-ins play it:** yes (`Harness.revokeAccessibility`, `FakeWindowSystem.isDenied`)
 - **Guard:** `test: itIsNoticedWithinThreeSecondsWithoutAnybodyDoingAnything`; `test: theSecondNoInARowIsBelieved`; `scenario: 63-permission-taken-away.sim`; `e2e: Arbor removes its taps within three seconds` (by hand); `e2e: it counts the windows out of view` (by hand)
-- **Arbor copes:** Sources/ArborKit/Controller/Controller+Permission.swift watches the permission itself, and `PointerInput.checkPermission` removes the taps at once.
+- **Arbor copes:** Sources/ArborKit/Controller/Controller+Permission.swift watches the permission itself, and the taps' own thread removes the taps at once (`TapPermission`).
 - **Read in:** `Sources/ArborKit/App/ArborApp.swift`, `Sources/ArborKit/Input/PointerInput.swift`, `Sources/ArborTesting/Harness.swift`
 
 ### switching-apps-posts-no-focus-change
@@ -1107,7 +1107,7 @@ Late or partial answers: a call returns before the deed, after it, with half of 
 - **Found by:** A script that stops Arbor again and again while its taps hold real input, judged by a witness at the far end of the chain of taps, on a hosted Mac with macOS 26.
 - **Stand-ins play it:** cannot: it lies below or beside the seam
 - **Guard:** `test: aTapFoundOffWithoutAWordGoesBackOn`; `test: anOccasionalSwitchOffGoesStraightBackOn`; `test: switchOffsFoundWithoutAWordCountToo`; `test: repeatedSwitchOffsLeaveTheTapsOffForAWhile`; `test: threeFreezesAreTheLimitHoweverManyTapsThereAre`; `test: aWordThatComesDuringARestChangesNothing`; `e2e: after three in a row the mouse-down tap is left off` (by hand)
-- **Arbor copes:** TapHealth counts what is found off like what is reported off, one count for all the taps of the thread, and leaves them off for thirty seconds after three switch-offs in ten. `reviveIfSwitchedOff` looks once a second for a tap that is off without a word.
+- **Arbor copes:** TapHealth counts what is found off like what is reported off, one count for all the taps of the thread, and leaves them off for thirty seconds after three switch-offs in ten. `reviveIfSwitchedOff` looks after every yes to the question of the taps' clock for a tap that is off without a word.
 - **Read in:** `Tests/ArborCoreTests/PointerInputTests.swift`, `docs/ARCHITECTURE.md`, `Sources/ArborKit/Input/EventTap.swift`, `Sources/ArborCore/TapHealth.swift`, `collab/BACKLOG.md`
 
 ### finder-answers-late-by-halves-or-not-at-all
@@ -2652,15 +2652,15 @@ Permissions: what macOS allows, to whom, and how it says no.
 
 ### losing-the-permission-with-a-tap-can-stop-all-input
 
-*hurt 1 · below the seam · suspected · touches `input-held`*
+*hurt 1 · below the seam · touches `input-held`*
 
 - **Expected:** Taking the permission away only disables Arbor, and its event taps become harmless.
-- **Happened:** macOS has been reported to stop all input when a process loses Accessibility permission while it has an active event tap. This project has not seen it, and the manual check for it is open. In the first run of that check on a hosted Mac (2026-10-15) Arbor had let go of its taps within a second of the loss, and quit and brought its window back afterwards. Whether input stopped meanwhile was not tried: the script's own tools cannot press once the permission is gone from every app.
-- **Found by:** Reports from elsewhere, quoted in the spec and in the code.
+- **Happened:** From the instant macOS withdraws the permission from a process that has active event taps until those taps are removed, every event of the whole Mac is dropped: clicks, and also keys, which no tap of Arbor's asks for, and the wheel, whose tap was switched off. Seen on hosted Macs on 2026-10-15 (macOS 26.6.2; no other macOS has been tried) in every round with taps in which the right to tap went before the flag turned (by `tccutil`, seven of seven in one run): 5 to 100 events of a stream of a click, a key and a notch every 50 ms, 85 to 1,091 ms; none in any round with no Arbor or with an Arbor without taps. The hole was the wait for the next tick of a check that then ran once a second on the main run loop. A bare tool with one active tap that never let go took all input away to the end of the stream, 8 s and 24 s, and the next stream arrived whole once it was killed; its callback was told nothing, and the window server went on listing its tap as switched on. Where the loss was announced and the privacy daemon left alone, the flag turned first, Arbor took its taps out and nothing was lost, in four rounds of four. With the check as it was, nothing was lost before and after, and after a loss in the middle of a ⌃⌥-drag nothing was stuck (one valid round). Before that it was known only from reports elsewhere.
+- **Found by:** Reports from elsewhere, quoted in the spec and in the code; then probes on hosted Macs that take the permission from an Arbor of its own identity under a numbered stream of events, with no Arbor, an Arbor without taps and a bare tapper as controls. The probes and their README are on the branch `probe/checks-that-never-ran` until they land.
 - **Stand-ins play it:** cannot: it lies below or beside the seam
-- **Guard:** `test: theTapsWatchdogCountsAsASecondOpinion`; `e2e: Arbor removes its taps within three seconds` (by hand)
-- **Arbor copes:** PointerInput.checkPermission looks once a second while a tap is installed and removes the taps at once.
-- **Read in:** `Sources/ArborKit/Input/PointerInput.swift`, `docs/features/F03-trackpad-gestures.md`, `docs/features/F63-permission-taken-away.md`, `scripts/mac-shell/input-taps.sh`, `docs/TESTING.md`
+- **Guard:** `test: theTapsWatchdogCountsAsASecondOpinion`; `test: wheneverTheLossComesTheTapsAreOutWithinABeat`; `test: theMainThreadBusyForFiveSecondsKeepsNoTapIn`; `test: aQuestionThatHangsForFiveSecondsKeepsNoTapInBeyondTwoBeats`; `e2e: Arbor removes its taps within three seconds` (by hand)
+- **Arbor copes:** TapPermission.beat: the taps' own thread has macOS asked at every beat of 0.15 s while a tap is installed, by a third thread, and removes all taps in the turn in which the answer is no or has not come in time. The main thread hears afterwards. By design input is still lost for up to a beat and the time the answer takes, two and a half beats if none comes. This has not run on a Mac yet.
+- **Read in:** `Sources/ArborCore/TapPermission.swift`, `Sources/ArborKit/Input/EventTap.swift`, `docs/features/F03-trackpad-gestures.md`, `docs/features/F63-permission-taken-away.md`, `scripts/mac-shell/input-taps.sh`, `docs/TESTING.md`
 
 ### the-permission-must-outlive-the-old-arbor
 
@@ -2679,11 +2679,11 @@ Permissions: what macOS allows, to whom, and how it says no.
 *hurt 1 · at the seam · M1052 · M1051 · touches `lost`, `input-held`*
 
 - **Expected:** `AXIsProcessTrusted()` says whether Arbor may use Accessibility.
-- **Happened:** The flag can go on saying yes after Arbor is removed from the list with the − button, and one no out of the blue may only be the privacy daemon restarting. Seen since, on macOS 26.6.2: under a second after `sudo tccutil reset Accessibility` a running Arbor logged "Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap)". The thorough question caught it, and the four taps were gone within one second. How long the flag would have gone on is not known. The stand-in's comment still calls `flagLags` unseen.
+- **Happened:** The flag can go on saying yes after Arbor is removed from the list with the − button, and one no out of the blue may only be the privacy daemon restarting. Seen since, on macOS 26.6.2: under a second after `sudo tccutil reset Accessibility` a running Arbor logged "Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap)". The thorough question caught it, and the four taps were gone within one second. Later probes saw the flag go on for 4 to 16 s after an entry was deleted and the daemon restarted, and once beyond the 30 s they waited: a process remembers it until `com.apple.accessibility.api` is posted. The stand-in's comment still calls `flagLags` unseen.
 - **Found by:** Reading and documentation; then the first run of the session of `input-taps.sh` that takes the permission away, on a hosted Mac on 2026-10-15. Taking it away by hand in System Settings is still on the list of manual checks.
 - **Stand-ins play it:** yes (`FakeWindowSystem.flagLags`, `FakeWindowSystem.isDenied`, `FakeWindowSystem.mayUseAccessibility`)
 - **Guard:** `test: ifTheFlagLagsTheRefusedCallsTellTheTruthAndTheyAreBelievedThoroughly`; `test: onceTheThoroughWayHasWorkedItsNoIsBelievedAgainstTheFlag`; `test: oneNoFollowedByYesChangesNothingAtAll`; `test: oneNoIsNotBelievedAndIsAskedAboutAgainSoon`; `e2e: Arbor removes its taps within three seconds` (by hand)
-- **Arbor copes:** EventTap.refusal asks the flag and then makes a tap and throws it away; PermissionWatch asks again half a second after a no out of the blue.
+- **Arbor copes:** EventTap.answer asks the flag and then makes a tap and throws it away; PermissionWatch asks again half a second after a no out of the blue.
 - **Read in:** `Sources/ArborKit/Input/EventTap.swift`, `docs/features/F63-permission-taken-away.md`, `Sources/ArborTesting/FakeWindowSystem.swift`, `docs/ARCHITECTURE.md`, `collab/QUESTIONS.md`, `scripts/mac-shell/input-taps.sh`
 
 ### without-the-permission-commands-seem-to-succeed
@@ -3363,7 +3363,7 @@ Input: where presses, keys and gestures really go.
 - **Found by:** Read in a comment in the source; the run that showed it is not named.
 - **Stand-ins play it:** cannot: it lies below or beside the seam
 - **Guard:** **none**
-- **Arbor copes:** EventTap.refusal makes that tap watch for nothing but a drawing tablet's pen coming near, never for what a mouse or a trackpad sends.
+- **Arbor copes:** EventTap.answer makes that tap watch for nothing but a drawing tablet's pen coming near, never for what a mouse or a trackpad sends.
 - **Read in:** `Sources/ArborKit/Input/EventTap.swift`
 
 ### a-wallpaper-click-activates-finder-without-a-window

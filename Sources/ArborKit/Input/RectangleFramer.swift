@@ -144,12 +144,6 @@ final class RectangleFramer {
     context.state.withLockUnchecked { $0.zones = zones }
   }
 
-  /// See `EventTap.reviveIfSwitchedOff`.
-  func revive() {
-    downTap?.reviveIfSwitchedOff()
-    context.state.withLockUnchecked { $0.dragTap }?.reviveIfSwitchedOff()
-  }
-
   var isInstalled: Bool { downTap != nil }
 
   // MARK: On the tap thread
