@@ -91,7 +91,7 @@ def acts_of(seed, display, acts=None, cast="stock"):
 
 # The kind of act each word counts as (lib-walk.sh). A name that ends in _ stands for every word that begins so.
 KINDS = {"switch": "switch_ focus_key", "tile-click": "tile_click", "open-close": "open_new close_new minimize restore hide unhide quit_app reopen",
-         "dock-key": "dock_key float_key arrange_key undo redo rotate mirror pin send_across", "drag": "drag_onto drag_out drag_by", "drag-where-macos-tiles": "drag_edge",
+         "dock-key": "dock_key float_key arrange_key undo redo rotate mirror pin send_across", "drag": "drag_onto drag_out drag_by carry_across", "drag-where-macos-tiles": "drag_edge",
          "view": "view peek save_view view_n", "resize": "resize_", "macos-own": "full_screen wallpaper_click title_double_click",
          "way-out": "pause resume float_all float_all_here hold_view", "display-change": "display", "idle": "idle_act"}
 # Every app of the cast is called up once, to see that it still comes. The smallest cast has this many.

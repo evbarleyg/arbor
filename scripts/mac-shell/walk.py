@@ -70,6 +70,12 @@ def walk(seed, acts, two=False, cast="stock"):
     apps, new, menu, quit_ = (CASTS[cast][key] for key in ("apps", "new", "menu", "quit"))
     lines, owed, count, plugged = [], [], 0, False
     restart_at = acts // 2
+    if two:
+        # What the cell is for, first, while every window still floats: a display comes, a window is carried onto it by hand, it goes, and it comes back (docs/VIABLE.md, section 7:
+        # the samples have to show that, in a control as well). Left to the dice, 6 walks of 40 had none of it, and one had the second display for a fifth of its lines.
+        lines += back_at_the_desk(apps)
+        plugged = True
+    away = 0
 
     def say(line, worth=1):
         nonlocal count
@@ -82,10 +88,12 @@ def walk(seed, acts, two=False, cast="stock"):
     restarted = False
     while count < acts:
         # Before anything else, and not counted: what is owed comes due, and Arbor is started again, when it would have without.
-        if two and changes.roll(8) == 0:
+        away = 0 if plugged else away + 1
+        if two and (changes.roll(8) == 0 or away > AWAY):
             # Only what applies: what cannot be played is left out on the Mac, and a gate would turn out short of what it believed it had.
             lines.append("display plug" if not plugged else changes.weighted([
-                ("display unplug", 2), ("display left", 1), ("display right", 1), ("display smaller", 1), ("display larger", 1), ("send_across", 4)]))
+                ("display unplug", 2), ("display left", 1), ("display right", 1), ("display smaller", 1), ("display larger", 1), ("send_across", 3),
+                (f"carry_across {changes.pick(apps)}", 2)]))
             plugged = lines[-1] != "display unplug"
             continue
         for debt in owed:
@@ -213,10 +221,19 @@ def self_test():
     for seed in range(200):
         there = False
         for line in walk(seed, 110, two=True):
-            if line.split()[0] in ("display", "send_across") and (line == "display plug") == there:
+            if line.split()[0] in ("display", "send_across", "carry_across") and (line == "display plug") == there:
                 failures.append(f"seed {seed}: `{line}` with the second display {'plugged in' if there else 'not there'}")
             there = line == "display plug" or (there and line != "display unplug")
-    plain = [line for line in walk("4711", 110, two=True) if line.split()[0] not in ("display", "send_across")]
+        lines = walk(seed, 110, two=True)
+        if lines[:4] != ["display plug", "carry_across notes", "display unplug", "display plug"]:
+            failures.append(f"seed {seed}: a walk with two displays begins with one that comes, has a window carried onto it, goes and comes back")
+        there, with_two = False, 0
+        for line in lines:
+            there = line == "display plug" or (there and line != "display unplug")
+            with_two += there
+        if with_two < 0.65 * len(lines):
+            failures.append(f"seed {seed}: the second display is there for {with_two} of {len(lines)} lines")
+    plain = [line for line in walk("4711", 110, two=True) if line.split()[0] not in ("display", "send_across", "carry_across")]
     if plain[:60] != walk("4711", 110)[:60]:
         failures.append("with a second display the rest of the walk is another walk")
     moving, still = script("4711", 110, "laptop", "off", False).split("\n"), script("4711", 110, "laptop", "off", False, still=True).split("\n")
@@ -244,7 +261,14 @@ def self_test():
 WORDS = {"switch_dock", "switch_click", "switch_to", "switch_cmdtab", "switch_backtick", "switch_menu", "tile_click", "focus_key", "arrange_key", "undo",
          "redo", "rotate", "mirror", "pin", "peek", "save_view", "view_n", "resize_edge", "float_all_here", "hold_view", "open_new", "close_new", "minimize", "restore", "hide", "unhide",
          "quit_app", "reopen", "dock_key", "float_key", "drag_onto", "drag_out", "drag_by", "drag_edge", "view", "resize_gap", "resize_key", "full_screen",
-         "wallpaper_click", "title_double_click", "pause", "resume", "float_all", "quit_and_start", "idle_act", "display", "send_across"}
+         "wallpaper_click", "title_double_click", "pause", "resume", "float_all", "quit_and_start", "idle_act", "display", "send_across", "carry_across"}
+def back_at_the_desk(apps):
+    """A display comes, a window of the cast's is carried onto it, it goes, and it comes back."""
+    return ["display plug", f"carry_across {next(app for app in ('notes', 'textedit', *apps) if app in apps)}", "display unplug", "display plug"]
+
+
+# The second display is never away for more lines than this.
+AWAY = 6
 PINNED = ['drag_onto mail preview right', 'switch_to mail', 'float_key']
 
 

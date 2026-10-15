@@ -732,6 +732,22 @@ display() {
 
 move_to_display() { send_across; }
 
+# By hand, which a person can do with Arbor or without: so a control, too, has a window on the second display when it goes. (send_across is Arbor's own command, and is left out of one.)
+carry_across() {
+  local window id x y w h
+  [ -n "$WALK_SECOND" ] || { left_out "carry_across $1: there is no second display"; return; }
+  can_be_dragged "$1" || { left_out "carry_across $1: nothing to take hold of"; return; }
+  window=$(window_of "$1")
+  if with_arbor && arbor_answers && is docked "$window" 2>/dev/null; then left_out "carry_across $1: it is docked"; return; fi
+  # The main display begins at 0,0.
+  read -r id x y w h _ <<< "$("$ARBOR_POINTER" displays | awk '$2 != 0 || $3 != 0' | head -n 1)"
+  [ -n "${h:-}" ] || { left_out "carry_across $1: macOS lists no second display"; return; }
+  walk_act drag "carry-$1-across" "drags $1, which floats, by its title bar onto the other display and lets go"
+  must drag_window "$window" "$((${x%.*} + ${w%.*} / 2))" "$((${y%.*} + 220))"
+  changed
+  acted drags="$window" front="$window" own="$window"
+}
+
 send_across() {
   local window
   arbor_acts && [ -n "$WALK_SECOND" ] || { left_out "send_across: there is no second display, or Arbor is not acting"; return; }
