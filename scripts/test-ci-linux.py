@@ -6,7 +6,8 @@ not wait for fails without anybody noticing, a job or a step that may be skipped
 `make check` that no job took over is simply not run (two were not, for as long as the list was kept by hand). So this
 reads .github/workflows/ci.yml and the Makefile and says what does not hold:
 
-  every job on a Linux runner is named linux-… (but `changes`), and the job `linux` needs it, and needs no other;
+  every job on a Linux runner is named linux-… (but `changes`, and the few that speak for the Mac job), and the job `linux` needs it, and
+  needs no other;
   `linux` runs whatever became of them and fails unless each succeeded: its script is run here, on made-up results;
   no Linux job and no step of one has a condition that could skip it, and none may fail and pass all the same;
   every command of `make check`, as it stands there, is a command of some Linux job, and so is what ALSO lists;
@@ -28,9 +29,12 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 VERDICT = "linux"
 # On Linux too, but it decides about the Mac and proves nothing about the code.
 NOT_A_CHECK = {"changes"}
+# On Linux runners because they need no Mac, but what they say is about the macOS job, after which they run and with which they are skipped. Each
+# is a check of its own, by its own name: what real windows said there, whether every test ran there or here, that it had built from nothing.
+OF_THE_MAC = {"real-windows", "tests-accounted-for", "macos-from-nothing"}
 # What CI's Linux jobs run beyond `make check`.
 ALSO = ["make typecheck-mac", "scripts/parity.py --test-log test.log --check", "scripts/test-ci-changes.py",
-        "scripts/test-mac-queue.py"]
+        "scripts/test-mac-queue.py", "scripts/test-ci-tests.py"]
 JOB = re.compile(r"""^  ["']?([A-Za-z_][\w-]*)["']?:\s*(?:#.*)?$""")
 KEY = re.compile(r"^(\s*)(?:- )?([\w-]+):\s*(.*)$")
 # They only widen when something runs.
@@ -97,6 +101,9 @@ def plain(command):
         words = words[1:]
     if words and words[0].startswith("./"):
         words[0] = words[0][2:]
+    # `swift test` on everything, which also leaves a record of what ran.
+    if words[:5] == ["scripts/ci-tests.py", "run", "--mode", "full", "--record"] and len(words) > 5:
+        words = ["swift", "test", *words[6:]]
     return " ".join(words)
 
 
@@ -125,7 +132,7 @@ def problems_in(workflow, makefile):
         return [f"there is no job `{VERDICT}`"]
     parts = sorted(name for name in jobs if name.startswith(VERDICT + "-"))
     found = [f"{name} runs on Linux and is not named {VERDICT}-…, so nobody waits for it"
-             for name, lines in jobs.items() if name not in (*parts, VERDICT, *NOT_A_CHECK)
+             for name, lines in jobs.items() if name not in (*parts, VERDICT, *NOT_A_CHECK, *OF_THE_MAC)
              and any("ubuntu" in value for value in values_of(lines, "runs-on"))]
 
     needs = sorted(re.findall(r"[\w-]+", " ".join(values_of(jobs[VERDICT], "needs", 4))))
@@ -189,6 +196,7 @@ jobs:
       - run: ./scripts/ci-step.py lint make lint
       - run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py
       - run: ./scripts/ci-step.py mac-queue ./scripts/test-mac-queue.py
+      - run: ./scripts/ci-step.py ci-tests ./scripts/test-ci-tests.py
       - name: Build
         run: ./scripts/ci-step.py --summary 'warning:' build swift build
       - run: ./scripts/ci-step.py typecheck-mac make typecheck-mac
@@ -244,6 +252,9 @@ TABLE = [
     ("linux-b waits for changes", "a job that waits for one that may be skipped", changed("  linux-b:\n", "  linux-b:\n    needs: changes\n"), MAKEFILE),
     (None, "a job that waits for another Linux job", changed("  linux-b:\n", "  linux-b:\n    needs: [linux-a]\n"), MAKEFILE),
     ("fuzz runs on Linux", "a job on Linux by another name", GOOD + "  fuzz:\n    runs-on: ubuntu-latest\n    steps:\n      - run: false\n", MAKEFILE),
+    (None, "a job on Linux that speaks for the Mac job", GOOD + "  real-windows:\n    needs: macos\n    runs-on: ubuntu-latest\n    steps:\n      - run: false\n", MAKEFILE),
+    ("waits for real-windows", "the verdict waits for such a one, which is skipped with the Mac",
+     changed(NEEDS, "needs: [linux-a, linux-b, real-windows]") + "  real-windows:\n    runs-on: ubuntu-latest\n", MAKEFILE),
     ("waits for macos", "the verdict waits for a Mac", changed(NEEDS, "needs: [linux-a, linux-b, macos]"), MAKEFILE),
     ("waits for linux-c", "a job that was renamed", changed(NEEDS, "needs: [linux-a, linux-b, linux-c]"), MAKEFILE),
     ("is skipped when", "the verdict has no condition", changed(CONDITION, NEEDS), MAKEFILE),
@@ -273,6 +284,10 @@ TABLE = [
     ("runs `scripts/new.sh`", "a new step after a comment", GOOD, changed("smoke.sh\n", "smoke.sh\n# And then:\n\t@./scripts/new.sh\n", MAKEFILE)),
     ("runs `scripts/smoke.sh && ./scripts/new.sh`", "a new step on an old line", GOOD, changed("smoke.sh\n", "smoke.sh && ./scripts/new.sh\n", MAKEFILE)),
     ("runs `swift test`", "the tests run only on the Mac", changed("test swift test", "test true").replace("- run: swift build", "- run: swift test"), MAKEFILE),
+    (None, "the tests run through the script that records them", changed("test swift test", "test ./scripts/ci-tests.py run --mode full --record linux.tsv"), MAKEFILE),
+    ("runs `swift test`", "through that script, only the Mac's selection", changed("test swift test", "test ./scripts/ci-tests.py run --mode mac-only --record linux.tsv"), MAKEFILE),
+    ("runs `swift test`", "through that script, only some", changed("test swift test", "test ./scripts/ci-tests.py run --mode full --record linux.tsv --filter Geometry"), MAKEFILE),
+    ("runs `swift test`", "that script only selects", changed("test swift test", "test ./scripts/ci-tests.py select"), MAKEFILE),
     ("runs `swift test`", "only some of the tests run", changed("test swift test", "test swift test --filter Geometry"), MAKEFILE),
     ("lint-a.py", "lint was dropped", changed("      - run: ./scripts/ci-step.py lint make lint\n", ""), MAKEFILE),
     ("lint-a.py", "lint is only printed", changed("lint make lint", "lint make lint -n"), MAKEFILE),

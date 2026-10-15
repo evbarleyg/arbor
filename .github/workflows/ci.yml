@@ -240,6 +240,8 @@ jobs:
         run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py
       - name: The arithmetic of the queue for the Macs
         run: ./scripts/ci-step.py mac-queue ./scripts/test-mac-queue.py
+      - name: The selection of tests for the Mac, the record of a run, and the net under both
+        run: ./scripts/ci-step.py ci-tests ./scripts/test-ci-tests.py
       - name: Lint (imports a Mac would miss; Mac shell scripts that would change a person's Mac; these jobs)
         run: ./scripts/ci-step.py lint make lint
       - name: Release tooling
