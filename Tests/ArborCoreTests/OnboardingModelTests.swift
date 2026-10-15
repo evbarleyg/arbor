@@ -52,8 +52,13 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     permitted.accessibility = true
     #expect(OnboardingModel(permitted).title == "Ready, with one suggestion")
     // An ad-hoc build loses the permission while System Settings still shows the switch on.
-    #expect(model.row(.accessibility)?.detail.contains("off and on again") == true)
-    #expect(OnboardingModel(fresh, isNewcomer: true).row(.accessibility)?.detail.hasSuffix("This window comes back by itself.") == true, "it cannot be in the list yet")
+    let alreadyOn = " Already on? Switch it off and on again: macOS asks anew after every update."
+    #expect(model.row(.accessibility)?.detail.hasSuffix("This window comes back by itself." + alreadyOn) == true)
+    // To a newcomer as well. Another build over an old grant looks like a first launch, the switch looks on, and Arbor waits: whoever meets
+    // that finds nothing to flip. Arbor cannot tell the two apart, so the sentence is always there, short, last in the row.
+    #expect(OnboardingModel(fresh, isNewcomer: true).row(.accessibility)?.detail.hasSuffix(alreadyOn) == true)
+    // Where the permission went while Arbor ran nothing was updated: what to do, without that reason.
+    #expect(OnboardingModel(fresh, windowsOutOfView: 3).row(.accessibility)?.detail.hasSuffix(" Already on? Switch it off and on again.") == true)
     #expect(model.row(.screenRecording)?.detail.contains("Nothing is recorded or stored") == true)
     #expect(model.row(.desktopAndDock)?.points.count == 3, "the click on the wallpaper is in nobody's way (Q24)")
   }
@@ -101,7 +106,7 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(welcome(facts, isNewcomer: false).keysLine == keys)
     #expect(model.keysLegend == "⌃ is Control, ⌥ Option, ⌘ Command, ↩ Return.")
     #expect(welcome(facts, shortcut: { _ in nil }).keysLine.isEmpty && welcome(facts, shortcut: { _ in nil }).keysLegend.isEmpty)
-    #expect(model.footnote == "Arbor lives in the menu bar, under this icon." && model.footnoteShowsMark)
+    #expect(model.footnote == "Arbor lives in the menu bar, under this icon.")
     #expect(model.primaryButton == "Continue" && !model.isPrimaryEnabled && model.backButton == nil)
 
     // With the permission there: the same, and nothing holds anybody up.
@@ -127,6 +132,18 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(
       OnboardingModel(facts, flow: OnboardingFlow(isReady: false), windowsOutOfView: 3, shortcut: defaults).title
         == "Arbor needs its permission back")
+  }
+
+  /// "Under this icon": the one that is in the menu bar at that moment, or the one time a newcomer looks for it, it is not what the window shows.
+  @Test func theFootnoteShowsTheIconThatIsInTheMenuBarNow() {
+    #expect(OnboardingModel(fresh).footnoteIcon == MenuBarModel.Icon(), "unless somebody says otherwise, Arbor's mark")
+    for icon in [MenuBarModel.Icon.needsPermission, .paused, .held, .holdingStill] {
+      let model = OnboardingModel(fresh, menuBarIcon: icon)
+      #expect(model.footnoteIcon == icon)
+      // Written out, by what VoiceOver reads of it.
+      #expect(model.text.contains(model.footnote + " [\(icon.label)]"))
+    }
+    #expect(!OnboardingModel(fresh).text.contains(" [Arbor"))
   }
 
   @Test func theDesktopAndDockRowListsWhatIsStillInTheWay() throws {
@@ -321,7 +338,7 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     // Only what is true of the item as it is: with something docked it is a row of buttons, and a plain click runs one of them.
     #expect(
       OnboardingModel(tuned, menuBarIsOneIcon: false, shortcut: defaults).footnote.contains("Right-click it for all commands, including Quit Arbor"))
-    #expect(ready.footnoteShowsMark && ready.keysLine.isEmpty && ready.keysLegend.isEmpty)
+    #expect(ready.keysLine.isEmpty && ready.keysLegend.isEmpty)
   }
 
   /// Until Arbor may arrange windows there is one thing to put right, and the welcome has it: whoever asks for Check Setup… then (it is
@@ -479,7 +496,7 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     #expect(secondPage { $0 == .zoom(nil) ? "⌃⇧Z" : nil }.keysLegend == "⌃ is Control, ⇧ Shift.")
     #expect(model.primaryButton == "Done" && model.isPrimaryEnabled && model.backButton == "Back")
     // During the moves, nothing but the moves, the way back, and the one thing nobody can guess.
-    #expect(model.footnote == "Arbor lives in the menu bar, under this icon." && model.footnoteShowsMark)
+    #expect(model.footnote == "Arbor lives in the menu bar, under this icon.")
     #expect(model.opensAtLogin == nil && model.keysLine.isEmpty)
   }
 
@@ -551,7 +568,7 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     let done = OnboardingModel(facts, flow: flow, menuBarIsOneIcon: false, shortcut: defaults)
     #expect(done.title == "That is all there is to it")
     #expect(done.summary == "The arrangement stays until you change it. ⌃⌥Z takes back the last change.")
-    #expect(done.footnote.contains("Right-click it for all commands") && done.footnoteShowsMark && done.opensAtLogin == false)
+    #expect(done.footnote.contains("Right-click it for all commands") && done.opensAtLogin == false)
     #expect(done.steps.allSatisfy { $0.isDone && !$0.isNext })
     #expect(OnboardingModel(facts, flow: flow).summary == "The arrangement stays until you change it.")
   }

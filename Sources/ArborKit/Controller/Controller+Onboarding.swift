@@ -20,7 +20,7 @@ extension Controller {
       facts, flow: flow, windowsOutOfView: permissionLoss?.windows ?? 0, offersScreenRecording: offersScreenRecording, appsWithOwnShortcuts: passThroughSuggestions.map(\.name),
       canFixSetup: macSwitchboard != nil, switchesChangedByArbor: macSwitchesChangedByArbor, switchesGivenBack: macSwitchesLent,
       fixSetupFailure: fixSetupFailure,
-      menuBarIsOneIcon: menuBarIsSurelyOneIcon, desktops: desktopsBetweenWhatIsDocked,
+      menuBarIsOneIcon: menuBarIsSurelyOneIcon, menuBarIcon: menuBarIconInShort, desktops: desktopsBetweenWhatIsDocked,
       isNewcomer: isFirstLaunch && workspaces.values.allSatisfy { $0.tree.allWindows.isEmpty }, isPaused: isPaused && accessibilityGranted,
       shortcut: { KeyBindings.label(for: $0, in: bindings) })
   }
@@ -31,9 +31,22 @@ extension Controller {
     !isRunning || !settings.menuBarControls || workspaces.values.allSatisfy { $0.tree.allWindows.isEmpty }
   }
 
-  /// The Desktop's part of each display on which something is docked, while it is in view.
+  /// The item's icon, as short of `menuBarModel()` as the above. Where the item may be a row of buttons it is Arbor's mark, which that row
+  /// begins with.
+  var menuBarIconInShort: MenuBarModel.Icon {
+    guard accessibilityGranted else { return .needsPermission }
+    guard isRunning else { return isPaused ? .paused : MenuBarModel.Icon() }
+    switch holdLevel {
+    case .view: return .held
+    case .still where menuBarIsSurelyOneIcon: return .holdingStill
+    default: return MenuBarModel.Icon()
+    }
+  }
+
+  /// The Desktop's part of each display on which something is docked, while it is in view. None while Arbor arranges nothing.
   fileprivate var desktopsBetweenWhatIsDocked: [CGRect] {
-    displays.compactMap { display in
+    guard isRunning else { return [] }
+    return displays.compactMap { display in
       workspaces[display.id]?.tree.allWindows.isEmpty == false ? layouts[display.id]?.desktopFrame : nil
     }
   }
@@ -100,7 +113,7 @@ public final class OnboardingSession {
     facts = Self.facts(of: controller)
     flow = OnboardingFlow(isReady: facts.accessibility)
     model = controller.onboardingModel(facts, flow: flow)
-    controller.observe { [weak self] _ in self?.arrangementChanged() }
+    controller.observe { [weak self] _ in self?.controllerChanged() }
     // With the facts of a second ago the window would hold what Arbor has just done against the Mac.
     controller.macSwitchesDidChange = { [weak self] in self?.refresh() }
   }
@@ -159,11 +172,14 @@ public final class OnboardingSession {
     publish()
   }
 
-  private func arrangementChanged() {
+  private func controllerChanged() {
     guard isOpen, let controller else { return }
     // Most changes tick nothing off (every step of a gap being dragged is one), so look before wording it all again.
     let before = flow.steps
     flow.steps.observe(controller.workspaces)
+    // Another icon in the menu bar: Arbor started or stopped, lost or got its permission, holds or has let go. Much of what the window says
+    // is about that, and the page it is on, so it looks at the Mac again. It is rare.
+    guard controller.menuBarIconInShort == model.footnoteIcon else { return refresh() }
     // The window rests over the Desktop, so it follows that too.
     if flow.steps != before || (flow.page == .firstSteps && controller.desktopsBetweenWhatIsDocked != model.desktops) { publish() }
   }

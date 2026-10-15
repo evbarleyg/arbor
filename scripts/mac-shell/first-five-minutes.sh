@@ -113,6 +113,25 @@ rests_right_of() {
   read -r x y w h <<< "$(real_frame_of "$1")"
   [ "$wx" -ge "$((${x%.*} + ${w%.*}))" ]
 }
+# The moves are made exactly as the window words them: the keys are read from the window, so they are whatever keys ship.
+ticks() { ax tree 2>/dev/null | grep AXImage | grep -c '"Done"'; }
+ticked() { [ "$(ticks)" = "$1" ]; }
+# keys_after <words>: the shortcut that follows those words in the window, as `key` wants it: "⌃⌥⌘←" as ctrl+opt+cmd+left.
+keys_after() {
+  ax tree 2>/dev/null | grep -o "$1 [^ \"]*" | head -n 1 | sed "s/^$1 //" \
+    | sed 's/⌃/ctrl+/; s/⌥/opt+/; s/⇧/shift+/; s/⌘/cmd+/; s/←/left/; s/→/right/; s/↩/return/; s/⎋/escape/; s/Space/space/' | tr 'A-Z' 'a-z'
+}
+make_move() {
+  local keys
+  keys=$(keys_after "$1")
+  check "the window names the keys after “$1”" test -n "$keys"
+  [ -n "$keys" ] && key "$keys"
+}
+
+# macOS's own dialog, a window of a process of its own.
+asking_pid() { pointer windows --on-screen | awk '$9 == "universalAccessAuthWarn" { print $2; found = 1; exit } END { exit !found }'; }
+macos_asks() { asking_pid > /dev/null; }
+macos_asks_no_more() { ! macos_asks; }
 menu_is_open() { pointer windows | awk '$3 == 101 && $8 == "on" { found = 1 } END { exit !found }'; }
 menu_is_closed() { ! menu_is_open; }
 close_menu() { menu_is_open || return 0; key escape; eventually menu_is_closed; }
@@ -142,6 +161,8 @@ mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
 cp "$ARBOR_BIN/Arbor" "$app/Contents/MacOS/Arbor"
 cp Resources/Info.plist "$app/Contents/Info.plist"
 /usr/libexec/PlistBuddy -c "Set :CFBundleIdentifier $BUNDLE_ID" -c "Delete :CFBundleURLTypes" "$app/Contents/Info.plist" || die "could not edit Info.plist"
+# As scripts/sign.sh stamps what it signs without a certificate, which is how this copy is signed two lines on.
+/usr/libexec/PlistBuddy -c "Add :ArborSignature string adhoc" "$app/Contents/Info.plist" 2>/dev/null || /usr/libexec/PlistBuddy -c "Set :ArborSignature adhoc" "$app/Contents/Info.plist"
 codesign --force --sign - --identifier "$BUNDLE_ID" "$app" || die "codesign failed"
 tcc "DELETE FROM access WHERE client = '$BUNDLE_ID';"
 at_exit "tcc \"DELETE FROM access WHERE client = '$BUNDLE_ID';\"; for name in $KEYS; do defaults delete $DOMAIN \$name 2>/dev/null; done; killall 'System Settings' 2>/dev/null"
@@ -161,6 +182,8 @@ check "it names the permission" says "Accessibility"
 check "and nothing else: not macOS's own tiling" says_not "macOS tiling"
 check "what Arbor is for, and what it has over macOS's tiling" says "Arbor keeps it."
 check "the keys, in a sentence" says "put a window left or right"
+check "and what to do where the switch is on already: another build over an old grant" says "Already on? Switch it off and on again"
+check "“under this icon” is the warning sign, which is what the menu bar shows while Arbor waits" says "Arbor needs Accessibility permission"
 "$ARBOR_BIN/arborctl" doctor 2>&1 | cut -c 1-240
 if item=$(status_item); then
   # shellcheck disable=SC2086
@@ -170,12 +193,19 @@ if item=$(status_item); then
   "$ARBOR_BIN/arborctl" menu
   close_menu
 fi
+# A newcomer who has read the keys presses one before granting anything.
+early=$(keys_after "until you ask\.")
+check "the welcome names a key" test -n "$early"
+if [ -n "$early" ]; then
+  key "$early"
+  sleep 0.3
+  shot 12-a-key-before-the-grant
+  check "Arbor takes the key and says why, on screen" grep -q "said on .*Arbor needs the Accessibility permission" "$ARBOR_HOME/arbor.log"
+  check "nothing has moved" nothing_moved
+  check "and macOS has not been made to ask" macos_asks_no_more
+fi
 
 step "2  the permission"
-# macOS's own dialog, a window of a process of its own.
-asking_pid() { pointer windows --on-screen | awk '$9 == "universalAccessAuthWarn" { print $2; found = 1; exit } END { exit !found }'; }
-macos_asks() { asking_pid > /dev/null; }
-macos_asks_no_more() { ! macos_asks; }
 settings_are_open() { pointer windows --on-screen | awk '$9 == "System" && $10 == "Settings" { found = 1 } END { exit !found }'; }
 press "Open Settings…"
 check "macOS asks, with its own dialog" eventually macos_asks
@@ -237,21 +267,6 @@ check "with nothing else to decide it has gone on to the moves" eventually says 
 check "nothing has moved" nothing_moved
 killall "System Settings" 2>/dev/null
 sleep 1
-
-# The moves are made exactly as the window words them: the keys are read from the window, so they are whatever keys ship.
-ticks() { ax tree 2>/dev/null | grep AXImage | grep -c '"Done"'; }
-ticked() { [ "$(ticks)" = "$1" ]; }
-# keys_after <words>: the shortcut that follows those words in the window, as `key` wants it: "⌃⌥⌘←" as ctrl+opt+cmd+left.
-keys_after() {
-  ax tree 2>/dev/null | grep -o "$1 [^ \"]*" | head -n 1 | sed "s/^$1 //" \
-    | sed 's/⌃/ctrl+/; s/⌥/opt+/; s/⇧/shift+/; s/⌘/cmd+/; s/←/left/; s/→/right/; s/↩/return/; s/⎋/escape/; s/Space/space/' | tr 'A-Z' 'a-z'
-}
-make_move() {
-  local keys
-  keys=$(keys_after "$1")
-  check "the window names the keys after “$1”" test -n "$keys"
-  [ -n "$keys" ] && key "$keys"
-}
 
 step "3  the four moves, with macOS's settings as they come"
 ctl trace on first-five-minutes-moves

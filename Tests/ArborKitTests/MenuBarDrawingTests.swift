@@ -247,7 +247,7 @@
     /// Lays a page out as `OnboardingWindow` does, in a window that is never shown, and draws it into a bitmap.
     func page(_ model: OnboardingModel, rowsHeight: CGFloat? = nil, isDark: Bool, as name: String) throws -> CGSize {
       let view = OnboardingView(
-        model: model, icon: ArborArtwork.appIcon(side: 128), mark: ArborArtwork.menuBarIcon(), rowsHeight: rowsHeight,
+        model: model, icon: ArborArtwork.appIcon(side: 128), rowsHeight: rowsHeight,
         onButton: { _ in }, onAction: { _ in }, onLogin: {}, onPrimary: {}, onBack: {})
       // A window needs an application object, which a test runner has not made. Nothing is activated or shown.
       _ = NSApplication.shared
@@ -274,7 +274,9 @@
         isPaused: Bool = false
       ) -> OnboardingModel {
         OnboardingModel(
-          facts, flow: flow, appsWithOwnShortcuts: apps, canFixSetup: true, switchesChangedByArbor: changed, isNewcomer: isNewcomer,
+          facts, flow: flow, appsWithOwnShortcuts: apps, canFixSetup: true, switchesChangedByArbor: changed,
+          // As the controller would have it.
+          menuBarIcon: !facts.accessibility ? .needsPermission : isPaused ? .paused : MenuBarModel.Icon(), isNewcomer: isNewcomer,
           isPaused: isPaused
         ) { command in
           KeyBindings.label(for: command)

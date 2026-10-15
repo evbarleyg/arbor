@@ -178,8 +178,9 @@ public struct OnboardingModel: Equatable, Sendable {
   public var opensAtLogin: Bool?
   public var loginTitle: String
   public var footnote: String
-  /// The footnote speaks of Arbor's mark in the menu bar, so the window shows it beside the text.
-  public var footnoteShowsMark: Bool
+  /// The footnote says "under this icon", so the window shows it beside the text: the one that is in the menu bar now. While Arbor waits for
+  /// its permission that is a warning sign, and that is the one time a newcomer looks for it.
+  public var footnoteIcon: MenuBarModel.Icon
   /// Where the Desktop lies between what is docked, in global coordinates, on each display that has something docked and its Desktop in view.
   public var desktops: [CGRect]
   /// The button that goes on: Continue, then Done.
@@ -220,6 +221,7 @@ public struct OnboardingModel: Equatable, Sendable {
   ///   - switchesGivenBack: those of them macOS has back for the time being: Arbor is paused, or may not arrange windows.
   ///   - fixSetupFailure: what `fix-setup` answered when it last failed in this showing of the window.
   ///   - menuBarIsOneIcon: the menu bar item is Arbor's icon alone, which a plain click opens; with something docked it is a row of buttons.
+  ///   - menuBarIcon: that icon as it is now.
   ///   - desktops: see `desktops`.
   ///   - isNewcomer: Arbor has never run on this Mac and nothing is docked.
   ///   - isPaused: the user has paused Arbor, so none of the moves would do anything.
@@ -230,7 +232,8 @@ public struct OnboardingModel: Equatable, Sendable {
     _ facts: SystemFacts, flow: OnboardingFlow? = nil, windowsOutOfView: Int = 0, offersScreenRecording: Bool = false,
     appsWithOwnShortcuts: [String] = [], canFixSetup: Bool = false, switchesChangedByArbor: [MacSwitch] = [],
     switchesGivenBack: [MacSwitch] = [],
-    fixSetupFailure: String? = nil, menuBarIsOneIcon: Bool = true, desktops: [CGRect] = [], isNewcomer: Bool = false,
+    fixSetupFailure: String? = nil, menuBarIsOneIcon: Bool = true, menuBarIcon: MenuBarModel.Icon = MenuBarModel.Icon(),
+    desktops: [CGRect] = [], isNewcomer: Bool = false,
     isPaused: Bool = false,
     shortcut: (Command) -> String? = { _ in nil }
   ) {
@@ -239,6 +242,7 @@ public struct OnboardingModel: Equatable, Sendable {
     self.desktops = desktops
     self.isNewcomer = isNewcomer
     let whereArborLives = Self.whereArborLives(isOneIcon: menuBarIsOneIcon)
+    footnoteIcon = menuBarIcon
     // The first minute asks for the one permission and for nothing else. What would spoil the four moves is said all the same, because no
     // move is taught that cannot work: who takes the same keys, and Stage Manager, which moves windows itself. macOS's tiling spoils none of
     // them: they are keys. It and the rest are for whoever asks (Check Setup…).
@@ -248,7 +252,7 @@ public struct OnboardingModel: Equatable, Sendable {
       told, windowsOutOfView: windowsOutOfView, offersScreenRecording: offersScreenRecording,
       appsWithOwnShortcuts: appsWithOwnShortcuts, canFixSetup: canFixSetup, changed: page == .setup ? switchesChangedByArbor : [],
       givenBack: page == .setup ? switchesGivenBack : [], isPaused: isPaused,
-      failure: fixSetupFailure, canDock: facts.accessibility && !isPaused, isNewcomer: isNewcomer, shortcut: shortcut)
+      failure: fixSetupFailure, canDock: facts.accessibility && !isPaused, shortcut: shortcut)
     rows =
       page == .setup
       ? all
@@ -287,7 +291,6 @@ public struct OnboardingModel: Equatable, Sendable {
       isPrimaryEnabled = facts.accessibility
       backButton = nil
       footnote = Self.whereArborLivesInShort
-      footnoteShowsMark = true
     case .setup:
       title =
         hasLostIt ? "Arbor needs its permission back"
@@ -298,7 +301,6 @@ public struct OnboardingModel: Equatable, Sendable {
       isPrimaryEnabled = true
       backButton = nil
       footnote = whereArborLives
-      footnoteShowsMark = true
     case .firstSteps:
       title = flow.steps.isComplete ? "That is all there is to it" : "Four moves to try"
       summary =
@@ -311,7 +313,6 @@ public struct OnboardingModel: Equatable, Sendable {
       isPrimaryEnabled = true
       backButton = "Back"
       footnote = isBusy ? Self.whereArborLivesInShort : whereArborLives
-      footnoteShowsMark = true
     }
     let shown: [String] =
       switch page {
@@ -421,7 +422,7 @@ public struct OnboardingModel: Equatable, Sendable {
 
   private static func rows(
     _ facts: SystemFacts, windowsOutOfView: Int, offersScreenRecording: Bool, appsWithOwnShortcuts apps: [String],
-    canFixSetup: Bool, changed: [MacSwitch], givenBack: [MacSwitch], isPaused: Bool, failure: String?, canDock: Bool, isNewcomer: Bool, shortcut: (Command) -> String?
+    canFixSetup: Bool, changed: [MacSwitch], givenBack: [MacSwitch], isPaused: Bool, failure: String?, canDock: Bool, shortcut: (Command) -> String?
   ) -> [Row] {
     let settings = "Open Settings…"
     let stranded =
@@ -437,8 +438,9 @@ public struct OnboardingModel: Equatable, Sendable {
           ? ""
           : stranded + "macOS asks your permission before an app may move other apps’ windows. Arbor reads only each window’s position "
             + "and title, and nothing leaves your Mac. Flip the switch next to Arbor in System Settings. This window comes back by itself."
-            // Not to somebody who has never run Arbor: it cannot be in the list.
-            + (isNewcomer ? "" : " If Arbor is already switched on in the list, this is a new build: switch it off and on again."),
+            // Another build over an old grant: the switch looks on, and Arbor waits. It looks like a first launch too, so this is said to
+            // everybody, or whoever meets it finds nothing to flip. The reason, not where the permission went while Arbor ran.
+            + " Already on? Switch it off and on again" + (windowsOutOfView == 0 ? ": macOS asks anew after every update." : "."),
         button: settings),
     ]
     if offersScreenRecording {
@@ -609,7 +611,8 @@ public struct OnboardingModel: Equatable, Sendable {
       if let opensAtLogin { lines += ["", "[\(opensAtLogin ? "x" : " ")] \(loginTitle)"] }
     }
     lines.append("")
-    if !footnote.isEmpty { lines.append(footnote) }
+    // The icon by what VoiceOver reads of it, where it is not simply Arbor's mark.
+    if !footnote.isEmpty { lines.append(footnote + (footnoteIcon == MenuBarModel.Icon() ? "" : " [\(footnoteIcon.label)]")) }
     lines.append((backButton.map { "[\($0)] " } ?? "") + (isPrimaryEnabled ? "[\(primaryButton)]" : "(\(primaryButton))"))
     return lines.joined(separator: "\n")
   }

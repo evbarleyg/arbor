@@ -38,12 +38,12 @@ import Testing
         Arrange windows side by side once. Fill the screen with any one, and one key brings the arrangement back. Your Mac’s own tiling forgets an arrangement; Arbor keeps it.
 
         → Accessibility (Required)  [Open Settings…]
-            macOS asks your permission before an app may move other apps’ windows. Arbor reads only each window’s position and title, and nothing leaves your Mac. Flip the switch next to Arbor in System Settings. This window comes back by itself.
+            macOS asks your permission before an app may move other apps’ windows. Arbor reads only each window’s position and title, and nothing leaves your Mac. Flip the switch next to Arbor in System Settings. This window comes back by itself. Already on? Switch it off and on again: macOS asks anew after every update.
 
         Nothing moves until you ask. ⌃⌥⌘← and ⌃⌥⌘→ put a window left or right. ⌃⌥↩ fills the screen with it, and brings both back.
         ⌃ is Control, ⌥ Option, ⌘ Command, ↩ Return.
 
-        Arbor lives in the menu bar, under this icon.
+        Arbor lives in the menu bar, under this icon. [Arbor needs Accessibility permission]
         (Continue)
         """)
   }
@@ -55,6 +55,8 @@ import Testing
     h.launchForTheFirstTime()
     #expect(h.welcome.isOpen && !h.controller.isRunning)
     #expect(nothingHasMoved(h, windows, found))
+    // "Under this icon": the warning sign, which is what the menu bar shows while Arbor waits.
+    #expect(h.welcome.model.footnoteIcon == .needsPermission && h.controller.menuBarModel().icon == .needsPermission)
 
     // macOS asks with its own dialog, whose button opens the pane. Arbor opens nothing over it, or it would be left lying.
     #expect(h.welcome.click("Open Settings…"))
@@ -66,6 +68,7 @@ import Testing
     h.permissionArrives()
     #expect(h.welcome.timesComeForward == 1)
     #expect(h.welcome.model.page == .firstSteps)
+    #expect(h.welcome.model.footnoteIcon == MenuBarModel.Icon(), "Arbor's mark, now that it runs")
     #expect(nothingHasMoved(h, windows, found), "no frame has been set")
     #expect(windows.allSatisfy { h.workspace.isFloating($0) })
 
@@ -107,6 +110,27 @@ import Testing
     expectWindowsMatchLayout(h)
   }
 
+  /// A newcomer who has read the keys presses one before granting anything. Arbor takes the key, so that it does not land in the app in
+  /// front, and says why in one line; nobody is taken out of the app they are in, and nothing moves. The window is there for the rest.
+  @Test func aKeyPressedBeforeTheGrantSaysWhy() {
+    let (h, windows, found) = makeDesk()
+    h.launchForTheFirstTime()
+    h.system.userFocus(windows[2])
+    let got = h.system.keysTheAppInFrontGot.count
+    #expect(h.key("ctrl+opt+cmd+left")?.ok == false)
+    #expect(h.system.keysTheAppInFrontGot.count == got, "it does not land in the app in front")
+    #expect(
+      h.overlays.headsUp[h.display]?.line == "Arbor needs the Accessibility permission · System Settings → Privacy & Security → Accessibility")
+    #expect(h.welcome.isOpen && h.welcome.model.page == .permissions)
+    h.scheduler.advance(by: 5)
+    #expect(h.welcome.timesMacOSWasAsked == 0 && h.welcome.panesOpened.isEmpty)
+    #expect(nothingHasMoved(h, windows, found))
+    // The same key, once Arbor may.
+    h.permissionArrives()
+    h.system.userFocus(windows[2])
+    #expect(h.key("ctrl+opt+cmd+left")?.ok == true && h.workspace.isDocked(windows[2]))
+  }
+
   /// The one way back the coach names does what it says.
   @Test func theWayBackTheCoachNames() {
     let (h, windows, found) = makeDesk()
@@ -118,8 +142,40 @@ import Testing
     h.system.userFocus(windows[1])
     h.key("ctrl+opt+cmd+right")
     h.key("ctrl+opt+escape")
-    #expect(h.controller.isPaused)
+    #expect(h.controller.isPaused && h.welcome.model.footnoteIcon == .paused)
     #expect(windows.map { h.frame($0) } == found)
+  }
+
+  /// "Under this icon": the one in the menu bar, at once, with no look at the clock: whatever Arbor comes to, on an open window.
+  @Test func theFootnotesIconFollowsTheMenuBarAtOnce() {
+    let (h, windows, _) = makeDesk()
+    h.watchAccessibility()
+    h.launchForTheFirstTime(permitted: true)
+    func agrees(_ icon: MenuBarModel.Icon, _ comment: Comment) {
+      #expect(h.welcome.model.footnoteIcon == icon && h.controller.menuBarModel().icon == icon, comment)
+    }
+    agrees(MenuBarModel.Icon(), "running, nothing docked")
+    h.run("hold still")
+    agrees(.holdingStill, "holding still")
+    h.run("release")
+    agrees(MenuBarModel.Icon(), "let go")
+    h.run("hold")
+    agrees(.held, "the view is held")
+    h.run("release")
+    h.run("pause")
+    agrees(.paused, "paused")
+    #expect(h.welcome.model.title == "Arbor is paused" && h.welcome.model.desktops.isEmpty, "all of it in one step")
+    h.run("resume")
+    agrees(MenuBarModel.Icon(), "resumed")
+    // With something docked the item is a row of buttons, which begins with Arbor's mark.
+    h.run("dock \(windows[0].rawValue) left")
+    #expect(h.welcome.model.footnoteIcon == MenuBarModel.Icon() && !h.controller.menuBarModel().buttons.isEmpty)
+    // The permission goes with Check Setup… open: the icon, the page and the row, together.
+    h.run("check-setup")
+    h.revokeAccessibility()
+    h.scheduler.advance(by: 3)
+    agrees(.needsPermission, "the permission went")
+    #expect(h.welcome.model.page == .permissions && h.welcome.model.row(.accessibility)?.isSatisfied == false)
   }
 
   /// With the permission there already a newcomer is still told what Arbor is for first.

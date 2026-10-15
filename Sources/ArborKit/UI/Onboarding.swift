@@ -16,7 +16,6 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
   private let onAction: @MainActor (Command) -> CommandResult
   private let onLogin: @MainActor () -> Void
   private let icon = ArborArtwork.appIcon(side: 128)
-  private let mark = ArborArtwork.menuBarIcon()
   private var window: NSPanel?
   private var content: NSHostingView<OnboardingView>?
   /// What the window last showed.
@@ -87,7 +86,7 @@ final class OnboardingWindow: NSObject, NSWindowDelegate {
   ///   take what they need.
   private func view(_ model: OnboardingModel, rowsHeight: CGFloat? = nil) -> OnboardingView {
     OnboardingView(
-      model: model, icon: icon, mark: mark, rowsHeight: rowsHeight, onButton: onButton,
+      model: model, icon: icon, rowsHeight: rowsHeight, onButton: onButton,
       onAction: { [weak self] command in
         guard let self else { return }
         self.session?.actionEnded(self.onAction(command))
@@ -234,7 +233,6 @@ struct OnboardingView: View {
   let model: OnboardingModel
   let icon: NSImage
   /// Arbor's mark as the menu bar shows it.
-  let mark: NSImage
   let rowsHeight: CGFloat?
   let onButton: @MainActor (OnboardingModel.Row.ID) -> Void
   let onAction: @MainActor (Command) -> Void
@@ -409,10 +407,9 @@ struct OnboardingView: View {
           }
         }
         if let action = row.action {
-          // The one step, and beside it the way to do the same by hand.
+          // The one step, and beside it the way to do the same by hand. A plain button: one blue button a window, and here it is Done.
           HStack(spacing: 8) {
             Button(action.title) { onAction(action.command) }
-              .buttonStyle(.borderedProminent)
             if let title = row.button {
               // A link, so that there is one button to decide about.
               Button(title) { onButton(row.id) }
@@ -522,14 +519,20 @@ struct OnboardingView: View {
 
   // MARK: Both
 
+  /// By the hand that draws it in the menu bar, in a cell of one width whatever it shows, so that the words beside it stay where they are.
+  private var footnoteIcon: some View {
+    Image(nsImage: ArborArtwork.menuBarIcon(model.footnoteIcon.glyph))
+      .renderingMode(.template)
+      .foregroundStyle(.secondary)
+      .opacity(model.footnoteIcon.isDimmed ? 0.5 : 1)
+      .frame(width: MenuBarLayout.pitch)
+      // "Under this icon" says nothing to whoever does not see it.
+      .accessibilityLabel(model.footnoteIcon.label)
+  }
+
   private var footer: some View {
     HStack(alignment: .center, spacing: 10) {
-      if model.footnoteShowsMark {
-        Image(nsImage: mark)
-          .renderingMode(.template)
-          .foregroundStyle(.secondary)
-          .accessibilityHidden(true)
-      }
+      footnoteIcon
       Text(model.footnote)
         .font(.caption)
         .foregroundStyle(.secondary)
