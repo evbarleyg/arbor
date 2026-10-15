@@ -31,10 +31,13 @@ extension FakeWindowSystem {
   /// What macOS does, as it comes, at a double-click on a title bar and at ⌥-click on the green button: the window fills the
   /// visible frame of its display as far as its app lets it grow and shrink. If it still has the frame the last zoom gave it, it
   /// returns to the one it had before.
-  public func zoomAsMacOSDoes(_ window: WindowID) {
+  ///
+  /// Not so where macOS is set to fill (`andBack: false`): seen on macOS 26, a filled window that is double-clicked again stays filled.
+  public func zoomAsMacOSDoes(_ window: WindowID, andBack: Bool = true) {
     guard let fake = windows[window], fake.snapshot.isPresent, !fake.snapshot.isFullScreen else { return }
     let current = fake.snapshot.frame
     if let zoom = fake.zoom, zoom.to == current {
+      guard andBack else { return }
       windows[window]!.zoom = nil
       return userMove(window, to: zoom.from)
     }

@@ -258,8 +258,8 @@ import Testing
         == "macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu")
     #expect(
       HeadsUpHint.zoomedByMacOS.model(facts: two, shortcut: keys).line
-        == "macOS zoomed this window · double-click again, or ⌃⌥Space, puts it back")
-    #expect(HeadsUpHint.zoomedByMacOS.model(facts: two) { _ in nil }.line == "macOS zoomed this window · double-click again puts it back")
+        == "macOS zoomed this window · ⌃⌥Space puts it back")
+    #expect(HeadsUpHint.zoomedByMacOS.model(facts: two) { _ in nil }.line == "macOS zoomed this window · Show Everything in the menu puts it back")
     for hint in HeadsUpHint.allCases {
       let bare = hint.model(facts: two) { _ in nil }
       // The two whose second half names a way that is there whatever the keys are.
