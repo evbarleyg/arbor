@@ -16,15 +16,16 @@ import Testing
     try JSONDecoder().decode(Settings.self, from: Data(json.utf8))
   }
 
-  @Test func oneMotionOf460Milliseconds() {
-    #expect(Settings().animationDuration == 0.46)
-    #expect(Settings().motionDuration == 0.46)
+  @Test func noMotionUntilSomebodyAsksForIt() {
+    // It shipped as one motion of 460 milliseconds until 2026-10-15 (collab/QUESTIONS.md, Q29).
+    #expect(Settings().animationDuration == 0)
+    #expect(Settings().motionDuration == 0)
   }
 
   @Test func anOldSettingsFileWithoutADurationStillLoads() throws {
     let settings = try decode(#"{"gap": 20, "tabsEnabled": false}"#)
     #expect(settings.gap == 20)
-    #expect(settings.animationDuration == 0.46)
+    #expect(settings.animationDuration == 0)
   }
 
   @Test func theDurationIsReadAndWritten() throws {
@@ -43,7 +44,7 @@ import Testing
     }
     for nonsense in [Double.nan, .infinity, -.infinity] {
       settings.animationDuration = nonsense
-      #expect(settings.motionDuration == 0.46, "\(nonsense)")
+      #expect(settings.motionDuration == 0, "\(nonsense) counts as the default, which is none")
     }
   }
 }

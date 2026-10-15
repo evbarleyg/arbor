@@ -56,7 +56,12 @@ public final class ChaosRunner {
   /// the Desktop (`guard-zones`) catches nothing where nobody asks for zones. `set pointerGestures` is among a walk's steps.
   /// And with the whole map of shortcuts, though nine ship: a walk presses the key of a command (`key down home`), and a command without
   /// a key is a step in which nothing happens and no net catches anything. `set shortcuts` is among a walk's steps too.
-  private var settingsFile: [String: Any] = ["pointerGestures": true, "shortcuts": "all"]
+  /// So with the motion, the ring, the buttons and the backdrop, which ship off too (Q29): a walk in which no stage is ever planned, no ring
+  /// or surface drawn and no button there to be clicked holds none of them to anything. `settingsChange` switches each off and on.
+  private var settingsFile: [String: Any] = [
+    "animationDuration": 0.46, "desktopEdge": 0.05, "dimBehindArranged": 0.25, "focusRing": true, "menuBarControls": true,
+    "pointerGestures": true, "shortcuts": "all",
+  ]
   /// state.json, and what was written to it, as of the last save.
   private var stateFile: Data?
   private var stateWritten: PersistedState?

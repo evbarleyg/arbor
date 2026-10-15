@@ -15,7 +15,7 @@ private let side = DisplaySnapshot(
   typealias ID = MenuBarModel.Button.ID
 
   /// [Safari | Desktop | Notes] with Mail floating, started, showing everything.
-  func makeHarness(settings: Settings = Settings()) -> (Harness, WindowID, WindowID, WindowID) {
+  func makeHarness(settings: Settings = .withButtons) -> (Harness, WindowID, WindowID, WindowID) {
     let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
@@ -33,7 +33,7 @@ private let side = DisplaySnapshot(
   // MARK: The model
 
   @Test func thereAreNoButtonsUntilArborArrangesWindows() {
-    let h = Harness()
+    let h = Harness(settings: .withButtons)
     h.controller.accessibilityGranted = false
     #expect(h.controller.menuBarModel() == MenuBarModel(icon: .needsPermission), "the icon says that something is wanted")
     h.controller.accessibilityGranted = true
@@ -49,7 +49,7 @@ private let side = DisplaySnapshot(
 
   /// Day one: a row of buttons with nowhere to go would only take room, and the first click should open the menu.
   @Test func withNothingDockedThereIsOnlyTheIcon() {
-    let h = Harness()
+    let h = Harness(settings: .withButtons)
     let a = h.system.open(app: "Safari")
     h.start()
     #expect(h.controller.menuBarModel() == MenuBarModel())
@@ -63,7 +63,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aPauseLeavesADimmedIcon() {
-    var settings = Settings()
+    var settings = Settings.withButtons
     let (h, _, _, _) = makeHarness()
     var updates: [MenuBarModel] = []
     let watcher = MenuBarWatcher(controller: h.controller) { updates.append($0) }
@@ -139,7 +139,7 @@ private let side = DisplaySnapshot(
 
   /// One Safari window, nothing docked: the single icon, which macOS has had time to show.
   func dayOne() -> (Harness, WindowID) {
-    let h = Harness()
+    let h = Harness(settings: .withButtons)
     let a = h.system.open(app: "Safari")
     h.start()
     return (h, a)
@@ -193,14 +193,14 @@ private let side = DisplaySnapshot(
     #expect(item.drawn.buttons.isEmpty)
 
     // Without back and forward it is 96 points.
-    var settings = Settings()
+    var settings = Settings.withButtons
     settings.historyButtons = false
     h.controller.apply(settings: settings)
     h.scheduler.advance(by: 2)
     #expect(item.drawn.buttons.map(\.id) == [.desktop, .everything, .view(1), .menu])
 
     // With them again it is tried once more, and found too wide once more.
-    h.controller.apply(settings: Settings())
+    h.controller.apply(settings: .withButtons)
     h.scheduler.advance(by: 0)
     #expect(item.drawn.buttons.count == 6)
     h.scheduler.advance(by: 1)
@@ -321,7 +321,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aViewWhoseWindowClosedGoesWhereTheViewCommandGoes() {
-    let (h, a, b, c) = makeHarness(settings: .withEveryKey)
+    let (h, a, b, c) = makeHarness(settings: .withEveryKey.withButtons)
     h.run("dock \(c.rawValue) beside \(a.rawValue) bottom")
     h.run("zoom \(c.rawValue)")
     h.run("save-view 1")
@@ -364,7 +364,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func dockingThatWidensTheCameraMovesTheFilledButton() {
-    let h = Harness()
+    let h = Harness(settings: .withButtons)
     let a = h.system.open(app: "Safari")
     h.start()
     #expect(h.controller.menuBarModel(complete: true).buttons.filter(\.isCurrent).map(\.id) == [.everything])
@@ -374,7 +374,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func eachDisplayHasItsOwnButtons() {
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side])
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: .withButtons)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 1600, y: 100, width: 600, height: 400))
     h.start()
@@ -421,7 +421,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func theSettingsChooseWhatIsShown() {
-    var settings = Settings()
+    var settings = Settings.withButtons
     #expect(settings.menuBarControls && settings.historyButtons && settings.menuBarFill == 0.25)
     settings.historyButtons = false
     settings.menuBarFill = 0.12
@@ -435,12 +435,12 @@ private let side = DisplaySnapshot(
     // The full menu still lists every place, whatever the item itself shows.
     #expect(h.controller.menuBarModel(complete: true).buttons.map(\.id) == [.back, .forward, .desktop, .everything, .menu])
 
-    h.controller.apply(settings: Settings())
+    h.controller.apply(settings: .withButtons)
     #expect(ids(h) == [.back, .forward, .desktop, .everything, .menu])
   }
 
   @Test func tooltipsShowTheShortcutsThatWork() throws {
-    let (h, a, b, c) = makeHarness(settings: .withEveryKey)
+    let (h, a, b, c) = makeHarness(settings: .withEveryKey.withButtons)
     h.run("dock \(c.rawValue) beside \(a.rawValue) bottom")
     h.run("zoom-node \(h.workspace.tree.parent(of: h.workspace.tree.leaf(containing: a)!)!.rawValue)")
     h.run("save-view 1")
@@ -452,7 +452,7 @@ private let side = DisplaySnapshot(
       ])
 
     // macOS refused ⌃⌥Space, and the user moved Back.
-    var settings = Settings.withEveryKey
+    var settings = Settings.withEveryKey.withButtons
     settings.bindings = ["ctrl+opt+[": nil, "ctrl+opt+b": "back"]
     h.controller.apply(settings: settings)
     h.controller.registeredBindings = KeyBindings.effective(settings: settings).bindings.filter { $0.command != .showAll }
@@ -471,7 +471,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func viewsAreDescribedInTheWordsOfArborsReplies() {
-    let h = Harness()
+    let h = Harness(settings: .withButtons)
     let windows = ["Safari", "Notes", "Mail", "Xcode", "Music"].map { h.system.open(app: $0) }
     h.start()
     h.run("dock \(windows[0].rawValue) left")
@@ -492,7 +492,7 @@ private let side = DisplaySnapshot(
 
   /// Seen in a film from a hosted Mac: "View 1: Safari and Safari".
   @Test func windowsOfOneAppAreCountedNotRepeated() {
-    let h = Harness()
+    let h = Harness(settings: .withButtons)
     let windows = ["Safari", "Safari", "Mail", "Safari", "Safari"].map { h.system.open(app: $0) }
     h.start()
     h.run("dock \(windows[0].rawValue) left")
@@ -585,7 +585,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func startingStoppingAndSettingsAreReported() {
-    let h = Harness()
+    let h = Harness(settings: .withButtons)
     let a = h.system.open(app: "Safari")
     var updates: [MenuBarModel] = []
     let watcher = MenuBarWatcher(controller: h.controller) { updates.append($0) }
@@ -597,7 +597,7 @@ private let side = DisplaySnapshot(
     h.scheduler.advance(by: 0)
     #expect(updates.last?.buttons.count == 5)
 
-    var settings = Settings()
+    var settings = Settings.withButtons
     settings.historyButtons = false
     h.controller.apply(settings: settings)
     h.scheduler.advance(by: 0)
@@ -610,7 +610,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func thePointerOnAnotherDisplayShowsAtTheNextChange() {
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side])
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: .withButtons)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 1600, y: 100, width: 600, height: 400))
     h.start()
@@ -641,7 +641,7 @@ private let side = DisplaySnapshot(
   // MARK: Commands
 
   @Test func theMenuBarCommandListsTheButtonsAndWhereTheyAre() {
-    let (h, a, _, _) = makeHarness(settings: .withEveryKey)
+    let (h, a, _, _) = makeHarness(settings: .withEveryKey.withButtons)
     h.run("zoom \(a.rawValue)")
     h.run("save-view 3")
     let result = h.run("menu-bar")
@@ -659,14 +659,14 @@ private let side = DisplaySnapshot(
   }
 
   @Test func theMenuBarCommandSaysWhyThereIsOnlyAnIcon() {
-    let h = Harness()
+    let h = Harness(settings: .withButtons)
     h.controller.accessibilityGranted = false
     let waiting = h.run("menu-bar")
     #expect(waiting.ok && waiting.text == nil)
     #expect(waiting.message.contains("single icon") && waiting.message.contains("Accessibility"))
 
     h.controller.accessibilityGranted = true
-    var settings = Settings()
+    var settings = Settings.withButtons
     settings.menuBarControls = false
     h.controller.apply(settings: settings)
     h.start()

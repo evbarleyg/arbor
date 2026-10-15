@@ -15,6 +15,7 @@ private final class Fixture {
   var saved: [Settings] = []
   var applied = 0
 
+  /// As Arbor ships, in so many words (docs/TESTING.md, "Tests and the defaults"): these are about which values are the defaults.
   init(settings: Settings = Settings(), start: Bool = true) {
     h = Harness(settings: settings)
     a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
@@ -275,9 +276,9 @@ private final class Fixture {
 
   @Test func aSwitchCanBeFlipped() {
     let f = Fixture()
-    #expect(f.h.run("set focusRing toggle").message == "focusRing = false (was true)")
     #expect(f.h.run("set focusRing toggle").message == "focusRing = true (was false)")
-    #expect(f.saved.map(\.focusRing) == [false, true])
+    #expect(f.h.run("set focusRing toggle").message == "focusRing = false (was true)")
+    #expect(f.saved.map(\.focusRing) == [true, false])
     // A command built in code, not parsed.
     #expect(!f.h.controller.perform(.settings(.set(key: "gap", value: "toggle"))).ok)
   }

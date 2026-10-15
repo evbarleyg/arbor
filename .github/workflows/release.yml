@@ -2,7 +2,7 @@ name: Release
 
 # Builds a release on GitHub's Mac and leaves it on the releases page as a DRAFT for a person to read and publish:
 # the disk image, the zip, their checksums, the Homebrew cask, and notes from the top of CHANGELOG.md.
-# It starts by hand and in no other way (Actions → Release → Run workflow, or `gh workflow run release.yml`), on a branch
+# It starts by hand and in no other way (Actions → Release → Run workflow, or `gh workflow run release.yml -f rehearsal=false`), on a branch
 # or on a tag: v0.9.0 for the version in the VERSION file, v0.9.0-rc.1 for a release candidate of it. See "Making a
 # release" in docs/INSTALL.md. Pushing a tag starts nothing: a tag marks a commit, and marking one must not take half an
 # hour of a Mac or put anything on the releases page. Nor does a pull request: the one that
@@ -11,7 +11,9 @@ name: Release
 # The build is signed ad hoc and not notarized: that takes an Apple Developer ID, which the project does not have.
 # The notes tell people how to get a downloaded copy past its first launch.
 #
-# After changing the release tooling, run it with "rehearsal" ticked: all of it except sending anything to the releases page.
+# "rehearsal" is ticked to begin with: all of it except sending anything to the releases page, for after a change to the release tooling.
+# In a rehearsal no job holds a token that can write, and none reads a secret or a signing identity: there is nothing to send with.
+# Whoever makes a release unticks it.
 
 on:
   workflow_dispatch:
@@ -26,10 +28,11 @@ on:
         required: false
         default: true
         type: boolean
+      # Ticked unless somebody unticks it: a run that says nothing, or whose inputs were lost on the way, sends nothing.
       rehearsal:
-        description: Build everything, send nothing to the releases page
+        description: Build everything, send nothing to the releases page (untick to make the release)
         required: false
-        default: false
+        default: true
         type: boolean
 
 permissions:
@@ -45,6 +48,7 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           fetch-depth: 0 # the build number is the number of commits
+          persist-credentials: false
 
       - name: Use the newest Xcode on the runner
         run: |
@@ -90,9 +94,32 @@ jobs:
             build/arbor.rb
           if-no-files-found: error
 
-  # On Linux, and apart from the build, which therefore never holds a token
-  # that can write.
+  # In a rehearsal, in place of `publish`: the same files and the same script, told to send nothing, in a job whose token can write nothing.
+  rehearse-publish:
+    if: ${{ inputs.rehearsal }}
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      ARBOR_VERSION: ${{ needs.build.outputs.version }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: arbor-release
+          path: build
+
+      - name: Say what would be sent, and send nothing
+        run: ./scripts/ci-step.py publish ./scripts/publish-release.sh --dry-run
+
+  # On Linux, and apart from the build, which therefore never holds a token that can write. The one job here that does, and it does not
+  # start in a rehearsal: a condition on its last step would leave the job running with its token. scripts/lint-workflows.py holds the
+  # whole file to that ("a rehearsal sends nothing"), and wants the condition in these very words.
   publish:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.rehearsal == false }}
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -110,12 +137,7 @@ jobs:
           name: arbor-release
           path: build
 
-      - name: Rehearse (nothing is sent)
-        if: inputs.rehearsal
-        run: ./scripts/ci-step.py publish ./scripts/publish-release.sh --dry-run
-
       - name: Create the release
-        if: ${{ !inputs.rehearsal }}
         env:
           GITHUB_TOKEN: ${{ github.token }}
           # GitHub takes a missing input to equal false, so an event without inputs would publish at once: hence the

@@ -129,11 +129,13 @@ extension World {
       let upgraded = try? Settings.upgradedFile(String(decoding: data, as: UTF8.self))
     {
       let copy = "settings.before-format-\(Settings.format).json"
-      if file(copy) == nil { put(data, in: copy) }
+      if !upgraded.stripped.isEmpty, file(copy) == nil { put(data, in: copy) }
       put(Data(upgraded.text.utf8), in: "settings.json")
       Log.info(
-        "settings.json now holds only what differs from the defaults; taken out, to follow the defaults from now on: "
-          + (upgraded.stripped.isEmpty ? "nothing" : upgraded.stripped.joined(separator: ", ")))
+        upgraded.stripped.isEmpty
+          ? "settings.json has the mark now; nothing was taken out of it"
+          : "settings.json now holds only what differs from the defaults; taken out, to follow the defaults from now on: "
+            + upgraded.stripped.joined(separator: ", "))
     }
     do {
       return try readSettings()
@@ -170,7 +172,7 @@ extension World {
       throw Settings.FileError("the file is not UTF-8 text, so Arbor cannot change it")
     }
     let text = String(decoding: data, as: UTF8.self)
-    let rewritten = try Settings.rewrite(text, from: old, to: new)
+    let rewritten = try Settings.rewriteAndMark(text, from: old, to: new)
     if rewritten != text { put(Data(rewritten.utf8), in: "settings.json") }
   }
 

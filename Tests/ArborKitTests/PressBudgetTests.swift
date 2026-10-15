@@ -10,8 +10,9 @@ import Testing
 /// moment it has most to do there: it draws itself as active, and the press that brought it forward is waiting in its queue. Whatever Arbor
 /// asks then is served first or in between (rule 6: input is never held). So the questions are counted.
 @Suite @MainActor struct PressBudgetTests {
-  /// [a | b] docked and c floating, three apps, with the keyboard on a, long enough ago that nothing is still pending.
-  func desk(settings: Settings = Settings()) -> (Harness, WindowID, WindowID, WindowID) {
+  /// [a | b] docked and c floating, three apps, with the keyboard on a, long enough ago that nothing is still pending. With the focus ring, an
+  /// option, switched on: it is one more that wants the answer, so that is where the budget is tight.
+  func desk(settings: Settings = .withRing) -> (Harness, WindowID, WindowID, WindowID) {
     let h = Harness(settings: settings)
     let a = h.system.open(app: "Finder", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Safari", frame: CGRect(x: 300, y: 200, width: 600, height: 400))

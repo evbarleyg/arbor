@@ -249,12 +249,13 @@ import Testing
   }
 
   /// A first meeting with a window that has one fixed side, like a settings window, or two, and does not say so. That shows in its
-  /// slot, where it grows: corner, then middle, both within the slot. Nobody else pays for it.
-  @Test(arguments: ["left", "right", "top", "bottom"], [CGSize(width: 500, height: 2000), CGSize(width: 3000, height: 400), CGSize(width: 500, height: 400)])
+  /// slot, where it grows: corner, then middle, both within the slot. Nobody else pays for it. Well short of every slot it is
+  /// given: less than a character cell short, nobody can tell it from a terminal (`CellsTests`).
+  @Test(arguments: ["left", "right", "top", "bottom"], [CGSize(width: 500, height: 2000), CGSize(width: 3000, height: 380), CGSize(width: 500, height: 380)])
   func aWindowThatTurnsOutUnableToGrowGoesOnToTheMiddleWithinItsSlot(side: String, most: CGSize) throws {
     let h = Harness()
     let a = h.system.open(app: "A")
-    let settings = h.system.open(app: "Settings", frame: CGRect(x: 400, y: 200, width: 500, height: 400))
+    let settings = h.system.open(app: "Settings", frame: CGRect(x: 400, y: 200, width: 500, height: 380))
     h.system.setMaximumSize(settings, most)
     h.start()
     h.run("dock \(a.rawValue) left")
@@ -439,9 +440,9 @@ import Testing
     #expect(excess(road, \.width) == 0, "\(road)")
   }
 
-  /// How many cells go into a slot shows only in the slot, where it grows, and the terminal is set right by less than a cell. Once: what
-  /// it made of this size is remembered.
-  @Test func aTerminalIsSetRightInItsSlotByLessThanACellOnce() throws {
+  /// How many cells go into a slot shows only in the slot, where it grows. It stays in the slot's corner, where its app leaves it: it is
+  /// not set right afterwards, not even once.
+  @Test func aTerminalIsNotSetRightInItsSlot() throws {
     let h = Harness()
     let cell = CGSize(width: 7, height: 15)
     let terminal = h.system.open(app: "Terminal", frame: CGRect(x: 300, y: 200, width: 640, height: 420))
@@ -450,12 +451,13 @@ import Testing
     let first = try #require(roads(h) { h.run("dock \(terminal.rawValue) right") }[terminal])
     #expect(FakeWindowSystem.changesOfPlace(first) == 1, "\(first)")
     let highest = try #require(first.map(\.minY).min())
-    #expect(try #require(first.last).minY - highest < cell.height, "\(first)")
-    #expect(isCentred(h.frame(terminal), in: h.layout?.windowFrames[terminal]))
+    #expect(try #require(first.last).minY == highest, "\(first)")
+    #expect(h.frame(terminal)?.origin == h.layout?.windowFrames[terminal]?.origin)
+    #expect(try #require(h.layout?.windowFrames[terminal]).height - (try #require(h.frame(terminal))).height < cell.height)
     h.run("float \(terminal.rawValue)")
     h.system.userMove(terminal, to: CGRect(x: 300, y: 200, width: 640, height: 420))
     expectStraightRoads(roads(h) { h.run("dock \(terminal.rawValue) right") }, placesOnly: true)
-    #expect(isCentred(h.frame(terminal), in: h.layout?.windowFrames[terminal]))
+    #expect(h.frame(terminal)?.origin == h.layout?.windowFrames[terminal]?.origin)
   }
 
   /// Accessibility said its size cannot be changed when it was first seen: a splash window that has become a main window since.
@@ -722,7 +724,8 @@ import Testing
     let h = Harness(settings: settings)
     let terminal = h.system.open(app: "Terminal")
     let a = h.system.open(app: "A")
-    h.system.setSizeStep(terminal, CGSize(width: 10, height: 15))
+    // In the slot's corner, four points short of its 875: 67 cells of 13.
+    h.system.setSizeStep(terminal, CGSize(width: 10, height: 13))
     h.start()
     h.run("dock \(terminal.rawValue) left")
     h.run("dock \(a.rawValue) beside \(terminal.rawValue) right")

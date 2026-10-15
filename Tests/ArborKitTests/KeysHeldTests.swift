@@ -222,7 +222,7 @@ import Testing
   @Test func whoeverStartedArborWithoutShortcutsIsToldSoAndNotThatFiftyAreMissing() {
     var facts = Self.healthy
     facts.inputDisabled = true
-    let h = Harness()
+    let h = Harness(settings: Settings())
     h.controller.systemFacts = { facts }
     h.controller.shortcutsAreDisabled = true
     let app = FakeHotKeys(h.controller)

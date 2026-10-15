@@ -29,7 +29,7 @@ extension Controller {
     /// windows float where they are), a floating one went to another display, or one changed its title.
     case windows
     /// The keyboard may be with another window now, or with none Arbor knows: an app was switched to or away from, a
-    /// sheet or a panel took it, the wallpaper was clicked. Ask `system.focusedWindow()`.
+    /// panel or a dialog took it, the wallpaper was clicked. Ask `system.focusedWindow()`.
     case keyboard
   }
 

@@ -51,7 +51,9 @@ arbor_build
 # The runners have "Reduce motion" on, and then the ring does not flash. Declines on a person's Mac: it is their setting.
 macos_reduce_motion off
 
-step "session 1: default settings"
+# The ring is an option: Arbor ships without it (collab/QUESTIONS.md, Q29). Every file of settings below says whether it is on.
+step "session 1: the ring on, everything else as it ships"
+arbor_settings '{"focusRing": true}'
 arbor_start 3
 read -r sx sy sw sh <<< "$(arbor_ask screen)"
 summary
@@ -162,7 +164,10 @@ step "click the desktop, then a window: another app comes to the front and goes 
 macos_click_wallpaper off
 # It declines on a person's Mac. There the click would throw their windows aside too, and prove nothing about the ring.
 if [ "$(defaults read com.apple.WindowManager EnableStandardClickToShowDesktop 2>/dev/null)" = 0 ]; then
+  # Docked windows have taken all there was. A layout line that names the Desktop gives it room, as Arbor ships: wallpaper to click.
+  ctl layout "$W1 | Desktop | ($W2 / $W3)"
   read -r dx dy dw dh <<< "$(arbor_ask desktop)"
+  [ -n "${dh:-}" ] || die "the Desktop has no room, and the click wants wallpaper"
   click "$((dx + dw / 2))" "$((dy + dh / 2))"
   check "no ring when the desktop has the keyboard" eventually no_ring
   shot 17-desktop-clicked
@@ -193,7 +198,7 @@ arbor_stop 19-after-quit
 # Without `makeRoom` (F61), which would move the gaps until the third window fits: this session wants it in a tile.
 step "session 2: no gap, a thicker yellow line; the third window cannot shrink"
 ARBOR_TEST_WINDOWS_ARGS="--min-size 3:700x500"
-arbor_settings '{"makeRoom": false, "gap": 0, "focusRingWidth": 4, "focusRingColour": "#FFCC00"}'
+arbor_settings '{"focusRing": true, "makeRoom": false, "gap": 0, "focusRingWidth": 4, "focusRingColour": "#FFCC00"}'
 arbor_start 3
 ctl dock "$W1" left
 ctl dock "$W2" right
@@ -221,24 +226,24 @@ shot 22-tile
 check "there is no ring around the tiled window" not ring_around "$W3" 4 0
 
 step "other settings, applied with reload-settings"
-arbor_settings '{"makeRoom": false, "gap": 24, "focusRingWidth": 8, "focusRingColour": "#FF2D55CC"}'
+arbor_settings '{"focusRing": true, "makeRoom": false, "gap": 24, "focusRingWidth": 8, "focusRingColour": "#FF2D55CC"}'
 ctl reload-settings
 ctl zoom "$W1"
 ctl back
 check "a thick line in a wide gap" eventually ring_around "$W1" 8
 shot 23-thick
-arbor_settings '{"makeRoom": false, "gap": 12, "focusRingWidth": 1}'
+arbor_settings '{"focusRing": true, "makeRoom": false, "gap": 12, "focusRingWidth": 1}'
 ctl reload-settings
 check "a hairline" eventually ring_around "$W1" 1
 shot 24-hairline
-arbor_settings '{"makeRoom": false, "gap": 12, "focusRingColour": "mauve"}'
+arbor_settings '{"focusRing": true, "makeRoom": false, "gap": 12, "focusRingColour": "mauve"}'
 ctl reload-settings
 check "an unknown colour is reported in the log" grep -q "focusRingColour" "$ARBOR_HOME/arbor.log"
 arbor_settings '{"makeRoom": false, "gap": 12, "focusRing": false}'
 ctl reload-settings
 check "switched off" eventually not ring_around "$W1"
 shot 25-off
-arbor_settings '{"makeRoom": false, "gap": 12}'
+arbor_settings '{"focusRing": true, "makeRoom": false, "gap": 12}'
 ctl reload-settings
 check "switched on again" eventually ring_around "$W1"
 

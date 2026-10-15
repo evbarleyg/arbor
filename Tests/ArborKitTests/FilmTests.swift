@@ -319,6 +319,7 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
     return try rect(window["frame"])
   }
 
+  /// With what Arbor ships without switched on (collab/QUESTIONS.md, Q29): the stage, the backdrop, the ring and the buttons are what is hardest to film.
   private let dragToTheLeftEdge = """
     display 1440x810 bar 24 dock 76
     app Browser #2f7bf6
@@ -326,6 +327,10 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
     open Notes 400x300 700,300
     mac-tiling off
     launch
+    set animationDuration 0.46
+    set dimBehindArranged 0.25
+    set focusRing true
+    set menuBarControls true
     pointer 900 700
     wait 0.5
     glide window 101 title in 0.5

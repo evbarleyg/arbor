@@ -8,7 +8,7 @@ import Testing
 /// Records `body` on a fresh harness, after `before` has set the scene.
 @MainActor
 private func record(
-  settings: Settings = Settings(), displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay],
+  settings: Settings = Harness.settingsWhenNoneAreGiven, displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay],
   before: (Harness) -> Void = { _ in }, _ body: (Harness) -> Void
 ) -> (trace: Trace, original: Harness) {
   let h = Harness(displays: displays, settings: settings)
@@ -413,6 +413,7 @@ private let second = DisplaySnapshot(
   @Test func eventsThatArriveFromInsideACallAreDeliveredInsideTheSameCall() {
     // Something is reported from within `setFrame`, so in the middle of the `dock` command, as a refusal is by the real layer.
     let (trace, original) = record(
+      settings: .withRing,
       before: { h in
         h.system.open(app: "Safari")
         h.system.open(app: "Notes")
@@ -1360,7 +1361,7 @@ private let second = DisplaySnapshot(
   // MARK: The story
 
   @Test func theStoryTellsWhatHappenedWithDrawings() {
-    let (trace, _) = record(before: { $0.system.open(app: "Safari") }) { h in
+    let (trace, _) = record(settings: .classic, before: { $0.system.open(app: "Safari") }) { h in
       h.run("trace note drag Safari to the left edge")
       h.scheduler.advance(by: 0.5)
       h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off

@@ -339,6 +339,7 @@ import Testing
   /// was taken for the same arrival, and nobody looked again: what was typed went to a window nobody could see.
   @Test func aWindowThatTakesTheKeyboardJustAfterItWasAskedBackIsTurnedAwayOnASecondLook() {
     let (h, keynote, mail) = stage()
+    h.switchOn(\.withRing)
     h.run("hold")
     h.system.defersFocus = true  // macOS does not do as it is asked at once, and this time not at all
     let asked = h.system.focusRequests.count
@@ -358,8 +359,10 @@ import Testing
 
   /// An app that insists is left with the keyboard. Then the line is around no window, not around the one that lost it.
   @Test func leftWithAnAppThatInsistsThereIsNoLineAroundTheWindowInView() {
-    let (h, _, mail) = stage()
+    let (h, keynote, mail) = stage()
+    h.switchOn(\.withRing)
     h.run("hold")
+    #expect(h.overlays.scenes[h.display]?.focusRing?.window == keynote, "there is a line to lose")
     for _ in 0..<8 {
       h.system.comesForward(mail)
       h.scheduler.advance(by: 0.3)

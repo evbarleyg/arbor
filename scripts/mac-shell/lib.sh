@@ -129,6 +129,8 @@
 #   check "<what should hold>" <command…>    ✔ or ✘ — why; a ✘ takes a picture, prints the state and the log
 #                                     since the claim, and makes the script exit with 1. THE COMMAND RUNS IN A SHELL OF ITS OWN, under
 #                                     `eventually` too: a variable it sets, a process it starts and means to wait for, are lost to the script
+#                                     On GitHub's Macs, where Arbor "did not answer within" the time (or at every ✘, with ARBOR_SAMPLE=1, for a fault
+#                                     that is being hunted), first of all a `sample` of its threads: mac-shell/sample-fail-<script>-<n>.txt
 #   settled                         the check that every docked window in view is where Arbor's layout says
 #   eventually <command…>           try it for up to three seconds: `eventually is docked $W2`
 #   stays <command…>                it holds now and for the next second: for things that must not happen
@@ -1165,12 +1167,25 @@ arbor_build() {
 
 arbor_settings() {
   local merged
-  # With the mark of a file that holds only what somebody chose (Q27). Without it a launch would take out of it whatever equals the default of
-  # an earlier day, and what the script asks for would come to depend on what Arbor ships with.
+  # With the mark of a file that holds only what somebody chose (Q27). Without it a launch would take a file of many keys for an early build's, and
+  # take out of it whatever equals the default of an earlier day: what the script asks for would come to depend on what Arbor ships with.
   merged=$(python3 -c 'import json, sys; print(json.dumps({"format": 2, **json.loads("{" + sys.argv[2] + "}"), **json.loads(sys.argv[1])}))' \
     "$1" "$(arbor_switches)") || die "arbor_settings: not a JSON object: $1 (or what goes under it: $(arbor_switches))"
   ARBOR_GAP=$(python3 -c 'import json, sys; print(round(json.loads(sys.argv[1]).get("gap", 12)))' "$merged")
   printf '%s\n' "$merged" > "$ARBOR_HOME/settings.json"
+}
+
+# Prints the settings.json an early build wrote at its first launch: all its settings, each at the default of its day, without the mark, from the
+# table Arbor itself goes by. All of it, because only a file that looks whole is taken for an early build's (Q27).
+# $1: what somebody changed in it or added to it, as a JSON object; the rest: keys that it does not hold.
+arbor_file_of_an_early_build() {
+  python3 - "$ARBOR_ROOT/Sources/ArborCore/SettingsFileFormat.swift" "$@" << 'END'
+import json, re, sys
+table = json.loads(re.search(r'defaultsOfOldFiles = #"""\n(.*?)"""#', open(sys.argv[1]).read(), re.S).group(1))
+whole = {key: values[0] for key, values in table.items() if key not in sys.argv[3:]}
+whole.update(json.loads(sys.argv[2]))
+print(json.dumps(whole, indent=2, sort_keys=True))
+END
 }
 
 # Several scripts can leave their logs in one folder, as the suite's sections do.
@@ -1883,6 +1898,14 @@ pressed() {
 # What a failed check leaves behind: a picture every time; the state and the log since the claim once per claim.
 arbor_explain() {
   local name="fail-$ARBOR_NAME-$ARBOR_FAILED"
+  # An Arbor that answers nobody names the call it stands in: `sample` of its threads, first of all, since it may answer again a second
+  # later, and the picture and the summary below take six. Call stacks and the names of libraries; no window's title.
+  # ARBOR_SAMPLE=1: at every failed check, for a fault that is being hunted.
+  if [ -n "${ARBOR_WAS_SILENT:-}${ARBOR_SAMPLE:-}" ] && on_throwaway_mac && [ -n "$ARBOR_PID" ] && kill -0 "$ARBOR_PID" 2>/dev/null \
+    && command -v sample > /dev/null 2>&1; then
+    sample "$ARBOR_PID" 2 1 -mayDie -file "$ARBOR_OUT/sample-$name.txt" > /dev/null 2>&1 \
+      && echo "      sample: mac-shell/sample-$name.txt"
+  fi
   # Never on a person's Mac, whatever ARBOR_SHOTS says: there a check fails just when a window of theirs has come forward.
   if on_throwaway_mac; then
     arbor_capture "$name" && echo "      picture: mac-shell/$name.png"
@@ -1925,6 +1948,8 @@ check() {
   else
     ARBOR_FAILED=$((ARBOR_FAILED + 1))
     ARBOR_CLAIM_FAILED=$((ARBOR_CLAIM_FAILED + 1))
+    # Looked for in all that was heard: arborctl's own words come first, and only the last line is printed.
+    case "$detail" in *"did not answer within"*) ARBOR_WAS_SILENT=yes ;; *) ARBOR_WAS_SILENT="" ;; esac
     detail=$(printf '%s\n' "$detail" | grep -v '^$' | tail -n 1 | cut -c 1-200)
     if [ -n "$ARBOR_KNOWN" ]; then
       ARBOR_KNOWN_FAILED=$((ARBOR_KNOWN_FAILED + 1))
@@ -2289,7 +2314,7 @@ drag_window() {
   drag $from "$@"
 }
 
-# Once something is docked the icon grows into a row of buttons, and a plain click in its middle presses one of them. A right click
+# With `menuBarControls` on the icon grows into a row of buttons once something is docked, and a plain click in its middle presses one of them. A right click
 # anywhere on it opens the menu, on the single icon too.
 # The item's place lags behind its width: straight after a hold, a pause or the first dock Accessibility still gave the old one, and a click there
 # opened nothing (seen on a Mac). So it is believed once two looks a quarter of a second apart agree.

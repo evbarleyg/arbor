@@ -309,10 +309,16 @@ extension TraceHeader: Codable {
     appPlaced = (try c.decodeIfPresent([WindowID: TraceRect].self, forKey: .appPlaced) ?? [:]).mapValues(\.rect)
     minimumSizes = (try c.decodeIfPresent([WindowID: TracePair].self, forKey: .minimumSizes) ?? [:])
       .mapValues(\.size)
-    // The least, the most, where it stopped growing, the offer it came close to and what it took of that.
+    // The least, the most, where it stopped growing, the offer it came close to and what it took of that. Of one that comes in
+    // cells also the cell, and a size it has had with such cells.
     seenSizes = (try c.decodeIfPresent([WindowID: [TracePair]].self, forKey: .seenSizes) ?? [:]).compactMapValues {
-      guard $0.count == 5 else { return nil }
-      return SeenSizes(least: $0[0].size, most: $0[1].size, stoppedAt: $0[2].size, closeOffer: $0[3].size, closeTook: $0[4].size)
+      guard $0.count == 5 || $0.count == 7 else { return nil }
+      var seen = SeenSizes(least: $0[0].size, most: $0[1].size, stoppedAt: $0[2].size, closeOffer: $0[3].size, closeTook: $0[4].size)
+      if $0.count == 7 {
+        seen.cells.width = Cells.Side(cell: $0[5].size.width, on: $0[6].size.width)
+        seen.cells.height = Cells.Side(cell: $0[5].size.height, on: $0[6].size.height)
+      }
+      return seen
     }
     focusHistory = try c.decodeIfPresent([WindowID].self, forKey: .focusHistory) ?? []
     onlyPIDs = try c.decodeIfPresent([Int32].self, forKey: .onlyPIDs)
@@ -340,7 +346,12 @@ extension TraceHeader: Codable {
     if !minimumSizes.isEmpty { try c.encode(minimumSizes.mapValues { TracePair($0) }, forKey: .minimumSizes) }
     if !seenSizes.isEmpty {
       try c.encode(
-        seenSizes.mapValues { [$0.least, $0.most, $0.stoppedAt, $0.closeOffer, $0.closeTook].map { TracePair($0) } }, forKey: .seenSizes)
+        seenSizes.mapValues { seen in
+          let (width, height) = (seen.cells.width, seen.cells.height)
+          let cells = [CGSize(width: width.cell, height: height.cell), CGSize(width: width.on, height: height.on)]
+          return ([seen.least, seen.most, seen.stoppedAt, seen.closeOffer, seen.closeTook] + (seen.cells == Cells() ? [] : cells))
+            .map { TracePair($0) }
+        }, forKey: .seenSizes)
     }
     if !appPlaced.isEmpty { try c.encode(appPlaced.mapValues { TraceRect($0) }, forKey: .appPlaced) }
     if !focusHistory.isEmpty { try c.encode(focusHistory, forKey: .focusHistory) }

@@ -13,7 +13,7 @@ import Testing
   static let asAMacComes: [MacSwitch] = [.clickWallpaper, .screenEdges, .menuBar, .optionKey]
   static let off: [MacSwitch: Bool] = [.screenEdges: false, .menuBar: false, .optionKey: false]
 
-  func makeHarness(settings: Settings = Settings()) -> Harness {
+  func makeHarness(settings: Settings = Harness.settingsWhenNoneAreGiven) -> Harness {
     let h = Harness(settings: settings)
     follow(h)
     return h

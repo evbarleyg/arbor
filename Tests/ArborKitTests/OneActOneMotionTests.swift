@@ -10,7 +10,7 @@ import Testing
 @Suite @MainActor struct OneActOneMotionTests {
   /// [a | Desktop] and c, which takes the place it is given but never more than 300 points of the width: every dock of it
   /// has to be corrected. Each app takes `answer` seconds over a move, and as on a Mac no timer runs meanwhile.
-  private func desk(answer: TimeInterval, settings: Settings = Settings()) -> (h: Harness, c: WindowID) {
+  private func desk(answer: TimeInterval, settings: Settings = .withMotion) -> (h: Harness, c: WindowID) {
     let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let c = h.system.open(app: "Mail", pid: 13, frame: CGRect(x: 520, y: 300, width: 400, height: 300))

@@ -62,6 +62,9 @@ types_into() {
   eventually received "$1" key -gt "$keys"
 }
 
+# The ring is an option: Arbor ships without it (collab/QUESTIONS.md, Q29). Before each session: every one begins with a home of its own.
+arbor_settings '{"focusRing": true}'
+
 # A short session of its own with two apps, for what moves the keyboard without any doing of Arbor's.
 ARBOR_SECOND_APP=1
 if on_throwaway_mac; then
@@ -138,6 +141,7 @@ ARBOR_SECOND_APP=0
 ARBOR_TEST_WINDOWS_ARGS=""
 ARBOR_SECOND_APP_ARGS=""
 
+arbor_settings '{"focusRing": true}'
 arbor_start 4 ARBOR_NO_HOTKEYS=0
 
 claim "click a window before anything is docked: there is no focus ring"

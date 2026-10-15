@@ -29,6 +29,8 @@ public final class FakeWindowSystem: WindowSystem {
     public var idealSize: CGSize?
     /// What a window that comes in steps has besides them: a terminal's is so many characters wide and high, and a few points more.
     public var sizeMargin: CGSize = .zero
+    /// It takes the whole cells that fit into what it is asked for, never the next larger. Otherwise the nearest.
+    public var stepsRoundDown = false
     /// How the app treats the frames Arbor asks for (`FakeWindowSystem+Chaos.swift`).
     public var behaviour: Behaviour = .normal
     /// Where a window that snaps back returns to: the last frame it or the user chose.
@@ -57,7 +59,8 @@ public final class FakeWindowSystem: WindowSystem {
 
     public static func == (a: FakeWindow, b: FakeWindow) -> Bool {
       a.snapshot == b.snapshot && a.minimumSize == b.minimumSize && a.maximumSize == b.maximumSize
-        && a.sizeStep == b.sizeStep && a.sizeMargin == b.sizeMargin && a.behaviour == b.behaviour && a.titleBar == b.titleBar
+        && a.sizeStep == b.sizeStep && a.stepsRoundDown == b.stepsRoundDown && a.sizeMargin == b.sizeMargin && a.behaviour == b.behaviour
+        && a.titleBar == b.titleBar
     }
   }
 
@@ -123,6 +126,10 @@ public final class FakeWindowSystem: WindowSystem {
   /// Windows whose app moves them back to a frame of its own a moment after anyone else moves them
   /// (`appsSettle()` is that moment).
   public var stubbornFrames: [WindowID: CGRect] = [:]
+  /// Windows whose app takes a new size a moment late: read back at once, as the Accessibility layer does, the window still has its
+  /// old one. `appsSettle()` is the moment at which it has the new one, and says so.
+  public var resizesLate: Set<WindowID> = []
+  fileprivate var sizesOnTheirWay: [WindowID: CGSize] = [:]
   /// Processes that do not answer: their windows cannot be moved.
   public private(set) var unresponsive: Set<Int32> = []
   /// Background tabs of native tab groups: alive, but not listed and not reported.
@@ -353,6 +360,11 @@ public final class FakeWindowSystem: WindowSystem {
       perform(steps)
       if let more = FramePlan.makingUp(for: steps, result: isAt, target: frame) { perform(more) }
       applied = whereMacOSPuts(Self.accepted(CGRect(origin: frame.origin, size: isAt.size), by: fake), titleBar: fake.titleBar)
+    }
+    // An app works through what it is asked in order: the last size counts, also when that is the size it still shows.
+    sizesOnTheirWay[window] = nil
+    if resizesLate.contains(window), applied.size != before.size {
+      (sizesOnTheirWay[window], applied.size) = (applied.size, before.size)
     }
     let changed = before != applied
     moveLog.append(Move(window: window, requested: frame, before: before, after: applied, together: together))
@@ -591,16 +603,21 @@ public final class FakeWindowSystem: WindowSystem {
   public func open(
     app: String = "App", bundleID: String? = nil, title: String? = nil, pid: Int32? = nil,
     frame: CGRect = CGRect(x: 300, y: 200, width: 640, height: 420), minimumSize: CGSize = .zero,
-    isResizable: Bool = true
+    isResizable: Bool = true, sizeStep: CGSize? = nil, stepsRoundDown: Bool = false, sizeMargin: CGSize = .zero
   ) -> WindowID {
     let id = WindowID(nextID)
     nextID += 1
-    let frame = whereItOpens(frame)
+    var frame = frame
+    // A terminal opens in whole cells.
+    if let sizeStep { frame.size = Self.rounded(frame.size, toStepsOf: sizeStep, down: stepsRoundDown, margin: sizeMargin) }
+    frame = whereItOpens(frame)
     let snapshot = WindowSnapshot(
       id: id, pid: pid ?? process(of: app), bundleID: bundleID ?? "com.example.\(app.lowercased())", appName: app,
       title: title ?? "\(app) \(id.rawValue)", frame: frame, isResizable: isResizable)
     windows[id] = FakeWindow(
       snapshot: snapshot, minimumSize: isResizable ? minimumSize : frame.size, maximumSize: isResizable ? nil : frame.size)
+    // Before anybody hears of it: what Arbor does when a window appears meets the app as it is.
+    setSizeStep(id, sizeStep, down: stepsRoundDown, margin: sizeMargin)
     // By the time anybody hears of a new window it has the keyboard and is in front. That is macOS's doing, whether or not Arbor runs.
     if echoes.keyboard {
       focused = id
@@ -943,14 +960,16 @@ extension FakeWindowSystem {
     let current = fake.snapshot.frame
     let maximum = fake.maximumSize ?? CGSize(width: CGFloat.infinity, height: CGFloat.infinity)
     var frame = requested
-    let width = min(max(requested.width, fake.minimumSize.width), maximum.width)
+    // A terminal follows the hand in whole cells.
+    let inCells = fake.sizeStep.map { rounded(requested.size, toStepsOf: $0, down: fake.stepsRoundDown, margin: fake.sizeMargin) } ?? requested.size
+    let width = min(max(inCells.width, fake.minimumSize.width), maximum.width)
     if width != requested.width {
       // The edge that moved further is the one being dragged; the other stays.
       let leftDragged = abs(requested.minX - current.minX) > abs(requested.maxX - current.maxX)
       frame.origin.x = leftDragged ? requested.maxX - width : requested.minX
       frame.size.width = width
     }
-    let height = min(max(requested.height, fake.minimumSize.height), maximum.height)
+    let height = min(max(inCells.height, fake.minimumSize.height), maximum.height)
     if height != requested.height {
       let topDragged = abs(requested.minY - current.minY) > abs(requested.maxY - current.maxY)
       frame.origin.y = topDragged ? requested.maxY - height : requested.minY
@@ -1230,10 +1249,12 @@ extension FakeWindowSystem {
     events?.keyboardFocusMoved()
   }
 
-  /// A sheet, a dialog or a panel of the app in front takes the keyboard ("Do you want to keep this document?"), or a
-  /// launcher that brings no app forward. None of these windows has it then either, and the app in front stays.
-  public func sheetTakesTheKeyboard() {
-    focused = nil
+  /// The keyboard goes to something that is none of these windows, and the app in front stays. `named`: what macOS names meanwhile. A free-standing
+  /// panel or dialog of the app in front: a number of its own, which nobody here knows (seen on a hosted Mac). Nobody: the app in front is not
+  /// observed, or has no focused window. A SHEET IS NEITHER: the real layer answers it with its window's number, so that to whoever asks at this
+  /// seam the keyboard has not moved.
+  public func keyboardGoesToNoKnownWindow(named number: WindowID? = nil) {
+    focused = number
     events?.keyboardFocusMoved()
   }
 
@@ -1253,6 +1274,14 @@ extension FakeWindowSystem {
 extension FakeWindowSystem {
   /// A moment passes: apps that insist on a frame of their own move their windows back to it.
   public func appsSettle() {
+    // What Arbor asks for on hearing of these is on its way in its turn.
+    let arriving = sizesOnTheirWay
+    sizesOnTheirWay.removeAll()
+    for (window, size) in arriving.sorted(by: { $0.key < $1.key }) {
+      guard let frame = windows[window]?.snapshot.frame else { continue }
+      // Not the frame Arbor was told, so to the Accessibility layer it is no echo of Arbor's own call.
+      userMove(window, to: CGRect(origin: frame.origin, size: size))
+    }
     for (window, frame) in stubbornFrames.sorted(by: { $0.key < $1.key })
     where windows[window] != nil && windows[window]!.snapshot.frame != frame {
       userMove(window, to: frame)
@@ -1335,16 +1364,19 @@ extension FakeWindowSystem {
 
 extension FakeWindowSystem {
   /// Makes `window` take only sizes that are whole steps, as Terminal does with its character cells. Like
-  /// Terminal, it takes the size nearest to the one it is asked for, which can be the larger one.
-  public func setSizeStep(_ window: WindowID, _ step: CGSize?, margin: CGSize = .zero) {
+  /// Terminal, it takes the size nearest to the one it is asked for, which can be the larger one; with `down`, like other
+  /// terminals, the cells that fit. `margin` is what of the window is not cells, so that its sizes are multiples of nothing.
+  public func setSizeStep(_ window: WindowID, _ step: CGSize?, down: Bool = false, margin: CGSize = .zero) {
     windows[window]?.sizeStep = step
+    windows[window]?.stepsRoundDown = down
     windows[window]?.sizeMargin = margin
   }
 
-  static func rounded(_ size: CGSize, toStepsOf step: CGSize, margin: CGSize = .zero) -> CGSize {
-    CGSize(
-      width: max(1, ((size.width - margin.width) / step.width).rounded()) * step.width + margin.width,
-      height: max(1, ((size.height - margin.height) / step.height).rounded()) * step.height + margin.height)
+  static func rounded(_ size: CGSize, toStepsOf step: CGSize, down: Bool = false, margin: CGSize = .zero) -> CGSize {
+    let rule: FloatingPointRoundingRule = down ? .down : .toNearestOrAwayFromZero
+    return CGSize(
+      width: margin.width + max(1, ((size.width - margin.width) / step.width).rounded(rule)) * step.width,
+      height: margin.height + max(1, ((size.height - margin.height) / step.height).rounded(rule)) * step.height)
   }
 }
 

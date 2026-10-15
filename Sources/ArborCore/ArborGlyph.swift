@@ -15,6 +15,18 @@ public enum ArborGlyph {
   public static let buttonSize = CGSize(width: 14, height: 12)
   public static let iconSize = CGSize(width: 18, height: 14)
 
+  /// Where a sign of `size` that stands in for the mark (a lock, a warning) is drawn in the single icon's image, which is `iconSize`
+  /// whatever it shows: an item that changes its width pushes its neighbours about in the menu bar. In the middle, on whole
+  /// points if it fits; made smaller, in its own proportions, if it does not; never larger.
+  public static func place(ofSign size: CGSize) -> CGRect {
+    guard size.width > 0, size.height > 0 else { return CGRect(x: iconSize.width / 2, y: iconSize.height / 2, width: 0, height: 0) }
+    let scale = min(iconSize.width / size.width, iconSize.height / size.height, 1)
+    let (width, height) = (size.width * scale, size.height * scale)
+    // Rounded down: rounded up, a sign nearly as large as the image would be pushed over its far edge.
+    return CGRect(
+      x: ((iconSize.width - width) / 2).rounded(.down), y: ((iconSize.height - height) / 2).rounded(.down), width: width, height: height)
+  }
+
   /// How opaque the app icon draws each cell, in the order of `cells`: the further out, the lighter.
   /// The menu bar draws every cell solid; at that size shades only look blurred.
   public static let opacities: [CGFloat] = [1, 0.92, 0.8, 0.68]

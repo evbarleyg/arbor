@@ -215,20 +215,6 @@ extension ChaosRunner {
         launch
         """),
     ChaosKnownFailure(
-      rule: "set-right-by-less-than-a-cell", owner: "board 1.62: Arbor knows a terminal's character cell", severity: 4,
-      story: "A terminal takes whole character cells. Nobody in view is asked to grow where it stands, so how many cells go into a slot shows in the slot, and the "
-        + "terminal is moved to the middle of it afterwards: less than half a cell, within the slot, at every size it has not been seen at. It ends when Arbor "
-        + "knows the cell, and foretells the place for any slot.",
-      script: """
-        launch
-        open 101 Terminal pid 1001 at 100 100 500 400
-        behave 101 grid
-        open 102 Mail pid 1002 at 800 300 500 400
-        dock 102 left
-        dock 101 beside 102 bottom
-        float 102
-        """),
-    ChaosKnownFailure(
       rule: "sized-there-and-back-floating-making-way", owner: "rule 3: a floating window's frame is its person's", severity: 4,
       story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). A floating window is squeezed onto the Desktop and given some of it back by the same command.",
       script: """

@@ -308,6 +308,8 @@
         let mode = isDark ? "dark" : "light"
         try picture(harness(Settings(), squeezed: false), isDark: isDark, name: "scene-\(mode)")
         try picture(harness(Settings(), squeezed: true), isDark: isDark, name: "scene-squeezed-\(mode)")
+        // Arbor ships without the darkening and the hairline (Q29): the scenes above are what ships, this one is the option.
+        try picture(harness(.withBackdrop, squeezed: false), isDark: isDark, name: "scene-backdrop-\(mode)")
         try picture(harness(named, squeezed: true), isDark: isDark, name: "scene-names-\(mode)")
         try picture(harness(strong, squeezed: false), isDark: isDark, name: "scene-colour-60-\(mode)")
         try picture(harness(tinted, squeezed: false), isDark: isDark, name: "scene-tint-20-edge-30-\(mode)")

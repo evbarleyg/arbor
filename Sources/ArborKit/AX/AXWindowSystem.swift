@@ -52,6 +52,8 @@ public final class AXWindowSystem: WindowSystem {
   /// The window last reported as focused, so that the two or three notifications macOS posts for one
   /// change are reported once. Forgotten whenever another app comes forward.
   private var lastReportedFocus: WindowID?
+  /// Numbers macOS has named as a focused window that are no window of `records`: a sheet's with its window's, anything else's with itself.
+  private var whoseSheet: [WindowID: WindowID] = [:]
   /// Counts the apps that came forward, to see whether a request to activate one had any effect.
   private var activations = 0
   /// The next look at an app that came forward before macOS named it as the one in front.
@@ -355,7 +357,43 @@ public final class AXWindowSystem: WindowSystem {
     guard let front = NSWorkspace.shared.frontmostApplication, let app = apps[front.processIdentifier],
       answers(front.processIdentifier)
     else { return nil }
-    return app.element.element(kAXFocusedWindowAttribute)?.windowID
+    return app.element.element(kAXFocusedWindowAttribute).flatMap { windowWithTheKeyboard($0) }
+  }
+
+  /// The number of what an app names as its focused window, or, of a sheet, the number of its window.
+  ///
+  /// macOS names a sheet by a number of its own (seen on a hosted Mac: a test window's, and TextEdit's Save As…), which nobody above this layer
+  /// knows. A sheet is where its window is, goes where that goes, and is no window to arrange: the keyboard is in that window, as
+  /// far as anybody above can tell. A free-standing panel or dialog keeps its own number: somebody has the keyboard, and it is no window of Arbor's.
+  ///
+  /// This is asked many times for every command. So a window that is known is not asked what it is, and what is none is asked once.
+  private func windowWithTheKeyboard(_ named: AXUIElement) -> WindowID? {
+    guard let number = named.windowID else { return nil }
+    guard records[number] == nil else { return number }
+    if let known = whoseSheet[number] { return records[known] == nil ? number : known }
+    // An app that does not say what it is, is asked again next time.
+    guard let role = named.string(kAXRoleAttribute) else { return number }
+    // The window server gives a number out once, so what was learned of it holds. A day's panels and sheets are few.
+    if whoseSheet.count >= 64 { whoseSheet.removeAll() }
+    guard role == kAXSheetRole else {
+      whoseSheet[number] = number
+      return number
+    }
+    var sheet = named
+    // A sheet can come down over a sheet.
+    for level in 0..<4 {
+      // A sheet of something that is itself no window Arbor knows, a panel's: somebody has the keyboard there, in plain sight.
+      guard level == 0 || sheet.string(kAXRoleAttribute) == kAXSheetRole else { return number }
+      // Both gave its window, of a test window's sheet and of TextEdit's Save As…, which another process draws. Not the main window: that
+      // changes 44 ms after the sheet has come.
+      guard let above = sheet.element(kAXParentAttribute) ?? sheet.element(kAXWindowAttribute) else { return number }
+      if let window = above.windowID, records[window] != nil {
+        whoseSheet[number] = window
+        return window
+      }
+      sheet = above
+    }
+    return number
   }
 
   public func cursorLocation() -> CGPoint {
@@ -1029,7 +1067,7 @@ public final class AXWindowSystem: WindowSystem {
   private func reportFocus(of pid: pid_t) {
     guard NSWorkspace.shared.frontmostApplication?.processIdentifier == pid else { return }
     guard let app = apps[pid], answers(pid), let element = app.element.element(kAXFocusedWindowAttribute),
-      let window = element.windowID
+      let window = windowWithTheKeyboard(element)
     else {
       // Finder after a click on the wallpaper, an app that is not observed: the keyboard left the known windows.
       keyboardLeftTheKnownWindows()
@@ -1037,7 +1075,7 @@ public final class AXWindowSystem: WindowSystem {
     }
     if records[window] == nil { addWindow(element, pid: pid, announce: true, wasOpenBefore: true) }
     guard let record = records[window], !record.isBackgroundTab else {
-      // A sheet, a dialog or a panel.
+      // A dialog or a panel.
       keyboardLeftTheKnownWindows()
       return
     }

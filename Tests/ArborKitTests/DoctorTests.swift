@@ -13,7 +13,7 @@ import Testing
     eventTaps: ["pinch", "scroll", "rectangle"])
 
   /// A started harness that reports `facts` and has every shortcut registered.
-  func makeHarness(_ facts: SystemFacts = healthy, settings: Settings = Settings()) -> Harness {
+  func makeHarness(_ facts: SystemFacts = healthy, settings: Settings = Harness.settingsWhenNoneAreGiven) -> Harness {
     let h = Harness(settings: settings)
     h.controller.systemFacts = { facts }
     h.controller.registeredBindings = KeyBindings.effective(settings: settings).bindings
@@ -25,7 +25,7 @@ import Testing
   func check(_ h: Harness, _ title: String) -> DoctorReport.Check? { h.controller.doctorReport().check(title) }
 
   @Test func aHealthyMacHasNoProblems() {
-    let result = makeHarness().run("doctor")
+    let result = makeHarness(settings: Settings()).run("doctor")
     #expect(result.ok)
     #expect(result.message == "no problems")
     #expect(
@@ -124,7 +124,7 @@ import Testing
 
   /// Signs a keyboard cannot type alone stay where a US keyboard has them (F44): said, because the README's table does not.
   @Test func theKeyboardLayoutIsNamedWithTheShortcutsItMoves() {
-    let h = makeHarness()
+    let h = makeHarness(settings: Settings())
     h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
     #expect(
       check(h, "Keyboard layout")
@@ -337,7 +337,7 @@ import Testing
   @Test func severalInputSourcesAreNotedWhileSomethingIsOnTheirShortcut() {
     var facts = Self.healthy
     facts.inputSources = 2
-    let h = makeHarness(facts)
+    let h = makeHarness(facts, settings: Settings())
     #expect(check(h, "Input sources")?.mark == .note)
     #expect(check(h, "Input sources")?.detail.hasPrefix("2, so macOS may keep ⌃⌥Space (`show-all`)") == true)
     #expect(check(h, "Input sources")?.detail.contains("shows everything too") == false, "among the nine no other key does")
@@ -420,7 +420,7 @@ import Testing
   }
 
   @Test func shortcutsMacOSRefusedAreNamed() {
-    let h = makeHarness()
+    let h = makeHarness(settings: Settings())
     h.controller.registeredBindings = KeyBindings.core.filter { ![.showAll, .undo].contains($0.command) }
     h.controller.refusedBindings = KeyBindings.core.filter { [.showAll, .undo].contains($0.command) }
     #expect(check(h, "Shortcuts")?.mark == .problem)
@@ -516,7 +516,7 @@ import Testing
   }
 
   @Test func withoutFactsNothingIsClaimed() {
-    let h = Harness()
+    let h = Harness(settings: Settings())
     h.start()
     let report = h.controller.doctorReport()
     #expect(report.problems == 0)
@@ -565,7 +565,7 @@ import Testing
     var facts = Self.healthy
     facts.accessibility = false
     facts.switches = [.menuBar]
-    let h = Harness()
+    let h = Harness(settings: Settings())
     let model = h.controller.onboardingModel(facts)
     #expect(model.rows.map(\.isSatisfied) == [false, false])
     // Nothing is registered before Arbor starts, so the window shows what the settings promise.
@@ -712,7 +712,7 @@ import Testing
   }
 
   @Test func aPausedArborSaysSoInsteadOfPromisingMovesThatDoNothing() {
-    let h = Harness()
+    let h = Harness(settings: Settings())
     h.start()
     h.controller.registeredBindings = KeyBindings.all
     let session = OnboardingSession(controller: h.controller) { _ in }

@@ -73,8 +73,9 @@ step "python, in place"
 python3 -c 'import sys; open(sys.argv[1], "w").write("{\"gap\": 16, \"noteToSelf\": \"hello\"}")' "$file"
 noticed 16
 ctl set tabsEnabled true
-check "a command leaves the rest of the file as it was written" \
-  [ "$(cat "$file")" = '{"gap": 16, "noteToSelf": "hello", "tabsEnabled": true}' ]
+# The file was put there without the mark while Arbor runs: it is somebody's own, and the first command that writes into it marks it.
+check "a command leaves the rest of the file as it was written, and marks it" \
+  [ "$(cat "$file")" = '{"gap": 16, "noteToSelf": "hello", "format": 2, "tabsEnabled": true}' ]
 
 step "a file that is not JSON changes nothing, is reported once, and is not saved over"
 applied=$(logged "settings.json read and applied")
@@ -145,12 +146,23 @@ arbor_stop
 
 step "an upgrade: launched on a file in which an earlier build wrote its defaults down"
 file="$ARBOR_HOME/settings.json"
-printf '%s\n' '{' '  "animationDuration" : 0.46,' '  "gap" : 40,' '  "gesturesEnabled" : true,' '  "noteToSelf" : "hello",' '  "peek" : true' '}' > "$file"
+arbor_file_of_an_early_build '{"gap": 40, "noteToSelf": "hello"}' > "$file"
 cp "$file" "$ARBOR_OUT/settings-of-an-earlier-build.json"
 arbor_start 1
 cat "$file"
 check "what nobody chose is out, what somebody chose stays, and the file is marked" [ "$(keys_of "$file")" = "format gap noteToSelf" ]
 check "Arbor uses the gap that was chosen" gap_is 40
 check "a copy of the file as it was lies beside it" cmp -s "$ARBOR_OUT/settings-of-an-earlier-build.json" "$ARBOR_HOME/settings.before-format-2.json"
-check "the log names the keys and no value" grep -q "taken out, to follow the defaults from now on: animationDuration, gesturesEnabled, peek" "$ARBOR_HOME/arbor.log"
+check "the log names the keys and no value" grep -q "taken out, to follow the defaults from now on: allowAllURLCommands, animationDuration, appColourAmount, " "$ARBOR_HOME/arbor.log"
+arbor_stop
+
+step "no upgrade: launched on a file of two keys that somebody wrote by hand, without the mark"
+file="$ARBOR_HOME/settings.json"
+# Both are what an earlier build wrote down too, and here they are somebody's choice.
+printf '%s\n' '{"focusRing": true, "animationDuration": 0.46}' > "$file"
+arbor_start 1
+cat "$file"
+check "nothing is taken out of it, and it is marked" [ "$(keys_of "$file")" = "animationDuration focusRing format" ]
+check "Arbor uses what was asked for" setting_is focusRing true
+check "no copy is kept, since nothing is lost" [ ! -e "$ARBOR_HOME/settings.before-format-2.json" ]
 arbor_stop

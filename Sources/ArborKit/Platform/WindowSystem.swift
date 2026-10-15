@@ -98,6 +98,8 @@ public protocol WindowSystem: AnyObject {
 
   /// Raises the window and activates its app.
   func focus(_ window: WindowID)
+  /// The window that has the keyboard. With the keyboard in a sheet, the sheet's window. A number nobody has been told of: a free-standing panel or
+  /// dialog of the app in front has it. Nil: the app in front names none, is not observed, or does not answer.
   func focusedWindow() -> WindowID?
 
   func cursorLocation() -> CGPoint

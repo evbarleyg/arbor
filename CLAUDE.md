@@ -34,6 +34,7 @@ make test       # swift test: core unit tests + controller scenario tests
 make test-making-way  # the same tests with floatingWindowsMakeWay on wherever a test does not choose its settings (F64)
 make check      # build + test + the arbor-sim smoke run + the scenarios + on Linux the real-window suite, rehearsed + the tools' self-test; must pass before every commit
 make gate       # on Linux: check, scenarios, parity, typecheck-mac and lint, each once and on every core: 4 minutes instead of 9
+make test-classic  # on Linux: the tests with every option on that has gone off since the first build; after changing one (docs/TESTING.md, "Tests and the defaults")
 make sim ARGS='"open Safari" "dock 101 left"'   # drive the real controller headlessly
 make run        # run the debug Arbor binary from this terminal; like install and uninstall it declines without one: the Mac's owner decides
 make app        # build build/Arbor.app (release; signed as docs/INSTALL.md describes)

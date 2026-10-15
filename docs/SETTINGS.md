@@ -14,15 +14,21 @@ File). There are four ways to change one, and each takes effect at once and show
   resets everything except your shortcuts, rules and lists of apps, and `arborctl reset everything` resets
   those too. Keys ignore case, and `on`/`off`, `yes`/`no` and `1`/`0` also mean true and false. A value
   outside what the table allows is refused, with the reason, and changes nothing. A command changes only its
-  own setting in the file; the rest stays as you wrote it, keys Arbor does not know included.
+  own setting in the file; the rest stays as you wrote it, keys Arbor does not know included. (A file without
+  `"format": 2` gets that line as well: see below.)
 - **The file**: Arbor watches it and applies an edit as soon as it is saved. **It holds only what differs from
-  the defaults**, and `"format": 2`, which says so and should stay: after a first launch there is nothing else in it, and
+  the defaults**, and `"format": 2`, which says so. After a first launch there is nothing else in it, and
   `reset` takes a value out again. So add the key you want to change; the tables below have them all. Missing keys take their
   defaults, also when a later version changes one. A number outside its range is moved to the nearest end of it, and any other value Arbor cannot
   use goes back to its default; `arborctl settings` and the log say which, and the file keeps what you wrote
   until you `set` or `reset` that key. While the file is not valid JSON Arbor keeps the settings it has and
   refuses commands that change settings; `arborctl reload-settings` says where the typo is. `arborctl reset
   everything` is the way out: it writes a new file and keeps the old one as `settings.unreadable.json`.
+  A file of your own without the mark is taken as it is, and gets the mark at the next launch, or with the first command that
+  writes into it. Leave it in. An early build wrote all its 68 settings down at its first launch, unasked. Only a file without the
+  mark that holds 16 or more of those is taken for such a build's: whatever in it equals a default of those days goes, once,
+  and a copy stays beside it as `settings.before-format-2.json`. Put that copy back and the same happens again: copy the lines
+  you want into the new file instead.
 - **A keyboard shortcut**: `arborctl bind ctrl+opt+x set gap 0`, or `set focusRing toggle` for a switch.
 
 ## General
@@ -107,9 +113,9 @@ File). There are four ways to change one, and each takes effect at once and show
 
 | Key | Default | Values | What it does |
 |---|---|---|---|
-| `focusRing` | `true` | true or false | **Focus ring.** Draw a line around the focused window, if Arbor arranges it. |
-| `animationDuration` | `0.46` | 0 to 2 s | **Motion.** How long a zoom, a dock or a close takes to play; 0 applies everything at once. “Reduce motion” in System Settings turns the motion off as well. |
-| `dimBehindArranged` | `0.25` | 0 to 1 | **Darken behind docked windows.** How much darker the wallpaper is behind docked windows, so that they read as one surface: from as it is to black. 0 leaves it as it is, 1 is black. |
+| `focusRing` | `false` | true or false | **Focus ring.** Draw a line around the focused window, if Arbor arranges it. |
+| `animationDuration` | `0` | 0 to 2 s | **Motion.** 0 puts windows in their places at once. Above 0 a zoom, a dock or a close plays for that long, and a card with the app’s icon stands in for each window while it moves; 0.46 is a good length. “Reduce motion” in System Settings turns the motion off as well. |
+| `dimBehindArranged` | `0` | 0 to 1 | **Darken behind docked windows.** How much darker the wallpaper is behind docked windows, so that they read as one surface: from as it is to black. 0 leaves it as it is, 1 is black. |
 | `tileStyle` | `icon` | icon or name or plain | **Tiles show.** What the tile of a window too small to use shows on its color. `icon`: The icon. `name`: The icon and the name. `plain`: Only the color. |
 | `gapHandles` | `shown` | shown or hidden or off | **Gaps between windows.** Whether dragging a gap resizes the windows on both sides of it, and whether a handle shows in the gap under the pointer. A window's own edges resize it either way. `resize` moves a window's edge whatever this says. `shown`: Can be dragged, and show a handle. `hidden`: Can be dragged. `off`: Cannot be dragged. |
 | `minimapDuration` | `0` | 0 to 10 s | **Show minimap after each move.** For how long the minimap shows by itself after the view has moved. 0 is off; its shortcut shows it either way. |
@@ -117,7 +123,7 @@ File). There are four ways to change one, and each takes effect at once and show
 | `focusRingColour` | `accent` | accent, #RRGGBB or #RRGGBBAA | **Focus ring color.** The color of the line: accent is the accent color chosen in System Settings. *Advanced.* |
 | `blurBehindArranged` | `0` | 0 to 1 | **Blur behind docked windows.** How much the wallpaper is blurred behind docked windows: from sharp to all the blur macOS has. 0 leaves it sharp, 1 is all the blur macOS has. *Advanced.* |
 | `tintBehindArranged` | `0` | 0 to 1 | **Tint behind docked windows.** How much of your accent color is laid over the wallpaper behind docked windows. *Advanced.* |
-| `desktopEdge` | `0.05` | 0 to 1 | **Line around the Desktop.** How strong the hairline around the Desktop is where it lies between docked windows; 0 draws none. *Advanced.* |
+| `desktopEdge` | `0` | 0 to 1 | **Line around the Desktop.** How strong the hairline around the Desktop is where it lies between docked windows; 0 draws none. *Advanced.* |
 | `appColours` | `true` | true or false | **Tiles in their app's color.** A tile takes on the color of its app's icon. Off, every tile is the same gray. *Advanced.* |
 | `appColourAmount` | `0.25` | 0 to 1 | **How much of the app's color.** How much of its app's color goes into a tile: from gray to the color itself. 0 is gray, 1 is the color itself. *Advanced.* |
 | `focusRingRadius` | `0` | 0 to 60 pt | **Focus ring corners.** The radius of the window corners the line follows; 0 picks that of the macOS Arbor runs on. *Not in the settings window.* |
@@ -128,7 +134,7 @@ File). There are four ways to change one, and each takes effect at once and show
 
 | Key | Default | Values | What it does |
 |---|---|---|---|
-| `menuBarControls` | `true` | true or false | **Buttons in the menu bar.** Buttons for back, forward, the Desktop, everything and each saved view; right-click them for the menu. Off, a single icon opens the menu. |
+| `menuBarControls` | `false` | true or false | **Buttons in the menu bar.** Buttons for back, forward, the Desktop, everything and each saved view; right-click them for the menu. Off, a single icon opens the menu. |
 | `historyButtons` | `true` | true or false | **Back and forward buttons.** Whether the buttons include back and forward. *Advanced.* |
 | `menuBarFill` | `0.25` | 0 to 1 | **Fill of the current button.** How opaque the background of the button for where you are is, from 0 to 1. *Not in the settings window.* |
 

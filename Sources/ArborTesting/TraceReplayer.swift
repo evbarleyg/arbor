@@ -1273,7 +1273,7 @@ struct SizeSteps {
   }
 
   /// No step is larger than this: character cells at a very large font.
-  static let largest = 36
+  static let largest = Int(Cells.largest)
 
   var base: Int
   var step: Int

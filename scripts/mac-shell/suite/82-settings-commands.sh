@@ -52,7 +52,7 @@ proves A17
 "$ARBOR_BIN/arborctl" settings > "$ARBOR_SESSION_DIR/settings"
 check "the gap, as it is now" grep -q "gap = 16  (0 to 100 pt; default 12)" "$ARBOR_SESSION_DIR/settings"
 check "marked as changed" grep -q "^\* *gap = 16" "$ARBOR_SESSION_DIR/settings"
-check "a switch" grep -q "focusRing = true  (true or false; default true)" "$ARBOR_SESSION_DIR/settings"
+check "a switch" grep -q "focusRing = false  (true or false; default false)" "$ARBOR_SESSION_DIR/settings"
 check "a choice" grep -q "stepInToward = auto  (auto or pointer or focus; default auto)" "$ARBOR_SESSION_DIR/settings"
 check "a setting left alone is not marked" fails grep -q "^\* *focusRing = " "$ARBOR_SESSION_DIR/settings"
 

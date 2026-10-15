@@ -82,8 +82,10 @@ extension Controller {
   /// It has answered where it stood, and that is where the answer belongs: there is nothing left to ask for. `asked` is what `place` would
   /// ask of it (`request`). What is not asked for is not foretold either (`movesInSight`).
   func isWhereItsAnswerBelongs(_ window: WindowSnapshot, asked: CGRect, in slot: CGRect) -> Bool {
-    justAnswered[window.id] != nil && !parked.contains(window.id) && asked.approximatelyEquals(window.frame, tolerance: 1)
-      && (asked == window.frame || !hasAnsweredForAnotherSize(window.id, than: slot.size))
+    guard !parked.contains(window.id), asked.approximatelyEquals(window.frame, tolerance: 1) else { return false }
+    // Nor is there anything to ask of a terminal whose slot has changed by less than a cell: the whole cells that fit are those it has.
+    guard justAnswered[window.id] != nil else { return asked == window.frame && asked.size != slot.size }
+    return asked == window.frame || !hasAnsweredForAnotherSize(window.id, than: slot.size)
   }
 
   /// What has been seen of a window's sizes, the one it has now included.
@@ -137,8 +139,7 @@ extension Controller {
   /// Puts a question. Returns true if the window refused to be that small (a new minimum size was learned).
   func ask(_ window: WindowID, _ question: CGRect, on displayID: DisplayID) -> Bool {
     // Its app does not answer: `place` finds that out as well, and sees to it.
-    guard let was = windows[window]?.frame.size, var actual = system.setFrame(question, of: window) else { return false }
-    actual = askForLess(window, slot: question, took: actual)
+    guard let was = windows[window]?.frame.size, let actual = offer(question, to: window) else { return false }
     windows[window]?.frame = actual
     settled[window] = actual
     justAnswered[window] = question.size
@@ -193,7 +194,7 @@ extension Controller {
     let limit = seenSizes[window.id]?.limit(now: window.frame.size, offered: slot.size) ?? (width: nil, height: nil)
     let expected = CGSize(
       width: min(limit.width ?? slot.width, slot.width), height: min(limit.height ?? slot.height, slot.height))
-    return expected.width < slot.width - 2 || expected.height < slot.height - 2 ? Self.centred(expected, in: slot) : slot
+    return expected.width < slot.width - 2 || expected.height < slot.height - 2 ? restingFrame(of: window.id, expected, in: slot) : slot
   }
 
   /// The frame to ask of a window that is to fill `slot`.
@@ -201,14 +202,16 @@ extension Controller {
     // It has just said what it makes of this size, so it is only moved. Offered the slot again, a terminal would round
     // up again and be talked down again.
     let answered = justAnswered[window.id]
-    if answered == slot.size { return Self.centred(window.frame.size, in: slot) }
+    if answered == slot.size { return restingFrame(of: window.id, window.frame.size, in: slot) }
     // Where it is expected to end up, but the whole size: a sheet may have been open, that time. So finding out that it can
-    // grow again costs nothing as long as it cannot. But for a side it has just answered for, where it stood.
+    // grow again costs nothing as long as it cannot. But for a side it has just answered for, where it stood. Of a terminal
+    // whose cell is known the whole size is the whole cells that fit (Controller+SizeSteps.swift).
+    let whole = fitted(slot, for: window.id).size
     return CGRect(
       origin: expectedFrame(of: window, in: slot).origin,
       size: CGSize(
-        width: answered?.width == slot.width ? window.frame.width : slot.width,
-        height: answered?.height == slot.height ? window.frame.height : slot.height))
+        width: answered?.width == slot.width ? window.frame.width : whole.width,
+        height: answered?.height == slot.height ? window.frame.height : whole.height))
   }
 
   /// A window of `size` in the middle of `slot`. Where it is the larger of the two it begins where the slot does.

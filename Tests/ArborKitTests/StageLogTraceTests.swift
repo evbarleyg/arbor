@@ -18,7 +18,7 @@ import Testing
 
   /// Eight windows side by side and one above the other, and the stage rehearsed while a trace is recorded.
   private func record(_ body: (Harness, [WindowID]) -> Void) -> (trace: Trace, harness: Harness) {
-    let h = Harness()
+    let h = Harness(settings: .withMotion)
     h.start()
     let windows = (0..<8).map { _ in h.system.open(app: "Notes") }
     h.scheduler.advance(by: 1)
@@ -33,7 +33,7 @@ import Testing
 
   /// A drag's lines come sixty a second too, and most are thinned away. Every frame of the stage counts: the judge measures the gaps.
   @Test func theStagesLinesAreNeverThinnedAndKeepTheirTime() {
-    let h = Harness()
+    let h = Harness(settings: .withMotion)
     h.start()
     let a = h.system.open(app: "Notes")
     h.run("trace on stage")
@@ -158,7 +158,7 @@ import Testing
   }
 
   @Test func aTraceWithoutMotionDoesNotPass() {
-    let h = Harness()
+    let h = Harness(settings: .withMotion)
     h.start()
     h.run("trace on still")
     h.run("state")
@@ -172,7 +172,7 @@ import Testing
 
   /// What `StageSampler` on a Mac and `RehearsedStage` here both leave to it: which lines, in which order, and when none.
   @Test func theWriterLogsAMotionFromItsBeginningToItsEnd() {
-    let h = Harness()
+    let h = Harness(settings: .withMotion)
     h.start()
     let writer = StageLogWriter(recorder: h.recorder)
     var x: CGFloat = 0
@@ -306,7 +306,7 @@ import Testing
   /// The controller also learns where windows are from the lists it asks for (after a change of the displays, on resuming) and from windows
   /// that are found or replaced. A judge that does not would hold stand-ins against frames from before.
   @Test func theRealWindowsAreFollowedThroughEveryWayTheyAreReported() {
-    let h = Harness()
+    let h = Harness(settings: .withMotion)
     h.start()
     let ids = (0..<4).map { _ in h.system.open(app: "Notes", frame: CGRect(x: 100, y: 100, width: 400, height: 300)) }
     h.run("trace on real")
@@ -352,7 +352,7 @@ import Testing
 
   /// macOS moves windows when the displays change, and says where to when it is asked. Until then nobody knows.
   @Test func afterAChangeOfTheDisplaysNothingOldIsBelieved() {
-    let h = Harness()
+    let h = Harness(settings: .withMotion)
     h.start()
     let a = h.system.open(app: "Notes", frame: CGRect(x: 100, y: 100, width: 400, height: 300))
     h.run("trace on displays")

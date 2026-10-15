@@ -339,7 +339,7 @@ private let above = DisplaySnapshot(
 
   /// docs/MENU.md: hidden when the thing it is about does not exist.
   @Test func theMenuOffersTheOtherDisplayOnlyWhereThereIsOne() {
-    let (h, a, _, _, _) = makeHarness()
+    let (h, a, _, _, _) = makeHarness(settings: Settings())
     h.system.userFocus(a)
     #expect(h.run("menu").text?.contains("Bottom\n    -----\n        Move to Next Display\n") == true)
     let (single, w) = tilingScenario(["A"], ["dock $0 left"])

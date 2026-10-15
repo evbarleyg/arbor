@@ -49,7 +49,7 @@ The real windows are resized to fit, so what you see is always the live app at a
 **Where do the others go?** Out of view. Only a move of the view takes a window out of view: docking, resizing, minimizing or closing something never does. They are not closed, hidden or minimised; they are where a photograph's surroundings are. Zoom out and they are back where they were. Switch to one with ⌘Tab or the Dock and
 the view moves to show it: framed stays framed, so from one framed window you land on the other, framed, and ⌃⌥[ takes you back; from a group the view steps out just far enough to show both.
 
-**You can see them go.** Every zoom, dock and close plays as one short motion: zooming in enlarges the whole arrangement, so the others slide out past the edges they live beyond, and zooming out brings them back from there. While they move, windows show their app's colour and icon. A click ends the motion at once; another shortcut carries on from where things are. macOS's "Reduce motion" switches it off, and so does `arborctl set animationDuration 0`.
+**They are there at once.** Windows go straight to their places, and nothing stands in for them on the way. If you would rather see them go, `arborctl set animationDuration 0.46` (or Settings… → Appearance → Motion) plays every zoom, dock and close as one short motion: zooming in enlarges the whole arrangement, so the others slide out past the edges they live beyond, and zooming out brings them back from there. While they move, a card with the app's colour and icon stands in for each window. A click ends the motion at once; another shortcut carries on from where things are. macOS's "Reduce motion" switches it off.
 
 That is all of it: **dock**, **float**, **zoom**. Everything else is a faster way to do one of the three.
 
@@ -115,7 +115,7 @@ Arbor checks all of this for you before it arranges anything, and changes none o
 
 Arbor has no Dock icon. At the first launch a **welcome window** opens by itself. It says what Arbor is for, asks for the one permission it needs and for nothing else, and then has four moves to try, all keys, each ticked off as you make it on your own windows. After that Arbor is the small icon of three columns in the menu bar. On a MacBook with a notch and many menu bar icons it may be hidden behind the notch: quit a few, or hold ⌘ and drag icons to reorder them; opening Arbor again brings the welcome window back, as menu → Help → Welcome… does.
 
-Once something is docked the icon grows into a row of small **buttons for where you are**: back, forward, the Desktop, everything, one for each saved view, and the menu. A right click anywhere on them opens the menu too. If the menu bar has no room, Arbor goes back to the single icon by itself; `arborctl set menuBarControls false` keeps it so.
+It stays that one icon, of one width, whatever happens: a click opens the menu. With `arborctl set menuBarControls true` (or Settings… → Menu Bar) it grows, once something is docked, into a row of small **buttons for where you are**: back, forward, the Desktop, everything, one for each saved view, and the menu. A right click anywhere on them opens the menu too. If the menu bar has no room, Arbor goes back to the single icon by itself.
 
 macOS asks whether Arbor may use **Accessibility**. macOS lets an app move other apps' windows only with that permission. Arbor reads where windows are and their titles, moves them, and sends nothing anywhere. Switch it on in System Settings → Privacy &
 Security → Accessibility; Arbor notices within a second. If the switch is already on but the menu still says that Arbor needs permission (this happens after installing a new build), switch it off and on again.
@@ -140,10 +140,9 @@ Safari fills the view"), and confirms what you cannot see, such as a saved view.
 
 **Keyboard Shortcuts…** in the menu shows every shortcut on screen, and what the pointer and the trackpad do; any key or click puts the list away.
 
-From the first dock on, a thin line in your accent colour runs round the **focused window**, in the gap, so that you can see where the keyboard is after windows have changed places. It goes away again when nothing is docked. `"focusRing": false` in the settings
-switches it off.
+If you want to see where the keyboard is after windows have changed places, `arborctl set focusRing true` (or Settings… → Appearance → Focus ring) draws a thin line in your accent colour round the **focused window**, in the gap, from the first dock on. It goes away again when nothing is docked.
 
-Behind what is docked the wallpaper is a shade darker, so that the docked windows read as one surface and the Desktop beside them as another. Icons on the Desktop can be clicked and dragged as always, also where it is darker.
+Behind what is docked the wallpaper is as it always is. `arborctl set dimBehindArranged 0.25` (or Settings… → Appearance → Darken behind docked windows) makes it a shade darker there, so that the docked windows read as one surface and the Desktop beside them as another. Icons on the Desktop can be clicked and dragged as always, also where it is darker.
 
 ### If you get lost
 
@@ -203,7 +202,7 @@ Changed your mind? Press ⎋, or let go without choosing: you are where you were
 
 The keys here are keys of the whole map: `arborctl set shortcuts all` binds them all, `arborctl bind` the ones you want ([section 4](#4-making-it-yours)).
 
-**⌃⌥⇧ + an arrow** moves the keyboard to the nearest window that way, docked or floating; the line round the focused window shows where it went. A tile in the way is zoomed into. With no window that way in view, the view moves to the neighbouring
+**⌃⌥⇧ + an arrow** moves the keyboard to the nearest window that way, docked or floating; with the focus ring on, the line round the focused window shows where it went. A tile in the way is zoomed into. With no window that way in view, the view moves to the neighbouring
 space and the keyboard goes along, so framed on one window the same four keys walk you from window to window; past the last space they cross to the next display.
 
 The focused window too small? **⌃⌥⌘=** grows it and **⌃⌥⌘-** shrinks it, taking room from and giving it to its neighbours; it never shrinks so far that it becomes a tile. **⌃⌥⌘0** balances the sizes of everything in view again.
@@ -314,7 +313,7 @@ Nothing to do. Quit Arbor or leave it running; log out or restart. Quitting brin
 
 **Settings…** in the menu opens the settings window: the everyday settings by section, the rarer ones behind Advanced, a search field, the lists of apps under Apps (the ones Arbor does not arrange, the ones that keep their own ⌃⌥), and panes for Shortcuts and Rules. Everything applies as you change it, so keep a few windows docked behind it and watch. A value Arbor cannot use is refused under its control, with the reason.
 
-Behind the window is a file, `~/Library/Application Support/Arbor/settings.json` (menu → Help → Settings File…); Arbor applies it as soon as you save it, and the open window follows. `arborctl set gap 16` changes one from the command line, and `arborctl settings` lists them all. A command changes only its own setting in the file; the rest stays as you wrote it. The file holds only what you changed: whatever is not in it follows the defaults, also when a later version changes one. [SETTINGS.md](SETTINGS.md) describes every key.
+Behind the window is a file, `~/Library/Application Support/Arbor/settings.json` (menu → Help → Settings File…); Arbor applies it as soon as you save it, and the open window follows. `arborctl set gap 16` changes one from the command line, and `arborctl settings` lists them all. A command changes only its own setting in the file; the rest stays as you wrote it (a file without the line `"format": 2` gets it too). The file holds only what you changed: whatever is not in it follows the defaults, also when a later version changes one. [SETTINGS.md](SETTINGS.md) describes every key.
 
 **Shortcuts.** Arbor takes nine keys, and the menu has the rest. To have the whole map, some fifty keys with ⇧ and ⌘ as well, set Settings… → General → **Shortcuts** to All of them, or run `arborctl set shortcuts all`; `set shortcuts core` goes back to the nine. In the whole map ⌃⌥ + arrow looks and ⌃⌥⌘ + arrow docks; the other seven of the nine stay as they are. [KEYBOARD.md](KEYBOARD.md) lists it. If you ran an earlier build, which bound all of it, you have the nine from the next start.
 
@@ -358,7 +357,7 @@ that were already open stay as they are. Your rules come first, so `{ "app": "co
 "appColourAmount": 0.5
 ```
 
-`"dimBehindArranged": 0` leaves the wallpaper as bright as it is; `"tintBehindArranged"` lays your accent colour over it. A hairline runs round the Desktop where it lies between docked windows: `"desktopEdge": 0.3` makes it plain to see, `0` removes it. `"tileStyle"` is `"icon"`, `"name"` (the icon and the app's name) or `"plain"`, and a space you have named shows its name in all three; `"appColours": false` makes every tile the same grey. `"gapHandles": "hidden"` keeps gaps draggable without the small handle under the pointer, `"off"` makes
+`"dimBehindArranged": 0`, as Arbor comes, leaves the wallpaper as bright as it is; `"tintBehindArranged"` lays your accent colour over it. `"desktopEdge": 0.3` draws a hairline, plain to see, round the Desktop where it lies between docked windows; `0`, as Arbor comes, draws none. `"tileStyle"` is `"icon"`, `"name"` (the icon and the app's name) or `"plain"`, and a space you have named shows its name in all three; `"appColours": false` makes every tile the same grey. `"gapHandles": "hidden"` keeps gaps draggable without the small handle under the pointer, `"off"` makes
 them plain gaps. None of this moves a window.
 
 **Scripts.** Everything Arbor does is a command with a text form, the same everywhere. (Copy the command, not the remark after `#`: at its prompt macOS's own shell, zsh, does not take `#` for a comment.)

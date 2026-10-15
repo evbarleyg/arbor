@@ -51,8 +51,11 @@ materials() {
 }
 
 # settings ['"key": value, …']: replace settings.json while Arbor runs.
+# With the backdrop as the first build drew it, an option since (collab/QUESTIONS.md, Q29), unless the step says otherwise: of a key that is
+# written twice the last one counts.
 settings() {
-  printf '{%s%s}\n' "$BASE" "${1:+, $1}" > "$ARBOR_HOME/settings.json"
+  python3 -c 'import json, sys; print(json.dumps(json.loads(sys.argv[1])))' \
+    "{\"dimBehindArranged\": 0.25, \"desktopEdge\": 0.05, $BASE${1:+, $1}}" > "$ARBOR_HOME/settings.json"
   ctl reload-settings
 }
 
@@ -87,9 +90,9 @@ pictures() {
   shot "$p-00-nothing-docked"
   check "nothing docked, no backdrop" has_no_backdrop
 
-  step "$p: two columns with the Desktop between them"
-  ctl dock "$W1" left
-  ctl dock "$W2" right
+  step "$p: two columns with the Desktop between them, by a layout line"
+  # Two docks are two halves, with nothing left over. A line that names the Desktop gives it room, as Arbor ships: the hole in the backdrop is to be seen.
+  ctl layout "$W1 | Desktop | $W2"
   pointer_away
   shot "$p-01-two-columns"
   check "the backdrop is on screen" eventually has_backdrop

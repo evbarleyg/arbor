@@ -40,7 +40,7 @@ leaves() {
   ran_is "$2:" "$before"
 }
 choose() { "$KEYS" select "com.apple.keylayout.$1"; }
-# session [NAME=value…]: [1 | Desktop | 2] with window 1 focused, shortcuts and the menu bar item on.
+# session [NAME=value…]: [1 | 2] with window 1 focused, shortcuts and the menu bar item on.
 session() {
   arbor_settings "{$BINDINGS}"
   arbor_start 2 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 "$@"

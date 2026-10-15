@@ -81,12 +81,13 @@ echo "the left window was $width_before wide and is now $width_after"
 check "the seam drag made the left window about 80 points wider" test "$((width_after - width_before))" -ge 60
 
 step "drag a docked window's own right edge 60 points to the right"
-read -r x y w h <<< "$(frame_of "$W1")"
+# The left window's: the two fill the display, and the right one's right edge is the display's.
+read -r x y w h <<< "$(frame_of "$W4")"
 drag "$((x + w - 1))" "$((y + h - 20))" "$((x + w + 59))" "$((y + h - 20))" --no-release
 shot 06b-edge-held
 release
 shot 06c-edge-released
-read -r _ _ w_after _ <<< "$(frame_of "$W1")"
+read -r _ _ w_after _ <<< "$(frame_of "$W4")"
 echo "the window was $w wide and is now $w_after"
 check "the edge drag made the window about 60 points wider" test "$((w_after - w))" -ge 40
 summary

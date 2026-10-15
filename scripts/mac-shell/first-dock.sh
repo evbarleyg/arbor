@@ -48,6 +48,8 @@ session() {
   shift 2
   step "session $name"
   ARBOR_BIN=$bin
+  # The motion is an option: Arbor ships without it (collab/QUESTIONS.md, Q29). This is about what the stage costs whoever switches it on.
+  arbor_settings '{"animationDuration": 0.46}'
   arbor_start_apps all "$@" || die "Arbor did not start"
   # While things are got ready: whatever keeps the main thread keeps this answer.
   for _ in 1 2 3 4 5 6; do

@@ -72,7 +72,7 @@ DOCUMENT = "docs/CENSUS.md"
 # The fake sends Arbor a report, or changes the world behind Arbor's back: macOS, an app or a hand acts.
 SYSTEM_REPORTS = """
 close setMinimized setHidden unhideApp setOnActiveSpace userMove setTitle userFocus drag activate activateApp setDisplays
-setListed openUnlisted finishSlowFocus userResize releaseMouse backgroundFocus setFullScreen leaveFullScreen enterFullScreen plug unplug makeMain moveDisplay userFocusesNothing sheetTakesTheKeyboard
+setListed openUnlisted finishSlowFocus userResize releaseMouse backgroundFocus setFullScreen leaveFullScreen enterFullScreen plug unplug makeMain moveDisplay userFocusesNothing keyboardGoesToNoKnownWindow
 userSwitchesApp appsSettle setUnresponsive openTab selectTab closeTab dragAndLoseTheRelease quit quitApp comesForward
 settleFocus click userClick userClickBringsAppForward beginDrag moveDrag holdDrag holdModifierKeys endDrag loseTheReleaseOfTheDrag appsReact grab
 carry letGo loseTheRelease moveSilently report renumber finishRestoring openStrayDialog forgetSession type keyDown keyUp
@@ -1341,7 +1341,7 @@ EVIDENCE = {
     "system.backgroundFocus": (["focused, a window of an app that is not in front"], ""),
     "system.userSwitchesApp": (["event keyboardFocusMoved"], ""),
     "system.userFocusesNothing": (["event keyboardFocusMoved", "event applicationActivated"], ""),
-    "system.sheetTakesTheKeyboard": (["event keyboardFocusMoved"], ""),
+    "system.keyboardGoesToNoKnownWindow": (["event keyboardFocusMoved"], ""),
     "system.activate": (["event applicationActivated"], ""),
     "system.activateApp": (["event applicationActivated"], ""),
     "system.drag": (["event dragBegan"], "row 6: on a Mac `dragBegan` comes 0.3 s late with the window already moved, and frames lag "
@@ -1965,8 +1965,8 @@ def show(t):
 # changed the script stops, so that the ranking is read again and not merely printed again.
 RANKING_DEFAULTS = {
     "hotkeysEnabled": "true", "shortcuts": '"core"', "pointerGestures": "false", "gesturesEnabled": "true", "scrollZoom": "true", "peek": "true", "frameRectangleModifier": '"ctrl+opt"',
-    "animationDuration": "0.46", "focusRing": "true", "makeRoom": "true", "messages": '"helpful"', "menuBarControls": "true",
-    "newWindowsWhileFramed": '"guest"', "dimBehindArranged": "0.25",
+    "animationDuration": "0", "focusRing": "false", "makeRoom": "true", "messages": '"helpful"', "menuBarControls": "false",
+    "newWindowsWhileFramed": '"guest"', "dimBehindArranged": "0",
     "guardDesktopClicks": "false", "continuousZoom": "false", "windowPictures": "false", "minimapDuration": "0",
     "holdStillWhileCameraIsOn": "false", "holdStillWhileMicrophoneIsOn": "false", "soleFloatTakesDesktop": "false",
     "newWindows": '"float"', "reflowWhileDragging": "false", "tabsEnabled": "false", "automaticUpdateChecks": "false",

@@ -23,46 +23,8 @@
 #
 # It changes no setting. It opens TextEdit and Terminal and tiles windows all over the screen, so it runs on GitHub's throwaway Macs alone.
 source "$(dirname "$0")/lib-day.sh"
+source "$(dirname "$0")/lib-menus.sh"
 needs_throwaway_mac "open TextEdit and Terminal, ask System Events where their menus are, and tile windows all over the screen"
-
-# place_of <process> <what, in System Events' words>: the middle of it, in whole points. Only looks.
-place_of() {
-  arbor_within 10 osascript -e "tell application \"System Events\" to tell process \"$1\" to get {position, size} of $2" 2> /dev/null \
-    | awk -F', *' 'NF == 4 { printf "%d %d\n", $1 + $3 / 2, $2 + $4 / 2 }'
-}
-
-# menu_pick <process> <item> [<item of its submenu>]: in the Window menu, with the real pointer, as a hand does it.
-menu_pick() {
-  local process=$1 item=$2 sub=${3:-} bar="menu bar item \"Window\" of menu bar 1" at
-  at=$(place_of "$process" "$bar")
-  [ -n "$at" ] || { echo "$process has no Window menu"; return 1; }
-  # shellcheck disable=SC2086
-  click $at
-  sleep 0.5
-  at=$(place_of "$process" "menu item \"$item\" of menu 1 of $bar")
-  if [ -z "$at" ]; then
-    echo "its Window menu has no \"$item\""
-    key escape
-    return 1
-  fi
-  if [ -z "$sub" ]; then
-    # shellcheck disable=SC2086
-    click $at
-    return
-  fi
-  # shellcheck disable=SC2086
-  move $at
-  sleep 0.7
-  at=$(place_of "$process" "menu item \"$sub\" of menu 1 of menu item \"$item\" of menu 1 of $bar")
-  if [ -z "$at" ]; then
-    echo "\"$item\" has no \"$sub\""
-    key escape
-    key escape
-    return 1
-  fi
-  # shellcheck disable=SC2086
-  click $at
-}
 
 # opt_green <window>
 opt_green() {

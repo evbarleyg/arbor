@@ -51,13 +51,13 @@ expect ok
 expect count docked 2
 set dont-arrange remove safari
 expect ok
-# A switch on a key: the focus ring off and on.
+# A switch on a key: the focus ring, which Arbor ships without, on and off.
 focus 102
-expect ring 102
-set focusRing toggle
 expect ring none
 set focusRing toggle
 expect ring 102
+set focusRing toggle
+expect ring none
 # Everything back, except what took longest to make.
 set gap 30
 reset all

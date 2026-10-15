@@ -114,8 +114,9 @@ asked_of "$W2"
 sleep 1
 
 claim "let be at a start, ten points over the right edge, it is as wide as it stood"
-# Too wide for half the display, so that it would be a tile; with the keyboard in it, it is let be where it stands.
-tw min-size "$W2" "$((fw - 124))" 300
+# Too wide for whatever the other can spare, so that it would be a tile; with the keyboard in it, it is let be where it stands. (Two docks are two
+# halves, with no column for the Desktop, and the neighbour gives down to a tile of 80 points: that leaves the display less 116.)
+tw min-size "$W2" "$((fw - 100))" 300
 wide="$((fx + 84)) $((sy + 70)) $((fw - 74)) 400"
 left_at "$wide"
 click_window "$W2"

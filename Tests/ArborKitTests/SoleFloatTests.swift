@@ -140,6 +140,7 @@ private let side = DisplaySnapshot(
   @Test func theMotionShowsItGoingWhereItGoes() {
     // F02 plans a transition before anything moves, so the plan has to know who takes the Desktop.
     let (h, a, f) = makeHarness()
+    h.switchOn(\.withMotion)
     let company = h.system.open(app: "Preview", frame: CGRect(x: 1000, y: 650, width: 300, height: 200))
     #expect(h.frame(f) == own)
     h.overlays.clearTransitions()

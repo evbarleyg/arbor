@@ -10,7 +10,7 @@ import Testing
   let display = FakeWindowSystem.standardDisplay.id
 
   /// A desk as a day begins: windows of several apps, nothing docked. A moment after the start, unless `rested` is false.
-  private func desk(settings: Settings = Settings(), rested: Bool = true) -> (h: Harness, windows: [WindowID]) {
+  private func desk(settings: Settings = Settings.withMotion, rested: Bool = true) -> (h: Harness, windows: [WindowID]) {
     let h = Harness(settings: settings)
     let windows = ["Finder", "Safari", "Notes", "Mail"].enumerated().map { index, app in
       h.system.open(app: app, pid: Int32(2000 + index), frame: CGRect(x: 100 + 60 * index, y: 100 + 40 * index, width: 600, height: 400))
@@ -34,7 +34,7 @@ import Testing
 
   /// Rule 2: nothing moves until the person docks something. Getting ready asks nothing of any window.
   @Test func gettingReadyTouchesNoWindow() {
-    let h = Harness()
+    let h = Harness(settings: .withMotion)
     let window = h.system.open(app: "Finder", pid: 2000)
     let before = h.frame(window)
     let budget = h.measure {
@@ -92,7 +92,7 @@ import Testing
   /// What cannot be helped: nobody knew of the app before its window was there, and a rule docks it in the same breath. (On a Mac
   /// the motion does not wait for the costume either: the window travels as a plain card.)
   @Test func aWindowDockedTheMomentItOpensLacksItsOwnCostumeOnly() {
-    var settings = Settings()
+    var settings = Settings.withMotion
     settings.rules = [AppRule(app: "com.example.calendar", action: .dock(.right))]
     let (h, windows) = desk(settings: settings)
     h.run("dock \(windows[0].rawValue) left")
@@ -133,7 +133,7 @@ import Testing
 
   /// Coming back from the Dock is a motion with the window in it.
   @Test func aWindowThatWasMinimizedAtTheStartIsReadyToo() {
-    let h = Harness()
+    let h = Harness(settings: .withMotion)
     let docked = h.system.open(app: "Finder", pid: 2000)
     let away = h.system.open(app: "Notes", pid: 2001)
     h.system.setMinimized(away, true)
@@ -179,18 +179,27 @@ import Testing
     #expect(h.overlays.madeInTheMotion == [])
   }
 
-  /// What is not shown is not paid for.
-  @Test func withoutMotionNothingIsGotReady() {
-    var settings = Settings()
+  /// What is not shown is not paid for: no stage. The apps are got ready all the same: a tile wears its app's colour and icon too, and with no
+  /// stage over the display whoever waits for four tiles to be made looks at an empty desk (0.4 s on a hosted Mac).
+  @Test func withoutMotionTheAppsAreGotReadyAndNoStage() {
+    var settings = Settings.withMotion
     settings.animationDuration = 0
     let (h, windows) = desk(settings: settings)
+    let apps = [app("finder", 2000), app("safari", 2001), app("notes", 2002), app("mail", 2003)]
+    #expect(h.overlays.rehearsals == apps, "a moment after the start, before anybody has docked anything")
     h.run("dock \(windows[0].rawValue) left")
-    #expect(h.overlays.rehearsals.isEmpty && !h.scheduler.pendingKeys.contains("rehearsal"))
+    h.scheduler.advance(by: 1)
+    #expect(h.overlays.rehearsals == apps && !h.scheduler.pendingKeys.contains("rehearsal"), "once")
+    let late = h.system.open(app: "Calendar", pid: 2010)
+    h.scheduler.advance(by: 1)
+    #expect(h.overlays.rehearsals.last == app("calendar", 2010), "and an app that comes later")
+    h.system.close(late)
 
     settings.animationDuration = 0.3
     h.controller.apply(settings: settings)
     h.scheduler.advance(by: 1)
-    #expect(h.overlays.rehearsals.count == 5, "switched on, it is")
+    #expect(h.overlays.rehearsals.last == Rehearsal(displays: [display], apps: []), "switched on, the stage is too")
+    #expect(h.overlays.rehearsals.count == 6, "and nothing is said twice")
     h.run("dock \(windows[1].rawValue) right")
     #expect(h.overlays.madeInTheMotion == [])
   }
@@ -231,7 +240,7 @@ import Testing
   /// A Mac's presenter leaves out the covers while stand-ins are pictures of their windows.
   @Test func picturesSwitchedOnOrOffSayItAllAgain() {
     let (h, _) = desk()
-    var settings = Settings()
+    var settings = Settings.withMotion
     settings.windowPictures = true
     h.controller.apply(settings: settings)
     h.scheduler.advance(by: 1)
@@ -254,7 +263,7 @@ import Testing
   /// What the first dock asks of the window system is what the second asks: no observer, size or list is fetched late.
   @Test func theFirstDockAsksTheWindowSystemWhatALaterOneAsks() {
     func questions(docksBefore: Int) -> Budget {
-      let h = Harness()
+      let h = Harness(settings: .withMotion)
       let windows = (0..<4).map { h.system.open(app: "App\($0)", pid: Int32(2000 + $0)) }
       h.start()
       for _ in 0..<docksBefore {

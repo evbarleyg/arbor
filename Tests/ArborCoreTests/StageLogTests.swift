@@ -555,7 +555,7 @@ private func redrawn(_ log: [Timed], frame index: Int, _ samples: [StageLog.Samp
   @Test func theLimitsAreTheOnesThatWereSet() {
     let limits = StageJudge.Limits()
     #expect(limits.duration == 0.46)
-    #expect(limits.duration == Settings().animationDuration)
+    #expect(limits.duration == Settings.usualMotionDuration)
     #expect(!limits.holdsToThePlan)
     #expect(limits.durationTolerance == 0.06)
     #expect(limits.overshoot == 2)

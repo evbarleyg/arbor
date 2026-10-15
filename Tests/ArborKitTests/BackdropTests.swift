@@ -12,7 +12,7 @@ private let side = DisplaySnapshot(
 /// The surface behind docked windows follows the layout (docs/features/F15-appearance-options.md).
 @Suite @MainActor struct BackdropTests {
   /// Three floating windows, started.
-  func makeHarness(settings: Settings = Settings()) -> (Harness, WindowID, WindowID, WindowID) {
+  func makeHarness(settings: Settings = .withBackdrop) -> (Harness, WindowID, WindowID, WindowID) {
     let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
@@ -71,7 +71,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func neighboursShareOneSurfaceAndTheDesktopStaysClear() {
-    let (h, a, b, c) = makeHarness(settings: .withDesktopColumn)
+    let (h, a, b, c) = makeHarness(settings: .withDesktopColumn.withBackdrop)
     h.run("dock \(a.rawValue) left")
     h.run("dock \(c.rawValue) beside \(a.rawValue) bottom")
     #expect(backdrop(h)?.rects == [grown(h.frame(a)!.union(h.frame(c)!))], "the gap between them is covered")
@@ -112,7 +112,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func draggingAWindowOntoTheDesktopTakesItOffTheSurface() {
-    let (h, a, b, _) = makeHarness(settings: .withDesktopColumn)
+    let (h, a, b, _) = makeHarness(settings: .withDesktopColumn.withBackdrop)
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     let start = h.frame(a)!
@@ -160,7 +160,7 @@ private let side = DisplaySnapshot(
 
   @Test func tilesLieOnTheSurfaceToo() {
     // With room made for it (F61) the window would be no tile.
-    var settings = Settings()
+    var settings = Settings.withBackdrop
     settings.makeRoom = false
     let (h, a, b, _) = makeHarness(settings: settings)
     let big = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500))
@@ -176,7 +176,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func whenTheDesktopIsATileTheSurfaceRunsUnderIt() {
-    let (h, a, b, _) = makeHarness(settings: .withDesktopColumn)
+    let (h, a, b, _) = makeHarness(settings: .withDesktopColumn.withBackdrop)
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     // The two columns squeeze the Desktop between them until it is too narrow to use.
@@ -221,7 +221,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func eachDisplayHasItsOwnSurface() {
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side])
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: .withBackdrop)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 1600, y: 100, width: 600, height: 400))
     h.start()
@@ -258,7 +258,7 @@ private let side = DisplaySnapshot(
   // MARK: Settings
 
   @Test func withoutDimOrBlurThereIsNoBackdrop() {
-    var settings = Settings()
+    var settings = Settings.withBackdrop
     settings.dimBehindArranged = 0
     settings.desktopEdge = 0
     let (h, a, _, _) = makeHarness(settings: settings)
@@ -267,7 +267,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func tintAloneIsEnoughForABackdrop() {
-    var settings = Settings()
+    var settings = Settings.withBackdrop
     settings.dimBehindArranged = 0
     settings.desktopEdge = 0
     settings.tintBehindArranged = 0.3
@@ -280,7 +280,7 @@ private let side = DisplaySnapshot(
   // MARK: The Desktop's edge
 
   @Test func theDesktopBetweenDockedWindowsHasALineAroundIt() {
-    let (h, a, b, _) = makeHarness(settings: .withDesktopColumn)
+    let (h, a, b, _) = makeHarness(settings: .withDesktopColumn.withBackdrop)
     #expect(backdrop(h) == nil, "nothing is docked: the Desktop is the whole display and needs no line")
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
@@ -295,7 +295,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func theLineAloneIsEnoughForABackdropThatDarkensNothing() {
-    var settings = Settings()
+    var settings = Settings.withBackdrop
     settings.dimBehindArranged = 0
     let (h, a, _, _) = makeHarness(settings: settings)
     h.run("dock \(a.rawValue) left")
@@ -304,7 +304,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func whereTheDesktopIsNotInViewThereIsNoLine() {
-    let (h, a, b, _) = makeHarness(settings: .withDesktopColumn)
+    let (h, a, b, _) = makeHarness(settings: .withDesktopColumn.withBackdrop)
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     h.run("zoom \(a.rawValue)")
@@ -355,7 +355,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func blurAloneIsEnoughForABackdrop() {
-    var settings = Settings()
+    var settings = Settings.withBackdrop
     settings.dimBehindArranged = 0
     settings.blurBehindArranged = 0.6
     let (h, a, _, _) = makeHarness(settings: settings)
@@ -367,7 +367,7 @@ private let side = DisplaySnapshot(
   @Test func reloadSettingsChangesTheBackdropAtOnce() {
     let (h, a, _, _) = makeHarness()
     h.run("dock \(a.rawValue) left")
-    var edited = Settings()
+    var edited = Settings.withBackdrop
     edited.dimBehindArranged = 0.5
     edited.blurBehindArranged = 1
     h.controller.loadSettings = { edited }
@@ -386,7 +386,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func amountsOutOfRangeAreMadeSafeBeforeTheyAreDrawn() {
-    var settings = Settings()
+    var settings = Settings.withBackdrop
     settings.dimBehindArranged = 40
     settings.blurBehindArranged = .nan
     let (h, a, _, _) = makeHarness(settings: settings)
@@ -395,7 +395,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func theLeftoversAreMadeSafeToo() {
-    var settings = Settings()
+    var settings = Settings.withBackdrop
     settings.tintBehindArranged = -3
     settings.desktopEdge = 7
     settings.tileFade = .infinity
@@ -409,7 +409,7 @@ private let side = DisplaySnapshot(
     let (h, a, _, _) = makeHarness()
     h.run("dock \(a.rawValue) left")
     #expect(h.overlays.scenes[h.display]?.tileFade == 0.2)
-    var edited = Settings()
+    var edited = Settings.withBackdrop
     edited.tileFade = 0
     h.controller.loadSettings = { edited }
     h.run("reload-settings")
@@ -417,7 +417,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func theGapDecidesHowFarTheSurfaceReachesAndHowRoundItIs() {
-    var settings = Settings()
+    var settings = Settings.withBackdrop
     settings.gap = 20
     let (h, a, _, _) = makeHarness(settings: settings)
     h.run("dock \(a.rawValue) left")
@@ -466,7 +466,7 @@ private let side = DisplaySnapshot(
     #expect(h.run("pause").ok)
     #expect(h.overlays.scenes.isEmpty, "nothing of Arbor's stays on screen during a pause")
     // Settings applied meanwhile draw nothing either.
-    var edited = Settings()
+    var edited = Settings.withBackdrop
     edited.dimBehindArranged = 0.6
     h.controller.apply(settings: edited)
     #expect(h.overlays.scenes.isEmpty)
@@ -476,18 +476,18 @@ private let side = DisplaySnapshot(
 
   /// Final window frames are the same with every cosmetic option on or off.
   @Test func windowsGoToTheSamePlacesWhateverTheAppearance() {
-    var plain = Settings()
+    var plain = Settings.withBackdrop
     plain.dimBehindArranged = 0
     plain.appColours = false
     plain.gapHandles = "off"
     plain.tileStyle = "plain"
-    var fancy = Settings()
+    var fancy = Settings.withBackdrop
     fancy.dimBehindArranged = 0.8
     fancy.blurBehindArranged = 1
     fancy.appColourAmount = 1
     fancy.tileStyle = "name"
     var outcomes: [[WindowID: CGRect]] = []
-    for settings in [plain, Settings(), fancy] {
+    for settings in [plain, Settings(), .withBackdrop, fancy] {
       let (h, a, b, c) = makeHarness(settings: settings)
       h.system.setMinimumSize(c, CGSize(width: 900, height: 600))
       for command in [

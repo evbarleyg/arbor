@@ -21,6 +21,12 @@ Many hands write workflows here, quickly. Each of these rules was once a sentenc
   no strangers' code with a token   A workflow that strangers can start and that runs with the repository's own token
                (`pull_request_target`, `workflow_run`, `issues`, `issue_comment`, discussions) reaches for nothing of a pull request:
                not its commit, its branch, its repository or what another run built from it.
+  a rehearsal sends nothing   A workflow that can be rehearsed (an input `rehearsal`) keeps every job that could send anything out of the
+               rehearsal altogether, by one condition on the job itself, written one way. Such a job is one that holds a right to write,
+               or names a token, a secret, a signing identity, or a command or an action that makes a release or a tag, pushes, or has a
+               build notarized. On a step the condition is not enough: the job would start, and hold its token. And a run is a rehearsal
+               unless it is told otherwise (`default: true`), so that a slip in starting one sends nothing. A release is public at
+               once and for good, and whether there is one is the maintainer's decision: a rehearsal is for everybody else.
 
 Workflows are read line by line, as they are written here (block style, two spaces a level, plain keys), not with a YAML parser,
 which Python does not bring along. YAML allows much else; what this cannot follow it reports as unreadable rather than pass over.
@@ -51,6 +57,13 @@ NOBODY_TYPES = re.compile(r"^\s*(github\.(sha|run_id|run_number|run_attempt|repo
 STARTED_BY_STRANGERS = re.compile(r"\b(pull_request_target|workflow_run|issues|issue_comment|discussion|discussion_comment)\b")
 OF_THE_PULL_REQUEST = re.compile(
     r"head\.(sha|ref|repo)|\['head'\]|head_ref|head_sha|head_branch|head_repository|\bpull/|merge_commit_sha|gh pr (checkout|diff)|download-artifact")
+# The one way to keep a job out of a rehearsal. Started by hand as well: to GitHub an input that is not there equals false.
+NOT_IN_A_REHEARSAL = "if: ${{ github.event_name == 'workflow_dispatch' && inputs.rehearsal == false }}"
+SENDS = re.compile(
+    r"publish-release\.sh(?!\s+--dry-run\s*$)|\bgh\s+release\b|\bgit\s+(tag|push)\b|release-action|action-gh-release|create-release|upload-release-asset"
+    r"|/releases\b|/git/(refs|tags)\b|\bgh\s+api\b.*(-X|--method)[ =]*(POST|PUT|PATCH|DELETE)|\bcurl\b.*(-X|--request)[ =]*(POST|PUT|PATCH|DELETE)"
+    r"|\bnotarytool\b|\baltool\b|\bstapler\b|\bsecrets\.|\bgithub\.token\b|\bGITHUB_TOKEN\b|\bGH_TOKEN\b"
+    r"|\bARBOR_SIGN_IDENTITY\b|\bARBOR_NOTARY_PROFILE\b|\bsecurity\s+import\b|\.p12\b")
 # Ways to write a key that YAML allows and the patterns here would read past.
 ODD_KEY = re.compile(
     r"""^\s*(-\s+)?["'](uses|run|script|shell|runs-on|timeout-minutes|permissions|on|jobs|steps)["']\s*:"""
@@ -91,6 +104,35 @@ def choices(head, name):
 CHOSEN = re.compile(r"^\$\{\{\s*inputs\.([\w-]+)\s*(?:\|\|\s*'([\w.-]+)'\s*)?\}\}$")
 
 
+def sent_in_a_rehearsal(lines, head, jobs_at):
+    """(line number, what) for everything in a workflow with an input `rehearsal` that a rehearsal could send with."""
+    at = next((index for index, line in enumerate(head) if re.match(r"^      rehearsal:\s*$", code(line))), None)
+    if jobs_at is None or at is None:
+        return []
+    found, job, kept_out, held = [], None, False, []
+    remedy = f", and starts in a rehearsal too; give the job itself `{NOT_IN_A_REHEARSAL}`, so and not otherwise"
+    own = []
+    for line in head[at + 1:]:
+        if line.strip() and indent(line) <= 6:
+            break
+        own.append(code(line).strip())
+    if "default: true" not in own or "type: boolean" not in own:
+        found.append((at + 1, "a run that says nothing about `rehearsal` is no rehearsal (`type: boolean`, `default: true`): a slip in starting one would send"))
+    for index, line in list(enumerate(lines))[jobs_at + 1:] + [(len(lines), "  end:")]:
+        bare = code(line).rstrip()
+        if re.match(r"^  [\w.-]+:", bare):
+            if job and not kept_out:
+                found += held
+            job, kept_out, held = bare.strip().rstrip(":"), False, []
+        elif bare == "    " + NOT_IN_A_REHEARSAL:
+            kept_out = True
+        elif re.search(r":\s*write(-all)?\s*$", bare):
+            held.append((index + 1, f"the job `{job}` holds a right to write{remedy}"))
+        elif SENDS.search(bare):
+            held.append((index + 1, f"the job `{job}` names `{SENDS.search(bare).group(0).strip()}`{remedy}"))
+    return found
+
+
 def problems_in(text, name):
     """One line for every rule broken in a workflow or a composite action."""
     problems = []
@@ -123,6 +165,9 @@ def problems_in(text, name):
                     break
                 if re.search(r"\bwrite(-all)?\b", code(line)):
                     report(at + 1 + offset, "permissions", "the top grants a right to write to every job; give it to the one job that needs it")
+
+        for number, what in sent_in_a_rehearsal(lines, head, jobs_at):
+            report(number, "a rehearsal sends nothing", what)
 
     # Jobs: the keys two spaces in, below `jobs:`.
     job, job_line, job_has, jobs_seen = None, 0, set(), 0
@@ -408,6 +453,50 @@ def self_test():
         ("an input that another workflow can set to what it likes", rules(choice("[macos-26]").replace("  workflow_dispatch:", "  workflow_call:\n  workflow_dispatch:")), ["free"]),
         ("no triggers at all", rules(changed("on:\n  pull_request:\n", "")), ["unreadable"]),
         ("no jobs at all", rules("name: X\non: push\npermissions: {}\n"), ["unreadable"]),
+    ]
+    # On the Release workflow itself, as it is in this checkout: these rows are about that file and no model of it.
+    with open(os.path.join(ROOT, ".github", "workflows", "release.yml"), encoding="utf-8") as handle:
+        release = handle.read()
+    nothing = "a rehearsal sends nothing"
+
+    def rehearsed(old, new):
+        assert release.count(old) >= 1, old
+        return [rule for rule in rules(release.replace(old, new, 1), ".github/workflows/release.yml") if rule == nothing]
+
+    build = "      - name: Build the release\n"
+    kept_out = "    " + NOT_IN_A_REHEARSAL + "\n"
+    last_step = "      - name: Create the release\n"
+    said_nothing = release[release.index("      rehearsal:\n"):release.index("\npermissions:")]
+    cases += [
+        ("the Release workflow as it is", rules(release, ".github/workflows/release.yml"), []),
+        ("it can be rehearsed, so the rule is about it", bool(re.search(r"^      rehearsal:$", release, re.M)), True),
+        ("exactly one job is kept out of a rehearsal, and it is the only one with a right to write",
+         (release.count(kept_out), len(re.findall(r":\s*write\b", "\n".join(code(line) for line in release.split("\n"))))), (1, 1)),
+        ("rehearsal: a run that says nothing is none", rehearsed(said_nothing, said_nothing.replace("default: true", "default: false")), [nothing]),
+        ("rehearsal: no word on what a run is that says nothing", rehearsed(said_nothing, said_nothing.replace("        default: true\n", "")), [nothing]),
+        ("rehearsal: an input people type into", rehearsed(said_nothing, said_nothing.replace("type: boolean", "type: string")), [nothing]),
+        ("rehearsal: the job that publishes starts in one", rehearsed(kept_out, ""), [nothing]),
+        ("rehearsal: the same condition on the step that publishes, and none on the job: it starts, and holds its token",
+         rehearsed(kept_out + release.split(kept_out)[1], release.split(kept_out)[1].replace(last_step, last_step + "    " + kept_out)), [nothing]),
+        ("rehearsal: the condition with a way round it", rehearsed("inputs.rehearsal == false }}", "inputs.rehearsal == false || inputs.draft }}"), [nothing]),
+        ("rehearsal: the condition the short way, which an event without inputs passes", rehearsed(NOT_IN_A_REHEARSAL, "if: ${{ !inputs.rehearsal }}"), [nothing]),
+        ("rehearsal: the condition turned round", rehearsed("inputs.rehearsal == false }}", "inputs.rehearsal == true }}"), [nothing]),
+        ("rehearsal: the script that publishes, without --dry-run, where a rehearsal comes by", rehearsed("publish-release.sh --dry-run", "publish-release.sh"), [nothing]),
+        ("rehearsal: with an option that only begins like --dry-run", rehearsed("publish-release.sh --dry-run", "publish-release.sh --dry-run-off"), [nothing]),
+        ("rehearsal: with something after --dry-run", rehearsed("publish-release.sh --dry-run", "publish-release.sh --dry-run \"$@\""), [nothing]),
+        ("rehearsal: a right to write for the build", rehearsed("  build:\n", "  build:\n    permissions:\n      contents: write\n"), [nothing]),
+        ("rehearsal: every right there is", rehearsed("  rehearse-publish:\n", "  rehearse-publish:\n    permissions: write-all\n"), [nothing]),
+    ] + [(f"rehearsal: `{command}` in the build", rehearsed(build, f"      - run: {command}\n" + build), [nothing]) for command in (
+        "gh release create v1 build/*", "git tag v1", "git push origin v1", "git push --tags", "gh api -X POST repos/o/r/git/refs -f ref=refs/tags/v1",
+        "curl --request POST https://api.github.com/repos/o/r/releases", "xcrun notarytool submit build/Arbor.zip", "xcrun stapler staple build/Arbor.app",
+        "security import cert.p12 -k build.keychain", "make release ARBOR_SIGN_IDENTITY=Somebody", "ARBOR_NOTARY_PROFILE=arbor make release")
+    ] + [
+        ("rehearsal: an action that makes a release, in the build", rehearsed(build, f"      - uses: softprops/action-gh-release@{sha} # v2.0.0\n" + build), [nothing]),
+        ("rehearsal: a secret in the build's environment", rehearsed(build, build + "        env:\n          KEY: ${{ secrets.KEY }}\n"), [nothing]),
+        ("rehearsal: the run's own token in the build's environment", rehearsed(build, build + "        env:\n          GH_TOKEN: ${{ github.token }}\n"), [nothing]),
+        ("rehearsal: the words in a remark are no command", rehearsed(build, "      # never git push or gh release here\n" + build), []),
+        ("rehearsal: what a run keeps for itself is not sent", rehearsed(build, f"      - uses: actions/upload-artifact@{sha} # v4.6.2\n" + build), []),
+        ("a workflow that cannot be rehearsed is none of this rule's", [rule for rule in rules(release.replace("      rehearsal:\n", "      practice:\n").replace(kept_out, "")) if rule == nothing], []),
     ]
     A, B, C, D, E = ("a" * 40, "b" * 40, "c" * 40, "d" * 40, "e" * 40)
     listing = "".join(f"{commit}\t{name}\n" for commit, name in [

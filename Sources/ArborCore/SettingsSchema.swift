@@ -231,6 +231,7 @@ public enum SettingsSchema {
     "guardDesktopClicks": "pointerGestures", "scrollZoom": "gesturesEnabled", "continuousZoom": "gesturesEnabled",
     "pinchThreshold": "gesturesEnabled", "scrollZoomThreshold": "scrollZoom", "scrollOnDesktopZooms": "scrollZoom",
     "historyButtons": "menuBarControls", "menuBarFill": "menuBarControls",
+    "focusRingWidth": "focusRing", "focusRingColour": "focusRing", "focusRingRadius": "focusRing",
   ]
 
   private static let gestures = section(
@@ -301,8 +302,9 @@ public enum SettingsSchema {
         hidden: true),
       .number(
         "animationDuration", \.animationDuration, min: 0, max: 2, step: 0.05, unit: "s", "Motion",
-        "How long a zoom, a dock or a close takes to play; 0 applies everything at once. “Reduce motion” in System "
-          + "Settings turns the motion off as well."),
+        "0 puts windows in their places at once. Above 0 a zoom, a dock or a close plays for that long, and a card with the app’s "
+          + "icon stands in for each window while it moves; 0.46 is a good length. “Reduce motion” in System Settings turns "
+          + "the motion off as well."),
       .number(
         "minimapDuration", \.minimapDuration, min: 0, max: 10, step: 0.1, unit: "s", "Show minimap after each move",
         "For how long the minimap shows by itself after the view has moved. 0 is off; its shortcut shows it either way."),
@@ -633,15 +635,21 @@ public enum SettingsSchema {
       "  resets everything except your shortcuts, rules and lists of apps, and `arborctl reset everything` resets",
       "  those too. Keys ignore case, and `on`/`off`, `yes`/`no` and `1`/`0` also mean true and false. A value",
       "  outside what the table allows is refused, with the reason, and changes nothing. A command changes only its",
-      "  own setting in the file; the rest stays as you wrote it, keys Arbor does not know included.",
+      "  own setting in the file; the rest stays as you wrote it, keys Arbor does not know included. (A file without",
+      "  `\"format\": 2` gets that line as well: see below.)",
       "- **The file**: Arbor watches it and applies an edit as soon as it is saved. **It holds only what differs from",
-      "  the defaults**, and `\"format\": 2`, which says so and should stay: after a first launch there is nothing else in it, and",
+      "  the defaults**, and `\"format\": 2`, which says so. After a first launch there is nothing else in it, and",
       "  `reset` takes a value out again. So add the key you want to change; the tables below have them all. Missing keys take their",
       "  defaults, also when a later version changes one. A number outside its range is moved to the nearest end of it, and any other value Arbor cannot",
       "  use goes back to its default; `arborctl settings` and the log say which, and the file keeps what you wrote",
       "  until you `set` or `reset` that key. While the file is not valid JSON Arbor keeps the settings it has and",
       "  refuses commands that change settings; `arborctl reload-settings` says where the typo is. `arborctl reset",
       "  everything` is the way out: it writes a new file and keeps the old one as `settings.unreadable.json`.",
+      "  A file of your own without the mark is taken as it is, and gets the mark at the next launch, or with the first command that",
+      "  writes into it. Leave it in. An early build wrote all its 68 settings down at its first launch, unasked. Only a file without the",
+      "  mark that holds \(Settings.leastKeysOfAWholeFile) or more of those is taken for such a build's: whatever in it equals a default of those days goes, once,",
+      "  and a copy stays beside it as `settings.before-format-2.json`. Put that copy back and the same happens again: copy the lines",
+      "  you want into the new file instead.",
       "- **A keyboard shortcut**: `arborctl bind ctrl+opt+x set gap 0`, or `set focusRing toggle` for a switch.",
     ]
     for section in SettingsSection.allCases {

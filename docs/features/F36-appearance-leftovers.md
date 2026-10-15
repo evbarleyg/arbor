@@ -33,6 +33,8 @@ Not planned, because nobody knows what they do: "Frame" (hidden, no key), `fixed
 
 ## Shipped / Not shipped
 
+**`desktopEdge` ships 0 since 2026-10-15** (`collab/QUESTIONS.md`, Q29).
+
 Shipped (2026-10-14, report `collab/reports/2026-10-14-F36-appearance-leftovers.md`): `tintBehindArranged`, `desktopEdge`, `tileFade`.
 
 Not shipped, on purpose: `tileIcon` (F15's `"tileStyle": "plain"` says the same); `historyButtons` and `menuBarFill`, which F10 builds with the buttons they belong to. Criterion 4's manual look is open until

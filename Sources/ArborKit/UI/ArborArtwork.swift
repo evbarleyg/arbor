@@ -26,25 +26,25 @@ enum ArborArtwork {
     return image
   }
 
-  /// The item as a single icon: Arbor's mark on its own, or whatever sign the model asks for in its place.
+  /// The item as a single icon: Arbor's mark on its own, or whatever sign the model asks for in its place. One size whatever it
+  /// shows: the item never changes its width, so nothing beside it in the menu bar moves when Arbor is paused or holds the view.
   static func menuBarIcon(_ glyph: MenuBarModel.Button.Glyph = .arbor) -> NSImage {
-    let image: NSImage
-    if glyph == .arbor {
-      image = NSImage(size: ArborGlyph.iconSize, flipped: false) { bounds in
+    let image = NSImage(size: ArborGlyph.iconSize, flipped: false) { bounds in
+      if case .symbol(let name) = glyph, let symbol = symbol(name) {
+        symbol.draw(in: ArborGlyph.place(ofSign: symbol.size), from: .zero, operation: .sourceOver, fraction: 1)
+      } else {
+        // Every macOS Arbor runs on has the symbols; the mark is better than a hole all the same.
         drawMark(in: bounds, opacity: 1)
-        return true
       }
-    } else {
-      // Drawn as a button is, in a cell of its own.
-      let button = MenuBarModel.Button(id: .menu, command: nil, glyph: glyph, title: "Arbor")
-      let cell = CGRect(x: 0, y: 0, width: MenuBarLayout.pitch, height: MenuBarLayout.height)
-      image = NSImage(size: cell.size, flipped: false) { _ in
-        draw(button, in: cell, fill: 0)
-        return true
-      }
+      return true
     }
     image.isTemplate = true
     return image
+  }
+
+  private static func symbol(_ name: String) -> NSImage? {
+    NSImage(systemSymbolName: name, accessibilityDescription: nil)?
+      .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 12, weight: .medium))
   }
 
   private static func draw(_ button: MenuBarModel.Button, in cell: CGRect, fill: CGFloat) {
@@ -64,11 +64,7 @@ enum ArborArtwork {
     case .digit(let digit):
       draw(String(digit), in: cell, opacity: opacity)
     case .symbol(let name):
-      let configuration = NSImage.SymbolConfiguration(pointSize: 12, weight: .medium)
-      guard
-        let symbol = NSImage(systemSymbolName: name, accessibilityDescription: nil)?
-          .withSymbolConfiguration(configuration)
-      else {
+      guard let symbol = symbol(name) else {
         // Every macOS Arbor runs on has these symbols; an initial is better than a hole all the same.
         draw(String(button.title.prefix(1)), in: cell, opacity: opacity)
         return

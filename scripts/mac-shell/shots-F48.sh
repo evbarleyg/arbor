@@ -89,10 +89,15 @@ shot 05-framed-floated
 summary
 
 step "drag it out of its slot, slowly, grabbed in the middle"
+# Alone beside the Desktop, which is what is left over: of two halves there is no wallpaper to let a window go over. (By Float All, which puts
+# the second window where it started.)
+ctl float-all
 ctl dock "$W1" left
 sleep 0.5
 read -r x y w h <<< "$(frame_of "$W1")"
-drag "$((x + w / 2))" "$((y + 12))" 512 300 --no-release
+read -r dx dy dw dh <<< "$(arbor_ask desktop)"
+[ -n "${dh:-}" ] || die "the Desktop has no room, and the window wants a bare place to be let go over"
+drag "$((x + w / 2))" "$((y + 12))" "$((dx + dw / 2))" 300 --no-release
 echo "held: the window server has it at $(real_frame_of "$W1"), Arbor at $(frame_of "$W1"), pointer $(pointer where)"
 shot 06-drag-held
 release &
@@ -111,7 +116,7 @@ ctl dock "$W1" left
 sleep 0.5
 read -r x y w h <<< "$(frame_of "$W1")"
 grabbed=$((100 * 100 / w))
-drag "$((x + 100))" "$((y + 12))" 620 420 --duration 0.25 --steps 12 --hold 0
+drag "$((x + 100))" "$((y + 12))" "$((dx + dw / 3))" 420 --duration 0.25 --steps 12 --hold 0
 check "it floats" eventually is floating "$W1"
 check "it has its old size" eventually has_size_of "$W1" "$B1"
 echo "released: the window server has it at $(real_frame_of "$W1"), pointer $(pointer where), $(pointer_along "$W1")/100 along (grabbed at $grabbed/100)"

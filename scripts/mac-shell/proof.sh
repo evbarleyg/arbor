@@ -233,15 +233,14 @@ fi
 
 # MARK: Session 2
 
-step "session 2: the published keyboard, on [ [W1 / W3] | Desktop | W2 ] with W4 floating"
+step "session 2: the published keyboard, on [ [W1 / W3] | Desktop | W2 ], by a layout line, with W4 floating"
 # The fourth window refuses to be smaller than 700×500, for the tile further down.
 ARBOR_TEST_WINDOWS_ARGS="--min-size 4:700x500"
 # For the ⌃⌥ rectangle further down.
 arbor_settings "{$ARBOR_GESTURES_ON}"
 arbor_start 4 ARBOR_NO_HOTKEYS=0
-ctl dock "$W1" left
-ctl dock "$W2" right
-ctl dock "$W3" beside "$W1" bottom
+# Two docks are two halves, with nothing left over, and a Desktop without room is nobody's neighbour. A line that names it gives it room, as Arbor ships.
+ctl layout "($W1 / $W3) | Desktop | $W2"
 # shellcheck disable=SC2046
 click $(center_of "$W1")
 check "a click focuses the first window" eventually is focused "$W1"

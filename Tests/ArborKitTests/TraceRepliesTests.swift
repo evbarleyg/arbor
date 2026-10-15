@@ -27,7 +27,7 @@ import Testing
     mouseDown: false, thinning: 0.05)
 
   /// The `command` and `done` lines of commands that get these replies.
-  private func lines(_ words: Words, settings: Settings = Settings(), _ commands: [(text: String, reply: String)]) throws -> [String] {
+  private func lines(_ words: Words, settings: Settings = Harness.settingsWhenNoneAreGiven, _ commands: [(text: String, reply: String)]) throws -> [String] {
     let recorder = TraceRecorder()
     let sink = MemoryTraceSink(location: "memory")
     recorder.clock = { 0 }

@@ -65,6 +65,9 @@ private let waysThereAndBack: [String] = {
 private let laptop = DisplayID("main")
 private let monitor = DisplayID("side")
 private let moment = ["settle", "react", "advance 1", "react"]
+/// The parts of a script, one after another. A list and not a sum: over a sum of five arrays, literals with interpolation among them, Swift 6.2 takes
+/// a minute, and on one of seven it gives up ("unable to type-check this expression in reasonable time").
+private func script(_ parts: [String]...) -> [String] { parts.flatMap { $0 } }
 /// Arbor is not looking: it has quit, or is paused. Both write down where they left each window (`leftAt`).
 private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "react"]]
 
@@ -272,9 +275,9 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
   /// Both displays, Safari on the laptop; the lid is shut; later the laptop alone. `then` is what happens on the lap.
   private func backAtTheDesk(after then: [String] = [], order: String = "late") -> ChaosRunner {
     play(
-      ["\(desk.both) windows-never", desk.windows[0], "launch", "settle"]
-        + ["\(desk.external) windows-\(order)", "settle", "\(desk.laptop) windows-\(order)", "settle"] + then
-        + ["\(desk.both) windows-\(order)", "settle"])
+      script(["\(desk.both) windows-never", desk.windows[0], "launch", "settle"],
+        ["\(desk.external) windows-\(order)", "settle", "\(desk.laptop) windows-\(order)", "settle"], then,
+        ["\(desk.both) windows-\(order)", "settle"]))
   }
 
   @Test(arguments: ["between", "late", "silent", "first"])
@@ -322,8 +325,8 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
   /// against a first attempt at the fault, which took a stale claim for the elder one.)
   @Test func norDoesTheLaptopForgetItsOwnAfterSuchAStart() {
     let runner = play(
-      ["\(desk.both) windows-never"] + desk.windows + ["launch", "settle", "\(desk.external) windows-late"] + moment
-        + ["quit", "\(desk.laptop) windows-late", "launch", "settle", "\(desk.external) windows-late"] + moment)
+      script(["\(desk.both) windows-never"], desk.windows, ["launch", "settle", "\(desk.external) windows-late"], moment,
+        ["quit", "\(desk.laptop) windows-late", "launch", "settle", "\(desk.external) windows-late"], moment))
     let began = [safari: whereSafariIs, WindowID(102): CGRect(x: 300, y: 225, width: 800, height: 500)]
     play(["\(desk.both) windows-late"] + moment, in: runner)
     for (window, frame) in began { #expect(frames(runner)[window] == frame) }
@@ -331,7 +334,7 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
 
   @Test func dayAfterDay() {
     let day = ["\(desk.external) windows-late", "settle", "\(desk.laptop) windows-late", "settle", "\(desk.both) windows-late", "settle"]
-    let runner = play(["\(desk.both) windows-never", desk.windows[0], "launch", "settle"] + day + day + day)
+    let runner = play(script(["\(desk.both) windows-never", desk.windows[0], "launch", "settle"], day, day, day))
     #expect(frames(runner)[safari] == whereSafariIs)
   }
 
@@ -388,7 +391,7 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
   @Test func pinnedWhileVisitingItBelongsWhereItWasPinned() {
     let day = [desk.laptop, desk.both, desk.external, desk.both, desk.laptop, desk.both].flatMap { ["\($0) windows-late"] + moment }
     let runner = play(
-      ["\(desk.both) windows-never"] + desk.windows + ["launch", "settle", "\(desk.external) windows-late"] + moment + ["pin 101"] + moment)
+      script(["\(desk.both) windows-never"], desk.windows, ["launch", "settle", "\(desk.external) windows-late"], moment, ["pin 101"], moment))
     let pinnedAt = frames(runner)[safari]!.offsetBy(dx: 1440, dy: 0)
     play(day, in: runner)
     #expect(frames(runner)[safari] == pinnedAt)
@@ -416,8 +419,8 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
         + ["launch", "settle", "\(desk.laptop) windows-late"] + moment)
     let waited = frames(runner)[mail]!
     play(
-      ["\(desk.laptop) \(home) windows-late"] + moment + ["displays home:0,0,1920,1080:25,0,70,0* windows-late"] + moment
-        + ["\(desk.laptop) \(home) windows-late"] + moment, in: runner)
+      script(["\(desk.laptop) \(home) windows-late"], moment, ["displays home:0,0,1920,1080:25,0,70,0* windows-late"], moment,
+        ["\(desk.laptop) \(home) windows-late"], moment), in: runner)
     #expect(frames(runner)[mail] == waited)
     #expect(frames(runner)[safari] == whereSafariIs)
   }
@@ -461,9 +464,9 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
   @Test func whatItsPersonSentToAnotherDisplayStaysThere() {
     let three = "displays main:0,0,1440,900:25,0,70,0* side:1440,0,2560,1440:25,0,0,0 third:4000,0,1920,1080:25,0,0,0"
     let runner = play(
-      ["\(three) windows-never", desk.windows[0], desk.windows[2], "launch", "settle"]
-        + ["displays side:0,0,2560,1440:25,0,70,0* third:2560,0,1920,1080:25,0,0,0 windows-late"] + moment
-        + ["move-to-display next 101"] + moment)
+      script(["\(three) windows-never", desk.windows[0], desk.windows[2], "launch", "settle"],
+        ["displays side:0,0,2560,1440:25,0,70,0* third:2560,0,1920,1080:25,0,0,0 windows-late"], moment,
+        ["move-to-display next 101"], moment))
     #expect(display(showing: frames(runner)[safari]!, in: runner) == DisplayID("third"))
     let sentTo = frames(runner)[safari]!.offsetBy(dx: 1440, dy: 0)
     play(["\(three) windows-late"] + moment, in: runner)
@@ -502,8 +505,8 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
     let runner = play(["\(desk.both) windows-never", desk.windows[2], "launch", "settle"] + dock)
     let slot = frames(runner)[mail]!
     play(
-      ["\(desk.laptop) windows-late"] + moment + ["grab 103", "carry 500 200", "release", "react", "advance 1", "react"]
-        + ["\(desk.both) windows-late"] + moment, in: runner)
+      script(["\(desk.laptop) windows-late"], moment, ["grab 103", "carry 500 200", "release", "react", "advance 1", "react"],
+        ["\(desk.both) windows-late"], moment), in: runner)
     #expect(runner.controller.workspaces[monitor]?.isDocked(mail) == true)
     #expect(frames(runner)[mail] == slot)
   }
@@ -514,7 +517,7 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
 
   /// Mail, the monitor's own, waits on the laptop. Returns the world, and where it waits.
   private func mailWaitsOnTheLaptop(_ before: [String] = []) -> (ChaosRunner, CGRect) {
-    let runner = play(["\(desk.both) windows-never", desk.windows[2], "launch", "settle"] + before + ["\(desk.laptop) windows-late"] + moment)
+    let runner = play(script(["\(desk.both) windows-never", desk.windows[2], "launch", "settle"], before, ["\(desk.laptop) windows-late"], moment))
     return (runner, frames(runner)[mail]!)
   }
 
@@ -544,7 +547,7 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
   /// Only the window that was placed: its neighbour, which nobody touched, goes home.
   @Test(arguments: waysNotToLook) func itsNeighbourThatNobodyTouchedGoesHome(ending: [String]) {
     let runner = play(["\(desk.both) windows-never", desk.windows[2], desk.windows[3], "launch", "settle", "\(desk.laptop) windows-late"] + moment)
-    play(ending + ["move 103 300 150 1100 700"] + lookingAgain(after: ending) + ["\(desk.both) windows-late"] + moment, in: runner)
+    play(script(ending, ["move 103 300 150 1100 700"], lookingAgain(after: ending), ["\(desk.both) windows-late"], moment), in: runner)
     #expect(frames(runner)[mail] == CGRect(x: 300, y: 150, width: 1100, height: 700))
     #expect(frames(runner)[WindowID(104)] == CGRect(x: 2140, y: 325, width: 877, height: 499))
   }
@@ -557,8 +560,8 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
   private func mailOfTheThirdDisplayWaits(onTheSide: Bool) -> ChaosRunner {
     let (main, side, third) = (Self.main3, Self.side3, Self.third3)
     return play(
-      ["displays \(main) \(side) \(third) windows-never", "open 103 Mail pid 1002 at -1500 200 800 500", "launch", "settle"]
-        + ["displays \(main) \(side) windows-between"] + moment + (onTheSide ? ["move 103 2000 400 800 500"] + moment : []))
+      script(["displays \(main) \(side) \(third) windows-never", "open 103 Mail pid 1002 at -1500 200 800 500", "launch", "settle"],
+        ["displays \(main) \(side) windows-between"], moment, (onTheSide ? ["move 103 2000 400 800 500"] + moment : [])))
   }
 
   /// It waits on the display at the side, which is neither the first nor the main one. (Its app took it there, in Arbor's sight: that
@@ -605,8 +608,8 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
     let (runner, waits) = mailWaitsOnTheLaptop()
     let sized = CGRect(x: waits.minX, y: waits.minY, width: waits.width - 200, height: waits.height - 100)
     play(
-      ending + ["move 103 \(Int(sized.minX)) \(Int(sized.minY)) \(Int(sized.width)) \(Int(sized.height))"] + lookingAgain(after: ending)
-        + ["\(desk.both) windows-late"] + moment, in: runner)
+      script(ending, ["move 103 \(Int(sized.minX)) \(Int(sized.minY)) \(Int(sized.width)) \(Int(sized.height))"], lookingAgain(after: ending),
+        ["\(desk.both) windows-late"], moment), in: runner)
     #expect(frames(runner)[mail] == sized)
   }
 
@@ -626,7 +629,7 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
   /// What must stay: nobody touched it, so back at the desk it goes home, to the point.
   @Test(arguments: waysNotToLook) func whatWaitedWhereArborLeftItGoesHome(ending: [String]) {
     let (runner, _) = mailWaitsOnTheLaptop()
-    play(ending + lookingAgain(after: ending) + ["\(desk.both) windows-late"] + moment, in: runner)
+    play(script(ending, lookingAgain(after: ending), ["\(desk.both) windows-late"], moment), in: runner)
     #expect(frames(runner)[mail] == whereMailWas)
   }
 
@@ -635,7 +638,7 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
   @Test(arguments: waysNotToLook, [false, true]) func whatMacOSHadToMoveMeanwhileGoesHome(ending: [String], pinned: Bool) {
     let runner = play(["\(desk.both) windows-never", desk.windows[2], "launch", "settle"] + (pinned ? ["pin 103", "settle"] : []))
     play(
-      ending + ["\(desk.laptop) windows-silent"] + lookingAgain(after: ending) + moment + ["\(desk.both) windows-late"] + moment, in: runner)
+      script(ending, ["\(desk.laptop) windows-silent"], lookingAgain(after: ending), moment, ["\(desk.both) windows-late"], moment), in: runner)
     #expect(frames(runner)[mail] == whereMailWas)
     #expect(runner.controller.workspaces[monitor]?.isPinned(mail) == pinned)
   }
@@ -647,9 +650,9 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
   func whereItOnlyWaitedWentUnseenAndItStillGoesHome(ending: [String], back: [String]) {
     let (main, third, side) = ("main:-1440,0,1440,900:25,0,70,0", "third:0,0,1920,1080:25,0,0,0*", "side:1920,0,2560,1440:25,0,0,0")
     let runner = play(
-      ["displays \(main) \(third) \(side) windows-never", "open 103 Mail pid 1002 at 2500 300 1100 700 min 760 400", "launch", "settle"]
-        + ["displays \(main) \(third) windows-between", "settle"] + ending + ["displays main:0,0,1440,900:25,0,70,0* windows-silent"]
-        + lookingAgain(after: ending) + moment)
+      script(["displays \(main) \(third) \(side) windows-never", "open 103 Mail pid 1002 at 2500 300 1100 700 min 760 400", "launch", "settle"],
+        ["displays \(main) \(third) windows-between", "settle"], ending, ["displays main:0,0,1440,900:25,0,70,0* windows-silent"],
+        lookingAgain(after: ending), moment))
     var connected = ["main:-1440,0,1440,900:25,0,70,0*"]
     for display in back {
       connected = [main + (display == "third" || connected.contains(third) ? "" : "*")] + connected.dropFirst() + [display == "third" ? third : side]
@@ -674,8 +677,8 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
   @Test(arguments: waysNotToLook) func aHandAfterTheCableWasPulledUnseenIsNotKnownForOne(ending: [String]) {
     let runner = play(["\(desk.both) windows-never", desk.windows[2], "launch", "settle"])
     play(
-      ending + ["\(desk.laptop) windows-silent", "move 103 300 150 1100 700"] + lookingAgain(after: ending) + moment
-        + ["\(desk.both) windows-late"] + moment, in: runner)
+      script(ending, ["\(desk.laptop) windows-silent", "move 103 300 150 1100 700"], lookingAgain(after: ending), moment,
+        ["\(desk.both) windows-late"], moment), in: runner)
     #expect(frames(runner)[mail] == whereMailWas)
   }
 
@@ -683,7 +686,7 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
   @Test(arguments: waysNotToLook) func aPointIsNoHand(ending: [String]) {
     let (runner, waits) = mailWaitsOnTheLaptop()
     let move = "move 103 \(Int(waits.minX) + 1) \(Int(waits.minY) - 1) \(Int(waits.width)) \(Int(waits.height))"
-    play(ending + [move] + lookingAgain(after: ending) + ["\(desk.both) windows-late"] + moment, in: runner)
+    play(script(ending, [move], lookingAgain(after: ending), ["\(desk.both) windows-late"], moment), in: runner)
     #expect(frames(runner)[mail] == whereMailWas)
   }
 
@@ -692,8 +695,8 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
     let (runner, waits) = mailWaitsOnTheLaptop()
     let placed = waits.offsetBy(dx: 2, dy: 0)
     play(
-      ending + ["move 103 \(Int(placed.minX)) \(Int(placed.minY)) \(Int(placed.width)) \(Int(placed.height))"] + lookingAgain(after: ending)
-        + ["\(desk.both) windows-late"] + moment, in: runner)
+      script(ending, ["move 103 \(Int(placed.minX)) \(Int(placed.minY)) \(Int(placed.width)) \(Int(placed.height))"], lookingAgain(after: ending),
+        ["\(desk.both) windows-late"], moment), in: runner)
     #expect(frames(runner)[mail] == placed)
   }
 
@@ -713,11 +716,11 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
   /// A pin goes by the same rule: untouched it goes home, placed unseen it stays; pinned either way.
   @Test(arguments: waysNotToLook) func aPinPlacedUnseenGoesByTheSameRule(ending: [String]) {
     let (home, _) = mailWaitsOnTheLaptop(["pin 103", "settle"])
-    play(ending + lookingAgain(after: ending) + ["\(desk.both) windows-late"] + moment, in: home)
+    play(script(ending, lookingAgain(after: ending), ["\(desk.both) windows-late"], moment), in: home)
     #expect(frames(home)[mail] == whereMailWas)
     #expect(home.controller.workspaces[monitor]?.isPinned(mail) == true)
     let (stays, _) = mailWaitsOnTheLaptop(["pin 103", "settle"])
-    play(ending + ["move 103 300 150 1100 700"] + lookingAgain(after: ending) + ["\(desk.both) windows-late"] + moment, in: stays)
+    play(script(ending, ["move 103 300 150 1100 700"], lookingAgain(after: ending), ["\(desk.both) windows-late"], moment), in: stays)
     #expect(frames(stays)[mail] == CGRect(x: 300, y: 150, width: 1100, height: 700))
     #expect(stays.controller.workspaces[laptop]?.isPinned(mail) == true)
   }
@@ -770,7 +773,7 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
     let own = CGRect(x: 100, y: 25, width: 1100, height: 809)
     let runner = play(["\(monitorAlone) windows-never", "open 103 Mail pid 1002 at 100 25 1100 809 min 760 400", "launch", "settle"])
     for _ in 0..<2 {
-      play(["displays main:0,0,1440,900:24,0,70,0* windows-late"] + moment + ["\(monitorAlone) windows-late"] + moment, in: runner)
+      play(script(["displays main:0,0,1440,900:24,0,70,0* windows-late"], moment, ["\(monitorAlone) windows-late"], moment), in: runner)
       #expect(frames(runner)[mail] == own)
     }
   }
@@ -781,7 +784,7 @@ private let waysNotToLook = [["quit"], ["toggle-pause", "react", "advance 1", "r
     let monitorAlone = "displays side:0,0,2560,1440:25,0,70,0*"
     let runner = play(["\(monitorAlone) windows-never", "open 103 Mail pid 1002 at 100 185 1100 600 min 760 400", "launch", "settle"])
     for _ in 0..<6 {
-      play(["displays main:0,0,1440,900:24,0,70,0* windows-late"] + moment + ["\(monitorAlone) windows-late"] + moment, in: runner)
+      play(script(["displays main:0,0,1440,900:24,0,70,0* windows-late"], moment, ["\(monitorAlone) windows-late"], moment), in: runner)
       #expect(frames(runner)[mail] == CGRect(x: 100, y: 185, width: 1100, height: 600))
     }
   }

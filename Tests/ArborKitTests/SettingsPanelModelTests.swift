@@ -15,7 +15,7 @@ private final class Panel {
   var commands: [String] = []
   var redraws = 0
 
-  init(settings: Settings = Settings()) {
+  init(settings: Settings = Harness.settingsWhenNoneAreGiven) {
     let h = Harness(settings: settings)
     self.h = h
     a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
@@ -123,7 +123,7 @@ private final class Panel {
     let gap = try #require(p.row("gap", in: .windows))
     #expect(gap.label == "Gap" && gap.help.hasPrefix("Space between docked windows") && gap.isChanged && gap.error == nil)
     #expect(gap.control == .number(value: 30, range: 0...100, step: 1, unit: "pt"))
-    #expect(p.row("focusRing", in: .appearance)?.control == .toggle(isOn: true))
+    #expect(p.row("focusRing", in: .appearance)?.control == .toggle(isOn: false))
     #expect(p.row("focusRing", in: .appearance)?.isChanged == false)
     #expect(p.row("frameRectangleModifier", in: .gestures)?.control == .text(value: "ctrl+opt", example: "shift+cmd"))
   }
@@ -149,11 +149,11 @@ private final class Panel {
   @Test func everyChangeIsASetCommandThatAppliesAtOnce() {
     let p = Panel()
     p.model.set("gap", to: 30.4)  // a slider let go of between two steps
-    p.model.set("focusRing", to: false)
+    p.model.set("focusRing", to: true)
     p.model.set("frameRectangleModifier", to: "Control + Option")
-    #expect(p.commands == ["set gap 30", "set focusRing false", "set frameRectangleModifier Control + Option"])
+    #expect(p.commands == ["set gap 30", "set focusRing true", "set frameRectangleModifier Control + Option"])
     #expect(p.inset == 30)
-    #expect(!p.settings.focusRing && p.settings.frameRectangleModifier == "ctrl+opt")
+    #expect(p.settings.focusRing && p.settings.frameRectangleModifier == "ctrl+opt")
     #expect(p.row("gap", in: .windows)?.control == .number(value: 30, range: 0...100, step: 1, unit: "pt"))
     #expect(p.model.errors.isEmpty)
   }
@@ -232,7 +232,7 @@ private final class Panel {
 
   /// 0.25 of what? A share of a whole is a number from 0 to 1 in settings.json, and so many per cent to a person.
   @Test func aShareOfTheWholeIsShownInPerCent() throws {
-    let p = Panel()
+    let p = Panel(settings: .withBackdrop)
     #expect(p.row("dimBehindArranged", in: .appearance)?.control == .number(value: 25, range: 0...100, step: 5, unit: "%"))
     #expect(p.row("windowEdgeFraction", in: .dragging)?.control == .number(value: 30, range: 0...50, step: 5, unit: "%"))
     // Not everything without a unit is one: this is so many times the width of the windows beside it.
@@ -289,7 +289,7 @@ private final class Panel {
 
   @Test func restoreDefaultsRestoresWhatTheSectionShows() {
     var settings = Settings()
-    settings.focusRing = false  // normal
+    settings.focusRing = true  // normal
     settings.focusRingWidth = 6  // advanced
     settings.focusRingRadius = 10  // hidden
     settings.gap = 30  // another section
@@ -297,7 +297,7 @@ private final class Panel {
     #expect(p.model.changedKeys(in: .appearance) == ["focusRing", "focusRingWidth"])
     p.model.restoreDefaults(in: .appearance)
     #expect(p.commands == ["reset focusRing", "reset focusRingWidth"])
-    #expect(p.settings.focusRing && p.settings.focusRingWidth == 3)
+    #expect(!p.settings.focusRing && p.settings.focusRingWidth == 3)
     #expect(p.settings.focusRingRadius == 10 && p.settings.gap == 30)
     #expect(p.model.changedKeys(in: .appearance).isEmpty)
     p.model.restoreDefaults(in: .appearance)
@@ -402,7 +402,8 @@ private final class Panel {
   /// Seen on a Mac: a field that has the keyboard says once more what stands in it after Return, also where that is what it was given to
   /// show after a refusal. Taken for typing, that stood in the field from then on, whatever became of the setting.
   @Test func whatAFieldWasGivenToShowIsNotTyping() {
-    let p = Panel()
+    // With the darkening at a quarter, so that its field shows a number that is not the same in per cent.
+    let p = Panel(settings: .withBackdrop)
     p.model.type("12", into: .setting("gap"))
     #expect(p.model.drafts.isEmpty && p.redraws == 0)
     p.model.type("40", into: .setting("gap"))
@@ -554,7 +555,7 @@ private final class Panel {
 
   /// Seen in the window: "ring" also found the setting that holds still "during a call".
   @Test func aSearchBeginsAWordAndDoesNotEndOne() {
-    let p = Panel()
+    let p = Panel(settings: Settings())
     p.model.search = "ring"
     #expect(p.model.found.sections.flatMap(\.rows).map(\.key) == ["focusRing", "focusRingWidth", "focusRingColour"])
     p.model.search = "dock"
@@ -716,7 +717,7 @@ private final class Panel {
 @Suite @MainActor struct SettingsPanelShortcutTests {
   /// What ships. The tests below that need a line only the whole map has (`desktop`, mostly) ask for that map.
   @Test func asItShipsThePageHasTheNineAndTheChoiceAboveThem() throws {
-    let p = Panel()
+    let p = Panel(settings: Settings())
     #expect(p.model.shortcutRows.map(\.command) == KeyBindings.core.map(\.command))
     #expect(p.model.shortcutRows.compactMap(\.chord) == KeyBindings.core.map(\.chord))
     #expect(p.model.shortcutRows.allSatisfy { $0.chord == $0.standard && !$0.isChanged })

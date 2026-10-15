@@ -63,9 +63,9 @@ round shipped
 chapter "Without a trace being recorded"
 ctl trace off
 round no-trace
-chapter "Without the line round the focused window"
-with '{"focusRing": false}'
-round no-line
+chapter "With the line round the focused window, an option"
+with '{"focusRing": true}'
+round line
 chapter "With no event tap at all"
 with '{"frameRectangleModifier": "none", "frameRectangleOnDesktop": false, "scrollZoom": false, "gesturesEnabled": false}'
 round no-taps

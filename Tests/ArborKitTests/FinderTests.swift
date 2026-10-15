@@ -604,6 +604,7 @@ private let side = DisplaySnapshot(
   /// As after a command that moves the keyboard (F37). The palette has been open for longer than a command's grace.
   @Test func theFocusRingFlashesOnTheWindowGoneTo() {
     let (h, safari, notes, _, _) = makeHarness()
+    h.switchOn(\.withRing)
     h.system.userFocus(safari)
     func pulse() -> Int? { h.overlays.scenes[h.display]?.focusRing?.pulse }
     h.run("find")

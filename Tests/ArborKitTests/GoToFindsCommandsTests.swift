@@ -10,7 +10,7 @@ import Testing
 @Suite @MainActor struct GoToFindsCommandsTests {
   /// Safari and Notes docked, Mail floating with the keyboard.
   private func makeHarness(
-    settings: Settings = Settings(), displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay]
+    settings: Settings = Harness.settingsWhenNoneAreGiven, displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay]
   ) -> (h: Harness, safari: WindowID, notes: WindowID, mail: WindowID) {
     let h = Harness(displays: displays, settings: settings)
     let safari = h.system.open(app: "Safari", title: "Arbor docs")

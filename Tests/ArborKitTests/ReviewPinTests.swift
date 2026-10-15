@@ -17,7 +17,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
   /// [editor | Desktop | browser] with a video call pinned in the top right corner, over the browser. As Arbor ships: two halves, and
   /// the Desktop between them has no room.
   func makeHarness(
-    displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Settings()
+    displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Harness.settingsWhenNoneAreGiven
   ) -> (Harness, editor: WindowID, browser: WindowID, call: WindowID) {
     let h = Harness(displays: displays, settings: settings)
     let editor = h.system.open(app: "Editor", pid: 1001)

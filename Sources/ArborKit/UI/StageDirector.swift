@@ -24,7 +24,7 @@ final class StageDirector {
   /// When the last transition began, in seconds since the Mac started, as events are stamped.
   private var lastBegan: TimeInterval = 0
   private var focused: WindowID?
-  /// Reduce Motion may have been switched on or off. While it is on nothing is got ready.
+  /// Reduce Motion may have been switched on or off. While it is on no stage is got ready.
   var onDisplayOptionsChanged: (() -> Void)?
   /// `ARBOR_NO_REHEARSAL`, for measuring what a first motion costs that nothing was got ready for.
   private static let rehearsalIsSwitchedOff = ArborEnvironment.current.noRehearsal
@@ -156,7 +156,11 @@ final class StageDirector {
   /// the picture behind it. An app's colour and icon are ordered (`Wardrobe`). All of it is kept, and what is there already is
   /// skipped. The controller hands out one display or one app at a time (Controller+Rehearsal.swift).
   func rehearse(_ rehearsal: Rehearsal) {
-    guard !Self.rehearsalIsSwitchedOff, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
+    guard !Self.rehearsalIsSwitchedOff else { return }
+    // Whether or not anything will move: tiles and the minimap wear them too, and ask while they wait to be drawn.
+    // Also where stand-ins are pictures of their windows: a tile, a window back from the Dock and one that has only just opened are covers.
+    for app in rehearsal.apps { wardrobe.order(app, again: app.bundleID == nil) }
+    guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
     for display in rehearsal.displays {
       guard let screen = ScreenGeometry.screen(for: display) else { continue }
       var marks = [uptime]
@@ -170,8 +174,6 @@ final class StageDirector {
       marks.append(uptime)
       Log.debug("got ready the stage of \(display) in \(ms(marks[2] - marks[0])) ms, the desktop \(ms(marks[1] - marks[0])) of them")
     }
-    // Also where stand-ins are pictures of their windows: a tile, a window back from the Dock and one that has only just opened are covers.
-    for app in rehearsal.apps { wardrobe.order(app, again: app.bundleID == nil) }
   }
 
   private func ms(_ seconds: TimeInterval) -> Int { Int((seconds * 1000).rounded()) }

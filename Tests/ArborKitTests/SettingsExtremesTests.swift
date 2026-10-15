@@ -11,8 +11,9 @@ import Testing
 @Suite @MainActor struct SettingsExtremesTests {
   // MARK: An ordinary day
 
-  /// Safari | Desktop | (Notes / Mail), Music floating.
-  private func world(_ settings: Settings = Settings()) -> (h: Harness, windows: [WindowID]) {
+  /// Safari | Desktop | (Notes / Mail), Music floating. With every option on that Arbor ships without (`Settings.classic`): a line
+  /// of the greatest width is tried only where a line is drawn, and a change in the middle of a motion only where there is one.
+  private func world(_ settings: Settings = .classic) -> (h: Harness, windows: [WindowID]) {
     let h = Harness(settings: settings)
     let windows = ["Safari", "Notes", "Mail", "Music"].enumerated().map { index, app in
       h.system.open(app: app, frame: CGRect(x: 100 + 60 * index, y: 100 + 40 * index, width: 600, height: 400))
@@ -169,7 +170,7 @@ import Testing
   @Test func eachSettingAtEachEndFromTheStart() throws {
     for entry in simple {
       for value in ends(of: entry) {
-        var settings = Settings()
+        var settings = Settings.classic
         try entry.set(try entry.parse(value), in: &settings)
         let (h, windows) = world(settings)
         day(h, windows, "launched with \(entry.key) \(value)", untilNoon: true)
@@ -459,7 +460,7 @@ import Testing
   }
 
   private func harness() -> Harness {
-    let h = Harness()
+    let h = Harness(settings: Settings())
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     h.start()
     h.run("dock \(a.rawValue) left")
@@ -485,7 +486,7 @@ import Testing
   }
 
   @Test func beforeThePermission() {
-    let h = Harness()
+    let h = Harness(settings: Settings())
     h.controller.accessibilityGranted = false
     everything(model(h))
     #expect(h.controller.settings == Settings())
@@ -497,7 +498,7 @@ import Testing
     h.controller.takeInSettingsFile()
     let model = self.model(h)
     everything(model)
-    #expect(h.controller.settings == Harness.settingsWhenNoneAreGiven, "nothing is changed while nothing can be saved")
+    #expect(h.controller.settings == Settings(), "nothing is changed while nothing can be saved")
     #expect(model.fileProblem != nil)
   }
 

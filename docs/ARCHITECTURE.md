@@ -267,7 +267,8 @@ a window gets it, out of the Dock too (`askForTheKeyboard`): what a person asks 
 
 Real windows cannot be animated through the Accessibility API: a move takes milliseconds to seconds and
 blocks. So they are not animated. `relayout` moves them straight to their final frames, exactly as it
-would without animation, and the motion is drawn on top (F02).
+would without animation, and the motion is drawn on top (F02). It is an option: `animationDuration` ships 0, and then there is no
+stage and no plan, and no stage is got ready (`stageTransition` and `rehearseNextMotion` ask first).
 
 **The plane** (`Plane`, ArborCore). The layout only says where things inside the camera's node go. The
 plane says where *everything* is, as seen with the camera on that node: an ancestor of the node is
@@ -318,8 +319,9 @@ display's stage and backdrop and skips what it has. The stage goes up once, clea
 returns. An app's colour and icon are made on a thread of their own (`UI/Wardrobe.swift`), because they were nearly all of the two seconds:
 macOS draws an icon at a size the first time anybody asks, 4.7 s for eight apps on a Mac that had drawn none and 27 ms a minute later. **A
 motion never waits for one**: a window whose app has no cover yet sets off as a plain grey card and is dressed on its way, when the cover
-arrives. No window is asked anything. With `animationDuration` 0 nothing is handed out; with Reduce Motion on, or
-where stand-ins are pictures of their windows, the director leaves out what would not be seen, and when either changes everything is said
+arrives. No window is asked anything. With `animationDuration` 0, as Arbor ships, no display is handed out, and with Reduce Motion on the
+director makes no stage; **the apps are got ready either way**, because a tile wears its app's colour and icon too and asks for them while it
+waits to be drawn: with no stage to cover that, four first tiles were 0.4 s of empty desk on a hosted Mac. Where stand-ins are pictures of their windows, the director leaves out what would not be seen, and when either changes everything is said
 again (`rehearseAfresh`). A stage stays while its display does: macOS reports a change of screen parameters at every minimize. What cannot be
 helped: a window of an app nobody knew of that a rule docks as it opens sets off as a plain card. `FakeOverlays.madeInTheMotion` lists what a motion met that
 nobody had got ready (`RehearsalTests`). Every stage that comes up logs what kept the windows waiting, as `INFO` from a tenth of a second.
@@ -417,7 +419,10 @@ mouse down → a drag or resize in progress; docked and resized by its edges →
 move the seams it touched when the mouse is released (see Edge resizes);
 docked otherwise → put it back after the mouse is released
 (`scheduleEnforce`). Differences of up to 4 points are accepted as the app
-rounding the size (terminals snap to character cells).
+rounding the size. Terminals go further: they come in whole character cells, and take the
+nearest, which can be more than they were asked for. The step such a window is talked down by is
+its cell (`Cells`), and from then on it is asked for the whole cells that fit its slot; less than a cell short, it has its slot and stays in the slot's top-left corner
+(`Controller+SizeSteps.swift`).
 
 An app that answers every move with one of its own would make putting back a
 loop without end. After three put-backs of a window within three seconds
@@ -696,7 +701,7 @@ had company or been docked. Whoever adds floating windows that do not live on th
 
 ## Focus ring
 
-A line around the window that has the keyboard (`OverlayScene.focusRing`, `Controller+FocusRing.swift`,
+An option (`focusRing`, which ships false). A line around the window that has the keyboard (`OverlayScene.focusRing`, `Controller+FocusRing.swift`,
 `UI/FocusRingPanel.swift`; spec F37). Which window that is comes from `system.focusedWindow()` each time the ring is
 worked out: an app in the background reports focus changes too, so events only say when to look again
 (`windowFocused`, `windowAppeared`, `windowChanged` for the ring's own window, and `keyboardFocusMoved`, which
@@ -1107,8 +1112,9 @@ every other program that links `ArborPaths` (the tests, arbor-sim, arbor-e2e) us
 directory unless it is given an `ARBOR_HOME`, so that a test run on a Mac where Arbor is in use leaves its log alone:
 
 - `settings.json`: `Settings`, but only what differs from the defaults, and the mark `"format": 2` (`ArborCore/SettingsFileFormat.swift`, Q27): a written
-  default cannot be told from a choice, and would keep a changed default from ever arriving. A file from before the mark is stripped once, at a launch, of
-  what equals the defaults of its day (a frozen table), with a copy kept beside it;
+  default cannot be told from a choice, and would keep a changed default from ever arriving. A file from before the mark, which is known by its holding sixteen or
+  more of the keys such files held, is stripped once, at a launch, of what equals the defaults of its day (a frozen table), with a copy kept
+  beside it; a file of fewer keys without the mark is somebody's own, and only gets the mark, at a launch or with the first command that writes into it;
   unknown keys are ignored, missing keys take defaults. See "Settings" below.
 - `state.json`: `PersistedState`: every workspace (tree, camera, history,
   saved views, names, floating frames, the frames docked windows floated at) keyed by display UUID, plus `WindowHint`s
@@ -1738,10 +1744,10 @@ Everything else is a view of it:
   is now and refuses while it cannot be read; works out the new settings; and returns
   `reply("…", unsaved: change(settings: updated))`, which saves, then applies. A change that cannot be saved (a
   read-only file) is refused as a whole.
-- **Saving**: people edit the file by hand, so `saveSettings` → `SettingsFile.update` → `Settings.rewrite` is a three-way
-  merge: what changed between the settings in use and the new ones is written into the file's text (`JSONText`), and
-  every other byte stays, including unknown keys and the values and entries Arbor could not use. What is added is laid
-  out like what is there. Arbor never writes to a file it cannot read; only `reset everything` replaces one
+- **Saving**: people edit the file by hand, so `saveSettings` → `SettingsFile.update` → `Settings.rewriteAndMark` is a
+  three-way merge: what changed between the settings in use and the new ones is written into the file's text (`JSONText`),
+  and every other byte stays, including unknown keys and the values and entries Arbor could not use. What is added is laid
+  out like what is there. Somebody's own file that has no mark yet gets it with the first such change. Arbor never writes to a file it cannot read; only `reset everything` replaces one
   (`SettingsFile.replace`), keeping the old one as settings.unreadable.json.
 - **Decoding**: `Settings.init(from:)` keeps the default for a value of the wrong type and then runs
   `SettingsSchema.sanitize`, which moves numbers into their ranges. What it changed is in `valueProblems` (logged,

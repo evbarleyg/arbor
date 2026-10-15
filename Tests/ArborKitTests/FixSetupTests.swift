@@ -9,7 +9,7 @@ import Testing
 /// way back (docs/features/F42-setup-check.md, "Turn it off for me"). Through the real controller and a fake Mac.
 @Suite @MainActor struct FixSetupTests {
   /// A harness whose facts about Desktop & Dock are what its fake Mac stores.
-  func makeHarness(settings: Settings = Settings()) -> Harness {
+  func makeHarness(settings: Settings = Harness.settingsWhenNoneAreGiven) -> Harness {
     let h = Harness(settings: settings)
     h.controller.systemFacts = { [unowned h] in
       SystemFacts(
@@ -378,7 +378,7 @@ import Testing
 
   /// The moves are keys, which work however the switches stand (Q29, 11).
   @Test func theMovesDoNotMindTheStep() {
-    let h = makeHarness()
+    let h = makeHarness(settings: Settings())
     h.start()
     let session = OnboardingSession(controller: h.controller) { _ in }
     session.begin(on: .firstSteps)

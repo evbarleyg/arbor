@@ -13,7 +13,7 @@ import Testing
 
   /// `apart`: each app is a process of its own, as a story about ⌘Tab needs. Otherwise they are one, and a switch among them is ⌘`.
   func makeHarness(
-    displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Settings(), apart: Bool = false
+    displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Harness.settingsWhenNoneAreGiven, apart: Bool = false
   ) -> (Harness, WindowID, WindowID, WindowID) {
     let h = Harness(displays: displays, settings: settings)
     let a = h.system.open(app: "Safari", pid: apart ? 11 : 1000, frame: CGRect(x: 100, y: 100, width: 600, height: 400))

@@ -83,8 +83,8 @@
   /// that AppKit and SwiftUI draw it as decided, and leaves pictures of every state for people to look at. No window
   /// is shown, nothing is captured, no input is sent.
   @Suite @MainActor struct MenuBarDrawingTests {
-    /// [Safari | Desktop | Notes] with Mail floating, started, showing everything.
-    func makeHarness(settings: ArborCore.Settings = ArborCore.Settings()) -> (Harness, WindowID, WindowID) {
+    /// [Safari | Desktop | Notes] with Mail floating, started, showing everything, with the buttons these pictures are of.
+    func makeHarness(settings: ArborCore.Settings = .withButtons) -> (Harness, WindowID, WindowID) {
       let h = Harness(settings: settings)
       let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
       let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
@@ -142,7 +142,7 @@
       h.run("zoom \(a.rawValue)")
       h.run("save-view 1")
       var glyphs = h.controller.menuBarModel().buttons.map(\.glyph)
-      glyphs += [MenuBarModel.Icon.needsPermission.glyph, MenuBarModel.Icon.paused.glyph]
+      glyphs += Self.icons.map(\.icon.glyph)
       for glyph in glyphs {
         if case .symbol(let name) = glyph {
           #expect(NSImage(systemSymbolName: name, accessibilityDescription: nil) != nil, "\(name)")
@@ -189,6 +189,47 @@
       try savePicture(image(for: model), as: "framed-is-view-1")
     }
 
+    /// Everything the single icon can say.
+    static let icons: [(name: String, icon: MenuBarModel.Icon)] = [
+      ("plain", MenuBarModel.Icon()), ("paused", .paused), ("held", .held), ("holding-still", .holdingStill),
+      ("needs-permission", .needsPermission),
+    ]
+
+    @Test func theSingleIconIsOneSizeWhateverItSays() throws {
+      // An item that changes its width pushes its neighbours about in the menu bar (collab/IDEAS.md, I23).
+      for (name, icon) in Self.icons {
+        let image = ArborArtwork.menuBarIcon(icon.glyph)
+        #expect(image.size == ArborGlyph.iconSize, "\(name)")
+        try savePicture(image, as: "one-icon-\(name)", dimmed: icon.isDimmed)
+      }
+    }
+
+    @Test func everySignIsWholeAndLegibleInTheIcon() throws {
+      // As much ink as it has with all the room in the world, less what being made smaller takes; and that is little.
+      for (name, icon) in Self.icons {
+        guard case .symbol(let symbol) = icon.glyph else { continue }
+        let natural = try #require(
+          NSImage(systemSymbolName: symbol, accessibilityDescription: nil)?
+            .withSymbolConfiguration(NSImage.SymbolConfiguration(pointSize: 12, weight: .medium)))
+        let scale = ArborGlyph.place(ofSign: natural.size).width / natural.size.width
+        #expect(scale >= 0.85, "\(name) is \(natural.size) by itself: too large for \(ArborGlyph.iconSize)")
+        let image = ArborArtwork.menuBarIcon(icon.glyph)
+        let alone = Double(try bitmap(of: natural).ink(in: NSRect(origin: .zero, size: natural.size)).count) * scale * scale
+        let inTheIcon = Double(try bitmap(of: image).ink(in: NSRect(origin: .zero, size: image.size)).count)
+        #expect(alone > 10 && abs(alone - inTheIcon) <= alone * 0.2, "\(name), \(natural.size): \(alone) pixels expected, \(inTheIcon) in the icon")
+      }
+    }
+
+    @Test func asItShipsTheItemIsTheSameImageAllDay() throws {
+      let (h, a, b) = makeHarness(settings: ArborCore.Settings())
+      var sizes = [image(for: h.controller.menuBarModel()).size]
+      for step in ["zoom \(a.rawValue)", "save-view 1", "zoom \(b.rawValue)", "save-view 2", "desktop", "show-all", "hold still", "hold", "release", "pause"] {
+        #expect(h.run(step).ok, "\(step)")
+        sizes.append(image(for: h.controller.menuBarModel()).size)
+      }
+      #expect(Set(sizes.map(\.width)) == [ArborGlyph.iconSize.width])
+    }
+
     /// Every state the item has, for the eye.
     @Test func picturesOfEveryState() throws {
       // Day one: nothing docked.
@@ -210,7 +251,7 @@
       try savePicture(nine, as: "nine-views")
       #expect(nine.size.width < 330, "what a notch has to leave room for: \(nine.size.width)")
 
-      var settings = ArborCore.Settings()
+      var settings = ArborCore.Settings.withButtons
       settings.historyButtons = false
       settings.menuBarFill = 0.12
       h.controller.apply(settings: settings)

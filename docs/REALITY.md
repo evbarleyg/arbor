@@ -1319,9 +1319,9 @@ Late or partial answers: a call returns before the deed, after it, with half of 
 - **Expected:** What an app answers to `setFrame` is what it can do.
 - **Happened:** A busy app, or one with an open sheet, refuses once, and its window was a tile until it closed. An app may also resize a moment late, so that a round of arranging learns a minimum that is none; that has not been measured.
 - **Found by:** A usability review; no run on a real app is named.
-- **Stand-ins play it:** partly (`FakeWindowSystem.willSetFrame`, `FakeWindowSystem.setMinimumSize`)
-- **Guard:** `test: aWindowThatRefusedOnceIsAWindowAgainAtTheFirstLayoutTenMinutesLater`; `e2e: a window stops accepting small sizes` (on CI's Macs)
-- **Arbor copes:** Sources/ArborKit/Controller/Controller+LearnedSizes.swift lets learned sizes expire: the window is asked again at the first layout after ten minutes. No app in the fakes answers late.
+- **Stand-ins play it:** partly (`FakeWindowSystem.willSetFrame`, `FakeWindowSystem.setMinimumSize`, `FakeWindowSystem.resizesLate`)
+- **Guard:** `test: aWindowThatRefusedOnceIsAWindowAgainAtTheFirstLayoutTenMinutesLater`; `e2e: a window stops accepting small sizes` (on CI's Macs); `test: anAppThatIsOnlySlowHasNoCells`; `test: anAppThatWasLateOnceHasItsSlotAtOnce`
+- **Arbor copes:** Sources/ArborKit/Controller/Controller+LearnedSizes.swift lets learned sizes expire: the window is asked again at the first layout after ten minutes. An app in the fakes can take a size a moment late (`resizesLate`); so far only what is learnt of character cells is tried against it: a window that was talked down like a terminal because it was late once is asked for a point less, gives it, and is offered its slot again.
 - **Read in:** `collab/QUESTIONS.md`, `collab/BACKLOG.md`
 
 ### quitting-while-an-app-hangs-strands-its-windows
@@ -1487,8 +1487,8 @@ Late or partial answers: a call returns before the deed, after it, with half of 
 - **Expected:** `focusedWindow()` is nil when nobody has the keyboard: the bare Desktop.
 - **Happened:** It is also nil whenever the app in front is not observed or does not answer: a launcher that comes forward, a menu bar app's panel. (Not for a sheet or a panel of an app that is observed: what-macos-names-while-a-sheet-or-a-panel-has-the-keyboard.) A shortcut that moves the view then took the keyboard out of the launcher somebody was typing in: ten times of ten on a hosted Mac, with an app in front that Arbor was not pointed at. It had been decided to leave that as it is for commands a person gives; that is overruled: Arbor takes the keyboard only from a window that it takes out of view, and goes by the app in front where it knows no focused window (`Controller.ensureFocusIsVisible`). Open still: what brings no app forward. A window closing behind a launcher made Arbor give the keyboard to another window a quarter of a second later; it no longer does (the-window-used-last-is-not-the-window-with-the-keyboard). What a real Spotlight does then is still to be tried by hand.
 - **Found by:** A rehearsal check that was bisected, then reading the Accessibility layer, and a headless probe. Then seen on a hosted Mac, behind the greens of the check of apps that keep their own shortcuts: the app that writes down its keys resigned 5 ms after `show-all`.
-- **Stand-ins play it:** partly (`FakeWindowSystem.sheetTakesTheKeyboard`)
-- **Guard:** `test: aKeyThatMovesTheViewLeavesTheKeyboardWithAnAppArborDoesNotLookAt`; `test: aSheetKeepsTheKeyboardForAsLongAsItsWindowIsInView`; `test: anAppWithNoWindowLeftIsNobody`; `test: theKeyboardStaysInASheet`; `test: theSheetIsWhereItsAppsWindowIs`; `test: whatNamesAPlaceTakesTheKeyboardThereWhoeverHadIt`; `test: withArborItselfInFrontTheKeyboardGoesAlongWithTheView`
+- **Stand-ins play it:** partly (`FakeWindowSystem.keyboardGoesToNoKnownWindow`)
+- **Guard:** `test: aKeyThatMovesTheViewLeavesTheKeyboardWithAnAppArborDoesNotLookAt`; `test: aPanelKeepsTheKeyboardWhereverItsAppsWindowGoes`; `test: anAppWithNoWindowLeftIsNobody`; `test: theKeyboardStaysInAPanel`; `test: whatNamesAPlaceTakesTheKeyboardThereWhoeverHadIt`; `test: withArborItselfInFrontTheKeyboardGoesAlongWithTheView`
 - **Arbor copes:** **not yet**
 - **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `Tests/ArborKitTests/ReviewTilingTests.swift`, `collab/BACKLOG.md`
 
@@ -2645,12 +2645,12 @@ Geometry: displays, bars, sizes and coordinates that are not what was assumed.
 *hurt 2 · at the seam · K031 · K1140 · K1814 · K1582 · touches `lost`, `size-lost`*
 
 - **Expected:** An app takes the frame it is asked for, or has a minimum and a maximum. An answer larger than what was asked means that the window will not be made that small.
-- **Happened:** Terminal takes the whole characters nearest to what it is asked, which half the time is more: 494×656 became 492×649, 244 became 247, 1000 became 1003, 858 became 861 (a step of 7 points wide). Read as refusals, three points made a docked Terminal a tile. A floating one squeezed onto the Desktop taught Arbor a minimum of 861 for a window that goes down to 177, and the next dock gave 574, 245 and 861 instead of thirds.
-- **Found by:** Traces of a real Terminal on a hosted Mac (terminal-commands, terminal-rounds-up, terminal-edge). The floating case came out of a simulated working day with the cells measured there.
-- **Stand-ins play it:** yes (`FakeWindowSystem.setSizeStep`, `FakeWindow.sizeStep`, `SizeSteps`)
-- **Guard:** `test: aWindowThatRoundsToTheNearestStepStaysInsideItsSlot`; `test: aFloatingTerminalSqueezedOntoTheDesktopTeachesNoMinimum`; `test: aWindowThatComesInStepsIsNotTakenToRefuseByACell`; `test: aTerminalThatFillsTheDesktopTeachesNoMinimumEither`; `test: anAppThatRoundsToStepsIsNotTakenForOneWithAMinimumSize`; `trace: terminal-rounds-up.expect`; `trace: terminal-drag.expect`
-- **Arbor copes:** Controller.askForLess takes up to 36 points over for sizing in steps and asks for less, up to four times, before a minimum is learned. It does so for docked, floating and new windows.
-- **Read in:** `collab/evidence/traces/README.md`, `docs/features/F23-automatic-docking.md`, `docs/TRACES.md`, `collab/QUESTIONS.md`, `Tests/ArborKitTests/SizeStepTests.swift`
+- **Happened:** Terminal takes the whole characters nearest to what it is asked, which half the time is more: 494×656 became 492×649, 244 became 247, 1000 became 1003, 858 became 861 (a step of 7 points wide). Read as refusals, three points made a docked Terminal a tile. A floating one squeezed onto the Desktop taught Arbor a minimum of 861 for a window that goes down to 177, and the next dock gave 574, 245 and 861 instead of thirds. And what it was talked down from was forgotten: every time its slot came back a docked Terminal grew a line past it and was talked down again, 840, 855, 840, ending at the same size each time. Asked for a size that is whole characters, it takes that size to the point, at once: 513 wide twenty times in a row, and with a larger font 517×757 ten times. ⌘+ keeps its rows and columns, so the window resizes itself to a size between two of its old cells (7×15 became 8×17).
+- **Found by:** Traces of a real Terminal on a hosted Mac (terminal-commands, terminal-rounds-up, terminal-edge). The floating case came out of a simulated working day with the cells measured there. What it makes of whole characters: `scripts/mac-shell/check-terminal-cells.sh` on a hosted Mac (macOS 26), thirty returns of the view, every request beside its answer in the traces.
+- **Stand-ins play it:** yes (`FakeWindowSystem.setSizeStep`, `FakeWindow.sizeStep`, `SizeSteps`, `FakeWindow.sizeMargin`, `FakeWindow.stepsRoundDown`)
+- **Guard:** `test: aWindowThatRoundsToTheNearestStepStaysInsideItsSlot`; `test: aFloatingTerminalSqueezedOntoTheDesktopTeachesNoMinimum`; `test: aWindowThatComesInStepsIsNotTakenToRefuseByACell`; `test: aTerminalThatFillsTheDesktopTeachesNoMinimumEither`; `test: anAppThatRoundsToStepsIsNotTakenForOneWithAMinimumSize`; `trace: terminal-rounds-up.expect`; `trace: terminal-drag.expect`; `test: theViewGoesAwayAndComesBackTenTimes`; `test: eachReturnIsOneFrameSet`; `test: itIsTalkedDownOnce`; `test: anAppThatWasLateOnceHasItsSlotAtOnce`; `test: aLeastSizeThatPassesIsNoCell`; `test: aPullByOneCellStandsWhateverIsLeftOfTheSlot`; `scenario: 62-a-terminal-keeps-its-frame.sim`
+- **Arbor copes:** Controller.askForLess takes up to 36 points over for sizing in steps and asks for less, up to four times, before a minimum is learned. It does so for docked, floating and new windows. What the talking down shows is kept (`Cells`): the step the window came down by is its cell, and from then on it is asked for the whole cells that fit its slot, which it takes as they are. Less than a cell short, it has its slot and stays in the slot's top-left corner.
+- **Read in:** `collab/evidence/traces/README.md`, `docs/features/F23-automatic-docking.md`, `docs/TRACES.md`, `collab/QUESTIONS.md`, `Tests/ArborKitTests/SizeStepTests.swift`, `Tests/ArborKitTests/CellsTests.swift`
 
 ### the-dock-keeps-a-window-as-large-as-the-display
 
@@ -3119,7 +3119,7 @@ Identity: what counts as a window, an app or a display, and whether it is the sa
 - **Expected:** Every window the window server lists for an app is a window to arrange.
 - **Happened:** A sheet is a child of its window and not one of the app's windows. A utility panel is a floating window to Accessibility, an alert a dialog. When one of them takes the keyboard the system says so, and Arbor's layer passes on only that the keyboard left the known windows. On a hosted Mac the test process had more than four windows at the normal and floating levels, and Arbor managed exactly four.
 - **Found by:** A script of claims about real windows on a hosted Mac, where all these checks passed, and experiments with a sheet and a dialog of TextEdit.
-- **Stand-ins play it:** yes (`World.extras`, `FakeWindowSystem.strangers`, `FakeWindowSystem.sheetTakesTheKeyboard`, `FakeWindowSystem.openStrayDialog`)
+- **Stand-ins play it:** yes (`World.extras`, `FakeWindowSystem.strangers`, `FakeWindowSystem.keyboardGoesToNoKnownWindow`, `FakeWindowSystem.openStrayDialog`)
 - **Guard:** `test: standardWindowsAreWindows`; `test: everythingElseInViewIsNot`; `e2e: windows that are not standard windows are left alone` (on CI's Macs); `e2e: the panel and the sheet stayed out of it` (on CI's Macs)
 - **Arbor copes:** WindowKind.classify takes standard windows only; `StrayDialog` moves a dialog that opens out of view to the middle of the display, once.
 - **Read in:** `docs/ARCHITECTURE.md`, `scripts/mac-shell/proof.sh`, `Sources/arbor-fakemac/World.swift`, `Sources/arbor-fakemac/World+Input.swift`, `Sources/ArborKit/AX/AXWindowSystem.swift`
@@ -3165,12 +3165,12 @@ Identity: what counts as a window, an app or a display, and whether it is the sa
 *hurt 2 · below the seam · touches `focus`*
 
 - **Expected:** While a sheet, a dialog or a panel has the keyboard an app names no focused window, or the window it belongs to.
-- **Happened:** It names the sheet or the panel itself, by a number of its own at the window server. A sheet: role AXSheet, no subrole, and its window goes on being the main window (a test window's sheet; a stock editor's Save As…). A free-standing utility panel: AXWindow, AXFloatingWindow. The stock editor's Open…: AXWindow, AXStandardWindow, without close, minimize or zoom buttons. Arbor's layer passes those numbers on as they come, nobody above it knows them, and the stand-ins say nil instead: a rule written for nil (a sheet whose window is taken out of view hands the keyboard on) would never have run on a Mac. When the sheet begins, "focused window changed" is posted, and "main window changed" 44 ms later if its window was not the main one.
+- **Happened:** It names the sheet or the panel itself, by a number of its own at the window server. A sheet: role AXSheet, no subrole; its window is its AXParent and its AXWindow, and goes on being the main window (a test window's sheet; a stock editor's Save As…, which another process draws). A free-standing utility panel: AXWindow, AXFloatingWindow. The stock editor's Open…: AXWindow, AXStandardWindow, without close, minimize or zoom buttons. Arbor's layer passed those numbers on as they came, nobody above it knew them, and the stand-ins said nil instead: a rule written for nil (a sheet whose window is taken out of view hands the keyboard on) would never have run on a Mac. When the sheet begins, "focused window changed" is posted, and "main window changed" 44 ms later if its window was not the main one.
 - **Found by:** A reader of the rule asked what the real layer answers, and nobody knew. Then a script on a hosted Mac that writes down number, role and subrole of what Accessibility names, with keys counted in the sheet, the panel and the windows themselves, and Arbor's own trace of the same minutes.
-- **Stand-ins play it:** partly (`FakeWindowSystem.sheetTakesTheKeyboard`)
-- **Guard:** `test: aSheetKeepsTheKeyboardForAsLongAsItsWindowIsInView`; `test: theSheetIsWhereItsAppsWindowIs`
-- **Arbor copes:** Controller.ensureFocusIsVisible takes a number it does not know like none, and the window of the app in front that was used last for the sheet's. Seen on a hosted Mac: a sheet whose window stays in view keeps the keyboard, one whose window leaves hands it on. A free-standing panel is taken like a sheet and loses the keyboard in plain sight when that window leaves: decided otherwise, and to follow: the layer is to answer a sheet with its window's number.
-- **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `scripts/mac-shell/check-moves-of-the-view.sh`
+- **Stand-ins play it:** partly (`FakeWindowSystem.keyboardGoesToNoKnownWindow`)
+- **Guard:** `test: aPanelKeepsTheKeyboardWhereverItsAppsWindowGoes`
+- **Arbor copes:** AXWindowSystem.windowWithTheKeyboard answers a sheet with its window's number, so that it goes by what holds for that window; a number Arbor does not know is somebody, who keeps the keyboard (Controller.ensureFocusIsVisible). `make mac-on-linux` tells six stories of it.
+- **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `scripts/mac-on-linux/tests/Sheets.swift`, `scripts/mac-shell/check-moves-of-the-view.sh`
 
 ### a-popover-is-no-window-to-accessibility
 
@@ -4545,7 +4545,7 @@ Input: where presses, keys and gestures really go.
 *hurt 2 · at the seam · touches `moved-unasked`, `focus`*
 
 - **Expected:** An app that comes forward brings its main window, a report says which window has the keyboard now, and the view goes there.
-- **Happened:** A click on the wallpaper activates Finder without asking for its last window: its main window is still set, its focused window is not. Reporting the main window would bring a Finder window into view. The keyboard has left every known window and no `windowFocused` says so. The same holds for a sheet, a dialog, a panel and an app that is not observed.
+- **Happened:** A click on the wallpaper activates Finder without asking for its last window: its main window is still set, its focused window is not. Reporting the main window would bring a Finder window into view. The keyboard has left every known window and no `windowFocused` says so. The same holds for a dialog, a panel and an app that is not observed. (A sheet is answered with its window's number: what-macos-names-while-a-sheet-or-a-panel-has-the-keyboard.)
 - **Found by:** A review of the app as a person meets it, and comments in the Accessibility layer. The run that showed it is not named.
 - **Stand-ins play it:** yes (`FakeWindowSystem.userFocusesNothing`, `World.finderPID`, `World.keyboardLeavesTheWindows`)
 - **Guard:** `test: movingTheViewWithNothingFocusedFocusesAWindowInView`; `test: aCommandThatLeavesTheViewWhereItIsLeavesTheFocusAloneToo`; `e2e: a click on the backdrop reaches the Finder's Desktop` (by hand)
@@ -6380,7 +6380,7 @@ Counted by grep at commit `a391fe4`. "Rude" means on unless a test switches it o
 | `minimumSize:`, `setMinimumSize` | FWS | polite (zero) | an app that will not be made smaller | 168 / 63; lab `limits`; sim `min` |
 | `maximumSize`, `setMaximumSize` | FWS | polite (none) | an app that cannot grow to its slot | 24 / 18; lab |
 | `isResizable: false` | FWS | polite | a window of a fixed size | 6 / 2 |
-| `setSizeStep` | FWS | polite | Terminal's character cells: the nearest step, which can be the larger | 8 / 7; the trace replayer learns steps; lab, sim, fake Mac: never |
+| `setSizeStep` | FWS | polite | Terminal's character cells: the nearest step, which can be the larger, or the steps that fit (`down:`), beside a margin (`margin:`) | 8 / 7; the trace replayer learns steps; arbor-sim: `cell`; lab, fake Mac: never |
 | `openTab`, `selectTab`, `closeTab` | FWS | polite | native tabs: a new id replaces the old, which is no longer listed | 25 / 13, 5 / 4, 1 / 1; lab; fake Mac |
 | `openTab(grownBy:)` | FWS | polite (0) | Terminal grows by its tab bar (31 points) | 1 / 1 |
 | `dragAndLoseTheRelease`, `loseTheReleaseOfTheDrag`, `loseTheRelease` | FWS; FakeWindowSystem+Chaos.swift | polite | the mouse-up nobody sees | 20 / 6; lab |
@@ -6391,7 +6391,7 @@ Counted by grep at commit `a391fe4`. "Rude" means on unless a test switches it o
 | `secondsSinceInput` | FWS | polite (infinity; 0 during `userFocus`) | how long since a click or a modifier key | 11 / 4 |
 | `userSwitchesApp` | FWS | polite | ⌘Tab as macOS alone reports it: no `windowFocused` (not what Arbor's layer sends: K1978) | 12 / 8; lab `switch-app`; fake Mac |
 | `userFocusesNothing` | FWS | polite | a click on the Desktop: Finder comes forward, and no known window has the keyboard | 14 / 9; lab |
-| `sheetTakesTheKeyboard` | FWS | polite | the keyboard goes to a sheet, a panel or a launcher: no known window has it, and the app in front stays | 1 / 1; fake Mac |
+| `keyboardGoesToNoKnownWindow` | FWS | polite | the keyboard goes to a panel (a number nobody knows) or to an app that is not observed (nobody is named), and the app in front stays | 1 / 1; fake Mac |
 | `userClick` | FakeWindowSystem+Stacking.swift | polite | a click in the focused window raises it and reports no focus | 6 / 3 |
 | `activate(bundleID:)` | FWS | polite | an app without a window comes to the front | 13 / 5; lab |
 | `openStrayDialog` | FWS | polite | a dialog that opens beside a window out of view | 7 / 2 |

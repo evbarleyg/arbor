@@ -185,7 +185,7 @@ import Testing
 
   /// With F02: the neighbours that give room arrive where they end up in the motion that shows the dock, not after it.
   @Test func theGapsMoveInTheSameMotionAsTheDock() throws {
-    let (h, notes, safari) = makeHarness()
+    let (h, notes, safari) = makeHarness(settings: .withMotion)
     h.run("dock \(notes.rawValue) left")
     h.overlays.clearTransitions()
     h.run("dock \(safari.rawValue) right")

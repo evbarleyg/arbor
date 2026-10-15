@@ -14,6 +14,8 @@ no_overlays() {
   [ -z "$shown" ] || { echo "Arbor shows: $(echo "$shown" | head -n 1)"; return 1; }
 }
 
+# With the ring and the darkening, options (collab/QUESTIONS.md, Q29): that none of Arbor's own windows is left on screen says nothing where none was.
+arbor_settings '{"focusRing": true, "dimBehindArranged": 0.25}'
 arbor_start 3 ARBOR_NO_HOTKEYS=0
 # Where each window is before Arbor touches it, and how large: what a pause gives back.
 own1=$(resting_frame_of "$W1")
@@ -51,6 +53,7 @@ claim "⌃⌥⎋ pauses Arbor while zoomed in: every window comes back and Arbor
 proves A40
 ctl zoom "$W3"
 check "the others are out of view" eventually out_of_view "$W1"
+check "something of Arbor's own is on screen" eventually fails no_overlays
 key ctrl+opt+escape
 check "⌃⌥⎋ reaches Arbor" eventually logged "INFO  paused"
 check "status says paused" eventually paused

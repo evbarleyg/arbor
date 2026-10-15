@@ -16,7 +16,7 @@ private let side = DisplaySnapshot(
   /// [editor | Desktop | browser], framed on the editor, which has the keyboard. The terminal floats, so it is
   /// out of view with the Desktop. As Arbor ships: two halves, and the Desktop between them has no room.
   func makeHarness(
-    displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Settings()
+    displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Harness.settingsWhenNoneAreGiven
   ) -> (Harness, editor: WindowID, browser: WindowID, terminal: WindowID) {
     let h = Harness(displays: displays, settings: settings)
     let editor = h.system.open(app: "Editor", pid: 1001)
@@ -186,6 +186,7 @@ private let side = DisplaySnapshot(
 
   @Test func pulledOutOfItsCornerItGoesBackWithTheNextMoveOfTheViewAndNotWhileThatIsPlanned() {
     let (h, _, browser, terminal) = makeHarness()
+    h.switchOn(\.withMotion)
     h.run("summon Terminal")
     h.run("summon Terminal")
     settle(h)

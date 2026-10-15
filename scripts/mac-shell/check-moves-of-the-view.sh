@@ -4,8 +4,9 @@
 #   scripts/mac-shell/run.sh scripts/mac-shell/check-moves-of-the-view.sh
 #
 # Arbor takes the keyboard only from a window that it takes out of view. With no window focused that it knows, a move of the view that names no
-# place (Show Everything, Home, Back, Out, Desktop, a neighbour) leaves the keyboard where it is: in an app Arbor does not look at, and in a sheet
-# whose window stays in view. A sheet whose window the move takes away hands it on, and what names a place takes it there.
+# place (Show Everything, Home, Back, Out, Desktop, a neighbour) leaves the keyboard where it is: in an app Arbor does not look at, in a free-standing
+# panel, which stays on screen whatever the view does, and in a sheet whose window stays in view. A sheet whose window the move takes away hands it
+# on, and what names a place takes it there.
 #
 # Who has the keyboard cannot be read from Arbor, so a plain x is typed and whoever gets it has it: the test windows, their sheet and their panel
 # count their keys, and the app Arbor does not look at writes every key down (keys.swift, as in check-keyboard-returns.sh).
@@ -50,6 +51,7 @@ if [ -n "${ARBOR_REHEARSAL:-}" ]; then arbor_build; else apps_build; fi
 
 # [1 | Desktop | 2], and 3 floats on the Desktop. NEEDS THE DESKTOP'S COLUMN BETWEEN THE TWO: the view goes there, and the witness further down lies over it.
 three_windows() {
+  arbor_settings '{"desktopColumn": true}'
   arbor_start 3
   ctl dock "$W1" left
   ctl dock "$W2" right
@@ -90,7 +92,7 @@ three_windows
 open_window P1 kind=panel size=220x140
 summary
 
-claim "a panel keeps the keyboard while its app's window used last stays in view"
+claim "a panel keeps the keyboard while its app's window stays in view"
 ctl zoom "$W1"
 click_window "$W1"
 click_window "$P1"
@@ -100,19 +102,29 @@ ctl show-all
 sleep 1
 types "$P1" "after show-all"
 
-step "the panel, when that window leaves the view: written down, not judged"
+claim "a panel keeps the keyboard when its app's window leaves the view: it is still there itself"
 ctl zoom "$W1"
 click_window "$W1"
 click_window "$P1"
 types "$P1" "before"
-panel_before=$(keys_of "$P1")
-desk_before=$(keys_of "$W3")
 ctl neighbor right
 sleep 1
-key x
-sleep 0.5
-echo "names: after neighbor right took window $W1 away, of one x the panel got $(($(keys_of "$P1") - panel_before)) events and the window in view $(($(keys_of "$W3") - desk_before))"
+check "the window is out of view" eventually out_of_view "$W1"
+check "the panel is in view" is on_screen "$P1"
+types "$P1" "after neighbor right"
 shot panel-1-its-window-left
+
+claim "what names a place takes the keyboard from a panel too"
+ctl zoom "$W2"
+ctl save-view 1
+ctl desktop
+click_window "$P1"
+types "$P1" "before"
+ctl view 1
+sleep 1
+check "the view is on window 2" eventually camera_on "$W2"
+deaf "$P1" "after view 1"
+types "$W2" "the window of the saved view"
 forget_window "$P1"
 arbor_stop panel-2-quit
 
@@ -201,6 +213,7 @@ started "$KEYS_PID"
 eventually keys_ready || die "the key-logging app did not start"
 
 ARBOR_EXTRA_PIDS=""
+arbor_settings '{"desktopColumn": true}'
 arbor_start 2 ARBOR_NO_HOTKEYS=0
 ctl dock "$W1" left
 ctl dock "$W2" right
@@ -222,9 +235,10 @@ leaves_it "desktop" root ctl desktop
 # Back wants somewhere to go back to.
 ctl zoom "$W1"
 leaves_it "back" desktop ctl back
+# Of the nine keys Arbor ships with, the two that move the view and name nothing.
 leaves_it "⌃⌥Space" desktop key ctrl+opt+space
-leaves_it "⌃⌥→" desktop key ctrl+opt+right
-leaves_it "⌃⌥0" desktop key ctrl+opt+0
+ctl zoom "$W1"
+leaves_it "⌃⌥[" desktop key "ctrl+opt+["
 shot unseen-1-after-the-moves
 
 # The control: that this witness can see the keyboard being taken.
@@ -253,6 +267,7 @@ apps_scratch
 if app_open com.apple.TextEdit "$APPS_SCRATCH/oak.txt"; then
   app_dismiss "$APP_PID"
   companions_start 2
+  arbor_settings '{"desktopColumn": true}'
   arbor_start_apps "$APP_PID" "$COMPANIONS_PID"
   ctl dock "$APP_WINDOW" left
   ctl dock "$C1" right
@@ -292,6 +307,13 @@ if app_open com.apple.TextEdit "$APPS_SCRATCH/oak.txt"; then
   ctl show-all
   sleep 1
   names "TextEdit, after show-all" "$APP_PID"
+  summary
+  ctl desktop
+  sleep 1
+  names "TextEdit, after desktop took its document window away" "$APP_PID"
+  check "Open… keeps the keyboard: TextEdit is still in front" front_is "$APP_PID"
+  ctl show-all
+  sleep 1
   ctl zoom "$C1"
   sleep 1
   names "TextEdit, after zoom on another app's window, which names a window" "$APP_PID"

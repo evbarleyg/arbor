@@ -7,6 +7,7 @@ import Foundation
 /// default is not in the file: not after a first launch, not after `reset`, not after `set` to that very value.
 ///
 /// Files of the old kind are put right once (`upgradedFile`), and files of the new kind say what they are: `"format": 2`.
+/// A file without the mark that holds a few keys is neither: somebody wrote it by hand, and all of it is their choice.
 extension Settings {
   /// The key that marks a file which holds only what differs. It is no setting: Arbor reads nothing else from it.
   public static let formatKey = "format"
@@ -38,12 +39,22 @@ extension Settings {
   /// files were written**, and marked. Nil if it has the mark already. Everything else stays byte for byte: what somebody changed, keys
   /// Arbor does not know, the order, the spacing.
   ///
+  /// **Only a file that looks whole is taken for one of those** (`leastKeysOfAWholeFile`: it holds sixteen or more of the keys such files held). They were
+  /// written by Arbor, every default in them, unasked; and sixteen is no longer a few. A file of a few keys is somebody's own:
+  /// `{"focusRing": true}` says what it means, though true is what an early build wrote down too. Nothing is taken out of it. It
+  /// only gets the mark, so that it is read the same at a launch as at a reload, today and after the next default has changed.
+  ///
   /// Whoever had chosen a value that happened to be the default loses nothing that day, and follows the default from then on. **But for
   /// a default that has changed since such files were written:** there the value goes and today's default comes, at once. That is
   /// the point for whoever never chose it, and the price for whoever did (`defaultsOfOldFiles` says which keys those are).
   ///
   /// Throws, and so changes nothing, if Arbor cannot read `text`: it is somebody's to mend first, and is looked at again at the next launch.
   public static func upgradedFile(_ text: String) throws -> UpgradedFile? {
+    try upgradedFile(text, wholeFrom: leastKeysOfAWholeFile)
+  }
+
+  /// The same with the rule as a number, for the tests of how a file is stripped, which show it on files of a few lines.
+  static func upgradedFile(_ text: String, wholeFrom least: Int) throws -> UpgradedFile? {
     try describingEditErrors { () throws -> UpgradedFile? in
       var document = try JSONText(text)
       // Asked first: of a file that has the mark nothing more is asked, not even whether it can be read.
@@ -54,8 +65,9 @@ extension Settings {
       // Marked first, while the file still has members to show how it is written: on one line or many, with which space at the colon.
       document = try document.setting([formatKey], to: "\(format)")
       var stripped: [String] = []
+      let isWhole = Set(keys).intersection(table.keys(at: []) ?? []).count >= least
       // A value Arbor could not use was never written by Arbor. It stays for whoever wrote it to put right.
-      for key in Set(keys).subtracting(unusable).sorted() {
+      for key in Set(keys).subtracting(unusable).sorted() where isWhole {
         guard let written = document.value(at: [key]), let old = table.elements(at: [key]),
           old.contains(where: { isSame($0, written) })
         else { continue }
@@ -70,6 +82,25 @@ extension Settings {
       return UpgradedFile(text: document.text, stripped: stripped)
     }
   }
+
+  /// `rewrite`, for a command that changes settings; and somebody's own file, put there without the mark while Arbor runs, gets the mark with
+  /// the first command that writes into it, going by the file as they left it. Otherwise command after command could fill it
+  /// until it looks whole, and the next launch would take out of it what those very commands were asked for.
+  /// A whole file of an early build stays without the mark: it is the next launch's.
+  public static func rewriteAndMark(_ text: String, from old: Settings, to new: Settings) throws -> String {
+    let rewritten = try rewrite(text, from: old, to: new)
+    // Marked first, as at a launch: while the file still has the members that show how it is written.
+    guard rewritten != text, let marked = try? upgradedFile(text), marked.stripped.isEmpty,
+      let both = try? rewrite(marked.text, from: old, to: new)
+    else { return rewritten }
+    return both
+  }
+
+  /// How many of the keys of `defaultsOfOldFiles` a file without the mark has to hold to pass for one that Arbor wrote. Far fewer than the 68
+  /// of the table, on purpose: a file holds the keys of the build that first launched on that Mac, and an older build had fewer. Too high, and
+  /// such a file counts as somebody's own and no changed default ever reaches that Mac, in silence. Too low, and somebody who wrote that
+  /// many by hand loses those that equal an old default, once, with the copy of the file lying beside it (QUESTIONS, Q27).
+  public static let leastKeysOfAWholeFile = 16
 
   /// Whether two pieces of JSON say the same: numbers by their value (an older macOS wrote 0.46 with seventeen digits), the rest by its
   /// text with the white space outside strings taken out (an empty list was written over three lines).
@@ -101,7 +132,7 @@ extension Settings {
   ///
   /// Left out on purpose: `pointerGestures` true, the default for the twelve minutes between the commit that brought the key and the one that
   /// switched it off. No build of those minutes was handed to anybody, and in every other file true is somebody's choice.
-  static let defaultsOfOldFiles = #"""
+  public static let defaultsOfOldFiles = #"""
     {
       "allowAllURLCommands": [false], "animationDuration": [0.46], "appColourAmount": [0.25], "appColours": [true],
       "arrangeDesktopWeight": [0.5], "autoDockMinimumHeight": [300], "autoDockMinimumWidth": [400], "automaticUpdateChecks": [false],

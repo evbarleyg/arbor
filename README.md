@@ -41,10 +41,10 @@ independent implementation and is not affiliated with it.
   goes out a level, Step In goes in toward the window you are typing in (or pointing at), and Forward goes where Back came from.
 - **Peek**: hold ⌃⌥Space instead of tapping it. Everything shows while the keys are down; point at a window, or walk to it with
   the arrow keys, and let go: it is framed. One gesture from any window to any other, by where it is.
-- **Motion that shows where things went**: every zoom, dock and close plays as one short motion.
-  Zooming in enlarges the whole arrangement, so the other windows slide out past the screen edges;
-  zooming out brings them back from there. A click ends it at once, a second shortcut carries on
-  from where things are, and macOS's "Reduce motion" switches it off.
+- **Nothing is drawn that you did not ask for**: windows go to their places at once, and the menu bar has one icon. These are
+  options: a line round the focused window (`focusRing`), buttons for where you are in the menu bar (`menuBarControls`), and
+  motion that shows where things went (`arborctl set animationDuration 0.46`): every zoom, dock and close then plays as one short
+  motion, in which a card with the app's icon stands in for each window.
 - **Nine keys, or all of them**: Arbor takes nine shortcuts, each ⌃⌥ and one key; the menu has the rest. One setting
   binds some fifty: `arborctl set shortcuts all`. See [Keyboard](#keyboard).
 - **Stay on the keyboard**: with all of them bound, ⌃⌥⇧ + arrow moves focus to the nearest window that way, into tiles, on to the
@@ -77,9 +77,9 @@ independent implementation and is not affiliated with it.
   window, sends it out of view again. The view never moves. See [Summoning](#summoning).
 - **Resize at the gaps**: drag the gap between two windows, or a docked
   window's own edge, to resize both sides. A small handle shows in the gap under the pointer.
-- **One surface**: behind docked windows the wallpaper is a shade darker, with rounded corners, so that what is docked
-  reads as one thing and the Desktop between it as another. It can be blurred as well, or left alone
-  (see `dimBehindArranged` under [Settings](#settings)).
+- **One surface**, if you like: behind docked windows the wallpaper can be made a shade darker, with rounded corners, so that what is
+  docked reads as one thing and the Desktop between it as another; it can be blurred or tinted as well. As Arbor comes the wallpaper
+  is left alone (see `dimBehindArranged` under [Settings](#settings)).
 - **Saved views**: Saved Views in the menu saves where you are looking under a number, 1 to 9, and goes back there.
 - **Named spaces**: Name This Space…, in the same submenu, gives the space you are looking at a name. `arborctl go writing`, `arbor://go/writing` or the
   menu take you there from anywhere, on any display. A named group stays itself while windows come and go.
@@ -196,6 +196,10 @@ with 1 when something is wrong, and what it calls a problem is also written to t
 
 ### The menu bar item
 
+One icon, Arbor's mark: a click opens the menu with every command and its shortcut. Whatever it says, it never changes its width.
+
+`arborctl set menuBarControls true` turns it into a row of buttons once something is docked:
+
 | Button | Click |
 |---|---|
 | ‹ › | Back and forward through where the view has been; grey when there is nowhere to go |
@@ -207,11 +211,11 @@ with 1 when something is wrong, and what it calls a problem is also written to t
 The button for where you are is filled in. The buttons belong to the display under the pointer, like the
 commands they run. **Right-click** anywhere on the item (or click with ⌃ or ⌥) for the menu with every command and its shortcut.
 While nothing is docked on that display there is nowhere to go, and the item is Arbor's mark alone: a click opens the menu.
-Set `menuBarControls` to false to keep it that way, which also takes less of a crowded menu bar. macOS silently leaves out the items
-a full menu bar has no room for, and a notch takes room too: when Arbor finds its buttons left out it falls back to the single icon by
-itself, and `arborctl doctor` says so ("Menu bar item"). If even that is left out, open Arbor again: the welcome window comes.
+macOS silently leaves out the items a full menu bar has no room for, and a notch takes room too: when Arbor finds its buttons left
+out it falls back to the single icon by itself, and `arborctl doctor` says so ("Menu bar item"). If even that is left out, open Arbor again: the welcome window comes.
 
-The icon also says how Arbor is: dimmed while it is paused, a warning sign while it waits for Accessibility permission. The menu
+The icon also says how Arbor is: dimmed while it is paused, a lock while the view is held, three filled columns while it holds still, a warning sign
+while it waits for Accessibility permission. The menu
 then begins with a row that says so, and choosing it ends it ("Arbor is paused · Resume"). What cannot act at the moment is greyed out, in its usual
 place; Show Everything, Float All Windows, Pause Arbor and Quit Arbor never are. `arborctl menu` prints the menu as it would open.
 
@@ -630,7 +634,7 @@ version changes one. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete refere
 | `frameRectangleModifier` | "ctrl+opt" | Keys to hold while dragging a rectangle to frame, starting anywhere; "none" turns it off |
 | `summonStays` | false | A summoned window stays when you turn to another window, until summoned away (see [Summoning](#summoning)) |
 | `allowAllURLCommands` | false | Accept every command from `arbor://` URLs, not only those that move the view and arrange windows (see [URLs](#urls)) |
-| `focusRing` | true | A line around the focused window, once something is docked |
+| `focusRing` | false | A line around the focused window, once something is docked |
 | `focusRingWidth` | 3 | Its thickness in points, 1 to 12 |
 | `focusRingColour` | "accent" | "accent" (from System Settings), "#RRGGBB" or "#RRGGBBAA" |
 | `focusRingRadius` | 0 | The radius of the window corners it follows; 0 picks 17 on macOS 26 and 10 before |
@@ -652,14 +656,14 @@ version changes one. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete refere
 | `pauseForApps` | [] | Apps (bundle ids) Arbor pauses for while one is in front, as ⌃⌥⎋ does, and resumes after: games, anything that changes the display's resolution |
 | `holdStillWhileCameraIsOn` / `holdStillWhileMicrophoneIsOn` | false / false | Hold still (below) by itself while any app has a camera or a microphone running |
 | `holdStillFor` | [] | And while such a window is open. A bundle id, then optionally part of the title (without it any window of the app counts, minimized ones too), for example `"us.zoom.xos Zoom Meeting"` (written from memory: check the title on your Mac) |
-| `animationDuration` | 0.46 | Seconds a zoom, dock or close takes to play, up to 2; 0 applies everything at once |
+| `animationDuration` | 0 | 0 puts windows in their places at once. Above 0, up to 2: the seconds a zoom, dock or close takes to play, with a card standing in for each window; 0.46 is a good length |
 | `windowPictures` | false | Not ready, see [Install and run](#install-and-run): windows keep their contents while they move, with Screen Recording permission |
 | `automaticUpdateChecks` | false | Ask GitHub for a newer release a minute after starting and weekly. No window opens: the menu item then reads Update Available… |
 | `dropDwell` | 0.15 | Seconds to hold a dragged window over a window or tile before it can be dropped there (0 to 2); screen edges never wait |
 | `previewDrags` | true | Show where a dragged window will land. Without it nothing has to be held either |
 | `reflowWhileDragging` | false | While you drag, the other windows close up and make room, showing what letting go would do |
 | `keepPushed` | true | With `reflowWhileDragging` and `floatingWindowsMakeWay`: floating windows pushed aside stay there until the drag ends |
-| `menuBarControls` | true | Buttons in the menu bar item; false shows a single icon that opens the menu |
+| `menuBarControls` | false | Buttons in the menu bar item; false shows a single icon that opens the menu |
 | `historyButtons` | true | Back and forward among those buttons |
 | `menuBarFill` | 0.25 | How strongly the button for where you are is filled in, from 0 to 1 |
 | `makeRoom` | true | Before a window becomes a tile because its app will not shrink that far, move the gaps around it and take the room from the Desktop and from neighbours that can spare it. For the window being typed in the neighbours give more: they become the tiles |
@@ -668,14 +672,14 @@ version changes one. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete refere
 | `resizeStep` | 40 | Points `grow` and `shrink` add or take when no amount is given |
 | `displays` | [] | Other values of `gap`, `minimumUsableWidth`, `minimumUsableHeight` and `screenEdgeBand` for particular displays (below) |
 | `messages` | "helpful" | What Arbor says on screen after a shortcut, a gesture or a menu item: "helpful" (problems, unseen changes, a few hints), "all" (every reply) or "off" |
-| `dimBehindArranged` | 0.25 | Darken behind docked windows: how much darker the wallpaper is there, from 0 (not at all) to 1 (black) |
+| `dimBehindArranged` | 0 | Darken behind docked windows: how much darker the wallpaper is there, from 0 (not at all) to 1 (black) |
 | `blurBehindArranged` | 0 | Blur behind docked windows: from 0 (sharp) to 1 (all the blur macOS has) |
 | `appColours` | true | Tiles take on their app's colour; false: every tile is the same grey |
 | `appColourAmount` | 0.25 | How much of the app's colour goes into its tile, from 0 to 1 |
 | `gapHandles` | "shown" | The gaps between docked windows. "shown": drag one to resize both sides, and a handle shows in it under the pointer. "hidden": the same without the handle. "off": gaps cannot be dragged (window edges and `arborctl resize` still resize) |
 | `tileStyle` | "icon" | What a tile shows on its colour: "icon", "name" (the icon and the app's name) or "plain" (nothing). A space you named shows its name either way |
 | `tintBehindArranged` | 0 | Tint behind docked windows: how much of your accent colour is laid over the wallpaper there, from 0 to 1 |
-| `desktopEdge` | 0.05 | How strong the hairline around the Desktop is where it lies between docked windows, from 0 (none) to 1 |
+| `desktopEdge` | 0 | How strong the hairline around the Desktop is where it lies between docked windows, from 0 (none) to 1 |
 | `tileFade` | 0.2 | Seconds a tile takes to fade in and out, from 0 (at once) to 1 |
 | `newWindows` | "float" | What a new window does when no rule matches it. "dock": it docks beside the focused window (below). The menu's "Dock New Windows" and `toggle-auto-dock` switch it |
 | `autoDockMinimumWidth` / `autoDockMinimumHeight` | 400 / 300 | A window that opens smaller than this is never docked by `dock auto` or by a rule for `*` |

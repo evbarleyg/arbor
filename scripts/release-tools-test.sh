@@ -557,8 +557,13 @@ export GITHUB_API_URL="http://127.0.0.1:$port" GITHUB_REPOSITORY=o/r GITHUB_TOKE
 log="$root/requests.log"
 
 echo '[{"id": 5, "tag_name": "v1.2.2", "draft": false}, {"id": 6, "tag_name": "v1.2.3", "draft": true}]' > "$root/existing.json"
+# First, while the log is still empty: what the Release workflow's rehearsal runs, here with all it would take to send.
+"$root/scripts/publish-release.sh" --dry-run > /dev/null 2>&1
+check "a dry run with a token at hand and GitHub listening succeeds" test $? -eq 0
+check "and asks GitHub nothing and sends it nothing" test ! -s "$log"
 "$root/scripts/publish-release.sh" > "$root/publish.txt" 2>&1
 check "it succeeds" test $? -eq 0
+check "(and that reached the same log)" test -s "$log"
 check "an earlier draft for the version is replaced" contains "$log" "DELETE /repos/o/r/releases/6 "
 check "other releases are left alone" lacks "$log" "DELETE /repos/o/r/releases/5 "
 check "the release is a draft on the commit, named after the version" contains "$log" \

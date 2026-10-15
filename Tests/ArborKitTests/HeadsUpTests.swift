@@ -19,7 +19,7 @@ private let side = DisplaySnapshot(
 
   /// Safari, Mail and Notes, floating. Hints are out of the way unless a test asks for them.
   private func makeHarness(
-    settings: Settings = Settings(), displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], taught: Bool = true
+    settings: Settings = Harness.settingsWhenNoneAreGiven, displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], taught: Bool = true
   ) -> (Harness, WindowID, WindowID, WindowID) {
     var saved = PersistedState(workspaces: [:], hints: [:])
     if taught { for hint in HeadsUpHint.allCases { saved.hintsShown[hint.rawValue] = HeadsUpHint.timesShown } }

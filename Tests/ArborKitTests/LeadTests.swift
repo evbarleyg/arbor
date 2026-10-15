@@ -20,7 +20,7 @@ private let side = DisplaySnapshot(
     let h: Harness
     let a, b, c, d: WindowID
 
-    @MainActor init(settings: Settings = Settings()) {
+    @MainActor init(settings: Settings = Harness.settingsWhenNoneAreGiven) {
       h = Harness(displays: [main, side], settings: settings)
       a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 500, height: 400))
       b = h.system.open(app: "Notes", frame: CGRect(x: 700, y: 100, width: 500, height: 400))

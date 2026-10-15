@@ -36,13 +36,14 @@ real_titlebar_of() {
 }
 
 arbor_build
-step "three windows: [1 | Desktop | 2 / 3], shortcuts and the menu bar item on"
+step "three windows, and room for the Desktop by a layout line: [1 | Desktop | 2 / 3]; shortcuts and the menu bar item on"
 # An ordinary app, so that ⌘Tab can switch to it.
 ARBOR_TEST_WINDOWS_ARGS="--regular"
+# With the ring and the darkening, options (collab/QUESTIONS.md, Q29): that none of Arbor's own windows is left on screen says nothing where none was.
+arbor_settings '{"focusRing": true, "dimBehindArranged": 0.25}'
 arbor_start 3 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0
-ctl dock "$W1" left
-ctl dock "$W2" right
-ctl dock "$W3" beside "$W2" bottom
+# Two docks are two halves, with nothing left over. A line that names the Desktop gives it room, as Arbor ships: a neighbour to walk to, wallpaper to click.
+ctl layout "$W1 | Desktop | ($W2 / $W3)"
 summary
 grep "registered" "$ARBOR_HOME/arbor.log" | tail -n 2
 
@@ -72,6 +73,7 @@ key escape
 step "pause with ⌃⌥⎋ while framed"
 ctl zoom "$W3"
 check "1 and 2 are out of view" eventually is parked "$W1"
+check "something of Arbor's own is on screen" eventually fails no_overlays
 shot 02-framed
 key ctrl+opt+escape
 check "status says paused" eventually paused
@@ -181,8 +183,8 @@ arbor_start 2
 # The first session's app has just left the Dock, which is still shrinking: that changes the visible
 # frame, and with it every slot, for a second or so.
 sleep 3
-ctl dock "$W1" left
-ctl dock "$W2" right
+# With the Desktop between them, by a layout line: window 2's left edge is then no edge of window 1's.
+ctl layout "$W1 | Desktop | $W2"
 read -r sx sy sw sh <<< "$(arbor_ask slot "$W1")"
 read -r fx fy fw fh <<< "$(frame_of "$W1")"
 echo "slot $sx $sy $sw $sh, window $fx $fy $fw $fh, window server $(real_frame_of "$W1")"

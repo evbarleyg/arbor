@@ -27,6 +27,46 @@ extension FakeMac {
     return window
   }
 
+  /// A sheet comes down over `parent` and takes the keyboard. Seen on a hosted Mac on 2026-10-15, of a test window and of TextEdit's Save As…: the window
+  /// server gives it a number of its own; its role is AXSheet and it has no subrole; its app names IT as the focused window and `parent` as the main
+  /// one; it is not among the app's windows. "Focused window changed" is posted, and "main window changed" 44 ms later if `parent` was not the main window.
+  /// Both gave that window as their AXParent and as their AXWindow. Not modelled: that it goes where its window goes.
+  @discardableResult
+  public func openSheet(on parent: Window, size: CGSize = CGSize(width: 220, height: 120)) -> Window {
+    lastWindowNumber += 1
+    windowsMade += 1
+    let frame = CGRect(x: parent.frame.midX - size.width / 2, y: parent.frame.minY + parent.titleBarHeight, width: size.width, height: size.height)
+    let sheet = Window(number: lastWindowNumber, serial: windowsMade, app: parent.app, title: "", frame: frame, space: parent.space)
+    sheet.role = "AXSheet"
+    sheet.subrole = nil
+    sheet.sheetOf = parent
+    windowsBySerial[sheet.serial] = sheet
+    parent.app.windows.append(sheet)
+    note("a sheet, w\(sheet.number), comes down over w\(parent.number)")
+    stack.insert(sheet, at: stack.firstIndex { $0 === parent } ?? 0)
+    let app = parent.app
+    app.focused = sheet
+    report("AXFocusedWindowChanged", about: sheet)
+    if app.main !== parent {
+      appDoes(app, after: 0.044, "") { [self] in
+        app.main = parent
+        report("AXMainWindowChanged", about: parent)
+      }
+    }
+    return sheet
+  }
+
+  /// The sheet is answered and goes. Its window has the keyboard again. That "focused window changed" is posted is a GUESS, from what is posted when it comes.
+  public func closeSheet(_ sheet: Window) {
+    guard sheet.isOpen, let parent = sheet.sheetOf else { return }
+    note("the sheet w\(sheet.number) is answered and goes")
+    sheet.isOpen = false
+    sheet.exists = false
+    stack.removeAll { $0 === sheet }
+    forgetRegistrations(on: sheet)
+    if sheet.app.focused === sheet { makeKey(parent) }
+  }
+
   private func show(_ window: Window, takesKeyboard: Bool) {
     let app = window.app
     listWillChange(of: app)

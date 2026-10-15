@@ -255,11 +255,16 @@ in ways nobody is likely to notice in a window manager. Please report the errors
 
 1. Set the version in `VERSION`, the one place it is written down, and see that the top section of `CHANGELOG.md` says
    what changed: it becomes the release notes.
-2. Run the **Release** workflow (Actions → Release → Run workflow, or `gh workflow run release.yml`), on a branch or on the
-   tag `v<version>`. A suffix makes a pre-release of the version in `VERSION`, which update checks do not offer:
-   `v0.9.0-rc.1`. The workflow starts only by hand: pushing a tag marks a commit and does nothing else.
+2. Run the **Release** workflow **with "rehearsal" unticked** (Actions → Release → Run workflow, or
+   `gh workflow run release.yml -f rehearsal=false`), on a branch or on the tag `v<version>`. A suffix makes a pre-release
+   of the version in `VERSION`, which update checks do not offer: `v0.9.0-rc.1`. The workflow starts only by hand: pushing
+   a tag marks a commit and does nothing else.
 3. It runs `make check` and `make release` on a Mac and leaves a **draft** on the releases page with the disk image, the
    zip, the checksums, the cask and the notes. Read it, then publish it; publishing creates the tag if there is none.
+
+With "rehearsal" ticked, as it is to begin with, it does all of that except the last step: nothing is sent to the releases
+page, and there is nothing to send with. The one job whose token can write does not start, and no other reads a secret or a
+signing identity; `scripts/lint-workflows.py` holds the file to that.
 
 `make release` does the same build locally, into `build/`: universal binaries, `Arbor-<version>.zip` and `.dmg`,
 `Arbor-<version>-checksums.txt`, `Arbor-<version>-notes.md` and `arbor.rb`.

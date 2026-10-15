@@ -16,7 +16,7 @@ import Testing
   let mailFrame = CGRect(x: 400, y: 420, width: 520, height: 340)
 
   /// A Mac with three windows open, all wholly in view, and Arbor not started.
-  func mac(settings: Settings = Settings()) -> (h: Harness, windows: [WindowID]) {
+  func mac(settings: Settings = Harness.settingsWhenNoneAreGiven) -> (h: Harness, windows: [WindowID]) {
     let h = Harness(settings: settings)
     let windows = [
       h.system.open(app: "Safari", pid: 1001, frame: safariFrame), h.system.open(app: "Notes", pid: 1002, frame: notesFrame),

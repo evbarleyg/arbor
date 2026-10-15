@@ -12,6 +12,9 @@
 # So: TextEdit, opened as a person opens it, with a window docked beside a test window. Ended three ways: as a crash ends it (SIGKILL), as
 # Force Quit and a log-out's impatience end it (SIGTERM), and in good order (it is asked to quit), which is the control. For each: how long
 # until Arbor no longer knows the window, up to twenty seconds; whether the neighbour takes the room; and from Arbor's own trace, what it was told.
+#
+# First run, macOS 26: a real app leaves none. By SIGKILL and by SIGTERM Arbor was told `destroyed` 0.06 s later; asked to quit, 1.39 s. So the test
+# app is ended too now, once as it comes and once as a regular app (below).
 source "$(dirname "$0")/lib.sh"
 needs_throwaway_mac "open TextEdit and kill it"
 
@@ -72,6 +75,56 @@ print(next((w["id"] for w in json.load(sys.stdin)["windows"] if w["managed"] and
 }
 
 for how in kill term quit; do brought_to_an_end "$how"; done
+
+# TextEdit left no ghost, however it was ended (told after 0.06 s). What the keeper of the test apps reads from the sources: the test app is an
+# ACCESSORY app unless told --regular; macOS does not post "did terminate" for such apps; and a process that is killed closes no window, so no window is
+# reported gone either. If that is it, the same app ended the same way leaves a ghost as an accessory and none as a regular app: each is the other's
+# control. It would not be the harness's alone: a menu bar app's settings window is an accessory app's window too.
+the_test_app_is_ended() {
+  local kind=$1 began waited=gave-up beside pid
+  step "the second test app, $kind, ended by term"
+  arbor_settings '{}'
+  ARBOR_SECOND_APP=1
+  ARBOR_SECOND_APP_ARGS=""
+  [ "$kind" = regular ] && ARBOR_SECOND_APP_ARGS="--regular"
+  arbor_start 1
+  pid=$ARBOR_WINDOWS_PID_2
+  ctl dock "$V1" left
+  ctl dock "$W1" right
+  sleep 1.5
+  summary
+  beside=$(real_frame_of "$W1")
+  ctl trace on "an-app-ended-test-$kind"
+  "$ARBOR_BIN/arborctl" trace note "ended by term, window $V1" > /dev/null
+  began=$(python3 -c 'import time; print(time.time())')
+  exec 8>&-
+  kill -TERM "$pid" 2> /dev/null
+  ARBOR_WINDOWS_PID_2=""
+  for _ in $(seq 1 100); do
+    if ! still_known "$V1"; then
+      waited=$(python3 -c 'import sys, time; print(round(time.time() - float(sys.argv[1]), 1))' "$began")
+      break
+    fi
+    sleep 0.2
+  done
+  echo "  $kind: the process is $(kill -0 "$pid" 2> /dev/null && echo still there || echo gone); Arbor forgot the window after: $waited s"
+  echo "  $kind: the neighbour was at $beside and is at $(real_frame_of "$W1")"
+  summary
+  # Does a request that comes back empty find the dead window out?
+  ctl show-all > /dev/null
+  sleep 1
+  echo "  $kind: after Show Everything Arbor $(still_known "$V1" && echo still knows it || echo does not know it)"
+  ctl relayout > /dev/null
+  sleep 1
+  echo "  $kind: after a layout Arbor $(still_known "$V1" && echo still knows it || echo does not know it)"
+  ctl trace off
+  shot "the-test-app-$kind-ended"
+  forget_window "$V1"
+  arbor_stop
+  ARBOR_SECOND_APP=0
+  ARBOR_SECOND_APP_ARGS=""
+}
+for kind in accessory regular; do the_test_app_is_ended "$kind"; done
 
 step "what Arbor was told"
 python3 - "$ARBOR_OUT"/traces/*an-app-ended-*.jsonl << 'PYTHON'

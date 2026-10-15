@@ -161,6 +161,14 @@ extension ChaosRunner {
           exactly = actual == request.took
           refused = request.took.width > slot.width || request.took.height > slot.height
         }
+        // A terminal is in its slot when it is in the slot's corner and less than a character cell short of it, whoever asked it last.
+        if !inPlace, let step = fake.sizeStep ?? (fake.behaviour == .grid ? CGSize(width: 20, height: 20) : nil),
+          abs(actual.minX - slot.minX) <= 1, abs(actual.minY - slot.minY) <= 1,
+          (-Self.slotTolerance..<step.width).contains(slot.width - actual.width),
+          (-Self.slotTolerance..<step.height).contains(slot.height - actual.height)
+        {
+          (inPlace, exactly) = (true, true)
+        }
         guard inPlace else {
           if controller.windowsLeftToTheirApps.contains(window) {
             // Arbor stops putting back a window that something keeps moving. Not one that was moved once or twice,

@@ -256,7 +256,7 @@ import Testing
 /// Settings that change while something is going on.
 @Suite @MainActor struct ReviewSettingsLiveTests {
   /// Three windows: two docked left and right of the Desktop, one floating.
-  func desk(_ settings: Settings = Settings()) -> (Harness, WindowID, WindowID, WindowID) {
+  func desk(_ settings: Settings = Harness.settingsWhenNoneAreGiven) -> (Harness, WindowID, WindowID, WindowID) {
     let h = Harness(displays: ReviewSettingsTests.twoDisplays, settings: settings)
     let a = h.system.open(app: "Safari", pid: 1001)
     let b = h.system.open(app: "Notes", pid: 1002)
@@ -339,7 +339,7 @@ import Testing
   // MARK: Panels
 
   @Test func switchingThingsOffTakesThemOffTheScreen() throws {
-    var settings = Settings()
+    var settings = Settings.withRing.withBackdrop
     settings.minimapDuration = 10
     settings.messages = "all"
     let (h, a, _, _) = desk(settings)
@@ -397,7 +397,8 @@ import Testing
   // MARK: A pause
 
   @Test func settingsChangedDuringAPauseMoveNothingAndCountAfterwards() throws {
-    let (h, a, b, c) = desk()
+    let (h, a, b, c) = desk(.withRing.withBackdrop)
+    #expect(h.overlays.scenes.values.contains { $0.focusRing != nil && $0.backdrop != nil }, "there is something for the pause to take away")
     h.run("pause")
     h.scheduler.advance(by: 1)
     let frames = [a, b, c].map { h.frame($0) }
@@ -454,10 +455,12 @@ import Testing
   }
 
   @Test func theSameByHandInTheFileWhileMotionRuns() throws {
-    let (h, a, b, c) = desk()
-    var file = Settings()
+    let (h, a, b, c) = desk(.withMotion)
+    var file = Settings.withMotion
     h.controller.loadSettings = { file }
+    h.overlays.clearTransitions()
     h.run("zoom \(a.rawValue)")
+    #expect(!h.overlays.transitions.isEmpty, "there is a motion to be in the middle of")
     h.scheduler.advance(by: 0.1)  // the motion takes 0.46 s
     file.excludedBundleIDs = ["com.example.notes", "com.example.mail", "com.example.safari"]
     file.animationDuration = 0

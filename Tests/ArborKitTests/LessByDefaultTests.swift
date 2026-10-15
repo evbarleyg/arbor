@@ -11,9 +11,8 @@ import Testing
 /// - **Keys:** at most ten shortcuts, each ⌃⌥ and one key. A global shortcut is taken from every app on the Mac.
 /// - **The menu bar:** one thing, and its width never changes.
 ///
-/// The keys are within it since the nine (`KeyBindings.core`). The menu bar is over it today, so that half is a known issue that says its numbers.
-/// A known issue fails the build the moment it no longer occurs: whoever brings it within its budget takes the `withKnownIssue` out in the
-/// same change, and from then on the budget holds.
+/// Both halves hold: the keys since the nine (`KeyBindings.core`), the menu bar since `menuBarControls` ships false. Each was a known issue that
+/// said its numbers until the change that brought it within its budget.
 @MainActor @Suite struct LessByDefaultTests {
   static let mostKeys = 10
   static let mostInTheMenuBar = 1
@@ -25,7 +24,7 @@ import Testing
   /// What the menu bar item shows in the course of an ordinary hour, as Arbor ships: nothing docked, two windows docked, one framed,
   /// everything again, views saved, a pause.
   func menuBarThroughAnHour() -> [MenuBarModel] {
-    let h = Harness()
+    let h = Harness(settings: Settings())
     let windows = ["Safari", "Mail", "Notes"].map { h.system.open(app: $0) }
     h.start()
     var seen = [h.controller.menuBarModel()]
@@ -58,11 +57,9 @@ import Testing
 
   @Test func oneThingInTheMenuBarAndItsWidthNeverChanges() {
     let hour = menuBarThroughAnHour()
-    withKnownIssue("I23: the menu bar item grows buttons once something is docked") {
-      let most = hour.map(things).max() ?? 0
-      #expect(most <= Self.mostInTheMenuBar, "menu bar items: up to \(most) of \(Self.mostInTheMenuBar)")
-      let widths = Set(hour.map(width)).sorted()
-      #expect(widths.count == 1, "the item's widths in points: \(widths)")
-    }
+    let most = hour.map(things).max() ?? 0
+    #expect(most <= Self.mostInTheMenuBar, "menu bar items: up to \(most) of \(Self.mostInTheMenuBar)")
+    let widths = Set(hour.map(width)).sorted()
+    #expect(widths.count == 1, "the item's widths in points: \(widths)")
   }
 }

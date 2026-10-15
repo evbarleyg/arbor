@@ -12,8 +12,9 @@ import Testing
 /// Issue #3, rules 1 and 2: nothing moves; before anything is arranged Arbor has looked for macOS's own tiling and the wallpaper
 /// click, says what they do, and offers the fix in one step, with the way back; then the first dock is invited.
 @Suite @MainActor struct FirstFiveMinutesTests {
-  /// Three windows of the person's own, and what has been done to them.
-  func makeDesk(settings: Settings = Harness.settingsWhenNoneAreGiven) -> (Harness, [WindowID], [CGRect?]) {
+  /// Three windows of the person's own, and what has been done to them. Arbor as it ships, in so many words, unless a test says otherwise: that
+  /// is what a newcomer meets.
+  func makeDesk(settings: Settings = Settings()) -> (Harness, [WindowID], [CGRect?]) {
     let h = Harness(settings: settings)
     let windows = [
       h.system.open(app: "Safari", frame: CGRect(x: 200, y: 120, width: 800, height: 600)),
@@ -99,7 +100,13 @@ import Testing
     #expect(windows.map { h.frame($0) } == arranged, "the arrangement is back")
     #expect(h.welcome.model.title == "That is all there is to it")
     #expect(h.welcome.model.summary == "The arrangement stays until you change it. ⌃⌥Z takes back the last change.")
-    #expect(h.welcome.model.footnote.contains("Right-click it for all commands"), "the item is a row of buttons now")
+    #expect(h.welcome.model.footnote.contains("Click it for all commands"), "the item is one icon whatever is docked (Q29)")
+    // With the buttons, an option, it is a row of them now, and a plain click would press one.
+    h.switchOn(\.withButtons)
+    h.welcome.tick()
+    #expect(h.welcome.model.footnote.contains("Right-click it for all commands"))
+    h.controller.apply(settings: Settings())
+    h.welcome.tick()
     #expect(h.welcome.click("Done") && !h.welcome.isOpen)
 
     #expect(h.mac.writes.isEmpty && h.mac.before.isEmpty, "macOS's tiling is as its owner has it")
@@ -181,9 +188,14 @@ import Testing
     #expect(h.welcome.model.title == "Arbor is paused" && h.welcome.model.desktops.isEmpty, "all of it in one step")
     h.run("resume")
     agrees(MenuBarModel.Icon(), "resumed")
-    // With something docked the item is a row of buttons, which begins with Arbor's mark.
+    // With something docked it is still the one icon, as Arbor ships (Q29).
     h.run("dock \(windows[0].rawValue) left")
+    agrees(MenuBarModel.Icon(), "something is docked")
+    #expect(h.controller.menuBarModel().buttons.isEmpty)
+    // With the buttons, an option, the item is a row of them, which begins with Arbor's mark.
+    h.switchOn(\.withButtons)
     #expect(h.welcome.model.footnoteIcon == MenuBarModel.Icon() && !h.controller.menuBarModel().buttons.isEmpty)
+    h.controller.apply(settings: Settings())
     // The permission goes with Check Setup… open: the icon, the page and the row, together.
     h.run("check-setup")
     h.revokeAccessibility()

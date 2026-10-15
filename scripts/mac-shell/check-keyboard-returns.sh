@@ -89,7 +89,7 @@ PLIST
 at_exit 'kill_started $KEYS_PID; rm -rf "$KEYS_APP"'
 
 # The app opens before Arbor starts, low in the middle of the display: the field, the palette and the panel of shortcuts come up higher, and a click has to find
-# the window. That is on the Desktop of [1 | Desktop | 2].
+# the window. That is on the Desktop of [1 | Desktop | 2], which has its room by a layout line.
 open_witness() {
   local x y w h
   read -r _ x y w h _ <<< "$(pointer displays | head -n 1)"
@@ -113,8 +113,8 @@ session() {
   local id x y w h before
   ARBOR_TEST_WINDOWS_ARGS="--regular"
   arbor_start 2 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0
-  ctl dock "$W1" left
-  ctl dock "$W2" right
+  # Two docks would be two halves, and meet under the app's window.
+  ctl layout "$W1 | Desktop | $W2"
   sleep 3  # a regular app joining the Dock resizes it, and with it every slot
   read -r id x y w h <<< "$(witness_window)"
   [ -n "$h" ] || die "the key-logging app shows no window"

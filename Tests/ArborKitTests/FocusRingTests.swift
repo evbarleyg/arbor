@@ -15,7 +15,7 @@ private let side = DisplaySnapshot(
   /// [a | b | c], thirds, with the keyboard on c, the window docked last, and long enough ago that
   /// nothing that happens next counts as caused by those commands.
   /// `apart`: each app is a process of its own, as a story about ⌘Tab needs. Otherwise they are one, and a switch among them is ⌘`.
-  func makeHarness(settings: Settings = Settings(), apart: Bool = false) -> (Harness, WindowID, WindowID, WindowID) {
+  func makeHarness(settings: Settings = .withRing, apart: Bool = false) -> (Harness, WindowID, WindowID, WindowID) {
     let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", pid: apart ? 11 : 1000, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", pid: apart ? 12 : 1000, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
@@ -122,13 +122,13 @@ private let side = DisplaySnapshot(
   }
 
   @Test func theRingIsThereFromTheStart() {
-    let earlier = Harness()
+    let earlier = Harness(settings: .withRing)
     earlier.system.open(app: "Safari")
     earlier.start()
     earlier.run("dock 101 left")
     earlier.controller.saveNow()
 
-    let h = Harness(saved: earlier.store.saved)
+    let h = Harness(settings: .withRing, saved: earlier.store.saved)
     let a = h.system.open(app: "Safari")
     h.system.focus(a)
     h.start()
@@ -140,7 +140,7 @@ private let side = DisplaySnapshot(
   // MARK: Not before Arbor is asked for anything
 
   @Test func thereIsNoRingUntilSomethingIsDocked() {
-    let h = Harness()
+    let h = Harness(settings: .withRing)
     let a = h.system.open(app: "Safari")
     let b = h.system.open(app: "Mail")
     h.system.focus(a)
@@ -164,7 +164,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func floatingTheLastDockedWindowTakesTheRingAway() {
-    let h = Harness()
+    let h = Harness(settings: .withRing)
     let a = h.system.open(app: "Safari")
     h.start()
     h.run("dock \(a.rawValue) left")
@@ -174,7 +174,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func somethingDockedOnOneDisplayIsEnoughForTheOther() {
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side])
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: .withRing)
     let b = h.system.open(app: "Notes", frame: CGRect(x: 1600, y: 100, width: 600, height: 400))
     h.start()
     h.system.userFocus(b)
@@ -222,7 +222,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aHiddenAppLosesTheRing() {
-    let h = Harness()
+    let h = Harness(settings: .withRing)
     let a = h.system.open(app: "Safari", pid: 2000)
     h.start()
     h.run("dock \(a.rawValue) left")
@@ -282,7 +282,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aTabBehindAnotherHasNoRing() {
-    var settings = Settings()
+    var settings = Settings.withRing
     settings.tabsEnabled = true
     let (h, a, b, _) = makeHarness(settings: settings)
     let centre = CGPoint(x: h.frame(a)!.midX, y: h.frame(a)!.midY)
@@ -313,7 +313,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aFloatingWindowThatFillsTheScreenHasItsRingInside() {
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side])
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: .withRing)
     let f = h.system.open(app: "Music", frame: side.visibleFrame)
     h.start()
     dockSomething(h)
@@ -547,7 +547,7 @@ private let side = DisplaySnapshot(
   // MARK: Displays
 
   @Test func onlyOneDisplayHasTheRing() {
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side])
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: .withRing)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 1600, y: 100, width: 600, height: 400))
     h.start()
@@ -564,7 +564,7 @@ private let side = DisplaySnapshot(
 
   @Test func aRelayoutOfOneDisplayTakesTheRingOffTheOther() {
     // The keyboard moved to the other display and the first thing Arbor hears of it is a relayout there.
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side])
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: .withRing)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 1600, y: 100, width: 600, height: 400))
     let c = h.system.open(app: "Mail", frame: CGRect(x: 1700, y: 200, width: 600, height: 400))
@@ -577,7 +577,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func theRingFollowsAWindowCarriedToAnotherDisplay() {
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side])
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: .withRing)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     h.start()
     dockSomething(h)
@@ -588,7 +588,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aDisplayGoingAwayTakesItsRingAlong() {
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side])
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side], settings: .withRing)
     let b = h.system.open(app: "Notes", frame: CGRect(x: 1600, y: 100, width: 600, height: 400))
     h.start()
     dockSomething(h)
@@ -604,7 +604,7 @@ private let side = DisplaySnapshot(
   // MARK: Settings
 
   @Test func theRingFollowsTheSettings() {
-    var settings = Settings()
+    var settings = Settings.withRing
     settings.focusRingWidth = 6
     settings.focusRingColour = "#FF000080"
     settings.focusRingRadius = 10
@@ -630,14 +630,14 @@ private let side = DisplaySnapshot(
   }
 
   @Test func withoutAGapTheRingIsInsideTheWindow() {
-    var settings = Settings()
+    var settings = Settings.withRing
     settings.gap = 0
     let (h, _, _, c) = makeHarness(settings: settings)
     #expect(ring(h)?.outerFrame == h.frame(c))
   }
 
   @Test func aLineThickerThanTheGapStaysOffTheNeighbours() {
-    var settings = Settings()
+    var settings = Settings.withRing
     settings.gap = 4
     settings.focusRingWidth = 10
     let (h, a, b, _) = makeHarness(settings: settings)
@@ -647,7 +647,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func windowsEndUpInTheSamePlacesWithAndWithoutTheRing() {
-    var off = Settings()
+    var off = Settings.withRing
     off.focusRing = false
     let (with, a, b, c) = makeHarness()
     let (without, _, _, _) = makeHarness(settings: off)

@@ -7,8 +7,9 @@ import CoreGraphics
 /// drawn every frame of it all the same; only a film of the screen says. So nothing is a finding that a busy main thread explains.
 public enum StageJudge {
   public struct Limits: Equatable, Sendable {
-    /// How long a motion is to last, in seconds: as long as Arbor's motions do unless somebody changes the setting.
-    public var duration = Settings().animationDuration
+    /// How long a motion is to last, in seconds: as long as Arbor's motions did while they shipped switched on, which is what
+    /// docs/VIABLE.md's rubric is written for. Not the default, which is no motion at all.
+    public var duration = Settings.usualMotionDuration
     /// Each motion is held to what its own plan says instead, for a run with another `animationDuration`.
     public var holdsToThePlan = false
     public var durationTolerance = 0.06

@@ -322,14 +322,14 @@ private func current(_ model: MenuBarModel) -> [MenuBarModel.Button.ID] {
 
   @Test func anOldSettingsFileGetsTheMenuBarDefaults() throws {
     let settings = try JSONDecoder().decode(Settings.self, from: Data(#"{"gap": 20}"#.utf8))
-    #expect(settings.menuBarControls)
+    #expect(!settings.menuBarControls)
     #expect(settings.historyButtons)
     #expect(settings.menuBarFill == 0.25)
   }
 
   @Test func theMenuBarSettingsRoundTrip() throws {
     var settings = Settings()
-    settings.menuBarControls = false
+    settings.menuBarControls = true
     settings.historyButtons = false
     settings.menuBarFill = 0.12
     let decoded = try JSONDecoder().decode(Settings.self, from: JSONEncoder().encode(settings))

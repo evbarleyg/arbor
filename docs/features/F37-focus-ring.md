@@ -99,6 +99,8 @@ They apply on `reload-settings`. Old settings files load.
 
 ## Shipped
 
+- **An option since 2026-10-15: `focusRing` ships false** (`collab/QUESTIONS.md`, Q29: nothing is drawn that was not asked for). Everything below
+  holds once it is switched on; its tests, scenario and scripts switch it on.
 - Everything above. 59 scenario tests and 15 core tests (`FocusRingTests.swift` in both test targets), the scenario
   `collab/scenarios/06-focus-ring.sim` with the new `expect ring <id>|none`, and `scripts/mac-shell/shots-focus-ring.sh`, which
   checks the ring's place and stacking on real windows against the window server's own list and takes the pictures

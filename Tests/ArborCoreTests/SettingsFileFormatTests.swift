@@ -93,6 +93,9 @@ import Testing
     }
     """# + "\n"
 
+  /// How a file is stripped is shown on files of a few lines. Only a whole one is (`OnlyAWholeFileIsStrippedTests`): these count as whole.
+  func stripped(_ text: String) throws -> Settings.UpgradedFile? { try Settings.upgradedFile(text, wholeFrom: 0) }
+
   // MARK: A new file
 
   @Test func afterAFirstLaunchTheFileHoldsTheMarkAndNothingElse() throws {
@@ -162,7 +165,7 @@ import Testing
       }
 
       """
-    let upgraded = try #require(try Settings.upgradedFile(text))
+    let upgraded = try #require(try stripped(text))
     #expect(
       upgraded.text == """
         {
@@ -190,14 +193,14 @@ import Testing
 
   @Test func aDefaultOfAnEarlierDayIsNoChoiceEither() throws {
     // ⇧⌘ were the rectangle's keys until 2026-10-14, and the guard shipped switched on until then.
-    let upgraded = try #require(try Settings.upgradedFile(#"{"frameRectangleModifier": "shift+cmd", "guardDesktopClicks": true, "gap": 12}"#))
+    let upgraded = try #require(try stripped(#"{"frameRectangleModifier": "shift+cmd", "guardDesktopClicks": true, "gap": 12}"#))
     #expect(upgraded.text == #"{"format": 2}"#)
     #expect(try Settings.read(upgraded.text) == Settings(), "they follow the defaults of today")
   }
 
   @Test func theSwitchForTheGesturesIsStrippedOnlyAsTheFirstBuildWroteIt() throws {
-    #expect(try Settings.upgradedFile(#"{"pointerGestures": false}"#)?.text == #"{"format": 2}"#)
-    #expect(try Settings.upgradedFile(#"{"pointerGestures": true}"#)?.text == #"{"pointerGestures": true, "format": 2}"#, "somebody switched it on")
+    #expect(try stripped(#"{"pointerGestures": false}"#)?.text == #"{"format": 2}"#)
+    #expect(try stripped(#"{"pointerGestures": true}"#)?.text == #"{"pointerGestures": true, "format": 2}"#, "somebody switched it on")
   }
 
   @Test func itHappensOnce() throws {
@@ -210,9 +213,9 @@ import Testing
   @Test func numbersAreComparedByTheirValueAndListsWithoutTheirWhiteSpace() throws {
     // An older macOS wrote 0.46 with seventeen digits, and an empty list over three lines.
     let text = "{\"animationDuration\": 0.46000000000000002, \"gap\": 12.0, \"rules\": [\n\n  ], \"bindings\": { }, \"messages\": \"helpful\"}"
-    #expect(try Settings.upgradedFile(text)?.text == #"{"format": 2}"#)
+    #expect(try stripped(text)?.text == #"{"format": 2}"#)
     // White space inside a string counts, and so does half a point.
-    #expect(try Settings.upgradedFile(#"{"excludedBundleIDs": [" "], "holdStillFor": [""], "gap": 12.5}"#)?.stripped == [])
+    #expect(try stripped(#"{"excludedBundleIDs": [" "], "holdStillFor": [""], "gap": 12.5}"#)?.stripped == [])
   }
 
   @Test func aFileArborCannotReadIsLeftAlone() throws {
@@ -222,12 +225,12 @@ import Testing
   }
 
   @Test func aValueArborCannotUseStaysForWhoeverWroteIt() throws {
-    let upgraded = try #require(try Settings.upgradedFile(#"{"gap": "12", "peek": true}"#))
+    let upgraded = try #require(try stripped(#"{"gap": "12", "peek": true}"#))
     #expect(upgraded.text == #"{"gap": "12", "format": 2}"#)
   }
 
   @Test func aByteOrderMarkAndTheLineEndingsOfAnotherSystemStay() throws {
-    let upgraded = try #require(try Settings.upgradedFile("\u{FEFF}{\r\n  \"peek\": true,\r\n  \"gap\": 20\r\n}\r\n"))
+    let upgraded = try #require(try stripped("\u{FEFF}{\r\n  \"peek\": true,\r\n  \"gap\": 20\r\n}\r\n"))
     #expect(upgraded.text == "\u{FEFF}{\r\n  \"gap\": 20,\r\n  \"format\": 2\r\n}\r\n")
   }
 
@@ -236,7 +239,7 @@ import Testing
       {"gap": 12, "rules": [{"app": "com.b", "action": "dock sideways"}], "bindings": {"ctrl+opt+x": 5}, "displays": [{"gap": 3}]}
       """#
     #expect(
-      try Settings.upgradedFile(text)?.text == #"""
+      try stripped(text)?.text == #"""
         {"rules": [{"app": "com.b", "action": "dock sideways"}], "bindings": {"ctrl+opt+x": 5}, "displays": [{"gap": 3}], "format": 2}
         """#)
   }
@@ -247,7 +250,7 @@ import Testing
   }
 
   @Test func aKeyWrittenTwiceGoesTwice() throws {
-    #expect(try Settings.upgradedFile(#"{"gap": 12, "peek": false, "gap": 30}"#)?.text == #"{"peek": false, "format": 2}"#)
+    #expect(try stripped(#"{"gap": 12, "peek": false, "gap": 30}"#)?.text == #"{"peek": false, "format": 2}"#)
   }
 
   // MARK: The table
