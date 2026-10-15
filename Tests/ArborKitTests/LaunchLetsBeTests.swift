@@ -84,13 +84,14 @@ import Testing
     #expect(h.system.raiseLog.isEmpty, "nothing is raised over it: \(h.system.raiseLog)")
   }
 
-  /// `[editor | Desktop | browser]` and loose notes. The editor goes no narrower than 1200 points, which beside
-  /// anything is more than the display has: it is a tile. Arbor has quit, and somebody has clicked it since.
+  /// `[editor | Desktop | browser]` and loose notes. The editor goes no narrower than 1300 points, which beside
+  /// anything, even two tiles, is more than the display has: it is a tile, also while it is typed in (F61). Arbor has
+  /// quit, and somebody has clicked it since.
   func quitWithTheKeyboardInAWindowThatIsTooWide(on side: String = "left") -> (Harness, tooWide: WindowID, others: [WindowID]) {
     let old = Harness()
     old.start()
-    let editor = old.system.open(app: "Xcode", pid: 11, frame: CGRect(x: 100, y: 100, width: 1200, height: 600))
-    old.system.setMinimumSize(editor, CGSize(width: 1200, height: 500))
+    let editor = old.system.open(app: "Xcode", pid: 11, frame: CGRect(x: 100, y: 100, width: 1300, height: 600))
+    old.system.setMinimumSize(editor, CGSize(width: 1300, height: 500))
     let browser = old.system.open(app: "Safari", pid: 12, frame: CGRect(x: 700, y: 100, width: 600, height: 500))
     let notes = old.system.open(app: "Notes", pid: 13, frame: CGRect(x: 300, y: 300, width: 500, height: 400))
     old.run("dock \(editor.rawValue) \(side)")

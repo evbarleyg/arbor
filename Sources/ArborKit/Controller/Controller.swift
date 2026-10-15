@@ -251,6 +251,10 @@ public final class Controller {
   /// gap, and the slots they squeezed into tiles that way, which stay as they left them.
   var gapsInHand = false
   var squeezedByHand: [DisplayID: Set<NodeID>] = [:]
+  /// True while a layout is made that nobody asked for (`unasked`): the window with the keyboard costs nobody their place.
+  var layingOutUnasked = false
+  /// The window that is being docked as it opens (`asItOpens`): with the keyboard in it, it costs nobody their place either.
+  var dockingAsItOpens: WindowID?
 
   /// True between `pause` and `resume` (Controller+Pause.swift). `isRunning` is false meanwhile.
   public internal(set) var isPaused = false
@@ -615,7 +619,7 @@ public final class Controller {
       saveNow()
       store.flush()
     }
-    relayoutAll(reason: .camera, motion: .instant)
+    unasked { relayoutAll(reason: .camera, motion: .instant) }
     theStartHasLaidOut()
     placedOnPurpose.removeAll()
     refreshHoldCaller()

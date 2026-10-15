@@ -39,7 +39,13 @@ extension Controller {
 
   /// Does what a rule says with a new window, whatever an earlier rule did with it. Without a
   /// rule the window floats. `theViewMayFollow`: see `dockNewWindow`.
+  ///
+  /// No neighbour pays with its place for a window that opened (F61, second round, 3).
   func apply(ruleAt index: Int?, to id: WindowID, theViewMayFollow: Bool = true) {
+    asItOpens(id) { obey(ruleAt: index, for: id, theViewMayFollow: theViewMayFollow) }
+  }
+
+  private func obey(ruleAt index: Int?, for id: WindowID, theViewMayFollow: Bool) {
     let rule = index.map { settings.newWindowRules[$0] }
     let dockedOn = workspaces.first { $0.value.isDocked(id) }?.key
     // (A window in a workspace is brought into view by `releaseUnmanagedWindows`. One that cannot be ignored yet

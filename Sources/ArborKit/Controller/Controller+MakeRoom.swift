@@ -34,8 +34,9 @@ extension Controller {
     let present = presentWindowIDs().union(late)
     let minimums = minimumSizes
     var terms = roomTerms(on: displayID)
-    // What the Desktop is owed it gets when something moves anyway, not because an app has moved its own window. (An app that makes
-    // the window being typed in larger than its slot is still served, at a neighbour's cost if need be; one in the background never.)
+    // What the Desktop is owed it gets when something moves anyway, not because an app has moved its own window. (An
+    // app that makes the window being typed in larger than its slot is still served, at a neighbour's cost if need
+    // be; one in the background never.)
     if reason == .enforce {
       terms.desktopIsOwed = false
       terms.givesBack = false
@@ -85,12 +86,33 @@ extension Controller {
     // Windows that keep their frames need no Desktop of any size: it counts as not in use, and docked windows come first.
     let onDesktop = settings.floatingWindowsMakeWay ? windowsOnDesktop(of: displayID, without: docking) : []
     let frames = onDesktop.compactMap { workspaces[displayID]?.floating[$0] }
-    return MakeRoom.Terms(
+    // Who has it now, not who had it last: it can cost a neighbour its place.
+    let keyboard = keyboardFocus()
+    var terms = MakeRoom.Terms(
       desktopIsInUse: !onDesktop.isEmpty,
-      // Who has it now, not who had it last: it can cost a neighbour its place.
-      keyboard: keyboardFocus(),
+      keyboard: keyboard,
       leaving: squeezedByHand[displayID] ?? [], desktopIsOwed: workspaces[displayID]?.desktopIsOwedRoom == true,
       desktopWish: CGSize(width: frames.map(\.width).max() ?? 0, height: frames.map(\.height).max() ?? 0))
+    // Only at a layout that follows a person's act. Not at a start, nor while the window is let be since, until a person asks
+    // for a layout (Controller+LetBe.swift); not for a report of the displays; not for the window that is docked as it
+    // opens. Those send nothing away (board 0.9).
+    terms.neighboursPay = !layingOutUnasked && keyboard.map { isLetBe($0) || $0 == dockingAsItOpens } != true
+    return terms
+  }
+
+  /// Runs a layout that nobody asked for: Arbor starts, or macOS has reported a change of displays.
+  func unasked(_ body: () -> Void) {
+    layingOutUnasked = true
+    defer { layingOutUnasked = false }
+    body()
+  }
+
+  /// Runs what docks `window` as it opens: a rule, or the place that was kept for it. Nobody asked for that either, and it has the
+  /// keyboard by now, as a rule. It is this window that costs no neighbour its place: whoever was being typed in before keeps theirs.
+  func asItOpens(_ window: WindowID, _ body: () -> Void) {
+    dockingAsItOpens = window
+    defer { dockingAsItOpens = nil }
+    body()
   }
 
   /// The windows that float on the Desktop: not kept in view wherever the view goes (pinned, summoned), not waiting out of
@@ -154,6 +176,16 @@ extension Controller {
       for window in layout.windowFrames.keys {
         if let leaf = view.tree.leaf(containing: window) { squeezed.remove(leaf) }
       }
+      // A row or column that the hand has made one tile, or a smaller one, likewise: nothing in it is fetched out of
+      // it.
+      let groups = layout.tiles.filter { $0.kind == .group }
+      squeezed.subtract(squeezed.filter { node in view.tree.isSplit(node) && !groups.contains { $0.node == node } })
+      squeezed.formUnion(
+        groups.filter { tile in
+          guard let shown, shown.tiles.contains(where: { $0.node == tile.node }), let was = shown.nodeFrames[tile.node]
+          else { return true }
+          return tile.frame.width < was.width - 0.5 || tile.frame.height < was.height - 0.5
+        }.map(\.node))
     }
     squeezedByHand[displayID] = squeezed.isEmpty ? nil : squeezed
   }

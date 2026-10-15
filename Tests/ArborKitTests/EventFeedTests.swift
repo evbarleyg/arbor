@@ -657,11 +657,13 @@ private final class Listener {
   }
 
   @Test func aWindowTooSmallToUseIsATile() throws {
-    let (h, feed, _, _, _) = makeHarness()
+    let (h, feed, _, b, _) = makeHarness()
     let listener = try Listener(feed, "watch layout window")
     _ = try listener.take()
     let big = h.system.open(
       app: "Xcode", frame: CGRect(x: 400, y: 200, width: 900, height: 500), minimumSize: CGSize(width: 900, height: 500))
+    // Somebody else is being typed in: the window with the keyboard would be served at its neighbours' cost (F61).
+    h.system.userFocus(b)
     h.run("dock \(big.rawValue) right")
     turn(h)
     let events = try listener.take()

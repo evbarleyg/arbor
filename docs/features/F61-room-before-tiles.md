@@ -24,18 +24,46 @@ Of the fourth round (2026-10-15): a slot squeezed by hand still gives to a windo
 2. **Room goes back to whom it was taken from.** The tree keeps a ledger (`LayoutTree+Loans.swift`): who gave how much to whom, for whose sake. It is repaid when the window closes, floats or is docked elsewhere, and as soon as the window can spare it
    (a neighbour has closed, the display is larger); only windows whose minimum is known give back, so a launch moves nothing. So the arrangement is what the person made it plus the least its windows need, in whatever order things happened. What
    was lent across a gap that a person has moved since is forgotten: that gap is theirs. The ledger is saved with the tree, and comes and goes with undo.
-3. **The window with the keyboard is the last to become a tile**: it is served first, then the others, the one docked last first. If what can be spared is not enough for it, what Arbor lent to its neighbours goes back first, and they are served again from what is
-   left: the one exception to "nobody in view pays with their place". So of Mail and a chat that do not both fit, the one that shows after ⌃⌥Space is the one the person was typing in, as long as the gaps between them are where Arbor put them. How far it reaches:
+3. **The window with the keyboard is never the tile, if it fits at all** (`docs/VIABLE.md`; QUESTIONS, 2026-10-15, F61). It is served first, then the others, the one docked last first. For it alone there is more than what can be spared, the one exception to
+   "nobody in view pays with their place":
+   - what Arbor lent to its neighbours goes back first;
+   - if that is not enough, the neighbours lend what they need themselves, and lose their place by it. It is written into the ledger like any loan. So a gap that a person has moved, which is theirs, is back where they put it when the window leaves, can
+     spare it, or another window has the keyboard and needs it;
+   - if even that is not enough, what was lent anywhere in view goes back as well: a group beside the window shrinks in proportion, so what was lent inside it decides how far it can shrink;
+   - then the others are served again from what is left, so no more windows leave the view than must.
+
+   So of Mail and a chat that do not both fit, the one that shows after ⌃⌥Space is the one the person was typing in. The price: on a small display one large window with the keyboard can leave all its neighbours tiles. How far it reaches:
    - The window that has the keyboard now, not the one that had it last: when a floating window closes and nobody has it, nobody pays.
-   - Only in the rows and columns that the window itself is in, as far as they are in view as a whole: a look into a group changes nothing outside it, and in a column beside it the same windows show as before.
-   - On every occasion, also when the app being typed in makes its own window larger than its place (decided by the product owner, 2026-10-15). An app in the background that does so costs nobody their place: its window is the tile.
-   - All or nothing: for a window that still does not fit, nothing goes back and nobody pays. It is the tile.
-   - A place that the person's own hand has made short, or shorter, stays as they left it: it is not served, whoever has the keyboard (criterion 6), and gives nothing back for it.
+   - What is out of view is left as it is: a look into a group changes nothing outside it.
+   - Wherever a tile is decided but for the layouts named below, also when the app being typed in makes its own window larger than its place, and when a window comes back out of the Dock or out of ⌘H into a place that is too small for it. An app in the
+     background that grows its window costs nobody their place: its window is the tile.
+   - **Only at a layout that follows a person's act** (ruled by the product owner, 2026-10-15; board 0.9). These are layouts nobody asked for, and send nothing away: there nothing goes back for the window with the keyboard and nobody lends.
+     - **A start and a resume**, whoever has the keyboard. If it is a window in view that has no room, it is let be where it stands (Q16), also at what follows by itself; at the first thing the person asks for it is a window like any other, with the keyboard.
+     - **A report of the displays.**
+     - **A window that is docked as it opens**: by a rule, by automatic docking (F23), whose rehearsal reckons likewise, or into the place that was kept for it since a login. It is *that window* which costs nobody their place; whoever was being typed in before
+       keeps theirs, and the newcomer is the tile. With no room to spare for it, the view goes to it, as it did before this round. (What was lent went back for it then. It does not now.)
+     - Not covered, and so as everywhere else: a window that is docked as it opens and says only later that it will not be so small (its app was still starting, so it is laid out again a quarter of a second later). And `release` by hand docks what waited
+       during a hold without moving the view: a window being typed in that then has no room is a tile, as it was before this round (board 1.12).
+   - **Let be means that no frame is set** (the product owner, 2026-10-15). After a pause none is: what was learned is still known, so it is decided on paper, and the neighbour goes to its place in one move. **Not yet at a launch.** A new process knows nobody's
+     smallest size, and the saved arrangement does not tell (the slot that waits is wide enough for some window; it is a tile only because of what was known). So the window is asked where it stands, like anybody, is narrower for a moment, and gets its width
+     back: `sized-there-and-back-let-be`, a known failure with this story. It was so before this round for a window that fits nowhere. For whoever builds board 1.32: once a launch knows what the last run knew it is a resume, with one clause: **of the window that
+     is let be the paper is believed, unasked**, as of a lender; it is not in its corner, where a question costs the eye nothing. The test is there: `atAStartNobodyPaysAndAtTheFirstThingThePersonAsksForTheNeighbourDoes` counts the frames.
+   - **Before the neighbours pay, an old record is questioned** (F45): if what Arbor believes about the size of the window being typed in is older than `tileRetryMinutes`, the window is asked where it is, as any window is before it becomes a tile.
+   - Also out of the tile of a group: a row or column that is too small for anything is one tile, and what is in it waits until somebody looks, but not the window being typed in. The groups around it are grown until they can be laid out with nothing in
+     them smaller than a tile goes, then the window.
+   - A neighbour that lent its place comes back when it is typed in, also if Arbor has never learned what it needs (after a restart that is everybody): it then needs the smallest usable size.
    - Nobody is left with less than a tile, and what cannot go back stays owed.
    - A drop's preview goes by the window in the hand, as the drop will: its place is one that only the drop makes.
    - Switching to a window moves no gap by itself. It happens at the next layout: ⌘Tab to a tile's window still frames it.
-   - **A limit, known:** only what Arbor lent goes back. A gap that a person has moved since is theirs, nothing is owed across it, and beside it the window being typed in can still be the tile, against `docs/VIABLE.md` ("The window with the
-     keyboard is never the tile"). The cure is decided (the neighbours lend what they need themselves, written into the ledger, so that the gap comes back) and is a change of its own.
+
+   **Where it can still be the tile.** In none of these may the keyboard stay in the tile: that is board 1.12.
+   - At a layout nobody asked for (above).
+   - It fits nowhere, with everybody beside it as small as a tile goes. All or nothing: nothing goes back and nobody pays.
+   - The person's own hand made its place short, or shorter (criterion 6, T20): a window's place, or a row or column squeezed into one tile. It stays as they left it, is not served, and gives nothing back.
+   - Arbor knows nothing about the window, its place is too small for any window (under 240 × 160), and nobody lent anything: six columns on a laptop's display. As ever, all are tiles. **Decided by the product owner, 2026-10-15: it stays so.** To take 240
+     points from the neighbours would be Arbor rearranging what its person set up because of where the keyboard is: more by itself, not less (Q29). The fault there is not the tile but the keyboard in a window nobody sees.
+   - Beside a nested group that cannot shrink any further in proportion: 6 of 60,000 random arrangements. The walk in `KeyboardFirstRoomTests` accepts that cause and no other, and counts.
+   - Who else shows beside it still depends on who had the keyboard before: whoever is in view keeps their place while nobody has a better claim. More often than before places were lent (board 1.51, whose cure is to work the loans out afresh at every layout).
 4. Tiles give in two steps: first what leaves them large enough for a window, below that only if it takes that.
 5. A gap moved by hand marks only the slots it made short, or shorter, as squeezed; it cancels what the Desktop is owed only if it is one of the Desktop's own gaps; looking at the Desktop cancels nothing; `layout <line>` starts afresh like `arrange` (all
    four from the review by R6).

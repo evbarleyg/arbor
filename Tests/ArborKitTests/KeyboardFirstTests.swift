@@ -5,8 +5,8 @@ import CoreGraphics
 import Foundation
 import Testing
 
-/// F61, second round, 3: where room is short, whoever has the keyboard is served first, and what was lent to the others goes back
-/// for it. The one exception to "nobody in view pays with their place", so these are about how far it reaches.
+/// F61, second round, 3: where room is short, whoever has the keyboard is served first. What was lent to the others goes back for it, and
+/// if that is not enough they lend. The one exception to "nobody in view pays with their place", so these are about how far it reaches.
 extension RoomBeforeTilesTests {
   /// Mail and a chat, floating, started. They do not both fit on 1440 points.
   func mailAndChat() -> (Harness, mail: WindowID, chat: WindowID) {
@@ -170,9 +170,9 @@ extension RoomBeforeTilesTests {
     expectWindowsMatchLayout(h)
   }
 
-  /// The limit, as it stands: the person has moved the gap beside the chat, by ten points. That gap is theirs, so Arbor has nothing to
-  /// take back across it, and Mail is the tile though it is being typed in. Known, against `docs/VIABLE.md`; the cure is a change of its own.
-  @Test func acrossAGapMovedByHandNothingGoesBack() throws {
+  /// The person has moved the gap beside the chat, by ten points. That gap is theirs, so Arbor has nothing to take back across it.
+  /// The window being typed in shows all the same, and when the chat is typed in again the gap is where the person put it.
+  @Test func aGapMovedByHandDoesNotMakeATileOfTheWindowBeingTypedIn() throws {
     let (h, mail, chat) = mailAndChat()
     h.system.userFocus(mail)
     h.run("dock \(mail.rawValue) left")
@@ -188,9 +188,367 @@ extension RoomBeforeTilesTests {
     h.scheduler.runPending()
     h.run("show-all")
     h.scheduler.runPending()
+    expectInView(h, mail)
+    #expect(isTile(h, chat))
+    #expect(h.system.focused == mail)
+    expectWindowsMatchLayout(h)
+
+    h.system.userFocus(chat)
+    h.scheduler.runPending()
+    h.run("show-all")
+    h.scheduler.runPending()
     expectInView(h, chat)
     #expect(h.frame(chat) == theirs)
+    expectWindowsMatchLayout(h)
+  }
+
+  /// Mail will not go below 1100 points. Typed in, it leaves the column of the chat and Notes 212, too narrow for anything, so the column is
+  /// one tile. Whoever is typed in next in there shows again, and everything is where it was.
+  @Test func outOfAColumnThatHasBecomeOneTile() throws {
+    let h = Harness()
+    let mail = h.system.open(
+      app: "Mail", pid: 1001, frame: CGRect(x: 100, y: 100, width: 1200, height: 700), minimumSize: CGSize(width: 1100, height: 400))
+    let chat = h.system.open(
+      app: "Chat", pid: 1002, frame: CGRect(x: 300, y: 100, width: 600, height: 400), minimumSize: CGSize(width: 400, height: 300))
+    let notes = h.system.open(
+      app: "Notes", pid: 1003, frame: CGRect(x: 200, y: 100, width: 600, height: 400), minimumSize: CGSize(width: 400, height: 300))
+    h.start()
+    func showAll(typingIn window: WindowID) {
+      h.system.userFocus(window)
+      h.scheduler.runPending()
+      h.run("show-all")
+      h.scheduler.runPending()
+      #expect(h.system.focused == window)
+      expectInView(h, window)
+      expectWindowsMatchLayout(h)
+    }
+    h.system.userFocus(mail)
+    h.run("dock \(mail.rawValue) left")
+    h.system.userFocus(chat)
+    h.run("dock \(chat.rawValue) right")
+    h.system.userFocus(notes)
+    h.run("dock \(notes.rawValue) beside \(chat.rawValue) bottom")
+    showAll(typingIn: chat)
+    expectInView(h, chat, notes)
+    let before = try #require(h.layout)
+
+    showAll(typingIn: mail)
+    #expect(h.layout?.tiles.contains { $0.kind == .group && $0.windows.contains(chat) } == true)
+
+    showAll(typingIn: chat)
+    #expect(h.layout?.windowFrames == before.windowFrames)
+    #expect(h.layout?.tiles.map(\.frame) == before.tiles.map(\.frame))
+  }
+
+  /// Notes has never refused a size, so Arbor does not know what it needs. It lends Mail its place and is a tile too small for any window.
+  /// Typed in, it shows again where it was. After a restart too, when Arbor has forgotten what it had learned about anybody.
+  @Test(arguments: [false, true]) func aNeighbourThatLentItsPlaceComesBackThoughNothingIsKnownAboutIt(restart: Bool) throws {
+    func open(_ h: Harness) -> (mail: WindowID, notes: WindowID) {
+      let mail = h.system.open(
+        app: "Mail", pid: 1001, frame: CGRect(x: 100, y: 100, width: 1200, height: 700), minimumSize: CGSize(width: 1150, height: 400))
+      return (mail, h.system.open(app: "Notes", pid: 1003, frame: CGRect(x: 200, y: 100, width: 500, height: 500)))
+    }
+    func showAll(_ h: Harness, typingIn window: WindowID) {
+      h.system.userFocus(window)
+      h.scheduler.runPending()
+      h.run("show-all")
+      h.scheduler.runPending()
+      #expect(h.system.focused == window)
+      expectInView(h, window)
+      expectWindowsMatchLayout(h)
+    }
+    var h = Harness()
+    let (mail, notes) = open(h)
+    h.start()
+    h.system.userFocus(mail)
+    h.run("dock \(mail.rawValue) left")
+    h.system.userFocus(notes)
+    h.run("dock \(notes.rawValue) right")
+    expectInView(h, notes)
+    let place = try #require(h.frame(notes))
+    showAll(h, typingIn: mail)
+    #expect(isTile(h, notes))
+    if restart {
+      h.controller.saveNow()
+      h = Harness(saved: h.store.saved)
+      _ = open(h)
+      h.start()
+      h.scheduler.runPending()
+    }
+    showAll(h, typingIn: notes)
+    #expect(h.frame(notes) == place)
+  }
+
+  /// The person drags the gap until the column of the chat and Notes is one tile. They get the tile they asked for (T20): nothing in it is
+  /// fetched out of it, whoever has the keyboard, and the Desktop that they made wider stays as wide.
+  @Test func aColumnSqueezedIntoOneTileByHandStaysAsItWasLeft() throws {
+    let h = Harness()
+    let mail = h.system.open(
+      app: "Mail", pid: 1001, frame: CGRect(x: 100, y: 100, width: 1000, height: 700), minimumSize: CGSize(width: 900, height: 400))
+    let chat = h.system.open(
+      app: "Chat", pid: 1002, frame: CGRect(x: 300, y: 100, width: 600, height: 400), minimumSize: CGSize(width: 300, height: 300))
+    let notes = h.system.open(
+      app: "Notes", pid: 1003, frame: CGRect(x: 200, y: 100, width: 600, height: 400), minimumSize: CGSize(width: 300, height: 300))
+    h.start()
+    h.system.userFocus(mail)
+    h.run("dock \(mail.rawValue) left")
+    h.system.userFocus(chat)
+    h.run("dock \(chat.rawValue) right")
+    h.system.userFocus(notes)
+    h.run("dock \(notes.rawValue) beside \(chat.rawValue) bottom")
+    expectInView(h, mail, chat, notes)
+    let seam = try #require(h.overlays.seams[h.display]?.last { $0.axis == .horizontal })
+    h.overlays.dragSeam(seam, by: 250)
+    let tile = try #require(h.layout?.tiles.first { $0.kind == .group && $0.windows.contains(chat) })
+    let desktop = h.layout?.nodeFrames[h.workspace.tree.desktop]
+
+    h.system.userFocus(chat)
+    h.scheduler.runPending()
+    h.run("show-all")
+    h.scheduler.runPending()
+    #expect(h.layout?.tiles.first { $0.node == tile.node }?.frame == tile.frame)
+    #expect(h.layout?.nodeFrames[h.workspace.tree.desktop] == desktop)
+    expectInView(h, mail)
+    expectWindowsMatchLayout(h)
+  }
+
+  /// Three windows are enough: Mail on top; below it the Desktop beside a column of Safari and Notes. What Notes borrowed from Safari inside
+  /// that column, when it was typed in, decides how far the column can shrink. For Mail's sake it goes back as well.
+  @Test func whatWasLentInsideTheGroupBesideItGoesBackIfNothingElseHelps() {
+    let h = Harness()
+    let mail = h.system.open(
+      app: "Mail", pid: 1001, frame: CGRect(x: 100, y: 100, width: 900, height: 650), minimumSize: CGSize(width: 500, height: 600))
+    let safari = h.system.open(
+      app: "Safari", pid: 1002, frame: CGRect(x: 60, y: 60, width: 900, height: 600), minimumSize: CGSize(width: 800, height: 550))
+    let notes = h.system.open(
+      app: "Notes", pid: 1003, frame: CGRect(x: 200, y: 100, width: 600, height: 400), minimumSize: CGSize(width: 450, height: 350))
+    h.start()
+    h.system.userFocus(safari)
+    h.run("dock \(safari.rawValue) right")
+    h.system.userFocus(notes)
+    h.run("dock \(notes.rawValue) beside \(safari.rawValue) bottom")
+    h.system.userFocus(mail)
+    h.run("dock \(mail.rawValue) top")
+    for typingIn in [mail, notes, mail, safari, mail] {
+      h.system.userFocus(typingIn)
+      h.scheduler.runPending()
+      h.run("show-all")
+      h.scheduler.runPending()
+      #expect(h.system.focused == typingIn)
+      expectInView(h, typingIn)
+      expectWindowsMatchLayout(h)
+    }
+  }
+
+  /// Quit Arbor, click Mail in the Dock, open Arbor again. A start takes nobody out of view, and nobody moves for the window with the
+  /// keyboard: it is let be where it stands (Q16). At the first thing the person asks for it is a window like any other, with the keyboard.
+  @Test func atAStartNobodyPaysAndAtTheFirstThingThePersonAsksForTheNeighbourDoes() throws {
+    let (old, mail, chat) = mailAndChat()
+    old.system.userFocus(mail)
+    old.run("dock \(mail.rawValue) left")
+    old.system.userFocus(chat)
+    old.run("dock \(chat.rawValue) right")
+    #expect(isTile(old, mail))
+    old.controller.shutdown()
+    old.system.userFocus(mail)
+    let stood = try #require(old.frame(mail))
+
+    let h = old.newProcess()
+    h.system.clearFrameLog()
+    h.start()
+    h.scheduler.advance(by: 3)
+    #expect(h.controller.windowLetBe == mail)
+    #expect(h.frame(mail) == stood)
+    #expect(h.system.isVisible(chat) && !isTile(h, chat), "nobody moves for it")
+    #expect(h.system.focused == mail)
+    expectWindowsMatchLayout(h)
+    // A FAULT, pinned so that its cure is seen: let be means no frame at all, as after a pause (the next test). A new process knows
+    // nobody's smallest size, so both are asked where they stand, and Mail gets its width back. It ends with board 1.32: then
+    // Mail's list is empty and the chat's has its place alone. (`ChaosKnownFailures.swift`, `sized-there-and-back-let-be`, has this story.)
+    let asked = CGRect(origin: stood.origin, size: CGSize(width: 820, height: stood.height))
+    #expect(h.system.frameLog.filter { $0.window == mail }.map(\.frame) == [asked, stood], "\(h.system.frameLog)")
+    #expect(h.system.frameLog.filter { $0.window == chat }.count == 2, "a question where it stands, and one move: \(h.system.frameLog)")
+
+    h.run("show-all")
+    h.scheduler.runPending()
+    #expect(h.controller.windowLetBe == nil)
+    expectInView(h, mail)
+    #expect(isTile(h, chat))
+    #expect(h.system.focused == mail)
+    expectWindowsMatchLayout(h)
+  }
+
+  /// It lasts as long as the window is let be: what happens by itself afterwards, here a neighbour that closes, lays out the others, and
+  /// nobody pays for it then either.
+  @Test func whileItIsLetBeWhatHappensByItselfCostsNobodyTheirPlaceEither() throws {
+    let (old, mail, chat) = mailAndChat()
+    let notes = old.system.open(app: "Notes", pid: 1003)
+    old.system.userFocus(mail)
+    old.run("dock \(mail.rawValue) left")
+    old.system.userFocus(chat)
+    old.run("dock \(chat.rawValue) right")
+    old.run("dock \(notes.rawValue) beside \(chat.rawValue) bottom")
+    old.controller.shutdown()
+    old.system.userFocus(mail)
+    let stood = try #require(old.frame(mail))
+
+    let h = old.newProcess()
+    h.start()
+    h.scheduler.advance(by: 3)
+    #expect(h.controller.windowLetBe == mail, "\(h.ascii())")
+    h.system.close(notes)
+    h.scheduler.advance(by: 3)
+    #expect(h.controller.windowLetBe == mail && h.frame(mail) == stood, "\(h.ascii())")
+    #expect(h.system.isVisible(chat) && !isTile(h, chat))
+    #expect(h.system.focused == mail)
+    expectWindowsMatchLayout(h)
+  }
+
+  /// Pause Arbor, click Mail in the Dock, resume. What was learned of the two is still known, so it is all decided on paper: let be means
+  /// that no frame is set, not even a question, and the neighbour goes to its place in one move.
+  @Test func atAResumeTheWindowThatIsLetBeIsSetNoFrameAndItsNeighbourOne() throws {
+    let (h, mail, chat) = mailAndChat()
+    h.system.userFocus(mail)
+    h.run("dock \(mail.rawValue) left")
+    h.system.userFocus(chat)
+    h.run("dock \(chat.rawValue) right")
+    let place = try #require(h.frame(chat))
+    #expect(h.run("pause").ok)
+    h.system.userFocus(mail)
+    h.system.clearFrameLog()
+
+    #expect(h.run("resume").ok)
+    h.scheduler.advance(by: 3)
+    #expect(h.controller.windowLetBe == mail)
+    #expect(h.system.frameLog.filter { $0.window == mail }.isEmpty, "\(h.system.frameLog)")
+    #expect(h.system.frameLog.filter { $0.window == chat }.map(\.frame) == [place], "\(h.system.frameLog)")
+    #expect(h.system.focused == mail)
+    expectWindowsMatchLayout(h)
+  }
+
+  /// A rule docks a window that has just opened, which has the keyboard by then. Nobody asked for that layout either: a neighbour does
+  /// not pay with its place for a window that opened (decided by the product owner, 2026-10-15). The view goes to it, as it always did.
+  @Test func aWindowThatARuleDocksAsItOpensIsNotServedAtItsNeighboursCost() throws {
+    var settings = Settings()
+    settings.rules = [AppRule(app: "com.example.mail", action: .dock(.left))]
+    let h = Harness(settings: settings)
+    let safari = h.system.open(app: "Safari", pid: 1002)
+    h.start()
+    h.run("dock \(safari.rawValue) right")
+
+    // More than Safari and the Desktop can spare between them, and less than the display has beside two tiles.
+    let opened = CGRect(x: 200, y: 200, width: 1200, height: 600)
+    let mail = h.system.open(app: "Mail", pid: 1001, frame: opened, minimumSize: opened.size)
+    h.scheduler.advance(by: 3)
+    #expect(h.system.focused == mail && h.workspace.isDocked(mail))
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: mail), "\(h.ascii())")
+    expectWindowsMatchLayout(h)
+
+    // What the person asks for is another matter.
+    h.run("show-all")
+    h.scheduler.runPending()
+    expectInView(h, mail)
+    #expect(isTile(h, safari))
+    expectWindowsMatchLayout(h)
+  }
+
+  /// It is the window that opened that costs nobody their place. The window being typed in, which was there before, does not lose its own
+  /// to it: a window of another app opens in the background, and a rule docks it.
+  @Test func aWindowThatARuleDocksAsItOpensDoesNotTakeThePlaceOfTheWindowBeingTypedIn() throws {
+    var settings = Settings()
+    settings.rules = [AppRule(app: "com.example.notes", action: .dock(.right))]
+    let h = Harness(settings: settings)
+    let mail = h.system.open(
+      app: "Mail", pid: 1001, frame: CGRect(x: 100, y: 100, width: 1150, height: 700), minimumSize: CGSize(width: 1100, height: 400))
+    let safari = h.system.open(app: "Safari", pid: 1002)
+    h.start()
+    h.run("dock \(safari.rawValue) right")
+    h.system.userFocus(mail)
+    h.run("dock \(mail.rawValue) left")
+    h.scheduler.advance(by: 3)
+    expectInView(h, mail)
+
+    h.system.echoes.keyboard = false
+    let notes = h.system.open(app: "Notes", pid: 1003)
+    h.scheduler.advance(by: 3)
+    #expect(h.workspace.isDocked(notes) && h.system.focused == mail)
+    expectInView(h, mail)
+    #expect(isTile(h, notes), "\(h.ascii())")
+    expectWindowsMatchLayout(h)
+  }
+
+  /// At a login Arbor is up before the apps. Mail opens, with the keyboard, into the place that was kept for it: a window that opened, like
+  /// one that a rule docks.
+  @Test func aWindowThatOpensIntoThePlaceKeptForItCostsNobodyTheirPlace() throws {
+    let (old, mail, chat) = mailAndChat()
+    old.system.userFocus(mail)
+    old.run("dock \(mail.rawValue) left")
+    old.system.userFocus(chat)
+    old.run("dock \(chat.rawValue) right")
+    old.controller.shutdown()
+    old.system.setListed(mail, false)
+
+    let h = old.newProcess()
+    h.start()
+    h.scheduler.advance(by: 3)
+    expectInView(h, chat)
+    // It has the keyboard by the time Arbor hears of it, and macOS says so afterwards.
+    h.system.focused = mail
+    h.system.setListed(mail, true)
+    #expect(h.workspace.isDocked(mail), "\(h.ascii())")
+    #expect(h.system.isVisible(chat) && !isTile(h, chat), "\(h.ascii())")
+    h.system.userFocus(mail)
+    h.scheduler.advance(by: 3)
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: mail), "the view goes to it, as to any window out of view: \(h.ascii())")
+    #expect(h.system.focused == mail && h.system.isVisible(mail))
+    expectWindowsMatchLayout(h)
+  }
+
+  /// Arbor is killed with the keyboard in Mail, which is a tile, so in its corner. Nobody sees it, so there is nothing to let be, and a start
+  /// sends nothing away all the same: it stays behind its tile, and the keyboard goes to a window in view (Controller+LetBe.swift).
+  @Test func afterACrashTooAStartCostsNobodyTheirPlace() throws {
+    let (old, mail, chat) = mailAndChat()
+    old.system.userFocus(mail)
+    old.run("dock \(mail.rawValue) left")
+    old.system.userFocus(chat)
+    old.run("dock \(chat.rawValue) right")
+    old.scheduler.advance(by: 3)
+    #expect(isTile(old, mail) && !old.system.isVisible(mail))
+    old.system.focused = mail
+
+    let h = old.newProcess()
+    h.start()
+    h.scheduler.advance(by: 3)
+    #expect(h.controller.windowLetBe == nil)
+    #expect(h.system.isVisible(chat) && !isTile(h, chat), "\(h.ascii())")
+    #expect(h.workspace.camera == h.workspace.tree.root)
+    #expect(h.system.focused == chat)
+    expectWindowsMatchLayout(h)
+  }
+
+  /// macOS reports the displays: the Dock has grown, a display has blinked. Nobody asked for that layout, so it sends nothing away, though
+  /// Mail, which is a tile, has the keyboard by now (⌘Tab, as macOS reports it when the app's window stays the same).
+  @Test func aReportOfTheDisplaysCostsNobodyTheirPlace() throws {
+    let (h, mail, chat) = mailAndChat()
+    h.system.userFocus(mail)
+    h.run("dock \(mail.rawValue) left")
+    h.system.userFocus(chat)
+    h.run("dock \(chat.rawValue) right")
     #expect(isTile(h, mail))
+    let place = try #require(h.frame(chat))
+    h.system.userSwitchesApp(to: mail)
+    #expect(h.workspace.camera == h.workspace.tree.root && h.system.focused == mail)
+
+    h.system.clearFrameLog()
+    h.system.setDisplays([FakeWindowSystem.standardDisplay])
+    h.scheduler.advance(by: 1)
+    #expect(h.frame(chat) == place && !isTile(h, chat))
+    #expect(h.workspace.camera == h.workspace.tree.root)
+
+    h.run("show-all")
+    h.scheduler.runPending()
+    expectInView(h, mail)
+    #expect(isTile(h, chat))
     expectWindowsMatchLayout(h)
   }
 
@@ -327,6 +685,36 @@ extension RoomBeforeTilesTests {
     h.system.clearFrameLog()
     h.scheduler.advance(by: 5)
     #expect(h.workspace.tree == tree && h.system.frameLog.isEmpty)
+  }
+
+  /// Found by a hunt. Notes is docked on the right; the person looks at the Desktop, opens Mail and docks it at the top there. Mail goes
+  /// away (⌘H, ⌘M) and is fetched again with a click in the Dock. It comes back beside Notes, into a column 65 points too narrow for
+  /// it, lay over Notes for a second, and was then swept into a tile with the keyboard in it: what was typed went to a window nobody saw.
+  @Test(arguments: ["hidden", "minimized"]) func aWindowFetchedBackIntoAPlaceTooSmallForItIsNotSweptIntoATile(trip: String) {
+    let h = Harness()
+    let notes = h.system.open(
+      app: "Notes", pid: 1001, frame: CGRect(x: 150, y: 80, width: 900, height: 600), minimumSize: CGSize(width: 709, height: 300))
+    h.start()
+    h.system.userFocus(notes)
+    h.run("dock right")
+    h.run("desktop")
+    h.scheduler.runPending()
+    let mail = h.system.open(
+      app: "Mail", pid: 1002, frame: CGRect(x: 142, y: 90, width: 1100, height: 700), minimumSize: CGSize(width: 760, height: 400))
+    h.system.userFocus(mail)
+    h.run("dock top")
+    h.scheduler.runPending()
+    expectInView(h, mail)
+
+    func away(_ gone: Bool) { trip == "hidden" ? h.system.setHidden(pid: 1002, gone) : h.system.setMinimized(mail, gone) }
+    away(true)
+    h.scheduler.advance(by: 5)
+    away(false)
+    h.system.userFocus(mail)
+    h.scheduler.advance(by: 2)
+    #expect(h.system.focused == mail)
+    expectInView(h, mail)
+    expectWindowsMatchLayout(h)
   }
 
   /// Only the window with the keyboard can do that. An app in the background that makes its window larger is the one that pays.

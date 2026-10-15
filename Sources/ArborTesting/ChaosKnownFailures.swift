@@ -209,6 +209,35 @@ extension ChaosRunner {
         key down arrange
         """),
     ChaosKnownFailure(
+      rule: "sized-there-and-back-let-be", owner: "board 1.32: Arbor knows how small apps go, and believes it of the window that is let be", severity: 3,
+      story: "Quit Arbor, click an app in the Dock, open Arbor. The window with the keyboard turns out to have no room, so it is let be where it stands "
+        + "(Q16). Let be means that no frame is set, and after a pause none is, because what was learned is still known. A new process knows nobody's "
+        + "smallest size: the window is asked where it stands, like anybody, becomes narrower, and gets its width back. It ends when a launch knows what the "
+        + "last run knew; for this window the paper is then believed, unasked, as it is for a lender.",
+      script: """
+        launch
+        open 101 Mail pid 1002 at 100 100 900 700 min 820 400
+        focus 101
+        dock 101 left
+        open 102 Chat pid 1008 at 300 100 900 700 min 760 500
+        focus 102
+        dock 102 right
+        quit
+        focus 101
+        launch
+        """,
+      """
+        launch
+        open 101 Xcode pid 1004 at 40 100 1350 700 min 1300 500
+        focus 101
+        dock 101 left
+        open 102 Safari pid 1000 at 300 100 600 500
+        dock 102 right
+        quit
+        focus 101
+        launch
+        """),
+    ChaosKnownFailure(
       rule: "set-right-by-less-than-a-cell", owner: "board 1.62: Arbor knows a terminal's character cell", severity: 4,
       story: "A terminal takes whole character cells. Nobody in view is asked to grow where it stands, so how many cells go into a slot shows in the slot, and the "
         + "terminal is moved to the middle of it afterwards: less than half a cell, within the slot, at every size it has not been seen at. It ends when Arbor "

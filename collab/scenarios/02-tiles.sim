@@ -18,5 +18,18 @@ tile n4
 expect camera 103
 expect fills 103
 expect hidden 101
+# (Changed by the swarm, 2026-10-15; the documenter may edit it. Until then the story ended with `show-all`, `expect tile 103`.)
+# Since the click Xcode has the keyboard, and the window being typed in is never the tile if it fits at all (F61, QUESTIONS 2026-10-15):
+# at Show Everything it is a window, at its neighbours' cost: Safari is the tile for as long. Notes above it still fits, so it stays.
+show-all
+expect visible 103
+expect focused 103
+expect size 103 1200x600
+expect tile 101
+expect visible 102
+# Back in Safari everything is as it was: what the neighbours lent has gone back.
+focus 101
 show-all
 expect tile 103
+expect visible 101
+expect visible 102

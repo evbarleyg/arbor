@@ -487,7 +487,9 @@ extension ChaosRunner {
       }
       // Never in a wrong place, but smaller or larger on the way than it ends up.
       guard FakeWindowSystem.changesOfPlace(road) > 1 else {
-        problems.append(.init("sized-there-and-back" + floats, "Arbor made \(window) smaller or larger than it ends up, for one thing that happened: \(path)"))
+        // The window that is let be is to be set no frame at all. One bug, with a name of its own.
+        let letBe = controller.windowLetBe == window ? "-let-be" : ""
+        problems.append(.init("sized-there-and-back" + floats + letBe, "Arbor made \(window) smaller or larger than it ends up, for one thing that happened: \(path)"))
         continue
       }
       var rule = (timeOnly ? "moved-again" : "moved-twice") + (knew ? "-sizing-again" : refused ? "-sizing" : "") + floats

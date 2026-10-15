@@ -92,7 +92,7 @@ extension Controller {
     {
       bringIntoViewIfFocused(focused)
     }
-    relayoutAll(reason: .camera, motion: .instant)
+    unasked { relayoutAll(reason: .camera, motion: .instant) }
     parkAgain()
     scheduleSave()
   }
@@ -281,7 +281,7 @@ extension Controller {
     movedBehindArborsBack = []
     Log.info("a display blinked: \(moved.count) window(s) that macOS moved meanwhile are looked after")
     placeArrivingWindows(moved)
-    relayoutAll(reason: .camera, motion: .instant)
+    unasked { relayoutAll(reason: .camera, motion: .instant) }
     parkAgain()
   }
 

@@ -49,7 +49,8 @@ root  split(horizontal)
   Clicking a tile zooms onto it.
 - **Room before tiles** (F61): before a window becomes a tile for its minimum size, `MakeRoom`
   moves weight to its slot from the Desktop and from siblings in view that can spare it, once, as if
-  the gaps had been dragged. The weights change, never the layout function: frames stay
+  the gaps had been dragged. For the window with the keyboard alone there is more: what was lent to its
+  neighbours goes back, and if that is not enough they lend their places, written into the tree's ledger. The weights change, never the layout function: frames stay
   proportional to weights, which is what lets a gap follow the pointer. Not while the person's own
   hand is on a gap (`byHand`). A Desktop squeezed into a tile that way takes a usable size back
   once a window floats on it (`Workspace.desktopIsOwedRoom`).

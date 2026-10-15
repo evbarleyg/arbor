@@ -301,7 +301,7 @@ extension Controller {
     endWaitIfOver()
     Log.info("\(window.id) is back in its saved slot")
     letBeAgainIfThePauseLeftItAlone(window)
-    relayout(display, reason: .structure)
+    asItOpens(window.id) { relayout(display, reason: .structure) }
     scheduleSave()
   }
 

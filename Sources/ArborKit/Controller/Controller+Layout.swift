@@ -94,7 +94,7 @@ extension Controller {
     let staged = stageTransition(on: displayID, to: layout, reason: reason, motion: motion, puttingBack: waiting)
     putBackWhatWaits()
     // Once the stage is up, like everything that moves a window.
-    if askBeforeTheyLeave(layout, on: displayID),
+    if askBeforeTheyLeave(layout, on: displayID, startingFrom: before),
       let known = roomyLayout(of: displayID, for: reason, startingFrom: before)
     {
       layout = known

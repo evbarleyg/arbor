@@ -41,12 +41,21 @@ extension LayoutTree {
   @discardableResult mutating func endVisit(of id: NodeID, leaving parent: NodeID) -> Bool {
     defer { visits.removeAll { $0.guest == id || $0.host == id } }
     let (row, weights) = rowAndWeights(of: parent)
-    // (To the last digits but a few: room that was made for the guest has just been given back, by arithmetic.)
-    func same(_ a: [Double], _ b: [Double]) -> Bool { zip(a, b).allSatisfy { abs($0 - $1) <= 1e-9 * max(abs($0), abs($1)) } }
+    // (Give or take a point. Room that was made for the guest has just been given back, and making room sets the
+    // weights of the whole row by its lengths, which are whole points: a neighbour that is 172.5 points wide comes
+    // out of it weighing 173. A thousandth of the row is a point or two on any display; a hand moves a gap further
+    // than that.)
+    func same(_ a: [Double], _ b: [Double]) -> Bool {
+      let (sumA, sumB) = (a.reduce(0, +), b.reduce(0, +))
+      guard sumA > 0, sumB > 0 else { return false }
+      return zip(a, b).allSatisfy { abs($0 / sumA - $1 / sumB) <= 1e-3 }
+    }
     guard let visit = visits.last(where: { $0.guest == id }), visit.row == row, same(visit.weights, weights),
-      visit.host != id, row.contains(visit.host)
+      visit.host != id, let host = row.firstIndex(of: visit.host), let guest = row.firstIndex(of: id)
     else { return false }
-    nodes[visit.host]!.weight += nodes[id]!.weight
+    // As it was written down, so that nothing adds up over many visits.
+    for (node, weight) in zip(row, visit.weights) { nodes[node]!.weight = weight }
+    nodes[visit.host]!.weight = visit.weights[host] + visit.weights[guest]
     return true
   }
 }
