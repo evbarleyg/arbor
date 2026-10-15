@@ -330,6 +330,7 @@ extension World {
       guard owner(of: id) != nil else {
         throw AppRefusal("the rehearsal cannot \(verb) a tab that is not in front")
       }
+      let pushesForward = verb == "activate" && frontApp != pid
       if verb == "activate" {
         bringForward(app: pid)
         raiseAll(of: pid)
@@ -338,7 +339,7 @@ extension World {
       apps[pid]?.focused = id
       // In the background the app's focused window changes and nobody is told.
       guard frontApp == pid else { break }
-      if isStandard { giveKeyboard(to: window) } else { takeKeyboard(extra: id) }
+      if isStandard { giveKeyboard(to: window, byItself: pushesForward) } else { takeKeyboard(extra: id) }
     case "front":
       raise(.window(id))
     case "move":
