@@ -1,0 +1,304 @@
+# mac-shell: scripts/mac-shell/check-window-list.sh at a8bd01a, macOS 26.6.2, 2026-10-15T09:20Z
+built Arbor, the pointer tool and the app bundles in 5s
+session 1: Arbor pid 4215, test windows 30 31 32 33 34 35 36 (pid 4140,4188)
+running: 1 display, 0 docked and 7 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> test windows: title 30 zqxalpha report
+> test windows: title 31 zqxbravo inbox
+> test windows: title 32 zqxcharlie notes
+> test windows: title 33 zqxdelta shell
+> test windows: title 34 zqxecho a title that goes on and on, far beyond what the row of a menu has room for
+> test windows: title 35 zqxfoxtrot chat
+> test windows: title 36 zqxgolf music
+> trace on window-list
+recording /tmp/arbor-shell.9tH0oW/home/traces/2026-10-15-092026-window-list.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+> dock 30 left
+docked w30 at the left edge
+> dock 31 right
+docked w31 at the right edge
+> dock 32 beside 31 bottom
+docked w32 below w31
+> click 176 383
+
+▸ the menu's second row opens a list of every open window, by app and title
+  ✔ zqxalpha is in the list
+  ✔ zqxbravo is in the list
+  ✔ zqxcharlie is in the list
+  ✔ zqxdelta is in the list
+  ✔ zqxecho is in the list
+  ✔ zqxfoxtrot is in the list
+  ✔ zqxgolf is in the list
+  ✔ the window with the keyboard is ticked
+  ✔ and first
+  ✔ with everything in view no row has a mark
+  ✔ a long title is cut
+> click 732 15 --right
+  ✔ the menu has a row Windows
+> move 787.5 72
+  ✔ resting on it opens the list
+Arbor's menus (id pid level x y w h on owner):
+44 4215 101 166 55 490 178 on Arbor
+43 4215 101 651 31 273 486 on Arbor
+  ✔ seven rows with icons are 178 points high
+shot: mac-shell/10-everything-in-view.png
+shot: mac-shell/11-menu-44.png
+shot: mac-shell/11-menu-43.png
+> key escape
+> key escape
+
+▸ what cannot be seen says why at the end of its row
+> zoom 30
+framed w30
+> test windows: minimize 33
+> test windows: hide
+  ✔ a docked window out of view: out of view
+  ✔ a window in the Dock: minimized
+  ✔ a window of a hidden app: hidden
+  ✔ the framed window: nothing
+> click 732 15 --right
+> move 787.5 72
+  ✔ marks make no row higher
+shot: mac-shell/20-with-marks.png
+shot: mac-shell/21-menu-48.png
+shot: mac-shell/21-menu-47.png
+> key escape
+> key escape
+
+▸ click a docked window that is out of view: in front and whole
+  ✔ it is out of view
+> click 732 15 --right
+> click 787.5 72
+> move 361 72
+> click 361 120
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✔ all of it is on the screen
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+  ✔ windows match Arbor's layout
+shot: mac-shell/30-docked-out-of-view.png
+
+▸ click a window in the Dock: in front and whole
+> click 732 15 --right
+> click 787.5 72
+> move 361 72
+> click 361 144
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✔ all of it is on the screen
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+shot: mac-shell/31-minimized.png
+
+▸ click a window of a hidden app: in front and whole
+> click 732 15 --right
+> click 794 72
+> move 371 72
+> click 371 192
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✔ all of it is on the screen
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+shot: mac-shell/32-hidden.png
+
+▸ click a docked window in view that lies under a floating one: in front, and nothing moves
+> show-all
+showing everything
+> test windows: move 34 707 394 300 200
+> click 859 512
+> click 732 15 --right
+> click 787.5 72
+> move 411 72
+> click 411 192
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✔ all of it is on the screen
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+  ✔ it has not moved
+  ✔ windows match Arbor's layout
+
+▸ click a floating window that lies behind another: in front, where it was
+> test windows: move 34 362 268 300 200
+> test windows: move 33 312 218 400 300
+> click 344 384
+> click 732 15 --right
+> click 787.5 72
+> move 411 72
+> click 411 120
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✔ all of it is on the screen
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+  ✔ it has not moved
+
+▸ click a floating window that hangs over the corner of the screen: it comes in whole, at its own size
+> test windows: move 34 964 645 300 200
+> click 176 383
+it hangs at 964 645 300 200; 0.12 of it is on the display
+  ✔ it hangs over the corner
+  ✔ its row says out of view
+shot: mac-shell/40-over-the-corner.png
+> click 732 15 --right
+> click 787.5 72
+> move 361 72
+> click 361 96
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✔ all of it is on the screen
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+  ✔ it is as wide as it was
+  ✔ and as high
+shot: mac-shell/41-whole.png
+
+▸ the same out of the Dock: it comes back whole
+> test windows: move 34 964 645 300 200
+  ✔ it hangs over the corner
+> test windows: minimize 34
+> click 176 383
+  ✔ it is in the Dock
+> click 732 15 --right
+> click 787.5 72
+> move 363 72
+> click 363 96
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✘ all of it is on the screen — it is at 724 507 300 200, the screen is 0 31 1024 674
+      picture: mac-shell/fail-check-window-list-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+      |   Desktop          349 43 326 650
+      |   w30 12 43 325 650        docked
+      |   w31 687 43 325 319       docked
+      |   w32 687 374 325 319      docked
+      |   w33 312 218 400 300      floating
+      |   w34 724 507 300 200      floating focused
+      |   w35 349 220 326 348      floating
+      |   w36 349 180 326 348      floating
+      log | DEBUG focus is on w30
+      log | DEBUG w30 has the keyboard
+      log | DEBUG the button went down at 176,383, the pointer is at 176,383: it is on w30
+      log | INFO  displays changed: 1 display(s), 0 remembered
+      log | DEBUG menu bar click: x 67.0 by the event, 67.0 by the screen, button 134.0 wide
+      log | DEBUG w34 was asked for and hung over an edge: it is at (724,507 300×200) now
+      log | INFO  reveal 34: w34 is in view and focused
+      log | DEBUG focus is on w34
+      log | DEBUG focus report for w34, which does not have the keyboard or takes no space; 4 checks left
+      log | DEBUG w34 has the keyboard
+      log | INFO  displays changed: 1 display(s), 0 remembered
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+  ✔ it is as wide as it was
+
+▸ the same of a hidden app: it comes back whole
+> test windows: move 36 -240 131 300 200
+it hangs at -240 131 300 200
+  ✔ it hangs over the left edge
+> test windows: hide
+> click 176 383
+  ✔ it is hidden
+> click 732 15 --right
+> click 787.5 72
+> move 371.5 72
+> click 371.5 216
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✔ all of it is on the screen
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+  ✔ it is as wide as it was
+
+▸ click a window too small to show, which is a tile: in front and whole
+> test windows: min-size 33 900 600
+> dock 33 beside 32 bottom
+docked w33 below w32; its space is too small to show it, so it is a tile, and so is 1 other window now
+> click 176 383
+  ✔ it is a tile
+  ✔ its row says out of view
+shot: mac-shell/50-a-tile.png
+> click 732 15 --right
+> click 787.5 72
+> move 361 72
+> click 361 144
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✔ all of it is on the screen
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+shot: mac-shell/51-the-tile-fetched.png
+
+▸ titles are shown and never passed on
+> show-all
+showing everything
+> trace off
+trace saved: /tmp/arbor-shell.9tH0oW/home/traces/2026-10-15-092026-window-list.jsonl: 3183 lines, trace off
+  ✔ the clicks are in arbor.log
+  ✔ no title is
+  ✔ the clicks are in the trace
+  ✔ no title is
+  ✔ state knows the window
+  ✔ and not its title
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+  ✔ window 7 is back on screen after quitting
+shot: mac-shell/90-after.png
+
+139 passed, 1 failed
+exit code 1

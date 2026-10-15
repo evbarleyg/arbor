@@ -1,0 +1,79 @@
+# check-menu-height 2026-10-15T09:21Z on macOS 26.6.2, commit a8bd01a
+
+== nothing docked
+  ✔ 10-nothing-docked: the menu opens
+  ✔ 10-nothing-docked: macOS makes it as high as the model says
+  ✔ 10-nothing-docked: at most 600 points
+  ✔ 10-nothing-docked: it ends above the Dock
+
+== an ordinary day, and every submenu
+  ✔ 20-ordinary: the menu opens
+  ✔ 20-ordinary: macOS makes it as high as the model says
+  ✔ 20-ordinary: at most 600 points
+  ✔ 20-ordinary: it ends above the Dock
+  ✔ Saved Views opens a submenu
+  ✔ View opens a submenu
+  ✔ Dock Focused Window opens a submenu
+  ✔ Focused Window opens a submenu
+  ✔ Arrangement opens a submenu
+  ✔ Help opens a submenu
+
+== much of everything: nine saved views, three named spaces, twelve apps that are not arranged
+  ✔ 30-much: the menu opens
+  ✔ 30-much: macOS makes it as high as the model says
+  ✔ 30-much: at most 600 points
+  ✔ 30-much: it ends above the Dock
+  ✔ Saved Views opens a submenu
+  ✔ Arrangement opens a submenu
+
+== the state with the most lines: the view is held and settings.json has a mistake
+  ✔ the menu says that settings.json has a mistake
+  ✔ and that the view is held
+  ✔ 40-most-lines: the menu opens
+  ✔ 40-most-lines: macOS makes it as high as the model says
+  ✔ 40-most-lines: at most 600 points
+  ✔ 40-most-lines: it ends above the Dock
+  ✔ the menu opens
+  ✔ the click on Release closed the menu
+  ✔ Release let go of the view
+  ✔ and the line is gone
+
+== the first way out: Show Everything
+  ✔ the second window is out of view
+  ✔ the menu opens
+  ✔ the click on Show Everything closed the menu
+  ✔ it is back in view
+
+== the second: Float All Windows
+  ✔ the second window is out of view
+  ✔ the menu opens
+  ✔ the click on Float All Windows closed the menu
+  ✔ the first window floats
+  ✔ the second window floats
+  ✔ and is in view
+
+== the third: Pause Arbor, and Resume
+  ✔ the menu opens
+  ✔ the click on Pause Arbor closed the menu
+  ✔ Arbor is paused
+  ✔ 50-paused: the menu opens
+  ✔ 50-paused: macOS makes it as high as the model says
+  ✔ 50-paused: at most 600 points
+  ✔ 50-paused: it ends above the Dock
+  ✔ the menu opens
+  ✔ the click on Resume closed the menu
+  ✔ Arbor runs again
+
+== the fourth: Quit Arbor, with a window out of view
+  ✔ the second window is out of view
+  ✔ the menu opens
+  ✔ the click on Quit Arbor closed the menu
+  ✔ Arbor exits
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+58 passed, 0 failed
