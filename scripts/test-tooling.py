@@ -2146,6 +2146,18 @@ def check_ci_build_key():
         write("Sources/A.swift", "not committed\n")
         row("ci-build-key.sh: a checkout that differs from its commit has no name", key("products"), (2, None))
 
+# MARK: ci-keep-output.py
+
+def check_recordings():
+    for tool in ("ci-keep-output.py",):
+        done = subprocess.run([sys.executable, os.path.join(HERE, tool), "--self-test"], capture_output=True, text=True, check=False)
+        row(f"{tool}: its own situations", (done.returncode, [line for line in done.stdout.splitlines() if line.startswith("✘")]), (0, []))
+    with open(os.path.join(ROOT, ".github", "workflows", "mac-shell.yml"), encoding="utf-8") as handle:
+        workflow = handle.read()
+    row("mac-shell.yml: what is pushed goes through the limit first, with the workflow's own copy of the tool",
+        workflow.find('.ci/scripts/ci-keep-output.py" .') < workflow.find("git add --all") and '.ci/scripts/ci-keep-output.py" . || {' in workflow, True)
+
+
 def check_fuzz_launch():
     for situation in fuzz_launch.situations():
         row(*situation)
@@ -2447,6 +2459,7 @@ def main():
     check_ci_build_key()
     check_mac_shell_batch()
     check_preflight()
+    check_recordings()
     check_fuzz_launch()
     check_no_server_asks_its_name()
     check_reality_diff()

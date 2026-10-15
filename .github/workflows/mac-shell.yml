@@ -184,8 +184,13 @@ jobs:
           out=$(mktemp -d)
           cp -R mac-shell/. "$out/"
           cd "$out"
-          # GitHub refuses files over 100 MB, and one of those must not cost the rest of the output.
-          find . -type f -size +50m -print -delete | sed 's/^/::warning::left out, over 50 MB: /'
+          # Everybody's `git fetch` brings this branch along. What tells what happened always stays; films and pictures go, the largest first,
+          # until the rest is under 40 MB, and dropped.txt says which. The workflow's own copy: the commit under test may be older than the tool.
+          # Should the tool fail, that must not cost the output: then only what GitHub would refuse goes, as before there was a tool.
+          python3 "$GITHUB_WORKSPACE/.ci/scripts/ci-keep-output.py" . || {
+            echo "::warning title=mac-shell output::ci-keep-output.py failed, so nothing was left out but files over 50 MB"
+            find . -type f -size +50m -print -delete | sed 's/^/::warning::left out, over 50 MB: /'
+          }
           git init --quiet --initial-branch=out
           git add --all
           git -c user.name="mac-shell" -c user.email="mac-shell@users.noreply.github.com" \

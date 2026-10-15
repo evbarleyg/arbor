@@ -47,6 +47,8 @@ A hosted Mac is lent for minutes, and what it showed should never need a Mac aga
   the first heading after `trace off`.
 - In the middle of a drag, while the button is down and while a key is held for a peek, `trace next` begins nothing: a header does not say what a hand is doing. It is refused, the trace that is running goes on, and the heading is a remark in it.
 - What a pause, ten minutes or 20 MB ended goes on with the next check or step. An Arbor that does not answer within a second (stopped, hung, killed: some scripts are about that) is left alone until the next heading. `arbor_trace_next "<remark>"` begins one at once, right after a `resume`, say.
+- **What comes back is kept small** (`scripts/ci-keep-output.py`): an output branch holds at most 40 MB. Output, logs, traces and other text always stay; films, then pictures go, the largest first, and
+  `dropped.txt` lists them. A script that needs more writes the megabytes, 200 at most, into `keep-mb.txt` in its output folder.
 
 ## What is never in a trace
 
