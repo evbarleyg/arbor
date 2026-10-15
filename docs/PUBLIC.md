@@ -45,6 +45,9 @@ the commits were made.
 It prints the place, the rule, what to write instead, and the line with the find between » and «. In GitHub Actions, whose
 logs are as public as the rest, everything found is blanked out, in file and branch names too.
 
+As the hook, the check also keeps `main` and `swarm/trunk` of the repository itself for whoever lands work there
+(`git config arbor.mayLand true` in that clone), never deleted and only ever moving forward. A fork's branches are its owner's business.
+
 The hook has one more job, for agents who work to a brief that is kept outside the repository. A rule that changes while they are deep in
 long work does not reach them by message. Beside the file of private words lies `rules-version.txt`, whose first line is a number, a
 time, and a sentence on what changed. While the number differs from `git config arbor.rulesRead`, the hook refuses every push and

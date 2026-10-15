@@ -14,5 +14,5 @@ check=$kept
 [ "$(version "$own")" -gt "$(version "$kept")" ] && check=$own
 # The exceptions are the branch's own: it may need one that nobody else has yet.
 [ -f "$top/scripts/public-check.allow" ] && PUBLIC_CHECK_ALLOW="$top/scripts/public-check.allow" && export PUBLIC_CHECK_ALLOW
-# Which remote goes by the environment too: no check, however old, trips over that.
-PUBLIC_CHECK_REMOTE="$1" exec python3 "$check" --pre-push
+# Which remote, and where it is, go by the environment too: no check, however old, trips over that.
+PUBLIC_CHECK_REMOTE="$1" PUBLIC_CHECK_TO="$2" exec python3 "$check" --pre-push

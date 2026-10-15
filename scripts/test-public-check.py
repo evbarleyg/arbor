@@ -573,6 +573,42 @@ def check_history():
     situation("pre-push: to one's fork, what the public repository has under another name is not new", (0, []),
               second_remote_has_it("upstream", "https://github.com/evbarleyg/arbor.git", pushing_to="origin"), "--pre-push")
 
+    # Where work is integrated.
+    HERE_URL, FORK_URL = "https://github.com/evbarleyg/arbor", "https://github.com/someone/arbor.git"
+
+    def landing(to="swarm/trunk", may=None, prepare=clean, there=None, delete=False):
+        def prepared(r):
+            prepare(r)
+            if may is not None:
+                r.git("config", "arbor.mayLand", may)
+            sha = "0" * 40 if delete else r.git("rev-parse", "HEAD")
+            return {"standard_input": f"refs/heads/x {sha} refs/heads/{to} {there(r) if there else r.root}\n"}
+        return prepared
+
+    def said(what, expected, prepare, *arguments):
+        with tempfile.TemporaryDirectory() as folder:
+            repository = Repository(folder)
+            code, _, output = repository.run("--pre-push", *arguments, **prepare(repository))
+            row(what, (code, [words for words in ("by nobody else", "never deleted", "only ever moves forward") if words in output]), expected)
+    said("pre-push: an executor's push to swarm/trunk", (1, ["by nobody else"]), landing(), "--to", HERE_URL)
+    said("pre-push: to main", (1, ["by nobody else"]), landing("main"), "--to", HERE_URL)
+    said("pre-push: over ssh", (1, ["by nobody else"]), landing(), "--to", "git@github.com:evbarleyg/arbor.git")
+    said("pre-push: from a hook that does not say where to", (1, ["by nobody else"]), landing())
+    said("pre-push: with the switch set to false", (1, ["by nobody else"]), landing(may="false"), "--to", HERE_URL)
+    said("pre-push: to main of one's own fork", (0, []), landing("main"), "--to", FORK_URL)
+    said("pre-push: to a branch that only begins like it", (0, []), landing("swarm/trunk-2"), "--to", HERE_URL)
+    said("pre-push: by whoever lands, forward", (0, []), landing(may="true"), "--to", HERE_URL)
+
+    def rewritten(r):
+        clean(r)
+        r.there = r.git("rev-parse", "HEAD")
+        r.git("commit", "--quiet", "--amend", "--message", "fix: otherwise")
+    said("pre-push: by whoever lands, leaving out what is there", (1, ["only ever moves forward"]), landing(may="true", prepare=rewritten, there=lambda r: r.there), "--to", HERE_URL)
+    said("pre-push: over something this clone has never seen", (1, ["only ever moves forward"]), landing(may="true", there=lambda r: "0123456789" * 4), "--to", HERE_URL)
+    said("pre-push: deleting it, by an executor", (1, ["by nobody else"]), landing(delete=True), "--to", HERE_URL)
+    said("pre-push: deleting it, by whoever lands", (1, ["never deleted"]), landing(may="true", delete=True), "--to", HERE_URL)
+    said("pre-push: what is landed is read like anything else", (1, []), landing(may="true", prepare=line), "--to", HERE_URL)
+
     # Rules that change while agents are deep in work.
     def rules(version="7 12:00 UTC patches go up by hand-over only: read section 3 again", read=None, words=True):
         def prepare(r):
@@ -708,6 +744,9 @@ def check_hook():
         os.remove(os.path.join(repository.path, "scripts", "public-check.py"))
         again = subprocess.run([install], cwd=repository.path, env=repository.environment, capture_output=True, check=False).returncode
         row("make hooks: a second time renews it", again, 2)
+        with open(os.path.join(HERE, "git-hooks", "pre-push"), encoding="utf-8") as handle:
+            calls = [line.split("python3")[1].split() for line in handle if 'python3 "$check"' in line]
+        row("the hook hands the check no argument that an older copy would not know", calls, [['"$check"', "--pre-push"]])
         hook = os.path.join(repository.path, ".git", "hooks", "pre-push")
         with open(hook, "w", encoding="utf-8") as handle:
             handle.write("#!/bin/sh\necho mine\n")

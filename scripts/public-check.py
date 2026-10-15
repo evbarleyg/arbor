@@ -9,7 +9,8 @@ sentence about one person's Mac. Those were looked for by hand; this looks for t
 It checks two things.
 
   History   Everything being pushed goes back to the repository's first public commit and to no other beginning (a clone
-            can hold history from elsewhere), and every new commit and tag was made under a no-reply address.
+            can hold history from elsewhere), and every new commit and tag was made under a no-reply address. As the hook it also
+            keeps `main` and `swarm/trunk` of the repository itself for whoever lands work there, and only ever moving forward.
   Words     The lines, file names, commit messages, authors' names, branch and tag names that are new. RULES below says
             what is looked for and what to write instead. Each new commit is read by itself, merges too: what one commit
             adds and the next takes out again is still in the history.
@@ -22,7 +23,8 @@ in $PUBLIC_CHECK_WORDS. Honest exceptions are in public-check.allow, each with i
 
 Usage: scripts/public-check.py             what this branch adds to origin's main and swarm/trunk (`make public-check`)
        … --base REF [--head REF] [--branch NAME] [--tag NAME]   what REF..head adds (head: HEAD); CI's way
-       … --pre-push                        as git's pre-push hook, which says on standard input what is being pushed
+       … --pre-push [--to URL]             as git's pre-push hook, which says on standard input what is being pushed; where to is
+                                           in $PUBLIC_CHECK_TO or after --to
        … --rules                           only whether the rules have changed since this clone last said it had read them (below)
        … --text [FILE…]                    free text, from standard input without a file: read a pull request's body or a
                                            comment through this BEFORE posting it
@@ -53,7 +55,7 @@ import urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 # Raise it whenever the check gets stricter or a hole in it is mended. The hook has two copies to choose from, the one `make hooks` kept
 # and the one on the branch that is checked out, and lets the newer do the reading.
-VERSION = 3
+VERSION = 4
 # The first public commit. All history begins here.
 ROOT_COMMIT = "51b162d5f28c02846134c1f4a113c787f5164602"
 # Where work is integrated: what these hold on origin has been read before.
@@ -496,7 +498,19 @@ def unread_rules(top):
             f"Read your inbox and what that sentence names, now. Then: git config arbor.rulesRead {number}")
 
 
-def pre_push(top, lines, masked):
+def landing_problems(top, name, commit, there):
+    """Why this push to a branch where work is integrated may not happen. `commit` is None when the branch is being deleted."""
+    if git("config", "--type=bool", "--get", "arbor.mayLand", cwd=top, check=False)[1].strip() != "true":
+        return [f"{name} is moved by whoever lands work, and by nobody else: hand in a pull request against swarm/trunk (CLAUDE.md). "
+                "If landing is your job: git config arbor.mayLand true"]
+    if commit is None:
+        return [f"{name} is never deleted"]
+    if not ZERO.match(there) and git("merge-base", "--is-ancestor", there, commit, cwd=top, check=False)[0] != 0:
+        return [f"{name} only ever moves forward, and this push would leave out what is there now ({there[:8]}): git fetch, rebase, and push again, without force"]
+    return []
+
+
+def pre_push(top, lines, masked, url=None):
     unread = unread_rules(top)
     if unread:
         print(f"✘ {unread}\npublic-check: nothing was pushed.")
@@ -504,9 +518,16 @@ def pre_push(top, lines, masked):
     checker, code = None, 0
     for line in lines:
         fields = line.split()
-        if len(fields) != 4 or ZERO.match(fields[1]):  # a branch being deleted adds nothing
+        if len(fields) != 4:
             continue
-        _, sha, remote_ref, _ = fields
+        _, sha, remote_ref, there = fields
+        # A fork's branches are its owner's business.
+        guarded = remote_ref.replace("refs/heads/", "", 1) if remote_ref.startswith("refs/heads/") and (url is None or UPSTREAM.search(url)) else None
+        if ZERO.match(sha):  # a branch being deleted adds nothing
+            if guarded in INTEGRATION:
+                checker = checker or checker_for(top)
+                code |= report(checker, landing_problems(top, guarded, None, there), [], f"branch {guarded}", masked)
+            continue
         checker = checker or checker_for(top)
         commit = git("rev-parse", "--verify", sha + "^{commit}", cwd=top).strip()
         problems, findings, count = check_range(checker, [commit, "--not", *public_already(top)], commit, top)
@@ -517,6 +538,8 @@ def pre_push(top, lines, masked):
         else:
             kind, name = "branch", remote_ref.replace("refs/heads/", "", 1)
             findings += checker.check("branch", name, numbered=False)
+            if guarded in INTEGRATION:
+                problems += landing_problems(top, guarded, commit, there)
         shown = checker.fit_to_print(kind, name) if masked else name
         code |= report(checker, problems, findings, f"{kind} {shown} ({new_commits(count)})", masked)
     if code:
@@ -526,7 +549,7 @@ def pre_push(top, lines, masked):
 
 def main(arguments=None, cwd=None):
     parser = argparse.ArgumentParser(usage="see the top of scripts/public-check.py", add_help=False)
-    for flag in ("--base", "--head", "--branch", "--tag"):
+    for flag in ("--base", "--head", "--branch", "--tag", "--to"):
         parser.add_argument(flag)
     for flag in ("--pre-push", "--rules", "--text", "--tree", "--mask", "--help"):
         parser.add_argument(flag, action="store_true")
@@ -545,7 +568,7 @@ def main(arguments=None, cwd=None):
             print(f"✘ {unread}" if unread else "public-check: the rules are as this clone last read them, or there are none to read")
             return 1 if unread else 0
         if options.pre_push:
-            return pre_push(top, sys.stdin.read().splitlines(), masked)
+            return pre_push(top, sys.stdin.read().splitlines(), masked, options.to or os.environ.get("PUBLIC_CHECK_TO"))
         checker = checker_for(top)
         if options.text:
             findings = []
