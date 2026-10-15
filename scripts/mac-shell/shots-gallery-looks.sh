@@ -1,5 +1,4 @@
 #!/bin/bash
-# A part of shots-gallery.sh, which see: the panels over red, blue, white and black as a Mac comes, and the tour with Increase Contrast
-# and with Reduce Transparency.
-export GALLERY_PARTS="grounds-light grounds-dark light-contrast dark-contrast light-opaque"
+# A part of shots-gallery.sh, which see. ON THIS LOOK BRANCH ONLY: the tour with Increase Contrast alone, for the lines Arbor draws on other apps' windows.
+export GALLERY_PARTS="light-contrast dark-contrast"
 exec bash "$(dirname "$0")/shots-gallery.sh"
