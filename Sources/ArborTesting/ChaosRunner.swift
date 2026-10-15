@@ -332,7 +332,8 @@ public final class ChaosRunner {
         id: window.id, app: window.app, bundleID: window.bundleID,
         title: window.title ?? "\(window.app) \(window.id.rawValue)", pid: window.pid,
         frame: Self.within(window.frame, minimum: window.minimum, maximum: window.maximum),
-        minimumSize: window.minimum, maximumSize: window.maximum, behaviour: window.behaviour, cells: window.cells)
+        minimumSize: window.minimum, maximumSize: window.maximum, behaviour: window.behaviour, cells: window.cells,
+        idealSize: window.ideal)
     case .close(let window): system.close(window)
     case .quitApp(let pid): system.quitApp(pid: pid)
     case .minimize(let window, let minimized): system.setMinimized(window, minimized)

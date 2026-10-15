@@ -44,6 +44,7 @@ extension FakeWindowSystem {
       zoomed.size = CGSize(width: min(zoomed.width, maximum.width), height: min(zoomed.height, maximum.height))
     }
     zoomed.size = CGSize(width: max(zoomed.width, fake.minimumSize.width), height: max(zoomed.height, fake.minimumSize.height))
+    zoomed = zoomedAsItsAppHasIt(zoomed, fake, within: display.visibleFrame)
     guard zoomed != current else { return }
     windows[window]!.zoom = (zoomed, current)
     userMove(window, to: zoomed)

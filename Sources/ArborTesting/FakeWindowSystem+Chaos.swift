@@ -80,7 +80,8 @@ extension FakeWindowSystem {
   /// deleting steps from a script does not renumber the windows opened later.
   public func open(
     id: WindowID, app: String, bundleID: String?, title: String, pid: Int32, frame: CGRect,
-    minimumSize: CGSize = .zero, maximumSize: CGSize? = nil, behaviour: Behaviour = .normal, cells: RealApp.Cells? = nil
+    minimumSize: CGSize = .zero, maximumSize: CGSize? = nil, behaviour: Behaviour = .normal, cells: RealApp.Cells? = nil,
+    idealSize: CGSize? = nil
   ) {
     guard !existingWindowIDs().contains(id) else { return }
     nextID = max(nextID, id.rawValue &+ 1)
@@ -91,6 +92,7 @@ extension FakeWindowSystem {
     windows[id] = FakeWindow(
       snapshot: snapshot, minimumSize: minimumSize, maximumSize: maximumSize, behaviour: behaviour)
     if let cells { (windows[id]!.sizeStep, windows[id]!.sizeMargin) = (cells.step, cells.margin) }
+    windows[id]!.idealSize = idealSize
     guard started else { return }
     // As in `open(app:)`.
     if echoes.keyboard {
@@ -111,6 +113,28 @@ extension FakeWindowSystem {
   /// gets the keyboard is another matter, and is reported.
   public func bringForward(pid: Int32) {
     for id in windowsFrontToBack().filter({ windows[$0]?.snapshot.pid == pid }).reversed() { bringToFront(id) }
+  }
+
+  /// What a window's app makes of macOS's zoom, which offers it `offered`, all the screen has within the window's own limits. So Calendar, Terminal, the Finder, Preview and System Settings
+  /// were seen to on hosted Macs. An app that knows the right size for what it shows takes that, where the window stands: a Finder window shrinks to what it holds, and Preview's, which fits its picture
+  /// already, does not change. One that comes in steps takes whole steps that fit. One that cannot be as large as the screen grows where it stands, as far as it goes and the screen has
+  /// room; one of a single size has nothing to zoom to, and stays.
+  func zoomedAsItsAppHasIt(_ offered: CGRect, _ fake: FakeWindow, within visible: CGRect) -> CGRect {
+    let start = fake.snapshot.frame
+    var size = offered.size
+    if let ideal = fake.idealSize {
+      size = CGSize(width: max(min(ideal.width, size.width), fake.minimumSize.width), height: max(min(ideal.height, size.height), fake.minimumSize.height))
+    }
+    if let step = fake.sizeStep {
+      size = Self.rounded(size, toStepsOf: step, margin: fake.sizeMargin)
+      // Not the nearest, which may reach under the Dock.
+      if size.width > visible.width { size.width -= step.width }
+      if size.height > visible.height { size.height -= step.height }
+    }
+    // One that fills the screen begins at its corner, whatever its steps leave over. Another is moved only as far as it takes to show all of it.
+    guard fake.idealSize != nil || fake.maximumSize != nil else { return CGRect(origin: offered.origin, size: size) }
+    return CGRect(
+      x: max(min(start.minX, visible.maxX - size.width), visible.minX), y: max(min(start.minY, visible.maxY - size.height), visible.minY), width: size.width, height: size.height)
   }
 
   /// Gives a window a new number without telling anyone, as restarting its app (or the Mac) does

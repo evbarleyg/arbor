@@ -682,6 +682,7 @@
    "knobs": [
     "FakeWindowSystem.zoomAsMacOSDoes",
     "FakeWindowSystem.doubleClickTitleBar",
+    "FakeWindowSystem.zoomedAsItsAppHasIt",
     "FakeWindowSystem.userMove",
     "World.titleBarActionSetting"
    ],
@@ -3315,6 +3316,53 @@
    "certainty": "suspected"
   },
   {
+   "id": "a-window-that-fits-its-document-is-not-zoomed",
+   "kind": "second-actor",
+   "layer": "at the seam",
+   "expected": "A double-click on Preview's title bar fills the screen, as it does with Calendar's.",
+   "happened": "Nothing moved: 4,35 708×424 before and after, on both Macs. The window is as large as its picture wants it, and that is what macOS's zoom asks the app for.",
+   "found": "A walk of 87 plain acts played on two fresh hosted Macs, macOS 26.6.2, on 2026-10-15: one with Arbor running and nothing asked of it, one without Arbor at all. The two agree to the point, so it is macOS's or the app's own doing.",
+   "modelled": "yes",
+   "knobs": [
+    "RealApp.zoomsTo",
+    "FakeWindowSystem.zoomedAsItsAppHasIt"
+   ],
+   "guards": [
+    "test: whatAnAppMakesOfANewWindowAndOfAZoomIsItsOwnToSay"
+   ],
+   "copes": "RealApp.zoomsTo holds Preview's size with the harness's picture in it. With another document it is another size.",
+   "hurt": 2,
+   "touches": [
+    "fought"
+   ],
+   "sources": [
+    "Sources/ArborTesting/RealApps.swift",
+    "Sources/ArborTesting/FakeWindowSystem+Chaos.swift"
+   ]
+  },
+  {
+   "id": "a-window-that-travels-with-another",
+   "kind": "extra-report",
+   "layer": "at the seam",
+   "expected": "Each app of the cast opens with one window, and a window moves when somebody moves it.",
+   "happened": "On a fresh hosted Mac Mail has a second window, 470×416 at 565,179, over its first. It goes wherever the first is dragged or zoomed to, frame by frame, and nobody touches it. It is the one in front when Mail is called, so ⌘M did not apply to Mail's first window on the Macs and did on Linux. With no Arbor on the Mac the judge of the samples still found that it had moved twice for one act, two times in 87 acts, and with Arbor that Quit had not given it its place back.",
+   "found": "A walk of 87 plain acts played on two fresh hosted Macs, macOS 26.6.2, on 2026-10-15: one with Arbor running and nothing asked of it, one without Arbor at all. The two agree to the point, so it is macOS's or the app's own doing.",
+   "modelled": "no",
+   "knobs": [],
+   "guards": [],
+   "copes": "open",
+   "hurt": 3,
+   "touches": [
+    "jolt",
+    "moved-unasked",
+    "size-lost"
+   ],
+   "sources": [
+    "Sources/ArborTesting/RealApps.swift",
+    "scripts/mac-shell/jolts.py"
+   ]
+  },
+  {
    "id": "a-window-would-not-dock-on-the-right-while-another-was-minimized",
    "kind": "input",
    "layer": "controller",
@@ -3507,6 +3555,30 @@
    "backlog": [
     "K1235",
     "K1237"
+   ]
+  },
+  {
+   "id": "after-cmd-m-on-its-only-window-an-app-stays-in-front-with-nobody-at-the-keyboard",
+   "kind": "second-actor",
+   "layer": "controller",
+   "expected": "With nothing docked and nothing asked of it, Arbor leaves the keyboard where macOS leaves it.",
+   "happened": "⌘M on Calendar's only window. Without Arbor the window goes and Calendar stays the app in front, with no window at the keyboard, until the person calls another. With Arbor, 330 ms after the window was reported minimized, Arbor gave the keyboard to the window used last, a Finder window, and the Finder became the app in front: another menu bar, another app for the next key. It was the only thing Arbor asked of macOS about any window in the whole walk. The stand-ins play both halves truly: the same seed shows the same difference at the same act on Linux.",
+   "found": "A walk of 87 plain acts played on two fresh hosted Macs, macOS 26.6.2, on 2026-10-15: one with Arbor running and nothing asked of it, one without Arbor at all. The two agree to the point, so it is macOS's or the app's own doing. What Arbor asked is in the trace that run recorded.",
+   "modelled": "yes",
+   "knobs": [
+    "FakeWindowSystem.setMinimized"
+   ],
+   "guards": [
+    "tool: mac-shell/walk-diff.py"
+   ],
+   "copes": "open",
+   "hurt": 3,
+   "touches": [
+    "focus"
+   ],
+   "sources": [
+    "Sources/ArborKit/Controller/Controller+Focus.swift",
+    "scripts/mac-shell/walk-diff.py"
    ]
   },
   {
@@ -3989,6 +4061,30 @@
     "Sources/ArborKit/AX/AXWindowSystem.swift"
    ],
    "certainty": "suspected"
+  },
+  {
+   "id": "an-empty-document-has-a-size-of-its-own",
+   "kind": "geometry",
+   "layer": "at the seam",
+   "expected": "⌘N opens a window as large as the app's first one, a step down and to the right of the window in front.",
+   "happened": "The step is right: 29 and 29. TextEdit's new, empty document is 603×505 beside a first window of 673×439, which holds the document the harness opened. On the screen it grows into that from 595×499 within a fifth of a second. Safari's is as large as the one in front.",
+   "found": "A walk of 87 plain acts played on two fresh hosted Macs, macOS 26.6.2, on 2026-10-15: one with Arbor running and nothing asked of it, one without Arbor at all. The two agree to the point, so it is macOS's or the app's own doing.",
+   "modelled": "yes",
+   "knobs": [
+    "RealApp.newWindow"
+   ],
+   "guards": [
+    "test: whatAnAppMakesOfANewWindowAndOfAZoomIsItsOwnToSay"
+   ],
+   "copes": "RealApp.newWindow says what ⌘N opens where that is not the size of the first window. Of Terminal's, the Finder's and the other browsers' nobody has looked.",
+   "hurt": 1,
+   "touches": [
+    "jolt"
+   ],
+   "sources": [
+    "Sources/ArborTesting/RealApps.swift",
+    "Sources/ArborTesting/WalkPlayer+Words.swift"
+   ]
   },
   {
    "id": "an-event-stuck-in-a-tap-is-overtaken-by-later-ones",
@@ -6283,6 +6379,28 @@
    ]
   },
   {
+   "id": "fresh-hosted-macs-open-the-same-apps-at-the-same-frames",
+   "kind": "identity",
+   "layer": "test",
+   "expected": "No two runs on hosted Macs begin alike, so a journey and its control cannot be compared frame by frame.",
+   "happened": "Two fresh hosted Macs opened all nine apps of the cast at the same frames, to the point. A second script on one of them did not: Safari, Calendar and System Settings opened where the first had left them.",
+   "found": "The opening frames of three scripts on two hosted Macs, macOS 26.6.2, on 2026-10-15.",
+   "modelled": "yes",
+   "knobs": [
+    "RealApp.onAHostedMac"
+   ],
+   "guards": [
+    "tool: mac-shell/walk-diff.py"
+   ],
+   "copes": "scripts/mac-shell/run.sh with `--macs 2` plays a walk and its control on two Macs, each the first script there. scripts/mac-shell/walk-diff.py takes what differs before the walk begins for the scene's, and blames nobody for it.",
+   "hurt": 4,
+   "sources": [
+    "Sources/ArborTesting/RealApps.swift",
+    "scripts/mac-shell/walk-diff.py",
+    "docs/TESTING.md"
+   ]
+  },
+  {
    "id": "full-screen-has-no-notice-of-its-own",
    "kind": "missing-report",
    "layer": "at the seam",
@@ -6943,6 +7061,27 @@
    ]
   },
   {
+   "id": "macos-does-not-tile-every-window-at-the-top-edge",
+   "kind": "second-actor",
+   "layer": "at the seam",
+   "expected": "With macOS's tiling as it comes, a window dragged against the top edge of the screen and let go fills the screen.",
+   "happened": "Preview did: 0,31 1600×791. Mail, by the same act in the same walk, did not: it ended at 282,31 at its own 1120×630, on both Macs. Mail had its second window up, which may be why: that is a guess.",
+   "found": "A walk of 87 plain acts played on two fresh hosted Macs, macOS 26.6.2, on 2026-10-15: one with Arbor running and nothing asked of it, one without Arbor at all. The two agree to the point, so it is macOS's or the app's own doing.",
+   "modelled": "no",
+   "knobs": [
+    "FakeWindowSystem.letMacOSTile"
+   ],
+   "guards": [],
+   "copes": "open",
+   "hurt": 2,
+   "touches": [
+    "fought"
+   ],
+   "sources": [
+    "Sources/ArborTesting/FakeWindowSystem.swift"
+   ]
+  },
+  {
    "id": "macos-drops-all-input-behind-any-tap-whose-owner-lost-the-right",
    "kind": "permissions",
    "layer": "below the seam",
@@ -7038,6 +7177,29 @@
     "scripts/mac-shell/lib-walk.sh",
     "docs/VIABLE.md",
     "docs/TESTING.md"
+   ]
+  },
+  {
+   "id": "macos-holds-a-slowly-dragged-window-at-the-edges-of-the-screen",
+   "kind": "second-actor",
+   "layer": "at the seam",
+   "expected": "A window that is dragged by its title bar goes as far as the pointer goes, as the stand-in's does.",
+   "happened": "In the open it does: the Finder's window went 204 across and 90 down with the pointer. At an edge it is held. Terminal, crossing the left edge of the screen from x = 40, went 162 while the pointer went 193. System Settings, crossing it from x = 108, went 282 on one Mac and 272 on the other while the pointer went 291: the one act of the walk in which two Macs differed, by one step of the posted drag. Notes stopped with its lower edge a point above the Dock while the pointer went 88 further down. Mail, lying under the menu bar, stayed there while the pointer went 64 down. The window does not catch up afterwards. The harness drags slowly, some 200 points in three seconds.",
+   "found": "A walk of 87 plain acts played on two fresh hosted Macs, macOS 26.6.2, on 2026-10-15: one with Arbor running and nothing asked of it, one without Arbor at all. The two agree to the point, so it is macOS's or the app's own doing.",
+   "modelled": "no",
+   "knobs": [
+    "FakeWindowSystem.follow"
+   ],
+   "guards": [],
+   "copes": "scripts/mac-shell/walk-diff.py lays a playing with Arbor beside one without on real Macs, where both are held alike. Beside a playing on Linux nearly every later frame differs by this. How far the pointer goes before each edge lets go, slowly and fast, from inside and from across, nobody has measured.",
+   "hurt": 3,
+   "touches": [
+    "jolt",
+    "moved-unasked"
+   ],
+   "sources": [
+    "Sources/ArborTesting/FakeWindowSystem.swift",
+    "scripts/mac-shell/walk-diff.py"
    ]
   },
   {
@@ -11318,6 +11480,33 @@
    "sources": [
     "scripts/mac-shell/day-sabotage.sh",
     "docs/TESTING.md"
+   ]
+  },
+  {
+   "id": "what-macos-zooms-a-window-to-is-its-apps-to-say",
+   "kind": "second-actor",
+   "layer": "at the seam",
+   "expected": "A double-click on a title bar fills the screen with the window, and a second one takes it back, as the stand-in's did.",
+   "happened": "Calendar filled the space between the menu bar and the Dock, Terminal too, in whole rows (1600×784 of 791). A Finder window SHRANK, from 794×297 to 551×252 where it stood: to what it holds. The second double-click took each back to the very frame. On the screen the way takes about a third of a second, beginning some 0.8 s after the script's mark. A zoomed Terminal is 1600 wide, which is no whole number of its characters: the stand-in's is 1598.",
+   "found": "The samples of eight double-clicks on title bars in a walk and a day on hosted Macs, macOS 26.6.2, on 2026-10-15.",
+   "modelled": "partly",
+   "knobs": [
+    "FakeWindowSystem.zoomedAsItsAppHasIt",
+    "RealApp.zoomsTo"
+   ],
+   "guards": [
+    "test: macOSZoomsAWindowAtADoubleClickOnItsTitleBarAndTakesItBack"
+   ],
+   "copes": "FakeWindowSystem.zoomAsMacOSDoes is the one zoom of the stand-ins, for the walks and for the fake Mac: the app's own size where it has one (`ideal 551 252` in a script), whole steps that fit, back to the very frame, afresh for a window that was moved since. What a window with a largest size, or the green button, does on a Mac nobody has looked at.",
+   "hurt": 4,
+   "touches": [
+    "fought",
+    "jolt"
+   ],
+   "sources": [
+    "Sources/ArborTesting/FakeWindowSystem+Chaos.swift",
+    "Sources/ArborTesting/RealApps.swift",
+    "Sources/arbor-fakemac/World+Input.swift"
    ]
   },
   {
