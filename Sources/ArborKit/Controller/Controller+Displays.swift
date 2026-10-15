@@ -14,6 +14,9 @@ extension Controller {
   /// How long the arrangement of a disconnected display is kept.
   static let dormantLifetime: TimeInterval = 30 * 24 * 60 * 60
 
+  /// Whether an audience may be looking: some display's picture is shown on another as well.
+  public var isMirroring: Bool { displays.contains(where: \.isMirrored) }
+
   /// Matches the workspaces to the connected displays. Called when displays
   /// are added or removed and when their frames change.
   ///
@@ -31,6 +34,11 @@ extension Controller {
       for (window, place) in workspace.floating { all[window] = areaShowing(of: place) }
     }
     displays = system.displays()
+    // An audience that comes is seen to first, so that whatever follows happens as it does in front of one. One that goes, last:
+    // what waited for the end of the hold is let in once everything is where it belongs. Any other change of the displays
+    // is no sign of anything, and must not cut short the moment a call is given to change its camera.
+    let wasMirroring = before.contains(where: \.isMirrored)
+    if isMirroring, !wasMirroring { refreshHoldCaller(anAudienceHasCome: true) }
     followDisplaysThatMoved(since: before)
     endUndoHistoryIfDisplaysMoved(
       since: Dictionary(before.map { ($0.id, $0.frame.origin) }) { first, _ in first },
@@ -64,7 +72,7 @@ extension Controller {
 
     // A drag may be over, or have moved windows on, a display that went away or changed shape.
     displaysChangedDuringDrag()
-    Log.info("displays changed: \(displays.count) display(s), \(dormant.count) remembered")
+    Log.info("displays changed: \(displays.count) display(s)\(isMirroring ? ", mirrored" : ""), \(dormant.count) remembered")
     // A lower resolution or a display that moved can leave windows beyond the edges of them all.
     treatStrandedWindowsAsParked()
     // Books too, and no frame is set: so also before Arbor lets go, which gives every window its remembered place.
@@ -80,6 +88,7 @@ extension Controller {
     }
     relayoutAll(reason: .camera, motion: .instant)
     parkAgain()
+    if wasMirroring, !isMirroring { refreshHoldCaller() }
     scheduleSave()
   }
 

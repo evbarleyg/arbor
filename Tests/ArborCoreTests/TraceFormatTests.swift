@@ -138,6 +138,17 @@ private let display = TraceDisplay(
     #expect(try roundTrip(TraceLine.cursorLocation(nowhere)) == .cursorLocation(.zero))
   }
 
+  /// K160. Traces recorded before there was such a thing have no word about it, and lines stay as short as they were.
+  @Test func aMirroredDisplaySaysSoAndAnyOtherSaysNothing() throws {
+    var mirrored = display
+    mirrored.mirrored = true
+    #expect(try roundTrip(mirrored) == mirrored)
+    #expect(String(decoding: try JSONEncoder().encode(mirrored), as: UTF8.self).contains(#""mirrored":true"#))
+    #expect(!String(decoding: try JSONEncoder().encode(display), as: UTF8.self).contains("mirrored"))
+    #expect(try roundTrip(display).mirrored == false)
+    #expect(mirrored.description == display.description + ", mirrored", "whoever reads a replay sees it too")
+  }
+
   @Test func linesSayWhetherArborReactsToThemOrMadeThem() {
     #expect(TraceLine.focused(WindowID(1)).isStimulus)
     #expect(TraceLine.command("arrange").isStimulus)

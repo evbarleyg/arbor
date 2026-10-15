@@ -218,6 +218,10 @@ public struct Settings: Codable, Equatable, Sendable {
   /// (collab/QUESTIONS.md, Q26).
   /// Off as Arbor ships: no tap goes in at launch until all its checks of the taps on a Mac are green.
   public var pointerGestures: Bool = false
+  /// Hold still while a display's picture is shown on another as well: a projector, a television, AirPlay. Off, like the other
+  /// signs: out of the box Arbor holds only when asked, and nobody has seen on a Mac what Arbor is told when a display is
+  /// mirrored, or when. It is the first to be switched on, by itself, once somebody has: a mirrored display is a screen that is shared.
+  public var holdStillWhileMirroring: Bool = false
 
   public init() {}
 
@@ -293,6 +297,7 @@ public struct Settings: Codable, Equatable, Sendable {
     case minimapDuration
     case shareRemovedSpace, shrinkOutOfView
     case pointerGestures
+    case holdStillWhileMirroring
   }
 
   public init(from decoder: any Decoder) throws {
@@ -399,5 +404,6 @@ public struct Settings: Codable, Equatable, Sendable {
     try read(.shareRemovedSpace, into: &shareRemovedSpace)
     try read(.shrinkOutOfView, into: &shrinkOutOfView)
     try read(.pointerGestures, into: &pointerGestures)
+    try read(.holdStillWhileMirroring, into: &holdStillWhileMirroring)
   }
 }

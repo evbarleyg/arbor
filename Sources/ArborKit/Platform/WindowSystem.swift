@@ -58,8 +58,13 @@ public struct DisplaySnapshot: Equatable, Sendable {
   /// A laptop's or an iMac's own display.
   public var isBuiltIn: Bool
 
+  /// What it shows is shown on another display as well: a projector, a television, AirPlay. Of such a set macOS
+  /// lists one display.
+  public var isMirrored: Bool
+
   public init(
-    id: DisplayID, frame: CGRect, visibleFrame: CGRect, isMain: Bool, name: String? = nil, isBuiltIn: Bool = false
+    id: DisplayID, frame: CGRect, visibleFrame: CGRect, isMain: Bool, name: String? = nil, isBuiltIn: Bool = false,
+    isMirrored: Bool = false
   ) {
     self.id = id
     self.frame = frame
@@ -67,6 +72,7 @@ public struct DisplaySnapshot: Equatable, Sendable {
     self.isMain = isMain
     self.name = name
     self.isBuiltIn = isBuiltIn
+    self.isMirrored = isMirrored
   }
 
   /// What the `displays` entries of settings.json are matched against.

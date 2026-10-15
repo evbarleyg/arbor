@@ -96,6 +96,16 @@ struct LaunchOptions {
   }
 }
 
+/// `displays`, with the main one mirrored if it is now: only `projector off` ends that.
+@MainActor func keepingTheProjector(_ displays: [DisplaySnapshot], of system: FakeWindowSystem) -> [DisplaySnapshot] {
+  let isMirrored = system.displays().contains(where: \.isMirrored)
+  return displays.map { display in
+    var display = display
+    if display.isMain { display.isMirrored = isMirrored }
+    return display
+  }
+}
+
 /// The main display and the one `displays 2` plugs in to the right of it.
 @MainActor let simulatedDisplays = [
   FakeWindowSystem.standardDisplay,

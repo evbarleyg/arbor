@@ -249,7 +249,7 @@ To have every call pinned as it opens, use a rule (below): `{ "app": "us.zoom.xo
 
 Choose **Hold Still** from the menu when you share, and Arbor holds still: the view moves when you ask, with keys, gestures, ⌘Tab, Go to… or a click in the Dock, and not because a chat or a calendar pushed itself forward; such a window stays out of view and you go on typing where you
 were. Arbor cannot see who asked. It goes by time: a change of app within half a second of a click or of letting go of ⌘ counts as yours, so a chat that picks that very moment gets through, and a switch made with Spotlight or a launcher is turned away. Arbor says so on screen, once for each app: "Terminal is out of view: holding still · ⌘Tab or ⌃⌥G goes there".
-The menu bar icon is filled in meanwhile. **Release** in the menu ends it. `arborctl set holdStillWhileCameraIsOn true` makes a camera do it for you, once that has been seen at work: Arbor only reads that a camera is on, which macOS tells every app; it does not open it.
+The menu bar icon is filled in meanwhile. **Release** in the menu ends it. `arborctl set holdStillWhileCameraIsOn true` makes a camera do it for you, once that has been seen at work: Arbor only reads that a camera is on, which macOS tells every app; it does not open it. `holdStillWhileMirroring` does the same for a display that is mirrored to a projector, a television or over AirPlay. Both are experiments: neither has been seen at work on a Mac yet.
 
 ### Sharing your screen
 

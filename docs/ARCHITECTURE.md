@@ -306,8 +306,8 @@ and nothing else is worth optimising.
 ## Holding the view
 
 `Controller+Hold.swift` (F58), for calls, shared screens and recordings. `holdLevel` is `.still` (Arbor moves the view
-only when asked; also during a call) or `.view` (nothing moves it until `release`). A call is a window matching `holdStillFor`, or a camera or
-microphone that some app has running, each only if switched on (all three ship off: out of the box Arbor holds only when asked): `App/CallSensor.swift` listens for that on a queue of its own and reports changes to
+only when asked; also during a call) or `.view` (nothing moves it until `release`). A call is a window matching `holdStillFor`, a camera or
+microphone that some app has running, or a display that is mirrored (K160), each only if switched on (all four ship off: out of the box Arbor holds only when asked): `App/CallSensor.swift` listens for that on a queue of its own and reports changes to
 `callSignalsChanged`; whether they matter, for how long and in which words is decided in `refreshHoldCaller`.
 
 **Before putting anything of Arbor's on screen, ask**: `mayShowUnasked` for what Arbor would show or sound by itself (hints, the minimap after a move, messages other than
@@ -1115,6 +1115,11 @@ launch become dormant too, dormant windows are re-matched like the others on
 start, and dormant workspaces older than 30 days are dropped on start
 (`Controller+Displays.swift`). Every display change also sends the parked
 windows to a corner that is out of view with the displays as they are now.
+
+A display whose picture is shown on another as well (a projector, a television, AirPlay) has `DisplaySnapshot.isMirrored`
+(the real window system does not fill it in yet); its beginning and end are expected to arrive as display changes, which nobody has seen on a Mac yet. `Controller.isMirroring`, `"mirrored"` in `state`,
+the log's line about displays and a trace's say so. Meanwhile Arbor holds still if `holdStillWhileMirroring` is on (it ships off, an experiment): one more sign in `refreshHoldCaller()`, asked first thing in
+`updateDisplays()` when mirroring begins and last thing when it ends. A call and an audience are two occasions: a release made on one does not outlast it.
 
 The Accessibility API lists only the windows on the Spaces that are showing.
 After a Space switch `AXWindowSystem` asks every app for its windows again and
