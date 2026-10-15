@@ -51,6 +51,9 @@ import sys
 import urllib.request
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+# Raise it whenever the check gets stricter or a hole in it is mended. The hook has two copies to choose from, the one `make hooks` kept
+# and the one on the branch that is checked out, and lets the newer do the reading.
+VERSION = 3
 # The first public commit. All history begins here.
 ROOT_COMMIT = "51b162d5f28c02846134c1f4a113c787f5164602"
 # Where work is integrated: what these hold on origin has been read before.
@@ -440,7 +443,7 @@ def checker_for(top, here=None):
     if highest is None:
         print("public-check: could not ask origin for its newest pull request, so numbers like #123 were not checked", file=sys.stderr)
     return Checker(
-        allowed=read_lines(os.path.join(HERE, "public-check.allow")), licence=licence, highest=highest,
+        allowed=read_lines(os.environ.get("PUBLIC_CHECK_ALLOW") or os.path.join(HERE, "public-check.allow")), licence=licence, highest=highest,
         owner=os.environ.get("GITHUB_REPOSITORY_OWNER") or (owner.group(1) if owner else None),
         here=told_by_this_machine(os.environ, socket.gethostname()) if here is None else here, private=[word.strip() for word in private if word.strip()])
 

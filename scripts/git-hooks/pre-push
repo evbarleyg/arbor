@@ -3,11 +3,16 @@
 # clone and its worktrees, and gives up the push when it fails. See scripts/public-check.py and docs/PUBLIC.md.
 top=$(git rev-parse --show-toplevel) && common=$(git rev-parse --git-common-dir) || exit 1
 kept="$common/arbor-public-check/public-check.py"
+own="$top/scripts/public-check.py"
 # Whether the rules have changed is asked of the copy `make hooks` kept, which came with this hook: the branch that is checked out
 # may be from before anybody thought of asking.
 said=$(python3 "$kept" --rules) || { echo "$said"; echo "public-check: nothing was pushed."; exit 1; }
-check="$top/scripts/public-check.py"
-# A branch from before the check existed is as public as any other: it is read with the kept copy.
-[ -f "$check" ] || check=$kept
-# Which remote goes by the environment: the check on an older branch knows no argument for it, and must not trip over one.
+# The newer of the two checks does the reading. A branch from before a hole was mended, or from before there was a check at all, is as
+# public as any other; and a clone whose kept copy has grown old has the newer one in its tree.
+version() { number=$(sed -n 's/^VERSION = \([0-9][0-9]*\)$/\1/p' "$1" 2>/dev/null | head -n 1); echo "${number:-0}"; }
+check=$kept
+[ "$(version "$own")" -gt "$(version "$kept")" ] && check=$own
+# The exceptions are the branch's own: it may need one that nobody else has yet.
+[ -f "$top/scripts/public-check.allow" ] && PUBLIC_CHECK_ALLOW="$top/scripts/public-check.allow" && export PUBLIC_CHECK_ALLOW
+# Which remote goes by the environment too: no check, however old, trips over that.
 PUBLIC_CHECK_REMOTE="$1" exec python3 "$check" --pre-push

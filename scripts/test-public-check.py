@@ -686,7 +686,8 @@ def check_hook():
         row("make hooks: git calls the hook, and a refusal stops the push",
             (done.returncode != 0, "does not descend" in done.stdout + done.stderr, there), (True, True, False))
         # A branch whose own check is from before the rules were asked about: the hook asks all the same.
-        repository.write("scripts/public-check.py", "import sys\nsys.exit(0)\n")
+        lets_all_pass = "import sys\nsys.exit(0)\n"
+        repository.write("scripts/public-check.py", lets_all_pass)
         repository.write("../notes/words.txt", "quux7\n")
         repository.write("../notes/rules-version.txt", "7 12:00 UTC read section 3 again\n")
         repository.git("config", "arbor.privateWords", os.path.join(folder, "notes", "words.txt"))
@@ -694,7 +695,16 @@ def check_hook():
         done = push()
         row("the hook: the rules have changed, and the branch's own check knows nothing of rules", (done.returncode != 0, "read section 3 again" in done.stdout + done.stderr), (True, True))
         repository.git("config", "arbor.rulesRead", "7")
-        row("the hook: read, and the push goes on to the branch's own check", push().returncode, 0)
+        done = push()
+        row("the hook: read; and the branch's own check, which is older than the kept copy, does not do the reading", (done.returncode != 0, "does not descend" in done.stdout + done.stderr), (True, True))
+        repository.write("scripts/public-check.py", f"VERSION = {check.VERSION}\n" + lets_all_pass)
+        row("the hook: nor one of the same age", push().returncode != 0, True)
+        repository.write("scripts/public-check.allow", "nonsense\n")
+        done = push()
+        row("the hook: the exceptions are the branch's own", "three fields are wanted" in done.stdout + done.stderr, True)
+        os.remove(os.path.join(repository.path, "scripts", "public-check.allow"))
+        repository.write("scripts/public-check.py", f"VERSION = {check.VERSION + 1}\n" + lets_all_pass)
+        row("the hook: a newer one on the branch does", push().returncode, 0)
         os.remove(os.path.join(repository.path, "scripts", "public-check.py"))
         again = subprocess.run([install], cwd=repository.path, env=repository.environment, capture_output=True, check=False).returncode
         row("make hooks: a second time renews it", again, 2)
