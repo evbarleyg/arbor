@@ -378,6 +378,30 @@ extension ChaosRunner {
         advance 1
         """),
     ChaosKnownFailure(
+      rule: "moved-again-floating-making-way", owner: "rule 3: a floating window's frame is its person's", severity: 4,
+      story: "Only with `floatingWindowsMakeWay` on, which ships off (F64). As `moved-twice-floating`, in a layout that a timer runs.",
+      script: """
+        settings {"floatingWindowsMakeWay":true}
+        open 109 Mail pid 1002 at 803 461 76 133
+        renumber 109 110
+        open 111 Preview pid 1007 at -83 282 1165 625 min 1165 625
+        renumber 110 112
+        launch
+        displays third:0,0,800,600:25,0,0,0* windows-silent
+        displays main:0,0,2560,1440:25,0,0,88* side:-1440,268,1440,900:0,0,42,0 third:-4000,282,2560,1440:0,0,0,41 windows-late
+        space 111 off
+        open 116 Music pid 1006 at -2827 594 634 283 grid
+        displays main:0,0,800,600:25,0,0,0* windows-first
+        arrange all
+        dock 111 bottom
+        focus 111
+        undo
+        dock 116 beside 112 right
+        zoom-node 0
+        space 111 on
+        settle
+        """),
+    ChaosKnownFailure(
       rule: "moved-again-sizing-again", owner: "rule 3: one thing that happens is one layout", severity: 3,
       story: "As `moved-twice-sizing-again`, in a layout that a timer runs: a window whose macOS Space was away comes back on other displays.",
       script: """

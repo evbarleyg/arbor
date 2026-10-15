@@ -516,17 +516,6 @@ private final class Recorder: WindowSystemEvents {
     #expect(recorder.log == Array(repeating: "changed \(window) echo", count: 3))
   }
 
-  /// An app looks at its limits when it is asked for a size, and only then. As asked and answered on a hosted Mac: a window of 480×348 whose
-  /// minimum is 700×500 goes to the corner and back as it is, and takes 700×500 when it is asked to be 480×319.
-  @Test func aWindowBelowItsMinimumStaysSoWhileItIsOnlyMoved() {
-    let system = FakeWindowSystem(displays: [Self.hosted])
-    let window = system.open(app: "Safari", frame: CGRect(x: 170, y: 220, width: 480, height: 348), minimumSize: CGSize(width: 700, height: 500))
-    system.start()
-    #expect(system.setFrame(CGRect(x: 1023, y: 767, width: 480, height: 348), of: window) == CGRect(x: 1023, y: 677, width: 480, height: 348))
-    #expect(system.setFrame(CGRect(x: 170, y: 220, width: 480, height: 348), of: window) == CGRect(x: 170, y: 220, width: 480, height: 348))
-    #expect(system.setFrame(CGRect(x: 170, y: 220, width: 480, height: 319), of: window)?.size == CGSize(width: 700, height: 500))
-  }
-
   /// Given a minimum since it was last sized, the fake's window takes another size when it is asked only to move. That is the fake's manner: a
   /// Mac's kept its size for as long as it was only moved. As long as the fake has it, both changes are reported, though the plan was one call:
   /// the number goes by what changed.

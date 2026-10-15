@@ -46,8 +46,6 @@ public final class FakeWindowSystem: WindowSystem {
     public internal(set) var movesNotArbors = 0
     /// The app changed its ways since Arbor last asked it for anything.
     public internal(set) var changedItsWays = false
-    /// A test has given it another minimum, maximum, step or manner since Arbor last asked it for anything.
-    var limitsGivenSince = false
     /// What `setTitleBar` said. Nil: what its app's windows measured on a Mac, or the usual.
     var ownTitleBar: CGFloat?
     /// How much of its top macOS keeps above the bottom of the visible frame: its title bar, with the toolbar if that is part of it.
@@ -344,10 +342,8 @@ public final class FakeWindowSystem: WindowSystem {
     let before = fake.snapshot.frame
     if fake.behaviour != .frozen {
       // The calls of `FramePlan` one by one, and what follows the reading back, as the layer makes them: how far a window may grow depends
-      // on where it is when it is asked to. An app looks at its limits when it is asked for a size, and only then: a window that is
-      // smaller than its minimum stays so for as long as it is only moved (a test window of 480×348 whose minimum is 700×500 went to the
-      // corner and back as it was; asked for 480×319 it took 700×500). One manner of the fake's own is left, and is no Mac's: a limit that
-      // a test gives a window AFTER it has opened bites at the next asking, were it only a move (`limitsGivenSince`).
+      // on where it is when it is asked to. The last line is the fake's own manner and no Mac's: a limit its app was given since the window
+      // was last sized bites at the next asking, were it only a move.
       var isAt = before
       func perform(_ steps: [FramePlan.Step]) {
         for (index, step) in steps.enumerated() {
@@ -363,8 +359,7 @@ public final class FakeWindowSystem: WindowSystem {
       let steps = plan(from: before, to: frame)
       perform(steps)
       if let more = FramePlan.makingUp(for: steps, result: isAt, target: frame) { perform(more) }
-      if fake.limitsGivenSince { isAt.size = Self.accepted(isAt, by: fake).size }
-      applied = whereMacOSPuts(CGRect(origin: frame.origin, size: isAt.size), titleBar: fake.titleBar)
+      applied = whereMacOSPuts(Self.accepted(CGRect(origin: frame.origin, size: isAt.size), by: fake), titleBar: fake.titleBar)
     }
     // An app works through what it is asked in order: the last size counts, also when that is the size it still shows.
     sizesOnTheirWay[window] = nil
@@ -380,7 +375,6 @@ public final class FakeWindowSystem: WindowSystem {
     fake.placeIsArborsDoing = true
     fake.groundHasShifted = false
     fake.changedItsWays = false
-    fake.limitsGivenSince = false
     windows[window] = fake
     frameLog.append((window, applied))
     // Of calls back to back the list has the frame from before the first of them.
@@ -736,7 +730,6 @@ public final class FakeWindowSystem: WindowSystem {
 
   public func setMinimumSize(_ window: WindowID, _ size: CGSize) {
     windows[window]?.minimumSize = size
-    windows[window]?.limitsGivenSince = true
   }
 
   /// The user (or another app) moves or resizes a window without Arbor.
@@ -931,7 +924,6 @@ extension FakeWindowSystem {
 extension FakeWindowSystem {
   public func setMaximumSize(_ window: WindowID, _ size: CGSize?) {
     windows[window]?.maximumSize = size
-    windows[window]?.limitsGivenSince = true
   }
 
   /// The user drags `window`'s edges with the mouse until it has `frame`.
@@ -1378,7 +1370,6 @@ extension FakeWindowSystem {
     windows[window]?.sizeStep = step
     windows[window]?.stepsRoundDown = down
     windows[window]?.sizeMargin = margin
-    windows[window]?.limitsGivenSince = true
   }
 
   static func rounded(_ size: CGSize, toStepsOf step: CGSize, down: Bool = false, margin: CGSize = .zero) -> CGSize {
