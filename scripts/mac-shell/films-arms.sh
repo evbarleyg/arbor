@@ -13,14 +13,14 @@
 # ARMS: name=commit, in the order they are played. `head` is the commit under test, whose build the harness has made anyway. A commit must be given in full: the Mac's clone is one commit deep.
 # name=commit+commit is the first with, laid over it, the files that the second changed, those of the stand-ins (Sources/ArborTesting) left out, which are no part of the app: for two cures that have
 # not been put together yet. It is played only if each of those files is the same in the first commit as in the second's parent, so that it is what any merge of the two would build the app from.
-ARMS="head"
+ARMS="base=7bd65058bb96f37b81624aba645f86b036d7206d orders=43d9145153b6d39ac4a345f2f2174a459c26ed35 barrier=075199b018d5cfa4ef2a7a34c46690afe4e76085"
 # PLAYS: what every arm plays.
 #   test, safari   nine acts on one window: every side once, a quit and a launch, the first side again
 #   crowd, apps    many windows, eight test windows or six real apps and a test window, on a large display: Arrange, fill, everything, back, ROUNDS times over. How many frames a state is on the display
 #                  is chance, so whoever compares frames plays each arm five times; and the first round of a session is kept apart, since what is done for the first time differs.
 PLAYS="crowd apps"
 ROUNDS=5
-ARBOR_TIME_LIMIT=1150
+ARBOR_TIME_LIMIT=1800
 source "$(dirname "$0")/lib-film.sh"
 needs_throwaway_mac "film the whole display, open Safari, and build other commits in this clone"
 
@@ -227,7 +227,7 @@ for arm in $ARMS; do
     continue
   fi
   # The films need a minute for each playing: an arm that could not be built in time is left out, and said to be.
-  if [ "$SECONDS" -gt 480 ] && [ "$commit" != head ]; then echo "arm $name: NOT BUILT, no time left"; continue; fi
+  if [ "$SECONDS" -gt 700 ] && [ "$commit" != head ]; then echo "arm $name: NOT BUILT, no time left"; continue; fi
   arm_build "$name" "$commit"
   [ -x "$ARMS_DIR/$name/Arbor" ] && PLAYED="$PLAYED $name"
 done

@@ -375,22 +375,32 @@ def pieces(m, until=None):
     return {"frames": frames, "times": [int(film.times[index]) - cause for index in frames], "between": sorted(between), "followed": followed, "sized": sorted(sized)}
 
 
-def grows_where_it_cannot(film, old):
+def grows_where_it_cannot(film, old, seen=None):
     """The one exception to "over" (the product owner, 2026-10-15): a window may show its new size at its old place if it grows, wider or higher by half a point or more, and its new frame lies
-    within no display's room: x from the display's left edge to the visible frame's right one, y from the display's top to the visible frame's bottom: the room as the product has it
-    (`FramePlan.room`): one definition in both. (The Dock at the right: unmeasured on a Mac; the narrower room errs to the old full plan.) macOS cuts growth at the display's edge once the window stands there,
-    and a size lost for good outranks a frame seen for a moment. The display shows only what of such a frame lies on it, so the frames are Arbor's own account, before and after; the window is the
-    one whose frame before has the followed rectangle's left, right and bottom. False where the film does not say."""
+    within no display's room: x from the display's left edge to the visible frame's right one, y from the display's top to the visible frame's bottom, and half a point more on every side: the room
+    as the product has it (`FramePlan.room`, `growsWhereItCannot`): one definition in both. (The Dock at the right: unmeasured on a Mac; the narrower room errs to the old full plan.) macOS cuts growth
+    at the display's edge once the window stands there, and a size lost for good outranks a frame seen for a moment. The display shows only what of such a frame lies on it, so the frames are Arbor's
+    own account, before and after; the window is the one whose frame before comes nearest the followed rectangle's left, right and bottom, with its top a title bar above. `seen`, the rectangle
+    to be excused, has to be that size and no third one: as wide and as high as the new frame, or as much of it as the room or the display lets show from the old place. False where the film
+    does not say. A film has one display, so a frame that lies wholly on another is taken to lie in no room: no film has two."""
     if not film.display or not film.visible:
         return False
     edges = tuple(value / film.scale for value in old.edges)
-    for window, (x, y, w, h) in film.before.items():
-        if window in film.after and max(abs(x - edges[0]), abs(x + w - edges[2]), abs(y + h - edges[3])) <= 3:
-            left, top, wide, high = film.after[window]
-            grows = wide - w >= 0.5 or high - h >= 0.5
-            within = film.display[0] <= left and left + wide <= film.visible[0] + film.visible[2] and film.display[1] <= top and top + high <= film.visible[1] + film.visible[3]
-            return grows and not within
-    return False
+    near = [(max(abs(x - edges[0]), abs(x + w - edges[2]), abs(y + h - edges[3])), window) for window, (x, y, w, h) in film.before.items()
+            if window in film.after and -3 <= edges[1] - y <= 45]
+    if not near or min(near)[0] > 3:
+        return False
+    (x, y, w, h), (left, top, wide, high) = film.before[min(near)[1]], film.after[min(near)[1]]
+    right, foot = film.visible[0] + film.visible[2], film.visible[1] + film.visible[3]
+    grows = wide - w >= 0.5 or high - h >= 0.5
+    within = film.display[0] - 0.5 <= left and left + wide <= right + 0.5 and film.display[1] - 0.5 <= top and top + high <= foot + 0.5
+    if seen is not None:
+        shown = tuple(value / film.scale for value in seen.edges)
+        if min(abs(shown[2] - min(x + wide, edge)) for edge in (right, film.display[0] + film.display[2])) > 3:
+            return False
+        if min(abs(shown[3] - min(y + high, edge)) for edge in (foot, film.display[1] + film.display[3])) > 3:
+            return False
+    return grows and not within
 
 
 def in_one_piece(m, until=None):
@@ -441,7 +451,7 @@ def in_one_piece(m, until=None):
             if rect.area - shared(old) - shared(new) + shared(old, new) > 400 * film.scale**2:
                 # The exception excuses the new size at the old place, and nothing else that happens in the same act.
                 there = max(abs(rect.left - old.left), abs(rect.top - old.top)) <= 2 * film.scale
-                found["excused" if there and grows_where_it_cannot(film, old) else "over"].append(index)
+                found["excused" if there and grows_where_it_cannot(film, old, rect) else "over"].append(index)
     found["over"], found["excused"] = sorted(set(found["over"])), sorted(set(found["excused"]))
     return found
 
@@ -1443,19 +1453,45 @@ def self_test():
             wrong += [f"{identifier} saw nothing: {verdicts[identifier].said}" for identifier in unseen]
             failures += bool(wrong)
             print(f"{'✘' if wrong else '✔'} {name}: missed {', '.join(missed) or 'nothing'}" + "".join(f"\n    {line}" for line in wrong))
-        # The Dock at the right: the room ends where the visible frame does, not where the display does.
-        class Docked:
-            display, visible, scale = [0, 0, 1024, 768], [0, 31, 960, 737], 1
-            before = {1: [100.0, 100.0, 200.0, 300.0]}
-
+        # The room of the exception, edge by edge, with the Dock at each of its three places. The window stands at 100, 100, 200 wide and 300 high; its drawn rectangle begins a title bar lower.
         class Was:
-            edges = (100, 100, 300, 400)
-        rooms = []
-        for after, wanted in (([400.0, 100.0, 500.0, 400.0], False), ([500.0, 100.0, 500.0, 400.0], True), ([400.0, 400.0, 500.0, 400.0], True), ([-10.0, 100.0, 500.0, 400.0], True), ([980.0, 100.0, 150.0, 200.0], False)):
-            Docked.after = {1: after}
-            rooms.append(grows_where_it_cannot(Docked, Was) == wanted)
-        failures += not all(rooms)
-        print(f"{'✔' if all(rooms) else '✘'} the room of the exception: within, over the visible frame's right edge, below its foot, over the display's left edge, and one that shrinks: {rooms}")
+            edges = (100, 128, 300, 400)
+
+        def excused(visible, after, before=None, seen=None, was=Was):
+            film = types.SimpleNamespace(display=[0, 0, 1024, 768], visible=visible, scale=1, before=before or {1: [100.0, 100.0, 200.0, 300.0]}, after=after if isinstance(after, dict) else {1: after})
+            return grows_where_it_cannot(film, was, seen)
+        at_right, at_left, below = [0, 31, 960, 737], [70, 31, 954, 737], [0, 31, 1024, 667]
+        rooms = {
+            "within": excused(at_right, [400.0, 100.0, 500.0, 400.0]) is False,
+            "over the visible frame's right edge": excused(at_right, [500.0, 100.0, 500.0, 400.0]) is True,
+            "to the point on that edge": excused(at_right, [460.0, 100.0, 500.0, 400.0]) is False,
+            "0.4 over it, as the product lets pass": excused(at_right, [460.4, 100.0, 500.0, 400.0]) is False,
+            "0.6 over it": excused(at_right, [460.6, 100.0, 500.0, 400.0]) is True,
+            "below the foot": excused(at_right, [400.0, 400.0, 500.0, 400.0]) is True,
+            "to the point on the foot": excused(at_right, [400.0, 368.0, 500.0, 400.0]) is False,
+            "the Dock below: on the display and under the visible foot": excused(below, [400.0, 320.0, 500.0, 400.0]) is True,
+            "the Dock below: to the point on the visible foot": excused(below, [400.0, 298.0, 500.0, 400.0]) is False,
+            "the Dock at the left: in its strip there is room": excused(at_left, [10.0, 100.0, 500.0, 400.0]) is False,
+            "the Dock at the left: the right edge is the visible frame's own": excused(at_left, [500.0, 100.0, 524.0, 400.0]) is False,
+            "the Dock at the left: a point over it": excused(at_left, [501.0, 100.0, 524.0, 400.0]) is True,
+            "over the display's left edge": excused(at_right, [-10.0, 100.0, 500.0, 400.0]) is True,
+            "over the display's top": excused(at_right, [400.0, -10.0, 500.0, 400.0]) is True,
+            "under the menu bar there is room": excused(at_right, [400.0, 10.0, 500.0, 400.0]) is False,
+            "one that shrinks": excused(at_right, [980.0, 100.0, 150.0, 200.0]) is False,
+            "one that only grows higher": excused(at_right, [900.0, 100.0, 200.0, 400.0]) is True,
+            "one that only grows wider": excused(at_right, [900.0, 100.0, 300.0, 300.0]) is True,
+            "wider and shorter": excused(at_right, [900.0, 100.0, 300.0, 200.0]) is True,
+            "of two windows the nearer one decides": excused(at_right, {1: [900.0, 100.0, 300.0, 300.0], 2: [400.0, 100.0, 100.0, 100.0]}, {2: [102.0, 100.0, 196.0, 298.0], 1: [100.0, 100.0, 200.0, 300.0]}) is True,
+            "none near: nobody is excused": excused(at_right, [900.0, 100.0, 300.0, 300.0], {1: [140.0, 100.0, 200.0, 300.0]}) is False,
+            "another window with the same sides and foot, and its top elsewhere": excused(at_right, [900.0, 100.0, 300.0, 300.0], {1: [100.0, 300.0, 200.0, 100.0]}) is False,
+            "seen at the new size": excused(at_right, [900.0, 100.0, 300.0, 350.0], seen=types.SimpleNamespace(edges=(100, 128, 400, 450))) is True,
+            "seen at a third size": excused(at_right, [900.0, 100.0, 300.0, 350.0], seen=types.SimpleNamespace(edges=(100, 128, 500, 540))) is False,
+            "seen as wide as the new and no higher than the old": excused(at_right, [900.0, 100.0, 300.0, 350.0], seen=types.SimpleNamespace(edges=(100, 128, 400, 400))) is False,
+            "seen cut at the room's foot": excused(at_right, [900.0, 60.0, 300.0, 700.0], seen=types.SimpleNamespace(edges=(100, 128, 400, 768))) is True,
+        }
+        wrong = [name for name, right in rooms.items() if not right]
+        failures += bool(wrong)
+        print(f"{'✘' if wrong else '✔'} the room of the exception, {len(rooms)} frames: " + ("WRONG: " + "; ".join(wrong) if wrong else "each as the product has it"))
         _, verdicts = judge(os.path.join(folder, "grows-where-it-cannot"))
         counted = "was used in 1 frames" in verdicts["R5"].said
         failures += not counted
