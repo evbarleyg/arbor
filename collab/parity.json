@@ -1796,8 +1796,8 @@
       "area": "Arbor only",
       "title": "Minimap: where the view is in the whole arrangement",
       "trellis": "",
-      "arbor": "⌃⌥M, `minimap`: the whole arrangement in small with the view marked; stays five seconds, a click in it frames that window; held, letting go frames what the pointer is over. By itself after each move of the view with `minimapDuration` (off by default). Proven headlessly and built on a Mac; nobody has seen the panel yet (`MinimapDrawingTests`' pictures, `shots-minimap.sh`)",
-      "status": "partial",
+      "arbor": "⌃⌥M, `minimap`: the whole arrangement in small with the view marked; stays five seconds, a click in it frames that window; held, letting go frames what the pointer is over. By itself after each move of the view with `minimapDuration` (off by default). Seen on a hosted Mac in the light look, the dark one, with Increase Contrast and with Reduce Transparency, over windows and over plain red, blue, white and black (the gallery)",
+      "status": "shipped",
       "spec": "F26",
       "priority": 2,
       "tests": [
@@ -1909,6 +1909,9 @@
         "withNothingDockedThereIsNothingToShow",
         "withPassingMinimapsOffAClickGoesThereAndPutsItAway",
         "withPeekingOffHeldIsTapped"
+      ],
+      "e2e": [
+        "the minimap"
       ]
     },
     {
@@ -3657,8 +3660,8 @@
       "area": "Arbor only",
       "title": "⌃⌥N: a field to type a space's name into",
       "trellis": "",
-      "arbor": "`ask-name`: one field over the space; the line under it says what ↩ will do; closes with ⎋, ⌃⌥N, when another window gets the keyboard, and when the view leaves. The model is tested; the panel has not run on a Mac yet (`check-F20.sh`)",
-      "status": "partial",
+      "arbor": "`ask-name`: one field over the space; the line under it says what ↩ will do; closes with ⎋, ⌃⌥N, when another window gets the keyboard, and when the view leaves. Seen on a hosted Mac, empty, typed into and with a name too long, in every look (the gallery); its keys are `check-F20.sh`'s",
+      "status": "shipped",
       "spec": "F20",
       "priority": 2,
       "tests": [
@@ -3679,6 +3682,9 @@
         "theFieldStaysWhileTheViewStays",
         "theLineUnderTheFieldSaysWhatReturnWillDo",
         "theShortcutIsControlOptionN"
+      ],
+      "e2e": [
+        "the field for a name"
       ]
     },
     {
