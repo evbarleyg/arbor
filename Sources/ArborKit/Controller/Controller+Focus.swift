@@ -87,7 +87,7 @@ extension Controller {
     }
     // The window that had the keyboard has just gone, and macOS picked this one. Nobody asked to see it.
     if let loss, now().timeIntervalSince(loss.time) < Self.handOverTime, loss.app == nil || loss.app == windows[id]?.pid,
-      ensureFocusIsVisible(on: loss.display)
+      aWindowInViewGetsTheKeyboard(after: loss.display, picked: display)
     {
       return
     }
@@ -108,8 +108,9 @@ extension Controller {
   /// When the window with the keyboard is closed, minimized or hidden, macOS hands the keyboard on: to the app's
   /// next window, or to the app used before. If that window is out of view, following it would move the view
   /// although the user asked for nothing of the kind (and perhaps in front of an audience). So the view
-  /// stays and a window in view gets the keyboard. Only if nothing is in view does the view follow, because
-  /// typing into a window out of view is worse.
+  /// stays and a window in view gets the keyboard. Only if nothing is in view, on any display, does the view follow,
+  /// because typing into a window out of view is worse. (A view that has followed already and is taken back still
+  /// looks at its own display alone.)
   ///
   /// macOS was seen to report the new focus a millisecond BEFORE the close or the minimize, and after a hide, and
   /// not at all when another app comes forward whose own focused window did not change. All three are covered.
@@ -278,8 +279,22 @@ extension Controller {
         return
       }
       self.keyboardHandOver.loss = nil
-      if !self.ensureFocusIsVisible(on: display) { self.bringIntoView(heir) }
+      if !self.aWindowInViewGetsTheKeyboard(after: display, picked: home) { self.bringIntoView(heir) }
     }
+  }
+
+  /// The window with the keyboard went, on `display`, and macOS picked one that Arbor keeps out of view, on `picked`. A window in
+  /// view gets the keyboard, and "in view" is asked of all displays: first of `display`, where the eyes and the pointer are, then
+  /// of `picked`, where the app goes on, then of the others; on each it is the window used last. A display that shows only its
+  /// wallpaper once its last window has closed is what closing the last window means, and nobody at another display asked
+  /// for its view to move. Returns whether there was one.
+  ///
+  /// Not where macOS picked none: no window is out of view with the keyboard in it then, and no app is brought forward on
+  /// another display for it.
+  private func aWindowInViewGetsTheKeyboard(after display: DisplayID, picked: DisplayID) -> Bool {
+    // Each display once: asking costs a question to macOS.
+    var asked: Set<DisplayID> = []
+    return ([display, picked] + workspaces.keys.sorted()).first { asked.insert($0).inserted && ensureFocusIsVisible(on: $0) } != nil
   }
 
   /// Whether a view on `camera` would show a window that can take the focus: a docked one, or a floating one that is in
