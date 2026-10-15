@@ -54,11 +54,11 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 
 | Kind | Cases | Hurt 1 | Stand-ins play it | partly | not yet | cannot | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded | Arbor does not cope yet, or nobody knows |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| [order-of-reports](#order-of-reports) | 28 | 3 | 9 | 9 | 5 | 5 | 16 | 1 | 3 | 8 | 4 |
+| [order-of-reports](#order-of-reports) | 29 | 3 | 9 | 9 | 6 | 5 | 16 | 1 | 4 | 8 | 4 |
 | [missing-report](#missing-report) | 42 | 7 | 12 | 7 | 4 | 19 | 22 | 1 | 5 | 14 | 11 |
 | [extra-report](#extra-report) | 9 | 0 | 3 | 3 | 1 | 2 | 6 | 0 | 0 | 3 | 1 |
 | [late-or-partial-answer](#late-or-partial-answer) | 46 | 9 | 11 | 16 | 6 | 13 | 28 | 0 | 6 | 12 | 15 |
-| [second-actor](#second-actor) | 53 | 6 | 16 | 19 | 11 | 7 | 33 | 0 | 4 | 16 | 11 |
+| [second-actor](#second-actor) | 53 | 6 | 16 | 19 | 11 | 7 | 34 | 1 | 4 | 14 | 10 |
 | [geometry](#geometry) | 35 | 2 | 11 | 15 | 7 | 2 | 24 | 1 | 2 | 8 | 6 |
 | [identity](#identity) | 31 | 4 | 7 | 6 | 7 | 11 | 12 | 1 | 4 | 14 | 9 |
 | [permissions](#permissions) | 22 | 8 | 6 | 3 | 3 | 10 | 11 | 2 | 2 | 7 | 4 |
@@ -67,16 +67,16 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 42 | 1 | 0 | 1 | 4 | 37 | 23 | 1 | 1 | 17 | 7 |
-| **all** | 455 | 61 | 90 | 121 | 72 | 172 | 226 | 19 | 59 | 151 | 111 |
+| **all** | 456 | 61 | 90 | 121 | 73 | 172 | 227 | 20 | 60 | 149 | 110 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 143 | 88 | 43 | 13 | 33 | 54 |
-| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 163 | 97 | 121 | 0 | 11 | 31 |
+| at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 163 | 97 | 122 | 1 | 11 | 29 |
 | controller | in the controller or the core, given reports that were right | 27 | 14 | 15 | 0 | 1 | 11 |
-| test | in a test, a script or a harness that expected the wrong thing | 80 | 0 | 24 | 5 | 10 | 41 |
+| test | in a test, a script or a harness that expected the wrong thing | 81 | 0 | 24 | 5 | 11 | 41 |
 | machine | in the machine, the toolchain or the way things are built and installed | 42 | 3 | 23 | 1 | 4 | 14 |
 
 Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
@@ -212,7 +212,7 @@ So no test on Linux can meet it. (Those they play partly are not listed: see eac
 
 ## Ring 2: what the walks on Linux cannot vouch for
 
-The viable gate (`docs/VIABLE.md`, section 2) asks of this ledger that no open row touches one of the detectors of its section 5: with such a row open, ten thousand clean walks against the stand-ins say nothing about that detector. Each case says which detectors a person's trouble would set off (*touches*). It counts here when Arbor does not cope with it yet or nobody knows (**bold**), or when it crosses the seam and the stand-ins play it only partly or not at all. 127 cases count, each once, however many detectors it touches: that is the number `scripts/reality-ledger.py --rings` hands to the gate.
+The viable gate (`docs/VIABLE.md`, section 2) asks of this ledger that no open row touches one of the detectors of its section 5: with such a row open, ten thousand clean walks against the stand-ins say nothing about that detector. Each case says which detectors a person's trouble would set off (*touches*). It counts here when Arbor does not cope with it yet or nobody knows (**bold**), or when it crosses the seam and the stand-ins play it only partly or not at all. 126 cases count, each once, however many detectors it touches: that is the number `scripts/reality-ledger.py --rings` hands to the gate.
 
 | Detector | Cases | Open or unplayed cases that touch it |
 |---|---|---|
@@ -220,7 +220,7 @@ The viable gate (`docs/VIABLE.md`, section 2) asks of this ledger that no open r
 | `jolt` | 27 | **[arbor-pulls-at-a-window-on-its-way-into-full-screen](#arbor-pulls-at-a-window-on-its-way-into-full-screen)**, **[native-tabs-go-wrong-when-the-apps-list-is-ten-milliseconds-behind](#native-tabs-go-wrong-when-the-apps-list-is-ten-milliseconds-behind)**, **[one-shrink-moves-a-window-that-will-not-shrink-four-times](#one-shrink-moves-a-window-that-will-not-shrink-four-times)**, **[real-apps-are-reported-gone-before-their-sibling-has-the-keyboard](#real-apps-are-reported-gone-before-their-sibling-has-the-keyboard)**, **[the-key-that-fills-the-screen-pressed-again-fills-it-with-another-apps-window](#the-key-that-fills-the-screen-pressed-again-fills-it-with-another-apps-window)**, **[a-window-that-travels-with-another](#a-window-that-travels-with-another)**, **[an-app-settles-its-size-after-the-mouse-is-up](#an-app-settles-its-size-after-the-mouse-is-up)**, **[float-all-inside-arbors-wait-for-the-displays-goes-by-the-old-ones](#float-all-inside-arbors-wait-for-the-displays-goes-by-the-old-ones)**, **[the-fake-obeys-a-move-of-a-minimized-or-hidden-window](#the-fake-obeys-a-move-of-a-minimized-or-hidden-window)**, [displays-blink-on-wake](#displays-blink-on-wake), [a-double-click-on-a-title-bar-zooms-the-window](#a-double-click-on-a-title-bar-zooms-the-window), [a-minimize-posts-a-change-of-displays](#a-minimize-posts-a-change-of-displays), [a-window-asked-to-grow-stops-at-the-dock](#a-window-asked-to-grow-stops-at-the-dock), [every-setframe-is-echoed-after-the-call-returns](#every-setframe-is-echoed-after-the-call-returns), [leaving-full-screen-lands-where-macos-chooses](#leaving-full-screen-lands-where-macos-chooses), [macos-puts-windows-back-on-a-display-that-returns](#macos-puts-windows-back-on-a-display-that-returns), [the-resize-may-come-before-the-full-screen-flag](#the-resize-may-come-before-the-full-screen-flag), [a-size-set-at-the-old-place-is-cut-to-what-fits-there](#a-size-set-at-the-old-place-is-cut-to-what-fits-there), [focus-reports-lag-behind-a-burst-of-new-windows](#focus-reports-lag-behind-a-burst-of-new-windows), [macos-holds-a-slowly-dragged-window-at-the-edges-of-the-screen](#macos-holds-a-slowly-dragged-window-at-the-edges-of-the-screen), [resized-can-stall-for-a-second](#resized-can-stall-for-a-second), [the-dock-resizes-and-the-visible-frame-with-it](#the-dock-resizes-and-the-visible-frame-with-it), [windows-of-an-unplugged-display-land-in-a-heap](#windows-of-an-unplugged-display-land-in-a-heap), [windows-turn-up-one-by-one-at-launch](#windows-turn-up-one-by-one-at-launch), [a-terminals-window-has-a-margin-besides-its-characters](#a-terminals-window-has-a-margin-besides-its-characters), [stock-apps-stop-at-other-sizes-than-the-table-said](#stock-apps-stop-at-other-sizes-than-the-table-said), [what-macos-zooms-a-window-to-is-its-apps-to-say](#what-macos-zooms-a-window-to-is-its-apps-to-say) |
 | `pulled` | 3 | [a-title-bar-never-goes-under-the-menu-bar](#a-title-bar-never-goes-under-the-menu-bar), [macos-holds-a-dragged-window-back-where-edges-meet](#macos-holds-a-dragged-window-back-where-edges-meet), [a-window-dragged-off-a-tile-of-macos-lies-under-the-pointer-as-it-was-held](#a-window-dragged-off-a-tile-of-macos-lies-under-the-pointer-as-it-was-held) |
 | `flash` | 9 | **[macos-puts-windows-that-are-out-of-view-into-view-when-displays-change](#macos-puts-windows-that-are-out-of-view-into-view-when-displays-change)**, **[macoss-last-word-about-the-screens-comes-before-most-of-the-windows-reports](#macoss-last-word-about-the-screens-comes-before-most-of-the-windows-reports)**, **[one-shrink-moves-a-window-that-will-not-shrink-four-times](#one-shrink-moves-a-window-that-will-not-shrink-four-times)**, **[float-all-inside-arbors-wait-for-the-displays-goes-by-the-old-ones](#float-all-inside-arbors-wait-for-the-displays-goes-by-the-old-ones)**, **[the-display-showing-most-of-a-window-stops-it](#the-display-showing-most-of-a-window-stops-it)**, [after-a-change-of-displays-macos-pulls-a-parked-window-into-view](#after-a-change-of-displays-macos-pulls-a-parked-window-into-view), [how-far-above-the-bottom-a-window-stops-differs](#how-far-above-the-bottom-a-window-stops-differs), [leaving-full-screen-pulls-the-apps-parked-windows-onto-the-screen](#leaving-full-screen-pulls-the-apps-parked-windows-onto-the-screen), [unhiding-moves-windows-before-it-says-shown](#unhiding-moves-windows-before-it-says-shown) |
-| `fought` | 14 | **[a-raise-fetches-a-minimized-window-out-of-the-dock](#a-raise-fetches-a-minimized-window-out-of-the-dock)**, **[a-docked-window-let-go-in-macos-band-at-the-top-is-undocked](#a-docked-window-let-go-in-macos-band-at-the-top-is-undocked)**, **[macos-does-not-tile-every-window-at-the-top-edge](#macos-does-not-tile-every-window-at-the-top-edge)**, **[macos-remembers-a-tile-arbor-has-undone](#macos-remembers-a-tile-arbor-has-undone)**, **[command-and-shift-do-not-stop-macos-tiling](#command-and-shift-do-not-stop-macos-tiling)**, **[macos-half-tile-is-a-point-off](#macos-half-tile-is-a-point-off)**, [a-double-click-on-a-title-bar-zooms-the-window](#a-double-click-on-a-title-bar-zooms-the-window), [a-window-macos-tiled-gets-its-old-size-back-in-the-hand](#a-window-macos-tiled-gets-its-old-size-back-in-the-hand), [macos-tiling-travels-although-reduce-motion-is-on](#macos-tiling-travels-although-reduce-motion-is-on), [option-held-in-a-drag-brings-up-macos-tiling-preview](#option-held-in-a-drag-brings-up-macos-tiling-preview), [two-previews-for-one-drag](#two-previews-for-one-drag), [macos-tiling-does-not-answer-every-drag-to-the-menu-bar](#macos-tiling-does-not-answer-every-drag-to-the-menu-bar), [what-macos-zooms-a-window-to-is-its-apps-to-say](#what-macos-zooms-a-window-to-is-its-apps-to-say), [with-option-held-macos-shows-its-preview-and-does-not-tile](#with-option-held-macos-shows-its-preview-and-does-not-tile) |
+| `fought` | 13 | **[a-raise-fetches-a-minimized-window-out-of-the-dock](#a-raise-fetches-a-minimized-window-out-of-the-dock)**, **[a-docked-window-let-go-in-macos-band-at-the-top-is-undocked](#a-docked-window-let-go-in-macos-band-at-the-top-is-undocked)**, **[macos-does-not-tile-every-window-at-the-top-edge](#macos-does-not-tile-every-window-at-the-top-edge)**, **[macos-remembers-a-tile-arbor-has-undone](#macos-remembers-a-tile-arbor-has-undone)**, **[macos-half-tile-is-a-point-off](#macos-half-tile-is-a-point-off)**, [a-double-click-on-a-title-bar-zooms-the-window](#a-double-click-on-a-title-bar-zooms-the-window), [a-window-macos-tiled-gets-its-old-size-back-in-the-hand](#a-window-macos-tiled-gets-its-old-size-back-in-the-hand), [macos-tiling-travels-although-reduce-motion-is-on](#macos-tiling-travels-although-reduce-motion-is-on), [option-held-in-a-drag-brings-up-macos-tiling-preview](#option-held-in-a-drag-brings-up-macos-tiling-preview), [two-previews-for-one-drag](#two-previews-for-one-drag), [macos-tiling-does-not-answer-every-drag-to-the-menu-bar](#macos-tiling-does-not-answer-every-drag-to-the-menu-bar), [what-macos-zooms-a-window-to-is-its-apps-to-say](#what-macos-zooms-a-window-to-is-its-apps-to-say), [with-option-held-macos-shows-its-preview-and-does-not-tile](#with-option-held-macos-shows-its-preview-and-does-not-tile) |
 | `lost` | 20 | **[an-app-that-is-busy-as-it-is-switched-to-is-never-reported-focused](#an-app-that-is-busy-as-it-is-switched-to-is-never-reported-focused)**, **[f08-a-virtual-display-once-no-cable-no-lid-no-space](#f08-a-virtual-display-once-no-cable-no-lid-no-space)**, **[f51-no-finger-has-held-the-key](#f51-no-finger-has-held-the-key)**, **[f53-no-real-apps-window-has-been-summoned](#f53-no-real-apps-window-has-been-summoned)**, **[f58-no-held-view-has-been-empty-and-no-audience-has-looked](#f58-no-held-view-has-been-empty-and-no-audience-has-looked)**, **[f63-nothing-has-been-pressed-while-the-permission-is-gone](#f63-nothing-has-been-pressed-while-the-permission-is-gone)**, **[quitting-while-an-app-hangs-strands-its-windows](#quitting-while-an-app-hangs-strands-its-windows)**, **[a-move-that-timed-out-is-carried-out-when-the-app-wakes](#a-move-that-timed-out-is-carried-out-when-the-app-wakes)**, **[arbor-starts-while-an-app-hangs-and-each-try-to-observe-it-waits-a-second](#arbor-starts-while-an-app-hangs-and-each-try-to-observe-it-waits-a-second)**, **[twins-and-displays-without-a-uuid-share-one-name](#twins-and-displays-without-a-uuid-share-one-name)**, **[a-window-put-away-before-arbor-started-and-shown-again-counts-as-open-all-along](#a-window-put-away-before-arbor-started-and-shown-again-counts-as-open-all-along)**, **[float-all-inside-arbors-wait-for-the-displays-goes-by-the-old-ones](#float-all-inside-arbors-wait-for-the-displays-goes-by-the-old-ones)**, **[the-labs-own-book-keeping-raised-false-alarms](#the-labs-own-book-keeping-raised-false-alarms)**, [a-refusal-comes-from-inside-a-call](#a-refusal-comes-from-inside-a-call), [displays-blink-on-wake](#displays-blink-on-wake), [every-display-notice-restarts-the-wait](#every-display-notice-restarts-the-wait), [macos-moves-windows-at-once-and-arbor-hears-of-the-displays-later](#macos-moves-windows-at-once-and-arbor-hears-of-the-displays-later), [one-refusal-from-a-busy-app-is-not-a-minimum-size](#one-refusal-from-a-busy-app-is-not-a-minimum-size), [real-apps-are-wider-than-a-column](#real-apps-are-wider-than-a-column), [terminal-grows-out-of-its-slot-when-the-font-grows](#terminal-grows-out-of-its-slot-when-the-font-grows) |
 | `stuck` | 9 | **[stage-manager-rearranges-windows-on-its-own](#stage-manager-rearranges-windows-on-its-own)**, **[a-flick-is-over-before-arbor-hears-of-the-press](#a-flick-is-over-before-arbor-hears-of-the-press)**, **[a-press-heard-late-finds-no-window-under-the-events-own-place](#a-press-heard-late-finds-no-window-under-the-events-own-place)**, **[the-fakes-announce-a-drag-without-asking-the-judge](#the-fakes-announce-a-drag-without-asking-the-judge)**, [a-drag-is-heard-of-a-third-of-a-second-late](#a-drag-is-heard-of-a-third-of-a-second-late), [the-app-learns-of-a-drag-later-than-the-window-server](#the-app-learns-of-a-drag-later-than-the-window-server), [macos-holds-a-dragged-window-back-where-edges-meet](#macos-holds-a-dragged-window-back-where-edges-meet), [a-title-bar-let-go-behind-the-dock-is-pulled-up](#a-title-bar-let-go-behind-the-dock-is-pulled-up), [a-window-dragged-off-a-tile-of-macos-lies-under-the-pointer-as-it-was-held](#a-window-dragged-off-a-tile-of-macos-lies-under-the-pointer-as-it-was-held) |
 | `behind` | 8 | **[f53-no-real-apps-window-has-been-summoned](#f53-no-real-apps-window-has-been-summoned)**, **[f49-no-pin-has-been-seen-in-front-after-a-real-click-under-it](#f49-no-pin-has-been-seen-in-front-after-a-real-click-under-it)**, **[raise-does-not-lift-a-window-over-the-active-apps-key-window](#raise-does-not-lift-a-window-over-the-active-apps-key-window)**, [a-clicked-window-takes-the-keyboard-first-and-comes-forward-afterwards](#a-clicked-window-takes-the-keyboard-first-and-comes-forward-afterwards), [raising-a-window-can-make-its-app-report-a-focus-change](#raising-a-window-can-make-its-app-report-a-focus-change), [an-app-that-comes-forward-raises-only-its-key-window](#an-app-that-comes-forward-raises-only-its-key-window), [a-command-click-raises-nothing-and-the-three-buttons-work-from-behind](#a-command-click-raises-nothing-and-the-three-buttons-work-from-behind), [a-press-on-a-title-bar-brings-the-window-forward-before-it-moves](#a-press-on-a-title-bar-brings-the-window-forward-before-it-moves) |
@@ -552,6 +552,18 @@ Order of reports: what belongs together arrives in another order than expected.
 - **Guard:** **none**
 - **Arbor copes:** EchoFilter.judge takes each report by its own window and time, so the order between windows is nothing to it.
 - **Read in:** `Sources/ArborTesting/FakeWindowSystem.swift`, `Sources/ArborCore/EchoFilter.swift`
+
+### the-list-of-all-windows-is-not-front-to-back
+
+*hurt 4 · test*
+
+- **Expected:** The window server's list names windows from front to back, so the first one that holds a point is the one a press there takes.
+- **Happened:** That holds for the list of what is on screen. The list of everything, which the harness reads for most of its questions, named a window behind before the one in front: in two drags of forty-five, each begun on the title bar of the frontmost window where another window lay behind the same point, the harness took the press for one into the other window's content, held no ⌘, and the drag, which Arbor saw and answered by its rule, docked nothing. By the drags that went right and the two that went wrong; the lists themselves were not kept.
+- **Found by:** One run of e2e-drag.sh and check-drag-docks.sh on a hosted Mac, macOS 26.
+- **Stand-ins play it:** **no**
+- **Guard:** `e2e: the button comes up first: it docks` (by hand)
+- **Arbor copes:** scripts/mac-shell/lib.sh asks the list of what is on screen where the order counts (arbor_hand_means_to_dock), as pointer.swift's freePoint always did, and says in the run's output why the hand holds nothing.
+- **Read in:** `scripts/mac-shell/lib.sh`, `scripts/mac-shell/state.py`, `scripts/mac-shell/pointer.swift`
 
 ### the-tap-threads-log-lines-come-last
 
@@ -2161,8 +2173,8 @@ A second actor: macOS, an app or another tool moves things too.
 - **Happened:** ⌘ silences Arbor only. With ⌘ held and the pointer at (512,0) macOS showed its preview and the window ended at (0,31 1024×674), filling the display; at (0,368) it ended at (-1,31 512×674). ⇧ changes nothing either: both previews, three moves. Since Arbor stands aside where macOS tiles there is one preview and one move; that ⌘ does not keep the window where it was let go is macOS's doing and stays.
 - **Found by:** Probes of real title-bar drags with the keys held, on hosted Macs.
 - **Stand-ins play it:** yes (`FakeWindowSystem.letMacOSTile`)
-- **Guard:** **none**
-- **Arbor copes:** **not yet**
+- **Guard:** `test: withCommandHeldAtMacOSsEdgeTheLineIsStillSaid`; `test: atMacOSsDefaultsAPlainDragIsMacOSsAlone`
+- **Arbor copes:** MacTiling.claim is asked before the key. Since 2026-10-15 ⌘ is what asks Arbor to dock (`dragDocks`), so at an edge that is macOS's there are two claimants: Arbor shows nothing and docks nothing there, ⌘ or not (Q23), and whoever held ⌘ is told which key docks and where macOS's tiling is switched off.
 - **Read in:** `docs/features/F09-drag-polish.md`, `docs/TESTING.md`, `docs/GUIDE.md`, `scripts/mac-shell/check-F09.sh`
 
 ### invisible-windows-cover-the-whole-screen
@@ -2209,8 +2221,8 @@ A second actor: macOS, an app or another tool moves things too.
 - **Happened:** Since macOS 15, ⌥ held during a window drag brings up macOS's own tiling preview (on by default). The key became ⌘.
 - **Found by:** Known of macOS 15 and given as the reason when drag polish was built; ⌘ was then seen at work in three Mac shell runs on a hosted Mac.
 - **Stand-ins play it:** partly (`FakeWindowSystem.tiling`)
-- **Guard:** `test: withCommandHeldADropOverAnyTargetFloatsTheWindow`; `test: theOtherModifiersDoNotSuppressDocking`; `e2e: no preview at the screen edge with ⌘ held` (by hand); `test: withOptionHeldEveryPlaceIsMacOSs`
-- **Arbor copes:** Controller.suppressesDocking goes by ⌘; `doctor` names the macOS switch (`MacSwitch.optionKey`). With ⌥ held Arbor now shows no preview of its own and docks nothing (`MacTiling.claim`).
+- **Guard:** `test: withCommandHeldADropOverAnyTargetFloatsTheWindow`; `test: theOtherModifiersDoNotSuppressDocking`; `test: whichKeysCount`; `e2e: no preview at the screen edge with nothing held` (by hand); `test: withOptionHeldEveryPlaceIsMacOSs`
+- **Arbor copes:** DragDocks.isKeyHeld goes by ⌘, which since 2026-10-15 is the key that docks; `doctor` names the macOS switch (`MacSwitch.optionKey`). With ⌥ held Arbor now shows no preview of its own and docks nothing (`MacTiling.claim`).
 - **Read in:** `collab/QUESTIONS.md`, `docs/features/F09-drag-polish.md`, `docs/KEYBOARD.md`, `docs/GUIDE.md`, `Sources/arbor-fakemac/main.swift`
 
 ### real-apps-bring-sheets-and-old-windows-with-them
@@ -2266,12 +2278,12 @@ A second actor: macOS, an app or another tool moves things too.
 *hurt 4 · at the seam · K121 · touches `stuck`*
 
 - **Expected:** A window stays where the hand lets go of it.
-- **Happened:** Held with its top at y 692 and y 728 on a display whose visible frame ends at 705, the window jumped to y 677 within 5 to 20 ms of the release, before anything else happened to it.
+- **Happened:** Held with its top at y 692 and y 728 on a display whose visible frame ends at 705, the window jumped to y 677 within 5 to 20 ms of the release, before anything else happened to it. Seen again on 2026-10-15 in plain drags to the bottom edge, with Arbor running and asking nothing: let go at y 690, the windows lay at 677.
 - **Found by:** A probe of real title-bar drags on a hosted Mac, with a watcher of Accessibility notifications.
 - **Stand-ins play it:** partly (`Echoes.titleBarStaysReachable`, `FakeWindowSystem.whereMacOSPuts`)
-- **Guard:** **none**
+- **Guard:** `e2e: where it was let go` (on CI's Macs)
 - **Arbor copes:** Controller.windowChanged takes the report as a move after the drop; nothing more is needed. The fakes correct only frames that Arbor sets, so tests of hands that let go under the Dock's line leave the window hanging there.
-- **Read in:** `Sources/ArborTesting/FakeWindowSystem.swift`, `Sources/arbor-fakemac/World+Input.swift`, `Tests/ArborKitTests/ASizeGivenBackTests.swift`, `collab/BACKLOG.md`
+- **Read in:** `Sources/ArborTesting/FakeWindowSystem.swift`, `Sources/arbor-fakemac/World+Input.swift`, `Tests/ArborKitTests/ASizeGivenBackTests.swift`, `collab/BACKLOG.md`, `scripts/mac-shell/e2e-drag.sh`
 
 ### a-web-server-on-a-runner-brings-up-the-alert-about-local-networks
 
@@ -4482,10 +4494,10 @@ Input: where presses, keys and gestures really go.
 *hurt 3 · below the seam · suspected*
 
 - **Expected:** The modifier keys that are down when Arbor handles a mouse-up are those that were down at the release.
-- **Happened:** People let go of key and button together, and the key can be up by the time Arbor hears of the mouse-up. A drag held with ⌘ to the end would dock all the same.
+- **Happened:** People let go of key and button together, and the key can be up by the time Arbor hears of the mouse-up. A drag held with ⌘ to the end would dock all the same. Since 2026-10-15 ⌘ is what docks, and the fault would turn round with it: held to the end, and nothing docks.
 - **Found by:** Reading, and a comment in the Accessibility layer that names no run. ⌘ and the hold were seen on a Mac at an earlier state of the code (check-F09.sh), not since.
 - **Stand-ins play it:** cannot: it lies below or beside the seam
-- **Guard:** `test: commandAtTheMomentOfReleaseIsEnough`; `tool: mac-on-linux/build.sh` (by hand)
+- **Guard:** `test: commandAtTheMomentOfReleaseIsEnough`; `test: commandPressedOnTheWayAndHeldToTheEndDocks`; `tool: mac-on-linux/build.sh` (by hand)
 - **Arbor copes:** AXWindowSystem.eventModifiers: while a mouse event is handled, `modifierKeysDown` answers with the flags the event itself carried.
 - **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `docs/ARCHITECTURE.md`, `docs/RELEASE-NOTES.md`, `scripts/mac-on-linux/mutants.py`
 

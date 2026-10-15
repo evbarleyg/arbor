@@ -196,8 +196,7 @@ extension Controller {
     }
     guard presentMinimap(on: display, askedFor: true) else {
       guard !workspace.tree.allWindows.isEmpty else {
-        return .failure(
-          "nothing is docked yet\(onPointerDisplay): drag a window to a screen edge, or try `dock left`")
+        return .failure("nothing is docked yet\(onPointerDisplay): \(howToDockAFirstWindow)")
       }
       return .failure(
         "no docked window takes up room just now\(onPointerDisplay): they are minimized, hidden or on another macOS Space")

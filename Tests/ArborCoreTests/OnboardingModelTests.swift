@@ -228,7 +228,13 @@ private let tuned = SystemFacts(accessibility: true, screenRecording: true, swit
     let two =
       "While Arbor runs, 2 settings of macOS are off. Quit or pause Arbor, and your Mac is as it was. To end that for good: here, or later "
       + "under Help → Check Setup… in Arbor’s menu."
-    #expect(row.done == two + " A window dragged to a screen edge docks now.")
+    #expect(row.done == two + " To dock a window there, hold ⌘ and drag it to a screen edge.")
+    // By how a dragged window docks (`dragDocks`): what to do now, and nothing where no drag docks.
+    func said(_ docks: DragDocks) -> String? {
+      OnboardingModel(tuned, canFixSetup: true, switchesChangedByArbor: [.screenEdges, .menuBar], dragDocks: docks).row(.desktopAndDock)?.done
+    }
+    #expect(said(.always) == two + " A window dragged to a screen edge docks now.")
+    #expect(said(.never) == two)
     #expect(row.undo == OnboardingModel.Row.Action("Put Them Back", .fixSetup(undo: true)) && row.action == nil)
     // What it was for is said only where it has come true: with the permission, without a pause, with every edge Arbor's.
     func done(_ facts: SystemFacts, isPaused: Bool = false) -> String? {

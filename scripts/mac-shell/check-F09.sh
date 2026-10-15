@@ -3,9 +3,9 @@
 #
 #   scripts/mac-shell/run.sh scripts/mac-shell/check-F09.sh
 #
-# Session 1, default settings: let go at once over a window's edge, a floating window stays there and a docked one
-# goes back to its slot; held there, a preview shows and the window docks exactly where it was; with ⌘ held nothing
-# docks and no preview shows.
+# Session 1, default settings, with ⌘ held as lib.sh's `drag` holds it: let go at once over a window's edge, a floating window stays
+# there and a docked one goes back to its slot; held there, a preview shows and the window docks exactly where it was. With
+# nothing held (--plain) nothing docks and no preview shows.
 # Session 2, dropDwell 2 s, so that the wait is long enough to look at: no preview before it is over, one
 # after; an ordinary drag does not dock; a screen edge does not wait.
 # Session 3, reflowWhileDragging: the others close up, make room, and go back, also when a docked window is let go
@@ -160,35 +160,35 @@ overlays
 check "the preview has left the screen, not only faded" not has_overlay 3
 shot 04-docked
 
-step "⌘ held: a docked window let go over its own slot floats"
+step "nothing held: a docked window let go over its own slot floats"
 read -r x y w h <<< "$(frame_of "$W3")"
 # shellcheck disable=SC2046
-drag $(titlebar_of "$W3") "$((x + w / 2 + 20))" "$((y + 70))" --mods cmd --no-release
-check "no preview with ⌘ held" not has_overlay 3
-shot 05-command-own-slot
-release --mods cmd
+drag $(titlebar_of "$W3") "$((x + w / 2 + 20))" "$((y + 70))" --plain --no-release
+check "no preview with nothing held" not has_overlay 3
+shot 05-plain-own-slot
+release
 sleep 0.6
 check "it is floating" is floating "$W3"
 summary
 
-step "⌘ held: neither a window's edge nor the screen edge docks"
+step "nothing held: neither a window's edge nor the screen edge docks"
 # shellcheck disable=SC2046
-drag $(titlebar_of "$W3") "$top_x" "$top_y" --mods cmd --hold 0.5 --no-release ||
+drag $(titlebar_of "$W3") "$top_x" "$top_y" --plain --hold 0.5 --no-release ||
   check "the drag was let through (W3 floats already: declined, the checks below would pass for nothing)" false
-check "no preview over a window's edge with ⌘ held" not has_overlay 3
-release --mods cmd
+check "no preview over a window's edge with nothing held" not has_overlay 3
+release
 sleep 0.6
 check "it is floating after the window's edge" is floating "$W3"
 # shellcheck disable=SC2046
-drag $(titlebar_of "$W3") "$edge_x" "$edge_y" --mods cmd --no-release || check "the drag was let through" false
-check "no preview at the screen edge with ⌘ held" not has_overlay 3
-shot 06-command-screen-edge
-release --mods cmd
+drag $(titlebar_of "$W3") "$edge_x" "$edge_y" --plain --no-release || check "the drag was let through" false
+check "no preview at the screen edge with nothing held" not has_overlay 3
+shot 06-plain-screen-edge
+release
 sleep 0.6
 check "it is floating after the screen edge" is floating "$W3"
 summary
 
-step "and without ⌘ the screen edge still docks"
+step "and with ⌘ the screen edge docks"
 # From the Desktop: quitting puts a window back where it floated before it was docked (F48), and half off the screen
 # is not where arbor_stop expects it.
 # shellcheck disable=SC2046
@@ -216,10 +216,10 @@ film 10-fade-in 14
 sleep 1
 check "a preview after two seconds" has_overlay 3
 shot 11-after-the-dwell
-# ⌘ down and up again while the pointer rests. The key alone: with another key it would be a shortcut of the app in front.
-key cmd --down
+# ⌘ up and down again while the pointer rests. The key alone: with another key it would be a shortcut of the app in front.
 key cmd --up
-check "⌘ pressed for a moment: the preview goes" not has_overlay 3
+key cmd --down
+check "⌘ let go of for a moment: the preview goes" not has_overlay 3
 sleep 2.2
 check "and comes back when the target has been held again" has_overlay 3
 release &

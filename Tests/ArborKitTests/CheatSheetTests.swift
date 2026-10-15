@@ -80,7 +80,7 @@ private let side = DisplaySnapshot(
       $0.frameRectangleModifier = "ctrl+opt"
     }
     h.run("show-shortcuts")
-    #expect(rows(h).contains("Drag to a screen edge Dock"))
+    #expect(rows(h).contains("⌘ + drag to a screen edge Dock"))
     #expect(rows(h).contains("⌃⌥ + drag Frame What Is Inside"))
     #expect(!rows(h).contains { $0.contains("pinch") })
   }

@@ -378,3 +378,26 @@ private let display = TraceDisplay(
       ])
   }
 }
+
+/// A recording holds every setting its build knew. What came later is missing, and means what that build did.
+@Suite struct RecordedSettingsTests {
+  private func header(settings: String?) throws -> TraceHeader {
+    let text = #"{"trace":1,"displays":[{"id":"main","frame":[0,0,1440,900],"visible":[0,25,1440,875],"main":true}]"# + (settings.map { #","settings":\#($0)"# } ?? "") + "}"
+    return try JSONDecoder().decode(TraceHeader.self, from: Data(text.utf8))
+  }
+
+  @Test func aRecordingFromBeforeTheKeyReplaysWithPlainDragsDocking() throws {
+    #expect(try header(settings: #"{"gap":8}"#).settings.dragDocks == "always")
+    #expect(try header(settings: #"{"gap":8}"#).settings.gap == 8)
+    #expect(try header(settings: #"{"gap":8,"dragDocks":"held"}"#).settings.dragDocks == "held")
+    #expect(try header(settings: #"{"dragDocks":"never"}"#).settings.dragDocks == "never")
+    // Written by hand, without settings: Arbor as it ships.
+    #expect(try header(settings: nil).settings == Settings())
+  }
+
+  @Test func whatIsRecordedNowSaysWhichWayItWas() throws {
+    var header = try header(settings: nil)
+    header.settings.dragDocks = "held"
+    #expect(try JSONDecoder().decode(TraceHeader.self, from: JSONEncoder().encode(header)).settings.dragDocks == "held")
+  }
+}

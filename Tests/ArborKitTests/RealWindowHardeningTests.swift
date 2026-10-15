@@ -338,6 +338,7 @@ import Testing
 
   @Test func aTabChangeInTheMiddleOfADragEndsTheDrag() {
     let (h, a, _) = makeHarness()
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(a, at: CGPoint(x: 300, y: 50))
     h.controller.dragMoved(a, to: CGPoint(x: 1438, y: 400))
     let tab = h.system.openTab(in: a)!
@@ -369,6 +370,7 @@ import Testing
     let (h, a, b) = makeHarness()
     h.system.clearFrameLog()
     h.controller.dragCancelled(a)
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(a, at: CGPoint(x: 300, y: 50))
     h.controller.dragCancelled(b)
     #expect(h.system.frameLog.isEmpty)

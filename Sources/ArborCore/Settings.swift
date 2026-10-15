@@ -222,6 +222,9 @@ public struct Settings: Codable, Equatable, Sendable {
   /// returns. Off, as it ships, a floating window's frame is its person's: Arbor sets it only to take the window out
   /// of view and to put it back exactly where it was (collab/QUESTIONS.md, Q20).
   public var floatingWindowsMakeWay: Bool = false
+  /// When a window dragged by its title bar docks: `"held"`, only while ⌘ is held, so that a plain drag is macOS's own and nothing
+  /// else; `"always"`, wherever there is a target, and ⌘ turns that off; `"never"`. Anything else means `"held"` (`DragDocks`).
+  public var dragDocks: String = DragDocks.held.rawValue
 
   public init() {}
 
@@ -298,6 +301,7 @@ public struct Settings: Codable, Equatable, Sendable {
     case shareRemovedSpace, shrinkOutOfView
     case pointerGestures
     case floatingWindowsMakeWay
+    case dragDocks
   }
 
   public init(from decoder: any Decoder) throws {
@@ -405,5 +409,6 @@ public struct Settings: Codable, Equatable, Sendable {
     try read(.shrinkOutOfView, into: &shrinkOutOfView)
     try read(.pointerGestures, into: &pointerGestures)
     try read(.floatingWindowsMakeWay, into: &floatingWindowsMakeWay)
+    try read(.dragDocks, into: &dragDocks)
   }
 }

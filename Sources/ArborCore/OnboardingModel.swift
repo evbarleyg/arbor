@@ -234,7 +234,7 @@ public struct OnboardingModel: Equatable, Sendable {
     switchesGivenBack: [MacSwitch] = [],
     fixSetupFailure: String? = nil, menuBarIsOneIcon: Bool = true, menuBarIcon: MenuBarModel.Icon = MenuBarModel.Icon(),
     desktops: [CGRect] = [], isNewcomer: Bool = false,
-    isPaused: Bool = false,
+    isPaused: Bool = false, dragDocks: DragDocks = .held,
     shortcut: (Command) -> String? = { _ in nil }
   ) {
     let flow = flow ?? .checkingSetup(isReady: facts.accessibility)
@@ -252,7 +252,7 @@ public struct OnboardingModel: Equatable, Sendable {
       told, windowsOutOfView: windowsOutOfView, offersScreenRecording: offersScreenRecording,
       appsWithOwnShortcuts: appsWithOwnShortcuts, canFixSetup: canFixSetup, changed: page == .setup ? switchesChangedByArbor : [],
       givenBack: page == .setup ? switchesGivenBack : [], isPaused: isPaused,
-      failure: fixSetupFailure, canDock: facts.accessibility && !isPaused, shortcut: shortcut)
+      failure: fixSetupFailure, canDock: facts.accessibility && !isPaused, dragDocks: dragDocks, shortcut: shortcut)
     rows =
       page == .setup
       ? all
@@ -420,9 +420,19 @@ public struct OnboardingModel: Equatable, Sendable {
 
   // MARK: The first page
 
+  /// What somebody can do at a screen edge now that it is Arbor's, by how a dragged window docks. Nothing where no drag does.
+  private static func whatTheEdgesAreFor(_ dragDocks: DragDocks) -> String {
+    switch dragDocks {
+    case .held: " To dock a window there, hold ⌘ and drag it to a screen edge."
+    case .always: " A window dragged to a screen edge docks now."
+    case .never: ""
+    }
+  }
+
   private static func rows(
     _ facts: SystemFacts, windowsOutOfView: Int, offersScreenRecording: Bool, appsWithOwnShortcuts apps: [String],
-    canFixSetup: Bool, changed: [MacSwitch], givenBack: [MacSwitch], isPaused: Bool, failure: String?, canDock: Bool, shortcut: (Command) -> String?
+    canFixSetup: Bool, changed: [MacSwitch], givenBack: [MacSwitch], isPaused: Bool, failure: String?, canDock: Bool, dragDocks: DragDocks,
+    shortcut: (Command) -> String?
   ) -> [Row] {
     let settings = "Open Settings…"
     let stranded =
@@ -500,7 +510,7 @@ public struct OnboardingModel: Equatable, Sendable {
             "While Arbor runs, \(off) setting\(one ? "" : "s") of macOS \(one ? "is" : "are") off. Quit or pause Arbor, and your Mac is as "
             + "it was. To end that for good: here, or later under Help → Check Setup… in Arbor’s menu."
             // What it was for, where that has come true: every edge is Arbor's, and Arbor may and does move windows.
-            + (changed.contains(.screenEdges) && !takesEdges && canDock ? " A window dragged to a screen edge docks now." : "")
+            + (changed.contains(.screenEdges) && !takesEdges && canDock ? Self.whatTheEdgesAreFor(dragDocks) : "")
           row.undo = Row.Action(one ? "Put It Back" : "Put Them Back", .fixSetup(undo: true))
         } else if !lent.isEmpty {
           // Neither a tick, which would say "off", nor advice: this is Arbor keeping its word.

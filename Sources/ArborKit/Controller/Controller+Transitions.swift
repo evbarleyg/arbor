@@ -92,6 +92,7 @@ extension Controller {
   /// through the stage to whatever is really under the pointer.
   public func pointerPressed() {
     guard isRunning else { return }
+    noteWhereWindowsStandAtAPress()
     overlays.finishAnimations()
     lookAfterPinnedWindowsAfterAPress()
     // "Any key or click": the panel itself hears only of clicks in other apps and of losing the keyboard. A press on a gap

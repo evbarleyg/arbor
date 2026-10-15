@@ -48,7 +48,7 @@ expect camera 101
 expect hidden 102
 
 # A nudge of the title bar, a drag to the screen edge, ⌃⌥F: the one window being shown stays where it is.
-drag 101 3 400
+drag 101 3 400 cmd
 expect fills 101
 expect hidden 102
 toggle-float 101

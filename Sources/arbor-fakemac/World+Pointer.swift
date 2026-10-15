@@ -105,7 +105,7 @@ extension World {
     var arguments = Arguments(words: Array(words.dropFirst()))
     let chord = try arguments.option("--mods").map { try parse(chord: $0) }
     let held = chord?.held ?? []
-    // What Arbor asks the window system about during a drag: ⌘ turns docking off (F09). What a shortcut that is held down
+    // What Arbor asks the window system about during a drag: ⌘ is what docks, as Arbor ships (`dragDocks`). What a shortcut that is held down
     // (`key … --down`) keeps down with it stays down from line to line, or every line would be a letting go (F26, F51).
     // So does what a `drag … --no-release` pressed, until its `release`: the real tool lets go of it only then, whatever is asked meanwhile.
     let modifiers = chord?.modifiers ?? (isButtonDown ? system.heldModifiers : [])
@@ -147,6 +147,8 @@ extension World {
       _ = try arguments.option("--duration").map { try arguments.number($0) }
       let hold = try arguments.option("--hold").map { try arguments.number($0) } ?? 0.2
       let release = !arguments.flag("--no-release")
+      // Modifiers that go down a quarter of the way, with the thing already in the hand.
+      let late = try arguments.option("--then-mods").map { try parse(chord: $0).modifiers } ?? []
       let start = try arguments.point(at: 0)
       let end = try arguments.point(at: 2)
       try arguments.expect(atMost: 4, for: command)
@@ -156,6 +158,11 @@ extension World {
       for step in 1...steps {
         let share = CGFloat(step) / CGFloat(steps)
         drag(to: CGPoint(x: start.x + (end.x - start.x) * share, y: start.y + (end.y - start.y) * share))
+        if step == max(steps / 4, 1), !late.isEmpty {
+          system.heldModifiers.formUnion(late)
+          // The Accessibility layer reports a modifier that goes down during a drag as a move to the same point.
+          if case .title(let window, _, true, _) = self.held { system.events?.dragMoved(window, to: system.cursor) }
+        }
       }
       // The real tool's last small movement, aside and back.
       drag(to: CGPoint(x: end.x + 1, y: end.y))

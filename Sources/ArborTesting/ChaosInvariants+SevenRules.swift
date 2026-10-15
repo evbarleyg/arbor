@@ -135,7 +135,7 @@ extension ChaosRunner {
       .behave(let window, _), .move(let window, _), .focus(let window), .switchApp(let window), .backgroundFocus(let window),
       .listed(let window, _), .doubleClick(let window):
       return [window]
-    case .grab(let window), .edge(let window, _, _): return inHand.union([window])
+    case .grab(let window), .grabPlainly(let window), .edge(let window, _, _): return inHand.union([window])
     // The pointer does not leave a window it is holding behind.
     case .carry, .cursor, .release, .loseRelease, .settle: return inHand
     case .hide(let pid, _), .hang(let pid, _), .appForward(let pid): return windows(of: pid)

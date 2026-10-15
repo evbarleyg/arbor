@@ -22,7 +22,7 @@ extension Controller {
       fixSetupFailure: fixSetupFailure,
       menuBarIsOneIcon: menuBarIsSurelyOneIcon, menuBarIcon: menuBarIconInShort, desktops: desktopsBetweenWhatIsDocked,
       isNewcomer: isFirstLaunch && workspaces.values.allSatisfy { $0.tree.allWindows.isEmpty }, isPaused: isPaused && accessibilityGranted,
-      shortcut: { KeyBindings.label(for: $0, in: bindings) })
+      dragDocks: dragDocks, shortcut: { KeyBindings.label(for: $0, in: bindings) })
   }
 
   /// Short of asking `menuBarModel()`, which looks where the pointer is: this is asked once a second. Where it says no the item may still be

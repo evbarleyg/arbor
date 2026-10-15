@@ -131,10 +131,12 @@ import Testing
     #expect(keys { $0.frameRectangleModifier = "Opt + Ctrl" }.contains("⌃⌥ + drag"))
     #expect(!keys { $0.frameRectangleModifier = "none" }.contains { $0.hasSuffix("+ drag") })
     #expect(!keys { $0.frameRectangleModifier = "nonsense" }.contains { $0.hasSuffix("+ drag") })
-    #expect(keys { _ in }.first == "Drag to a screen edge")
+    #expect(keys { _ in }.prefix(2) == ["⌘ + drag to a screen edge", "⌘ + drag to a window’s edge"])
+    #expect(keys { $0.dragDocks = "always" }.prefix(2) == ["Drag to a screen edge", "Drag to a window’s edge"])
+    #expect(keys { $0.dragDocks = "never" }.first == "Drag a gap")
     // A band of 0 is off.
-    #expect(keys { $0.screenEdgeBand = 0 }.first == "Drag to a window’s edge")
-    #expect(!keys { $0.windowEdgeFraction = 0 }.contains("Drag to a window’s edge"))
+    #expect(keys { $0.screenEdgeBand = 0 }.first == "⌘ + drag to a window’s edge")
+    #expect(!keys { $0.windowEdgeFraction = 0 }.contains("⌘ + drag to a window’s edge"))
   }
 
   @Test func sectionsStayInOrderWhateverTheColumns() {

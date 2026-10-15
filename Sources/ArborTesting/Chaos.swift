@@ -102,15 +102,18 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
   /// An app that is not in front changes which of its windows is focused.
   case backgroundFocus(WindowID)
   case press
-  /// Presses the mouse on a window's title bar; `carry` moves it, `release` drops it.
+  /// Presses the mouse on a window's title bar; `carry` moves it, `release` drops it. By a hand that means to dock, and holds
+  /// what Arbor is set to ask for until it has let go (`FakeWindowSystem.drag`).
   case grab(WindowID)
+  /// The same by a hand that only moves a window: it holds nothing, but for `commandKey`.
+  case grabPlainly(WindowID)
   case carry(CGPoint)
   case release
   /// Double-clicks a window's title bar, and macOS zooms the window, or returns it to where it was before.
   case doubleClick(WindowID)
   /// The button comes up and nobody sees it: the drag ends without a drop.
   case loseRelease
-  /// ⌘ goes down, or comes up. Held during a drag, it turns docking off (F09).
+  /// ⌘ goes down, or comes up. Held during a drag it is what docks, as Arbor ships (`dragDocks`).
   case commandKey(held: Bool)
   /// macOS's own tiling of dragged windows is switched on, as a Mac comes and every walk begins, or off. With it on the left, right and
   /// top edges of the screen are macOS's (`MacTiling`).
@@ -268,6 +271,7 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
     case .backgroundFocus(let window): return "background-focus \(window.rawValue)"
     case .press: return "press"
     case .grab(let window): return "grab \(window.rawValue)"
+    case .grabPlainly(let window): return "grab \(window.rawValue) plain"
     case .doubleClick(let window): return "double-click \(window.rawValue)"
     case .carry(let point): return "carry \(n(point.x)) \(n(point.y))"
     case .release: return "release"
@@ -438,6 +442,7 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
     case ("background-focus", 2): return window(1).map { .backgroundFocus($0) }
     case ("press", 1): return .press
     case ("grab", 2): return window(1).map { .grab($0) }
+    case ("grab", 3) where words[2] == "plain": return window(1).map { .grabPlainly($0) }
     case ("carry", 3): return point(1).map { .carry($0) }
     case ("release", 1): return .release
     case ("do", 2...): return .command(words.dropFirst().joined(separator: " "))

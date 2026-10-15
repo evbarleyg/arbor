@@ -1059,6 +1059,7 @@ extension Harness {
     let (a, b) = (h.open("Safari"), h.open("Mail"))
     let frames = h.layout?.windowFrames
     h.system.mouseDown = true
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(b, at: CGPoint(x: h.rect(b).midX, y: h.rect(b).minY + 10))
     h.system.clearFrameLog()
     let n = h.open("Notes")

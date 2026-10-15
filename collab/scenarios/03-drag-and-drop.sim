@@ -6,14 +6,14 @@ mac-tiling off
 open Safari
 open Notes
 # Drag Safari to the left screen edge: it docks.
-drag 101 3 450
+drag 101 3 450 cmd
 expect docked 101
 # Drop Notes near Safari's right edge: it docks beside Safari.
-drag 102 700 450
+drag 102 700 450 cmd
 expect docked 102
 expect left-of 101 102
 # Drag Safari out onto the Desktop: it floats again and Notes takes its space.
-drag 101 1300 450
+drag 101 1300 450 cmd
 expect floating 101
 expect docked 102
 expect count docked 1

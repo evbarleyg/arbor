@@ -704,7 +704,7 @@ private let side = DisplaySnapshot(
     let own = settings { $0.bindings = ["ctrl+opt+e": "show-all", "ctrl+opt+cmd+h": "dock left", "ctrl+opt+shift+3": "save-view 3"] }
     let (h, _, _, _) = makeHarness(settings: own, taught: false)
     h.run("in", from: .shortcut)
-    #expect(lines(h).last == "Nothing is docked yet: drag a window to a screen edge, or try ⌃⌥⌘H")
+    #expect(lines(h).last == "Nothing is docked yet: hold ⌘ and drag a window to a screen edge, or try ⌃⌥⌘H")
     h.run("dock left", from: .shortcut)
     h.run("zoom", from: .shortcut)
     #expect(lines(h).last == "Your other windows are out of view, not closed · ⌃⌥E shows everything")

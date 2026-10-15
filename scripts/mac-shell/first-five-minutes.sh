@@ -376,7 +376,7 @@ uncover $(grab_of "$FIRST")
 drag $(grab_of "$FIRST") 0 400 --hold 1.2 --no-release
 shot 52-held-at-the-edge
 check "macOS is seen to have stopped tiling: it shows no preview" no_macos_preview
-# "A window dragged to a screen edge docks now", says the row.
+# "To dock a window there, hold ⌘ and drag it to a screen edge", says the row.
 check "Arbor shows where the window will land" arbor_preview
 release
 check "the window docked" eventually is docked "$FIRST"

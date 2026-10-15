@@ -367,6 +367,7 @@ private let side = DisplaySnapshot(
     let (h, _, _, c) = makeHarness()
     let start = h.frame(c)!
     h.system.mouseDown = true
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(c, at: CGPoint(x: start.midX, y: start.minY + 10))
     h.system.userMove(c, to: start.offsetBy(dx: -40, dy: 30))
     expectNoRing(h)
@@ -438,6 +439,7 @@ private let side = DisplaySnapshot(
     let (h, _, _, c) = makeHarness()
     let start = h.frame(c)!
     h.system.mouseDown = true
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(c, at: CGPoint(x: start.midX, y: start.minY + 10))
     h.system.userMove(c, to: start.offsetBy(dx: -40, dy: 30))
     h.system.mouseDown = false
@@ -451,6 +453,7 @@ private let side = DisplaySnapshot(
     let (h, _, _, c) = makeHarness()
     let start = h.frame(c)!
     h.system.mouseDown = true
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(c, at: CGPoint(x: start.midX, y: start.minY + 10))
     h.system.userMove(c, to: start.offsetBy(dx: -40, dy: 30))
     // As for the last window of its app: macOS hands the keyboard to no other window.

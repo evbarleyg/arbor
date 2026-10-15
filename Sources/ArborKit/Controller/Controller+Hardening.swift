@@ -123,14 +123,17 @@ extension Controller {
   // MARK: Drags whose end nobody saw
 
   /// Nobody saw the button come up, so where the pointer is now says nothing about what the user meant.
-  /// A docked window goes back to its slot; a floating one stays where it was left.
+  /// A docked window goes back to its slot, unless a plain drag had taken it out (`cancelDrag`); a floating one stays where it was left.
   ///
   /// macOS saw it, though. Where the pointer was last seen at the edge of the display or in the menu bar, the window is in a tile
   /// of macOS's by now, or on its way there, and no slot is a place to pull it back to. Only by the place: which keys were
   /// down when the button came up, nobody knows any more.
   public func dragCancelled(_ id: WindowID) {
     guard let session = drag, session.window == id else { return }
-    if let macOSs = hoverLeftToMacOS(session, optionHeld: false) { return endDrag(on: macOSs) }
+    if var macOSs = hoverLeftToMacOS(session, optionHeld: false) {
+      macOSs.isPlain = session.wasPlain
+      return endDrag(on: macOSs)
+    }
     cancelDrag()
   }
 

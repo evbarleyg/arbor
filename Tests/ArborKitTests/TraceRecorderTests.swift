@@ -546,6 +546,7 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     h.run("trace on edges")
     h.system.mouseDown = true
     h.system.tiling = .off  // the screen's edges are Arbor's only with macOS's tiling off
+    h.system.heldModifiers = DragDocks.key  // held by whoever means to dock, as Arbor ships
     h.system.events?.dragBegan(a, at: CGPoint(x: 100, y: 400))
     // In and out of the band along the screen's left edge, a millisecond apart: the preview changes every time.
     let xs: [CGFloat] = [100, 3, 100, 3, 100, 3]

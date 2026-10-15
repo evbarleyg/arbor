@@ -891,6 +891,7 @@ private let finder = "com.apple.finder"
     ])
     h.start()
     let f = h.system.open(app: "Finder", bundleID: finder, title: "")
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(f, at: CGPoint(x: 600, y: 210))
     h.system.setTitle(f, "Downloads")
     #expect(h.controller.filter.ignoredWindowIDs == [f])
@@ -917,6 +918,7 @@ private let finder = "com.apple.finder"
     h.start()
     h.run("dock \(a.rawValue) right")
     let m = h.system.open(app: "Mail", bundleID: mail, title: "")
+    h.system.heldModifiers = DragDocks.key
     h.controller.dragBegan(a, at: CGPoint(x: 1000, y: 50))
     h.system.clearFrameLog()
     h.system.setTitle(m, "Inbox")

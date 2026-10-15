@@ -2930,14 +2930,16 @@
    "kind": "second-actor",
    "layer": "at the seam",
    "expected": "A window stays where the hand lets go of it.",
-   "happened": "Held with its top at y 692 and y 728 on a display whose visible frame ends at 705, the window jumped to y 677 within 5 to 20 ms of the release, before anything else happened to it.",
+   "happened": "Held with its top at y 692 and y 728 on a display whose visible frame ends at 705, the window jumped to y 677 within 5 to 20 ms of the release, before anything else happened to it. Seen again on 2026-10-15 in plain drags to the bottom edge, with Arbor running and asking nothing: let go at y 690, the windows lay at 677.",
    "found": "A probe of real title-bar drags on a hosted Mac, with a watcher of Accessibility notifications.",
    "modelled": "partly",
    "knobs": [
     "Echoes.titleBarStaysReachable",
     "FakeWindowSystem.whereMacOSPuts"
    ],
-   "guards": [],
+   "guards": [
+    "e2e: where it was let go"
+   ],
    "copes": "Controller.windowChanged takes the report as a move after the drop; nothing more is needed. The fakes correct only frames that Arbor sets, so tests of hands that let go under the Dock's line leave the window hanging there.",
    "hurt": 4,
    "touches": [
@@ -2947,7 +2949,8 @@
     "Sources/ArborTesting/FakeWindowSystem.swift",
     "Sources/arbor-fakemac/World+Input.swift",
     "Tests/ArborKitTests/ASizeGivenBackTests.swift",
-    "collab/BACKLOG.md"
+    "collab/BACKLOG.md",
+    "scripts/mac-shell/e2e-drag.sh"
    ],
    "backlog": [
     "K121"
@@ -5093,8 +5096,11 @@
    "knobs": [
     "FakeWindowSystem.letMacOSTile"
    ],
-   "guards": [],
-   "copes": "open",
+   "guards": [
+    "test: withCommandHeldAtMacOSsEdgeTheLineIsStillSaid",
+    "test: atMacOSsDefaultsAPlainDragIsMacOSsAlone"
+   ],
+   "copes": "MacTiling.claim is asked before the key. Since 2026-10-15 ⌘ is what asks Arbor to dock (`dragDocks`), so at an edge that is macOS's there are two claimants: Arbor shows nothing and docks nothing there, ⌘ or not (Q23), and whoever held ⌘ is told which key docks and where macOS's tiling is switched off.",
    "hurt": 3,
    "touches": [
     "fought"
@@ -6878,12 +6884,13 @@
    "kind": "input",
    "layer": "below the seam",
    "expected": "The modifier keys that are down when Arbor handles a mouse-up are those that were down at the release.",
-   "happened": "People let go of key and button together, and the key can be up by the time Arbor hears of the mouse-up. A drag held with ⌘ to the end would dock all the same.",
+   "happened": "People let go of key and button together, and the key can be up by the time Arbor hears of the mouse-up. A drag held with ⌘ to the end would dock all the same. Since 2026-10-15 ⌘ is what docks, and the fault would turn round with it: held to the end, and nothing docks.",
    "found": "Reading, and a comment in the Accessibility layer that names no run. ⌘ and the hold were seen on a Mac at an earlier state of the code (check-F09.sh), not since.",
    "modelled": "cannot",
    "knobs": [],
    "guards": [
     "test: commandAtTheMomentOfReleaseIsEnough",
+    "test: commandPressedOnTheWayAndHeldToTheEndDocks",
     "tool: mac-on-linux/build.sh"
    ],
    "copes": "AXWindowSystem.eventModifiers: while a mouse event is handled, `modifierKeysDown` answers with the flags the event itself carried.",
@@ -8379,10 +8386,11 @@
    "guards": [
     "test: withCommandHeldADropOverAnyTargetFloatsTheWindow",
     "test: theOtherModifiersDoNotSuppressDocking",
-    "e2e: no preview at the screen edge with ⌘ held",
+    "test: whichKeysCount",
+    "e2e: no preview at the screen edge with nothing held",
     "test: withOptionHeldEveryPlaceIsMacOSs"
    ],
-   "copes": "Controller.suppressesDocking goes by ⌘; `doctor` names the macOS switch (`MacSwitch.optionKey`). With ⌥ held Arbor now shows no preview of its own and docks nothing (`MacTiling.claim`).",
+   "copes": "DragDocks.isKeyHeld goes by ⌘, which since 2026-10-15 is the key that docks; `doctor` names the macOS switch (`MacSwitch.optionKey`). With ⌥ held Arbor now shows no preview of its own and docks nothing (`MacTiling.claim`).",
    "hurt": 3,
    "touches": [
     "fought"
@@ -10392,6 +10400,26 @@
    "sources": [
     "scripts/mac-shell/apptool.swift",
     "scripts/mac-shell/lib-walk.sh"
+   ]
+  },
+  {
+   "id": "the-list-of-all-windows-is-not-front-to-back",
+   "kind": "order-of-reports",
+   "layer": "test",
+   "expected": "The window server's list names windows from front to back, so the first one that holds a point is the one a press there takes.",
+   "happened": "That holds for the list of what is on screen. The list of everything, which the harness reads for most of its questions, named a window behind before the one in front: in two drags of forty-five, each begun on the title bar of the frontmost window where another window lay behind the same point, the harness took the press for one into the other window's content, held no ⌘, and the drag, which Arbor saw and answered by its rule, docked nothing. By the drags that went right and the two that went wrong; the lists themselves were not kept.",
+   "found": "One run of e2e-drag.sh and check-drag-docks.sh on a hosted Mac, macOS 26.",
+   "modelled": "no",
+   "knobs": [],
+   "guards": [
+    "e2e: the button comes up first: it docks"
+   ],
+   "copes": "scripts/mac-shell/lib.sh asks the list of what is on screen where the order counts (arbor_hand_means_to_dock), as pointer.swift's freePoint always did, and says in the run's output why the hand holds nothing.",
+   "hurt": 4,
+   "sources": [
+    "scripts/mac-shell/lib.sh",
+    "scripts/mac-shell/state.py",
+    "scripts/mac-shell/pointer.swift"
    ]
   },
   {

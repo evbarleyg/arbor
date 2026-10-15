@@ -232,6 +232,15 @@ public final class FakeWindowSystem: WindowSystem {
   /// The window being dragged by its title bar, from `beginDrag` to `endDrag`: where it was and
   /// where on it the pointer took hold.
   var inHand: (window: WindowID, start: CGRect, grab: CGPoint)?
+  /// What a hand holds down while it drags a window that it means to dock: whoever drags knows how their Arbor is set
+  /// (`Settings.dragDocks`). `Harness` points it at its controller's settings; by itself the fake knows of no Arbor.
+  public var keysThatDock: () -> KeyChord.Modifiers = { [] }
+  /// What the other hand holds down for the drag in progress, from before the press until after the release, whatever shortcuts
+  /// are pressed and let go of meanwhile: `keysThatDock` as they were when it began, unless it began `plainly`.
+  public internal(set) var heldForTheDrag: KeyChord.Modifiers = []
+  /// Modifier keys held by themselves from one line of a script to a later one (`holdAlone`), whatever is dragged, pressed and let go
+  /// of meanwhile.
+  public private(set) var heldAlone: KeyChord.Modifiers = []
   /// A window system is free to ignore `moveTogether`. Nothing but the cost may differ.
   public var ignoresMoveTogether = false
   /// What came of the moves announced with `moveTogether`, until `setFrame` asks for it.
@@ -452,7 +461,7 @@ public final class FakeWindowSystem: WindowSystem {
   }
   public func bringInStrayDialogs(ofApp bundleID: String?) { strayDialogs.removeAll { $0 == bundleID } }
   public func strayDialogsWaiting() -> Int { strayDialogs.count }
-  public func modifierKeysDown() -> KeyChord.Modifiers { heldModifiers }
+  public func modifierKeysDown() -> KeyChord.Modifiers { heldModifiers.union(heldForTheDrag).union(heldAlone) }
   public func macTiling() -> MacTiling { tiling }
 
   public func inputActivity() -> InputActivity {
@@ -506,7 +515,7 @@ public final class FakeWindowSystem: WindowSystem {
     if focused == window { giveKeyboard(to: echoes.keyboard ? nextWindowOfApp(after: window) : nil) }
     windows[window] = nil
     keyboardOrder.removeAll { $0 == window }
-    if inHand?.window == window { inHand = nil }
+    if inHand?.window == window { (inHand, heldForTheDrag) = (nil, []) }
     events?.windowDestroyed(window)
     deliverEchoes()
   }
@@ -624,9 +633,12 @@ public final class FakeWindowSystem: WindowSystem {
   /// and releases it at the last one. The window follows the pointer, which
   /// rests at each point for `seconds`: by default long enough for a drop
   /// target to activate (`dropDwell`). Pass 0 for a quick pass.
-  public func drag(_ window: WindowID, through points: [CGPoint], holding seconds: Double = 0.3) {
+  ///
+  /// The hand means to dock, and holds what Arbor is set to ask for (`keysThatDock`). `plainly`: it holds nothing but what
+  /// `heldModifiers` says, as whoever only moves a window does.
+  public func drag(_ window: WindowID, through points: [CGPoint], holding seconds: Double = 0.3, plainly: Bool = false) {
     guard let first = points.first, windows[window] != nil else { return }
-    beginDrag(window, at: first)
+    beginDrag(window, at: first, plainly: plainly)
     for point in points.dropFirst() { moveDrag(to: point, holding: seconds) }
     endDrag()
   }
@@ -1101,9 +1113,10 @@ extension FakeWindowSystem {
     events?.windowDestroyed(front)
   }
 
-  /// The user is dragging `window` and the button's release is never seen.
-  public func dragAndLoseTheRelease(_ window: WindowID, to point: CGPoint) {
+  /// The user is dragging `window` and the button's release is never seen. `plainly`: see `drag`.
+  public func dragAndLoseTheRelease(_ window: WindowID, to point: CGPoint, plainly: Bool = false) {
     guard let start = windows[window]?.snapshot.frame else { return }
+    heldForTheDrag = plainly ? [] : keysThatDock()
     mouseDown = true
     cursor = point
     events?.pointerPressed()
@@ -1114,6 +1127,8 @@ extension FakeWindowSystem {
     mouseDown = false
     // macOS sees every release.
     if let letGo = windows[window]?.snapshot.frame { letMacOSTile(window, letGoAt: letGo) }
+    // The Accessibility layer finds the button up half a second later or more. Whatever was held for the drag is long up by then.
+    heldForTheDrag = []
     events?.dragCancelled(window)
   }
 }
@@ -1218,9 +1233,10 @@ extension FakeWindowSystem {
 
 extension FakeWindowSystem {
   /// Presses the mouse on `window`'s title bar (10 points below its top, centred) and starts
-  /// dragging it with the pointer at `point`, or where it took hold.
-  public func beginDrag(_ window: WindowID, at point: CGPoint? = nil) {
+  /// dragging it with the pointer at `point`, or where it took hold. `plainly`: see `drag`.
+  public func beginDrag(_ window: WindowID, at point: CGPoint? = nil, plainly: Bool = false) {
     guard var start = windows[window]?.snapshot.frame else { return }
+    heldForTheDrag = plainly ? [] : keysThatDock()
     let ownSize = takeSizeBeforeTile(of: window)
     if let ownSize {
       start = CGRect(x: (start.midX - ownSize.width / 2).rounded(), y: start.minY, width: ownSize.width, height: ownSize.height)
@@ -1257,9 +1273,21 @@ extension FakeWindowSystem {
     if let window = inHand?.window { events?.dragMoved(window, to: cursor) }
   }
 
+  /// `keys` go down by themselves, or come up, and stay so until this says otherwise: arbor-sim's `cmd down`, a film's `keydown cmd`.
+  /// Returns whether that changed anything.
+  @discardableResult
+  public func holdAlone(_ keys: KeyChord.Modifiers, _ down: Bool) -> Bool {
+    let before = heldAlone
+    if down { heldAlone.formUnion(keys) } else { heldAlone.subtract(keys) }
+    if let window = inHand?.window, heldAlone != before { events?.dragMoved(window, to: cursor) }
+    return heldAlone != before
+  }
+
   /// Releases the mouse where the pointer is.
   public func endDrag() {
     mouseDown = false
+    // The key goes up after the button: what Arbor asks while it hears of the release is what the release itself carried.
+    defer { heldForTheDrag = [] }
     guard let window = inHand?.window else { return }
     inHand = nil
     let letGo = windows[window]?.snapshot.frame
@@ -1367,10 +1395,13 @@ extension FakeWindowSystem {
   /// The button comes up and nobody sees it, until the AX layer finds it up and calls the drag off.
   public func loseTheReleaseOfTheDrag() {
     mouseDown = false
+    defer { heldForTheDrag = [] }
     guard let window = inHand?.window else { return }
     inHand = nil
     // macOS sees every release.
     if let letGo = windows[window]?.snapshot.frame { letMacOSTile(window, letGoAt: letGo) }
+    // By the time the layer finds the button up, whatever was held for the drag is long up too.
+    heldForTheDrag = []
     events?.dragCancelled(window)
   }
 

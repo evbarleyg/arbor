@@ -892,6 +892,24 @@ extension ChaosRunner {
         undo
         key down show-all
         """),
+    ChaosKnownFailure(
+      rule: "plain-drag-across-displays-moved-another", owner: "the controller: a floating window that leaves a display", severity: 3,
+      story: "A floating window is carried to another display with nothing held. The display it left is laid out again, and that layout is not "
+        + "the one that stood: two docked windows move by three points. Older than the net that found it: so it was when every drag could dock.",
+      script: """
+        launch
+        open 103 Xcode pid 1004 at 671 1775 741 632 min 210 119
+        dock 103 top
+        open 105 Music pid 1006 at 232 537 323 545 min 147 373 max 814 624
+        zoom 103
+        open 107 Notes pid 1001 at -232 487 525 252
+        dock bottom
+        displays side:1920,129,1080,1920:37,0,0,85 main:0,0,1920,1080:37,0,0,0* windows-late
+        home
+        grab 105 plain
+        carry 2009 430
+        release
+        """),
   ]
 
   public nonisolated static let knownRules = Set(knownFailures.map(\.rule))

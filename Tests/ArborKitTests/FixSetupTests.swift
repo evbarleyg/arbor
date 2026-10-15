@@ -285,7 +285,7 @@ import Testing
     #expect(row.isSatisfied && row.action == nil)
     #expect(
       row.done == "While Arbor runs, 3 settings of macOS are off. Quit or pause Arbor, and your Mac is as it was. To end that for good: here, or "
-        + "later under Help → Check Setup… in Arbor’s menu. A window dragged to a screen edge docks now.")
+        + "later under Help → Check Setup… in Arbor’s menu. To dock a window there, hold ⌘ and drag it to a screen edge.")
     #expect(session.model.page == .setup, "it stays, so that what was done can be read")
 
     let back = try #require(row.undo)
@@ -339,7 +339,7 @@ import Testing
     #expect(row.undo?.title == "Put Them Back")
     #expect(
       row.done == "While Arbor runs, 3 settings of macOS are off. Quit or pause Arbor, and your Mac is as it was. To end that for good: here, or "
-        + "later under Help → Check Setup… in Arbor’s menu. A window dragged to a screen edge docks now.")
+        + "later under Help → Check Setup… in Arbor’s menu. To dock a window there, hold ⌘ and drag it to a screen edge.")
 
     // One is switched on again by hand: the step for that one, and the way back for all.
     h.mac.values[.stageManager] = nil

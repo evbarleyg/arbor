@@ -195,6 +195,8 @@ public final class Controller {
   var hints: [WindowID: WindowHint] = [:]
   /// The window the user is dragging by its title bar (Controller+Drag.swift).
   var drag: DragSession?
+  /// When the button last went down, and where every window stood then (`whereItStoodAtThePress`).
+  var lastPress: (at: Date, frames: [WindowID: CGRect])?
   /// A docked window the user is resizing by its edges (Controller+EdgeResize.swift).
   var edgeResize: EdgeResize?
 
