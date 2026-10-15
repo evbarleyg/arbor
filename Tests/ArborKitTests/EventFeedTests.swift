@@ -60,6 +60,13 @@ private final class Listener {
 
   func leaf(_ h: Harness, _ window: WindowID) -> NodeID { h.workspace.tree.leaf(containing: window)! }
 
+  /// What `hello`, which must be the first of the lines `listener` has not taken yet, says of the state.
+  private func snapshot(_ listener: Listener) throws -> ArborEvent.Summary {
+    guard case .hello(let hello)? = try listener.take().first else { throw NoHello() }
+    return hello.snapshot
+  }
+  private struct NoHello: Error {}
+
   // MARK: hello
 
   @Test func helloComesFirstAndCarriesTheWholeState() throws {
@@ -177,6 +184,100 @@ private final class Listener {
     #expect(h.run("unname").ok)
     turn(h)
     #expect(try #require(try listener.takeView()).name == nil)
+  }
+
+  @Test func holdingAndReleasingAreReported() throws {
+    let (h, feed, a, _, _) = makeHarness()
+    let listener = try Listener(feed, "watch hold view")
+    #expect(try snapshot(listener).hold == ArborEvent.Hold())
+    #expect(h.run("hold").ok)
+    turn(h)
+    #expect(try listener.take() == [.hold(ArborEvent.Hold(level: .view))])
+    #expect(!h.run("zoom \(a.rawValue)").ok)
+    turn(h)
+    #expect(try listener.take().isEmpty, "a held view does not move, so there is nothing to say")
+    #expect(h.run("hold still").ok)
+    turn(h)
+    #expect(try listener.take() == [.hold(ArborEvent.Hold(level: .still))])
+    #expect(try snapshot(Listener(feed, "watch hold")).hold == ArborEvent.Hold(level: .still), "a newcomer is told")
+    #expect(h.run("release").ok)
+    turn(h)
+    #expect(try listener.take() == [.hold(ArborEvent.Hold())])
+  }
+
+  /// The level stays `still` throughout, and nothing else happens that would make the feed look.
+  @Test func aReasonThatComesChangesOrGoesIsReportedThoughTheLevelStays() throws {
+    var settings = Settings()
+    settings.holdStillWhileCameraIsOn = true  // it ships off
+    settings.holdStillWhileMicrophoneIsOn = true
+    settings.holdStillFor = ["com.example.zoom"]
+    let (h, feed, _, _, _) = makeHarness(settings: settings)
+    let listener = try Listener(feed, "watch hold")
+    _ = try listener.take()
+    h.controller.callSignalsChanged(CallSignals(cameraIsOn: true))
+    turn(h)
+    #expect(try listener.take() == [.hold(ArborEvent.Hold(level: .still, reason: "the camera is on"))])
+    #expect(h.run("hold still").ok)
+    turn(h)
+    #expect(try listener.take() == [.hold(ArborEvent.Hold(level: .still))], "asked for now, whatever the camera does")
+    #expect(h.run("release").ok)
+    turn(h)
+    #expect(try listener.take() == [.hold(ArborEvent.Hold(level: .still, reason: "the camera is on"))], "the call goes on")
+    let call = h.system.open(app: "Zoom", frame: CGRect(x: 200, y: 200, width: 400, height: 300))
+    turn(h)
+    #expect(try listener.take() == [.hold(ArborEvent.Hold(level: .still, reason: "Zoom is open"))])
+    h.system.close(call)
+    turn(h)
+    #expect(try listener.take() == [.hold(ArborEvent.Hold(level: .still, reason: "the camera is on"))])
+    h.controller.callSignalsChanged(CallSignals(cameraIsOn: false, microphoneIsOn: true))
+    turn(h)
+    #expect(try listener.take() == [.hold(ArborEvent.Hold(level: .still, reason: "the microphone is on"))])
+    #expect(h.run("hold still 1").ok)
+    turn(h)
+    #expect(try listener.take() == [.hold(ArborEvent.Hold(level: .still))])
+    h.scheduler.advance(by: 61)
+    #expect(try listener.take() == [.hold(ArborEvent.Hold(level: .still, reason: "the microphone is on"))], "the minute is up, the call is not")
+  }
+
+  /// Everything else is announced again after `resumed` and `started`. A hold is over by then, and that it is over would never be said.
+  @Test func aHoldThatEndsBecauseArborStopsIsTakenBack() throws {
+    let (h, feed, _, _, _) = makeHarness()
+    let listener = try Listener(feed, "watch hold")
+    _ = try listener.take()
+    h.run("hold")
+    turn(h)
+    #expect(try listener.take() == [.hold(ArborEvent.Hold(level: .view))])
+    h.run("pause")
+    turn(h)
+    #expect(try listener.take() == [.hold(ArborEvent.Hold()), .paused])
+    h.run("resume")
+    turn(h)
+    #expect(try listener.take() == [.resumed])
+    h.run("hold still")
+    turn(h)
+    #expect(try listener.take() == [.hold(ArborEvent.Hold(level: .still))])
+    // Not a pause: the permission is taken away, say. Nothing else is said of that so far.
+    h.controller.shutdown()
+    turn(h)
+    #expect(try listener.take() == [.hold(ArborEvent.Hold())])
+  }
+
+  /// What docs/SCRIPTING.md says of a held view with nothing in it.
+  @Test func aHeldViewThatEmptiesSaysSoAndStaysWhereItIs() throws {
+    let (h, feed, a, _, _) = makeHarness()
+    h.run("zoom \(a.rawValue)")
+    let listener = try Listener(feed, "watch view hold")
+    let framed = try #require(try snapshot(listener).views.first)
+    #expect(framed.kind == .window && framed.windows == [a])
+    h.run("hold")
+    h.system.setMinimized(a, true)
+    h.scheduler.advance(by: 1)
+    let events = try listener.take()
+    #expect(events.first == .hold(ArborEvent.Hold(level: .view)) || events.last == .hold(ArborEvent.Hold(level: .view)))
+    let view = try #require(events.compactMap { if case .view(let view) = $0 { view } else { nil } }.last)
+    #expect(view.windows.isEmpty && view.apps.isEmpty, "the wallpaper")
+    #expect(view.outOfView == 2, "the others have not come in")
+    #expect((view.node, view.kind, view.label) == (framed.node, framed.kind, framed.label), "still on the window that is away")
   }
 
   @Test func aSavedViewShowsItsNumberWhileTheViewIsThere() throws {
@@ -575,8 +676,10 @@ private final class Listener {
     let (h, feed, a, b, c) = makeHarness()
     let listener = try Listener(feed, "watch window layout")
     _ = try listener.take()
-    func states() throws -> [WindowID: ArborEvent.Window.State] {
-      turn(h)
+    /// - Parameter later: a moment, not a turn: while the controller has a layout put off, as it has when a window changes Spaces, the
+    ///   feed looks again a twentieth of a second later.
+    func states(later: Bool = false) throws -> [WindowID: ArborEvent.Window.State] {
+      h.scheduler.advance(by: later ? 0.1 : 0)
       let changes = try listener.takeChanges()
       #expect(changes.allSatisfy { $0.change == .state })
       return Dictionary(uniqueKeysWithValues: changes.map { ($0.window.id, $0.window.state) })
@@ -591,10 +694,10 @@ private final class Listener {
     #expect(try states() == [b: .inView])
     h.system.setOnActiveSpace(c, false)
     h.scheduler.runPending()
-    #expect(try states() == [c: .otherSpace])
+    #expect(try states(later: true) == [c: .otherSpace])
     h.system.setOnActiveSpace(c, true)
     h.scheduler.runPending()
-    #expect(try states() == [c: .inView])
+    #expect(try states(later: true) == [c: .inView])
     h.system.setFullScreen(c, true)
     h.scheduler.runPending()
     #expect(try states() == [c: .fullScreen], "which is also a Space of its own, but not what its user would say")
@@ -640,6 +743,61 @@ private final class Listener {
     h.controller.dragEnded(b, at: grab)
     h.scheduler.advance(by: 1)
     #expect(try listener.takeChanges().contains { $0.window.id == a && $0.window.state == .otherSpace })
+  }
+
+  /// Taking a window by its title bar gives it the keyboard, so the feed's second look at the keyboard falls into the drag.
+  @Test func theSecondLookAtTheKeyboardWaitsForALayoutThatIsPutOffAsWell() throws {
+    let (h, feed, a, b, _) = makeHarness()
+    let listener = try Listener(feed, "watch window")
+    _ = try listener.take()
+    let grab = CGPoint(x: h.frame(b)!.midX, y: h.frame(b)!.minY + 10)
+    h.system.userFocus(b)
+    h.system.mouseDown = true
+    h.controller.dragBegan(b, at: grab)
+    h.system.setOnActiveSpace(a, false)
+    h.scheduler.advance(by: 1)
+    #expect(try listener.take().isEmpty, "still being dragged")
+    h.system.mouseDown = false
+    h.controller.dragEnded(b, at: grab)
+    h.scheduler.advance(by: 1)
+    #expect(try listener.takeChanges().contains { $0.window.id == a && $0.window.state == .otherSpace })
+  }
+
+  /// A newcomer makes the feed look, so that `hello` is right. Not while a layout is put off: the others would be told the half of it.
+  @Test func aNewcomerWhileALayoutIsPutOffIsToldWhatTheOthersKnow() throws {
+    let (h, feed, a, b, _) = makeHarness()
+    let listener = try Listener(feed, "watch window layout view")
+    let before = try snapshot(listener)
+    let grab = CGPoint(x: h.frame(b)!.midX, y: h.frame(b)!.minY + 10)
+    h.system.mouseDown = true
+    h.controller.dragBegan(b, at: grab)
+    h.system.setOnActiveSpace(a, false)
+    h.scheduler.advance(by: 1)
+    let late = try Listener(feed, "watch window layout view")
+    #expect(try snapshot(late) == before)
+    #expect(try listener.take().isEmpty, "still being dragged")
+    h.system.mouseDown = false
+    h.controller.dragEnded(b, at: grab)
+    h.scheduler.advance(by: 1)
+    let heard = try listener.take()
+    #expect(heard.contains { if case .window(let change) = $0 { change.window.id == a && change.window.state == .otherSpace } else { false } })
+    #expect(heard.contains { $0.kind == .layout })
+    #expect(try late.take() == heard)
+  }
+
+  @Test func withNobodyLeftToTellTheFeedStopsLooking() throws {
+    let (h, feed, a, b, _) = makeHarness()
+    let listener = try Listener(feed, "watch window")
+    h.system.userFocus(b)
+    h.system.mouseDown = true
+    h.controller.dragBegan(b, at: CGPoint(x: h.frame(b)!.midX, y: h.frame(b)!.minY + 10))
+    h.system.setOnActiveSpace(a, false)
+    h.scheduler.advance(by: 1)
+    #expect(h.scheduler.pendingKeys.contains("events"), "looking again in a moment")
+    feed.unsubscribe(try #require(listener.subscription))
+    h.scheduler.advance(by: 1)
+    #expect(!h.scheduler.pendingKeys.contains("events"))
+    #expect(try snapshot(Listener(feed)).windows.first { $0.id == a }?.state == .otherSpace, "and whoever comes next is told how things are")
   }
 
   @Test func aSpaceOfWhichNothingCanBeSeenIsStillNamedInWords() throws {

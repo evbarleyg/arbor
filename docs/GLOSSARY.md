@@ -61,6 +61,7 @@ JSON keys, values, exit codes and options are promised never to change once rele
 | What happened to a window | `change`: `opened`, `closed`, `adopted` (Arbor arranges it from now on), `released` (no longer), `docked`, `floated`, `state`, `renamed` |
 | Words for a thing | `label`: Arbor's own words ("Mail and Notes", "display 1"). `name`: what the thing is called by whoever named it, never by Arbor: a space by a person, a display by macOS, its maker or a device over AirPlay. Names are sent to whoever watches, never logged, and stay out of traces |
 | What kind of space | `kind`: `everything`, `desktop`, `window`, `group` |
+| How the view is held | `level`: `view` (nothing moves it), `still` (only its user does); left out when it is not held. `reason`: why Arbor holds still by itself, in words that follow "while" |
 | A display | `display`: its number, as commands take it (`@2`; 1 is the main display). `displayID`: its UUID, which survives unplugging |
 | Numbers | An object that **is** a window or a display has `id`; one that refers to it says `window`, `display`, `displayID`. A display in `displays` has both `id` and `displayID`, so that one filter works on every payload |
 | A space's number | `node`, for `zoom-node` |

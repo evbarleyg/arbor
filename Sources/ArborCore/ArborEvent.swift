@@ -35,9 +35,11 @@ public enum ArborEvent: Equatable, Sendable {
   case paused
   /// The pause is over. The state follows as ordinary events, as after `started`.
   case resumed
+  /// The view is held now, held otherwise, or no longer held (F58).
+  case hold(Hold)
 
   public enum Kind: String, Codable, Sendable, CaseIterable, Comparable {
-    case hello, displays, window, layout, view, focus, settings, started, quitting, paused, resumed
+    case hello, displays, window, layout, view, focus, settings, started, quitting, paused, resumed, hold
 
     /// Whether Arbor is there and listening at all is news for every client, whatever else it asked for: a status bar
     /// that watches only the view must not go on showing it through a pause.
@@ -62,6 +64,7 @@ public enum ArborEvent: Equatable, Sendable {
     case .quitting: .quitting
     case .paused: .paused
     case .resumed: .resumed
+    case .hold: .hold
     }
   }
 
@@ -331,6 +334,20 @@ public enum ArborEvent: Equatable, Sendable {
     }
   }
 
+  /// Every field is missing when the view is not held.
+  public struct Hold: Codable, Equatable, Sendable {
+    /// `view`: nothing moves the view until it is released (a shared screen). `still`: only its user does (a call).
+    public var level: HoldLevel?
+    /// Why Arbor holds still by itself, in words that follow "while": "the camera is on", "Zoom is open". Left out when its
+    /// user asked for the hold.
+    public var reason: String?
+
+    public init(level: HoldLevel? = nil, reason: String? = nil) {
+      self.level = level
+      self.reason = reason
+    }
+  }
+
   // MARK: The state behind the events
 
   /// Everything events report, at one moment: `hello` carries it, and the difference between two of
@@ -352,6 +369,7 @@ public enum ArborEvent: Equatable, Sendable {
     /// One per display, in the order of `displays`.
     public var views: [View] = []
     public var focus = Focus()
+    public var hold = Hold()
 
     public init(running: Bool, accessibility: Bool) {
       self.running = running
@@ -373,7 +391,10 @@ public enum ArborEvent: Equatable, Sendable {
   /// `quitting` is never among them: that the controller stopped does not say that Arbor is quitting. Whoever
   /// knows that it is says so (`EventFeed.stop`).
   public static func changes(from old: Summary, to new: Summary) -> [ArborEvent] {
-    guard new.running else { return old.running && new.paused ? [.paused] : [] }
+    guard new.running else {
+      // A hold ends with the arranging. Said now: all else is announced again after `resumed` or `started`, but not what is no more.
+      return (old.hold != new.hold ? [.hold(new.hold)] : []) + (old.running && new.paused ? [.paused] : [])
+    }
     var events: [ArborEvent] = old.running ? [] : [old.paused ? .resumed : .started]
     if old.displays != new.displays { events.append(.displays(new.displays)) }
 
@@ -401,6 +422,7 @@ public enum ArborEvent: Equatable, Sendable {
     for layout in new.layouts where !old.layouts.contains(layout) { events.append(.layout(layout)) }
     for view in new.views where !old.views.contains(view) { events.append(.view(view)) }
     if old.focus != new.focus { events.append(.focus(new.focus)) }
+    if old.hold != new.hold { events.append(.hold(new.hold)) }
     return events
   }
 
@@ -428,6 +450,7 @@ public enum ArborEvent: Equatable, Sendable {
     case .layout(let arrangement): arrangement
     case .view(let view): view
     case .focus(let focus): focus
+    case .hold(let hold): hold
     case .settings(let changed): ChangedKeys(changed: changed)
     case .started, .quitting, .paused, .resumed: nil
     }
@@ -469,6 +492,7 @@ extension ArborEvent: Codable {
     case .quitting: self = .quitting
     case .paused: self = .paused
     case .resumed: self = .resumed
+    case .hold: self = .hold(try Hold(from: decoder))
     }
   }
 }
