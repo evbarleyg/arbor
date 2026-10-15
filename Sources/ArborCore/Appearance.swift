@@ -4,7 +4,7 @@ import CoreGraphics
 public enum TileStyle: String, Equatable, Sendable, CaseIterable {
   /// The app's icon and nothing else, as in TrellisWM.
   case icon
-  /// The icon with the app's name.
+  /// The icon with a caption: the space's name, the window's title or the app's name.
   case name
   /// Nothing: the colour alone.
   case plain

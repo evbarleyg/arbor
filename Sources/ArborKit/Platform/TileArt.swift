@@ -132,8 +132,15 @@ public struct TileArt: Equatable, Sendable {
   private static let captionHeight: CGFloat = 14
   /// Space kept clear on both sides of a caption.
   private static let margin: CGFloat = 8
-  /// Below this nothing readable is left of a caption, ellipsis included.
+  /// Below this nothing readable is left of a group's name, ellipsis included.
   private static let narrowestCaption: CGFloat = 28
+  /// Room for eight letters. What is left of a caption cut shorter than that says nothing that tells it from another: the
+  /// icon stands alone then, and the help tag has the words. A caption that fits whole is drawn in whatever it fits.
+  private static let eightLetters: CGFloat = (8 * captionSize * 0.6).rounded(.up)
+
+  private static func hasRoom(_ room: CGFloat, for text: String) -> Bool {
+    room >= min(eightLetters, max(estimatedWidth(of: text), narrowestCaption))
+  }
   private static let smallestEmblem: CGFloat = 12
 
   private static func plate(_ frame: CGRect, radius: CGFloat, _ colours: TilePalette, _ hairline: CGFloat) -> Plate {
@@ -185,7 +192,7 @@ public struct TileArt: Equatable, Sendable {
     let room = size.width - 2 * margin
 
     let stacked = side + spacing + captionHeight
-    if text != nil, room >= narrowestCaption, stacked + 20 <= size.height {
+    if let text, hasRoom(room, for: text), stacked + 20 <= size.height {
       let top = ((size.height - stacked) / 2 - lift(in: size)).rounded()
       return (
         hasEmblem ? CGRect(x: ((size.width - side) / 2).rounded(), y: top, width: side, height: side) : nil,
@@ -194,7 +201,7 @@ public struct TileArt: Equatable, Sendable {
     }
 
     let beside = room - side - 6
-    if let text, hasEmblem, beside >= narrowestCaption, captionHeight + 4 <= size.height {
+    if let text, hasEmblem, hasRoom(beside, for: text), captionHeight + 4 <= size.height {
       // An estimate is enough to centre the pair; the label's frame runs on to the margin, so a low one cuts nothing off.
       let estimate = min(beside, estimatedWidth(of: text))
       let left = (margin + (beside - estimate) / 2).rounded()

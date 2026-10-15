@@ -47,6 +47,9 @@ public final class FakeOverlays: OverlayPresenter {
 
   /// Every `update`, in order. On a Mac each one moves and reorders a panel per tile and seam.
   public private(set) var updateLog: [Update] = []
+  /// The caption of every tile of every scene so far: what has been on screen, if only for a moment.
+  public private(set) var captionsEverShown: Set<String> = []
+  public func forgetCaptions() { captionsEverShown.removeAll() }
 
   /// One call of the controller's.
   public enum Call {
@@ -74,6 +77,7 @@ public final class FakeOverlays: OverlayPresenter {
 
   public func update(display: DisplayID, scene: OverlayScene) {
     updateLog.append(Update(display: display, changed: (scenes[display] ?? OverlayScene()) != scene))
+    captionsEverShown.formUnion(scene.tiles.flatMap { [$0.title, $0.helpTag] })
     scenes[display] = scene
     onCall?(.update(display, scene))
   }

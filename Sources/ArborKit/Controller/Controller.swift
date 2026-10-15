@@ -298,6 +298,7 @@ public final class Controller {
   var namePrompt: (display: DisplayID, node: NodeID, keyboard: WindowID?)?
   /// What the heads-up line and the panel of shortcuts show, and what has been taught (Controller+HeadsUp.swift).
   var headsUp = HeadsUpState()
+  var tileCaptions = TileCaptions()
   /// Which displays show a minimap, and where their views were (Controller+Minimap.swift).
   var minimap = MinimapState()
 
@@ -460,6 +461,8 @@ public final class Controller {
     drag = nil
     soleFloats.dragged = nil
     edgeResize = nil
+    // Whether a call is on is looked at further down, when there is an arrangement to hold. Until then no tile shows a title.
+    tileCaptions = TileCaptions(isStarting: true)
     system.start()
     let shapes = Dictionary(displays.map { ($0.id, $0.frame) }, uniquingKeysWith: { first, _ in first })
     displays = system.displays()
@@ -521,6 +524,7 @@ public final class Controller {
     relayoutAll(reason: .camera, motion: .instant)
     placedOnPurpose.removeAll()
     refreshHoldCaller()
+    tileCaptionsKnowWhetherACallIsOn()
     notify(.lifecycle)
     scheduleSave()
     startWaitingForPendingSlots()

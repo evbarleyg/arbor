@@ -36,6 +36,8 @@ import Testing
     var model = try #require(tile(.window, makeHarness()))
     model.frame.size = CGSize(width: width, height: height)
     model.items[0].appName = app
+    // Titles have tests of their own (TileCaptionTests).
+    model.windowTitle = nil
     model.style = style
     return model
   }
@@ -49,15 +51,15 @@ import Testing
   @Test func tilesCarryTheColourAndStyleSettings() throws {
     let standard = try #require(makeHarness().overlays.tiles[DisplayID("main")])
     #expect(Set(standard.map(\.kind)) == [.group, .desktop, .window])
-    #expect(standard.allSatisfy { $0.usesAppColour && $0.colourAmount == 0.25 && $0.style == .icon })
+    #expect(standard.allSatisfy { $0.usesAppColour && $0.colourAmount == 0.25 && $0.style == .name })
 
     var settings = Settings()
     settings.appColours = false
     settings.appColourAmount = 0.7
-    settings.tileStyle = "name"
+    settings.tileStyle = "icon"
     let h = makeHarness(settings: settings)
     #expect(h.overlays.tiles[h.display]?.count == 3)
-    #expect(h.overlays.tiles[h.display]?.allSatisfy { !$0.usesAppColour && $0.colourAmount == 0.7 && $0.style == .name } == true)
+    #expect(h.overlays.tiles[h.display]?.allSatisfy { !$0.usesAppColour && $0.colourAmount == 0.7 && $0.style == .icon } == true)
 
     h.controller.loadSettings = { Settings() }
     h.run("reload-settings")
@@ -69,7 +71,7 @@ import Testing
     settings.appColourAmount = 12
     settings.tileStyle = "hologram"
     let h = makeHarness(settings: settings)
-    #expect(h.overlays.tiles[h.display]?.allSatisfy { $0.colourAmount == 1 && $0.style == .icon } == true)
+    #expect(h.overlays.tiles[h.display]?.allSatisfy { $0.colourAmount == 1 && $0.style == .name } == true)
   }
 
   @Test func gapsShowTheirHandleHideItOrAreNoHandlesAtAll() {
@@ -343,6 +345,7 @@ import Testing
 
   @Test func theDesktopsTileIsGlassWithAGlyphInBothModes() throws {
     var model = try #require(tile(.desktop, makeHarness()))
+    model.style = .icon
     let tile = art(model, isDark: false, colour: blue)
     #expect(tile == art(model, isDark: true, colour: yellow), "the wallpaper does not change with the mode")
     #expect(tile.plate.top.alpha < 0.5, "the wallpaper shows through")
