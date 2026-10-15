@@ -7,19 +7,21 @@
 #   - Carbon reports a hot key's release (kEventHotKeyReleased), with the modifiers still down and without;
 #   - ⌃⌥ + arrow and ⌃⌥⎋ fire while Space is down;
 #   - what a held key's auto-repeat does;
-#   - CGEventSource.keyState and NSEvent.modifierFlags see a key that a hot key swallowed;
+#   - CGEventSource.keyState and NSEvent.modifierFlags see a key that a hot key swallowed, WHEN THE APP ASKS: the shell's child is told more (lib-person.sh);
 #   - what the outline looks like.
 # arbor.log (debug) says "peek: held", "peek: the key came up" (Carbon said so) and "peek: the keys were found up" (the
 # timer noticed first); the end of this script prints those lines.
 #
-# Safe on a person's Mac: it touches its own test windows, the pointer and the keyboard, and changes no setting.
+# Safe on a person's Mac: it touches its own test windows, the pointer and the keyboard, and changes no setting. On GitHub's Macs alone it starts Arbor as a
+# person does, which takes an entry in the permission database, removed at the end.
 ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
+source "$(dirname "$0")/lib-person.sh"
 
 SPACE=ctrl+opt+space
 
 arbor_build
-arbor_start 3 ARBOR_NO_HOTKEYS=0
+arbor_start_as_a_person 3 ARBOR_NO_HOTKEYS=0
 
 framed() {
   local id
