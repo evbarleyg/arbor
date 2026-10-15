@@ -142,6 +142,7 @@ extension Controller {
       dropOverdueSlotsBeforeAStop()
       // Kept in memory as well, so that coming back does not depend on the file having been written.
       resumeState = persistedState()
+      displaysWhenThePauseBegan = displays
       shutdown(movingWindows: false)
       // Arbor cannot look any more, so `state` and `ascii` must not pass off old frames as current.
       layouts.removeAll()
@@ -163,6 +164,9 @@ extension Controller {
     // Nor is it a new way into an app Arbor pauses for (`followFrontmostApp`).
     if let loss, loss.wasADoubt, let app = loss.resumedInside, app == frontmostApp?.bundleID { frontmostAppPaused = true }
     start()
+    // What follows belongs to the coming back, and a command may be what noticed that it was due (Controller+AppsDoubleClick.swift).
+    isStartingUnasked = true
+    defer { isStartingUnasked = false }
     filter.ignoredWindowIDs.formIntersection(windows.keys)
     lastVisitToSettings = nil
     // They were promised their windows back. Back returns to the view this replaces. Not after a false alarm, which

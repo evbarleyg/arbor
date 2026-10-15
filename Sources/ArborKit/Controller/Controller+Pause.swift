@@ -38,6 +38,7 @@ extension Controller {
       lookAtTheDisplaysBeforeLettingGo()
       let before = windows.mapValues(\.frame)
       noteWhoIsLetBeAsThePauseBegins()
+      resumeState?.zoomedByMacOS = letBeWhenThePauseBegan.isEmpty ? nil : letBeWhenThePauseBegan
       shutdown()
       // An app Arbor pauses for may take the display to a resolution of its own and back. macOS fits every window onto it, and nobody tells Arbor,
       // which is not listening. So where it left the windows says nothing afterwards (Controller+FoundAtAStart.swift).

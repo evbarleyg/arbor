@@ -236,6 +236,8 @@ extension Controller: WindowSystemEvents {
     }
     if enforcement.givenUp.contains(window.id) {
       settled[window.id] = window.frame
+      // Where it is let be is written down, for a start after a crash, and macOS takes a third of a second to get there.
+      if enforcement.leftAlone.contains(window.id) { scheduleSave() }
       noteWhetherItIsBackInItsSlot(window, on: display)
       return
     }

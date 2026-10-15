@@ -214,8 +214,10 @@ public final class Controller {
   /// And the slot it had then.
   var whereAZoomBegan: [WindowID: (frame: CGRect, slot: CGRect?)] = [:]
   /// The windows that were let be when the pause began: where each was, and `whereAZoomBegan`'s word about it.
-  var letBeWhenThePauseBegan: [WindowID: (frame: CGRect, began: (frame: CGRect, slot: CGRect?)?)] = [:]
+  var letBeWhenThePauseBegan: [WindowID: PersistedState.ZoomedWindow] = [:]
   var displaysWhenThePauseBegan: [DisplaySnapshot] = []
+  /// While `start()` runs, if nobody asked for it, though a command may be what noticed that it was due.
+  var isStartingUnasked = false
 
   /// Managed windows, most recently focused first. `dock beside` rules use it
   /// to pick which of an app's windows to dock beside (Controller+Rules.swift).
@@ -523,6 +525,7 @@ public final class Controller {
     isTurning = true
     defer { isTurning = false }
     isListedUnderAccessibility = true
+    defer { isStartingUnasked = false }
     // Not always the first start of the process: Arbor also starts after a pause, and after losing and
     // regaining Accessibility permission. Nobody told it what happened meanwhile, so what it knew about
     // windows, displays and frames is forgotten here, whoever stopped it.
@@ -625,7 +628,7 @@ public final class Controller {
     Log.info("started: \(displays.count) display(s), \(managedWindowIDs.count) managed window(s)")
     letTheViewFollowTheKeyboardBeforeTheFirstLayout()
     letTheWindowWithTheKeyboardBe()
-    letBeAgainWhatThePauseLeftAlone()
+    letBeAgainWhatWasLetBe(saved: saved, nobodyAskedForThisStart: !byAPerson || afterAccident)
     // Before the first layout takes the windows: from here on the file must not say where Arbor left them.
     if !leftAt.isEmpty {
       saveNow()
@@ -675,7 +678,6 @@ public final class Controller {
     defer { isStoppingWithoutMoving = false }
     if movingWindows { cancelDragLettingGo() } else { cancelDrag() }
     appsDoubleClick = nil
-    whereAZoomBegan.removeAll()
     if movingWindows { lookAtTheDisplaysBeforeLettingGo() }
     dropOverdueSlotsBeforeAStop()
     scheduler.cancel("save")
@@ -769,6 +771,7 @@ public final class Controller {
     overlays.removeAll()
     if movingWindows { leftAt = windows.filter { !$0.value.isFullScreen }.mapValues(\.frame) }
     saveNow()
+    whereAZoomBegan.removeAll()
     // Saved with their hints; the next start finds them again.
     keptRoom.removeAll()
     windowsTheFileKnew.removeAll()
@@ -900,6 +903,8 @@ public final class Controller {
     state = state.withEveryLookOver()
     state = state.written(with: displays)
     state.leftAt = leftAt
+    let zoomed = whoIsLetBeAndWhere()
+    state.zoomedByMacOS = zoomed.isEmpty ? nil : zoomed
     if isPaused { state.pause = PersistedState.Pause(until: pauseEnd, forApp: isPausedForApp) }
     return state
   }

@@ -1002,6 +1002,8 @@ import Testing
 @Suite @MainActor struct AZoomThroughAPauseTests {
   func zoomed() -> (Harness, [WindowID]) {
     let h = Harness()
+    // Before the start, which is when Arbor begins to ask.
+    h.watchAccessibility()
     let windows = ["Safari", "Mail", "Notes"].enumerated().map { index, app in
       h.system.open(
         app: app, pid: 1000 + Int32(index),
@@ -1196,6 +1198,219 @@ import Testing
     h.controller.shutdown()
     #expect(h.system.windows[large]?.snapshot.frame == zoomed)
     #expect(h.system.frameLog.filter { $0.window == large }.isEmpty, "Arbor asked nothing of it")
+  }
+
+  // MARK: Starts that nobody asked for
+
+  /// macOS doubts the permission for a moment, Arbor stops without moving anything and starts again. A doubt that passes ends nothing.
+  @Test func aDoubtAboutThePermissionThatPassesEndsNothing() {
+    let (h, windows) = zoomed()
+    let starts = h.system.starts
+    h.revokeAccessibility()
+    h.scheduler.advance(by: 2.6)
+    h.grantAccessibility()
+    h.scheduler.advance(by: 10)
+    #expect(h.controller.isRunning, "the test's own premise")
+    #expect(h.system.starts > starts, "the test's own premise: it stopped, and started again")
+    #expect(h.frame(windows[0]) == h.visibleFrame)
+    #expect(h.system.frameLog.isEmpty, "no frame was set")
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]], "the mark as before")
+  }
+
+  /// And a loss that lasted.
+  @Test func thePermissionGoneForAMinuteAndBackEndsNothingEither() {
+    let (h, windows) = zoomed()
+    h.revokeAccessibility()
+    h.scheduler.advance(by: 60)
+    #expect(!h.controller.isRunning, "the test's own premise")
+    h.grantAccessibility()
+    h.scheduler.advance(by: 10)
+    #expect(h.controller.isRunning, "the test's own premise")
+    #expect(h.frame(windows[0]) == h.visibleFrame)
+    #expect(h.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor never moved it")
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]])
+  }
+
+  /// A command may be what notices that the permission is back, and the windows that were promised are fetched inside it.
+  @Test func aCommandThatNoticesThatThePermissionIsBackIsNotAboutThis() {
+    let (h, windows) = zoomed()
+    // Something is out of view, so that there is a promise to keep.
+    #expect(h.run("zoom \(windows[0].rawValue)").ok)
+    h.scheduler.advance(by: 5)
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 5)
+    guard h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]], let filled = h.frame(windows[0]) else {
+      Issue.record("the test's own premise: framed, zoomed by macOS, let be")
+      return
+    }
+    h.system.clearFrameLog()
+    h.revokeAccessibility()
+    h.scheduler.advance(by: 60)
+    #expect(!h.controller.isRunning, "the test's own premise")
+    h.grantAccessibility()
+    h.run("focus \(windows[0].rawValue)")
+    #expect(h.controller.isRunning, "the test's own premise: the command noticed")
+    h.scheduler.advance(by: 10)
+    #expect(h.frame(windows[0]) == filled)
+    #expect(h.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor never moved it")
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]])
+  }
+
+  @Test func movedWhileThePermissionWasGoneItIsAnOrdinaryDockedWindow() {
+    let (h, windows) = zoomed()
+    h.revokeAccessibility()
+    h.scheduler.advance(by: 60)
+    h.system.userMove(windows[0], to: CGRect(x: 300, y: 200, width: 700, height: 500))
+    h.grantAccessibility()
+    h.scheduler.advance(by: 10)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty)
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  @Test func displaysThatChangedWhileThePermissionWasGoneEndIt() {
+    let (h, windows) = zoomed()
+    h.revokeAccessibility()
+    h.scheduler.advance(by: 60)
+    h.system.setDisplays([
+      DisplaySnapshot(
+        id: FakeWindowSystem.standardDisplay.id, frame: CGRect(x: 0, y: 0, width: 1920, height: 1080),
+        visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1055), isMain: true)
+    ])
+    h.grantAccessibility()
+    h.scheduler.advance(by: 10)
+    #expect(h.controller.windowsLeftWhereADoubleClickPutThem.isEmpty, "\(windows[0])")
+    expectWindowsMatchLayout(h, on: h.display)
+  }
+
+  /// macOS takes a third of a second to fill the screen, and the first step is written down at once. What a crash finds is the last.
+  @Test func whatIsWrittenIsWhereItEndedUp() {
+    let h = Harness()
+    let windows = ["Safari", "Mail", "Notes"].enumerated().map { index, app in
+      h.system.open(app: app, pid: 1000 + Int32(index), frame: CGRect(x: 80 + 60 * CGFloat(index), y: 90, width: 640, height: 420))
+    }
+    h.start()
+    #expect(h.run("arrange").ok)
+    h.scheduler.advance(by: 5)
+    let slot = h.frame(windows[0])!
+    h.system.doubleClick(at: CGPoint(x: slot.midX, y: slot.minY + 12))
+    h.system.userMove(windows[0], to: slot.insetBy(dx: -40, dy: -10))
+    // Longer than a save waits.
+    h.scheduler.advance(by: 1)
+    h.system.userMove(windows[0], to: h.visibleFrame)
+    h.scheduler.advance(by: 5)
+    #expect(h.store.saved?.zoomedByMacOS?[windows[0]]?.frame == h.visibleFrame)
+    let new = again(after: h, byTheWatchdog: true)
+    #expect(new.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]])
+    #expect(new.frame(windows[0]) == new.visibleFrame)
+  }
+
+  /// Where the zoom began, and the slot it had, are written too: after the crash a neighbour's closing is still noticed on macOS's way back.
+  @Test func afterACrashTheWayBackStillKnowsTheSlotItHad() {
+    let (h, windows) = zoomed()
+    let old = h.layout!.windowFrames[windows[0]]!
+    h.scheduler.advance(by: 5)
+    #expect(h.store.saved?.zoomedByMacOS?[windows[0]]?.began == old)
+    #expect(h.store.saved?.zoomedByMacOS?[windows[0]]?.slot == old)
+    let new = again(after: h, byTheWatchdog: true)
+    new.system.close(windows[1])
+    new.scheduler.advance(by: 3)
+    // In the new harness the windows lie in the order they were opened in.
+    new.system.userFocus(windows[0])
+    new.scheduler.advance(by: 3)
+    new.system.clearFrameLog()
+    new.system.doubleClick(at: CGPoint(x: new.visibleFrame.midX, y: new.visibleFrame.minY + 12))
+    #expect(new.controller.windowJustDoubleClicked == windows[0], "the test's own premise")
+    new.system.userMove(windows[0], to: old)
+    new.scheduler.advance(by: 3)
+    #expect(new.controller.windowsLeftWhereADoubleClickPutThem.isEmpty)
+    expectWindowsMatchLayout(new, on: new.display)
+  }
+
+  /// And so it is in what a lost permission writes, should Arbor crash meanwhile.
+  @Test func whatALostPermissionWritesKnowsItToo() {
+    let (h, windows) = zoomed()
+    let old = h.layout!.windowFrames[windows[0]]!
+    h.revokeAccessibility()
+    h.scheduler.advance(by: 60)
+    #expect(!h.controller.isRunning, "the test's own premise")
+    #expect(h.store.saved?.zoomedByMacOS?[windows[0]]?.began == old)
+  }
+
+  @Test func anOlderFileHasNoneAndADamagedOneCostsOnlyItself() throws {
+    let (h, windows) = zoomed()
+    h.controller.saveNow()
+    let data = try JSONEncoder().encode(try #require(h.store.saved))
+    var object = try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
+    #expect(object["zoomedByMacOS"] != nil)
+    object["zoomedByMacOS"] = nil
+    let older = try JSONDecoder().decode(PersistedState.self, from: JSONSerialization.data(withJSONObject: object))
+    #expect(older.zoomedByMacOS == nil && older.workspaces == h.store.saved?.workspaces)
+    for damage: Any in ["nonsense", 7, ["\(windows[0].rawValue)": "nonsense"], ["\(windows[0].rawValue)": ["frame": [1, 2]]]] {
+      object["zoomedByMacOS"] = damage
+      let read = try JSONDecoder().decode(PersistedState.self, from: JSONSerialization.data(withJSONObject: object))
+      #expect(read.zoomedByMacOS?[windows[0]] == nil, "\(damage)")
+      #expect(read.workspaces == h.store.saved?.workspaces, "the arrangement is whole: \(damage)")
+    }
+  }
+
+  func again(after h: Harness, byTheWatchdog: Bool) -> Harness {
+    let again = Harness(displays: h.system.displayList, saved: h.store.saved)
+    for window in h.system.allWindows() {
+      let id = again.system.open(app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
+      #expect(id == window.id)
+    }
+    again.controller.restartedAfterAccident = byTheWatchdog
+    again.start()
+    again.scheduler.advance(by: 10)
+    return again
+  }
+
+  @Test func afterACrashTheWatchdogsStartLetsItBeAgain() {
+    let (h, windows) = zoomed()
+    h.scheduler.advance(by: 5)
+    // Arbor dies: nothing is given back, and what was written is all there is.
+    let new = again(after: h, byTheWatchdog: true)
+    #expect(new.frame(windows[0]) == new.visibleFrame)
+    #expect(new.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor never moved it")
+    #expect(new.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]])
+    // macOS's own way back is home, as before the crash.
+    new.system.userMove(windows[0], to: h.layout!.windowFrames[windows[0]]!)
+    new.scheduler.advance(by: 3)
+    #expect(new.controller.windowsLeftWhereADoubleClickPutThem.isEmpty)
+  }
+
+  /// The same file, and a person who starts Arbor: it docks what was docked (Q16).
+  @Test func afterACrashAPersonsStartDocksItLikeTheRest() {
+    let (h, windows) = zoomed()
+    h.scheduler.advance(by: 5)
+    let new = again(after: h, byTheWatchdog: false)
+    #expect(new.controller.windowsLeftWhereADoubleClickPutThem.isEmpty, "\(windows[0])")
+    expectWindowsMatchLayout(new, on: new.display)
+  }
+
+  @Test func aCrashDuringAPauseAndTheResumeAfterItLetItBeAgain() {
+    let (h, windows) = zoomed()
+    #expect(h.run("pause").ok)
+    let new = again(after: h, byTheWatchdog: true)
+    #expect(new.controller.isPaused, "the test's own premise: a pause outlives an accident")
+    #expect(new.run("resume").ok)
+    new.scheduler.advance(by: 5)
+    #expect(new.frame(windows[0]) == new.visibleFrame)
+    #expect(new.system.frameLog.filter { $0.window == windows[0] }.isEmpty, "Arbor never moved it")
+    #expect(new.controller.windowsLeftWhereADoubleClickPutThem == [windows[0]])
+  }
+
+  @Test func whatIsWrittenSurvivesJSON() throws {
+    let (h, windows) = zoomed()
+    h.controller.saveNow()
+    let saved = try #require(h.store.saved)
+    #expect(saved.zoomedByMacOS?[windows[0]]?.frame == h.visibleFrame)
+    let back = try JSONDecoder().decode(PersistedState.self, from: JSONEncoder().encode(saved))
+    #expect(back == saved)
+    h.system.doubleClickTitleBar(of: windows[0])
+    h.scheduler.advance(by: 5)
+    h.controller.saveNow()
+    #expect(h.store.saved?.zoomedByMacOS == nil, "nobody is let be, and nothing is written")
   }
 
   /// Arbor says what it has looked at.

@@ -79,6 +79,24 @@ public struct PersistedState: Codable, Equatable, Sendable {
   /// The leaves, by display, that were kept open for windows that were not there yet when this was written, in the
   /// minutes after a login (Controller+KeptRoom.swift). Nearly always absent, and older files do not have it.
   public var roomKept: [DisplayID: [NodeID]]?
+  /// The docked windows that are where macOS put them at their person's asking, and are let be there (Controller+AppsDoubleClick.swift).
+  /// Followed only by a start that nobody asked for: after a pause, a doubt about the permission, a crash. A person who starts Arbor gets
+  /// what was docked docked. Nearly always absent, and older files do not have it.
+  public var zoomedByMacOS: [WindowID: ZoomedWindow]?
+
+  public struct ZoomedWindow: Codable, Equatable, Sendable {
+    /// Where it is.
+    public var frame: CGRect
+    /// Where it was before, which is where macOS's own way back leads, and the slot it had then.
+    public var began: CGRect?
+    public var slot: CGRect?
+
+    public init(frame: CGRect, began: CGRect?, slot: CGRect?) {
+      self.frame = frame
+      self.began = began
+      self.slot = slot
+    }
+  }
 
   public init(
     workspaces: [DisplayID: Workspace], hints: [WindowID: WindowHint],
@@ -118,6 +136,7 @@ public struct PersistedState: Codable, Equatable, Sendable {
     case origins
     case leftAt
     case roomKept
+    case zoomedByMacOS
   }
 
   public init(from decoder: any Decoder) throws {
@@ -157,6 +176,8 @@ public struct PersistedState: Codable, Equatable, Sendable {
     }
     // Nor over this: those windows move once more than they had to.
     roomKept = (try? c.decodeIfPresent(LossyDictionary<DisplayID, [NodeID]>.self, forKey: .roomKept))?.entries
+    // Nor over this: that window is docked like the rest.
+    zoomedByMacOS = (try? c.decodeIfPresent(LossyDictionary<WindowID, ZoomedWindow>.self, forKey: .zoomedByMacOS))?.entries
     for id in dormant.keys where dormant[id]!.origin.map(DormantWorkspace.isPlaceForADisplay) == false {
       dormant[id]!.origin = nil
     }

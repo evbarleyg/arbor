@@ -36,6 +36,7 @@ extension Controller {
     if let slot, slot.approximatelyEquals(window.frame, tolerance: 4) { return true }
     enforcement.leave(window.id)
     if let stood = began ?? slot { whereAZoomBegan[window.id] = (stood, slot) }
+    scheduleSave()
     // It covers its neighbours now. The first few times, how to get them back. Not for whatever else an app made of it.
     if let slot, window.frame.width > slot.width + 4 || window.frame.height > slot.height + 4 { teach(.zoomedByMacOS, on: display) }
     Log.info("\(window.id) has a new frame after a double-click; it stays there until it is back in its slot or somebody asks for a layout")
@@ -52,8 +53,8 @@ extension Controller {
   /// this one: the others share the room behind it, and what its person asked macOS for is not undone by the way (Q22). A display
   /// that comes, goes, moves or changes its size ends it for the windows on it (`updateDisplays`).
   func stillLetBe(in layout: Layout, on display: DisplayID) -> Set<WindowID> {
-    // A resume is asked for, and is not about this: there and back a pause is nothing.
-    guard !aPersonAsks || isResuming else { return [] }
+    // A resume is asked for, and is not about this: there and back a pause is nothing. Nor is a doubt about the permission.
+    guard !aPersonAsks || isStartingUnasked else { return [] }
     return enforcement.leftAlone.filter { id in
       guard let window = windows[id], workspaces[display]?.isDocked(id) == true else { return false }
       // In the Dock, hidden with its app or on another Space it has no slot, and nobody has said a word about its size: macOS brings
@@ -94,28 +95,39 @@ extension Controller {
     enforcement.reset(tree.allWindows.filter { !kept.contains($0) })
     enforcement.reset(enforcement.leftAlone.filter { id in !workspaces.values.contains { $0.isDocked(id) } })
     if !whereAZoomBegan.isEmpty { whereAZoomBegan = whereAZoomBegan.filter { enforcement.leftAlone.contains($0.key) } }
-    if !isResuming { forgetWhoWasLetBeAndWaitsNoMore() }
+    if !isStartingUnasked { forgetWhoWasLetBeAndWaitsNoMore() }
   }
 
   // MARK: A pause, and Quit
 
-  /// Before `shutdown`, which leaves these windows where they are (`letGo`) and forgets what is known about them.
-  func noteWhoIsLetBeAsThePauseBegins() {
-    // One that has been out of sight since the last pause goes on waiting.
-    letBeWhenThePauseBegan = letBeWhenThePauseBegan.filter { pendingSlots.contains($0.key) }
-    displaysWhenThePauseBegan = displays
+  /// What is written: while Arbor runs, who is let be now; during a pause, who was when it began.
+  func whoIsLetBeAndWhere() -> [WindowID: PersistedState.ZoomedWindow] {
+    guard isRunning else { return letBeWhenThePauseBegan }
+    var zoomed = letBeWhenThePauseBegan.filter { pendingSlots.contains($0.key) }
     for id in enforcement.leftAlone {
-      if let frame = windows[id]?.frame { letBeWhenThePauseBegan[id] = (frame, whereAZoomBegan[id]) }
+      guard let frame = windows[id]?.frame else { continue }
+      zoomed[id] = PersistedState.ZoomedWindow(frame: frame, began: whereAZoomBegan[id]?.frame, slot: whereAZoomBegan[id]?.slot)
     }
+    return zoomed
   }
 
-  /// Called by `start()` before its first layout. Only a resume finds anything here: nothing is let be across a quit and a start, which
-  /// docks what was docked. Nor on a display that has changed, as while Arbor runs.
-  func letBeAgainWhatThePauseLeftAlone() {
-    guard isResuming else { return letBeWhenThePauseBegan = [:] }
+  /// Before `shutdown`, which leaves these windows where they are (`letGo`) and forgets what is known about them.
+  func noteWhoIsLetBeAsThePauseBegins() {
+    letBeWhenThePauseBegan = whoIsLetBeAndWhere()
+    displaysWhenThePauseBegan = displays
+  }
+
+  /// Called by `start()` before its first layout. A start that nobody asked for ends nothing: the end of a pause, a doubt about the
+  /// permission that has passed, the watchdog after a crash. Nothing is let be across a quit and a start, which docks what was docked.
+  /// Nor on a display that has changed, as while Arbor runs; after a crash nobody knows what they were, and the frames have to do.
+  func letBeAgainWhatWasLetBe(saved: PersistedState?, nobodyAskedForThisStart: Bool) {
+    defer { displaysWhenThePauseBegan = [] }
+    guard nobodyAskedForThisStart else { return letBeWhenThePauseBegan = [:] }
+    isStartingUnasked = true
+    letBeWhenThePauseBegan = saved?.zoomedByMacOS ?? [:]
     let stand = displaysThatStand(since: displaysWhenThePauseBegan)
     // Of a window that is not listed nobody knows the display: any change ends it.
-    if stand.count != displays.count || stand.count != displaysWhenThePauseBegan.count {
+    if !displaysWhenThePauseBegan.isEmpty, stand.count != displays.count || stand.count != displaysWhenThePauseBegan.count {
       letBeWhenThePauseBegan = letBeWhenThePauseBegan.filter { workspaceID(containing: $0.key).map(stand.contains) == true && windows[$0.key] != nil }
     }
     for id in letBeWhenThePauseBegan.keys.sorted() { if let window = windows[id] { letBeAgainIfThePauseLeftItAlone(window) } }
@@ -130,7 +142,7 @@ extension Controller {
     else { return }
     enforcement.leave(window.id)
     settled[window.id] = window.frame
-    whereAZoomBegan[window.id] = note.began
+    whereAZoomBegan[window.id] = note.began.map { ($0, note.slot) }
   }
 
   /// A note lasts as long as the slot that waits for its window.
@@ -183,6 +195,7 @@ extension Controller {
   private func isADockedWindowAgain(_ window: WindowID) {
     enforcement.reset([window])
     whereAZoomBegan[window] = nil
+    scheduleSave()
     // The line on screen does not outlive what it says.
     hideHeadsUp()
   }
