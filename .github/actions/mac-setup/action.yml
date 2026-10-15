@@ -25,7 +25,7 @@ inputs:
     required: false
     default: "6.4"
   build-cache:
-    description: "products: .build as `swift build` leaves it. tests: as `swift build --build-tests` does. none: build from nothing."
+    description: "products: .build as `swift build` leaves it. tests: as `swift build --build-tests` does. release: as `swift build -c release` does. none: build from nothing."
     required: false
     default: none
 outputs:

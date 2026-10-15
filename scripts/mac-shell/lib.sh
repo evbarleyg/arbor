@@ -201,7 +201,14 @@ if [ -z "${ARBOR_REHEARSAL:-}" ]; then
   unset ARBOR_OUT ARBOR_BIN ARBOR_APPS ARBOR_POINTER ARBOR_TEST_WINDOWS ARBOR_TEST_WINDOWS_2 ARBOR_APP ARBOR_VDISPLAY ARBOR_CURTAIN ARBOR_BUILT
 fi
 ARBOR_OUT=${ARBOR_OUT:-$ARBOR_ROOT/mac-shell}
-ARBOR_BIN=${ARBOR_BIN:-$ARBOR_ROOT/.build/debug}
+# Which build the script drives: `debug`, as `swift build` and the tests have it, or `release`, the program people get. How busy Arbor is, how long
+# anything takes and how smoothly it moves are judged on that one: without the optimizer it is another program.
+ARBOR_CONFIGURATION=${ARBOR_CONFIGURATION:-debug}
+case "$ARBOR_CONFIGURATION" in
+  debug | release) ;;
+  *) echo "lib.sh: ARBOR_CONFIGURATION is debug or release, not '$ARBOR_CONFIGURATION'" >&2; exit 64 ;;
+esac
+ARBOR_BIN=${ARBOR_BIN:-$ARBOR_ROOT/.build/$ARBOR_CONFIGURATION}
 ARBOR_APPS=${ARBOR_APPS:-$ARBOR_ROOT/.build/mac-shell}
 ARBOR_POINTER=${ARBOR_POINTER:-$ARBOR_APPS/pointer}
 ARBOR_TEST_WINDOWS=${ARBOR_TEST_WINDOWS:-$ARBOR_APPS/ArborTestWindows.app/Contents/MacOS/ArborTestWindows}
@@ -1059,7 +1066,7 @@ arbor_build() {
     || swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/curtain.swift" -o "$ARBOR_CURTAIN" \
       > "$ARBOR_OUT/build-curtain.log" 2>&1 &
   curtain=$!
-  if ! swift build > "$ARBOR_OUT/build.log" 2>&1; then
+  if ! swift build -c "$ARBOR_CONFIGURATION" > "$ARBOR_OUT/build.log" 2>&1; then
     echo "swift build failed. Its errors, then the end of mac-shell/build.log:"
     grep "error:" "$ARBOR_OUT/build.log" | sort -u | head -n 40
     tail -n 30 "$ARBOR_OUT/build.log"
@@ -1094,7 +1101,7 @@ arbor_build() {
       || die "could not make $ARBOR_APP"
     arbor_sign Arbor || echo "note: could not sign $ARBOR_APP: $(tail -n 1 "$ARBOR_OUT/build-bundles.log")"
   fi
-  echo "built Arbor, the pointer tool and the app bundles in $((SECONDS - started))s"
+  echo "built Arbor$([ "$ARBOR_CONFIGURATION" = debug ] || echo " ($ARBOR_CONFIGURATION)"), the pointer tool and the app bundles in $((SECONDS - started))s"
   : > "$ARBOR_LEDGER/built"
   # Now, before the script opens its first window: whatever opens later opens in front of the curtain.
   arbor_make_room || exit 77

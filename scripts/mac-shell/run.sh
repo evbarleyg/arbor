@@ -1,7 +1,7 @@
 #!/bin/bash
 # Runs a script from this repository on a real Mac and brings back what it produced. Or several scripts.
 #
-#   scripts/mac-shell/run.sh [--macs N] [--on macos-15] [--bare] [--priority N] [--no-preflight "<why>"] <script>… [ref]
+#   scripts/mac-shell/run.sh [--macs N] [--on macos-15] [--bare] [--release] [--priority N] [--no-preflight "<why>"] <script>… [ref]
 #   scripts/mac-shell/run.sh scripts/mac-shell/shots-demo.sh
 #   scripts/mac-shell/run.sh scripts/mac-shell/shots-F10.sh scripts/mac-shell/shots-F12.sh scripts/mac-shell/shots-F43.sh
 #
@@ -21,6 +21,8 @@
 #               its own, "2/3" on the second of three; only for a script that looks there (compat.sh does).
 #   --on KIND   another of GitHub's Macs than macos-26: macos-15, macos-14 or macos-15-intel. They come out of the same five.
 #   --bare      no toolchain and no build: half a minute saved for a script that only asks the Mac something.
+#   --release   the scripts drive the release build, the program people get (ARBOR_CONFIGURATION=release says the same): for whatever is measured,
+#               how busy, how long, how smooth. It is built before the first script and kept for the next run, apart from the debug builds.
 #   --priority N   GitHub hands its Macs out in no particular order, so the order is kept here, before the run is started: waiting
 #               here costs nobody anything. 1 waits for nobody's ordinary run: a fault on real windows, a merge train. 2 waits while three or
 #               more jobs are waiting for a Mac. 3 (the default) waits while any is: pictures, features, whatever can wait.
@@ -58,13 +60,14 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 97
 
-usage="usage: scripts/mac-shell/run.sh [--macs N] [--on macos-15] [--bare] [--priority N] [--no-preflight \"<why>\"] <script>… [ref]"
-macs="" ref="" kind=macos-26 bare=false priority=${ARBOR_MAC_PRIORITY:-3} unchecked=""
+usage="usage: scripts/mac-shell/run.sh [--macs N] [--on macos-15] [--bare] [--release] [--priority N] [--no-preflight \"<why>\"] <script>… [ref]"
+macs="" ref="" kind=macos-26 bare=false priority=${ARBOR_MAC_PRIORITY:-3} unchecked="" configuration=${ARBOR_CONFIGURATION:-debug}
 scripts=()
 while [ $# -gt 0 ]; do
   case "$1" in
     --macs) macs=${2:?$usage}; shift ;;
     --on) kind=${2:?$usage}; shift ;;
+    --release) configuration=release ;;
     --bare) bare=true ;;
     --priority) priority=${2:?$usage}; shift ;;
     --no-preflight) unchecked=${2:?$usage}; shift ;;
@@ -78,6 +81,8 @@ done
 [ ${#scripts[@]} -gt 0 ] || { echo "$usage" >&2; exit 97; }
 case "$macs" in *[!0-9]* | 0) echo "run.sh: --macs takes a number, 1 or more" >&2; exit 97 ;; esac
 case "$priority" in 1 | 2 | 3) ;; *) echo "run.sh: --priority takes 1, 2 or 3" >&2; exit 97 ;; esac
+case "$configuration" in debug | release) ;; *) echo "run.sh: ARBOR_CONFIGURATION is debug or release, not '$configuration'" >&2; exit 97 ;; esac
+[ "$configuration" = debug ] || [ "$bare" = false ] || { echo "run.sh: --bare builds nothing, so there is no release build to drive" >&2; exit 97; }
 ref=${ref:-$(git rev-parse --abbrev-ref HEAD)}
 [ "$ref" != HEAD ] || { echo "run.sh: no branch is checked out; name one: run.sh <script> <ref>" >&2; exit 97; }
 limit=${MAC_SHELL_TIMEOUT:-2700}
@@ -134,6 +139,8 @@ slug() { printf '%s' "$1" | tr -c 'A-Za-z0-9_-' '-' | cut -c "1-$2"; }
 name=$(slug "$(basename "$script" .sh)" 16)
 [ ${#scripts[@]} -eq 1 ] || name=$(slug "$name" 13)-x${#scripts[@]}
 [ "$kind" = macos-26 ] || name=$(slug "$name" 9)-${kind#macos-}
+# A tag of its own: the same script on the other build is another question, and must not cancel this one.
+[ "$configuration" = debug ] || name=$(slug "$name" 12)-rel
 tag=${MAC_SHELL_TAG:-$(slug "$ref" 21).$name}
 
 # What Linux can say, it says first.
@@ -189,12 +196,15 @@ before=$(outputs)
 # whose title carries the tag.
 runs="repos/$repo/actions/workflows/mac-shell.yml/runs?event=workflow_dispatch&per_page=30"
 newest=$(api "$runs" --jq '.workflow_runs[0].id // 0') || fail "cannot list the workflow's runs"
+# Said only where it is asked for: GitHub refuses a start with an input the workflow does not know, and $home's may be an older one.
+other=()
+[ "$configuration" = debug ] || other=(-f "inputs[configuration]=$configuration")
 api -X POST "repos/$repo/actions/workflows/mac-shell.yml/dispatches" \
-  -f ref="$home" -f "inputs[ref]=$ref" -f "inputs[script]=${scripts[*]}" -f "inputs[tag]=$tag" \
+  -f ref="$home" -f "inputs[ref]=$ref" -f "inputs[script]=${scripts[*]}" -f "inputs[tag]=$tag" ${other[@]+"${other[@]}"} \
   -f "inputs[runner]=$kind" -F "inputs[bare]=$bare" -f "inputs[unchecked]=$(printf '%s' "$unchecked" | tr -c 'A-Za-z0-9 .,:_/-' ' ' | cut -c 1-80)" \
   -f "inputs[macs]=$([ "$macs" -eq 1 ] || echo "$shares" | sed 's/.*/"&"/' | paste -sd, - | sed 's/.*/[&]/')" >/dev/null \
   || fail "could not start the workflow of $home for $ref"
-echo "started ${scripts[*]} at $ref (${remote:0:7}), tag $tag$([ "$macs" -eq 1 ] || echo ", on $macs Macs")"
+echo "started ${scripts[*]} at $ref (${remote:0:7}), tag $tag$([ "$macs" -eq 1 ] || echo ", on $macs Macs")$([ "$configuration" = debug ] || echo ", the $configuration build")"
 # For whoever shares a look at the queue: there is one more waiting now. Costs no call.
 python3 scripts/mac-queue.py --repo "$repo" --started "$macs" --for "$ref" >/dev/null 2>&1
 
