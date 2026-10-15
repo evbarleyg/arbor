@@ -163,6 +163,7 @@ private let b = WindowID(102)
     #expect(nets(after: again, then: "launch").isEmpty)
     #expect(nets(after: again, then: "launch") { _ = $0.setFrame(self.rect(820, 300, 500, 400), of: b) }.contains("moved-at-launch"))
     // After a run that did not quit it has a name of its own, so that what is known of the one does not excuse the other.
+    #expect(nets(after: again + ["crash"], then: "launch") { _ = $0.setFrame(self.rect(820, 300, 500, 400), of: b) }.contains("moved-at-launch"), "nothing was running that could crash")
     let killed = oneDocked + ["crash"]
     #expect(nets(after: killed, then: "launch").isEmpty)
     #expect(nets(after: killed, then: "launch") { _ = $0.setFrame(self.rect(820, 300, 500, 400), of: b) }.contains("moved-at-launch-after-a-crash"))

@@ -172,6 +172,8 @@ func runSimulation() {
   var staleLayouts = 0
   var linesPrinted = 0
   var hasQuit = false
+  /// Who hears of the windows once the next process has started: not the controller itself, or a trace would record no event.
+  var whoHears: (any WindowSystemEvents)?
   var minimapsPrinted = 0
 
   for rawLine in lines {
@@ -228,14 +230,14 @@ func runSimulation() {
       watcher.printLines()
       // The process is gone, its timers with it. The next one is not started yet, and nobody hears what happens to the windows meanwhile.
       harness = successor(of: harness)
-      harness.system.events = nil
+      (whoHears, harness.system.events) = (harness.system.events, nil)
       hasQuit = true
     }
     let startsAgain = hasQuit && (words == ["relaunch"] || words == ["relaunch", "start"])
     if startsAgain {
       hasQuit = false
       // The step that is judged is the start (`begin`): the quit before it is an act of its own.
-      harness.system.events = harness.controller
+      (harness.system.events, whoHears) = (whoHears, nil)
       begin(harness)
       watcher = SimulatedWatcher(harness: harness)
       // The new process has stages of its own.

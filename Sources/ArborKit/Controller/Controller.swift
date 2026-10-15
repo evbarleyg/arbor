@@ -550,7 +550,7 @@ public final class Controller {
     Log.info("started: \(displays.count) display(s), \(managedWindowIDs.count) managed window(s)")
     letTheViewFollowTheKeyboardBeforeTheFirstLayout()
     letTheWindowWithTheKeyboardBe()
-    // Before the first window is taken: from here on the file must not say where Arbor left them.
+    // Before the first layout takes the windows: from here on the file must not say where Arbor left them.
     if !leftAt.isEmpty {
       saveNow()
       store.flush()

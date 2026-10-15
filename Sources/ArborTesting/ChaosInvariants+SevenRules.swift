@@ -167,7 +167,9 @@ extension ChaosRunner {
     // What Arbor learnt about sizes it learnt in a process that is gone.
     case .launch, .crash:
       seven.launchedAfterAQuit = action == .launch && seven.hasQuit
-      (seven.refusedLess, seven.refusedMore, seven.hasQuit) = ([], [], false)
+      (seven.refusedLess, seven.refusedMore) = ([], [])
+      // A `crash` while Arbor is not running ends nothing: it has still quit.
+      if action == .launch || wasRunningBefore || seven.pausedBefore { seven.hasQuit = false }
     // A native tab has the size of its group.
     case .openTab(let new, let front): if framesBefore[new] == nil, let size = seven.ownSizes[front] { seven.ownSizes[new] = size }
     case .selectTab(let new, let front): if let size = seven.ownSizes[front] { seven.ownSizes[new] = size }
