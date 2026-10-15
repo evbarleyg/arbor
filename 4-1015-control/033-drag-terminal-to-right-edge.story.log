@@ -1,0 +1,135 @@
+33 drag-terminal-to-right-edge: drags terminal by its title bar against the right edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:1422', 'drags': '724', 'moves': ',,', 'front': '724', 'own': '724'}
+ODD rule 3: terminal (w724) changed its size while it was being dragged
+
+01:46:42.951 SCREEN -- begin 33 drag-terminal-to-right-edge
+01:46:42.951 SCREEN -- text 33 drags terminal by its title bar against the right edge of the screen and lets go
+01:46:43.009 SCRIPT drag w724 from 1205,43 to 1599,450
+01:46:43.559 SCREEN the button is down 1205 43
+01:46:43.815 SCREEN terminal (w724) 812,31 800×784
+01:46:43.825 SCREEN terminal (w724) 839,44 800×784
+01:46:43.843 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 799 31 803 775
+01:46:43.844 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 799 31 803 775
+01:46:43.856 SCREEN terminal (w724) 839,44 803×775
+01:46:43.856 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 799 31 814 735
+01:46:43.857 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 799 31 814 735
+01:46:43.864 SCREEN terminal (w724) 839,44 814×735
+01:46:43.872 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 799 31 827 688
+01:46:43.872 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 799 31 827 688
+01:46:43.890 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 799 31 839 643
+01:46:43.891 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 799 31 839 643
+01:46:43.902 SCREEN terminal (w724) 839,44 839×643
+01:46:43.907 MACOS pid 73945 AXMoved w724 AXWindow/AXStandardWindow 839 44 849 606
+01:46:43.908 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 839 44 849 606
+01:46:43.908 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 839 44 849 606
+01:46:43.909 SCREEN terminal (w724) 804,44 839×643
+01:46:43.923 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 839 44 857 576
+01:46:43.923 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 839 44 857 576
+01:46:43.935 SCREEN terminal (w724) 795,44 857×576
+01:46:43.941 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 839 44 863 554
+01:46:43.941 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 839 44 863 554
+01:46:43.955 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 839 44 867 538
+01:46:43.956 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 839 44 867 538
+01:46:43.975 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 839 44 870 526
+01:46:43.976 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 839 44 870 526
+01:46:43.982 SCREEN terminal (w724) 788,44 870×526
+01:46:43.989 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 839 44 872 518
+01:46:44.006 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 839 44 874 512
+01:46:44.007 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 839 44 874 512
+01:46:44.024 MACOS pid 73945 AXMoved w724 AXWindow/AXStandardWindow 800 58 875 508
+01:46:44.025 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 800 58 875 508
+01:46:44.040 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 800 58 876 505
+01:46:44.055 SCREEN terminal (w724) 811,71 876×505
+01:46:44.055 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 800 58 876 503
+01:46:44.071 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 800 58 877 502
+01:46:44.071 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 800 58 877 502
+01:46:44.088 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 800 58 877 501
+01:46:44.105 SCREEN terminal (w724) 824,85 877×501
+01:46:44.119 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 800 58 877 500
+01:46:44.155 SCREEN terminal (w724) 837,98 877×500
+01:46:44.169 MACOS pid 73945 AXMoved w724 AXWindow/AXStandardWindow 837 98 877 500
+01:46:44.205 SCREEN terminal (w724) 850,112 877×500
+01:46:44.264 SCREEN terminal (w724) 863,125 877×500
+01:46:44.272 SCREEN terminal (w724) 876,139 877×500
+01:46:44.307 MACOS pid 73945 AXMoved w724 AXWindow/AXStandardWindow 876 139 877 500
+01:46:44.330 SCREEN terminal (w724) 889,153 877×500
+01:46:44.377 SCREEN terminal (w724) 903,166 877×500
+01:46:44.433 SCREEN terminal (w724) 916,180 877×500
+01:46:44.445 MACOS pid 73945 AXMoved w724 AXWindow/AXStandardWindow 916 180 877 500
+01:46:44.473 SCREEN terminal (w724) 929,193 877×500
+01:46:44.535 MACOS pid 73945 AXMoved w724 AXWindow/AXStandardWindow 929 193 877 500
+01:46:44.573 SCREEN terminal (w724) 942,207 877×500
+01:46:44.621 SCREEN terminal (w724) 955,220 877×500
+01:46:44.648 MACOS pid 73945 AXMoved w724 AXWindow/AXStandardWindow 955 220 877 500
+01:46:44.684 SCREEN terminal (w724) 968,234 877×500
+01:46:44.751 SCREEN terminal (w724) 981,248 877×500
+01:46:44.758 SCREEN terminal (w724) 995,261 877×500
+01:46:44.769 MACOS pid 73945 AXMoved w724 AXWindow/AXStandardWindow 995 261 877 500
+01:46:44.796 SCREEN terminal (w724) 1008,275 877×500
+01:46:44.868 MACOS pid 73945 AXMoved w724 AXWindow/AXStandardWindow 1008 275 877 500
+01:46:44.904 SCREEN terminal (w724) 1021,288 877×500
+01:46:44.964 SCREEN terminal (w724) 1034,302 877×500
+01:46:44.979 MACOS pid 73945 AXMoved w724 AXWindow/AXStandardWindow 1034 302 877 500
+01:46:45.033 SCREEN terminal (w724) 1047,315 877×500
+01:46:45.038 SCREEN terminal (w724) 1060,329 877×500
+01:46:45.079 SCREEN terminal (w724) 1073,343 877×500
+01:46:45.112 MACOS pid 73945 AXMoved w724 AXWindow/AXStandardWindow 1073 343 877 500
+01:46:45.208 SCREEN terminal (w724) 1086,356 877×500
+01:46:45.272 MACOS pid 73945 AXMoved w724 AXWindow/AXStandardWindow 1100 370 877 500
+01:46:45.278 SCREEN terminal (w724) 1100,370 877×500
+01:46:45.300 SCREEN terminal (w724) 1113,383 877×500
+01:46:45.377 SCREEN terminal (w724) 1126,397 877×500
+01:46:45.394 MACOS pid 73945 AXMoved w724 AXWindow/AXStandardWindow 1126 397 877 500
+01:46:45.433 SCREEN w805 of WindowManager 785,16 830×821
+01:46:45.433 SCREEN terminal (w724) 1139,410 877×500
+01:46:45.433 SCREEN w804 of WindowManager 785,16 830×821
+01:46:45.433 SCREEN front to back: w805 terminal w804 textedit preview safari notes calendar finder w740 mail settings
+01:46:45.524 MACOS pid 73945 AXMoved w724 AXWindow/AXStandardWindow 1139 410 877 500
+01:46:45.714 SCREEN terminal (w724) 1140,410 877×500
+01:46:45.765 SCREEN terminal (w724) 1139,410 877×500
+01:46:47.330 SCREEN the button is up 1599 450
+01:46:47.339 SCREEN terminal (w724) 1140,410 877×500
+01:46:47.339 SCREEN w805 of WindowManager left the screen
+01:46:47.339 SCREEN w804 of WindowManager left the screen
+01:46:47.339 SCREEN front to back: terminal textedit preview safari notes calendar finder w740 mail settings
+01:46:47.363 SCREEN terminal (w724) 1139,410 877×500
+01:46:47.373 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 1115 384 872 520
+01:46:47.373 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 1115 384 872 520
+01:46:47.390 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 1063 326 860 564
+01:46:47.390 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 1063 326 860 564
+01:46:47.404 SCREEN terminal (w724) 1063,326 860×564
+01:46:47.406 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 1007 264 848 611
+01:46:47.406 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 1007 264 848 611
+01:46:47.409 SCREEN terminal (w724) 1007,264 848×611
+01:46:47.420 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 956 208 836 654
+01:46:47.420 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 956 208 836 654
+01:46:47.437 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 915 161 827 689
+01:46:47.437 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 915 161 827 689
+01:46:47.457 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 882 126 819 716
+01:46:47.457 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 882 126 819 716
+01:46:47.469 SCREEN terminal (w724) 882,126 819×716
+01:46:47.472 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 858 99 814 736
+01:46:47.472 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 858 99 814 736
+01:46:47.476 SCREEN terminal (w724) 858,99 814×736
+01:46:47.489 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 841 80 810 751
+01:46:47.489 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 841 80 810 751
+01:46:47.502 SCREEN terminal (w724) 841,80 810×751
+01:46:47.506 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 828 66 807 761
+01:46:47.507 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 828 66 807 761
+01:46:47.522 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 819 56 805 769
+01:46:47.522 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 819 56 805 769
+01:46:47.538 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 813 49 804 774
+01:46:47.554 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 809 44 803 778
+01:46:47.568 SCREEN terminal (w724) 809,44 803×778
+01:46:47.572 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 806 41 802 780
+01:46:47.576 SCREEN terminal (w724) 806,41 802×780
+01:46:47.587 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 804 39 801 782
+01:46:47.607 SCREEN terminal (w724) 804,39 801×782
+01:46:47.608 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 802 37 801 783
+01:46:47.610 SCREEN terminal (w724) 802,37 801×783
+01:46:47.620 MACOS pid 73945 AXTitleChanged w724 AXWindow/AXStandardWindow 801 36 801 784
+01:46:47.620 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 801 36 801 784
+01:46:47.657 MACOS pid 73945 AXResized w724 AXWindow/AXStandardWindow 800 35 801 785
+01:46:47.686 SCREEN terminal (w724) 800,35 801×785
+01:46:48.757 SCREEN -- end 33 act=drag-where-macos-tiles settled=quiet:1422 drags=724 moves=,, front=724 own=724
+01:46:48.935 SCRIPT == 34 dock-icon-settings

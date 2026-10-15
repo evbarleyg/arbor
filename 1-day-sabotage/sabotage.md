@@ -1,0 +1,43 @@
+| # | Step | Offence committed | Reported | |
+|---|---|---|---|---|
+| 15 | honest-switch | none | nothing | ✔ |
+| 16 | honest-click | none | nothing | ✔ |
+| 17 | honest-move | none | nothing | ✔ |
+| 18 | honest-resize | none | nothing | ✔ |
+| 19 | moved-twice | jolt | jolt | ✔ |
+| 20 | elsewhere-first | jolt | jolt | ✔ |
+| 21 | somebody-else | moved-unasked | moved-unasked | ✔ |
+| 22 | honest-park | none | nothing | ✔ |
+| 23 | flashes | flash | flash | ✔ |
+| 24 | honest-return | none | nothing | ✔ |
+| 25 | covered | behind | behind | ✔ |
+| 26 | honest-click-2 | none | nothing | ✔ |
+| 27 | honest-minimize | none | nothing | ✔ |
+| 28 | keyboard-taken | focus | focus | ✔ |
+| 29 | honest-click-3 | none | nothing | ✔ |
+| 30 | comes-forward | focus | focus | ✔ |
+| 31 | honest-click-4 | none | nothing | ✔ |
+| 32 | honest-drag | none | nothing | ✔ |
+| 33 | out-of-the-hand | pulled | pulled | ✔ |
+| 34 | dropped-elsewhere | stuck | stuck | ✔ |
+| 35 | honest-move-2 | none | nothing | ✔ |
+| 36 | answers-late | slow | slow | ✔ |
+| 37 | honest-idle | none | nothing | ✔ |
+| 38 | wrong-size | size-lost | size-lost | ✔ |
+| 39 | honest-give-back | none | nothing | ✔ |
+| 40 | left-out | lost | lost | ✔ |
+| 41 | honest-return-2 | none | nothing | ✔ |
+| 42 | vanishes | lost | lost | ✔ |
+| 43 | honest-click-5 | none | nothing | ✔ |
+| 44 | under-the-stage | none | nothing | ✔ |
+| 45 | under-no-stage | jolt | jolt | ✔ |
+| 46 | held-back | input-held | input-held | ✔ |
+| 47 | both-previews | fought | fought | ✔ |
+| 48 | honest-drag-back | none | nothing | ✔ |
+| 49 | busy-doing-nothing | busy | busy | ✔ |
+| 50 | honest-idle-2 | none | nothing | ✔ |
+| 51 | stays-behind | left-behind | left-behind | ✔ |
+| 52 | ends-unasked | crash | crash | ✔ |
+| 53 | tells | told | told | ✔ |
+
+16 kinds of offence committed: behind, busy, crash, flash, focus, fought, input-held, jolt, left-behind, lost, moved-unasked, pulled, size-lost, slow, stuck, told. Every one was reported by its own detector alone.

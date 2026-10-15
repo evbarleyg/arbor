@@ -1,0 +1,49 @@
+76 view-out: presses ⌃⌥↑
+expected: {'act': 'view', 'settled': 'quiet:873', 'moves': 'any', 'floating': '469', 'docked': '452,455,466,472,476,477,479,481'}
+ODD rule 3: the last window came to rest 754 ms after the key or the button
+
+01:41:15.274 SCREEN -- begin 76 view-out
+01:41:15.274 SCREEN -- text 76 presses ⌃⌥↑
+01:41:15.499 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+01:41:15.509 MACOS pid 44587 AXMoved w466 AXWindow/AXStandardWindow 12 562 295 248
+01:41:15.514 SCREEN w620 of Arbor 0,0 1600×900 (level 4)
+01:41:15.514 SCREEN textedit (w466) 12,562 295×248
+01:41:15.542 SCREEN calendar (w476) 12,307 871×503
+01:41:15.565 MACOS pid 45225 AXResized w476 AXWindow/AXStandardWindow 625 307 871 503
+01:41:15.572 SCREEN calendar (w476) 625,307 871×503
+01:41:15.572 MACOS pid 45225 AXMoved w476 AXWindow/AXStandardWindow 625 307 871 503
+01:41:15.657 MACOS pid 45690 AXResized w481 AXWindow/AXStandardWindow 625 43 871 252
+01:41:15.658 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 625 43 871 252
+01:41:15.663 INFO  out: stepped out to everything
+01:41:15.664 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Too small to show: click the tile to zoom in · ⌃⌥G goes there too
+01:41:15.671 SCREEN w483 of Mail 826,95 470×416
+01:41:15.671 SCREEN mail (w481) 625,43 871×252
+01:41:15.746 SCREEN w596 of Arbor 616,298 889×521
+01:41:15.746 SCREEN w622 of Arbor 12,43 295×248
+01:41:15.746 SCREEN w624 of Arbor 12,303 295×247
+01:41:15.746 SCREEN w625 of Arbor 319,43 294×248
+01:41:15.746 SCREEN w626 of Arbor 319,303 294×247
+01:41:15.746 SCREEN w623 of Arbor 319,562 294×248
+01:41:15.746 SCREEN w621 of Arbor 1508,43 80×767
+01:41:15.746 SCREEN w630 of Arbor 12,291 295×12
+01:41:15.746 SCREEN w631 of Arbor 12,550 295×12
+01:41:15.746 SCREEN w595 of Arbor 319,291 294×12
+01:41:15.746 SCREEN w629 of Arbor 319,550 294×12
+01:41:15.746 SCREEN w628 of Arbor 625,295 871×12
+01:41:15.746 SCREEN w627 of Arbor 307,43 12×767
+01:41:15.746 SCREEN w594 of Arbor 613,43 12×767
+01:41:15.746 SCREEN w632 of Arbor 1496,43 12×767
+01:41:15.746 SCREEN front to back: w596 calendar terminal safari preview textedit w483 mail notes settings finder w622 w624 w625 w626 w623 w621 w630 w631 w595 w629 w628 w627 w594 w632
+01:41:15.750 DEBUG raised w469, which stays in view
+01:41:15.752 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:41:15.753 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:41:16.005 DEBUG raised w469, which stays in view
+01:41:16.005 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:41:16.006 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:41:16.202 DEBUG stage down
+01:41:16.244 SCREEN w620 of Arbor left the screen
+01:41:16.290 DEBUG raised w469, which stays in view
+01:41:16.293 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:41:16.294 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:41:16.950 SCREEN -- end 76 act=view settled=quiet:873 moves=any floating=469 docked=452,455,466,472,476,477,479,481
+01:41:17.801 SCRIPT == 77 drag-gap-beside-textedit

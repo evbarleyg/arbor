@@ -1,0 +1,54 @@
+79 hide-finder: presses ⌘H
+expected: {'act': 'open-close', 'settled': 'quiet:1077', 'moves': '153,156,167,153,156,167,', 'leaves': '153,', 'floating': '170,171,172,175,177,180', 'docked': '153,156,167'}
+FAIL rule 2: terminal (w170) a floating window, moved, and the step did not name it
+FAIL rule 2: notes (w171) a floating window, moved, and the step did not name it
+FAIL rule 2: calendar (w172) a floating window, moved, and the step did not name it
+FAIL rule 2: settings (w175) a floating window, moved, and the step did not name it
+FAIL rule 2: preview (w177) a floating window, moved, and the step did not name it
+FAIL rule 2: mail (w180) a floating window, moved, and the step did not name it
+ODD rule 2: w182 of Mail moved along with a window of its app
+
+01:32:24.624 SCREEN -- begin 79 hide-finder
+01:32:24.624 SCREEN -- text 79 presses ⌘H
+01:32:24.831 MACOS pid 15700 AXApplicationHidden
+01:32:24.831 MACOS workspace didActivate pid 16910 com.apple.Safari regular
+01:32:24.832 MACOS workspace didDeactivate pid 15700 com.apple.finder regular
+01:32:24.832 MACOS workspace didHide pid 15700 com.apple.finder regular
+01:32:24.832 MACOS pid 16910 AXApplicationActivated
+01:32:24.832 MACOS pid 15700 AXApplicationDeactivated
+01:32:24.833 DEBUG focus is on w156
+01:32:24.836 SCREEN safari (w156) 336,43 574×767
+01:32:24.836 SCREEN finder (w153) left the screen
+01:32:24.836 SCREEN front to back: safari w253 calendar terminal w182 mail preview settings notes textedit w202 w260 w256 w266 w261
+01:32:24.839 SCREEN in front: process 16910 com.apple.Safari
+01:32:24.846 MACOS pid 16910 AXMoved w156 AXWindow/AXStandardWindow 336 43 574 767
+01:32:24.858 SCREEN textedit (w167) 1203,43 397×767
+01:32:24.860 MACOS pid 16993 AXResized w167 AXWindow/AXStandardWindow 922 43 666 767
+01:32:24.860 MACOS pid 16993 AXMoved w167 AXWindow/AXStandardWindow 922 43 666 767
+01:32:24.861 MACOS pid 16993 AXResized w167 AXWindow/AXStandardWindow 922 43 666 767
+01:32:24.876 SCREEN textedit (w167) 922,43 666×767
+01:32:24.880 MACOS pid 17117 AXTitleChanged w170 AXWindow/AXStandardWindow 0 238 324 499
+01:32:24.880 MACOS pid 17117 AXResized w170 AXWindow/AXStandardWindow 0 238 324 499
+01:32:24.880 MACOS pid 17117 AXMoved w170 AXWindow/AXStandardWindow 0 238 324 499
+01:32:24.907 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow 0 105 709 660
+01:32:24.908 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 0 115 680 600
+01:32:24.909 SCREEN calendar (w172) 0,115 680×600
+01:32:24.909 SCREEN terminal (w170) 0,238 324×499
+01:32:24.909 SCREEN notes (w171) 0,105 709×660
+01:32:24.909 MACOS pid 17595 AXMoved w175 AXWindow/AXStandardWindow 0 85 723 625
+01:32:24.909 MACOS pid 17664 AXMoved w177 AXWindow/AXStandardWindow 0 35 708 424
+01:32:24.913 MACOS pid 18068 AXMoved w180 AXWindow/AXStandardWindow 0 72 871 630
+01:32:24.919 SCREEN w182 of Mail 201,179 470×416
+01:32:24.919 SCREEN mail (w180) 0,72 871×630
+01:32:24.919 SCREEN preview (w177) 0,35 708×424
+01:32:24.919 SCREEN settings (w175) 0,85 723×625
+01:32:24.924 DEBUG w156 has the keyboard
+01:32:24.972 SCREEN w253 of Arbor 327,34 592×785
+01:32:24.972 SCREEN w266 of Arbor 324,43 12×767
+01:32:24.972 SCREEN w261 of Arbor 910,43 12×767
+01:32:24.972 SCREEN w256 of Arbor left the screen
+01:32:24.972 SCREEN front to back: w253 safari calendar terminal w182 mail preview settings notes textedit w202 w260 w266 w261
+01:32:25.117 SCREEN w260 of Arbor left the screen
+01:32:25.117 SCREEN front to back: w253 safari calendar terminal w182 mail preview settings notes textedit w202 w266 w261
+01:32:26.287 SCREEN -- end 79 act=open-close settled=quiet:1077 moves=153,156,167,153,156,167, leaves=153, floating=170,171,172,175,177,180 docked=153,156,167
+01:32:26.536 SCRIPT == 80 unhide-finder

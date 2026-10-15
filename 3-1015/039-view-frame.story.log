@@ -1,0 +1,46 @@
+39 view-frame: presses ⌃⌥↩
+expected: {'act': 'view', 'settled': 'quiet:1045', 'moves': 'any', 'front': '472', 'floating': '452,466,472,476,477,479,481', 'docked': '455,469'}
+FAIL rule -: w479 is in view for Arbor but only 88% of it is on a display: -84,398 708×423
+
+01:38:57.064 SCREEN -- begin 39 view-frame
+01:38:57.064 SCREEN -- text 39 presses ⌃⌥↩
+01:38:57.200 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+01:38:57.201 SCREEN w518 of Arbor 0,0 1600×900 (level 4)
+01:38:57.208 MACOS pid 44472 AXMoved w455 AXWindow/AXStandardWindow 1599 770 782 378
+01:38:57.213 MACOS pid 44644 AXMoved w469 AXWindow/AXStandardWindow 1599 790 779 769
+01:38:57.222 SCREEN terminal (w469) 1599,790 779×769
+01:38:57.222 SCREEN safari (w455) 1599,770 782×378
+01:38:57.251 SCREEN finder (w452) 340,120 794×389
+01:38:57.270 MACOS pid 43355 AXMoved w452 AXWindow/AXStandardWindow 340 120 920 436
+01:38:57.272 SCREEN finder (w452) 340,120 920×436
+01:38:57.272 MACOS pid 43355 AXResized w452 AXWindow/AXStandardWindow 340 120 920 436
+01:38:57.284 SCREEN notes (w472) 0,31 794×389
+01:38:57.326 MACOS pid 44713 AXMoved w472 AXWindow/AXStandardWindow 0 31 800 790
+01:38:57.327 MACOS pid 44713 AXResized w472 AXWindow/AXStandardWindow 0 31 800 790
+01:38:57.334 SCREEN notes (w472) 0,31 800×790
+01:38:57.361 SCREEN settings (w477) 437,85 723×470
+01:38:57.368 MACOS pid 45417 AXMoved w477 AXWindow/AXStandardWindow 437 85 723 470
+01:38:57.369 MACOS pid 45417 AXResized w477 AXWindow/AXStandardWindow 437 85 723 625
+01:38:57.396 MACOS pid 45539 AXMoved w479 AXWindow/AXStandardWindow -84 398 708 423
+01:38:57.397 MACOS pid 45539 AXResized w479 AXWindow/AXStandardWindow -84 398 708 423
+01:38:57.405 SCREEN settings (w477) 437,85 723×625
+01:38:57.405 SCREEN preview (w479) -84,398 708×423
+01:38:57.430 SCREEN w483 of Mail 441,124 470×416
+01:38:57.430 SCREEN mail (w481) 240,72 871×389
+01:38:57.513 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 240 72 1120 630
+01:38:57.514 MACOS pid 45690 AXResized w481 AXWindow/AXStandardWindow 240 72 1120 630
+01:38:57.526 INFO  zoom: showing the Desktop, where w472 floats
+01:38:57.528 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Your other windows are out of view, not closed · ⌃⌥Space shows everything
+01:38:57.552 SCREEN w511 of Arbor 512,728 576×38 (level 6)
+01:38:57.552 SCREEN w520 of Arbor -6,25 815×803
+01:38:57.552 SCREEN w483 of Mail 565,179 470×416
+01:38:57.552 SCREEN mail (w481) 240,72 1120×630
+01:38:57.552 SCREEN w519 of Arbor left the screen
+01:38:57.552 SCREEN w551 of Arbor left the screen
+01:38:57.552 SCREEN front to back: w520 notes calendar terminal settings safari preview finder textedit w498 w483 mail
+01:38:57.775 SCREEN w521 of Arbor left the screen
+01:38:57.858 DEBUG stage down
+01:38:57.900 SCREEN w518 of Arbor left the screen
+01:39:00.292 SCREEN -- finding 39 - FAIL w479 is in view for Arbor but only 88% of it is on a display: -84,398 708×423
+01:39:00.292 SCREEN -- end 39 act=view settled=quiet:1045 moves=any front=472 floating=452,466,472,476,477,479,481 docked=455,469
+01:39:00.607 SCRIPT == 40 view-in

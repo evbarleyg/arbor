@@ -1,0 +1,41 @@
+62 launch: starts Arbor
+expected: {'act': 'quit-and-start', 'settled': 'quiet:1003', 'moves': ',455,466,', 'everything': '1', 'floating': '452,469,472,476,477,479,481', 'docked': '455,466'}
+FAIL rule -: w479 is in view for Arbor but only 88% of it is on a display: -84,398 708×423
+
+01:40:25.249 SCREEN -- begin 62 launch
+01:40:25.249 SCREEN -- text 62 starts Arbor
+01:40:25.343 INFO  Arbor dev starting, pid 60351, home /tmp/arbor-shell.hpnR3l/home
+01:40:25.344 INFO  control socket at /tmp/arbor-shell.hpnR3l/home/arbor.sock
+01:40:25.388 INFO  keyboard layout: U.S.
+01:40:25.441 INFO  started: 1 display(s), 9 managed window(s)
+01:40:25.464 SCREEN safari (w455) 138,31 1462×247
+01:40:25.492 MACOS pid 44472 AXResized w455 AXWindow/AXStandardWindow 12 303 1576 247
+01:40:25.493 MACOS pid 44472 AXMoved w455 AXWindow/AXStandardWindow 12 303 1576 247
+01:40:25.493 MACOS pid 44472 AXResized w455 AXWindow/AXStandardWindow 12 303 1576 247
+01:40:25.502 MACOS pid 44587 AXResized w466 AXWindow/AXStandardWindow 12 43 1576 248
+01:40:25.502 MACOS pid 44587 AXMoved w466 AXWindow/AXStandardWindow 12 43 1576 248
+01:40:25.516 SCREEN safari (w455) 12,303 1576×247
+01:40:25.516 SCREEN textedit (w466) 12,43 1576×248
+01:40:25.528 INFO  registered 52 shortcuts in 1241 µs
+01:40:25.529 DEBUG w479 has the keyboard
+01:40:25.533 INFO  pinch event tap installed
+01:40:25.533 INFO  scroll event tap installed
+01:40:25.533 INFO  rectangle event taps installed
+01:40:25.544 ERROR setup: Desktop & Dock settings: as they stand, macOS reacts to the same clicks and drags as Arbor. In System Settings → Desktop & Dock: | “Click wallpaper to reveal desktop”: choose “Only in Stage Manager”. Otherwise a click on the Desktop sends every window away | “Drag windows to left or right edge of screen to tile”: switch it off | “Drag windows to menu bar to fill screen”: switch it off | “Hold ⌥ key while dragging windows to tile”: switch it off
+01:40:25.556 DEBUG pinch event tap installed
+01:40:25.556 DEBUG scroll event tap installed
+01:40:25.556 DEBUG rectangle event tap installed
+01:40:25.556 DEBUG rectangle drag event tap installed
+01:40:25.560 DEBUG raised w469, which stays in view
+01:40:25.560 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:25.561 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:25.566 SCREEN w596 of Arbor -90,389 723×439
+01:40:25.566 SCREEN w594 of Arbor 12,291 1576×12
+01:40:25.566 SCREEN w595 of Arbor 12,550 1576×12
+01:40:25.566 SCREEN w597 of Arbor 0,31 1600×791 (level -2147483602)
+01:40:25.566 SCREEN front to back: w596 preview terminal notes safari settings textedit calendar finder w483 mail w594 w595
+01:40:25.619 SCREEN -- arbor 60351
+01:40:25.636 INFO  trace day-2: recording to /tmp/arbor-shell.hpnR3l/home/traces/2026-10-15-014025-day-2.jsonl
+01:40:28.381 SCREEN -- finding 62 - FAIL w479 is in view for Arbor but only 88% of it is on a display: -84,398 708×423
+01:40:28.382 SCREEN -- end 62 act=quit-and-start settled=quiet:1003 moves=,455,466, everything=1 floating=452,469,472,476,477,479,481 docked=455,466
+01:40:28.660 SCRIPT == 63 hold

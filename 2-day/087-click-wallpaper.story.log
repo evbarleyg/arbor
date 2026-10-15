@@ -1,0 +1,38 @@
+87 click-wallpaper: clicks on the wallpaper
+expected: {'act': 'macos-own', 'settled': 'quiet:449', 'moves': 'any', 'leaves': 'any', 'floating': '170,171,172,175,177,180,335', 'docked': '153,156'}
+FAIL rule 6: the button came up, and the apps heard of it 165 ms later
+
+01:32:52.276 SCREEN -- begin 87 click-wallpaper
+01:32:52.276 SCREEN -- text 87 clicks on the wallpaper
+01:32:52.734 SCREEN the button is down 560 780
+01:32:52.785 MACOS pid 15700 AXApplicationActivated
+01:32:52.790 MACOS pid 15700 AXFocusedWindowChanged
+01:32:52.790 MACOS pid 15700 AXMainWindowChanged
+01:32:52.987 SCREEN (nothing was seen for 170 ms)
+01:32:52.987 SCREEN w253 of Arbor 1588,-10 592×785
+01:32:52.987 SCREEN safari (w156) 1588,-1 574×767
+01:32:52.987 SCREEN textedit (w335) 432,-397 477×439
+01:32:52.987 SCREEN finder (w153) -489,8 501×767
+01:32:52.987 SCREEN calendar (w172) -75,-558 680×600
+01:32:52.987 SCREEN terminal (w170) -466,858 478×499
+01:32:52.987 SCREEN w182 of Mail 221,-481 470×416
+01:32:52.987 SCREEN mail (w180) 20,-588 871×630
+01:32:52.987 SCREEN preview (w177) 339,-382 708×424
+01:32:52.987 SCREEN settings (w175) 41,-583 723×625
+01:32:52.987 SCREEN notes (w171) -470,-618 709×660
+01:32:52.987 SCREEN w202 of Arbor 520,-392 560×434
+01:32:52.987 SCREEN w256 of Arbor 0,-27 12×767
+01:32:52.987 SCREEN w266 of Arbor 1588,-65 12×767
+01:32:52.987 SCREEN w254 of Arbor 0,-749 1600×791 (level -2147483602)
+01:32:52.987 SCREEN the button is up 560 780
+01:32:52.987 SCREEN in front: process 15700 com.apple.finder
+01:32:52.993 MACOS pid 16910 AXApplicationDeactivated
+01:32:53.019 MACOS workspace didActivate pid 15700 com.apple.finder regular
+01:32:53.020 MACOS workspace didDeactivate pid 16910 com.apple.Safari regular
+01:32:53.106 SCREEN w253 of Arbor left the screen
+01:32:53.106 SCREEN front to back: safari textedit finder calendar terminal w182 mail preview settings notes w202 w256 w266
+01:32:53.555 SCREEN w375 of WindowManagerShowDesktopEducati 302,41 388×146
+01:32:53.555 SCREEN front to back: safari w375 textedit finder calendar terminal w182 mail preview settings notes w202 w256 w266
+01:32:53.615 SCREEN w375 of WindowManagerShowDesktopEducati 300,40 392×148
+01:32:54.718 SCREEN -- end 87 act=macos-own settled=quiet:449 moves=any leaves=any floating=170,171,172,175,177,180,335 docked=153,156
+01:32:54.985 SCRIPT == 88 click-wallpaper-again

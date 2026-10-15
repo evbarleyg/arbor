@@ -1,0 +1,93 @@
+98 drag-calendar-by: drags calendar, which floats, by its title bar 0 across and 118 down, and clicks there 0.3 s after letting go
+expected: {'act': 'drag', 'settled': 'quiet:939', 'drags': '172', 'front': '172', 'own': '172', 'floating': '170,171,172,175,177,180,335', 'docked': '153,156'}
+ODD rule 3: calendar (w172) changed its size while it was being dragged
+
+01:33:39.351 SCREEN -- begin 98 drag-calendar-by
+01:33:39.351 SCREEN -- text 98 drags calendar, which floats, by its title bar 0 across and 118 down, and clicks there 0.3 s after letting go
+01:33:39.404 SCRIPT drag w172 from 672,43 to 672,161
+01:33:40.007 SCREEN front to back: calendar w253 notes finder safari textedit terminal w182 mail preview settings w202 w256 w266
+01:33:40.007 SCREEN the button is down 672 43
+01:33:40.172 SCREEN calendar (w172) 0,34 1600×791
+01:33:40.235 DEBUG w172 is being dragged
+01:33:40.236 DEBUG drag of w172: on float
+01:33:40.255 SCREEN calendar (w172) 0,42 1600×791
+01:33:40.297 SCREEN calendar (w172) 7,38 1582×788
+01:33:40.305 SCREEN calendar (w172) 121,38 1311×731
+01:33:40.308 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 0 38 1165 701
+01:33:40.308 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 0 38 1165 701
+01:33:40.308 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 0 38 1165 701
+01:33:40.309 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 0 38 1165 701
+01:33:40.309 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 0 38 1165 701
+01:33:40.321 SCREEN calendar (w172) 182,38 1165×701
+01:33:40.321 SCREEN w253 of Arbor left the screen
+01:33:40.321 SCREEN front to back: calendar notes finder safari textedit terminal w182 mail preview settings w202 w256 w266
+01:33:40.325 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 0 38 1041 675
+01:33:40.344 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 0 38 942 655
+01:33:40.358 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 0 38 867 639
+01:33:40.378 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 0 38 812 628
+01:33:40.388 SCREEN calendar (w172) 330,46 812×628
+01:33:40.394 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 276 42 772 620
+01:33:40.394 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 276 42 772 620
+01:33:40.410 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 276 42 744 614
+01:33:40.420 SCREEN calendar (w172) 359,46 744×614
+01:33:40.426 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 276 42 724 610
+01:33:40.442 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 276 42 710 607
+01:33:40.462 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 276 42 701 605
+01:33:40.463 SCREEN calendar (w172) 377,46 701×605
+01:33:40.474 SCREEN calendar (w172) 377,50 701×605
+01:33:40.476 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 276 42 694 603
+01:33:40.487 SCREEN calendar (w172) 380,50 694×603
+01:33:40.493 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 276 42 690 602
+01:33:40.509 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 380 54 687 602
+01:33:40.510 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 380 54 687 602
+01:33:40.523 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 380 54 685 601
+01:33:40.538 SCREEN calendar (w172) 384,54 685×601
+01:33:40.541 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 380 54 683 601
+01:33:40.556 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 380 54 682 601
+01:33:40.590 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 380 54 681 601
+01:33:40.592 SCREEN calendar (w172) 385,58 681×601
+01:33:40.603 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 385 58 681 601
+01:33:40.689 SCREEN calendar (w172) 385,62 681×601
+01:33:40.697 SCREEN calendar (w172) 385,66 681×601
+01:33:40.740 SCREEN calendar (w172) 385,70 681×601
+01:33:40.771 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 385 74 681 601
+01:33:40.799 SCREEN calendar (w172) 385,74 681×601
+01:33:40.863 SCREEN calendar (w172) 385,78 681×601
+01:33:40.881 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 385 78 681 601
+01:33:40.940 SCREEN calendar (w172) 385,86 681×601
+01:33:40.947 SCREEN calendar (w172) 385,90 681×601
+01:33:40.978 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 385 90 681 601
+01:33:41.035 SCREEN calendar (w172) 385,93 681×601
+01:33:41.145 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 385 97 681 601
+01:33:41.183 SCREEN calendar (w172) 385,101 681×601
+01:33:41.249 SCREEN calendar (w172) 385,105 681×601
+01:33:41.264 SCREEN calendar (w172) 385,109 681×601
+01:33:41.268 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 385 105 681 601
+01:33:41.319 SCREEN calendar (w172) 385,113 681×601
+01:33:41.372 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 385 113 681 601
+01:33:41.459 SCREEN calendar (w172) 385,117 681×601
+01:33:41.467 SCREEN calendar (w172) 385,121 681×601
+01:33:41.520 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 385 121 681 601
+01:33:41.593 SCREEN calendar (w172) 385,125 681×601
+01:33:41.655 SCREEN calendar (w172) 385,129 681×601
+01:33:41.679 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 385 129 681 601
+01:33:41.774 SCREEN calendar (w172) 385,133 681×601
+01:33:41.781 SCREEN calendar (w172) 385,137 681×601
+01:33:41.840 SCREEN calendar (w172) 385,141 681×601
+01:33:41.847 SCREEN calendar (w172) 385,145 681×601
+01:33:41.848 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 385 141 681 601
+01:33:41.954 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 385 145 681 601
+01:33:42.155 SCREEN calendar (w172) 386,145 681×601
+01:33:42.221 SCREEN calendar (w172) 385,145 681×601
+01:33:42.936 SCREEN the button is up 672 161
+01:33:42.939 INFO  dropped w172 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+01:33:42.944 SCREEN calendar (w172) 386,145 681×601
+01:33:42.989 SCREEN w253 of Arbor 376,136 699×619
+01:33:42.989 SCREEN calendar (w172) 385,145 681×601
+01:33:42.989 SCREEN front to back: w253 calendar notes finder safari textedit terminal w182 mail preview settings w202 w256 w266
+01:33:43.731 SCREEN front to back: calendar w253 notes finder safari textedit terminal w182 mail preview settings w202 w256 w266
+01:33:43.731 SCREEN the button is down 672 161
+01:33:43.771 SCREEN front to back: w253 calendar notes finder safari textedit terminal w182 mail preview settings w202 w256 w266
+01:33:43.771 SCREEN the button is up 672 161
+01:33:44.872 SCREEN -- end 98 act=drag settled=quiet:939 drags=172 front=172 own=172 floating=170,171,172,175,177,180,335 docked=153,156
+01:33:45.111 SCRIPT == 99 view-all

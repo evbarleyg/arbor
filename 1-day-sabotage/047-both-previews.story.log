@@ -1,0 +1,96 @@
+47 both-previews: OFFENCE: a window is dragged against the menu bar, and a drop preview comes up beside macOS's own
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:1417', 'drags': '45', 'own': '45', 'offence': 'fought', 'floating': '', 'docked': ''}
+FAIL rule 1: textedit (w45) macOS's tiling preview and Arbor's drop preview were up at the same time
+
+01:27:11.693 SCREEN -- begin 47 both-previews
+01:27:11.693 SCREEN -- text 47 OFFENCE: a window is dragged against the menu bar, and a drop preview comes up beside macOS's own
+01:27:11.753 SCRIPT drag w45 from 385,91 to 800,0
+01:27:12.313 SCREEN the button is down 385 91
+01:27:12.487 SCREEN textedit (w45) 132,75 520×380
+01:27:12.587 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 146 72 520 380
+01:27:12.616 SCREEN textedit (w45) 146,72 520×380
+01:27:12.680 SCREEN textedit (w45) 160,69 520×380
+01:27:12.770 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 174 66 520 380
+01:27:12.771 SCREEN textedit (w45) 174,66 520×380
+01:27:12.805 SCREEN textedit (w45) 188,63 520×380
+01:27:12.857 SCREEN textedit (w45) 202,60 520×380
+01:27:12.884 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 215 57 520 380
+01:27:12.907 SCREEN textedit (w45) 215,57 520×380
+01:27:12.966 SCREEN textedit (w45) 229,54 520×380
+01:27:13.036 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 243 51 520 380
+01:27:13.038 SCREEN textedit (w45) 243,51 520×380
+01:27:13.079 SCREEN textedit (w45) 257,48 520×380
+01:27:13.150 SCREEN textedit (w45) 271,45 520×380
+01:27:13.179 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 271 45 520 380
+01:27:13.223 SCREEN textedit (w45) 285,42 520×380
+01:27:13.273 SCREEN textedit (w45) 298,39 520×380
+01:27:13.315 SCREEN textedit (w45) 312,36 520×380
+01:27:13.320 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 312 36 520 380
+01:27:13.417 SCREEN textedit (w45) 326,33 520×380
+01:27:13.482 SCREEN textedit (w45) 340,31 520×380
+01:27:13.493 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 340 31 520 380
+01:27:13.539 SCREEN textedit (w45) 354,31 520×380
+01:27:13.627 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 368 31 520 380
+01:27:13.641 SCREEN textedit (w45) 368,31 520×380
+01:27:13.648 SCREEN textedit (w45) 381,31 520×380
+01:27:13.690 SCREEN textedit (w45) 395,31 520×380
+01:27:13.746 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 395 31 520 380
+01:27:13.809 SCREEN textedit (w45) 409,31 520×380
+01:27:13.861 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 423 31 520 380
+01:27:13.871 SCREEN textedit (w45) 423,31 520×380
+01:27:13.901 SCREEN textedit (w45) 437,31 520×380
+01:27:14.002 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 451 31 520 380
+01:27:14.018 SCREEN textedit (w45) 451,31 520×380
+01:27:14.021 SCREEN textedit (w45) 464,31 520×380
+01:27:14.116 SCREEN textedit (w45) 478,31 520×380
+01:27:14.123 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 478 31 520 380
+01:27:14.189 SCREEN textedit (w45) 492,31 520×380
+01:27:14.271 SCREEN textedit (w45) 506,31 520×380
+01:27:14.275 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 506 31 520 380
+01:27:14.394 SCREEN textedit (w45) 534,31 520×380
+01:27:14.456 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 534 31 520 380
+01:27:14.664 SCREEN (nothing was seen for 122 ms)
+01:27:14.664 SCREEN w125 of WindowManager -15,16 1630×821
+01:27:14.664 SCREEN textedit (w45) 535,31 520×380
+01:27:14.664 SCREEN w124 of WindowManager -15,16 1630×821
+01:27:14.664 SCREEN front to back: w125 textedit w124 preview finder
+01:27:15.041 SCREEN (nothing was seen for 377 ms)
+01:27:15.041 SCREEN textedit (w45) 534,31 520×380
+01:27:15.062 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 535 31 520 380
+01:27:15.190 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 534 31 520 380
+01:27:16.587 SCREEN w126 of Arbor 12,43 1576×400 (level 3)
+01:27:17.222 SCREEN the button is up 800 0
+01:27:17.231 SCREEN w124 of WindowManager left the screen
+01:27:17.231 SCREEN w125 of WindowManager left the screen
+01:27:17.231 SCREEN front to back: textedit preview finder
+01:27:17.259 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 498 31 592 408
+01:27:17.276 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 417 31 757 470
+01:27:17.280 SCREEN textedit (w45) 498,31 592×408
+01:27:17.280 SCREEN w126 of Arbor left the screen
+01:27:17.289 SCREEN textedit (w45) 417,31 757×470
+01:27:17.289 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 327 31 937 539
+01:27:17.308 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 247 31 1099 601
+01:27:17.321 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 182 31 1232 651
+01:27:17.338 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 131 31 1335 690
+01:27:17.351 SCREEN textedit (w45) 131,31 1335×690
+01:27:17.355 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 93 31 1412 720
+01:27:17.373 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 65 31 1468 741
+01:27:17.392 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 45 31 1509 757
+01:27:17.406 SCREEN textedit (w45) 45,31 1509×757
+01:27:17.406 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 31 31 1537 767
+01:27:17.422 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 21 31 1557 775
+01:27:17.438 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 14 31 1571 780
+01:27:17.454 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 9 31 1581 784
+01:27:17.471 SCREEN textedit (w45) 9,31 1581×784
+01:27:17.476 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 6 31 1587 786
+01:27:17.489 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 4 31 1591 788
+01:27:17.507 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 2 31 1594 789
+01:27:17.521 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 1 31 1596 790
+01:27:17.534 SCREEN textedit (w45) 1,31 1596×790
+01:27:17.537 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 1 31 1598 790
+01:27:17.559 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 0 31 1599 791
+01:27:17.584 SCREEN textedit (w45) 0,31 1599×791
+01:27:17.590 MACOS pid 5290 AXResized w45 AXWindow/AXStandardWindow 0 31 1600 791
+01:27:17.595 SCREEN textedit (w45) 0,31 1600×791
+01:27:18.694 SCREEN -- end 47 act=drag-where-macos-tiles settled=quiet:1417 drags=45 own=45 offence=fought floating= docked=
+01:27:18.982 SCRIPT == 48 honest-drag-back

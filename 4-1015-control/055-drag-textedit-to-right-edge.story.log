@@ -1,0 +1,112 @@
+55 drag-textedit-to-right-edge: drags textedit by its title bar against the right edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:1361', 'drags': '721', 'moves': ',,', 'front': '721', 'own': '721'}
+ODD rule 3: textedit (w721) changed its size while it was being dragged
+
+01:48:11.831 SCREEN -- begin 55 drag-textedit-to-right-edge
+01:48:11.831 SCREEN -- text 55 drags textedit by its title bar against the right edge of the screen and lets go
+01:48:11.889 SCRIPT drag w721 from 727,43 to 1599,450
+01:48:12.450 MACOS pid 73801 AXApplicationActivated
+01:48:12.450 MACOS workspace didActivate pid 73801 com.apple.TextEdit regular
+01:48:12.454 SCREEN front to back: textedit calendar settings finder-new-51 finder safari preview w740 mail terminal notes
+01:48:12.454 SCREEN the button is down 727 43
+01:48:12.455 MACOS workspace didDeactivate pid 74660 com.apple.iCal regular
+01:48:12.455 MACOS pid 74660 AXApplicationDeactivated
+01:48:12.456 SCREEN in front: process 73801 com.apple.TextEdit
+01:48:12.597 SCREEN textedit (w721) 28,44 800×791
+01:48:12.675 SCREEN textedit (w721) 57,72 800×791
+01:48:12.702 MACOS pid 73801 AXMoved w721 AXWindow/AXStandardWindow 57 72 798 786
+01:48:12.702 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 57 72 798 786
+01:48:12.723 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 57 72 762 684
+01:48:12.742 SCREEN textedit (w721) 57,72 741×627
+01:48:12.743 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 57 72 741 627
+01:48:12.748 SCREEN textedit (w721) 112,58 741×627
+01:48:12.768 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 57 72 724 579
+01:48:12.769 SCREEN textedit (w721) 128,58 724×579
+01:48:12.801 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 57 72 700 512
+01:48:12.814 SCREEN textedit (w721) 209,85 700×512
+01:48:12.829 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 57 72 686 475
+01:48:12.840 SCREEN textedit (w721) 223,85 686×475
+01:48:12.842 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 57 72 682 464
+01:48:12.861 MACOS pid 73801 AXMoved w721 AXWindow/AXStandardWindow 209 85 680 456
+01:48:12.862 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 209 85 680 456
+01:48:12.878 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 209 85 678 451
+01:48:12.895 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 209 85 676 447
+01:48:12.910 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 209 85 675 445
+01:48:12.915 SCREEN textedit (w721) 262,98 675×445
+01:48:12.930 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 209 85 675 443
+01:48:12.941 SCREEN textedit (w721) 291,112 675×443
+01:48:12.944 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 209 85 674 442
+01:48:12.963 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 209 85 674 441
+01:48:12.973 MACOS pid 73801 AXMoved w721 AXWindow/AXStandardWindow 291 112 674 441
+01:48:12.986 SCREEN textedit (w721) 292,112 674×441
+01:48:12.991 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 291 112 674 440
+01:48:12.992 SCREEN textedit (w721) 321,125 674×441
+01:48:13.032 SCREEN textedit (w721) 321,125 674×440
+01:48:13.086 SCREEN textedit (w721) 350,139 674×440
+01:48:13.106 MACOS pid 73801 AXMoved w721 AXWindow/AXStandardWindow 350 139 674 440
+01:48:13.188 SCREEN textedit (w721) 379,153 674×440
+01:48:13.206 MACOS pid 73801 AXMoved w721 AXWindow/AXStandardWindow 379 153 674 440
+01:48:13.288 SCREEN textedit (w721) 408,166 674×440
+01:48:13.296 SCREEN textedit (w721) 437,180 674×440
+01:48:13.351 MACOS pid 73801 AXMoved w721 AXWindow/AXStandardWindow 437 180 674 440
+01:48:13.439 SCREEN textedit (w721) 496,207 674×440
+01:48:13.483 SCREEN textedit (w721) 525,220 674×440
+01:48:13.485 MACOS pid 73801 AXMoved w721 AXWindow/AXStandardWindow 525 220 674 440
+01:48:13.554 SCREEN textedit (w721) 554,234 674×440
+01:48:13.609 SCREEN textedit (w721) 583,248 674×440
+01:48:13.616 MACOS pid 73801 AXMoved w721 AXWindow/AXStandardWindow 583 248 674 440
+01:48:13.617 SCREEN textedit (w721) 612,261 674×440
+01:48:13.721 MACOS pid 73801 AXMoved w721 AXWindow/AXStandardWindow 641 275 674 440
+01:48:13.739 SCREEN textedit (w721) 641,275 674×440
+01:48:13.749 SCREEN textedit (w721) 670,288 674×440
+01:48:13.795 SCREEN textedit (w721) 699,302 674×440
+01:48:13.851 MACOS pid 73801 AXMoved w721 AXWindow/AXStandardWindow 699 302 674 440
+01:48:13.907 SCREEN textedit (w721) 728,315 674×440
+01:48:13.914 SCREEN textedit (w721) 757,329 674×440
+01:48:13.963 SCREEN textedit (w721) 786,343 674×440
+01:48:13.976 MACOS pid 73801 AXMoved w721 AXWindow/AXStandardWindow 786 343 674 440
+01:48:14.055 SCREEN textedit (w721) 815,356 674×440
+01:48:14.088 SCREEN textedit (w721) 844,370 674×440
+01:48:14.138 SCREEN textedit (w721) 873,383 674×440
+01:48:14.143 MACOS pid 73801 AXMoved w721 AXWindow/AXStandardWindow 873 383 674 440
+01:48:14.147 SCREEN textedit (w721) 902,397 674×440
+01:48:14.227 MACOS pid 73801 AXMoved w721 AXWindow/AXStandardWindow 902 397 674 440
+01:48:14.255 SCREEN textedit (w721) 932,410 674×440
+01:48:14.342 MACOS pid 73801 AXMoved w721 AXWindow/AXStandardWindow 961 424 674 440
+01:48:14.356 SCREEN w847 of WindowManager 785,16 830×821
+01:48:14.356 SCREEN textedit (w721) 961,424 674×440
+01:48:14.356 SCREEN w846 of WindowManager 785,16 830×821
+01:48:14.356 SCREEN front to back: w847 textedit w846 calendar settings finder-new-51 finder safari preview w740 mail terminal notes
+01:48:16.156 SCREEN the button is up 1599 450
+01:48:16.197 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 955 410 679 453
+01:48:16.204 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 932 355 697 502
+01:48:16.217 SCREEN textedit (w721) 932,355 697×502
+01:48:16.217 SCREEN w847 of WindowManager left the screen
+01:48:16.217 SCREEN w846 of WindowManager left the screen
+01:48:16.217 SCREEN front to back: textedit calendar settings finder-new-51 finder safari preview w740 mail terminal notes
+01:48:16.223 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 905 289 718 561
+01:48:16.239 SCREEN textedit (w721) 905,289 718×561
+01:48:16.239 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 880 229 737 615
+01:48:16.256 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 859 177 754 661
+01:48:16.270 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 843 137 767 697
+01:48:16.288 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 830 107 776 724
+01:48:16.305 SCREEN textedit (w721) 830,107 776×724
+01:48:16.307 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 821 84 784 744
+01:48:16.312 SCREEN textedit (w721) 821,84 784×744
+01:48:16.323 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 815 67 789 759
+01:48:16.340 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 810 56 792 769
+01:48:16.356 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 807 48 795 776
+01:48:16.366 SCREEN textedit (w721) 807,48 795×776
+01:48:16.373 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 804 43 797 781
+01:48:16.388 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 803 39 798 784
+01:48:16.407 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 802 36 799 787
+01:48:16.422 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 801 35 799 788
+01:48:16.438 SCREEN textedit (w721) 801,35 799×788
+01:48:16.440 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 800 34 800 789
+01:48:16.444 SCREEN textedit (w721) 800,34 800×789
+01:48:16.453 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 800 33 800 790
+01:48:16.469 SCREEN textedit (w721) 800,33 800×790
+01:48:16.472 MACOS pid 73801 AXResized w721 AXWindow/AXStandardWindow 800 32 800 791
+01:48:16.489 SCREEN textedit (w721) 800,32 800×791
+01:48:17.523 SCREEN -- end 55 act=drag-where-macos-tiles settled=quiet:1361 drags=721 moves=,, front=721 own=721
+01:48:17.753 SCRIPT == 56 leave-alone

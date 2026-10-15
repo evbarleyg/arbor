@@ -1,0 +1,34 @@
+45 dock-icon-preview: clicks preview's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:549', 'front': '479', 'floating': '452,466,469,472,476,477,479,481', 'docked': '455'}
+FAIL rule 4: preview (w479) is not wholly in view: 88% of it, at -84,398 708×423 in 0,31 1600×791
+
+01:39:17.192 SCREEN -- begin 45 dock-icon-preview
+01:39:17.192 SCREEN -- text 45 clicks preview's icon in the Dock
+01:39:17.799 SCREEN the button is down 1332 854
+01:39:17.808 DEBUG raised w469, which stays in view
+01:39:17.811 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:39:17.812 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:39:17.930 SCREEN front to back: preview w520 notes terminal safari calendar settings finder textedit w498 w483 mail
+01:39:17.930 SCREEN the button is up 1332 854
+01:39:17.931 MACOS pid 44713 AXApplicationDeactivated
+01:39:17.931 MACOS workspace didActivate pid 45539 com.apple.Preview regular
+01:39:17.932 SCREEN in front: process 45539 com.apple.Preview
+01:39:17.932 MACOS workspace didDeactivate pid 44713 com.apple.Notes regular
+01:39:17.932 MACOS pid 45539 AXApplicationActivated
+01:39:17.935 DEBUG focus is on w479
+01:39:17.935 DEBUG w479 has the keyboard
+01:39:18.037 SCREEN w520 of Arbor -90,389 723×439
+01:39:18.037 SCREEN front to back: w520 preview notes terminal safari calendar settings finder textedit w498 w483 mail
+01:39:18.043 DEBUG raised w469, which stays in view
+01:39:18.045 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:39:18.045 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:39:18.072 SCREEN front to back: w520 preview terminal notes safari calendar settings finder textedit w498 w483 mail
+01:39:18.275 DEBUG raised w469, which stays in view
+01:39:18.276 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:39:18.277 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:39:18.491 DEBUG raised w469, which stays in view
+01:39:18.493 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:39:18.494 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:39:18.550 SCREEN w511 of Arbor left the screen
+01:39:20.877 SCREEN -- end 45 act=switch settled=quiet:549 front=479 floating=452,466,469,472,476,477,479,481 docked=455
+01:39:21.148 SCRIPT == 46 rotate

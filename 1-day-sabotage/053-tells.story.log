@@ -1,0 +1,8 @@
+53 tells: OFFENCE: a window's title is written into a log
+expected: {'act': 'idle', 'settled': 'quiet:375', 'offence': 'told'}
+FAIL rule -: a window's title is in what the run brings back: saboteur.log
+
+01:27:44.256 SCREEN -- begin 53 tells
+01:27:44.256 SCREEN -- text 53 OFFENCE: a window's title is written into a log
+01:27:44.633 SCREEN -- end 53 act=idle settled=quiet:375 offence=told
+01:27:45.025 SCREEN -- finding 53 -:told FAIL a window's title is in what the run brings back: saboteur.log

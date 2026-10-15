@@ -1,0 +1,58 @@
+89 view-frame: presses ⌃⌥↩
+expected: {'act': 'view', 'settled': 'quiet:1216', 'moves': 'any', 'front': '477', 'floating': '469,644', 'docked': '452,455,466,472,476,477,479,481'}
+FAIL rule 4: settings (w477) is not in front: finder-new-82 (w644), terminal (w469) ahead of it, of which 1 cover part of it
+FAIL rule 4: settings (w477) its app is not the one in front (process 43355 is)
+FAIL rule 4: settings (w477) is not wholly in view: 0% of it, at 1599,770 723×767 in 0,31 1600×791
+
+01:42:54.277 SCREEN -- begin 89 view-frame
+01:42:54.277 SCREEN -- text 89 presses ⌃⌥↩
+01:42:54.340 SCREEN w651 of Arbor left the screen
+01:42:54.444 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 5 stand-ins, 0.46 s
+01:42:54.449 SCREEN w620 of Arbor 0,0 1600×900 (level 4)
+01:42:54.483 SCREEN safari (w455) 1599,770 1576×248
+01:42:54.501 SCREEN safari (w455) 12,43 1576×248
+01:42:54.502 MACOS pid 44472 AXResized w455 AXWindow/AXStandardWindow 12 43 1576 248
+01:42:54.503 MACOS pid 44472 AXMoved w455 AXWindow/AXStandardWindow 12 43 1576 248
+01:42:54.517 MACOS pid 45417 AXMoved w477 AXWindow/AXStandardWindow 1599 770 723 767
+01:42:54.529 MACOS pid 43355 AXMoved w644 AXWindow/AXStandardWindow 41 72 920 436
+01:42:54.540 MACOS pid 43355 AXFocusedWindowChanged w644 AXWindow/AXStandardWindow 41 72 920 436
+01:42:54.541 SCREEN settings (w477) 1599,770 723×767
+01:42:54.541 SCREEN finder-new-82 (w644) 41,72 920×436
+01:42:54.541 MACOS pid 43355 AXMainWindowChanged w644 AXWindow/AXStandardWindow 41 72 920 436
+01:42:54.562 MACOS pid 43355 AXFocusedWindowChanged w644 AXWindow/AXStandardWindow 41 72 920 436
+01:42:54.563 MACOS pid 43355 AXMainWindowChanged w644 AXWindow/AXStandardWindow 41 72 920 436
+01:42:54.563 MACOS pid 43355 AXFocusedWindowChanged w644 AXWindow/AXStandardWindow 41 72 920 436
+01:42:54.572 SCREEN front to back: finder-new-82 w652 settings terminal finder calendar safari preview textedit w483 mail notes
+01:42:54.572 MACOS pid 43355 AXMainWindowChanged w644 AXWindow/AXStandardWindow 41 72 920 436
+01:42:54.596 SCREEN in front: process 43355 com.apple.finder
+01:42:54.787 MACOS workspace didActivate pid 43355 com.apple.finder regular
+01:42:54.790 SCREEN (nothing was seen for 217 ms)
+01:42:54.791 MACOS workspace didDeactivate pid 45417 com.apple.systempreferences regular
+01:42:54.813 INFO  zoom: back to Safari, Finder and System Settings (n8)
+01:42:54.815 MACOS pid 45417 AXApplicationDeactivated
+01:42:54.816 MACOS pid 43355 AXApplicationActivated
+01:42:54.880 SCREEN w658 of Arbor 12,291 1576×12
+01:42:54.880 SCREEN w659 of Arbor 12,550 1576×12
+01:42:54.880 SCREEN w652 of Arbor left the screen
+01:42:54.880 SCREEN front to back: finder-new-82 settings terminal finder calendar safari preview textedit w483 mail notes w658 w659
+01:42:54.891 DEBUG focus is on w644
+01:42:54.892 DEBUG w644 has the keyboard
+01:42:54.923 SCREEN w652 of Arbor 32,63 938×454
+01:42:54.923 SCREEN front to back: w652 finder-new-82 settings terminal finder calendar safari preview textedit w483 mail notes w658 w659
+01:42:54.966 SCREEN w656 of Arbor 12,303 1576×247
+01:42:54.966 SCREEN w657 of Arbor 12,562 1576×248
+01:42:54.966 SCREEN front to back: w652 finder-new-82 settings terminal finder calendar safari preview textedit w483 mail notes w656 w657 w658 w659
+01:42:55.077 DEBUG raised w469, which stays in view
+01:42:55.079 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:42:55.080 SCREEN front to back: w652 finder-new-82 terminal settings finder calendar safari preview textedit w483 mail notes w656 w657 w658 w659
+01:42:55.080 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:42:55.082 DEBUG stage down
+01:42:55.113 SCREEN w620 of Arbor left the screen
+01:42:55.359 DEBUG raised w469, which stays in view
+01:42:55.359 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:42:55.360 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:42:55.644 DEBUG raised w469, which stays in view
+01:42:55.645 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:42:55.646 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:42:56.266 SCREEN -- end 89 act=view settled=quiet:1216 moves=any front=477 floating=469,644 docked=452,455,466,472,476,477,479,481
+01:42:56.791 SCRIPT == 90 view-right

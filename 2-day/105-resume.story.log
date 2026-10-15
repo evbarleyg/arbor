@@ -1,0 +1,64 @@
+105 resume: presses ⌃⌥⎋
+expected: {'act': 'way-out', 'settled': 'quiet:1162', 'moves': 'any', 'floating': '170,171,172,175,177,180,335', 'docked': '153,156'}
+ODD rule 3: w182 of Mail went 176 points out of its way before it ended up
+
+01:34:00.422 SCREEN -- begin 105 resume
+01:34:00.422 SCREEN -- text 105 presses ⌃⌥⎋
+01:34:00.662 INFO  started: 1 display(s), 9 managed window(s)
+01:34:00.720 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 501 701
+01:34:00.722 MACOS pid 15700 AXMoved w153 AXWindow/AXStandardWindow 12 43 501 701
+01:34:00.732 SCREEN finder (w153) 340,120 501×701
+01:34:00.754 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 501 767
+01:34:00.773 SCREEN finder (w153) 12,43 501×767
+01:34:00.870 SCREEN safari (w156) 1014,43 574×767
+01:34:00.870 MACOS pid 16910 AXResized w156 AXWindow/AXStandardWindow 1014 43 574 767
+01:34:00.894 MACOS pid 16910 AXMoved w156 AXWindow/AXStandardWindow 1014 43 574 767
+01:34:00.916 SCREEN terminal (w170) 97,238 478×499
+01:34:00.925 MACOS pid 17117 AXTitleChanged w170 AXWindow/AXStandardWindow 525 238 478 499
+01:34:00.926 MACOS pid 17117 AXResized w170 AXWindow/AXStandardWindow 525 238 478 499
+01:34:00.927 MACOS pid 17117 AXMoved w170 AXWindow/AXStandardWindow 525 238 478 499
+01:34:00.933 MACOS pid 17595 AXMoved w175 AXWindow/AXStandardWindow 402 85 723 625
+01:34:00.939 DEBUG raised w175, which was left hanging over docked windows
+01:34:00.941 MACOS pid 17595 AXFocusedWindowChanged w175 AXWindow/AXStandardWindow 402 85 723 625
+01:34:00.942 SCREEN terminal (w170) 525,238 478×499
+01:34:00.943 MACOS pid 17595 AXMainWindowChanged w175 AXWindow/AXStandardWindow 402 85 723 625
+01:34:00.944 MACOS pid 17664 AXMoved w177 AXWindow/AXStandardWindow 409 35 708 424
+01:34:00.947 DEBUG raised w177, which was left hanging over docked windows
+01:34:00.949 MACOS pid 17664 AXFocusedWindowChanged w177 AXWindow/AXStandardWindow 409 35 708 424
+01:34:00.950 MACOS pid 17664 AXMainWindowChanged w177 AXWindow/AXStandardWindow 409 35 708 424
+01:34:00.955 SCREEN settings (w175) 402,85 723×625
+01:34:00.955 SCREEN preview (w177) 409,35 708×424
+01:34:00.955 SCREEN front to back: calendar settings safari notes finder textedit terminal w182 mail preview w202
+01:34:01.004 SCREEN front to back: calendar preview settings safari notes finder textedit terminal w182 mail w202
+01:34:01.072 MACOS pid 18068 AXResized w180 AXWindow/AXStandardWindow 328 72 871 630
+01:34:01.073 SCREEN w182 of Mail 441,179 470×416
+01:34:01.073 SCREEN mail (w180) 240,72 871×630
+01:34:01.073 MACOS pid 18068 AXMoved w180 AXWindow/AXStandardWindow 328 72 871 630
+01:34:01.075 DEBUG raised w180, which was left hanging over docked windows
+01:34:01.075 MACOS pid 18068 AXFocusedWindowChanged w182 AXSheet/- 529 179 470 416
+01:34:01.076 MACOS pid 18068 AXMainWindowChanged w180 AXWindow/AXStandardWindow 328 72 871 630
+01:34:01.084 MACOS pid 32451 AXResized w335 AXWindow/AXStandardWindow 525 65 477 439
+01:34:01.085 MACOS pid 32451 AXMoved w335 AXWindow/AXStandardWindow 525 65 477 439
+01:34:01.091 INFO  registered 52 shortcuts in 1283 µs
+01:34:01.092 INFO  pinch event tap installed
+01:34:01.092 INFO  scroll event tap installed
+01:34:01.092 INFO  rectangle event taps installed
+01:34:01.092 DEBUG w172 has the keyboard
+01:34:01.093 INFO  resumed
+01:34:01.093 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Resumed
+01:34:01.106 SCREEN w405 of Arbor 436,196 701×619
+01:34:01.106 SCREEN w182 of Mail 529,179 470×416
+01:34:01.106 SCREEN mail (w180) 328,72 871×630
+01:34:01.106 SCREEN textedit (w335) 525,65 477×439
+01:34:01.106 SCREEN w403 of Arbor 513,43 12×767
+01:34:01.106 SCREEN w404 of Arbor 1002,43 12×767
+01:34:01.106 SCREEN w406 of Arbor 0,31 1600×791 (level -2147483602)
+01:34:01.106 SCREEN front to back: w405 calendar w182 mail preview settings safari notes finder textedit terminal w202 w403 w404
+01:34:01.156 DEBUG pinch event tap installed
+01:34:01.156 DEBUG scroll event tap installed
+01:34:01.156 DEBUG rectangle event tap installed
+01:34:01.156 DEBUG rectangle drag event tap installed
+01:34:01.160 SCREEN w398 of Arbor 749,728 102×38 (level 6)
+01:34:02.216 SCREEN -- end 105 act=way-out settled=quiet:1162 moves=any floating=170,171,172,175,177,180,335 docked=153,156
+01:34:02.427 INFO  trace day-13: recording to /tmp/arbor-shell.jFQW4D/home/traces/2026-10-15-013402-day-13.jsonl
+01:34:02.478 SCRIPT == 106 float-all

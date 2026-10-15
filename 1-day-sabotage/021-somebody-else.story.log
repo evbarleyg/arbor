@@ -1,0 +1,10 @@
+21 somebody-else: OFFENCE: a window that the step does not name is moved
+expected: {'act': 'dock-key', 'settled': 'quiet:1069', 'moves': '45', 'offence': 'moved-unasked'}
+FAIL rule 2: finder (w31) moved, and the step did not name it
+
+01:25:52.324 SCREEN -- begin 21 somebody-else
+01:25:52.324 SCREEN -- text 21 OFFENCE: a window that the step does not name is moved
+01:25:52.371 MACOS pid 356 AXMoved w31 AXWindow/AXStandardWindow 720 120 560 380
+01:25:52.385 SCREEN finder (w31) 720,120 560×380
+01:25:53.441 SCREEN -- end 21 act=dock-key settled=quiet:1069 moves=45 offence=moved-unasked
+01:25:53.711 SCRIPT == 22 honest-park

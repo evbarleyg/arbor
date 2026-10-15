@@ -1,0 +1,79 @@
+86 leave-full-screen: presses ⌃⌘F again
+expected: {'act': 'macos-own', 'settled': 'quiet:482', 'moves': 'any', 'leaves': 'any', 'comes': '156', 'front': '156', 'returns': '84', 'floating': '170,171,172,175,177,180,335', 'docked': '153,156'}
+FAIL rule 3: safari (w156) moved 2 times
+FAIL rule 2: textedit (w335) is not back where it was after step 84: 525,65 477×439, it was at 165,65 673×439
+
+01:32:43.224 SCREEN -- begin 86 leave-full-screen
+01:32:43.224 SCREEN -- text 86 presses ⌃⌘F again
+01:32:43.483 MACOS pid 16910 AXWindowCreated w360 AXWindow/AXUnknown 0 0 1600 900
+01:32:43.486 MACOS pid 16910 AXResized w156 AXWindow/AXStandardWindow 138 31 1324 791
+01:32:43.487 DEBUG w156 is no longer listed
+01:32:43.491 DEBUG w156 left full screen
+01:32:43.500 SCREEN w360 of Safari 0,0 1600×900
+01:32:43.500 SCREEN textedit (w335) 525,65 673×439
+01:32:43.500 SCREEN finder (w153) 12,43 501×767
+01:32:43.500 SCREEN calendar (w172) 525,115 937×600
+01:32:43.500 SCREEN terminal (w170) 525,238 877×499
+01:32:43.500 SCREEN w182 of Mail 828,179 470×416
+01:32:43.500 SCREEN mail (w180) 525,72 1075×630
+01:32:43.500 SCREEN preview (w177) 525,35 708×424
+01:32:43.500 SCREEN settings (w175) 525,85 723×625
+01:32:43.500 SCREEN notes (w171) 525,105 1000×660
+01:32:43.500 SCREEN w202 of Arbor 520,121 560×434
+01:32:43.500 SCREEN safari (w156) left the screen
+01:32:43.500 SCREEN w341 of Safari left the screen
+01:32:43.500 SCREEN front to back: w360 textedit finder calendar terminal w182 mail preview settings notes w202
+01:32:43.606 MACOS pid 16910 AXMoved w156 AXWindow/AXStandardWindow 138 31 1324 791
+01:32:43.608 MACOS pid 16910 AXMoved w360 AXWindow/AXUnknown 0 0 1600 900
+01:32:44.080 DEBUG w153 is listed again
+01:32:44.081 DEBUG w170 is listed again
+01:32:44.082 DEBUG w171 is listed again
+01:32:44.082 DEBUG w172 is listed again
+01:32:44.082 DEBUG w175 is listed again
+01:32:44.083 DEBUG w177 is listed again
+01:32:44.083 DEBUG w180 is listed again
+01:32:44.084 DEBUG w335 is listed again
+01:32:44.089 MACOS pid 16910 AXUIElementDestroyed w360
+01:32:44.107 SCREEN safari (w156) 138,31 1324×791
+01:32:44.107 SCREEN w360 of Safari left the screen
+01:32:44.107 SCREEN front to back: safari textedit finder calendar terminal w182 mail preview settings notes w202
+01:32:44.112 SCREEN w256 of Arbor 513,43 12×767
+01:32:44.112 SCREEN w254 of Arbor 0,31 1600×791 (level -2147483602)
+01:32:44.112 SCREEN front to back: safari textedit finder calendar terminal w182 mail preview settings notes w202 w256
+01:32:45.124 DEBUG w156 is listed again
+01:32:45.126 DEBUG focus is on w156
+01:32:45.126 INFO  made room for w153
+01:32:45.153 SCREEN safari (w156) 138,31 574×767
+01:32:45.156 MACOS pid 16910 AXResized w156 AXWindow/AXStandardWindow 1014 43 574 767
+01:32:45.157 MACOS pid 16910 AXMoved w156 AXWindow/AXStandardWindow 1014 43 574 767
+01:32:45.176 MACOS pid 17117 AXTitleChanged w170 AXWindow/AXStandardWindow 525 238 478 499
+01:32:45.176 MACOS pid 17117 AXResized w170 AXWindow/AXStandardWindow 525 238 478 499
+01:32:45.188 SCREEN safari (w156) 1014,43 574×767
+01:32:45.188 SCREEN terminal (w170) 525,238 478×499
+01:32:45.217 SCREEN notes (w171) 525,105 709×660
+01:32:45.222 MACOS pid 17481 AXResized w171 AXWindow/AXStandardWindow 409 105 709 660
+01:32:45.222 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow 409 105 709 660
+01:32:45.233 SCREEN notes (w171) 409,105 709×660
+01:32:45.254 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 423 115 680 600
+01:32:45.255 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 423 115 680 600
+01:32:45.262 MACOS pid 17595 AXMoved w175 AXWindow/AXStandardWindow 402 85 723 625
+01:32:45.269 SCREEN calendar (w172) 525,115 680×600
+01:32:45.269 SCREEN settings (w175) 402,85 723×625
+01:32:45.269 MACOS pid 17664 AXMoved w177 AXWindow/AXStandardWindow 409 35 708 424
+01:32:45.283 SCREEN calendar (w172) 423,115 680×600
+01:32:45.283 SCREEN preview (w177) 409,35 708×424
+01:32:45.338 MACOS pid 18068 AXResized w180 AXWindow/AXStandardWindow 328 72 871 630
+01:32:45.339 MACOS pid 18068 AXMoved w180 AXWindow/AXStandardWindow 328 72 871 630
+01:32:45.356 SCREEN w182 of Mail 529,179 470×416
+01:32:45.356 SCREEN mail (w180) 328,72 871×630
+01:32:45.356 MACOS pid 32451 AXResized w335 AXWindow/AXStandardWindow 525 65 477 439
+01:32:45.361 DEBUG w156 has the keyboard
+01:32:45.380 SCREEN w253 of Arbor 1005,34 592×785
+01:32:45.380 SCREEN textedit (w335) 525,65 477×439
+01:32:45.380 SCREEN w266 of Arbor 1002,43 12×767
+01:32:45.380 SCREEN front to back: w253 safari textedit finder calendar terminal w182 mail preview settings notes w202 w256 w266
+01:32:46.510 SCREEN -- end 86 act=macos-own settled=quiet:482 moves=any leaves=any comes=156 front=156 returns=84 floating=170,171,172,175,177,180,335 docked=153,156
+01:32:46.762 SCREEN -- chapter A click lands on the wallpaper, a double-click on a title bar
+01:32:46.774 INFO  trace day-9 ended: 266 lines, trace off
+01:32:46.794 INFO  trace day-10: recording to /tmp/arbor-shell.jFQW4D/home/traces/2026-10-15-013246-day-10.jsonl
+01:32:52.265 SCRIPT == 87 click-wallpaper

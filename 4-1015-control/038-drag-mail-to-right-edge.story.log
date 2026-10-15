@@ -1,0 +1,12 @@
+38 drag-mail-to-right-edge: drags mail by its title bar against the right edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:1058', 'judge': 'no', 'drags': '737', 'moves': ',,', 'front': '737', 'own': '737'}
+FAIL rule -: the act was not performed: drag_window could not be done
+
+01:46:57.643 SCREEN -- begin 38 drag-mail-to-right-edge
+01:46:57.643 SCREEN -- text 38 drags mail by its title bar against the right edge of the screen and lets go
+01:46:57.698 SCRIPT drag w737 from 1176,43 to 1599,450
+01:46:58.187 SCREEN the button is down 1176 43
+01:47:00.907 SCREEN the button is up 1599 450
+01:47:01.957 SCREEN -- finding 38 - FAIL the act was not performed: drag_window could not be done
+01:47:01.958 SCREEN -- end 38 act=drag-where-macos-tiles settled=quiet:1058 judge=no drags=737 moves=,, front=737 own=737
+01:47:02.223 SCRIPT == 39 click-textedit

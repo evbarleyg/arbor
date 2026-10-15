@@ -1,0 +1,14 @@
+38 drag-notes-by: drags notes, which floats, by its title bar 67 across and 34 down
+expected: {'act': 'drag', 'settled': 'quiet:1058', 'judge': 'no', 'drags': '472', 'front': '472', 'own': '472', 'floating': '452,466,472,476,477,479,481', 'docked': '455,469'}
+FAIL rule -: the act was not performed: drag_window could not be done
+
+01:38:51.916 SCREEN -- begin 38 drag-notes-by
+01:38:51.916 SCREEN -- text 38 drags notes, which floats, by its title bar 67 across and 34 down
+01:38:51.974 SCRIPT drag w472 from 1226,445 to 1293,479
+01:38:52.586 SCREEN the button is down 1226 445
+01:38:52.597 SCREEN front to back: notes w520 calendar terminal settings safari preview finder textedit w498 w483 mail w519 w551
+01:38:55.564 SCREEN the button is up 1293 479
+01:38:55.610 SCREEN front to back: w520 notes calendar terminal settings safari preview finder textedit w498 w483 mail w519 w551
+01:38:56.663 SCREEN -- finding 38 - FAIL the act was not performed: drag_window could not be done
+01:38:56.721 SCREEN -- end 38 act=drag settled=quiet:1058 judge=no drags=472 front=472 own=472 floating=452,466,472,476,477,479,481 docked=455,469
+01:38:57.053 SCRIPT == 39 view-frame

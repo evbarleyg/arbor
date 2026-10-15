@@ -1,0 +1,48 @@
+106 float-all: presses ⌃⌥⇧F
+expected: {'act': 'way-out', 'settled': 'quiet:933', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1', 'floating': '153,156,170,171,172,175,177,180,335', 'docked': ''}
+FAIL rule 5: calendar (w172) has its size back but not its place: 385,145 683×601, it was at 445,205 683×601
+
+01:34:02.488 SCREEN -- begin 106 float-all
+01:34:02.488 SCREEN -- text 106 presses ⌃⌥⇧F
+01:34:02.771 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+01:34:02.781 SCREEN w251 of Arbor 0,0 1600×900 (level 4)
+01:34:02.842 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 340 120 920 436
+01:34:02.842 MACOS pid 15700 AXMoved w153 AXWindow/AXStandardWindow 340 120 920 436
+01:34:02.849 SCREEN finder (w153) 340,120 920×436
+01:34:02.864 SCREEN safari (w156) 1014,43 586×778
+01:34:02.880 SCREEN safari (w156) 138,31 586×778
+01:34:02.937 MACOS pid 16910 AXResized w156 AXWindow/AXStandardWindow 138 31 1324 790
+01:34:02.938 MACOS pid 16910 AXMoved w156 AXWindow/AXStandardWindow 138 31 1324 790
+01:34:02.939 MACOS pid 16910 AXResized w156 AXWindow/AXStandardWindow 138 31 1324 790
+01:34:02.946 SCREEN safari (w156) 138,31 1324×790
+01:34:02.957 MACOS pid 17117 AXTitleChanged w170 AXWindow/AXStandardWindow 97 238 877 499
+01:34:02.958 MACOS pid 17117 AXResized w170 AXWindow/AXStandardWindow 97 238 877 499
+01:34:02.959 MACOS pid 17117 AXMoved w170 AXWindow/AXStandardWindow 97 238 877 499
+01:34:02.962 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 385 145 683 601
+01:34:02.969 MACOS pid 17595 AXMoved w175 AXWindow/AXStandardWindow 437 85 723 625
+01:34:02.979 MACOS pid 17664 AXMoved w177 AXWindow/AXStandardWindow 4 35 708 424
+01:34:02.987 SCREEN calendar (w172) 385,145 683×601
+01:34:02.987 SCREEN preview (w177) 4,35 708×424
+01:34:02.987 SCREEN settings (w175) 437,85 723×625
+01:34:02.987 SCREEN terminal (w170) 97,238 877×499
+01:34:03.057 SCREEN w182 of Mail 653,179 470×416
+01:34:03.057 SCREEN mail (w180) 328,72 1120×630
+01:34:03.062 MACOS pid 18068 AXResized w180 AXWindow/AXStandardWindow 240 72 1120 630
+01:34:03.062 MACOS pid 18068 AXMoved w180 AXWindow/AXStandardWindow 240 72 1120 630
+01:34:03.076 MACOS pid 32451 AXResized w335 AXWindow/AXStandardWindow 165 65 673 439
+01:34:03.077 MACOS pid 32451 AXMoved w335 AXWindow/AXStandardWindow 165 65 673 439
+01:34:03.080 INFO  float-all: floated 2 windows
+01:34:03.081 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Floated 2 windows
+01:34:03.085 SCREEN w182 of Mail 565,179 470×416
+01:34:03.085 SCREEN mail (w180) 240,72 1120×630
+01:34:03.085 SCREEN textedit (w335) 165,65 673×439
+01:34:03.128 SCREEN w398 of Arbor 717,728 167×38 (level 6)
+01:34:03.128 SCREEN w403 of Arbor left the screen
+01:34:03.128 SCREEN w404 of Arbor left the screen
+01:34:03.128 SCREEN w405 of Arbor left the screen
+01:34:03.128 SCREEN front to back: calendar w182 mail preview settings safari notes finder textedit terminal w202
+01:34:03.355 SCREEN w406 of Arbor left the screen
+01:34:03.439 DEBUG stage down
+01:34:03.481 SCREEN w251 of Arbor left the screen
+01:34:04.233 SCREEN -- end 106 act=way-out settled=quiet:933 moves=any restores=all places=1 everything=1 floating=153,156,170,171,172,175,177,180,335 docked=
+01:34:04.578 SCRIPT == 107 dock-icon-finder

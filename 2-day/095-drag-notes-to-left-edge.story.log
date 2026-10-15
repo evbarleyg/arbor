@@ -1,0 +1,97 @@
+95 drag-notes-to-left-edge: drags notes by its title bar against the left edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:373', 'drags': '171', 'moves': '153,156,153,156,', 'front': '171', 'own': '171', 'floating': '170,171,172,175,177,180,335', 'docked': '153,156'}
+FAIL rule 3: notes (w171) was 0 points ahead of the pointer's travel and 198 behind it at the most
+
+01:33:14.404 SCREEN -- begin 95 drag-notes-to-left-edge
+01:33:14.404 SCREEN -- text 95 drags notes by its title bar against the left edge of the screen and lets go
+01:33:14.497 SCRIPT drag w171 from 759,117 to 0,450
+01:33:15.137 SCREEN front to back: notes w253 calendar finder safari textedit terminal w182 mail preview settings w202 w256 w266
+01:33:15.137 SCREEN the button is down 759 117
+01:33:15.365 SCREEN notes (w171) 383,116 709×660
+01:33:15.425 SCREEN notes (w171) 358,127 709×660
+01:33:15.445 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow 358 127 709 660
+01:33:15.481 SCREEN notes (w171) 333,138 709×660
+01:33:15.481 SCREEN w253 of Arbor left the screen
+01:33:15.481 SCREEN front to back: notes calendar finder safari textedit terminal w182 mail preview settings w202 w256 w266
+01:33:15.538 SCREEN notes (w171) 282,160 709×660
+01:33:15.561 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow 282 160 709 660
+01:33:15.624 SCREEN notes (w171) 257,161 709×660
+01:33:15.733 SCREEN notes (w171) 231,161 709×660
+01:33:15.754 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow 231 161 709 660
+01:33:15.816 SCREEN notes (w171) 206,161 709×660
+01:33:15.833 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow 206 161 709 660
+01:33:15.909 SCREEN notes (w171) 181,161 709×660
+01:33:16.008 SCREEN notes (w171) 156,161 709×660
+01:33:16.008 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow 156 161 709 660
+01:33:16.045 SCREEN notes (w171) 130,161 709×660
+01:33:16.142 SCREEN notes (w171) 105,161 709×660
+01:33:16.149 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow 105 161 709 660
+01:33:16.201 SCREEN notes (w171) 94,161 709×660
+01:33:16.309 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow 94 161 709 660
+01:33:16.381 SCREEN notes (w171) 68,161 709×660
+01:33:16.480 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow 18 161 709 660
+01:33:16.481 SCREEN notes (w171) 18,161 709×660
+01:33:16.537 SCREEN notes (w171) 0,161 709×660
+01:33:16.651 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow 0 172 709 660
+01:33:16.683 SCREEN notes (w171) 0,172 709×660
+01:33:16.739 SCREEN notes (w171) -26,194 709×660
+01:33:16.805 SCREEN notes (w171) -75,206 709×660
+01:33:16.828 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow -75 206 709 660
+01:33:16.853 SCREEN notes (w171) -101,217 709×660
+01:33:16.937 SCREEN notes (w171) -126,228 709×660
+01:33:16.940 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow -126 228 709 660
+01:33:16.987 SCREEN notes (w171) -151,239 709×660
+01:33:17.089 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow -177 240 709 660
+01:33:17.105 SCREEN notes (w171) -177,240 709×660
+01:33:17.164 SCREEN notes (w171) -202,240 709×660
+01:33:17.239 SCREEN notes (w171) -227,240 709×660
+01:33:17.257 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow -227 240 709 660
+01:33:17.275 SCREEN notes (w171) -253,240 709×660
+01:33:17.318 SCREEN notes (w171) -278,240 709×660
+01:33:17.378 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow -278 240 709 660
+01:33:17.430 SCREEN notes (w171) -303,240 709×660
+01:33:17.505 SCREEN w386 of WindowManager -15,16 830×821
+01:33:17.505 SCREEN notes (w171) -328,240 709×660
+01:33:17.505 SCREEN w385 of WindowManager -15,16 830×821
+01:33:17.505 SCREEN front to back: w386 notes w385 calendar finder safari textedit terminal w182 mail preview settings w202 w256 w266
+01:33:17.508 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow -328 240 709 660
+01:33:17.722 SCREEN notes (w171) -327,240 709×660
+01:33:17.826 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow -327 240 709 660
+01:33:19.232 SCREEN notes (w171) -328,240 709×660
+01:33:19.298 SCREEN w253 of Arbor -333,231 724×675
+01:33:19.298 SCREEN w386 of WindowManager left the screen
+01:33:19.298 SCREEN w385 of WindowManager left the screen
+01:33:19.298 SCREEN front to back: w253 notes calendar finder safari textedit terminal w182 mail preview settings w202 w256 w266
+01:33:19.298 SCREEN the button is up 0 450
+01:33:19.325 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow -328 240 709 660
+01:33:19.350 SCREEN w253 of Arbor -334,231 724×675
+01:33:19.357 MACOS pid 17481 AXResized w171 AXWindow/AXStandardWindow -307 226 716 669
+01:33:19.363 SCREEN notes (w171) -307,226 716×669
+01:33:19.408 SCREEN w253 of Arbor -313,217 731×684
+01:33:19.408 SCREEN notes (w171) -202,159 745×711
+01:33:19.408 MACOS pid 17481 AXResized w171 AXWindow/AXStandardWindow -153 128 758 731
+01:33:19.409 MACOS pid 17481 AXResized w171 AXWindow/AXStandardWindow -153 128 758 731
+01:33:19.420 SCREEN w253 of Arbor -159,119 773×746
+01:33:19.420 SCREEN notes (w171) -153,128 758×731
+01:33:19.445 MACOS pid 17481 AXResized w171 AXWindow/AXStandardWindow -81 83 778 759
+01:33:19.445 MACOS pid 17481 AXResized w171 AXWindow/AXStandardWindow -58 67 785 769
+01:33:19.455 SCREEN w253 of Arbor -87,74 793×774
+01:33:19.455 SCREEN notes (w171) -58,67 785×769
+01:33:19.461 MACOS pid 17481 AXResized w171 AXWindow/AXStandardWindow -41 57 789 775
+01:33:19.483 MACOS pid 17481 AXResized w171 AXWindow/AXStandardWindow -28 49 793 780
+01:33:19.515 MACOS pid 17481 AXResized w171 AXWindow/AXStandardWindow -14 40 797 786
+01:33:19.521 SCREEN w253 of Arbor -34,40 808×795
+01:33:19.521 SCREEN notes (w171) -14,40 797×786
+01:33:19.563 SCREEN w253 of Arbor -20,31 812×801
+01:33:19.586 MACOS pid 17481 AXResized w171 AXWindow/AXStandardWindow -3 32 800 791
+01:33:19.587 MACOS pid 17481 AXResized w171 AXWindow/AXStandardWindow -3 32 800 791
+01:33:19.588 SCREEN notes (w171) -7,35 799×789
+01:33:19.606 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow -2 32 800 791
+01:33:19.608 SCREEN w253 of Arbor -9,25 815×804
+01:33:19.608 SCREEN notes (w171) -3,32 800×791
+01:33:19.618 MACOS pid 17481 AXMoved w171 AXWindow/AXStandardWindow -1 32 800 791
+01:33:19.638 SCREEN w253 of Arbor -8,25 815×804
+01:33:19.638 SCREEN notes (w171) -1,32 800×791
+01:33:19.672 SCREEN w253 of Arbor -7,25 815×804
+01:33:25.445 SCREEN -- end 95 act=drag-where-macos-tiles settled=quiet:373 drags=171 moves=153,156,153,156, front=171 own=171 floating=170,171,172,175,177,180,335 docked=153,156
+01:33:25.943 SCRIPT == 96 click-calendar

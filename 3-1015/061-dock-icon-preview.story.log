@@ -1,0 +1,16 @@
+61 dock-icon-preview: clicks preview's icon in the Dock
+expected: {'act': 'switch', 'settled': 'quiet:406', 'front': '479'}
+FAIL rule 4: preview (w479) is not wholly in view: 88% of it, at -84,398 708×423 in 0,31 1600×791
+
+01:40:23.153 SCREEN -- begin 61 dock-icon-preview
+01:40:23.153 SCREEN -- text 61 clicks preview's icon in the Dock
+01:40:23.833 SCREEN the button is down 1332 854
+01:40:23.909 SCREEN the button is up 1332 854
+01:40:23.923 SCREEN in front: process 45539 com.apple.Preview
+01:40:23.958 MACOS workspace didActivate pid 45539 com.apple.Preview regular
+01:40:23.959 SCREEN front to back: preview notes safari settings terminal textedit calendar finder w483 mail
+01:40:23.959 MACOS workspace didDeactivate pid 44713 com.apple.Notes regular
+01:40:23.959 MACOS pid 44713 AXApplicationDeactivated
+01:40:23.959 MACOS pid 45539 AXApplicationActivated
+01:40:25.059 SCREEN -- end 61 act=switch settled=quiet:406 front=479
+01:40:25.247 SCRIPT == 62 launch

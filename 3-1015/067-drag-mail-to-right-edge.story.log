@@ -1,0 +1,155 @@
+67 drag-mail-to-right-edge: drags mail by its title bar against the right edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:350', 'drags': '481', 'moves': '455,466,455,466,', 'front': '481', 'own': '481', 'floating': '452,469,472,476,477,479,481', 'docked': '455,466'}
+ODD rule 2: w483 of Mail moved along with a window of its app
+FAIL rule 3: w483 of Mail moved 3 times
+FAIL rule 4: mail (w481) is not in front: w483 of Mail ahead of it, of which 1 cover part of it
+
+01:40:40.751 SCREEN -- begin 67 drag-mail-to-right-edge
+01:40:40.751 SCREEN -- text 67 drags mail by its title bar against the right edge of the screen and lets go
+01:40:40.841 SCRIPT drag w481 from 800,84 to 1599,450
+01:40:41.386 SCREEN the button is down 800 84
+01:40:41.390 DEBUG raised w469, which stays in view
+01:40:41.400 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:41.401 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:41.611 DEBUG raised w469, which stays in view
+01:40:41.612 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:41.612 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:41.618 SCREEN w483 of Mail 591,191 470×416
+01:40:41.618 SCREEN mail (w481) 266,84 1120×630
+01:40:41.679 SCREEN w483 of Mail 618,203 470×416
+01:40:41.679 SCREEN mail (w481) 293,96 1120×630
+01:40:41.711 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 293 96 1120 630
+01:40:41.716 SCREEN w483 of Mail 644,215 470×416
+01:40:41.716 SCREEN mail (w481) 319,108 1120×630
+01:40:41.807 SCREEN w483 of Mail 671,227 470×416
+01:40:41.807 SCREEN mail (w481) 346,120 1120×630
+01:40:41.814 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 346 120 1120 630
+01:40:41.892 DEBUG raised w469, which stays in view
+01:40:41.894 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:41.894 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:41.911 SCREEN w483 of Mail 698,240 470×416
+01:40:41.911 SCREEN mail (w481) 373,133 1120×630
+01:40:41.955 SCREEN w483 of Mail 751,264 470×416
+01:40:41.955 SCREEN mail (w481) 426,157 1120×630
+01:40:41.975 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 426 157 1120 630
+01:40:42.063 SCREEN w483 of Mail 778,276 470×416
+01:40:42.063 SCREEN mail (w481) 453,169 1120×630
+01:40:42.077 SCREEN w483 of Mail 804,288 470×416
+01:40:42.077 SCREEN mail (w481) 479,181 1120×630
+01:40:42.143 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 479 181 1120 630
+01:40:42.146 DEBUG raised w469, which stays in view
+01:40:42.153 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:42.156 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:42.171 SCREEN w483 of Mail 805,298 470×416
+01:40:42.171 SCREEN mail (w481) 480,191 1120×630
+01:40:42.273 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 480 191 1120 630
+01:40:42.303 SCREEN w483 of Mail 831,298 470×416
+01:40:42.303 SCREEN mail (w481) 506,191 1120×630
+01:40:42.380 SCREEN w483 of Mail 885,298 470×416
+01:40:42.380 SCREEN mail (w481) 560,191 1120×630
+01:40:42.413 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 560 191 1120 630
+01:40:42.421 DEBUG raised w469, which stays in view
+01:40:42.421 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:42.422 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:42.432 SCREEN w483 of Mail 911,298 470×416
+01:40:42.432 SCREEN mail (w481) 586,191 1120×630
+01:40:42.523 SCREEN w483 of Mail 938,298 470×416
+01:40:42.523 SCREEN mail (w481) 613,191 1120×630
+01:40:42.523 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 613 191 1120 630
+01:40:42.573 SCREEN w483 of Mail 965,298 470×416
+01:40:42.573 SCREEN mail (w481) 640,191 1120×630
+01:40:42.616 SCREEN w483 of Mail 991,298 470×416
+01:40:42.616 SCREEN mail (w481) 666,191 1120×630
+01:40:42.647 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:42.648 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:42.650 DEBUG raised w469, which stays in view
+01:40:42.653 SCREEN w483 of Mail 1018,298 470×416
+01:40:42.653 SCREEN mail (w481) 693,191 1120×630
+01:40:42.686 SCREEN w483 of Mail 1045,298 470×416
+01:40:42.686 SCREEN mail (w481) 720,191 1120×630
+01:40:42.693 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 720 191 1120 630
+01:40:42.704 SCREEN w483 of Mail 1071,310 470×416
+01:40:42.704 SCREEN mail (w481) 746,203 1120×630
+01:40:42.755 SCREEN w483 of Mail 1124,347 470×416
+01:40:42.755 SCREEN mail (w481) 799,240 1120×630
+01:40:42.806 SCREEN w483 of Mail 1151,359 470×416
+01:40:42.806 SCREEN mail (w481) 826,252 1120×630
+01:40:42.811 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 826 252 1120 630
+01:40:42.871 SCREEN w483 of Mail 1178,371 470×416
+01:40:42.871 SCREEN mail (w481) 853,264 1120×630
+01:40:42.908 DEBUG raised w469, which stays in view
+01:40:42.908 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:42.908 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:42.916 SCREEN w483 of Mail 1204,377 470×416
+01:40:42.916 SCREEN mail (w481) 879,270 1120×630
+01:40:42.942 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 879 270 1120 630
+01:40:42.988 SCREEN w483 of Mail 1231,377 470×416
+01:40:42.988 SCREEN mail (w481) 906,270 1120×630
+01:40:42.993 SCREEN w483 of Mail 1258,377 470×416
+01:40:42.993 SCREEN mail (w481) 933,270 1120×630
+01:40:43.060 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 933 270 1120 630
+01:40:43.100 SCREEN w483 of Mail 1311,389 470×416
+01:40:43.100 SCREEN mail (w481) 986,282 1120×630
+01:40:43.155 SCREEN w612 of WindowManager 785,16 830×821
+01:40:43.155 SCREEN w483 of Mail 1338,414 470×416
+01:40:43.155 SCREEN mail (w481) 1013,307 1120×630
+01:40:43.155 SCREEN w611 of WindowManager 785,16 830×821
+01:40:43.155 SCREEN front to back: w612 w483 mail w611 terminal preview notes safari settings textedit calendar finder w594 w595
+01:40:43.184 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 1013 307 1120 630
+01:40:43.190 DEBUG raised w469, which stays in view
+01:40:43.190 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:43.207 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:43.413 SCREEN w483 of Mail 1339,414 470×416
+01:40:43.413 SCREEN mail (w481) 1014,307 1120×630
+01:40:43.496 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:43.497 DEBUG raised w469, which stays in view
+01:40:43.497 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:43.525 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 1014 307 1120 630
+01:40:43.757 DEBUG raised w469, which stays in view
+01:40:43.757 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:43.758 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:44.040 DEBUG raised w469, which stays in view
+01:40:44.040 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:44.040 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:44.254 DEBUG raised w469, which stays in view
+01:40:44.254 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:44.256 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:44.464 DEBUG raised w469, which stays in view
+01:40:44.464 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:44.468 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:44.723 DEBUG raised w469, which stays in view
+01:40:44.723 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:44.724 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:44.930 SCREEN w483 of Mail 1338,414 470×416
+01:40:44.930 SCREEN mail (w481) 1013,307 1120×630
+01:40:44.970 SCREEN the button is up 1599 450
+01:40:44.978 SCREEN w611 of WindowManager left the screen
+01:40:44.978 SCREEN w612 of WindowManager left the screen
+01:40:44.978 SCREEN front to back: w483 mail terminal preview notes safari settings textedit calendar finder w594 w595
+01:40:44.998 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 1013 307 1120 630
+01:40:45.062 DEBUG raised w469, which stays in view
+01:40:45.069 SCREEN w483 of Mail 1297,394 470×416
+01:40:45.069 SCREEN mail (w481) 984,279 1096×647
+01:40:45.152 SCREEN w483 of Mail 1074,288 470×416
+01:40:45.152 SCREEN mail (w481) 829,129 960×734
+01:40:45.221 MACOS pid 45690 AXResized w481 AXWindow/AXStandardWindow 745 47 886 782
+01:40:45.222 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:45.222 MACOS pid 45690 AXResized w481 AXWindow/AXStandardWindow 745 47 886 782
+01:40:45.223 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:45.223 MACOS pid 45690 AXResized w481 AXWindow/AXStandardWindow 745 47 886 782
+01:40:45.240 SCREEN w483 of Mail 953,230 470×416
+01:40:45.240 SCREEN mail (w481) 745,47 886×782
+01:40:45.351 SCREEN w483 of Mail 933,221 470×416
+01:40:45.351 SCREEN mail (w481) 731,34 874×790
+01:40:45.356 MACOS pid 45690 AXResized w481 AXWindow/AXStandardWindow 729 32 872 791
+01:40:45.356 MACOS pid 45690 AXResized w481 AXWindow/AXStandardWindow 729 32 872 791
+01:40:45.361 SCREEN w483 of Mail 930,219 470×416
+01:40:45.361 SCREEN mail (w481) 729,32 872×791
+01:40:45.439 DEBUG raised w469, which stays in view
+01:40:45.440 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:45.441 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:45.671 DEBUG raised w469, which stays in view
+01:40:45.672 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:45.677 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:40:52.770 SCREEN -- end 67 act=drag-where-macos-tiles settled=quiet:350 drags=481 moves=455,466,455,466, front=481 own=481 floating=452,469,472,476,477,479,481 docked=455,466
+01:40:53.073 SCRIPT == 68 peek

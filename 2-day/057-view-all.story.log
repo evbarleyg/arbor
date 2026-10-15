@@ -1,0 +1,38 @@
+57 view-all: presses ⌃⌥Space
+expected: {'act': 'view', 'settled': 'quiet:959', 'moves': 'any', 'everything': '1', 'tiles': '', 'keyboard': '172', 'returns': '41', 'floating': '170,171,172,175,177,180', 'docked': '153,156,167'}
+ODD rule 3: the last window came to rest 729 ms after the key or the button
+FAIL rule 2: notes (w171) is not back where it was after step 41: 300,105 1000×660, it was at 202,105 709×660
+FAIL rule 2: calendar (w172) is not back where it was after step 41: 403,115 937×600, it was at 217,115 680×600
+FAIL rule 2: settings (w175) is not back where it was after step 41: 437,85 723×625, it was at 195,85 723×625
+FAIL rule 2: preview (w177) is not back where it was after step 41: 4,35 708×424, it was at 203,35 708×424
+FAIL rule 2: mail (w180) is not back where it was after step 41: 240,72 1120×630, it was at 121,72 871×630
+FAIL rule 2: w182 of Mail is not back where it was after step 41: 565,179 470×416, it was at 322,179 470×416
+
+01:31:27.602 SCREEN -- begin 57 view-all
+01:31:27.602 SCREEN -- text 57 presses ⌃⌥Space
+01:31:27.781 DEBUG commands follow the pointer: a shortcut, pointer idle 1.5 s, keys 4.5 s, focus 1.7 s
+01:31:27.793 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+01:31:27.844 SCREEN w251 of Arbor 0,0 1600×900 (level 4)
+01:31:27.866 SCREEN finder (w153) 1599,770 501×767
+01:31:27.871 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 501 767
+01:31:27.873 MACOS pid 15700 AXMoved w153 AXWindow/AXStandardWindow 12 43 501 767
+01:31:27.897 SCREEN finder (w153) 12,43 501×767
+01:31:27.897 SCREEN safari (w156) 1599,770 574×767
+01:31:27.931 SCREEN safari (w156) 617,43 574×767
+01:31:27.942 MACOS pid 16910 AXResized w156 AXWindow/AXStandardWindow 1599 770 574 767
+01:31:27.944 MACOS pid 16910 AXMoved w156 AXWindow/AXStandardWindow 617 43 574 767
+01:31:27.945 MACOS pid 16993 AXMoved w167 AXWindow/AXStandardWindow 1203 43 385 767
+01:31:27.963 SCREEN textedit (w167) 1203,43 385×767
+01:31:27.986 INFO  show-all: showing everything
+01:31:27.991 DEBUG peek: the key came up
+01:31:27.999 SCREEN w266 of Arbor 513,43 12×767
+01:31:27.999 SCREEN w256 of Arbor 605,43 12×767
+01:31:27.999 SCREEN w261 of Arbor 1191,43 12×767
+01:31:27.999 SCREEN w254 of Arbor 0,31 1600×791 (level -2147483602)
+01:31:27.999 SCREEN front to back: w253 calendar finder safari preview w182 mail settings notes terminal textedit w202 w266 w256 w261
+01:31:28.031 SCREEN w260 of Arbor 525,43 80×767
+01:31:28.031 SCREEN front to back: w253 calendar finder safari preview w182 mail settings notes terminal textedit w202 w260 w266 w256 w261
+01:31:28.479 DEBUG stage down
+01:31:28.516 SCREEN w251 of Arbor left the screen
+01:31:29.173 SCREEN -- end 57 act=view settled=quiet:959 moves=any everything=1 tiles= keyboard=172 returns=41 floating=170,171,172,175,177,180 docked=153,156,167
+01:31:29.968 SCRIPT == 58 click-safari

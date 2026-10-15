@@ -1,0 +1,65 @@
+74 view-right: presses ⌃⌥→
+expected: {'act': 'view', 'settled': 'quiet:1168', 'moves': 'any', 'floating': '469', 'docked': '452,455,466,472,476,477,479,481'}
+ODD rule 3: the last window came to rest 943 ms after the key or the button
+
+01:41:10.800 SCREEN -- begin 74 view-right
+01:41:10.800 SCREEN -- text 74 presses ⌃⌥→
+01:41:10.959 INFO  made room for w477
+01:41:10.966 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 7 stand-ins, 0.46 s
+01:41:10.971 SCREEN w620 of Arbor 0,0 1600×900 (level 4)
+01:41:11.015 SCREEN safari (w455) 12,43 1576×220
+01:41:11.033 MACOS pid 44472 AXResized w455 AXWindow/AXStandardWindow 12 43 1576 220
+01:41:11.034 MACOS pid 44472 AXMoved w455 AXWindow/AXStandardWindow 12 43 1576 220
+01:41:11.045 MACOS pid 45417 AXMoved w477 AXWindow/AXStandardWindow 12 340 723 470
+01:41:11.046 MACOS pid 45417 AXMoved w477 AXWindow/AXStandardWindow 438 340 723 470
+01:41:11.052 MACOS pid 45539 AXMoved w479 AXWindow/AXStandardWindow 1599 770 1576 767
+01:41:11.053 INFO  made room for w452
+01:41:11.072 SCREEN preview (w479) 1599,770 1576×767
+01:41:11.072 SCREEN settings (w477) 438,340 723×470
+01:41:11.143 SCREEN finder (w452) 1599,770 1576×252
+01:41:11.147 MACOS pid 43355 AXResized w452 AXWindow/AXStandardWindow 12 302 1576 252
+01:41:11.150 SCREEN finder (w452) 12,302 1576×252
+01:41:11.153 MACOS pid 43355 AXMoved w452 AXWindow/AXStandardWindow 12 302 1576 252
+01:41:11.179 SCREEN safari (w455) 12,43 1576×247
+01:41:11.179 MACOS pid 44472 AXResized w455 AXWindow/AXStandardWindow 12 43 1576 247
+01:41:11.188 MACOS pid 45417 AXMoved w477 AXWindow/AXStandardWindow 1599 770 723 470
+01:41:11.200 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 7 stand-ins, 0.46 s
+01:41:11.202 SCREEN settings (w477) 1599,770 723×470
+01:41:11.229 MACOS pid 44472 AXFocusedWindowChanged w455 AXWindow/AXStandardWindow 12 43 1576 247
+01:41:11.230 MACOS pid 44472 AXMainWindowChanged w455 AXWindow/AXStandardWindow 12 43 1576 247
+01:41:11.235 SCREEN front to back: w596 preview safari terminal textedit w483 mail notes settings calendar finder
+01:41:11.236 MACOS pid 44472 AXFocusedWindowChanged w455 AXWindow/AXStandardWindow 12 43 1576 247
+01:41:11.236 MACOS pid 44472 AXMainWindowChanged w455 AXWindow/AXStandardWindow 12 43 1576 247
+01:41:11.237 SCREEN in front: process 44472 com.apple.Safari
+01:41:11.237 INFO  neighbor right: moved to Safari, Finder and System Settings (n8)
+01:41:11.278 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Too small to show: click the tile to zoom in · ⌃⌥G goes there too
+01:41:11.278 MACOS workspace didActivate pid 44472 com.apple.Safari regular
+01:41:11.320 SCREEN front to back: safari w596 preview terminal textedit w483 mail notes settings calendar finder
+01:41:11.321 MACOS workspace didDeactivate pid 45539 com.apple.Preview regular
+01:41:11.321 MACOS pid 45539 AXApplicationDeactivated
+01:41:11.347 MACOS pid 44472 AXApplicationActivated
+01:41:11.352 SCREEN w601 of Arbor 554,728 493×38 (level 6)
+01:41:11.352 SCREEN w630 of Arbor 12,290 1576×12
+01:41:11.352 SCREEN w628 of Arbor 12,554 1576×12
+01:41:11.352 SCREEN w596 of Arbor left the screen
+01:41:11.352 SCREEN front to back: safari preview terminal textedit w483 mail notes settings calendar finder w630 w628
+01:41:11.355 DEBUG focus is on w455
+01:41:11.355 DEBUG w455 has the keyboard
+01:41:11.367 SCREEN w596 of Arbor 3,34 1594×265
+01:41:11.367 SCREEN front to back: w596 safari preview terminal textedit w483 mail notes settings calendar finder w630 w628
+01:41:11.451 SCREEN w622 of Arbor 12,566 1576×244
+01:41:11.451 SCREEN front to back: w596 safari preview terminal textedit w483 mail notes settings calendar finder w622 w630 w628
+01:41:11.468 DEBUG raised w469, which stays in view
+01:41:11.470 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:41:11.476 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:41:11.494 SCREEN front to back: w596 safari terminal preview textedit w483 mail notes settings calendar finder w622 w630 w628
+01:41:11.708 DEBUG raised w469, which stays in view
+01:41:11.711 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:41:11.711 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:41:11.890 DEBUG stage down
+01:41:11.906 SCREEN w620 of Arbor left the screen
+01:41:11.915 DEBUG raised w469, which stays in view
+01:41:11.919 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:41:11.919 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:41:12.599 SCREEN -- end 74 act=view settled=quiet:1168 moves=any floating=469 docked=452,455,466,472,476,477,479,481
+01:41:12.922 SCRIPT == 75 view-right

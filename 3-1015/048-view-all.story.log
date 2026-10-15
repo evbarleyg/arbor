@@ -1,0 +1,64 @@
+48 view-all: presses ⌃⌥Space
+expected: {'act': 'view', 'settled': 'quiet:950', 'moves': 'any', 'everything': '1', 'tiles': '', 'keyboard': '479', 'floating': '452,466,469,472,476,477,479,481', 'docked': '455'}
+FAIL rule -: w479 is in view for Arbor but only 88% of it is on a display: -84,433 708×389
+
+01:39:27.956 SCREEN -- begin 48 view-all
+01:39:27.956 SCREEN -- text 48 presses ⌃⌥Space
+01:39:28.116 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+01:39:28.123 MACOS pid 44472 AXMoved w455 AXWindow/AXStandardWindow 12 43 1576 378
+01:39:28.140 SCREEN w518 of Arbor 0,0 1600×900 (level 4)
+01:39:28.140 SCREEN safari (w455) 12,43 1576×378
+01:39:28.140 SCREEN finder (w452) 340,120 920×389
+01:39:28.154 MACOS pid 43355 AXResized w452 AXWindow/AXStandardWindow 340 120 920 389
+01:39:28.155 MACOS pid 43355 AXMoved w452 AXWindow/AXStandardWindow 340 433 920 389
+01:39:28.170 MACOS pid 44587 AXResized w466 AXWindow/AXStandardWindow -1 433 800 390
+01:39:28.171 MACOS pid 44587 AXMoved w466 AXWindow/AXStandardWindow -1 433 800 390
+01:39:28.199 MACOS pid 44713 AXResized w472 AXWindow/AXStandardWindow 0 433 800 389
+01:39:28.199 MACOS pid 44713 AXMoved w472 AXWindow/AXStandardWindow 0 433 800 389
+01:39:28.200 SCREEN notes (w472) 0,31 800×389
+01:39:28.200 SCREEN finder (w452) 340,433 920×389
+01:39:28.200 SCREEN textedit (w466) -1,433 800×390
+01:39:28.243 MACOS pid 45225 AXResized w476 AXWindow/AXStandardWindow 800 319 800 503
+01:39:28.243 MACOS pid 45225 AXMoved w476 AXWindow/AXStandardWindow 800 319 800 503
+01:39:28.245 DEBUG raised w476, which was left hanging over docked windows
+01:39:28.245 MACOS pid 45225 AXFocusedWindowChanged w476 AXWindow/AXStandardWindow 800 319 800 503
+01:39:28.245 MACOS pid 45225 AXMainWindowChanged w476 AXWindow/AXStandardWindow 800 319 800 503
+01:39:28.272 SCREEN calendar (w476) 800,319 800×503
+01:39:28.272 SCREEN notes (w472) 0,433 800×389
+01:39:28.272 SCREEN front to back: w520 preview calendar terminal notes safari settings finder textedit w498 w483 mail
+01:39:28.277 MACOS pid 45417 AXResized w477 AXWindow/AXStandardWindow 437 352 723 470
+01:39:28.278 MACOS pid 45417 AXMoved w477 AXWindow/AXStandardWindow 437 352 723 470
+01:39:28.283 SCREEN settings (w477) 437,85 723×470
+01:39:28.289 DEBUG raised w477, which was left hanging over docked windows
+01:39:28.290 MACOS pid 45417 AXFocusedWindowChanged w477 AXWindow/AXStandardWindow 437 352 723 470
+01:39:28.291 MACOS pid 45417 AXMainWindowChanged w477 AXWindow/AXStandardWindow 437 352 723 470
+01:39:28.309 MACOS pid 45539 AXResized w479 AXWindow/AXStandardWindow -84 433 708 389
+01:39:28.311 MACOS pid 45539 AXMoved w479 AXWindow/AXStandardWindow -84 433 708 389
+01:39:28.318 SCREEN preview (w479) -84,433 708×389
+01:39:28.318 SCREEN settings (w477) 437,352 723×470
+01:39:28.318 SCREEN front to back: w520 preview settings calendar terminal notes safari finder textedit w498 w483 mail
+01:39:28.375 MACOS pid 45690 AXResized w481 AXWindow/AXStandardWindow 240 433 1120 389
+01:39:28.377 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 240 433 1120 389
+01:39:28.385 SCREEN w483 of Mail 565,485 470×416
+01:39:28.385 SCREEN mail (w481) 240,433 1120×389
+01:39:28.390 INFO  show-all: showing everything
+01:39:28.393 DEBUG peek: the key came up
+01:39:28.416 SCREEN w520 of Arbor -90,424 723×404
+01:39:28.416 SCREEN w551 of Arbor 12,421 1576×12
+01:39:28.416 SCREEN w521 of Arbor 0,31 1600×791 (level -2147483602)
+01:39:28.416 SCREEN front to back: w520 preview settings calendar terminal notes safari finder textedit w498 w483 mail w551
+01:39:28.429 SCREEN front to back: w520 preview terminal settings calendar notes safari finder textedit w498 w483 mail w551
+01:39:28.430 DEBUG raised w469, which stays in view
+01:39:28.430 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:39:28.430 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:39:28.711 DEBUG raised w469, which stays in view
+01:39:28.711 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:39:28.712 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:39:28.756 DEBUG stage down
+01:39:28.773 SCREEN w518 of Arbor left the screen
+01:39:28.967 DEBUG raised w469, which stays in view
+01:39:28.969 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:39:28.969 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:39:31.231 SCREEN -- finding 48 - FAIL w479 is in view for Arbor but only 88% of it is on a display: -84,433 708×389
+01:39:31.231 SCREEN -- end 48 act=view settled=quiet:950 moves=any everything=1 tiles= keyboard=479 floating=452,466,469,472,476,477,479,481 docked=455
+01:39:31.622 SCRIPT == 49 dock-icon-textedit

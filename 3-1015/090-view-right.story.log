@@ -1,0 +1,59 @@
+90 view-right: presses ⌃⌥→
+expected: {'act': 'view', 'settled': 'quiet:1413', 'moves': 'any', 'floating': '469,644', 'docked': '452,455,466,472,476,477,479,481'}
+ODD rule 3: the last window came to rest 759 ms after the key or the button
+
+01:42:56.811 SCREEN -- begin 90 view-right
+01:42:56.811 SCREEN -- text 90 presses ⌃⌥→
+01:42:56.965 DEBUG commands follow the keyboard: a shortcut, pointer idle 48.2 s, keys 2.4 s, focus 2.1 s
+01:42:56.983 SCREEN w620 of Arbor 0,0 1600×900 (level 4)
+01:42:56.985 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 7 stand-ins, 0.46 s
+01:42:57.076 SCREEN calendar (w476) 1599,770 1576×503
+01:42:57.080 MACOS pid 45225 AXResized w476 AXWindow/AXStandardWindow 12 307 1576 503
+01:42:57.083 MACOS pid 45225 AXMoved w476 AXWindow/AXStandardWindow 12 307 1576 503
+01:42:57.084 SCREEN calendar (w476) 12,307 1576×503
+01:42:57.234 SCREEN w483 of Mail 2152,822 470×416
+01:42:57.234 SCREEN mail (w481) 1599,770 1576×252
+01:42:57.263 SCREEN w483 of Mail 565,95 470×416
+01:42:57.263 SCREEN mail (w481) 12,43 1576×252
+01:42:57.293 MACOS pid 45690 AXResized w481 AXWindow/AXStandardWindow 12 43 1576 252
+01:42:57.294 MACOS pid 45690 AXMoved w481 AXWindow/AXStandardWindow 12 43 1576 252
+01:42:57.298 MACOS pid 44472 AXMoved w455 AXWindow/AXStandardWindow 1599 770 1576 248
+01:42:57.323 MACOS pid 43355 AXMoved w644 AXWindow/AXStandardWindow 1599 770 920 436
+01:42:57.326 SCREEN finder-new-82 (w644) 1599,770 920×436
+01:42:57.326 SCREEN safari (w455) 1599,770 1576×248
+01:42:57.361 MACOS pid 45225 AXFocusedWindowChanged w476 AXWindow/AXStandardWindow 12 307 1576 503
+01:42:57.363 MACOS pid 45225 AXMainWindowChanged w476 AXWindow/AXStandardWindow 12 307 1576 503
+01:42:57.369 SCREEN in front: process 45225 com.apple.iCal
+01:42:57.369 MACOS pid 45225 AXFocusedWindowChanged w476 AXWindow/AXStandardWindow 12 307 1576 503
+01:42:57.370 INFO  neighbor right: moved to Mail and Calendar (n12)
+01:42:57.370 MACOS workspace didActivate pid 45225 com.apple.iCal regular
+01:42:57.370 MACOS workspace didDeactivate pid 43355 com.apple.finder regular
+01:42:57.371 MACOS pid 45225 AXMainWindowChanged w476 AXWindow/AXStandardWindow 12 307 1576 503
+01:42:57.413 SCREEN w658 of Arbor 12,295 1576×12
+01:42:57.413 SCREEN w652 of Arbor left the screen
+01:42:57.413 SCREEN w659 of Arbor left the screen
+01:42:57.413 SCREEN front to back: finder-new-82 calendar terminal settings finder safari preview textedit w483 mail notes w656 w657 w658
+01:42:57.436 MACOS pid 43355 AXApplicationDeactivated
+01:42:57.542 DEBUG focus is on w476
+01:42:57.542 MACOS pid 45225 AXApplicationActivated
+01:42:57.543 DEBUG w476 has the keyboard
+01:42:57.547 SCREEN (nothing was seen for 134 ms)
+01:42:57.547 SCREEN front to back: calendar finder-new-82 terminal settings finder safari preview textedit w483 mail notes w656 w657 w658
+01:42:57.636 SCREEN w652 of Arbor 3,298 1594×521
+01:42:57.636 SCREEN w656 of Arbor left the screen
+01:42:57.636 SCREEN w657 of Arbor left the screen
+01:42:57.636 SCREEN front to back: w652 calendar finder-new-82 terminal settings finder safari preview textedit w483 mail notes w658
+01:42:57.644 DEBUG raised w469, which stays in view
+01:42:57.645 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:42:57.646 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:42:57.664 SCREEN front to back: w652 calendar terminal finder-new-82 settings finder safari preview textedit w483 mail notes w658
+01:42:57.685 DEBUG stage down
+01:42:57.727 SCREEN w620 of Arbor left the screen
+01:42:57.909 DEBUG raised w469, which stays in view
+01:42:57.910 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:42:57.911 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:42:58.150 DEBUG raised w469, which stays in view
+01:42:58.159 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:42:58.161 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 800 35 801 784
+01:42:58.827 SCREEN -- end 90 act=view settled=quiet:1413 moves=any floating=469,644 docked=452,455,466,472,476,477,479,481
+01:42:59.177 SCRIPT == 91 dock-icon-safari

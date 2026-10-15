@@ -1,0 +1,9 @@
+32 leave-alone: does nothing for half a minute
+expected: {'act': 'idle', 'settled': 'quiet:395', 'floating': '452,466,469,472,476,477,479,481', 'docked': '455'}
+FAIL rule -: with nothing to do Arbor used 1.5 % of a core
+
+01:37:27.355 SCREEN -- begin 32 leave-alone
+01:37:27.355 SCREEN -- text 32 does nothing for half a minute
+01:37:57.469 SCREEN -- finding 32 -:busy FAIL with nothing to do Arbor used 1.5 % of a core
+01:37:59.580 SCREEN -- end 32 act=idle settled=quiet:395 floating=452,466,469,472,476,477,479,481 docked=455
+01:38:00.033 SCRIPT == 33 leave-alone

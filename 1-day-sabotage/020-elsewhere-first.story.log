@@ -1,0 +1,12 @@
+20 elsewhere-first: OFFENCE: a window goes somewhere else before it goes where it ends up
+expected: {'act': 'dock-key', 'settled': 'quiet:1062', 'moves': '45', 'offence': 'jolt'}
+FAIL rule 3: textedit (w45) went 960 points out of its way before it ended up
+
+01:25:50.728 SCREEN -- begin 20 elsewhere-first
+01:25:50.728 SCREEN -- text 20 OFFENCE: a window goes somewhere else before it goes where it ends up
+01:25:50.760 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 700 300 600 420
+01:25:50.803 SCREEN textedit (w45) 700,300 600×420
+01:25:50.947 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 100 100 600 420
+01:25:50.953 SCREEN textedit (w45) 100,100 600×420
+01:25:52.015 SCREEN -- end 20 act=dock-key settled=quiet:1062 moves=45 offence=jolt
+01:25:52.322 SCRIPT == 21 somebody-else

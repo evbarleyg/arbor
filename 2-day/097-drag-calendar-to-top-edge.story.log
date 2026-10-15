@@ -1,0 +1,116 @@
+97 drag-calendar-to-top-edge: drags calendar by its title bar against the top edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:376', 'drags': '172', 'moves': '153,156,153,156,', 'front': '172', 'own': '172', 'floating': '170,171,172,175,177,180,335', 'docked': '153,156'}
+FAIL rule 1: calendar (w172) Arbor's drop preview was up with the pointer within 12 points of an edge of the screen that is macOS's
+
+01:33:28.089 SCREEN -- begin 97 drag-calendar-to-top-edge
+01:33:28.089 SCREEN -- text 97 drags calendar by its title bar against the top edge of the screen and lets go
+01:33:28.146 SCRIPT drag w172 from 913,127 to 800,0
+01:33:28.657 SCREEN the button is down 913 127
+01:33:28.697 SCREEN front to back: calendar w253 notes finder safari textedit terminal w182 mail preview settings w202 w256 w266
+01:33:28.931 SCREEN calendar (w172) 419,110 680×600
+01:33:28.937 DEBUG w172 is being dragged
+01:33:28.938 DEBUG drag of w172: on float
+01:33:28.943 SCREEN calendar (w172) 415,106 680×600
+01:33:28.978 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 415 106 680 600
+01:33:28.984 SCREEN w253 of Arbor left the screen
+01:33:28.984 SCREEN front to back: calendar notes finder safari textedit terminal w182 mail preview settings w202 w256 w266
+01:33:29.064 SCREEN calendar (w172) 411,102 680×600
+01:33:29.115 SCREEN calendar (w172) 407,98 680×600
+01:33:29.128 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 407 98 680 600
+01:33:29.215 SCREEN calendar (w172) 404,93 680×600
+01:33:29.311 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 400 89 680 600
+01:33:29.338 SCREEN calendar (w172) 396,85 680×600
+01:33:29.406 SCREEN calendar (w172) 392,81 680×600
+01:33:29.426 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 392 81 680 600
+01:33:29.438 SCREEN calendar (w172) 389,76 680×600
+01:33:29.541 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 385 72 680 600
+01:33:29.571 SCREEN calendar (w172) 385,72 680×600
+01:33:29.613 SCREEN calendar (w172) 381,68 680×600
+01:33:29.675 SCREEN calendar (w172) 377,64 680×600
+01:33:29.712 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 377 64 680 600
+01:33:29.730 SCREEN calendar (w172) 374,59 680×600
+01:33:29.811 SCREEN calendar (w172) 370,55 680×600
+01:33:29.836 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 366 51 680 600
+01:33:29.872 SCREEN calendar (w172) 362,47 680×600
+01:33:29.933 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 358 43 680 600
+01:33:29.985 SCREEN calendar (w172) 358,43 680×600
+01:33:30.037 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 355 38 680 600
+01:33:30.047 SCREEN calendar (w172) 355,38 680×600
+01:33:30.118 SCREEN calendar (w172) 351,34 680×600
+01:33:30.207 DEBUG drag of w172: on cameraEdge(ArborCore.Edge.top)
+01:33:30.213 SCREEN calendar (w172) 347,31 680×600
+01:33:30.222 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 347 31 680 600
+01:33:30.223 SCREEN w265 of Arbor 12,43 1576×378 (level 3)
+01:33:30.305 SCREEN calendar (w172) 343,31 680×600
+01:33:30.372 SCREEN calendar (w172) 340,31 680×600
+01:33:30.393 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 340 31 680 600
+01:33:30.415 DEBUG drag of w172: on float, left to macOS’s tiling
+01:33:30.430 SCREEN calendar (w172) 336,31 680×600
+01:33:30.489 SCREEN calendar (w172) 332,31 680×600
+01:33:30.520 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 332 31 680 600
+01:33:30.530 SCREEN w265 of Arbor left the screen
+01:33:30.621 SCREEN calendar (w172) 325,31 680×600
+01:33:30.682 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 325 31 680 600
+01:33:30.685 SCREEN calendar (w172) 321,31 680×600
+01:33:30.738 SCREEN calendar (w172) 317,31 680×600
+01:33:30.784 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 317 31 680 600
+01:33:30.836 SCREEN calendar (w172) 313,31 680×600
+01:33:30.907 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 310 31 680 600
+01:33:30.913 SCREEN calendar (w172) 310,31 680×600
+01:33:31.006 SCREEN w390 of WindowManager -15,16 1630×821
+01:33:31.006 SCREEN w389 of WindowManager -15,16 1630×821
+01:33:31.006 SCREEN front to back: w390 calendar w389 notes finder safari textedit terminal w182 mail preview settings w202 w256 w266
+01:33:31.147 SCREEN calendar (w172) 311,31 680×600
+01:33:31.194 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 311 31 680 600
+01:33:32.588 SCREEN calendar (w172) 310,31 680×600
+01:33:32.624 SCREEN the button is up 800 0
+01:33:32.636 SCREEN w389 of WindowManager left the screen
+01:33:32.636 SCREEN w390 of WindowManager left the screen
+01:33:32.636 SCREEN front to back: calendar notes finder safari textedit terminal w182 mail preview settings w202 w256 w266
+01:33:32.636 MACOS pid 17536 AXMoved w172 AXWindow/AXStandardWindow 310 31 680 600
+01:33:32.642 INFO  dropped w172 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5, left to macOS’s tiling
+01:33:32.654 SCREEN w253 of Arbor 301,25 698×615
+01:33:32.654 SCREEN front to back: w253 calendar notes finder safari textedit terminal w182 mail preview settings w202 w256 w266
+01:33:32.669 SCREEN calendar (w172) 288,31 743×613
+01:33:32.694 SCREEN calendar (w172) 189,31 1037×675
+01:33:32.696 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 189 31 1037 675
+01:33:32.696 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 189 31 1037 675
+01:33:32.696 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 189 31 1037 675
+01:33:32.709 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 143 31 1175 703
+01:33:32.726 SCREEN w253 of Arbor 232,25 1055×690
+01:33:32.726 SCREEN calendar (w172) 143,31 1175×703
+01:33:32.726 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 105 31 1288 727
+01:33:32.744 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 75 31 1375 745
+01:33:32.762 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 53 31 1440 758
+01:33:32.773 SCREEN w253 of Arbor 96,25 1306×742
+01:33:32.773 SCREEN calendar (w172) 53,31 1440×758
+01:33:32.779 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 37 31 1488 768
+01:33:32.790 SCREEN w253 of Arbor 66,25 1393×760
+01:33:32.790 SCREEN calendar (w172) 37,31 1488×768
+01:33:32.809 SCREEN w253 of Arbor 44,25 1458×773
+01:33:32.809 SCREEN calendar (w172) 26,31 1523×775
+01:33:32.811 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 18 31 1547 780
+01:33:32.811 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 18 31 1547 780
+01:33:32.827 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 12 31 1564 784
+01:33:32.844 SCREEN w253 of Arbor 9,25 1565×795
+01:33:32.844 SCREEN calendar (w172) 12,31 1564×784
+01:33:32.844 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 8 31 1576 786
+01:33:32.859 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 5 31 1584 788
+01:33:32.876 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 3 31 1589 789
+01:33:32.885 SCREEN w253 of Arbor -4,25 1602×803
+01:33:32.885 SCREEN calendar (w172) 3,31 1589×789
+01:33:32.891 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 2 31 1593 790
+01:33:32.907 SCREEN calendar (w172) 2,31 1593×790
+01:33:32.914 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 1 31 1595 790
+01:33:32.926 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 1 31 1597 791
+01:33:32.941 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 0 31 1598 791
+01:33:32.956 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 0 31 1599 791
+01:33:32.970 SCREEN w253 of Arbor -6,25 1612×803
+01:33:32.970 SCREEN calendar (w172) 0,31 1599×791
+01:33:32.976 MACOS pid 17536 AXResized w172 AXWindow/AXStandardWindow 0 31 1600 791
+01:33:32.983 SCREEN calendar (w172) 0,31 1600×791
+01:33:33.149 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: macOS tiles windows let go here, so Arbor stood aside · Check Setup… in the menu
+01:33:33.175 SCREEN w255 of Arbor 489,728 622×38 (level 6)
+01:33:38.372 SCREEN w255 of Arbor left the screen
+01:33:39.009 SCREEN -- end 97 act=drag-where-macos-tiles settled=quiet:376 drags=172 moves=153,156,153,156, front=172 own=172 floating=170,171,172,175,177,180,335 docked=153,156
+01:33:39.341 SCRIPT == 98 drag-calendar-by

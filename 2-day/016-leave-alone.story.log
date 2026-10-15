@@ -1,0 +1,12 @@
+16 leave-alone: does nothing for half a minute
+expected: {'act': 'idle', 'settled': 'quiet:408', 'floating': '153,156,167,170,171,172,175,177,180', 'docked': ''}
+FAIL rule -: with nothing to do Arbor used 1.6 % of a core
+
+01:29:11.514 SCREEN -- begin 16 leave-alone
+01:29:11.515 SCREEN -- text 16 does nothing for half a minute
+01:29:41.577 SCREEN -- finding 16 -:busy FAIL with nothing to do Arbor used 1.6 % of a core
+01:29:42.110 SCREEN -- end 16 act=idle settled=quiet:408 floating=153,156,167,170,171,172,175,177,180 docked=
+01:29:42.477 SCREEN -- chapter Switching between apps, nothing docked yet
+01:29:42.492 INFO  trace day-1 ended: 57 lines, trace off
+01:29:42.513 INFO  trace day-2: recording to /tmp/arbor-shell.jFQW4D/home/traces/2026-10-15-012942-day-2.jsonl
+01:29:42.571 SCRIPT == 17 dock-icon-finder

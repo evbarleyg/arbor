@@ -1,0 +1,106 @@
+27 drag-preview-by: drags preview, which floats, by its title bar -121 across and -22 down
+expected: {'act': 'drag', 'settled': 'quiet:1112', 'drags': '479', 'front': '479', 'own': '479', 'floating': '452,466,469,472,476,477,479,481', 'docked': '455'}
+FAIL rule -: w479 is in view for Arbor but only 88% of it is on a display: -84,432 708×389
+FAIL rule 4: preview (w479) is not wholly in view: 88% of it, at -84,432 708×389 in 0,31 1600×791
+
+01:37:05.293 SCREEN -- begin 27 drag-preview-by
+01:37:05.293 SCREEN -- text 27 drags preview, which floats, by its title bar -121 across and -22 down
+01:37:05.343 SCRIPT drag w479 from 312,445 to 191,423
+01:37:05.942 SCREEN front to back: preview w520 terminal finder settings calendar textedit safari notes w498 w483 mail w519
+01:37:05.942 SCREEN the button is down 312 445
+01:37:05.946 DEBUG raised w469, which stays in view
+01:37:05.946 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:05.954 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:05.968 SCREEN front to back: preview terminal w520 finder settings calendar textedit safari notes w498 w483 mail w519
+01:37:06.170 DEBUG w479 is being dragged
+01:37:06.171 DEBUG drag of w479: on float
+01:37:06.175 DEBUG raised w469, which stays in view
+01:37:06.183 SCREEN preview (w479) 0,432 708×389
+01:37:06.194 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:06.195 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:06.275 MACOS pid 45539 AXMoved w479 AXWindow/AXStandardWindow 0 432 708 389
+01:37:06.314 SCREEN w520 of Arbor left the screen
+01:37:06.314 SCREEN front to back: preview terminal finder settings calendar textedit safari notes w498 w483 mail w519
+01:37:06.411 DEBUG raised w469, which stays in view
+01:37:06.423 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:06.424 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:06.659 DEBUG raised w469, which stays in view
+01:37:06.659 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:06.664 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:06.856 SCREEN preview (w479) -5,432 708×389
+01:37:06.877 SCREEN preview (w479) -12,432 708×389
+01:37:06.888 DEBUG raised w469, which stays in view
+01:37:06.891 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:06.891 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:06.898 SCREEN preview (w479) -16,432 708×389
+01:37:06.949 MACOS pid 45539 AXMoved w479 AXWindow/AXStandardWindow -16 432 708 389
+01:37:07.005 SCREEN preview (w479) -20,432 708×389
+01:37:07.015 SCREEN preview (w479) -24,432 708×389
+01:37:07.092 MACOS pid 45539 AXMoved w479 AXWindow/AXStandardWindow -28 432 708 389
+01:37:07.108 SCREEN preview (w479) -28,432 708×389
+01:37:07.138 DEBUG raised w469, which stays in view
+01:37:07.146 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:07.146 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:07.147 SCREEN preview (w479) -32,432 708×389
+01:37:07.232 SCREEN preview (w479) -36,432 708×389
+01:37:07.251 MACOS pid 45539 AXMoved w479 AXWindow/AXStandardWindow -36 432 708 389
+01:37:07.294 SCREEN preview (w479) -40,432 708×389
+01:37:07.329 SCREEN preview (w479) -44,432 708×389
+01:37:07.368 DEBUG raised w469, which stays in view
+01:37:07.373 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:07.373 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:07.393 MACOS pid 45539 AXMoved w479 AXWindow/AXStandardWindow -44 432 708 389
+01:37:07.421 SCREEN preview (w479) -48,432 708×389
+01:37:07.465 SCREEN preview (w479) -52,432 708×389
+01:37:07.524 MACOS pid 45539 AXMoved w479 AXWindow/AXStandardWindow -52 432 708 389
+01:37:07.546 SCREEN preview (w479) -56,432 708×389
+01:37:07.589 SCREEN preview (w479) -60,432 708×389
+01:37:07.650 SCREEN preview (w479) -64,432 708×389
+01:37:07.663 MACOS pid 45539 AXMoved w479 AXWindow/AXStandardWindow -64 432 708 389
+01:37:07.664 DEBUG raised w469, which stays in view
+01:37:07.665 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:07.666 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:07.754 MACOS pid 45539 AXMoved w479 AXWindow/AXStandardWindow -68 432 708 389
+01:37:07.780 SCREEN preview (w479) -68,432 708×389
+01:37:07.839 SCREEN preview (w479) -72,432 708×389
+01:37:07.912 DEBUG raised w469, which stays in view
+01:37:07.913 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:07.921 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:07.939 MACOS pid 45539 AXMoved w479 AXWindow/AXStandardWindow -80 432 708 389
+01:37:07.948 SCREEN preview (w479) -84,432 708×389
+01:37:08.047 MACOS pid 45539 AXMoved w479 AXWindow/AXStandardWindow -84 432 708 389
+01:37:08.151 DEBUG raised w469, which stays in view
+01:37:08.154 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:08.155 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:08.255 SCREEN preview (w479) -83,432 708×389
+01:37:08.337 MACOS pid 45539 AXMoved w479 AXWindow/AXStandardWindow -83 432 708 389
+01:37:08.359 DEBUG raised w469, which stays in view
+01:37:08.368 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:08.369 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:08.601 DEBUG raised w469, which stays in view
+01:37:08.602 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:08.605 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:08.880 DEBUG raised w469, which stays in view
+01:37:08.880 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:08.885 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:09.005 SCREEN preview (w479) -84,432 708×389
+01:37:09.104 MACOS pid 45539 AXMoved w479 AXWindow/AXStandardWindow -84 432 708 389
+01:37:09.110 DEBUG raised w469, which stays in view
+01:37:09.115 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:09.115 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:09.119 INFO  dropped w479 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+01:37:09.150 SCREEN the button is up 191 423
+01:37:09.180 SCREEN w520 of Arbor -90,423 723×405
+01:37:09.180 SCREEN front to back: w520 preview terminal finder settings calendar textedit safari notes w498 w483 mail w519
+01:37:09.361 DEBUG raised w469, which stays in view
+01:37:09.361 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:09.362 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:09.596 DEBUG raised w469, which stays in view
+01:37:09.597 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:09.597 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:09.817 DEBUG raised w469, which stays in view
+01:37:09.820 MACOS pid 44644 AXFocusedWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:09.821 MACOS pid 44644 AXMainWindowChanged w469 AXWindow/AXStandardWindow 97 238 877 499
+01:37:11.928 SCREEN -- finding 27 - FAIL w479 is in view for Arbor but only 88% of it is on a display: -84,432 708×389
+01:37:11.928 SCREEN -- end 27 act=drag settled=quiet:1112 drags=479 front=479 own=479 floating=452,466,469,472,476,477,479,481 docked=455
+01:37:12.525 SCRIPT == 28 view-forward

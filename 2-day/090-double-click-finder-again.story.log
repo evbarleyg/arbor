@@ -1,0 +1,47 @@
+90 double-click-finder-again: double-clicks it again: macOS takes the window back
+expected: {'act': 'macos-own', 'settled': 'quiet:1102', 'zooms': '153', 'front': '153', 'returns': '88', 'floating': '170,171,172,175,177,180,335', 'docked': '153,156'}
+FAIL rule 1: finder (w153) macOS answered the double-click on its title bar, and it was moved again afterwards (2 moves)
+
+01:33:01.103 SCREEN -- begin 90 double-click-finder-again
+01:33:01.103 SCREEN -- text 90 double-clicks it again: macOS takes the window back
+01:33:01.761 SCREEN front to back: finder w253 safari textedit calendar terminal w182 mail preview settings notes w202 w256 w266
+01:33:01.761 SCREEN the button is down 264 55
+01:33:01.864 SCREEN front to back: w253 finder safari textedit calendar terminal w182 mail preview settings notes w202 w256 w266
+01:33:01.864 SCREEN the button is up 264 55
+01:33:01.997 SCREEN the button is down 264 55
+01:33:02.036 SCREEN the button is up 264 55
+01:33:02.098 SCREEN finder (w153) 12,43 502×760
+01:33:02.130 SCREEN finder (w153) 12,43 506×719
+01:33:02.151 SCREEN finder (w153) 12,43 509×693
+01:33:02.186 SCREEN finder (w153) 12,43 516×621
+01:33:02.237 SCREEN finder (w153) 12,43 527×499
+01:33:02.316 SCREEN finder (w153) 12,43 541×362
+01:33:02.321 SCREEN finder (w153) 12,43 543×334
+01:33:02.356 SCREEN finder (w153) 12,43 548×287
+01:33:02.409 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.409 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.409 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.410 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.410 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.411 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.411 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.411 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.411 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.412 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.412 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.412 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.413 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.413 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.414 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.414 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.414 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.414 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.416 SCREEN w253 of Arbor 3,34 569×270
+01:33:02.416 SCREEN finder (w153) 12,43 551×252
+01:33:02.417 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.418 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 551 252
+01:33:02.753 MACOS pid 15700 AXResized w153 AXWindow/AXStandardWindow 12 43 501 767
+01:33:02.761 SCREEN finder (w153) 12,43 501×767
+01:33:02.771 SCREEN w253 of Arbor 3,34 519×785
+01:33:03.942 SCREEN -- end 90 act=macos-own settled=quiet:1102 zooms=153 front=153 returns=88 floating=170,171,172,175,177,180,335 docked=153,156
+01:33:04.250 SCRIPT == 91 dock-icon-calendar

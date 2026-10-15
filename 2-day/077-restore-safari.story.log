@@ -1,0 +1,65 @@
+77 restore-safari: clicks its miniature in the Dock
+expected: {'act': 'open-close', 'settled': 'quiet:1179', 'moves': '153,156,167,153,156,167,', 'comes': '156', 'front': '156', 'returns': '75', 'floating': '170,171,172,175,177,180', 'docked': '153,156,167'}
+FAIL rule 2: terminal (w170) is not back where it was after step 75: 525,238 429×499, it was at 97,238 877×499
+FAIL rule 2: notes (w171) is not back where it was after step 75: 386,105 709×660, it was at 300,105 1000×660
+FAIL rule 2: calendar (w172) is not back where it was after step 75: 401,115 680×600, it was at 403,115 937×600
+FAIL rule 2: settings (w175) is not back where it was after step 75: 379,85 723×625, it was at 437,85 723×625
+FAIL rule 2: preview (w177) is not back where it was after step 75: 387,35 708×424, it was at 4,35 708×424
+FAIL rule 2: mail (w180) is not back where it was after step 75: 305,72 871×630, it was at 240,72 1120×630
+FAIL rule 2: w182 of Mail is not back where it was after step 75: 506,179 470×416, it was at 565,179 470×416
+
+01:32:18.322 SCREEN -- begin 77 restore-safari
+01:32:18.322 SCREEN -- text 77 clicks its miniature in the Dock
+01:32:18.921 SCREEN the button is down 1441 854
+01:32:18.988 SCREEN the button is up 1441 854
+01:32:18.995 SCREEN safari (w156) 1423,823 36×58
+01:32:18.995 SCREEN front to back: safari w253 calendar terminal w182 mail preview settings notes finder textedit w202 w256 w266
+01:32:19.026 SCREEN safari (w156) 1422,806 37×75
+01:32:19.031 SCREEN safari (w156) 1420,792 39×89
+01:32:19.076 SCREEN safari (w156) 1354,674 104×207
+01:32:19.106 SCREEN safari (w156) 1233,570 224×311
+01:32:19.114 SCREEN safari (w156) 1179,533 278×348
+01:32:19.134 SCREEN safari (w156) 1050,451 406×430
+01:32:19.167 SCREEN safari (w156) 859,330 595×551
+01:32:19.176 SCREEN safari (w156) 806,293 648×588
+01:32:19.238 SCREEN safari (w156) 620,73 829×768
+01:32:19.266 SCREEN safari (w156) 617,60 832×768
+01:32:19.317 SCREEN safari (w156) 617,43 795×767
+01:32:19.323 SCREEN safari (w156) 617,43 784×767
+01:32:19.348 SCREEN safari (w156) 617,43 745×767
+01:32:19.357 SCREEN safari (w156) 617,43 730×767
+01:32:19.414 SCREEN safari (w156) 617,43 613×767
+01:32:19.441 SCREEN safari (w156) 617,43 603×767
+01:32:19.496 SCREEN safari (w156) 617,43 575×767
+01:32:19.500 SCREEN safari (w156) 617,43 574×767
+01:32:19.602 SCREEN (nothing was seen for 101 ms)
+01:32:19.604 MACOS pid 16910 AXApplicationActivated
+01:32:19.604 MACOS workspace didActivate pid 16910 com.apple.Safari regular
+01:32:19.605 MACOS workspace didDeactivate pid 17536 com.apple.iCal regular
+01:32:19.605 MACOS pid 17536 AXApplicationDeactivated
+01:32:19.606 MACOS pid 16910 AXFocusedWindowChanged w156 AXWindow/AXStandardWindow 617 43 574 767
+01:32:19.607 SCREEN in front: process 16910 com.apple.Safari
+01:32:19.607 MACOS pid 16910 AXMainWindowChanged w156 AXWindow/AXStandardWindow 617 43 574 767
+01:32:19.607 MACOS pid 16910 AXWindowDeminiaturized w156 AXWindow/AXStandardWindow 617 43 574 767
+01:32:19.607 MACOS pid 16910 AXApplicationActivated
+01:32:19.608 DEBUG focus is on w156
+01:32:19.608 DEBUG focus report for w156, which does not have the keyboard or takes no space; 4 checks left
+01:32:19.614 INFO  made room for w153
+01:32:19.618 SCREEN w253 of Arbor left the screen
+01:32:19.618 SCREEN front to back: safari calendar terminal w182 mail preview settings notes finder textedit w202 w256 w266
+01:32:19.632 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 9 stand-ins, 0.46 s
+01:32:19.641 SCREEN w251 of Arbor 0,0 1600×900 (level 4)
+01:32:19.653 MACOS pid 16993 AXResized w167 AXWindow/AXStandardWindow 1203 43 385 767
+01:32:19.653 MACOS pid 16993 AXMoved w167 AXWindow/AXStandardWindow 1203 43 385 767
+01:32:19.654 SCREEN textedit (w167) 969,43 385×767
+01:32:19.665 DEBUG w156 has the keyboard
+01:32:19.672 SCREEN textedit (w167) 1203,43 385×767
+01:32:19.732 SCREEN w253 of Arbor 608,34 592×785
+01:32:19.732 SCREEN w260 of Arbor 525,43 80×767
+01:32:19.732 SCREEN w266 of Arbor 605,43 12×767
+01:32:19.732 SCREEN w261 of Arbor 1191,43 12×767
+01:32:19.732 SCREEN front to back: w253 safari calendar terminal w182 mail preview settings notes finder textedit w202 w260 w256 w266 w261
+01:32:20.266 DEBUG stage down
+01:32:20.321 SCREEN w251 of Arbor left the screen
+01:32:21.166 SCREEN -- end 77 act=open-close settled=quiet:1179 moves=153,156,167,153,156,167, comes=156 front=156 returns=75 floating=170,171,172,175,177,180 docked=153,156,167
+01:32:22.053 SCRIPT == 78 click-finder

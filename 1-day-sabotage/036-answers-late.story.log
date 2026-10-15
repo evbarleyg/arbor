@@ -1,0 +1,10 @@
+36 answers-late: OFFENCE: a key is pressed, and the window moves two seconds later
+expected: {'act': 'dock-key', 'settled': 'quiet:1070', 'moves': '45', 'offence': 'slow'}
+FAIL rule 3: the last window came to rest 2287 ms after the key or the button
+
+01:26:33.690 SCREEN -- begin 36 answers-late
+01:26:33.690 SCREEN -- text 36 OFFENCE: a key is pressed, and the window moves two seconds later
+01:26:35.978 MACOS pid 5290 AXMoved w45 AXWindow/AXStandardWindow 140 100 600 420
+01:26:36.034 SCREEN textedit (w45) 140,100 600×420
+01:26:37.050 SCREEN -- end 36 act=dock-key settled=quiet:1070 moves=45 offence=slow
+01:26:37.319 SCRIPT == 37 honest-idle
