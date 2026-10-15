@@ -63,8 +63,8 @@ Swift 6 language mode, macOS 14+, no third-party dependencies.
 
 The headless stack (`ArborCore`, the controller and platform protocols, `ArborTesting`, arbor-sim
 and both test targets) also builds on Linux, where `build`, `test`, `check`, `sim`, `scenarios` and
-`parity` work the same; CI runs them on Linux every time, and on macOS unless a Mac could prove nothing
-new. See "Executors without a Mac" in `collab/README.md`.
+`parity` work the same; CI runs them on Linux every time (of a draft only `make lint`), and on macOS unless a Mac could
+prove nothing new. See "Executors without a Mac" in `collab/README.md`.
 
 ## Layout
 
