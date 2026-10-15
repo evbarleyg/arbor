@@ -1,0 +1,453 @@
+# mac-shell: scripts/mac-shell/app-sizes.sh at 74d526b, macOS 26.6.2, 2026-10-15T03:51Z
+display modes (w h pixel-w pixel-h): 800 600 800 600;960 540 960 540;1024 576 1024 576;1024 768 1024 768 *;1280 720 1280 720;1280 960 1280 960;1344 756 1344 756;1344 1008 1344 1008;1600 900 1600 900;1600 1200 1600 1200;1920 1080 1920 1080;640 480 640 480;
+1920 1080 1920 1080
+macOS 26.6.2, display 1920x1080
+
+== com.apple.finder
+> open -g -b com.apple.finder /tmp/arbor-apps.9jxBnf/scratch/grove
+pid 375 lists (id role subrole x y w h flags):
+  31 AXWindow AXStandardWindow 500 165 920 436 main,toolbar
+  0 AXScrollArea - 0 0 1920 1080 fixed-size,fixed-position,no-close,no-minimize,no-zoom
+limits: min 501x252 max 1916x961 asked 638x365 got 638x365 late no slowest-ms 109 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.finder: 5 s
+
+== com.apple.Safari
+> open -g -b com.apple.Safari /tmp/arbor-apps.9jxBnf/scratch/page.html
+pid 3836 lists (id role subrole x y w h flags):
+  32 AXWindow AXStandardWindow 298 47 1324 940 main,toolbar
+limits: min 574x240 max 1916x961 asked 711x353 got 711x353 late no slowest-ms 40 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.Safari: 10 s
+
+== com.google.Chrome
+> open -g -b com.google.Chrome /tmp/arbor-apps.9jxBnf/scratch/page.html
+open failed
+com.google.Chrome: 20 s
+
+== org.mozilla.firefox
+> open -g -b org.mozilla.firefox /tmp/arbor-apps.9jxBnf/scratch/page.html
+open failed
+org.mozilla.firefox: 21 s
+
+== com.microsoft.edgemac
+> open -g -b com.microsoft.edgemac /tmp/arbor-apps.9jxBnf/scratch/page.html
+open failed
+com.microsoft.edgemac: 20 s
+
+== com.apple.mail
+> open -g -b com.apple.mail 
+pid 6207 lists (id role subrole x y w h flags):
+  41 AXWindow AXStandardWindow 320 94 1280 720 main,close-disabled,sheets=1,toolbar
+something is in the way:
+  AXWindow/AXStandardWindow 320 94 1280 720
+      AXButton/- 484 94 44 52 "Sidebar"
+      AXButton/- 933 94 45 52 "New Message"
+        AXButton/AXSegment 990 94 36 52 "Reply"
+        AXButton/AXSegment 1027 94 36 52 "Reply All"
+        AXButton/AXSegment 1064 94 36 52 "Forward"
+        AXButton/AXSegment 1108 94 36 52 "Archive"
+        AXButton/AXSegment 1145 94 36 52 "Delete"
+        AXButton/AXSegment 1182 94 37 52 "Junk"
+          AXButton/AXSegment 1287 102 36 36 "flagged Orange"
+          AXButton/- 1386 116 15 9 ""
+    AXButton/AXCloseButton 338 112 16 16
+    AXButton/AXZoomButton 384 112 16 16
+    AXButton/AXMinimizeButton 361 112 16 16
+    AXSheet/- 725 246 470 416
+          AXButton/- 1096 369 79 24 "Continue"
+        AXButton/- 745 618 24 24 "Help"
+        AXButton/- 1109 618 66 24 "Cancel"
+pressed "Cancel": 0
+apptool: the window server has no window 41
+limits: 
+com.apple.mail: 7 s
+
+== com.apple.Notes
+> open -g -b com.apple.Notes 
+pid 6538 lists (id role subrole x y w h flags):
+  54 AXWindow AXStandardWindow 460 195 1000 660 main,close-disabled,sheets=1
+something is in the way:
+  AXWindow/AXStandardWindow 460 195 1000 660
+    AXButton/AXCloseButton 468 203 16 16
+    AXButton/AXZoomButton 514 203 16 16
+    AXButton/AXMinimizeButton 491 203 16 16
+    AXSheet/- 723 225 475 600
+      AXButton/- 1094 776 85 30 "Continue"
+pressed "Continue": 0
+pressed "Cancel": 0
+limits: min 709x300 max 1916x961 asked 846x413 got 846x413 late no slowest-ms 88 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.Notes: 9 s
+
+== com.apple.iCal
+> open -g -b com.apple.iCal 
+pid 6708 lists (id role subrole x y w h flags):
+  67 AXWindow AXStandardWindow 200 266 935 598 main,toolbar
+limits: min 680x503 max 1916x961 asked 817x616 got 817x616 late no slowest-ms 37 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.iCal: 5 s
+
+== com.apple.MobileSMS
+> open -g -b com.apple.MobileSMS 
+pid 7063 lists (id role subrole x y w h flags):
+  
+com.apple.MobileSMS: 40 s
+
+== com.apple.Terminal
+> open -g -b com.apple.Terminal 
+pid 9149 lists (id role subrole x y w h flags):
+  79 AXWindow AXStandardWindow 40 51 877 499 main
+limits: min 177x124 max 1913x964 asked 314x237 got 317x244 late no slowest-ms 9 errors none parked-at 1919,970 of 1919,1079 restored yes
+com.apple.Terminal: 6 s
+
+== com.apple.systempreferences
+> open -g -b com.apple.systempreferences 
+pid 9536 lists (id role subrole x y w h flags):
+  87 AXWindow AXStandardWindow 597 125 723 625 main,toolbar
+limits: min 723x470 max 723x961 asked 723x583 got 723x583 late no slowest-ms 82 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.systempreferences: 6 s
+
+== com.apple.Preview
+> open -g -b com.apple.Preview /tmp/arbor-apps.9jxBnf/scratch/leaf.png
+pid 9690 lists (id role subrole x y w h flags):
+  98 AXWindow AXStandardWindow 4 35 708 424 main,toolbar
+limits: min 708x224 max 1916x961 asked 845x337 got 845x337 late no slowest-ms 85 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.Preview: 7 s
+
+== com.apple.TextEdit
+> open -g -b com.apple.TextEdit /tmp/arbor-apps.9jxBnf/scratch/oak.txt
+pid 10004 lists (id role subrole x y w h flags):
+  106 AXWindow AXStandardWindow 213 78 673 439 main
+limits: min 115x46 max 1916x961 asked 252x159 got 252x159 late no slowest-ms 123 errors none parked-at 1919,970 of 1919,1079 restored yes
+com.apple.TextEdit: 4 s
+
+== com.apple.Music
+> open -g -b com.apple.Music 
+pid 10183 lists (id role subrole x y w h flags):
+  110 AXWindow AXStandardWindow 470 129 980 600 main,close-disabled,sheets=1,toolbar
+something is in the way:
+  AXWindow/AXStandardWindow 470 129 980 600
+    AXButton/AXCloseButton 488 147 16 16
+    AXButton/AXZoomButton 534 147 16 16
+    AXButton/AXMinimizeButton 511 147 16 16
+    AXSheet/- 667 191 586 476
+      AXButton/- 734 488 452 80 ""
+      AXButton/- 859 602 202 30 "Start Listening"
+limits: min 980x600 max 1916x961 asked 1117x713 got 1117x713 late no slowest-ms 38 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.Music: 8 s
+
+== com.apple.Photos
+> open -g -b com.apple.Photos 
+pid 10547 lists (id role subrole x y w h flags):
+  114 AXWindow AXStandardWindow 360 94 1200 720 main,focused,toolbar
+limits: min 715x615 max 1916x961 asked 852x728 got 852x728 late no slowest-ms 13 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.Photos: 6 s
+
+== com.apple.reminders
+> open -g -b com.apple.reminders 
+pid 10735 lists (id role subrole x y w h flags):
+  121 AXWindow AXStandardWindow 264 263 768 692 main,focused
+limits: min 768x692 max 1916x961 asked 905x805 got 905x805 late no slowest-ms 27 errors none parked-at 1919,970 of 1919,1079 restored yes
+com.apple.reminders: 5 s
+
+== com.apple.Maps
+> open -g -b com.apple.Maps 
+pid 11000 lists (id role subrole x y w h flags):
+  131 AXWindow AXStandardWindow 448 82 1024 768 main,close-disabled,sheets=1,toolbar
+something is in the way:
+  AXWindow/AXStandardWindow 448 82 1024 768
+      AXButton/- 612 82 44 52 "Sidebar"
+    AXButton/AXCloseButton 466 100 16 16
+    AXButton/AXZoomButton 512 100 16 16
+    AXButton/AXMinimizeButton 489 100 16 16
+    AXSheet/- 720 166 480 600
+pressed "Not Now": 0
+limits: min 660x360 max 1916x961 asked 797x473 got 797x473 late no slowest-ms 114 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.Maps: 15 s
+
+== com.apple.AddressBook
+> open -g -b com.apple.AddressBook 
+pid 11687 lists (id role subrole x y w h flags):
+  139 AXWindow AXStandardWindow 458 432 931 438 main,toolbar
+limits: min 644x360 max 1916x961 asked 781x473 got 781x473 late no slowest-ms 221 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.AddressBook: 6 s
+
+== com.apple.AppStore
+> open -g -b com.apple.AppStore 
+pid 11795 lists (id role subrole x y w h flags):
+  147 AXWindow AXStandardWindow 370 93 1180 724 main,toolbar
+limits: min 1000x110 max 1916x961 asked 1137x223 got 1137x223 late no slowest-ms 16 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.AppStore: 4 s
+
+== com.apple.calculator
+> open -g -b com.apple.calculator 
+pid 11902 lists (id role subrole x y w h flags):
+  153 AXWindow AXStandardWindow 510 501 230 408 main,fixed-size,zoom-disabled,toolbar
+limits: min 230x408 max 230x408 asked 230x408 got 230x408 late no slowest-ms 1 errors -25200,-25200,-25200 parked-at 1919,950 of 1919,1079 restored yes
+com.apple.calculator: 5 s
+
+== com.apple.ActivityMonitor
+> open -g -b com.apple.ActivityMonitor 
+pid 12289 lists (id role subrole x y w h flags):
+  159 AXWindow AXStandardWindow 480 235 960 640 main,toolbar
+limits: min 740x384 max 1916x961 asked 877x497 got 877x497 late no slowest-ms 174 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.ActivityMonitor: 4 s
+
+== com.apple.podcasts
+> open -g -b com.apple.podcasts 
+pid 12381 lists (id role subrole x y w h flags):
+  169 AXWindow AXStandardWindow 448 82 1024 768 main,close-disabled,sheets=1,toolbar
+something is in the way:
+  AXWindow/AXStandardWindow 448 82 1024 768
+    AXButton/AXCloseButton 466 100 16 16
+    AXButton/AXZoomButton 512 100 16 16
+    AXButton/AXMinimizeButton 489 100 16 16
+    AXSheet/- 719 166 482 600
+          AXButton/- 779 533 362 117 "The podcasts subscriptions you purchase in Apple Podcasts are associated with your Apple Account. Your device trust score is used to prevent fraud. Data about your podcast listening and interactions is collected to improve and personalize the service and is not associated with your Apple Account. See how your data is managed…"
+pressed "Continue": 0
+limits: min 1024x512 max 1916x961 asked 1161x625 got 1916x625 late no slowest-ms 73 errors none parked-at 1919,950 of 1919,1079 restored 448 82 1916 768
+pid 12381 would not quit; killing it
+com.apple.podcasts: 21 s
+
+== com.apple.TV
+> open -g -b com.apple.TV 
+pid 13420 lists (id role subrole x y w h flags):
+  177 AXWindow AXStandardWindow 350 115 1220 720 main,toolbar
+limits: min 980x580 max 1916x961 asked 1117x693 got 1117x693 late no slowest-ms 11 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.TV: 5 s
+
+== com.apple.iBooksX
+> open -g -b com.apple.iBooksX 
+pid 13521 lists (id role subrole x y w h flags):
+  182 AXWindow AXStandardWindow 448 82 1024 768 main,close-disabled,sheets=1,toolbar
+something is in the way:
+  AXWindow/AXStandardWindow 448 82 1024 768
+          AXButton/- 1428 90 36 36 "Today’s reading: 0 minutes of your 5-minute goal"
+    AXButton/AXCloseButton 466 100 16 16
+    AXButton/AXZoomButton 512 100 16 16
+    AXButton/AXMinimizeButton 489 100 16 16
+    AXSheet/- 719 166 482 600
+pressed "Get Started": 0
+pressed "Continue": 0
+limits: min 1001x530 max 1916x961 asked 1138x643 got 1138x643 late no slowest-ms 199 errors none parked-at 1919,950 of 1919,1079 restored yes
+pid 13521 would not quit; killing it
+com.apple.iBooksX: 26 s
+
+== com.apple.news
+> open -g -b com.apple.news 
+pid 14980 lists (id role subrole x y w h flags):
+  194 AXWindow AXStandardWindow 310 31 1300 971 main,toolbar
+limits: min 860x670 max 1916x961 asked 997x783 got 997x783 late no slowest-ms 110 errors none parked-at 1919,950 of 1919,1079 restored yes
+pid 14980 would not quit; killing it
+com.apple.news: 19 s
+
+== com.apple.stocks
+> open -g -b com.apple.stocks 
+pid 15715 lists (id role subrole x y w h flags):
+  202 AXWindow AXStandardWindow 448 82 1024 768 main,toolbar
+limits: min 860x670 max 1916x961 asked 997x783 got 997x783 late no slowest-ms 929 errors none parked-at 1919,936 of 1919,1079 restored yes
+pid 15715 would not quit; killing it
+com.apple.stocks: 20 s
+
+== com.apple.weather
+> open -g -b com.apple.weather 
+pid 16683 lists (id role subrole x y w h flags):
+  210 AXWindow AXStandardWindow 488 220 1048 640 main,toolbar
+limits: min 1048x640 max 1916x961 asked 1185x753 got 1185x753 late no slowest-ms 963 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.weather: 8 s
+
+== com.apple.Home
+> open -g -b com.apple.Home 
+pid 17008 lists (id role subrole x y w h flags):
+  218 AXWindow AXStandardWindow 448 82 1024 768 main,toolbar
+limits: min 515x319 max 1916x961 asked 652x432 got 652x432 late no slowest-ms 44 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.Home: 6 s
+
+== com.apple.VoiceMemos
+> open -g -b com.apple.VoiceMemos 
+pid 17254 lists (id role subrole x y w h flags):
+  226 AXWindow AXStandardWindow 448 82 1024 768 main,close-disabled,sheets=1,toolbar
+something is in the way:
+  AXWindow/AXStandardWindow 448 82 1024 768
+      AXButton/- 540 82 48 52 "Sidebar"
+    AXButton/AXCloseButton 466 100 16 16
+    AXButton/AXZoomButton 512 100 16 16
+    AXButton/AXMinimizeButton 489 100 16 16
+    AXSheet/- 719 166 482 600
+pressed "Continue": 0
+limits: min 976x500 max 1916x961 asked 1113x613 got 1113x613 late no slowest-ms 66 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.VoiceMemos: 6 s
+
+== com.apple.freeform
+> open -g -b com.apple.freeform 
+pid 17366 lists (id role subrole x y w h flags):
+  235 AXWindow AXDialog 448 82 1024 800 main,focused,modal,fixed-size,no-close,no-minimize,no-zoom
+something is in the way:
+  AXWindow/AXDialog 448 82 1024 800
+      AXButton/- 651 714 618 50 "Personal Data Use, Apple collects a variety of data, some of which is associated with your Apple Account. You can limit the use of certain analytics data in Freeform by going to Privacy & Analytics. See how your data is managed…"
+      AXButton/- 803 788 314 38 "Continue"
+pressed "Continue": 0
+pressed "Continue": 0
+pressed "Not Now": 0
+limits: min 660x496 max 1916x961 asked 797x609 got 797x609 late no slowest-ms 98 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.freeform: 27 s
+
+== com.apple.clock
+> open -g -b com.apple.clock 
+pid 19188 lists (id role subrole x y w h flags):
+  251 AXWindow AXStandardWindow 448 82 1024 768 main,toolbar
+limits: min 600x640 max 1916x961 asked 737x753 got 737x753 late no slowest-ms 68 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.clock: 5 s
+
+== com.apple.shortcuts
+> open -g -b com.apple.shortcuts 
+pid 19286 lists (id role subrole x y w h flags):
+  255 AXWindow AXStandardWindow 460 104 1000 682 main,toolbar
+limits: min 750x400 max 1916x961 asked 887x513 got 887x513 late no slowest-ms 30 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.shortcuts: 6 s
+
+== com.apple.Dictionary
+> open -g -b com.apple.Dictionary 
+pid 19441 lists (id role subrole x y w h flags):
+  261 AXWindow AXStandardWindow 615 117 690 628 main,toolbar
+limits: min 400x300 max 1916x961 asked 537x413 got 537x413 late no slowest-ms 35 errors -25205 parked-at 1919,950 of 1919,1079 restored yes
+com.apple.Dictionary: 5 s
+
+== com.apple.FontBook
+> open -g -b com.apple.FontBook 
+pid 19801 lists (id role subrole x y w h flags):
+  269 AXWindow AXStandardWindow 460 192 1000 650 main,toolbar
+limits: min 508x532 max 1916x961 asked 645x645 got 645x645 late no slowest-ms 625 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.FontBook: 8 s
+
+== com.apple.Console
+> open -g -b com.apple.Console 
+pid 20073 lists (id role subrole x y w h flags):
+  277 AXWindow AXStandardWindow 460 305 1000 500 main,toolbar
+limits: min 600x400 max 1916x961 asked 737x513 got 737x513 late no slowest-ms 91 errors -25205 parked-at 1919,950 of 1919,1079 restored yes
+com.apple.Console: 5 s
+
+== com.apple.DiskUtility
+> open -g -b com.apple.DiskUtility 
+pid 20348 lists (id role subrole x y w h flags):
+  283 AXWindow AXStandardWindow 406 264 1107 600 main,toolbar
+limits: min 780x485 max 1916x961 asked 917x598 got 917x598 late no slowest-ms 84 errors none parked-at 1919,936 of 1919,1079 restored yes
+com.apple.DiskUtility: 4 s
+
+== com.apple.ScriptEditor2
+> open -g -b com.apple.ScriptEditor2 /tmp/arbor-apps.9jxBnf/scratch/hello.applescript
+pid 20456 lists (id role subrole x y w h flags):
+  289 AXWindow AXStandardWindow 20 34 700 734 main,toolbar
+limits: min 334x413 max 1916x961 asked 471x526 got 471x526 late no slowest-ms 55 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.ScriptEditor2: 6 s
+
+== com.apple.SystemProfiler
+> open -g -b com.apple.SystemProfiler 
+pid 20757 lists (id role subrole x y w h flags):
+  298 AXWindow AXStandardWindow 12 31 910 602 main
+limits: min 761x440 max 1916x961 asked 898x553 got 898x553 late no slowest-ms 41 errors none parked-at 1919,970 of 1919,1079 restored yes
+com.apple.SystemProfiler: 5 s
+
+== com.apple.Passwords
+> open -g -b com.apple.Passwords 
+pid 20983 lists (id role subrole x y w h flags):
+  305 AXWindow AXStandardWindow 510 252 900 530 main,focused,toolbar
+limits: min 320x360 max 1916x961 asked 457x473 got 457x473 late no slowest-ms 9 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.Passwords: 5 s
+
+== com.apple.findmy
+> open -g -b com.apple.findmy 
+pid 21199 lists (id role subrole x y w h flags):
+  318 AXWindow AXStandardWindow 448 82 1024 768 main,toolbar
+limits: min 500x310 max 1916x961 asked 637x423 got 637x423 late no slowest-ms 163 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.findmy: 9 s
+
+== com.apple.Automator
+> open -g -b com.apple.Automator 
+pid 21826 lists (id role subrole x y w h flags):
+  323 AXWindow AXStandardWindow 337 31 1000 898 main,close-disabled,sheets=1,toolbar
+something is in the way:
+  AXWindow/AXStandardWindow 337 31 1000 898
+        AXButton/- 491 107 13 8 ""
+      AXButton/- 1145 31 56 66 "Record"
+      AXButton/- 1201 31 44 66 "Step"
+      AXButton/- 1245 31 44 66 "Stop"
+      AXButton/- 1289 31 44 66 "Run"
+    AXButton/AXCloseButton 355 49 16 16
+    AXButton/AXZoomButton 401 49 16 16
+    AXButton/AXMinimizeButton 378 49 16 16
+    AXSheet/- 569 239 537 482
+      AXButton/- 588 677 206 26 "Open an Existing Document..."
+      AXButton/- 931 677 73 26 "Close"
+      AXButton/- 1014 677 73 26 "Choose"
+pressed "Close": 0
+apptool: the window server has no window 323
+limits: 
+com.apple.Automator: 6 s
+
+== com.apple.ColorSyncUtility
+> open -g -b com.apple.ColorSyncUtility 
+pid 22045 lists (id role subrole x y w h flags):
+  332 AXWindow AXStandardWindow 665 152 590 488 main,toolbar
+limits: min 500x388 max 1916x961 asked 637x501 got 637x501 late no slowest-ms 18 errors none parked-at 1919,970 of 1919,1079 restored yes
+com.apple.ColorSyncUtility: 3 s
+
+== com.apple.dt.Xcode
+> open -g -b com.apple.dt.Xcode 
+pid 22136 lists (id role subrole x y w h flags):
+  338 AXWindow AXDialog 710 131 500 640 main,focused,modal,fixed-size,no-close,no-minimize,no-zoom
+something is in the way:
+  AXWindow/AXDialog 710 131 500 640
+      AXButton/- 1043 658 13 13 "More Info"
+      AXButton/- 882 703 156 28 "Download & Install"
+  338 AXWindow AXDialog 710 131 500 640 main,focused,modal,fixed-size,no-close,no-minimize,no-zoom
+com.apple.dt.Xcode: 42 s
+
+== the table
+# bundle	version	macOS	display	verdict	smallest	largest	notes
+com.apple.finder	26.4	26.6.2	1920x1080	clean	501x252	1916x961	asked 638x365 got 638x365 late no slowest-ms 109 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.Safari	26.6.2	26.6.2	1920x1080	clean	574x240	1916x961	asked 711x353 got 711x353 late no slowest-ms 40 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.google.Chrome	155.0.8059.40	26.6.2	1920x1080	no-window	-	-	-
+org.mozilla.firefox	157.0.1	26.6.2	1920x1080	no-window	-	-	-
+com.microsoft.edgemac	155.0.4283.45	26.6.2	1920x1080	no-window	-	-	-
+com.apple.mail	16.0	26.6.2	1920x1080	no-answer	-	-	
+com.apple.Notes	4.13	26.6.2	1920x1080	clean	709x300	1916x961	asked 846x413 got 846x413 late no slowest-ms 88 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.iCal	16.0	26.6.2	1920x1080	clean	680x503	1916x961	asked 817x616 got 817x616 late no slowest-ms 37 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.MobileSMS	26.0	26.6.2	1920x1080	no-window	-	-	-
+com.apple.Terminal	2.15	26.6.2	1920x1080	clean	177x124	1913x964	asked 314x237 got 317x244 late no slowest-ms 9 errors none parked-at 1919,970 of 1919,1079 restored yes
+com.apple.systempreferences	15.0	26.6.2	1920x1080	clean	723x470	723x961	asked 723x583 got 723x583 late no slowest-ms 82 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.Preview	11.0	26.6.2	1920x1080	clean	708x224	1916x961	asked 845x337 got 845x337 late no slowest-ms 85 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.TextEdit	1.20	26.6.2	1920x1080	clean	115x46	1916x961	asked 252x159 got 252x159 late no slowest-ms 123 errors none parked-at 1919,970 of 1919,1079 restored yes
+com.apple.Music	1.6.6	26.6.2	1920x1080	in-the-way	980x600	1916x961	asked 1117x713 got 1117x713 late no slowest-ms 38 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.Photos	11.0	26.6.2	1920x1080	clean	715x615	1916x961	asked 852x728 got 852x728 late no slowest-ms 13 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.reminders	7.0	26.6.2	1920x1080	clean	768x692	1916x961	asked 905x805 got 905x805 late no slowest-ms 27 errors none parked-at 1919,970 of 1919,1079 restored yes
+com.apple.Maps	3.0	26.6.2	1920x1080	clean	660x360	1916x961	asked 797x473 got 797x473 late no slowest-ms 114 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.AddressBook	14.0	26.6.2	1920x1080	clean	644x360	1916x961	asked 781x473 got 781x473 late no slowest-ms 221 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.AppStore	3.0	26.6.2	1920x1080	clean	1000x110	1916x961	asked 1137x223 got 1137x223 late no slowest-ms 16 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.calculator	12.0	26.6.2	1920x1080	clean	230x408	230x408	asked 230x408 got 230x408 late no slowest-ms 1 errors -25200,-25200,-25200 parked-at 1919,950 of 1919,1079 restored yes
+com.apple.ActivityMonitor	10.14	26.6.2	1920x1080	clean	740x384	1916x961	asked 877x497 got 877x497 late no slowest-ms 174 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.podcasts	1.1.0	26.6.2	1920x1080	clean	1024x512	1916x961	asked 1161x625 got 1916x625 late no slowest-ms 73 errors none parked-at 1919,950 of 1919,1079 restored 448 82 1916 768
+com.apple.TV	1.6.6	26.6.2	1920x1080	clean	980x580	1916x961	asked 1117x693 got 1117x693 late no slowest-ms 11 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.iBooksX	8.5	26.6.2	1920x1080	clean	1001x530	1916x961	asked 1138x643 got 1138x643 late no slowest-ms 199 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.news	11.5	26.6.2	1920x1080	clean	860x670	1916x961	asked 997x783 got 997x783 late no slowest-ms 110 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.stocks	8.5	26.6.2	1920x1080	clean	860x670	1916x961	asked 997x783 got 997x783 late no slowest-ms 929 errors none parked-at 1919,936 of 1919,1079 restored yes
+com.apple.weather	6.0	26.6.2	1920x1080	clean	1048x640	1916x961	asked 1185x753 got 1185x753 late no slowest-ms 963 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.Home	10.0	26.6.2	1920x1080	clean	515x319	1916x961	asked 652x432 got 652x432 late no slowest-ms 44 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.VoiceMemos	3.2	26.6.2	1920x1080	clean	976x500	1916x961	asked 1113x613 got 1113x613 late no slowest-ms 66 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.freeform	4.5	26.6.2	1920x1080	clean	660x496	1916x961	asked 797x609 got 797x609 late no slowest-ms 98 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.clock	1.1	26.6.2	1920x1080	clean	600x640	1916x961	asked 737x753 got 737x753 late no slowest-ms 68 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.shortcuts	7.0	26.6.2	1920x1080	clean	750x400	1916x961	asked 887x513 got 887x513 late no slowest-ms 30 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.Dictionary	2.3.0	26.6.2	1920x1080	clean	400x300	1916x961	asked 537x413 got 537x413 late no slowest-ms 35 errors -25205 parked-at 1919,950 of 1919,1079 restored yes
+com.apple.FontBook	11.0	26.6.2	1920x1080	clean	508x532	1916x961	asked 645x645 got 645x645 late no slowest-ms 625 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.Console	1.1	26.6.2	1920x1080	clean	600x400	1916x961	asked 737x513 got 737x513 late no slowest-ms 91 errors -25205 parked-at 1919,950 of 1919,1079 restored yes
+com.apple.DiskUtility	22.7	26.6.2	1920x1080	clean	780x485	1916x961	asked 917x598 got 917x598 late no slowest-ms 84 errors none parked-at 1919,936 of 1919,1079 restored yes
+com.apple.ScriptEditor2	2.11	26.6.2	1920x1080	clean	334x413	1916x961	asked 471x526 got 471x526 late no slowest-ms 55 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.SystemProfiler	11.0	26.6.2	1920x1080	clean	761x440	1916x961	asked 898x553 got 898x553 late no slowest-ms 41 errors none parked-at 1919,970 of 1919,1079 restored yes
+com.apple.Passwords	2.6.2	26.6.2	1920x1080	clean	320x360	1916x961	asked 457x473 got 457x473 late no slowest-ms 9 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.findmy	4.0	26.6.2	1920x1080	clean	500x310	1916x961	asked 637x423 got 637x423 late no slowest-ms 163 errors none parked-at 1919,950 of 1919,1079 restored yes
+com.apple.Automator	2.10	26.6.2	1920x1080	no-answer	-	-	
+com.apple.ColorSyncUtility	12.2.0	26.6.2	1920x1080	clean	500x388	1916x961	asked 637x501 got 637x501 late no slowest-ms 18 errors none parked-at 1919,970 of 1919,1079 restored yes
+com.apple.dt.Xcode	26.3	26.6.2	1920x1080	no-window	-	-	-
+  ✔ at least twenty apps were measured with nothing in the way (35)
+
+1 passed, 0 failed
+still running when the script had ended, and stopped now:
+  3512 sleep
+exit code 0
