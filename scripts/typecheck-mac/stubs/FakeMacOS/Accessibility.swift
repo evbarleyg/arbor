@@ -30,6 +30,8 @@ extension FakeMac {
   ///   pool (`Task.detached`), which the pump runs on the main thread, cannot wait: its call fails at once, so that Arbor's question "are you back?" is asked every 0.5 s here
   ///   and every 1.5 s on a Mac.
   private func refusal(by pid: pid_t, timeout: TimeInterval?) -> Answer? {
+    // A process that is no more asks nothing.
+    guard !arborHasGone else { return .cannotComplete }
     calls += 1
     guard isTrusted else { return .apiDisabled }
     guard let app = app(pid), app.isAlive else { return .cannotComplete }
@@ -169,12 +171,17 @@ extension FakeMac {
 
   public func write(_ value: Value, to attribute: String, of element: Element, timeout: TimeInterval?) -> Answer {
     guard let pid = element.pid else { return .illegalArgument }
+    if let app = app(pid), reaches(app) {
+      // The message is in the app's queue from the moment it is sent, and is read when the app wakes: whether the caller has given up by then, or is no more.
+      var outcome: Answer?
+      app.backlog.append(("what was asked of it while it hung: \(attribute) = \(value)", { [self] in outcome = carryOut(value, attribute, element, app) }))
+      return refusal(by: pid, timeout: timeout) ?? outcome ?? .cannotComplete
+    }
     let refusal = refusal(by: pid, timeout: timeout)
     guard let app = app(pid), app.isAlive else { return refusal ?? .cannotComplete }
-    if refusal == .cannotComplete, app.isHung {
-      // The message is in the app's queue all the same, and is read when the app wakes.
-      app.backlog.append(("the call that timed out: \(attribute) = \(value)", { [self] in _ = carryOut(value, attribute, element, app) }))
-      return .cannotComplete
+    if refusal == .cannotComplete, app.isHung, !arborHasGone {
+      // It began to hang at this very call.
+      app.backlog.append(("what was asked of it while it hung: \(attribute) = \(value)", { [self] in _ = carryOut(value, attribute, element, app) }))
     }
     if let refusal { return refusal }
     if case .window = element {
@@ -187,6 +194,11 @@ extension FakeMac {
       return .success
     }
     return carryOut(value, attribute, element, app)
+  }
+
+  /// Whether a message now would lie in the queue of an app that hangs.
+  private func reaches(_ app: App) -> Bool {
+    app.isAlive && app.isHung && isTrusted && !arborHasGone && !hasEnded && app.hangsAfterCalls == nil && (Worker.holder != nil || !Pump.isOffTheMainThread)
   }
 
   private func carryOut(_ value: Value, _ attribute: String, _ element: Element, _ app: App) -> Answer {
@@ -218,11 +230,17 @@ extension FakeMac {
 
   public func perform(_ action: String, on element: Element, timeout: TimeInterval?) -> Answer {
     guard let pid = element.pid else { return .illegalArgument }
-    let refusal = refusal(by: pid, timeout: timeout)
-    if refusal == .cannotComplete, let app = app(pid), app.isHung, action == "AXRaise", let window = window(for: element) {
-      app.backlog.append(("the call that timed out: AXRaise", { [self] in raise(window) }))
+    if let app = app(pid), reaches(app), action == "AXRaise", let window = window(for: element) {
+      app.backlog.append(("what was asked of it while it hung: AXRaise", { [self] in raise(window) }))
+      return refusal(by: pid, timeout: timeout) ?? .success
     }
-    if let refusal { return refusal }
+    if let refusal = refusal(by: pid, timeout: timeout) {
+      // It began to hang at this very call.
+      if refusal == .cannotComplete, let app = app(pid), app.isHung, action == "AXRaise", let window = window(for: element) {
+        app.backlog.append(("what was asked of it while it hung: AXRaise", { [self] in raise(window) }))
+      }
+      return refusal
+    }
     guard let window = window(for: element), window.isOpen else { return .invalidUIElement }
     guard action == "AXRaise" else { return .actionUnsupported }
     raise(window)

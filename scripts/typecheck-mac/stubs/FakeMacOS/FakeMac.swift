@@ -162,7 +162,7 @@ public final class FakeMac: @unchecked Sendable {
   /// Sends something on its way. With `manners.overtaking` it may be held up, so that what another source sent later arrives first.
   func send(after delay: TimeInterval, from source: Source, _ label: String, _ run: @escaping () -> Void) {
     var due = now + max(delay, 0)
-    guard !hasEnded else { return }
+    guard !hasEnded, !(arborHasGone && (isForTheMainThread(source) || { if case .thread = source { true } else { false } }())) else { return }
     var isArborsOwn = false
     switch source {
     case .sleeper, .thread: isArborsOwn = true
@@ -278,6 +278,29 @@ public final class FakeMac: @unchecked Sendable {
       self.sleepers.removeValue(forKey: number)?.resume(throwing: CancellationError())
     }
   }
+
+  // MARK: Arbor ends, the Mac goes on
+
+  public private(set) var arborHasGone = false
+
+  /// Arbor's process ends. Its threads, timers, observers and monitors go with it, and what was on its way to it reaches nobody. What it has sent is sent: an app that hangs still finds it in its
+  /// queue when it wakes.
+  public func arborIsGone() {
+    note("Arbor is gone")
+    arborHasGone = true
+    pending.removeAll { item in
+      if case .thread = item.source { return true }
+      return isForTheMainThread(item.source)
+    }
+    sleepers.removeAll()
+    for worker in workers { worker.finish() }
+    workers.removeAll()
+    observers.removeAll()
+    monitors.removeAll()
+  }
+
+  /// Something happens on this Mac so much later, whatever Arbor's main thread is doing by then.
+  public func later(_ seconds: TimeInterval, _ action: @escaping () -> Void) { send(after: seconds, from: .system, "", action) }
 
   /// The story is over: nothing more is delivered, and whoever sleeps is never woken. Waking them would run what they were waiting to do, on a Mac
   /// that is no more, and a timer that winds itself up again would never let go.

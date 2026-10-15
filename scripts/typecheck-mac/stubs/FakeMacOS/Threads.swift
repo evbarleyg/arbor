@@ -71,7 +71,7 @@ final class Worker: @unchecked Sendable {
   /// On this thread: the model's time passes, for everybody else too.
   func wait(_ seconds: TimeInterval) {
     // Its Mac is no more: nothing takes time any longer, so that what is under way comes to its end.
-    guard !mac.hasEnded else { return }
+    guard !mac.hasEnded, !mac.arborHasGone else { return }
     mac.send(after: seconds, from: .thread(number), "") { [self] in takeTheBaton() }
     Self.back.signal()
     go.wait()
@@ -92,7 +92,7 @@ extension FakeMac {
   func wait(until deadline: TimeInterval, orUntil isOver: () -> Bool = { false }) {
     if let worker = Worker.holder {
       // It looks every few milliseconds, which costs nothing here and spares a list of who waits for what.
-      while !isOver(), now < deadline, !hasEnded { worker.wait(min(0.005, deadline - now)) }
+      while !isOver(), now < deadline, !hasEnded, !arborHasGone { worker.wait(min(0.005, deadline - now)) }
       return
     }
     let began = now

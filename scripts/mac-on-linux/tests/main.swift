@@ -148,6 +148,7 @@ tellOfDragging(book)
 tellOfLostDrags(book)
 tellOfPlacing(book)
 tellOfArrangements(book)
+tellOfSlowApps(book)
 tellOfTheWalk(book)
 if let replay = book.options.replay { exit(replayWalk(replay)) }
 exit(book.tellAll())
