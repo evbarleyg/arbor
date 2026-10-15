@@ -322,8 +322,8 @@ private func endReason(_ entries: [TraceEntry]) -> String? {
     let h = Harness(displays: [FakeWindowSystem.standardDisplay, second], settings: settings)
     h.controller.filter.onlyPIDs = [1000, 7]
     h.start()
-    let palette = h.system.open(app: "Palette")
-    let a = h.system.open(app: "Safari", frame: CGRect(x: 1500, y: 100, width: 400, height: 300))
+    let palette = h.system.open(app: "Palette", pid: 1000)
+    let a = h.system.open(app: "Safari", pid: 7, frame: CGRect(x: 1500, y: 100, width: 400, height: 300))
     h.run("dock \(a.rawValue) left")
     h.system.setDisplays([FakeWindowSystem.standardDisplay])
     h.run("trace on filter")

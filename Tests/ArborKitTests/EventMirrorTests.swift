@@ -138,7 +138,11 @@ private struct Dice {
       return "hide or show pid \(snapshot.pid)"
     case 33:
       guard let snapshot = dice.pick(h.system.allWindows()) else { return "nothing" }
-      h.system.setFullScreen(snapshot.id, !snapshot.isFullScreen)
+      // The whole way, as a Mac goes it: the window gets a Space of its own, and the others of its display are not on it. The report
+      // alone, with the others still to be clicked on, is a story no Mac tells.
+      let display = h.system.displays().first { $0.frame.contains(snapshot.frame.center) }?.frame ?? .zero
+      let others = h.system.allWindows().filter { $0.id != snapshot.id && !$0.isFullScreen && display.contains($0.frame.center) }.map(\.id)
+      if snapshot.isFullScreen { h.system.leaveFullScreen(snapshot.id, with: others) } else { h.system.enterFullScreen(snapshot.id, leaving: others) }
       return "full screen on or off \(snapshot.id)"
     case 34:
       guard let snapshot = dice.pick(h.system.allWindows()) else { return "nothing" }

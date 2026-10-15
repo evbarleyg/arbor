@@ -674,8 +674,12 @@ private let above = DisplaySnapshot(
       }
     }
     h.controller.shutdown()
+    // Where a hand let go of it a window is its person's, also when Arbor has given it its own size back there: no less of it shows.
+    func shown(_ frame: CGRect?) -> CGFloat { frame.flatMap { frame in h.system.displayList.map { frame.fractionInside($0.frame) }.max() } ?? 0 }
     for window in open
-    where isPresent(window) && !h.system.isVisible(window) && window != dragged && h.frame(window) != dropped[window] {
+    where isPresent(window) && !h.system.isVisible(window) && window != dragged
+      && (dropped[window].map { shown(h.frame(window)) < shown($0) - 0.001 } ?? true)
+    {
       Issue.record("seed \(seed): \(window) is lost after quitting, at \(String(describing: h.frame(window)))\n  \(steps.joined(separator: "\n  "))")
     }
   }

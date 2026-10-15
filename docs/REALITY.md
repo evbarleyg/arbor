@@ -60,14 +60,14 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [late-or-partial-answer](#late-or-partial-answer) | 46 | 9 | 11 | 16 | 6 | 13 | 28 | 0 | 6 | 12 | 15 |
 | [second-actor](#second-actor) | 53 | 6 | 16 | 20 | 10 | 7 | 34 | 0 | 4 | 15 | 10 |
 | [geometry](#geometry) | 35 | 2 | 11 | 15 | 7 | 2 | 24 | 1 | 2 | 8 | 6 |
-| [identity](#identity) | 31 | 4 | 7 | 6 | 7 | 11 | 12 | 1 | 4 | 14 | 9 |
+| [identity](#identity) | 31 | 4 | 7 | 6 | 7 | 11 | 13 | 1 | 4 | 13 | 9 |
 | [permissions](#permissions) | 23 | 8 | 6 | 3 | 3 | 11 | 12 | 2 | 2 | 7 | 4 |
 | [timing](#timing) | 54 | 7 | 7 | 16 | 9 | 22 | 29 | 4 | 7 | 14 | 10 |
 | [input](#input) | 59 | 8 | 7 | 15 | 13 | 24 | 23 | 6 | 8 | 22 | 11 |
 | [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 45 | 1 | 0 | 1 | 4 | 40 | 26 | 1 | 2 | 16 | 7 |
-| **all** | 462 | 62 | 91 | 124 | 70 | 177 | 235 | 19 | 60 | 148 | 109 |
+| **all** | 462 | 62 | 91 | 124 | 70 | 177 | 236 | 19 | 60 | 147 | 109 |
 
 **Where the difference bit**
 
@@ -76,7 +76,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 144 | 89 | 46 | 13 | 33 | 52 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 163 | 97 | 121 | 0 | 11 | 31 |
 | controller | in the controller or the core, given reports that were right | 28 | 15 | 16 | 0 | 1 | 11 |
-| test | in a test, a script or a harness that expected the wrong thing | 81 | 0 | 25 | 5 | 11 | 40 |
+| test | in a test, a script or a harness that expected the wrong thing | 81 | 0 | 26 | 5 | 11 | 39 |
 | machine | in the machine, the toolchain or the way things are built and installed | 46 | 3 | 27 | 1 | 4 | 14 |
 
 Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
@@ -3110,11 +3110,11 @@ Identity: what counts as a window, an app or a display, and whether it is the sa
 *hurt 4 · test*
 
 - **Expected:** Windows opened under different app names in a Harness belong to different apps.
-- **Happened:** `open(app:pid:)` gives every window pid 1000 unless told otherwise, so closing a window hands the keyboard to a "sibling" that is another app's. Pid 1 is the Harness's own, and a window with it is ignored. On a Mac every app is a process of its own. One pid for all fake apps also made two manners of a rude stand-in toothless.
+- **Happened:** `open(app:pid:)` gave every window pid 1000 unless told otherwise, so closing a window handed the keyboard to a "sibling" that is another app's, ⌘H hid everything and a quit closed everything: some two thousand tests ran so. Pid 1 is the Harness's own, and a window with it is ignored. On a Mac every app is a process of its own. When the fake was made to give each app name a process, three tests of 5,985 fell: two named 1000, and one random journey came upon a story no Mac tells (a window in full screen by the report alone, and a click on another of its Space). One pid for all fake apps also made two manners of a rude stand-in toothless.
 - **Found by:** Reports withdrawn during bug hunts on simulated windows.
-- **Stand-ins play it:** yes (`FakeWindowSystem.open`, `pid`)
-- **Guard:** **none**
-- **Arbor copes:** Sources/arbor-sim/main.swift gives every app name a pid of its own; a Harness test has to pass `pid:`.
+- **Stand-ins play it:** yes (`FakeWindowSystem.open`, `FakeWindowSystem.process`)
+- **Guard:** `test: everyAppIsAProcessOfItsOwn`
+- **Arbor copes:** Sources/ArborTesting/FakeWindowSystem.swift gives every app name a process of its own, as Sources/arbor-sim/main.swift and the random walks always did.
 - **Read in:** `Sources/ArborTesting/FakeWindowSystem.swift`, `Sources/ArborTesting/Harness.swift`, `Sources/arbor-sim/main.swift`
 
 ### first-run-windows-keep-apps-out-of-the-suite

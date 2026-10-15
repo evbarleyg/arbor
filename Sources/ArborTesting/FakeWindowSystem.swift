@@ -96,6 +96,7 @@ public final class FakeWindowSystem: WindowSystem {
   public var focusIsSlow = false
   public private(set) var slowFocus: WindowID?
   var nextID: UInt32 = 101
+  private var processes: [String: Int32] = [:]
   /// Called before every frame Arbor sets takes effect, for apps whose answer depends on the question
   /// (change the window's minimum size here).
   public var willSetFrame: ((WindowID, CGRect) -> Void)?
@@ -510,15 +511,24 @@ public final class FakeWindowSystem: WindowSystem {
     return CGRect(origin: CGPoint(x: frame.minX, y: max(frame.minY, display.visibleFrame.minY)), size: frame.size)
   }
 
+  /// The process of the app of that name, for a window nobody has given one: 1000 for the first app that opens a window, 1001 for the
+  /// next. Every app is a process of its own: whom the keyboard goes to when a window closes, what ⌘H hides, who hangs, whose reports
+  /// take turns all go by that.
+  public func process(of app: String) -> Int32 {
+    if let known = processes[app] { return known }
+    processes[app] = 1000 + Int32(processes.count)
+    return processes[app]!
+  }
+
   /// Opens a window and announces it (unless the system has not started, in
   /// which case it is simply there when the controller starts).
   ///
-  /// Windows opened without a `pid` are one process, whatever their apps are called. To Arbor they are one app's: closing one
-  /// hands the keyboard to another, and a switch among them to one that is out of view is ⌘`, which the view follows after
-  /// `Controller.timeForAGoing`. A story about ⌘Tab gives each app a `pid` of its own.
+  /// Windows opened without a `pid` are of their app's process (`process(of:)`): one app name, one process. Within it closing a window
+  /// hands the keyboard to another, and a switch to one that is out of view is ⌘`, which the view follows after
+  /// `Controller.timeForAGoing`. Between two it is ⌘Tab.
   @discardableResult
   public func open(
-    app: String = "App", bundleID: String? = nil, title: String? = nil, pid: Int32 = 1000,
+    app: String = "App", bundleID: String? = nil, title: String? = nil, pid: Int32? = nil,
     frame: CGRect = CGRect(x: 300, y: 200, width: 640, height: 420), minimumSize: CGSize = .zero,
     isResizable: Bool = true
   ) -> WindowID {
@@ -526,7 +536,7 @@ public final class FakeWindowSystem: WindowSystem {
     nextID += 1
     let frame = whereItOpens(frame)
     let snapshot = WindowSnapshot(
-      id: id, pid: pid, bundleID: bundleID ?? "com.example.\(app.lowercased())", appName: app,
+      id: id, pid: pid ?? process(of: app), bundleID: bundleID ?? "com.example.\(app.lowercased())", appName: app,
       title: title ?? "\(app) \(id.rawValue)", frame: frame, isResizable: isResizable)
     windows[id] = FakeWindow(
       snapshot: snapshot, minimumSize: isResizable ? minimumSize : frame.size, maximumSize: isResizable ? nil : frame.size)
@@ -740,12 +750,12 @@ public final class FakeWindowSystem: WindowSystem {
   /// user going there.
   @discardableResult
   public func openUnlisted(
-    app: String = "App", bundleID: String? = nil, pid: Int32 = 1000,
+    app: String = "App", bundleID: String? = nil, pid: Int32? = nil,
     frame: CGRect = CGRect(x: 300, y: 200, width: 640, height: 420)
   ) -> WindowID {
     let id = WindowID(nextTabID())
     let snapshot = WindowSnapshot(
-      id: id, pid: pid, bundleID: bundleID ?? "com.example.\(app.lowercased())", appName: app,
+      id: id, pid: pid ?? process(of: app), bundleID: bundleID ?? "com.example.\(app.lowercased())", appName: app,
       title: "\(app) \(id.rawValue)", frame: whereItOpens(frame))
     unlisted[id] = FakeWindow(snapshot: snapshot, minimumSize: .zero)
     return id

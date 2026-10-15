@@ -601,8 +601,8 @@ private final class Listener {
     h.system.setFullScreen(c, false)
     h.scheduler.runPending()
     #expect(try states() == [c: .inView])
-    h.system.setHidden(pid: 1000, true)
-    #expect(try states() == [a: .hidden, b: .hidden, c: .hidden])
+    h.system.setHidden(pid: h.system.process(of: "Notes"), true)
+    #expect(try states() == [b: .hidden], "⌘H hides one app")
   }
 
   /// macOS reports a switch of its Spaces window by window, and Arbor lays out when it has heard them all.

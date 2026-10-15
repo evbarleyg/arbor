@@ -20,10 +20,10 @@ private let notes = "com.example.notes"
 @Suite @MainActor struct ANewWindowIsDockedInOneActTests {
   /// Safari, the Desktop and Mail, a third of the display each, at the sizes that ship. Half of Safari's third is too narrow to
   /// show a window.
-  private func thirdsAndARuleThatHalvesOne() -> (Harness, WindowID, WindowID) {
+  private func thirdsAndARuleThatHalvesOne(theOther: String = "Mail") -> (Harness, WindowID, WindowID) {
     let h = harness([AppRule(app: notes, action: .dockBeside(bundleID: "com.example.safari", .right))])
     let a = h.system.open(app: "Safari")
-    let b = h.system.open(app: "Mail")
+    let b = h.system.open(app: theOther)
     h.start()
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
@@ -151,9 +151,10 @@ private let notes = "com.example.notes"
   }
 
   /// The view followed the keyboard. If the window that had it goes in the same moment, macOS picked the new one and nobody asked
-  /// to see it: the move is taken back, as after any report that moved the view (`keyboardLeft`).
+  /// to see it: the move is taken back, as after any report that moved the view (`keyboardLeft`). Both are one app's, which puts one
+  /// window in the place of another: macOS hands the keyboard on within an app.
   @Test func theMoveIsTakenBackIfTheWindowThatHadTheKeyboardGoesInTheSameMoment() {
-    let (h, a, b) = thirdsAndARuleThatHalvesOne()
+    let (h, a, b) = thirdsAndARuleThatHalvesOne(theOther: "Notes")
     h.system.userFocus(b)
     let view = h.workspace.camera
     let new = h.system.open(app: "Notes")

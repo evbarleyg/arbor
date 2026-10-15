@@ -6304,15 +6304,17 @@
    "kind": "identity",
    "layer": "test",
    "expected": "Windows opened under different app names in a Harness belong to different apps.",
-   "happened": "`open(app:pid:)` gives every window pid 1000 unless told otherwise, so closing a window hands the keyboard to a \"sibling\" that is another app's. Pid 1 is the Harness's own, and a window with it is ignored. On a Mac every app is a process of its own. One pid for all fake apps also made two manners of a rude stand-in toothless.",
+   "happened": "`open(app:pid:)` gave every window pid 1000 unless told otherwise, so closing a window handed the keyboard to a \"sibling\" that is another app's, ⌘H hid everything and a quit closed everything: some two thousand tests ran so. Pid 1 is the Harness's own, and a window with it is ignored. On a Mac every app is a process of its own. When the fake was made to give each app name a process, three tests of 5,985 fell: two named 1000, and one random journey came upon a story no Mac tells (a window in full screen by the report alone, and a click on another of its Space). One pid for all fake apps also made two manners of a rude stand-in toothless.",
    "found": "Reports withdrawn during bug hunts on simulated windows.",
    "modelled": "yes",
    "knobs": [
     "FakeWindowSystem.open",
-    "pid"
+    "FakeWindowSystem.process"
    ],
-   "guards": [],
-   "copes": "Sources/arbor-sim/main.swift gives every app name a pid of its own; a Harness test has to pass `pid:`.",
+   "guards": [
+    "test: everyAppIsAProcessOfItsOwn"
+   ],
+   "copes": "Sources/ArborTesting/FakeWindowSystem.swift gives every app name a process of its own, as Sources/arbor-sim/main.swift and the random walks always did.",
    "hurt": 4,
    "sources": [
     "Sources/ArborTesting/FakeWindowSystem.swift",

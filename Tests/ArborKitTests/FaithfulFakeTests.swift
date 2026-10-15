@@ -210,6 +210,25 @@ private final class Recorder: WindowSystemEvents {
     #expect(recorder.log == ["changed \(c) echo", "focused \(c)", "keyboard moved"], "to another app")
   }
 
+  /// Nobody has to say so: windows opened under one name are one app's, under another name another's. So the keyboard does not go to
+  /// another app's window when an app's last one closes, and ⌘H hides one app.
+  @Test func everyAppIsAProcessOfItsOwn() {
+    let system = FakeWindowSystem()
+    let recorder = Recorder()
+    system.events = recorder
+    let (a, b, c) = (system.open(app: "Safari"), system.open(app: "Safari"), system.open(app: "Mail"))
+    system.start()
+    func process(_ window: WindowID) -> Int32? { system.windows[window]?.snapshot.pid }
+    #expect(process(a) == process(b) && process(a) != process(c) && process(c) == system.process(of: "Mail"))
+    system.userFocus(c)
+    recorder.log.removeAll()
+    system.close(c)
+    #expect(recorder.log == ["keyboard moved", "destroyed \(c)"] && system.focused == nil, "Mail is in front still, without a window")
+    recorder.log.removeAll()
+    system.setHidden(pid: system.process(of: "Safari"), true)
+    #expect(system.windows[a]?.snapshot.isHidden == true && system.windows[b]?.snapshot.isHidden == true)
+  }
+
   @Test func everySwitchCanBeTurnedOff() {
     let (system, recorder, a, b, _) = make(.none)
     system.focus(b)

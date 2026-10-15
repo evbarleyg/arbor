@@ -102,7 +102,7 @@ changedItsWays window requested before after together wasFocused focus frames ke
 titleBarStaysReachable growsNoFurtherThanTheScreen movesLate flightFromTheDock flightFromFullScreen none jolts titleBar usualTitleBar
 measuredTitleBars reports
 sightings clearSightings macTiling macTile takeSizeBeforeTile isSweptAside
-whereItWaits movesWhenTheFrameLogWasCleared road roadTolerance changesOfPlace detour giveToTheAppInFront keysTheAppInFrontGot doubleClicks idealSize sizeMargin framePlan
+whereItWaits movesWhenTheFrameLogWasCleared road roadTolerance changesOfPlace detour giveToTheAppInFront keysTheAppInFrontGot doubleClicks idealSize sizeMargin framePlan process
 """.split()
 
 # A hand on one of Arbor's own panels: the fake calls the action the real panel would call.
