@@ -463,6 +463,70 @@ private let oneLayout: Set<String> = [
     expectSound(h)
   }
 
+  /// There and back is nothing (Controller+ThereAndBack.swift), also where the layout for the view that is left is skipped: it is carried out on
+  /// paper. A crowded row in which room has been made; Mail goes, the view goes elsewhere, Mail comes back. With everything in view again
+  /// everybody stands where they stood. Skipped altogether, the gaps that stood were forgotten and Safari ended as a tile.
+  @Test(arguments: [true, false]) func backAtEverythingEverybodyStandsWhereTheyStood(byName: Bool) {
+    let h = Harness()
+    let safari = h.system.open(app: "Safari", pid: 1000)
+    let notes = h.system.open(app: "Notes", pid: 1001)
+    let mail = h.system.open(app: "Mail", pid: 1002)
+    h.system.setMinimumSize(notes, CGSize(width: 700, height: 500))
+    h.system.setMinimumSize(mail, CGSize(width: 900, height: 600))
+    h.start()
+    runOK(h, "dock \(safari.rawValue) right")
+    runOK(h, "dock \(notes.rawValue) beside \(safari.rawValue) right")
+    runOK(h, "dock \(mail.rawValue) beside \(notes.rawValue) right")
+    h.system.userFocus(mail)
+    h.scheduler.advance(by: 1)
+    runOK(h, "home")
+    h.scheduler.advance(by: 1)
+    let stood = h.layout!.windowFrames
+    #expect(stood[safari] != nil && stood[mail] != nil, "the story needs them in view: \(h.ascii())")
+    h.system.setMinimized(mail, true)
+    h.scheduler.advance(by: 1)
+    runOK(h, "zoom \(notes.rawValue)")
+    h.scheduler.advance(by: 1)
+    let roads = Roads(h) { if byName { runOK(h, "reveal \(mail.rawValue)") } else { h.system.setMinimized(mail, false) } }
+    roads.expectOneRoadEach()
+    #expect(h.layout!.windowFrames.keys.sorted() == [mail], "the story needs the view to go to it: \(h.ascii())")
+    h.scheduler.advance(by: 1)
+    runOK(h, "home")
+    h.scheduler.advance(by: 1)
+    #expect(h.layout!.windowFrames == stood, "\(h.ascii())")
+    expectSound(h)
+  }
+
+  /// Only for a window that comes back. For a new window that a rule docks where it does not show, the layout that is skipped has never been
+  /// carried out, on paper or otherwise: room made for it there would stay behind when it closes. A gap moved by hand; the new
+  /// window comes and goes at once; with everything in view again three of the four show. With room left behind it was two.
+  @Test func aNewWindowThatARuleDocksLeavesNoRoomBehind() {
+    let h = Harness()
+    func open(_ app: String, _ pid: Int32, _ size: CGSize, least: CGSize) -> WindowID {
+      h.system.open(app: app, pid: pid, frame: CGRect(origin: CGPoint(x: 300, y: 200), size: size), minimumSize: least)
+    }
+    let preview = open("Preview", 1000, CGSize(width: 700, height: 557), least: CGSize(width: 702, height: 419))
+    let xcode = open("Xcode", 1001, CGSize(width: 1370, height: 685), least: CGSize(width: 1188, height: 685))
+    let safari = open("Safari", 1002, CGSize(width: 1000, height: 700), least: CGSize(width: 574, height: 240))
+    let pages = h.system.open(app: "Pages", pid: 1003)
+    h.start()
+    runOK(h, "dock \(preview.rawValue) left")
+    runOK(h, "dock \(xcode.rawValue) beside \(preview.rawValue) top")
+    runOK(h, "dock \(safari.rawValue) beside \(preview.rawValue) top")
+    runOK(h, "dock \(pages.rawValue) beside \(preview.rawValue) right")
+    h.overlays.dragSeam(h.overlays.seams[h.display]![3], by: -200)
+    runOK(h, "rule add com.example.music dock beside com.example.safari bottom")
+    h.scheduler.advance(by: 1)
+    h.system.userFocus(preview)
+    h.scheduler.advance(by: 1)
+    let music = open("Music", 1004, CGSize(width: 853, height: 480), least: CGSize(width: 680, height: 480))
+    #expect(h.layout!.windowFrames.keys.sorted() == [music], "the story needs the view to go to it: \(h.ascii())")
+    h.system.close(music)
+    h.scheduler.advance(by: 1)
+    #expect(h.layout!.windowFrames.count == 3, "\(h.ascii())")
+    expectSound(h)
+  }
+
   /// Safari beside a tab group of Notes and Mail. Notes, the tab in front, goes away, so Mail is in front when it comes back.
   private func aTabThatWentAway() -> (Harness, safari: WindowID, notes: WindowID, mail: WindowID) {
     let h = Harness()
@@ -914,6 +978,33 @@ private let oneLayout: Set<String> = [
     #expect(roads.roads[notes].map(FakeWindowSystem.changesOfPlace) == 1, "\(roads.roads[notes]?.map(\.brief) ?? [])")
     #expect(roads.roads[mail] == nil, "nobody asked for it: \(roads.roads[mail]?.map(\.brief) ?? [])")
     #expect(h.system.isVisible(notes) && h.system.focused == notes && !h.system.isVisible(mail), "\(h.ascii())")
+    expectSound(h)
+  }
+
+  /// And it comes to the front after the gaps that stood have come back, which are known by the arrangement, of which the tab in front is a
+  /// part. Safari beside three tabs, room made for Notes; Mail's app is hidden and Mail fetched by name: Safari is as wide as it was.
+  @Test func aTabFetchedByNameLeavesTheGapsAsTheyStood() {
+    let h = Harness()
+    h.start()
+    runOK(h, "set tabsEnabled true")
+    let safari = h.system.open(app: "Safari", pid: 1000)
+    let notes = h.system.open(app: "Notes", pid: 1001, minimumSize: CGSize(width: 700, height: 500))
+    let mail = h.system.open(app: "Mail", pid: 1002)
+    _ = h.system.open(app: "Music", pid: 1003, minimumSize: CGSize(width: 600, height: 300))
+    runOK(h, "layout Safari | [Notes Mail Music]")
+    h.scheduler.advance(by: 2)
+    runOK(h, "focus \(notes.rawValue)")
+    h.scheduler.advance(by: 1)
+    runOK(h, "home")
+    h.scheduler.advance(by: 2)
+    let stood = h.frame(safari)!
+    h.system.setHidden(pid: 1002, true)
+    h.scheduler.advance(by: 2)
+    #expect(h.frame(safari) != stood, "the story needs the gaps to move while it is away: \(h.ascii())")
+    runOK(h, "reveal \(mail.rawValue)")
+    h.scheduler.advance(by: 3)
+    #expect(h.system.isVisible(mail) && h.system.focused == mail, "\(h.ascii())")
+    #expect(h.frame(safari) == stood, "\(h.frame(safari)!.brief), it was \(stood.brief)")
     expectSound(h)
   }
 

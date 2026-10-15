@@ -350,24 +350,31 @@ extension Controller {
   /// macOS has just handed the keyboard on (`bringIntoViewIfFocused`): both are seen to when the focus is reported, as
   /// before. So is a window that turns out to refuse its slot, which only asking it can tell.
   ///
-  /// The same for a docked window that comes back with the keyboard, or `byName`: somebody asked for it, so it comes whether or not it
+  /// The same for a docked window that `isBack` with the keyboard, or `byName`: somebody asked for it, so it comes whether or not it
   /// has the keyboard, and whoever macOS has handed that to (Controller+OneLayout.swift).
-  func theViewGoesStraightTo(_ id: WindowID, dockedOn display: DisplayID, byName: Bool = false) -> Bool {
+  func theViewGoesStraightTo(_ id: WindowID, dockedOn display: DisplayID, isBack: Bool = false, byName: Bool = false) -> Bool {
     let handedOn = !byName && keyboardHandOver.loss.map { now().timeIntervalSince($0.time) < Self.handOverTime } ?? false
     guard holdLevel == nil, drag == nil, !handedOn, windows[id]?.isPresent == true, let workspace = workspaces[display],
       let leaf = workspace.tree.leaf(containing: id),
       // A tab that is not in front has no place on paper in any view. It wants the front of its group, not another view (`bringIntoView`).
-      workspace.tree.activeWindow(of: leaf) == id
+      // Asked for by name it gets that, below.
+      byName || workspace.tree.activeWindow(of: leaf) == id
     else { return false }
     // What macOS says beforehand, as the layout would note it.
     noteFixedSizes(of: [id])
     // The question to the window system last: most windows show where they are docked.
-    guard let skipped = theNextLayout(leavingOut: id, on: display), byName || system.focusedWindow() == id else { return false }
+    guard !theNextLayoutShows(id, on: display), byName || system.focusedWindow() == id else { return false }
     let floatingInView = workspace.floating.keys.sorted().filter { !parked.contains($0) }
       .compactMap { window in windows[window].map { (window: window, frame: $0.frame) } }
-    // From here on as if that layout had been carried out: whether the Desktop comes into view, and gathers what floats, is judged by
-    // what the display would have shown, not by what it showed before the window was there.
-    layouts[display] = skipped
+    if isBack {
+      // Should it show after all, whoever called lays out, from the same gaps.
+      guard let skipped = layOutOnPaper(display), skipped.windowFrames[id] == nil else { return false }
+      // From here on as if that layout had been carried out: whether the Desktop comes into view, and gathers what floats, is judged
+      // by what the display would have shown, not by what it showed before the window was there.
+      layouts[display] = skipped
+      // After the gaps that stood have come back: they are known by the arrangement, of which the tab in front is a part.
+      if byName { workspaces[display]?.tree.activate(id) }
+    }
     reveal(id, leaf: leaf, on: display)
     // As after every move that followed the keyboard (`bringIntoViewIfFocused`). One that somebody asked for is not taken back.
     if !byName {

@@ -16,12 +16,10 @@ extension Controller {
     // Whoever has moved a view since it was asked for has said where it goes.
     let byName = askedBack?.window == window && askedBack?.views == workspaces.mapValues(\.camera)
     if askedBack?.window == window { stopAwaitingAReturn() }
-    // Asked for by name, a tab comes to the front of its group (`bringIntoView`): before the layout, which would send it to its corner.
-    if byName { workspaces[display]?.tree.activate(window) }
     let isAwaited = windows[window].flatMap { snapshot in awaitedSummon.map { Self.isWindow(snapshot, of: $0.app) } } ?? false
     // `summon` is waiting for it: it hears of it from the layout, and goes there itself, with a way back. And a tile by a record so
     // old that the layout asks it again may show after all (Controller+LearnedSizes.swift).
-    if isAwaited || hasARecordToBeAskedAbout(window) || !theViewGoesStraightTo(window, dockedOn: display, byName: byName) {
+    if isAwaited || hasARecordToBeAskedAbout(window) || !theViewGoesStraightTo(window, dockedOn: display, isBack: true, byName: byName) {
       relayout(display, reason: .structure, motion: motion)
       if byName { bringIntoView(window) }
     }
@@ -30,6 +28,21 @@ extension Controller {
   }
 
   // MARK: A window that was asked back by name
+
+  /// A layout that is skipped because the view is about to go is still carried out on paper: all of it but the moving of windows. The gaps
+  /// that stood while a window was away come back, room is made as it would have been, and where the gaps stand now is on
+  /// record (Controller+ThereAndBack.swift). Left out, the layout for the new view found a record half kept, took the view's going for
+  /// the typist's window leaving it, and forgot the gaps that stood: back at everything a window that had been in view was a tile.
+  ///
+  /// For a window that comes back, whose place has been laid out before. Not for a new one that a rule docks where it does not show: room
+  /// made for it in a view it never had would stay behind when it closes.
+  func layOutOnPaper(_ display: DisplayID) -> Layout? {
+    guard let layout = startFromTheGapsThatStood(on: display, for: .structure) ?? roomyLayout(of: display, for: .structure)
+    else { return nil }
+    rememberSqueezes(in: layout, on: display)
+    noteWhereTheGapsStand(in: layout, on: display, for: .structure)
+    return layout
+  }
 
   /// `window` is in the Dock or hidden with its app, and a command is about to ask it back to show it: Go to…, `reveal`, a row of the
   /// menu. macOS reports that it is back a moment later, when it has flown out. **The view waits for the window.** What is on
