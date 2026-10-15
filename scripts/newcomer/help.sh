@@ -22,7 +22,8 @@ how=${1:?} tools=${2:?} wanted=${3:?} app=${4:?}
 tcc="/Library/Application Support/com.apple.TCC/TCC.db"
 
 on_screen() { "$tools/pointer" windows --on-screen | awk '{ $1 = $2 = $3 = $4 = $5 = $6 = $7 = $8 = ""; sub(/^ +/, ""); print }'; }
-asking() { on_screen | grep -qxE "coreautha|SecurityAgent|LocalAuthenticationRemoteService"; }
+# Not grep -q, which leaves at the first match: under pipefail whoever is still writing to it then fails the whole line.
+asking() { on_screen | grep -xE "coreautha|SecurityAgent|LocalAuthenticationRemoteService" > /dev/null; }
 ours() { [ -d "$1" ] && [ "$(codesign --display --verbose=3 "$1" 2>&1 | sed -n 's/^CDHash=//p')" = "$wanted" ]; }
 found() {
   local each

@@ -25,7 +25,7 @@ Open screen.jpg and look at it after every act. From `ready` on, first.jpg is th
     ./mac drag 200 30 700 400 holding shift
     ./mac drag 200 30 700 400 keep      do not let go yet: look at the picture, then
     ./mac release                       let go where the pointer is, or: ./mac release 710 400
-    ./mac scroll 200 300 -3             turn the wheel there: three notches down (positive: up; 60 at most; a notch is a line or so); also: holding ctrl, opt
+    ./mac scroll 200 300 -3             turn the wheel there: three notches down (positive: up; 50 at most; a notch is a line or so); also: holding ctrl, opt
     ./mac key cmd+n                     one press; up to four, one after the other: ./mac key cmd+n cmd+w
     ./mac type "some words"             typed on the keyboard, to whatever has it
     ./mac wait 3                        do nothing for that many seconds (1 to 10), then look

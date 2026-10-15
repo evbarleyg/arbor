@@ -93,6 +93,8 @@ code=$?
 echo "the loop ended with $code"
 
 step "what is left"
+# A sampler that has died must not take the rest of the script with it.
+trap '' PIPE
 sampler_stop
 pointer windows --on-screen | awk '$3 == 0'
 cp "$HOME/Library/Application Support/Arbor/arbor.log" "$ARBOR_OUT/arbor-newcomer.log" 2>/dev/null

@@ -68,6 +68,24 @@ jobs:
         with:
           persist-credentials: false # nothing on this Mac but the courier gets a token
 
+      # As root, from a copy that is root's, with the token on its standard input: see the header of courier.sh. It outlives this step and ends with the last.
+      # Before anything that can fail, so that whatever happens somebody is there to take the branch that started the run away.
+      - name: The courier
+        env:
+          TOKEN: ${{ github.token }}
+          NAME: ${{ steps.asked.outputs.run }}
+        run: |
+          # GitHub keeps the token itself out of its logs, and this form of it only when told.
+          echo "::add-mask::$(printf 'x-access-token:%s' "$TOKEN" | base64 | tr -d '\n')"
+          mkdir -p "$RUNNER_TEMP/box"
+          sudo install -o root -m 700 scripts/newcomer/courier.sh /var/root/newcomer-courier.sh
+          token=$TOKEN
+          unset TOKEN # or sudo, which stays for as long as the courier does, would have it in its environment
+          printf '%s\n' "$token" | sudo nohup bash /var/root/newcomer-courier.sh "$RUNNER_TEMP/box" "https://github.com/$GITHUB_REPOSITORY.git" "$NAME" \
+            > "$RUNNER_TEMP/courier.log" 2>&1 &
+          sleep 1
+          pgrep -f newcomer-courier.sh > /dev/null || { cat "$RUNNER_TEMP/courier.log"; echo "::error::the courier did not start"; exit 1; }
+
       - name: The Arbor under test
         if: steps.asked.outputs.arm == 'arbor'
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
@@ -93,6 +111,7 @@ jobs:
       # What a stranger gets: an app somebody else has built, zipped. There is no release to download it from, so it is built here.
       - name: Build it, as a release is built
         if: steps.asked.outputs.arm == 'arbor'
+        timeout-minutes: 20
         working-directory: product
         run: |
           swift --version
@@ -109,24 +128,8 @@ jobs:
         if: steps.asked.outputs.arm == 'arbor'
         run: rm -rf product
 
-      # As root, from a copy that is root's, with the token on its standard input: see the header of courier.sh. It outlives this step and ends with the next but one.
-      - name: The courier
-        env:
-          TOKEN: ${{ github.token }}
-          NAME: ${{ steps.asked.outputs.run }}
-        run: |
-          # GitHub keeps the token itself out of its logs, and this form of it only when told.
-          echo "::add-mask::$(printf 'x-access-token:%s' "$TOKEN" | base64 | tr -d '\n')"
-          mkdir -p "$RUNNER_TEMP/box"
-          sudo install -o root -m 700 scripts/newcomer/courier.sh /var/root/newcomer-courier.sh
-          token=$TOKEN
-          unset TOKEN # or sudo, which stays for as long as the courier does, would have it in its environment
-          printf '%s\n' "$token" | sudo nohup bash /var/root/newcomer-courier.sh "$RUNNER_TEMP/box" "https://github.com/$GITHUB_REPOSITORY.git" "$NAME" \
-            > "$RUNNER_TEMP/courier.log" 2>&1 &
-          sleep 1
-
       - name: The newcomer's hours
-        timeout-minutes: 108
+        timeout-minutes: 116
         env:
           NEWCOMER_RUN: ${{ steps.asked.outputs.run }}
           NEWCOMER_ARM: ${{ steps.asked.outputs.arm }}
@@ -144,6 +147,7 @@ jobs:
         if: always() && steps.asked.outcome == 'success'
         run: |
           box="$RUNNER_TEMP/box"
+          [ -d "$box" ] || exit 0
           ask() {
             echo "$1 $2" > "$box/request.new" && mv "$box/request.new" "$box/request"
             for _ in $(seq 1 240); do [ -f "$box/answer-$1" ] && break; sleep 0.5; done
@@ -151,11 +155,19 @@ jobs:
           }
           if [ -d mac-shell ]; then
             gzip -9 mac-shell/samples.log mac-shell/witness.log 2>/dev/null || true
-            find mac-shell -type f -size +20m -print -delete | sed 's/^/::warning::left out, over 20 MB: /'
+            find mac-shell -type f -size +20M -print -delete | sed 's/^/::warning::left out, over 20 MB: /'
             # The journal that is there already is the whole one unless the loop handed over its own.
             cp -R mac-shell/. "$box/record/"
           fi
           echo "::notice title=newcomer::the record: $(find "$box/record" -type f | wc -l | tr -d ' ') files, $(du -sm "$box/record" | cut -f 1) MB"
+          if [ -d "$box/screen" ] && [ ! -f "$box/screen/over" ]; then
+            # Cut off before the loop could say goodbye: or the newcomer would wait two minutes at every word, for a Mac that has gone.
+            echo over > "$box/screen/over"
+            echo 99999 > "$box/screen/round"
+            echo 0 > "$box/screen/answers"
+            echo "This Mac has gone: its time was up, or it was called away." > "$box/screen/status.txt"
+            ask 1000000 screen
+          fi
           ask 1000001 record
           ask 1000002 goodbye
           touch "$box/stop"
