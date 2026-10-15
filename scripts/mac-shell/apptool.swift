@@ -181,12 +181,18 @@ func owner(of window: UInt32) -> pid_t? {
 /// through. Arbor's other windows (its welcome, its settings) take presses like anybody's.
 /// `among`: the list, for whoever asks about many points at one moment.
 /// Without `ringAround` it is told by what it is: a window of Arbor's that lies so round any window of somebody else's.
-func topWindow(at point: CGPoint, ringAround framed: CGRect? = nil, among list: [[String: Any]]? = nil) -> (id: UInt32, pid: pid_t)? {
+/// `sparing`: every other window counts as 8 points larger all round. A window takes presses a few points beyond its frame, to be resized by, and at a corner that reaches
+/// round it: a press 4 points left of the front window's corner and 1 above it went to that window, not to the title bar that showed there.
+func topWindow(
+  at point: CGPoint, ringAround framed: CGRect? = nil, among list: [[String: Any]]? = nil, sparing spared: UInt32? = nil
+) -> (id: UInt32, pid: pid_t)? {
   let ordinary = (list ?? windowList([.optionOnScreenOnly, .excludeDesktopElements])).filter { number($0, kCGWindowLayer) == 0 }
   func isArbors(_ info: [String: Any]) -> Bool { info[kCGWindowOwnerName as String] as? String == "Arbor" }
   let framedOnes = framed.map { [$0] } ?? ordinary.filter { !isArbors($0) }.compactMap(bounds)
   for info in ordinary {
-    guard let rect = bounds(info), rect.contains(point), let id = number(info, kCGWindowNumber) else { continue }
+    guard let rect = bounds(info), let id = number(info, kCGWindowNumber),
+      (spared == nil || UInt32(id) == spared ? rect : rect.insetBy(dx: -8, dy: -8)).contains(point)
+    else { continue }
     if isArbors(info), framedOnes.contains(where: { rect.contains($0) && $0.insetBy(dx: -24, dy: -24).contains(rect) }) { continue }
     return (UInt32(id), pid_t(number(info, kCGWindowOwnerPID) ?? 0))
   }
@@ -290,7 +296,7 @@ func grabPoint(_ window: AXUIElement, id: UInt32, pid: pid_t) -> (CGPoint, Strin
       // A window takes presses a few points beyond its frame, where its border can be dragged: a point that close to another window's edge
       // resizes or raises that one instead. So the window has to be the frontmost all round the point as well.
       let around = [(0, 0), (-10, 0), (10, 0), (0, 8)].map { CGPoint(x: point.x + CGFloat($0.0), y: point.y + CGFloat($0.1)) }
-      guard around.allSatisfy({ topWindow(at: $0, ringAround: frame, among: onScreen)?.id == id }) else { continue }
+      guard around.allSatisfy({ topWindow(at: $0, ringAround: frame, among: onScreen, sparing: id)?.id == id }) else { continue }
       var found: AXUIElement?
       guard AXUIElementCopyElementAtPosition(app, Float(point.x), Float(point.y), &found) == .success,
         let element = found
