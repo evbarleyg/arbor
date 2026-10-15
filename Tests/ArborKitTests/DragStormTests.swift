@@ -148,7 +148,7 @@ import Testing
       notes += workspace.tree.invariantViolations()
       let layout = h.controller.layouts[display]
       for (window, frame) in (layout?.windowFrames ?? [:]).sorted(by: { $0.key < $1.key })
-      where h.system.windows[window]?.minimumSize == .zero && h.frame(window) != frame {
+      where h.system.windows[window]?.minimumSize == .zero && h.frame(window) != frame && !h.isShortForNow(window, in: frame) {
         notes.append("\(window) is at \(h.frame(window)!), its slot is \(frame)")
       }
       for window in (layout?.hiddenWindows ?? []).sorted() where h.system.isVisible(window) {

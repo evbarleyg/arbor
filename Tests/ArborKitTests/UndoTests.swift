@@ -47,8 +47,8 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     for (window, frame) in layout.windowFrames {
       // A window within a point of its slot is left alone.
       #expect(
-        h.frame(window)?.approximatelyEquals(frame, tolerance: 1) == true, "\(window) is not in its slot \(note)",
-        sourceLocation: sourceLocation)
+        h.frame(window)?.approximatelyEquals(frame, tolerance: 1) == true || h.isShortForNow(window, in: frame),
+        "\(window) is not in its slot \(note)", sourceLocation: sourceLocation)
       #expect(!h.controller.parked.contains(window), "\(window) counts as parked \(note)", sourceLocation: sourceLocation)
     }
     for window in layout.hiddenWindows {
@@ -1672,9 +1672,14 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     // From either display: the change was made to both.
     h.system.cursor = pointer
     #expect(h.run("undo").message == "undid dock \(b) beside \(s) bottom")
+    // The arrangement at once. The pictures also hold frames, and a window fresh from another display has its whole size when macOS has caught up.
+    #expect(Picture(h).workspaces == before.workspaces && Picture(h).parked == before.parked)
+    h.scheduler.advance(by: 1.1)
     #expect(Picture(h) == before)
     expectConsistent(h)
     #expect(h.run("redo").ok)
+    #expect(Picture(h).workspaces == after.workspaces && Picture(h).parked == after.parked)
+    h.scheduler.advance(by: 1.1)
     #expect(Picture(h) == after)
     expectConsistent(h)
     #expect(redoLabels(h, on: main.id).isEmpty && redoLabels(h, on: side.id).isEmpty)
@@ -1690,6 +1695,8 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     h.system.drag(a, through: [CGPoint(x: slot.midX, y: slot.minY + 10), CGPoint(x: target.midX, y: target.maxY - 20)])
     #expect(h.controller.workspaces[side.id]!.isDocked(a))
     #expect(h.run("undo").ok, "the pointer is where the window was dropped")
+    #expect(Picture(h).workspaces == before.workspaces && Picture(h).parked == before.parked)
+    h.scheduler.advance(by: 1.1)  // across displays: macOS catches up
     #expect(Picture(h) == before)
     expectConsistent(h)
   }
@@ -1825,6 +1832,8 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
 
     h.system.cursor = onMain
     #expect(h.run("undo").message == "undid float \(b)")
+    #expect(Picture(h).workspaces == before.workspaces && Picture(h).parked == before.parked)
+    h.scheduler.advance(by: 1.1)  // across displays: macOS catches up
     #expect(Picture(h) == before)
     expectConsistent(h)
     // Redo puts it back where it had wandered to.

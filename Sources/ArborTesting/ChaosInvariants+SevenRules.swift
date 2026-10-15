@@ -354,7 +354,7 @@ extension ChaosRunner {
       || harness.scheduler.pendingKeys.contains { key in
         // Not the focus ring's own timers, which are pending after most acts and lay nothing out.
         if key.hasPrefix("focus-ring") { return false }
-        return ["space-", "enforce-", "landed-", "displays-blinked", "focus", "back-from-full-screen", "summon-wait", "pending-slots", "sole-float-after-launch", "meet-"]
+        return ["space-", "enforce-", "landed-", "across-", "displays-blinked", "focus", "back-from-full-screen", "summon-wait", "pending-slots", "sole-float-after-launch", "meet-"]
           .contains { key.hasPrefix($0) }
       }
   }

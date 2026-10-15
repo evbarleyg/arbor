@@ -471,7 +471,7 @@ extension Controller {
       // It is placed before the layouts below; a motion still playing would end on a window that has left.
       overlays.finishAnimations()
       // Asked before anything is written down: a window whose app does not answer is where it was.
-      guard var actual = system.setFrame(wanted, of: id) else {
+      guard var actual = give(wanted, to: id)?.frame else {
         return .failure("\(id) stays where it is: its app does not answer")
       }
       parked.remove(id)

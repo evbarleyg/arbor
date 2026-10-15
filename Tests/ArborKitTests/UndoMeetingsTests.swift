@@ -634,9 +634,12 @@ private final class Listener {
       h.system.cursor = laptop.frame.center
       #expect(h.run("undo").ok, "\(command)")
       #expect(h.controller.workspaces == before.0, "undoing \(command), round \(round)")
+      // The arrangement at once; the frames when macOS has caught up with a window fresh from another display.
+      h.scheduler.advance(by: 1.1)
       #expect(frames(h) == before.1 && h.controller.parked == before.2, "undoing \(command), round \(round)")
       #expect(h.run("redo").ok, "\(command)")
       #expect(h.controller.workspaces == after.0, "redoing \(command), round \(round)")
+      h.scheduler.advance(by: 1.1)
       #expect(frames(h) == after.1 && h.controller.parked == after.2, "redoing \(command), round \(round)")
       for display in [laptop, studio] { expectWindowsMatchLayout(h, on: display.id) }
     }

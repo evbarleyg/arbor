@@ -24,7 +24,9 @@ extension Controller {
   /// place where a hand let go of it. Nil if its app does not answer, and the window may then be anywhere on the way.
   ///
   /// For a frame that lies on the screen this is `setFrame`. A docked window's slot does, and `place` sees to its own.
-  func give(_ frame: CGRect, to window: WindowID) -> Given? {
+  ///
+  /// Called through `give`, which knows besides what a journey across displays does to the answer (Controller+AcrossDisplays.swift).
+  func giveAtOnce(_ frame: CGRect, to window: WindowID) -> Given? {
     let standing = windows[window]?.frame
     if let standing, whereItHasToBeSized(for: frame, from: standing) != nil {
       lookAtTheDock(under: frame.origin)

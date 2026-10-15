@@ -1,0 +1,39 @@
+# Proposed by the swarm (2026-10-15, board 0.22); the documenter may edit or drop it.
+# Story: a laptop beside a larger monitor. A docked window is sent across with the key. It fills its place there: not four fifths of it.
+# Right after a window has been taken to another display, macOS still judges what it may grow to by the display it came from: asked to be
+# as high as its new place, it stops at the foot of the laptop's display. Arbor took that for an app that will not grow, centred the window in
+# its place and remembered the short size, and so it lay until it next went out of view.
+# That is the screen's answer and not the window's: nothing is made of it, and the window is asked again when macOS has caught up.
+# Seen on a hosted Mac, from 1280x720 to 1920x1080. Here the laptop's display is 1440x900.
+quiet
+displays 2
+open Safari
+open Notes
+dock 101 left
+dock 102 right
+wait 3
+focus 102
+move-to-display next
+expect ok
+# The journey: at its place's corner at once, as high as the laptop's display let it be (its foot at 900). Never in the middle of its place.
+expect at 102 1452 12
+expect size 102 942x888
+wait 1.1
+# Whole within about a second, in one further change, and still at the corner.
+expect at 102 1452 12
+expect size 102 942x1056
+wait 10
+expect still
+expect size 102 942x1056
+# Nothing was remembered: there and back again, it is as high as its place.
+move-to-display next
+wait 3
+move-to-display next
+wait 3
+expect at 102 1452 12
+expect size 102 942x1056
+# The way to the laptop's display is one move, and nothing waits.
+move-to-display next
+expect moved-once
+wait 5
+expect still

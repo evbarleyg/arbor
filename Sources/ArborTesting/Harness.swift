@@ -70,6 +70,7 @@ public final class Harness {
     let start = Date(timeIntervalSinceReferenceDate: 800_000_000)
     controller.now = { [scheduler] in start.addingTimeInterval(scheduler.now) }
     scheduler.afterEach = { [system] in system.deliverEchoes() }
+    scheduler.beforeEach = { [system] due in system.itIsAtLeast(due) }
     system.afterEvents = { [scheduler] in scheduler.advance(by: 0) }
     system.clock = { [scheduler] in scheduler.now }
     controller.releaseFeed = releases

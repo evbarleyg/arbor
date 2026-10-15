@@ -508,7 +508,7 @@ private let above = DisplaySnapshot(
         }
         // Within two points: Arbor leaves a window alone when it is a point from its slot, and lets one hang over by two.
         for (window, frame) in (h.controller.layouts[display]?.windowFrames ?? [:]).sorted(by: { $0.key < $1.key })
-        where h.frame(window)?.approximatelyEquals(frame, tolerance: 2) != true {
+        where h.frame(window)?.approximatelyEquals(frame, tolerance: 2) != true && !h.isShortForNow(window, in: frame) {
           return "\(display): \(window) is at \(String(describing: h.frame(window))), its slot at \(frame)"
         }
         for window in (h.controller.layouts[display]?.hiddenWindows ?? []).sorted() where h.system.isVisible(window) {

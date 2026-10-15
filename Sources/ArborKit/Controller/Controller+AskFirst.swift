@@ -140,6 +140,10 @@ extension Controller {
     actual = askForLess(window, slot: question, took: actual)
     windows[window]?.frame = actual
     settled[window] = actual
+    // Fresh from another display, it is judged by that one wherever it stands, also where it waits out of view
+    // (Controller+AcrossDisplays.swift). Nothing is made of such an answer, and it does not count as having answered: `place` offers it the
+    // whole slot, where `request` would only move one that has said what it makes of the size.
+    if isAnotherDisplaysAnswer(actual, shortOf: question, on: displayID) { return false }
     justAnswered[window] = question.size
     // Only just back, it may not be ready to take a frame, and answers with the one it has (Controller+OnTheWayBack.swift). It goes
     // where the size it has belongs, and nothing is concluded. One that has changed its size has heard the question.

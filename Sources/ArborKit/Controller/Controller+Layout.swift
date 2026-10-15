@@ -216,6 +216,18 @@ extension Controller {
     let isOnlyMoved = asked.size == current.frame.size
     // Where it was asked, not by way of the slot's corner.
     if !isOnlyMoved { actual = askForLess(window, slot: asked, took: actual) }
+    // Fresh from another display, it has been judged by that one (Controller+AcrossDisplays.swift). Nothing is made of such an answer: it is
+    // not asked again on the spot, which brings the same; not centred; not written down. It is asked again when macOS has caught up.
+    if isAnotherDisplaysAnswer(actual, shortOf: target, on: displayID), askAgainAfterTheJourney(window, on: displayID) {
+      parked.remove(window)
+      windows[window]?.frame = actual
+      settled[window] = actual
+      misfits[window] = nil
+      // (Whatever frame it was owed while it floated, it is docked now.)
+      journeys[window]?.owed = nil
+      return false
+    }
+    journeyIsOver(window)
     // An answer the screen may have given is no refusal (`mayHaveBeenStoppedByTheScreen`). It can be, anywhere but in the slot, which
     // lies on the screen: where the window stood, if its app carries out a move late and was still there when it was asked for the
     // size; and where it answers from, if it was not expected to grow, was asked lower than its slot begins, and has grown. Not

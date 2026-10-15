@@ -172,6 +172,8 @@ extension Controller {
     seenSizes[window.id] = seenSizes.removeValue(forKey: old)
     if fixedSizesNoted.remove(old) != nil { fixedSizesNoted.insert(window.id) }
     misfits[window.id] = misfits.removeValue(forKey: old)
+    // What stands there now is asked at the next layout like anybody.
+    journeyIsOver(old)
     parkedAgain[window.id] = parkedAgain.removeValue(forKey: old)
     titleBars[window.id] = titleBars.removeValue(forKey: old)
     chosenOnShape[window.id] = chosenOnShape.removeValue(forKey: old)

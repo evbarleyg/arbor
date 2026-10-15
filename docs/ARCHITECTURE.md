@@ -182,6 +182,18 @@ move is not held back. A cut nobody foresaw shows in an answer that is all macOS
 frames: the one the window has, and the one to write down as its own, in which a side that the screen kept short has the size that was asked for,
 down to the one point that a window as high as the visible frame falls short above a Dock, which no order of calls can give it and nobody asks for again.
 
+**Nor is another screen's** (`Controller+AcrossDisplays.swift`). Right after a position call has taken a window to another display, macOS judges a size call by the
+display the window came from, for something between 6 and 200 ms and in every order of the calls: sent from 1280×720 to 1920×1080, a window asked to be 947 high
+took 677, the foot of the display it had left. So an answer that is as short as **another** display would have it (`ScreenLines` with that display's lines: it ends on one of
+them, or in the strip of that display's Dock) is nobody's refusal, wherever it is given: in `place`, to a question put where a window waits out of view (`ask`), or to
+`give`, which wraps `giveAtOnce` and judges wherever the window was sized. Nothing is made of it. The window is not asked again on the spot, which brings the same; it is not
+centred in its slot; nothing is learnt and no misfit noted; a question so answered counts as not answered; and what `give` hands back to be written down as the window's own
+is what was asked for, which going out of view meanwhile does not overwrite. The window is asked again when macOS has caught up: one timer for each display (`across-<display>`) lays
+it out a quarter of a second after the journey and, if a window is still that short, a second after it; not under a hand nor while the displays are in doubt, like any put-back. What
+a window answers the third time is its own answer, like any other. It goes by the answer and by no forecast, so it does not matter which call took the window across, nor which
+display macOS counts a window to that lies across two, which nobody has measured. Whoever compares windows with their slots in that moment asks `Harness.isShortForNow`: short at its
+slot's corner, nowhere else, and only while the time until the asking is running.
+
 A window that gives no such sign is **asked again where nobody can see** (`Controller+LearnedSizes.swift`). A tile's
 window is parked anyway. So when a display is laid out, and the record that makes a window a tile has stood for
 `tileRetryMinutes` (10), `relayout` asks the window, between applying the layout and laying out again, to take the size of

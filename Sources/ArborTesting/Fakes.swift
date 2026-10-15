@@ -255,6 +255,9 @@ public final class ManualScheduler: Scheduler {
   private var order: [String] = []
   /// Called after each piece of work. `Harness` delivers the fake window system's echoes here.
   public var afterEach: (@MainActor () -> Void)?
+  /// Called before each piece of work with the time it was due. `runPending` and `fire` run work with the clock standing still, and yet
+  /// work that runs says that its time has come: whoever plays something of macOS's that passes by itself goes by this as well.
+  public var beforeEach: (@MainActor (_ due: Double) -> Void)?
   /// Seconds since the scheduler was made. Only `advance(by:)` moves it.
   public private(set) var now: Double = 0
 
@@ -280,6 +283,7 @@ public final class ManualScheduler: Scheduler {
     pending.removeAll()
     for key in keys {
       guard let item = items[key] else { continue }
+      beforeEach?(item.due)
       item.action()
       afterEach?()
     }
@@ -294,6 +298,7 @@ public final class ManualScheduler: Scheduler {
     {
       now = max(now, item.due)
       cancel(key)
+      beforeEach?(item.due)
       item.action()
       afterEach?()
     }
@@ -314,6 +319,7 @@ extension ManualScheduler {
   public func fire(_ key: String) -> Bool {
     guard let item = pending[key] else { return false }
     cancel(key)
+    beforeEach?(item.due)
     item.action()
     return true
   }
@@ -329,6 +335,7 @@ extension ManualScheduler {
       now = max(now, item.due)
       cancel(key)
       willRun(key)
+      beforeEach?(item.due)
       item.action()
     }
     now = max(now, end)

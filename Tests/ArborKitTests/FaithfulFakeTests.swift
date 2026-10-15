@@ -106,6 +106,43 @@ private final class Recorder: WindowSystemEvents {
     #expect(system.setFrame(rect(687, 300, 400, 650), of: a) == rect(687, 300, 400, 650))
   }
 
+  /// Right after a position call has taken a window to another display, a size call is judged by the display it CAME from: under 6 ms, 10 of
+  /// 10; from 200 ms on by the new one, 4 of 4 (a probe on a hosted Mac, macOS 26). From 1280×720 to 1920×1080, asked 465×947 at y 43, a docked
+  /// window took 465×677: 720 − 43, the foot of the display it had left. Asked again a millisecond later: 677.
+  @Test func aSizeAskedRightAfterAJourneyAcrossDisplaysIsJudgedByTheDisplayItCameFrom() {
+    let system = FakeWindowSystem(displays: [
+      DisplaySnapshot(
+        id: DisplayID("small"), frame: CGRect(x: 0, y: 0, width: 1280, height: 720),
+        visibleFrame: CGRect(x: 0, y: 31, width: 1280, height: 689), isMain: true),
+      DisplaySnapshot(
+        id: DisplayID("large"), frame: CGRect(x: 1280, y: 0, width: 1920, height: 1080),
+        visibleFrame: CGRect(x: 1280, y: 31, width: 1920, height: 1049), isMain: false),
+    ])
+    var now = 100.0
+    system.clock = { now }
+    let slot = CGRect(x: 1292, y: 43, width: 465, height: 947)
+    let a = system.open(app: "A", frame: CGRect(x: 12, y: 43, width: 465, height: 665))
+    #expect(system.setFrame(slot, of: a)?.size.height ?? 0 < 680, "the foot of the display it came from")
+    #expect(system.setFrame(slot, of: a)?.origin == slot.origin, "the position is taken")
+    now += 0.001
+    #expect(system.setFrame(slot, of: a)?.size.height ?? 0 < 680, "asked again at once")
+    now += 0.1
+    #expect(system.setFrame(slot, of: a)?.size.height ?? 0 < 680, "and after a tenth of a second")
+    now += 0.1
+    #expect(system.setFrame(slot, of: a) == slot, "macOS has caught up")
+
+    // The other way nothing is cut: the large display's lines lie beyond the small one's.
+    let home = CGRect(x: 12, y: 43, width: 465, height: 665)
+    #expect(system.setFrame(home, of: a) == home)
+    // A journey within one display is none.
+    now += 1
+    #expect(system.setFrame(CGRect(x: 600, y: 43, width: 465, height: 300), of: a)?.height == 300)
+    #expect(system.setFrame(home, of: a) == home)
+    // Nor is it so for whoever switches it off.
+    system.echoes.theDisplayItCameFromJudgesForAMoment = false
+    #expect(system.setFrame(slot, of: a) == slot)
+  }
+
   @Test func aNewWindowIsCreatedThenFocused() {
     let (system, recorder, _, _, _) = make()
     let new = system.open(app: "Safari", pid: 1)
