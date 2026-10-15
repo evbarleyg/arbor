@@ -35,11 +35,10 @@ class Film:
         self.dropped = 0
         self.kind = ""
         self.text = ""
-        self.before = {}
         self.after = {}
         self.how = {}
-        self.colours = {}
         self.overlays = []
+        numbered = []
         with open(os.path.join(folder, "film.log"), encoding="utf-8") as log:
             for line in log:
                 words = line.split()
@@ -47,8 +46,7 @@ class Film:
                     continue
                 time, kind, rest = int(words[0]), words[1], words[2:]
                 if kind == "F":
-                    self.times.append(time)
-                    self.places.append(tuple(int(word) for word in rest[1:3]) if len(rest) >= 3 else (0, 0))
+                    numbered.append((int(rest[0]), time, tuple(int(word) for word in rest[1:3]) if len(rest) >= 3 else (0, 0)))
                 elif kind == "D":
                     self.display = [int(word) for word in rest]
                 elif kind == "V":
@@ -66,7 +64,11 @@ class Film:
                     self.dropped = int(rest[0])
                 elif kind == "M":
                     self.mark(time, rest)
-        self.times = np.array(self.times, dtype=np.int64)
+        # By their numbers, which is how the pictures are named: the lines are in the order of their times, and the first frame's is the
+        # moment the film began, which a frame that was under way then may undercut.
+        numbered.sort()
+        self.places = [place for _, _, place in numbered]
+        self.times = np.maximum.accumulate(np.array([time for _, time, _ in numbered], dtype=np.int64)) if numbered else np.array([], dtype=np.int64)
         # The Dock grows and shrinks with the apps that run. The panel Arbor hangs behind everything fills the room as it is now.
         behind = [frame for _, level, frame in self.overlays if level < -1000]
         if behind:
@@ -78,12 +80,10 @@ class Film:
             self.kind = words[1]
         elif words[0] == "text":
             self.text = " ".join(words[1:])
-        elif words[0] in ("before", "after") and len(words) in (6, 7):
-            getattr(self, words[0])[int(words[1])] = [float(word) for word in words[2:6]]
-            if words[0] == "after" and len(words) == 7:
+        elif words[0] == "after" and len(words) in (6, 7):
+            self.after[int(words[1])] = [float(word) for word in words[2:6]]
+            if len(words) == 7:
                 self.how[int(words[1])] = words[6]
-        elif words[0] == "window" and len(words) == 4:
-            self.colours[int(words[1])] = int(words[3])
         elif words[0] == "overlay" and len(words) == 7:
             self.overlays.append((words[1], int(words[2]), [float(word) for word in words[3:7]]))
 
@@ -261,6 +261,9 @@ class Rect:
         same = apart_by(self.colour, other.colour) <= 2 * FLAT
         apart = [abs(a - b) for index, (a, b) in enumerate(zip(self.edges, other.edges)) if not (self.cut[index] or other.cut[index])]
         if not apart:
+            # Of one that fills the room nothing can be compared: it is the same as another that does, and as nothing else.
+            if all(self.cut) != all(other.cut):
+                return 10000
             apart = [abs((self.left + self.right) - (other.left + other.right)) / 2,
                      abs((self.top + self.bottom) - (other.top + other.bottom)) / 2]
         # Of two that are as near, the one of the same colour is the same thing; and what is plainly another colour from one frame to
@@ -270,27 +273,26 @@ class Rect:
 
 
 def whole(rects, room, scale):
-    """Windows, of the flat patches they are made of: what lies inside another and is small beside it (an icon, a word's ground) is a
-    detail of it, and a bar that sits on a body of the same width is its title bar."""
+    """Windows, of the flat patches they are made of: a bar that sits on a body of the same width is its title bar, and what then lies
+    inside another and is small beside it (an icon, a word's ground) is a detail of it."""
     slack = 3 * scale
-    outer = [rect for rect in rects
-             if not any(other is not rect and other.area > 4 * rect.area and other.left - slack <= rect.left and other.top - slack <= rect.top
-                        and other.right + slack >= rect.right and other.bottom + slack >= rect.bottom for other in rects)]
-    kept = {id(rect) for rect in outer}
-    result, used = [Rect(rect.edges, rect.colour, room, detail=True, ragged=rect.ragged) for rect in rects if id(rect) not in kept], set()
-    for body in sorted(outer, key=lambda rect: -rect.bottom):
+    joined, used = [], set()
+    for body in sorted(rects, key=lambda rect: -rect.bottom):
         if id(body) in used:
             continue
         box = list(body.edges)
-        for bar in outer:
+        for bar in rects:
             if bar is body or id(bar) in used:
                 continue
             if abs(bar.left - box[0]) <= slack and abs(bar.right - box[2]) <= slack and abs(bar.bottom - box[1]) <= slack + 2:
                 box[1] = bar.top
                 used.add(id(bar))
         used.add(id(body))
-        result.append(Rect(tuple(box), body.colour, room, ragged=body.ragged))
-    return result
+        joined.append(Rect(tuple(box), body.colour, room, ragged=body.ragged))
+    for rect in joined:
+        rect.detail = any(other is not rect and other.area > 4 * rect.area and other.left - slack <= rect.left and other.top - slack <= rect.top
+                          and other.right + slack >= rect.right and other.bottom + slack >= rect.bottom for other in joined)
+    return joined
 
 
 class Track:
@@ -358,9 +360,12 @@ class Scan:
         self.boxes_changed = [None] * len(film)
         # Of what the menu bar and the Dock showed at first, the share that is plainly another colour now.
         self.strips = np.zeros((len(film), 2))
+        # Every sixteenth pixel of the room in every frame: for what is too large to be followed as a thing.
+        self.small = []
         previous = None
         for index, _, picture, changed in film.frames():
             inside = picture[y0:y1, x0:x1]
+            self.small.append(inside[::16, ::16].astype(np.int16))
             if index == 0:
                 first = picture
                 # The bar is all its own. The Dock's own are its icons, told by their colours: its plate is glass, and shows what passes under it.

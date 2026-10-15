@@ -37,8 +37,8 @@ PASS, MISS, UNSEEN = "pass", "miss", "unseen"
 WEIGHT = {1: 5, 2: 3, 3: 1}
 
 MOVES = ("camera", "structure", "control")
-SETTLES = MOVES + ("drag",)
-ALL = SETTLES + ("hold", "follow", "instant", "panel")
+SETTLES = MOVES + ("drag", "follow")
+ALL = SETTLES + ("hold", "instant", "panel")
 # Of Arbor's own windows, the levels of those that have no business on screen once things are at rest: the drop preview, the stage.
 PASSING = (3, 4)
 
@@ -168,13 +168,16 @@ def no_hop(m, allow):
 
 
 def softly(m, allow):
-    if not m["motion"].seen and not m["looks"]:
-        return Verdict(UNSEEN, "nothing could be followed")
+    step, frame = 0, None
     if m["looks"]:
         _, step, frame = max(m["looks"], key=lambda look: look[1])
-        if step > 26:
-            return Verdict(MISS, f"a window changes its look by {step / 2.55:.0f}% of full scale between two frames (at most 10%: a fade of some 130 ms)",
-                           [frame - 1, frame])
+    if step > 26:
+        return Verdict(MISS, f"a window changes its look by {step / 2.55:.0f}% of full scale between two frames (at most 10%: a fade of some 130 ms)",
+                       [frame - 1, frame])
+    # That nothing abrupt was found says something only where a window was followed all the way.
+    if not m["motion"].seen:
+        return Verdict(UNSEEN, "nothing could be followed")
+    if m["looks"]:
         return Verdict(PASS, f"what changes its look fades: at most {step / 2.55:.0f}% of full scale between two frames")
     return Verdict(PASS, "nothing changes its look")
 
@@ -197,6 +200,9 @@ def no_blink(m, allow):
 
 
 def no_flash(m, allow):
+    if m["washes"]:
+        frame, shown, share = m["washes"][0]
+        return Verdict(MISS, f"{share * 100:.0f}% of the room is something else for {ms(shown)}", [frame - 1, frame, frame + 1])
     if m["flashes"]:
         track, shown = m["flashes"][0]
         rect = track.rects[0]
@@ -327,8 +333,7 @@ def not_pulled(m, allow):
         return Verdict(UNSEEN, "the dragged window was seen whole in too few frames")
     # By its left and its bottom: the top is where its title bar is, if that was found. macOS's own dragging trails the pointer, so the
     # window may be wherever the pointer has put it in the last tenth of a second. Anywhere else, somebody pulled.
-    first = held[0][1]
-    grip = (first.left - np.interp(held[0][0], times, xs), first.bottom - np.interp(held[0][0], times, ys))
+    grip = (taken.left - down[2] * film.scale, taken.bottom - down[3] * film.scale)
     worst, where = 0.0, held[0][0]
     for time, rect in held:
         lately = (times >= time - 100) & (times <= time + 5)
@@ -415,7 +420,7 @@ def nothing_left(m, allow):
 CHECKS = [
     # id, what it asks, how bad a miss is, the kinds of scene it is asked of, the function
     ("M1", "answers at once", 2, ALL, answers),
-    ("M2", "lasts about 460 ms", 2, MOVES + ("drag",), lasts),
+    ("M2", "lasts about 460 ms", 2, SETTLES, lasts),
     ("M3", "eased: quick off the mark, gentle at the end, never past it", 2, SETTLES, eased),
     ("M4", "one motion per action", 1, SETTLES, one_motion),
     ("M5", "smooth", 2, SETTLES, smooth),
@@ -499,6 +504,11 @@ def judge(folder, allow=None):
     for identifier, _, _, kinds, check in CHECKS:
         if film.kind in kinds:
             verdicts[identifier] = check(m, allow or NO_LEEWAY)
+            # Of a film in which nothing happens, or whose end is missing, nothing good can be said either.
+            if film.dropped:
+                verdicts[identifier] = Verdict(UNSEEN, f"the camera ran out of room: the film's last {film.dropped} frames are missing")
+            elif not m["episodes"] and verdicts[identifier].status == PASS:
+                verdicts[identifier] = Verdict(UNSEEN, "nothing happens in the film")
     return m, verdicts
 
 
@@ -580,7 +590,8 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout):
             trusted = False
             continue
         missed = sorted(identifier for identifier, verdict in result[1].items() if verdict.status == MISS)
-        unseen = [identifier for identifier in wanted if result[1][identifier].status == UNSEEN]
+        # The good film proves nothing unless the ruler could follow it.
+        unseen = [identifier for identifier in (wanted or ["M2", "M3", "M4", "M5", "M6"]) if result[1][identifier].status == UNSEEN]
         right = all(identifier in missed for identifier in wanted) and (wanted or not missed) and not unseen
         trusted &= right
         print(f"- metronome {kind}: {'as it should be' if right else 'WRONG'}: missed {', '.join(missed) or 'nothing'}"
@@ -588,12 +599,16 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout):
     print(f"- allowed for this camera on this Mac: {ms(allow['latency'])} of delay, {ms(allow['gap'])} between frames\n", file=out)
 
     def read(path):
-        if path and os.path.isfile(path):
-            with open(path, encoding="utf-8") as file:
-                return json.load(file)
-        return {}
+        if not path:
+            return {}
+        with open(path, encoding="utf-8") as file:
+            return json.load(file)
 
-    eyes, stills = read(eyes_path).get("scenes", {}), read(stills_path).get("panels", {})
+    seen_by_eye = read(eyes_path)
+    # Verdicts are about frames, so about one run's films and no other's.
+    if seen_by_eye and str(seen_by_eye.get("run")) not in os.path.basename(os.path.normpath(folder)):
+        raise SystemExit(f"judge.py: {eyes_path} is about run {seen_by_eye.get('run')}, not about {folder}")
+    eyes, stills = seen_by_eye.get("scenes", {}), read(stills_path).get("panels", {})
     cells = []  # (scene or panel, check, title, severity, move, Verdict)
     table = []
     for name, kind, move in SCENES:
@@ -608,10 +623,12 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout):
             fooled = eyes.get(name, {}).get("refuted", {}).get(identifier)
             if verdict.status == MISS and fooled:
                 verdict = Verdict(UNSEEN, "the ruler was fooled, say eyes")
+            if eyes.get(name, {}).get("void"):
+                verdict = Verdict(UNSEEN, "the film does not show its scene, say eyes")
             cells.append((name, identifier, title, severity, move, verdict))
             row[identifier] = verdict.status
         for identifier, title, severity in EYES:
-            seen = eyes.get(name, {}).get(identifier) if name in results else None
+            seen = eyes.get(name, {}).get(identifier) if name in results and not eyes.get(name, {}).get("void") else None
             verdict = Verdict(seen["status"], seen["said"], seen.get("frames", [])) if seen else Verdict(UNSEEN, "nobody has gone through the sheet")
             cells.append((name, identifier, title, severity, move, verdict))
             row[identifier] = verdict.status
@@ -699,8 +716,11 @@ def self_test():
         "cards-that-fade": ({"cards": True, "fade": 9}, ["M12"], []),
         "cards-out-of-place": ({"cards": True, "fade": 9, "offset": 5}, ["M6", "M12"], []),
         "preview-left": ({"left": 3}, ["M13"], []),
-        "blink": ({"blink": True}, ["M8"], ["M7"]),
+        "blink": ({"blink": True}, ["M8"], ["M7", "M9"]),
+        "good-and-not-a-frame-more": ({"words": False}, [], []),
         "flash": ({"flash": True}, ["M9"], []),
+        "flash-at-the-edge": ({"flash": (0, 420, 150, 110)}, ["M9"], []),
+        "flash-of-everything": ({"flash": (0, 31, 1024, 674)}, ["M9"], ["M7", "M8"]),
         "bars": ({"bars": True}, ["M11"], []),
         "at-once": ({"instant": True, "kind": "instant"}, [], []),
         "not-at-once": ({"kind": "instant"}, ["R1", "R3"], []),
@@ -709,9 +729,12 @@ def self_test():
     # The same for what is drawn by another hand: name -> (who draws it, how it is wrong, must miss, may miss)
     others = {
         "drag": (studio.shoot_drag, {}, [], []),
+        "drag-that-rests-in-the-room": (studio.shoot_drag, {"drop": (760, 300)}, [], []),
+        "drag-under-a-tint": (studio.shoot_drag, {"tint": True}, [], []),
         "drag-pulled": (studio.shoot_drag, {"pull": 30}, ["D1"], []),
         "drag-preview-lies": (studio.shoot_drag, {"preview_off": 8}, ["D2"], []),
         "panel": (studio.shoot_panel, {}, [], []),
+        "panel-by-a-click": (studio.shoot_panel, {"click": True}, [], []),
         "panel-late": (studio.shoot_panel, {"late": 300}, ["P1", "M1"], []),
         "panel-slow": (studio.shoot_panel, {"fade": 30}, ["P1"], []),
         "panel-slides": (studio.shoot_panel, {"slide": 60}, ["P2"], []),

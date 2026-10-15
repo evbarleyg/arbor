@@ -9,7 +9,7 @@ regression, found before it lands, like a failing test.
 
 | | |
 |---|---|
-| What Linux proves | that the film script plays (`scripts/mac-shell/rehearse.sh scripts/mac-shell/films.sh`) and that the judge catches what it claims to catch (`scripts/polish/judge.py --self-test`: 32 drawn films, each wrong in one known way or right) |
+| What Linux proves | that the film script plays (`scripts/mac-shell/rehearse.sh scripts/mac-shell/films.sh`) and that the judge catches what it claims to catch (`scripts/polish/judge.py --self-test`: 38 drawn films, each wrong in one known way or right) |
 | What a Mac must run | `scripts/mac-shell/films.sh`: unattended, on a free hosted runner, one run for everything, under ten minutes. It only records |
 | What the sandbox judges afterwards | everything: `scripts/polish/judge.py score <run folder>`, then the sheets, by eye |
 
@@ -21,8 +21,8 @@ regression, found before it lands, like a failing test.
 | 2 | Felt within a day of use, even by somebody who could not name it: sluggish, abrupt, stuttering, hard to read | 3 points |
 | 3 | A designer would circle it: a pixel off, a corner that is not concentric, a word too many | 1 point |
 
-**What could not be seen counts as a miss.** A film that was not shot, a scene for a feature that has not landed, a window the
-judge lost track of, a sheet nobody has gone through: all score nothing. So the score cannot be raised by looking at less, and
+**What could not be seen counts as a miss.** A film that was not shot, a film in which nothing happens or that does not show its scene, a scene for a
+feature that has not landed, a window the judge lost track of, a sheet nobody has gone through: all score nothing. So the score cannot be raised by looking at less, and
 the scenes for tabs, double clicks and continuous zoom are in the sum from the first day.
 
 ## The laboratory
@@ -59,13 +59,13 @@ every frame and linked from frame to frame; each of its edges that travels at le
 | M2 | **It lasts about 460 ms** | the roads' median progress is fitted with the usual timing curves; the best fit's duration is what the motion was meant to last (the last tenth of an eased motion covers less than a pixel, so what is seen is shorter) | 400 to 520 ms | 2 |
 | M3 | **It is eased**: quick off the mark, gentle at the end, never past it | time from 50% to 95% of the road, over time from 5% to 50% (1.0 for linear and for ease-in-out); the furthest point beyond the end; the largest step backwards; the largest share of the road in one frame | ratio ≥ 1.4; ≤ 2 px beyond or backwards; ≤ 34% in one frame | 2 |
 | M4 | **One motion per action**: a window moves once, to where it ends up, and all move together | spells of change after the first (the heads-up line's fade does not count); speed that rises threefold again after its peak with more than 40 px to go; the widest gap between two roads' progress at one moment; for edges that enter or leave over the display's edge, the distance from the straight line that ties them to the others' progress | none; none; ≤ 10%; ≤ 6 px | 1 |
-| M5 | **It is smooth**, with four windows and with eight | the longest wait between two frames from the first movement to 95% of the road | ≤ 2 frames (35 ms) | 2 |
+| M5 | **It is smooth**, with four windows and with eight | the longest wait between two frames from the first movement to 95% of the road; a standstill of more than 120 ms after which a fifth of the room or more changes at once | ≤ 2 frames (35 ms); none | 2 |
 | M6 | **No hop at either hand-over**: the stand-in begins where the window is, and the window is where the stand-in ends | at the end: a step of 3 px or more, at three times the speed before it, with 40 px or less to go. At the start: a first step larger than the second (a glide gathers speed). All the while: how far an edge that ends where it began is from there | none; none; ≤ 2 px | 1 |
 | M7 | **What changes its look does so softly.** Arbor never asks for Screen Recording, so what ships travels as a card in the app's colour with its icon: window to card and card to window are fades | in a patch at the lower left of each followed rectangle, away from title bar, words and icon: the largest step of its mean colour between two frames | ≤ 10% of full scale (a fade of about 130 ms or more) | 1 |
 | M8 | **Nothing flickers** | a followed rectangle missing from a frame in which its place shows the wallpaper, and back within 220 ms | never | 1 |
-| M9 | **Nothing flashes**, least of all on its way out of view | a flat thing of at least 0.6% of the room that is there for 130 ms or less and neither comes nor goes over the room's edge | never | 1 |
+| M9 | **Nothing flashes**, least of all on its way out of view | a flat thing of at least 0.6% of the room that is there for 130 ms or less, whose place plainly looked otherwise just before and just after, and that is not the first or the last of something that comes or goes over the room's edge; or two fifths of the room being something else for 130 ms or less and then what they were | never | 1 |
 | M10 | **At rest soon** | cause → the last frame of the first spell of change (stand-ins gone, ring drawn) | ≤ 700 ms | 3 |
-| M11 | **The menu bar and the Dock are left alone** | the most pixels that change at once in either strip | ≤ 6000 px (clock, recording dot, Arbor's item); ≤ 1500 px | 2 |
+| M11 | **The menu bar and the Dock are left alone** | of what each showed when the film began, the share that is plainly another colour at any moment. The bar is all its own; the Dock's own are its icons, told by their colours: its plate is glass, and shows what passes under it, as it does with any window | ≤ 25% of the bar (clock, recording dot, Arbor's item, the app's name); ≤ 10% of the icons | 2 |
 | M12 | **A window looks like itself all the way** | whether a followed rectangle is plainly another colour on the way. Takes pictures of windows, which take a permission Arbor does not ask for: reported, never a condition | never | 3 |
 | M13 | **Nothing is left behind** | Arbor's own windows on screen when the film ends, as the window server lists them | no stage, no drop preview | 1 |
 
@@ -77,7 +77,7 @@ on a wallpaper that is not plain; windows whose content is not flat. Those are f
 | # | What | How | Passes when | Severity |
 |---|---|---|---|---|
 | R1 | **The end at once, nothing in between** | first changed frame → last changed frame of the first spell | ≤ 100 ms | 1 |
-| R2 | **The same end** as with motion | the last frame of `reduced-x` against the last frame of `x`, windows' rectangles | within 1 px | 2 |
+| R2 | **The same end** as with motion | the windows' rectangles in the last frame of `reduced-x` against those of `pictures-x`, the session that presses the same keys from the same beginning with motion on | within 1 px | 2 |
 | R3 | **No stage, no fade, no slide** anywhere, panels included | Arbor's log has no "stage up"; no followed rectangle has more than two positions | so | 2 |
 
 M1, M8, M9, M11 and M13 are asked here too.
@@ -86,7 +86,7 @@ M1, M8, M9, M11 and M13 are asked here too.
 
 | # | What | How | Passes when | Severity |
 |---|---|---|---|---|
-| D1 | **Arbor never pulls what is being dragged** | while the button is down: the dragged rectangle's offset from the pointer, frame by frame | stays within 3 px of what macOS alone does (control: the same drag with Arbor paused) | 1 |
+| D1 | **Arbor never pulls what is being dragged** | while the button is down, in the frames in which all of the window is seen as it was taken: its left and its bottom against where the pointer, at the grip it took, has had them in the last 100 ms (macOS's own dragging trails the pointer; `drag-alone`, which Arbor leaves alone, came to 1 px) | within 6 px | 1 |
 | D2 | **The preview tells the truth** | the preview panel's frame while held, against the window's rectangle at rest | within 2 px | 2 |
 | D3 | **The preview comes and goes softly, once** | spells of change in the preview's rectangle while the pointer rests | one fade in of 80 to 250 ms; no blink | 2 |
 | D4 | **Others make room in one motion** | M2 to M9 for the windows that are not dragged, from the moment the preview shows | as there | 1 |
@@ -97,7 +97,7 @@ After the button comes up, M1 to M13 are asked with that as the cause.
 
 | # | What | How | Passes when | By | Severity |
 |---|---|---|---|---|---|
-| P1 | **There at once, gone at once**, and never for a moment only | cause → first change; first → last change of the coming, and of the going; how long it is up | ≤ 100 ms; each ≤ 250 ms; ≥ 100 ms, and gone 500 ms after what it belongs to is over | ruler | 2 |
+| P1 | **There at once, gone at once** | every key or click → the first change after it; first → last change of that spell. (Never for a moment only is M9's; nothing left behind is M13's) | ≤ 100 ms; ≤ 250 ms | ruler | 2 |
 | P2 | **It fades or it is there; it does not jump** | the changed box from frame to frame while it comes | the same box throughout (or an eased slide: M3) | ruler | 2 |
 | S1 | **Crisp at 1x and 2x** | across every straight edge at least 60 px long with a step of 60 levels or more: the pixels between 10% and 90% of the step | ≤ 1 device pixel | stills | 2 |
 | S2 | **On the pixel** | the window server's frame of every panel; half-covered rows or columns along its straight edges | whole points; none | stills | 3 |
@@ -190,3 +190,4 @@ new table, in the same commit, so that a longer table is never mistaken for a wo
 
 | Date (UTC) | Commit | Score | Seen | Severity 1 misses | Note |
 |---|---|---|---|---|---|
+| 2026-10-14 23:27 | `a391fe4` | **39.6** | 53% | 34 | Run 1 (`collab/polish/run-1.md`). Tabs, double clicks, the followed pinch and all stills unseen |
