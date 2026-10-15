@@ -10,8 +10,9 @@ import Testing
   func grid() -> (Harness, [WindowID]) {
     let h = Harness()
     let ids = ["A", "B", "C", "D"].enumerated().map { index, app in
+      // Each a process of its own, so that one of them can be hidden.
       h.system.open(
-        app: app, frame: CGRect(x: 100 + 300 * (index / 2), y: 100 + 300 * (index % 2), width: 280, height: 280))
+        app: app, pid: Int32(1000 + index), frame: CGRect(x: 100 + 300 * (index / 2), y: 100 + 300 * (index % 2), width: 280, height: 280))
     }
     h.start()
     h.run("arrange")
@@ -119,5 +120,221 @@ import Testing
     #expect(abs(h.frame(c)!.minX - desktop.minX) <= 12)
     #expect(h.layout!.desktopFrame!.maxX == desktop.maxX)
     #expect(abs(h.frame(c)!.width - h.layout!.desktopFrame!.width) <= 1)
+  }
+
+  // MARK: Beside windows that are away
+
+  enum Away: String, CaseIterable {
+    case minimized, hidden
+  }
+
+  /// `[safari / terminal | chrome | Desktop]`, as `arrange` makes it of three, each app a process of its own, and `terminal` away:
+  /// `safari` fills the column, and to the eye there is no group.
+  func aColumnOfWhichOneIsAway(_ away: Away) -> (h: Harness, safari: WindowID, terminal: WindowID, chrome: WindowID) {
+    let h = Harness()
+    let safari = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 900, height: 700))
+    let terminal = h.system.open(app: "Terminal", pid: 12, frame: CGRect(x: 200, y: 150, width: 700, height: 500))
+    let chrome = h.system.open(app: "Chrome", pid: 13, frame: CGRect(x: 300, y: 200, width: 1000, height: 700))
+    h.start()
+    h.run("arrange")
+    #expect(h.workspace.tree.parent(of: h.workspace.tree.leaf(containing: safari)!) == h.workspace.tree.parent(of: h.workspace.tree.leaf(containing: terminal)!))
+    switch away {
+    case .minimized: h.system.setMinimized(terminal, true)
+    case .hidden: h.system.setHidden(pid: 12, true)
+    }
+    h.scheduler.advance(by: 1)
+    h.system.userFocus(safari)
+    #expect(h.frame(safari)!.maxX < h.frame(chrome)!.minX)
+    return (h, safari, terminal, chrome)
+  }
+
+  /// Where the windows in view are, and the Desktop (as window 0): a window that trades places with it has moved.
+  func picture(_ h: Harness) -> [WindowID: CGRect] {
+    var picture = h.layout!.windowFrames
+    picture[WindowID(0)] = h.layout!.desktopFrame ?? h.layout!.tiles.first { $0.kind == .desktop }?.frame
+    return picture
+  }
+
+  /// With another window in the Dock a browser's window "would not dock on the right". It shared a column with the one that was away, so the
+  /// key took it out of a group that nobody could see: the same picture, both windows narrower, and "moved" for an answer.
+  @Test(arguments: Away.allCases) func theKeyMovesTheWindowPastItsNeighbourAtTheFirstPress(away: Away) {
+    let (h, safari, _, chrome) = aColumnOfWhichOneIsAway(away)
+    let (safariWas, chromeWas, desktopWas) = (h.frame(safari)!, h.frame(chrome)!, h.layout!.desktopFrame!)
+    h.system.clearFrameLog()
+    #expect(h.run("dock right").message == "moved \(safari) right")
+    #expect(h.frame(chrome)!.maxX < h.frame(safari)!.minX, "\(h.ascii())")
+    // They trade places, and that is all: sizes travel with the windows, the Desktop is as it was, each moves once.
+    #expect(h.frame(safari)!.size == safariWas.size && h.frame(chrome)!.size == chromeWas.size, "\(h.ascii())")
+    #expect(h.layout!.desktopFrame == desktopWas)
+    #expect(h.system.frameLog.map(\.window).sorted() == [safari, chrome].sorted(), "\(h.system.frameLog)")
+    #expect(h.system.focused == safari)
+    expectWindowsMatchLayout(h)
+  }
+
+  /// What was a column of two is one again, whichever side it is on by now.
+  @Test(arguments: Away.allCases) func theOneThatWasAwayComesBackToTheWindowItSharedAColumnWith(away: Away) {
+    let (h, safari, terminal, chrome) = aColumnOfWhichOneIsAway(away)
+    let chromeWidth = h.frame(chrome)!.width
+    h.run("dock right")
+    switch away {
+    case .minimized: h.system.setMinimized(terminal, false)
+    case .hidden: h.system.setHidden(pid: 12, false)
+    }
+    h.scheduler.advance(by: 1)
+    #expect(h.frame(terminal)!.minX == h.frame(safari)!.minX && h.frame(safari)!.maxY < h.frame(terminal)!.minY, "\(h.ascii())")
+    #expect(h.frame(chrome)!.width == chromeWidth, "nobody is squeezed for it")
+    #expect(h.layout!.tiles.isEmpty)
+    expectWindowsMatchLayout(h)
+  }
+
+  /// The rule, whatever the arrangement: a key that says "moved" has changed what is on screen, and one that cannot says why not. Out of a
+  /// group that shows the first press takes the window, which shows in the sizes; a window that is all that shows of its group has
+  /// changed places with somebody.
+  @Test(arguments: Away.allCases) func aKeyThatSaysMovedHasMovedSomethingThatShows(away: Away) {
+    for gone in 0..<4 {
+      for walker in 0..<4 where walker != gone {
+        for edge in ["right", "left", "up", "down"] {
+          let (h, ids) = grid()
+          switch away {
+          case .minimized: h.system.setMinimized(ids[gone], true)
+          case .hidden: h.system.setHidden(pid: Int32(1000 + gone), true)
+          }
+          h.scheduler.advance(by: 1)
+          h.system.userFocus(ids[walker])
+          for step in 1...6 {
+            let before = picture(h)
+            let tree = h.workspace.tree
+            let company = tree.parent(of: tree.leaf(containing: ids[walker])!).map { tree.windows(under: $0) } ?? []
+            let itsGroupShows = company.contains { $0 != ids[walker] && before[$0] != nil }
+            let result = h.run("dock \(edge)")
+            let note = "\(ids[gone]) away, \(ids[walker]) \(edge), step \(step): \(result.message)\n\(h.ascii())"
+            #expect(h.workspace.tree.invariantViolations().isEmpty, "\(note)")
+            if result.ok {
+              #expect(picture(h) != before, "\(note)")
+              if !itsGroupShows { #expect(order(picture(h)) != order(before), "the same picture: \(note)") }
+            } else {
+              #expect(picture(h) == before, "\(note)")
+              break
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /// Who lies left of whom and above whom: what a person would call the arrangement, whatever the sizes.
+  func order(_ picture: [WindowID: CGRect]) -> [String] {
+    var relations: [String] = []
+    for (a, frameA) in picture.sorted(by: { $0.key < $1.key }) {
+      for (b, frameB) in picture.sorted(by: { $0.key < $1.key }) where a != b {
+        if frameA.maxX <= frameB.minX { relations.append("\(a) left of \(b)") }
+        if frameA.maxY <= frameB.minY { relations.append("\(a) above \(b)") }
+      }
+    }
+    return relations
+  }
+
+  /// At the edge, with only a window that is away beyond it or beside it: there is nowhere to go, and it says so.
+  @Test(arguments: Away.allCases) func whereNothingLiesBeyondItSaysSoAndMovesNothing(away: Away) {
+    let (h, safari, _, _) = aColumnOfWhichOneIsAway(away)
+    let (tree, before) = (h.workspace.tree, picture(h))
+    h.system.clearFrameLog()
+    let result = h.run("dock left")
+    #expect(!result.ok && result.message == "\(safari) is already at the left edge", "\(result.message)")
+    #expect(h.workspace.tree == tree && picture(h) == before && h.system.frameLog.isEmpty)
+  }
+
+  /// A row looks the way it acts.
+  @Test(arguments: Away.allCases) func theMenuGreysOutTheWayThatLeadsNowhere(away: Away) {
+    let (h, _, _, _) = aColumnOfWhichOneIsAway(away)
+    let rows = h.controller.menuModel().item("Dock Focused Window")?.sections.flatMap(\.items) ?? []
+    #expect(rows.first { $0.title == "Left" }?.isEnabled == false)
+    #expect(rows.first { $0.title == "Right" }?.isEnabled == true)
+  }
+
+  /// The group is whole afterwards: what it was called and the view saved of it are still its own.
+  @Test(arguments: Away.allCases) func theGroupKeepsItsNameAndItsSavedView(away: Away) {
+    let (h, safari, terminal, _) = aColumnOfWhichOneIsAway(away)
+    let column = h.workspace.tree.parent(of: h.workspace.tree.leaf(containing: safari)!)!
+    h.run("zoom-node \(column.rawValue)")
+    h.run("name pair")
+    h.run("save-view 1")
+    h.run("show-all")
+    h.system.userFocus(safari)
+    #expect(h.run("dock right").ok)
+    #expect(h.workspace.names["pair"] == column && h.workspace.tree.windows(under: column).sorted() == [safari, terminal].sorted())
+    #expect(h.run("view 1").ok && h.workspace.camera == column, "\(h.ascii())")
+  }
+
+  /// Up and down as left and right: a row of which one is away, above another window.
+  @Test(arguments: Away.allCases) func aRowOfWhichOneIsAwayGoesDownAsOne(away: Away) {
+    let (h, safari, terminal, chrome) = aColumnOfWhichOneIsAway(away)
+    #expect(h.run("layout (\(safari) | \(terminal)) / \(chrome) / Desktop").ok)
+    h.scheduler.advance(by: 1)
+    h.system.userFocus(safari)
+    let (safariWas, chromeWas) = (h.frame(safari)!, h.frame(chrome)!)
+    #expect(!h.run("dock up").ok)
+    #expect(h.run("dock down").ok)
+    #expect(h.frame(chrome)!.maxY < h.frame(safari)!.minY, "\(h.ascii())")
+    // (Thirds of the display's height are whole points, so the first of three is a point off the second.)
+    #expect(h.frame(safari)!.width == safariWas.width && abs(h.frame(safari)!.height - safariWas.height) <= 1, "\(h.ascii())")
+    #expect(h.frame(chrome)!.width == chromeWas.width && abs(h.frame(chrome)!.height - chromeWas.height) <= 1, "\(h.ascii())")
+    expectWindowsMatchLayout(h)
+  }
+
+  /// The view is on the column, of which the window is all that shows: it fills the view, whichever way the key points.
+  @Test(arguments: Away.allCases) func inAViewOfWhichItIsAllThatShowsItFillsTheView(away: Away) {
+    let (h, safari, _, _) = aColumnOfWhichOneIsAway(away)
+    h.run("zoom-node \(h.workspace.tree.parent(of: h.workspace.tree.leaf(containing: safari)!)!.rawValue)")
+    h.system.userFocus(safari)
+    let (tree, before) = (h.workspace.tree, picture(h))
+    for edge in ["left", "right", "up", "down"] {
+      let result = h.run("dock \(edge)")
+      #expect(!result.ok && result.message.hasPrefix("\(safari) fills the view"), "\(edge): \(result.message)")
+      #expect(h.workspace.tree == tree && picture(h) == before, "\(edge)")
+    }
+  }
+
+  /// At the top of a column that is all that shows of the view: the top of the view, though the column is not the view.
+  @Test(arguments: Away.allCases) func theEdgeOfAGroupThatIsAllThatShowsIsTheEdgeOfTheView(away: Away) {
+    let (h, safari, terminal, chrome) = aColumnOfWhichOneIsAway(away)
+    #expect(h.run("layout \(terminal) | (\(safari) / \(chrome) / Desktop)").ok)
+    h.scheduler.advance(by: 1)
+    h.system.userFocus(safari)
+    let (tree, before) = (h.workspace.tree, picture(h))
+    let result = h.run("dock up")
+    #expect(!result.ok && result.message == "\(safari) is already at the top edge", "\(result.message)")
+    #expect(h.workspace.tree == tree && picture(h) == before)
+  }
+
+  /// Nobody looks at a window that is itself away, and no key reaches it: named by its id, it goes as it always went.
+  @Test(arguments: Away.allCases) func aWindowThatIsItselfAwayIsAtTheEdgeWhereItIs(away: Away) {
+    let (h, safari, terminal, chrome) = aColumnOfWhichOneIsAway(away)
+    #expect(h.run("layout \(terminal):2 | \(safari) | \(chrome) | Desktop:0.5").ok)
+    h.scheduler.advance(by: 1)
+    let tree = h.workspace.tree
+    let result = h.run("dock \(terminal) left")
+    #expect(!result.ok && result.message == "\(terminal) is already at the left edge", "\(result.message)")
+    #expect(h.workspace.tree == tree)
+  }
+
+  /// Nor at one that is out of view: named by its id, it comes into the view, alone.
+  @Test(arguments: Away.allCases) func aWindowOutOfViewComesIntoTheView(away: Away) {
+    let (h, safari, _, chrome) = aColumnOfWhichOneIsAway(away)
+    h.run("zoom \(chrome)")
+    #expect(h.layout!.windowFrames[safari] == nil)
+    #expect(h.run("dock \(safari) right").ok)
+    let (chromeIs, safariIs) = (h.layout!.windowFrames[chrome] ?? .zero, h.layout!.windowFrames[safari] ?? .zero)
+    #expect(!safariIs.isEmpty && !chromeIs.isEmpty && chromeIs.maxX < safariIs.minX, "\(h.ascii())")
+  }
+
+  /// A group that shows is a group: the key takes the window out of it, as ever.
+  @Test func outOfAColumnThatShowsTheWindowStillStepsFirst() {
+    let (h, safari, terminal, chrome) = aColumnOfWhichOneIsAway(.minimized)
+    h.system.setMinimized(terminal, false)
+    h.scheduler.advance(by: 1)
+    h.system.userFocus(safari)
+    #expect(h.run("dock right").ok)
+    #expect(h.frame(terminal)!.maxX < h.frame(safari)!.minX && h.frame(safari)!.maxX < h.frame(chrome)!.minX, "\(h.ascii())")
   }
 }
