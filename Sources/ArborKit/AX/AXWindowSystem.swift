@@ -25,9 +25,16 @@ public final class AXWindowSystem: WindowSystem {
   public var recorder: TraceRecorder?
 
   private let onlyPIDs: Set<pid_t>?
+  private let oneByOne: Bool
   private var apps: [pid_t: ObservedApp] = [:]
   private var records: [WindowID: WindowRecord] = [:]
   private var echoes = EchoFilter()
+  /// What came of the moves announced with `moveTogether`, until `setFrame` asks for it.
+  private var answersAhead: [WindowID: (requested: CGRect, answer: CGRect?)] = [:]
+  /// Windows that were moved ahead and never asked for, until they are reported.
+  private var toReport: Set<WindowID> = []
+  /// A queue for each app of a batch. They are kept: a batch comes with every layout.
+  private var sideBySide: [DispatchQueue] = []
   private var tokens: [NSObjectProtocol] = []
   private var mouseMonitor: Any?
   private var localMouseMonitor: Any?
@@ -92,8 +99,10 @@ public final class AXWindowSystem: WindowSystem {
 
   /// - Parameter onlyPIDs: when set, observe only these processes (of any
   ///   activation policy). The end-to-end runner uses it.
-  public init(onlyPIDs: Set<pid_t>? = nil) {
+  /// - Parameter oneByOne: take no notice of `moveTogether`. The control, for measuring what it saves.
+  public init(onlyPIDs: Set<pid_t>? = nil, oneByOne: Bool = false) {
     self.onlyPIDs = onlyPIDs
+    self.oneByOne = oneByOne
   }
 
   /// Seconds on a clock that never goes backwards.
@@ -202,6 +211,8 @@ public final class AXWindowSystem: WindowSystem {
     lastReportedFocus = nil
     for pid in Array(apps.keys) { forget(pid: pid, announce: false) }
     // `pause` stops and `resume` starts again: nothing of this run may colour the next.
+    answersAhead.removeAll()
+    toReport.removeAll()
     waitingToObserve.removeAll()
     unresponsive.removeAll()
   }
@@ -233,68 +244,111 @@ public final class AXWindowSystem: WindowSystem {
   }
 
   public func setFrame(_ frame: CGRect, of window: WindowID) -> CGRect? {
+    // Asked for ahead, with the others (`moveTogether`). A call with another frame moves the window as always.
+    if let ahead = answersAhead.removeValue(forKey: window), ahead.requested == frame { return ahead.answer }
     guard let record = records[window], answers(record.snapshot.pid) else { return nil }
     // macOS accepts a new size for a full-screen window and does nothing.
     guard !record.snapshot.isFullScreen else { return record.snapshot.frame }
-    let element = record.element
-    let appElement = apps[record.snapshot.pid]?.element
-    let began = uptime
+    let job = job(toGive: record, frame), began = uptime
+    return book(job.run(), of: job, waited: uptime - began)
+  }
 
-    // Apps with "enhanced user interface" on (set by assistive tools) animate
-    // every frame change; turn it off while we move the window.
-    var enhanced = false
-    if let answer = appElement?.read("AXEnhancedUserInterface") {
-      // An app that is silent now will be silent for the calls to come. One wait is enough.
-      if answer.error == .cannotComplete { return gaveUp(on: record.snapshot.pid, since: began) }
-      // Not the app's silence: Arbor's permission is gone (Controller+Permission.swift). The calls to come would be
-      // refused as well.
-      if answer.error == .apiDisabled {
-        events?.accessibilityWasRefused()
-        return nil
-      }
-      if let value = answer.value, CFGetTypeID(value) == CFBooleanGetTypeID() {
-        enhanced = CFBooleanGetValue((value as! CFBoolean))
-      }
-    }
-    if enhanced { appElement?.setBool("AXEnhancedUserInterface", false) }
-
+  /// The conversation that gives a window that frame. The plan is made here, on the main thread, where the displays can be looked at.
+  private func job(toGive record: WindowRecord, _ frame: CGRect) -> AXFrameJob {
     let steps = FramePlan.steps(
       from: record.snapshot.frame, to: frame,
       rooms: NSScreen.screens.map {
         FramePlan.room(onDisplay: ScreenGeometry.global(fromAppKit: $0.frame), visible: ScreenGeometry.global(fromAppKit: $0.visibleFrame))
       })
-    var result = perform(steps, on: element)
-    if let taken = result, let more = FramePlan.makingUp(for: steps, result: taken, target: frame) {
-      result = perform(more, on: element)
-    }
-
-    // Also when the app fell silent half way: a call that times out is still delivered when the app wakes up.
-    if enhanced { appElement?.setBool("AXEnhancedUserInterface", true) }
-
-    // Nothing is known about a window whose frame cannot be read back. Saying that it took the frame would
-    // keep Arbor from ever trying again.
-    guard let actual = result else { return gaveUp(on: record.snapshot.pid, since: began) }
-    echoes.expect(actual, for: window, at: uptime)
-    records[window]?.snapshot.frame = actual
-    return actual
+    return AXFrameJob(
+      window: record.snapshot.id, pid: record.snapshot.pid, element: record.element, app: apps[record.snapshot.pid]?.element,
+      steps: steps, target: frame)
   }
 
-  /// Sets the attributes a plan names and reads the frame back. Nil if the app did not answer. A refusal
-  /// (a window with a fixed size, say) is an answer: the frame read back shows what came of it.
-  private func perform(_ steps: [FramePlan.Step], on element: AXUIElement) -> CGRect? {
-    for step in steps {
-      let error =
-        switch step {
-        case .size(let size): element.setSize(size)
-        case .position(let origin): element.setPosition(origin)
-        }
-      if error == .cannotComplete { return nil }
-      if error == .apiDisabled {
-        events?.accessibilityWasRefused()
-        return nil
+  /// Enters what came of a job in the books, on the main thread, before the next notification is judged. Returns what `setFrame` does.
+  /// `waited`: how long the app kept the job waiting, which tells one that hangs from one that is gone.
+  private func book(_ outcome: AXFrameJob.Outcome, of job: AXFrameJob, waited: TimeInterval) -> CGRect? {
+    switch outcome {
+    case .took(let actual):
+      echoes.expect(actual, for: job.window, at: uptime)
+      records[job.window]?.snapshot.frame = actual
+      return actual
+    case .silent:
+      noteSilence(of: job.pid, waited: waited)
+      return nil
+    case .refused(let atOnce):
+      events?.accessibilityWasRefused()
+      if !atOnce { noteSilence(of: job.pid, waited: waited) }
+      return nil
+    }
+  }
+
+  /// Several apps are asked side by side, each on a queue of its own, its windows one after the other in the order foretold. The main
+  /// thread waits for all of them, as it waits for each in `setFrame`, so nothing is new about what can happen meanwhile: no
+  /// notification is judged, nothing is late, and no call outlives this one. What is new is that the wait is the slowest app's
+  /// and not the sum of them all.
+  public func moveTogether(_ frames: [(window: WindowID, frame: CGRect)]) {
+    // What is left of an earlier forecast is reported when the caller has returned, not from here: the caller is the controller, in
+    // the middle of a layout.
+    retireAnswersAhead()
+    var batches: [(pid: pid_t, jobs: [AXFrameJob])] = []
+    var seen: Set<WindowID> = []
+    for (window, frame) in frames {
+      // A second frame for one window waits for its `setFrame`: by then it is known what came of the first.
+      guard seen.insert(window).inserted, let record = records[window], answers(record.snapshot.pid), !record.snapshot.isFullScreen
+      else { continue }
+      let job = job(toGive: record, frame)
+      if let index = batches.firstIndex(where: { $0.pid == job.pid }) {
+        batches[index].jobs.append(job)
+      } else {
+        batches.append((job.pid, [job]))
       }
     }
-    return element.frame
+    // One app has nobody to work beside.
+    guard batches.count > 1, !oneByOne else { return }
+    while sideBySide.count < batches.count {
+      // Windows wait on these, so they must not queue behind background work. Serial queues, which the model of a Mac can play
+      // (scripts/mac-on-linux); a concurrent one it cannot.
+      sideBySide.append(DispatchQueue(label: "dev.arbor.side-by-side-\(sideBySide.count)", qos: .userInteractive))
+    }
+    let results = BatchResults(apps: batches.count)
+    let group = DispatchGroup()
+    for (index, batch) in batches.enumerated() {
+      let jobs = batch.jobs
+      sideBySide[index].async(group: group) {
+        for job in jobs {
+          let began = ProcessInfo.processInfo.systemUptime
+          let outcome = job.run()
+          results.add((job, outcome, ProcessInfo.processInfo.systemUptime - began), app: index)
+          // An app that is silent now will be silent for its other windows. One wait is enough: they are asked for when it answers.
+          guard case .took = outcome else { break }
+        }
+      }
+    }
+    group.wait()
+    for (job, outcome, waited) in results.all() {
+      answersAhead[job.window] = (job.target, book(outcome, of: job, waited: waited))
+    }
+    // An answer is as good as a call for as long as nothing else can have happened: until whoever foretold the moves has returned.
+    // Kept longer, it would be given for a window that its person has moved away since, which would then stay away.
+    Task { @MainActor [weak self] in self?.dropAnswersAhead() }
+  }
+
+  /// What nobody has asked for is no answer any more. The windows are still to be reported, but for those of which nothing is
+  /// known: a report would say that their app answers.
+  private func retireAnswersAhead() {
+    for (window, ahead) in answersAhead where ahead.answer != nil { toReport.insert(window) }
+    answersAhead.removeAll()
+  }
+
+  /// Answers nobody asked for are dropped, and the windows reported where they are, so that nobody goes on believing an old frame.
+  private func dropAnswersAhead() {
+    retireAnswersAhead()
+    let unclaimed = toReport.sorted()
+    toReport.removeAll()
+    for window in unclaimed {
+      if let record = records[window], !record.isBackgroundTab { events?.windowChanged(record.snapshot, userInitiated: false) }
+    }
   }
 
   public func setFrameOnce(_ frame: CGRect, of window: WindowID, pid: Int32) -> CGRect? {
@@ -310,7 +364,13 @@ public final class AXWindowSystem: WindowSystem {
     AXUIElementSetMessagingTimeout(element, Self.messagingTimeout)
     // macOS accepts a new size for a full-screen window and does nothing.
     guard element.bool("AXFullScreen") != true else { return element.frame }
-    return perform(FramePlan.full(to: frame), on: element)
+    switch AXFrameJob(window: window, pid: pid, element: element, app: nil, steps: FramePlan.full(to: frame), target: frame).run() {
+    case .took(let actual): return actual
+    case .silent: return nil
+    case .refused:
+      events?.accessibilityWasRefused()
+      return nil
+    }
   }
 
   public func focus(_ window: WindowID) {
@@ -546,22 +606,19 @@ public final class AXWindowSystem: WindowSystem {
 
   // MARK: Apps that do not answer
 
-  /// Every call is synchronous, on the main thread, and waits up to `messagingTimeout` for the app. Moving one
+  /// Every call is synchronous, and the main thread waits up to `messagingTimeout` for the app. Moving one
   /// window takes six calls, so a hung app with three docked windows used to stop Arbor for some twenty seconds
   /// at every layout. Now the first call that times out ends the conversation: nothing more is asked of the app
   /// until it answers a call made off the main thread, or posts a notification.
   private func answers(_ pid: pid_t) -> Bool { !unresponsive.contains(pid) }
 
-  private func gaveUp(on pid: pid_t, since began: TimeInterval) -> CGRect? {
-    noteSilence(of: pid, since: began)
-    return nil
-  }
-
   /// Called when a call came back without an answer. A process that made Arbor wait is hung. One that is gone fails at
   /// once; its end is usually reported, but not that of an accessory app or one started from a shell, whose windows
   /// would stay in the tree as ghosts.
-  private func noteSilence(of pid: pid_t, since began: TimeInterval) {
-    guard uptime - began >= TimeInterval(Self.messagingTimeout) / 2 else {
+  private func noteSilence(of pid: pid_t, since began: TimeInterval) { noteSilence(of: pid, waited: uptime - began) }
+
+  private func noteSilence(of pid: pid_t, waited: TimeInterval) {
+    guard waited >= TimeInterval(Self.messagingTimeout) / 2 else {
       if kill(pid, 0) != 0, errno == ESRCH {
         // Not from here: the caller may be the controller, in the middle of a layout.
         Task { @MainActor [weak self] in
@@ -1141,6 +1198,8 @@ public final class AXWindowSystem: WindowSystem {
       // windows their apps report, after macOS has shifted them, is just what a trace of a closing lid is for.
       recorder.raw(raw.map { "\(notification) w\($0)" } ?? notification, thinKey: moving && pendingDisplayChange == nil ? notification : nil)
     }
+    // Something has happened since the moves were foretold. (The task that ends their time has no fixed turn among the run loop's sources.)
+    if !answersAhead.isEmpty || !toReport.isEmpty { dropAnswersAhead() }
     // Whoever posts a notification is awake.
     if let pid = element.pid, !answers(pid) { answersAgain(pid) }
 

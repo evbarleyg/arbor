@@ -185,11 +185,12 @@ final class Listener: WindowSystemEvents {
 @MainActor
 final class StoreyOne {
   let mac = FakeMac()
-  let layer = AXWindowSystem()
+  let layer: AXWindowSystem
   let heard = Listener()
 
   /// `before` sets the Mac up as it is when Arbor starts. A second then passes, and the layer starts.
-  init(_ story: Story, before: (FakeMac) -> Void = { _ in }) {
+  init(_ story: Story, layer: AXWindowSystem = AXWindowSystem(), before: (FakeMac) -> Void = { _ in }) {
+    self.layer = layer
     FakeMac.current = mac
     before(mac)
     mac.pass(1)

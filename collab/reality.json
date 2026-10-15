@@ -5898,7 +5898,7 @@
     "test: aWindowThatOnlyChangesPlaceNeedsOneCall",
     "test: takingTheHintChangesNothingButTheCost"
    ],
-   "copes": "FramePlan makes one call where one does, panels are kept and handed out again, and the stand-ins count calls instead of time. The real window system does not take the hint of `moveTogether` yet.",
+   "copes": "FramePlan makes one call where one does, panels are kept and handed out again, and the stand-ins count calls instead of time. At a layout the real window system asks the apps side by side (`moveTogether`, `AXFrameJob`) and waits for the slowest; what that saves on a Mac is `probe-together.sh`'s to measure.",
    "hurt": 3,
    "touches": [
     "slow"
@@ -12552,7 +12552,7 @@
   "- A plain change of displays leaves the windows at their old coordinates, \"which no Mac does\". (`Sources/ArborTesting/Chaos.swift`)",
   "- After it learned to echo, the fake still leaves out repeated focus reports across apps, the Dock's two points at a minimize, and apps that settle late or on a grid. (`collab/BACKLOG.md`, K470)",
   "- Of the sixteen rows of \"What real macOS does that `FakeWindowSystem` does not\", written at 07:00 UTC on 2026-10-14, eight are played at least in part today (echoes, focus answers, the reachable title bar, whole points, sizes, plain titles, focus before a restore and before a close). Not played: a drag that begins late, a press that focuses first, the second mouse-up, \"resized\" that stalls, unhiding that moves windows, a minimize that changes the display, an unresizable window's silence, and the time a `setFrame` takes. (`collab/evidence/traces/README.md`)",
-  "- `moveTogether` is implemented in the stand-in only. The real layer runs the protocol's default, which does nothing. (`Sources/ArborKit/Platform/WindowSystem.swift`)",
+  "- `moveTogether` costs the stand-in nothing: it moves the windows ahead one after the other, in no time. The real layer asks the apps side by side on queues of their own, which only the model of a Mac plays (`scripts/mac-on-linux/tests/Together.swift`), and that apps laying out at the same time share the cores and the window server nothing plays. (`Sources/ArborKit/AX/AXFrameJob.swift`)",
   "- `strangers`, windows that Accessibility does not report, is set by no test, scenario or rehearsal. (`Sources/ArborTesting/FakeWindowSystem.swift`)",
   "",
   "**Traces, type-checks and pictures**",

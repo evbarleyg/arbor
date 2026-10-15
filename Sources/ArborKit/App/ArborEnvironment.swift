@@ -26,6 +26,7 @@ import Foundation
 /// - `ARBOR_NO_OPENING=1`: open no app (`summon` with no window to bring). An Arbor under test on somebody's Mac knows only
 ///   its test windows, so to it every app of theirs is one that has to be opened.
 /// - `ARBOR_NO_REHEARSAL=1`: get nothing ready for the first motion ahead of time, to measure what that saves.
+/// - `ARBOR_ONE_BY_ONE=1`: at a layout, wait for one app after the other instead of asking them side by side, to measure what that saves.
 public struct ArborEnvironment: Sendable {
   public var onlyPIDs: Set<Int32>?
   public var macSwitches: Bool
@@ -41,6 +42,7 @@ public struct ArborEnvironment: Sendable {
   public var restarted: Bool
   public var noOpening: Bool
   public var noRehearsal: Bool
+  public var oneByOne: Bool
 
   public static var current: ArborEnvironment {
     let env = ProcessInfo.processInfo.environment
@@ -58,6 +60,6 @@ public struct ArborEnvironment: Sendable {
       noPictures: flag("ARBOR_NO_PICTURES"),
       releasesURL: env["ARBOR_RELEASES_URL"].flatMap { $0.isEmpty ? nil : $0 },
       restarted: !(env["ARBOR_RESTARTS"] ?? "").isEmpty, noOpening: flag("ARBOR_NO_OPENING"),
-      noRehearsal: flag("ARBOR_NO_REHEARSAL"))
+      noRehearsal: flag("ARBOR_NO_REHEARSAL"), oneByOne: flag("ARBOR_ONE_BY_ONE"))
   }
 }

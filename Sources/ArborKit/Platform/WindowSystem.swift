@@ -160,9 +160,9 @@ public protocol WindowSystem: AnyObject {
   /// Says which `setFrame` calls are about to follow, so that they need not wait for one app after the other. A window
   /// system that can moves these windows now, those of different apps side by side, waits only so long for all of them
   /// together, and keeps what came of each move as the answer to the next `setFrame` of that window with that very
-  /// frame. A call with another frame moves the window as always. Answers nobody asks for are dropped at
-  /// the next `moveTogether`, and the windows reported where they are. It changes what the calls cost, never what
-  /// they return. The default does nothing.
+  /// frame. A call with another frame moves the window as always. Answers nobody asks for are dropped at the next
+  /// `moveTogether`, or sooner, once the caller has returned, and the windows reported where they are. It changes what
+  /// the calls cost, never what they return. The default does nothing.
   func moveTogether(_ frames: [(window: WindowID, frame: CGRect)])
 
   /// `setFrame` for one window of the app `pid` while the window system is stopped (a pause), without starting it:
