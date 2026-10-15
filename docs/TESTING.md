@@ -287,13 +287,32 @@ half of the focused window's slot; a small one, one of a fixed size and one that
 opened, with nobody moved; a native tab takes no slot of its own; closing the docked one gives its room back.
 
 **`make e2e-drag`** (`scripts/mac-shell/e2e-drag.sh`) does with the real pointer what no command can
-stand in for: a title-bar drag to the screen edge (preview while held, docked on release), a drag onto
-another window's edge, a double-click on a docked window's title bar (no seam may move), a press and drag
-inside a window (not a drag), a drag of a docked window's edge (the seam follows), a drag out onto the Desktop. Then macOS's own tiling, as the
-Mac is set: a docked window let go at the very edge of the screen and a floating one let go in the menu bar are left to macOS (no preview of
-Arbor's, the window ends in macOS's tile, stays there and floats); on GitHub's Macs, which come with macOS's defaults, the same places once more with the
-tiling switched off, where Arbor docks. It
-takes over the pointer for about half a minute, so it is a target of its own; CI runs it after `arbor-e2e`.
+stand in for: a title-bar drag to the left screen edge, a drag onto another window's edge (let go with the pointer inside the preview), a double-click on a
+docked window's title bar (no seam may move), a press and drag inside a window (not a drag), a drag of a docked window's edge (the seam follows), a drag
+out onto the Desktop, a drag to the bottom edge, a window let go at the very edge of the screen, and one let go in the menu bar.
+
+- **At both settings of macOS's own tiling.** On GitHub's Macs the whole journey is played with the tiling on, as a Mac comes, and once more with it switched
+  off; on a person's Mac once, as it is set. The script switches it on first if a script before it on the same Mac left it off, and back on however it ends. On
+  GitHub's Macs the setting is first **seen to act, or not to**, on a window that Arbor does not know, before Arbor starts: a switch that is written and not
+  obeyed proves nothing. macOS does not answer every drag, so that it acts is said by one drag of three, and that it does not by two of two. With the tiling
+  on, the left, right and top edges are macOS's: along them Arbor shows no preview, a window let go short of macOS's point floats where it is, and one let go
+  at it ends in macOS's tile, stays there and floats. With it off, Arbor docks in all those places. At the end of the first round the tiling is switched off
+  while Arbor runs, and the next drag into the menu bar docks.
+- **After every drop** (`collab/QUESTIONS.md`, Q17: nothing of Arbor's takes the mouse-up): the login session has the button up within 100 ms of the posted
+  release (`pointer release --timed`), and a click where the preview was, about half a second after the drop, arrives in the window (`events_of <id> down`; the check says how long it was). The
+  release and the click come out of one call of the pointer tool (`release --timed --then-click x,y`): two calls, with what `lib.sh` does between them, lie 0.6 to
+  0.8 s apart on GitHub's Macs, and the other questions take a second and more. Then: the window ends where the preview was, Arbor saw the release, and no preview is left behind.
+- **With and without Arbor's event taps.** The first round plays Arbor as it ships, which is without one (`pointerGestures`). Nothing of Arbor's can hold a
+  release back then, and the time says what the Mac is like. The second round has every gesture switched on, so that the taps lie in the way of every
+  press and release. What a tap costs a press, to the millisecond, is `input-taps.sh`'s to say.
+- **A round that does not get to its end** ends the run with exit code 2: an answer that never came makes bash give up on the command it is in, which
+  would otherwise be the rest of the script, with no check made and exit code 0.
+- **If the very first press takes hold of nothing** (the window server moves a dragged window, with no help from Arbor), the run says what the Mac looked like
+  before its first input and now (`arbor_mac_facts`: how long it was left alone, locked, screen saver, what lies in front), takes a picture and ends with
+  exit code 2: it says nothing about Arbor, and the steps after it would press wherever empty answers sent them. It happened once: an alert that an
+  earlier step of the same job had left on screen lay over the title bars.
+
+It takes over the pointer for a minute or two, so it is a target of its own; CI runs it after `arbor-e2e`.
 
 It needs Accessibility permission for the terminal you run it from (Arbor
 inherits it as a child process): System Settings → Privacy & Security →
@@ -721,7 +740,8 @@ copy from before the repository was public, and say what the script does once it
 | `sweep.sh` | trunk | safe | lets go, puts the pointer back | Only what the record of a run that was cut off names |
 | `check-harness.sh` | trunk | safe | 10 s | The harness itself: run it first |
 | `run-list.sh` | trunk | safe | its scripts' | Runs what this table calls safe, in order, and stops at the first sign of trouble. Keeps the display awake for as long as it lives (`caffeinate -d -i -w`), which changes no setting; the scripts are told which process that is, so that they do not take it for a call |
-| `e2e-drag.sh` | trunk | safe | 30 s | |
+| `e2e-drag.sh` | trunk | safe, steps skip themselves | 1 min, on GitHub's Macs 3 | The second round, with macOS's tiling switched off |
+| `reality.sh` | trunk | **never**: ends with 77 | | Ten minutes of pointer and keyboard, for observations that mean something only on the display a rehearsal has |
 | `e2e.sh` | trunk | safe | 30 s | `make e2e` with full screen, then `e2e-drag.sh`; rewrites `collab/evidence/e2e-latest.txt` |
 | `shots-F45.sh` | trunk | safe | none | |
 | `shots-F48.sh` | trunk | safe | 5 s | |
@@ -773,6 +793,7 @@ copy from before the repository was public, and say what the script does once it
 | `check-F52.sh`, `check-F63.sh` | not landed, trunk | **never**: end with 77 | | Virtual displays, Accessibility taken from every app |
 | `check-macos-double-click.sh` | trunk | safe, steps skip themselves | 40 s | macOS's other title-bar actions (it would change the setting), TextEdit and Terminal. A test window fills the display for some seconds |
 | `check-claimed-keys.sh` | trunk | **never**: ends with 77 | | Writes an entry for Arbor's bundle into the privacy database; types into whatever has the keyboard |
+| `check-menu-height.sh` | trunk | **never**: ends with 77 | | Clicks in the menu bar; pauses, holds and quits its Arbor from the menu |
 | `check-F59.sh` | not landed | safe | 30 s | During a carry nobody's app gets arrows, ↩ or ⎋ |
 | `shots-F04.sh`, `shots-F34.sh` | not landed | safe | 3 min, 60 s | Test windows go to the Dock and come back; one is closed by its tab's button |
 | `shots-F22.sh`, `shots-F19.sh` | trunk | safe | 90 s, 45 s | |
@@ -1012,6 +1033,77 @@ was none (after Quit one window covered the others, and every click fell on the 
 
 For a script of your own, `lib-day.sh` is the harness below the acts (its header lists everything) and `jolts.py`'s header lists the marks and keys.
 
+### Walks for a hosted Mac (`arbor-sim walk`)
+
+The gate wants half of its 2,400 acts from walks that nobody wrote by hand (`docs/VIABLE.md`, "Who writes the journey"). `arbor-sim walk` writes them, in `lib-walk.sh`'s words, and plays the same
+file against the stand-ins. So **one seed is one journey in both places, judged by the same rules**, and every difference between the two playings is either a lie of the stand-ins
+(`collab/reality.json`) or a fault that only a Mac shows (the board).
+
+```bash
+swift build -c release --product arbor-sim; B=.build/release/arbor-sim
+$B walk f1240ac3.1 110 --for-a-mac stock laptop defaults <commit> > scripts/mac-shell/f1240ac3.1.sh   # a walk of about 110 acts: a file that bash runs on a hosted Mac as it stands
+$B walk f1240ac3.1 110 --words stock laptop defaults                    # only its words, one a line
+$B walk --rehearse --samples linux.log < scripts/mac-shell/f1240ac3.1.sh   # plays a walk, whoever wrote it: the story, what was left out, which rules broke
+python3 scripts/mac-shell/jolts.py report linux.log                     # the detectors of the gate, over the playing on Linux
+$B walk --rehearse --shrink --quiet < a-walk.sh                         # for each rule that broke and is no known failure: the shortest script that still breaks it
+$B walk --rehearse --script < a-walk.sh | $B replay --frames --go-on    # its events are a script of the chaos lab's
+$B walk --many 1 200 110 laptop off awkward                             # writes and plays 200 walks and adds up: acts by kind, left out, rules
+```
+
+**The seed** is any word without a space; the gate takes it from the commit's own hash, so that nobody can pick one that passes. The same seed, length and setting give the same walk on Linux
+and on a Mac, **for one commit**: only acts that apply are written, so what Arbor does has a say, and a fix leads walks elsewhere. Compare walks of one commit only.
+
+**It plays as it writes.** `lib-walk.sh` leaves out an act that does not apply, so a walk may be written blind; but then one act in seven is a Mac's time spent on nothing (15 of 116 in the first walk on a
+hosted Mac). The writer plays each word on the stand-ins first and writes it only if it was played there: fewer than one act in a hundred is left out on Linux. What a Mac leaves out all the same is
+no bad luck but a measured difference. The kinds come in the proportions of `acts_min`; what belongs together stays near each other (a pause is resumed, what is minimized is restored, an app that quit is
+opened again, within a few acts); the last line of the file counts the acts by kind. A word at which an expectation of the script's own does not hold on the stand-ins (a window dropped where there is no
+room floats, and "it is docked" is not so) is struck out and the walk written again from the same seed: on a Mac it would be a finding, and the gate allows none. `--many` counts them.
+
+**The first version** has `switch`, `open-close`, `dock-key`, `drag`, `drag-where-macos-tiles`, `view`, `resize`, `way-out`, `quit-and-start`, `idle` and `tile-click`, with each of the three casts (of `browsers` no Mac has been asked yet: its sizes are guesses that the first run corrects). Changes of
+displays, hiding, native tabs and full screen come from the written days. The rehearsal plays those words too, so a walk of `walk.py`'s can be rehearsed; a click on the wallpaper it cannot play
+("not rehearsed"): the stand-in's macOS does not sweep the windows aside.
+
+**Somebody who does not know Arbor** (`--stranger`; `collab/IDEAS.md`, I25). Arbor runs, and nothing is asked of it: only what is macOS's or an app's is done. Plain drags, double-clicks on title bars,
+full screen, ⌘Tab, ⌘M, ⌘H, ⌘N, ⌘W, ⌘Q, the edges where macOS tiles. The same file is played without Arbor, and **the right answer is that nothing differs**:
+
+```bash
+$B walk 3deb36a.1 100 --for-a-mac stock laptop defaults --stranger > stranger.sh
+$B walk --rehearse --quiet --samples with.log < stranger.sh;  $B walk --rehearse --quiet --without-arbor --samples without.log < stranger.sh
+python3 scripts/mac-shell/walk-diff.py --with with.log --without without.log [--all] [--json findings.json]
+```
+
+Each difference is counted once, at the act where it first shows, as one of three: `UNASKED` (a window the act does not name is elsewhere than without Arbor; and whatever differs once Arbor has started, or has
+quit), `REVERSED` (the window the person dragged, double-clicked, put into full screen, switched to or brought back is not where the same act leaves it without Arbor), `IN FRONT` (another app or window ends in front, two
+windows lie the other way round in the pile, or an act that any Mac has applied in one playing only). Each weighs as much as a lost window. Below them: acts, keys, presses, and seconds until the screen was at rest, either way, and how many of those seconds came after the last key
+or press of an act, which a person spends waiting. The header of `walk-diff.py` says what is nobody's doing: the scene, and an act that could not be performed.
+
+`--stranger --docked 2`: two windows are docked first, by the keys, and from then on nothing is asked. That is where a double-click on an arranged window's title bar is pulled back, which `jolts.py` finds, by what an act may
+move (`docs/VIABLE.md`, section 6). A control cannot dock. Laid beside such a walk it says what the docking cost: the windows the act names, or says it may move, are where the person wanted them; every other window that moved with
+them is `UNASKED`. **Of a window that Arbor placed it sees little after that**, only that it goes where it has not been: that it falls back, or that Quit leaves it where Arbor had it, is for `jolts.py`, rules 2 and 5.
+What was asked of Arbor is in none of the costs.
+
+**On a Mac the two playings go on two Macs**: `scripts/mac-shell/run.sh --macs 2 the-walk.sh its-control.sh`, the control being a wrapper that says `export WALK_WITHOUT_ARBOR=1` and runs the file. Fresh hosted Macs open the
+cast at the same frames to the point; a second script on one Mac begins where the first left the windows. Two controls on two Macs, an hour apart, differed at none of 87 acts. **One playing to a Mac cannot tell
+Arbor from the Mac**: what only one Mac of several shows is played again without Arbor, with it and without it on one Mac, before anybody calls it Arbor's.
+
+**A walk is plain text and nothing else:** the shebang, comments, the one `source`, `walk_begin`, one word with its arguments a line, `walk_end`. `Walk(text:)` refuses the rest, so a walk cannot sleep, call
+`arborctl`, set a variable or name anything but the cast. Never a title.
+
+**The player on Linux is `lib-walk.sh` over again** (`WalkPlayer+Words.swift`, function by function: the same conditions, reasons, slugs and keys for `jolts.py`). `WalkTests` reads `lib-walk.sh`: a word that is added
+there, a key that is no longer bound to the command played here, a reason that is worded otherwise, a number of `docs/VIABLE.md` that has changed, each turns a test red.
+
+**After a run on a Mac**, lay the two side by side. An app remembers its frame from the script before, so no two runs begin alike: `--scene` begins the rehearsal where the run began (its display, its
+windows' frames, its pile, which apps had been in front).
+
+```bash
+$B walk --rehearse --scene mac/samples.log --samples linux.log --quiet < the-walk.sh
+python3 scripts/mac-shell/walk-diff.py mac/samples.log linux.log [--all] [--within 2]
+```
+
+It says which acts were played in one place alone, where windows, the pile or what is docked differ at the end of an act that both played, and **where the two part for the first time**: from there on one
+difference breeds the next, so that act is the one to look at. The first comparison, of a walk a hosted Mac had already played, ended 29 acts in a row alike to the point and corrected five smallest sizes
+of `RealApps.swift` and where a window lies that is dragged off a tile of macOS's, and showed that a second Tab posted too soon after ⌘Tab does not count.
+
 ### A newcomer's eval (`make newcomer`, `scripts/newcomer`)
 
 The day finds faults; it cannot find "I could not find it" or "it took five steps". For that, somebody who has never seen this repository gets what a stranger
@@ -1140,6 +1232,95 @@ run gets none, and the script says which and why. Commit the evidence, `parity.j
   an answer that never came), and `key_to <window> cmd+w` rather than `key cmd+w` for keys that are meant for the app in front.
 - **A flaky claim is worse than none**: run the section twice; fix or drop what differs.
 
+## 11. Reality: the stand-ins against a real Mac (`make reality`)
+
+Everything in sections 1 to 3, and every rehearsal, runs on stand-ins (`Sources/ArborTesting`, `Sources/arbor-fakemac`), and they are more polite than macOS: thousands of
+tests pass on them while the serious faults are found on real Macs. `make reality` says how far the two are apart, as **one number to bring down to zero**:
+
+```bash
+make reality MAC=collab/evidence/reality-mac  # on Linux: rehearse reality.sh and compare with the last run on a Mac that was committed. A minute and a half, no Mac
+make reality                                  # the same against a fresh run on a hosted Mac (push first): a quarter of an hour
+make reality MAC=.mac-shell/reality-<run id>  # against an earlier run
+make reality MAC="<run> <another run>"        # what not every one of the Macs' runs shows is counted apart, as unstable
+make reality-trunk                            # after a batch has landed: the trunk's head on a Mac at once (priority 1), with the ratchet; the last line is the verdict
+```
+
+**`scripts/mac-shell/reality.sh`** runs unchanged in both worlds and expects nothing of a step (the only checks are `lib.sh`'s own at the end of a session, and in `edges` that the window came along with the pointer: a step that takes hold of nothing is the same in both worlds and says nothing). It plays five journeys, each in an Arbor session of its own: `commands` (what `arbor-e2e`'s first session does
+over the socket), `apps` (windows minimize, hide, close and open; another app comes forward), `edges` (title-bar drags all the way to three screen edges, which with macOS's tiling on are macOS's: looked at while held and after), `pointer` (a drag to the bottom edge, which is Arbor's, `e2e-drag.sh`'s steps,
+a seam and a tile) and `keys` (a click, then shortcuts). macOS stays as it comes, its own edge tiling included: that is where people live. After every step `observe` waits a second, looks until two looks
+in a row agree (four seconds at most) and appends one line of JSON to `mac-shell/reality/<journey>.jsonl` (`scripts/mac-shell/reality.py` has the form):
+
+| | |
+|---|---|
+| `belief` | what Arbor says (`arborctl state`): every window's status, frame and slot, the tree and the camera as a line of text, who it thinks has the keyboard, tiles, the Desktop, its own words |
+| `truth` | what the window server says (`pointer windows`, `pointer keyboard`): every test window's frame, whether it is on screen, the order from the front, the app in front, the window keys go to, Arbor's own windows by level, macOS's own by owner (the outline of its tiling is WindowManager's) |
+| `reports`, `replies` | what crossed the seam since the step before, from a trace that runs for the whole journey (a rehearsal records traces too): events as `changed:W1:user`, calls as `setFrame:W1 asked→took`, `focus:W1`, `raise:W1`, in order, nothing collapsed; and what Arbor answered to each command |
+
+Windows are W1, W2… in the order they opened, and there are no process ids, node ids, titles or times, so two rehearsals give the same bytes. What the script's own questions set off is left out. The traces themselves
+come back in `reality/traces/`.
+
+**`scripts/reality-diff.py <mac> <linux>`** aligns the two by journey and step, compares field by field and prints one line per divergence: whether it is new, its class, its key
+(`journey/step/field/window`, the same from run to run) and both values. Then a table by class and the number:
+
+```
+✘ new      answers         commands/zoom-W1/answers/W2/1023,767-325x650   mac: took 1023,677 325x650 | linux: took 1023,673 325x650
+reality: 307 divergences in 66 steps of 5 journeys (new: 1, known: 306, gone: 0)
+```
+
+| Class | | Whose |
+|---|---|---|
+| `belief` | Arbor ends up believing something else: a status, a frame, the tree, the camera, a reply | follows from one of the others, as a rule: look at the step's reports first |
+| `truth` | real windows end up elsewhere (by more than a point), or on screen where the stand-ins' are not | the stand-ins' |
+| `belief-vs-truth` | **on the Mac alone**, what Arbor believes is not what the window server shows | Arbor's, or its Accessibility layer's, whatever the stand-ins do |
+| `focus`, `stacking`, `overlays` | who has the keyboard and who Arbor thinks has it, which app is in front; the order from front to back; how many of Arbor's own windows show at a level, and of macOS's own | mostly `World.swift`'s and `Arbor.swift`'s in `arbor-fakemac` |
+| `answers` | a window asked for the same frame took another, or Arbor asked it for another frame to begin with | `FakeWindowSystem.setFrame`; the second kind follows from something earlier |
+| `reports-extra`, `reports-missing`, `reports-order` | the Mac reports what the stand-ins do not; the stand-ins what the Mac does not; the same in another order | `FakeWindowSystem` and `World*.swift` |
+| `unplayed` | a journey or a step one world does not have | the script's, or a run that was cut off |
+| `unstable` | any of these that not every run on a real Mac shows, or at a step that had not come to rest: counted apart, never dropped | timing |
+
+What counts as one: a difference in belief or truth that stays the same from one step to the next, under the first step at which it can be relied on (a finding does not go on from something unstable, or it would hide behind it for as long as it
+lasts); a frame that Arbor has right in both worlds (`truth` says it, that Arbor believes something else follows); a call to the same
+window with another request or another answer. During a drag, a resize or a seam drag the number of moves is a matter of timing (a trace thins them by the clock), so a run of moves counts as one of each kind, written `~dragMoved:W3`.
+Written down and not compared, which the report says every time: `settingsFileMayHaveChanged`, which is of another seam. (On a Mac every save of `state.json` wakes the watcher of `settings.json` twice, ninety times in a run.)
+
+**The ratchet** is `collab/evidence/reality-known.txt`: every known key with the cause it is put down to, and at its top every cause with a reading: whose it is, which file would have to change, what a person would see. With
+`--check` (`make reality MAC=… CHECK=1`, and CI) the tool fails for a key the list does not have *and* for a key of the list that is gone, so the list shrinks with every cure and never grows unseen. `~` before a key: not every run on a Mac
+shows it, and such a key may hold `*` for anything, because what a fight with an animation leaves in a key is never the same twice. A key of a step that was not played, or had not come to rest, is neither known nor gone: it waits, and the report says so. `make reality MAC=… KNOWN=1` writes the keys anew and keeps whatever this comparison
+does not refute: the remarks, the causes, the words, the `~` keys that did not show this time, the keys that wait. One lie shows at many steps: the first count, 2026-10-14, was some three hundred keys from some twenty causes, nearly half of them one constant, and the
+report ends with the causes by how many keys each would take along (that constant and two more were cured a day later, and 186 keys went at a stroke). And one fault: the second recording, that same day, had 79 keys that said that docked windows no longer filled their slots on a real Mac
+(`@clipped-at-the-dock`), half an hour after the change had landed with every test on Linux green.
+
+**To bring the number down**: take a cause from the top of that table, read both lines of one of its steps (`.build/reality/report.md` has everything as tables; `collab/evidence/reality-mac/traces/` holds what macOS really sent, marked `reality: <step>` after every step), teach the stand-in to be as rude as
+the Mac was, give the lesson a test of its own in `Tests/ArborKitTests`, run `make reality MAC=collab/evidence/reality-mac`, and take the keys it calls gone off the list. No Mac is needed for that: what the Mac did is on file. If it is Arbor that is
+wrong, report it: the key stays until Arbor is cured, and then the Mac's side has to be played again.
+
+**`collab/evidence/reality-mac/`** is that file: the observations of one run on a hosted Mac and its traces, as they came back. Play it again (`make reality`, then copy the run's `reality` folder there) after a change to `reality.sh` or `reality.py`, to Arbor's macOS-only code, or to
+what the controller does in these journeys; a step the file does not have counts as `unplayed`. `commit.txt` in it says which commit was played. When `Sources/ArborCore` or `Sources/ArborKit` have changed since, the two sides may not play the same Arbor: the report
+warns, and names the journeys with anything new as to be recorded again. `--check` fails on them all the same: a ratchet does not go soft.
+
+**After every batch that lands**, the five journeys at the trunk's head, and no train leaves from a head whose run is red or missing:
+
+```bash
+git fetch origin swarm/trunk && git switch --detach origin/swarm/trunk   # any worktree: nothing is pushed, and no branch of anybody's is touched
+make reality-trunk
+# swarm/trunk at 1234567: green: 187 divergences in 70 steps of 5 journeys (new: 0, known: 187, gone: 0)
+```
+
+`run.sh` starts the Mac for the ref `swarm/trunk`, so the Mac plays what GitHub has there; the rehearsal plays what lies here, and the script refuses if the code, the scripts or the list here are not that head's.
+**Play the head of a batch, not a commit in the middle of one**: a batch arrives commit by commit, over minutes, so the script first waits three minutes to see that the trunk stands still (`STILL=0` when whoever landed the batch has named the commit).
+Then the Mac is started, and the rehearsal fits into the wait for it: some twenty-five minutes in all. **A run checks its branch out when the Mac starts, not when the run is asked for**, and a quarter of an hour can lie between the two: `commit.txt` in what comes back is the truth of what was played, the verdict names it, and
+the tool warns when it is not the Arbor that was rehearsed. **RED** means a key the list does not have (`✘ new`, a line each, above the verdict), or one it has that is gone. For a new key look at both values, then
+at the step in both traces, then at what the batch changed. A key that one run shows and the next does not is timing: `make reality-trunk MAC="<run> <another run>"` counts it apart, and a `~` before it in the list says so for good.
+Gone keys are good news, and are taken off. When the fresh run is to be what everybody compares with from then on, copy its `reality` folder to `collab/evidence/reality-mac`.
+Where Swift lives in a container and `gh` outside it, in two halves: outside, `scripts/mac-shell/run.sh --priority 1 scripts/mac-shell/reality.sh swarm/trunk`; inside, `make reality-trunk MAC=.mac-shell/reality-<run id>`.
+
+**CI** does not run it yet. The step is written (the `real-windows` job plays the journeys, `linux` rehearses them, a small job compares the two with `--check` and gives the number as a check annotation) and comes
+in a change of its own.
+
+**Its limits**, plainly: five journeys of test windows on one small display. No real apps (section 7 has those), no second display, no app that hangs, no permission taken away, no timers, pinches, menus, Spaces or full
+screen, and only what shows once things have come to rest. Green does not mean that Arbor works on a Mac: it means that in these seventy steps nothing differs that did not differ before. It caught the short windows because every dock met them;
+a fault that needs a browser, a lid or a slow app walks straight past it.
+
 ## Pictures without a screen (`OffscreenPicture`)
 
 What Arbor draws can be looked at, and checked, without a window, a permission, a script or anybody's screen. `Tests/ArborKitTests/OffscreenPicture.swift` (macOS only) is a bitmap in memory
@@ -1201,7 +1382,7 @@ The same script can divide the tests among several machines, the compiling too (
 
 ## The tools test themselves (`scripts/test-tooling.py`)
 
-`parity.py`, `ci-step.py`, `scenarios.sh` with arbor-sim, `lint-imports.py`, `lint-mac-shell.py`, `mutate.py` and `fuzz-launch.py` are what says "all is well", so each is given
+`parity.py`, `ci-step.py`, `scenarios.sh` with arbor-sim, `lint-imports.py`, `lint-mac-shell.py`, `mutate.py`, `fuzz-launch.py` and `reality-diff.py` are what says "all is well", so each is given
 situations that must come out as failures: a misspelt status, a renamed test or step, a record of the tests cut off by a
 crash or with a torn line, a scenario whose commands do nothing, an `rm -rf` of a variable nobody checked. The safety nets of `scripts/mac-shell/lib.sh` are tried for real: small scripts
 run against stand-ins for a Mac and are interrupted, timed out and killed, with a full disk, with somebody's window under the pointer, beside a running Arbor
@@ -1353,7 +1534,7 @@ done to the world as if Arbor had done it, at which the net has to speak, beside
 |---|---|---|
 | Nothing moves until the person docks something, and nothing that was not asked to | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-launch-after-a-crash`, `moved-at-resume`, `moved-unasked`, `there-and-back-moved`, `pause-and-resume-moved`, `dragged-gap-did-not-last` | `moved-unasked` |
 | A start takes nothing out of view, but for what Show Everything itself has out of view; a quit leaves nothing there | `start-took-out-of-view` (the window with the keyboard stays in view even if it is such a window), `quit-left-out-of-reach` | `lost` |
-| A window moves once, to where it ends up | `moved-twice` (in the step of the command or event), `moved-again` (later, with nobody touching anything); `-sizing` where its app refused a size, `-sizing-again` where it had refused in the same way before; `sized-there-and-back` (never in a wrong place, but smaller or larger on the way than it ends up); all with `-floating` for a floating window; `set-right-by-less-than-a-cell` (a terminal in its slot). Judged by the road, not by the number of requests (`FakeWindowSystem.detour`): a window Arbor does not know is asked to shrink where it stands, and then moved. It grows in its slot, and the first time it turns out unable to, the way on to the middle of the slot is left out of the road | `jolt` |
+| A window moves once, to where it ends up | `moved-twice` (in the step of the command or event), `moved-again` (later, with nobody touching anything); `-sizing` where its app refused a size, `-sizing-again` where it had refused in the same way before; `sized-there-and-back` (never in a wrong place, but smaller or larger on the way than it ends up); all with `-floating` for a floating window; `moved-twice-floating-windows-first` (with `soleFloatTakesDesktop`, where macOS reported the window before the displays); `set-right-by-less-than-a-cell` (a terminal in its slot). Judged by the road, not by the number of requests (`FakeWindowSystem.detour`): a window Arbor does not know is asked to shrink where it stands, and then moved. It grows in its slot, and the first time it turns out unable to, the way on to the middle of the slot is left out of the road | `jolt` |
 | Out of view means out of view, and nothing goes on for ever | `flashed-into-view`, `flashed-out-of-view`; `moved-over-and-over` (more than three moves with nobody acting) | `flash`, `stuck` |
 | The window you switch to comes to the front and into view | `switched-to-out-of-view`, `switched-to-partly-out`, `app-switch-out-of-view` (only the app was reported), `switched-to-behind` | `focus`, `behind` |
 | Quitting, Float All and pause give windows their own sizes back | `size-not-given-back` | `size-lost` |
@@ -1469,7 +1650,7 @@ counts three times at most, in every column alike.
 | `jumped` | wholly on a display without Arbor, so macOS saw no reason to move it; elsewhere with Arbor |
 | `fitted` | hangs over an edge without Arbor; elsewhere with Arbor, which may have fitted it onto a display |
 | `home on the laptop` | began on the laptop and is on it again now that the lid is open: on purpose |
-| `where the hand left it` | on the big display where the hand left it, seen from that display, where macOS alone has it elsewhere: on purpose |
+| `where the hand left it` | on the big display where the hand left it, **or where it was found**, seen from that display, where macOS alone has it elsewhere: on purpose |
 
 After `jumped` and `fitted` stands at which change: `jumped 612 (0 + 468 + 144)` is none when the lid closes, 468 when it opens, 144 when it closes again. A line also says how many places were not
 looked at because Arbor moved the window at its start, which is another story, or because no hand could have put a window there. The exit code is 1 if a window was hidden or out of reach
@@ -1490,7 +1671,7 @@ grid: nothing refused, no window hidden or out of reach.
 - When the lid closes again, 72 / 0 / 18 under `late` and `silent`: a window astride the border that went home to the laptop is put back where it stood when the lid was last shut, 40 points from where macOS leaves it.
 - How long ago the hand let go changes nothing in these columns.
 - With Arbor away across the change: jumped 0 / 0 / 3; fitted 240, 360 and about 200 (paused, quit, crashed).
-- In the untouched columns 36 / 36 / 49 places are not looked at: windows hanging over an edge, which Arbor moves at its start.
+- In the untouched columns 36 / 36 / 49 places are not looked at: windows hanging over an edge, which Arbor moves at its start. (None since what is found counts as left: all 246 are played, with the tallies of the columns by hand, hidden 0 and out of reach 0.)
 - `never`, where windows keep their old coordinates, is what no Mac does; its columns are there because Arbor must cope.
 
 **What it does not play:** more than one window; a docked one; displays whose tops or sides are not in line; a display that changes its size or its side; and what macOS really does with
@@ -1579,7 +1760,7 @@ judged afterwards by whoever started the run, who writes what was seen into the 
 | Motion | `shots-F02.sh` (the stage comes down, a click ends it, off by setting and by Reduce Motion) | every film of `shots-F02.sh` |
 | How it looks: backdrop, blur, tint, ring | `suite/35-ring`; `shots-F15.sh` `shots-focus-ring.sh` | both, light and dark; `check-desktop.sh` mission-control |
 | The settings window | `shots-F12.sh` | every pane, light and dark; SettingsWindowPictureTests |
-| The menu bar item, the welcome window, `doctor` | `shots-F10.sh` | `shots-F10.sh` 05–74; MenuBarDrawingTests |
+| The menu bar item, the welcome window, the first launch, `doctor` | `shots-F10.sh` `first-five-minutes.sh` | `shots-F10.sh` 05–74; MenuBarDrawingTests |
 | Two displays, Spaces | `check-displays.sh` `check-F56.sh` `check-F49.sh` `check-desktop.sh` | their panoramas |
 | Signing, installing, login item, updates | `check-F13.sh` `check-F13-system.sh`; `suite/75-menu` | 03, 05, 06 |
 | Real apps (13 stock apps × 28 steps; tabs, sheets, full screen) | `compat.sh` `compat-extras.sh`; `check-F54.sh` for `--open` | `matrix.md`, `extras.md`, `compat-pictures.sh`, `shots-F15-apps.sh` |

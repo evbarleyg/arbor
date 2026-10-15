@@ -14,6 +14,7 @@ import Foundation
 // Besides every arborctl command (see `help`), the simulator understands:
 //   open <App> [WxH] [min WxH] [fixed]
 //                                open a window (ids start at 101); `fixed`: its size cannot be changed
+//   open <App> [<WxH>] [at <x> <y>] …   `at` says where the window opens
 //   close <id> | minimize <id> | restore <id>
 //   focus <id>                   click a window (`focus left`, `focus next`… are Arbor's own commands)
 //   cursor <x> <y>               move the pointer (camera commands use it)
@@ -102,6 +103,7 @@ import Foundation
 //                                what is in view in brackets, or `minimap: gone`
 // `arbor-sim film <script.txt> [--out <frames.jsonl>] [--fps <n>]` writes a script down frame by frame (Film.swift, docs/FILM.md).
 // `arbor-sim launch [--state <file>] [--settings <file>] … [lines…]` starts on real files first (Launch.swift).
+// `arbor-sim first-launch [--permitted] [lines…]` plays the first five minutes, welcome window and all (FirstLaunch.swift).
 //
 // A command that fails (a misspelt verb, a window that does not exist) also makes arbor-sim exit with
 // code 1, unless the next line is `expect fail`: a script that does not do what it says proves nothing.
@@ -112,6 +114,7 @@ import Foundation
 //
 //   swift run -c release arbor-sim bench [sizes…]   count and time everyday commands (Bench.swift)
 // `arbor-sim chaos|hunt|shrink …`, and `replay` without a file, are the chaos test's modes: see ChaosModes.swift.
+// `arbor-sim walk …` writes walks for a hosted Mac and plays them here: see WalkModes.swift.
 
 @MainActor
 func runSimulation() {
