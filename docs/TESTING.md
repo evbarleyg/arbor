@@ -444,7 +444,8 @@ own commands. Behind them is `arbor-fakemac` (`Sources/arbor-fakemac`): the real
 with a model of the screen around it (which window is in front, who has the keyboard, what a press lands on, drags
 that stay held, shortcuts, the menu, pause, quit, signals, `kill -9` and the watchdog). It exits with the script's exit code. It catches typos, bash
 mistakes, wrong geometry and wrong expectations of the controller; against the two runs we have from a real Mac
-it prints the same frames and the same log.
+it prints the same frames and the same log. `trace on` records there as in the app, on the fake clock, and `arbor-sim` is the real one, so a script that
+records traces and replays or judges them is rehearsed to its end.
 
 - `ARBOR_REHEARSAL_BASH=/path/to/bash-3.2` runs the script with the bash macOS has.
 - `ARBOR_REHEARSAL_DISPLAY="1440x900 24 70"` sets the display: width x height, menu bar, Dock. The default,

@@ -22,6 +22,7 @@
 #   until `defaults write` says otherwise), with its preview in the list of windows while the window is held there. There is
 #   no daemon: a session's history is a text file next to its ARBOR_HOME, and every call replays it. The header of
 #   Sources/arbor-fakemac/main.swift says more.
+#   `trace on` records as in the app (docs/TRACES.md), on the fake clock. arbor-sim is the real one.
 # - screencapture, sips, sw_vers, defaults, killall, launchctl, system_profiler, and sysctl and bc where they
 #   are missing, are rehearse/mac-tools.
 # - `sleep`: the fake Mac's clock moves a second with everything that is done to it, not with the real one. So a
@@ -71,17 +72,24 @@ here="${root:?}/scripts/mac-shell/rehearse"
 # Each of several side by side has a folder of its own, which is also how the stand-ins tell one fake Mac's processes from another's.
 work="${root:?}/.build/rehearsal${ARBOR_REHEARSAL_MAC:+-$ARBOR_REHEARSAL_MAC}"
 fakemac="$root/.build/debug/arbor-fakemac"
+# Needs no stand-in: a script replays and judges the traces it has recorded with the real one.
+sim="$root/.build/debug/arbor-sim"
 cd "${root:?}" || exit 2
 mkdir -p "$work"
 
-# Built when it is missing or older than anything it is made of.
+# Built when one of them is missing or older than anything it is made of: an old arbor-sim would judge by yesterday's rules.
 if command -v swift > /dev/null 2>&1; then
   changed=""
-  [ -x "$fakemac" ] && changed=$(find Package.swift Sources -name '*.swift' -newer "$fakemac" | head -n 1)
-  if [ ! -x "$fakemac" ] || [ -n "$changed" ]; then
-    if ! swift build --product arbor-fakemac > "$work/build.log" 2>&1; then
+  if [ -x "$fakemac" ] && [ -x "$sim" ]; then
+    changed=$({
+      find Package.swift Sources -name '*.swift' -newer "$fakemac"
+      find Package.swift Sources -name '*.swift' -not -path 'Sources/arbor-fakemac/*' -newer "$sim"
+    } | head -n 1)
+  fi
+  if [ ! -x "$fakemac" ] || [ ! -x "$sim" ] || [ -n "$changed" ]; then
+    if ! swift build --product arbor-fakemac > "$work/build.log" 2>&1 || ! swift build --product arbor-sim >> "$work/build.log" 2>&1; then
       cat "$work/build.log"
-      echo "rehearse.sh: arbor-fakemac does not build" >&2
+      echo "rehearse.sh: arbor-fakemac or arbor-sim does not build" >&2
       exit 2
     fi
   fi
@@ -123,6 +131,7 @@ mkdir -p "$stand_ins/bin" "$stand_ins/path" "$stand_ins/Arbor.app/Contents/MacOS
 ln -s "$here/arbor" "$stand_ins/bin/Arbor"
 ln -s "$here/arbor" "$stand_ins/Arbor.app/Contents/MacOS/Arbor"
 ln -s "$here/fakemac" "$stand_ins/bin/arborctl"
+[ -x "$sim" ] && ln -s "$sim" "$stand_ins/bin/arbor-sim"
 ln -s "$here/fakemac" "$stand_ins/pointer"
 ln -s "$here/fakemac" "$stand_ins/path/open"
 ln -s "$here/fakemac" "$stand_ins/path/lsappinfo"
