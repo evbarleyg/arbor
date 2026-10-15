@@ -45,11 +45,11 @@ public struct LidSweep {
       return "\(side.rawValue), \(meanwhile.rawValue), \(hand), windows-\(order.rawValue)"
     }
 
-    /// Every order with Arbor running, by hand and untouched; Arbor away across the change, when it hears of no order at all; and a hand
+    /// Every order in which no time passes, with Arbor running, by hand and untouched; Arbor away across the change, when it hears of no order at all; and a hand
     /// that has only just let go.
     public static func all(_ sides: [Side] = Side.allCases) -> [Column] {
       sides.flatMap { side in
-        ChaosAction.WindowsFollow.allCases.flatMap { order in [true, false].map { Column(side: side, byHand: $0, order: order) } }
+        ChaosAction.WindowsFollow.inAnInstant.flatMap { order in [true, false].map { Column(side: side, byHand: $0, order: order) } }
           + [Meanwhile.paused, .quit, .crashed].map { Column(side: side, meanwhile: $0) }
           + [0, 5, 15, 29].map { Column(side: side, secondsSinceTheHand: $0) } + [Column(side: side, secondsSinceTheHand: 0, order: .first)]
       }

@@ -209,7 +209,7 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
 
   /// What macOS does with the windows when the displays change. It moves them along with their
   /// display (or onto the main one if theirs is gone) in the same instant; only the order in
-  /// which Arbor hears about it varies.
+  /// which Arbor hears about it varies. All but the last, in which time passes.
   public enum WindowsFollow: String, Sendable, CaseIterable {
     /// Arbor hears about the windows first, then about the displays, and macOS's own list of displays is still the old one while the
     /// windows speak: nobody can know yet that anything is changing. Hosted Macs were recorded doing that for one window of a
@@ -225,6 +225,15 @@ public enum ChaosAction: Equatable, Sendable, CustomStringConvertible {
     case silent
     /// The windows stay at their old coordinates, which no Mac does; Arbor must cope anyway.
     case never
+    /// In the order and at the times hosted Macs were recorded (`FakeWindowSystem.changeDisplaysAsAMacDoes`): one window speaks while the old displays
+    /// are still in force, then macOS has the new ones and the apps speak, and Arbor hears about the displays nearly two seconds
+    /// later, in which its timers run. In the orders above no time passes; each has something of this one. WHICH windows move is the
+    /// lab's own rule as in every order, and less than was recorded: on the Macs a display that came moved 2 to 11 windows on the
+    /// display that stayed, 17 times of 17, and here it moves none, so that nobody speaks.
+    case recorded
+
+    /// The orders in which no time passes: all but the recorded one. For what has never been recorded in any order: a lid.
+    public static var inAnInstant: [WindowsFollow] { allCases.filter { $0 != .recorded } }
   }
 
   // MARK: Text form

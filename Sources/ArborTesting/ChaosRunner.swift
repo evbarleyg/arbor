@@ -625,6 +625,22 @@ public final class ChaosRunner {
       // The same numbers mean another place now: nothing is "where Arbor put it" any more.
       for id in system.windows.keys { system.windows[id]!.groundHasShifted = true }
       system.setDisplays(displays)
+    case .recorded:
+      // macOS takes the pointer off a display that goes at once, and Arbor's timers run before this step is over.
+      if system.dragging == nil, let nearest = displays.min(by: { $0.frame.distance(to: system.cursor) < $1.frame.distance(to: system.cursor) })?.frame {
+        system.cursor = CGPoint(x: min(max(system.cursor.x, nearest.minX), nearest.maxX - 1), y: min(max(system.cursor.y, nearest.minY), nearest.maxY - 1))
+      }
+      if old.first(where: \.isMain)?.id == displays.first(where: \.isMain)?.id {
+        system.changeDisplaysAsAMacDoes(displays, moving: moves)
+      } else {
+        // Another main display has never been recorded. Of the shift of every coordinate that goes with it no app says a word here, and the
+        // wait is the layer's rule.
+        for move in moves { system.moveSilently(move.window, to: move.frame) }
+        system.changeDisplaysAsAMacDoes(displays)
+      }
+      // What is not worth a word to the layer (another order of the list, say), and what nobody listened to, the lab says all the same, as in
+      // its other orders: its mirror holds Arbor to the very list.
+      if system.displaysLastTold != displays { system.setDisplays(displays) }
     case .first:
       for move in moves {
         // As in the other orders what Arbor last asked of it goes along with it: a window in the middle of its slot is there afterwards too.

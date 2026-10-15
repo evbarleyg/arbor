@@ -260,7 +260,10 @@ public final class FakeWindowSystem: WindowSystem {
     started = true
     starts += 1
     if isDenied { rememberedWithoutPermission = [:] }
+    displaysLastTold = displayList
   }
+  /// The displays Arbor was last told of, or found at its start: what the real layer holds a change against (`changeDisplaysAsAMacDoes`).
+  public internal(set) var displaysLastTold: [DisplaySnapshot] = []
   /// The real one lets go of every app, so what the apps were about to report of Arbor's last moves is never heard.
   public func stop() {
     started = false
@@ -727,6 +730,7 @@ public final class FakeWindowSystem: WindowSystem {
   public func setDisplays(_ displays: [DisplaySnapshot]) {
     displayList = displays
     for id in windows.keys { windows[id]!.placeIsArborsDoing = true }
+    if events != nil { displaysLastTold = displays }
     events?.displaysChanged()
   }
 

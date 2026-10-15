@@ -11,7 +11,7 @@ import Testing
   }
 
   @Test(arguments: LidSweep.Side.allCases) func aMacWithoutArborDiffersFromItselfNowhere(side: LidSweep.Side) {
-    for order in ChaosAction.WindowsFollow.allCases {
+    for order in ChaosAction.WindowsFollow.inAnInstant {
       var sweep = coarse(LidSweep.Column(side: side, order: order))
       sweep.withArbor = false
       let tally = sweep.run()
