@@ -1,0 +1,28 @@
+20 drag-the-gap: drags the gap at the right of Notes 300 points to the left
+expected: {'act': 'resize', 'settled': 'quiet:426', 'moves': '31', 'everything': '1', 'floating': '41', 'docked': '31'}
+FAIL rule -: not so: the gap followed the pointer under the window: the place is some 300 points short
+FAIL rule 4: the app in front changed (to process 4701), and nobody switched
+
+16:15:25.512 SCREEN -- begin 20 drag-the-gap
+16:15:25.512 SCREEN -- text 20 drags the gap at the right of Notes 300 points to the left
+16:15:25.976 SCREEN the button is down 727 654
+16:15:25.980 DEBUG the button went down at 727,654, the pointer is at 727,654: it is on w41
+16:15:26.332 DEBUG the press on w41 has moved nothing so far: looking less often
+16:15:28.784 SCREEN (nothing was seen for 119 ms)
+16:15:28.784 SCREEN front to back: settings w50 notes w46 w49
+16:15:28.784 SCREEN the button is up 427 654
+16:15:28.787 SCREEN in front: process 4701 com.apple.systempreferences
+16:15:28.851 DEBUG focus is on w41
+16:15:28.852 DEBUG w41 has the keyboard
+16:15:28.889 SCREEN w50 of Arbor 600,33 741×643
+16:15:28.889 SCREEN front to back: w50 settings notes w46 w49
+16:15:29.101 SCREEN (nothing was seen for 139 ms)
+16:15:29.253 SCREEN front to back: settings w50 notes w46 w49
+16:15:29.685 SCREEN (nothing was seen for 432 ms)
+16:15:30.024 SCREEN (nothing was seen for 338 ms)
+16:15:30.862 SCREEN (nothing was seen for 708 ms)
+16:15:31.276 SCREEN (nothing was seen for 241 ms)
+16:15:31.620 SCREEN (nothing was seen for 344 ms)
+16:15:31.845 SCREEN (nothing was seen for 140 ms)
+16:15:32.878 SCREEN -- finding 20 - FAIL not so: the gap followed the pointer under the window: the place is some 300 points short
+16:15:33.473 SCREEN -- end 20 act=resize settled=quiet:426 moves=31 everything=1 floating=41 docked=31

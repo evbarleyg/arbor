@@ -1,0 +1,243 @@
+# mac-shell: scripts/mac-shell/shots-what-cannot-fit-overlaps.sh at 64a5521, macOS 26.6.2, 2026-10-15T16:13Z
+
+== the Mac
+macOS 26.6.2 (25G83) on arm64
+built Arbor, the pointer tool and the app bundles in 4s
+1344 756 1344 756
+display: 1 0 0 1344 756 1344 756 1
+the sampler writes mac-shell/samples.log (pid 4461), the witness mac-shell/witness.log (pid 4470)
+
+== Before Arbor: two apps are open
+
+-- 1 open-notes: opens notes
+> open -g -b com.apple.Notes 
+pid 4484 lists (id role subrole x y w h flags):
+  31 AXWindow AXStandardWindow 172 31 1000 647 main,close-disabled,sheets=1
+  w31 is notes
+something is in the way:
+  AXWindow/AXStandardWindow 172 31 1000 647
+    AXButton/AXCloseButton 180 39 16 16
+    AXButton/AXZoomButton 226 39 16 16
+    AXButton/AXMinimizeButton 203 39 16 16
+    AXSheet/- 435 54 475 600
+      AXButton/- 806 605 85 30 "Continue"
+pressed "Continue": 0
+pressed "Cancel": 0
+  (quiet:371 ms) setup=1
+
+-- 2 open-settings: opens settings
+> open -g -b com.apple.systempreferences 
+pid 4701 lists (id role subrole x y w h flags):
+  41 AXWindow AXStandardWindow 309 53 723 625 main,toolbar
+  w41 is settings
+  (quiet:458 ms) setup=1
+
+== The coach's first two keys
+
+-- 3 launch: starts Arbor
+session 1: Arbor pid 4897, ARBOR_LIMIT=none: running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+recording traces/2026-10-15-161423-day-1.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+  (quiet:850 ms) moves=none everything=1 floating=31,41 docked=
+> get windowsThatDoNotFit
+windowsThatDoNotFit: overlap
+
+-- 4 click-notes: clicks Notes' title bar
+> click 676 43
+> move 676 163
+  (quiet:462 ms) front=31 floating=31,41 docked=
+
+-- 5 dock-left: presses ⌃⌥←
+> key ctrl+opt+left
+  ✔ Notes is docked
+  (quiet:858 ms) moves=31 first=1 front=31 floating=41 docked=31 first=1
+Notes: 12 43 709 623 
+
+-- 6 click-settings: clicks System Settings' title bar
+> click 757 65
+> move 757 185
+  (quiet:474 ms) front=41 floating=41 docked=31
+
+-- 7 dock-right: presses ⌃⌥→
+> key ctrl+opt+right
+  ✔ System Settings is docked
+  ✔ Notes is in view
+  ✔ System Settings is in view
+> state
+  ✔ neither is parked
+  ✔ they overlap
+> state
+> state
+  ✔ state says that one of them hangs over its place
+  ✔ the one the key named lies in front
+  (quiet:434 ms) moves=31,41 docked=31,41 front=41 everything=1 floating= docked=31,41
+> state
+> state
+Notes: 12 43 709 623  over by ''; System Settings: 609 43 723 623  over by '124'
+Arbor's own windows: 52 4897 6 496 584 352 38 off Arbor;51 4897 -2147483602 0 31 1344 647 on Arbor;46 4897 0 392 120 560 379 on Arbor;50 4897 0 600 34 741 641 on Arbor;49 4897 0 721 43 12 623 off Arbor;
+camera n2, visible 0,31 1344×647, Desktop out of view
+  w31 com.apple.Notes 12,43 709×623, slot 12,43 709×623: docked
+  w41 com.apple.systempreferences 609,43 723×623, slot 609,43 723×623: docked focused
+
+== Which lies in front later is macOS's business
+recording traces/2026-10-15-161441-day-2.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- 8 click-the-one-behind: clicks the part of Notes that shows
+> click 362 55
+> move 362 175
+  ✔ Notes lies in front
+  ✔ no window has moved or changed its size
+  (quiet:382 ms) moves=none front=31 everything=1 floating= docked=31,41
+
+-- 9 click-back: clicks the part of System Settings that shows
+> click 973 55
+> move 973 175
+  ✔ System Settings lies in front
+  ✔ no window has moved or changed its size
+  (quiet:405 ms) moves=none front=41 everything=1 floating= docked=31,41
+
+-- 10 cmd-tab: presses ⌘Tab
+> key cmd+tab --down
+> key cmd+tab --up
+  ✔ Notes lies in front
+  ✔ no window has moved or changed its size
+  (quiet:440 ms) moves=none front=31 everything=1 floating= docked=31,41
+
+-- 11 idle: does nothing for ten seconds
+  with nothing to do Arbor used 0.2 % of a core and wrote 0 lines a minute
+  ✔ no window has moved or changed its size
+  (quiet:379 ms) moves=none everything=1 floating= docked=31,41
+
+== Framed and back, and one step back
+recording traces/2026-10-15-161510-day-3.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- 12 frame: presses ⌃⌥↩
+> key ctrl+opt+return
+  (quiet:990 ms) moves=31,41,31,41, leaves=any floating= docked=31,41
+
+-- 13 frame-again: and again
+> key ctrl+opt+return
+  ✔ the overlap is as it was
+  (quiet:742 ms) moves=31,41,31,41, everything=1 floating= docked=31,41
+
+-- 14 undo: takes the last dock back
+> undo
+undid dock w41 right
+  ✔ System Settings floats
+  (quiet:983 ms) moves=31,41 restores=41 everything=1 floating=41 docked=31
+Notes: 12 43 709 623 ; System Settings: 309 53 723 624 
+
+-- 15 redo: and docks it again
+> redo
+redid dock w41 right
+  ✔ the overlap is as it was
+  (quiet:966 ms) moves=31,41 everything=1 floating= docked=31,41
+
+== It ends when the neighbour goes
+recording traces/2026-10-15-161517-day-4.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- 16 float-settings: floats System Settings
+> float 41
+w41 is floating
+> state
+> state
+  ✔ nobody hangs over
+  (quiet:948 ms) moves=31,41 restores=41 everything=1 floating=41 docked=31
+
+== The option: the tile, as it was
+recording traces/2026-10-15-161519-day-5.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- 17 tile: asks for tiles, and docks System Settings at the right
+> set windowsThatDoNotFit tile
+windowsThatDoNotFit = tile (was overlap)
+> dock 41 right
+docked w41 at the right edge; its space is too small to show it, so it is a tile
+> state
+  ✔ one of the two is out of view
+  (quiet:1045 ms) moves=31,41 tiles=41@733:43:599:623 keyboard=31 leaves=any floating= docked=31,41
+
+-- 18 overlap-again: asks for the overlap again
+> set windowsThatDoNotFit overlap
+windowsThatDoNotFit = overlap (was tile)
+  ✔ the overlap is as it was
+  (quiet:1179 ms) moves=31,41 everything=1 floating= docked=31,41
+
+== A gap dragged until it lies under a window
+recording traces/2026-10-15-161523-day-6.jsonl: 1 lines, 3 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- 19 float-settings-again: floats System Settings
+> float 41
+w41 is floating
+  (quiet:1048 ms) moves=31,41 restores=41 everything=1 floating=41 docked=31
+
+-- 20 drag-the-gap: drags the gap at the right of Notes 300 points to the left
+> drag 727 654 427 654
+  ✔ Notes is in view
+  ✔ Notes stands where it stood, as large
+> state
+Notes: 12 43 709 623  over by ''
+> state
+  ✘ the gap followed the pointer under the window: the place is some 300 points short
+      picture: mac-shell/fail-shots-what-cannot-fit-overlaps-1.png
+      | display 0 0 1344 756, visible 0 31 1344 647, camera n2, back no
+      |   Desktop          733 43 599 623
+      |   w31 12 43 709 623        docked
+      |   w41 609 42 723 625       floating focused
+      log | INFO  trace day-5 ended: 81 lines, trace off
+      log | INFO  trace day-6: recording to /tmp/arbor-shell.OvTJXL/home/traces/2026-10-15-161523-day-6.jsonl
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  float 41: w41 is floating
+      log | DEBUG the button went down at 727,654, the pointer is at 727,654: it is on w41
+      log | DEBUG the press on w41 has moved nothing so far: looking less often
+      log | DEBUG focus is on w41
+      log | DEBUG w41 has the keyboard
+  (quiet:426 ms) moves=31 everything=1 floating=41 docked=31
+
+-- 21 idle-after-the-drag: does nothing for three seconds
+  with nothing to do Arbor used 0.0 % of a core and wrote 0 lines a minute
+Arbor's own windows: 52 4897 6 496 584 352 38 off Arbor;51 4897 -2147483602 0 31 1344 647 on Arbor;46 4897 0 392 120 560 379 on Arbor;64 4897 0 733 43 599 623 off Arbor;50 4897 0 600 33 741 643 on Arbor;49 4897 0 721 43 12 623 on Arbor;
+  ✔ nothing has moved
+  (quiet:387 ms) moves=none everything=1 floating=41 docked=31
+
+== The way out
+recording traces/2026-10-15-161537-day-7.jsonl: 1 lines, 2 KB, 0 s (stops by itself at 20 MB or 10 minutes)
+
+-- 22 quit: quits Arbor
+> quit
+quitting
+  ✔ Arbor ends within five seconds
+  (quiet:521 ms) moves=any restores=all everything=1
+
+== the report (all of it: mac-shell/day-report.md)
+22 steps in 87 s, 18 of them judged, 1 with a rule broken. The sampler: samples 2806 seconds 77.4 hz 36.2 cost-ms 3.35 late 16 longest-gap-ms 708 whole-samples 3186 whole-seconds 87.9 whole-late 20.
+Input: 47 presses, releases, keys and scrolls reached the apps, half of them within 862 µs, 99 in 100 within 147308 µs, the latest after 147308 µs.
+By kind, listed only (events, half within, 99 in 100 within, µs): down 1, 14131, 14131; dragged 32, 714, 3461; forward 4, 137986, 147308; key 5, 542, 1057; up 5, 6455, 94645. `forward`: a press on a window of an app that was not in front.
+
+## Per rule
+
+| Rule | | Steps that checked it | Steps that broke it | Which |
+|---|---|---|---|---|
+| 1 | never fight macOS: where it answers a drag, Arbor stands aside | 0 | 0 |  |
+| 2 | nothing moves that the person did not move | 19 | 0 |  |
+| 3 | no jolts: a window moves once, to where it ends up | 20 | 0 |  |
+| 4 | the window you switch to comes to the front and into view | 15 | 1 | 20 drag-the-gap |
+| 5 | quitting, Float All and pause give windows their own sizes back | 4 | 0 |  |
+| 6 | what a person presses reaches the apps, at once | 5 | 0 |  |
+| L | no window is lost or stuck | 20 | 0 |  |
+| - | what the script itself checked | 20 | 1 | 20 drag-the-gap |
+
+## Findings
+
+### Rule 4: the window you switch to comes to the front and into view
+
+- ✘ **20 drag-the-gap** (drags the gap at the right of Notes 300 points to the left): the app in front changed (to process 4701), and nobody switched [focus]
+
+### Rule -: what the script itself checked
+
+- ✘ **20 drag-the-gap** (drags the gap at the right of Notes 300 points to the left): not so: the gap followed the pointer under the window: the place is some 300 points short [script]
+
+
+25 passed, 2 failed
+still running when the script had ended, and stopped now:
+  3478 sleep
+exit code 1
