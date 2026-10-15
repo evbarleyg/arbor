@@ -1,0 +1,78 @@
+# mac-shell: scripts/mac-shell/probe-step-tests-e2e.sh at 6e3287b, macOS 26.6.2, 2026-10-15T01:04Z
+swift build --build-tests: exit 0, 346 s
+the selection: exit 0, 130 s
+Running the tests of 48 of 263 files (scripts/ci-tests.py select says which, and why).
+Recorded 966 tests in mac-shell/mac.tsv: 965 passed, 0 failed, 1 skipped
+
+== what this step leaves behind (up 15 mins, 1 user, load averages: 6.77 15.80 17.09)
+-- processes of Arbor's:
+-- in front: pointer: no app has the keyboard
+-- the pointer: 10 10 up, the button: pointer: expected a process id, x, y and close, minimize or zoom
+-- Accessibility for this process: true
+-- Spaces:
+07230EFA-7A8D-4E37-845C-19CC8737EEF5 1 1
+-- windows on screen:
+134 26727 0 0 0 0 0 off nsattributedstringagent
+133 449 0 0 268 64 64 off CursorUIViewService
+29 445 2147483628 388 318 247 100 off TextInputSwitcher
+26 348 25 799 0 31 30 on Control Center
+25 444 3 0 255 0 0 off Accessibility
+24 449 0 0 268 64 64 off CursorUIViewService
+23 452 0 0 268 64 64 off Spotlight
+22 452 23 90 96 844 607 off Spotlight
+20 452 23 146 346 640 56 off Spotlight
+19 348 25 830 0 42 30 on Control Center
+18 348 25 872 0 152 30 on Control Center
+17 165 -2147483602 0 0 1024 65 off Window Server
+16 165 24 0 0 1024 30 on Window Server
+15 350 0 0 268 64 64 off Finder
+14 350 0 0 0 1024 30 off Finder
+13 350 0 0 0 1024 30 off Finder
+12 350 0 0 0 1024 30 off Finder
+11 350 0 0 0 1024 30 off Finder
+10 350 -2147483603 0 0 1024 768 on Finder
+7 346 -2147483624 0 0 1024 768 on Dock
+6 346 20 0 0 1024 768 on Dock
+3 165 2147483630 60 337 28 40 off Window Server
+2 165 -2147483626 0 0 1024 768 on Window Server
+-- macOS's own tiling and the wallpaper click:
+    EnableTilingByEdgeDrag = 1;
+-- secure input: 0
+arbor-e2e --full-screen: exit 0, 91 s
+415 passed, 0 failed
+
+== what this step leaves behind (up 16 mins, 1 user, load averages: 4.58 12.82 15.82)
+-- processes of Arbor's:
+-- in front: pointer: no app has the keyboard
+-- the pointer: 10 10 up, the button: pointer: expected a process id, x, y and close, minimize or zoom
+-- Accessibility for this process: true
+-- Spaces:
+07230EFA-7A8D-4E37-845C-19CC8737EEF5 1 1
+-- windows on screen:
+243 449 0 0 268 64 64 off CursorUIViewService
+134 26727 0 0 0 0 0 off nsattributedstringagent
+29 445 2147483628 388 318 247 100 off TextInputSwitcher
+26 348 25 799 0 31 30 on Control Center
+25 444 3 0 255 0 0 off Accessibility
+24 449 0 0 268 64 64 off CursorUIViewService
+23 452 0 0 268 64 64 off Spotlight
+22 452 23 90 96 844 607 off Spotlight
+20 452 23 146 346 640 56 off Spotlight
+19 348 25 830 0 42 30 on Control Center
+18 348 25 872 0 152 30 on Control Center
+17 165 -2147483602 0 0 1024 65 off Window Server
+16 165 24 0 0 1024 30 on Window Server
+15 350 0 0 268 64 64 off Finder
+14 350 0 0 0 1024 30 off Finder
+13 350 0 0 0 1024 30 off Finder
+12 350 0 0 0 1024 30 off Finder
+11 350 0 0 0 1024 30 off Finder
+10 350 -2147483603 0 0 1024 768 on Finder
+7 346 -2147483624 0 0 1024 768 on Dock
+6 346 20 0 0 1024 768 on Dock
+3 165 2147483630 60 337 28 40 off Window Server
+2 165 -2147483626 0 0 1024 768 on Window Server
+-- macOS's own tiling and the wallpaper click:
+    EnableTilingByEdgeDrag = 1;
+-- secure input: 0
+exit code 0
