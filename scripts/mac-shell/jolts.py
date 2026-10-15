@@ -882,6 +882,10 @@ def judge(step, world, by_number, own):
                 if not in_preview and not in_hand and not back:
                     step.find("3", "FAIL", window, "ended neither where it was let go nor where the preview was: let go at %s, %s, now at %s" % (
                         words(let_go), "the preview at " + words(preview) if preview else "no preview", words(ended)), road(trace), "stuck")
+        elif wants.get("act") == "resize" and (may == "any" or window in named) and any(entry[2] for entry in trace):
+            # An edge or a gap is dragged: while the button is down the windows beside it go as the hand goes, by macOS's doing or by Arbor's: those the act names, no others. What counts is what
+            # happens once it is let go. (The bottom edge of a docked window with nothing below it was dragged up 60 points; Arbor put the window back into its place, once: read as two moves.)
+            trace = trace[max(index for index, entry in enumerate(trace) if entry[2]):]
         if window in step.born and trace and trace[0][1]:
             # Where it has opened is where its app put it.
             opened = 0
@@ -1606,6 +1610,19 @@ def self_test():
         "2000 M begin 2 dock", "2100 W 1 10 0 100 100 500 700 One", "2160 W 1 10 0 0 30 500 700 One", "3200 M end 2 moves=1 lands=1"], [])
     detectors("under the stage it lands where nobody sees it", away + stage + [
         "2500 W 1 10 0 100 100 400 300 One", "2600 W 1 10 0 400 100 400 300 One", "2800 G 70", "3900 M end 3 moves=1 comes=1 lands=1"], [])
+    edge = start + ["2000 M begin 2 edge", "2050 B down 300 400"]
+    for i in range(1, 7):
+        edge += [f"{2100 + 60 * i} W 1 10 0 100 100 400 {300 - 10 * i} One", f"{2100 + 60 * i} P 300 {400 - 10 * i}"]
+    detectors("an edge is dragged, and the window goes as the hand goes", edge + ["2900 B up 300 340", "4000 M end 2 act=resize moves=1"], [])
+    detectors("… let go, it is put back into its place, once", edge + ["2900 B up 300 340", "3000 W 1 10 0 100 100 400 300 One", "4100 M end 2 act=resize moves=1"], [])
+    detectors("… put back, and then moved again", edge + [
+        "2900 B up 300 340", "3000 W 1 10 0 100 100 400 300 One", "3400 W 1 10 0 100 100 400 320 One", "4500 M end 2 act=resize moves=1"], ["jolt"])
+    detectors("… somewhere else first, and then back", edge + [
+        "2900 B up 300 340", "3000 W 1 10 0 100 100 400 200 One", "3100 W 1 10 0 100 100 400 300 One", "4200 M end 2 act=resize moves=1"], ["jolt"])
+    detectors("… in an act of another kind the same frames are two moves", edge + [
+        "2900 B up 300 340", "3000 W 1 10 0 100 100 400 300 One", "4100 M end 2 act=dock-key moves=1"], ["jolt"])
+    detectors("… a window nobody named that goes along under the hand is seen", edge + [
+        "2300 W 2 20 0 500 100 400 280 Two", "2900 B up 300 340", "4000 M end 2 act=resize moves=1"], ["moved-unasked"])
     pressed = start + ["2000 M begin 2 edge", "2100 A 20 app.two", "2100 B down 505 250", "2200 B up 505 250", "3300 M end 2 act=resize"]
     detectors("a press on a window brings its app forward, in whatever kind of act", pressed, [])
     detectors("… another app than the one the press fell on comes forward", [line.replace("A 20 app.two", "A 30 app.three") for line in pressed], ["focus"])

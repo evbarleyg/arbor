@@ -454,9 +454,19 @@ drag_window() {
 }
 
 dock_click() {
-  local x y
+  local x y again tries=0
   read -r x y <<< "$(apptool dock "$1" 2>/dev/null)"
   [ -n "${x:-}" ] || { echo "the Dock shows no icon of $1"; return 1; }
+  # An icon is not always where it rests: of 390 clicks on icons in the Dock 389 were at one height, and one, on Mail's, which had a sheet up that wanted an answer, 45 points above it,
+  # on the window that lay there. So it is asked until it says the same twice, as an icon that hops does not.
+  while [ "$tries" -lt 20 ]; do
+    sleep 0.12
+    again=$(apptool dock "$1" 2>/dev/null)
+    [ "$again" != "$x $y" ] || break
+    read -r x y <<< "$again"
+    tries=$((tries + 1))
+  done
+  [ -n "${x:-}" ] && [ "$tries" -lt 20 ] || { echo "the icon of $1 in the Dock does not keep still"; return 1; }
   click "$x" "$y"
   # Away from the Dock, whose labels and magnification follow the pointer.
   move "$x" "$((y - 200))"
