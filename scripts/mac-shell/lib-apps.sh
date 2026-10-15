@@ -191,7 +191,7 @@ app_open() {
   echo "> open -g $how $app ${said//${APPS_CANARY:-$'\001'}/…}"
   # -g: in the background, as the test windows open, so that what comes to the front is the script's doing.
   # safe anywhere: on a person's Mac only an app that was not running or that this script started gets here
-  # APP_OPEN_LIMIT: a large app that has never run on this Mac is looked over by macOS first, and `open` waits for that.
+  # APP_OPEN_LIMIT: a large app that has never run on a Mac is looked over by macOS first, and `open` waits for that.
   bounded "${APP_OPEN_LIMIT:-20}" open -g "$how" "$app" "$@" || { echo "open failed"; return 1; }
   until APP_PID=$(apptool pid "$app" 2>/dev/null); do
     [ "$tries" -ge 100 ] && { echo "$app did not start within 10 s"; return 1; }
