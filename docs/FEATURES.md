@@ -6,7 +6,7 @@ A.. items are Arbor-only. Levels are explained in `collab/README.md`.
 
 **TrellisWM parity: 39 of 52 reference items shipped (75%), 18 verified on real windows.**
 
-Levels: verified 51, tested 60, partial 7, planned 7, missing 1, not-planned 3.
+Levels: verified 51, tested 62, partial 7, planned 7, missing 1, not-planned 3.
 
 Real-window evidence: mac-shell: scripts/mac-shell/proof.sh at ab40b20, macOS 26.6.2, 2026-10-14T06:48Z.
 
@@ -17,7 +17,7 @@ Real-window evidence: the real-window suite, 33 sections, the newest 2026-10-15T
 | ID | Feature | TrellisWM | Arbor | Level | Evidence | Spec |
 |---|---|---|---|---|---|---|
 | T00 | Native menu-bar app | Swift, AppKit, Accessibility, ScreenCaptureKit; menu bar only; macOS 14+ | Swift, AppKit, Accessibility; menu bar only; macOS 14+ | verified | nothing to test | [F01](features/F01-dock-and-zoom.md) |
-| T75 | Permissions explained | Accessibility required, Screen Recording optional, both explained | A welcome window with a live tick for Accessibility and for each macOS setting that matters, then three moves to try (Screen Recording is explained and asked for only with the hidden `windowPictures`, T53); `doctor` checks the same from the command line | tested | tests 22/22 | [F10](features/F10-menu-bar-and-onboarding.md) |
+| T75 | Permissions explained | Accessibility required, Screen Recording optional, both explained | A welcome window that says what Arbor is for and asks for Accessibility and nothing else, with a live tick, then four moves to try, all keys; Check Setup… has a row for each macOS setting and app that matters (Screen Recording is explained and asked for only with the hidden `windowPictures`, T53); `doctor` checks the same from the command line | tested | tests 45/45 | [F10](features/F10-menu-bar-and-onboarding.md) |
 
 ## Docking and arrangement
 
@@ -89,7 +89,7 @@ Real-window evidence: the real-window suite, 33 sections, the newest 2026-10-15T
 
 | ID | Feature | TrellisWM | Arbor | Level | Evidence | Spec |
 |---|---|---|---|---|---|---|
-| T70 | Menu bar controls | Back/forward and view buttons, current one filled | The same, for the display under the pointer, with tooltips; right-click for the menu. `menuBarControls`, `historyButtons`, `menuBarFill` | tested | tests 23/23 | [F10](features/F10-menu-bar-and-onboarding.md) |
+| T70 | Menu bar controls | Back/forward and view buttons, current one filled | The same, for the display under the pointer, with tooltips; right-click for the menu. `menuBarControls`, `historyButtons`, `menuBarFill` | tested | tests 25/25 | [F10](features/F10-menu-bar-and-onboarding.md) |
 | T71 | Every action as a URL | Pro: trelliswm://… | `arbor://dock/left`, `arbor://show-all`, TrellisWM's `zoom-out`; from the installed bundle; `arborctl`. URLs run camera and arrangement commands; the rest need `allowAllURLCommands` | verified | tests 14/14, real windows 2/2 | [F01](features/F01-dock-and-zoom.md) |
 | T72 | Settings | Settings window with advanced and hidden options | A native window (Settings…, ⌃⌥,) drawn from one schema: sections, Advanced, search (hidden options only as commands and in the file), editors for shortcuts (recorded by pressing them), rules and apps not to arrange; refusals shown under the control. The same settings as commands and as `settings.json`, applied as it is saved ([docs/SETTINGS.md](SETTINGS.md)). Built on a Mac, not yet looked at on one | tested | tests 61/61, real windows 1/7 | [F12](features/F12-settings-window.md) |
 | T73 | Launch at login | Yes | Menu toggle; `launch-at-login on\|off`; `make uninstall` removes it. The logic is tested against a stand-in; macOS's part (`SMAppService.mainApp`, from ~/Applications) has never been tried: `scripts/mac-shell/check-F13-system.sh` | verified | tests 7/7, real windows 1/1 | [F13](features/F13-distribution.md) |
@@ -101,14 +101,14 @@ Real-window evidence: the real-window suite, 33 sections, the newest 2026-10-15T
 
 | ID | Feature | TrellisWM | Arbor | Level | Evidence | Spec |
 |---|---|---|---|---|---|---|
-| A01 | Keyboard docking and moving |  | ⌃⌥⌘+arrow docks the focused window or moves it one place | verified | tests 16/16, real windows 3/3 | [F01](features/F01-dock-and-zoom.md) |
+| A01 | Keyboard docking and moving |  | ⌃⌥⌘+arrow docks the focused window or moves it one place | verified | tests 22/22, real windows 3/3 | [F01](features/F01-dock-and-zoom.md) |
 | A02 | Command line with JSON state and ASCII layout |  | `arborctl state` (window titles only with `--titles`), `arborctl ascii`; batches from standard input, `--timeout`, exit codes for scripts, shell completion | verified | tests 18/18, real windows 4/4 | [F01](features/F01-dock-and-zoom.md) |
 | A03 | Configurable shortcuts |  | `bindings` in settings.json; `arborctl bindings` | verified | tests 6/6, real windows 7/7 | [F06](features/F06-configurable-keybindings.md) |
 | A04 | Rules for new windows per app |  | `rules` in settings.json; `arborctl rules` | verified | tests 13/13, real windows 7/7 | [F11](features/F11-app-rules.md) |
 | A05 | Minimum sizes learned from apps |  | A window that refuses its slot becomes a tile | tested | tests 1/1, real windows 3/4 | [F01](features/F01-dock-and-zoom.md) |
-| A06 | Windows left off-screen by a crash are recovered |  | On launch | verified | tests 3/3, real windows 4/4 | [F01](features/F01-dock-and-zoom.md) |
+| A06 | Windows left off-screen by a crash are recovered |  | On launch, and only those: a window kept over an edge of the screen with 24 points of its title bar within reach stays where it is found, at a start, when it opens and at a quit | verified | tests 9/9, real windows 4/4 | [F01](features/F01-dock-and-zoom.md) |
 | A07 | Reused window numbers after a reboot are ignored |  | Saved windows must match their app | verified | tests 1/1, real windows 1/1 | [F01](features/F01-dock-and-zoom.md) |
-| A08 | A display's arrangement returns when it reconnects |  | Dormant workspaces keyed by display UUID; restored on reconnect, kept for 30 days | tested | tests 25/25 | [F08](features/F08-displays-and-spaces.md) |
+| A08 | A display's arrangement returns when it reconnects |  | Dormant workspaces keyed by display UUID; restored on reconnect, kept for 30 days | tested | tests 38/38 | [F08](features/F08-displays-and-spaces.md) |
 | A09 | Resize by command |  | `resize <id> <edge> <points>` | tested | tests 3/3, real windows 1/3 | [F01](features/F01-dock-and-zoom.md) |
 | A10 | Free, open source, no window limit |  | MIT licence | verified | nothing to test |  |
 | A11 | Resize docked windows by their own edges |  | Edge drags move the matching seams; outer edges spring back | verified | tests 7/7, real windows 6/6 | [F07](features/F07-resize-by-window-edges.md) |
@@ -128,6 +128,8 @@ Real-window evidence: the real-window suite, 33 sections, the newest 2026-10-15T
 | A224 | Send a window to another display |  | `move-to-display <next\|previous\|n> [window]`: docked stays docked (at the facing edge of the view there), floating stays floating; focus goes along | tested | tests 18/18 | [F22](features/F22-keyboard-tiling-tools.md) |
 | A225 | Focus another display |  | `focus-display <next\|previous\|n>` focuses that display's last window; shortcuts follow the keyboard there (F56), the pointer stays (IDEAS I4) | tested | tests 5/5 | [F22](features/F22-keyboard-tiling-tools.md) |
 | A226 | Never fights macOS's own tiling |  | With macOS's tiling on, as a Mac comes, the left, right and top edges of the screen are macOS's, and so is a window let go with ⌥ held: no second preview, not even on the way there, no docking, one move. The bottom edge, docked windows' edges and the keys stay Arbor's, and so does every edge once the switches are off. Real drags at macOS's defaults: `make e2e-drag` | tested | tests 30/30 | [F42](features/F42-setup-check.md) |
+| A142 | macOS's own tiling switched off in one step, and put back |  | Before anything is arranged Arbor has looked: Check Setup… and `doctor` name macOS's three tiling switches ("Click wallpaper to reveal desktop" is a note: Q24); Switch Off macOS Tiling in the row (`fix-setup`) switches off those that are on and nothing else, at once, after writing down how they were; They are off only while Arbor runs: a quit and a pause restore exactly that, the next start switches them off again; Put Them Back (`fix-setup undo`) and `make uninstall` end it for good. Never unasked, never Stage Manager | tested | tests 55/55 | [F42](features/F42-setup-check.md) |
+| A228 | Drags never block input |  | No drop layer: the preview is a panel that ignores the mouse, and so is whatever can cover a display. One table of Arbor's panels (level, takes the mouse or not, why) that a test holds against the sources. After every real drop the button is up within 100 ms and a click where the preview was, half a second later, arrives in the window, with Arbor's event taps installed too: `make e2e-drag` | tested | tests 3/3 | [F09](features/F09-drag-polish.md) |
 | A41 | Home: everything on every display |  | ⌃⌥0; `home` | verified | tests 2/2, real windows 1/1 | [F40](features/F40-pause.md) |
 | A42 | The frame shortcut pressed again returns |  | ⌃⌥↩ twice; `zoom <id>` stays idempotent | verified | tests 3/3, real windows 1/1 | [F01](features/F01-dock-and-zoom.md) |
 | A43 | Windows that cannot grow sit in the middle of their slot |  | Calculator, System Settings; not moved again while slot and frame hold | verified | tests 3/3, real windows 1/1 | [F01](features/F01-dock-and-zoom.md) |
