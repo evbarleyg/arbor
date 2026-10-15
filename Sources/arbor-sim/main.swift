@@ -84,6 +84,7 @@ import Foundation
 //   finder-type [text]           replace the text in the field of Go to… (`find` opens it)
 //   finder-move <rows>           move its selection down, or with a negative number up
 //   finder-choose [n]            press Return, or choose the n-th row that shows
+//   finder-tick [n]              press ⌘Return, or ⌘-click the n-th row that shows: tick it, or take its tick off
 //   finder-cancel                press Escape
 //   scene                        list what Arbor draws at rest: the backdrop, tiles and seams
 // `open Terminal` has the bundle id com.example.terminal, for `rule add` and `exclude`.
