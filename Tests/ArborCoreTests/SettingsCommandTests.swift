@@ -174,6 +174,11 @@ private func refusal(_ text: String) -> String? {
   @Test func bindCannotBeNested() {
     #expect(refusal("bind f1 bind f2 desktop") == "a shortcut cannot run `bind`")
     #expect(refusal(String(repeating: "bind f1 ", count: 200_000) + "desktop") == "a shortcut cannot run `bind`")
+    // What follows the shortcut keeps its quotes for the command to read (F50), and they must not hide the word.
+    for inner in ["\"bind\"", "'bind'", "\"BIND\""] {
+      #expect(refusal("bind f1 \(inner) f2 desktop") == "a shortcut cannot run `bind`")
+      #expect(refusal(String(repeating: "bind f1 \(inner) f1 ", count: 20_000) + "desktop") == "a shortcut cannot run `bind`")
+    }
     #expect(refusal("bind f1 unbind f2") == nil)
   }
 

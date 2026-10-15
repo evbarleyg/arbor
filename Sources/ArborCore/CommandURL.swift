@@ -31,6 +31,10 @@ extension Command {
     // menu and the replies, or delete names. So does `ask-name`, which opens a field that takes the keyboard.
     case .goToSpace: true
     case .undo, .redo: true
+    // A name is the window it stands for, but for an app's. A window's number means nothing to a page, so it cannot aim; an app's name does,
+    // and `zoom` and `dock` give the window they name the keyboard, which a page must not pick (see `focus` below). `focused` and
+    // `pointer` are chosen by the person at the Mac.
+    case .naming(let command, let names): command.isAllowedFromURL && names.allSatisfy { $0 == .focused || $0 == .pointer }
     // The keyboard tiling tools (F22) arrange windows, or step to a neighbour in view, and each is as easily put back. But a
     // web page must not pick the window the keyboard types into: not `focus <window>`, nor `swap <window> <direction>`,
     // which focuses the window it names, nor the commands that take the keyboard to another display.

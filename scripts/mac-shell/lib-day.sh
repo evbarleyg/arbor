@@ -241,7 +241,7 @@ except (ValueError, KeyError):
     sys.exit(0)
 for docked in (True, False):
     print(",".join(str(window["id"]) for window in windows if window["docked"] == docked) or "-", end=" ")
-print(",".join("%d@%s" % (window, ":".join(str(round(number)) for pair in tile["frame"] for number in pair))
+print(",".join("%d@%s" % (window, ":".join(str(round(tile["frame"][key])) for key in ("x", "y", "width", "height")))
                for display in state["displays"] for tile in display["tiles"] for window in tile["windows"]) or "-")')"
   DAY_DOCKED=${DAY_DOCKED#-} DAY_FLOATING=${DAY_FLOATING#-} DAY_TILES=${DAY_TILES#-}
 }

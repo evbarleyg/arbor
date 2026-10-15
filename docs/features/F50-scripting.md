@@ -2,7 +2,7 @@
 
 Written by the executor swarm, 2026-10-14; for the documenter to review.
 
-Status: ready
+Status: in progress (parts 1 to 4 are done; part 5, URLs that wait and call back, is written and held back)
 Depends on: F01; complements I5 (`watch`)
 Size: medium; each part stands alone
 
@@ -55,3 +55,24 @@ three worked examples: a Raycast script command, a SketchyBar item, a Shortcuts 
 3. Rectangles decode as objects; `arbor-e2e` reads schema 2.
 4. Exit codes and stderr as listed (macOS CI runs `arborctl` against the e2e instance).
 5. The three examples in `docs/SCRIPTING.md` are run by a test or by e2e.
+
+## Shipped / Not shipped
+
+Shipped: parts 1 to 4; `docs/SCRIPTING.md` is the manual, and every transcript and script in it is run by a test.
+
+Different from the spec (`collab/QUESTIONS.md` has each decision):
+- **`Command`'s cases still hold `WindowID`s.** Dozens of places build and match them. A command with names in it is wrapped instead: `.naming(command with stand-in numbers, [WindowRef])`,
+  made by the parser's one helper for window words and undone by the controller. Nothing that builds or matches a plain command changed, and commands added later take names without doing anything.
+- **Text output is separated by tabs**, which is what `cut -f` splits at; `arborctl` lines the columns up when stdout is a terminal, so a person sees the table in the spec.
+- `windows` has a display column (4th), and more states of not being in view: `hidden`, `full-screen`, `other-space`. `where`, `views` and `displays` begin with the display's number (`@1` is the main one), not its id, which on a real Mac is a UUID.
+- `--json` prints a query's answer alone, not the reply around it. For other commands it prints the reply, as before; a refusal is on stderr with exit code 1 even then (it used to be exit code 0).
+- `help <command>`, suggestions and completions are read out of the help text rather than from a second table.
+- `ARBOR_UNCHECKED=1` skips the local check, for a newer Arbor or `arbor-sim --serve`.
+- **The JSON speaks the words of the events** (`watch`): `docked` true or false, `state` where the spec's table has in-view/out-of-view (`minimized`), `label` for a space in words, `display` and `displayID`. `version` is F13's `BuildInfo`.
+- **More manners than were asked for**, so that there is one `arborctl`: `--timeout`, `--keep-going`, `--`, `arborctl - < file`, exit codes 3 (`watch`) and 4 (no answer in time), any other option before the command is 64, a line break in an argument is 64.
+- **A link may not name a window by its app** unless `allowAllURLCommands` is on: by name a page could pick the window that gets the keyboard. `focused` and `pointer` it may say.
+- **A number gone wrong is never a name**: "numbers keep meaning window ids", so `4294967296`, `1e3`, `w` and `n1` are refused rather than looked for among the apps. In quotes they are names.
+
+Not shipped: part 5, of which both halves are written and held back. A URL that waits for the start would move every window twice where a launch brings an arrangement back: once by the start, once by its own command. x-callback URLs want a Mac to say what Shortcuts really sends as `x-success`, so that Arbor can hold callbacks to a list of schemes it opens rather than a list of those it does not. Nor `spaces` as a query row (F20). It takes in I5 (`watch`, the socket), F25 (`displays`) and the options `arborctl` had before: there is one `arborctl`, one `displays` and one manual, and `cli-smoke.sh` and `watch-smoke.sh` drive the real binary over a real socket, exit codes 3 and 4 among what they check.
+
+How it is proven. Linux: everything above, through the real controller, the real `Arborctl.run` and, in the two smoke scripts, the real binary over a real socket; `ScriptingMovesTests` holds names, queries and refusals to "a window moves once, and only if it was asked about". A Mac: three headings in `arbor-e2e` ("name a window by its app", "arborctl's exit codes and streams", "the small queries": criteria 3 and 4), which the `real-windows` job runs unattended; they have not run yet. Nothing is left for a person to look at.

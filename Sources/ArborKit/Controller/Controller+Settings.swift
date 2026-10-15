@@ -1,4 +1,5 @@
 import ArborCore
+import Foundation
 
 /// Settings as commands (docs/features/F12-settings-window.md): `set`, `get`, `settings`, `reset`, `bind`,
 /// `unbind` and `rule …`, and taking in a settings.json that was edited by hand. What a setting is
@@ -75,8 +76,10 @@ extension Controller {
       }
       text = (warning ?? "") + SettingsSchema.report(settings)
     }
+    // `arborctl settings --json` takes the option for its own and asks for `settings`, so the answer goes with every form (F50).
     return CommandResult(
-      ok: true, message: "\(SettingsSchema.entries.count) settings, \(changed) changed from the default", text: text)
+      ok: true, message: "\(SettingsSchema.entries.count) settings, \(changed) changed from the default", text: text,
+      json: try? JSONDecoder().decode(JSONValue.self, from: Data(SettingsSchema.json(settings).utf8)))
   }
 
   private func setSetting(_ key: String, to text: String) throws -> CommandResult {

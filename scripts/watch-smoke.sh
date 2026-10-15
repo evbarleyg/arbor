@@ -107,7 +107,8 @@ check "with nothing on standard output" is "$out" ""
 check "and the reason on standard error" has "$dir/err" "arborctl: .*999"
 out=$("$ctl" --json zoom 999 2> "$dir/err")
 check "--json keeps the exit code" is $? 1
-check "and puts the whole reply on standard output" is "${out##*,}" '"ok":false}'
+check "and still puts nothing on standard output" is "$out" ""
+check "and the reason on standard error" has "$dir/err" "arborctl: .*999"
 out=$("$ctl" status 2> "$dir/err")
 check "0 when it says yes, with the answer on standard output" is "$?: ${out%%:*}" "0: running"
 "$ctl" watch views > "$dir/out" 2> "$dir/err"

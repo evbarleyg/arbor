@@ -65,7 +65,7 @@ Every example on this page is run by the tests (`DocTranscriptTests`), against t
 <!-- windows: Safari, Mail, Notes -->
 ```console
 $ arborctl layout "Safari | Mail / Notes"
-layout, column 15: `|` and `/` are mixed here: put brackets around one of them
+arborctl: layout, column 15: `|` and `/` are mixed here: put brackets around one of them
   Safari | Mail / Notes
                 ^
 ```
@@ -157,7 +157,7 @@ Plain names are letters, digits, `.`, `-` and `_`. Anything else needs quotes, a
 
 ```console
 $ arborctl layout "Visual Studio Code | Slack"
-layout, column 8: expected `|` or `/` here; a name of several words needs quotes
+arborctl: layout, column 8: expected `|` or `/` here; a name of several words needs quotes
   Visual Studio Code | Slack
          ^
 ```
@@ -228,7 +228,7 @@ Slack was not mentioned, so it floats on the Desktop. If nothing in the line is 
 
 ```console
 $ arborctl layout "Sfari | Mial"
-no window of Sfari or Mial; nothing changed
+arborctl: no window of Sfari or Mial; nothing changed
 ```
 
 With `--open`, apps that have no window are opened (in the background), and each takes its place when its window appears,
@@ -258,7 +258,7 @@ arranged 2 windows
 $ arborctl layout @2
 (Mail / Notes) | Desktop:0.5
 $ arborctl layout @3 Safari
-no display 3; there are 2 displays, counted from @1
+arborctl: no display 3; there are 2 displays, counted from @1
 ```
 
 ## Printing
@@ -335,27 +335,27 @@ Every error names the column, says what was expected there, and points at it:
 <!-- windows: Safari -->
 ```console
 $ arborctl layout "Safari | (Mail / Notes"
-layout, column 10: this `(` is never closed
+arborctl: layout, column 10: this `(` is never closed
   Safari | (Mail / Notes
            ^
 $ arborctl layout "Safari | | Mail"
-layout, column 10: expected an app's name, a window number, `Desktop`, `(` or `[`
+arborctl: layout, column 10: expected an app's name, a window number, `Desktop`, `(` or `[`
   Safari | | Mail
            ^
 $ arborctl layout "[Safari | Mail]"
-layout, column 9: a tab group holds only names: expected a name or `]`
+arborctl: layout, column 9: a tab group holds only names: expected a name or `]`
   [Safari | Mail]
           ^
 $ arborctl layout "Safari:0"
-layout, column 8: expected a size from 0.001 to 1000 after `:`
+arborctl: layout, column 8: expected a size from 0.001 to 1000 after `:`
   Safari:0
          ^
 $ arborctl layout "Safari | Desktop | Desktop"
-layout, column 20: the Desktop is already in this arrangement
+arborctl: layout, column 20: the Desktop is already in this arrangement
   Safari | Desktop | Desktop
                      ^
 $ arborctl layout --titles Safari
-layout, column 1: `--titles` goes with `layout` on its own, which prints the arrangement
+arborctl: layout, column 1: `--titles` goes with `layout` on its own, which prints the arrangement
   --titles Safari
   ^
 ```

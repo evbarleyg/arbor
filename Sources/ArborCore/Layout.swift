@@ -99,12 +99,12 @@ public struct Tile: Equatable, Sendable, Codable {
 
   public var node: NodeID
   public var kind: Kind
-  public var frame: CGRect
+  @JSONRect public var frame: CGRect
   /// Present windows inside, in tree order.
   public var windows: [WindowID]
   /// For groups: where each window would sit inside the tile, for drawing a
   /// miniature of the group's splits.
-  public var miniature: [WindowID: CGRect]
+  @JSONRect public var miniature: [WindowID: CGRect]
 }
 
 /// The gap between two neighbouring children of a split. Dragging it resizes both.

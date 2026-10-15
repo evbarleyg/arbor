@@ -29,46 +29,6 @@ extension Controller {
     displayLabel(display.id) ?? display.name.flatMap { $0.isEmpty ? nil : $0 } ?? "display \(number)"
   }
 
-  // MARK: The `displays` query
-
-  /// Every display with its name, size and id, the options in effect on it and the entry each comes from, and the
-  /// entries of settings.json that were skipped and why.
-  func displaysReport() -> CommandResult {
-    var lines: [String] = []
-    if displays.isEmpty {
-      lines.append("No displays yet: \(statusText).")
-    }
-    for (index, display) in numberedDisplays.enumerated() {
-      var traits = ["\(Self.whole(display.frame.width))×\(Self.whole(display.frame.height))"]
-      if display.isMain { traits.append("main") }
-      if display.isBuiltIn { traits.append("built-in") }
-      lines.append("\(index + 1). \(display.name.flatMap { $0.isEmpty ? nil : $0 } ?? "Display"), \(traits.joined(separator: ", "))")
-      lines.append("   id \(display.id)")
-      let given = DisplayOptions.given(by: settings.displays, to: display.traits)
-      let inEffect = options(for: display.id)
-      for (key, value) in [
-        ("gap", inEffect.gap), ("minimumUsableWidth", inEffect.minimumUsableWidth),
-        ("minimumUsableHeight", inEffect.minimumUsableHeight), ("screenEdgeBand", inEffect.screenEdgeBand),
-      ] {
-        let entry = given.first { $0.key == key }.map { ", from the entry \"\($0.match)\"" } ?? ""
-        lines.append("   \(key) \(Self.plain(value))\(entry)")
-      }
-    }
-    if settings.displays.isEmpty {
-      lines.append("Every display uses the general settings. Add a \"displays\" list to settings.json to change that.")
-    }
-    if !settings.skippedDisplays.isEmpty {
-      lines.append("Skipped entries of \"displays\" in settings.json:")
-      lines += settings.skippedDisplays.map { "  \($0)" }
-    }
-    return CommandResult(ok: true, message: "\(displays.count) display(s)", text: lines.joined(separator: "\n"))
-  }
-
-  /// A display's side in whole points. Frames come from the system; a nonsensical one must not crash a query.
-  private static func whole(_ value: CGFloat) -> String {
-    value.isFinite && abs(value) < 1e9 ? String(Int(value.rounded())) : "?"
-  }
-
   /// 12 for 12.0, 12.5 for 12.5.
   private static func plain(_ value: Double) -> String {
     value == value.rounded() && abs(value) < 1e9 ? String(Int(value)) : String(value)

@@ -5,13 +5,13 @@ import CoreGraphics
 public struct StateSnapshot: Codable, Sendable, Equatable {
   public struct Display: Codable, Sendable, Equatable {
     public var id: DisplayID
-    public var frame: CGRect
-    public var visibleFrame: CGRect
+    @JSONRect public var frame: CGRect
+    @JSONRect public var visibleFrame: CGRect
     public var camera: NodeID
     public var tree: LayoutTree
-    public var windowFrames: [WindowID: CGRect]
+    @JSONRect public var windowFrames: [WindowID: CGRect]
     public var tiles: [Tile]
-    public var desktopFrame: CGRect?
+    @JSONRect public var desktopFrame: CGRect?
     public var floating: [WindowID]
     public var canGoBack: Bool
     public var canGoForward: Bool
@@ -53,12 +53,14 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
     public var bundleID: String?
     /// Only for whoever asked for titles (`state --titles`).
     public var title: String?
-    public var frame: CGRect
+    @JSONRect public var frame: CGRect
     public var minimized: Bool
     public var hidden: Bool
     public var managed: Bool
     public var docked: Bool
     public var parked: Bool
+    /// The display whose arrangement holds it. In JSON its UUID is `displayID` and `display` is its number, as in the queries and the
+    /// events: one key, one meaning.
     public var display: DisplayID?
     /// In macOS's own full screen, where Arbor leaves it alone.
     public var fullScreen: Bool
@@ -70,6 +72,15 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
     public var stashed = false
     /// The space a floating window opened over and goes in and out of view with, if not the Desktop (F57).
     public var guestOf: NodeID?
+    /// What `@2` counts.
+    public var displayNumber: Int?
+
+    /// **A new property needs a case here**, or it is left out of the JSON without a word; `everyPropertyOfTheStateIsWritten` says so.
+    private enum CodingKeys: String, CodingKey {
+      case id, pid, app, bundleID, title, frame, minimized, hidden, managed, docked, parked, fullScreen, pinned, summoned, stashed, guestOf
+      case display = "displayID"
+      case displayNumber = "display"
+    }
 
     public init(
       id: WindowID, pid: Int32, app: String, bundleID: String?, title: String?, frame: CGRect,
@@ -110,11 +121,20 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
     public var bundleID: String?
     /// The title the window had. Only for whoever asked for titles (`state --titles`).
     public var title: String?
-    /// The display whose arrangement has the place, connected or not.
+    /// The display whose arrangement has the place, connected or not. `displayID` in JSON, as everywhere.
     public var display: DisplayID?
     /// True: the window exists, out of Arbor's sight on another Space, and keeps the place for as long as it
     /// does. False: it is not open yet (after a login or a restart of its app), and the place is kept for minutes.
     public var open: Bool
+    /// What `@2` counts, while the display is connected.
+    public var displayNumber: Int?
+
+    /// A new property needs a case here, as in `Window`.
+    private enum CodingKeys: String, CodingKey {
+      case id, bundleID, title, open
+      case display = "displayID"
+      case displayNumber = "display"
+    }
 
     public init(id: WindowID, bundleID: String?, title: String?, display: DisplayID?, open: Bool) {
       self.id = id
@@ -137,6 +157,12 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
     for index in copy.waiting.indices { copy.waiting[index].title = nil }
     return copy
   }
+
+  /// Goes up when the JSON changes in a way a script can notice (docs/SCRIPTING.md). 2: rectangles are objects, and in `windows` and
+  /// `waiting` a display's UUID is `displayID` and `display` its number.
+  /// Keys are camelCase and only ever added.
+  public var schema = StateSnapshot.currentSchema
+  public static let currentSchema = 2
 
   public init(
     accessibility: Bool, running: Bool, focused: WindowID?, displays: [Display], windows: [Window]

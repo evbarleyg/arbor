@@ -94,9 +94,10 @@ import Testing
     #expect(refusal("exclude a.b c.d") == "`exclude` takes one argument at most, got 2")
   }
 
-  /// Somebody who types `help dock` wants help, and the whole of it has what they are after.
+  /// Somebody who types `help dock` wants help: on `dock` (F50), and failing that the whole of it has what they are after.
   @Test func helpIsGivenWhateverFollows() throws {
-    #expect(try Command.parse("help dock") == .help && Command.parse("help me please") == .help)
+    #expect(try Command.parse("help dock") == .helpOn("dock") && Command.parse("help me please") == .help)
+    #expect(try Command.parse("help zom") == .help && Command.parse("help dock left") == .help && Command.parse("help \"\"") == .help)
   }
 
   @Test func errorsStayShortHoweverLongTheInput() {

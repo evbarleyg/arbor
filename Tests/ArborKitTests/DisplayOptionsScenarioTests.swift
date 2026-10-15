@@ -272,48 +272,51 @@ private let studio = DisplaySnapshot(
     // Whatever order the system lists them in, they are counted as `@2` counts: the main one first.
     let h = Harness(displays: [studio, laptop], settings: try JSONDecoder().decode(Settings.self, from: Data(json.utf8)))
     h.start()
+    // F50's query, with F25's options appended: a table for `cut`, and JSON.
     let result = h.run("displays")
     #expect(result.ok)
-    #expect(result.message == "2 display(s)")
+    #expect(result.message == "2 displays")
     #expect(
-      result.text == """
-        1. Built-in Retina Display, 1440×900, main, built-in
-           id main
-           gap 6, from the entry "builtin"
-           minimumUsableWidth 240
-           minimumUsableHeight 160
-           screenEdgeBand 12
-        2. Studio Display, 2560×1440
-           id 4C7A5B0E-9F2D-4B41-8E55-1A2B3C4D5E6F
-           gap 20.5, from the entry ">=2500"
-           minimumUsableWidth 650, from the entry "studio"
-           minimumUsableHeight 400, from the entry ">=2500"
-           screenEdgeBand 12
-        Skipped entries of "displays" in settings.json:
+      result.text?.split(separator: "\n").map { $0.split(separator: "\t").map(String.init) } == [
+        ["1", "main", "0,0,1440,900", "main,pointer", "Built-in Retina Display", "gap 6 (builtin)"],
+        [
+          "2", "4C7A5B0E-9F2D-4B41-8E55-1A2B3C4D5E6F", "1440,0,2560,1440", "-", "Studio Display",
+          "gap 20.5 (>=2500), minimumUsableWidth 650 (studio), minimumUsableHeight 400 (>=2500)",
+        ],
+      ], "\(result.text ?? "")")
+    let rows = try #require(result.json)
+    #expect(rows[0]?["name"] == .string("Built-in Retina Display") && rows[0]?["builtIn"] == .bool(true))
+    #expect(rows[0]?["gap"] == .int(6) && rows[0]?["minimumUsableWidth"] == .int(240) && rows[0]?["minimumUsableHeight"] == .int(160))
+    #expect(rows[0]?["screenEdgeBand"] == .int(12) && rows[0]?["from"] == .object(["gap": .string("builtin")]))
+    #expect(rows[1]?["name"] == .string("Studio Display") && rows[1]?["builtIn"] == .bool(false))
+    #expect(rows[1]?["gap"] == .number(20.5) && rows[1]?["minimumUsableWidth"] == .int(650) && rows[1]?["minimumUsableHeight"] == .int(400))
+    #expect(
+      rows[1]?["from"] == .object(["gap": .string(">=2500"), "minimumUsableWidth": .string("studio"), "minimumUsableHeight": .string(">=2500")]))
+    // The table stays a table. What was skipped and why goes beside it: `arborctl` prints it on stderr.
+    #expect(
+      result.warning == """
+        skipped entries of "displays" in settings.json:
           entry 2 (>=wide): `>=wide` compares the display's width with something that is not a number; expected e.g. >=2500
         """)
   }
 
-  @Test func theDisplaysQuerySaysWhenNothingIsSet() {
+  @Test func theDisplaysQuerySaysWhenNothingIsSet() throws {
     let h = Harness()
     h.start()
-    #expect(
-      h.run("displays").text == """
-        1. Display, 1440×900, main, built-in
-           id main
-           gap 12
-           minimumUsableWidth 240
-           minimumUsableHeight 160
-           screenEdgeBand 12
-        Every display uses the general settings. Add a "displays" list to settings.json to change that.
-        """)
+    let result = h.run("displays")
+    #expect(result.message == "1 display")
+    #expect(result.text?.split(separator: "\t").suffix(2) == ["-", "-"], "no name, and nothing of its own")
+    #expect(result.json?[0]?["gap"] == .int(12) && result.json?[0]?["from"] == .object([:]), "the general settings are in effect")
+    #expect(result.warning == nil)
   }
 
-  @Test func theDisplaysQueryAnswersBeforeArborStarts() {
-    let h = Harness()
+  @Test func theDisplaysQueryAnswersBeforeArborStarts() throws {
+    let json = #"{"displays": [{"match": ">=wide"}]}"#
+    let h = Harness(settings: try JSONDecoder().decode(Settings.self, from: Data(json.utf8)))
     h.controller.accessibilityGranted = false
     let result = h.run("displays")
-    #expect(result.ok)
-    #expect(result.text?.hasPrefix("No displays yet: waiting for Accessibility permission") == true)
+    #expect(result.ok && result.text == "" && result.json == .array([]))
+    #expect(result.warning?.hasPrefix("no displays yet: waiting for Accessibility permission") == true, "\(result.warning ?? "-")")
+    #expect(result.warning?.contains("entry 1 (>=wide)") == true, "what became of settings.json can be asked at once")
   }
 }

@@ -38,6 +38,11 @@ extension Controller {
   /// The inside of `perform(_:from:)` (Controller+Lead.swift): runs a command and, when a person asked for it with keys, a
   /// gesture or the menu, says on screen what they need to know about the outcome. The reply is the same whoever asked.
   func executeAndSay(_ command: Command, from source: CommandSource) -> CommandResult {
+    // What is asked about a command here, before and after it runs (does it leave nothing to see? on which display is its window?), is
+    // asked about the window a name stands for, as in `execute`. A name that means nothing goes on as it is, and fails there.
+    if case .naming(_, let names) = command, case .success(let plain) = plain(command, naming: names) {
+      return executeAndSay(plain, from: source)
+    }
     let outer = headsUp.source
     headsUp.source = source
     defer { headsUp.source = outer }

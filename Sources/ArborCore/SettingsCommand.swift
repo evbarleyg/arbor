@@ -139,7 +139,8 @@ public enum SettingsCommand: Equatable, Sendable, Codable {
       }
       // Nobody needs a shortcut that changes shortcuts, and `bind` inside `bind` inside `bind`, for as
       // long as a line can be, would be parsed that deep and overflow the stack.
-      guard args[1].lowercased() != "bind" else { throw ParseError("a shortcut cannot run `bind`") }
+      // In quotes too: what follows the shortcut comes with its quotes on, for the command to read.
+      guard (Command.unquoted(args[1]) ?? args[1]).lowercased() != "bind" else { throw ParseError("a shortcut cannot run `bind`") }
       return .bind(chord: try chord(args[0]), command: try Command.parse(words: Array(args.dropFirst())).text)
     case "unbind":
       guard args.count == 1 else { throw ParseError("usage: unbind <shortcut>, e.g. unbind ctrl+opt+d") }

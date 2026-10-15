@@ -101,11 +101,13 @@ check "no: exit code 1" is "$code" 1
 check "  nothing on standard output" empty "$dir/out"
 check "  the reason on standard error" has "$dir/err" "arborctl: .*999"
 try --json zoom 999
-check "--json: the exit code stays, the whole reply goes to standard output" is "$code: $(grep -c '"ok":false' "$dir/out")" "1: 1"
+# A refusal is a refusal whatever was asked for. The exit code always tells the truth.
+check "--json: a refusal is still 1, with nothing on standard output" is "$code: $(wc -c < "$dir/out" | tr -d ' ')" "1: 0"
+check "  and the reason on standard error" has "$dir/err" "arborctl: .*999"
 try --timeout 2 --json status
 check "options combine" is "$code: $(grep -c '"ok":true' "$dir/out")" "0: 1"
 try zoom 999 --json
-check "options count after the command too" is "$code: $(grep -c '"ok":false' "$dir/out")" "1: 1"
+check "options count after the command too" is "$code: $(wc -c < "$dir/out" | tr -d ' '): $(grep -c 'arborctl: .*999' "$dir/err")" "1: 0: 1"
 try status --timeout 2 --json
 check "  several of them" is "$code: $(grep -c '"ok":true' "$dir/out")" "0: 1"
 try -- status

@@ -94,7 +94,15 @@ extension Controller {
 
   /// `pass-through [bundle-id] [on|off]`. Without the last word: on the list if it was off, off if it was on.
   func passThrough(_ bundleID: String?, on: Bool?) -> CommandResult {
-    guard let bundle = bundleID ?? frontmostApp?.bundleID else {
+    var named: String?
+    if let bundleID {
+      switch self.bundleID(named: bundleID, listed: settings.passThroughApps) {
+      // This list is read without regard to capitals, and the reply says the bundle id as it was typed.
+      case .success(let found): named = found.lowercased() == bundleID.lowercased() ? bundleID : found
+      case .failure(let refusal): return .failure(refusal.description)
+      }
+    }
+    guard let bundle = named ?? frontmostApp?.bundleID else {
       return .failure(
         frontmostApp.map { "\($0.name) has no bundle id to list it by" } ?? "no bundle id given and no app in front")
     }

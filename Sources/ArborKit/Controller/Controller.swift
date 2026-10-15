@@ -982,7 +982,9 @@ public final class Controller {
       windows: windowStates)
     snapshot.paused = isPaused
     snapshot.waiting = waitingSlots
+    for index in snapshot.waiting.indices { snapshot.waiting[index].displayNumber = snapshot.waiting[index].display.flatMap(number(of:)) }
     for index in snapshot.windows.indices {
+      snapshot.windows[index].displayNumber = snapshot.windows[index].display.flatMap(number(of:))
       let role = role(of: snapshot.windows[index].id)
       snapshot.windows[index].pinned = role == .pinned
       snapshot.windows[index].stashed = role == .stashed

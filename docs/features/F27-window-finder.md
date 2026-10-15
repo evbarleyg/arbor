@@ -89,7 +89,7 @@ Choosing a **saved view** moves the view of its own display there, as `view <n>`
 | Command | Does |
 |---|---|
 | `find` (also `go-to`) | Opens the palette; closes it if it is open |
-| `find <text…>` | Goes straight to the best match, without the palette: `arborctl find safari docs`. Fails with "no window, space or saved view matches “…”" |
+| `find <text…>` | Goes straight to the best match, without the palette: `arborctl find safari docs`. Fails with "no window, space or saved view matches “…”; `windows` lists them" |
 | `reveal [window]` | Brings one window (default: the focused one) into view and focuses it |
 
 The list itself is printed by F50's `windows`. This feature had a `windows` of its own; the product owner took it out before it could land: one command, one vocabulary.

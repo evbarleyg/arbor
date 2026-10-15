@@ -355,7 +355,7 @@ extension Controller {
     for way in ways {
       let text = LayoutNotation.Spec(tree) { slot(for: $0, naming: way.naming, titleLength: way.title, among: candidates) }.text
       guard (try? LayoutNotation.parse(text)) != nil else { continue }
-      return CommandResult(ok: true, message: "display \(number(of: display) ?? 1): \(docked)", text: text)
+      return CommandResult(ok: true, message: "display \(number(of: display) ?? 1): \(docked)", text: text, json: .string(text))
     }
     return .failure("\(docked) in spaces this deep are more than a line can hold (\(LayoutNotation.maximumLength) bytes, \(LayoutNotation.maximumDepth) brackets deep)")
   }
