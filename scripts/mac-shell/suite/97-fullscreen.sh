@@ -11,8 +11,8 @@ arbor_build
 arbor_start 3
 ctl dock "$W1" left
 ctl dock "$W2" right
-first=$(real_frame_of "$W1")
-second=$(real_frame_of "$W2")
+first=$(resting_frame_of "$W1")
+second=$(resting_frame_of "$W2")
 # Nearly as wide as the display: wider than any slot.
 read -r _ _ _ screen_w _ <<< "$(pointer displays | head -n 1)"
 wide=$((screen_w - 30))
@@ -22,7 +22,7 @@ proves T63
 tw full-screen "$W3"
 sleep 3
 summary
-take "_ _ w h" real_frame_of "$W3"
+take "_ _ w h" resting_frame_of "$W3"
 echo "the full-screen window is $w × $h"
 check "the window covers the display" eventually wider_than "$W3" "$wide"
 check "Arbor keeps running" ctl status

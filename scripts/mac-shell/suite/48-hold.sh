@@ -120,6 +120,11 @@ ctl hold
 
 claim "⌘M on the only window of a held view: nothing else comes into view, and the menu says that nothing is in it"
 proves A58
+# Not before the keyboard rests: a report that came late had Arbor send it back, and a ⌘M in that half second minimized nothing.
+check "the framed window has the keyboard" stays is focused "$W1"
+keys=$(events_of "$W1" key)
+key_to "$W1" x
+check "a letter arrives in it" eventually received "$W1" key -gt "$keys"
 key_to "$W1" cmd+m
 check "it is minimized" eventually is minimized "$W1"
 # Without a hold the view shows the nearest space around it that has something in it: the other window of its column.

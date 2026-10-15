@@ -16,9 +16,9 @@ no_overlays() {
 
 arbor_start 3 ARBOR_NO_HOTKEYS=0
 # Where each window is before Arbor touches it, and how large: what a pause gives back.
-own1=$(real_frame_of "$W1")
-own2=$(real_frame_of "$W2")
-own3=$(real_frame_of "$W3")
+own1=$(resting_frame_of "$W1")
+own2=$(resting_frame_of "$W2")
+own3=$(resting_frame_of "$W3")
 ctl dock "$W1" left
 ctl dock "$W2" right
 ctl dock "$W3" beside "$W2" bottom
@@ -70,7 +70,7 @@ check "a command is refused" fails ctl dock "$W1" right
 
 claim "while paused Arbor reacts to nothing: no shortcut, no drag"
 proves A40
-second=$(real_frame_of "$W2")
+second=$(resting_frame_of "$W2")
 keys=$(events_of "$W3" key)
 key ctrl+opt+space
 check "⌃⌥Space does not reach Arbor" stays fails ran show-all
@@ -162,7 +162,7 @@ proves A43
 ctl dock "$W1" left
 ctl dock "$W2" right
 take "sx sy sw sh" slot_of "$W1"
-take "x y w h" real_frame_of "$W1"
+take "x y w h" resting_frame_of "$W1"
 echo "its slot is at $sx $sy $sw $sh, the window at $x $y $w $h"
 check "it kept its own width" test "${w%.*}" -le 300
 check "it is centred across" about "$((${x%.*} + ${w%.*} / 2))" "$((sx + sw / 2))"

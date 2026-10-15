@@ -18,7 +18,7 @@ no_ring() {
 # beyond it on any side.
 ring_around() {
   local frame shown
-  frame=$(real_frame_of "$1") || { echo "the window server has no such window"; return 1; }
+  frame=$(resting_frame_of "$1") || { echo "the window server has no such window"; return 1; }
   shown=$(rings)
   [ "$(printf '%s' "$shown" | grep -c .)" -eq 1 ] || { echo "not one ring: ${shown:-none}"; return 1; }
   printf '%s\n' "$shown" | awk -v frame="$frame" '
@@ -246,7 +246,7 @@ claim "switch focusRing off by command: the ring is gone, and switching it on br
 proves A15
 click_window "$W2"
 check "the ring is around the window" eventually ring_around "$W2"
-second=$(real_frame_of "$W2")
+second=$(resting_frame_of "$W2")
 check "set focusRing false succeeds" ctl set focusRing false
 check "there is no ring" eventually no_ring
 click_window "$W1"

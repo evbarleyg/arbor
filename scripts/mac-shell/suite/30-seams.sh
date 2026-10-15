@@ -10,7 +10,7 @@ arbor_build
 # over: it holds the whole window, is meant to lie in front of it, and lets presses through.
 in_front_at() {
   local frame
-  frame=$(real_frame_of "$1") || { echo "the window server has no such window"; return 1; }
+  frame=$(resting_frame_of "$1") || { echo "the window server has no such window"; return 1; }
   "$ARBOR_POINTER" windows --on-screen | awk -v id="$1" -v arbor="$ARBOR_PID" -v x="$2" -v y="$3" -v frame="$frame" '
     BEGIN { split(frame, f, " ") }
     $1 == id { found = 1; exit }
@@ -22,7 +22,7 @@ in_front_at() {
 # across <id> x: the window reaches at least a gap's width beyond x on either side.
 across() {
   local fx fy fw fh
-  take "fx fy fw fh" real_frame_of "$1"
+  take "fx fy fw fh" resting_frame_of "$1"
   [ "$fx" -lt "$(($2 - ARBOR_GAP))" ] && [ "$((fx + fw))" -gt "$(($2 + ARBOR_GAP))" ] \
     || { echo "the window is at $fx $fy $fw $fh, the gap at x $2"; return 1; }
 }
@@ -67,7 +67,7 @@ settled
 
 claim "drag a docked window's inner edge: on release its neighbour gives up the space"
 proves A11 A73
-take "x y w h" real_frame_of "$W2"
+take "x y w h" resting_frame_of "$W2"
 drag "$((x + 1))" "$((y + h / 2))" "$((x - 39))" "$((y + h / 2))"
 check "the window is 40 points wider" eventually width_is "$W2" "$((w + 40))" 8
 check "it still reaches the right edge" eventually at_edge "$W2" right
@@ -77,9 +77,9 @@ settled
 
 claim "drag a docked window's lower edge toward the window below: nothing else moves until the button is let go"
 proves A11
-take "x y w h" real_frame_of "$W1"
-below=$(real_frame_of "$W3")
-beside=$(real_frame_of "$W2")
+take "x y w h" resting_frame_of "$W1"
+below=$(resting_frame_of "$W3")
+beside=$(resting_frame_of "$W2")
 lower=$(height_of "$W3")
 drag "$((x + w / 2))" "$((y + h - 1))" "$((x + w / 2))" "$((y + h + 39))" --no-release
 # How much of the 40 points arrives is macOS's business (see the corner, below): what the window has while it is held is what counts.
@@ -101,7 +101,7 @@ settled
 
 claim "drag a docked window's outer edge, against the screen: it springs back on release"
 proves A11
-take "x y w h" real_frame_of "$W2"
+take "x y w h" resting_frame_of "$W2"
 drag "$((x + w - 1))" "$((y + h / 2))" "$((x + w - 71))" "$((y + h / 2))" --no-release
 check "the window follows the pointer while the button is held" eventually narrower_than "$W2" "$((w - 40))"
 release
@@ -111,7 +111,7 @@ settled
 
 claim "drag a docked window's corner: both seams move"
 proves A11
-take "x y w h" real_frame_of "$W1"
+take "x y w h" resting_frame_of "$W1"
 drag "$((x + w - 2))" "$((y + h - 2))" "$((x + w + 38))" "$((y + h - 32))" --no-release
 # macOS holds back an edge that is flush with a neighbour's, as this one is with the window's below, and does not give the points
 # back: on a hosted Mac 9 of 40 arrived. What Arbor promises is that the seams go where the window's edges are when it is let go.
@@ -131,7 +131,7 @@ settled
 
 claim "move a docked window without the mouse: Arbor puts it back"
 proves A11
-take "x y w h" real_frame_of "$W3"
+take "x y w h" resting_frame_of "$W3"
 tw move "$W3" "$((x + 120))" "$((y - 90))" "$w" "$h"
 check "it is back in its slot" eventually in_slot "$W3"
 settled
@@ -153,7 +153,7 @@ take "x y" seam_right_of "$W1"
 drag_window "$F1" "$x" "$y"
 check "the window floats" eventually is floating "$F1"
 # It trails the pointer, so where it lies is measured. The press goes where the gap runs, halfway down the window.
-take "fx fy fw fh" real_frame_of "$F1"
+take "fx fy fw fh" resting_frame_of "$F1"
 y=$((fy + fh / 2))
 check "it lies across the gap" across "$F1" "$x"
 # There and back: the gap is where it was, and its handle has been shown anew twice.

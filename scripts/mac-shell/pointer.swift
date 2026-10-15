@@ -395,7 +395,8 @@ struct Pointer {
         break
       }
       if (info[kCGWindowLayer as String] as? NSNumber)?.intValue == 0 {
-        covers.append((rect.insetBy(dx: -3, dy: -3), info[kCGWindowOwnerName as String] as? String == "Arbor"))
+        // A window takes presses some points beyond its frame, to be resized by: 4 points above one, the press was its edge's.
+        covers.append((rect.insetBy(dx: -8, dy: -8), info[kCGWindowOwnerName as String] as? String == "Arbor"))
       }
     }
     guard let own else { return nil }

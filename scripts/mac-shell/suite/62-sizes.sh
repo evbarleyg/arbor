@@ -20,7 +20,7 @@ seen_where_it_is() { arbor_close "$(frame_of "$1")" "$(real_frame_of "$1")"; }
 # grip <id>: dx dy w: the pointer from the window's corner, and the window's width, by the window server.
 grip() {
   local place frame
-  place=$(pointer where) && frame=$(real_frame_of "$1") || { echo "no answer from the pointer tool"; return 1; }
+  place=$(pointer where) && frame=$(resting_frame_of "$1") || { echo "no answer from the pointer tool"; return 1; }
   # shellcheck disable=SC2086
   set -- $place $frame
   [ $# -eq 7 ] || { echo "the pointer is at $place, the window at $frame"; return 1; }
@@ -51,7 +51,7 @@ all_w=$(width_of "$W2")
 all_h=$(height_of "$W2")
 own_w=$((all_w - 80))
 own_h=$((all_h - 50))
-take "x y _ _" real_frame_of "$W1"
+take "x y _ _" resting_frame_of "$W1"
 tw move "$W1" "$x" "$y" "$own_w" "$own_h"
 eventually seen_where_it_is "$W1"
 ctl dock "$W1" left
@@ -102,10 +102,10 @@ settled
 
 step "where every window is before Arbor arranges them all"
 ctl float-all
-first=$(real_frame_of "$W1")
-second=$(real_frame_of "$W2")
-third=$(real_frame_of "$W3")
-other=$(real_frame_of "$V1")
+first=$(resting_frame_of "$W1")
+second=$(resting_frame_of "$W2")
+third=$(resting_frame_of "$W3")
+other=$(resting_frame_of "$V1")
 echo "$first | $second | $third | $other"
 # everything_is_back: four checks, for the claims that end with "as it was".
 everything_is_back() {
@@ -190,7 +190,7 @@ ctl dock "$W2" beside "$W1" bottom
 tw min-size "$W2" "$((screen_w * 7 / 10))" "$((screen_h * 7 / 10))"
 ctl zoom "$W2"
 ctl back
-first=$(real_frame_of "$W1")
+first=$(resting_frame_of "$W1")
 summary
 
 claim "a window that goes on refusing its slot is asked again out of view: it stays a tile, and nothing else moves"

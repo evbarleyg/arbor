@@ -598,7 +598,7 @@ extension World {
         own = window.frame
         break
       }
-      if window.layer == 0 { covers.append((window.frame.insetBy(dx: -3, dy: -3), window.pid == arbor?.pid)) }
+      if window.layer == 0 { covers.append((window.frame.insetBy(dx: -8, dy: -8), window.pid == arbor?.pid)) }
     }
     guard let own else { return nil }
     // The focus ring's panel.

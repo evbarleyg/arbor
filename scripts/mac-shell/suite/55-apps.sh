@@ -25,9 +25,9 @@ ctl dock "$W2" left
 ctl dock "$W1" left
 ctl dock "$V2" beside "$V1" bottom
 summary
-first=$(real_frame_of "$W1")
-second=$(real_frame_of "$W2")
-other=$(real_frame_of "$V1")
+first=$(resting_frame_of "$W1")
+second=$(resting_frame_of "$W2")
+other=$(resting_frame_of "$V1")
 width=$(width_of "$W1")
 
 claim "a docked window gets a new native tab: the tab has the window's slot and nothing else moves"

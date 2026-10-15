@@ -9,7 +9,7 @@ arbor_build
 # arbor_settings was last given, which knows nothing of a command or an editor.)
 inset_is() {
   local x left
-  x=$(real_frame_of "$W1" | awk '{ print int($1) }')
+  x=$(resting_frame_of "$W1" | awk '{ print int($1) }')
   left=$(screen_of 1 | awk '{ print int($1) }')
   about "$((x - left))" "$1" 1 > /dev/null || { echo "it starts $((x - left)) points from the edge, not $1"; return 1; }
 }
@@ -198,7 +198,7 @@ settled
 
 claim "start a second copy of Arbor on the same home folder: it explains itself and leaves, and the first goes on"
 proves A13
-first=$(real_frame_of "$W1")
+first=$(resting_frame_of "$W1")
 words=$(second_copy 2>&1)
 code=$?
 echo "$words"

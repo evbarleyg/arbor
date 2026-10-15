@@ -109,6 +109,7 @@
 #   desktop_is_bare                 whether the wallpaper is what lies there: on a person's Mac the curtain hangs in front of it, and to
 #                                     Arbor the curtain is an app's window. Ask before a claim about a press or a pinch on the Desktop
 #   frame_of <id> (x y w h)         as Arbor sees the window; real_frame_of: as the window server does; slot_of: its slot
+#   resting_frame_of <id>           as the window server has it once it rests: to note a place for later (`before=$(resting_frame_of "$W1")`)
 #   take "x y w h" <command…>       what one of these prints, into those variables: take "x y" center_of $W1. Ends the script when
 #                                     there is no answer: `read` and arithmetic would make a press at 0 0 of it
 #   width_of <id> | height_of <id>  as the window server sees it
@@ -1536,6 +1537,20 @@ events_of() {
 frame_of() { arbor_ask frame "$1"; }
 slot_of() { arbor_ask slot "$1"; }
 real_frame_of() { "$ARBOR_POINTER" frame "$1"; }
+# To note where a window is, for later. The window server's list lags behind Accessibility, and not in one piece: some tens of milliseconds after a
+# command had answered it still gave a window its old place, or its new size at the old place: a stage of the road that Accessibility had already
+# left behind (seen on a Mac; the trace had one setFrame, answered whole in 2 ms). So: what two looks a fifth of a second apart agree on.
+resting_frame_of() {
+  local now before="" tries=0
+  while [ "$tries" -lt 15 ]; do
+    now=$(real_frame_of "$1") || return 1
+    [ "$now" != "$before" ] || break
+    before=$now
+    sleep 0.2
+    tries=$((tries + 1))
+  done
+  echo "$now"
+}
 width_of() { real_frame_of "$1" | awk '{ print int($3 + 0.5) }'; }
 height_of() { real_frame_of "$1" | awk '{ print int($4 + 0.5) }'; }
 

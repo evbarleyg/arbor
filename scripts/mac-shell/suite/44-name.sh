@@ -36,7 +36,7 @@ field_in_the_upper_middle() {
 # beside_the_field <id>: a point in that window's content which the field does not cover. `click_window` looks at ordinary windows only.
 beside_the_field() {
   local frame shown
-  frame=$(real_frame_of "$1") || return 1
+  frame=$(resting_frame_of "$1") || return 1
   shown=$(overlay_frame 8) || return 1
   echo "$frame $shown" | awk '
     function clear(x, y) { return x < $5 - 10 || x > $5 + $7 + 10 || y < $6 - 10 || y > $6 + $8 + 10 }

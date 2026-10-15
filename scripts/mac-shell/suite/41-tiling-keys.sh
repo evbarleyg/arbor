@@ -26,7 +26,7 @@ claim "⌃⌥⇧→ walks from window to window across two apps, by way of the o
 proves A220
 click_window "$W1"
 check "the click gave the first window the keyboard" eventually is focused "$W1"
-between=$(real_frame_of "$W2")
+between=$(resting_frame_of "$W2")
 hand=$(pointer where)
 check "⌃⌥⇧→ reaches Arbor" pressed ctrl+opt+shift+right focus right
 check "the floating window has the keyboard" eventually is focused "$W2"
@@ -73,7 +73,7 @@ claim "⌃⌥⌘= makes the focused window 40 points wider and ⌃⌥⌘- takes 
 proves A222
 click_window "$W1"
 width=$(width_of "$W1")
-other=$(real_frame_of "$V1")
+other=$(resting_frame_of "$V1")
 check "⌃⌥⌘= reaches Arbor" pressed ctrl+opt+cmd+= grow
 check "the window is 40 points wider" eventually width_is "$W1" "$((width + 40))"
 check "it still reaches the left edge" at_edge "$W1" left
@@ -116,8 +116,8 @@ settled
 
 claim "⌃⌥R turns the row into a column, and ⌃⌥R again turns it back to the point"
 proves A223
-one=$(real_frame_of "$W1")
-two=$(real_frame_of "$V1")
+one=$(resting_frame_of "$W1")
+two=$(resting_frame_of "$V1")
 check "⌃⌥R reaches Arbor" pressed ctrl+opt+r rotate
 check "the first window is above the other app's" eventually above "$W1" "$V1"
 check "it is as wide as the screen" eventually at_edge "$W1" right
@@ -147,8 +147,8 @@ claim "a shortcut bound to swap right in settings.json: the focused window trade
 proves A221
 ctl grow 60
 check "the first window is the wider one" eventually wider_than "$W1" "$(($(width_of "$V1") + 40))"
-wide=$(real_frame_of "$W1")
-narrow=$(real_frame_of "$V1")
+wide=$(resting_frame_of "$W1")
+narrow=$(resting_frame_of "$V1")
 check "⌃⌥⇧L reaches Arbor" pressed ctrl+opt+shift+l swap right
 # shellcheck disable=SC2086
 check "the first window has the narrow place on the right" eventually frame_is "$W1" $narrow

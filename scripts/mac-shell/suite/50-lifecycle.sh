@@ -108,10 +108,10 @@ proves T64
 open_window P1 kind=panel size=220x160 "at=$((x - 110)),$((y - 290))" title=A panel
 echo "Accessibility calls the panel: $(pointer ax "$P1" 2>&1)"
 open_window S1 "kind=sheet:$N1" size=200x100 title=A sheet
-panel=$(real_frame_of "$P1")
+panel=$(resting_frame_of "$P1")
 check "Arbor does not list the panel" stays fails is known "$P1"
 check "nor the sheet" fails is known "$S1"
-sheet=$(real_frame_of "$S1")
+sheet=$(resting_frame_of "$S1")
 ctl arrange
 # shellcheck disable=SC2086
 check "arranging everything leaves the panel where it was" stays frame_is "$P1" $panel

@@ -63,7 +63,7 @@ tw2 title "$V1" Ledger
 summary
 
 show_everything
-place=$(real_frame_of "$W3")
+place=$(resting_frame_of "$W3")
 claim "go to a window that is in the Dock: it comes back framed, with the keyboard, and its own place is still its own"
 proves A27
 click_button "$W3" minimize
@@ -91,7 +91,7 @@ if is minimized "$W3" > /dev/null 2>&1; then tw restore "$W3"; fi
 show_everything
 visit "$W1"
 visit "$V1"
-place=$(real_frame_of "$V1")
+place=$(resting_frame_of "$V1")
 claim "go to a window of a hidden app: the app comes back, and the window has its own place and the keyboard"
 proves A27
 check "Arbor knows the window by the title its app gave it since" eventually says Ledger arborctl state --titles

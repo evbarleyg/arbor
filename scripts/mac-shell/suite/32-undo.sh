@@ -14,8 +14,8 @@ redo_row() { says "    $1  ⌃⌥⇧Z$2" arborctl menu; }
 claim "with nothing to undo the menu's Undo and Redo are grey, a click on Undo does nothing, and ⌃⌥Z moves nothing"
 proves A31
 click_window "$W1"
-start1=$(real_frame_of "$W1")
-start2=$(real_frame_of "$W2")
+start1=$(resting_frame_of "$W1")
+start2=$(resting_frame_of "$W2")
 check "Undo names no step and is grey" undo_row "Undo" "  (gray)"
 check "so is Redo" redo_row "Redo" "  (gray)"
 check "the open menu has the row" click_menu "Undo"
@@ -40,9 +40,9 @@ take "x y" titlebar_of "$W3"
 drag "$x" "$y" "$x" "$((y + 60))"
 click_window "$W1"
 summary
-first=$(real_frame_of "$W1")
-second=$(real_frame_of "$W2")
-third=$(real_frame_of "$W3")
+first=$(resting_frame_of "$W1")
+second=$(resting_frame_of "$W2")
+third=$(resting_frame_of "$W3")
 
 claim "drag a gap forth and part of the way back, let go, press ⌃⌥Z once: the gap is back where it was before the drag"
 proves A31
@@ -75,7 +75,7 @@ settled
 
 claim "drag a docked window's inner edge, then ⌃⌥Z: window and neighbour have their sizes back"
 proves A31
-take "x y w h" real_frame_of "$W2"
+take "x y w h" resting_frame_of "$W2"
 drag "$((x + 1))" "$((y + h / 2))" "$((x - 59))" "$((y + h / 2))"
 check "the window is wider" eventually wider_than "$W2" "$((w + 20))"
 check "it is in its slot: the layout followed the window" eventually in_slot "$W2"

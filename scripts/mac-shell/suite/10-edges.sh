@@ -89,8 +89,8 @@ settled
 
 claim "let go of a docked window over the middle of another: no preview shows, and it goes back into its slot"
 proves T10
-place=$(real_frame_of "$W4")
-other=$(real_frame_of "$W3")
+place=$(resting_frame_of "$W4")
+other=$(resting_frame_of "$W3")
 # All the way across the Desktop, which on a wide screen is further than thirty steps can take a window that Arbor is to notice.
 # shellcheck disable=SC2046
 drag_window "$W4" $(center_of "$W3") --steps 60 --no-release

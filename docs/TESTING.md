@@ -501,6 +501,9 @@ Things that bite:
   but only within a run: another Mac gives it another.
 - `vdisplay.m` uses private API (CGVirtualDisplay, SkyLight). That is allowed because it is a test helper that no target in
   `Package.swift` contains; nothing of it may move into `Sources/`.
+- The window server's list lags behind Accessibility, and not in one piece: tens of milliseconds after a command has answered, `real_frame_of` may still give the old
+  place, or the new size at the old place. A `check` waits (`eventually`); a place noted for later does not, so note it with `resting_frame_of`.
+- A window takes presses some points beyond its frame, to be resized by. `click_window` and `drag_window` keep 8 points clear of whatever lies in front.
 - A dragged window trails a posted pointer: macOS holds it back when one of its edges meets another window's, the Dock's or the
   screen's, and it does not catch up, so after a drag `titlebar_of` can be off screen (`grab_of` in `check-F09.sh`).
 

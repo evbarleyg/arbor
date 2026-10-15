@@ -16,7 +16,7 @@ no_outline() {
 # on any side: the line runs in the gap.
 outline_around() {
   local frame shown
-  frame=$(real_frame_of "$1") || { echo "the window server has no such window"; return 1; }
+  frame=$(resting_frame_of "$1") || { echo "the window server has no such window"; return 1; }
   shown=$(overlay_frame 3) || { echo "there is no outline"; return 1; }
   echo "$shown" | awk -v frame="$frame" '
     function near(beyond) { return beyond >= 0 && beyond <= 20 }

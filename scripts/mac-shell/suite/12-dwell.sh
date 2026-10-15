@@ -15,8 +15,8 @@ if screen_edges_dock; then edges=ours; else edges=""; fi
 # over <a> <b>: part of the first window lies over the second, as the window server has both.
 over() {
   local ax ay aw ah bx by bw bh
-  take "ax ay aw ah" real_frame_of "$1"
-  take "bx by bw bh" real_frame_of "$2"
+  take "ax ay aw ah" resting_frame_of "$1"
+  take "bx by bw bh" resting_frame_of "$2"
   [ "$ax" -lt "$((bx + bw))" ] && [ "$bx" -lt "$((ax + aw))" ] && [ "$ay" -lt "$((by + bh))" ] && [ "$by" -lt "$((ay + ah))" ] \
     || { echo "one is at $ax $ay $aw $ah, the other at $bx $by $bw $bh"; return 1; }
 }
@@ -50,14 +50,14 @@ summary
 claim "sweep a window over a docked window's edge and let go without stopping: no preview shows, and it floats where it was let go"
 proves T10
 take "x y" zone_of "$W2" top
-slot=$(real_frame_of "$W2")
-before=$(real_frame_of "$W3")
+slot=$(resting_frame_of "$W2")
+before=$(resting_frame_of "$W3")
 # shellcheck disable=SC2046
 drag_window "$W3" $(desktop_point) --steps 60 --no-release
 # shellcheck disable=SC2086
 check "the window is in the hand" fails frame_is "$W3" ${before:-0 0 0 0}
 release "$x" "$y"
-place=$(real_frame_of "$W3")
+place=$(resting_frame_of "$W3")
 check "no preview is on screen" stays fails has_overlay 3
 check "the window floats" is floating "$W3"
 check "Arbor saw it let go, and docked nothing" logged "dropped w$W3 on float"
@@ -72,7 +72,7 @@ settled
 claim "sweep a docked window the same way: it goes back into its slot"
 proves T10
 home
-place=$(real_frame_of "$W1")
+place=$(resting_frame_of "$W1")
 # shellcheck disable=SC2046
 drag_window "$W1" $(desktop_point) --steps 60 --no-release
 check "the window has left its slot with the pointer" fails in_slot "$W1"

@@ -17,7 +17,7 @@ check "a test app is in front" eventually front_is "$ARBOR_WINDOWS_PID" || on_th
 
 claim "⌃⌥-drag a rectangle around a window: a band follows the pointer and release frames the window"
 proves T38
-take "x y w h" real_frame_of "$W3"
+take "x y w h" resting_frame_of "$W3"
 downs=$(events_of "$W3" down)
 drag "$((x + 30))" "$((y + 60))" "$((x + w - 30))" "$((y + h - 40))" --mods ctrl+opt --no-release
 check "a band is on screen while the button is held" eventually has_overlay 3
@@ -35,7 +35,7 @@ claim "begin a ⌃⌥ rectangle and let go of ⌃⌥ before the button: the band
 proves T38
 # Not before the window is back from the claim above: its place is what the rectangle is drawn by.
 check "the window is back in its slot" eventually in_slot "$W3"
-take "x y w h" real_frame_of "$W3"
+take "x y w h" resting_frame_of "$W3"
 downs=$(events_of "$W3" down)
 drag "$((x + 30))" "$((y + 60))" "$((x + w - 30))" "$((y + h - 40))" --mods ctrl+opt --no-release
 check "a band is on screen while the button is held" eventually has_overlay 3
@@ -50,8 +50,8 @@ ctl show-all
 
 claim "⌃⌥-drag a rectangle around a column: the camera frames the column"
 proves T38
-take "x y w h" real_frame_of "$W1"
-take "_ y2 _ h2" real_frame_of "$W2"
+take "x y w h" resting_frame_of "$W1"
+take "_ y2 _ h2" resting_frame_of "$W2"
 drag "$((x + 20))" "$((y + 50))" "$((x + w - 20))" "$((y2 + h2 - 30))" --mods ctrl+opt
 check "both windows of the column are in view" eventually in_view "$W1"
 check "the lower one too" eventually in_view "$W2"
@@ -79,7 +79,7 @@ check "no band is left on screen" fails has_overlay 3
 if desktop_is_bare; then
   claim "⇧-drag that starts on the Desktop, around a window: release frames the window"
   proves T38
-  take "x y w h" real_frame_of "$W3"
+  take "x y w h" resting_frame_of "$W3"
   drag "$((x - 30))" "$((y + 40))" "$((x + w - 10))" "$((y + h - 10))" --mods shift --no-release
   check "a band is on screen while the button is held" eventually has_overlay 3
   release --mods shift
@@ -159,6 +159,8 @@ fi
 
 claim "a pinch over a window without ⌥ belongs to the app"
 proves T36
+# Clicked first, as before the control below: the two pinches differ in nothing but Arbor.
+click_window "$W3"
 # shellcheck disable=SC2046
 pinch $(center_of "$W3") 0.3
 check "Arbor did nothing" stays fails ran in

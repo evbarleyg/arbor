@@ -19,7 +19,7 @@ arbor_settings '{"makeRoom": false}'
 # over: it holds the whole window, is meant to lie in front of it, and lets presses through.
 in_front_at() {
   local frame
-  frame=$(real_frame_of "$1") || { echo "the window server has no such window"; return 1; }
+  frame=$(resting_frame_of "$1") || { echo "the window server has no such window"; return 1; }
   "$ARBOR_POINTER" windows --on-screen | awk -v id="$1" -v arbor="$ARBOR_PID" -v x="$2" -v y="$3" -v frame="$frame" '
     BEGIN { split(frame, f, " ") }
     $1 == id { found = 1; exit }
@@ -32,7 +32,7 @@ in_front_at() {
 # when that is under 40 points either way: too little to aim at.
 shared() {
   local fx fy fw fh kx ky kw kh left right top bottom
-  take "fx fy fw fh" real_frame_of "$1"
+  take "fx fy fw fh" resting_frame_of "$1"
   take "kx ky kw kh" arbor_ask tile "$2"
   left=$((fx > kx ? fx : kx)); right=$((fx + fw < kx + kw ? fx + fw : kx + kw))
   # Below its title bar.
@@ -94,7 +94,7 @@ check "the window floats" eventually is floating "$F1"
 if check "it lies over the tile" shared "$F1" "$W3"; then
   # It trails the pointer, so where the two overlap is measured.
   take "x y" shared "$F1" "$W3"
-  place=$(real_frame_of "$F1")
+  place=$(resting_frame_of "$F1")
   # There and back: the tile is where it was, and has been shown anew twice.
   check "the first resize succeeds" ctl resize "$W1" right -20
   check "and the one that takes it back" ctl resize "$W1" right 20

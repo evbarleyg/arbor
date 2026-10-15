@@ -13,9 +13,9 @@ ctl resize "$W1" right 60
 ctl zoom "$W2"
 ctl save-view 4
 ctl show-all
-first=$(real_frame_of "$W1")
-second=$(real_frame_of "$W2")
-third=$(real_frame_of "$W3")
+first=$(resting_frame_of "$W1")
+second=$(resting_frame_of "$W2")
+third=$(resting_frame_of "$W3")
 summary
 
 claim "quit Arbor, move the windows about, start it again: the arrangement is back"

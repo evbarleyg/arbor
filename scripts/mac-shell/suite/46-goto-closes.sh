@@ -15,7 +15,7 @@ paused() { "$ARBOR_BIN/arborctl" status | grep "^paused" > /dev/null || { echo "
 # beside_the_palette <id>: a point in that window's content which the palette does not cover. `click_window` looks at ordinary windows only.
 beside_the_palette() {
   local frame shown
-  frame=$(real_frame_of "$1") || return 1
+  frame=$(resting_frame_of "$1") || return 1
   shown=$(overlay_frame 5) || return 1
   echo "$frame $shown" | awk '
     function clear(x, y) { return x < $5 - 10 || x > $5 + $7 + 10 || y < $6 - 10 || y > $6 + $8 + 10 }
@@ -101,7 +101,7 @@ claim "click a gap handle with the palette open: the palette closes, though the 
 proves A27
 check "⌃⌥G opens the palette" opens_the_palette
 # The gap under the first window, near its left end: clear of the palette.
-take "x y w h" real_frame_of "$W1"
+take "x y w h" resting_frame_of "$W1"
 click "$((x + 30))" "$((y + h + ARBOR_GAP / 2))"
 check "the palette is gone" eventually palette_closed
 check "and stays away" stays palette_closed
