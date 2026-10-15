@@ -5,11 +5,11 @@
 #
 #   scripts/mac-shell/run.sh --no-preflight "<why>" scripts/mac-shell/probe-went-and-came-back-unseen.sh
 #
-# By itself, or in one dispatch with the other two, in any order: it builds what it needs and leaves the Mac as it found it. About four minutes; no step begins
+# By itself, or in one dispatch with the other two, in any order: it builds what it needs and leaves the Mac as it found it. About five and a half minutes with part N; no step begins
 # after 900 s, and lib.sh ends the script at 1,020 s. It needs no control: the steps at which no Arbor runs (u3, u4, u9, u10) are macOS alone, on the same windows.
 # Why no pre-flight: the fake Mac has no stand-in for vdisplay, apptool or the sampler, so a rehearsal ends with exit code 2 before the first step.
 #
-# Part N, a display made narrower, can ride along: JOURNEY_PARTS="N U" below. It is played before Arbor is started, has a window of Arbor's own test app beside TextEdit's, because
+# Part N, a display made narrower, rides along (JOURNEY_PARTS="N U" below; U alone: JOURNEY_PARTS=U). It is played before Arbor is started, has a window of Arbor's own test app beside TextEdit's, because
 # this script builds Arbor anyway, and takes a minute and a half more (part_N in the journey).
 #
 # THE WINDOWS: LIVES (Notes), TEXT (TextEdit), JAVA (jconsole, if it opens) and PICTURE (Preview), all put wholly on A through Accessibility; DESK (Script Editor), a
@@ -37,5 +37,5 @@
 # Only on GitHub's Macs: it plugs displays in and out, switches the display's size, changes Reduce Motion and puts it back, hides apps, opens and quits five apps.
 JOURNEY_ARBOR=yes
 ARBOR_RECORD=1
-JOURNEY_PARTS=U
+JOURNEY_PARTS="N U"
 source "$(dirname "${BASH_SOURCE[0]}")/probe-went-and-came-back-journey.sh"
