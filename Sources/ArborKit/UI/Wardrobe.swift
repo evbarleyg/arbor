@@ -12,12 +12,13 @@ import ArborCore
 @MainActor
 final class Wardrobe {
   struct Cover {
-    var colour: CGColor
+    /// The colour the app's icon is recognised by. What becomes of it on a card is the tiles' business (`Transition.Cover`).
+    var colour: RGBA?
     var icon: CGImage?
   }
 
   /// For a window whose app's cover is not here yet, or has no icon.
-  static let plain = Cover(colour: NSColor.systemGray.withAlphaComponent(1).cgColor, icon: nil)
+  static let plain = Cover(colour: nil, icon: nil)
 
   /// Called with every cover as it arrives, for a motion that began without it.
   var onCover: ((Rehearsal.App, Cover) -> Void)?
@@ -49,9 +50,7 @@ final class Wardrobe {
           self.ordered.remove(key)
           // Its process has gone, or it has no icon. Whoever asks again orders again.
           guard let made else { return Log.debug("no costume for \(app.bundleID ?? "pid \(app.pid)") after \(took) ms") }
-          // The colour is the icon's, transparent margin included. A cover hides what is behind it.
-          let colour = made.colour.map { AppAppearance.fill($0).withAlphaComponent(1).cgColor } ?? Self.plain.colour
-          let cover = Cover(colour: colour, icon: made.icon)
+          let cover = Cover(colour: made.colour, icon: made.icon)
           self.covers[key] = cover
           // Tiles and the minimap are tinted with it, and ask while they wait to be drawn.
           if let colour = made.colour { AppAppearance.remember(colour, pid: app.pid, bundleID: app.bundleID) }

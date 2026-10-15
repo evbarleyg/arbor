@@ -249,7 +249,7 @@ nobody had got ready (`RehearsalTests`). Every stage that comes up logs what kep
 taken with ScreenCaptureKit, and the backdrop is a picture of everything below the windows (wallpaper,
 icons, widgets). A motion cannot wait for a picture, so they are taken ahead of time (at launch, when the
 focus moves on, after every motion) and kept in memory; the stage starts with what there is and swaps in
-new ones as they arrive. Without permission stand-ins are the app's colour and icon, and the backdrop
+new ones as they arrive. Without permission a stand-in is the window's tile without its caption (`Transition.Cover`: the card is the tile), and the backdrop
 is the wallpaper's file. Arbor never prompts for the permission from here (`WindowPictures.isAllowed` is
 for onboarding to ask), and nothing is written to disk.
 
