@@ -486,7 +486,7 @@ extension World {
       return
     }
     // A registered hot key never reaches an app.
-    // Those a peek asked for while it lasts are registered too (`HotKeyCenter.setTemporary`).
+    // Those a peek asked for, for as long as its key is down, are registered too (`HotKeyCenter.setTemporary`).
     if let arbor, let binding = (arbor.activeBindings + arbor.controller.temporaryShortcuts).first(where: { $0.chord == chord }) {
       // `HotKeyCenter` reports the key going down and coming up; the pointer tool lets go at once. The modifiers stay down
       // for as long as another key is held with them.

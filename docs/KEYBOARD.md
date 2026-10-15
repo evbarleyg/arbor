@@ -13,7 +13,7 @@ modifier, no digit, no other letter.
 |---|---|---|
 | ⌃⌥← / ⌃⌥→ | Dock the window in front at that side, or move it one place | `dock left` / `dock right` |
 | ⌃⌥↩ | Frame it: it has the screen to itself. Again, and it is back | `zoom` |
-| ⌃⌥Space | Show everything. Held: a peek, which has all four arrows and ⎋ for as long as it lasts (F51). ⌃⌥← and ⌃⌥→ dock nothing while the key is down: pressed early they begin the hold, pressed after ⎋ they do nothing | `show-all` |
+| ⌃⌥Space | Show everything. Held: a peek, which has all four arrows and ⎋ for as long as it lasts (F51). The four arrows are the peek's, and no app's, for as long as the key is down, from the press on: ⌃⌥← and ⌃⌥→ dock nothing, ⌃⌥↑ and ⌃⌥↓, which are bound to nothing, reach no app; pressed early they begin the hold, pressed after ⎋ they do nothing | `show-all` |
 | ⌃⌥[ | Back to where the view was | `back` |
 | ⌃⌥Z | Undo the last change to the arrangement | `undo` |
 | ⌃⌥F | Float the window in front, or take it back in | `toggle-float` |
@@ -59,7 +59,7 @@ use exactly this key. **reserved**: keep free for that purpose, bound to nothing
 |---|---|---|
 | ⌃⌥Space | `show-all` | T |
 | ⌃⌥Space, held | peek: everything shows while the keys are down, letting go frames what is outlined. A tap is TrellisWM's, unchanged, and a hold of under a second in which nothing was chosen counts as one: the first way home does not spring back for a slow press | shipped (F51) |
-| ⌃⌥ + arrow, ⌃⌥⎋ while ⌃⌥Space is held | move the outline; give up and return. They have their usual meaning until 0.3 s after the press and from the moment the peek ends | shipped (F51) |
+| ⌃⌥ + arrow, ⌃⌥⎋ while ⌃⌥Space is held | move the outline; give up and return. Those that look about or are bound to something else than arranging have their usual meaning until 0.3 s after the press and from the moment the peek ends; those that arrange, or are bound to nothing, and ⌃⌥⎋, which would pause, are the peek's for as long as ⌃⌥Space is down | shipped (F51) |
 | ⌃⌥0 | `home`: everything, on every display ("view 0", and ⌘0 resets zoom in every Mac app). Also the way out for people whose ⌃⌥Space belongs to input sources or an IDE | shipped (product review) |
 | ⌃⌥↑ / ⌃⌥↓ | `out` / `in` | T |
 | ⌃⌥- / ⌃⌥= | zoom out / in, as ⌘- and ⌘= do in apps | reserved (F16) |

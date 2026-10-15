@@ -46,6 +46,8 @@ TCC="/Library/Application Support/com.apple.TCC/TCC.db"
 A=0
 # And Z: `undo`, a key of Arbor's in every map.
 Z=6
+# And J alone, which is nobody's: what shows that the witness has the keyboard.
+J=38
 
 tcc() { sudo sqlite3 "$TCC" "$1"; }
 front_is() { [ "$("$KEYS" frontmost)" = "$1" ]; }
@@ -126,11 +128,21 @@ leave() {
 
 # The witness has the keyboard. A click that falls while Arbor is still moving its window (a pause, a resume) lands on the wallpaper, and the key would then
 # go to the Finder and prove nothing (2026-10-15). So: as often as it takes, and a round in which it never comes forward says so.
+# Whether a key that nobody holds gets to the witness now. To be the app in front is not enough: Arbor's welcome window is a panel that takes the keyboard
+# without making Arbor the active app, and with the keyboard there every "the key is taken" below would pass whatever Arbor did (seen on 2026-10-15:
+# six rounds that expect the key to reach the app failed, and that is how it showed).
+hears() {
+  local before
+  before=$(given down $J)
+  key j
+  sleep 0.2
+  [ "$(given down $J)" -gt "$before" ]
+}
 come_forward() {
   local tries=0
-  until front_is "$KEYS_ID"; do
+  until front_is "$KEYS_ID" && hears; do
     tries=$((tries + 1))
-    [ "$tries" -gt 5 ] && { echo "  (THE WITNESS IS NOT IN FRONT: $("$KEYS" frontmost): this round proves nothing)"; return 1; }
+    [ "$tries" -gt 5 ] && { echo "  (THE WITNESS HAS NOT GOT THE KEYBOARD; in front: $("$KEYS" frontmost): this round proves nothing)"; return 1; }
     kill -USR1 "$KEYS_PID" 2>/dev/null
     sleep 0.5
     click "$KEYS_X" "$KEYS_Y"
@@ -146,7 +158,8 @@ REACHED=0
 ACTED=0
 press() {
   local state=$1 chord=${2:-ctrl+opt+z} code=${3:-$Z} downs ups lines acted roads claimed line
-  come_forward
+  # Neither "taken" nor "reached" holds then.
+  come_forward || { REACHED=-1 ACTED=0; echo "RESULT | $state | the witness has not got the keyboard: nothing was pressed" | tee -a "$RESULTS"; return; }
   downs=$(given down "$code")
   ups=$(given up "$code")
   roads=$(count "road .*\(down\|pressed\|ran\)" "$KEYS_LOG")
@@ -236,6 +249,50 @@ press "running, permission granted while it waited"
 check "the key is Arbor's" taken
 check "and Arbor answers it" answered
 shot 12-running
+
+step "1p. a peek's keys, from the press on: of the nine that ship ⌃⌥↓ is bound to nothing (board 1.80)"
+DOWN=125
+early() { count "peek: ctrl+opt+down came before the hold counted" "$ARBOR_HOME/arbor.log"; }
+press "running, no peek: a key that is bound to nothing" ctrl+opt+down $DOWN
+check "the control: without a peek it is the app's" reached
+# The tool that presses a key takes half a second to start, give or take, so the two are started a little apart, not one after the other. Whether the arrow
+# did come before the hold counted is for Arbor's log to say: a round in which it came later would pass on any Arbor. So: several, and one at least early.
+got=0
+came=$(early)
+for wait in 0.1 0.15 0.2 0.25; do
+  check "the witness has the keyboard" come_forward
+  downs=$(given down $DOWN)
+  before=$(early)
+  key ctrl+opt+space --down &
+  sleep $wait
+  key ctrl+opt+down --held
+  sleep 0.5
+  REACHED=$(($(given down $DOWN) - downs))
+  got=$((got + REACHED))
+  echo "RESULT | ⌃⌥↓ started $wait s after ⌃⌥Space | the app got: $REACHED down | early by Arbor's log: $(($(early) - before))" | tee -a "$RESULTS"
+  key ctrl+opt+space --up
+  sleep 0.6
+done
+REACHED=$got
+check "in none of the four did it reach the app" taken
+check "and in one at least it came before the hold counted, or these rounds prove nothing" test "$(early)" -gt "$came"
+check "the witness has the keyboard" come_forward
+downs=$(given down $DOWN)
+key ctrl+opt+space --down
+sleep 0.3
+key ctrl+opt+escape --held
+sleep 0.3
+key ctrl+opt+down --held
+sleep 0.5
+REACHED=$(($(given down $DOWN) - downs))
+echo "RESULT | ⌃⌥↓ after ⌃⌥⎋ has called the peek off, ⌃⌥Space still down | the app got: $REACHED down" | tee -a "$RESULTS"
+check "with the peek called off and its key still down it goes nowhere" taken
+check "and ⌃⌥⎋ meant the peek: Arbor is not paused" status_starts "running"
+key ctrl+opt+space --up
+sleep 0.6
+press "running, the peek over" ctrl+opt+down $DOWN
+check "and the app's again once the key is up" reached
+"$ARBOR_BIN/arborctl" show-all > /dev/null 2>&1
 
 step "2. with no event tap, as shipped: every default shortcut in turn"
 echo "event taps: $("$KEYS" taps "$ARBOR_PID")"

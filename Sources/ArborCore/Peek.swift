@@ -16,7 +16,7 @@ public enum KeyPhase: String, Sendable {
 /// keys, ⎋, a click and anything that gets in the way do to a peek. It moves no camera and reads no
 /// clock. The controller tells it what happened and does what it answers (`Controller+Peek.swift`).
 public struct Peek: Equatable, Sendable {
-  /// Released sooner than this, the press was a tap. Until then nothing differs from a plain Show Everything.
+  /// Released sooner than this, the press was a tap. Until then nothing differs from a plain Show Everything, but for the keys that are kept.
   public static let holdThreshold = 0.3
   /// Let go sooner than this with nothing chosen, the press was a slow tap. Show Everything is the first way home, and
   /// someone who is lost presses three keys slowly and on purpose: it must not spring back for them.
@@ -75,6 +75,9 @@ public struct Peek: Equatable, Sendable {
 
   /// Whether the arrow keys and ⎋ mean the peek rather than what they are bound to.
   public var takesKeys: Bool { phase == .holding }
+  /// Whether those of them that are bound to nothing are kept from the app in front: for as long as the keys are down, from the press on. Whoever
+  /// has ⌃⌥Space down takes ⌃⌥↑ for Arbor's, a tenth of a second after the press and after the peek is decided as much as in between.
+  public var keepsKeys: Bool { phase != .over }
   /// What to draw an outline around now.
   public var shownOutline: NodeID? { phase == .holding ? outline : nil }
 
@@ -133,9 +136,9 @@ public struct Peek: Equatable, Sendable {
     return end(outline == origin ? .goBack : .land(outline))
   }
 
-  /// An arrow key came while it was too early to tell a tap from a hold, and left to itself it would rearrange windows. Whoever presses
-  /// an arrow with the key down is holding it: the hold begins now.
-  public mutating func heldForAnArrow() {
+  /// An arrow key or ⎋ came while it was too early to tell a tap from a hold, and it is the peek's: left to itself it would rearrange windows, or
+  /// it is bound to nothing. Whoever presses one with the key down is holding it: the hold begins now.
+  public mutating func heldForAKey() {
     if phase == .pressed { phase = .holding }
   }
 

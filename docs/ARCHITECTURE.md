@@ -1605,7 +1605,7 @@ tap or hold, what the pointer, the arrow keys, ⎋, a click, another command and
   makes one ordinary move: one history entry, or none. A peek that nobody ends (a pause, a display unplugged, a crash or a quit with the keys down) becomes a stay (`stayAfterALook`). `moveCamera` calls `peekYields(on:)` first, so a camera moved by anything
   else (a clicked tile, a window that took the keyboard) counts as the landing. `perform(_:from:)` interrupts a peek before any command that is not a query.
 - The arrow keys and ⎋ arrive with the held modifiers, as ⌃⌥← and so on, which are bound by default; a peek takes those chords by their keys,
-  whatever they are bound to. Chords that are bound to nothing are registered for the length of the hold
+  whatever they are bound to. Chords that are bound to nothing are registered for as long as the shortcut's keys are down: asked for at the press, before a window is moved, and given back when the keys are up, or at once if the person gives the keys away
   (`KeyBindings.whilePeeking`, `onTemporaryShortcuts`, `HotKeyCenter.setTemporary`) without touching the others: unregistering a shortcut whose key is down would lose its release.
 - The outline is `OverlayScene.peekOutline`. Its panel takes the click meant for what it outlines and reports it (`OverlayActions.peekOutlineClicked`): with
   ⌃⌥ held, the app underneath would open a contextual menu and macOS would hide the app that had the keyboard. The timer watches the button

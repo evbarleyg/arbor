@@ -44,6 +44,34 @@ import Testing
     #expect(peek.released(at: 0.25) == .stay)
   }
 
+  /// What is bound to nothing is kept from the app in front for as long as the keys are down, whatever the peek makes of it meanwhile.
+  @Test func theKeysAreKeptFromThePressUntilTheKeysAreUp() {
+    var peek = pressed()
+    #expect(peek.keepsKeys && !peek.takesKeys, "too early to tell a tap from a hold")
+    #expect(peek.look(at: 0.4, pointer: rest, under: nil) == nil)
+    #expect(peek.keepsKeys && peek.takesKeys, "held")
+    #expect(peek.escape() == .goBack)
+    #expect(peek.keepsKeys && !peek.takesKeys, "decided, and the keys still down")
+    #expect(peek.released(at: 0.9) == nil)
+    #expect(!peek.keepsKeys)
+    var tap = pressed()
+    #expect(tap.released(at: 0.1) == .stay)
+    #expect(!tap.keepsKeys)
+  }
+
+  /// Whoever presses an arrow with the key down is holding it.
+  @Test func aKeyOfThePeeksBeginsTheHoldEarly() {
+    var peek = pressed()
+    peek.heldForAKey()
+    #expect(peek.phase == .holding)
+    peek.arrow(to: other, pointer: rest)
+    #expect(peek.released(at: 0.2) == .land(other), "well before the threshold")
+    var spent = held()
+    #expect(spent.escape() == .goBack)
+    spent.heldForAKey()
+    #expect(spent.phase == .spent, "it begins nothing anew")
+  }
+
   @Test func heldPastTheThresholdTheViewThatWasLeftIsOutlined() {
     let peek = held()
     #expect(peek.shownOutline == origin)
