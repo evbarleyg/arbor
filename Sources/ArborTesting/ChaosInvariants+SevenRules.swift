@@ -11,7 +11,7 @@ import Foundation
 /// | Nothing moves until the person docks something | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-resume`, `start-took-out-of-view`, `pause-and-resume-moved`, `there-and-back-moved`, `moved-unasked` |
 /// | No jolts: a window moves once, to where it ends up | `moved-twice`, `moved-again`; both with `-sizing` where its app refused a size, `-sizing-again` where it had refused before |
 /// | The window you switch to comes to the front and into view | `switched-to-out-of-view`, `app-switch-out-of-view`, `switched-to-partly-out`, `switched-to-behind` |
-/// | Quitting, Float All and pause give windows their own earlier sizes back | `size-not-given-back`, `size-kept-through-a-pause` |
+/// | Quitting, Float All and pause give windows their own earlier sizes back | `size-not-given-back` |
 /// | After any way home no window is less than wholly in view | `home-not-whole`, `home-behind-the-dock`, `home-leaves-out` |
 extension ChaosRunner {
   /// What the nets remember from step to step.
@@ -40,6 +40,8 @@ extension ChaosRunner {
     var there: (frames: [WindowID: CGRect], action: ChaosAction, views: [DisplayID: NodeID])?
     /// The last thing somebody did took the one before it back: where everything has to be again once it has come to rest.
     var backDue: (frames: [WindowID: CGRect], there: String, rule: String)?
+    /// What the pause itself moved, to give it its own frame back: the resume may take it back to where it was.
+    var movedByThePause: Set<WindowID> = []
     /// The window its user switched to last, until somebody does something else; and whether macOS said which window it was, or only
     /// that another app came forward.
     var switchedTo: WindowID?
@@ -238,6 +240,7 @@ extension ChaosRunner {
   // MARK: No jolts: a window moves once, to where it ends up
 
   func onceViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
+    if !seven.pausedBefore, isPaused { seven.movedByThePause = Set(movesSeenInThisStep.map(\.window)) }
     // Several things done in one step.
     if case .wayBack = action {
       seven.seenSinceSomebodyActed = [:]
@@ -322,7 +325,7 @@ extension ChaosRunner {
         asked("launch-or-resume")
         // The view that comes back may not include the Desktop: then what floats goes out of view with it.
         if workspace.isFloating(window), !workspace.isStashed(window), showedBefore >= 0.995 * before.area, !parkedBefore.contains(window),
-          !controller.parked.contains(window)
+          !controller.parked.contains(window), !(resumed && seven.movedByThePause.contains(window))
         {
           problems.append(.init(action == .launch ? "moved-at-launch" : "moved-at-resume", "\(whatHappened), where it floats as it did"))
         }
@@ -499,11 +502,9 @@ extension ChaosRunner {
       guard due.width <= visible.width, due.height <= visible.height else { continue }
       let step = fake.sizeStep ?? (fake.behaviour == .grid ? CGSize(width: 20, height: 20) : .zero)
       if abs(frame.width - due.width) > max(step.width, 1.5) || abs(frame.height - due.height) > max(step.height, 1.5) {
-        // F40: what is in view at a pause is not touched, so that the pause cannot be seen.
-        let keptOnPurpose = isPaused && !parkedBefore.contains(window)
         problems.append(
           .init(
-            keptOnPurpose ? "size-kept-through-a-pause" : "size-not-given-back",
+            "size-not-given-back",
             "after \(name), \(window) is \(Int(frame.width))×\(Int(frame.height)); its own size was \(Int(due.width))×\(Int(due.height))"))
       }
     }

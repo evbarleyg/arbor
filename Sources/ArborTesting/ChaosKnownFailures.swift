@@ -307,17 +307,6 @@ extension ChaosRunner {
         launch
         """),
     ChaosKnownFailure(
-      rule: "size-kept-through-a-pause", owner: "rule 5: pause gives every window its own size back", severity: 2,
-      story: "A pause leaves what is in view as it is, in its slot's size (F40, on purpose: a pause that cannot be seen). The product's fifth rule says a pause "
-        + "gives sizes back.",
-      script: """
-        launch
-        open 101 Finder pid 1005 at 154 80 754 440 min 501 300
-        key down dock left
-        react
-        toggle-pause
-        """),
-    ChaosKnownFailure(
       rule: "size-not-given-back", owner: "rule 5: pin, and a trip to the other display", severity: 3,
       story: "Pinning a docked window gives it half the display, and Float All leaves it so: its own size is forgotten. Also: sent to a smaller display and back, a "
         + "window keeps the smaller size.",

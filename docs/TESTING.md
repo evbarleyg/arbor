@@ -972,7 +972,7 @@ done to the world as if Arbor had done it, at which the net has to speak, beside
 | A start takes nothing out of view | `start-took-out-of-view` | `lost` |
 | A window moves once, to where it ends up | `moved-twice` (in the step of the command or event), `moved-again` (later, with nobody touching anything); `-sizing` where its app refused a size, `-sizing-again` where it had refused in the same way before | `jolt` |
 | The window you switch to comes to the front and into view | `switched-to-out-of-view`, `switched-to-partly-out`, `app-switch-out-of-view` (only the app was reported), `switched-to-behind` | `focus`, `behind` |
-| Quitting, Float All and pause give windows their own sizes back | `size-not-given-back`, `size-kept-through-a-pause` | `size-lost` |
+| Quitting, Float All and pause give windows their own sizes back | `size-not-given-back` | `size-lost` |
 | After any way home no window shows less than its person left showing | `home-not-whole`, `home-behind-the-dock`, `home-leaves-out` | `lost` |
 
 The ways home (`way-back home`, `show-all`, `pause`, `float-all`, `start-again`, `quit`) are each taken at the end of every walk, the ones that leave the arrangement alone first.

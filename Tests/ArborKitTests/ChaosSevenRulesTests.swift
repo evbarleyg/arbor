@@ -158,7 +158,7 @@ private let b = WindowID(102)
 
   // MARK: The ways home
 
-  @Test(arguments: ["float-all", "quit"]) func aWayOutGivesEveryWindowItsOwnSizeBack(way: String) {
+  @Test(arguments: ["float-all", "quit", "pause"]) func aWayOutGivesEveryWindowItsOwnSizeBack(way: String) {
     #expect(nets(after: oneDocked, then: way).isEmpty)
     #expect(nets(after: oneDocked, then: way) { _ = $0.setFrame(self.rect(100, 100, 702, 400), of: a) }.contains("size-not-given-back"))
   }
@@ -168,12 +168,6 @@ private let b = WindowID(102)
     let resized = twoFloating + ["move 101 100 100 640 480", "dock 101 left", "settle"]
     #expect(nets(after: resized, then: "float-all").isEmpty)
     #expect(nets(after: resized, then: "float-all") { _ = $0.setFrame(self.rect(100, 100, 500, 400), of: a) }.contains("size-not-given-back"))
-  }
-
-  /// F40 leaves what is in view as it is, so that a pause cannot be seen; the product's fifth rule says a pause gives sizes back. Until that is
-  /// decided the net says so under a name of its own.
-  @Test func whatAPauseLeavesInItsSlotHasANameOfItsOwn() {
-    #expect(nets(after: oneDocked, then: "pause") == ["size-kept-through-a-pause"])
   }
 
   @Test func afterAWayHomeEveryWindowIsWhollyInView() {
