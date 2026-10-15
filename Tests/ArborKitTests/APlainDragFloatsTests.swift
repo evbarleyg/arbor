@@ -43,6 +43,105 @@ import Testing
     s.expectNothingLeftBehind()
   }
 
+  /// Nothing is left for Undo to take back, on another display either: ⌃⌥Z after it takes back what was asked of Arbor before, and the
+  /// window stays where the hand put it.
+  @Test func aPlainDragOfAFloatingWindowIsNoStepForUndo() throws {
+    let side = DisplaySnapshot(
+      id: DisplayID("side"), frame: CGRect(x: 1440, y: 0, width: 1280, height: 800),
+      visibleFrame: CGRect(x: 1440, y: 0, width: 1280, height: 800), isMain: false)
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side])
+    let a = h.system.open(app: "Safari")
+    let b = h.system.open(app: "Notes", frame: CGRect(x: 500, y: 200, width: 500, height: 400))
+    h.start()
+    h.run("dock \(a.rawValue) left")
+    h.system.drag(b, through: [CGPoint(x: 750, y: 210), CGPoint(x: 2000, y: 300)], plainly: true)
+    h.scheduler.runPending()
+    let put = try #require(h.frame(b))
+    #expect(h.controller.workspaces[side.id]?.isFloating(b) == true)
+    // Undo goes by the display of the window with the keyboard, which the hand has carried along: that one has seen nothing to take back.
+    #expect(!h.run("undo").ok)
+    #expect(h.frame(b) == put)
+    h.system.userFocus(a)
+    #expect(h.run("undo").message.contains("dock"), "the dock is what was asked of Arbor last")
+    h.scheduler.runPending()
+    #expect(h.frame(b) == put, "and the window stays where the hand put it")
+    #expect(h.controller.workspaces[side.id]?.isFloating(b) == true)
+    #expect(h.workspace.tree.allWindows.isEmpty)
+  }
+
+  /// The same when the release is lost: the drag was a plain one when Arbor last looked.
+  @Test func aPlainDragWhoseReleaseIsLostIsNoStepForUndoEither() {
+    let side = DisplaySnapshot(
+      id: DisplayID("side"), frame: CGRect(x: 1440, y: 0, width: 1280, height: 800),
+      visibleFrame: CGRect(x: 1440, y: 0, width: 1280, height: 800), isMain: false)
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, side])
+    let a = h.system.open(app: "Safari")
+    let b = h.system.open(app: "Notes", frame: CGRect(x: 500, y: 200, width: 500, height: 400))
+    h.start()
+    h.run("dock \(a.rawValue) left")
+    h.system.dragAndLoseTheRelease(b, to: CGPoint(x: 2000, y: 300), plainly: true)
+    h.scheduler.advance(by: 3)
+    #expect(h.controller.workspaces[side.id]?.isFloating(b) == true)
+    // Undo goes by the display under the pointer, which has seen nothing that could be taken back.
+    #expect(!h.run("undo").ok)
+    #expect(h.controller.workspaces[side.id]?.isFloating(b) == true)
+  }
+
+  /// As a hunter's walk found it, with keys: ⌃⌥← docks Safari, the Terminal is dragged by hand from the side display onto the main one, and
+  /// ⌃⌥Z is pressed to take the dock back. The Terminal used to fly back to the other display, and only the second ⌃⌥Z took the dock back.
+  /// Beside it the control on one display, where the hand was always left alone.
+  @Test(arguments: [
+    ("displays main:0,0,1512,982:37,0,70,0* side:1512,0,1920,1080:25,0,0,0 windows-never", "2000 300", "1000 520"),
+    ("displays side:0,0,1920,1080:25,0,70,0* windows-never", "1000 500", "1500 300"),
+  ]) func aHandsDragToTheOtherDisplayIsNotArborsToTakeBack(displays: String, from: String, to: String) throws {
+    let runner = ChaosRunner()
+    func play(_ lines: [String]) {
+      for line in lines.flatMap({ [$0, "react", "advance 2", "react", "settle"] }) {
+        let broken = runner.step(ChaosAction(text: line)).filter { !ChaosRunner.knownRules.contains($0.rule) }
+        #expect(broken.isEmpty, "\(line): \(broken)")
+      }
+    }
+    play([
+      "settings {}", displays, "open 101 Safari pid 1000 at 150 90 1000 700 min 574 240", "open 103 Terminal pid 1003 at \(from) 800 460 min 177 60",
+      "launch", "focus 101", "key down dock left", "key up dock left",
+    ])
+    for line in ["grab 103 plain", "carry \(to)", "advance 0.3", "release"] { _ = runner.step(ChaosAction(text: line)) }
+    play(["react"])
+    let put = try #require(runner.system.windows[WindowID(103)]?.snapshot.frame)
+    #expect(runner.controller.workspaces.values.contains { $0.isDocked(WindowID(101)) })
+    play(["cursor 400 400", "key down undo", "key up undo"])
+    #expect(runner.system.windows[WindowID(103)]?.snapshot.frame == put, "the Terminal stays where the hand put it")
+    #expect(!runner.controller.workspaces.values.contains { $0.isDocked(WindowID(101)) }, "and the first ⌃⌥Z takes the dock back")
+  }
+
+  /// A docked window dragged out is a change of the arrangement, and ⌃⌥Z is the way back.
+  @Test func aDockedWindowDraggedOutPlainlyCanBeTakenBack() {
+    let s = DragScene()
+    let before = s.h.workspace.tree
+    s.h.system.drag(s.a, through: [CGPoint(x: s.frame(s.a).midX, y: s.frame(s.a).minY + 10), s.frame(s.b).center], plainly: true)
+    #expect(s.h.workspace.isFloating(s.a))
+    s.h.run("undo")
+    #expect(s.h.workspace.tree.hasSameArrangement(as: before))
+  }
+
+  /// So can a window that filled the view: it had Arbor's size, as a docked one has, and takes its own at the release (board 0.16).
+  @Test func aWindowThatFillsTheViewDraggedOutPlainlyCanBeTakenBack() throws {
+    let h = Harness()
+    let a = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 500, height: 400))
+    h.start()
+    h.system.userFocus(a)
+    h.run("zoom")
+    h.scheduler.runPending()
+    let filling = try #require(h.frame(a))
+    #expect(h.controller.isFilled(a))
+    h.system.drag(a, through: [CGPoint(x: filling.midX, y: filling.minY + 10), CGPoint(x: 900, y: 300)], plainly: true)
+    h.scheduler.runPending()
+    #expect(!h.controller.isFilled(a) && h.frame(a)?.size == CGSize(width: 500, height: 400))
+    #expect(h.run("undo").ok)
+    h.scheduler.runPending()
+    #expect(h.controller.isFilled(a) && h.frame(a) == filling)
+  }
+
   /// No waiting over a target either: a plain drag starts no timer of its own. (The press gives the window the keyboard, and the ring round
   /// the window with the keyboard follows it on timers of the ring's, whatever moves the window.)
   @Test func aPlainDragStartsNoTimer() {

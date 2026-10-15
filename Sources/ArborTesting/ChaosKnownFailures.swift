@@ -1279,7 +1279,7 @@ extension ChaosRunner {
   /// read 0; whoever brings one there takes it out of this set, and from then on it ends walks like any other rule.
   public nonisolated static let countedRules: Set<String> = [
     "eye-moved-twice", "eye-moved-twice-sizing", "eye-moved-again", "eye-moved-again-sizing",
-    "floating-taken-out-of-view", "strayed-between", "dock-took-out-of-view", "displays-moved-the-untouched", "plain-drag-left-an-undo-step",
+    "floating-taken-out-of-view", "strayed-between", "dock-took-out-of-view", "displays-moved-the-untouched",
     "parked-before-any-dock", "arrival-moved-a-neighbour", "arrival-took-a-neighbour-out-of-view",
     "displays-fetched-what-was-in-reach",
   ]
