@@ -70,6 +70,8 @@
 #   ARBOR_SHORTCUTS=all             BEFORE sourcing this file, in a script that is no section and presses keys of the whole map: nine ship ("Which Arbor")
 #   arbor_start [count] [NAME=v…]   test windows W1…Wcount (default 4), then Arbor limited to them. With ARBOR_BUNDLE=<a copy of Arbor.app in
 #                                     the session's folder> that copy is opened as Finder would: it has no permissions of its own
+#                                   With ARBOR_AS_A_PERSON=1 (run.sh --as-a-person), on GitHub's Macs: Arbor.app through Launch Services, without the
+#                                     permission, which it is given while it waits ("As a person starts it", below). arbor_start_apps too
 #   arbor_stop [name]               quit Arbor, check that every test window is back on screen (and take the
 #                                     picture <name> of that), close the test windows. ARBOR_AFTER_QUIT=<function>: called before
 #                                     they close, for a script that wants a look of its own at what quitting left
@@ -1329,7 +1331,7 @@ reopen_test_windows() {
 
 # Starts Arbor on the session's windows, settings and saved state, and waits until it manages the windows.
 # Without arguments, with those of the session's last launch.
-arbor_relaunch() { arbor_launch "$@"; }
+arbor_relaunch() { ARBOR_LATER_DAY=1 arbor_launch "$@"; }
 # Under names of their own in here, so that a script's own function of the same name changes nothing in this file.
 arbor_launch() {
   local argument status="" deadline binary="$ARBOR_BIN/Arbor" expected pids id
@@ -1371,6 +1373,10 @@ arbor_launch() {
   if [ -n "${ARBOR_BUNDLE:-}" ]; then
     # shellcheck disable=SC2086
     arbor_open_bundle ARBOR_ONLY_PIDS="$pids" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 \
+      ARBOR_NO_WATCHDOG=1 $ARBOR_LAUNCH_ENV
+  elif arbor_as_a_person; then
+    # shellcheck disable=SC2086
+    arbor_open_as_a_person ARBOR_ONLY_PIDS="$pids" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 \
       ARBOR_NO_WATCHDOG=1 $ARBOR_LAUNCH_ENV
   else
     # shellcheck disable=SC2086
@@ -1421,6 +1427,109 @@ arbor_open_bundle() {
   # never empty: the case above ends the script unless it is a path in the session's folder
   ARBOR_PID=$(pgrep -f "$ARBOR_BUNDLE/Contents/MacOS/Arbor" | head -n 1)
   [ -n "$ARBOR_PID" ] || die "the bundle did not start"
+}
+
+# MARK: As a person starts it
+#
+# A script's Arbor is the bare binary, a child of the shell: it borrows the permission of whoever started the shell, and has it from its first
+# instant. Nobody's Arbor is like that. A person opens Arbor.app, which answers for itself, has no permission, and is given it while it waits.
+# It makes a difference: on a hosted Mac (2026-10-15, macOS 26.6.2) an Arbor started so was told by CGEventSource.keyState(.combinedSessionState)
+# that a key which was down was up, 19 times of 19, and the shell's child the truth 288 times of 288; so a held key was a tap, in the Arbor
+# people have and in no script's. With ARBOR_AS_A_PERSON=1 both doors (arbor_launch here, arbor_start_apps in lib-apps.sh) start it the person's way,
+# with the same environment. Only on GitHub's Macs: it writes to the privacy database. In a rehearsal it changes nothing: the fake Mac
+# has neither Launch Services nor a privacy database.
+#
+# arbor_start is a first day: the entry is forgotten, Arbor is seen waiting, and is given the permission while it waits. arbor_relaunch is a later
+# day: the entry is there from before the start. THE START IS A PERSON'S, THE GRANT IS A SCRIPT'S: no script can flick the switch in System Settings.
+#
+# A script that is itself about the permission says ARBOR_MAY_LACK_PERMISSION=1 at its start: then nothing is forgotten and nothing granted
+# here, the entry is the script's own business (check-F63.sh: `arbor_grant` before it notes which entries allow).
+ARBOR_ID=com.evbarleyg.arbor
+# safe anywhere: a name; nothing is done with it here
+ARBOR_TCC="/Library/Application Support/com.apple.TCC/TCC.db"
+ARBOR_ANNOUNCE="$ARBOR_APPS/announce-accessibility"
+arbor_as_a_person() { [ "${ARBOR_AS_A_PERSON:-}" = 1 ] && [ -z "${ARBOR_REHEARSAL:-}" ] && on_throwaway_mac; }
+arbor_tcc() {
+  arbor_may "write to the privacy database" || return 1
+  sudo sqlite3 "$ARBOR_TCC" "$1"
+}
+# The switch in System Settings does three things, and so does this, in that order: it writes the entry, the daemon (which answers from memory)
+# learns of it, here by being restarted, and the change is announced, which is how a running process hears of it (check-F63.sh has the measurements).
+arbor_build_announce() {
+  swiftc -O -swift-version 5 - -o "$ARBOR_ANNOUNCE" > "$ARBOR_OUT/build-announce.log" 2>&1 <<'SWIFT' || die "the three lines that announce a change did not compile"
+import Foundation
+DistributedNotificationCenter.default().postNotificationName(
+  Notification.Name("com.apple.accessibility.api"), object: nil, userInfo: nil, deliverImmediately: true)
+SWIFT
+}
+arbor_told() {
+  arbor_may "restart the daemon that keeps the privacy database" || return 1
+  [ -x "$ARBOR_ANNOUNCE" ] || arbor_build_announce
+  sudo killall -9 tccd 2>/dev/null
+  sleep 2
+  "$ARBOR_ANNOUNCE"
+}
+# The bundle's own entry, made from one that is there, so that it has whatever columns this macOS has.
+arbor_grant() {
+  arbor_tcc "DELETE FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$ARBOR_ID';
+    CREATE TEMP TABLE one AS SELECT * FROM access WHERE service = 'kTCCServiceAccessibility' AND auth_value = 2 LIMIT 1;
+    UPDATE one SET client = '$ARBOR_ID', client_type = 0, csreq = NULL;
+    INSERT INTO access SELECT * FROM one;" || return 1
+  arbor_told
+}
+arbor_forget() {
+  arbor_tcc "DELETE FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$ARBOR_ID';" || return 1
+  arbor_told
+}
+arbor_is_allowed() {
+  "$ARBOR_BIN/arborctl" state 2>/dev/null | python3 "$ARBOR_STATE_PY" ready 0 2>/dev/null
+  [ $? -ne 3 ]
+}
+# arbor_open_as_a_person NAME=value…: sets ARBOR_PID. What a child of this shell would have inherited of Arbor's variables goes with it, and of a name
+# given twice the last counts, as with `env`.
+arbor_open_as_a_person() {
+  local name all=() arguments=() i j later tries=0 log
+  arbor_as_a_person || die "arbor_open_as_a_person: only with ARBOR_AS_A_PERSON=1, on a throwaway Mac"
+  arbor_may "open Arbor.app, which registers it, and write its entry in the privacy database" || return 1
+  [ -x "$ARBOR_APP/Contents/MacOS/Arbor" ] || die "arbor_open_as_a_person: there is no $ARBOR_APP; call arbor_build first"
+  for name in $(compgen -e ARBOR_); do all+=("$name=${!name}"); done
+  all+=("$@")
+  for ((i = 0; i < ${#all[@]}; i++)); do
+    later=""
+    for ((j = i + 1; j < ${#all[@]}; j++)); do [ "${all[j]%%=*}" = "${all[i]%%=*}" ] && later=1; done
+    [ -n "$later" ] || arguments+=(--env "${all[i]}")
+  done
+  [ -n "${ARBOR_MAY_LACK_PERMISSION:-}${ARBOR_LATER_DAY:-}" ] || arbor_forget || die "the privacy database cannot be written here"
+  log="$ARBOR_OUT/$(arbor_log_name arbor-stderr)"
+  : >> "$log"
+  if ! limit 20 open -n --stdout "$log" --stderr "$log" "${arguments[@]}" "$ARBOR_APP"; then
+    echo "NOTE: \`open\` would not connect what Arbor writes to a file; opened without, so there is no $(basename "$log") of this start"
+    limit 20 open -n "${arguments[@]}" "$ARBOR_APP" || die "could not open $ARBOR_APP"
+  fi
+  # The lock names who holds it; one that an Arbor which was killed left behind names nobody that lives.
+  # safe anywhere: it asks whether that process lives, and sends it nothing
+  until "$ARBOR_BIN/arborctl" status > /dev/null 2>&1 && kill -0 "$(cat "$ARBOR_HOME/arbor.lock" 2>/dev/null)" 2>/dev/null; do
+    tries=$((tries + 1))
+    [ "$tries" -lt 100 ] || die "Arbor.app was opened and does not answer on its socket"
+    sleep 0.2
+  done
+  ARBOR_PID=$(cat "$ARBOR_HOME/arbor.lock")
+  echo "as a person starts it: Arbor.app through Launch Services, pid $ARBOR_PID: $("$ARBOR_BIN/arborctl" status 2>&1 | head -n 1 | cut -c 1-70)"
+  [ -z "${ARBOR_MAY_LACK_PERMISSION:-}" ] || return 0
+  if [ -n "${ARBOR_LATER_DAY:-}" ]; then
+    arbor_is_allowed || die "a later day: the entry was there before the start, and Arbor says it has no permission"
+    return 0
+  fi
+  # The premise: one that is allowed before anybody gave it anything is not answering for itself, and the start proves nothing.
+  arbor_is_allowed && die "Arbor.app has the permission before it was given it: it is not answering for itself"
+  arbor_grant || die "the privacy database cannot be written here"
+  tries=0
+  until arbor_is_allowed; do
+    tries=$((tries + 1))
+    [ "$tries" -lt 75 ] || die "Arbor was given the permission while it waited, and 15 s later still says it has none"
+    sleep 0.2
+  done
+  echo "given the permission while it waited; it knew after $(echo "scale=1; $tries / 5" | bc) s"
 }
 
 # A drag or a modifier left held (the script was stopped half way through one) would outlive the session: nobody

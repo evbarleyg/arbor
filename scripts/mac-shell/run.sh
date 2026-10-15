@@ -1,7 +1,7 @@
 #!/bin/bash
 # Runs a script from this repository on a real Mac and brings back what it produced. Or several scripts.
 #
-#   scripts/mac-shell/run.sh [--macs N] [--at-once N] [--on macos-15] [--bare] [--release] [--limit S] [--priority N] [--no-preflight "<why>"] <script>… [ref]
+#   scripts/mac-shell/run.sh [--macs N] [--at-once N] [--on macos-15] [--bare] [--release] [--as-a-person] [--limit S] [--priority N] [--no-preflight "<why>"] <script>… [ref]
 #   scripts/mac-shell/run.sh scripts/mac-shell/shots-demo.sh
 #   scripts/mac-shell/run.sh scripts/mac-shell/shots-F10.sh scripts/mac-shell/shots-F12.sh scripts/mac-shell/shots-F43.sh
 #
@@ -26,6 +26,9 @@
 #               supervisor for ($ARBOR_TIME_LIMIT, in the script or in a file it reads in). A Mac has eighty minutes for its scripts, so fewer go to one.
 #   --release   the scripts drive the release build, the program people get (ARBOR_CONFIGURATION=release says the same): for whatever is measured,
 #               how busy, how long, how smooth. It is built before the first script and kept for the next run, apart from the debug builds.
+#   --as-a-person   the scripts start Arbor the way a person does: Arbor.app through Launch Services, without the Accessibility permission, which it is given
+#               while it waits (ARBOR_AS_A_PERSON=1 says the same). Without it Arbor is the bare binary, a child of the script's shell, which has the
+#               permission from its first instant: macOS treats the two differently (lib.sh, "As a person starts it").
 #   --priority N   GitHub hands its Macs out in no particular order, so the order is kept here, before the run is started: waiting
 #               here costs nobody anything. 1 waits for nobody's ordinary run: a fault on real windows, a merge train. 2 waits while three or
 #               more jobs are waiting for a Mac. 3 (the default) waits while any is: pictures, features, whatever can wait.
@@ -71,8 +74,8 @@
 set -uo pipefail
 cd "$(dirname "$0")/../.." || exit 97
 
-usage="usage: scripts/mac-shell/run.sh [--macs N] [--at-once N] [--on macos-15] [--bare] [--release] [--limit S] [--priority N] [--no-preflight \"<why>\"] <script>… [ref]"
-seconds="" longest="" macs="" at_once="" ref="" kind=macos-26 bare=false priority=${ARBOR_MAC_PRIORITY:-3} unchecked="" configuration=${ARBOR_CONFIGURATION:-debug}
+usage="usage: scripts/mac-shell/run.sh [--macs N] [--at-once N] [--on macos-15] [--bare] [--release] [--as-a-person] [--limit S] [--priority N] [--no-preflight \"<why>\"] <script>… [ref]"
+seconds="" longest="" macs="" at_once="" ref="" kind=macos-26 bare=false priority=${ARBOR_MAC_PRIORITY:-3} unchecked="" configuration=${ARBOR_CONFIGURATION:-debug} person=${ARBOR_AS_A_PERSON:-}
 scripts=()
 while [ $# -gt 0 ]; do
   case "$1" in
@@ -80,6 +83,7 @@ while [ $# -gt 0 ]; do
     --at-once) at_once=${2:?$usage}; shift ;;
     --on) kind=${2:?$usage}; shift ;;
     --release) configuration=release ;;
+    --as-a-person) person=1 ;;
     --limit) seconds=${2:?$usage}; shift ;;
     --bare) bare=true ;;
     --priority) priority=${2:?$usage}; shift ;;
@@ -98,6 +102,8 @@ case "$seconds" in *[!0-9]* | 0) echo "run.sh: --limit takes seconds, 1 or more"
 case "$priority" in 1 | 2 | 3) ;; *) echo "run.sh: --priority takes 1, 2 or 3" >&2; exit 97 ;; esac
 case "$configuration" in debug | release) ;; *) echo "run.sh: ARBOR_CONFIGURATION is debug or release, not '$configuration'" >&2; exit 97 ;; esac
 [ "$configuration" = debug ] || [ "$bare" = false ] || { echo "run.sh: --bare builds nothing, so there is no release build to drive" >&2; exit 97; }
+case "$person" in "" | 1) ;; *) echo "run.sh: ARBOR_AS_A_PERSON is 1 or nothing, not '$person'" >&2; exit 97 ;; esac
+[ -z "$person" ] || [ "$bare" = false ] || { echo "run.sh: --bare builds nothing, so there is no Arbor.app to open" >&2; exit 97; }
 ref=${ref:-$(git rev-parse --abbrev-ref HEAD)}
 [ "$ref" != HEAD ] || { echo "run.sh: no branch is checked out; name one: run.sh <script> <ref>" >&2; exit 97; }
 script=${scripts[0]}
@@ -120,6 +126,10 @@ done
 if [ "$configuration" != debug ] && git cat-file -e "$remote:scripts/mac-shell/lib.sh" 2>/dev/null \
   && ! git show "$remote:scripts/mac-shell/lib.sh" | grep -q 'swift build -c "\$ARBOR_CONFIGURATION"'; then
   fail "$ref's scripts/mac-shell/lib.sh is older than the switch for the $configuration build, and would drive debug whatever is asked: bring the branch up to date first"
+fi
+if [ -n "$person" ] && git cat-file -e "$remote:scripts/mac-shell/lib.sh" 2>/dev/null \
+  && ! git show "$remote:scripts/mac-shell/lib.sh" | grep -q '^arbor_as_a_person()'; then
+  fail "$ref's scripts/mac-shell/lib.sh is older than --as-a-person, and would start the bare binary whatever is asked: bring the branch up to date first"
 fi
 if [ "$ref" = "$(git rev-parse --abbrev-ref HEAD)" ]; then
   [ "$remote" = "$(git rev-parse HEAD)" ] || fail "$ref is at ${remote:0:7} on GitHub but $(git rev-parse --short HEAD) here; push first"
@@ -195,9 +205,10 @@ name=$(slug "$(basename "$script" .sh)" 16)
 [ "$kind" = macos-26 ] || name=$(slug "$name" 9)-${kind#macos-}
 # To be read at a glance: the same script on the other build is another question.
 [ "$configuration" = debug ] || name=$(slug "$name" 12)-rel
+[ -z "$person" ] || name=$(slug "$name" 12)-per
 # Names are cut short to fit, and a run started under the tag of one that is under way replaces it: so whatever is cut off has its say in a few
 # letters at the end. The same scripts for the same ref on the same kind of Mac and the same build get the same tag again, and nothing else does.
-whole=$(printf '%s\n' "$ref" "$kind" "$configuration" "${scripts[@]}" | git hash-object --stdin | cut -c 1-5)
+whole=$(printf '%s\n' "$ref" "$kind" "$configuration${person:+ as a person}" "${scripts[@]}" | git hash-object --stdin | cut -c 1-5)
 tag=${MAC_SHELL_TAG:-$(slug "$ref" 15).$name.$whole}
 
 # What Linux can say, it says first.
@@ -307,12 +318,13 @@ newest=$(api "$runs" --jq '.workflow_runs[0].id // 0') || fail "cannot list the 
 other=()
 [ "$configuration" = debug ] || other=(-f "inputs[configuration]=$configuration")
 [ "$seconds" -eq 1200 ] || other+=(-f "inputs[limit]=$seconds")
+[ -z "$person" ] || other+=(-F "inputs[person]=true")
 api -X POST "repos/$repo/actions/workflows/mac-shell.yml/dispatches" \
   -f ref="$home" -f "inputs[ref]=$ref" -f "inputs[script]=${scripts[*]}" -f "inputs[tag]=$tag" ${other[@]+"${other[@]}"} \
   -f "inputs[at-once]=${at_once:-5}" -f "inputs[runner]=$kind" -F "inputs[bare]=$bare" -f "inputs[unchecked]=$(printf '%s' "$unchecked" | tr -c 'A-Za-z0-9 .,:_/-' ' ' | cut -c 1-80)" \
   -f "inputs[macs]=$plan" >/dev/null \
   || fail "could not start the workflow of $home for $ref"
-echo "started ${scripts[*]} at $ref (${remote:0:7}), tag $tag$([ "$macs" -eq 1 ] || echo ", on $macs Macs")$([ "$configuration" = debug ] || echo ", the $configuration build"); waits ${limit} s at most"
+echo "started ${scripts[*]} at $ref (${remote:0:7}), tag $tag$([ "$macs" -eq 1 ] || echo ", on $macs Macs")$([ "$configuration" = debug ] || echo ", the $configuration build")${person:+, started as a person starts it}; waits ${limit} s at most"
 # For whoever shares a look at the queue: there is one more waiting now. Costs no call.
 look 20 python3 scripts/mac-queue.py --repo "$repo" --started "$macs" --for "$ref"
 

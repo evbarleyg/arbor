@@ -73,6 +73,8 @@ DistributedNotificationCenter.default().postNotificationName(
   Notification.Name("com.apple.accessibility.api"), object: nil, userInfo: nil, deliverImmediately: true)
 SWIFT
 tcc "SELECT count(*) FROM access;" > /dev/null 2>&1 || die "the privacy database cannot be read here"
+# Started as a person starts it (lib.sh), Arbor answers for itself: its own entry is then among those that are switched off and on.
+arbor_as_a_person && arbor_grant
 ALLOWED_ROWS=$(tcc "SELECT group_concat(rowid) FROM access WHERE service = 'kTCCServiceAccessibility' AND auth_value = 2;")
 [ -n "$ALLOWED_ROWS" ] || die "nothing has the Accessibility permission here, so there is none to take away"
 tcc "SELECT rowid, client, auth_value FROM access WHERE service = 'kTCCServiceAccessibility';"

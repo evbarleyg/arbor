@@ -68,6 +68,11 @@ on:
         default: debug
         type: choice
         options: [debug, release]
+      person:
+        description: The scripts start Arbor as a person does, Arbor.app through Launch Services, given the permission while it waits (run.sh --as-a-person)
+        required: false
+        default: false
+        type: boolean
 
 # A run started again under the same tag (by default: the same scripts for the same branch) replaces the one before, which would
 # push to the same branch anyway: whoever starts it again after a fix no longer wants the old answer, and somebody is waiting for that Mac.
@@ -97,6 +102,8 @@ jobs:
       REF: ${{ inputs.ref }}
       # For the build below and for lib.sh's arbor_build, which then finds nothing left to do.
       ARBOR_CONFIGURATION: ${{ inputs.configuration || 'debug' }}
+      # lib.sh, "As a person starts it".
+      ARBOR_AS_A_PERSON: ${{ inputs.person && '1' || '' }}
       MAC_SHELL_LIMIT: ${{ inputs.limit || '1200' }}
     steps:
       - name: Check the inputs
