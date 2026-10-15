@@ -145,9 +145,6 @@ macos_reduce_motion off
 macos_tiling
 if ! camera_start; then
   echo "the stream gave no frames; trying one picture after another"
-  kill_started "$FILM_CAMERA_PID"
-  FILM_CAMERA_PID=""
-  exec 4>&-
   camera_start --poll || die "no camera: neither the stream nor pictures"
 fi
 # A regular app, as people's apps are: in the Dock and in ⌘⇥.
@@ -265,7 +262,8 @@ scene_end 1.5
 
 # The item is a row of buttons once something is docked; the last one opens the menu. The item centres its image.
 read -r ix iy iw ih <<< "$(status_item_frame)"
-at=$("$ARBOR_BIN/arborctl" menu-bar | awk -v ix="$ix" -v iy="$iy" -v iw="$iw" -v ih="$ih" '
+# Without a frame awk would still print a point: the top left corner, which is the Apple menu.
+at=$([ -n "${ih:-}" ] && "$ARBOR_BIN/arborctl" menu-bar | awk -v ix="$ix" -v iy="$iy" -v iw="$iw" -v ih="$ih" '
   { width = $2 + $3 }
   $1 == "menu" { middle = $2 + $3 / 2; found = 1 }
   END { if (!found) exit 1; printf "%d %d\n", ix + (iw - width) / 2 + middle, iy + ih / 2 }') || at=$(status_item)

@@ -87,7 +87,26 @@ camera_start() {
   exec 4> "$FILM_TEMP/commands"
   film_await 150 grep -q -E "^camera-(ready|failed)" "$log"
   cat "$log"
-  grep -q "^camera-ready" "$log"
+  grep -q "^camera-ready" "$log" && return 0
+  camera_gone
+  return 1
+}
+
+# Nobody reads the other end any more: whoever wrote there would be ended by the signal.
+camera_gone() {
+  exec 4>&-
+  [ -z "$FILM_CAMERA_PID" ] || kill_started "$FILM_CAMERA_PID"
+  FILM_CAMERA_PID=""
+  FILM_SCENE=""
+}
+
+# Whether the camera is still there. It ends itself when its stream stops.
+camera_rolls() {
+  [ -n "$FILM_CAMERA_PID" ] || return 1
+  kill -0 "$FILM_CAMERA_PID" 2>/dev/null && return 0
+  echo "the camera is gone: $(tail -n 1 "$ARBOR_OUT/camera-$FILM_CAMERAS.log")"
+  camera_gone
+  return 1
 }
 
 camera_stop() {
@@ -107,7 +126,7 @@ display_size() {
   "$FILM_APPTOOL" set-mode "$1" "$2" || echo "the display does not offer $1 x $2"
   sleep 2
   pointer displays
-  camera_start
+  camera_start || { echo "display_size: the camera did not come back"; return 1; }
 }
 
 # film_await <tenths of a second> <command…>
@@ -123,6 +142,8 @@ film_await() {
 }
 
 note() { [ -n "$FILM_CAMERA_PID" ] && echo "mark $*" >&4; }
+# A camera that dies between the look and the line must not take the script with it.
+trap '' PIPE
 
 # Where Arbor believes every window is, for the judge to hold against what the display showed. Ids, never titles.
 film_windows() {
@@ -155,9 +176,9 @@ hold_drag() {
 }
 
 scene() {
-  local name=$1 kind=$2 index=0 id
+  local name=$1 kind=$2
   shift 2
-  [ -n "$FILM_CAMERA_PID" ] || { echo "scene $name: no camera"; return 1; }
+  camera_rolls || { echo "scene $name: no camera"; return 1; }
   [ -z "$FILM_SCENE" ] || scene_end 0
   step "scene $name: $*"
   FILM_SCENE=$name
@@ -167,11 +188,6 @@ scene() {
   note "scene $name"
   note "kind $kind"
   note "text $*"
-  # The nth test window has the nth colour (Sources/ArborTestWindows/main.swift), which is how the judge tells them apart.
-  for id in ${ARBOR_WINDOW_IDS:-}; do
-    index=$((index + 1))
-    note "window $id colour $index"
-  done
   film_windows before
   # Seen at rest first: what the first frame of a motion differs from.
   sleep 0.4
@@ -182,6 +198,7 @@ scene_end() {
   local name=$FILM_SCENE
   [ -n "$name" ] || return 0
   sleep "${1:-2.5}"
+  camera_rolls || return 1
   film_windows after
   film_overlays after
   echo end >&4
@@ -190,6 +207,7 @@ scene_end() {
     FILM_COUNT=$((FILM_COUNT + 1))
     rm -f "$ARBOR_OUT/films/$name/rolling" "$ARBOR_OUT/films/$name/done"
     echo "film: mac-shell/films/$name/: $(tail -n 1 "$ARBOR_OUT/films/$name/film.log" | cut -d ' ' -f 3-)"
+    ! grep " L " "$ARBOR_OUT/films/$name/film.log" || echo "film $name: THE CAMERA RAN OUT OF ROOM: its end is missing"
   else
     echo "film $name: the camera did not finish it"
     return 1
@@ -197,7 +215,7 @@ scene_end() {
 }
 
 metronome() {
-  scene "metronome-$1" control "the camera's own square: $1"
+  scene "metronome-$1" control "the camera's own square: $1" || return 1
   echo "metronome $1" >&4
   scene_end 2.4
 }

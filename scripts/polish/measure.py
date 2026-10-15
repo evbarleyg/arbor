@@ -200,11 +200,6 @@ class Motion:
                 following = np.flatnonzero(speed[index:] < speed[index] / 3)
                 index += int(following[0]) if following.size else len(speed)
             index += 1
-        # The longest wait between two frames while things were under way, in the fast part, where an eye follows.
-        _, _, raw_t, _ = self.longest
-        fast = [b - a for a, b, step in zip(raw_t[:-1], raw_t[1:], np.abs(steps)) if step >= 2]
-        self.gap = float(max(fast)) if fast else 0.0
-        self.frames = len(fast)
 
 
 def wobbles(scan, cause, until):
@@ -262,7 +257,8 @@ def looks(scan, cause, until):
         samples = series[id(track)]
         if len(samples) < 2:
             continue
-        steps = [float(np.abs(b[1] - a[1]).max()) for a, b in zip(samples[:-1], samples[1:])]
+        # From the cause on: what a preview's tint does to a window that is still held is another check's.
+        steps = [float(np.abs(b[1] - a[1]).max()) if film.times[b[0]] >= cause - 5 else 0.0 for a, b in zip(samples[:-1], samples[1:])]
         worst = int(np.argmax(steps))
         found.append((track, steps[worst], samples[worst + 1][0]))
     return found
@@ -274,7 +270,16 @@ def cause_of(film):
     goes = next((time for time, mark in film.marks if mark.startswith("metronome") and " goes " in mark), None)
     if goes is not None:
         return goes, "exact"
+    lifted = film.time_of("fingers up")
+    if lifted is not None:
+        return lifted, "exact"
     ups = [time for time, what, _, _ in film.buttons if what == "up" and time >= action]
+    if film.kind == "panel":
+        # Whatever came first, a key or a click: a menu is opened with one and closed with the other.
+        first = sorted([time for time, what in film.keys if what == "down" and time >= action]
+                       + [time for time, what, _, _ in film.buttons if what == "down" and time >= action])
+        if first:
+            return first[0], "exact"
     if film.kind == "drag" and ups:
         return ups[-1], "exact"
     downs = [time for time, what in film.keys if what == "down" and time >= action]
@@ -351,6 +356,27 @@ def flashes(scan, since):
     return really(scan, found)
 
 
+def washes(scan, since):
+    """Moments at which two fifths of the room or more were plainly something else for 130 ms or less, and then what they had been:
+    [(frame, milliseconds, share of the room)]. Too large to be followed as a thing, and the worst flash there is."""
+    film, found = scan.film, []
+    for index in range(1, len(film) - 1):
+        if film.times[index] < since:
+            continue
+        before, now = scan.small[index - 1], scan.small[index]
+        other = (np.abs(now - before).max(axis=2) > PLAIN)
+        if other.mean() < 0.4:
+            continue
+        for later in range(index + 1, len(film)):
+            if film.times[later] - film.times[index] > 130:
+                break
+            back = other & (np.abs(scan.small[later] - before).max(axis=2) <= PLAIN)
+            if back.mean() >= 0.4:
+                found.append((index, int(film.times[later] - film.times[index]), float(back.mean())))
+                break
+    return found
+
+
 def really(scan, candidates):
     """Of things that were found for a moment only, those whose place plainly looked otherwise just before and just after. The others
     were there all along, and only the finding of them flickered."""
@@ -364,7 +390,7 @@ def really(scan, candidates):
     for index, _, picture, _ in scan.film.frames():
         for place, role in wanted.get(index, []):
             rect = candidates[place][0].rects[0]
-            seen[(place, role)] = picture[rect.top:rect.bottom, rect.left:rect.right].astype(np.int16)
+            seen[(place, role)] = picture[max(rect.top, 0):rect.bottom, max(rect.left, 0):rect.right].astype(np.int16)
     kept = []
     for place, candidate in enumerate(candidates):
         during = seen[(place, "during")]
@@ -444,11 +470,12 @@ def measure(film):
     if spells and spells[0][3] - spells[0][2] >= 4:
         tick = float(np.clip(np.median(np.diff(film.times[spells[0][2]:spells[0][3] + 1])), TICK, 60))
     result["tick"] = tick
-    until = (spells[0][1] if spells else cause) + 1
+    until = spells[0][1] if spells else cause
     result["motion"] = Motion(scan, cause, until, tick)
     result["wobbles"] = wobbles(scan, cause, until)
     result["looks"] = looks(scan, cause, until)
     result["flashes"] = flashes(scan, cause - 5)
+    result["washes"] = washes(scan, cause - 5)
     result["blinks"] = blinks(scan, cause - 5)
     after = film.times >= cause
     result["bars"] = (float(scan.strips[after, 0].max(initial=0)), float(scan.strips[after, 1].max(initial=0)))
