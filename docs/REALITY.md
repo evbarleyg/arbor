@@ -61,13 +61,13 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [second-actor](#second-actor) | 44 | 6 | 12 | 16 | 9 | 7 | 26 | 0 | 4 | 14 | 8 |
 | [geometry](#geometry) | 29 | 1 | 7 | 12 | 8 | 2 | 16 | 1 | 2 | 10 | 7 |
 | [identity](#identity) | 28 | 4 | 6 | 5 | 6 | 11 | 11 | 1 | 2 | 14 | 7 |
-| [permissions](#permissions) | 22 | 8 | 6 | 3 | 3 | 10 | 11 | 2 | 2 | 7 | 4 |
+| [permissions](#permissions) | 23 | 8 | 6 | 3 | 3 | 11 | 12 | 2 | 2 | 7 | 4 |
 | [timing](#timing) | 50 | 7 | 7 | 15 | 8 | 20 | 27 | 4 | 6 | 13 | 9 |
 | [input](#input) | 56 | 7 | 6 | 13 | 13 | 24 | 20 | 6 | 7 | 23 | 11 |
 | [looks](#looks) | 18 | 0 | 0 | 0 | 1 | 17 | 1 | 2 | 3 | 12 | 4 |
 | [never-exercised](#never-exercised) | 16 | 7 | 2 | 13 | 0 | 1 | 0 | 0 | 15 | 1 | 16 |
-| [toolchain](#toolchain) | 41 | 1 | 0 | 1 | 4 | 36 | 23 | 1 | 0 | 17 | 6 |
-| **all** | 422 | 59 | 80 | 109 | 67 | 166 | 204 | 19 | 53 | 146 | 99 |
+| [toolchain](#toolchain) | 43 | 1 | 0 | 1 | 4 | 38 | 25 | 1 | 0 | 17 | 6 |
+| **all** | 425 | 59 | 80 | 109 | 67 | 169 | 207 | 19 | 53 | 146 | 99 |
 
 **Where the difference bit**
 
@@ -77,7 +77,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 146 | 91 | 108 | 0 | 10 | 28 |
 | controller | in the controller or the core, given reports that were right | 25 | 13 | 13 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 74 | 0 | 19 | 5 | 8 | 42 |
-| machine | in the machine, the toolchain or the way things are built and installed | 40 | 3 | 23 | 1 | 2 | 14 |
+| machine | in the machine, the toolchain or the way things are built and installed | 43 | 3 | 26 | 1 | 2 | 14 |
 
 Each case is counted under the best guard it has: one that goes red on any machine (a test, a scenario, a replayed trace, a tool that `make check` or CI runs), one that needs CI's Macs (a test for macOS alone, a step of a real-window run that CI starts), one that somebody has to start, or none.
 
@@ -3027,6 +3027,18 @@ Permissions: what macOS allows, to whom, and how it says no.
 - **Arbor copes:** AXWindowSystem.focus sets AXFrontmost through Accessibility if no app has come forward 0.3 s after the request. The settings window makes way for the app that was in front before it, and the test app comes forward by itself on a signal. The fake can leave a request unanswered; the rehearsal's focus always succeeds.
 - **Read in:** `Sources/ArborKit/AX/AXWindowSystem.swift`, `scripts/mac-shell/proof.sh`, `collab/evidence/gestures-latest.txt`, `Sources/ArborKit/UI/SettingsWindow.swift`, `collab/BACKLOG.md`
 
+### a-keychain-a-test-makes-has-no-partition-lists-and-the-login-keychain-has
+
+*hurt 3 · machine*
+
+- **Expected:** What codesign may do with a key in a keychain that a test has made for itself, it may do with one in a person's login keychain. Six roads were tried in such keychains on three releases of macOS, no dialog came on any, and it was written down, and told to four others, that nobody needs to be asked. And a dialog goes when the program that caused it is killed.
+- **Happened:** In the login keychain an imported key has five access entries, among them `partition_id: apple-tool:`; codesign's partition is `apple:`, so macOS asks: "codesign wants to access key “…” in your keychain. To allow this, enter the “login” keychain password." Always Allow makes the list `apple-tool:, apple:`, and nothing is asked again. In a keychain made with `security create-keychain` the same import gives three entries and no such list, and nothing is asked. A login keychain made anew asks like the old one. After Deny codesign says `errSecInternalComponent` and the dialog goes at once; a dialog that nobody answers outlives codesign (twenty seconds of twenty, after TERM and after INT) and the key it asks about, until Deny or Escape. An unlocked keychain takes any password on macOS 14 and 15; 26 looks at it (exit code 51), and refuses, for a file named login.keychain-db, the very password it was made with, in its dialog too.
+- **Found by:** `scripts/mac-shell/check-signing.sh`, when a step was added that runs the script as a person does, and a probe after it: hosted Macs with macOS 15.7.9 and 26.6.2, on 2026-10-15. The road to its end (the password, Always Allow, silence) on 15.7.9 alone: on 26 no script knows a password the dialog takes.
+- **Stand-ins play it:** cannot: it lies below or beside the seam
+- **Guard:** `e2e: which is so: the dialog has outlived codesign and the key` (on CI's Macs); `e2e: Always Allow has put codesign's partition on the key's list` (on CI's Macs); `e2e: sign.sh, told nothing, finds it and signs twice with it, and nobody is asked` (on CI's Macs); `tool: release-tools-test.sh`
+- **Arbor copes:** scripts/make-signing-identity.sh says beforehand that macOS will ask and what to choose, says that codesign can sign only of a signature it has just made, gives up after a minute where nobody is there, and says then, and after ⌃C, that the dialog may still be on screen and how to close it. `scripts/mac-shell/check-signing.sh` tries the login keychain itself; the stand-ins in `scripts/release-tools-test.sh` ask in the login keychain and nowhere else.
+- **Read in:** `scripts/make-signing-identity.sh`, `scripts/mac-shell/check-signing.sh`
+
 ### the-login-item-can-be-refused
 
 *hurt 3 · at the seam · suspected · M1066*
@@ -4907,6 +4919,18 @@ Toolchain and machines: compilers, runners and shells that differ from the ones 
 - **Arbor copes:** scripts/lint-paste-safe.py keeps `#` out of the blocks of the pages a person installs Arbor from.
 - **Read in:** `scripts/lint-paste-safe.py`, `docs/INSTALL.md`, `docs/TRACES.md`, `docs/RELEASE-NOTES.md`, `collab/BACKLOG.md`
 
+### macos-calls-every-imported-key-the-same
+
+*hurt 3 · machine*
+
+- **Expected:** `security import` gives a private key the name that comes with it in the file, so `security set-key-partition-list -l "Arbor Local Signing"` finds the key the script has just imported. And when that command fails, the password was wrong.
+- **Happened:** macOS 15.7.9 and 26.6.2 call every key they import "Imported Private Key", whichever openssl packed the file; macOS 14.8.9 gives it the name. By the name none was found ("SecItemCopyMatching: The specified item could not be found in the keychain"), and `scripts/make-signing-identity.sh` called that a wrong password, three times over, to whoever typed the right one. Then it went on to its trial signature, and macOS asked for the same password a fourth time, in a dialog about a key called “identity”: the dialog goes by the name of the file the key came in. That was a fault of the script's. What a person did next is not known: the identity was in the keychain by then and stayed there unless it was removed. To leave the name out would have been no cure: the command then changes every signing key in the keychain, the person's own among them.
+- **Found by:** `scripts/mac-shell/check-F13.sh`, then a probe of eleven trials, each in a keychain of its own, then `scripts/mac-shell/check-signing.sh`: hosted Macs with macOS 14.8.9, 15.7.9 and 26.6.2, on 2026-10-15.
+- **Stand-ins play it:** cannot: it lies below or beside the seam
+- **Guard:** `e2e: it calls the key by the certificate's name` (on CI's Macs); `e2e: with ours taken out again, not an attribute and not an access list of theirs has changed` (on CI's Macs); `tool: release-tools-test.sh`
+- **Arbor copes:** scripts/make-signing-identity.sh asks for no password and takes none, looks for no key by name and changes no key's access list: it imports, from a file named after the certificate, says what macOS will ask and what to choose, signs something, and goes by that. A run that fails or is cut short takes out what it put in, and what is there already is tried before it is called fine. For whoever is without the identity, `make install` ends aloud when a build is signed ad hoc, and `doctor` and Check Setup say what that costs.
+- **Read in:** `scripts/make-signing-identity.sh`, `scripts/sign.sh`, `scripts/install.sh`, `scripts/mac-shell/check-signing.sh`, `docs/INSTALL.md`
+
 ### a-c-callback-may-not-read-what-a-top-level-guard-bound
 
 *hurt 4 · machine*
@@ -5038,6 +5062,18 @@ Toolchain and machines: compilers, runners and shells that differ from the ones 
 - **Guard:** **none**
 - **Arbor copes:** **not yet**
 - **Read in:** `scripts/mac-shell/input-taps.sh`, `scripts/mac-shell/check-displays.sh`, `docs/features/F61-room-before-tiles.md`, `docs/CENSUS.md`
+
+### codesign-looks-only-on-the-search-list
+
+*hurt 4 · machine*
+
+- **Expected:** `codesign --keychain <file>` signs with an identity in that file, so a script can keep a keychain of its own and leave the search list alone.
+- **Happened:** It finds the identity only if the file is on the search list as well, with or without leave to use the key: "no identity found" on macOS 26.6.2, "The specified item could not be found in the keychain" on 14.8.9 and 15.7.9, at once and without a dialog. `security find-identity` with the same file shows the identity all the while. codesign follows HOME to the list, as `security` does, so a throwaway HOME has a throwaway list.
+- **Found by:** The same probe and `scripts/mac-shell/check-signing.sh`, on 2026-10-15. It is why `check-F13.sh` had never got past its second step on a Mac.
+- **Stand-ins play it:** cannot: it lies below or beside the seam
+- **Guard:** `e2e: it fails, and says that that is why` (on CI's Macs); `e2e: on that list and not on the account's: codesign follows HOME to the search list` (on CI's Macs); `tool: release-tools-test.sh`
+- **Arbor copes:** scripts/make-signing-identity.sh and `scripts/sign.sh` say so when codesign fails and the keychain is not on the list, and do not advise removing an identity for it; `scripts/mac-shell/lib-F13.sh` puts its keychain on the throwaway HOME's list.
+- **Read in:** `scripts/make-signing-identity.sh`, `scripts/sign.sh`, `scripts/mac-shell/lib-F13.sh`, `scripts/mac-shell/check-signing.sh`
 
 ### dispatchmain-gives-up-the-main-thread-on-macos
 
