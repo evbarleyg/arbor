@@ -125,6 +125,11 @@ public struct Settings: Codable, Equatable, Sendable {
   /// A letter, digit or sign in a shortcut means the key that types it on the keyboard layout in use, as in
   /// ⌘-shortcuts. Off, it means the key's position on a US keyboard, whatever the layout (KeyLayout.swift).
   public var shortcutsFollowLayout: Bool = true
+  /// Which of Arbor's own shortcuts are bound: `core`, nine keys that are each ⌃⌥ and one key, or `all`, some fifty across ⌃⌥, ⌃⌥⇧ and
+  /// ⌃⌥⌘ (`KeyBindings.core`, `KeyBindings.all`). `bindings` changes single keys on top of either.
+  public var shortcuts: String = "core"
+  /// Whether `shortcuts` asks for the whole map. Whatever is not `all` is the nine.
+  public var bindsTheWholeMap: Bool { shortcuts == "all" }
   /// While something is docked on a display, a plain click on bare Desktop there is kept from macOS,
   /// which would sweep every window aside ("Click wallpaper to reveal desktop"). Drags, icons
   /// and widgets are left alone (F60). Off until it has been seen at work on a Mac.
@@ -277,7 +282,7 @@ public struct Settings: Codable, Equatable, Sendable {
     case stepInToward
     case peek
     case passThroughApps, pauseForApps
-    case shortcutsFollowLayout
+    case shortcutsFollowLayout, shortcuts
     case holdStillFor, holdStillWhileCameraIsOn, holdStillWhileMicrophoneIsOn
     case guardDesktopClicks
     case animationDuration
@@ -359,6 +364,7 @@ public struct Settings: Codable, Equatable, Sendable {
     try read(.passThroughApps, into: &passThroughApps)
     try read(.pauseForApps, into: &pauseForApps)
     try read(.shortcutsFollowLayout, into: &shortcutsFollowLayout)
+    try read(.shortcuts, into: &shortcuts)
     try read(.holdStillFor, into: &holdStillFor)
     try read(.holdStillWhileCameraIsOn, into: &holdStillWhileCameraIsOn)
     try read(.holdStillWhileMicrophoneIsOn, into: &holdStillWhileMicrophoneIsOn)

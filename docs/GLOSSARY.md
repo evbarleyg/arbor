@@ -78,6 +78,6 @@ Onboarding, the HUD (F43), the README and replies should say these the same way.
 
 - What Arbor is: "Dock windows side by side, then zoom between them."
 - When windows leave the view for the first time: "Your other windows are out of view, not closed. ⌃⌥Space shows everything."
-- The three ways back, always in this order: "Show Everything (⌃⌥Space) · Float All Windows (⌃⌥⇧F) puts your Mac back to normal · quitting Arbor brings every window back into view." The coach names one (Q29; three blurred for four readers of six): "⌃⌥⎋ pauses Arbor: every window is as it was. Quit does the same."
+- The three ways back, always in this order: "Show Everything (⌃⌥Space) · Float All Windows puts your Mac back to normal · quitting Arbor brings every window back into view." The coach names one (Q29; three blurred for four readers of six): "⌃⌥⎋ pauses Arbor: every window is as it was. Quit does the same."
 - Why Accessibility: "macOS lets an app move other apps' windows only with Accessibility permission. Arbor reads where windows are and their titles, moves them, and sends nothing anywhere."
 - Why Screen Recording (optional): "With it, windows show their contents while they move. Without it they show their app's colour and icon. Nothing is recorded or stored."

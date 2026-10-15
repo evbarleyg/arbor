@@ -9,7 +9,7 @@ open Notes
 # The first key they try does nothing, and says what to do instead.
 press in
 expect fail
-expect said Nothing is docked yet: drag a window to a screen edge, or try ⌃⌥⌘←
+expect said Nothing is docked yet: drag a window to a screen edge, or try ⌃⌥←
 # They drag a window to the left edge. No command ran, and the moment is explained all the same.
 drag 101 3 400
 expect docked 101
@@ -32,7 +32,7 @@ flush
 # A view that was never saved: the sentence names the keys that would save it.
 press view 7
 expect fail
-expect said View 7 is not saved; ⌃⌥⇧7 saves where you are looking
+expect said View 7 is not saved; “Save View 7” saves where you are looking
 flush
 # The same commands from a script are answered in the reply only.
 view 7

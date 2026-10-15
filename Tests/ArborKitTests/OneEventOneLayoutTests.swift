@@ -285,7 +285,7 @@ private let oneLayout: Set<String> = [
     launch
     open 102 Xcode pid 1004 at 76 25 1248 875 min 1188 685
     open 103 Mail pid 1002 at 138 215 1166 511 min 760 400
-    key down arrange
+    via shortcut arrange
     key down dock top
     key down shrink
     """,
@@ -295,7 +295,7 @@ private let oneLayout: Set<String> = [
     open 102 Safari pid 1000 at 1884 235 1368 960 min 574 240
     displays side:0,0,1920,1080:25,70,0,0* windows-first
     open 104 Music pid 1006 at 464 230 1147 600 min 680 480
-    key down arrange
+    via shortcut arrange
     key down shrink
     """,
     """
@@ -328,7 +328,7 @@ private let oneLayout: Set<String> = [
     open 103 Safari pid 1000 at 2175 376 1128 656 min 574 240
     grab 103
     carry 3356 953
-    key down arrange
+    via shortcut arrange
     quit
     launch
     focus 101

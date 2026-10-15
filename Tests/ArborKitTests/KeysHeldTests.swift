@@ -5,7 +5,7 @@ import Testing
 
 /// A key of Arbor's that is not Arbor's at this moment is known and said: `bindings`, `doctor`, Check Setup, the log.
 @Suite @MainActor struct KeysHeldTests {
-  private let map = KeyBindings.defaults
+  private let map = KeyBindings.core
   private var count: Int { map.count }
 
   private static let healthy = SystemFacts(
@@ -97,23 +97,23 @@ import Testing
 
   @Test func aKeyThatMacOSRefusedIsSaidEverywhere() {
     let h = makeHarness()
-    register(h, refusing: [.arrange])
-    #expect(h.controller.keysHeld.all(.refused).map(\.label) == ["⌃⌥A"])
+    register(h, refusing: [.toggleFloat(nil)])
+    #expect(h.controller.keysHeld.all(.refused).map(\.label) == ["⌃⌥F"])
     let result = h.run("bindings")
     #expect(result.ok, "a query")
     #expect(result.message == "\(count) shortcuts, 1 not Arbor's")
-    #expect(line(h, "arrange")?.hasSuffix(" → arrange  (macOS refused it: Arbor does not hear it)") == true)
-    #expect(result.text?.contains("\n\n⌃⌥A is not Arbor's, though nobody asked for that: Arbor does not hear what is pressed there") == true)
+    #expect(line(h, "toggle-float")?.hasSuffix(" → toggle-float  (macOS refused it: Arbor does not hear it)") == true)
+    #expect(result.text?.contains("\n\n⌃⌥F is not Arbor's, though nobody asked for that: Arbor does not hear what is pressed there") == true)
     #expect(line(h, "show-all")?.hasSuffix(" → show-all") == true, "the others are")
     #expect(shortcuts(h)?.mark == .problem)
-    #expect(shortcuts(h)?.detail == "\(count - 1) registered; macOS refused ⌃⌥A, which Arbor so does not hear")
+    #expect(shortcuts(h)?.detail == "\(count - 1) registered; macOS refused ⌃⌥F, which Arbor so does not hear")
     #expect(!h.run("doctor").ok)
-    #expect(h.controller.setupProblemLines.contains { $0.hasPrefix("setup: Shortcuts: \(count - 1) registered; macOS refused ⌃⌥A") })
-    #expect(row(h)?.title == "⌃⌥A is not Arbor’s")
+    #expect(h.controller.setupProblemLines.contains { $0.hasPrefix("setup: Shortcuts: \(count - 1) registered; macOS refused ⌃⌥F") })
+    #expect(row(h)?.title == "⌃⌥F is not Arbor’s")
     #expect(row(h)?.needsAttention == true)
     #expect(h.controller.onboardingModel(Self.healthy).title == "Ready, with one suggestion")
-    #expect(h.controller.keysHeldForTheLog == "macOS refused ⌃⌥A")
-    #expect(h.controller.shortcut(for: .arrange) == nil, "and the menu does not show it")
+    #expect(h.controller.keysHeldForTheLog == "macOS refused ⌃⌥F")
+    #expect(h.controller.shortcut(for: .toggleFloat(nil)) == nil, "and the menu does not show it")
     // It is tried again at every change, and one day macOS says yes.
     register(h)
     #expect(h.run("bindings").message == "\(count) shortcuts")
@@ -123,8 +123,8 @@ import Testing
 
   @Test func manyLostKeysAreCountedInTheWindowsTitle() {
     let h = makeHarness()
-    register(h, refusing: [.arrange, .showAll, .home])
-    #expect(row(h)?.title == "⌃⌥Space, ⌃⌥A and ⌃⌥0 are not Arbor’s")
+    register(h, refusing: [.toggleFloat(nil), .showAll, .undo])
+    #expect(row(h)?.title == "⌃⌥Space, ⌃⌥Z and ⌃⌥F are not Arbor’s")
     register(h, refusing: map.map(\.command))
     #expect(row(h)?.title == "\(count) shortcuts are not Arbor’s")
   }
@@ -142,15 +142,15 @@ import Testing
     #expect(h.run("bindings").text?.contains("\n\n\(count) shortcuts are not Arbor's, though nobody asked for that") == true)
     #expect(!h.run("doctor").ok)
     #expect(h.run("bindings").message == "\(count) shortcuts, \(count) not Arbor's")
-    #expect(line(h, "arrange")?.hasSuffix("(not registered: the app in front gets it)") == true)
+    #expect(line(h, "toggle-float")?.hasSuffix("(not registered: the app in front gets it)") == true)
     #expect(row(h)?.title == "\(count) shortcuts are not Arbor’s")
   }
 
   @Test func oneMissingKeyIsAProblemToo() {
     let h = makeHarness()
-    h.controller.registeredBindings = map.filter { $0.command != .arrange }
+    h.controller.registeredBindings = map.filter { $0.command != .toggleFloat(nil) }
     #expect(shortcuts(h)?.detail == "\(count - 1) registered; 1 that Arbor wants is not, and reaches the app in front")
-    #expect(h.controller.keysHeldForTheLog == "⌃⌥A wanted and not registered")
+    #expect(h.controller.keysHeldForTheLog == "⌃⌥F wanted and not registered")
   }
 
   // MARK: Handed over, because the person said so: known and said, and nothing is wrong
@@ -164,7 +164,7 @@ import Testing
     #expect(h.controller.keysHeld.all(.handedOver).count == count - kept)
     #expect(h.controller.keysHeld.lost.isEmpty)
     #expect(h.run("bindings").message == "\(count) shortcuts, all but \(kept) off while Arbor is paused")
-    #expect(line(h, "arrange")?.hasSuffix(" → arrange  (the apps' now)") == true)
+    #expect(line(h, "toggle-float")?.hasSuffix(" → toggle-float  (the apps' now)") == true)
     #expect(shortcuts(h)?.mark == .ok)
     #expect(row(h) == nil)
     #expect(h.controller.keysHeldForTheLog == "\(count - kept) of the map's \(count) are the apps' while Arbor is paused")
@@ -234,7 +234,7 @@ import Testing
     #expect(h.controller.keysHeld.lost.isEmpty)
     #expect(h.run("bindings").message == "\(count) shortcuts, all off because ARBOR_NO_HOTKEYS is set")
     #expect(h.run("bindings").text?.hasSuffix("\n\nRight now: all off because ARBOR_NO_HOTKEYS is set.") == true)
-    #expect(line(h, "arrange")?.hasSuffix(" → arrange  (the apps' now)") == true)
+    #expect(line(h, "toggle-float")?.hasSuffix(" → toggle-float  (the apps' now)") == true)
     #expect(shortcuts(h)?.detail == "off (ARBOR_NO_HOTKEYS)")
     #expect(h.controller.onboardingModel(facts).row(.lostShortcuts) == nil)
     h.run("pause")
@@ -286,13 +286,13 @@ import Testing
   }
 
   @Test func aRefusalIsLoggedWithItsNumberOnceAndTriedAgainInSilenceUntilItGoesOtherwise() throws {
-    let arrange = try #require(map.first { $0.command == .arrange })
-    let (h, app) = makeApp { $0.server.refuses = [HotKey(arrange)] }
+    let float = try #require(map.first { $0.command == .toggleFloat(nil) })
+    let (h, app) = makeApp { $0.server.refuses = [HotKey(float)] }
     #expect(
       app.lines == [
-        "shortcuts: macOS said no to ⌃⌥A (error -9879)", "registered \(count - 1) shortcuts in 900 µs: macOS refused ⌃⌥A",
+        "shortcuts: macOS said no to ⌃⌥F (error -9879)", "registered \(count - 1) shortcuts in 900 µs: macOS refused ⌃⌥F",
       ])
-    #expect(h.controller.keysHeld.all(.refused) == [arrange])
+    #expect(h.controller.keysHeld.all(.refused) == [float])
     let asked = app.server.asked
     app.server.steps = []
     h.run("hold")
@@ -326,23 +326,25 @@ import Testing
   }
 
   @Test func aKeyThatMacOSWillNotTakeBackIsSaidAndCountsAsHeld() throws {
-    let arrange = try #require(map.first { $0.command == .arrange })
+    let float = try #require(map.first { $0.command == .toggleFloat(nil) })
     let (h, app) = makeApp()
-    app.server.keeps = [HotKey(arrange)]
+    app.server.keeps = [HotKey(float)]
     h.run("pause")
     let kept = h.controller.activeBindings.count
-    #expect(app.lines.suffix(2).first == "shortcuts: macOS said would not take back ⌃⌥A (error -1)")
+    #expect(app.lines.suffix(2).first == "shortcuts: macOS said would not take back ⌃⌥F (error -1)")
     #expect(app.lines.last?.hasPrefix("registered \(kept + 1) shortcuts in 900 µs: \(count - kept - 1) of the map's") == true)
-    #expect(h.controller.keysHeld.all(.held).contains(arrange), "the truth: no app gets it")
+    #expect(h.controller.keysHeld.all(.held).contains(float), "the truth: no app gets it")
     #expect(app.leaked.isEmpty)
   }
 
   // MARK: A key and its twin with fn are one
 
-  /// A person sees fifty-two, or nine: keys, not registrations.
-  @Test func everythingCountsKeysAndNotRegistrations() {
-    let (h, app) = makeApp()
-    #expect(app.server.registrations.count > count + 30, "most keys are registered twice")
+  /// A person sees fifty-one, or nine: keys, not registrations.
+  @Test(arguments: [false, true]) func everythingCountsKeysAndNotRegistrations(everyKey: Bool) {
+    let (h, app) = makeApp(settings: everyKey ? .withEveryKey : Settings())
+    let count = everyKey ? KeyBindings.all.count : map.count
+    // Of the nine all but the two arrows.
+    #expect(app.server.registrations.count > count + (everyKey ? 30 : 6), "most keys are registered twice")
     #expect(app.table.count == count)
     #expect(app.lines == ["registered \(count) shortcuts in 900 µs"])
     #expect(h.run("bindings").message == "\(count) shortcuts")
@@ -353,16 +355,16 @@ import Testing
 
   /// The key is Arbor's. What is amiss is for whoever reads the log.
   @Test func aTwinThatMacOSRefusesIsLoggedAndIsNoProblem() throws {
-    let arrange = try #require(map.first { $0.command == .arrange })
-    let (h, app) = makeApp { $0.server.refusesTwins = [HotKey(arrange)] }
-    #expect(app.lines == ["shortcuts: macOS said no to fn ⌃⌥A (error -9879)", "registered \(count) shortcuts in 900 µs"])
+    let float = try #require(map.first { $0.command == .toggleFloat(nil) })
+    let (h, app) = makeApp { $0.server.refusesTwins = [HotKey(float)] }
+    #expect(app.lines == ["shortcuts: macOS said no to fn ⌃⌥F (error -9879)", "registered \(count) shortcuts in 900 µs"])
     #expect(h.controller.keysHeld.all(.held).count == count)
     #expect(h.controller.keysHeld.lost.isEmpty && h.controller.refusedBindings.isEmpty)
     #expect(shortcuts(h)?.mark == .ok)
     #expect(h.run("doctor").ok)
     #expect(row(h) == nil)
     #expect(h.run("bindings").message == "\(count) shortcuts")
-    #expect(app.runs(HotKey(arrange)).map(\.command) == [.arrange])
+    #expect(app.runs(HotKey(float)).map(\.command) == [.toggleFloat(nil)])
     // Tried again at every occasion, alone, and in silence while the answer is the same.
     let asked = app.server.asked
     app.server.steps = []
@@ -372,10 +374,10 @@ import Testing
     #expect(app.lines.count == 2)
     h.run("pause")
     h.run("resume")
-    #expect(app.lines.filter { $0.contains("fn ⌃⌥A") }.count == 2, "said again when the key came back and the twin did not")
+    #expect(app.lines.filter { $0.contains("fn ⌃⌥F") }.count == 2, "said again when the key came back and the twin did not")
     app.server.refusesTwins = []
     h.run("hold")
-    #expect(app.runs(HotKey(arrange), fn: true).map(\.command) == [.arrange])
+    #expect(app.runs(HotKey(float), fn: true).map(\.command) == [.toggleFloat(nil)])
     let registrations = app.registrations
     h.run("release")
     #expect(app.registrations == registrations, "and then macOS is left in peace")
@@ -383,7 +385,7 @@ import Testing
 
   /// What a macOS that will have none of them would make of it: one short line, the same whatever the order, and every key Arbor's.
   @Test func ifMacOSRefusesEveryTwinTheLogHasOneShortLineAndNothingIsWrong() {
-    let (h, app) = makeApp { $0.server.refusesTwins = Set(KeyBindings.defaults.map(HotKey.init)) }
+    let (h, app) = makeApp { $0.server.refusesTwins = Set(KeyBindings.all.map(HotKey.init)) }
     let twins = map.filter(\.chord.hasFnTwin).count
     #expect(app.lines.count == 2)
     #expect(app.lines.first?.hasPrefix("shortcuts: macOS said no to \(twins) shortcuts with fn, ") == true)
@@ -397,10 +399,10 @@ import Testing
 
   /// Two keys without a twin come back from a pause in another order than they were in at launch. That is no news.
   @Test func theSameRefusalsInAnotherOrderAreNotSaidAgain() throws {
-    let arrange = try #require(map.first { $0.command == .arrange })
+    let float = try #require(map.first { $0.command == .toggleFloat(nil) })
     let pause = try #require(KeyBindings.whilePaused(map).first)
     #expect(pause.chord.hasFnTwin)
-    let (h, app) = makeApp { $0.server.refusesTwins = [HotKey(arrange), HotKey(pause)] }
+    let (h, app) = makeApp { $0.server.refusesTwins = [HotKey(float), HotKey(pause)] }
     h.run("pause")
     h.run("resume")
     let said = app.lines.filter { $0.hasPrefix("shortcuts: ") }
@@ -456,7 +458,7 @@ import Testing
       ("places, not letters", { h.run("set shortcutsFollowLayout false") }),
       ("US", { h.controller.keyboardLayoutChanged(SampleKeyLayouts.us) }),
       ("recording", { h.controller.isRecordingShortcut = true }), ("recorded", { h.controller.isRecordingShortcut = false }),
-      ("bind", { h.run("bind ctrl+opt+cmd+j arrange") }), ("unbind", { h.run("unbind ctrl+opt+a") }),
+      ("bind", { h.run("bind ctrl+opt+cmd+j arrange") }), ("unbind", { h.run("unbind ctrl+opt+f") }),
       ("off", { h.run("set hotkeysEnabled false") }), ("on", { h.run("set hotkeysEnabled true") }),
       ("hold", { h.run("hold") }), ("release", { h.run("release") }),
       ("the permission goes", { h.revokeAccessibility(); h.scheduler.advance(by: 3) }),

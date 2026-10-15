@@ -9,6 +9,7 @@
 #
 # Safe on a person's Mac: it touches only its own test windows and changes no setting. It moves the pointer and
 # presses keys, always with the test app in front, so a key the field misses lands in a test window.
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
 
 # The field is the only one of Arbor's windows at the level of a modal panel.

@@ -11,8 +11,9 @@ import Testing
 /// - **Keys:** at most ten shortcuts, each ⌃⌥ and one key. A global shortcut is taken from every app on the Mac.
 /// - **The menu bar:** one thing, and its width never changes.
 ///
-/// Both are over budget today, so each half is a known issue that says its numbers. A known issue fails the build the moment it no longer
-/// occurs: whoever brings a half within its budget takes that `withKnownIssue` out in the same change, and from then on the budget holds.
+/// The keys are within it since the nine (`KeyBindings.core`). The menu bar is over it today, so that half is a known issue that says its numbers.
+/// A known issue fails the build the moment it no longer occurs: whoever brings it within its budget takes the `withKnownIssue` out in the
+/// same change, and from then on the budget holds.
 @MainActor @Suite struct LessByDefaultTests {
   static let mostKeys = 10
   static let mostInTheMenuBar = 1
@@ -50,11 +51,9 @@ import Testing
   }
 
   @Test func atMostTenShortcutsEachControlOptionAndOneKey() {
-    withKnownIssue("I22: some fifty keys over three sets of modifiers") {
-      #expect(keys.count <= Self.mostKeys, "default bindings: \(keys.count) of \(Self.mostKeys)")
-      let labels = keysWithMoreThanControlOption.map(\.label).joined(separator: " ")
-      #expect(keysWithMoreThanControlOption.isEmpty, "with a third modifier: \(keysWithMoreThanControlOption.count): \(labels)")
-    }
+    #expect(keys.count <= Self.mostKeys, "default bindings: \(keys.count) of \(Self.mostKeys)")
+    let labels = keysWithMoreThanControlOption.map(\.label).joined(separator: " ")
+    #expect(keysWithMoreThanControlOption.isEmpty, "with a third modifier: \(keysWithMoreThanControlOption.count): \(labels)")
   }
 
   @Test func oneThingInTheMenuBarAndItsWidthNeverChanges() {

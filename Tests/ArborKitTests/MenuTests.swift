@@ -23,15 +23,16 @@ import Testing
   // MARK: The whole of it
 
   /// The menu, written out in the order docs/MENU.md decides. **Whoever adds an item adds its line here, in the place
-  /// its row has there**: an item appended anywhere else fails this test.
+  /// its row has there**: an item appended anywhere else fails this test. With the whole map, so that every row that can have a key shows
+  /// it; `NineKeysTests.theMenuShowsAKeyOnlyWhereThereIsOne` has the keys as Arbor ships.
   @Test func theWholeMenu() {
-    let (h, _, _, _) = makeHarness()
+    let (h, _, _, _) = makeHarness(settings: .withEveryKey)
     h.loginItem.status = .enabled
     h.run("save-view 2")
     h.run("exclude com.apple.Music")
     #expect(
       h.run("menu").text == """
-            Arrange Windows  ⌃⌥A
+            Arrange Windows
             Windows ▸
               ✓ Safari: Safari 101
                 Notes: Notes 102
@@ -510,7 +511,7 @@ import Testing
     let menu = h.controller.menuModel()
     #expect(menu.item("Back")?.shortcut?.label == "⌃⌥Ü")
     #expect(menu.item("Back")?.shortcut?.keyEquivalent == "ü", "what AppKit draws as Ü")
-    #expect(menu.item("Arrange Windows")?.shortcut?.keyEquivalent == "a")
+    #expect(menu.item("Go to…")?.shortcut?.keyEquivalent == "g")
     #expect(menu.item("Show Everything")?.shortcut?.keyEquivalent == " ")
     #expect(menu.item("Quit Arbor")?.shortcut?.keyEquivalent == "q")
   }

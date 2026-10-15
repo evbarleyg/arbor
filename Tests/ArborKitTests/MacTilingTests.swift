@@ -698,7 +698,7 @@ import Testing
       s.h.scheduler.advance(by: 8)
       let said = s.h.overlays.messages.dropFirst(before).map(\.model.line)
       if round <= HeadsUpHint.timesShown {
-        #expect(said == ["macOS tiled this window; Arbor stood aside · ⌃⌥⌘← docks it · Check Setup… in the menu"], "round \(round)")
+        #expect(said == ["macOS tiled this window; Arbor stood aside · ⌃⌥← docks it · Check Setup… in the menu"], "round \(round)")
       } else {
         #expect(said.isEmpty, "round \(round)")
       }

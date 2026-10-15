@@ -20,6 +20,7 @@
 # 7. Eight windows on a large display.
 # 8. The moves again, light and dark, with "Trackpad and mouse gestures" on as well, and macOS's own tiling off: where a move was filmed so, that film counts.
 ARBOR_TIME_LIMIT=1120
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib-film.sh"
 needs_throwaway_mac "film the whole display, and change Reduce Motion, the appearance, the wallpaper and the display's size"
 

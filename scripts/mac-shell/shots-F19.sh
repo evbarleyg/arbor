@@ -6,6 +6,7 @@
 # What only a Mac can answer: do ⌃⌥Z and ⌃⌥⇧Z reach Arbor; is a real drag of a gap (dozens of events) one
 # step; does a window dragged to an edge go back to where it was picked up; do the echoes macOS sends of
 # Arbor's own moves and focus changes add steps of their own; what do the two menu items look like.
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
 arbor_build
 

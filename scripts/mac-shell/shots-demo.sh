@@ -10,6 +10,7 @@
 # Second session, with the menu bar item and the shortcuts on: the menu, shortcuts, a drag to the right
 # edge, a ⌃⌥-drag around a window, a double-click on a title bar.
 # It also prints what scripts need to know about the Mac they run on.
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
 source "$(dirname "$0")/lib-gestures.sh"
 

@@ -131,6 +131,7 @@ public struct KeyChord: Hashable, Sendable, CustomStringConvertible {
       return "Xcode uses ⌃⌥⌘ with letters and ↩ (fix all issues, test again, the assistant editor)"
     case [.control, .option]:
       switch key {
+      case .a: return "a widely used chat app archives the open conversation with \(label), should the key ever reach it"
       case .q, .w: return "\(label) is one slipped finger from ⌘\(key.label)"
       case .delete: return "\(label) reads as “delete”"
       case .h: return "Figma (distribute spacing) and JetBrains IDEs (call hierarchy) use \(label)"

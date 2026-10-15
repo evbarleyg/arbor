@@ -140,7 +140,7 @@ import Testing
   }
 
   /// T30 to T35: the keyboard table TrellisWM publishes, key by key, and
-  /// A01's four. Swapping two directions in `KeyBindings.defaults` went unnoticed before this.
+  /// A01's four. Swapping two directions in `KeyBindings.all` went unnoticed before this.
   @Test func theDefaultShortcutsAreTheOnesTrellisWMPublishes() throws {
     var published: [String: Command] = [
       "ctrl+opt+space": .showAll, "ctrl+opt+up": .stepOut, "ctrl+opt+down": .stepIn, "ctrl+opt+return": .zoom(nil),
@@ -154,7 +154,7 @@ import Testing
     }
     for (text, command) in published {
       let chord = try KeyChord(text: text)
-      #expect(KeyBindings.defaults.first { $0.chord == chord }?.command == command, "\(text)")
+      #expect(KeyBindings.all.first { $0.chord == chord }?.command == command, "\(text)")
     }
   }
 

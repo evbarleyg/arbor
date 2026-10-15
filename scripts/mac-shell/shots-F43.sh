@@ -11,6 +11,7 @@
 # The pictures are for looking at (is the line legible, is the panel tidy); the checks cover what a picture cannot
 # show: the line takes neither the keyboard nor clicks and goes by itself, the panel takes the keyboard and
 # goes at a key, a click, one of Arbor's own shortcuts and a pause.
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
 
 LINE=6   # window levels: the line is three above `.floating`, the panel two

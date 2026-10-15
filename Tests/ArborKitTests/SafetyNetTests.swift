@@ -74,7 +74,7 @@ import Testing
     h.run("zoom \(a.rawValue)")
     let tree = h.workspace.tree
     let result = h.run("dock \(a.rawValue) right")
-    #expect(!result.ok && result.message.contains("step out"))
+    #expect(!result.ok && result.message.contains("`show-all` first"))
     #expect(h.workspace.tree == tree)
   }
 

@@ -526,7 +526,7 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
   }
 
   @Test func aShortcutArborRefusesFailsTheLine() throws {
-    #expect(try film("display 1440x810\nlaunch\ntap ctrl+opt+up").failures == ["tap ctrl+opt+up"])
+    #expect(try film("display 1440x810\nlaunch\ntap ctrl+opt+[").failures == ["tap ctrl+opt+["])
   }
 
   @Test func theMenuOpensFromTheItemAndAChoiceRunsItsCommand() throws {
@@ -616,7 +616,7 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
 
   @Test func aClickPutsThePanelOfShortcutsAndGoToAway() throws {
     let film = try film(
-      dragToTheLeftEdge + "\ntap ctrl+opt+shift+/\nwait 0.3\nglide window 101 middle in 0.2\nclick\nwait 0.2\ntap ctrl+opt+g\nwait 0.2\nclick\nwait 0.2")
+      dragToTheLeftEdge + "\nshow-shortcuts\nwait 0.3\nglide window 101 middle in 0.2\nclick\nwait 0.2\ntap ctrl+opt+g\nwait 0.2\nclick\nwait 0.2")
     #expect(film.failures.isEmpty)
     #expect(film.frames.contains { $0["shortcuts"] != nil })
     #expect(film.frames.contains { $0["goTo"] != nil })
@@ -673,8 +673,8 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
   }
 
   @Test func aKeyThatIsRefusedDuringADragIsNotHeldAgainstTheDrop() throws {
-    let film = try film(dragToTheLeftEdge.replacingOccurrences(of: "wait 0.5\nlift", with: "tap ctrl+opt+up\nwait 0.5\nlift"))
-    #expect(film.failures == ["tap ctrl+opt+up"])
+    let film = try film(dragToTheLeftEdge.replacingOccurrences(of: "wait 0.5\nlift", with: "tap ctrl+opt+[\nwait 0.5\nlift"))
+    #expect(film.failures == ["tap ctrl+opt+["])
   }
 
   @Test func linesOfTheSimulatorsThatShareAVerbReachIt() {

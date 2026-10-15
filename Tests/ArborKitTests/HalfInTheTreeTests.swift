@@ -186,8 +186,10 @@ import Testing
 
   /// Somebody with two displays: Mail is docked on the main one and out of view, and Mail opens a window that lands on the other.
   /// With `hold`, the command that holds, or nil for none. With `docked`, something is docked on the other display too.
-  private func lateMail(hold: String?, docked: Bool) -> (h: Harness, mail: WindowID, late: WindowID) {
-    let h = Harness(displays: [Self.main, Self.side])
+  private func lateMail(
+    hold: String?, docked: Bool, settings: Settings = Settings()
+  ) -> (h: Harness, mail: WindowID, late: WindowID) {
+    let h = Harness(displays: [Self.main, Self.side], settings: settings)
     let mail = h.system.open(app: "Mail", pid: 2001)
     let slides = h.system.open(app: "Slides", pid: 2002)
     let notes = h.system.open(app: "Notes", pid: 2003, frame: CGRect(x: 1700, y: 200, width: 500, height: 350))
@@ -239,11 +241,12 @@ import Testing
 
   /// The same by the keys themselves. A pressed ⌃⌥Space is not the command: it begins a peek, which takes `show-all`'s place.
   /// Tapped, and held for two seconds and let go; wherever the pointer is, as for the commands.
+  /// Three of the four are keys of the whole map only.
   @Test(arguments: ["ctrl+opt+0", "ctrl+opt+space", "ctrl+opt+shift+f", "ctrl+opt+d"], [false, true])
   func eachKeyFetchesWhatAHoldKeptOut(key: String, docked: Bool) {
     for seconds in key == "ctrl+opt+space" ? [0, 2.0] : [0] {
       for pointer in [Self.main, Self.side] {
-        let (h, _, late) = lateMail(hold: "hold", docked: docked)
+        let (h, _, late) = lateMail(hold: "hold", docked: docked, settings: .withEveryKey)
         h.run("release")
         h.system.cursor = CGPoint(x: pointer.frame.midX, y: pointer.frame.midY)
         #expect(!isWithinReach(late, h))
@@ -261,7 +264,7 @@ import Testing
   @Test(arguments: ["ctrl+opt+0", "ctrl+opt+space", "ctrl+opt+d"], ["hold", "hold still"])
   func duringAHoldNoKeyLetsInWhatWaits(key: String, hold: String) {
     for seconds in key == "ctrl+opt+space" ? [0, 2.0] : [0] {
-      let (h, _, late) = lateMail(hold: hold, docked: false)
+      let (h, _, late) = lateMail(hold: hold, docked: false, settings: .withEveryKey)
       h.system.cursor = CGPoint(x: Self.side.frame.midX, y: Self.side.frame.midY)
       h.keyDown(key)
       h.scheduler.advance(by: seconds)

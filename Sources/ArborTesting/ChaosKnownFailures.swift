@@ -206,7 +206,7 @@ extension ChaosRunner {
         open 103 Notes pid 1001 at 838 122 801 648 min 709 300
         open 104 Notes pid 1001 at 351 78 709 714 min 709 300
         launch
-        key down arrange
+        via shortcut arrange
         """),
     ChaosKnownFailure(
       rule: "sized-there-and-back-let-be", owner: "board 1.32: Arbor knows how small apps go, and believes it of the window that is let be", severity: 3,
@@ -282,7 +282,7 @@ extension ChaosRunner {
         open 101 Finder pid 1005 at 148 53 975 358 min 501 300
         open 102 Music pid 1006 at 159 70 862 558 min 680 480
         launch
-        key down arrange
+        via shortcut arrange
         minimize 101
         restore 101
         """,
@@ -322,7 +322,7 @@ extension ChaosRunner {
         grab 101
         carry 390 967
         release
-        key down arrange
+        via shortcut arrange
         """),
     ChaosKnownFailure(
       rule: "moved-twice-sizing-floating-making-way", owner: "rule 3: a floating window's frame is its person's", severity: 4,
@@ -365,7 +365,7 @@ extension ChaosRunner {
         open 102 Preview pid 1007 at 606 305 723 585 min 723 400 max 723 2000
         open 103 Mail pid 1002 at 185 136 1100 798 min 760 400
         launch
-        key down arrange
+        via shortcut arrange
         key down rotate
         minimize 103
         restore 103
@@ -638,7 +638,7 @@ extension ChaosRunner {
         open 102 Notes pid 1001 at 157 794 819 516 min 709 300
         open 103 Xcode pid 1004 at 677 463 1188 744 min 1188 685
         launch
-        key down arrange
+        via shortcut arrange
         key down rotate
         """,
       """
@@ -723,7 +723,7 @@ extension ChaosRunner {
         open 106 Music pid 1006 at 534 405 1078 684 min 980 600
         open 108 Xcode pid 1004 at 265 270 1188 696 min 1188 685
         focus-nothing
-        key down arrange
+        via shortcut arrange
         edge 101 915 583 957 522
         key down undo
         tile main 4
@@ -736,7 +736,7 @@ extension ChaosRunner {
       script: """
         open 103 Mail pid 1002 at 1553 134 1155 658 min 760 400
         launch
-        key down arrange
+        via shortcut arrange
         key down desktop
         react
         """,
@@ -745,7 +745,7 @@ extension ChaosRunner {
         open 103 Notes pid 1001 at 367 327 972 654 min 709 300
         launch
         open 104 Xcode pid 1004 at 368 312 1188 696 min 1188 685
-        key down arrange
+        via shortcut arrange
         focus 104
         via menu move-to-display next
         """,
@@ -827,7 +827,7 @@ extension ChaosRunner {
         open 103 Safari pid 1000 at 89 107 1416 784 min 574 240
         open 104 Safari pid 1000 at -1318 -171 1152 816 min 574 240
         launch
-        key down arrange
+        via shortcut arrange
         key down zoom
         displays side:0,0,1920,1080:25,0,48,0* windows-first
         displays main:0,0,1512,982:37,0,48,0* side:-1920,-200,1920,1080:25,0,0,0 windows-silent
@@ -1046,7 +1046,7 @@ extension ChaosRunner {
       script: """
         launch
         open 106 Xcode pid 1004 at 147 126 1287 685 min 1188 685
-        key down arrange
+        via shortcut arrange
         via menu toggle-pin
         react
         focus 106
@@ -1073,7 +1073,7 @@ extension ChaosRunner {
         open 103 Terminal pid 1003 at 600 300 877 499 min 177 60
         focus 103
         react
-        key down arrange
+        via shortcut arrange
         key up arrange
         react
         settle

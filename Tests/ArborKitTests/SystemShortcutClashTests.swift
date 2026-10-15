@@ -27,16 +27,27 @@ import Testing
     return settings
   }
 
+  /// With the whole map, where `home` has a key to name at the end.
   let nextSource =
     "⌃⌥Space (`show-all`) is macOS's “Select next source in Input menu” as well, so one of the two does nothing. Change either: "
     + "System Settings → Keyboard → Keyboard Shortcuts → Input Sources, or `bindings` in settings.json. ⌃⌥0 shows everything too"
 
   @Test func withTwoKeyboardsShowEverythingIsAlsoNextInputSource() throws {
-    let h = makeHarness()
+    let h = makeHarness(settings: .withEveryKey)
     let clashes = h.controller.systemShortcutClashes
     #expect(clashes.map(\.sentence) == [nextSource])
     #expect(clashes.first?.binding.command == .showAll)
     #expect(clashes.first?.use.list == "Input Sources")
+  }
+
+  /// Of the nine only ⌃⌥Space shows everything, so there is no other key to name until somebody gives `home` one.
+  @Test func asArborShipsTheSentenceEndsWithoutAnotherKey() {
+    let clashes = makeHarness().controller.systemShortcutClashes
+    #expect(clashes.map(\.sentence) == [nextSource.replacing(". ⌃⌥0 shows everything too", with: "")])
+    #expect(clashes.first?.sentence.hasSuffix(", or `bindings` in settings.json") == true)
+    #expect(clashes.first?.binding.command == .showAll)
+    let own = makeHarness(settings: settings(["ctrl+opt+h": "home"])).controller.systemShortcutClashes
+    #expect(own.map(\.sentence) == [nextSource.replacing("⌃⌥0 shows", with: "⌃⌥H shows")])
   }
 
   @Test func withOneKeyboardOrAnUnknownNumberNothingIsSaid() {
@@ -53,7 +64,7 @@ import Testing
   }
 
   @Test func bindingsListsThemAndCountsThemAlsoBeforeArborStarts() throws {
-    let h = makeHarness()
+    let h = makeHarness(settings: .withEveryKey)
     let result = h.run("bindings")
     #expect(result.ok)
     #expect(result.message.hasSuffix(" shortcuts, 1 also macOS's"))
@@ -85,7 +96,7 @@ import Testing
     let h = makeHarness(inputSources: 1, settings: settings(["ctrl+up": "out", "cmd+space": "home"]))
     #expect(h.controller.systemShortcutClashes.map(\.binding.label) == ["⌘Space", "⌃↑"], "sorted by command, as the list is")
     #expect(h.controller.systemShortcutClashes.map(\.use.name) == ["Show Spotlight search", "Mission Control"])
-    let before = makeHarness(settings: settings(["ctrl+up": "back"])).controller.systemShortcutClashes
+    let before = makeHarness(settings: settings(["ctrl+up": "back"]).withEveryKey).controller.systemShortcutClashes
     #expect(before.map(\.binding.command) == [.back, .showAll], "whichever table they come from")
     #expect(before.first?.sentence.contains("shows everything too") == false, "that is for Show Everything")
     let after = makeHarness(settings: settings(["ctrl+up": "zoom"])).controller.systemShortcutClashes
@@ -104,10 +115,10 @@ import Testing
   }
 
   @Test func theOtherWayToEverythingIsNotOfferedIfItIsTakenOrGone() {
-    let both = makeHarness(asItComes + [Shortcut([.control, .option], .digit0)])
+    let both = makeHarness(asItComes + [Shortcut([.control, .option], .digit0)], settings: .withEveryKey)
     #expect(both.controller.systemShortcutClashes.count == 2)
     #expect(both.controller.systemShortcutClashes.allSatisfy { !$0.sentence.contains("shows everything too") })
-    let gone = makeHarness(settings: settings(["ctrl+opt+0": nil]))
+    let gone = makeHarness(settings: settings(["ctrl+opt+0": nil]).withEveryKey)
     #expect(gone.controller.systemShortcutClashes.map(\.sentence) == [nextSource.replacing(". ⌃⌥0 shows everything too", with: "")])
   }
 
@@ -138,7 +149,7 @@ import Testing
   }
 
   @Test func theLogHearsOfThemOnceAndMacOSIsAskedOnlyWhenTheShortcutsChange() {
-    let h = Harness()
+    let h = Harness(settings: .withEveryKey)
     var sources = 2
     var asked = 0
     h.controller.systemShortcuts = {
@@ -156,7 +167,7 @@ import Testing
     #expect(asked == 1)
     // Other shortcuts, or another layout, do.
     sources = 1
-    h.controller.apply(settings: settings(["ctrl+opt+z": "back"]))
+    h.controller.apply(settings: settings(["ctrl+opt+z": "back"]).withEveryKey)
     h.controller.logSystemShortcutClashes()
     #expect(h.controller.loggedSystemShortcutClashes.isEmpty && asked == 2)
     sources = 2

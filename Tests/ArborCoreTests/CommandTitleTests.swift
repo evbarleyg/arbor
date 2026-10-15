@@ -5,7 +5,7 @@ import Testing
 @Suite struct CommandTitleTests {
   @Test func titlesUseTheGlossarysWords() {
     #expect(Command.showAll.title == "Show Everything")
-    #expect(Command.home.title == "Show Everything on All Displays", "docs/MENU.md, row 3")
+    #expect(Command.home.title == "Show Everything on All Displays", "it has no row in the menu: the panel of shortcuts and the settings window call it that")
     #expect(Command.desktop.title == "Show the Desktop", "docs/MENU.md, View")
     #expect(Command.dock(nil, .left).title == "Dock Left")
     #expect(Command.saveView(3).title == "Save View 3")

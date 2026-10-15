@@ -8,7 +8,7 @@
 #   act open-close open-textedit "opens TextEdit";    meet textedit com.apple.TextEdit "$APPS_SCRATCH/oak.txt";  acted judge=no
 #   act quit-and-start launch "starts Arbor";         day_launch;                      acted
 #   act switch click-textedit "clicks its title bar"; click_window "$W_textedit";      acted front="$W_textedit"
-#   act dock-key dock-left "presses ⌃⌥⌘←";            key ctrl+opt+cmd+left;           acted moves=docked front="$W_textedit"
+#   act dock-key dock-left "presses ⌃⌥←";             key ctrl+opt+left;               acted moves=docked front="$W_textedit"
 #   day_report
 #
 # A check asks where a window is once things have settled. A person also sees how it got there. So sampler.swift asks the

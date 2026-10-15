@@ -40,7 +40,7 @@ import Testing
 
   @Test func aListedAppInFrontTakesTheShortcutsAndGesturesAndGivesThemBack() {
     let (h, emacs, safari, _) = makeHarness()
-    #expect(h.controller.activeBindings == KeyBindings.defaults)
+    #expect(h.controller.activeBindings == KeyBindings.core)
     #expect(h.controller.inputSettings == h.controller.settings)
 
     h.system.userFocus(emacs)
@@ -53,7 +53,7 @@ import Testing
 
     h.system.userFocus(safari)
     #expect(!h.controller.isPassingThrough)
-    #expect(h.controller.activeBindings == KeyBindings.defaults)
+    #expect(h.controller.activeBindings == KeyBindings.core)
     #expect(h.controller.inputSettings == h.controller.settings)
   }
 
@@ -144,7 +144,7 @@ import Testing
     #expect(h.controller.activeBindings.map(\.chord.text) == ["ctrl+opt+k"])
     #expect(h.controller.perform(h.controller.activeBindings[0].command).ok)
     #expect(!h.controller.isPassingThrough)
-    #expect(h.controller.activeBindings.count == KeyBindings.defaults.count)
+    #expect(h.controller.activeBindings.count == KeyBindings.core.count)
   }
 
   @Test func shortcutsSwitchedOffAltogetherStayOff() {
@@ -287,7 +287,7 @@ import Testing
 
   @Test func bindingsAndStatusSayThatTheShortcutsAreOffAndWhy() {
     let (h, emacs, safari, _) = makeHarness()
-    let count = KeyBindings.defaults.count
+    let count = KeyBindings.core.count
     #expect(h.run("bindings").message == "\(count) shortcuts")
     #expect(h.run("bindings").text?.contains("Right now") == false)
     #expect(!h.run("status").message.contains("off"))
@@ -528,7 +528,7 @@ import Testing
     #expect(h.controller.activeBindings.map(\.command) == [.togglePause])
     h.system.userFocus(safari)
     #expect(h.controller.isRunning)
-    #expect(h.controller.activeBindings == KeyBindings.defaults)
+    #expect(h.controller.activeBindings == KeyBindings.core)
   }
 
   @Test func quittingDuringAnAppsPauseIsSafeAndTheArrangementSurvives() {

@@ -13,6 +13,7 @@
 # timer noticed first); the end of this script prints those lines.
 #
 # Safe on a person's Mac: it touches its own test windows, the pointer and the keyboard, and changes no setting.
+ARBOR_SHORTCUTS=all  # it presses keys of the whole map, of which nine ship
 source "$(dirname "$0")/lib.sh"
 
 SPACE=ctrl+opt+space
