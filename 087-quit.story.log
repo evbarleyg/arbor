@@ -1,0 +1,32 @@
+87 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:579', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule 5: terminal (w49) is 40,51 877×502; its own size was 40,51 877×499
+
+13:23:40.491 SCREEN -- begin 87 quit
+13:23:40.491 SCREEN -- text 87 chooses Quit Arbor in Arbor's menu
+13:23:41.203 DEBUG menu bar click: x 67.0 by the event, 67.0 by the screen, button 134.0 wide
+13:23:41.497 SCREEN w177 of Arbor 1227,31 273×486 (level 101)
+13:23:42.882 SCREEN safari (w33) 138,31 574×767
+13:23:42.882 SCREEN w177 of Arbor left the screen
+13:23:42.952 MACOS pid 6883 AXMoved w33 AXWindow/AXStandardWindow 138 31 1324 790
+13:23:42.953 MACOS pid 6883 AXResized w33 AXWindow/AXStandardWindow 138 31 1324 790
+13:23:42.965 SCREEN safari (w33) 138,31 1324×790
+13:23:43.003 MACOS pid 7261 AXTitleChanged w49 AXWindow/AXStandardWindow 40 51 557 502
+13:23:43.004 MACOS pid 7261 AXResized w49 AXWindow/AXStandardWindow 40 51 557 502
+13:23:43.008 MACOS pid 7261 AXMoved w49 AXWindow/AXStandardWindow 40 51 557 502
+13:23:43.021 SCREEN terminal (w49) 40,51 557×502
+13:23:43.043 MACOS pid 7261 AXTitleChanged w49 AXWindow/AXStandardWindow 40 51 877 502
+13:23:43.044 MACOS pid 7261 AXResized w49 AXWindow/AXStandardWindow 40 51 877 502
+13:23:43.052 SCREEN terminal (w49) 40,51 877×502
+13:23:43.057 INFO  trace day-5 ended: 452 lines, Arbor stopped
+13:23:43.059 INFO  stopped; all windows returned to view
+13:23:43.068 INFO  Arbor quit
+13:23:43.097 SCREEN w96 of Arbor left the screen
+13:23:43.097 SCREEN w106 of Arbor left the screen
+13:23:43.097 SCREEN w108 of Arbor left the screen
+13:23:43.097 SCREEN w107 of Arbor left the screen
+13:23:43.097 SCREEN w110 of Arbor left the screen
+13:23:43.097 SCREEN front to back: textedit preview calendar safari terminal w71 mail settings notes finder
+13:23:43.238 SCREEN -- arbor gone
+13:23:44.127 SCREEN -- end 87 act=quit-and-start settled=quiet:579 moves=any restores=all places=1 everything=1
+13:23:44.497 SCRIPT == 88 input-after

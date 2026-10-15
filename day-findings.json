@@ -1,0 +1,4478 @@
+{
+ "sampler": "samples 9360 seconds 276.1 hz 33.9 cost-ms 3.51 late 38 longest-gap-ms 220 whole-samples 12071 whole-seconds 356.0 whole-late 166",
+ "input": {
+  "events": 78,
+  "p50_us": 437,
+  "p99_us": 161318,
+  "max_us": 161318,
+  "kinds": {
+   "down": {
+    "events": 1,
+    "p50_us": 1085,
+    "p99_us": 1085,
+    "max_us": 1085
+   },
+   "forward": {
+    "events": 5,
+    "p50_us": 104289,
+    "p99_us": 161318,
+    "max_us": 161318
+   },
+   "key": {
+    "events": 66,
+    "p50_us": 395,
+    "p99_us": 3420,
+    "max_us": 3420
+   },
+   "up": {
+    "events": 6,
+    "p50_us": 46828,
+    "p99_us": 55433,
+    "max_us": 55433
+   }
+  },
+  "rounds": {
+   "before": {
+    "forward": {
+     "events": 8,
+     "p50_us": 71714,
+     "p99_us": 143508,
+     "max_us": 143508
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 5076,
+     "p99_us": 28372,
+     "max_us": 28372
+    }
+   },
+   "started": {
+    "forward": {
+     "events": 8,
+     "p50_us": 68600,
+     "p99_us": 96617,
+     "max_us": 96617
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 2353,
+     "p99_us": 8511,
+     "max_us": 8511
+    }
+   },
+   "last": {
+    "down": {
+     "events": 13,
+     "p50_us": 2328,
+     "p99_us": 7772,
+     "max_us": 7772
+    },
+    "dragged": {
+     "events": 20,
+     "p50_us": 437,
+     "p99_us": 1147,
+     "max_us": 1147
+    },
+    "forward": {
+     "events": 13,
+     "p50_us": 76401,
+     "p99_us": 157656,
+     "max_us": 157656
+    },
+    "key": {
+     "events": 13,
+     "p50_us": 396,
+     "p99_us": 1404,
+     "max_us": 1404
+    },
+    "scroll": {
+     "events": 28,
+     "p50_us": 481,
+     "p99_us": 5370,
+     "max_us": 5370
+    },
+    "up": {
+     "events": 26,
+     "p50_us": 826,
+     "p99_us": 25668,
+     "max_us": 25668
+    }
+   },
+   "after": {
+    "forward": {
+     "events": 8,
+     "p50_us": 78610,
+     "p99_us": 139835,
+     "max_us": 139835
+    },
+    "up": {
+     "events": 8,
+     "p50_us": 5276,
+     "p99_us": 48180,
+     "max_us": 48180
+    }
+   }
+  },
+  "judged": [],
+  "silent": {
+   "down": "fewer than 10 such events in a round without Arbor",
+   "forward": "fewer than 10 such events in a round without Arbor",
+   "up": "fewer than 10 such events in a round without Arbor",
+   "key": "fewer than 10 such events in a round without Arbor",
+   "dragged": "fewer than 10 such events in a round without Arbor",
+   "scroll": "fewer than 10 such events in a round without Arbor"
+  }
+ },
+ "stage_seen": true,
+ "witnessed": true,
+ "steps": [
+  {
+   "number": 13,
+   "slug": "input-before",
+   "chapter": "Before Arbor: the apps are open already",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792070384946,
+   "milliseconds": 13103,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 14,
+   "slug": "launch",
+   "chapter": "The walk",
+   "text": "starts Arbor",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792070398658,
+   "milliseconds": 2654,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 15,
+   "slug": "input-started",
+   "chapter": "The walk",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792070401971,
+   "milliseconds": 13697,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 16,
+   "slug": "dock-icon-terminal",
+   "chapter": "The walk",
+   "text": "clicks terminal's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792070416459,
+   "milliseconds": 2858,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 17,
+   "slug": "dock-left",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥⌘ and the left arrow",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792070420761,
+   "milliseconds": 1821,
+   "moved": {
+    "49": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 18,
+   "slug": "click-safari",
+   "chapter": "The walk",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792070423423,
+   "milliseconds": 2250,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 19,
+   "slug": "dock-right",
+   "chapter": "The walk",
+   "text": "presses ⌃⌥⌘ and the right arrow",
+   "act": "dock-key",
+   "judged": true,
+   "performed": true,
+   "began": 1792070426371,
+   "milliseconds": 1997,
+   "moved": {
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "3",
+     "detector": "slow",
+     "level": "ODD",
+     "window": null,
+     "what": "the last window came to rest 724 ms after the key or the button",
+     "trace": null,
+     "explained": "listed, and no reason, until the release build has answered"
+    }
+   ]
+  },
+  {
+   "number": 20,
+   "slug": "view-frame",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070429234,
+   "milliseconds": 1629,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 21,
+   "slug": "view-home",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070431410,
+   "milliseconds": 2014,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 22,
+   "slug": "view-frame",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070434229,
+   "milliseconds": 1614,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 23,
+   "slug": "view-home",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070436977,
+   "milliseconds": 1844,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 24,
+   "slug": "view-frame",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070439588,
+   "milliseconds": 1991,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 25,
+   "slug": "view-home",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070442157,
+   "milliseconds": 1601,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 26,
+   "slug": "view-frame",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070444615,
+   "milliseconds": 1882,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 27,
+   "slug": "view-home",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070446907,
+   "milliseconds": 1591,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 28,
+   "slug": "view-frame",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070449055,
+   "milliseconds": 1817,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 29,
+   "slug": "view-home",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070451223,
+   "milliseconds": 1597,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 30,
+   "slug": "view-frame",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070453380,
+   "milliseconds": 1677,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 31,
+   "slug": "view-home",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070455488,
+   "milliseconds": 1686,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 32,
+   "slug": "view-frame",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070457905,
+   "milliseconds": 1946,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 33,
+   "slug": "view-home",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070460206,
+   "milliseconds": 1695,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 34,
+   "slug": "view-frame",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070462436,
+   "milliseconds": 1692,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 35,
+   "slug": "view-home",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070464405,
+   "milliseconds": 1520,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 36,
+   "slug": "view-frame",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070466450,
+   "milliseconds": 1461,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 37,
+   "slug": "view-home",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070468267,
+   "milliseconds": 1595,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 38,
+   "slug": "view-frame",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070470354,
+   "milliseconds": 1826,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 39,
+   "slug": "view-home",
+   "chapter": "Ten times away and back",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070472595,
+   "milliseconds": 1592,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 40,
+   "slug": "click-terminal",
+   "chapter": "Another width",
+   "text": "clicks terminal's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792070474940,
+   "milliseconds": 2094,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 41,
+   "slug": "grow",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥⌘=",
+   "act": "resize",
+   "judged": true,
+   "performed": true,
+   "began": 1792070477683,
+   "milliseconds": 1613,
+   "moved": {
+    "49": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 42,
+   "slug": "click-safari",
+   "chapter": "Another width",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792070480011,
+   "milliseconds": 2152,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 43,
+   "slug": "view-frame",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070482923,
+   "milliseconds": 1973,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 44,
+   "slug": "view-home",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070485662,
+   "milliseconds": 1752,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 45,
+   "slug": "view-frame",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070488157,
+   "milliseconds": 1782,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 46,
+   "slug": "view-home",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070490390,
+   "milliseconds": 1792,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 47,
+   "slug": "view-frame",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070493336,
+   "milliseconds": 2152,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 48,
+   "slug": "view-home",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070496014,
+   "milliseconds": 1601,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 49,
+   "slug": "view-frame",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070498197,
+   "milliseconds": 1698,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 50,
+   "slug": "view-home",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070500280,
+   "milliseconds": 1635,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 51,
+   "slug": "view-frame",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070502452,
+   "milliseconds": 1799,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 52,
+   "slug": "view-home",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070504509,
+   "milliseconds": 1581,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 53,
+   "slug": "view-frame",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070506885,
+   "milliseconds": 1593,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 54,
+   "slug": "view-home",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070508918,
+   "milliseconds": 1530,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 55,
+   "slug": "view-frame",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070511178,
+   "milliseconds": 1739,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 56,
+   "slug": "view-home",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070513343,
+   "milliseconds": 1459,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 57,
+   "slug": "view-frame",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070515367,
+   "milliseconds": 1764,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 58,
+   "slug": "view-home",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070517527,
+   "milliseconds": 1444,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 59,
+   "slug": "view-frame",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070519624,
+   "milliseconds": 1663,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 60,
+   "slug": "view-home",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070521728,
+   "milliseconds": 1467,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 61,
+   "slug": "view-frame",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070523773,
+   "milliseconds": 1738,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 62,
+   "slug": "view-home",
+   "chapter": "Another width",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070525844,
+   "milliseconds": 1523,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 63,
+   "slug": "click-terminal",
+   "chapter": "A larger font",
+   "text": "clicks terminal's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792070528043,
+   "milliseconds": 2026,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 64,
+   "slug": "larger-font",
+   "chapter": "A larger font",
+   "text": "presses ⌘+ in Terminal",
+   "act": "macos-own",
+   "judged": true,
+   "performed": true,
+   "began": 1792070530504,
+   "milliseconds": 1719,
+   "moved": {
+    "49": [
+     2,
+     3,
+     339
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "ODD",
+     "window": null,
+     "what": "w49 fills 557×757 of its slot 12,43 557×767",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "jolt",
+     "level": "FAIL",
+     "window": "terminal (w49)",
+     "what": "moved 2 times",
+     "trace": "+0 ms 12,43 555×769 · +232 ms 12,43 629×791 · +530 ms 12,43 557×774 · +571 ms 12,43 557×757"
+    }
+   ]
+  },
+  {
+   "number": 65,
+   "slug": "click-safari",
+   "chapter": "A larger font",
+   "text": "clicks safari's title bar",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792070533004,
+   "milliseconds": 2204,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 66,
+   "slug": "view-frame",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070535708,
+   "milliseconds": 1822,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 67,
+   "slug": "view-home",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070537939,
+   "milliseconds": 1657,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "ODD",
+     "window": null,
+     "what": "w49 fills 557×757 of its slot 12,43 557×767",
+     "trace": null
+    },
+    {
+     "rule": "2",
+     "detector": "moved-unasked",
+     "level": "FAIL",
+     "window": "terminal (w49)",
+     "what": "is not back where it was after step 62: 12,43 557×757, it was at 12,43 555×769",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 68,
+   "slug": "view-frame",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070540142,
+   "milliseconds": 1650,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 69,
+   "slug": "view-home",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070542167,
+   "milliseconds": 1745,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "ODD",
+     "window": null,
+     "what": "w49 fills 557×757 of its slot 12,43 557×767",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 70,
+   "slug": "view-frame",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070544661,
+   "milliseconds": 1983,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 71,
+   "slug": "view-home",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070547094,
+   "milliseconds": 1719,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "ODD",
+     "window": null,
+     "what": "w49 fills 557×757 of its slot 12,43 557×767",
+     "trace": null
+    },
+    {
+     "rule": "3",
+     "detector": "slow",
+     "level": "ODD",
+     "window": null,
+     "what": "the last window came to rest 713 ms after the key or the button",
+     "trace": null,
+     "explained": "listed, and no reason, until the release build has answered"
+    }
+   ]
+  },
+  {
+   "number": 72,
+   "slug": "view-frame",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070549561,
+   "milliseconds": 1703,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 73,
+   "slug": "view-home",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070551639,
+   "milliseconds": 1719,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "ODD",
+     "window": null,
+     "what": "w49 fills 557×757 of its slot 12,43 557×767",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 74,
+   "slug": "view-frame",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070554030,
+   "milliseconds": 1856,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 75,
+   "slug": "view-home",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070556210,
+   "milliseconds": 1511,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "ODD",
+     "window": null,
+     "what": "w49 fills 557×757 of its slot 12,43 557×767",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 76,
+   "slug": "view-frame",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070558302,
+   "milliseconds": 1769,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 77,
+   "slug": "view-home",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070560490,
+   "milliseconds": 1564,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "ODD",
+     "window": null,
+     "what": "w49 fills 557×757 of its slot 12,43 557×767",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 78,
+   "slug": "view-frame",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070562786,
+   "milliseconds": 1858,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 79,
+   "slug": "view-home",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070565267,
+   "milliseconds": 1740,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "ODD",
+     "window": null,
+     "what": "w49 fills 557×757 of its slot 12,43 557×767",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 80,
+   "slug": "view-frame",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070567910,
+   "milliseconds": 1895,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 81,
+   "slug": "view-home",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070570136,
+   "milliseconds": 1513,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "ODD",
+     "window": null,
+     "what": "w49 fills 557×757 of its slot 12,43 557×767",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 82,
+   "slug": "view-frame",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070572345,
+   "milliseconds": 1818,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 83,
+   "slug": "view-home",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070574889,
+   "milliseconds": 1781,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "ODD",
+     "window": null,
+     "what": "w49 fills 557×757 of its slot 12,43 557×767",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 84,
+   "slug": "view-frame",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥↩",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070577417,
+   "milliseconds": 1901,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": []
+  },
+  {
+   "number": 85,
+   "slug": "view-home",
+   "chapter": "A larger font",
+   "text": "presses ⌃⌥0",
+   "act": "view",
+   "judged": true,
+   "performed": true,
+   "began": 1792070579769,
+   "milliseconds": 2212,
+   "moved": {
+    "30": [
+     1,
+     1,
+     0
+    ],
+    "33": [
+     1,
+     1,
+     0
+    ],
+    "43": [
+     1,
+     1,
+     0
+    ],
+    "49": [
+     1,
+     1,
+     0
+    ],
+    "52": [
+     1,
+     1,
+     0
+    ],
+    "58": [
+     1,
+     1,
+     0
+    ],
+    "61": [
+     1,
+     1,
+     0
+    ],
+    "65": [
+     1,
+     1,
+     0
+    ],
+    "69": [
+     1,
+     1,
+     0
+    ],
+    "71": [
+     1,
+     1,
+     0
+    ]
+   },
+   "findings": [
+    {
+     "rule": "-",
+     "detector": "script",
+     "level": "ODD",
+     "window": null,
+     "what": "w49 fills 557×757 of its slot 12,43 557×767",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 86,
+   "slug": "input-last",
+   "chapter": "The end",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792070583062,
+   "milliseconds": 36713,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 87,
+   "slug": "quit",
+   "chapter": "The end",
+   "text": "chooses Quit Arbor in Arbor's menu",
+   "act": "quit-and-start",
+   "judged": true,
+   "performed": true,
+   "began": 1792070620491,
+   "milliseconds": 3636,
+   "moved": {
+    "33": [
+     1,
+     2,
+     83
+    ],
+    "49": [
+     1,
+     2,
+     31
+    ]
+   },
+   "findings": [
+    {
+     "rule": "5",
+     "detector": "size-lost",
+     "level": "FAIL",
+     "window": "terminal (w49)",
+     "what": "is 40,51 877×502; its own size was 40,51 877×499",
+     "trace": null
+    }
+   ]
+  },
+  {
+   "number": 88,
+   "slug": "input-after",
+   "chapter": "The end",
+   "text": "a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window",
+   "act": "instrument",
+   "judged": true,
+   "performed": true,
+   "began": 1792070624499,
+   "milliseconds": 12719,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 89,
+   "slug": "dock-icon-finder",
+   "chapter": "The end",
+   "text": "clicks finder's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792070637499,
+   "milliseconds": 1888,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 90,
+   "slug": "dock-icon-safari",
+   "chapter": "The end",
+   "text": "clicks safari's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792070639682,
+   "milliseconds": 1976,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 91,
+   "slug": "dock-icon-textedit",
+   "chapter": "The end",
+   "text": "clicks textedit's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792070642035,
+   "milliseconds": 1997,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 92,
+   "slug": "dock-icon-terminal",
+   "chapter": "The end",
+   "text": "clicks terminal's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792070644383,
+   "milliseconds": 1900,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 93,
+   "slug": "dock-icon-notes",
+   "chapter": "The end",
+   "text": "clicks notes's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792070646620,
+   "milliseconds": 2234,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 94,
+   "slug": "dock-icon-calendar",
+   "chapter": "The end",
+   "text": "clicks calendar's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792070649301,
+   "milliseconds": 2066,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 95,
+   "slug": "dock-icon-settings",
+   "chapter": "The end",
+   "text": "clicks settings's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792070651769,
+   "milliseconds": 2502,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 96,
+   "slug": "dock-icon-preview",
+   "chapter": "The end",
+   "text": "clicks preview's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792070655019,
+   "milliseconds": 1998,
+   "moved": {},
+   "findings": []
+  },
+  {
+   "number": 97,
+   "slug": "dock-icon-mail",
+   "chapter": "The end",
+   "text": "clicks mail's icon in the Dock",
+   "act": "switch",
+   "judged": true,
+   "performed": true,
+   "began": 1792070657696,
+   "milliseconds": 2350,
+   "moved": {},
+   "findings": []
+  }
+ ]
+}

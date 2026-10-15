@@ -1,0 +1,38 @@
+19 dock-right: presses ⌃⌥⌘ and the right arrow
+expected: {'act': 'dock-key', 'settled': 'quiet:696', 'moves': '49,33,49,', 'front': '33', 'floating': '30,43,52,58,61,65,69', 'docked': '33,49'}
+ODD rule 3: the last window came to rest 724 ms after the key or the button
+
+13:20:26.371 SCREEN -- begin 19 dock-right
+13:20:26.371 SCREEN -- text 19 presses ⌃⌥⌘ and the right arrow
+13:20:26.788 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+13:20:26.788 DEBUG the stage kept the windows waiting 8 ms: its panel 0, 9 costumes 0 (0 not ready), the desktop 5, going up 3
+13:20:26.831 SCREEN w97 of Arbor 0,0 1600×900 (level 4)
+13:20:26.876 SCREEN safari (w33) 138,31 574×767
+13:20:26.887 MACOS pid 6883 AXResized w33 AXWindow/AXStandardWindow 138 31 574 767
+13:20:26.891 INFO  made room for w33
+13:20:26.938 MACOS pid 7261 AXTitleChanged w49 AXWindow/AXStandardWindow 12 43 520 769
+13:20:26.940 MACOS pid 7261 AXResized w49 AXWindow/AXStandardWindow 12 43 520 769
+13:20:26.948 SCREEN terminal (w49) 12,43 520×769
+13:20:26.960 MACOS pid 7261 AXTitleChanged w49 AXWindow/AXStandardWindow 12 43 513 769
+13:20:26.963 MACOS pid 7261 AXResized w49 AXWindow/AXStandardWindow 12 43 513 769
+13:20:26.978 MACOS pid 6883 AXMoved w33 AXWindow/AXStandardWindow 1014 43 574 767
+13:20:26.985 SCREEN safari (w33) 1014,43 574×767
+13:20:26.985 SCREEN terminal (w49) 12,43 513×769
+13:20:26.995 DEBUG stage retargeted on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.2663520193099976 s
+13:20:27.046 INFO  dock right: docked w33 at the right edge
+13:20:27.049 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Docked · ⌃⌥↩ frames it
+13:20:27.054 SCREEN front to back: safari w107 terminal preview w96 calendar textedit w71 mail settings notes finder w106
+13:20:27.104 SCREEN w109 of Arbor 692,728 216×38 (level 6)
+13:20:27.104 SCREEN w107 of Arbor 1005,34 592×785
+13:20:27.104 SCREEN w106 of Arbor 529,43 12×767
+13:20:27.104 SCREEN w110 of Arbor 1002,43 12×767
+13:20:27.104 SCREEN front to back: w107 safari terminal preview w96 calendar textedit w71 mail settings notes finder w106 w110
+13:20:27.417 SCREEN (nothing was seen for 126 ms)
+13:20:27.422 DEBUG stage down
+13:20:27.456 SCREEN w97 of Arbor left the screen
+13:20:28.368 SCREEN -- end 19 act=dock-key settled=quiet:696 moves=49,33,49, front=33 floating=30,43,52,58,61,65,69 docked=33,49
+13:20:28.729 SCREEN -- chapter Ten times away and back
+13:20:28.745 INFO  trace day-1 ended: 466 lines, trace off
+13:20:28.764 INFO  trace day-2: recording to /tmp/arbor-shell.g5h7kM/home/traces/2026-10-15-132028-day-2.jsonl
+13:20:28.925 SCREEN w109 of Arbor left the screen
+13:20:29.218 SCRIPT == 20 view-frame

@@ -1,0 +1,43 @@
+85 view-home: presses ⌃⌥0
+expected: {'act': 'view', 'settled': 'quiet:1055', 'moves': 'any', 'everything': '1', 'tiles': '', 'keyboard': '33', 'returns': '83', 'floating': '30,43,52,58,61,65,69', 'docked': '33,49'}
+ODD rule -: w49 fills 557×757 of its slot 12,43 557×767
+
+13:22:59.769 SCREEN -- begin 85 view-home
+13:22:59.769 SCREEN -- text 85 presses ⌃⌥0
+13:23:00.117 DEBUG stage up on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: 9 stand-ins, 0.46 s
+13:23:00.117 DEBUG the stage kept the windows waiting 20 ms: its panel 0, 9 costumes 0 (0 not ready), the desktop 8, going up 11
+13:23:00.216 SCREEN (nothing was seen for 119 ms)
+13:23:00.216 SCREEN w97 of Arbor 0,0 1600×900 (level 4)
+13:23:00.273 MACOS pid 6883 AXResized w33 AXWindow/AXStandardWindow 1014 43 574 767
+13:23:00.283 MACOS pid 6883 AXMoved w33 AXWindow/AXStandardWindow 1014 43 574 767
+13:23:00.303 SCREEN safari (w33) 1014,43 574×767
+13:23:00.303 SCREEN terminal (w49) 12,43 557×757
+13:23:00.304 MACOS pid 7261 AXMoved w49 AXWindow/AXStandardWindow 12 43 557 757
+13:23:00.316 MACOS pid 357 AXMoved w30 AXWindow/AXStandardWindow 340 120 920 436
+13:23:00.325 MACOS pid 7116 AXMoved w43 AXWindow/AXStandardWindow 165 65 673 439
+13:23:00.350 MACOS pid 7442 AXMoved w52 AXWindow/AXStandardWindow 300 105 1000 660
+13:23:00.353 SCREEN textedit (w43) 165,65 673×439
+13:23:00.353 SCREEN finder (w30) 340,120 920×436
+13:23:00.357 SCREEN notes (w52) 300,105 1000×660
+13:23:00.368 MACOS pid 8046 AXMoved w58 AXWindow/AXStandardWindow 404 115 936 599
+13:23:00.390 MACOS pid 8277 AXMoved w61 AXWindow/AXStandardWindow 437 85 723 625
+13:23:00.427 SCREEN calendar (w58) 404,115 936×599
+13:23:00.427 SCREEN settings (w61) 437,85 723×625
+13:23:00.428 MACOS pid 8443 AXMoved w65 AXWindow/AXStandardWindow 4 35 708 424
+13:23:00.449 SCREEN preview (w65) 4,35 708×424
+13:23:00.478 MACOS pid 8764 AXMoved w69 AXWindow/AXStandardWindow 240 72 1120 630
+13:23:00.497 INFO  home: showing everything
+13:23:00.523 SCREEN w107 of Arbor 1005,34 592×785
+13:23:00.523 SCREEN w71 of Mail 565,179 470×416
+13:23:00.523 SCREEN mail (w69) 240,72 1120×630
+13:23:00.523 SCREEN w106 of Arbor 569,43 12×767
+13:23:00.523 SCREEN w110 of Arbor 1002,43 12×767
+13:23:00.523 SCREEN front to back: w107 safari terminal preview w96 calendar textedit w71 mail settings notes finder w106 w110
+13:23:00.680 DEBUG stage down
+13:23:00.708 SCREEN w97 of Arbor left the screen
+13:23:01.981 SCREEN -- finding 85 - ODD w49 fills 557×757 of its slot 12,43 557×767
+13:23:01.981 SCREEN -- end 85 act=view settled=quiet:1055 moves=any everything=1 tiles= keyboard=33 returns=83 floating=30,43,52,58,61,65,69 docked=33,49
+13:23:02.843 SCREEN -- chapter The end
+13:23:02.867 INFO  trace day-4 ended: 2115 lines, trace off
+13:23:02.902 INFO  trace day-5: recording to /tmp/arbor-shell.g5h7kM/home/traces/2026-10-15-132302-day-5.jsonl
+13:23:03.044 SCRIPT == 86 input-last
