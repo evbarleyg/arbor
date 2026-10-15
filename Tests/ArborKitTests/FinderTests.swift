@@ -149,6 +149,8 @@ private let side = DisplaySnapshot(
     let (h, _, notes, _, _) = makeHarness()
     let xcode = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500))
     h.system.setMinimumSize(xcode, CGSize(width: 900, height: 600))
+    // Somebody else is being typed in: the window with the keyboard would be served at its neighbours' cost (F61).
+    h.system.userFocus(notes)
     h.run("dock \(xcode.rawValue) beside \(notes.rawValue) bottom")
     #expect(note(h, xcode) == "tile")
   }
@@ -637,6 +639,8 @@ private let side = DisplaySnapshot(
     let (h, _, notes, _, _) = makeHarness()
     let xcode = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500))
     h.system.setMinimumSize(xcode, CGSize(width: 900, height: 600))
+    // Somebody else is being typed in: the window with the keyboard would be served at its neighbours' cost (F61).
+    h.system.userFocus(notes)
     h.run("dock \(xcode.rawValue) beside \(notes.rawValue) bottom")
     #expect(!h.system.isVisible(xcode))
     #expect(h.run("find xcode").ok)

@@ -583,7 +583,7 @@ version changes one. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete refere
 | `menuBarControls` | true | Buttons in the menu bar item; false shows a single icon that opens the menu |
 | `historyButtons` | true | Back and forward among those buttons |
 | `menuBarFill` | 0.25 | How strongly the button for where you are is filled in, from 0 to 1 |
-| `makeRoom` | true | Before a window becomes a tile because its app will not shrink that far, move the gaps around it and take the room from the Desktop and from neighbours that can spare it |
+| `makeRoom` | true | Before a window becomes a tile because its app will not shrink that far, move the gaps around it and take the room from the Desktop and from neighbours that can spare it. For the window being typed in the neighbours give more: they become the tiles |
 | `soleFloatTakesDesktop` | false | A window that floats alone beside docked windows takes the whole Desktop, and has its own size back as soon as a second one floats |
 | `resizeStep` | 40 | Points `grow` and `shrink` add or take when no amount is given |
 | `displays` | [] | Other values of `gap`, `minimumUsableWidth`, `minimumUsableHeight` and `screenEdgeBand` for particular displays (below) |

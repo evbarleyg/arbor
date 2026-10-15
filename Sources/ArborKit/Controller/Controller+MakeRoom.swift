@@ -33,8 +33,9 @@ extension Controller {
     let present = presentWindowIDs()
     let minimums = minimumSizes
     var terms = roomTerms(on: displayID)
-    // What the Desktop is owed it gets when something moves anyway, not because an app has moved its own window. (An app that makes
-    // the window being typed in larger than its slot is still served, at a neighbour's cost if need be; one in the background never.)
+    // What the Desktop is owed it gets when something moves anyway, not because an app has moved its own window. (An
+    // app that makes the window being typed in larger than its slot is still served, at a neighbour's cost if need
+    // be; one in the background never.)
     if reason == .enforce {
       terms.desktopIsOwed = false
       terms.givesBack = false
@@ -123,6 +124,16 @@ extension Controller {
       for window in layout.windowFrames.keys {
         if let leaf = view.tree.leaf(containing: window) { squeezed.remove(leaf) }
       }
+      // A row or column that the hand has made one tile, or a smaller one, likewise: nothing in it is fetched out of
+      // it.
+      let groups = layout.tiles.filter { $0.kind == .group }
+      squeezed.subtract(squeezed.filter { node in view.tree.isSplit(node) && !groups.contains { $0.node == node } })
+      squeezed.formUnion(
+        groups.filter { tile in
+          guard let shown, shown.tiles.contains(where: { $0.node == tile.node }), let was = shown.nodeFrames[tile.node]
+          else { return true }
+          return tile.frame.width < was.width - 0.5 || tile.frame.height < was.height - 0.5
+        }.map(\.node))
     }
     squeezedByHand[displayID] = squeezed.isEmpty ? nil : squeezed
   }

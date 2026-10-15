@@ -24,3 +24,16 @@ expect visible 102
 expect focused 102
 expect tile 101
 expect size 102 760x851
+# The person makes the chat ten points wider. That gap is theirs now, and Mail shows all the same when it is the one typed in.
+seam 1 -10
+expect size 102 770x851
+focus 101
+key ctrl+opt+space
+expect visible 101
+expect tile 102
+# Back in the chat, the gap is where the person put it.
+focus 102
+key ctrl+opt+space
+expect visible 102
+expect size 102 770x851
+expect tile 101

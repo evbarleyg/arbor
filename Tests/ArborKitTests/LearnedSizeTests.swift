@@ -282,10 +282,12 @@ private let tenMinutes = 600.0
 
   // MARK: A window that is in view when a layout would make a tile of it
 
-  /// c framed, so in view at the size of the display, with its record ten minutes old.
-  func framedWithAnOldRecord(settings: Settings = Settings()) -> (Harness, c: WindowID, framed: CGRect) {
+  /// c framed, so in view at the size of the display, with its record ten minutes old. It has the keyboard, unless `typedIn` is false (a
+  /// click on the wallpaper): a record that stands makes a tile only of a window that nobody types in (F61).
+  func framedWithAnOldRecord(settings: Settings = Settings(), typedIn: Bool = true) -> (Harness, c: WindowID, framed: CGRect) {
     let (h, _, _, c) = makeHarness(settings: settings)
     h.run("zoom \(c.rawValue)")
+    if !typedIn { h.system.userFocusesNothing() }
     h.scheduler.advance(by: tenMinutes)
     h.system.clearFrameLog()
     return (h, c, h.frame(c)!)
@@ -306,8 +308,21 @@ private let tenMinutes = 600.0
     #expect(motion.from == framed && motion.to == slot && motion.toLook == .picture)
   }
 
-  @Test func ifItStillRefusesItIsAskedOnceAndThenGoes() {
+  /// Typed in, it is asked all the same before its neighbours pay for a record that old. It refuses, so they do.
+  @Test func ifTheWindowBeingTypedInStillRefusesItIsAskedOnceAndItsNeighboursPay() throws {
     let (h, c, framed) = framedWithAnOldRecord()
+    h.run("show-all")
+    #expect(!isTile(h, c))
+    #expect(h.frame(c)?.size == large)
+    #expect(h.system.focused == c)
+    let moves = h.system.frameLog.filter { $0.window == c }.map(\.frame)
+    #expect(moves.count == 2, "the question, and the way to its place: \(moves)")
+    #expect(moves.first.map(framed.contains) == true)
+    expectWindowsMatchLayout(h)
+  }
+
+  @Test func ifItStillRefusesItIsAskedOnceAndThenGoes() {
+    let (h, c, framed) = framedWithAnOldRecord(typedIn: false)
     h.run("show-all")
     #expect(isTile(h, c))
     #expect(!h.system.isVisible(c))
@@ -371,6 +386,8 @@ private let tenMinutes = 600.0
   @Test func aRecordThatIsFreshIsBelieved() {
     let (h, _, _, c) = makeHarness()
     h.run("zoom \(c.rawValue)")
+    // Nobody types in it: the window with the keyboard would be served at its neighbours' cost (F61).
+    h.system.userFocusesNothing()
     h.scheduler.advance(by: tenMinutes - 1)
     h.system.clearFrameLog()
     h.run("show-all")
@@ -397,7 +414,7 @@ private let tenMinutes = 600.0
   @Test func neverMeansNotInViewEither() {
     var settings = Settings()
     settings.tileRetryMinutes = 0
-    let (h, c, _) = framedWithAnOldRecord(settings: settings)
+    let (h, c, _) = framedWithAnOldRecord(settings: settings, typedIn: false)
     h.system.setMinimumSize(c, .zero)
     h.run("show-all")
     #expect(isTile(h, c))

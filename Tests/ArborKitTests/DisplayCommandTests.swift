@@ -234,8 +234,10 @@ private let above = DisplaySnapshot(
 
   @Test func aWindowTooBigForItsNewSlotIsFramedRatherThanLeftAsATile() {
     let (h, _, _, _, _) = makeHarness()
+    // Too wide for the side display beside anything at all, even two tiles (1232 points less 160). With less, the window with the
+    // keyboard would be served at its neighbours' cost (F61) and need no frame.
     let big = h.system.open(
-      app: "Xcode", frame: CGRect(x: 100, y: 100, width: 1000, height: 700), minimumSize: CGSize(width: 1000, height: 700))
+      app: "Xcode", frame: CGRect(x: 100, y: 100, width: 1150, height: 700), minimumSize: CGSize(width: 1150, height: 700))
     runOK(h, "dock \(big.rawValue) left")
     h.system.userFocus(big)
     runOK(h, "move-to-display next")

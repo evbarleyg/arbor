@@ -97,7 +97,8 @@ public enum SettingsSchema {
       .toggle(
         "makeRoom", \.makeRoom, "Make room before making a tile",
         "Before a window becomes a tile because its app will not shrink that far, move the gaps around it and take "
-          + "the room from the Desktop and from neighbors that can spare it.", advanced: true),
+          + "the room from the Desktop and from neighbors that can spare it. For the window being typed in the "
+          + "neighbors give more: they become the tiles.", advanced: true),
       .toggle(
         "soleFloatTakesDesktop", \.soleFloatTakesDesktop, "Lone window fills the Desktop",
         "Beside docked windows, the only floating window takes the whole Desktop and follows it. It has its own size "

@@ -257,8 +257,8 @@ import Testing
     for focusedFirst in [true, false] {
       let (h, _, b, _) = makeHarness()
       let big = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500))
-      // More than its neighbours and the Desktop could spare between them (F61).
-      h.system.setMinimumSize(big, CGSize(width: 1200, height: 600))
+      // More than the display has. With less, the window with the keyboard would be served at its neighbours' cost (F61).
+      h.system.setMinimumSize(big, CGSize(width: 1500, height: 600))
       if focusedFirst { h.system.userFocus(big) }
       h.run("dock \(big.rawValue) beside \(b.rawValue) bottom")
       #expect(h.workspace.camera == h.workspace.tree.root, "focused first: \(focusedFirst)")

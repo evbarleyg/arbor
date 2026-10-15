@@ -146,17 +146,55 @@ private let tall = [
     #expect(layout.windowFrames[chat] == nil)
   }
 
-  /// The limit: only what Arbor lent goes back. A gap that a person has moved is theirs, so nothing is owed across it.
-  @Test func aGapThatAPersonHasMovedDoesNotGoBack() throws {
+  /// A gap that a person has moved is theirs, so nothing is owed across it that could go back. The window with the keyboard borrows
+  /// across it then, at the cost of the neighbour's place, and the ledger knows where the person had put the gap.
+  @Test func acrossAGapThatAPersonHasMovedItBorrowsAndTheGapComesBack() throws {
     var tree = columns()
     serve(&tree, keyboard: chat)
     tree.moveBoundary(leading: tree.desktop, trailing: try #require(tree.leaf(containing: chat)), by: -10, pointsPerWeight: 464)
     #expect(!tree.hasLoans)
-    let before = tree
-    let layout = serve(&tree, keyboard: mail)
-    #expect(layout.windowFrames[mail] == nil)
+    let theirs = tree
+    #expect(serve(&tree, keyboard: chat).windowFrames[chat]?.width == 770)
+    #expect(tree == theirs)
+
+    var layout = serve(&tree, keyboard: mail)
+    #expect(layout.windowFrames[mail]?.width == 820)
+    #expect(layout.windowFrames[chat] == nil)
+    let leaf = try #require(tree.leaf(containing: mail))
+    #expect(tree.hasLoans && tree.loans.allSatisfy { $0.borrower == leaf }, "\(tree.loans)")
+    let settled = tree
+    serve(&tree, keyboard: mail)
+    #expect(tree == settled, "and another layout finds nothing to do")
+
+    layout = serve(&tree, keyboard: chat)
     #expect(layout.windowFrames[chat]?.width == 770)
-    #expect(tree == before)
+    expectSame(parts(of: tree.root, tree), parts(of: theirs.root, theirs))
+    #expect(!tree.hasLoans)
+  }
+
+  /// [Desktop 80 | Mail 490 | Chat 490 | Notes 320] by hand, nothing lent, the two in the middle with ten points to spare each. Both
+  /// have to give more than that, and no more leave the view than must.
+  @Test func ofTwoNeighboursThatPayTheNewerIsServedAgainFromWhatIsLeft() {
+    let known = [mail: CGSize(width: 480, height: 400), chat: CGSize(width: 480, height: 400), notes: CGSize(width: 700, height: 300)]
+    var tree = LayoutTree()
+    let leaves = [mail, chat, notes].map { tree.dock($0, beside: tree.root, edge: .right) }
+    tree.setShares([tree.desktop: 80, leaves[0]: 490, leaves[1]: 490, leaves[2]: 320])
+    let before = tree
+    let plain = serve(&tree, keyboard: nil, known: known)
+    #expect(plain.windowFrames[notes] == nil && plain.windowFrames.count == 2)
+    #expect(tree == before, "without the keyboard nobody pays with their place")
+
+    let layout = serve(&tree, keyboard: notes, known: known)
+    #expect(layout.windowFrames[notes]?.width == 700)
+    #expect(layout.windowFrames[chat]?.width == 480, "the one docked last of the two")
+    #expect(layout.windowFrames[mail] == nil)
+    let settled = tree
+    serve(&tree, keyboard: notes, known: known)
+    #expect(tree == settled)
+
+    // Whoever has the keyboard next finds the gaps where the person had put them.
+    #expect(serve(&tree, keyboard: mail, known: known).windowFrames[mail]?.width == 490)
+    expectSame(parts(of: tree.root, tree), parts(of: before.root, before))
   }
 
   /// A slot that the person's own hand has made short stays as they left it, whoever has the keyboard (T20).
@@ -260,17 +298,132 @@ private let tall = [
     #expect(tree.loans.filter { $0.borrower == upper && $0.receiver == upper } == owed)
   }
 
+  /// [Mail over Desktop | Notes]. Notes stands on 7 points that the Desktop lent it while the two were neighbours; Mail, docked above the
+  /// Desktop since, has put that into a column, so they cannot go back. And they would not be enough. Mail comes back out of the Dock
+  /// with the keyboard, into a column 65 points too narrow for it.
+  @Test func whereNothingThatWasLentCanGoBackTheNeighbourLends() throws {
+    let known = [notes: CGSize(width: 709, height: 300), mail: CGSize(width: 760, height: 400)]
+    var tree = LayoutTree()
+    tree.dock(notes, beside: tree.root, edge: .right)
+    #expect(serve(&tree, keyboard: notes, known: known).windowFrames[notes]?.width == 709)
+    tree.dock(mail, beside: tree.desktop, edge: .top)
+    #expect(serve(&tree, keyboard: notes, known: known).windowFrames[mail] == nil, "in the background it is the tile")
+    let layout = serve(&tree, keyboard: mail, known: known, givesBack: false)
+    #expect(layout.windowFrames[mail]?.width == 760)
+    #expect(layout.windowFrames[notes] == nil)
+  }
+
+  /// [Mail | Desktop | Chat over Notes], and Mail will not go below 1100 points: typed in, it leaves the column 212, which is too narrow
+  /// for anything, so the column is one tile. A window in there is served like any other that has the keyboard.
+  @Test func outOfTheTileOfAGroupToo() throws {
+    let known = [mail: CGSize(width: 1100, height: 400), chat: CGSize(width: 400, height: 300), notes: CGSize(width: 400, height: 300)]
+    var tree = LayoutTree()
+    tree.dock(mail, beside: tree.root, edge: .left)
+    let upper = tree.dock(chat, beside: tree.root, edge: .right)
+    tree.dock(notes, beside: upper, edge: .bottom)
+    let column = try #require(tree.parent(of: upper))
+    var layout = serve(&tree, keyboard: chat, known: known)
+    #expect(Set(layout.windowFrames.keys) == [chat, notes])
+    let first = tree
+
+    layout = serve(&tree, keyboard: mail, known: known)
+    #expect(layout.windowFrames[mail]?.width == 1100)
+    #expect(layout.tiles.contains { $0.node == column && $0.kind == .group })
+
+    layout = serve(&tree, keyboard: chat, known: known)
+    #expect(Set(layout.windowFrames.keys) == [chat, notes])
+    expectSame(parts(of: tree.root, tree), parts(of: first.root, first))
+    let settled = tree
+    serve(&tree, keyboard: chat, known: known)
+    #expect(tree == settled)
+  }
+
+  /// The same with the gaps put there by hand, so that nothing is owed: the column is grown until it is laid out again, then the window.
+  @Test func outOfTheTileOfAGroupThatNothingWasLentFor() throws {
+    let known = [mail: CGSize(width: 1100, height: 400), chat: CGSize(width: 500, height: 600), notes: CGSize(width: 400, height: 300)]
+    var tree = LayoutTree()
+    let left = tree.dock(mail, beside: tree.root, edge: .left)
+    let upper = tree.dock(chat, beside: tree.root, edge: .right)
+    tree.dock(notes, beside: upper, edge: .bottom)
+    let column = try #require(tree.parent(of: upper))
+    tree.setShares([left: 1100, tree.desktop: 80, column: 212])
+    let theirs = tree
+    #expect(serve(&tree, keyboard: mail, known: known).tiles.contains { $0.node == column && $0.kind == .group })
+    #expect(tree == theirs)
+    #expect(serve(&tree, keyboard: nil, known: known).windowFrames[mail] != nil, "without the keyboard nobody pays")
+    #expect(tree == theirs)
+
+    let layout = serve(&tree, keyboard: chat, known: known)
+    #expect(layout.windowFrames[chat]?.size == CGSize(width: 500, height: 600))
+    #expect(layout.windowFrames[mail] == nil)
+    #expect(tree.loans.allSatisfy { $0.borrower == upper }, "\(tree.loans)")
+
+    #expect(serve(&tree, keyboard: mail, known: known).windowFrames[mail]?.width == 1100)
+    expectSame(parts(of: tree.root, tree), parts(of: theirs.root, theirs))
+  }
+
+  /// Notes has never refused a size, so Arbor does not know what it needs. It lends Mail its place and is a tile of 162 points, too small for
+  /// any window. Typed in, it is back: that it is so small is Arbor's doing.
+  @Test func aNeighbourThatLentItsPlaceComesBackThoughNothingIsKnownAboutIt() {
+    let known = [mail: CGSize(width: 1150, height: 400)]
+    var tree = LayoutTree()
+    tree.dock(mail, beside: tree.root, edge: .left)
+    tree.dock(notes, beside: tree.root, edge: .right)
+    let first = tree
+    #expect(serve(&tree, keyboard: notes, known: known).windowFrames[notes]?.width == 464)
+    #expect(tree == first)
+    var layout = serve(&tree, keyboard: mail, known: known)
+    #expect(layout.windowFrames[mail]?.width == 1150)
+    #expect(layout.windowFrames[notes] == nil)
+    layout = serve(&tree, keyboard: notes, known: known)
+    #expect(layout.windowFrames[notes]?.width == 464)
+    #expect(layout.windowFrames[mail] == nil)
+    expectSame(parts(of: tree.root, tree), parts(of: first.root, first))
+  }
+
+  /// Six columns on 1440 points are 220 each, too small for any window, and nobody made them so but the person. As ever, they are tiles.
+  @Test func aSlotTooSmallForAnyWindowIsLeftAloneWhereNothingIsKnownAndNothingWasLent() {
+    var tree = LayoutTree()
+    let windows = (1...5).map { WindowID(UInt32($0)) }
+    for window in windows { tree.dock(window, beside: tree.root, edge: .right) }
+    let before = tree
+    #expect(serve(&tree, keyboard: windows[2], known: [:]).windowFrames.isEmpty)
+    #expect(tree == before)
+  }
+
   // MARK: Anything
 
-  /// Seeded, so a failure can be played again. Whatever the arrangement, the minimums and whoever has the keyboard.
+  /// Whatever the arrangement, the minimums and whoever has the keyboard.
   @Test func anyTreeAnyMinimumsAnyKeyboard() {
-    var state: UInt64 = 0x61_2026
+    let (exceptions, missed) = walk(0..<1500)
+    #expect(exceptions > 20, "the walk has to meet what it is about: \(exceptions)")
+    #expect(missed <= 12, "beside a group that cannot shrink any further it is still the tile; that has become more common: \(missed)")
+  }
+
+  /// Found by longer walks than the one above, each with one thing taken out of `MakeRoom`: twelve rounds (debts in a circle); a group laid
+  /// out again large enough for all that is in it; the tile of a group giving like a window's; a layout after each loan that goes back.
+  @Test(arguments: [
+    13951, 33480, 37293, 42820, 55008, 57915,
+    4388, 49686, 59304,
+    5560, 11163, 16693,
+    35037,
+  ]) func roundsThatOnceBrokeARule(round: Int) {
+    _ = walk(round..<(round + 1))
+  }
+
+  /// Each round is seeded with its number, so that one can be played again by itself. Returns in how many somebody paid with their place
+  /// for the window with the keyboard, and in how many it was the tile though there would have been room.
+  func walk(_ rounds: Range<Int>) -> (exceptions: Int, missed: Int) {
+    var state: UInt64 = 0
     func random(_ bound: Int) -> Int {
       state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
       return Int((state >> 33) % UInt64(bound))
     }
     var exceptions = 0
-    for round in 0..<1500 {
+    var missed = 0
+    for round in rounds {
+      state = 0x61_2026 &+ UInt64(round) &* 0x9E37_79B9_7F4A_7C15
+      _ = random(2)
       var tree = LayoutTree()
       let windows = (1...(2 + random(5))).map { WindowID(UInt32($0)) }
       var known: [WindowID: CGSize] = [:]
@@ -290,7 +443,6 @@ private let tall = [
       let splits = tree.preorder().filter(tree.isSplit)
       let camera = random(3) == 0 ? splits[random(splits.count)] : tree.root
       let keyboard = windows[random(windows.count)]
-      let leaf = tree.leaf(containing: keyboard)!
       let before = tree
       let shown = LayoutEngine.layout(
         tree, camera: camera, in: screen, options: LayoutOptions(), isPresent: { _ in true }, minimumSize: { known[$0] })
@@ -303,34 +455,62 @@ private let tall = [
         #expect(abs(was - now) < 1e-9, "weight moves, none is made: \(story)")
       }
       // Out of view nothing changes.
-      for id in tree.preorder() where after.nodeFrames[id] == nil && after.nodeFrames[tree.parent(of: id) ?? id] == nil {
+      for id in tree.preorder() where [shown, after].allSatisfy({ $0.nodeFrames[id] == nil && $0.nodeFrames[tree.parent(of: id) ?? id] == nil }) {
         #expect(tree[id]!.weight == before[id]!.weight, "\(id) is out of view: \(story)")
       }
       let losers = shown.windowFrames.keys.filter { after.windowFrames[$0] == nil }.sorted()
       if !losers.isEmpty {
         exceptions += 1
         #expect(shown.windowFrames[keyboard] == nil && after.windowFrames[keyboard] != nil, "\(losers) paid for nothing: \(story)")
-        // Whoever pays was on lent room, in a row or column that the window with the keyboard is in.
-        var path: Set<NodeID> = []
-        var current = leaf
-        while current != after.camera, let parent = tree.parent(of: current) {
-          path.insert(parent)
-          current = parent
-        }
-        let lent = before.loans.filter { before.parent(of: $0.receiver).map(path.contains) == true }
-        for loser in losers {
-          #expect(lent.contains { before.subtree($0.receiver, contains: before.leaf(containing: loser)!) }, "\(loser) was on its own room: \(story)")
+      }
+      // It is the tile only if it fits nowhere: not even with everybody beside it as small as a tile goes. (Asked only where nothing is
+      // smaller than that to begin with: what follows would count on it, and the window is served from the gaps without the loans.)
+      let cramped = shown.nodeFrames.values.contains { $0.width < 80 || $0.height < 80 }
+      // A window that Arbor knows nothing about is left in a slot too small for any window, unless it is so small because it has lent room
+      // (and still is once that has gone back: then the person's own gaps leave it no more).
+      let lent = tree.loans.contains { tree.subtree($0.giver, contains: tree.leaf(containing: keyboard)!) }
+      if !cramped, known[keyboard] != nil || lent, after.windowFrames[keyboard] == nil,
+        after.tiles.contains(where: { $0.windows.contains(keyboard) })
+      {
+        let minimum = known[keyboard] ?? CGSize(width: 240, height: 160)
+        var alone = before
+        let others = windows.filter { $0 != keyboard }
+        let roomiest = MakeRoom.serve(
+          &alone, camera: camera, in: screen, options: LayoutOptions(), isPresent: { _ in true },
+          minimumSize: { $0 == keyboard ? minimum : others.contains($0) ? CGSize(width: 10_000, height: 10_000) : nil },
+          terms: MakeRoom.Terms(desktopIsInUse: false, keyboard: keyboard)
+        ).layout
+        if roomiest.windowFrames[keyboard] != nil {
+          // The one case known. A group shrinks in proportion, so only as far as the smallest in it is still as large as a tile: a column
+          // (or a row of columns) beside the window gives less height than its windows have between them.
+          func runs(_ id: NodeID, along axis: Axis) -> Bool {
+            guard case .split(let direction, let children) = tree[id]?.kind else { return false }
+            return (direction == axis && children.count > 1) || children.contains { runs($0, along: axis) }
+          }
+          var besideSuchAGroup = false
+          var current = tree.leaf(containing: keyboard)!
+          while current != after.camera, let parent = tree.parent(of: current) {
+            if case .split(let axis, let children) = tree[parent]?.kind, children.contains(where: { $0 != current && runs($0, along: axis) }) {
+              besideSuchAGroup = true
+            }
+            current = parent
+          }
+          #expect(besideSuchAGroup, "there was room for it: \(story)")
+          missed += 1
         }
       }
       for (id, frame) in after.nodeFrames {
-        guard let was = shown.nodeFrames[id] else { continue }
-        #expect(frame.width >= min(was.width, 80) - 0.5 && frame.height >= min(was.height, 80) - 0.5, "\(id) is \(frame.size): \(story)")
+        // Nothing becomes smaller than a tile goes, 80 points, give or take what the engine itself does: a group is laid out from the
+        // smallest usable size on, where three in a row have (240 - 24) / 3 = 72 each; and boundaries are whole points, so what is smaller
+        // already can lose one more. What was inside the tile of a group had no size before.
+        let was = shown.nodeFrames[id]?.size ?? CGSize(width: 80, height: 80)
+        #expect(frame.width >= min(was.width - 1, 72) && frame.height >= min(was.height - 1, 72), "\(id) is \(frame.size): \(story)")
       }
       let settled = tree
       _ = lay(&tree, keyboard: keyboard, camera: camera)
       #expect(tree == settled, "another layout finds nothing to do: \(story)")
     }
-    #expect(exceptions > 20, "the walk has to meet what it is about: \(exceptions)")
+    return (exceptions, missed)
   }
 
   // MARK: Rehearsals

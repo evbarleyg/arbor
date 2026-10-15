@@ -46,10 +46,24 @@ extension Controller {
   /// all in one layout and for everyone to see. So it is asked first, where it is, to shrink to the size of the slot: that
   /// way it covers nothing that it does not cover already. Returns true if a record changed, so that
   /// `layout` no longer holds.
-  func askBeforeTheyLeave(_ layout: Layout, on displayID: DisplayID) -> Bool {
+  ///
+  /// The window being typed in is no tile in `layout` whatever its record says: its neighbours are, for its sake
+  /// (F61). Before they pay with their places for a record that old, it is asked the same, for the slot it has in
+  /// `before`, the workspace as this layout found it.
+  func askBeforeTheyLeave(_ layout: Layout, on displayID: DisplayID, startingFrom before: Workspace? = nil) -> Bool {
     guard !confirmedSizes.isEmpty, let shown = layouts[displayID]?.windowFrames else { return false }
     var changed = false
-    for (window, slot) in tilesToAsk(in: layout, on: displayID)
+    var toAsk = tilesToAsk(in: layout, on: displayID)
+    if let before, let typedIn = keyboardFocus(), layout.windowFrames[typedIn] != nil, let display = display(displayID) {
+      let (present, minimums) = (presentWindowIDs(), minimumSizes)
+      let plain = LayoutEngine.layout(
+        before.tree, camera: before.camera, in: display.visibleFrame, options: options(for: displayID).layoutOptions,
+        isPresent: { present.contains($0) }, minimumSize: { minimums[$0] })
+      if plain.windowFrames.keys.contains(where: { layout.windowFrames[$0] == nil }) {
+        toAsk += tilesToAsk(in: plain, on: displayID).filter { $0.window == typedIn }
+      }
+    }
+    for (window, slot) in toAsk
     where shown[window] != nil && !parked.contains(window) && !enforcement.givenUp.contains(window) {
       if askInView(window, toTake: slot.size) { changed = true }
     }
