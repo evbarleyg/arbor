@@ -86,7 +86,8 @@ step "the first minute: launched without the permission, then granted"
 allow 0
 sleep 1
 # The permission goes with taps installed: that is what this is about.
-arbor_settings "{$ARBOR_GESTURES_ON}"
+# With the ring and the darkening, options (collab/QUESTIONS.md, Q29): that none of Arbor's own windows is left on screen says nothing where none was.
+arbor_settings "{\"focusRing\": true, \"dimBehindArranged\": 0.25, $ARBOR_GESTURES_ON}"
 ARBOR_MAY_LACK_PERMISSION=1 arbor_start 3 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_NO_PROMPT=0
 expect_status "Arbor waits for the permission" "waiting for Accessibility permission"
 check "it holds no event tap" taps_are 0
@@ -113,6 +114,7 @@ ctl zoom "$W1"
 check "2 is out of view" eventually off_screen "$W2"
 check "3 is out of view" eventually off_screen "$W3"
 check "the event taps are installed" eventually has_taps
+check "something of Arbor's own is on screen" test -n "$(overlays | awk '$8 == "on"')"
 shot 01-framed
 
 step "the permission goes"

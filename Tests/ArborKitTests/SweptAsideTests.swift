@@ -9,9 +9,10 @@ import Testing
 /// window server lists meanwhile, or on the way back, for anybody's hand.
 @Suite @MainActor struct SweptAsideTests {
   /// root(h)[a, desktop, b], showing everything, with `low` floating in the lower half of the Desktop and `high` in the upper: with
-  /// a column for the Desktop, whose wallpaper is clicked and whose windows are swept up and down.
+  /// a column for the Desktop, whose wallpaper is clicked and whose windows are swept up and down. And with the motion, an option too,
+  /// switched on: that no stage goes up over a desktop somebody wanted bare says nothing where none ever does.
   func makeHarness() -> (h: Harness, a: WindowID, b: WindowID, low: WindowID, high: WindowID) {
-    let h = Harness(settings: .withDesktopColumn)
+    let h = Harness(settings: .withDesktopColumn.withMotion)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
     h.start()

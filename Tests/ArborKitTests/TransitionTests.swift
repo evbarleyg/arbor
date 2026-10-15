@@ -10,8 +10,8 @@ import Testing
   let content = FakeWindowSystem.standardDisplay.visibleFrame.insetBy(dx: 12, dy: 12)
 
   /// [a | b] with c floating over the middle. The transitions of the set-up are forgotten.
-  /// With `.withDesktopColumn`: [a | Desktop | b] with c floating on the Desktop.
-  func makeHarness(settings: Settings = Settings()) -> (Harness, WindowID, WindowID, WindowID) {
+  /// With `.withDesktopColumn`: [a | Desktop | b] with c floating on the Desktop. Always with the motion, which is an option too.
+  func makeHarness(settings: Settings = .withMotion) -> (Harness, WindowID, WindowID, WindowID) {
     let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", pid: 12, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
@@ -41,7 +41,7 @@ import Testing
   // MARK: Acceptance criterion 1: zoom, back, dock and close
 
   @Test func zoomingMovesEveryWindowThatIsDrawn() throws {
-    let (h, a, b, c) = makeHarness(settings: .withDesktopColumn)  // c rides on the Desktop, which has a place on the plane
+    let (h, a, b, c) = makeHarness(settings: .withDesktopColumn.withMotion)  // c rides on the Desktop, which has a place on the plane
     let (slotA, slotB, restC) = (h.frame(a)!, h.frame(b)!, h.frame(c)!)
     h.run("zoom \(a.rawValue)")
     let transition = try #require(only(h))
@@ -150,16 +150,16 @@ import Testing
   }
 
   @Test func withADurationOfZeroNoTransitionIsProduced() {
-    var settings = Settings()
+    var settings = Settings.withMotion
     settings.animationDuration = 0
     let (h, _) = journey(settings)
     #expect(h.overlays.transitions.isEmpty)
   }
 
   @Test func windowsGoTheSameWayWithAndWithoutAnimation() {
-    var off = Settings()
+    var off = Settings.withMotion
     off.animationDuration = 0
-    let (animated, moves) = journey(Settings())
+    let (animated, moves) = journey(.withMotion)
     let (instant, plainMoves) = journey(off)
     #expect(animated.overlays.transitions.count > 15)
     #expect(moves == plainMoves, "the same frames, set in the same order")
@@ -237,7 +237,7 @@ import Testing
     let (h, a, _, _) = makeHarness()
     h.run("zoom \(a.rawValue)")
     h.controller.saveNow()
-    let again = Harness(saved: h.store.saved)
+    let again = Harness(settings: .withMotion, saved: h.store.saved)
     for window in h.system.allWindows() {
       // As a crash would leave them: nothing is where the saved arrangement wants it.
       again.system.open(
@@ -434,7 +434,7 @@ import Testing
   }
 
   @Test func floatingEverythingBringsBackWhatWasOutOfView() throws {
-    let (h, a, b, c) = makeHarness(settings: .withDesktopColumn)  // c comes in with the Desktop, from where the plane has it
+    let (h, a, b, c) = makeHarness(settings: .withDesktopColumn.withMotion)  // c comes in with the Desktop, from where the plane has it
     h.run("zoom \(a.rawValue)")
     h.overlays.clearTransitions()
     h.run("float-all")
@@ -447,7 +447,7 @@ import Testing
   }
 
   @Test func aRuleThatDocksANewWindowIsAnimated() throws {
-    var settings = Settings()
+    var settings = Settings.withMotion
     settings.rules = [AppRule(app: "com.example.terminal", action: .dock(.right))]
     let (h, _, b, _) = makeHarness(settings: settings)
     let opened = CGRect(x: 600, y: 300, width: 500, height: 300)
@@ -515,7 +515,7 @@ import Testing
   }
 
   @Test func clickingATileUnfoldsIt() throws {
-    var settings = Settings()
+    var settings = Settings.withMotion
     settings.minimumUsableWidth = 750  // more than half the display
     let (h, a, b, c) = makeHarness(settings: settings)
     h.run("dock \(c.rawValue) beside \(a.rawValue) bottom")
@@ -543,7 +543,7 @@ import Testing
   }
 
   @Test func standInsAreStackedLikeTheWindows() throws {
-    let (h, a, b, c) = makeHarness(settings: .withDesktopColumn)  // the way to the Desktop is played: it has a place on the plane
+    let (h, a, b, c) = makeHarness(settings: .withDesktopColumn.withMotion)  // the way to the Desktop is played: it has a place on the plane
     h.system.userFocus(c)
     h.system.userFocus(a)
     h.run("out")  // fails: nothing to step out to, so nothing is focused or moved
@@ -552,7 +552,7 @@ import Testing
   }
 
   @Test func windowsArborDoesNotArrangeAreDrawnWhereTheyAre() throws {
-    var settings = Settings()
+    var settings = Settings.withMotion
     settings.excludedBundleIDs = ["com.example.player"]
     let (h, a, _, _) = makeHarness(settings: settings)
     let frame = CGRect(x: 900, y: 500, width: 400, height: 300)
@@ -570,7 +570,7 @@ import Testing
     let second = DisplaySnapshot(
       id: DisplayID("side"), frame: CGRect(x: 1440, y: 0, width: 1280, height: 800),
       visibleFrame: CGRect(x: 1440, y: 0, width: 1280, height: 800), isMain: false)
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, second])
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, second], settings: .withMotion)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 1600, y: 100, width: 600, height: 400))
     let c = h.system.open(app: "Mail", frame: CGRect(x: 1700, y: 200, width: 600, height: 400))
@@ -587,7 +587,7 @@ import Testing
   }
 
   @Test func theDurationComesFromTheSettings() throws {
-    var settings = Settings()
+    var settings = Settings.withMotion
     settings.animationDuration = 0.2
     let (h, a, _, _) = makeHarness(settings: settings)
     h.run("zoom \(a.rawValue)")

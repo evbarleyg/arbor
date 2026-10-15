@@ -28,7 +28,9 @@ public struct Workload {
   ///   - twoDisplays: adds `secondDisplay` with one more group of three docked on it.
   ///   - grid: instead of groups, every window docked in a grid (`arrange`) on `largeDisplay`, all of
   ///     them in view: the most a camera move can have to do.
-  public init(windows count: Int, twoDisplays: Bool = false, grid: Bool = false, settings: Settings = Settings()) {
+  public init(
+    windows count: Int, twoDisplays: Bool = false, grid: Bool = false, settings: Settings = Harness.settingsWhenNoneAreGiven
+  ) {
     let main = grid ? Self.largeDisplay : FakeWindowSystem.standardDisplay
     // The fake numbers windows from 101 in the order they open.
     let ids = (0..<count).map { WindowID(UInt32(101 + $0)) }

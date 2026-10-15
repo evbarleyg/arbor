@@ -68,7 +68,7 @@ import Testing
 
   /// A second's doubt about the permission is a state like the others: nobody said anything.
   @Test func aFalseAlarmLetsGoOfNothing() {
-    let h = Harness()
+    let h = Harness(settings: Settings())
     h.watchAccessibility()
     h.system.open(app: "Chat")
     h.start()

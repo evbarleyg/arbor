@@ -14,6 +14,11 @@ import Foundation
 /// what is missing itself, as it always did.
 ///
 /// Nothing shows and no window is touched, so nothing moves before the person docks something.
+///
+/// **Without motion, as Arbor ships, the apps are got ready all the same, and no display.** A tile wears its app's colour and icon as a
+/// stand-in does, and asks for them while it waits to be drawn. On a hosted Mac, with no motion, a dock that made tiles of four
+/// windows had them out of the way after 7 ms and was busy for another 400 making the four tiles: with no stage to cover
+/// it, an empty desk.
 extension Controller {
   struct Rehearsed {
     /// What the presenter has been told of, or will be as soon as its turn comes.
@@ -29,9 +34,9 @@ extension Controller {
   public static let pauseBetweenPieces = 0.01
 
   func rehearseNextMotion() {
-    // Without motion there is nothing to be ready for, and it is not paid for.
-    guard isRunning, settings.motionDuration > 0 else { return }
-    let displays = Set(displays.map(\.id))
+    guard isRunning else { return }
+    // Without motion there is no stage to be ready, and it is not paid for.
+    let displays = settings.motionDuration > 0 ? Set(displays.map(\.id)) : []
     // Also of windows that are minimized or hidden: coming back is a motion, and they are in it.
     let apps = Set(windows.values.map { Rehearsal.App(pid: $0.pid, bundleID: $0.bundleID) })
     guard displays != rehearsed.displays || apps != rehearsed.apps else { return }

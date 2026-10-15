@@ -239,7 +239,7 @@ import Testing
   }
 
   @Test func withoutTheButtonsTheMenuBarIsTheSameWhateverTheyWouldBeLike() throws {
-    let h = harness()
+    let h = harness { $0.menuBarControls = true }
     let window = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     h.run("dock \(window.rawValue) left")
     let hanging = SettingsSchema.needs.filter { $0.value == "menuBarControls" }.keys.sorted()

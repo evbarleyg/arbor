@@ -1600,6 +1600,7 @@ def check_rehearse():
             handle.write(f"""source '{HERE}/mac-shell/lib.sh'
 levels() {{ echo "levels:$(pointer windows $1 | awk '$NF == "Arbor" && $3 != 0 {{ printf " %s", $3 }}')"; }}
 arbor_build
+arbor_settings '{{"dimBehindArranged": 0.25}}'
 arbor_start 1 ARBOR_NO_HOTKEYS=0
 ctl dock "$W1" left
 ctl check-for-updates

@@ -55,8 +55,9 @@ public struct Settings: Codable, Equatable, Sendable {
   /// Accept every command from `arbor://` URLs. Off, URLs can only move the camera and arrange
   /// windows (`Command.isAllowedFromURL`), because any web page or document can open a URL.
   public var allowAllURLCommands: Bool = false
-  /// Draws a line around the window that has the keyboard, if Arbor arranges it (FocusRing.swift).
-  public var focusRing: Bool = true
+  /// Draws a line around the window that has the keyboard, if Arbor arranges it (FocusRing.swift). Off as Arbor ships, like the buttons
+  /// in the menu bar and the motion below: nothing is drawn that was not asked for (collab/QUESTIONS.md, Q29).
+  public var focusRing: Bool = false
   /// The line's thickness in points, 1 to 12.
   public var focusRingWidth: Double = 3
   /// `accent` (the accent colour of System Settings), `#RRGGBB` or `#RRGGBBAA`.
@@ -84,15 +85,16 @@ public struct Settings: Codable, Equatable, Sendable {
   /// (docs/TESTING.md): that "Hey Siri" and dictation do not count as a call, and that muting does not end one.
   public var holdStillWhileMicrophoneIsOn: Bool = false
   /// The menu bar item shows buttons for back, forward, the Desktop, everything and each saved view;
-  /// right-click it for the menu. False shows a single icon that opens the menu.
-  public var menuBarControls: Bool = true
+  /// right-click it for the menu. False, as Arbor ships, shows a single icon that opens the menu and never changes its width.
+  public var menuBarControls: Bool = false
   /// Whether those buttons include back and forward.
   public var historyButtons: Bool = true
   /// How opaque the background of the button for where you are is, from 0 to 1.
   public var menuBarFill: Double = 0.25
-  /// How long camera moves and layout changes take to play, in seconds; 0 applies them at once.
-  /// macOS's "Reduce motion" turns the motion off as well. See `motionDuration`.
-  public var animationDuration: Double = 0.46
+  /// How long camera moves and layout changes take to play, in seconds. 0, as Arbor ships, applies them at once: the windows themselves
+  /// go to their places and nothing stands in for them. Above 0 a stage covers the display meanwhile, on which cards with the apps'
+  /// icons travel (0.46 is what the first build played). macOS's "Reduce motion" turns the motion off as well. See `motionDuration`.
+  public var animationDuration: Double = 0
   /// A summoned window stays over the view when the keyboard goes to another window, until it is
   /// summoned away. Off, turning to another window sends it out of view.
   public var summonStays: Bool = false
@@ -165,9 +167,9 @@ public struct Settings: Codable, Equatable, Sendable {
   /// wrong, what changed unseen, and a few hints for newcomers), `all` (every reply) or `off`. See HeadsUp.swift.
   public var messages: String = "helpful"
   /// How much the wallpaper is darkened behind docked windows, from 0 (not at all) to 1 (black), so
-  /// that the docked area reads as one surface. This and the five keys below are read through
-  /// `appearanceOptions` (Appearance.swift).
-  public var dimBehindArranged: Double = 0.25
+  /// that the docked area reads as one surface. 0 as Arbor ships: the wallpaper is left as it is (collab/QUESTIONS.md, Q29). This and the
+  /// five keys below are read through `appearanceOptions` (Appearance.swift).
+  public var dimBehindArranged: Double = 0
   /// Blur of the wallpaper in the same area, from 0 (none) to 1 (all the blur macOS has to give).
   public var blurBehindArranged: Double = 0
   /// Tiles take on their app's colour; false gives every tile the same grey.
@@ -189,8 +191,8 @@ public struct Settings: Codable, Equatable, Sendable {
   /// How much of the accent colour is laid over the wallpaper behind docked windows, from 0 (none) to 1. This and
   /// the two keys below are read through `appearanceOptions` too (docs/features/F36-appearance-leftovers.md).
   public var tintBehindArranged: Double = 0
-  /// How strong the hairline around the Desktop is where it lies between docked windows, from 0 (none) to 1.
-  public var desktopEdge: Double = 0.05
+  /// How strong the hairline around the Desktop is where it lies between docked windows, from 0 (none), as Arbor ships, to 1.
+  public var desktopEdge: Double = 0
   /// Seconds a tile takes to fade in and out, from 0 (at once) to 1.
   public var tileFade: Double = 0.2
   /// Scrolling with ⌃⌥ held zooms: up steps in toward the pointer, down steps out (F55). Off with `gesturesEnabled`.
@@ -259,6 +261,10 @@ public struct Settings: Codable, Equatable, Sendable {
   /// How wide Arrange Windows, `balance` and a `layout` line that does not mention it leave the Desktop, counted in windows. Nil: it
   /// has no room.
   public var desktopWeightWhenArranged: Double? { desktopColumn ? arrangeDesktopWeight : nil }
+
+  /// How long the motion lasted while it shipped switched on, in seconds. The default is none since (collab/QUESTIONS.md, Q29); this is the
+  /// length the help names to whoever wants it back, and the one the judge of motion holds a motion to (`StageJudge.Limits`).
+  public static let usualMotionDuration = 0.46
 
   /// `animationDuration` kept between 0 and 2 seconds. A value that is not a number counts as the default.
   public var motionDuration: Double {

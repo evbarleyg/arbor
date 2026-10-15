@@ -26,7 +26,7 @@ private let side = DisplaySnapshot(
 
     final class Box { var calls: [[KeyBinding]] = [] }
 
-    @MainActor init(settings: Settings = Settings()) {
+    @MainActor init(settings: Settings = Harness.settingsWhenNoneAreGiven) {
       h = Harness(settings: settings)
       a = h.system.open(app: "Safari")
       b = h.system.open(app: "Notes")
@@ -1139,7 +1139,7 @@ private let side = DisplaySnapshot(
   /// Seen on a hosted Mac: the line round the focused window and peek's outline, both in the accent colour, round two windows at
   /// once. Each exists to answer "which of these is the one?".
   @Test func whileAnOutlineShowsThereIsNoLineRoundTheFocusedWindow() {
-    let desk = Desk()
+    let desk = Desk(settings: .withRing)
     let rings = { desk.h.overlays.scenes.values.compactMap(\.focusRing) }
     #expect(rings().map(\.window) == [desk.a])
     desk.h.keyDown(space)
@@ -1158,7 +1158,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func itComesBackWithTheEndOfThePeekRoundWhoeverHasTheKeyboardThen() {
-    let desk = Desk()
+    let desk = Desk(settings: .withRing)
     let rings = { desk.h.overlays.scenes.values.compactMap(\.focusRing) }
     desk.hold()
     desk.point(at: desk.b)
@@ -1171,7 +1171,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func afterAPeekThatGoesBackItIsWhereItWasAndDoesNotFlash() throws {
-    let desk = Desk()
+    let desk = Desk(settings: .withRing)
     let ring = { desk.h.overlays.scenes[desk.h.display]?.focusRing }
     let before = try #require(ring())
     desk.hold()
@@ -1185,7 +1185,7 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aLineOnAnotherDisplayGoesToo() {
-    let h = Harness(displays: [main, side])
+    let h = Harness(displays: [main, side], settings: .withRing)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 500, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 700, y: 100, width: 500, height: 400))
     let c = h.system.open(app: "Mail", frame: CGRect(x: 1500, y: 100, width: 500, height: 400))

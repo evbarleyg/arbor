@@ -99,12 +99,14 @@ final class Runner {
 
   /// A settings file somebody has worked on: a number written their way, a key Arbor does not
   /// know, and a rule it cannot read. Arbor starts on it, so its gap has to be `gap`. It has the mark of a file that holds only what
-  /// somebody chose (Q27): without it the launch would take the gap out, which is the default's.
+  /// somebody chose (Q27): without it the launch would take the gap out, which is the default's. And the darkening behind docked windows,
+  /// an option (Q29), which two steps look for on the screen.
   static let handEditedSettings = """
     {
       "format": 2,
       "gap": 12.0,
       "myNote": "kept by arbor-e2e",
+      "dimBehindArranged": 0.25,
       "excludedBundleIDs": ["com.example.first"],
       "rules": [
         { "app": "com.example.typo", "action": "dock sideways" }

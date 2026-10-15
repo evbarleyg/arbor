@@ -2289,7 +2289,7 @@ drag_window() {
   drag $from "$@"
 }
 
-# Once something is docked the icon grows into a row of buttons, and a plain click in its middle presses one of them. A right click
+# With `menuBarControls` on the icon grows into a row of buttons once something is docked, and a plain click in its middle presses one of them. A right click
 # anywhere on it opens the menu, on the single icon too.
 # The item's place lags behind its width: straight after a hold, a pause or the first dock Accessibility still gave the old one, and a click there
 # opened nothing (seen on a Mac). So it is believed once two looks a quarter of a second apart agree.

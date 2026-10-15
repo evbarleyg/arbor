@@ -51,9 +51,12 @@ nothing else: never logged, never in a trace. The measure: two windows of one ap
 
 ## Shipped / Not shipped
 
+**The darkening is an option since 2026-10-15: `dimBehindArranged` ships 0**, as the table above has it (`collab/QUESTIONS.md`, Q29: nothing is drawn that was not
+asked for). With the hairline of F36 at 0 as well there is no backdrop at all until somebody asks for one.
+
 Shipped (2026-10-14): the backdrop (darkening and blur, one rounded surface per display that keeps off the Desktop and lets
 clicks through), redrawn tiles, a handle in the gap under the pointer, a drop preview with the windows' own corner radius, and six keys. The keys as built, where they differ from the table above:
-`dimBehindArranged` defaults to 0.25; `blurBehindArranged` is an amount from 0 to 1; `showSeamHandles` is `gapHandles` with `"shown"`, `"hidden"` and `"off"`; `tileStyle` also takes `"plain"`.
+`dimBehindArranged` defaulted to 0.25 until 2026-10-15; `blurBehindArranged` is an amount from 0 to 1; `showSeamHandles` is `gapHandles` with `"shown"`, `"hidden"` and `"off"`; `tileStyle` also takes `"plain"`.
 
 Not shipped: tint and the Desktop's edge (F36); a blur radius (macOS offers one strength); blur while F02's stage is up; a resize cursor over a gap (macOS takes a cursor only from the active app);
 a command or shortcut for the backdrop (⌃⌥B stays reserved); entries in F12's settings schema. Criterion 4, the manual look in light and dark mode, is open until `scripts/mac-shell/shots-F15.sh` has run on a Mac.

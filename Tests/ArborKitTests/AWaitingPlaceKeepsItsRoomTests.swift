@@ -203,6 +203,8 @@ import Testing
     #expect(h.frame(notes) == evening.places[1])
     #expect(h.run("status").message.contains("2 places kept for windows that are not open yet"))
     // The surface behind docked windows runs through the holes as behind any place, and is what it will be when everybody is back.
+    // (An option: Arbor ships without it, Q29.)
+    h.switchOn(\.withBackdrop)
     let surface = try #require(h.overlays.scenes[h.display]?.backdrop?.rects)
     for place in evening.places { #expect(surface.contains { $0.contains(place.center) }, "\(place)") }
     _ = reopen(evening.windows[0], in: h)

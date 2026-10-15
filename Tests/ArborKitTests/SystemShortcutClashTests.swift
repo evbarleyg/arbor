@@ -14,7 +14,7 @@ import Testing
     Shortcut([.control], .up), Shortcut([.control, .option, .command], .digit8, isEnabled: false),
   ]
 
-  func makeHarness(_ shortcuts: [Shortcut]? = nil, inputSources: Int? = 2, settings: Settings = Settings()) -> Harness {
+  func makeHarness(_ shortcuts: [Shortcut]? = nil, inputSources: Int? = 2, settings: Settings = Harness.settingsWhenNoneAreGiven) -> Harness {
     let h = Harness(settings: settings)
     let system = SystemShortcuts(shortcuts: shortcuts ?? asItComes, inputSources: inputSources)
     h.controller.systemShortcuts = { system }
@@ -42,7 +42,7 @@ import Testing
 
   /// Of the nine only ⌃⌥Space shows everything, so there is no other key to name until somebody gives `home` one.
   @Test func asArborShipsTheSentenceEndsWithoutAnotherKey() {
-    let clashes = makeHarness().controller.systemShortcutClashes
+    let clashes = makeHarness(settings: Settings()).controller.systemShortcutClashes
     #expect(clashes.map(\.sentence) == [nextSource.replacing(". ⌃⌥0 shows everything too", with: "")])
     #expect(clashes.first?.sentence.hasSuffix(", or `bindings` in settings.json") == true)
     #expect(clashes.first?.binding.command == .showAll)

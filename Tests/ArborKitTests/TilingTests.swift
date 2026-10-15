@@ -736,7 +736,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
 /// Scenario tests for `grow` and `shrink`.
 @Suite @MainActor struct GrowAndShrinkTests {
   @Test func withOneSeamItMovesByTheWholeAmount() {
-    let (h, w) = tilingScenario(["A", "B"], ["dock $0 left", "dock $1 right"])
+    let (h, w) = tilingScenario(["A", "B"], ["dock $0 left", "dock $1 right"], settings: Settings())
     let (a, b) = (w[0], w[1])
     let (before, other) = (h.frame(a)!, h.frame(b)!)
     h.system.userFocus(a)
@@ -801,7 +801,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
   }
 
   @Test func growingStopsWhenTheNeighbourIsDownToTheLimit() {
-    let (h, w) = tilingScenario(["A", "B"], ["dock $0 left", "dock $1 right"])
+    let (h, w) = tilingScenario(["A", "B"], ["dock $0 left", "dock $1 right"], settings: Settings())
     let a = w[0]
     h.system.userFocus(a)
     runOK(h, "grow 1000000")
@@ -936,7 +936,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
 
   /// As Arbor ships nothing squeezes it back, so it has the whole display, over its docked neighbours.
   @Test func aFloatingWindowThatMakesWayForNothingGrowsAsFarAsTheDisplay() {
-    let (h, w) = tilingScenario(["A", "B", "F"], ["dock $0 left", "dock $1 right"])
+    let (h, w) = tilingScenario(["A", "B", "F"], ["dock $0 left", "dock $1 right"], settings: Settings())
     let f = w[2]
     h.system.userFocus(f)
     runOK(h, "grow 1000000")
@@ -949,7 +949,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
 
   /// Someone who put it over docked windows meant it, and means it when making it bigger.
   @Test func aFloatingWindowPutOverDockedWindowsGrowsWhereItIs() {
-    let (h, w) = tilingScenario(["A", "B", "F"], ["dock $0 left", "dock $1 right"])
+    let (h, w) = tilingScenario(["A", "B", "F"], ["dock $0 left", "dock $1 right"], settings: .withRing)
     let f = w[2]
     h.system.userMove(f, to: CGRect(x: 100, y: 200, width: 300, height: 200))
     h.system.userFocus(f)
@@ -963,7 +963,7 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
 
   /// F02: the stage covers the real windows while a motion plays, and lifts on what it led to.
   @Test func aMotionStillPlayingEndsBeforeAFloatingWindowChangesUnderIt() {
-    let (h, w) = tilingScenario(["A", "F"], ["dock $0 left"])
+    let (h, w) = tilingScenario(["A", "F"], ["dock $0 left"], settings: .withMotion)
     h.system.userFocus(w[1])
     let before = h.overlays.finishedAnimations
     runOK(h, "grow")

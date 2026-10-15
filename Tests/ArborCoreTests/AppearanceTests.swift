@@ -11,21 +11,21 @@ import Testing
   @Test func oldSettingsFilesGetTheAppearanceDefaults() throws {
     let settings = try decode(#"{"gap": 20, "tabsEnabled": true}"#)
     #expect(settings.gap == 20)
-    #expect(settings.dimBehindArranged == 0.25)
+    #expect(settings.dimBehindArranged == 0)
     #expect(settings.blurBehindArranged == 0)
     #expect(settings.appColours)
     #expect(settings.appColourAmount == 0.25)
     #expect(settings.gapHandles == "shown")
     #expect(settings.tileStyle == "icon")
     #expect(settings.tintBehindArranged == 0)
-    #expect(settings.desktopEdge == 0.05)
+    #expect(settings.desktopEdge == 0)
     #expect(settings.tileFade == 0.2)
     #expect(settings.valueProblems.isEmpty)
     #expect(
       settings.appearanceOptions
         == AppearanceOptions(
-          dim: 0.25, blur: 0, usesAppColours: true, appColourAmount: 0.25, gapHandles: .shown, tileStyle: .icon,
-          tint: 0, desktopEdge: 0.05, tileFade: 0.2))
+          dim: 0, blur: 0, usesAppColours: true, appColourAmount: 0.25, gapHandles: .shown, tileStyle: .icon,
+          tint: 0, desktopEdge: 0, tileFade: 0.2))
   }
 
   @Test func appearanceSettingsDecodeAndRoundTrip() throws {
@@ -77,7 +77,7 @@ import Testing
     odd.tintBehindArranged = .nan
     odd.desktopEdge = .infinity
     odd.tileFade = -.infinity
-    #expect(odd.appearanceOptions.tint == 0 && odd.appearanceOptions.desktopEdge == 0.05)
+    #expect(odd.appearanceOptions.tint == 0 && odd.appearanceOptions.desktopEdge == 0)
     #expect(odd.appearanceOptions.tileFade == 0.2)
   }
 
@@ -90,7 +90,7 @@ import Testing
     settings.tileStyle = "hologram"
     settings.gapHandles = "sometimes"
     var options = settings.appearanceOptions
-    #expect(options.dim == 0.25 && options.blur == 0 && options.appColourAmount == 0.25)
+    #expect(options.dim == 0 && options.blur == 0 && options.appColourAmount == 0.25)
     #expect(options.tileStyle == .icon && options.gapHandles == .shown)
     settings.dimBehindArranged = 40
     settings.blurBehindArranged = -1

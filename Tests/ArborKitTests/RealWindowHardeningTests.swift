@@ -9,7 +9,7 @@ import Testing
 /// and F17.
 @Suite @MainActor struct RealWindowHardeningTests {
   /// Safari docked on the left and Notes on the right, each in its own process.
-  func makeHarness(settings: Settings = Settings()) -> (Harness, WindowID, WindowID) {
+  func makeHarness(settings: Settings = Harness.settingsWhenNoneAreGiven) -> (Harness, WindowID, WindowID) {
     let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", pid: 1000, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", pid: 2000, frame: CGRect(x: 300, y: 200, width: 600, height: 400))

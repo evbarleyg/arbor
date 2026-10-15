@@ -23,7 +23,7 @@
     private let store: SettingsPanelStore
     private var broken: String?
 
-    init(settings: ArborCore.Settings = ArborCore.Settings()) {
+    init(settings: ArborCore.Settings = Harness.settingsWhenNoneAreGiven) {
       // Windows and controls expect there to be an application object. It is not run, and shows nothing.
       _ = NSApplication.shared
       let h = Harness(settings: settings)

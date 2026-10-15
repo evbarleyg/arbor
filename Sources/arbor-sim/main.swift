@@ -537,6 +537,10 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     }
     system.setTitle(id, words.dropFirst(2).joined(separator: " "))
     return ("retitled \(id.rawValue)", true)
+  case "classic":
+    guard words.count == 1 else { return usage("classic") }
+    harness.switchOn(\.classic)
+    return ("as the first build shipped", true)
   case "settings-file":
     guard words.count >= 2 else { return usage("settings-file <path to a settings.json>") }
     let file = URL(fileURLWithPath: words.dropFirst().joined(separator: " "))

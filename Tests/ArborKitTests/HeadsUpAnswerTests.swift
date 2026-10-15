@@ -9,7 +9,7 @@ import Testing
 /// than a line over a film. So the model says whether it answers somebody, and the panel shows there only if it does.
 @Suite @MainActor struct HeadsUpAnswerTests {
   /// Safari and Mail, floating. Hints are out of the way unless a test asks for them.
-  private func makeHarness(settings: Settings = Settings(), taught: Bool = true) -> (Harness, WindowID, WindowID) {
+  private func makeHarness(settings: Settings = Harness.settingsWhenNoneAreGiven, taught: Bool = true) -> (Harness, WindowID, WindowID) {
     var saved = PersistedState(workspaces: [:], hints: [:])
     if taught { for hint in HeadsUpHint.allCases { saved.hintsShown[hint.rawValue] = HeadsUpHint.timesShown } }
     let h = Harness(settings: settings, saved: saved)

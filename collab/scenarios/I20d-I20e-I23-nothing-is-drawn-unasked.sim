@@ -1,0 +1,55 @@
+# A complaint, answered (IDEAS I20 d, I20 e, I23, I25 c; QUESTIONS Q29, 6; board 0.7). It came up from collab/scenarios/wanted.
+# Story: as Arbor comes, no ring is drawn round the window in front, nothing stands in for a window that moves, the menu bar has one icon,
+# and the wallpaper behind docked windows is as it was.
+open Safari
+open Notes
+dock 101 left
+dock 102 right
+focus 101
+expect ring none
+get focusRing
+expect replied false
+get menuBarControls
+expect replied false
+# Nothing to change: it is 0 as Arbor comes. (`get` would not tell 0 from 0.46 by the word 0.)
+set animationDuration 0
+expect replied is already 0
+# Nor is the wallpaper darkened behind the two, or a line drawn round the Desktop between them.
+scene
+expect replied backdrop: none
+set dimBehindArranged 0
+expect replied is already 0
+set desktopEdge 0
+expect replied is already 0
+# One icon whatever happens: with a window framed, a view saved, the view held, Arbor paused.
+menu-bar
+expect replied a single icon
+zoom 101
+save-view 1
+menu-bar
+expect replied a single icon
+expect ring none
+hold
+menu-bar
+expect replied a single icon
+release
+pause
+menu-bar
+expect replied a single icon
+resume
+show-all
+# Each is an option still, one line away, and one line takes it back.
+set focusRing true
+expect ring 101
+set menuBarControls true
+menu-bar
+expect replied forward
+set dimBehindArranged 0.25
+scene
+expect replied backdrop: dim 0.25
+reset dimBehindArranged
+reset focusRing
+reset menuBarControls
+expect ring none
+menu-bar
+expect replied a single icon

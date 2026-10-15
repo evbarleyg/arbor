@@ -109,7 +109,8 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   }
 
   @Test func withThePreviewOffNothingIsDrawnAndTheDropIsTheSame() {
-    let (with, a, _, _) = makeHarness()
+    // Alike but for the one switch, whatever a harness is given when nobody says.
+    let (with, a, _, _) = makeHarness(settings { $0.previewDrags = true })
     let (without, _, _, _) = makeHarness(settings { $0.previewDrags = false })
     dragToTheLeftEdge(with, a)
     dragToTheLeftEdge(without, a)

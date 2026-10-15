@@ -205,7 +205,9 @@ if swift scripts/make-icon.swift "$ICON_DIR/Arbor.iconset" && iconutil -c icns "
 fi
 check "the icon script and iconutil made Arbor.icns" test -s "$ICON_DIR/Arbor.icns"
 
-step "session 1: the menu bar item"
+# The buttons are an option: Arbor ships with the single icon (collab/QUESTIONS.md, Q29). check-nothing-unasked.sh looks at that.
+step "session 1: the menu bar item, with its buttons"
+arbor_settings '{"menuBarControls": true}'
 arbor_start 3 ARBOR_NO_STATUS_ITEM=0 ARBOR_NO_HOTKEYS=0 ARBOR_NO_PROMPT=0
 # A home folder nobody has used: the first launch of a lifetime (F46).
 check "with the permission there, the welcome window still opens at the first launch" eventually welcome_frame
@@ -347,7 +349,7 @@ menu_is_open && close_menu
 has_buttons || ctl resume
 
 step "the settings"
-arbor_settings '{"historyButtons": false, "menuBarFill": 0.12}'
+arbor_settings '{"menuBarControls": true, "historyButtons": false, "menuBarFill": 0.12}'
 ctl reload-settings
 ctl menu-bar
 bar 30-no-history-faint-fill
@@ -361,7 +363,7 @@ check "a plain click on the single icon opened the menu" eventually menu_is_open
 shot 32-single-icon-menu
 look_menu 32-single-icon-menu-own
 close_menu
-arbor_settings '{}'
+arbor_settings '{"menuBarControls": true}'
 ctl reload-settings
 check "the buttons are back" eventually shows everything current
 
@@ -521,6 +523,7 @@ step "session 3: dark"
 dark=system
 appearance dark || dark=app
 echo "dark: $dark"
+arbor_settings '{"menuBarControls": true}'
 arbor_start 2 ARBOR_NO_STATUS_ITEM=0 ARBOR_NO_HOTKEYS=0 ARBOR_APPEARANCE=dark
 ctl dock "$W1" left
 ctl zoom "$W1"

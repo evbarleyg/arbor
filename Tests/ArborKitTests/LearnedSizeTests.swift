@@ -18,7 +18,7 @@ private let tenMinutes = 600.0
 @Suite @MainActor struct LearnedSizeTests {
   /// `[a | b / c]`, halves, where c refused its slot and is a tile.
   func makeHarness(
-    displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Settings()
+    displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Harness.settingsWhenNoneAreGiven
   ) -> (Harness, a: WindowID, b: WindowID, c: WindowID) {
     let h = Harness(displays: displays, settings: settings)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
@@ -285,7 +285,9 @@ private let tenMinutes = 600.0
 
   /// c framed, so in view at the size of the display, with its record ten minutes old. It has the keyboard, unless `typedIn` is false (a
   /// click on the wallpaper): a record that stands makes a tile only of a window that nobody types in (F61).
-  func framedWithAnOldRecord(settings: Settings = Settings(), typedIn: Bool = true) -> (Harness, c: WindowID, framed: CGRect) {
+  func framedWithAnOldRecord(
+    settings: Settings = Harness.settingsWhenNoneAreGiven, typedIn: Bool = true
+  ) -> (Harness, c: WindowID, framed: CGRect) {
     let (h, _, _, c) = makeHarness(settings: settings)
     h.run("zoom \(c.rawValue)")
     if !typedIn { h.system.userFocusesNothing() }
@@ -295,7 +297,7 @@ private let tenMinutes = 600.0
   }
 
   @Test func withAnOldWrongRecordItGoesFromWhereItIsToItsSlotAndNeverOutOfView() throws {
-    let (h, c, framed) = framedWithAnOldRecord(settings: noRoomMade)
+    let (h, c, framed) = framedWithAnOldRecord(settings: noRoomMade.withMotion)
     h.system.setMinimumSize(c, .zero)
     h.run("show-all")
     #expect(!isTile(h, c))

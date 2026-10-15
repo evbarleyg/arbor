@@ -668,7 +668,7 @@ private let simpleEntries = SettingsSchema.entries.filter {
     #expect((rules["value"] as? [[String: String]])?.first?["title"] == "a/b")
     #expect((rules["default"] as? [Any])?.isEmpty == true && rules["kind"] as? String == "list")
     let ring = try #require(objects.first { $0["key"] as? String == "focusRing" })
-    #expect(ring["value"] as? Bool == true && ring["changed"] as? Bool == false && ring["kind"] as? String == "switch")
+    #expect(ring["value"] as? Bool == false && ring["changed"] as? Bool == false && ring["kind"] as? String == "switch")
     let colour = try #require(objects.first { $0["key"] as? String == "focusRingColour" })
     #expect(colour["example"] as? String == "#FF8000" && colour["kind"] as? String == "text")
   }

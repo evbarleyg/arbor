@@ -25,7 +25,9 @@ private let cameraCommands = [
   func stage(
     displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], apart: Bool = false, configure: (inout Settings) -> Void = { _ in }
   ) -> Stage {
-    var settings = Settings.withGestures  // which a hold switches off
+    // The gestures, which a hold switches off. And the ring and the backdrop, options too: `picture` holds everything an audience could
+    // notice, and says the more the more there is to notice.
+    var settings = Settings.withGestures.withRing.withBackdrop
     // Both ship off (`outOfTheBoxNothingStartsAHoldByItself`). The tests about calls are about someone who has switched them on.
     settings.holdStillWhileCameraIsOn = true
     settings.holdStillFor = ["us.zoom.xos Zoom Meeting"]
@@ -148,7 +150,7 @@ private let cameraCommands = [
   }
 
   @Test func theLineAroundTheFocusedWindowDoesNotBlinkWhenAWindowIsTurnedAway() {
-    let s = stage()
+    let s = stage { $0.focusRing = true }
     s.h.run("hold")
     #expect(s.h.overlays.scenes[s.h.display]?.focusRing?.window == s.keynote)
     let before = picture(s.h)
@@ -2308,7 +2310,7 @@ private let cameraCommands = [
 
   /// Every button in the menu bar moves the view. With the menu closed a lock says why none is there, and opens the menu.
   @Test func theMenuBarItemIsALockWhileTheViewIsHeld() {
-    let s = stage()
+    let s = stage { $0.menuBarControls = true }
     #expect(!s.h.controller.menuBarModel().buttons.isEmpty)
     s.h.run("hold")
     #expect(s.h.controller.menuBarModel().buttons.isEmpty)

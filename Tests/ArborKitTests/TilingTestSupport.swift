@@ -15,7 +15,7 @@ let sideDisplay = DisplaySnapshot(
 @MainActor
 func tilingScenario(
   _ apps: [String], _ commands: [String] = [], displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay],
-  settings: Settings = Settings(), sourceLocation: SourceLocation = #_sourceLocation
+  settings: Settings = Harness.settingsWhenNoneAreGiven, sourceLocation: SourceLocation = #_sourceLocation
 ) -> (Harness, [WindowID]) {
   let h = Harness(displays: displays, settings: settings)
   let windows = apps.map { h.system.open(app: $0, frame: CGRect(x: 520, y: 300, width: 400, height: 300)) }

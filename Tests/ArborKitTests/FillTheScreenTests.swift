@@ -1191,7 +1191,7 @@ private let own = CGRect(x: 200, y: 150, width: 640, height: 420)
 
   /// Found by `TransitionInvariantTests`, seed 1: moved after the stage had gone, it jumped behind the motion's back.
   @Test func theMotionThatShowsEverythingShowsItGoingBackToo() throws {
-    let (h, editor, _, note, _) = desk()
+    let (h, editor, _, note, _) = desk(settings: Harness.settingsWhenNoneAreGiven.withMotion)
     let was = try #require(h.frame(note))
     h.press("zoom")
     h.system.userFocus(editor)

@@ -267,7 +267,7 @@ A letter, digit or sign in a shortcut is the key that types it on the layout in 
 Not keys, but the same race. `arbor-sim` has its own words that it handles **before** passing a line to the controller,
 so a product command with one of these names cannot be driven in the simulator or in `collab/scenarios`:
 `open`, `close`, `minimize`, `restore`, `focus`, `cursor`, `drag`, `move`, `pull`, `seam`, `tile`, `flush`, `quiet`, `loud`, `expect`,
-`press`, `from`, `type`, `wait`, `keydown`, `keyup`, `key`, `mouse`, `hide`, `unhide`, `background-focus`, `displays`, `title`, `settings-file`, `keyboard`, `min`, `fullscreen`, `transitions`, `field-type`, `field-cancel`, `map`, `revoke`, `grant`, `macos`, `pick-up`, `let-go`, `shove`;
+`press`, `from`, `type`, `wait`, `keydown`, `keyup`, `key`, `mouse`, `hide`, `unhide`, `background-focus`, `displays`, `title`, `classic`, `settings-file`, `keyboard`, `min`, `fullscreen`, `transitions`, `field-type`, `field-cancel`, `map`, `revoke`, `grant`, `macos`, `pick-up`, `let-go`, `shove`;
 and on branches not merged yet `dblclick`, `tab-tear`, `tab-click`, `tab-drop`, `strip-drag`.
 A feature that needs one (`focus left`, `restore` for presets) must teach the simulator to tell the two apart in the same change
 (`focus 101` is the user clicking a window; `focus left` is the command).

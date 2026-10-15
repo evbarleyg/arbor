@@ -22,7 +22,8 @@ final class StoreyTwo {
 
   /// What the told stories were written on: the Desktop has a column of its own among docked windows, which Arbor no longer ships with. FOR THE TIME BEING: they are about the layer and the controller's roads, name frames that
   /// go by the column, and some let a window go "over the Desktop". So they do NOT play what ships; the walk upstairs does (WalkUpstairs.swift). Owed: each story told on what ships, or on both.
-  static let asTheStoriesWereWritten = Settings().withDesktopColumn
+  /// And with the focus ring, an option too, switched on: the stories read off it which window Arbor takes to have the keyboard, and where it takes that window to be.
+  static let asTheStoriesWereWritten = Settings().withDesktopColumn.withRing
 
   /// `before` sets the Mac up as it is when Arbor starts. A second then passes, and Arbor starts.
   init(_ story: Story, settings: Settings = StoreyTwo.asTheStoriesWereWritten, before: (FakeMac) -> Void = { _ in }) {

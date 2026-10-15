@@ -39,6 +39,8 @@ arbor_build
 step "three windows: [1 | Desktop | 2 / 3], shortcuts and the menu bar item on"
 # An ordinary app, so that ⌘Tab can switch to it.
 ARBOR_TEST_WINDOWS_ARGS="--regular"
+# With the ring and the darkening, options (collab/QUESTIONS.md, Q29): that none of Arbor's own windows is left on screen says nothing where none was.
+arbor_settings '{"focusRing": true, "dimBehindArranged": 0.25}'
 arbor_start 3 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0
 ctl dock "$W1" left
 ctl dock "$W2" right
@@ -72,6 +74,7 @@ key escape
 step "pause with ⌃⌥⎋ while framed"
 ctl zoom "$W3"
 check "1 and 2 are out of view" eventually is parked "$W1"
+check "something of Arbor's own is on screen" eventually fails no_overlays
 shot 02-framed
 key ctrl+opt+escape
 check "status says paused" eventually paused

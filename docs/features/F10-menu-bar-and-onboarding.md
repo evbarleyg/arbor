@@ -3,6 +3,9 @@
 Status: done
 Depends on: F01
 
+**The buttons are an option since 2026-10-15: `menuBarControls` ships false** (`collab/QUESTIONS.md`, Q29): one icon that opens the menu, 18 by 14
+points whatever it says (the mark, the mark dimmed, a lock, three columns filled in, a warning sign), so that the item never changes its width.
+
 Shipped (2026-10-14, `feat/F10-menu-bar`): the buttons (back, forward,
 the Desktop, Show Everything, one per saved view, the current one filled in, and one that opens the menu) for the display under
 the pointer, with a tooltip each, and Arbor's mark alone while nothing is docked there; right click, ⌃-click or ⌥-click for the full menu, built from a headless model in the order of `docs/MENU.md`, with native shortcuts and ticks, and greyed out where a command would fail; settings

@@ -29,7 +29,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
 /// A window that floats again gets its old size back (docs/features/F48-floating-restores-size.md).
 @Suite @MainActor struct UndockedFrameTests {
   /// Notes (400 × 300), Safari and Mail, all floating.
-  func makeHarness(settings: Settings = Settings()) -> (Harness, WindowID, WindowID, WindowID) {
+  func makeHarness(settings: Settings = Harness.settingsWhenNoneAreGiven) -> (Harness, WindowID, WindowID, WindowID) {
     let h = Harness(settings: settings)
     let notes = h.system.open(app: "Notes", frame: notesFrame)
     let safari = h.system.open(app: "Safari", frame: safariFrame)
@@ -596,7 +596,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     func ringProblem(_ h: Harness, _ window: WindowID) -> String? {
       ScenarioExpectation.check(["ring", "\(window.rawValue)"], harness: h, lastCommandOK: true)
     }
-    let (h, notes, safari, _) = makeHarness()
+    let (h, notes, safari, _) = makeHarness(settings: .withRing)
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) beside \(notes.rawValue) bottom")
     h.system.userFocus(notes)

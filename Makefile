@@ -86,8 +86,9 @@ unplayed:
 test-fast:
 	@./scripts/fast-tests.py run
 
-# On Linux: the tests once more, arranged as the first build arranged (a column for the Desktop, floating windows making way) wherever
-# a test names no settings (Sources/ArborTesting/Harness.swift): what went off by default stays in the app, and must not rot there.
+# On Linux: the tests once more as the first build shipped, wherever a test names no settings (Sources/ArborTesting/Harness.swift): arranged
+# as it arranged (a column for the Desktop, floating windows making way), with what it drew, moved and bound (`Settings.classic`;
+# docs/TESTING.md, "Tests and the defaults"). What went off by default stays in the app, and must not rot there. Not part of `check`.
 test-classic:
 	@ARBOR_TEST_CLASSIC=1 ./scripts/fast-tests.py run
 

@@ -1024,7 +1024,11 @@ public struct ChaosGenerator {
       let width = number([1, 3, 12], [0, -3, 500, 1e300], &random)
       let radius = number([0, 10, 17], [-1, 1e300], &random)
       let colour = random.pick(["accent", "#FF8800", "#ff880080", "red", ""])!
-      return "{\"focusRing\":\(random.chance(75)),\"focusRingWidth\":\(width),\"focusRingRadius\":\(radius),\"focusRingColour\":\"\(colour)\"}"
+      // The two other things Arbor ships without go off and on with it. Read off what is drawn anyway, not drawn themselves: one more
+      // call to `random` and every walk ever written down by its seed would be another walk from here on.
+      let motion = radius == "0" ? "0" : "0.46"
+      let others = "\"animationDuration\":\(motion),\"menuBarControls\":\(colour != "accent")"
+      return "{\"focusRing\":\(random.chance(75)),\"focusRingWidth\":\(width),\"focusRingRadius\":\(radius),\"focusRingColour\":\"\(colour)\",\(others)}"
     case 0, 1: return "{\"gap\":\(number([0, 1, 4, 8, 12, 24, 40, 60], [-12, 0.5, 400, 5000, 1e9], &random))}"
     case 2:
       let width = number([0, 1, 120, 240, 400, 800], [-1, 5000, 1e12], &random)

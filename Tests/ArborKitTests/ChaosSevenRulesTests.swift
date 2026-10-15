@@ -156,7 +156,7 @@ private let b = WindowID(102)
     #expect(floating.contains("moved-twice-floating") && !floating.contains("flipped"))
   }
 
-  /// The ring's timers are pending after most acts, as Arbor ships: the nets ask all the same.
+  /// The ring's timers are pending after most acts wherever the ring is on, as it is when a walk begins: the nets ask all the same.
   @Test func theFocusRingsTimersKeepNoNetFromAsking() {
     let gone = oneDocked + ["focus 101", "minimize 102", "react"]
     #expect(

@@ -95,7 +95,7 @@ import Testing
   }
 
   @Test(arguments: [1, 2, 3, 4]) func everyTransitionKeepsItsPromises(seed: UInt64) {
-    var settings = Settings()
+    var settings = Settings.withMotion
     settings.tabsEnabled = seed % 2 == 0
     let h = Harness(settings: settings)
     for index in 0..<4 { h.system.open(app: "App\(index)", frame: CGRect(x: 100 + index * 90, y: 100 + index * 60, width: 500, height: 350)) }

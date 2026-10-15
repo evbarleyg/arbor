@@ -1965,8 +1965,8 @@ def show(t):
 # changed the script stops, so that the ranking is read again and not merely printed again.
 RANKING_DEFAULTS = {
     "hotkeysEnabled": "true", "shortcuts": '"core"', "pointerGestures": "false", "gesturesEnabled": "true", "scrollZoom": "true", "peek": "true", "frameRectangleModifier": '"ctrl+opt"',
-    "animationDuration": "0.46", "focusRing": "true", "makeRoom": "true", "messages": '"helpful"', "menuBarControls": "true",
-    "newWindowsWhileFramed": '"guest"', "dimBehindArranged": "0.25",
+    "animationDuration": "0", "focusRing": "false", "makeRoom": "true", "messages": '"helpful"', "menuBarControls": "false",
+    "newWindowsWhileFramed": '"guest"', "dimBehindArranged": "0",
     "guardDesktopClicks": "false", "continuousZoom": "false", "windowPictures": "false", "minimapDuration": "0",
     "holdStillWhileCameraIsOn": "false", "holdStillWhileMicrophoneIsOn": "false", "soleFloatTakesDesktop": "false",
     "newWindows": '"float"', "reflowWhileDragging": "false", "tabsEnabled": "false", "automaticUpdateChecks": "false",

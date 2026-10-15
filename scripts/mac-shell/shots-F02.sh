@@ -157,6 +157,7 @@ check "the stage comes down" eventually stage_down
 arbor_stop 29-after-quit
 
 step "the real thing: 0.46 s"
+arbor_settings '{"animationDuration": 0.46}'
 arbor_start 4
 sleep 2
 ctl dock "$W1" left
@@ -203,6 +204,8 @@ arbor_stop
 if throwaway; then
   step "switched off by Reduce motion"
   reduce_motion true
+  # With the motion asked for, so that it is macOS's switch that keeps the stage away and not Arbor's own default.
+  arbor_settings '{"animationDuration": 0.46}'
   arbor_start 3
   ctl dock "$W1" left
   ctl dock "$W2" right

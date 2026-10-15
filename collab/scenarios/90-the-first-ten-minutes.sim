@@ -128,8 +128,8 @@ expect ok
 float-all
 expect ok
 expect count docked 0
-# Motion: off, and back to the default.
-set animationDuration 0
+# Motion: on, and back to the default, which is none.
+set animationDuration 0.46
 expect ok
 reset animationDuration
 expect ok

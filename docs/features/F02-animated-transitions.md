@@ -86,6 +86,9 @@ display; `arbor-sim stage-judge` measures each motion from that. The lines, what
 
 ## Shipped (2026-10-14, `feat/F02-transitions`)
 
+**An option since 2026-10-15: `animationDuration` ships 0** (`collab/QUESTIONS.md`, Q29): windows go to their places at once, and nothing stands in for
+them. No stage is put up and none is got ready; the apps' colours and icons still are, for the tiles. The motion comes back as a default only with pictures of the windows that are ready.
+
 Shipped: the plane (`Plane`, `PlaneMap`), the plan (`Keyframe`, `Transition`, `TransitionPlanner`), the
 controller's side (`Controller+Transitions.swift`), `animationDuration`, `OverlayPresenter.animate` and
 `finishAnimations`, `transitions` in arbor-sim, and the macOS presenter: one stage per display

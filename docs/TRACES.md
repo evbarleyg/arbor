@@ -292,7 +292,7 @@ judge, and says nothing about how Arbor moves.
 
 ```bash
 export ARBOR_HOME=$(mktemp -d)
-swift run arbor-sim quiet "open A" "open B" "open C" rehearse-stage "trace on motion" arrange "wait 1" "zoom 101" "wait 0.2" back "wait 1" "trace off"
+swift run arbor-sim quiet "open A" "open B" "open C" "set animationDuration 0.46" rehearse-stage "trace on motion" arrange "wait 1" "zoom 101" "wait 0.2" back "wait 1" "trace off"
 swift run arbor-sim stage-judge "$ARBOR_HOME"/traces/*.jsonl
 ```
 

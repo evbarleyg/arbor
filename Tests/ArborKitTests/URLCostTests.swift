@@ -12,7 +12,7 @@ private let side = DisplaySnapshot(
 
 /// A link may arrange, and may not take away what a person made (Controller+URLCost.swift).
 @Suite @MainActor struct URLCostTests {
-  func harness(_ apps: String..., displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Settings()) -> Harness {
+  func harness(_ apps: String..., displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Harness.settingsWhenNoneAreGiven) -> Harness {
     let h = Harness(displays: displays, settings: settings)
     for app in apps { h.system.open(app: app) }
     h.start()
@@ -20,7 +20,7 @@ private let side = DisplaySnapshot(
   }
 
   /// Safari beside Mail over Notes; Mail and Notes are view 1 and are called Post.
-  func desk(settings: Settings = Settings()) -> Harness {
+  func desk(settings: Settings = Harness.settingsWhenNoneAreGiven) -> Harness {
     let h = harness("Safari", "Mail", "Notes", settings: settings)
     for line in ["layout Safari | (Mail / Notes)", "zoom 102", "out", "save-view 1", "name Post", "home"] { #expect(h.run(line).ok, "\(line)") }
     return h

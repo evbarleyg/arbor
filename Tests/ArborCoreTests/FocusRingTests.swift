@@ -27,15 +27,19 @@ import Testing
   // MARK: Settings
 
   @Test func theDefaultsAreAThinAccentLine() {
-    #expect(Settings().focusRingOptions == FocusRingOptions(width: 3, colour: .accent, radius: 0))
-    #expect(Settings().focusRingColourProblem == nil)
+    // Once it is switched on: Arbor ships without it (`NothingDrawnUnaskedTests`).
+    var settings = Settings()
+    #expect(settings.focusRingOptions == nil)
+    settings.focusRing = true
+    #expect(settings.focusRingOptions == FocusRingOptions(width: 3, colour: .accent, radius: 0))
+    #expect(settings.focusRingColourProblem == nil)
   }
 
   @Test func settingsFilesFromBeforeTheRingStillLoad() throws {
     let old = #"{"gap": 20, "tabsEnabled": true, "frameRectangleModifier": "ctrl+opt"}"#
     let settings = try JSONDecoder().decode(Settings.self, from: Data(old.utf8))
     #expect(settings.gap == 20)
-    #expect(settings.focusRing)
+    #expect(!settings.focusRing)
     #expect(settings.focusRingWidth == 3)
     #expect(settings.focusRingColour == "accent")
     #expect(settings.focusRingRadius == 0)
@@ -43,7 +47,7 @@ import Testing
 
   @Test func theRingsSettingsSurviveSavingAndLoading() throws {
     var settings = Settings()
-    settings.focusRing = false
+    settings.focusRing = true
     settings.focusRingWidth = 5
     settings.focusRingColour = "#12345678"
     settings.focusRingRadius = 10
@@ -53,12 +57,15 @@ import Testing
 
   @Test func switchedOffMeansNoOptions() {
     var settings = Settings()
+    settings.focusRing = true
+    #expect(settings.focusRingOptions != nil)
     settings.focusRing = false
     #expect(settings.focusRingOptions == nil)
   }
 
   @Test func widthAndRadiusAreClamped() {
     var settings = Settings()
+    settings.focusRing = true
     settings.focusRingWidth = 0
     settings.focusRingRadius = -4
     #expect(settings.focusRingOptions?.width == 1)
@@ -76,7 +83,7 @@ import Testing
   }
 
   @Test func anUnknownColourFallsBackToAccentAndSaysSo() throws {
-    let settings = try JSONDecoder().decode(Settings.self, from: Data(#"{"focusRingColour": "mauve"}"#.utf8))
+    let settings = try JSONDecoder().decode(Settings.self, from: Data(#"{"focusRing": true, "focusRingColour": "mauve"}"#.utf8))
     #expect(settings.focusRingOptions?.colour == .accent)
     #expect(settings.focusRingColourProblem?.contains("mauve") == true)
   }

@@ -8,7 +8,7 @@ import Testing
 /// What Arbor's menu offers, against the real controller (Controller+Menu.swift).
 @Suite @MainActor struct MenuTests {
   /// [Safari | Desktop | Notes] with Mail floating, started, showing everything, Safari focused.
-  func makeHarness(settings: Settings = Settings()) -> (Harness, WindowID, WindowID, WindowID) {
+  func makeHarness(settings: Settings = Harness.settingsWhenNoneAreGiven) -> (Harness, WindowID, WindowID, WindowID) {
     let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
@@ -475,12 +475,15 @@ import Testing
 
   /// The settings may take buttons out of the menu bar; the menu is where everything still is.
   @Test func theMenuIsCompleteWhateverTheMenuBarShows() {
-    var settings = Settings()
-    settings.menuBarControls = false
-    settings.historyButtons = false
-    let (h, a, _, _) = makeHarness(settings: settings)
-    h.run("zoom \(a.rawValue)")
-    #expect(h.controller.menuModel().item("Back")?.isEnabled == true)
+    for buttons in [false, true] {
+      var settings = Settings()
+      settings.menuBarControls = buttons
+      settings.historyButtons = false
+      let (h, a, _, _) = makeHarness(settings: settings)
+      h.run("zoom \(a.rawValue)")
+      #expect(h.controller.menuBarModel().button(.back) == nil, "no such button, \(buttons ? "among the others" : "nor any other")")
+      #expect(h.controller.menuModel().item("Back")?.isEnabled == true)
+    }
   }
 
   /// With nothing docked the Desktop is everything. True, and odd to read as two ticks.

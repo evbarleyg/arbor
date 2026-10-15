@@ -51,8 +51,11 @@ materials() {
 }
 
 # settings ['"key": value, …']: replace settings.json while Arbor runs.
+# With the backdrop as the first build drew it, an option since (collab/QUESTIONS.md, Q29), unless the step says otherwise: of a key that is
+# written twice the last one counts.
 settings() {
-  printf '{%s%s}\n' "$BASE" "${1:+, $1}" > "$ARBOR_HOME/settings.json"
+  python3 -c 'import json, sys; print(json.dumps(json.loads(sys.argv[1])))' \
+    "{\"dimBehindArranged\": 0.25, \"desktopEdge\": 0.05, $BASE${1:+, $1}}" > "$ARBOR_HOME/settings.json"
   ctl reload-settings
 }
 

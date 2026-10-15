@@ -267,7 +267,8 @@ a window gets it, out of the Dock too (`askForTheKeyboard`): what a person asks 
 
 Real windows cannot be animated through the Accessibility API: a move takes milliseconds to seconds and
 blocks. So they are not animated. `relayout` moves them straight to their final frames, exactly as it
-would without animation, and the motion is drawn on top (F02).
+would without animation, and the motion is drawn on top (F02). It is an option: `animationDuration` ships 0, and then there is no
+stage and no plan, and no stage is got ready (`stageTransition` and `rehearseNextMotion` ask first).
 
 **The plane** (`Plane`, ArborCore). The layout only says where things inside the camera's node go. The
 plane says where *everything* is, as seen with the camera on that node: an ancestor of the node is
@@ -318,8 +319,9 @@ display's stage and backdrop and skips what it has. The stage goes up once, clea
 returns. An app's colour and icon are made on a thread of their own (`UI/Wardrobe.swift`), because they were nearly all of the two seconds:
 macOS draws an icon at a size the first time anybody asks, 4.7 s for eight apps on a Mac that had drawn none and 27 ms a minute later. **A
 motion never waits for one**: a window whose app has no cover yet sets off as a plain grey card and is dressed on its way, when the cover
-arrives. No window is asked anything. With `animationDuration` 0 nothing is handed out; with Reduce Motion on, or
-where stand-ins are pictures of their windows, the director leaves out what would not be seen, and when either changes everything is said
+arrives. No window is asked anything. With `animationDuration` 0, as Arbor ships, no display is handed out, and with Reduce Motion on the
+director makes no stage; **the apps are got ready either way**, because a tile wears its app's colour and icon too and asks for them while it
+waits to be drawn: with no stage to cover that, four first tiles were 0.4 s of empty desk on a hosted Mac. Where stand-ins are pictures of their windows, the director leaves out what would not be seen, and when either changes everything is said
 again (`rehearseAfresh`). A stage stays while its display does: macOS reports a change of screen parameters at every minimize. What cannot be
 helped: a window of an app nobody knew of that a rule docks as it opens sets off as a plain card. `FakeOverlays.madeInTheMotion` lists what a motion met that
 nobody had got ready (`RehearsalTests`). Every stage that comes up logs what kept the windows waiting, as `INFO` from a tenth of a second.
@@ -699,7 +701,7 @@ had company or been docked. Whoever adds floating windows that do not live on th
 
 ## Focus ring
 
-A line around the window that has the keyboard (`OverlayScene.focusRing`, `Controller+FocusRing.swift`,
+An option (`focusRing`, which ships false). A line around the window that has the keyboard (`OverlayScene.focusRing`, `Controller+FocusRing.swift`,
 `UI/FocusRingPanel.swift`; spec F37). Which window that is comes from `system.focusedWindow()` each time the ring is
 worked out: an app in the background reports focus changes too, so events only say when to look again
 (`windowFocused`, `windowAppeared`, `windowChanged` for the ring's own window, and `keyboardFocusMoved`, which

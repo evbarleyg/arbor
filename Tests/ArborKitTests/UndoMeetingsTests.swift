@@ -40,7 +40,7 @@ private final class Listener {
 /// answer, and the rule that the log sees no title and no name of a space.
 @Suite @MainActor struct UndoMeetingsTests {
   /// Three floating windows of three apps, started.
-  func makeHarness(settings: Settings = Settings()) -> (Harness, WindowID, WindowID, WindowID) {
+  func makeHarness(settings: Settings = Harness.settingsWhenNoneAreGiven) -> (Harness, WindowID, WindowID, WindowID) {
     let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", pid: 1000, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", pid: 1001, frame: CGRect(x: 300, y: 200, width: 600, height: 400))

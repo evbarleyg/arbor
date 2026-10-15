@@ -43,8 +43,16 @@ grep -q "^\* gap = 20 " <<<"$output" || fail "settings does not list the changed
 [ "$(head -n 3 "$folder/settings.json")" = "$(printf '{\n  "gap": 20,\n  "myNote": "mine",')" ] \
   || fail "set changed more of settings.json than the gap"
 
+# `classic`: all that the first build shipped switched on (ArborTesting/ClassicSettings.swift), in one line.
+output=$(.build/debug/arbor-sim quiet "get focusRing" classic "get focusRing" "get animationDuration" "get menuBarControls" "get dimBehindArranged") \
+  || fail "classic failed"
+[ "$(grep -E '^(true|false|[0-9.]+)$' <<<"$output" | tr '\n' ' ')" = "false true 0.46 true 0.25 " ] \
+  || fail "classic does not switch on what the first build shipped with"
+
 # A film (docs/FILM.md): the simulator's own words and the film's in one script, a line of JSON per frame, and no film of what Arbor refuses.
-printf '%s\n' "display 1440x810 bar 24 dock 76" "open Safari 800x500" "mac-tiling off" "launch" "glide window 101 title in 0.2" "press" \
+# With the motion, an option, switched on: a stage is the hardest thing a film has to show.
+printf '%s\n' "display 1440x810 bar 24 dock 76" "open Safari 800x500" "mac-tiling off" "launch" "set animationDuration 0.46" \
+  "glide window 101 title in 0.2" "press" \
   "glide 3 400 in 0.5" "wait 0.3" "lift" "wait 0.7" "expect docked 101" "tap ctrl+opt+return" "wait 0.6" > "$folder/film.txt"
 output=$(.build/debug/arbor-sim film "$folder/film.txt" --out "$folder/film.jsonl") || fail "the film script failed"
 grep -q "the button is down on the title bar of w101" <<<"$output" || fail "the film's pointer missed the title bar"
@@ -58,7 +66,7 @@ grep -q "LINE FAILED: .tap ctrl+opt+left" <<<"$output" || fail "the film does no
 
 # The stage's log of its frames (F02, "How motion is measured"): from a rehearsed stage through a trace file to the judge.
 output=$(ARBOR_HOME="$folder/stage" .build/debug/arbor-sim quiet "open A" "open B" "open C" "open D" "open E" "open F" "open G" "open H" \
-  rehearse-stage "trace on motion" arrange "wait 1" "zoom 101" "wait 0.2" back "wait 1" "trace off") || fail "a trace could not be recorded"
+  "set animationDuration 0.46" rehearse-stage "trace on motion" arrange "wait 1" "zoom 101" "wait 0.2" back "wait 1" "trace off") || fail "a trace could not be recorded"
 output=$(.build/debug/arbor-sim stage-judge "$folder"/stage/traces/*-motion.jsonl) || fail "the judge finds fault with a rehearsed stage"
 grep -q ": 8 stand-ins, lasts 4.* ms, 460 ms planned" <<<"$output" || fail "the judge did not measure a motion of eight windows"
 grep -q "retargeted 1 time" <<<"$output" || fail "the judge did not see the second command in mid-motion"
