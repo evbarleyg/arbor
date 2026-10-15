@@ -1174,15 +1174,16 @@ def check_mac_shell_batch():
         "worse.sh": "exit 7\n",
         "hangs.sh": "trap 'echo cleaned up; exit 143' TERM\necho hangs\nsleep 60 & wait\n",
         "leaves.sh": "(sleep 20 &)\necho left\n",
+        "part.sh": "echo part $MAC_SHELL_PART of $MAC_SHELL_PARTS\n",
     }
 
-    def tried(*names, limit="60"):
+    def tried(*names, limit="60", **more):
         with tempfile.TemporaryDirectory(prefix="tooling-") as folder:
             for name, text in scripts.items():
                 with open(os.path.join(folder, name), "w", encoding="utf-8") as handle:
                     handle.write(text)
             began = time.time()
-            done = subprocess.run([BASH, runner, *names], cwd=folder, env={**os.environ, "MAC_SHELL_LIMIT": limit}, capture_output=True,
+            done = subprocess.run([BASH, runner, *names], cwd=folder, env={**os.environ, "MAC_SHELL_LIMIT": limit, **more}, capture_output=True,
                                   text=True, check=False, timeout=90)
             left = {}
             for where, _folders, files in os.walk(os.path.join(folder, "mac-shell")):
@@ -1218,6 +1219,20 @@ def check_mac_shell_batch():
     code, left, _, took = tried("leaves.sh", "fine.sh")
     row("ci-mac-shell.sh: what a script leaves running holds nobody up", (code, took < 10), (0, True))
     row("ci-mac-shell.sh: no script at all", tried()[0], 64)
+
+    def parts(*names, **more):
+        left = tried(*names, **more)[1]
+        return [text.splitlines()[1] for path, text in sorted(left.items()) if path.endswith("output.txt")]
+
+    row("ci-mac-shell.sh: one script is part 1 of 1", parts("part.sh"), ["part 1 of 1"])
+    row("ci-mac-shell.sh: three on one Mac", parts("part.sh", "part.sh", "part.sh"), ["part 1 of 3", "part 2 of 3", "part 3 of 3"])
+    row("ci-mac-shell.sh: one that is not there keeps its number", parts("part.sh", "nothing.sh", "part.sh")[::2], ["part 1 of 3", "part 3 of 3"])
+    row("ci-mac-shell.sh: the second of two Macs with five scripts between them plays places 2 and 4",
+        parts("part.sh", "part.sh", MAC_SHELL_SHARE="2/2", MAC_SHELL_PARTS="5"), ["part 2 of 5", "part 4 of 5"])
+    row("ci-mac-shell.sh: the first plays 1, 3 and 5",
+        parts("part.sh", "part.sh", "part.sh", MAC_SHELL_SHARE="1/2", MAC_SHELL_PARTS="5"), ["part 1 of 5", "part 3 of 5", "part 5 of 5"])
+    row("ci-mac-shell.sh: one script given to three Macs: the third", parts("part.sh", MAC_SHELL_SHARE="3/3", MAC_SHELL_PARTS="3"), ["part 3 of 3"])
+    row("ci-mac-shell.sh: a share that is none", parts("part.sh", MAC_SHELL_SHARE="x"), ["part 1 of 1"])
 
     # run.sh in a checkout of its own whose origin is a folder beside it, with a stand-in for `gh` that notes every call. GitHub allows an account
     # 5,000 calls an hour, and copies of this script have used them up: how many it makes is part of what it does.
@@ -1272,10 +1287,13 @@ esac
                 made = handle.read().splitlines()
         return done, noted, made
 
+    NOT_STARTED = [None] * 4
+
     def started(*arguments):
         done, noted, _ = ran(*arguments)
         if not os.path.exists(noted):
-            return done.returncode, None, {}
+            # Four of nothing, so that a row that looks into it comes out wrong and says so, instead of ending everything with a traceback.
+            return done.returncode, NOT_STARTED, {}
         with open(noted, encoding="utf-8") as handle:
             asked = dict(line.strip().split("=", 1) for line in handle if "=" in line)
         return done.returncode, [asked.get(key) for key in ("ref", "inputs[ref]", "inputs[script]", "inputs[macs]")], asked
@@ -1291,11 +1309,11 @@ esac
     row("run.sh: --on and --bare, and a tag of its own for another kind of Mac",
         [started("--on", "macos-15-intel", "--bare", "e2e-drag.sh", "feat/x")[2].get(key) for key in ("inputs[runner]", "inputs[bare]", "inputs[tag]")],
         ["macos-15-intel", "true", "feat-x.e2e-drag-15-intel"])
-    row("run.sh: too few Macs", started("--macs", "2", *[f"{n}.sh" for n in range(9)], "feat/x")[:2], (97, None))
-    row("run.sh: a slip in a script's name does not pass for a branch", started("a.sh", "b.sj", "c.sh")[:2], (97, None))
-    row("run.sh: no script", started("feat/x")[:2], (97, None))
-    row("run.sh: a path that could be more than a path", started("a;b.sh", "feat/x")[:2], (97, None))
-    row("run.sh: --macs 0", started("--macs", "0", "a.sh", "feat/x")[:2], (97, None))
+    row("run.sh: too few Macs", started("--macs", "2", *[f"{n}.sh" for n in range(9)], "feat/x")[:2], (97, NOT_STARTED))
+    row("run.sh: a slip in a script's name does not pass for a branch", started("a.sh", "b.sj", "c.sh")[:2], (97, NOT_STARTED))
+    row("run.sh: no script", started("feat/x")[:2], (97, NOT_STARTED))
+    row("run.sh: a path that could be more than a path", started("a;b.sh", "feat/x")[:2], (97, NOT_STARTED))
+    row("run.sh: --macs 0", started("--macs", "0", "a.sh", "feat/x")[:2], (97, NOT_STARTED))
     row("run.sh: a branch GitHub does not have, found out without a call", (lambda done, _, made: (done.returncode, made))(*ran("a.sh", "feat/none")), (97, []))
     row("run.sh: a script GitHub does not have at that branch, likewise", (lambda done, _, made: (done.returncode, made))(*ran("z.sh", "feat/x")), (97, []))
 

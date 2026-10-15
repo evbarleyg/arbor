@@ -10,6 +10,10 @@
 #   several         a folder for each, 1-<name>/, 2-<name>/, …, with exactly that in it; summary.txt, a line for each; and
 #                   exit-code.txt, the first exit code that is not 0
 #
+# Each script finds in $MAC_SHELL_PART which playing of the whole dispatch it is, and in $MAC_SHELL_PARTS how many there are, over all its Macs: its place
+# among run.sh's arguments, whichever Mac plays it (they are dealt out like cards: Mac i of M, which is $MAC_SHELL_SHARE, plays places i, i+M, …). Both
+# are settled before the first script begins, so that a playing that is left out, cut off or lost shows as a gap. One script: 1 and 1.
+#
 # Every script gets its turn, whatever became of the one before: they are separate questions. One that is still running after
 # MAC_SHELL_LIMIT seconds (1200) is stopped as the job's own time limit would stop it, only that the others still get to run: TERM, which
 # the supervisor in lib.sh takes for an interruption and cleans up after, and KILL fifteen seconds later. Its exit code is 124.
@@ -38,9 +42,15 @@ show() {
 running=""
 trap '[ -n "$running" ] && kill -TERM "$running" 2>/dev/null' TERM INT HUP
 
+share=${MAC_SHELL_SHARE:-1/1}
+case "$share" in [1-9]*/[1-9]*) ;; *) share=1/1 ;; esac
+# The workflow knows how many there are in all. Without it: what this Mac was given.
+export MAC_SHELL_PARTS=${MAC_SHELL_PARTS:-$#}
+
 first=0 number=0
 for script in "$@"; do
   number=$((number + 1))
+  export MAC_SHELL_PART=$((${share%/*} + (number - 1) * ${share#*/}))
   rm -rf "$out"
   mkdir -p "$out"
   header="# mac-shell: $script at $commit, macOS $system, $(date -u +%Y-%m-%dT%H:%MZ)"

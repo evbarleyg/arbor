@@ -81,6 +81,7 @@ jobs:
         id: inputs
         env:
           TAG: ${{ inputs.tag || github.run_id }}
+          ALL: ${{ inputs.script }}
           INDEX: ${{ strategy.job-index }}
           TOTAL: ${{ strategy.job-total }}
         run: |
@@ -108,6 +109,10 @@ jobs:
           echo "TAG=$TAG" >> "$GITHUB_ENV"
           # For a script that is given to several Macs and shares its work out among them: "2/3" on the second of three.
           echo "MAC_SHELL_SHARE=$((INDEX + 1))/$TOTAL" >> "$GITHUB_ENV"
+          # How many playings the whole dispatch has (scripts/ci-mac-shell.sh): all its scripts, or of one script as many as there are Macs.
+          parts=$(echo $ALL | wc -w | tr -d ' ')
+          if [ "$parts" -le 1 ]; then parts=$TOTAL; fi
+          echo "MAC_SHELL_PARTS=$parts" >> "$GITHUB_ENV"
 
       - uses: actions/checkout@v5
         with:

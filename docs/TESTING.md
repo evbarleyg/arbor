@@ -487,7 +487,8 @@ They run one after the other. Each gets its turn and its own twenty minutes, wha
 run of that script alone would have brought (`output.txt`, `exit-code.txt`, pictures, logs), and `summary.txt` with a line for each. `run.sh` exits with the
 first exit code that is not 0. At most four to a Mac; more are shared out among as many Macs as that takes, or among `--macs N`, whose
 output lies in `mac-1/`, `mac-2/`, …. A script that is given to several Macs by itself finds in `$MAC_SHELL_SHARE` which part is its own
-(`2/3`: the second of three); `compat.sh` takes every Nth app. All kinds of Mac come out of the same five at a time.
+(`2/3`: the second of three); `compat.sh` takes every Nth app. Every script finds in `$MAC_SHELL_PART` and `$MAC_SHELL_PARTS` which playing of the whole
+dispatch it is and how many there are, over all its Macs, settled before the first begins: its place among `run.sh`'s arguments, so a playing that is lost shows as a gap. All kinds of Mac come out of the same five at a time.
 
 **Whose turn it is.** GitHub hands its Macs out in no particular order: a job has been seen to wait eight minutes while later ones started. So
 `run.sh` keeps the order itself, before it starts the run, where waiting takes nobody's place. `--priority 1` (or `ARBOR_MAC_PRIORITY=1`) starts at once: a
@@ -501,7 +502,7 @@ seconds whether their run had ended, and every thirty what the queue looked like
 the branch; whether the run has ended, which is when its output branch appears), and a run costs about ten calls however long it waits. While it holds back it looks
 at the queue every two minutes, for a handful of calls. **Do the same in your own loops:** `git ls-remote` instead of `gh api` where it will do, a minute or more
 between two calls where it will not, and never a loop round `scripts/mac-queue.py`, whose full report costs twenty to forty; its last line but one says what is left of
-the hour. Several checkouts, containers or people who share a folder can share one look at the queue: `export ARBOR_MAC_QUEUE_CACHE=<a file there>`.
+the hour. Several checkouts, containers or people who share a folder can share one look at the queue, good for three minutes: `export ARBOR_MAC_QUEUE_CACHE=<a file there>`.
 
 **Nothing takes a Mac that Linux can already refute.** A run that ends in a compiler's error, a typo in the script or a wait for something that never
 comes has held a Mac for minutes to say what Linux says for nothing. So `run.sh` starts nothing that has not been through `scripts/mac-shell/preflight.sh`:

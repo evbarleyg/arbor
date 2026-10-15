@@ -30,7 +30,7 @@ every run that could have held or wanted a Mac within the period: some twenty to
 everything everybody does under it, so do not run this in a loop; the last line but one says what is left.
 
 --turn is made to be asked again and again, and costs little: two requests, and one for every run in progress that is not a Mac shell
-run (of those the run's own state tells enough). With $ARBOR_MAC_QUEUE_CACHE naming a file, whoever asks within a minute of somebody else
+run (of those the run's own state tells enough). With $ARBOR_MAC_QUEUE_CACHE naming a file, whoever asks within three minutes of somebody else
 reads the answer there and asks GitHub nothing: for several checkouts, containers or people on one machine or one shared folder.
 
 What GitHub's answers mean, found by looking at them on 2026-10-14 while five jobs ran and five waited:
@@ -73,8 +73,9 @@ OLDER_RUNS = timedelta(hours=6)
 RUNS = "[.workflow_runs[] | {id, path, status, head_branch, display_title, html_url, updated_at, created_at, run_started_at}]"
 JOBS = "[.jobs[] | {name, status, conclusion, labels, runner_name, created_at, started_at, completed_at}]"
 AT_ONCE = 8
-# For how long one look at the queue will do for everybody who shares a cache.
-FRESH_FOR = 60
+# For how long one look at the queue will do for everybody who shares a cache. Longer than the round of whoever looks for all, so that
+# nobody else asks while there is such a one, and short enough to tell whose turn it is: a Mac is held for minutes.
+FRESH_FOR = 200
 # "Mac shell: scripts/mac-shell/shots-F10.sh at feat/x [tag]"; "at feat/x" is missing from the runs of older branches.
 MAC_SHELL = re.compile(r"^Mac shell(?: \([^)]*\))?: (?:scripts/mac-shell/)?(?P<script>.*?)(?: at (?P<ref>\S+))?(?: \(no pre-flight: .*\))?(?P<tag> \[[^\]]*\])?$")
 ALARMED = 3
@@ -155,7 +156,7 @@ def fetch_now(repo):
 
 
 def shared(repo, now, look, path=None):
-    """`look()`, or what somebody who shares the cache saw less than a minute ago."""
+    """`look()`, or what somebody who shares the cache saw a short while ago."""
     path = os.environ.get("ARBOR_MAC_QUEUE_CACHE", "") if path is None else path
     if not path:
         return look()
