@@ -92,6 +92,7 @@ class Motion:
         film = scan.film
         self.roads = []
         self.tick = tick
+        self.cause = cause
         for track in scan.tracks:
             if track.detail or track.ragged(cause, until) or track.lifetime < 150 or track.times[0] > cause or track.times[-1] < until:
                 continue
@@ -176,7 +177,9 @@ class Motion:
         self.last = float(t[moving[-1] + 1])
         self.visible = self.last - self.first + self.tick
         self.overshoot = float(max(way.max() - way[-1], 0))
-        self.backwards = float(max(-steps.min(), 0))
+        # Not in the first frames after the cause: what was under way then goes on until the answer shows.
+        late = steps[t[1:] >= self.cause + 70]
+        self.backwards = float(max(-late.min(), 0)) if late.size else 0.0
         self.marks = {level: crossing(self.times, self.progress, level) for level in (0.05, 0.5, 0.95)}
         early, half, late = self.marks[0.05], self.marks[0.5], self.marks[0.95]
         # How much longer the second half of the road takes than the first: 1 for a motion that does not slow down.
@@ -284,7 +287,8 @@ def cause_of(film):
         return ups[-1], "exact"
     downs = [time for time, what in film.keys if what == "down" and time >= action]
     if downs:
-        return downs[0], "exact"
+        # Of two keys in a row the second: what is asked is how things go on from where the first had got them.
+        return (downs[0] if film.kind == "hold" else downs[-1]), "exact"
     if ups:
         return ups[-1], "exact"
     return action, "about"
@@ -325,7 +329,7 @@ def is_small(box, room):
     return (box[3] - box[1]) <= 0.12 * (room[3] - room[1]) and (box[2] - box[0]) <= 0.6 * (room[2] - room[0])
 
 
-def flashes(scan, since):
+def flashes(scan, since, longest=130):
     """Things that were there for a moment: [(track, milliseconds)]. Not the first or the last that is seen of something that comes
     into the room or leaves it: a title bar ahead of its window."""
     film = scan.film
@@ -334,7 +338,7 @@ def flashes(scan, since):
         if track.times[0] < since or track.indices[0] == 0 or track.indices[-1] >= len(film) - 1:
             continue
         shown = int(film.times[track.indices[-1] + 1]) - track.times[0]
-        if shown > 130:
+        if shown > longest:
             continue
         first, last = track.rects[0], track.last
         # A sliver at the room's edge is the first or the last of something that comes or goes. (So a sliver that flashes there is left to eyes.)

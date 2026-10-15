@@ -277,6 +277,38 @@ class Rect:
         return max(apart) + (0 if same else 15) + (10000 if sudden or self.detail != other.detail else 0)
 
 
+def in_shadow(pixel, colour):
+    """Whether the pixel is that colour with less light on it: the window in front throws its shadow over its neighbours' edges."""
+    light = max(colour)
+    share = max(int(value) for value in pixel) / light
+    return 0.4 <= share <= 1.05 and all(abs(int(value) - part * share) <= 14 for value, part in zip(pixel, colour))
+
+
+def out_of_the_shadow(box, colour, picture, room, scale):
+    """The box, carried on over pixels that are its colour in shadow. Only for colours that can be told by their hue."""
+    if max(colour) - min(colour) < 60:
+        return box
+    left, top, right, bottom = box
+    reach = 40 * scale
+
+    def carried(start, step, limit, across, horizontal):
+        steps = []
+        for place in across:
+            count = 0
+            while count < reach and (start + step * (count + 1) - limit) * step < 0:
+                at = start + step * (count + 1)
+                if not in_shadow(picture[place, at] if horizontal else picture[at, place], colour):
+                    break
+                count += 1
+            steps.append(count)
+        return sorted(steps)[1]
+
+    rows = [int(top + share * (bottom - top)) for share in (0.3, 0.5, 0.7)]
+    columns = [int(left + share * (right - left)) for share in (0.3, 0.5, 0.7)]
+    return (left - carried(left, -1, room[0] - 1, rows, True), top - carried(top, -1, room[1] - 1, columns, False),
+            right + carried(right - 1, 1, room[2], rows, True), bottom + carried(bottom - 1, 1, room[3], columns, False))
+
+
 def whole(rects, room, scale):
     """Windows, of the flat patches they are made of: a bar that sits on a body of the same width is its title bar, and what then lies
     inside another and is small beside it (an icon, a word's ground) is a detail of it."""
@@ -422,7 +454,8 @@ class Scan:
                         continue
                     inset = min(36 * self.film.scale, (c - a) // 4, (d - b) // 4)
                     corners = [mask[y - y0, x - x0] for x in (a + inset, c - 1 - inset) for y in (b + inset, d - 1 - inset)]
-                    found.append(Rect((a - RUB, b - RUB, c + RUB, d + RUB), colour, self.room, ragged=not all(corners)))
+                    box = out_of_the_shadow((a - RUB, b - RUB, c + RUB, d + RUB), colour, picture, self.room, self.film.scale)
+                    found.append(Rect(box, colour, self.room, ragged=not all(corners)))
             # The line of words is no window, and in dark mode it looks like a card.
             found = [rect for rect in found if not any(max(abs(a - b) for a, b in zip(rect.edges, line)) <= 6 * self.film.scale for line in lines)]
             found = whole(found, self.room, self.film.scale)
