@@ -1,15 +1,16 @@
 #!/bin/bash
-# Does macOS itself bring windows back when a display returns? A probe of macOS alone: Arbor does not run (collab/QUESTIONS.md, Q29, 4).
+# Where does macOS NOT bring a window back when a display returns? A probe of macOS alone: Arbor does not run (collab/QUESTIONS.md, Q29, 4).
 #
 #   scripts/mac-shell/run.sh scripts/mac-shell/probe-display-returns.sh
 #
-# Arbor fetches floating windows back to a display that returns. If macOS does so by itself, that is a second mover for nothing. So: four stock apps' windows on a second display; the display goes, and macOS
-# moves them over; nothing is touched; the display comes back. Where is each window after 1, 3 and 10 s: to the point where it was, roughly, or not at all? Once more with one window
-# moved by hand meanwhile.
+# Arbor fetches floating windows back to a display that returns. That macOS does so by itself is known (docs/REALITY.md, macos-puts-windows-back-on-a-display-that-returns: three test windows, back at their
+# old frames 0.15 to 0.2 s after a virtual display with the same identifier returned). If it always does, Arbor's fetching is a second mover for nothing; one case in which macOS leaves a window behind keeps it.
+# So this looks for such a case: four stock apps' windows rather than test windows; one window dragged by hand while the display is gone; a display that returns with ANOTHER serial number, which is what
+# macOS knows it by; one that is put at the other side of the main display as soon as it is back. Where is each window 1, 3 and 10 s after the return: to the point where it was, roughly, or not at all?
 #
-# WHAT KIND OF DISPLAY: a virtual one (vdisplay.m, a private API), with the same vendor, product and serial number each time, so that macOS can take it for the same display. No cable, no lid, no sleep. On
-# GitHub's Macs the first virtual display also changes the size of the main one, so every round is played twice: with that display alone, and with another virtual display that stays throughout, beside
-# which the one that goes and comes may leave the main display alone. What the displays were at each moment is printed. A real display may behave otherwise, and nothing here can tell.
+# WHAT KIND OF DISPLAY: a virtual one (vdisplay.m, a private API). No cable, no lid, no sleep. On GitHub's Macs the first virtual display also changes the size of the main one, so the first two rounds are played
+# twice: with that display alone, and with another virtual display that stays throughout, beside which the one that goes and comes may leave the main display alone. What the displays were at each
+# moment is printed. A real display may behave otherwise, and nothing here can tell.
 source "$(dirname "$0")/lib-apps.sh"
 needs_throwaway_mac "plug virtual displays in and out, at which macOS rearranges every window"
 
@@ -18,11 +19,11 @@ GOES_ID=""
 WINDOWS=""
 at_exit 'kill_started $GOES_PID'
 displays() { pointer displays | awk '{ print "    display " $1 ": " $2, $3, $4, $5 }'; }
-# comes <how many displays there are then>
+# comes <how many displays there are then> [serial number]
 comes() {
-  local hello="" tries=0
+  local hello="" tries=0 serial=${2:-7}
   : > "$ARBOR_OUT/goes.txt"
-  "$ARBOR_VDISPLAY" add 1280 800 "Arbor Test Display That Goes" --serial 7 > "$ARBOR_OUT/goes.txt" 2>> "$ARBOR_OUT/vdisplay.log" 9>&- 8>&- 3>&- &
+  "$ARBOR_VDISPLAY" add 1280 800 "Arbor Test Display That Goes" --serial "$serial" > "$ARBOR_OUT/goes.txt" 2>> "$ARBOR_OUT/vdisplay.log" 9>&- 8>&- 3>&- &
   GOES_PID=$!
   started "$GOES_PID"
   while [ -z "$hello" ] && [ "$tries" -lt 80 ]; do
@@ -45,9 +46,12 @@ look() {
   local id
   for id in $WINDOWS; do echo "$id $(real_frame_of "$id")"; done > "$ARBOR_OUT/$1.txt"
 }
-# round <name> <displays without the one that goes> [touch]
+# where_it_is <file>: the frame of the display that goes and comes, so that a window's place can also be told from that display's corner.
+where_it_is() { pointer displays | awk -v id="$GOES_ID" '$1 == id { print $2, $3, $4, $5 }' > "$ARBOR_OUT/$1.txt"; }
+# round <name> <displays without the one that goes> [touch|-] [the serial number it returns with] [other-side]
 round() {
-  local name=$1 others=$2 touch=${3:-} id index=0 gx gy gw gh px py first
+  local name=$1 others=$2 touch=${3:-} back=${4:-7} side=${5:-} id index=0 gx gy gw gh px py first mw
+  [ "$touch" = - ] && touch=""
   step "$name: the display comes, and four windows are put on it"
   comes $((others + 1))
   sleep 3
@@ -60,6 +64,7 @@ round() {
   done
   sleep 2
   look "$name-0-on-it"
+  where_it_is "$name-display-before"
 
   step "$name: it goes"
   goes "$others"
@@ -75,14 +80,19 @@ round() {
     look "$name-1b-moved-by-hand"
   fi
 
-  step "$name: it comes back, and nothing is touched"
-  comes $((others + 1))
+  step "$name: it comes back, and no window is touched"
+  comes $((others + 1)) "$back"
+  if [ -n "$side" ]; then
+    # Left of the main display, where it had been right of it or wherever macOS had put it.
+    "$ARBOR_VDISPLAY" move "$GOES_ID" -1280 0 | sed 's/^/  moved to the other side: /'
+  fi
   sleep 1
   look "$name-2-back-1s"
   sleep 2
   look "$name-3-back-3s"
   sleep 7
   look "$name-4-back-10s"
+  where_it_is "$name-display-after"
   displays
   shot "$name-back"
   python3 - "$ARBOR_OUT" "$name" "$touch" <<'PY'
@@ -95,6 +105,11 @@ def read(stage):
         words = line.split()
         rows[words[0]] = [round(float(word)) for word in words[1:5]] if len(words) >= 5 else None
     return rows
+def corner(which):
+    words = open(os.path.join(folder, f"{name}-display-{which}.txt")).read().split()
+    return [int(float(word)) for word in words[:2]] if len(words) >= 2 else None
+before, after = corner("before"), corner("after")
+print(f"  the display's corner: {before} before, {after} after")
 stages = ["0-on-it", "1-gone"] + (["1b-moved-by-hand"] if touch else []) + ["2-back-1s", "3-back-3s", "4-back-10s"]
 seen = {stage: read(stage) for stage in stages}
 print(f"  {'window':8}" + "".join(f"{stage:>22}" for stage in stages) + "   verdict at 10 s")
@@ -108,6 +123,8 @@ for index, window in enumerate(seen["0-on-it"]):
         verdict = "to the point, another size"
     elif abs(was[0] - now[0]) <= 40 and abs(was[1] - now[1]) <= 40:
         verdict = "roughly (within 40 points)"
+    elif before and after and before != after and [was[0] - before[0], was[1] - before[1]] == [now[0] - after[0], now[1] - after[1]]:
+        verdict = "to the point, counted from the display's corner, which moved"
     elif now == (seen.get("1b-moved-by-hand") or seen["1-gone"])[window]:
         verdict = "NOT AT ALL: where it lay while the display was gone"
     else:
@@ -138,6 +155,8 @@ displays
 
 round alone 1
 round alone-and-a-hand 1 touch
+round another-serial-number 1 - 8
+round at-the-other-side 1 - 7 other-side
 
 step "another virtual display, which stays"
 if display_add 1280 720 right; then
