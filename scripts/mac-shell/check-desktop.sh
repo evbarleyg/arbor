@@ -24,8 +24,7 @@ portraits() {
   # Dropped back on the Desktop, so that the next round starts from the same arrangement.
   # shellcheck disable=SC2046
   release $(arbor_point $(arbor_ask desktop) "x + w / 2" "y + 60")
-  # shellcheck disable=SC2046
-  click $(status_item)
+  open_menu
   shot "$1-3-menu"
   key escape
 }

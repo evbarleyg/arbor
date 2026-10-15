@@ -460,6 +460,8 @@ Things that bite:
 - There is no public way to make gesture events. `pinch` (and `witness pinch`, below) fills in the fields a trackpad's
   events carry, and Arbor's tap reads the result as it reads a trackpad's on macOS 26; a new macOS may change that.
 - On macOS 26 a menu bar item's window belongs to Control Center; `status_item` asks Accessibility instead.
+- Arbor's menu bar item is a row of buttons, and the middle of it, which `status_item` gives, is Show the Desktop: `open_menu`, a right click, opens the menu wherever in the item
+  it lands; `click` does not. Ask each time: paused, held or without the permission the item is one glyph, somewhere else. Ten scripts learned it at their first run.
 - bash 3.2: no associative arrays, no `${x,,}`, and an empty array is an error under `set -u`.
 - Plugging the virtual display in switches the runner's main display from 1024×768 to 1920×1080, and macOS shuffles the
   windows; unplugging switches it back. Ask `screen_of 1` and `frame_of` again afterwards.

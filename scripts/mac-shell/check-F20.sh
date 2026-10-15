@@ -38,6 +38,8 @@ ctl zoom "$W3"
 ctl out
 summary
 before=$(front)
+# Or the two checks below would compare nothing with nothing, as they did on their first run on a Mac.
+check "the tool says who is in front" [ -n "$before" ]
 
 step "⌃⌥N, type, ↩"
 key ctrl+opt+n
@@ -80,8 +82,9 @@ key ctrl+opt+n
 check "⌃⌥N again closes it" eventually field_closed
 key ctrl+opt+n
 check "open" eventually field_open
+# Its lower left corner, clear of the field: on a small display the middle of the window lies under it.
 # shellcheck disable=SC2046
-click $(center_of "$W2")
+click $(arbor_point $(frame_of "$W2") "x + 20" "y + h - 20")
 check "a click in a window closes it" eventually field_closed
 
 step "it closes when the view leaves its space"
@@ -98,7 +101,7 @@ check "window 1 is out of view" eventually is parked "$W1"
 
 step "the menu"
 read -r item_x item_y <<< "$(status_item)"
-click "$item_x" "$item_y"
+rightclick "$item_x" "$item_y"
 shot 05-menu
 key escape
 

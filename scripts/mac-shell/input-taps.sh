@@ -627,7 +627,8 @@ if on_throwaway_mac; then
   click_away "the Apple menu"
   key cmd+space
   click_away "Spotlight"
-  pointer click $(pointer status-item "$ARBOR_PID")
+  # A right click: with windows docked the item is a row of buttons, and a plain click in its middle presses Show the Desktop.
+  pointer click $(pointer status-item "$ARBOR_PID") --right
   click_away "Arbor's own menu"
   read -r _ _ _ cx cy cw ch _ <<< "$(pointer windows --on-screen | awk '$3 == 25' | tail -n 1)"
   pointer click "$((cx + cw / 2))" "$((cy + ch / 2))"

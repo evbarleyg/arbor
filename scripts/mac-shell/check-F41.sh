@@ -40,7 +40,7 @@ ran() { grep -c "INFO  $1" "$ARBOR_HOME/arbor.log"; }
 mentions_are() { [ "$(grep -c "$1" "$ARBOR_HOME/arbor.log")" = "$2" ]; }
 last_registered_is() { grep "registered [0-9]* shortcuts" "$ARBOR_HOME/arbor.log" | tail -n 1 | grep -q "registered $1 shortcuts"; }
 listed_is() {
-  [ "$(python3 -c 'import json, sys; print(",".join(json.load(open(sys.argv[1]))["passThroughApps"]))' "$ARBOR_HOME/settings.json")" = "$1" ]
+  [ "$(python3 -c 'import json, sys; print(",".join(json.load(open(sys.argv[1])).get("passThroughApps", [])))' "$ARBOR_HOME/settings.json")" = "$1" ]
 }
 real_center_of() { real_frame_of "$1" | awk '{ print int($1 + $3 / 2), int($2 + $4 / 2) }'; }
 to_keys_app() {
@@ -108,7 +108,7 @@ eventually keys_ready || die "the key-logging app did not start"
 head -n 3 "$KEYS_LOG"
 
 step "in an ordinary app the shortcuts are Arbor's"
-to_test_windows
+check "the test windows' app is in front" to_test_windows
 ctl status
 ctl bindings | tail -n 1
 check "the event taps are installed" eventually has_taps
@@ -144,7 +144,7 @@ check "no frame-rect command ran" mentions_are "frame-rect" 0
 
 step "the menu says so"
 read -r item_x item_y <<< "$(status_item)"
-click "$item_x" "$item_y"
+rightclick "$item_x" "$item_y"
 shot 02-menu-ticked
 key escape
 check "the app is still in front after the menu" front_is "$KEYS_ID"
@@ -173,7 +173,7 @@ check "⌃⌥Space shows everything" eventually all_on_screen
 check "the app saw neither" received_is 36 1
 
 step "the command, with the app in front"
-to_keys_app
+check "the app is in front" to_keys_app
 ctl pass-through
 check "settings.json no longer lists the app" listed_is ""
 check "the shortcuts are registered again at once" eventually last_registered_is "[0-9][0-9]"
@@ -186,6 +186,9 @@ check "⌃⌥Space shows everything" eventually all_on_screen
 drag $((KEYS_X - 60)) $((KEYS_Y - 20)) $((KEYS_X + 60)) $((KEYS_Y + 40)) --mods ctrl+opt
 check "the same ⌃⌥-drag is Arbor's now" eventually mentions_are "frame-rect" 1
 ctl home
+# ⌃⌥Space and `home` took the keyboard from the app, which Arbor does not look at here: whoever moves the view with "nobody" at the keyboard gets a docked
+# window focused. At the first run on a Mac the command below therefore went to the test windows' app.
+check "the app is in front again" to_keys_app
 ctl pass-through
 check "settings.json lists the app again" listed_is "$KEYS_ID"
 check "and the taps are gone again" eventually taps_are 0
@@ -236,7 +239,7 @@ else
 fi
 
 step "for the record: keeping the hot key and passing the press on with postToPid"
-to_keys_app
+check "the app is in front" to_keys_app
 "$KEYS" repost 4 &
 sleep 1
 key ctrl+opt+j
@@ -253,7 +256,7 @@ arbor_start 2 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0
 ctl dock "$W1" left
 ctl dock "$W2" right
 sleep 3
-to_test_windows
+check "the test windows' app is in front" to_test_windows
 arbor_settings "{$ARBOR_GESTURES_ON, \"pauseForApps\": [\"$KEYS_ID\"]}"
 ctl reload-settings
 check "running while another app is in front" eventually status_has "^running"
@@ -267,7 +270,7 @@ space_before=$(received 49)
 key ctrl+opt+space
 check "⌃⌥Space reaches the app" eventually received_is 49 $((space_before + 1))
 read -r item_x item_y <<< "$(status_item)"
-click "$item_x" "$item_y"
+rightclick "$item_x" "$item_y"
 shot 04-menu-paused-for-app
 key escape
 key cmd+tab

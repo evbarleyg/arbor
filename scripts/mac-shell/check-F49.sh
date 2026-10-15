@@ -46,17 +46,28 @@ corner() {
   [ -n "$h" ] || die "the call has no frame"
   echo "$((sx + sw - w / 2 - 40)) $((sy + 32))"
 }
-same_place() { [ "$(real_frame_of "$CALL")" = "$1" ]; }
+# Says where it is when that is somewhere else: `check` keeps only the verdict.
+same_place() { [ "$(real_frame_of "$CALL")" = "$1" ] || { echo "    the call is at $(real_frame_of "$CALL"), not at $1"; return 1; }; }
 camera() { arbor_ask json | python3 -c 'import json, sys; print(json.load(sys.stdin)["displays"][0]["camera"])'; }
 camera_is() { [ "$(camera)" = "$1" ]; }
 running() { "$ARBOR_BIN/arborctl" status | grep -q "^running"; }
 raises() { grep -c "raised" "$ARBOR_HOME/arbor.log"; }
+# Known to fail (collab/BOARD.md, 1.25; Q25): a raise lifts a window of another app over everything but the key window of the app in front. All ten
+# failed at the first run on a Mac. The mark is on this one check and not on the step around it: what fails beside it is new. With room of its
+# own for the call (Q25) nothing can cover it, and the mark comes off.
+nothing_covers() {
+  local outcome=0
+  known "board 1.25, Q25: a raise does not bring it in front of the active app's window; Keep in View is to make room instead"
+  check "$1" eventually uncovered "$CALL" || outcome=1
+  known ""
+  return $outcome
+}
 # The pinned window is where it was, wholly on screen, in front, and $1 has the keyboard.
 call_is_fine() {
   check "$2: the call has not moved" eventually same_place "$home_frame"
   check "$2: the call is not out of view" is on_screen "$CALL"
   check "$2: Arbor does not count it as out of view" eventually is_not parked "$CALL"
-  check "$2: nothing covers the call" eventually uncovered "$CALL"
+  nothing_covers "$2: nothing covers the call"
   check "$2: the keyboard is in $1" eventually is focused "$1"
 }
 is_not() { ! is "$@"; }
@@ -183,8 +194,10 @@ shot 05-dragged-over-an-edge
 release
 check "dropped there it still floats" eventually is floating "$CALL"
 check "and is still pinned" is pinned "$CALL"
-# shellcheck disable=SC2046
-drag $(titlebar_of "$CALL") 2 300 --no-release
+# By the left end of its title bar, so that most of the call stays on the display. Taken by the middle it ended 251 points off the edge, and the next
+# drag pressed where no pointer can be, at x -11.
+read -r x y w h <<< "$(frame_of "$CALL")"
+drag $((x + 100)) $((y + 12)) 2 300 --no-release
 check "at the screen edge: no preview" is_not_shown 3
 release
 check "dropped there it still floats" eventually is floating "$CALL"
@@ -193,6 +206,7 @@ check "and is still pinned" is pinned "$CALL"
 drag $(titlebar_of "$CALL") $(corner)
 sleep 1
 home_frame=$(real_frame_of "$CALL")
+echo "the call is at $home_frame"
 ctl zoom "$W1"
 call_is_fine "$W1" "where it was dropped, after the next camera move"
 ctl show-all
@@ -202,13 +216,13 @@ step "the shortcut and the menu"
 click $(center_of "$CALL")
 check "the call has the keyboard" eventually is focused "$CALL"
 read -r item_x item_y <<< "$(status_item)"
-click "$item_x" "$item_y"
+rightclick "$item_x" "$item_y"
 shot 06-menu-with-a-tick
 key escape
 key ctrl+opt+shift+d
 check "⌃⌥⇧D (from bindings) unpins" eventually is_not pinned "$CALL"
 check "and moves nothing" same_place "$home_frame"
-click "$item_x" "$item_y"
+rightclick "$item_x" "$item_y"
 shot 07-menu-without-a-tick
 key escape
 key ctrl+opt+shift+d
@@ -266,7 +280,7 @@ elif display_add 800 600 right; then
   check "unplugged: still pinned" is pinned "$CALL"
   check "unplugged: in view, though the Desktop is not" eventually is on_screen "$CALL"
   check "unplugged: Arbor does not count it as out of view" is_not parked "$CALL"
-  check "unplugged: nothing covers it" eventually uncovered "$CALL"
+  nothing_covers "unplugged: nothing covers it"
   shot 10-unplugged
   display_add 800 600 right
   check "plugged in again: back on the second display" eventually is display2 "$CALL"
@@ -280,6 +294,7 @@ elif display_add 800 600 right; then
   # Arbor hears of it a second and a half after the displays have settled.
   sleep 3
   home_frame=$(real_frame_of "$CALL")
+  echo "the call is at $home_frame"
   ctl show-all
 fi
 
