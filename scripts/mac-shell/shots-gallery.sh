@@ -222,7 +222,43 @@ tour() {
   # Beside the handle, which sits in the middle of the gap: the pointer would cover it.
   move "$((gx - 70))" "$gy"
   shot "$p-06-gap-hover"
+  drag "$((gx - 70))" "$gy" "$((gx - 70))" "$((gy + 20))" --no-release
+  shot "$p-06b-gap-dragged"
+  release
   pointer_away
+
+  claim "what the settings make of tiles and of the surface  ($p)"
+  ctl set tileStyle plain
+  shot "$p-06c-tiles-plain"
+  ctl reset tileStyle
+  ctl set appColours false
+  shot "$p-06d-tiles-grey"
+  ctl reset appColours
+  ctl set appColourAmount 1
+  shot "$p-06e-tiles-full-colour"
+  ctl reset appColourAmount
+  ctl set dimBehindArranged 0
+  shot "$p-06f-no-surface"
+  ctl reset dimBehindArranged
+  ctl set tintBehindArranged 0.2
+  shot "$p-06g-surface-tinted"
+  ctl reset tintBehindArranged
+  ctl set blurBehindArranged 1
+  shot "$p-06h-surface-blurred"
+  ctl reset blurBehindArranged
+  ctl set desktopEdge 0.3
+  shot "$p-06i-desktop-edge-plain-to-see"
+  ctl reset desktopEdge
+
+  claim "the rectangle of a ⌃⌥-drag  ($p)"
+  read -r x y w h <<< "$(frame_of "$W2")"
+  drag "$((x + 30))" "$((y + 60))" "$((x + w - 30))" "$((y + h - 40))" --mods ctrl+opt --no-release
+  shot "$p-06j-rectangle"
+  check "it shows while the button is held" has_overlay 3
+  release --mods ctrl+opt
+  sleep 0.6
+  shot "$p-06k-framed"
+  ctl show-all
 
   claim "the panel of shortcuts  ($p)"
   # shellcheck disable=SC2046
@@ -334,6 +370,11 @@ tour() {
   claim "paused  ($p)"
   key ctrl+opt+escape
   both "$p-22-paused" "$before" 0.5
+  before=$(ids_on)
+  # shellcheck disable=SC2046
+  rightclick $(status_item)
+  both "$p-22b-paused-menu" "$before"
+  menu_is_open && key escape
   key ctrl+opt+escape
 
   if [ "$p" = light ]; then
