@@ -1,0 +1,33 @@
+# Board 1.62, its second half. A docked terminal gets another font and its window happens to keep its size, so Arbor sees nothing. Asked for
+# whole lines of the old font it takes something else, and that ends what was known of its cells: it is offered its slot like a
+# window of which nothing is known, and talked down a line if it takes more. It used to be offered the two points over its slot that any
+# window is allowed, and allowed two more on top of those: three over, it passed for fitting, then for refusing, and was a tile.
+quiet
+open Terminal 560x340 cell 7x15
+open Notes
+open Mail
+dock 101 left
+dock 103 right
+dock 102 right
+dock 102 beside 101 bottom
+
+# Until its height has shown its cell.
+resize 101 bottom 4
+resize 101 bottom 4
+resize 101 bottom 4
+resize 101 bottom 4
+resize 101 bottom 4
+resize 101 bottom 4
+expect at 101 12 37
+expect size 101 700x435
+
+# A smaller font: lines of 11 points. Its slot becomes 448 high; 30 lines of the old font are 450; the nearest lines of the new one 451.
+cell 101 5x11
+resize 101 bottom 4
+expect docked 101
+expect at 101 12 37
+expect size 101 700x440
+
+# And that is that: the next layouts find nothing to do.
+show-all
+expect still 101

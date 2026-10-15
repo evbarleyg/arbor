@@ -16,15 +16,18 @@ import Testing
     CGSize(width: 13, height: 29),
   ]
 
-  /// [terminal | Desktop | notes]
+  /// [terminal | mail | notes], as Arbor ships. Three, so that the terminal's slot changes under it, in view, as a neighbour is docked: the
+  /// second takes what is left and leaves the first alone.
   func makeHarness(cell: CGSize, _ rounding: Rounding, margin: CGSize = .zero) -> (Harness, WindowID, WindowID) {
-    let h = Harness()
+    let h = Harness(settings: Settings())
     let terminal = h.system.open(
       app: "Terminal", frame: CGRect(x: 300, y: 200, width: 560, height: 340), sizeStep: cell, stepsRoundDown: rounding == .down,
       sizeMargin: margin)
     let notes = h.system.open(app: "Notes")
+    let mail = h.system.open(app: "Mail")
     h.start()
     h.run("dock \(terminal.rawValue) left")
+    h.run("dock \(mail.rawValue) right")
     h.run("dock \(notes.rawValue) right")
     return (h, terminal, notes)
   }
@@ -481,10 +484,27 @@ import Testing
     #expect(gap.unclaimedMoves == 0 && gap.waste == 0, "\(gap)")
   }
 
+  /// A terminal that fills its slot to the point is nobody's misfit. Its cell known, the gap moves by less than a cell while a neighbour
+  /// goes: nothing is foretold for it, for nothing is asked of it.
+  @Test func whoFillsItsSlotToThePointIsNotForetoldForLessThanACell() throws {
+    // A third of the display is 464 x 851: 2 + 66 x 7 by 11 + 56 x 15.
+    let (h, terminal, _) = makeHarness(cell: CGSize(width: 7, height: 15), .nearest, margin: CGSize(width: 2, height: 11))
+    // Three cells wider, by every remainder on the way, so that its width has shown its cell.
+    for _ in 0..<7 { h.run("resize \(terminal.rawValue) right 3") }
+    #expect(h.frame(terminal) == h.layout?.windowFrames[terminal], "the story's own premise: to the point")
+    #expect(h.frame(terminal)?.width == 485)
+    h.system.clearFrameLog()
+    let gap = h.measure { h.run("resize \(terminal.rawValue) right 3") }
+    #expect(h.layout?.windowFrames[terminal]?.width == 488)
+    #expect(h.system.frameLog.filter { $0.window == terminal }.isEmpty, "\(h.system.frameLog)")
+    #expect(gap.moves > 0 && gap.waste == 0, "the neighbour goes, and nothing is asked for nothing: \(gap)")
+  }
+
   /// Three terminals and a gap that moves: two of them are asked where they stand and are then where they belong. Nothing more is
   /// foretold for them, for nothing more is asked.
+  /// (With the Desktop's column: the sizes were found by walking, in the arrangement that gave.)
   @Test func whoIsThereAfterAnsweringIsNotForetoldAgain() throws {
-    let h = Harness()
+    let h = Harness(settings: .withDesktopColumn)
     func terminal(_ size: CGSize, _ cell: CGSize, _ margin: CGSize, down: Bool = false) -> WindowID {
       h.system.open(
         app: "Terminal", pid: Int32(2000 + h.system.windows.count), frame: CGRect(origin: CGPoint(x: 300, y: 200), size: size),
@@ -543,6 +563,30 @@ import Testing
     try expectInItsCorner(h, terminal, cell: new)
   }
 
+  /// And at the first layout after the font has changed, not at some later one: asked for whole cells of the old font it takes something
+  /// else, is offered its slot at once, and has as many lines of the new font as fit. The next layouts find nothing to do. (Where the
+  /// lines of the old font that fit are whole lines of the new one as well, it takes them as they are, and nothing can tell until its
+  /// slot changes again.)
+  @Test(arguments: 0..<36) func anotherFontIsSettledAtTheFirstLayout(higher: Int) throws {
+    // Lines with no measure in common: with 18 and 12 every miss is half a line, is rounded up, and ends where it should by accident.
+    let (old, new) = (CGSize(width: 7, height: 15), CGSize(width: 5, height: 11))
+    let (h, terminal, notes) = makeHarness(cell: old, .nearest)
+    h.run("dock \(notes.rawValue) beside \(terminal.rawValue) bottom")
+    // Until its height has shown its cell.
+    for _ in 0..<6 { h.run("resize \(terminal.rawValue) bottom 4") }
+    h.system.setSizeStep(terminal, new)
+    h.run("resize \(terminal.rawValue) bottom \(higher + 3)")
+    let slot = try #require(h.layout?.windowFrames[terminal])
+    let frame = try #require(h.frame(terminal))
+    func lines(of cell: CGSize) -> CGFloat { ((slot.height + 2) / cell.height).rounded(.down) * cell.height }
+    let isOnBothGrids = lines(of: old).truncatingRemainder(dividingBy: new.height) == 0
+    #expect(frame.height == lines(of: isOnBothGrids ? old : new), "\(frame) in \(slot)")
+    h.system.clearFrameLog()
+    for _ in 0..<3 { h.controller.apply(settings: h.controller.settings) }
+    #expect(h.system.frameLog.filter { $0.window == terminal }.isEmpty)
+    #expect(h.frame(terminal) == frame)
+  }
+
   /// ⌘+ in a real Terminal: it keeps its rows and columns, so the window resizes itself, and is seen between two of its old cells. That is
   /// told at once: the next thing it is asked for is its slot, not whole cells of a font it no longer has.
   @Test func aFontChangeThatIsSeenCostsNoWrongRequest() throws {
@@ -578,18 +622,22 @@ import Testing
   /// A window that is known to grow no further is in the middle of its slot however little is missing: it does not leap from the
   /// corner to the middle where a gap is moved by a few points.
   @Test func oneThatIsKnownNotToGrowIsInTheMiddleHoweverLittleIsMissing() throws {
-    let h = Harness()
-    let fixed = h.system.open(app: "Calculator", frame: CGRect(x: 300, y: 200, width: 450, height: 600), isResizable: false)
+    let h = Harness(settings: Settings())
+    // Fourteen points narrower than half the display.
+    let fixed = h.system.open(app: "Calculator", frame: CGRect(x: 300, y: 200, width: 688, height: 600), isResizable: false)
     let notes = h.system.open(app: "Notes")
     h.start()
     h.run("dock \(fixed.rawValue) left")
     h.run("dock \(notes.rawValue) right")
+    var missing: [CGFloat] = []
     for step in [0, 3, 3, 3, 3, 3, 3, 3, 3, -5, -5, -5] {
       h.run("resize \(fixed.rawValue) right \(step)")
       let slot = try #require(h.layout?.windowFrames[fixed])
       let frame = try #require(h.frame(fixed))
       #expect(abs(frame.midX - slot.midX) <= 1 && abs(frame.midY - slot.midY) <= 1, "\(frame) in \(slot)")
+      missing.append(slot.width - frame.width)
     }
+    #expect(missing.first == 14 && missing.max() == 38 && missing.last == 23, "the story's own premise, across the line and back: \(missing)")
   }
 
   // MARK: Large cells, and other windows than docked ones
@@ -658,6 +706,15 @@ import Testing
       h.run("resize \(notes.rawValue) right 1")
       #expect(FakeWindowSystem.detour(h.system.road(of: terminal, since: mark)) == nil, "step \(step)")
     }
+    // And by a leap, to where the nearest cells are three points over again and are no size the window has: asked for the cells that
+    // fit, it goes there in one move, by way of no other size. Its room is the Desktop and what is beside it, to the edge of the display.
+    let mark = h.system.moveLog.count
+    h.run("resize \(notes.rawValue) right 33")
+    let room = h.visibleFrame.maxX - (try #require(h.layout?.desktopFrame)).minX
+    #expect((room - 5).truncatingRemainder(dividingBy: 7) == 4, "the story's own premise: \(room)")
+    #expect(h.frame(terminal)?.width == room - 4)
+    // Where it stood, and where it went.
+    #expect(h.system.road(of: terminal, since: mark).count == 2, "\(h.system.road(of: terminal, since: mark))")
   }
 
   /// Float All, and it has its own size again, to the point (rule 5).

@@ -226,10 +226,12 @@ extension Controller {
     let isOnlyMoved = asked.size == current.frame.size
     // Where it was asked, not by way of the slot's corner.
     // Measured against the slot's size, for what is asked of a terminal is less; or against what was asked where that is more:
-    // a side that has answered where it stood is not talked down again.
+    // a side that has answered where it stood is not talked down again. Not where it is a point or two more, which is the whole cells
+    // that fit: allowed those two points twice over, a terminal with another font by now would pass here and be a refusal below.
     if !isThere {
+      func side(_ asked: CGFloat, _ target: CGFloat) -> CGFloat { asked > target + 2 ? asked : target }
       let slot = CGRect(
-        origin: asked.origin, size: CGSize(width: max(asked.width, target.width), height: max(asked.height, target.height)))
+        origin: asked.origin, size: CGSize(width: side(asked.width, target.width), height: side(asked.height, target.height)))
       let known = seenSizes[window]?.cells
       actual = offeredAnew(window, slot, unlessItTook: asked, took: actual)
       if !isOnlyMoved || seenSizes[window]?.cells != known { actual = askForLess(window, slot: slot, took: actual) }
