@@ -332,8 +332,8 @@ private func rect(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloa
     var world = played(Self.straddling + "\n" + docked + "\nsettle\ncursor 1200 700")
     #expect(world.runner.controller.workspaces[DisplayID("main")]?.isDocked(a) == true, "a control: it is docked")
     world.play("undo\nsettle")
-    // Seven points higher than it was let go: macOS lets no frame be set with less than 32 points of title bar on the display its corner is on.
-    #expect(world.frame(a) == rect(800, 1408, 800, 600))
+    // A little higher than it was let go: macOS lets no frame be set with less than the window's title bar on the display its corner is on.
+    #expect(world.frame(a) == rect(800, 1440 - FakeWindowSystem.usualTitleBar, 800, 600))
     #expect(world.share(of: a) > 0.99)
   }
 
