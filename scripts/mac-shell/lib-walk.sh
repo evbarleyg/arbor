@@ -37,7 +37,7 @@
 #   arrange_key                  ⌃⌥A: every window is docked            undo | redo            ⌃⌥Z | ⌃⌥⇧Z
 #   rotate | mirror              ⌃⌥R | ⌃⌥⇧R on the window in front's group                     pin        `arborctl toggle-pin`: the menu's, it has no key
 #   drag_onto <app> <app> left|right|top|bottom       by its title bar onto that part of the other's window, which has to be docked and in view
-#   drag_out <app>               a docked window, onto the Desktop      drag_by <app> <dx> <dy>    a floating window, that far
+#   drag_out <app>               a docked window, onto the Desktop      drag_by <app> <dx> <dy> [click]   a floating one, that far
 #   drag_edge <app> left|right|top                    against that edge of the display, where macOS tiles too
 #   view frame|out|in|left|right|back|forward|all|home|desktop               (all: ⌃⌥Space tapped; home: ⌃⌥0, every display)
 #   peek                         ⌃⌥Space held for a second and a half, then let go             save_view <1-9> | view_n <1-9>     ⌃⌥⇧digit | ⌃⌥digit
@@ -443,8 +443,9 @@ drag_by() {
   x=$((x + $2)) y=$((y + $3))
   [ "$x" -gt $((WALK_X + 60)) ] && [ "$x" -lt $((WALK_X + WALK_W - 60)) ] && [ "$y" -gt $((WALK_Y + 80)) ] && [ "$y" -lt $((WALK_Y + WALK_H - 260)) ] \
     || { left_out "drag_by $*: that would end at an edge"; return; }
-  walk_act drag "drag-$1-by" "drags $1, which floats, by its title bar $2 across and $3 down"
-  must drag_window "$window" "$x" "$y"
+  # The point is one of its title bar's at which nothing but the window answers, so the click after the drop does nothing but arrive.
+  walk_act drag "drag-$1-by" "drags $1, which floats, by its title bar $2 across and $3 down${4:+, and clicks there 0.3 s after letting go}"
+  must drag_window "$window" "$x" "$y" ${4:+--then-click}
   changed
   [ -z "$WALK_PAUSED" ] || WALK_MOVED_IN_PAUSE="${WALK_MOVED_IN_PAUSE:+$WALK_MOVED_IN_PAUSE,}$window"
   # Its size too: macOS gives a window it had tiled its earlier size back under the hand.
