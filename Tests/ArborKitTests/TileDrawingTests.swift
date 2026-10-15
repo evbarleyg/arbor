@@ -297,8 +297,8 @@
     }
 
     @Test func scenesInBothModes() throws {
-      var named = Settings()
-      named.tileStyle = "name"
+      var icons = Settings()
+      icons.tileStyle = "icon"
       var strong = Settings()
       strong.appColourAmount = 0.6
       var tinted = Settings()
@@ -308,9 +308,47 @@
         let mode = isDark ? "dark" : "light"
         try picture(harness(Settings(), squeezed: false), isDark: isDark, name: "scene-\(mode)")
         try picture(harness(Settings(), squeezed: true), isDark: isDark, name: "scene-squeezed-\(mode)")
-        try picture(harness(named, squeezed: true), isDark: isDark, name: "scene-names-\(mode)")
+        try picture(harness(icons, squeezed: true), isDark: isDark, name: "scene-icons-\(mode)")
         try picture(harness(strong, squeezed: false), isDark: isDark, name: "scene-colour-60-\(mode)")
         try picture(harness(tinted, squeezed: false), isDark: isDark, name: "scene-tint-20-edge-30-\(mode)")
+      }
+    }
+
+    /// The product owner's measure (collab/QUESTIONS.md, Q15): on a laptop's 1440 points, four apps that will not be smaller than
+    /// the real ones, two of them Safari windows. Can the two be told apart from the picture?
+    @Test func twoSafariWindowsOnALaptop() throws {
+      for style in ["name", "icon"] {
+        var settings = Settings()
+        settings.tileStyle = style
+        let frame = CGRect(x: 0, y: 0, width: 1440, height: 900)
+        let h = Harness(
+          displays: [
+            DisplaySnapshot(
+              id: DisplayID("main"), frame: frame, visibleFrame: CGRect(x: 0, y: 25, width: 1440, height: 875), isMain: true)
+          ], settings: settings)
+        func open(_ app: String, _ title: String, _ pid: Int32, least: CGFloat) -> UInt32 {
+          h.system.open(
+            app: app, title: title, pid: pid, frame: CGRect(x: 100, y: 100, width: 1100, height: 700),
+            minimumSize: CGSize(width: least, height: 240)
+          ).rawValue
+        }
+        let trains = open("Safari", "Train times to the coast", 2001, least: 574)
+        let bread = open("Safari", "Bread without kneading", 2001, least: 574)
+        let messages = open("Messages", "Family", 2002, least: 760)
+        let notes = open("Notes", "Shopping", 2003, least: 709)
+        h.start()
+        h.run("dock \(trains) left")
+        h.run("dock \(messages) right")
+        h.run("dock \(bread) beside \(trains) right")
+        h.run("dock \(notes) beside \(messages) left")
+        h.run("show-all")
+        let tiles = try #require(h.overlays.tiles[h.display]).filter { $0.kind == .window }
+        #expect(tiles.contains { $0.items.first?.appName == "Safari" }, "one of the two is a tile")
+        for mode in OffscreenPicture.Mode.allCases {
+          let picture = try OffscreenPicture(size: frame.size, scale: 2, mode: mode)
+          picture.draw(display: h)
+          try picture.save("two-safaris-\(style)-\(mode.rawValue)@2x", item: "F15")
+        }
       }
     }
 

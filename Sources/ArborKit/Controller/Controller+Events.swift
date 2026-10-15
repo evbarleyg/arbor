@@ -80,6 +80,7 @@ extension Controller: WindowSystemEvents {
     putBackIfItLeftFullScreen(window, was: previous)
     defer { focusRingFollows(window) }
     if previous?.title != window.title { refreshHoldCaller() }
+    defer { if previous?.title != window.title { tileFollowsItsTitle(window.id) } }
     defer { if previous?.frame != window.frame { notify(.frames) } }
     // Before the check below, because a late title can also end an `ignore`. If a rule takes over, it
     // moves the window, and the rest of this is about where `window` says the window is.

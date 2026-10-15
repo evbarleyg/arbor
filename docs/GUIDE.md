@@ -69,7 +69,7 @@ The keys follow one rule: **⌃⌥ looks, ⌃⌥⌘ moves, ⇧ does the opposite
 Arbor was inspired by TrellisWM and is not a copy of it. Three things are different because we think them better, not because they are unfinished:
 
 - **Nothing moves until you dock something.** When Arbor starts, every window stays where it is, at the size it has, and floats. You choose what gets a place. When it starts again later, what *you* docked goes back to its place.
-- **Show Everything shows your real windows**, laid out smaller, not pictures of them. You can read, click and type in them at once, and Arbor needs no permission to record your screen. A window that cannot be that small shows as a tile with its app's colour and icon.
+- **Show Everything shows your real windows**, laid out smaller, not pictures of them. You can read, click and type in them at once, and Arbor needs no permission to record your screen. A window that cannot be that small shows as a tile with its app's colour and icon, and its title under it, so that two windows of one app can be told apart; rest the pointer on a tile too narrow for words and it says them.
 - **Nothing of Arbor's lies between your pointer and your windows.** While you drag, the preview is a picture that lets the mouse through: no layer of Arbor's covers the screen, so letting go always reaches the window.
 
 ## 2. The first ten minutes
@@ -313,11 +313,11 @@ that were already open stay as they are. Your rules come first, so `{ "app": "co
 ```json
 "dimBehindArranged": 0.4,
 "blurBehindArranged": 1,
-"tileStyle": "name",
+"tileStyle": "icon",
 "appColourAmount": 0.5
 ```
 
-`"dimBehindArranged": 0` leaves the wallpaper as bright as it is; `"tintBehindArranged"` lays your accent colour over it. A hairline runs round the Desktop where it lies between docked windows: `"desktopEdge": 0.3` makes it plain to see, `0` removes it. `"tileStyle"` is `"icon"`, `"name"` (the icon and the app's name) or `"plain"`, and a space you have named shows its name in all three; `"appColours": false` makes every tile the same grey. `"gapHandles": "hidden"` keeps gaps draggable without the small handle under the pointer, `"off"` makes
+`"dimBehindArranged": 0` leaves the wallpaper as bright as it is; `"tintBehindArranged"` lays your accent colour over it. A hairline runs round the Desktop where it lies between docked windows: `"desktopEdge": 0.3` makes it plain to see, `0` removes it. `"tileStyle"` is `"name"` (the icon with the window's title, or the name you gave the space), `"icon"` or `"plain"`, and a space you have named shows its name in all three; `"appColours": false` makes every tile the same grey. `"gapHandles": "hidden"` keeps gaps draggable without the small handle under the pointer, `"off"` makes
 them plain gaps. None of this moves a window.
 
 **Scripts.** Everything Arbor does is a command with a text form, the same everywhere. (Copy the command, not the remark after `#`: at its prompt macOS's own shell, zsh, does not take `#` for a comment.)
@@ -375,7 +375,6 @@ Being built or waiting to be merged as this is written. When one lands, its sect
 |---|---|
 | Motion with the windows' own contents | With Screen Recording permission windows will keep their contents while they move. Not yet: wait for the release notes to say it has been seen on a Mac |
 | A later start shows everything | Today a later start also goes back to the view you had, so windows can go out of view at once. It will end showing everything; ⌃⌥[ will go to where the view was |
-| Tiles say which window they are | A tile will show the window's title under the icon, so that two windows of one app can be told apart (`tileStyle`, which will ship as `name`) |
 | Tab groups | Drop a window on the middle of another: they share a place under a strip of tabs; ⌃⌥⇥ switches |
 | Presets | Set the table with one command |
 | Carry a window with the keyboard (⌃⌥⌘Space) | Everything a drag can do, from the keys: put a window under one other window, make a tab group |
