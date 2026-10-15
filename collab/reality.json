@@ -4534,7 +4534,7 @@
    "layer": "below the seam",
    "expected": "A key pressed while Arbor cannot answer is lost, or goes to the app in front.",
    "happened": "Neither. With Arbor stopped by a signal, nine of its keys were pressed: the taps at the keyboard's end heard them, no app got one, and Arbor's log did not grow. Set going again, its log grew by 23 lines, the commands one after another within 140 ms: `arrange` (\"arranged 3 windows; 9 saved views are gone\"), `zoom`, `show-all`, `back`, `undo`, `toggle-float`, `find`. macOS keeps a hot key for the process that registered it until that process takes it. By reading, not tried: the same would hold for every long hang of Arbor's main thread, as when it waits for an app that does not answer (a-hung-app-holds-every-call-for-the-whole-timeout): what a person presses again because nothing happens is all carried out when Arbor comes to.",
-   "found": "A probe that is not on the trunk yet, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line. Every key was a posted event: no finger, no real keyboard.",
+   "found": "`probe-whose-key.sh`, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line. Every key was a posted event: no finger, no real keyboard.",
    "modelled": "no",
    "knobs": [],
    "guards": [],
@@ -4545,7 +4545,8 @@
    ],
    "sources": [
     "Sources/ArborKit/Input/HotKeyCenter.swift",
-    "Sources/ArborKit/App/ArborApp.swift"
+    "Sources/ArborKit/App/ArborApp.swift",
+    "scripts/mac-shell/probe-whose-key.sh"
    ]
   },
   {
@@ -7293,7 +7294,7 @@
    "layer": "below the seam",
    "expected": "`RegisterEventHotKey` fails for a shortcut that another app already holds, so a refusal tells Arbor which keys are not its own: `HotKeyCenter.register` logs \"shortcuts already in use by another app\", and `doctor` names them. A hot key that is registered \"swallows the key press so the frontmost app never sees it\". This case said the first for as long as it stood, from the code's own words; no run was named.",
    "happened": "On the one Mac that was asked `RegisterEventHotKey` never refused: it answered 0 to Arbor and to the other, in both orders, plain and exclusive. **Another process holds the chord, plain:** both hear every press; the app in front gets nothing. **Another process holds it with `kEventHotKeyExclusive`:** only that process hears, whoever came first. Arbor logs \"registered 52 shortcuts\" and `doctor` says \"✔ Shortcuts: 52 registered\": Arbor does not know that the key is not its own. **The app in front has a Carbon hot key of its own on the chord** (what Electron's `globalShortcut` is said to be): both ran, whoever registered first. **What a held key does keep from the app:** a menu item with the chord did not run, and a local and a global monitor in the app heard nothing. A listen-only event tap at the session level heard the key go down. So the road that Arbor is built for, the refusal, was never taken, and the two it has no eye for were: a key that is shared, and a key that is lost without a word. **On the first build's own binary too**, by a second probe: a rival with the same 52 hot keys, registered after Arbor and, in another session, before it, was refused none of 52, nor was Arbor; both heard every one of 51 keys, no app got any, and Arbor noticed nothing.",
-   "found": "Stated in the input layer's code until 2026-10-15. Then a probe that is not on the trunk yet, one run on a hosted Mac (macOS 26.6.2; the trunk's Arbor as an app bundle that answers for its own permission, its input code the first build's, file for file; a witness app in front that writes down every key it is given; ten controls, all passed), in search of how a key of Arbor's reached another app (a-key-arbor-does-not-hold-at-the-moment-reaches-the-app-in-front); each order once. Then a second probe that is not on the trunk yet, by another session, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line. Every key was a posted event: no finger, no real keyboard.",
+   "found": "Stated in the input layer's code until 2026-10-15. Then a probe that is not on the trunk yet, one run on a hosted Mac (macOS 26.6.2; the trunk's Arbor as an app bundle that answers for its own permission, its input code the first build's, file for file; a witness app in front that writes down every key it is given; ten controls, all passed), in search of how a key of Arbor's reached another app (a-key-arbor-does-not-hold-at-the-moment-reaches-the-app-in-front); each order once. Then a second probe, `probe-whose-key.sh`, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line. Every key was a posted event: no finger, no real keyboard.",
    "modelled": "no",
    "knobs": [],
    "guards": [],
@@ -7304,7 +7305,8 @@
     "Sources/ArborKit/App/ArborApp.swift",
     "Sources/arbor-fakemac/World+Arbor.swift",
     "Sources/ArborKit/Controller/Controller+Doctor.swift",
-    "Tests/ArborKitTests/DoctorTests.swift"
+    "Tests/ArborKitTests/DoctorTests.swift",
+    "scripts/mac-shell/probe-whose-key.sh"
    ]
   },
   {
@@ -7363,8 +7365,8 @@
    "kind": "second-actor",
    "layer": "at the seam",
    "expected": "What Arbor keeps out of view stays there while a display comes or goes; with the view held that is a promise to an audience.",
-   "happened": "When the virtual display came, macOS itself put all four windows that were out of view in plain view, at frames of before Arbor touched them (480×348 at 582,300, 450,372, 715,227 and 582,300), and the window shown at 0,424. The report of the displays reached the controller 1.85 s later, after the 1.5 s the app waits for displays to settle, and Arbor put all five right within twenty milliseconds. At the unplugging the same, for 1.75 s. The reports of those windows' moves came at once and were not acted on. Not known: what showed, since these are Accessibility's frames and the script slept meanwhile; and whether it is the display or the change of the main display's size that came with it (plugging-in-the-virtual-display-changes-the-main-one). Each window out of view was also given the same frame twice per change.",
-   "found": "Behind greens in the first run of `check-F58.sh` on a hosted Mac on 2026-10-15 (the trunk at `0951b7f3`, macOS 26, one display of 1024×768, Reduce Motion on, once, every key and click a posted event; its output is not in the repository); in the trace.",
+   "happened": "When the virtual display came, macOS itself put all four windows that were out of view in plain view, at frames of before Arbor touched them (480×348 at 582,300, 450,372, 715,227 and 582,300), and the window shown at 0,424. The report of the displays reached the controller 1.85 s later, after the 1.5 s the app waits for displays to settle, and Arbor put all five right within twenty milliseconds. At the unplugging the same, for 1.75 s. The reports of those windows' moves came at once and were not acted on. Each window out of view was also given the same frame twice per change. **Both things that were not known then are known since**, from the mended script's run. It is not the change of the main display's size (plugging-in-the-virtual-display-changes-the-main-one): with two displays up a third came and went, the main one kept its 1920×1080, which the script checks, and macOS moved all five windows within 0.15 s, to the same places both times: the four to the middle of the main display, and the window shown to -524,539 at 1000×656, moved and made smaller, half on the third display, so that nothing covers the four. Arbor put all five back 1.6 to 1.7 s later at the coming and 1.5 to 1.6 s at the going. And it shows: in the first picture of each film three of the four stand in a cascade in the middle of the main display, titles and contents to read (the fourth has the frame of one of them and lies behind it). The script's own number, \"the most of a window on a display\", is geometry, the window server's frame against the displays, and does not know what covers what; that the windows could be seen rests on those two pictures and on the shown window's frame in the trace. Only the first picture of a film falls into the span, a picture taking about a second with three displays; the third display was never photographed. Ruled by the product owner: under a held view, while Arbor waits for the displays to settle, whenever macOS speaks of the screens or of one of those windows, what the hold keeps out of view is put away again at once; \"a moment\", not \"never\" (macoss-last-word-about-the-screens-comes-before-most-of-the-windows-reports).",
+   "found": "Behind greens in the first run of `check-F58.sh` on a hosted Mac on 2026-10-15 (the trunk at `0951b7f3`, macOS 26, one display of 1024×768, Reduce Motion on, once, every key and click a posted event; its output is not in the repository); in the trace. Then the whole of the mended script on a hosted Mac the same day (macOS 26.6.2, virtual displays, test windows, Reduce Motion on, once): 128 passed, 5 failed, four of them this; the trace, the looks about every 0.12 s, and four pictures opened.",
    "modelled": "no",
    "knobs": [],
    "guards": [
@@ -7379,8 +7381,7 @@
     "scripts/mac-shell/check-F58.sh",
     "Sources/ArborKit/Controller/Controller+Displays.swift",
     "collab/BOARD.md"
-   ],
-   "certainty": "suspected"
+   ]
   },
   {
    "id": "macos-remembers-a-tile-arbor-has-undone",
@@ -7494,7 +7495,7 @@
    "layer": "below the seam",
    "expected": "A hot key is taken away before anybody else hears it, and no key gets past the place where it is taken.",
    "happened": "Taps at the HID point and at the session point hear every one of Arbor's keys. The tap at the annotated session point, a local and a global monitor hear none. So macOS takes a hot key away between the session and the annotated-session points. A key put in at the session point is Arbor's, as from the keyboard. A key put in at the annotated session point, or posted to the app with `postToPid`: 9 of 9 reached the app, its menu items fired, and Arbor's log did not grow. That is a road which tools that remap keys or play macros may take; none was tried. With secure input on, as in a password field, every tap and monitor is deaf and the hot keys work: 0 of 51 reached the app, and 50 of 51 ran by Arbor's log (the 51st opens the settings window and logs nothing). An earlier probe agrees: a listen-only tap at the session level heard ⌃⌥A go down while Arbor held it, and a menu item and both monitors in the app heard nothing.",
-   "found": "A probe that is not on the trunk yet, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line. Every key was a posted event: no finger, no real keyboard.",
+   "found": "`probe-whose-key.sh`, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line. Every key was a posted event: no finger, no real keyboard.",
    "modelled": "no",
    "knobs": [],
    "guards": [],
@@ -7502,7 +7503,8 @@
    "hurt": 3,
    "sources": [
     "Sources/ArborKit/Input/HotKeyCenter.swift",
-    "docs/KEYBOARD.md"
+    "docs/KEYBOARD.md",
+    "scripts/mac-shell/probe-whose-key.sh"
    ]
   },
   {
@@ -7640,6 +7642,27 @@
    "sources": [
     "docs/TESTING.md",
     "Sources/arbor-fakemac/main.swift"
+   ]
+  },
+  {
+   "id": "macoss-last-word-about-the-screens-comes-before-most-of-the-windows-reports",
+   "kind": "timing",
+   "layer": "at the seam",
+   "expected": "When displays change macOS says so, moves the windows, and says so again when it is done: whoever acts at each word about the screens has seen every move.",
+   "happened": "In three changes of four macOS's last word about the screens (`didChangeScreenParameters`) came before the reports of three of the four windows it moved. A third display comes: words at 86.157 and 86.281 s of the trace; one window reported moved at 86.172, the other three at 86.291 to 86.301, and no word after. The third goes: words at 93.710 and 93.781; one at 93.721, three at 93.787 to 93.790. The second goes and the main one shrinks: words at 100.513, 100.516 and 101.087; one at 101.085, three at 101.110 to 101.130; and there the first word is 0.57 s before the first move, so that at it nothing has moved yet. Only where the second display comes and the main one grows do two words follow the last report (73.570 and 73.822, after 73.437 to 73.493). So whoever acts only when macOS speaks of the screens may catch one window of four. A report lags its move by an unknown little, so looking at all the windows at the last word, reported or not, might do; nothing here shows that. What is sure to be heard is the windows' own reports.",
+   "found": "The trace of `check-F58.sh`'s parts 5 to 5c on a hosted Mac on 2026-10-15 (macOS 26.6.2, virtual displays, test windows of two apps, Reduce Motion on, the view held, once), read for a cure of macos-puts-windows-that-are-out-of-view-into-view-when-displays-change.",
+   "modelled": "no",
+   "knobs": [],
+   "guards": [],
+   "copes": "open",
+   "hurt": 2,
+   "touches": [
+    "flash"
+   ],
+   "sources": [
+    "scripts/mac-shell/check-F58.sh",
+    "Sources/ArborKit/Controller/Controller+Displays.swift",
+    "collab/BOARD.md"
    ]
   },
   {
@@ -11643,8 +11666,8 @@
    "kind": "looks",
    "layer": "controller",
    "expected": "Out of view is out of sight.",
-   "happened": "Windows out of view show in Mission Control as miniatures like any other window. What share pickers list, and whether four such windows leave a smudge of shadows in the corner, is not known.",
-   "found": "Runs with a virtual display on a hosted Mac.",
+   "happened": "Windows out of view show in Mission Control as miniatures like any other window. Looked at closely on 2026-10-15, with one window framed and four out of view at the display's corner: Mission Control and the app's own windows (⌃↓) show all five whole, title bar and content, the four at about half their own size (143×166 for 275×320, 143×340 for 275×653; the framed one 520×340 for 1000×653), and the Dock tells Accessibility of each as a button with the window's title. A click on the picture of a window that is out of view frames it in one move: the focus report, then two frames set within 8 ms, the picked window in and the old one out, and the picked window has the keyboard. So the way a Mac user already knows finds every window that Arbor has put aside. **With the view held the pick is turned away in silence:** macOS gave the picked window the keyboard twice, 0.25 s apart, Arbor sent it back both times, and no line on screen says why (none in the log of that session, none in the two pictures of eight that were opened; the board, 1.71). Not tried: with motion (Reduce Motion was on, so Mission Control faded, where a person sees windows fly out of the corner and back), real apps, several displays or Spaces, the Dock's menu, ⌘`. What share pickers list, and whether four such windows leave a smudge of shadows in the corner, is not known.",
+   "found": "Runs with a virtual display on a hosted Mac. Then `probe-mission-control.sh`, one run on a hosted Mac on 2026-10-15 (the trunk at `07b2bfc5`, macOS 26.6.2, one display of 1024×768, test windows of one app, Reduce Motion on, every key and click a posted event); the trace, the Dock's Accessibility tree and its pictures.",
    "modelled": "cannot",
    "knobs": [],
    "guards": [],
@@ -11652,7 +11675,9 @@
    "hurt": 3,
    "sources": [
     "docs/features/F58-hold-the-view.md",
-    "collab/BACKLOG.md"
+    "collab/BACKLOG.md",
+    "scripts/mac-shell/probe-mission-control.sh",
+    "collab/BOARD.md"
    ],
    "backlog": [
     "K225",
@@ -11692,7 +11717,7 @@
    "layer": "below the seam",
    "expected": "A hot key that is registered for ⌃⌥A is Arbor's, whatever else is down. `docs/KEYBOARD.md`: \"A global shortcut is taken away from every app on the Mac\". `HotKeyCenter`: it \"swallows the key press so the frontmost app never sees it\".",
    "happened": "With the flag that a held fn (Globe) key sets, 0x800000, on the key event, Arbor's keys that are not arrows are not Arbor's. Arbor running, 52 shortcuts registered, not paused, nothing on any list: ⌃⌥A, ⌃⌥↩, ⌃⌥Space, ⌃⌥[, ⌃⌥Z, ⌃⌥F and ⌃⌥G, seven of seven, reached the app in front (the tap at the annotated session point, the local monitor, `performKeyEquivalent`, then `keyDown` in the view), and Arbor's log did not grow by a line. ⌃⌥← and ⌃⌥→ with the flag went to Arbor as ever: an arrow carries it by nature, and posted without it an arrow reaches the app and not Arbor (posted-arrow-keys-need-the-flags-a-keyboard-adds, mirrored). So the window server compares that flag exactly when it looks for a hot key. With the flag AppKit's menu did not fire for the letters and the bracket, with Arbor or without; for ↩ and Space it did. So it fits an app that listens in its page or its view, not one with a plain menu equivalent for a letter. **What does not matter**, each 7 of 7 to Arbor and none to the app: the right-hand ⌃ and ⌥, left and right mixed, both of each pair down, Caps Lock's flag, the numeric-pad flag, flags with no modifier key going down at all, a key held to repeat. **Not shown:** that a real fn key held on a real keyboard puts that flag on a letter's key event as it passes the window server. On a laptop fn sits beside ⌃; if it does, a finger that catches fn with ⌃ turns ⌃⌥A into the app's own ⌃⌥A, with Arbor running and knowing nothing. One of two candidates for what a person met (a-key-arbor-does-not-hold-at-the-moment-reaches-the-app-in-front); it fits their words better in one respect, \"Arbor running, not paused\". A cure to try, not tried: Carbon has a bit for fn; each shortcut registered a second time with it. No stand-in compares flags, and no detector of the gate has an eye for a key of Arbor's that arrives elsewhere.",
-   "found": "A second probe that is not on the trunk yet, by another session, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line: nine keys by thirteen hands and roads, beside the same thirteen with no Arbor. Every key was a posted event: no finger, no real keyboard.",
+   "found": "A second probe, `probe-whose-key.sh`, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line: nine keys by thirteen hands and roads, beside the same thirteen with no Arbor. Every key was a posted event: no finger, no real keyboard.",
    "modelled": "no",
    "knobs": [],
    "guards": [],
@@ -11703,7 +11728,8 @@
     "docs/KEYBOARD.md",
     "scripts/mac-shell/pointer.swift",
     "collab/QUESTIONS.md",
-    "collab/BOARD.md"
+    "collab/BOARD.md",
+    "scripts/mac-shell/probe-whose-key.sh"
    ],
    "certainty": "suspected"
   },
