@@ -110,8 +110,7 @@ extension Controller {
   /// next window, or to the app used before. If that window is out of view, following it would move the view
   /// although the user asked for nothing of the kind (and perhaps in front of an audience). So the view
   /// stays and a window in view gets the keyboard. Only if nothing is in view, on any display, does the view follow,
-  /// because typing into a window out of view is worse. (A view that has followed already and is taken back still
-  /// looks at its own display alone.) That the window macOS picked is out of view is Arbor's doing, and this is
+  /// because typing into a window out of view is worse. That the window macOS picked is out of view is Arbor's doing, and this is
   /// all Arbor does about a going: where macOS picks a window in view, or none, macOS has decided.
   ///
   /// macOS was seen to report the new focus a millisecond BEFORE the close or the minimize, and after a hide, and
@@ -216,14 +215,16 @@ extension Controller {
     return reveal
   }
 
-  /// Whether the view moved just now for the window macOS picked when `id` went, and a layout of where it came from shows something: otherwise
-  /// it would only have to follow again. (A view with nothing in it shows what is around it, so this is seldom no.)
+  /// Whether the view moved just now for the window macOS picked when `id` went, and a layout of where it came from shows something, or
+  /// another display does: otherwise it would only have to follow again. (A view with nothing in it shows what is around it, so
+  /// this is seldom no.)
   private func isTheHeirs(_ reveal: KeyboardHandOver.Reveal, after id: WindowID, of app: Int32?) -> Bool {
     guard reveal.holder == id, now().timeIntervalSince(reveal.time) < Self.handOverTime, app == nil || app == windows[reveal.window]?.pid
     else { return false }
     var before = workspaces[reveal.display]
     guard before?.retractLastMove() == true, let view = before?.camera else { return false }
     return somethingWouldBeInView(on: reveal.display, at: view)
+      || workspaces.keys.contains { $0 != reveal.display && !windowsInView(on: $0, asHeirs: true).isEmpty }
   }
 
   /// Call after `id`, which `hadKeyboard`, closed or stopped taking space, and `display` was laid out without it.
@@ -241,7 +242,7 @@ extension Controller {
     if followed == nil, let reveal = keyboardHandOver.reveal, reveal.holder == id {
       keyboardHandOver.reveal = nil
       // The new focus was reported first and the view has followed it. Take that back, unless nothing would be
-      // in view there: then the view would only have to follow again.
+      // in view there or on any other display: then the view would only have to follow again.
       guard isTheHeirs(reveal, after: id, of: app), workspaces[reveal.display]?.retractLastMove() == true else { return }
       followed = reveal
     }
@@ -260,7 +261,7 @@ extension Controller {
         keyboardHandOver.comingBack = nil
         // Only for that layout: should the view have to move on, they go with it like any other.
         placedOnPurpose.subtract(back.map(\.window))
-        if !ensureFocusIsVisible(on: reveal.display, alsoFromNothing: false), let heir = system.focusedWindow(), heir != id,
+        if !aWindowInViewGetsTheKeyboard(after: display, picked: reveal.display), let heir = system.focusedWindow(), heir != id,
           windows[heir]?.isPresent == true
         {
           bringIntoView(heir)
@@ -307,17 +308,26 @@ extension Controller {
     // Each display once: asking costs a question to macOS.
     var asked: Set<DisplayID> = []
     return ([display, picked] + workspaces.keys.sorted())
-      .first { asked.insert($0).inserted && ensureFocusIsVisible(on: $0, alsoFromNothing: false) } != nil
+      .first { asked.insert($0).inserted && ensureFocusIsVisible(on: $0, alsoFromNothing: false, asAnHeir: true) } != nil
   }
 
-  /// Whether a view on `camera` would show a window that can take the focus: a docked one, or a floating one that is in
-  /// view there (`floatingMoves`).
+  /// Not a window of an app that Arbor pauses for or passes its keys through to. Given the keyboard, its app comes forward: the one
+  /// pauses Arbor, which brings every window on every display into view, the other takes Arbor's keys away. After a
+  /// command that moved the view there a person has asked for that. After a going nobody has. Unless that app is in front
+  /// already, which changes nothing by keeping the keyboard: an editor's next frame in view, and no other app jumps forward.
+  func canBeAnHeir(_ window: WindowID) -> Bool {
+    let app = windows[window]?.bundleID
+    return app == frontmostApp?.bundleID || (!settings.pausesFor(app) && !settings.passesThrough(app))
+  }
+
+  /// Whether a view on `camera` would show a window that can be the heir: a docked one, or a floating one that is in
+  /// view there (`floatingMoves`). (The window that is going takes no space any more, so it is in no layout.)
   private func somethingWouldBeInView(on display: DisplayID, at camera: NodeID) -> Bool {
     guard let workspace = workspaces[display], let layout = layout(of: display, camera: camera) else { return false }
-    if !layout.windowFrames.isEmpty { return true }
+    if layout.windowFrames.keys.contains(where: canBeAnHeir) { return true }
     let showsTheDesktop = workspace.tree.subtree(layout.camera, contains: workspace.tree.desktop)
     return workspace.floating.keys.contains {
-      windows[$0]?.isPresent == true && isManaged($0) && !workspace.isStashed($0) && !workspace.staysInView($0)
+      canBeAnHeir($0) && windows[$0]?.isPresent == true && isManaged($0) && !workspace.isStashed($0) && !workspace.staysInView($0)
         && (showsTheDesktop || hostInView(of: $0, in: workspace, layout: layout) != nil)
     }
   }

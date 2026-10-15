@@ -164,6 +164,65 @@ import Testing
     expectWindowsMatchLayout(h)
   }
 
+  /// The going is reported so late that the view has followed macOS's pick. It goes back, and the order is the same.
+  @Test func aGoingReportedLateStillPrefersTheDisplayOfTheWindowThatWent() {
+    let (h, _, safari, f) = aLoneWindowOnTheSecondDisplay(of: "Safari", pid: 12)
+    let beside = h.system.open(app: "Mail", pid: 14, frame: Self.place(on: h.system.displayList[1].frame, x: 800))
+    h.system.userFocus(f)
+    h.scheduler.advance(by: 2)
+    h.system.userFocus(safari)
+    h.scheduler.advance(by: Controller.timeForAGoing + 0.01)
+    #expect(h.system.isVisible(safari))
+    h.system.close(f)
+    h.scheduler.advance(by: 2)
+    #expect(!h.system.isVisible(safari))
+    #expect(h.system.focused == beside)
+    expectWindowsMatchLayout(h)
+  }
+
+  /// Nor does the view stay where it followed to because nothing would be in view on ITS display: Mail is in view on the other.
+  @Test func aGoingReportedLateTakesTheViewBackWhileAWindowIsInViewAnywhere() {
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, Workload.secondDisplay])
+    let second = h.system.displayList[1].frame
+    let safari = h.system.open(app: "Safari", pid: 12, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
+    let f = h.system.open(app: "Safari", pid: 12, frame: Self.place(on: second, x: 200))
+    let mail = h.system.open(app: "Mail", pid: 14, frame: Self.place(on: second, x: 800))
+    h.start()
+    h.run("dock \(safari.rawValue) left")
+    h.run("desktop")
+    h.system.userFocus(f)
+    h.scheduler.advance(by: 2)
+    #expect(!h.system.isVisible(safari))
+    h.system.userFocus(safari)
+    h.scheduler.advance(by: Controller.timeForAGoing + 0.01)
+    #expect(h.system.isVisible(safari))
+    h.system.close(f)
+    h.scheduler.advance(by: 2)
+    #expect(!h.system.isVisible(safari))
+    #expect(h.system.focused == mail)
+    expectWindowsMatchLayout(h)
+  }
+
+  /// But with nothing else in view anywhere it stays: the window that is going does not count. A control.
+  @Test func aGoingReportedLateLeavesTheViewWhereItFollowedToWithNothingElseInView() {
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, Workload.secondDisplay])
+    let safari = h.system.open(app: "Safari", pid: 12, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
+    let f = h.system.open(app: "Safari", pid: 12, frame: Self.place(on: h.system.displayList[1].frame, x: 200))
+    h.start()
+    h.run("dock \(safari.rawValue) left")
+    h.run("desktop")
+    h.system.userFocus(f)
+    h.scheduler.advance(by: 2)
+    h.system.userFocus(safari)
+    h.scheduler.advance(by: Controller.timeForAGoing + 0.01)
+    let mark = h.system.moveLog.count
+    h.system.close(f)
+    h.scheduler.advance(by: 2)
+    #expect(h.system.isVisible(safari) && h.system.focused == safari)
+    #expect(realMoves(h, since: mark).isEmpty, "\(realMoves(h, since: mark))")
+    expectWindowsMatchLayout(h)
+  }
+
   /// ⌘H: macOS brings another app forward, and its window is out of view on the other display.
   @Test func hidingTheOnlyAppOnADisplayMovesNoViewOnAnother() {
     let (h, notes, safari, _) = aLoneWindowOnTheSecondDisplay(of: "Preview", pid: 13)
@@ -174,6 +233,28 @@ import Testing
     h.scheduler.advance(by: 2)
     #expect(realMoves(h, since: mark).isEmpty, "\(realMoves(h, since: mark))")
     #expect(h.system.focused == notes && !h.system.isVisible(safari))
+    expectWindowsMatchLayout(h)
+  }
+
+  /// Nor does a docked window that is going count as in view. A control too.
+  @Test func norDoesADockedWindowThatIsGoingCountAsInView() {
+    let h = Harness(displays: [FakeWindowSystem.standardDisplay, Workload.secondDisplay])
+    let safari = h.system.open(app: "Safari", pid: 12, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
+    let f = h.system.open(app: "Safari", pid: 12, frame: Self.place(on: h.system.displayList[1].frame, x: 200))
+    h.start()
+    h.run("dock \(safari.rawValue) left")
+    h.run("desktop")
+    h.run("dock \(f.rawValue) left")
+    h.system.userFocus(f)
+    h.scheduler.advance(by: 2)
+    #expect(!h.system.isVisible(safari) && h.system.isVisible(f))
+    h.system.userFocus(safari)
+    h.scheduler.advance(by: Controller.timeForAGoing + 0.01)
+    let mark = h.system.moveLog.count
+    h.system.close(f)
+    h.scheduler.advance(by: 2)
+    #expect(h.system.isVisible(safari) && h.system.focused == safari)
+    #expect(realMoves(h, since: mark).isEmpty, "\(realMoves(h, since: mark))")
     expectWindowsMatchLayout(h)
   }
 

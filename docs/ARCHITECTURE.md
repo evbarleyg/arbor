@@ -217,8 +217,9 @@ When the window with the keyboard is closed, minimized or hidden, macOS hands th
 keyboard on by itself. If it picks a window out of view, the view stays and a window in
 view gets the keyboard: one on the display of the window that went, else on the display of
 the window macOS picked, else on any other, and there the one used last. A view follows only
-if nothing is in view on any of them. (A view that has followed already and is taken
-back still looks at its own display alone.) macOS reports
+if nothing is in view on any of them. A window of an app that Arbor pauses for or passes its
+keys through to is nobody's heir (`canBeAnHeir`), unless that app is in front already: nobody chose
+a pause. macOS reports
 the new focus before a close or a minimize, after a hide, and sometimes not at all.
 Until the going is reported, a few milliseconds later, a close looks like ⌘`. So a report that takes the keyboard from
 one window of an app to another that is out of view waits 50 ms (`Controller.timeForAGoing`): if the first window goes

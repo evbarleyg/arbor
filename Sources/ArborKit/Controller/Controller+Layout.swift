@@ -768,7 +768,7 @@ extension Controller {
   /// given the focus would cover a guest that was used after it.
   @discardableResult
   func ensureFocusIsVisible(
-    on displayID: DisplayID, alsoFromAPinnedWindow: Bool = false, alsoFromNothing: Bool = true
+    on displayID: DisplayID, alsoFromAPinnedWindow: Bool = false, alsoFromNothing: Bool = true, asAnHeir: Bool = false
   ) -> Bool {
     // A command that moves the view says where the attention goes, so the keyboard goes along, also out of a
     // pinned window, which is still in view: keys meant for the window that arrived must not end up in a call.
@@ -778,13 +778,12 @@ extension Controller {
         parked.contains($0) || (alsoFromNothing && windows[$0]?.isMinimized == true)
           || (alsoFromAPinnedWindow && staysInView($0))
       } ?? alsoFromNothing
-    return nobody && giveTheKeyboardToTheView(on: displayID)
+    return nobody && giveTheKeyboardToTheView(on: displayID, asAnHeir: asAnHeir)
   }
 
-  /// The choice itself, for a caller that knows the keyboard has to come (a peek that landed beside it).
-  @discardableResult
-  func giveTheKeyboardToTheView(on displayID: DisplayID) -> Bool {
-    guard let layout = layouts[displayID], let workspace = workspaces[displayID] else { return false }
+  /// The windows in view on a display that can be given the keyboard, and where they are. `asHeirs`: only those that `canBeAnHeir`.
+  func windowsInView(on displayID: DisplayID, asHeirs: Bool) -> [WindowID: CGRect] {
+    guard let layout = layouts[displayID], let workspace = workspaces[displayID] else { return [:] }
     // The layout can be a moment behind the windows (an app being hidden is laid out once all are reported).
     var candidates = layout.windowFrames.filter { windows[$0.key]?.isPresent == true }
     // Not a pinned window: it did not just arrive, and keys typed into a call by surprise do harm.
@@ -796,6 +795,15 @@ extension Controller {
     if let window = windowLetBe, workspace.isDocked(window), let snapshot = windows[window], snapshot.isPresent {
       candidates[window] = snapshot.frame
     }
+    return asHeirs ? candidates.filter { canBeAnHeir($0.key) } : candidates
+  }
+
+  /// The choice itself, for a caller that knows the keyboard has to come (a peek that landed beside it).
+  /// `asAnHeir`: nobody moved the view or asked for anything, the window with the keyboard went (`canBeAnHeir`).
+  @discardableResult
+  func giveTheKeyboardToTheView(on displayID: DisplayID, asAnHeir: Bool = false) -> Bool {
+    guard let workspace = workspaces[displayID] else { return false }
+    let candidates = windowsInView(on: displayID, asHeirs: asAnHeir)
     // In a fixed order: windows overlap and frames tie, and the choice must not depend on a dictionary's.
     let ordered = candidates.sorted {
       ($0.value.minY, $0.value.minX, $0.key.rawValue) < ($1.value.minY, $1.value.minX, $1.key.rawValue)
