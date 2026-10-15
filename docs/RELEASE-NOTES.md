@@ -3,7 +3,7 @@
 A running draft of what the first release can honestly say. A line moves up only when its code has merged, and changes its mark only when there is evidence.
 `docs/FEATURES.md` (generated) has the item-by-item comparison; `CHANGELOG.md` is the documenter's.
 
-Last brought up to date: 2026-10-15, the sections "On the way to the second build" and "Build 1". The rest is as it stood at the third freeze of 2026-10-14.
+Last brought up to date: 2026-10-15, the section "Build 2, the candidate". "On the way to the second build" and "Build 1" are of the same day; the rest is as it stood at the third freeze of 2026-10-14.
 
 **How sure we are**
 
@@ -13,9 +13,48 @@ Last brought up to date: 2026-10-15, the sections "On the way to the second buil
 | ◐ | Tested against the real controller with simulated windows. The logic is right; nobody has watched it on a Mac |
 | ○ | Built, with no test that reaches it. Treat as unproven |
 
-Nothing here has been used by a person for a working day yet. All real-Mac evidence is from test windows on macOS 26.6; none is from Safari, Slack, Terminal or Zoom.
+Nothing here has been used by a person for a working day yet. All real-Mac evidence is from GitHub's hosted Macs, macOS 26.6: test windows, and since Build 1 also the apps macOS brings along (a text editor, a browser, a terminal, notes, System Settings, Finder). None is from a chat, mail or meeting app of another maker.
 
-## Build 2, in the making: less by default
+## Build 2, the candidate (2026-10-15)
+
+**Arbor now does almost nothing you did not ask for.** That is what the first person to work with Build 1 asked of it. Two of their complaints are not cured yet: they head the second list, and their cures follow within hours.
+
+**After installing or updating:** System Settings → Privacy & Security → Accessibility: switch Arbor on; if it looks on already, off and on again; if that does not help, remove it there with the − button and let Arbor ask again. **Then quit Arbor and start it once more.**
+
+### What is different from Build 1
+
+| You said | Now |
+|---|---|
+| Too many keys; one archived a conversation in the app in front | **Nine keys**, each ⌃⌥ and one key: ← → dock, ↩ fills the screen and comes back, Space shows everything, [ goes back, Z undoes, F floats, G is Go to…, ⎋ pauses. ⌃⌥A is never bound again |
+| A window dragged near an edge gets docked | **A plain drag only moves the window.** Hold ⌘ to dock. A docked window dragged plainly comes out at its own size |
+| Docking one window rearranges the others | **Docking touches only what is docked** |
+| An empty column for the Desktop | **None.** Two docks are two halves |
+| A ring, cards, three icons, motion | **Nothing is drawn unasked.** All still there as options |
+| My double-click to fill the screen was undone | **What you ask of macOS stays**, on a docked window too |
+| The fill key did nothing for a window I never docked | **⌃⌥↩ fills the screen with any window**; again, and it is back |
+| I could not find my windows again | **The menu lists every open window**; a click brings it |
+
+### What you will still meet, and the way round
+
+- **⌃⌥↩ on a docked window still takes floating windows out of view.** *⌃⌥↩ again brings everything back.*
+- **Two apps too wide to stand side by side:** at the second dock the first leaves the view and waits as a tile at the edge. *Click the tile, ⌃⌥G, or ⌃⌥Z.*
+- **Until Arbor has been started once with the permission in place,** holding ⌃⌥Space only taps. *Quit Arbor and start it again.*
+- **After an update the welcome window shows the four moves again.** *Close it.*
+- **⌘M or ⌘H on one of two halves:** the other takes the whole width until the first returns. *Nothing is lost.*
+- **A display unplugged, or a lid shut and opened beside a monitor:** a floating window may be moved though nobody asked. *Drag it back.*
+- **A window let go low on the screen** can come out 10 to 30 points taller. *Size it by hand.*
+- **A docked terminal whose font changes** can, rarely, become a tile. *Click the tile, or Arrange Windows in the menu.*
+- **Twice, on test Macs, Arbor answered nobody for 10 and 17 seconds**, then did all that had queued. If yours does, tell us.
+
+Rarer things are on the board, `collab/BOARD.md`.
+
+### Who has tried it
+
+**Programs only; no person has used this build.**
+Seen on GitHub's hosted Macs, with real apps, a real pointer and real keys: the table above (its last row in part).
+Simulated only: the lid, the terminal's font. Never met: a real second display, a trackpad, most apps of other makers.
+
+## Build 2 as it was being made: less by default
 
 What the first person to work with Arbor said of build 1: it does too much by itself (`collab/QUESTIONS.md`, Q29). A line stands here once its code is on the trunk. The two below came to `main` with the second step of 2026-10-15, which the next section tells of.
 
