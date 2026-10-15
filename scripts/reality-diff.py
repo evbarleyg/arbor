@@ -10,7 +10,9 @@ Usage: scripts/reality-diff.py <mac folder> <linux folder> [--also <mac folder>]
   <folder>            holds <journey>.jsonl, one observation a line (scripts/mac-shell/reality.py has the form)
   --also <folder>     another run of the same commit on a Mac. What one run on a real Mac shows and another does not is timing, not a
                       finding: it is classed `unstable` and counted apart
-  --known FILE        the ratchet (collab/evidence/reality-known.txt): a key a line, then a word on it. `~` before a key: it comes and goes
+  --known FILE        the ratchet (collab/evidence/reality-known.txt): a key a line, then a word on it. `~` before a key: it comes and goes.
+                      The word is as a rule the name of a cause, `@title-bar`, which a line of its own explains: `@title-bar stand-in: …`
+                      A `~` key may hold `*` for anything: what a fight with an animation leaves in a key is never the same twice
   --check             exit code 1 when a key appears that the list does not have, or when a key of the list is gone (take it off: the
                       list shrinks with every cure)
   --markdown FILE     the same report as Markdown
@@ -81,16 +83,26 @@ def load(folder):
 
 
 def read_known(path):
-    """{key: (comes and goes, word)} in the order of the file."""
-    known = {}
+    """{key: (comes and goes, word)} in the order of the file, {@cause: what it is}, and [(pattern, word)] for `~` keys with a `*` in them."""
+    known, causes, shapes = {}, {}, []
     with open(path, encoding="utf-8") as lines:
         for line in lines:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
             key, _, word = line.partition(" ")
-            known[key.lstrip("~")] = (key.startswith("~"), word.strip())
-    return known
+            if key.startswith("@"):
+                causes[key] = word.strip()
+            elif is_shape(key):
+                shapes.append((re.compile(re.escape(key[1:]).replace(r"\*", ".*") + "$"), word.strip()))
+            else:
+                known[key.lstrip("~")] = (key.startswith("~"), word.strip())
+    return known, causes, shapes
+
+
+def is_shape(key):
+    """Only what comes and goes may be named by its shape: a finding has one key."""
+    return key.startswith("~") and "*" in key
 
 
 def slug(text):
@@ -364,7 +376,7 @@ def report(args):
         print(f"reality-diff.py: no <journey>.jsonl in {args.mac} or in {args.linux}", file=sys.stderr)
         return 2
     others = [load(folder) for folder in args.also]
-    known = read_known(args.known) if args.known else {}
+    known, causes, shapes = read_known(args.known) if args.known else ({}, {}, [])
     found, steps = compare(mac, linux)
     unsettled = restless(mac)
     # A divergence is a finding if every run on a Mac shows it. What only some show is written down too, so that the list knows it when it comes.
@@ -383,7 +395,7 @@ def report(args):
             return UNSTABLE
         if divergence.key in known:
             return UNSTABLE if known[divergence.key][0] else "known"
-        return "new"
+        return UNSTABLE if any(shape.match(divergence.key) for shape, _ in shapes) else "new"
 
     verdicts = {divergence.key: verdict(divergence) for divergence in found}
     gone = [key for key, (comes_and_goes, _) in known.items() if key not in verdicts and not comes_and_goes]
@@ -409,6 +421,11 @@ def report(args):
         row = table[kind]
         if sum(row.values()):
             summary.append(f"{kind:<16} {row['new'] + row['known']:>4} {row['new']:>4} {row['known']:>5} {row[UNSTABLE]:>8}")
+    # One lie shows at many steps. By what the list says of them, the largest first: where a cure takes the most keys.
+    by_cause = collections.Counter(known[key][1] for key, state in verdicts.items() if state == "known")
+    if by_cause:
+        summary += ["", f"{'all':>4} by cause"]
+        summary += [f"{count:>4} {word} {causes.get(word, '')}".rstrip()[:200] for word, count in by_cause.most_common()]
     journeys = len(set(mac) | set(linux))
     last = f"reality: {total} divergences in {steps} steps of {journeys} journeys (new: {counts['new']}, known: {counts['known']}, gone: {len(gone)})"
     apart = f"reality: {counts[UNSTABLE]} more come and go between runs on real Macs, or were seen before things had come to rest; counted apart"
@@ -430,6 +447,10 @@ def report(args):
                 row = table[kind]
                 if sum(row.values()):
                     out.write(f"| {kind} | {row['new'] + row['known']} | {row['new']} | {row['known']} | {row[UNSTABLE]} |\n")
+            if by_cause:
+                out.write("\n| all | cause | |\n|---|---|---|\n")
+                for word, count in by_cause.most_common():
+                    out.write(f"| {count} | {word} | {causes.get(word, '')} |\n".replace("||", "| |"))
             place = None
             for divergence in found:
                 if place != (divergence.journey, divergence.step):
@@ -444,14 +465,16 @@ def report(args):
     if args.write_known:
         with open(args.write_known, "w", encoding="utf-8") as out:
             if args.known:
+                # What stands above the first key stays: the remarks, the causes and the shapes.
                 with open(args.known, encoding="utf-8") as old:
                     for line in old:
-                        if not line.startswith("#"):
+                        if line.strip() and line[0] not in "#@" and not is_shape(line.split()[0]):
                             break
                         out.write(line)
             for divergence in found:
-                mark = "~" if verdicts[divergence.key] == UNSTABLE else ""
-                out.write(f"{mark}{divergence.key} {known.get(divergence.key, (False, '?'))[1]}\n")
+                unstable = verdicts[divergence.key] == UNSTABLE
+                if not (unstable and any(shape.match(divergence.key) for shape, _ in shapes)):
+                    out.write(f"{'~' if unstable else ''}{divergence.key} {known.get(divergence.key, (False, '?'))[1]}\n")
 
     return 1 if args.check and (counts["new"] or gone) else 0
 
@@ -548,6 +571,11 @@ def situations():
     yield "reality-diff: one that comes and goes may be gone", classes([look()], [look()], known=f"~{key} why\n"), (0, [])
     yield ("reality-diff: and may be there",
            classes([look(real=(12, 43, 494, 600))], [look()], known=f"~{key} why\n~j/dock/belief-vs-truth/frame/W1 why\n"), (0, []))
+    yield ("reality-diff: what comes and goes may be named by its shape",
+           classes([look(reports=["setFrame:W1 12,43 494x650→-194,316 490x442", "setFrame:W1 12,43 494x650→12,43 494x650"])],
+                   [look(reports=["setFrame:W1 12,43 494x650→12,43 494x650"])], known="~j/dock/reports/setFrame:W1-* why\n"), (0, []))
+    yield ("reality-diff: a finding may not: without the ~ a shape is a key like any other, and it is gone",
+           classes([look(status="floating")], [look()], known="j/dock/belief/* why\n"), (1, ["belief"]))
     yield ("reality-diff: without --check the number is only reported",
            classes([look(status="floating")], [look()], check=False), (0, ["belief"]))
     yield ("reality-diff: what differs between two runs on Macs is counted apart",
