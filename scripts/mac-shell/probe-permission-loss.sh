@@ -10,7 +10,8 @@
 #
 # Each round: the entry is written, Arbor is opened and has its taps; asker.swift posts a click, a key and a notch of the wheel every
 # 50 ms, each with a number, for twelve seconds; four seconds in, the permission goes; a listener at the far end of the taps writes down
-# what arrived and when. Three rounds with `tccutil reset Accessibility <identifier>`, one with the entry deleted and tccd restarted.
+# what arrived and when. Three rounds with `tccutil reset Accessibility <identifier>`, one with the entry deleted and tccd restarted, which a running
+# process feels only a quarter of a minute later, so that round's stream is longer.
 # What is asked: every event arrives; none is more than 10 ms late once the taps are gone; and THE NUMBER: the longest hole.
 #
 # A round in which nothing could be posted, nothing arrived before the loss, Arbor had no taps or did not lose them proves nothing: it
@@ -97,8 +98,10 @@ by_the_row() {
 
 # one_round <number> <how the permission goes>
 one_round() {
-  local how=$2 x y log_mark taken back
+  local how=$2 x y log_mark taken back length=12
   round=$1
+  # By that road the loss came 14 s after the deed, the first time this ran: the stream has to last until then.
+  [ "$how" = by_the_row ] && length=34
   step "round $round: $how"
   grant
   launch
@@ -116,10 +119,10 @@ one_round() {
   read -r x y <<< "$(center_of "$W1")"
   log_mark=$(wc -l < "$ARBOR_HOME/arbor.log")
 
-  "$ASKER" arrivals 17 > "$ARBOR_OUT/arrivals-$round.txt" 2>&1 &
+  "$ASKER" arrivals "$((length + 5))" > "$ARBOR_OUT/arrivals-$round.txt" 2>&1 &
   started $!
   eventually grep -q arrivals-ready "$ARBOR_OUT/arrivals-$round.txt" || { invalid "the listener at the end of the taps started"; leave; return; }
-  "$ASKER" stream 12 50 "$x" "$y" > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
+  "$ASKER" stream "$length" 50 "$x" "$y" > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
   stream=$!
   started "$stream"
   sleep 4
@@ -127,16 +130,10 @@ one_round() {
   "$how"
   back=$("$ASKER" now)
   echo "the permission was taken between $taken and $back"
-  ended "$stream" 150 || invalid "the stream came to its end"
+  ended "$stream" "$((length * 10 + 30))" || invalid "the stream came to its end"
   sleep 1
   cat "$ARBOR_OUT/stream-$round.txt"
   tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -v -E "DEBUG focus|has the keyboard" | cut -c 12-220 | tail -n 12
-  if [ "$how" = by_the_row ] && ! eventually no_taps; then
-    echo "NEWS: with its entry deleted and tccd restarted Arbor still has its taps, eight seconds on, and says: $("$ARBOR_BIN/arborctl" status | head -n 1)"
-    echo "So that is no loss to a process that is running, and this round asks nothing."
-    leave
-    return
-  fi
   check "round $round: Arbor has no event tap left" eventually no_taps
   "$ARBOR_BIN/arborctl" status | head -n 1
   echo "the tools' own permission afterwards: $(pointer ax-access)"
