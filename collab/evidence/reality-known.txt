@@ -1,0 +1,237 @@
+# The ratchet of `make reality` (docs/TESTING.md, section 11): every known divergence between a hosted Mac and a rehearsal of scripts/mac-shell/reality.sh.
+#
+# A key a line (journey/step/field/window, as scripts/reality-diff.py prints it), then the cause it is put down to. `~` before a key: not every run on a Mac shows it.
+# With --check the tool fails for a key that is not here, and for a key that is here and did not show. So: cure a cause, run `make reality MAC=collab/evidence/reality-mac`,
+# take off the keys it calls gone. Never add a key to make a check pass without a word on whose it is. `make reality MAC=… KNOWN=1` writes the keys anew and keeps the words.
+#
+# The causes. "stand-in": the stand-ins are more polite than macOS, and the file named would have to change. "Arbor": a fault of Arbor's, with what a person would see.
+# Readings of 2026-10-14 and 15, from eight runs on macOS 26.6.2 (one display of 1024×768) and their traces; the eighth, of the trunk at 646c815, is the one in collab/evidence/reality-mac. A reading is a best guess until somebody has cured the cause.
+# @clipped-at-the-dock is a fault of Arbor's that got past Linux through a lie of the stand-ins, so its keys can go two ways: when Arbor is cured the Mac's side changes (record again),
+# when FakeWindowSystem is made true the rehearsal's side changes and shows the fault on Linux: the keys go, and tests that look at a docked window's size turn red until Arbor is cured.
+@clipped-at-the-dock Arbor, for everybody to see, and stand-in: macOS lets a window that is resized grow until its bottom edge is a point above the Dock (y + height = 704 here) and its right edge at the display's, and no further, going by where the window is at that moment. Arbor asks a window where it stands whether it can be as large as its slot (Controller+AskFirst.swift), takes the room below it for the app's limit and lays it out at that size in the middle of the slot: docked from 170,220 a window is 494×484 in a slot of 494×650, and grows a step with every later layout (484, 578, 625, 648, 650). One that comes back from where it was parked takes the whole size there, is put in the middle meant for the smaller one, 51 points behind the Dock, and moves a second time. FakeWindowSystem.setFrame takes any size anywhere; reports(ofTheWayFrom:to:) beside it knows that the first resize is cut short and counts on the last to make up for it, which at the same place it cannot (three echoes for the Mac's two)
+@echoes stand-in: what is left of it. macOS reports some steps of a setFrame twice, more often after a drag and when the Dock changes size: four or five echoes where FakeWindowSystem.reports(ofTheWayFrom:to:) counts three
+@echo-order stand-in: echoes arrive as the apps get round to them: the two or three of one call are not back to back, another window's come in between, another app's earlier or later. FakeWindowSystem queues all of one call together, and moveTogether in the order the moves were announced, which is not the order of the calls since the window that may grow goes last
+@hide-hands-on stand-in: when an app hides, macOS brings Finder forward first, and the keyboard is in no window Arbor knows for a quarter of a second, until Arbor's own focus call. FakeWindowSystem.setHidden hands it straight to the next window
+@key-stays-down stand-in: a real key stays down for some hundredths of a second, so echoes and focus reports arrive before its release. World.pressKey (arbor-fakemac/World+Input.swift) lets go at once, before FakeWindowSystem delivers anything
+@activation-moves-keyboard stand-in: when an app comes forward or steps back (AXApplicationActivated, AXApplicationDeactivated, didActivateApplication) the Mac's layer reports keyboardFocusMoved, up to three times. World.bringForward (arbor-fakemac/World.swift) reports nothing
+@activation-unrecorded Arbor, its traces: in the app FrontmostAppWatcher calls Controller.applicationActivated past the recorder (ArborApp.startController), so no trace of a real Mac holds an app coming forward and no replay delivers it. FakeWindowSystem sends it through the seam. Nobody sees it; whoever replays a trace about pass-through or a pause for an app is misled
+@press-before-focus stand-in: on the Mac a press is reported before the focus it brings, most of the time. World.press (arbor-fakemac/World+Input.swift) gives the keyboard first and reports pointerPressed after
+@backdrop stand-in: the backdrop behind docked windows (BackdropPanel, one level above the desktop icons) is not among the windows the fake Mac lists (WatchedOverlays in arbor-fakemac/Arbor.swift, World.windowServerList)
+@heads-up stand-in: the heads-up line (HeadsUpPanel, level 6) is up for some seconds after a gesture or a shortcut. WatchedOverlays.showHeadsUp records it and lists no window
+@dock-resizes stand-in: the Dock changes size when a window goes into it or comes out, so the visible frame changes (674 to 676 points high here), macOS says so (displaysChanged) and Arbor lays everything out again. The fake Mac's display is a constant (World.display)
+@comes-forward stand-in: an app that comes forward gives the keyboard to its key window, here the one it opened last while in the background, and brings only that one above the other app's. World.switchTo goes by the window that had the keyboard before and raises all of the app's windows
+@opens-behind stand-in: a window opened by an app that is not in front opens behind the front app's window. World.openWindow (arbor-fakemac/World+TestApps.swift) raises it above everything
+@closed-stays-listed stand-in, small: a test window that closes stays in the window server's list, off screen (isReleasedWhenClosed is false). World.remove forgets it
+@trails-the-pointer stand-in: a dragged window trails the pointer by up to twenty points and is held back where an edge of its meets the screen's, the Dock's or another window's. World.drag(to:) keeps it under the pointer
+@held-by-the-dock stand-in: macOS stops a dragged window as tall as its slot when its bottom edge meets the Dock (y stays at 54 while the pointer goes on to 103), so it is dropped higher up. World.drag(to:) lets it hang off the screen
+@macos-tiling timing, what is left of it: let go of at a screen edge that is macOS's, a window is animated to its tile for a third of a second, and every step is reported as the user's: 17 to 21 changes in two runs of three edges each. FakeWindowSystem.letMacOSTile takes eighteen. Where the window ends up is the same in both worlds, and Arbor stands aside in both
+@macos-outline stand-in: while a window is held at a screen edge, macOS's own tiling shows its outline (two windows of WindowManager's). The fake Mac tiles and shows no outline (World.systemWindows in arbor-fakemac/World+Pointer.swift is a fixed list)
+@cursor-window stand-in, small, and it comes and goes: with the pointer at rest over a window's edge, where it turns into a resize cursor, the window server has one more window of its own on screen. A guess from where it shows (after a drag of an edge, after a drop at the left or right screen edge): nobody has looked at it. World.systemWindows (arbor-fakemac/World+Pointer.swift) is a fixed list
+@runs-of-moves timing: how often the preview changes in the middle of a drag divides the moves into more or fewer runs
+@front-at-the-start open, timing as likely as not: in the seventh run the test app started for `keys` came up in front, the keyboard in its newest window; in the four journeys before it, and in all journeys of the six runs before, a test app started behind whatever was in front. The fake Mac's always start behind (World+TestApps.swift). With the app in front already, the first dock brings no app forward
+
+apps/dock-W1-left/answers/W1/170,220-494x650 @clipped-at-the-dock
+apps/dock-W1-left/answers/W1/asked-1 @clipped-at-the-dock
+apps/dock-W1-left/reports-order @echo-order
+apps/dock-W1-left/reports/applicationActivated:test-app @activation-unrecorded
+apps/dock-W1-left/reports/changed:W1:arbor @clipped-at-the-dock
+apps/dock-W1-left/truth/frame/W1 @clipped-at-the-dock
+apps/dock-W1-left/truth/overlays/level--2147483602 @backdrop
+apps/dock-W2-right/answers/W1/asked-1 @clipped-at-the-dock
+apps/dock-W2-right/answers/W2/518,180-325x650 @clipped-at-the-dock
+apps/dock-W2-right/answers/W2/asked-1 @clipped-at-the-dock
+apps/dock-W2-right/reports-order @echo-order
+apps/dock-W2-right/reports/changed:W1:arbor @clipped-at-the-dock
+apps/dock-W2-right/reports/changed:W2:arbor @clipped-at-the-dock
+apps/dock-W2-right/reports/setFrame:W1-12,79-325x578→12,79-325x578 @clipped-at-the-dock
+apps/dock-W2-right/truth/frame/W1 @clipped-at-the-dock
+apps/dock-W2-right/truth/frame/W2 @clipped-at-the-dock
+apps/the-app-minimizes-docked-W1/answers/W2/asked-1 @clipped-at-the-dock
+apps/the-app-minimizes-docked-W1/answers/W2/asked-2 @clipped-at-the-dock
+apps/the-app-minimizes-docked-W1/belief/desktop @dock-resizes
+apps/the-app-minimizes-docked-W1/belief/slot/W2 @dock-resizes
+apps/the-app-minimizes-docked-W1/belief/visible @dock-resizes
+apps/the-app-minimizes-docked-W1/reports-order @echo-order
+apps/the-app-minimizes-docked-W1/reports/changed:W2:arbor @echoes
+apps/the-app-minimizes-docked-W1/reports/displaysChanged @dock-resizes
+apps/the-app-minimizes-docked-W1/reports/setFrame:W2-551,50-428x638→551,50-428x638 @clipped-at-the-dock
+apps/the-app-minimizes-docked-W1/reports/setFrame:W2-596,69-494x652→596,69-428x638 @clipped-at-the-dock
+apps/the-app-minimizes-docked-W1/truth/frame/W2 @dock-resizes
+apps/the-app-restores-W1/reports-order @echo-order
+apps/the-app-restores-W1/reports/changed:W2:arbor @echoes
+apps/the-app-restores-W1/reports/displaysChanged @dock-resizes
+apps/the-app-restores-W1/reports/setFrame:W2-687,49-325x650→687,49-325x650 @clipped-at-the-dock
+apps/the-app-hides/reports-order @hide-hands-on
+apps/the-app-hides/reports/applicationActivated:test-app @activation-unrecorded
+~apps/the-app-hides/reports/focused:W4 @hide-hands-on
+apps/the-app-hides/reports/keyboardFocusMoved @activation-moves-keyboard
+apps/the-app-shows-again/truth/overlays/level--2147483602 @backdrop
+apps/docked-W2-closes/answers/W1/asked-1 @clipped-at-the-dock
+apps/docked-W2-closes/reports-order @echo-order
+apps/docked-W2-closes/reports/changed:W1:arbor @clipped-at-the-dock
+apps/docked-W2-closes/reports/setFrame:W1-12,56-494x625→12,56-494x625 @clipped-at-the-dock
+apps/docked-W2-closes/truth/frame/W1 @clipped-at-the-dock
+apps/docked-W2-closes/truth/frame/W2 @closed-stays-listed
+apps/docked-W2-closes/truth/on-screen/W2 @closed-stays-listed
+apps/a-new-window-opens/truth/order @opens-behind
+apps/the-first-app-comes-forward/belief/focused @comes-forward
+apps/the-first-app-comes-forward/reports/applicationActivated:test-app @activation-unrecorded
+apps/the-first-app-comes-forward/reports/focused:W1 @comes-forward
+apps/the-first-app-comes-forward/reports/focused:W5 @comes-forward
+apps/the-first-app-comes-forward/reports/keyboardFocusMoved @activation-moves-keyboard
+apps/the-first-app-comes-forward/truth/keyboard @comes-forward
+apps/the-first-app-comes-forward/truth/order @comes-forward
+apps/the-second-app-comes-forward/reports/applicationActivated:test-app @activation-unrecorded
+apps/the-second-app-comes-forward/reports/keyboardFocusMoved @activation-moves-keyboard
+apps/the-second-app-comes-forward/truth/order @comes-forward
+apps/dock-W4-right/answers/W4/518,220-325x650 @clipped-at-the-dock
+apps/dock-W4-right/answers/W4/asked-1 @clipped-at-the-dock
+apps/dock-W4-right/reports-order @echo-order
+apps/dock-W4-right/reports/changed:W1:arbor @clipped-at-the-dock
+apps/dock-W4-right/reports/changed:W4:arbor @clipped-at-the-dock
+apps/dock-W4-right/reports/setFrame:W1-12,56-325x650→12,56-325x648 @clipped-at-the-dock
+apps/dock-W4-right/truth/frame/W4 @clipped-at-the-dock
+apps/zoom-W1/answers/W4/asked-1 @clipped-at-the-dock
+apps/zoom-W1/reports-order @echo-order
+apps/zoom-W1/reports/applicationActivated:test-app @activation-unrecorded
+apps/zoom-W1/reports/keyboardFocusMoved @activation-moves-keyboard
+apps/zoom-W1/truth/frame/W4 @clipped-at-the-dock
+~apps/the-second-app-comes-forward,-its-window-out-of-view/reports-order @echo-order
+apps/the-second-app-comes-forward,-its-window-out-of-view/reports/applicationActivated:test-app @activation-unrecorded
+apps/the-second-app-comes-forward,-its-window-out-of-view/reports/keyboardFocusMoved @activation-moves-keyboard
+commands/dock-W1-left/answers/W1/170,220-494x650 @clipped-at-the-dock
+commands/dock-W1-left/answers/W1/asked-1 @clipped-at-the-dock
+commands/dock-W1-left/reports/applicationActivated:test-app @activation-unrecorded
+commands/dock-W1-left/reports/changed:W1:arbor @clipped-at-the-dock
+commands/dock-W1-left/truth/frame/W1 @clipped-at-the-dock
+commands/dock-W1-left/truth/overlays/level--2147483602 @backdrop
+commands/dock-W2-right/answers/W1/asked-1 @clipped-at-the-dock
+commands/dock-W2-right/answers/W2/518,180-325x650 @clipped-at-the-dock
+commands/dock-W2-right/answers/W2/asked-1 @clipped-at-the-dock
+commands/dock-W2-right/reports-order @echo-order
+commands/dock-W2-right/reports/changed:W1:arbor @clipped-at-the-dock
+commands/dock-W2-right/reports/changed:W2:arbor @clipped-at-the-dock
+commands/dock-W2-right/reports/setFrame:W1-12,79-325x578→12,79-325x578 @clipped-at-the-dock
+commands/dock-W2-right/truth/frame/W1 @clipped-at-the-dock
+commands/dock-W2-right/truth/frame/W2 @clipped-at-the-dock
+commands/dock-W3-below-W1/reports/changed:W1:arbor @clipped-at-the-dock
+commands/dock-W3-below-W1/reports/setFrame:W1-12,79-325x319→12,79-325x319 @clipped-at-the-dock
+commands/zoom-W1/answers/W2/asked-1 @clipped-at-the-dock
+commands/zoom-W1/reports-order @echo-order
+commands/zoom-W1/truth/frame/W2 @clipped-at-the-dock
+commands/back/reports/changed:W2:arbor @clipped-at-the-dock
+commands/back/reports/setFrame:W2-687,106-325x650→687,106-325x650 @clipped-at-the-dock
+commands/show-all/truth/overlays/level--2147483602 @backdrop
+commands/zoom-W3/answers/W3/12,374-1000x650 @clipped-at-the-dock
+commands/zoom-W3/answers/W3/asked-1 @clipped-at-the-dock
+commands/zoom-W3/reports-order @echo-order
+commands/zoom-W3/reports/changed:W3:arbor @clipped-at-the-dock
+commands/zoom-W3/truth/frame/W3 @clipped-at-the-dock
+~edges/W3-held-at-the-left-edge/reports-order @press-before-focus
+edges/W3-held-at-the-left-edge/reports/applicationActivated:test-app @activation-unrecorded
+edges/W3-held-at-the-left-edge/reports/keyboardFocusMoved @activation-moves-keyboard
+~edges/W3-held-at-the-left-edge/truth/frame/W3 @trails-the-pointer
+edges/W3-held-at-the-left-edge/truth/furniture/WindowManager @macos-outline
+~edges/W3-let-go-at-the-left-edge/reports/changed:W3:user @macos-tiling
+~edges/W3-let-go-at-the-left-edge/truth/furniture/Window-Server @cursor-window
+edges/W3-let-go-at-the-left-edge/truth/overlays/level-6 @heads-up
+~edges/the-app-brings-W2-forward/truth/furniture/Window-Server @cursor-window
+edges/W2-held-at-the-top-edge/reports-order @press-before-focus
+edges/W2-held-at-the-top-edge/truth/furniture/WindowManager @macos-outline
+~edges/W2-let-go-at-the-top-edge/reports/changed:W2:user @macos-tiling
+~edges/W2-let-go-at-the-top-edge/truth/overlays/level-6 @heads-up
+edges/the-app-brings-W1-forward/truth/overlays/level-6 @heads-up
+~edges/W1-held-at-the-right-edge/reports-order @press-before-focus
+edges/W1-held-at-the-right-edge/reports/preview:off @runs-of-moves
+edges/W1-held-at-the-right-edge/reports/~changed:W1:user @runs-of-moves
+edges/W1-held-at-the-right-edge/reports/~dragMoved:W1 @runs-of-moves
+edges/W1-held-at-the-right-edge/truth/furniture/WindowManager @macos-outline
+~edges/W1-let-go-at-the-right-edge/reports/changed:W1:user @macos-tiling
+~edges/W1-let-go-at-the-right-edge/truth/furniture/Window-Server @cursor-window
+edges/W1-let-go-at-the-right-edge/truth/overlays/level-6 @heads-up
+~edges/quit/truth/furniture/Window-Server @cursor-window
+~keys/start/belief/focused @front-at-the-start
+~keys/start/truth/front @front-at-the-start
+~keys/start/truth/keyboard @front-at-the-start
+keys/dock-W1-left/answers/W1/170,220-494x650 @clipped-at-the-dock
+keys/dock-W1-left/answers/W1/asked-1 @clipped-at-the-dock
+keys/dock-W1-left/reports/applicationActivated:test-app @activation-unrecorded
+keys/dock-W1-left/reports/changed:W1:arbor @clipped-at-the-dock
+~keys/dock-W1-left/reports/keyboardFocusMoved @front-at-the-start
+keys/dock-W1-left/truth/frame/W1 @clipped-at-the-dock
+keys/dock-W1-left/truth/overlays/level--2147483602 @backdrop
+keys/dock-W2-right/answers/W1/asked-1 @clipped-at-the-dock
+keys/dock-W2-right/answers/W2/518,180-325x650 @clipped-at-the-dock
+keys/dock-W2-right/answers/W2/asked-1 @clipped-at-the-dock
+keys/dock-W2-right/reports-order @echo-order
+keys/dock-W2-right/reports/changed:W1:arbor @clipped-at-the-dock
+keys/dock-W2-right/reports/changed:W2:arbor @clipped-at-the-dock
+keys/dock-W2-right/reports/setFrame:W1-12,79-325x578→12,79-325x578 @clipped-at-the-dock
+keys/dock-W2-right/truth/frame/W1 @clipped-at-the-dock
+keys/dock-W2-right/truth/frame/W2 @clipped-at-the-dock
+keys/click-W1/reports-order @press-before-focus
+keys/⌃⌥↩-zoom/answers/W1/asked-1 @clipped-at-the-dock
+keys/⌃⌥↩-zoom/answers/W2/asked-1 @clipped-at-the-dock
+keys/⌃⌥↩-zoom/reports-order @key-stays-down
+keys/⌃⌥↩-zoom/reports/changed:W1:arbor @clipped-at-the-dock
+keys/⌃⌥↩-zoom/reports/setFrame:W1-12,56-1000x625→12,56-1000x625 @clipped-at-the-dock
+keys/⌃⌥↩-zoom/truth/frame/W1 @clipped-at-the-dock
+keys/⌃⌥↩-zoom/truth/frame/W2 @clipped-at-the-dock
+keys/⌃⌥↩-zoom/truth/overlays/level-6 @heads-up
+keys/⌃⌥Space-show-all/reports-order @key-stays-down
+keys/⌃⌥Space-show-all/reports/changed:W1:arbor @clipped-at-the-dock
+keys/⌃⌥Space-show-all/reports/changed:W2:arbor @clipped-at-the-dock
+keys/⌃⌥Space-show-all/reports/setFrame:W1-12,56-325x650→12,56-325x648 @clipped-at-the-dock
+keys/⌃⌥Space-show-all/reports/setFrame:W2-687,106-325x650→687,106-325x650 @clipped-at-the-dock
+keys/⌃⌥⇧→-focus-right/reports-order @key-stays-down
+keys/⌃⌥⇧→-focus-right-again/reports-order @key-stays-down
+keys/⌃⌥⇧←-focus-left/reports-order @key-stays-down
+keys/⌃⌥↩-zoom-what-has-the-focus/reports-order @key-stays-down
+keys/⌃⌥↩-zoom-what-has-the-focus/truth/overlays/level-6 @heads-up
+keys/⌃⌥[-back/reports-order @key-stays-down
+keys/⌃⌥[-back/truth/overlays/level--2147483602 @backdrop
+keys/⌃⌥F-float/answers/W3/349,140-241x650 @clipped-at-the-dock
+keys/⌃⌥F-float/answers/W3/asked-1 @clipped-at-the-dock
+keys/⌃⌥F-float/reports-order @key-stays-down
+keys/⌃⌥F-float/reports/changed:W3:arbor @clipped-at-the-dock
+keys/⌃⌥F-float/truth/frame/W3 @clipped-at-the-dock
+keys/⌃⌥F-dock-again/reports-order @key-stays-down
+keys/⌃⌥D-desktop/reports-order @key-stays-down
+keys/⌃⌥D-desktop/truth/overlays/level-6 @heads-up
+~pointer/start/truth/furniture/Window-Server @cursor-window
+pointer/drag-W3-to-the-bottom-edge/reports/applicationActivated:test-app @activation-unrecorded
+pointer/drag-W3-to-the-bottom-edge/reports/changed:W3:arbor @echoes
+pointer/drag-W3-to-the-bottom-edge/reports/keyboardFocusMoved @activation-moves-keyboard
+pointer/drag-W3-to-the-bottom-edge/truth/overlays/level--2147483602 @backdrop
+pointer/drag-W3-to-the-bottom-edge/truth/overlays/level-6 @heads-up
+pointer/dock-W3-left/answers/W3/12,374-494x650 @clipped-at-the-dock
+pointer/dock-W3-left/answers/W3/asked-1 @clipped-at-the-dock
+pointer/dock-W3-left/reports/changed:W3:arbor @clipped-at-the-dock
+pointer/dock-W3-left/truth/frame/W3 @clipped-at-the-dock
+pointer/drag-W3s-right-edge-60-to-the-right/reports/changed:W3:arbor @clipped-at-the-dock
+pointer/drag-W3s-right-edge-60-to-the-right/reports/setFrame:W3-12,118-554x501→12,118-554x501 @clipped-at-the-dock
+pointer/drag-W3s-right-edge-60-to-the-right/reports/setFrame:W3-12,203-554x650→12,203-554x501 @clipped-at-the-dock
+pointer/drag-W3s-right-edge-60-to-the-right/truth/frame/W3 @clipped-at-the-dock
+pointer/drag-W3s-right-edge-60-to-the-right/truth/furniture/Window-Server @cursor-window
+pointer/drag-W2-onto-the-right-of-W3/answers/W2/asked-1 @clipped-at-the-dock
+pointer/drag-W2-onto-the-right-of-W3/answers/W2/asked-2 @clipped-at-the-dock
+pointer/drag-W2-onto-the-right-of-W3/answers/W3/asked-1 @clipped-at-the-dock
+pointer/drag-W2-onto-the-right-of-W3/reports-order @press-before-focus
+pointer/drag-W2-onto-the-right-of-W3/reports/changed:W2:arbor @echoes
+pointer/drag-W2-onto-the-right-of-W3/reports/changed:W3:arbor @clipped-at-the-dock
+pointer/drag-W2-onto-the-right-of-W3/reports/setFrame:W3-12,75-274x586→12,75-274x586 @clipped-at-the-dock
+pointer/drag-W2-onto-the-right-of-W3/reports/~changed:W2:user @runs-of-moves
+pointer/drag-W2-onto-the-right-of-W3/reports/~dragMoved:W2 @runs-of-moves
+pointer/drag-W2-onto-the-right-of-W3/truth/frame/W2 @clipped-at-the-dock
+pointer/drag-W2-onto-the-right-of-W3/truth/frame/W3 @clipped-at-the-dock
+~pointer/drag-W2-onto-the-right-of-W3/truth/overlays/level-6 @heads-up
+pointer/double-click-W3s-title-bar/reports-order @press-before-focus
+pointer/drag-W2-out-onto-the-Desktop/answers/W2/asked-1 @held-by-the-dock
+~pointer/drag-W2-out-onto-the-Desktop/reports-order @press-before-focus
+pointer/drag-W2-out-onto-the-Desktop/reports/changed:W2:arbor @echoes
+~pointer/drag-W2-out-onto-the-Desktop/reports/~changed:W2:user @runs-of-moves
+pointer/drag-W2-out-onto-the-Desktop/truth/frame/W2 @held-by-the-dock
+pointer/click-the-tile/reports-order @echo-order
+pointer/click-the-tile/truth/overlays/level-6 @heads-up
+pointer/quit/answers/W2/asked-1 @held-by-the-dock
+pointer/quit/truth/frame/W2 @held-by-the-dock
