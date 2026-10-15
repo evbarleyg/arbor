@@ -68,6 +68,7 @@ DAY_JOLTS="$ARBOR_ROOT/scripts/mac-shell/jolts.py"
 DAY_SAMPLES="$ARBOR_OUT/samples.log"
 DAY_SAMPLER_PID=""
 DAY_WITNESS="$ARBOR_ROOT/.build/mac-shell/witness"
+DAY_DESK="$ARBOR_ROOT/.build/mac-shell/desk"
 DAY_WITNESS_PID=""
 DAY_STEP=0
 DAY_TRACES=0
@@ -88,7 +89,7 @@ DAY_FACE="ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0 ARBOR_NO_PROMPT=0"
 QUIET=""
 
 day_build() {
-  local compiler second
+  local compiler second third
   mkdir -p "$(dirname "$DAY_SAMPLER")"
   swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/sampler.swift" -o "$DAY_SAMPLER" \
     > "$ARBOR_OUT/build-sampler.log" 2>&1 &
@@ -96,7 +97,14 @@ day_build() {
   swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/witness.swift" -o "$DAY_WITNESS" \
     > "$ARBOR_OUT/build-witness.log" 2>&1 &
   second=$!
+  swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/desk.swift" -o "$DAY_DESK" \
+    > "$ARBOR_OUT/build-desk.log" 2>&1 &
+  third=$!
   apps_build
+  if ! wait "$third"; then
+    grep -A 6 "error:" "$ARBOR_OUT/build-desk.log" | head -n 80
+    die "scripts/mac-shell/desk.swift did not compile"
+  fi
   if ! wait "$compiler"; then
     grep -A 6 "error:" "$ARBOR_OUT/build-sampler.log" | head -n 80
     die "scripts/mac-shell/sampler.swift did not compile"
@@ -110,7 +118,7 @@ day_build() {
 day_build_tools() {
   local started=$SECONDS tool jobs=""
   mkdir -p "$(dirname "$DAY_SAMPLER")"
-  for tool in pointer apptool sampler witness; do
+  for tool in pointer apptool sampler witness desk; do
     swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/$tool.swift" -o "$ARBOR_ROOT/.build/mac-shell/$tool" \
       > "$ARBOR_OUT/build-$tool.log" 2>&1 &
     jobs="$jobs $tool:$!"
