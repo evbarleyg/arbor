@@ -582,7 +582,8 @@ extension ChaosRunner {
       let whatHappened = "Arbor moved \(window) from \(before.brief) to \(fake.snapshot.frame.brief)"
       let showedBefore = Self.area(of: before, showingOn: system.displayList)
       if untouched {
-        if !titleBarIsWithinReach(before) { continue }
+        // Most of it shows: it may not be fetched, wherever its title bar is.
+        if showedBefore < 0.5 * before.area, !titleBarIsWithinReach(before) { continue }
         // A command that names a window is somebody asking, and so is one that asks for everything.
         // Timers finish what it began.
         // But with nothing arranged there is nothing to lay out or to give back.

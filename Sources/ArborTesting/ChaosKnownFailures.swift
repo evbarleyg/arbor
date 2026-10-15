@@ -963,22 +963,6 @@ extension ChaosRunner {
         key down home
         """),
     ChaosKnownFailure(
-      rule: "mirror", owner: "rule 3: Arbor notes the answer, not what it expected (new with the cure for refused sizes)", severity: 4,
-      story: "A terminal, which takes sizes in whole cells, is docked by a drop and made lower when a second window is dropped beside it: it is one point from where Arbor thinks it is, until the next event.",
-      script: """
-        displays main:0,0,1512,982:37,86,0,0* side:1512,-200,3008,1692:25,0,0,0 windows-never
-        open 101 Terminal pid 1003 at 476 273 930 484 min 177 64 cells 7 15 2 4
-        launch
-        open 104 Safari pid 1000 at 86 246 1426 584 min 574 220
-        grab 101
-        carry 2248 1483
-        release
-        grab 104
-        carry 4090 1391
-        advance 0.3
-        release
-        """),
-    ChaosKnownFailure(
       rule: "plain-drag-started-a-timer", owner: "less by default (Q29, board 0.4): a plain drag docks nothing", severity: 3,
       story: "A window is dragged over another with no key held, and Arbor begins to wait for it to rest there.",
       script: """
