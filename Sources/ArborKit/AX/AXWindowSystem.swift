@@ -89,8 +89,9 @@ public final class AXWindowSystem: WindowSystem {
       MainActor.assumeIsolated { AXWindowSystem.current?.noteLateResults() }
     }
   })
-  /// The window that was to get the focus while its app's lane was still busy moving it. It gets it when the lane is free.
-  private var focusWhenFree: WindowID?
+  /// The window that was to get the focus while its app's lane was still busy moving it, or as its app fell silent. It gets it when the
+  /// lane is free; when an app that hung wakes, only if things are as they were when the wait began (`WaitingFocus`).
+  private var focusWhenFree: WaitingFocus?
   /// Arbor is about to stop (`finishMoves`). There is no next time for a move that is turned away now, so none is.
   private var isLettingGo = false
   private var lettingGoEnds: TimeInterval = 0
@@ -506,8 +507,8 @@ public final class AXWindowSystem: WindowSystem {
     }
     rescan([pid], afterSpaceSwitch: false)
     // What was not asked of it while it was busy.
-    if let waiting = focusWhenFree, records[waiting]?.snapshot.pid == pid {
-      focus(waiting)
+    if let waiting = focusWhenFree, waiting.app == pid {
+      focus(waiting.window)
     } else {
       reportFocus(of: pid)
     }
@@ -542,7 +543,10 @@ public final class AXWindowSystem: WindowSystem {
       // A camera move moves the window and then gives it the focus, and the window that grows is the likeliest to be slow.
       // Dropping the focus would leave the keyboard in a window that has just gone out of view. Nothing new is kept for an app that is
       // known to hang; but whoever sees nothing happen and presses the same key again must not undo the first press.
-      if !unresponsive.contains(record.snapshot.pid) || waiting == window { focusWhenFree = window }
+      // The second press says it afresh, so the wait begins anew.
+      if !unresponsive.contains(record.snapshot.pid) || waiting?.window == window {
+        focusWhenFree = wait(for: window, of: record.snapshot.pid)
+      }
       return
     }
     // Making a window main and raising it takes its app some nine milliseconds; asking what has the focus, a fraction of one.
@@ -550,7 +554,7 @@ public final class AXWindowSystem: WindowSystem {
     // That look asks the app in front, which may be this one and may have begun to hang: it has cost a second then, and is on record.
     // Asking again would cost another. The window gets the keyboard when its app answers again (`answersAgain`).
     guard answers(record.snapshot.pid) else {
-      focusWhenFree = window
+      focusWhenFree = wait(for: window, of: record.snapshot.pid)
       return
     }
     let pid = record.snapshot.pid
@@ -582,6 +586,29 @@ public final class AXWindowSystem: WindowSystem {
       Log.debug("pid \(pid) did not come forward when activated; asking it through Accessibility")
       app.element.setBool(kAXFrontmostAttribute, true)
     }
+  }
+
+  private func wait(for window: WindowID, of pid: pid_t) -> WaitingFocus {
+    WaitingFocus(
+      window: window, app: pid, front: NSWorkspace.shared.frontmostApplication?.processIdentifier, activations: activations,
+      heard: lastReportedFocus, began: uptime)
+  }
+
+  /// An app that hung has woken, seconds after `waiting` was asked for. Whether it is still to be made.
+  private func isStillWanted(_ waiting: WaitingFocus) -> Bool {
+    switch waiting.verdict(front: NSWorkspace.shared.frontmostApplication?.processIdentifier, activations: activations, at: uptime) {
+    case .make: return true
+    case .drop: return false
+    case .ask: break
+    }
+    guard let app = apps[waiting.app] else { return false }
+    let began = uptime
+    // It has just answered, so this is cheap. Should it have fallen silent again, that is on record, and nobody waits a second time.
+    guard let answer = app.element.elementIfAnswered(kAXFocusedWindowAttribute) else {
+      noteSilence(of: waiting.app, since: began)
+      return false
+    }
+    return waiting.verdict(focused: answer.flatMap { windowID(of: $0, pid: waiting.app) }) == .make
   }
 
   public func raise(_ window: WindowID) {
@@ -732,6 +759,7 @@ public final class AXWindowSystem: WindowSystem {
     CFRunLoopRemoveSource(CFRunLoopGetMain(), AXObserverGetRunLoopSource(app.observer), .commonModes)
     lanes.forget(pid)
     AXEnhancedUI.shared.forget(pid)
+    if focusWhenFree?.app == pid { focusWhenFree = nil }
     AXCalls.names.set(nil, for: pid)
     let gone = windowIDs(of: pid)
     for window in gone {
@@ -761,7 +789,7 @@ public final class AXWindowSystem: WindowSystem {
     activations += 1
     lastReportedFocus = nil
     // Whoever switches apps says where the keyboard goes.
-    if let waiting = focusWhenFree, records[waiting]?.snapshot.pid != pid { focusWhenFree = nil }
+    if let waiting = focusWhenFree, waiting.app != pid { focusWhenFree = nil }
     if apps[pid] == nil, !waitingToObserve.contains(pid) { observe(pid: pid, announce: true, wasRunning: true) }
     // Whoever came forward before has been overtaken.
     lookAtAppThatCameForward?.cancel()
@@ -847,10 +875,11 @@ public final class AXWindowSystem: WindowSystem {
     }
     for window in windowIDs(of: pid) { refresh(window, userInitiated: true) }
     rescan([pid], afterSpaceSwitch: false)
-    if let waiting = focusWhenFree, records[waiting]?.snapshot.pid == pid {
-      // What was asked of it as it fell silent, unless the person has switched apps or clicked since.
-      focus(waiting)
+    if let waiting = focusWhenFree, waiting.app == pid, isStillWanted(waiting) {
+      // What was asked of it as it fell silent, unless the person has gone elsewhere since.
+      focus(waiting.window)
     } else {
+      if focusWhenFree?.app == pid { focusWhenFree = nil }
       // If it came forward while it was silent, nobody has heard which of its windows has the keyboard.
       reportFocus(of: pid)
     }
@@ -1450,7 +1479,14 @@ public final class AXWindowSystem: WindowSystem {
       recorder.raw(raw.map { "\(notification) w\($0)" } ?? notification, thinKey: moving && pendingDisplayChange == nil ? notification : nil)
     }
     // Whoever posts a notification is awake.
-    if let pid = element.pid, !answers(pid) { answersAgain(pid) }
+    if let pid = element.pid, !answers(pid) {
+      if notification == kAXFocusedWindowChangedNotification, unresponsive.contains(pid), let waiting = focusWhenFree, waiting.app == pid,
+        let now = windowID(of: element, pid: pid), waiting.verdict(reported: now) == .drop
+      {
+        focusWhenFree = nil
+      }
+      answersAgain(pid)
+    }
 
     switch notification {
     case kAXWindowCreatedNotification:

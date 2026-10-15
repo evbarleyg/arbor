@@ -3360,10 +3360,13 @@
       "status": "shipped",
       "priority": 1,
       "tests": [
+        "aKeyTypedAheadIntoTheHungAppIsNotUndone",
         "aMoveIsFreshForAsLongAsAnyReportIsAnEchoOrEarly",
         "aMoveOutOfViewThatOutlastsTheWaitIsFetchedBack",
+        "aRequestForAnAppInTheBackgroundDoesNotKeep",
         "aSlowAppCostsPatienceOnceAndFinishesInTheBackground",
         "aSlowAppsWindowsEndWhereAQuickAppsDo",
+        "aSwitchOfAppsThatEitherChannelTellsOfEndsIt",
         "anAppThatDoesNotAnswerIsNamedAndTheRestOfItsBatchDropped",
         "appsAnswerSideBySideAndEachAppInOrder",
         "itsWindowsFollowWhenItIsDone",
@@ -3371,10 +3374,14 @@
         "quittingLeavesNeitherOfASlowAppsTwoWindowsOutOfView",
         "quittingRightAfterACameraMoveLeavesNothingOutOfView",
         "silenceAfterPatienceRanOutIsReportedLate",
+        "theAppInFrontIsAskedWhichOfItsWindowsHasTheKeyboard",
         "theKeyboardFollowsIntoTheWindowThatWasFramed",
         "whatABusyAppMakesOfTheSizeIsLearntWhenItIsDone",
         "whatABusyAppWasAskedMeanwhileIsMadeUpForWhenItIsDone",
-        "whatWaitsBehindAJobThatWentUnansweredIsNotTried"
+        "whatTheAppReportsAsItWakesIsHeard",
+        "whatWaitsBehindAJobThatWentUnansweredIsNotTried",
+        "whereNothingWasHeardNothingCanBeSeenToHaveChanged",
+        "withNothingChangedItIsMade"
       ]
     },
     {

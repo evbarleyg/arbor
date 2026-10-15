@@ -336,7 +336,8 @@ and nothing else is worth optimising.
   move planned, or the app's reports of that very move would pass for the person's doing. What came of a late move is kept until the window is next asked to move, and
   answers a call for the same frame: whoever got no answer asks again on hearing the report, and from an app that is late every time would
   otherwise never learn what it made of the size. A focus asked for meanwhile is given
-  then, unless the person has switched apps or clicked since. Before Arbor lets go of the windows for good it waits for the lanes (`WindowSystem.finishMoves`), or a window on its way
+  then, unless the person has switched apps or clicked since. One that waited for an app that HUNG, which is seconds, is made only if things are as they were when the wait began (`ArborCore/WaitingFocus.swift`): the same app in
+  front by both of macOS's channels, that app's keyboard in the window it was in, and, for a window of an app in the background, within three seconds. Before Arbor lets go of the windows for good it waits for the lanes (`WindowSystem.finishMoves`), or a window on its way
   out of view would stay there; and from then until `stop`, which waits for the lanes once more, a move that finds its app
   busy waits its turn on the lane instead of being turned away, because nobody would try again, and is answered with the
   frame it was asked for, so that nothing is tried in its place. A move that is still not done after the wait is entered in the
