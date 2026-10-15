@@ -4893,6 +4893,27 @@
    ]
   },
   {
+   "id": "asking-for-the-keyboard-for-a-window-in-the-dock-takes-half-a-second",
+   "kind": "timing",
+   "layer": "at the seam",
+   "expected": "`focus` returns at once, as the stand-ins' does, and macOS flies the window out of the Dock afterwards, while Arbor goes on.",
+   "happened": "Asked for the keyboard for a window that had just been asked out of the Dock, the call took 540 to 566 ms, three rounds of three: the flight happens inside it, and Arbor stands still meanwhile. The reports (the keyboard, the window back) came 8 to 50 ms after it had returned. For a window of a hidden app the same call took 11 to 14 ms. So whatever Arbor puts on screen before that call stays there for the length of it: a view moved first, to the place of a window that is not there yet, shows its neighbour for more than half a second. And work scheduled before the call begins to count only after it: the scheduler's task starts when the main actor is free.",
+   "found": "A Mac shell run of check-comes-back.sh on a hosted Mac, macOS 26.6.2, which records itself: read from the times in the recording.",
+   "modelled": "no",
+   "knobs": [],
+   "guards": [
+    "e2e: what is on screen stays, and its neighbour never shows",
+    "test: whatIsOnScreenStaysUntilItIsBack"
+   ],
+   "copes": "Controller.awaitTheReturn: no view moves before the call; what is on screen stays until the window is reported back.",
+   "hurt": 2,
+   "sources": [
+    "scripts/mac-shell/check-comes-back.sh",
+    "Sources/ArborKit/Controller/Controller+OneLayout.swift",
+    "Sources/ArborKit/Platform/Scheduler.swift"
+   ]
+  },
+  {
    "id": "asking-in-vain-at-every-step-of-a-gap-drag",
    "kind": "late-or-partial-answer",
    "layer": "controller",
