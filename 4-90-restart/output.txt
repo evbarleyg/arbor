@@ -1,0 +1,262 @@
+# mac-shell: scripts/mac-shell/suite/90-restart.sh at 92f2fd4, macOS 26.6.2, 2026-10-15T17:13Z
+built Arbor, the pointer tool and the app bundles in 6s
+session 1: Arbor pid 16264, test windows 126 127 128 129 (pid 16242)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 126 left
+docked w126 at the left edge
+> dock 127 right
+docked w127 at the right edge
+> dock 128 beside 126 bottom
+docked w128 below w126
+> resize 126 right 60
+resized w126
+> zoom 127
+framed w127
+> save-view 4
+saved view 4: ArborTestWindows (n3)
+> show-all
+showing everything
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  Desktop          409 43 266 650
+  w126 12 43 385 319        docked
+  w127 687 43 325 650       docked focused
+  w128 12 374 385 319       docked
+  w129 320 100 480 348      floating
+
+▸ quit Arbor, move the windows about, start it again: the arrangement is back
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+> test windows: move 126 300 200 400 300
+> test windows: move 128 100 80 500 260
+session 1: Arbor pid 16384, test windows 126 127 128 129 (pid 16242)
+running: 1 display, 3 docked and 1 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ three are docked
+  ✔ the first window is back in its place, seam and all
+  ✔ the second
+  ✔ the third
+  ✔ the fourth still floats
+  ✔ the camera shows everything
+> view 4
+  ✔ the saved view is still there
+  ✔ and frames the same window
+> show-all
+showing everything
+  ✔ windows match Arbor's layout
+
+▸ quit Arbor while zoomed in and start it again: it shows everything, takes no window out of view, and Back returns to the old view
+> zoom 128
+framed w128
+  ✔ the window fills the screen
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ quitting brought the others back into view
+session 1: Arbor pid 16508, test windows 126 127 128 129 (pid 16242)
+running: 1 display, 3 docked and 1 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ the camera shows everything
+  ✔ the first window stays in view
+  ✔ the window that was framed is in its slot
+  ✔ the one that floats is in view
+  ✔ there is a view to go back to
+> back
+back to ArborTestWindows (n4)
+  ✔ which is the one Arbor stopped in
+  ✔ the others are out of view there
+> show-all
+showing everything
+  ✔ and come back with show-all
+  ✔ windows match Arbor's layout
+
+▸ the apps restarted too: their new windows are matched by app and title
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+session 1: Arbor pid 16990, test windows 140 141 142 143 (pid 16967)
+running: 1 display, 3 docked and 1 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ three are docked
+  ✔ the window with the first title has the first place
+  ✔ the second
+  ✔ the third
+  ✔ windows match Arbor's layout
+
+▸ a saved window number that now belongs to another app is not trusted
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+session 1: Arbor pid 17075, test windows 140 141 142 143 (pid 16967)
+running: 1 display, 2 docked and 2 floating, 0 out of view; 1 place kept for a window that is not open yet
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ the window with the reused number is not docked
+  ✔ the others are
+  ✔ it was left where it was
+> dock 141 right
+docked w141 at the right edge
+  ✔ windows match Arbor's layout
+
+▸ kill Arbor while zoomed in: the windows it had moved away are stranded
+> zoom 140
+framed w140
+  ✔ the others are out of view
+  ✔ not the floating one, which no view takes away: it is where it was
+> kill -KILL (Arbor)
+/Users/runner/work/arbor/arbor/scripts/mac-shell/suite/../lib.sh: line 570: 17075 Killed: 9               env ARBOR_ONLY_PIDS="$pids" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 ARBOR_NO_WATCHDOG=1 $ARBOR_LAUNCH_ENV "$binary" >> "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>&1 3>&- 7>&- 8>&- 9>&-
+  ✔ nothing brought them back
+  ✔ the floating one is in view, Arbor or no Arbor
+
+▸ start Arbor after the crash: every window is within reach again
+session 1: Arbor pid 17397, test windows 140 141 142 143 (pid 16967)
+running: 1 display, 3 docked and 1 floating, 0 out of view; 1 place kept for a window that is not open yet
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ Arbor arranges all four
+> show-all
+showing everything
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the floating window is in view
+  ✔ where it was all along
+  ✔ windows match Arbor's layout
+
+▸ kill Arbor the moment it zooms in, before it has saved: the next launch still strands nothing
+> zoom 140
+framed w140
+> kill -KILL (Arbor)
+/Users/runner/work/arbor/arbor/scripts/mac-shell/suite/../lib.sh: line 570: 17397 Killed: 9               env ARBOR_ONLY_PIDS="$pids" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 ARBOR_NO_WATCHDOG=1 $ARBOR_LAUNCH_ENV "$binary" >> "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>&1 3>&- 7>&- 8>&- 9>&-
+session 1: Arbor pid 17627, test windows 140 141 142 143 (pid 16967)
+running: 1 display, 3 docked and 1 floating, 0 out of view; 1 place kept for a window that is not open yet
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> show-all
+showing everything
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the floating window is in view
+  ✔ windows match Arbor's layout
+
+▸ kill Arbor while zoomed in and lose its saved state: the next launch rescues the stranded windows
+> zoom 140
+framed w140
+  ✔ the others are out of view
+> kill -KILL (Arbor)
+/Users/runner/work/arbor/arbor/scripts/mac-shell/suite/../lib.sh: line 570: 17627 Killed: 9               env ARBOR_ONLY_PIDS="$pids" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 ARBOR_NO_WATCHDOG=1 $ARBOR_LAUNCH_ENV "$binary" >> "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>&1 3>&- 7>&- 8>&- 9>&-
+session 1: Arbor pid 17727, test windows 140 141 142 143 (pid 16967)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ the log says it rescued windows
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the floating window is in view
+  ✔ nothing is docked: there was no arrangement to restore
+
+▸ a damaged state file cannot stop Arbor, and is kept for whoever wants to look
+> arrange
+arranged 4 windows
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+session 1: Arbor pid 17823, test windows 140 141 142 143 (pid 16967)
+running: 1 display, 0 docked and 4 floating, 0 out of view; the saved arrangement could not be read and was set aside (state.unreadable.json)
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ Arbor runs and arranges all four
+  ✔ it starts afresh: nothing is docked
+  ✔ the damaged file was set aside
+  ✔ every window is in view
+
+▸ a state file from a newer Arbor is not overwritten
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+session 1: Arbor pid 17898, test windows 140 141 142 143 (pid 16967)
+running: 1 display, 0 docked and 4 floating, 0 out of view; the saved arrangement is from a newer Arbor and was set aside (state.unreadable.json)
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ Arbor runs
+  ✔ the newer file was set aside as it was
+  ✔ the log says why
+
+▸ end Arbor with SIGTERM while zoomed in: it puts every window back first
+> arrange
+arranged 4 windows
+> zoom 141
+framed w141
+  ✔ the others are out of view
+> kill -TERM (Arbor)
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the fourth window is in view
+  ✔ the log says so
+session 1: Arbor pid 17993, test windows 140 141 142 143 (pid 16967)
+running: 1 display, 4 docked and 0 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+
+▸ float-all while zoomed in: every window is in view and nothing is docked
+> zoom 141
+framed w141
+  ✔ the others are out of view
+> float-all
+  ✔ float-all succeeds
+  ✔ nothing is docked
+  ✔ the first window is in view
+  ✔ the second window is in view
+  ✔ the third window is in view
+  ✔ the fourth window is in view
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+session 2: Arbor pid 18430, test windows 172 173 (pid 18351)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 172 left
+docked w172 at the left edge
+
+▸ with floatingWindowsMakeWay on: kill Arbor while zoomed in and start it again: the floating window it had moved away is within reach again
+> zoom 172
+framed w172
+  ✔ the floating window left with the Desktop
+> kill -KILL (Arbor)
+/Users/runner/work/arbor/arbor/scripts/mac-shell/suite/../lib.sh: line 570: 18430 Killed: 9               env ARBOR_ONLY_PIDS="$pids" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 ARBOR_NO_WATCHDOG=1 $ARBOR_LAUNCH_ENV "$binary" >> "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>&1 3>&- 7>&- 8>&- 9>&-
+  ✔ nothing brought it back
+session 2: Arbor pid 18655, test windows 172 173 (pid 18351)
+running: 1 display, 1 docked and 1 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ Arbor arranges both
+> show-all
+showing everything
+  ✔ the docked window is in view
+  ✔ the floating window is in view
+  ✔ windows match Arbor's layout
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+92 passed, 0 failed
+exit code 0

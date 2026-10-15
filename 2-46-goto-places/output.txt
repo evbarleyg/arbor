@@ -1,0 +1,240 @@
+# mac-shell: scripts/mac-shell/suite/46-goto-places.sh at 92f2fd4, macOS 26.6.2, 2026-10-15T17:11Z
+built Arbor, the pointer tool and the app bundles in 3s
+session 1: Arbor pid 7054, test windows 37 38 39 40 41 (pid 7004,7029)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 37 left
+docked w37 at the left edge
+> dock 38 right
+docked w38 at the right edge
+> dock 39 beside 38 bottom
+docked w39 below w38
+> dock 41 beside 37 bottom
+docked w41 below w37
+> test windows: title 41 Ledger
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          349 43 326 655
+  w37 12 43 325 322        docked
+  w38 687 43 325 322       docked
+  w39 687 377 325 321      docked
+  w40 320 100 480 348      floating
+  w41 12 377 325 321       docked focused
+> show-all
+showing everything
+
+▸ go to a window that is in the Dock: it comes back framed, with the keyboard, and its own place is still its own
+> click 721 391
+  ✔ Arbor sees the window minimized
+> zoom 37
+framed w37
+> click 512 389
+> key ctrl+opt+g
+  ✔ ⌃⌥G opens the palette
+> key 3
+> key return
+  ✔ the palette is gone
+  ✔ the window is out of the Dock
+  ✔ it fills the screen, alone, as the first window did
+> key x
+  ✔ the next letter goes to it, without a click
+  ✔ the pointer has not moved
+> show-all
+showing everything
+  ✔ with everything in view it is where it was
+  ✔ to be seen there
+  ✔ as a window, not as a tile
+  ✔ windows match Arbor's layout
+> show-all
+showing everything
+> click 176 221
+> click 176 555
+
+▸ go to a window of a hidden app: the app comes back, and the window has its own place and the keyboard
+  ✔ Arbor knows the window by the title its app gave it since
+> key cmd+h
+  ✔ macOS hides the app
+  ✔ Arbor sees the other app's window hidden
+> click 176 389
+  ✔ the first app is in front
+> key ctrl+opt+g
+  ✔ ⌃⌥G opens the palette
+> key l
+> key e
+> key d
+> key return
+  ✔ the palette is gone
+  ✔ the app is no longer hidden
+  ✔ its window is where it was
+  ✔ to be seen there
+  ✔ its app is in front
+> key x
+  ✔ the next letter goes to the window, without a click
+  ✔ the camera stayed on everything
+  ✔ windows match Arbor's layout
+> show-all
+showing everything
+> zoom 37
+framed w37
+> click 512 389
+
+▸ go to a floating window from a framed one: the view stays, and the window comes to the front where it was, with the keyboard in it
+  ✔ the floating window lies behind the framed one
+> key ctrl+opt+g
+  ✔ ⌃⌥G opens the palette
+> key 4
+> key return
+  ✔ the palette is gone
+  ✔ the floating window is in front
+  ✔ where it was
+  ✔ the view has not moved
+  ✔ the framed window still fills the screen
+> key x
+  ✔ the next letter goes to the floating window
+> show-all
+showing everything
+> zoom 38
+framed w38
+> out
+stepped out to 2 ArborTestWindows windows (n5)
+> save-view 1
+saved view 1: 2 ArborTestWindows windows (n5)
+> zoom 37
+framed w37
+> out
+stepped out to ArborTestWindows and ArborTestWindows2 (n7)
+> name Books
+named ArborTestWindows and ArborTestWindows2 (n7): Books
+> show-all
+showing everything
+> zoom 37
+framed w37
+> click 512 389
+
+▸ go to a saved view by its number and to a named space by its name: the view moves there
+> key ctrl+opt+g
+  ✔ ⌃⌥G opens the palette
+> key v
+> key 1
+> key return
+  ✔ the palette is gone
+  ✔ the saved view's windows are in view
+  ✔ both of them
+  ✔ the framed window has left
+  ✔ windows match Arbor's layout
+> click 512 221
+> key ctrl+opt+g
+  ✔ ⌃⌥G opens the palette
+> key b
+> key o
+> key o
+> key k
+> key s
+> key return
+  ✔ the palette is gone
+  ✔ the named space's windows are in view
+  ✔ both of them
+  ✔ the saved view's have left
+  ✔ spaces says that it is in view
+  ✔ windows match Arbor's layout
+> unname Books
+removed the name Books from ArborTestWindows and ArborTestWindows2 (n7)
+> show-all
+showing everything
+> zoom 37
+framed w37
+> click 512 389
+
+▸ choose Go to… from the menu: the palette opens with the keyboard, and what is typed finds a window
+> click 782 15 --right
+> click 881.5 144
+  ✔ the row can be clicked
+  ✔ Arbor ran find
+  ✔ the palette is on screen
+  ✔ the app in front stays in front
+> key 3
+> key return
+  ✔ the palette is gone
+  ✔ the window found fills the screen, alone
+  ✔ the window left behind saw none of the typing
+  ✔ windows match Arbor's layout
+> show-all
+showing everything
+> zoom 37
+framed w37
+> click 512 389
+
+▸ find and reveal, by command: the best match comes into view with the keyboard and no palette, and what matches nothing is refused
+> find led
+  ✔ find with a part of a title succeeds
+  ✔ no palette shows
+  ✔ the window found fills the screen, alone
+  ✔ it has the keyboard
+  ✔ what matches nothing is refused, in words
+  ✔ with exit code 1
+  ✔ the view stayed
+> reveal 38
+  ✔ reveal succeeds
+  ✔ the window asked for fills the screen, alone
+  ✔ it has the keyboard
+  ✔ windows match Arbor's layout
+
+▸ after all that finding, no title and nothing that was typed is in Arbor's log
+  ✔ the log has lines about Go to…
+  ✔ none of the first app's titles
+  ✔ nor the other app's
+  ✔ nor what was looked for by command
+> show-all
+showing everything
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+session 2: Arbor pid 9860, test windows 81 82 83 84 (pid 9834)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 81 left
+docked w81 at the left edge
+> dock 82 right
+docked w82 at the right edge
+> dock 83 beside 82 bottom
+docked w83 below w82
+> show-all
+showing everything
+> zoom 81
+framed w81
+> click 512 383
+
+▸ with floatingWindowsMakeWay on: go to a floating window from a framed one: the Desktop is framed, with the window on it and the keyboard in it
+  ✔ the floating window is out of view
+> key ctrl+opt+g
+  ✔ ⌃⌥G opens the palette
+> key 4
+> key return
+  ✔ the palette is gone
+  ✔ the camera is on the Desktop
+  ✔ the floating window is in view
+  ✔ the framed window has left
+> key x
+  ✔ the next letter goes to the floating window
+> show-all
+showing everything
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+86 passed, 0 failed
+exit code 0

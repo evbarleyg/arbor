@@ -1,0 +1,56 @@
+# check-floats-stay 2026-10-15T17:10Z on macOS 26.6.2, commit 92f2fd4
+  ✔ the first window has the keyboard
+  ✔ ⌃⌥← reaches Arbor
+  ✔ the first window is docked
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥↩ on a docked window with three floating ones, and ⌃⌥↩ again: no floating window is moved, sized, hidden or raised
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the docked window fills the screen
+  ✔ with the docked window filling the screen: the second window is where it was
+  ✔ with the docked window filling the screen: the third window is where it was
+  ✔ with the docked window filling the screen: the fourth window is where it was
+  ✔ with the docked window filling the screen: all three are on screen, in the order they were in
+  ✔ ⌃⌥↩ again
+  ✔ the camera is on everything
+  ✔ back: the second window is where it was
+  ✔ back: the third window is where it was
+  ✔ back: the fourth window is where it was
+  ✔ back: all three are on screen, in the order they were in
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥↩ and then ⌃⌥Space: the same
+  ✔ ⌃⌥↩ reaches Arbor
+  ✔ the docked window fills the screen
+  ✔ with the docked window filling the screen: the second window is where it was
+  ✔ with the docked window filling the screen: the third window is where it was
+  ✔ with the docked window filling the screen: the fourth window is where it was
+  ✔ with the docked window filling the screen: all three are on screen, in the order they were in
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ the camera is on everything
+  ✔ with everything showing: the second window is where it was
+  ✔ with everything showing: the third window is where it was
+  ✔ with everything showing: the fourth window is where it was
+  ✔ with everything showing: all three are on screen, in the order they were in
+  ✔ windows match Arbor's layout
+
+▸ click a floating window and press ⌃⌥[ and ⌃⌥Space: the view moves, the window keeps the keyboard and its place in front
+  ✔ the floating window has the keyboard
+  ✔ ⌃⌥[ reaches Arbor
+  ✔ the docked window fills the screen
+  ✔ the floating window still has the keyboard
+  ✔ back on the docked window: the second window is where it was
+  ✔ back on the docked window: the third window is where it was
+  ✔ back on the docked window: the fourth window is where it was
+  ✔ back on the docked window: all three are on screen, in the order they were in
+  ✔ ⌃⌥Space reaches Arbor
+  ✔ the camera is on everything
+  ✔ the floating window still has the keyboard
+  ✔ with everything showing: the second window is where it was
+  ✔ with everything showing: the third window is where it was
+  ✔ with everything showing: the fourth window is where it was
+  ✔ with everything showing: all three are on screen, in the order they were in
+  ✔ windows match Arbor's layout
+  ✔ Arbor exits within 5 s of quit
+
+47 passed, 0 failed
