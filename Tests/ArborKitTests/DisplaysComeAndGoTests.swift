@@ -308,9 +308,11 @@ private let moment = ["settle", "react", "advance 1", "react"]
   @Test(arguments: [["quit"], ["crash"], ["toggle-pause", "react", "advance 1", "react"]])
   func withTheLidOpenedBehindArborsBackItStaysToo(ending: [String]) {
     let again = ending[0] == "toggle-pause" ? ending : ["launch", "settle"]
-    let runner = play(
-      ["\(desk.both) windows-never", desk.windows[0], "launch", "settle", "\(desk.external) windows-late"] + moment + ending
-        + ["\(desk.laptop) windows-silent"] + again + ["\(desk.both) windows-late"] + moment)
+    // In pieces, here and further down: as one sum Swift 6.2 gives up on it ("unable to type-check this expression in reasonable time").
+    var lines = ["\(desk.both) windows-never", desk.windows[0], "launch", "settle", "\(desk.external) windows-late"] + moment + ending
+    lines += ["\(desk.laptop) windows-silent"] + again
+    lines += ["\(desk.both) windows-late"] + moment
+    let runner = play(lines)
     #expect(frames(runner)[safari] == whereSafariIs)
   }
 
@@ -335,10 +337,10 @@ private let moment = ["settle", "react", "advance 1", "react"]
   @Test func withTheMonitorsViewFramedNothingOfTheLaptopsGoesOutOfView() {
     func key(_ name: String) -> [String] { ["key down \(name)", "key up \(name)", "react", "advance 1", "react"] }
     func focus(_ window: Int) -> [String] { ["focus \(window)", "react", "advance 1", "react"] }
-    let runner = play(
-      ["\(desk.both) windows-never"] + desk.windows + ["launch", "settle"]
-        + focus(101) + key("dock left") + focus(103) + key("dock left") + focus(104) + key("dock right") + focus(103) + key("zoom")
-        + ["settle"])
+    var lines = ["\(desk.both) windows-never"] + desk.windows + ["launch", "settle"]
+    lines += focus(101) + key("dock left") + focus(103) + key("dock left")
+    lines += focus(104) + key("dock right") + focus(103) + key("zoom")
+    let runner = play(lines + ["settle"])
     let notes = WindowID(102)
     let began = frames(runner)[notes]!
     for state in ["external", "laptop", "both"] { play(["\(desk.line(state)) windows-late"] + moment, in: runner) }
@@ -368,9 +370,11 @@ private let moment = ["settle", "react", "advance 1", "react"]
 
   /// Safari visits the monitor, the lid being shut. `then` happens; the monitor blinks: no display, and back.
   private func visitorThroughABlink(_ then: [String]) -> ChaosRunner {
-    play(
-      ["\(desk.both) windows-never"] + desk.windows + ["launch", "settle", "\(desk.external) windows-late"] + moment + then + moment
-        + ["displays windows-late"] + moment + ["\(desk.external) windows-late"] + moment)
+    var lines = ["\(desk.both) windows-never"] + desk.windows + ["launch", "settle", "\(desk.external) windows-late"]
+    lines += moment + then + moment
+    lines += ["displays windows-late"] + moment
+    lines += ["\(desk.external) windows-late"] + moment
+    return play(lines)
   }
 
   @Test func aVisitorPinnedByItsPersonIsStillPinned() {
@@ -432,9 +436,10 @@ private let moment = ["settle", "react", "advance 1", "react"]
 
   /// Mail floats on the monitor, which is unplugged; `then` is what happens on the lap; the monitor is plugged in again.
   private func monitorUnpluggedAndBack(_ before: [String] = [], meanwhile then: [String]) -> ChaosRunner {
-    play(
-      ["\(desk.both) windows-never", desk.windows[2], "launch", "settle"] + before + ["\(desk.laptop) windows-late"] + moment + then
-        + ["\(desk.both) windows-late"] + moment)
+    var lines = ["\(desk.both) windows-never", desk.windows[2], "launch", "settle"] + before
+    lines += ["\(desk.laptop) windows-late"] + moment + then
+    lines += ["\(desk.both) windows-late"] + moment
+    return play(lines)
   }
 
   @Test func whatItsPersonDraggedMeanwhileStaysWhereItWasDropped() {
