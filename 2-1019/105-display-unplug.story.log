@@ -1,0 +1,45 @@
+105 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:441', 'moves': 'any', 'leaves': 'any', 'floating': '687,690,704,705,706,709,711,712,1149', 'docked': ''}
+FAIL rule 3: notes (w705) moved 3 times
+FAIL rule 3: calendar (w706) moved 3 times
+
+12:24:36.608 SCREEN -- begin 105 display-unplug
+12:24:36.608 SCREEN -- text 105 the second display: unplug
+12:24:36.656 SCREEN notes (w705) 315,102 1000×660
+12:24:36.656 SCREEN calendar (w706) 436,67 909×791
+12:24:37.584 SCREEN (nothing was seen for 927 ms)
+12:24:37.584 SCREEN notes (w705) 426,158 1000×660
+12:24:37.584 SCREEN calendar (w706) 478,31 909×791
+12:24:37.584 SCREEN finder (w687) 340,120 920×436
+12:24:37.584 SCREEN textedit (w1149) 165,65 656×422
+12:24:37.584 SCREEN terminal (w704) 366,31 862×497
+12:24:37.588 MACOS pid 50739 AXMoved w704 AXWindow/AXStandardWindow 366 31 862 497
+12:24:37.592 MACOS pid 50978 AXMoved w705 AXWindow/AXStandardWindow 426 158 1000 660
+12:24:37.593 MACOS pid 67327 AXMoved w1149 AXWindow/AXStandardWindow 165 65 656 422
+12:24:37.594 MACOS pid 51239 AXMoved w706 AXWindow/AXStandardWindow 478 31 909 791
+12:24:37.595 MACOS pid 49285 AXResized w687 AXWindow/AXStandardWindow 340 120 920 436
+12:24:37.596 MACOS pid 50739 AXTitleChanged w704 AXWindow/AXStandardWindow 366 31 862 497
+12:24:37.597 MACOS pid 67327 AXResized w1149 AXWindow/AXStandardWindow 165 65 656 422
+12:24:37.597 MACOS pid 50739 AXResized w704 AXWindow/AXStandardWindow 366 31 862 497
+12:24:37.742 SCREEN w1110 of Arbor 566,728 670×38 (level 6)
+12:24:38.028 SCREEN w1110 of Arbor left the screen
+12:24:39.325 INFO  display 46102E0D-FB1C-420D-9A0B-D9DBC9E5D2F6 disconnected; remembering 2 window(s)
+12:24:39.326 INFO  displays changed: 1 display(s), 1 remembered
+12:24:39.333 DEBUG w711 has the keyboard
+12:24:39.350 MACOS pid 50978 AXMoved w705 AXWindow/AXStandardWindow 484 162 1000 660
+12:24:39.359 SCREEN notes (w705) 484,162 1000×660
+12:24:39.368 MACOS pid 50978 AXFocusedWindowChanged w705 AXWindow/AXStandardWindow 484 162 1000 660
+12:24:39.369 MACOS pid 50978 AXMainWindowChanged w705 AXWindow/AXStandardWindow 484 162 1000 660
+12:24:39.410 MACOS pid 51239 AXMoved w706 AXWindow/AXStandardWindow 638 31 909 791
+12:24:39.418 SCREEN calendar (w706) 638,31 909×791
+12:24:39.464 DEBUG raised w705, which stays in view
+12:24:39.464 MACOS pid 50978 AXFocusedWindowChanged w705 AXWindow/AXStandardWindow 484 162 1000 660
+12:24:39.468 MACOS pid 50978 AXMainWindowChanged w705 AXWindow/AXStandardWindow 484 162 1000 660
+12:24:39.802 MACOS pid 50978 AXFocusedWindowChanged w705 AXWindow/AXStandardWindow 484 162 1000 660
+12:24:39.803 MACOS pid 50978 AXMainWindowChanged w705 AXWindow/AXStandardWindow 484 162 1000 660
+12:24:39.804 DEBUG raised w705, which stays in view
+12:24:40.022 MACOS pid 50978 AXFocusedWindowChanged w705 AXWindow/AXStandardWindow 484 162 1000 660
+12:24:40.023 MACOS pid 50978 AXMainWindowChanged w705 AXWindow/AXStandardWindow 484 162 1000 660
+12:24:40.024 DEBUG raised w705, which stays in view
+12:24:40.680 SCREEN -- end 105 act=display-change settled=quiet:441 moves=any leaves=any floating=687,690,704,705,706,709,711,712,1149 docked=
+12:24:41.061 SCRIPT == 106 view-home

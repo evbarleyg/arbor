@@ -1,0 +1,13 @@
+117 send-across: sends the window in front to the other display
+expected: {'act': 'dock-key', 'settled': 'quiet:994', 'moves': '61,61,,61', 'front': '61', 'place': '61', 'floating': '31,34,45,49,52,58,59,65', 'docked': '61'}
+FAIL rule -: w61 sticks 1608 points out of its slot: window 4,35 708×424, slot 1612,43 942×1025
+
+12:17:08.766 SCREEN -- begin 117 send-across
+12:17:08.766 SCREEN -- text 117 sends the window in front to the other display
+12:17:08.791 SCREEN w411 of Arbor 2554,43 12×1025
+12:17:08.794 INFO  move-to-display next: moved w61 to display 2
+12:17:08.804 SCREEN w635 of Arbor 1600,31 1920×1049 (level -2147483602)
+12:17:09.026 SCREEN w416 of Arbor left the screen
+12:17:11.463 SCREEN -- finding 117 - FAIL w61 sticks 1608 points out of its slot: window 4,35 708×424, slot 1612,43 942×1025
+12:17:11.464 SCREEN -- end 117 act=dock-key settled=quiet:994 moves=61,61,,61 front=61 place=61 floating=31,34,45,49,52,58,59,65 docked=61
+12:17:11.759 SCRIPT == 118 float-all

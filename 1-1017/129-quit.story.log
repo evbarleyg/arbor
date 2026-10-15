@@ -1,0 +1,32 @@
+129 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:889', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule 5: safari (w34) is 38,109 1324×791; its own size was -573,770 574×240
+FAIL rule 5: textedit (w45) is 165,65 656×422; its own size was 165,65 673×439
+FAIL rule 5: terminal (w49) is 40,51 863×499; its own size was 40,51 877×499
+FAIL rule 5: preview (w61) has its size back but not its place: 1396,31 708×424, it was at 4,35 708×424
+FAIL rule L: preview (w61) is out of view: 29% of it is on a display, at 1396,31 708×424
+
+12:17:56.831 SCREEN -- begin 129 quit
+12:17:56.831 SCREEN -- text 129 chooses Quit Arbor in Arbor's menu
+12:17:57.483 DEBUG menu bar click: x 67.0 by the event, 67.0 by the screen, button 134.0 wide
+12:17:57.655 SCREEN w658 of Arbor 1219,31 273×486 (level 101)
+12:17:59.184 SCREEN w658 of Arbor left the screen
+12:17:59.246 MACOS pid 17130 AXMoved w59 AXWindow/AXStandardWindow 437 85 723 625
+12:17:59.247 MACOS pid 17130 AXResized w59 AXWindow/AXStandardWindow 437 85 723 625
+12:17:59.254 SCREEN settings (w59) 437,85 723×470
+12:17:59.284 SCREEN calendar (w58) 664,223 801×599
+12:17:59.284 SCREEN settings (w59) 437,85 723×625
+12:17:59.315 MACOS pid 16803 AXResized w58 AXWindow/AXStandardWindow 799 31 801 790
+12:17:59.316 MACOS pid 16803 AXMoved w58 AXWindow/AXStandardWindow 799 31 801 790
+12:17:59.316 MACOS pid 16803 AXResized w58 AXWindow/AXStandardWindow 799 31 801 790
+12:17:59.324 INFO  trace day-3 ended: 708 lines, Arbor stopped
+12:17:59.325 INFO  stopped; all windows returned to view
+12:17:59.333 INFO  Arbor quit
+12:17:59.360 SCREEN calendar (w58) 799,31 801×790
+12:17:59.360 SCREEN w415 of Arbor left the screen
+12:17:59.360 SCREEN w411 of Arbor left the screen
+12:17:59.360 SCREEN w416 of Arbor left the screen
+12:17:59.360 SCREEN front to back: preview calendar settings terminal safari notes finder w67 mail textedit
+12:17:59.406 SCREEN -- arbor gone
+12:18:00.372 SCREEN -- end 129 act=quit-and-start settled=quiet:889 moves=any restores=all places=1 everything=1
+12:18:00.533 SCRIPT == 130 input-after

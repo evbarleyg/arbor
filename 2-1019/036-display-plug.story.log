@@ -1,0 +1,18 @@
+36 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:364', 'moves': 'any', 'leaves': 'any', 'floating': '687,690,699,704,705,706,709,711,712', 'docked': ''}
+FAIL rule 3: notes (w705) went 338 points out of its way before it ended up
+
+12:20:42.661 SCREEN -- begin 36 display-plug
+12:20:42.661 SCREEN -- text 36 the second display: plug
+12:20:42.677 SCREEN notes (w705) 2253,276 1000×660
+12:20:42.834 SCREEN (nothing was seen for 157 ms)
+12:20:42.834 SCREEN notes (w705) 2084,180 1000×660
+12:20:42.835 MACOS pid 51239 AXMoved w706 AXWindow/AXStandardWindow 415 115 909 791
+12:20:42.835 MACOS pid 50978 AXMoved w705 AXWindow/AXStandardWindow 2084 180 1000 660
+12:20:42.848 SCREEN calendar (w706) 415,115 909×791
+12:20:43.004 SCREEN (nothing was seen for 156 ms)
+12:20:44.578 INFO  displays changed: 2 display(s), 0 remembered
+12:20:44.578 DEBUG w709 has the keyboard
+12:20:44.617 DEBUG got ready the stage of 46102E0D-FB1C-420D-9A0B-D9DBC9E5D2F6 in 7 ms, the desktop 1 of them
+12:20:48.592 SCREEN -- end 36 act=display-change settled=quiet:364 moves=any leaves=any floating=687,690,699,704,705,706,709,711,712 docked=
+12:20:48.870 SCRIPT == 37 view-home

@@ -1,0 +1,317 @@
+128 input-last: a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+expected: {'act': 'instrument', 'settled': 'quiet:832', 'round': 'last', 'posted': 'press:14,up:14', 'floating': '31,34,45,49,52,58,61,65', 'docked': '59'}
+FAIL rule 2: preview (w61) a floating window, moved, and the step did not name it
+
+12:17:39.350 SCREEN -- begin 128 input-last
+12:17:39.350 SCREEN -- text 128 a round of input: presses on windows behind and in front, keys, a scroll, a drag inside a window
+12:17:39.684 SCREEN w422 of Arbor left the screen
+12:17:40.320 SCREEN the button is down 1392 165
+12:17:40.375 SCREEN in front: process 16589 com.apple.Notes
+12:17:40.381 DEBUG focus is on w52
+12:17:40.381 DEBUG w52 has the keyboard
+12:17:40.398 DEBUG the button went down at 1392,165, the pointer is at 1392,165: it is on w52
+12:17:40.398 MACOS pid 16026 AXApplicationDeactivated
+12:17:40.398 MACOS workspace didActivate pid 16589 com.apple.Notes regular
+12:17:40.398 MACOS workspace didDeactivate pid 16026 com.apple.Safari regular
+12:17:40.398 MACOS pid 16589 AXApplicationActivated
+12:17:40.416 DEBUG raised w58, which stays in view
+12:17:40.416 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:40.417 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:40.450 SCREEN w415 of Arbor 417,149 1018×678
+12:17:40.450 SCREEN front to back: safari calendar settings w572 preview w571 w415 notes finder w67 mail terminal textedit w411
+12:17:40.450 SCREEN the button is up 1392 165
+12:17:40.458 SCREEN preview (w61) 1396,31 708×424
+12:17:40.463 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow 1396 31 708 424
+12:17:40.478 SCREEN w572 of WindowManager left the screen
+12:17:40.478 SCREEN w571 of WindowManager left the screen
+12:17:40.478 SCREEN front to back: safari calendar settings preview w415 notes finder w67 mail terminal textedit w411
+12:17:40.660 DEBUG raised w58, which stays in view
+12:17:40.660 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:40.662 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:40.930 DEBUG raised w58, which stays in view
+12:17:40.932 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:40.933 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:41.157 DEBUG raised w58, which stays in view
+12:17:41.158 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:41.158 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:41.323 SCREEN front to back: calendar safari settings preview w415 notes finder w67 mail terminal textedit w411
+12:17:41.323 SCREEN the button is down 1392 235
+12:17:41.382 SCREEN in front: process 16803 com.apple.iCal
+12:17:41.383 MACOS pid 16803 AXApplicationActivated
+12:17:41.384 MACOS workspace didActivate pid 16803 com.apple.iCal regular
+12:17:41.384 MACOS workspace didDeactivate pid 16589 com.apple.Notes regular
+12:17:41.385 MACOS pid 16589 AXApplicationDeactivated
+12:17:41.389 DEBUG focus is on w58
+12:17:41.389 DEBUG w58 has the keyboard
+12:17:41.408 DEBUG the button went down at 1392,235, the pointer is at 1392,235: it is on w58
+12:17:41.425 SCREEN w415 of Arbor 655,214 951×614
+12:17:41.425 SCREEN front to back: w415 calendar safari settings preview notes finder w67 mail terminal textedit w411
+12:17:41.425 SCREEN the button is up 1392 235
+12:17:42.262 SCREEN front to back: settings w415 calendar safari preview notes finder w67 mail terminal textedit w411
+12:17:42.262 SCREEN the button is down 802 55
+12:17:42.308 SCREEN in front: process 17130 com.apple.systempreferences
+12:17:42.308 MACOS pid 16803 AXApplicationDeactivated
+12:17:42.311 MACOS workspace didActivate pid 17130 com.apple.systempreferences regular
+12:17:42.313 MACOS workspace didDeactivate pid 16803 com.apple.iCal regular
+12:17:42.366 SCREEN the button is up 802 55
+12:17:42.400 DEBUG focus is on w59
+12:17:42.400 MACOS pid 17130 AXApplicationActivated
+12:17:42.401 DEBUG w59 has the keyboard
+12:17:42.410 DEBUG the button went down at 802,55, the pointer is at 802,55: it is on w59
+12:17:42.417 DEBUG raised w58, which stays in view
+12:17:42.417 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:42.421 SCREEN w415 of Arbor 429,34 741×488
+12:17:42.421 SCREEN front to back: w415 settings calendar safari preview notes finder w67 mail terminal textedit w411
+12:17:42.422 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:42.642 DEBUG raised w58, which stays in view
+12:17:42.643 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:42.644 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:42.880 DEBUG raised w58, which stays in view
+12:17:42.882 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:42.883 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:43.269 SCREEN the button is down 1592 43
+12:17:43.274 DEBUG the button went down at 1592,43, the pointer is at 1592,43: it is on w61
+12:17:43.279 DEBUG raised w58, which stays in view
+12:17:43.295 MACOS pid 17205 AXApplicationActivated
+12:17:43.296 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:43.296 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:43.360 SCREEN front to back: preview w415 settings calendar safari notes finder w67 mail terminal textedit w411
+12:17:43.360 SCREEN the button is up 1592 43
+12:17:43.392 SCREEN in front: process 17205 com.apple.Preview
+12:17:43.396 DEBUG focus is on w61
+12:17:43.397 DEBUG w61 has the keyboard
+12:17:43.411 DEBUG raised w58, which stays in view
+12:17:43.429 SCREEN w415 of Arbor 1387,25 723×439
+12:17:43.429 SCREEN front to back: w415 preview calendar settings safari notes finder w67 mail terminal textedit w411
+12:17:43.455 MACOS pid 17130 AXApplicationDeactivated
+12:17:43.455 MACOS workspace didActivate pid 17205 com.apple.Preview regular
+12:17:43.455 MACOS workspace didDeactivate pid 17130 com.apple.systempreferences regular
+12:17:43.456 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:43.456 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:43.662 DEBUG raised w58, which stays in view
+12:17:43.662 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:43.663 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:43.873 DEBUG raised w58, which stays in view
+12:17:43.875 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:43.875 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:44.444 SCREEN front to back: safari w415 preview calendar settings notes finder w67 mail terminal textedit w411
+12:17:44.444 SCREEN the button is down 416 121
+12:17:44.444 SCREEN in front: process 16026 com.apple.Safari
+12:17:44.444 MACOS pid 17205 AXApplicationDeactivated
+12:17:44.446 MACOS workspace didActivate pid 16026 com.apple.Safari regular
+12:17:44.446 MACOS workspace didDeactivate pid 17205 com.apple.Preview regular
+12:17:44.462 DEBUG focus is on w34
+12:17:44.462 DEBUG w34 has the keyboard
+12:17:44.462 MACOS pid 16026 AXApplicationActivated
+12:17:44.473 DEBUG the button went down at 416,121, the pointer is at 416,121: it is on w34
+12:17:44.488 SCREEN w415 of Arbor 29,100 1342×806
+12:17:44.488 SCREEN front to back: w415 safari preview calendar settings notes finder w67 mail terminal textedit w411
+12:17:44.488 SCREEN the button is up 416 121
+12:17:44.504 DEBUG raised w58, which stays in view
+12:17:44.505 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:44.506 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:44.557 SCREEN front to back: w415 safari calendar preview settings notes finder w67 mail terminal textedit w411
+12:17:44.800 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:44.801 DEBUG raised w58, which stays in view
+12:17:44.801 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:45.075 DEBUG raised w58, which stays in view
+12:17:45.078 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:45.079 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:45.410 SCREEN front to back: terminal w415 safari calendar preview settings notes finder w67 mail textedit w411
+12:17:45.410 SCREEN the button is down 222 63
+12:17:45.445 SCREEN in front: process 16495 com.apple.Terminal
+12:17:45.465 MACOS pid 16026 AXApplicationDeactivated
+12:17:45.465 MACOS workspace didActivate pid 16495 com.apple.Terminal regular
+12:17:45.466 MACOS workspace didDeactivate pid 16026 com.apple.Safari regular
+12:17:45.476 DEBUG focus is on w49
+12:17:45.476 MACOS pid 16495 AXApplicationActivated
+12:17:45.477 DEBUG w49 has the keyboard
+12:17:45.493 SCREEN w415 of Arbor 31,42 881×517
+12:17:45.493 SCREEN front to back: w415 terminal safari calendar preview settings notes finder w67 mail textedit w411
+12:17:45.503 DEBUG the button went down at 222,63, the pointer is at 222,63: it is on w49
+12:17:45.512 SCREEN the button is up 222 63
+12:17:45.537 DEBUG raised w58, which stays in view
+12:17:45.537 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:45.538 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:45.584 SCREEN front to back: w415 terminal calendar safari preview settings notes finder w67 mail textedit w411
+12:17:45.802 DEBUG raised w58, which stays in view
+12:17:45.803 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:45.804 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:46.026 DEBUG raised w58, which stays in view
+12:17:46.028 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:46.028 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:46.580 SCREEN front to back: calendar w415 terminal safari preview settings notes finder w67 mail textedit w411
+12:17:46.580 SCREEN the button is down 1000 235
+12:17:46.581 SCREEN in front: process 16803 com.apple.iCal
+12:17:46.581 MACOS pid 16803 AXApplicationActivated
+12:17:46.582 MACOS workspace didActivate pid 16803 com.apple.iCal regular
+12:17:46.583 MACOS workspace didDeactivate pid 16495 com.apple.Terminal regular
+12:17:46.583 MACOS pid 16495 AXApplicationDeactivated
+12:17:46.584 DEBUG focus is on w58
+12:17:46.585 DEBUG w58 has the keyboard
+12:17:46.606 DEBUG the button went down at 1000,235, the pointer is at 1000,235: it is on w58
+12:17:46.658 SCREEN w415 of Arbor 655,214 951×614
+12:17:46.658 SCREEN front to back: w415 calendar terminal safari preview settings notes finder w67 mail textedit w411
+12:17:46.658 SCREEN the button is up 1000 235
+12:17:47.552 MACOS pid 16803 AXApplicationDeactivated
+12:17:47.552 MACOS workspace didActivate pid 17130 com.apple.systempreferences regular
+12:17:47.553 SCREEN in front: process 17130 com.apple.systempreferences
+12:17:47.553 MACOS workspace didDeactivate pid 16803 com.apple.iCal regular
+12:17:47.561 SCREEN front to back: settings w415 calendar terminal safari preview notes finder w67 mail textedit w411
+12:17:47.561 SCREEN the button is down 928 55
+12:17:47.614 MACOS pid 17130 AXApplicationActivated
+12:17:47.615 DEBUG focus is on w59
+12:17:47.615 DEBUG w59 has the keyboard
+12:17:47.631 SCREEN the button is up 928 55
+12:17:47.633 SCREEN w415 of Arbor 429,34 741×488
+12:17:47.633 SCREEN front to back: w415 settings calendar terminal safari preview notes finder w67 mail textedit w411
+12:17:47.645 DEBUG the button went down at 928,55, the pointer is at 928,55: it is on w59
+12:17:47.672 DEBUG raised w58, which stays in view
+12:17:47.672 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:47.673 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:47.883 DEBUG raised w58, which stays in view
+12:17:47.884 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:47.888 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:48.148 DEBUG raised w58, which stays in view
+12:17:48.150 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:48.150 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:48.413 SCREEN the button is down 1592 43
+12:17:48.416 DEBUG the button went down at 1592,43, the pointer is at 1592,43: it is on w61
+12:17:48.420 DEBUG raised w58, which stays in view
+12:17:48.427 MACOS pid 17205 AXApplicationActivated
+12:17:48.428 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:48.428 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:48.492 SCREEN front to back: preview w415 settings calendar terminal safari notes finder w67 mail textedit w411
+12:17:48.492 SCREEN the button is up 1592 43
+12:17:48.502 SCREEN in front: process 17205 com.apple.Preview
+12:17:48.508 DEBUG focus is on w61
+12:17:48.509 DEBUG w61 has the keyboard
+12:17:48.520 DEBUG raised w58, which stays in view
+12:17:48.561 SCREEN w415 of Arbor 1387,25 723×439
+12:17:48.561 SCREEN front to back: w415 preview calendar settings terminal safari notes finder w67 mail textedit w411
+12:17:48.567 MACOS pid 17130 AXApplicationDeactivated
+12:17:48.567 MACOS workspace didActivate pid 17205 com.apple.Preview regular
+12:17:48.567 MACOS workspace didDeactivate pid 17130 com.apple.systempreferences regular
+12:17:48.568 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:48.568 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:48.773 DEBUG raised w58, which stays in view
+12:17:48.774 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:48.775 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:48.990 DEBUG raised w58, which stays in view
+12:17:48.991 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:48.992 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:49.506 SCREEN front to back: safari w415 preview calendar settings terminal notes finder w67 mail textedit w411
+12:17:49.506 SCREEN the button is down 1186 121
+12:17:49.507 SCREEN in front: process 16026 com.apple.Safari
+12:17:49.507 MACOS pid 17205 AXApplicationDeactivated
+12:17:49.507 MACOS workspace didActivate pid 16026 com.apple.Safari regular
+12:17:49.507 MACOS workspace didDeactivate pid 17205 com.apple.Preview regular
+12:17:49.523 DEBUG focus is on w34
+12:17:49.523 MACOS pid 16026 AXApplicationActivated
+12:17:49.524 DEBUG w34 has the keyboard
+12:17:49.541 DEBUG the button went down at 1186,121, the pointer is at 1186,121: it is on w34
+12:17:49.547 DEBUG raised w58, which stays in view
+12:17:49.557 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:49.558 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:49.563 SCREEN w415 of Arbor 29,100 1342×806
+12:17:49.563 SCREEN front to back: w415 safari calendar preview settings terminal notes finder w67 mail textedit w411
+12:17:49.617 SCREEN the button is up 1186 121
+12:17:49.778 DEBUG raised w58, which stays in view
+12:17:49.781 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:49.782 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:50.004 DEBUG raised w58, which stays in view
+12:17:50.006 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:50.006 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:50.240 DEBUG raised w58, which stays in view
+12:17:50.242 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:50.243 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:50.513 SCREEN the button is down 418 63
+12:17:50.522 SCREEN in front: process 16495 com.apple.Terminal
+12:17:50.523 MACOS workspace didActivate pid 16495 com.apple.Terminal regular
+12:17:50.555 MACOS workspace didDeactivate pid 16026 com.apple.Safari regular
+12:17:50.557 DEBUG focus is on w49
+12:17:50.557 MACOS pid 16495 AXApplicationActivated
+12:17:50.558 SCREEN front to back: terminal w415 safari calendar preview settings notes finder w67 mail textedit w411
+12:17:50.558 DEBUG w49 has the keyboard
+12:17:50.565 MACOS pid 16026 AXApplicationDeactivated
+12:17:50.577 DEBUG the button went down at 418,63, the pointer is at 418,63: it is on w49
+12:17:50.592 DEBUG raised w58, which stays in view
+12:17:50.604 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:50.605 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:50.620 SCREEN w415 of Arbor 31,42 881×517
+12:17:50.620 SCREEN front to back: w415 terminal calendar safari preview settings notes finder w67 mail textedit w411
+12:17:50.620 SCREEN the button is up 418 63
+12:17:50.868 DEBUG raised w58, which stays in view
+12:17:50.869 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:50.872 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:51.107 DEBUG raised w58, which stays in view
+12:17:51.109 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:51.110 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:51.385 DEBUG raised w58, which stays in view
+12:17:51.388 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:51.389 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:51.556 SCREEN front to back: calendar w415 terminal safari preview settings notes finder w67 mail textedit w411
+12:17:51.556 SCREEN the button is down 1000 235
+12:17:51.563 SCREEN in front: process 16803 com.apple.iCal
+12:17:51.603 MACOS workspace didActivate pid 16803 com.apple.iCal regular
+12:17:51.605 MACOS workspace didDeactivate pid 16495 com.apple.Terminal regular
+12:17:51.606 DEBUG focus is on w58
+12:17:51.606 DEBUG w58 has the keyboard
+12:17:51.606 MACOS pid 16803 AXApplicationActivated
+12:17:51.606 MACOS pid 16495 AXApplicationDeactivated
+12:17:51.624 DEBUG the button went down at 1000,235, the pointer is at 1000,235: it is on w58
+12:17:51.667 SCREEN w415 of Arbor 655,214 951×614
+12:17:51.667 SCREEN front to back: w415 calendar terminal safari preview settings notes finder w67 mail textedit w411
+12:17:51.673 SCREEN the button is up 1000 235
+12:17:52.600 SCREEN front to back: settings w415 calendar terminal safari preview notes finder w67 mail textedit w411
+12:17:52.600 SCREEN the button is down 928 55
+12:17:52.634 SCREEN in front: process 17130 com.apple.systempreferences
+12:17:52.637 MACOS pid 16803 AXApplicationDeactivated
+12:17:52.637 MACOS workspace didActivate pid 17130 com.apple.systempreferences regular
+12:17:52.637 MACOS workspace didDeactivate pid 16803 com.apple.iCal regular
+12:17:52.692 DEBUG focus is on w59
+12:17:52.692 MACOS pid 17130 AXApplicationActivated
+12:17:52.693 DEBUG w59 has the keyboard
+12:17:52.702 DEBUG the button went down at 928,55, the pointer is at 928,55: it is on w59
+12:17:52.706 DEBUG raised w58, which stays in view
+12:17:52.707 SCREEN w415 of Arbor 429,34 741×488
+12:17:52.707 SCREEN front to back: w415 settings calendar terminal safari preview notes finder w67 mail textedit w411
+12:17:52.707 SCREEN the button is up 928 55
+12:17:52.711 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:52.712 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:52.982 DEBUG raised w58, which stays in view
+12:17:52.983 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:52.986 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:53.195 DEBUG raised w58, which stays in view
+12:17:53.199 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:53.200 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:53.478 SCREEN the button is down 1592 43
+12:17:53.484 DEBUG raised w58, which stays in view
+12:17:53.491 DEBUG the button went down at 1592,43, the pointer is at 1592,43: it is on w61
+12:17:53.497 DEBUG raised w58, which stays in view
+12:17:53.506 MACOS pid 17205 AXApplicationActivated
+12:17:53.507 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:53.508 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:53.509 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:53.510 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:53.527 SCREEN front to back: preview w415 settings calendar terminal safari notes finder w67 mail textedit w411
+12:17:53.527 SCREEN the button is up 1592 43
+12:17:53.542 SCREEN in front: process 17205 com.apple.Preview
+12:17:53.545 DEBUG focus is on w61
+12:17:53.545 DEBUG w61 has the keyboard
+12:17:53.581 DEBUG raised w58, which stays in view
+12:17:53.602 SCREEN w415 of Arbor 1387,25 723×439
+12:17:53.602 SCREEN front to back: w415 preview calendar settings terminal safari notes finder w67 mail textedit w411
+12:17:53.637 MACOS pid 17130 AXApplicationDeactivated
+12:17:53.638 MACOS workspace didActivate pid 17205 com.apple.Preview regular
+12:17:53.638 MACOS workspace didDeactivate pid 17130 com.apple.systempreferences regular
+12:17:53.639 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:53.639 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:53.838 DEBUG raised w58, which stays in view
+12:17:53.840 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:53.842 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:54.062 DEBUG raised w58, which stays in view
+12:17:54.065 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:54.067 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:17:56.366 SCREEN -- end 128 act=instrument settled=quiet:832 round=last posted=press:14,up:14 floating=31,34,45,49,52,58,61,65 docked=59
+12:17:56.810 SCRIPT == 129 quit

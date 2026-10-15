@@ -1,0 +1,60 @@
+113 display-unplug: the second display: unplug
+expected: {'act': 'display-change', 'settled': 'quiet:485', 'moves': 'any', 'leaves': 'any', 'floating': '31,34,45,49,52,58,59,65', 'docked': '61'}
+FAIL rule -: w61 sticks 398 points out of its slot: window 4,35 708×424, slot 12,433 1576×377
+FAIL rule 3: calendar (w58) moved 2 times
+
+12:16:49.057 SCREEN -- begin 113 display-unplug
+12:16:49.057 SCREEN -- text 113 the second display: unplug
+12:16:49.232 SCREEN (nothing was seen for 186 ms)
+12:16:49.232 SCREEN preview (w61) 4,35 708×424
+12:16:49.232 SCREEN calendar (w58) 1263,301 936×599
+12:16:49.306 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow 4 35 708 424
+12:16:49.307 MACOS pid 16803 AXMoved w58 AXWindow/AXStandardWindow 1263 301 936 599
+12:16:49.308 MACOS pid 17205 AXResized w61 AXWindow/AXStandardWindow 4 35 708 424
+12:16:49.320 SCREEN w411 of Arbor 995,552 1576×12
+12:16:50.980 INFO  displays changed: 1 display(s), 0 remembered
+12:16:50.981 DEBUG w61 has the keyboard
+12:16:50.985 MACOS pid 16803 AXMoved w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:50.993 SCREEN calendar (w58) 664,223 936×599
+12:16:51.202 DEBUG raised w58, which stays in view
+12:16:51.204 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:51.205 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:51.487 DEBUG raised w58, which stays in view
+12:16:51.490 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:51.492 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:51.734 DEBUG raised w58, which stays in view
+12:16:51.734 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:51.739 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:51.982 DEBUG raised w58, which stays in view
+12:16:51.982 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:51.983 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:52.261 DEBUG raised w58, which stays in view
+12:16:52.264 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:52.266 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:52.473 DEBUG raised w58, which stays in view
+12:16:52.475 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:52.476 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:52.691 DEBUG raised w58, which stays in view
+12:16:52.691 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:52.693 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:52.910 DEBUG raised w58, which stays in view
+12:16:52.914 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:52.914 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:53.120 DEBUG raised w58, which stays in view
+12:16:53.123 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:53.125 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:53.342 DEBUG raised w58, which stays in view
+12:16:53.347 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:53.348 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:53.556 DEBUG raised w58, which stays in view
+12:16:53.557 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:53.559 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:53.734 SCREEN -- finding 113 - FAIL w61 sticks 398 points out of its slot: window 4,35 708×424, slot 12,433 1576×377
+12:16:53.735 SCREEN -- end 113 act=display-change settled=quiet:485 moves=any leaves=any floating=31,34,45,49,52,58,59,65 docked=61
+12:16:53.824 DEBUG raised w58, which stays in view
+12:16:53.827 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:53.828 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:54.048 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:54.049 DEBUG raised w58, which stays in view
+12:16:54.049 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 223 936 599
+12:16:54.106 SCRIPT == 114 view-home

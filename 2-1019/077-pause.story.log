@@ -1,0 +1,43 @@
+77 pause: presses ⌃⌥⎋
+expected: {'act': 'way-out', 'settled': 'quiet:971', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1', 'front': '711', 'floating': '', 'docked': '', 'first': '1'}
+FAIL rule 5: textedit (w699) is 165,65 656×422; its own size was 165,65 673×439
+FAIL rule 5: terminal (w704) is 369,177 863×499; its own size was 369,177 877×499
+
+12:22:47.133 SCREEN -- begin 77 pause
+12:22:47.133 SCREEN -- text 77 presses ⌃⌥⎋
+12:22:47.311 SCREEN finder (w687) 729,43 501×436
+12:22:47.364 MACOS pid 49285 AXResized w687 AXWindow/AXStandardWindow 340 120 920 436
+12:22:47.364 MACOS pid 49285 AXMoved w687 AXWindow/AXStandardWindow 340 120 920 436
+12:22:47.364 MACOS pid 49285 AXResized w687 AXWindow/AXStandardWindow 340 120 920 436
+12:22:47.391 SCREEN finder (w687) 340,120 920×436
+12:22:47.415 MACOS pid 50600 AXResized w690 AXWindow/AXStandardWindow 211 109 1324 791
+12:22:47.415 MACOS pid 50600 AXMoved w690 AXWindow/AXStandardWindow 211 109 1324 791
+12:22:47.423 MACOS pid 50739 AXTitleChanged w704 AXWindow/AXStandardWindow 1242 43 345 499
+12:22:47.441 MACOS pid 50739 AXResized w704 AXWindow/AXStandardWindow 1242 43 345 499
+12:22:47.444 SCREEN safari (w690) 211,109 1324×791
+12:22:47.444 SCREEN terminal (w704) 1242,43 345×499
+12:22:47.446 MACOS pid 50739 AXMoved w704 AXWindow/AXStandardWindow 369 177 863 499
+12:22:47.447 MACOS pid 50739 AXTitleChanged w704 AXWindow/AXStandardWindow 369 177 863 499
+12:22:47.449 MACOS pid 50739 AXResized w704 AXWindow/AXStandardWindow 369 177 863 499
+12:22:47.455 SCREEN terminal (w704) 369,177 863×499
+12:22:47.456 MACOS pid 51299 AXMoved w709 AXWindow/AXStandardWindow 437 85 723 470
+12:22:47.479 SCREEN settings (w709) 437,85 723×470
+12:22:47.479 MACOS pid 51299 AXResized w709 AXWindow/AXStandardWindow 437 85 723 625
+12:22:47.489 SCREEN settings (w709) 437,85 723×625
+12:22:47.490 INFO  trace day-2 ended: 53 lines, Arbor stopped
+12:22:47.496 INFO  registered 1 shortcuts in 2950 µs: 51 of the map's 52 are the apps' while Arbor is paused
+12:22:47.496 INFO  stopped; all windows returned to view
+12:22:47.496 INFO  paused
+12:22:47.497 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Arbor is paused: its keys are the apps’ again · ⌃⌥⎋ resumes
+12:22:47.526 SCREEN w1104 of Arbor left the screen
+12:22:47.526 SCREEN w1100 of Arbor left the screen
+12:22:47.526 SCREEN w1101 of Arbor left the screen
+12:22:47.526 SCREEN w1105 of Arbor left the screen
+12:22:47.526 SCREEN w1106 of Arbor left the screen
+12:22:47.526 SCREEN w1107 of Arbor left the screen
+12:22:47.526 SCREEN w1102 of Arbor left the screen
+12:22:47.526 SCREEN w1103 of Arbor left the screen
+12:22:47.526 SCREEN front to back: preview notes safari terminal finder settings calendar textedit w715 mail
+12:22:47.591 SCREEN w1110 of Arbor 566,728 469×38 (level 6)
+12:22:48.717 SCREEN -- end 77 act=way-out settled=quiet:971 moves=any restores=all places=1 everything=1 front=711 floating= docked= first=1
+12:22:49.025 SCRIPT == 78 dock-icon-terminal

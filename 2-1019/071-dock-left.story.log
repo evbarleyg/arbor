@@ -1,0 +1,41 @@
+71 dock-left: presses ⌃⌥⌘ and the left arrow
+expected: {'act': 'dock-key', 'settled': 'quiet:634', 'moves': '687,704,709,687,690,704,709,', 'front': '690', 'floating': '699,705,706,711,712', 'docked': '687,690,704,709'}
+FAIL rule 4: safari (w690) is not wholly in view: 0% of it, at -573,770 574×791 in 0,31 1600×791 and 1600,31 1920×1049
+
+12:22:33.799 SCREEN -- begin 71 dock-left
+12:22:33.799 SCREEN -- text 71 presses ⌃⌥⌘ and the left arrow
+12:22:34.008 INFO  made room for w687
+12:22:34.012 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 8 stand-ins, 0.46 s
+12:22:34.012 DEBUG the stage kept the windows waiting 3 ms: its panel 0, 8 costumes 0 (0 not ready), the desktop 1, going up 2
+12:22:34.047 SCREEN w737 of Arbor 0,0 1600×900 (level 4)
+12:22:34.047 SCREEN safari (w690) 211,109 574×791
+12:22:34.048 MACOS pid 50600 AXResized w690 AXWindow/AXStandardWindow 211 109 574 791
+12:22:34.050 INFO  made room for w687
+12:22:34.067 MACOS pid 49285 AXResized w687 AXWindow/AXStandardWindow 729 43 501 767
+12:22:34.074 MACOS pid 49285 AXMoved w687 AXWindow/AXStandardWindow 729 43 501 767
+12:22:34.077 MACOS pid 50739 AXMoved w704 AXWindow/AXStandardWindow 1242 43 345 769
+12:22:34.078 MACOS pid 50739 AXTitleChanged w704 AXWindow/AXStandardWindow 1242 43 345 769
+12:22:34.078 MACOS pid 50739 AXResized w704 AXWindow/AXStandardWindow 1242 43 345 769
+12:22:34.080 MACOS pid 50600 AXMoved w690 AXWindow/AXStandardWindow -573 770 574 791
+12:22:34.082 MACOS pid 51299 AXMoved w709 AXWindow/AXStandardWindow -722 770 723 470
+12:22:34.084 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 8 stand-ins, 0.38976903915405275 s
+12:22:34.090 SCREEN safari (w690) -573,770 574×791
+12:22:34.090 SCREEN terminal (w704) 1242,43 324×769
+12:22:34.090 SCREEN finder (w687) 729,43 501×767
+12:22:34.090 SCREEN settings (w709) -722,770 723×470
+12:22:34.094 INFO  dock left: docked w690 at the left edge; its space is too small to show it, so it is a tile, and so is 1 other window now
+12:22:34.095 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Too small to show: click the tile to zoom in · ⌃⌥G goes there too
+12:22:34.100 SCREEN terminal (w704) 1242,43 345×769
+12:22:34.125 SCREEN w814 of Arbor 554,728 493×38 (level 6)
+12:22:34.125 SCREEN w1084 of Arbor 12,43 346×767
+12:22:34.125 SCREEN w1085 of Arbor 370,433 347×377
+12:22:34.125 SCREEN w1060 of Arbor 370,421 347×12
+12:22:34.125 SCREEN w1086 of Arbor 358,43 12×767
+12:22:34.125 SCREEN w1069 of Arbor 717,43 12×767
+12:22:34.125 SCREEN w1075 of Arbor 1230,43 12×767
+12:22:34.125 SCREEN w1061 of Arbor left the screen
+12:22:34.125 SCREEN front to back: safari notes terminal finder settings calendar textedit w736 w715 mail preview w1084 w1085 w1060 w1086 w1069 w1075
+12:22:34.593 DEBUG stage down
+12:22:34.603 SCREEN w737 of Arbor left the screen
+12:22:35.277 SCREEN -- end 71 act=dock-key settled=quiet:634 moves=687,704,709,687,690,704,709, front=690 floating=699,705,706,711,712 docked=687,690,704,709
+12:22:35.553 SCRIPT == 72 quit

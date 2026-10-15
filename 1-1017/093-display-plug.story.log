@@ -1,0 +1,29 @@
+93 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:424', 'moves': 'any', 'leaves': 'any', 'floating': '31,34,45,49,52,58,59,61,65', 'docked': ''}
+FAIL rule 3: calendar (w58) moved 2 times
+
+12:15:53.529 SCREEN -- begin 93 display-plug
+12:15:53.529 SCREEN -- text 93 the second display: plug
+12:15:53.546 SCREEN calendar (w58) 1263,301 936×599
+12:15:53.546 SCREEN w422 of Arbor left the screen
+12:15:53.794 MACOS pid 16803 AXMoved w58 AXWindow/AXStandardWindow 1263 301 936 599
+12:15:53.795 MACOS pid 16803 AXMoved w58 AXWindow/AXStandardWindow 1263 301 936 599
+12:15:53.800 SCREEN (nothing was seen for 253 ms)
+12:15:53.992 SCREEN (nothing was seen for 175 ms)
+12:15:54.179 SCREEN (nothing was seen for 112 ms)
+12:15:54.179 SCREEN calendar (w58) 664,301 936×599
+12:15:54.192 MACOS pid 16803 AXMoved w58 AXWindow/AXStandardWindow 664 301 936 599
+12:15:55.986 INFO  displays changed: 2 display(s), 0 remembered
+12:15:55.989 DEBUG w34 has the keyboard
+12:15:56.022 DEBUG raised w58, which stays in view
+12:15:56.025 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:15:56.026 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:15:56.053 DEBUG got ready the stage of 46102E0D-FB1C-420D-9A0B-D9DBC9E5D2F6 in 25 ms, the desktop 3 of them
+12:15:56.260 DEBUG raised w58, which stays in view
+12:15:56.260 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:15:56.261 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:15:56.502 DEBUG raised w58, which stays in view
+12:15:56.506 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:15:56.507 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:00.137 SCREEN -- end 93 act=display-change settled=quiet:424 moves=any leaves=any floating=31,34,45,49,52,58,59,61,65 docked=
+12:16:00.540 SCRIPT == 94 view-home

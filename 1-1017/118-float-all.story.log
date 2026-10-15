@@ -1,0 +1,19 @@
+118 float-all: presses ⌃⌥⇧F
+expected: {'act': 'way-out', 'settled': 'quiet:628', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1', 'floating': '31,34,45,49,52,58,59,61,65', 'docked': ''}
+FAIL rule 5: safari (w34) is 38,109 1324×791; its own size was -573,770 574×240
+FAIL rule 5: textedit (w45) is 165,65 656×422; its own size was 165,65 673×439
+FAIL rule 5: terminal (w49) is 40,51 863×499; its own size was 40,51 877×499
+FAIL rule 5: calendar (w58) has its size back but not its place: 2559,31 801×791, it was at 800,32 801×791
+
+12:17:11.772 SCREEN -- begin 118 float-all
+12:17:11.772 SCREEN -- text 118 presses ⌃⌥⇧F
+12:17:11.794 DEBUG drag of w61: on float, left to macOS’s tiling
+12:17:12.074 INFO  float-all: floated 1 window
+12:17:12.074 DEBUG said on 46102E0D-FB1C-420D-9A0B-D9DBC9E5D2F6: Floated 1 window
+12:17:12.105 SCREEN w422 of Arbor 2482,986 157×38 (level 6)
+12:17:12.105 SCREEN w411 of Arbor left the screen
+12:17:12.105 SCREEN front to back: w572 preview w571 calendar notes finder safari w67 mail settings terminal textedit
+12:17:12.310 DEBUG drag of w61: on float, left to macOS’s tiling
+12:17:12.359 SCREEN w635 of Arbor left the screen
+12:17:13.229 SCREEN -- end 118 act=way-out settled=quiet:628 moves=any restores=all places=1 everything=1 floating=31,34,45,49,52,58,59,61,65 docked=
+12:17:13.707 SCRIPT == 119 dock-icon-settings

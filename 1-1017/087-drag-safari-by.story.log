@@ -1,0 +1,99 @@
+87 drag-safari-by: drags safari, which floats, by its title bar -100 across and 91 down
+expected: {'act': 'drag', 'settled': 'quiet:1208', 'drags': '34', 'front': '34', 'own': '34', 'floating': '58', 'docked': '31,34,45,49,52,59,61,65'}
+FAIL rule 3: safari (w34) ended neither where it was let go nor where the preview was: let go at 38,109 1324×791, the preview at 615,43 368×222, now at -573,770 574×240
+FAIL rule 2: textedit (w45) moved, and the step did not name it
+
+12:15:35.311 SCREEN -- begin 87 drag-safari-by
+12:15:35.311 SCREEN -- text 87 drags safari, which floats, by its title bar -100 across and 91 down
+12:15:35.483 SCRIPT drag w34 from 1076,43 to 976,134
+12:15:35.792 SCREEN w422 of Arbor left the screen
+12:15:35.953 SCREEN the button is down 1076 43
+12:15:35.966 SCREEN front to back: safari w415 calendar preview notes finder settings terminal textedit w67 mail w407 w403 w405 w406 w408 w413 w410 w411 w409 w412
+12:15:35.967 DEBUG the button went down at 1076,43, the pointer is at 1076,43: it is on w34
+12:15:36.192 SCREEN safari (w34) 134,34 1324×791
+12:15:36.227 DEBUG w34 is being dragged
+12:15:36.228 SCREEN safari (w34) 131,41 1324×791
+12:15:36.229 DEBUG drag of w34: waiting over beside(n10, ArborCore.Edge.top)
+12:15:36.282 SCREEN safari (w34) 128,44 1324×791
+12:15:36.304 MACOS pid 16026 AXMoved w34 AXWindow/AXStandardWindow 128 44 1324 791
+12:15:36.317 SCREEN w415 of Arbor left the screen
+12:15:36.317 SCREEN front to back: safari calendar preview notes finder settings terminal textedit w67 mail w407 w403 w405 w406 w408 w413 w410 w411 w409 w412
+12:15:36.353 SCREEN safari (w34) 124,47 1324×791
+12:15:36.430 DEBUG drag of w34: on beside(n10, ArborCore.Edge.top)
+12:15:36.433 SCREEN safari (w34) 121,50 1324×791
+12:15:36.465 MACOS pid 16026 AXMoved w34 AXWindow/AXStandardWindow 121 50 1324 791
+12:15:36.481 SCREEN w485 of Arbor 995,43 501×179 (level 3)
+12:15:36.541 SCREEN safari (w34) 118,53 1324×791
+12:15:36.594 SCREEN safari (w34) 114,56 1324×791
+12:15:36.619 MACOS pid 16026 AXMoved w34 AXWindow/AXStandardWindow 114 56 1324 791
+12:15:36.714 SCREEN safari (w34) 111,59 1324×791
+12:15:36.718 SCREEN safari (w34) 108,62 1324×791
+12:15:36.769 MACOS pid 16026 AXMoved w34 AXWindow/AXStandardWindow 108 62 1324 791
+12:15:36.784 SCREEN safari (w34) 104,65 1324×791
+12:15:36.817 SCREEN safari (w34) 101,68 1324×791
+12:15:36.854 DEBUG drag of w34: waiting over beside(n10, ArborCore.Edge.left)
+12:15:36.859 SCREEN safari (w34) 98,71 1324×791
+12:15:36.896 MACOS pid 16026 AXMoved w34 AXWindow/AXStandardWindow 98 71 1324 791
+12:15:36.979 SCREEN safari (w34) 94,74 1324×791
+12:15:36.979 SCREEN w485 of Arbor left the screen
+12:15:37.014 SCREEN safari (w34) 91,77 1324×791
+12:15:37.052 MACOS pid 16026 AXMoved w34 AXWindow/AXStandardWindow 91 77 1324 791
+12:15:37.078 DEBUG drag of w34: on beside(n10, ArborCore.Edge.left)
+12:15:37.095 SCREEN w485 of Arbor 995,43 245×380 (level 3)
+12:15:37.100 SCREEN safari (w34) 88,80 1324×791
+12:15:37.199 SCREEN safari (w34) 84,83 1324×791
+12:15:37.217 MACOS pid 16026 AXMoved w34 AXWindow/AXStandardWindow 84 83 1324 791
+12:15:37.260 SCREEN safari (w34) 81,86 1324×791
+12:15:37.361 MACOS pid 16026 AXMoved w34 AXWindow/AXStandardWindow 78 89 1324 791
+12:15:37.400 SCREEN safari (w34) 74,92 1324×791
+12:15:37.500 SCREEN safari (w34) 71,95 1324×791
+12:15:37.509 MACOS pid 16026 AXMoved w34 AXWindow/AXStandardWindow 71 95 1324 791
+12:15:37.611 SCREEN safari (w34) 68,98 1324×791
+12:15:37.674 SCREEN safari (w34) 64,101 1324×791
+12:15:37.687 MACOS pid 16026 AXMoved w34 AXWindow/AXStandardWindow 64 101 1324 791
+12:15:37.762 SCREEN safari (w34) 61,104 1324×791
+12:15:37.806 SCREEN safari (w34) 58,107 1324×791
+12:15:37.865 MACOS pid 16026 AXMoved w34 AXWindow/AXStandardWindow 58 107 1324 791
+12:15:37.879 DEBUG drag of w34: on float
+12:15:37.892 SCREEN safari (w34) 54,109 1324×791
+12:15:37.987 MACOS pid 16026 AXMoved w34 AXWindow/AXStandardWindow 51 109 1324 791
+12:15:37.992 SCREEN safari (w34) 51,109 1324×791
+12:15:37.992 SCREEN w485 of Arbor left the screen
+12:15:38.042 SCREEN safari (w34) 48,109 1324×791
+12:15:38.117 DEBUG drag of w34: waiting over beside(n6, ArborCore.Edge.right)
+12:15:38.135 SCREEN safari (w34) 44,109 1324×791
+12:15:38.148 MACOS pid 16026 AXMoved w34 AXWindow/AXStandardWindow 44 109 1324 791
+12:15:38.212 SCREEN safari (w34) 41,109 1324×791
+12:15:38.283 DEBUG drag of w34: on beside(n6, ArborCore.Edge.right)
+12:15:38.307 SCREEN w485 of Arbor 615,43 368×222 (level 3)
+12:15:38.307 SCREEN safari (w34) 38,109 1324×791
+12:15:38.316 MACOS pid 16026 AXMoved w34 AXWindow/AXStandardWindow 38 109 1324 791
+12:15:38.508 SCREEN safari (w34) 39,109 1324×791
+12:15:38.607 MACOS pid 16026 AXMoved w34 AXWindow/AXStandardWindow 39 109 1324 791
+12:15:39.249 SCREEN safari (w34) 38,109 1324×791
+12:15:39.343 MACOS pid 16026 AXMoved w34 AXWindow/AXStandardWindow 38 109 1324 791
+12:15:39.363 INFO  dropped w34 on beside(n6, ArborCore.Edge.right), display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+12:15:39.376 SCREEN the button is up 976 134
+12:15:39.376 DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 8 stand-ins, 0.46 s
+12:15:39.376 DEBUG the stage kept the windows waiting 7 ms: its panel 0, 8 costumes 0 (0 not ready), the desktop 3, going up 4
+12:15:39.402 SCREEN w417 of Arbor 0,0 1600×900 (level 4)
+12:15:39.439 MACOS pid 16026 AXResized w34 AXWindow/AXStandardWindow 38 109 574 240
+12:15:39.469 MACOS pid 16246 AXResized w45 AXWindow/AXStandardWindow 234 43 369 222
+12:15:39.483 MACOS pid 16026 AXMoved w34 AXWindow/AXStandardWindow -573 770 574 240
+12:15:39.485 SCREEN safari (w34) -573,770 574×240
+12:15:39.485 SCREEN textedit (w45) 234,43 369×222
+12:15:39.499 DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 8 stand-ins, 0.3519320106506348 s
+12:15:39.505 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Docked · ⌃⌥↩ frames it
+12:15:39.552 SCREEN w422 of Arbor 692,728 216×38 (level 6)
+12:15:39.552 SCREEN w404 of Arbor 615,43 368×222
+12:15:39.552 SCREEN w408 of Arbor 603,43 12×222
+12:15:39.552 SCREEN w414 of Arbor 234,265 749×12
+12:15:39.552 SCREEN w485 of Arbor left the screen
+12:15:39.552 SCREEN front to back: safari calendar preview notes finder settings terminal textedit w67 mail w407 w403 w405 w406 w413 w410 w411 w409 w412 w404 w408 w414
+12:15:40.023 DEBUG stage down
+12:15:40.059 SCREEN w417 of Arbor left the screen
+12:15:40.691 SCREEN -- end 87 act=drag settled=quiet:1208 drags=34 front=34 own=34 floating=58 docked=31,34,45,49,52,59,61,65
+12:15:40.864 SCREEN (nothing was seen for 101 ms)
+12:15:41.067 SCREEN (nothing was seen for 145 ms)
+12:15:41.442 SCREEN w422 of Arbor left the screen
+12:15:41.613 SCRIPT == 88 float-all

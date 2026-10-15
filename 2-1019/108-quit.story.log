@@ -1,0 +1,17 @@
+108 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:354', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule 5: terminal (w704) is 366,31 862×497; its own size was 1,35 1598×784
+FAIL rule 5: notes (w705) has its size back but not its place: 484,162 1000×660, it was at 2084,180 1000×660
+FAIL rule 5: calendar (w706) has its size back but not its place: 638,31 909×791, it was at 2238,180 909×791
+FAIL rule 5: textedit (w1149) is 165,65 656×422; its own size was 165,65 673×439
+
+12:24:45.639 SCREEN -- begin 108 quit
+12:24:45.639 SCREEN -- text 108 chooses Quit Arbor in Arbor's menu
+12:24:46.350 SCREEN w1216 of Arbor 1319,31 273×486 (level 101)
+12:24:47.626 SCREEN w1216 of Arbor left the screen
+12:24:47.689 INFO  trace day-4 ended: 49 lines, Arbor stopped
+12:24:47.690 INFO  stopped; all windows returned to view
+12:24:47.695 INFO  Arbor quit
+12:24:47.855 SCREEN -- arbor gone
+12:24:48.368 SCREEN -- end 108 act=quit-and-start settled=quiet:354 moves=any restores=all places=1 everything=1
+12:24:48.732 SCRIPT == 109 input-after

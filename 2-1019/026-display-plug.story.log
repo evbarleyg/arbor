@@ -1,0 +1,24 @@
+26 display-plug: the second display: plug
+expected: {'act': 'display-change', 'settled': 'quiet:365', 'moves': 'any', 'leaves': 'any', 'floating': '687,690,699,704,705,706,709,711,712', 'docked': ''}
+FAIL rule 3: notes (w705) moved 2 times
+FAIL rule 3: calendar (w706) moved 2 times
+
+12:20:15.022 SCREEN -- begin 26 display-plug
+12:20:15.022 SCREEN -- text 26 the second display: plug
+12:20:15.212 SCREEN (nothing was seen for 176 ms)
+12:20:15.212 SCREEN notes (w705) -1081,97 1000×660
+12:20:15.212 SCREEN calendar (w706) 415,109 909×791
+12:20:15.258 MACOS pid 50978 AXMoved w705 AXWindow/AXStandardWindow -1081 97 1000 660
+12:20:15.259 MACOS pid 51239 AXMoved w706 AXWindow/AXStandardWindow 415 109 909 791
+12:20:15.455 SCREEN (nothing was seen for 121 ms)
+12:20:15.455 SCREEN w814 of Arbor 654,728 175×38 (level 6)
+12:20:15.804 SCREEN notes (w705) 1799,97 1000×660
+12:20:15.804 SCREEN calendar (w706) 415,115 909×791
+12:20:15.804 SCREEN w814 of Arbor left the screen
+12:20:15.804 MACOS pid 50978 AXMoved w705 AXWindow/AXStandardWindow 1799 97 1000 660
+12:20:15.805 MACOS pid 51239 AXMoved w706 AXWindow/AXStandardWindow 415 115 909 791
+12:20:17.549 INFO  displays changed: 2 display(s), 0 remembered
+12:20:17.551 DEBUG w705 has the keyboard
+12:20:17.612 DEBUG got ready the stage of 46102E0D-FB1C-420D-9A0B-D9DBC9E5D2F6 in 21 ms, the desktop 5 of them
+12:20:21.599 SCREEN -- end 26 act=display-change settled=quiet:365 moves=any leaves=any floating=687,690,699,704,705,706,709,711,712 docked=
+12:20:21.830 SCRIPT == 27 view-home

@@ -1,0 +1,159 @@
+112 drag-preview-to-left-edge: drags preview by its title bar against the left edge of the screen and lets go
+expected: {'act': 'drag-where-macos-tiles', 'settled': 'quiet:882', 'drags': '61', 'moves': '61,61,', 'front': '61', 'floating': '31,34,45,49,52,58,59,65', 'docked': '61'}
+FAIL rule -: w61 is in view for Arbor but only 51% of it is on a display: -768,438 1576×377
+FAIL rule -: w61 sticks 780 points out of its slot: window -768,438 1576×377, slot 12,433 1576×377
+
+12:16:41.580 SCREEN -- begin 112 drag-preview-to-left-edge
+12:16:41.580 SCREEN -- text 112 drags preview by its title bar against the left edge of the screen and lets go
+12:16:41.652 SCRIPT drag w61 from 768,445 to 0,450
+12:16:42.186 SCREEN the button is down 768 445
+12:16:42.200 SCREEN front to back: preview w415 calendar notes finder safari w67 mail settings terminal textedit w411
+12:16:42.200 DEBUG the button went down at 768,445, the pointer is at 768,445: it is on w61
+12:16:42.205 DEBUG raised w58, which stays in view
+12:16:42.206 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:42.207 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:42.231 SCREEN front to back: preview calendar w415 notes finder safari w67 mail settings terminal textedit w411
+12:16:42.397 DEBUG the press on w61 has moved nothing so far: looking less often
+12:16:42.400 SCREEN preview (w61) 0,433 1576×377
+12:16:42.434 SCREEN preview (w61) -26,433 1576×377
+12:16:42.462 DEBUG raised w58, which stays in view
+12:16:42.464 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:42.465 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:42.507 DEBUG w61 is being dragged, which began late
+12:16:42.507 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow -26 433 1576 377
+12:16:42.509 DEBUG drag of w61: on none
+12:16:42.541 SCREEN preview (w61) -77,433 1576×377
+12:16:42.541 SCREEN w415 of Arbor left the screen
+12:16:42.541 SCREEN front to back: preview calendar notes finder safari w67 mail settings terminal textedit w411
+12:16:42.626 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow -103 433 1576 377
+12:16:42.656 SCREEN preview (w61) -128,433 1576×377
+12:16:42.712 DEBUG raised w58, which stays in view
+12:16:42.714 SCREEN preview (w61) -154,434 1576×377
+12:16:42.714 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:42.722 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:42.734 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow -154 434 1576 377
+12:16:42.787 SCREEN preview (w61) -180,434 1576×377
+12:16:42.832 SCREEN preview (w61) -205,434 1576×377
+12:16:42.841 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow -205 434 1576 377
+12:16:42.920 SCREEN preview (w61) -231,434 1576×377
+12:16:43.003 DEBUG raised w58, which stays in view
+12:16:43.005 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:43.005 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:43.007 SCREEN preview (w61) -256,434 1576×377
+12:16:43.021 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow -256 434 1576 377
+12:16:43.054 SCREEN preview (w61) -282,434 1576×377
+12:16:43.122 SCREEN preview (w61) -308,435 1576×377
+12:16:43.150 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow -308 435 1576 377
+12:16:43.165 SCREEN preview (w61) -333,435 1576×377
+12:16:43.232 DEBUG raised w58, which stays in view
+12:16:43.234 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:43.235 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:43.275 SCREEN preview (w61) -359,435 1576×377
+12:16:43.282 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow -359 435 1576 377
+12:16:43.350 SCREEN preview (w61) -384,435 1576×377
+12:16:43.442 SCREEN preview (w61) -410,435 1576×377
+12:16:43.451 DEBUG raised w58, which stays in view
+12:16:43.454 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:43.456 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:43.460 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow -410 435 1576 377
+12:16:43.560 SCREEN preview (w61) -436,435 1576×377
+12:16:43.569 SCREEN preview (w61) -461,436 1576×377
+12:16:43.643 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow -461 436 1576 377
+12:16:43.673 SCREEN preview (w61) -487,436 1576×377
+12:16:43.677 DEBUG raised w58, which stays in view
+12:16:43.679 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:43.679 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:43.764 SCREEN preview (w61) -512,436 1576×377
+12:16:43.768 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow -512 436 1576 377
+12:16:43.790 SCREEN preview (w61) -538,436 1576×377
+12:16:43.849 SCREEN preview (w61) -564,436 1576×377
+12:16:43.888 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow -564 436 1576 377
+12:16:43.959 DEBUG raised w58, which stays in view
+12:16:43.963 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:43.964 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:43.971 SCREEN preview (w61) -589,436 1576×377
+12:16:44.038 SCREEN preview (w61) -615,437 1576×377
+12:16:44.071 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow -615 437 1576 377
+12:16:44.096 SCREEN preview (w61) -640,437 1576×377
+12:16:44.103 SCREEN preview (w61) -666,437 1576×377
+12:16:44.159 SCREEN preview (w61) -692,437 1576×377
+12:16:44.178 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow -692 437 1576 377
+12:16:44.180 DEBUG raised w58, which stays in view
+12:16:44.181 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:44.181 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:44.283 SCREEN preview (w61) -717,437 1576×377
+12:16:44.334 SCREEN preview (w61) -743,437 1576×377
+12:16:44.337 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow -743 437 1576 377
+12:16:44.380 DEBUG drag of w61: on float, left to macOS’s tiling
+12:16:44.393 SCREEN w572 of WindowManager -15,16 830×821
+12:16:44.393 SCREEN preview (w61) -768,438 1576×377
+12:16:44.393 SCREEN w571 of WindowManager -15,16 830×821
+12:16:44.393 SCREEN front to back: w572 preview w571 calendar notes finder safari w67 mail settings terminal textedit w411
+12:16:44.451 DEBUG raised w58, which stays in view
+12:16:44.453 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:44.470 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:44.507 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow -768 438 1576 377
+12:16:44.595 DEBUG drag of w61: on none
+12:16:44.597 SCREEN preview (w61) -767,438 1576×377
+12:16:44.683 DEBUG raised w58, which stays in view
+12:16:44.683 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:44.683 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:44.711 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow -767 438 1576 377
+12:16:44.712 DEBUG drag of w61: on float, left to macOS’s tiling
+12:16:44.928 DEBUG raised w58, which stays in view
+12:16:44.941 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:44.942 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:45.223 DEBUG raised w58, which stays in view
+12:16:45.225 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:45.227 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:45.507 DEBUG raised w58, which stays in view
+12:16:45.508 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:45.508 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:45.735 DEBUG raised w58, which stays in view
+12:16:45.737 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:45.743 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:46.022 DEBUG raised w58, which stays in view
+12:16:46.025 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:46.026 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:46.121 SCREEN preview (w61) -768,438 1576×377
+12:16:46.191 MACOS pid 17205 AXMoved w61 AXWindow/AXStandardWindow -768 438 1576 377
+12:16:46.244 DEBUG raised w58, which stays in view
+12:16:46.245 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:46.246 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:46.464 DEBUG raised w58, which stays in view
+12:16:46.467 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:46.468 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:46.699 DEBUG raised w58, which stays in view
+12:16:46.700 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:46.705 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:46.986 DEBUG raised w58, which stays in view
+12:16:46.988 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:46.990 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:47.199 DEBUG raised w58, which stays in view
+12:16:47.199 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:47.202 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:47.440 DEBUG raised w58, which stays in view
+12:16:47.441 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:47.444 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:47.651 DEBUG raised w58, which stays in view
+12:16:47.655 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:47.655 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:47.910 DEBUG raised w58, which stays in view
+12:16:47.913 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:47.914 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:48.122 DEBUG raised w58, which stays in view
+12:16:48.123 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:48.125 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:48.337 DEBUG raised w58, which stays in view
+12:16:48.340 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:48.341 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:48.609 DEBUG raised w58, which stays in view
+12:16:48.610 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:48.612 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:48.792 SCREEN -- finding 112 - FAIL w61 is in view for Arbor but only 51% of it is on a display: -768,438 1576×377
+12:16:48.792 SCREEN -- finding 112 - FAIL w61 sticks 780 points out of its slot: window -768,438 1576×377, slot 12,433 1576×377
+12:16:48.793 SCREEN -- end 112 act=drag-where-macos-tiles settled=quiet:882 drags=61 moves=61,61, front=61 floating=31,34,45,49,52,58,59,65 docked=61
+12:16:48.893 MACOS pid 16803 AXFocusedWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:48.895 DEBUG raised w58, which stays in view
+12:16:48.895 MACOS pid 16803 AXMainWindowChanged w58 AXWindow/AXStandardWindow 664 301 936 599
+12:16:49.047 SCRIPT == 113 display-unplug

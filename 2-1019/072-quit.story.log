@@ -1,0 +1,46 @@
+72 quit: chooses Quit Arbor in Arbor's menu
+expected: {'act': 'quit-and-start', 'settled': 'quiet:825', 'moves': 'any', 'restores': 'all', 'places': '1', 'everything': '1'}
+FAIL rule 5: textedit (w699) is 165,65 656×422; its own size was 165,65 673×439
+FAIL rule 5: terminal (w704) is 369,177 863×499; its own size was 369,177 877×499
+
+12:22:35.566 SCREEN -- begin 72 quit
+12:22:35.566 SCREEN -- text 72 chooses Quit Arbor in Arbor's menu
+12:22:36.179 DEBUG menu bar click: x 80.0 by the event, 80.0 by the screen, button 160.0 wide
+12:22:36.302 SCREEN w1091 of Arbor 1193,31 273×486 (level 101)
+12:22:37.676 SCREEN w1091 of Arbor left the screen
+12:22:37.736 SCREEN finder (w687) 729,43 501×436
+12:22:37.736 MACOS pid 49285 AXResized w687 AXWindow/AXStandardWindow 340 120 501 436
+12:22:37.736 MACOS pid 49285 AXMoved w687 AXWindow/AXStandardWindow 340 120 501 436
+12:22:37.746 SCREEN finder (w687) 340,120 501×436
+12:22:37.821 MACOS pid 49285 AXResized w687 AXWindow/AXStandardWindow 340 120 920 436
+12:22:37.865 MACOS pid 50600 AXResized w690 AXWindow/AXStandardWindow 211 109 1324 791
+12:22:37.866 MACOS pid 50600 AXMoved w690 AXWindow/AXStandardWindow 211 109 1324 791
+12:22:37.872 SCREEN safari (w690) -573,770 1324×791
+12:22:37.872 SCREEN finder (w687) 340,120 920×436
+12:22:37.872 MACOS pid 50739 AXTitleChanged w704 AXWindow/AXStandardWindow 1242 43 345 499
+12:22:37.873 MACOS pid 50739 AXResized w704 AXWindow/AXStandardWindow 1242 43 345 499
+12:22:37.881 MACOS pid 50739 AXMoved w704 AXWindow/AXStandardWindow 369 177 345 499
+12:22:37.884 SCREEN safari (w690) 211,109 1324×791
+12:22:37.884 SCREEN terminal (w704) 1242,43 345×499
+12:22:37.895 MACOS pid 50739 AXTitleChanged w704 AXWindow/AXStandardWindow 369 177 863 499
+12:22:37.895 MACOS pid 50739 AXResized w704 AXWindow/AXStandardWindow 369 177 863 499
+12:22:37.905 SCREEN terminal (w704) 369,177 863×499
+12:22:37.920 MACOS pid 51299 AXMoved w709 AXWindow/AXStandardWindow 437 85 723 625
+12:22:37.921 MACOS pid 51299 AXResized w709 AXWindow/AXStandardWindow 437 85 723 625
+12:22:37.934 SCREEN settings (w709) 437,85 723×625
+12:22:37.934 INFO  trace day-1 ended: 3456 lines, Arbor stopped
+12:22:37.935 INFO  stopped; all windows returned to view
+12:22:37.947 INFO  Arbor quit
+12:22:37.962 SCREEN w1069 of Arbor left the screen
+12:22:37.962 SCREEN w1062 of Arbor left the screen
+12:22:37.962 SCREEN w1075 of Arbor left the screen
+12:22:37.962 SCREEN w1085 of Arbor left the screen
+12:22:37.962 SCREEN w736 of Arbor left the screen
+12:22:37.962 SCREEN w814 of Arbor left the screen
+12:22:37.962 SCREEN w1060 of Arbor left the screen
+12:22:37.962 SCREEN w1084 of Arbor left the screen
+12:22:37.962 SCREEN w1086 of Arbor left the screen
+12:22:37.962 SCREEN front to back: safari notes terminal finder settings calendar textedit w715 mail preview
+12:22:38.104 SCREEN -- arbor gone
+12:22:39.018 SCREEN -- end 72 act=quit-and-start settled=quiet:825 moves=any restores=all places=1 everything=1
+12:22:39.196 SCRIPT == 73 dock-icon-safari
