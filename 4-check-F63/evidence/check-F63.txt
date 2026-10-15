@@ -1,0 +1,47 @@
+# check-F63 2026-10-15T12:49Z on macOS 26.6.2, commit 4ff9daa
+
+== the first minute: launched without the permission, then granted
+  ✔ Arbor waits for the permission
+  ✔ it holds no event tap
+  ✔ it has not spoken of a loss
+  ✔ it starts by itself when the permission arrives
+  ✔ no window has moved
+  ✔ ten seconds later it is still running: no false alarm in front of the welcome window
+  ✔ and has still not spoken of a loss
+
+== [1 | Desktop with 3 | 2], framed on 1: 2 and 3 are out of view
+  ✔ 2 is out of view
+  ✔ 3 is out of view
+  ✔ the event taps are installed
+
+== the permission goes
+  ✔ Arbor notices
+  ✔ it counts the windows out of view
+  ✔ no event tap is left
+  ✔ the shortcuts are still Arbor's: none of them reaches another app
+  ✔ nothing Arbor draws over the Desktop is left on screen
+  ✔ the window that asks for the permission back is up
+  ✔ a command fails
+  ✔ 2 is still out of view: nothing could be done
+
+== the permission returns
+  ✔ Arbor starts again
+  ✔ every window is in view
+  ✔ the event taps are back
+  ✔ and the shortcuts work again
+  ✔ Back returns to the view it had: 2 is out of view
+  ✔ ⌃⌥Space shows everything, with a real key
+
+== with nothing out of view Arbor keeps quiet
+  ✔ Arbor notices
+  ✔ the shortcuts are still Arbor's
+  ✔ Arbor starts again
+  ✔ the windows are where they were
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+32 passed, 0 failed
