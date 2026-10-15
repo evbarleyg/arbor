@@ -171,6 +171,7 @@ extension Controller {
     disprovedMinimums[window.id] = disprovedMinimums.removeValue(forKey: old)
     seenSizes[window.id] = seenSizes.removeValue(forKey: old)
     if fixedSizesNoted.remove(old) != nil { fixedSizesNoted.insert(window.id) }
+    foresightPasses(from: old, to: window.id)
     misfits[window.id] = misfits.removeValue(forKey: old)
     parkedAgain[window.id] = parkedAgain.removeValue(forKey: old)
     titleBars[window.id] = titleBars.removeValue(forKey: old)

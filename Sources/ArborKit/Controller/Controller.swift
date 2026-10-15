@@ -483,6 +483,19 @@ public final class Controller {
   /// Windows on a display too small for their own size, which they take along when they leave it (Controller+UndockedFrames.swift).
   var fittedToADisplay: [WindowID: FittedWindow] = [:]
 
+  /// How small apps go, by bundle id, kept from run to run (Controller+KnownSizes.swift).
+  public internal(set) var appSizes = AppSizes()
+  /// Who has been asked about what is foreseen of its app, and in which direction.
+  var askedAbout: [WindowID: AskedAbout] = [:]
+  /// True while a command works a layout out only to judge whether it may go ahead (`byAnswersAlone`).
+  var judgesByAnswersAlone = false
+  /// What of `minimumSizes` is in `appSizes` already.
+  var enteredSizes: [WindowID: EnteredSize] = [:]
+  /// While a trace is recorded: the apps of which it has been told what is known (Controller+KnownSizes.swift).
+  var toldInTheTrace: Set<String>?
+  /// The major version of macOS, which what is known of an app goes with. A test says which.
+  public var macOSVersion = ProcessInfo.processInfo.operatingSystemVersion.majorVersion
+
   public init(
     system: any WindowSystem, overlays: any OverlayPresenter, store: any StateStore,
     scheduler: any Scheduler, settings: Settings = Settings(), filter: WindowFilter = WindowFilter()
@@ -580,6 +593,7 @@ public final class Controller {
     seenSizes = seenSizes.filter { windows[$0.key] != nil }
     fixedSizesNoted = fixedSizesNoted.filter { windows[$0] != nil }
     titleBars = titleBars.filter { windows[$0.key] != nil }
+    recallHowSmallAppsGo(saved: saved)
     owedTheWayBack = owedTheWayBack.filter { windows[$0.key] != nil }
     appPlacedFrames = appPlacedFrames.filter { windows[$0.key] != nil }
     spokeOfItsPlace = spokeOfItsPlace.filter { windows[$0.key] != nil }
@@ -875,6 +889,7 @@ public final class Controller {
       workspaces: workspaces, hints: hints.filter { known.contains($0.key) }, dormant: dormant, welcomed: hasWelcomed)
     state.hintsShown = headsUp.hintsShown
     state.roomKept = leavesThatKeepRoom()
+    state.appSizes = appSizes.isEmpty ? nil : appSizes
     // With the keys of a peek down the view is only visiting, and history is kept by where it belongs. Whoever reads this
     // (a start after a crash or a quit, the end of a pause) finds nobody peeking, so what is written is what the look would
     // become then: everything shows, and Back leads to where its user was.

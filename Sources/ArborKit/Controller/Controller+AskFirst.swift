@@ -44,9 +44,13 @@ extension Controller {
       return min(slot.width / max(now.width, 1), slot.height / max(now.height, 1))
     }
     // One at a time, and no further than the first refusal: whoever has shrunk by then has shrunk for a layout that never
-    // comes, and may have to grow again. So newcomers come first, who are what the others make room for.
-    func turn(_ window: WindowID) -> (Int, Int, CGFloat, WindowID.RawValue) {
-      (window == first ? 0 : 1, shown[window] == nil ? 0 : 1, squeeze(window), window.rawValue)
+    // comes, and may have to grow again. So newcomers come first, who are what the others make room for. And whoever is foreseen to take
+    // its slot comes after all the strangers (Controller+KnownSizes.swift).
+    func turn(_ window: WindowID) -> (Int, Int, Int, CGFloat, WindowID.RawValue) {
+      (
+        window == first ? 0 : 1, unaskedForesight(about: window) == .zero ? 0 : 1, shown[window] == nil ? 0 : 1, squeeze(window),
+        window.rawValue
+      )
     }
     for window in unknown.sorted(by: { turn($0) < turn($1) }) {
       guard let current = windows[window], let question = question(current, toTake: layout.windowFrames[window]!.size)

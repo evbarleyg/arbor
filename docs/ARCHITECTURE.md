@@ -1060,8 +1060,9 @@ directory unless it is given an `ARBOR_HOME`, so that a test run on a Mac where 
   unknown keys are ignored, missing keys take defaults. See "Settings" below.
 - `state.json`: `PersistedState`: every workspace (tree, camera, history,
   saved views, names, floating frames, the frames docked windows floated at) keyed by display UUID, plus `WindowHint`s
-  (bundle id and title) for re-matching windows whose numbers changed, and the
-  dormant workspaces of disconnected displays with the date each went away.
+  (bundle id and title) for re-matching windows whose numbers changed, the
+  dormant workspaces of disconnected displays with the date each went away, and how small apps go (`appSizes`, F68: for each
+  bundle id a width, a height, the major version of macOS and the date a window last stood by it; gone after thirty days).
   Saved 0.5 s after any change and on quit, atomically, if it differs from what was saved last;
   encoded and written on a queue of its own, in order, and flushed on quit.
 - `state.unreadable.json`: a `state.json` Arbor could not use, set aside instead of

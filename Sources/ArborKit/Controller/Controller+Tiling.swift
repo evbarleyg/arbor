@@ -215,7 +215,7 @@ extension Controller {
           + "`grow` them first, or frame the group (`zoom`, then `out`) and rotate it there")
     }
     // Judged as it will be laid out: with room made for windows that need it, if their neighbours can spare it (F61).
-    if let refusal = refusal(roomyLayout(of: display, for: .structure)) { return refusal }
+    if let refusal = byAnswersAlone({ refusal(roomyLayout(of: display, for: .structure)) }) { return refusal }
     workspaces[display] = workspace
     relayout(display, reason: .structure)
     // How small an app lets its window get is known only once it has been asked.

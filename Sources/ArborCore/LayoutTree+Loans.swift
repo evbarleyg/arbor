@@ -78,6 +78,21 @@ extension LayoutTree {
     loans.removeAll { $0.borrower == id || $0.giver == id || $0.receiver == id }
   }
 
+  /// Room that was made for `borrower`, which stays in the tree, goes back to whoever gave it, all of it, now. For a window that was foreseen not to go
+  /// smaller and does (F68): it is a stranger again, and of a stranger nobody knows what it can spare, so that nothing would ever come back by itself.
+  /// What it has lent to others stays lent.
+  public mutating func giveBackWhatWasBorrowed(for borrower: NodeID) {
+    for index in loans.indices where loans[index].borrower == borrower {
+      let loan = loans[index]
+      // As in `repayLoans`: a giver that has been wrapped in a group since has a weight that counts in another direction.
+      guard let giver = nodes[loan.giver], let receiver = nodes[loan.receiver], giver.parent == receiver.parent, giver.parent != nil,
+        loan.weight.isFinite, loan.weight > 0
+      else { continue }
+      repay(loan.weight, ofLoanAt: index)
+    }
+    loans.removeAll { $0.borrower == borrower }
+  }
+
   public var hasLoans: Bool { !loans.isEmpty }
 
   /// Gives `weight` of the loan at `index` back now, because the receiver can spare it.

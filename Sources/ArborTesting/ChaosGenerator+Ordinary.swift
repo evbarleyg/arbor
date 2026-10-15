@@ -99,6 +99,12 @@ extension ChaosGenerator {
   /// What real apps refuse to go below, and about how large they open.
   private static let realApps = RealApp.ordinary
 
+  static func howSmallTheOrdinaryAppsGo(seen: Date, macOS: Int) -> AppSizes {
+    var sizes = AppSizes()
+    for app in realApps { sizes.stoodBy(app.minimum, app: "com.example.\(app.name.lowercased())", macOS: macOS, at: seen) }
+    return sizes
+  }
+
   /// The keys a person presses, by how often.
   private static let keys: [(weight: Int, value: String)] = [
     (12, "dock left"), (12, "dock right"), (6, "dock top"), (8, "dock bottom"), (12, "toggle-float"), (5, "arrange"), (4, "float-all"),

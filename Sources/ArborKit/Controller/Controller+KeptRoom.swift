@@ -113,9 +113,11 @@ extension Controller {
   /// decided**: whatever lays out an arrangement that is, or may be, the real one goes through here, so that no two
   /// of them disagree.
   func laidOut(
-    _ tree: LayoutTree, camera: NodeID, on display: DisplaySnapshot, options: LayoutOptions, present: Set<WindowID>
+    _ tree: LayoutTree, camera: NodeID, on display: DisplaySnapshot, options: LayoutOptions, present: Set<WindowID>,
+    minimums: [WindowID: CGSize]? = nil
   ) -> (layout: Layout, late: Set<WindowID>, atAWindowsCost: Bool) {
-    let minimums = minimumSizes
+    // What windows answered, unless whoever asks also goes by what is foreseen of them (Controller+KnownSizes.swift).
+    let minimums = minimums ?? minimumSizes
     func layout(_ camera: NodeID, counting present: Set<WindowID>) -> Layout {
       LayoutEngine.layout(
         tree, camera: camera, in: display.visibleFrame, options: options, isPresent: { present.contains($0) },

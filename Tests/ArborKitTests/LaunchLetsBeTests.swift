@@ -111,6 +111,8 @@ import Testing
   /// wherever that left it: with a slot on the right, mostly off the display. Preview, with eight windows docked, on a hosted Mac.)
   @Test(arguments: ["left", "right"]) func oneThatTurnsOutToBeATileOnlyWhenAskedEndsWhereItStood(side: String) {
     let (h, tooWide, others) = quitWithTheKeyboardInAWindowThatIsTooWide(on: side)
+    // In a home that has not met the app. One that has knows how small it goes, and sets it no frame at all (`HowSmallAppsGoTests`).
+    h.store.saved?.appSizes = nil
     let (stood, mark) = (h.frame(tooWide)!, h.system.focusLog.count)
     h.start()
     settle(h)

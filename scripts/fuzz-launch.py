@@ -26,7 +26,7 @@ Exits with 1 if anything was found. Each distinct finding is printed once, with 
 which is kept (--keep, or a folder in the temporary directory that is named at the end). What is found and not fixed yet is
 listed in KNOWN, counted apart, and no reason to exit with 1.
 """
-import argparse, collections, copy, glob, json, os, random, re, resource, shutil, subprocess, sys, tempfile
+import argparse, collections, copy, glob, json, os, platform, random, re, resource, shutil, subprocess, sys, tempfile
 from concurrent.futures import ThreadPoolExecutor
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -48,10 +48,12 @@ BASE_SESSIONS = {
                  "move 107 1500 100 600 400", "focus 107", "dock 107 right", "move 106 1700 300 400 300", "focus 101",
                  "summon Music", "flush", "summon Music", "flush", "displays 1", "flush", "zoom 101", "pause 30"]),
 }
+# The major version of the system, as Foundation tells it to Arbor: of macOS, or of Linux's kernel.
+SYSTEM = int((platform.mac_ver()[0] or platform.release()).split(".")[0])
 # Every key a workspace, a tree, a node or the file can have, so that none goes unfuzzed because no session made one.
 EXPECTED_KEYS = {"back", "camera", "floating", "forward", "guests", "names", "pinned", "savedViews", "stashed", "summonFrames",
                  "summoned", "tree", "undockedFrames", "dormant", "hints", "pause", "version", "workspaces", "keeps", "visits",
-                 "desktopIsOwedRoom", "welcomed", "hintsShown", "leftAt"}
+                 "desktopIsOwedRoom", "welcomed", "hintsShown", "leftAt", "appSizes", "macOS", "seen"}
 
 SETTINGS_SESSION = [
     "rule add com.example.notes dock left title Inbox", "rule add com.example.maps dock beside com.example.safari right",
@@ -444,6 +446,11 @@ def build_bases(rig):
         states[name] = json.load(open(path))
     states["A"]["workspaces"]["main"]["desktopIsOwedRoom"] = True  # takes a window that refuses its slot; simpler by hand
     states["A"]["hintsShown"] = {"peek": 2, "step-in": 1}  # counted by the app's panels, which the simulator does not have
+    # Takes windows that refuse their slots. An hour before the simulator's clock starts, on the system this runs on, or it would be dropped unread.
+    # Smaller than any slot: the simulator's windows take any size, so that a store on which a slot came to rest would be a wrong one, and
+    # putting it right is seen (a window moves twice, once), which the simulator counts as a fault.
+    states["A"]["appSizes"] = {"com.example.%s" % app: {"width": width, "height": height, "macOS": SYSTEM, "seen": 799996400}
+                               for app, width, height in (("safari", 120, 90), ("mail", 140, 0), ("notes", 0, 100))}
     settings_path = os.path.join(base, "settings.json")
     session([], ["settings-file " + settings_path] + SETTINGS_SESSION, "settings.json")
     settings = json.load(open(settings_path))

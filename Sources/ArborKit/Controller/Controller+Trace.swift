@@ -118,6 +118,9 @@ extension Controller {
     header.parked = parked.sorted()
     header.minimumSizes = minimumSizes
     header.seenSizes = seenSizes
+    header.appSizes = appSizesForATrace(of: header.windows.compactMap(\.bundle))
+    toldInTheTrace = Set(header.windows.compactMap(\.bundle))
+    header.askedAbout = askedAbout.mapValues { ($0.width ? "w" : "") + ($0.height ? "h" : "") }.filter { !$0.value.isEmpty }
     header.appPlaced = appPlacedFrames
     header.framePlan = FramePlan.version
     header.focusHistory = focusHistory
@@ -139,6 +142,12 @@ extension Controller {
     filter.ignoredWindowIDs = Set(header.ignored)
     minimumSizes = header.minimumSizes
     seenSizes = header.seenSizes
+    // As old as it was then. A date that cannot be read: a day, which is old enough to be asked about.
+    let recorded = ISO8601DateFormatter().date(from: header.recorded)
+    let newest = header.appSizes?.apps.values.map(\.seen).max() ?? now()
+    appSizes = (header.appSizes ?? AppSizes()).moved(
+      by: now().timeIntervalSince(recorded ?? newest.addingTimeInterval(24 * 3600)), macOS: macOSVersion)
+    askedAbout = header.askedAbout.mapValues { AskedAbout(width: $0.contains("w"), height: $0.contains("h")) }
     appPlacedFrames = header.appPlaced
     focusHistory = header.focusHistory
     // A recording begins in the middle of a run, so the replay goes on from the view of then. A launch would show everything.

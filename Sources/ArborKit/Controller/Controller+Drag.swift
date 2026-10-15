@@ -240,7 +240,7 @@ extension Controller {
   func previewFrame(for window: WindowID, at target: DropTarget, on displayID: DisplayID) -> CGRect? {
     guard let workspace = workspaces[displayID], let display = display(displayID) else { return nil }
     let present = presentWindowIDs()
-    let minimums = minimumSizes
+    let minimums = plannedSizes
     return workspace.previewFrame(
       for: window, at: target, in: display.visibleFrame, options: options(for: displayID).layoutOptions,
       isPresent: { present.contains($0) }, minimumSize: { minimums[$0] },

@@ -32,7 +32,7 @@ extension Controller {
       !plain.tiles.isEmpty || (workspace.tree.hasLoans && reason != .enforce), let display = display(displayID)
     else { return plain }
     let present = presentWindowIDs().union(late)
-    let minimums = minimumSizes
+    let minimums = plannedSizes
     var terms = roomTerms(on: displayID)
     // What the Desktop is owed it gets when something moves anyway, not because an app has moved its own window. (An app that makes
     // the window being typed in larger than its slot is still served, at a neighbour's cost if need be; one in the background never.)

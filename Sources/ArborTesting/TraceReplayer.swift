@@ -314,7 +314,21 @@ public final class TraceReplayer {
   }
 
   private func boot() {
-    let header = trace.header
+    var header = trace.header
+    // Of an app whose first window came during the recording the trace was told then, in a line that names the window
+    // (Controller+KnownSizes.swift). Till then nothing in the trace goes by it, so it is as well known from the start.
+    var apps: [WindowID: String] = [:]
+    for entry in entries {
+      switch entry.line {
+      case .appeared(let window), .changed(let window, _): apps[window.id] = window.bundle
+      case .other(.read, AppSizes.traceLine, let arguments, let result?):
+        guard let window: WindowID = arguments.first?.decoded(), let app = apps[window], let known: AppSizes.Entry = result.decoded()
+        else { continue }
+        var sizes = header.appSizes ?? AppSizes()
+        if sizes.take(known, for: app) { header.appSizes = sizes }
+      default: break
+      }
+    }
     for window in header.windows { install(WindowSnapshot(window)) }
     fake.focused = header.focused
     fake.cursor = header.cursor

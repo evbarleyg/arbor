@@ -5,6 +5,7 @@ extension Controller: WindowSystemEvents {
   public func windowAppeared(_ window: WindowSnapshot) {
     windows[window.id] = window
     keyboardHandOver.newcomers[window.id] = now()
+    tellTheTrace(whatIsKnownOf: window)
     // A window can have the keyboard before Arbor hears of it.
     defer { refreshFocusRing(.focus) }
     refreshHoldCaller()
@@ -42,6 +43,7 @@ extension Controller: WindowSystemEvents {
     seenSizes[id] = nil
     justAnswered[id] = nil
     fixedSizesNoted.remove(id)
+    forgetForesight(of: id)
     parkedAgain[id] = nil
     titleBars[id] = nil
     landsAt[id] = nil
@@ -92,6 +94,7 @@ extension Controller: WindowSystemEvents {
     // Every window Arbor moves reports back what Arbor knows already. Storing that would count as a change of `windows`.
     if previous != window { windows[window.id] = window }
     lettingBeNotes(window, movedByItsUser: userInitiated && previous?.frame != window.frame)
+    if previous == nil { tellTheTrace(whatIsKnownOf: window) }
     if owedTheWayBack[window.id] != nil { payTheWayBack(to: window.id) }
     noteWhetherItCameBack(window, was: previous)
     putBackIfItLeftFullScreen(window, was: previous)

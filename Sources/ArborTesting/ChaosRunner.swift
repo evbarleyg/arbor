@@ -676,9 +676,9 @@ public final class ChaosRunner {
         found.append(.init("codable", "state.json cannot be read back"))
       }
     }
-    harness = Harness(settings: settings(), saved: saved, system: system)
-    let (controller, scheduler, before) = (harness.controller, harness.scheduler, elapsed)
     let start = Date(timeIntervalSinceReferenceDate: 800_000_000)
+    harness = Harness(settings: settings(), saved: saved ?? Self.homeThatHasMetTheApps(before: start), system: system)
+    let (controller, scheduler, before) = (harness.controller, harness.scheduler, elapsed)
     controller.now = { start.addingTimeInterval(before + scheduler.now) }
     controller.loadSettings = { [unowned self] in self.settings() }
     controller.saveSettings = { [unowned self] _, settings in
@@ -698,6 +698,16 @@ public final class ChaosRunner {
     guardZonesCopy = controller.desktopGuardZones()
     found += shapeViolations(expected: expected)
     renumbered = [:]
+  }
+
+  /// `ARBOR_CHAOS_MET_BEFORE=1`: where there is no state.json, one that holds nothing but how small the apps of the ordinary walks go,
+  /// seen the day before. What walks find then is what is left once no app is a stranger (docs/features/F68-how-small-apps-go.md).
+  private static func homeThatHasMetTheApps(before start: Date) -> PersistedState? {
+    guard ProcessInfo.processInfo.environment["ARBOR_CHAOS_MET_BEFORE"] != nil else { return nil }
+    var home = PersistedState(workspaces: [:], hints: [:])
+    home.appSizes = ChaosGenerator.howSmallTheOrdinaryAppsGo(
+      seen: start.addingTimeInterval(-24 * 3600), macOS: ProcessInfo.processInfo.operatingSystemVersion.majorVersion)
+    return home
   }
 
   /// Performs a command as ArborApp does: `quit` replies, then the app terminates, which shuts the
