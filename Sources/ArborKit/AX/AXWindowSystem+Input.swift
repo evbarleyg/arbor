@@ -26,7 +26,7 @@ extension AXWindowSystem {
     seen += " ctrl=\(CGEventSource.keyState(.combinedSessionState, key: 59)) opt=\(CGEventSource.keyState(.combinedSessionState, key: 58))"
     seen += " flags appkit=\(NSEvent.modifierFlags.rawValue)"
     Log.debug(seen)
-    guard CGEventSource.keyState(.hidSystemState, key: code) || CGEventSource.keyState(.combinedSessionState, key: code) else {
+    guard CGEventSource.keyState(.combinedSessionState, key: code) else {
       return false
     }
     let (modifiers, flags) = (chord.modifiers, NSEvent.modifierFlags)

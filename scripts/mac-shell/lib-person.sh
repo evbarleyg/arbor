@@ -5,9 +5,9 @@
 #   arbor_build
 #   arbor_start_as_a_person 3 ARBOR_NO_HOTKEYS=0      # whatever arbor_start takes
 #
-# arbor_start runs the bare binary as the shell's child. Such an Arbor borrows the permission of the hosted Mac's agent, and macOS tells it things that it does
-# not tell the app: whether a key is down that another app has the keyboard for, by the session's table (2026-10-15: 288 looks of 288 true in the child, 19 of
-# 19 false in the app, the key down in all). A script that starts Arbor as nobody does cannot see what only the app meets.
+# arbor_start runs the bare binary as the shell's child. Such an Arbor borrows the permission of the hosted Mac's agent, and has it from before it starts. What
+# an Arbor meets that is granted its permission while it waits, as on a first day, no such script can see: macOS tells it that a key which is down is up, by the
+# session's table, while another app has the keyboard (2026-10-15: 233 looks of 233; the shell's child was told the truth at 288 of 288). A hold was a tap.
 #
 # Here: a copy of the app under an identifier of its own, opened by Launch Services, WITHOUT the permission; it is granted while Arbor waits, as on a first day.
 # arbor_relaunch_as_a_person starts the same copy again in the same session, with the grant in place from before it starts: as on any later day.
@@ -22,8 +22,12 @@ ARBOR_PERSON_APP=""
 # safe anywhere: a name; nothing is done with it here
 ARBOR_PERSON_TCC="/Library/Application Support/com.apple.TCC/TCC.db"
 
-# safe anywhere: called from inside `if on_throwaway_mac` below and from nowhere else
-arbor_person_tcc() { sudo sqlite3 "$ARBOR_PERSON_TCC" "$1"; }
+# The daemon writes there too, a row of its own when the copy asks: "database is locked", one grant of 21 on hosted Macs (2026-10-15). So: it waits, and tries once more.
+arbor_person_tcc() {
+  on_throwaway_mac && sudo sqlite3 -cmd ".timeout 5000" "$ARBOR_PERSON_TCC" "$1" && return 0
+  sleep 1
+  on_throwaway_mac && sudo sqlite3 -cmd ".timeout 5000" "$ARBOR_PERSON_TCC" "$1"
+}
 arbor_person_forget() { arbor_person_tcc "DELETE FROM access WHERE client = '$ARBOR_PERSON_ID';"; }
 arbor_person_manages() {
   # shellcheck disable=SC2086
@@ -73,8 +77,9 @@ arbor_start_as_a_person() {
 
     codesign --display --requirements - "$app" 2>/dev/null | sed -n 's/^\(# \)\{0,1\}designated => //p' | csreq -r- -b "$ARBOR_SESSION_DIR/requirement.bin"
     hex=$(xxd -p "$ARBOR_SESSION_DIR/requirement.bin" | tr -d '\n')
-    # From an entry that is there, so that it has whatever columns this macOS has.
-    arbor_person_tcc "CREATE TEMP TABLE one AS SELECT * FROM access WHERE service = 'kTCCServiceAccessibility' AND auth_value = 2 LIMIT 1;
+    # From an entry that is there, so that it has whatever columns this macOS has. In place of the one macOS wrote when the copy asked and was told no.
+    arbor_person_tcc "DELETE FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$ARBOR_PERSON_ID';
+      CREATE TEMP TABLE one AS SELECT * FROM access WHERE service = 'kTCCServiceAccessibility' AND auth_value = 2 LIMIT 1;
       UPDATE one SET client = '$ARBOR_PERSON_ID', client_type = 0, csreq = X'$hex';
       INSERT INTO access SELECT * FROM one;" || die "the grant could not be written"
     sudo killall -9 tccd 2>/dev/null
