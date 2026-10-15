@@ -7,6 +7,9 @@ import Foundation
 //
 //   arbor-sim walk <seed> <acts> --for-a-mac <cast> <display> <tiling> [commit]
 //                                      writes a walk in the words of scripts/mac-shell/lib-walk.sh: a file that bash runs on a hosted Mac as it stands
+//       --stranger                     by somebody who does not know Arbor: it runs, and nothing is asked of it. Play the file with and without Arbor
+//                                      (--without-arbor) and lay the two side by side: `walk-diff.py --with a.log --without b.log`. Nothing may differ
+//       --stranger --docked <n>        n windows are docked first, by the keys; from then on nothing is asked. jolts.py judges it; a control, which cannot dock, says what else the docking moved
 //   arbor-sim walk <seed> <acts> --words <cast> <display> <tiling>
 //                                      only its words, one a line: what scripts/mac-shell/gate.py hands to gate.sh
 //   arbor-sim walk --rehearse [options] < file
@@ -42,7 +45,17 @@ private func summary(of player: WalkPlayer) -> [String] {
 @MainActor
 func runWalkMode(_ arguments: [String]) -> Int32? {
   guard arguments.first == "walk" else { return nil }
-  let rest = Array(arguments.dropFirst())
+  let walker: WalkWriter.Walker = arguments.contains("--stranger") ? .stranger : .knowing
+  var rest = Array(arguments.dropFirst()).filter { $0 != "--stranger" }
+  var docked = 0
+  if let at = rest.firstIndex(of: "--docked") {
+    guard walker == .stranger, rest.indices.contains(at + 1), let number = Int(rest[at + 1]), (1...6).contains(number) else {
+      complain("--stranger --docked <1 to 6>")
+      return 64
+    }
+    docked = number
+    rest.removeSubrange(at...(at + 1))
+  }
   func option(_ name: String) -> String? { rest.firstIndex(of: name).flatMap { rest.indices.contains($0 + 1) ? rest[$0 + 1] : nil } }
   func setting(_ words: ArraySlice<String>, seed: String) -> WalkSetting? {
     let words = Array(words)
@@ -101,7 +114,7 @@ func runWalkMode(_ arguments: [String]) -> Int32? {
     for seed in first..<(first + count) {
       var one = base
       one.seed = String(seed)
-      let writer = Log.silenced { WalkWriter(one, acts: acts) }
+      let writer = Log.silenced { WalkWriter(one, acts: acts, walker: walker, docked: docked) }
       let counts = WalkWriter.counts(of: writer.player)
       played += writer.player.played.count
       leftOut += writer.player.leftOut.count
@@ -137,7 +150,7 @@ func runWalkMode(_ arguments: [String]) -> Int32? {
     return 64
   }
   guard let chosen = setting(rest[3...], seed: rest[0]) else { return 64 }
-  let writer = Log.silenced { WalkWriter(chosen, acts: acts) }
+  let writer = Log.silenced { WalkWriter(chosen, acts: acts, walker: walker, docked: docked) }
   if writer.isResigned { complain("this walk holds an act at which an expectation of lib-walk.sh's does not hold on the stand-ins: too many had to be struck out") }
   if rest[2] == "--words" { for word in writer.walk.words { say(word.text) } } else { FileHandle.standardOutput.write(Data(writer.walk.text.utf8)) }
   return 0

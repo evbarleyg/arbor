@@ -429,7 +429,7 @@ public final class WalkPlayer {
 
   public func window(of app: String) -> WindowID? { members[app]?.window }
   /// The window that was given that label last and is still there.
-  func window(labelled label: String) -> WindowID? { labels.filter { $0.value == label && system.windows[$0.key] != nil }.keys.max() }
+  public func window(labelled label: String) -> WindowID? { labels.filter { $0.value == label && system.windows[$0.key] != nil }.keys.max() }
   func pid(of app: String) -> Int32? { members[app]?.pid }
   func name(ofPid pid: Int32?) -> String? { pid.flatMap { pid in cast.first { members[$0]?.pid == pid } } }
 
@@ -578,7 +578,7 @@ public final class WalkPlayer {
   func newWindow(of app: RealApp, pid: Int32, frame: CGRect) -> ChaosAction.NewWindow {
     var new = ChaosAction.NewWindow(id: WindowID(nextWindow), app: app.name, pid: pid, frame: frame)
     nextWindow += 1
-    (new.minimum, new.maximum, new.bundle, new.cells) = (app.minimum, app.maximum, app.bundleID, app.cells)
+    (new.minimum, new.maximum, new.bundle, new.cells, new.ideal) = (app.minimum, app.maximum, app.bundleID, app.cells, app.zoomsTo)
     return new
   }
 
