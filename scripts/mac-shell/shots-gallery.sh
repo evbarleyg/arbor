@@ -193,13 +193,17 @@ tour() {
   pointer_away
   shot "$p-04-tiles"
   check "a window is a tile" is tile "$W6"
-  ctl set tileStyle name
-  shot "$p-05-tiles-with-names"
+  ctl set tileStyle icon
+  shot "$p-05-tiles-icons-alone"
   ctl reset tileStyle
   # The pointer rests on a tile: its help tag has the caption, drawn or not.
   # shellcheck disable=SC2046
   move $(tile_of "$W6")
   shot_after 2.5 "$p-05b-tile-help-tag"
+  # A hold begins with the tag up: the title goes from the tile, and the tag with it.
+  ctl hold
+  shot "$p-05c-tiles-held"
+  ctl release
   pointer_away
 
   claim "$p: the handle in a gap"
@@ -475,8 +479,8 @@ apps() {
   ctl set minimumUsableHeight 400
   sleep 1
   shot "apps-$1-02-window-tiles"
-  ctl set tileStyle name
-  shot "apps-$1-03-window-tiles-with-names"
+  ctl set tileStyle icon
+  shot "apps-$1-03-window-tiles-icons-alone"
   ctl reset tileStyle
   ctl set minimumUsableWidth 2000
   sleep 1
