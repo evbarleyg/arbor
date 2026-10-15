@@ -10,7 +10,8 @@ picture for that long, whatever else was or was not meant to move.
                                                the processes burnt meanwhile; then a line for each group of scenes
   standstill.py calm <run folder> <group> <ms> whether in every scene of that group (`back` is back-1, back-2, …) the display never stood still for that long. Fails,
                                                too, where the instrument was blind: fewer than 40 frames in the second before the cause
-  standstill.py each <run folder> <group>      the longest standstill of each scene of that group, in ms, on one line: to print beside another group's
+  standstill.py each <run folder> <group> [go] the longest standstill of each scene of that group, in ms, on one line: to print beside another group's. Fails, and says
+                                               why, where there is no such figure; with `go`, also where the plain tool never said `go` in a scene
   standstill.py waits <run folder> <ms>        every wait of that length in frames.log, inside a scene or not, with the mark that came last before it
   standstill.py longest <film folder>          that film's longest wait, of the display or of what is not the strip, in ms: for a script that decides what to keep
   standstill.py worst <run folder> <n>         `<from> <to> <scene>` in seconds since 1970, outwards to whole seconds, for the n longest waits
@@ -172,7 +173,21 @@ def table(run):
 
 
 def group_of(name):
-    return re.sub(r"-\d+(?=-|$)", "", name, count=1)
+    """A scene's name without its round: the number at its end (control-away-3400-2 is of control-away-3400), or else the first one inside it (arbor-2-back)."""
+    return re.sub(r"-\d+$", "", name) if re.search(r"-\d+$", name) else re.sub(r"-\d+(?=-)", "", name, count=1)
+
+
+def each(run, group, how=None):
+    """The longest standstill of each of the group's scenes, on one line. What is no figure is said and fails: a group that is not there (a `-` in its place was read past for
+    a whole run), a scene filmed blind, and, where `how` says what the cause must be (`go`: the plain tool's own word), a scene in which that never came: the strip makes
+    frames whoever plays, so a tool that did not start would read as a calm one."""
+    films = [film for film in films_of(run) if group_of(film.name) == group and len(film.frames) > 1]
+    wrong = [f"{film.name}: blind" for film in films if film.sight() < 40]
+    wrong += [f"{film.name}: no `{how}` in it: measured from `{film.how}`" for film in films if how and film.how != how]
+    if not films:
+        wrong = [f"no filmed scene of the group {group}"]
+    print("; ".join(wrong) if wrong else " ".join(str(film.longest()[1]) for film in films))
+    return 1 if wrong else 0
 
 
 def calm(run, group, limit):
@@ -210,11 +225,28 @@ def waits(run, least):
     return 0
 
 
+def asked_and_played(script):
+    """Of check-standstill.sh: the groups it asks about by name, and the groups of the scenes it plays, with `$i`, `$session`, a trial's `$name` and the names it keeps in
+    variables filled in."""
+    with open(script, encoding="utf-8") as file:
+        text = "".join(line.replace("$i", "1").replace("$session", "a") for line in file if not line.lstrip().startswith("#"))
+    for variable, value in re.findall(r"^([A-Z_]+)=([a-z][a-z0-9-]*)$", text, re.M):
+        text = text.replace("$" + variable, value)
+    trials = re.findall(r'^\s*trial "?([a-z0-9-]+)"? ', text, re.M)
+    played = set()
+    for name in re.findall(r'^\s*(?:[A-Z]+=\S+ )?(?:watched|again) "?([$a-z0-9-]+)"? ', text, re.M):
+        if name != "$name":
+            played.update(group_of(name.replace("$name", trial)) for trial in (trials if "$name" in name else [""]))
+    asked = re.findall(r"""\b(?:calm|told|first_way_out) ["']?([a-z][a-z0-9-]*)["']?(?=\s|$)""", text)
+    asked += re.findall(r"""\b(?:calm|each) "\$ARBOR_OUT" ["']?([a-z][a-z0-9-]*)""", text)
+    return set(asked), played
+
+
 def self_test():
     import tempfile
 
-    def scene(name, base, holes=(), rate=17, strip=True):
-        lines = [f"{base - 1500} M scene {name}", f"{base - 400} M action", f"{base} K down", f"{base + 60} K up"]
+    def scene(name, base, holes=(), rate=17, strip=True, key=True):
+        lines = [f"{base - 1500} M scene {name}", f"{base - 400} M action"] + ([f"{base} K down", f"{base + 60} K up"] if key else [])
         number = 0
         for time in range(-1400, 2500, rate):
             if any(a < time < b for a, b in holes):
@@ -227,12 +259,16 @@ def self_test():
         lines = scene("good-1", 1_000_000) + scene("good-2", 1_010_000, [(-900, -700)]) + scene("bad-1", 1_020_000, [(480, 860)])
         lines += scene("late-1", 1_030_000, [(1700, 2300)]) + scene("blind-1", 1_040_000, rate=200)
         lines += scene("outlasts-1", 1_050_000, [(90, 9000)]) + [f"{1_050_000 + 2600} M scene"]
+        lines += scene("tool-1", 1_060_000, key=False)
         with open(os.path.join(run, "frames.log"), "w", encoding="utf-8") as file:
             file.write("\n".join(sorted(lines, key=lambda line: int(line.split()[0]))) + "\n")
+        with open(os.path.join(run, "mover.log"), "w", encoding="utf-8") as file:
+            file.write("1060000 M go 0\n")
         films = {film.name: film for film in films_of(run)}
+        asked, played = asked_and_played(os.path.join(os.path.dirname(os.path.abspath(__file__)), "check-standstill.sh"))
         failed = []
         for what, holds in [
-            ("six scenes are read", len(films) == 6),
+            ("seven scenes are read", len(films) == 7),
             ("a standstill that outlasts its scene lasts until the scene is closed at least", films["outlasts-1"].longest()[1] >= 2400),
             ("calm fails what outlasts its scene", calm(run, "outlasts", 300) == 1),
             ("a steady display stands still for a frame at most", films["good-1"].longest()[1] <= 17),
@@ -243,6 +279,16 @@ def self_test():
             ("calm fails the bad", calm(run, "bad", 150) == 1),
             ("calm fails the blind", calm(run, "blind", 150) == 1),
             ("calm fails a group nobody played", calm(run, "nothing", 150) == 1),
+            ("each tells a group that was played", each(run, "good") == 0),
+            ("each fails a group nobody played", each(run, "nothing") == 1),
+            ("each fails the blind", each(run, "blind") == 1),
+            ("each fails a scene in which the plain tool never said go", each(run, "good", "go") == 1),
+            ("each tells one in which it did", each(run, "tool", "go") == 0),
+            ("a scene's round is the number at its end", group_of("control-away-3400-2") == "control-away-3400" and group_of("tile-a-back-1") == "tile-a-back"),
+            ("or else the first inside it", group_of("arbor-2-back") == "arbor-back"),
+            ("a scene without a round is its own group", group_of("tile-a-first-back") == "tile-a-first-back"),
+            (f"the check's questions are found at all: only {sorted(asked)}", len(asked) >= 4 and "rest" in asked),
+            (f"and plays every one of them: {sorted(asked - played)}", asked <= played),
         ]:
             if not holds:
                 failed.append(what)
@@ -316,9 +362,8 @@ def main(arguments):
         return self_test()
     if len(arguments) == 4 and arguments[0] == "calm":
         return calm(arguments[1], arguments[2], int(arguments[3]))
-    if len(arguments) == 3 and arguments[0] == "each":
-        print(" ".join(str(film.longest()[1]) for film in films_of(arguments[1]) if group_of(film.name) == arguments[2] and len(film.frames) > 1) or "-")
-        return 0
+    if len(arguments) in (3, 4) and arguments[0] == "each":
+        return each(*arguments[1:])
     if len(arguments) == 3 and arguments[0] == "waits":
         return waits(arguments[1], int(arguments[2]))
     if len(arguments) == 3 and arguments[0] == "worst":
