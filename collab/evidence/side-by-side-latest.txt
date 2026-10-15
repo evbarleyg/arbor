@@ -1,0 +1,44 @@
+# mac-shell: scripts/mac-shell/check-side-by-side.sh at d208d88, macOS 26.6.2, 2026-10-15T09:51Z
+# Run 38708392030. Only the headings and the checks. The pictures are on the branch gallery/pictures.
+== five floating windows, shortcuts on
+  ✔ the test app is the active one
+== the line under the rows says how
+  ✔ ⌃⌥G opens the palette
+== ⌘↩ ticks: 3, then 1, then 4
+  ✔ the palette is still open
+  ✔ nothing has moved yet: window 3 is where it was
+== ↩ docks them, in that order, and they fill the screen
+  ✔ the palette closes
+  ✔ 3 is docked
+  ✔ three windows are docked
+  ✔ 3 is left of 1
+  ✔ 1 is left of 4
+  ✔ each is in its slot: 3
+  ✔ 1
+  ✔ 4
+  ✔ the first ticked has the keyboard
+  ✔ the test app is still the active one
+== ⌃⌥Z takes all of it back
+  ✔ nothing is docked
+  ✔ 3 has its own frame again
+  ✔ 1
+  ✔ 4
+== ⌘-click and ⇧-click tick a row; again takes the tick off
+  ✔ the palette is open
+  ✔ a click with a modifier chooses nothing: the palette is still open
+  ✔ ⎋ closes it, and nothing is docked
+== a fifth is refused
+  ✔ the palette is open
+  ✔ closed
+== one of them is in the Dock: it comes back into the place kept open for it
+  ✔ 2 is minimized
+  ✔ the palette is open
+  ✔ 2 is out of the Dock
+  ✔ 5 is left of 2
+  ✔ 2 is in its slot
+  ✔ 5 is in its slot
+  ✔ 5 was never wider than its half (494 then, 494 now)
+== nothing of a title is in the log
+  ✔ no title in the log
+  ✔ Arbor exits within 5 s of quit
+32 passed, 0 failed
