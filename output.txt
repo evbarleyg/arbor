@@ -1,0 +1,288 @@
+# mac-shell: scripts/mac-shell/probe-held-switch.sh at 3182461, macOS 26.6.2, 2026-10-15T12:11Z
+built Arbor, the pointer tool and the app bundles in 4s
+Reduce Motion: false
+
+== two apps, one window framed, four out of view
+session 1: Arbor pid 20796, test windows 29 30 31 32 33 (pid 20748,20777)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor dev
+> test windows: title 32 Other App One
+> test windows: title 33 Other App Two
+> dock 29 left
+docked w29 at the left edge
+> dock 30 right
+docked w30 at the right edge
+> dock 31 beside 30 bottom
+docked w31 below w30
+> dock 32 beside 29 bottom
+docked w32 below w29
+display 0 0 1024 768, visible 0 31 1024 679, camera n2, back no
+  Desktop          349 43 326 655
+  w29 12 43 325 322        docked
+  w30 687 43 325 322       docked
+  w31 687 377 325 321      docked
+  w32 12 377 325 321       docked focused
+  w33 220 180 480 348      floating
+
+== 1. the other app comes forward by itself: no word
+> release
+arborctl: the view is not held
+> click 210 55
+> zoom 29
+framed w29
+> hold
+holding this view until `release`
+> test windows: activate 32
+  log | 12:11:40.785Z DEBUG hold: focus report for w32, 3.299235625 s after the last click or modifier key
+  log | 12:11:40.785Z DEBUG w32 has the keyboard
+  log | 12:11:40.786Z INFO  hold: w32 took the keyboard out of view; sending it back
+  log | 12:11:40.794Z DEBUG hold: focus report for w29, 3.307667875 s after the last click or modifier key
+  log | 12:11:40.794Z DEBUG w29 has the keyboard
+  said on screen that the view is held: 0 time(s); in front: 20748; W1 has the keyboard: yes
+  ✔ nothing is said of an app that pushed itself forward
+  ✔ its window stays out of view
+
+== 2. ⌘Tab to it
+> release
+released
+> click 546 55
+> zoom 29
+framed w29
+> hold
+holding this view until `release`
+> key cmd+tab
+film: 6 pictures in .90 s
+shot: mac-shell/02-after-cmd-tab-1.png
+shot: mac-shell/02-after-cmd-tab-2.png
+shot: mac-shell/02-after-cmd-tab-3.png
+shot: mac-shell/02-after-cmd-tab-4.png
+shot: mac-shell/02-after-cmd-tab-5.png
+shot: mac-shell/02-after-cmd-tab-6.png
+  log | 12:11:48.241Z DEBUG hold: focus report for w32, 0.009349084 s after the last click or modifier key
+  log | 12:11:48.242Z DEBUG w32 has the keyboard
+  log | 12:11:48.242Z INFO  hold: w32 took the keyboard out of view; sending it back
+  log | 12:11:48.249Z DEBUG hold: focus report for w29, 0.017484709 s after the last click or modifier key
+  log | 12:11:48.250Z DEBUG w29 has the keyboard
+  log | 12:11:48.508Z DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: ArborTestWindows2 is out of view: the view is held · ⌃⌥⎋ releases it
+  said on screen that the view is held: 1 time(s); in front: 20748; W1 has the keyboard: yes
+  ✔ it is said once
+  ✔ its window stays out of view
+  ✔ W1 has the keyboard back
+
+== 3. a pick in Mission Control: a window of the other app
+> release
+released
+> click 546 55
+> zoom 29
+framed w29
+> hold
+holding this view until `release`
+> key ctrl+up
+shot: mac-shell/03-held.png
+what the Dock says of windows' pictures (13 lines in 03-held.txt):
+  4 AXButton - [] "Arbor Test 1" "Arbor Test 1" 380 291 625 409
+  4 AXButton - [] "Arbor Test 3" "Arbor Test 3" 160 314 203 200
+  4 AXButton - [] "Arbor Test 2" "Arbor Test 2" 379 78 203 201
+> click 808 178
+film: 8 pictures in 1.03 s
+shot: mac-shell/03-after-the-pick-1.png
+shot: mac-shell/03-after-the-pick-2.png
+shot: mac-shell/03-after-the-pick-3.png
+shot: mac-shell/03-after-the-pick-4.png
+shot: mac-shell/03-after-the-pick-5.png
+shot: mac-shell/03-after-the-pick-6.png
+shot: mac-shell/03-after-the-pick-7.png
+shot: mac-shell/03-after-the-pick-8.png
+  log | 12:11:59.650Z DEBUG hold: focus report for w32, 0.029460791 s after the last click or modifier key
+  log | 12:11:59.651Z DEBUG w32 has the keyboard
+  log | 12:11:59.651Z INFO  hold: w32 took the keyboard out of view; sending it back
+  log | 12:11:59.709Z DEBUG hold: focus report for w32, 0.08858075 s after the last click or modifier key
+  log | 12:11:59.709Z DEBUG w32 has the keyboard
+  log | 12:11:59.740Z DEBUG hold: focus report for w29, 0.119239625 s after the last click or modifier key
+  log | 12:11:59.741Z DEBUG w29 has the keyboard
+  log | 12:12:00.007Z DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: ArborTestWindows2 is out of view: the view is held · ⌃⌥⎋ releases it
+  said on screen that the view is held: 1 time(s); in front: 20748; W1 has the keyboard: yes
+  ✔ it is said once
+  ✔ its window stays out of view
+
+== 4. a pick in Mission Control: another window of the app in front
+> release
+released
+> click 546 55
+> zoom 29
+framed w29
+> hold
+holding this view until `release`
+> key ctrl+up
+shot: mac-shell/04-held.png
+what the Dock says of windows' pictures (13 lines in 04-held.txt):
+  4 AXButton - [] "Arbor Test 1" "Arbor Test 1" 380 291 625 409
+  4 AXButton - [] "Arbor Test 3" "Arbor Test 3" 160 314 203 200
+  4 AXButton - [] "Arbor Test 2" "Arbor Test 2" 379 78 203 201
+> click 261 414
+film: 8 pictures in .60 s
+shot: mac-shell/04-after-the-pick-1.png
+shot: mac-shell/04-after-the-pick-2.png
+shot: mac-shell/04-after-the-pick-3.png
+shot: mac-shell/04-after-the-pick-4.png
+shot: mac-shell/04-after-the-pick-5.png
+shot: mac-shell/04-after-the-pick-6.png
+shot: mac-shell/04-after-the-pick-7.png
+shot: mac-shell/04-after-the-pick-8.png
+  log | 12:12:12.253Z DEBUG hold: focus report for w31, 0.034372959 s after the last click or modifier key
+  log | 12:12:12.253Z DEBUG w31 has the keyboard
+  log | 12:12:12.253Z INFO  hold: w31 took the keyboard out of view; sending it back
+  log | 12:12:12.286Z DEBUG hold: focus report for w29, 0.067576292 s after the last click or modifier key
+  log | 12:12:12.286Z DEBUG w29 has the keyboard
+  log | 12:12:12.521Z DEBUG hold: focus report for w31, 0.030868833 s after the last click or modifier key
+  log | 12:12:12.522Z DEBUG w31 has the keyboard
+  log | 12:12:12.522Z INFO  hold: w31 took the keyboard out of view; sending it back
+  log | 12:12:12.538Z DEBUG hold: focus report for w29, 0.04694575 s after the last click or modifier key
+  log | 12:12:12.538Z DEBUG w29 has the keyboard
+  log | 12:12:12.799Z DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: ArborTestWindows is out of view: the view is held · ⌃⌥⎋ releases it
+  said on screen that the view is held: 1 time(s); in front: 20748; W1 has the keyboard: yes
+  ✔ it is said once
+  ✔ its window stays out of view
+
+== 5. twice within five seconds: where is the keyboard then?
+> release
+released
+> click 546 55
+> zoom 29
+framed w29
+> hold
+holding this view until `release`
+> key ctrl+up
+shot: mac-shell/05-held-1.png
+what the Dock says of windows' pictures (13 lines in 05-held-1.txt):
+  4 AXButton - [] "Arbor Test 1" "Arbor Test 1" 380 291 625 409
+  4 AXButton - [] "Arbor Test 3" "Arbor Test 3" 707 78 203 200
+  4 AXButton - [] "Arbor Test 2" "Arbor Test 2" 379 78 203 201
+> click 261 414
+> key ctrl+up
+shot: mac-shell/05-held-2.png
+what the Dock says of windows' pictures (13 lines in 05-held-2.txt):
+  4 AXButton - [] "Arbor Test 1" "Arbor Test 1" 380 291 625 409
+  4 AXButton - [] "Arbor Test 3" "Arbor Test 3" 160 314 203 200
+  4 AXButton - [] "Arbor Test 2" "Arbor Test 2" 379 78 203 201
+> click 808 178
+  log | 12:12:24.341Z DEBUG hold: focus report for w32, 0.024602708 s after the last click or modifier key
+  log | 12:12:24.341Z DEBUG w32 has the keyboard
+  log | 12:12:24.342Z INFO  hold: w32 took the keyboard out of view; sending it back
+  log | 12:12:24.358Z DEBUG hold: focus report for w29, 0.041639083 s after the last click or modifier key
+  log | 12:12:24.358Z DEBUG w29 has the keyboard
+  log | 12:12:24.594Z DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: ArborTestWindows2 is out of view: the view is held · ⌃⌥⎋ releases it
+  log | 12:12:29.353Z DEBUG hold: focus report for w32, 0.015903042 s after the last click or modifier key
+  log | 12:12:29.355Z DEBUG w32 has the keyboard
+  log | 12:12:29.355Z INFO  hold: w32 took the keyboard out of view; sending it back
+  log | 12:12:29.362Z DEBUG hold: focus report for w29, 0.024955958 s after the last click or modifier key
+  log | 12:12:29.362Z DEBUG w29 has the keyboard
+  said on screen that the view is held: 1 time(s); in front: 20748; W1 has the keyboard: yes
+  Other App One has the keyboard: no; is it in view: no
+shot: mac-shell/05-after-two-picks.png
+
+== 6. ⌘M on the window in view: macOS hands the keyboard on, and nobody picked anything
+> release
+released
+> click 546 55
+> zoom 29
+framed w29
+> hold
+holding this view until `release`
+> key cmd+m
+  log | 12:12:38.017Z DEBUG hold: focus report for w31, 0.412380167 s after the last click or modifier key
+  log | 12:12:38.018Z DEBUG w31 has the keyboard
+  log | 12:12:38.018Z INFO  hold: w31 took the keyboard out of view; sending it back
+  log | 12:12:38.556Z DEBUG hold: focus report for w29, 0.950659292 s after the last click or modifier key
+  log | 12:12:38.556Z DEBUG w29 has the keyboard
+  log | 12:12:38.841Z DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: ArborTestWindows is out of view: the view is held · ⌃⌥⎋ releases it
+  said on screen that the view is held: 1 time(s); in front: 20748; W1 has the keyboard: yes
+  ✘ nothing is said — said 1 time(s), not 0
+      picture: mac-shell/fail-probe-held-switch-1.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n1, back yes
+      |   w29 12 43 1000 655       docked focused
+      |   w30 1023 682 325 322     docked parked
+      |   w31 1023 682 325 321     docked parked
+      |   w32 1023 682 325 321     docked parked
+      |   w33 1023 682 480 348     floating parked
+      log | INFO  hold: view → none
+      log | INFO  release: released
+      log | DEBUG the button went down at 546,55, the pointer is at 546,55: it is on w29
+      log | INFO  zoom 29: framed w29
+      log | INFO  hold: none → view
+      log | INFO  hold: holding this view until `release`
+      log | DEBUG focus is on w31
+      log | DEBUG hold: focus report for w31, 0.412380167 s after the last click or modifier key
+      log | DEBUG w31 has the keyboard
+      log | INFO  hold: w31 took the keyboard out of view; sending it back
+      log | DEBUG focus is on w29
+      log | DEBUG hold: focus report for w29, 0.950659292 s after the last click or modifier key
+      log | DEBUG w29 has the keyboard
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: ArborTestWindows is out of view: the view is held · ⌃⌥⎋ releases it
+shot: mac-shell/06-after-cmd-m.png
+> test windows: restore 29
+
+== 7. ⌘W on the window in view
+> release
+released
+> click 546 55
+> zoom 29
+framed w29
+> hold
+holding this view until `release`
+> key cmd+w
+  log | 12:12:47.751Z INFO  hold: nothing is in the view on 07230EFA-7A8D-4E37-845C-19CC8737EEF5; it stays held
+  log | 12:12:47.752Z DEBUG hold: focus report for w31, 0.079892417 s after the last click or modifier key
+  log | 12:12:47.752Z DEBUG w31 has the keyboard
+  log | 12:12:47.752Z INFO  hold: w31 took the keyboard out of view; sending it back
+  log | 12:12:48.022Z INFO  hold: w31 took the keyboard out of view; sending it back
+  log | 12:12:48.023Z DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: ArborTestWindows is out of view: the view is held · ⌃⌥⎋ releases it
+  log | 12:12:48.290Z INFO  hold: w31 took the keyboard out of view; sending it back
+  log | 12:12:48.529Z INFO  hold: w31 keeps taking the keyboard; leaving it there, out of view
+  log | 12:12:48.676Z INFO  hold: settings.json has changed; it is read when the view is released
+  said on screen that the view is held: 1 time(s); in front: 20748; W1 has the keyboard: no
+  ✘ nothing is said — said 1 time(s), not 0
+      picture: mac-shell/fail-probe-held-switch-2.png
+      | display 0 0 1024 768, visible 0 31 1024 679, camera n6, back yes
+      |   w30 1023 682 325 322     docked parked
+      |   w31 1023 682 325 321     docked parked focused
+      |   w32 1023 682 325 321     docked parked
+      |   w33 1023 682 480 348     floating parked
+      log | INFO  hold: view → none
+      log | INFO  release: released
+      log | DEBUG the button went down at 546,55, the pointer is at 546,55: it is on w29
+      log | INFO  zoom 29: framed w29
+      log | INFO  hold: none → view
+      log | INFO  hold: holding this view until `release`
+      log | DEBUG w29 is gone from its app's list and no longer valid
+      log | INFO  hold: nothing is in the view on 07230EFA-7A8D-4E37-845C-19CC8737EEF5; it stays held
+      log | DEBUG focus is on w31
+      log | DEBUG hold: focus report for w31, 0.079892417 s after the last click or modifier key
+      log | DEBUG w31 has the keyboard
+      log | INFO  hold: w31 took the keyboard out of view; sending it back
+      log | INFO  hold: w31 took the keyboard out of view; sending it back
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: ArborTestWindows is out of view: the view is held · ⌃⌥⎋ releases it
+      log | INFO  hold: w31 took the keyboard out of view; sending it back
+      log | INFO  hold: w31 keeps taking the keyboard; leaving it there, out of view
+      log | INFO  hold: settings.json has changed; it is read when the view is released
+shot: mac-shell/07-after-cmd-w.png
+> release
+released
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✘ window 1 is back on screen after quitting — only 0 % of it is to be seen: 12 43 1000 655
+      picture: mac-shell/fail-probe-held-switch-3.png
+      log | DEBUG stage down
+      log | INFO  stopped; all windows returned to view
+      log | INFO  Arbor quit
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+shot: mac-shell/08-quit.png
+
+14 passed, 3 failed
+exit code 1
