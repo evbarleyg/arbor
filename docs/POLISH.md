@@ -7,10 +7,14 @@ with a ruler wherever a ruler can settle it and with their eyes, frame by frame,
 The result is one number, the **polish score**. It is on the scoreboard, and it only goes up: a change that lowers it is a
 regression, found before it lands, like a failing test.
 
+**What is scored is what ships, and the bar is macOS alone.** The first person to work with Arbor quit it for macOS's own tiling: it did too much by itself (`collab/HANDOFF-2026-10-14-maintainer.md`; `collab/QUESTIONS.md`,
+Q29). This page had given points for how well a ring and cards were drawn, and the first person to see them wanted neither. So the first column holds only what a person meets who has switched nothing on; everything else is the
+second column, *the options*, judged by the same rules and read by no gate. And every run films macOS's own tiling of the same windows, with Arbor not running: whatever Arbor does with a window is held against that.
+
 | | |
 |---|---|
-| What Linux proves | that the film script plays (`scripts/mac-shell/rehearse.sh scripts/mac-shell/films.sh`) and that the judge catches what it claims to catch (`scripts/polish/judge.py --self-test`: 43 drawn films, each wrong in one known way or right; `scripts/polish/stills.py --self-test`: 30 drawn pictures) |
-| What a Mac must run | `scripts/mac-shell/films.sh`: unattended, on a free hosted runner, one run for everything, about a quarter of an hour. It only records |
+| What Linux proves | that the film scripts play (`scripts/mac-shell/rehearse.sh scripts/mac-shell/films-light.sh scripts/mac-shell/films.sh`) and that the judge catches what it claims to catch (`scripts/polish/judge.py --self-test`: 51 drawn films, each wrong in one known way or right; `scripts/polish/stills.py --self-test`: 30 drawn pictures) |
+| What a Mac must run | `scripts/mac-shell/films-light.sh`, what ships: unattended, on a free hosted runner, about ten minutes; for the options `scripts/mac-shell/films.sh`, about a quarter of an hour. They only record |
 | What the sandbox judges afterwards | everything: `scripts/polish/judge.py score <run folder>`, then the sheets, by eye |
 
 ## How bad a miss is
@@ -29,9 +33,13 @@ the scenes for tabs, double clicks and continuous zoom are in the sum from the f
 
 - **The Mac**: GitHub's `macos-26` runner, one display of 1024 × 768 at 1x; a virtual Retina display for pictures at 2x. macOS at
   its default settings (its own edge tiling on, click-wallpaper on): the runners come with Reduce Motion and Reduce Transparency on, and the script switches both off.
-- **Arbor, in two columns.** **As it ships**: every switch of Arbor's and of macOS's as it comes. This is the score, and what the gate reads. A move that does nothing as shipped is filmed doing
-  nothing, and scores nothing. **With everything on** (`on-…`): the moves again with "Trackpad and mouse gestures" on and macOS's own tiling off. The laboratory's own column, for climbing: it says how good
-  a move will be the day it ships, and passes no gate.
+- **Arbor, in two columns.** **As it ships** (`scripts/mac-shell/films-light.sh`): every switch of Arbor's and of macOS's as it comes. This is the score, and what the gate reads. An act that does nothing as shipped is filmed doing
+  nothing, and scores nothing. **The options** (`scripts/mac-shell/films.sh`): motion, the ring, the menu bar's buttons, the whole map of keys, the gestures, each switched on in so many words; the gestures with macOS's own tiling off (`on-…`). It says how good
+  an option is for whoever switches it on, and how good it will be the day it ships; it passes no gate. Until the second build's defaults are on the trunk its switches are written out in `films-light.sh`, one key fewer with every default that lands.
+- **The look that is scored first is the one a Mac comes with**: Reduce Transparency off. The flat look is second, being what a person with Reduce Transparency sees.
+- **macOS alone**: in every run, after Arbor has quit, the same windows are tiled by macOS itself from each app's Window menu (`macos-…`). Filmed, measured, not counted: it is the bar. As first measured (`collab/polish/light-1.md`): the real window glides and grows in one
+  piece, eased, 283 to 300 ms, 16 to 18 frames of sixty a second, none skipped, on a curve like Arbor's own stretched to 0.3 s; of two windows tiled at once the one in front glides and the other jumps.
+- **A first use is told from a standing cost.** What is made for the first time in a session (a tile, a panel, a drawing context) can take many times what it ever takes again. A scene that stalls is filmed a second time in the same session (`…-again`): both count, since a first use is met at every launch.
 - Every session records a trace (`docs/TRACES.md`), which comes back beside the films: what Arbor asked of macOS, and when.
 - **The window server's account**: `sampler.swift` runs beside the camera and writes down where every window is, sixty times a second. A film cannot show where a real window is while a
   stand-in covers it; `judge.py home <run>` lays the two side by side, scene by scene. It scores nothing: it says where the cause of a miss is to be looked for.
@@ -56,7 +64,23 @@ the scenes for tabs, double clicks and continuous zoom are in the sum from the f
 **By**: *ruler* = `judge.py` measures it; *eyes* = an agent goes through the sheets (`judge.py sheet`) and writes the verdict, with the
 frames that show it, into `collab/polish/eyes-run-<n>.json`; *stills* = measured on pictures of each panel alone (the gallery's `*-alone-*.png`).
 
-### Motion: asked of every scene in which Arbor moves windows
+### At once: asked of every act by key, from the menu, or at the end of a drag, as Arbor ships
+
+Arbor ships without motion: windows go to their places at once and nothing stands in for them. So the real windows are seen going: each is another app's, is asked for its place and its size one after the other, and obeys when it gets round to it.
+A **piece** is a frame in which a window comes, goes, or changes its place or size. A line of words that fades in afterwards is no part of the windows' arriving. `judge.py acts <run>` prints all of this for every act, with the window server's own account beside it.
+
+| # | What | How | Passes when | Severity |
+|---|---|---|---|---|
+| R1 | **At once** | the first piece → the last | ≤ 100 ms | 1 |
+| R4 | **Every window is where it was or where it belongs** | frames in which a followed window is at a place or size that is neither its old nor its new one | none | 2 |
+| R5 | **In one piece** | between the first piece and the last: frames in which the ground shows where there is a window both before the act and after it (a hole, over 1% of the room); in which nothing at all is on a desk that had windows and has them again; in which a window on its way covers what neither its old frame nor its new one covers (over 400 square points) | none | 1 |
+| R2 | **The same end** as with motion (the options only) | the windows' rectangles in the last frame of `reduced-x` against those of `pictures-x`, the session that presses the same keys from the same beginning with motion on | within 1 px | 2 |
+| R3 | **No stage, no fade, no slide** with Reduce Motion (the options only) | Arbor's log has no "stage up"; no followed rectangle has more than two positions | so | 2 |
+
+M1, M8, M9, M11, M13 and S8 are asked here too. **R5 is the second build's mark** (the product owner, 2026-10-15): size and place are two askings, so the state between them must lie within the old frame or the new one; what grows is seen to before what leaves is
+sent away; tiles come at once. R4, none at all, stays the aim: `fill`, `everything` and `back` show that it can be had.
+
+### Motion, an option: asked of every scene in which Arbor moves windows with `animationDuration` above 0
 
 The **cause** is the key going down, or the button coming up. **Followed** means: every flat rectangle in the room between menu bar and Dock is boxed in
 every frame and linked from frame to frame; each of its edges that travels at least 24 points gives a road, from 0 (where it was) to 1 (where it stays).
@@ -80,16 +104,6 @@ every frame and linked from frame to frame; each of its edges that travels at le
 What the ruler does not see: a sliver under 60 px at the room's edge that shows for a moment (it cannot be told from the first of a window that comes in); anything
 on a wallpaper that is not plain; windows whose content is not flat. Those are for eyes.
 
-### Without motion: Reduce Motion, `animationDuration` 0, quitting
-
-| # | What | How | Passes when | Severity |
-|---|---|---|---|---|
-| R1 | **The end at once, nothing in between** | first changed frame → last changed frame of the first spell | ≤ 100 ms | 1 |
-| R2 | **The same end** as with motion | the windows' rectangles in the last frame of `reduced-x` against those of `pictures-x`, the session that presses the same keys from the same beginning with motion on | within 1 px | 2 |
-| R3 | **No stage, no fade, no slide** anywhere, panels included | Arbor's log has no "stage up"; no followed rectangle has more than two positions | so | 2 |
-
-M1, M8, M9, M11 and M13 are asked here too.
-
 ### Drags: the pointer is the person's
 
 | # | What | How | Passes when | Severity |
@@ -98,6 +112,8 @@ M1, M8, M9, M11 and M13 are asked here too.
 | D2 | **The preview tells the truth** | the preview panel's frame while held, against the window's rectangle at rest | within 2 px | 2 |
 | D3 | **The preview comes and goes softly, once** | by eye, until the ruler can: the frames while the button is down | one fade in of 80 to 250 ms; no blink; no second coming while the pointer rests | 2 |
 | D4 | **Others make room in one motion** | by eye, until the ruler can: the windows that are not dragged, while the button is down | they move once, eased, together, or not at all | 1 |
+| D5 | **In a plain drag nothing of Arbor's is on screen** | Arbor's own windows while the button is down, as the window server lists them | no preview, no stage, no line of words | 1 |
+| D6 | **After a plain drag the window is where it was let go** | its frame before and after against where the button went down and came up; the other windows' frames | moved by what the pointer moved, within 2 px, its size its own, floating; no other window elsewhere | 1 |
 
 After the button comes up, M1 to M13 are asked with that as the cause.
 
@@ -144,14 +160,42 @@ When the fingers come up (the mark `fingers up`), M2 to M13 are asked with that 
 | E2 | **No frame is ugly**: no smeared or squashed text, no hole, no stray line, no half-drawn panel, no colour that belongs to nothing | 2 |
 | E3 | **It could be macOS's own**: corners, shadows, materials, type and timing as the system's own windows and panels have them | 3 |
 | E4 | **It says what is needed and no more**: words right, in the right place, over nothing one is looking at, gone in time | 3 |
+| E5 | **Nothing is drawn that was not asked for**: name each thing of Arbor's in the frames (a line, a mark, a surface, a panel) and ask of each: would it be missed? | 2 |
 
 A verdict by eye names the run, the scene and the frames, and says in a sentence what is there. "Looks fine" is not a verdict.
 
 ## The scenes
 
-One scene is one thing a person does. **Move** marks the scenes that stand for the five moves of the reference's public how-it-works page, in its order, as
-Arbor does them. The reference is compared only by what that page shows and says, never by its assets or code; this page describes only Arbor.
-The scenes of the five moves, and `frame`, are filmed twice: in light mode on a black wallpaper, and as `dark-…` in dark mode on a light one, where shadows and dark lines show.
+One scene is one thing a person does.
+
+### The first column: what ships
+
+**Gate** marks what the gate asks for: the nine keys, Go to…, the menu with its one icon, a plain drag, a drag with the key held. Those scenes are filmed twice: in light mode on a black wallpaper, and as `dark-…` in dark mode on a
+light one, where shadows and dark lines show. The keys are asked of Arbor (`bindings`), so the films follow the map in effect; an act that no key does is not filmed, and scores nothing.
+
+| Scene | Kind | What the person does | Gate |
+|---|---|---|---|
+| `dock-first`, `dock-second` | instant | docks a floating window at the left; a second one at the right | ✔ |
+| `fill`, `everything`, `back` | instant | fills the screen with a docked window; shows everything again; fills, and goes back | ✔ |
+| `float`, `undo`, `float-back` | instant | floats a docked window; undoes that; floats it, and takes it back in | ✔ |
+| `pause`, `resume` | instant | pauses Arbor: every window gets its own size back; resumes | ✔ |
+| `go-to`, `go-to-choose` | panel, instant | opens Go to…, closes it; with another window chosen in it, presses ↩ | ✔ |
+| `menu`, `menu-arrange` | panel, instant | clicks the icon in the menu bar, closes the menu; chooses Arrange Windows with four floating windows | ✔ |
+| `drag-plain` | plain | drags a floating window over a docked one, waits, lets go. Nothing was asked of Arbor | ✔ |
+| `drag-held` | drop | the same with ⌘ held: the preview comes, and letting go docks | ✔ |
+| `drag-out` | drop | drags a docked window out, plainly: it floats at its own size where it was let go, and its place closes | ✔ |
+| `dock-third`, `dock-fourth`, `dock-fourth-again` | instant | more docks than the display has room for: every window becomes a tile; the same a second time in the session | |
+| `close`, `quit` | instant | closes a docked window; quits Arbor: every window gets its own size back | |
+| `eight-arrange`, `eight-fill`, `eight-everything` | instant | the same with eight windows on a display of 1920 × 1080 | |
+| `macos-left`, `macos-right`, `macos-fill`, `macos-previous`, `macos-left-and-right` | bare | macOS's own tiling of the same windows, Arbor not running: the bar. Not counted | |
+| `metronome-…` | control | the camera's own square: tests the instruments, not counted | |
+
+The panels of the first column: the menu, the drop preview, a tile, Go to…, the heads-up line, the coach, the setup check, the settings window.
+
+### The second column: the options
+
+**Move** marks the scenes that stand for the five moves of the reference's public how-it-works page, in its order, as Arbor does them with everything switched on. The reference is compared only by what that page shows and says, never by its assets
+or code; this page describes only Arbor. The scenes of the five moves, and `frame`, are filmed in light and in dark.
 
 | Scene | Kind | What the person does | Move |
 |---|---|---|---|
@@ -176,23 +220,22 @@ The scenes of the five moves, and `frame`, are filmed twice: in light mode on a 
 | `quit` | instant | quits Arbor: every window gets its own size back, at once | |
 | `reduced-dock-key`, `reduced-frame`, `reduced-show-everything` | instant | the same keys with Reduce Motion on | |
 | `eight-frame`, `eight-show-everything` | camera | the same keys with eight windows docked on a display of 1920 × 1080 | |
-| `on-…`, `on-dark-…` | | the scenes of the moves with everything on: the second column | |
+| `on-…`, `on-dark-…` | | the scenes of the moves with the gestures on and macOS's own tiling off: where one was filmed it is the one that counts | |
 | `pictures-…` | | the same with `windowPictures`, which ships off: judged and reported, **not counted** | |
 | `drag-alone` | bare | a drag that Arbor leaves alone (⌘ held): what macOS does by itself, to hold D1 against. Not counted | |
 | `metronome-…` | control | the camera's own square: tests the instruments, not counted | |
 
-The panels that S1 to S7 are asked of: the heads-up line, the drop preview, a tile, a seam, the focus ring, the peek's outline, the rectangle, the minimap, Go to…, the
-shortcuts, the name field, the menu, the settings window, the coach, the setup check, the tab strip. Five of them (the preview, a seam, the ring, the peek's outline, the
+The panels of the second column: a seam, the focus ring, the peek's outline, the rectangle, the minimap, the shortcuts, the name field, the tab strip. Five of all sixteen (the preview, a seam, the ring, the peek's outline, the
 rectangle) have no words and no ground of their own: S3, S4 and S7 have nothing to ask of them and are no cells there; nor are S3 and S4 for the minimap, which has no words. The pictures are the gallery's (branch `gallery/pictures`, `collab/evidence/gallery`); reviewers
 with eyes name the rectangles and `scripts/polish/stills.py` measures inside them (`scripts/polish/REVIEWERS-STILLS.md`).
 
 ## The score
 
 Every check that is asked of a scene is a cell. A cell that passes earns its severity's points; a miss, or a cell nobody could see,
-earns nothing. **Score = 100 × points earned ÷ points there are**, as it ships. `judge.py score` prints the table, the findings with the frames that show them,
-and the number; beside it, how much of the table has been seen at all, and the number with everything on: the same table with the scenes of the moves taken from the `on-…` films.
+earns nothing. **Score = 100 × points earned ÷ points there are**, in the first column. `judge.py score <run of films-light.sh>` prints the table, the findings with the frames that show them,
+and the number, and how much of the table has been seen at all; `judge.py score --options <run of films.sh>` does the same for the second column.
 
-**The rubric passes** (issue #4, "Definition of viable"; `docs/VIABLE.md`) when no cell of severity 1 or 2 in a scene of the five moves, light or dark, misses or is unseen, and the score is at least 90.
+**The rubric passes** (issue #4, "Definition of viable"; `docs/VIABLE.md`) when no cell of severity 1 or 2 in a scene the gate asks for, light or dark, misses or is unseen, and the score is at least 90.
 
 **It only goes up.** The last line of the scoreboard below is the floor. A run that scores lower names the commits since that line, and the finding goes to
 whoever owns them before anything else does. New scenes and checks are added with their cells unseen and the floor is restated on the same films under the
@@ -200,14 +243,24 @@ new table, in the same commit, so that a longer table is never mistaken for a wo
 
 ## The loop
 
-1. Film: `scripts/mac-shell/run.sh scripts/mac-shell/films.sh` on the trunk, or on a branch that claims to raise the score.
-2. Judge: `scripts/polish/judge.py score .mac-shell/films-<run>`; then every scene's sheets (`judge.py sheets`), by reviewers with eyes who have built none of it. They give E1 to E4,
+1. Film: `scripts/mac-shell/run.sh scripts/mac-shell/films-light.sh` (for an option: `films.sh`) on the trunk, or on a branch that claims to raise the score.
+2. Judge: `scripts/polish/judge.py score .mac-shell/films-<run>`; then every scene's sheets (`judge.py sheets`), by reviewers with eyes who have built none of it. They give E1 to E5,
    and they confirm or refute **every miss the ruler claims**: the ruler follows flat rectangles, and overlapping cards, a preview's tint or a title bar in shadow fool it. A refuted miss
    counts as unseen, not as passed, and the ruler is mended. Verdicts into `collab/polish/eyes-run-<n>.json`, the report into `collab/polish/run-<n>.md`.
 3. Findings become small pull requests, each naming the cell it turns green and the frame that showed the fault.
 4. Film again. The pull request lands when the cell is green and no other cell has turned.
 
 ## Scoreboard
+
+### From the second build on: what ships
+
+| Date (UTC) | Commit | Score: what ships | The options | Seen | Severity 1 misses | Cells the gate still wants | Note |
+|---|---|---|---|---|---|---|---|
+
+### The first build (closed)
+
+By the table as it was then: one list of scenes, the five moves of the reference as the gate, ring and cards counted as shipped. 44.6 stands as the first build's last score.
+
 
 Restated on 2026-10-15 under the table as it is now (S4 on glass and S7 added; the drag to an edge asked as `aside`; no cells where a panel has no words to read or no ground to see through) and by the judge as a second review left it (a film in which no window moves earns nothing; of two keys in a row the second's answer cannot be told): run 1 was 36.6 and run 2 was 42.8 as they were first scored. In both, gestures still shipped on and the edges were Arbor's, so the two columns are one.
 
