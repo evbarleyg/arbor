@@ -85,9 +85,11 @@ step "Spaces: a second one, there and back, with a tile and seams on the first"
 is docked "$W3" || ctl dock "$W3" right
 summary
 slots="$(arbor_ask slot "$W1") / $(arbor_ask slot "$W3")"
+# One more than it had: a script that ran on this Mac before may have added one, and nothing takes a Space away (shots-finder.sh does).
+had=$(spaces | awk 'NR == 1 { print $2 }')
 recorded space-added space_add
 spaces
-check "the main display has two Spaces" test "$(spaces | awk 'NR == 1 { print $2 }')" = 2
+check "the main display has one Space more" test "$(spaces | awk 'NR == 1 { print $2 }')" = "$((had + 1))"
 recorded space-to-the-second space_go right
 check "⌃→ shows the second Space" on_space 2
 shot spaces-1-second
@@ -133,7 +135,15 @@ check "the window that stayed is in its slot" eventually is in_slot "$W1"
 recorded space-right-to-the-window space_go right
 shot spaces-5-with-it
 summary
-space_go left
+# Home with it, the way it came: whoever quits on the first Space finds nothing to be seen of a window that is on the second.
+read -r x y <<< "$(titlebar_of "$W3")"
+carry_home() {
+  drag "$x" "$y" "$((x - 40))" "$((y + 40))" --no-release
+  space_go left
+  release
+}
+recorded space-window-carried-home carry_home
+check "the first Space shows, and the window with it" eval 'on_space 1 && eventually is on_screen "$W3"'
 
 step "Mission Control with a tile on the screen"
 ctl dock "$W2" beside "$W1" bottom

@@ -518,7 +518,11 @@ kill -CONT "$ARBOR_PID"
 arbor_stop
 
 # F60. It needs the macOS switch at its default, which is the person's to set, and a file on the Desktop.
-if on_throwaway_mac; then
+# Only when asked for: the guard ships off and is shelved, thirteen of this session's checks have failed at every playing, and nobody mends
+# them meanwhile. Failures that are there every time teach everybody to read past failures. input-taps-with-the-guard.sh asks for it.
+if [ "${ARBOR_INPUT_TAPS_GUARD:-}" != 1 ]; then
+  echo "session 3, the guard of the Desktop, is left out: it ships off and is shelved (input-taps-with-the-guard.sh plays it)"
+elif on_throwaway_mac; then
   step "session 3: a click on the Desktop does not sweep the windows away"
   wallpaper_click on
   # Off by default until this session has been seen to pass.
@@ -675,14 +679,29 @@ if on_throwaway_mac; then
 
   with_gestures '{"guardDesktopClicks": false}'
   ctl reload-settings
+  # By what is to be seen, not by counting clicks: every second click on the wallpaper brings the windows back, and wherever the guard let one
+  # through above, the count is off by one: then the click below "sweeps" them into view, and the one that is to bring them back sweeps them
+  # aside under the quit (seen on a hosted Mac: three windows of which 4 to 12 % showed afterwards).
+  is_swept() {
+    local id out=0
+    for id in $ARBOR_WINDOW_IDS; do
+      [ "$("$ARBOR_POINTER" visible "$id" | tr -d .)" -lt 50 ] && out=$((out + 1))
+    done
+    [ "$out" -ge 2 ]
+  }
+  if is_swept; then
+    echo "NOTE: the windows were still swept aside, from a click further up"
+    pointer click "$BARE_X" "$BARE_Y"
+    sleep 1
+  fi
   mark "a click on the Desktop with the guard off"
-  before=$(server_frames)
   pointer click "$BARE_X" "$BARE_Y"
   sleep 1
   check "the click reached macOS as it was" test "$(count '^down .*mark=none')" -eq 1
-  check "and macOS swept the windows aside, as it intends" test "$before" != "$(server_frames)"
+  check "and macOS swept the windows aside, as it intends" is_swept
   pointer click "$BARE_X" "$BARE_Y"
   sleep 1
+  check "the next click brings them back" eval '! is_swept'
   arbor_stop
   wallpaper_click off
 fi

@@ -56,7 +56,7 @@ summon_keys_app() {
 to_test_windows() {
   # shellcheck disable=SC2046
   click $(center_of "$W1")
-  eventually front_is "[ArborTestWindows]"
+  eventually front_is "$ARBOR_TEST_BUNDLE"
 }
 
 arbor_build
@@ -162,7 +162,7 @@ check "⌃⌥Space still reaches the app" eventually received_is 49 2
 
 step "⌘Tab away and they are back"
 key cmd+tab
-check "⌘Tab leads to the test windows" eventually front_is "[ArborTestWindows]"
+check "⌘Tab leads to the test windows" eventually front_is "$ARBOR_TEST_BUNDLE"
 check "status no longer says off" eventually status_has "out of view$"
 check "the event taps are back" eventually has_taps
 # shellcheck disable=SC2046

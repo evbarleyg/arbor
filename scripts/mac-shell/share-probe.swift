@@ -167,6 +167,9 @@ case "shareable":
 
 case "capture":
   guard arguments.count == 3, let id = CGWindowID(arguments[1]) else { fail(usage) }
+  // A connection to the window server, which a tool without an application has none of. Without it the filter below ends the process:
+  // "Assertion failed: (did_initialize), function CGS_REQUIRE_INIT" (a hosted Mac, macOS 26.6.2). Listing the windows needs none.
+  _ = NSApplication.shared
   guard let window = shareableWindows(onScreenOnly: false).first(where: { $0.windowID == id }) else {
     fail("ScreenCaptureKit lists no window \(id)")
   }
