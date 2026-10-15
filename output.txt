@@ -1,0 +1,203 @@
+# mac-shell: scripts/mac-shell/probe-mission-control.sh at 65e1348, macOS 26.6.2, 2026-10-15T05:03Z
+built Arbor, the pointer tool and the app bundles in 5s
+
+== five windows docked, shortcuts on
+session 1: Arbor pid 3856, test windows 28 29 30 31 32 (pid 3811)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> arrange
+arranged 5 windows
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  tile n0 desktop  874 43 138 653  holds -
+  w28 12 43 275 321        docked focused
+  w29 12 376 275 320       docked
+  w30 299 43 276 321       docked
+  w31 299 376 276 320      docked
+  w32 587 43 275 653       docked
+  window 28: the window server has it at 12 43 275 321; on a display: 1.00
+  window 29: the window server has it at 12 376 275 320; on a display: 1.00
+  window 30: the window server has it at 299 43 276 321; on a display: 1.00
+  window 31: the window server has it at 299 376 276 320; on a display: 1.00
+  window 32: the window server has it at 587 43 275 653; on a display: 1.00
+  in front: 3811
+
+== for comparison: Mission Control with everything in view
+> key ctrl+up
+shot: mac-shell/01-everything-in-view.png
+what the Dock says of windows' pictures (13 lines in 01-everything-in-view.txt):
+  4 AXButton - [] "Arbor Test 1" "Arbor Test 1" 60 185 214 250
+  4 AXButton - [] "Arbor Test 5" "Arbor Test 5" 617 186 214 508
+  4 AXButton - [] "Arbor Test 4" "Arbor Test 4" 331 448 215 249
+  4 AXButton - [] "Arbor Test 3" "Arbor Test 3" 328 185 215 250
+  4 AXButton - [] "Arbor Test 2" "Arbor Test 2" 57 448 214 249
+> key escape
+  ✔ windows match Arbor's layout
+
+== one framed, four out of view: what Mission Control shows of them
+> zoom 28
+framed w28
+display 0 0 1024 768, visible 0 31 1024 677, camera n1, back yes
+  w28 12 43 1000 653       docked focused
+  w29 1023 680 275 320     docked parked
+  w30 1023 680 276 321     docked parked
+  w31 1023 680 276 320     docked parked
+  w32 1023 680 275 653     docked parked
+  window 28: the window server has it at 12 43 1000 653; on a display: 1.00
+  window 29: the window server has it at 1023 680 275 320; on a display: 0.00
+  window 30: the window server has it at 1023 680 276 321; on a display: 0.00
+  window 31: the window server has it at 1023 680 276 320; on a display: 0.00
+  window 32: the window server has it at 1023 680 275 653; on a display: 0.00
+  in front: 3811
+shot: mac-shell/02-framed.png
+> key ctrl+up
+shot: mac-shell/03-four-out-of-view.png
+what the Dock says of windows' pictures (13 lines in 03-four-out-of-view.txt):
+  4 AXButton - [] "Arbor Test 1" "Arbor Test 1" 19 356 520 340
+  4 AXButton - [] "Arbor Test 5" "Arbor Test 5" 704 357 143 340
+  4 AXButton - [] "Arbor Test 4" "Arbor Test 4" 861 528 144 166
+  4 AXButton - [] "Arbor Test 3" "Arbor Test 3" 551 183 144 167
+  4 AXButton - [] "Arbor Test 2" "Arbor Test 2" 861 186 143 166
+> key escape
+after ⎋:
+display 0 0 1024 768, visible 0 31 1024 677, camera n1, back yes
+  w28 12 43 1000 653       docked focused
+  w29 1023 680 275 320     docked parked
+  w30 1023 680 276 321     docked parked
+  w31 1023 680 276 320     docked parked
+  w32 1023 680 275 653     docked parked
+  window 28: the window server has it at 12 43 1000 653; on a display: 1.00
+  window 29: the window server has it at 1023 680 275 320; on a display: 0.00
+  window 30: the window server has it at 1023 680 276 321; on a display: 0.00
+  window 31: the window server has it at 1023 680 276 320; on a display: 0.00
+  window 32: the window server has it at 1023 680 275 653; on a display: 0.00
+  in front: 3811
+
+== a click on the picture of a window that is out of view
+> key ctrl+up
+shot: mac-shell/04-before-the-click.png
+what the Dock says of windows' pictures (13 lines in 04-before-the-click.txt):
+  4 AXButton - [] "Arbor Test 1" "Arbor Test 1" 19 356 520 340
+  4 AXButton - [] "Arbor Test 5" "Arbor Test 5" 704 357 143 340
+  4 AXButton - [] "Arbor Test 4" "Arbor Test 4" 861 528 144 166
+  4 AXButton - [] "Arbor Test 3" "Arbor Test 3" 551 183 144 167
+  4 AXButton - [] "Arbor Test 2" "Arbor Test 2" 861 186 143 166
+the picture of Arbor Test 3 is at 623 266
+> click 623 266
+film: 8 pictures in .55 s
+shot: mac-shell/05-after-the-click-1.png
+shot: mac-shell/05-after-the-click-2.png
+shot: mac-shell/05-after-the-click-3.png
+shot: mac-shell/05-after-the-click-4.png
+shot: mac-shell/05-after-the-click-5.png
+shot: mac-shell/05-after-the-click-6.png
+shot: mac-shell/05-after-the-click-7.png
+shot: mac-shell/05-after-the-click-8.png
+shot: mac-shell/06-settled.png
+display 0 0 1024 768, visible 0 31 1024 677, camera n5, back yes
+  w28 1023 680 1000 653    docked parked
+  w29 1023 680 275 320     docked parked
+  w30 12 43 1000 653       docked focused
+  w31 1023 680 276 320     docked parked
+  w32 1023 680 275 653     docked parked
+  window 28: the window server has it at 1023 680 1000 653; on a display: 0.00
+  window 29: the window server has it at 1023 680 275 320; on a display: 0.00
+  window 30: the window server has it at 12 43 1000 653; on a display: 1.00
+  window 31: the window server has it at 1023 680 276 320; on a display: 0.00
+  window 32: the window server has it at 1023 680 275 653; on a display: 0.00
+  in front: 3811
+  log | DEBUG focus is on w30
+  log | DEBUG w30 has the keyboard
+  log | DEBUG no stage: Reduce motion is on
+is window 3 in view? yes; has it the keyboard? yes
+
+== the same with the view held, as on a shared screen
+> show-all
+showing everything
+> zoom 28
+framed w28
+> hold
+holding this view until `release`
+> key ctrl+up
+shot: mac-shell/07-held.png
+what the Dock says of windows' pictures (13 lines in 07-held.txt):
+  4 AXButton - [] "Arbor Test 1" "Arbor Test 1" 19 291 620 405
+  4 AXButton - [] "Arbor Test 3" "Arbor Test 3" 467 79 171 199
+  4 AXButton - [] "Arbor Test 5" "Arbor Test 5" 652 80 171 405
+  4 AXButton - [] "Arbor Test 4" "Arbor Test 4" 714 497 171 198
+  4 AXButton - [] "Arbor Test 2" "Arbor Test 2" 835 79 171 198
+> click 799 596
+film: 8 pictures in .54 s
+shot: mac-shell/08-held-after-the-click-1.png
+shot: mac-shell/08-held-after-the-click-2.png
+shot: mac-shell/08-held-after-the-click-3.png
+shot: mac-shell/08-held-after-the-click-4.png
+shot: mac-shell/08-held-after-the-click-5.png
+shot: mac-shell/08-held-after-the-click-6.png
+shot: mac-shell/08-held-after-the-click-7.png
+shot: mac-shell/08-held-after-the-click-8.png
+display 0 0 1024 768, visible 0 31 1024 677, camera n1, back yes
+  w28 12 43 1000 653       docked focused
+  w29 1023 680 275 320     docked parked
+  w30 1023 680 276 321     docked parked
+  w31 1023 680 276 320     docked parked
+  w32 1023 680 275 653     docked parked
+  window 28: the window server has it at 12 43 1000 653; on a display: 1.00
+  window 29: the window server has it at 1023 680 275 320; on a display: 0.00
+  window 30: the window server has it at 1023 680 276 321; on a display: 0.00
+  window 31: the window server has it at 1023 680 276 320; on a display: 0.00
+  window 32: the window server has it at 1023 680 275 653; on a display: 0.00
+  in front: 3811
+  log | DEBUG no stage: Reduce motion is on
+  log | INFO  show-all: showing everything
+  log | DEBUG no stage: Reduce motion is on
+  log | INFO  zoom 28: framed w28
+  log | DEBUG focus is on w28
+  log | DEBUG w28 has the keyboard
+  log | INFO  hold: none → view
+  log | INFO  hold: holding this view until `release`
+  log | INFO  hold: settings.json has changed; it is read when the view is released
+  log | DEBUG focus is on w31
+  log | DEBUG hold: focus report for w31, 0.02758625 s after the last click or modifier key
+  log | DEBUG w31 has the keyboard
+  log | INFO  hold: w31 took the keyboard out of view; sending it back
+  log | DEBUG focus is on w28
+  log | DEBUG hold: focus report for w28, 0.05910775 s after the last click or modifier key
+  log | DEBUG w28 has the keyboard
+  log | DEBUG focus is on w31
+  log | DEBUG hold: focus report for w31, 0.018337125 s after the last click or modifier key
+  log | DEBUG w31 has the keyboard
+  log | INFO  hold: w31 took the keyboard out of view; sending it back
+  log | DEBUG focus is on w28
+  log | DEBUG hold: focus report for w28, 0.049640417 s after the last click or modifier key
+  log | DEBUG w28 has the keyboard
+> release
+released
+
+== ⌃↓, the windows of the app in front, with four of them out of view
+> show-all
+showing everything
+> zoom 28
+framed w28
+> key ctrl+down
+shot: mac-shell/09-app-windows.png
+  3 AXButton - [] "Arbor Test 1" "Arbor Test 1" 28 20 312 204
+  3 AXButton - [] "Arbor Test 2" "Arbor Test 2" 380 20 264 307
+  3 AXButton - [] "Arbor Test 4" "Arbor Test 4" 708 20 265 307
+  3 AXButton - [] "Arbor Test 5" "Arbor Test 5" 283 359 129 307
+  3 AXButton - [] "Arbor Test 3" "Arbor Test 3" 544 359 264 307
+> key escape
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+shot: mac-shell/10-quit.png
+
+7 passed, 0 failed
+exit code 0
