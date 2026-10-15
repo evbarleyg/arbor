@@ -855,7 +855,7 @@ What comes back in `.mac-shell/day-<run>/`:
 
 **Three controls**, without which a silent detector means nothing. *Without Arbor*: apps move their own windows, and so does macOS, so read a finding against the control before
 calling it Arbor's. *Sabotage*: `apptool set-frame`, `raise`, `activate` and `close` do to real windows what Arbor must never do, and a program that passes for Arbor (`impostor.swift`) does what only its own process can do wrong, one offence a step with honest steps between, and `jolts.py sabotage` fails
-unless every offence is reported by its own detector, by no other, and nothing where nothing was done. *The self-test*, part of `make lint`: some sixty situations, each with the finding it must or must not give.
+unless every offence is reported by its own detector, by no other, and nothing where nothing was done. *The self-test*, part of `make lint`: some hundred and twenty situations, each with the finding it must or must not give.
 
 **What it cannot see**: two changes within one sample (a step during which the sampler saw nothing for more than 250 ms does not count as judged, and the report says `blind for … ms`; what it did see stands, because a gap
 can hide a move and cannot make one up), anything that is
@@ -870,11 +870,37 @@ whoever writes a journey needs the words and nothing else. `day.sh` is written i
 ```bash
 python3 scripts/mac-shell/walk.py 4711 --acts 110 --display two --tiling off     # prints the walk from that seed: the same on every machine
 python3 scripts/mac-shell/walk.py 4711 --control                                 # its control: the same file, played without Arbor
+python3 scripts/mac-shell/walk.py 4711 --cast browsers --reduce-motion on        # another cast; no stage, so that every move of every window shows
 ```
 
 `walk_begin <cast> <display> <tiling> [seed [commit]]` prepares the Mac, opens the cast, sees macOS tile (or not), starts Arbor and writes the manifest; `walk_end` brings back what is hidden or minimized,
 quits Arbor, reaches every window, and reports. Setting the scene (`acted setup=1`) is in the report and is no act. `walk-sample.sh` is the walk from 4711 (`make lint` checks that it still is);
-`day-sit.sh` makes an arrangement and leaves the Mac alone for six minutes; `survey-casts.sh` asks a Mac which other apps it has and how their windows resist.
+`day-sit.sh` makes an arrangement and leaves the Mac alone for six minutes; `survey-casts.sh` asks a Mac which other apps it has and how their windows resist (`survey-browsers.sh`: the browsers alone).
+The casts are those of `docs/VIABLE.md`: `stock`; `browsers` (Safari, Chrome, Firefox and Edge with two windows each, Finder, TextEdit); `awkward` (a window of one size, two that are no narrower than
+half a laptop's screen and greet with a sheet, two that cannot be minimized, tabs, an open panel, an app without a window). A member that opens no window is left out; six are needed.
+
+**A whole gate** (`docs/VIABLE.md`). `gate.py plan` works its rows out of the numbers on that page: four journeys for each cell of macOS's tiling and the displays, the casts and Reduce Motion spread over
+them, a control for each cell, the sabotage run, two sits: 33 parts, some 230 minutes of Macs. `gate.sh` is one script that plays whichever part it is told: `run.sh` says only which part of how many a
+playing is (`$MAC_SHELL_PART`, `$MAC_SHELL_PARTS`), and how many there are says which dispatch it is.
+
+```bash
+python3 scripts/mac-shell/gate.py plan first          # the two user-hours a commit is given first; `rest`: the other 31 parts; `whole`: all 33
+scripts/mac-shell/run.sh scripts/mac-shell/gate.sh scripts/mac-shell/gate.sh      # plays `first`: as many times gate.sh as the plan has rows
+python3 scripts/mac-shell/gate.py row <commit> 4 33   # what part 4 of 33 is on that commit; `gate.py acts <seed> <display> <acts> <cast>`: its walk
+python3 scripts/mac-shell/viable.py ledger <commit> <every directory with a run.json> -o ledger.json
+python3 scripts/mac-shell/viable.py check ledger.json --runs jobs.txt             # VIABLE, NOT VIABLE or INVALID, with the reasons
+```
+
+A walk is seeded from the commit, so it cannot be a file in it: it is written on the Mac and comes back as `walk.txt`. The seed also holds the first number with which the walks of that commit, **as they
+are written**, have enough of every kind of act and stay under the time a run may take, so that a gate does not turn out two resizes short after four hours of Macs; nothing a run brought back has a say
+in it. `gate.py --self-test` (in `make lint`) holds the plan to the page: raise a number there and it fails until the plan has grown. `run.json` is written as a script begins (`"started": true`) and completed at
+its end; whoever hands out the parts leaves a stub (`"started": false`) in each one's place first, and only a part that has nothing but a stub, or whose job GitHub gave no Mac, may be played again in a later attempt.
+
+**What hosted Macs taught about the measuring itself.** Nearly all late samples fall while nine apps start cold, so the sampler's account runs from the first act that counts to the last, in one stretch,
+and the whole run's figures stay beside it (`whole-…`). What is over within one sample (26 ms) shows to nobody: an offence planted for the sabotage run lasts a tenth of a second. A window that is wholly
+transparent is not on the screen. The line Arbor draws round the focused window lets presses through, so `apptool top-at` and `grab` look through it. macOS's own tiling does not answer every drag, an app does not obey
+every key: a journey checks that what it did took hold, and otherwise the act counts as not performed. A release has been seen to take 57 ms to reach the apps with no Arbor running: a single one has 100.
+`probe-presses.sh` asks which of Arbor's event taps holds a press back, in rounds with different settings and one after Quit.
 
 For a script of your own, `lib-day.sh` is the harness below the acts (its header lists everything) and `jolts.py`'s header lists the marks and keys.
 
