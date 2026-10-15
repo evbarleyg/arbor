@@ -415,7 +415,7 @@ import Testing
     h.start()
     func model() throws -> OnboardingModel { try self.model(h) }
     var row = try tilingRow(h)
-    #expect(row.detail.hasSuffix("Switch that off, only while Arbor runs, and Arbor has the edges."))
+    #expect(row.detail.hasSuffix("Switch that off, only while Arbor runs, and the edges are Arbor’s."))
 
     h.run("fix-setup")
     row = try tilingRow(h)
@@ -423,7 +423,7 @@ import Testing
     #expect(
       row.done
         == "While Arbor runs, 3 settings of macOS are off. Quit or pause Arbor, and your Mac is as it was. To end that for good: here, or later "
-        + "under Help → Check Setup… in Arbor’s menu. To dock a window there, hold ⌘ and drag it to a screen edge.")
+        + "under Help → Check Setup… in Arbor’s menu. The screen edges are Arbor’s now: hold ⌘ and drag a window to a screen edge, and it docks.")
 
     // Paused: neither a tick, which would say "off", nor advice. Arbor is keeping its word.
     h.run("pause")

@@ -402,9 +402,11 @@ struct OnboardingView: View {
         HStack(alignment: .firstTextBaseline, spacing: 6) {
           Text(row.title)
             .font(.headline)
-          Text(row.importance)
-            .font(.caption)
-            .foregroundStyle(.secondary)
+          if !row.importance.isEmpty {
+            Text(row.importance)
+              .font(.caption)
+              .foregroundStyle(.secondary)
+          }
           Spacer(minLength: 8)
           if row.action != nil {
             // Its buttons come under the text that says what they are for.

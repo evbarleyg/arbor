@@ -159,16 +159,30 @@ extension Controller {
               + "`fix-setup undo` ends that"
             : "macOS has \(lent.count) of them back until Arbor arranges windows again; `fix-setup undo` leaves \(lent.count == 1 ? "it" : "them") on"
         ]
-      if inTheWay.isEmpty {
-        report.add(.ok, titles.switches, "none in the way", notes: guardNote + undoNote)
-      } else {
-        let oneStep =
-          macSwitchboard != nil && inTheWay.contains(where: \.canBeSwitchedOffForYou)
-          ? "`fix-setup` keeps them off for you while Arbor runs (and `fix-setup undo` ends that), or do it in" : "In"
+      // Weighed as in Check Setup….
+      let inVain = macSwitchesAskedForInVain
+      func those(_ weight: MacSwitch.Weight) -> [MacSwitch] {
+        inTheWay.filter { $0.weight(edgeDrags: edgeDrags, askedFor: inVain.contains($0)) == weight }
+      }
+      func oneStep(_ it: String, for switches: [MacSwitch]) -> String {
+        macSwitchboard != nil && switches.contains(where: \.canBeSwitchedOffForYou)
+          ? "`fix-setup` keeps \(it) off for you while Arbor runs (and `fix-setup undo` ends that), or do it in" : "In"
+      }
+      let (problems, known) = (those(.inTheWay), those(.goodToKnow))
+      if !problems.isEmpty {
         report.add(
           .problem, titles.switches,
-          "as they stand, macOS reacts to the same clicks and drags as Arbor. \(oneStep) System Settings → Desktop & Dock:",
-          notes: inTheWay.map(\.advice) + guardNote + undoNote)
+          "as they stand, macOS reacts to the same clicks and drags as Arbor. \(oneStep("them", for: problems)) System Settings → Desktop & Dock:",
+          notes: problems.map(\.advice) + guardNote + undoNote)
+      } else if !known.isEmpty {
+        // A plain drag is macOS's own, so nothing anybody does unasked runs into it. All that the step would change is named.
+        report.add(
+          .note, titles.switches,
+          "macOS’s own tiling is on, and gets a window dragged to a screen edge first, with ⌘ held too. "
+            + "\(oneStep("it", for: known)) System Settings → Desktop & Dock:",
+          notes: inTheWay.filter(\.canBeSwitchedOffForYou).map(\.advice) + guardNote + undoNote)
+      } else {
+        report.add(.ok, titles.switches, "none in the way", notes: guardNote + undoNote)
       }
     } else {
       report.add(.note, titles.switches, Self.unknown)
@@ -328,6 +342,13 @@ extension Controller {
   /// later should see what Arbor saw.
   public func logSetupProblems() {
     for line in setupProblemLines { Log.error(line) }
+    for line in setupNoteLines { Log.info(line) }
+  }
+
+  /// No problem, and yet the first thing to know of a Mac on which "it would not dock at the edge": that macOS's own tiling is on.
+  public var setupNoteLines: [String] {
+    guard let tiling = doctorReport().check("Desktop & Dock settings"), tiling.mark == .note, !tiling.notes.isEmpty else { return [] }
+    return [forTheLog("setup: \(tiling.title): \(([tiling.detail] + tiling.notes).joined(separator: " | "))")]
   }
 
   /// The entries of `bindings` that were skipped go there too, whenever they change (`KeyBindings.problemsForTheLog`).

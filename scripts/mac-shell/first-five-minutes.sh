@@ -491,7 +491,8 @@ step "5  Check Setup…"
 ctl check-setup
 check "Check Setup… opens the window" eventually welcome_frame
 see 50-check-setup
-check "here macOS's tiling is spoken of" says "Your Mac tiles a window dragged to a screen edge, before Arbor gets it."
+check "on a Mac as it comes Arbor is ready" says "Arbor is ready"
+check "here macOS's tiling is spoken of, for whoever wants the edges" says "There your Mac’s own tiling gets it first."
 check "with the three settings by their names" says "Drag windows to menu bar to fill screen"
 before_the_step=$(frames)
 if press "Switch Off macOS Tiling"; then
@@ -512,7 +513,7 @@ uncover $(grab_of "$FIRST")
 drag $(grab_of "$FIRST") 0 400 --hold 1.2 --no-release
 shot 52-held-at-the-edge
 check "macOS is seen to have stopped tiling: it shows no preview" no_macos_preview
-# "To dock a window there, hold ⌘ and drag it to a screen edge", says the row.
+# "The screen edges are Arbor’s now: hold ⌘ and drag a window to a screen edge, and it docks", says the row.
 check "Arbor shows where the window will land" arbor_preview
 release
 check "the window docked" eventually is docked "$FIRST"

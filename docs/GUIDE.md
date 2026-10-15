@@ -91,9 +91,11 @@ Seven things you can hold Arbor to. Each has a story of its own that is played a
 
 ## 2. The first ten minutes
 
-### Before you start: three switches
+### Before you start
 
-macOS has tiling of its own, which wants the same screen edges. In **System Settings → Desktop & Dock**:
+The four moves below are keys, and a plain drag is macOS's own, so macOS's tiling can stay as you have it. Two things only: quit other window managers (Rectangle, Magnet, Amethyst and others use the same ⌃⌥ keys), and turn Stage Manager off, which moves windows itself.
+
+**Only if you want to dock with the mouse** (hold ⌘ and drag a window to a screen edge): macOS has tiling of its own, which gets a window at those edges first, with ⌘ held too. In **System Settings → Desktop & Dock**:
 
 | Switch | Set it to | Otherwise |
 |---|---|---|
@@ -103,11 +105,9 @@ macOS has tiling of its own, which wants the same screen edges. In **System Sett
 
 **Arbor never fights macOS over a window. With macOS's tiling on, the left, right and top edges are macOS's.** Arbor shows no preview along them and docks nothing there, and leaves the window floating where macOS puts it. So there is one preview at a time, and what it shows is what happens. The bottom edge, the edges of docked windows and the keys stay Arbor's: ⌃⌥← docks at the left at every setting. The first few times, a line on screen says who took the window and which key docks it. With the switches off, every edge is Arbor's to its last point.
 
-Quit other window managers (Rectangle, Magnet, Amethyst and others use the same ⌃⌥ keys), and turn Stage Manager off.
-
 One more is good to know and nothing to change: with **Click wallpaper to reveal desktop** as macOS comes, one click on the Desktop, or in a gap between docked windows, sweeps every window off to the sides. It looks as if Arbor lost them. It has not: a second click brings them back where they were. "Only in Stage Manager" switches it off, if you would rather.
 
-Arbor checks all of this for you before it arranges anything, and changes none of it unasked: **Check Setup…** (menu → Help) lists what stands in the way, worst first, and so does `arborctl doctor`.
+Arbor checks all of this for you before it arranges anything, and changes none of it unasked: **Check Setup…** (menu → Help) lists what matters on this Mac, and so does `arborctl doctor`. On a Mac as it comes the window is headed "Arbor is ready" and `doctor` finds no problem; both name the three switches, for whoever wants the edges.
 
 **Or in one step.** The row has a button, **Switch Off macOS Tiling** (`arborctl fix-setup`). It switches off the three above, as far as they are on, and nothing else; macOS obeys at once, nothing restarts and no window moves. Arbor writes down how each was. **They are off only while Arbor runs**: quit or pause Arbor and your Mac is exactly as it was; start or resume it and they are off again, without another question. A switch you flip yourself in the meantime is yours, and Arbor leaves it alone from then on. **Put Them Back**, in the same row afterwards (`arborctl fix-setup undo`), ends that for good, and so does uninstalling. Stage Manager is not part of it: whoever has it on chose it.
 
@@ -124,8 +124,8 @@ Nothing moves when permission arrives. Arbor arranges nothing until you ask.
 
 ### Four moves
 
-1. **Dock.** Click any window and press **⌃⌥⌘←**. (Or hold ⌘ and drag it by its title bar to the left edge of the screen; a preview shows where it will land. Without ⌘ a drag only moves the window, as on any Mac. With macOS's own tiling on, that edge is macOS's: the key works at every setting.)
-2. **Dock a second.** Click another and press **⌃⌥⌘→**. It takes the other half, and the first does not move. Nor does any other window: what floated where the docked ones now sit is still there, exactly as you left it.
+1. **Dock.** Click any window and press **⌃⌥←**. (Or hold ⌘ and drag it by its title bar to the left edge of the screen; a preview shows where it will land. Without ⌘ a drag only moves the window, as on any Mac. With macOS's own tiling on, that edge is macOS's: the key works at every setting.)
+2. **Dock a second.** Click another and press **⌃⌥→**. It takes the other half, and the first does not move. Nor does any other window: what floated where the docked ones now sit is still there, exactly as you left it.
 3. **Frame.** Click one of the docked windows and press **⌃⌥↩**. It fills the screen. **Your other windows are out of view, not closed.**
 4. **And back.** Press **⌃⌥↩** again (or ⌃⌥Space). The arrangement is back.
 

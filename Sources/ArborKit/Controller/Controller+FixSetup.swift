@@ -20,8 +20,8 @@ extension Controller {
   private static let unreadable =
     "what Arbor wrote down about macOS’s settings cannot be read (\(MacSwitchLedger.fileName)), so nothing was changed; see \(place)"
 
-  /// The settings of macOS in Arbor's way as they stand. Nil if they cannot be read. The one rule for what `doctor` calls a
-  /// problem, what the welcome window lists and words its moves by, and what `fix-setup` touches.
+  /// The settings of macOS that can be in Arbor's way, as they stand. Nil if they cannot be read. What `fix-setup` touches, and what
+  /// `doctor` and Check Setup… weigh, both by `MacSwitch.weight`.
   func macSwitchesInTheWay(_ facts: SystemFacts?) -> [MacSwitch]? {
     let lent = macSwitchesLent
     return facts?.switches?.filter { $0.isInArborsWay && !lent.contains($0) }
@@ -34,6 +34,17 @@ extension Controller {
   /// running Arbor none is: one that could not be taken again is as much in the way as any.
   public var macSwitchesLent: [MacSwitch] {
     isRunning && !isTurning ? [] : macSwitchboard?.records()?.filter(\.isGivenBack).map(\.item) ?? []
+  }
+
+  /// Those that are on though somebody asked Arbor to keep them off and Arbor arranges windows: it could not take them again at its
+  /// start (a full disk, a Mac managed by somebody else). One that a person has switched on again by hand is theirs, and is not among them.
+  var macSwitchesAskedForInVain: [MacSwitch] {
+    isRunning && !isTurning ? macSwitchboard?.records()?.filter(\.isGivenBack).map(\.item) ?? [] : []
+  }
+
+  /// When a window dragged to a screen edge docks. Never, too, for whoever has no band of Arbor's along the edges of any display.
+  var edgeDrags: DragDocks {
+    displays.isEmpty || displays.contains { options(for: $0.id).dropOptions.offersScreenEdges } ? dragDocks : .never
   }
 
   /// Needs no Accessibility permission, so it works before `start()`: the welcome window offers it from the first moment.

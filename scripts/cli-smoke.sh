@@ -173,8 +173,11 @@ try macos tidy
 try doctor
 check "with nothing wrong: exit code 0, on standard output, no complaint" is "$code: $(grep -c '^✘' "$dir/out"): $(wc -c < "$dir/err" | tr -d ' ')" "0: 0: 0"
 rows=$(wc -l < "$dir/out" | tr -d ' ')
-# As a Mac comes: macOS's own tiling is on, which is a ✘ row.
+# As a Mac comes macOS's own tiling is on. That is a ✘ row where a plain drag is to dock; as Arbor ships, with ⌘ held, it is only a note.
 try macos defaults
+try doctor
+check "on a Mac as it comes, too: exit code 0" is "$code: $(grep -c '^✘' "$dir/out")" "0: 0"
+try set dragDocks always
 try doctor
 check "with a ✘ among its rows: exit code 1" is "$code" 1
 check "  all of it on standard output all the same, the worst first" is "$(head -c 3 "$dir/out"): $(($(wc -l < "$dir/out") >= rows))" "✘: 1"
@@ -196,6 +199,7 @@ check "  one answer, the report, and what follows is not run" is "$(wc -l < "$di
 batch 'show-all\ndoctor\nzoom 999\ndesktop' --keep-going
 check "--keep-going: whatever decided the exit code has its line" is "$code:$(cut -d: -f2 "$dir/err" | tr -d '\n')" "1: line 2 line 3"
 try macos tidy
+try set dragDocks held
 
 try - < /dev/null
 check "an empty batch is done: exit code 0" is "$code" 0

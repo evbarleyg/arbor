@@ -46,10 +46,10 @@ import Testing
     h.start()
     settle(h)
     #expect(h.controller.onboardingModel(facts, flow: OnboardingFlow(isReady: true)).rows.map(\.id) == [.accessibility])
-    #expect(h.controller.onboardingModel(facts).row(.desktopAndDock)?.state == .recommended, "Check Setup…")
+    #expect(h.controller.onboardingModel(facts).row(.desktopAndDock)?.state == .optional, "Check Setup…")
     #expect(h.system.moveLog.isEmpty, "\(h.system.moveLog)")
     let report = h.run("doctor")
-    #expect(!report.ok)
+    #expect(report.ok, "a plain drag is macOS's own (Q29, 3): a Mac as it comes has no problem, and the switches are named all the same")
     for macSwitch in [MacSwitch.screenEdges, .menuBar, .optionKey] { #expect(report.text?.contains(macSwitch.label) == true) }
   }
 

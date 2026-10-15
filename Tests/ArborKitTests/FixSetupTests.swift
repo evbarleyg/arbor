@@ -274,7 +274,7 @@ import Testing
     h.start()
     let session = OnboardingSession(controller: h.controller) { _ in }
     session.begin(on: .setup)
-    #expect(session.model.title == "Ready, with one suggestion")
+    #expect(session.model.title == "Arbor is ready", "macOS's tiling is in nobody's way: the row is for whoever wants the edges")
     let step = try #require(session.model.row(.desktopAndDock)?.action)
     #expect(step.title == "Switch Off macOS Tiling")
 
@@ -285,7 +285,7 @@ import Testing
     #expect(row.isSatisfied && row.action == nil)
     #expect(
       row.done == "While Arbor runs, 3 settings of macOS are off. Quit or pause Arbor, and your Mac is as it was. To end that for good: here, or "
-        + "later under Help → Check Setup… in Arbor’s menu. To dock a window there, hold ⌘ and drag it to a screen edge.")
+        + "later under Help → Check Setup… in Arbor’s menu. The screen edges are Arbor’s now: hold ⌘ and drag a window to a screen edge, and it docks.")
     #expect(session.model.page == .setup, "it stays, so that what was done can be read")
 
     let back = try #require(row.undo)
@@ -339,7 +339,7 @@ import Testing
     #expect(row.undo?.title == "Put Them Back")
     #expect(
       row.done == "While Arbor runs, 3 settings of macOS are off. Quit or pause Arbor, and your Mac is as it was. To end that for good: here, or "
-        + "later under Help → Check Setup… in Arbor’s menu. To dock a window there, hold ⌘ and drag it to a screen edge.")
+        + "later under Help → Check Setup… in Arbor’s menu. The screen edges are Arbor’s now: hold ⌘ and drag a window to a screen edge, and it docks.")
 
     // One is switched on again by hand: the step for that one, and the way back for all.
     h.mac.values[.stageManager] = nil
@@ -373,7 +373,7 @@ import Testing
     h.controller.macSwitchboard = nil
     let facts = try #require(h.controller.systemFacts?())
     let row = try #require(h.controller.onboardingModel(facts).row(.desktopAndDock))
-    #expect(row.action == nil && row.state == .recommended)
+    #expect(row.action == nil && row.state == .optional)
   }
 
   /// The moves are keys, which work however the switches stand (Q29, 11).
@@ -408,8 +408,8 @@ import Testing
     let h = makeHarness()
     h.start()
     let before = try #require(h.controller.doctorReport().check("Desktop & Dock settings"))
-    #expect(before.mark == .problem)
-    #expect(before.detail.contains("`fix-setup` keeps them off for you while Arbor runs (and `fix-setup undo` ends that)"))
+    #expect(before.mark == .note)
+    #expect(before.detail.contains("`fix-setup` keeps it off for you while Arbor runs (and `fix-setup undo` ends that)"))
     #expect(before.notes.count == 4, "the three, and a note on the click on the wallpaper")
 
     h.run("fix-setup")
@@ -420,6 +420,6 @@ import Testing
       after.notes.last == "Arbor keeps 3 of them off while it runs, and gives them back at a quit and at a pause; `fix-setup undo` ends that")
 
     h.run("fix-setup undo")
-    #expect(h.controller.doctorReport().check("Desktop & Dock settings")?.mark == .problem)
+    #expect(h.controller.doctorReport().check("Desktop & Dock settings") == before)
   }
 }

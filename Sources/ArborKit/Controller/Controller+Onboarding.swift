@@ -19,10 +19,10 @@ extension Controller {
     return OnboardingModel(
       facts, flow: flow, windowsOutOfView: permissionLoss?.windows ?? 0, offersScreenRecording: offersScreenRecording, appsWithOwnShortcuts: passThroughSuggestions.map(\.name),
       canFixSetup: macSwitchboard != nil, switchesChangedByArbor: macSwitchesChangedByArbor, switchesGivenBack: macSwitchesLent,
-      fixSetupFailure: fixSetupFailure,
-      menuBarIsOneIcon: menuBarIsSurelyOneIcon, menuBarIcon: menuBarIconInShort, desktops: desktopsBetweenWhatIsDocked,
+      switchesAskedForInVain: macSwitchesAskedForInVain, fixSetupFailure: fixSetupFailure,
+      edgeDrags: edgeDrags, menuBarIsOneIcon: menuBarIsSurelyOneIcon, menuBarIcon: menuBarIconInShort, desktops: desktopsBetweenWhatIsDocked,
       isNewcomer: isFirstLaunch && workspaces.values.allSatisfy { $0.tree.allWindows.isEmpty }, isPaused: isPaused && accessibilityGranted,
-      lostShortcuts: facts.inputDisabled ? [] : keysHeld.lost.map(\.label), signature: buildInfo.signature, dragDocks: dragDocks,
+      lostShortcuts: facts.inputDisabled ? [] : keysHeld.lost.map(\.label), signature: buildInfo.signature,
       shortcut: { KeyBindings.label(for: $0, in: bindings) })
   }
 
