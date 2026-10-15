@@ -297,7 +297,8 @@ public final class FilmHands {
       return system.click()
     }
     if let window = window(at: point), let frame = system.frame(of: window) {
-      system.userClick(window, release: false)
+      // With ⌘ down macOS moves a window by its title bar without bringing it forward or giving it the keyboard.
+      if modifiers.contains(.command), point.y - frame.minY < titleBarHeight { system.click() } else { system.userClick(window, release: false) }
       landedOn = "\(window)"
       if point.y - frame.minY < titleBarHeight {
         held = .title(window, grip: CGSize(width: point.x - frame.minX, height: point.y - frame.minY), moved: false)
@@ -364,6 +365,8 @@ public final class FilmHands {
   public func keyDown(_ chord: KeyChord) -> CommandResult? {
     // An open menu has the keyboard. What macOS does with a global shortcut meanwhile is not known, so a film does not show it.
     guard menu == nil else { return .failure("Arbor's menu is open and takes the keys: choose from it, or `tap escape`") }
+    // With another modifier key down these keys are another shortcut, or none.
+    guard chord.modifiers.isSuperset(of: modifiers) else { return .failure("a modifier key that is no part of \(chord.label) is held") }
     chords.append(chord)
     let result = harness.keyDown(chord.text)
     // A key that is nobody's shortcut goes to the panel of shortcuts, which any key puts away.
@@ -375,6 +378,28 @@ public final class FilmHands {
     guard chords.contains(chord) else { return }
     chords.removeAll { $0 == chord }
     harness.keyUp(chord.text)
+    tellWhichModifiersAreDown()
+  }
+
+  /// Modifier keys that are held down by themselves, as somebody holds ⌘ while they drag.
+  public private(set) var modifiers: KeyChord.Modifiers = []
+
+  /// Presses and lets go of modifier keys until exactly these are held by themselves.
+  public func hold(_ modifiers: KeyChord.Modifiers) {
+    guard modifiers != self.modifiers else { return }
+    self.modifiers = modifiers
+    tellWhichModifiersAreDown()
+    // A modifier key is input like a click. During a drag the Accessibility layer reports it as a move to the same point.
+    let before = system.secondsSinceInput
+    system.secondsSinceInput = 0
+    defer { system.secondsSinceInput = before }
+    if case .title(let window, _, moved: true) = held { system.events?.dragMoved(window, to: pointer) }
+  }
+
+  /// What macOS answers when it is asked which modifier keys are down: the ones held by themselves and those of every shortcut that
+  /// is held. The stand-in forgets all of them when the last key of a shortcut comes up.
+  private func tellWhichModifiersAreDown() {
+    system.heldModifiers = chords.reduce(modifiers) { $0.union($1.modifiers) }
   }
 
   /// ⎋ with the menu open.

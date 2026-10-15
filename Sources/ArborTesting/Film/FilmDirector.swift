@@ -190,8 +190,14 @@ public final class FilmDirector {
       guard rest.count == 1 else { return ("usage: tap <shortcut or key> [for <seconds>]", false) }
       return tap(rest[0], for: time)
     case "keydown", "keyup":
+      // Modifier keys by themselves: held while something else happens, a drag mostly.
+      if rest.count == 1, let modifiers = modifiers(rest[0]) {
+        if verb == "keyup", !hands.modifiers.isSuperset(of: modifiers) { return ("error: \(rest[0]) is not held", false) }
+        hands.hold(verb == "keydown" ? hands.modifiers.union(modifiers) : hands.modifiers.subtracting(modifiers))
+        return ("\(verb == "keydown" ? "holding" : "let go of") \(rest[0])", true)
+      }
       guard rest.count == 1, let chord = try? KeyChord(text: rest[0]) else {
-        return ("usage: \(verb) <shortcut>, e.g. \(verb) ctrl+opt+space", false)
+        return ("usage: \(verb) <shortcut or modifier keys>, e.g. \(verb) ctrl+opt+space, \(verb) cmd", false)
       }
       if verb == "keyup" {
         hands.keyUp(chord)
@@ -204,6 +210,12 @@ public final class FilmDirector {
     default:
       return nil
     }
+  }
+
+  /// `cmd`, `ctrl+opt`…: nothing but modifier keys, by every name a shortcut knows them by. With a key after them they are a shortcut;
+  /// what already has a key is none then.
+  private func modifiers(_ text: String) -> KeyChord.Modifiers? {
+    (try? KeyChord(text: text + "+space")).map(\.modifiers).flatMap { $0.isEmpty ? nil : $0 }
   }
 
   /// `app <Name> <#rrggbb>` says which colour Arbor takes from the app's icon. `app <Name> icon <file>` has Arbor take it: the file holds
@@ -334,6 +346,7 @@ public final class FilmDirector {
       return ("the menu is closed", true)
     }
     guard overlays.finder != nil, ["return", "escape", "up", "down", "tab"].contains(name) else { return nil }
+    guard hands.modifiers.isEmpty else { return ("error: a modifier key is held: with it \(name) is another key", false) }
     var ok = true
     hands.typingKey = name
     switch name {
@@ -351,6 +364,7 @@ public final class FilmDirector {
   /// Types into Go to…, a key at a time.
   private func type(_ text: String, each: Double) -> Outcome {
     guard let finder = harness.overlays.finder else { return ("error: nothing is open to type into; `find` opens Go to…", false) }
+    guard hands.modifiers.isEmpty else { return ("error: a modifier key is held: what is typed with it is no letter", false) }
     var typed = finder.query
     for character in text {
       typed.append(character)

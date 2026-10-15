@@ -51,7 +51,7 @@ leaves over is carried to the next, so a film is as long as its lines say at any
 | `glide <x> <y>` | The pointer travels there as a hand moves it, carrying what it holds. Also `glide window <id> title` (a point of its title bar that can be seen and reached, as near the middle as there is; the line fails if there is none), `visible` (the same for the rest of the window), `middle` or `<share of width> <share of height>`; `glide item [button]` (Arbor's menu bar item: `menu`, `everything`, `back`…); `glide menu <title>` (a row of the open menu). `in <seconds>` after any of them sets the time |
 | `press`, `lift`, `click` | The mouse button, where the pointer is: on a title bar, a window, a tile, a gap, the minimap, a row of Go to…, Arbor's item, a row of its menu, the bare Desktop (which takes the keyboard from the windows). The story says what it landed on |
 | `tap <shortcut> [for <seconds>]` | Down and up: `tap ctrl+opt+return`. While Go to… is open, `return`, `escape`, `up`, `down` and `tab` go to it |
-| `keydown <shortcut>`, `keyup <shortcut>` | To hold one: a peek |
+| `keydown <shortcut>`, `keyup <shortcut>` | To hold one: a peek. With nothing but modifier keys (`keydown cmd`, `keyup ctrl+opt`): held by themselves, as somebody holds ⌘ while they drag; Arbor hears of it at once. Meanwhile a shortcut can be pressed only if it has them in it, and nothing is typed. With ⌘ down a press on a title bar takes hold of the window without bringing it forward |
 | `type <text> [each <seconds>]` | Into Go to…, a key at a time |
 | `caption [text]`, `shot [text]`, `mark <name> [text]` | The film's own notes, of which Arbor knows nothing. They travel with every frame until they change |
 
@@ -81,7 +81,7 @@ them). A key is left out when there is nothing of the kind. From back to front, 
 | `menuBar` | Arbor's item: `frame`, and a single `icon` or the `buttons` (`name`, `cell`, `chip`, `enabled`, `current`, `glyph`). A glyph is Arbor's `mark` as rectangles, a `digit`, or the name of a system `symbol` | `StatusMenu`, `ArborArtwork` |
 | `menu` | Its menu while it is open: `frame` and `rows` (`kind`, `title`, `shortcut`, `enabled`, `ticked`, `highlighted`) | `StatusMenu` |
 | `pointer` | `at`, `down` | |
-| `keys` | What is held: `modifiers`, `key`, `label` | |
+| `keys` | What is held: `modifiers`, `key`, `label`; modifier keys held by themselves have no `key`, and their signs for a `label` | |
 | `marks` | The film's own notes | |
 
 Window titles are in a film. They are the simulator's: a film never holds anything of a person's Mac.

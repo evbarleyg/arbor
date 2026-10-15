@@ -145,15 +145,17 @@ public final class FilmCamera {
   }
 
   private func keys() -> [String: Any]? {
-    if let chord = hands.chords.last {
-      var names: [String] = []
-      if chord.modifiers.contains(.control) { names.append("ctrl") }
-      if chord.modifiers.contains(.option) { names.append("opt") }
-      if chord.modifiers.contains(.shift) { names.append("shift") }
-      if chord.modifiers.contains(.command) { names.append("cmd") }
-      return ["modifiers": names, "key": chord.key.name, "label": chord.label]
+    func names(_ modifiers: KeyChord.Modifiers) -> [String] {
+      let all: [(KeyChord.Modifiers, String)] = [(.control, "ctrl"), (.option, "opt"), (.shift, "shift"), (.command, "cmd")]
+      return all.filter { modifiers.contains($0.0) }.map(\.1)
     }
-    return hands.typingKey.map { ["modifiers": [String](), "key": $0, "label": $0] }
+    if let chord = hands.chords.last {
+      return ["modifiers": names(chord.modifiers), "key": chord.key.name, "label": chord.label]
+    }
+    if let key = hands.typingKey { return ["modifiers": [String](), "key": key, "label": key] }
+    // Held by themselves: there is no key, and the label is their signs.
+    guard !hands.modifiers.isEmpty else { return nil }
+    return ["modifiers": names(hands.modifiers), "label": String(KeyChord(hands.modifiers, .space).label.dropLast(5))]
   }
 
   private func backdrop(_ model: BackdropModel, opacity: Double) -> [String: Any] {

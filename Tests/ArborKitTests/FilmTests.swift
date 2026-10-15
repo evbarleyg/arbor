@@ -355,6 +355,68 @@ private func near(_ a: CGRect, _ b: CGRect, within tolerance: CGFloat = 0.01) ->
     #expect(film.frames.count == lifted + 18 + 60 + 1)
   }
 
+  @Test func aModifierKeyIsHeldByItselfDuringADrag() throws {
+    // ⌘ goes down once the window rests at the edge, under Arbor's preview, and comes up again before the button does.
+    let script = dragToTheLeftEdge.replacingOccurrences(
+      of: "wait 0.5\nlift", with: "wait 0.5\nkeydown cmd\nwait 0.5\nkeyup cmd\nwait 0.5\nlift")
+    let film = try film(script)
+    #expect(film.failures.isEmpty)
+    // 0.5 + 0.5 + 1 + 0.5 s, then half a second with the key down.
+    let (before, during, after) = (film.frames[145], film.frames[170], film.frames[205])
+    #expect(before["keys"] == nil && after["keys"] == nil)
+    let keys = try #require(during["keys"] as? [String: Any])
+    #expect(keys["modifiers"] as? [String] == ["cmd"] && keys["key"] == nil && keys["label"] as? String == "⌘")
+    // Arbor hears of the key at once, though the pointer rests: with ⌘ down it keeps out of the drag.
+    let shown = [before, during, after].map { ($0["preview"] as? [String: Any])?["opacity"] as? NSNumber == 1 }
+    #expect(shown == [true, false, true])
+    #expect(film.director.harness.workspace.isDocked(WindowID(101)))
+
+    // Let go of with ⌘ still down, the window floats where it lies.
+    let kept = try self.film(dragToTheLeftEdge.replacingOccurrences(of: "wait 0.5\nlift", with: "keydown cmd\nwait 0.5\nlift\nkeyup cmd"))
+    #expect(kept.failures.isEmpty)
+    #expect(!kept.director.harness.workspace.isDocked(WindowID(101)))
+  }
+
+  @Test func whatIsHeldByItselfAndWhatAShortcutHoldsAreToldApart() throws {
+    let film = try film(dragToTheLeftEdge)
+    let (director, system) = (film.director, film.director.harness.system)
+    func keys() -> [String: Any]? { director.camera.frame(number: 0, fps: 60)["keys"] as? [String: Any] }
+
+    // By every name a shortcut knows them by; what is not held cannot be let go of.
+    for line in ["keydown control+⌥", "keydown shift", "keyup alt+shift"] { #expect(director.run(line).ok, "\(line)") }
+    #expect(system.heldModifiers == [.control] && director.camera.hands.modifiers == [.control])
+    for line in ["keyup cmd", "keydown hyper", "keydown cmd+hyper", "keydown cmd+"] { #expect(!director.run(line).ok, "\(line)") }
+    #expect(system.heldModifiers == [.control])
+
+    // A shortcut that has the held key in it: when it comes up, the key held by itself is still down, for Arbor as in the film.
+    #expect(director.run("tap ctrl+opt+return").ok)
+    #expect(system.heldModifiers == [.control] && keys()?["modifiers"] as? [String] == ["ctrl"])
+    // One that has not is another shortcut on a Mac: the film does not press it. Nor does it type.
+    #expect(director.run("keydown cmd").ok)
+    #expect(!director.run("tap ctrl+opt+space").ok)
+    #expect(director.run("keyup ctrl+cmd").ok && keys() == nil && system.heldModifiers.isEmpty)
+    #expect(director.run("tap ctrl+opt+g").ok && director.run("keydown shift").ok)
+    #expect(!director.run("type a").ok && !director.run("tap return").ok)
+    #expect(director.run("keyup shift").ok && director.run("tap escape").ok)
+
+    // A shortcut that is held keeps its own modifier keys down whatever else comes and goes.
+    #expect(director.run("keydown ctrl+opt+space").ok)
+    #expect(director.run("keydown ctrl").ok && director.run("keyup ctrl").ok)
+    #expect(system.heldModifiers == [.control, .option])
+    #expect(keys()?["label"] as? String == "⌃⌥Space")
+    #expect(director.run("keyup ctrl+opt+space").ok && system.heldModifiers.isEmpty)
+  }
+
+  @Test func withCommandDownATitleBarIsTakenHoldOfWithoutBringingTheWindowForward() throws {
+    let film = try film(dragToTheLeftEdge + "\nglide window 102 visible in 0.1\nclick")
+    let (director, system) = (film.director, film.director.harness.system)
+    #expect(system.focused == WindowID(102))
+    for line in ["keydown cmd", "glide window 101 title in 0.1", "press", "glide 500 300 in 0.2"] { #expect(director.run(line).ok, "\(line)") }
+    #expect(director.camera.hands.landedOn == "the title bar of w101")
+    #expect(system.focused == WindowID(102) && system.windowsFrontToBack().first == WindowID(102))
+    for line in ["lift", "keyup cmd"] { #expect(director.run(line).ok) }
+  }
+
   @Test func everySixtiethOfASecondIsOneLine() throws {
     let film = try film("display 1440x810\nwait 1.5\nwait 0.25")
     #expect(film.failures.isEmpty)
