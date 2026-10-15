@@ -69,7 +69,24 @@ What happens between a step's end and the next step's beginning counts for the s
 import datetime
 import json
 import os
+import re
 import sys
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+
+
+def of_the_gate(*path, otherwise):
+    """A number that the gate decides: from the first block of JSON in docs/VIABLE.md. Samples are judged far from the repository too, and then by
+    the number this file was written with; the self-test sees to it that the two are the same."""
+    try:
+        with open(os.path.join(HERE, "..", "..", "docs", "VIABLE.md"), encoding="utf-8") as handle:
+            value = json.loads(re.search(r"```json\n(.*?)```", handle.read(), flags=re.S).group(1))
+        for key in path:
+            value = value[key]
+        return value
+    except (OSError, AttributeError, KeyError, ValueError):
+        return otherwise
+
 
 # Two changes of one window further apart than this are two moves to a person, not one.
 EPISODE_GAP = 250
@@ -82,7 +99,7 @@ OPENING_REACH = 24
 OPENING_SHARE = 0.08
 # A step during which the sampler saw nothing for longer than this does not count as judged: it may have missed something. What it did see
 # stands, because a gap can hide a move and cannot make one up.
-BLIND = 250
+BLIND = of_the_gate("sampler", "blind_ms_max", otherwise=250)
 # A window Arbor moves is at rest this long after the key or the drop: later is worth a look, much later is a failure.
 SLOW_ODD = 700
 SLOW = 1500
@@ -1324,6 +1341,13 @@ def self_test():
         told = story(samples, world, steps, 2, [log])
         if "too early" in told or told.find("DEBUG dock 1 left") > told.find("one (w1) 0,30 500×700") or "dock 1 left" not in told:
             failures.append(f"the story is out of order or has too much in it:\n{told}")
+
+    # One number, three places: the page decides, this file has a copy for samples that are judged elsewhere, and the sampler counts by its own.
+    with open(os.path.join(HERE, "sampler.swift"), encoding="utf-8") as handle:
+        samplers = re.search(r"static let late = ([0-9.]+)", handle.read())
+    for name, mine, path in (("blind_ms_max", 250, ("sampler", "blind_ms_max")), ("late_ms", samplers and float(samplers.group(1)), ("sampler", "late_ms"))):
+        if of_the_gate(*path, otherwise=None) != mine:
+            failures.append(f"docs/VIABLE.md has {of_the_gate(*path, otherwise=None)!r} for {name}, and what judges by it has {mine!r}")
 
     for failure in failures:
         print(f"✘ {failure}")
