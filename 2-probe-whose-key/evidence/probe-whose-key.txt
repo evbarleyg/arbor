@@ -1,0 +1,71 @@
+# probe-whose-key 2026-10-15T07:25Z on macOS 26.6.2, commit b6d92eb
+
+== the keys: Arbor's own list
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== the app in front and the listener in the background
+  ✔ the app is up
+  ✔ the listener is up
+
+== 0  no Arbor: the control. Every key has to reach the app
+  ✔ every key's code is known
+
+== 0b  no Arbor, odd hands and odd roads: the control. Each has to reach the app
+
+== 1  from the moment of launch: how long is ⌃⌥A not Arbor's?
+  ✔ the hammer came to an end
+
+== 2  running
+
+== 2a  running, odd hands and odd roads: the right-hand keys, both of a pair, Caps Lock, fn; and keys put in further in than the keyboard
+
+== 2b  is there a moment at which Arbor lets go? ⌃⌥A twenty-five times a second through whatever might register shortcuts anew
+  ✔ the hammer came to an end
+
+== 3  paused
+
+== 4  shortcuts off for the app in front
+
+== 5  secure input on, as with a password field
+
+== 6  Arbor stopped in its tracks: a main thread that is busy
+
+== 7  a rival registers the same hot keys AFTER Arbor
+  ✔ the rival is up
+
+== 8  the rival was there BEFORE Arbor
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== 9  Arbor killed
+
+== 10  the bundle
+
+== 10a  never granted: Arbor is in the menu bar. Which keys does it hold?
+
+== 10b  granted, as the switch in System Settings records it
+
+== 10b2  the permission is taken away while Arbor runs
+
+== 10c  replaced by another build, signed ad hoc: the entry stays, the hash is another
+
+== 11  the display asleep, and awake again
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== when the app came to the front and left it
+
+18 passed, 0 failed

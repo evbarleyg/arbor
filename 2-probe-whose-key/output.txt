@@ -1,0 +1,389 @@
+# mac-shell: scripts/mac-shell/probe-whose-key.sh at b6d92eb, macOS 26.6.2, 2026-10-15T07:25Z
+built Arbor, the pointer tool and the app bundles in 3s
+
+== the keys: Arbor's own list
+session 1: Arbor pid 38092, test windows 68 69 70 (pid 38071)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+52 keys
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/00-listed.png
+
+== the app in front and the listener in the background
+  ✔ the app is up
+  ✔ the listener is up
+  back global monitor in
+  back tap-hid in
+  back tap-session in
+  back tap-annotated in
+  back ready pid=38546
+
+== 0  no Arbor: the control. Every key has to reach the app
+round control: 52 keys
+   52 heard by [local equiv menu global tap-hid tap-session tap-annotated]; Arbor's log did not grow
+  REACHED AN APP: 52 of 52
+  ✔ every key's code is known
+shot: mac-shell/01-control.png
+
+== 0b  no Arbor, odd hands and odd roads: the control. Each has to reach the app
+control: hand or road                       keys  seen at the keyboard end  given to an app  Arbor log grew   flags the app saw
+         left                                  9                         9                9               0   flags=8c0121 flags=c0121
+         right                                 9                         9                9               0   flags=8c2140 flags=c2140
+         left-ctrl-right-opt                   9                         9                9               0   flags=8c0141 flags=c0141
+         right-ctrl-left-opt                   9                         9                9               0   flags=8c2120 flags=c2120
+         both-of-each                          9                         9                9               0   flags=8c2161 flags=c2161
+         caps-lock-on                          9                         9                9               0   flags=8d0121 flags=d0121
+         fn-held                               9                         9                9               0   flags=8c0121
+         pad-flag                              9                         9                9               0   flags=2c0121 flags=ac0121
+         flags-and-no-keys                     9                         9                9               0   flags=8c0100 flags=c0100
+         held-to-repeat                        9                         9                9               0   flags=8c0121 flags=c0121
+         put-in-at-the-session                 9                         0                9               0   flags=8c0121 flags=c0121
+         put-in-at-the-annotated-session       9                         0                9               0   flags=200c0121 flags=208c0121
+         posted-to-the-app                     9                         0                9               0   flags=8c0121 flags=c0121
+
+== 1  from the moment of launch: how long is ⌃⌥A not Arbor's?
+session 2: Arbor pid 45405, test windows 82 83 84 (pid 45387)
+running: 1 display, 3 docked and 0 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+115 presses in 8.0 s
+  ✔ the hammer came to an end
+Arbor was started at or after 07:28:18.266
+given to an app (local or global), key code 0:
+  07:28:18.316 local
+  07:28:18.316 global
+  07:28:18.342 global
+  07:28:18.348 local
+  07:28:19.076 local
+  in all: 16; seen by the tap at the keyboard: 115
+Arbor's log:
+  07:28:18.845Z INFO  registered 52 shortcuts in 4481 µs
+  07:28:18.921Z INFO  started: 1 display(s), 3 managed window(s)
+  07:28:19.023Z INFO  arrange: arranged 3 windows
+  07:28:19.096Z INFO  arrange: arranged 3 windows
+  07:28:19.125Z INFO  arrange: arranged 3 windows
+  07:28:19.135Z INFO  arrange: arranged 3 windows
+
+== 2  running
+> arrange
+arranged 3 windows
+what Arbor says of itself:
+  status | running: 1 display, 3 docked and 0 floating, 0 out of view
+  status | Arbor dev
+  bindings | 52 lines with a key; the last: Letters, digits and signs mean the keys that type them on the U.S. keyboard layout.
+  log | 07:28:18.845Z INFO  registered 52 shortcuts in 4481 µs
+round running: 51 keys
+   50 heard by [tap-hid tap-session]; Arbor's log grew
+    1 heard by [tap-hid tap-session]; Arbor's log did not grow: ctrl+opt+,
+  REACHED AN APP: 0 of 51
+shot: mac-shell/02-running.png
+round pause-key: 1 keys
+    1 heard by [tap-hid tap-session]; Arbor's log grew: ctrl+opt+escape
+  REACHED AN APP: 0 of 1
+paused: windows, shortcuts and gestures are left alone until `resume`
+round resume-key: 1 keys
+    1 heard by [tap-hid tap-session]; Arbor's log grew: ctrl+opt+escape
+  REACHED AN APP: 0 of 1
+running: 1 display, 3 docked and 0 floating, 3 out of view
+
+== 2a  running, odd hands and odd roads: the right-hand keys, both of a pair, Caps Lock, fn; and keys put in further in than the keyboard
+running: hand or road                       keys  seen at the keyboard end  given to an app  Arbor log grew   flags the app saw
+         left                                  9                         9                2               7   flags=8c0121
+         right                                 9                         9                2               7   flags=8c2140
+         left-ctrl-right-opt                   9                         9                2               7   flags=8c0141
+         right-ctrl-left-opt                   9                         9                2               7   flags=8c2120
+         both-of-each                          9                         9                2               7   flags=8c2161
+         caps-lock-on                          9                         9                2               7   flags=8d0121
+         fn-held                               9                         9                0               9   
+         pad-flag                              9                         9                2               7   flags=ac0121
+         flags-and-no-keys                     9                         9                2               7   flags=8c0100
+         held-to-repeat                        9                         9                2               7   flags=8c0121
+         put-in-at-the-session                 9                         0                2               7   flags=8c0121
+         put-in-at-the-annotated-session       9                         0                9               0   flags=200c0121 flags=208c0121
+         posted-to-the-app                     9                         0                9               0   flags=8c0121 flags=c0121
+running: lines of each key's own command in Arbor's log, press by press
+         hand or road                               a arrange     left neighbor    right neighbor       return zoom    space show-all            [ back            z undo    f toggle-float            g find
+         left                                               1                 0                 0                 1                 1                 1                 1                 1                 2
+         right                                              1                 0                 0                 1                 1                 1                 1                 1                 2
+         left-ctrl-right-opt                                1                 0                 0                 1                 1                 1                 1                 1                 2
+         right-ctrl-left-opt                                1                 0                 0                 1                 1                 1                 1                 1                 2
+         both-of-each                                       1                 0                 0                 1                 1                 1                 1                 1                 2
+         caps-lock-on                                       1                 0                 0                 1                 1                 1                 1                 1                 2
+         fn-held                                            1                 1                 1                 1                 1                 1                 1                 1                 2
+         pad-flag                                           1                 0                 0                 1                 1                 1                 1                 1                 2
+         flags-and-no-keys                                  1                 0                 0                 1                 1                 1                 1                 1                 2
+         held-to-repeat                                     1                 0                 0                 1                 1                 1                 1                 1                 2
+         put-in-at-the-session                              1                 0                 0                 1                 1                 1                 1                 1                 2
+         put-in-at-the-annotated-session                    0                 0                 0                 0                 0                 0                 0                 0                 0
+         posted-to-the-app                                  0                 0                 0                 0                 0                 0                 0                 0                 0
+> show-all
+showing everything
+
+== 2b  is there a moment at which Arbor lets go? ⌃⌥A twenty-five times a second through whatever might register shortcuts anew
+482 presses in 34.0 s
+  ✔ the hammer came to an end
+482 presses of ⌃⌥A were seen at the keyboard's end, through 21 acts; 23 were given to an app
+  07:31:14.712 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:14.749 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:14.789 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:14.864 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:14.922 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.033 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.077 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.152 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.205 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.284 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.360 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.426 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.467 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.533 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.578 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.620 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.664 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.708 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.751 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.795 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.838 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.891 global after: 07:31:14.608 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:31:15.950 global after: 07:31:15.943 /Users/runner/work/arbor/arbor/.build/debug/arborctl resume
+how often Arbor registered its shortcuts meanwhile:
+  07:31:14.663Z INFO  registered 1 shortcuts in 15583 µs: 51 of the map's 52 are the apps' while Arbor is paused
+  07:31:16.018Z INFO  registered 52 shortcuts in 4206 µs
+> show-all
+showing everything
+
+== 3  paused
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+what Arbor says of itself:
+  status | paused: windows, shortcuts and gestures are left alone until `resume`
+  status | Arbor dev
+  bindings | 52 lines with a key; the last: Right now: all but 1 off while Arbor is paused.
+  log | 07:31:16.018Z INFO  registered 52 shortcuts in 4206 µs
+  log | 07:31:22.051Z INFO  registered 1 shortcuts in 2312 µs: 51 of the map's 52 are the apps' while Arbor is paused
+round paused: 51 keys
+   51 heard by [local equiv menu global tap-hid tap-session tap-annotated]; Arbor's log did not grow
+  REACHED AN APP: 51 of 51
+> resume
+resumed
+
+== 4  shortcuts off for the app in front
+> pass-through dev.arbor.test.ears on
+shortcuts and gestures are off in ArborEars, except ⌃⌥⎋
+what Arbor says of itself:
+  status | running: 1 display, 3 docked and 0 floating, 0 out of view; shortcuts and gestures are off in ArborEars
+  status | Arbor dev
+  bindings | 52 lines with a key; the last: Right now: all but 1 off in ArborEars.
+  log | 07:32:08.209Z INFO  registered 52 shortcuts in 2971 µs
+  log | 07:32:08.248Z INFO  registered 1 shortcuts in 2720 µs: 51 of the map's 52 are the apps' in the app in front
+round off-for-the-app: 51 keys
+   51 heard by [local equiv menu global tap-hid tap-session tap-annotated]; Arbor's log did not grow
+  REACHED AN APP: 51 of 51
+> pass-through dev.arbor.test.ears off
+shortcuts and gestures work in ArborEars again
+
+== 5  secure input on, as with a password field
+front secure input on (status 0, IsSecureEventInputEnabled true)
+kCGSSessionSecureInputPID"=38537
+what Arbor says of itself:
+  status | running: 1 display, 3 docked and 0 floating, 0 out of view
+  status | Arbor dev
+  bindings | 52 lines with a key; the last: Letters, digits and signs mean the keys that type them on the U.S. keyboard layout.
+  log | 07:32:08.248Z INFO  registered 1 shortcuts in 2720 µs: 51 of the map's 52 are the apps' in the app in front
+  log | 07:32:54.018Z INFO  registered 52 shortcuts in 2404 µs
+round secure-input: 51 keys
+   50 heard by [nobody]; Arbor's log grew
+    1 heard by [nobody]; Arbor's log did not grow: ctrl+opt+,
+  REACHED AN APP: 0 of 51
+front secure input off (status 0, IsSecureEventInputEnabled false)
+
+== 6  Arbor stopped in its tracks: a main thread that is busy
+round stopped: 9 keys
+    9 heard by [tap-hid tap-session]; Arbor's log did not grow: ctrl+opt+a ctrl+opt+left ctrl+opt+right ctrl+opt+return ctrl+opt+space ctrl+opt+[ ctrl+opt+z ctrl+opt+f ctrl+opt+g
+  REACHED AN APP: 0 of 9
+going again, Arbor's log grew by 23 lines:
+  07:33:50.274Z INFO  arrange: arranged 3 windows; 9 saved views are gone
+  07:33:50.309Z INFO  zoom: framed w84
+  07:33:50.359Z INFO  show-all: showing everything
+  07:33:50.376Z INFO  back: back to ArborTestWindows (n5)
+  07:33:50.394Z INFO  undo: undid arrange
+  07:33:50.412Z INFO  toggle-float: docked w84 at the right edge
+  07:33:50.440Z INFO  find: the palette is up, with the keyboard
+  07:33:50.440Z INFO  find: showing 3 destination(s) on 5A42259C-47B8-4590-9762-97DBE4FE7F1B
+> show-all
+showing everything
+
+== 7  a rival registers the same hot keys AFTER Arbor
+  ✔ the rival is up
+rival ready pid=65722: registered 52, refused 0 
+round rival-after-arbor: 51 keys
+   50 heard by [tap-hid tap-session rival]; Arbor's log grew
+    1 heard by [tap-hid tap-session rival]; Arbor's log did not grow: ctrl+opt+,
+  REACHED AN APP: 0 of 51
+what Arbor says of itself:
+  status | running: 1 display, 3 docked and 0 floating, 3 out of view
+  status | Arbor dev
+  bindings | 52 lines with a key; the last: Letters, digits and signs mean the keys that type them on the U.S. keyboard layout.
+  log | 07:32:08.248Z INFO  registered 1 shortcuts in 2720 µs: 51 of the map's 52 are the apps' in the app in front
+  log | 07:32:54.018Z INFO  registered 52 shortcuts in 2404 µs
+
+== 8  the rival was there BEFORE Arbor
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/03-before-the-rival.png
+session 3: Arbor pid 69015, test windows 191 192 193 (pid 68997)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> arrange
+arranged 3 windows
+what Arbor says of itself:
+  status | running: 1 display, 3 docked and 0 floating, 0 out of view
+  status | Arbor dev
+  bindings | 52 lines with a key; the last: Letters, digits and signs mean the keys that type them on the U.S. keyboard layout.
+  log | 07:34:47.227Z INFO  registered 52 shortcuts in 2615 µs
+round rival-before-arbor: 51 keys
+   50 heard by [tap-hid tap-session rival]; Arbor's log grew
+    1 heard by [tap-hid tap-session rival]; Arbor's log did not grow: ctrl+opt+,
+  REACHED AN APP: 0 of 51
+round rival-gone: 9 keys
+    9 heard by [tap-hid tap-session]; Arbor's log grew: ctrl+opt+a ctrl+opt+left ctrl+opt+right ctrl+opt+return ctrl+opt+space ctrl+opt+[ ctrl+opt+z ctrl+opt+f ctrl+opt+g
+  REACHED AN APP: 0 of 9
+
+== 9  Arbor killed
+> kill -KILL (Arbor)
+/Users/runner/work/arbor/arbor/scripts/mac-shell/lib.sh: line 543: 69015 Killed: 9               env ARBOR_ONLY_PIDS="$pids" ARBOR_NO_PROMPT=1 ARBOR_DEBUG=1 ARBOR_NO_HOTKEYS=1 ARBOR_NO_STATUS_ITEM=1 ARBOR_NO_WATCHDOG=1 $ARBOR_LAUNCH_ENV "$binary" >> "$ARBOR_OUT/$(arbor_log_name arbor-stderr)" 2>&1 3>&- 7>&- 8>&- 9>&-
+round killed: 9 keys
+    9 heard by [local equiv menu global tap-hid tap-session tap-annotated]; Arbor's log did not grow: ctrl+opt+a ctrl+opt+left ctrl+opt+right ctrl+opt+return ctrl+opt+space ctrl+opt+[ ctrl+opt+z ctrl+opt+f ctrl+opt+g
+  REACHED AN APP: 9 of 9
+
+== 10  the bundle
+session 4: Arbor pid 72967, test windows 221 222 223 (pid 72950)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+/Users/runner/Applications/ArborProbeWhoseKey.app: replacing existing signature
+the bundle's hash: 79c1ee0aa4d3b9e6b738099ab6e71a9bc56b0351
+
+== 10a  never granted: Arbor is in the menu bar. Which keys does it hold?
+the entry in the database (2 is what the switch shows as on): 
+what Arbor says of itself:
+  status | waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+  status | Arbor 0.0.0 (build 0)
+  bindings | 52 lines with a key; the last: Right now: Arbor takes them and can move nothing without Accessibility permission.
+  log | 07:35:55.594Z INFO  registered 0 shortcuts in 0 µs: 52 of the map's 52 are the apps' because ARBOR_NO_HOTKEYS is set
+  log | 07:35:56.333Z INFO  registered 52 shortcuts in 3071 µs
+shot: mac-shell/05-no-permission.png
+round never-granted: 52 keys
+   51 heard by [tap-hid tap-session]; Arbor's log grew
+    1 heard by [tap-hid tap-session]; Arbor's log did not grow: ctrl+opt+,
+  REACHED AN APP: 0 of 52
+
+== 10b  granted, as the switch in System Settings records it
+cdhash H"79c1ee0aa4d3b9e6b738099ab6e71a9bc56b0351"
+the entry in the database (2 is what the switch shows as on): com.evbarleyg.arbor.probe-whose-key|2 
+what Arbor says of itself:
+  status | running: 1 display, 0 docked and 3 floating, 0 out of view
+  status | Arbor 0.0.0 (build 0)
+  bindings | 52 lines with a key; the last: Letters, digits and signs mean the keys that type them on the U.S. keyboard layout.
+  log | 07:35:56.333Z INFO  registered 52 shortcuts in 3071 µs
+  log | 07:36:53.236Z INFO  registered 52 shortcuts in 2559 µs
+round granted: 9 keys
+    9 heard by [tap-hid tap-session]; Arbor's log grew: ctrl+opt+a ctrl+opt+left ctrl+opt+right ctrl+opt+return ctrl+opt+space ctrl+opt+[ ctrl+opt+z ctrl+opt+f ctrl+opt+g
+  REACHED AN APP: 0 of 9
+
+== 10b2  the permission is taken away while Arbor runs
+the entry in the database (2 is what the switch shows as on): com.evbarleyg.arbor.probe-whose-key|0 
+what Arbor says of itself:
+  status | Arbor's Accessibility permission was taken away, so it cannot move windows. Grant it again under System Settings → Privacy & Security → Accessibility
+  status | Arbor 0.0.0 (build 0)
+  bindings | 52 lines with a key; the last: Right now: Arbor takes them and can move nothing without Accessibility permission.
+  log | 07:35:56.333Z INFO  registered 52 shortcuts in 3071 µs
+  log | 07:36:53.236Z INFO  registered 52 shortcuts in 2559 µs
+shot: mac-shell/05b-lost.png
+round lost: 52 keys
+   51 heard by [tap-hid tap-session]; Arbor's log grew
+    1 heard by [tap-hid tap-session]; Arbor's log did not grow: ctrl+opt+,
+  REACHED AN APP: 0 of 52
+  log | 07:37:56.823Z DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Arbor needs the Accessibility permission · System Settings → Privacy & Security → Accessibility
+  log | 07:37:57.725Z DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Arbor needs the Accessibility permission · System Settings → Privacy & Security → Accessibility
+  log | 07:37:58.527Z DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Arbor needs the Accessibility permission · System Settings → Privacy & Security → Accessibility
+  log | 07:37:59.332Z DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Arbor needs the Accessibility permission · System Settings → Privacy & Security → Accessibility
+what Arbor says of itself:
+  status | running: 1 display, 0 docked and 3 floating, 0 out of view
+  status | Arbor 0.0.0 (build 0)
+  bindings | 52 lines with a key; the last: Letters, digits and signs mean the keys that type them on the U.S. keyboard layout.
+  log | 07:35:56.333Z INFO  registered 52 shortcuts in 3071 µs
+  log | 07:36:53.236Z INFO  registered 52 shortcuts in 2559 µs
+round given-back: 9 keys
+    9 heard by [tap-hid tap-session]; Arbor's log grew: ctrl+opt+a ctrl+opt+left ctrl+opt+right ctrl+opt+return ctrl+opt+space ctrl+opt+[ ctrl+opt+z ctrl+opt+f ctrl+opt+g
+  REACHED AN APP: 0 of 9
+
+== 10c  replaced by another build, signed ad hoc: the entry stays, the hash is another
+/Users/runner/Applications/ArborProbeWhoseKey.app: replacing existing signature
+the bundle's hash: 193136a2138bcd957b6cd4b2dfa9f4035a1f03ac
+the entry in the database (2 is what the switch shows as on): com.evbarleyg.arbor.probe-whose-key|2 
+what Arbor says of itself:
+  status | waiting for Accessibility permission (System Settings → Privacy & Security → Accessibility)
+  status | Arbor 0.0.0 (build 0)
+  bindings | 52 lines with a key; the last: Right now: Arbor takes them and can move nothing without Accessibility permission.
+  log | 07:36:53.236Z INFO  registered 52 shortcuts in 2559 µs
+  log | 07:38:16.762Z INFO  registered 52 shortcuts in 3078 µs
+shot: mac-shell/06-reinstalled.png
+round reinstalled: 52 keys
+   51 heard by [tap-hid tap-session]; Arbor's log grew
+    1 heard by [tap-hid tap-session]; Arbor's log did not grow: ctrl+opt+,
+  REACHED AN APP: 0 of 52
+  log | 07:39:05.063Z DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Arbor needs the Accessibility permission · System Settings → Privacy & Security → Accessibility
+  log | 07:39:05.876Z DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Arbor needs the Accessibility permission · System Settings → Privacy & Security → Accessibility
+  log | 07:39:06.634Z DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Arbor needs the Accessibility permission · System Settings → Privacy & Security → Accessibility
+  log | 07:39:07.396Z DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Arbor needs the Accessibility permission · System Settings → Privacy & Security → Accessibility
+  log | 07:39:08.157Z DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Arbor needs the Accessibility permission · System Settings → Privacy & Security → Accessibility
+  log | 07:39:08.914Z DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Arbor needs the Accessibility permission · System Settings → Privacy & Security → Accessibility
+
+== 11  the display asleep, and awake again
+session 5: Arbor pid 83989, test windows 278 279 280 (pid 83971)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> arrange
+arranged 3 windows
+what Arbor says of itself:
+  status | running: 1 display, 3 docked and 0 floating, 0 out of view
+  status | Arbor dev
+  bindings | 52 lines with a key; the last: Letters, digits and signs mean the keys that type them on the U.S. keyboard layout.
+  log | 07:39:14.454Z INFO  registered 52 shortcuts in 2766 µs
+round after-display-sleep: 9 keys
+    9 heard by [tap-hid tap-session]; Arbor's log grew: ctrl+opt+a ctrl+opt+left ctrl+opt+right ctrl+opt+return ctrl+opt+space ctrl+opt+[ ctrl+opt+z ctrl+opt+f ctrl+opt+g
+  REACHED AN APP: 0 of 9
+shot: mac-shell/04-after-display-sleep.png
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/07-quit.png
+
+== when the app came to the front and left it
+  71 active
+  70 resigned
+
+18 passed, 0 failed
+exit code 0
