@@ -367,6 +367,7 @@ day_gone() {
   [ -n "$pid" ] || return 0
   ended "$pid" 50 || return 1
   ARBOR_PID=""
+  note "arbor gone"
   left=$(ps -A -o pid=,comm= | grep -F "$ARBOR_BIN/Arbor" | awk '{ printf "%s ", $1 }')
   [ -z "$left" ] || note "finding $DAY_STEP -:left-behind FAIL after Quit a process of Arbor's is still there: $left"
   left=$(pointer windows --pid "$pid" | wc -l | tr -d ' ')
