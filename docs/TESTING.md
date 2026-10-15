@@ -17,19 +17,21 @@ under each ✘ says which field of which case to change, and to what.
 **What green on Linux cannot tell your change:** `make unplayed` (`scripts/reality-ledger.py --for`), which `make gate` prints under its steps. It reads what the branch adds to the
 trunk and lists the cases of that page which the stand-ins play partly, not at all or never can, and which the change leans on. Above the seam that is by name: a line
 it adds to the code that ships calls a member of the platform protocols (`system.setFrame(`), or writes one, and the case names that member. Below the seam it is by file: it touches
-macOS-only code, which no test on Linux runs, and the case cites that file. The worst first, a dozen lines at most (`ALL=1` for the rest; `FOR=` a commit, a range or a diff file).
+macOS-only code, which no test on Linux runs, and the case cites that file. What is not played at all first, a dozen lines at most (`ALL=1` for the rest; `FOR=` a commit, a range or a diff file).
 **If the list is not empty, that is the argument for a Mac run before landing.** It is advice and never a failure, it takes a fifth of a second and no network, and to a change of pages,
 scenarios, tools, tests or stand-ins it says nothing at all.
 Why it is there: on 2026-10-15 "a refused size costs nobody a second move" passed everything on Linux, landed, and left the first dock on a Mac short of its slot, while
-`a-size-set-at-the-old-place-is-cut-to-what-fits-there` had stood in the ledger as not played, and nobody held the change against it. For that change the list has seven cases, that one the fifth.
+`a-size-set-at-the-old-place-is-cut-to-what-fits-there` had stood in the ledger as not played, and nobody held the change against it. For that change the list had seven cases that day, that one the fifth.
 How much it talks, measured that day: of the last thirty changes to the trunk that touch `Sources/` it has nothing to say to twenty, and ten cases at most; of the twenty newest
 branches, nothing to sixteen, and two lists were cut (25 and 70 cases: they touch the panels and `AXWindowSystem.swift`). By every file a case cites the same thirty gave 32 cases in the middle and
 172 at most, since everybody cites the backlog; by every Swift file that ships, 3 and 19, much of it by way of `Settings.swift` and `ArborApp.swift`.
 A call that stood there before is told apart: where every hunk that adds a member takes it out as often, the line was only reworded, so the case comes last, marked "read there before", and a list of
 nothing else does not speak of a Mac run; a call that leaves one hunk and arrives in another counts as new, because on 2026-10-15 moving the call was the fault. Of the ten lists for those thirty changes
 two are wholly of that kind, and so was the first list a pull request ever got: six cases for one `if` that had gained a clause.
+**The order** within each kind is by what the stand-ins play (not at all, never can, partly) and only then by hurt: the question is what green cannot tell, so what is not played at all is the first answer, whatever it hurts. By hurt first a case goes under among its like once they all name their member, and by now 141 of the 362 unplayed cases name theirs (37 did): whoever adds a `system.setFrame(` is shown nineteen, with ten printed. `make lint` holds the order to its purpose: the change of 2026-10-15 is kept, cut down, in `collab/evidence/changes`, and every run of the script holds it against the ledger as it is (`PROOF`). The three cases that say a size depends on where the window stands are taken as not played, which they were when they were written down (the stand-ins learnt the rule within hours), and stand 1st, 2nd and 4th of twenty; by hurt first they would be 5th, 6th and 13th. With the names the same thirty changes still get ten lists, seven cases in the middle and nineteen at most, three of them cut.
 **Silence is no clean bill.** A change that leans on a report rather than a call (full screen, a display that goes, an app that hides) names no member of the seam, and a case that does not
 name the call it is about is not found. So a case about a call does well to name it in backticks.
+The cases about reports name them too (`windowChanged`, `windowAppeared`), and **that finds nothing yet**: a report is called below the seam and written once, in the controller, and what is decided on hearing it stands a function or two further down. To count a hunk inside `func windowChanged` as the member was tried and is noise (33 cases at most for the thirty where it is 19, 86 for the branches): whatever keeps a table per window adds a line to `windowDestroyed` and `windowReplaced`.
 
 ## 1. Core unit tests (`Tests/ArborCoreTests`)
 
@@ -673,6 +675,14 @@ A script that had run earlier on that Mac had left it there. Arbor saw no drag b
   something to answer over HTTP uses `scripts/mac-shell/serve.py`, or binds as it does; `scripts/test-tooling.py` refuses the server as it is.
 - **Real windows come first in CI's Mac job,** straight after the build, so that they meet a Mac on which nothing else has happened. Leave them there.
 
+### When the display seems to stand still
+
+A camera gets a frame when the display changed, so where nothing is meant to move, no frame says nothing. Put `pulse.swift`'s strip on top of everything: then a wait between two frames is a display that stood still. `framewatch.swift` writes down when the display changed and keeps no picture; `standstill.py table <run>` says for how long it stood still in each scene, with three witnesses that film nothing beside it (the display's beat, the window list, the key held); `story <run> <scene>` puts everything known about a scene on one clock. `check-standstill.sh` is the example.
+- **Play it twice before believing it.** The first time a process shows a self-drawn panel again after seconds out of view, a hosted Mac stands still for most of a second, whoever the process is (`docs/REALITY.md`, `a-panel-shown-again-costs-a-hosted-mac-a-second`). A scene played once on a fresh Mac makes "the first time" look like "always". Print what the first play took all the same.
+- **A control that is calm proves nothing until it does everything the suspect does.** `mover.swift` was calm through two runs, and stood still as soon as its panel stayed out of view as long as Arbor's.
+- **Ask whether looking causes it:** play it filmed and unfilmed, from fresh starts, in turns.
+- **The system log's clock drifts from the wall clock** on a hosted Mac (it was seen 0.4 s off). Take a line of Arbor's own from `log show` (subsystem `dev.arbor`) to tie them before believing an order of events.
+
 ### On a person's own Mac
 
 **Nobody is asked to run anything on a Mac of their own, and no result from one goes into this repository** (issue #4, `docs/PUBLIC.md`): real Macs
@@ -801,6 +811,7 @@ copy from before the repository was public, and say what the script does once it
 | `rehearse.sh` | trunk | **never on a Mac**: ends with 77 | | It tells scripts that the Mac is thrown away; only what has a stand-in is fake. For Linux |
 | `run.sh` | trunk | safe for the Mac | none | Starts a run on GitHub |
 | `check-F13.sh` (`lib-F13.sh`) | trunk | safe | none | 10 to 25 minutes and 2 GB. Everything in a sandbox under `/tmp`: a throwaway `HOME`, `ARBOR_HOME`, keychain and clone. A small window takes the keyboard twice for seconds. Three copies run with their watchdog, which after a crash would use `open` |
+| `check-signing.sh` | trunk | **never**: ends with 77 | | Five minutes, `--bare`. Keychains of its own go on the account's search list and come off again; it answers macOS's dialogs about a key, and in the end replaces the account's login keychain by an empty one |
 | `check-F12.sh` | trunk | safe | none | |
 | `perf.sh` | trunk | safe, steps skip themselves | one drag | `footprint`, `heap`, `leaks` where developer mode is off (macOS would ask for a password) |
 | `check-F13-system.sh` | trunk | **never**: ends with 77 | | TCC.db as root, `tccutil`, login items, `make install` as a person runs it |
@@ -817,6 +828,8 @@ copy from before the repository was public, and say what the script does once it
 | `check-macos-double-click.sh` | trunk | safe, steps skip themselves | 40 s | macOS's other title-bar actions (it would change the setting), TextEdit and Terminal. A test window fills the display for some seconds |
 | `check-claimed-keys.sh` | trunk | **never**: ends with 77 | | Writes an entry for Arbor's bundle into the privacy database; types into whatever has the keyboard |
 | `check-menu-height.sh` | trunk | **never**: ends with 77 | | Clicks in the menu bar; pauses, holds and quits its Arbor from the menu |
+| `check-window-list.sh` | trunk | **never**: ends with 77 | | Clicks in the menu bar and on rows of Windows ▸; hides and minimizes its own test windows |
+| `check-standstill.sh` (`pulse.swift`, `framewatch.swift`, `mover.swift`) | trunk | **never**: ends with 77 | | Watches the whole display for changes, changes Reduce Motion |
 | `probe-mission-control.sh` | trunk | **never**: ends with 77 | | Mission Control and the app's windows opened, a window picked there by a click |
 | `probe-whose-key.sh`, `probe-fn-bit.sh` (`lib-ears.sh`) | trunk | **never**: ends with 77 | | Some fifty shortcuts pressed a dozen times over into whatever is in front; event taps that listen; hot keys registered; secure input switched on and off; Arbor stopped, killed and installed as a bundle of its own under `~/Applications`; the display put to sleep; an entry in the permission database, as root |
 | `census-menu-keys.sh` | trunk | **never**: ends with 77 | | Alone on its Mac. Opens and ends every app, installs apps and leaves them, lifts the browsers' quarantine mark, prints the titles of menu items |
@@ -1469,8 +1482,9 @@ whether the tests you wrote since do their job. It is not part of `make check` o
 ## Installing, signing and releasing
 
 `scripts/release-tools-test.sh`, part of `make check` and of CI, tests what needs no Mac in a temporary copy: `version.sh`,
-`release-notes.sh`, and `publish-release.sh` against a stand-in for GitHub's API on the same machine (left out where
-there is no curl, as in the Swift image for Linux).
+`release-notes.sh`, `sign.sh` and `make-signing-identity.sh` against stand-ins for `security`, `codesign` and `openssl` (`at-a-terminal.py` is the terminal), and
+`publish-release.sh` against a stand-in for GitHub's API on the same machine (left out where there is no curl, as in the Swift image
+for Linux).
 
 `scripts/candidate-check.sh` builds a commit the way `make install` does (`make app`: `-c release`, bundled, stamped, signed, here ad hoc) and looks
 at the result: the signature, the stamps, and what the two binaries say to `--version`. Every other build, CI's
@@ -1486,6 +1500,15 @@ are only read, and compared before and after; the copies of Arbor it starts arra
 limit is stopped with everything it started; what might put one of macOS's dialogs on the screen is tried once, for
 twenty seconds, before anything depends on it. Its header says what you may notice, and names the one exception (three
 copies run with their watchdog).
+
+`scripts/mac-shell/check-signing.sh` is the signing identity alone, in five minutes and with nothing compiled, so that it can be asked
+of every macOS GitHub has (`run.sh --bare --on macos-14`): either openssl, a keychain off the search list, a throwaway `HOME`, somebody's
+key and a certificate with a name like ours in the same keychain (every attribute and access list compared before and after),
+`sign.sh`'s stamp against `codesign`, a terminal; then the account's own login keychain, where macOS asks and nobody knows the
+password (no answer, Deny); and last the road a person takes, in a login keychain made anew: the dialog, the password, Always Allow,
+and silence ever after. **A keychain that a test makes for itself proves nothing about the dialog**: its keys have no partition
+list, so nothing is asked. What those Macs answered is what the stand-ins in `release-tools-test.sh` answer on Linux, with a run that
+is cut short besides: ⌃C at the dialog, a signal, a reader that leaves.
 
 `scripts/mac-shell/check-F13-system.sh` is for GitHub's throwaway Macs only (`needs_throwaway_mac`): it writes a grant into the
 permission database and shows that the next build inherits it and an ad-hoc build does not, tries launch at login,
@@ -1516,7 +1539,7 @@ windows are out of view; nothing Arbor placed is lost beyond the displays; overl
 preview without a drag; one focus ring, around the window that has the keyboard; a floating window in view goes out of view only
 when the camera moves; a pinned window is always in view; Go to… is open only while Arbor runs, on a display that is there and with nothing being
 dragged, and the window chosen in it has the keyboard and is in view; a saved slot that waits for its window is in a tree and has a timer that ends the
-wait; Arbor gives up only on windows that something keeps moving, and lets be only those that a double-click moved; only known timers, and they run dry; windows Arbor does not arrange are never moved;
+wait; Arbor gives up only on windows that something keeps moving, and lets be only those that a double-click moved, through whatever nobody asked of it; only known timers, and they run dry; windows Arbor does not arrange are never moved;
 `state` and state.json survive JSON; after `quit` or `pause` everything is back in view; a restart keeps the shape of every tree).
 
 **Running it**
@@ -1558,13 +1581,14 @@ done to the world as if Arbor had done it, at which the net has to speak, beside
 
 | Rule of the product | Rules of the walks | Detector |
 |---|---|---|
-| Nothing moves until the person docks something, and nothing that was not asked to | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-launch-after-a-crash`, `moved-at-resume`, `moved-unasked`, `there-and-back-moved`, `pause-and-resume-moved`, `dragged-gap-did-not-last` | `moved-unasked` |
+| Nothing moves until the person docks something, and nothing that was not asked to | `moved-before-any-dock`, `fetched-before-any-dock`, `moved-at-launch`, `moved-at-launch-after-a-crash`, `moved-at-resume`, `moved-unasked`, `there-and-back-moved`, `pause-and-resume-moved`, `dragged-gap-did-not-last`, `same-windows-other-frames`, `displays-out-and-back-moved`, `taken-to-another-display`, `taken-out-of-view-with-another-display`, `taken-back-from-where-it-was-put`, `docked-at-a-start` | `moved-unasked` |
 | A start takes nothing out of view, but for what Show Everything itself has out of view; a quit leaves nothing there | `start-took-out-of-view` (the window with the keyboard stays in view even if it is such a window), `quit-left-out-of-reach` | `lost` |
-| A window moves once, to where it ends up | `moved-twice` (in the step of the command or event), `moved-again` (later, with nobody touching anything); `-sizing` where its app refused a size, `-sizing-again` where it had refused in the same way before; `sized-there-and-back` (never in a wrong place, but smaller or larger on the way than it ends up); all with `-floating` for a floating window; `sized-there-and-back-let-be` (the window that a start lets be, which is to be set no frame); `moved-twice-floating-windows-first` (with `soleFloatTakesDesktop`, where macOS reported the window before the displays); `set-right-by-less-than-a-cell` (a terminal in its slot). Judged by the road, not by the number of requests (`FakeWindowSystem.detour`): a window Arbor does not know is asked to shrink where it stands, and then moved. It grows in its slot, and the first time it turns out unable to, the way on to the middle of the slot is left out of the road | `jolt` |
-| Out of view means out of view, and nothing goes on for ever | `flashed-into-view`, `flashed-out-of-view`; `moved-over-and-over` (more than three moves with nobody acting) | `flash`, `stuck` |
-| The window you switch to comes to the front and into view | `switched-to-out-of-view`, `switched-to-partly-out`, `app-switch-out-of-view` (only the app was reported), `switched-to-behind` | `focus`, `behind` |
+| A window moves once, to where it ends up | `moved-twice` (in the step of the command or event), `moved-again` (later, with nobody touching anything); `-sizing` where its app refused a size, `-sizing-again` where it had refused in the same way before; `sized-there-and-back` (never in a wrong place, but smaller or larger on the way than it ends up); all with `-floating` for a floating window; `sized-there-and-back-let-be` (the window that a start lets be, which is to be set no frame); `moved-twice-floating-windows-first` (with `soleFloatTakesDesktop`, where macOS reported the window before the displays); `set-right-by-less-than-a-cell` (a terminal in its slot). `flipped`: in view all the way, no app refused a size, and back where it began. Judged by the road, not by the number of requests (`FakeWindowSystem.detour`): a window Arbor does not know is asked to shrink where it stands, and then moved. It grows in its slot, and the first time it turns out unable to, the way on to the middle of the slot is left out of the road | `jolt` |
+| Out of view means out of view, and nothing goes on for ever | `flashed-into-view`, `flashed-out-of-view` (an app refused a size in that step: a layout finding out), `flipped-into-view`, `flipped-out-of-view` (nobody refused: the view flew somewhere and was taken back); `moved-over-and-over` (more than three moves with nobody acting) | `flash`, `stuck` |
+| Less by default (Q29): a floating window is its person's, and a plain drag is what it is without Arbor | `floating-taken-out-of-view` (never, by anything; only what was summoned may be sent away); from the moment a window is taken until somebody does something else: `plain-drag-showed-a-preview`, `plain-drag-docked`, `plain-drag-moved-it` (it floated, and Arbor set a frame on it), `plain-drag-moved-another` (it floated: nobody else moves; it was docked: only what is docked), `plain-drag-started-a-timer`; a docked window let go 24 points or more from where it was taken floats, at its own size: `plain-drag-left-it-docked`, `plain-drag-not-its-own-size` | `lost`, `moved-unasked` |
+| The window you switch to comes to the front and into view | `switched-to-and-sent-away` (out of view with the keyboard in it), `switched-to-out-of-view`, `switched-to-mostly-out` (a floating window, where Arbor had put it), `switched-to-partly-out`, `app-switch-out-of-view` (only the app was reported), `switched-to-behind` | `focus`, `behind` |
 | Quitting, Float All and pause give windows their own sizes back | `size-not-given-back` | `size-lost` |
-| After any way home no window shows less than its person left showing; after a change of displays none is mostly out of view | `home-not-whole`, `home-behind-the-dock`, `home-leaves-out`; `displays-left-mostly-out` | `lost` |
+| After any way home no window shows less than its person left showing; after a change of displays none is mostly out of view | `home-not-whole`, `home-behind-the-dock`, `home-leaves-out`; `displays-left-mostly-out`, `nothing-in-view-after-displays`, `nothing-in-view-held-after-displays` | `lost` |
 
 **Arbor raises nothing else** (`ChaosInvariants+Raises.swift`, QUESTIONS Q20 and Q25): `raised-unasked` speaks at any raise, which is a window brought to the front without the keyboard, of a window that is neither kept in view nor summoned, at the step in which it is made,
 and at any raise at all by an Arbor that has paused or quit. `switched-to-behind` sees the harm only where the raised window happens to lie over the one just switched to. `asked: raised` counts how often a floating window that nothing keeps in view
@@ -1583,11 +1607,33 @@ A hunt ends with `asked: <net> <n> times`: **a net that never asks its question 
 **Ordinary walks** (`ARBOR_CHAOS_ORDINARY=1`): the displays of a real desk, apps with the smallest sizes real apps have, windows that open wholly in view, keys that are bound, items that are in the menu, the mouse, and
 a moment between one thing and the next. No settings edited by hand, no app that fights back, no crash, no nonsense. **What such a walk finds is likely on a real desk**; what only the wild walks find has to be looked at for how a person would get there.
 
+**Light walks** (`ARBOR_CHAOS_ORDINARY=light`) are the ordinary walks of a person who has read nothing (`collab/QUESTIONS.md`, Q29): a plain drag is the commonest thing they do, they know the nine keys,
+the rest is in the menu, and no setting has been touched. Such a script begins with `settings {}`: **an empty object means that the file holds nothing, which is Arbor as it ships**, so these are the walks at the switches that
+ship, on whatever commit they run, and a replay knows it from the script. Every other walk begins as walks always did (the gestures on, and whatever else went off by default since), so that recorded seeds and listed scripts keep their meaning.
+
 ```bash
-ARBOR_CHAOS_ORDINARY=1 .build/release/arbor-sim hunt 1 2000 300                                # the seed chooses the desk
+ARBOR_CHAOS_ORDINARY=light .build/release/arbor-sim hunt 1 2000 300                            # nine keys, the menu, the mouse; as Arbor ships
+ARBOR_CHAOS_ORDINARY=1 .build/release/arbor-sim hunt 1 2000 300                                # the whole map of keys; the seed chooses the desk
 ARBOR_CHAOS_ORDINARY=1 ARBOR_CHAOS_DESK=laptop ARBOR_CHAOS_DOCK=left .build/release/arbor-sim hunt 1 2000 300   # laptop | desk | both; bottom | left | right | hidden
 ARBOR_CHAOS_ORDINARY=1 .build/release/arbor-sim hunt 1 2000 300 --known                        # the known failures end a walk like any other
 ```
+
+**By the eye.** The cure for refused sizes came with a change to the net that judges it: by the road a window takes, `moved-twice-sizing` fell from 8,170 walks in 10,000 to 160; by a net that counts every change a person could see, `moved-twice` rose from 5,007 to 9,917, and a film from a hosted Mac agreed with the second. So both are on every board from now on. `eye-moved-twice`, `eye-moved-twice-sizing`, `eye-moved-again`, `eye-moved-again-sizing` count every change of a window that a person could see for one thing that happened. They are numbers: `step` keeps them apart (`runner.counted`), no walk, replay or test ends at them, a hunt counts them beside the known failures, and `replay --frames` prints them.
+
+**Not yet gates**, counted in the same way until they read 0, because nearly every walk and many a strict test would break them today. Whoever brings one to 0 takes it out of `ChaosRunner.countedRules`, and it ends walks like any other rule. Each has a control.
+
+| Rule | Asks |
+|---|---|
+| `floating-taken-out-of-view` | as above |
+| `strayed-between` | whatever the number of requests: on its way a window covers nothing in view, over 400 square points, that neither its old nor its new frame covers. A window that comes into view counts from where it first shows. Not asked of one that grows into a frame that lies within no display, which is sized first |
+| `dock-took-out-of-view` | a key that docks takes no docked window out of view that was in view: not the one it names, not one that becomes a tile for want of room |
+| `displays-moved-the-untouched` | a floating window from which a change of displays took nothing, and which macOS carried nowhere, is not moved by Arbor either |
+| `plain-drag-left-an-undo-step` | Undo after a plain drag of a floating window takes back what was asked of Arbor before, not the hand's drag |
+| `keyboard-taken-unasked` | with nothing docked, kept in view or summoned, and nothing asked of it, Arbor sends the keyboard nowhere |
+
+**A word that is added changes no old walk.** A walk draws its commands and the settings it changes from lists, so one more entry sent every seed another way, and whoever added a command met, in their own pull request, faults of the trunk that had nothing to do with it. Now the lists are frozen, version by version (`ChaosGenerator+Vocabulary.swift`): seeds under 1,000,000 draw from the list as it stood on 2026-10-15; seeds beyond the last frozen version draw from everything there is, and are the seeds for hunting. The tests walk frozen seeds only. **Adding a command or a setting needs nothing there.** A new kind of act or a new weight gets its weight only where `drawsFromEverything` is true. The keeper of the lab freezes a new version now and then.
+
+**Whose fault is a walk?** `scripts/blame-walk.sh script.txt` replays the shrunk script that a failure printed on this tree and on the commit where the branch left the trunk (built once for each commit in `.build/blame`), and says "THE TRUNK'S" or "ONLY WITH THIS CHANGE".
 
 **The scoreboard** is the number of ordinary walks in 10,000 in which a rule broke, by rule: the `known:` lines of a hunt count the walks that passed a rule by, the summary line those that ended at one.
 

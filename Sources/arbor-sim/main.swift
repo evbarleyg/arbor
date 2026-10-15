@@ -20,6 +20,7 @@ import Foundation
 //   cursor <x> <y>               move the pointer (camera commands use it)
 //   press <command>              press and release a shortcut bound to that command
 //   from <source> <command>      run it as a shortcut, menu, gesture, script or url would (plain commands: script)
+//   menu-choose <title…>         open Arbor's menu and click the first row, in a submenu or not, whose title begins so (`menu` prints them)
 //   keydown | keyup | key <shortcut>   a shortcut by its keys (ctrl+opt+space): press and hold, let go, or both
 //   mouse down|up                press or release the mouse button where the pointer is
 //   type                         type a few characters into the focused window
