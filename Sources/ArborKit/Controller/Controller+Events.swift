@@ -61,6 +61,8 @@ extension Controller: WindowSystemEvents {
     owedTheWayBack[id] = nil
     owedMoves.remove(id)
     returningWindows.remove(id)
+    awaitedBack.remove(id)
+    if awaitedGroup?.windows.contains(id) == true { stopAwaitingAnybody(layingOut: false) }
     if unframedIntoATile?.window == id || unframedIntoATile?.heir == id { unframedIntoATile = nil }
     enforcement.reset([id])
     if appsDoubleClick?.window == id { appsDoubleClick = nil }
@@ -94,6 +96,7 @@ extension Controller: WindowSystemEvents {
     lettingBeNotes(window, movedByItsUser: userInitiated && previous?.frame != window.frame)
     if owedTheWayBack[window.id] != nil { payTheWayBack(to: window.id) }
     noteWhetherItCameBack(window, was: previous)
+    noteWhetherAnAwaitedWindowIsBack(window)
     putBackIfItLeftFullScreen(window, was: previous)
     meetAtItsSlotIfItLeftFullScreen(window, was: previous)
     defer { focusRingFollows(window) }

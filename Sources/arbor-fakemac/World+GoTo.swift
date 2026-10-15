@@ -23,6 +23,7 @@ extension World {
       overlays.dismissFinder()
       return false
     case ([], .returnKey): overlays.chooseInFinder()
+    case ([.command], .returnKey): overlays.tickInFinder()
     case ([], .escape): overlays.dismissFinder()
     case ([], .down), ([], .tab): overlays.moveFinderSelection(by: 1)
     case ([], .up), ([.shift], .tab): overlays.moveFinderSelection(by: -1)
@@ -39,7 +40,8 @@ extension World {
   }
 
   /// Takes the press if it lands on the palette; any other press closes the palette and lands where it lands.
-  func paletteTakesPress(at point: CGPoint) -> Bool {
+  /// `ticks`: with ⌘ or ⇧ held.
+  func paletteTakesPress(at point: CGPoint, ticks: Bool = false) -> Bool {
     guard let overlays = arbor?.overlays.fake, let palette = overlays.finder else { return false }
     let layout = palette.layout
     guard layout.panel.contains(point) else {
@@ -48,7 +50,9 @@ extension World {
     }
     // The real one chooses when the button comes up; nothing here tells the two apart.
     let inList = CGPoint(x: point.x - layout.panel.minX - layout.list.minX, y: point.y - layout.panel.minY - layout.list.minY)
-    if let row = layout.row(at: inList) { overlays.chooseInFinder(row: row + 1) }
+    if let row = layout.row(at: inList) {
+      if ticks { overlays.tickInFinder(row: row + 1) } else { overlays.chooseInFinder(row: row + 1) }
+    }
     followKeyboard()
     return true
   }

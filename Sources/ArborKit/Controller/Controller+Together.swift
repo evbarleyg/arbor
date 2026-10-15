@@ -19,7 +19,8 @@ extension Controller {
     guard reason != .enforce, let display = display(displayID) else { return [] }
     var moves: [(window: WindowID, frame: CGRect)] = []
     // The window in the user's hand stays there (F09): foretold, it would be pulled out of it, and nobody would claim the move.
-    for (window, target) in layout.windowFrames.sorted(by: { $0.key < $1.key }) where window != drag?.window {
+    for (window, target) in layout.windowFrames.sorted(by: { $0.key < $1.key })
+    where window != drag?.window && !awaitedBack.contains(window) {
       guard let current = windows[window] else { continue }
       if !parked.contains(window), current.frame.approximatelyEquals(target, tolerance: 1) || misfits[window] != nil {
         continue

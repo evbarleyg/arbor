@@ -236,6 +236,9 @@ Would you like to see it after every move of the view, without asking? `arborctl
 
 ### Reading and writing side by side
 
+**⌃⌥G**, a few letters, **⌘↩**; a few letters, **⌘↩**; **↩**. Each ⌘↩ ticks a window, wherever it is, and Return docks the two, three or four that are ticked side by side, in that order, and fills the screen with them. Nothing else
+moves house; ⌃⌥Z takes it all back.
+
 Frame a rectangle (with [the gestures switched on](#6-on-its-way)): hold **⇧** and drag, starting on the Desktop, in a gap or on a tile, around the windows you want; or hold **⌃⌥** and start anywhere. The view moves to the space that fits best. It is the quickest way to say "these two". Let go of the keys first to call it off.
 
 ### Something small for a moment

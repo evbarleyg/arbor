@@ -101,6 +101,7 @@ extension Command {
     case .focusDisplay(let target): return "Focus \(Self.title(of: target))"
     case .fixSetup(undo: false): return "Switch Off macOS Settings in the Way"
     case .fixSetup(undo: true): return "Put macOS Settings Back"
+    case .sideBySide: return "Dock Side by Side"
     default: return nil
     }
   }
