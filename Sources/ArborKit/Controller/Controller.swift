@@ -197,6 +197,8 @@ public final class Controller {
   var drag: DragSession?
   /// A docked window the user is resizing by its edges (Controller+EdgeResize.swift).
   var edgeResize: EdgeResize?
+  /// A floating window the user is resizing by its edges: what is reported of it meanwhile is a hand's doing (`windowChanged`).
+  var floatingEdgeInHand: WindowID?
 
   /// Who to tell when something they might show has changed (Controller+Observers.swift).
   var observers: [@MainActor (Change) -> Void] = []
@@ -534,6 +536,7 @@ public final class Controller {
     drag = nil
     soleFloats.dragged = nil
     edgeResize = nil
+    floatingEdgeInHand = nil
     appsDoubleClick = nil
     whereAZoomBegan.removeAll()
     system.start()

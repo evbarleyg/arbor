@@ -140,14 +140,16 @@ extension ChaosRunner {
     let (window, wasDragged): (WindowID?, Bool)
     switch action {
     // (An app that resizes its own window reports it as a hand would, and nobody can tell the two apart.)
-    case .move(let moved, _), .edge(let moved, _, _), .limits(let moved, _, _): (window, wasDragged) = (moved, false)
+    case .move(let moved, _), .limits(let moved, _, _): (window, wasDragged) = (moved, false)
+    // (An edge is held by a hand, and Arbor is told so.)
+    case .edge(let moved, _, _): (window, wasDragged) = (moved, true)
     // (`settle` lets go of the mouse first.)
     case .release, .settle: (window, wasDragged) = (inHandBefore, true)
     default: (window, wasDragged) = (nil, false)
     }
     guard let window, let frame = system.windows[window]?.snapshot.frame, let home = controller.workspaceID(containing: window) else { return }
     movedByUndo.remove(window)
-    // No hand takes a window across a border without a drag.
+    // No hand takes a window across a border without a drag, of the window or of one of its edges.
     if wasDragged || workspacesBefore[home]?.contains(window) == true {
       leftByHand[window] = HandNote(frame: frame, display: controller.display(home)?.frame)
     }

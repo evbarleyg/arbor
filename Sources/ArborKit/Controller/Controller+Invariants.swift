@@ -247,6 +247,7 @@ extension Controller {
     check("appsDoubleClick", [appsDoubleClick?.window].compactMap { $0 })
     check("whereAZoomBegan", whereAZoomBegan.keys)
     check("letBeWhenThePauseBegan", letBeWhenThePauseBegan.keys.filter { !pendingSlots.contains($0) })
+    check("floatingEdgeInHand", [floatingEdgeInHand].compactMap { $0 })
     check("focusHistory", focusHistory)
     check("letBe", [letBe?.window].compactMap { $0 })
     check("ignoredWindowIDs", filter.ignoredWindowIDs)

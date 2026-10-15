@@ -49,6 +49,7 @@ extension Controller: WindowSystemEvents {
     metAhead[id] = nil
     leftInFullScreen.notes[id] = nil
     chosenOnShape[id] = nil
+    if floatingEdgeInHand == id { floatingEdgeInHand = nil }
     fittedFrames[id] = nil
     appPlacedFrames[id] = nil
     spokeOfItsPlace[id] = nil
@@ -200,7 +201,15 @@ extension Controller: WindowSystemEvents {
       // No hand takes a window to another display without a drag, and a drag writes its own note at the drop.
       // What comes here across a border is an app's, a tool's or macOS's doing, and while the displays change
       // it is judged by the old ones: such a place is remembered, and fitted like any other that nobody chose.
-      if destination == display { noteWhereItsUserLeftIt(window.id) } else { chosenOnShape[window.id] = nil }
+      // Two things only look like that. A hand that holds an edge can take the window's middle over a border. And a drop goes by
+      // the pointer: of a window let go between two displays of unequal height the middle may be nearer to the other one all
+      // along, so the next report changes its display though nothing has crossed anything.
+      let cameFrom = previous.flatMap { displayID(at: $0.frame.center) }
+      if destination == display || destination == cameFrom || floatingEdgeInHand == window.id {
+        noteWhereItsUserLeftIt(window.id)
+      } else {
+        chosenOnShape[window.id] = nil
+      }
       if destination != display { workspaces[destination]?.setRole(role, of: window.id) }
       if destination != display { notify(.windows) }
       scheduleSave()

@@ -27,6 +27,7 @@ extension Controller {
       // Whatever the mouse was doing is over as far as Arbor is concerned.
       cancelDragLettingGo()
       edgeResize = nil
+      floatingEdgeInHand = nil
       // Set first: observers of the `.lifecycle` change that `shutdown` sends read it.
       isPaused = true
       endSummonsWithoutMoving()

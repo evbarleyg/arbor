@@ -20,11 +20,11 @@ extension Controller {
 
   public func resizeBegan(_ id: WindowID) {
     edgeResize = nil
+    floatingEdgeInHand = nil
     appsDoubleClick = nil
     stopWatchingTitle(of: id)
-    guard isRunning, isManaged(id), let display = workspaceID(containing: id),
-      workspaces[display]!.isDocked(id)
-    else { return }
+    guard isRunning, isManaged(id), let display = workspaceID(containing: id) else { return }
+    guard workspaces[display]!.isDocked(id) else { return floatingEdgeInHand = id }
     edgeResize = EdgeResize(window: id, display: display)
   }
 
@@ -32,6 +32,7 @@ extension Controller {
     actsOfAHand += 1
     defer { actsOfAHand -= 1 }
     if edgeResize?.window == id { edgeResize = nil }
+    floatingEdgeInHand = nil
     guard isRunning, isManaged(id) else { return }
     if workspaces.values.contains(where: { $0.isFloating(id) }) { aHandHasPlaced(id) }
     recordingUndo("resize \(id) by its edges", title: "Resize") { applyEdgeResize(of: id) }

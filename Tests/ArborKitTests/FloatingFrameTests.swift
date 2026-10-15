@@ -359,6 +359,118 @@ import Testing
     #expect(h.frame(f) == strip)
   }
 
+  /// At a pause and at a quit Arbor gives back what Arbor has put out of view, and nothing else. What its person pushed aside stays
+  /// where it was left, however little of it shows, as long as somebody can get hold of it: at a pause, a resume, a quit and a start,
+  /// whether or not floating windows make way.
+  @Test(arguments: [false, true]) func whatItsPersonPushedAsideStaysAtAPauseAResumeAQuitAndAStart(makingWay: Bool) {
+    let old = Harness(displays: [Self.display], settings: makingWay ? .makingWay : Settings())
+    let f = old.system.open(app: "Mail", frame: CGRect(x: 240, y: 72, width: 1017, height: 584))
+    old.start()
+    let aside = CGRect(x: -425, y: 718, width: 1017, height: 584)
+    old.system.userMove(f, to: aside)
+    old.scheduler.advance(by: 5)
+    old.system.clearFrameLog()
+    for act in ["pause", "resume", "home", "show-all"] {
+      #expect(old.run(act).ok)
+      old.scheduler.advance(by: 5)
+      #expect(old.frame(f) == aside && old.system.frameLog.isEmpty, "\(act): \(old.system.frameLog)")
+    }
+    old.controller.shutdown()
+    #expect(old.frame(f) == aside && old.system.frameLog.isEmpty, "a quit: \(old.system.frameLog)")
+    let h = old.newProcess()
+    h.start()
+    h.scheduler.advance(by: 5)
+    h.run("home")
+    #expect(h.frame(f) == aside && h.system.frameLog.isEmpty, "a start: \(h.system.frameLog)")
+  }
+
+  /// Two displays of unequal height, and a window dropped over the foot of the lower one, beside the higher: under half of it shows.
+  /// The drop goes by the pointer, which is on the lower display. The window's middle is on neither, and nearer to the higher.
+  func droppedBetweenTwoDisplays(makingWay: Bool) -> (Harness, f: WindowID, other: WindowID, dropped: CGRect) {
+    let low = ReviewFloatingFrameTests.display("low", CGRect(x: -1440, y: 0, width: 1440, height: 900))
+    let high = ReviewFloatingFrameTests.display("high", CGRect(x: 0, y: 0, width: 2560, height: 1440), isMain: true)
+    let h = Harness(displays: [low, high], settings: makingWay ? .makingWay : Settings())
+    h.start()
+    let other = h.system.open(app: "Notes", frame: CGRect(x: 900, y: 200, width: 600, height: 400))
+    let f = h.system.open(app: "Music", frame: CGRect(x: -1285, y: 78, width: 1126, height: 654))
+    h.system.drag(f, through: [CGPoint(x: -722, y: 88), CGPoint(x: -168, y: 793)])
+    h.scheduler.advance(by: 5)
+    let dropped = CGRect(x: -731, y: 783, width: 1126, height: 654)
+    #expect(h.frame(f) == dropped)
+    h.system.clearFrameLog()
+    return (h, f, other, dropped)
+  }
+
+  func letGo(_ h: Harness, by lettingGo: String) {
+    if lettingGo == "pause" { #expect(h.run("pause").ok) } else { h.controller.shutdown() }
+  }
+
+  /// A hand that drags an edge leaves a window somewhere as much as one that drops it. Sized by an edge there, the window changed its
+  /// display without a drop, which passed for an app's or a tool's doing, and a pause and a quit pulled it in.
+  @Test(arguments: [false, true], ["pause", "quit"]) func whatAHandSizedByAnEdgeStaysToo(makingWay: Bool, lettingGo: String) {
+    let (h, f, _, dropped) = droppedBetweenTwoDisplays(makingWay: makingWay)
+    let sized = CGRect(origin: dropped.origin, size: CGSize(width: 1126, height: 600))
+    h.system.userResize(f, to: sized)
+    h.scheduler.advance(by: 5)
+    letGo(h, by: lettingGo)
+    #expect(h.frame(f) == sized && h.system.frameLog.isEmpty, "\(h.system.frameLog)")
+  }
+
+  /// Nor is it pulled from under the hand that still holds its edge, by whatever lays the display out meanwhile.
+  @Test(arguments: [false, true]) func aWindowWhoseEdgeIsInTheHandIsNotPulledFromUnderIt(makingWay: Bool) {
+    let (h, f, other, dropped) = droppedBetweenTwoDisplays(makingWay: makingWay)
+    let sized = CGRect(origin: dropped.origin, size: CGSize(width: 1126, height: 600))
+    h.system.userResize(f, to: sized, release: false)
+    h.system.close(other)
+    h.scheduler.advance(by: 5)
+    h.run("home")
+    h.scheduler.advance(by: 5)
+    #expect(h.frame(f) == sized && h.system.frameLog.isEmpty, "held: \(h.system.frameLog)")
+    h.system.releaseMouse()
+    h.scheduler.advance(by: 5)
+    for act in ["pause", "resume", "home"] {
+      #expect(h.run(act).ok)
+      h.scheduler.advance(by: 5)
+      #expect(h.frame(f) == sized && h.system.frameLog.isEmpty, "\(act): \(h.system.frameLog)")
+    }
+  }
+
+  /// Seven points further down crosses no border. It changed the window's display all the same, from the pointer's to the one nearest its
+  /// middle, and that cost it the note of the hand.
+  @Test(arguments: [false, true], ["pause", "quit"]) func aNudgeWhereItWasDroppedCrossesNoBorder(makingWay: Bool, lettingGo: String) {
+    let (h, f, _, dropped) = droppedBetweenTwoDisplays(makingWay: makingWay)
+    let nudged = dropped.offsetBy(dx: 0, dy: 7)
+    h.system.userMove(f, to: nudged)
+    h.scheduler.advance(by: 5)
+    letGo(h, by: lettingGo)
+    #expect(h.frame(f) == nudged && h.system.frameLog.isEmpty, "\(h.system.frameLog)")
+  }
+
+  /// The control of the three: what comes to the same place from the middle of the lower display, without a drag and with no edge in
+  /// anybody's hand, is an app's or a tool's doing. Nobody chose that place, and Arbor does not leave it there.
+  @Test(arguments: [false, true], ["pause", "quit"]) func whatComesAcrossABorderInNobodysHandIsFetched(makingWay: Bool, lettingGo: String) {
+    let (h, f, _, dropped) = droppedBetweenTwoDisplays(makingWay: makingWay)
+    h.system.drag(f, through: [CGPoint(x: -168, y: 793), CGPoint(x: -722, y: 88)])
+    h.scheduler.advance(by: 5)
+    h.system.userMove(f, to: dropped)
+    h.scheduler.advance(by: 5)
+    letGo(h, by: lettingGo)
+    #expect(h.system.isVisible(f), "\(h.frame(f)!)")
+  }
+
+  /// The control: pushed so far that nobody could get hold of its title bar, it is fetched when Arbor lets go.
+  @Test(arguments: [false, true]) func whatNobodyCouldGetHoldOfIsFetchedAtAPause(makingWay: Bool) {
+    let h = Harness(displays: [Self.display], settings: makingWay ? .makingWay : Settings())
+    let f = h.system.open(app: "Mail", frame: CGRect(x: 240, y: 72, width: 1017, height: 584))
+    h.start()
+    let outOfReach = CGRect(x: -1007, y: 718, width: 1017, height: 584)
+    h.system.userMove(f, to: outOfReach)
+    h.scheduler.advance(by: 5)
+    #expect(h.frame(f) == outOfReach, "or something before the pause fetches it")
+    #expect(h.run("pause").ok)
+    #expect(h.system.isVisible(f), "\(h.frame(f)!)")
+  }
+
   /// A change of displays can also cut off a window that is in view. It had more than half showing, and has not now.
   @Test func aWindowInViewThatAChangeOfDisplaysCutOffIsFitted() {
     let h = Harness(displays: [Self.display], settings: Settings())
@@ -389,9 +501,10 @@ import Testing
 
   // MARK: The rule of the walks
 
-  /// Two finds of the walks, cut down. A window opens over docked ones and stays, and the next unrelated event, a click on
+  /// Three finds of the walks, cut down. A window opens over docked ones and stays, and the next unrelated event, a click on
   /// another window's title bar, shoved and shrank it. And with nothing docked at all, a window left hanging over an edge before Arbor
-  /// started was pulled in when another window closed.
+  /// started was pulled in when another window closed. And one that a hand had widened by its left edge, over the left edge of the main
+  /// display and its foot, was pulled in by the next view key: its middle had left the display below, and nobody had noted the hand.
   @Test(arguments: [
     """
     launch
@@ -409,6 +522,16 @@ import Testing
     launch
     open 104 Safari pid 1000 at 20 113 1068 656 min 574 240
     close 104
+    """,
+    """
+    launch
+    open 105 Preview pid 1007 at 820 956 636 233
+    displays side:188,1080,800,600:0,73,0,0 main:0,0,1920,1080:37,0,0,0* windows-silent
+    dock right
+    open 109 Preview pid 1007 at 59 803 397.5 559.25 title Untitled
+    edge 109 -158 803 614.5 559.25 hold
+    release
+    in
     """,
   ]) func whatTheWalksFound(script: String) {
     #expect(ChaosRunner.replay(script) == nil)
