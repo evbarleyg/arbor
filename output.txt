@@ -1,0 +1,389 @@
+# mac-shell: scripts/mac-shell/probe-nothing-stuck.sh at 36d5e99, macOS 26.6.2, 2026-10-15T02:39Z
+built Arbor and the pointer tool in 5s
+
+== the bundles
+session 1: Arbor pid 12658, test windows 31 (pid 12629)
+running: 1 display, 0 docked and 1 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+/Users/runner/Applications/ArborProbeNothingStuck.app: replacing existing signature
+/Users/runner/Applications/ArborProbeStuckTapper.app: replacing existing signature
+
+== round 1: with nobody
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+posted 32, arrived at the end of the taps 31, given to the app 22, lost 1: n=25 move
+the first that was lost was posted +4111 ms from the beginning of the deed, the last +4111 ms
+held down at the end: nothing; key-downs with the repeat flag the app was given: 0; drags it was given after the cycles, with nobody holding: 0; its window stayed where it was
+after the silence: 7 of 8 arrived (a move, a notch, three presses and releases)
+the button a second after the stream, by the window server: 760 394 up
+  ✔ round 1: NOTHING STAYS STUCK: whatever was held after a lost up is right again after one press and release of its kind at the latest (0 were not)
+  ✔ round 1: nothing is held down at the end
+  ✘ round 1: after the hole the move, the notch and the three presses and releases all arrive (1 did not)
+  ✔ round 1: no key repeats
+  ✔ round 1: no drag goes on with nobody holding
+
+== round 2: with bare-tapper
+bare-tapper is pid 13895 with 1 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-stuck-tapper
+02:40:48.218 question tapIsEnabled = yes
+02:40:48.223 question AXIsProcessTrusted = yes
+02:40:48.224 question CGPreflightListenEventAccess = yes
+02:40:48.224 question CGPreflightPostEventAccess = yes
+02:40:48.224 question a trial tapCreate = yes
+02:40:51.453 question a trial tapCreate = no
+02:40:55.450 switched-off by timeout
+02:40:58.788 switched-off by timeout
+posted 32, arrived at the end of the taps 25, given to the app 18, lost 7: n=21 down, n=22 key-up, n=23 shift-up, n=24 up, n=25 move, n=27 down, n=28 up
+the first that was lost was posted +481 ms from the beginning of the deed, the last +6306 ms
+  A LOST UP WHOSE DOWN ARRIVED: the key, n=19 and n=22, which was posted +624 ms from the deed
+    f19 was held to be down for 6902 ms after that; put right by: key-up, of the same kind
+    the app was given the down and no up; the next up of that kind it was given came 6864 ms after
+  A LOST UP WHOSE DOWN ARRIVED: the modifier, n=20 and n=23, which was posted +775 ms from the deed
+    shift-key was held to be down for 3274 ms after that; put right by: nothing: it came right by itself
+    shift-flag was held to be down for 3274 ms after that; put right by: nothing: it came right by itself
+    appkit-shift was held to be down for 3274 ms after that; put right by: nothing: it came right by itself
+    the app was given the down and no up; the next up of that kind it was given came 7900 ms after
+held down at the end: nothing; key-downs with the repeat flag the app was given: 0; drags it was given after the cycles, with nobody holding: 0; its window stayed where it was
+after the silence: 5 of 8 arrived (a move, a notch, three presses and releases)
+the button a second after the stream, by the window server: 760 394 up
+  ✔ round 2: NOTHING STAYS STUCK: whatever was held after a lost up is right again after one press and release of its kind at the latest (0 were not)
+  ✔ round 2: nothing is held down at the end
+  ✘ round 2: after the hole the move, the notch and the three presses and releases all arrive (3 did not)
+  ✔ round 2: no key repeats
+  ✔ round 2: no drag goes on with nobody holding
+
+== round 3: with arbor
+arbor is pid 14504 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+02:41:13.485Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+02:41:13.485Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 32, arrived at the end of the taps 31, given to the app 22, lost 1: n=25 move
+the first that was lost was posted +3926 ms from the beginning of the deed, the last +3926 ms; Arbor's taps were out at +182 ms
+held down at the end: nothing; key-downs with the repeat flag the app was given: 0; drags it was given after the cycles, with nobody holding: 0; its window stayed where it was
+after the silence: 7 of 8 arrived (a move, a notch, three presses and releases)
+the button a second after the stream, by the window server: 760 394 up
+  ✔ round 3: NOTHING STAYS STUCK: whatever was held after a lost up is right again after one press and release of its kind at the latest (0 were not)
+  ✔ round 3: nothing is held down at the end
+  ✘ round 3: after the hole the move, the notch and the three presses and releases all arrive (1 did not)
+  ✔ round 3: no key repeats
+  ✔ round 3: no drag goes on with nobody holding
+
+== round 4: with arbor
+arbor is pid 15788 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+02:41:35.141Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+02:41:35.142Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 32, arrived at the end of the taps 31, given to the app 22, lost 1: n=25 move
+the first that was lost was posted +3915 ms from the beginning of the deed, the last +3915 ms; Arbor's taps were out at +158 ms
+held down at the end: nothing; key-downs with the repeat flag the app was given: 0; drags it was given after the cycles, with nobody holding: 0; its window stayed where it was
+after the silence: 7 of 8 arrived (a move, a notch, three presses and releases)
+the button a second after the stream, by the window server: 760 394 up
+  ✔ round 4: NOTHING STAYS STUCK: whatever was held after a lost up is right again after one press and release of its kind at the latest (0 were not)
+  ✔ round 4: nothing is held down at the end
+  ✘ round 4: after the hole the move, the notch and the three presses and releases all arrive (1 did not)
+  ✔ round 4: no key repeats
+  ✔ round 4: no drag goes on with nobody holding
+
+== round 5: with arbor
+arbor is pid 16655 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+02:41:57.394Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+02:41:57.395Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 32, arrived at the end of the taps 27, given to the app 20, lost 5: n=21 down, n=22 key-up, n=23 shift-up, n=24 up, n=25 move
+the first that was lost was posted +322 ms from the beginning of the deed, the last +3849 ms; Arbor's taps were out at +966 ms
+  A LOST UP WHOSE DOWN ARRIVED: the key, n=19 and n=22, which was posted +431 ms from the deed
+    f19 was held to be down for 6808 ms after that; put right by: key-up, of the same kind
+    the app was given the down and no up; the next up of that kind it was given came 6763 ms after
+  A LOST UP WHOSE DOWN ARRIVED: the modifier, n=20 and n=23, which was posted +544 ms from the deed
+    shift-key was held to be down for 3351 ms after that; put right by: nothing: it came right by itself
+    shift-flag was held to be down for 3351 ms after that; put right by: nothing: it came right by itself
+    appkit-shift was held to be down for 3351 ms after that; put right by: nothing: it came right by itself
+    the app was given the down and no up; the next up of that kind it was given came 7800 ms after
+held down at the end: nothing; key-downs with the repeat flag the app was given: 0; drags it was given after the cycles, with nobody holding: 0; its window stayed where it was
+after the silence: 7 of 8 arrived (a move, a notch, three presses and releases)
+the button a second after the stream, by the window server: 760 394 up
+  ✔ round 5: NOTHING STAYS STUCK: whatever was held after a lost up is right again after one press and release of its kind at the latest (0 were not)
+  ✔ round 5: nothing is held down at the end
+  ✘ round 5: after the hole the move, the notch and the three presses and releases all arrive (1 did not)
+  ✔ round 5: no key repeats
+  ✔ round 5: no drag goes on with nobody holding
+
+== round 6: with arbor
+arbor is pid 17518 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+02:42:19.149Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+02:42:19.150Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 32, arrived at the end of the taps 27, given to the app 20, lost 5: n=21 down, n=22 key-up, n=23 shift-up, n=24 up, n=25 move
+the first that was lost was posted +145 ms from the beginning of the deed, the last +3732 ms; Arbor's taps were out at +1004 ms
+  A LOST UP WHOSE DOWN ARRIVED: the key, n=19 and n=22, which was posted +265 ms from the deed
+    f19 was held to be down for 6922 ms after that; put right by: key-up, of the same kind
+    the app was given the down and no up; the next up of that kind it was given came 6888 ms after
+  A LOST UP WHOSE DOWN ARRIVED: the modifier, n=20 and n=23, which was posted +408 ms from the deed
+    shift-key was held to be down for 3327 ms after that; put right by: nothing: it came right by itself
+    shift-flag was held to be down for 3327 ms after that; put right by: nothing: it came right by itself
+    appkit-shift was held to be down for 3327 ms after that; put right by: nothing: it came right by itself
+    the app was given the down and no up; the next up of that kind it was given came 7902 ms after
+held down at the end: nothing; key-downs with the repeat flag the app was given: 0; drags it was given after the cycles, with nobody holding: 0; its window stayed where it was
+after the silence: 7 of 8 arrived (a move, a notch, three presses and releases)
+the button a second after the stream, by the window server: 760 394 up
+  ✔ round 6: NOTHING STAYS STUCK: whatever was held after a lost up is right again after one press and release of its kind at the latest (0 were not)
+  ✔ round 6: nothing is held down at the end
+  ✘ round 6: after the hole the move, the notch and the three presses and releases all arrive (1 did not)
+  ✔ round 6: no key repeats
+  ✔ round 6: no drag goes on with nobody holding
+
+== round 7: with arbor
+arbor is pid 18789 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+02:42:40.545Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+02:42:40.546Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 32, arrived at the end of the taps 27, given to the app 20, lost 5: n=21 down, n=22 key-up, n=23 shift-up, n=24 up, n=25 move
+the first that was lost was posted +190 ms from the beginning of the deed, the last +3680 ms; Arbor's taps were out at +962 ms
+  A LOST UP WHOSE DOWN ARRIVED: the key, n=19 and n=22, which was posted +257 ms from the deed
+    f19 was held to be down for 6822 ms after that; put right by: key-up, of the same kind
+    the app was given the down and no up; the next up of that kind it was given came 6755 ms after
+  A LOST UP WHOSE DOWN ARRIVED: the modifier, n=20 and n=23, which was posted +457 ms from the deed
+    shift-key was held to be down for 3220 ms after that; put right by: nothing: it came right by itself
+    shift-flag was held to be down for 3220 ms after that; put right by: nothing: it came right by itself
+    appkit-shift was held to be down for 3220 ms after that; put right by: nothing: it came right by itself
+    the app was given the down and no up; the next up of that kind it was given came 7788 ms after
+held down at the end: nothing; key-downs with the repeat flag the app was given: 0; drags it was given after the cycles, with nobody holding: 0; its window stayed where it was
+after the silence: 7 of 8 arrived (a move, a notch, three presses and releases)
+the button a second after the stream, by the window server: 760 394 up
+  ✔ round 7: NOTHING STAYS STUCK: whatever was held after a lost up is right again after one press and release of its kind at the latest (0 were not)
+  ✔ round 7: nothing is held down at the end
+  ✘ round 7: after the hole the move, the notch and the three presses and releases all arrive (1 did not)
+  ✔ round 7: no key repeats
+  ✔ round 7: no drag goes on with nobody holding
+
+== round 8: with arbor
+arbor is pid 19653 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+02:43:01.949Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+02:43:01.950Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 32, arrived at the end of the taps 27, given to the app 20, lost 5: n=21 down, n=22 key-up, n=23 shift-up, n=24 up, n=25 move
+the first that was lost was posted +62 ms from the beginning of the deed, the last +3592 ms; Arbor's taps were out at +847 ms
+  A LOST UP WHOSE DOWN ARRIVED: the key, n=19 and n=22, which was posted +198 ms from the deed
+    f19 was held to be down for 6762 ms after that; put right by: key-up, of the same kind
+    the app was given the down and no up; the next up of that kind it was given came 6747 ms after
+  A LOST UP WHOSE DOWN ARRIVED: the modifier, n=20 and n=23, which was posted +383 ms from the deed
+    shift-key was held to be down for 3223 ms after that; put right by: nothing: it came right by itself
+    shift-flag was held to be down for 3223 ms after that; put right by: nothing: it came right by itself
+    appkit-shift was held to be down for 3223 ms after that; put right by: nothing: it came right by itself
+    the app was given the down and no up; the next up of that kind it was given came 7683 ms after
+held down at the end: nothing; key-downs with the repeat flag the app was given: 0; drags it was given after the cycles, with nobody holding: 0; its window stayed where it was
+after the silence: 7 of 8 arrived (a move, a notch, three presses and releases)
+the button a second after the stream, by the window server: 760 394 up
+  ✔ round 8: NOTHING STAYS STUCK: whatever was held after a lost up is right again after one press and release of its kind at the latest (0 were not)
+  ✔ round 8: nothing is held down at the end
+  ✘ round 8: after the hole the move, the notch and the three presses and releases all arrive (1 did not)
+  ✔ round 8: no key repeats
+  ✔ round 8: no drag goes on with nobody holding
+
+== round 9: with bare-tapper
+bare-tapper is pid 20507 with 1 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-stuck-tapper
+02:43:17.124 question tapIsEnabled = yes
+02:43:17.128 question AXIsProcessTrusted = yes
+02:43:17.129 question CGPreflightListenEventAccess = yes
+02:43:17.129 question CGPreflightPostEventAccess = yes
+02:43:17.129 question a trial tapCreate = yes
+02:43:20.514 question a trial tapCreate = no
+02:43:24.833 question tapIsEnabled = no
+02:43:24.842 switched-off by timeout
+02:43:24.855 question tapIsEnabled = yes
+02:43:28.072 switched-off by timeout
+posted 38, arrived at the end of the taps 31, given to the app 22, lost 7: n=27 down, n=28 key-up, n=29 shift-up, n=30 up, n=31 move, n=33 down, n=34 up
+the first that was lost was posted +792 ms from the beginning of the deed, the last +6548 ms
+  A LOST UP WHOSE DOWN ARRIVED: the key, n=25 and n=28, which was posted +918 ms from the deed
+    f19 was held to be down for 6843 ms after that; put right by: key-up, of the same kind
+    the app was given the down and no up; the next up of that kind it was given came 6817 ms after
+  A LOST UP WHOSE DOWN ARRIVED: the modifier, n=26 and n=29, which was posted +1098 ms from the deed
+    shift-key was held to be down for 3324 ms after that; put right by: nothing: it came right by itself
+    shift-flag was held to be down for 3324 ms after that; put right by: nothing: it came right by itself
+    appkit-shift was held to be down for 3324 ms after that; put right by: nothing: it came right by itself
+    the app was given the down and no up; the next up of that kind it was given came 7812 ms after
+held down at the end: nothing; key-downs with the repeat flag the app was given: 0; drags it was given after the cycles, with nobody holding: 0; its window stayed where it was
+after the silence: 5 of 8 arrived (a move, a notch, three presses and releases)
+the button a second after the stream, by the window server: 760 394 up
+  ✔ round 9: NOTHING STAYS STUCK: whatever was held after a lost up is right again after one press and release of its kind at the latest (0 were not)
+  ✔ round 9: nothing is held down at the end
+  ✘ round 9: after the hole the move, the notch and the three presses and releases all arrive (3 did not)
+  ✔ round 9: no key repeats
+  ✔ round 9: no drag goes on with nobody holding
+
+== round 10: with arbor
+arbor is pid 21378 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+02:43:43.849Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+02:43:43.850Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 38, arrived at the end of the taps 35, given to the app 26, lost 3: n=27 down, n=28 key-up, n=31 move
+the first that was lost was posted +692 ms from the beginning of the deed, the last +4233 ms; Arbor's taps were out at +855 ms
+  an up without its down: the button, n=30
+  A LOST UP WHOSE DOWN ARRIVED: the key, n=25 and n=28, which was posted +807 ms from the deed
+    f19 was held to be down for 6809 ms after that; put right by: key-up, of the same kind
+    the app was given the down and no up; the next up of that kind it was given came 6745 ms after
+held down at the end: nothing; key-downs with the repeat flag the app was given: 0; drags it was given after the cycles, with nobody holding: 0; its window stayed where it was
+after the silence: 7 of 8 arrived (a move, a notch, three presses and releases)
+the button a second after the stream, by the window server: 760 394 up
+  ✔ round 10: NOTHING STAYS STUCK: whatever was held after a lost up is right again after one press and release of its kind at the latest (0 were not)
+  ✔ round 10: nothing is held down at the end
+  ✘ round 10: after the hole the move, the notch and the three presses and releases all arrive (1 did not)
+  ✔ round 10: no key repeats
+  ✔ round 10: no drag goes on with nobody holding
+
+== round 11: with arbor
+arbor is pid 22649 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+02:44:05.760Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+02:44:05.761Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 38, arrived at the end of the taps 37, given to the app 26, lost 1: n=31 move
+the first that was lost was posted +4265 ms from the beginning of the deed, the last +4265 ms; Arbor's taps were out at +613 ms
+held down at the end: nothing; key-downs with the repeat flag the app was given: 0; drags it was given after the cycles, with nobody holding: 0; its window stayed where it was
+after the silence: 7 of 8 arrived (a move, a notch, three presses and releases)
+the button a second after the stream, by the window server: 760 394 up
+  ✔ round 11: NOTHING STAYS STUCK: whatever was held after a lost up is right again after one press and release of its kind at the latest (0 were not)
+  ✔ round 11: nothing is held down at the end
+  ✘ round 11: after the hole the move, the notch and the three presses and releases all arrive (1 did not)
+  ✔ round 11: no key repeats
+  ✔ round 11: no drag goes on with nobody holding
+
+== round 12: with arbor
+arbor is pid 23712 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+02:44:27.164Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+02:44:27.165Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 32, arrived at the end of the taps 31, given to the app 22, lost 1: n=25 move
+the first that was lost was posted +4100 ms from the beginning of the deed, the last +4100 ms; Arbor's taps were out at +449 ms
+held down at the end: nothing; key-downs with the repeat flag the app was given: 0; drags it was given after the cycles, with nobody holding: 0; its window stayed where it was
+after the silence: 7 of 8 arrived (a move, a notch, three presses and releases)
+the button a second after the stream, by the window server: 760 394 up
+  ✔ round 12: NOTHING STAYS STUCK: whatever was held after a lost up is right again after one press and release of its kind at the latest (0 were not)
+  ✔ round 12: nothing is held down at the end
+  ✘ round 12: after the hole the move, the notch and the three presses and releases all arrive (1 did not)
+  ✔ round 12: no key repeats
+  ✔ round 12: no drag goes on with nobody holding
+
+== round 13: with arbor
+arbor is pid 24503 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+02:44:48.286Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+02:44:48.287Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 32, arrived at the end of the taps 31, given to the app 22, lost 1: n=25 move
+the first that was lost was posted +4062 ms from the beginning of the deed, the last +4062 ms; Arbor's taps were out at +234 ms
+held down at the end: nothing; key-downs with the repeat flag the app was given: 0; drags it was given after the cycles, with nobody holding: 0; its window stayed where it was
+after the silence: 7 of 8 arrived (a move, a notch, three presses and releases)
+the button a second after the stream, by the window server: 760 394 up
+  ✔ round 13: NOTHING STAYS STUCK: whatever was held after a lost up is right again after one press and release of its kind at the latest (0 were not)
+  ✔ round 13: nothing is held down at the end
+  ✘ round 13: after the hole the move, the notch and the three presses and releases all arrive (1 did not)
+  ✔ round 13: no key repeats
+  ✔ round 13: no drag goes on with nobody holding
+
+== round 14: with arbor
+arbor is pid 25831 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+02:45:09.903Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+02:45:09.904Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 32, arrived at the end of the taps 31, given to the app 22, lost 1: n=25 move
+the first that was lost was posted +4077 ms from the beginning of the deed, the last +4077 ms; Arbor's taps were out at +339 ms
+held down at the end: nothing; key-downs with the repeat flag the app was given: 0; drags it was given after the cycles, with nobody holding: 0; its window stayed where it was
+after the silence: 7 of 8 arrived (a move, a notch, three presses and releases)
+the button a second after the stream, by the window server: 760 394 up
+  ✔ round 14: NOTHING STAYS STUCK: whatever was held after a lost up is right again after one press and release of its kind at the latest (0 were not)
+  ✔ round 14: nothing is held down at the end
+  ✘ round 14: after the hole the move, the notch and the three presses and releases all arrive (1 did not)
+  ✔ round 14: no key repeats
+  ✔ round 14: no drag goes on with nobody holding
+
+== round 15: with arbor
+arbor is pid 26668 with 4 taps
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+02:45:31.362Z INFO  Accessibility permission is gone (AXIsProcessTrusted says yes, but macOS refused a tap): removed the pinch and rectangle event taps
+02:45:31.363Z ERROR Accessibility permission was taken away with 0 window(s) out of view
+doubts ("macOS has not said …"): 0
+posted 32, arrived at the end of the taps 31, given to the app 22, lost 1: n=25 move
+the first that was lost was posted +3975 ms from the beginning of the deed, the last +3975 ms; Arbor's taps were out at +305 ms
+held down at the end: nothing; key-downs with the repeat flag the app was given: 0; drags it was given after the cycles, with nobody holding: 0; its window stayed where it was
+after the silence: 7 of 8 arrived (a move, a notch, three presses and releases)
+the button a second after the stream, by the window server: 760 394 up
+  ✔ round 15: NOTHING STAYS STUCK: whatever was held after a lost up is right again after one press and release of its kind at the latest (0 were not)
+  ✔ round 15: nothing is held down at the end
+  ✘ round 15: after the hole the move, the notch and the three presses and releases all arrive (1 did not)
+  ✔ round 15: no key repeats
+  ✔ round 15: no drag goes on with nobody holding
+
+== round 16: with nobody
+Successfully reset Accessibility approval status for com.evbarleyg.arbor.probe-nothing-stuck
+posted 32, arrived at the end of the taps 31, given to the app 22, lost 1: n=25 move
+the first that was lost was posted +3898 ms from the beginning of the deed, the last +3898 ms
+held down at the end: nothing; key-downs with the repeat flag the app was given: 0; drags it was given after the cycles, with nobody holding: 0; its window stayed where it was
+after the silence: 7 of 8 arrived (a move, a notch, three presses and releases)
+the button a second after the stream, by the window server: 760 394 up
+  ✔ round 16: NOTHING STAYS STUCK: whatever was held after a lost up is right again after one press and release of its kind at the latest (0 were not)
+  ✔ round 16: nothing is held down at the end
+  ✘ round 16: after the hole the move, the notch and the three presses and releases all arrive (1 did not)
+  ✔ round 16: no key repeats
+  ✔ round 16: no drag goes on with nobody holding
+
+== side by side
+1 nobody lost=1 lost-ups-whose-down-arrived=0 ups-without-down=0 not-right-after-one-act=0 held-at-the-end=0 repeats=0 drags=0 window-moved=0
+2 bare-tapper lost=7 lost-ups-whose-down-arrived=2 ups-without-down=0 not-right-after-one-act=0 held-at-the-end=0 repeats=0 drags=0 window-moved=0
+3 arbor lost=1 lost-ups-whose-down-arrived=0 ups-without-down=0 not-right-after-one-act=0 held-at-the-end=0 repeats=0 drags=0 window-moved=0
+4 arbor lost=1 lost-ups-whose-down-arrived=0 ups-without-down=0 not-right-after-one-act=0 held-at-the-end=0 repeats=0 drags=0 window-moved=0
+5 arbor lost=5 lost-ups-whose-down-arrived=2 ups-without-down=0 not-right-after-one-act=0 held-at-the-end=0 repeats=0 drags=0 window-moved=0
+6 arbor lost=5 lost-ups-whose-down-arrived=2 ups-without-down=0 not-right-after-one-act=0 held-at-the-end=0 repeats=0 drags=0 window-moved=0
+7 arbor lost=5 lost-ups-whose-down-arrived=2 ups-without-down=0 not-right-after-one-act=0 held-at-the-end=0 repeats=0 drags=0 window-moved=0
+8 arbor lost=5 lost-ups-whose-down-arrived=2 ups-without-down=0 not-right-after-one-act=0 held-at-the-end=0 repeats=0 drags=0 window-moved=0
+9 bare-tapper lost=7 lost-ups-whose-down-arrived=2 ups-without-down=0 not-right-after-one-act=0 held-at-the-end=0 repeats=0 drags=0 window-moved=0
+10 arbor lost=3 lost-ups-whose-down-arrived=1 ups-without-down=1 not-right-after-one-act=0 held-at-the-end=0 repeats=0 drags=0 window-moved=0
+11 arbor lost=1 lost-ups-whose-down-arrived=0 ups-without-down=0 not-right-after-one-act=0 held-at-the-end=0 repeats=0 drags=0 window-moved=0
+12 arbor lost=1 lost-ups-whose-down-arrived=0 ups-without-down=0 not-right-after-one-act=0 held-at-the-end=0 repeats=0 drags=0 window-moved=0
+13 arbor lost=1 lost-ups-whose-down-arrived=0 ups-without-down=0 not-right-after-one-act=0 held-at-the-end=0 repeats=0 drags=0 window-moved=0
+14 arbor lost=1 lost-ups-whose-down-arrived=0 ups-without-down=0 not-right-after-one-act=0 held-at-the-end=0 repeats=0 drags=0 window-moved=0
+15 arbor lost=1 lost-ups-whose-down-arrived=0 ups-without-down=0 not-right-after-one-act=0 held-at-the-end=0 repeats=0 drags=0 window-moved=0
+16 nobody lost=1 lost-ups-whose-down-arrived=0 ups-without-down=0 not-right-after-one-act=0 held-at-the-end=0 repeats=0 drags=0 window-moved=0
+
+THE TABLE: round and variant, kind, who believed it, for how long after the lost up | what put it right
+2-bare-tapper key f19 6902-ms | key-up, of the same kind
+2-bare-tapper modifier shift-key 3274-ms | nothing: it came right by itself
+2-bare-tapper modifier shift-flag 3274-ms | nothing: it came right by itself
+2-bare-tapper modifier appkit-shift 3274-ms | nothing: it came right by itself
+5-arbor key f19 6808-ms | key-up, of the same kind
+5-arbor modifier shift-key 3351-ms | nothing: it came right by itself
+5-arbor modifier shift-flag 3351-ms | nothing: it came right by itself
+5-arbor modifier appkit-shift 3351-ms | nothing: it came right by itself
+6-arbor key f19 6922-ms | key-up, of the same kind
+6-arbor modifier shift-key 3327-ms | nothing: it came right by itself
+6-arbor modifier shift-flag 3327-ms | nothing: it came right by itself
+6-arbor modifier appkit-shift 3327-ms | nothing: it came right by itself
+7-arbor key f19 6822-ms | key-up, of the same kind
+7-arbor modifier shift-key 3220-ms | nothing: it came right by itself
+7-arbor modifier shift-flag 3220-ms | nothing: it came right by itself
+7-arbor modifier appkit-shift 3220-ms | nothing: it came right by itself
+8-arbor key f19 6762-ms | key-up, of the same kind
+8-arbor modifier shift-key 3223-ms | nothing: it came right by itself
+8-arbor modifier shift-flag 3223-ms | nothing: it came right by itself
+8-arbor modifier appkit-shift 3223-ms | nothing: it came right by itself
+9-bare-tapper key f19 6843-ms | key-up, of the same kind
+9-bare-tapper modifier shift-key 3324-ms | nothing: it came right by itself
+9-bare-tapper modifier shift-flag 3324-ms | nothing: it came right by itself
+9-bare-tapper modifier appkit-shift 3324-ms | nothing: it came right by itself
+10-arbor key f19 6809-ms | key-up, of the same kind
+
+64 passed, 16 failed
+still running when the script had ended, and stopped now:
+  27536 asker
+  27588 asker
+exit code 1
