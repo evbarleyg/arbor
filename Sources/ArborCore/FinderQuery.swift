@@ -20,14 +20,19 @@ public struct FinderCandidate: Equatable, Sendable {
   /// It does something instead of being somewhere. Go to… is about places, and whoever types a few letters of a title and presses Return
   /// must not have run something: see `FinderQuery`.
   let isACommand: Bool
+  /// How many of the name's units are a command's own words. From the first quotation mark on it is the name of the app the command is about;
+  /// no row of the menu has words after that, and a long name is cut before the closing mark.
+  let ownCount: Int
 
   public init(name: String, detail: String, isAName: Bool = false, isACommand: Bool = false) {
     self.name = name
     self.detail = detail
     self.isAName = isAName
     self.isACommand = isACommand
-    var text = FinderText(name, limit: Self.nameLimit)
+    // Nobody types the apostrophe of Don’t Arrange, and a word has to be typed from its beginning (`FinderQuery`).
+    var text = FinderText(name, limit: Self.nameLimit, droppingApostrophes: isACommand)
     nameCount = text.units.count
+    ownCount = isACommand ? text.units.firstIndex(of: 0x22) ?? nameCount : nameCount
     // No word of a query holds a space, so this one is never matched. It keeps a run of matches from
     // continuing out of the name into the detail.
     text.append(unit: 0x20, source: 0, start: .none)
@@ -102,11 +107,16 @@ public struct FinderMatch: Equatable, Sendable {
 /// the texts that matched count, so that three Safari windows are equal for `saf` whatever their titles. What
 /// is still equal stays in the order it was given, which for the finder is most recently used first.
 ///
-/// **A command never comes before a place that matches as well.** All of a command is its name, so its letters count as a title's do, not as
-/// an app's; and between equally good matches every place comes before every command, whatever is left over (`3` is the window called
-/// Report 3, not Save This View As ▸ View 3). Among such commands those whose name begins with a word of the query come first (`dock`
-/// prefers Dock New Windows to Undo Dock), and then the order they were given in decides, which is the menu's: the ways back and what is
-/// used most come first there (`float` prefers Float Focused Window to Float All Windows, which is shorter).
+/// **A command has to be named.** A title is found by whatever of it comes to mind, since nobody knows its words. A command does something, and
+/// its words are in the menu to be read: it matches only when every word of the query is the beginning of a word of its name, letters
+/// together (`bal`, `dock left`, `dont arr`). Scattered over a name as long as a way through the menu are the letters of many an app.
+///
+/// And by a word of its own. Don’t Arrange “Safari” is about Safari and is not called Safari: whoever types `saf` means the app. What stands
+/// between quotation marks narrows (`dont saf`) and lists nothing by itself.
+///
+/// Commands are ranked among themselves (`FinderSession` lists them after the places). Those whose name begins with a word of the query come
+/// first (`dock` prefers Dock Focused Window ▸ Left to Undo Dock), and then the order they were given in decides, which is the menu's: the ways back
+/// and what is used most come first there (`float` prefers Float Focused Window to Float All Windows, which is shorter).
 public struct FinderQuery: Equatable, Sendable {
   /// Bounds on the work one query can ask for. What goes beyond them is ignored.
   static let wordLimit = 8
@@ -114,19 +124,36 @@ public struct FinderQuery: Equatable, Sendable {
 
   /// The folded words.
   let words: [[UInt32]]
+  /// The words beyond the bounds. A place is found without them. A command is not: every word typed has to begin a word of its name, or
+  /// "… ▸ View 3", copied with its signs, is View 1, which comes first. Looking for the beginning of a word costs next to nothing.
+  let further: [[UInt32]]
+  /// Something was typed that neither list holds, so nothing can be said about every word: no command matches.
+  let isCut: Bool
 
   public init(_ text: String) {
     var words: [[UInt32]] = []
+    var further: [[UInt32]] = []
     var room = Self.unitLimit
-    for word in FinderText.clip(text, to: Self.unitLimit * 4).split(whereSeparator: \.isWhitespace) {
-      guard words.count < Self.wordLimit, room > 0 else { break }
+    let clipped = FinderText.clip(text, to: Self.unitLimit * 4)
+    var isCut = clipped.utf8.count < text.utf8.count
+    for word in clipped.split(whereSeparator: \.isWhitespace) {
+      // No word of a command is that long.
+      let whole = FinderText(String(word), limit: Self.unitLimit).units
+      if word.count > Self.unitLimit || whole.count > Self.unitLimit { isCut = true }
+      guard words.count < Self.wordLimit, room > 0 else {
+        further.append(whole)
+        continue
+      }
       let units = Array(FinderText(String(word), limit: room).units.prefix(room))
+      if units.count < whole.count { isCut = true }
       // A word of nothing but accents or invisible characters asks for nothing.
       guard !units.isEmpty else { continue }
       room -= units.count
       words.append(units)
     }
     self.words = words
+    self.further = further
+    self.isCut = isCut
   }
 
   /// Whether the query asks for nothing, and so matches everything.
@@ -147,11 +174,25 @@ public struct FinderQuery: Equatable, Sendable {
   public func match(_ candidate: FinderCandidate, index: Int = 0) -> FinderMatch? {
     var quality = 0
     var matched = Set<Int>()
-    for word in words {
-      guard let alignment = Self.align(word, with: candidate) else { return nil }
+    var isNamed = !candidate.isACommand
+    if candidate.isACommand, isCut { return nil }
+    for word in candidate.isACommand ? words + further : words {
+      guard candidate.isACommand else {
+        guard let alignment = Self.align(word, with: candidate) else { return nil }
+        quality += alignment.score
+        matched.formUnion(alignment.positions)
+        continue
+      }
+      // Without the apostrophes, which the name is searched without, and without what stands before its first letter or digit, which
+      // begins no word: a quotation mark, a bracket. Nothing but signs (the ▸ of a name that was copied) asks for nothing.
+      let letters = Array(word.filter { $0 != 0x27 }.drop { !FinderText.isLetterOrDigit($0) })
+      guard !letters.isEmpty else { continue }
+      guard let alignment = Self.beginning(letters, in: candidate) else { return nil }
       quality += alignment.score
       matched.formUnion(alignment.positions)
+      if alignment.positions[0] < candidate.ownCount { isNamed = true }
     }
+    guard isNamed else { return nil }
     let nameCount = candidate.nameCount
     if candidate.isAName, !words.isEmpty, Array(words.joined(separator: [0x20])) == Array(candidate.text.units.prefix(nameCount)) {
       quality += Points.theVeryName
@@ -161,18 +202,13 @@ public struct FinderQuery: Equatable, Sendable {
     var leftOver = 0
     if !inName.isEmpty { leftOver += nameCount - inName.count }
     if !inDetail.isEmpty { leftOver += candidate.text.units.count - nameCount - 1 - inDetail.count }
-    // Only decides between equal qualities. What is left over of a place is below 512 (see the limits).
+    // Only decides between equal qualities.
     var handicap = min(leftOver, 1023)
-    if candidate.isACommand { handicap = 512 + (matched.contains(0) ? 0 : 256) }
+    if candidate.isACommand { handicap = matched.contains(0) ? 0 : 1 }
     return FinderMatch(
       index: index, score: quality * 1024 - handicap,
       nameRanges: Self.ranges(inName.map { candidate.text.sources[$0] }),
       detailRanges: Self.ranges(inDetail.map { candidate.text.sources[$0] }))
-  }
-
-  /// Whether each word of the query was found with its letters together, going by what `match` sets off: no more pieces than words.
-  public func foundInOnePiece(_ match: FinderMatch) -> Bool {
-    !words.isEmpty && match.nameRanges.count + match.detailRanges.count <= words.count
   }
 
   /// Ascending offsets, possibly repeated, as the fewest ranges that cover them.
@@ -201,6 +237,25 @@ public struct FinderQuery: Equatable, Sendable {
     static let gapExtension = 1
     /// More than the longest query can earn any other way (64 letters of some 50 points).
     static let theVeryName = 10_000
+  }
+
+  /// The first word of a command's name that begins with `word`, scored as `align` scores letters that follow each other from the start of
+  /// a word. Nil if none does. Its own words come first, so one of them is found rather than one of the app it is about.
+  static func beginning(_ word: [UInt32], in candidate: FinderCandidate) -> (score: Int, positions: [Int])? {
+    let (units, starts) = (candidate.text.units, candidate.text.starts)
+    guard !word.isEmpty, word.count <= candidate.nameCount else { return nil }
+    func bonus(_ j: Int) -> Int {
+      switch starts[j] {
+      case .none: 0
+      case .inner: Points.innerStart
+      case .word: Points.wordStart
+      }
+    }
+    for j in 0...(candidate.nameCount - word.count) where starts[j] != .none && units[j..<(j + word.count)].elementsEqual(word) {
+      let rest = (j + 1)..<(j + word.count)
+      return (Points.match + 2 * bonus(j) + rest.reduce(0) { $0 + Points.match + Points.consecutive + bonus($1) }, Array(j..<(j + word.count)))
+    }
+    return nil
   }
 
   /// The best way to lay `word` over the candidate's text: its score, and the unit each of the word's
@@ -241,7 +296,7 @@ public struct FinderQuery: Equatable, Sendable {
       case .inner: bonus = Points.innerStart
       case .word: bonus = Points.wordStart
       }
-      return Points.match + (first ? 2 * bonus : bonus) + (j < candidate.nameCount && !candidate.isACommand ? Points.inName : 0)
+      return Points.match + (first ? 2 * bonus : bonus) + (j < candidate.nameCount ? Points.inName : 0)
     }
 
     let impossible = Int.min / 2
@@ -341,7 +396,7 @@ struct FinderText: Equatable, Sendable {
     return Dictionary(uniqueKeysWithValues: table.map { ($0.0.value, $0.1.unicodeScalars.map(\.value)) })
   }()
 
-  init(_ text: String, limit: Int) {
+  init(_ text: String, limit: Int, droppingApostrophes: Bool = false) {
     let clipped = Self.clip(text, to: limit)
     var characters = Array(clipped)
     if !clipped.utf8.allSatisfy({ $0 < 0x80 }) {
@@ -359,6 +414,8 @@ struct FinderText: Equatable, Sendable {
     var before = Kind.separator
     for (offset, character) in characters.enumerated() {
       guard units.count < unitLimit else { break }
+      // As if it were not there: the t of Don’t begins no word.
+      if droppingApostrophes, character == "'" || character == "\u{2019}" || character == "\u{2018}" { continue }
       let kind = Kind(character)
       var start = Start.none
       switch (before, kind) {
@@ -415,6 +472,12 @@ struct FinderText: Equatable, Sendable {
     if text.utf8.count <= limit { return text }
     let scalars = String.UnicodeScalarView(text.unicodeScalars.prefix(limit * scalarsPerCharacter))
     return String(String(scalars).prefix(limit))
+  }
+
+  /// Whether a unit can begin a word, going by what `Kind` takes for a separator.
+  static func isLetterOrDigit(_ unit: UInt32) -> Bool {
+    guard let scalar = Unicode.Scalar(unit) else { return false }
+    return Kind(Character(scalar)) != .separator
   }
 
   private static func isIgnored(_ scalar: Unicode.Scalar) -> Bool {

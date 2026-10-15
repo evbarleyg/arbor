@@ -17,7 +17,7 @@ Arbor has no window and no Dock icon. The menu is the only part of it a newcomer
 
 It is not the settings window, and not a list of everything Arbor can do: `arborctl help` and Keyboard Shortcuts… are those.
 
-**Every row that runs a command is also found in Go to… by its title here** (F27, "It finds commands too"), a row of a submenu by its way there: "Arrangement ▸ Balance Sizes". So a title is also what somebody types:
+**Every row that runs a command is also found in Go to… by its title here** (F27, "It finds commands too"), a row of a submenu by its way there: "Arrangement ▸ Balance Sizes". The name of an app in a title stands between quotation marks, and says whom the row is about: typed alone it finds the app's windows and no row. So a title is also what somebody types:
 two rows must not come out under one name, and a title that only makes sense under its heading ("Left") is fine in a submenu, whose title goes before it. **What is greyed out here cannot be run there either**: grey out whatever
 would fail, and whatever would do something else than its title says.
 

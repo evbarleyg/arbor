@@ -28,7 +28,7 @@ for everywhere the view can go (docs/KEYBOARD.md).
 - **Order with nothing typed**: windows that have had the keyboard, the latest first, but the focused window after them; then the windows that never had
   it, as they are laid out; then the named spaces, in the order `go` looks in; then the saved views. So Return straight after ⌃⌥G goes to the window the user was in before, as ⌘Tab does, and doing
   it again comes back. The focused window is never first, also right after launch, when no other window has had the keyboard yet.
-- **Typing filters and ranks** (below). The best match is selected. Matched letters are set off.
+- **Typing filters and ranks** (below). The best match is selected, if it is a place (see "It finds commands too"). Matched letters are set off.
 - ↓ and ⇥ select the next row, ↑ and ⇧⇥ the previous one, going round at the ends; Page Up and Page Down move by a palette's length and stop
   at the ends; the list scrolls just far enough. Return chooses the selected row, ⌘1–⌘9 and a click choose a row directly. Moving the
   pointer over the rows changes nothing. ⌘A, ⌘X, ⌘C and ⌘V work in the field.
@@ -86,7 +86,27 @@ Choosing a **saved view** moves the view of its own display there, as `view <n>`
 
 ### It finds commands too (board 0.14)
 
-With nine keys bound (QUESTIONS Q29, 1) everything else is "in the menu and in Go to…". Whoever knows what a thing is called types a few letters of it: ⌃⌥G `bal` ↩ balances the sizes.
+With nine keys bound (QUESTIONS Q29, 1) everything else is "in the menu and in Go to…". Whoever knows what a thing is called types a few letters of it and picks it: ⌃⌥G `bal` ↓ ↩ balances the sizes.
+
+**Letters and Return do what they did before commands were listed: they go to the best place, or beep.** ⌃⌥G, a few letters, Return, without a look, is what Go to… is for, and the fingers do it also when the app they mean is not open, or has
+just closed behind the palette. Three rules see to it, for every command alike; there is no list of commands too weighty for a reflex.
+
+1. **The list is what it was, with the commands after it.** The places that match come first, in the order they always had, however they were found; then the commands. So the row that is selected and the rows ⌘1–⌘9 point at are the same as before, as far as there
+   are places. **Only ↓ or ⇥ past the last place leads on to the commands.** ↑ and ⇧⇥ from the top go round to the last place, and Page Down stops there however often it is pressed, as ever: `pa` ↑ ↩ is the last of Pages' windows, not Pause Arbor below it. Coming
+   up out of the commands, ↑ stays among the places likewise. The price: a place that holds the letters here and there stands above a command that was spelt out (`undo`: TextEdit's Untitled Document). Typing on sends it away.
+2. **A command has to be named to be listed.** Every word typed is the beginning of a word of its way through the menu, letters together: `bal`, `siz`, `dock left`, `dont arr` (the apostrophe need not be typed, and a word of nothing but signs, like the ▸
+   of a name that was copied, asks for nothing). Nothing scattered, nothing from inside a word, no initials: that is how a title is found, of which nobody knows the words; a command's are in the menu to be read. **And by a word of its own**: Don’t Arrange
+   “Safari” is about Safari and is not called Safari. What stands between quotation marks narrows (`dont saf`) and lists nothing by itself. Every word counts, also beyond the eight that a place is found by.
+3. **Return alone never runs a command.** Where no place matches, the command on top is shown, not selected, and the line under the rows says "↓ picks a command, ↩ runs it"; Return beeps. Picked by hand it runs: ↓, ↑, ⇥, a Page key, then Return; a click; ⌘ and
+   the row's digit. ↓ and the Page keys pick the first row, ↑ the last. Whatever is typed afterwards unpicks, and so does a fresh list in which the picked row is no more; where a place is left, such a list selects a place.
+
+Found on the way to the second build. Over "Focused Window ▸ Don’t Arrange “Safari”" the letters of `notes` are scattered: `notes`, Notes closes behind the palette, Return ("That window has closed"), Return again: Safari
+was out of the arrangement, and settings.json said so. By thinking on from there: `pa` ↩ for Pages paused Arbor, `ar` ↩ for Arc arranged everything, `sa` ↩ for Safari saved view 1, `shortcuts` ↩ for the app of that name switched Arbor's shortcuts off in the
+app in front, which is a whole first word: no rule about how much to type closes it. And by a reader who was asked what Return can still run: in Safari's one window `saf` ↓ ↩, for the next of its windows, took Safari out of the arrangement, since the rows about
+the app in front hold its name; and by a second reader: `pa` ↑ ↩ with two windows of Pages, counted rightly, paused Arbor, and `sa` Page Down ↩ saved view 8.
+
+**What is left.** ↓, ⇥ or a digit that counts on a place that is not there comes to a command, if one begins with the same letters: `pa` ↓ ↩ or `pa` ⌘2, for the second of Pages' windows when there is one, pauses Arbor. It takes a wrong count; a shared beginning is
+common (`sa`, `ar`, `ke`, `re`, `st`, `ho` all begin a command's word). Nothing short of a key of their own for the commands closes that, since ↓, ⇥ and the digits mean places already: a question for the product owner (QUESTIONS).
 
 - **The rows are the menu's**, read from the menu as it stands when the palette opens (`Controller+FinderCommands.swift`): every row that runs a command, under the name the menu gives it then
   ("Undo Dock", "Don’t Arrange “Safari”"), with the key in effect and the tick the menu shows. A row added to the menu is found here without another line. A row of a submenu is called by its way
@@ -97,17 +117,12 @@ With nine keys bound (QUESTIONS Q29, 1) everything else is "in the menu and in G
 - **The rows are about the display the palette is on**, when they are read and when one is run. The menu is about the display under the pointer, which chose it; here the pointer may rest anywhere. "Undo Dock" undoes that display's Dock, and
   "View 3 (replace)" says so of that display's view 3.
 - **With nothing typed the list is what it always was**: places. A command comes when it is called by name. The empty field says "A window, a space, a saved view or a command".
-- **Whoever types a piece of an app's name or of a title and presses Return goes there, as before.** Places and commands are ranked together, with three rules for the commands:
-  1. All of a command is its name, so its letters count as a title's do, not as an app's; and between equally good matches every place comes before every command. `3` is the window called Report 3, not Save This View As ▸ View 3.
-  2. **Letters that stand together in a place are that place**, also inside a word, where they score less than at the beginning of a command's: `vie` is Preview and not Hold This View, `all` the window called Wallpaper and not Float All
-     Windows. No command comes before such a place, nor before the places that rank above it.
-  3. Among equally good commands those whose name begins with a word that was typed come first (`dock`: Dock New Windows before Undo Dock), then the menu's order decides, which has the ways back and what is used most first (`float`: Float Focused Window
-     before Float All Windows).
-
-  Only against letters scattered through a place does a command that was spelt out win: a title of 200 characters holds the letters of nearly any short word. The places keep their order among themselves.
+- **Among themselves** the commands whose name begins with a word that was typed come first (`dock`: Dock Focused Window ▸ Left before Undo Dock), then the menu's order decides, which has the ways back and what is used most first (`float`: Float Focused Window
+  before Float All Windows).
+- Under Arrange Again a row of the menu is an app's name and nothing else. Here it is marked as the menu marks a name in the midst of a title: "Arrangement ▸ Arrange Again ▸ “Calendar”".
 - A command's row shows ⌘ where a window has its icon, and at the right `command`, with ✓ if the menu ticks it, and its key if it has one: `command ✓, ⌃⌥Space`.
-- **Chosen, it runs as its key would**: the palette closes, the app behind it has the keyboard again, and the command acts on the window the palette opened over. It is answered on screen as a key is (F43). One undo takes it back.
-- **What the menu greys out is listed, so that it is found where it is looked for, and says `command, not now`. Chosen, it runs nothing**: the palette beeps, says "“Step Out” can do nothing just now" and stays. The menu greys a row out because it would
+- **Picked and chosen, it runs as its key would**: the palette closes, the app behind it has the keyboard again, and the command acts on the window the palette opened over. It is answered on screen as a key is (F43). One undo takes it back.
+- **What the menu greys out is listed, so that it is found where it is looked for, and says `command, not now`. Chosen, it runs nothing**: the palette beeps, says "“View ▸ Step Out” can do nothing just now" and stays. The menu greys a row out because it would
   fail, or because it would do something else than it says: Float Focused Window is `toggle-float`, which would dock a window that floats. Whether a row can act is asked when it is chosen, not when the palette opened.
 - **Only in the palette.** `find <text>`, which goes somewhere without showing anything, finds places and nothing else: a script, a binding or (where all links are allowed) a link that says `find` names a place, and must not thereby
   run whatever it spells.
@@ -116,9 +131,11 @@ With nine keys bound (QUESTIONS Q29, 1) everything else is "in the menu and in G
 - A trace holds the choice as `{"command":"dock left"}`, the log its first word. No row's command holds a name somebody gave.
 
 ✔ `everyCommandInTheMenuIsFoundByItsNameInTheMenu`, `aCommandTheMenuHasUnderTwoNamesIsFoundByEither`, `everyCommandThatHasAKeyInTheWholeMapIsFoundWhetherOrNotTheMenuHasIt`, `withAllShortcutsOffEveryCommandIsStillFound`,
-`returnRunsItOnTheWindowThePaletteOpenedOver`, `theRowsAreAboutTheDisplayThePaletteIsOnWhereverThePointerRests`, `andTheCommandActsThere`, `chosenItRunsNothingAndThePaletteSaysSoAndStays`, `aRowNeverDoesTheOppositeOfWhatItSays`,
+`itRunsOnTheWindowThePaletteOpenedOver`, `lettersAndReturnMeantForAnAppThatIsNotOpenRunNothing`, `notesClosesBehindThePaletteAndReturnIsPressedTwice`, `afterAPlaceHasGoneASecondReturnRunsNothing`, `theNameOfTheAppInFrontAndTheArrowStayAmongThePlaces`, `theArrowUpAndPageDownStayAmongThePlaces`, `pickedWithTheArrowItRuns`, `theRowsAreAboutTheDisplayThePaletteIsOnWhereverThePointerRests`, `andTheCommandActsThere`, `chosenItRunsNothingAndThePaletteSaysSoAndStays`, `aRowNeverDoesTheOppositeOfWhatItSays`,
 `findWithTextGoesToPlacesAndRunsNothing`, `aLinkThatSaysFindRunsNothingEvenWhereAllLinksAreAllowed`, `aTraceHoldsTheChoiceAndReplaysIt`, `aCommandThatChangesASettingReplaysToTheSameSetting` (`GoToFindsCommandsTests`);
-`lettersThatStandTogetherInsideAWordOfAPlaceAreThatPlace`, `aLetterOfATitleIsWorthWhatALetterOfACommandIs` (`FinderCommandRowTests`); scenario 94.
+`theListIsWhatItWasWithTheCommandsAfterIt`, `amongManyPlacesTheListScrollsAsItDid`, `onlyTheArrowDownPastTheLastPlaceLeadsToTheCommands`, `lettersScatteredOverACommandsNameDoNotListIt`, `aCommandIsListedOnlyWhenEveryWordTypedBeginsAWordOfItsName`, `anAppsNameInACommandsNameSaysWhomItIsAboutAndDoesNotListIt`,
+`ofACommandEveryWordCountsHoweverManyAreTyped`, `returnAloneNeverChoosesACommand`, `pickedByHandItIsChosen`, `aFreshListUnpicksUnlessThePickedRowIsStillThere`, `aPickDoesNotPassToTheCommandThatTookThePlacesRow`,
+`whereAPlaceIsLeftAFreshListSelectsAPlace` (`FinderCommandRowTests`); scenario 94.
 Not yet: no key has been pressed in it on a Mac, and nobody has looked at a row (`scripts/mac-shell/shots-finder.sh` takes the picture).
 
 ### Commands

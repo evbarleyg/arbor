@@ -294,7 +294,7 @@ ctl find zebra
 ctl reveal "$W3"
 check "reveal focused window 3" eventually is focused "$W3"
 
-step "it finds commands: real keys spell one, Return runs it on the window behind the palette (board 0.14)"
+step "it finds commands: real keys spell one, ↓ picks it, Return runs it on the window behind the palette (board 0.14)"
 ctl show-all
 # shellcheck disable=SC2046
 click $(center_of "$W4")
@@ -302,18 +302,24 @@ check "the floating window has the keyboard" eventually is focused "$W4"
 key ctrl+opt+g
 check "open" eventually palette
 keys d o c k
-# LOOK: the sign where an icon would be, the arrows in the names, the notes with their keys at the right, nothing cut off.
+# LOOK: the sign where an icon would be, the arrows in the names, the notes with their keys at the right, nothing cut off; NO ROW IS
+# SELECTED, and the line under the rows says how to pick one.
 shot 16-commands
 keys space l e f t
 shot 17-one-command
 check "window 4 is still what macOS calls focused, with the palette up" is focused "$W4"
 key return
-check "Return closed the palette" eventually no_palette
+check "Return alone runs nothing: the palette stays up" stays palette
+check "and the window still floats" stays is floating "$W4"
+key down
+shot 17b-picked
+key return
+check "picked with ↓, Return closed the palette" eventually no_palette
 check "the window behind it was docked" eventually is docked "$W4"
 check "and still has the keyboard" eventually is focused "$W4"
 key ctrl+opt+g
 check "open" eventually palette
-keys u n d o
+keys u n d o down
 key return
 check "closed" eventually no_palette
 check "Undo, by its name, took it back" eventually is floating "$W4"

@@ -30,12 +30,18 @@ import Testing
       sections.flatMap { section -> [(String, MenuModel.Item)] in
         let path = path + (inSubmenu ? [section.title].compactMap { $0 } : [])
         return section.items.flatMap { item in
-          (item.command == nil ? [] : [((path + [item.title]).joined(separator: " ▸ "), item)])
+          (item.command == nil ? [] : [((path + [isAnApp(item) ? "“\(item.title)”" : item.title]).joined(separator: " ▸ "), item)])
             + walk(item.sections, path + [item.title], true)
         }
       }
     }
     return walk(h.controller.menuModel().sections, [], false)
+  }
+
+  /// A row that is an app's name and nothing else. The palette marks it as the menu marks a name in the midst of a title.
+  private func isAnApp(_ item: MenuModel.Item) -> Bool {
+    if case .include = item.command { return true }
+    return false
   }
 
   /// Listed as places already, under the same names; and the palette itself.
@@ -46,11 +52,20 @@ import Testing
     }
   }
 
+  /// ⌃⌥G, the text, ↓ to the first command, Return.
   @discardableResult
   private func choose(_ h: Harness, _ text: String) -> Bool {
     h.run("find")
-    h.overlays.typeInFinder(text)
+    guard case .command = picked(h, typing: text) else { return false }
     return h.overlays.chooseInFinder()
+  }
+
+  /// What ↓ comes to after this was typed, past the places that hold the letters: the first command.
+  private func picked(_ h: Harness, typing text: String) -> FinderDestination? {
+    h.overlays.typeInFinder(text)
+    let places = h.overlays.finder?.items.prefix { $0.row.place != .command }.count ?? 0
+    h.overlays.moveFinderSelection(by: max(places, 1))
+    return h.overlays.finder?.selected
   }
 
   // MARK: What is found
@@ -66,9 +81,9 @@ import Testing
     for (name, item) in rows {
       let command = try #require(item.command)
       // As somebody reads it off the menu. Nobody types the arrows.
-      h.overlays.typeInFinder(name.replacingOccurrences(of: " ▸", with: ""))
-      #expect(h.overlays.finder?.selected == .command(command.text), "\(name)")
-      let row = try #require(h.overlays.finder?.items.first?.row)
+      #expect(picked(h, typing: name.replacingOccurrences(of: " ▸", with: "")) == .command(command.text), "\(name)")
+      #expect(picked(h, typing: name) == .command(command.text), "copied, signs and all: \(name)")
+      let row = try #require(h.overlays.finder?.items.first { $0.isSelected }?.row)
       #expect(row.name == name)
       #expect(row.shortcut == item.shortcut?.label, "\(name)")
       #expect(row.isOn == item.isTicked, "\(name)")
@@ -89,9 +104,8 @@ import Testing
     for (text, rows) in twice where !isAPlaceOrThePalette(rows[0].item.command!) {
       #expect(rows.contains { $0.name.contains(" · ") }, "one of them is the state's: \(rows.map(\.name))")
       for row in rows {
-        h.overlays.typeInFinder(row.name.replacingOccurrences(of: " ▸", with: ""))
+        #expect(picked(h, typing: row.name.replacingOccurrences(of: " ▸", with: "")) == .command(text))
         #expect(h.overlays.finder?.items.first?.row.name == row.name)
-        #expect(h.overlays.finder?.selected == .command(text))
       }
       // Decided by the product owner, 2026-10-15: a state's row never comes ahead of the command of the same name in its own menu. It does:
       // of equally good matches the one whose name begins with a word of the query comes first (`FinderQuery`), and the name of a row in a
@@ -115,8 +129,7 @@ import Testing
       #expect(listed.count >= 1, "\(command.text)")
       guard !inTheMenu.contains(command.text) else { continue }
       besides += 1
-      h.overlays.typeInFinder(command.title)
-      #expect(h.overlays.finder?.selected == .command(command.text), "\(command.title)")
+      #expect(picked(h, typing: command.title) == .command(command.text), "\(command.title)")
     }
     #expect(besides >= 5, "Space to the Left, Window Above, Show Everything on All Displays…: \(besides)")
   }
@@ -184,7 +197,7 @@ import Testing
 
   // MARK: Choosing one
 
-  @Test func returnRunsItOnTheWindowThePaletteOpenedOver() {
+  @Test func itRunsOnTheWindowThePaletteOpenedOver() {
     let (h, safari, _, mail) = makeHarness()
     #expect(h.workspace.floating[mail] != nil)
     #expect(choose(h, "dock left"))
@@ -247,8 +260,7 @@ import Testing
     let (h, _, _, _) = makeHarness()
     h.run("exclude com.example.calendar")
     h.run("find")
-    h.overlays.typeInFinder("arrange again calendar")
-    #expect(h.overlays.finder?.selected == .command("include com.example.calendar"))
+    #expect(picked(h, typing: "arrange again calendar") == .command("include com.example.calendar"))
     // Somebody saves settings.json behind the palette, without the app.
     var settings = h.controller.settings
     settings.excludedBundleIDs = []
@@ -334,6 +346,7 @@ import Testing
     h.controller.perform(.find(nil), from: .shortcut)
     let other = h.controller.workspaces[Self.side.id]
     h.overlays.typeInFinder("undo")
+    h.overlays.moveFinderSelection(by: 1)
     // The elbow nudges the mouse: the pointer was used last, on the other display.
     h.scheduler.advance(by: 2)
     h.system.cursor = CGPoint(x: 2010, y: 500)
@@ -438,5 +451,171 @@ import Testing
     let commands = try #require(h.overlays.finder?.model.commands)
     #expect(!commands.contains { "\($0.destination) \($0.name)".contains("Taxes") })
     for case .command(let text) in commands.map(\.destination) { #expect(!text.contains("Taxes")) }
+  }
+
+  // MARK: What Return can run
+
+  /// Everything that a command could have changed.
+  private struct Everything: Equatable {
+    var workspaces: [DisplayID: Workspace]
+    var settings: Settings
+    var frames: [WindowID: CGRect]
+    var isPaused: Bool
+    var hold: String
+    var panels: Int
+  }
+
+  private func everything(_ h: Harness) -> Everything {
+    Everything(
+      workspaces: h.controller.workspaces, settings: h.controller.settings, frames: h.system.windows.mapValues(\.snapshot.frame),
+      isPaused: h.controller.isPaused, hold: "\(h.controller.holdLevel)", panels: h.overlays.cheatSheets.count)
+  }
+
+  /// ⌃⌥G, a few letters, Return, without a look: that is what Go to… is for, and the fingers do it also when the app they mean is not
+  /// open. Until commands were listed that was a beep. `pa` for Pages paused Arbor, `ar` for Arc arranged everything, `sa` for Safari saved view 1,
+  /// `shortcuts` for the app of that name switched Arbor's shortcuts off in the app in front and wrote that to settings.json.
+  @Test func lettersAndReturnMeantForAnAppThatIsNotOpenRunNothing() throws {
+    let h = Harness()
+    let a = h.system.open(app: "Zed", title: "zzz")
+    let b = h.system.open(app: "Zoom", title: "zzz")
+    h.start()
+    h.run("dock \(a.rawValue) left")
+    h.run("dock \(b.rawValue) right")
+    h.system.userFocus(a)
+    h.scheduler.advance(by: 1)
+    let apps = [
+      "Pages", "Arc", "Safari", "Shortcuts", "Notes", "Mail", "Terminal", "Calendar", "Preview", "Keynote", "Docker", "Reminders", "Home", "Weather",
+      "Photos", "Music", "Finder", "Messages", "Slack", "Chrome", "Xcode", "Settings", "Windows App", "Figma", "Balance", "Mirror", "Grow", "Focus",
+      "Spaces", "Undo", "Help", "Float", "Hold", "Back", "Release", "Step Two", "Show", "Save", "View", "Arrange", "Pause", "Float All Windows",
+    ]
+    let before = everything(h)
+    var tried = 0
+    var listedACommand = 0
+    for app in apps {
+      for length in 1...app.count {
+        h.run("find")
+        let typed = String(app.lowercased().prefix(length))
+        h.overlays.typeInFinder(typed)
+        if h.overlays.finder?.items.first?.row.place == .command { listedACommand += 1 }
+        guard h.overlays.finder?.items.first?.row.place != .some(.inView) else {
+          h.overlays.dismissFinder()
+          continue
+        }
+        _ = h.overlays.chooseInFinder()
+        _ = h.overlays.chooseInFinder()
+        h.scheduler.advance(by: 1)
+        tried += 1
+        #expect(everything(h) == before, "\(typed) ↩ ↩")
+        #expect(h.overlays.finder != nil, "nothing was chosen, so it is still open: \(typed)")
+        h.overlays.dismissFinder()
+        if everything(h) != before { return }
+      }
+    }
+    #expect(tried > 150 && listedACommand > 40, "or this looks at nothing: \(tried), \(listedACommand)")
+  }
+
+  /// The story it was found by. The letters of `notes` are scattered over "Focused Window ▸ Don’t Arrange “Safari”": the one row left.
+  @Test func notesClosesBehindThePaletteAndReturnIsPressedTwice() throws {
+    let (h, safari, notes, _) = makeHarness()
+    h.system.userFocus(safari)
+    h.scheduler.advance(by: 1)
+    #expect(menuRows(h).contains { $0.name == "Focused Window ▸ Don’t Arrange “Safari”" }, "or this looks at nothing")
+    h.run("find")
+    h.overlays.typeInFinder("notes")
+    #expect(h.overlays.finder?.selected == .window(notes))
+    h.system.close(notes)
+    #expect(h.overlays.chooseInFinder())
+    #expect(h.overlays.finder?.message == "That window has closed")
+    #expect(h.overlays.finder?.items.isEmpty == true)
+    h.scheduler.advance(by: 1)
+    let before = everything(h)
+    #expect(!h.overlays.chooseInFinder(), "a beep")
+    h.scheduler.advance(by: 1)
+    #expect(everything(h) == before && h.controller.settings.excludedBundleIDs.isEmpty)
+  }
+
+  /// The same with rows that are named by what was typed: the place goes behind the palette, and Return is pressed again.
+  @Test func afterAPlaceHasGoneASecondReturnRunsNothing() throws {
+    for (app, typed, command) in [("Pages", "pa", "toggle-pause"), ("Undoer", "undo", "undo"), ("Floaty", "float", "float-all")] {
+      let (h, _, _, mail) = makeHarness()
+      let window = h.system.open(app: app, title: "Untitled")
+      h.system.userFocus(mail)
+      h.scheduler.advance(by: 1)
+      h.run("find")
+      h.overlays.typeInFinder(typed)
+      #expect(h.overlays.finder?.selected == .window(window), "\(typed)")
+      #expect(h.overlays.finder?.items.contains { $0.row.destination == .command(command) } == true, "or this looks at nothing: \(typed)")
+      h.system.close(window)
+      #expect(h.overlays.chooseInFinder())
+      #expect(h.overlays.finder?.message == "That window has closed")
+      #expect(h.overlays.finder?.items.first?.row.place == .command, "or this looks at nothing: \(typed)")
+      h.scheduler.advance(by: 1)
+      let before = everything(h)
+      #expect(!h.overlays.chooseInFinder(), "a beep: \(typed)")
+      h.scheduler.advance(by: 1)
+      #expect(everything(h) == before, "\(typed)")
+      #expect(h.overlays.finder != nil)
+    }
+  }
+
+  /// `saf` ↓ Return is the next of Safari's windows. With one, it went round to that one until commands were listed; the rows that are
+  /// about the app in front hold its name, and stood right below.
+  @Test func theNameOfTheAppInFrontAndTheArrowStayAmongThePlaces() throws {
+    let (h, safari, _, _) = makeHarness()
+    h.run("exclude com.example.calendar")
+    h.system.userFocus(safari)
+    h.scheduler.advance(by: 1)
+    #expect(h.controller.menuModel().item("Don’t Arrange “Safari”") != nil && h.controller.menuModel().item("Shortcuts Off in “Safari”") != nil)
+    let before = everything(h)
+    for (typed, steps) in [("saf", 1), ("saf", -1), ("safari", 1), ("saf", 2)] {
+      h.run("find")
+      h.overlays.typeInFinder(typed)
+      #expect(h.overlays.finder?.items.map(\.row.destination) == [.window(safari)], "\(typed)")
+      h.overlays.moveFinderSelection(by: steps)
+      #expect(h.overlays.finder?.selected == .window(safari), "\(typed) \(steps)")
+      #expect(h.overlays.chooseInFinder())
+      h.scheduler.advance(by: 1)
+      #expect(everything(h) == before, "\(typed) \(steps)")
+    }
+    h.overlays.dismissFinder()
+    // The app that is not arranged is called as the other two rows call theirs.
+    h.run("find")
+    h.overlays.typeInFinder("calendar")
+    #expect(h.overlays.finder?.items.isEmpty == true)
+    h.overlays.typeInFinder("again cal")
+    #expect(h.overlays.finder?.items.map(\.row.name) == ["Arrangement ▸ Arrange Again ▸ “calendar”"])
+  }
+
+  /// `pa` ↑ Return is the last of Pages' windows, and the count is right. Pause Arbor stood below it, where ↑ from the top came out.
+  @Test func theArrowUpAndPageDownStayAmongThePlaces() throws {
+    let (h, _, _, mail) = makeHarness()
+    let first = h.system.open(app: "Pages", title: "Letter")
+    let second = h.system.open(app: "Pages", title: "Report")
+    h.system.userFocus(mail)
+    h.scheduler.advance(by: 1)
+    for page in [false, true] {
+      h.run("find")
+      h.overlays.typeInFinder("pa")
+      let listed = try #require(h.overlays.finder?.items.map(\.row.destination))
+      #expect(Set(listed.prefix(2)) == [.window(first), .window(second)] && listed.contains(.command("toggle-pause")), "or this looks at nothing")
+      if page { h.overlays.pageFinderSelection(by: 1) } else { h.overlays.moveFinderSelection(by: -1) }
+      #expect(h.overlays.finder?.selected == listed[1])
+      #expect(h.overlays.chooseInFinder())
+      h.scheduler.advance(by: 1)
+      #expect(!h.controller.isPaused)
+      h.system.userFocus(mail)
+      h.scheduler.advance(by: 1)
+    }
+  }
+
+  @Test func pickedWithTheArrowItRuns() {
+    let (h, _, _, mail) = makeHarness()
+    h.run("find")
+    h.overlays.typeInFinder("dock left")
+    #expect(!h.overlays.chooseInFinder(), "Return alone: a beep")
+    #expect(h.overlays.finder != nil && h.workspace.floating[mail] != nil)
+    h.overlays.moveFinderSelection(by: 1)
+    #expect(h.overlays.chooseInFinder())
+    #expect(h.overlays.finder == nil && h.workspace.tree.leaf(containing: mail) != nil)
   }
 }

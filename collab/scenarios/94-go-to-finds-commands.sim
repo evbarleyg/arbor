@@ -1,4 +1,4 @@
-# Story: somebody who knows nine keys wants the rest. They press ⌃⌥G and type what the thing is called in the menu: a few letters, Return.
+# Story: somebody who knows nine keys wants the rest. They press ⌃⌥G and type what the thing is called in the menu: a few letters, ↓, Return.
 # It acts on the window they were in, is answered on screen as a key is, and one undo takes it back. Before they type, Go to… lists
 # places as ever; whoever types a piece of a window's name still goes to the window; and `find <text>`, which shows nothing, goes to
 # places and runs nothing.
@@ -14,6 +14,7 @@ expect floating 103
 find
 expect ok
 finder-type dock left
+finder-move 1
 finder-choose
 expect docked 103
 expect left-of 103 101
@@ -23,26 +24,31 @@ grow
 grow
 find
 finder-type bal
+finder-move 1
 finder-choose
 expect size 103 345x851
 expect size 101 345x851
 # "Undo…", whatever it is called just now: the balancing, the growing, the dock.
 find
 finder-type undo
+finder-move 1
 finder-choose
 find
 finder-type undo
+finder-move 1
 finder-choose
 expect docked 103
 expect size 103 345x851
 find
 finder-type undo
+finder-move 1
 finder-choose
 expect floating 103
 expect docked 101
 # "Float All Windows", one of the ways back.
 find
 finder-type float all
+finder-move 1
 finder-choose
 expect floating 101
 expect floating 102
@@ -50,6 +56,7 @@ expect floating 102
 flush
 find
 finder-type step out
+finder-move 1
 finder-choose
 expect silent
 finder-cancel
@@ -59,12 +66,40 @@ find
 finder-type vie
 finder-choose
 expect focused 104
-# A window still comes first where it is the better match, and Return goes there.
+# A window comes first, and Return goes there.
 dock 101 left
 find
 finder-type saf
 finder-choose
 expect focused 101
+# ↓ for the next of Safari's windows, of which there is one: round to the same, as ever. The rows about the app in front hold its name
+# ("Don’t Arrange “Safari”"), and its name alone lists none of them.
+find
+finder-type saf
+finder-move 1
+finder-choose
+expect focused 101
+expect docked 101
+# Letters and Return, without a look, run nothing: Pages is not open, and Arbor is not paused. The palette beeps and stays.
+find
+finder-type pa
+finder-choose
+expect fail
+finder-cancel
+expect docked 101
+dock 102 right
+expect ok
+# The story it was found by. In Safari somebody types `notes`; Notes closes behind the palette; Return: "That window has closed"; Return
+# again. The letters are scattered over "Focused Window ▸ Don’t Arrange “Safari”", which was the one row left, and ran.
+focus 101
+find
+finder-type notes
+close 102
+finder-choose
+finder-choose
+expect fail
+finder-cancel
+expect docked 101
 # Without the palette nothing is run: a script or a link that says `find` means a place.
 find float all
 expect fail

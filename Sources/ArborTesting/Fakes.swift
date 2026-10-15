@@ -184,6 +184,7 @@ public final class FakeOverlays: OverlayPresenter {
 
   /// ↓ and ⇥ (positive) or ↑ and ⇧⇥ (negative).
   public func moveFinderSelection(by rows: Int) { finder?.moveSelection(by: rows) }
+  public func pageFinderSelection(by pages: Int) { finder?.pageSelection(by: pages) }
 
   /// Return, or with `row` a click on that row or ⌘ and its number, counted from 1 at the top of the
   /// palette. Returns false if there is nothing there to choose.

@@ -419,14 +419,12 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
 
   @Test func aCommandIsFoundByAnyOfTheWordsOfItsWayThroughTheMenu() {
     var session = session()
-    session.type("left")
-    #expect(session.selected == .command("dock left"))
-    session.type("focused left")
-    #expect(session.selected == .command("dock left"))
-    session.type("save 3")
-    #expect(session.selected == .command("save-view 3"))
-    session.type("sizes")
-    #expect(session.selected == .command(Command.equalize(all: false).text))
+    for (typed, command) in [
+      ("left", "dock left"), ("focused left", "dock left"), ("save 3", "save-view 3"), ("sizes", Command.equalize(all: false).text),
+    ] {
+      session.type(typed)
+      #expect(session.items.first?.row.destination == .command(command), "\(typed)")
+    }
   }
 
   /// In a title, where a letter is worth what a command's is; and with far more left over than the command has.
@@ -447,16 +445,15 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     ]
     let places = [
       window(101, "Preview", "scan.pdf"), window(102, "Finder", "Wallpaper"), window(103, "Mail", "Feedback"), window(104, "Notes", "Carrot cake"),
+      window(105, "Photos", "Hut, cold"),
     ]
     var session = FinderSession(model: FinderModel(display: main, screen: screen, rows: places, commands: commands))
-    for (typed, window) in [("vie", 101), ("all", 102), ("back", 103), ("rot", 104)] {
+    // The last one holds its letters here and there, under a command that is spelt out.
+    for (typed, window) in [("vie", 101), ("all", 102), ("back", 103), ("rot", 104), ("hold", 105)] {
       session.type(typed)
       #expect(session.selected == .window(WindowID(UInt32(window))), "\(typed)")
-      #expect(session.items.count == 2, "the command comes after it: \(typed)")
+      #expect(session.items.map(\.row.place) == [.outOfView, .command], "the command comes after it: \(typed)")
     }
-    // Scattered letters are no such claim.
-    session.type("hv")
-    #expect(session.selected == .command("hold"))
   }
 
   @Test func noCommandComesBeforeAPlaceThatIsBetterThanOneFoundInOnePiece() {
@@ -484,10 +481,10 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     session.type("3")
     #expect(session.items.map(\.row.destination) == [.window(WindowID(103)), .command("save-view 3")])
     session.type("left")
-    #expect(session.selected == .command("dock left"), "scattered through a title the letters are worth less than together")
+    #expect(session.items.map(\.row.destination) == [.window(WindowID(103)), .command("dock left")], "scattered through a title, and still first")
   }
 
-  @Test func theBetterMatchComesFirstWhicheverKindItIs() {
+  @Test func thePlacesComeFirstAndThenTheCommandsEachKindBestFirst() {
     var session = session()
     session.type("dock")
     // The app whose name it nearly is; then what begins with the word, in the menu's order; last what only holds it.
@@ -513,7 +510,7 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     var session = session(places: [])
     #expect(session.items.isEmpty && session.message == "No windows")
     session.type("undo")
-    #expect(session.selected == .command("undo") && session.message == nil)
+    #expect(session.items.first?.row.destination == .command("undo") && session.message == "↓ picks a command, ↩ runs it")
     session.type("zzz")
     #expect(session.items.isEmpty && session.message == "No windows")
   }
@@ -530,6 +527,368 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
   @Test func asTextARowShowsItsFirstWordItsNameAndItsNote() {
     var session = session()
     session.type("new")
+    #expect(session.text == "go to: new\n  1 command toggle-auto-dock  Dock New Windows  (command ✓)\n  ↓ picks a command, ↩ runs it")
+    session.moveSelection(by: 1)
     #expect(session.text == "go to: new\n> 1 command toggle-auto-dock  Dock New Windows  (command ✓)")
+  }
+
+  // MARK: What Return can run
+
+  /// The story it was found by. Somebody types `notes`; Notes closes behind the palette; Return: "That window has closed", and a fresh
+  /// list, whose one row held the letters scattered over its way through the menu (n-o in Window, t in Don’t, e in Arrange, s in Safari).
+  /// A second Return took Safari out of the arrangement and wrote that to settings.json.
+  @Test func lettersScatteredOverACommandsNameDoNotListIt() {
+    let row = FinderModel.Row.command(.exclude(bundleID: "com.apple.Safari"), name: "Focused Window ▸ Don’t Arrange “Safari”", display: main)
+    var session = FinderSession(model: FinderModel(display: main, screen: screen, rows: [window(101, "Mail", "Inbox")], commands: [row]))
+    session.type("notes")
+    #expect(session.items.isEmpty && session.selected == nil && session.message == "Nothing matches")
+  }
+
+  @Test func aCommandIsListedOnlyWhenEveryWordTypedBeginsAWordOfItsName() {
+    var session = session(places: [])
+    func listed(_ text: String) -> [String] {
+      session.type(text)
+      return session.items.map(\.row.name)
+    }
+    // From inside a word, initials, letters here and there: that is how a title is found, of which nobody knows the words.
+    for text in ["ock", "indow", "dfw", "dnw", "blnc", "udo", "izes", "dock eft", "lance sizes", "dock x"] {
+      #expect(listed(text).isEmpty, "\(text)")
+    }
+    #expect(listed("bal") == ["Arrangement ▸ Balance Sizes"])
+    #expect(listed("siz") == ["Arrangement ▸ Balance Sizes"])
+    #expect(listed("arr b s") == ["Arrangement ▸ Balance Sizes"])
+    #expect(listed("left dock") == ["Dock Focused Window ▸ Left"], "in any order")
+    #expect(listed("DOCK") == ["Dock Focused Window ▸ Left", "Dock New Windows", "Undo Dock"])
+    #expect(listed("save 3") == ["Saved Views ▸ Save This View As ▸ View 3"])
+  }
+
+  /// Nobody types the apostrophe, and whoever does is right too.
+  @Test func anApostropheInACommandsNameNeedNotBeTyped() {
+    let row = FinderModel.Row.command(.exclude(bundleID: nil), name: "Don’t Arrange “Safari”", display: main)
+    var session = FinderSession(model: FinderModel(display: main, screen: screen, rows: [], commands: [row]))
+    for text in ["dont", "don't", "don’t arr", "dont arrange saf", "don", "Don’t Arrange “Safari”", "dont \"saf", "(arr"] {
+      session.type(text)
+      #expect(session.items.count == 1, "\(text)")
+    }
+    session.type("dont")
+    #expect(session.items.first?.match.nameRanges == [0..<3, 4..<5], "the letters are set off, the apostrophe is not")
+  }
+
+  /// Whatever is typed: the same places in the same order, the same one selected and the same under each digit, as far as there are places.
+  /// Then the commands. ↑, ⇧⇥ and the Page keys do among the places what they did; so does ↓ as far as the last place.
+  @Test func theListIsWhatItWasWithTheCommandsAfterIt() {
+    let places = [
+      window(101, "Safari", "Arbor: a window manager, docs and all, left to be read"), window(102, "Notes", "Shopping, balance of the month"),
+      window(103, "Docker", "Containers"), window(104, "Slack", "Huddle"), window(105, "Pages", "Untitled, saved in the view of the dock"),
+      window(106, "Numbers", "Big tables all over, nicely coloured, every size"), view(3, "Mail"),
+    ]
+    let names = places.flatMap { [$0.name, $0.detail] } + commands.map(\.name) + ["sh", "dfw", "blnc", "uo", "3", "w s", "a e", "s v"]
+    var typed = Set<String>()
+    for name in names {
+      for word in name.lowercased().split(separator: " ") { for length in 1...word.count { typed.insert(String(word.prefix(length))) } }
+      typed.insert(name)
+    }
+    var before = FinderSession(model: FinderModel(display: main, screen: screen, rows: places))
+    var now = FinderSession(model: FinderModel(display: main, screen: screen, rows: places, commands: commands))
+    var mixed = 0
+    for text in typed.sorted() {
+      before.type(text)
+      now.type(text)
+      let count = before.matches.count
+      #expect(Array(now.matches.prefix(count)) == before.matches, "\(text)")
+      #expect(now.matches.dropFirst(count).allSatisfy { $0.index >= places.count }, "\(text)")
+      #expect(now.selected == before.selected, "Return: \(text)")
+      if count > 0, now.matches.count > count { mixed += 1 }
+      for place in 0..<min(count, 9) {
+        #expect(now.destination(atVisible: place) == before.destination(atVisible: place), "⌘\(place + 1): \(text)")
+        #expect(now.selected == before.selected, "↓ \(place) times: \(text)")
+        if place + 1 < count {
+          now.moveSelection(by: 1)
+          before.moveSelection(by: 1)
+        }
+      }
+      guard count > 0 else { continue }
+      // From the top, from the bottom and from between, more often than there are places.
+      for start in 0..<count {
+        for keys: [(name: String, press: (inout FinderSession) -> Void)] in [
+          Array(repeating: ("↑", { $0.moveSelection(by: -1) }), count: count + 2),
+          [("↑↑↑", { $0.moveSelection(by: -3) }), ("far up", { $0.moveSelection(by: -1000) })],
+          [("Page Down", { $0.pageSelection(by: 1) }), ("Page Down", { $0.pageSelection(by: 1) }), ("↑", { $0.moveSelection(by: -1) })],
+          [("Page Up", { $0.pageSelection(by: -1) }), ("↑", { $0.moveSelection(by: -1) }), ("Page Down", { $0.pageSelection(by: 3) })],
+        ] {
+          before.type(text)
+          now.type(text)
+          before.moveSelection(by: start)
+          now.moveSelection(by: start)
+          for key in keys {
+            key.press(&before)
+            key.press(&now)
+            #expect(now.selected == before.selected, "\(text), ↓ \(start) times, then \(keys.map(\.name)) as far as \(key.name)")
+            #expect(now.items.filter(\.isSelected).map(\.row) == before.items.filter(\.isSelected).map(\.row))
+          }
+        }
+      }
+    }
+    #expect(typed.count > 150 && mixed > 40, "or this looks at nothing: \(typed.count), \(mixed)")
+  }
+
+  /// More places than the palette shows: the same rows show after the same keys.
+  @Test func amongManyPlacesTheListScrollsAsItDid() {
+    let places = (1...25).map { window(UInt32(100 + $0), "Docker", "Container \($0)") }
+    var before = FinderSession(model: FinderModel(display: main, screen: screen, rows: places))
+    var now = FinderSession(model: FinderModel(display: main, screen: screen, rows: places, commands: commands))
+    before.type("dock")
+    now.type("dock")
+    #expect(now.matches.count == before.matches.count + 3)
+    let keys: [(inout FinderSession) -> Void] = [
+      { $0.pageSelection(by: 1) }, { $0.pageSelection(by: 1) }, { $0.pageSelection(by: 1) }, { $0.pageSelection(by: 1) }, { $0.moveSelection(by: -1) },
+      { $0.pageSelection(by: -1) }, { $0.pageSelection(by: -5) }, { $0.moveSelection(by: -1) }, { $0.moveSelection(by: -1) }, { $0.pageSelection(by: 9) },
+    ]
+    for (step, key) in keys.enumerated() {
+      key(&before)
+      key(&now)
+      #expect(now.selected == before.selected, "key \(step)")
+      #expect(now.items == before.items, "key \(step)")
+    }
+  }
+
+  /// The one way from the places to the commands, and the ways back.
+  @Test func onlyTheArrowDownPastTheLastPlaceLeadsToTheCommands() {
+    var session = session(places: [window(103, "Docker", "Containers"), window(104, "Docker", "Images")])
+    session.type("dock")
+    #expect(session.items.map(\.row.place) == [.outOfView, .outOfView, .command, .command, .command])
+    session.moveSelection(by: -1)
+    #expect(session.selected == .window(WindowID(104)), "↑ from the top: round to the last place, as ever")
+    session.pageSelection(by: 1)
+    #expect(session.selected == .window(WindowID(104)), "Page Down stops at the last place, as ever")
+    session.moveSelection(by: 1)
+    #expect(session.selected == .command("dock left"))
+    // Among the commands the keys are a list's.
+    session.pageSelection(by: 1)
+    #expect(session.selected == .command("undo"))
+    session.moveSelection(by: 1)
+    #expect(session.selected == .window(WindowID(103)), "round")
+    session.moveSelection(by: 2)
+    session.moveSelection(by: -1)
+    #expect(session.selected == .window(WindowID(104)), "↑ from the first command")
+    session.moveSelection(by: 2)
+    #expect(session.selected == .command(Command.toggleAutoDock.text))
+    session.moveSelection(by: -4)
+    #expect(session.selected == .window(WindowID(104)), "once among the places it stays among them: 104, 103, 104")
+    session.moveSelection(by: 3)
+    session.pageSelection(by: -1)
+    #expect(session.selected == .window(WindowID(103)))
+  }
+
+  /// Letters and Return do what they did before commands were listed: they go to a place, or beep.
+  @Test func returnAloneNeverChoosesACommand() {
+    var session = session(places: [])
+    session.type("bal")
+    #expect(session.items.map(\.row.name) == ["Arrangement ▸ Balance Sizes"])
+    #expect(session.selected == nil, "it is shown")
+    #expect(session.items.allSatisfy { !$0.isSelected }, "and not selected")
+    #expect(session.message == "↓ picks a command, ↩ runs it")
+    #expect(session.layout.hasMessage)
+  }
+
+  @Test func pickedByHandItIsChosen() {
+    var session = session(places: [])
+    session.type("dock")
+    #expect(session.selected == nil)
+    session.moveSelection(by: 1)
+    #expect(session.selected == .command("dock left"), "↓ picks the first, not the second")
+    #expect(session.items.map(\.isSelected) == [true, false, false])
+    #expect(session.message == nil)
+    session.moveSelection(by: 1)
+    #expect(session.selected == .command(Command.toggleAutoDock.text))
+    session.type("dock")
+    session.moveSelection(by: -1)
+    #expect(session.selected == .command("undo"), "↑ picks the last")
+    session.type("dock")
+    session.pageSelection(by: 1)
+    #expect(session.selected != nil)
+  }
+
+  @Test func aClickAndADigitPointAtARowAndNeedNoPicking() {
+    var session = session(places: [])
+    session.type("dock")
+    #expect(session.destination(atVisible: 1) == .command(Command.toggleAutoDock.text))
+  }
+
+  @Test func whatIsTypedAfterwardsUnpicks() {
+    var session = session(places: [])
+    session.type("doc")
+    session.moveSelection(by: 1)
+    #expect(session.selected != nil)
+    session.type("dock")
+    #expect(session.selected == nil && session.items.allSatisfy { !$0.isSelected })
+  }
+
+  @Test func underAPlaceACommandIsReachedWithTheArrowAndThenChosen() {
+    var session = session()
+    session.type("dock")
+    #expect(session.selected == .window(WindowID(103)), "Docker")
+    #expect(session.message == nil)
+    session.moveSelection(by: 1)
+    #expect(session.selected == .command("dock left"))
+  }
+
+  /// Return went to this window until commands were listed, and goes there.
+  @Test func aPlaceThatOnlyHoldsTheLettersHereAndThereStillComesBeforeACommandSpeltOut() {
+    var session = session(places: [window(101, "Numbers", "Big tables all over, nicely coloured, every size")])
+    session.type("balance")
+    #expect(session.items.map(\.row.place) == [.outOfView, .command])
+    #expect(session.selected == .window(WindowID(101)) && session.message == nil)
+    session.moveSelection(by: 1)
+    #expect(session.selected == .command(Command.equalize(all: false).text))
+  }
+
+  /// Whoever types `saf` means Safari. In Safari's one window, `saf` ↓ Return, for the next of its windows, went round to the same window
+  /// until commands were listed. It must not take Safari out of the arrangement, which is the row that stood below.
+  @Test func anAppsNameInACommandsNameSaysWhomItIsAboutAndDoesNotListIt() {
+    let commands: [FinderModel.Row] = [
+      .command(.exclude(bundleID: "com.apple.Safari"), name: "Don’t Arrange “Safari”", display: main),
+      .command(.passThrough(bundleID: "com.apple.Safari"), name: "Shortcuts Off in “Safari”", display: main),
+      .command(.include(bundleID: "com.apple.iCal"), name: "Arrange Again ▸ “Calendar”", display: main),
+      .command(.passThrough(bundleID: "com.apple.shortcuts"), name: "Shortcuts Off in “Shortcuts”", display: main),
+    ]
+    var session = FinderSession(model: FinderModel(display: main, screen: screen, rows: [window(101, "Safari", "Arbor")], commands: commands))
+    func listed(_ text: String) -> [String] {
+      session.type(text)
+      return session.items.filter { $0.row.place == .command }.map(\.row.name)
+    }
+    for text in ["s", "saf", "safari", "\"safari\"", "“Safari”", "cal", "calendar"] { #expect(listed(text).filter { !$0.hasPrefix("Shortcuts") }.isEmpty, "\(text)") }
+    #expect(listed("saf").isEmpty)
+    session.moveSelection(by: 1)
+    #expect(session.selected == .window(WindowID(101)), "round, as ever")
+    // It narrows.
+    #expect(listed("dont saf") == ["Don’t Arrange “Safari”"])
+    #expect(listed("saf arr") == ["Don’t Arrange “Safari”"], "in any order")
+    #expect(listed("off saf") == ["Shortcuts Off in “Safari”"])
+    #expect(listed("again cal") == ["Arrange Again ▸ “Calendar”"])
+    #expect(listed("arr") == ["Arrange Again ▸ “Calendar”", "Don’t Arrange “Safari”"])
+    #expect(listed("dont cal").isEmpty)
+    // A word of the command's own, though an app is called the same.
+    #expect(listed("shortcuts") == ["Shortcuts Off in “Safari”", "Shortcuts Off in “Shortcuts”"])
+    #expect(listed("Shortcuts Off in “Shortcuts”") == ["Shortcuts Off in “Shortcuts”"])
+  }
+
+  /// A row's name is cut to 80 characters, and the closing mark with it.
+  @Test func anAppsNameTooLongForTheRowIsStillTheApps() {
+    for app in ["Pause and Balance " + String(repeating: "Studio ", count: 12), "The \"Pro\" Pause and Balance " + String(repeating: "Studio ", count: 12)] {
+      let row = FinderModel.Row.command(.exclude(bundleID: "com.example.long"), name: "Don’t Arrange “\(app)”", display: main)
+      #expect(!row.name.contains("”"), "or this looks at nothing")
+      var session = FinderSession(model: FinderModel(display: main, screen: screen, rows: [], commands: [row]))
+      for text in ["pa", "pause", "bal", "studio", "and"] {
+        session.type(text)
+        #expect(session.items.isEmpty, "\(text)")
+      }
+      session.type("dont pause")
+      #expect(session.items.count == 1)
+    }
+  }
+
+  /// A row's name copied from here or from the guide, signs and all.
+  @Test func aWordOfNothingButSignsAsksNothingOfACommand() {
+    var session = session(places: [])
+    for text in ["Dock Focused Window ▸ Left", "dock - left", "dock · left", "dock > left", "▸ left"] {
+      session.type(text)
+      #expect(session.items.map(\.row.name) == ["Dock Focused Window ▸ Left"], "\(text)")
+    }
+    for text in ["▸", "-", "▸ ▸", "\"", "…"] {
+      session.type(text)
+      #expect(session.items.isEmpty, "and names none: \(text)")
+    }
+  }
+
+  /// A place is found by the first eight words and 64 letters of what was typed. What a command is called by is read to the end.
+  @Test func ofACommandEveryWordCountsHoweverManyAreTyped() {
+    let views = (1...3).map { FinderModel.Row.command(.saveView($0), name: "Saved Views ▸ Save This View As ▸ View \($0)", display: main) }
+    var session = FinderSession(model: FinderModel(display: main, screen: screen, rows: [], commands: views + commands))
+    func listed(_ text: String) -> [String] {
+      session.type(text)
+      return session.items.map(\.row.name)
+    }
+    #expect(listed("Saved Views ▸ Save This View As ▸ View 3") == [views[2].name, commands[4].name], "ten words")
+    #expect(listed("d d d d d d d d") == ["Dock Focused Window ▸ Left", "Dock New Windows", "Undo Dock"])
+    #expect(listed("d d d d d d d d zzz").isEmpty)
+    #expect(listed("d d d d d d d d d n") == ["Dock New Windows"])
+    #expect(listed(String(repeating: "dock ", count: 12) + "dock") == ["Dock Focused Window ▸ Left", "Dock New Windows", "Undo Dock"], "thirteen words")
+    // Beyond what is read at all.
+    #expect(listed("dock " + String(repeating: "d", count: 70)).isEmpty)
+    #expect(listed("dock" + String(repeating: " d", count: 200)).isEmpty)
+    #expect(listed("d d d d d d d d " + String(repeating: "d", count: 70)).isEmpty)
+    let long = FinderModel.Row.command(.exclude(bundleID: "x"), name: "Drop “\(String(repeating: "d", count: 66))”", display: main)
+    session = FinderSession(model: FinderModel(display: main, screen: screen, rows: [], commands: [long]))
+    #expect(listed("d d d d d d d d " + String(repeating: "d", count: 65) + "x").isEmpty, "a word is not read as its first 64 letters")
+    // 62 letters, and room for two: þ is th, and the x is not read.
+    let the = FinderModel.Row.command(.include(bundleID: "x"), name: "Arrangement ▸ Arrange Again ▸ “The Unarchiver”", display: main)
+    session = FinderSession(model: FinderModel(display: main, screen: screen, rows: [], commands: [the]))
+    let most = String(repeating: "arrangement ", count: 5) + "arrange "
+    #expect(listed(most + "th").count == 1, "or this looks at nothing")
+    #expect(listed(most + "thx").isEmpty && listed(most + "þx").isEmpty)
+  }
+
+  @Test func movingByNothingPicksNothing() {
+    var session = session(places: [])
+    session.type("dock")
+    session.moveSelection(by: 0)
+    #expect(session.selected == nil && !session.hasPicked)
+    session.pageSelection(by: 0)
+    #expect(session.selected == nil && !session.hasPicked)
+  }
+
+  /// As from above the list, like the arrows: not a palette's length further down.
+  @Test func thePageKeysPickTheFirstOfTheCommandsThatWait() {
+    let many = (1...30).map { FinderModel.Row.command(.saveView($0), name: "Save View \($0)", display: main) }
+    for pages in [1, -1] {
+      var session = FinderSession(model: FinderModel(display: main, screen: screen, rows: [], commands: many))
+      session.type("save")
+      #expect(session.selected == nil)
+      session.pageSelection(by: pages)
+      #expect(session.selected == .command("save-view 1"), "\(pages)")
+    }
+  }
+
+  @Test func aFreshListUnpicksUnlessThePickedRowIsStillThere() {
+    var session = session()
+    session.type("dock")
+    session.moveSelection(by: 1)
+    #expect(session.selected == .command("dock left"))
+    session.replace(model: FinderModel(display: main, screen: screen, rows: [], commands: commands, notice: "“Left” can do nothing just now"))
+    #expect(session.selected == .command("dock left"), "it was picked, and is")
+    // The place that was selected goes, and a command takes its row.
+    session = self.session()
+    session.type("dock")
+    #expect(session.selected == .window(WindowID(103)))
+    session.replace(model: FinderModel(display: main, screen: screen, rows: [places[0]], commands: commands, notice: "That window has closed"))
+    #expect(session.items.first?.row.place == .command)
+    #expect(session.selected == nil, "a second Return runs nothing")
+    #expect(session.message == "That window has closed")
+  }
+
+  /// The same with the arrows used before: what was picked was the place, and it has gone.
+  @Test func aPickDoesNotPassToTheCommandThatTookThePlacesRow() {
+    var session = session()
+    session.type("dock")
+    session.moveSelection(by: 1)
+    session.moveSelection(by: -1)
+    #expect(session.selected == .window(WindowID(103)) && session.hasPicked)
+    session.replace(model: FinderModel(display: main, screen: screen, rows: [places[0]], commands: commands, notice: "That window has closed"))
+    #expect(session.items.first?.row.place == .command)
+    #expect(session.selected == nil && !session.hasPicked, "a second Return runs nothing")
+  }
+
+  /// ↓ to the second of two windows; it closes; Return. The row it had is a command's now.
+  @Test func whereAPlaceIsLeftAFreshListSelectsAPlace() {
+    let two = [window(103, "Docker", "Containers"), window(104, "Docker", "Images")]
+    var session = session(places: two)
+    session.type("dock")
+    session.moveSelection(by: 1)
+    #expect(session.selected == .window(WindowID(104)))
+    session.replace(model: FinderModel(display: main, screen: screen, rows: [two[0]], commands: commands, notice: "That window has closed"))
+    #expect(session.items.map(\.row.place).prefix(2) == [.outOfView, .command])
+    #expect(session.selected == .window(WindowID(103)), "the nearest place, not the command in the row")
+    #expect(session.items.map(\.isSelected).prefix(2) == [true, false])
   }
 }
