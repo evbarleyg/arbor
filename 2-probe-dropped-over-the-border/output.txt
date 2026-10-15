@@ -1,0 +1,105 @@
+# mac-shell: scripts/mac-shell/probe-dropped-over-the-border.sh at bb5eee9, macOS 26.6.2, 2026-10-15T12:01Z
+built Arbor, the pointer tool and the app bundles in 8s
+com.apple.WindowManager EnableTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+session 1: Arbor pid 14060, test windows 171 172 173 (pid 14035)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+
+== two displays: the large one is the main one, the small one at its right
+> display_add 1280 800: display 5, 8D51EE93-7C85-4129-948E-B2E17900FD55
+> display_move right: now at 1920 0 1280 800
+1 07230EFA-7A8D-4E37-845C-19CC8737EEF5 0 0 1920 1080 1 main 0 0 305419896
+5 8D51EE93-7C85-4129-948E-B2E17900FD55 1920 0 1280 800 1 - 42928 1 1
+  ✔ Arbor arranges two displays
+the large display is 1920 × 1080; the small one 1280 × 800 at 1920 0; the border is at x 1920
+  ✔ the second display is the lower of the two
+
+== W1 is docked at the right of the large display; W2 floats on the small one
+> dock 171 right
+docked w171 at the right edge
+> move-to-display next 172
+moved w172 to display 2
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          12 43 942 947
+display 2 1920 0 1280 800, visible 1920 31 1280 769, camera n0, back no
+  Desktop          1932 43 1256 745
+  w171 966 43 942 947       display 1, docked
+  w172 2320 242 480 348     display 2, floating focused
+  w173 715 227 480 348      display 1, floating
+  ✔ W1 is docked on the large display
+  ✔ W2 floats
+  ✔ W2 is on the small display
+look before: W2 the window server 2320 242 480 348 | its slot state.py: window 172 has no slot in view | docked no | display 2 | in its slot no
+shot: mac-shell/01-before.png and 01-before-d2.png
+
+== the hand: taken at the left of its title bar, carried until the pointer is 50 points over the border, held, let go
+from 2410 254 to 1870 516: at the release the window should reach from 1780 to 2260: 140 points of its 480 on the large display
+> drag 2410 254 1870 516 --no-release --then-mods cmd
+look held: W2 the window server 1776 514 480 348 | its slot state.py: window 172 has no slot in view | docked no | display 2 | in its slot no
+Arbor's own windows while it is held (id pid level x y w h on owner):
+195 14060 3 1440 43 468 947 on Arbor
+187 14060 0 954 43 12 947 on Arbor
+188 14060 -2147483602 0 31 1920 971 on Arbor
+shot: mac-shell/02-held.png and 02-held-d2.png
+> release --mods cmd
+  ✔ at the release the larger part of it lay on the small display
+look 1 s after the release: W2 the window server 1440 138 468 757 | its slot 1440 43 468 947 | docked yes | display 1 | in its slot no
+shot: mac-shell/03-one-second-after.png and 03-one-second-after-d2.png
+look 3 s after the release: W2 the window server 1440 138 468 757 | its slot 1440 43 468 947 | docked yes | display 1 | in its slot no
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          12 43 936 947
+display 2 1920 0 1280 800, visible 1920 31 1280 769, camera n0, back no
+  Desktop          1932 43 1256 745
+  w171 960 43 468 947       display 1, docked
+  w172 1440 138 468 757     display 1, docked focused
+  w173 715 227 480 348      display 1, floating
+shot: mac-shell/04-three-seconds-after.png and 04-three-seconds-after-d2.png
+
+== a trip out of view and back
+> zoom 171
+framed w171
+look with W1 framed: W2 the window server 1919 974 468 757 | its slot state.py: window 172 has no slot in view | docked yes | display 1 | in its slot no
+> back
+back to everything
+look back: W2 the window server 1440 43 468 947 | its slot 1440 43 468 947 | docked yes | display 1 | in its slot yes
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          12 43 936 947
+display 2 1920 0 1280 800, visible 1920 31 1280 769, camera n0, back no
+  Desktop          1932 43 1256 745
+  w171 960 43 468 947       display 1, docked focused
+  w172 1440 43 468 947      display 1, docked
+  w173 715 227 480 348      display 1, floating
+shot: mac-shell/05-back.png and 05-back-d2.png
+
+== the same by command, for comparison: to the small display and back
+> move-to-display next 172
+moved w172 to display 2
+look moved to the small display: W2 the window server 1932 43 622 745 | its slot 1932 43 622 745 | docked yes | display 2 | in its slot yes
+> move-to-display next 172
+moved w172 to display 1
+look 1 s after the move to the large display: W2 the window server 1284 138 624 757 | its slot 1284 43 624 947 | docked yes | display 1 | in its slot no
+look 3 s after the move to the large display: W2 the window server 1284 138 624 757 | its slot 1284 43 624 947 | docked yes | display 1 | in its slot no
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n2, back no
+  Desktop          12 43 624 947
+display 2 1920 0 1280 800, visible 1920 31 1280 769, camera n0, back no
+  Desktop          1932 43 1256 745
+  w171 648 43 624 947       display 1, docked
+  w172 1284 138 624 757     display 1, docked focused
+  w173 715 227 480 348      display 1, floating
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/06-quit.png and 06-quit-d2.png
+> display_remove
+
+10 passed, 0 failed
+exit code 0

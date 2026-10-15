@@ -1,0 +1,25 @@
+# probe-dropped-over-the-border 2026-10-15T12:01Z on macOS 26.6.2, commit bb5eee9
+
+== two displays: the large one is the main one, the small one at its right
+  ✔ Arbor arranges two displays
+  ✔ the second display is the lower of the two
+
+== W1 is docked at the right of the large display; W2 floats on the small one
+  ✔ W1 is docked on the large display
+  ✔ W2 floats
+  ✔ W2 is on the small display
+
+== the hand: taken at the left of its title bar, carried until the pointer is 50 points over the border, held, let go
+  ✔ at the release the larger part of it lay on the small display
+
+== a trip out of view and back
+
+== the same by command, for comparison: to the small display and back
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+10 passed, 0 failed
