@@ -512,6 +512,17 @@ public final class WalkPlayer {
     does(.key(command, .released))
   }
 
+  /// lib-walk.sh's `way_to` and `go_that_way`: how a person runs a command of Arbor's: by the key it has now, or from Arbor's menu where it has none, for which
+  /// `arborctl` stands in. Nine keys ship, and a walk plays Arbor as it ships.
+  private func chord(of command: String) -> String? {
+    guard let command = try? Command.parse(command) else { return nil }
+    return runner.controller.activeBindings.first { $0.command == command }?.chord.text
+  }
+  func hasAKey(_ command: String) -> Bool { chord(of: command) != nil }
+  func way(to command: String) -> String { chord(of: command).map { "presses \($0)" } ?? "chooses `\(command)` from Arbor's menu" }
+  /// What Arbor refuses is nothing, as a key that can do nothing is, and a row that is grey.
+  func goThatWay(_ command: String) { if hasAKey(command) { key(command) } else { does(.command(command)) } }
+
   /// lib-day.sh's `must ctl …`: what is in Arbor's menu and on no key is asked of `arborctl`, which fails when Arbor refuses.
   @discardableResult
   func mustCtl(_ command: String) -> Bool {
@@ -618,6 +629,8 @@ public final class WalkPlayer {
     _ = clock
     does(.displays(displays, .never))
     does(.macTiling(on: setting.tiling == .defaults))
+    // Arbor as it ships. The lab's own walks begin with the whole map, because they press the key of a command.
+    does(.settings(#"{"shortcuts": "core"}"#))
     note("tiling \(setting.tiling.rawValue)")
 
     chapter("Before Arbor: the apps are open already")

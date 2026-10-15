@@ -74,7 +74,9 @@ extension WalkPlayer {
     case .tileClick(let index): tileClick(index)
     case .focusKey(let arrow):
       guard arborActs else { return leaveOut("focus_key \(arrow.rawValue): Arbor is not acting") }
-      walkAct(.switch, "focus-\(arrow.rawValue)", "presses ⌃⌥⇧ and the \(arrow.rawValue) arrow")
+      // It is nothing without a key, and has no row in the menu.
+      guard hasAKey("focus \(arrow.rawValue)") else { return leaveOut("focus_key \(arrow.rawValue): it has no key") }
+      walkAct(.switch, "focus-\(arrow.rawValue)", way(to: "focus \(arrow.rawValue)"))
       key("focus \(arrow.rawValue)")
       pass(0.4)
       // With no window that way in view, the view goes to the neighbouring space.
@@ -97,12 +99,12 @@ extension WalkPlayer {
       changed()
       acted(["moves=docked", "front=\(id(window))", "restores=\(id(window))"])
     // Every window on the display is docked, so every one of them may move.
-    case .arrangeKey: arrangementKey("arrange", "⌃⌥A", "arrange", ["moves=any"])
+    case .arrangeKey: arrangementKey("arrange", ["moves=any"])
     // What comes back may have floated, been docked or been out of view.
-    case .undo: arrangementKey("undo", "⌃⌥Z", "undo", ["moves=any"])
-    case .redo: arrangementKey("redo", "⌃⌥⇧Z", "redo", ["moves=any"])
-    case .rotate: arrangementKey("rotate", "⌃⌥R", "rotate", ["moves=docked"])
-    case .mirror: arrangementKey("mirror", "⌃⌥⇧R", "mirror", ["moves=docked"])
+    case .undo: arrangementKey("undo", ["moves=any"])
+    case .redo: arrangementKey("redo", ["moves=any"])
+    case .rotate: arrangementKey("rotate", ["moves=docked"])
+    case .mirror: arrangementKey("mirror", ["moves=docked"])
     case .pin:
       guard arborActs else { return leaveOut("pin: Arbor is not acting") }
       guard let window = frontWindow, isManaged(window) else { return leaveOut("pin: Arbor does not arrange the window in front") }
@@ -126,21 +128,21 @@ extension WalkPlayer {
       acted(["moves=any"])
     case .saveView(let number):
       guard arborActs else { return leaveOut("save_view \(number): Arbor is not acting") }
-      walkAct(.view, "save-view-\(number)", "presses ⌃⌥⇧\(number)")
-      key("save-view \(number)")
+      walkAct(.view, "save-view-\(number)", way(to: "save-view \(number)"))
+      goThatWay("save-view \(number)")
       // Remembering where one looks moves nothing.
       acted()
     case .viewN(let number):
       guard arborActs else { return leaveOut("view_n \(number): Arbor is not acting") }
-      walkAct(.view, "view-\(number)", "presses ⌃⌥\(number)")
-      key("view \(number)")
+      walkAct(.view, "view-\(number)", way(to: "view \(number)"))
+      goThatWay("view \(number)")
       acted(["moves=any"])
     case .resizeGap(let app, let points): resizeGap(app, points)
     case .resizeKey(let size):
       guard arborActs else { return leaveOut("resize_key \(size.rawValue): Arbor is not acting") }
       guard let window = frontWindow, isDocked(window) else { return leaveOut("resize_key \(size.rawValue): the window in front is not docked") }
-      walkAct(.resize, size.rawValue, "presses \([.grow: "⌃⌥⌘=", .shrink: "⌃⌥⌘-", .balance: "⌃⌥⌘0"][size]!)")
-      key(size.rawValue)
+      walkAct(.resize, size.rawValue, way(to: size.rawValue))
+      goThatWay(size.rawValue)
       changed()
       acted(["moves=docked", "front=\(id(window))"])
     case .resizeEdge(let app, let part, let points): resizeEdge(app, part, points)
@@ -171,8 +173,8 @@ extension WalkPlayer {
       beforePause = nil
     case .floatAll:
       guard arborActs else { return leaveOut("float_all: Arbor is not acting") }
-      walkAct(.wayOut, "float-all", "presses ⌃⌥⇧F")
-      key("float-all")
+      walkAct(.wayOut, "float-all", way(to: "float-all"))
+      goThatWay("float-all")
       acted(["moves=any", "restores=all", "places=1", "everything=1"])
       atHome()
     case .floatAllHere:
@@ -428,18 +430,19 @@ extension WalkPlayer {
   private func dockKey(_ arrow: WalkWord.Arrow) {
     guard arborActs else { return leaveOut("dock_key \(arrow.rawValue): Arbor is not acting") }
     guard let window = frontWindow, isManaged(window) else { return leaveOut("dock_key \(arrow.rawValue): Arbor does not arrange the window in front") }
-    walkAct(.dockKey, "dock-\(arrow.rawValue)", "presses ⌃⌥⌘ and the \(arrow.rawValue) arrow")
-    key("dock \([.left: "left", .right: "right", .up: "top", .down: "bottom"][arrow]!)")
+    let command = "dock \([.left: "left", .right: "right", .up: "top", .down: "bottom"][arrow]!)"
+    walkAct(.dockKey, "dock-\(arrow.rawValue)", way(to: command))
+    goThatWay(command)
     changed()
     want("it is docked", eventually { isDocked(window) })
     acted(["moves=docked", "front=\(id(window))"])
   }
 
-  /// One of Arbor's keys that changes the arrangement as a whole.
-  private func arrangementKey(_ slug: String, _ keys: String, _ command: String, _ wants: [String]) {
-    guard arborActs else { return leaveOut("\(slug): Arbor is not acting") }
-    walkAct(.dockKey, slug, "presses \(keys)")
-    key(command)
+  /// One of Arbor's commands that changes the arrangement as a whole, by its key or from the menu.
+  private func arrangementKey(_ command: String, _ wants: [String]) {
+    guard arborActs else { return leaveOut("\(command): Arbor is not acting") }
+    walkAct(.dockKey, command, way(to: command))
+    goThatWay(command)
     changed()
     acted(wants)
   }
@@ -593,26 +596,25 @@ extension WalkPlayer {
     guard arborActs else { return leaveOut("view \(move.rawValue): Arbor is not acting") }
     let window = frontWindow
     var wants: [String] = []
-    let (command, keys): (String, String)
+    let command: String
     switch move {
     case .frame:
       guard let window, isManaged(window) else { return leaveOut("view frame: Arbor does not arrange the window in front") }
-      (command, keys, wants) = ("zoom", "⌃⌥↩", ["front=\(id(window))"])
-    case .out: (command, keys) = ("out", "⌃⌥↑")
-    case .in: (command, keys) = ("in", "⌃⌥↓")
-    case .left: (command, keys) = ("neighbor left", "⌃⌥←")
-    case .right: (command, keys) = ("neighbor right", "⌃⌥→")
-    case .back: (command, keys) = ("back", "⌃⌥[")
-    case .forward: (command, keys) = ("forward", "⌃⌥]")
-    case .desktop: (command, keys) = ("desktop", "⌃⌥D")
+      (command, wants) = ("zoom", ["front=\(id(window))"])
+    case .out, .in, .back, .forward, .desktop: command = move.rawValue
+    case .left, .right:
+      command = "neighbor \(move.rawValue)"
+      // Walking to the neighbouring space is nothing without a key, and has no row in the menu.
+      guard hasAKey(command) else { return leaveOut("view \(move.rawValue): it has no key") }
     case .all:
       // Show Everything is about one display.
-      (command, keys) = ("show-all", "⌃⌥Space")
+      command = "show-all"
       if !second { wants = ["everything=1", "tiles=ok"] + backHome }
-    case .home: (command, keys, wants) = ("home", "⌃⌥0", ["everything=1", "tiles=ok"] + backHome)
+    // No row in the menu: without a key it is `arborctl home`, which the guide names.
+    case .home: (command, wants) = ("home", ["everything=1", "tiles=ok"] + backHome)
     }
-    walkAct(.view, "view-\(move.rawValue)", "presses \(keys)")
-    key(command)
+    walkAct(.view, "view-\(move.rawValue)", way(to: command))
+    goThatWay(command)
     acted(["moves=any"] + wants)
     if move == .home || (move == .all && !second) { atHome() }
   }
@@ -709,8 +711,8 @@ extension WalkPlayer {
     walkAct(.wayOut, "hold", "holds the view, as for a shared screen")
     guard mustCtl("hold") else { return acted() }
     acted()
-    walkAct(.view, "show-desktop-while-held", "presses ⌃⌥D, which would show the Desktop: the view is held")
-    key("desktop")
+    walkAct(.view, "show-everything-while-held", "presses ⌃⌥Space, which would show everything: the view is held")
+    key("show-all")
     acted()
     walkAct(.wayOut, "release", "lets the view go again")
     mustCtl("release")
