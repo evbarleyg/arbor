@@ -10,8 +10,8 @@
 #   round b  the gesture tap. A whole small pinch without ⌥ over a test window every 50 ms: it is the app's, so all of it must arrive, throughout.
 #   round c  the tap on drags and mouse-ups, in the middle of a ⌃⌥-drag: the button down, the band showing. Afterwards the button's release arrives
 #            somewhere, nothing of Arbor's is left on the screen, and the next plain click, drag and key arrive whole.
-# Each round twice. As in the other probe Arbor is a bundle under an identifier of its own, opened by Launch Services; only its entry is taken
-# (`tccutil reset Accessibility <identifier>`), and this script's tools keep theirs. The settings are as they ship.
+# Each round by three roads (see `take`). As in the other probe Arbor is a bundle under an identifier of its own, opened by Launch Services; only its
+# entry is taken, and this script's tools keep theirs. The settings are as they ship.
 #
 # The bars: no hole longer than a second between the loss and the taps' going, none over 150 ms (three beats of the stream) after it, nothing more than
 # 10 ms late after it, nothing lost after it, nothing stuck. A round that could not post, saw nothing arrive before the loss, or did not have
@@ -66,7 +66,7 @@ at_exit "tcc \"DELETE FROM access WHERE client = '$BUNDLE_ID';\""
 
 # judge.py <arrivals> <stream> <taken> <removed> <kinds that must arrive throughout> [<kind that is swallowed while ⌃⌥ is down and the taps are in>]
 cat > "$ARBOR_SESSION_DIR/judge.py" <<'PYTHON'
-import re, sys
+import os, re, sys
 
 def seconds(text):
     hours, minutes, rest = text.split(":")
@@ -87,7 +87,8 @@ print(f"posted {posted}, arrived {len(found)}: " + ", ".join(f"{kind} {sum(1 for
 print(f"the taps were gone {(removed - taken) * 1000:.0f} ms after the permission began to go")
 
 steady = [e for e in found if e[1] in always]
-stretches = [("before the loss", float("-inf"), taken), ("from the loss until the taps were gone", taken, removed), ("after the taps were gone", removed, float("inf"))]
+between = os.environ.get("BETWEEN", "from the loss until the taps were gone")
+stretches = [("before the loss", float("-inf"), taken), (between, taken, removed), ("after the taps were gone", removed, float("inf"))]
 facts = {}
 for name, start, end in stretches:
     part = [e for e in steady if start <= e[0] < end]
@@ -124,7 +125,7 @@ if swallowed:
 else:
     lost_after = sum(1 for number in range(1, posted + 1) if number not in numbers)
     print(f"lost altogether: {lost_after}")
-print("facts", posted, facts["before the loss"][0], facts["after the taps were gone"][0], facts["from the loss until the taps were gone"][1],
+print("facts", posted, facts["before the loss"][0], facts["after the taps were gone"][0], facts[between][1],
       facts["after the taps were gone"][1], facts["after the taps were gone"][2], lost_after, first_after, met, facts.get("clean", -1), facts.get("plain", -1),
       facts["before the loss"][1], facts["before the loss"][3], facts["after the taps were gone"][3])
 PYTHON
@@ -144,7 +145,7 @@ leave() {
 # Granted, opened, running, with its four taps; [1 | Desktop | 2]; the settings and the taps for the record; the listener listening. 1 if not.
 begin() {
   round=$1
-  step "round $round: $2"
+  step "round $round, by the road \"$ROAD\": $2"
   grant
   limit 20 open -n "$app" --env ARBOR_HOME="$ARBOR_HOME" --env ARBOR_SOCKET="$ARBOR_SOCKET" --env ARBOR_DEBUG=1 \
     --env ARBOR_ONLY_PIDS="$ARBOR_WINDOWS_PID" --env ARBOR_NO_WATCHDOG=1 --env ARBOR_NO_PICTURES=1 --env ARBOR_NO_PROMPT=1 \
@@ -166,15 +167,28 @@ begin() {
   read -r X Y <<< "$(center_of "$W2")"
   move "$X" "$Y"
   LOG_MARK=$(wc -l < "$ARBOR_HOME/arbor.log")
-  "$ASKER" arrivals "${3:-17}" > "$ARBOR_OUT/arrivals-$round.txt" 2>&1 &
+  "$ASKER" arrivals "${3:-$(($(length) + 5))}" > "$ARBOR_OUT/arrivals-$round.txt" 2>&1 &
   started $!
   eventually grep -q arrivals-ready "$ARBOR_OUT/arrivals-$round.txt" || { invalid "the listener at the end of the taps started"; leave; return 1; }
 }
+# The road the permission goes by. tccutil: `tccutil reset Accessibility <identifier>`. row: the entry deleted and tccd restarted, nothing announced, which a running
+# process feels only a quarter of a minute later: until then Arbor keeps its taps and is told yes. announced: the same, and then the notification
+# com.apple.accessibility.api, which is probably what the switch in System Settings comes to (probe-permission-grant.sh).
+ROAD=tccutil
 take() {
   TAKEN=$("$ASKER" now)
-  tccutil reset Accessibility "$BUNDLE_ID" || sudo tccutil reset Accessibility "$BUNDLE_ID"
-  echo "the permission was taken between $TAKEN and $("$ASKER" now)"
+  case "$ROAD" in
+    tccutil) tccutil reset Accessibility "$BUNDLE_ID" || sudo tccutil reset Accessibility "$BUNDLE_ID" ;;
+    row | announced)
+      tcc "DELETE FROM access WHERE service = 'kTCCServiceAccessibility' AND client = '$BUNDLE_ID';"
+      sudo killall -9 tccd 2>/dev/null
+      [ "$ROAD" = row ] || "$ASKER" announce ;;
+  esac
+  echo "the permission was taken by the road \"$ROAD\" between $TAKEN and $("$ASKER" now)"
 }
+# How long a stream lasts, and what the stretch between the deed and the taps' going is called.
+length() { [ "$ROAD" = row ] && echo 34 || echo 12; }
+between() { [ "$ROAD" = row ] && echo "FROM THE ROW'S DELETION UNTIL ARBOR NOTICED" || echo "from the loss until the taps were gone"; }
 # What Arbor's log says of it, and when the taps went.
 afterwards() {
   tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -E "ermission|event tap|stopped|ERROR" | cut -c 12-220 | tail -n 8
@@ -205,24 +219,24 @@ bars() {
 
 round_a() {
   begin "$1" "the scroll tap: ⌃⌥ down from a second before the loss, a notch and a key every 50 ms" || return
-  "$ASKER" stream 12 50 "$X" "$Y" --kinds key,wheel --ctrl-opt 3 10 > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
+  "$ASKER" stream "$(length)" 50 "$X" "$Y" --kinds key,wheel --ctrl-opt 3 "$(($(length) - 2))" > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
   stream=$!
   started "$stream"
   sleep 3.6
   arbor_taps | grep "mask=0x400000"
   tap_is 0x400000 true || invalid "the scroll tap is switched on at the loss"
   take
-  ended "$stream" 150 || invalid "the stream came to its end"
+  ended "$stream" "$(($(length) * 10 + 30))" || invalid "the stream came to its end"
   sleep 1
   cat "$ARBOR_OUT/stream-$round.txt"
   afterwards
-  python3 "$ARBOR_SESSION_DIR/judge.py" "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/stream-$round.txt" "$TAKEN" "$REMOVED" key-down,key-up wheel \
+  BETWEEN=$(between) python3 "$ARBOR_SESSION_DIR/judge.py" "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/stream-$round.txt" "$TAKEN" "$REMOVED" key-down,key-up wheel \
     > "$ARBOR_SESSION_DIR/verdict"
   bars
   [ "${plain:-0}" -ge 30 ] || invalid "plain notches arrived before ⌃⌥ went down (${plain:-0})"
   [ "${met:-1}" -eq 0 ] || invalid "Arbor swallowed the notches while it had the permission, so the tap had traffic (${met:-?} got through)"
   check "round $round: notches arrive again after the loss (the first after ${first:-?} ms)" test "${first:--1}" -ge 0
-  check "round $round: and within the second" test "${first:-9999}" -ge 0 -a "${first:-9999}" -le 1000
+  [ "$ROAD" = row ] || check "round $round: and within the second" test "${first:-9999}" -ge 0 -a "${first:-9999}" -le 1000
   check "round $round: no modifier is stuck: keys after ⌃⌥ came up carry none" test "${clean:-0}" -eq 1
   check "round $round: nothing of Arbor's is left on the screen" eventually nothing_of_arbors
   shot "round-$round-afterwards"
@@ -232,19 +246,19 @@ round_a() {
 round_b() {
   begin "$1" "the gesture tap: a small pinch without ⌥ over a test window every 50 ms" || return
   tap_is 0x20000000 true || invalid "the gesture tap is switched on"
-  "$ASKER" stream 12 50 "$X" "$Y" --kinds pinch > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
+  "$ASKER" stream "$(length)" 50 "$X" "$Y" --kinds pinch > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
   stream=$!
   started "$stream"
   sleep 4
   tap_is 0x20000000 true || invalid "the gesture tap is switched on at the loss"
   take
-  ended "$stream" 150 || invalid "the stream came to its end"
+  ended "$stream" "$(($(length) * 10 + 30))" || invalid "the stream came to its end"
   sleep 1
   cat "$ARBOR_OUT/stream-$round.txt"
   echo "pinches Arbor's tap saw begin: $(tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -c "pinch began")"
   [ "$(tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -c "pinch began")" -ge 20 ] || invalid "the gesture tap had traffic before the loss"
   afterwards
-  python3 "$ARBOR_SESSION_DIR/judge.py" "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/stream-$round.txt" "$TAKEN" "$REMOVED" gesture > "$ARBOR_SESSION_DIR/verdict"
+  BETWEEN=$(between) python3 "$ARBOR_SESSION_DIR/judge.py" "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/stream-$round.txt" "$TAKEN" "$REMOVED" gesture > "$ARBOR_SESSION_DIR/verdict"
   bars
   check "round $round: nothing of Arbor's is left on the screen" eventually nothing_of_arbors
   leave
@@ -254,7 +268,7 @@ count_since() { awk -v mark="## $1" '$0 == mark { on = 1; next } /^## / { on = 0
 mark() { sleep 0.3; echo "## $1" >> "$ARBOR_OUT/arrivals-$round.txt"; }
 round_c() {
   local x y w h
-  begin "$1" "the drag tap: the loss in the middle of a ⌃⌥-drag, the button down and the band showing" 40 || return
+  begin "$1" "the drag tap: the loss in the middle of a ⌃⌥-drag, the button down and the band showing" 75 || return
   read -r x y w h <<< "$(frame_of "$W2")"
   mark "a plain click before"
   click "$X" "$Y"
@@ -268,6 +282,7 @@ round_c() {
   shot "round-$round-1-band"
   take
   sleep 2
+  [ "$ROAD" != row ] || { for _ in 1 2 3 4 5 6 7 8 9 10; do no_taps && break; sleep 3; done; }
   afterwards
   shot "round-$round-2-after-the-loss"
   check "round $round: no band or panel of Arbor's is left on the screen, the button still down" eventually nothing_of_arbors
@@ -293,12 +308,12 @@ round_c() {
   leave
 }
 
-round_a a1
-round_b b1
-round_c c1
-round_a a2
-round_b b2
-round_c c2
+# ROADS="tccutil announced row" is all of them, which is also the default; one Mac's twenty minutes hold them.
+for ROAD in ${ROADS:-tccutil announced row}; do
+  round_a "a-$ROAD"
+  round_b "b-$ROAD"
+  round_c "c-$ROAD"
+done
 
 step "the end"
 arbor_log
