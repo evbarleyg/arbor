@@ -90,10 +90,9 @@ extension FakeWindowSystem {
     deliverEchoes()
   }
 
-  /// The app quits: its windows go one after the other, as `AXWindowSystem.forget(pid:)` reports it.
-  public func quitApp(pid: Int32) {
-    for id in windows.keys.sorted() where windows[id]!.snapshot.pid == pid { close(id) }
-  }
+  /// The app quits: its windows go one after the other, and the process is reported ended, after them or before (`quit`).
+  /// Which of the two goes by the number, so that a walk meets both and a script replays as it was played.
+  public func quitApp(pid: Int32) { quit(pid: pid, windowsFirst: pid % 2 == 0) }
 
   /// Gives a window a new number without telling anyone, as restarting its app (or the Mac) does
   /// between two runs of Arbor. Nothing happens if the new number is taken.

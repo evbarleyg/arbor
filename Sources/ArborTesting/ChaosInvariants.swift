@@ -14,6 +14,7 @@ extension ChaosRunner {
   /// Timers the controller may have pending, by prefix. A key that matches none has leaked.
   static let knownTimers = ["save", "undo-continuation", "enforce-", "space-", "resume", "focus", "rule-title-", "pending-slots", "peek", "raise-pins",
     "settings-file", "update-check", "summon-wait", "accessibility",
+    "closed-places", "ended-apps",
     "landed-", "drag-dwell", "sole-float-after-launch", "layout-open ", "release", "call-over",
     "events", "control-connection-",
     "heads-up", "minimap-",

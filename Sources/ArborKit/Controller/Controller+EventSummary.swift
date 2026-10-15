@@ -19,9 +19,12 @@ extension Controller {
         ArborEvent.Display(
           display: display.id, main: display.isMain, frame: display.frame,
           name: display.name.flatMap { $0.isEmpty ? nil : $0 }, builtIn: display.isBuiltIn))
+      // Windows that exist, as listed below. A slot that waits for its window (Controller+PendingSlots.swift) is a number
+      // in the tree and no window: whoever counts the `window` lines must come to the same number.
+      let docked = tree.allWindows.filter { windows[$0] != nil }.count
       summary.layouts.append(
         ArborEvent.Arrangement(
-          display: display.id, docked: tree.allWindows.count, floating: workspace.floating.count,
+          display: display.id, docked: docked, floating: workspace.floating.count,
           tiles: layout?.tiles.count ?? 0, frames: layout?.windowFrames ?? [:]))
 
       var outOfView = 0

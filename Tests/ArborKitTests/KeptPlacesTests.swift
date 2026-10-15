@@ -255,6 +255,19 @@ import Testing
     return (h, safari, newNotes)
   }
 
+  /// A script counts the `window` lines it was sent (`arborctl watch`, F24), and `dockedCount` must come to the same number.
+  @Test func aPlaceThatStillWaitsIsNotCountedAsADockedWindow() throws {
+    let (h, _, notes) = waitingForSafari()
+    // Safari is not open yet: its place is in the tree under a number that no window has.
+    #expect(h.controller.snapshot().waiting.count == 1)
+    #expect(h.workspace.tree.allWindows.count == 2)
+    let summary = h.controller.eventSummary(focused: nil)
+    let layout = try #require(summary.layouts.first { $0.display == h.display })
+    let docked = summary.windows.filter { $0.display == h.display && $0.docked }.map(\.id)
+    #expect(docked == [notes])
+    #expect(layout.docked == docked.count)
+  }
+
   @Test func theWindowWithTheSavedTitleTakesThePlaceOverFromTheOneThatCameFirst() {
     let (h, safari, notes) = waitingForSafari()
     // "Welcome to Xcode", a sign-in sheet, a what's-new window: what an app shows first is often not
@@ -284,6 +297,28 @@ import Testing
     h.system.setTitle(real, safari.title)
     #expect(h.workspace.isDocked(real))
     #expect(h.workspace.isFloating(welcome))
+  }
+
+  @Test(arguments: [false, true])
+  func aWindowThatWasAGuestOrPinnedWhileItWaitedForItsTitleIsNeitherOnceItIsDocked(pinned: Bool) {
+    let (saved, _, right) = lifecycle.savedPairOfOneApp()
+    let h = Harness(saved: saved)
+    let filler = h.system.open(app: "Filler")
+    for _ in 0..<3 { h.system.open(app: "Filler") }  // so that nobody gets a saved number
+    h.start()
+    h.run("dock \(filler.rawValue) top")
+    h.run("zoom \(filler.rawValue)")
+    // It opens over a framed window, without its title: a guest (F57).
+    let window = lifecycle.reopen(right, in: h, title: "")
+    #expect(h.workspace.isFloating(window))
+    #expect(h.workspace.guests?[window] != nil)
+    if pinned { h.run("pin \(window.rawValue)") }
+    h.system.setTitle(window, right.title)
+    #expect(h.workspace.isDocked(window))
+    #expect(h.workspace.guests?[window] == nil)
+    #expect(!h.workspace.isPinned(window))
+    #expect(h.workspace.pinnedWindows.isEmpty)
+    #expect(h.workspace.pinned == nil, "not even a pin that does not count")
   }
 
   @Test func theFirstWindowKeepsThePlaceOnceItHasTheSavedTitleOrTheWaitIsOver() {

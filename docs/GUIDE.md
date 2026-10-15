@@ -156,7 +156,7 @@ Browser on the left, terminal on the right, chat under the terminal, the Desktop
 - Drag the chat window onto the lower part of the terminal and let go when the preview covers its bottom half.
 - Drag the gaps until the proportions suit you.
 
-Arbor remembers the arrangement, per display, across restarts of Arbor and across a login, when apps bring their windows back. Starting Arbor puts what was docked back in its places and shows everything, whatever the view was when you quit, and a window you never docked is not moved. (A docked window too large for its place shows as a tile, as always when everything shows.) The view you quit in is one step back (**⌃⌥[**). An app that you quit and open again while Arbor runs does not get its places back yet: its windows float, and you dock them again.
+Arbor remembers the arrangement, per display, across restarts of Arbor and across a login, when apps bring their windows back. Starting Arbor puts what was docked back in its places and shows everything, whatever the view was when you quit, and a window you never docked is not moved. (A docked window too large for its place shows as a tile, as always when everything shows.) The view you quit in is one step back (**⌃⌥[**). An app that you quit and open again within three minutes goes back to its places too, and so does one that restarts for an update, unless you have docked, floated or arranged something meanwhile. A window that you close keeps no place: the next one is a new window.
 
 In a hurry? **⌃⌥A** docks every window on the display in a grid. It replaces whatever arrangement was there.
 

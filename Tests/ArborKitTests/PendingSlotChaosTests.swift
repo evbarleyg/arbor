@@ -21,6 +21,8 @@ import Testing
     visibleFrame: CGRect(x: 1440, y: 25, width: 1920, height: 1055), isMain: false)
   static let apps = ["Safari", "Mail", "Terminal"]
   static let titles = ["one", "two", ""]
+  /// Each app is a process of its own.
+  static func pid(of app: String) -> Int32 { Int32(2000 + (apps.firstIndex(of: app) ?? 9)) }
 
   func check(_ h: Harness, _ context: String) {
     var seen = Set<WindowID>()
@@ -44,8 +46,9 @@ import Testing
       // A first life: some windows, docked here and there, on one or two displays.
       let first = Harness(displays: random.next(2) == 0 ? both : [both[0]])
       for _ in 0..<(2 + random.next(5)) {
+        let app = Self.apps[random.next(3)]
         first.system.open(
-          app: Self.apps[random.next(3)], title: Self.titles[random.next(3)],
+          app: app, title: Self.titles[random.next(3)], pid: Self.pid(of: app),
           frame: CGRect(x: 100 + random.next(2500), y: 60 + random.next(500), width: 500, height: 300))
       }
       first.start()
@@ -60,8 +63,9 @@ import Testing
       let h = Harness(displays: random.next(2) == 0 ? both : [both[0]], saved: first.store.saved)
       let rebooted = random.next(2) == 0
       for window in first.system.allWindows() {
+        let app = rebooted ? Self.apps[random.next(3)] : window.appName
         let id = h.system.open(
-          app: rebooted ? Self.apps[random.next(3)] : window.appName, title: rebooted ? Self.titles[random.next(3)] : window.title,
+          app: app, title: rebooted ? Self.titles[random.next(3)] : window.title, pid: Self.pid(of: app),
           frame: window.frame)
         switch random.next(4) {
         case 0: h.system.setListed(id, false)
@@ -77,19 +81,20 @@ import Testing
       for step in 0..<40 {
         let known = h.system.allWindows().map(\.id)
         let pick = known.isEmpty ? nil : known[random.next(known.count)]
-        switch random.next(14) {
+        switch random.next(16) {
         case 0, 1:
           // Apps open windows on a display that is there.
           let width = h.system.displayList.count == 2 ? 2500 : 800
+          let app = Self.apps[random.next(3)]
           h.system.open(
-            app: Self.apps[random.next(3)], title: Self.titles[random.next(3)],
+            app: app, title: Self.titles[random.next(3)], pid: Self.pid(of: app),
             frame: CGRect(x: 100 + random.next(width), y: 60 + random.next(500), width: 500, height: 300))
         case 2: if let pick { h.system.setTitle(pick, Self.titles[random.next(3)]) }
         case 3: if let pick { h.system.close(pick) }
         case 4: if let hidden = h.system.unlisted.keys.sorted().first { h.system.setListed(hidden, true) }
         case 5: if let hidden = h.system.unlisted.keys.sorted().last { h.system.close(hidden) }
         case 6: h.system.setDisplays(h.system.displayList.count == 2 ? [both[0]] : both)
-        case 7: h.scheduler.advance(by: [0.6, 30, Controller.pendingSlotLifetime][random.next(3)])
+        case 7: h.scheduler.advance(by: [0.6, Controller.closedPlaceGrace, 30, Controller.pendingSlotLifetime][random.next(4)])
         case 8: h.run(["arrange", "float-all", "arrange all", "show-all", "desktop", "back"][random.next(6)])
         case 9:
           h.run("pause")
@@ -98,6 +103,8 @@ import Testing
         case 10: if let pick { h.run("dock \(pick.rawValue) \(["left", "right", "up", "down"][random.next(4)])") }
         case 11: if let pick { h.run(["zoom", "float", "toggle-float"][random.next(3)] + " \(pick.rawValue)") }
         case 12: if let pick { h.system.setMinimized(pick, random.next(2) == 0) }
+        // An app ends, one way or the other; it is "opened again" whenever a window of it next opens.
+        case 13, 14: h.system.quit(pid: Self.pid(of: Self.apps[random.next(3)]), windowsFirst: random.next(2) == 0)
         default: h.run("exclude com.example.\(Self.apps[random.next(3)].lowercased())")
         }
         check(h, "seed \(seed) step \(step)")

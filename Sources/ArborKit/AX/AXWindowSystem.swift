@@ -128,7 +128,11 @@ public final class AXWindowSystem: WindowSystem {
         [weak self] note in
         guard let pid = (note.userInfo?[NSWorkspace.applicationUserInfoKey] as? NSRunningApplication)?.processIdentifier
         else { return }
-        MainActor.assumeIsolated { self?.forget(pid: pid) }
+        MainActor.assumeIsolated {
+          // First: what `forget` reports gone is then known to have gone with its app.
+          self?.events?.applicationTerminated(pid)
+          self?.forget(pid: pid)
+        }
       })
     tokens.append(
       workspaceCenter.addObserver(forName: NSWorkspace.didActivateApplicationNotification, object: nil, queue: .main) {
@@ -535,6 +539,7 @@ public final class AXWindowSystem: WindowSystem {
         Task { @MainActor [weak self] in
           guard let self, self.apps[pid] != nil else { return }
           Log.info("pid \(pid) is gone without a word; forgetting its windows")
+          self.events?.applicationTerminated(pid)
           self.forget(pid: pid)
         }
       }

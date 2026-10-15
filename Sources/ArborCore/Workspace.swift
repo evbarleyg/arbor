@@ -831,3 +831,91 @@ extension Workspace {
     }
   }
 }
+
+/// Putting an arrangement back as it was before windows closed.
+extension Workspace {
+  /// Takes the tree of `earlier`: this workspace as it was before some docked windows left it. `left` is how their
+  /// going left it, and the arrangement is still that one (`isSameArrangement`). **What has been done since stays
+  /// done**: a gap that has moved since `left` has moved as far in the result (`LayoutTree.follow(gapsOf:since:)`), and
+  /// the tabs in front stay in front. What was remembered about the windows that are docked again comes back with
+  /// them, and so do the saved views and names that their going moved or took away and nobody has given anew since.
+  /// A view of everything stays a view of everything. Otherwise the view, its history, floating windows, pins and
+  /// guests stay as they are now.
+  public mutating func restoreStructure(from earlier: Workspace, left: Workspace) {
+    let showedEverything = camera == tree.root
+    var restored = earlier.tree
+    restored.follow(gapsOf: tree, since: left.tree)
+    // A group there is now need not be one in the earlier tree: with a window back beside it, its members lie in the row
+    // around it. What points at it follows, as when the tree itself takes a group apart.
+    var remap = Remap()
+    for group in tree.preorder() where !restored.contains(group) {
+      let leaves = tree.preorder(from: group).filter { !tree.isSplit($0) && restored.contains($0) }
+      guard let first = leaves.first else { continue }
+      remap.record(group, movedTo: leaves.reduce(first) { Navigation.commonAncestor($0, $1, in: restored) })
+    }
+    tree = restored
+    apply(remap)
+    // It says how the gaps of a tree came about (F61), so it comes back with them, unless it has been settled anew since.
+    if desktopIsOwedRoom == left.desktopIsOwedRoom { desktopIsOwedRoom = earlier.desktopIsOwedRoom }
+    // When the last docked window went, the Desktop became the root.
+    if showedEverything { camera = tree.root }
+    takeBackViewsAndNames(from: earlier, left: left)
+    // Only now, and not around the swap: these let go of every group that no view is on and that has no name, and a
+    // saved view or a name may be all that keeps one.
+    keepWhatIsNamed()
+    changeStructure { _ in Remap() }
+    for window in tree.allWindows {
+      floating[window] = nil
+      if undockedFrames?[window] == nil { setUndockedFrame(earlier.undockedFrames?[window], of: window) }
+    }
+    dropGuestsThatLeft()
+  }
+
+  /// Saved views and names as they are in `earlier`, where they are still as `left` has them.
+  private mutating func takeBackViewsAndNames(from earlier: Workspace, left: Workspace) {
+    for (slot, node) in earlier.savedViews where savedViews[slot] == left.savedViews[slot] && tree.contains(node) {
+      savedViews[slot] = node
+    }
+    for (name, node) in earlier.names.sorted(by: { $0.key < $1.key })
+    where names[name] == left.names[name] && tree.contains(node) {
+      // No two names alike, no space with two.
+      let alike = SpaceName.exact(name, among: names.keys)
+      guard alike == nil || alike == name, self.name(of: node) == nil || self.name(of: node) == name else { continue }
+      names[name] = node
+    }
+  }
+
+  /// For a note of how things were (`earlier` above) that is kept while more windows go: `self` is that note, `left` how
+  /// the last going left things, `now` how they are. Gaps moved, views saved and names given since then are the person's
+  /// latest word, and go into the note, so that putting it back does not take them away.
+  public mutating func follow(whatWasDoneIn now: Workspace, since left: Workspace) {
+    tree.follow(gapsOf: now.tree, since: left.tree)
+    if now.desktopIsOwedRoom != left.desktopIsOwedRoom { desktopIsOwedRoom = now.desktopIsOwedRoom }
+    follow(whatKeepsGroupsIn: now, since: left)
+  }
+
+  /// The part of that which decides whether a group goes on existing when windows are forgotten in the note: where the view
+  /// is, the saved views, the names, and who is whose guest.
+  public mutating func follow(whatKeepsGroupsIn now: Workspace, since left: Workspace) {
+    if tree.contains(now.camera) { camera = now.camera }
+    for slot in Set(now.savedViews.keys).union(left.savedViews.keys) where now.savedViews[slot] != left.savedViews[slot] {
+      savedViews[slot] = now.savedViews[slot]
+    }
+    for name in Set(now.names.keys).union(left.names.keys) where now.names[name] != left.names[name] {
+      if let node = now.names[name] {
+        for other in names.keys where names[other] == node || SpaceName.exact(name, among: [other]) != nil {
+          names[other] = nil
+        }
+        names[name] = node
+      } else {
+        names[name] = nil
+      }
+    }
+    floating = now.floating.filter { !isDocked($0.key) }
+    let nodes = tree
+    guests = now.guests?.filter { nodes.contains($0.value) }
+    dropGuestsThatLeft()
+    keepWhatIsNamed()
+    changeStructure { _ in Remap() }
+  }
+}

@@ -79,6 +79,22 @@ extension LayoutTree {
 
   public var hasLoans: Bool { !loans.isEmpty }
 
+  /// The ledger's part of `follow(gapsOf:since:)`: what has been lent, paid back or forgotten between `left` and `now` is
+  /// lent, paid back or forgotten here. Not within a group that was dissolved meanwhile, where weights are another measure.
+  mutating func follow(loansOf now: LayoutTree, since left: LayoutTree) {
+    guard now.loans != left.loans else { return }
+    var changes: [[NodeID]: Double] = [:]
+    for loan in now.loans { changes[[loan.borrower, loan.giver, loan.receiver], default: 0] += loan.weight }
+    for loan in left.loans { changes[[loan.borrower, loan.giver, loan.receiver], default: 0] -= loan.weight }
+    changes = changes.filter { nodes[$0.key[1]]?.parent == now.nodes[$0.key[1]]?.parent }
+    for index in loans.indices {
+      let loan = loans[index]
+      loans[index].weight += changes.removeValue(forKey: [loan.borrower, loan.giver, loan.receiver]) ?? 0
+    }
+    for (key, weight) in changes { loans.append(Loan(borrower: key[0], giver: key[1], receiver: key[2], weight: weight)) }
+    tidyLoans()
+  }
+
   /// Gives `weight` of the loan at `index` back now, because the receiver can spare it.
   mutating func repay(_ weight: Double, ofLoanAt index: Int) {
     let loan = loans[index]

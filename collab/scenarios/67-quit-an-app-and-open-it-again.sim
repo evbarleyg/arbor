@@ -1,0 +1,54 @@
+# Board 4.4. Mail is docked beside Safari. Quitting Mail and opening it again puts it back where it was;
+# closing a window does not keep its place.
+quiet
+open Safari
+open Mail
+open Notes
+dock 101 left
+dock 102 right
+expect left-of 101 102
+
+# ⌘Q. The neighbours close over the place at once, as for a closed window.
+quit-app Mail
+expect visible 101
+expect count docked 1
+wait 20
+
+# Mail again: another process, another window number, the same title.
+open Mail
+title 104 Mail 102
+expect docked 104
+expect left-of 101 104
+
+# An update restarts the browser: the process is simply gone, and comes back under another title.
+kill-app Safari
+wait 5
+open Safari
+expect docked 105
+expect left-of 105 104
+
+# What was done while an app was away stays done, and can be undone with the app in its place.
+dock 103 beside 104 bottom
+quit-app Safari
+resize 103 top 80
+open Safari
+expect docked 106
+expect left-of 106 104
+undo
+expect docked 106
+float 103
+
+# ⌘W is not ⌘Q: Mail lives on, so the place goes, and the next window is a new window.
+open Mail
+close 104
+open Mail
+title 108 Mail 102
+expect floating 108
+wait 10
+expect count docked 1
+
+# An app that stays away gets no place for ever.
+quit-app Safari
+wait 200
+open Safari
+expect floating 109

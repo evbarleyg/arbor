@@ -276,6 +276,10 @@ extension RecordingWindowSystem: WindowSystemEvents {
     recorder.event("windowFound", [recorder.window(window)]) { events?.windowFound(window) }
   }
 
+  public func applicationTerminated(_ pid: Int32) {
+    recorder.event("applicationTerminated", [pid]) { events?.applicationTerminated(pid) }
+  }
+
   private func beginGesture(_ id: WindowID) {
     gesture = inner.allWindows().first { $0.id == id }
   }

@@ -193,6 +193,37 @@ public struct UndoHistory: Equatable, Sendable {
     renumberings.append(Renumbering(old: old, new: new))
   }
 
+  /// For a window that was away for a while and is back under the number `window`, which is nobody's step and which no
+  /// step may take back. The steps made meanwhile are the newest in either direction, as far as neither of their
+  /// workspaces knows the window. (Not by their ids: a step from before that is undone or redone meanwhile keeps its
+  /// id, and is made anew of workspaces without the window.) Each is replaced by what `change` makes of it, or dropped.
+  public mutating func rewriteSteps(
+    on display: DisplayID, madeWithout window: WindowID, _ change: (UndoStep) -> UndoStep?
+  ) {
+    func rewritten(_ steps: [UndoStep]?) -> [UndoStep]? {
+      guard let steps else { return nil }
+      let first = steps.lastIndex { $0.workspace.contains(window) || $0.changedTo.contains(window) }.map { $0 + 1 } ?? 0
+      return Array(steps[..<first]) + steps[first...].compactMap(change)
+    }
+    undoSteps[display] = rewritten(undoSteps[display])
+    redoSteps[display] = rewritten(redoSteps[display])
+  }
+
+  /// `Workspace.setOwnFrame`, in every step.
+  public mutating func setOwnFrame(_ frame: CGRect, of window: WindowID) {
+    func changed(_ steps: [UndoStep]) -> [UndoStep] {
+      steps.map { step in
+        var step = step
+        step.workspace.setOwnFrame(frame, of: window)
+        step.changedTo.setOwnFrame(frame, of: window)
+        if step.frames[window] != nil { step.frames[window] = frame }
+        return step
+      }
+    }
+    undoSteps = undoSteps.mapValues(changed)
+    redoSteps = redoSteps.mapValues(changed)
+  }
+
   /// Forgets everything about a display (it was disconnected).
   public mutating func removeAll(on display: DisplayID) {
     undoSteps[display] = nil

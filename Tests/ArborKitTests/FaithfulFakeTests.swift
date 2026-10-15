@@ -25,6 +25,7 @@ private final class Recorder: WindowSystemEvents {
   func resizeEnded(_ id: WindowID) {}
   func keyboardFocusMoved() { log.append("keyboard moved") }
   func dragCancelled(_ id: WindowID) {}
+  func applicationTerminated(_ pid: Int32) { log.append("terminated \(pid)") }
   func windowReplaced(_ old: WindowID, by window: WindowSnapshot) { log.append("replaced \(old) by \(window.id)") }
   func pointerPressed() {}
 }
