@@ -2,7 +2,7 @@
 # The films of the first column of docs/POLISH.md: what ships, act by act; and macOS's own tiling of the same windows, which is the bar.
 #
 #   scripts/mac-shell/rehearse.sh scripts/mac-shell/films-light.sh    on Linux, first, for nothing
-#   scripts/mac-shell/run.sh scripts/mac-shell/films-light.sh         about ten minutes on a hosted Mac
+#   scripts/mac-shell/run.sh scripts/mac-shell/films-light.sh         about a quarter of an hour on a hosted Mac
 #   scripts/polish/judge.py acts .mac-shell/films-light-<run id>      anywhere, afterwards: the numbers of every act
 #   scripts/polish/judge.py score .mac-shell/films-light-<run id>     the table and the score
 #
@@ -13,7 +13,7 @@
 #
 # Whatever of the second build's defaults the commit under test does not ship yet is written out (`second_build`), and said to be: from the day a default lands the film is of what ships.
 # The keys are asked of Arbor (`bindings`), so the films follow the map in effect.
-ARBOR_TIME_LIMIT=1000
+ARBOR_TIME_LIMIT=1400
 source "$(dirname "$0")/lib-film.sh"
 needs_throwaway_mac "film the whole display, and change Reduce Motion, the appearance, the wallpaper and the display's size"
 
