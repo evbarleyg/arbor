@@ -32,7 +32,9 @@ the scenes for tabs, double clicks and continuous zoom are in the sum from the f
 - **Arbor, in two columns.** **As it ships**: every switch of Arbor's and of macOS's as it comes. This is the score, and what the gate reads. A move that does nothing as shipped is filmed doing
   nothing, and scores nothing. **With everything on** (`on-…`): the moves again with "Trackpad and mouse gestures" on and macOS's own tiling off. The laboratory's own column, for climbing: it says how good
   a move will be the day it ships, and passes no gate.
-- Every session records a trace (`docs/TRACES.md`), which comes back beside the films.
+- Every session records a trace (`docs/TRACES.md`), which comes back beside the films: what Arbor asked of macOS, and when.
+- **The window server's account**: `sampler.swift` runs beside the camera and writes down where every window is, sixty times a second. A film cannot show where a real window is while a
+  stand-in covers it; `judge.py home <run>` lays the two side by side, scene by scene. It scores nothing: it says where the cause of a miss is to be looked for.
 - **The windows**: `ArborTestWindows`, each one flat colour, on a plain wallpaper: a window is then a rectangle that a script can find in every
   frame to the pixel. Each is an app of its own (`cast_start`), with a name and an icon in the window's colour, because a person's windows are not all
   one app's, and cards that all look alike are harder on the eye, and on the ruler, than anybody's desk.
