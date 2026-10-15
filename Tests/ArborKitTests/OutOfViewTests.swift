@@ -390,9 +390,10 @@ private let side = DisplaySnapshot(
 
   /// A frame Arbor was given by nobody's hand: its app opened the window there, more than half of it showing. One of which under half
   /// shows was taken to the middle as it opened; since what is found counts as left it stays, and goes out of view and back like one that
-  /// a hand left (FoundCountsAsLeftTests).
-  @Test func aWindowItsAppOpenedOverTheEdgeIsBroughtInWhenArborPlacesIt() {
-    let h = Harness()
+  /// a hand left (FoundCountsAsLeftTests). Arbor places floating windows only where they make way. As it ships both come back exactly where
+  /// they were (F64).
+  @Test(arguments: [false, true]) func aWindowItsAppOpenedOverTheEdgeIsBroughtInWhenArborPlacesIt(makingWay: Bool) {
+    let h = Harness(settings: makingWay ? .makingWay : Settings())
     let a = h.system.open(app: "Safari", pid: 11)
     h.start()
     h.run("dock \(a.rawValue) left")
@@ -401,7 +402,11 @@ private let side = DisplaySnapshot(
     let mail = h.system.open(app: "Mail", pid: 13, frame: strip)
     h.run("zoom \(a.rawValue)")
     h.run("back")
-    #expect(main.frame.contains(h.frame(notes)!), "\(h.frame(notes)!)")
+    if makingWay {
+      #expect(main.frame.contains(h.frame(notes)!), "\(h.frame(notes)!)")
+    } else {
+      #expect(h.frame(notes) == CGRect(x: 1100, y: 300, width: 500, height: 400))
+    }
     #expect(h.frame(mail) == strip)
   }
 
@@ -480,7 +485,7 @@ private let side = DisplaySnapshot(
     #expect(!h.system.isVisible(f), "\(h.frame(f)!)")
   }
 
-  @Test func aWindowHangingOffTheScreenAtLaunchIsNotCountedAsOutOfView() {
+  @Test(arguments: [false, true]) func aWindowHangingOffTheScreenAtLaunchIsNotCountedAsOutOfView(makingWay: Bool) {
     // Framed on Safari when Arbor quit. Meanwhile a floating window was left hanging off the right edge, most of
     // it off screen but 180 points of it showing.
     let old = Harness()
@@ -492,13 +497,14 @@ private let side = DisplaySnapshot(
     var saved = old.store.saved!
     saved.workspaces[old.display]!.moveCamera(to: saved.workspaces[old.display]!.tree.leaf(containing: a)!)
 
-    let h = Harness(saved: saved)
+    let h = Harness(settings: makingWay ? .makingWay : Settings(), saved: saved)
     _ = h.system.open(app: "Safari", frame: old.frame(a)!)
     _ = h.system.open(app: "Notes", frame: CGRect(x: 1260, y: 300, width: 500, height: 400))
     h.start()
     // The books and the screen agree, one way or the other.
     #expect(h.controller.parked.contains(f) == (visibleArea(h, f) < 40), "\(h.frame(f)!)")
     h.run("show-all")
+    // Either way: nobody can tell who left it there, and less than half of it shows. Where in doubt, in view (Q20).
     #expect(h.system.isVisible(f))
   }
 

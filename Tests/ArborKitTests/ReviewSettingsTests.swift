@@ -468,8 +468,10 @@ import Testing
     #expect(h.workspace.allWindows.isEmpty)
   }
 
-  @Test func aLoneWindowGetsItsOwnFrameBackWhenTheSettingGoesOff() throws {
-    var settings = Settings()
+  /// F18 takes `floatingWindowsMakeWay` as well since Q20. Whichever of the two goes off, the window has its own frame back.
+  @Test(arguments: ["soleFloatTakesDesktop", "floatingWindowsMakeWay"])
+  func aLoneWindowGetsItsOwnFrameBackWhenTheSettingGoesOff(key: String) throws {
+    var settings = Settings.makingWay
     settings.soleFloatTakesDesktop = true
     let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", pid: 1001)
@@ -479,7 +481,7 @@ import Testing
     h.run("dock \(a.rawValue) left")
     h.scheduler.advance(by: 2)
     #expect(h.frame(c) != own)
-    #expect(h.run("set soleFloatTakesDesktop false").ok)
+    #expect(h.run("set \(key) false").ok)
     h.scheduler.advance(by: 2)
     #expect(h.frame(c) == own, "it stays at \(String(describing: h.frame(c)))")
   }

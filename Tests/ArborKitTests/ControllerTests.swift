@@ -216,7 +216,8 @@ import Testing
   }
 
   @Test func dockingPushesOverlappingFloatingWindowsOntoTheDesktop() {
-    let (h, a, b, c) = makeHarness()
+    // While floating windows make way, as until Q20. As Arbor ships they stay where they are (`FloatingFrameTests`).
+    let (h, a, b, c) = makeHarness(settings: .makingWay)
     h.system.userMove(c, to: CGRect(x: 20, y: 300, width: 500, height: 300))
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")

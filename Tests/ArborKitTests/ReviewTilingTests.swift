@@ -240,8 +240,12 @@ private let upperDisplay = DisplaySnapshot(
   }
 
   /// A pinned window is passed over only when the view arrives somewhere (F49). In view, the keyboard can reach it like any other.
-  @Test func aPinnedWindowCanBeReachedFromTheKeyboard() {
-    let (h, w) = tilingScenario(["A", "B", "Call"], ["dock $0 left", "dock $1 beside $0 down", "pin $2"])
+  @Test(arguments: [false, true]) func aPinnedWindowCanBeReachedFromTheKeyboard(makingWay: Bool) {
+    let (h, w) = tilingScenario(
+      ["A", "B", "Call"], ["dock $0 left", "dock $1 beside $0 down"], settings: makingWay ? .makingWay : Settings())
+    // The docked windows have pushed it onto the Desktop. As Arbor ships they push nothing, and a hand takes it there.
+    if !makingWay { h.system.userMove(w[2], to: CGRect(x: 900, y: 300, width: 400, height: 300)) }
+    runOK(h, "pin $2", w)
     #expect(h.frame(w[2])!.minX > h.frame(w[0])!.maxX, "it floats on the Desktop, to the right")
     h.system.userFocus(w[0])
     runOK(h, "focus right")

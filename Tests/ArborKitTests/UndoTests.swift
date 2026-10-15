@@ -545,9 +545,9 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     expectConsistent(h)
   }
 
-  @Test func theViewStepsOutUntilTheWindowThatFloatsAgainIsInView() {
+  @Test(arguments: [false, true]) func theViewStepsOutUntilTheWindowThatFloatsAgainIsInView(makingWay: Bool) {
     // [a | Desktop | b / (c | e)], framed on c.
-    let (h, a, b, c) = makeHarness()
+    let (h, a, b, c) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let e = h.system.open(app: "Terminal", frame: CGRect(x: 600, y: 300, width: 400, height: 300))
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
@@ -558,7 +558,11 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     // The column b / c would show that e has left. It went to the Desktop.
     #expect(h.workspace.isFloating(e))
     #expect(h.system.isVisible(e))
-    #expect(h.layout!.desktopFrame!.contains(h.frame(e)!))
+    if makingWay {
+      #expect(h.layout!.desktopFrame!.contains(h.frame(e)!))
+    } else {
+      #expect(h.frame(e) == CGRect(x: 600, y: 300, width: 400, height: 300), "exactly where it floated before it was docked")
+    }
     expectConsistent(h)
   }
 
@@ -872,8 +876,8 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     expectConsistent(h)
   }
 
-  @Test func aWindowDockedByARuleCanBeUndocked() {
-    var settings = Settings()
+  @Test(arguments: [false, true]) func aWindowDockedByARuleCanBeUndocked(makingWay: Bool) {
+    var settings = makingWay ? Settings.makingWay : Settings()
     settings.rules = [AppRule(app: "com.example.terminal", action: .dock(.right))]
     let (h, a, _, _) = makeHarness(settings: settings)
     h.run("dock \(a.rawValue) left")
@@ -883,7 +887,7 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     #expect(h.run("undo").message == "undid dock \(fresh) as it opened")
     #expect(h.workspace.isFloating(fresh))
     #expect(h.workspace.floating[fresh] == spot, "where its app opened it")
-    #expect(h.layout!.desktopFrame!.contains(h.frame(fresh)!))
+    if makingWay { #expect(h.layout!.desktopFrame!.contains(h.frame(fresh)!)) } else { #expect(h.frame(fresh) == spot) }
     #expect(h.run("redo").ok)
     #expect(h.workspace.isDocked(fresh))
     expectConsistent(h)
@@ -1164,8 +1168,9 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     #expect(Picture(h) == before)
   }
 
+  /// Floating windows make way here, as until Q20 (`floatingWindowsMakeWay`).
   @Test func floatingWindowsThatWerePushedAsideGoBack() {
-    let (h, a, b, c) = makeHarness()
+    let (h, a, b, c) = makeHarness(settings: .makingWay)
     let spot = CGRect(x: 420, y: 300, width: 500, height: 300)
     h.system.userMove(c, to: spot)
     h.run("dock \(a.rawValue) left")
@@ -1195,8 +1200,8 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     #expect(h.frame(c) == placed)
   }
 
-  @Test func floatingAWindowWhileTheDesktopIsOutOfViewGoesBackAndForthExactly() {
-    let (h, a, _, c, _) = makeArrangement()
+  @Test(arguments: [false, true]) func floatingAWindowWhileTheDesktopIsOutOfViewGoesBackAndForthExactly(makingWay: Bool) {
+    let (h, a, _, c, _) = makeArrangement(settings: makingWay ? .makingWay : Settings())
     let column = h.workspace.tree.parent(of: h.workspace.tree.leaf(containing: a)!)!
     h.run("zoom-node \(column.rawValue)")
     let before = Picture(h)
@@ -1207,7 +1212,7 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     h.run("redo")
     #expect(Picture(h) == after)
     h.run("show-all")
-    #expect(h.layout!.desktopFrame!.contains(h.frame(c)!))
+    if makingWay { #expect(h.layout!.desktopFrame!.contains(h.frame(c)!)) } else { #expect(h.frame(c) == after.frames[c], "it stays") }
     expectConsistent(h)
   }
 

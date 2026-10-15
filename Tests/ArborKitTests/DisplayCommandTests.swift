@@ -14,8 +14,10 @@ private let above = DisplaySnapshot(
 /// Scenario tests for `move-to-display` and `focus-display` (docs/features/F22-keyboard-tiling-tools.md).
 @Suite @MainActor struct DisplayCommandTests {
   /// Main: [ a | Desktop | b ] and a floating f. Side: [ Desktop | c ]. The pointer is on the main display.
-  func makeHarness(displays: [DisplaySnapshot]? = nil) -> (Harness, a: WindowID, b: WindowID, c: WindowID, f: WindowID) {
-    let h = Harness(displays: displays ?? [main, side])
+  func makeHarness(
+    displays: [DisplaySnapshot]? = nil, settings: Settings = Settings()
+  ) -> (Harness, a: WindowID, b: WindowID, c: WindowID, f: WindowID) {
+    let h = Harness(displays: displays ?? [main, side], settings: settings)
     let a = h.system.open(app: "A", frame: CGRect(x: 100, y: 100, width: 500, height: 400))
     let b = h.system.open(app: "B", frame: CGRect(x: 300, y: 200, width: 500, height: 400))
     let c = h.system.open(app: "C", frame: CGRect(x: 1600, y: 100, width: 500, height: 400))
@@ -63,12 +65,16 @@ private let above = DisplaySnapshot(
     expectSound(h)
   }
 
-  @Test func aFloatingWindowTooBigForTheOtherDisplayIsFittedToIt() {
-    let (h, _, _, c, f) = makeHarness()
+  @Test(arguments: [false, true]) func aFloatingWindowTooBigForTheOtherDisplayIsFittedToIt(makingWay: Bool) {
+    let (h, _, _, c, f) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.system.userMove(f, to: CGRect(x: 0, y: 25, width: 1440, height: 875))
     runOK(h, "move-to-display 2 \(f.rawValue)")
-    // The Desktop, out to the edges of the display where nothing is docked beside it.
-    #expect(side.visibleFrame.contains(h.frame(f)!) && !h.frame(f)!.overlaps(h.frame(c)!))
+    if makingWay {
+      // The Desktop, out to the edges of the display where nothing is docked beside it.
+      #expect(side.visibleFrame.contains(h.frame(f)!) && !h.frame(f)!.overlaps(h.frame(c)!))
+    } else {
+      #expect(h.frame(f) == side.visibleFrame, "as much of its own size as the display has, over what is docked there")
+    }
     #expect(h.frame(f)!.contains(h.controller.layouts[side.id]!.desktopFrame!))
   }
 
@@ -86,8 +92,9 @@ private let above = DisplaySnapshot(
   }
 
   /// Found by the random run: fitted to a small Desktop in the far corner, a window whose app keeps it larger hung off the display.
-  @Test func aFloatingWindowThatCannotShrinkToTheDesktopThereStaysOnTheDisplay() {
-    let (h, _, _, c, _) = makeHarness()
+  /// Where floating windows do not make way it is not fitted to the Desktop, and must not hang off the display either.
+  @Test(arguments: [false, true]) func aFloatingWindowThatCannotShrinkToTheDesktopThereStaysOnTheDisplay(makingWay: Bool) {
+    let (h, _, _, c, _) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let big = h.system.open(
       app: "Big", frame: CGRect(x: 300, y: 150, width: 720, height: 520), minimumSize: CGSize(width: 700, height: 500))
     // Side: [ c / Desktop ] on the right half would do; make the Desktop a small corner at the bottom right.
@@ -98,7 +105,11 @@ private let above = DisplaySnapshot(
     #expect(desktop.width < 700 && desktop.height < 500 && desktop.maxX > side.frame.maxX - 20 && desktop.maxY > side.frame.maxY - 20)
     runOK(h, "move-to-display 2 \(big.rawValue)")
     #expect(side.visibleFrame.contains(h.frame(big)!), "over its docked neighbours rather than off the display")
-    #expect(h.frame(big)!.size == CGSize(width: 700, height: 500))
+    if makingWay {
+      #expect(h.frame(big)!.size == CGSize(width: 700, height: 500))
+    } else {
+      #expect(h.frame(big) == workspace(h, side).floating[big], "nobody asked it to shrink: it is where it floats, at its own size")
+    }
     #expect(workspace(h, side).floating[big]!.size == CGSize(width: 720, height: 520), "the size it gets back when there is room")
     expectSound(h)
   }
@@ -135,9 +146,10 @@ private let above = DisplaySnapshot(
     expectSound(h)
   }
 
-  /// As for every `dock` command: a call or a note on a narrow Desktop does not end up over a tile.
+  /// As for every `dock` command: a call or a note on a narrow Desktop does not end up over a tile. That is for the sake of
+  /// windows that are kept on the Desktop: where floating windows make way, as until Q20.
   @Test func theDesktopThereStaysUsableWhileSomethingFloatsOnIt() {
-    let (h, a, _, c, _) = makeHarness()
+    let (h, a, _, c, _) = makeHarness(settings: .makingWay)
     let others = (0..<3).map { h.system.open(app: "D\($0)", frame: CGRect(x: 1700 + 20 * CGFloat($0), y: 200, width: 500, height: 400)) }
     h.system.cursor = side.visibleFrame.center
     runOK(h, "arrange")
@@ -149,9 +161,10 @@ private let above = DisplaySnapshot(
     expectSound(h)
   }
 
-  /// F18, which is off by default: who floats alone fills the Desktop, and sending a window away changes who is alone.
+  /// F18, which is off by default: who floats alone fills the Desktop, and sending a window away changes who is alone. It takes
+  /// `floatingWindowsMakeWay` as well since Q20.
   @Test func theWindowLeftAloneOnTheDesktopTakesIt() {
-    var settings = Settings()
+    var settings = Settings.makingWay
     settings.soleFloatTakesDesktop = true
     let h = Harness(displays: [main, side], settings: settings)
     let a = h.system.open(app: "A", frame: CGRect(x: 100, y: 100, width: 500, height: 400))

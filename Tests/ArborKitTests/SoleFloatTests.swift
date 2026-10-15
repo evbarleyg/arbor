@@ -12,12 +12,15 @@ private let side = DisplaySnapshot(
 
 /// F18 (T21): with `soleFloatTakesDesktop` on, a window that floats alone takes the whole Desktop, and is its old
 /// self again as soon as it has company.
+///
+/// Taking the Desktop is placing and sizing a floating window, so since Q20 F18 needs `floatingWindowsMakeWay` too. That is on
+/// in the whole suite, also where `soleFloatTakesDesktop` is off. That F18 does nothing without it is in `FloatingFrameTests`.
 @Suite @MainActor struct SoleFloatTests {
   /// The frame `f`'s user gave it.
   let own = CGRect(x: 900, y: 300, width: 320, height: 300)
 
   static func settings(on: Bool = true) -> Settings {
-    var settings = Settings()
+    var settings = Settings.makingWay
     settings.soleFloatTakesDesktop = on
     return settings
   }

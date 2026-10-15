@@ -6,11 +6,15 @@ import Testing
 
 /// Floating windows as a person meets them: they live on the Desktop, follow it, make way for
 /// docked windows, and otherwise stay the size and in the place the user gave them.
+///
+/// Making way is a setting since Q20, `floatingWindowsMakeWay`, and it ships off (`FloatingFrameTests`). The tests of making way
+/// run with it on and say so (`.makingWay`, `makingWay: true`). What has to hold whatever the setting runs as Arbor ships,
+/// or both ways.
 @Suite @MainActor struct FloatingWindowTests {
-  /// `[a | Desktop | b]` with `f` floating in the middle of the Desktop.
+  /// `[a | Desktop | b]` with `f` floating in the middle of the Desktop. As Arbor ships, unless `makingWay`.
   /// `apart`: each app is a process of its own, as a story about ⌘Tab needs. Otherwise they are one, and a switch among them is ⌘`.
-  func makeHarness(apart: Bool = false) -> (Harness, a: WindowID, b: WindowID, f: WindowID) {
-    let h = Harness()
+  func makeHarness(makingWay: Bool = false, apart: Bool = false) -> (Harness, a: WindowID, b: WindowID, f: WindowID) {
+    let h = Harness(settings: makingWay ? .makingWay : Settings())
     let a = h.system.open(app: "Safari", pid: apart ? 11 : 1000, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", pid: apart ? 12 : 1000, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
     let f = h.system.open(app: "Calculator", pid: apart ? 13 : 1000, frame: CGRect(x: 560, y: 300, width: 320, height: 300))
@@ -21,7 +25,7 @@ import Testing
   }
 
   @Test func aPushedWindowGoesBackWhenTheDesktopGrowsAgain() {
-    let h = Harness()
+    let h = Harness(settings: .makingWay)  // nothing is pushed unless floating windows make way
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let f = h.system.open(app: "Preview", frame: CGRect(x: 200, y: 200, width: 1000, height: 500))
     h.start()
@@ -34,7 +38,7 @@ import Testing
   }
 
   @Test func aPushedWindowGrowsBackAsASeamGivesTheDesktopRoom() {
-    let h = Harness()
+    let h = Harness(settings: .makingWay)  // nothing is pushed unless floating windows make way
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let f = h.system.open(app: "Preview", frame: CGRect(x: 700, y: 200, width: 700, height: 500))
     h.start()
@@ -60,7 +64,7 @@ import Testing
   }
 
   @Test func aWindowDroppedAFewPointsOverTheEdgeOfTheDesktopStillMakesWay() {
-    let (h, a, b, f) = makeHarness()
+    let (h, a, b, f) = makeHarness(makingWay: true)
     // Nobody lines a window up with the Desktop to the point: this one covers the gap and a sliver of Notes.
     let desktop = h.layout!.desktopFrame!
     h.system.userMove(f, to: CGRect(x: desktop.maxX - 300, y: 300, width: 320, height: 300))
@@ -70,7 +74,7 @@ import Testing
   }
 
   @Test func aWindowHangingOverTheScreenEdgeMakesWayForAWindowDockedUnderIt() {
-    let h = Harness()
+    let h = Harness(settings: .makingWay)  // nothing makes way unless the setting of that name is on
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let f = h.system.open(app: "Mail", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
     h.start()
@@ -85,9 +89,10 @@ import Testing
   }
 
   /// `[a | Desktop]` with `f` floating. The frame remembered for `f` is narrower than its app allows by now, as on a real
-  /// Mac in collab/evidence/traces/seam-drag-futile.jsonl.
+  /// Mac in collab/evidence/traces/seam-drag-futile.jsonl. Floating windows make way here, as until Q20
+  /// (`floatingWindowsMakeWay`): it is being pushed that asks the app for that frame.
   func withAWindowThatHasGrownStubborn() -> (Harness, a: WindowID, f: WindowID) {
-    let h = Harness()
+    let h = Harness(settings: .makingWay)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let f = h.system.open(app: "Xcode", frame: CGRect(x: 900, y: 136, width: 480, height: 352))
     h.start()
@@ -130,8 +135,8 @@ import Testing
   }
 
   @Test func aWindowThatAnswersWithLessThanItWasAskedForIsNotAskedAgainAndAgain() {
-    // A terminal that is shrunk to fit the Desktop takes the whole text cell below.
-    let h = Harness()
+    // A terminal that is shrunk to fit the Desktop takes the whole text cell below. Only while floating windows make way.
+    let h = Harness(settings: .makingWay)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let f = h.system.open(app: "Terminal", frame: CGRect(x: 300, y: 136, width: 1000, height: 352))
     h.start()
@@ -171,15 +176,17 @@ import Testing
 
   // MARK: A display that changes shape
 
+  // Never lost, and a place chosen by hand is honoured: that holds whether floating windows make way or keep their frames.
+
   func small(_ width: CGFloat = 800, _ height: CGFloat = 600) -> DisplaySnapshot {
     DisplaySnapshot(
       id: FakeWindowSystem.standardDisplay.id, frame: CGRect(x: 0, y: 0, width: width, height: height),
       visibleFrame: CGRect(x: 0, y: 25, width: width, height: height - 25), isMain: true)
   }
 
-  @Test func whatADisplayThatShrankLeavesHangingWasNotLeftHanging() {
+  @Test(arguments: [false, true]) func whatADisplayThatShrankLeavesHangingWasNotLeftHanging(makingWay: Bool) {
     // Found by the chaos lab. All of it was in view at 776,135 on a display 1440 wide. On one 800 wide 24 points of it show.
-    let h = Harness()
+    let h = Harness(settings: makingWay ? .makingWay : Settings())
     let f = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 64, y: 104, width: 230, height: 400))
     h.start()
     let chosen = CGRect(x: 776, y: 135, width: 230, height: 400)
@@ -222,8 +229,8 @@ import Testing
     #expect(small().visibleFrame.contains(h.frame(f)!), "\(h.frame(f)!)")
   }
 
-  @Test func aStripItsUserLeftIsStillAStripAfterAPause() {
-    let (h, a, b, f) = makeHarness()
+  @Test(arguments: [false, true]) func aStripItsUserLeftIsStillAStripAfterAPause(makingWay: Bool) {
+    let (h, a, b, f) = makeHarness(makingWay: makingWay)
     h.run("float \(b.rawValue)")
     h.system.close(b)
     let strip = CGRect(x: h.visibleFrame.maxX - 40, y: 200, width: 600, height: 400)
@@ -235,8 +242,8 @@ import Testing
     #expect(h.frame(f) == strip)
   }
 
-  @Test func aDisplayThatShrankDuringAPauseCountsToo() {
-    let h = Harness()
+  @Test(arguments: [false, true]) func aDisplayThatShrankDuringAPauseCountsToo(makingWay: Bool) {
+    let h = Harness(settings: makingWay ? .makingWay : Settings())
     let f = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 64, y: 104, width: 230, height: 400))
     h.start()
     h.system.userMove(f, to: CGRect(x: 776, y: 135, width: 230, height: 400))
@@ -263,8 +270,8 @@ import Testing
     #expect(h.frame(f) == strip, "chosen on the display as it is")
   }
 
-  @Test func anOverhangIsHonouredAgainWhenTheDisplayIsAsItWas() {
-    let (h, a, b, f) = makeHarness()
+  @Test(arguments: [false, true]) func anOverhangIsHonouredAgainWhenTheDisplayIsAsItWas(makingWay: Bool) {
+    let (h, a, b, f) = makeHarness(makingWay: makingWay)
     h.run("float \(b.rawValue)")
     h.system.close(b)
     let strip = CGRect(x: h.visibleFrame.maxX - 40, y: 200, width: 600, height: 400)
@@ -281,8 +288,8 @@ import Testing
     #expect(h.frame(f) == strip)
   }
 
-  @Test func whatWouldHardlyShowIsNoPlace() {
-    let (h, a, b, f) = makeHarness()
+  @Test(arguments: [false, true]) func whatWouldHardlyShowIsNoPlace(makingWay: Bool) {
+    let (h, a, b, f) = makeHarness(makingWay: makingWay)
     h.run("float \(b.rawValue)")
     h.system.close(b)
     h.system.userMove(f, to: CGRect(x: h.visibleFrame.maxX - 10, y: 200, width: 600, height: 400))
@@ -298,10 +305,13 @@ import Testing
 
   /// `[a | c | Desktop | b]`, and `f`, which cannot be narrower than 700, in the middle of a Desktop that is narrower: it
   /// hangs over `c` and `b`, and is behind them. `focused` says which of `a`, `c` and `f` has the keyboard.
+  ///
+  /// Floating windows make way here, as until Q20 (`floatingWindowsMakeWay`), unless a test says otherwise: it is a layout
+  /// that moves `f` which raises it, and as Arbor ships no layout does.
   func withAWindowTooWideForTheDesktop(
-    focused: (WindowID, WindowID, WindowID) -> WindowID
+    makingWay: Bool = true, focused: (WindowID, WindowID, WindowID) -> WindowID
   ) -> (Harness, a: WindowID, b: WindowID, c: WindowID, f: WindowID) {
-    let h = Harness()
+    let h = Harness(settings: makingWay ? .makingWay : Settings())
     let a = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", pid: 12, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
     let c = h.system.open(app: "Mail", pid: 14, frame: CGRect(x: 300, y: 200, width: 600, height: 400))
@@ -365,9 +375,9 @@ import Testing
     #expect(!h.system.raiseLog.contains(f))
   }
 
-  @Test func aLayoutThatDoesNotMoveItLeavesTheOrderAlone() {
+  @Test(arguments: [false, true]) func aLayoutThatDoesNotMoveItLeavesTheOrderAlone(makingWay: Bool) {
     // Mail and Notes were clicked after Xcode and cover part of it. That is their user's business.
-    let (h, _, _, _, f) = withAWindowTooWideForTheDesktop { a, _, _ in a }
+    let (h, _, _, _, f) = withAWindowTooWideForTheDesktop(makingWay: makingWay) { a, _, _ in a }
     let before = h.frame(f)
     h.controller.apply(settings: h.controller.settings)
     h.run("relayout")
@@ -438,7 +448,7 @@ import Testing
   }
 
   @Test func aWindowThatCannotShrinkToTheDesktopStaysOnTheScreen() {
-    let h = Harness()
+    let h = Harness(settings: .makingWay)  // nothing is asked to shrink unless floating windows make way
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let f = h.system.open(
       app: "Xcode", frame: CGRect(x: 200, y: 200, width: 1000, height: 500),
@@ -547,7 +557,7 @@ import Testing
   }
 
   @Test func aNewWindowItsAppOpenedOverDockedWindowsMakesWayLikeAnyOther() {
-    let (h, a, _, _) = makeHarness()
+    let (h, a, _, _) = makeHarness(makingWay: true)
     // ⌘N: Safari offsets the new window a little from the docked one. Nobody put it there on purpose.
     let new = h.system.open(app: "Safari", frame: h.frame(a)!.offsetBy(dx: 30, dy: 30))
     let c = h.system.open(app: "Mail", frame: CGRect(x: 600, y: 300, width: 300, height: 300))
@@ -573,7 +583,7 @@ import Testing
   }
 
   @Test func aWindowTooWideForTheDesktopCoversBothNeighboursAlikeAndNeitherWhollyNeedlessly() {
-    let h = Harness()
+    let h = Harness(settings: .makingWay)  // it is Arbor that places it: only while floating windows make way
     let a = h.system.open(app: "Safari")
     let b = h.system.open(app: "Mail")
     let f = h.system.open(
@@ -590,9 +600,9 @@ import Testing
   // MARK: The Desktop as a tile is still part of the view
 
   /// "After ⌃⌥0 nothing is out of view, without exception." The gap the guide tells people to drag is one way in.
-  @Test func showingEverythingShowsTheFloatingWindowsAlsoWhenTheDesktopIsATile() {
+  @Test(arguments: [false, true]) func showingEverythingShowsTheFloatingWindowsAlsoWhenTheDesktopIsATile(makingWay: Bool) {
     for command in ["home", "show-all", "back", "out"] {
-      let (h, a, _, f) = makeHarness()
+      let (h, a, _, f) = makeHarness(makingWay: makingWay)
       let place = h.frame(f)!
       h.run("resize \(a.rawValue) right 300")
       #expect(h.layout!.desktopFrame == nil && h.layout!.tiles.map(\.kind) == [.desktop])
@@ -677,7 +687,8 @@ import Testing
   }
 
   @Test func aTitleChangeIsNotAMove() {
-    let h = Harness()
+    // Squeezed, it is not at the frame remembered for it, which is what a report could spoil: floating windows make way here.
+    let h = Harness(settings: .makingWay)
     let a = h.system.open(app: "Notes", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let f = h.system.open(app: "Safari", frame: CGRect(x: 200, y: 200, width: 1000, height: 500))
     h.start()
@@ -691,7 +702,9 @@ import Testing
   }
 
   @Test func floatingAWindowOutOfAColumnPutsItOnTheDesktopNotOverItsOldNeighbour() {
-    let (h, a, _, _) = makeHarness()
+    // Onto the Desktop only while floating windows make way. As Arbor ships it floats around where it was docked:
+    // `aWindowFloatedByCommandTakesItsOwnSizeAndIsNotSqueezedOntoTheDesktop`.
+    let (h, a, _, _) = makeHarness(makingWay: true)
     let c = h.system.open(app: "Mail", frame: CGRect(x: 500, y: 300, width: 600, height: 400))
     h.run("dock \(c.rawValue) beside \(a.rawValue) bottom")
     #expect(h.run("float \(a.rawValue)").ok)
@@ -715,8 +728,9 @@ import Testing
     #expect(h.system.isVisible(b))
   }
 
-  @Test func aNewWindowOpenedWhileZoomedInStaysUntilTheCameraMovesAndComesBackWithTheDesktop() {
-    let (h, a, _, _) = makeHarness()
+  @Test(arguments: [false, true])
+  func aNewWindowOpenedWhileZoomedInStaysUntilTheCameraMovesAndComesBackWithTheDesktop(makingWay: Bool) {
+    let (h, a, _, _) = makeHarness(makingWay: makingWay)
     h.run("zoom \(a.rawValue)")
     let frame = CGRect(x: 400, y: 200, width: 500, height: 400)
     let new = h.system.open(app: "Safari", frame: frame)
@@ -725,6 +739,10 @@ import Testing
     #expect(h.frame(new) == frame)
     h.run("show-all")
     #expect(h.system.isVisible(new))
-    #expect(h.layout!.desktopFrame!.contains(h.frame(new)!))
+    if makingWay {
+      #expect(h.layout!.desktopFrame!.contains(h.frame(new)!))
+    } else {
+      #expect(h.frame(new) == frame, "where its app opened it, whatever is docked there")
+    }
   }
 }

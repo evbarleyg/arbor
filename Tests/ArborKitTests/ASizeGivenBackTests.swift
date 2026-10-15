@@ -8,6 +8,9 @@ import Testing
 /// A floating window that Arbor squeezed beside what is docked keeps its own size to go back to when its user only moves it.
 /// Let go a point under the Dock's line, it counted as left hanging, and its own width came back from the hand's corner, off
 /// the right edge, which the hand had never taken it across: a third of it showed, and Show Everything did not mend it.
+///
+/// Floating windows make way here, as until Q20 (`floatingWindowsMakeWay`): as Arbor ships nothing is squeezed, and a window's
+/// own size is the size it has.
 @Suite @MainActor struct ASizeGivenBackTests {
   /// How a hand moves a window: a report that it moved, or a drag with ⌘ held, which Arbor follows without docking.
   enum Hand: CaseIterable, Sendable { case moves, drags }
@@ -20,7 +23,7 @@ import Testing
 
   /// One display with a Dock. `docked` insists on `minimum` of its width; `own` floats beside it, squeezed into the rest.
   func desk(width: CGFloat = 1512, height: CGFloat = 982, dock: CGFloat = 59, minimum: CGFloat = 1188, own: CGSize) -> Desk {
-    let h = Harness()
+    let h = Harness(settings: .makingWay)
     let display = AReportAcrossABorderTests.display(
       "laptop", CGRect(x: 0, y: 0, width: width, height: height), bottom: dock, isMain: true)
     h.system.displayList = [display]

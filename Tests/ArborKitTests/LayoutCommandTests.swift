@@ -247,21 +247,33 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
 
   // MARK: Windows that are not mentioned
 
-  @Test func windowsNotMentionedFloatOnTheDesktop() {
-    let h = harness("Safari", "Mail", "Notes", "Slack")
+  @Test(arguments: [false, true]) func windowsNotMentionedFloatOnTheDesktop(makingWay: Bool) throws {
+    let h = harness("Safari", "Mail", "Notes", "Slack", settings: makingWay ? .makingWay : Settings())
+    let own = try #require(h.frame(w(103))).size
     h.run("arrange")
     #expect(h.workspace.tree.allWindows.count == 4)
+    let slots = try [w(103), w(104)].map { try #require(h.layout?.windowFrames[$0]) }
     let result = h.run("layout Safari | Desktop | Mail")
     #expect(result.message == "arranged 2 windows, floated 2")
-    for window in [w(103), w(104)] {
+    for (window, slot) in zip([w(103), w(104)], slots) {
       #expect(h.workspace.isFloating(window))
-      #expect(isOnDesktop(window, h), "\(window)")
+      if makingWay {
+        #expect(isOnDesktop(window, h), "\(window)")
+      } else {
+        // As Arbor ships it need not be on the Desktop: it takes its own size around where it was docked, like any
+        // window that a command floats (F48).
+        let corner = CGPoint(x: (slot.midX - own.width / 2).rounded(), y: (slot.midY - own.height / 2).rounded())
+        let around = CGRect(origin: corner, size: own)
+        #expect(h.frame(window) == around.fitted(into: h.visibleFrame), "\(window)")
+      }
     }
     expectNothingLost(h)
   }
 
+  /// While floating windows make way, as until Q20 (`floatingWindowsMakeWay`). As Arbor ships they stay:
+  /// `theWindowItWasTypedInStaysInView`.
   @Test func windowsThatFloatedAlreadyMoveOffTheDockedOnes() {
-    let h = harness("Safari", "Mail", "Notes")
+    let h = harness("Safari", "Mail", "Notes", settings: .makingWay)
     #expect(h.run("layout Safari | Mail | Desktop").ok)
     #expect(isOnDesktop(w(103), h))
   }
@@ -510,9 +522,10 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     #expect(try #require(h.frame(w(101))).width == width)
   }
 
-  @Test func theWindowItWasTypedInStaysInView() throws {
+  @Test(arguments: [false, true]) func theWindowItWasTypedInStaysInView(makingWay: Bool) throws {
     // The first line a laptop user types, in a Terminal that the line does not mention.
-    let h = harness("Safari", "Mail", "Notes", "Terminal")
+    let h = harness("Safari", "Mail", "Notes", "Terminal", settings: makingWay ? .makingWay : Settings())
+    let before = h.frame(w(104))
     h.system.userFocus(w(104))
     #expect(h.run("layout Safari | Mail | Notes").message == "arranged 3 windows")
     #expect(h.system.isVisible(w(104)))
@@ -522,7 +535,11 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
     let desktop = try #require(h.layout?.desktopFrame)
     #expect(desktop.width >= 240 && desktop.width < 260)
     #expect(h.layout?.tiles.isEmpty == true)
-    #expect(try #require(h.frame(w(104))).minX >= desktop.minX - 12)
+    if makingWay {
+      #expect(try #require(h.frame(w(104))).minX >= desktop.minX - 12)
+    } else {
+      #expect(h.frame(w(104)) == before, "as Arbor ships it is not even moved")
+    }
     // The columns share what is left evenly.
     let widths = try [w(101), w(102), w(103)].map { try #require(h.frame($0)).width }
     #expect(widths.max()! - widths.min()! <= 1)
@@ -886,12 +903,14 @@ private func expectNothingLost(_ h: Harness, sourceLocation: SourceLocation = #_
   }
 
   /// The Desktop that is made wide enough for a window that floats counts the places as well.
-  @Test func besideAWrittenPairTheDesktopIsMadeWideEnoughToUse() throws {
-    let h = harness("A", "B", "C", "Terminal")
+  @Test(arguments: [false, true]) func besideAWrittenPairTheDesktopIsMadeWideEnoughToUse(makingWay: Bool) throws {
+    let h = harness("A", "B", "C", "Terminal", settings: makingWay ? .makingWay : Settings())
+    let own = h.frame(w(104))
     h.system.userFocus(w(104))
     #expect(h.run("layout A | (B | C)").ok)
     #expect(try #require(h.layout?.desktopFrame).width >= 240)
-    #expect(isOnDesktop(w(104), h))
+    // Where floating windows make way it is on the Desktop. As Arbor ships it stays where it was (F64), beside a Desktop as wide.
+    if makingWay { #expect(isOnDesktop(w(104), h)) } else { #expect(h.frame(w(104)) == own) }
     #expect(h.layout?.tiles.isEmpty == true)
   }
 

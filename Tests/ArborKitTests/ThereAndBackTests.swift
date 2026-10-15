@@ -8,13 +8,14 @@ import Testing
 /// gets its place back and its neighbours their exact sizes (Controller+ThereAndBack.swift).
 @MainActor @Suite struct ThereAndBackTests {
   /// Finder, Safari and TextEdit docked on a display of 1600 × 900 with a Terminal floating, as on the hosted Mac where it was
-  /// seen. The smallest sizes are the real apps'. Safari has borrowed from the Desktop and from TextEdit.
+  /// seen. The smallest sizes are the real apps'. Safari has borrowed from the Desktop and from TextEdit; as Arbor ships (F64) from the
+  /// Desktop alone, which does not count as in use for the Terminal's sake. `make test-making-way` runs all of this on the desk as it was seen.
   private struct Desk {
     let h: Harness
     let finder, safari, textEdit, terminal: WindowID
     var docked: [WindowID] { [finder, safari, textEdit] }
 
-    @MainActor init(settings: Settings = Settings()) {
+    @MainActor init(settings: Settings = Harness.settingsWhenNoneAreGiven) {
       let h = Harness(
         displays: [
           DisplaySnapshot(
@@ -46,11 +47,19 @@ import Testing
     }
   }
 
+  /// That day floating windows made way (`floatingWindowsMakeWay`).
   @Test func theDeskIsTheOneThatWasSeen() {
-    let desk = Desk()
+    let desk = Desk(settings: .makingWay)
     #expect(desk.h.frame(desk.finder) == CGRect(x: 12, y: 43, width: 501, height: 845))
     #expect(desk.h.frame(desk.safari) == CGRect(x: 712, y: 43, width: 574, height: 845))
     #expect(desk.h.frame(desk.textEdit) == CGRect(x: 1298, y: 43, width: 290, height: 845))
+    expectWindowsMatchLayout(desk.h)
+  }
+
+  @Test func theDeskAsArborShips() {
+    let desk = Desk(settings: Settings())
+    #expect(desk.docked.map { desk.h.frame($0)?.size } == [501, 574, 385].map { CGSize(width: $0, height: 845) })
+    #expect(desk.h.frame(desk.terminal) == CGRect(x: 140, y: 60, width: 877, height: 499), "nobody touched it")
     expectWindowsMatchLayout(desk.h)
   }
 
@@ -176,12 +185,12 @@ import Testing
 
   /// A gap moved by hand while a window is away is the person's. The window that comes back takes its share of the row as
   /// it stands, and nothing goes back to where it was before the hand.
-  @Test func aGapMovedByHandMeanwhileIsThePersons() {
-    let desk = Desk()
+  @Test(arguments: [false, true]) func aGapMovedByHandMeanwhileIsThePersons(makingWay: Bool) {
+    let desk = Desk(settings: makingWay ? .makingWay : Settings())
     let before = desk.places
     desk.hide(desk.finder)
     desk.h.run("resize \(desk.textEdit.rawValue) left 100")
-    #expect(desk.h.frame(desk.textEdit)!.width == 674)
+    #expect(desk.h.frame(desk.textEdit)!.width == (makingWay ? 674 : 675))
     desk.hide(desk.finder, false)
     #expect(desk.places != before)
     #expect(desk.h.frame(desk.finder)!.width == 501)
@@ -284,12 +293,12 @@ import Testing
   }
 
   /// The next layout after the drop is the one for whoever went during the drag: it looks as it would have without a drag.
-  @Test func whoWentDuringADragIsAwayAfterTheDrop() {
-    let plain = Desk()
+  @Test(arguments: [false, true]) func whoWentDuringADragIsAwayAfterTheDrop(makingWay: Bool) {
+    let plain = Desk(settings: makingWay ? .makingWay : Settings())
     plain.hide(plain.finder)
     plain.h.system.setMinimized(plain.textEdit, true)
 
-    let desk = Desk()
+    let desk = Desk(settings: makingWay ? .makingWay : Settings())
     desk.hide(desk.finder)
     desk.h.system.beginDrag(desk.terminal)
     desk.h.system.moveDrag(to: CGPoint(x: 140, y: 500), holding: 0.1)
@@ -303,7 +312,8 @@ import Testing
     #expect(desk.places == dropped)
     desk.h.controller.relayout(desk.h.display, reason: .structure)
     #expect(desk.places == plain.places)
-    #expect(desk.places != dropped)
+    // A control, on the desk that was seen. As Arbor ships the layout at the drop has seen to it already.
+    if makingWay { #expect(desk.places != dropped) }
     expectWindowsMatchLayout(desk.h)
   }
 

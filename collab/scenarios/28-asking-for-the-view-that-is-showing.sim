@@ -24,6 +24,8 @@ zoom 101
 expect hidden 106
 home
 expect visible 106
+# Where it was, to the point (Q20).
+expect at 106 300 200 500x400
 # Until 2026-10-15 this ended `expect in-front 106`, which took a raise. It is gone on purpose; putting it back is no fix. Arbor raises nothing but
 # a window kept in view, and going out of view and coming back changes no window's place in macOS's order (QUESTIONS Q20, Q25). Why: it is what
 # the Mac would do without Arbor. A window that gets the keyboard comes over whatever floated above it, so the note lies under the window somebody

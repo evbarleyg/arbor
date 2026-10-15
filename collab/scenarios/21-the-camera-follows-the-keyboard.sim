@@ -21,11 +21,10 @@ expect hidden 102
 open Safari 500x400
 expect camera 101
 expect visible 104
-# Zooming out puts it on the Desktop with the other floating windows.
+# Zooming out leaves it exactly where it is: its frame is its person's (Q20).
 show-all
 expect visible 104
-expect left-of 101 104
-expect left-of 104 102
+expect at 104 300 200 500x400
 # ⌘Tab to a window out of view shows it, and the level is kept: from one framed window to another.
 zoom 101
 focus 102

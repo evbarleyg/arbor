@@ -3,6 +3,8 @@
 # on the right, under Mail: Mail was on the Desktop with all that showed of it, so it makes way.
 # (That it is not pulled in while nothing needs its place is in FloatingWindowTests: no `expect` form says it.)
 # Reference: T03 T08.
+# Floating windows make way here, as they did until Q20 (collab/QUESTIONS.md); as Arbor ships they keep their frames (scenario 67).
+set floatingWindowsMakeWay true
 open Safari
 open Mail 600x400
 move 102 1000 300 600 400

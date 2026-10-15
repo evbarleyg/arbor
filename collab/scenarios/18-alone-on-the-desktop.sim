@@ -3,6 +3,8 @@
 # Notes floats alone beside Safari and takes the whole Desktop; when Mail opens, Notes is its
 # old self again; when Mail closes, it takes the Desktop again; once resized by hand it is left alone.
 # Reference: T21.
+# It takes floatingWindowsMakeWay as well: without it Arbor sizes no floating window (Q20, scenario 67).
+set floatingWindowsMakeWay true
 open Safari
 open Notes
 dock 101 left

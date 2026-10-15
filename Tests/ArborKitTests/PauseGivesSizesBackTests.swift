@@ -8,6 +8,7 @@ import Testing
 ///
 /// The desk is the one a day with real apps on a hosted Mac had reached when it pressed ⌃⌥⎋: a display of 1600 × 900,
 /// two docked windows with the Desktop between them, and seven floating windows, four of them squeezed to stay on it.
+/// Floating windows make way here, as they did on that day and until Q20 (`floatingWindowsMakeWay`): as Arbor ships none is squeezed.
 @Suite @MainActor struct PauseGivesSizesBackTests {
   static let display = DisplaySnapshot(
     id: FakeWindowSystem.standardDisplay.id, frame: CGRect(x: 0, y: 0, width: 1600, height: 900),
@@ -30,7 +31,7 @@ import Testing
     }
   }
 
-  func makeDesk(settings: Settings = Settings(), watchingThePermission: Bool = false) -> Desk {
+  func makeDesk(settings: Settings = .makingWay, watchingThePermission: Bool = false) -> Desk {
     let h = Harness(displays: [Self.display], settings: settings)
     if watchingThePermission { h.watchAccessibility() }
     var own: [WindowID: CGRect] = [:]
@@ -367,7 +368,7 @@ import Testing
   }
 
   @Test func soDoesThePauseArborBeginsForAnApp() {
-    var settings = Settings()
+    var settings = Settings.makingWay
     settings.pauseForApps = ["com.example.game"]
     let desk = makeDesk(settings: settings)
     let frames = desk.frames()

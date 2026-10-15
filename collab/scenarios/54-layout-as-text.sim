@@ -7,6 +7,8 @@ open Simulator
 open Terminal
 open Slack
 layout Xcode:2 | (Simulator / Terminal) | Desktop
+# What the line does not mention floats on, where it was (Q20).
+expect still 104
 expect ok
 expect count docked 3
 expect left-of 101 102

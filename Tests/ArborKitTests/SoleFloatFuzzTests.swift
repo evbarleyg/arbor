@@ -5,7 +5,8 @@ import CoreGraphics
 import Testing
 
 /// Random walks with `soleFloatTakesDesktop` on. Whatever happens, the frame remembered as a window's own is never the one
-/// Arbor stretched it to, no window is lost, and letting go gives every floating window its own size back.
+/// Arbor stretched it to, no window is lost, and letting go gives every floating window its own size back. F18 takes
+/// `floatingWindowsMakeWay` as well since Q20; without it nothing is stretched, and all of that has to hold the same.
 @Suite @MainActor struct SoleFloatFuzzTests {
   struct Random {
     var state: UInt64
@@ -15,9 +16,9 @@ import Testing
     }
   }
 
-  @Test(arguments: Array(1...200).map { UInt64($0) }) func theWindowsOwnFrameSurvives(seed: UInt64) {
+  @Test(arguments: Array(1...200).map { UInt64($0) }, [true, false]) func theWindowsOwnFrameSurvives(seed: UInt64, makingWay: Bool) {
     var random = Random(state: seed)
-    var settings = Settings()
+    var settings = makingWay ? Settings.makingWay : Settings()
     settings.soleFloatTakesDesktop = true
     let h = Harness(settings: settings)
     var ids: [WindowID] = []

@@ -7,11 +7,14 @@ import Testing
 
 /// Summoning (docs/features/F53-summon.md) next to remembered sizes (F48) and the window that takes the Desktop (F18): a
 /// window is summoned at its own size, not at one Arbor gave it, and keeps it.
+///
+/// Arbor gives a floating window a size only where floating windows make way, as until Q20 (`floatingWindowsMakeWay`): they do in
+/// the whole suite.
 @Suite @MainActor struct ReviewSummonSizeTests {
   /// [editor | Desktop | browser], framed on the editor, which has the keyboard. The terminal floats, so it is out of
   /// view with the Desktop. So does a note, so that the terminal is not alone there.
   func makeHarness(
-    terminal size: CGSize = CGSize(width: 400, height: 300), company: Bool = true, settings: Settings = Settings()
+    terminal size: CGSize = CGSize(width: 400, height: 300), company: Bool = true, settings: Settings = .makingWay
   ) -> (Harness, editor: WindowID, browser: WindowID, terminal: WindowID) {
     let h = Harness(settings: settings)
     let editor = h.system.open(app: "Editor", pid: 1001)
@@ -83,7 +86,7 @@ import Testing
   }
 
   @Test func stretchedOverTheDesktopItIsSummonedAtItsOwnSize() {
-    var settings = Settings()
+    var settings = Settings.makingWay
     settings.soleFloatTakesDesktop = true
     let own = CGSize(width: 400, height: 300)
     let (h, editor, _, terminal) = makeHarness(company: false, settings: settings)

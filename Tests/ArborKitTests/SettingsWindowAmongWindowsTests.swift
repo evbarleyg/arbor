@@ -10,16 +10,18 @@ import Testing
 /// closed is macOS's answer: `make e2e` and scripts/mac-shell/shots-F12.sh ask for it.)
 @Suite @MainActor struct SettingsWindowAmongWindowsTests {
   @MainActor private final class World {
-    let h = Harness()
+    let h: Harness
     let docked: [WindowID]
     let floating: WindowID
     let model: SettingsPanelModel
     var commands: [String] = []
 
     /// Safari | Desktop | (Notes / Mail), Music floating, Safari with the keyboard, and everything at rest. Music has room on the
-    /// Desktop whatever the gap, unless it is `wide`: then it is as wide as the Desktop, where Arbor keeps it.
+    /// Desktop whatever the gap, unless it is `wide`: then it is as wide as the Desktop, where Arbor keeps it, which takes
+    /// `floatingWindowsMakeWay`: as Arbor ships it keeps no floating window anywhere (F64).
     init(wide: Bool = false) {
-      let h = self.h
+      let h = wide ? Harness(settings: .makingWay) : Harness()
+      self.h = h
       var windows = ["Safari", "Notes", "Mail"].enumerated().map { index, app in
         h.system.open(app: app, frame: CGRect(x: 100 + 60 * index, y: 100 + 40 * index, width: 600, height: 400))
       }

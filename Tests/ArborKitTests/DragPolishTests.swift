@@ -736,6 +736,8 @@ private let side = DisplaySnapshot(
 
 // MARK: Pushed windows stay pushed (T08)
 
+/// Floating windows make way here, as until Q20 (`floatingWindowsMakeWay`): as Arbor ships, the trial layouts of a drag move
+/// no floating window that is in view, so none is pushed.
 @Suite @MainActor struct DragKeepPushedTests {
   /// c rests in the middle of the Desktop. Another window is dragged to the top screen edge and then
   /// away: while it is at the edge the Desktop has given up its top half, which pushes c down.
@@ -744,6 +746,7 @@ private let side = DisplaySnapshot(
   ) -> (DragScene, rest: CGRect, pushed: CGRect, after: CGRect) {
     let s = DragScene {
       $0.reflowWhileDragging = true
+      $0.floatingWindowsMakeWay = true
       configure(&$0)
     }
     let d = s.h.system.open(app: "Terminal", frame: CGRect(x: 600, y: 500, width: 300, height: 200))
@@ -788,7 +791,10 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aPushedWindowWhoseAppDoesNotAnswerAtTheEndKeepsThePlaceItsUserGaveIt() {
-    let s = DragScene { $0.reflowWhileDragging = true }
+    let s = DragScene {
+      $0.reflowWhileDragging = true
+      $0.floatingWindowsMakeWay = true
+    }
     let rest = CGRect(x: s.desktop.minX + 10, y: 400, width: 300, height: 200)
     let slow = s.h.system.open(app: "Slow", pid: 77, frame: rest)
     s.h.system.userMove(slow, to: rest)
@@ -810,7 +816,10 @@ private let side = DisplaySnapshot(
   }
 
   @Test func aPushThatTheDropConfirmsIsNotMadeTwice() {
-    let s = DragScene { $0.reflowWhileDragging = true }
+    let s = DragScene {
+      $0.reflowWhileDragging = true
+      $0.floatingWindowsMakeWay = true
+    }
     let d = s.h.system.open(app: "Terminal", frame: CGRect(x: 600, y: 500, width: 300, height: 200))
     let rest = CGRect(x: s.desktop.minX + 10, y: 400, width: 300, height: 200)
     s.h.system.userMove(s.c, to: rest)

@@ -8,8 +8,8 @@ import Testing
 /// Every way Arbor can end, and what it finds when it starts again: no window may stay out of view.
 @Suite @MainActor struct LifecycleTests {
   /// Three floating windows, started.
-  func makeHarness() -> (Harness, WindowID, WindowID, WindowID) {
-    let h = Harness()
+  func makeHarness(settings: Settings = Settings()) -> (Harness, WindowID, WindowID, WindowID) {
+    let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 200, width: 600, height: 400))
     let c = h.system.open(app: "Mail", frame: CGRect(x: 500, y: 300, width: 600, height: 400))
@@ -20,7 +20,7 @@ import Testing
   /// A new Arbor process that finds the windows of `h` exactly where they are now, under the same
   /// numbers, as after a crash or `kill -9`.
   func relaunch(after h: Harness, saved: PersistedState?) -> Harness {
-    let again = Harness(displays: h.system.displayList, saved: saved)
+    let again = Harness(displays: h.system.displayList, settings: h.controller.settings, saved: saved)
     for window in h.system.allWindows() {
       let id = again.system.open(
         app: window.appName, bundleID: window.bundleID, title: window.title, pid: window.pid, frame: window.frame)
@@ -121,8 +121,8 @@ import Testing
     #expect(again.system.isVisible(c), "\(again.frame(c)!)")
   }
 
-  @Test func aCrashWhileZoomedInKeepsTheArrangement() {
-    let (h, a, b, c) = makeHarness()
+  @Test(arguments: [false, true]) func aCrashWhileZoomedInKeepsTheArrangement(makingWay: Bool) {
+    let (h, a, b, c) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("dock \(a.rawValue) left")
     h.run("dock \(b.rawValue) right")
     h.run("zoom \(a.rawValue)")
@@ -134,7 +134,9 @@ import Testing
     #expect(again.system.isVisible(a))
     again.run("show-all")
     for window in [a, b, c] { #expect(again.system.isVisible(window), "\(window)") }
-    #expect(again.frame(c) == CGRect(x: 500, y: 300, width: 600, height: 400).fitted(into: again.layout!.desktopFrame!))
+    // Where it was, to the point; or, where floating windows make way, as near to that as the Desktop allows.
+    let own = CGRect(x: 500, y: 300, width: 600, height: 400)
+    #expect(again.frame(c) == (makingWay ? own.fitted(into: again.layout!.desktopFrame!) : own))
   }
 
   @Test func aCrashIsRecoveredFromEvenIfADisplayWentAwayMeanwhile() {

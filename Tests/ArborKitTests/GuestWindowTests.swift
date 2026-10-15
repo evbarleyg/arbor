@@ -34,16 +34,21 @@ import Testing
     #expect(h.frame(new) == place, "Back brings it back, where it was")
   }
 
-  @Test func itIsInViewWheneverItsHostIs() {
-    let (h, _, b) = framed()
+  @Test(arguments: [false, true]) func itIsInViewWheneverItsHostIs(makingWay: Bool) {
+    let (h, _, b) = framed(settings: makingWay ? .makingWay : Settings())
     let new = openGuest(h)
     h.run("show-all")
     #expect(h.system.isVisible(new))
-    #expect(isOnDesktop(new, h), "with the Desktop in view it sits there like any floating window")
+    if makingWay {
+      #expect(isOnDesktop(new, h), "with the Desktop in view it sits there like any floating window")
+    } else {
+      #expect(h.frame(new) == place, "it was in view and is in view: like any floating window, it is not moved")
+    }
     h.run("zoom \(b.rawValue)")
     #expect(!h.system.isVisible(new))
     h.run("desktop")
     #expect(h.system.isVisible(new), "and the Desktop still shows every floating window")
+    if !makingWay { #expect(h.frame(new) == place, "where it was") }
   }
 
   @Test func switchingToAGuestOutOfViewGoesToItsHost() {

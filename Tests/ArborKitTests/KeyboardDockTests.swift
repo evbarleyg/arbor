@@ -7,8 +7,8 @@ import Testing
 /// Walking a docked window around with `dock <edge>` (⌃⌥⌘ + arrow).
 @Suite @MainActor struct KeyboardDockTests {
   /// Four windows arranged as `[a / b | c / d | Desktop]`.
-  func grid() -> (Harness, [WindowID]) {
-    let h = Harness()
+  func grid(settings: Settings = Settings()) -> (Harness, [WindowID]) {
+    let h = Harness(settings: settings)
     let ids = ["A", "B", "C", "D"].enumerated().map { index, app in
       // Each a process of its own, so that one of them can be hidden.
       h.system.open(
@@ -68,8 +68,10 @@ import Testing
     }
   }
 
+  /// While floating windows make way, as until Q20 (`floatingWindowsMakeWay`), they need a Desktop to be on. As Arbor ships they
+  /// keep their frames whatever its size, and a `dock` keeps no room for their sake.
   @Test func walkingAWindowDoesNotSqueezeADesktopThatHoldsWindowsIntoATile() {
-    let (h, ids) = grid()
+    let (h, ids) = grid(settings: .makingWay)
     // A call window on the narrow Desktop column.
     let call = h.system.open(app: "Zoom", frame: CGRect(x: 1150, y: 200, width: 260, height: 300))
     h.system.userMove(call, to: CGRect(x: 1150, y: 200, width: 260, height: 300))

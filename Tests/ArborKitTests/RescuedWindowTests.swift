@@ -399,9 +399,11 @@ private func rect(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloa
 
   /// Left by hand across the border to the display on the right; then a window is docked on that side, and Arbor pushes it aside. The
   /// display on the right goes, and macOS moves nothing. That is no rescue: its person's place is still the one Float All takes it back to.
+  /// Where floating windows make way (`floatingWindowsMakeWay`): as Arbor ships it pushes nothing aside (F64).
   @Test func whereArborPushedItAsideIsNoRescue() {
     let world = played(
       """
+      settings {"floatingWindowsMakeWay":true}
       displays main:0,0,1440,900:25,0,0,0* side:1440,0,1920,1080:0,0,0,0 windows-never
       launch
       open 101 Notes pid 1001 at 200 200 500 400
@@ -423,11 +425,11 @@ private func rect(_ x: CGFloat, _ y: CGFloat, _ width: CGFloat, _ height: CGFloa
   }
 
   /// The same with a window too wide for what is left beside the docked one, which Arbor makes smaller; and this time something does move it,
-  /// in the size Arbor gave. That size is not its own: the one remembered stays.
+  /// in the size Arbor gave. That size is not its own: the one remembered stays. Where floating windows make way, again.
   @Test func aSizeArborGaveIsNotTakenForItsOwn() {
     let main = DisplaySnapshot(id: DisplayID("main"), frame: rect(0, 0, 1440, 900), visibleFrame: rect(0, 25, 1440, 875), isMain: true)
     let side = DisplaySnapshot(id: DisplayID("side"), frame: rect(1440, 0, 1920, 1080), visibleFrame: rect(1440, 0, 1920, 1080), isMain: false)
-    let h = Harness(displays: [main, side])
+    let h = Harness(displays: [main, side], settings: .makingWay)
     let n = h.system.open(app: "Notes", frame: rect(200, 200, 1000, 400))
     let s = h.system.open(app: "Safari", frame: rect(100, 100, 700, 500))
     h.start()

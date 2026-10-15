@@ -910,10 +910,10 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
     #expect(h.run("grow").message == "\(f) cannot grow any further")
   }
 
-  /// Floating windows live on the Desktop. One that grew over its docked neighbours would be squeezed back at the next
-  /// change of the arrangement, so it stops at the Desktop's edge.
+  /// Where floating windows make way, as until Q20, they live on the Desktop. One that grew over its docked neighbours would be
+  /// squeezed back at the next change of the arrangement, so it stops at the Desktop's edge.
   @Test func aFloatingWindowOnTheDesktopGrowsNoFurtherThanTheDesktop() {
-    let (h, w) = tilingScenario(["A", "B", "F"], ["dock $0 left", "dock $1 right"])
+    let (h, w) = tilingScenario(["A", "B", "F"], ["dock $0 left", "dock $1 right"], settings: .makingWay)
     let f = w[2]
     h.system.userFocus(f)
     let desktop = h.layout!.desktopFrame!
@@ -926,6 +926,19 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
     // Nothing jumps when the arrangement next changes.
     runOK(h, "relayout")
     #expect(h.frame(f) == grown)
+    expectSound(h)
+  }
+
+  /// As Arbor ships nothing squeezes it back, so it has the whole display, over its docked neighbours.
+  @Test func aFloatingWindowThatMakesWayForNothingGrowsAsFarAsTheDisplay() {
+    let (h, w) = tilingScenario(["A", "B", "F"], ["dock $0 left", "dock $1 right"])
+    let f = w[2]
+    h.system.userFocus(f)
+    runOK(h, "grow 1000000")
+    #expect(h.frame(f) == h.visibleFrame)
+    #expect(h.run("grow").message == "\(f) cannot grow any further")
+    runOK(h, "relayout")
+    #expect(h.frame(f) == h.visibleFrame, "and there it stays")
     expectSound(h)
   }
 
@@ -953,9 +966,10 @@ private func columns(settings: Settings = Settings()) -> (Harness, WindowID, Win
     #expect(!h.run("shrink 0.5").ok && h.overlays.finishedAnimations == before + 1, "nothing moved, nothing ends")
   }
 
-  /// F18, which is off by default: a window that floats alone fills the Desktop until its user takes it in hand.
+  /// F18, which is off by default: a window that floats alone fills the Desktop until its user takes it in hand. It takes
+  /// `floatingWindowsMakeWay` as well since Q20.
   @Test func aWindowThatFilledTheDesktopKeepsTheSizeItWasShrunkTo() {
-    var settings = Settings()
+    var settings = Settings.makingWay
     settings.soleFloatTakesDesktop = true
     let (h, w) = tilingScenario(["A", "F"], ["dock $0 left"], settings: settings)
     let f = w[1]

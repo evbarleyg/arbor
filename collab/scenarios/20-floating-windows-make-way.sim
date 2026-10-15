@@ -3,6 +3,8 @@
 # way, stays in view when the Desktop is squeezed into a tile, and is left alone
 # where its owner puts it on purpose.
 # Reference: T03 T08 T50.
+# Floating windows make way here, as they did until Q20 (collab/QUESTIONS.md); as Arbor ships they keep their frames (scenario 67).
+set floatingWindowsMakeWay true
 open Safari 440x400
 open Preview 1000x500
 dock 101 left

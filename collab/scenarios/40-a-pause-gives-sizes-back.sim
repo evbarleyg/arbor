@@ -5,6 +5,8 @@
 # the arrangement is back.
 # Reference: F40, F48; "quitting, Float All and pause give windows back their own earlier sizes".
 quiet
+# Floating windows make way here, as they did on that day and until Q20 (collab/QUESTIONS.md); as Arbor ships none is squeezed (scenario 67).
+set floatingWindowsMakeWay true
 display-size 1600x900 31
 open Finder 920x436
 open Safari 1324x791

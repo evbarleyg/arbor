@@ -11,9 +11,10 @@ import Testing
 @Suite @MainActor struct HoldRescueTests {
   /// [keynote | Desktop | mail], framed on keynote, which has the keyboard.
   /// `apart`: Keynote is a process of its own, as a story about ⌘Tab needs. Otherwise they are one, and a switch among them is ⌘`.
-  func stage(apart: Bool = false) -> (h: Harness, keynote: WindowID, mail: WindowID) {
+  func stage(makingWay: Bool = false, apart: Bool = false) -> (h: Harness, keynote: WindowID, mail: WindowID) {
     var settings = Settings()
     settings.holdStillWhileCameraIsOn = true  // it ships off
+    settings.floatingWindowsMakeWay = makingWay  // so does this
     let h = Harness(settings: settings)
     let keynote = h.system.open(app: "Keynote", pid: apart ? 11 : 1000)
     let mail = h.system.open(app: "Mail")
@@ -115,8 +116,9 @@ import Testing
   }
 
   /// Found by HoldFuzzTests: a layout puts floating windows that are out of view back on a Desktop that is in view.
-  @Test(arguments: ["hold", "hold still"]) func itIsKeptOffADesktopThatIsInViewUntilTheViewMoves(text: String) {
-    let (h, keynote, mail) = stage()
+  @Test(arguments: ["hold", "hold still"], [false, true])
+  func itIsKeptOffADesktopThatIsInViewUntilTheViewMoves(text: String, makingWay: Bool) {
+    let (h, keynote, mail) = stage(makingWay: makingWay)
     // The view is on the Desktop alone, where Notes floats: Mail's window is out of view, the Desktop its message would float on is not.
     h.system.open(app: "Notes")
     h.run("desktop")
@@ -133,7 +135,13 @@ import Testing
     #expect(!h.system.isVisible(note), "the end of a hold brings nothing into view")
     h.run("show-all")
     #expect(h.system.isVisible(note), "the next move of the view does")
-    #expect(h.layout!.desktopFrame!.contains(h.frame(note)!.center))
+    if makingWay {
+      #expect(h.layout!.desktopFrame!.contains(h.frame(note)!.center))
+    } else {
+      // Where it would have been brought at once without a hold, whatever is docked there.
+      #expect(h.frame(note)!.center.x == h.visibleFrame.midX)
+      #expect(h.visibleFrame.contains(h.frame(note)!))
+    }
   }
 
   /// Found by HoldFuzzTests. The rule would leave the view where it is, and put a window into it that nobody has seen.

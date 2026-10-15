@@ -354,7 +354,8 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
 
   @Test func pinnedWhereDockedWindowsHadPushedItThatIsItsPlaceFromNowOn() {
     // Or whatever sends floating windows back to where the user left them (float-all, quitting) would move it.
-    let h = Harness()
+    // Floating windows make way here, as until Q20 (`floatingWindowsMakeWay`): otherwise nothing pushes one.
+    let h = Harness(settings: .makingWay)
     let editor = h.system.open(app: "Editor", pid: 1001)
     let browser = h.system.open(app: "Browser", pid: 1002)
     // Small enough for the Desktop, so it is pushed and not squeezed (`aWindowTheDesktopSqueezedIsItsOwnSizeOncePinned`).
@@ -506,9 +507,10 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     #expect(h.frame(browser) == frame)
   }
 
-  /// [a | Desktop | b] with a terminal 900 points wide on a Desktop that is narrower, so Arbor has squeezed it.
+  /// [a | Desktop | b] with a terminal 900 points wide on a Desktop that is narrower, so Arbor has squeezed it. Floating
+  /// windows make way here, as until Q20 (`floatingWindowsMakeWay`): as Arbor ships nothing is squeezed.
   func makeHarnessWithASqueezedWindow() -> (Harness, a: WindowID, terminal: WindowID, own: CGSize) {
-    let h = Harness()
+    let h = Harness(settings: .makingWay)
     let a = h.system.open(app: "A", pid: 1001)
     let b = h.system.open(app: "B", pid: 1002)
     let terminal = h.system.open(app: "Term", pid: 1003, frame: CGRect(x: 200, y: 200, width: 900, height: 400))
@@ -554,7 +556,7 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
   }
 
   @Test func squeezedInHeightItIsItsOwnSizeOncePinnedToo() {
-    let h = Harness()
+    let h = Harness(settings: .makingWay)  // squeezed: only while floating windows make way
     let a = h.system.open(app: "A", pid: 1001)
     let b = h.system.open(app: "B", pid: 1002)
     let notes = h.system.open(app: "Notes", pid: 1003, frame: CGRect(x: 500, y: 60, width: 400, height: 760))
@@ -569,8 +571,8 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
   }
 
   @Test func squeezedAtTheEdgeOfTheScreenItGrowsInward() {
-    // [a | b | Desktop]: around where it is would be half off the screen.
-    let h = Harness()
+    // [a | b | Desktop]: around where it is would be half off the screen. Squeezed: only while floating windows make way.
+    let h = Harness(settings: .makingWay)
     let a = h.system.open(app: "A", pid: 1001)
     let b = h.system.open(app: "B", pid: 1002)
     let terminal = h.system.open(app: "Term", pid: 1003, frame: CGRect(x: 500, y: 200, width: 900, height: 400))

@@ -19,8 +19,8 @@ private let side = DisplaySnapshot(
   let notesFrame = CGRect(x: 820, y: 300, width: 400, height: 300)
 
   /// Safari (101), Mail (102) and Notes (103), floating, each at a size of its own.
-  func harness(displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay]) -> Harness {
-    let h = Harness(displays: displays)
+  func harness(displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Settings()) -> Harness {
+    let h = Harness(displays: displays, settings: settings)
     h.system.open(app: "Safari", frame: safariFrame)
     h.system.open(app: "Mail", frame: mailFrame)
     h.system.open(app: "Notes", frame: notesFrame)
@@ -261,9 +261,10 @@ private let side = DisplaySnapshot(
   }
 
   /// From mutation testing. A window that will not shrink to the Desktop's width hangs over its edge, so only the note that it
-  /// was Arbor that put it there tells later layouts that it is not there on purpose.
+  /// was Arbor that put it there tells later layouts that it is not there on purpose. Floating windows make way here, as until
+  /// Q20 (`floatingWindowsMakeWay`): as Arbor ships a line pushes nothing aside.
   @Test func aWindowThatALinePushedAsideGoesBackWhenThereIsRoomAgain() {
-    let h = harness()
+    let h = harness(settings: .makingWay)
     let terminal = h.system.open(
       app: "Terminal", frame: CGRect(x: 300, y: 200, width: 900, height: 500), minimumSize: CGSize(width: 600, height: 300))
     let own = CGRect(x: 100, y: 150, width: 900, height: 500)

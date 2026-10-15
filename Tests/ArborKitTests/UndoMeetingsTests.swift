@@ -299,15 +299,21 @@ private final class Listener {
     expectWindowsMatchLayout(h)
   }
 
-  @Test func aWindowLeftAsAStripGoesBackToItsStripWhenTheDockThatPushedItAsideIsUndone() {
-    let h = Harness()
+  /// Only where floating windows make way does the dock push it aside. After the undo it is at its strip either way.
+  @Test(arguments: [false, true])
+  func aWindowLeftAsAStripGoesBackToItsStripWhenTheDockThatPushedItAsideIsUndone(makingWay: Bool) {
+    let h = Harness(settings: makingWay ? .makingWay : Settings())
     let a = h.system.open(app: "Preview", pid: 1007, frame: CGRect(x: 78, y: 285, width: 329, height: 388))
     let b = h.system.open(app: "Safari", pid: 1000, frame: CGRect(x: 500, y: 300, width: 397, height: 296))
     h.start()
     let aside = CGRect(x: -350, y: 224, width: 397, height: 296)
     h.system.userMove(b, to: aside)
     h.run("dock \(a.rawValue) left")
-    #expect(h.frame(b) != aside, "Preview has taken that side of the display")
+    if makingWay {
+      #expect(h.frame(b) != aside, "Preview has taken that side of the display")
+    } else {
+      #expect(h.frame(b) == aside, "its frame is its person's, whatever is docked there")
+    }
     #expect(h.run("undo").ok)
     #expect(h.frame(b) == aside, "not pulled into full view, to jump back at the next layout")
     expectWindowsMatchLayout(h)
@@ -385,13 +391,15 @@ private final class Listener {
     #expect(frames(h) == before.1)
   }
 
-  /// Larger than the display, where its user left it, and pushed aside by the dock: the undo has to take it back there.
-  @Test(arguments: [
-    CGRect(x: -100, y: 25, width: 2000, height: 1500), CGRect(x: 0, y: 25, width: 1714, height: 2180),
-    CGRect(x: -300, y: 40, width: 2400, height: 1400), CGRect(x: 200, y: 100, width: 1900, height: 1300),
-  ])
-  func aWindowLargerThanTheDisplayGoesBackWhereItWas(place: CGRect) {
-    let h = Harness()
+  /// Larger than the display, where its user left it, and pushed aside by the dock: the undo has to take it back there. The dock
+  /// pushes it aside only where floating windows make way; where they do not, it is there all along.
+  @Test(
+    arguments: [
+      CGRect(x: -100, y: 25, width: 2000, height: 1500), CGRect(x: 0, y: 25, width: 1714, height: 2180),
+      CGRect(x: -300, y: 40, width: 2400, height: 1400), CGRect(x: 200, y: 100, width: 1900, height: 1300),
+    ], [false, true])
+  func aWindowLargerThanTheDisplayGoesBackWhereItWas(place: CGRect, makingWay: Bool) {
+    let h = Harness(settings: makingWay ? .makingWay : Settings())
     let a = h.system.open(app: "Terminal", pid: 1003, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Preview", pid: 1007, frame: place)
     h.start()
@@ -407,9 +415,12 @@ private final class Listener {
 
   // MARK: F18, a window that floats alone
 
+  // Taking the Desktop is placing and sizing a floating window: F18 needs `floatingWindowsMakeWay` too, which is on in this
+  // section, as until Q20.
+
   /// `opensLater`: where its app opened it is not a place anybody chose, and undo goes another way for such a window.
   @Test(arguments: [false, true]) func aWindowThatHadTheDesktopToItselfHasItAgainAfterAnUndo(opensLater: Bool) {
-    var settings = Settings()
+    var settings = Settings.makingWay
     settings.soleFloatTakesDesktop = true
     let h = Harness(settings: settings)
     let a = h.system.open(app: "Safari", pid: 1000, frame: CGRect(x: 100, y: 100, width: 600, height: 400))
@@ -432,7 +443,7 @@ private final class Listener {
 
   /// Safari docked on the left, Notes alone on the Desktop, which it takes.
   func makeSoleFloat() -> (Harness, WindowID, WindowID) {
-    var settings = Settings()
+    var settings = Settings.makingWay
     settings.soleFloatTakesDesktop = true
     let h = Harness(settings: settings)
     h.start()
@@ -486,7 +497,7 @@ private final class Listener {
   }
 
   @Test func aWindowThatFilledTheDesktopGetsItsOwnFrameWhenItComesBackToCompany() {
-    var settings = Settings()
+    var settings = Settings.makingWay
     settings.soleFloatTakesDesktop = true
     let h = Harness(settings: settings)
     h.start()
@@ -912,6 +923,7 @@ private final class Listener {
     settings.tabsEnabled = true
     if world == "every switch thrown" {
       settings.soleFloatTakesDesktop = true
+      settings.floatingWindowsMakeWay = true  // without which the line above does nothing
       settings.shrinkOutOfView = true
       settings.shareRemovedSpace = false
       settings.makeRoom = false

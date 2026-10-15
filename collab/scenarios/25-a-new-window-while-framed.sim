@@ -16,10 +16,10 @@ expect hidden 103
 back
 expect camera 101
 expect visible 103
-# With everything in view it sits on the Desktop like any floating window.
+# With everything in view it is where it was, like any floating window (Q20).
 show-all
 expect visible 103
-expect left-of 102 103
+expect at 103 300 200 500x400
 # ⌘Tab to it from somewhere else frames the window it belongs to.
 zoom 102
 expect hidden 103

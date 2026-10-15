@@ -523,6 +523,8 @@ import Testing
   @Test(arguments: [CGSize(width: 1000, height: 500), CGSize(width: 1000, height: 875)])
   func aWindowThatShrankIntoItsTileIsRememberedAsLargeAsItIs(size: CGSize) {
     let s = scene()
+    // "A move is not a resize" is about windows that Arbor squeezed. As it ships it squeezes none (F64), and takes a report at its word.
+    let makesWay = s.h.controller.settings.floatingWindowsMakeWay
     s.h.system.userMove(s.c, to: CGRect(origin: CGPoint(x: 200, y: 25), size: size))
     s.h.scheduler.advance(by: 3)
     s.h.system.clearFrameLog()
@@ -533,19 +535,19 @@ import Testing
     withKnownIssue("board 1.68: the last steps of macOS's tiling are taken for moves") {
       #expect(s.h.workspace.floating[s.c] == tile, "what is remembered: \(String(describing: s.h.workspace.floating[s.c]))")
     } when: {
-      size.height == 875
+      size.height == 875 && makesWay
     }
     s.h.run("float-all")
     s.h.scheduler.advance(by: 3)
     withKnownIssue("board 1.68") {
       #expect(s.frame(s.c) == tile)
     } when: {
-      size.height == 875
+      size.height == 875 && makesWay
     }
     withKnownIssue("board 1.68") {
       #expect(!s.h.system.frameLog.contains { $0.window == s.c }, "\(s.h.system.frameLog)")
     } when: {
-      size.height == 875
+      size.height == 875 && makesWay
     }
   }
 
@@ -649,7 +651,7 @@ import Testing
   /// With `soleFloatTakesDesktop` a lone floating window fills the Desktop and gets its own size back when it is dragged off. Not
   /// from Arbor where macOS is about to size it.
   @Test func aWindowThatFilledTheDesktopIsNotSizedByBoth() {
-    let s = DragScene { $0.soleFloatTakesDesktop = true }
+    let s = DragScene { ($0.soleFloatTakesDesktop, $0.floatingWindowsMakeWay) = (true, true) }  // it takes both (F64)
     s.h.system.tiling = .on
     s.h.scheduler.advance(by: 3)
     s.h.system.clearFrameLog()

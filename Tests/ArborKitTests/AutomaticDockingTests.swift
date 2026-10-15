@@ -943,8 +943,10 @@ extension Harness {
 
   // MARK: 14. Late titles
 
-  @Test func aLateTitleThatMatchesAFloatRuleTakesTheWindowBackOut() throws {
-    let h = harness(rules: [AppRule(app: "com.example.safari", title: "Picture in Picture", action: .float)])
+  @Test(arguments: [false, true]) func aLateTitleThatMatchesAFloatRuleTakesTheWindowBackOut(makingWay: Bool) throws {
+    let h = harness(rules: [AppRule(app: "com.example.safari", title: "Picture in Picture", action: .float)]) {
+      $0.floatingWindowsMakeWay = makingWay
+    }
     h.start()
     let a = h.open("Mail")
     let slot = h.rect(a)
@@ -953,9 +955,14 @@ extension Harness {
     h.scheduler.advance(by: 0.15)
     h.system.setTitle(n, "Picture in Picture")
     #expect(h.isFloating(n))
-    // The Desktop is in view, so it sits as near to where it opened as the Desktop allows (F11's follow-up).
+    // The Desktop is in view, so it sits as near to where it opened as the Desktop allows (F11's follow-up). As Arbor ships,
+    // where it opened, whatever is docked there.
     #expect(h.workspace.floating[n] == opening)
-    #expect(h.layout?.desktopFrame?.contains(h.frame(n) ?? .zero) == true)
+    if makingWay {
+      #expect(h.layout?.desktopFrame?.contains(h.frame(n) ?? .zero) == true)
+    } else {
+      #expect(h.frame(n) == opening)
+    }
     #expect(h.slot(a) == slot)
     h.expectAllInPlace()
   }

@@ -13,8 +13,8 @@ private let side = DisplaySnapshot(
 /// A laptop and a monitor, as a person uses them.
 @Suite @MainActor struct TwoDisplayTests {
   /// Main: `[a | Desktop]`. Side: `[Desktop | b]` with `f` floating on it.
-  func makeHarness() -> (Harness, a: WindowID, b: WindowID, f: WindowID) {
-    let h = Harness(displays: [main, side])
+  func makeHarness(settings: Settings = Settings()) -> (Harness, a: WindowID, b: WindowID, f: WindowID) {
+    let h = Harness(displays: [main, side], settings: settings)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 100, y: 100, width: 600, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 1600, y: 200, width: 600, height: 400))
     let f = h.system.open(app: "Calculator", frame: CGRect(x: 1500, y: 300, width: 320, height: 300))
@@ -59,8 +59,8 @@ private let side = DisplaySnapshot(
     expectWindowsMatchLayout(h, on: main.id)
   }
 
-  @Test func theSameWindowStillFloatingWaitsOutOfViewForTheDesktop() {
-    let (h, a, _, f) = makeHarness()
+  @Test(arguments: [false, true]) func theSameWindowStillFloatingWaitsOutOfViewForTheDesktop(makingWay: Bool) {
+    let (h, a, _, f) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.system.setMinimized(f, true)
     unplugSide(h, macOSMoves: f)
     h.run("zoom \(a.rawValue)")
@@ -68,7 +68,12 @@ private let side = DisplaySnapshot(
     h.system.setMinimized(f, false)
     #expect(!h.system.isVisible(f), "\(h.frame(f)!) lies over the framed window")
     h.run("show-all")
-    #expect(h.layout!.desktopFrame!.contains(h.frame(f)!), "\(h.ascii())")
+    if makingWay {
+      #expect(h.layout!.desktopFrame!.contains(h.frame(f)!), "\(h.ascii())")
+    } else {
+      // As far from this display's corner as it was from its own display's: it has not been in view here yet.
+      #expect(h.frame(f) == CGRect(x: 60, y: 325, width: 320, height: 300))
+    }
   }
 
   @Test func theLidClosesAndOpens() {
@@ -100,8 +105,8 @@ private let side = DisplaySnapshot(
     #expect(workspace(h, main).tree.allWindows.isEmpty)
   }
 
-  @Test func aFloatingWindowMovedToADisplayThatIsZoomedInStaysInViewUntilItsCameraMoves() {
-    let (h, a, _, f) = makeHarness()
+  @Test(arguments: [false, true]) func aFloatingWindowMovedToADisplayThatIsZoomedInStaysInViewUntilItsCameraMoves(makingWay: Bool) {
+    let (h, a, _, f) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.system.cursor = CGPoint(x: 700, y: 400)
     h.run("zoom \(a.rawValue)")
     h.system.userMove(f, to: CGRect(x: 500, y: 300, width: 320, height: 300))
@@ -110,7 +115,11 @@ private let side = DisplaySnapshot(
     #expect(h.system.isVisible(f))
     h.run("back")
     #expect(h.system.isVisible(f))
-    #expect(h.controller.layouts[main.id]!.desktopFrame!.contains(h.frame(f)!))
+    if makingWay {
+      #expect(h.controller.layouts[main.id]!.desktopFrame!.contains(h.frame(f)!))
+    } else {
+      #expect(h.frame(f) == CGRect(x: 500, y: 300, width: 320, height: 300), "where its person put it")
+    }
   }
 
   @Test func cameraCommandsThatFailSayWhichDisplayTheyMeant() {

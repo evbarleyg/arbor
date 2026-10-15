@@ -3,8 +3,11 @@
 # floating. Safari will not go under 574 points, so it has borrowed from the Desktop and from TextEdit. They press ⌘H in
 # Finder, look at something, and click Finder's icon in the Dock. Seen with the real apps on a hosted Mac: TextEdit, 290 points
 # wide before, was 385 afterwards and stayed so. There and back is nothing: everybody has the place and the size they had.
+# The numbers are the ones seen that day, when floating windows made way and the Desktop counted as in use for the Terminal's sake
+# (`floatingWindowsMakeWay`, which ships off since F64). As Arbor ships: 69-there-and-back-as-arbor-ships.sim.
 # Reference: T07, F61.
 display-size 1600x900 31
+set floatingWindowsMakeWay true
 open Finder 920x436 min 501x300
 open Safari 1324x791 min 574x240
 open TextEdit 673x439 min 115x100

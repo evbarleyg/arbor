@@ -517,12 +517,16 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     #expect(frame.midX == target.x)
   }
 
-  @Test func aDroppedWindowStaysUnderThePointerThoughTheDesktopMovesAway() throws {
-    let (h, notes, safari, mail) = makeHarness()
+  @Test(arguments: [false, true]) func aDroppedWindowStaysUnderThePointerThoughTheDesktopMovesAway(makingWay: Bool) throws {
+    let (h, notes, safari, mail) = makeHarness(settings: makingWay ? .makingWay : Settings())
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")
     let before = try #require(h.layout?.desktopFrame)
-    #expect(before.contains(try #require(h.frame(mail))), "another floating window, on the Desktop")
+    if makingWay {
+      #expect(before.contains(try #require(h.frame(mail))), "another floating window, on the Desktop")
+    } else {
+      #expect(h.frame(mail) == mailFrame, "another floating window, where its person has it")
+    }
     let drop = CGPoint(x: before.maxX - 20, y: 300)
     h.system.drag(notes, through: [CGPoint(x: 300, y: 60), drop])
 
@@ -530,7 +534,11 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     let desktop = try #require(h.layout?.desktopFrame)
     #expect(!desktop.contains(drop))
     #expect(try #require(h.frame(notes)).midX == drop.x, "what the user has just put down is not snatched away")
-    #expect(desktop.contains(try #require(h.frame(mail))), "the others follow the Desktop as ever")
+    if makingWay {
+      #expect(desktop.contains(try #require(h.frame(mail))), "the others follow the Desktop as ever")
+    } else {
+      #expect(h.frame(mail) == mailFrame, "and the others stay as ever")
+    }
   }
 
   @Test func droppingAWindowBackOnItsSlotKeepsItDockedAndRemembered() throws {
@@ -759,8 +767,9 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     #expect(h.workspace.undockedFrame(of: notes) == notesFrame)
   }
 
-  @Test func aPauseAndAResumeMoveOnlyWhatArborHadMovedOnceEachWay() {
-    let (h, notes, safari, mail) = makeHarness()
+  /// Where floating windows make way the dock has pushed Notes and Mail aside. As Arbor ships it has moved Safari alone.
+  @Test(arguments: [false, true]) func aPauseAndAResumeMoveOnlyWhatArborHadMovedOnceEachWay(makingWay: Bool) {
+    let (h, notes, safari, mail) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let clockFrame = CGRect(x: 1000, y: 500, width: 300, height: 200)
     let clock = h.system.open(app: "Clock", frame: clockFrame)
     h.run("dock \(safari.rawValue) left")
@@ -768,9 +777,9 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     let frames = [notes, safari, mail, clock].map { h.frame($0) }
     h.system.clearFrameLog()
     h.run("pause")
-    #expect(h.system.frameLog.map(\.window).sorted() == [notes, safari, mail])
+    #expect(h.system.frameLog.map(\.window).sorted() == (makingWay ? [notes, safari, mail] : [safari]))
     h.run("resume")
-    #expect(h.system.frameLog.map(\.window).sorted() == [notes, notes, safari, safari, mail, mail])
+    #expect(h.system.frameLog.map(\.window).sorted() == (makingWay ? [notes, notes, safari, safari, mail, mail] : [safari, safari]))
     #expect([notes, safari, mail, clock].map { h.frame($0) } == frames)
   }
 
@@ -910,9 +919,10 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
 
   // MARK: Windows that floated all along
 
-  /// Safari and Mail docked either side of a Desktop too narrow for Notes, which was squeezed onto it.
+  /// Safari and Mail docked either side of a Desktop too narrow for Notes, which was squeezed onto it. Floating windows make
+  /// way here, as until Q20 (`floatingWindowsMakeWay`): as Arbor ships nothing is squeezed, and there is nothing to undo.
   func harnessWithASqueezedWindow() throws -> (Harness, WindowID) {
-    let (h, notes, safari, mail) = makeHarness()
+    let (h, notes, safari, mail) = makeHarness(settings: .makingWay)
     h.run("dock \(safari.rawValue) left")
     h.run("dock \(mail.rawValue) right")
     h.run("resize \(safari.rawValue) right 150")
@@ -947,9 +957,9 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   }
 
   /// Squeezed by Arbor to keep it on the Desktop, then merely moved: a move is not a resize. Taken for "this is how I
-  /// want it", size included, it left the window at the squeezed size for good.
+  /// want it", size included, it left the window at the squeezed size for good. Floating windows make way here too.
   func harnessWithASqueezedWindow() throws -> (Harness, zoom: WindowID, own: CGSize, squeezed: CGRect) {
-    let h = Harness()
+    let h = Harness(settings: .makingWay)
     let chrome = h.system.open(app: "Chrome", pid: 2001, frame: CGRect(x: 20, y: 60, width: 1200, height: 760))
     let ghostty = h.system.open(app: "Ghostty", pid: 2002, frame: CGRect(x: 300, y: 100, width: 800, height: 600))
     let own = CGSize(width: 900, height: 600)
@@ -1250,9 +1260,10 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   }
 
   /// What is remembered about a floating window can be smaller than its app allows by now. Pushed onto the
-  /// Desktop it then turns out larger than asked, and has to end on the screen all the same.
+  /// Desktop it then turns out larger than asked, and has to end on the screen all the same. Floating windows make way in
+  /// this test and the three that follow, as until Q20 (`floatingWindowsMakeWay`): otherwise nothing pushes or squeezes one.
   @Test func aFloatingWindowThatCanNoLongerBeAsSmallAsItWasStaysOnTheScreenWhenPushedAside() throws {
-    let (h, notes, safari, mail) = makeHarness()
+    let (h, notes, safari, mail) = makeHarness(settings: .makingWay)
     h.run("close \(mail.rawValue)")
     h.system.userMove(notes, to: CGRect(x: 200, y: 200, width: 480, height: 352))
     // A sidebar opened: nothing moves yet, but it will not be made this small again.
@@ -1273,7 +1284,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   }
 
   @Test func afterFloatAllAWindowThatCouldNotShrinkIsStillKeptOnTheScreen() throws {
-    let (h, notes, safari, mail) = makeHarness()
+    let (h, notes, safari, mail) = makeHarness(settings: .makingWay)
     h.run("close \(mail.rawValue)")
     h.system.userMove(notes, to: CGRect(x: 200, y: 200, width: 480, height: 352))
     h.system.setMinimumSize(notes, CGSize(width: 1000, height: 537))
@@ -1288,7 +1299,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
 
   /// What Arbor learned earlier about the other side may be out of date (F45): it is no reason to widen a window.
   @Test func onlyTheSideTheAppRefusesGrows() throws {
-    let (h, notes, safari, mail) = makeHarness()
+    let (h, notes, safari, mail) = makeHarness(settings: .makingWay)
     h.run("close \(mail.rawValue)")
     h.system.userMove(notes, to: CGRect(x: 200, y: 200, width: 800, height: 300))
     h.system.setMinimumSize(notes, CGSize(width: 760, height: 0))
@@ -1307,7 +1318,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   /// Only what the app refuses changes what is remembered: squeezed onto a narrow Desktop, a window still goes
   /// back to the size the user gave it.
   @Test func aWindowSqueezedOntoTheDesktopStillGoesBackToTheSizeItHad() throws {
-    let (h, notes, safari, mail) = makeHarness()
+    let (h, notes, safari, mail) = makeHarness(settings: .makingWay)
     h.run("close \(mail.rawValue)")
     h.system.userMove(notes, to: CGRect(x: 200, y: 200, width: 1000, height: 500))
     h.system.setMinimumSize(notes, CGSize(width: 900, height: 400))

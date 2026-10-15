@@ -450,7 +450,7 @@ private let simpleEntries = SettingsSchema.entries.filter {
     #expect(SettingsSchema.suggestions(for: "usable-width") == ["minimumUsableWidth"], "from any of its words on")
     // Not from the middle of a word: run together, "Shortcuts off in" has "sof" in it.
     #expect(SettingsSchema.suggestions(for: "sof").isEmpty)
-    #expect(SettingsSchema.suggestions(for: "ngw") == ["focusRingWidth"], "a part of the key, and of no label")
+    #expect(SettingsSchema.suggestions(for: "ngwid") == ["focusRingWidth"], "a part of the key, and of no label")
   }
 
   @Test func nothingIsSuggestedForSomethingElseEntirely() {

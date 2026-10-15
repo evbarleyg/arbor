@@ -169,14 +169,14 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
 
   /// A tester's day, in their own words but for the names: in clamshell at the desk, the laptop alone, back at the desk
   /// with the lid open. A window left hanging over the bottom edge came back with a strip of 32 points showing.
-  @Test func backAtTheDeskWithTheLidOpenAWindowIsWhereItWasLeftOnTheBigDisplay() {
+  @Test(arguments: [false, true]) func backAtTheDeskWithTheLidOpenAWindowIsWhereItWasLeftOnTheBigDisplay(makingWay: Bool) {
     let desk = DisplaySnapshot(
       id: DisplayID("desk"), frame: CGRect(x: 0, y: 0, width: 2560, height: 1440),
       visibleFrame: CGRect(x: 0, y: 25, width: 2560, height: 1415), isMain: true)
     let builtin = DisplaySnapshot(
       id: DisplayID("builtin"), frame: CGRect(x: 0, y: 0, width: 1728, height: 1117),
       visibleFrame: CGRect(x: 0, y: 33, width: 1728, height: 1084), isMain: true)
-    let h = Harness(displays: [desk])
+    let h = Harness(displays: [desk], settings: makingWay ? .makingWay : Settings())
     h.start()
     let n = h.system.open(app: "Notes", frame: CGRect(x: 300, y: 400, width: 700, height: 500))
     h.system.drag(n, through: [CGPoint(x: 650, y: 410), CGPoint(x: 1400, y: 800), CGPoint(x: 2077, y: 1095)])
@@ -200,8 +200,12 @@ private let pairs = Side.allCases.flatMap { a in Side.allCases.map { (a, $0) } }
     // Where it was left on the display, not in the world. But wholly in view: that it hung over the edge by its user's own hand is
     // known only until the displays change (`noteWhereItsUserLeftIt`), and where in doubt a window is brought in. The fault
     // this test is about was a strip of 32 points.
+    // As Arbor ships it is brought in only if less than half of it would show (Q20), and seven tenths of this one do: exactly
+    // where it was left on the display.
     let back = moved(desk, to: CGPoint(x: 1728, y: -323), isMain: false)
-    #expect(h.frame(n) == left.offsetBy(dx: 1728, dy: -323).fitted(into: back.visibleFrame))
+    let there = left.offsetBy(dx: 1728, dy: -323)
+    #expect(h.frame(n) == (makingWay ? there.fitted(into: back.visibleFrame) : there))
+    #expect(there.fractionInside(back.frame) >= 0.5)
     #expect(h.frame(n)?.minX == left.minX + 1728)
   }
 

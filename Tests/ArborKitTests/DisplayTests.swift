@@ -26,8 +26,8 @@ private func reopen(_ old: Harness, in new: Harness) {
 @Suite @MainActor struct DisplayTests {
   /// The main and side displays, three windows docked on the side display as
   /// [a | Desktop | b / c], and the pointer on the side display.
-  func makeHarness() -> (Harness, WindowID, WindowID, WindowID) {
-    let h = Harness(displays: [main, side])
+  func makeHarness(settings: Settings = Settings()) -> (Harness, WindowID, WindowID, WindowID) {
+    let h = Harness(displays: [main, side], settings: settings)
     let a = h.system.open(app: "Safari", frame: CGRect(x: 1500, y: 100, width: 500, height: 400))
     let b = h.system.open(app: "Notes", frame: CGRect(x: 1700, y: 150, width: 500, height: 400))
     let c = h.system.open(app: "Mail", frame: CGRect(x: 1900, y: 200, width: 500, height: 400))
@@ -551,8 +551,8 @@ private func reopen(_ old: Harness, in new: Harness) {
     #expect(h.frame(d) == spot)
   }
 
-  @Test func evacuatedWindowsStayOutOfViewWhileTheMainDesktopIs() {
-    let (h, a, b, c) = makeHarness()
+  @Test(arguments: [false, true]) func evacuatedWindowsStayOutOfViewWhileTheMainDesktopIs(makingWay: Bool) {
+    let (h, a, b, c) = makeHarness(settings: makingWay ? .makingWay : Settings())
     let m = h.system.open(app: "Finder", frame: CGRect(x: 200, y: 200, width: 600, height: 400))
     h.system.cursor = CGPoint(x: 700, y: 450)
     h.run("dock \(m.rawValue) left")
@@ -572,7 +572,9 @@ private func reopen(_ old: Harness, in new: Harness) {
     h.run("show-all")
     let desktop = h.layout!.desktopFrame!
     for window in [a, b, c] {
-      #expect(desktop.contains(h.frame(window)!), "\(window)")
+      // On the Desktop where floating windows make way. Otherwise at the frame it was given on this display, wholly in view.
+      #expect((makingWay ? desktop : main.visibleFrame).contains(h.frame(window)!), "\(window)")
+      if !makingWay { #expect(h.frame(window) == h.workspace.floating[window], "\(window)") }
     }
   }
 

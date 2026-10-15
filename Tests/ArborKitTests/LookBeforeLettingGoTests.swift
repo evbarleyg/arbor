@@ -31,8 +31,9 @@ import Testing
   }
 
   /// Three windows docked and one floating on the second display, and one that never left the main display.
-  func make(from x: CGFloat = 1600) -> (Harness, onTheSide: [WindowID], atHome: WindowID) {
-    let h = Harness(displays: [FakeWindowSystem.standardDisplay, Self.side])
+  func make(from x: CGFloat = 1600, settings: Settings? = nil) -> (Harness, onTheSide: [WindowID], atHome: WindowID) {
+    let displays = [FakeWindowSystem.standardDisplay, Self.side]
+    let h = settings.map { Harness(displays: displays, settings: $0) } ?? Harness(displays: displays)
     let there = (0..<4).map { index in
       h.system.open(
         app: "App\(index)", pid: Int32(1001 + index),
@@ -136,8 +137,8 @@ import Testing
   // MARK: It looks, and moves nothing by looking
 
   /// The display has only got larger. Each docked window goes from its slot to its own frame, and not by way of a larger slot.
-  @Test(arguments: Way.allCases) func aDisplayOfAnotherSizeCostsNoSecondMove(_ way: Way) {
-    let (h, there, _) = make()
+  @Test(arguments: Way.allCases, [false, true]) func aDisplayOfAnotherSizeCostsNoSecondMove(_ way: Way, makingWay: Bool) {
+    let (h, there, _) = make(settings: makingWay ? .makingWay : Settings())
     var larger = Self.side
     larger.frame.size = CGSize(width: 2560, height: 1440)
     larger.visibleFrame.size = larger.frame.size
@@ -145,9 +146,12 @@ import Testing
     h.scheduler.advance(by: 1)
     h.system.clearFrameLog()
     letGo(h, way)
-    // The fourth floats, and the docked ones had pushed it aside: it too gets its own place back.
+    // The fourth floats. Where floating windows make way the docked ones had pushed it aside, and it too gets its own place back. As
+    // Arbor ships nothing ever moved it (F64), and nothing does now.
     for (index, window) in there.enumerated() {
-      #expect(moves(of: window, h) == [CGRect(x: 1600 + 100 * CGFloat(index), y: 100 + 50 * CGFloat(index), width: 480, height: 348)])
+      let own = CGRect(x: 1600 + 100 * CGFloat(index), y: 100 + 50 * CGFloat(index), width: 480, height: 348)
+      #expect(moves(of: window, h) == (index == 3 && !makingWay ? [] : [own]))
+      #expect(h.frame(window) == own)
     }
   }
 

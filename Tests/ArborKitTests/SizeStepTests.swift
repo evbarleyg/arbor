@@ -98,8 +98,9 @@ import Testing
   // MARK: Floating
 
   /// The guide's first two moves on a 1728 × 1117 display, with the sizes the compat lab measured (Terminal's to the
-  /// whole cell: the fake has no title bar to add).
-  func firstMinute(settings: Settings = Settings()) -> (Harness, safari: WindowID, terminal: WindowID) {
+  /// whole cell: the fake has no title bar to add). Floating windows make way here, as until Q20 (`floatingWindowsMakeWay`):
+  /// otherwise Arbor asks a floating window for no size, and there is no answer to misread.
+  func firstMinute(settings: Settings = .makingWay) -> (Harness, safari: WindowID, terminal: WindowID) {
     let display = DisplaySnapshot(
       id: DisplayID("main"), frame: CGRect(x: 0, y: 0, width: 1728, height: 1117),
       visibleFrame: CGRect(x: 0, y: 33, width: 1728, height: 1084), isMain: true)
@@ -161,7 +162,7 @@ import Testing
 
   /// Alone on the Desktop and taking all of it (F18), the same.
   @Test func aTerminalThatFillsTheDesktopTeachesNoMinimumEither() throws {
-    var settings = Settings()
+    var settings = Settings.makingWay
     settings.soleFloatTakesDesktop = true
     let (h, safari, terminal) = firstMinute(settings: settings)
     h.run("dock \(safari.rawValue) left")
