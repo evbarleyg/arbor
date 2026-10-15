@@ -9,6 +9,7 @@ repositories made for the purpose. Every name, id and address in here is made up
 """
 
 import contextlib
+import datetime
 import importlib.util
 import io
 import os
@@ -618,6 +619,8 @@ def check_history():
             row(what, (code, [words for words in ("by nobody else", "never deleted", "only ever moves forward") if words in output]), expected)
     said("pre-push: an executor's push to swarm/trunk", (1, ["by nobody else"]), landing(), "--to", HERE_URL)
     said("pre-push: to main", (1, ["by nobody else"]), landing("main"), "--to", HERE_URL)
+    said("pre-push: by a port said outright", (1, ["by nobody else"]), landing(), "--to", "https://github.com:443/evbarleyg/arbor")
+    said("pre-push: by GitHub's other door for ssh", (1, ["by nobody else"]), landing(), "--to", "ssh://git@ssh.github.com:443/evbarleyg/arbor.git")
     said("pre-push: over ssh", (1, ["by nobody else"]), landing(), "--to", "git@github.com:evbarleyg/arbor.git")
     said("pre-push: from a hook that does not say where to", (1, ["by nobody else"]), landing())
     said("pre-push: with the switch set to false", (1, ["by nobody else"]), landing(may="false"), "--to", HERE_URL)
@@ -663,6 +666,93 @@ def check_history():
     told("a stranger's clone, which knows of no private words: not a word", (0, False, False), rules(words=False))
     told("--rules: the same question, for whoever is about to do something else than push", (1, True, True), rules(read="6"), "--rules")
     told("--rules: read", (0, False, False), rules(read="7"), "--rules")
+
+    # While work goes from the trunk to main.
+    def hold(text, age=0, words=True, pushed="refs/heads/x {head} refs/heads/x {none}", also=None, **settings):
+        def prepare(r):
+            clean(r)
+            r.write("../notes/words.txt", "quux7\n")
+            if also:
+                also(r)
+            if text is not None:
+                written = text(r) if callable(text) else text
+                r.write("../notes/hold.txt", written, "wb" if isinstance(written, bytes) else "w")
+                then = time.time() - 60 * age
+                os.utime(os.path.join(os.path.dirname(r.path), "notes", "hold.txt"), (then, then))
+            if words:
+                r.git("config", "arbor.privateWords", os.path.join(os.path.dirname(r.path), "notes", "words.txt"))
+            for key, value in settings.items():
+                r.git("config", f"arbor.{key}", value)
+            return {"standard_input": pushed.format(head=r.git("rev-parse", "HEAD"), none="0" * 40) + "\n" if pushed else ""}
+        return prepare
+
+    def stopped(what, expected, prepare, *arguments):
+        with tempfile.TemporaryDirectory() as folder:
+            repository = Repository(folder)
+            more = prepare(repository)
+            code, _, output = repository.run(*(arguments if "--rules" in arguments else ("--pre-push", *arguments)), **more)
+            row(what, (code, "PUSHES ARE HELD" in output, "the Macs are wanted" in output), expected)
+    HELD, FREE = (1, True, True), (0, False, False)
+    soon, past = ((datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(minutes=minutes)).strftime("%Y-%m-%dT%H:%MZ") for minutes in (30, -1))
+    why = "\nA train is open:\nthe Macs are wanted for it.\n"
+    elsewhere = "until main is 0123456" + why
+
+    def main_of(r):
+        return r.git("ls-remote", "origin", "refs/heads/main").split()[0]
+    stopped("a hold until a time that has not come: refused, with the reason", HELD, hold(f"until {soon}{why}"))
+    stopped("the time has come", FREE, hold(f"until {past}{why}"))
+    stopped("a hold until main is somewhere it is not yet", HELD, hold(elsewhere))
+    stopped("main is there", FREE, hold(lambda r: f"until main is {main_of(r)[:9]}{why}"))
+    stopped("seven digits of it do", FREE, hold(lambda r: f"until main is {main_of(r)[:7]}{why}"))
+    stopped("six are no commit's name: a first line nobody can read", HELD, hold(lambda r: f"until main is {main_of(r)[:6]}{why}"))
+
+    def moved_on(r):
+        r.before = main_of(r)
+        r.git("push", "--quiet", "origin", "HEAD:refs/heads/main")
+    stopped("main is past it already", FREE, hold(lambda r: f"until main is {r.before[:9]}{why}", also=moved_on))
+    stopped("another branch is there, main is not", HELD,
+            hold(lambda r: f"until main is {r.git('rev-parse', 'HEAD')[:9]}{why}", also=lambda r: r.git("push", "--quiet", "origin", "HEAD:refs/heads/a-branch")))
+    stopped("nobody took it away: after an hour and a half it is taken for forgotten", FREE, hold(elsewhere, age=91))
+    stopped("not yet forgotten", HELD, hold(elsewhere, age=89))
+    stopped("written a few minutes in the future, by a clock that is a little off", HELD, hold(elsewhere, age=-5))
+    stopped("written hours in the future: a clock is wrong, and it would never be forgotten", FREE, hold(elsewhere, age=-200))
+    stopped("a first line nobody can read holds all the same, as long as any", HELD, hold("until further notice" + why))
+    stopped("and no longer", FREE, hold("until further notice" + why, age=91))
+    stopped("a day that does not exist: likewise", HELD, hold("until 2026-13-45T99:99Z" + why))
+    stopped("as an editor may leave it: a mark at the beginning, spaces at the end, capitals, seconds, lines ending the other way", FREE,
+            hold(lambda r: f"\ufeffUNTIL  main IS {main_of(r)[:12].upper()}  \r\nx\r\n"))
+    stopped("a time with seconds", FREE, hold(f"until {past[:-1]}:30Z{why}"))
+    stopped("a time with seconds that has not come", HELD, hold(f"until {soon[:-1]}:30Z{why}"))
+    broken = b"until main is 0123456\nA train \xff\xfe is open: the Macs are wanted for it.\n"
+    stopped("a byte that is no text: it holds like any other", HELD, hold(broken))
+    stopped("but not whoever lands", FREE, hold(broken, mayLand="true"))
+    stopped("nor for ever", FREE, hold(broken, age=91))
+    stopped("whoever lands has to push", FREE, hold(f"until {soon}{why}", mayLand="true"))
+    stopped("a push that was asked for", FREE, hold(f"until {soon}{why}", ignoreHold="true"))
+    stopped("`yes` is true to git, so it is here", FREE, hold(f"until {soon}{why}", ignoreHold="yes"))
+    stopped("to a fork, whose checks are its owner's", FREE, hold(f"until {soon}{why}"), "--to", FORK_URL)
+    for address in (HERE_URL, "git@github.com:evbarleyg/arbor.git", "ssh://git@ssh.github.com:443/evbarleyg/arbor.git", "https://github.com:443/evbarleyg/arbor", "ssh://git@github.com:22/evbarleyg/arbor"):
+        stopped(f"to the repository itself, as {address}", HELD, hold(f"until {soon}{why}"), "--to", address)
+    stopped("to a remote by its name, which is the repository's", HELD, hold(f"until {soon}{why}", also=lambda r: r.git("remote", "add", "up", HERE_URL)), "--to", "up")
+    stopped("to a remote by its name, which is a fork's", FREE, hold(f"until {soon}{why}", also=lambda r: r.git("remote", "add", "mine", FORK_URL)), "--to", "mine")
+
+    def another_way(r):
+        """What stands for GitHub: the address pushed to leads to a repository whose main has moved; `origin` to one where it has not."""
+        there = os.path.join(os.path.dirname(r.path), "github.git")
+        subprocess.run(["git", "init", "--quiet", "--bare", there], check=True, env=r.environment)
+        r.git("push", "--quiet", there, "HEAD:refs/heads/main")
+        r.git("config", f"url.{there}.insteadOf", HERE_URL)
+    stopped("main is asked after where the push goes, not at origin", FREE, hold(lambda r: f"until main is {r.git('rev-parse', 'HEAD')[:9]}{why}", also=another_way), "--to", HERE_URL)
+    stopped("a branch that is deleted starts nothing", FREE, hold(f"until {soon}{why}", pushed="(delete) {none} refs/heads/x {head}"))
+    stopped("nor does a tag", FREE, hold(f"until {soon}{why}", pushed="refs/tags/v9 {head} refs/tags/v9 {none}", also=lambda r: r.git("tag", "v9")))
+    stopped("nor a push with nothing to send", FREE, hold(f"until {soon}{why}", pushed=""))
+    stopped("nor what a Mac shell run left", FREE, hold(f"until {soon}{why}", pushed="refs/heads/x {head} refs/heads/mac-shell-out/x {none}"))
+    stopped("one branch among them that does is enough", HELD, hold(f"until {soon}{why}", pushed="(delete) {none} refs/heads/y {head}\nrefs/heads/x {head} refs/heads/x {none}"))
+    stopped("no such file", FREE, hold(None))
+    stopped("an empty one", FREE, hold(""))
+    stopped("a stranger's clone, which knows of no private words: not a word", FREE, hold(f"until {soon}{why}", words=False))
+    stopped("--rules: the same question, for whoever is about to start a run on a Mac", HELD, hold(f"until {soon}{why}"), "--rules")
+    stopped("--rules: nothing held", FREE, hold(f"until {past}{why}"), "--rules")
 
     situation("--text: what somebody is about to post", (1, ["person", "session"]),
               lambda r: {"standard_input": "It failed on his Mac.\n\nhttps://claude.ai/code/session_01AbCdEfGhIjKlMnOpQrStUv\n"}, "--text")

@@ -44,6 +44,7 @@ scripts/test-public-check.py holds it to a table of situations; `make lint` runs
 
 import argparse
 import bisect
+import datetime
 import fnmatch
 import json
 import os
@@ -56,13 +57,13 @@ import urllib.request
 HERE = os.path.dirname(os.path.abspath(__file__))
 # Raise it whenever the check gets stricter or a hole in it is mended. The hook has two copies to choose from, the one `make hooks` kept
 # and the one on the branch that is checked out, and lets the newer do the reading.
-VERSION = 5
+VERSION = 6
 # The first public commit. All history begins here.
 ROOT_COMMIT = "51b162d5f28c02846134c1f4a113c787f5164602"
 # Where work is integrated: what these hold on origin has been read before.
 INTEGRATION = ("main", "swarm/trunk")
 # The public repository itself, under whatever name a clone knows it.
-UPSTREAM = re.compile(r"github\.com[:/]evbarleyg/arbor(\.git)?/?$", re.IGNORECASE)
+UPSTREAM = re.compile(r"github\.com(:\d+)?[:/]+evbarleyg/arbor(\.git)?/?$", re.IGNORECASE)  # ssh.github.com:443 is GitHub's too
 NO_REPLY = re.compile(r"^([\w.+\[\]-]+@users\.noreply\.github\.com|noreply@github\.com)$")
 MASK = "▒▒▒"
 # A little more than the newest number passes: a branch is pushed before its pull request has one, others are opened
@@ -505,6 +506,62 @@ def unread_rules(top):
             f"Read your inbox and what that sentence names, now. Then: git config arbor.rulesRead {number}")
 
 
+# A hold that nobody took away is taken for forgotten after this long.
+HOLD_LASTS = datetime.timedelta(minutes=90)
+# What a push to these starts is nothing, or seconds.
+NOT_HELD = re.compile(r"(mac-shell-out|state)/")
+
+
+def held(top, url=None, now=None):
+    """Why nothing that starts checks is to be pushed just now; None when there is no such reason.
+
+    While work goes from the trunk to main, every push that starts checks takes a runner from the checks the move waits for. Whoever
+    lands says so in `hold.txt`, beside the file of private words: `until main is <commit>` or `until <2026-01-02T12:30Z>`, then why.
+    It ends by itself: when main is there or past it, when the time has come, and in any case when the file is an hour and a half old.
+    Whatever is wrong with the file, it never holds for longer than that, and never whoever lands."""
+    code, words = git("config", "--get", "arbor.privateWords", cwd=top, check=False)
+    if code != 0 or not words.strip():
+        return None
+    if url and "/" not in url and ":" not in url:  # a remote's name
+        url = git("remote", "get-url", "--push", url, cwd=top, check=False)[1].strip()
+    if url and not UPSTREAM.search(url):
+        return None
+    for key in ("arbor.mayLand", "arbor.ignoreHold"):  # whoever lands has to push; the other is for a push that was asked for
+        if git("config", "--type=bool", "--get", key, cwd=top, check=False)[1].strip() == "true":
+            return None
+    path = os.path.join(os.path.dirname(os.path.expanduser(words.strip())), "hold.txt")
+    now = now or datetime.datetime.now(datetime.timezone.utc)
+    try:
+        age = now - datetime.datetime.fromtimestamp(os.path.getmtime(path), datetime.timezone.utc)
+        with open(path, encoding="utf-8-sig", errors="replace") as handle:
+            until, _, why = handle.read().strip().partition("\n")
+    except OSError:
+        return None
+    until = " ".join(until.split())
+    if not until or age > HOLD_LASTS or age < -HOLD_LASTS:  # written in a future that far off: a clock is wrong, not a train open
+        return None
+    commit = re.fullmatch(r"until main is ([0-9a-f]{7,40})", until, re.IGNORECASE)
+    time = re.fullmatch(r"until (\d{4}-\d\d-\d\dT\d\d:\d\d)(:\d\d)?Z", until, re.IGNORECASE)
+    if commit:
+        wanted = commit.group(1).lower()
+        try:
+            listed = subprocess.run(["git", "ls-remote", url or "origin", "refs/heads/main"], cwd=top, capture_output=True, text=True, timeout=20, check=False).stdout
+        except subprocess.TimeoutExpired:  # the push would fare no better
+            listed = ""
+        there = listed.split("\t")[0]
+        # Past it counts too, where this clone has both commits to compare.
+        if there.startswith(wanted) or (there and git("merge-base", "--is-ancestor", wanted, there, cwd=top, check=False)[0] == 0):
+            return None
+    if time:
+        try:
+            if now >= datetime.datetime.strptime(time.group(1).upper(), "%Y-%m-%dT%H:%M").replace(tzinfo=datetime.timezone.utc):
+                return None
+        except ValueError:  # the 45th of the 13th: it holds like any first line nobody can read
+            pass
+    return (f"PUSHES ARE HELD {until}. {' '.join(why.split())}\n"
+            "It ends by itself; go on working, and push then. If this very push was asked for: git -c arbor.ignoreHold=true push …")
+
+
 def landing_problems(top, name, commit, there):
     """Why this push to a branch where work is integrated may not happen. `commit` is None when the branch is being deleted."""
     if git("config", "--type=bool", "--get", "arbor.mayLand", cwd=top, check=False)[1].strip() != "true":
@@ -521,6 +578,13 @@ def pre_push(top, lines, masked, url=None):
     unread = unread_rules(top)
     if unread:
         print(f"✘ {unread}\npublic-check: nothing was pushed.")
+        return 1
+    # A branch that is deleted, a tag, and a push that has nothing to send start nothing.
+    starts = [fields for fields in map(str.split, lines) if len(fields) == 4 and not ZERO.match(fields[1]) and fields[2].startswith("refs/heads/")
+              and not NOT_HELD.match(fields[2][len("refs/heads/"):])]
+    hold = held(top, url) if starts else None
+    if hold:
+        print(f"✘ {hold}\npublic-check: nothing was pushed.")
         return 1
     code = 0
     for line in lines:
@@ -570,7 +634,7 @@ def main(arguments=None, cwd=None):
             raise Unclear(f"what is to be done with {options.files[0]}? --text reads files; without it a branch is read")
         top = git("rev-parse", "--show-toplevel", cwd=cwd).strip()
         if options.rules:
-            unread = unread_rules(top)
+            unread = unread_rules(top) or held(top)
             print(f"✘ {unread}" if unread else "public-check: the rules are as this clone last read them, or there are none to read")
             return 1 if unread else 0
         if options.pre_push:

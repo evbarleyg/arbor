@@ -1570,6 +1570,19 @@ esac
     ]:
         done, noted, _ = ran("a.sh", "feat/x", ARBOR_MAC_PRIORITY=priority, TURN=turn, MAC_SHELL_TIMEOUT="0", MAC_SHELL_POLL="0")
         row(f"run.sh: whose turn: {what}", (done.returncode, os.path.exists(noted)), expected)
+    # While work goes to main, with a stand-in for public-check.py --rules that ends as told.
+    rules = os.path.join(checkout, "scripts", "public-check.py")
+    with open(rules, "w", encoding="utf-8") as handle:
+        handle.write('import os, sys\nprint("✘ PUSHES ARE HELD until main is 0123456. A train is open.\\nIt ends by itself.")\nsys.exit(int(os.environ["HELD"]))\n')
+    for what, priority, held, expected in [
+        ("its turn, but pushes are held: no Mac is asked for either, and it says why", "3", "1", (98, False, True)),
+        ("nothing is held", "3", "0", (97, True, False)),
+        ("nobody can tell: the queue decides", "3", "2", (97, True, False)),
+        ("priority 1 does not ask", "1", "1", (97, True, False)),
+    ]:
+        done, noted, _ = ran("a.sh", "feat/x", ARBOR_MAC_PRIORITY=priority, TURN="0", HELD=held, MAC_SHELL_TIMEOUT="0", MAC_SHELL_POLL="0")
+        row(f"run.sh: a hold: {what}", (done.returncode, os.path.exists(noted), "PUSHES ARE HELD until main is 0123456. A train is open." in done.stdout + done.stderr), expected)
+    os.remove(rules)
     with open(real_queue, "w", encoding="utf-8") as handle:
         handle.write(kept_queue)
 

@@ -54,6 +54,14 @@ time, and a sentence on what changed. While the number differs from `git config 
 prints the sentence. `scripts/public-check.py --rules` asks the same before anything else that cannot be taken back. Where there is no
 such file, nothing is said.
 
+In the same folder, `hold.txt` **holds pushes for a while**. While work goes from the trunk to `main`, each push that starts checks takes a
+runner from the checks the move is waiting for, and a request not to push does not reach whoever is deep in work either. Whoever lands
+writes `until main is <commit>` or `until 2026-01-02T12:30Z` on the first line and the reason below. The hook then refuses, with the
+reason, and the hold ends by itself: when `main` is there or past it, when the time has come, and in any case when the file is an hour and
+a half old, whatever is wrong with it. It does not hold whoever lands, a fork, what starts no checks (a branch deleted, a tag, the output
+of a Mac shell run), or `git -c arbor.ignoreHold=true push …` for a push that was asked for. `scripts/public-check.py --rules` tells of a
+hold too: ask it before starting a run on a Mac.
+
 ## The clone itself
 
 A clone is not always what it seems. A machine that is handed a prepared or cached copy, or a folder in use since before the

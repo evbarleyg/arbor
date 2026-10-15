@@ -155,12 +155,16 @@ fi
 start=$(date +%s)
 told=""
 while [ "$priority" != 1 ]; do
-  why=$(python3 scripts/mac-queue.py --repo "$repo" --turn "$priority" --for "$ref" 2>/dev/null)
-  case $? in
-    0) break ;;
-    4) ;;
-    *) why="the queue for the Macs cannot be read (are GitHub's calls for this hour used up? gh api rate_limit says, and costs none)" ;;
-  esac
+  # While work goes to main, its checks come first (hold.txt, docs/PUBLIC.md). Only the answer "held" holds: where nobody can tell, the queue decides.
+  why=$(python3 scripts/public-check.py --rules 2>/dev/null | sed -n '1s/^[^A-Za-z]*//p'; exit "${PIPESTATUS[0]}")
+  if [ $? -ne 1 ]; then
+    why=$(python3 scripts/mac-queue.py --repo "$repo" --turn "$priority" --for "$ref" 2>/dev/null)
+    case $? in
+      0) break ;;
+      4) ;;
+      *) why="the queue for the Macs cannot be read (are GitHub's calls for this hour used up? gh api rate_limit says, and costs none)" ;;
+    esac
+  fi
   [ $(($(date +%s) - start)) -le "$limit" ] || fail "not started after ${limit}s: $why" 98
   [ "$why" = "$told" ] || echo "holding back: $why"
   told=$why
