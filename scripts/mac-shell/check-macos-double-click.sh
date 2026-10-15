@@ -11,7 +11,7 @@
 # double-clicks: the window goes where macOS sends it, by one road, and stays; nobody else moves; Arbor sets no frame
 # (its own trace says so); macOS's second double-click brings it back to its slot; and after a third, one command of
 # Arbor's does, in one move. Then as a person met it: four windows, `arrange`, the double-click, and what comes next (other
-# windows are switched to, one opens and closes, ⌃⌥0 and back, a docked neighbour closes), and a session with all that lays out unasked. Then the first round with two of macOS's own apps.
+# windows are switched to, one opens and closes, `home` and back, a docked neighbour closes), and a session with all that lays out unasked. Then the first round with two of macOS's own apps.
 #
 # The question only a Mac can answer: does the Accessibility layer's monitor hear the second press, with its count, before the
 # app reports the new frame? The traces come back in traces/: what macOS reports round a title bar's double-click.
@@ -46,7 +46,8 @@ frames_during() {
 }
 
 # one_road <file>: the window never turned round. On its way from the first frame to the last, each of x, y, width and height
-# went one way only, so it was moved once, however many stages macOS's animation shows.
+# went one way only, so it was moved once, however many stages macOS's animation shows. But for a single point: macOS rounds the stages
+# of its own eased way, and was seen to fill the screen by y 33, 32, 31, 32, 31, 31 with Arbor setting no frame at all.
 one_road() {
   awk '
     NR == 1 { for (i = 1; i <= 4; i++) { first[i] = $i; before[i] = $i } next }
@@ -54,7 +55,11 @@ one_road() {
     END {
       for (i = 1; i <= 4; i++) {
         whole = before[i] - first[i]
-        for (row = 2; row <= rows; row++) if (step[row, i] * whole < 0 || (whole == 0 && step[row, i] != 0)) bad = 1
+        for (row = 2; row <= rows; row++) {
+          back = whole < 0 ? step[row, i] : -step[row, i]
+          if (whole == 0) back = step[row, i] < 0 ? -step[row, i] : step[row, i]
+          if (back > 1) bad = 1
+        }
       }
       exit bad
     }' "$1"
@@ -244,7 +249,7 @@ as_a_person_met_it() {
   check "and after that one has closed" real_frame_is "$W1" "$zoomed"
   check "the other three did not move" the_others_stayed
 
-  step "$name, arranged: everything (the key is ⌃⌥0), and back"
+  step "$name, arranged: everything (`home`), and back"
   frames_during "$W1" "$ARBOR_OUT/frames-$name-arranged-2.txt" ctl home
   check "a command of the person's puts it into its slot" eventually real_frame_is "$W1" "$slot"
   check "by one road" one_road "$ARBOR_OUT/frames-$name-arranged-2.txt"
