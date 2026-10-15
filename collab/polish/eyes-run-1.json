@@ -1,0 +1,2755 @@
+{
+ "run": "38653628928",
+ "commit": "a391fe4",
+ "scenes": {
+  "back": {
+   "E1": {
+    "status": "pass",
+    "said": "Two blank dark cards come in over the left edge, the upper one grows steadily until it fills the view while the lower one sinks away behind the Dock, and nothing crosses anything, though which window it is stays unknown until it turns orange at frame 27.",
+    "frames": [
+     1,
+     4,
+     8,
+     14,
+     26,
+     27
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "A one-pixel bright line (white above orange before, grey above red after) stands at the display's right edge beside the Dock, and in frames 27 and 28 the fading 'exec' icon lies around and over the window's own 'Arbor Test 4' in a muddy brown that is neither card nor window.",
+    "frames": [
+     0,
+     27,
+     28,
+     30,
+     32
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "A near-black slab fills the display for 450 ms, creeping its last 20 px from frame 20 to 25, and then becomes a bright orange window with a full-strength blue ring within three frames, a flash from dark to bright that no system animation has.",
+    "frames": [
+     20,
+     25,
+     26,
+     27,
+     29
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "No words appear, and the only sign is in the menu bar, where at frame 1 the Desktop glyph loses its highlight and the forward arrow lights up.",
+    "frames": [
+     0,
+     1
+    ]
+   },
+   "other": [
+    "First change at +48 ms, the window's own content is back only at +532 to +548 ms: half a second of looking at a dark card.",
+    "In frames 1 to 3 the cards are empty slabs: their icons are still beyond the left edge, so nothing at all says what is coming.",
+    "In frame 4 the lower card's icon peeps out as a green 'c' in the bottom-left corner, beside and below the Dock.",
+    "The ruler claims no jump of look here, but between frames 26 and 29 the whole view goes from near black to orange in 50 ms."
+   ]
+  },
+  "dark-pinch-out": {
+   "E1": {
+    "status": "miss",
+    "said": "The way out comes in two legs with a hitch: in frames 14 to 17 the card only loses height, at frame 18 its lower edge hops 4 px back down and a second move to the right begins, while a grey slab already stands where the left column has yet to arrive.",
+    "frames": [
+     14,
+     17,
+     18,
+     19,
+     24,
+     30
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "A mid-grey rounded slab that belongs to nothing stands still at the left from frame 19 until the cards cover it at frame 40, a second one fades away in the middle, the Dock's plate turns black while a card passes beneath it with its icon sliced in two, and in frames 46 and 47 'exec' is printed over each window's label.",
+    "frames": [
+     14,
+     16,
+     20,
+     24,
+     28,
+     34,
+     39,
+     46,
+     47
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "The bright green window is swapped for a near-black card between two frames without any fade and real windows are back only 630 ms after the first change, although the cards' corners and soft shadows on the light wallpaper are like the system's.",
+    "frames": [
+     13,
+     14,
+     45,
+     46,
+     48
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "'Already showing everything' pops up at frame 28 while the camera is still on its way out, so it contradicts what one is watching, lies over the lower-left corner of the lower right card and window, and stays until about +2350 ms.",
+    "frames": [
+     28,
+     33,
+     45,
+     48,
+     58,
+     63
+    ]
+   },
+   "other": [
+    "Frames 0 to 11, before the cause, still show the pill of the scene before fading out: 'Nothing to step into: ArborTestWindows fills the view'.",
+    "At frame 14 the slab fills the whole view behind the shrinking card and shows below it as a grey band with round corners; it looks like a shadow or plate left behind by windows that are not there.",
+    "The cards stand finished from frame 43 (+863 ms) and the windows start to show only at frame 46 (+963 ms).",
+    "The end picture has an empty middle third of bare wallpaper with no outline or glyph; in the light scenes the same place has an outline.",
+    "The lower right card hangs over the Dock's top edge until about frame 37."
+   ]
+  },
+  "desktop": {
+   "E1": {
+    "status": "pass",
+    "said": "The two columns part like curtains, the left cards off to the left and the right cards off to the right at one pace, gone by frame 16 and leaving the bare desktop, with nothing crossing anything.",
+    "frames": [
+     1,
+     3,
+     5,
+     8,
+     11,
+     15,
+     16
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "Every moving frame is clean, but when the stage lifts a one-pixel white-and-green line fades in at the display's right edge beside the Dock and stays on what should be an empty desktop.",
+    "frames": [
+     27,
+     28,
+     30,
+     31
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "Four bright windows, the ring, the seam handle, the Desktop outline and its glyph are replaced by four near-black cards in a single frame without a fade, though the 250 ms slide to the sides is itself much like Show Desktop.",
+    "frames": [
+     0,
+     1,
+     8,
+     15
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "No words appear, and the menu-bar highlight hopping from the grid glyph to the Desktop glyph at frame 3 says all that is needed.",
+    "frames": [
+     2,
+     3
+    ]
+   },
+   "other": [
+    "The ruler claims nothing here, yet what it calls M7 and M12 elsewhere is plainly here too: between frames 0 and 1 four windows change from full colour to near black and travel as cards.",
+    "The cards grow wider as they leave but keep their height (in frame 1 the left card is about 452 px wide against the window's 425), so this is a sideways stretch, not a zoom; the icons are not stretched.",
+    "The place one is going into, the outline with its glyph, vanishes at frame 1 instead of growing to fill the display.",
+    "Nothing on the display changes from frame 17 to frame 26 (+300 to +500 ms): the move is over to the eye at +283 ms."
+   ]
+  },
+  "eight-frame": {
+   "E1": {
+    "status": "pass",
+    "said": "All eight cards swell and slide off up and to the left as one zoom while the lower right one grows to fill the display and nothing crosses, though the eight are the same dark card on black, so the framed window can be told only by its place.",
+    "frames": [
+     3,
+     4,
+     5,
+     7,
+     10,
+     16,
+     25
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "In frame 29 the half-faded 'exec' icon stands around the window's own 'Arbor Test 8' on a murky dark blue, its ghost is still there in frame 30, and from frame 29 a one-pixel white-and-red line stands at the display's right edge below the window.",
+    "frames": [
+     29,
+     30,
+     32,
+     34
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "Eight windows in six colours turn near black in one frame, the card is in place at frame 25 (+457 ms) but stands dark until +540 ms, and the window then returns in two coarse steps 33 ms apart.",
+    "frames": [
+     2,
+     3,
+     25,
+     28,
+     29,
+     30
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "The pill 'Your other windows are out of view, not closed  ⌃⌥Space shows everything' answers the very worry that seven vanishing windows raise, fades in over frames 4 to 7 low in the middle, and is still up when the film ends at +1190 ms, so its leaving is unseen.",
+    "frames": [
+     4,
+     5,
+     7,
+     28,
+     34
+    ]
+   },
+   "other": [
+    "At the moment all colour goes (frame 2 to 3) the framed card has also already jumped 170 px to the left and grown by 210 px, so colour, name and place are lost in the same frame.",
+    "In frame 4 the half-faded pill lies across the black gap between two moving cards.",
+    "The focus ring is blue on a blue window here and cannot be seen.",
+    "No Arbor glyphs are in the menu bar in this scene, unlike the 1024-wide scenes.",
+    "Frames are missing at +223, +440, +523 and +557 ms (33 ms steps)."
+   ]
+  },
+  "out": {
+   "E1": {
+    "status": "pass",
+    "said": "The card shrinks upward into the top half while a second card rises from behind the Dock into the lower half, both the full width and in step with the gap between them closing from 60 to 12 px, and nothing crosses.",
+    "frames": [
+     1,
+     3,
+     5,
+     8,
+     14,
+     22,
+     25
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "In frames 26 and 27 'Arbor Test 4' and 'Arbor Test 2' are printed across the fading 'exec' icons on murky brown and dark blue, and a one-pixel white-and-red line stands at the display's right edge beside the Dock before and after.",
+    "frames": [
+     0,
+     26,
+     27,
+     28,
+     31
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "The orange window turns near black in one frame, the first step is a stumble (6 px by +56 ms, then 63 px at +89 ms with a frame missing), and the cards are in place by +456 ms but stay dark until +589 ms, so the windows are back only at +639 ms.",
+    "frames": [
+     0,
+     1,
+     2,
+     24,
+     25,
+     26,
+     28
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "No words appear and none are missed; the only sign is the forward arrow in the menu bar going grey at frame 3.",
+    "frames": [
+     2,
+     3
+    ]
+   },
+   "other": [
+    "The rising card's icon is sliced by the Dock in frames 5 to 8, with a strip of it also showing below the Dock.",
+    "The ring is at full strength in the first frame of the fade (26) while the window under it is still half dark."
+   ]
+  },
+  "pictures-dock-key": {
+   "E1": {
+    "status": "pass",
+    "said": "Each window keeps its colour and name, so it is plain that orange goes left and grows to full height while green, blue and red slide right out of its way, with orange staying in front as it was.",
+    "frames": [
+     2,
+     3,
+     5,
+     9,
+     14,
+     23
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "In frames 3 to 5 orange's picture is stretched upward, so 'Arbor Test 4' is tall and narrow, the title bar half as high again and the traffic lights oval, and in frames 6 to 8 old and new picture overlap so that title, lights and label are printed double.",
+    "frames": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     8
+    ]
+   },
+   "E3": {
+    "status": "pass",
+    "said": "The windows keep their own look and round corners, the move eases out over about 400 ms much like the system's own tiling, the real window takes over at frame 30 without a hop, and the pill is a light capsule in the system's type.",
+    "frames": [
+     9,
+     14,
+     23,
+     29,
+     30,
+     33
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "'Docked  ⌃⌥↩ frames it' says what happened and the next step in a few words from frame 5 until about +1800 ms, though it sits across the lower right corner of the very window that is landing.",
+    "frames": [
+     5,
+     8,
+     23,
+     37,
+     41,
+     46
+    ]
+   },
+   "other": [
+    "The ruler claims nothing here and so misses the squashed and doubled text of frames 3 to 8.",
+    "One key for one window moves four: green, blue and red, which the person did not touch, slide 248, 298 and 348 px to the right and their staircase is flattened to one left edge (x=518).",
+    "The focus ring comes late as a second event: the window has stopped by frame 24 (+466 ms), the ring fades in at frames 30 to 32 (+599 to +632 ms).",
+    "A frame is missing between frames 2 and 3 (+66 to +99 ms), where orange jumps about 80 px.",
+    "The outline of the empty right half is so faint on black that it can hardly be seen (frames 29 to 44)."
+   ]
+  },
+  "rearrange": {
+   "E1": {
+    "status": "miss",
+    "said": "During the drag the drop preview is painted over the dragged window and the window hangs up to about 100 px below the pointer in frames 50 to 87, and after the drop four look-alike dark cards overlap, stop in mid-flight for 183 ms and jump into place.",
+    "frames": [
+     60,
+     70,
+     81,
+     96,
+     120,
+     200,
+     201,
+     208,
+     209
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "Frame 200 shows the dragged window's title bar washed light blue with dulled traffic lights and the preview's border running across its body, frames 201 to 208 are dark cards on dark cards told apart only by a hairline, and frames 212 and 213 show the ghost of 'exec' behind the labels on murky colours.",
+    "frames": [
+     60,
+     96,
+     200,
+     201,
+     204,
+     208,
+     212,
+     213
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "The colours turn to near-black cards in one frame, the cards stop dead at frame 208, jump at 209, twitch again at 210 and 211, and windows return only at +674 ms: no system animation stutters like that.",
+    "frames": [
+     200,
+     201,
+     208,
+     209,
+     210,
+     211,
+     212
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "'Too small to show: click the tile to zoom in  ⌃⌥G goes there too' never says what is too small, lies across the bottoms of the orange and red windows and the seam between them, and is still up when the film ends two seconds later.",
+    "frames": [
+     212,
+     215,
+     260,
+     320
+    ]
+   },
+   "refuted": {
+    "M2": "The smooth part does last about 133 ms (frames 201 to 208), but at frame 208 the move is not over: the dragged card is still some 30 px short at each side and 48 px at the bottom. The rest is a jump at frame 209 (+357 ms) with corrections at 210 and 211 (+641 ms). The ruler took the standstill from +174 to +357 ms for the end.",
+    "M8": "Nothing is gone in frame 201 that is back in 202: the coloured windows and the preview go at 201 and stay away, and the four cards of 201 are all there in 202. The ruler lost the dragged card lying on the green window's card, dark on dark with only a hairline between.",
+    "S8": "At the end every gap measures 12 px (y 200-211 and 370-381 in the right column, x 512-523 between the columns). The 38 is the 12 px gap plus the red window's light grey title bar (y 383-409), which beside the grey tile the ruler took for part of the gap.",
+    "D1": "At frame 120 the pointer is on the title bar at the spot where it took hold; the ruler was fooled by the translucent preview, whose blue tint on the green window's left half joins the blue window. But there is a real fault earlier that it does not name: from about frame 45 to 87 the window follows sideways only, its top staying near y=367 while the pointer climbs to y=270, about 100 px above the title bar; it catches up at frame 93."
+   },
+   "other": [
+    "The preview promised the dragged window the top half of the green one (frame 200); what comes is two nameless grey tiles with the same icon, one for the dragged window and one for green, so both windows are gone from sight and one cannot tell which tile is which.",
+    "Each tile is 488 by 157 px, which does not look 'too small to show' beside a 244 px wide window.",
+    "At the end no window has a lit title bar or a ring: the window just handled has become a tile (frames 215 to 320).",
+    "Previews blink on and off along the way: an outline on the home place at frame 40, gone at 44, a navy fill at 60 to 63, gone, the left half of green at 96 to 132, gone at 135 to 156, the top half from 159.",
+    "The tiles' corners are rounder than the windows' beside them.",
+    "From frame 212 the one-pixel line of parked windows shows at the display's right edge."
+   ]
+  },
+  "seam": {
+   "E1": {
+    "status": "pass",
+    "said": "Only the left column changes: orange and blue grow to the right behind the pointer in steps of 3 to 4 px, one to three frames late, with the blue handle and the faint Desktop outline going along and the right column standing still.",
+    "frames": [
+     40,
+     60,
+     80,
+     100,
+     120,
+     137,
+     165
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "In about one frame in four orange trails blue by 3 to 4 px, so the column's right edge is a step, blue's corner comes within a pixel of the handle, and at frames 128 and 129 the Desktop outline is gone altogether before it comes back brighter with a glyph at frame 130.",
+    "frames": [
+     60,
+     62,
+     63,
+     83,
+     84,
+     96,
+     98,
+     100,
+     128,
+     129,
+     130
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "The pointer stays a plain arrow over the seam and all through the drag where macOS shows a left-right resize cursor, though the windows resize live as the system's do.",
+    "frames": [
+     30,
+     34,
+     60,
+     120,
+     165
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "No words appear and none are needed: the handle shows white under the pointer, turns blue when taken (frame 34) and white again on release (frame 166).",
+    "frames": [
+     30,
+     34,
+     165,
+     166
+    ]
+   },
+   "refuted": {
+    "S8": "At the end all straight edges are 12 px apart (orange to blue y 364-375, left column to the Desktop outline x 437-448, outline to the right column x 675-686), 9 px where the ring takes 3. Only a line through the rounded corners (y=360) gives 15: the ruler was fooled by the corners. The uneven 3 to 4 px exist only during the drag."
+   },
+   "other": [
+    "The ring on the green window goes when the drag begins (gone by frame 40) and is back at full strength at frame 167 (+44 ms), a blink on a window that has no part in the drag.",
+    "The Desktop glyph and the brighter outline pop in without a fade in the middle of the drag (frame 130), as if a width had been passed.",
+    "The handle moves one frame after the windows, so the space between window and handle pumps between 5 and 1 px.",
+    "Where the ring is on, the gap around that window looks 9 px against 12 elsewhere."
+   ]
+  },
+  "undo": {
+   "E1": {
+    "status": "pass",
+    "said": "The large card in front shrinks steadily to the right into the lower right place, its four edges in step, while the card behind it draws up until a gap opens between them at frame 19, and nothing else moves.",
+    "frames": [
+     1,
+     4,
+     8,
+     12,
+     16,
+     19,
+     24
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "In frames 27 and 28 all four windows are murky half-dark colours with 'exec' showing through above their labels, and in frame 0 a white crumb of the Desktop glyph sticks out above the floating window's ring, whose lower right corner cuts across the window at the display's edge.",
+    "frames": [
+     0,
+     27,
+     28
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "The whole display goes from four colours to near black in one frame and stays so for 530 ms, including orange and blue, which never move, and the cards are in place at +452 ms but the windows return only from +568 ms.",
+    "frames": [
+     0,
+     1,
+     24,
+     26,
+     27,
+     29
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "'Undid Float' says in two words what the key did, over the empty Desktop part where it covers nothing, from frame 2 until about +1800 ms.",
+    "frames": [
+     2,
+     4,
+     29,
+     33,
+     37,
+     41
+    ]
+   },
+   "refuted": {
+    "M4": "Nothing comes in or goes out over the display's edge: the floating window ends exactly at the right edge (its ring is seen there in frame 0) and that edge moves 12 px inward. Measured at frame 8 the card's edges are 74% (left), 83% (right), 75% (top) and 82% (bottom) along: in step. The ruler took a window flush with the edge for one that reaches beyond it.",
+    "M6": "The edges that end where they began (all of orange and blue, green's top, left and right) are at the same pixels in every frame from 0 to 29, and the front card's edges go one way only. The ruler was fooled by two near-black cards lying on each other and by cards that have no title bar where the windows have one.",
+    "M8": "Frames 7, 8 and 9 show the same four cards, four icons and the pill, each a few pixels on; nothing is missing in frame 8. The overlapping dark cards at the right have only a hairline between them, which the ruler loses.",
+    "S8": "At the end all straight edges are 12 px apart (y 364-375 in both columns, x 437-448 and 675-686 beside the Desktop part), 9 px where the ring takes 3; only a line through the rounded corners gives 15."
+   },
+   "other": [
+    "What green does, giving up its lower half, happens unseen behind the front card; it shows only as a gap opening in frames 19 to 24.",
+    "The Desktop outline and glyph vanish at frame 1 and are back at frame 27.",
+    "The ring is at full strength in the first frame of the fade (27)."
+   ]
+  },
+  "close": {
+   "E1": {
+    "status": "miss",
+    "said": "All twelve frames show the same empty black Desktop with menu bar and Dock: no window is on the display, so no window is seen to close and nothing closes ranks.",
+    "frames": [
+     0,
+     1,
+     5,
+     11
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "In every frame a one-pixel line, white above and blue below, some 80 px tall, stands at the display's right edge beside the Dock and belongs to nothing one can see (the rim of the windows put away).",
+    "frames": [
+     0,
+     1,
+     11
+    ]
+   },
+   "E3": {
+    "status": "pass",
+    "said": "All of Arbor that shows is its row of menu-bar buttons with the Desktop button lit and a plain square tooltip under it, both as the system draws its own; of the closing itself there is nothing to compare.",
+    "frames": [
+     0,
+     11
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "The tooltip 'Show the Desktop (⌃⌥D)' hangs under the lit button through the whole film although the Desktop is already showing, so the words name what has happened and not what a click would do, and nothing says a window was closed.",
+    "frames": [
+     0,
+     11
+    ]
+   },
+   "other": [
+    "The film cannot be used to judge this scene: the Desktop was showing (film.log has all four windows put away at 1023,680 before the action), and the pointer was left resting on the menu-bar button from an earlier scene. It needs filming again with the windows in view.",
+    "The film ends 298 ms after the action; had anything moved later it would not be in it."
+   ],
+   "void": "all its frames show the empty Desktop: the windows had been put away before it began"
+  },
+  "dark-rearrange": {
+   "E1": {
+    "status": "miss",
+    "said": "While the window is in the hand the blue drop preview is drawn in front of it, its border striking through the title and the traffic lights, and after the drop all four windows are the same black card, so one cannot say which of the two black tiles left at the top is the blue window and which the green.",
+    "frames": [
+     65,
+     132,
+     191,
+     192,
+     197,
+     199,
+     202
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "Frame 197 stands for 233 ms with the move two thirds done (one card floating over another whose icon peeps out beneath it, a hole under the left card), frame 198 stands for 267 ms with gaps of 7 and 13 px, and from frame 200 a one-pixel black-and-blue line with a shadow of its own darkens the right edge beside the Dock.",
+    "frames": [
+     197,
+     198,
+     200,
+     250
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "Four bright windows become black slabs within one frame, glide for 100 ms, freeze, jump twice, then fade back in 50 ms, and the cards' corners are visibly rounder than those of the windows they stand for: nothing of the system's stops and jumps like that.",
+    "frames": [
+     191,
+     192,
+     197,
+     198,
+     199,
+     200
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "The line 'Too small to show: click the tile to zoom in  ⌃⌥G goes there too' pops up at full strength at the bottom left, lying across the orange window, the gap and the red window, far from the two tiles at the top right that it speaks of, and is still there when the film ends 2.7 s after the drop.",
+    "frames": [
+     200,
+     250,
+     313
+    ]
+   },
+   "refuted": {
+    "M2": "The move is not over at 157 ms: the left card's lower edge stands at y 580 of the way from 363 to 695, 65% of its road. The display then freezes and the rest comes as jumps at 390 ms (y 688) and 657 ms (y 694). The ruler took the frozen frame for the end and fitted a short straight line to the first two thirds of a longer, eased move; what one sees is some 600 ms long with holes in it.",
+    "M3": "Measured on the same cut-off road. In the frames that exist the card's steps shrink (48, 42, 32, then 23 px per tick), so it is slowing when it freezes. The arrival itself is never seen: it is a freeze and a jump of 108 px, which is M4's fault, not a want of easing.",
+    "S8": "At rest every gap is 12 px from edge to edge: orange ends at x 511 and the tiles begin at 524; tile to tile y 199 to 212; tile to the red window y 369 to 382. To the eye they are even. The ruler measures the flat colour inside and loses the one-pixel light rims, the dark hairlines and the tiles' shaded edges.",
+    "D1": "At frame 159, and from 150 to 191, the pointer sits on the same spot of the blue window's title bar. The ruler was following a dark title-bar strip: the blue window's at first, then the red window's as it was uncovered (its 'thing' runs from 269,377 to 884,377). There IS a slip, but elsewhere: see 'other', frames 46 to 87."
+   },
+   "other": [
+    "Frames 46 to 87 (some 700 ms): the window follows the pointer sideways but hangs back vertically; the pointer leaves the title bar and rides up over the orange and the green window, up to some 90 px above the window it is supposed to hold, and at frame 88 the window snaps back under it in one jump.",
+    "Frames 38 to 42: the blue focus ring stays at the old slot while the window has already moved 12 px up and right, so ring and window are askew for some 70 ms.",
+    "Frames 63 to 68: a preview over the window's own old slot flashes up for some 100 ms and is gone again; between 134 and 151 there is no preview at all.",
+    "What the person gets for the drop: the window they let go of and its neighbour both vanish into black tiles, and only two of four windows are left to see.",
+    "At frame 200 the two upper cards turn into tiles in one frame: lighter, with a rim, the icon shrinking from about 56 to 50 px.",
+    "The left quarter of the display (x 0 to 256) is bare wallpaper throughout; the arrangement and its grey ground begin at x 262.",
+    "The grey ground shows as a hole with a rounded corner where the dragged window came from (frames 44 to 197); it reads well as 'this place is free'."
+   ]
+  },
+  "desktop-back": {
+   "E1": {
+    "status": "miss",
+    "said": "Four blank near-black slabs without icon or colour slide in from left and right over a black wallpaper, stop two thirds of the way for a whole second, and then four coloured windows stand elsewhere: until that last frame one cannot tell what is coming or which is which.",
+    "frames": [
+     2,
+     4,
+     7,
+     8
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "Frame 7 stays on the display for 1000 ms as a half-finished picture, four empty slabs cut off by the display's edges with nothing in the middle.",
+    "frames": [
+     7
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "The glide runs for 100 ms, freezes for a second 141 px short on the left and 113 px short on the right, and the windows then appear in one frame without a fade; the system's own Show Desktop comes back in one unbroken sweep.",
+    "frames": [
+     2,
+     7,
+     8
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "No words appear and none are needed; the Desktop button in the menu bar goes dark and the forward arrow wakes up, though only together with the windows at frame 8.",
+    "frames": [
+     7,
+     8
+    ]
+   },
+   "refuted": {
+    "S8": "Every gap is 12 px from edge to edge: x 436 to 449, 674 to 687, y 363 to 376 in both columns, 12 px to the display's edges. The ruler measures the flat colour and loses rims and title bars. The one unevenness the eye does find goes the other way: the focus ring takes 3 px of the gaps round the green window, leaving 9."
+   },
+   "other": [
+    "These cards carry no icon at all, unlike the cards of every other scene: at frame 7 the middle of the left cards is well inside the display and is empty.",
+    "Near-black cards (about 30,33,31) on a black wallpaper: only a hairline rim tells them from the ground.",
+    "With the last frame a white resize handle appears in the gap at x 443, because the pointer happens to lie there; it comes with the windows, without a fade.",
+    "Frame 0 has the one-pixel line at the right edge beside the Dock (windows put away); it goes at frame 1, before anything else moves."
+   ]
+  },
+  "eight-show-everything": {
+   "E1": {
+    "status": "pass",
+    "said": "One unbroken drawing back: the one big card shrinks towards the lower right while seven others come in from the left and from above, all in step, gaps shrinking with them, nothing crossing anything; but the eight cards are alike, so which is which is only known when the colours return at frame 31.",
+    "frames": [
+     4,
+     8,
+     14,
+     20,
+     29,
+     31
+    ]
+   },
+   "E2": {
+    "status": "pass",
+    "said": "Every frame of the move is clean: flat cards with a hairline rim, sharp icons at every size, cut only by the display's edge and the menu bar; frames 31 and 32 are a plain cross-fade in which the icon's ghost stands just above each window's label.",
+    "frames": [
+     5,
+     11,
+     18,
+     30,
+     31,
+     32
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "A display full of bright blue with a white title bar turns near-black within one frame and stays dark for half a second, which no system animation does, though the glide itself (about 450 ms, slowing softly) and the cards' corners, which match the windows', would pass for the system's.",
+    "frames": [
+     3,
+     4,
+     30,
+     31
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "The line 'Your other windows are out of view, not closed  ⌃⌥Space shows everything' starts to fade as the keys go down and is gone by about +170 ms, and nothing else is said.",
+    "frames": [
+     0,
+     1,
+     3,
+     4,
+     6,
+     9
+    ]
+   },
+   "refuted": {
+    "S8": "At rest every gap is 12 px from edge to edge: x 542 to 555 and 1086 to 1099; y 350 to 363, 669 to 682, 510 to 523. They look even. Nothing 22 px wide is to be seen; the ruler loses title bars and rims, and the ring round the blue window takes 3 px of its gaps (9 left)."
+   },
+   "other": [
+    "After 'show everything' a strip 266 px wide at the right (x 1642 to 1907) stays black: an empty place whose outline (12,12,12 on black) nobody could see, so the arrangement looks pushed to the left.",
+    "The move ends at frame 29/30 (+503 ms) and the display then stands still for 67 ms before the fade begins at frame 31 (+586 ms).",
+    "In this film the menu bar has none of Arbor's buttons, which the 1024 px films all show.",
+    "Frames 0 to 3 have the one-pixel line at the right edge beside the Dock (seven windows put away)."
+   ]
+  },
+  "panel-go-to": {
+   "E1": {
+    "status": "miss",
+    "said": "⌃⌥G goes down and ⎋ goes down and all 70 frames show the same four windows: no panel comes, none goes, nothing can be told.",
+    "frames": [
+     0,
+     1,
+     30,
+     65,
+     69
+    ]
+   },
+   "E2": {
+    "status": "pass",
+    "said": "The one picture there is is tidy: four windows with even gaps, a blue ring round the blue one, an empty place with a hairline outline and a small Desktop sign in its middle.",
+    "frames": [
+     0,
+     30,
+     69
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "There is no panel to hold against Spotlight's, which would be on the display within a tenth of a second of the key.",
+    "frames": [
+     1,
+     2,
+     30
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "The person asks for 'Go to…' and gets no field, no list and no word in 3.7 seconds.",
+    "frames": [
+     1,
+     30,
+     69
+    ]
+   },
+   "other": [
+    "The blue window keeps its coloured traffic lights and dark title throughout, as it would under a panel that does not take the app's place."
+   ],
+   "void": "the panel keeps out of screen captures, so it is in no frame"
+  },
+  "pictures-frame": {
+   "E1": {
+    "status": "pass",
+    "said": "The orange window grows from its corner to fill the display while green and red leave to the right and blue sinks away behind the Dock, each as its own picture, all in step, nothing crossing anything.",
+    "frames": [
+     2,
+     3,
+     5,
+     9,
+     16,
+     28
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "The pictures are pulled out of shape as they grow (wide, blurred letters, oval traffic lights, a swollen title bar), and from frame 6 to 9 the orange window shows two titles, two rows of lights and two labels at once, a big smeared 'Arbor Test 4' with a small sharp one inside it; from frame 29 the one-pixel white-and-red line stands at the right edge.",
+    "frames": [
+     3,
+     5,
+     6,
+     7,
+     8,
+     9,
+     29
+    ]
+   },
+   "E3": {
+    "status": "pass",
+    "said": "A 450 ms glide at 60 frames a second that slows softly, a stretched snapshot cross-fading into the window at its new size much as the system's own full-screen zoom does, the ring fading back in over 50 ms, and a hint in a light rounded pill with the system's type and shadow.",
+    "frames": [
+     2,
+     7,
+     16,
+     28,
+     29,
+     31
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "'Your other windows are out of view, not closed  ⌃⌥Space shows everything' fades in from +60 ms at the bottom centre, says what has just happened and how to undo it, and ends up over the lowest strip of the one window left; the film ends at +1110 ms with it still up, so its going is not seen.",
+    "frames": [
+     3,
+     4,
+     5,
+     28,
+     35
+    ]
+   },
+   "other": [
+    "The hint comes while everything is still moving and for a few frames covers the title of the blue window sliding past beneath it (frames 5 to 8).",
+    "The focus ring is gone from the first frame of the move and only begins to come back at +560 ms, 67 ms after everything has come to rest.",
+    "Of the scenes in this brief this is the only one in which one knows at every frame which window is which, and the only one without a dark flash.",
+    "No Arbor buttons in the menu bar in this film either."
+   ]
+  },
+  "rectangle": {
+   "E1": {
+    "status": "pass",
+    "said": "The rectangle grows from the press point with its corner under the pointer, and after the release the two left cards widen to fill the display while the two right ones leave to the right, in step and without crossing; the four cards are alike, but their places say which is which.",
+    "frames": [
+     28,
+     60,
+     133,
+     175,
+     176,
+     178,
+     185,
+     203
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "Over the blue window the blue rectangle cannot be seen, neither fill nor border, so from frame 95 on it looks like a box open at the bottom that ends in the blue window's title bar; and from frame 204 the one-pixel white-and-red line stands at the right edge beside the Dock.",
+    "frames": [
+     95,
+     133,
+     175,
+     204,
+     209
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "The rectangle itself is the Finder's (square corners, hairline, a wash of colour), and the glide of 470 ms slows softly, but rectangle and four bright windows are swapped for black cards within one frame, which the system never does.",
+    "frames": [
+     60,
+     175,
+     176,
+     203,
+     204
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "No words during the drag; 34 ms into the move 'Your other windows are out of view, not closed  ⌃⌥Space shows everything' fades in at the bottom centre, true and in its usual place, and is still up when the film ends a second later.",
+    "frames": [
+     178,
+     180,
+     203,
+     209
+    ]
+   },
+   "refuted": {
+    "M4": "The film has no button times, so the ruler counted from the start of the script's action. At 799 ms (frames 27, 28) the person's own drag begins and the rectangle is first drawn; at 3049 ms (frame 155, undone at 162) the pointer twitches a pixel and the rectangle's right edge goes with it; 3665 ms (frame 176) is the one and only answer to the release. After the release there is one move, 176 to 203, and one fade."
+   },
+   "other": [
+    "Between the last frame with the rectangle at rest (175, +3382 ms) and the cut to cards (176, +3665 ms) nothing changes for 283 ms. When the button came up the film does not say; the ⌃⌥ keys come up at +3635 ms, 30 ms before the cut. Whether Arbor answered late, or waits for the keys, cannot be told from this film.",
+    "Over orange the rectangle's wash gives a dull brown, and the white label inside it turns pale blue.",
+    "The rectangle vanishes in the same frame as the windows, without a fade.",
+    "Frame 204 (+67 ms after the move has ended) is a cross-fade with the icon's ghost over each label, gone by 206."
+   ]
+  },
+  "show-everything": {
+   "E1": {
+    "status": "pass",
+    "said": "One drawing back: the one card shrinks into the upper left corner, a second rises from behind the Dock beneath it and two come in from the right, all in step, nothing crossing; the cards are alike, so the colours at frame 28 are the first word on which is which.",
+    "frames": [
+     1,
+     4,
+     9,
+     15,
+     21,
+     27,
+     28
+    ]
+   },
+   "E2": {
+    "status": "pass",
+    "said": "The cards are clean in every frame, hairline rims, sharp icons from 230 px down to 100, cut only by the display's edges and the Dock; frames 28 and 29 are a plain cross-fade with the icon's ghost above each label.",
+    "frames": [
+     1,
+     6,
+     15,
+     27,
+     28,
+     29
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "A display full of orange turns near-black within one frame and stays so for half a second before four colours return in a 50 ms fade; the glide between (about 450 ms, slowing softly) could be the system's, the dark flash could not.",
+    "frames": [
+     0,
+     1,
+     27,
+     28,
+     30
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "The white pill 'Your other windows are out of view, not closed  ⌃⌥Space shows everything' stays at full strength until +158 ms after that very key, the brightest thing on a dark display, lies across the icon of the card coming up beneath it, and is gone only at about +340 ms.",
+    "frames": [
+     1,
+     5,
+     7,
+     8,
+     9,
+     10,
+     12,
+     15,
+     19
+    ]
+   },
+   "other": [
+    "In 'eight-show-everything' the same line begins to fade as the keys go down; here it waits some 175 ms. The two films differ in nothing a person would know of.",
+    "The move ends at frame 26/27 (+492 ms); the display then stands still for 66 ms before the fade starts at frame 28 (+558 ms).",
+    "The middle third of the display (x 317 to 610) is black at the end, an empty place with an outline too dark to see.",
+    "Frame 0 has the one-pixel line at the right edge beside the Dock; it goes with the first frame of the move."
+   ]
+  },
+  "view": {
+   "E1": {
+    "status": "pass",
+    "said": "The two left cards widen to fill the display while the two right ones leave to the right within three frames, in step, nothing crossing, and the '1' in the menu bar lights up as 'show everything' goes dark; the cards are alike, but their places say which is which.",
+    "frames": [
+     1,
+     2,
+     3,
+     6,
+     13,
+     27
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "The move's own frames are clean (flat cards, hairline rims, sharp icons; 28 to 30 a plain cross-fade with the icon's ghost over the label), but from frame 28 to the end a one-pixel line, white above and red below, 80 px tall, stands at the right edge beside the Dock and belongs to nothing on the display.",
+    "frames": [
+     6,
+     27,
+     28,
+     29,
+     36
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "Four bright windows turn near-black within one frame and stay so for half a second; the glide (about 460 ms, slowing softly), the cards' corners and the lit menu-bar button are the system's manner, the dark flash is not.",
+    "frames": [
+     0,
+     1,
+     27,
+     28,
+     31
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "'Your other windows are out of view, not closed  ⌃⌥Space shows everything' fades in from +58 to +108 ms at the bottom centre, true and clear, ending over the lowest strip of the blue window, and is still up when the film ends at +1325 ms.",
+    "frames": [
+     2,
+     3,
+     5,
+     27,
+     36
+    ]
+   },
+   "other": [
+    "The menu bar changes one frame after the stage appears (frame 2, +58 ms), at once and without a fade, as menu-bar buttons do.",
+    "The move ends at frame 26/27 (+492 ms); the display stands still for 66 ms before the fade starts at frame 28.",
+    "The same hint comes in 'view', 'rectangle' and 'pictures-frame' alike; someone who presses ⌃⌥1 on purpose is told each time that the other windows are not closed. Whether it stops after the first few times no film shows.",
+    "A very faint outline of the empty middle place stays where it was while the cards grow over it (frames 1 to 3); at 12 of 255 on black nobody would see it."
+   ]
+  },
+  "dark-dock-drag-beside": {
+   "E1": {
+    "status": "miss",
+    "said": "While the drag is held the blue-tinted drop preview lies on top of the dragged green window (its title bar turns navy, its green turns teal) instead of behind it, and after the release the dragged card and the orange window's card are the same black with only a hairline to tell them apart.",
+    "frames": [
+     101,
+     103,
+     104,
+     105,
+     108,
+     112
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "When the drag starts the focus ring stays behind for about 100 ms as an empty blue outline drawn across the moving window, and in the hand-back the icon's outline and 'exec' lie across each window's own 'Arbor Test n' on muddy brown, navy and bottle green.",
+    "frames": [
+     36,
+     38,
+     40,
+     41,
+     130,
+     131
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "Orange, blue, red and green windows all become flat near-black cards without title bars from one frame to the next, with no fade at all on the way in and only a 50 ms cross-fade (after an 83 ms standstill) on the way back, which no macOS transition does.",
+    "frames": [
+     104,
+     105,
+     129,
+     130,
+     133
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "The pill 'Docked  ⌃⌥↩ frames it' comes up at 88 ms while the card is still rising underneath it, and then sits astride the left edge of the very window that was just docked, half on it and half on the wallpaper, until about 1.9 s.",
+    "frames": [
+     106,
+     107,
+     110,
+     135,
+     139,
+     143
+    ]
+   },
+   "refuted": {
+    "S8": "The 27 px is the distance from the display's left edge to the blue window, which is one of a loose floating pile (blue over red, 40 px apart, reaching neither top nor bottom) and no tile. Round the two docked windows the gaps look alike: top, right, between orange and green, and to the pile."
+   },
+   "other": [
+    "The picture stands still for 1066 ms in mid-drag: frame 100 (-2262 ms) shows the first, left-half preview, the next frame frame 101 (-1196 ms) has the window 184 px further right and 146 px lower under another preview, while the script's log has the pointer moving all that time. Frozen screen or stalled camera: the frames cannot tell, but the light film has only 150 ms at the same spot.",
+    "A left-half preview shows for the one frame frame 100 before the lower-half one.",
+    "The preview's upper edge cuts through the words 'Arbor Test 4' of the window underneath.",
+    "During the stage the black pointer on black cards is only a thin white outline."
+   ]
+  },
+  "dark-rectangle": {
+   "E1": {
+    "status": "pass",
+    "said": "During the drag a rubber band grows from the press point to the pointer, and after the release the two left cards widen to fill the display while the two right ones slide off to the right in step with them, nothing crossing anything.",
+    "frames": [
+     58,
+     96,
+     135,
+     182,
+     183,
+     185,
+     190,
+     200
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "When the right-hand cards leave, the grey plate they stood on stays where it was as a big empty rounded grey slab for some 300 ms until the growing cards cover it, and the gap between those two cards is dark grey as far as the old column went and lighter beyond.",
+    "frames": [
+     183,
+     184,
+     185,
+     186,
+     188,
+     192,
+     196
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "One frame after the band vanishes four coloured windows are black cards, and they come back after an 84 ms standstill through a muddy two-frame cross-fade with 'exec' over their labels; only the band itself, square-cornered with a hairline and a tint, is as the Finder's own.",
+    "frames": [
+     181,
+     182,
+     207,
+     208,
+     209
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "One pill, 'Your other windows are out of view, not closed  ⌃⌥Space shows everything', fades in over three frames at the bottom centre over an empty part of the lower window, says what happened and how to undo it, and is still up when the film ends about a second after the release, so its going is not on film.",
+    "frames": [
+     184,
+     185,
+     186,
+     209,
+     213
+    ]
+   },
+   "refuted": {
+    "M4": "The ruler counted from the script's 'action' mark, because this film has no marks for the mouse button. frames 164 to 168 is the pointer's last nudge of a pixel or two with the band's edge following it: the person's own hand. frame 181 is the release (the band is gone) and the one motion follows from frame 182. There is one drag and one answer.",
+    "M6": "Between frame 33 and frame 34 only the pointer moves, some 22 px right and 18 px down after a pause of 166 ms: the hand setting off. No window moves, and the band is first there in frame 35."
+   },
+   "other": [
+    "Over the blue window the band's blue hairline and bluish tint all but vanish: from frames 116 to 180 its lower half can hardly be made out.",
+    "In frame 184 the pill is so faint that its white words lie unreadable on the pale wallpaper between card and slab; in frames 185 to 187 the grey second half of its text lies on the grey slab.",
+    "The three ready-made sheets of this scene are cut round the wrong moment (they end at frame 43); the release is at frame 180/frame 181. The time from letting go to the first answer cannot be judged: nothing in the film says when the button came up, and 267 ms lie between frame 180 and frame 181.",
+    "The pill sits about 15 px above the resting pointer."
+   ]
+  },
+  "dock-drag-beside": {
+   "E1": {
+    "status": "miss",
+    "said": "While the drag is held the drop preview is drawn over the dragged window (its white title bar turns pale blue, its green teal) instead of behind it, and after the release near-black cards on a black wallpaper slide over one another with only grey hairlines to say which is which.",
+    "frames": [
+     131,
+     140,
+     159,
+     161,
+     163,
+     166,
+     169
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "The focus ring stays behind as an empty blue outline across the window for the first 100 ms of the drag, a scrap of green 'exec' peeps out under the Dock at the display's bottom edge, and in the hand-back 'exec' and the icon's outline lie over the windows' own labels on dirty colours.",
+    "frames": [
+     33,
+     35,
+     36,
+     37,
+     161,
+     180,
+     181
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "All four windows, two of which never move, go from full colour to near-black cards in one frame so that the whole display goes dark for half a second, and the pointer flashes to an up-down resize arrow for two frames at the release.",
+    "frames": [
+     160,
+     161,
+     162,
+     179,
+     180
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "The pill 'Docked  ⌃⌥↩ frames it' appears at 90 ms with the card still travelling beneath it and then lies astride the left edge and ring of the window just docked, half on green and half on black, until about 1.9 s.",
+    "frames": [
+     163,
+     165,
+     168,
+     185,
+     189,
+     193
+    ]
+   },
+   "refuted": {
+    "M2": "The lower card's top edge moves in every frame from frame 161 (57 ms) to frame 178 (490 ms): about 430 ms. The ruler followed the orange card's lower edge, which is hidden behind the dragged card of the same colour until frame 170, and so missed the first 150 ms.",
+    "M3": "No such jump is to be seen. The lower card's top edge goes 625, 603, 567, 533, 506, 484, 468, 454, 442, 432 px in frames 161 to 170: the largest step is 36 px of a road of some 260. The 75% is the moment the hidden edge of the upper card comes out from behind the lower one.",
+    "M6": "Between frame 169 and frame 170 the moving edge goes 10 px, like its neighbours; the 209 px is again the upper card's lower edge appearing from behind the lower card. And the resting edges do not stir: blown up, the cards of blue, red and orange have left, top, right and bottom edges and corners on the same pixels as their windows in frame 160, frame 161, frame 170, frame 179 and frame 183.",
+    "M8": "Nothing is missing in frames 161 to 169: every window has its card in its place. A card of (30,33,31) on a black wallpaper, overlapped by another of the same colour, is what the ruler lost. A person might all the same feel that the windows went out: see E3.",
+    "S8": "The 27 px is the left margin of the floating pile (blue over red), which is no tile; the docked windows' own gaps look alike all round."
+   },
+   "other": [
+    "A faint left-half preview shows for the single frame frame 122, nothing in frames 123 to 125, then the lower-half preview fades in from frame 126.",
+    "The picture stalls for 150 ms twice in the drag, each time as Arbor draws something new (frames 32 to 33 the ring, frames 122 to 123 the first preview); after the second the window is 67 px further on.",
+    "The preview's upper edge cuts through the words 'Arbor Test 4'."
+   ]
+  },
+  "float": {
+   "E1": {
+    "status": "pass",
+    "said": "The lower right card grows to the left and a little upwards over its neighbour while the card above it lengthens behind it, its icon sliding down until it is half covered, and the two left cards stand still: it can be followed in every frame, though all four cards are the same black.",
+    "frames": [
+     3,
+     5,
+     7,
+     13,
+     22,
+     28
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "At rest a white nub, the top of the Desktop slot's little glyph, sticks out 3 px above the floated window's top edge near its left corner and the ring's right side is cut off by the display's edge, and in frame 29 'exec' and the icons' outlines lie across the windows' own labels.",
+    "frames": [
+     29,
+     30,
+     31,
+     34
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "All four windows, two of which never move, flip to black cards in one frame, and the floated window ends jammed into the corner, touching the display's right edge and the top of the Dock, where macOS leaves a free window clear of both.",
+    "frames": [
+     2,
+     3,
+     28,
+     31,
+     34
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "No word, pill or panel appears in any frame; the only sign is the window itself lying over its neighbours with the ring round it, and no message covers anything.",
+    "frames": [
+     3,
+     28,
+     31,
+     34
+    ]
+   },
+   "refuted": {
+    "M6": "The moving left edge goes 687 (window), 673, 654, 634, 619, 606, 596 px: steps of 14, 19, 20, 15, 13, 10. The first is smaller than the second, so it reads as a glide already one step under way in the first card frame, not as a hop. What may have fooled the ruler is the upper card's lower edge, covered from frame 3 on by the lower card of the same colour.",
+    "M8": "In frame 3 both right-hand cards are there, one overlapping the other by a few pixels, same colour, a hairline between: the ruler read them as one tall thing. What does go away for the eye is something else: the outline and glyph of the empty Desktop slot in the middle, gone from frames 3 to 28."
+   },
+   "other": [
+    "The floated window covers the words 'Arbor Test 3' and the lower half of the window that took over its slot.",
+    "Docking says 'Docked' in a pill; floating says nothing.",
+    "The cross-fade back is three frames (517-567 ms) after a 33 ms standstill; the ring is there at full strength from its first frame frame 29."
+   ]
+  },
+  "panel-menu": {
+   "E1": {
+    "status": "miss",
+    "said": "The click on Arbor's strip in the menu bar opens no menu: the whole strip of five buttons lights up as one pill, then all four windows turn into black cards and slide off to the left and right leaving a bare Desktop, and ⎋ afterwards changes nothing.",
+    "frames": [
+     34,
+     36,
+     41,
+     42,
+     43,
+     46,
+     54,
+     72
+    ]
+   },
+   "E2": {
+    "status": "pass",
+    "said": "No frame has a hole, a smear or a stray line: the cards leave over both side edges with their icons cut only by the display's edge, and what remains is the black Desktop, the menu bar and the Dock.",
+    "frames": [
+     42,
+     43,
+     44,
+     46,
+     50,
+     54,
+     60
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "The four windows go from full colour to near-black cards in one frame, and the pressed state is one grey pill over all five buttons, as for a single status item, though only the one under the pointer acts.",
+    "frames": [
+     36,
+     41,
+     42,
+     43
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "No menu, and so none of its words, is on film; the only words are the system's tool tip 'Show the Desktop (⌃⌥D)', which comes 1.9 s after the click, when the Desktop is already showing, and is still up when the film ends.",
+    "frames": [
+     72,
+     73,
+     74
+    ]
+   },
+   "refuted": {
+    "M1": "What appears in frame 73 is a tool tip under the resting pointer, 1.9 s after the click: macOS's own hover delay, not an answer to ⎋. There was nothing on screen for the key to act on.",
+    "P1": "True to the letter and void as a finding: no panel is in this film. The click at (720, 15) landed on the 'Show the Desktop' button of the strip, not on '⋯', so no menu opened and ⎋ had nothing to close; the change at 373 ms is the tool tip."
+   },
+   "other": [
+    "This film does not show its subject. Nothing about the menu (how it comes, looks, reads, goes) can be judged from it; it wants filming again with the click on the right button.",
+    "The windows leave in about 200 ms of visible travel (frames 42 to 54), the cards widening as they go, as if the camera dived into the empty middle slot; that slot's outline and glyph vanish at frame 42.",
+    "After the click the Desktop button is shown pressed and the forward arrow is dimmed, from frame 43."
+   ],
+   "void": "the click hit another button of the menu bar item, so no menu opens"
+  },
+  "pictures-show-everything": {
+   "E1": {
+    "status": "pass",
+    "said": "The orange window shrinks into the top left corner while blue rises from below it and green and red come in from the right, all in their own colours and in step, nothing crossing anything.",
+    "frames": [
+     1,
+     3,
+     6,
+     9,
+     12,
+     15,
+     18,
+     21,
+     24
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "In frame 5 and frame 6 two pictures of the orange window lie over one another, a tiny 'Arbor Test 4' inside a big blurred one and two sets of traffic lights, and from frame 2 to about frame 12 the title bars and labels are stretched sideways and soft, with oval traffic lights.",
+    "frames": [
+     2,
+     4,
+     5,
+     6,
+     7,
+     8,
+     10,
+     12
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "Timing, easing and the hand-over to the real windows at the end are seamless, but the type and the traffic lights are pulled to about one and a half times their width and a window swaps pictures in mid-flight, where Mission Control scales a window whole.",
+    "frames": [
+     2,
+     4,
+     5,
+     6,
+     8,
+     26,
+     27
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "Nothing new is said; the pill left from before, '… ⌃⌥Space shows everything', stays at full strength for 175 ms after that very key and has faded out by about 400 ms, brushing across the arriving 'Arbor Test 2' on its way.",
+    "frames": [
+     0,
+     8,
+     9,
+     10,
+     12,
+     15,
+     18,
+     21
+    ]
+   },
+   "other": [
+    "While the old pill fades, its words and the big 'Arbor Test 2' lie over one another for three or four frames (frames 10 to 13).",
+    "The ring goes in one frame (frames 0 to 1) and comes back in one frame at full strength (frame 27) after an 83 ms standstill; with it the shadow on the blue window's title bar appears.",
+    "This is the only scene of my eight in which one can tell the windows apart all the way."
+   ]
+  },
+  "reduced-dock-key": {
+   "E1": {
+    "status": "miss",
+    "said": "It happens in three jerks, not one: in frame 2 the orange window has its new size but still hangs at its old place in the middle, over the pile and down to the Dock, in frame 3 it is at the left and the three other windows have jumped to the right and been squared up, and only in frame 4 come ring, pill and the Desktop slot's outline.",
+    "frames": [
+     1,
+     2,
+     3,
+     4
+    ]
+   },
+   "E2": {
+    "status": "pass",
+    "said": "Every frame shows whole, sharp, real windows with their own title bars and shadows; nothing is smeared, half drawn or left behind.",
+    "frames": [
+     2,
+     3,
+     4,
+     12,
+     16
+    ]
+   },
+   "E3": {
+    "status": "pass",
+    "said": "No stage and no cards: the system's own windows jump into place within 132 ms, the ring follows the window's corner, and the pill is a light rounded panel in the system's type with a soft shadow, there and gone in one frame each as befits reduced motion.",
+    "frames": [
+     3,
+     4,
+     5,
+     15,
+     16
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "The pill 'Docked  ⌃⌥↩ frames it' lies astride the right edge and ring of the window just docked, half on orange and half on black, from 132 ms to about 1.7 s.",
+    "frames": [
+     4,
+     5,
+     12,
+     15,
+     16
+    ]
+   },
+   "refuted": {
+    "S8": "The 27 px is the room between the floating pile (green over blue over red) and the display's right edge; the pile reaches neither top nor bottom and is no tile. The docked window has 12 px to the left, above and to the pile."
+   },
+   "other": [
+    "Docking one window moves three others: the diagonal cascade of frame 1 is a straight vertical pile in the right half from frame 3.",
+    "The pointer, which was on the orange title bar, is left over bare wallpaper."
+   ]
+  },
+  "tile": {
+   "E1": {
+    "status": "miss",
+    "said": "Two cards of the same black cross, the big one going right in front and the blue window's going left behind it with its icon hidden until frame 11, so that between frame 6 and frame 14 only hairlines say which outline is whose, and the card that was the green window ends as a pale grey slab that nothing in the picture ties to it.",
+    "frames": [
+     3,
+     6,
+     9,
+     11,
+     14,
+     16,
+     30,
+     31,
+     33
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "In frame 31 and frame 32 the card's big icon outline and 'exec' lie round and over the tile's small icon, 'exec' lies over 'Arbor Test 1' and 'Arbor Test 2', and the colours are dirty red, navy and mid grey.",
+    "frames": [
+     31,
+     32
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "Three coloured windows become black cards in one frame, and at the end the right-hand card goes from near-black to light grey, the brightest thing on the display, in some 50 ms.",
+    "frames": [
+     2,
+     3,
+     30,
+     31,
+     33
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "The pill 'Too small to show: click the tile to zoom in  ⌃⌥G goes there too' comes at 85 ms with the cards still flying under it, lies across the empty slot and the foot of the blue window instead of by the tile it speaks of, does not say what is too small, and is still up when the film ends at 2.85 s.",
+    "frames": [
+     5,
+     6,
+     10,
+     33,
+     163
+    ]
+   },
+   "refuted": {
+    "M2": "The cards move in every frame from frame 3 (35 ms) to frame 26 (451 ms): a glide of some 415 ms. Three overlapping cards of one colour on a black wallpaper were too much for the ruler.",
+    "M3": "The big card's left edge goes 162, 188, 335, 413, 473, 523, 560, 592, 619 ... 766, 768, 770, 771 px: the steps shrink steadily to one pixel. The largest, 147 px of 609 (24%), spans the 33 ms between frame 3 and frame 4, where one tick is missing.",
+    "M4": "At frame 6 the red card's right edge has done 52% of its road, the blue card's left edge 51%, the big card's left edge 51%; at frame 10 about 75% each. And no edge crosses the display's edge in any frame: the big card's right edge goes from 862 to 1012 and stops there.",
+    "M6": "78 px is the step from frames 4 to 5, and its neighbours are 147 px over two ticks before it and 60 and 50 px after it: a fast glide slowing down, not a hop. The first card frame frame 3 is 26 px from where the window was.",
+    "M8": "All three are there in frame 3, frame 4 and frame 5 as cards; near-black on black and overlapping, they were lost by the ruler, not by the eye.",
+    "S8": "Counted on the pixels of the last frame every gap across is 12 px: 0-11, 253-264, 506-517, 759-770, 1012-1023. The ruler took the windows' 1 px lighter rims for gap."
+   },
+   "other": [
+    "From frame 31 a short white bar stands in the gap left of the blue window: the divider's grip, shown because the pointer happens to have been left on that gap. Nobody asked for it, and it stays to the end.",
+    "The tile has an icon of about 50 px and no name: with several windows of one app one could not tell which window it stands for.",
+    "The camera delivers a frame every 17 ms from frames 34 to 163, but not one pixel of the room differs between them."
+   ]
+  },
+  "dark-dock-drag-edge": {
+   "E1": {
+    "status": "miss",
+    "said": "After the button comes up the picture stands still, preview and all, for 0.77 s, then in a single frame the four coloured windows become four identical black cards, so the three in the pile cannot be told apart; and before that the blue preview lies in front of the very window the hand is holding.",
+    "frames": [
+     151,
+     154,
+     180,
+     181,
+     185
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "While held, the dragged window is two-toned (dulled brown under the preview, a bright orange strip 13 px wide outside it), and in the cross-fade the 'exec' icon ghosts over the words 'Arbor Test 3' and 'Arbor Test 4' on muddied green and orange.",
+    "frames": [
+     154,
+     178,
+     204
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "A 0.77 s freeze, a hard cut from windows to cards, a cross-fade back of only two frames, and from frame 189 to the end a flat grey plate with a hard rounded edge that shows as a band about 6 px wide outside the blue ring, where macOS would have only a soft shadow.",
+    "frames": [
+     180,
+     181,
+     191,
+     194,
+     204,
+     205,
+     207
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "The pill 'Docked  ⌃⌥↩ frames it' pops in whole, without a fade, at +1046 ms while the cards are still travelling, and sits astride the left edge of the window just docked, half on it and half on the wallpaper, for 1.6 s before it fades.",
+    "frames": [
+     191,
+     192,
+     207,
+     211,
+     214
+    ]
+   },
+   "refuted": {
+    "M7": "No window changes. The translucent blue preview fades in over the green, blue, red and orange windows in five frames (frames 151 to 155, about 80 ms, biggest step first), and the ruler took the tint for the windows' own look. What is true: the preview is drawn above the dragged window and tints it.",
+    "S8": "The docked window has 12 px to the green window, 12 px to the display's right edge, 13 px under the menu bar and 13 px above the Dock: even to the eye. The 26 to 30 px is the distance of the floating pile from the display's left edge; the pile is not a tile, and its soft shadow makes the edge vague.",
+    "D1": "At frame 165 nothing moves at all (frames 162 to 165 are identical) and the pointer rests on the title bar as before. The ruler's box of the window was cut up by the preview: under it the orange is another colour, and the preview's right edge at x=1011 slices off a strip. By my own measure the window is 9 px from the spot it was grabbed at from frame 103 on, and 6 px behind in frames 96 to 102, as its right edge crosses the display's edge."
+   },
+   "other": [
+    "The three floating windows are shoved left and squared up: from x=170/220/270 to x=26 for all three, so the cascade becomes one green window with a blue and a red strip under it. Nobody asked for that, and a person would notice it more than the docking.",
+    "The preview told the truth: its outline (518,43 494x653) is exactly where the window ends.",
+    "Arbor's menu-bar strip (< > and three glyphs) appears in one frame at frame 194, in the middle of the move.",
+    "A hole of 67 ms between frame 193 and frame 194 near the end of the travel; the last stretch stutters.",
+    "In frame 204 a light 1 px line stands between the ring and the orange body on the left.",
+    "The 'ends' sheet of this scene is the same file as the 'begins' sheet; I made my own of frames 192 to 214."
+   ]
+  },
+  "dark-save-view": {
+   "E1": {
+    "status": "pass",
+    "said": "One dark pill fades in at the bottom centre and, in the same frame, a '1' chip appears in Arbor's menu-bar strip; the two windows and the ring do not stir.",
+    "frames": [
+     2,
+     3,
+     4,
+     8
+    ]
+   },
+   "E2": {
+    "status": "pass",
+    "said": "Every frame of the fade is clean: the pill has its full shape and place from the first faint frame, the letters are sharp throughout, no half-drawn edge and no stray line.",
+    "frames": [
+     3,
+     4,
+     5,
+     6,
+     7
+    ]
+   },
+   "E3": {
+    "status": "pass",
+    "said": "A dark rounded pill with a hairline rim, a soft shadow and system type, first seen 49 ms after the key and full after some 80 ms, could pass for a system heads-up; the menu-bar strip jumps 26 px to the left in one frame, as status items do when they grow.",
+    "frames": [
+     3,
+     5,
+     8
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "It reads 'Saved view 1: ArborTestWindows and ArborTestWindows', the same name twice, which says nothing about which two windows were saved, and it still lies fully opaque over the lower window when the film ends 3.1 s after the key.",
+    "frames": [
+     8,
+     10
+    ]
+   },
+   "refuted": {
+    "P2": "The pill's rim and letters stand on the same pixels in frames 3 to 8; it only gains strength. What wanders is the ruler's box: in frame 3 it also takes in the menu-bar strip (change reaches up to y=6 and right to x=751), and the faint fringe of the pill's shadow crosses the ruler's threshold in some frames and not in others (box 289..751, then 291..732, then 294..729)."
+   },
+   "other": [
+    "The going of the pill was not filmed: no frame changes between +133 ms and the film's end at +3.1 s, so 'gone in time' cannot be seen here.",
+    "A 1 px line, dark grey then red, stands at the display's right edge from y=685 to the bottom: the parked windows peeping in.",
+    "The three sheets of this scene are one and the same file (11 frames)."
+   ]
+  },
+  "dock-drag-edge": {
+   "E1": {
+    "status": "miss",
+    "said": "After the button comes up nothing changes for 0.75 s, then in one frame four bright windows become four identical near-black cards on a black wallpaper, where the pile of three is only three hairlines; and the preview lies in front of the window being held.",
+    "frames": [
+     142,
+     171,
+     173,
+     174,
+     177
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "The held window is two-toned (dull brown under the preview, a bright orange strip outside it), and for three frames of the cross-fade the 'exec' icon ghosts over 'Arbor Test 3' and 'Arbor Test 4' on darkened, muddy colours with grey title bars.",
+    "frames": [
+     146,
+     171,
+     199,
+     200,
+     201
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "A display full of bright colour goes black in one frame and comes back half a second later, after a 0.75 s freeze and with the cards standing still for 83 ms before the fade; no move of macOS's own blinks like that.",
+    "frames": [
+     173,
+     174,
+     195,
+     198,
+     199,
+     202
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "The light pill 'Docked  ⌃⌥↩ frames it' pops in whole at +1043 ms while the cards still travel and sits astride the docked window's left edge, half on black and half on orange, for 1.6 s.",
+    "frames": [
+     187,
+     188,
+     204,
+     208,
+     209
+    ]
+   },
+   "refuted": {
+    "M7": "frame 30 is pixel for pixel frame 29. Around there the only thing that happens is that the dragged orange window steps 19 px across the pile; the ruler took the pixels of the green, blue and red windows that it covers and uncovers for a change of their look.",
+    "S8": "The docked window has 12 px to the green window, 12 px to the right edge, 13 px above and 13 px below. The 26 or 27 px is the floating pile's distance from the display's left edge, and the pile is not a tile.",
+    "D1": "At frame 69 the pointer's tip is on the 'T' of 'Test', as in frames 20 to 88: pointer and window step together. The script's pointer goes in steps of 19 px about every 100 ms; the log notes the step 2 ms before frame 68, the display shows it (pointer and window both) in frame 69, and the ruler counted that one frame as a distance. BUT there is a true lag elsewhere, see 'other'."
+   },
+   "other": [
+    "A true lag the ruler put in the wrong place: in frames 90 to 96 (117 ms) the pointer's tip stands on the last 't' of 'Test', 19 to 23 px right of where it holds the window; the window went down with the pointer but not right. Its left edge sticks at x=545, that is, exactly when its right edge meets the display's right edge; at frame 97 it has caught up. The frames cannot say whether macOS or Arbor holds it there.",
+    "The three floating windows are shoved left and squared up (x=170/220/270 to x=26 for all), so the cascade becomes one green window with a blue and a red strip under it.",
+    "In the light appearance the cards are as black as in the dark one; on this black wallpaper they are all but invisible.",
+    "The preview told the truth: its outline is where the window ends.",
+    "The 'ends' sheet of this scene is the same file as the 'begins' sheet; I made my own of frames 187 to 209."
+   ]
+  },
+  "frame": {
+   "E1": {
+    "status": "pass",
+    "said": "Four cards stand where the four windows stood, the top left one grows out of its corner until it fills the room while the others leave to the right and downward; nothing crosses anything, and place alone tells which is which, since the cards are all alike.",
+    "frames": [
+     2,
+     3,
+     4,
+     6,
+     10,
+     18
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "In frame 20 the 'exec' icon ghosts over the words 'Arbor Test 4' on a muddy brown with a grey title bar, and in frame 6 the tops of the green letters 'exec' of the leaving card peep out under the Dock at the very bottom of the display.",
+    "frames": [
+     6,
+     20
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "Four bright windows turn black in one frame and the orange one is back 0.5 s later through a fade of two frames, and on the way the growth leaps three times over holes of 67 ms; the system's own zooms neither blink nor stumble.",
+    "frames": [
+     2,
+     3,
+     7,
+     8,
+     9,
+     10,
+     16,
+     17,
+     19,
+     20,
+     21
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "'Your other windows are out of view, not closed  ⌃⌥Space shows everything' answers the one worry this move raises and names the way back, in a light pill at the bottom centre that fades in from +79 ms; it does lie over the foot of the framed window and is still there when the film ends 3.0 s after the key.",
+    "frames": [
+     5,
+     6,
+     8,
+     22,
+     25
+    ]
+   },
+   "other": [
+    "The card has arrived by +463 ms but stands as a black card until +546 ms: some 80 ms of black for nothing.",
+    "Before the key there is a column-wide empty slot in the middle (x=317 to 610), drawn as an outline so faint on black that it reads as a hole in the arrangement.",
+    "Very faint outlines of that empty slot stay where they are behind the moving cards (frames 3 to 12); under 12 of 255 in brightness, I only found them enlarged.",
+    "At rest a 1 px line, white then red, stands at the display's right edge from y=687 to the bottom (80 px): the parked windows peeping in; on a black wallpaper it shows.",
+    "The pill fades in while the lower card's edge is sliding under it (frame 5, frame 6)."
+   ]
+  },
+  "panel-minimap": {
+   "E1": {
+    "status": "miss",
+    "said": "Nothing happens: the key goes down twice and all 22 frames show the same four windows, the same empty slot and the same ring; no minimap comes or goes.",
+    "frames": [
+     1,
+     2,
+     7,
+     8,
+     21
+    ]
+   },
+   "E2": {
+    "status": "pass",
+    "said": "The one picture there is is tidy: four tiles with even gaps, a ring round the blue window, an outlined empty slot with a small glyph in its middle; nothing smeared, torn or half-drawn.",
+    "frames": [
+     5
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "There is no panel in any frame to hold against macOS's own, and a shortcut that gives neither a panel, a word nor any other sign is not how the system answers a key.",
+    "frames": [
+     2,
+     6,
+     8,
+     21
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "It says nothing at all: no map, and no word about why there is none.",
+    "frames": [
+     2,
+     7,
+     21
+    ]
+   },
+   "other": [
+    "The camera was handed 14 frames in a row after the second key (frames 8 to 21, every 17 ms) though no pixel differs: something was being redrawn without showing.",
+    "The 'ends' sheet of this scene is the same file as the 'begins' sheet."
+   ],
+   "void": "the panel keeps out of screen captures, so it is in no frame"
+  },
+  "pinch-in": {
+   "E1": {
+    "status": "miss",
+    "said": "Two things happen in one gesture: first both right-hand cards widen leftward as a pair, then, a third of the way there, the left edge jerks 14 px back and the move changes its mind, the upper card alone growing while the lower one sinks away.",
+    "frames": [
+     5,
+     8,
+     11,
+     12,
+     13,
+     16,
+     20
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "In frame 40 the 'exec' icon ghosts over the words 'Arbor Test 3' on a darkened green with a grey title bar, and in frame 20 and frame 21 the pill comes up as dark letters on dark grey right across the sliding gap between the two cards.",
+    "frames": [
+     20,
+     21,
+     40
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "Bright windows cut to black cards in one frame, the zoom stalls and restarts in mid-course, the finished card then stands black for 117 ms before the window returns; a pinch in macOS follows the fingers in one continuous motion.",
+    "frames": [
+     4,
+     5,
+     11,
+     12,
+     37,
+     39,
+     40
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "While the zoom the person asked for is still under way the pill says 'Nothing to step into: ArborTestWindows fills the view', a refusal for a gesture that visibly worked, naming the app and not the window, and it is still up when the film ends 2.7 s later.",
+    "frames": [
+     20,
+     24,
+     36,
+     44,
+     49
+    ]
+   },
+   "other": [
+    "The two left-hand windows are all but gone in the first frame of the move (frame 5) and wholly gone in the second: a person does not see them leave.",
+    "The focus goes from the orange window (ring in frame 4) to the green one under the pointer without any sign on the way.",
+    "At rest a 1 px line, white then red, stands at the display's right edge from y=687 to the bottom."
+   ]
+  },
+  "reduced-frame": {
+   "E1": {
+    "status": "pass",
+    "said": "In one frame the orange window is at its full size and the other three are gone, 30 ms after the key; one frame later the ring and the pill are there too, and nothing slides.",
+    "frames": [
+     2,
+     3,
+     4
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "In frame 3 the blue ring still stands at the window's old small place, a rounded blue outline drawn across the title bar and the body of the window that has already grown.",
+    "frames": [
+     3
+    ]
+   },
+   "E3": {
+    "status": "pass",
+    "said": "At rest it looks native: a 3 px accent-blue ring that follows the window's corners, a light pill with hairline rim, soft shadow and system type; the jump itself is as abrupt as the system's own zoom of a window when motion is reduced.",
+    "frames": [
+     4,
+     12,
+     15
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "'Your other windows are out of view, not closed  ⌃⌥Space shows everything' is there whole at +63 ms, says what a person who has just lost three windows needs and how to get them back; it lies over the foot of the framed window and is still there when the film ends 2.7 s after the key.",
+    "frames": [
+     4,
+     15
+    ]
+   },
+   "other": [
+    "From frames 4 to 11 the ring is a dull blue, as if under the window's shadow; at frame 12 (+263 ms) it turns bright in one step. Small, but it is a second change after the end.",
+    "From frame 4 on a 1 px line, white then red, stands at the display's right edge from y=687 to the bottom (80 px): the parked windows peeping in.",
+    "Arbor's menu-bar strip, which the other scenes show, is absent in this film.",
+    "The going of the pill was not filmed."
+   ]
+  },
+  "tile-back": {
+   "E1": {
+    "status": "miss",
+    "said": "The move starts, gets about a quarter of the way in four frames, then the picture stands frozen on half-arrived black cards for 983 ms and cuts in one frame to the end, so nobody sees what went where; the green window one was looking at ends as a grey slab.",
+    "frames": [
+     14,
+     15,
+     18,
+     19
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "frame 18, a big black card and another cut off by the display's left edge, is held on the display for a whole second, and the end has a column-wide black hole between the red and the blue window whose outline is too faint to see.",
+    "frames": [
+     18,
+     19
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "A one-second freeze in mid-move and a hard cut to the end is a hang, not an animation; and the same window wears three looks in that second: green window, black card with a big icon, light grey slab with a small icon and rounder corners than the windows beside it.",
+    "frames": [
+     14,
+     15,
+     18,
+     19
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "'Too small to show: click the tile to zoom in  ⌃⌥G goes there too' does not say what is too small or which tile, lies over the empty slot and the foot of the blue window instead of by the grey slab it is about, and is still up when the film ends 1.9 s later.",
+    "frames": [
+     19,
+     64,
+     125
+    ]
+   },
+   "refuted": {
+    "S8": "I measure 12 px at both sides and between blue window and grey slab, 13 px under the menu bar and above the Dock, and 14 px nowhere; to the eye they are even. The slab's rim is a soft, darker pixel column (x=771) and the blue window's shadow falls on it, which may have cost the ruler a pixel or two."
+   },
+   "other": [
+    "The ruler's own table passes M10 ('at rest 82 ms after the cause') and M4 ('one spell of change') for this film. Both are fooled by the freeze: the picture at +82 ms is not the end, the end comes at +1065 ms.",
+    "The grey slab is as wide (241 px) as the red and the blue column, which do show their windows; 'Too small to show' is hard to believe from what one sees.",
+    "The ring is on the blue window at the end, though the person came from the green one.",
+    "The pointer happens to lie exactly on the slab's small icon and hides half of it.",
+    "After frame 19 the camera was handed 106 frames (every 17 ms, to +2949 ms) in which no pixel differs: something keeps redrawing.",
+    "A 1 px line stands at the display's right edge from y=687 to the bottom, white then blue before the key, white then green after.",
+    "At the film's start the pill of the move before ('Your other windows are out of view…') is still fading out (frames 0 to 10).",
+    "The 'ends' sheet of this scene is the same file as the 'begins' sheet."
+   ]
+  },
+  "dark-frame": {
+   "E1": {
+    "status": "pass",
+    "said": "The card at top left grows out of its corner while the pair on the right runs off to the right by frame 5 and the card below sinks under the Dock by frame 20, all as one magnification about the top-left corner, and nothing passes in front of the growing card but the heads-up line.",
+    "frames": [
+     2,
+     3,
+     4,
+     5,
+     7,
+     13,
+     20
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "Two flat mid-grey slabs with round corners stand stock-still where the two columns of windows were (x 6-311 and x 616-1018, y 37-700) from frame 2 until the growing card has covered them at about frame 26, a colour that belongs to no window, and in frames 30 to 31 the dying card's icon outline and green 'exec' lie across the window's own 'Arbor Test 4'.",
+    "frames": [
+     3,
+     4,
+     5,
+     6,
+     7,
+     13,
+     30,
+     31
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "Four brightly coloured windows become four identical near-black slabs between two frames (frames 1 to 2), the last slab then lies still for some 70 ms (frames 29 to 30) and is three quarters window again at the next frame, a blink to black and back that no system animation has, though the cards' corner radius and edge band do match the real windows'.",
+    "frames": [
+     1,
+     2,
+     29,
+     30,
+     31,
+     32
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "'Your other windows are out of view, not closed  ⌃⌥Space shows everything' is true and sits bottom centre, but it fades in at frame 6 (+92 ms) while card edges still travel beneath it, and in frames 6 to 8 its right half lies on the grey slab where the dim key hint can hardly be read.",
+    "frames": [
+     6,
+     7,
+     8,
+     13,
+     33
+    ]
+   },
+   "refuted": {
+    "M4": "Fooled by the heads-up line: it is a dark pill of the cards' own colour, and the script carried the red window's track on into it (its rectangle jumps from the card at 721,400 in frames 3 to 229,615-795,651, which is the pill). By eye the right-hand pair is gone by frame 5 and until then moves 2.1 px for every 1 px of the growing card's right edge, exactly what a magnification about x=12 gives (610/293); the lower card's top edge keeps a constant share too (376 to about 770). Nothing is seen out of step."
+   },
+   "other": [
+    "All four cards are the same black, so from frame 2 on only the place tells which window is which.",
+    "After the move a 1-px line stays at the display's right edge from y=680 to the bottom (black, then red: the parked windows), with a dark shadow smear over the light wallpaper beside the Dock (frames 30 to 36).",
+    "The travel is at rest at about +430 ms but the window's own picture is not back before +590 ms: some 150 ms of looking at a still black slab (frames 26 to 29).",
+    "The gap between the upper and the lower card widens from 12 px to about 63 px on the way (frames 2 to 13), more than the vertical magnification alone would give; not noticeable at speed."
+   ]
+  },
+  "dark-show-everything": {
+   "E1": {
+    "status": "pass",
+    "said": "The one card shrinks into the top-left corner, a second rises from under the Dock below it and two more come in over the right edge from frame 8, each heading straight for its place and none crossing another.",
+    "frames": [
+     1,
+     3,
+     5,
+     8,
+     11,
+     14,
+     17,
+     20
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "From the first frame the whole room behind the card is a flat grey wash that only thins out to the wallpaper by about frame 20, with darker grey slabs already standing at the places the cards have yet to reach, and in frames 27 to 28 four icon ghosts with 'exec' lie over the four window labels.",
+    "frames": [
+     1,
+     5,
+     8,
+     11,
+     14,
+     17,
+     27,
+     28
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "Nothing moves for 60 ms and then the first frame shows the orange window already turned black and already 125 px narrower, and at the end four black slabs turn into four coloured windows within two frames (frames 26 to 28), so it begins and ends with a jolt where the system would glide.",
+    "frames": [
+     0,
+     1,
+     26,
+     27,
+     28
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "The line 'Your other windows are out of view, not closed  ⌃⌥Space shows everything' stays at full strength until about frame 14 (+277 ms) and is not gone before frame 25 (+477 ms), though the person has just pressed that very key and the windows are coming into view, and in frames 7 to 11 it covers the icon of the lower-left card.",
+    "frames": [
+     1,
+     7,
+     8,
+     9,
+     11,
+     14,
+     17,
+     20,
+     23
+    ]
+   },
+   "other": [
+    "The grey slabs give the end away: they mark where the windows will be before the cards get there (frames 1 to 17).",
+    "In the half-faded frames (frames 17 to 20) the line's pill is see-through, so its words run across a card's edge, the wallpaper and a slab at once and cannot be read."
+   ]
+  },
+  "dock-key": {
+   "E1": {
+    "status": "pass",
+    "said": "The front card, which was the green window, stays in front, slides left and grows tall, while the pile of three behind it slides right underneath, in its old order; nothing that was behind comes to the front.",
+    "frames": [
+     0,
+     1,
+     2,
+     4,
+     7,
+     14,
+     26
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "In frames 27 to 28 the dying cards' icon outlines and 'exec' lie over 'Arbor Test 3' and 'Arbor Test 1' under title bars still grey, and at rest a 10-px strip of a third title bar, its three buttons and its title cut in half, sticks out above 'Arbor Test 4'.",
+    "frames": [
+     27,
+     28,
+     29,
+     41
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "In the light appearance, bright windows with white title bars turn into near-black slabs on a black wallpaper in one frame, so almost the whole display is dark for half a second with only hairlines to tell the slabs apart, and it flashes bright again within two frames after an 84 ms standstill (frames 26 to 27).",
+    "frames": [
+     0,
+     1,
+     2,
+     26,
+     27,
+     28
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "A small light pill 'Docked  ⌃⌥↩ frames it' fades in at frame 2 (+83 ms) bottom centre, says what happened and the next step, and is gone by about frame 38 (+1.85 s); it does straddle the docked window's right edge and covers some 90 px of its bottom corner.",
+    "frames": [
+     2,
+     3,
+     29,
+     33,
+     37
+    ]
+   },
+   "other": [
+    "The person asked for one window to dock, yet three other windows also travel some 350 px to the right, and their staircase collapses to one x, so the blue window ends up hidden but for a strip.",
+    "Arbor's menu bar item jumps from one glyph to five ('< > ...') at frame 3, without any transition, while the cards are moving.",
+    "Between frame 1 (+49 ms) and frame 2 (+83 ms) a frame is missing: the front card jumps some 85 px left and the pile some 95 px right at once.",
+    "An outline for the empty right half appears with the cards' arrival (frame 26 on); on black it is so faint that it reads as a smudge rather than as a place."
+   ]
+  },
+  "in": {
+   "E1": {
+    "status": "pass",
+    "said": "The two cards of the left column widen to the right together, their icons keeping their size and staying centred, while the two cards of the right column slide out over the right edge by frame 3; nothing crosses.",
+    "frames": [
+     1,
+     2,
+     3,
+     6,
+     12,
+     21
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "In frames 29 to 30 the icon's outline and 'exec' lie across 'Arbor Test 4' and 'Arbor Test 2', and from frame 29 on a 1-px line, white above and red below, stays at the display's right edge from y=680 to the bottom.",
+    "frames": [
+     29,
+     30,
+     34
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "Four coloured windows with white title bars go black in a single frame, the display stays all but black for 530 ms, then nothing changes for 67 ms (frames 28 to 29) and the colours are back within two frames: the glide between is smooth and slows down well, but its two ends are cuts.",
+    "frames": [
+     0,
+     1,
+     28,
+     29,
+     30
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "No word is shown and nothing covers the two windows one is left with.",
+    "frames": [
+     12,
+     28,
+     34
+    ]
+   },
+   "other": [
+    "Here two windows leave the view and no line says so, whereas in dark-frame and tile-open the same event brings 'Your other windows are out of view, not closed'.",
+    "The outline of the empty middle place stands still (x 355-680) while the cards move over it (frames 1 to 3); it is nearly invisible on black.",
+    "First change at +67 ms."
+   ]
+  },
+  "panel-shortcuts": {
+   "E1": {
+    "status": "pass",
+    "said": "Only the panel comes and goes: the four windows, the ring and the Dock hold still, and frame 8 is the same picture as frame 0 to the pixel.",
+    "frames": [
+     0,
+     1,
+     5,
+     8
+    ]
+   },
+   "E2": {
+    "status": "pass",
+    "said": "In every frame the panel is whole, with all its text, its round corners and its shadow at the same pixels; in frames 1 to 3 it is see-through, so the big white window labels show among its small grey lines, which is a fade and not a fault.",
+    "frames": [
+     1,
+     2,
+     3,
+     5
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "Nothing happens for 140 ms, then the panel is there at 54% at once (78%, 92%, 98%, 100% in the next four frames) with the windows showing through sharp instead of blurred, it settles as a flat opaque grey rather than a system material, and it goes in a single frame though it came with a fade.",
+    "frames": [
+     0,
+     1,
+     2,
+     3,
+     5,
+     7,
+     8
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "Title, three headed columns with keys right-aligned against their names, and 'Press any key to close' are all legible and correct, the pressed ⌃⌥⇧/ is listed as 'Keyboard Shortcuts', and the panel is gone 44 ms after the second key.",
+    "frames": [
+     5,
+     6,
+     7,
+     8
+    ]
+   },
+   "refuted": {
+    "M9": "Fooled by the translucent panel over the black empty place (x 449-675): there the half-faded panel makes a flat mid-grey block (124, then 179 of 228) which the script took for a thing of its own; it is the panel's middle part on its way to full strength and never goes away.",
+    "P2": "The panel's left edge is at x=29 and its corner on the same pixels in frame 1, frame 2, frame 3, frame 5 and frame 6; only its soft shadow deepens, so the box around 'what changed' grows and shrinks by some pixels from frame to frame. To the eye it is a pure fade."
+   },
+   "other": [
+    "The panel is 966 px wide on a 1024 px display and hides nearly all of the windows; at its left edge it cuts window 2's red button in half (frames 5 to 7).",
+    "The third column stands far from the second, with its long pointer phrases ('⇧ + drag on the Desktop') reaching back into the gap, so the columns look unevenly spaced.",
+    "'Frame What Is Inside' appears twice, one under the other."
+   ]
+  },
+  "pinch-out": {
+   "E1": {
+    "status": "miss",
+    "said": "Two things happen one after the other: from frames 1 to 8 the card only loses height while a second card rises below it, and only from frame 9 do both run to the right and let the left column in (frame 18 on), so one pinch reads as two moves with a bend between them.",
+    "frames": [
+     1,
+     4,
+     8,
+     9,
+     11,
+     14,
+     18,
+     21
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "In frame 37 four icon outlines with 'exec' lie across the four window labels under grey title bars, and in frames 6 to 12 the lower card's icon is cut off by the Dock with scraps of its outline showing beneath the Dock.",
+    "frames": [
+     6,
+     7,
+     8,
+     10,
+     37
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "A pinch on the system follows the fingers, but here nothing moves for 266 ms, then the view runs by itself in two legs and goes on for some 380 ms after ⌥ is let go (frames 14 to 36), with the green window cut to a black slab at the start and the colours cut back in after an 84 ms standstill (frames 36 to 37).",
+    "frames": [
+     0,
+     1,
+     9,
+     14,
+     36,
+     37,
+     38
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "'Already showing everything' fades in at frame 15 (+500 ms), when only two of the four cards are in view and all are still moving, and stays for 1.9 s: it reads as a refusal of a gesture that is visibly being obeyed.",
+    "frames": [
+     15,
+     16,
+     17,
+     18,
+     21,
+     42,
+     47
+    ]
+   },
+   "refuted": {
+    "M3": "It plainly slows down: the right column's left edge covers 161, 127, 80, 56, 56, 27, 20, 15, 11, 7, 4, 2 px per two frames from frames 10 to 34 and creeps into place. The figure is spoiled by the two legs: the vertical leg begins 130 ms before the horizontal one, which stretches the 'first half'."
+   },
+   "other": [
+    "The gap between the upper and the lower card is about 60 px when the lower one comes in (frame 3) and closes to 12 px on the way, so the two do not look like parts of one picture at first.",
+    "The pill overlaps the red window's lower left corner by some 10 px (frames 38 to 47).",
+    "Before the pinch a 1-px line of the parked windows shows at the display's right edge (frame 0)."
+   ]
+  },
+  "reduced-show-everything": {
+   "E1": {
+    "status": "pass",
+    "said": "One cut: frame 2 still shows the one large orange window, frame 3 shows all four windows at their places and sizes, and nothing moves afterwards.",
+    "frames": [
+     2,
+     3,
+     4
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "In frame 2 the blue focus ring has already jumped to the small size while the window is still large, so for one frame a blue outline frames an empty quarter of the orange window and cuts through its title bar.",
+    "frames": [
+     1,
+     2,
+     3
+    ]
+   },
+   "E3": {
+    "status": "pass",
+    "said": "Real windows with the system's own corners, title bars and shadows change places in a single clean frame 91 ms after the key, with no stand-ins and no dark flash; the system itself would dissolve rather than cut, but nothing here looks foreign.",
+    "frames": [
+     1,
+     3,
+     8
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "'Your other windows are out of view, not closed  ⌃⌥Space shows everything' lies at full strength across windows 2 and 1 for some 630 ms after all four are in view (frame 3 at +91 ms to frame 9 at +725 ms) and then goes in one frame.",
+    "frames": [
+     3,
+     4,
+     8,
+     9
+    ]
+   },
+   "other": [
+    "The outline of the empty middle place fades in over frames 3 to 8, too faint on black to be noticed.",
+    "In this film the menu bar shows no Arbor item at all, unlike in the other scenes.",
+    "What changes at frame 1 (+41 ms) is only the 1-px line of the parked windows leaving the right edge."
+   ]
+  },
+  "tile-open": {
+   "E1": {
+    "status": "pass",
+    "said": "The slab under the pointer grows leftwards from the right edge until it fills the room, and the two cards to its left are pushed out over the left edge one after the other (gone at frame 88 and at about frame 101), keeping their order and their gaps.",
+    "frames": [
+     87,
+     88,
+     89,
+     90,
+     92,
+     97,
+     101,
+     108
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "In frames 116 to 117 the icon's outline and 'exec' lie over 'Arbor Test 3' on a darkened window, and a 1-px line stands at the display's right edge from y=680 down both before the click (white and green, frames 0 to 86) and after it (grey-white and blue, frames 116 to 122).",
+    "frames": [
+     86,
+     116,
+     117,
+     122
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "The tile answers neither the pointer coming over it nor the button going down (frames 70 to 86 differ only by the pointer), and then in one frame it turns from light grey to near-black while its icon jumps from 51 to 92 px and the red and blue windows go black with it.",
+    "frames": [
+     70,
+     76,
+     84,
+     86,
+     87
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "'Your other windows are out of view, not closed  ⌃⌥Space shows everything' fades in over frames 96 to 99 (+203 to +253 ms) bottom centre on the growing card, is true, is legible from frame 98 and stays over the lower part of the window to the film's end.",
+    "frames": [
+     96,
+     97,
+     98,
+     99,
+     118,
+     122
+    ]
+   },
+   "refuted": {
+    "M4": "Fooled by identical cards: the edge is the right edge of the red window's track, which the script lost at frame 88 and picked up again at frame 93 on the blue window's card as that passed the same place on its way out. By eye the gap between the blue window's card and the growing one widens in proportion to the magnification (15, 17, 23, 27, 32 ... 48 px), as parts of one picture do.",
+    "M8": "Nothing blinks: the red window's card is half out at frame 87 and gone for good at frame 88; what fills the same place at the left edge from frame 90 on is the next card, the blue window's, leaving by the same road. The script joined the two because they look exactly alike, which is also why a person could not say which is which."
+   },
+   "other": [
+    "The outline of the empty second place stands still at x 265-506 while the cards slide over it (frames 87 to 88).",
+    "In the lead-in a white grab bar shows in the gap beside the resting pointer (frames 0 to 40) and goes when the pointer leaves: tidy.",
+    "The tile and the travelling card are two different stand-ins for the same window (light grey with a small icon, black with a large one); the change from one to the other is the hardest cut in the film."
+   ]
+  },
+  "dark-pinch-in": {
+   "E1": {
+    "status": "miss",
+    "said": "Two moves are run one after the other instead of one: in frames 4 to 8 the two right-hand cards only grow wider (left edge 595 to 308, heights untouched), at frame 9 the left edge steps 6 px back to 314 and only then does the upper card start to grow downwards and push the lower one under the Dock, all four windows having become the same black card so that only their place says which is which.",
+    "frames": [
+     4,
+     5,
+     6,
+     7,
+     8,
+     9,
+     10,
+     12
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "Two grey rounded slabs stay standing where the two columns were while the cards leave them (the left one is a bare grey block from frame 6 on), their edges show as a two-tone stripe in the gap between the cards, and at frame 36 the fading 'exec' icon lies over the words 'Arbor Test 3'.",
+    "frames": [
+     6,
+     7,
+     10,
+     12,
+     14,
+     20,
+     21,
+     36,
+     37
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "Orange, blue, green and red windows with title bars are replaced in one frame by flat near-black slabs with no title bar and no traffic lights, the finished card then stands still for 84 ms (frames 35 to 36) and the green window comes up through it in about three frames, which no system animation does.",
+    "frames": [
+     3,
+     4,
+     35,
+     36,
+     37,
+     38
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "'Nothing to step into: ArborTestWindows fills the view' fades in at frame 18 while the card is still only four fifths of the way there, reads as a refusal of a gesture that visibly worked, lies over the lower middle of the window just opened and is still up in the last frame (+1601 ms; the log still lists it 3.3 s after the action).",
+    "frames": [
+     18,
+     19,
+     20,
+     25,
+     36,
+     44
+    ]
+   },
+   "other": [
+    "At rest after the move a 1 px pink line with a soft shadow stands at the display's right edge beside the Dock (y 680 to the bottom): the sliver of the windows parked off-screen (frames 36 to 44).",
+    "The lower card is still visible as a black strip in the few pixels under the Dock until about frame 30, long after it has left the room above the Dock (frame 22).",
+    "On the light grey desktop of this 'dark' scene the display goes bright colours, black for 530 ms, bright green: it reads as a blink.",
+    "The two left-hand cards are gone in 33 ms (frame 4, frame 5) while the rest of the move takes 500 ms."
+   ]
+  },
+  "dark-view": {
+   "E1": {
+    "status": "pass",
+    "said": "The two left cards stay pinned at the top-left and widen steadily to the full width while the two right cards slide off the right edge within three frames, nothing crossing anything, so place alone tells which is which although all four cards look the same.",
+    "frames": [
+     1,
+     2,
+     3,
+     8,
+     14,
+     22,
+     26
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "A grey slab stays where the right column was after its cards have slid off it (frames 1 to 3), at frame 4 it has become one grey sheet over the whole room without travelling, and the old slabs' edges show as a three-tone stripe in the gap between the cards until about frame 20.",
+    "frames": [
+     1,
+     2,
+     3,
+     4,
+     8,
+     14,
+     20
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "Four bright windows become flat black slabs without title bars in one frame (frames 0 to 1), the cards stand finished for 100 ms (frames 26 to 27) and the real windows are nearly fully there in the next frame, the 'exec' icons still ghosting above 'Arbor Test 4' and 'Arbor Test 2'.",
+    "frames": [
+     0,
+     1,
+     26,
+     27,
+     28
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "'Your other windows are out of view, not closed   ⌃⌥Space shows everything' says what became of the two windows that left and how to get them back, sits low in the middle over the blank part of the lower window and covers no label; the film ends at +1074 ms with it still up, so its leaving is not seen.",
+    "frames": [
+     3,
+     10,
+     27,
+     31
+    ]
+   },
+   "other": [
+    "At frame 2 the line is half faded in while it straddles a black card, the light desktop and the grey slab: its left third is unreadable for that one frame.",
+    "The second half of the line (⌃⌥Space shows everything) is dim grey on dark grey, clearly weaker than the first half.",
+    "The '1' in the menu bar gets its grey chip at frame 2, the grid glyph loses its own: the only sign that says which view this is.",
+    "After the move a 1 px pink line, a 1 px black line and a soft shadow stand at the right edge beside the Dock (frames 27 to 31): the sliver of the parked windows."
+   ]
+  },
+  "drag-out": {
+   "E1": {
+    "status": "miss",
+    "said": "The window stops following the pointer (it halts with its title bar at y 365 and later at x 252 while the pointer goes on to 512,330 and ends 35 px above the window it is dragging), on release it swells in place for one frame (frame 195), reappears 34 px up and left as a card (frame 196), and the orange card then grows down over it, so the window just dropped ends buried under three docked ones with only 'or Test 2' showing.",
+    "frames": [
+     100,
+     150,
+     194,
+     195,
+     196,
+     200,
+     212,
+     227
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "frame 195 shows the blue window suddenly 55 px wider and 28 px taller, pushed under the red one and down to the Dock, for a single frame; from frame 199 the dropped window's card shows a cut-off icon reading 'xec'; and the dark cards on the black desktop are told apart only by hairlines.",
+    "frames": [
+     195,
+     196,
+     199,
+     205,
+     222,
+     223
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "To let one window grow taller the whole display, including the green and red windows that do not move at all, is cut to black cards in one frame for 550 ms, holds still for 100 ms (frames 222 to 223) and fades back in two frames with 'exec' ghosts over the labels.",
+    "frames": [
+     195,
+     196,
+     222,
+     223,
+     224
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "No word and no panel appears in any frame, during the drag or after the drop, so nothing is wrong, in the way or late; the only sign on screen is the empty slot's hairline and its small glyph.",
+    "frames": [
+     0,
+     100,
+     194,
+     227
+    ]
+   },
+   "refuted": {
+    "S8": "Fooled by the floating window and by a line nobody sees: the blue window is not a tile, it lies under orange, green and red, and the ruler took its visible middle (448..679, 330..677) for a neighbour; the 9 px is the distance to the invisible bottom of the 'room' (y 705). By eye the docked windows are even: 12 px left, right and between columns and rows, 13 px of black up to the menu bar and 13 px down to the Dock's edge."
+   },
+   "other": [
+    "The dragged window never comes to the front or gets the ring: red keeps the blue ring and the lit traffic lights through the whole drag and after it (⌘-drag of a background window).",
+    "The focus ring round red eats 3 of the 12 px gap, so the black between green and red is 9 px where all other gaps are 12.",
+    "The empty slot's little glyph is half covered by the dragged title bar from about frames 100 to 195.",
+    "Nothing on screen during the drag says what letting go will do, and nothing afterwards says the window now floats or why it changed size (425x320 to 480x348)."
+   ]
+  },
+  "neighbour": {
+   "E1": {
+    "status": "miss",
+    "said": "The orange window turns into a black card that shrinks while it slides off to the left, a second card nobody had in view rises from behind the Dock and leaves with it, nothing comes in from the right, and from frame 20 the display is simply empty and black: one cannot tell what one has arrived at.",
+    "frames": [
+     0,
+     1,
+     3,
+     5,
+     8,
+     14,
+     17,
+     20,
+     32
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "The move ends in a hole (a wholly black room, frames 20 to 32), and a 1 px bright line, white above and red (frame 0) or orange (frames 28 to 32) below, stands at the right edge of the display beside the Dock.",
+    "frames": [
+     0,
+     20,
+     28,
+     29,
+     32
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "A bright orange window with title bar is swapped in one frame for a flat dark slab (frames 0 to 1) that is barely told from the black desktop by a hairline, and the slab shrinks as it leaves, which looks like neither a Spaces swipe nor a zoom.",
+    "frames": [
+     0,
+     1,
+     2,
+     4,
+     6
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "Every window has gone and not one word says where one is or how to get back; the only sign is a 20 px glyph in the menu bar getting a grey chip at frame 2.",
+    "frames": [
+     2,
+     20,
+     32
+    ]
+   },
+   "other": [
+    "The ruler could follow nothing here (M2, M3, M5-M7, M12 unseen) because dark cards on a black desktop give it no edges; the eye has nearly the same trouble from frame 6 on, when the icon has left the display.",
+    "The card's icon is centred on a card whose left part is already off-screen, so it runs out of view (frame 5 shows 'ec') long before the card does.",
+    "dark-view shows a line for 'your other windows are out of view'; here, where all of them are, nothing is shown."
+   ]
+  },
+  "peek": {
+   "E1": {
+    "status": "miss",
+    "said": "After ← two things wear the same blue ring, the empty middle slot and Arbor Test 3, for the whole second until the keys are let go, so one cannot tell from the frame which of the two letting go will open; the moves in and out themselves are plain (one card shrinks to the top right while three come in; four cards part to left and right).",
+    "frames": [
+     35,
+     36,
+     37,
+     6,
+     12,
+     18,
+     38,
+     40
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "At frame 29 and frame 30 every window shows its 'exec' icon's outline and word lying across its own label ('Arbor Test 4' struck through by the icon's edge), and a 1 px white-and-coloured line stands at the right edge beside the Dock before (frame 0) and after (frames 64 to 68).",
+    "frames": [
+     29,
+     30,
+     0,
+     64,
+     68
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "An overview made to find a window shows four identical black slabs for 560 ms, cut in within one frame (frames 0 to 1, again frames 37 to 38), waits 67 ms (frames 28 to 29) and only then lets the windows' pictures through, where Mission Control shrinks the pictures themselves.",
+    "frames": [
+     0,
+     1,
+     24,
+     28,
+     29,
+     37,
+     38
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "No words appear at any time: the choice is shown by a ring and a blue wash over the chosen window (frames 33 to 35) or a navy fill in the chosen slot (frames 36 to 37), nothing covers anything, and nothing is left when the keys are up.",
+    "frames": [
+     33,
+     35,
+     36,
+     37,
+     68
+    ]
+   },
+   "other": [
+    "The blue wash turns the chosen green window teal (52,199,89 to 46,190,109) and its title bar pale blue; with the focus ring under the selection ring the border is twice as thick as any other ring (frames 33 to 35).",
+    "The empty slot is invisible (a hairline one can hardly see on black) until it is chosen, so ← seems to conjure a panel out of nothing (frames 35 to 36).",
+    "The scene ends on a wholly black, empty display with no word; the person chose it with open eyes, but only the menu-bar glyph says where they are.",
+    "While the cards part (frames 38 to 47) the slot's faint outline stays where it was instead of growing with the zoom."
+   ]
+  },
+  "quit": {
+   "E1": {
+    "status": "pass",
+    "said": "From an empty desktop the hidden windows come back within 50 ms: green and blue at frame 2, Arbor's menu-bar items and the tooltip go at frame 3, orange appears behind the other two at frame 4, and nothing moves after that.",
+    "frames": [
+     1,
+     2,
+     3,
+     4,
+     29
+    ]
+   },
+   "E2": {
+    "status": "pass",
+    "said": "Every frame shows whole windows with their title bars and labels, no half-drawn piece; the thin coloured line at the right edge beside the Dock, there before the quit (frames 0 to 3), is gone from frame 4 on.",
+    "frames": [
+     0,
+     2,
+     3,
+     4,
+     29
+    ]
+   },
+   "E3": {
+    "status": "pass",
+    "said": "These are the real windows with the system's own title bars and corners, popping in without animation the way windows do when a hidden app is shown, and the status items vanish in one frame as any quitting app's do.",
+    "frames": [
+     2,
+     3,
+     4
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "Nothing is said and nothing needs saying: the tooltip 'Show the Desktop (⌃⌥D)' that happened to be up goes with the menu-bar items at frame 3 and no panel is left.",
+    "frames": [
+     0,
+     2,
+     3,
+     29
+    ]
+   },
+   "other": [
+    "The windows come back as a heap in the middle: orange is almost wholly hidden behind green and blue, and green's label is cut by blue's title bar; nobody is told that this is where they were before Arbor.",
+    "The three do not come back together: orange is 50 ms (two kept frames) later than the other two.",
+    "For one frame (frame 2) the windows are already back while Arbor's menu-bar items and tooltip are still up."
+   ]
+  },
+  "save-view": {
+   "E1": {
+    "status": "pass",
+    "said": "No window moves: a pill fades in low in the middle (half there at frame 2, whole at frame 3) and a '1' on a grey chip appears in the menu bar in the same frame.",
+    "frames": [
+     1,
+     2,
+     3,
+     5
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "The pill itself is clean in both frames, but a 1 px white-and-red line stands at the right edge of the display beside the Dock (y 687 to the bottom) in every frame of the scene.",
+    "frames": [
+     0,
+     1,
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "The pill is a flat opaque grey (228,228,228) with no trace of the blue beneath it, while the Dock in the same frame is translucent, its corners are rounded less than a capsule's, and it arrives in just two steps 50 ms apart: it looks like a tooltip grown large rather than a system heads-up panel.",
+    "frames": [
+     2,
+     3,
+     5
+    ]
+   },
+   "E4": {
+    "status": "miss",
+    "said": "It reads 'Saved view 1: ArborTestWindows and ArborTestWindows', naming the same app twice and so telling the two windows apart not at all, and it lies over the lower window's content; it is still up at the film's end (+1059 ms, and in the log 3.1 s after the key).",
+    "frames": [
+     2,
+     3,
+     4,
+     5
+    ]
+   },
+   "other": [
+    "When the '1' chip is inserted the four glyphs to its left (back, forward, Desktop, grid) jump 26 px to the left in one frame (frames 1 to 2); the ruler's M11 passed this as 'the menu bar stays as it is'.",
+    "Between frame 3 and frame 4 the camera kept nothing for 900 ms, so the scene is at rest 126 ms after the key."
+   ]
+  },
+  "twice-quickly": {
+   "E1": {
+    "status": "pass",
+    "said": "Each of the two moves is plain: the top-left card grows from its corner to fill the room while the one below is pushed under the Dock and the two on the right off the edge (frames 1 to 26), and after 230 ms of the orange window the same runs backwards (frames 31 to 59), nothing crossing anything.",
+    "frames": [
+     1,
+     2,
+     5,
+     11,
+     17,
+     26,
+     31,
+     34,
+     40,
+     46,
+     52,
+     59
+    ]
+   },
+   "E2": {
+    "status": "miss",
+    "said": "At frame 27 and frame 60 the 'exec' icons lie across the windows' own labels, and while the lower card passes behind the Dock the tops of its green 'exec' letters show as specks in the few pixels under the Dock (frame 4, also frames 2 to 3 the icon's outline).",
+    "frames": [
+     27,
+     28,
+     60,
+     61,
+     2,
+     3,
+     4
+    ]
+   },
+   "E3": {
+    "status": "miss",
+    "said": "In 1.4 s the display goes bright colours, black cards, orange, black cards, bright colours, each change to black a cut in one frame (frames 0 to 1, frames 30 to 31) and each return held back by a standstill (83 ms at frames 26 to 27), and the first card seen is already 93 px wider than the window it replaces (right edge 430 against 337).",
+    "frames": [
+     0,
+     1,
+     26,
+     27,
+     30,
+     31,
+     59,
+     60
+    ]
+   },
+   "E4": {
+    "status": "pass",
+    "said": "No word and no panel in any of the 65 frames; only the menu-bar glyphs change their chip, and nothing is left at the end.",
+    "frames": [
+     0,
+     30,
+     64
+    ]
+   },
+   "refuted": {
+    "M4": "Things do move at frame 31, but the script was fooled by the second key: film.log has ⌃⌥Space going down 796 ms after ⌃⌥↩ (not a fifth of a second), so frame 31 is the answer to it after 57 ms; the first move had come to rest at frame 30 (+619 ms) and nothing stirs between frame 30 and frame 31. It also means this film never shows a move being interrupted."
+   },
+   "other": [
+    "The scene does not do what its title says: the second key falls 177 ms after the first move is over, so 'twice quickly' is really 'twice, one after the other'.",
+    "The two right-hand cards are 180 px from where their windows were in the first frame one sees them and gone in the next: they vanish rather than leave.",
+    "From frames 27 to 30 a 1 px bright line stands at the right edge beside the Dock (y 687 to the bottom), for as long as the other three windows are parked."
+   ]
+  }
+ }
+}
