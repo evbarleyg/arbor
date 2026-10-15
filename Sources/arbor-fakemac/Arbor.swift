@@ -134,7 +134,7 @@ final class WatchedSystem: WindowSystem {
   func stackedWindows() -> [StackedWindow] {
     windowsFrontToBack().compactMap { id in
       guard let snapshot = fake.windows[id]?.snapshot, snapshot.isPresent else { return nil }
-      return StackedWindow(id: id, frame: snapshot.frame)
+      return StackedWindow(id: id, frame: world.sweptFrames[id.rawValue] ?? snapshot.frame)
     }
   }
 

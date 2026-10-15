@@ -56,9 +56,21 @@ extension Controller {
     else { return nil }
     // Asked for only now: most relayouts move nothing, and the window server takes a moment to answer.
     let stack = system.stackedWindows()
+    // macOS is showing its desktop. The windows take their new frames unseen and come back to them; a stage would
+    // put stand-ins on a desktop that somebody wanted bare, and lift on nothing.
+    guard !isSweptAside(stack) else {
+      overlays.finishAnimations()
+      return nil
+    }
     fit(&transition, to: stack)
     overlays.animate(transition)
     return StagedTransition(before: before, stack: stack, sent: transition)
+  }
+
+  /// Whether macOS has swept the windows aside to show its desktop, going by what the window server has just `listed`.
+  private func isSweptAside(_ listed: [StackedWindow]) -> Bool {
+    SweptAside.isSwept(
+      believed: windows.filter(\.value.isPresent).mapValues(\.frame), listed: listed, displays: displays.map(\.frame))
   }
 
   /// Stacks the stand-ins like the real windows. `Transition.leaveOpen` joins in with the change that teaches

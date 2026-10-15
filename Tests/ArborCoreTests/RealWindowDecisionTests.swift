@@ -114,6 +114,56 @@ extension Box where Value == EchoFilter {
     #expect(verdict(pressedAt: titleBar, now: CGRect(x: 250, y: 130, width: 300, height: 200)) == .drag)
   }
 
+  /// macOS shows its desktop by sweeping every window aside, and a press on the strip of one that still shows brings them all
+  /// back, with the button still down. As a hosted Mac listed it (macOS 26, 1024 × 768,
+  /// `collab/reports/2026-10-14-the-desktop-is-shown.md`): a docked window, pressed at 6,350 by a hand that slipped less than a point
+  /// before Arbor looked.
+  @Test func aWindowThatComesBackFromTheSideOfTheDisplayUnderAPointerAtRestIsNotInTheHand() {
+    let verdict = WindowGrab.classify(
+      pressedAt: CGPoint(x: 6, y: 350), frameAtPress: CGRect(x: -313, y: 15, width: 325, height: 653),
+      frameNow: CGRect(x: 12, y: 43, width: 325, height: 653), pointerNow: CGPoint(x: 6.75, y: 350.75))
+    #expect(verdict == .neither)
+  }
+
+  @Test func norOneThatComesBackFromAboveOrBelow() {
+    for (swept, home) in [(-306.0, 100.0), (756.0, 360.0)] {
+      let strip = CGPoint(x: 512, y: swept < 0 ? 36 : 762)
+      let verdict = WindowGrab.classify(
+        pressedAt: strip, frameAtPress: CGRect(x: 349, y: swept, width: 326, height: 348),
+        frameNow: CGRect(x: 349, y: home, width: 326, height: 348), pointerNow: CGPoint(x: strip.x + 3, y: strip.y + 3))
+      #expect(verdict == .neither, "from \(swept)")
+    }
+  }
+
+  @Test func norOneThatSomebodyTriesToPullInByItsStrip() {
+    // The window is back long before the hand has gone as far as it has.
+    let verdict = WindowGrab.classify(
+      pressedAt: CGPoint(x: 6, y: 350), frameAtPress: CGRect(x: -313, y: 15, width: 325, height: 653),
+      frameNow: CGRect(x: 12, y: 43, width: 325, height: 653), pointerNow: CGPoint(x: 26, y: 352))
+    #expect(verdict == .neither)
+  }
+
+  @Test func aWindowListedAtTheSideOfTheDisplayIsNotWhereItsAppHasIt() {
+    let docked = CGRect(x: 12, y: 43, width: 325, height: 653)
+    #expect(WindowGrab.isListedElsewhere(CGRect(x: -313, y: 15, width: 325, height: 653), than: docked))
+    #expect(WindowGrab.isListedElsewhere(CGRect(x: -313, y: 15, width: 325, height: 653), than: docked.insetBy(dx: 0, dy: 160)))
+    #expect(WindowGrab.isListedElsewhere(CGRect(x: 349, y: -306, width: 326, height: 348), than: CGRect(x: 349, y: 100, width: 326, height: 348)))
+  }
+
+  @Test func aWindowAtRestIsWhereItsAppHasItGiveOrTakeAMoment() {
+    #expect(!WindowGrab.isListedElsewhere(frame, than: frame))
+    #expect(!WindowGrab.isListedElsewhere(frame.offsetBy(dx: 9, dy: -4), than: frame), "Accessibility is a step behind")
+    #expect(!WindowGrab.isListedElsewhere(frame.insetBy(dx: 5, dy: 5), than: frame))
+  }
+
+  @Test func aWindowFlungAcrossTheDisplayIsStillDragged() {
+    // The first look comes late, and the window has gone as far as the pointer, or not quite.
+    #expect(verdict(pressedAt: titleBar, now: frame.offsetBy(dx: 480, dy: 90), pointer: CGPoint(x: 880, y: 204)) == .drag)
+    #expect(verdict(pressedAt: titleBar, now: frame.offsetBy(dx: 430, dy: 80), pointer: CGPoint(x: 880, y: 204)) == .drag)
+    // The menu bar stops the window and not the pointer.
+    #expect(verdict(pressedAt: titleBar, now: frame.offsetBy(dx: 5, dy: -75), pointer: CGPoint(x: 405, y: 2)) == .drag)
+  }
+
   @Test func nearTheEdgeMeansWithinTenPointsOfTheBorderOnEitherSide() {
     #expect(WindowGrab.isNearEdge(CGPoint(x: 100, y: 300), of: frame))
     #expect(WindowGrab.isNearEdge(CGPoint(x: 109, y: 300), of: frame))

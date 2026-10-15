@@ -342,7 +342,29 @@ changed after a press within 10 points of the border → an edge resize; size
 changed after a press anywhere else → not a resize (macOS zooms a window whose
 title bar is double-clicked, and gives a window it had tiled its old size back
 when it is dragged away); the pointer 24 points away and the window where it was
-→ the press is about the window's content, stop looking.
+→ the press is about the window's content, stop looking; moved farther than the
+pointer went, by more than 32 points → not in the hand, stop looking.
+
+**macOS showing its desktop** (a click on the wallpaper, as macOS 14 and later come; F11; a
+hot corner) is a picture and nothing more: the window server lists every window at the
+side of its display, with the size it had, while Accessibility has it where it is and
+reports no move. A frame set meanwhile is taken, shows nowhere, and is where the window
+comes back to. So Arbor goes on as ever, by Accessibility, and what it lays out meanwhile
+nobody sees move. What it must not do is believe the window server:
+
+- A press on the strip of a window that still shows brings them all back with the button
+  down, so the window under the pointer leaps across the display in the list. Taken for a drag,
+  that is one at the edge of the display, where Arbor docks. So a press on a window that is listed
+  elsewhere than Accessibility last had it takes hold of nothing (`WindowGrab.isListedElsewhere`,
+  asked by `makePress`), and the last rule above catches a leap from whatever cause.
+- A layout is shown as motion from where the windows are to where they go. With the windows aside
+  there is nothing on screen to lead from, and the stage would put stand-ins on a desktop that
+  somebody wanted bare: `stageTransition` asks `SweptAside`, which compares what Arbor believes
+  with the list it has just read, and moves the windows at once.
+
+`collab/reports/2026-10-14-the-desktop-is-shown.md` has what a Mac answered;
+`FakeWindowSystem+SweptAside.swift` and arbor-fakemac sweep as it did; `scripts/mac-shell/check-sweep.sh`
+asks a Mac again.
 
 `DropResolver` turns the pointer into a target, the
 first of these that applies: on the window's own slot → snap back; within

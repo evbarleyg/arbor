@@ -1219,7 +1219,9 @@ public final class AXWindowSystem: WindowSystem {
         let bounds = Self.bounds(in: info), bounds.insetBy(dx: -Self.reach, dy: -Self.reach).contains(point)
       else { continue }
       if let number = (info[kCGWindowNumber as String] as? NSNumber)?.uint32Value,
-        records[WindowID(number)]?.isBackgroundTab == false
+        let record = records[WindowID(number)], !record.isBackgroundTab,
+        // macOS is showing its desktop, and this is the strip of a window it swept aside.
+        !WindowGrab.isListedElsewhere(bounds, than: record.snapshot.frame)
       {
         press.window = WindowID(number)
         press.frame = bounds
