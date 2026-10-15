@@ -90,6 +90,9 @@ import Foundation
 //   field-cancel                 press ⎋ in the name field
 //   relaunch                     quit Arbor and start it again: every window comes back into view, then a new process
 //                                that knows what was saved and nothing else. A trace or a `watch` ends with the quit
+//   crash [<id>…]                Arbor dies as it stands and is started again: no window comes back first, what was not saved
+//                                yet (`flush`) is lost, and a trace is cut off. The windows named are closed and opened again by
+//                                their apps meanwhile: each is where it was, under the next number
 //
 // `arbor-sim replay <file.jsonl> [--strict] [--verbose]` replays a trace instead (Replay.swift).
 // `arbor-sim stage-judge [<file.jsonl>…] [<limit>=<value>…]` judges the motion in traces from a Mac (StageJudge.swift).
@@ -233,6 +236,14 @@ func runSimulation() {
     } else {
       harness.beginStep()
     }
+    // A number that is no window's is a slip in the script: nothing happens, and `simulate` says so.
+    if words[0] == "crash", words.dropFirst().allSatisfy({ WindowID(word: $0).map { harness.system.windows[$0] != nil } ?? false }) {
+      harness = relaunched(harness) { system in
+        reopened = words.dropFirst().compactMap { WindowID(word: $0) }.compactMap { old in system.renumber(old).map { (old, $0) } }
+      }
+      watcher = SimulatedWatcher(harness: harness)
+      (linesPrinted, minimapsPrinted) = (0, 0)
+    }
     let (message, ok) = simulate(words, harness: harness, printLayout: &printLayout)
     // macOS reports the focus changes Arbor asked for back to it.
     harness.system.deliverEchoes()
@@ -292,10 +303,12 @@ func begin(_ harness: Harness) {
   harness.start()
 }
 
-/// The new process of `relaunch`, started. It uses the settings file the old one used (`settings-file`).
+/// The new process of `relaunch` and `crash`, started. It uses the settings file the old one used (`settings-file`).
+/// `meanwhile` is what happens to the windows while no Arbor runs.
 @MainActor
-func relaunched(_ old: Harness) -> Harness {
+func relaunched(_ old: Harness, meanwhile: (FakeWindowSystem) -> Void = { _ in }) -> Harness {
   let new = old.newProcess()
+  meanwhile(new.system)
   new.controller.saveSettings = old.controller.saveSettings
   new.controller.loadSettings = old.controller.loadSettings
   new.controller.replaceSettingsFile = old.controller.replaceSettingsFile
@@ -554,6 +567,11 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
   case "relaunch" where words.count == 1:
     // The loop has done it: this is the new process.
     return ("quit, and started again", harness.controller.isRunning)
+  case "crash":
+    // The loop has done it: this is the new process.
+    guard let windows = reopened else { return usage("crash [<id>…]: windows that are open") }
+    reopened = nil
+    return ((["died, and started again"] + windows.map { "\($0.old) is \($0.new) now" }).joined(separator: "; "), harness.controller.isRunning)
   case "revoke":
     harness.revokeAccessibility()
     return ("Accessibility permission taken away", true)

@@ -176,6 +176,8 @@ public final class Controller {
   var keyboardHandOver = KeyboardHandOver()
   /// How often each parked window was sent back to its corner since it was parked (Controller+Layout.swift).
   var parkedAgain: [WindowID: Int] = [:]
+  /// How much of each window's top macOS kept above the bottom of the visible frame when Arbor sent it below (Controller+TitleBars.swift).
+  var titleBars: [WindowID: CGFloat] = [:]
   /// Windows Arbor has let go of (their app was excluded, a rule ignores them) that are still out of view, because their
   /// app did not answer when they were to be brought back, and where each belongs. Paid when the app has something
   /// to report, and at the latest when Arbor stops.
@@ -509,6 +511,7 @@ public final class Controller {
     disprovedMinimums = disprovedMinimums.filter { windows[$0.key] != nil }
     seenSizes = seenSizes.filter { windows[$0.key] != nil }
     fixedSizesNoted = fixedSizesNoted.filter { windows[$0] != nil }
+    titleBars = titleBars.filter { windows[$0.key] != nil }
     owedTheWayBack = owedTheWayBack.filter { windows[$0.key] != nil }
     appPlacedFrames = appPlacedFrames.filter { windows[$0.key] != nil }
     spokeOfItsPlace = spokeOfItsPlace.filter { windows[$0.key] != nil }

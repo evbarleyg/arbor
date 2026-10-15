@@ -104,6 +104,9 @@ struct LaunchOptions {
     visibleFrame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), isMain: false, name: "Side Display"),
 ]
 
+/// What the last `crash` gave new numbers. Nil: there was none, or it has been said.
+@MainActor var reopened: [(old: WindowID, new: WindowID)]?
+
 /// `health`: everything that must hold whatever the files said, in one line a script can look for.
 @MainActor
 func health(of harness: Harness) -> String {

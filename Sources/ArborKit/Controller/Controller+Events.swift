@@ -42,6 +42,7 @@ extension Controller: WindowSystemEvents {
     justAnswered[id] = nil
     fixedSizesNoted.remove(id)
     parkedAgain[id] = nil
+    titleBars[id] = nil
     landsAt[id] = nil
     sharedItsSpace[id] = nil
     metAhead[id] = nil

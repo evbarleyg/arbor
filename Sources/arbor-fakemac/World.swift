@@ -19,7 +19,8 @@ final class World {
   /// GitHub's macos-26 runner: a 31-point menu bar and a 63-point Dock.
   static let defaultDisplay = "1024x768 31 63"
   static let finderPID: Int32 = 362
-  static let titleBarHeight: CGFloat = 32
+  /// The test windows' title bar, as CI builds ArborTestWindows: a window of 480×320 measures 480×348 (`FakeWindowSystem.usualTitleBar`).
+  static let titleBarHeight = FakeWindowSystem.usualTitleBar
 
   /// Reads `<width>x<height> <height of the menu bar> <height of the Dock>`, as in ARBOR_REHEARSAL_DISPLAY.
   static func display(_ text: String) -> DisplaySnapshot? {

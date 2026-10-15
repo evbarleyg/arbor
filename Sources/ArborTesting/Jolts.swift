@@ -32,8 +32,11 @@ extension FakeWindowSystem {
     var last: [WindowID: Move] = [:]
     var found: [Jolt] = []
     var learning = false
+    func asAsked(_ move: Move) -> CGRect {
+      whereMacOSPuts(move.requested, titleBar: windows[move.window]?.titleBar ?? Self.usualTitleBar)
+    }
     for move in moveLog[min(mark, moveLog.count)...] {
-      defer { if move.after != whereMacOSPuts(move.requested) { learning = true } }
+      defer { if move.after != asAsked(move) { learning = true } }
       guard move.before != move.after else { continue }
       // What nobody can see belongs to the move before it: a window asked for a size in its corner is still in its corner, and
       // one that is fetched from there has been out of view and back all the same.
@@ -45,7 +48,7 @@ extension FakeWindowSystem {
       defer { last[move.window] = move }
       guard let first = last[move.window],
         // The app did as it was asked, so there was nothing to learn from its answer.
-        first.after == whereMacOSPuts(first.requested),
+        first.after == asAsked(first),
         // Nobody else has had the window since.
         first.after == move.before,
         // Not a question: a size where it stood, and from there straight on.

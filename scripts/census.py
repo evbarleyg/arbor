@@ -77,7 +77,7 @@ carry letGo loseTheRelease moveSilently report renumber finishRestoring openStra
 hold
 """.split()
 # The test tells the fake what macOS or an app will answer when Arbor asks or acts. Methods, then properties that are set.
-SYSTEM_ANSWERS = "setMinimumSize setMaximumSize setSizeStep setBehaviour".split()
+SYSTEM_ANSWERS = "setMinimumSize setMaximumSize setSizeStep setBehaviour setTitleBar".split()
 SYSTEM_ANSWER_PROPERTIES = """
 cursor mouseDown focused heldModifiers secondsSinceInput displayList stubbornFrames focusIsSlow defersFocus restoresLate
 willSetFrame echoes holdsEchoes isDenied flagLags refusesTaps stackingIsUnknown strangers missingApps unlaunchableApps
@@ -97,7 +97,7 @@ inputActivity isHolding frame isVisible clearFrameLog existingWindowIDs launchAp
 install place remove hasHeldEchoes dragging frameAfterResizing openApplication raise windowsFrontToBack clearRaiseLog
 snapshot minimumSize maximumSize sizeStep behaviour lastRequest placeIsArborsDoing groundHasShifted movesNotArbors
 changedItsWays window requested before after together wasFocused focus frames keyboard wholePoints
-titleBarStaysReachable flightFromTheDock flightFromFullScreen none jolts
+titleBarStaysReachable flightFromTheDock flightFromFullScreen none jolts titleBar usualTitleBar measuredTitleBars
 """.split()
 
 # A hand on one of Arbor's own panels: the fake calls the action the real panel would call.

@@ -94,10 +94,10 @@ extension World {
     var content = CGRect(x: CGFloat(120 + index * 50), y: CGFloat(160 + index * 40), width: 480, height: 320)
     if let maximum {
       // The real app shrinks the window it has just made with `setContentSize`. That its top left corner is
-      // what stays put is a guess; no run has printed such a window's frame before Arbor moved it.
+      // what stays put is a guess; no run has printed such a window's frame before Arbor moved it. The 32 are the real app's own.
       let top = content.maxY
       content.size = CGSize(
-        width: min(480, maximum.width), height: min(320, maximum.height - World.titleBarHeight))
+        width: min(480, maximum.width), height: min(320, maximum.height - 32))
       content.origin.y = top - content.height
     }
     return content

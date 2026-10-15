@@ -291,7 +291,7 @@ import Testing
       id: DisplayID("tall"), frame: CGRect(x: 1440, y: -100, width: 1280, height: 1200),
       visibleFrame: CGRect(x: 1440, y: -75, width: 1280, height: 1175), isMain: false)
     let (t, ta, tb, tc) = makeHarness(displays: [FakeWindowSystem.standardDisplay, tall])
-    // This test is about the corners Arbor asks for. macOS stops a window 32 points higher (OutOfViewTests).
+    // This test is about the corners Arbor asks for. macOS stops a window its title bar higher (OutOfViewTests, TitleBarTests).
     t.system.echoes.titleBarStaysReachable = false
     t.run("dock \(ta.rawValue) left")
     t.run("dock \(tb.rawValue) right")

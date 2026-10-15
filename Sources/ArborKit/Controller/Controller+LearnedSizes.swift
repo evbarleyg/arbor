@@ -114,13 +114,13 @@ extension Controller {
     // The corner to the left of a display depends on the window's width: one that stays wider than it
     // was asked to be would reach into view. So it is placed as if it kept the width on record.
     let atWorst = CGSize(width: max(size.width, learned.width), height: max(size.height, learned.height))
-    let question = CGRect(origin: parkingOrigin(for: atWorst, on: display), size: size)
+    let question = CGRect(origin: parkingOrigin(for: atWorst, of: window, on: display), size: size)
     guard var actual = system.setFrame(question, of: window) else { return false }
     // A character cell too large is not a refusal (Controller+SizeSteps.swift). What is asked next is smaller, in the same corner.
     actual = askForLess(window, slot: question, took: actual)
     if actual.width > size.width + 2 || actual.height > size.height + 2 {
       // It stays a tile, with one point on screen like every window out of view.
-      let corner = parkingOrigin(for: actual.size, on: display)
+      let corner = parkingOrigin(for: actual.size, of: window, on: display)
       if abs(actual.minX - corner.x) > 1 {
         actual = system.setFrame(CGRect(origin: corner, size: actual.size), of: window) ?? actual
       }

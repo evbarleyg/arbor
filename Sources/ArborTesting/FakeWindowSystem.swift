@@ -40,10 +40,14 @@ public final class FakeWindowSystem: WindowSystem {
     public internal(set) var movesNotArbors = 0
     /// The app changed its ways since Arbor last asked it for anything.
     public internal(set) var changedItsWays = false
+    /// What `setTitleBar` said. Nil: what its app's windows measured on a Mac, or the usual.
+    var ownTitleBar: CGFloat?
+    /// How much of its top macOS keeps above the bottom of the visible frame: its title bar, with the toolbar if that is part of it.
+    public var titleBar: CGFloat { ownTitleBar ?? FakeWindowSystem.measuredTitleBars[snapshot.appName] ?? FakeWindowSystem.usualTitleBar }
 
     public static func == (a: FakeWindow, b: FakeWindow) -> Bool {
       a.snapshot == b.snapshot && a.minimumSize == b.minimumSize && a.maximumSize == b.maximumSize
-        && a.sizeStep == b.sizeStep && a.behaviour == b.behaviour
+        && a.sizeStep == b.sizeStep && a.behaviour == b.behaviour && a.titleBar == b.titleBar
     }
   }
 
@@ -288,7 +292,7 @@ public final class FakeWindowSystem: WindowSystem {
     // Its app places it between two of the calls a frame is set with: the size is taken, the position is the app's again.
     if hearHalfNext.remove(window) != nil { frame.origin = fake.snapshot.frame.origin }
     var applied = Self.accepted(frame, by: fake)
-    if fake.behaviour != .frozen { applied = whereMacOSPuts(applied) }
+    if fake.behaviour != .frozen { applied = whereMacOSPuts(applied, titleBar: fake.titleBar) }
     let changed = fake.snapshot.frame != applied
     moveLog.append(
       Move(window: window, requested: frame, before: fake.snapshot.frame, after: applied, together: together))
@@ -306,15 +310,25 @@ public final class FakeWindowSystem: WindowSystem {
     return applied
   }
 
-  /// What macOS makes of a frame an app has agreed to (`echoes.titleBarStaysReachable`, `echoes.wholePoints`).
-  public func whereMacOSPuts(_ frame: CGRect) -> CGRect {
+  /// The title bar of a window nobody has said anything else about, in points. There is no one height: the window's app decides. On one
+  /// and the same macOS 26.6 the test windows measured 32 in the first recordings and 28 in all later ones: only the build differed.
+  public nonisolated static let usualTitleBar: CGFloat = 28
+  /// What windows of real apps kept above the bottom of the visible frame on hosted Macs (macOS 26.6; the traces of real apps in
+  /// collab/evidence/traces, each against its own visible frame: the Dock is not the same size in all of them). 52: a toolbar.
+  public nonisolated static let measuredTitleBars: [String: CGFloat] = [
+    "Terminal": 32, "TextEdit": 32, "Finder": 52, "Calculator": 52, "System Settings": 52,
+  ]
+
+  /// What macOS makes of a frame an app has agreed to (`echoes.titleBarStaysReachable`, `echoes.wholePoints`), for a window
+  /// with a title bar this high.
+  public func whereMacOSPuts(_ frame: CGRect, titleBar: CGFloat) -> CGRect {
     var applied = frame
     // The display the window's corner is on stops it. A point on a shared edge belongs to the display it is inside.
     if echoes.titleBarStaysReachable,
       let display = displayList.first(where: { $0.frame.contains(applied.origin) })
         ?? displayList.min(by: { $0.frame.distance(to: applied.origin) < $1.frame.distance(to: applied.origin) })
     {
-      applied.origin.y = min(applied.minY, display.visibleFrame.maxY - 32)
+      applied.origin.y = min(applied.minY, display.visibleFrame.maxY - titleBar)
     }
     if echoes.wholePoints {
       applied = CGRect(
@@ -716,7 +730,7 @@ extension FakeWindowSystem {
     /// Frames are cut to whole points (150.5 becomes 150).
     public var wholePoints = true
     /// A window cannot be moved so low that its title bar is under the Dock or below the display: asked for
-    /// 1023,767 on a display whose visible frame ends at 705, it stops at 1023,673.
+    /// 1023,767 on a display whose visible frame ends at 705, it stops at 1023,677, its title bar's 28 points above (`setTitleBar`).
     public var titleBarStaysReachable = true
     /// For this many seconds after a window leaves the Dock it is still flying: asked for a frame, it answers with the
     /// one it has and keeps it. 0, the default: not seen on a Mac so far (the report of the un-minimize seems to come
@@ -966,6 +980,7 @@ extension FakeWindowSystem {
     snapshot.title = title ?? "\(front.snapshot.appName) \(id.rawValue)"
     backgroundTabs[window] = windows.removeValue(forKey: window)
     windows[id] = FakeWindow(snapshot: snapshot, minimumSize: front.minimumSize, maximumSize: front.maximumSize)
+    windows[id]!.ownTitleBar = front.ownTitleBar
     if focused == window { focused = id }
     events?.windowReplaced(window, by: snapshot)
     return id
@@ -1019,6 +1034,16 @@ extension FakeWindowSystem {
     CGSize(
       width: max(1, (size.width / step.width).rounded()) * step.width,
       height: max(1, (size.height / step.height).rounded()) * step.height)
+  }
+}
+
+// MARK: Title bars
+
+extension FakeWindowSystem {
+  /// Gives `window` a title bar (or a toolbar) this high, which is how much of it macOS keeps above the bottom of the visible frame.
+  /// Nothing moves: like a Mac, the fake stops a window when it is next asked to go lower.
+  public func setTitleBar(_ window: WindowID, _ height: CGFloat) {
+    windows[window]?.ownTitleBar = height
   }
 }
 

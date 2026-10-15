@@ -704,7 +704,8 @@ public final class TraceReplayer {
     }
     if let nearest = sameSize?.min(by: { abs($0.index - current) < abs($1.index - current) }) {
       report.answeredFromTrace += 1
-      return place(id, at: fake.whereMacOSPuts(CGRect(origin: frame.origin, size: nearest.result.size)))
+      let titleBar = fake.windows[id]?.titleBar ?? FakeWindowSystem.usualTitleBar
+      return place(id, at: fake.whereMacOSPuts(CGRect(origin: frame.origin, size: nearest.result.size), titleBar: titleBar))
     }
     report.answeredByModel += 1
     var frame = frame

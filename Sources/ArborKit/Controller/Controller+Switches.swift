@@ -53,8 +53,8 @@ extension Controller {
     _ window: WindowID, took: CGRect, asked: CGRect, on display: DisplaySnapshot
   ) -> CGRect {
     var actual = took
-    let origin = parkingOrigin(for: took.size, on: display)
-    if origin != asked.origin, let moved = system.setFrame(CGRect(origin: origin, size: took.size), of: window) {
+    let origin = parkingOrigin(for: took.size, of: window, on: display)
+    if took.size != asked.size, origin != asked.origin, let moved = system.setFrame(CGRect(origin: origin, size: took.size), of: window) {
       actual = moved
     }
     shrunk[window]?.parked = actual.size

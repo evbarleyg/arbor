@@ -553,8 +553,8 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
   func expectOutOfSight(_ h: Harness, _ window: WindowID, sourceLocation: SourceLocation = #_sourceLocation) {
     for display in h.system.displayList {
       let showing = h.frame(window)!.intersection(display.frame)
-      // macOS stops a window 32 points above the bottom of the display, and so does the fake: a sliver 1 × 32.
-      #expect(showing.area <= 32, "\(window) shows \(showing) on \(display.id)", sourceLocation: sourceLocation)
+      // macOS stops a window its title bar's height above the bottom of the display, and so does the fake: a sliver one point across.
+      #expect(showing.area <= h.system.windows[window]!.titleBar, "\(window) shows \(showing) on \(display.id)", sourceLocation: sourceLocation)
     }
   }
 

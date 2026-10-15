@@ -275,21 +275,26 @@ extension Controller {
     guard let current = windows[window] else { return }
     parkedAgain[window] = parked.contains(window) ? parkedAgain[window, default: 0] + 1 : nil
     let size = parkingSize(for: window, now: current.frame.size)
-    let target = CGRect(origin: parkingOrigin(for: size, on: display), size: size)
+    let target = CGRect(origin: parkingOrigin(for: size, of: window, on: display), size: size)
     // A window that could not be moved is still in view: it does not count as parked, so the next
     // layout tries again.
     guard var actual = system.setFrame(target, of: window) else {
       unplaced.insert(window)
       return
     }
-    // An app that answers with another size can reach back into view from a spot chosen for the old one.
-    if actual.size != target.size, !isOutOfView(actual),
-      let again = system.setFrame(CGRect(origin: parkingOrigin(for: actual.size, on: display), size: actual.size), of: window)
+    var asked = target
+    // An app that answers with another size can reach back into view from a spot chosen for the old one. And now that it is known
+    // where macOS stops this window, less of it may show in another spot.
+    let isNews = learnTitleBar(of: window, asked: target, took: actual)
+    let better = CGRect(origin: parkingOrigin(for: actual.size, of: window, on: display), size: actual.size)
+    if actual.size != target.size && !isOutOfView(actual) || isNews && showsLess(window, sentTo: better, than: actual),
+      let again = system.setFrame(better, of: window)
     {
-      actual = again
+      learnTitleBar(of: window, asked: better, took: again)
+      (asked, actual) = (better, again)
     }
     unplaced.remove(window)
-    if settings.shrinkOutOfView { actual = settleParkedSmall(window, took: actual, asked: target, on: display) }
+    if settings.shrinkOutOfView { actual = settleParkedSmall(window, took: actual, asked: asked, on: display) }
     windows[window]?.frame = actual
     settled[window] = actual
     parked.insert(window)
@@ -313,36 +318,38 @@ extension Controller {
   /// macOS does not let a window go as low as asked: its title bar stays above the Dock and the display's bottom
   /// edge (asked for 1023,767 on a display whose visible frame ends at 705, a window stopped at 1023,673). So a
   /// parked window reaches higher than its origin says, and can show on a neighbour that ends a little
-  /// above this display's bottom. The places are judged by where the window would really stop.
-  func parkingOrigin(for size: CGSize, on display: DisplaySnapshot) -> CGPoint {
-    let frame = display.frame
-    let candidates = [
-      CGPoint(x: frame.maxX - 1, y: frame.maxY - 1),
-      CGPoint(x: frame.minX - size.width + 1, y: frame.maxY - 1),
-      CGPoint(x: frame.minX, y: frame.maxY - 1),
-      CGPoint(x: frame.maxX - 1, y: frame.minY),
-      CGPoint(x: frame.minX - size.width + 1, y: frame.minY),
-    ]
+  /// above this display's bottom. The places are judged by where the window would really stop (Controller+TitleBars.swift).
+  func parkingOrigin(for size: CGSize, of window: WindowID, on display: DisplaySnapshot) -> CGPoint {
+    parkingOrigin(for: size, titleBar: titleBars[window], on: display)
+  }
+
+  /// With nil, for a window whose title bar is not known, by a guess.
+  func parkingOrigin(for size: CGSize, titleBar: CGFloat?, on display: DisplaySnapshot) -> CGPoint {
+    let candidates = parkingPlaces(for: size, on: display)
     func showing(_ origin: CGPoint) -> CGFloat {
-      let rect = CGRect(origin: whereItStops(origin), size: size)
-      return displays.map { rect.intersection($0.frame).area }.reduce(0, +)
+      whatShows(of: CGRect(origin: whereItStops(origin, titleBar: titleBar ?? Self.guessedTitleBar), size: size))
     }
     var best = (origin: candidates[0], showing: showing(candidates[0]))
     for origin in candidates.dropFirst() where showing(origin) < best.showing { best = (origin, showing(origin)) }
     return best.origin
   }
 
-  /// How much of a window's top macOS keeps above the bottom of the visible frame (measured on macOS 26).
-  static let reachableTitleBar: CGFloat = 32
+  /// Whether less of `window` would show if it were sent to `frame` than shows of it at `now`.
+  func showsLess(_ window: WindowID, sentTo frame: CGRect, than now: CGRect) -> Bool {
+    let stop = whereItStops(frame.origin, titleBar: titleBars[window] ?? Self.guessedTitleBar)
+    return whatShows(of: CGRect(origin: stop, size: frame.size)) < whatShows(of: now)
+  }
 
-  /// Where a window asked to go to `origin` ends up. The display its corner is on stops it, or the nearest one:
-  /// with one display that is what was measured, with several it is a guess that the fake window system shares.
-  func whereItStops(_ origin: CGPoint) -> CGPoint {
-    let stopper =
-      displays.first { $0.frame.contains(origin) }
-      ?? displays.min { $0.frame.distance(to: origin) < $1.frame.distance(to: origin) }
-    guard let stopper else { return origin }
-    return CGPoint(x: origin.x, y: min(origin.y, stopper.visibleFrame.maxY - Self.reachableTitleBar))
+  /// The places `parkingOrigin` chooses among.
+  func parkingPlaces(for size: CGSize, on display: DisplaySnapshot) -> [CGPoint] {
+    let frame = display.frame
+    return [
+      CGPoint(x: frame.maxX - 1, y: frame.maxY - 1),
+      CGPoint(x: frame.minX - size.width + 1, y: frame.maxY - 1),
+      CGPoint(x: frame.minX, y: frame.maxY - 1),
+      CGPoint(x: frame.maxX - 1, y: frame.minY),
+      CGPoint(x: frame.minX - size.width + 1, y: frame.minY),
+    ]
   }
 
   /// Floating windows live on the Desktop. When the camera moves and the Desktop is no longer part of the view they

@@ -169,6 +169,7 @@ extension Controller {
     if fixedSizesNoted.remove(old) != nil { fixedSizesNoted.insert(window.id) }
     misfits[window.id] = misfits.removeValue(forKey: old)
     parkedAgain[window.id] = parkedAgain.removeValue(forKey: old)
+    titleBars[window.id] = titleBars.removeValue(forKey: old)
     soleFloatReplaced(old, by: window.id)
     shrunk[window.id] = shrunk.removeValue(forKey: old)
     fittedToADisplay[window.id] = fittedToADisplay.removeValue(forKey: old)

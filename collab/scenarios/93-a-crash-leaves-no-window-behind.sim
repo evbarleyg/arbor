@@ -1,0 +1,37 @@
+# Proposed by the swarm (2026-10-15), from board item 1.36; the documenter may edit or drop it.
+# Story: Finder and Mail are docked side by side, and the person works framed on Mail, so Finder's window is out of view. They would rather
+# Arbor left Finder alone and add a rule for that, which does not rearrange what is arranged. Then Arbor dies, so nothing is put back, and
+# Finder starts again, so its window has another number: nothing but its place says that Arbor put it there. Arbor is started
+# again. From now on it ignores Finder, so nothing would ever fetch that window: it has to come back into view first.
+# Finder's windows have a toolbar. macOS stops them 52 points above the bottom of the display, where a plain window stops 28 or 32 above.
+# Reference: issue #3 (no lost window), T61. Window ids start at 101.
+open Finder 920x436
+open Mail
+dock 101 left
+dock 102 right
+zoom 102
+expect hidden 101
+rule add Finder ignore
+expect ok
+expect docked 101
+expect hidden 101
+flush
+crash 101
+expect ok
+# 103 is Finder's window.
+expect visible 103
+expect visible 102
+# And it is left alone from here on.
+zoom 102
+expect visible 103
+dock 103 left
+expect fail
+# The same with a plain window, which stops lower.
+open Notes
+dock 104 right
+zoom 102
+expect hidden 104
+rule add Notes ignore
+flush
+crash 104
+expect visible 105

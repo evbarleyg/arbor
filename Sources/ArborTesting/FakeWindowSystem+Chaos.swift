@@ -105,6 +105,15 @@ extension FakeWindowSystem {
     if focused == window { focused = new }
   }
 
+  /// `renumber(_:as:)` with the next number, which no window has had. Returns it.
+  @discardableResult
+  public func renumber(_ window: WindowID) -> WindowID? {
+    guard windows[window] != nil else { return nil }
+    let new = WindowID(nextID)
+    renumber(window, as: new)
+    return new
+  }
+
   /// The window being dragged by its title bar.
   public var dragging: WindowID? { inHand?.window }
 

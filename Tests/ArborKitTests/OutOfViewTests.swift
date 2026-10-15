@@ -27,8 +27,8 @@ private let side = DisplaySnapshot(
     return (h, a, b, f)
   }
 
-  /// What may show of a parked window: one point across, and as much of its title bar as macOS keeps on screen.
-  let sliver: CGFloat = 32
+  /// What may show of a parked window: one point across, and its title bar, which macOS keeps on screen and which is the window's own.
+  func sliver(_ h: Harness, _ window: WindowID) -> CGFloat { h.system.windows[window]!.titleBar }
 
   /// How much of a window shows on any display.
   func visibleArea(_ h: Harness, _ window: WindowID) -> CGFloat {
@@ -39,19 +39,19 @@ private let side = DisplaySnapshot(
   @Test func parkedWindowsStayOutOfViewWhenADisplayIsPluggedInBesideThem() {
     let (h, _, b, f) = zoomedIn()
     h.system.setDisplays([main, side])
-    #expect(visibleArea(h, b) <= sliver, "\(h.frame(b)!) shows on the new display")
-    #expect(visibleArea(h, f) <= sliver, "\(h.frame(f)!) shows on the new display")
+    #expect(visibleArea(h, b) <= sliver(h, b), "\(h.frame(b)!) shows on the new display")
+    #expect(visibleArea(h, f) <= sliver(h, f), "\(h.frame(f)!) shows on the new display")
   }
 
   @Test func parkedWindowsDoNotShowOnANeighbourThatEndsJustAboveTheBottom() {
     // The neighbour ends 20 points above this display's bottom. A window parked at the very corner would clear it,
-    // but macOS stops the window 32 points up, where it would show along the neighbour's bottom edge.
+    // but macOS stops the window its title bar's height up, where it would show along the neighbour's bottom edge.
     let shorter = DisplaySnapshot(
       id: DisplayID("shorter"), frame: CGRect(x: 1440, y: 0, width: 1280, height: 880),
       visibleFrame: CGRect(x: 1440, y: 0, width: 1280, height: 880), isMain: false)
     let (h, _, b, f) = zoomedIn(displays: [main, shorter])
-    #expect(visibleArea(h, b) <= sliver, "\(h.frame(b)!)")
-    #expect(visibleArea(h, f) <= sliver, "\(h.frame(f)!)")
+    #expect(visibleArea(h, b) <= sliver(h, b), "\(h.frame(b)!)")
+    #expect(visibleArea(h, f) <= sliver(h, f), "\(h.frame(f)!)")
   }
 
   @Test func parkedWindowsStayOutOfViewBetweenTwoTallerDisplays() {
@@ -59,8 +59,8 @@ private let side = DisplaySnapshot(
       id: DisplayID("left"), frame: CGRect(x: -1920, y: 0, width: 1920, height: 1080),
       visibleFrame: CGRect(x: -1920, y: 0, width: 1920, height: 1080), isMain: false)
     let (h, _, b, f) = zoomedIn(displays: [main, side, left])
-    #expect(visibleArea(h, b) <= h.frame(b)!.width * sliver, "\(h.frame(b)!) shows on a neighbouring display")
-    #expect(visibleArea(h, f) <= h.frame(f)!.width * sliver, "\(h.frame(f)!) shows on a neighbouring display")
+    #expect(visibleArea(h, b) <= h.frame(b)!.width * sliver(h, b), "\(h.frame(b)!) shows on a neighbouring display")
+    #expect(visibleArea(h, f) <= h.frame(f)!.width * sliver(h, f), "\(h.frame(f)!) shows on a neighbouring display")
   }
 
   @Test func parkedWindowsStayOutOfViewWhenTheResolutionGrows() {
@@ -69,8 +69,8 @@ private let side = DisplaySnapshot(
       id: main.id, frame: CGRect(x: 0, y: 0, width: 1920, height: 1200),
       visibleFrame: CGRect(x: 0, y: 25, width: 1920, height: 1175), isMain: true)
     h.system.setDisplays([larger])
-    #expect(visibleArea(h, b) <= sliver, "\(h.frame(b)!)")
-    #expect(visibleArea(h, f) <= sliver, "\(h.frame(f)!)")
+    #expect(visibleArea(h, b) <= sliver(h, b), "\(h.frame(b)!)")
+    #expect(visibleArea(h, f) <= sliver(h, f), "\(h.frame(f)!)")
     h.run("back")
     #expect(h.system.isVisible(b) && h.system.isVisible(f))
   }
@@ -158,8 +158,8 @@ private let side = DisplaySnapshot(
     h.system.userMove(b, to: CGRect(x: 270, y: 31, width: 464, height: 851))
     h.system.userMove(f, to: CGRect(x: 300, y: 100, width: 320, height: 300))
     h.scheduler.advance(by: 1)
-    #expect(visibleArea(h, b) <= sliver, "\(h.frame(b)!)")
-    #expect(visibleArea(h, f) <= sliver, "\(h.frame(f)!)")
+    #expect(visibleArea(h, b) <= sliver(h, b), "\(h.frame(b)!)")
+    #expect(visibleArea(h, f) <= sliver(h, f), "\(h.frame(f)!)")
     h.run("back")
     #expect(h.frame(b) == h.layout!.windowFrames[b])
     #expect(h.frame(f) == CGRect(x: 560, y: 300, width: 320, height: 300), "where the user had it, not where macOS put it")
@@ -180,7 +180,7 @@ private let side = DisplaySnapshot(
     h.run("forward")
     h.system.userMove(b, to: CGRect(x: 270, y: 31, width: 464, height: 851))
     h.scheduler.advance(by: 1)
-    #expect(visibleArea(h, b) <= sliver)
+    #expect(visibleArea(h, b) <= sliver(h, b))
   }
 
   @Test func floatingWindowsStayOnTheScreenWhenTheResolutionShrinks() {

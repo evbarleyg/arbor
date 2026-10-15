@@ -153,15 +153,37 @@ extension Controller {
     return true
   }
 
-  /// Whether a window is exactly where Arbor would put it out of view, the displays being what they are (as in
-  /// `parkAgain`). Then Arbor did, whatever else is known: after a crash the window can have another number (its
-  /// app started again), be on a Space that was not showing at launch, or show more than a sliver on a neighbouring display.
+  /// Whether a window is where Arbor puts windows out of view. Then Arbor did, whatever else is known: after a crash the window can
+  /// have another number (its app started again), be on a Space that was not showing at launch, or show more than a sliver on a
+  /// neighbouring display. Nor is it known any more how high its title bar is, which displays there were, or how Arbor chose then. So
+  /// its place alone has to say it. Arbor's mark is one point of a window's width on a display and the rest beyond that display's
+  /// side: no hand leaves a window so. Where no hand can get hold of it either, that is enough. One that is within reach, on a
+  /// neighbour, or along the bottom, which has no such mark, counts only in the place Arbor would choose with the displays as they
+  /// are, or as far above it as macOS can have stopped it (Controller+TitleBars.swift). One display's corner is another's edge: a
+  /// window that does not reach onto the display is not in its corner, and one that shows whole needs no fetching.
   private func isInAParkingCorner(_ id: WindowID) -> Bool {
-    guard let frame = windows[id]?.frame else { return false }
+    guard let frame = windows[id]?.frame, whatShows(of: frame) < frame.area else { return false }
     return displays.contains { display in
-      let corner = parkingOrigin(for: frame.size, on: display)
-      return abs(frame.minX - corner.x) <= 1
-        && (abs(frame.minY - corner.y) <= 1 || abs(frame.minY - whereItStops(corner).y) <= 1)
+      guard frame.overlaps(display.frame) else { return false }
+      let isOnePointAcross = abs(frame.minX - (display.frame.maxX - 1)) <= 1 || abs(frame.maxX - (display.frame.minX + 1)) <= 1
+      if isOnePointAcross, !aHandCanGetHold(of: frame) { return true }
+      return parkingPlaces(for: frame.size, on: display).contains { place in
+        let isThere = abs(frame.minX - place.x) <= 1 && abs(frame.minY - place.y) <= 1
+        let titleBar = titleBar(ofAWindowAt: frame.origin, sentTo: place)
+        guard isThere || titleBar != nil else { return false }
+        // By the height its place speaks of, and by the guess, which is what Arbor goes by until a window has answered.
+        return [titleBar, nil].contains { parkingOrigin(for: frame.size, titleBar: $0, on: display) == place }
+      }
+    }
+  }
+
+  /// Whether some display shows enough of the top of `frame` to press and drag, clear of its menu bar and Dock: 24 points across and
+  /// 12 down, of the 24 that every title bar has.
+  private func aHandCanGetHold(of frame: CGRect) -> Bool {
+    let top = CGRect(x: frame.minX, y: frame.minY, width: frame.width, height: min(frame.height, 24))
+    return displays.contains {
+      let showing = top.intersection($0.visibleFrame)
+      return !showing.isNull && showing.width >= 24 && showing.height >= 12
     }
   }
 

@@ -33,7 +33,7 @@ extension Controller {
     where !parked.contains(window) && window != drag?.window && !isLetBe(window) && !settings.shrinkOutOfView {
       // The frame `park` asks for.
       guard let size = windows[window]?.frame.size else { continue }
-      moves.append((window, CGRect(origin: parkingOrigin(for: size, on: display), size: size)))
+      moves.append((window, CGRect(origin: parkingOrigin(for: size, of: window, on: display), size: size)))
     }
     // One window needs no company.
     return moves.count > 1 ? moves : []

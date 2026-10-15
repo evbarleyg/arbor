@@ -193,12 +193,13 @@ extension ChaosRunner {
       if parked.contains(id) {
         guard let showing else { continue }
         let home = controller.workspaceID(containing: id)
+        func whereMacOSPuts(_ frame: CGRect) -> CGRect { system.whereMacOSPuts(frame, titleBar: fake.titleBar) }
         // Something else moved it into view: like a docked window, it is put back by a timer.
         if !settled, let home, isDueForLayout(home) { continue }
         // Hemmed in by other displays, it goes where least of it shows, which is not nothing.
         guard let home = displays.first(where: { $0.id == home }),
           Self.area(of: snapshot.frame, showingOn: displays)
-            > leastThatMustShow(of: snapshot.frame.size, parkedAround: home, stoppedBy: system.whereMacOSPuts) + 1
+            > leastThatMustShow(of: snapshot.frame.size, parkedAround: home, stoppedBy: whereMacOSPuts) + 1
         else { continue }
         var rule = "parked-in-view"
         if !fake.placeIsArborsDoing {
@@ -208,7 +209,7 @@ extension ChaosRunner {
         } else if displays.contains(where: {
           $0.id != home.id
             && Self.area(of: snapshot.frame, showingOn: displays)
-              <= leastThatMustShow(of: snapshot.frame.size, parkedAround: $0, stoppedBy: system.whereMacOSPuts) + 1
+              <= leastThatMustShow(of: snapshot.frame.size, parkedAround: $0, stoppedBy: whereMacOSPuts) + 1
         }) {
           // It went out of view beside one display and has since been docked on another.
           rule = "parked-beside-another-display"
@@ -216,7 +217,7 @@ extension ChaosRunner {
           // macOS stops a window before its title bar goes under the bottom of a display. `parkingOrigin` takes that to be
           // the window's own display, the fake the one nearest the window's corner. Arbor chose well by its own lights.
           func stop(_ frame: CGRect) -> CGRect {
-            CGRect(x: frame.minX, y: min(frame.minY, home.visibleFrame.maxY - 32), width: frame.width, height: frame.height)
+            CGRect(x: frame.minX, y: min(frame.minY, home.visibleFrame.maxY - fake.titleBar), width: frame.width, height: frame.height)
           }
           if Self.area(of: stop(asked), showingOn: displays) <= leastThatMustShow(of: asked.size, parkedAround: home, stoppedBy: stop) + 1 {
             rule = "parked-stopped-short"

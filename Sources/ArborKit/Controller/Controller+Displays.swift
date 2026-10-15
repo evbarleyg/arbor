@@ -443,10 +443,18 @@ extension Controller {
       guard let displayID = workspaceID(containing: window), let display = display(displayID),
         let frame = windows[window]?.frame
       else { continue }
-      // macOS stops a window short of the corner (`parkingOrigin`). One that is where it would stop again stays.
-      let corner = parkingOrigin(for: frame.size, on: display)
-      let stop = whereItStops(corner).y
-      if abs(frame.minX - corner.x) <= 1, abs(frame.minY - corner.y) <= 1 || abs(frame.minY - stop) <= 1 { continue }
+      // macOS stops a window short of the corner (`parkingOrigin`). One that is where it would stop again stays. So does one in
+      // another of the places, chosen before its title bar was known, if no less of it would show in the one chosen now. Of a
+      // window found out of view at a start, its place says how high its title bar is; where it does not, the guess stands.
+      let places = parkingPlaces(for: frame.size, on: display)
+      if titleBars[window] == nil {
+        titleBars[window] = places.lazy.compactMap { self.titleBar(ofAWindowAt: frame.origin, sentTo: $0) }.first
+      }
+      let best = CGRect(origin: parkingOrigin(for: frame.size, of: window, on: display), size: frame.size)
+      if isAsFarAsItGoes(window, at: frame.origin, sentTo: best.origin) { continue }
+      if places.contains(where: { isAsFarAsItGoes(window, at: frame.origin, sentTo: $0) }), !showsLess(window, sentTo: best, than: frame) {
+        continue
+      }
       park(window, on: display)
       parkedAgain[window] = nil  // nobody is fighting over it
     }

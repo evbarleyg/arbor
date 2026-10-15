@@ -139,6 +139,32 @@ private let c = WindowID(103)
     expectEveryInvariantHolds(script)
   }
 
+  // MARK: A corner that is Arbor's, whatever the window's title bar
+
+  /// Finder's window has a toolbar, so macOS stops it 52 points above the bottom, not the 32 that Arbor took for every window's measure.
+  /// Arbor dies with the window out of view; Finder starts again; Arbor starts under a rule that ignores Finder. Not taken for
+  /// a window in Arbor's corner, it was ignored where it was, with one point of it on the display, for good.
+  @Test func aWindowWithAToolbarLeftOutOfViewByACrashIsFetchedBeforeItIsIgnored() {
+    let runner = world(
+      after: """
+        launch
+        open 101 Finder pid 1005 at 300 200 920 436
+        open 102 Mail pid 1002 at 400 250 600 400
+        dock 101 left
+        dock 102 right
+        zoom 102
+        flush
+        crash
+        renumber 101 103
+        settings {"rules":[{"app":"com.example.finder","action":"ignore"}]}
+        launch
+        settle
+        """)
+    #expect(runner.system.moveLog.contains { $0.window == a && $0.after.origin == CGPoint(x: 1439, y: 848) }, "where the crash left it")
+    #expect(runner.controller.filter.ignoredWindowIDs == [c])
+    #expect(runner.system.isVisible(c), "\(runner.system.frame(of: c)!)")
+  }
+
   // MARK: An overhang nobody left
 
   /// The display a floating window was on goes, and a smaller one is all that is left (or comes back under its name). The

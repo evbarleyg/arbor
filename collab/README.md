@@ -186,7 +186,7 @@ around that window, where the window is; there is none), `outline <id>|desktop|n
 `preview none|showing` (the drop preview), `jolt <id>` (see below),
 `said <words>` / `silent` (the heads-up line on screen now contains those words, ignoring
 case; there is none. A line stays until `flush` or `wait`). `press <command>` runs a command as its shortcut would, which is what
-makes Arbor answer on screen; arbor-sim prints each line as `on screen: …`. `relaunch` quits Arbor and starts it again. Failed expectations print
+makes Arbor answer on screen; arbor-sim prints each line as `on screen: …`. `relaunch` quits Arbor and starts it again; `crash [<id>…]` kills it as it stands and starts it again (those windows are closed and opened again meanwhile: where they were, under the next numbers). Failed expectations print
 `EXPECTATION FAILED` and make arbor-sim exit with code 1.
 
 arbor-sim checks each `expect` line as it runs (`ScenarioExpectation` in

@@ -87,7 +87,10 @@ extension Controller {
   /// window its person has left lower than macOS lets anybody put one would not stay where it stands.
   private func question(_ window: WindowSnapshot, toTake size: CGSize) -> CGRect? {
     let question = CGRect(origin: window.frame.origin, size: size)
-    guard parked.contains(window.id) else { return whereItStops(question.origin) == question.origin ? question : nil }
+    guard parked.contains(window.id) else {
+      let staysThere = whereItStops(question.origin, titleBar: titleBars[window.id] ?? Self.guessedTitleBar) == question.origin
+      return staysThere ? question : nil
+    }
     return isOutOfView(question.union(window.frame)) && displays.contains { question.overlaps($0.frame) } ? question : nil
   }
 

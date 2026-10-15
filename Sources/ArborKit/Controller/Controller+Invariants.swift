@@ -235,6 +235,7 @@ extension Controller {
     check("justAnswered", justAnswered.keys)
     check("fixedSizesNoted", fixedSizesNoted)
     check("parkedAgain", parkedAgain.keys)
+    check("titleBars", titleBars.keys)
     check("appPlacedFrames", appPlacedFrames.keys)
     check("spokeOfItsPlace", spokeOfItsPlace.keys)
     check("returningWindows", returningWindows)
