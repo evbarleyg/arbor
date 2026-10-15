@@ -4,7 +4,7 @@
 A Mac is left out when it could prove nothing new, or nothing that will not be proved soon anyway:
 
   1. everything the pull request changes (for a merge train: everything it adds to the trunk) is
-     prose, or data the Linux job checks just as well: collab/, docs/, *.md, scripts/typecheck-mac/ and
+     prose, or data the Linux job checks just as well: collab/, docs/, *.md, demo/ (the films' sources: Linux plays and paints them), scripts/typecheck-mac/ and
      scripts/mac-on-linux/ (which only Linux runs), Sources/arbor-fakemac/ (which Package.swift leaves out on a Mac unless ARBOR_FAKEMAC is set, and
      nothing a Mac runs here sets it: no Mac's compiler sees it; these rules' self-test looks that this stays so),
      the scripts in scripts/mac-shell/ that CI does not run (it runs e2e-drag.sh and compile-tools.sh, and
@@ -72,7 +72,7 @@ import subprocess
 import sys
 
 PROSE = re.compile(
-    r"^(collab|docs|scripts/typecheck-mac|scripts/mac-on-linux|Sources/arbor-fakemac)/|^scripts/mac-shell/(?!(e2e-drag\.sh|lib\.sh|compile-tools\.sh|state\.py|.*\.swift|.*\.m)$)|\.md$"
+    r"^(collab|docs|demo|scripts/typecheck-mac|scripts/mac-on-linux|Sources/arbor-fakemac)/|^scripts/mac-shell/(?!(e2e-drag\.sh|lib\.sh|compile-tools\.sh|state\.py|.*\.swift|.*\.m)$)|\.md$"
     # What CI's macOS job never runs. The Mac shell workflow is proved by a Mac shell run; the Linux jobs' own workflow, these rules and the
     # tools' self-tests by Linux.
     r"|^\.github/workflows/(mac-shell|linux|old-python)\.yml$|^scripts/ci-mac-shell\.sh$"

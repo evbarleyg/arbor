@@ -47,6 +47,8 @@ TABLE = [
     (NO, "the Mac made of fakes, which no Mac compiles", pull(), dict(files=["Sources/arbor-fakemac/World+Input.swift", "Sources/arbor-fakemac/Arbor.swift"])),
     (NO, "trunk: the same", TRUNK, dict(files=["Sources/arbor-fakemac/Driver.swift"])),
     (UPON, "it and macOS-only code", pull(), dict(files=["Sources/arbor-fakemac/Arbor.swift", UI])),
+    (NO, "the demo films' sources, which Linux plays and paints", pull(), dict(files=["demo/film.txt", "demo/make.sh", "demo/render/paint.js", "demo/icons/Chat.rgba"])),
+    (UPON, "they and macOS-only code", pull(), dict(files=["demo/film.txt", UI])),
     (NO, "only it since the pass", pull(), dict(files=[UI, "Sources/arbor-fakemac/Arbor.swift"], passed={"P1"}, between={("P1", "H"): ["Sources/arbor-fakemac/Arbor.swift"]})),
     (NO, "stories that only Linux tells", pull(), dict(files=[CORE, "scripts/mac-on-linux/tests/main.swift", "scripts/mac-on-linux/known-failures.txt"])),
     (NO, "the Mac shell workflow and what runs the scripts there, which CI's own job does not use", pull(), dict(files=[
