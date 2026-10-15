@@ -30,6 +30,7 @@ import signal
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -651,7 +652,7 @@ echo $! > "$FAKE/children"
 (sleep 401) &
 echo $! >> "$FAKE/children"
 limit 300 sh -c 'echo $$ >> "$FAKE/children"; exec sleep 402' &
-sleep 0.5
+until [ "$(wc -l < "$FAKE/children")" -ge 3 ]; do sleep 0.05; done
 echo ready > "$FAKE/ready"
 sleep 403
 echo "not reached" >> "$FAKE/said"
@@ -1132,6 +1133,51 @@ kill $mine
     return [(situation, False) for situation in throwaway] + [(situation, True) for situation in somebodys], [(traces, True), (stray_environment, False)]
 
 
+def played(together, alone, tried, say=print):
+    """What each situation came to. Those that can be are played eight at a time, and the gate has the compiler on every core meanwhile. On a machine that is
+    busy besides, a script then does not get its turn within the limits set here, which says nothing about lib.sh. So what was red beside the others is played
+    once more, by itself, when all the others are through, and that playing counts: what is red by itself stays red. Each is named, so that one which is red
+    beside the others every time gets noticed."""
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
+        results = list(pool.map(tried, together))
+    rest = [tried(entry) for entry in alone]
+    for index, entry in enumerate(together):
+        red = [what for what, got, expected in results[index] if got != expected]
+        if red:
+            say(f"  red beside the others, so played again by itself: {red[0]}" + (f" (and {len(red) - 1} more of its rows)" if red[1:] else ""))
+            results[index] = tried(entry)
+    return results + rest
+
+
+def check_played():
+    def playing(outcomes, alone=()):
+        """`outcomes`: for each situation what its playings come to, one after another. Also: how many were going on at each playing's start, and what was said."""
+        log, said, going, lock = [], [], [0], threading.Lock()
+
+        def tried(name):
+            with lock:
+                going[0] += 1
+                log.append((name, going[0]))
+            time.sleep(0.05)
+            with lock:
+                going[0] -= 1
+                return [(f"{name}: a row", outcomes[name].pop(0), "green"), (f"{name}: another", "green", "green")]
+
+        results = played([name for name in outcomes if name not in alone], list(alone), tried, said.append)
+        return [rows[0][1] for rows in results], log, said
+
+    came, log, said = playing({"a": ["green"], "b": ["green"], "c": ["green"]}, alone=("c",))
+    row("lib.sh's situations: all green: each is played once, nothing is said", (came, sorted(name for name, _ in log), said), (["green"] * 3, ["a", "b", "c"], []))
+    came, log, said = playing({"a": ["green"], "b": ["red", "green"], "c": ["green"], "d": ["green"]}, alone=("d",))
+    row("lib.sh's situations: red beside the others and green by itself counts as green, and is named",
+        (came, said), (["green"] * 4, ["  red beside the others, so played again by itself: b: a row"]))
+    row("lib.sh's situations: the second playing is the last of all, with nothing beside it", log[-1], ("b", 1))
+    came, log, said = playing({"a": ["red", "red", "green"], "b": ["green"]})
+    row("lib.sh's situations: red by itself too stays red, and there is no third playing", (came, [name for name, _ in log].count("a"), len(said)), (["red", "green"], 2, 1))
+    came, log, _ = playing({"a": ["green"], "b": ["red", "green"]}, alone=("b",))
+    row("lib.sh's situations: what is played by itself in the first place has one playing", (came, len(log)), (["green", "red"], 2))
+
+
 def check_mac_shell_lib(canary, since):
     def tried(entry):
         situation, somebodys = entry
@@ -1149,10 +1195,7 @@ def check_mac_shell_lib(canary, since):
     try:
         # Somebody's process: older than any run below by more than lib.sh, which has whole seconds to go by, can mistake.
         time.sleep(max(0, since + 4.2 - time.time()))
-        together, alone = lib_situations(canary.pid)
-        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as pool:
-            results = list(pool.map(tried, together))
-        for result in results + [tried(entry) for entry in alone]:
+        for result in played(*lib_situations(canary.pid), tried):
             for what, got, expected in result:
                 row(what, got, expected)
     finally:
