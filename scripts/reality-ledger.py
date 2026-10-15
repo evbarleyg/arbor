@@ -47,7 +47,11 @@ green cannot tell, so what is not played at all is the first answer, whatever it
 takes out and puts in again within one hunk: a line reworded leans on nothing new, and a list of nothing else is no argument for a Mac. A dozen lines at most; `--all` for the rest. So a case that is about a call does well
 to name it.
 
-Exit code 1 if a name is not found or, with --check, the page does not say what reality.json says; 2 if reality.json itself is wrong. A page whose
+That the list tells what it is for is held against the real ledger at every run, `--check` included. collab/evidence/changes keeps a change that landed green on Linux and was wrong on a
+Mac, cut down; of the cases that would have told (PROOF) one has to be among the first three it is shown, and all have to be printed. They are held as not played, which they were: the
+stand-ins learnt that rule within hours, and it is the list that is tried, among all the cases written since. Once the stand-ins play them all a note says so.
+
+Exit code 1 if a name is not found, the proof of `--for` no longer holds or, with --check, the page does not say what reality.json says; 2 if reality.json itself is wrong. A page whose
 counts have moved only because the rest of the repository has (CI starts another script, the gate has a new detector) gets a note, so that nobody's lint
 fails on it: that part of the page lies between two comments, and --check leaves it out.
 """
@@ -110,6 +114,11 @@ TRUNKS = ("origin/swarm/trunk", "origin/main")
 DOZEN = 12
 # How a change comes to a case, the most telling first.
 BY_NAME, BY_FILE, AS_BEFORE = range(3)
+# That `--for` tells what it is for is held against the real ledger at every run. The change is history: it landed green on Linux on 2026-10-15 and left a plain first dock on a Mac short
+# of its slot. The cases are those that say what it did not reckon with: the size a window may take depends on where it stands. None was played when it was written down.
+PROOF = ("collab/evidence/changes/a-refused-size-costs-nobody-a-second-move.diff", [
+    "a-window-asked-to-grow-stops-at-the-dock", "a-size-clipped-by-the-screen-was-taken-for-the-apps-refusal", "a-size-set-at-the-old-place-is-cut-to-what-fits-there"])
+AT_THE_HEAD = 3
 # How well an entry is guarded, best first. Every entry is in exactly one.
 WATCHES = collections.OrderedDict([
     ("linux", "Guarded without a Mac"),
@@ -738,13 +747,48 @@ def leans_on(entries, tree, diff):
     return sorted(found, key=lambda one: (one[2], UNPLAYED.index(one[0]["modelled"]), one[0]["hurt"], nearest.index(one[0]["layer"])))
 
 
+def printed(found):
+    """A dozen lines at most: the head, the cases, and where they do not fit ten of them and how many more there are."""
+    return found if len(found) < DOZEN else found[:DOZEN - 2]
+
+
+def proof_problems(data, tree, proof):
+    """Whether the ledger as it stands would have told the change that is kept as proof: each problem with what to do about it, and a note or none.
+
+    The self-test draws ledgers of a few cases, so it cannot see a case go under among its like. That happens in the real one: when every case about `setFrame` came to say so,
+    the case that would have told stood 17th of 27. So: one of the proof's cases is among the first three, and all of them are printed.
+    They are held as not played, which they were when they were written down, whatever the stand-ins have learnt since: it is the list that is tried here, not the stand-ins, and
+    these learnt the rule within hours. What is asked is whether a case as unknown to Linux as these were would be read today, among all that has been written since."""
+    path, cases = proof
+    here = "scripts/reality-ledger.py, PROOF"
+    if not tree.is_file(path):
+        return [(f"{path}, the change it is held against, is not there", f"bring the file back, or name another in {here}")], None
+    known = {entry["id"]: entry for entry in data["entries"]}
+    if gone := [case for case in cases if case not in known]:
+        return [(f"the ledger has no case {case}", f"{here}: give the case its new name, or take it out") for case in gone], None
+    then = [dict(entry, modelled=UNPLAYED[0]) if entry["id"] in cases else entry for entry in data["entries"]]
+    found = [entry["id"] for entry, _, _ in leans_on(then, tree, tree.read(os.path.join(tree.root, path)))]
+    place = lambda case: f"{case} is number {found.index(case) + 1} of {len(found)}" if case in found else f"{case} is not on the list"
+    remedy = ("collab/reality.json: see that each names the member of the seam it is about (`setFrame`), and that `modelled` and `hurt` of what stands before them are true; "
+              "if they are, it is the order in `leans_on` that no longer serves")
+    problems = []
+    if not set(cases).intersection(found[:AT_THE_HEAD]):
+        problems.append((f"held as not played, none of the cases that would have told {path} is among the first {AT_THE_HEAD} it is shown: {'; '.join(place(case) for case in cases)}", remedy))
+    problems += [(f"{place(case)}, and {len(printed(found))} are printed" if case in found else place(case), remedy) for case in cases if case not in printed(found)]
+    note = None
+    if all(known[case]["modelled"] not in UNPLAYED for case in cases):
+        note = (f"the stand-ins play all the cases of the proof of --for by now, so a change like {path} would go red on Linux, which is better than any list. "
+                f"The list is still tried on them, as if they were not played; a fresher proof, if there is one, goes into {here}")
+    return problems, note
+
+
 def reading_list(root, diff, everything=False):
     """What `--for` prints, line by line: nothing where there is nothing to say, and a dozen lines at most unless all are asked for."""
     data, tree, wrong = load(root)
     found = [] if wrong else leans_on(data["entries"], tree, diff)
     if not found:
         return []
-    shown = found if everything or len(found) < DOZEN else found[:DOZEN - 2]
+    shown = found if everything else printed(found)
     played = {"no": "not played", "partly": "played partly", "cannot": "cannot be played"}
     old = sum(1 for one in found if one[2] == AS_BEFORE)
     lines = [f"Green on Linux cannot tell you these: {len(found)} case{'s' if len(found) > 1 else ''} in docs/REALITY.md that the stand-ins do not play"
@@ -795,7 +839,7 @@ def advise(root, what, everything):
     return 0
 
 
-def run(root, check):
+def run(root, check, proof=None):
     data, tree, wrong = load(root)
     if wrong:
         for line in wrong:
@@ -807,6 +851,13 @@ def run(root, check):
             print(f"✘ {name or 'the prose'}: {problem}")
             print("  → collab/reality.json, " + (f'case "{name}", ' if name else "") + f'"{field}": {remedy}; then python3 scripts/reality-ledger.py and commit both files')
             code = 1
+    problems, note = proof_problems(data, tree, proof) if proof else ([], None)
+    for problem, remedy in problems:
+        print(f"✘ the proof of --for: {problem}")
+        print(f"  → {remedy}")
+        code = 1
+    if note:
+        print(f"note: {note}")
     text = document(data, tree)
     target = os.path.join(root, "docs", "REALITY.md")
     current = tree.read(target) if os.path.exists(target) else ""
@@ -1225,6 +1276,33 @@ def self_test():
         listed("")
         with open(os.path.join(root, "a.diff"), "w", encoding="utf-8") as file:
             file.write(asked)
+        # The proof against the real ledger, tried on drawn ones: what it lets pass, and what it says when it does not.
+        half = dict(cut, id="half-played", modelled="partly", knobs=["Fake.knob"])
+        louder = [dict(cut, id=f"louder-{number:02}", hurt=1) for number in range(12)]
+
+        def proof(entries, change="a.diff", names=(cut["id"], half["id"])):
+            listed("", entries)
+            said = io.StringIO()
+            with contextlib.redirect_stdout(said):
+                code = run(root, False, (change, list(names)))
+            return code, said.getvalue()
+        played = lambda *them: [dict(case, modelled="yes", knobs=["Fake.knob"]) for case in them]
+        for name, told, code, words in [
+            ("its cases at the head", proof([cut, half] + [dict(case, modelled="cannot", layer="below the seam") for case in louder]), 0, ""),
+            ("three that are louder before all of its cases", proof(louder[:3] + [cut, half]), 1, f"is among the first 3 it is shown: {cut['id']} is number 4 of 5; half-played is number 5 of 5"),
+            ("one of its cases below what is printed", proof(louder[:2] + [dict(cut, id="at-the-head", hurt=1), cut, half] + louder[2:], names=("at-the-head", cut["id"])), 1,
+             f"✘ the proof of --for: {cut['id']} is number 14 of 15, and 10 are printed"),
+            ("a case that no longer names the member", proof([cut, dict(half, expected="It is one step.")]), 1, "✘ the proof of --for: half-played is not on the list"),
+            # An hour and a half after the check was written the stand-ins had learnt the rule: one case played, two partly, and three that are not played at all before them.
+            ("its cases played since, one wholly and one partly, among others that are not", proof(played(cut) + [half] + [dict(case, hurt=4) for case in louder[:3]]), 0, ""),
+            ("all of its cases played since", proof(played(cut, half) + [dict(case, hurt=4) for case in louder[:3]]), 0, "note: the stand-ins play all the cases of the proof of --for by now"),
+            ("all of its cases played since, and three that are louder", proof(played(cut, half) + louder[:3]), 1, "is among the first 3 it is shown"),
+            ("a case that was renamed", proof([cut]), 1, "the ledger has no case half-played"),
+            ("the change gone", proof([cut, half], change="gone.diff"), 1, "gone.diff, the change it is held against, is not there"),
+        ]:
+            if told[0] != code or words not in told[1] or (not words and "proof" in told[1]):
+                failures.append(f"the proof of --for with {name} ends with {told[0]} and not {code}, or does not say {words!r}: {told[1]}")
+        listed("")
         for name, what, words in [("a diff in a file", os.path.join(root, "a.diff"), "a-size-set-at-the-old-place"), ("a range git does not know", "no-such..range", ""), ("a commit git does not know", "no-such-commit", "")]:
             said = io.StringIO()
             with contextlib.redirect_stdout(said), contextlib.redirect_stderr(io.StringIO()):
@@ -1248,7 +1326,7 @@ def main():
     parser.add_argument("--all", action="store_true")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
-    sys.exit(self_test() if args.self_test else advise(ROOT, args.change, args.all) if args.change is not None else rings(ROOT, args.rings) if args.rings is not None else run(ROOT, args.check))
+    sys.exit(self_test() if args.self_test else advise(ROOT, args.change, args.all) if args.change is not None else rings(ROOT, args.rings) if args.rings is not None else run(ROOT, args.check, PROOF))
 
 
 if __name__ == "__main__":
