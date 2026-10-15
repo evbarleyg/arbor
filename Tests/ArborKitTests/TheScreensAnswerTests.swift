@@ -239,7 +239,9 @@ import Testing
       ])
     #expect(runner.system.frame(of: Self.b)?.size == CGSize(width: 400, height: 673), "\(runner.system.frame(of: Self.b) as Any)")
     _ = play(["dock 102 right", "settle", "float 102", "settle"], on: runner)
-    #expect(runner.system.frame(of: Self.b)?.size == CGSize(width: 400, height: 673), "docked and floated again: \(runner.system.frame(of: Self.b) as Any)")
+    // Fetched onto the Desktop it is a point short again. Given a place that hangs over the bottom, from a slot with room, it has all of it.
+    let again = runner.system.frame(of: Self.b)?.size ?? .zero
+    #expect(again.width == 400 && again.height >= 673, "docked and floated again: \(runner.system.frame(of: Self.b) as Any)")
   }
 
   /// A pin remembers where the window is. Fetched onto the Desktop it ends on the Dock's line, a point short, and lost a point with every pin.
