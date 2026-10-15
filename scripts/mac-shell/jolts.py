@@ -194,6 +194,8 @@ class Step:
         self.tops = []
         self.apps = []
         self.late_samples = []
+        # A process of Arbor's was running at some time during the step.
+        self.alive = False
         self.app_before = None
         # When a key went down or the button changed.
         self.inputs = []
@@ -267,6 +269,8 @@ class World:
         self.others = {}
         self.button = False
         self.arbors = set()
+        # Whether a process of Arbor's is running, as far as the script says: `arbor <pid>` when it has started one, `arbor gone` when that has ended.
+        self.alive = False
         # The previews that are up: macOS's own (windows of WindowManager's) and Arbor's (its panels at level 3).
         self.macos_previews = set()
         self.arbor_previews = set()
@@ -311,6 +315,25 @@ class World:
             "displays": ([self.display] if self.display else []) + [frame for frame, _ in self.others.values()],
             "visibles": ([self.visible] if self.visible else []) + [visible for _, visible in self.others.values()],
         }
+
+
+def since_the_scene_was_set(said, ended, steps):
+    """The sampler's account of itself, for the time in which something is judged. Nine apps started cold keep every core busy, and nearly all late samples of
+    a run fall there (71 of 72 in one), where the script only sets the scene. How many samples came since is not written down: the run's own rate is
+    taken for it, which is on the strict side, because the rate was lower while the Mac was busy. What the sampler said of the whole run follows, as `whole-…`."""
+    told = dict(zip(said[::2], said[1::2]))
+    acts = [step for step in steps if step.wants.get("setup") != "1"]
+    try:
+        samples, seconds = int(told["samples"]), float(told["seconds"])
+    except (KeyError, ValueError):
+        return " ".join(said)
+    if len(acts) == len(steps) or not acts or seconds <= 0:
+        return " ".join(said)
+    span = min(seconds, (ended - acts[0].began) / 1000)
+    gaps = [gap for step in acts for gap in step.late_samples]
+    told.update({"samples": str(int(samples * span / seconds)), "seconds": f"{span:.1f}", "late": str(len(gaps)), "longest-gap-ms": str(max(gaps, default=0)),
+                 "whole-samples": told["samples"], "whole-seconds": told["seconds"], "whole-late": told.get("late", "?")})
+    return " ".join(f"{key} {value}" for key, value in told.items())
 
 
 def read(path):
@@ -430,19 +453,24 @@ def read(path):
                 if current:
                     current.late_samples.append(int(rest[0]))
             elif kind == "S":
-                account = " ".join(rest)
+                account = since_the_scene_was_set(rest, time, steps)
             elif kind == "M" and rest:
                 verb, rest = rest[0], rest[1:]
                 if verb == "label" and len(rest) >= 2:
                     world.labels[int(rest[0])] = " ".join(rest[1:])
                 elif verb == "arbor" and rest:
-                    world.arbors.add(int(rest[0]))
+                    world.alive = rest[0] != "gone"
+                    if world.alive:
+                        world.arbors.add(int(rest[0]))
+                    if current and world.alive:
+                        current.alive = True
                 elif verb == "tiling" and rest:
                     world.tiling = rest[0] == "defaults"
                 elif verb == "chapter":
                     chapter = " ".join(rest)
                 elif verb == "begin" and len(rest) >= 2:
                     current = Step(int(rest[0]), rest[1], chapter, time)
+                    current.alive = world.alive
                     current.app_before = world.app
                     for window, frame in world.frames.items():
                         if world.ordinary(window):
@@ -674,6 +702,14 @@ def judge(step, world, by_number, own):
                     break
                 opened = index
             trace = trace[opened:]
+        if len(trace) > 2 and trace[-1][1] is None:
+            # And as it closes macOS lets it shrink a little. That it went is the finding, if it is one.
+            closing = len(trace) - 1
+            while closing > 1 and trace[closing - 1][1] and trace[-1][0] - trace[closing - 1][0] <= OPENING:
+                closing -= 1
+            before = trace[closing - 1][1]
+            if before and all(entry[1] and not differs(before, entry[1], by=max(OPENING_REACH, OPENING_SHARE * max(before[2:]))) for entry in trace[closing:-1]):
+                trace = trace[:closing] + trace[-1:]
         moves, frames, took, detour, elsewhere = measure(trace)
         # macOS shrinks a window into the Dock and lets it grow out of it, by a road of its own.
         if window in ids(may_leave) | ids(wants.get("comes", "")):
@@ -737,7 +773,8 @@ def judge(step, world, by_number, own):
         step.find("4", "FAIL", None, "the app in front changed (to process %s), and nobody switched" % ", ".join(str(app) for app in step.apps))
 
     for time, kind, delay, _ in step.arrived:
-        if kind == "up" and delay > HELD:
+        # Who is not there holds nothing back: on a hosted Mac a release has been seen to take 57 ms with no Arbor running.
+        if kind == "up" and delay > HELD and step.alive:
             step.find("6", "FAIL", None, f"the button came up, and the apps heard of it {delay // 1000} ms later")
 
     tops = [top for top in step.tops if top is not None]
@@ -934,7 +971,8 @@ def as_json(world, steps, account):
 
 
 def sabotage(steps):
-    """Every offence found by its own detector and by no other, and nothing found where nothing was done."""
+    """Every offence found by its own detector and by no other, and nothing found where nothing was done. Stricter than docs/VIABLE.md, which lets one offence set
+    off several detectors: two reports of one event are noise, and this is where it shows."""
     out, missed = [], 0
     out.append("| # | Step | Offence committed | Reported | |")
     out.append("|---|---|---|---|---|")
@@ -1154,6 +1192,10 @@ def self_test():
         "2100 W 1 10 0 600 30 400 300 One", "2140 W 1 10 0 0 30 400 300 One", "2600 G 70", "3700 M end 2 moves=1"], [("3", "FAIL")])
     expect("a window leaves the screen", start + ["2000 M begin 2 idle", "2100 G 2", "2100 Z 1", "3000 M end 2"], [("L", "FAIL")])
     expect("a window is closed", start + ["2000 M begin 2 close", "2100 G 2", "2100 Z 1", "3000 M end 2 leaves=2"], [])
+    shrinks = ["2000 M begin 2 idle", "2190 W 2 20 0 504 102 392 296 Two", "2200 W 2 20 0 505 103 390 294 Two", "2400 G 2", "2400 Z 1", "3400 M end 2"]
+    detectors("a window nobody closed shrinks a little as it goes: that it went is the finding, once", start + shrinks, ["lost"])
+    detectors("it was moved far, and then it went: both", start + [shrinks[0], "2190 W 2 20 0 100 400 400 300 Two"] + shrinks[3:], ["lost", "moved-unasked"])
+    detectors("it was moved a little, long before it went: both", start + [shrinks[0], "2100 W 2 20 0 510 110 400 300 Two", "2900 G 2", "2900 Z 1", "3900 M end 2"], ["lost", "moved-unasked"])
     expect("a hidden window comes back elsewhere", start + [
         "2000 M begin 2 hide", "2100 G 2", "3000 M end 2 leaves=2",
         "4000 M begin 3 unhide", "4100 W 2 20 0 300 100 400 300 Two", "5000 M end 3 comes=2 returns=1"], [("2", "FAIL")])
@@ -1324,6 +1366,15 @@ def self_test():
     _, blind, _ = play(start + ["2000 M begin 2 dock", "2400 L 400", "3000 M end 2 act=dock-key"])
     if judged(blind[1]) or not judged(blind[0]):
         failures.append("a step during which the sampler was blind for 400 ms must not be judged")
+    scene = ["1000 M begin 1 open", "1100 L 300", "1200 L 200", "2000 M end 1 setup=1", "3000 M begin 2 idle", "3500 L 120", "4000 M end 2"]
+    said = "S samples 100 seconds 10.0 hz 10.0 late 3 longest-gap-ms 300"
+    for name, lines, wanted in (
+            ("counts from the first act", scene + [f"11000 {said}"], "samples 80 seconds 8.0 hz 10.0 late 1 longest-gap-ms 120 whole-samples 100 whole-seconds 10.0 whole-late 3"),
+            ("is left as it is where no scene was set", [line.replace(" setup=1", "") for line in scene] + [f"11000 {said}"], said[2:]),
+            ("is left as it is where nothing but the scene was set", scene[:4] + [f"11000 {said}"], said[2:]),
+            ("is left as it is where it cannot be read", scene + ["11000 S samples many"], "samples many")):
+        if play(lines)[2] != wanted:
+            failures.append(f"the sampler's account {name}: {play(lines)[2]!r}, wanted {wanted!r}")
     offences = start + [
         "2000 M begin 2 clean", "2100 W 1 10 0 0 30 500 700 One", "3000 M end 2 moves=1",
         "4000 M begin 3 twice", "4100 W 1 10 0 0 30 480 700 One", "4600 W 1 10 0 0 30 460 700 One", "5700 M end 3 moves=1 offence=jolt"]
@@ -1346,6 +1397,15 @@ def self_test():
             failures.append(f"a mouse-up that is held back for 210 ms is input-held, in its own step and no other: {got}")
         if lateness(heard) != {"events": 5, "p50_us": 400, "p99_us": 210000, "max_us": 210000}:
             failures.append(f"the lateness of five events: {lateness(heard)}")
+        for name, marks, wanted in (("after Arbor has gone nobody holds anything back", ["3500 M arbor gone"], []),
+                                    ("Arbor started again holds it back", ["3400 M arbor gone", "3500 M arbor 98"], ["input-held"]),
+                                    ("it ends during the step, and was there", ["4600 M arbor gone"], ["input-held"])):
+            with open(samples, "w", encoding="utf-8") as handle:
+                handle.write("\n".join(sorted(start + ["2000 M begin 2 click", "3000 M end 2", "4000 M begin 3 click", "5000 M end 3"] + marks,
+                                              key=lambda line: int(line.split()[0]))) + "\n")
+            got = [finding["detector"] for finding in read(samples)[1][2].findings]
+            if got != wanted:
+                failures.append(f"a mouse-up held back for 210 ms: {name}: {got}")
     with tempfile.TemporaryDirectory() as folder:
         samples, log = os.path.join(folder, "samples.log"), os.path.join(folder, "arbor.log")
         with open(samples, "w", encoding="utf-8") as handle:
