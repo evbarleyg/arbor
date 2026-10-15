@@ -1,0 +1,199 @@
+# mac-shell: scripts/mac-shell/check-review-ux.sh at fcefa9e, macOS 26.6.2, 2026-10-15T03:07Z
+built Arbor and the pointer tool in 5s
+
+== three windows: [1 | Desktop | 2 / 3], shortcuts and the menu bar item on
+session 1: Arbor pid 3971, test windows 28 29 30 (pid 3942)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 28 left
+docked w28 at the left edge
+> dock 29 right
+docked w29 at the right edge
+> dock 30 beside 29 bottom
+docked w30 below w29
+display 0 0 1024 768, visible 0 31 1024 677, camera n2, back no
+  Desktop          349 43 326 653
+  w28 12 43 325 653        docked
+  w29 687 43 325 321       docked
+  w30 687 376 325 320      docked focused
+2026-10-15T03:07:27.415Z INFO  registered 52 shortcuts in 1265 µs
+
+== the frame shortcut, twice
+> click 849 536
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ frames the focused window: the others go out of view
+> key ctrl+opt+return
+  ✔ ⌃⌥↩ again returns to everything
+
+== home, and the neighbour with ⇧
+> zoom 28
+framed w28
+  ✔ framed on 1
+> key ctrl+opt+shift+right
+  ✔ ⌃⌥⇧→ moves to the neighbouring space (the Desktop): 1 goes out of view
+> key ctrl+opt+0
+  ✔ ⌃⌥0 shows everything
+
+== the menu while running
+> click 732 15
+shot: mac-shell/01-menu-running.png
+> key escape
+
+== pause with ⌃⌥⎋ while framed
+> zoom 30
+framed w30
+  ✔ 1 and 2 are out of view
+shot: mac-shell/02-framed.png
+> key ctrl+opt+escape
+  ✔ status says paused
+  ✔ every window is back in view
+  ✔ none of Arbor's own windows is on screen
+  ✔ only the shortcut that ends the pause is registered
+shot: mac-shell/03-paused.png
+> status
+paused: windows, shortcuts and gestures are left alone until `resume`
+Arbor dev
+> dock 28 right
+arborctl: paused: windows, shortcuts and gestures are left alone until `resume`
+state: paused True running False windows 0
+
+== while paused Arbor reacts to nothing
+> key ctrl+opt+space
+> key ctrl+opt+shift+f
+> drag 410 232 3 400 --no-release
+  ✔ a real drag to the left edge shows no preview
+> release
+  ✔ still paused
+  ✔ window 2 has not moved
+window 1 was left where it was dropped: 170 220 480 348
+shot: mac-shell/04-dragged-while-paused.png
+
+== the menu while paused
+> click 732 15
+shot: mac-shell/05-menu-paused.png
+> key escape
+
+== resume with ⌃⌥⎋
+> key ctrl+opt+escape
+  ✔ status says running
+  ✔ the view is back on 3: 1 is out of view again
+  ✔ 2 is out of view again
+  ✔ 3 is docked and in view
+  ✔ all the shortcuts are registered again
+display 0 0 1024 768, visible 0 31 1024 677, camera n4, back yes
+  w28 1023 680 480 348     docked parked
+  w29 1023 680 480 348     docked parked
+  w30 12 43 1000 653       docked focused
+shot: mac-shell/06-resumed.png
+> key ctrl+opt+space
+  ✔ ⌃⌥Space works again
+  ✔ window 1, dragged away during the pause, is back in its slot
+
+== a timed pause
+> pause 0.05
+paused for 0.05 minutes; windows are back in view, in their own sizes
+  ✔ paused
+  ✔ it resumed by itself after three seconds
+
+== for the record: what a click on the wallpaper does
+com.apple.WindowManager EnableStandardClickToShowDesktop: The domain/default pair of (com.apple.WindowManager, EnableStandardClickToShowDesktop) does not exist
+com.apple.WindowManager EnableTilingByEdgeDrag: The domain/default pair of (com.apple.WindowManager, EnableTilingByEdgeDrag) does not exist
+com.apple.WindowManager EnableTopTilingByEdgeDrag: The domain/default pair of (com.apple.WindowManager, EnableTopTilingByEdgeDrag) does not exist
+com.apple.WindowManager EnableTilingOptionAccelerator: The domain/default pair of (com.apple.WindowManager, EnableTilingOptionAccelerator) does not exist
+com.apple.WindowManager GloballyEnabled: The domain/default pair of (com.apple.WindowManager, GloballyEnabled) does not exist
+> home
+showing everything
+the Desktop is at 349 43 326 653 and nothing floats on it; clicking its middle
+> click 849 203
+  ✔ 2 has the focus
+> click 512 369
+shot: mac-shell/07-after-wallpaper-click.png
+in front: nobody says
+window 28: window server -313 15 325 653, share on screen 0.04, Arbor 12 43 325 653
+window 29: window server 1012 -145 325 321, share on screen 0.02, Arbor 687 43 325 321
+window 30: window server 1012 508 325 320, share on screen 0.03, Arbor 687 376 325 320
+> click 512 369
+shot: mac-shell/08-after-second-click.png
+  ✔ every window is in view after the second click
+
+== float all with ⌃⌥⇧F
+> zoom 28
+framed w28
+  ✔ framed on 1
+> key ctrl+opt+shift+f
+  ✔ nothing is docked
+  ✔ every window is in view
+
+== arborctl without Arbor
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 28 is back on screen after quitting
+  ✔ window 29 is back on screen after quitting
+  ✔ window 30 is back on screen after quitting
+shot: mac-shell/11-after-quit.png
+  ✔ help needs no running Arbor
+arborctl: Arbor is not running (no control socket at /tmp/arbor-shell.7yhcfu/home/arbor.sock); start it with `open -a Arbor`
+exit code 2
+
+== a window that cannot grow sits in the middle of its slot
+session 2: Arbor pid 6125, test windows 73 74 (pid 6034)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 73 left
+docked w73 at the left edge
+> dock 74 right
+docked w74 at the right edge
+slot 12 43 325 650, window 24 248 300 240, window server 24 248 300 240
+  ✔ it kept its own width
+  ✔ it is centred across
+  ✔ it is centred down
+shot: mac-shell/12-cannot-grow.png
+> resize 74 left 40
+resized w74
+slot 12 43 325 650, window 24 248 300 240
+  ✔ it stays put when a neighbour's other edge moves
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 73 is back on screen after quitting
+  ✔ window 74 is back on screen after quitting
+
+== ⌘Tab to an app whose focused window is out of view
+session 3: Arbor pid 6557, test windows 87 88 (pid 6485)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 87 left
+docked w87 at the left edge
+> dock 88 right
+docked w88 at the right edge
+> dock 82 beside 88 bottom
+docked w82 below w88
+> click 849 204
+  ✔ 2 is its app's focused window
+> click 849 537
+  ✔ the other app has the keyboard
+> zoom 82
+framed w82
+  ✔ 2 is out of view, its app in the background
+in front: nobody says
+shot: mac-shell/13-before-cmd-tab.png
+> key cmd+tab
+in front: nobody says
+  ✔ ⌘Tab to its app brings 2 back into view
+display 0 0 1024 768, visible 0 31 1024 679, camera n3, back yes
+  w82 1023 682 1000 655    docked parked
+  w87 1023 682 325 655     docked parked
+  w88 12 43 1000 655       docked focused
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 87 is back on screen after quitting
+  ✔ window 88 is back on screen after quitting
+shot: mac-shell/14-after-cmd-tab.png
+
+46 passed, 0 failed
+exit code 0

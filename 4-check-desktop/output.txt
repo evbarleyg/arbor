@@ -1,0 +1,171 @@
+# mac-shell: scripts/mac-shell/check-desktop.sh at fcefa9e, macOS 26.6.2, 2026-10-15T03:15Z
+built Arbor and the pointer tool in 3s
+com.apple.WindowManager EnableTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+
+== as the Mac comes
+Reduce Motion: true
+appearance: light, AppleInterfaceStyle: Light
+wallpaper: /System/Library/Desktop Pictures/Solid Colors/Black.png
+5A42259C-47B8-4590-9762-97DBE4FE7F1B 1 1
+session 1: Arbor pid 27520, test windows 257 258 259 (pid 27505)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 257 left
+docked w257 at the left edge
+> dock 258 beside 257 bottom
+docked w258 below w257; its space is too small to show it, so it is a tile
+> show-all
+showing everything
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          518 43 494 650
+  tile n3 window   12 374 494 319  holds w258
+  w257 12 43 494 319        docked focused
+  w258 1023 677 700 500     docked parked
+  w259 518 140 480 348      floating
+  ✔ a tile, a docked window and the Desktop are in view
+shot: mac-shell/light-1-tile.png
+> drag 758 152 1021 368 --no-release
+shot: mac-shell/light-2-preview.png
+> release 765 103
+> click 732 15
+shot: mac-shell/light-3-menu.png
+> key escape
+
+== dark mode
+> appearance dark: now dark
+  ✔ the system says dark
+shot: mac-shell/dark-1-tile.png
+> drag 704 43 1021 368 --no-release
+shot: mac-shell/dark-2-preview.png
+> release 512 103
+> click 732 15
+shot: mac-shell/dark-3-menu.png
+> key escape
+
+== a wallpaper: a gradient under a grid, then one colour
+> wallpaper gradient
+/System/Library/Desktop Pictures/Solid Colors/Black.png
+  ✔ the desktop shows the gradient
+shot: mac-shell/dark-gradient-1-tile.png
+> drag 512 43 1021 368 --no-release
+shot: mac-shell/dark-gradient-2-preview.png
+> release 512 103
+> click 732 15
+shot: mac-shell/dark-gradient-3-menu.png
+> key escape
+> appearance light: now light
+  ✔ the system says light
+shot: mac-shell/light-gradient.png
+> wallpaper #2e7d32
+/Users/runner/work/arbor/arbor/.build/mac-shell/wallpaper-gradient.png
+  ✔ the desktop shows the colour
+shot: mac-shell/light-green.png
+
+== Reduce Motion
+Reduce Motion: false
+  ✔ an app launched now is told that motion is fine
+
+== Spaces: a second one, there and back, with a tile and seams on the first
+> dock 259 right
+docked w259 at the right edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n6, back yes
+  Desktop          12 43 494 650
+  w257 1023 677 494 319     docked parked
+  w258 1023 677 700 500     docked parked
+  w259 518 43 494 650       docked focused
+state.py: window 257 has no slot in view
+> space_add
+5A42259C-47B8-4590-9762-97DBE4FE7F1B 2 1
+  ✔ the main display has two Spaces
+> key ctrl+right
+  ✔ ⌃→ shows the second Space
+shot: mac-shell/spaces-1-second.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n6, back yes
+  Desktop          12 43 1000 650
+  w257 1023 677 494 319     docked parked
+  w258 1023 677 700 500     docked parked
+  w259 518 43 494 650       docked
+> key ctrl+left
+  ✔ ⌃← shows the first Space again
+shot: mac-shell/spaces-2-first-again.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n6, back yes
+  Desktop          12 43 494 650
+  w257 1023 677 494 319     docked parked
+  w258 1023 677 700 500     docked parked
+  w259 518 43 494 650       docked focused
+  ✘ both docked windows are back in their slots
+state.py: window 257 has no slot in view
+  ✔ and the slots are the ones they had
+
+== Spaces: carry a docked window to the second Space, as a person does: hold its title bar and press ⌃→
+> float 258
+w258 is floating
+> drag 765 55 725 95 --no-release
+> key ctrl+right
+> release
+  ✔ the second Space shows
+shot: mac-shell/spaces-3-carried.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n6, back yes
+  Desktop          12 43 494 650
+  w257 1023 677 494 319     docked parked
+  w258 26 194 700 500       floating
+  w259 518 43 494 650       docked focused
+the window server has the carried window at 518 43 494 650
+> key ctrl+left
+shot: mac-shell/spaces-4-without-it.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  Desktop          518 43 494 650
+  w257 12 43 494 650        docked focused
+  w258 324 194 700 500      floating
+  w259 518 43 494 650       docked
+  ✔ the window that stayed is in its slot
+> key ctrl+right
+shot: mac-shell/spaces-5-with-it.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  Desktop          12 43 494 650
+  w257 12 43 494 650        docked
+  w258 324 194 700 500      floating
+  w259 518 43 494 650       docked focused
+> key ctrl+left
+
+== Mission Control with a tile on the screen
+> dock 258 beside 257 bottom
+docked w258 below w257; its space is too small to show it, so it is a tile
+> show-all
+showing everything
+shot: mac-shell/mission-control.png
+> key escape
+   1 INFO  dock 258 beside 257 bottom: docked w258 below w257; its space is too small to show it, so it is a tile
+   1 INFO  dropped w259 on float, display 5A42259C-47B8-4590-9762-97DBE4FE7F1B
+   1 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Your other windows are out of view, not closed · ⌃⌥Space shows everything
+   2 INFO  dropped w259 on float, display 5A42259C-47B8-4590-9762-97DBE4FE7F1B
+   1 INFO  trace space-added: recording to /tmp/arbor-shell.PUXUFx/home/traces/2026-10-15-031621-space-added.jsonl
+   1 INFO  trace space-added ended: 16 lines, trace off
+   1 INFO  trace space-to-the-second: recording to /tmp/arbor-shell.PUXUFx/home/traces/2026-10-15-031628-space-to-the-second.jsonl
+   1 INFO  trace space-to-the-second ended: 45 lines, trace off
+   1 INFO  trace space-back-to-the-first: recording to /tmp/arbor-shell.PUXUFx/home/traces/2026-10-15-031634-space-back-to-the-first.jsonl
+   1 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Your other windows are out of view, not closed · ⌃⌥Space shows everything
+   1 INFO  trace space-back-to-the-first ended: 40 lines, trace off
+   1 INFO  trace space-window-carried: recording to /tmp/arbor-shell.PUXUFx/home/traces/2026-10-15-031646-space-window-carried.jsonl
+   1 INFO  dropped w259 on none, display 5A42259C-47B8-4590-9762-97DBE4FE7F1B
+   1 INFO  trace space-window-carried ended: 259 lines, trace off
+   1 INFO  trace space-left-without-the-window: recording to /tmp/arbor-shell.PUXUFx/home/traces/2026-10-15-031656-space-left-without-the-window.jsonl
+   1 DEBUG said on 5A42259C-47B8-4590-9762-97DBE4FE7F1B: Your other window is out of view, not closed · ⌃⌥Space shows everything
+   1 INFO  trace space-left-without-the-window ended: 51 lines, trace off
+   1 INFO  trace space-right-to-the-window: recording to /tmp/arbor-shell.PUXUFx/home/traces/2026-10-15-031702-space-right-to-the-window.jsonl
+   1 INFO  trace space-right-to-the-window ended: 28 lines, trace off
+   1 INFO  dock 258 beside 257 bottom: docked w258 below w257; its space is too small to show it, so it is a tile
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 257 is back on screen after quitting
+  ✔ window 258 is back on screen after quitting
+  ✔ window 259 is back on screen after quitting
+shot: mac-shell/after-quit.png
+
+16 passed, 1 failed
+exit code 1
