@@ -5,19 +5,17 @@ import Foundation
 /// Pausing (docs/features/F40-pause.md): for a game, a remote desktop or virtual machine that needs
 /// ⌃⌥, or an app Arbor is fighting with.
 ///
-/// Arbor lets go and nothing is lost. The commonest pause is someone framed on a virtual machine who wants
-/// ⌃⌥ back for a while, and the best pause for them is one they cannot see. So **what is in view is not
-/// touched**: same place, same size. **What is out of view comes back on screen**, because a window parked out
-/// of view while nothing reacts to ⌘Tab would be lost: at the frame it floated at before it was docked if that is
-/// known (Controller+UndockedFrames.swift), otherwise in its slot with everything shown. It is not raised, so it ends up
-/// behind what is in view, as on any Mac. Tiles and seam handles go away; Arbor stops observing windows; and
-/// the app hands back every shortcut except the ones that end the pause, and both pointer taps (`inputSettings`,
-/// `KeyBindings.whilePaused`). Resuming is a launch: the arrangement and camera are matched against the windows
-/// that exist by then; if nothing was touched meanwhile it is as invisible as the pause. Both ends reuse the
-/// paths that quitting and launching already exercise.
+/// Arbor lets go and nothing is lost: **a pause leaves the Mac as a quit would, and comes back.** Every window Arbor has
+/// moved or resized goes back to where it was before, in its own size and in view, in one move: a docked one to the frame it
+/// floated at (Controller+UndockedFrames.swift), or into its slot with everything shown if that is not known; a floating one
+/// that docked windows pushed aside or squeezed to where its user left it. Nothing is raised, so the window in use stays in
+/// front. (Whoever only wants ⌃⌥ for the app in front has Controller+PassThrough.swift, which moves nothing.) Tiles and seam
+/// handles go away; Arbor stops observing windows; and the app hands back every shortcut except the ones that end the pause,
+/// and both pointer taps (`inputSettings`, `KeyBindings.whilePaused`). Resuming is a launch: the arrangement and camera
+/// are matched against the windows that exist by then. It also puts the floating windows back on the Desktop that the pause
+/// took off it (`isBackFromThePause`), each in one move. Both ends are the paths that quitting and launching take.
 extension Controller {
-  /// - Parameter lettingGoOfEverything: as a quit does, what is in view too: for a pause that most likely ends in one.
-  func pause(minutes: Double?, forApp: Bool = false, lettingGoOfEverything: Bool = false) -> CommandResult {
+  func pause(minutes: Double?, forApp: Bool = false) -> CommandResult {
     guard isRunning || isPaused else { return .failure(statusText) }
     // Asked for by hand, even during a pause for an app: from now on only `resume` or its own end ends it.
     isPausedForApp = forApp
@@ -32,9 +30,9 @@ extension Controller {
       endSummonsWithoutMoving()
       // Kept in memory as well, so that resuming does not depend on the file having been written.
       resumeState = persistedState()
-      shutdown(leavingWhatIsInView: !lettingGoOfEverything)
-      // What a quit during the pause still has to put back: nothing, if everything has been let go of.
-      pausedFrames = lettingGoOfEverything ? [:] : windows.mapValues(\.frame)
+      let before = windows.mapValues(\.frame)
+      shutdown()
+      pausedFrames = windows.mapValues(\.frame).filter { before[$0.key] != $0.value }
       // Arbor is not looking any more, so `state` and `ascii` must not pass off old frames as current.
       layouts.removeAll()
       windows.removeAll()
@@ -56,7 +54,6 @@ extension Controller {
     isPaused = false
     isPausedForApp = false
     pauseEnd = nil
-    pausedFrames.removeAll()
     scheduler.cancel(Self.lookForFullScreenReturnsKey)
     // Windows and displays came and went unobserved. Start from what was saved and what exists
     // now, as a launch does.
@@ -69,6 +66,7 @@ extension Controller {
     isResuming = true
     start()
     isResuming = false
+    pausedFrames.removeAll()
     // What was learned about windows that still exist stays; the rest closed during the pause.
     minimumSizes = minimumSizes.filter { windows[$0.key] != nil }
     focusHistory.removeAll { windows[$0] == nil }
@@ -81,6 +79,13 @@ extension Controller {
   }
 
   func togglePause() -> CommandResult { isPaused ? resume() : pause(minutes: nil) }
+
+  /// Whether the pause that is ending took floating `window` off the Desktop, to where its user had left it, and nobody has
+  /// moved it since. A launch leaves floating windows where it finds them; a resume brings back what the pause undid.
+  func isBackFromThePause(_ window: WindowID) -> Bool {
+    guard isResuming, let left = pausedFrames[window], let now = windows[window]?.frame else { return false }
+    return now.approximatelyEquals(left, tolerance: 2)
+  }
 
   // MARK: A pause outlives an accident
 
@@ -140,39 +145,14 @@ extension Controller {
   public func sessionIsEnding() {
     guard isRunning else { return }
     Log.info("the session is ending")
-    _ = pause(minutes: Self.sessionEndPause, lettingGoOfEverything: true)
+    _ = pause(minutes: Self.sessionEndPause)
   }
 
-  /// Quitting during a pause. The pause left what was in view in the shape of its slot, and a quit leaves no
-  /// trace: Arbor looks once more, puts the windows back where they floated, and stops looking. Nothing is laid
-  /// out or parked on the way. A window somebody has moved since the pause began is theirs, and stays.
+  /// Quitting during a pause. The pause has let go of every window as a quit does, so nothing is left but to stop looking
+  /// for what it still owed.
   func letGoAfterPause() {
     forgetWindowsLeftInFullScreen()
-    guard isPaused, !pausedFrames.isEmpty else { return }
-    let left = pausedFrames
     pausedFrames.removeAll()
-    system.start()
-    defer {
-      system.stop()
-      windows.removeAll()
-    }
-    displays = system.displays()
-    for window in system.allWindows() { windows[window.id] = window }
-    for id in workspaces.keys.sorted() {
-      guard let workspace = workspaces[id], let display = display(id) else { continue }
-      for window in workspace.allWindows {
-        guard isManaged(window), let now = windows[window], let then = left[window],
-          now.frame.approximatelyEquals(then, tolerance: 2),
-          hints[window].map({ $0.bundleID == now.bundleID }) ?? true
-        else { continue }
-        if let frame = frameAsItWas(of: window, on: id) {
-          if wasPushedAside(window, from: frame) { putBack(window, at: frame, on: display) }
-        } else if let preferred = workspace.floating[window], wasPushedAside(window, from: preferred) {
-          putBack(window, at: asItWas(preferred, on: display), on: display)
-        }
-      }
-    }
-    Log.info("quit while paused; windows nobody had moved went back to where they floated")
   }
 
   /// The settings the pointer taps should follow: the user's, with pinch and rectangle framing off
@@ -189,7 +169,7 @@ extension Controller {
     return quiet
   }
 
-  private static let whatThePauseDid = "windows that were out of view are back on screen"
+  private static let whatThePauseDid = "windows are back in view, in their own sizes"
 
   static func minutesText(_ minutes: Double) -> String {
     let number = minutes == minutes.rounded() ? String(Int(minutes)) : String(minutes)

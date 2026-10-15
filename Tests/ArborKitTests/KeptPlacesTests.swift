@@ -198,7 +198,7 @@ import Testing
     #expect(h.controller.isPaused)
   }
 
-  /// Where #114 (logout is a pause) met F48 (a pause does not touch what is in view): apps save their windows' frames as they
+  /// Where "a logout is a pause" met F48 (a pause did not touch what is in view then): apps save their windows' frames as they
   /// quit, and would have saved the shapes of slots.
   @Test func atLogoutEveryWindowIsAsAQuitWouldLeaveIt() {
     func desk() -> (Harness, [WindowID]) {

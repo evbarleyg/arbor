@@ -253,13 +253,14 @@ private let side = DisplaySnapshot(
     #expect(h.frame(f) == own)
   }
 
-  @Test func aPauseLeavesItAsItIsLikeEverythingInView() {
+  @Test func aPauseGivesItItsOwnFrameBackAndAResumeTheDesktop() {
     let (h, a, f) = makeHarness()
     let filled = desktop(h)
     h.system.clearFrameLog()
     h.run("pause")
+    #expect(h.frame(f) == own)
     h.run("resume")
-    #expect(!h.system.frameLog.contains { $0.window == f })
+    #expect(h.system.frameLog.filter { $0.window == f }.count == 2, "one move each way")
     #expect(h.frame(f) == filled)
     h.run("resize \(a.rawValue) right 50")
     #expect(h.frame(f) == desktop(h), "and it goes on following the Desktop")

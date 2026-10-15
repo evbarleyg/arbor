@@ -752,7 +752,6 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
     let before = frames(h)
     h.run("zoom \(a.rawValue)")
     #expect(h.run("pause").ok)
-    // A pause leaves what is in view where it is; what is out of view comes back.
     #expect(h.frame(b) == before[b] && h.frame(c) == before[c])
     #expect(h.run("resume").ok)
     #expect(h.frame(b)!.size == small && h.frame(c)!.size == small)

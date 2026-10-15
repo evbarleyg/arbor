@@ -67,13 +67,13 @@ expect size 101 400x300
 expect size 102 800x600
 expect size 103 640x420
 
-# Framed on Safari, a pause cannot be seen: Safari stays as it is. The windows that were out of view come
-# back on screen, at their own sizes. Resuming takes them back.
+# Framed on Safari, a pause lets go as a quit would: Safari has its own size again, and the windows that were out
+# of view come back on screen at theirs. Resuming takes them back.
 arrange
 zoom 102
 expect fills 102
 pause
-expect fills 102
+expect size 102 800x600
 expect visible 101
 expect size 101 400x300
 expect size 103 640x420

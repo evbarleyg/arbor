@@ -366,7 +366,7 @@ private let side = DisplaySnapshot(
     h.run("toggle-pause", from: .shortcut)
 
     #expect(h.overlays.cheatSheets.isEmpty)
-    #expect(h.overlays.headsUp[h.display]?.line == "Paused until ⌃⌥⎋; windows that were out of view are back on screen")
+    #expect(h.overlays.headsUp[h.display]?.line == "Paused until ⌃⌥⎋; windows are back in view, in their own sizes")
     h.scheduler.advance(by: 10)
     #expect(h.overlays.headsUp.isEmpty, "and nothing of Arbor's is left on screen")
     #expect(h.scheduler.pendingKeys.isEmpty, "nor any timer")

@@ -403,7 +403,7 @@ public final class TraceReplayer {
     answerFocus()
 
     // Quitting is not a stimulus of its own: the app shuts the controller down after whatever made it quit. A pause has
-    // stopped by itself, and shutting down after it would be quitting during the pause, which lets go of more.
+    // stopped by itself, and shutting down after it would be quitting during the pause.
     if harness.controller.isRunning, response.contains(where: { entries[$0].line == .stop }) { harness.controller.shutdown() }
 
     comparePreviews()

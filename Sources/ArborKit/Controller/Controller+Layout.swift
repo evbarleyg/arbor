@@ -462,7 +462,9 @@ extension Controller {
       // Alone on the Desktop, it takes all of it (Controller+SoleFloat.swift).
       if window == alone, let desktop = layout.desktopFrame {
         // At launch, and when windows are only being put back, just one that is out of view is touched, as below.
-        if drag?.window != window, parked.contains(window) || (previous != nil && reason != .enforce) {
+        if drag?.window != window,
+          parked.contains(window) || isBackFromThePause(window) || (previous != nil && reason != .enforce)
+        {
           moves.append((window, .fill(desktop)))
         }
         continue
@@ -471,7 +473,7 @@ extension Controller {
         let desktopCameIntoView = reason == .camera && previous != nil && previous?.desktopFrame == nil
         // One that no display shows is out of view whoever put it there: a display that shrank, for one.
         guard
-          parked.contains(window) || showsOnlyASliver(window)
+          parked.contains(window) || showsOnlyASliver(window) || isBackFromThePause(window)
             || (reason != .enforce && (wasOnDesktop || desktopCameIntoView)),
           drag?.window != window
         else { continue }
@@ -496,7 +498,8 @@ extension Controller {
         // The Desktop is in the view, only too small to use: its windows are in view all the same, over the docked
         // ones. So is a guest of a space in view (Controller+Guests.swift). Each is where the user last had it.
         guard drag?.window != window,
-          parked.contains(window) || showsOnlyASliver(window) || (reason == .camera && whereArborPutIt)
+          parked.contains(window) || showsOnlyASliver(window) || isBackFromThePause(window)
+            || (reason == .camera && whereArborPutIt)
         else { continue }
         moves.append((window, .place(preferred.fitted(into: display.visibleFrame), fitting: nil)))
       } else if !parked.contains(window), reason == .camera || showsOnlyASliver(window) || owedMoves.contains(window),

@@ -121,8 +121,8 @@ extension Controller {
   }
 
   /// The window that is alone on `displayID` and its own frame, if it is in view at a size Arbor gave it instead. That
-  /// is the size it took when Arbor last placed it, or, when that has been forgotten (a pause leaves it stretched, and
-  /// resuming is a launch), the Desktop's.
+  /// is the size it took when Arbor last placed it, or, when that has been forgotten (a crash leaves it stretched, and the
+  /// launch that follows knows nothing of it), the Desktop's.
   private func ownFrameOfStretchedWindow(on displayID: DisplayID) -> (window: WindowID, frame: CGRect)? {
     guard settings.soleFloatTakesDesktop, let window = windowAloneOnDesktop(of: displayID),
       window != soleFloats.inHand[displayID], !parked.contains(window), let current = windows[window]?.frame,

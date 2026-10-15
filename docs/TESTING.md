@@ -1179,7 +1179,7 @@ With `Arbor.app` running and permission granted:
   Without Screen Recording permission: the same with app colours and icons. With a video playing, a
   picture-in-picture window, an open dialog or sheet: what happens to them for that half second?
   With "Reduce motion" on, or `"animationDuration": 0`: everything is applied at once.
-- ⌃⌥⎋ while framed on a window: it does not move, the windows that were out of view come back on screen behind it, tiles and gap handles go, the menu bar icon dims, and ⌃⌥F now
+- ⌃⌥⎋ while framed on a window: it goes back to where it was before it was docked, in its own size, and stays in front; so do the others, behind it, each in one move; tiles and gap handles go, the menu bar icon dims, and ⌃⌥F now
   reaches the frontmost app (try it in a terminal running Emacs or `cat -v`). Move, close and open windows:
   Arbor does nothing. ⌃⌥⎋ again: the arrangement and the view come back without the closed windows.
 - In Terminal (running `cat -v`) or Emacs choose Shortcuts Off in “Terminal” from Arbor's menu: ⌃⌥F and ⌃⌥Space now reach the

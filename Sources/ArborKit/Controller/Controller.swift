@@ -264,7 +264,7 @@ public final class Controller {
   var keyThatReleasedTheHold: KeyChord?
   /// What the app last heard about cameras and microphones. Kept through a pause.
   var callSignals = CallSignals()
-  /// Where the pause left each window, to tell at a quit which ones nobody has touched since.
+  /// Where the pause left each window it moved, to tell at the resume which of them nobody has touched since.
   var pausedFrames: [WindowID: CGRect] = [:]
   /// The window that had the keyboard before `summon` took it (Controller+Summon.swift).
   var keyboardBeforeSummon: WindowID?
@@ -512,10 +512,9 @@ public final class Controller {
   }
 
   /// Puts every window somewhere visible, saves, and stops. Called on quit so
-  /// no window is left parked off-screen. A pause stops the same way but with `leavingWhatIsInView`:
-  /// only windows that are out of view are moved (Controller+Pause.swift). Without `movingWindows` nothing
-  /// is moved: for when nothing can be (Controller+Permission.swift).
-  public func shutdown(leavingWhatIsInView: Bool = false, movingWindows: Bool = true) {
+  /// no window is left parked off-screen. A pause stops the same way (Controller+Pause.swift). Without `movingWindows`
+  /// nothing is moved: for when nothing can be (Controller+Permission.swift).
+  public func shutdown(movingWindows: Bool = true) {
     guard isRunning else {
       letGoAfterPause()
       return
@@ -535,7 +534,6 @@ public final class Controller {
     forgetHold()
     scheduler.cancel(Self.afterLaunchKey)
     soleFloats.isWaitingAfterLaunch = false
-    func stays(_ window: WindowID) -> Bool { leavingWhatIsInView && !parked.contains(window) }
     endSummonsWithoutMoving()
     forgetPendingLayouts()
     let present = presentWindowIDs()
@@ -548,11 +546,11 @@ public final class Controller {
         isPresent: { present.contains($0) })
       // Each goes back to where it floated before it was docked (Controller+UndockedFrames.swift), or
       // stays in its slot if that is not known.
-      for (window, frame) in layout.windowFrames.sorted(by: { $0.key < $1.key }) where !stays(window) {
+      for (window, frame) in layout.windowFrames.sorted(by: { $0.key < $1.key }) {
         letGo(of: window, on: display, otherwiseAt: frame)
       }
       // Inactive tabs go where their stack is.
-      for window in layout.hiddenWindows.sorted() where !stays(window) {
+      for window in layout.hiddenWindows.sorted() {
         if let leaf = workspace.tree.leaf(containing: window), let frame = layout.nodeFrames[leaf] {
           letGo(of: window, on: display, otherwiseAt: frame)
         }
@@ -563,12 +561,12 @@ public final class Controller {
       let everything = LayoutEngine.layout(
         workspace.tree, camera: workspace.tree.root, in: display.visibleFrame, options: withoutTiles,
         isPresent: { _ in true })
-      for window in workspace.tree.allWindows where !present.contains(window) && !stays(window) {
+      for window in workspace.tree.allWindows where !present.contains(window) {
         let slot = workspace.tree.leaf(containing: window).flatMap { everything.nodeFrames[$0] }
         letGo(of: window, on: display, otherwiseAt: parked.contains(window) ? slot : nil)
       }
       for (window, preferred) in workspace.floating.sorted(by: { $0.key < $1.key })
-      where parked.contains(window) || (!leavingWhatIsInView && wasPushedAside(window, from: preferred)) {
+      where parked.contains(window) || wasPushedAside(window, from: preferred) {
         putBack(window, at: asItWas(preferred, on: display), on: display)
       }
     }

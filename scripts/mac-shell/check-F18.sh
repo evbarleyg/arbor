@@ -84,15 +84,15 @@ check "it does not take the Desktop" not takes_desktop "$W3"
 shot 05-resized
 
 step "pausing"
+read -r _ _ WAS_W WAS_H <<< "$(real_frame_of "$W3")"
 ctl dock "$W3" right
 ctl float "$W3"
 check "it takes the Desktop" eventually takes_desktop "$W3"
-FILLED=$(real_frame_of "$W3")
 ctl pause
 sleep 1
-check "paused, it stays as it is, like everything in view" arbor_close "$FILLED" "$(real_frame_of "$W3")"
+check "paused, it has its own size again, as after a quit" has_size "$W3" "$WAS_W $WAS_H"
 shot 06-paused
 ctl resume
-check "resumed, it still takes the Desktop" eventually takes_desktop "$W3"
+check "resumed, it takes the Desktop again" eventually takes_desktop "$W3"
 
 arbor_stop 07-quit

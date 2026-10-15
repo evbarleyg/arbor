@@ -215,7 +215,11 @@ public final class FakeWindowSystem: WindowSystem {
     started = true
     starts += 1
   }
-  public func stop() { started = false }
+  /// The real one lets go of every app, so what the apps were about to report of Arbor's last moves is never heard.
+  public func stop() {
+    started = false
+    undelivered.removeAll()
+  }
   /// How often it was started: each start of the real one asks every running app for its windows.
   public private(set) var starts = 0
 

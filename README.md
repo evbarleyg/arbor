@@ -96,10 +96,10 @@ independent implementation and is not affiliated with it.
   is no room for float as always, and nothing turns into a tile because a window opened. Off by default.
 - **Your Mac, your rules**: "Don't Arrange" leaves an app's windows alone; "Float All Windows" returns you
   to a normal Mac; quitting puts every window back in view.
-- **No trace**: a window that leaves the arrangement gets its own size back. Float All Windows, quitting
+- **No trace**: a window that leaves the arrangement gets its own size back. Float All Windows, quitting, pausing
   and Don't Arrange put windows back where they were before they were docked.
 - **Out of the way when you need it**: ⌃⌥⎋ pauses Arbor for a game, a remote desktop or an app it
-  gets in the way of: what you are looking at stays as it is, windows out of view come back on screen, and windows, shortcuts and gestures are left
+  gets in the way of: every window goes back to where it was, in its own size and in view, and windows, shortcuts and gestures are left
   alone until you press it again.
 - **Apps that need ⌃⌥ keep it**: Emacs, an IDE, a remote desktop or a virtual machine. Choose Shortcuts Off
   in “App” from the menu, and in that app the keys are its own; its windows stay arranged.
@@ -695,7 +695,7 @@ What it never does:
 
 | | Windows | The view moves by itself | Your keys and gestures |
 |---|---|---|---|
-| **Pause** (⌃⌥⎋) | all come into view; Arbor lets go of them | | are handed back to the apps |
+| **Pause** (⌃⌥⎋) | all come into view, in their own sizes; Arbor lets go of them | | are handed back to the apps |
 | **Hold Still** | stay as they are | no | work as ever |
 | **Hold This View** | stay as they are | no | cannot move the view either, until you release it |
 

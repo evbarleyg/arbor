@@ -289,7 +289,7 @@ The settings changed (Reload Settings with an edited file, Don't Arrange…): `c
 
 - `started`: Arbor began arranging windows, for a client that connected while it was still waiting for Accessibility
   permission. The state follows as ordinary events, the windows as `adopted`.
-- `paused`: Arbor has put every window back in view and lets go of windows, shortcuts and gestures. Nothing more is sent until the
+- `paused`: Arbor has put every window back in view, in its own size, and lets go of windows, shortcuts and gestures. Nothing more is sent until the
   pause ends. Forget what you knew: windows come and go unobserved meanwhile.
 - `resumed`: the pause is over. The state follows as after `started`.
 - `quitting`: Arbor has put every window back in view and is about to go. Always the last line.

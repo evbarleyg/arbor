@@ -735,7 +735,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     #expect(again.workspace.undockedFrames == [restored: notesFrame])
   }
 
-  @Test func aPauseCannotBeSeenByWhoeverIsFramedOnAWindow() throws {
+  @Test func aPauseGivesTheFramedWindowItsFrameBackLikeTheRestAndAResumeFramesItAgain() throws {
     let (h, notes, safari, mail) = makeHarness()
     h.run("arrange")
     h.run("zoom \(safari.rawValue)")
@@ -744,36 +744,52 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     h.system.clearFrameLog()
 
     #expect(h.run("pause").ok)
-    #expect(h.frame(safari) == framed)
-    #expect(!h.system.frameLog.contains { $0.window == safari }, "what is in view is not touched at all")
+    #expect(h.frame(safari) == safariFrame, "in view, and as it was all the same")
     #expect(h.frame(notes) == notesFrame, "what was out of view is back on screen, where it floated")
     #expect(h.frame(mail) == mailFrame)
+    #expect(h.system.frameLog.map(\.window).sorted() == [notes, safari, mail], "one move each")
 
     h.system.clearFrameLog()
     #expect(h.run("resume").ok)
     #expect(h.frame(safari) == framed)
-    #expect(!h.system.frameLog.contains { $0.window == safari }, "nor by the resume")
+    #expect(h.system.frameLog.map(\.window).sorted() == [notes, safari, mail], "one move each")
     #expect(h.workspace == arranged)
     for window in [notes, mail] { #expect(!h.system.isVisible(window)) }
     #expect(h.workspace.undockedFrame(of: notes) == notesFrame)
   }
 
-  @Test func withEverythingInViewAPauseAndAResumeMoveNothing() {
-    let (h, _, safari, _) = makeHarness()
+  @Test func aPauseAndAResumeMoveOnlyWhatArborHadMovedOnceEachWay() {
+    let (h, notes, safari, mail) = makeHarness()
+    let clockFrame = CGRect(x: 1000, y: 500, width: 300, height: 200)
+    let clock = h.system.open(app: "Clock", frame: clockFrame)
     h.run("dock \(safari.rawValue) left")
+    #expect(h.frame(clock) == clockFrame, "on the Desktop as it is: Arbor has not touched it")
+    let frames = [notes, safari, mail, clock].map { h.frame($0) }
     h.system.clearFrameLog()
     h.run("pause")
+    #expect(h.system.frameLog.map(\.window).sorted() == [notes, safari, mail])
     h.run("resume")
-    #expect(h.system.frameLog.isEmpty, "\(h.system.frameLog)")
+    #expect(h.system.frameLog.map(\.window).sorted() == [notes, notes, safari, safari, mail, mail])
+    #expect([notes, safari, mail, clock].map { h.frame($0) } == frames)
   }
 
-  @Test func aPauseLeavesAFloatingWindowInViewAsItIsEvenIfSqueezed() throws {
+  @Test func aPauseGivesASqueezedFloatingWindowItsSizeBackAndAResumeSqueezesItAgain() throws {
     let (h, notes) = try harnessWithASqueezedWindow()
     let squeezed = try #require(h.frame(notes))
     h.run("pause")
-    #expect(h.frame(notes) == squeezed)
+    #expect(h.frame(notes) == notesFrame)
     h.run("resume")
     #expect(h.frame(notes) == squeezed)
+    #expect(h.workspace.floating[notes] == notesFrame)
+  }
+
+  @Test func aFloatingWindowSomebodyMovedDuringThePauseIsLeftThereByTheResume() throws {
+    let (h, notes) = try harnessWithASqueezedWindow()
+    h.run("pause")
+    let chosen = notesFrame.offsetBy(dx: 40, dy: 60)
+    h.system.userMove(notes, to: chosen)
+    h.run("resume")
+    #expect(h.frame(notes) == chosen)
   }
 
   @Test func aPauseBringsBackTilesMinimizedWindowsAndFloatingWindowsThatWereOutOfView() {
@@ -806,31 +822,16 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     let (h, notes, safari, mail) = makeHarness()
     h.run("arrange")
     h.run("pause")
-    #expect(h.frame(notes) != notesFrame, "in view, so the pause left it in its slot")
-    let saved = h.store.saved
+    let (saved, starts) = (h.store.saved, h.system.starts)
+    h.system.clearFrameLog()
     h.controller.shutdown()
     #expect(h.frame(notes) == notesFrame)
     #expect(h.frame(safari) == safariFrame)
     #expect(h.frame(mail) == mailFrame)
-    #expect(!h.system.started, "Arbor looked once more, and stopped looking")
+    #expect(h.system.frameLog.isEmpty, "they went back when the pause began")
+    #expect(h.system.starts == starts && !h.system.started, "so there is nothing to look for")
     #expect(h.store.saved == saved, "the arrangement is still there for the next launch")
     #expect(h.run("state").state?.windows.isEmpty == true)
-
-    h.system.clearFrameLog()
-    h.controller.shutdown()
-    #expect(h.system.frameLog.isEmpty, "once is enough")
-  }
-
-  @Test func quittingWhilePausedMovesEachWindowOnceAndParksNothingOnTheWay() {
-    let (h, notes, safari, mail) = makeHarness()
-    h.run("arrange")
-    h.run("zoom \(safari.rawValue)")
-    h.run("pause")
-    h.system.clearFrameLog()
-    h.controller.shutdown()
-    #expect(h.system.frameLog.map(\.window) == [safari], "the others went back when the pause began")
-    #expect(h.frame(safari) == safariFrame)
-    _ = (notes, mail)
   }
 
   @Test func quittingWhilePausedLeavesWhatSomebodyMovedMeanwhile() {
@@ -1025,7 +1026,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     #expect(h.frame(safari) == safariFrame)
   }
 
-  @Test func aPauseTouchesNeitherTheFramedWindowNorItsGuest() {
+  @Test func aPauseDoesNotTouchAGuestInView() {
     let (h, _, safari, _) = makeHarness()
     h.run("dock \(safari.rawValue) right")
     h.run("zoom \(safari.rawValue)")
@@ -1033,7 +1034,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     h.system.clearFrameLog()
     h.run("pause")
     h.run("resume")
-    #expect(!h.system.frameLog.contains { $0.window == guest || $0.window == safari }, "\(h.system.frameLog)")
+    #expect(!h.system.frameLog.contains { $0.window == guest }, "it is where its app put it: \(h.system.frameLog)")
     #expect(h.workspace.guests?[guest] != nil, "still a guest")
   }
 

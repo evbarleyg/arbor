@@ -95,10 +95,8 @@ extension Controller {
     system.start()
     defer { system.stop() }
     for (window, frame) in couldNotComeBack.sorted(by: { $0.key < $1.key }) {
-      guard let actual = system.setFrame(frame, of: window) else { continue }
+      guard system.setFrame(frame, of: window) != nil else { continue }
       couldNotComeBack[window] = nil
-      // What a quit during the pause compares with, to tell whether somebody has moved it since.
-      pausedFrames[window] = actual
       Log.info("\(window)'s app answers again; brought the window into view, as the pause promised")
     }
     if triesForWhatCouldNotComeBack >= Self.mostTriesForWhatCouldNotComeBack, !couldNotComeBack.isEmpty {
