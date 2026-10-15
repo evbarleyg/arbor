@@ -648,6 +648,7 @@ holds for the commit named (second reading, 10:45 UTC) and says what the script 
 | `probe-keyboard.sh` | trunk | safe, steps skip themselves | none | ⌘W. Reads who would get a key and presses nothing; no pictures, no titles. Its test app is in the Dock and in front for some twenty seconds; the app that was in front is brought forward again |
 | `watchdog-bundle.sh` | trunk | safe, but leaves a trace | none | `open`s a bundle of its own under an identifier of its own: LaunchServices keeps the entry for a while |
 | `check-displays.sh`, `check-desktop.sh`, `compat-pictures.sh` | trunk | **never**: end with 77 | | Virtual displays, dark mode, wallpaper, a Space that stays, every window arranged |
+| `check-sweep.sh` | trunk | **never**: ends with 77 | | Clicks on the wallpaper, which sweep aside whatever is open |
 | `compat.sh`, `compat-extras.sh` (`lib-apps.sh`) | trunk | **never, unless the person says `ARBOR_APPS_HERE=1`**: end with 77 | | An app that was not running is still theirs: launched, it brings back last time's windows and unsaved documents, and `app_quit` answers "Don't Save" |
 | `input-taps.sh` | trunk | **never, unless the person says `ARBOR_INPUT_TAPS_HERE=1`**: ends with 77 | | Pinches, scrolls and clicks at fixed places past the nets; stops Arbor while its taps hold everybody's input |
 | `rehearse.sh` | trunk | **never on a Mac**: ends with 77 | | It tells scripts that the Mac is thrown away; only what has a stand-in is fake. For Linux |

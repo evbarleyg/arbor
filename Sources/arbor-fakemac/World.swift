@@ -126,8 +126,18 @@ final class World {
   var heldShortcuts: [KeyChord.Key: KeyBinding] = [:]
   /// "Click wallpaper to reveal desktop" (macOS 14 and later, on unless switched off) has swept every window
   /// aside. The window server has them at the sides of the screen; Accessibility, and so Arbor, where they
-  /// were.
-  var isSwept = false
+  /// are.
+  var isSwept = false {
+    didSet {
+      guard isSwept != oldValue else { return }
+      sweptFrames = [:]
+      guard isSwept else { return }
+      for case .window(let id) in stack { sweptFrames[id] = frame(of: id).map(swept) }
+    }
+  }
+  /// Where the window server lists each window that was swept, for as long as the sweep lasts, whatever becomes
+  /// of the window meanwhile: it is a picture. A window that opens meanwhile is not among them, and shows where it is.
+  var sweptFrames: [UInt32: CGRect] = [:]
   /// Apps that do not answer (`hang`), and when on the world's clock they wake up.
   var hungUntil: [Int32: Double] = [:]
 

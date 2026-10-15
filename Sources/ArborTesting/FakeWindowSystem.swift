@@ -148,6 +148,9 @@ public final class FakeWindowSystem: WindowSystem {
   /// The app Arbor said is in use, whose dialogs never wait.
   public private(set) var appWhoseDialogsNeverWait: String?
   fileprivate var nobodyTouchedAnything = false
+  /// While macOS shows its desktop: where the window server lists each window that was swept aside
+  /// (FakeWindowSystem+SweptAside.swift).
+  var sweptAside: [WindowID: CGRect]?
   /// Makes `focus(_:)` take effect only at `settleFocus()`. On a real Mac the front app changes a moment after
   /// Arbor asks, and until then `focusedWindow()` gives the old answer.
   public var defersFocus = false
@@ -320,6 +323,8 @@ public final class FakeWindowSystem: WindowSystem {
       slowFocus = window
       return
     }
+    // Its app comes forward, which brings back what macOS had swept aside.
+    sweptAside = nil
     let moved = focused != window
     // macOS reports it two to four times when it crosses apps. Telling those apart is the Accessibility layer's job.
     if moved, echoes.focus { undelivered.append(.focus(window)) }
@@ -519,6 +524,8 @@ public final class FakeWindowSystem: WindowSystem {
   /// macOS, says nothing if the app is in front already.
   public func activate(bundleID: String?, name: String = "App") {
     let app = FrontmostApp(bundleID: bundleID, name: name)
+    // Whoever comes forward, but for Finder with the desktop, brings back what macOS had swept aside.
+    if bundleID != Self.finder { sweptAside = nil }
     guard app != frontmost else { return }
     frontmost = app
     events?.applicationActivated(app)
@@ -933,11 +940,11 @@ extension FakeWindowSystem {
     strangers
       + windowsFrontToBack().compactMap { id in
         guard let snapshot = windows[id]?.snapshot, snapshot.isPresent else { return nil }
-        return StackedWindow(id: id, frame: snapshot.frame)
+        return StackedWindow(id: id, frame: sweptAside?[id] ?? snapshot.frame)
       }
   }
 
-  /// The user clicks somewhere: on the wallpaper, in a window's content, on anything that starts no drag.
+  /// The user clicks somewhere: in a window's content, on anything that starts no drag.
   public func click() {
     events?.pointerPressed()
   }

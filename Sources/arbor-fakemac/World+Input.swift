@@ -24,6 +24,9 @@ enum Held {
   case menuItem(Menu.Path)
   /// Arbor's rectangle tap is holding the press back until it knows whether a drag follows.
   case rectangle(start: CGPoint, clicks: Int)
+  /// Pressed on the strip of a window that was swept aside, listed at `from` until then. `taken`: what the
+  /// Accessibility layer has taken its way back for, once it has.
+  case strip(WindowID, from: CGRect, at: CGPoint, taken: WindowGrab.Verdict)
 }
 
 /// What presses, drags, keys and pinches do, decided by what is under the pointer, frontmost first.
@@ -33,6 +36,11 @@ extension World {
   private static let borderReach: CGFloat = 4
   /// The part of the title bar that drags the window.
   private static let titleBarReach: CGFloat = 28
+
+  /// Where the window server lists what is at `frame` while all is swept aside.
+  func swept(_ frame: CGRect) -> CGRect {
+    isSwept ? FakeWindowSystem.whereItWaits(frame, on: display) : frame
+  }
 
   var isButtonDown: Bool {
     if case .nothing = held { return false }
@@ -134,8 +142,20 @@ extension World {
       held = .minimap
       return
     }
-    // With the windows swept aside, the next press only brings them back.
+    // With the windows swept aside, the next press only brings them back, as soon as the button is down, and
+    // nobody gets it. The Accessibility layer notes the window under it (`makePress`), unless it is listed elsewhere
+    // than its app has it.
     if isSwept {
+      for case .window(let id) in stack {
+        let reach = -World.borderReach
+        guard let real = system.frame(of: WindowID(id)), let strip = sweptFrames[id],
+          strip.insetBy(dx: reach, dy: reach).contains(point)
+        else { continue }
+        if !WindowGrab.isListedElsewhere(strip, than: real) {
+          held = .strip(WindowID(id), from: strip, at: point, taken: .undecided)
+        }
+        break
+      }
       isSwept = false
       return
     }
@@ -215,6 +235,8 @@ extension World {
     switch held {
     case .title(let window, var grip, let moved, let clicks):
       guard var frame = system.frame(of: window) else { return }
+      let before = frame
+      let pressedAt = CGPoint(x: frame.minX + grip.width, y: frame.minY + grip.height)
       // Dragged off a tile of macOS's, it has its own size again, with the pointer as far along its title bar as before.
       if !moved, let size = system.takeSizeBeforeTile(of: window) {
         grip.width *= size.width / frame.width
@@ -223,8 +245,10 @@ extension World {
       // The window server does not let a title bar go under the menu bar.
       frame.origin = CGPoint(x: point.x - grip.width, y: max(point.y - grip.height, display.visibleFrame.minY))
       // As the Accessibility layer does: the first move with the button down is what tells it that a drag
-      // began.
-      if !moved {
+      // began, if `WindowGrab` agrees. The window server takes the window along either way.
+      let isDragged =
+        moved || WindowGrab.classify(pressedAt: pressedAt, frameAtPress: before, frameNow: frame, pointerNow: point) == .drag
+      if !moved, isDragged {
         let isOn = World.tilingSettings.map { name in
           file(name).map { String(decoding: $0, as: UTF8.self).trimmingCharacters(in: .whitespacesAndNewlines) } != "0"
         }
@@ -233,7 +257,7 @@ extension World {
         held = .title(window, grip: grip, moved: true, clicks: clicks)
       }
       system.userMove(window, to: frame)
-      system.events?.dragMoved(window, to: point)
+      if isDragged { system.events?.dragMoved(window, to: point) }
 
     case .panelTitle(let id, let grip):
       extras[id]?.frame.origin = CGPoint(
@@ -267,6 +291,19 @@ extension World {
     case .rectangle:
       guard let arbor, case .band(let rect) = arbor.gesture.mouseDragged(to: point) else { return }
       arbor.band = (arbor.band?.id ?? newOverlayID(), rect, true)
+
+    case .strip(let window, let from, let pressedAt, let taken):
+      // As the Accessibility layer does (`lookAtPressedWindow`): it looks again with every movement, and asks.
+      if taken == .drag { system.events?.dragMoved(window, to: point) }
+      guard taken == .undecided, let frame = system.frame(of: window) else { return }
+      let verdict = WindowGrab.classify(pressedAt: pressedAt, frameAtPress: from, frameNow: frame, pointerNow: point)
+      held = .strip(window, from: from, at: pressedAt, taken: verdict)
+      if verdict == .drag {
+        system.events?.dragBegan(window, at: point)
+        system.events?.dragMoved(window, to: point)
+      } else if verdict == .resize {
+        system.events?.resizeBegan(window)
+      }
 
     case .nothing, .idle, .button, .tile, .minimap, .menuItem:
       break
@@ -335,6 +372,11 @@ extension World {
       default:
         break
       }
+
+    case .strip(let window, _, _, let taken):
+      guard taken == .drag || taken == .resize, let snapshot = system.windows[window]?.snapshot else { return }
+      system.events?.windowChanged(snapshot, userInitiated: true)
+      if taken == .drag { system.events?.dragEnded(window, at: point) } else { system.events?.resizeEnded(window) }
 
     case .nothing, .idle, .panelTitle, .resize, .seam:
       break
