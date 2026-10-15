@@ -7,7 +7,7 @@
 public enum Command: Equatable, Sendable, Codable {
   // Queries
   case status
-  case state
+  case state(titles: Bool)
   case ascii
   case help
 
@@ -302,7 +302,9 @@ public enum Command: Equatable, Sendable, Codable {
 
     switch verb {
     case "status": return try noArgs(.status)
-    case "state": return try noArgs(.state)
+    case "state":
+      guard args.allSatisfy({ $0 == "--titles" }) else { throw ParseError("usage: state [--titles]") }
+      return .state(titles: !args.isEmpty)
     case "ascii", "draw": return try noArgs(.ascii)
     case "help", "--help", "-h": return .help  // whatever follows: `help dock` wants help, and this has it
     case "show-all", "everything", "overview", "show-everything": return try noArgs(.showAll)
@@ -536,7 +538,7 @@ public enum Command: Equatable, Sendable, Codable {
     func w(_ window: WindowID?) -> String { window.map { " \($0.rawValue)" } ?? "" }
     switch self {
     case .status: return "status"
-    case .state: return "state"
+    case .state(let titles): return titles ? "state --titles" : "state"
     case .ascii: return "ascii"
     case .help: return "help"
     case .showAll: return "show-all"
@@ -701,6 +703,7 @@ public enum Command: Equatable, Sendable, Codable {
                                                  themselves; again, or `off`, to have them back
       relayout | reload-settings | quit
       status | state | ascii | help              one line | everything as JSON | the layout as text | this
+      state --titles                             with the windows' titles, which `state` leaves out
       bindings                                   list the keyboard shortcuts in effect
       rules                                      per-app rules and which one the focused window matches
       watch [events…] [--titles]                 stream changes as lines of JSON (docs/SCRIPTING.md)

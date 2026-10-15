@@ -951,7 +951,7 @@ directory unless it is given an `ARBOR_HOME`, so that a test run on a Mac where 
 with Accessibility or Screen Recording permission. The folder is 0700, Arbor's umask is
 077, and every file is 0600; a folder that belongs to another user is refused and
 one open to others is closed (`ArborPaths.secure`). Titles are stored as they are, not
-hashed: a hash would hide them from a glance but not from a guess, `arborctl state` hands them
+hashed: a hash would hide them from a glance but not from a guess, `arborctl state --titles` hands them
 to the same user anyway, and only windows that are open (or remembered for a
 disconnected display, for 30 days) are listed. Titles are never logged.
 

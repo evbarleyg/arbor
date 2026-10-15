@@ -60,7 +60,7 @@ import Testing
 
   static let refused: [Command] = [
     .quit, .exclude(bundleID: nil), .exclude(bundleID: "com.apple.Safari"), .include(bundleID: "com.apple.Safari"),
-    .floatAll, .reloadSettings, .status, .state, .ascii, .help, .bindings, .rules,
+    .floatAll, .reloadSettings, .status, .state(titles: false), .state(titles: true), .ascii, .help, .bindings, .rules,
     .pause(minutes: nil), .pause(minutes: 5), .resume, .togglePause, .floatAllHere,
   ]
 

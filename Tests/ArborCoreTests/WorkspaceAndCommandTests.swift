@@ -240,7 +240,7 @@ private let c = WindowID(3)
 
 @Suite struct CommandTests {
   static let samples: [Command] = [
-    .status, .state, .ascii, .showAll, .stepOut, .stepIn, .neighbor(.left), .neighbor(.bottom), .back,
+    .status, .state(titles: false), .state(titles: true), .ascii, .showAll, .stepOut, .stepIn, .neighbor(.left), .neighbor(.bottom), .back,
     .forward, .zoom(nil), .zoom(WindowID(42)), .zoomNode(NodeID(3)), .desktop, .saveView(4), .goToView(9),
     .dock(nil, .right), .dock(WindowID(7), .top), .dockBeside(nil, target: WindowID(8), .left),
     .dockBeside(WindowID(7), target: WindowID(8), .bottom), .float(nil), .float(WindowID(5)),

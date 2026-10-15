@@ -58,7 +58,7 @@ import Testing
 
 private enum CommandSamples {
   static let all: [Command] = [
-    .status, .state, .ascii, .help, .showAll, .stepOut, .stepIn, .neighbor(.left), .back, .forward, .zoom(nil),
+    .status, .state(titles: false), .state(titles: true), .ascii, .help, .showAll, .stepOut, .stepIn, .neighbor(.left), .back, .forward, .zoom(nil),
     .zoomNode(NodeID(3)), .desktop, .saveView(4), .goToView(9), .dock(nil, .right),
     .dockBeside(nil, target: WindowID(8), .left), .float(nil), .toggleFloat(nil), .arrange, .floatAll,
     .resize(nil, .right, 40), .exclude(bundleID: nil), .include(bundleID: "a.b"), .relayout, .reloadSettings, .quit,

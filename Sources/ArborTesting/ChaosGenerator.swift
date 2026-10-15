@@ -179,7 +179,7 @@ public struct ChaosGenerator {
   public mutating func command(_ kind: CommandKind, in world: ChaosRunner) -> Command {
     switch kind {
     case .status: return .status
-    case .state: return .state
+    case .state: return .state(titles: false)
     case .ascii: return .ascii
     case .help: return .help
     case .showAll: return .showAll

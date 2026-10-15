@@ -505,6 +505,10 @@ import Testing
 
     let decoded = try JSONDecoder().decode(StateSnapshot.self, from: JSONEncoder().encode(state))
     #expect(decoded.waiting == state.waiting)
+    // The title the window had is told only to whoever asks for titles.
+    #expect(slot.title == safari.title)
+    #expect(h.run("state --titles").state?.waiting == state.waiting)
+    #expect(h.run("state").state?.waiting.map(\.title) == [nil])
 
     _ = lifecycle.reopen(safari, in: h)
     #expect(!h.run("status").message.contains("kept for"))

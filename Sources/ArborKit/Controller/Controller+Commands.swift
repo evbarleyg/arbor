@@ -31,8 +31,8 @@ extension Controller {
       return CommandResult(
         ok: true, message: statusText + (problem.map { ". \($0)" } ?? ""),
         text: ([statusText] + (problem.map { [$0] } ?? []) + ["Arbor \(buildInfo.text)"]).joined(separator: "\n"))
-    case .state:
-      return CommandResult(ok: true, message: statusText, state: snapshot())
+    case .state(let titles):
+      return CommandResult(ok: true, message: statusText, state: titles ? snapshot() : snapshot().withoutTitles)
     case .ascii:
       return CommandResult(ok: true, message: statusText, text: asciiDrawing())
     case .help:

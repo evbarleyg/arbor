@@ -48,7 +48,8 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
     public var pid: Int32
     public var app: String
     public var bundleID: String?
-    public var title: String
+    /// Only for whoever asked for titles (`state --titles`).
+    public var title: String?
     public var frame: CGRect
     public var minimized: Bool
     public var hidden: Bool
@@ -68,7 +69,7 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
     public var guestOf: NodeID?
 
     public init(
-      id: WindowID, pid: Int32, app: String, bundleID: String?, title: String, frame: CGRect,
+      id: WindowID, pid: Int32, app: String, bundleID: String?, title: String?, frame: CGRect,
       minimized: Bool, hidden: Bool, managed: Bool, docked: Bool, parked: Bool,
       display: DisplayID?, fullScreen: Bool = false, guestOf: NodeID? = nil
     ) {
@@ -104,14 +105,15 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
     /// The number the place has in the tree. If `open` is false it is a stand-in that no window has.
     public var id: WindowID
     public var bundleID: String?
-    public var title: String
+    /// The title the window had. Only for whoever asked for titles (`state --titles`).
+    public var title: String?
     /// The display whose arrangement has the place, connected or not.
     public var display: DisplayID?
     /// True: the window exists, out of Arbor's sight on another Space, and keeps the place for as long as it
     /// does. False: it is not open yet (after a login or a restart of its app), and the place is kept for minutes.
     public var open: Bool
 
-    public init(id: WindowID, bundleID: String?, title: String, display: DisplayID?, open: Bool) {
+    public init(id: WindowID, bundleID: String?, title: String?, display: DisplayID?, open: Bool) {
       self.id = id
       self.bundleID = bundleID
       self.title = title
@@ -121,6 +123,15 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
   }
   /// `"view"` after `hold`, `"still"` after `hold still` or while a call's window is open; otherwise absent.
   public var held: HoldLevel?
+
+  /// The same without any window title: what `state` says unless it is asked for them. A title can hold anything a person is
+  /// reading or writing, and `state` is what people paste into a report.
+  public var withoutTitles: StateSnapshot {
+    var copy = self
+    for index in copy.windows.indices { copy.windows[index].title = nil }
+    for index in copy.waiting.indices { copy.waiting[index].title = nil }
+    return copy
+  }
 
   public init(
     accessibility: Bool, running: Bool, focused: WindowID?, displays: [Display], windows: [Window]

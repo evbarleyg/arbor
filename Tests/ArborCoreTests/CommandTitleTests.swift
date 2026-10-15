@@ -78,7 +78,7 @@ import Testing
     ]
     let arbor: [Command] = [
       .pause(minutes: nil), .resume, .togglePause, .exclude(bundleID: nil), .include(bundleID: "a"), .relayout, .reloadSettings,
-      .quit, .status, .state, .ascii, .help, .bindings, .rules, .showShortcuts, .passThrough(bundleID: nil),
+      .quit, .status, .state(titles: false), .ascii, .help, .bindings, .rules, .showShortcuts, .passThrough(bundleID: nil),
     ]
     for command in look { #expect(command.group == .look, "\(command.text)") }
     for command in arrange { #expect(command.group == .arrange, "\(command.text)") }
