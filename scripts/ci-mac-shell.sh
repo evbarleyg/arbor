@@ -31,7 +31,7 @@
 #   cannot be put back         one of those settings is not what it was at a second look; Accessibility for the runner's processes is gone (`tccutil reset`), there is another number of Spaces or of displays.
 #                              What would run on such a Mac would say nothing about Arbor, so the scripts that are left do not run: each says why, and
 #                              ends with exit code 75. Give a script that does such a thing the last place, or a run of its own.
-# The desktop picture is not looked at: nothing reads it back. Only where there is a `defaults`, so on a Mac.
+# The desktop picture is not looked at: nothing reads it back. Only on one of GitHub's Macs: anybody else's is left alone altogether.
 #
 # Readers that can reach only the REST API get each exit code and the end of each output as check annotations.
 # Exits with what it wrote to exit-code.txt. Written for bash 3.2, macOS's own.
@@ -72,8 +72,11 @@ for_good_now() {
 questions_now() {
   tool pointer windows | awk '$8 == "on" && NF == 9 && $9 ~ /^(UserNotificationCenter|CoreServicesUIAgent|SecurityAgent|universalAccessAuthWarn)$/ { print $9, $4, $5, $6, $7 }'
 }
+# GitHub's Macs are thrown away after the run. Only there is anything put back, ended or pictured: on anybody else's the scripts change none of it to begin
+# with (lib.sh), and a settings domain cleared or an app of theirs ended would be damage. Both locks, as in lib.sh: a runner on a person's own Mac sets the variable too.
+nobodys_mac() { [ "${GITHUB_ACTIONS:-}" = true ] && [ "$(id -un)" = runner ]; }
 mac_note() {
-  command -v defaults > /dev/null 2>&1 || return 0
+  nobodys_mac && command -v defaults > /dev/null 2>&1 || return 0
   settings_now > "$kept/.settings"
   for_good_now > "$kept/.for-good"
   defaults export com.apple.WindowManager "$kept/.window-manager.plist" 2>/dev/null
@@ -112,8 +115,8 @@ mac_put_back() {
   asked=$(questions_now)
   if [ -n "$asked" ]; then
     echo "$asked" | sed "s/^/mac-shell: LEFT ON THE SCREEN by $1, over whatever lies there: /"
-    # Only where nobody has anything open: what it says is in no list of windows.
-    [ "${GITHUB_ACTIONS:-}" != true ] || screencapture -x "$out/left-on-the-screen.png" 2>/dev/null
+    # What it says is in no list of windows. (Nobody has anything open here: see mac_note.)
+    screencapture -x "$out/left-on-the-screen.png" 2>/dev/null
     # Whoever asked takes it for no answer; launchd starts the asker again when it is next needed.
     for asker in $(echo "$asked" | cut -d ' ' -f 1 | sort -u); do killall "$asker" 2>/dev/null; done
     sleep 2

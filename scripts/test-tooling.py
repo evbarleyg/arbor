@@ -1749,7 +1749,7 @@ def check_mac_shell_batch():
     row("ci-mac-shell.sh: no script at all", tried()[0], 64)
 
     # The Mac between two scripts. Its state is a folder of files, which stand-ins for `defaults`, `killall` and the two helper tools read and write.
-    def between(*texts, domain="Margins 1"):
+    def between(*texts, domain="Margins 1", account="runner", actions="true"):
         with tempfile.TemporaryDirectory(prefix="tooling-") as folder:
             state = os.path.join(folder, "state")
             os.makedirs(state)
@@ -1773,6 +1773,8 @@ def check_mac_shell_batch():
     mv "$STATE/tiling.new" "$STATE/tiling" ;;
   "delete com.apple.WindowManager") [ -e "$STATE/sticky" ] || : > "$STATE/tiling" ;;
 esac""",
+                "bin/id": f'[ "$1" = -un ] && echo {account}',
+                "bin/screencapture": 'echo "$*" >> "$STATE/pictured"',
                 "bin/killall": 'echo "$*" >> "$STATE/killed"\n[ -e "$STATE/stubborn" ] || { grep -v " $1\\$" "$STATE/windows" > "$STATE/windows.new"; mv "$STATE/windows.new" "$STATE/windows"; }',
                 ".build/mac-shell/pointer": 'case "$1" in ax-access) cat "$STATE/ax" ;; displays) seq "$(cat "$STATE/displays")" ;; windows) cat "$STATE/windows" ;; esac',
                 ".build/mac-shell/vdisplay": """case "$*" in spaces) cat "$STATE/spaces" ;; "appearance dark") echo Dark > "$STATE/style" ;; "appearance light") rm -f "$STATE/style" ;; esac""",
@@ -1788,7 +1790,7 @@ esac""",
                 with open(os.path.join(folder, names[-1]), "w", encoding="utf-8") as handle:
                     handle.write(see + text + "\n")
             done = subprocess.run([BASH, runner, *names], cwd=folder, capture_output=True, text=True, check=False, timeout=60,
-                                  env={**os.environ, "STATE": state, "PATH": os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"]})
+                                  env={**os.environ, "STATE": state, "GITHUB_ACTIONS": actions, "PATH": os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"]})
             found, codes = [], []
             for number, name in enumerate(names):
                 where = os.path.join(folder, "mac-shell", f"{number + 1}-s{number}") if len(names) > 1 else os.path.join(folder, "mac-shell")
@@ -1847,6 +1849,13 @@ esac""",
     row("ci-mac-shell.sh: what a Mac always has on its screen is no question, nor is an asker's window that is not on it", between("true", "true")[3:6:2], (False, []))
     row("ci-mac-shell.sh: an app of that name within another's is no asker",
         between('echo "70 71 0 0 0 500 500 on Not UserNotificationCenter" >> "$STATE/windows"', "true")[3:6:2], (False, []))
+    everything = 'echo 0 > "$STATE/reduceMotion"; echo Dark > "$STATE/style"; echo "EdgeDrag 0" >> "$STATE/tiling"; ' + ask
+    for what, whose in [("the variable is set, but the account is not GitHub's", dict(account="zelda")), ("the account is called so, but the variable is not set", dict(actions=""))]:
+        answer = between(everything, "true", **whose)
+        row(f"ci-mac-shell.sh: on somebody's Mac ({what}) nothing is put back, nobody's app is ended, no picture is taken, and the scripts run",
+            (answer[0], answer[1][1], answer[3], answer[5], answer[6], answer[7]), (0, "0 Dark EdgeDrag 0;Margins 1; true", False, [], 1, []))
+    row("ci-mac-shell.sh: the control: on GitHub's the same is put back, ended and pictured", (lambda answer: (answer[1][1], answer[3], answer[6], len(answer[7])))(between(everything, "true")),
+        (as_it_was, True, 0, 3))
     row("ci-mac-shell.sh: in the last place such a script costs nobody anything", between("true", 'echo false > "$STATE/ax"')[:3], (0, [as_it_was] * 2, ["0", "0"]))
     row("ci-mac-shell.sh: a script by itself is not looked after", between('echo "EdgeDrag 0" >> "$STATE/tiling"')[:4], (0, [as_it_was], ["0"], False))
     row("ci-mac-shell.sh: the notes it keeps for this do not come back with the output", between("true", "true")[4], [])
