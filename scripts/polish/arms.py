@@ -2,6 +2,7 @@
 """Lays the arms of scripts/mac-shell/films-arms.sh side by side: the same acts on one Mac by Arbor as built from several commits.
 
   arms.py <run folder> test|safari      the table, act by act and arm by arm, then the count: of the acts on the test window, or of those on Safari
+  arms.py <run folder> crowd|apps       the same for the acts on many windows, round by round: bare ground where a window stands before and after, an empty desk, first change to last
   arms.py --self-test
 
 A real app's window is no flat rectangle with a plain title bar, so the judge's ruler does not follow it. But the films show one window of one colour (the test window's own; Safari on a page of
@@ -11,6 +12,10 @@ and how long that took; the display's frames in which the window had a new size 
 How things stood before an act is not taken from the film alone. Arbor's own account, noted when the scene begins, says where the window is; a frame that is stamped after that account and before the
 key, and shows the window otherwise, has a wrong time (macOS was seen to hand the camera a stale one for the first frame after a long rest). It belongs to the act: it is put where the window
 server's list (samples.log) first has that size after the key, and the table says so aloud.
+
+Many windows are not followed at all. What is asked of them needs no following: on a plain wallpaper, whose colour the run's film of the bare desk gives, every pixel of every frame either shows
+the ground or does not. A hole is ground that shows, over a hundredth of the room, where there is something both before the act and after it; the desk is empty where under a hundredth of the room
+shows anything. That holds for real apps as for test windows.
 
 Needs numpy and Pillow (and no Mac).
 """
@@ -114,6 +119,118 @@ def set_right(film, sequence, samples):
     return sorted(right, key=lambda entry: (entry[1], entry[0])), "; ".join(said)
 
 
+def many(film, ground, by=24):
+    """One act on many windows: {"holes": display frames in which ground shows, over 1% of the room, where there is something both before the act and after it, "worst": the largest such share of the
+    room, "empty": display frames with under 1% of the room taken, on a desk that had and has more than 5%, "first", "last": ms after the cause of the first and the last frame in which over 1% of the room
+    changes, "pieces": how many such frames, "wait": the longest wait from the cause to the last of them}. None if nothing changes."""
+    cause = cause_of(film)[0]
+    x, y, w, h = (int(value * film.scale) for value in film.visible)
+    room = w * h
+
+    def taken(picture):
+        return (np.abs(picture[y:y + h, x:x + w].astype(np.int16) - np.array(ground, dtype=np.int16)) > by).any(axis=2)
+
+    before = after = None
+    for _, time, picture, _ in film.frames():
+        if time < cause:
+            before = taken(picture)
+        after = picture
+    if before is None:
+        return None
+    after = taken(after)
+    times = [int(time) - cause for time in film.times]
+    found = {"holes": 0, "worst": 0.0, "empty": 0, "first": None, "last": None, "pieces": 0, "wait": 0}
+    previous, shown = None, []
+    for index, time, picture, _ in film.frames():
+        inside = picture[y:y + h, x:x + w]
+        if time >= cause and previous is not None:
+            lasts = max(int(round((times[index + 1] - times[index]) / TICK)), 1) if index + 1 < len(times) else 1
+            now = taken(picture)
+            share = float((before & after & ~now).sum()) / room
+            # The last frame is the end itself; and a state that stays for good is no state on the way.
+            if index + 1 < len(times):
+                if share > 0.01:
+                    found["holes"] += lasts
+                    found["worst"] = max(found["worst"], share)
+                if now.sum() < room / 100 and min(before.sum(), after.sum()) > room / 20:
+                    found["empty"] += lasts
+            if (np.abs(inside.astype(np.int16) - previous.astype(np.int16)) > by).any(axis=2).sum() > room / 100:
+                shown.append(times[index])
+        previous = inside.copy()
+    if not shown:
+        return None
+    found.update(first=shown[0], last=shown[-1], pieces=len(shown), wait=max(b - a for a, b in zip([0] + shown, shown)))
+    return found
+
+
+def waits(folder, since, until):
+    """What Arbor's own logs say of waiting between two moments (ms since 1970): the lines with "waited"."""
+    import datetime
+    import glob
+    said = []
+    for path in sorted(glob.glob(os.path.join(folder, "arbor-*.log"))):
+        with open(path, encoding="utf-8", errors="replace") as log:
+            for line in log:
+                if " waited " in line and line[:4].isdigit():
+                    try:
+                        at = datetime.datetime.fromisoformat(line.split()[0].replace("Z", "+00:00")).timestamp() * 1000
+                    except ValueError:
+                        continue
+                    if since <= at <= until:
+                        said.append(line.split(None, 2)[2].strip())
+    return said
+
+
+def crowd(folder, cast, out=sys.stdout):
+    films = os.path.join(folder, "films")
+    bare = os.path.join(films, "ground")
+    if not os.path.isfile(os.path.join(bare, "film.log")):
+        print("arms.py: the run has no film of the bare desk (`ground`)", file=sys.stderr)
+        return 2
+    ground = Film(os.path.join(films, next(name for name in os.listdir(films) if f"-{cast}-" in name))).ground()
+    acts, arms, notes = {}, [], []
+
+    def began(name):
+        with open(os.path.join(films, name, "film.log"), encoding="utf-8") as log:
+            return int(log.readline().split()[0])
+
+    for name in sorted((name for name in os.listdir(films) if f"-{cast}-" in name and os.path.isfile(os.path.join(films, name, "film.log"))), key=began):
+        arm, _, rest = name.partition(f"-{cast}-")
+        round_, _, what = rest.partition("-")
+        film = Film(os.path.join(films, name))
+        said = many(film, ground)
+        if arm not in arms:
+            arms.append(arm)
+        acts.setdefault(what, {}).setdefault(arm, {})[int(round_)] = said
+        if said is None:
+            notes.append(f"`{name}`: NOTHING CHANGED")
+        cause = cause_of(film)[0]
+        for line in waits(folder, cause - 50, cause + 1500):
+            notes.append(f"`{name}`: holes in {said['holes'] if said else '?'} frames; Arbor's log: {line}")
+    rounds = sorted({number for by_arm in acts.values() for played in by_arm.values() for number in played})
+
+    def row(played, key, unit=""):
+        values = [("·" if played.get(number) is None else str(played[number][key])) for number in rounds]
+        return f"{values[0]}{unit} ‖ " + " ".join(values[1:])
+
+    print(f"The ground: {ground}. Each cell: the first round of the session ‖ the later ones.\n", file=out)
+    for key, title, unit in (("holes", "Display frames with a hole", ""), ("empty", "Display frames with the desk empty", ""), ("pieces", "Frames in which over 1% of the room changes", ""),
+                             ("last", "The last of them, ms after the cause", ""), ("wait", "The longest wait up to it, ms", "")):
+        print(f"**{title}**\n\n| Act | " + " | ".join(arms) + " |\n|---|" + "---|" * len(arms), file=out)
+        for what, by_arm in acts.items():
+            print(f"| {what} | " + " | ".join(row(by_arm.get(arm, {}), key, unit) for arm in arms) + " |", file=out)
+        print(file=out)
+    print("**Summed over all rounds**\n\n| | " + " | ".join(arms) + " |\n|---|" + "---|" * len(arms), file=out)
+    for what, by_arm in acts.items():
+        whole = {arm: [said for said in by_arm.get(arm, {}).values() if said] for arm in arms}
+        print(f"| {what}: frames with a hole; the largest hole, of the room | " + " | ".join(f"{sum(said['holes'] for said in whole[arm])}; {100 * max((said['worst'] for said in whole[arm]), default=0):.0f}%" for arm in arms) + " |", file=out)
+        print(f"| {what}: first change to last, the longest | " + " | ".join(f"{max((said['last'] - said['first'] for said in whole[arm]), default=0)} ms" for arm in arms) + " |", file=out)
+        print(f"| {what}: rounds played | " + " | ".join(str(len(whole[arm])) for arm in arms) + " |", file=out)
+    if notes:
+        print("\nREAD THIS:\n" + "\n".join(f"- {note}" for note in notes), file=out)
+    return 0
+
+
 # The colours as a hosted Mac's display shows them.
 CAST = {"test": (255, 56, 60), "safari": (255, 141, 40)}
 
@@ -211,7 +328,8 @@ def self_test():
     failures += not right
     print(f"{'✔' if right else '✘'} what lies in neither of two boxes")
     failures += drawn()
-    print(f"{len(cases) + 2 - failures} of {len(cases) + 2} as they should be")
+    failures += drawn_many()
+    print(f"{len(cases) + 3 - failures} of {len(cases) + 3} as they should be")
     return 1 if failures else 0
 
 
@@ -253,13 +371,63 @@ def drawn():
     return 1 if missing else 0
 
 
+def drawn_many():
+    """Two arms, two rounds, drawn, read through `crowd`: four windows of which one fills the room. In the second arm the others have gone two frames before the one has grown, in its second round
+    the desk is empty for three; and Arbor's log says that it waited."""
+    import datetime
+    import io
+    import tempfile
+
+    from film import write_film
+
+    began, key = 1_760_000_000_000, 1_760_000_001_000
+    grid = {(255, 56, 60): (12, 42, 494, 321), (0, 136, 255): (12, 375, 494, 321), (52, 199, 89): (518, 42, 494, 321), (255, 141, 40): (518, 375, 494, 321)}
+    red = (255, 56, 60)
+
+    def picture(places):
+        frame = np.zeros((768, 1024, 3), dtype=np.uint8)
+        frame[:30] = (230, 230, 230)
+        frame[712:760, 300:700] = (70, 70, 74)
+        for colour, (x, y, w, h) in places.items():
+            frame[y:y + h, x:x + w] = colour
+        return frame
+
+    def shoot(folder, states, later):
+        lines = [(began + 1, "M kind instant"), (began + 700, "M action"), (key, "K down"), (key + 40, "K up")]
+        write_film(folder, [picture(places) for _, places in states], [time + later for time, _ in states], [(time + later, line) for time, line in lines], visible=[0, 30, 1024, 678])
+
+    full = {red: (12, 42, 1000, 654)}
+    with tempfile.TemporaryDirectory() as folder:
+        films = os.path.join(folder, "films")
+        shoot(os.path.join(films, "ground"), [(began, {})], 0)
+        for later, name, states in ((10_000, "clean-crowd-1-fill", [(began, grid), (key + 50, full), (key + 1500, full)]), (20_000, "clean-crowd-2-fill", [(began, grid), (key + 50, full), (key + 1500, full)]),
+                                    (30_000, "dirty-crowd-1-fill", [(began, grid), (key + 50, {red: grid[red]}), (key + 83, full), (key + 1500, full)]),
+                                    (40_000, "dirty-crowd-2-fill", [(began, grid), (key + 50, {}), (key + 100, full), (key + 1500, full)])):
+            # The last frame differs by a dot, so that it is a frame.
+            states[-1] = (states[-1][0], {**states[-1][1], (90, 90, 90): (1000, 690, 2, 2)})
+            shoot(os.path.join(films, name), states, later)
+        stamp = datetime.datetime.fromtimestamp((key + 30_060) / 1000, datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+        with open(os.path.join(folder, "arbor-films-arms.log"), "w", encoding="utf-8") as log:
+            log.write(f"{stamp} INFO  waited 12 ms, 3 looks, for 1 windows to be listed as they answered\n")
+        said = io.StringIO()
+        crowd(folder, "crowd", said)
+    wanted = ("| fill | 0 ‖ 0 | 2 ‖ 3 |", "| fill: frames with a hole; the largest hole, of the room | 0; 0% | 5; ", "| fill: first change to last, the longest | 0 ms | 50 ms |",
+              "`dirty-crowd-1-fill`: holes in 2 frames; Arbor's log: waited 12 ms, 3 looks, for 1 windows to be listed as they answered")
+    text = said.getvalue()
+    empty = text[text.index("desk empty"):].split("\n")[4]
+    missing = [line for line in wanted if line not in text] + ([] if empty == "| fill | 0 ‖ 0 | 0 ‖ 3 |" else [f"the desk empty: {empty}"])
+    print(f"{'✘' if missing else '✔'} two drawn arms with many windows through the table" + "".join(f"\n    not said: {line}" for line in missing) + (("\n" + text) if missing else ""))
+    return 1 if missing else 0
+
+
 def main(arguments):
     if not arguments or arguments[0] in ("-h", "--help"):
         print(__doc__)
         return 0
     if arguments[0] == "--self-test":
         return self_test()
-    return table(arguments[0], arguments[1] if len(arguments) > 1 else "safari")
+    cast = arguments[1] if len(arguments) > 1 else "safari"
+    return crowd(arguments[0], cast) if cast in ("crowd", "apps") else table(arguments[0], cast)
 
 
 if __name__ == "__main__":

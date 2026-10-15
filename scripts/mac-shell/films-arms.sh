@@ -3,7 +3,7 @@
 #
 #   scripts/mac-shell/rehearse.sh scripts/mac-shell/films-arms.sh     on Linux, first, for nothing (one arm, a test window for Safari)
 #   scripts/mac-shell/run.sh scripts/mac-shell/films-arms.sh          about a quarter of an hour on a hosted Mac
-#   scripts/polish/arms.py .mac-shell/films-arms-<run id> test|safari   anywhere, afterwards
+#   scripts/polish/arms.py .mac-shell/films-arms-<run id> test|safari|crowd|apps   anywhere, afterwards
 #
 # A count of requests on Linux says how often Arbor asks. It cannot say what a person sees: whether a Mac draws the state between two askings. That depends on how long the state lasts and on how
 # fast the app draws. So the acts are played twice: on a test window, and on one Safari window on a page of one flat colour. By real keys, without motion; each arm's Arbor built here from its own commit, so that Mac, macOS, apps and camera are the same for all;
@@ -13,14 +13,13 @@
 # ARMS: name=commit, in the order they are played. `head` is the commit under test, whose build the harness has made anyway. A commit must be given in full: the Mac's clone is one commit deep.
 # name=commit+commit is the first with, laid over it, the files that the second changed, those of the stand-ins (Sources/ArborTesting) left out, which are no part of the app: for two cures that have
 # not been put together yet. It is played only if each of those files is the same in the first commit as in the second's parent, so that it is what any merge of the two would build the app from.
-#   before  the trunk before sizes were asked for where a window stands
-#   head    the trunk
-#   asks    nobody in view is asked to grow where it stands (the controller)
-#   order   between size and place a window lies within its old frame or its new one (the layer's order of calls)
-#   both    the two together
-ASKS=cc9df278a708ecf06c2237cee8e0fab6479e3a13
-ORDER=1cab79797b5c216d8314dfaaaf40b3932fed13e9
-ARMS="before=07b2bfc5da482ddcbfc25156abfddffc49f605ba head asks=$ASKS order=$ORDER both=$ASKS+$ORDER"
+ARMS="head"
+# PLAYS: what every arm plays.
+#   test, safari   nine acts on one window: every side once, a quit and a launch, the first side again
+#   crowd, apps    many windows, eight test windows or six real apps and a test window, on a large display: Arrange, fill, everything, back, ROUNDS times over. How many frames a state is on the display
+#                  is chance, so whoever compares frames plays each arm five times; and the first round of a session is kept apart, since what is done for the first time differs.
+PLAYS="crowd apps"
+ROUNDS=5
 ARBOR_TIME_LIMIT=1150
 source "$(dirname "$0")/lib-film.sh"
 needs_throwaway_mac "film the whole display, open Safari, and build other commits in this clone"
@@ -83,7 +82,7 @@ act() {
     scene "$name" told "$text (no key does: the command)"
     ctl "$@"
   fi
-  scene_end 1.6
+  scene_end "${REST:-1.6}"
 }
 
 # Where every playing begins: floating, in the middle, at a size that is no slot's.
@@ -140,6 +139,64 @@ play() {
   arbor_stop
 }
 
+# open_real <bundle id> [<file>]: a real app with one window, for `apps`. Its process goes into REAL_PIDS, its window into REAL_WINDOWS.
+open_real() {
+  local bundle=$1 pid window
+  shift
+  arbor_within 30 open -g -b "$bundle" "$@" || { echo "$bundle did not open"; return 1; }
+  film_await 150 "$FILM_APPTOOL" pid "$bundle" > /dev/null || { echo "$bundle did not start"; return 1; }
+  pid=$("$FILM_APPTOOL" pid "$bundle")
+  started "$pid"
+  "$FILM_APPTOOL" wait-window "$pid" 25 > /dev/null
+  window=$("$FILM_APPTOOL" windows "$pid" | awk '$3 == "AXStandardWindow" { print $1; exit }')
+  [ -n "$window" ] || { echo "$bundle has no window"; return 1; }
+  REAL_PIDS="${REAL_PIDS:+$REAL_PIDS,}$pid"
+  REAL_WINDOWS="$REAL_WINDOWS $window"
+  echo "$bundle: pid $pid, window $window"
+}
+
+# play_many <arm> crowd|apps
+play_many() {
+  local arm=$1 cast=$2 p="$1-$2" round REST=1.3
+  # A playing takes about two minutes.
+  if [ "$SECONDS" -gt $((ARBOR_TIME_LIMIT - 190)) ]; then echo "arm $arm, $cast: NOT PLAYED, no time left"; return 0; fi
+  ARBOR_BIN="$ARMS_DIR/$arm"
+  [ -n "${ARBOR_REHEARSAL:-}" ] && ARBOR_BIN=$HEAD_BIN
+  arbor_settings "$LIGHT"
+  if [ "$cast" = crowd ] || [ -z "$REAL_PIDS" ]; then
+    cast_start 8 $FACE
+    TARGET=$W8
+  else
+    ARBOR_EXTRA_PIDS=$REAL_PIDS
+    arbor_start 1 $FACE
+    ctl trace on "arm-$p" || true
+    # shellcheck disable=SC2086
+    set -- $REAL_WINDOWS
+    TARGET=${1:-$W1}
+  fi
+  sleep 3
+  round=1
+  while [ "$round" -le "$ROUNDS" ]; do
+    ctl float-all
+    sleep 1.5
+    front
+    act "$p-$round-arrange" "arranges every window" arrange
+    act "$p-$round-fill" "fills the screen with one of them" zoom
+    act "$p-$round-everything" "shows everything again" show-all
+    key "$(key_for zoom)"
+    sleep 1.3
+    act "$p-$round-back" "goes back" back
+    round=$((round + 1))
+  done
+  summary
+  if [ "$cast" = crowd ] || [ -z "$REAL_PIDS" ]; then
+    cast_stop
+  else
+    ctl trace off || true
+    arbor_stop
+  fi
+}
+
 macos() {
   local name=$1 inner=$3
   front
@@ -154,6 +211,7 @@ macos() {
 }
 
 film_build
+cast_build
 step "the arms"
 # Now, while the build that is there is the commit's under test.
 mkdir -p "$ARMS_DIR/head"
@@ -186,44 +244,89 @@ ARBOR_TEST_WINDOWS_ARGS="--regular"
 step "the camera's own square"
 metronome good
 
-SAFARI="" SAFARI_PID="" TARGET=""
-for arm in $PLAYED; do
-  step "arm $arm, a test window"
-  play "$arm" test
-done
+plays() { case " $PLAYS " in *" $1 "*) return 0 ;; esac; return 1; }
 
-step "Safari, on a page of one colour"
-if [ -z "${ARBOR_REHEARSAL:-}" ]; then
-  scratch_dir arms-page PAGE_DIR
-  printf '<!doctype html><title>page</title><body style="margin:0;background:#ff8d28"></body>\n' > "$PAGE_DIR/page.html"
-  arbor_within 30 open -g -b com.apple.Safari "$PAGE_DIR/page.html" || die "Safari did not open"
-  film_await 150 "$FILM_APPTOOL" pid com.apple.Safari > /dev/null || die "Safari did not start"
-  SAFARI_PID=$("$FILM_APPTOOL" pid com.apple.Safari)
-  started "$SAFARI_PID"
-  "$FILM_APPTOOL" wait-window "$SAFARI_PID" 20
-  SAFARI=$("$FILM_APPTOOL" windows "$SAFARI_PID" | awk '$3 == "AXStandardWindow" { print $1; exit }')
-  [ -n "$SAFARI" ] || die "Safari has no window"
-  echo "Safari: pid $SAFARI_PID, window $SAFARI"
-  sleep 3
+# The bare desk: the wallpaper as the display shows it.
+scene ground bare "the bare desk"
+scene_end 0.3
+
+SAFARI="" SAFARI_PID="" TARGET="" REAL_PIDS="" REAL_WINDOWS=""
+if plays test; then
+  for arm in $PLAYED; do
+    step "arm $arm, a test window"
+    play "$arm" test
+  done
 fi
 
-for arm in $PLAYED; do
-  step "arm $arm, Safari"
-  play "$arm" safari
-done
-
-step "macOS alone, the same window: no Arbor is running"
-TARGET=$SAFARI
-[ -n "${ARBOR_REHEARSAL:-}" ] || "$FILM_APPTOOL" set-frame "$SAFARI" 260 120 574 380 > /dev/null
-sleep 1.2
-if [ -z "${ARBOR_REHEARSAL:-}" ]; then
-  macos macos-left "chooses Window ▸ Move & Resize ▸ Left" "Left"
-  macos macos-right "chooses Window ▸ Move & Resize ▸ Right" "Right"
-  macos macos-top "chooses Window ▸ Move & Resize ▸ Top" "Top"
-  macos macos-previous "chooses Window ▸ Move & Resize ▸ Return to Previous Size" "Return to Previous Size"
-  "$FILM_APPTOOL" quit "$SAFARI_PID" > /dev/null 2>&1
-  ended "$SAFARI_PID" 50 || kill_started "$SAFARI_PID"
+if plays safari || plays apps; then
+  step "Safari, on a page of one colour"
+  if [ -z "${ARBOR_REHEARSAL:-}" ]; then
+    scratch_dir arms-page PAGE_DIR
+    printf '<!doctype html><title>page</title><body style="margin:0;background:#ff8d28"></body>\n' > "$PAGE_DIR/page.html"
+    open_real com.apple.Safari "$PAGE_DIR/page.html" || die "no Safari"
+    SAFARI_PID=$REAL_PIDS
+    SAFARI=${REAL_WINDOWS# }
+    sleep 3
+  fi
 fi
+
+if plays safari; then
+  for arm in $PLAYED; do
+    step "arm $arm, Safari"
+    play "$arm" safari
+  done
+
+  step "macOS alone, the same window: no Arbor is running"
+  TARGET=$SAFARI
+  [ -n "${ARBOR_REHEARSAL:-}" ] || "$FILM_APPTOOL" set-frame "$SAFARI" 260 120 574 380 > /dev/null
+  sleep 1.2
+  if [ -z "${ARBOR_REHEARSAL:-}" ]; then
+    macos macos-left "chooses Window ▸ Move & Resize ▸ Left" "Left"
+    macos macos-right "chooses Window ▸ Move & Resize ▸ Right" "Right"
+    macos macos-top "chooses Window ▸ Move & Resize ▸ Top" "Top"
+    macos macos-previous "chooses Window ▸ Move & Resize ▸ Return to Previous Size" "Return to Previous Size"
+  fi
+fi
+
+if plays crowd || plays apps; then display_size 1920 1080; fi
+
+if plays crowd; then
+  for arm in $PLAYED; do
+    step "arm $arm, eight test windows"
+    play_many "$arm" crowd
+  done
+fi
+
+if plays apps; then
+  step "five more real apps"
+  if [ -z "${ARBOR_REHEARSAL:-}" ]; then
+    printf 'An oak.\n' > "$PAGE_DIR/oak.txt"
+    printf 'return 1\n' > "$PAGE_DIR/one.applescript"
+    python3 -c 'import struct, sys, zlib
+row = b"\0" + bytes((0, 136, 255)) * 400
+data = zlib.compress(row * 300)
+def chunk(kind, body): return struct.pack(">I", len(body)) + kind + body + struct.pack(">I", zlib.crc32(kind + body))
+open(sys.argv[1], "wb").write(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", 400, 300, 8, 2, 0, 0, 0)) + chunk(b"IDAT", data) + chunk(b"IEND", b""))' "$PAGE_DIR/blue.png"
+    # One that does not come is left out, and said to be: the arms are still alike.
+    open_real com.apple.TextEdit "$PAGE_DIR/oak.txt"
+    open_real com.apple.Terminal
+    open_real com.apple.Preview "$PAGE_DIR/blue.png"
+    open_real com.apple.ScriptEditor2 "$PAGE_DIR/one.applescript"
+    open_real com.apple.ActivityMonitor
+    sleep 3
+  fi
+  for arm in $PLAYED; do
+    step "arm $arm, real apps"
+    play_many "$arm" apps
+  done
+fi
+
+if plays crowd || plays apps; then display_size 1024 768; fi
+
+for pid in $(echo "$REAL_PIDS" | tr ',' ' '); do
+  "$FILM_APPTOOL" quit "$pid" > /dev/null 2>&1
+  ended "$pid" 30 || kill_started "$pid"
+done
 
 sampler_stop
 camera_stop
