@@ -255,15 +255,23 @@ Three rules keep the Linux build working and the platforms telling the same stor
    `parity.py --check` (on the Mac: see below); `macos` then runs the real-window and real-pointer tests. A newer push
    cancels the run for the older one.
 
-   Linux runners are plentiful, so the Linux work is several jobs side by side, each named `linux-…`
-   (`linux-lint`, `linux-typecheck-mac`, `linux-sim`, `linux-tests`). The last job, `linux`, passes only if all of
-   them did: that one is the Linux verdict. A new job gets a name that starts with `linux-` and a place in its `needs`;
-   `scripts/test-ci-linux.py` (part of `make lint`) fails if it has none, or if a step of `make check` is run by no job.
+   The Linux work is a file of its own, `.github/workflows/linux.yml`, which `ci.yml` calls in its job `linux`: several
+   jobs side by side, whose checks are called `linux / lint`, `linux / typecheck-mac`, `linux / sim`, `linux / tooling`, `linux / tests-1` to
+   `linux / tests-4`, and last `linux / verdict`, which passes only if all of them did, no test was lost between the parts, and
+   parity holds: that one is the Linux verdict, four to five minutes after the push when runners are free. The tests are divided among four machines, each
+   of which compiles only its part and runs it on every core (`scripts/fast-tests.py`); whoever
+   writes a test need not know. The oldest Swift the README promises compiles everything in a job of `ci.yml`, `oldest-swift`: eleven
+   minutes, so the verdict does not wait for it, but red there stops a landing all the same (its annotation says how to see it at home). There
+   are fifteen Linux runners for everybody: a new job costs all of them, so put a new step into a job that is there if you
+   can. A new job is named `linux-…` and gets a place in the `needs` of `linux-verdict`; `scripts/test-ci-linux.py` (part of
+   `make lint`) fails if it has none, or if a step of `make check` is run by no job. Where work is integrated (a push to
+   `main`, a pull request into it) the job `tests-whole` runs plain `swift test` once more, in the image, and holds
+   it against what the parts said, test by test.
 
    A macOS job is slow and runners are few, so a first small job,
    `changes`, leaves it out (it shows as skipped, and the annotation on
    `changes` says why) when a Mac could prove nothing new
-   (`scripts/ci-changes.py`; the `linux-lint` job holds its rules to the table of
+   (`scripts/ci-changes.py`; the check `linux / lint` holds its rules to the table of
    cases in `scripts/test-ci-changes.py`):
    - the pull request changes only `collab/`, `docs/`, `*.md` files, `scripts/typecheck-mac/`, `Sources/arbor-fakemac/` (no Mac compiles it), the scripts in
      `scripts/mac-shell/` that CI does not run (it runs `e2e-drag.sh` and `compile-tools.sh`, built on `lib.sh`, `pointer.swift` and
@@ -278,8 +286,8 @@ Three rules keep the Linux build working and the platforms telling the same stor
    The second rule does not hold where work is integrated (pushes to `main`, pull requests into it,
    the pull request from `swarm/trunk`): there every change of code is compiled
    and driven on a Mac. So a change to the controller or a platform protocol can
-   pass its own pull request and break the macOS-only code that uses it. The `linux-typecheck-mac`
-   job type-checks that code against stand-ins (`make typecheck-mac`), which catches a changed
+   pass its own pull request and break the macOS-only code that uses it. The check `linux / typecheck-mac`
+   type-checks that code against stand-ins (`make typecheck-mac`), which catches a changed
    name or type; it runs nothing. When
    you change something `AX`, `App`, `Input`, `IPC` or `UI` calls, run that first, and ask for the Mac with
    **`[mac]` in the subject of the head commit** (or the label `mac`), or

@@ -398,6 +398,14 @@ def as_record(outcomes):
     return "".join(f"{name}\t{outcome}\n" for name, outcome in sorted(record.items()))
 
 
+def runner_of(products, target):
+    """The program that runs a target's tests, or None. Swift 6.4 builds one for each target; older ones build one for all of them."""
+    for path in (os.path.join(products, f"{target}-test-runner"), *sorted(glob.glob(os.path.join(products, "*PackageTests.xctest")))):
+        if os.path.isfile(path) and os.access(path, os.X_OK):
+            return path
+    return None
+
+
 def run_one(root, products, name, folder, number):
     """Runs the tests of one file, the `number`th. Returns its name, the exit code, what it printed, its event stream and how long it took."""
     target, file = name.split("/")[1], name.rsplit("/", 1)[1]
@@ -409,7 +417,8 @@ def run_one(root, products, name, folder, number):
     own = os.path.join(folder, str(number))
     os.mkdir(own)
     environment = {key: value for key, value in os.environ.items() if key != "ARBOR_HOME"}
-    command = [os.path.join(products, f"{target}-test-runner"), "--testing-library", "swift-testing", "--filter", f"/{re.escape(file)}:",
+    # With the target, which begins the id: two targets may have a file of the same name, and one program may hold both.
+    command = [runner_of(products, target), "--testing-library", "swift-testing", "--filter", f"^{re.escape(target)}\\..*/{re.escape(file)}:",
                "--event-stream-output-path", events, "--event-stream-version", "0"]
     began = time.monotonic()
     process = subprocess.run(command, cwd=root, env={**environment, "LD_LIBRARY_PATH": products, "NO_COLOR": "1", "TMPDIR": own}, check=False,
@@ -423,11 +432,11 @@ def run_one(root, products, name, folder, number):
 
 def listed(products, target):
     """How many test functions a test runner holds."""
-    done = subprocess.run([os.path.join(products, f"{target}-test-runner"), "--testing-library", "swift-testing", "--list-tests"], check=False,
+    done = subprocess.run([runner_of(products, target), "--testing-library", "swift-testing", "--list-tests"], check=False,
                           env={**os.environ, "LD_LIBRARY_PATH": products, "NO_COLOR": "1"}, capture_output=True, encoding="utf-8", errors="replace")
     if done.returncode != 0:
-        raise Unreadable(f"{target}-test-runner cannot list its tests (exit code {done.returncode}): {done.stderr.strip()[-300:]}")
-    return sum(1 for line in done.stdout.split("\n") if line.strip().endswith(")"))
+        raise Unreadable(f"the tests of {target} cannot be listed (exit code {done.returncode}): {done.stderr.strip()[-300:]}")
+    return sum(1 for line in done.stdout.split("\n") if line.startswith(target + ".") and line.strip().endswith(")"))
 
 
 def command_run(args):
@@ -443,7 +452,7 @@ def command_run(args):
     texts = {name: read(root, name) for name in test_files(root)}
     expected = {name: declared(text) for name, text in texts.items()}
     names = sorted((name for name in texts if expected[name]), key=lambda name: (-weight(texts[name]), name))
-    missing = sorted({name.split("/")[1] for name in names if not os.access(os.path.join(products, name.split("/")[1] + "-test-runner"), os.X_OK)})
+    missing = sorted({name.split("/")[1] for name in names if not runner_of(products, name.split("/")[1])})
     if missing:
         print(f"✘ fast-tests.py: nothing to run the tests of {', '.join(missing)} with in .build/debug. It works on Linux only; on a Mac say swift test.")
         return 2
@@ -453,7 +462,7 @@ def command_run(args):
     # What was built knows best. It catches a wrong answer in ON_LINUX, which would leave a file's tests out without a word.
     for target in sorted({name.split("/")[1] for name in texts}):
         read_here = sum(count for name, count in expected.items() if name.split("/")[1] == target)
-        built = listed(products, target) if read_here or os.path.exists(os.path.join(products, f"{target}-test-runner")) else 0
+        built = listed(products, target) if runner_of(products, target) else 0
         if built != read_here:
             print(f"✘ fast-tests.py: {target} was built with {built} tests, and this reads {read_here} in its sources")
             return 2

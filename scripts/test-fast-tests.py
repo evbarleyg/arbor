@@ -248,6 +248,7 @@ row("same: another outcome", shard.differences(ONE, ONE.replace("skipped", "pass
 RUNNER = '''#!/usr/bin/env python3
 import json, os, re, sys
 tests = {"T.A/one()/A.swift:1:2": "A.swift", "T.A/two()/A.swift:2:2": "A.swift", "T.B/three()/B.swift:1:2": "B.swift"}
+if sys.argv[0].endswith(".xctest"): tests["U.A/other()/A.swift:1:2"] = "A.swift"
 behave = os.environ.get("BEHAVE", "")
 if behave == "more": tests["T.B/four()/B.swift:9:2"] = "B.swift"
 arguments = sys.argv[1:]
@@ -270,7 +271,7 @@ sys.exit(1 if behave == "red" and any("two" in name for name in mine) else 0)
 '''
 
 
-def tried(behave="", sources=None, *more):
+def tried(behave="", sources=None, *more, runner="T-test-runner"):
     """What `run` does in a made-up checkout: its exit code, what it printed, and the files it left."""
     with tempfile.TemporaryDirectory() as folder:
         os.makedirs(os.path.join(folder, "Tests", "T"))
@@ -278,9 +279,13 @@ def tried(behave="", sources=None, *more):
         for name, text in (sources or {"A.swift": TEST % "one" + TEST % "two", "B.swift": TEST % "three", "Helpers.swift": "func f() {}\n"}).items():
             with open(os.path.join(folder, "Tests", "T", name), "w", encoding="utf-8") as handle:
                 handle.write(text)
-        with open(os.path.join(folder, ".build", "debug", "T-test-runner"), "w", encoding="utf-8") as handle:
+        with open(os.path.join(folder, ".build", "debug", runner), "w", encoding="utf-8") as handle:
             handle.write(RUNNER)
-        os.chmod(os.path.join(folder, ".build", "debug", "T-test-runner"), 0o755)
+        os.chmod(os.path.join(folder, ".build", "debug", runner), 0o755)
+        if runner.endswith(".xctest"):
+            os.makedirs(os.path.join(folder, "Tests", "U"))
+            with open(os.path.join(folder, "Tests", "U", "A.swift"), "w", encoding="utf-8") as handle:
+                handle.write(TEST % "other")
         for name in ("record", "events", "log"):
             with open(os.path.join(folder, name), "w", encoding="utf-8") as handle:
                 handle.write("left by an earlier run\n")
@@ -304,6 +309,10 @@ row("run, whole: each file has a temporary folder of its own, which is there", (
     max(map(len, re.findall(r"at home in (\S+)", files.get("log", ""))), default=99) < 40), (2, True))
 row("run, whole: and no ARBOR_HOME, whatever the caller has", set(re.findall(r"told (\S+)", files.get("log", ""))), {"None"})
 row("run, whole: --verbose prints it", "ran T.A/one()" in tried("", None, "--verbose")[1], True)
+code, said, files = tried(runner="XPackageTests.xctest")
+row("run, whole: one program for all targets, as older Swifts build it; two targets have a file of one name",
+    (code, "4 tests of 3 files" in said, files.get("record")), (0, True, "T.A/one()\tpassed\nT.A/two()\tpassed\nT.B/three()\tpassed\nU.A/other()\tpassed\n"))
+row("run, whole: no program at all", (tried(runner="something-else")[0], "nothing to run the tests of T with" in tried(runner="something-else")[1]), (2, True))
 code, said, files = tried("red")
 row("run, whole: a test fails", (code, "✘ Tests/T/A.swift: 1 of 2 tests failed" in said, "ran T.A/one()" in said, "ran T.B" in said), (1, True, True, False))
 row("run, whole: and is in the record", files.get("record"), "T.A/one()\tpassed\nT.A/two()\tfailed\nT.B/three()\tpassed\n")

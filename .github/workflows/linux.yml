@@ -1,0 +1,191 @@
+name: Linux
+
+# The headless stack only (see Package.swift), so that it stays buildable for executors without a Mac. ci.yml calls
+# this in every run: it is what checks parity, FEATURES.md and the scenarios when the Mac is left out. A file of its
+# own, so that a change to it is plainly a change no Mac can say anything about. scripts/linux.sh runs the same image.
+#
+# A pull request waits for the slowest job, so what does not need one another's results runs side by side. The last
+# job, `linux-verdict`, passes only if all the others did. In ci.yml `needs: linux` waits for all of this; the checks
+# are called "linux / lint", "linux / tests-1" … "linux / verdict". scripts/test-ci-linux.py (`make lint`) holds this
+# file to that.
+#
+# There are fifteen Linux runners for everybody (GitHub's twenty less the five Macs), so what a push costs in
+# runner-minutes is everybody's waiting time. The image is the one every sandbox uses, so that green there is green
+# here. The runners come with a Swift of their own, which would save fetching the image: tried, and it saves nothing,
+# for it is read cold from the disk (a build of 59 seconds against 41), and it is whatever GitHub last installed.
+# Ubuntu by its number: "latest" moves by itself.
+#
+# Steps run through scripts/ci-step.py, which publishes what matters as check annotations.
+on:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  # What needs neither Swift nor a build, and so no image either. The runner has curl, which the image lacks and the release
+  # tooling's test wants for half of its checks.
+  linux-lint:
+    name: lint
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: The rules that decide about the macOS job
+        run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py
+      - name: The arithmetic of the queue for the Macs
+        run: ./scripts/ci-step.py mac-queue ./scripts/test-mac-queue.py
+      - name: The selection of tests for the Mac, the record of a run, and the net under both
+        run: ./scripts/ci-step.py ci-tests ./scripts/test-ci-tests.py
+      - name: Lint (imports a Mac would miss; Mac shell scripts that would change a person's Mac; these jobs)
+        run: ./scripts/ci-step.py lint make lint
+      - name: Release tooling
+        run: ./scripts/ci-step.py --summary '✘|not tried|release tools test' release-tools ./scripts/release-tools-test.sh
+
+  # Here and not on the Mac: the stand-ins are for machines without AppKit, and the check declines where
+  # swift build sees the real thing.
+  linux-typecheck-mac:
+    name: typecheck-mac
+    runs-on: ubuntu-24.04
+    container: swift:6.4-noble
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Python and make for the scripts, and a git that trusts the checkout
+        # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
+        run: |
+          apt-get update -qq && apt-get install -y -qq python3 make
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Toolchain
+        run: ./scripts/ci-step.py toolchain swift --version
+      - name: Type-check the macOS-only code against stand-ins
+        run: ./scripts/ci-step.py --summary 'error:|type-check' typecheck-mac make typecheck-mac
+
+  # Whatever drives the built arbor-sim, and the rest of `make check` that is not a test.
+  linux-sim:
+    name: sim
+    runs-on: ubuntu-24.04
+    container: swift:6.4-noble
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Python and make for the scripts, and a git that trusts the checkout
+        # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
+        run: |
+          apt-get update -qq && apt-get install -y -qq python3 make
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Toolchain
+        run: ./scripts/ci-step.py toolchain swift --version
+      - name: Build
+        # Nobody reads an index here, and not writing one takes a sixth off the build.
+        run: ./scripts/ci-step.py --summary 'warning:|Build complete' build swift build --disable-index-store
+      - name: Simulator smoke test
+        run: ./scripts/ci-step.py smoke ./scripts/sim-smoke.sh
+      - name: Nothing a person typed reaches the log
+        run: ./scripts/ci-step.py privacy ./scripts/privacy-smoke.sh
+      - name: User-journey scenarios
+        run: ./scripts/ci-step.py scenarios ./scripts/scenarios.sh
+      - name: The scenario runner can also report a failure
+        run: ./scripts/ci-step.py tooling python3 scripts/test-tooling.py --only scenarios
+      - name: Real-window evidence is read as it is meant, and the suite's claims are in order
+        run: ./scripts/ci-step.py evidence python3 scripts/test-parity.py
+
+  # The tools that report all this can also report a failure. Two minutes, and but for the rows about scenarios (in `linux-sim`) none
+  # needs a build or Swift: at the end of that job, and then taking three, they made it the slowest of all.
+  linux-tooling:
+    name: tooling
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: The tools that report all this can also report a failure
+        run: ./scripts/ci-step.py tooling python3 scripts/test-tooling.py --but scenarios
+
+  # Half of `swift test` is compiling the tests, on every core; the other half is running them, on one. So the tests are
+  # divided among several machines, each of which compiles only its part, from nothing, and runs it on all of its cores
+  # (scripts/fast-tests.py says how, and why nobody who writes a test need know). To change the number of parts, change
+  # the list: more parts are sooner done and cost more runners, for each fetches the image and builds the libraries
+  # again: a minute and a half of a runner for half a minute less to wait. Nobody reads an index here, and not writing one
+  # takes a sixth off every build.
+  #
+  # With the usual image, not the oldest Swift that README.md promises: tried, and a part took half as long again (build 219 s
+  # against 147, run 89 s against 53: it compiles slower, finds the tests by the index, and starts a test process in 1.25 s against
+  # 0.13). That Swift has a job of its own in ci.yml, `oldest-swift`, for which the verdict does not wait.
+  linux-tests:
+    name: tests-${{ matrix.part }}
+    strategy:
+      fail-fast: false
+      matrix:
+        part: [1, 2, 3, 4]
+    runs-on: ubuntu-24.04
+    container: swift:6.4-noble
+    timeout-minutes: 15
+    env:
+      PART: ${{ matrix.part }}
+      PARTS: ${{ strategy.job-total }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Python and make for the scripts, and a git that trusts the checkout
+        # The checkout belongs to the runner's user and the container runs as root, which git refuses to work with.
+        run: |
+          apt-get update -qq && apt-get install -y -qq python3 make
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+      - name: Toolchain
+        run: ./scripts/ci-step.py toolchain swift --version
+      - name: Keep this part's tests
+        run: ./scripts/ci-step.py cut ./scripts/fast-tests.py cut "$PART" "$PARTS"
+      - name: Build
+        run: ./scripts/ci-step.py --summary 'Build complete' build swift build --build-tests --disable-index-store
+      - name: Test
+        run: ./scripts/ci-step.py --summary ' tests of | slowest files' --report "test-$PART.jsonl" test ./scripts/fast-tests.py run --no-build --events "test-$PART.jsonl"
+      - name: Hand over what ran
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: linux-tests-${{ matrix.part }}
+          path: test-${{ matrix.part }}.jsonl
+          if-no-files-found: warn
+          retention-days: 7
+
+  # The verdict, and what needs all the parts: that between them they ran every test, each once, and parity. It runs
+  # whatever became of the others: by default a failure among them would leave it skipped, which reads as "nothing against
+  # it". Only when the whole run is cancelled is there no verdict. Its later steps run whatever the first one said, so
+  # that a slip in lint does not hide a stale FEATURES.md until the next push.
+  linux-verdict:
+    name: verdict
+    needs: [linux-lint, linux-typecheck-mac, linux-sim, linux-tooling, linux-tests]
+    if: ${{ !cancelled() }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Every Linux job passed
+        env:
+          RESULTS: ${{ toJSON(needs) }}
+        run: |
+          python3 - <<'VERDICT'
+          import json, os, sys
+          results = {name: job["result"] for name, job in json.loads(os.environ["RESULTS"]).items()}
+          for name, result in results.items():
+              if result != "success":
+                  print(f"::error title=linux::{name}: {result}")
+          sys.exit(0 if results and all(result == "success" for result in results.values()) else 1)
+          VERDICT
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        if: ${{ !cancelled() }}
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        if: ${{ !cancelled() }}
+        with:
+          pattern: linux-tests-*
+          merge-multiple: true
+      - name: No test was lost, none ran twice
+        if: ${{ !cancelled() }}
+        run: ./scripts/ci-step.py join ./scripts/fast-tests.py join --record linux.tsv test-*.jsonl
+      - name: Parity (no shipped feature may break; FEATURES.md must be current)
+        if: ${{ !cancelled() }}
+        run: ./scripts/ci-step.py parity python3 scripts/parity.py --report test-*.jsonl --check
+      - name: Keep the record of which test ran on Linux
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tests-linux
+          path: linux.tsv
+          retention-days: 7
