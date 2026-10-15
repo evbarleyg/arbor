@@ -219,6 +219,13 @@ sleep 0.5
 must click_window "$A"
 acted front="$A" offence=input-held
 sleep 4
+# A round of input with something that passes for Arbor running, which is honest; and one in which a key goes no further.
+input_round started
+tell drop 1 30
+sleep 0.5
+WALK_ROUND_SAYS="offence=input-held"
+input_round last
+WALK_ROUND_SAYS=""
 act drag-where-macos-tiles both-previews "OFFENCE: a window is dragged against the menu bar, and a drop preview comes up beside macOS's own"
 must drag_window "$A" "$((dx + dw / 2))" "$dy" --no-release
 sleep 1
