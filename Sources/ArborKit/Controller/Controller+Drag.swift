@@ -400,7 +400,10 @@ extension Controller {
     _ window: WindowID, on hover: Hover, at pointer: CGPoint? = nil, sizeOwed: CGSize? = nil,
     after reflow: Reflow = Reflow(), settling: Bool = true, whole: Bool = false
   ) -> [DisplayID] {
-    let undoScope = beginUndoStep(dropping: window, on: hover.target, of: hover.display)
+    var undoScope = beginUndoStep(dropping: window, on: hover.target, of: hover.display)
+    // A plain drag of a floating window is what it is without Arbor, to another display too: nothing is left for Undo to take back.
+    // (One that fills the view has Arbor's size, as a docked one has, and comes out of it.)
+    if hover.isPlain, !isFilled(window), !workspaces.values.contains(where: { $0.isDocked(window) }) { undoScope?.before = [:] }
     defer { endUndoStep(undoScope) }
     // While the drop is laid out, a window dropped to float stays where it was dropped (`placeFloatingWindows`).
     placedOnPurpose = [window]
@@ -502,7 +505,7 @@ extension Controller {
       let isOut = session.wasPlain && dragDocks != .always
       endDrag(on: isOut ? plainDrop(of: session) : Hover(display: display, target: .none))
     } else {
-      endDrag(on: Hover(display: dropTarget(for: session.window, at: session.point).display, target: .float))
+      endDrag(on: Hover(display: dropTarget(for: session.window, at: session.point).display, target: .float, isPlain: session.wasPlain))
     }
   }
 
