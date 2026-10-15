@@ -167,7 +167,9 @@ begin() {
   read -r X Y <<< "$(center_of "$W2")"
   move "$X" "$Y"
   LOG_MARK=$(wc -l < "$ARBOR_HOME/arbor.log")
-  "$ASKER" arrivals "${3:-$(($(length) + 5))}" > "$ARBOR_OUT/arrivals-$round.txt" 2>&1 &
+  # Appending, as `mark` does: two writers of whom only one appends write over each other.
+  : > "$ARBOR_OUT/arrivals-$round.txt"
+  "$ASKER" arrivals "${3:-$(($(length) + 5))}" >> "$ARBOR_OUT/arrivals-$round.txt" 2>&1 &
   started $!
   eventually grep -q arrivals-ready "$ARBOR_OUT/arrivals-$round.txt" || { invalid "the listener at the end of the taps started"; leave; return 1; }
 }
