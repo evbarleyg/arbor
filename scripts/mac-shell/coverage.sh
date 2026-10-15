@@ -13,11 +13,11 @@
 #   report.txt, report.md     every measurement side by side, per folder and per file (scripts/coverage-report.py)
 #   processes.txt             per part: how many Arbors ran, how many left a profile
 #   <measurement>/            e2e, drag, both; session (the two played scripts alone), with-session (all of it)
-#     summary.txt             llvm-cov report: per file regions, functions and lines, and how many of each never ran
 #     functions.txt           per file the functions that never ran, then the largest of them
 #     lines/<file>.txt        the source with how often each line ran: 0 is a line nothing reached
-#     coverage.json           llvm-cov export -summary-only, which coverage-report.py reads
-#     export.json             the same with every function and region
+#     export.json             llvm-cov export: every function, region and segment, which coverage-report.py reads
+#     summary.txt             llvm-cov report, and coverage.json, llvm-cov export -summary-only: llvm-cov's own sums per file. Their
+#                             regions and functions are fine; their lines count a line in a closure once for every function around it
 #   <part>/output.txt         what the part printed
 #
 # The build has a folder of its own, .build/coverage: it takes nothing from the plain build beside it, which may have come out of a cache that
@@ -75,7 +75,7 @@ tables() {
   # llvm-cov repeats the whole path of each source under its output folder.
   find "$COVERAGE_DIR/$name.lines" -name "*.swift.txt" -exec mv {} "$out/lines/" \;
   echo "$name ($(wc -l < "$COVERAGE_DIR/$name.list" | tr -d ' ') profiles, $(grep -c -i "warning\|error" "$out/merge.log") complaints in merge.log," \
-    "$((SECONDS - began)) s): $(python3 "$ARBOR_ROOT/scripts/coverage-report.py" "$out/coverage.json" | tail -n 1)"
+    "$((SECONDS - began)) s): $(python3 "$ARBOR_ROOT/scripts/coverage-report.py" "$out/export.json" | tail -n 1)"
 }
 
 # MARK: Parts
@@ -217,7 +217,7 @@ step "what the two executed"
 tables e2e e2e
 tables drag drag
 tables both e2e drag || die "no tables"
-measured="$COVERAGE_OUT/e2e/coverage.json $COVERAGE_OUT/drag/coverage.json $COVERAGE_OUT/both/coverage.json"
+measured="$COVERAGE_OUT/e2e/export.json $COVERAGE_OUT/drag/export.json $COVERAGE_OUT/both/export.json"
 
 # MARK: What one session nearer to a person's would add
 
@@ -232,8 +232,8 @@ if [ $((COVERAGE_LAST_CALL - SECONDS)) -ge 150 ]; then
     echo "no time left for proof.sh ($SECONDS s so far)"
   fi
   step "what that adds"
-  tables session session
-  tables with-session e2e drag session && measured="$measured $COVERAGE_OUT/with-session/coverage.json"
+  tables session session && measured="$measured $COVERAGE_OUT/session/export.json"
+  tables with-session e2e drag session && measured="$measured $COVERAGE_OUT/with-session/export.json"
 else
   echo "no time left for a session nearer to a person's ($SECONDS s so far)"
 fi

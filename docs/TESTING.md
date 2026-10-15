@@ -1156,7 +1156,7 @@ No test can run `Sources/ArborKit/{AX,UI,Input,App}`. What runs that code withou
 
 ```bash
 scripts/mac-shell/run.sh scripts/mac-shell/coverage.sh                                  # seven minutes on the Mac; with the queue give it 45
-scripts/coverage-report.py .mac-shell/coverage-<run id>/coverage/both/coverage.json     # the tables again, from what came back
+scripts/coverage-report.py .mac-shell/coverage-<run id>/coverage/both/export.json       # the tables again, from what came back
 ```
 
 The script builds everything with the compiler's coverage instrumentation, runs the two checks unchanged, as CI does, collects a profile from every Arbor they
@@ -1171,10 +1171,12 @@ one such session would add to CI. The measurements, each a folder in `coverage/`
 
 **Reading it.** `report.txt` (`report.md` is the same as tables for a pull request) has every measurement side by side, per folder and per file, the file with the most lines that never ran first, and closes with
 `real-window coverage: X of Y lines (Z %) of the macOS-only code; N functions never run`. In each folder, `functions.txt` names the functions that never ran, with the largest of all at its end: start
-there. `lines/<file>.txt` is the source with a count before each line, and `0` marks a line nothing reached. `summary.txt` is `llvm-cov`'s own table. `processes.txt` says how many Arbors ran and whether each left a profile.
+there. `lines/<file>.txt` is the source with a count before each line, and `0` marks a line nothing reached. `processes.txt` says how many Arbors ran and whether each left a profile.
 
 - **The lines are `llvm-cov`'s, not a person's.** A line counts if it lies in the body of a function, a closure or an initial value, comments and blank lines in there included; imports,
   declarations and the comments between functions count nowhere. So Y is not the number of lines in the files.
+- **Each line once.** `llvm-cov`'s own tables (`summary.txt`, `coverage.json`) add up what each function has, so that a line in a closure counts again for every function around it: 903 "lines" in a
+  SwiftUI file of 393. `coverage-report.py` counts from the export's segments, by the rule `llvm-cov show` goes by. Quote its numbers, not `summary.txt`'s.
 - **A line ran if any part of it did.** In `guard let x else { return }` the `return` hides behind the `guard`. Regions tell them apart: "never entered" is the nearest thing to branches, which Swift's
   compiler does not record.
 - **Every closure is a function**, the hidden one to the right of `&&`, `||` and `??` too, so N is larger than the number of `func`s that never ran.

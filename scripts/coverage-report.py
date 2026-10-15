@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Says how much of the macOS-only code the real-window checks executed, from what scripts/mac-shell/coverage.sh brought back.
 
-  coverage-report.py <coverage.json…> [--markdown FILE]   the table per folder and per file, and one closing line
-  coverage-report.py --functions <export.json>            per file the functions that never ran, then the largest of them all
+  coverage-report.py <export.json…> [--markdown FILE]   the table per folder and per file, and one closing line
+  coverage-report.py --functions <export.json>          per file the functions that never ran, then the largest of them all
   coverage-report.py --self-test
 
-A coverage.json is what `llvm-cov export -summary-only` prints; an export.json is the same without `-summary-only`, which also
-lists every function. A measurement is called after its folder: mac-shell/coverage/both/coverage.json is `both`.
+An export.json is what `llvm-cov export` prints. A measurement is called after its folder: mac-shell/coverage/both/export.json is `both`.
+What `llvm-cov export -summary-only` prints (coverage.json) is read too, but its lines are not to be trusted, and the report says so: see below.
 
 With several files the tables show what each measurement executed, side by side. They are sorted by the LAST one, and the columns that
 can be given only once (not executed, functions never run, regions never entered) and the closing line are the last one's. So
@@ -15,9 +15,12 @@ name the widest measurement last.
 The macOS-only code is Sources/ArborKit/AX, UI, Input and App: what Package.swift leaves out everywhere but on a Mac. Other folders in the
 files (IPC, which Linux builds and tests as well) get their rows and stay out of the sum.
 
-How llvm-cov counts, which is not how a person counts lines:
+What is counted, which is not how a person counts lines:
   - a line is one that lies in the body of a function, a closure or an initial value. Comments and blank lines in a body count, and
     go with the code around them. Imports, declarations without a body and comments between functions do not count at all;
+  - each line once. llvm-cov's own tables (summary.txt, coverage.json) add up what each function has, so there a line in a closure counts again
+    for every function around it: 903 "lines" in a SwiftUI file of 393. Here they are counted from the export's segments, by the
+    rule `llvm-cov show` goes by, so the numbers are those of lines/<file>.txt;
   - a line was executed if any part of it was: in `guard let x else { return }` the `return` hides behind the `guard`;
   - a region is a stretch of code that runs as one, so it does tell the two apart. Swift's compiler records no branches:
     regions never entered are the nearest thing;
@@ -71,21 +74,51 @@ def read(path):
         raise Unreadable(f"{path} is no export of llvm-cov's: {problem}") from problem
 
 
+def lines_of(segments):
+    """(lines that count, lines that ran), as LineCoverageStats in LLVM's CoverageMapping.cpp has it.
+
+    A segment is [line, column, count, has a count, begins a region, is a gap]: from there to the next segment the code ran so often."""
+    mapped = ran = index = 0
+    wrapped = None
+    if not segments:
+        return 0, 0
+    for line in range(segments[0][0], segments[-1][0] + 1):
+        here = []
+        while index < len(segments) and segments[index][0] == line:
+            here.append(segments[index])
+            index += 1
+        starts = [segment[2] for segment in here if segment[3] and segment[4] and not segment[5]]
+        skipped = bool(here) and not here[0][3] and here[0][4]
+        counts = (not skipped and ((wrapped is not None and wrapped[3]) or bool(starts))) or any(segment[3] and segment[4] for segment in here)
+        if counts:
+            mapped += 1
+            if max(starts + [wrapped[2] if wrapped is not None else 0]) > 0:
+                ran += 1
+        if here:
+            wrapped = here[-1]
+    return mapped, ran
+
+
 class Count:
     """Lines, functions and regions: how many there are and how many ran."""
 
     KINDS = ("lines", "functions", "regions")
 
-    def __init__(self, summary=None):
+    def __init__(self, summary=None, segments=None):
         for kind in self.KINDS:
             numbers = (summary or {}).get(kind, {})
             setattr(self, kind, numbers.get("count", 0))
             setattr(self, kind + "_run", numbers.get("covered", 0))
+        # Whether a line was counted more than once.
+        self.summed = summary is not None and segments is None
+        if segments is not None:
+            self.lines, self.lines_run = lines_of(segments)
 
     def add(self, other):
         for kind in self.KINDS:
             for name in (kind, kind + "_run"):
                 setattr(self, name, getattr(self, name) + getattr(other, name))
+        self.summed = self.summed or other.summed
 
     @property
     def percent(self):
@@ -95,7 +128,7 @@ class Count:
 def measure(data):
     """{file: Count}"""
     try:
-        return {short(entry["filename"]): Count(entry["summary"]) for entry in data["files"]}
+        return {short(entry["filename"]): Count(entry["summary"], entry.get("segments")) for entry in data["files"]}
     except (KeyError, TypeError) as problem:
         raise Unreadable(f"an export without {problem}") from problem
 
@@ -169,6 +202,8 @@ def report(measurements, labels, draw):
     lines.append("")
     lines += draw(heading("file", labels), rows(measurements, lambda name: name))
     lines.append("")
+    if any(count.summed for measurement in measurements for count in measurement.values()):
+        lines += ["From a summary: a line in a closure is counted again for every function around it. Give the export.json for lines counted once.", ""]
     lines.append(closing(measurements[-1]))
     return lines
 
@@ -253,7 +288,17 @@ def self_test():
     expect("a file the earlier measurement lacks counts as nothing executed",
            rows([{}, wide], lambda name: name)[0][:4], ["Sources/ArborKit/AX/Windows.swift", 100, 0, 50])
     expect("markdown has as many cells in every row", len({line.count("|") for line in markdown(heading("file", ["a"]), rows([wide], str))}), 1)
-    expect("a measurement is called after its folder", label_of("mac-shell/coverage/both/coverage.json"), "both")
+    expect("a summary's lines come with a warning", any(line.startswith("From a summary") for line in one), True)
+    # Line 10 `func f() {`, 11 `guard x else {`, 12 `return`, 13 `}`, 14 `later {`, 15 `g()`, 16 `}`, 17 `}`: f ran, the guard held, the closure never ran.
+    segments = [[10, 10, 1, True, True, False], [11, 16, 0, True, True, False], [13, 4, 1, True, False, False],
+                [14, 9, 0, True, True, False], [16, 4, 1, True, False, False], [17, 2, 0, False, False, False]]
+    expect("lines from segments: a line ran if any part of it did", lines_of(segments), (8, 4))
+    expect("no segments, no lines", lines_of([]), (0, 0))
+    once = measure({"files": [{"filename": "Sources/ArborKit/UI/View.swift", "summary": summary(11, 4, 2, 1, 4, 2), "segments": segments}]})
+    expect("an export's lines are counted once, whatever its summary adds up", closing(once),
+           "real-window coverage: 4 of 8 lines (50.0 %) of the macOS-only code; 1 functions never run")
+    expect("and come without the warning", any(line.startswith("From a summary") for line in report([once], ["both"], plain)), False)
+    expect("a measurement is called after its folder", label_of("mac-shell/coverage/both/export.json"), "both")
     expect("or after its file", label_of("somewhere/e2e.json"), "e2e")
     expect("the folder of a file", folder_of("/x/Sources/ArborKit/AX/AXHelpers.swift"), "ArborKit/AX")
     expect("the folder of a file right under its target", folder_of("/x/Sources/Arbor/main.swift"), "Arbor")
