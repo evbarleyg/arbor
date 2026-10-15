@@ -253,8 +253,13 @@ public final class Controller {
   /// The shortcuts the app has registered with macOS: the ones menus, tooltips and `doctor` go by.
   /// Nil until the app has said, and in tests; then the ones the settings describe stand in.
   public var registeredBindings: [KeyBinding]?
-  /// The shortcuts macOS would not let the app register, the last time it asked (another app holds them).
+  /// The shortcuts macOS would not let the app register, the last time it asked.
   public var refusedBindings: [KeyBinding] = []
+  /// `ARBOR_NO_HOTKEYS`: whoever started Arbor wants it to hold no shortcut. The app says so before the first `start()`.
+  public var shortcutsAreDisabled = false
+  /// What the app was last given to register and what the log was last told of it (Controller+KeysHeld.swift).
+  var shortcutsLastAsked: (bindings: [KeyBinding], problems: [String], isNews: Bool)?
+  var shortcutRefusalsSaid: [String] = []
   /// Reads what only macOS knows, for `doctor` and the welcome window (Controller+Doctor.swift).
   public var systemFacts: (() -> SystemFacts)?
   /// The name of an installed app, from its bundle id, for an app that has no window open to ask (Controller+Menu.swift).

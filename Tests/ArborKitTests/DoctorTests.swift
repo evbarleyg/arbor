@@ -40,6 +40,7 @@ import Testing
         ✔ Input sources: 1
         ✔ Gestures: pinch, scroll, rectangle
         ✔ Shortcuts: \(KeyBindings.defaults.count) registered
+            macOS does not tell Arbor when another program has registered the same key: then both get it, or the other alone
         ✔ Keyboard layout: US
         ✔ settings.json: no problems
         ✔ Displays: 1 (1440×900 main)
@@ -346,16 +347,24 @@ import Testing
     #expect(check(h, "Shortcuts")?.mark == .problem)
     #expect(
       check(h, "Shortcuts")?.detail
-        == "\(KeyBindings.defaults.count - 2) registered; macOS refused ⌃⌥Space ⌃⌥A (another app may hold them)")
+        == "\(KeyBindings.defaults.count - 2) registered; macOS refused ⌃⌥Space ⌃⌥A, which Arbor so does not hear")
   }
 
   /// Arbor itself asks for fewer shortcuts, or for other keys, than the settings describe: during a pause, in an app
-  /// that keeps its own ⌃⌥ (F41), on another keyboard layout (F44). None of that is a refusal.
+  /// that keeps its own ⌃⌥ (F41), on another keyboard layout (F44). None of that is a refusal. What it does ask for and does
+  /// not hold is another matter (`KeysHeldTests`): this test used to give a running Arbor that held nothing a tick.
   @Test func shortcutsArborDidNotAskForWereNotRefused() {
     let h = makeHarness()
-    h.controller.registeredBindings = Array(KeyBindings.defaults.prefix(3))
-    #expect(check(h, "Shortcuts") == .init(mark: .ok, title: "Shortcuts", detail: "3 registered"))
-    h.controller.registeredBindings = []
+    h.run("pause")
+    let paused = h.controller.activeBindings
+    #expect(paused.count < KeyBindings.defaults.count)
+    h.controller.registeredBindings = paused
+    #expect(check(h, "Shortcuts")?.mark == .ok)
+    #expect(check(h, "Shortcuts")?.detail == "\(paused.count) registered while Arbor is paused")
+    h.run("resume")
+    h.controller.keyboardLayoutChanged(SampleKeyLayouts.german)
+    h.controller.registeredBindings = h.controller.activeBindings
+    #expect(h.controller.activeBindings != KeyBindings.defaults, "other keys")
     #expect(check(h, "Shortcuts")?.mark == .ok)
     #expect(h.run("doctor").ok)
   }
@@ -597,6 +606,8 @@ import Testing
     session.go(to: .permissions)
     #expect(session.model.title == "Arbor is paused")
     h.run("resume")
+    // As the app does when it hears of it. Left at the pause's one key, the window would rightly say that the others are not Arbor's.
+    h.controller.registeredBindings = KeyBindings.defaults
     session.refresh()
     #expect(session.model.title == "Arbor is ready")
   }

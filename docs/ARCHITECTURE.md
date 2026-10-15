@@ -1296,9 +1296,23 @@ text, and `KeyBindings.effective(settings:)` applies it over the defaults,
 returning the entries it had to skip and why. `ArborApp` registers the result
 with Carbon (`HotKeyCenter`) at start and again whenever
 `Controller.apply(settings:)` runs (`onSettingsApplied`), which is how
-`reload-settings` picks up edits. `ArborApp` tells the controller which ones
-registered (`registeredBindings`); menus, tooltips, the welcome window and `doctor` go
-by that, and the `bindings` query prints the effective table.
+`reload-settings` picks up edits.
+
+**Who decides what.** The app only talks to macOS. Whenever it hears that the answer may have changed it asks
+`Controller.shortcutsToRegister()` (nil: nothing to do), hands the list to `HotKeyCenter.register`, and reports with
+`shortcutsWereRegistered` (Controller+KeysHeld.swift), which sets `registeredBindings` and `refusedBindings` and writes the log's
+"registered N shortcuts" line: at every change of what is held for good, also at none. `HotKeyCenter` in turn is a shell around
+`HotKeyTable`, a value that gets macOS as two closures and so runs in tests against `FakeHotKeyServer`; `FakeHotKeys`
+(ArborTesting) is the app's part with both. The table applies a difference (`HotKeyChanges`): **a key that stays wanted is never let go
+of**, keeps its number, so that its release is still heard, and only has its command swapped. All off and all on, as it was, gave every key to the app
+in front for two to three milliseconds at every pause, settings change and change of layout. What a peek added for the time
+being outlives a registration. What macOS refused, or would not take back, is tried again at every occasion, alone.
+
+**Whose a key is.** `KeysHeld` says of each key of the map in effect: held, handed over (Arbor does not ask for it now, and
+`whyKeysAreTheApps` has the words), refused, or missing (wanted, and macOS was not asked or Arbor cannot listen). `bindings` marks each line that is not Arbor's at
+that moment; `doctor`, Check Setup (the row `lostShortcuts`) and the log say what is refused or missing; menus, tooltips and the welcome
+window go by `registeredBindings`. **What it cannot know:** on macOS 26 `RegisterEventHotKey` said yes whoever else held the key. A second program
+on the same key hears it as well, one that asked for it exclusively hears it alone, and nothing tells Arbor. "Held" means that macOS said yes.
 
 ## The menu bar item, the welcome window and `doctor`
 
@@ -1327,9 +1341,10 @@ All three show state, so each is a headless model that the app only draws.
   the permission is missing and once more in a lifetime: after the first start `ArborApp` asks `Controller.pageToWelcomeOn()`, which answers nil
   once `noteWelcomed()` has been called, now or at an earlier launch (`welcomed` in `state.json`). The flag is written only while Arbor runs: before
   `start()` the controller has not read what it saved, and would write an empty arrangement over it.
-- **`doctor`** is `Controller.doctorReport()`: the same facts plus the settings, the shortcuts and the displays. It calls a shortcut
-  refused only if macOS refused it when the app asked (`refusedBindings`), and misses a gesture's event tap only if `inputSettings` wants
-  it, so a pause, or anything else that makes Arbor hold less than the settings describe, is not a problem.
+- **`doctor`** is `Controller.doctorReport()`: the same facts plus the settings, the shortcuts and the displays. It holds what the app
+  has registered against what Arbor wants to hold now (`KeysHeld`), not against what the settings describe, and misses a gesture's event tap only if
+  `inputSettings` wants it, so a pause, or anything else that makes Arbor want less, is not a problem. A key that Arbor wants and does not hold is one,
+  and an Arbor most of whose keys are the apps' gets the reason instead of a tick.
 - **The icon.** `ArborGlyph` (ArborCore) is the mark's geometry. `ArborArtwork` draws it for the menu bar and for Arbor's
   own windows; `scripts/make-icon.swift` repeats it to draw `Arbor.icns` when `scripts/bundle.sh` runs.
 

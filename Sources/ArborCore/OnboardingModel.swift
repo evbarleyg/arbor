@@ -73,6 +73,7 @@ public struct OnboardingModel: Equatable, Sendable {
   public struct Row: Equatable, Sendable, Identifiable {
     public enum ID: String, Sendable, CaseIterable {
       case accessibility, screenRecording, desktopAndDock, competingApps, voiceOver, inputSources, ownShortcuts
+      case lostShortcuts
     }
 
     public enum State: Sendable {
@@ -171,13 +172,14 @@ public struct OnboardingModel: Equatable, Sendable {
   ///     with them are left out.
   public init(
     _ facts: SystemFacts, flow: OnboardingFlow? = nil, windowsOutOfView: Int = 0, offersScreenRecording: Bool = false,
-    appsWithOwnShortcuts: [String] = [], isPaused: Bool = false, shortcut: (Command) -> String? = { _ in nil }
+    appsWithOwnShortcuts: [String] = [], isPaused: Bool = false, lostShortcuts: [String] = [],
+    shortcut: (Command) -> String? = { _ in nil }
   ) {
     let flow = flow ?? OnboardingFlow(isReady: facts.accessibility)
     page = flow.page
     rows = Self.rows(
       facts, windowsOutOfView: windowsOutOfView, offersScreenRecording: offersScreenRecording,
-      appsWithOwnShortcuts: appsWithOwnShortcuts, shortcut: shortcut)
+      appsWithOwnShortcuts: appsWithOwnShortcuts, lostShortcuts: lostShortcuts, shortcut: shortcut)
     steps = Self.steps(flow.steps, shortcut: shortcut)
     opensAtLogin = facts.opensAtLogin
     loginTitle = "Open at Login"
@@ -240,7 +242,7 @@ public struct OnboardingModel: Equatable, Sendable {
 
   private static func rows(
     _ facts: SystemFacts, windowsOutOfView: Int, offersScreenRecording: Bool, appsWithOwnShortcuts apps: [String],
-    shortcut: (Command) -> String?
+    lostShortcuts lost: [String], shortcut: (Command) -> String?
   ) -> [Row] {
     let settings = "Open Settings…"
     let stranded =
@@ -316,6 +318,18 @@ public struct OnboardingModel: Equatable, Sendable {
           state: .note, status: "Shares its keys",
           detail: "Arbor’s shortcuts come first, in every app. To give the keys back in \(several ? "one of them" : "it"), "
             + "bring it to the front and choose Shortcuts Off in “App” in Arbor’s menu.",
+          button: nil))
+    }
+    if !lost.isEmpty {
+      let several = lost.count > 1
+      rows.append(
+        Row(
+          id: .lostShortcuts,
+          title: (lost.count > 3 ? "\(lost.count) shortcuts" : sentenceList(lost)) + " \(several ? "are" : "is") not Arbor’s",
+          importance: "Best changed", state: .recommended, status: "Not registered",
+          detail: "Arbor does not hear \(several ? "them" : "it"), so what you press there goes elsewhere, most likely to the app in "
+            + "front, which may have a use of its own for it. Quit Arbor and open it again. If that does not help, give the "
+            + "command\(several ? "s" : "") another shortcut under Settings → Shortcuts.",
           button: nil))
     }
     return rows.map { row in

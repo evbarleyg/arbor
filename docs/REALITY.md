@@ -58,7 +58,7 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [missing-report](#missing-report) | 40 | 7 | 12 | 6 | 4 | 18 | 21 | 1 | 4 | 14 | 10 |
 | [extra-report](#extra-report) | 8 | 0 | 3 | 3 | 0 | 2 | 6 | 0 | 0 | 2 | 0 |
 | [late-or-partial-answer](#late-or-partial-answer) | 43 | 8 | 10 | 14 | 6 | 13 | 27 | 0 | 5 | 11 | 13 |
-| [second-actor](#second-actor) | 44 | 6 | 12 | 16 | 9 | 7 | 26 | 0 | 4 | 14 | 8 |
+| [second-actor](#second-actor) | 44 | 6 | 12 | 17 | 8 | 7 | 27 | 0 | 4 | 13 | 7 |
 | [geometry](#geometry) | 29 | 1 | 7 | 12 | 8 | 2 | 16 | 1 | 2 | 10 | 7 |
 | [identity](#identity) | 28 | 4 | 6 | 5 | 6 | 11 | 11 | 1 | 2 | 14 | 7 |
 | [permissions](#permissions) | 22 | 8 | 6 | 3 | 3 | 10 | 11 | 2 | 2 | 7 | 4 |
@@ -67,13 +67,13 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [looks](#looks) | 18 | 0 | 0 | 0 | 1 | 17 | 1 | 2 | 3 | 12 | 4 |
 | [never-exercised](#never-exercised) | 16 | 7 | 2 | 13 | 0 | 1 | 0 | 0 | 15 | 1 | 16 |
 | [toolchain](#toolchain) | 41 | 1 | 0 | 1 | 4 | 36 | 23 | 1 | 0 | 17 | 6 |
-| **all** | 422 | 59 | 80 | 109 | 67 | 166 | 204 | 19 | 53 | 146 | 99 |
+| **all** | 422 | 59 | 80 | 110 | 66 | 166 | 205 | 19 | 53 | 145 | 98 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
-| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 137 | 88 | 41 | 13 | 32 | 51 |
+| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 137 | 88 | 42 | 13 | 32 | 50 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 146 | 91 | 108 | 0 | 10 | 28 |
 | controller | in the controller or the core, given reports that were right | 25 | 13 | 13 | 0 | 1 | 11 |
 | test | in a test, a script or a harness that expected the wrong thing | 74 | 0 | 19 | 5 | 8 | 42 |
@@ -111,7 +111,6 @@ A fault that is known and open.
 | [arbor-stopped-swallows-its-keys-and-runs-them-all-at-once-when-woken](#arbor-stopped-swallows-its-keys-and-runs-them-all-at-once-when-woken) | 2 | below the seam | no | not guarded |
 | [behind-a-locked-screen-arbor-takes-no-window](#behind-a-locked-screen-arbor-takes-no-window) | 2 | below the seam | cannot | not guarded |
 | [docking-into-a-slot-too-small-took-seven-to-twelve-seconds](#docking-into-a-slot-too-small-took-seven-to-twelve-seconds) | 2 | at the seam | no | not guarded |
-| [macos-never-refused-a-shortcut-that-another-process-holds](#macos-never-refused-a-shortcut-that-another-process-holds) | 2 | below the seam | no | not guarded |
 | [real-apps-are-reported-gone-before-their-sibling-has-the-keyboard](#real-apps-are-reported-gone-before-their-sibling-has-the-keyboard) | 2 | at the seam | no | not guarded |
 | [the-key-that-fills-the-screen-pressed-again-fills-it-with-another-apps-window](#the-key-that-fills-the-screen-pressed-again-fills-it-with-another-apps-window) | 2 | controller | partly | not guarded |
 | [the-second-click-of-a-double-click-lands-in-the-window-just-framed](#the-second-click-of-a-double-click-lands-in-the-window-just-framed) | 2 | below the seam | partly | not guarded |
@@ -198,7 +197,6 @@ So no test on Linux can meet it. (Those they play partly are not listed: see eac
 | [app-nap-delays-an-accessory-apps-timers](#app-nap-delays-an-accessory-apps-timers) | 2 | at the seam | no | not guarded |
 | [arbor-stopped-swallows-its-keys-and-runs-them-all-at-once-when-woken](#arbor-stopped-swallows-its-keys-and-runs-them-all-at-once-when-woken) | 2 | below the seam | no | not guarded |
 | [docking-into-a-slot-too-small-took-seven-to-twelve-seconds](#docking-into-a-slot-too-small-took-seven-to-twelve-seconds) | 2 | at the seam | no | not guarded |
-| [macos-never-refused-a-shortcut-that-another-process-holds](#macos-never-refused-a-shortcut-that-another-process-holds) | 2 | below the seam | no | not guarded |
 | [real-apps-are-reported-gone-before-their-sibling-has-the-keyboard](#real-apps-are-reported-gone-before-their-sibling-has-the-keyboard) | 2 | at the seam | no | not guarded |
 | [twins-and-displays-without-a-uuid-share-one-name](#twins-and-displays-without-a-uuid-share-one-name) | 2 | at the seam | no | not guarded |
 | [macos-puts-windows-back-on-a-display-that-returns](#macos-puts-windows-back-on-a-display-that-returns) | 2 | at the seam | no | only when somebody starts a script |
@@ -683,9 +681,9 @@ Missing reports: something happens and nobody says so.
 - **Happened:** macOS does not report every key that comes up. Unregistering a shortcut whose key is down loses its release, and a press still on its way when the shortcuts are registered anew would find whichever command took over its number.
 - **Found by:** Stated in the hot key layer's comments and in the tests. A script asks a Mac whether releases are reported at all, with the modifiers down and without.
 - **Stand-ins play it:** yes (`Harness.keyUp`, `FakeWindowSystem.isHolding`, `FakeWindowSystem.hold`, `FakeWindowSystem.letGo`)
-- **Guard:** `test: aReleaseThatIsNeverReportedStillEndsThePeek`; `test: aKeyWhoseReleaseWasNeverReportedStillPausesWhenPressedAgain`
-- **Arbor copes:** HotKeyCenter.setTemporary puts temporary shortcuts on top of the others and no identifier is used twice; a peek asks `isHolding` itself.
-- **Read in:** `Sources/ArborKit/Input/HotKeyCenter.swift`, `Sources/ArborKit/Platform/WindowSystem.swift`, `Tests/ArborKitTests/HoldTests.swift`, `Sources/ArborTesting/Harness.swift`
+- **Guard:** `test: aReleaseThatIsNeverReportedStillEndsThePeek`; `test: aKeyWhoseReleaseWasNeverReportedStillPausesWhenPressedAgain`; `test: aKeyThatStaysKeepsItsNumberAndOneThatComesBackGetsANewOne`; `test: aRegistrationInTheMiddleOfAPeekLeavesThemAlone`
+- **Arbor copes:** HotKeyTable.hold lets go only of what is no longer wanted, so a key that is down and stays keeps its number and is heard coming up; HotKeyTable.setTemporary puts temporary shortcuts on top of the others; no number is used twice; a peek asks `isHolding` itself.
+- **Read in:** `Sources/ArborKit/Controller/HotKeyTable.swift`, `Sources/ArborKit/Input/HotKeyCenter.swift`, `Sources/ArborKit/Platform/WindowSystem.swift`, `Tests/ArborKitTests/HoldTests.swift`, `Sources/ArborTesting/Harness.swift`
 
 ### a-window-can-close-without-a-notice
 
@@ -1882,10 +1880,10 @@ A second actor: macOS, an app or another tool moves things too.
 - **Expected:** `RegisterEventHotKey` fails for a shortcut that another app already holds, so a refusal tells Arbor which keys are not its own: `HotKeyCenter.register` logs "shortcuts already in use by another app", and `doctor` names them. A hot key that is registered "swallows the key press so the frontmost app never sees it". This case said the first for as long as it stood, from the code's own words; no run was named.
 - **Happened:** On the one Mac that was asked `RegisterEventHotKey` never refused: it answered 0 to Arbor and to the other, in both orders, plain and exclusive. **Another process holds the chord, plain:** both hear every press; the app in front gets nothing. **Another process holds it with `kEventHotKeyExclusive`:** only that process hears, whoever came first. Arbor logs "registered 52 shortcuts" and `doctor` says "✔ Shortcuts: 52 registered": Arbor does not know that the key is not its own. **The app in front has a Carbon hot key of its own on the chord** (what Electron's `globalShortcut` is said to be): both ran, whoever registered first. **What a held key does keep from the app:** a menu item with the chord did not run, and a local and a global monitor in the app heard nothing. A listen-only event tap at the session level heard the key go down. So the road that Arbor is built for, the refusal, was never taken, and the two it has no eye for were: a key that is shared, and a key that is lost without a word. **On the first build's own binary too**, by a second probe: a rival with the same 52 hot keys, registered after Arbor and, in another session, before it, was refused none of 52, nor was Arbor; both heard every one of 51 keys, no app got any, and Arbor noticed nothing.
 - **Found by:** Stated in the input layer's code until 2026-10-15. Then a probe that is not on the trunk yet, one run on a hosted Mac (macOS 26.6.2; the trunk's Arbor as an app bundle that answers for its own permission, its input code the first build's, file for file; a witness app in front that writes down every key it is given; ten controls, all passed), in search of how a key of Arbor's reached another app (a-key-arbor-does-not-hold-at-the-moment-reaches-the-app-in-front); each order once. Then a second probe that is not on the trunk yet, by another session, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line. Every key was a posted event: no finger, no real keyboard.
-- **Stand-ins play it:** **no**
-- **Guard:** **none**
-- **Arbor copes:** **not yet**
-- **Read in:** `Sources/ArborKit/Input/HotKeyCenter.swift`, `Sources/ArborKit/App/ArborApp.swift`, `Sources/arbor-fakemac/World+Arbor.swift`, `Sources/ArborKit/Controller/Controller+Doctor.swift`, `Tests/ArborKitTests/DoctorTests.swift`
+- **Stand-ins play it:** partly (`FakeHotKeyServer.refuses`, `FakeHotKeyServer.keeps`)
+- **Guard:** `test: withEveryKeyHeldNothingIsSaidAnywhere`; `test: aKeyThatMacOSRefusedIsSaidEverywhere`; `test: aRefusalIsLoggedWithItsNumberOnceAndTriedAgainInSilenceUntilItGoesOtherwise`
+- **Arbor copes:** KeysHeld says that held means macOS said yes, and no more, and `doctor` says so under its tick: as to a second holder this is open, nothing tells Arbor. The words no longer guess: "already in use by another app" is gone, the log has macOS's number and no reason. A refusal, should one come, is named by `bindings`, `doctor`, Check Setup and the log and tried again alone (HotKeyTable.hold, Controller.shortcutsWereRegistered).
+- **Read in:** `Sources/ArborKit/Input/HotKeyCenter.swift`, `Sources/ArborKit/Controller/HotKeyTable.swift`, `Sources/ArborKit/Controller/KeysHeld.swift`, `Sources/ArborKit/Controller/Controller+Doctor.swift`, `Sources/ArborTesting/FakeHotKeys.swift`
 
 ### macos-puts-windows-back-on-a-display-that-returns
 

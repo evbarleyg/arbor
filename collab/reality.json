@@ -1073,14 +1073,17 @@
    ],
    "guards": [
     "test: aReleaseThatIsNeverReportedStillEndsThePeek",
-    "test: aKeyWhoseReleaseWasNeverReportedStillPausesWhenPressedAgain"
+    "test: aKeyWhoseReleaseWasNeverReportedStillPausesWhenPressedAgain",
+    "test: aKeyThatStaysKeepsItsNumberAndOneThatComesBackGetsANewOne",
+    "test: aRegistrationInTheMiddleOfAPeekLeavesThemAlone"
    ],
-   "copes": "HotKeyCenter.setTemporary puts temporary shortcuts on top of the others and no identifier is used twice; a peek asks `isHolding` itself.",
+   "copes": "HotKeyTable.hold lets go only of what is no longer wanted, so a key that is down and stays keeps its number and is heard coming up; HotKeyTable.setTemporary puts temporary shortcuts on top of the others; no number is used twice; a peek asks `isHolding` itself.",
    "hurt": 2,
    "touches": [
     "moved-unasked"
    ],
    "sources": [
+    "Sources/ArborKit/Controller/HotKeyTable.swift",
     "Sources/ArborKit/Input/HotKeyCenter.swift",
     "Sources/ArborKit/Platform/WindowSystem.swift",
     "Tests/ArborKitTests/HoldTests.swift",
@@ -3891,17 +3894,24 @@
    "expected": "`RegisterEventHotKey` fails for a shortcut that another app already holds, so a refusal tells Arbor which keys are not its own: `HotKeyCenter.register` logs \"shortcuts already in use by another app\", and `doctor` names them. A hot key that is registered \"swallows the key press so the frontmost app never sees it\". This case said the first for as long as it stood, from the code's own words; no run was named.",
    "happened": "On the one Mac that was asked `RegisterEventHotKey` never refused: it answered 0 to Arbor and to the other, in both orders, plain and exclusive. **Another process holds the chord, plain:** both hear every press; the app in front gets nothing. **Another process holds it with `kEventHotKeyExclusive`:** only that process hears, whoever came first. Arbor logs \"registered 52 shortcuts\" and `doctor` says \"✔ Shortcuts: 52 registered\": Arbor does not know that the key is not its own. **The app in front has a Carbon hot key of its own on the chord** (what Electron's `globalShortcut` is said to be): both ran, whoever registered first. **What a held key does keep from the app:** a menu item with the chord did not run, and a local and a global monitor in the app heard nothing. A listen-only event tap at the session level heard the key go down. So the road that Arbor is built for, the refusal, was never taken, and the two it has no eye for were: a key that is shared, and a key that is lost without a word. **On the first build's own binary too**, by a second probe: a rival with the same 52 hot keys, registered after Arbor and, in another session, before it, was refused none of 52, nor was Arbor; both heard every one of 51 keys, no app got any, and Arbor noticed nothing.",
    "found": "Stated in the input layer's code until 2026-10-15. Then a probe that is not on the trunk yet, one run on a hosted Mac (macOS 26.6.2; the trunk's Arbor as an app bundle that answers for its own permission, its input code the first build's, file for file; a witness app in front that writes down every key it is given; ten controls, all passed), in search of how a key of Arbor's reached another app (a-key-arbor-does-not-hold-at-the-moment-reaches-the-app-in-front); each order once. Then a second probe that is not on the trunk yet, by another session, one run on a hosted Mac (macOS 26.6.2) on the first build itself, its commit and the probe and nothing else: an app in front and a listener in the background with ears of every kind, taps at three points, monitors, a menu, a view, and Arbor's own log counted line by line. Every key was a posted event: no finger, no real keyboard.",
-   "modelled": "no",
-   "knobs": [],
-   "guards": [],
-   "copes": "open",
+   "modelled": "partly",
+   "knobs": [
+    "FakeHotKeyServer.refuses",
+    "FakeHotKeyServer.keeps"
+   ],
+   "guards": [
+    "test: withEveryKeyHeldNothingIsSaidAnywhere",
+    "test: aKeyThatMacOSRefusedIsSaidEverywhere",
+    "test: aRefusalIsLoggedWithItsNumberOnceAndTriedAgainInSilenceUntilItGoesOtherwise"
+   ],
+   "copes": "KeysHeld says that held means macOS said yes, and no more, and `doctor` says so under its tick: as to a second holder this is open, nothing tells Arbor. The words no longer guess: \"already in use by another app\" is gone, the log has macOS's number and no reason. A refusal, should one come, is named by `bindings`, `doctor`, Check Setup and the log and tried again alone (HotKeyTable.hold, Controller.shortcutsWereRegistered).",
    "hurt": 2,
    "sources": [
     "Sources/ArborKit/Input/HotKeyCenter.swift",
-    "Sources/ArborKit/App/ArborApp.swift",
-    "Sources/arbor-fakemac/World+Arbor.swift",
+    "Sources/ArborKit/Controller/HotKeyTable.swift",
+    "Sources/ArborKit/Controller/KeysHeld.swift",
     "Sources/ArborKit/Controller/Controller+Doctor.swift",
-    "Tests/ArborKitTests/DoctorTests.swift"
+    "Sources/ArborTesting/FakeHotKeys.swift"
    ]
   },
   {

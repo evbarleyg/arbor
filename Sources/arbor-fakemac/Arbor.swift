@@ -23,11 +23,8 @@ final class Arbor {
   var savesSeen = 0
 
   // ArborApp
-  var activeBindings: [KeyBinding] = [] {
-    // As `ArborApp` does: the menu, tooltips and `doctor` go by what is registered.
-    didSet { controller.registeredBindings = activeBindings }
-  }
-  var lastBindings: (bindings: [KeyBinding], problems: [String])?
+  /// What `HotKeyCenter` holds: the menu, tooltips and `doctor` go by it too.
+  var activeBindings: [KeyBinding] { controller.registeredBindings ?? [] }
 
   // PointerInput, GestureTap and RectangleFramer
   /// ArborApp makes its `PointerInput` once the controller has started, unless ARBOR_NO_HOTKEYS is set.
@@ -60,6 +57,7 @@ final class Arbor {
       system: WatchedSystem(world: world), overlays: overlays, store: store, scheduler: scheduler,
       settings: settings,
       filter: WindowFilter(onlyPIDs: onlyPIDs, ownPID: pid))
+    controller.shortcutsAreDisabled = noHotkeys
     // `SystemLoginItem`: only an app in a bundle can be a login item.
     if bundled { controller.loginItem = world.loginItem }
     // The little of `ArborApp.systemFacts()` that this Mac has an answer to.

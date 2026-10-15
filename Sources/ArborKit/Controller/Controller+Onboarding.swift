@@ -14,7 +14,8 @@ extension Controller {
     if guardsDesktopClicks { facts.switches?.removeAll { $0 == .clickWallpaper } }
     facts.accessibility = hasPermission(facts)
     return OnboardingModel(
-      facts, flow: flow, windowsOutOfView: permissionLoss?.windows ?? 0, offersScreenRecording: offersScreenRecording, appsWithOwnShortcuts: passThroughSuggestions.map(\.name), isPaused: isPaused && accessibilityGranted,
+      facts, flow: flow, windowsOutOfView: permissionLoss?.windows ?? 0, offersScreenRecording: offersScreenRecording, appsWithOwnShortcuts: passThroughSuggestions.map(\.name),
+      isPaused: isPaused && accessibilityGranted, lostShortcuts: facts.inputDisabled ? [] : keysHeld.lost.map(\.label),
       shortcut: { KeyBindings.label(for: $0, in: bindings) })
   }
 

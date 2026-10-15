@@ -159,7 +159,8 @@ if on_throwaway_mac; then
   claim "every shortcut in arborctl bindings reaches Arbor"
   proves A03
   click_window "$W1"
-  "$ARBOR_BIN/arborctl" bindings | grep "^[a-z].* → " | sed 's/ *→ */ /' > "$ARBOR_SESSION_DIR/bindings"
+  # A key that is not Arbor's just now says so in brackets at the end of its line.
+  "$ARBOR_BIN/arborctl" bindings | grep "^[a-z].* → " | sed -e 's/  (.*$//' -e 's/ *→ */ /' > "$ARBOR_SESSION_DIR/bindings"
   # Descriptor 4, so that nothing inside the loop can read the list away.
   while read -r chord command <&4; do
     # Paused, Arbor would let go of all the others: 45-pause.sh presses that one.

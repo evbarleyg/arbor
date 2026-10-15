@@ -27,9 +27,9 @@ ax() { "$AXFIND" "$ARBOR_PID" "$@"; }
 shows() { ax point "$@" > /dev/null 2>&1; }
 setting_is() { [ "$("$ARBOR_BIN/arborctl" get "$1")" = "$2" ]; }
 field_is() { [ "$(ax value AXTextField "$1" 2> /dev/null)" = "$2" ]; }
-# runs <shortcut> <command>: whether `bindings` has that line.
+# runs <shortcut> <command>: whether `bindings` has that line, whatever it says in brackets of whose the key is just now.
 runs() {
-  "$ARBOR_BIN/arborctl" bindings | awk -v chord="$1" -v command="$2" '
+  "$ARBOR_BIN/arborctl" bindings | sed 's/  (.*$//' | awk -v chord="$1" -v command="$2" '
     $1 == chord { $1 = ""; $2 = ""; sub(/^ +/, ""); if ($0 == command) found = 1 }
     END { exit !found }'
 }

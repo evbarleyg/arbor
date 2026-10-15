@@ -3,75 +3,78 @@ import Carbon.HIToolbox
 
 /// Registers global shortcuts with Carbon's RegisterEventHotKey, which needs
 /// no extra permission and swallows the key press so the frontmost app never
-/// sees it. It reports each shortcut's key going down and coming up, and decides nothing.
+/// sees it. It reports each shortcut's key going down and coming up, and decides nothing:
+/// which keys to ask macOS for and which to give back is `HotKeyTable`'s business.
+///
+/// What macOS's yes is worth, as seen on macOS 26: it says yes whoever else holds the key. Another program that
+/// registered the same key hears it as well, and one that registered it exclusively hears it alone. Nothing tells Arbor.
 @MainActor
 public final class HotKeyCenter {
   fileprivate static weak var current: HotKeyCenter?
 
   private var handlerRef: EventHandlerRef?
-  private var registered: [UInt32: (ref: EventHotKeyRef, binding: KeyBinding)] = [:]
-  /// The shortcuts `setTemporary` added.
-  private var temporary: [UInt32] = []
-  /// Never used twice, so that the release of a shortcut that has been unregistered meanwhile is nobody's, and a
-  /// press still on its way when the shortcuts are registered anew (another app came to the front) finds
-  /// nothing rather than whichever command took over its number.
-  private var lastIdentifier: UInt32 = 0
+  private var table = HotKeyTable<EventHotKeyRef>()
+  /// What the log was last told about listening, so that trying again does not fill it.
+  private var deafnessSaid: OSStatus = noErr
   private let onKey: (KeyBinding, KeyPhase) -> Void
 
   public init(onKey: @escaping (KeyBinding, KeyPhase) -> Void) {
     self.onKey = onKey
     HotKeyCenter.current = self
+    _ = listen()
+  }
+
+  /// Without a handler a registered shortcut would be taken from every app and heard by nobody. Tried again whenever
+  /// shortcuts are asked for.
+  private func listen() -> Bool {
+    guard handlerRef == nil else { return true }
     let specs = [
       EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed)),
       EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyReleased)),
     ]
     let status = InstallEventHandler(
       GetEventDispatcherTarget(), hotKeyEventHandler, 2, specs, nil, &handlerRef)
-    if status != noErr { Log.error("no shortcut will work: could not listen for hot keys (error \(status))") }
+    if status != noErr { handlerRef = nil }
+    if status != noErr, status != deafnessSaid {
+      Log.error("no shortcut will work: could not listen for hot keys (error \(status))")
+    }
+    deafnessSaid = status
+    return status == noErr
   }
 
-  /// Registers the bindings and returns any that macOS refused.
-  @discardableResult
-  public func register(_ bindings: [KeyBinding]) -> [KeyBinding] {
-    unregisterAll()
-    let failed = bindings.filter { add($0) == nil }
-    if !failed.isEmpty {
-      Log.info("shortcuts already in use by another app: \(failed.map(\.label).joined(separator: " "))")
-    }
-    return failed
+  /// Holds these and, besides, only what `setTemporary` added. Says how it went, or nil if Arbor cannot listen for shortcuts
+  /// and so holds none.
+  public func register(_ bindings: [KeyBinding]) -> HotKeyOutcome? {
+    guard listen() else { return nil }
+    return table.hold(bindings, ask: Self.ask, giveBack: Self.giveBack)
   }
 
   /// Registers these on top of the others, in place of the ones the last call added. The others stay as
   /// they are: unregistering a shortcut whose key is down would lose its release.
   public func setTemporary(_ bindings: [KeyBinding]) {
-    for identifier in temporary { remove(identifier) }
-    temporary = bindings.compactMap { add($0) }
+    guard listen() else { return }
+    let outcome = table.setTemporary(bindings, ask: Self.ask, giveBack: Self.giveBack)
+    let refusals = (outcome.refused + outcome.stuck).map(\.text)
+    if !refusals.isEmpty { Log.error("shortcuts for the time being: macOS said no to \(refusals.joined(separator: ", "))") }
   }
 
   public func unregisterAll() {
-    for entry in registered.values { UnregisterEventHotKey(entry.ref) }
-    registered.removeAll()
-    temporary.removeAll()
+    let stuck = table.giveAllBack(Self.giveBack).stuck.map(\.text)
+    if !stuck.isEmpty { Log.error("macOS would not take shortcuts back: \(stuck.joined(separator: ", "))") }
   }
 
-  private func add(_ binding: KeyBinding) -> UInt32? {
-    lastIdentifier &+= 1
+  private static func ask(_ binding: KeyBinding, _ identifier: UInt32) -> (EventHotKeyRef?, HotKeyOutcome.Status) {
     var ref: EventHotKeyRef?
-    let hotKeyID = EventHotKeyID(signature: OSType(0x4152_424F), id: lastIdentifier)  // 'ARBO'
+    let hotKeyID = EventHotKeyID(signature: OSType(0x4152_424F), id: identifier)  // 'ARBO'
     let status = RegisterEventHotKey(
       binding.keyCode, binding.modifiers.carbonFlags, hotKeyID, GetEventDispatcherTarget(), 0, &ref)
-    guard status == noErr, let ref else { return nil }
-    registered[lastIdentifier] = (ref, binding)
-    return lastIdentifier
+    return (ref, status)
   }
 
-  private func remove(_ identifier: UInt32) {
-    guard let entry = registered.removeValue(forKey: identifier) else { return }
-    UnregisterEventHotKey(entry.ref)
-  }
+  private static func giveBack(_ ref: EventHotKeyRef) -> HotKeyOutcome.Status { UnregisterEventHotKey(ref) }
 
   fileprivate func fire(_ identifier: UInt32, _ phase: KeyPhase) {
-    guard let binding = registered[identifier]?.binding else { return }
+    guard let binding = table.binding(for: identifier) else { return }
     onKey(binding, phase)
   }
 }

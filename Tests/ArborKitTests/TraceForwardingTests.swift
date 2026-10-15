@@ -238,6 +238,9 @@ import Testing
       // What the presenter is told ahead of a motion is said again. No window, view or layout depends on it, and its scheduled work (`rehearsal`)
       // only tells the presenter.
       "rehearseAfresh",
+      // Which shortcuts the app is to hold, and what macOS said. The first asks (`activeBindings`, which follows no hand) and remembers what it
+      // handed out and logged; the second sets what menus, `doctor`, the welcome window and the log go by. No window, view or layout depends on either.
+      "shortcutsToRegister", "shortcutsWereRegistered",
     ]
     /// Everything they do, they do by calling `perform`. A gesture that moves the view by itself (F16) will have to be recorded.
     let endAsCommands: Set = ["gesture"]
