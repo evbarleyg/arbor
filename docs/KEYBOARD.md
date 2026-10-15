@@ -82,7 +82,7 @@ use exactly this key. **reserved**: keep free for that purpose, bound to nothing
 | **⌃⌥** + two fingers sideways; two fingers during a pinch of Arbor's | slide the view | assigned (F16). ⌥ + scroll **alone is never Arbor's**: editors, design tools, timelines and terminals use it, and ⌃⌥ is Arbor, with the pointer too |
 | **⌘** held while dragging a window | do not dock, just move | shipped (F09), **instead of ⌥**; see "Conflicts" |
 
-The first five need an event tap. `pointerGestures` ("Trackpad and mouse gestures" in the settings window) is the one switch above them: off, no tap is installed, whatever their own settings say.
+The first five need an event tap. `pointerGestures` ("Trackpad and mouse gestures" in the settings window) is the one switch above them: off, no tap is installed, whatever their own settings say. **It ships off** (Q26), so none of the five works until it is switched on.
 
 ## Never bind by default
 

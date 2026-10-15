@@ -161,7 +161,7 @@ TrellisWM does, adds a keyboard and a command line for all of it, and is careful
 | **Show Everything shows everything** | Floating windows are out of view only when the Desktop is not part of the view. If the Desktop has become too narrow to use, by a dragged gap or by ⌃⌥A with many windows, they show over the docked windows at their own size | ◐ | #211 |
 | **New windows can dock by themselves** | Dock New Windows (off): a window you open takes half of the one you were working in; dialogs and small windows float; never a tile, never a move of the view | ◐; ○ on a Mac | F23 |
 | **Zoom with a mouse** | ⌃⌥ + scroll steps in and out, a notch a step | ◐; ○ with a real wheel, and beside macOS's own ⌃ + scroll zoom | F55 |
-| **One switch for everything that can hold input back** | Trackpad and mouse gestures (Settings… → Gestures; `arborctl set pointerGestures false`): off, Arbor installs no event tap, so no click, scroll or pinch of the Mac waits for Arbor. The pinch, ⌃⌥ + scroll and the rectangle go with it; keys, the menu and dragging windows stay | ◐; `input-taps.sh` counts the taps on a Mac | Q26 |
+| **One switch for everything that can hold input back** | **Off as it ships**, also on a Mac whose `settings.json` an earlier build wrote: `arborctl set pointerGestures true`, or Trackpad and mouse gestures under Settings… → Gestures, switches it on. Off, Arbor installs no event tap, so no click, scroll or pinch of the Mac waits for Arbor. The pinch, ⌃⌥ + scroll and the rectangle go with it; keys, the menu and dragging windows stay | ◐; `input-taps.sh` counts the taps on a Mac | Q26 |
 | **Go to…** | ⌃⌥G, type a few letters, ↩: any window, in view or not, minimized or hidden, and any saved view | ◐; compiled and seen to come and go on a Mac; **○ typing in it** | F27 |
 | **Options per display** | Another gap, tile size or edge band on the laptop than on the big display | ◐ | F25 |
 | **A minimap** | ⌃⌥M shows where the view is in the whole arrangement; click a window in it to go there. Showing it after every move is built and off | ◐; **○ the panel**: nobody has seen it | F26 |
@@ -228,19 +228,19 @@ The gravest, those that can cost sight of a window or stop Arbor, are [at the he
 | A **dialog** of an app whose window is out of view may open off screen | always; not yet seen | F47 |
 | On a **shared screen**, windows that are out of view show as a line one point wide and 20 to 85 tall in a bottom corner | always | F58's follow-up: needs measuring on a Mac |
 | If you **rebound a letter** by writing the US letter of the key you wanted, as the guide used to say, that shortcut has moved to the key that types the letter. Write `ctrl+opt+us:z` for a place | F44 | |
-| If you learnt **⇧⌘-drag** for the rectangle: it is **⌃⌥-drag** now, and ⇧⌘-drag belongs to the design tools again. `arborctl set frameRectangleModifier shift+cmd` brings the old keys back | #207 | |
+| If you learnt **⇧⌘-drag** for the rectangle: it is **⌃⌥-drag** now, and ⇧⌘-drag belongs to the design tools again. `arborctl set frameRectangleModifier shift+cmd` brings the old keys back, once `pointerGestures` is on | the rectangle's change of keys | |
 | **VoiceOver**, Rectangle, Magnet, Stage Manager, macOS tiling and "click wallpaper to reveal desktop" clash with Arbor. It says so now, in the welcome window and `arborctl doctor`; it changes none of them for you | always | |
 | Nothing by keyboard puts a window **under one other window**; ⌃⌥⌘↓ puts it under everything | always | F59 |
 
 ## What a person still has to try before anyone else is invited
 
 1. A whole working day on real apps: browser, chat, terminal, a call, a shared screen.
-2. Pinch, on a real trackpad. Hold ⌃⌥Space and let go.
+2. With `arborctl set pointerGestures true`: pinch, on a real trackpad. Hold ⌃⌥Space and let go.
 3. Unplugging and plugging a real display; sleep and wake; a laptop lid.
 4. Apps known to be awkward: System Settings, Calculator, Terminal with large text, an Electron app, Finder, a Java or Qt app.
 5. The line on screen (F43): legible on your wallpaper, helpful or in the way? Does the panel of shortcuts (⌃⌥⇧/) give the keyboard back?
 6. Emacs, an IDE or a remote desktop with Shortcuts Off: do its own ⌃⌥ keys arrive?
 7. A keyboard layout that is not US; two layouts switched during the day.
-8. With `"guardDesktopClicks": true` and macOS's "Click wallpaper to reveal desktop" at its default: click the wallpaper between docked windows. Then an icon, a widget, a rubber band round icons, a file dragged from the Desktop into a docked window; and a click on the wallpaper to dismiss an open menu, Spotlight, Control Centre, a Dock stack; the items of Arbor's own menu; tap to click.
+8. With `"guardDesktopClicks": true`, `"pointerGestures": true` and macOS's "Click wallpaper to reveal desktop" at its default: click the wallpaper between docked windows. Then an icon, a widget, a rubber band round icons, a file dragged from the Desktop into a docked window; and a click on the wallpaper to dismiss an open menu, Spotlight, Control Centre, a Dock stack; the items of Arbor's own menu; tap to click.
 9. ⌘W on an app's last window: the keyboard goes to the window you used before. Welcome, or did the next ⌘N land in the wrong app?
 10. Double-click a word in Safari's address field, a browser tab, a toolbar button in a docked window (once F14 is in): the view must stay.

@@ -47,7 +47,7 @@ independent implementation and is not affiliated with it.
 - **Pinch and frame**: with ⌥ held, or over the Desktop, pinch on the trackpad
   to step out and spread two fingers to step in toward the pointer. Hold ⇧
   and drag a rectangle, starting on the Desktop, to frame what it covers; with
-  ⌃⌥ held the drag can start anywhere.
+  ⌃⌥ held the drag can start anywhere. Off for now, with the next: `arborctl set pointerGestures true` switches them on.
 - **Zoom with a mouse**: hold ⌃⌥ and scroll: up steps in toward the pointer, down steps out. One step per notch of a
   wheel.
 - **Nothing gets lost**: windows outside the view are out of view, not closed: they wait past a
@@ -600,7 +600,7 @@ in the file it costs only its own key. [docs/SETTINGS.md](docs/SETTINGS.md) is t
 | `newWindows` | "float" | What a new window does when no rule matches it. "dock": it docks beside the focused window (below). The menu's "Dock New Windows" and `toggle-auto-dock` switch it |
 | `autoDockMinimumWidth` / `autoDockMinimumHeight` | 400 / 300 | A window that opens smaller than this is never docked by `dock auto` or by a rule for `*` |
 | `minimapDuration` | 0 | Seconds (at most 10) the minimap shows by itself after the view has moved; 0 is off, ⌃⌥M shows it either way |
-| `pointerGestures` | true | The one switch above the pinch, ⌃⌥ + scroll, both ways to draw a rectangle and `guardDesktopClicks`. false: Arbor installs no event tap, so it holds back no click, scroll or pinch of the Mac, whatever their own settings say. Dragging windows, gaps and tiles works either way |
+| `pointerGestures` | false | The one switch above the pinch, ⌃⌥ + scroll, both ways to draw a rectangle and `guardDesktopClicks`. false: Arbor installs no event tap, so it holds back no click, scroll or pinch of the Mac, whatever their own settings say. Dragging windows, gaps and tiles works either way |
 
 The file is yours. When a command changes a setting (`set`, `bind`, `rule add`, "Don't Arrange"…), Arbor
 changes that setting in the file and leaves the rest as you wrote it: your order and spacing, keys

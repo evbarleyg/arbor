@@ -52,6 +52,22 @@ import Testing
     return taps(makeHarness(settings))
   }
 
+  // MARK: As it ships. Whoever switches the default on again takes these two with it.
+
+  @Test func asItShipsArborAsksForNoEventTap() {
+    #expect(!Settings().pointerGestures)
+    #expect(taps { _ in } == [])
+  }
+
+  @Test func norOnAMacThatHasRunAnEarlierBuild() throws {
+    // Its settings.json holds the four gestures switched on: the first launch wrote every default of its day down.
+    let old = try JSONDecoder().decode(Settings.self, from: Data(Self.fileOfAnEarlierBuild.utf8))
+    #expect(old.gesturesEnabled && old.scrollZoom && old.frameRectangleModifier == "ctrl+opt" && old.frameRectangleOnDesktop)
+    #expect(taps { $0 = old } == [])
+  }
+
+  // MARK: The switch
+
   @Test func offArborAsksForNoEventTapWhateverTheOtherSettingsSay() {
     #expect(taps { $0 = Self.everything } == ["pinch", "scroll", "rectangle"])
     #expect(

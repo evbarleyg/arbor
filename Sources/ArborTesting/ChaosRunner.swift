@@ -52,8 +52,9 @@ public final class ChaosRunner {
   /// Called with every action of every runner before it is applied. arbor-sim's watchdog listens.
   public static var beforeEachStep: ((ChaosAction) -> Void)?
 
-  /// settings.json, as the object in the file.
-  private var settingsFile: [String: Any] = [:]
+  /// settings.json, as the object in the file. A walk begins with the gestures switched on, though they ship off: the net over the zones of
+  /// the Desktop (`guard-zones`) catches nothing where nobody asks for zones. `set pointerGestures` is among a walk's steps.
+  private var settingsFile: [String: Any] = ["pointerGestures": true]
   /// state.json, and what was written to it, as of the last save.
   private var stateFile: Data?
   private var stateWritten: PersistedState?
