@@ -3,9 +3,10 @@ import CoreGraphics
 
 extension Controller {
   /// Where a press might land on bare Desktop inside Arbor's view, for the guard of the Desktop
-  /// (docs/features/F60-guard-the-wallpaper-click.md) and for ⇧-drag (F05), which ask the same question: on every
-  /// display with something docked, the part Arbor lays out, less where the windows it knows to be in view really
-  /// are. Empty before the start, while paused, and wherever else `inputSettings` turns both off.
+  /// (docs/features/F60-guard-the-wallpaper-click.md), for ⇧-drag (F05) and for a scroll on the Desktop that zooms (F55,
+  /// `scrollOnDesktopZooms`), which ask the same question: on every display with something docked, the part Arbor lays out,
+  /// less where the windows it knows to be in view really are. Empty before the start, while paused, and wherever else
+  /// `inputSettings` turns all three off.
   ///
   /// The windows' real frames, not their slots: a window that cannot grow to its slot has wallpaper around it. They
   /// change without a new layout (the user drags a floating window about), which observers hear of as `.frames`.
@@ -16,7 +17,10 @@ extension Controller {
 
   public func desktopGuardZones() -> DesktopGuardZones {
     let settings = inputSettings
-    guard isRunning, settings.guardDesktopClicks || settings.frameRectangleOnDesktop else { return DesktopGuardZones() }
+    let scrolls = settings.gesturesEnabled && settings.scrollZoom && settings.scrollOnDesktopZooms
+    guard isRunning, settings.guardDesktopClicks || settings.frameRectangleOnDesktop || scrolls else {
+      return DesktopGuardZones()
+    }
     let inView = windows.values.filter { $0.isPresent && !parked.contains($0.id) }.map(\.frame)
     return DesktopGuardZones(
       displays: displays.compactMap { display -> DesktopGuardZones.Display? in

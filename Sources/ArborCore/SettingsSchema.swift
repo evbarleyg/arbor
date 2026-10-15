@@ -197,7 +197,7 @@ public enum SettingsSchema {
         "A ⇧-drag that starts on the Desktop, in a gap or on a tile also frames a rectangle."),
       .toggle(
         "continuousZoom", \.continuousZoom, "Continuous zoom",
-        "Not finished: the view will follow the fingers during a pinch, and pan with ⌥ and two fingers. "
+        "Not finished: the view will follow the fingers during a pinch, and slide with ⌃⌥ and two fingers sideways. "
           + "For now a pinch steps as before.", hidden: true),
       .toggle(
         "guardDesktopClicks", \.guardDesktopClicks, "Guard clicks on the Desktop",

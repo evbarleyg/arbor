@@ -814,7 +814,8 @@ alone never is. The scroll tap is therefore installed by default (`scrollZoom`),
 the Mac would pass through it, a hundred a second. `GestureRouter.scrollTapIsWanted` says when it has to be on (⌃⌥ down, a scroll of Arbor's or
 its momentum, a pinch of Arbor's with `continuousZoom`); two monitors for modifier keys (a global one, and a local one for what goes to Arbor's own windows) and the handlers themselves
 switch it. None of them remembers what the keys were: a key that goes up unheard (a menu, secure keyboard entry) would make the memory wrong and the next press would be ignored. While it
-is on, `scrollNeedsALook` sends most scrolls on after reading the event's flags and one comparison under the lock. `ScrollZoom` counts notches and points of travel into steps; with `continuousZoom` the router streams the same scroll as the
+is on, `scrollNeedsALook` sends most scrolls on after reading the event's flags and one comparison under the lock. With `scrollOnDesktopZooms` what is under the pointer matters: `scrollAsksWhatIsUnder` says
+for which events, `DesktopGuardZones` (published to this tap too) answers for the windows Arbor knows, `SurfaceMemo` keeps the window list's answer for a wheel's notches for 0.3 s or until new zones arrive, and the list is read with the lock released. `ScrollZoom` counts notches and points of travel into steps; with `continuousZoom` the router streams the same scroll as the
 magnification of a pinch that would have stepped as often.
 
 Once a second `PointerInput` checks that Arbor still has Accessibility

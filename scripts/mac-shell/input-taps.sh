@@ -395,6 +395,9 @@ check "the app gets all three notches" test "$(count '^scroll ')" -eq 3
 check "and Arbor does nothing" test "$(logged | grep -c -E "^INFO  (in|out):")" -eq 0
 echo "a notch past Arbor's paused scroll tap: $(delays scroll)"
 for keys in --opt --ctrl; do
+  # Two notches in and none out: not where ⌃ and a wheel zoom a person's screen.
+  [ "$keys" = --ctrl ] && ! on_throwaway_mac && [ "$(defaults read com.apple.universalaccess closeViewScrollWheelToggle 2>/dev/null)" = 1 ] \
+    && { echo "skipped: ⌃ and a wheel zoom the screen here"; continue; }
   mark "a wheel with $keys alone"
   "$WITNESS" wheel "$cx" "$cy" 2 "$keys"
   check "with $keys alone the app gets both notches" test "$(count '^scroll ')" -eq 2
@@ -419,6 +422,62 @@ ctl show-all
 mark "a plain scroll afterwards"
 "$WITNESS" scroll "$cx" "$cy" 0 -120 --steps 6
 check "the next plain scroll is the app's again (8 events)" test "$(count '^scroll ')" -eq 8
+echo "exactly ⌃⌥: with another key besides, a scroll is the app's"
+for more in --cmd --shift "--shift --cmd"; do
+  mark "two fingers with ⌃⌥ and $more"
+  # shellcheck disable=SC2086
+  "$WITNESS" scroll "$cx" "$cy" 0 100 --steps 6 --ctrl --opt $more
+  check "with ⌃⌥ and $more the app gets all of it (8 events)" test "$(count '^scroll ')" -eq 8
+  check "and Arbor does nothing" test "$(logged | grep -c -E "^INFO  (in|out):")" -eq 0
+done
+mark "a wheel with ⌃⌥⌘"
+"$WITNESS" wheel "$cx" "$cy" 2 --ctrl --opt --cmd
+check "a wheel with ⌃⌥⌘ is the app's" test "$(count '^scroll ')" -eq 2
+mark "a wheel with ⌃⌥⇧"
+"$WITNESS" wheel "$cx" "$cy" 1 --ctrl --opt --shift
+check "a wheel with ⌃⌥⇧ is Arbor's: ⇧ is how macOS turns a wheel sideways" test "$(count '^scroll ')" -eq 0
+ctl show-all
+check "with the keys up the tap is paused" eventually tap_is 0x400000 false
+
+step "F55: scrollOnDesktopZooms"
+with_gestures '{"scrollOnDesktopZooms": true}'
+ctl reload-settings
+check "the tap is on all the time" eventually tap_is 0x400000 true
+mark "forty notches over window 2, no keys"
+"$WITNESS" wheel "$cx" "$cy" 40
+check "the app gets them all" test "$(count '^scroll ')" -eq 40
+echo "a notch over a window Arbor knows, with the tap on (a few rectangles, no window list): $(delays scroll)"
+read -r dx dy dw dh <<< "$(arbor_ask desktop)"
+px=$((dx + dw / 2))
+py=$((dy + dh - 20))
+pointer move "$px" "$py"
+mark "one notch up on the Desktop, no keys"
+"$WITNESS" wheel "$px" "$py" 1
+check "nobody else gets it" test "$(count '^scroll ')" -eq 0
+# Nothing is also what a notch gives that never arrived.
+check "because Arbor took it: it ran one step in" test "$(logged | grep -c -E "^(INFO |DEBUG) in")" -eq 1
+# The witness never sees a notch that is swallowed, so the window server's own count has to say what it cost.
+echo "the scroll tap as the window server times it, after a notch for which the window list was read:"
+arbor_taps | grep "mask=0x400000"
+ctl show-all
+sleep 0.5
+echo "what was found under the pointer is not believed for long"
+"$WITNESS" wheel "$px" "$py" 1
+ctl zoom "$W2"
+sleep 0.5
+mark "the same place, half a second after a window came there"
+"$WITNESS" wheel "$px" "$py" 1
+read -r rx ry rw rh <<< "$(real_frame_of "$W2")"
+check "window 2 covers the place" test "$px" -ge "$rx" -a "$px" -lt "$((rx + rw))" -a "$py" -ge "$ry" -a "$py" -lt "$((ry + rh))"
+check "the app gets the notch" test "$(count '^scroll ')" -eq 1
+check "and Arbor does nothing" test "$(logged | grep -c -E "^(INFO |DEBUG) (in|out)")" -eq 0
+mark "two fingers at the same place"
+"$WITNESS" scroll "$px" "$py" 0 100 --steps 6
+check "a scroll that begins over the window is the app's, all of it (8 events)" test "$(count '^scroll ')" -eq 8
+with_gestures '{}'
+ctl reload-settings
+ctl show-all
+check "without the setting the tap is paused again" eventually tap_is 0x400000 false
 
 # The product owner's question on #68. Many people with big displays have "Use scroll gesture with modifier keys to zoom" on, with ⌃.
 # The switch is the person's to set, so this part runs only where there is no person.

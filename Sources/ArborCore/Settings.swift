@@ -192,8 +192,8 @@ public struct Settings: Codable, Equatable, Sendable {
   public var scrollZoom: Bool = true
   /// Points of travel for one step on a Magic Mouse or trackpad. A wheel steps once per notch.
   public var scrollZoomThreshold: Double = 40
-  /// Scrolling where no app's window is under the pointer zooms without the keys, as a pinch there does. Every scroll on
-  /// the Mac then passes through Arbor, and each notch of a wheel reads the window list.
+  /// Scrolling on the Desktop, in a gap or on a tile zooms without the keys, on a display with something docked. Every scroll
+  /// on the Mac then passes through Arbor.
   public var scrollOnDesktopZooms: Bool = false
   /// What happens to a new window that no entry of `rules` matches: `"float"`, it stays where its app put it, or
   /// `"dock"`, it docks beside the focused window. `"dock"` is short for a last rule
