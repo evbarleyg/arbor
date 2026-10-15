@@ -112,6 +112,26 @@ import Testing
     #expect(BuildInfo(version: "0.9.0", commit: "47a2ba9-dirty").text == "0.9.0 (47a2ba9-dirty)")
   }
 
+  /// `scripts/sign.sh` stamps one of three words. Another word is from a build Arbor does not know, and says nothing.
+  @Test func theKindOfSignatureIsRead() {
+    func signature(_ word: Any?) -> BuildInfo.Signature? {
+      var keys: [String: Any] = ["CFBundleShortVersionString": "0.9.0"]
+      keys["ArborSignature"] = word
+      return BuildInfo(infoDictionary: keys).signature
+    }
+    #expect(signature("adhoc") == .adHoc)
+    #expect(signature("local") == .local)
+    #expect(signature("issued") == .issued)
+    for word: Any? in [nil, "", "Adhoc", "something new", 1] { #expect(signature(word) == nil) }
+    #expect(BuildInfo(infoDictionary: ["ArborSignature": "adhoc"]) == .development, "a stamp without a version is no bundle of ours")
+    #expect(BuildInfo.development.signature == nil)
+    // Only the ad-hoc one makes a stranger of the next build.
+    #expect(!BuildInfo.Signature.adHoc.outlivesTheBuild)
+    #expect(BuildInfo.Signature.local.outlivesTheBuild && BuildInfo.Signature.issued.outlivesTheBuild)
+    // The version's text is compared and shown in many places, and stays what it was.
+    #expect(BuildInfo(version: "0.9.0", build: "3", signature: .adHoc).text == "0.9.0 (build 3)")
+  }
+
   /// `scripts/bundle.sh` stamps this file's content into the app, which later compares it with release tags.
   @Test func theVersionFileHoldsAVersion() throws {
     let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
