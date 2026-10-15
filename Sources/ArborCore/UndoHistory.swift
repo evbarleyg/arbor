@@ -26,10 +26,13 @@ public struct UndoStep: Equatable, Sendable {
   /// A change that cannot be taken back (a docked window closed). It is kept so that `undo` can say so
   /// once, rather than reach past it to an older change as if that had been the last one.
   public var isIrreversible: Bool
+  /// Who had the keyboard before the change, for a change that said who gets it (`side-by-side`): going back gives it back. Nil for
+  /// all others, after which the keyboard stays where it is.
+  public var keyboard: WindowID?
 
   public init(
     id: Int, label: String, title: String? = nil, workspace: Workspace, frames: [WindowID: CGRect] = [:],
-    changedTo: Workspace, continuation: String? = nil, isIrreversible: Bool = false
+    changedTo: Workspace, continuation: String? = nil, isIrreversible: Bool = false, keyboard: WindowID? = nil
   ) {
     self.id = id
     self.label = label
@@ -39,6 +42,7 @@ public struct UndoStep: Equatable, Sendable {
     self.changedTo = changedTo
     self.continuation = continuation
     self.isIrreversible = isIrreversible
+    self.keyboard = keyboard
   }
 }
 
@@ -107,7 +111,7 @@ public struct UndoHistory: Equatable, Sendable {
   /// undone something can still put it back.
   public mutating func record(
     _ label: String, title: String? = nil, changes: [DisplayID: Change], continuing key: String? = nil,
-    keepingRedo: Bool = false
+    keepingRedo: Bool = false, keyboard: WindowID? = nil
   ) {
     guard !changes.isEmpty else { return }
     if let key, changes.keys.allSatisfy({ undoSteps[$0]?.last?.continuation == key }) {
@@ -122,7 +126,7 @@ public struct UndoHistory: Equatable, Sendable {
       push(
         UndoStep(
           id: id, label: label, title: title, workspace: change.before, frames: change.framesBefore,
-          changedTo: change.after, continuation: key),
+          changedTo: change.after, continuation: key, keyboard: keyboard),
         to: .undo, on: display)
       if !keepingRedo { redoSteps[display] = nil }
     }
@@ -185,6 +189,7 @@ public struct UndoHistory: Equatable, Sendable {
         step.workspace.renumber(old, as: new)
         step.changedTo.renumber(old, as: new)
         if let frame = step.frames.removeValue(forKey: old) { step.frames[new] = frame }
+        if step.keyboard == old { step.keyboard = new }
         return step
       }
     }
@@ -249,6 +254,7 @@ extension Command {
     switch self {
     case .arrangeAll: "Arrange"
     case .pin, .togglePin: "Keep in View"
+    case .sideBySide: "Dock Side by Side"
     default: nil
     }
   }

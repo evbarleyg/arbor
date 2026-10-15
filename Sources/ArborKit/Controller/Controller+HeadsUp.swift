@@ -349,6 +349,8 @@ extension Controller {
 
   /// The display a command's outcome shows on: its window's, or the one camera commands act on.
   private func display(actedOnBy command: Command) -> DisplayID? {
+    // Where Go to… is open, which is where the person is looking.
+    if case .sideBySide = command, let display = sideBySideDisplay { return display }
     if let window = command.window, let id = window ?? system.focusedWindow(), let display = workspaceID(containing: id) {
       return display
     }

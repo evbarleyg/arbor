@@ -131,7 +131,9 @@ extension World {
       }
     }
     pressIsTold = false
-    land(at: point, clicks: clicks, secondary: right || !modifiers.isDisjoint(with: [.control, .option]))
+    land(
+      at: point, clicks: clicks, secondary: right || !modifiers.isDisjoint(with: [.control, .option]),
+      ticks: !modifiers.isDisjoint(with: [.command, .shift]))
     // What the Accessibility layer's monitor of the mouse passes on. Where the press gives a window the keyboard it has its place among
     // the reports of that (`giveKeyboard`, `FakeWindowSystem.press`).
     if !pressIsTold { system.events?.pointerPressed() }
@@ -153,7 +155,7 @@ extension World {
   }
 
   /// A press that got past Arbor's taps.
-  private func land(at point: CGPoint, clicks: Int, secondary: Bool) {
+  private func land(at point: CGPoint, clicks: Int, secondary: Bool, ticks: Bool = false) {
     held = .idle
     arbor?.overlays.leaveNameField(for: point)
     // From here on whatever is highest is asked first: the menu, the menu bar, Arbor's panels, its update window, the windows.
@@ -172,7 +174,7 @@ extension World {
       arbor?.overlays.dismissShortcuts(by: "a click on it")
       return
     }
-    if paletteTakesPress(at: point) { return }
+    if paletteTakesPress(at: point, ticks: ticks) { return }
     if point.y < display.visibleFrame.minY { return }
     // Above every window. One that only passes by lets the press through.
     if let model = arbor?.overlays.fake.minimaps[display.id], model.takesClicks, model.frame.contains(point) {

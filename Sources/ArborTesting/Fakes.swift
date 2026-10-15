@@ -191,10 +191,19 @@ public final class FakeOverlays: OverlayPresenter {
   @discardableResult
   public func chooseInFinder(row: Int? = nil) -> Bool {
     guard let finder else { return false }
-    let destination = if let row { row >= 1 ? finder.destination(atVisible: row - 1) : nil } else { finder.selected }
+    let destination = if let row { row >= 1 ? finder.destination(atVisible: row - 1) : nil } else { finder.chosen }
     guard let destination else { return false }
     actions?.finderChose(destination)
     return true
+  }
+
+  /// ⌘Return, or ⌘-click or ⇧-click on the `row`-th row that shows, counted from 1. Returns whether the row took or lost a tick.
+  @discardableResult
+  public func tickInFinder(row: Int? = nil) -> Bool {
+    guard finder != nil, row.map({ $0 >= 1 }) ?? true else { return false }
+    let done = finder!.tick(atVisible: row.map { $0 - 1 })
+    if !done { finderBeeps += 1 }
+    return done
   }
 
   /// Escape, or a click on another window.

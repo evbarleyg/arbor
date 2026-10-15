@@ -21,6 +21,8 @@ extension Controller {
     var continuation: UndoContinuation?
     /// See `UndoHistory.record`.
     var keepsRedo = false
+    /// See `UndoStep.keyboard`.
+    var keyboard: WindowID?
   }
 
   /// Makes one step of changes that follow each other under the same key with no other step in
@@ -87,6 +89,8 @@ extension Controller {
     default:
       break
     }
+    // It says who gets the keyboard, so taking it back says so too.
+    if case .sideBySide = command { scope?.keyboard = keyboardFocus() }
     // Walking through the history is not itself a step.
     if command == .undo || command == .redo { scope?.before = [:] }
     // Nor is a visit of ten seconds, though it can bring a floating window over from another display.
@@ -135,7 +139,7 @@ extension Controller {
     }
     undoHistory.record(
       scope.label, title: scope.title, changes: changes, continuing: scope.continuation?.key,
-      keepingRedo: scope.keepsRedo)
+      keepingRedo: scope.keepsRedo, keyboard: scope.keyboard)
     if let continuation = scope.continuation { scheduleEnd(of: continuation) }
   }
 
@@ -314,7 +318,7 @@ extension Controller {
         undoHistory.push(
           UndoStep(
             id: step.id, label: step.label, title: step.title, workspace: current, frames: frames[id] ?? [:],
-            changedTo: restoration.workspace),
+            changedTo: restoration.workspace, keyboard: step.keyboard == nil ? nil : keyboardFocus()),
           to: direction.opposite, on: id)
       }
       install(plan)
@@ -323,6 +327,10 @@ extension Controller {
       if plan.keys.allSatisfy({ id in arrangedAsItWas[id].map { workspaces[id]?.hasSameArrangement(as: $0) == true } == true }) {
         undoHistory = historyAsItWas
         return .failure("cannot \(verb) \(step.label) now: the window's app does not answer")
+      }
+      if let window = step.keyboard, windows[window]?.isPresent == true, !parked.contains(window) {
+        expectFocusToMove()
+        askForTheKeyboard(for: window)
       }
       titleOfTheStepJustTaken = step.title
       return .success("\(done) \(step.label)")

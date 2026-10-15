@@ -124,3 +124,26 @@ import Testing
     #expect(try JSONDecoder().decode(Settings.self, from: JSONEncoder().encode(edited)) == edited)
   }
 }
+
+@Suite struct SideBySideCommandTests {
+  @Test func itsWords() throws {
+    let three = Command.sideBySide([WindowID(103), WindowID(101), WindowID(104)])
+    #expect(try Command.parse("side-by-side 103 101 104") == three)
+    #expect(try Command.parse("side-by-side w103 101 w104") == three)
+    #expect(three.text == "side-by-side 103 101 104")
+    #expect(try Command.parse(three.text) == three)
+    #expect(three.title == "Dock Side by Side" && three.undoTitle == "Dock Side by Side")
+    #expect(Command.helpText.contains("side-by-side <window> <window>"))
+  }
+
+  @Test(arguments: ["side-by-side", "side-by-side 1", "side-by-side 1 1", "side-by-side 1 2 3 4 5", "side-by-side 1 left"])
+  func twoToFourEachOnce(line: String) {
+    #expect(throws: Command.ParseError.self) { try Command.parse(line) }
+  }
+
+  /// It brings windows out of the Dock, moves the view and says who gets the keyboard: not for a web page, nor in front of an audience.
+  @Test func notFromALinkNorWhileTheViewIsHeld() {
+    let two = Command.sideBySide([WindowID(1), WindowID(2)])
+    #expect(!two.isAllowedFromURL && !two.isAllowedWhileHeld && !two.isQuery)
+  }
+}

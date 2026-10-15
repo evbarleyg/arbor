@@ -77,6 +77,10 @@ public final class ChaosRunner {
   var owedAPlaceBefore: Set<WindowID> = []
   /// What was out of view, where the cameras were and which run of Arbor it was, before the current action.
   var parkedBefore: Set<WindowID> = []
+  /// `Controller.windowsOfTheAwaitedGroup` when the step began.
+  var awaitedGroupBefore: Set<WindowID> = []
+  /// `Controller.everybodyOfTheAwaitedGroup` when the step began.
+  var everybodyAwaitedBefore: Set<WindowID> = []
   /// Windows whose app did not answer when they were to be moved: the move comes when it does, whatever else happens then.
   var owedAMoveBefore: Set<WindowID> = []
   /// Where macOS put each floating window that was wholly on a display when that display moved without changing, and how often
@@ -230,6 +234,7 @@ public final class ChaosRunner {
     frameLogMark = system.frameLog.count
     owedAPlaceBefore = controller.windowsOwedAPlace
     owedTheWayBackBefore = controller.windowsOwedTheWayBack
+    (awaitedGroupBefore, everybodyAwaitedBefore) = (controller.windowsOfTheAwaitedGroup, controller.everybodyOfTheAwaitedGroup)
     (parkedBefore, workspacesBefore, displaysBefore, wasRunningBefore) = (
       controller.parked, controller.workspaces, controller.displays, isRunning
     )

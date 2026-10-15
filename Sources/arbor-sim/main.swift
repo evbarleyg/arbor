@@ -695,7 +695,7 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     settings.holdStillFor.append(words.dropFirst().joined(separator: " "))
     harness.controller.apply(settings: settings)
     return ("holding still for \(settings.holdStillFor.count) kind(s) of window", true)
-  case "finder-type", "finder-move", "finder-choose", "finder-cancel":
+  case "finder-type", "finder-move", "finder-choose", "finder-tick", "finder-cancel":
     let overlays = harness.overlays
     guard overlays.finder != nil else { return ("error: Go to… is not open; `find` opens it", false) }
     switch words[0] {
@@ -708,6 +708,12 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
       let row = words.count > 1 ? Int(words[1]) : nil
       guard words.count == 1 || row != nil else { return usage("finder-choose [n]") }
       guard overlays.chooseInFinder(row: row) else { return ("error: nothing to choose there", false) }
+    case "finder-tick":
+      let row = words.count > 1 ? Int(words[1]) : nil
+      guard words.count == 1 || row != nil else { return usage("finder-tick [n]") }
+      guard overlays.tickInFinder(row: row) else {
+        return ("error: \(overlays.finder?.message ?? "nothing to tick there")", false)
+      }
     default:
       overlays.dismissFinder()
     }

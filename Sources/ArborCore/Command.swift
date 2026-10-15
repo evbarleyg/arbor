@@ -152,6 +152,9 @@ public enum Command: Equatable, Sendable, Codable {
   case focusDisplay(DisplayTarget)
   /// Switches off the settings of macOS that are in Arbor's way, or with `undo` puts them back as they were (Controller+FixSetup.swift).
   case fixSetup(undo: Bool)
+  /// Two to four windows, docked side by side in that order as a group of their own, which fills the view
+  /// (Controller+SideBySide.swift). What Go to… runs for the windows that are ticked.
+  case sideBySide([WindowID])
 
   /// Whether the command only reads state.
   public var isQuery: Bool {
@@ -527,6 +530,12 @@ public enum Command: Equatable, Sendable, Codable {
     case "fix-setup":
       guard args.isEmpty || args == ["undo"] else { throw ParseError("usage: fix-setup [undo]") }
       return .fixSetup(undo: !args.isEmpty)
+    case "side-by-side":
+      let windows = try args.map(window)
+      guard (2...4).contains(windows.count), Set(windows).count == windows.count else {
+        throw ParseError("usage: side-by-side <window> <window> [window] [window] (two to four, each once)")
+      }
+      return .sideBySide(windows)
     case "watch":
       var kinds: [ArborEvent.Kind] = []
       for word in args where word != "--titles" {
@@ -640,6 +649,7 @@ public enum Command: Equatable, Sendable, Codable {
     case .moveToDisplay(let target, let window): return "move-to-display \(target.text)" + w(window)
     case .focusDisplay(let target): return "focus-display \(target.text)"
     case .fixSetup(let undo): return "fix-setup" + (undo ? " undo" : "")
+    case .sideBySide(let windows): return "side-by-side " + windows.map { String($0.rawValue) }.joined(separator: " ")
     case .displays: return "displays"
     case .toggleAutoDock: return "toggle-auto-dock"
     case .showShortcuts: return "show-shortcuts"
@@ -690,6 +700,8 @@ public enum Command: Equatable, Sendable, Codable {
     Arrange: change where windows sit
       dock [window] <edge>                     dock at that edge of the view, or move a docked window one place
       dock [window] beside <window> <edge>     dock next to another window
+      side-by-side <window> <window> […]       dock two to four windows side by side, in that order, and fill the view
+                                               with them; what else is docked stays docked (in Go to…: ⌘↩ ticks a window)
       float [window] | toggle-float [window]   undock: the window floats on the Desktop
       arrange [all]                            dock every window on this display, or on all, in a grid
       float-all [here]                         undock everything: back to a normal Mac (here: this display only)

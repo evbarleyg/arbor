@@ -499,6 +499,13 @@ public final class Controller {
 
   /// Windows on a display too small for their own size, which they take along when they leave it (Controller+UndockedFrames.swift).
   var fittedToADisplay: [WindowID: FittedWindow] = [:]
+  /// Where Go to… is open, while it runs `side-by-side` for what is ticked.
+  var sideBySideDisplay: DisplayID?
+  /// Windows that `side-by-side` has asked out of the Dock or out of ⌘H and that macOS has not reported back yet. Until it does,
+  /// or the time is up, each counts as present: its place is kept open, so that its neighbours go to theirs once.
+  var awaitedBack: Set<WindowID> = []
+  /// The group they belong to, until all of them have landed.
+  var awaitedGroup: AwaitedGroup?
 
   public init(
     system: any WindowSystem, overlays: any OverlayPresenter, store: any StateStore,
@@ -692,6 +699,7 @@ public final class Controller {
     postponedRelayouts.removeAll()
     waitingForASpaceToLeave.removeAll()
     returningWindows.removeAll()
+    stopAwaitingAnybody()
     keyboardHandOver = KeyboardHandOver()
     letBe = nil
     scheduler.cancel("pending-slots")
@@ -871,7 +879,7 @@ public final class Controller {
   }
 
   func presentWindowIDs() -> Set<WindowID> {
-    Set(windows.values.filter(\.isPresent).map(\.id))
+    Set(windows.values.filter(\.isPresent).map(\.id)).union(awaitedBack)
   }
 
   func treeView(_ display: DisplayID) -> TreeView? {

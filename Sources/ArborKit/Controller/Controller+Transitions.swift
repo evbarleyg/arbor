@@ -152,7 +152,7 @@ extension Controller {
     puttingBack: [(window: WindowID, frame: CGRect)]
   ) -> [WindowID: CGRect] {
     var frames = framesInView(on: display)
-    for (window, slot) in layout.windowFrames {
+    for (window, slot) in layout.windowFrames where !awaitedBack.contains(window) {
       guard let current = windows[window] else { continue }
       if isInPlace(current, at: slot) {
         frames[window] = current.frame

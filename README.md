@@ -445,6 +445,13 @@ Return alone never runs a command: letters and Return go to a window, a space or
 the menu that runs a command is there, and the commands that have no row there (Space to the Left, Window Above). A command's row says `command` at the right, with its shortcut if it has one, or `not now` where
 the menu would grey it out. It acts on the window you were in. Before you type, the list holds places only, and a piece of a window's name still finds the window first.
 
+**A few windows side by side, in one step.** ⌘↩ ticks the selected row (⌘-click or ⇧-click, any row), and again takes the tick off. A tick clears
+the field, so the next window can be looked for. With two to four ticked, Return docks them side by side, in the order ticked, and fills the screen with
+them; each row bears its number. It does not matter where they were: floating, docked, out of view, in the Dock, hidden, on another display. What else was
+docked stays docked, out of view for now; ⌃⌥Space shows everything, ⌃⌥[ goes back. They are equally wide, except that a window which does not go that
+narrow gets what it needs. If they do not fit together nothing moves, and Arbor says who: "Safari, Xcode and Mail do not fit side by side on this
+display". One ⌃⌥Z takes all of it back. From a script: `arborctl side-by-side 103 101 104`.
+
 A shortcut can go straight to a window: `"ctrl+opt+cmd+f1": "find mail inbox"` in `bindings`. (`find` with text goes to places; it never runs a command.)
 
 ## Summoning

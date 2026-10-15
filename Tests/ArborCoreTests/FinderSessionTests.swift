@@ -163,7 +163,7 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     #expect(session.items.map(\.row) == rows)
     #expect(session.items.map(\.isSelected) == [true, false, false, false, false, false])
     #expect(session.selected == .window(WindowID(102)))
-    #expect(session.message == nil)
+    #expect(session.message == FinderSession.hint)
   }
 
   @Test func typingFiltersAndSelectsTheBestMatch() {
@@ -240,7 +240,7 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     session.type("zebr")
     #expect(session.message == "Nothing matches")
     session.type("")
-    #expect(session.message == nil)
+    #expect(session.message == FinderSession.hint)
   }
 
   /// It used to be the row that took its place. Decided otherwise by the product owner (QUESTIONS, board 0.25): Return runs only what the
@@ -299,9 +299,10 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
           1 w104  Safari  Arbor docs  (out of view)
         > 2 w101  Safari  News  (in view)
           3 view 1  View 1  Safari, Notes  (saved view)
+          ⌘↩ ticks a window: two to four are docked side by side
         """)
     let long = FinderSession(model: model((1...12).map { window(UInt32(100 + $0), "App", "") }))
-    #expect(long.text.hasSuffix("  9 w109  App  (out of view)\n  and 3 more"))
+    #expect(long.text.hasSuffix("  9 w109  App  (out of view)\n  and 3 more\n  \(FinderSession.hint)"))
   }
 }
 
@@ -534,7 +535,7 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     session.type("new")
     #expect(session.text == "go to: new\n  1 command toggle-auto-dock  Dock New Windows  (command ✓)\n  ↓ picks a command, ↩ runs it")
     session.moveSelection(by: 1)
-    #expect(session.text == "go to: new\n> 1 command toggle-auto-dock  Dock New Windows  (command ✓)")
+    #expect(session.text == "go to: new\n> 1 command toggle-auto-dock  Dock New Windows  (command ✓)\n  \(FinderSession.hint)")
   }
 
   // MARK: What Return can run
@@ -703,7 +704,7 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     session.moveSelection(by: 1)
     #expect(session.selected == .command("dock left"), "↓ picks the first, not the second")
     #expect(session.items.map(\.isSelected) == [true, false, false])
-    #expect(session.message == nil)
+    #expect(session.message == FinderSession.hint)
     session.moveSelection(by: 1)
     #expect(session.selected == .command(Command.toggleAutoDock.text))
     session.type("dock")
@@ -733,7 +734,7 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     var session = session()
     session.type("dock")
     #expect(session.selected == .window(WindowID(103)), "Docker")
-    #expect(session.message == nil)
+    #expect(session.message == FinderSession.hint)
     session.moveSelection(by: 1)
     #expect(session.selected == .command("dock left"))
   }
@@ -743,7 +744,7 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     var session = session(places: [window(101, "Numbers", "Big tables all over, nicely coloured, every size")])
     session.type("balance")
     #expect(session.items.map(\.row.place) == [.outOfView, .command])
-    #expect(session.selected == .window(WindowID(101)) && session.message == nil)
+    #expect(session.selected == .window(WindowID(101)) && session.message == FinderSession.hint)
     session.moveSelection(by: 1)
     #expect(session.selected == .command(Command.equalize(all: false).text))
   }

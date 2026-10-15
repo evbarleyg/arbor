@@ -240,6 +240,7 @@ extension Controller {
     check("appPlacedFrames", appPlacedFrames.keys)
     check("spokeOfItsPlace", spokeOfItsPlace.keys)
     check("returningWindows", returningWindows)
+    check("awaitedBack", awaitedBack)
     check("titleWatches", titleWatches.keys)
     check("unplaced", unplaced)
     check("owedMoves", owedMoves)

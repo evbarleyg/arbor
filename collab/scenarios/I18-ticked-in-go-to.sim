@@ -1,0 +1,76 @@
+# Story: of six open windows a person wants three beside each other. ⌃⌥G, a few letters, ⌘↩, three times; ↩. They stand side by side in
+# the order ticked and fill the screen. What was docked stays docked. One of the three was in the Dock. One undo takes it all back.
+# Reference: IDEAS I18; QUESTIONS Q29, 9; board 0.12. Window ids start at 101.
+# The command by itself, with nothing else touched, is collab/scenarios/wanted/I18-a-few-windows-in-one-step.sim, which waits for board 0.5.
+open Safari
+open Notes
+open Mail
+open Music
+open Preview
+open Xcode
+dock 106 left
+dock 102 right
+minimize 104
+focus 105
+# The line under the rows says how, before anybody asks.
+find
+expect ok
+expect replied ticks a window: two to four are docked side by side
+finder-type mai
+finder-tick
+expect ok
+# A tick clears the field and the whole list shows again.
+expect replied go to:
+expect replied [1]
+finder-type saf
+finder-tick
+expect replied docks these 2 side by side
+finder-type mus
+finder-tick
+expect replied docks these 3 side by side
+# Nothing has moved so far.
+expect floating 103
+expect floating 101
+finder-choose
+expect ok
+expect moved-once
+expect count docked 5
+expect left-of 103 101
+expect left-of 101 104
+expect visible 104
+expect focused 103
+# What was docked is still docked, out of view for now.
+expect docked 106
+expect docked 102
+expect hidden 106
+# Everything: the group stands at the right end.
+show-all
+expect left-of 102 103
+back
+expect left-of 103 101
+expect hidden 102
+# One step back for all of it: the windows, the view, the keyboard.
+undo
+expect ok
+expect count docked 2
+expect floating 103
+expect visible 106
+expect focused 105
+# A fifth is refused in words, and so is what is no window.
+find
+finder-tick 1
+finder-tick 2
+finder-tick 3
+finder-tick 4
+finder-tick 5
+expect fail
+expect replied Four at the most
+finder-cancel
+# With one ticked, Return goes there as if it had been chosen.
+find
+finder-type note
+finder-tick
+finder-type prev
+finder-choose
+expect focused 102
+expect count docked 2

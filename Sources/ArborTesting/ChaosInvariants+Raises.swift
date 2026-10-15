@@ -3,7 +3,8 @@ import ArborKit
 
 /// "Arbor raises nothing else" (collab/QUESTIONS.md, Q20 and Q25). Which window lies in front of which is macOS's business. What is acted on or
 /// switched to comes to the front with the keyboard, which is no raise; a raise without the keyboard is for a window kept in
-/// view or summoned, and for nobody else, running, paused or on the way out.
+/// view or summoned, and for nobody else, running, paused or on the way out. One more since Q29, 9: the windows a `side-by-side` names
+/// were all asked for by name, only one of them can have the keyboard, and the others must not stay behind what lay there.
 ///
 /// `switched-to-behind` sees the harm where there is some: the raised window happens to overlap the one just switched to. This net sees the
 /// raise itself, at the step in which it is made, whatever lies where.
@@ -27,7 +28,11 @@ extension ChaosRunner {
       wasRunningMeanwhile
         && (controller.workspaces.values.contains { $0.staysInView(window) } || workspacesBefore.values.contains { $0.staysInView(window) })
     }
-    return Set(raised).sorted().filter { !isKeptInView($0) }.map {
+    var askedFor: Set<WindowID> = []
+    if case .sideBySide(let windows)? = action.parsedCommand, refusals.isEmpty, wasRunningBefore, isRunning { askedFor = Set(windows) }
+    // Whoever was in the Dock or hidden is raised when it is back, which is a step later.
+    if isRunning { askedFor.formUnion(controller.windowsOfTheAwaitedGroup.union(awaitedGroupBefore)) }
+    return Set(raised).sorted().filter { !isKeptInView($0) && !askedFor.contains($0) }.map {
       .init("raised-unasked", "Arbor raised \($0), which is neither kept in view nor summoned")
     }
   }
