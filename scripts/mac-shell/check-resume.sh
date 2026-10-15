@@ -67,7 +67,9 @@ while [ "$round" -le "$ROUNDS" ]; do
 done
 
 echo
-echo "macOS was behind with the app in front $(grep -c "still names another app" "$ARBOR_HOME/arbor.log") time(s) in this session"
+echo "macOS was behind with the app in front, in this session:"
+echo "  $(grep -c "is active, and macOS still names another app" "$ARBOR_HOME/arbor.log") time(s) when it said that an app was active, which is what begins and ends a pause ($((ROUNDS * 2)) of those here, at least)"
+echo "  $(grep -c "came forward, and macOS still names another app" "$ARBOR_HOME/arbor.log") time(s) when the Accessibility layer heard the same, which listens only while Arbor runs"
 
 arbor_stop
 companions_stop
