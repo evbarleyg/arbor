@@ -179,6 +179,9 @@ public final class AXWindowSystem: WindowSystem {
     localMouseMonitor = nil
     pendingRescan?.cancel()
     pendingDisplayChange?.cancel()
+    pendingDisplayChange = nil
+    screensWritten = nil
+    screenFramesSeen = []
     lookAtAppThatCameForward?.cancel()
     for look in secondLooks.values { look.cancel() }
     secondLooks.removeAll()
@@ -567,17 +570,41 @@ public final class AXWindowSystem: WindowSystem {
 
   // MARK: Displays
 
+  /// For a trace: the displays as AppKit shows them at this moment, whenever they are not as they were last written. Arbor is told of a
+  /// change of displays only once it has settled (`DisplayChange`), and until then takes no window's move for the person's. So when
+  /// a lid closes it matters in which order AppKit's own list and the windows' moves change, to the millisecond, and only a Mac can say.
+  /// Ids and frames, no names.
+  private func noteScreens(_ recorder: TraceRecorder) {
+    // It is looked at with every notification, sixty times a second in a drag, and `displays()` asks for ids and names. AppKit's own frames
+    // are relative to the primary display, so they change whenever the set, a size, a corner or the primary display does.
+    let frames = NSScreen.screens.map(\.frame)
+    guard frames != screenFramesSeen else { return }
+    screenFramesSeen = frames
+    let screens = displays().map { display in
+      "\(display.id.rawValue) \(Int(display.frame.minX)),\(Int(display.frame.minY)) \(Int(display.frame.width))x\(Int(display.frame.height))"
+    }.joined(separator: "; ")
+    guard screens != screensWritten else { return }
+    screensWritten = screens
+    recorder.raw("screens \(screens)")
+  }
+  private var screensWritten: String?
+  private var screenFramesSeen: [CGRect] = []
+
   /// macOS posts this at every minimize, and several times in a row when a display comes or goes. `DisplayChange` says
   /// whether there is anything to report and how long to wait; if the displays are by then as they were (a display that
   /// blinked on wake), nothing is reported at all.
   private func screensChanged() {
     recorder?.raw("didChangeScreenParameters")
+    if let recorder, recorder.isRecording { noteScreens(recorder) }
     pendingDisplayChange?.cancel()
     pendingDisplayChange = nil
     guard let delay = DisplayChange.settleTime(from: reportedDisplays, to: displays()) else { return }
     pendingDisplayChange = Task { @MainActor [weak self] in
       try? await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
       guard !Task.isCancelled, let self, self.running else { return }
+      // Not cancelled, so this is the one that is pending, and from here it runs to its end in one go. (Not in a `defer`: a cancelled one that
+      // wakes up would take away the one that replaced it.) `handle` goes by this to tell whether the displays are unsettled.
+      self.pendingDisplayChange = nil
       let current = self.displays()
       guard DisplayChange.settleTime(from: self.reportedDisplays, to: current) != nil else { return }
       self.reportedDisplays = current
@@ -1076,8 +1103,11 @@ public final class AXWindowSystem: WindowSystem {
     }
     // A trace shows what macOS said before what Arbor made of it.
     if let recorder, recorder.isRecording {
+      noteScreens(recorder)
       let moving = notification == kAXMovedNotification || notification == kAXResizedNotification
-      recorder.raw(raw.map { "\(notification) w\($0)" } ?? notification, thinKey: moving ? notification : nil)
+      // Thinned by name, which keeps the first and the last of a burst whichever windows they are of. Not while the displays are unsettled: which
+      // windows their apps report, after macOS has shifted them, is just what a trace of a closing lid is for.
+      recorder.raw(raw.map { "\(notification) w\($0)" } ?? notification, thinKey: moving && pendingDisplayChange == nil ? notification : nil)
     }
     // Whoever posts a notification is awake.
     if let pid = element.pid, !answers(pid) { answersAgain(pid) }

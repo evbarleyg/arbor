@@ -176,7 +176,7 @@ replay delivers it from inside the same call, so that Arbor meets it in the same
 
 | Line | Meaning |
 |---|---|
-| `{"raw":"AXWindowMoved w7"}`, `{"raw":"leftMouseDown 360,92"}` | What macOS sent, as it arrived, before `AXWindowSystem` made events of it: Accessibility notifications with their window, mouse events with the pointer's place, `flagsChanged`, a press that landed on a tile or handle of Arbor's, and from the workspace `didActivateApplication pid 412` (the only sign of ⌘Tab), `activeSpaceDidChange` and `didChangeScreenParameters`. The events say what Arbor understood, these what it was told |
+| `{"raw":"AXWindowMoved w7"}`, `{"raw":"leftMouseDown 360,92"}` | What macOS sent, as it arrived, before `AXWindowSystem` made events of it: Accessibility notifications with their window, mouse events with the pointer's place, `flagsChanged`, a press that landed on a tile or handle of Arbor's, and from the workspace `didActivateApplication pid 412` (the only sign of ⌘Tab), `activeSpaceDidChange` and `didChangeScreenParameters`; and `screens <id> x,y WxH; …`, the displays as AppKit shows them, whenever they are not as last written. The events say what Arbor understood, these what it was told |
 | `{"note":"…"}` | A remark made with `trace note` |
 | `{"end":"trace off","lines":212,"thinned":388}` | The last line: why recording stopped, the lines before this one, and how many were thinned away |
 
