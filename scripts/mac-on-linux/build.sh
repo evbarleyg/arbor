@@ -194,6 +194,19 @@ if [ "${1:-}" = --self-test ]; then
   excuses_not "a line with another number of seeds"
   sed 's/^\(the rude walk (polite): .*\) \[[0-9]* of 40 seeds\]/sometimes: \1/' "$here/known-failures.txt" > known-changed.txt
   excuses_not "a line that says sometimes, with the usual seeds,"
+  # What the layer was heard to report goes out of date by the reports, not by the milliseconds.
+  kept="$root/collab/evidence/mac-on-linux/heard.jsonl"
+  holds() { "$work/mac-on-linux" --quiet --known "$here/known-failures.txt" --heard heard-changed.jsonl > /dev/null 2>&1; }
+  sed '1s/"ms":\[\([0-9]*\)/"ms":[9\1/' "$kept" > heard-changed.jsonl
+  cp heard-changed.jsonl heard-before.jsonl
+  if ! cmp -s "$kept" heard-changed.jsonl && holds && cmp -s heard-changed.jsonl heard-before.jsonl
+  then echo "✔ other milliseconds in heard.jsonl: the run passes and leaves the file alone"
+  else echo "✘ other milliseconds in heard.jsonl: the run fails, or rewrites the file"; touch self-test-failed; fi
+  sed '1s/"heard":\["[a-zA-Z]* /"heard":["found /' "$kept" > heard-changed.jsonl
+  cp heard-changed.jsonl heard-before.jsonl
+  if ! cmp -s "$kept" heard-changed.jsonl && ! holds && ! cmp -s heard-changed.jsonl heard-before.jsonl && holds
+  then echo "✔ another report in heard.jsonl: the run fails once, rewrites the file, and passes the next time"
+  else echo "✘ another report in heard.jsonl goes unnoticed, or the file is not put right"; touch self-test-failed; fi
   # --- The net.
   # First the whole list: a list that cannot be had, or is empty, is no self-test that passed.
   "$here/mutants.py" --list > mutants.txt && [ -s mutants.txt ] || { echo "✘ scripts/mac-on-linux/mutants.py lists no change to make"; exit 1; }

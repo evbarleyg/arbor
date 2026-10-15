@@ -109,7 +109,7 @@ took and how often it started afresh. Going on found three faults at once that n
 ## What was heard
 
 A run of everything writes down every call of `WindowSystemEvents` the layer made, story by story, and for the walk which kind followed which: `collab/evidence/mac-on-linux/heard.jsonl`, with a README. It is for those who keep stand-ins at the seam, and it shows in a diff what a change to the layer does to what the controller
-hears. If the file is out of date the run rewrites it and fails that once: look at the difference and commit it.
+hears. If the reports in the file are out of date the run rewrites it and fails that once: look at the difference and commit it. For other milliseconds alone, which every change to the controller's timing brings, it is left as it is.
 
 ## Does the net hold? (`make mac-on-linux-selftest`)
 

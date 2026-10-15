@@ -3,7 +3,8 @@
 `heard.jsonl` is written by `make mac-on-linux` (`scripts/mac-on-linux/README.md`): the calls of `WindowSystemEvents` that the real `AXWindowSystem` made, in order, in every story and on the rude walk, on the model of a Mac. It is where the model below the seam meets the stand-ins at
 the seam: whoever keeps a fake `WindowSystem` can hold what it sends against what the real layer has been heard to send, and see which of its orders the real layer never produced.
 
-Everything is a function of the sources and the stories, so the file is committed. **A run of everything holds it against what it hears; if it is out of date the run rewrites it and fails that once.** Look at the difference (it says what a change to the layer did to what the controller hears) and commit it.
+Everything is a function of the sources and the stories, so the file is committed. **A run of everything holds it against what it hears; if it is out of date the run rewrites it and fails that once.** Look at the difference (it says what a change to the layer did to what the controller hears) and commit it. It goes out of date by what was reported, not by `ms`: the milliseconds move with every change to the controller's timing, and for
+them alone the file is left as it is, with a line that says so. To refresh them, delete the file and run again.
 Runs with `--only`, `--seeds` or `REF=` leave it alone.
 
 One JSON object to a line. No frame, no title, no name of an app.
