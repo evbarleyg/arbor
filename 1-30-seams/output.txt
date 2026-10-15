@@ -1,0 +1,215 @@
+# mac-shell: scripts/mac-shell/suite/30-seams.sh at 1b4f074, macOS 26.6.2, 2026-10-15T16:03Z
+built Arbor, the pointer tool and the app bundles in 8s
+session 1: Arbor pid 3842, test windows 30 31 32 (pid 3797)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 30 left
+docked w30 at the left edge
+> dock 31 right
+docked w31 at the right edge
+> dock 32 beside 30 bottom
+docked w32 below w30
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w30 12 43 325 319        docked
+  w31 687 43 325 650       docked
+  w32 12 374 325 319       docked focused
+
+▸ drag the seam beside a column to the right: the whole column grows and the Desktop gives way
+> drag 343 202 423 202
+  ✔ the window beside the seam is 80 points wider
+  ✔ so is the one below it
+  ✔ the window beyond the Desktop kept its width
+  ✔ it still reaches the right edge
+  ✔ nothing overlaps
+  ✔ windows match Arbor's layout
+
+▸ drag the seam between two stacked windows down: the upper grows and the lower shrinks
+> drag 214 368 214 428
+  ✔ the upper window is 60 points taller
+  ✔ the lower one 60 points shorter
+  ✔ the lower one still reaches the bottom edge
+  ✔ windows match Arbor's layout
+
+▸ drag a seam back to the left: it follows the pointer both ways
+> drag 423 232 343 232
+  ✔ the window beside the seam is 80 points narrower
+  ✔ windows match Arbor's layout
+
+▸ drag a docked window's inner edge: on release its neighbour gives up the space
+> drag 688 368 648 368
+  ✔ the window is 40 points wider
+  ✔ it still reaches the right edge
+  ✔ it is in its slot: the layout followed the window
+  ✔ the Desktop is still between the columns
+  ✔ windows match Arbor's layout
+
+▸ drag a docked window's lower edge toward the window below: nothing else moves until the button is let go
+> drag 174 421 174 461 --no-release
+held: the window is at 12 43 325 390, the pointer at 174 461 down
+  ✔ the window grew under the pointer
+  ✔ the window below has not moved
+  ✔ nor the one beyond the Desktop
+  ✔ the window still has what it was given
+> release
+  ✔ released, it keeps the height it was given
+  ✔ the window below gives up that much
+  ✔ and still reaches the bottom edge
+  ✔ it is in its slot: the layout followed the window
+  ✔ nothing overlaps
+  ✔ windows match Arbor's layout
+
+▸ drag a docked window's outer edge, against the screen: it springs back on release
+> drag 1011 368 941 368 --no-release
+  ✔ the window follows the pointer while the button is held
+> release
+  ✔ it has its width back
+  ✔ it reaches the right edge again
+  ✔ windows match Arbor's layout
+
+▸ drag a docked window's corner: both seams move
+> drag 335 431 375 401 --no-release
+held: the window is at 12 43 365 360, the pointer at 375 401 down
+  ✔ the window grew wider under the pointer
+  ✔ and shorter
+> release
+  ✔ released, it keeps the width it was given
+  ✔ and the height
+  ✔ it is in its slot: the layout followed the window
+  ✔ the window below took the height and the width
+  ✔ and reaches the bottom edge
+  ✔ nothing overlaps
+  ✔ windows match Arbor's layout
+
+▸ move a docked window without the mouse: Arbor puts it back
+> test windows: move 32 132 325 365 278
+  ✘ it is back in its slot — it is at 132 325 365 278, its slot at 12 415 365 278
+      picture: mac-shell/fail-30-seams-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          389 43 246 650
+      |   w30 12 43 365 360        docked focused
+      |   w31 647 43 365 650       docked
+      |   w32 132 325 365 278      docked letBe
+      log | INFO  trace 30-seams-1-08 ended: 262 lines, another trace was started
+      log | INFO  trace 30-seams-1-09: recording to /tmp/arbor-shell.gqLsBf/home/traces/2026-10-15-160347-30-seams-1-09.jsonl
+      log | INFO  w32 has a new frame within a second of a click or a modifier key; Arbor waits for where it ends
+      log | DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Left as it is · ⌃⌥Space puts it back in its place
+  ✘ windows match Arbor's layout — w32 expected 12 415 365 278 actual 132 325 365 278
+      picture: mac-shell/fail-30-seams-2.png
+
+▸ resize a docked window by command
+> resize 30 right -40
+  ✔ the command succeeds
+  ✔ the window is 40 points narrower
+> resize 30 left 40
+  ✔ an edge with nothing beside it is refused
+  ✔ windows match Arbor's layout
+
+▸ drag a floating window across a gap and resize under it by command: it stays in front, and a press where the gap runs is the window's
+> test windows: open size=300x200 at=342,268 title=Across the gap
+> drag 528 280 343 223
+  ✔ the window floats
+  ✔ it lies across the gap
+> resize 30 right -20
+  ✔ the first resize succeeds
+> resize 30 right 20
+  ✔ and the one that takes it back
+  ✔ the floating window has stayed where it was put
+  ✔ the gap runs under it as before
+  ✔ it is in front of the gap's handle
+> drag 343 325 393 325
+  ✔ the floating window got the press
+  ✔ and the drag that followed
+  ✔ no docked window was resized
+  ✔ windows match Arbor's layout
+> test windows: close 43
+
+▸ a floating window lies behind both windows beside a gap: a press in the gap moves the gap, and the window stays behind
+> test windows: open size=300x200 at=342,268 title=Behind the gap
+> drag 528 280 174 409
+  ✔ the window floats
+  ✔ it lies across the gap
+  ✔ in front of the gap's handle, as long as it is in front of the windows
+> click 317 103
+> click 317 673
+  ✔ the two windows have come forward over it
+  ✔ and the gap's handle with them
+  ✔ under the two, not over them
+  front to back, the handle never pressed:
+    Arbor 35 at 3 406 343 296
+          32 at 12 415 325 278
+          30 at 12 43 325 360
+    Arbor 33 at 12 403 325 12
+          44 at 20 397 300 228
+          31 at 647 43 365 650
+    Arbor 37 at 337 43 12 650
+    Arbor 36 at 635 43 12 650
+> drag 170 409 170 449
+  ✔ the upper window is 40 points taller
+  ✔ the lower one 40 points shorter
+  ✔ the floating window got no press
+  ✔ it has stayed where it was
+  ✔ and behind both
+  ✔ windows match Arbor's layout
+
+▸ a handle that was pressed goes back to its place: under the two windows, over what is behind them
+  front to back, after the drag:
+    Arbor 35 at 3 445 343 257
+          32 at 12 454 325 239
+          30 at 12 43 325 399
+    Arbor 33 at 12 443 325 12
+          44 at 20 397 300 228
+          31 at 647 43 365 650
+    Arbor 37 at 337 43 12 650
+    Arbor 36 at 635 43 12 650
+  ✔ after the drag it is under the two
+  ✔ and over the floating window
+> click 170 448
+  front to back, after a click on the handle:
+    Arbor 35 at 3 445 343 257
+          32 at 12 454 325 239
+          30 at 12 43 325 399
+    Arbor 33 at 12 443 325 12
+          44 at 20 397 300 228
+          31 at 647 43 365 650
+    Arbor 37 at 337 43 12 650
+    Arbor 36 at 635 43 12 650
+  ✔ after a click that drags nothing too
+  ✔ and over the floating window
+  ✔ the floating window got no press
+  ✔ no docked window was resized
+
+▸ brought forward, it has its presses back; and loses them again when the two come forward over it
+> test windows: front 44
+  ✔ it is in front of the gap's handle
+> click 170 448
+  ✔ it got the press
+  ✔ no docked window was resized
+> click 317 673
+> click 317 103
+  ✔ the two windows have come forward over it
+  ✔ and the gap's handle with them
+  ✔ under the two, not over them
+  front to back, at the end:
+    Arbor 35 at 3 34 343 417
+          30 at 12 43 325 399
+          32 at 12 454 325 239
+    Arbor 33 at 12 443 325 12
+          44 at 20 397 300 228
+          31 at 647 43 365 650
+    Arbor 37 at 337 43 12 650
+    Arbor 36 at 635 43 12 650
+  ✔ windows match Arbor's layout
+> test windows: close 44
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+84 passed, 2 failed
+exit code 1
