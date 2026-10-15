@@ -37,6 +37,103 @@ public enum WindowGrab {
     return (x * x + y * y).squareRoot() > lead
   }
 
+  // MARK: What a press takes hold of
+
+  /// The frontmost window that the window server shows at a place.
+  public enum Top: Equatable, Sendable {
+    /// One that Arbor does not arrange.
+    case stranger
+    /// - listed: its frame by the window server.
+    /// - believed: what Accessibility last said.
+    case known(WindowID, listed: CGRect, believed: CGRect)
+  }
+
+  /// What is noted of a press, to hold later looks at the window against.
+  public struct Hold: Equatable, Sendable {
+    /// Nil: none that Arbor knows was found. Unless that is settled, what a window's app reports may still tell.
+    public var window: WindowID?
+    /// A place of the pointer, and the frame the window had when the pointer was there, as nearly as can be told.
+    public var point: CGPoint
+    public var frame: CGRect = .zero
+    /// The press is not about a window Arbor knows.
+    public var isSettled = false
+    /// The press is served late, and the window was found on its way. For the log.
+    public var isInTheHand = false
+
+    public init(
+      window: WindowID? = nil, point: CGPoint, frame: CGRect = .zero, isSettled: Bool = false, isInTheHand: Bool = false
+    ) {
+      (self.window, self.point, self.frame) = (window, point, frame)
+      (self.isSettled, self.isInTheHand) = (isSettled, isInTheHand)
+    }
+  }
+
+  /// What a press takes hold of, by what the window server lists when the press is looked at.
+  ///
+  /// That is at once, as a rule, and then the pointer is where the button went down. But a busy Mac serves a press late: the
+  /// place of the press is of a while ago, and the list is of now. A window in the hand may have left that place, with
+  /// another one showing there, or be listed as far from its app's word as one that macOS swept aside. So a window that
+  /// `isInTheHand` goes first, whether it is under the pointer or still under the press.
+  /// - Parameters:
+  ///   - pressedAt: where the button went down.
+  ///   - pointerNow: where the pointer is as the press is looked at.
+  ///   - underPress, underPointer: what the window server shows at those places now.
+  public static func hold(pressedAt: CGPoint, pointerNow: CGPoint, underPress: Top?, underPointer: Top?) -> Hold {
+    for case .known(let window, let listed, let believed)? in [underPointer, underPress]
+    where isInTheHand(listed: listed, believed: believed, pressedAt: pressedAt, pointerNow: pointerNow) {
+      // Its app's last word is the nearest there is to the frame it had at the press, and is that frame if Arbor was
+      // too busy to hear more. If not, and it is an edge that is in the hand, the edge has left the press behind.
+      if isNearEdge(pointerNow, of: listed), !isNearEdge(pressedAt, of: believed) {
+        return Hold(window: window, point: pointerNow, frame: listed, isInTheHand: true)
+      }
+      return Hold(window: window, point: pressedAt, frame: believed, isInTheHand: true)
+    }
+    switch underPress {
+    case nil:
+      return Hold(point: pressedAt)
+    case .known(let window, let listed, let believed)? where !isListedElsewhere(listed, than: believed):
+      // The same for an edge whose app has been heard all along.
+      if case .known(window, _, _)? = underPointer, isNearEdge(pointerNow, of: listed), !isNearEdge(pressedAt, of: listed) {
+        return Hold(window: window, point: pointerNow, frame: listed)
+      }
+      return Hold(window: window, point: pressedAt, frame: listed)
+    case .stranger?, .known?:
+      return Hold(point: pressedAt, isSettled: true)
+    }
+  }
+
+  /// Whether a hand has taken the window along since the button went down.
+  ///
+  /// Such a window is ahead of its app's word, the way the pointer went and no farther: the window server moves it at once, and
+  /// its app hears a tenth of a second later. More than a step or two ahead it is only if Arbor has not heard the app since
+  /// the press, and then the app's word has it under the press. A window at rest that the pointer has merely come to is
+  /// where its app says. One that macOS swept aside (`isListedElsewhere`) shows a strip at the side of the display, which can only be
+  /// pulled inwards: the other way.
+  ///
+  /// Nothing is made of a few points. A press that is served on time finds the pointer where it was, give or take a tremble, and
+  /// the two frames of a window at rest may differ a little for good; to go by the app's word then would make a drag of
+  /// the difference.
+  static func isInTheHand(listed: CGRect, believed: CGRect, pressedAt: CGPoint, pointerNow: CGPoint) -> Bool {
+    let (px, py) = (pointerNow.x - pressedAt.x, pointerNow.y - pressedAt.y)
+    let (dx, dy) = (listed.minX - believed.minX, listed.minY - believed.minY)
+    let ahead = (dx * dx + dy * dy).squareRoot()
+    return (px * px + py * py).squareRoot() > patience && ahead >= edgeMargin
+      && wentThePointersWay(from: believed, to: listed, pressedAt: pressedAt, pointerNow: pointerNow, give: edgeMargin)
+      && (ahead <= lag || believed.insetBy(dx: -edgeMargin, dy: -edgeMargin).contains(pressedAt))
+  }
+
+  /// Whether a window has moved, each way between nowhere and as far as the pointer, give or take, and not against it.
+  private static func wentThePointersWay(
+    from before: CGRect, to now: CGRect, pressedAt: CGPoint, pointerNow: CGPoint, give: CGFloat
+  ) -> Bool {
+    let (dx, dy) = (now.minX - before.minX, now.minY - before.minY)
+    let (px, py) = (pointerNow.x - pressedAt.x, pointerNow.y - pressedAt.y)
+    func follows(_ window: CGFloat, _ pointer: CGFloat) -> Bool {
+      window >= Swift.min(pointer, 0) - give && window <= Swift.max(pointer, 0) + give
+    }
+    return (abs(dx) >= 1 || abs(dy) >= 1) && follows(dx, px) && follows(dy, py) && dx * px + dy * py > 0
+  }
+
   /// How far a window that started late may be from where the pointer's travel would have it, either way. The pointer and the
   /// window are read a moment apart, and a pointer that comes in coarse steps (a script's: 66 points on a hosted Mac) is a
   /// whole step further on by the second reading.
@@ -128,12 +225,8 @@ public enum WindowGrab {
   ) -> Verdict {
     let resized = abs(frameNow.width - frameAtPress.width) >= 1 || abs(frameNow.height - frameAtPress.height) >= 1
     if resized { return isNearEdge(pressedAt, of: frameAtPress) ? .resize : .neither }
-    let (dx, dy) = (frameNow.minX - frameAtPress.minX, frameNow.minY - frameAtPress.minY)
-    let (px, py) = (pointerNow.x - pressedAt.x, pointerNow.y - pressedAt.y)
-    func follows(_ window: CGFloat, _ pointer: CGFloat) -> Bool {
-      window >= Swift.min(pointer, 0) - lag && window <= Swift.max(pointer, 0) + lag
-    }
-    guard abs(dx) >= 1 || abs(dy) >= 1, follows(dx, px), follows(dy, py), dx * px + dy * py > 0 else { return .neither }
+    guard wentThePointersWay(from: frameAtPress, to: frameNow, pressedAt: pressedAt, pointerNow: pointerNow, give: lag)
+    else { return .neither }
     return .drag
   }
 }

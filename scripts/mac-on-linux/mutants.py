@@ -194,6 +194,41 @@ MUTANTS = [
         "new": "    guard let delay = Optional(0.0) else { return }\n",
         "red": ["a second display is plugged in and unplugged: for a moment nothing is said: displays blink"],
     },
+    {
+        "name": "a press on the strip of a window that was swept aside takes hold of it",
+        "file": "ArborCore/WindowGrab.swift",
+        "old": "    case .known(let window, let listed, let believed)? where !isListedElsewhere(listed, than: believed):\n",
+        "new": "    case .known(let window, let listed, let believed)? where believed != .null:\n",
+        "red": [
+            "macOS shows its desktop, a window is given another frame meanwhile, and a click on its strip slips, heard 0 ms late: "
+            "no drag, no resize, and no window moved by hand is reported",
+            "macOS shows its desktop, a window is given another frame meanwhile, and a click on its strip slips, heard 20 ms late: "
+            "no drag, no resize, and no window moved by hand is reported",
+        ],
+    },
+    {
+        "name": "a press is looked for at its own place only, however late it is served",
+        "old": "      pressedAt: point, pointerNow: now, underPress: topWindow(at: point, in: list), underPointer: topWindow(at: now, in: list))\n",
+        "new": "      pressedAt: point, pointerNow: point, underPress: topWindow(at: point, in: list), underPointer: topWindow(at: point, in: list))\n",
+        "red": [
+            "a window is dragged for a second, and the monitor hears of the press 500 ms late: the drag is reported to begin",
+            "a window is dragged sideways for a second while Arbor's main thread is busy for 300 ms from the press, and what queued up comes byTime: "
+            "the drag is reported to begin",
+            "a window that lies over another is dragged for a second, and the monitor hears of the press 500 ms late: the drag is reported to begin",
+            "a window is made wider by its left edge for a second while Arbor's main thread is busy for 300 ms from the press, and what queued up comes byTime: "
+            "it is not taken for a drag",
+        ],
+    },
+    {
+        "name": "whatever is under the pointer when a press is served late is in the hand",
+        "file": "ArborCore/WindowGrab.swift",
+        "old": "    where isInTheHand(listed: listed, believed: believed, pressedAt: pressedAt, pointerNow: pointerNow) {\n",
+        "new": "    where pressedAt != pointerNow {\n",
+        "red": [
+            "the button goes down on the wallpaper while Arbor's main thread is busy for 300 ms, the pointer comes to a window, and its app moves it: "
+            "no drag and no resize is made of it",
+        ],
+    },
 ]
 
 

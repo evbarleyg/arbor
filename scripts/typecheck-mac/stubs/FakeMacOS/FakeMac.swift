@@ -9,6 +9,7 @@
 //   Windows.swift         open, close, minimize, full screen, tabs, Spaces
 //   Mouse.swift           presses, drags, releases
 //   Threads.swift         other threads than Arbor's main one, on the model's clock
+//   DesktopShown.swift    macOS shows its desktop: the windows are listed at the sides
 //
 // Every delay and every order of reports here says where it was seen. "Guess" marks what nobody has measured.
 import Foundation
@@ -76,6 +77,11 @@ public final class FakeMac: @unchecked Sendable {
   /// The window server has a dragged window one movement further than the pointer has gone, and leaves it there. (A hosted Mac: the window ended 67 points further than
   /// the pointer travelled, which was one step of that drag. Why is not known.)
   public var serverRunsAStepAhead = false
+  /// While macOS shows its desktop: where the window server lists each window it swept aside, by number (DesktopShown.swift).
+  public internal(set) var sweptTo: [UInt32: CGRect]?
+  /// How long after the button went down on a strip the window server lists the windows where they are again, with the button still down. 27 ms on a hosted
+  /// Mac at rest. What a loaded one takes nobody has measured.
+  public var stripBringsBackAfter: TimeInterval = 0.027
   /// Whether Arbor has the Accessibility permission. Without it every call is refused with `apiDisabled`.
   public var isTrusted = true
 

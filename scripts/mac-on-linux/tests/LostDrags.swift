@@ -38,9 +38,11 @@ private func play(_ one: StoreyOne, flick: Bool) {
 }
 
 @MainActor
-private func judge(_ story: Story, _ one: StoreyOne, _ window: FakeMac.Window, pressedAt: TimeInterval) {
+private func judge(
+  _ story: Story, _ one: StoreyOne, _ window: FakeMac.Window, pressedAt: TimeInterval, movedTo place: CGPoint = CGPoint(x: 300, y: 250)
+) {
   let words = account(one, window, pressedAt: pressedAt)
-  story.check("the window has moved", window.bounds.origin == CGPoint(x: 300, y: 250), window.bounds.text)
+  story.check("the window has moved", window.bounds.origin == place, window.bounds.text)
   story.check("the drag is reported to begin", one.heard.all.contains(.dragBegan(window.number)), words)
   story.check("and to end, so that there is a drop to act on", one.heard.all.contains(.dragEnded(window.number)), words)
   story.check("Arbor knows where the window is", one.snapshot(window)?.frame == window.bounds, "\(one.snapshot(window)?.frame.text ?? "")")
@@ -69,6 +71,96 @@ func tellOfLostDrags(_ book: Book) {
         one.mac.arborIsBusy(for: 0.3, then: order)
         play(one, flick: flick)
         judge(story, one, window, pressedAt: pressed)
+      }
+    }
+  }
+
+  // Along its title bar the window stays under the place of the press, so a press that is served late does find it: 60 points and more from where its app last said.
+  // That is also how a window looks that macOS has swept aside (DesktopShown.swift).
+  func sideways(_ story: Story, _ prepare: (FakeMac) -> Void) {
+    let (one, window) = stage(story)
+    prepare(one.mac)
+    let pressed = one.mac.now
+    one.mac.drag(from: grip, to: CGPoint(x: 500, y: grip.y))
+    one.mac.release()
+    one.mac.pass(3)
+    judge(story, one, window, pressedAt: pressed, movedTo: CGPoint(x: 300, y: 100))
+  }
+  for late in [0, 100, 500] {
+    book.story("a window is dragged sideways for a second, and the monitor hears of the press \(late) ms late") { story in
+      sideways(story) { $0.mouseDownIsLateBy = Double(late) / 1000 }
+    }
+  }
+  for order in [FakeMac.Backlog.byTime, .accessibilityFirst, .mouseFirst] {
+    book.story("a window is dragged sideways for a second while Arbor's main thread is busy for 300 ms from the press, and what queued up comes \(order)") { story in
+      sideways(story) { $0.arborIsBusy(for: 0.3, then: order) }
+    }
+  }
+
+  // A floating window over tiles: as soon as it has left the place of the press, another window that Arbor knows shows there.
+  func overAnother(_ story: Story, _ prepare: (FakeMac) -> Void) {
+    var window: FakeMac.Window!
+    let one = StoreyOne(story) { mac in
+      _ = mac.open("below", in: mac.launch("Safari"), frame: CGRect(x: 40, y: 60, width: 900, height: 600))
+      window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 100, y: 100, width: 400, height: 300))
+    }
+    prepare(one.mac)
+    let pressed = one.mac.now
+    play(one, flick: false)
+    judge(story, one, window, pressedAt: pressed)
+  }
+  book.story("a window that lies over another is dragged for a second, and the monitor hears of the press 500 ms late") { story in
+    overAnother(story) { $0.mouseDownIsLateBy = 0.5 }
+  }
+  for order in [FakeMac.Backlog.byTime, .accessibilityFirst, .mouseFirst] {
+    book.story("a window that lies over another is dragged for a second while Arbor's main thread is busy for 300 ms from the press, and what queued up comes \(order)") { story in
+      overAnother(story) { $0.arborIsBusy(for: 0.3, then: order) }
+    }
+  }
+
+  // A rubber band over the icons on the desktop. The pointer comes to a window, which is not therefore in the hand.
+  book.story("the button goes down on the wallpaper while Arbor's main thread is busy for 300 ms, the pointer comes to a window, and its app moves it") { story in
+    var window: FakeMac.Window!
+    let one = StoreyOne(story) { mac in window = mac.open("window", in: mac.launch("Notes"), frame: CGRect(x: 300, y: 100, width: 400, height: 300)) }
+    one.mac.arborIsBusy(for: 0.3)
+    // It is there, and rests, by the time the press is served.
+    one.mac.drag(from: CGPoint(x: 100, y: 500), to: CGPoint(x: 400, y: 300), steps: 5, interval: 0.03, rest: 0.01)
+    one.mac.pass(0.4)
+    // The way the pointer came, and on: what a window does that started late.
+    for step in 1...3 {
+      one.mac.appMoves(window, to: CGRect(x: 300 + 10 * CGFloat(step), y: 100 - 5 * CGFloat(step), width: 400, height: 300))
+      one.mac.pass(0.15)
+      one.mac.moveMouse(to: CGPoint(x: 400 + 10 * CGFloat(step), y: 300 - 5 * CGFloat(step)))
+      one.mac.pass(0.15)
+    }
+    one.mac.release()
+    one.mac.pass(2)
+    story.check("no drag and no resize is made of it", one.heard.outline.isEmpty, one.heard.texts)
+  }
+
+  // By its left edge a window's place changes with its size, as far as the pointer goes. Whatever becomes of a press that is served late, it is no drag: a drag ends
+  // in a drop, and the window would be docked or set afloat where the hand only made it wider.
+  func byTheLeftEdge(_ story: Story, wider: Bool, _ prepare: (FakeMac) -> Void) {
+    let (one, window) = stage(story)
+    prepare(one.mac)
+    one.mac.drag(from: CGPoint(x: 100, y: 250), to: CGPoint(x: wider ? 20 : 220, y: 250))
+    one.mac.release()
+    one.mac.pass(3)
+    story.check("the window has another size", window.bounds == (wider ? CGRect(x: 20, y: 100, width: 480, height: 300) : CGRect(x: 220, y: 100, width: 280, height: 300)), window.bounds.text)
+    story.check("it is not taken for a drag", !one.heard.all.contains(.dragBegan(window.number)), one.heard.texts)
+    story.check("the resize is reported to begin and to end", one.heard.outline == [.resizeBegan(window.number), .resizeEnded(window.number)], one.heard.texts)
+    story.check("Arbor knows where the window is", one.snapshot(window)?.frame == window.bounds, "\(one.snapshot(window)?.frame.text ?? "")")
+  }
+  for wider in [true, false] {
+    let gesture = "a window is made \(wider ? "wider" : "narrower") by its left edge for a second"
+    for late in [0, 100, 500] {
+      book.story("\(gesture), and the monitor hears of the press \(late) ms late") { story in
+        byTheLeftEdge(story, wider: wider) { $0.mouseDownIsLateBy = Double(late) / 1000 }
+      }
+    }
+    for order in [FakeMac.Backlog.byTime, .accessibilityFirst, .mouseFirst] {
+      book.story("\(gesture) while Arbor's main thread is busy for 300 ms from the press, and what queued up comes \(order)") { story in
+        byTheLeftEdge(story, wider: wider) { $0.arborIsBusy(for: 0.3, then: order) }
       }
     }
   }

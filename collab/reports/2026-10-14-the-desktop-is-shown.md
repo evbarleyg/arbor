@@ -78,6 +78,61 @@ docks it at the edge of the display and resizes everything else.
   `collab/evidence/traces/desktop-shown.jsonl`. (A first run came to 61 of 62: the control for the stage minimized a window, the Dock grew by it, the display's
   visible frame with the Dock, and a layout for another frame is never shown as motion.)
 
+## Afterwards: a press that is served late (2026-10-15)
+
+The first rule had a hole, found on the model of a Mac that runs the real Accessibility layer (`make mac-on-linux`). A busy Mac serves a press late. By then a
+window that is really in the hand has gone some way, its app has not been heard, and the window server lists it "elsewhere": the press took hold of
+nothing, and **the drag was lost**, with nothing logged. For the same reason a second try at a late press (at the pointer's place of now, when no window lies
+under the press's own place any more) cured nothing, lost a drag that used to be seen, and had been taken out again.
+
+Putting that second try back without the rule for strips, which was the plan, does not do. Two reviews, each with stories of its own on the model, showed that it
+takes hold of whatever the pointer has come to, forgets the place of the press when it finds nothing, and never runs when another window shows at that place,
+which under a floating window over tiles is always. And late presses turned out to lose more than drags, most of it older than the rule:
+
+| A press heard 300 or 500 ms late, or Arbor's main thread busy for 300 ms from the press | Before |
+|---|---|
+| a window dragged away from under the place of the press, heard late | no drag |
+| a window dragged **sideways**, which stays under that place | no drag: "listed elsewhere" |
+| a window that **lies over another** (a floating one over tiles) | no drag: the press takes hold of the window below |
+| a tall window dragged up against the menu bar, the pointer going on into it | no drag: "listed elsewhere" |
+| a window **flicked**, or dragged and held still, the gesture over when the press is served | no drag |
+| a window **made wider by its left edge** | **a drag**, which ends in a drop |
+
+**What changed.** The decision is out of the Accessibility layer. `makePress` reads the list once, and what shows at the press and at the pointer;
+`WindowGrab.hold` (ArborCore, tabled in `WindowGrabTests`) says what the press takes hold of:
+
+- **A window in the hand goes first**, under the pointer or still under the press. It is known by being ahead of its app's word, the way the pointer went and no
+  farther. It is judged from the place of the press and **its app's last word**, which is the nearest there is to the frame it had at the press, and is that
+  frame if Arbor was too busy to hear more. So the way it has come counts, and a gesture that is over by then is still seen.
+- **An edge that has left the press behind** (its app heard meanwhile) is judged from where the pointer is, if the pointer is at an edge and the press is not.
+- Otherwise the press is looked for at its own place, under the rule for strips, as before; and if nothing is found it keeps its own place, which is what a
+  report from a window's app is held against.
+- **Nothing is made of a few points**: the pointer must have gone more than 24, the window be 10 ahead. A press on time comes with a tremble, and the two frames of a
+  window at rest may differ a little; to go by the app's word then would make a drag of the difference.
+- **A window that the pointer has merely come to is not in the hand**: it is where its app says. (A rubber band over the icons on the desktop.)
+- **No strip is**: it can only be pulled inwards, the other way than its window was swept. That does not rest on the 27 ms, which were measured on a Mac at rest.
+  More than 100 points ahead, a window must also have been under the press by its app's word, so a pointer that comes to a strip from the bare desktop finds nothing.
+
+**Evidence.** All on the model, which no Mac can be asked for: lateness to order.
+
+- **The model shows its desktop** (`FakeMacOS/DesktopShown.swift`: the key, and a press on a strip). `tests/DesktopShown.swift`: a click that slips and a pull at a strip,
+  heard 0, 20, 100 and 500 ms late and with the main thread busy, in all three orders; a Mac that takes 400 ms to bring the windows back; a window given another
+  frame meanwhile; with the real controller, a floating window's strip. In `tests/LatePresses.swift`, a rubber band from the bare desktop that comes to a strip.
+- `tests/LatePresses.swift` and more of `tests/LostDrags.swift`: with the above, 161 new stories. **55 checks are red on the trunk's layer and green on this one, none the other
+  way** (`REF=origin/swarm/trunk make mac-on-linux`: 1434 ✔ against 1489 ✔). 36 checks of the new stories are red on both, none of them a drag or a resize that was not
+  one, each listed in `known-failures.txt` with its reason. Six lines that stood there are cured and gone.
+- Of the stories that were there before, the layer reports something else in six: four drags seen sooner or at all, two flicks seen at all
+  (`collab/evidence/mac-on-linux/heard.jsonl`).
+- 3,000 random gestures (title bar, four edges, content, wallpaper; alone, over another window, beside a tile; eight kinds of lateness; windows and apps that start
+  late), played on both layers by the second review and again on the last state: **547 come out right that came out wrong, 11 the other way**. Nine of
+  the 11 are drags there and back, which the measure took for nothing. Two are real: see below.
+- Three changes in `mutants.py` take the rules out one by one, and the stories about them go red.
+
+**Still lost**, as before: what is at rest when the press is served and is dragged on afterwards; an edge that takes the window's place nowhere (right, bottom) or has left
+the place of the press, once its app has been heard; a window stopped by the menu bar with its app heard first. **Worse than before**, two in 3,000: a window
+over another whose window server starts 400 ms late **and** whose press is served 300 ms late, with the pointer near one of its edges by then, is judged from
+there, and the drag is not seen.
+
 ## Not done, and why
 
 - **A leap of less than 32 points.** A window that hangs off its display with 40 points showing is swept until 12 show. A click on its strip that slips is

@@ -121,6 +121,7 @@ extension FakeMac {
       mouse.grab = Grab(kind: .nothing, window: nil, pressedAt: point, frameAtPress: .zero, time: now)
       return
     }
+    if isStrip(at: point) { return pressOnAStrip(at: point) }
     // The resize area reaches a few points outside the frame.
     guard let window = windowShowing(at: point, reach: 4) else {
       mouse.grab = Grab(kind: .nothing, window: nil, pressedAt: point, frameAtPress: .zero)

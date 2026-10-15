@@ -70,7 +70,7 @@ extension FakeMac {
     for window in stack where window.exists {
       all.append(
         Listed(
-          number: window.number, pid: window.app.pid, ownerName: window.app.name, layer: 0, bounds: window.bounds, alpha: window.alpha,
+          number: window.number, pid: window.app.pid, ownerName: window.app.name, layer: 0, bounds: listedBounds(of: window), alpha: window.alpha,
           isOnScreen: isShowing(window)))
     }
     all += things.filter { !$0.isInFront }.map(listed)
@@ -93,7 +93,7 @@ extension FakeMac {
 
   /// The frontmost window that shows at a point, within `reach` points of its frame: macOS's resize area lies to either side of the border.
   func windowShowing(at point: CGPoint, reach: CGFloat = 0) -> Window? {
-    stack.first { isShowing($0) && $0.alpha > 0 && $0.bounds.insetBy(dx: -reach, dy: -reach).contains(point) }
+    stack.first { isShowing($0) && $0.alpha > 0 && listedBounds(of: $0).insetBy(dx: -reach, dy: -reach).contains(point) }
   }
 
   // MARK: Screens
@@ -111,6 +111,7 @@ extension FakeMac {
       window.frame = window.frame.offsetBy(dx: dx, dy: dy)
       window.bounds = window.bounds.offsetBy(dx: dx, dy: dy)
     }
+    sweptTo = sweptTo?.mapValues { $0.offsetBy(dx: dx, dy: dy) }
     mouse.location.x += dx
     mouse.location.y += dy
     mouse.locationByAppKit = mouse.location

@@ -227,6 +227,136 @@ extension Box where Value == EchoFilter {
     #expect(!WindowGrab.isListedElsewhere(frame.insetBy(dx: 5, dy: 5), than: frame))
   }
 
+  // What a press takes hold of. `frame` is where the window's app last had it.
+
+  let window = WindowID(101)
+  let below = WindowGrab.Top.known(
+    WindowID(102), listed: CGRect(x: 0, y: 40, width: 1400, height: 800), believed: CGRect(x: 0, y: 40, width: 1400, height: 800))
+
+  /// The press was on the title bar, and the pointer has gone so far by the time it is looked at.
+  func hold(
+    pressedAt: CGPoint? = nil, pointerWent x: CGFloat, _ y: CGFloat, listed: CGRect, believed: CGRect? = nil,
+    behind: WindowGrab.Top? = nil
+  ) -> WindowGrab.Hold {
+    let pressedAt = pressedAt ?? titleBar
+    let now = CGPoint(x: pressedAt.x + x, y: pressedAt.y + y)
+    let top = WindowGrab.Top.known(window, listed: listed, believed: believed ?? frame)
+    func shows(at point: CGPoint) -> WindowGrab.Top? { listed.insetBy(dx: -4, dy: -4).contains(point) ? top : behind }
+    return WindowGrab.hold(pressedAt: pressedAt, pointerNow: now, underPress: shows(at: pressedAt), underPointer: shows(at: now))
+  }
+
+  @Test func aPressThatIsServedOnTimeTakesHoldOfWhatIsUnderIt() {
+    #expect(hold(pointerWent: 0, 0, listed: frame) == .init(window: window, point: titleBar, frame: frame))
+    #expect(WindowGrab.hold(pressedAt: titleBar, pointerNow: titleBar, underPress: nil, underPointer: nil) == .init(point: titleBar))
+    #expect(
+      WindowGrab.hold(pressedAt: titleBar, pointerNow: titleBar, underPress: .stranger, underPointer: .stranger)
+        == .init(point: titleBar, isSettled: true))
+  }
+
+  @Test func aTrembleAndFramesThatDifferALittleMakeNoDifference() {
+    // To go by the app's word here would make a drag of the difference, at the first look.
+    for ahead in [1, 2, 9, 30] as [CGFloat] {
+      let listed = frame.offsetBy(dx: ahead, dy: 0)
+      #expect(hold(pointerWent: 2, 0, listed: listed) == .init(window: window, point: titleBar, frame: listed), "\(ahead)")
+    }
+    // A selection in a text, served late, in an app whose two frames differ for good.
+    let inside = CGPoint(x: 300, y: 300)
+    let listed = frame.offsetBy(dx: 2, dy: 2)
+    #expect(hold(pressedAt: inside, pointerWent: 90, 40, listed: listed) == .init(window: window, point: inside, frame: listed))
+  }
+
+  @Test func servedLateItTakesHoldOfTheWindowInTheHandAsItsAppLastHadIt() {
+    let expected = WindowGrab.Hold(window: window, point: titleBar, frame: frame, isInTheHand: true)
+    // 300 ms late, the app not heard since. Sideways the window is still under the press, otherwise it has left.
+    #expect(hold(pointerWent: 60, 0, listed: frame.offsetBy(dx: 60, dy: 0)) == expected)
+    #expect(hold(pointerWent: 100, 75, listed: frame.offsetBy(dx: 100, dy: 75)) == expected)
+    #expect(hold(pointerWent: 100, 75, listed: frame.offsetBy(dx: 100, dy: 75), behind: below) == expected, "over a tile")
+    #expect(hold(pointerWent: 100, 0, listed: frame.offsetBy(dx: 40, dy: 0)) == expected, "a window trails the pointer")
+    // The menu bar stops the window, and the pointer goes on, off the window.
+    #expect(hold(pointerWent: 90, -110, listed: frame.offsetBy(dx: 90, dy: -60)) == expected)
+    // Its app has been heard all along, and is a tenth of a second behind.
+    let heard = frame.offsetBy(dx: 80, dy: 60)
+    #expect(
+      hold(pointerWent: 100, 75, listed: frame.offsetBy(dx: 100, dy: 75), believed: heard, behind: below)
+        == .init(window: window, point: titleBar, frame: heard, isInTheHand: true))
+  }
+
+  @Test func anEdgeInTheHandIsJudgedFromThePressIfItsAppHasNotBeenHeardSince() {
+    let edge = CGPoint(x: 100, y: 300)
+    var wider = frame
+    wider.origin.x -= 50
+    wider.size.width += 50
+    let expected = WindowGrab.Hold(window: window, point: edge, frame: frame, isInTheHand: true)
+    #expect(hold(pressedAt: edge, pointerWent: -50, 2, listed: wider) == expected)
+    // It trails the pointer, which is well off the edge.
+    #expect(hold(pressedAt: edge, pointerWent: -80, 2, listed: wider) == expected)
+  }
+
+  @Test func andFromThePointersPlaceIfItHas() {
+    let edge = CGPoint(x: 100, y: 300)
+    var wider = frame
+    wider.origin.x -= 50
+    wider.size.width += 50
+    let now = CGPoint(x: 50, y: 302)
+    #expect(hold(pressedAt: edge, pointerWent: -50, 2, listed: wider, believed: wider) == .init(window: window, point: now, frame: wider))
+    var behind = wider
+    behind.origin.x += 15
+    behind.size.width -= 15
+    #expect(
+      hold(pressedAt: edge, pointerWent: -50, 2, listed: wider, believed: behind)
+        == .init(window: window, point: now, frame: wider, isInTheHand: true))
+  }
+
+  @Test func aWindowThatHasNotStirredIsJudgedFromThePress() {
+    // It starts late, or its app does: the pointer is well on its way, on the window still.
+    #expect(hold(pointerWent: 120, 0, listed: frame) == .init(window: window, point: titleBar, frame: frame))
+    let edge = CGPoint(x: 100, y: 300)
+    #expect(hold(pressedAt: edge, pointerWent: 40, 0, listed: frame) == .init(window: window, point: edge, frame: frame))
+  }
+
+  @Test func aWindowAtRestThatThePointerHasComeToIsNotTakenHoldOf() {
+    let wallpaper = CGPoint(x: 40, y: 700)
+    #expect(hold(pressedAt: wallpaper, pointerWent: 300, -300, listed: frame) == .init(point: wallpaper))
+    #expect(hold(pressedAt: wallpaper, pointerWent: 300, -300, listed: frame.offsetBy(dx: 3, dy: -3)) == .init(point: wallpaper))
+  }
+
+  @Test func norIsOneThatWentAnotherWayOrFartherThanThePointer() {
+    let wallpaper = CGPoint(x: 40, y: 700)
+    for (x, y) in [(-25, 25), (0, 30), (-30, 0)] as [(CGFloat, CGFloat)] {
+      #expect(hold(pressedAt: wallpaper, pointerWent: 300, -300, listed: frame.offsetBy(dx: x, dy: y)) == .init(point: wallpaper))
+    }
+    // Still under the press, and listed far from its app's word: that is what a swept window looks like.
+    #expect(hold(pointerWent: 60, 0, listed: frame.offsetBy(dx: 200, dy: 0)) == .init(point: titleBar, isSettled: true))
+    #expect(hold(pointerWent: 60, 0, listed: frame.offsetBy(dx: -60, dy: 0)) == .init(point: titleBar, isSettled: true))
+  }
+
+  @Test func aPressOnAStripTakesHoldOfNothingHoweverFarItIsPulledAndHoweverLateItIsServed() {
+    // A strip lies at the side of the display, and can only be pulled inwards: the other way than the window was swept.
+    let docked = CGRect(x: 12, y: 43, width: 325, height: 653)
+    let swept = CGRect(x: -313, y: 15, width: 325, height: 653)
+    let strip = CGPoint(x: 6, y: 350)
+    for pull in [0, 3, 150, 325, 600] as [CGFloat] {
+      #expect(
+        hold(pressedAt: strip, pointerWent: pull, 3, listed: swept, believed: docked) == .init(point: strip, isSettled: true),
+        "\(pull) points")
+    }
+    // Under the menu bar, where the window's own place reaches as far as the strip.
+    let above = CGRect(x: 349, y: -306, width: 326, height: 348)
+    let top = CGPoint(x: 500, y: 36)
+    #expect(
+      hold(pressedAt: top, pointerWent: 0, 400, listed: above, believed: above.offsetBy(dx: 0, dy: 340))
+        == .init(point: top, isSettled: true))
+  }
+
+  @Test func norDoesAPressOnTheBareDesktopWhosePointerComesToAStrip() {
+    // The way that window was swept. Its app has it nowhere near the press.
+    let docked = CGRect(x: 1000, y: 43, width: 400, height: 653)
+    let desktop = CGPoint(x: 900, y: 300)
+    #expect(
+      hold(pressedAt: desktop, pointerWent: 494, 0, listed: docked.offsetBy(dx: 388, dy: 0), believed: docked)
+        == .init(point: desktop))
+  }
+
   @Test func aWindowFlungAcrossTheDisplayIsStillDragged() {
     // The first look comes late, and the window has gone as far as the pointer, or not quite.
     #expect(verdict(pressedAt: titleBar, now: frame.offsetBy(dx: 480, dy: 90), pointer: CGPoint(x: 880, y: 204)) == .drag)

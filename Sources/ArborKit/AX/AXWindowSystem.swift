@@ -1278,13 +1278,22 @@ public final class AXWindowSystem: WindowSystem {
 
   // MARK: The press
 
-  /// Finds the window under the pointer: the first ordinary window, front to back, that the point belongs to.
+  /// Finds the window that a press is about.
   private func makePress(at point: CGPoint) -> Press {
-    var press = Press(point: point)
     guard
       let list = CGWindowListCopyWindowInfo([.optionOnScreenOnly, .excludeDesktopElements], kCGNullWindowID)
         as? [[String: Any]]
-    else { return press }
+    else { return Press(point: point) }
+    // Served late, on a busy Mac, the press is of a while ago, and the list is of now. So is the pointer's place.
+    let now = ScreenGeometry.global(fromAppKit: NSEvent.mouseLocation)
+    let hold = WindowGrab.hold(
+      pressedAt: point, pointerNow: now, underPress: topWindow(at: point, in: list), underPointer: topWindow(at: now, in: list))
+    if hold.isInTheHand, let window = hold.window { Log.debug("the press is served late, with \(window) in the hand") }
+    return Press(point: hold.point, window: hold.window, frame: hold.frame, isSettled: hold.isSettled)
+  }
+
+  /// The first ordinary window, front to back, that the point belongs to.
+  private func topWindow(at point: CGPoint, in list: [[String: Any]]) -> WindowGrab.Top? {
     let own = getpid()
     for info in list {
       // Layer 0 is where apps' windows are; the menu bar, the Dock and overlays are above. Arbor's own panels
@@ -1293,19 +1302,12 @@ public final class AXWindowSystem: WindowSystem {
         (info[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value != own,
         let bounds = Self.bounds(in: info), bounds.insetBy(dx: -Self.reach, dy: -Self.reach).contains(point)
       else { continue }
-      if let number = (info[kCGWindowNumber as String] as? NSNumber)?.uint32Value,
-        let record = records[WindowID(number)], !record.isBackgroundTab,
-        // macOS is showing its desktop, and this is the strip of a window it swept aside.
-        !WindowGrab.isListedElsewhere(bounds, than: record.snapshot.frame)
-      {
-        press.window = WindowID(number)
-        press.frame = bounds
-      } else {
-        press.isSettled = true
-      }
-      break
+      guard let number = (info[kCGWindowNumber as String] as? NSNumber)?.uint32Value,
+        let record = records[WindowID(number)], !record.isBackgroundTab
+      else { return .stranger }
+      return .known(WindowID(number), listed: bounds, believed: record.snapshot.frame)
     }
-    return press
+    return nil
   }
 
   private static func bounds(in info: [String: Any]) -> CGRect? {
