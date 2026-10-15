@@ -1,0 +1,196 @@
+# check-displays 2026-10-15T15:41Z on macOS 26.6.2, commit 6717a94
+
+== one display: five windows, one docked
+
+== plug a display in on the right
+  ✔ Arbor arranges two displays
+  ✔ Arbor knows the new display by its UUID
+
+== drag three windows across: one dropped in the middle, one at the far edge, one that cannot shrink
+  ✔ dropped on the second display it belongs to the second display
+  ✔ docked with a command it stays on the second display
+  ✔ dropped at the second display's right edge it docks there
+  ✔ the third window went across too
+  ✔ the window that cannot shrink has its place on the second display, with room made for it or as a tile
+
+== right: where everything is
+  ✔ right: Arbor's frame for the second display is macOS's
+  ✔ right: window 35 is in its slot (12 43 624 947)
+  ✔ right: window 36 is in its slot (1284 43 624 947)
+  ✔ right: window 37 is in its slot (1932 288 700 500)
+  ✔ right: window 38 is in its slot (2896 43 292 745)
+  ✔ right: window 39 is in its slot (1932 43 700 233)
+  ✔ right: every overlay lies within a display
+
+== right: zoom on the second display leaves the main one alone
+  ✔ right: the zoomed window fills the second display
+  ✔ right: the main display's windows did not move
+  ✔ right: parked window 38 shows on no display (it is at 3199 772 292 745)
+  ✔ right: back on the second display brings its window back
+
+== right: zoom on the main display, with a neighbour to park beside
+  ✔ right: the second display's windows did not move
+  ✔ right: parked window 36 shows on no display (it is at 1919 974 624 947)
+  ✔ right: back on the main display brings its window back
+
+== right: drag a window from the second display to the main one and back to the far edge
+  ✔ right: dropped on the main display it floats there
+  ✔ right: the drop preview lies on the second display
+  ✔ right: released there it docks on the second display
+  ✔ right: and lands where the preview was
+
+== right: where everything is afterwards
+  ✔ right: Arbor's frame for the second display is macOS's
+  ✔ right: window 35 is in its slot (12 43 624 947)
+  ✔ right: window 36 is in its slot (1284 43 624 947)
+  ✔ right: window 37 is in its slot (1932 288 700 500)
+  ✔ right: window 38 is in its slot (2777 43 411 745)
+  ✔ right: window 39 is in its slot (1932 43 700 233)
+  ✔ right: every overlay lies within a display
+
+== unplug the display
+  ✔ Arbor arranges one display
+  ✔ unplugged: window 35 is on the screen that is left
+  ✔ unplugged: window 35 belongs to the main display
+  ✔ unplugged: window 36 is on the screen that is left
+  ✔ unplugged: window 36 belongs to the main display
+  ✔ unplugged: window 37 is on the screen that is left
+  ✔ unplugged: window 37 belongs to the main display
+  ✔ unplugged: window 38 is on the screen that is left
+  ✔ unplugged: window 38 belongs to the main display
+  ✔ unplugged: window 39 is on the screen that is left
+  ✔ unplugged: window 39 belongs to the main display
+  ✔ unplugged: window 35 is in its slot
+  ✔ unplugged: window 36 is in its slot
+
+== plug it in again
+  ✔ a virtual display with the same serial number keeps its UUID
+  ✔ Arbor arranges two displays again
+  ✔ replugged: window 37 is docked on the second display again
+  ✔ replugged: window 38 is docked on the second display again
+  ✔ replugged: window 39 is docked on the second display again
+  ✔ replugged: the arrangement is the one that went away
+  ✔ replugged: Arbor's frame for the second display is macOS's
+  ✔ replugged: window 35 is in its slot (12 43 624 947)
+  ✔ replugged: window 36 is in its slot (1284 43 624 947)
+  ✔ replugged: window 37 is in its slot (1932 288 700 500)
+  ✔ replugged: window 38 is in its slot (2777 43 411 745)
+  ✔ replugged: window 39 is in its slot (1932 43 700 233)
+  ✔ replugged: every overlay lies within a display
+
+== move the display to the left of the main one (negative x)
+
+== left: where everything is
+  ✔ left: Arbor's frame for the second display is macOS's
+  ✔ left: window 35 is in its slot (12 43 624 947)
+  ✔ left: window 36 is in its slot (1284 43 624 947)
+  ✔ left: window 37 is in its slot (-1268 288 700 500)
+  ✔ left: window 38 is in its slot (-423 43 411 745)
+  ✔ left: window 39 is in its slot (-1268 43 700 233)
+  ✔ left: every overlay lies within a display
+
+== left: zoom on the second display leaves the main one alone
+  ✔ left: the zoomed window fills the second display
+  ✔ left: the main display's windows did not move
+  ✔ left: parked window 38 shows on no display (it is at -1690 772 411 745)
+  ✔ left: back on the second display brings its window back
+
+== left: zoom on the main display, with a neighbour to park beside
+  ✔ left: the second display's windows did not move
+  ✔ left: parked window 36 shows on no display (it is at 1919 974 624 947)
+  ✔ left: back on the main display brings its window back
+
+== left: drag a window from the second display to the main one and back to the far edge
+  ✔ left: dropped on the main display it floats there
+  ✔ left: the drop preview lies on the second display
+  ✔ left: released there it docks on the second display
+  ✔ left: and lands where the preview was
+
+== left: where everything is afterwards
+  ✔ left: Arbor's frame for the second display is macOS's
+  ✔ left: window 35 is in its slot (12 43 624 947)
+  ✔ left: window 36 is in its slot (1284 43 624 947)
+  ✔ left: window 37 is in its slot (-845 288 700 500)
+  ✔ left: window 38 is in its slot (-1268 43 411 745)
+  ✔ left: window 39 is in its slot (-845 43 700 233)
+  ✔ left: every overlay lies within a display
+
+== move the display above the main one (negative y)
+
+== above: where everything is
+  ✔ above: Arbor's frame for the second display is macOS's
+  ✔ above: window 35 is in its slot (12 43 624 947)
+  ✔ above: window 36 is in its slot (1284 43 624 947)
+  ✔ above: window 37 is in its slot (435 -512 700 500)
+  ✔ above: window 38 is in its slot (12 -757 411 745)
+  ✔ above: window 39 is in its slot (435 -757 700 233)
+  ✔ above: every overlay lies within a display
+
+== above: zoom on the second display leaves the main one alone
+  ✔ above: the zoomed window fills the second display
+  ✔ above: the main display's windows did not move
+  ✔ above: parked window 38 shows on no display (it is at -410 31 411 745)
+  ✔ above: back on the second display brings its window back
+
+== above: zoom on the main display, with a neighbour to park beside
+  ✔ above: the second display's windows did not move
+  ✔ above: parked window 36 shows on no display (it is at 1919 974 624 947)
+  ✔ above: back on the main display brings its window back
+
+== above: drag a window from the second display to the main one and back to the far edge
+  ✔ above: dropped on the main display it floats there
+  ✔ above: the drop preview lies on the second display
+  ✔ above: released there it docks on the second display
+  ✔ above: and lands where the preview was
+
+== above: where everything is afterwards
+  ✔ above: Arbor's frame for the second display is macOS's
+  ✔ above: window 35 is in its slot (12 43 624 947)
+  ✔ above: window 36 is in its slot (1284 43 624 947)
+  ✔ above: window 37 is in its slot (12 -512 700 500)
+  ✔ above: window 38 is in its slot (857 -757 411 745)
+  ✔ above: window 39 is in its slot (12 -757 700 233)
+  ✔ above: every overlay lies within a display
+
+== move the display low on the right, over the corner where the main display parks
+  ✔ right-low: Arbor's frame for the second display is macOS's
+  ✔ right-low: window 35 is in its slot (12 43 624 947)
+  ✔ right-low: window 36 is in its slot (1284 43 624 947)
+  ✔ right-low: window 37 is in its slot (1932 688 700 500)
+  ✔ right-low: window 38 is in its slot (2777 443 411 745)
+  ✔ right-low: window 39 is in its slot (1932 443 700 233)
+  ✔ right-low: every overlay lies within a display
+
+== right-low: zoom on the second display leaves the main one alone
+  ✔ right-low: the zoomed window fills the second display
+  ✔ right-low: the main display's windows did not move
+  ✔ right-low: parked window 38 shows on no display (it is at 3199 1172 411 745)
+  ✔ right-low: back on the second display brings its window back
+
+== right-low: zoom on the main display, with a neighbour to park beside
+  ✔ right-low: the second display's windows did not move
+  ✔ right-low: parked window 36 shows on no display (it is at -623 974 624 947)
+  ✔ right-low: back on the main display brings its window back
+
+== swap it for a Retina display
+  ✔ Arbor arranges one display
+  ✔ another serial number is another display
+  ✔ Arbor arranges two displays
+  ✔ retina: dropped at the left edge the window docks there
+  ✔ retina: Arbor's frame for the second display is macOS's
+  ✔ retina: window 35 is in its slot (12 43 624 947)
+  ✔ retina: window 36 is in its slot (1284 43 624 947)
+  ✔ retina: window 39 is in its slot (1932 43 622 745)
+  ✔ retina: every overlay lies within a display
+
+== quit with two displays, then unplug
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+
+137 passed, 0 failed

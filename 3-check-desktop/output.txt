@@ -1,0 +1,195 @@
+# mac-shell: scripts/mac-shell/check-desktop.sh at 6717a94, macOS 26.6.2, 2026-10-15T15:44Z
+built Arbor, the pointer tool and the app bundles in 7s
+com.apple.WindowManager EnableTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+
+== as the Mac comes
+Reduce Motion: true
+appearance: light, AppleInterfaceStyle: Light
+wallpaper: /System/Library/Desktop Pictures/Solid Colors/Black.png
+07230EFA-7A8D-4E37-845C-19CC8737EEF5 1 1
+as a person starts it: Arbor.app through Launch Services, pid 16033: waiting for Accessibility permission (System Settings → Privacy & Secu
+given the permission while it waited; it knew after .4 s
+session 1: Arbor pid 16033, test windows 173 174 175 (pid 15763)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor 0.0.0 (build 0)
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 173 left
+docked w173 at the left edge
+> dock 174 beside 173 bottom
+docked w174 below w173; its space is too small to show it, so it is a tile
+> show-all
+showing everything
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          518 43 494 650
+  tile n3 window   12 374 494 319  holds w174
+  w173 12 43 494 319        docked focused
+  w174 1023 677 700 500     docked parked
+  w175 270 140 480 348      floating
+  ✔ a tile, a docked window and the Desktop are in view
+shot: mac-shell/light-1-tile.png
+> drag 546 152 1021 368 --no-release
+shot: mac-shell/light-2-preview.png
+> release 765 103
+> click 732 15 --right
+shot: mac-shell/light-3-menu.png
+> key escape
+
+== dark mode
+> appearance dark: now dark
+  ✔ the system says dark
+shot: mac-shell/dark-1-tile.png
+> drag 770 43 1021 368 --no-release
+shot: mac-shell/dark-2-preview.png
+> release 765 103
+> click 732 15 --right
+shot: mac-shell/dark-3-menu.png
+> key escape
+
+== a wallpaper: a gradient under a grid, then one colour
+> wallpaper gradient
+/System/Library/Desktop Pictures/Solid Colors/Black.png
+  ✔ the desktop shows the gradient
+shot: mac-shell/dark-gradient-1-tile.png
+> drag 665 43 1021 368 --no-release
+shot: mac-shell/dark-gradient-2-preview.png
+> release 765 103
+> click 732 15 --right
+shot: mac-shell/dark-gradient-3-menu.png
+> key escape
+> appearance light: now light
+  ✔ the system says light
+shot: mac-shell/light-gradient.png
+> wallpaper #2e7d32
+/Users/runner/work/arbor/arbor/.build/mac-shell/wallpaper-gradient.png
+  ✔ the desktop shows the colour
+shot: mac-shell/light-green.png
+
+== Reduce Motion
+Reduce Motion: false
+  ✔ an app launched now is told that motion is fine
+
+== Spaces: a second one, there and back, with a tile and seams on the first
+it is managed at 490 96 480 348
+> dock 175 right
+docked w175 at the right edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  tile n3 window   12 374 325 319  holds w174
+  w173 12 43 325 319        docked
+  w174 1023 677 700 500     docked parked
+  w175 687 43 325 650       docked focused
+> space_add
+07230EFA-7A8D-4E37-845C-19CC8737EEF5 2 1
+  ✔ the main display has one Space more
+> key ctrl+right
+  ✔ ⌃→ shows the second Space
+shot: mac-shell/spaces-1-second.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          12 43 1000 650
+  w173 12 43 325 319        docked
+  w174 1023 677 700 500     docked parked
+  w175 687 43 325 650       docked
+> key ctrl+left
+  ✔ ⌃← shows the first Space again
+shot: mac-shell/spaces-2-first-again.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  tile n3 window   12 374 325 319  holds w174
+  w173 12 43 325 319        docked
+  w174 1023 677 700 500     docked parked
+  w175 687 43 325 650       docked focused
+  ✔ both docked windows are back in their slots
+  ✔ and the slots are the ones they had
+
+== Spaces: there and back with one window framed
+> zoom 173
+framed w173
+  ✔ the window fills the screen
+  ✔ its neighbour is out of view
+> key ctrl+right
+  ✔ ⌃→ shows the second Space
+> key ctrl+left
+  ✔ ⌃← shows the first Space again
+  ✔ the window is still framed
+  ✔ and stays so
+  ✔ its neighbour is still out of view
+> show-all
+showing everything
+  ✔ with everything in view both are in the slots they had
+
+== Spaces: carry a docked window to the second Space, as a person does: hold its title bar and press ⌃→
+> float 174
+w174 is floating
+> drag 885 55 845 95 --no-release
+> key ctrl+right
+> release
+  ✔ the second Space shows
+shot: mac-shell/spaces-3-carried.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  Desktop          12 43 494 650
+  w173 12 43 325 650        docked
+  w174 0 205 700 500        floating
+  w175 518 43 494 650       docked focused
+the window server has the carried window at 518 43 494 650
+> key ctrl+left
+shot: mac-shell/spaces-4-without-it.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  Desktop          518 43 494 650
+  w173 12 43 494 650        docked focused
+  w174 0 205 700 500        floating
+  w175 518 43 494 650       docked
+  ✔ the window that stayed is in its slot
+> key ctrl+right
+shot: mac-shell/spaces-5-with-it.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  Desktop          12 43 494 650
+  w173 12 43 494 650        docked
+  w174 0 205 700 500        floating
+  w175 518 43 494 650       docked focused
+> drag 800 55 760 95 --no-release
+> key ctrl+left
+> release
+  ✔ the first Space shows, and the window with it
+
+== Mission Control with a tile on the screen
+> dock 174 beside 173 bottom
+docked w174 below w173; its space is too small to show it, so it is a tile
+> show-all
+showing everything
+shot: mac-shell/mission-control.png
+> key escape
+   1 INFO  dock 174 beside 173 bottom: docked w174 below w173; its space is too small to show it, so it is a tile
+   3 INFO  dropped w175 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+   1 INFO  trace space-added: recording to /tmp/arbor-shell.piibDR/home/traces/2026-10-15-154546-space-added.jsonl
+   1 INFO  trace space-added ended: 12 lines, trace off
+   1 INFO  trace space-to-the-second: recording to /tmp/arbor-shell.piibDR/home/traces/2026-10-15-154553-space-to-the-second.jsonl
+   1 INFO  trace space-to-the-second ended: 46 lines, trace off
+   1 INFO  trace space-back-to-the-first: recording to /tmp/arbor-shell.piibDR/home/traces/2026-10-15-154600-space-back-to-the-first.jsonl
+   1 INFO  trace space-back-to-the-first ended: 41 lines, trace off
+   1 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Your other windows are out of view, not closed · ⌃⌥Space shows everything
+   1 INFO  trace space-window-carried: recording to /tmp/arbor-shell.piibDR/home/traces/2026-10-15-154613-space-window-carried.jsonl
+   1 INFO  dropped w175 on none, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+   1 INFO  trace space-window-carried ended: 331 lines, trace off
+   1 INFO  trace space-left-without-the-window: recording to /tmp/arbor-shell.piibDR/home/traces/2026-10-15-154623-space-left-without-the-window.jsonl
+   1 INFO  trace space-left-without-the-window ended: 32 lines, trace off
+   1 INFO  trace space-right-to-the-window: recording to /tmp/arbor-shell.piibDR/home/traces/2026-10-15-154629-space-right-to-the-window.jsonl
+   1 INFO  trace space-right-to-the-window ended: 29 lines, trace off
+   1 INFO  trace space-window-carried-home: recording to /tmp/arbor-shell.piibDR/home/traces/2026-10-15-154635-space-window-carried-home.jsonl
+   1 INFO  dropped w175 on none, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+   1 INFO  trace space-window-carried-home ended: 278 lines, trace off
+   1 INFO  dock 174 beside 173 bottom: docked w174 below w173; its space is too small to show it, so it is a tile
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/after-quit.png
+
+26 passed, 0 failed
+exit code 0

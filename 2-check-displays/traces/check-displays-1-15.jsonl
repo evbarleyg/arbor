@@ -1,0 +1,133 @@
+{"arbor":"0.0.0","cursor":[1023.98,415],"displays":[{"frame":[0,0,1920,1080],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1920,971]},{"frame":[1920,0,1280,800],"id":"235DDBFE-4491-4E89-85A4-2BC7E1BAD8EC","name":"display-2","visible":[1920,31,1280,769]}],"focusHistory":[38,35,39,36,37],"focused":38,"framePlan":2,"minimumSizes":{"37":[700,500]},"mouseDown":false,"name":"check-displays-1-15","onlyPIDs":[5177],"os":"macOS Version 26.6.2 (Build 25G83)","recorded":"2026-10-15T15:43:03Z","seenSizes":{"35":[[325,348],[1896,947],[0,0],[0,0],[0,0]],"36":[[325,348],[624,947],[0,0],[0,0],[0,0]],"37":[[700,500],[926,500],[0,0],[0,0],[0,0]],"38":[[292,348],[480,745],[0,0],[0,0],[0,0]],"39":[[411,233],[1256,745],[0,0],[0,0],[0,0]]},"settings":{"allowAllURLCommands":false,"animationDuration":0.46,"appColourAmount":0.25,"appColours":true,"arrangeDesktopWeight":0.5,"autoDockMinimumHeight":300,"autoDockMinimumWidth":400,"automaticUpdateChecks":false,"bindings":{},"blurBehindArranged":0,"continuousZoom":false,"desktopEdge":0.05,"dimBehindArranged":0.25,"displays":[],"dropDwell":0.15,"excludedBundleIDs":[],"floatingWindowsMakeWay":false,"focusRing":true,"focusRingColour":"accent","focusRingRadius":0,"focusRingWidth":3,"frameRectangleModifier":"ctrl+opt","frameRectangleOnDesktop":true,"gap":12,"gapHandles":"shown","gesturesEnabled":true,"guardDesktopClicks":false,"historyButtons":true,"holdStillFor":[],"holdStillWhileCameraIsOn":false,"holdStillWhileMicrophoneIsOn":false,"hotkeysEnabled":true,"keepPushed":true,"makeRoom":true,"menuBarControls":true,"menuBarFill":0.25,"messages":"helpful","minimapDuration":0,"minimumUsableHeight":160,"minimumUsableWidth":240,"newWindows":"float","newWindowsWhileFramed":"guest","passThroughApps":[],"pauseForApps":[],"peek":true,"pinchThreshold":0.25,"pointerGestures":false,"previewDrags":true,"reflowWhileDragging":false,"resizeStep":40,"ruleTitleWait":2,"rules":[],"screenEdgeBand":12,"scrollOnDesktopZooms":false,"scrollZoom":true,"scrollZoomThreshold":40,"shareRemovedSpace":true,"shortcuts":"core","shortcutsFollowLayout":true,"shrinkOutOfView":false,"soleFloatTakesDesktop":false,"stepInToward":"auto","summonStays":false,"tabsEnabled":false,"tileFade":0.2,"tileRetryMinutes":10,"tileStyle":"icon","tintBehindArranged":0,"windowEdgeFraction":0.3,"windowPictures":false},"thinning":0.05,"trace":1,"windows":[{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[12,43,624,947],"id":35,"pid":5177,"title":"title[1]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[1284,43,624,947],"id":36,"pid":5177,"title":"title[2]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[1932,288,700,500],"id":37,"pid":5177,"title":"title[3]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[2777,43,411,745],"id":38,"pid":5177,"title":"title[4]"},{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[1932,43,700,233],"id":39,"pid":5177,"title":"title[5]"}],"workspaces":{"07230EFA-7A8D-4E37-845C-19CC8737EEF5":{"back":[],"camera":2,"floating":{},"forward":[1],"names":{},"savedViews":{},"tree":{"desktop":0,"loans":[],"nextRawID":4,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"parent":2,"weight":1},"1":{"id":1,"kind":{"stack":{"active":0,"windows":[35]}},"parent":2,"weight":1},"2":{"id":2,"kind":{"split":{"axis":"horizontal","children":[1,0,3]}},"weight":1},"3":{"id":3,"kind":{"stack":{"active":0,"windows":[36]}},"parent":2,"weight":1}},"root":2,"visits":[]},"undockedFrames":{"35":[[170,220],[480,348]],"36":[[220,180],[480,348]]}},"235DDBFE-4491-4E89-85A4-2BC7E1BAD8EC":{"back":[],"camera":2,"floating":{},"forward":[1],"names":{},"savedViews":{},"tree":{"desktop":0,"loans":[{"borrower":4,"giver":0,"receiver":5,"weight":0.6627869897959184},{"borrower":4,"giver":1,"receiver":4,"weight":0.36425648021828105}],"nextRawID":7,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"parent":2,"weight":0.3372130102040816},"1":{"id":1,"kind":{"stack":{"active":0,"windows":[39]}},"parent":5,"weight":0.635743519781719},"2":{"id":2,"kind":{"split":{"axis":"horizontal","children":[5,0,6]}},"weight":1},"4":{"id":4,"kind":{"stack":{"active":0,"windows":[37]}},"parent":5,"weight":1.364256480218281},"5":{"id":5,"kind":{"split":{"axis":"vertical","children":[1,4]}},"parent":2,"weight":1.9508190672963397},"6":{"id":6,"kind":{"stack":{"active":0,"windows":[38]}},"parent":2,"weight":1.1454094809411366}},"root":2,"visits":[]},"undockedFrames":{"37":[[2176,300],[700,500]],"38":[[2469,452],[480,348]],"39":[[2284,403],[480,348]]}}}}
+{"t":0.0035,"note":"✔ a virtual display with the same serial number keeps its UUID"}
+{"t":0.0150,"command":"state","from":"script"}
+{"t":0.0159,"call":"focusedWindow","result":38}
+{"t":0.0161,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":0.1419,"note":"✔ Arbor arranges two displays again"}
+{"t":2.0172,"timer":"accessibility"}
+{"t":2.0178,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":2.4506,"command":"state","from":"script"}
+{"t":2.4543,"call":"focusedWindow","result":38}
+{"t":2.4556,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":2.5174,"command":"state","from":"script"}
+{"t":2.5190,"call":"focusedWindow","result":38}
+{"t":2.5192,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":2.5905,"note":"✔ replugged: window 37 is docked on the second display again"}
+{"t":2.6066,"command":"state","from":"script"}
+{"t":2.6075,"call":"focusedWindow","result":38}
+{"t":2.6076,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":2.6623,"command":"state","from":"script"}
+{"t":2.6631,"call":"focusedWindow","result":38}
+{"t":2.6633,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":2.7270,"note":"✔ replugged: window 38 is docked on the second display again"}
+{"t":2.7486,"command":"state","from":"script"}
+{"t":2.7500,"call":"focusedWindow","result":38}
+{"t":2.7504,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":2.7955,"command":"state","from":"script"}
+{"t":2.7969,"call":"focusedWindow","result":38}
+{"t":2.7971,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":2.8609,"note":"✔ replugged: window 39 is docked on the second display again"}
+{"t":2.8737,"command":"state","from":"script"}
+{"t":2.8745,"call":"focusedWindow","result":38}
+{"t":2.8747,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":2.9411,"command":"state","from":"script"}
+{"t":2.9427,"call":"focusedWindow","result":38}
+{"t":2.9432,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":2.9882,"command":"state","from":"script"}
+{"t":2.9890,"call":"focusedWindow","result":38}
+{"t":2.9892,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.0425,"command":"state","from":"script"}
+{"t":3.0434,"call":"focusedWindow","result":38}
+{"t":3.0435,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.1146,"command":"state","from":"script"}
+{"t":3.1155,"call":"focusedWindow","result":38}
+{"t":3.1159,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.1848,"command":"state","from":"script"}
+{"t":3.1856,"call":"focusedWindow","result":38}
+{"t":3.1858,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.2287,"command":"state","from":"script"}
+{"t":3.2298,"call":"focusedWindow","result":38}
+{"t":3.2300,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.2909,"command":"state","from":"script"}
+{"t":3.2924,"call":"focusedWindow","result":38}
+{"t":3.2926,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.3434,"note":"✔ replugged: the arrangement is the one that went away"}
+{"t":3.3521,"command":"state","from":"script"}
+{"t":3.3530,"call":"focusedWindow","result":38}
+{"t":3.3532,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.4156,"command":"state","from":"script"}
+{"t":3.4162,"call":"focusedWindow","result":38}
+{"t":3.4164,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.4581,"command":"state","from":"script"}
+{"t":3.4589,"call":"focusedWindow","result":38}
+{"t":3.4591,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.5184,"note":"✔ replugged: Arbor's frame for the second display is macOS's"}
+{"t":3.5268,"command":"state","from":"script"}
+{"t":3.5274,"call":"focusedWindow","result":38}
+{"t":3.5275,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.5809,"command":"state","from":"script"}
+{"t":3.5824,"call":"focusedWindow","result":38}
+{"t":3.5828,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.6198,"command":"state","from":"script"}
+{"t":3.6207,"call":"focusedWindow","result":38}
+{"t":3.6210,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.6650,"command":"state","from":"script"}
+{"t":3.6657,"call":"focusedWindow","result":38}
+{"t":3.6658,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.7001,"note":"✔ replugged: window 35 is in its slot (12 43 624 947)"}
+{"t":3.7094,"command":"state","from":"script"}
+{"t":3.7103,"call":"focusedWindow","result":38}
+{"t":3.7104,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.7513,"command":"state","from":"script"}
+{"t":3.7520,"call":"focusedWindow","result":38}
+{"t":3.7522,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.8052,"command":"state","from":"script"}
+{"t":3.8063,"call":"focusedWindow","result":38}
+{"t":3.8065,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.8576,"command":"state","from":"script"}
+{"t":3.8585,"call":"focusedWindow","result":38}
+{"t":3.8587,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.9142,"note":"✔ replugged: window 36 is in its slot (1284 43 624 947)"}
+{"t":3.9244,"command":"state","from":"script"}
+{"t":3.9251,"call":"focusedWindow","result":38}
+{"t":3.9253,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":3.9726,"command":"state","from":"script"}
+{"t":3.9736,"call":"focusedWindow","result":38}
+{"t":3.9740,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":4.0090,"command":"state","from":"script"}
+{"t":4.0109,"call":"focusedWindow","result":38}
+{"t":4.0113,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":4.0643,"timer":"accessibility"}
+{"t":4.0649,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":4.0652,"command":"state","from":"script"}
+{"t":4.0663,"call":"focusedWindow","result":38}
+{"t":4.0665,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":4.1073,"note":"✔ replugged: window 37 is in its slot (1932 288 700 500)"}
+{"t":4.1170,"command":"state","from":"script"}
+{"t":4.1176,"call":"focusedWindow","result":38}
+{"t":4.1178,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":4.1646,"command":"state","from":"script"}
+{"t":4.1652,"call":"focusedWindow","result":38}
+{"t":4.1654,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":4.2058,"command":"state","from":"script"}
+{"t":4.2065,"call":"focusedWindow","result":38}
+{"t":4.2066,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":4.2731,"command":"state","from":"script"}
+{"t":4.2745,"call":"focusedWindow","result":38}
+{"t":4.2749,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":4.3098,"note":"✔ replugged: window 38 is in its slot (2777 43 411 745)"}
+{"t":4.3191,"command":"state","from":"script"}
+{"t":4.3204,"call":"focusedWindow","result":38}
+{"t":4.3206,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":4.3758,"command":"state","from":"script"}
+{"t":4.3773,"call":"focusedWindow","result":38}
+{"t":4.3777,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":4.4523,"command":"state","from":"script"}
+{"t":4.4531,"call":"focusedWindow","result":38}
+{"t":4.4532,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":4.4943,"command":"state","from":"script"}
+{"t":4.4950,"call":"focusedWindow","result":38}
+{"t":4.4952,"done":"state","message":"running: 2 displays, 5 docked and 0 floating, 0 out of view","ok":true}
+{"t":4.5402,"note":"✔ replugged: window 39 is in its slot (1932 43 700 233)"}
+{"t":4.5818,"note":"✔ replugged: every overlay lies within a display"}
+{"t":4.6024,"end":"another trace was started","lines":132,"thinned":0}

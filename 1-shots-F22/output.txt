@@ -1,0 +1,20 @@
+# mac-shell: scripts/mac-shell/shots-F22.sh at 6717a94, macOS 26.6.2, 2026-10-15T15:40Z
+built Arbor, the pointer tool and the app bundles in 8s
+
+== session 1: [ 1 / 3 | Desktop with 4 floating | 2 ], shortcuts and the menu bar item on
+as a person starts it: Arbor.app through Launch Services, pid 4046: waiting for Accessibility permission (System Settings → Privacy & Secu
+Error: stepping, database is locked (5)
+::error title=mac-shell::the privacy database cannot be written here
+  ✘ the script ended early, with exit code 2
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+5 passed, 1 failed
+exit code 2
