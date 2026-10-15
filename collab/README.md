@@ -268,6 +268,14 @@ Three rules keep the Linux build working and the platforms telling the same stor
    `main`, a pull request into it) the job `tests-whole` runs plain `swift test` once more, in the image, and holds
    it against what the parts said, test by test.
 
+   **A pull request that is still a draft gets `linux / lint` and nothing else**: no tests, no verdict, no Mac (unless `[mac]` or the
+   label asks for one). Fifteen runners have 900 minutes in an hour and a whole run takes over twenty of them, and you have just run the same
+   checks in the same image with `make gate`. So open the pull request as a draft, push as often as you like, and **mark it ready for
+   review at the moment you would say it is ready**: that starts the whole run, and so does every push after it. A draft's run has
+   no verdict: `linux / verdict` ends as skipped, which is no success. Those skipped checks stay with the commit, beside the ones
+   of the run that marking it ready starts, so the one to go by is the newest `linux / verdict`, not "all that is called linux".
+   A pull request that passed and is made a draft again keeps its checks: whoever lands also asks whether it is a draft.
+
    A macOS job is slow and runners are few, so a first small job,
    `changes`, leaves it out (it shows as skipped, and the annotation on
    `changes` says why) when a Mac could prove nothing new
@@ -312,7 +320,7 @@ Three rules keep the Linux build working and the platforms telling the same stor
    Mac compiles and the selection missed, one that is skipped on both. Its summary counts what ran where. If it names
    your test, give the file a reason to be selected; a test that is to run on neither is a decision, and goes
    into `NOWHERE_ON_PURPOSE` with the reason. With a selection `macos` leaves `parity.py --check` to `linux`,
-   which runs it on every commit.
+   which runs it wherever there is a verdict.
 3. Read the results. Every step publishes its outcome as check annotations:
    compiler warnings, test counts and the parity score when it passes; the
    errors and the end of its output when it fails (`scripts/ci-step.py`). They can

@@ -20,9 +20,10 @@ UI, DOC, SHOTS = "Sources/ArborKit/UI/B.swift", "docs/x.md", "scripts/mac-shell/
 NEW_BRANCH = "0" * 40
 
 
-def pull(ref="feat/x", labels=(), base=rules.INTEGRATION_BRANCH):
+def pull(ref="feat/x", labels=(), base=rules.INTEGRATION_BRANCH, draft=False):
     head = {"sha": "H", "ref": ref}
-    return "pull_request", {"pull_request": {"number": 1, "head": head, "base": {"ref": base}, "labels": [{"name": name} for name in labels]}}
+    return "pull_request", {"pull_request": {"number": 1, "head": head, "base": {"ref": base}, "draft": draft,
+                                             "labels": [{"name": name} for name in labels]}}
 
 
 def push(before="B"):
@@ -75,6 +76,12 @@ TABLE = [
     (UPON, "a helper tool, which only a Mac's tests type-check", pull(), dict(files=[DOC, "scripts/mac-shell/curtain.swift"])),
     (UPON, "the one in Objective-C too", pull(), dict(files=[DOC, "scripts/mac-shell/vdisplay.m"])),
     (UPON, "macOS-only code", pull(), dict(files=[CORE, UI])),
+    (NO, "the same in a draft: its author has not said it is ready", pull(draft=True), dict(files=[CORE, UI])),
+    (UPON, "a draft that asks with [mac]", pull(draft=True), dict(files=[CORE, UI], subject="fix: y [mac]")),
+    (UPON, "a draft that asks with the label", pull(draft=True, labels=[rules.LABEL]), dict(files=[CORE, UI])),
+    (FULL, "a draft that asks with [mac-full]", pull(draft=True), dict(files=[CORE, UI], subject="fix: y [mac-full]")),
+    (NO, "a draft of which it is unclear what it changes", pull(draft=True), dict()),
+    (NO, "a draft into main too: nothing is integrated before it is ready", pull(ref="train/2", base=rules.MAIN, draft=True), dict(files=[CORE, UI])),
     (UPON, "the app's main.swift and the real-window runner", pull(), dict(files=["Sources/Arbor/main.swift", "Sources/arbor-e2e/Steps.swift"])),
     (NO, "macOS-only code whose head has passed", pull(), dict(files=[CORE, UI], passed={"H"})),
     (NO, "prose since the pass", pull(), dict(files=[CORE, UI, DOC], passed={"P1"}, between={("P1", "H"): [DOC]})),
