@@ -301,7 +301,7 @@ public final class FilmCamera {
       "rows": session.items.enumerated().map { place, item -> [String: Any] in
         var row: [String: Any] = [
           "frame": Self.rect(layout.rowFrame(place).offsetBy(dx: layout.list.minX, dy: layout.list.minY)),
-          "name": item.row.name, "detail": item.row.detail, "note": item.row.note, "selected": item.isSelected,
+          "name": item.row.name, "detail": item.row.shownDetail, "note": item.row.note, "selected": item.isSelected,
           "nameRanges": ranges(item.match.nameRanges), "detailRanges": ranges(item.match.detailRanges),
         ]
         if let pid = item.row.pid { row["app"] = appName(pid: pid) ?? "" }

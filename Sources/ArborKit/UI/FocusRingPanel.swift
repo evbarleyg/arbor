@@ -68,8 +68,8 @@ final class FocusRings {
 final class FocusRingPanel: OverlayPanel {
   private let line = CAShapeLayer()
   private let flash = CAShapeLayer()
-  /// With Increase Contrast: the outermost point of the line, in `AccentInk`'s second colour.
-  private let edge = CAShapeLayer()
+  /// With Increase Contrast: the outermost points of the line, in `AccentInk`'s other lines' colours, from the outside in.
+  private let edges = [CAShapeLayer(), CAShapeLayer()]
   private var ringedWindow: WindowID?
 
   override init() {
@@ -82,7 +82,7 @@ final class FocusRingPanel: OverlayPanel {
     let view = NSView()
     view.layer = CALayer()
     view.wantsLayer = true
-    for layer in [flash, line, edge] {
+    for layer in [flash, line] + edges {
       // Each is the area between two rounded rectangles.
       layer.fillRule = .evenOdd
       view.layer?.addSublayer(layer)
@@ -120,7 +120,7 @@ final class FocusRingPanel: OverlayPanel {
       layer.path = path
       layer.fillColor = colour
     }
-    showEdge(of: model.band(automaticRadius: radius), in: area, scale: scale, colour: colour)
+    showEdges(of: model.band(automaticRadius: radius), in: area, scale: scale, colour: colour)
     CATransaction.commit()
 
     ringedWindow = model.window
@@ -137,23 +137,32 @@ final class FocusRingPanel: OverlayPanel {
     }
   }
 
-  /// The darker accent of Increase Contrast stood out from the darkened wallpaper it lies on by 1.1 to 1.7 to 1.
-  private func showEdge(of band: FocusRingModel.Band, in area: CGRect, scale: CGFloat, colour: CGColor) {
-    guard NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast, band.thickness > 1,
-      let accent = NSColor(cgColor: colour)
-    else {
-      edge.path = nil
-      return
-    }
+  /// The accent of Increase Contrast stood out from the darkened wallpaper it lies on by 1.1 to 1.7 to 1. In `AccentInk`'s
+  /// order: black outside, then white, and the ring's colour has what is left (`PanelLook.strongLines(within:of:)`).
+  private func showEdges(of band: FocusRingModel.Band, in area: CGRect, scale: CGFloat, colour: CGColor) {
     let outer = CGRect(
       x: band.frame.minX - area.minX, y: area.maxY - band.frame.maxY, width: band.frame.width, height: band.frame.height)
-    let path = CGMutablePath()
-    path.addPath(ContinuousCorners.path(outer, radius: band.cornerRadius))
-    path.addPath(ContinuousCorners.path(outer.insetBy(dx: 1, dy: 1), radius: max(band.cornerRadius - 1, 0)))
-    edge.frame = CGRect(origin: .zero, size: area.size)
-    edge.contentsScale = scale
-    edge.path = path
-    edge.fillColor = AccentInk.secondLine(inside: accent, increasesContrast: true).cgColor
+    var lines: [RGBA] = []
+    if NSWorkspace.shared.accessibilityDisplayShouldIncreaseContrast {
+      lines = PanelLook.strongLines(within: band.thickness, of: NSColor(cgColor: colour).map(AccentInk.rgba) ?? .black)
+    }
+    for (place, layer) in edges.enumerated() {
+      guard place < lines.count else {
+        layer.path = nil
+        continue
+      }
+      // Each reaches in as far as the last of them and is painted over by the next, and under them all lies the ring's own line: so
+      // nothing of what is behind the ring shows through the soft edge two of them share. Not as far as the ring's inner edge, with
+      // its colour on top: a colour a person chose may be translucent, and would come out paler over white.
+      let (from, to) = (CGFloat(place), CGFloat(lines.count))
+      let path = CGMutablePath()
+      path.addPath(ContinuousCorners.path(outer.insetBy(dx: from, dy: from), radius: max(band.cornerRadius - from, 0)))
+      path.addPath(ContinuousCorners.path(outer.insetBy(dx: to, dy: to), radius: max(band.cornerRadius - to, 0)))
+      layer.frame = CGRect(origin: .zero, size: area.size)
+      layer.contentsScale = scale
+      layer.path = path
+      layer.fillColor = lines[place].nsColor.cgColor
+    }
   }
 
   /// Puts the panel directly above its window again. Window numbers are the window server's, so another

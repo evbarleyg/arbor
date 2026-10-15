@@ -892,3 +892,19 @@ private func model(_ rows: [FinderModel.Row], notice: String? = nil) -> FinderMo
     #expect(session.items.map(\.isSelected).prefix(2) == [true, false])
   }
 }
+
+@Suite struct FinderRowWordsTests {
+  /// With real apps most rows said the same word twice: "Maps  Maps".
+  @Test func aTitleThatIsTheAppsNameIsNotShownBesideIt() {
+    func row(_ name: String, _ detail: String) -> FinderModel.Row {
+      FinderModel.Row(destination: .window(WindowID(1)), name: name, detail: detail, place: .inView, display: DisplayID("main"))
+    }
+    #expect(row("Maps", "Maps").shownDetail.isEmpty)
+    #expect(row("Maps", "Maps — Lisbon").shownDetail == "Maps — Lisbon" && row("Maps", "").shownDetail.isEmpty)
+    // It is still what the row is, and what is searched.
+    #expect(row("Maps", "Maps").detail == "Maps" && row("Maps", "Maps").candidate == FinderCandidate(name: "Maps", detail: "Maps"))
+    let session = FinderSession(
+      model: FinderModel(display: DisplayID("main"), screen: CGRect(x: 0, y: 0, width: 1440, height: 900), rows: [row("Maps", "Maps")]))
+    #expect(session.text.contains("w1  Maps  (in view)"))
+  }
+}
