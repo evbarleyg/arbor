@@ -16,6 +16,16 @@ public enum SweptAside {
   /// It is listed off that display with less than this much of it left there. On a Mac 2 to 12 % were.
   static let aside: CGFloat = 0.25
 
+  /// The level of the window, as large as the display, that the Dock has on screen for as long as a sweep lasts. Seen on
+  /// macOS 26; nobody has looked on 14 and 15, so it is one sign of two.
+  static let dockLevel = 18
+
+  /// Whether something that the window server lists is that window of the Dock's. It tells a sweep where the frames
+  /// cannot: with as many windows opened since as were swept.
+  public static func isTheDocksSign(level: Int, frame: CGRect, displays: [CGRect]) -> Bool {
+    level == dockLevel && displays.contains(frame)
+  }
+
   /// - Parameters:
   ///   - believed: where Accessibility last had the windows that show (not minimized, hidden or on another Space).
   ///   - listed: the windows on screen as the window server has them. What is in only one of the two is not judged.

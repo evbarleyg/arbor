@@ -92,6 +92,29 @@ func tellOfTheDesktopShown(_ book: Book) {
     }
   }
 
+  // Two signs tell a sweep: the Dock's window at level 18, seen on macOS 26, and where the windows are listed. Each by itself: a macOS without the first; and (Judge2.swift, K3) as many
+  // windows opened since as were swept, when the second says nothing. The gesture is the judge's: from the bare desktop over a swept tile's left edge to its strip.
+  for late in [300, 500] {
+    book.story("on a macOS without the Dock's sign of a sweep, a rubber band from over a swept tile's left edge is thrown to its strip, heard \(late) ms late") { story in
+      var window: FakeMac.Window!
+      let one = StoreyOne(story) { mac in
+        _ = mac.open("other", in: mac.launch("Safari"), frame: left)
+        window = mac.open("window", in: mac.launch("Notes"), frame: right)
+      }
+      one.mac.docksSignShows = false
+      one.mac.pressShowDesktopKey()
+      one.mac.pass(1)
+      one.mac.mouseDownIsLateBy = Double(late) / 1000
+      one.mac.drag(from: CGPoint(x: 597, y: 300), to: CGPoint(x: 1020, y: 330), steps: 6, interval: 0.04, rest: 0.02)
+      one.mac.pass(0.7)
+      one.mac.release()
+      one.mac.pass(0.5)
+      one.mac.pressShowDesktopKey()
+      one.mac.pass(2)
+      judge(story, one, window, at: right)
+    }
+  }
+
   // The list goes on showing the size the window had, so it comes back with another: by the sizes alone, a hand at its edge.
   for late in [0, 20, 100] {
     book.story("macOS shows its desktop, a window is given another frame meanwhile, and a click on its strip slips, heard \(late) ms late") { story in

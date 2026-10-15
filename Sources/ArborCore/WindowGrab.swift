@@ -21,7 +21,8 @@ public enum WindowGrab {
   /// How far the pointer may travel with the window standing still before the press is taken to be
   /// about the window's content. A window follows a drag from the first few points.
   public static let patience: CGFloat = 24
-  /// How far below its upper edge a window can be taken along: a title bar, or a toolbar that is one with it.
+  /// How far below its upper edge a window can be taken along: a title bar, or a toolbar that is one with it. A guess, with room
+  /// to spare over what has been measured: 26 to 52 points. A taller bar taken lower down is not known for one.
   public static let top: CGFloat = 60
   /// How much farther than the pointer a window in the hand may seem to have gone, and how far apart the window
   /// server and Accessibility may have a window that is at rest: they are read a moment apart.
@@ -89,7 +90,8 @@ public enum WindowGrab {
     where !desktopIsShown && isInTheHand(listed: listed, believed: believed, pressedAt: pressedAt, pointerNow: pointerNow) {
       // Its app's last word is the nearest there is to the frame it had at the press, and is that frame if Arbor was
       // too busy to hear more. If not, and it is an edge that is in the hand, the edge has left the press behind.
-      if isNearEdge(pointerNow, of: listed), !isNearEdge(pressedAt, of: believed) {
+      // Not for a press at the top: a window that trails a hand going up has the pointer at its upper edge.
+      if isNearEdge(pointerNow, of: listed), !isNearEdge(pressedAt, of: believed), pressedAt.y >= believed.minY + top {
         return Hold(window: window, point: pointerNow, frame: listed, isInTheHand: true)
       }
       return Hold(window: window, point: pressedAt, frame: believed, isInTheHand: true)
@@ -129,13 +131,15 @@ public enum WindowGrab {
     guard (px * px + py * py).squareRoot() > patience, ahead >= edgeMargin,
       wentThePointersWay(from: believed, to: listed, pressedAt: pressedAt, pointerNow: pointerNow, give: edgeMargin)
     else { return false }
-    // Where its app has it under the press, the press must be where a hand can take hold: in a text that is being
-    // selected, a window that goes the pointer's way goes by itself.
-    if believed.insetBy(dx: -edgeMargin, dy: -edgeMargin).contains(pressedAt) {
-      return pressedAt.y < believed.minY + top || isNearEdge(pressedAt, of: believed)
+    // A hand takes a window by its top or by an edge: in a text that is being selected, a window that goes the pointer's
+    // way goes by itself. If its app has not been heard since the press, its app's word has that place under the press.
+    if believed.insetBy(dx: -edgeMargin, dy: -edgeMargin).contains(pressedAt),
+      pressedAt.y < believed.minY + top || isNearEdge(pressedAt, of: believed)
+    {
+      return true
     }
-    // Where it has not, its app has been heard since the press, and is a step or two behind. The hand is then still where it took
-    // hold, which is where the pointer is.
+    // If it has, it is a step or two behind (and a window that goes up may cover the press still, deep inside). The hand is
+    // then still where it took hold, which is where the pointer is.
     return ahead <= lag && (pointerNow.y < listed.minY + top || isNearEdge(pointerNow, of: listed))
   }
 

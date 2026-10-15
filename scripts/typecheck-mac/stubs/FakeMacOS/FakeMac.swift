@@ -82,6 +82,8 @@ public final class FakeMac: @unchecked Sendable {
   /// How long after the button went down on a strip the window server lists the windows where they are again, with the button still down. 27 ms on a hosted
   /// Mac at rest. What a loaded one takes nobody has measured.
   public var stripBringsBackAfter: TimeInterval = 0.027
+  /// Whether the Dock's window at level 18 is listed during a sweep, as on macOS 26. Off: a macOS that has no such sign. Nobody has looked on 14 and 15.
+  public var docksSignShows = true
   /// Whether Arbor has the Accessibility permission. Without it every call is refused with `apiDisabled`.
   public var isTrusted = true
 

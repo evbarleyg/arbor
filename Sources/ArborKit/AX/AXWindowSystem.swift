@@ -1307,17 +1307,19 @@ public final class AXWindowSystem: WindowSystem {
     Log.debug("the button went down at \(traceText(point)), the pointer is at \(traceText(pointer)): \(what)")
   }
 
-  /// Whether macOS has swept the windows aside, going by where the list has those that Arbor knows.
+  /// Whether macOS has swept the windows aside: by the Dock's own sign of it in the list, or by where the list has the
+  /// windows that Arbor knows.
   private func desktopIsShown(by list: [[String: Any]]) -> Bool {
-    let listed = list.compactMap { info -> StackedWindow? in
-      guard (info[kCGWindowLayer as String] as? NSNumber)?.intValue == 0,
-        let number = (info[kCGWindowNumber as String] as? NSNumber)?.uint32Value, let bounds = Self.bounds(in: info)
-      else { return nil }
-      return StackedWindow(id: WindowID(number), frame: bounds)
+    let displays = NSScreen.screens.map { ScreenGeometry.global(fromAppKit: $0.frame) }
+    var listed: [StackedWindow] = []
+    for info in list {
+      guard let level = (info[kCGWindowLayer as String] as? NSNumber)?.intValue, let bounds = Self.bounds(in: info) else { continue }
+      if SweptAside.isTheDocksSign(level: level, frame: bounds, displays: displays) { return true }
+      if level == 0, let number = (info[kCGWindowNumber as String] as? NSNumber)?.uint32Value {
+        listed.append(StackedWindow(id: WindowID(number), frame: bounds))
+      }
     }
-    return SweptAside.isSwept(
-      believed: records.mapValues(\.snapshot.frame), listed: listed,
-      displays: NSScreen.screens.map { ScreenGeometry.global(fromAppKit: $0.frame) })
+    return SweptAside.isSwept(believed: records.mapValues(\.snapshot.frame), listed: listed, displays: displays)
   }
 
   /// The first ordinary window, front to back, that the point belongs to.

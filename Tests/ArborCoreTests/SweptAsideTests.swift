@@ -84,6 +84,16 @@ import Testing
     #expect(SweptAside.isSwept(believed: believed(frames), listed: Array(some), displays: [display]))
   }
 
+  @Test func theDocksWindowAsLargeAsADisplayIsASignOfItsOwn() {
+    let right = CGRect(x: 1600, y: 0, width: 1600, height: 900)
+    #expect(SweptAside.isTheDocksSign(level: 18, frame: display, displays: [display, right]))
+    #expect(SweptAside.isTheDocksSign(level: 18, frame: right, displays: [display, right]))
+    // The Dock at rest has one as large at level 20, and apps' windows that fill the display are at level 0.
+    #expect(!SweptAside.isTheDocksSign(level: 20, frame: display, displays: [display]))
+    #expect(!SweptAside.isTheDocksSign(level: 0, frame: display, displays: [display]))
+    #expect(!SweptAside.isTheDocksSign(level: 18, frame: display.insetBy(dx: 0, dy: 40), displays: [display]))
+  }
+
   @Test func aWindowSweptTowardsANeighbouringDisplayHasStillLeftItsOwn() {
     let right = CGRect(x: 1600, y: 0, width: 1600, height: 900)
     #expect(isSwept(Self.recorded.map(\.before), Self.recorded.map(\.after), displays: [display, right]))

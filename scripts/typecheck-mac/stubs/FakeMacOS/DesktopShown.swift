@@ -31,6 +31,13 @@ extension FakeMac {
     sweptTo = nil
   }
 
+  /// For as long as a sweep lasts the Dock has one more window, as large as the display, at level 18 (seen: the report, and the ledger's case about the guard of the Desktop). Where in
+  /// the list it stands is a guess: among what is behind, so that a press is not taken from the strips here.
+  func theDocksSignOfASweep() -> [Furniture] {
+    guard sweptTo != nil, docksSignShows else { return [] }
+    return screens.enumerated().map { Furniture(number: UInt32(18 + $0.offset * 10), pid: 91, layer: 18, bounds: $0.element.frame, isInFront: false) }
+  }
+
   /// The window's frame as the window server lists it.
   public func listedBounds(of window: Window) -> CGRect { sweptTo?[window.number] ?? window.bounds }
 

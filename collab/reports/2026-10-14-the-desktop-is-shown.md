@@ -107,37 +107,65 @@ shown; `WindowGrab.hold` (ArborCore, tabled in `WindowGrabTests`) says what the 
 - **A hand takes a window by its top or by an edge.** Where its app has the window under the press, the press must be there (the upper 60 points, or 10 from the border): in a text
   that is being selected, a window that goes the pointer's way goes by itself. Where it has not, the app has been heard since: it is at most 100 points behind, and the
   pointer is still where a hand holds.
-- **While macOS shows its desktop nothing is in the hand** (`SweptAside.isSwept`, on the list that is read anyway). Every window is then listed far from its app's word, some of
-  them the way the pointer went.
+- **While macOS shows its desktop nothing is in the hand.** Every window is then listed far from its app's word, some of them the way the pointer went. Two signs tell it, both in the
+  list that is read anyway: the Dock's window as large as the display at level 18, which is there for as long as a sweep lasts (seen on macOS 26; nobody has looked on 14 and 15), and
+  `SweptAside.isSwept`, which goes by the frames.
 - **An edge that has left the press behind** (its app heard meanwhile) is judged from where the pointer is, if the pointer is at an edge and the press is not. Not for a
-  press in the upper 60 points: that is a window held by its title bar that has not stirred yet, with the pointer gone along the bar as far as a corner.
+  press in the upper 60 points: that is a window held by its title bar, which has not stirred yet, with the pointer gone along the bar as far as a corner, or which trails a hand going up.
 - Otherwise the press is looked for at its own place, under the rule for strips, as before; and if nothing is found it keeps its own place, which is what a
   report from a window's app is held against.
 - **Nothing is made of a few points**: the pointer must have gone more than 24, the window be 10 ahead. A press on time comes with a tremble, and the two frames of a
   window at rest may differ a little; to go by the app's word then would make a drag of the difference.
 - One line at debug level for every press: where the button went down, where the pointer was by then, and what the press was found to be on.
 
-**Three rounds found what argument did not.** Two reviews and an independent judge, each with stories of its own on the model. The first state (the second try put back) took hold of
+**Four rounds found what argument did not.** Two reviews and an independent judge, twice, each with stories of its own on the model. The first state (the second try put back) took hold of
 whatever the pointer had come to. The second judged every late press from the pointer's place, and lost what had come to rest. The third made **a false drag of a swept window**: a
 press on the bare desktop within ten points of where a tile's far edge really is, the pointer thrown to that tile's strip, the press served late; with the real controller on top two tiles
 were swapped and resized. It also made a drag of a stubborn window going back under a selection, and lost a window alone that starts late. "A strip can only be pulled the other way than it was
-swept" is true of a press ON the strip, and of nothing else. All their stories are in the tree.
+swept" is true of a press ON the strip, and of nothing else. The fourth lost a window that trails a hand going up, and knew a sweep only while more windows were aside than in place. All
+their stories are in the tree.
 
-**Evidence.** All on the model, which no Mac can be asked for: lateness to order.
+**Evidence.** On the model, which no Mac can be asked for: lateness to order.
 
-- **The model shows its desktop** (`FakeMacOS/DesktopShown.swift`: the key, and a press on a strip; its header says what was seen and what is a guess). It is a layer over the list: with the
-  trunk's layer every older story has line for line the account it had.
-- `tests/DesktopShown.swift`, `tests/LatePresses.swift`, `tests/Judge.swift` (the judge's), more of `tests/LostDrags.swift`: 308 new stories, each shape also served on time, as a control.
-- `make mac-on-linux`: **587 stories, 1908 ✔, 111 known ✘, 0 new, exit code 0.** `REF=origin/swarm/trunk make mac-on-linux`, the trunk's layer with the same stories: 1827 ✔, **86 new ✘**.
-  **No check is red here and green there.**
-- 41 checks of the new stories are red on both, none of them made worse, each listed in `known-failures.txt` with its reason. Six lines that stood there are cured and gone.
-- **4,000 random gestures**, the judge's (`tests/JudgeRandom.swift`, told on request; truth is what became of the windows; a quarter with the desktop shown): **3,365 come out right against the
-  trunk layer's 2,826. 539 better, none worse. No false drag or resize, and no wrong one; the trunk's layer has three wrong ones.** The rest are lost on both.
-- `make mac-on-linux-selftest`: 30 changes noticed, seven of them new: each takes one of these rules out.
+- **The model shows its desktop** (`FakeMacOS/DesktopShown.swift`: the key, a press on a strip, the Dock's sign; its header says what was seen and what is a guess). It is a layer over the
+  list: with the trunk's layer every older story has line for line the account it had.
+- `tests/DesktopShown.swift`, `tests/LatePresses.swift`, `tests/Judge.swift` and `tests/Judge2.swift` (the judge's), more of `tests/LostDrags.swift`: 607 new stories, each shape also served on
+  time, as a control.
+- `make mac-on-linux`: **886 stories, 2566 ✔, 298 known ✘, 0 new, exit code 0.** `REF=origin/swarm/trunk make mac-on-linux`, the trunk's layer with the same stories and the same list: 2399 ✔, **167
+  new ✘**, and 7 that are listed pass. So **167 checks are red there and green here, and 7 the other way** (below).
+- 228 checks of the new stories are listed in `known-failures.txt`, each with its reason: 221 red on both layers, the 7. Six lines that stood there are cured and gone.
+- **Twice 4,000 random gestures**, the judge's (`tests/JudgeRandom.swift`, `tests/JudgeRandom2.swift`, told on request; truth is what became of the windows; a quarter with the desktop
+  shown; the second lot with top edges, corners, taller title bars, longer throws):
 
-**Still lost**, as before: what is at rest when the press is served and is dragged on afterwards; an edge that takes the window's place nowhere (right, bottom) or has left
-the place of the press, once its app has been heard; a window stopped by the menu bar with its app heard first; a window taken by its background, below the upper 60 points; a window server
-that runs a whole step ahead of the pointer. The facts are gone by then. The cure is to note the window under the press when it happens, off the main thread.
+  | | right, here | right, the trunk's layer | better | worse | false | wrong, here | wrong, the trunk's |
+  |---|---|---|---|---|---|---|---|
+  | the first 4,000 | 3,379 | 2,826 | 553 | 0 | 0 | 0 | 3 |
+  | the second 4,000 | 3,260 | 2,783 | 477 | 0 | 0 | 3 | 4 |
+
+  The rest are lost on both.
+- `make mac-on-linux-selftest`: 33 changes noticed, ten of them new: each takes one of these rules out.
+
+**On a hosted Mac** (macOS 26.6.2, before the last mend, which changes nothing for a press that is served on time): `check-sweep.sh` 62 of 62, `check-drag-from-behind.sh` 37 of 37, `e2e-drag.sh` 32 of
+35, the three ✘ the trunk's own: they fail the same in another branch's run of the same hour. By the new line of the log **all 48 presses of the run were served on time**. So the Mac says that this
+does no harm where nothing is late; what it does where something is, only the model says.
+
+**Worse than before, seven checks, both shapes contrived:** a window that goes the pointer's way **by itself** under a press in its upper 60 points that is served late. A title bar double-clicked and the
+window zoomed with the button still down, the pointer slipping the way its corner went (a Mac zooms when the button comes up); text selected in a field 30 points below the top of a window that goes
+back 60 points. Each is taken for a drag. Served on time the same stories are false drags on every layer.
+
+**Still lost or mistaken**, as before:
+- what is at rest when the press is served and is dragged on afterwards; an edge that takes the window's place nowhere (right, bottom) or has left the place of the press, once its app has been
+  heard; a window stopped by the menu bar with its app heard first; a window server that runs a whole step ahead of the pointer;
+- **a resize taken in the upper 60 points** (the left edge 30 or 55 below the top, the top edge, both upper corners), served late, is taken for a **drag**: it cannot be told from a title bar held while
+  the pointer goes along it to a corner. The three wrong ones of the second 4,000;
+- **the 60 points are a guess**, with room over what has been measured (26 to 52). A bar of 90 points taken 62 to 88 below the top, or a window taken by its background, is lost when late;
+- **the only window in view**, really carried to the bottom or the right edge until less than a quarter of it is left on the display, is taken for a sweep by its frames, and lost when late. On a
+  macOS that has the Dock's sign the frames need not be asked; until somebody has looked on 14 and 15 they are;
+- a window moved with ⌘ **under** another: only the frontmost window at a place is looked at;
+- above the layer: the only floating window carried briskly to the bottom edge, the press served late. The layer reports the drag, but is told the pointer's place of now, at the edge, and the
+  controller discounts an edge that was never left: no preview, no dock.
+
+The facts are gone by the time a late press is served. The cure is to note the window under the press when it happens, off the main thread.
 
 ## Not done, and why
 

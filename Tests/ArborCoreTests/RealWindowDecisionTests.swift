@@ -304,7 +304,9 @@ extension Box where Value == EchoFilter {
     var behind = wider
     behind.origin.x += 15
     behind.size.width -= 15
-    #expect(hold(pressedAt: edge, pointerWent: -50, 2, listed: wider, believed: behind) == .init(window: window, point: now, frame: wider))
+    #expect(
+      hold(pressedAt: edge, pointerWent: -50, 2, listed: wider, believed: behind)
+        == .init(window: window, point: now, frame: wider, isInTheHand: true))
     // Made narrower, it has left the press altogether, and is known by being a step ahead of its app.
     let narrower = CGRect(x: 150, y: 100, width: 550, height: 400)
     #expect(
@@ -402,6 +404,24 @@ extension Box where Value == EchoFilter {
     // Along the bar as far as the corner. Judged from there, the window's catching up would be a leap.
     #expect(hold(pointerWent: -297, 0, listed: frame) == .init(window: window, point: titleBar, frame: frame))
     #expect(hold(pointerWent: 296, 2, listed: frame) == .init(window: window, point: titleBar, frame: frame))
+  }
+
+  @Test func aWindowThatTrailsAHandGoingUpIsJudgedFromThePress() {
+    // The pointer is at its upper edge, or past it. Judged from there, the rest of its catching up would be a leap.
+    #expect(
+      hold(pointerWent: 0, -120, listed: frame.offsetBy(dx: 0, dy: -100))
+        == .init(window: window, point: titleBar, frame: frame, isInTheHand: true))
+    #expect(
+      hold(pointerWent: 0, -112, listed: frame.offsetBy(dx: 0, dy: -100))
+        == .init(window: window, point: titleBar, frame: frame, isInTheHand: true))
+  }
+
+  @Test func aWindowThatGoesUpMayCoverThePressStillWithItsAppHeardSince() {
+    // By its app's word the press lies deep inside it. The hand is where the pointer is: at its top.
+    let heard = frame.offsetBy(dx: 0, dy: -120)
+    #expect(
+      hold(pointerWent: 0, -150, listed: frame.offsetBy(dx: 0, dy: -150), believed: heard)
+        == .init(window: window, point: titleBar, frame: heard, isInTheHand: true))
   }
 
   @Test func aWindowFlungAcrossTheDisplayIsStillDragged() {

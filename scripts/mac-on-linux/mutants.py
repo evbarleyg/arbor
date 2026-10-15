@@ -253,8 +253,8 @@ MUTANTS = [
     {
         "name": "a hand can take a window along by the middle of it",
         "file": "ArborCore/WindowGrab.swift",
-        "old": "      return pressedAt.y < believed.minY + top || isNearEdge(pressedAt, of: believed)\n",
-        "new": "      return true\n",
+        "old": "      pressedAt.y < believed.minY + top || isNearEdge(pressedAt, of: believed)\n",
+        "new": "      true\n",
         "red": [
             "judge: J2 a stubborn window goes back 60 points while text is selected in it the same way, Arbor busy for 500 ms, then byTime: "
             "no drag and no resize is made of it",
@@ -269,6 +269,31 @@ MUTANTS = [
             "judge: J2b the button goes down on the wallpaper, the pointer comes to a window whose app has moved it 40 points the same way meanwhile, "
             "Arbor busy for 500 ms, then byTime: no drag and no resize is made of it",
         ],
+    },
+    {
+        "name": "the Dock's sign of a sweep is not looked for",
+        "old": "      if SweptAside.isTheDocksSign(level: level, frame: bounds, displays: displays) { return true }\n",
+        "new": "      if level == .min { return true }\n",
+        "red": [
+            "judge2: K3 the desktop is shown, 1 window(s) open meanwhile, a rubber band from over a swept window's left edge is thrown to its strip, "
+            "the press heard 500 ms late: no drag and no resize is made of it",
+        ],
+    },
+    {
+        "name": "a sweep is known by the Dock's sign alone",
+        "old": "    return SweptAside.isSwept(believed: records.mapValues(\\.snapshot.frame), listed: listed, displays: displays)\n",
+        "new": "    return listed.count > .max\n",
+        "red": [
+            "on a macOS without the Dock's sign of a sweep, a rubber band from over a swept tile's left edge is thrown to its strip, heard 500 ms late: "
+            "no drag, no resize, and no window moved by hand is reported",
+        ],
+    },
+    {
+        "name": "a window that trails a hand going up is judged from its upper edge",
+        "file": "ArborCore/WindowGrab.swift",
+        "old": "      if isNearEdge(pointerNow, of: listed), !isNearEdge(pressedAt, of: believed), pressedAt.y >= believed.minY + top {\n",
+        "new": "      if isNearEdge(pointerNow, of: listed), !isNearEdge(pressedAt, of: believed) {\n",
+        "red": ["judge2: R 1746: it comes out right", "judge2: R 1048: it comes out right"],
     },
 ]
 

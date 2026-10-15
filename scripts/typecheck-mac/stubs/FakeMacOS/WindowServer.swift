@@ -65,7 +65,7 @@ extension FakeMac {
         number: item.number, pid: item.pid, ownerName: item.pid == arbor.pid ? arbor.name : "Window Server", layer: item.layer,
         bounds: item.bounds, alpha: item.alpha, isOnScreen: true)
     }
-    let things = (furnitureAtRest() + furniture).filter { !(withoutDesktop && $0.isDesktopElement) }
+    let things = (furnitureAtRest() + furniture + theDocksSignOfASweep()).filter { !(withoutDesktop && $0.isDesktopElement) }
     var all = things.filter(\.isInFront).map(listed)
     for window in stack where window.exists {
       all.append(
