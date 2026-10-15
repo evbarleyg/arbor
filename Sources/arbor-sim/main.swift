@@ -73,6 +73,8 @@ import Foundation
 //                                add an entry to the `holdStillFor` setting
 //   transitions                  start/stop printing the motion each step is shown with: one line
 //                                per window drawn, back to front, `w101 (from) -> (to)`
+//   rehearse-stage               from here on, while a trace is recorded, a stage that does everything right logs its
+//                                frames into it as the real one does on a Mac, for `arbor-sim stage-judge` (RehearsedStage)
 //   finder-type [text]           replace the text in the field of Go to… (`find` opens it)
 //   finder-move <rows>           move its selection down, or with a negative number up
 //   finder-choose [n]            press Return, or choose the n-th row that shows
@@ -86,6 +88,7 @@ import Foundation
 //                                that knows what was saved and nothing else. A trace or a `watch` ends with the quit
 //
 // `arbor-sim replay <file.jsonl> [--strict] [--verbose]` replays a trace instead (Replay.swift).
+// `arbor-sim stage-judge [<file.jsonl>…] [<limit>=<value>…]` judges the motion in traces from a Mac (StageJudge.swift).
 //   map <id>|desktop|beside      click in the minimap: on a window, on the Desktop's outline, beside the map.
 //                                Whenever the minimap changes it is printed as `minimap: [w101] w102 desktop`, with
 //                                what is in view in brackets, or `minimap: gone`
@@ -117,6 +120,7 @@ func runSimulation() {
   }
   // `replay <file>` replays a trace; `replay` alone, a chaos script from standard input.
   if lines.first == "replay", lines.dropFirst().contains(where: { !$0.hasPrefix("--") }) { runReplay(Array(lines.dropFirst())) }
+  if lines.first == "stage-judge" { runStageJudge(Array(lines.dropFirst())) }
   if let code = runChaosMode(lines) { exit(code) }
   let launch = LaunchOptions(taking: &lines)
   if lines.isEmpty, launch?.audit != true {
@@ -150,6 +154,7 @@ func runSimulation() {
     print("COMMAND FAILED: `\(line)` (follow it with `expect fail` if it is meant to)\n")
   }
   var printTransitions = false
+  var rehearsedStage: RehearsedStage?
   var watcher = SimulatedWatcher(harness: harness)
   var staleLayouts = 0
   var linesPrinted = 0
@@ -189,6 +194,10 @@ func runSimulation() {
       lastReply = ""
       continue
     }
+    if words[0] == "rehearse-stage" {
+      rehearsedStage = rehearsedStage ?? RehearsedStage(recorder: harness.recorder, scheduler: harness.scheduler, overlays: harness.overlays)
+      continue
+    }
     harness.overlays.clearTransitions()
     if words[0] == "watch", case .watch(let options)? = try? Command.parse(words: words) {
       harness.beginStep()
@@ -206,6 +215,10 @@ func runSimulation() {
       // The step that is judged is the start (`begin`): the quit before it is an act of its own.
       harness = relaunched(harness)
       watcher = SimulatedWatcher(harness: harness)
+      // The new process has stages of its own.
+      if rehearsedStage != nil {
+        rehearsedStage = RehearsedStage(recorder: harness.recorder, scheduler: harness.scheduler, overlays: harness.overlays)
+      }
       (linesPrinted, minimapsPrinted) = (0, 0)
     } else {
       harness.beginStep()

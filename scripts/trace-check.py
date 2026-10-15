@@ -6,7 +6,8 @@
 A trace (docs/TRACES.md) never holds window titles: each is replaced by a token such as `title[3]`, and the title
 patterns of rules by marks such as `[p1]`. What it does hold in words: the names and bundle ids of the apps whose windows
 were open, the commands that ran and their replies, remarks made with `trace note`, and the settings. This prints
-them. Exits with 1 if a title or a pattern is anything but a token, which would be a bug in the recorder.
+them. Exits with 1 if a title or a pattern is anything but a token, or a line of the stage's log holds a word of its own, which
+would be a bug in the recorder.
 """
 
 import json
@@ -15,6 +16,8 @@ import sys
 
 TOKEN = re.compile(r"^(title(-\d+|\[\d+\])(\[[a-z]\d+\])*)?$")
 MARK = re.compile(r"^\[p\d+\]$")
+# The stage's log of its frames: a few fixed words, the display's id, numbers of windows and numbers.
+STAGE = re.compile(r"^stage (up|retargeted|frame|lift|down) d[-\w]+( w\d+| [-\d.,]+(,cover)?)*$")
 
 
 def windows_in(line):
@@ -50,6 +53,9 @@ def check(path):
                         bad.append(f"line {number}: a rule's title pattern is {rule['title']!r}")
                 bindings.update(f"{chord}: {command}" for chord, command in settings.get("bindings", {}).items())
                 excluded.update(settings.get("excludedBundleIDs", []))
+            raw = line.get("raw", "")
+            if raw.startswith("stage ") and not STAGE.match(raw):
+                bad.append(f"line {number}: a line of the stage's holds more than numbers: {raw!r}")
             if "note" in line:
                 notes.append(line["note"])
             if "command" in line:

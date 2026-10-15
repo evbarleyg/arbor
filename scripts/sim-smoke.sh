@@ -42,6 +42,17 @@ output=$(.build/debug/arbor-sim quiet "settings-file $folder/settings.json" "set
 grep -q "^\* gap = 20 " <<<"$output" || fail "settings does not list the changed gap"
 [ "$(head -n 3 "$folder/settings.json")" = "$(printf '{\n  "gap": 20,\n  "myNote": "mine",')" ] \
   || fail "set changed more of settings.json than the gap"
+
+# The stage's log of its frames (F02, "How motion is measured"): from a rehearsed stage through a trace file to the judge.
+output=$(ARBOR_HOME="$folder/stage" .build/debug/arbor-sim quiet "open A" "open B" "open C" "open D" "open E" "open F" "open G" "open H" \
+  rehearse-stage "trace on motion" arrange "wait 1" "zoom 101" "wait 0.2" back "wait 1" "trace off") || fail "a trace could not be recorded"
+output=$(.build/debug/arbor-sim stage-judge "$folder"/stage/traces/*-motion.jsonl) || fail "the judge finds fault with a rehearsed stage"
+grep -q ": 8 stand-ins, lasts 4.* ms, 460 ms planned" <<<"$output" || fail "the judge did not measure a motion of eight windows"
+grep -q "retargeted 1 time" <<<"$output" || fail "the judge did not see the second command in mid-motion"
+grep -q "^2 motions, none with findings$" <<<"$output" || fail "the judge did not sum up"
+output=$(.build/debug/arbor-sim stage-judge gap=0.01 < "$(ls "$folder"/stage/traces/*-motion.jsonl)") && fail "a limit nobody meets was met"
+grep -q "✘ gap: .*16.7 ms without a frame" <<<"$output" || fail "the judge did not say what it found"
+python3 scripts/trace-check.py "$folder"/stage/traces/*-motion.jsonl > /dev/null || fail "trace-check finds words in the stage's lines"
 echo "sim smoke test passed"
 
 # The same for the control socket: the real arborctl against the simulator.

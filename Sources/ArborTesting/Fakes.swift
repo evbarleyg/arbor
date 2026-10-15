@@ -19,6 +19,8 @@ public final class FakeOverlays: OverlayPresenter {
   public private(set) var finishedAnimations = 0
   /// Called with each transition as it arrives, for tests that care what has happened by then.
   public var onAnimate: ((Transition) -> Void)?
+  /// Called whenever the controller drops the stages.
+  public var onFinish: (() -> Void)?
   /// The field for typing a space's name, if a display shows it.
   public var namePrompt: NamePromptModel? { scenes.sorted { $0.key < $1.key }.compactMap(\.value.namePrompt).first }
   /// The heads-up line showing now, by display.
@@ -83,7 +85,10 @@ public final class FakeOverlays: OverlayPresenter {
     onAnimate?(transition)
   }
 
-  public func finishAnimations() { finishedAnimations += 1 }
+  public func finishAnimations() {
+    finishedAnimations += 1
+    onFinish?()
+  }
 
   /// Forgets the transitions recorded so far, so a test can look at one step's.
   public func clearTransitions() { transitions.removeAll() }
