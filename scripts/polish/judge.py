@@ -659,6 +659,10 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout):
             verdict = results[name][1].get(identifier) if name in results else Verdict(UNSEEN, "not filmed")
             if verdict is None:
                 verdict = Verdict(UNSEEN, f"filmed as {results[name][0]['film'].kind}, not as {kind}")
+            # What the ruler cannot measure yet, eyes may settle.
+            by_eye = eyes.get(name, {}).get(identifier)
+            if verdict.said == not_yet(None, None).said and by_eye:
+                verdict = Verdict(by_eye["status"], by_eye["said"], by_eye.get("frames", []))
             # A miss that somebody with eyes could not find in the frames is no finding. It is no pass either: nothing was measured.
             fooled = eyes.get(name, {}).get("refuted", {}).get(identifier)
             if verdict.status == MISS and fooled:
@@ -908,7 +912,7 @@ def main(arguments):
             with open(path, encoding="utf-8") as file:
                 for name, said in json.load(file)["scenes"].items():
                     entry = {check: {"status": said[check]["status"], "said": said[check]["said"], "frames": said[check].get("frames", [])}
-                             for check, _, _ in EYES if check in said}
+                             for check in [check for check, _, _ in EYES] + ["D3", "D4"] if check in said}
                     refuted = {claim["claim"].split(":")[0].strip(): claim["why"] for claim in said.get("claims", []) if claim["verdict"].startswith("refute")}
                     entry.update({key: value for key, value in (("refuted", refuted), ("other", said.get("other")), ("void", said.get("void"))) if value})
                     scenes[name] = entry

@@ -88,8 +88,8 @@ M1, M8, M9, M11 and M13 are asked here too.
 |---|---|---|---|---|
 | D1 | **Arbor never pulls what is being dragged** | while the button is down, in the frames in which all of the window is seen as it was taken: its left and its bottom against where the pointer, at the grip it took, has had them in the last 100 ms (macOS's own dragging trails the pointer; `drag-alone`, which Arbor leaves alone, came to 1 px) | within 6 px | 1 |
 | D2 | **The preview tells the truth** | the preview panel's frame while held, against the window's rectangle at rest | within 2 px | 2 |
-| D3 | **The preview comes and goes softly, once** | spells of change in the preview's rectangle while the pointer rests | one fade in of 80 to 250 ms; no blink | 2 |
-| D4 | **Others make room in one motion** | M2 to M9 for the windows that are not dragged, from the moment the preview shows | as there | 1 |
+| D3 | **The preview comes and goes softly, once** | by eye, until the ruler can: the frames while the button is down | one fade in of 80 to 250 ms; no blink; no second coming while the pointer rests | 2 |
+| D4 | **Others make room in one motion** | by eye, until the ruler can: the windows that are not dragged, while the button is down | they move once, eased, together, or not at all | 1 |
 
 After the button comes up, M1 to M13 are asked with that as the cause.
 
