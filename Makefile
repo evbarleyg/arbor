@@ -176,6 +176,11 @@ suite:
 rehearse:
 	@./scripts/mac-shell/rehearse.sh $(SCRIPTS)
 
+# The judge of polish judged: films drawn wrong in known ways, each of which it must catch (docs/POLISH.md). Needs numpy and Pillow.
+.PHONY: polish-selftest
+polish-selftest:
+	@python3 scripts/polish/judge.py --self-test
+
 # Hostile and broken clients against the control socket of arbor-sim --serve, for half a minute (scripts/socket-attack.py).
 attack: build
 	@python3 scripts/socket-attack.py
