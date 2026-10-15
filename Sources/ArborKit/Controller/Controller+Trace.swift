@@ -9,6 +9,11 @@ extension Controller {
   /// The recorder shared by the decorators. The app and the test harness always install them.
   public var traceRecorder: TraceRecorder? { (system as? RecordingWindowSystem)?.recorder }
 
+  /// Where the app hands in what it hears of macOS by itself and not from the window system (which app is in front, a press that an event
+  /// tap held back): through the recorder, like every other report. Handed to the controller itself they changed what Arbor did and no trace of
+  /// a real Mac held them, so no replay could do the same.
+  public var reports: any WindowSystemEvents { (system as? RecordingWindowSystem) ?? self }
+
   /// Does `body`, which performs `command`, as one reaction in the trace. All that a command sets off belongs inside.
   func traced(_ command: Command, from source: CommandSource?, _ body: () -> CommandResult) -> CommandResult {
     // (A word to the recorder never gets here: `perform`, Controller+Lead.swift. So it is no part of what is recorded, and no replay starts traces of its own.)

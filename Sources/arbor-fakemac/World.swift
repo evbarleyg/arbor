@@ -447,7 +447,7 @@ final class World {
     recentApps.removeAll { $0 == pid }
     recentApps.insert(pid, at: 0)
     // `FrontmostAppWatcher`, which goes on looking during a pause. The controller ignores what is no news.
-    arbor?.controller.applicationActivated(frontmostApp)
+    arbor?.controller.reports.applicationActivated(frontmostApp)
   }
 
   var frontmostApp: FrontmostApp? {
@@ -533,6 +533,6 @@ final class World {
     followKeyboard()
     recentApps.removeAll { $0 == pid }
     if system.focused == nil { bringForward(app: World.finderPID) }
-    arbor?.controller.applicationActivated(frontmostApp)
+    arbor?.controller.reports.applicationActivated(frontmostApp)
   }
 }

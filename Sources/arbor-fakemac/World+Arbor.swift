@@ -103,7 +103,7 @@ extension World {
     arbor.store.saved = loadState(into: arbor.store)
     controller.accessibilityGranted = true
     // `FrontmostAppWatcher.start` reports once at once. The keyboard layout is the US one, which is the controller's own.
-    controller.applicationActivated(frontmostApp)
+    controller.reports.applicationActivated(frontmostApp)
     controller.restartedAfterAccident = !(options["ARBOR_RESTARTS"] ?? "").isEmpty
     controller.start()
     registerHotKeys()

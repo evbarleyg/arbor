@@ -25,6 +25,8 @@ def windows_in(line):
     found += line.get("windows", [])
     if line.get("call") == "allWindows":
         found += line.get("result", [])
+    # Recorded by name (`windowFound`, `windowReplaced`): whole windows among the arguments.
+    found += [argument for argument in line.get("args") or [] if isinstance(argument, dict) and "app" in argument and "pid" in argument]
     return found
 
 
@@ -46,6 +48,9 @@ def check(path):
                 apps.add(f"{window.get('app')} ({window.get('bundle')})")
                 if not TOKEN.match(window.get("title", "")):
                     bad.append(f"line {number}: a window's title is {window['title']!r}")
+            # An app that came forward need not have a window Arbor knows of.
+            if line.get("event") == "applicationActivated" and len(line.get("args") or []) == 2:
+                apps.add(f"{line['args'][1]} ({line['args'][0]})")
             settings = line.get("settings")
             if isinstance(settings, dict):
                 for rule in settings.get("rules", []):

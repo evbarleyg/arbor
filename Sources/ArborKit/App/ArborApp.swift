@@ -225,7 +225,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
   /// Takes the shortcuts, once, at launch. None of this needs a permission.
   private func startKeys() {
     // First, so that launching behind an app that keeps its own ⌃⌥ takes nothing from it even for a moment.
-    let watcher = FrontmostAppWatcher { [weak self] app in self?.controller.applicationActivated(app) }
+    let watcher = FrontmostAppWatcher { [weak self] app in self?.controller.reports.applicationActivated(app) }
     watcher.start()
     frontmostApp = watcher
     // And so that the first registration is already on the right keys.
@@ -248,7 +248,7 @@ public final class ArborApp: NSObject, NSApplicationDelegate {
         onCommand: { [weak self] command in self?.handle(command, from: .gesture) },
         onGesture: { [weak self] update in self?.controller.gesture(update) },
         // A press that a tap holds back reaches no monitor, and a press ends a motion all the same.
-        onPress: { [weak self] in self?.controller.pointerPressed() })
+        onPress: { [weak self] in self?.controller.reports.pointerPressed() })
       // Its watchdog looks once a second, and what it finds out about the permission concerns more than the taps.
       input.onPermissionChange = { [weak self] in self?.controller.askAboutAccessibility(beyondDoubt: true) }
       input.update()

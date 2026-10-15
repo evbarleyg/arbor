@@ -94,7 +94,7 @@ Both are worked out just before the command runs, by asking what the command is 
 known there.
 
 What a trace does hold in words: the names and bundle ids of the apps whose windows were open (all of them, not only those
-that moved), process ids, the text of commands and their replies, your remarks, and the settings (shortcuts,
+that moved) and of every app that came to the front, with or without a window, process ids, the text of commands and their replies, your remarks, and the settings (shortcuts,
 excluded apps). `make trace-check` lists all of it. Close what nobody should know you had open before you record.
 
 And about the Mac and the hands on it: the version of macOS, the displays (their identifiers, sizes and how they are arranged), where the pointer was, and every press, drag and release of

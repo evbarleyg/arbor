@@ -276,6 +276,26 @@ import Testing
     }
   }
 
+  /// The test above takes a report or an overlay's action for recorded because the decorators record them. That holds for what comes through the
+  /// decorators. `ArborApp` handed `applicationActivated` and `pointerPressed` to the controller itself, so no trace of a real Mac held an app
+  /// coming forward, which is the only sign of ⌘Tab.
+  @Test func nobodyHandsTheControllerAReportPastTheRecorder() throws {
+    let names = Set(try requirements(of: "WindowSystemEvents", in: source("Sources/ArborKit/Platform/WindowSystem.swift")))
+      .union(try requirements(of: "OverlayActions", in: source("Sources/ArborKit/Platform/OverlayPresenter.swift")))
+      // Records itself.
+      .subtracting(["perform"])
+    #expect(names.contains("applicationActivated") && names.contains("tileActivated"))
+    var read = 0
+    // The controller may call itself, and tests and the labs say what they mean to.
+    for file in try swiftFiles() where !file.hasPrefix("Sources/ArborKit/Controller/") && !file.hasPrefix("Sources/ArborTesting/") {
+      read += 1
+      for match in try source(file).matches(of: /controller\??\.([A-Za-z0-9_]+)\(/) where names.contains(String(match.1)) {
+        Issue.record("\(file) calls `controller.\(match.1)`, which no trace will hold: `controller.reports.\(match.1)` goes through the recorder")
+      }
+    }
+    #expect(read > 50)
+  }
+
   @Test func theReaderOfProtocolsFindsWhatIsThere() throws {
     let text = try source("Sources/ArborKit/Platform/WindowSystem.swift")
     let calls = try requirements(of: "WindowSystem", in: text)
