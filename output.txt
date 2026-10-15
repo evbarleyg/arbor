@@ -1,0 +1,150 @@
+# mac-shell: scripts/mac-shell/probe-login-keychain.sh at 46ffa66, macOS 15.7.9, 2026-10-15T06:31Z
+
+== the Mac
+macOS 15.7.9 on arm64
+the search list:     "/Users/runner/Library/Keychains/login.keychain-db"; the default:     "/Users/runner/Library/Keychains/login.keychain-db"
+Keychain "~/Library/Keychains/login.keychain-db" no-timeout
+
+== A1  the account's own login keychain: the file is named after the certificate; Deny
+  A DIALOG CAME:
+        AXStaticText _NS:73 "" "codesign wants to access key “Arbor Local Signing” in your keychain."
+        AXStaticText infotext "" "To allow this, enter the “login” keychain password."
+        AXStaticText _NS:99 "" "Password:"
+        AXButton _NS:42 "Help" ""
+        AXButton _NS:21 "Always Allow" ""
+        AXButton _NS:29 "Deny" ""
+        AXButton _NS:8 "Allow" ""
+shot: mac-shell/a1-dialog.png
+> click 578 295
+  after Deny codesign said: /private/tmp/arbor-login.KtUK80/probe: replacing existing signature|/private/tmp/arbor-login.KtUK80/probe: errSecInternalComponent|
+  the dialog is still there after Deny: 0 s
+
+== A2  the key's access list there, and in a keychain of the test's own
+  in the login keychain:
+        access: 5 entries
+            entry 0:
+                authorizations (6): decrypt derive export_clear export_wrapped mac sign
+                don't-require-password
+                description: Arbor Local Signing
+                applications (1):
+                    0: /usr/bin/codesign (OK)
+            entry 1:
+                authorizations (1): encrypt
+                don't-require-password
+                description: Arbor Local Signing
+                applications: <null>
+            entry 2:
+                authorizations (1): integrity
+                don't-require-password
+                description: 515232e324b94d83e17b122f2784056cd743002fcb26574550a89e8eaea4e8bf
+                applications: <null>
+            entry 3:
+                authorizations (1): partition_id
+                don't-require-password
+                description: apple-tool:
+                applications: <null>
+            entry 4:
+                authorizations (1): change_acl
+                don't-require-password
+                description: Arbor Local Signing
+                applications (0):
+  in a keychain of the test's own:
+        access: 3 entries
+            entry 0:
+                authorizations (1): encrypt
+                don't-require-password
+                description: Arbor Local Signing
+                applications: <null>
+            entry 1:
+                authorizations (6): decrypt derive export_clear export_wrapped mac sign
+                don't-require-password
+                description: Arbor Local Signing
+                applications (1):
+                    0: /usr/bin/codesign (OK)
+            entry 2:
+                authorizations (1): change_acl
+                don't-require-password
+                description: Arbor Local Signing
+                applications (0):
+
+== A3  how long a dialog outlives codesign
+  codesign ended with TERM; the dialog stayed 20 s of 20
+> key escape
+  after Escape it is gone
+  codesign ended with INT; the dialog stayed 20 s of 20
+> key escape
+  after Escape it is gone
+  the key deleted under the dialog; it stayed 8 s of 8; codesign still waits
+> click 578 295
+  left on screen: nothing
+
+== B  the login keychain made anew, with a known password
+  create: 0
+  settings: 0
+  unlock with the password it was made with: 0
+  IT ASKS TOO:
+        AXStaticText _NS:73 "" "codesign wants to access key “Arbor Local Signing” in your keychain."
+        AXStaticText infotext "" "To allow this, enter the “login” keychain password."
+        AXStaticText _NS:99 "" "Password:"
+        AXButton _NS:42 "Help" ""
+        AXButton _NS:21 "Always Allow" ""
+        AXButton _NS:29 "Deny" ""
+        AXButton _NS:8 "Allow" ""
+shot: mac-shell/b-dialog.png
+> key p
+> key r
+> key o
+> key b
+> key e
+> key 7
+> key 4
+> key 7
+> key 2
+shot: mac-shell/b-typed.png
+> click 440 295
+    Made the code-signing certificate "Arbor Local Signing" in /Users/runner/Library/Keychains/login.keychain-db
+      SHA-1 25DE24F42E821F1FE7A6EE9351D510FF9C2966DA, valid until Oct 12 06:33:08 2036 GMT
+    If macOS now asks whether codesign may use the key "Imported Private Key" or "Arbor Local Signing": type the keychain's password
+    into ITS dialog and choose ALWAYS ALLOW. (Allow would ask again, twice for every build.)
+    /var/folders/nj/vtw8zd2j31d1gdrtntc5y4600000gn/T/tmp.ScVi7mduJR/probe: replacing existing signature
+    codesign can sign with it. What macOS will remember about a build signed this way:
+      identifier "com.evbarleyg.arbor.probe" and certificate leaf = H"25de24f42e821f1fe7a6ee9351d510ff9c2966da"
+    
+    `make app` and `make install` sign with it from now on.
+    The first build signed this way needs Accessibility permission once more. If an older build is listed there, clear
+    its entry, but NOT YET: an Arbor that is running needs it to bring its windows back when it quits. In this order:
+      make install LAUNCH=0
+  ✔ the script ends by saying that codesign can sign
+/private/tmp/arbor-login.KtUK80/probe: replacing existing signature
+  the next signature: exit codes 0 0; a dialog: no
+  the key's access list now:
+        access: 5 entries
+            entry 0:
+                authorizations (6): decrypt derive export_clear export_wrapped mac sign
+                don't-require-password
+                description: Arbor Local Signing
+                applications (1):
+                    0: /usr/bin/codesign (OK)
+            entry 1:
+                authorizations (1): encrypt
+                don't-require-password
+                description: Arbor Local Signing
+                applications: <null>
+            entry 2:
+                authorizations (1): integrity
+                don't-require-password
+                description: 581389c2192d02819e70b2b23690fbf9de2b9cb2e7ec4df5a5eea2c12704ee88
+                applications: <null>
+            entry 3:
+                authorizations (1): partition_id
+                don't-require-password
+                description: apple-tool:, apple:
+                applications: <null>
+            entry 4:
+                authorizations (1): change_acl
+                don't-require-password
+                description: Arbor Local Signing
+                applications (0):
+
+1 passed, 0 failed
+exit code 0
