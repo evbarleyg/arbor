@@ -17,8 +17,9 @@
 # A scene is ONE thing a person does, done as a person does it: with real keys and a real pointer, not with the command behind them.
 # A film shows the whole display, so all of this is for GitHub's Macs only.
 #
-#   film_build                      arbor_build, and compile camera.swift, witness.swift (for pinches) and apptool.swift (for display_size)
+#   film_build                      arbor_build, and compile camera.swift, witness.swift (for pinches), apptool.swift (for display_size), sampler.swift
 #   camera_start | camera_stop      start the camera (fails, and says why, where it gets no frames) | stop it
+#   sampler_start | sampler_stop    beside the films, where the window server has every window, sixty times a second: mac-shell/samples.log
 #   display_size <w> <h>            switch the display to that size, if it offers it, with the camera stopped meanwhile
 #   scene <name> <kind> "<what the person does>"      a film begins: mac-shell/films/<name>/. The kind tells the judge which checks
 #                                     apply (docs/POLISH.md): camera, structure, drag, hold, instant, panel, control
@@ -42,6 +43,8 @@ needs_throwaway_mac "film the whole display, with whatever is on it"
 FILM_CAMERA="$ARBOR_ROOT/.build/mac-shell/camera"
 FILM_WITNESS="$ARBOR_ROOT/.build/mac-shell/witness"
 FILM_APPTOOL="$ARBOR_ROOT/.build/mac-shell/apptool"
+FILM_SAMPLER="$ARBOR_ROOT/.build/mac-shell/sampler"
+FILM_SAMPLER_PID=""
 # A rehearsal has no display to film: the stand-in keeps the log and takes no pictures.
 [ -n "${ARBOR_REHEARSAL:-}" ] && FILM_CAMERA="$ARBOR_ROOT/scripts/mac-shell/rehearse/camera"
 FILM_CAMERA_PID=""
@@ -53,7 +56,7 @@ FILM_CAMERAS=0
 FILM_CAMERA_ARGS=""
 
 film_build() {
-  local camera witness apptool
+  local camera witness apptool sampler
   if [ -n "${ARBOR_REHEARSAL:-}" ]; then
     arbor_build
     return 0
@@ -65,6 +68,8 @@ film_build() {
   witness=$!
   swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/apptool.swift" -o "$FILM_APPTOOL" > "$ARBOR_OUT/build-apptool.log" 2>&1 &
   apptool=$!
+  swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/sampler.swift" -o "$FILM_SAMPLER" > "$ARBOR_OUT/build-sampler.log" 2>&1 &
+  sampler=$!
   arbor_build
   if ! wait "$camera"; then
     grep -A 6 "error:" "$ARBOR_OUT/build-camera.log" | head -n 80
@@ -73,6 +78,37 @@ film_build() {
   # Costs the scenes with a pinch, not the others.
   wait "$witness" || { echo "scripts/mac-shell/witness.swift did not compile: no pinches"; FILM_WITNESS=""; }
   wait "$apptool" || { echo "scripts/mac-shell/apptool.swift did not compile: the display keeps its size"; FILM_APPTOOL=""; }
+  wait "$sampler" || { echo "scripts/mac-shell/sampler.swift did not compile: the films go without the window server's account"; FILM_SAMPLER=""; }
+}
+
+# A film shows what the display showed. It cannot show where a real window is while a stand-in covers it, which is what decides whether
+# the stand-ins may go. The sampler asks the window server, on the same clock and in the same grammar as a film's log, so
+# `judge.py home` lays the two side by side. Descriptors 5 and 6 are the script's ends of its fifos.
+sampler_start() {
+  local tiers=""
+  [ -z "${ARBOR_REHEARSAL:-}" ] || { echo "> sampler_start (not rehearsed)"; return 0; }
+  [ -n "$FILM_SAMPLER" ] && [ -z "$FILM_SAMPLER_PID" ] || return 0
+  scratch_dir sampler FILM_SAMPLER_TEMP
+  mkfifo "$FILM_SAMPLER_TEMP/in" "$FILM_SAMPLER_TEMP/out" || die "sampler_start: no fifos in $FILM_SAMPLER_TEMP"
+  # As in lib-day.sh: what the runner's agent starts counts as work in the background, and its timers come late.
+  if command -v taskpolicy > /dev/null; then tiers="taskpolicy -l 0 -t 0"; fi
+  # shellcheck disable=SC2086
+  $tiers "$FILM_SAMPLER" "$ARBOR_OUT/samples.log" "$FILM_SAMPLER_TEMP/in" "$FILM_SAMPLER_TEMP/out" --hz 60 \
+    2>> "$ARBOR_OUT/sampler.log" 4>&- 7>&- 8>&- 9>&- &
+  FILM_SAMPLER_PID=$!
+  started "$FILM_SAMPLER_PID"
+  # Both ways, so that opening them does not wait for a sampler that ended at once.
+  exec 6<> "$FILM_SAMPLER_TEMP/in" 5<> "$FILM_SAMPLER_TEMP/out"
+  echo "the sampler writes mac-shell/samples.log (pid $FILM_SAMPLER_PID)"
+}
+
+sampler_stop() {
+  [ -n "$FILM_SAMPLER_PID" ] || return 0
+  kill -0 "$FILM_SAMPLER_PID" 2>/dev/null && echo stop >&6
+  exec 6>&- 5<&-
+  ended "$FILM_SAMPLER_PID" 30 || kill_started "$FILM_SAMPLER_PID"
+  FILM_SAMPLER_PID=""
+  echo "samples: $(wc -l < "$ARBOR_OUT/samples.log" | tr -d ' ') lines; $(tail -n 1 "$ARBOR_OUT/samples.log")"
 }
 
 # Descriptor 4 is the script's end of the camera's stdin.
