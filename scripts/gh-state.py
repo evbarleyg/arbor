@@ -83,6 +83,8 @@ OF_A_RUN = ("id", "path", "status", "head_branch", "display_title", "html_url", 
 OF_A_JOB = ("name", "status", "conclusion", "labels", "runner_name", "created_at", "started_at", "completed_at")
 MARKS = {"success": "✔", "failure": "✘", "skipped": "–", "cancelled": "∅", "timed_out": "✘", "neutral": "–", "action_required": "?", "startup_failure": "✘",
          "queued": "⧖", "in_progress": "…", "waiting": "⧖", "pending": "⧖", "requested": "⧖"}
+# The check that speaks for all of CI's Linux jobs, under its name of today and of yesterday. Without it nothing was tried.
+VERDICTS = ("linux / verdict", "linux")
 RED = {"failure", "timed_out", "startup_failure", "action_required"}
 NO_ANSWER = (OSError, http.client.HTTPException, ValueError)
 
@@ -158,6 +160,8 @@ def read_state(github, finished, now, watch=None):
     state["checks"] = {}
     for item in state["open"]:
         sha = item["sha"]
+        if sha in busy:  # a run can begin for a commit whose checks were all in: a draft is marked ready, a run is started again
+            finished.pop(sha, None)
         if sha not in finished:
             checks = github.get(f"/commits/{sha}/check-runs?per_page=100", lambda body: [check(one) for one in body["check_runs"]])
             state["checks"][sha] = checks
@@ -213,7 +217,8 @@ def written(state, heads, now, every, spent):
              " · ".join(f"{name} {sha}" for name, sha in sorted(heads.items(), reverse=True)) or "(git did not say where the branches stand)"]
     if state["paused"]:
         return "\n".join(lines + ["", f"PAUSED: fewer than {state['leaves']} requests are left, and they are for those who have to act. What stood here before is out of date."]) + "\n"
-    lines += ["", f"## Open pull requests: {len(state['open'])}", "", "✔ passed  ✘ failed  – skipped  ∅ cancelled  … running  ⧖ waiting", ""]
+    lines += ["", f"## Open pull requests: {len(state['open'])}", "", "✔ passed  ✘ failed  – skipped  ∅ cancelled  … running  ⧖ waiting",
+              "GREEN: nothing failed and CI's Linux verdict passed. DRAFT: a draft gets lint alone. NO CI: nothing failed, and CI never ran or gave no verdict: does it conflict with its base?", ""]
     for item in sorted(state["open"], key=lambda item: item["number"]):
         checks = {}
         for one in state["checks"][item["sha"]]:  # of two runs of one name the worse shows, then the unfinished
@@ -221,7 +226,13 @@ def written(state, heads, now, every, spent):
             if one["name"] not in checks or rank(one["state"]) > rank(checks[one["name"]]):
                 checks[one["name"]] = one["state"]
         shown = " ".join(f"{name} {MARKS.get(value, '?')}" for name, value in sorted(checks.items()))
-        lines.append(f"#{item['number']} {item['branch']} {item['sha'][:8]} -> {item['base']}{' (draft)' if item['draft'] else ''} | {verdict(state['checks'][item['sha']])} | {shown} | {item['title'][:90]}")
+        # By what shows: a check that was cancelled or skipped when the pull request was a draft stays with the commit, beside the later one of
+        # its name. And nothing against a commit is not something for it: a draft gets lint alone, with all the rest skipped, and a
+        # pull request that conflicts with its base gets no run of CI at all, without a word.
+        word = verdict([{"state": value} for value in checks.values()])
+        if word == "GREEN" and (item["draft"] or not any(checks.get(name) == "success" for name in VERDICTS)):
+            word = "DRAFT" if item["draft"] else "NO CI"
+        lines.append(f"#{item['number']} {item['branch']} {item['sha'][:8]} -> {item['base']}{' (draft)' if item['draft'] else ''} | {word} | {shown} | {item['title'][:90]}")
     lines += ["", "## Closed lately", ""]
     for item in state["closed"]:
         lines.append(f"#{item['number']} {'landed' if item['merged'] else 'closed'} {utc(item['closed_at']).strftime('%H:%M')} {item['branch']} {item['sha'][:8]} -> {item['base']} | {item['title'][:90]}")
@@ -412,7 +423,7 @@ def wait(path, what, limit, clock=time.time, sleep=time.sleep, refreshed=None):
         found = lines_about(text, what)
         for line in found:
             word = line.split(" | ")[1]
-            if " landed " in line or " closed " in line or word in ("GREEN", "RED", "CANCELLED"):
+            if " landed " in line or " closed " in line or word in ("GREEN", "RED", "CANCELLED", "DRAFT", "NO CI"):
                 print(line)
                 return 0 if word == "GREEN" or " landed " in line else 1
         if clock() >= until:
@@ -537,6 +548,27 @@ def self_test():
         twice = world(**{f"/commits/{'b' * 40}/check-runs?per_page=100": {"check_runs": checks(public_check="skipped")["check_runs"] + checks(public_check="success", linux="success")["check_runs"]}})
         rows.append(("two runs of one name, one of them skipped", [line.split(" | ")[1:3] for line in rounds(Stub(twice), 1, folder).splitlines() if line.startswith("#2 ")], [["GREEN", "linux ✔ public-check ✔"]]))
 
+        lint_alone = checks(**{"linux / lint": "success", "linux / verdict": "skipped"}, macos="skipped", public_check="success")
+        a_draft = {"/pulls?state=open&per_page=100": [pull(1, "a"), pull(2, "b", draft=True)], f"/commits/{'b' * 40}/check-runs?per_page=100": lint_alone}
+        second = lambda text: [line.split(" | ")[:3] for line in text.splitlines() if line.startswith("#2 ")]
+        rows.append(("a draft, which gets lint alone, is not green", second(rounds(Stub(world(**a_draft)), 1, folder)),
+                     [["#2 fix/2 bbbbbbbb -> swarm/trunk (draft)", "DRAFT", "linux / lint ✔ linux / verdict – macos – public-check ✔"]]))
+
+        def marked_ready(answers):
+            answers["/pulls?state=open&per_page=100"] = [pull(1, "a"), pull(2, "b")]
+            answers["/actions/runs?status=in_progress&per_page=100"] = {"workflow_runs": [a_run(11, "a"), a_run(16, "b", ".github/workflows/public-check.yml")]}
+            answers[f"/commits/{'b' * 40}/check-runs?per_page=100"] = {"check_runs": lint_alone["check_runs"] + checks(**{"linux / lint": "success", "linux / verdict": "failure"})["check_runs"]}
+        rows.append(("it is marked ready, at the same commit: the run that starts is seen", second(rounds(Stub(world(**a_draft)), 2, folder, marked_ready)),
+                     [["#2 fix/2 bbbbbbbb -> swarm/trunk", "RED", "linux / lint ✔ linux / verdict ✘ macos – public-check ✔"]]))
+        no_run = world(**{f"/commits/{'b' * 40}/check-runs?per_page=100": checks(public_check="success", public_text="success")})
+        rows.append(("it conflicts with its base, so CI never ran: that is not green", second(rounds(Stub(no_run), 1, folder))[0][1:], ["NO CI", "public-check ✔ public-text ✔"]))
+        skipped = world(**{f"/commits/{'b' * 40}/check-runs?per_page=100": checks(**{"linux / lint": "success", "linux / verdict": "skipped"}, public_check="success")})
+        rows.append(("the verdict was skipped", second(rounds(Stub(skipped), 1, folder))[0][1], "NO CI"))
+        today = world(**{f"/commits/{'b' * 40}/check-runs?per_page=100": checks(**{"linux / lint": "success", "linux / verdict": "success"}, macos="skipped")})
+        rows.append(("the verdict under its name of today", second(rounds(Stub(today), 1, folder))[0][1], "GREEN"))
+        left_over = world(**{f"/commits/{'b' * 40}/check-runs?per_page=100": {"check_runs": checks(linux="cancelled")["check_runs"] + checks(linux="success")["check_runs"]}})
+        rows.append(("a check cancelled then, and passed since", second(rounds(Stub(left_over), 1, folder))[0][1:], ["GREEN", "linux ✔"]))
+
         github = Stub(world(remaining=LEAVE - 1))
         text = rounds(github, 1, folder)
         rows.append(("little is left: it asks for nothing more, and says so", (github.asked, "PAUSED" in text, "## Open" in text), (["rate_limit"], True, False)))
@@ -599,6 +631,8 @@ def self_test():
             ("--wait: green", waited("2"), 0),
             ("--wait: landed", waited("3"), 0),
             ("--wait: closed without landing", waited("4"), 1),
+            ("--wait: CI never ran: done, and not green", waited("1", text=text.replace("| unfinished |", "| NO CI |")), 1),
+            ("--wait: a draft is done, and not green", waited("1", text=text.replace("| unfinished |", "| DRAFT |")), 1),
             ("--wait: red", waited("1", text=text.replace("| unfinished |", "| RED |")), 1),
             ("--wait: red, but not all in: it goes on waiting, until the file is stale", waited("1", text=text.replace("| unfinished |", "| RED, unfinished |")), 3),
             ("--wait: unfinished when the time is up", waited("1", limit=5), 3),
