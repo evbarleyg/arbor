@@ -1,0 +1,170 @@
+# check-window-list 2026-10-15T10:18Z on macOS 26.6.2, commit f1bdb47
+
+▸ the menu's second row opens a list of every open window, by app and title
+  ✔ zqxalpha is in the list
+  ✔ zqxbravo is in the list
+  ✔ zqxcharlie is in the list
+  ✔ zqxdelta is in the list
+  ✔ zqxecho is in the list
+  ✔ zqxfoxtrot is in the list
+  ✔ zqxgolf is in the list
+  ✔ the window with the keyboard is ticked
+  ✔ and first
+  ✔ with everything in view no row has a mark
+  ✔ a long title is cut
+  ✔ the menu has a row Windows
+  ✔ resting on it opens the list
+  ✔ seven rows with icons are 178 points high
+
+▸ what cannot be seen says why at the end of its row
+  ✔ a docked window out of view: out of view
+  ✔ a window in the Dock: minimized
+  ✔ a window of a hidden app: hidden
+  ✔ the framed window: nothing
+  ✔ marks make no row higher
+
+▸ click a docked window that is out of view: in front and whole
+  ✔ it is out of view
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✔ all of it is on the screen
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+  ✔ windows match Arbor's layout
+
+▸ click a window in the Dock: in front and whole
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✔ all of it is on the screen
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+
+▸ click a window of a hidden app: in front and whole
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✔ all of it is on the screen
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+
+▸ click a docked window in view that lies under a floating one: in front, and nothing moves
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✔ all of it is on the screen
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+  ✔ it has not moved
+  ✔ windows match Arbor's layout
+
+▸ click a floating window that lies behind another: in front, where it was
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✔ all of it is on the screen
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+  ✔ it has not moved
+
+▸ click a floating window that hangs over the corner of the screen: it comes in whole, at its own size
+  ✔ it hangs over the corner
+  ✔ its row says out of view
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✔ all of it is on the screen
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+  ✔ it is as wide as it was
+  ✔ and as high
+
+▸ the same out of the Dock: it comes back whole
+  ✔ it hangs over the corner
+  ✔ it is in the Dock
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✔ all of it is on the screen
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+  ✔ the Dock, as it grows again, takes no more than 4 points of it
+  ✔ it is as wide as it was
+
+▸ the same of a hidden app: it comes back whole
+  ✔ it hangs over the left edge
+  ✔ it is hidden
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✔ all of it is on the screen
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+  ✔ it is as wide as it was
+
+▸ click a window too small to show, which is a tile: in front and whole
+  ✔ it is a tile
+  ✔ its row says out of view
+  ✔ its row can be clicked
+  ✔ Arbor ran reveal for it
+  ✔ it is in view
+  ✔ all of it is on the screen
+  ✔ it is the frontmost window
+  ✔ its app is in front
+  ✔ it has the keyboard
+  ✔ its row has no mark
+  ✔ its row is ticked
+  ✔ and is the first of the list
+
+▸ titles are shown and never passed on
+  ✔ the clicks are in arbor.log
+  ✔ no title is
+  ✔ the clicks are in the trace
+  ✔ no title is
+  ✔ state knows the window
+  ✔ and not its title
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+  ✔ window 7 is back on screen after quitting
+
+141 passed, 0 failed
