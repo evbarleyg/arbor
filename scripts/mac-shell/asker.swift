@@ -24,9 +24,10 @@ let usage = """
                                     tap made and thrown away, as Arbor does it), listen=yes|no (a tap that only listens)
     hear <seconds>                  print every distributed notification com.apple.accessibility.api
     announce                        post that notification
-    stream <seconds> <ms> <x> <y> [--kinds click,key,wheel,pinch] [--ctrl-opt <from> <until>]
+    stream <seconds> <ms> <x> <y> [--kinds click,key,wheel,pinch] [--ctrl-opt <from> <until>] [--sparse]
                                     every <ms> milliseconds, numbered: a click at x y, the key F19, one notch of the wheel (those three
-                                    unless told otherwise), a whole small pinch. ⌃⌥ go down <from> seconds in and up at <until>
+                                    unless told otherwise), a whole small pinch. ⌃⌥ go down <from> seconds in and up at <until>.
+                                    --sparse: one event a beat, in the same order, and not all of them at once: a dense stream hides the shape of a thing
     arrivals <seconds>              print each of those that reaches the end of the taps: the time, its kind, its number, how late, its modifiers;
                                     and every other press, drag, key, scroll and gesture, as other=…
     pairs <seconds> <x> <y>         the key F19, ⇧ and the button, each down for 400 ms of a cycle of 800, numbered; the key and ⇧ go down BEFORE the button and come up after it
@@ -112,7 +113,7 @@ func field(_ number: UInt32) -> CGEventField {
   CGEventField(rawValue: number) ?? unsafeBitCast(number, to: CGEventField.self)
 }
 
-func stream(seconds: Double, every milliseconds: Double, at point: CGPoint, kinds: Set<String>, held: ClosedRange<Double>?) {
+func stream(seconds: Double, every milliseconds: Double, at point: CGPoint, kinds: Set<String>, held: ClosedRange<Double>?, sparse: Bool = false) {
   let source = CGEventSource(stateID: .hidSystemState)
   var number: Int64 = 0
   var flags: CGEventFlags = []
@@ -165,25 +166,33 @@ func stream(seconds: Double, every milliseconds: Double, at point: CGPoint, kind
       if flags.isEmpty, held.contains(elapsed) { modifiers(down: true) }
       if !flags.isEmpty, !held.contains(elapsed) { modifiers(down: false) }
     }
+    var acts: [() -> Void] = []
     if kinds.contains("click") {
-      post(CGEvent(mouseEventSource: source, mouseType: .leftMouseDown, mouseCursorPosition: point, mouseButton: .left))
-      post(CGEvent(mouseEventSource: source, mouseType: .leftMouseUp, mouseCursorPosition: point, mouseButton: .left))
+      acts.append { post(CGEvent(mouseEventSource: source, mouseType: .leftMouseDown, mouseCursorPosition: point, mouseButton: .left)) }
+      acts.append { post(CGEvent(mouseEventSource: source, mouseType: .leftMouseUp, mouseCursorPosition: point, mouseButton: .left)) }
     }
     if kinds.contains("key") {
-      post(CGEvent(keyboardEventSource: source, virtualKey: f19, keyDown: true))
-      post(CGEvent(keyboardEventSource: source, virtualKey: f19, keyDown: false))
+      acts.append { post(CGEvent(keyboardEventSource: source, virtualKey: f19, keyDown: true)) }
+      acts.append { post(CGEvent(keyboardEventSource: source, virtualKey: f19, keyDown: false)) }
     }
     if kinds.contains("wheel") {
-      // Up and down in turn, so that a view that follows them goes nowhere.
-      let notch = CGEvent(scrollWheelEvent2Source: source, units: .line, wheelCount: 1, wheel1: up ? 1 : -1, wheel2: 0, wheel3: 0)
-      notch?.location = point
-      post(notch)
-      if held != nil { up.toggle() }
+      acts.append {
+        // Up and down in turn, so that a view that follows them goes nowhere.
+        let notch = CGEvent(scrollWheelEvent2Source: source, units: .line, wheelCount: 1, wheel1: up ? 1 : -1, wheel2: 0, wheel3: 0)
+        notch?.location = point
+        post(notch)
+        if held != nil { up.toggle() }
+      }
     }
     if kinds.contains("pinch") {
-      magnify(0, phase: 1)
-      magnify(0.01, phase: 2)
-      magnify(0, phase: 4)
+      acts.append { magnify(0, phase: 1) }
+      acts.append { magnify(0.01, phase: 2) }
+      acts.append { magnify(0, phase: 4) }
+    }
+    if sparse {
+      acts[Int(beat) % acts.count]()
+    } else {
+      for act in acts { act() }
     }
     // By the clock and not by a pause after each beat: posting takes its time too, on a hosted Mac as long again as the pause.
     beat += 1
@@ -491,7 +500,9 @@ case "stream":
   let kinds = Set((option("--kinds", values: 1)?[0] ?? "click,key,wheel").split(separator: ",").map(String.init))
   let held = option("--ctrl-opt", values: 2).map { $0.compactMap(Double.init) }
   if let held, held.count != 2 || held[0] > held[1] { fail(usage) }
-  stream(seconds: number(1), every: number(2), at: CGPoint(x: number(3), y: number(4)), kinds: kinds, held: held.map { $0[0]...$0[1] })
+  let sparse = arguments.contains("--sparse")
+  arguments.removeAll { $0 == "--sparse" }
+  stream(seconds: number(1), every: number(2), at: CGPoint(x: number(3), y: number(4)), kinds: kinds, held: held.map { $0[0]...$0[1] }, sparse: sparse)
 case "arrivals":
   arrivals(seconds: number(1))
 case "pairs":

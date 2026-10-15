@@ -217,8 +217,11 @@ take() {
   esac
   echo "the permission was taken by the road \"$ROAD\" between $TAKEN and $("$ASKER" now)"
 }
+# A dense stream hides the shape of a thing: SPARSE=--sparse plays one event a second, in the same order.
+SPARSE=""
+beat() { [ -n "$SPARSE" ] && echo 1000 || echo 50; }
 # How long a stream lasts, and what the stretch between the deed and the taps' going is called.
-length() { [ "$ROAD" = row ] && echo 34 || echo 12; }
+length() { if [ "$ROAD" = row ]; then echo 34; elif [ -n "$SPARSE" ]; then echo 26; else echo 12; fi; }
 between() { [ "$ROAD" = row ] && echo "FROM THE ROW'S DELETION UNTIL ARBOR NOTICED" || echo "from the loss until the taps were gone"; }
 # What Arbor's log says of it, and when the taps went.
 afterwards() {
@@ -244,6 +247,12 @@ bars() {
   grep -v "^facts " "$ARBOR_SESSION_DIR/verdict"
   read -r _ posted before after hole_during hole_after late_after lost first met clean plain hole_before worst_before worst_after gone median_worse \
     <<< "$(grep "^facts " "$ARBOR_SESSION_DIR/verdict")"
+  if [ -n "$SPARSE" ]; then
+    [ "${posted:-0}" -ge 20 ] || invalid "the stream posted its events (${posted:-0})"
+    echo "which numbers arrived (a beat is a second; the deed came about four seconds in): $(sed -n 's/.* n=\([0-9]*\) .*/\1/p' "$ARBOR_OUT/arrivals-$round.txt" | tr '\n' ' ')"
+    check "round $round: NOTHING LOST of what must always arrive (${gone:-?} were)" test "${gone:-1}" -eq 0
+    return
+  fi
   [ "${posted:-0}" -ge 400 ] || invalid "the stream posted its events (${posted:-0})"
   [ "${before:-0}" -ge 80 ] || invalid "events arrived before the loss (${before:-0})"
   [ "${after:-0}" -ge 80 ] || invalid "events arrived after the taps were gone (${after:-0})"
@@ -262,7 +271,7 @@ bars() {
 
 round_a() {
   begin "$1" "the scroll tap: ⌃⌥ down from a second before the loss, a notch and a key every 50 ms" || return
-  "$ASKER" stream "$(length)" 50 "$X" "$Y" --kinds key,wheel --ctrl-opt 3 "$(($(length) - 2))" > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
+  "$ASKER" stream "$(length)" "$(beat)" "$X" "$Y" --kinds key,wheel --ctrl-opt 3 "$(($(length) - 2))" $SPARSE > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
   stream=$!
   started "$stream"
   sleep 3.6
@@ -276,10 +285,10 @@ round_a() {
   BETWEEN=$(between) python3 "$ARBOR_SESSION_DIR/judge.py" "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/stream-$round.txt" "$TAKEN" "$REMOVED" key-down,key-up wheel \
     > "$ARBOR_SESSION_DIR/verdict"
   bars
-  [ "${plain:-0}" -ge 30 ] || invalid "plain notches arrived before ⌃⌥ went down (${plain:-0})"
+  [ -n "$SPARSE" ] || [ "${plain:-0}" -ge 30 ] || invalid "plain notches arrived before ⌃⌥ went down (${plain:-0})"
   [ "${met:-1}" -eq 0 ] || invalid "Arbor swallowed the notches while it had the permission, so the tap had traffic (${met:-?} got through)"
   check "round $round: notches arrive again after the loss (the first after ${first:-?} ms)" test "${first:--1}" -ge 0
-  [ "$ROAD" = row ] || check "round $round: and within the second" test "${first:-9999}" -ge 0 -a "${first:-9999}" -le 1000
+  [ "$ROAD" = row ] || [ -n "$SPARSE" ] || check "round $round: and within the second" test "${first:-9999}" -ge 0 -a "${first:-9999}" -le 1000
   check "round $round: no modifier is stuck: keys after ⌃⌥ came up carry none" test "${clean:-0}" -eq 1
   check "round $round: nothing of Arbor's is left on the screen" eventually nothing_of_arbors
   shot "round-$round-afterwards"
@@ -289,7 +298,7 @@ round_a() {
 round_b() {
   begin "$1" "the gesture tap: a small pinch without ⌥ over a test window every 50 ms" || return
   tap_is 0x20000000 true || invalid "the gesture tap is switched on"
-  "$ASKER" stream "$(length)" 50 "$X" "$Y" --kinds pinch > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
+  "$ASKER" stream "$(length)" "$(beat)" "$X" "$Y" --kinds pinch $SPARSE > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
   stream=$!
   started "$stream"
   sleep 4
@@ -299,7 +308,7 @@ round_b() {
   sleep 1
   cat "$ARBOR_OUT/stream-$round.txt"
   echo "pinches Arbor's tap saw begin: $(tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -c "pinch began")"
-  [ "$(tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -c "pinch began")" -ge 20 ] || invalid "the gesture tap had traffic before the loss"
+  [ "$(tail -n "+$((LOG_MARK + 1))" "$ARBOR_HOME/arbor.log" | grep -c "pinch began")" -ge "$([ -n "$SPARSE" ] && echo 1 || echo 20)" ] || invalid "the gesture tap had traffic before the loss"
   afterwards
   BETWEEN=$(between) python3 "$ARBOR_SESSION_DIR/judge.py" "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/stream-$round.txt" "$TAKEN" "$REMOVED" gesture > "$ARBOR_SESSION_DIR/verdict"
   bars
@@ -359,6 +368,10 @@ for ROAD in ${ROADS:-tccutil word tccutil word}; do
   round_b "b-$ROAD-$turn"
   round_c "c-$ROAD-$turn"
 done
+ROAD=tccutil SPARSE=--sparse
+round_a a-tccutil-sparse
+round_b b-tccutil-sparse
+SPARSE=""
 
 step "the end"
 arbor_log

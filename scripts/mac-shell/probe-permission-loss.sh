@@ -1,7 +1,7 @@
 #!/bin/bash
 # Does the Mac's input survive when Arbor loses the Accessibility permission with its event taps installed?
 #
-#   scripts/mac-shell/run.sh scripts/mac-shell/probe-permission-loss.sh      (about thirteen minutes; README-permission-probes.md says how to read it)
+#   scripts/mac-shell/run.sh scripts/mac-shell/probe-permission-loss.sh      (about seventeen minutes; README-permission-probes.md says how to read it)
 #
 # macOS holds every event a tap has asked for until the tap's owner answers, and has been reported to stop all input when that owner
 # loses the permission. check-F63.sh and input-taps.sh take the permission from everything, their own tools included, so neither can
@@ -119,7 +119,7 @@ grant() {
 launch() {
   limit 20 open -n "$app" --env ARBOR_HOME="$ARBOR_HOME" --env ARBOR_SOCKET="$ARBOR_SOCKET" --env ARBOR_DEBUG=1 \
     --env ARBOR_ONLY_PIDS="$ARBOR_WINDOWS_PID" --env ARBOR_NO_WATCHDOG=1 --env ARBOR_NO_PICTURES=1 --env ARBOR_NO_PROMPT=1 \
-    --env ARBOR_NO_STATUS_ITEM=1 --env ARBOR_NO_HOTKEYS="$1"
+    --env ARBOR_NO_STATUS_ITEM=1 --env ARBOR_NO_HOTKEYS="$1" ${2:+--env "$2"}
   sleep 2
   ARBOR_PID=$(pgrep -f "$app/Contents/MacOS/Arbor" | head -n 1)
   [ -n "$ARBOR_PID" ] || die "INVALID: the bundle did not start"
@@ -157,22 +157,32 @@ by_the_row_and_a_word() {
 
 # arbor-stopped is sabotage: the whole process is halted (SIGSTOP) two seconds before the deed, so that nobody is there to take the taps out, which is the nearest there is today to
 # "the thread that keeps the permission's clock sleeps for good". How long until input is back? The Mac is given back whatever happens: twenty seconds after the deed Arbor is killed.
-# one_round <number> <how the permission goes> [arbor|arbor-without-taps|nobody|bare-tapper[-off|-off+idle|-late]|bare-monitor|arbor-stopped] [sampled]: all but the first are controls.
+# arbor-clock-stopped is the sabotage that matters: ARBOR_TAP_CLOCK_STOPS_AFTER=<s> ends the timer of the taps' clock, once, and nothing else; arbor.log says "the event taps' clock is stopped". The tap thread goes on
+# answering, so nothing times out. The deed is done after that line. INVALID on an Arbor that does not know the variable. Killed twenty seconds after the deed as well.
+# one_round <number> <how the permission goes> [arbor|arbor-without-taps|nobody|bare-tapper[-off|-off+idle|-late]|bare-monitor|arbor-stopped|arbor-clock-stopped] [sampled|sparse]: all but the first are controls.
 # bare-monitor is the tapper's bundle with no tap but a global NSEvent monitor, which Arbor has beside its scroll tap and takes out in the same turn: is anything dropped for that? If input stands still without
 # Arbor's taps as well, it is not the taps' doing. sampled: `sample` looks at Arbor from the deed on, for what its main thread is doing meanwhile; it halts
 # Arbor at every look, so such a round's figures are not to be compared with the others'.
 one_round() {
-  local how=$2 who=${3:-arbor} sampled=${4:-} x y w h log_mark taken back length=12 between killed=""
+  local how=$2 who=${3:-arbor} manner=${4:-} sampled="" sparse="" beat=${BEAT:-50} x y w h log_mark taken back length=12 between killed=""
+  [ "$manner" = sampled ] && sampled=yes
+  # A dense stream hides the shape of a thing: one event a second, in the same order.
+  [ "$manner" = sparse ] && sparse=--sparse beat=1000 length=26
   round=$1
   # By that road the loss came 14 s after the deed: the stream has to last until then.
   [ "$how" = by_the_row ] && length=34
+  [ "$how" = by_the_row ] && [ -n "$sparse" ] && length=40
   between="from the loss until the taps were gone"
   [ "$how" = by_the_row ] && between="FROM THE ROW'S DELETION UNTIL ARBOR NOTICED"
   if [ "$who" = arbor-stopped ]; then
     length=30
     between="FROM THE LOSS UNTIL ARBOR, HALTED, WAS KILLED"
   fi
-  step "round $round: $how, with $who${sampled:+, sampled}"
+  if [ "$who" = arbor-clock-stopped ]; then
+    length=30
+    between="FROM THE LOSS UNTIL ARBOR, ITS CLOCK STOPPED, WAS KILLED"
+  fi
+  step "round $round: $how, with $who${manner:+, $manner}"
   # Whose entry is written and taken.
   BUNDLE_ID=$ARBOR_ID REQUIREMENT=$ARBOR_REQUIREMENT
   case "$who" in bare-*) BUNDLE_ID=$TAPPER_ID REQUIREMENT=$TAPPER_REQUIREMENT ;; esac
@@ -196,7 +206,8 @@ one_round() {
     started "$TAPPER_PID"
     "$WITNESS" taps | grep "pid=$TAPPER_PID "
   elif [ "$who" != nobody ]; then
-    launch "$([ "$who" = arbor-without-taps ] && echo 1 || echo 0)"
+    log_mark=$(wc -l < "$ARBOR_HOME/arbor.log")
+    launch "$([ "$who" = arbor-without-taps ] && echo 1 || echo 0)" "$([ "$who" = arbor-clock-stopped ] && echo ARBOR_TAP_CLOCK_STOPS_AFTER=2)"
     if ! eventually status_starts running; then
       "$ARBOR_BIN/arborctl" status
       invalid "Arbor has the permission at launch"
@@ -211,6 +222,13 @@ one_round() {
       no_taps || { invalid "this Arbor has no event taps"; leave; return; }
     fi
   fi
+  if [ "$who" = arbor-clock-stopped ]; then
+    at_exit "kill -9 $ARBOR_PID 2>/dev/null"
+    clock_stopped() { tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -q "the event taps' clock is stopped"; }
+    for _ in 1 2 3 4; do clock_stopped && break; sleep 2; done
+    clock_stopped || { invalid "this Arbor knows ARBOR_TAP_CLOCK_STOPS_AFTER: its log says that the clock is stopped"; leave; return; }
+    tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep "the event taps' clock is stopped" | cut -c 12-150
+  fi
   # The second window is in front. By the window server, which is there whoever runs.
   read -r x y w h <<< "$(real_frame_of "$W2")"
   x=$((${x%.*} + ${w%.*} / 2)) y=$((${y%.*} + ${h%.*} / 2))
@@ -219,7 +237,8 @@ one_round() {
   "$ASKER" arrivals "$((length + 5))" > "$ARBOR_OUT/arrivals-$round.txt" 2>&1 &
   started $!
   eventually grep -q arrivals-ready "$ARBOR_OUT/arrivals-$round.txt" || { invalid "the listener at the end of the taps started"; leave; return; }
-  "$ASKER" stream "$length" "${BEAT:-50}" "$x" "$y" --kinds "${KINDS:-click,key,wheel}" > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
+  # shellcheck disable=SC2086
+  "$ASKER" stream "$length" "$beat" "$x" "$y" --kinds "${KINDS:-click,key,wheel}" $sparse > "$ARBOR_OUT/stream-$round.txt" 2>&1 &
   stream=$!
   started "$stream"
   if [ "$who" = arbor-stopped ]; then
@@ -239,7 +258,7 @@ one_round() {
   "$how"
   back=$("$ASKER" now)
   echo "the permission was taken between $taken and $back"
-  if [ "$who" = arbor-stopped ]; then
+  if [ "$who" = arbor-stopped ] || [ "$who" = arbor-clock-stopped ]; then
     sleep 20
     echo "its taps, twenty seconds on:"; arbor_taps
     killed=$("$ASKER" now)
@@ -252,7 +271,8 @@ one_round() {
   tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -E "ermission|event tap|stopped|ERROR" | cut -c 12-220 | tail -n 8
   echo "the tools' own permission afterwards: $(pointer ax-access)"
   removed=""
-  if [ "$who" = arbor-stopped ]; then
+  if [ "$who" = arbor-stopped ] || [ "$who" = arbor-clock-stopped ]; then
+    tail -n "+$((log_mark + 1))" "$ARBOR_HOME/arbor.log" | grep -E "ermission|event tap|stopped|ERROR" | grep -v "DEBUG said" | cut -c 12-200 | tail -n 6
     removed=$killed
     ARBOR_PID=""
   elif [ "$who" = bare-monitor ]; then
@@ -288,8 +308,8 @@ one_round() {
   fi
 
   python3 - "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/stream-$round.txt" "$taken" "${removed:-$back}" "$between" \
-    "$([ "${who#bare-tapper}" != "$who" ] && echo "$ARBOR_OUT/tapper-$round.txt" || echo -)" "${BEAT:-50}" \
-    "$(echo "${KINDS:-click,key,wheel}" | awk -F, '{ n = 0; for (i = 1; i <= NF; i++) n += ($i == "wheel" ? 1 : $i == "pinch" ? 3 : 2); print n }')" \
+    "$([ "${who#bare-tapper}" != "$who" ] && echo "$ARBOR_OUT/tapper-$round.txt" || echo -)" "$beat" \
+    "$([ -n "$sparse" ] && echo 1 || echo "${KINDS:-click,key,wheel}" | awk -F, '{ n = 0; for (i = 1; i <= NF; i++) n += ($i == "wheel" ? 1 : $i == "pinch" ? 3 : 2); print n }')" \
     > "$ARBOR_SESSION_DIR/verdict" <<'PYTHON'
 import re, sys
 
@@ -344,10 +364,10 @@ print("median lateness in ms, before the loss / after the taps were gone: " + ",
 def stamp(time):
     return f"{int(time // 3600):02d}:{int(time % 3600 // 60):02d}:{time % 60:06.3f}"
 for earlier, later in zip(found, found[1:]):
-    if later[0] - earlier[0] > 0.15 or later[2] - earlier[2] > 1:
+    if later[0] - earlier[0] > max(0.15, 2.5 * beat) or later[2] - earlier[2] > 1:
         print(f"  a hole of {(later[0] - earlier[0]) * 1000:.0f} ms from {stamp(earlier[0])} (n={earlier[2]}) to {stamp(later[0])} (n={later[2]}): {later[2] - earlier[2] - 1} events lost in it")
 silence = ends - found[-1][0] if found else ends - begins
-if silence > 0.15:
+if silence > max(0.15, 2.5 * beat):
     last = spans[2][0]
     worst[last] = (worst[last][0], max(worst[last][1], silence), worst[last][2], worst[last][3])
     print(f"  NOTHING ARRIVED from {stamp(found[-1][0]) if found else stamp(begins)} to the end of the stream, {silence * 1000:.0f} ms: {posted - (found[-1][2] if found else 0)} events lost in it")
@@ -371,6 +391,30 @@ print("facts", posted, len(missing), worst["before the loss"][0], worst["after t
 PYTHON
   grep -v "^facts " "$ARBOR_SESSION_DIR/verdict"
   read -r _ posted missing before after late hole late_before late_after hole_before hole_during hole_after median_worse <<< "$(grep "^facts " "$ARBOR_SESSION_DIR/verdict")"
+  if [ -n "$sparse" ]; then
+    # Which events were lost, and which arrived between them, is what such a round is for: it is read, not barred, but for the one absolute.
+    [ "${posted:-0}" -ge 20 ] || invalid "the stream posted its events (${posted:-0})"
+    [ "${before:-0}" -ge 3 ] || invalid "events arrived before the loss (${before:-0})"
+    echo "what became of each event from the deed on (n, kind, ms from the deed):"
+    python3 - "$ARBOR_OUT/arrivals-$round.txt" "$ARBOR_OUT/stream-$round.txt" "$taken" "${KINDS:-click,key,wheel}" <<'SPARSE'
+import re, sys
+def seconds(text):
+    hours, minutes, rest = text.split(":")
+    return int(hours) * 3600 + int(minutes) * 60 + float(rest)
+arrivals, stream, taken, kinds = sys.argv[1:5]
+taken = seconds(taken)
+names = [name for kind in kinds.split(",") for name in {"click": ["down", "up"], "key": ["key-down", "key-up"], "wheel": ["wheel"], "pinch": ["gesture"] * 3}[kind]]
+text = open(stream).read()
+begins = seconds(re.search(r"(\S+) stream begins", text).group(1))
+posted = int(re.search(r"stream ends: (\d+)", text).group(1))
+arrived = {int(match.group(1)) for match in (re.search(r" n=(\d+) ", line) for line in open(arrivals)) if match}
+print("  " + "  ".join(f"{number} {names[(number - 1) % len(names)]} {(begins + number - 1 - taken) * 1000:+.0f} {'arrived' if number in arrived else 'LOST'};" for number in range(1, posted + 1) if begins + number - 1 >= taken - 1.5))
+SPARSE
+    check "round $round: NOTHING LOST: every event that was posted arrived (${missing:-?} did not)" test "${missing:-1}" -eq 0
+    shot "round-$round-afterwards"
+    leave
+    return
+  fi
   [ "${posted:-0}" -ge 500 ] || invalid "the stream posted its events (${posted:-0})"
   [ "${before:-0}" -ge 100 ] || invalid "events arrived before the loss (${before:-0})"
   # The bare tapper never lets go: that nothing arrives afterwards is what it is there to show.
@@ -398,10 +442,11 @@ for each in ${ROUNDS:-by_tccutil:arbor by_tccutil:nobody by_tccutil:arbor-withou
   by_the_row:arbor by_the_row:nobody by_the_row:bare-tapper \
   by_tccutil:arbor by_the_row_and_a_word:arbor by_tccutil:arbor by_the_row_and_a_word:arbor \
   by_tccutil:arbor:sampled by_the_row_and_a_word:arbor:sampled by_the_row_announced:arbor:sampled \
-  nothing:arbor-stopped by_tccutil:arbor-stopped}; do
+  by_tccutil:arbor:sparse by_tccutil:arbor:sparse by_tccutil:bare-tapper:sparse by_tccutil:nobody:sparse \
+  nothing:arbor-stopped by_tccutil:arbor-stopped by_tccutil:arbor-clock-stopped by_tccutil:arbor-clock-stopped:sparse}; do
   number=$((number + 1))
-  IFS=: read -r how who sampled <<< "$each"
-  one_round "$number" "$how" "$who" "$sampled"
+  IFS=: read -r how who manner <<< "$each"
+  one_round "$number" "$how" "$who" "$manner"
 done
 
 step "side by side"
