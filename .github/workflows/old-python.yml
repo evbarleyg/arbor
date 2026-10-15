@@ -1,0 +1,59 @@
+name: Old Python
+
+# A Mac has the python3 it was given one day, and the one that comes with Xcode's Command Line Tools has long been 3.9. The runners have a newer one. A
+# line only a newer Python can read passes every other check there is and then stops `make check` on somebody's Mac. So whatever
+# changes a script is tried here under the oldest: the Python in the tree is read (scripts/lint-python.py says how), and the tools' own tests run.
+#
+# On Linux, in some six minutes, and only when something changed that it could say anything about.
+
+on:
+  push:
+    branches: [main, swarm/trunk]
+    paths: ["scripts/**", "Makefile", ".github/**"]
+  pull_request:
+    paths: ["scripts/**", "Makefile", ".github/**"]
+
+concurrency:
+  group: old-python-${{ github.event_name }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  old-python:
+    # Not `latest`: nobody builds a Python this old for an image that is yet to come.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          persist-credentials: false
+      # The last 3.9 there was. A Mac's may be an earlier one, which lacks a thing or two that was carried back later.
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.9"
+      - name: python3 is the old one from here on
+        run: python3 -c 'import sys; print(sys.version); sys.exit(sys.version_info[:2] != (3, 9))'
+      # By the runner's own Python: it finds the old one and has it read everything, and can itself say more about f-strings and patterns. Only so
+      # do all of the lint's own rows run, those that hold what it says of the grammar to a real old Python among them.
+      - name: The lint does what it says
+        run: ./scripts/ci-step.py lint-python-self-test /usr/bin/python3 scripts/lint-python.py --self-test
+      - name: The Python in the tree keeps to it
+        run: ./scripts/ci-step.py lint-python /usr/bin/python3 scripts/lint-python.py --floor-here
+      - name: Lint
+        run: ./scripts/ci-step.py lint make lint
+      - name: The rules that decide about the macOS job
+        run: ./scripts/ci-step.py ci-changes ./scripts/test-ci-changes.py
+      - name: The arithmetic of the queue for the Macs
+        run: ./scripts/ci-step.py mac-queue ./scripts/test-mac-queue.py
+      - name: The selection of tests for the Mac
+        run: ./scripts/ci-step.py ci-tests ./scripts/test-ci-tests.py
+      - name: The evidence behind the score
+        run: ./scripts/ci-step.py evidence ./scripts/test-parity.py
+      - name: The tools that say "all is well"
+        run: ./scripts/ci-step.py tooling ./scripts/test-tooling.py
+      - name: Release tooling
+        run: ./scripts/ci-step.py release-tools ./scripts/release-tools-test.sh
+      - name: The pruning of branches, and the census
+        run: ./scripts/ci-step.py others bash -c './scripts/housekeeping.py --self-test && ./scripts/census.py --self-test'

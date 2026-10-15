@@ -9655,6 +9655,25 @@
    ]
   },
   {
+   "id": "a-macs-python3-is-older-than-the-runners",
+   "kind": "toolchain",
+   "layer": "machine",
+   "expected": "A script that passes its tests on every runner, Linux and Mac, runs on a Mac.",
+   "happened": "The runners have a newer Python than many a Mac, which has the `python3` it was given one day. A backslash between the braces of an f-string, which Python reads from 3.12 on, stopped `make lint`, and with it `make check`, with a SyntaxError under 3.11.",
+   "found": "`make check` on a tester's Mac. Seen again on Linux with a real 3.11 and a real 3.9.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [
+    "tool: lint-python.py"
+   ],
+   "copes": "scripts/lint-python.py has every older Python it finds read the scripts and the Python that stands in shell scripts, workflows and pages, and knows much of what came after 3.9. The workflow `Old Python` runs `make lint` and the tools' own tests under 3.9.",
+   "hurt": 4,
+   "sources": [
+    "scripts/lint-python.py",
+    ".github/workflows/old-python.yml"
+   ]
+  },
+  {
    "id": "cgrect-disagrees-at-the-boundaries-on-linux-and-macos",
    "kind": "toolchain",
    "layer": "machine",
