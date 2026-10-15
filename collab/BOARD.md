@@ -1,5 +1,7 @@
 # Board
 
+> **Maintainer, 2026-10-14 evening: read `collab/HANDOFF-2026-10-14-maintainer.md` before ordering.** A new direction (IDEAS I16 to I25: Arbor does less by itself and is simpler) and an overnight attempt at a better product.
+
 **Ordered by the product owner against issues #3 (the seven rules) and #4 (how we work).** Last ordered: 2026-10-15, 00:20 UTC, after the first day played with real apps on a hosted Mac (106 acts, nine apps, macOS's defaults: no window lost, none left behind another in 72 switches, six faults: 1.3 and 1.18 to 1.21).
 
 1. **Faults against the seven rules come first** (section 1), whatever else is nearly ready.
