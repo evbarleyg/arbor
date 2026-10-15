@@ -19,7 +19,7 @@
 #   day_build                       apps_build, and compile sampler.swift
 #   day_build_tools                 only the tools (pointer, apptool, sampler, witness), for a script in which Arbor does not run
 #   sampler_start | sampler_stop    write mac-shell/samples.log from now on | stop. With it goes the witness (witness.swift log): mac-shell/witness.log, how late
-#                                     every press, release and key reached the far end of the event taps (`input-held`)
+#                                     every press, release and key reached the far end of the event taps (`input-held`). DAY_HZ, DAY_LATE: the sampler's --hz and --late
 #   note <text…>                    a mark in the samples (jolts.py's header lists the marks it reads)
 #   quiet [ms] [limit ms]           wait until no window has moved, come, gone or changed its place in the pile for that long
 #                                     (1000, at most 8000). Sets QUIET to `quiet:<waited ms>` or `restless:<waited ms>`
@@ -137,7 +137,7 @@ sampler_start() {
   # What the runner's agent starts counts as work in the background, whose timers macOS runs together with others': two samples in seven came 40 to
   # 70 ms late. taskpolicy asks for the tightest tiers, then becomes the sampler.
   # shellcheck disable=SC2086
-  $tiers "$DAY_SAMPLER" "$DAY_SAMPLES" "$APPS_TEMP/sampler-in" "$APPS_TEMP/sampler-out" --hz "${DAY_HZ:-60}" \
+  $tiers "$DAY_SAMPLER" "$DAY_SAMPLES" "$APPS_TEMP/sampler-in" "$APPS_TEMP/sampler-out" --hz "${DAY_HZ:-60}" ${DAY_LATE:+--late "$DAY_LATE"} \
     2>> "$ARBOR_OUT/sampler.log" 8>&- 9>&- &
   DAY_SAMPLER_PID=$!
   started "$DAY_SAMPLER_PID"
