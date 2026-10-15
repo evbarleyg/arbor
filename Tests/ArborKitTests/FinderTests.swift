@@ -577,7 +577,9 @@ private let side = DisplaySnapshot(
     h.system.secondsSinceInput = 60
     h.system.restoresLate = true
     #expect(h.run("find inbox").ok)
-    #expect(h.workspace.camera == leaf(h, mail))
+    // The view waits for the window (Controller+OneLayout.swift). It used to go at once, to the place of a window that was not there
+    // yet, and this line said so: for the length of the flight out of the Dock a neighbour nobody had asked for filled the screen.
+    #expect(h.workspace.camera == leaf(h, safari))
     h.system.finishRestoring()
     h.system.reportFocus()
     h.scheduler.runPending()

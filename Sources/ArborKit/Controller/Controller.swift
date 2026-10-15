@@ -461,6 +461,9 @@ public final class Controller {
 
   /// When each window that has only just come back can be taken at its word (Controller+OnTheWayBack.swift).
   var landsAt: [WindowID: Date] = [:]
+  /// The window that was asked back by name, out of the Dock or out of ⌘H, and has not been reported back yet, and what each display's view
+  /// was on when it was asked (Controller+OneLayout.swift).
+  var askedBack: (window: WindowID, views: [DisplayID: NodeID])?
   /// For each window in macOS's full screen, the windows that took up room when it went there (Controller+OnTheWayBack.swift).
   var sharedItsSpace: [WindowID: Set<WindowID>] = [:]
   /// Windows on their way out of full screen: the frame each is to land at, what it last made of that, and how often Arbor has
@@ -676,6 +679,7 @@ public final class Controller {
     overlays.finishAnimations()
     stopWatchingTitles()
     cancelFocusLooks()
+    stopAwaitingAReturn()
     for id in postponedRelayouts { scheduler.cancel("space-\(id.rawValue)") }
     postponedRelayouts.removeAll()
     waitingForASpaceToLeave.removeAll()

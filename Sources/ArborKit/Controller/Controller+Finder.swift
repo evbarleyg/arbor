@@ -271,7 +271,9 @@ extension Controller {
     guard let snapshot = windows[id] else { return .failure("\(id) has closed") }
     fetchWhole(id)
 
-    // macOS reports that these happened a moment later, in no particular order with the focus change.
+    // macOS reports that these happened a moment later, in no particular order with the focus change. The view waits for that.
+    let isAskedBack = !snapshot.isPresent && snapshot.isOnActiveSpace && !snapshot.isFullScreen
+    if isAskedBack { awaitTheReturn(of: id) }
     if snapshot.isHidden { system.unhideApp(pid: snapshot.pid) }
     if snapshot.isMinimized { system.setMinimized(id, false) }
 
@@ -285,11 +287,11 @@ extension Controller {
       // again. One that is still on its way back from the Dock or from ⌘H comes with that report.
       return summonStashed(id)
     }
-    if snapshot.isOnActiveSpace, !snapshot.isFullScreen {
-      // Now, rather than when the reports come in (Controller+Focus.swift), so that the command does what it says
-      // whether or not the window gets the keyboard. The view is picked as if the window were back already,
-      // it takes its place there when macOS says it is, and the reports then find nothing to do.
-      bringIntoView(id, onItsWayBack: !snapshot.isPresent)
+    if snapshot.isOnActiveSpace, !snapshot.isFullScreen, windows[id]?.isPresent == true {
+      // Now, rather than when the report of the keyboard comes in (Controller+Focus.swift), so that the command does what it says
+      // whether or not the window gets the keyboard. One that is still on its way back is shown when macOS says that it is
+      // there, for the same reason, and in one layout (Controller+OneLayout.swift).
+      bringIntoView(id)
       // How small a window can be, Arbor learns by trying (and has forgotten since it was last launched). One that refused
       // its slot is a tile now: it is framed at once, not when macOS reports that a window out of view has the keyboard.
       if windows[id]?.isPresent == true, parked.contains(id) { bringIntoView(id) }
@@ -297,6 +299,9 @@ extension Controller {
     // Otherwise focusing it makes macOS switch Spaces. Moving the camera now would rearrange the Space the user is
     // about to leave; the camera follows the focus report once the window's own Space shows.
     askForTheKeyboard(for: id)
+    // By what was so when it was asked for. On a Mac no report comes before the command has ended; a stand-in's may, and an answer that
+    // went by that would be another in a replay.
+    if isAskedBack { return .success("\(id) is on its way back, and comes into view when it is there") }
     return .success("\(id) is in view and focused")
   }
 

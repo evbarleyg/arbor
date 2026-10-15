@@ -827,8 +827,8 @@ extension Controller {
   /// group or everything, by zooming out just far enough, or onto the window itself if it would be too small at
   /// that level.
   ///
-  /// `onItsWayBack`: the window has been asked out of the Dock or out of ⌘H, and macOS has not said yet that it
-  /// is back. The view is picked as if it were, so it does not depend on when that report comes.
+  /// `onItsWayBack`: the window has been asked out of the Dock or out of ⌘H, and macOS has still not said that it is back when the
+  /// time a flight takes is over (`awaitTheReturn`). The view is picked as if it were.
   func reveal(_ window: WindowID, leaf: NodeID, on displayID: DisplayID, onItsWayBack: Bool = false) {
     guard workspaces[displayID] != nil else { return }
     moveCamera(on: displayID, to: viewThatShows(window, leaf: leaf, on: displayID, onItsWayBack: onItsWayBack))
