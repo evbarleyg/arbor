@@ -33,9 +33,15 @@ func fail(_ message: String) -> Never {
   FileHandle.standardError.write(Data("ears: \(message)\n".utf8))
   exit(64)
 }
-guard let command = arguments.first else { fail("front | back | rival | frontmost | press | hammer") }
+guard let command = arguments.first else { fail("front | back | rival | frontmost | press | hammer | announce") }
 if command == "frontmost" {
   print(NSWorkspace.shared.frontmostApplication?.processIdentifier ?? 0)
+  exit(0)
+}
+if command == "announce" {
+  // What the switch in System Settings sends and a write to the permission database does not: a process that runs hears of a grant or a loss through this alone.
+  DistributedNotificationCenter.default().postNotificationName(
+    Notification.Name("com.apple.accessibility.api"), object: nil, userInfo: nil, deliverImmediately: true)
   exit(0)
 }
 // press <key code> <modifier keys, comma-separated> <road> [repeats]

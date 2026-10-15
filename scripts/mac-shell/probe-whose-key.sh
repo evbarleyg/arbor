@@ -20,9 +20,9 @@
 #
 # It takes the keys from `arborctl bindings`, presses each with the app in front, and prints which ears heard it and whether Arbor's log grew. Rounds: no Arbor (the
 # control: every ear has to hear); from the moment of launch; running; paused; shortcuts off for the app; secure input on; Arbor stopped (a main thread that is
-# busy); a rival registered after Arbor, and before it; the display asleep and awake again; Arbor killed. Then ⌃⌥A a dozen times a second through everything that might make
+# busy); a rival registered after Arbor, and before it; the display asleep and awake again; Arbor killed. Then ⌃⌥A twenty-five times a second through everything that might make
 # Arbor let go of its keys for a moment (a reload, `set`, a panel, a hold, a pause, a switch of apps). And Arbor as a bundle that answers for its own permission: in the
-# menu bar without it; granted; and replaced by a build with another hash, signed ad hoc, as `make install` leaves it where there is no signing identity.
+# menu bar without it; granted; the permission taken away while it runs, and given back; and replaced by a build with another hash, signed ad hoc, as `make install` leaves it where there is no signing identity.
 # Not tried: real sleep and wake (a hosted Mac may not come back from it), the watchdog's restart (watchdog-bundle.sh), a finger on a real keyboard: every key here is a posted event.
 #
 # Only on GitHub's Macs: it presses some fifty shortcuts a dozen times over, into whatever is in front, and installs event taps that listen.
@@ -95,7 +95,7 @@ step "2a  running, odd hands and odd roads: the right-hand keys, both of a pair,
 odd_hands running
 ctl show-all
 
-step "2b  is there a moment at which Arbor lets go? ⌃⌥A a dozen times a second through whatever might register shortcuts anew"
+step "2b  is there a moment at which Arbor lets go? ⌃⌥A twenty-five times a second through whatever might register shortcuts anew"
 ROUND=holes
 mark -
 front_again
@@ -283,6 +283,28 @@ if tcc "SELECT count(*) FROM access;" > /dev/null 2>&1; then
   what_arbor_says
   # shellcheck disable=SC2086
   press_all granted $FEW
+
+  step "10b2  the permission is taken away while Arbor runs"
+  tcc "UPDATE access SET auth_value = 0 WHERE service = 'kTCCServiceAccessibility' AND client = '$BUNDLE_ID';"
+  sudo killall -9 tccd 2>/dev/null
+  sleep 2
+  "$EARS" announce
+  # Whoever posts events has been blocked for seconds after such a kill.
+  sleep 6
+  entry
+  what_arbor_says
+  shot 05b-lost
+  # shellcheck disable=SC2086
+  press_all lost $ALL ctrl+opt+escape
+  grep -iE "permission|accessib" "$ARBOR_HOME/arbor.log" | tail -n 4 | cut -c 12- | sed 's/^/  log | /'
+  tcc "UPDATE access SET auth_value = 2 WHERE service = 'kTCCServiceAccessibility' AND client = '$BUNDLE_ID';"
+  sudo killall -9 tccd 2>/dev/null
+  sleep 2
+  "$EARS" announce
+  sleep 6
+  what_arbor_says
+  # shellcheck disable=SC2086
+  press_all given-back $FEW
   leave_the_bundle
 
   step "10c  replaced by another build, signed ad hoc: the entry stays, the hash is another"
