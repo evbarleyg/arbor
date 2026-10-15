@@ -65,6 +65,17 @@ extension World {
       self?.registerHotKeys()
       self?.updatePointerInput()
     }
+    controller.releaseFeed = LateReleaseFeed(scheduler: arbor.scheduler)
+    // `UpdateWindow.show`. No Mac has listed this window: its level and its width are in the code, its height goes by the
+    // words, and where `center()` puts it is AppKit's to say. In the one picture of it from a hosted Mac it was 424 by 156, a
+    // quarter of the room left above it. That was another answer, "Arbor 9.9.9 is available": three lines and two buttons,
+    // where the one given here has one button and, by estimate, two lines.
+    controller.onUpdateDecision = { [weak self, weak arbor] _ in
+      guard let self, let arbor else { return }
+      let area = display.visibleFrame
+      let origin = CGPoint(x: area.midX - 212, y: (area.minY + (area.height - 156) / 4).rounded(.down))
+      arbor.updateWindow = (newOverlayID(), CGRect(origin: origin, size: CGSize(width: 424, height: 156)))
+    }
     // A fixed day, so that what is saved does not depend on when the rehearsal runs.
     let launched = Date(timeIntervalSinceReferenceDate: 800_000_000 + elapsed)
     controller.now = { [scheduler = arbor.scheduler] in launched.addingTimeInterval(scheduler.now) }

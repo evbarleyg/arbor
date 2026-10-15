@@ -3,7 +3,7 @@ import ArborKit
 import ArborTesting
 import CoreGraphics
 
-/// The palette of Go to… (UI/FinderPanel.swift) on the fake Mac: the one panel of Arbor's that takes the keyboard. While
+/// The palette of Go to… (UI/FinderPanel.swift) on the fake Mac: one of the panels of Arbor's that take the keyboard. While
 /// it is open, keys that are no shortcut of Arbor's go to it, a click on a row chooses the row, and a press anywhere else
 /// closes it, as the panel's monitors do. That another window taking the keyboard closes it is the controller's own doing.
 extension World {

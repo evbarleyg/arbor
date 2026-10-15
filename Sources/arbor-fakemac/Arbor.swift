@@ -28,6 +28,10 @@ final class Arbor {
     didSet { controller.registeredBindings = activeBindings }
   }
   var lastBindings: (bindings: [KeyBinding], problems: [String])?
+  /// `UpdateWindow`: the answer to an update check that somebody asked for. An ordinary window with a title bar, which floats
+  /// above the apps' windows. Nothing keeps it once it is closed, and every answer gets a new one. It never has the keyboard
+  /// here: the real one activates Arbor and makes itself key, which macOS grants when it was asked for from the menu.
+  var updateWindow: (id: UInt32, frame: CGRect)?
 
   // PointerInput, GestureTap and RectangleFramer
   /// ArborApp makes its `PointerInput` once the controller has started, unless ARBOR_NO_HOTKEYS is set.
@@ -68,6 +72,19 @@ final class Arbor {
         accessibility: controller.accessibilityGranted, screenRecording: true, switches: nil,
         opensAtLogin: bundled ? false : nil, inputDisabled: noHotkeys)
     }
+  }
+}
+
+/// `GitHubReleaseFeed`, where no release has been published. The answer comes once the command has replied, as GitHub's does.
+/// Whatever ARBOR_RELEASES_URL says: nobody is asked.
+@MainActor
+final class LateReleaseFeed: ReleaseFeed {
+  private let scheduler: ManualScheduler
+
+  init(scheduler: ManualScheduler) { self.scheduler = scheduler }
+
+  func latestRelease(_ completion: @escaping @MainActor @Sendable (ReleaseLookup) -> Void) {
+    scheduler.schedule("release-feed", after: 0.5) { completion(.nothingPublished) }
   }
 }
 
@@ -193,6 +210,13 @@ final class WatchedOverlays: OverlayPresenter {
 
   /// The palette of Go to…, kept once made.
   private(set) var palettePanel: UInt32?
+  /// The surface behind docked windows (`BackdropPanel`): one panel as large as the display's visible frame, whatever the
+  /// shape drawn in it, just above the Desktop's icons. Kept once made, and the mouse goes straight through it.
+  private(set) var backdropPanel: (id: UInt32, frame: CGRect, shown: Bool)?
+  /// The heads-up line (`HeadsUpPanel`), of which there is one, kept once made. No click can hit it.
+  private(set) var linePanel: (id: UInt32, frame: CGRect, shown: Bool)?
+  /// The panel of shortcuts (`CheatSheetPanel`), likewise, but that it has the keyboard and takes clicks while it is up.
+  private(set) var shortcutsPanel: (id: UInt32, frame: CGRect, shown: Bool)?
 
   init(world: World) { self.world = world }
 
@@ -237,6 +261,12 @@ final class WatchedOverlays: OverlayPresenter {
     for thing in panels where !shown.contains(thing) { world.forget(thing) }
     for tile in scene.tiles { show(.tile(tile.node)) }
     for seam in drawn(scene.seams) { show(.seam(World.SeamKey(seam))) }
+    // Last, as in `AppKitOverlays.update`: on a Mac the backdrop's number follows that of the first gap's handle.
+    if let backdrop = scene.backdrop {
+      backdropPanel = (backdropPanel?.id ?? world.newOverlayID(), backdrop.frame, true)
+    } else {
+      backdropPanel?.shown = false
+    }
   }
 
   /// A new panel gets its window number now, so that the number does not depend on who asks for the list of
@@ -252,9 +282,52 @@ final class WatchedOverlays: OverlayPresenter {
   func finishAnimations() { fake.finishAnimations() }
   func rehearse(_ rehearsal: Rehearsal) { fake.rehearse(rehearsal) }
 
-  /// Recorded and not listed among the windows yet: no script asks where the line or the panel of shortcuts is.
-  func showHeadsUp(_ model: HeadsUpModel?, on display: DisplayID) { fake.showHeadsUp(model, on: display) }
-  func showCheatSheet(_ model: CheatSheetModel?, on display: DisplayID) { fake.showCheatSheet(model, on: display) }
+  /// `HeadsUpPanel.placement`. The model says where the middle of the bottom edge is and how wide the line may get; how wide
+  /// its words are only AppKit can measure. On a hosted Mac a line was 38 points high, and 231 wide with 26 characters and
+  /// 525 with 66: the padding of 10 and 18 points a side, and about seven and a half points a character. That is a guess at
+  /// the width, within some 50 points of what hosted Macs have listed: "Resumed" was 102 wide and is 89 here, a line of 65
+  /// characters 493 and is 524. A hint is also drawn after a separator of five characters, where `line` has three. The height
+  /// holds for a line that wraps: one of 153 characters was listed 713 by 56, and is 720 by 56 here. The controller takes the
+  /// line down when its time is up; the real one then fades for a quarter of a second, and nothing in this world takes time.
+  func showHeadsUp(_ model: HeadsUpModel?, on display: DisplayID) {
+    fake.showHeadsUp(model, on: display)
+    guard let model else {
+      linePanel?.shown = false
+      return
+    }
+    let words = (CGFloat(model.line.count) * 7.5).rounded(.up)
+    let room = model.maximumWidth - 36
+    let size = CGSize(width: min(words, room) + 36, height: (words / room).rounded(.up) * 18 + 20)
+    let origin = CGPoint(x: (model.anchor.x - size.width / 2).rounded(), y: (model.anchor.y - size.height).rounded())
+    linePanel = (linePanel?.id ?? world.newOverlayID(), CGRect(origin: origin, size: size), true)
+  }
+
+  /// `CheatSheetPanel.show`: in the middle of the model's area. Its size is the measure of its words, which only AppKit can
+  /// take: 967 by 446 on a hosted Mac's display of 1024 by 768, with the shortcuts as they shipped then, before two of its
+  /// headings were respelled. That size here, whatever the shortcuts and the display, but for the 24 points that the real one
+  /// keeps from the area's edges. Where it does not fit, the real one draws all of it smaller by one factor
+  /// (`CheatSheetPanel.layout`); here each side is cut to the room by itself.
+  func showCheatSheet(_ model: CheatSheetModel?, on display: DisplayID) {
+    fake.showCheatSheet(model, on: display)
+    guard let model else {
+      shortcutsPanel?.shown = false
+      return
+    }
+    let size = CGSize(width: min(967, model.area.width - 48), height: min(446, model.area.height - 48))
+    let origin = CGPoint(x: (model.area.midX - size.width / 2).rounded(), y: (model.area.midY - size.height / 2).rounded())
+    shortcutsPanel = (shortcutsPanel?.id ?? world.newOverlayID(), CGRect(origin: origin, size: size), true)
+    Log.debug("the panel of shortcuts is up, with the keyboard")
+  }
+
+  /// `CheatSheetPanel.dismiss`: a key or a click ends the panel. False if it is not up.
+  @discardableResult
+  func dismissShortcuts(by cause: String) -> Bool {
+    guard shortcutsPanel?.shown == true else { return false }
+    Log.debug("the panel of shortcuts is put away by \(cause)")
+    fake.dismissCheatSheet()
+    shortcutsPanel?.shown = false
+    return true
+  }
 
   func removeAll() {
     fake.removeAll()
@@ -265,6 +338,9 @@ final class WatchedOverlays: OverlayPresenter {
     minimapPanel = nil
     namePanel = nil
     palettePanel = nil
+    backdropPanel = nil
+    linePanel = nil
+    shortcutsPanel = nil
   }
 
   /// A key pressed while the name field has the keyboard, as `NamePanel` and its field editor treat it. False if the

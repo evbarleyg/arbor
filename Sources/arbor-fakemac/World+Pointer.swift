@@ -447,6 +447,15 @@ extension World {
     }
     shown += systemWindows(above: true)
 
+    // The heads-up line is one level above the panel of shortcuts, whose level is the palette's and the minimap's too.
+    if let arbor {
+      for (panel, level) in [(arbor.overlays.linePanel, 6), (arbor.overlays.shortcutsPanel, 5)] {
+        guard let panel else { continue }
+        let window = ListedWindow(
+          id: panel.id, pid: arbor.pid, layer: level, frame: panel.frame, onScreen: panel.shown, owner: "Arbor")
+        if panel.shown { shown.append(window) } else { hidden.append(window) }
+      }
+    }
     if let arbor, let id = arbor.overlays.palettePanel {
       let window = ListedWindow(
         id: id, pid: arbor.pid, layer: World.paletteLevel, frame: palette?.layout.panel ?? .zero, onScreen: palette != nil,
@@ -454,6 +463,9 @@ extension World {
       if palette != nil { shown.append(window) } else { hidden.append(window) }
     }
     if let arbor {
+      if let window = arbor.updateWindow {
+        shown.append(ListedWindow(id: window.id, pid: arbor.pid, layer: 3, frame: window.frame, owner: "Arbor"))
+      }
       if let band = arbor.band {
         let window = ListedWindow(
           id: band.id, pid: arbor.pid, layer: 3, frame: band.frame, onScreen: band.shown, owner: "Arbor")
@@ -501,6 +513,13 @@ extension World {
     // curtain.swift: behind everything the run opened, in front of everything else.
     if let curtainPID {
       shown.append(ListedWindow(id: 8999, pid: curtainPID, layer: 0, frame: display.frame, owner: "curtain"))
+    }
+    // One level above the Desktop's icons, directly in front of them, swept aside with the windows: all as a Mac listed it.
+    if let arbor, let panel = arbor.overlays.backdropPanel {
+      let window = ListedWindow(
+        id: panel.id, pid: arbor.pid, layer: -2_147_483_602, frame: panel.shown ? swept(panel.frame) : panel.frame,
+        onScreen: panel.shown, owner: "Arbor")
+      if panel.shown { shown.append(window) } else { hidden.append(window) }
     }
     shown += systemWindows(above: false)
 
