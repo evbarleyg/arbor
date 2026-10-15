@@ -166,7 +166,7 @@ step "6  update checks"
 wait "$pointer_build" || cat "$ARBOR_OUT/build-pointer.log"
 mkdir -p "$sandbox/feed"
 echo '{"tag_name": "v9.9.9", "html_url": "https://example.invalid/ignored"}' > "$sandbox/feed/latest.json"
-(cd "$sandbox/feed" && exec python3 -m http.server 8765 --bind 127.0.0.1 > /dev/null 2>&1) &
+(cd "$sandbox/feed" && exec python3 "$ARBOR_ROOT/scripts/mac-shell/serve.py" 8765 > /dev/null 2>&1) &
 feed_pid=$!
 updates_say() { case "$(ask version | tail -n 1)" in "Updates: $1"*) return 0 ;; *) return 1 ;; esac; }
 

@@ -560,6 +560,24 @@ Where branches cannot be deleted, the output branch
 The workflow `Housekeeping` deletes it once it is a day old, so fetch what you want to keep before then. The same workflow
 deletes branches whose work has landed (`scripts/housekeeping.py` has the rules, and what never goes).
 
+### When real input "is not seen": first look at what is on the screen
+
+A press with the real pointer goes to whatever lies at that place, and that need not be the window under test. For a night `e2e-drag.sh` failed 16 of
+its 34 checks whenever it came late in CI's Mac job, and six explanations that blamed Arbor were tried and dropped. The seventh was a window nobody
+had looked for: macOS asking *Allow "Python" to find devices on local networks?*, in the middle of the screen, over the very title bars the script presses.
+A script that had run earlier on that Mac had left it there. Arbor saw no drag because there was none.
+
+- **List what is on the screen before anything else:** `.build/mac-shell/pointer windows | grep " on "`. A line is id, process, layer, x, y, width, height, `on`
+  or `off`, owner. A hosted Mac always lists Control Center, Window Server, Finder and the Dock, one of whose windows covers the whole screen. Anything else above
+  layer 0 is foreign; the alert was `… 8 382 118 260 250 on UserNotificationCenter`. **And take a picture:** what an alert says is in no list.
+- **Find the step by halves, in one dispatch:** give several Macs the steps in different orders (`run.sh --macs`), and have each step end by printing what it leaves
+  behind. That named the script in two runs, after hours of theories.
+- **An alert takes seconds to come up.** A probe that looks three seconds after each step puts it down to the step after. Have something watch and note the moment.
+- **Where that one came from:** Python's `HTTPServer` asks the system for this machine's name when it binds (`socket.getfqdn`), also when it binds to 127.0.0.1, and
+  nothing uses the answer. macOS can take the question for one about the local network: asked alone it took 35 s and raised the alert three seconds in, though not every time. A script that needs
+  something to answer over HTTP uses `scripts/mac-shell/serve.py`, or binds as it does; `scripts/test-tooling.py` refuses the server as it is.
+- **Real windows come first in CI's Mac job,** straight after the build, so that they meet a Mac on which nothing else has happened. Leave them there.
+
 ### On a person's own Mac
 
 **Nobody is asked to run anything on a Mac of their own, and no result from one goes into this repository** (issue #4, `docs/PUBLIC.md`): real Macs

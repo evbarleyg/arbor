@@ -109,7 +109,7 @@ fi
 
 # A stand-in for GitHub: answers the four calls the script makes and writes down what it was sent.
 cat > "$root/github.py" <<'PYTHON'
-import http.server, json, os, sys
+import http.server, json, os, socketserver, sys
 
 root = sys.argv[1]
 
@@ -144,7 +144,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def log_message(self, *arguments):
         pass
 
-server = http.server.HTTPServer(("127.0.0.1", 0), Handler)
+class Server(http.server.HTTPServer):
+    # As HTTPServer binds, but for asking the system what this machine is called (socket.getfqdn), which nothing here needs. macOS can take
+    # that question for one about the local network: alone, on a hosted Mac, it took 35 s and left "Allow Python to find devices on local networks?" in
+    # the middle of the screen, where the real pointer of whatever ran next on that Mac pressed it and not the window under it.
+    def server_bind(self):
+        socketserver.TCPServer.server_bind(self)
+        self.server_name, self.server_port = self.server_address[:2]
+
+server = Server(("127.0.0.1", 0), Handler)
 with open(os.path.join(root, "port"), "w", encoding="utf-8") as port:
     port.write(str(server.server_address[1]))
 server.serve_forever()
@@ -152,7 +160,7 @@ PYTHON
 python3 "$root/github.py" "$root" &
 server=$!
 tries=0
-# A hosted Mac took more than five seconds to start Python for the first time.
+# A hosted Mac once took more than five seconds to get here. Most likely that was the question Server no longer asks; the patience does no harm.
 while [ ! -s "$root/port" ] && [ "$tries" -lt 600 ]; do sleep 0.1; tries=$((tries + 1)); done
 port=$(cat "$root/port")
 export GITHUB_API_URL="http://127.0.0.1:$port" GITHUB_REPOSITORY=o/r GITHUB_TOKEN=s3cret NO_PROXY=127.0.0.1
