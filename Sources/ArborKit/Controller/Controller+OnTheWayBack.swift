@@ -20,34 +20,68 @@ extension Controller {
     landsAt[window.id] = now().addingTimeInterval(previous.isFullScreen ? Self.timeToLandFromFullScreen : Self.timeToLand)
   }
 
-  /// Called with every report about a window. macOS says that a window has left full screen when the way out begins. For 0.7 s
-  /// a stand-in of macOS's shows the animation, the window itself is off the screen and off its app's list, at the frame it
-  /// will land at: the one it had before Arbor ever moved it. That it is back Arbor hears with the change of Space, a tenth of a
-  /// second after everybody has seen it there. Laid out only then, it is seen to land in one place and jump to another.
+  /// Called with every report about a window. macOS says that a window has left full screen when the way out begins. For 0.5 to
+  /// 0.7 s a stand-in of macOS's shows the animation; the window itself is off the screen and off its app's list, at the frame it
+  /// will land at: the one it had before Arbor ever moved it. That it is back Arbor hears when everybody has seen it there.
+  /// Laid out only then, it is seen to land in one place and jump to another.
   ///
   /// So a docked window is given the frame of its slot while nobody can see it. Nothing else is moved, and nothing is concluded
-  /// from its answer: the layout that follows the change of Space finds it in place, or puts it there as it always has.
+  /// from its answer: the layout that follows its return finds it in place, or puts it there as it always has.
+  ///
+  /// What real apps make of that (a hosted Mac, macOS 26.6): TextEdit takes the frame at once and keeps it. Safari, which shows its own
+  /// way out, says yes and stays where it is until it has placed the window once more itself, a tenth of a second or two
+  /// into the flight; asked after that, it takes the frame and keeps it. So Arbor asks until it is heard. In full screen
+  /// no window can be asked: the position is refused, the size accepted and forgotten.
   func meetAtItsSlotIfItLeftFullScreen(_ window: WindowSnapshot, was previous: WindowSnapshot?) {
-    guard isRunning, previous?.isFullScreen == true, !window.isFullScreen, !window.isPresent, !window.isMinimized,
-      !window.isHidden, drag?.window != window.id, !enforcement.givenUp.contains(window.id), filter.manages(window),
+    if previous?.isFullScreen == false, window.isFullScreen { sharedItsSpace[window.id] = presentWindowIDs() }
+    // Back, or in full screen again: no longer on its way.
+    if window.isPresent || window.isFullScreen { metAhead[window.id] = nil }
+    guard previous?.isFullScreen == true, !window.isFullScreen else { return }
+    let companions = sharedItsSpace.removeValue(forKey: window.id)
+    guard isRunning, !window.isPresent, !window.isMinimized, !window.isHidden, drag?.window != window.id,
+      !enforcement.givenUp.contains(window.id), filter.manages(window),
       // A held view may show something else when the window is back (`holdFences`), which only the layout itself finds out.
       holdLevel != .view,
-      let display = workspaceID(containing: window.id), let slot = slotWhenItsSpaceIsBack(of: window.id, on: display)
+      let display = workspaceID(containing: window.id),
+      let slot = slotWhenItsSpaceIsBack(of: window.id, with: companions, on: display)
     else { return }
     // Where it ended the last time it was asked to fill this slot, if it could not.
-    let target = misfits[window.id].flatMap { $0.slot == slot ? $0.frame : nil } ?? slot
-    guard let actual = system.setFrame(target, of: window.id) else { return }
-    Log.debug("\(window.id) is on its way out of full screen and was given its slot ahead of its landing")
-    windows[window.id]?.frame = actual
+    metAhead[window.id] = (misfits[window.id].flatMap { $0.slot == slot ? $0.frame : nil } ?? slot, 0)
+    seeThatItHasItsSlot(window.id)
   }
 
-  /// The slot of a docked window once the windows that are away with their Space, as it is, are back. Nil if it has none then
+  /// How often Arbor looks at a window on its way out of full screen, ten times a second: as long as the way takes.
+  static let looksOnTheWayOut = 7
+
+  /// By the clock, not with each of the window's reports, which come four at a time. One that left full screen from afar is never
+  /// reported back: what happens to it after the last look is no part of its way out.
+  private func seeThatItHasItsSlot(_ window: WindowID) {
+    guard isRunning, let meeting = metAhead[window], meeting.looks < Self.looksOnTheWayOut else { return metAhead[window] = nil }
+    metAhead[window]?.looks += 1
+    if let before = windows[window]?.frame, !before.approximatelyEquals(meeting.target, tolerance: 1) {
+      guard let actual = system.setFrame(meeting.target, of: window) else { return metAhead[window] = nil }
+      // It has heard, whatever it made of the frame: an app that rounds sizes or has limits is not asked seven times.
+      let heard = !actual.approximatelyEquals(before, tolerance: 1)
+      if heard { metAhead[window]?.target = actual }
+      Log.debug("\(window) is on its way out of full screen; asked for its slot's frame, it \(heard ? "went" : "stays where it is")")
+      windows[window]?.frame = actual
+    }
+    scheduler.schedule("meet-\(window.rawValue)", after: 0.1) { [weak self] in self?.seeThatItHasItsSlot(window) }
+  }
+
+  /// The slot of a docked window once it is back on the Space it left for full screen, with `companions`, the windows that were
+  /// there with it: macOS takes it back to that Space, and what is docked on a third one stays away. Nil if it has no slot then
   /// (it floats, it is out of view, or a tile). Only a look, like `layoutToCome`: the gaps are the layout's to move.
-  private func slotWhenItsSpaceIsBack(of window: WindowID, on displayID: DisplayID) -> CGRect? {
+  private func slotWhenItsSpaceIsBack(
+    of window: WindowID, with companions: Set<WindowID>?, on displayID: DisplayID
+  ) -> CGRect? {
     let (asItIs, noted, known) = (workspaces[displayID], treesBeforeRoomWasMade[displayID], windows)
     defer { (workspaces[displayID], treesBeforeRoomWasMade[displayID], windows) = (asItIs, noted, known) }
     var back = known
-    for id in asItIs?.allWindows ?? [] { back[id]?.isOnActiveSpace = true }
+    let all = asItIs?.allWindows ?? []
+    // If none of them is on record, Arbor heard of the full screen only when the Space had gone: then all that are away count.
+    let isKnown = companions.map { !$0.isDisjoint(with: all.filter { $0 != window }) } ?? false
+    for id in all where id == window || !isKnown || companions?.contains(id) == true { back[id]?.isOnActiveSpace = true }
     windows = back
     return roomyLayout(of: displayID, for: .structure)?.windowFrames[window]
   }

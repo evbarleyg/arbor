@@ -707,7 +707,8 @@ extension FakeWindowSystem {
     /// one it has and keeps it. 0, the default: not seen on a Mac so far (the report of the un-minimize seems to come
     /// when the flight is over), but nobody has looked at a slow Mac or with ⇧ held.
     public var flightFromTheDock = 0.0
-    /// The same for the way back from full screen, which takes macOS longer.
+    /// The same for the way back from full screen, which takes macOS longer. All the way it has not been seen either: see
+    /// `leaveFullScreen`, which plays what has.
     public var flightFromFullScreen = 0.0
 
     public init() {}
@@ -811,16 +812,31 @@ extension FakeWindowSystem {
   ///     0 ms    macOS puts a stand-in on the app's list, which shows the animation. The window is off the list, and off the screen.
   ///     2 ms    the window reports a resize: no longer in full screen, and already at the frame macOS gives it back. That is
   ///             not the one it had last, its slot: it is the one it had before Arbor ever moved it
-  ///     690 ms  the stand-in goes
+  ///     690 ms  the stand-in goes, and the apps list their windows again, this one too
   ///     720 ms  the window is on the screen
-  ///     830 ms  the Space is reported to have changed. Only now do the apps list their windows again, this one too
+  ///     830 ms  the Space is reported to have changed, which is when Arbor read the lists
   ///
-  /// So "it has left" comes when the way out begins, and "it is back" a tenth of a second after everybody has seen it.
-  public func leaveFullScreen(_ window: WindowID, with others: [WindowID]) {
+  /// So "it has left" comes when the way out begins, and "it is back" a tenth of a second after everybody has seen it. (Since then the
+  /// Accessibility layer reads the lists when the stand-in goes. The order stays: seen first, reported afterwards.)
+  ///
+  /// `whereItWas`: it lands at the frame it had last after all, be it a corner out of view. Nobody has seen a Mac do that, and
+  /// nobody has seen that it never does; what Arbor does about it (Controller+LeftInFullScreen.swift) is tried with this.
+  ///
+  /// `deafFor`: asked for a frame in the first moments of its way out, it says yes and stays where it is. That is Safari, which places
+  /// the window itself once more 0.06 to 0.17 s after the report; asked after that it takes the frame and keeps it. 0 is
+  /// TextEdit, which takes it at once. Both land where they were last put. (`echoes.flightFromFullScreen`, deaf all the way, was
+  /// a prediction, and has not been seen.)
+  public func leaveFullScreen(
+    _ window: WindowID, with others: [WindowID], whereItWas: Bool = false, deafFor: Double = 0.15
+  ) {
     guard windows[window]?.snapshot.isFullScreen == true else { return }
     setOnActiveSpace(window, false)
-    if let own = ownFramesBeforeFullScreen[window] { framesBeforeFullScreen[window] = own }
+    if !whereItWas, let own = ownFramesBeforeFullScreen[window] { framesBeforeFullScreen[window] = own }
+    // Before the report: Arbor may answer it with a question.
+    let flight = echoes.flightFromFullScreen
+    echoes.flightFromFullScreen = max(flight, deafFor)
     setFullScreen(window, false)
+    echoes.flightFromFullScreen = flight
     afterEvents?()
     deliverEchoes()
     passTime?(0.72)
@@ -830,6 +846,9 @@ extension FakeWindowSystem {
     inSightUnlisted.remove(window)
     // One list after the other, in the order of the Accessibility layer's scan.
     for id in (others + [window]).sorted() { setOnActiveSpace(id, true) }
+    // On a Mac the focus report comes in the same breath, before the layout that was put off. Not here: a strict replay runs what
+    // is due between two reports of the same instant, and would part from the recording (docs/TRACES.md).
+    afterEvents?()
     if echoes.keyboard { giveKeyboard(to: window) }
     afterEvents?()
     deliverEchoes()

@@ -38,6 +38,23 @@ arranged when its green button is pressed, and that goes wrong in three ways:
   the window had before Arbor ever moved it), then the Space change 0.45 s later. Nothing puts the window back: it stays
   `docked parked`, a tile or no slot at all, lying over its neighbour.
 
+### The way out, looked at closely (a hosted Mac, macOS 26.6.2, Safari and TextEdit, 2026-10-15)
+
+A tool asked the window for a frame at one chosen moment per round, while a sampler wrote down every frame the window server showed.
+
+- The window lands at **the frame it had before any Accessibility move**, every time, however often it had been moved that way since.
+- macOS's animation (0.5 to 0.7 s) is a stand-in's: subrole `AXUnknown`, as large as the display, on the app's list in the window's place. It always
+  shows the window arriving at that old frame. The window itself is off the screen and off the list meanwhile.
+- **In full screen** a window cannot be asked: setting the position fails, setting the size succeeds and changes nothing, nor where it lands.
+- **On the way out** it can. TextEdit takes the frame at once, keeps it and lands there. Safari answers "success" and stays where it is until it has placed the
+  window once more itself (a "moved" report 0.06 to 0.17 s after the first); asked after that, it takes the frame, keeps it and lands there.
+- Asked only **when the stand-in has gone**, both take the frame at once, and TextEdit was seen at the old frame for 44 ms first.
+- When the stand-in goes, the window is listed again, and so are the other apps' windows of the Space that came back (16 rounds of 16). The change of Space
+  was reported 0.14 s after that in one run and a few milliseconds *before* it in two rounds of four, when the window was not listed yet.
+
+So a docked window is asked for its slot's frame from the first report on, ten times a second until it has heard (`Controller+OnTheWayBack.swift`), and the stand-in's
+end counts as the window's return (`AXWindowSystem`). What a person still sees is macOS's picture arriving at the old frame and, as it ends, the window standing in its slot.
+
 ## Behaviour
 
 - A docked window that enters full screen keeps its place in the tree and

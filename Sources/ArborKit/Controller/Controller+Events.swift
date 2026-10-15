@@ -38,6 +38,8 @@ extension Controller: WindowSystemEvents {
     disprovedMinimums[id] = nil
     parkedAgain[id] = nil
     landsAt[id] = nil
+    sharedItsSpace[id] = nil
+    metAhead[id] = nil
     leftInFullScreen.notes[id] = nil
     chosenOnShape[id] = nil
     appPlacedFrames[id] = nil

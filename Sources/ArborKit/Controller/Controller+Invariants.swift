@@ -227,6 +227,8 @@ extension Controller {
     check("focusHistory", focusHistory)
     check("ignoredWindowIDs", filter.ignoredWindowIDs)
     check("landsAt", landsAt.keys)
+    check("sharedItsSpace", sharedItsSpace.keys)
+    check("metAhead", metAhead.keys)
     check("windowsOwedAPlace", windowsOwedAPlace)
     check("chosenOnShape", chosenOnShape.keys)
     if Set(focusHistory).count != focusHistory.count {

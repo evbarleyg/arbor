@@ -387,6 +387,10 @@ public final class Controller {
 
   /// When each window that has only just come back can be taken at its word (Controller+OnTheWayBack.swift).
   var landsAt: [WindowID: Date] = [:]
+  /// For each window in macOS's full screen, the windows that took up room when it went there (Controller+OnTheWayBack.swift).
+  var sharedItsSpace: [WindowID: Set<WindowID>] = [:]
+  /// Windows on their way out of full screen: the frame each is to land at, and how often Arbor has looked whether it has it.
+  var metAhead: [WindowID: (target: CGRect, looks: Int)] = [:]
 
   /// Windows a pause could not bring into view (Controller+LeftInFullScreen.swift).
   var leftInFullScreen = LeftInFullScreen()

@@ -63,9 +63,11 @@ import Foundation
 //   min <id> <WxH>               from now on the window refuses to be smaller (0x0: any size will do)
 //   wait <seconds>               let time pass, running the scheduled work that falls due
 //   watch [events…] [--titles]   from here on, print the lines `arborctl watch` would send after each step
-//   fullscreen <id> on|off       the green button: the window gets a macOS Space to itself, so the other windows
+//   fullscreen <id> on|off [where-it-was]
+//                                the green button: the window gets a macOS Space to itself, so the other windows
 //                                of its display are on a Space that does not show; off brings all of it back, as a Mac
-//                                does (FakeWindowSystem.leaveFullScreen), and says where a person saw the window meanwhile
+//                                does (FakeWindowSystem.leaveFullScreen), and says where a person saw the window meanwhile.
+//                                It lands at the frame it had before Arbor moved it; `where-it-was`: at the one it had last
 //   comes-forward <id>           the window's app brings itself forward: nobody clicked or pressed anything
 //   hold-still-for <bundle id> [title words…]
 //                                add an entry to the `holdStillFor` setting
@@ -530,8 +532,10 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     harness.controller.keyboardLayoutChanged(layout)
     return ("keyboard layout: \(layout.name)", true)
   case "fullscreen":
-    guard let id = window(1), words.count == 3, ["on", "off"].contains(words[2]) else {
-      return usage("fullscreen <id> on|off")
+    guard let id = window(1), words.count == 3 || Array(words.dropFirst(2)) == ["off", "where-it-was"],
+      ["on", "off"].contains(words[2])
+    else {
+      return usage("fullscreen <id> on|off [where-it-was]")
     }
     guard system.windows[id] != nil else { return ("error: there is no window \(id.rawValue)", false) }
     let on = words[2] == "on"
@@ -551,7 +555,7 @@ func simulate(_ words: [String], harness: Harness, printLayout: inout Bool) -> (
     } else {
       // In the order and at the times of a Mac, where it is seen before it is reported back.
       system.clearSightings()
-      system.leaveFullScreen(id, with: onItsSpace)
+      system.leaveFullScreen(id, with: onItsSpace, whereItWas: words.count == 4)
     }
     // macOS reports each window by itself; Arbor lays out once they have all been heard of.
     harness.scheduler.advance(by: 2)

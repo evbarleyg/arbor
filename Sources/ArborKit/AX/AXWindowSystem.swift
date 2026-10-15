@@ -187,6 +187,7 @@ public final class AXWindowSystem: WindowSystem {
     leavesStrayDialogs = false
     appWhoseDialogsNeverWait = nil
     reportedCreated.removeAll()
+    standIns.removeAll()
     counted.removeAll()
     putAway.removeAll()
     press = nil
@@ -1024,6 +1025,26 @@ public final class AXWindowSystem: WindowSystem {
     events?.windowChanged(record.snapshot, userInitiated: !programmatic)
   }
 
+  /// macOS's stand-ins for windows on their way out of full screen.
+  ///
+  /// The stand-in shows the animation and is on the app's list in the window's place. When it goes, the window is on the screen
+  /// and all apps list the windows of the Space that has come back (16 rounds of 16 on a hosted Mac, macOS 26.6). The change of
+  /// Space is reported about then: 0.14 s later in one run, and in two rounds of four a moment EARLIER, when the window was not
+  /// listed yet, so that Arbor heard of it from the second look, a second after everybody had seen it.
+  private var standIns: Set<WindowID> = []
+
+  private func watchIfItStandsInOnTheWayOutOfFullScreen(_ element: AXUIElement, pid: pid_t) {
+    // As large as the window: in full screen apps make and drop smaller helpers all the time (the toolbar that slides in).
+    guard let app = apps[pid], let id = element.windowID, records[id] == nil,
+      let leaving = records.values.first(where: { $0.snapshot.pid == pid && $0.snapshot.isFullScreen }),
+      element.string(kAXSubroleAttribute) == kAXUnknownSubrole, element.frame?.size == leaving.snapshot.frame.size
+    else { return }
+    if standIns.count > 20 { standIns.removeAll() }
+    standIns.insert(id)
+    let refcon = UnsafeMutableRawPointer(bitPattern: UInt(id.rawValue))
+    AXObserverAddNotification(app.observer, element, kAXUIElementDestroyedNotification as CFString, refcon)
+  }
+
   /// A report came so soon after Arbor's move that it was taken for a stage of it, though the frame was another. If the
   /// window is still not where Arbor put it when things have settled, that was its app's answer, and is reported as such.
   private func lookAgain(at window: WindowID) {
@@ -1064,11 +1085,18 @@ public final class AXWindowSystem: WindowSystem {
     switch notification {
     case kAXWindowCreatedNotification:
       guard let pid = element.pid else { return }
+      // Before the list is read, which takes the window that is leaving full screen for one on another Space.
+      watchIfItStandsInOnTheWayOutOfFullScreen(element, pid: pid)
       // A new tab is a new window that pushes another off the list, so the list comes first.
       rescan([pid], afterSpaceSwitch: false, aWindowOpened: true)
       addWindow(element, pid: pid, announce: true)
 
     case kAXUIElementDestroyedNotification:
+      if let raw, standIns.remove(WindowID(raw)) != nil {
+        Log.debug("the stand-in \(WindowID(raw)) is gone: the way out of full screen is over")
+        rescan(Array(apps.keys), afterSpaceSwitch: true)
+        return
+      }
       guard let raw, let record = records[WindowID(raw)] else { return }
       // If it was the tab in front of others, one of them is taking its place. macOS 26 reports that first, as a
       // change of the main window; should the order ever be the other way round, the list says so already.
