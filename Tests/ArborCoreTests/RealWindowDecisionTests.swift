@@ -326,26 +326,221 @@ extension Box where Value == EchoFilter {
 
   @Test func aWindowThatOnlyChangesPlaceNeedsOneCall() {
     let parked = CGRect(x: 1439, y: 899, width: 700, height: 851)
-    #expect(FramePlan.steps(from: known, to: parked) == [.position])
+    #expect(FramePlan.steps(from: known, to: parked) == [.position(parked.origin)])
   }
 
-  @Test func aChangeOfSizeTakesTheFullPlan() {
-    #expect(FramePlan.steps(from: known, to: CGRect(x: 12, y: 37, width: 701, height: 851)) == FramePlan.full)
-    #expect(FramePlan.steps(from: nil, to: known) == FramePlan.full)
+  @Test func aWindowOfWhichNothingIsKnownTakesTheFullPlan() {
+    #expect(FramePlan.steps(from: nil, to: known) == FramePlan.full(to: known))
+    #expect(FramePlan.full(to: known) == [.size(known.size), .position(known.origin), .size(known.size)])
   }
 
   @Test func evenAWindowBelievedToBeInPlaceIsMoved() {
-    #expect(FramePlan.steps(from: known, to: known) == [.position], "the belief may be out of date")
+    #expect(FramePlan.steps(from: known, to: known) == [.position(known.origin)], "the belief may be out of date")
+  }
+
+  @Test func whatShrinksIsSizedFirst() {
+    let smaller = CGRect(x: 400, y: 300, width: 300, height: 200)
+    #expect(FramePlan.steps(from: known, to: smaller) == [.size(smaller.size), .position(smaller.origin)])
+  }
+
+  @Test func whatGrowsIsMovedFirst() {
+    let larger = CGRect(x: 12, y: 37, width: 1416, height: 851)
+    let small = CGRect(x: 12, y: 469, width: 557, height: 419)
+    #expect(FramePlan.steps(from: small, to: larger) == [.position(larger.origin), .size(larger.size)])
+    // By half a point and more, as before.
+    #expect(FramePlan.steps(from: known, to: CGRect(x: 12, y: 37, width: 701, height: 851)).last == .size(CGSize(width: 701, height: 851)))
+  }
+
+  @Test func whatGetsWiderAndShorterShrinksMovesAndGrows() {
+    let wide = CGRect(x: 100, y: 500, width: 1200, height: 300)
+    #expect(
+      FramePlan.steps(from: known, to: wide) == [.size(CGSize(width: 700, height: 300)), .position(wide.origin), .size(wide.size)])
+  }
+
+  /// The ruling itself, over frames of every kind: each state on the way lies within the frame the window had or the one it is to have.
+  @Test func everyStateLiesWithinTheOldFrameOrTheNewOne() {
+    let xs: [CGFloat] = [0, 12, 300, 720, 1439], ys: [CGFloat] = [25, 37, 469, 843]
+    let sizes = [CGSize(width: 230, height: 408), CGSize(width: 557, height: 419), CGSize(width: 700, height: 851), CGSize(width: 1416, height: 300), CGSize(width: 1416, height: 851)]
+    var frames: [CGRect] = []
+    for x in xs { for y in ys { for size in sizes { frames.append(CGRect(origin: CGPoint(x: x, y: y), size: size)) } } }
+    for old in frames {
+      for new in frames {
+        let states = FramePlan.states(from: old, after: FramePlan.steps(from: old, to: new))
+        #expect(states.last == new)
+        #expect(states.count <= 3)
+        for state in states where !(old.contains(state) || new.contains(state)) {
+          Issue.record("from \(old) to \(new) by way of \(state)")
+        }
+        // Never larger on the way than at either end: no display clamps it.
+        #expect(states.allSatisfy { $0.width <= max(old.width, new.width) && $0.height <= max(old.height, new.height) })
+      }
+    }
   }
 
   @Test func aWrongBeliefAboutTheSizeIsCaughtByReadingBack() {
     let target = CGRect(x: 1439, y: 899, width: 700, height: 851)
     let surprise = CGRect(x: 1439, y: 899, width: 500, height: 851)
-    #expect(FramePlan.needsFullPlan(after: [.position], result: surprise, target: target))
-    #expect(!FramePlan.needsFullPlan(after: [.position], result: target, target: target))
+    let moved: [FramePlan.Step] = [.position(target.origin)]
+    #expect(FramePlan.makingUp(for: moved, result: surprise, target: target) == FramePlan.full(to: target))
+    #expect(FramePlan.makingUp(for: moved, result: target, target: target) == nil)
     // macOS keeps title bars on screen, so a parked window ends up higher than asked. That is not a reason.
-    #expect(!FramePlan.needsFullPlan(after: [.position], result: target.offsetBy(dx: 0, dy: -94), target: target))
-    #expect(!FramePlan.needsFullPlan(after: FramePlan.full, result: surprise, target: target), "the app refused; once is enough")
+    #expect(FramePlan.makingUp(for: moved, result: target.offsetBy(dx: 0, dy: -94), target: target) == nil)
+    #expect(FramePlan.makingUp(for: FramePlan.full(to: target), result: surprise, target: target) == nil, "the app refused; once is enough")
+    // Nor after a shorter plan that asked for the size where the window ends up.
+    #expect(FramePlan.makingUp(for: [.position(target.origin), .size(target.size)], result: surprise, target: target) == nil)
+  }
+
+  /// A window thought to shrink is sized where it stands and asked no more. If it had gone back to a smaller size unheard, that call made
+  /// it grow, at the old place, where macOS cuts it: cached 12,43 1000×650, really 518,220 480×348, asked for 12,43 494×650, it stops at
+  /// a height of 484. So a window that comes out smaller than asked is asked for the size once more, where it is by then: one call, and all
+  /// of it within the new frame. An app that refuses to shrink stays larger than asked, and is left alone.
+  @Test func aWindowThoughtToShrinkThatEndsUpSmallerThanAskedIsAskedAgainWhereItIs() {
+    let target = CGRect(x: 12, y: 43, width: 494, height: 650)
+    let steps = FramePlan.steps(from: CGRect(x: 12, y: 43, width: 1000, height: 650), to: target)
+    #expect(steps == [.size(target.size), .position(target.origin)])
+    #expect(FramePlan.makingUp(for: steps, result: CGRect(x: 12, y: 43, width: 494, height: 484), target: target) == [.size(target.size)])
+    #expect(FramePlan.makingUp(for: steps, result: CGRect(x: 12, y: 43, width: 480, height: 650), target: target) == [.size(target.size)])
+    #expect(FramePlan.makingUp(for: steps, result: CGRect(x: 12, y: 43, width: 700, height: 650), target: target) == nil, "it refused to shrink")
+    #expect(FramePlan.makingUp(for: steps, result: target, target: target) == nil)
+    #expect(FramePlan.makingUp(for: steps, result: CGRect(x: 12, y: 43, width: 493, height: 650), target: target) == nil, "a point is no reason")
+  }
+
+  /// A terminal takes whole cells and rounds down. That looks the same as a wrong belief, so it gets the one call more, which makes three: what
+  /// every change of size used to cost. Not the full plan, which would make five.
+  @Test func anAppThatRoundsDownCostsOneCallMoreAndNoMore() {
+    let target = CGRect(x: 12, y: 43, width: 494, height: 843)
+    let steps = FramePlan.steps(from: CGRect(x: 12, y: 43, width: 1000, height: 855), to: target)
+    let more = FramePlan.makingUp(for: steps, result: CGRect(x: 12, y: 43, width: 491, height: 840), target: target)
+    #expect(more == [.size(target.size)])
+    #expect(steps.count + (more?.count ?? 0) == 3)
+    // And that was the last of it: a plan that ends with the size is followed by nothing.
+    #expect(FramePlan.makingUp(for: more ?? [], result: CGRect(x: 12, y: 43, width: 491, height: 840), target: target) == nil)
+  }
+
+  /// As measured on a hosted Mac: 12,43 1000×650 on its way to a display 800×600 at the left or below. Moved first it is cut by the position call
+  /// and ends 812 wide, or 12 points too high. Shrunk first, as here, it ended right both times.
+  @Test(arguments: [CGRect(x: -788, y: 43, width: 776, height: 545), CGRect(x: 12, y: 1123, width: 776, height: 496)])
+  func onTheWayToASmallerDisplayItShrinksFirst(target: CGRect) {
+    #expect(FramePlan.steps(from: CGRect(x: 12, y: 43, width: 1000, height: 650), to: target) == [.size(target.size), .position(target.origin)])
+  }
+
+  /// As measured on a hosted Mac, 1024 × 768, its visible frame ending at 705: moved first, this window ended 494 wide; by size, position, size
+  /// it ended whole. One point there. A person's floating window that hangs 160 points over the edge would come back 160 narrower.
+  @Test func aWindowCannotGrowIntoAFrameThatHangsOverTheEdgeSoItGrowsFirst() {
+    let rooms = [FramePlan.room(onDisplay: CGRect(x: 0, y: 0, width: 1024, height: 768), visible: CGRect(x: 0, y: 31, width: 1024, height: 674))]
+    let known = CGRect(x: 170, y: 220, width: 480, height: 348)
+    let over = CGRect(x: 530, y: 43, width: 495, height: 400)
+    #expect(FramePlan.steps(from: known, to: over, rooms: rooms) == FramePlan.full(to: over))
+    let atTheEdge = CGRect(x: 530, y: 43, width: 494, height: 400)
+    #expect(FramePlan.steps(from: known, to: atTheEdge, rooms: rooms) == [.position(atTheEdge.origin), .size(atTheEdge.size)])
+    // Downwards, by the same rule: into the Dock's strip. A slot that ends at the visible frame's bottom hangs over nothing.
+    let below = CGRect(x: 12, y: 400, width: 480, height: 360)
+    #expect(FramePlan.steps(from: known, to: below, rooms: rooms) == FramePlan.full(to: below))
+    let slot = CGRect(x: 0, y: 31, width: 1024, height: 674)
+    #expect(FramePlan.steps(from: known, to: slot, rooms: rooms) == [.position(slot.origin), .size(slot.size)])
+    // On a second display it is that display's edge.
+    let two = rooms + [FramePlan.room(onDisplay: CGRect(x: 1024, y: 0, width: 800, height: 600), visible: CGRect(x: 1024, y: 31, width: 800, height: 569))]
+    let onTheSecond = CGRect(x: 1100, y: 43, width: 700, height: 500)
+    #expect(FramePlan.steps(from: known, to: onTheSecond, rooms: two) == [.position(onTheSecond.origin), .size(onTheSecond.size)])
+    #expect(FramePlan.steps(from: known, to: onTheSecond, rooms: rooms) == FramePlan.full(to: onTheSecond))
+    // The exception has a name, by which a net knows it: it is the full plan for a known window, and nothing else is.
+    for target in [over, atTheEdge, below, slot, onTheSecond, known.offsetBy(dx: 900, dy: 0), CGRect(x: 900, y: 600, width: 300, height: 200)] {
+      #expect(FramePlan.growsWhereItCannot(from: known, to: target, rooms: rooms) == (FramePlan.steps(from: known, to: target, rooms: rooms) == FramePlan.full(to: target)))
+    }
+  }
+
+  /// Nothing grows, so nothing is cut: a window that is parked, which hangs over the corner, still costs one call, and nobody asks for the displays.
+  @Test func whatDoesNotGrowMayHangOverAnyEdge() {
+    func never() -> [CGRect]? {
+      Issue.record("the displays are looked up only for a window that grows")
+      return []
+    }
+    let known = CGRect(x: 12, y: 43, width: 494, height: 650)
+    #expect(FramePlan.steps(from: known, to: CGRect(x: 1023, y: 767, width: 494, height: 650), rooms: never()) == [.position(CGPoint(x: 1023, y: 767))])
+    let smaller = CGRect(x: 1023, y: 767, width: 300, height: 200)
+    #expect(FramePlan.steps(from: known, to: smaller, rooms: never()) == [.size(smaller.size), .position(smaller.origin)])
+  }
+
+  /// Less than half a point is no difference, to the plan and to whoever reads the frame back alike.
+  @Test func lessThanHalfAPointIsNoDifference() {
+    let known = CGRect(x: 0, y: 25, width: 700, height: 851)
+    let target = CGRect(x: 40, y: 25, width: 700.4, height: 400)
+    let steps = FramePlan.steps(from: known, to: target)
+    #expect(steps == [.size(target.size), .position(target.origin)], "and a plan that sets a size ends at the very size asked for")
+    #expect(FramePlan.states(from: known, after: steps).last == target)
+    // The app goes no lower than 600: it was asked, and is not asked again.
+    #expect(FramePlan.makingUp(for: steps, result: CGRect(x: 40, y: 25, width: 700, height: 600), target: target) == nil)
+    #expect(FramePlan.steps(from: known, to: CGRect(x: 40, y: 25, width: 700.4, height: 850.6)) == [.position(CGPoint(x: 40, y: 25))])
+    let higher = CGRect(x: 40, y: 25, width: 699.6, height: 1000)
+    #expect(FramePlan.steps(from: known, to: higher) == [.position(higher.origin), .size(higher.size)])
+  }
+}
+
+/// The cases are a hosted Mac's: one display 1024 × 768, its visible frame ending at 705.
+@Suite struct CutWhereItStoodTests {
+  func cut(_ answer: CGSize, asked: CGSize, stoodAt old: CGRect) -> Bool {
+    FramePlan.wasCutWhereItStood(answer: answer, asked: asked, stoodAt: old, visibleBottom: 705, rightEdge: 1024)
+  }
+
+  @Test func anAnswerThatEndsOnTheLineBelowWhereItStoodIsNoRefusal() {
+    // Stood at 170,220, asked for 494 × 650, took 494 × 484: bottom 704.
+    #expect(cut(CGSize(width: 494, height: 484), asked: CGSize(width: 494, height: 650), stoodAt: CGRect(x: 170, y: 220, width: 480, height: 348)))
+    #expect(cut(CGSize(width: 1000, height: 330), asked: CGSize(width: 1000, height: 650), stoodAt: CGRect(x: 12, y: 374, width: 494, height: 319)))
+  }
+
+  @Test func norOneThatEndsAtTheDisplaysRightEdge() {
+    // Stood at 687,106, asked for 494 wide, took 337: right edge 1024, with no "less 1".
+    #expect(cut(CGSize(width: 337, height: 400), asked: CGSize(width: 494, height: 400), stoodAt: CGRect(x: 687, y: 106, width: 300, height: 400)))
+  }
+
+  @Test func theDocksEdgeMayHaveMovedByAPoint() {
+    #expect(cut(CGSize(width: 494, height: 485), asked: CGSize(width: 494, height: 650), stoodAt: CGRect(x: 170, y: 220, width: 480, height: 348)))
+    #expect(!cut(CGSize(width: 494, height: 487), asked: CGSize(width: 494, height: 650), stoodAt: CGRect(x: 170, y: 220, width: 480, height: 348)))
+  }
+
+  @Test func anAppsOwnLimitIsARefusal() {
+    // It stopped where it stops, with room to spare.
+    #expect(!cut(CGSize(width: 230, height: 408), asked: CGSize(width: 494, height: 650), stoodAt: CGRect(x: 12, y: 43, width: 230, height: 408)))
+    #expect(!cut(CGSize(width: 494, height: 420), asked: CGSize(width: 494, height: 650), stoodAt: CGRect(x: 170, y: 100, width: 480, height: 348)))
+  }
+
+  @Test func aWindowAlreadyOnTheLineHadNoRoomToGrow() {
+    // Its bottom is at 704 and the height stays. A fixed size looks the same there; asking once more where there is room tells them apart.
+    #expect(cut(CGSize(width: 273, height: 348), asked: CGSize(width: 273, height: 650), stoodAt: CGRect(x: 249, y: 356, width: 446, height: 348)))
+  }
+
+  /// With the Dock at the left the line is the display's own bottom, 768: stood at 170,283, asked for 494 × 650, took 494 × 485.
+  @Test func withTheDockElsewhereTheLineIsTheDisplaysBottom() {
+    #expect(
+      FramePlan.wasCutWhereItStood(
+        answer: CGSize(width: 494, height: 485), asked: CGSize(width: 494, height: 650), stoodAt: CGRect(x: 170, y: 283, width: 480, height: 348),
+        visibleBottom: 768, rightEdge: 1024))
+  }
+
+  /// Back from a display 800 × 600 to 12,43 1000 × 650 on a larger one, the size call a few milliseconds after the move was judged by the display
+  /// the window came from, by all four orders of calls: 1000 × 557 with the small display beside the large one (its bottom is at 600), 788 × 650
+  /// with it below (its right edge is at 800). The place it was moved to, the edges of the display it came from.
+  @Test func rightAfterAMoveToAnotherDisplayTheOldDisplayStillJudges() {
+    let moved = CGRect(x: 12, y: 43, width: 776, height: 545)
+    let asked = CGSize(width: 1000, height: 650)
+    #expect(FramePlan.wasCutWhereItStood(answer: CGSize(width: 1000, height: 557), asked: asked, stoodAt: moved, visibleBottom: 600, rightEdge: 2720))
+    let fromBelow = CGRect(x: 12, y: 43, width: 776, height: 496)
+    #expect(FramePlan.wasCutWhereItStood(answer: CGSize(width: 788, height: 650), asked: asked, stoodAt: fromBelow, visibleBottom: 1680, rightEdge: 800))
+    // By the edges of the display it is on now, nothing explains it.
+    #expect(!FramePlan.wasCutWhereItStood(answer: CGSize(width: 1000, height: 557), asked: asked, stoodAt: moved, visibleBottom: 1002, rightEdge: 1920))
+  }
+
+  @Test func onlyWhatWasAskedToGrowCanHaveBeenCut() {
+    // It hung over the line, 400 high, was asked to be 352 and took 348, a whole cell: its bottom is on the line by chance. macOS cuts growth only.
+    #expect(!cut(CGSize(width: 273, height: 348), asked: CGSize(width: 273, height: 352), stoodAt: CGRect(x: 249, y: 356, width: 446, height: 400)))
+  }
+
+  @Test func aWindowWithRoomBelowThatDidNotGrowRefused() {
+    #expect(!cut(CGSize(width: 273, height: 348), asked: CGSize(width: 273, height: 650), stoodAt: CGRect(x: 249, y: 54, width: 446, height: 348)))
+  }
+
+  @Test func theWholeSizeIsNoShortAnswer() {
+    #expect(!cut(CGSize(width: 494, height: 650), asked: CGSize(width: 494, height: 650), stoodAt: CGRect(x: 170, y: 54, width: 480, height: 348)))
   }
 }
 

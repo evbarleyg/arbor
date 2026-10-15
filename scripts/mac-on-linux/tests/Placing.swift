@@ -55,8 +55,8 @@ func tellOfPlacing(_ book: Book) {
       one.layer.setFrame(CGRect(x: 12, y: 43, width: 300, height: 300), of: WindowID(window.number)) == CGRect(x: 12, y: 43, width: 600, height: 400))
   }
 
-  // Size, position, size: the first resize keeps a large window from being clamped when it moves to a smaller display, the second applies the size the
-  // destination allows (Sources/ArborCore/FramePlan.swift).
+  // What grows is moved first and sized where it ends up, to what that display allows; what shrinks is sized first, so that no smaller display cuts it on
+  // the way (Sources/ArborCore/FramePlan.swift).
   book.story("a window goes from a small display to a large one and back") { story in
     var window: FakeMac.Window!
     let large = FakeMac.Screen(id: 2, name: "Large", frame: CGRect(x: 1024, y: 0, width: 2560, height: 1440), visibleFrame: CGRect(x: 1024, y: 25, width: 2560, height: 1415))
@@ -164,7 +164,7 @@ func tellOfPlacing(_ book: Book) {
   book.story("an app with the enhanced user interface on hangs in the middle of a move") { story in
     let (one, window) = stage(story)
     window.app.hasEnhancedUserInterface = true
-    // The question, the switch off, the size; then silence.
+    // The question, the switch off, the first call of the plan; then silence.
     window.app.hangsAfterCalls = 3
     story.check(
       "the layer does not know what came of the move",

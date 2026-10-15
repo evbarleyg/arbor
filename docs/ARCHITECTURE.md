@@ -151,7 +151,7 @@ room is made from their answers; at the first refusal the layout is worked out a
 the slot, so that is asked while the others move (`apply`), and the window goes last. A size that cannot be changed is known
 beforehand (`isResizable`, `noteFixedSizes`). A window that once stopped short of a slot is sent straight to the middle of the next, still asked for
 the whole size, so it costs nothing to find out that it can grow again. To
-the eye a question and the move after it are what one `setFrame` has always been (`FramePlan`: size, position, size); tests look at the
+the eye a question that makes a window shrink and the move after it are what one `setFrame` is (`FramePlan`: what shrinks is sized first). One that makes it grow where it stands is not, since what grows is moved first: it shows the new size at the old place (collab/BOARD.md, 0.19). Tests look at the
 road a window takes (`FakeWindowSystem.detour`), and `Budget.questions` counts what it costs.
 
 A window that gives no such sign is **asked again where nobody can see** (`Controller+LearnedSizes.swift`). A tile's

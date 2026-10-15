@@ -154,8 +154,8 @@ MUTANTS = [
     },
     {
         "name": "a shortened plan is never followed by the full one",
-        "old": "    if let taken = result, FramePlan.needsFullPlan(after: steps, result: taken, target: frame) {\n",
-        "new": "    if let taken = result, false, FramePlan.needsFullPlan(after: steps, result: taken, target: frame) {\n",
+        "old": "    if let taken = result, let more = FramePlan.makingUp(for: steps, result: taken, target: frame) {\n",
+        "new": "    if let taken = result, false, let more = FramePlan.makingUp(for: steps, result: taken, target: frame) {\n",
         "red": ["the frame Arbor believes a window has is out of date: a move that was thought to need no resize gets one"],
     },
     {

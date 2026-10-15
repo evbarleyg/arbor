@@ -478,6 +478,12 @@ private let second = DisplaySnapshot(
     expectSameOutcome(replayer, original)
   }
 
+  /// How many reports follow a `setFrame` depends on the order of calls, so a recording says by which it was made.
+  @Test func aRecordingSaysByWhichOrderOfCallsItWasMade() {
+    let (trace, _) = record { h in h.system.open(app: "Safari") }
+    #expect(trace.header.framePlan == FramePlan.version)
+  }
+
   /// Where an app opened a window is no place anybody chose, so Arbor may move it onto the Desktop. It remembers that from the
   /// moment the window appeared, which can be before the recording began.
   @Test func whereAppsOpenedTheirWindowsBeforeTheRecordingIsReplayed() {

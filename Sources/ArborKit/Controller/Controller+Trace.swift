@@ -119,6 +119,7 @@ extension Controller {
     header.minimumSizes = minimumSizes
     header.seenSizes = seenSizes
     header.appPlaced = appPlacedFrames
+    header.framePlan = FramePlan.version
     header.focusHistory = focusHistory
     header.onlyPIDs = filter.onlyPIDs?.sorted()
     header.ignored = filter.ignoredWindowIDs.sorted()

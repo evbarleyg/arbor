@@ -258,6 +258,8 @@ public struct TraceHeader: Equatable, Sendable {
   public var mouseDown: Bool
   /// High-frequency lines closer together than this many seconds were thinned (docs/TRACES.md).
   public var thinning: Double
+  /// By which order of calls windows were given their frames (`FramePlan.version`). Traces from before there was a second one do not say.
+  public var framePlan = 1
 
   public init(
     name: String, arbor: String, os: String, recorded: String, displays: [TraceDisplay],
@@ -283,6 +285,7 @@ extension TraceHeader: Codable {
   private enum CodingKeys: String, CodingKey {
     case trace, name, arbor, os, recorded, displays, windows, settings, workspaces, dormant, parked
     case minimumSizes, focusHistory, onlyPIDs, ignored, focused, cursor, mouseDown, thinning, appPlaced, seenSizes
+    case framePlan
   }
 
   /// Only what a replay cannot do without is required, so that hand-written traces can be short.
@@ -314,6 +317,7 @@ extension TraceHeader: Codable {
     cursor = try c.decodeIfPresent(TracePair.self, forKey: .cursor)?.point ?? .zero
     mouseDown = try c.decodeIfPresent(Bool.self, forKey: .mouseDown) ?? false
     thinning = try c.decodeIfPresent(Double.self, forKey: .thinning) ?? 0
+    framePlan = try c.decodeIfPresent(Int.self, forKey: .framePlan) ?? 1
   }
 
   public func encode(to encoder: any Encoder) throws {
@@ -342,6 +346,7 @@ extension TraceHeader: Codable {
     try c.encode(TracePair(cursor), forKey: .cursor)
     try c.encode(mouseDown, forKey: .mouseDown)
     try c.encode(thinning, forKey: .thinning)
+    if framePlan != 1 { try c.encode(framePlan, forKey: .framePlan) }
   }
 }
 

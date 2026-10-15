@@ -308,27 +308,39 @@ public final class FakeWindowSystem: WindowSystem {
     frameLog.append((window, applied))
     if changed, fake.snapshot.isPresent || inSightUnlisted.contains(window) { sightings.append((window, applied)) }
     if changed, echoes.frames {
-      undelivered += Array(repeating: .frame(window), count: reports(ofTheWayFrom: before, to: applied, atLeast: fake.minimumSize))
+      undelivered += Array(repeating: .frame(window), count: reports(ofTheWayFrom: before, to: applied, asked: frame, atLeast: fake.minimumSize))
     }
     return applied
   }
 
-  /// How many reports one `setFrame` that changed something brings. The Accessibility layer sets the size, the place and the size again, or
-  /// the place alone (`FramePlan`), and macOS reports each step that changed something: "resized" and "moved" are two reports. A third
-  /// comes when the new size does not fit on the display at the old place: macOS cuts the first resize short, though never below the
-  /// window's minimum, and the last step makes up for it. A window that hung over that edge already is not cut short. The layer reads
-  /// the frame when a report arrives, which is after the call, so they all say the same. And no report stands for two calls.
+  /// By which order of calls the Accessibility layer is taken to work (`FramePlan.version`): today's, or that of an older recording.
+  public var framePlan = FramePlan.version
+
+  /// How many reports one `setFrame` that changed something brings. The Accessibility layer sets size and place in the steps of
+  /// `FramePlan`, and macOS reports each step that changed something: "resized" and "moved" are two reports. That much was measured, under
+  /// the first order of calls (`framePlan` 1: size, position, size), where a third came when the new size did not fit on the display at the
+  /// old place: macOS cut the first resize short, though never below the window's minimum, and the last step made up for it. A window that
+  /// hung over that edge already was not cut short. Under today's order a window grows where it ends up, so nothing is cut, and a third
+  /// report comes of a window that shrinks one way and grows the other: worked out from the same rule, and not recorded yet. The layer
+  /// reads the frame when a report arrives, which is after the call, so they all say the same. And no report stands for two calls.
+  /// Today's plan depends on which way the size goes, and the layer makes it for the frame it was `asked` for, not for the one the window took.
   /// Measured with one display. With several, that the display with the window's middle is the one that counts is a guess.
-  public func reports(ofTheWayFrom old: CGRect, to new: CGRect, atLeast minimum: CGSize = .zero) -> Int {
+  public func reports(ofTheWayFrom old: CGRect, to new: CGRect, asked: CGRect? = nil, atLeast minimum: CGSize = .zero) -> Int {
+    let asked = framePlan == 1 ? new : asked ?? new
+    // Of what is asked for in the end the window makes what it took; on the way it goes no lower than its minimum.
+    func made(of wanted: CGFloat, _ last: CGFloat, _ took: CGFloat, _ least: CGFloat) -> CGFloat { wanted == last ? took : max(wanted, least) }
     let middle = CGPoint(x: old.midX, y: old.midY)
     let room = (displayList.first { $0.frame.contains(middle) } ?? displayList.first { $0.frame.overlaps(old) })?.visibleFrame
+    let rooms = displayList.map { FramePlan.room(onDisplay: $0.frame, visible: $0.visibleFrame) }
+    let sizeFirst = abs(old.width - new.width) < 0.5 && abs(old.height - new.height) < 0.5 ? [.position(new.origin)] : FramePlan.full(to: new)
     var (frame, count) = (old, 0)
-    for (index, step) in FramePlan.steps(from: old, to: new).enumerated() {
+    for (index, step) in (framePlan == 1 ? sizeFirst : FramePlan.steps(from: old, to: asked, rooms: rooms)).enumerated() {
       var next = frame
       switch step {
       case .position: next.origin = new.origin
-      case .size:
-        next.size = new.size
+      case .size(let size):
+        next.size = CGSize(
+          width: made(of: size.width, asked.width, new.width, minimum.width), height: made(of: size.height, asked.height, new.height, minimum.height))
         guard index == 0, let room else { break }
         if frame.maxX <= room.maxX { next.size.width = max(min(next.width, room.maxX - frame.minX), minimum.width) }
         if frame.maxY <= room.maxY { next.size.height = max(min(next.height, room.maxY - frame.minY), minimum.height) }
@@ -336,6 +348,8 @@ public final class FakeWindowSystem: WindowSystem {
       if next != frame { count += 1 }
       frame = next
     }
+    // A size the plan never asked for, which the window took all the same (a limit it was given since it was last sized), is reported too.
+    if framePlan != 1, abs(frame.width - new.width) >= 0.5 || abs(frame.height - new.height) >= 0.5 { count += 1 }
     return max(count, 1)
   }
 

@@ -206,6 +206,7 @@ public final class TraceReplayer {
       ).written(with: header.displays.map { DisplaySnapshot($0) }),
       interpose: { fake in
         bridge.fake = fake
+        fake.framePlan = header.framePlan
         return bridge
       })
     bridge.replayer = self
