@@ -17,9 +17,9 @@ Nothing here has been used by a person for a working day yet. All real-Mac evide
 
 ## Build 2, the candidate (2026-10-15)
 
-**Arbor now does almost nothing you did not ask for.** That is what the first person to work with Build 1 asked of it. Two of their complaints are not cured yet: they head the second list, and their cures follow within hours.
+**Arbor now does almost nothing you did not ask for.** That is what the first person to work with Build 1 asked of it. One of their complaints is not cured yet: it heads the second list, and its cure follows within hours.
 
-**After installing or updating:** System Settings → Privacy & Security → Accessibility: switch Arbor on; if it looks on already, off and on again; if that does not help, remove it there with the − button and let Arbor ask again. **Then quit Arbor and start it once more.**
+**After installing or updating:** System Settings → Privacy & Security → Accessibility: switch Arbor on; if it looks on already, off and on again; if that does not help, remove it there with the − button and let Arbor ask again.
 
 ### What is different from Build 1
 
@@ -37,13 +37,11 @@ Nothing here has been used by a person for a working day yet. All real-Mac evide
 ### What you will still meet, and the way round
 
 - **⌃⌥↩ on a docked window still takes floating windows out of view.** *⌃⌥↩ again brings everything back.*
-- **Two apps too wide to stand side by side:** at the second dock the first leaves the view and waits as a tile at the edge. *Click the tile, ⌃⌥G, or ⌃⌥Z.*
-- **Until Arbor has been started once with the permission in place,** holding ⌃⌥Space only taps. *Quit Arbor and start it again.*
-- **After an update the welcome window shows the four moves again.** *Close it.*
+- **Two apps too wide to stand side by side overlap,** as with macOS's own tiling, and the one behind may show little. *Click it, or ⌃⌥G.*
 - **⌘M or ⌘H on one of two halves:** the other takes the whole width until the first returns. *Nothing is lost.*
 - **A display unplugged, or a lid shut and opened beside a monitor:** a floating window may be moved though nobody asked. *Drag it back.*
 - **A window let go low on the screen** can come out 10 to 30 points taller. *Size it by hand.*
-- **A docked terminal whose font changes** can, rarely, become a tile. *Click the tile, or Arrange Windows in the menu.*
+- **A docked terminal whose font changes** can, rarely, be taken for too large for its place and hang over it. *Arrange Windows in the menu.*
 - **Twice, on test Macs, Arbor answered nobody for 10 and 17 seconds**, then did all that had queued. If yours does, tell us.
 
 Rarer things are on the board, `collab/BOARD.md`.
