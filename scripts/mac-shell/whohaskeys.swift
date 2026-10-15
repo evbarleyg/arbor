@@ -2,9 +2,12 @@
 // probe-finder-gets-the-keyboard.sh.
 //
 //   whohaskeys report [name=pid…]            one line: who is in front, whose menus the menu bar shows, who has the keyboard
-//   whohaskeys take <seconds> [name=pid…]    becomes what Arbor is (an accessory app whose only window cannot take the
-//                                            keyboard), activates ITSELF, reports after 0.05, 0.3 and 1 s and then
-//                                            every second, and ends
+//   whohaskeys take <seconds> [politely] [name=pid…]    becomes what Arbor is (an accessory app whose only window cannot take
+//                                            the keyboard), activates ITSELF, reports after 0.05, 0.3 and 1 s and then
+//                                            every second, and ends. `politely`: with the newer activate(), which is a request.
+//                                            `quietly`: it stays in the background, as a control. Either way it writes down every key
+//                                            that reaches its own event loop (`swallowing`: and lets it go no further) and every
+//                                            press of ⌃⌥K, which it holds as a Carbon hot key, as Arbor holds its own
 //   whohaskeys activate <pid>                brings that app forward, as a click on its Dock icon does
 //   whohaskeys give <way[+way…]> <pid> [x y] becomes what Arbor is (an accessory app that is not in front) and gives that app the keyboard, one
 //                                            way after the other, saying what each call answered:
@@ -17,6 +20,9 @@
 // what else is open. Compiled on the Mac by the script, in language mode 5.
 import AppKit
 import ApplicationServices
+import Carbon.HIToolbox
+
+setvbuf(stdout, nil, _IOLBF, 0)
 
 @_silgen_name("_AXUIElementGetWindow")
 func _AXUIElementGetWindow(_ element: AXUIElement, _ identifier: UnsafeMutablePointer<CGWindowID>) -> AXError
@@ -71,6 +77,22 @@ func report() -> String {
   return words.joined(separator: " ")
 }
 
+func hotKeyHandler(_ next: EventHandlerCallRef?, _ event: EventRef?, _ userData: UnsafeMutableRawPointer?) -> OSStatus {
+  guard let event else { return OSStatus(eventNotHandledErr) }
+  if GetEventKind(event) == UInt32(kEventHotKeyPressed) { print("  its hot key fired") }
+  return noErr
+}
+
+/// ⌃⌥K as a Carbon hot key of this process. Returns what macOS answered: 0 is yes.
+func holdControlOptionK() -> OSStatus {
+  var specs = [EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))]
+  InstallEventHandler(GetEventDispatcherTarget(), hotKeyHandler, 1, &specs, nil, nil)
+  var ref: EventHotKeyRef?
+  return RegisterEventHotKey(
+    UInt32(kVK_ANSI_K), UInt32(controlKey | optionKey), EventHotKeyID(signature: 0x57_484F_4B, id: 1), GetEventDispatcherTarget(),
+    OptionBits(kEventHotKeyNoOptions), &ref)
+}
+
 final class Bystander: NSPanel {
   override var canBecomeKey: Bool { false }
   override var canBecomeMain: Bool { false }
@@ -97,7 +119,17 @@ final class Taker {
     panel.alphaValue = 0.2
     panel.orderFrontRegardless()
     // The newer `activate()` is a request that macOS does not grant an accessory app in the background (M4).
-    app.activate(ignoringOtherApps: true)
+    if arguments.contains("politely") {
+      app.activate()
+    } else if !arguments.contains("quietly") {
+      app.activate(ignoringOtherApps: true)
+    }
+    let swallows = arguments.contains("swallowing")
+    NSEvent.addLocalMonitorForEvents(matching: [.keyDown]) { event in
+      print("  it is given a key: code=\(event.keyCode) flags=\(event.modifierFlags.intersection(.deviceIndependentFlagsMask).rawValue)")
+      return swallows ? nil : event
+    }
+    print("  RegisterEventHotKey answers \(holdControlOptionK())")
     _ = Timer.scheduledTimer(withTimeInterval: 0.01, repeats: true) { _ in MainActor.assumeIsolated { self.tick() } }
     app.run()
   }
