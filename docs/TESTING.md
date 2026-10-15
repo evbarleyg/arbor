@@ -727,21 +727,22 @@ reality: 307 divergences in 66 steps of 5 journeys (new: 1, known: 306, gone: 0)
 | `answers` | a window asked for the same frame took another, or Arbor asked it for another frame to begin with | `FakeWindowSystem.setFrame`; the second kind follows from something earlier |
 | `reports-extra`, `reports-missing`, `reports-order` | the Mac reports what the stand-ins do not; the stand-ins what the Mac does not; the same in another order | `FakeWindowSystem` and `World*.swift` |
 | `unplayed` | a journey or a step one world does not have | the script's, or a run that was cut off |
-| `unstable` | any of these that differs between two runs on real Macs, or at a step that had not come to rest: counted apart, never dropped | timing |
+| `unstable` | any of these that not every run on a real Mac shows, or at a step that had not come to rest: counted apart, never dropped | timing |
 
-A difference in belief or truth that stays the same from one step to the next is one divergence, under the step where it began. During a drag, a resize or a seam drag the number of moves is a matter of timing (a
-trace thins them by the clock), so a run of moves counts as one of each kind, written `~dragMoved:W3`.
+What counts as one: a difference in belief or truth that stays the same from one step to the next, under the step where it began; a frame that Arbor has right in both worlds (`truth` says it, that Arbor believes something else follows); a call to the same
+window with another request or another answer. During a drag, a resize or a seam drag the number of moves is a matter of timing (a trace thins them by the clock), so a run of moves counts as one of each kind, written `~dragMoved:W3`.
+Written down and not compared, which the report says every time: `settingsFileMayHaveChanged`, which is of another seam. (On a Mac every save of `state.json` wakes the watcher of `settings.json` twice, ninety times in a run.)
 
 **The ratchet** is `collab/evidence/reality-known.txt`: every known key with the cause it is put down to, and at its top every cause with a reading: whose it is, which file would have to change, what a person would see. With
 `--check` (`make reality MAC=… CHECK=1`, and CI) the tool fails for a key the list does not have *and* for a key of the list that is gone, so the list shrinks with every cure and never grows unseen. `~` before a key: not every run on a Mac
-shows it. `make reality MAC=… KNOWN=1` writes the keys anew and keeps the words it has. One lie shows at many steps: the first count, 2026-10-14, was some three hundred keys from some twenty causes, nearly half of them one constant, and the
+shows it, and such a key may hold `*` for anything, because what a fight with an animation leaves in a key is never the same twice. `make reality MAC=… KNOWN=1` writes the keys anew and keeps the words it has. One lie shows at many steps: the first count, 2026-10-14, was some three hundred keys from some twenty causes, nearly half of them one constant, and the
 report ends with the causes by how many keys each would take along.
 
-**To bring the number down**: take a cause from the top of that table, read both lines of one of its steps (`.build/reality/report.md` has everything as tables; a run's `reality/traces/` holds what macOS really sent), teach the stand-in to be as rude as
+**To bring the number down**: take a cause from the top of that table, read both lines of one of its steps (`.build/reality/report.md` has everything as tables; `collab/evidence/reality-mac/traces/` holds what macOS really sent, marked `reality: <step>` after every step), teach the stand-in to be as rude as
 the Mac was, give the lesson a test of its own in `Tests/ArborKitTests`, run `make reality MAC=collab/evidence/reality-mac`, and take the keys it calls gone off the list. No Mac is needed for that: what the Mac did is on file. If it is Arbor that is
 wrong, report it: the key stays until Arbor is cured, and then the Mac's side has to be played again.
 
-**`collab/evidence/reality-mac/`** is that file: the observations of one run on a hosted Mac, as they came back. Play it again (`make reality`, then copy the run's `reality/*.jsonl` there) after a change to `reality.sh` or `reality.py`, to Arbor's macOS-only code, or to
+**`collab/evidence/reality-mac/`** is that file: the observations of one run on a hosted Mac and its traces, as they came back. Play it again (`make reality`, then copy the run's `reality` folder there) after a change to `reality.sh` or `reality.py`, to Arbor's macOS-only code, or to
 what the controller does in these journeys; a step the file does not have counts as `unplayed`.
 
 **CI** reports the number whenever the Mac jobs run: `real-windows` plays the journeys on real windows, `linux` rehearses them, and the small job `reality` compares the two with `--check`. The number and whatever is new or gone come out as
