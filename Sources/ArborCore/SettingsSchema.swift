@@ -136,6 +136,10 @@ public enum SettingsSchema {
         "shrinkOutOfView", \.shrinkOutOfView, "Shrink windows out of view",
         "Windows that go out of view are also shrunk, to 320 by 200 points at most, until they come back.",
         advanced: true),
+      .toggle(
+        "outOfViewIsBehind", \.outOfViewIsBehind, "Leave windows behind, not away",
+        "A trial. A window that is not in the framed space stays where it is, behind the ones that are, where Mission "
+          + "Control and the app switcher find it. Off, it goes to the display's corner.", advanced: true),
     ])
 
   private static let dragging = section(

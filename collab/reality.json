@@ -3176,11 +3176,14 @@
    "expected": "`raise` puts a window in front of every other. `FakeWindowSystem.raise` and the fake Mac do exactly that, and a pin (F49), a summoned window that stays (F53) and every check that says \"raised\" rest on it.",
    "happened": "Accessibility's raise action lifts a window of an app in the background over everything but the key window of the active app. So a pinned window of another app lies behind the very window the person is working in, which is where a pin matters. All of it is green on Linux and false on a Mac: the gravest of the six differences that run brought out. Decided since (the board, 1.25): Keep in View is to make room beside the pinned window instead of fighting for the front. Not built yet.",
    "found": "The first run, on hosted Macs, of a suite of real-window checks that is not on the trunk yet (macOS 26.6.2; 1,406 of 1,454 checks passed), beside its rehearsal on Linux, where this was green.",
-   "modelled": "no",
-   "knobs": [],
+   "modelled": "partly",
+   "knobs": [
+    "FakeWindowSystem.raiseStopsBehindTheKeyWindow"
+   ],
    "guards": [
     "e2e: pinning alone brings it in front of the other app's windows",
-    "e2e: nothing covers the call"
+    "e2e: nothing covers the call",
+    "test: theKeyboardInAWindowThatGoesBehindDoesNotKeepItInFront"
    ],
    "copes": "open",
    "hurt": 2,

@@ -21,7 +21,7 @@ extension Controller {
     // The window in the user's hand stays there (F09): foretold, it would be pulled out of it, and nobody would claim the move.
     for (window, target) in layout.windowFrames.sorted(by: { $0.key < $1.key }) where window != drag?.window {
       guard let current = windows[window] else { continue }
-      if !parked.contains(window), current.frame.approximatelyEquals(target, tolerance: 1) || misfits[window] != nil {
+      if !isAway(current), current.frame.approximatelyEquals(target, tolerance: 1) || misfits[window] != nil {
         continue
       }
       // The first frame `apply` asks for.
@@ -30,7 +30,7 @@ extension Controller {
     // With `shrinkOutOfView` a window is parked at another size, which `parkingSize` works out and remembers in one
     // go: not for a forecast. Those moves wait on their own.
     for window in layout.hiddenWindows.sorted()
-    where !parked.contains(window) && window != drag?.window && !settings.shrinkOutOfView {
+    where !parked.contains(window) && window != drag?.window && !settings.shrinkOutOfView && !staysBehind(window) {
       // The frame `park` asks for.
       guard let size = windows[window]?.frame.size else { continue }
       moves.append((window, CGRect(origin: parkingOrigin(for: size, on: display), size: size)))

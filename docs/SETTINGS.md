@@ -59,6 +59,7 @@ File). There are four ways to change one, and each takes effect at once and show
 | `autoDockMinimumHeight` | `300` | 0 to 3000 pt | **Shortest window docked.** Where new windows dock by themselves, one that opens shorter than this floats. That is `dock auto` and a rule for `*`; a rule that names an app docks its windows whatever their size. *Advanced.* |
 | `shareRemovedSpace` | `true` | true or false | **Share a leaving window's space.** The space of a window that leaves is shared by its whole group. Off, it goes to the neighbor before it and nothing else moves. *Advanced.* |
 | `shrinkOutOfView` | `false` | true or false | **Shrink windows out of view.** Windows that go out of view are also shrunk, to 320 by 200 points at most, until they come back. *Advanced.* |
+| `outOfViewIsBehind` | `false` | true or false | **Leave windows behind, not away.** A trial. A window that is not in the framed space stays where it is, behind the ones that are, where Mission Control and the app switcher find it. Off, it goes to the display's corner. *Advanced.* |
 
 ## Dragging
 

@@ -7,6 +7,9 @@ extension FakeWindowSystem {
     guard windows[window] != nil else { return }
     raiseLog.append(window)
     bringToFront(window)
+    if raiseStopsBehindTheKeyWindow, let key = focused, windows[key] != nil, windows[key]?.snapshot.pid != windows[window]?.snapshot.pid {
+      bringToFront(key)
+    }
   }
 
   /// Focusing or raising a window brings it to the front. Windows that never were lie behind the

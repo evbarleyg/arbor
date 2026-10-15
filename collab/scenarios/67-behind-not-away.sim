@@ -1,0 +1,61 @@
+# Story: somebody who cannot work with windows they cannot find tries the switch `outOfViewIsBehind`: what is not in the framed
+# space stays where it is, behind what fills the screen, and every means of macOS's finds it there. A trial (QUESTIONS Q29, point 8; the board, 0.11).
+# Reference: T52.
+mac-tiling off
+open Safari
+open Notes
+open Mail
+open Terminal
+set outOfViewIsBehind on
+expect ok
+dock 101 left
+dock 103 beside 101 right
+dock 102 beside 101 bottom
+dock 104 beside 103 bottom
+focus 101
+
+# Filled: one window moves, once. The others are where they were, and count as out of view all the same.
+zoom
+expect fills 101
+expect moved-once
+expect still 102
+expect still 103
+expect still 104
+expect in-front 101
+expect focused 101
+
+# And back: the same one window.
+zoom
+expect camera root
+expect moved-once
+expect still 102
+expect still 103
+expect still 104
+expect visible 102
+expect visible 103
+
+# Switching to a window that is behind brings it into view, as it does when it is away (rule 4). Someone who lives framed stays framed.
+zoom
+focus 104
+expect fills 104
+expect in-front 104
+expect focused 104
+expect still 102
+expect still 103
+
+# Everything: whatever filled the screen goes back to its place, and nothing else is touched.
+show-all
+expect camera root
+expect still 102
+expect still 103
+expect left-of 101 103
+expect above 103 104
+
+# Off again: out of view is at the corner, as Arbor ships.
+set outOfViewIsBehind off
+focus 101
+zoom
+expect fills 101
+expect hidden 102
+expect hidden 103
+expect hidden 104

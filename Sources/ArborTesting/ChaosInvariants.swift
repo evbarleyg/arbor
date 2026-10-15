@@ -193,6 +193,11 @@ extension ChaosRunner {
       if parked.contains(id) {
         guard let showing else { continue }
         let home = controller.workspaceID(containing: id)
+        // The trial `outOfViewIsBehind`: it is where it was, and out of view is behind. (What its person sent away still goes to the corner.)
+        if controller.settings.outOfViewIsBehind, home.map({ controller.workspaces[$0]?.isStashed(id) != true }) ?? true {
+          if settled { liesOverTheView(id, &problems) }
+          continue
+        }
         // Something else moved it into view: like a docked window, it is put back by a timer.
         if !settled, let home, isDueForLayout(home) { continue }
         // Hemmed in by other displays, it goes where least of it shows, which is not nothing.
@@ -227,6 +232,18 @@ extension ChaosRunner {
         if !settled, let home = controller.workspaceID(containing: id), isDueForLayout(home) { continue }
         problems.append(.init("lost", "\(id) is not parked but is at \(snapshot.frame.brief), off every display"))
       }
+    }
+  }
+
+  /// With the trial `outOfViewIsBehind`: a window that is out of view lies over none that is in view.
+  private func liesOverTheView(_ window: WindowID, _ problems: inout [InvariantViolation]) {
+    let frontToBack = system.windowsFrontToBack()
+    guard let place = frontToBack.firstIndex(of: window), let frame = system.windows[window]?.snapshot.frame else { return }
+    for other in frontToBack[(place + 1)...] {
+      guard let under = system.windows[other]?.snapshot, under.isPresent, !controller.parked.contains(other), other != controller.draggedWindow,
+        controller.filter.manages(under), controller.workspaceID(containing: other) != nil, under.frame.overlaps(frame)
+      else { continue }
+      problems.append(.init("behind-in-front", "\(window) is out of view, at \(frame.brief), and lies over \(other), which is in view at \(under.frame.brief)"))
     }
   }
 

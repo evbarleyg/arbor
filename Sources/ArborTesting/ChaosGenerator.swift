@@ -32,6 +32,8 @@ public struct ChaosGenerator {
     // From a stream of its own, so that the other walks are what they were.
     var forTheDesk = ChaosRandom(seed: seed &+ 0x5EED)
     desk = Desk(&forTheDesk)
+    // `ARBOR_CHAOS_BEHIND=1`: every walk with the trial `outOfViewIsBehind` on, from before Arbor starts, to see which rules it breaks.
+    defer { if ProcessInfo.processInfo.environment["ARBOR_CHAOS_BEHIND"] != nil { planned.insert(.settings("{\"outOfViewIsBehind\":true}"), at: 0) } }
     if ordinary {
       startOrdinaryWalk()
       return
@@ -295,7 +297,8 @@ public struct ChaosGenerator {
   /// `set`, `reset`, `bind`, `rule` and the rest. The schema lists every setting there is, with the values it takes, so a
   /// new setting is tried from the day it is listed there.
   private mutating func settingsCommand(in world: ChaosRunner) -> SettingsCommand {
-    let entry = random.pick(SettingsSchema.entries)!
+    // Not the trial `outOfViewIsBehind`: the rules on what is out of view go by the corner. `ARBOR_CHAOS_BEHIND=1` walks with it on.
+    let entry = random.pick(SettingsSchema.entries.filter { $0.key != "outOfViewIsBehind" })!
     func rule(_ r: inout ChaosRandom) -> AppRule {
       let action = r.pick([
         RuleAction.float, .ignore, .pin, .dock(.left), .dock(.right), .dock(.top), .dockBeside(bundleID: "com.example.notes", .bottom),

@@ -83,6 +83,7 @@ extension Controller {
     }
     // Before anybody is moved, so that everybody moves once (Controller+AskFirst.swift).
     layout = askingFirst(layout, on: displayID) { self.roomyLayout(of: displayID, for: reason, startingFrom: before) }
+    bringTheViewInFront(for: layout, on: displayID, reason: reason)
     // After the stage has its pictures of the windows where they are.
     system.moveTogether(movesInSight(for: layout, on: displayID, reason: reason))
     // A window refused its slot after all: lay out again so that room is made for it, or it becomes a tile. Or one that is
@@ -104,6 +105,7 @@ extension Controller {
     }
     rememberSqueezes(in: layout, on: displayID)
     placeFloatingWindows(on: displayID, layout: layout, reason: reason)
+    bringTheViewInFront(for: layout, on: displayID, reason: reason)
     layouts[displayID] = layout
     settleTransition(staged, on: displayID, layout: layout)
     stats.time("controller", "update overlays") {
@@ -171,11 +173,13 @@ extension Controller {
     guard isStillToBePlaced(current, in: target) else {
       // Not a misfit's: that is where its own answer left it, which is on record.
       if isInPlace(current, at: target) || enforcement.givenUp.contains(window) { settled[window] = current.frame }
+      // Left behind, it is there already (Controller+Behind.swift).
+      if !isAway(current) { parked.remove(window) }
       return false
     }
     let asked = request(for: current, in: target)
     // It has answered where it stood, and that is where the answer belongs: there is nothing left to ask for.
-    let isThere = justAnswered[window] != nil && !parked.contains(window) && asked.approximatelyEquals(current.frame, tolerance: 1)
+    let isThere = justAnswered[window] != nil && !isAway(current) && asked.approximatelyEquals(current.frame, tolerance: 1)
     guard var actual = isThere ? current.frame : system.setFrame(asked, of: window) else {
       unplaced.insert(window)
       return false
@@ -205,7 +209,7 @@ extension Controller {
 
   /// Whether a window already sits where it belongs, so there is no need to move it.
   func isInPlace(_ window: WindowSnapshot, at frame: CGRect) -> Bool {
-    !parked.contains(window.id) && window.frame.approximatelyEquals(frame, tolerance: 1)
+    !isAway(window) && window.frame.approximatelyEquals(frame, tolerance: 1)
   }
 
   /// A learned minimum can be wrong: an app that resizes a moment late, or had a sheet open, looks
@@ -264,6 +268,7 @@ extension Controller {
   /// bottom corner (macOS keeps windows that are fully off-screen from
   /// moving reliably).
   func park(_ window: WindowID, on display: DisplaySnapshot) {
+    guard !staysBehind(window) else { return leaveBehind(window) }
     guard let current = windows[window] else { return }
     parkedAgain[window] = parked.contains(window) ? parkedAgain[window, default: 0] + 1 : nil
     let size = parkingSize(for: window, now: current.frame.size)
@@ -291,7 +296,7 @@ extension Controller {
   /// rounds the answer is no: whatever keeps moving it wins, rather than the two fighting for ever.
   func hasLeftItsCorner(_ window: WindowID) -> Bool {
     guard parked.contains(window), parkedAgain[window, default: 0] < 3, let current = windows[window],
-      current.isPresent
+      current.isPresent, !staysBehind(window)
     else { return false }
     // Found in a corner at launch, after a crash: where exactly is not on record, but whether it shows can be seen.
     guard let corner = settled[window] else { return !showsOnlyASliver(window) }

@@ -146,6 +146,9 @@ public final class FakeWindowSystem: WindowSystem {
   public internal(set) var raiseLog: [WindowID] = []
   /// The window server does not answer: `windowsFrontToBack` is empty.
   public var stackingIsUnknown = false
+  /// As on a Mac: `raise` lifts a window of an app in the background over everything but the window that has the keyboard
+  /// (collab/reality.json, raise-does-not-lift-a-window-over-the-active-apps-key-window).
+  public var raiseStopsBehindTheKeyWindow = false
   /// When each window that is flying out of the Dock lands (`Echoes.flightFromTheDock`).
   private var landings: [WindowID: Double] = [:]
   /// What `secondsSinceClickOrModifierKey()` answers. `userFocus` makes it 0 while it reports.

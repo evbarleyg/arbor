@@ -212,6 +212,9 @@ public struct Settings: Codable, Equatable, Sendable {
   public var shareRemovedSpace: Bool = true
   /// Windows moved out of view are also shrunk (to 320 × 200 at most) until they come back.
   public var shrinkOutOfView: Bool = false
+  /// A trial (collab/QUESTIONS.md, Q29, point 8): a window that is not in the framed space stays where it is, behind what is, and is
+  /// not sent to the display's corner. Only what its person sent away still goes there (Controller+Behind.swift).
+  public var outOfViewIsBehind: Bool = false
   /// The one switch for whatever needs an event tap: the pinch, ⌃⌥ + scroll, the ⌃⌥ rectangle, ⇧-drag on the Desktop, the guard of
   /// the wallpaper click. Off, Arbor installs no event tap, whatever their own settings say (`Controller.inputSettings`). A key of
   /// its own because a settings.json written by an earlier build holds theirs as they were then, and cannot hold this one
@@ -291,7 +294,7 @@ public struct Settings: Codable, Equatable, Sendable {
     case scrollZoom, scrollZoomThreshold, scrollOnDesktopZooms
     case newWindows, autoDockMinimumWidth, autoDockMinimumHeight
     case minimapDuration
-    case shareRemovedSpace, shrinkOutOfView
+    case shareRemovedSpace, shrinkOutOfView, outOfViewIsBehind
     case pointerGestures
   }
 
@@ -398,6 +401,7 @@ public struct Settings: Codable, Equatable, Sendable {
     try read(.minimapDuration, into: &minimapDuration)
     try read(.shareRemovedSpace, into: &shareRemovedSpace)
     try read(.shrinkOutOfView, into: &shrinkOutOfView)
+    try read(.outOfViewIsBehind, into: &outOfViewIsBehind)
     try read(.pointerGestures, into: &pointerGestures)
   }
 }

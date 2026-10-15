@@ -68,6 +68,7 @@ extension Controller {
     // Nothing is asked of the window system during a pause.
     guard isRunning else { return }
     noteFocus()
+    theViewComesInFrontOnceItHasTheKeyboard()
     guard settings.focusRing else { return }
     refreshFocusRing(.focus)
     // macOS does not change everything at once when the keyboard moves, and an event can arrive before the window

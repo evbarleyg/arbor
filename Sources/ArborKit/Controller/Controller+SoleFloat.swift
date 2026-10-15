@@ -71,6 +71,8 @@ extension Controller {
     guard let current = windows[window] else { return }
     var target = fillingFrame(on: desktop, of: display, minimum: minimumSizes[window])
     guard parked.contains(window) || current.frame != frameWhenFilling(desktop, with: window, on: display) else { return }
+    // Left behind as it was (Controller+Behind.swift).
+    if !isAway(current), current.frame == frameWhenFilling(desktop, with: window, on: display) { return _ = parked.remove(window) }
     // Its app does not answer: it is where it was, and is placed when the app does (as in `apply`).
     guard var actual = system.setFrame(target, of: window) else {
       unplaced.insert(window)

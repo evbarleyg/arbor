@@ -15,8 +15,17 @@ extension Harness {
       for (window, slot) in fresh.windowFrames.sorted(by: { $0.key < $1.key }) where frame(window) != slot {
         problems.append("\(window) is at \(frame(window).map(Self.brief) ?? "nowhere"), and its place is \(Self.brief(slot))")
       }
+      // With the trial `outOfViewIsBehind` it is where it was, and out of view is behind: it lies over nothing that is in view.
+      let frontToBack = system.windowsFrontToBack()
       for window in fresh.hiddenWindows.sorted() where system.isVisible(window) {
-        problems.append("\(window) should be out of view and is at \(frame(window).map(Self.brief) ?? "nowhere")")
+        guard controller.settings.outOfViewIsBehind else {
+          problems.append("\(window) should be out of view and is at \(frame(window).map(Self.brief) ?? "nowhere")")
+          continue
+        }
+        guard let place = frontToBack.firstIndex(of: window), let own = frame(window) else { continue }
+        for other in frontToBack[(place + 1)...] where fresh.windowFrames[other] != nil && frame(other)?.overlaps(own) == true {
+          problems.append("\(window) should be behind what is in view and lies over \(other)")
+        }
       }
     }
     if let only, !system.displayList.contains(where: { $0.id == only }) { problems.append("there is no display \(only)") }

@@ -57,7 +57,7 @@ extension Controller {
   /// every layout); or if Arbor has given up on it.
   func isStillToBePlaced(_ window: WindowSnapshot, in slot: CGRect) -> Bool {
     if isInPlace(window, at: slot) || enforcement.givenUp.contains(window.id) { return false }
-    if !parked.contains(window.id), let misfit = misfits[window.id], misfit.slot == slot,
+    if !isAway(window), let misfit = misfits[window.id], misfit.slot == slot,
       window.frame.approximatelyEquals(misfit.frame, tolerance: 1)
     {
       return false
@@ -77,7 +77,7 @@ extension Controller {
     guard seen(window).mayRefuseToGrow(to: slot.size, now: window.frame.size),
       // macOS lets a window be as large as the display it is on allows (`FramePlan`). On another display the answer
       // would be that display's, not the window's.
-      parked.contains(window.id) || !displays.contains(where: { $0.id != displayID && $0.frame.contains(window.frame.center) })
+      isAway(window) || !displays.contains(where: { $0.id != displayID && $0.frame.contains(window.frame.center) })
     else { return nil }
     return question(window, toTake: slot.size)
   }
@@ -87,7 +87,7 @@ extension Controller {
   /// window its person has left lower than macOS lets anybody put one would not stay where it stands.
   private func question(_ window: WindowSnapshot, toTake size: CGSize) -> CGRect? {
     let question = CGRect(origin: window.frame.origin, size: size)
-    guard parked.contains(window.id) else { return whereItStops(question.origin) == question.origin ? question : nil }
+    guard isAway(window) else { return whereItStops(question.origin) == question.origin ? question : nil }
     return isOutOfView(question.union(window.frame)) && displays.contains { question.overlaps($0.frame) } ? question : nil
   }
 

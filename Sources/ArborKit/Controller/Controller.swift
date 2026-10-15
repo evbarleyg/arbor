@@ -65,6 +65,7 @@ public struct WindowFilter: Sendable, Equatable {
 /// - Controller+Hold.swift: moving nothing uninvited during calls and on shared screens
 /// - Controller+UndockedFrames.swift: giving windows that leave the arrangement their own size back
 /// - Controller+Switches.swift: what the behaviour switches need (parking small, windows left parked)
+/// - Controller+Behind.swift: a trial: out of view means behind what is in view, not in the corner
 /// - Controller+Transitions.swift: showing changes as motion
 /// - Controller+Updates.swift: the version, and asking whether a newer release exists
 /// - Controller+LoginItem.swift: opening Arbor at login
@@ -681,6 +682,7 @@ public final class Controller {
     traceRecorder?.settingsWillApply(newSettings)
     // With pictures of windows the presenter needs other things for a motion than without.
     if newSettings.windowPictures != settings.windowPictures { forgetRehearsal() }
+    if settings.outOfViewIsBehind, !newSettings.outOfViewIsBehind { whatWasLeftBehindIsInView() }
     settings = newSettings
     filter.excludedBundleIDs = Set(newSettings.excludedBundleIDs)
     stopWatchingTitles()

@@ -31,6 +31,8 @@ root  split(horizontal)
   window being dragged is never parked, placed or put back; the drop lays its display out again.
   With `shrinkOutOfView` it is also shrunk (320 × 200 at most) until it returns
   (`Controller+Switches.swift`).
+  A trial, `outOfViewIsBehind` (`Controller+Behind.swift`): it is asked nothing and stays where it is, and what is in view is raised in front of it. It counts
+  as parked all the same, so the view, the keyboard and `state` go on as they do; `isAway` says whether a parked window is also out of sight.
 - **Presence**: minimized windows, windows of hidden apps, windows on other
   Spaces and windows in macOS's own full screen keep their place in the tree
   but take no space and are not moved, so they return to the same spot.

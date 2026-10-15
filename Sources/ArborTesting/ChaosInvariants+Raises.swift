@@ -27,7 +27,12 @@ extension ChaosRunner {
       wasRunningMeanwhile
         && (controller.workspaces.values.contains { $0.staysInView(window) } || workspacesBefore.values.contains { $0.staysInView(window) })
     }
-    return Set(raised).sorted().filter { !isKeptInView($0) }.map {
+    // The trial `outOfViewIsBehind`: what is in view comes in front of what is left behind, and that is a raise (Controller+Behind.swift). Never
+    // of a window that is out of view itself.
+    func comesInFrontOfWhatIsBehind(_ window: WindowID) -> Bool {
+      wasRunningMeanwhile && controller.settings.outOfViewIsBehind && !controller.parked.contains(window)
+    }
+    return Set(raised).sorted().filter { !isKeptInView($0) && !comesInFrontOfWhatIsBehind($0) }.map {
       .init("raised-unasked", "Arbor raised \($0), which is neither kept in view nor summoned")
     }
   }

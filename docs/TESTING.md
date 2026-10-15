@@ -714,6 +714,7 @@ copy from before the repository was public, and say what the script does once it
 | `check-resume.sh` | trunk | **never**: ends with 77 | | Calculator and TextEdit opened, brought forward in turn, and quit; `ARBOR_APPS_HERE=1` does not open it |
 | `shots-F15-apps.sh` | trunk | **never**: ends with 77 | | Ten real apps opened for their icons, and killed |
 | `first-dock.sh` (`first-dock.py`) | trunk | **never**: ends with 77 | | Nine real apps opened and quit, every window arranged, Reduce Motion, the display's size |
+| `look-behind.sh`, `look-away.sh` | trunk | **never**: end with 77 | | Five real apps opened and quit, Mission Control, ⌘Tab, a virtual display, Reduce Transparency, the display's size, Arbor killed |
 | `check-F52.sh`, `check-F63.sh` | not landed, trunk | **never**: end with 77 | | Virtual displays, Accessibility taken from every app |
 | `check-F59.sh` | not landed | safe | 30 s | During a carry nobody's app gets arrows, ↩ or ⎋ |
 | `shots-F04.sh`, `shots-F34.sh` | not landed | safe | 3 min, 60 s | Test windows go to the Dock and come back; one is closed by its tab's button |
@@ -1241,6 +1242,7 @@ swift build -c release --product arbor-sim                             # four ti
 .build/debug/arbor-sim replay --frames < script.txt                    # … and after each step Arbor's own moves, then where every window is
 .build/debug/arbor-sim ways-back < script.txt                          # which of Float All, crash and launch, quit returns every window
 ARBOR_CHAOS_ALL_ON=1 .build/release/arbor-sim hunt 1 2000 300          # everything that ships switched off, switched on together
+ARBOR_CHAOS_BEHIND=1 .build/release/arbor-sim hunt 1 2000 300          # the trial `outOfViewIsBehind` on, which no other walk switches on; goes with any of the others
 ARBOR_CHAOS_DESKS=1 .build/release/arbor-sim hunt 1 2000 300           # walks about displays: ten times the changes, in a Mac's orders, each display keeps its size
 ARBOR_CHAOS_WINDOWS_FIRST=1 .build/release/arbor-sim hunt 1 2000 300   # mostly the order in which the windows speak before the displays; a window has spoken 1 to 40 s before
 .build/release/arbor-sim hunt 1 2000 300 --pass=slot,undo-redo         # walks on past those rules too, counting them: for a hunt after one rule that others would end first
