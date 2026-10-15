@@ -313,6 +313,9 @@ public final class FakeMac: @unchecked Sendable {
     monitors.removeAll()
   }
 
+  /// Arbor is started again, a new process.
+  public func arborIsBack() { arborHasGone = false }
+
   /// Something happens on this Mac so much later, whatever Arbor's main thread is doing by then.
   public func later(_ seconds: TimeInterval, _ action: @escaping () -> Void) { send(after: seconds, from: .system, "", action) }
 
@@ -526,6 +529,8 @@ extension FakeMac {
     /// When the notice that it came forward was delivered, `NSWorkspace` still named another app.
     public internal(set) var noticeOutranTheProperty = false
 
+    /// Calls it has answered and not carried out yet (`Manners.lateCalls`).
+    var callsStillToCarryOut = 0
     /// How long Arbor's main thread has waited for it in vain since it last began to hang.
     public internal(set) var secondsWaitedForInThisHang: TimeInterval = 0
 

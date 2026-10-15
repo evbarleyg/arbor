@@ -189,8 +189,13 @@ extension FakeMac {
       if attribute == "AXSize", !window.isResizable { return .failure }
     }
     let lag = manners.lag(upTo: manners.lateCalls)
-    if lag > 0 {
-      appDoes(app, after: lag, "pid \(pid) carries out, late: \(attribute)") { [self] in _ = carryOut(value, attribute, element, app) }
+    // An app reads what it is sent in order: behind a call that still waits, the next waits too.
+    if lag > 0 || app.callsStillToCarryOut > 0 {
+      app.callsStillToCarryOut += 1
+      appDoes(app, after: lag, "pid \(pid) carries out, late: \(attribute)") { [self] in
+        app.callsStillToCarryOut -= 1
+        _ = carryOut(value, attribute, element, app)
+      }
       return .success
     }
     return carryOut(value, attribute, element, app)

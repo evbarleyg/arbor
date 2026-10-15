@@ -145,8 +145,13 @@ final class Book {
     }
   }
 
-  /// Whether a failure of this check would be news.
-  func isNew(_ story: Story, _ what: String) -> Bool { known["\(story.name): \(what)"] == nil }
+  /// Whether a failure of this check would be news. `count`: for a rule of the walk, in how many seeds it breaks.
+  func isNew(_ story: Story, _ what: String, count: String? = nil) -> Bool {
+    let key = "\(story.name): \(what)"
+    guard known[key] != nil else { return true }
+    guard let count, options.walkSeeds == nil else { return false }
+    return sometimes.contains(key) || knownCounts[key] != count
+  }
 
   /// Tells the chosen stories. Returns the exit code.
   func tellAll() -> Int32 {

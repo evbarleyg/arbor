@@ -16,6 +16,8 @@ import Foundation
 struct WalkManners: Equatable {
   var name: String
   var overtaking = false, stale = false, repeatsAndDrops = false, lateCalls = false
+  /// 1: the layer alone. 2: the real controller on top (WalkUpstairs.swift).
+  var storey = 1
 
   static let all: [WalkManners] = [
     // The control: on a Mac that behaves, nothing may be found. A rule that fails here is a wrong rule, or a wrong model.
@@ -26,6 +28,16 @@ struct WalkManners: Equatable {
     WalkManners(name: "late calls", lateCalls: true),
     WalkManners(name: "all four", overtaking: true, stale: true, repeatsAndDrops: true, lateCalls: true),
   ]
+
+  /// At storey two: the control, and everything at once. Which kind of manners does what is for storey one to tell.
+  static let upstairs: [WalkManners] = [all[0], all[5]].map { manners in
+    var manners = manners
+    manners.storey = 2
+    manners.name = "upstairs, " + manners.name
+    return manners
+  }
+
+  var rules: [String] { storey == 2 ? RuleUpstairs.all : Rule.all }
 
   func apply(to mac: FakeMac, seed: UInt64) {
     final class Dice { var random: ChaosRandom; init(_ seed: UInt64) { random = ChaosRandom(seed: seed) } }
@@ -50,6 +62,8 @@ struct WalkStep: Equatable {
   enum Kind: String, CaseIterable {
     case launch, quit, dies, open, dialog, close, putAway, reopen, click, activate, minimize, restore, hide, move, rename
     case drag, dragLost, resize, hang, wake, space, tab, chooseTab, arborMoves, arborFocuses, arborMinimizes
+    // At storey two: what a person asks of Arbor.
+    case dock, float, arrange, zoom, out, stepIn = "in", back, showAll, focus, pause, resume, restart
   }
   var kind: Kind
   var a: Int
@@ -63,6 +77,7 @@ struct WalkStep: Equatable {
   var isByHand: Bool {
     switch kind {
     case .click, .activate, .minimize, .restore, .hide, .drag, .dragLost, .resize, .space, .tab, .chooseTab, .close, .putAway, .reopen, .launch, .quit: true
+    case .dock, .float, .arrange, .zoom, .out, .stepIn, .back, .showAll, .focus, .pause, .resume, .restart: true
     case .dies, .open, .dialog, .move, .rename, .hang, .wake, .arborMoves, .arborFocuses, .arborMinimizes: false
     }
   }
@@ -80,9 +95,12 @@ struct WalkStep: Equatable {
     self.init(kind: kind, a: a, b: b, gap: words.count > 3 ? Double(words[3].dropFirst()) : nil)
   }
 
-  static func script(seed: UInt64, steps: Int) -> [WalkStep] {
+  static func script(seed: UInt64, steps: Int, storey: Int = 1) -> [WalkStep] {
     var random = ChaosRandom(seed: seed)
-    let weights: [(weight: Int, value: Kind)] = [
+    let weights: [(weight: Int, value: Kind)] = storey == 2 ? [
+      (2, .launch), (2, .quit), (8, .open), (6, .close), (9, .click), (8, .activate), (4, .minimize), (5, .restore), (3, .hide), (3, .move), (8, .drag), (4, .resize), (2, .hang), (5, .wake),
+      (4, .space), (9, .dock), (4, .float), (4, .arrange), (8, .zoom), (4, .out), (3, .stepIn), (4, .back), (6, .showAll), (6, .focus), (2, .pause), (4, .resume), (3, .restart),
+    ] : [
       (3, .launch), (2, .quit), (1, .dies), (10, .open), (2, .dialog), (7, .close), (2, .putAway), (3, .reopen), (10, .click), (9, .activate), (5, .minimize),
       (6, .restore), (4, .hide), (5, .move), (2, .rename), (6, .drag), (2, .dragLost), (4, .resize), (3, .hang), (6, .wake), (6, .space), (3, .tab), (3, .chooseTab),
       (6, .arborMoves), (5, .arborFocuses), (2, .arborMinimizes),
@@ -347,6 +365,7 @@ final class Walk {
     case .chooseTab: if let tab = pick(openWindows.filter { !$0.isFrontTab }, a) { mac.chooseTab(tab) }
     case .arborMoves: if let id = pick(layer.allWindows().map(\.id), a) { _ = layer.setFrame(frame(b), of: id) }
     case .arborFocuses: if let id = pick(layer.allWindows().filter(\.isPresent).map(\.id), a) { layer.focus(id) }
+    case .dock, .float, .arrange, .zoom, .out, .stepIn, .back, .showAll, .focus, .pause, .resume, .restart: break
     case .arborMinimizes: if let window = pick(layer.allWindows(), a) { layer.setMinimized(window.id, !window.isMinimized) }
     }
   }
@@ -430,6 +449,29 @@ final class Walk {
 
 // MARK: - Many walks
 
+/// What can be walked with.
+@MainActor
+protocol Walking: AnyObject {
+  var mac: FakeMac { get }
+  func take(_ step: WalkStep)
+  /// The rules that are broken now.
+  func check() -> [Breach]
+  /// Whether whatever breaks after this rule may follow from it.
+  func spoils(_ rule: String) -> Bool
+  func startAfresh()
+  func end()
+  /// Whether Arbor has asked something of a window since this was last asked.
+  func hasBeenAtWork() -> Bool
+  /// It has not come to rest in the time it was given.
+  func noteUnrest()
+}
+
+extension Walk: Walking {
+  func spoils(_ rule: String) -> Bool { Rule.spoilTheRest.contains(rule) }
+  func hasBeenAtWork() -> Bool { false }
+  func noteUnrest() {}
+}
+
 @MainActor
 enum Walker {
   struct Finding {
@@ -449,7 +491,7 @@ enum Walker {
     _ script: [WalkStep], manners: WalkManners, seed: UInt64, ignoring: Set<String>, journal: Bool = false, seen: ((Breach) -> Void)? = nil,
     atTheEnd: (([String]) -> Void)? = nil
   ) -> (breach: Breach, after: Int, journal: [String])? {
-    let walk = Walk(manners: manners, seed: seed, keepsJournal: journal)
+    let walk: any Walking = manners.storey == 2 ? WalkUpstairs(manners: manners, seed: seed, keepsJournal: journal) : Walk(manners: manners, seed: seed, keepsJournal: journal)
     stepsWalked = 0
     freshStarts = 0
     defer {
@@ -463,13 +505,20 @@ enum Walker {
         waited = walk.mac.secondsWaitedInVain
         walk.mac.pass(seconds)
       } while walk.mac.secondsWaitedInVain != waited
+      // Apps that carry out late what they are asked make a layout take several rounds. The rules are for when it is over, which has a rule of its own.
+      _ = walk.hasBeenAtWork()
+      for _ in 0..<6 {
+        walk.mac.pass(0.5)
+        if !walk.hasBeenAtWork() { return }
+      }
+      walk.noteUnrest()
     }
     func look(_ index: Int) -> (Breach, Int, [String])? {
       for breach in walk.check() {
         seen?(breach)
         if !ignoring.contains(breach.rule) { return (breach, index + 1, walk.mac.journal) }
         // What else is wrong now may follow from it.
-        if Rule.spoilTheRest.contains(breach.rule) {
+        if walk.spoils(breach.rule) {
           isSpoilt = true
           return nil
         }
@@ -556,15 +605,16 @@ enum Walker {
 /// Each kind of manners is a story, each rule a check: it holds if no seed breaks it.
 @MainActor
 func tellOfTheWalk(_ book: Book) {
-  let rules = Rule.all
-  for manners in WalkManners.all {
+  for manners in WalkManners.all + WalkManners.upstairs {
+    let rules = manners.rules
     book.story("the rude walk (\(manners.name))") { story in
-      let seeds = book.options.walkSeeds ?? 1...40
+      // Upstairs a step costs several times as much, and the whole run is to stay short.
+      let seeds = book.options.walkSeeds ?? (manners.storey == 2 ? 1...10 : 1...40)
       var first: [String: Walker.Finding] = [:]
       var counts: [String: Int] = [:]
       var (walked, freshStarts) = (0, 0)
       for seed in seeds {
-        let script = WalkStep.script(seed: seed, steps: book.options.walkSteps)
+        let script = WalkStep.script(seed: seed, steps: book.options.walkSteps, storey: manners.storey)
         // A rule that has broken is left out from then on, so that the walk goes on and the others get their turn.
         var broken: Set<String> = []
         while let found = Walker.run(script, manners: manners, seed: seed, ignoring: broken) {
@@ -580,21 +630,24 @@ func tellOfTheWalk(_ book: Book) {
       }
       // How much of a net it was must not go unsaid.
       book.remark("the rude walk (\(manners.name)) took \(walked) of \(seeds.count * book.options.walkSteps) steps, and started the layer afresh \(freshStarts) times after a listed fault")
-      if book.options.heardFile != nil, book.isWholeRun { book.writeDown(Walker.heard(manners: manners, seeds: seeds, steps: book.options.walkSteps)) }
+      if book.options.heardFile != nil, book.isWholeRun, manners.storey == 1 { book.writeDown(Walker.heard(manners: manners, seeds: seeds, steps: book.options.walkSteps)) }
       for rule in rules {
         guard let finding = first[rule] else {
           story.check(rule, true)
           continue
         }
         let others = Set(rules).subtracting([rule])
-        let short = Walker.shrink(finding.script, manners: manners, seed: finding.seed, rule: rule, ignoring: others)
+        let count = "\(counts[rule] ?? 0) of \(seeds.count) seeds"
+        // To make a script short takes most of a run's time. What is listed, and breaks as often as listed, has been looked at.
+        let isNews = book.options.isVerbose || book.isNew(story, rule, count: count)
+        let short = isNews ? Walker.shrink(finding.script, manners: manners, seed: finding.seed, rule: rule, ignoring: others) : finding.script
         let text = short.map(\.text).joined(separator: "; ")
-        let again = Walker.run(short, manners: manners, seed: finding.seed, ignoring: others, journal: true)
+        let again = isNews ? Walker.run(short, manners: manners, seed: finding.seed, ignoring: others, journal: true) : nil
         story.check(
           rule, false,
           "\(counts[rule] ?? 0) of \(seeds.count) seeds; first seed \(finding.seed): \(again?.breach.detail ?? finding.breach.detail)\n      --replay '\(manners.name)|\(finding.seed)|\(text)'",
-          count: "\(counts[rule] ?? 0) of \(seeds.count) seeds")
-        if book.options.isVerbose || book.isNew(story, rule) {
+          count: count)
+        if isNews {
           story.onFailure { "    \(rule): seed \(finding.seed), \(short.count) steps of \(finding.script.count)\n" + (again?.journal ?? []).map { "      " + $0 }.joined(separator: "\n") }
         }
       }
@@ -606,7 +659,7 @@ func tellOfTheWalk(_ book: Book) {
 @MainActor
 func replayWalk(_ text: String) -> Int32 {
   let parts = text.components(separatedBy: "|")
-  guard parts.count == 3, let manners = WalkManners.all.first(where: { $0.name == parts[0] }), let seed = UInt64(parts[1]) else {
+  guard parts.count == 3, let manners = (WalkManners.all + WalkManners.upstairs).first(where: { $0.name == parts[0] }), let seed = UInt64(parts[1]) else {
     print("--replay wants 'manners|seed|step; step; …', as a failing walk prints it")
     return 2
   }
@@ -617,7 +670,7 @@ func replayWalk(_ text: String) -> Int32 {
     return 2
   }
   var all: [Breach] = []
-  _ = Walker.run(script, manners: manners, seed: seed, ignoring: Set(Rule.all), journal: true, seen: { all.append($0) }) { for line in $0 { print(line) } }
+  _ = Walker.run(script, manners: manners, seed: seed, ignoring: Set(manners.rules), journal: true, seen: { all.append($0) }) { for line in $0 { print(line) } }
   if all.isEmpty { print("no rule is broken") }
   for breach in all { print("✘ \(breach.rule): \(breach.detail)") }
   return all.isEmpty ? 0 : 1

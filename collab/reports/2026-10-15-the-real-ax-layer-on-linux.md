@@ -1,10 +1,10 @@
 # Report: the real Accessibility layer, run on Linux on a model of a rude Mac
 
 - Date: 2026-10-15
-- Branch: test/the-real-ax-layer-on-linux, then test/mac-on-linux-round-2
+- Branch: test/the-real-ax-layer-on-linux, then test/mac-on-linux-round-2 and -round-3
 - What: `make mac-on-linux` (scripts/mac-on-linux/README.md; docs/TESTING.md, section 9)
 
-`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 279 stories (1,083 ✔, 80 ✘ known, on the trunk at 4091c0f; 181 stories at the end of round 1) and a random walk under four kinds of bad manners, seven seconds to run. The run enters 92 % of the lines and 81 % of
+`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 294 stories (1,204 ✔, 91 ✘ known, on the trunk at 9b4cd51; 181 stories at the end of round 1) and a random walk under four kinds of bad manners, at both storeys, five seconds to run. The run enters 92 % of the lines and 81 % of
 the regions of `AXWindowSystem.swift` (`COVERAGE=1`). Twenty-three changes that take known cures out of a copy of the layer all turn their stories red (`make mac-on-linux-selftest`).
 
 This report is what it found. Nothing in the layer was changed. Each finding says what a person would see, the lines concerned, and how sure the model is of the manners that bring it out: SEEN on a Mac, or GUESS. Every red check is listed in
@@ -30,6 +30,10 @@ forty lines further down now. **The findings of round 2 (N9 to N15, the addition
 | N13 | **a window goes out of view seconds AFTER Arbor is gone** | a hang in the middle of a move out of view, a quit meanwhile | seen on a hosted Mac |
 | N14 | Arbor's request for the keyboard, held up by a slow app, takes the keyboard away from where the person has gone meanwhile | an app busy for less than the timeout | the layer's own logic |
 | N15 | a command answers after 3.3 s because one app is slow | an app that takes 0.1 s over a call | the layer's own logic; slow answers seen |
+| U1 | **a window dropped where there is no room for it goes out of view, as a tile, and what is typed goes into it** | nothing: a polite Mac, 1024 points, three windows | the controller's; the stand-ins show the same; no net asks |
+| U2 | a window that opened over a docked one jumps, and shrinks, when something else happens | nothing: a polite Mac | the controller's; known to the chaos lab (`moved-unasked`, severity 2) |
+| U3 | the view goes to an empty Desktop, and what is typed goes into a window out of view | nothing: `arrange`, `desktop` | the controller's; the stand-ins show the same; no net asks |
+| U4 | ⌘Tab to a hidden app whose windows are on another Space: its window has the keyboard and stays out of view | the focus reported before the Space's notice | guess as to the order |
 | L1 | **a drag of any length is not seen at all; nothing is logged** | the window server a moment late, the pointer more than 24 points away | found on a guess; **since SEEN on a hosted Mac**: three of four drags of 1,244 to 1,991 points in 30 steps never taken for drags, nothing logged. **CURED by a3c0281**, which was held against the stories twice before it was published: 61 listed lines deleted, 2 listed anew (what its author names as left), red again with the cure taken out |
 | L2 | a flick is not seen | the gesture over before Arbor hears of the press | the layer's own logic |
 | L3 | **(new with 37d0f05) a drag of a second is not seen** | the press heard half a second late | the layer's own logic; a regression. **531885f meant to cure it, did not, and lost two drags more (L4); its lines are out again** (L4) |
@@ -171,6 +175,47 @@ answers within the second, 316-318 go on to raise and activate without asking wh
 HOW SURE: N12 and N13 SEEN on a hosted Mac (traces of a hang at a quit, at a pause, while the view moves: a park is carried out on waking as well as a fetch). N14, N15: the layer's own logic; that big apps answer slowly is seen (100 to 190 ms of the layer's work for one focus report with Safari and Finder).
 TO CONSIDER: N12, N13: at `stop()`, send the fetch to every window that is or may be out of view, with a short timeout and without waiting for an answer: what lies in the queue last wins. N14: after 307, `guard activations == before`. N15: the lanes.
 
+## What the walk at storey two found (round 3)
+
+The real `Controller` on the real layer on the model, with commands among the steps, a pause, a quit and a new start; the rules look at the model's SCREEN and hold it against what the controller says it has in view and out of view (`tests/WalkUpstairs.swift`). The polite control first: a rule that breaks there is news. 400 seeds × 40 steps,
+polite and all four. N1 (a place kept for a window that closed without a word: 21 of 400 under all four, none on a polite Mac) and N9 (15 of 400; the main thread's waits in 96) show upstairs as expected. What is new is the controller's, not the layer's. For each: does `arbor-sim` show the same on the stand-ins, and which of the chaos lab's nets
+should have had it.
+
+### U1. A window dropped where there is no room for it is shown as a tile, out of view, and keeps the keyboard   (FOUND BY THE WALK ON A POLITE MAC; shortest `arrange; drag`)
+WHAT A PERSON SEES: three windows arranged on a display of 1024 points. Take one by its title bar and drop it beside another. It vanishes: where it was dropped there is a tile with its name, and a line on screen says "Too small to show: click the tile to zoom in". The press gave it the keyboard, and it still has it, at 1023,673: what is typed next
+goes into a window nobody can see. With five windows and a drop at the screen's edge EVERYTHING turns into tiles: six tiles, no window, the keyboard in one of the five.
+STORIES: "three windows are arranged, and one is dropped beside another where there is no room for it"; "five windows are arranged on 1024 points, and one is dropped at the right edge of the screen, macOS's tiling off". Walk: 3 of 400 polite seeds, 3 of 400 under all four.
+ON THE STAND-INS: THE SAME. `arbor-sim "display-size 1024x768 31" "open App1 420x320" "open App1 380x300" "open App2 460x300" arrange "focus 101" "drag 101 492 344" "wait 2" health type` → `HEALTH ok`, `typed into 101`, `2 out of view`. (`focus 101` stands for the press: the stand-in's `drag` gives the pressed window no keyboard, which a real
+press does. Without it `type` goes into 103, which has become a tile as well.)
+WHICH NET MISSES IT: the keyboard's nets (`switched-to-out-of-view`, `app-switch-out-of-view`) ask only in the step in which the person SWITCHED to a window (`seven.switchedTo`); a drop is no switch, the less so as the stand-in's drag reports no focus. `launch-keyboard-in-a-tile` is the same sight at a launch, and decided (Q16). Nothing asks the standing
+question: once all has come to rest, is the window with the keyboard in view? `health` does not ask it either.
+HOW SURE: the controller's own logic, on both sets of windows.
+TO CONSIDER: the window in the hand is the one the person is looking at: after a drop that leaves it a tile, go to it (what a click on the tile does), or refuse the drop as the preview could have said. For the nets: a standing `keyboard-out-of-view`, asked at rest, with the held view and the peek excepted as in `switchedToViolations`; and let
+`FakeWindowSystem`'s drag give the pressed window the keyboard.
+
+### U2. A window that opened over a docked one is left there, and the next layout, whatever brings it about, pushes it onto the Desktop and shrinks it   (KNOWN; confirmed on the real layer)
+WHAT A PERSON SEES: a window is docked at the top. Its app opens another window, which lies half over it, and stays there. Two steps later ANOTHER app quits: the new window jumps 124 points down. In another walk it was also shrunk, from 440 to 337 points, to fit the Desktop.
+STORY: "a window opens over a docked one, and then another app quits". Walk: 9 of 400 polite seeds, 18 of 400 under all four.
+ON THE STAND-INS: THE SAME, AND LISTED: `moved-unasked` in `Sources/ArborTesting/ChaosKnownFailures.swift`, severity 2, with two scripts, in nearly these words. No net misses it.
+TO CONSIDER: either moment may be right, at the opening or never, but not "at the next thing that happens".
+
+### U3. The view goes to a Desktop with nothing on it, and the keyboard stays with a window out of view   (FOUND BY THE WALK ON A POLITE MAC; shortest `arrange; desktop`)
+WHAT A PERSON SEES: everything is docked. ⌃⌥D, or `back` to a Desktop whose one window has closed since: an empty Desktop, no window in view, and what is typed goes into the docked window that had the keyboard, now at 1023,673.
+STORIES: "with nothing floating, the view goes to the Desktop (desktop)", "… (back)". Walk: 3 of 400 polite seeds.
+ON THE STAND-INS: THE SAME. `arbor-sim "open App1" "open App2" arrange desktop "wait 2" health type` → `camera n0  hidden: w101 w102`, `HEALTH ok`, `typed into 102`. With a window on the Desktop the keyboard goes to it (`typed into 103`): a command that moves the view hands the keyboard to a window in view if there is one; with none it stays.
+WHICH NET MISSES IT: the same as U1: nobody switched to anything, so nobody asks.
+HOW SURE: the controller's own logic. Whether it is a fault is the product's to say: the person asked for that view.
+TO CONSIDER: give the keyboard to nobody that can be typed into (Finder's desktop, as a click on the wallpaper does). The same standing net would ask.
+
+### U4. ⌘Tab to a hidden app whose windows are on another Space   (walk, 1 of 400 polite seeds; for the record)
+`upstairs, polite|308|dock 51 88; hide 68 21; dock 92 81; in 16 60; space 80 85; focus 8 68; activate 54 90`: macOS shows the app again and switches Space; the layer reports `focused` 0.34 s before the Space's notice; the controller does not act on it (the window is still "on another Space"), and nobody says it again afterwards: the window
+has the keyboard at 1023,673, the view stays on another. HOW SURE: that the app comes forward before the notice is a GUESS (N3's probe would settle it).
+
+### Also seen, and no fault
+- Under late calls (apps that carry out up to 80 ms late what they are asked) `arrange` of five windows takes 2.06 s and 112 calls, in three rounds, to come to rest; then all is right. So the walk looks when Arbor has come to rest, and "within five seconds" is a rule of its own, which never broke.
+- A window restored from the Dock gives the display two points back; `displaysChanged` is reported, and the docked windows are left a point off their new places. The rule allows two points.
+- The model was wrong five times on the way, each time ruder or tidier than a Mac: calls to one app overtook each other under late calls; a restore "by hand" left the app in the background; the walk took hold of windows that lay under others, closed what did not show, and called lost what a hand had just put at the screen's edge.
+
 ## What held (no finding), under all four kinds of bad manners, 400 seeds × 40 steps × 6
 every window is announced once; no window is reported gone that is still open; nothing is reported about a window that was not announced or is gone; what the layer has announced is what it lists; flags (minimized, hidden, full screen, Space) and frames right after two seconds;
 the layer's last word on the keyboard in the lenient sense (keyboardFocusMoved + focusedWindow()); no drag or resize left open with the button up; a drag or resize begins once and ends once. Duplicated notifications, a second mouse-up, dropped `AXMoved`, swallowed releases and late calls found NOTHING.
@@ -268,7 +313,7 @@ CHEAP AND WORTH HAVING WHATEVER THE CURE: a debug line at 1249 ("the press on \(
 - The self-test has a change for the other direction already ("a drag is known only by what the app reports").
 
 ### How sure
-SEEN: the layer's code paths above run unmodified; `WindowGrab` is the real one. The traces' pointer steps and rests. GUESS: that a loaded window server starts late and then catches up with the pointer in one jump (modelled so); how the run loop orders a backlog (all three orders played; no difference).
+SEEN: the layer's code paths above run unmodified; `WindowGrab` is the real one. The traces' pointer steps and rests. That a loaded window server starts late was a GUESS when this was written and is SEEN since, with its number, about 0.1 s ("Has the model been right?", below); that it then catches up with the pointer in one jump (modelled so, and behind all the way as well) is still a GUESS; how the run loop orders a backlog (all three orders played; no difference).
 The 15 red checks are listed in scripts/mac-on-linux/known-failures.txt, so whoever cures this deletes the lines.
 
 ## The cure for R2, held against the stories before it landed
@@ -331,7 +376,7 @@ What a model says is worth what has been checked against Macs. So far:
 
 | | |
 |---|---|
-| **Right, before a Mac showed it** | **L1.** Found on a guess (the window server a moment late, the pointer more than 24 points away: no drag at all, nothing logged). Hours later SEEN on a hosted Mac: three of four long drags in coarse steps were never taken for drags, nothing logged; at the first look the pointer was 27 points out and the window still in its place. The stories in coarse steps give the same picture, and the cure, which has landed (a3c0281), was shaped by two verdicts from them |
+| **Right, before a Mac showed it** | **L1.** Found on a guess (the window server a moment late, the pointer more than 24 points away: no drag at all, nothing logged). **Since proven on a hosted Mac, with a control.** On the code before the cure, drags in steps of 71, 45 and 29 points were seen 1, 0 and 1 times of 6, in steps of 22, 14 and 7 points 6 of 6 each: the line lies exactly at the 24 points. In the trace the window's first move comes 108 ms after the first dragged event, a quarter of a second after the press. After the cure: 52 of 52. (The traces are to come into the repository.) How it was first seen: Hours later SEEN on a hosted Mac: three of four long drags in coarse steps were never taken for drags, nothing logged; at the first look the pointer was 27 points out and the window still in its place. The stories in coarse steps give the same picture, and the cure, which has landed (a3c0281), was shaped by two verdicts from them |
 | **Right, without having been built for it** | **Safari's and Finder's order at a close.** Told only that these apps drop a closing window from their list at once, the real layer on the model says `destroyed` and then `focused` of the sibling, 15 to 20 ms apart: the order, and about the gap, of recordings of hosted Macs (4 to 13 ms, once 91) |
 | **Right, afterwards** | **R2**: red at both storeys while it was open, green with 5726225, red again with the cure taken out. **N13**: the park carried out after Arbor is gone, measured on a hosted Mac, comes out of the model as told: "AXPosition = 1023,767", 7 s after the quit. **A repeat from nothing** of the verdict on the mended cure by another hand gave the same 61 and 2 |
 | **Wrong, and corrected by a recording** | **The order at a minimize.** The model posted "miniaturized" and then the sibling's focus. A recording has the focus 6.6 ms BEFORE, at the end of the flight. Swapped; no story changed its verdict |

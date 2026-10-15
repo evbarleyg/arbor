@@ -92,7 +92,7 @@ extension FakeMac {
   }
 
   /// The frontmost window that shows at a point, within `reach` points of its frame: macOS's resize area lies to either side of the border.
-  func windowShowing(at point: CGPoint, reach: CGFloat = 0) -> Window? {
+  public func windowShowing(at point: CGPoint, reach: CGFloat = 0) -> Window? {
     stack.first { isShowing($0) && $0.alpha > 0 && listedBounds(of: $0).insetBy(dx: -reach, dy: -reach).contains(point) }
   }
 

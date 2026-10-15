@@ -140,10 +140,12 @@ extension FakeMac {
     }
   }
 
-  /// A click on it in the Dock, or its app. The focus is reported first, 4 to 8 ms before "deminiaturized" (`minimize-restore`, `app-minimize`).
-  public func restore(_ window: Window) {
+  /// Its app brings it back, or, `byHand`, a click on it in the Dock, which brings the app forward as well (that it does so at the click, not at the end of the flight, is a GUESS). The focus is reported first,
+  /// 4 to 8 ms before "deminiaturized" (`minimize-restore`, `app-minimize`: both the app's own call).
+  public func restore(_ window: Window, byHand: Bool = false) {
     guard window.isOpen, window.isMinimized else { return }
     note("w\(window.number) is being restored")
+    if byHand, frontmost !== window.app { activate(window.app) }
     window.isBusyUntil = now + timing.minimizing + 0.05
     appDoes(window.app, after: timing.minimizing, "") { [self] in
       guard window.isOpen, window.isMinimized else { return }
