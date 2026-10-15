@@ -1,0 +1,84 @@
+# check-review-ux 2026-10-15T04:17Z on macOS 26.6.2, commit 6d0c59d
+
+== three windows: [1 | Desktop | 2 / 3], shortcuts and the menu bar item on
+
+== the frame shortcut, twice
+  ✔ ⌃⌥↩ frames the focused window: the others go out of view
+  ✔ ⌃⌥↩ again returns to everything
+
+== home, and the neighbour with ⇧
+  ✔ framed on 1
+  ✔ ⌃⌥⇧→ moves to the neighbouring space (the Desktop): 1 goes out of view
+  ✔ ⌃⌥0 shows everything
+
+== the menu while running
+
+== pause with ⌃⌥⎋ while framed
+  ✔ 1 and 2 are out of view
+  ✔ status says paused
+  ✔ every window is back in view
+  ✔ none of Arbor's own windows is on screen
+  ✔ only the shortcut that ends the pause is registered
+
+== while paused Arbor reacts to nothing
+  ✔ a real drag to the left edge shows no preview
+  ✔ the drag was one: window 1 is somewhere else
+  ✔ still paused
+  ✔ window 2 has not moved
+
+== the menu while paused
+
+== resume with ⌃⌥⎋
+  ✔ status says running
+  ✔ the view is back on 3: 1 is out of view again
+  ✔ 2 is out of view again
+  ✔ 3 is docked and in view
+  ✔ all the shortcuts are registered again
+  ✔ ⌃⌥Space works again
+  ✔ window 1, dragged away during the pause, is back in its slot
+
+== a timed pause
+  ✔ paused
+  ✔ it resumed by itself after three seconds
+
+== for the record: what a click on the wallpaper does
+  ✔ 2 has the focus
+  ✔ every window is in view after the second click
+
+== float all with ⌃⌥⇧F
+  ✔ framed on 1
+  ✔ nothing is docked
+  ✔ every window is in view
+
+== arborctl without Arbor
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ help needs no running Arbor
+
+== a window that cannot grow sits in the middle of its slot
+  ✔ it kept its own width
+  ✔ it is centred across
+  ✔ it is centred down
+  ✔ it stays put when a neighbour's other edge moves
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== ⌘Tab to an app whose focused window is out of view
+  ✔ 2 is its app's focused window
+  ✔ the other app has the keyboard
+  ✔ 2 is out of view, its app in the background
+  ✔ ⌘Tab to its app brings 2 back into view
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+47 passed, 0 failed
