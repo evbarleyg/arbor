@@ -1135,6 +1135,8 @@ overlays() { "$ARBOR_POINTER" windows --pid "$ARBOR_PID"; }
 
 has_overlay() { overlays | awk -v level="$1" '$3 == level && $8 == "on" { found = 1 } END { exit !found }'; }
 
+# The middle of Arbor's menu bar item. It is a row of buttons, and its middle is Show the Desktop: `rightclick $(status_item)` opens the menu, wherever in
+# the item it lands. Ask each time: paused, held or without the permission the item is one glyph, somewhere else.
 status_item() { "$ARBOR_POINTER" status-item "$ARBOR_PID"; }
 status_item_frame() { "$ARBOR_POINTER" status-item "$ARBOR_PID" --frame; }
 

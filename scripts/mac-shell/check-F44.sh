@@ -74,7 +74,7 @@ session ARBOR_KEYBOARD_LAYOUT=com.apple.keylayout.German
 check "Arbor read the layout" last_layout_is German
 german_checks
 read -r item_x item_y <<< "$(status_item)"
-click "$item_x" "$item_y"
+rightclick "$item_x" "$item_y"
 shot 01-menu-german
 key escape
 arbor_stop

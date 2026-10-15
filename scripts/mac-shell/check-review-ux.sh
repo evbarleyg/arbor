@@ -60,8 +60,9 @@ key ctrl+opt+0
 check "⌃⌥0 shows everything" eventually all_on_screen
 
 step "the menu while running"
-read -r item_x item_y <<< "$(status_item)"
-click "$item_x" "$item_y"
+# The item is a row of buttons, and its middle is Show the Desktop: a secondary click opens the menu wherever it lands.
+# shellcheck disable=SC2046
+rightclick $(status_item)
 shot 01-menu-running
 key escape
 
@@ -83,24 +84,37 @@ step "while paused Arbor reacts to nothing"
 before=$(real_frame_of "$W2")
 key ctrl+opt+space
 key ctrl+opt+shift+f
+# A pause gives every window its own frame back (Q21), and there window 1 lies under the others: it comes to the front first, by a click low in it, or
+# the drag takes hold of another window's content and drags nothing.
+read -r x y w h <<< "$(real_frame_of "$W1")"
+click $((x + 30)) $((y + h - 30))
+own=$(real_frame_of "$W1")
 # shellcheck disable=SC2046
 drag $(real_titlebar_of "$W1") 3 400 --no-release
 check "a real drag to the left edge shows no preview" no_overlays
 release
 sleep 1
+check "the drag was one: window 1 is somewhere else" test "$(real_frame_of "$W1")" != "$own"
 check "still paused" paused
 check "window 2 has not moved" test "$(real_frame_of "$W2")" = "$before"
 echo "window 1 was left where it was dropped: $(real_frame_of "$W1")"
 shot 04-dragged-while-paused
+# The keyboard goes back to the window that was framed, or the resume would rightly follow it to window 1.
+read -r x y w h <<< "$(real_frame_of "$W3")"
+click $((x + w - 30)) $((y + h - 30))
 
 step "the menu while paused"
-click "$item_x" "$item_y"
+# Asked again: paused, the item is one glyph, somewhere else.
+# shellcheck disable=SC2046
+rightclick $(status_item)
 shot 05-menu-paused
 key escape
 
 step "resume with ⌃⌥⎋"
 key ctrl+opt+escape
 check "status says running" eventually running
+# A pause ends a trace.
+arbor_record
 check "the view is back on 3: 1 is out of view again" eventually is parked "$W1"
 check "2 is out of view again" eventually is parked "$W2"
 check "3 is docked and in view" eventually is on_screen "$W3"

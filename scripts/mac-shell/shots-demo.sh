@@ -144,7 +144,7 @@ shot 20-menu-bar
 if item=$(status_item); then
   echo "Arbor's menu bar item is at $item"
   # shellcheck disable=SC2086
-  click $item
+  rightclick $item
   shot 21-menu-open
   key escape
 else

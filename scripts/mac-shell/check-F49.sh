@@ -46,7 +46,8 @@ corner() {
   [ -n "$h" ] || die "the call has no frame"
   echo "$((sx + sw - w / 2 - 40)) $((sy + 32))"
 }
-same_place() { [ "$(real_frame_of "$CALL")" = "$1" ]; }
+# Says where it is when that is somewhere else: `check` keeps only the verdict.
+same_place() { [ "$(real_frame_of "$CALL")" = "$1" ] || { echo "    the call is at $(real_frame_of "$CALL"), not at $1"; return 1; }; }
 camera() { arbor_ask json | python3 -c 'import json, sys; print(json.load(sys.stdin)["displays"][0]["camera"])'; }
 camera_is() { [ "$(camera)" = "$1" ]; }
 running() { "$ARBOR_BIN/arborctl" status | grep -q "^running"; }
@@ -183,8 +184,10 @@ shot 05-dragged-over-an-edge
 release
 check "dropped there it still floats" eventually is floating "$CALL"
 check "and is still pinned" is pinned "$CALL"
-# shellcheck disable=SC2046
-drag $(titlebar_of "$CALL") 2 300 --no-release
+# By the left end of its title bar, so that most of the call stays on the display. Taken by the middle it ended 251 points off the edge, and the next
+# drag pressed where no pointer can be, at x -11.
+read -r x y w h <<< "$(frame_of "$CALL")"
+drag $((x + 100)) $((y + 12)) 2 300 --no-release
 check "at the screen edge: no preview" is_not_shown 3
 release
 check "dropped there it still floats" eventually is floating "$CALL"
@@ -193,6 +196,7 @@ check "and is still pinned" is pinned "$CALL"
 drag $(titlebar_of "$CALL") $(corner)
 sleep 1
 home_frame=$(real_frame_of "$CALL")
+echo "the call is at $home_frame"
 ctl zoom "$W1"
 call_is_fine "$W1" "where it was dropped, after the next camera move"
 ctl show-all
@@ -202,13 +206,13 @@ step "the shortcut and the menu"
 click $(center_of "$CALL")
 check "the call has the keyboard" eventually is focused "$CALL"
 read -r item_x item_y <<< "$(status_item)"
-click "$item_x" "$item_y"
+rightclick "$item_x" "$item_y"
 shot 06-menu-with-a-tick
 key escape
 key ctrl+opt+shift+d
 check "⌃⌥⇧D (from bindings) unpins" eventually is_not pinned "$CALL"
 check "and moves nothing" same_place "$home_frame"
-click "$item_x" "$item_y"
+rightclick "$item_x" "$item_y"
 shot 07-menu-without-a-tick
 key escape
 key ctrl+opt+shift+d
@@ -242,6 +246,8 @@ sleep 1
 check "paused: the call has not moved" same_place "$home_frame"
 ctl resume
 check "running again" eventually running
+# A pause ends a trace.
+arbor_record
 check "resumed: still pinned" eventually is pinned "$CALL"
 check "resumed: the call has not moved" same_place "$home_frame"
 
@@ -280,6 +286,7 @@ elif display_add 800 600 right; then
   # Arbor hears of it a second and a half after the displays have settled.
   sleep 3
   home_frame=$(real_frame_of "$CALL")
+  echo "the call is at $home_frame"
   ctl show-all
 fi
 
@@ -300,6 +307,7 @@ env ARBOR_ONLY_PIDS="$ARBOR_WINDOWS_PID,$CALL_PID" ARBOR_NO_PROMPT=1 ARBOR_DEBUG
 ARBOR_PID=$!
 started "$ARBOR_PID"
 check "running again" eventually running
+arbor_record
 check "relaunched: still pinned" eventually is pinned "$CALL"
 check "relaunched: the call has not moved" same_place "$home_frame"
 ctl zoom "$W1"

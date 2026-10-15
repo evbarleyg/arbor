@@ -144,7 +144,7 @@ check "no frame-rect command ran" mentions_are "frame-rect" 0
 
 step "the menu says so"
 read -r item_x item_y <<< "$(status_item)"
-click "$item_x" "$item_y"
+rightclick "$item_x" "$item_y"
 shot 02-menu-ticked
 key escape
 check "the app is still in front after the menu" front_is "$KEYS_ID"
@@ -267,7 +267,7 @@ space_before=$(received 49)
 key ctrl+opt+space
 check "⌃⌥Space reaches the app" eventually received_is 49 $((space_before + 1))
 read -r item_x item_y <<< "$(status_item)"
-click "$item_x" "$item_y"
+rightclick "$item_x" "$item_y"
 shot 04-menu-paused-for-app
 key escape
 key cmd+tab

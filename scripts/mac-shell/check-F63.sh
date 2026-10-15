@@ -37,7 +37,9 @@ allow() {
   [ -n "$ALLOWED_ROWS" ] || return 0
   tcc "UPDATE access SET auth_value = $1 WHERE service = 'kTCCServiceAccessibility' AND rowid IN ($ALLOWED_ROWS);"
   sudo killall -9 tccd 2>/dev/null
-  sleep 0.5
+  # Long enough for the daemon to be up again. With half a second, grants took Arbor seven to nine seconds to hear of (2026-10-15); in the probe, which
+  # left seven seconds between the steps, an eighth of one.
+  sleep 2
   [ -x "$ANNOUNCE" ] && "$ANNOUNCE"
   echo "$(arbor_now) Accessibility set to $1 for entries $ALLOWED_ROWS, the daemon restarted, the change announced"
 }
@@ -119,7 +121,9 @@ ctl status
 check "it counts the windows out of view" status_starts "Arbor's Accessibility permission was taken away, so it cannot move windows. 2 windows (ArborTestWindows) are out of view"
 check "no event tap is left" eventually taps_are 0
 check "only the four ways home are registered" eventually last_registered_is 4
-check "none of Arbor's own windows is on screen" test -z "$(overlays | awk '$8 == "on"')"
+# But for the window that asks for the permission back, which is an ordinary window (level 0) and is meant to be there.
+check "nothing Arbor draws over the Desktop is left on screen" test -z "$(overlays | awk '$8 == "on" && $3 != 0')"
+check "the window that asks for the permission back is up" test -n "$(overlays | awk '$8 == "on" && $3 == 0')"
 ctl show-all
 check "a command fails" test "$("$ARBOR_BIN/arborctl" show-all > /dev/null 2>&1; echo $?)" = 1
 check "2 is still out of view: nothing could be done" off_screen "$W2"

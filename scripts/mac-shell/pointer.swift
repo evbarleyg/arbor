@@ -602,11 +602,17 @@ struct Pointer {
 
     case "front":
       var pid: pid_t = 0
-      guard let application = attribute(AXUIElementCreateSystemWide(), kAXFocusedApplicationAttribute),
+      if let application = attribute(AXUIElementCreateSystemWide(), kAXFocusedApplicationAttribute),
         CFGetTypeID(application) == AXUIElementGetTypeID(),
         AXUIElementGetPid(application as! AXUIElement, &pid) == .success
-      else { fail("no app has the keyboard") }
-      print(pid)
+      {
+        print(pid)
+      } else if let application = NSWorkspace.shared.frontmostApplication {
+        // On GitHub's Macs the system-wide element answers nothing. A process that has just started reads this afresh.
+        print(application.processIdentifier)
+      } else {
+        fail("no app has the keyboard")
+      }
 
     case "screen-access":
       print(CGPreflightScreenCaptureAccess())

@@ -259,7 +259,7 @@ check "held again" status_says "the view is held"
 step "3f. the lock in the menu bar, and the menu"
 shot held-menu-bar
 # shellcheck disable=SC2046
-click $(status_item)
+rightclick $(status_item)
 sleep 0.5
 shot held-menu
 key escape

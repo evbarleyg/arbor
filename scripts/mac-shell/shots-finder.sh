@@ -134,6 +134,8 @@ check "open" eventually palette
 ctl pause
 check "pausing closed the palette" eventually no_palette
 ctl resume
+# A pause ends a trace.
+arbor_record
 
 # ⌘Tab brings a person's own app, or its full-screen Space, in front of the curtain, and nothing here puts it back.
 if on_throwaway_mac; then
@@ -283,7 +285,7 @@ check "reveal focused window 3" eventually is focused "$W3"
 step "the menu"
 if item=$(status_item); then
   # shellcheck disable=SC2086
-  click $item
+  rightclick $item
   shot 18-menu
   key escape
 fi

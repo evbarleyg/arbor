@@ -169,7 +169,7 @@ check "in either direction" about "${py%.*}" 400 2
 step "the menu"
 if item=$(status_item); then
   # shellcheck disable=SC2086
-  click $item
+  rightclick $item
   shot 10-menu
   key escape
 fi
