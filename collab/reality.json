@@ -10888,6 +10888,74 @@
     "scripts/mac-shell/witness.swift",
     "Sources/ArborCore/Settings.swift"
    ]
+  },
+  {
+   "id": "macos-calls-every-imported-key-the-same",
+   "kind": "toolchain",
+   "layer": "machine",
+   "expected": "`security import` gives a private key the name that comes with it in the file, so `security set-key-partition-list -l \"Arbor Local Signing\"` finds the key the script has just imported. And when that command fails, the password was wrong.",
+   "happened": "macOS 15.7.9 and 26.6.2 call every key they import \"Imported Private Key\", whichever openssl packed the file; macOS 14.8.9 gives it the name. By the name none was found (\"SecItemCopyMatching: The specified item could not be found in the keychain\"), and `scripts/make-signing-identity.sh` called that a wrong password, three times over, to whoever typed the right one. That was a fault of the script's. What a person did next is not known: the identity was in the keychain by then and stayed there, so the next build was signed with it unless it was removed. To leave the name out would have been no cure: the command then changes every signing key in the keychain, the person's own among them.",
+   "found": "`scripts/mac-shell/check-F13.sh`, then a probe of eleven trials, each in a keychain of its own, then `scripts/mac-shell/check-signing.sh`: hosted Macs with macOS 14.8.9, 15.7.9 and 26.6.2, on 2026-10-15.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [
+    "e2e: not a word about a password",
+    "e2e: with ours taken out again, not an attribute and not an access list of theirs has changed",
+    "tool: release-tools-test.sh"
+   ],
+   "copes": "scripts/make-signing-identity.sh asks for no password and takes none, looks for no key by name and changes no key's access list: it imports, signs something, and goes by that. A run that fails or is cut short takes out what it put in, and what is there already is tried before it is called fine. For whoever is without the identity, `make install` ends aloud when a build is signed ad hoc, and `doctor` and Check Setup say what that costs.",
+   "hurt": 3,
+   "sources": [
+    "scripts/make-signing-identity.sh",
+    "scripts/sign.sh",
+    "scripts/install.sh",
+    "scripts/mac-shell/check-signing.sh",
+    "docs/INSTALL.md"
+   ]
+  },
+  {
+   "id": "codesign-looks-only-on-the-search-list",
+   "kind": "toolchain",
+   "layer": "machine",
+   "expected": "`codesign --keychain <file>` signs with an identity in that file, so a script can keep a keychain of its own and leave the search list alone.",
+   "happened": "It finds the identity only if the file is on the search list as well, with or without leave to use the key: \"no identity found\" on macOS 26.6.2, \"The specified item could not be found in the keychain\" on 14.8.9 and 15.7.9, at once and without a dialog. `security find-identity` with the same file shows the identity all the while. codesign follows HOME to the list, as `security` does, so a throwaway HOME has a throwaway list.",
+   "found": "The same probe and `scripts/mac-shell/check-signing.sh`, on 2026-10-15. It is why `check-F13.sh` had never got past its second step on a Mac.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [
+    "e2e: it fails, and says that that is why",
+    "e2e: on that list and not on the account's: codesign follows HOME to the search list",
+    "tool: release-tools-test.sh"
+   ],
+   "copes": "scripts/make-signing-identity.sh and `scripts/sign.sh` say so when codesign fails and the keychain is not on the list, and do not advise removing an identity for it; `scripts/mac-shell/lib-F13.sh` puts its keychain on the throwaway HOME's list.",
+   "hurt": 4,
+   "sources": [
+    "scripts/make-signing-identity.sh",
+    "scripts/sign.sh",
+    "scripts/mac-shell/lib-F13.sh",
+    "scripts/mac-shell/check-signing.sh"
+   ]
+  },
+  {
+   "id": "no-dialog-came-and-an-unlocked-keychain-may-take-any-password",
+   "kind": "toolchain",
+   "layer": "machine",
+   "expected": "codesign may use a key that a script has just imported only after the key's partition list is set, which takes the keychain's password, or a dialog is answered: so it has been told since macOS 10.12. `security unlock-keychain -p` tells a wrong password whether or not the keychain is unlocked. And a file named login.keychain-db under a throwaway HOME is a keychain like any other.",
+   "happened": "On hosted Macs with macOS 14.8.9, 15.7.9 and 26.6.2 codesign signed with a key imported with `-T /usr/bin/codesign` without either: no dialog came. So the question that failed was one nobody had needed to be asked. Whether a person's Mac asks is not known. An unlocked keychain takes any password on 14 and 15, for `unlock-keychain` and `set-key-partition-list` alike; 26 looks at it (exit code 51). And macOS 26 refuses, for a file of that name, the very password it was made with a moment before.",
+   "found": "`scripts/mac-shell/check-signing.sh` on 2026-10-15: its first version expected a failure, a dialog and a login keychain of its own, and got none of the three.",
+   "modelled": "cannot",
+   "knobs": [],
+   "guards": [
+    "e2e: it succeeds, and nobody was asked for anything",
+    "e2e: asked or not, the script ends by saying that codesign can sign",
+    "tool: release-tools-test.sh"
+   ],
+   "copes": "scripts/make-signing-identity.sh reasons none of it out and handles no password: it says that codesign can sign only of a signature it has just made, within seconds where nobody is there to answer a dialog, and announces the dialog with an \"if\".",
+   "hurt": 4,
+   "sources": [
+    "scripts/make-signing-identity.sh",
+    "scripts/mac-shell/check-signing.sh"
+   ]
   }
  ],
  "afterword": [
