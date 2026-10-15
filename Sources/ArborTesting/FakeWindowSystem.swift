@@ -66,6 +66,8 @@ public final class FakeWindowSystem: WindowSystem {
   /// Where a person could have seen windows that Arbor or macOS moved, in order: the frame a window came out of full screen
   /// at (`leaveFullScreen`), and every frame Arbor gave a window that was in sight. A move nobody can see is not here.
   public fileprivate(set) var sightings: [(window: WindowID, frame: CGRect)] = []
+  /// Windows that take only half of the next frame they are asked for (`leaveFullScreen`).
+  fileprivate var hearHalfNext: Set<WindowID> = []
   /// Windows that are on the screen again after full screen, and that their apps do not list yet.
   fileprivate var inSightUnlisted: Set<WindowID> = []
   /// As on a Mac, `focus` takes effect only a moment later: at `finishSlowFocus()`.
@@ -261,6 +263,9 @@ public final class FakeWindowSystem: WindowSystem {
       frameLog.append((window, fake.snapshot.frame))
       return fake.snapshot.frame
     }
+    var frame = frame
+    // Its app places it between two of the calls a frame is set with: the size is taken, the position is the app's again.
+    if hearHalfNext.remove(window) != nil { frame.origin = fake.snapshot.frame.origin }
     var applied = Self.accepted(frame, by: fake)
     if fake.behaviour != .frozen { applied = whereMacOSPuts(applied) }
     let changed = fake.snapshot.frame != applied
@@ -799,9 +804,11 @@ extension FakeWindowSystem {
   /// nobody has seen that it never does; what Arbor does about it (Controller+LeftInFullScreen.swift) is tried with this.
   ///
   /// `deafFor`: asked for a frame in the first moments of its way out, it says yes and stays where it is. That is Safari, which places
-  /// the window itself once more 0.06 to 0.17 s after the report; asked after that it takes the frame and keeps it. 0 is
-  /// TextEdit, which takes it at once. Both land where they were last put. (`echoes.flightFromFullScreen`, deaf all the way, was
-  /// a prediction, and has not been seen.)
+  /// the window itself once more 0.06 to 0.17 s after the report; asked after that it takes the frame and keeps it. A frame is set
+  /// with several calls, and Safari's own placing fell between them in three rounds of four: it had the new size at the old place, or
+  /// the new place at the old size, and landed so. So the first frame that is heard here is heard by half. 0 is TextEdit, which
+  /// takes it at once. Both land where they were last put. (`echoes.flightFromFullScreen`, deaf all the way, was a prediction,
+  /// and has not been seen.)
   public func leaveFullScreen(
     _ window: WindowID, with others: [WindowID], whereItWas: Bool = false, deafFor: Double = 0.15
   ) {
@@ -811,11 +818,13 @@ extension FakeWindowSystem {
     // Before the report: Arbor may answer it with a question.
     let flight = echoes.flightFromFullScreen
     echoes.flightFromFullScreen = max(flight, deafFor)
+    if deafFor > 0 { hearHalfNext.insert(window) }
     setFullScreen(window, false)
     echoes.flightFromFullScreen = flight
     afterEvents?()
     deliverEchoes()
     passTime?(0.72)
+    hearHalfNext.remove(window)
     inSightUnlisted.insert(window)
     sightings.append((window, windows[window]!.snapshot.frame))
     passTime?(0.11)

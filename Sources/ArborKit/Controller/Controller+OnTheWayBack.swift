@@ -30,8 +30,8 @@ extension Controller {
   ///
   /// What real apps make of that (a hosted Mac, macOS 26.6): TextEdit takes the frame at once and keeps it. Safari, which shows its own
   /// way out, says yes and stays where it is until it has placed the window once more itself, a tenth of a second or two
-  /// into the flight; asked after that, it takes the frame and keeps it. So Arbor asks until it is heard. In full screen
-  /// no window can be asked: the position is refused, the size accepted and forgotten.
+  /// into the flight; asked after that, it takes the frame and keeps it. So Arbor asks until it has been heard in full. In full
+  /// screen no window can be asked: the position is refused, the size accepted and forgotten.
   func meetAtItsSlotIfItLeftFullScreen(_ window: WindowSnapshot, was previous: WindowSnapshot?) {
     if previous?.isFullScreen == false, window.isFullScreen { sharedItsSpace[window.id] = presentWindowIDs() }
     // Back, or in full screen again: no longer on its way.
@@ -46,7 +46,7 @@ extension Controller {
       let slot = slotWhenItsSpaceIsBack(of: window.id, with: companions, on: display)
     else { return }
     // Where it ended the last time it was asked to fill this slot, if it could not.
-    metAhead[window.id] = (misfits[window.id].flatMap { $0.slot == slot ? $0.frame : nil } ?? slot, 0)
+    metAhead[window.id] = (misfits[window.id].flatMap { $0.slot == slot ? $0.frame : nil } ?? slot, nil, 0)
     seeThatItHasItsSlot(window.id)
   }
 
@@ -58,12 +58,20 @@ extension Controller {
   private func seeThatItHasItsSlot(_ window: WindowID) {
     guard isRunning, let meeting = metAhead[window], meeting.looks < Self.looksOnTheWayOut else { return metAhead[window] = nil }
     metAhead[window]?.looks += 1
-    if let before = windows[window]?.frame, !before.approximatelyEquals(meeting.target, tolerance: 1) {
-      guard let actual = system.setFrame(meeting.target, of: window) else { return metAhead[window] = nil }
-      // It has heard, whatever it made of the frame: an app that rounds sizes or has limits is not asked seven times.
-      let heard = !actual.approximatelyEquals(before, tolerance: 1)
-      if heard { metAhead[window]?.target = actual }
-      Log.debug("\(window) is on its way out of full screen; asked for its slot's frame, it \(heard ? "went" : "stays where it is")")
+    // An app busy with its own way out may not answer in time: that is not heard either, and the next look asks again.
+    if let before = windows[window]?.frame, !before.approximatelyEquals(meeting.target, tolerance: 1),
+      let actual = system.setFrame(meeting.target, of: window)
+    {
+      // The same answer twice, at the place it was asked to: that is what its app makes of the frame (it rounds sizes, or has limits), and
+      // it is not asked seven times. Once is not enough: a frame is set with several calls, and Safari's own placing falls
+      // between them, so that it has the new size at the old place, or the new place at the old size.
+      if let answer = meeting.answer, actual.approximatelyEquals(answer, tolerance: 1),
+        abs(actual.minX - meeting.target.minX) <= 1, abs(actual.minY - meeting.target.minY) <= 1
+      {
+        metAhead[window]?.target = actual
+      }
+      metAhead[window]?.answer = actual
+      Log.debug("\(window) is on its way out of full screen; asked for \(meeting.target.brief), it has \(actual.brief)")
       windows[window]?.frame = actual
     }
     scheduler.schedule("meet-\(window.rawValue)", after: 0.1) { [weak self] in self?.seeThatItHasItsSlot(window) }

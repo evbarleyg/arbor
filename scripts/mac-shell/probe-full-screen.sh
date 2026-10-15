@@ -122,10 +122,10 @@ done
 [ -n "$W_finder" ] && [ -n "$W_safari" ] && [ -n "$W_textedit" ] || die "not all three apps opened a window"
 sleep 2
 
-if [ -z "${PROBE_ONLY_ARBOR:-}" ]; then
+if [ -n "${PROBE_MOMENTS:-}" ]; then
   chapter "Without Arbor: asked at one moment per round"
   for name in safari textedit; do
-    for when in ${PROBE_MOMENTS:-insist insist insist}; do
+    for when in $PROBE_MOMENTS; do
       round "$name" "$when"
     done
   done
@@ -150,7 +150,7 @@ if [ -z "${PROBE_WITHOUT_ARBOR:-}" ]; then
   key ctrl+opt+cmd+right
   acted moves=any judge=no
   brief | sed 's/^/    /'
-  for name in safari textedit safari textedit safari textedit safari textedit; do
+  for name in safari safari textedit safari safari textedit safari safari textedit safari safari textedit; do
     ROUND=$((ROUND + 1))
     chapter "With Arbor: $name, round $ROUND"
     reach "$name"
