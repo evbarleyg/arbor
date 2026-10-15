@@ -217,3 +217,45 @@ def shoot_panel(folder, late=34, fade=5, slide=0, click=False):
         take(second + late + step * TICK, 1 - step / fade)
     lines.append((times[-1] + 900, "M after 1 12 43 494 319 docked"))
     write_film(folder, frames, times, lines, visible=[0, 31, 1024, 674])
+
+
+def shoot_follow(folder, lag=1, step=0):
+    """Two fingers spread over the first window for a second and a half, unevenly, as fingers do; it grows with them; they let go, and the
+    view settles on it."""
+    import os
+    x, y = bezier((0.2, 0, 0, 1))
+    frames, times, fingers = [], [], []
+    down = BEGAN + LEAD
+    lines = [(BEGAN + 1, "M kind follow"), (BEGAN + LEAD - 20, "M action"), (down, "M fingers down")]
+
+    def take(time, share):
+        picture = desk()
+        for colour in GRID:
+            window(picture, between(GRID[colour], FRAMED[colour], share), colour)
+        if not frames or (picture != frames[-1]).any():
+            frames.append(picture)
+            times.append(int(round(time)))
+
+    def spread(count):
+        # Fast, slow, a rest, fast again: up to 0.6 of the way.
+        return 0.6 * float(np.interp(count, [0, 25, 50, 60, 90], [0, 0.45, 0.6, 0.6, 1]))
+
+    take(BEGAN, 0)
+    for count in range(1, 91):
+        fingers.append((int(down + count * TICK), spread(count)))
+        share = spread(max(count - lag, 0))
+        if step and 40 <= count < 44:
+            share += step / 506
+        take(down + count * TICK, share)
+    for count in range(91, 91 + lag + 1):
+        take(down + count * TICK, spread(min(count - lag, 90)))
+    up = int(down + (92 + lag) * TICK)
+    lines.append((up, "M fingers up"))
+    for count in range(1, 29):
+        take(up + 17 + count * TICK, 0.6 + 0.4 * float(np.interp(count / 28, x, y)))
+    lines.append((times[-1] + 900, "M after 1 12 43 1000 650 docked"))
+    lines.append((times[-1] + 900, "M overlay after 0 506 43 12 650"))
+    write_film(folder, frames, times, lines, visible=[0, 31, 1024, 674])
+    with open(os.path.join(folder, "fingers.log"), "w", encoding="utf-8") as file:
+        for time, total in fingers:
+            file.write(f"{time} G {total:.4f} 0 0\n")
