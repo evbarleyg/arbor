@@ -1,0 +1,43 @@
+# mac-shell: scripts/mac-shell/probe-why-alert.sh at 7b6647d, macOS 26.6.2, 2026-10-15T02:00Z
+python3 is /opt/homebrew/bin/python3, Python 3.14.7
+What this Python's HTTPServer does when it binds, and what getfqdn does:
+        def server_bind(self):
+            socketserver.TCPServer.server_bind(self)
+            host, port = self.server_address[:2]
+            self.server_name = socket.getfqdn(host)
+            self.server_port = port
+    def getfqdn(name=''):
+        possibly existing aliases. In case no FQDN is available and `name`
+        was given, it is returned unchanged. If `name` was empty, '0.0.0.0' or '::',
+        hostname from gethostname() is returned.
+        name = name.strip()
+        if not name or name in ('0.0.0.0', '::'):
+            name = gethostname()
+        try:
+            hostname, aliases, ipaddrs = gethostbyaddr(name)
+        except error:
+            pass
+        else:
+            aliases.insert(0, hostname)
+            for name in aliases:
+                if '.' in name:
+                    break
+            else:
+                name = hostname
+        return name
+   0 s  STEP 1: a server that does not ask its name, and one question to it over the loopback
+   0 s     listening after about 0.1 s
+   0 s     answered: yes
+  40 s     forty seconds later: 0 alert(s)
+  40 s  STEP 2: only the question for the name
+  43 s  ** WATCHER: 0 -> 1 alert(s) on screen
+           getfqdn took 35.04 s and ends in .localhost
+ 116 s     forty seconds later: 1 alert(s)
+ 116 s  STEP 3: the server as it is
+ 151 s     listening after about 19.3 s
+ 151 s     answered: yes
+ 191 s     forty seconds later: 1 alert(s)
+What macOS wrote down about asking (times are the Mac's; the script began at 02:00:56):
+Timestamp               Ty Process[PID:TID]
+2026-10-15 02:04:08.661 Df log[13067:9a62] [com.apple.log:] log run noninteractively, parent: 5211 (bash), args: 'log' 'show' '--last' '4m' '--style' 'compact' '--predicate' '(eventMessage CONTAINS[c] "local network" OR eventMessage CONTAINS[c] "LocalNetwork") AND (eventMessage CONTAINS[c] "python" 
+exit code 0
