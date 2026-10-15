@@ -26,7 +26,7 @@
 #   hold_drag x1 y1 x2 y2 [options] a drag that waits before it lets go, and notes which panels of Arbor's are up meanwhile
 #   scene_end [seconds]             let things come to rest for that long (2.5), then end the film
 #   cast_build                      make four small apps of ArborTestWindows, each with a name and an icon of its own
-#   cast_start [count] [NAME=v…]    arbor_start, with every test window another app's, as a person's windows are: W1…Wcount (4)
+#   cast_start [count] [NAME=v…]    arbor_start, with every test window another app's, as a person's windows are: W1…Wcount (4; eight are two to an app)
 #   cast_stop [name]                arbor_stop, and the cast goes home
 #   tell <n> <command…>             a command for the app of the nth window (Sources/ArborTestWindows/Commands.swift)
 #   metronome <kind>                a scene of its own: the camera's square, moving in a way that is known (camera.swift)
@@ -287,55 +287,66 @@ PLIST
 }
 
 cast_start() {
-  local count=4 n name pid pids="" hello tries id
+  local count=4 per apps a n first name pid pids="" id ids
   case "${1:-}" in "" | *[!0-9]*) ;; *) count=$1; shift ;; esac
   if [ -z "$FILM_CAST" ]; then
     arbor_start "$count" "$@"
     return
   fi
-  # The last one is arbor_start's own, so that it opens last and lies in front, as the last window of one app does.
-  n=1
-  while [ "$n" -lt "$count" ]; do
-    name=$(cast_name "$n")
-    rm -f "$FILM_CAST/in-$n" "$FILM_CAST/hello-$n"
-    mkfifo "$FILM_CAST/in-$n" || die "cast_start: no fifo in $FILM_CAST"
+  # Up to four windows, an app each; more are dealt out evenly among four apps.
+  per=$(((count + 3) / 4))
+  apps=$((count / per))
+  [ $((apps * per)) -eq "$count" ] || die "cast_start: $count windows cannot be dealt out evenly among four apps"
+  # The last app is arbor_start's own, so that it opens last and lies in front, as the last window of one app does.
+  a=1
+  while [ "$a" -lt "$apps" ]; do
+    name=$(cast_name "$a")
+    rm -f "$FILM_CAST/in-$a" "$FILM_CAST/hello-$a"
+    mkfifo "$FILM_CAST/in-$a" || die "cast_start: no fifo in $FILM_CAST"
     # shellcheck disable=SC2086
-    "$FILM_CAST/$name.app/Contents/MacOS/$name" --count 1 --first "$n" ${ARBOR_TEST_WINDOWS_ARGS:-} \
-      < "$FILM_CAST/in-$n" > "$FILM_CAST/hello-$n" 2>> "$ARBOR_OUT/test-windows.log" 4>&- 7>&- 8>&- 9>&- &
+    "$FILM_CAST/$name.app/Contents/MacOS/$name" --count "$per" --first $(((a - 1) * per + 1)) ${ARBOR_TEST_WINDOWS_ARGS:-} \
+      < "$FILM_CAST/in-$a" > "$FILM_CAST/hello-$a" 2>> "$ARBOR_OUT/test-windows.log" 4>&- 7>&- 8>&- 9>&- &
     pid=$!
     started "$pid"
     pids="$pids $pid"
     # The app lives until nobody holds the other end of its stdin. This does, so that `tell` can come and go.
-    sleep 100000 > "$FILM_CAST/in-$n" 4>&- 7>&- 8>&- 9>&- &
+    sleep 100000 > "$FILM_CAST/in-$a" 4>&- 7>&- 8>&- 9>&- &
     started $!
     FILM_CAST_PIDS="$FILM_CAST_PIDS $pid $!"
-    n=$((n + 1))
+    a=$((a + 1))
   done
-  n=1
+  ids=""
+  a=1
   for pid in $pids; do
-    film_await 100 test -s "$FILM_CAST/hello-$n" || die "the cast's $(cast_name "$n") did not report its window"
-    id=$(python3 -c 'import json, sys; print(*json.loads(sys.argv[1])["windows"])' "$(head -n 1 "$FILM_CAST/hello-$n")")
-    eval "CAST_W$n=$id"
-    n=$((n + 1))
+    film_await 100 test -s "$FILM_CAST/hello-$a" || die "the cast's $(cast_name "$a") did not report its windows"
+    ids="$ids $(python3 -c 'import json, sys; print(*json.loads(sys.argv[1])["windows"])' "$(head -n 1 "$FILM_CAST/hello-$a")")"
+    a=$((a + 1))
   done
-  name=$(cast_name "$count")
+  name=$(cast_name "$apps")
+  # shellcheck disable=SC2086
   ARBOR_EXTRA_PIDS=$(echo $pids | tr ' ' ',')
   ARBOR_TEST_WINDOWS="$FILM_CAST/$name.app/Contents/MacOS/$name"
-  ARBOR_TEST_WINDOWS_ARGS="${ARBOR_TEST_WINDOWS_ARGS:-} --first $count" arbor_start 1 "$@"
-  eval "W$count=$W1"
-  ARBOR_WINDOW_IDS=""
-  n=1
-  while [ "$n" -lt "$count" ]; do
-    eval "W$n=\$CAST_W$n"
+  ARBOR_TEST_WINDOWS_ARGS="${ARBOR_TEST_WINDOWS_ARGS:-} --first $((count - per + 1))" arbor_start "$per" "$@"
+  ARBOR_WINDOW_IDS="$ids $ARBOR_WINDOW_IDS"
+  n=0
+  for id in $ARBOR_WINDOW_IDS; do
     n=$((n + 1))
+    eval "W$n=$id"
   done
+  [ "$n" -eq "$count" ] || die "cast_start: $n windows for $count"
+  FILM_CAST_COUNT=$count
+  FILM_CAST_PER=$per
+  film_await 50 cast_is_managed "$count" || echo "cast_start: Arbor does not manage all $count windows"
+  # Apps that start side by side pile their windows up as it comes. In the order of their numbers, the last in front and its app
+  # active, as the windows of one app lie.
   n=1
   while [ "$n" -le "$count" ]; do
-    eval "ARBOR_WINDOW_IDS=\"\$ARBOR_WINDOW_IDS \$W$n\""
+    eval "tell $n \"front \$W$n\""
+    sleep 0.2
     n=$((n + 1))
   done
-  FILM_CAST_COUNT=$count
-  film_await 50 cast_is_managed "$count" || echo "cast_start: Arbor does not manage all $count windows"
+  tell "$count" activate
+  sleep 0.5
   echo "the cast's windows:$ARBOR_WINDOW_IDS"
 }
 
@@ -353,5 +364,10 @@ cast_stop() {
 tell() {
   local n=$1
   shift
-  if [ -z "$FILM_CAST" ] || [ "$n" -eq "${FILM_CAST_COUNT:-4}" ]; then echo "$*" >&9; else echo "$*" > "$FILM_CAST/in-$n"; fi
+  # The app the nth window belongs to; the last app's stdin is the one arbor_start holds.
+  if [ -z "$FILM_CAST" ] || [ "$n" -gt $((${FILM_CAST_COUNT:-4} - ${FILM_CAST_PER:-1})) ]; then
+    echo "$*" >&9
+  else
+    echo "$*" > "$FILM_CAST/in-$(((n + ${FILM_CAST_PER:-1} - 1) / ${FILM_CAST_PER:-1}))"
+  fi
 }

@@ -428,18 +428,19 @@ final class Metronome {
         after(0.52) { [self] in place(travel) }
       case "flash":
         glide(to: travel, seconds: 0.46, curve: eased)
-        after(0.2) { [self] in
-          CATransaction.begin()
-          CATransaction.setDisableActions(true)
-          spark.isHidden = false
-          CATransaction.commit()
-          after(0.034) { [self] in
-            CATransaction.begin()
-            CATransaction.setDisableActions(true)
-            spark.isHidden = true
-            CATransaction.commit()
-          }
-        }
+        // Two frames long, and timed where the glide is timed, not by a timer of this process: on a busy Mac that came 150 ms late.
+        let blink = CAKeyframeAnimation(keyPath: "opacity")
+        blink.values = [0, 1, 0]
+        // In this mode each time says when its value begins, and the last one when the last value ends.
+        blink.keyTimes = [0, 0.5, 0.572, 1]
+        blink.calculationMode = .discrete
+        blink.duration = 0.46
+        CATransaction.begin()
+        CATransaction.setDisableActions(true)
+        spark.opacity = 0
+        spark.isHidden = false
+        CATransaction.commit()
+        spark.add(blink, forKey: "blink")
       default: print("camera: no metronome \(kind)")
       }
     }

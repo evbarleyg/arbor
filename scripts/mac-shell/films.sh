@@ -361,7 +361,7 @@ cast_stop
 
 step "7. eight windows on a large display"
 display_size 1920 1080
-arbor_start 8 $FACE
+cast_start 8 $FACE
 sleep 3
 ctl arrange
 sleep 1.5
@@ -373,6 +373,6 @@ scene_end
 scene eight-show-everything camera "presses ⌃⌥Space"
 key ctrl+opt+space
 scene_end
-arbor_stop
+cast_stop
 
 camera_stop
