@@ -1,0 +1,253 @@
+witness-ready listen-only
+## baseline
+down 500 400 mods=none clicks=1 mark=none delay_us=717
+up 500 400 mods=none clicks=1 mark=none delay_us=520
+down 500 400 mods=none clicks=1 mark=none delay_us=395
+up 500 400 mods=none clicks=1 mark=none delay_us=490
+down 500 400 mods=none clicks=1 mark=none delay_us=604
+up 500 400 mods=none clicks=1 mark=none delay_us=554
+down 500 400 mods=none clicks=1 mark=none delay_us=602
+up 500 400 mods=none clicks=1 mark=none delay_us=586
+down 500 400 mods=none clicks=1 mark=none delay_us=448
+up 500 400 mods=none clicks=1 mark=none delay_us=228
+down 500 400 mods=none clicks=1 mark=none delay_us=424
+up 500 400 mods=none clicks=1 mark=none delay_us=460
+down 500 400 mods=none clicks=1 mark=none delay_us=220
+up 500 400 mods=none clicks=1 mark=none delay_us=697
+down 500 400 mods=none clicks=1 mark=none delay_us=402
+up 500 400 mods=none clicks=1 mark=none delay_us=397
+## pinch at the session tap
+gesture 500 400 mods=none clicks=0 mark=none delay_us=470 magnify phase=1 value=0.0
+gesture 500 400 mods=none clicks=0 mark=none delay_us=295 magnify phase=4 value=0.10000000149011612
+gesture 500 400 mods=none clicks=0 mark=none delay_us=293 magnify phase=4 value=0.10000000149011612
+gesture 500 400 mods=none clicks=0 mark=none delay_us=149 magnify phase=4 value=0.10000000149011612
+gesture 500 400 mods=none clicks=0 mark=none delay_us=254 magnify phase=8 value=0.0
+## latency with Arbor
+down 849 368 mods=none clicks=1 mark=none delay_us=1627
+up 849 368 mods=none clicks=1 mark=none delay_us=377
+down 849 368 mods=none clicks=1 mark=none delay_us=613
+up 849 368 mods=none clicks=1 mark=none delay_us=430
+down 849 368 mods=none clicks=1 mark=none delay_us=2372
+up 849 368 mods=none clicks=1 mark=none delay_us=3324
+down 849 368 mods=none clicks=1 mark=none delay_us=619
+up 849 368 mods=none clicks=1 mark=none delay_us=1364
+down 849 368 mods=none clicks=1 mark=none delay_us=618
+up 849 368 mods=none clicks=1 mark=none delay_us=1709
+down 849 368 mods=none clicks=1 mark=none delay_us=1794
+up 849 368 mods=none clicks=1 mark=none delay_us=449
+down 849 368 mods=none clicks=1 mark=none delay_us=513
+up 849 368 mods=none clicks=1 mark=none delay_us=6298
+down 849 368 mods=none clicks=1 mark=none delay_us=1137
+up 849 368 mods=none clicks=1 mark=none delay_us=3669
+## plain drag
+down 240 369 mods=none clicks=1 mark=none delay_us=7005
+dragged 244 373 mods=none clicks=1 mark=none delay_us=492
+dragged 248 377 mods=none clicks=1 mark=none delay_us=573
+dragged 252 381 mods=none clicks=1 mark=none delay_us=932
+dragged 256 385 mods=none clicks=1 mark=none delay_us=841
+dragged 260 389 mods=none clicks=1 mark=none delay_us=790
+dragged 264 393 mods=none clicks=1 mark=none delay_us=1078
+dragged 268 397 mods=none clicks=1 mark=none delay_us=542
+dragged 272 401 mods=none clicks=1 mark=none delay_us=595
+dragged 276 405 mods=none clicks=1 mark=none delay_us=807
+dragged 280 409 mods=none clicks=1 mark=none delay_us=614
+dragged 281 409 mods=none clicks=1 mark=none delay_us=586
+dragged 280 409 mods=none clicks=1 mark=none delay_us=487
+up 280 409 mods=none clicks=1 mark=none delay_us=2777
+down 174 202 mods=none clicks=1 mark=none delay_us=625
+up 174 202 mods=none clicks=1 mark=none delay_us=1112
+## ctrl+opt click
+down 849 368 mods=ctrl+opt clicks=1 mark=arbor delay_us=107752
+up 849 368 mods=ctrl+opt clicks=1 mark=none delay_us=1528
+## ctrl+opt double-click
+down 174 202 mods=ctrl+opt clicks=1 mark=arbor delay_us=117664
+up 174 202 mods=ctrl+opt clicks=1 mark=none delay_us=1013
+down 174 202 mods=ctrl+opt clicks=2 mark=arbor delay_us=47206
+up 174 202 mods=ctrl+opt clicks=2 mark=none delay_us=623
+## ctrl+opt drag
+## pinch over a window without ⌥
+gesture 849 368 mods=none clicks=0 mark=none delay_us=1354 magnify phase=1 value=0.0
+gesture 849 368 mods=none clicks=0 mark=none delay_us=529 magnify phase=4 value=0.10000000149011612
+gesture 849 368 mods=none clicks=0 mark=none delay_us=530 magnify phase=4 value=0.10000000149011612
+gesture 849 368 mods=none clicks=0 mark=none delay_us=550 magnify phase=4 value=0.10000000149011612
+gesture 849 368 mods=none clicks=0 mark=none delay_us=536 magnify phase=4 value=0.10000000149011612
+gesture 849 368 mods=none clicks=0 mark=none delay_us=552 magnify phase=4 value=0.10000000149011612
+gesture 849 368 mods=none clicks=0 mark=none delay_us=920 magnify phase=4 value=0.10000000149011612
+gesture 849 368 mods=none clicks=0 mark=none delay_us=2123 magnify phase=8 value=0.0
+## ⌥-pinch over a window, with a rotation
+## pinch on the bare Desktop without ⌥
+## pinch on the menu bar without ⌥
+gesture 400 10 mods=none clicks=0 mark=none delay_us=1308 magnify phase=1 value=0.0
+gesture 400 10 mods=none clicks=0 mark=none delay_us=379 magnify phase=4 value=0.05000000074505806
+gesture 400 10 mods=none clicks=0 mark=none delay_us=529 magnify phase=4 value=0.05000000074505806
+gesture 400 10 mods=none clicks=0 mark=none delay_us=1055 magnify phase=8 value=0.0
+## a huge delta
+## shift drag from the Desktop
+## shift click on the Desktop
+down 512 368 mods=shift clicks=1 mark=arbor delay_us=152292
+up 512 368 mods=shift clicks=1 mark=none delay_us=37007
+## shift drag over a window
+down 747 143 mods=shift clicks=1 mark=none delay_us=786
+dragged 757 153 mods=shift clicks=1 mark=none delay_us=602
+dragged 767 163 mods=shift clicks=1 mark=none delay_us=341
+dragged 777 173 mods=shift clicks=1 mark=none delay_us=268
+dragged 787 183 mods=shift clicks=1 mark=none delay_us=556
+dragged 797 193 mods=shift clicks=1 mark=none delay_us=698
+dragged 807 203 mods=shift clicks=1 mark=none delay_us=1103
+dragged 817 213 mods=shift clicks=1 mark=none delay_us=1166
+dragged 827 223 mods=shift clicks=1 mark=none delay_us=1160
+dragged 837 233 mods=shift clicks=1 mark=none delay_us=1249
+dragged 847 243 mods=shift clicks=1 mark=none delay_us=1233
+dragged 848 243 mods=shift clicks=1 mark=none delay_us=1430
+dragged 847 243 mods=shift clicks=1 mark=none delay_us=1101
+up 847 243 mods=shift clicks=1 mark=none delay_us=5624
+## shift click on the menu bar
+down 600 10 mods=shift clicks=1 mark=none delay_us=23283
+up 600 10 mods=shift clicks=1 mark=none delay_us=294
+## shift click on the Dock's edge
+down 20 735 mods=shift clicks=1 mark=none delay_us=1255
+up 20 735 mods=shift clicks=1 mark=none delay_us=377
+## shift drag with the setting off
+down 512 368 mods=shift clicks=1 mark=none delay_us=3968
+dragged 520 376 mods=shift clicks=1 mark=none delay_us=934
+dragged 528 384 mods=shift clicks=1 mark=none delay_us=1622
+dragged 536 392 mods=shift clicks=1 mark=none delay_us=436
+dragged 544 400 mods=shift clicks=1 mark=none delay_us=517
+dragged 552 408 mods=shift clicks=1 mark=none delay_us=667
+dragged 560 416 mods=shift clicks=1 mark=none delay_us=651
+dragged 568 424 mods=shift clicks=1 mark=none delay_us=607
+dragged 576 432 mods=shift clicks=1 mark=none delay_us=248
+dragged 584 440 mods=shift clicks=1 mark=none delay_us=407
+dragged 592 448 mods=shift clicks=1 mark=none delay_us=345
+dragged 593 448 mods=shift clicks=1 mark=none delay_us=1072
+dragged 592 448 mods=shift clicks=1 mark=none delay_us=723
+up 592 448 mods=shift clicks=1 mark=none delay_us=368
+## a shift drag with the switch off
+down 512 368 mods=shift clicks=1 mark=none delay_us=1400
+dragged 520 376 mods=shift clicks=1 mark=none delay_us=457
+dragged 528 384 mods=shift clicks=1 mark=none delay_us=341
+dragged 536 392 mods=shift clicks=1 mark=none delay_us=745
+dragged 544 400 mods=shift clicks=1 mark=none delay_us=243
+dragged 552 408 mods=shift clicks=1 mark=none delay_us=450
+dragged 560 416 mods=shift clicks=1 mark=none delay_us=430
+dragged 568 424 mods=shift clicks=1 mark=none delay_us=887
+dragged 576 432 mods=shift clicks=1 mark=none delay_us=477
+dragged 584 440 mods=shift clicks=1 mark=none delay_us=714
+dragged 592 448 mods=shift clicks=1 mark=none delay_us=625
+dragged 593 448 mods=shift clicks=1 mark=none delay_us=948
+dragged 592 448 mods=shift clicks=1 mark=none delay_us=507
+up 592 448 mods=shift clicks=1 mark=none delay_us=1392
+## a scroll before the setting is on
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=836 phase=1 momentum=0 dx=0 dy=0
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=285 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=308 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=345 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=356 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=311 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=514 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=523 phase=4 momentum=0 dx=0 dy=0
+## a scroll past the paused tap
+scroll 849 368 mods=none clicks=0 mark=none delay_us=298 phase=1 momentum=0 dx=0 dy=0
+scroll 849 368 mods=none clicks=0 mark=none delay_us=330 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=410 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=317 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=426 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=465 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=297 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=629 phase=4 momentum=0 dx=0 dy=0
+## a scroll without the tap
+scroll 849 368 mods=none clicks=0 mark=none delay_us=232 phase=1 momentum=0 dx=0 dy=0
+scroll 849 368 mods=none clicks=0 mark=none delay_us=485 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=461 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=328 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=295 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=476 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=483 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=1191 phase=4 momentum=0 dx=0 dy=0
+## a plain scroll
+scroll 849 368 mods=none clicks=0 mark=none delay_us=206 phase=1 momentum=0 dx=0 dy=0
+scroll 849 368 mods=none clicks=0 mark=none delay_us=407 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=175 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=491 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=310 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=321 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=489 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=491 phase=4 momentum=0 dx=0 dy=0
+scroll 849 368 mods=none clicks=0 mark=none delay_us=312 phase=0 momentum=1 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=464 phase=0 momentum=2 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=327 phase=0 momentum=2 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=1229 phase=0 momentum=3 dx=0 dy=0
+## an ⌥-scroll
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=237 phase=1 momentum=0 dx=0 dy=0
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=299 phase=2 momentum=0 dx=6 dy=-20
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=439 phase=2 momentum=0 dx=6 dy=-20
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=334 phase=2 momentum=0 dx=6 dy=-20
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=328 phase=2 momentum=0 dx=6 dy=-20
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=389 phase=2 momentum=0 dx=6 dy=-20
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=308 phase=2 momentum=0 dx=6 dy=-20
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=331 phase=4 momentum=0 dx=0 dy=0
+scroll 849 368 mods=none clicks=0 mark=none delay_us=403 phase=0 momentum=1 dx=6 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=314 phase=0 momentum=2 dx=6 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=312 phase=0 momentum=2 dx=6 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=709 phase=0 momentum=3 dx=0 dy=0
+## a ⌃⌥-scroll, sideways
+## a plain scroll afterwards
+scroll 849 368 mods=none clicks=0 mark=none delay_us=268 phase=1 momentum=0 dx=0 dy=0
+scroll 849 368 mods=none clicks=0 mark=none delay_us=168 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=178 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=155 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=187 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=165 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=148 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=329 phase=4 momentum=0 dx=0 dy=0
+## a streamed ⌥-pinch
+## a wheel, no keys
+scroll 849 368 mods=none clicks=0 mark=none delay_us=471 phase=0 momentum=0 dx=0 dy=10
+scroll 849 368 mods=none clicks=0 mark=none delay_us=354 phase=0 momentum=0 dx=0 dy=10
+scroll 849 368 mods=none clicks=0 mark=none delay_us=505 phase=0 momentum=0 dx=0 dy=10
+## a wheel with --opt alone
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=304 phase=0 momentum=0 dx=0 dy=10
+scroll 849 368 mods=opt clicks=0 mark=none delay_us=374 phase=0 momentum=0 dx=0 dy=10
+## a wheel with --ctrl alone
+scroll 849 368 mods=ctrl clicks=0 mark=none delay_us=497 phase=0 momentum=0 dx=0 dy=10
+scroll 849 368 mods=ctrl clicks=0 mark=none delay_us=464 phase=0 momentum=0 dx=0 dy=10
+## ⌃⌥ and one notch up, over window 2
+## ⌃⌥ and one notch down
+## ⌃⌥ and two fingers, 100 points up, then coasting
+## a plain scroll afterwards
+scroll 849 368 mods=none clicks=0 mark=none delay_us=358 phase=1 momentum=0 dx=0 dy=0
+scroll 849 368 mods=none clicks=0 mark=none delay_us=327 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=357 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=3445 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=380 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=345 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=386 phase=2 momentum=0 dx=0 dy=-20
+scroll 849 368 mods=none clicks=0 mark=none delay_us=817 phase=4 momentum=0 dx=0 dy=0
+## ⌃ alone and three notches, with macOS's zoom on
+scroll 849 368 mods=ctrl clicks=0 mark=none delay_us=359 phase=0 momentum=0 dx=0 dy=10
+scroll 849 368 mods=ctrl clicks=0 mark=none delay_us=310 phase=0 momentum=0 dx=0 dy=10
+scroll 849 368 mods=ctrl clicks=0 mark=none delay_us=367 phase=0 momentum=0 dx=0 dy=10
+scroll 849 368 mods=ctrl clicks=0 mark=none delay_us=1262 phase=0 momentum=0 dx=0 dy=-10
+scroll 849 368 mods=ctrl clicks=0 mark=none delay_us=525 phase=0 momentum=0 dx=0 dy=-10
+scroll 849 368 mods=ctrl clicks=0 mark=none delay_us=456 phase=0 momentum=0 dx=0 dy=-10
+## ⌃⌥ and one notch up, with macOS's zoom on
+## ⌃⌥Space with ten auto-repeats
+## killed mid-drag
+dragged 982 653 mods=ctrl+opt clicks=1 mark=none delay_us=2768
+up 982 653 mods=ctrl+opt clicks=1 mark=none delay_us=638
+## after the kill
+down 849 368 mods=none clicks=1 mark=none delay_us=670
+up 849 368 mods=none clicks=1 mark=none delay_us=855
+## before the rounds
+## stopped, round 1
+down 512 60 mods=none clicks=1 mark=none delay_us=1820220
+up 512 60 mods=none clicks=1 mark=none delay_us=1772054
+## stopped, round 2
+down 512 60 mods=none clicks=1 mark=none delay_us=1929704
+up 512 60 mods=none clicks=1 mark=none delay_us=1811194
+## stopped, round 3
+down 512 60 mods=none clicks=1 mark=none delay_us=1924824
+up 512 60 mods=none clicks=1 mark=none delay_us=1835831
+## a click while the tap rests and Arbor is stopped
+down 512 60 mods=none clicks=1 mark=none delay_us=634
+up 512 60 mods=none clicks=1 mark=none delay_us=433

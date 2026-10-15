@@ -1,0 +1,486 @@
+# mac-shell: scripts/mac-shell/check-F44.sh at 6717a94, macOS 26.6.2, 2026-10-15T15:42Z
+built Arbor, the pointer tool and the app bundles in 7s
+selected com.apple.keylayout.US layout com.apple.keylayout.US ascii com.apple.keylayout.US
+com.apple.keylayout.US
+
+== going by the German layout: ⌃⌥Z shows the Desktop, ⌃⌥Y everything
+as a person starts it: Arbor.app through Launch Services, pid 4927: waiting for Accessibility permission (System Settings → Privacy & Secu
+given the permission while it waited; it knew after .4 s
+session 1: Arbor pid 4927, test windows 28 29 (pid 4825)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor 0.0.0 (build 0)
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 28 left
+docked w28 at the left edge
+> dock 29 right
+docked w29 at the right edge
+> click 174 368
+2026-10-15T15:43:33.766Z INFO  keyboard layout: German
+2026-10-15T15:43:33.785Z INFO  registered 54 shortcuts in 3797 µs
+  ✔ Arbor read the layout
+> key ctrl+opt+y
+  ✔ the key labelled Z (where a US keyboard has Y) shows the Desktop
+  ✔ the docked windows went out of view
+> key ctrl+opt+z
+  ✔ the key labelled Y (where a US keyboard has Z) shows everything
+> key ctrl+opt+[
+  ✔ the key labelled Ü (where a US keyboard has [) goes back
+> home
+showing everything
+> key ctrl+opt+k
+  ✔ a shortcut written as a position has not moved
+  ✔ bindings shows what is printed on the key
+  ✔ and names the layout
+> bindings
+ctrl+opt+[ (⌃⌥Ü)        → back
+ctrl+opt+d              → desktop
+ctrl+opt+z              → desktop
+ctrl+opt+] (⌃⌥+)        → forward
+ctrl+opt+0              → home
+ctrl+opt+y              → home
+ctrl+opt+us:k           → relayout
+Letters, digits and signs mean the keys that type them on the German keyboard layout.
+> click 732 15 --right
+shot: mac-shell/01-menu-german.png
+> key escape
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== going by the French layout: letters move, digits stay
+as a person starts it: Arbor.app through Launch Services, pid 6230: waiting for Accessibility permission (System Settings → Privacy & Secu
+given the permission while it waited; it knew after .4 s
+session 2: Arbor pid 6230, test windows 42 43 (pid 5908)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor 0.0.0 (build 0)
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 42 left
+docked w42 at the left edge
+> dock 43 right
+docked w43 at the right edge
+> click 174 368
+2026-10-15T15:43:59.552Z INFO  keyboard layout: French
+2026-10-15T15:43:59.566Z INFO  registered 54 shortcuts in 3566 µs
+  ✔ Arbor read the layout
+> key ctrl+opt+q
+  ✔ the key labelled A (where a US keyboard has Q) arranges
+> key ctrl+opt+a
+  ✔ the key labelled Q (where a US keyboard has A) is not Arbor's
+> key ctrl+opt+w
+  ✔ the key labelled Z (where a US keyboard has W) shows the Desktop
+> home
+showing everything
+> key ctrl+opt+shift+1
+  ✔ ⌃⌥⇧1 saves a view from the key that has 1 on it
+> key ctrl+opt+1
+  ✔ ⌃⌥1 recalls it
+> bindings
+ctrl+opt+a              → arrange
+ctrl+opt+[ (⌃⌥^)        → back
+ctrl+opt+us:k           → relayout
+ctrl+opt+shift+1        → save-view 1
+ctrl+opt+1              → view 1
+Letters, digits and signs mean the keys that type them on the French keyboard layout.
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== going by Dvorak: nothing is where a US keyboard has it
+as a person starts it: Arbor.app through Launch Services, pid 7420: waiting for Accessibility permission (System Settings → Privacy & Secu
+given the permission while it waited; it knew after .6 s
+session 3: Arbor pid 7420, test windows 53 54 (pid 7277)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor 0.0.0 (build 0)
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 53 left
+docked w53 at the left edge
+> dock 54 right
+docked w54 at the right edge
+> click 174 368
+2026-10-15T15:44:22.217Z INFO  keyboard layout: Dvorak
+2026-10-15T15:44:22.243Z INFO  registered 54 shortcuts in 4239 µs
+  ✔ Arbor read the layout
+> key ctrl+opt+h
+  ✔ the key that types D (where a US keyboard has H) shows the Desktop
+> home
+showing everything
+> key ctrl+opt+/
+  ✔ so does the key that types Z (where a US keyboard has /)
+> home
+showing everything
+> key ctrl+opt+-
+  ✔ the key that types [ (where a US keyboard has -) goes back
+> home
+showing everything
+> key ctrl+opt+d
+  ✔ the key where a US keyboard has D is not Arbor's
+> key ctrl+opt+k
+  ✔ the position shortcut is where a US keyboard has K
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== shortcutsFollowLayout: false gives positions back
+as a person starts it: Arbor.app through Launch Services, pid 8457: waiting for Accessibility permission (System Settings → Privacy & Secu
+given the permission while it waited; it knew after .4 s
+session 4: Arbor pid 8457, test windows 63 64 (pid 8231)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor 0.0.0 (build 0)
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 63 left
+docked w63 at the left edge
+> dock 64 right
+docked w64 at the right edge
+> click 174 368
+2026-10-15T15:44:46.136Z INFO  keyboard layout: German
+2026-10-15T15:44:46.160Z INFO  registered 54 shortcuts in 5725 µs
+> reload-settings
+settings reloaded
+> key ctrl+opt+z
+  ✔ where a US keyboard has Z shows the Desktop, whatever is printed there
+> key ctrl+opt+y
+  ✔ where a US keyboard has Y shows everything
+  ✔ bindings says so
+  ✔ and shows US labels
+K126, on this Mac as it is:
+none of Arbor's shortcuts is macOS's as well
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== K126, for the record: macOS's own shortcuts, raw (which bits come with arrow keys, and with the Globe key?)
+key 53 modifiers 0x900 on
+key 48 modifiers 0x100 on
+key 48 modifiers 0x300 on
+key 1 modifiers 0x1100 on
+key 53 modifiers 0xb00 on
+key 120 modifiers 0x21000 on
+key 99 modifiers 0x21000 on
+key 118 modifiers 0x21000 on
+key 96 modifiers 0x21000 on
+key 97 modifiers 0x21000 on
+key 122 modifiers 0x21000 on
+key 98 modifiers 0x21000 on
+key 12 modifiers 0x1b00 on
+key 28 modifiers 0x900 off
+key 67 modifiers 0x900 off
+key 24 modifiers 0x900 off
+key 69 modifiers 0x900 off
+key 27 modifiers 0x900 off
+key 78 modifiers 0x900 off
+key 28 modifiers 0x1900 off
+key 67 modifiers 0x1900 off
+key 42 modifiers 0x900 off
+key 50 modifiers 0x900 off
+key 47 modifiers 0x1900 off
+key 43 modifiers 0x1900 off
+key 50 modifiers 0x100 on
+key 20 modifiers 0x300 on
+key 20 modifiers 0x1300 on
+key 21 modifiers 0x300 on
+key 21 modifiers 0x1300 on
+key 126 modifiers 0x21000 on
+key 125 modifiers 0x21000 on
+key 126 modifiers 0x21200 on
+key 125 modifiers 0x21200 on
+key 103 modifiers 0x20000 on
+key 103 modifiers 0x20200 on
+key 49 modifiers 0x1100 on
+key 50 modifiers 0x900 on
+key 2 modifiers 0x900 on
+key 107 modifiers 0x20000 on
+key 113 modifiers 0x20000 on
+key 107 modifiers 0x20800 on
+key 113 modifiers 0x20800 on
+key 100 modifiers 0x21000 on
+key 53 modifiers 0x800 on
+key 96 modifiers 0x20100 on
+key 49 modifiers 0x1000 off
+key 49 modifiers 0x1800 off
+key 111 modifiers 0x20000 on
+key 111 modifiers 0x20200 on
+key 49 modifiers 0x100 on
+key 49 modifiers 0x900 on
+key 2 modifiers 0x1100 on
+key 100 modifiers 0x20000 off
+key 100 modifiers 0x20200 off
+key 98 modifiers 0x20000 off
+key 98 modifiers 0x20200 off
+key 123 modifiers 0x21000 on
+key 123 modifiers 0x21200 on
+key 124 modifiers 0x21000 on
+key 124 modifiers 0x21200 on
+key 0 modifiers 0x1000 off
+key 0 modifiers 0x1200 off
+key 0 modifiers 0x1000 off
+key 0 modifiers 0x1200 off
+key 104 modifiers 0x0 on
+key 102 modifiers 0x0 on
+key 114 modifiers 0x20000 on
+key 44 modifiers 0x300 on
+key 122 modifiers 0x20100 on
+key 129 modifiers 0x20000 on
+key 129 modifiers 0x20800 on
+key 130 modifiers 0x20000 on
+key 130 modifiers 0x20800 on
+key 144 modifiers 0x20000 on
+key 144 modifiers 0x20800 on
+key 145 modifiers 0x20000 on
+key 145 modifiers 0x20800 on
+key 160 modifiers 0x20000 on
+key 160 modifiers 0x20800 on
+key 160 modifiers 0x20100 on
+key 160 modifiers 0x20900 on
+key 160 modifiers 0x20300 on
+key 160 modifiers 0x20200 on
+key 130 modifiers 0x20200 on
+key 160 modifiers 0x21000 on
+key 160 modifiers 0x21800 on
+key 160 modifiers 0x21200 on
+key 18 modifiers 0x1000 off
+key 19 modifiers 0x1000 off
+key 20 modifiers 0x1000 off
+key 21 modifiers 0x1000 off
+key 23 modifiers 0x1000 off
+key 22 modifiers 0x1000 off
+key 26 modifiers 0x1000 off
+key 28 modifiers 0x1000 off
+key 25 modifiers 0x1000 off
+key 29 modifiers 0x1000 off
+key 18 modifiers 0x1800 off
+key 19 modifiers 0x1800 off
+key 20 modifiers 0x1800 off
+key 21 modifiers 0x1800 off
+key 23 modifiers 0x1800 off
+key 22 modifiers 0x1800 off
+key 83 modifiers 0x1000 off
+key 84 modifiers 0x1000 off
+key 85 modifiers 0x1000 off
+key 86 modifiers 0x1000 off
+key 87 modifiers 0x1000 off
+key 88 modifiers 0x1000 off
+key 89 modifiers 0x1000 off
+key 91 modifiers 0x1000 off
+key 92 modifiers 0x1000 off
+key 82 modifiers 0x1000 off
+key 83 modifiers 0x1800 off
+key 84 modifiers 0x1800 off
+key 85 modifiers 0x1800 off
+key 86 modifiers 0x1800 off
+key 87 modifiers 0x1800 off
+key 88 modifiers 0x1800 off
+key 145 modifiers 0x20100 on
+key 144 modifiers 0x20100 on
+key 144 modifiers 0x20a00 on
+key 145 modifiers 0x20a00 on
+key 107 modifiers 0x20a00 on
+key 113 modifiers 0x20a00 on
+key 49 modifiers 0x1200 off
+key 3 modifiers 0x300 on
+key 101 modifiers 0x21000 on
+key 36 modifiers 0x1000 on
+key 65535 modifiers 0x0 off
+key 65535 modifiers 0x200 on
+key 96 modifiers 0x20900 on
+key 65535 modifiers 0x0 off
+key 113 modifiers 0x21000 on
+key 107 modifiers 0x21000 on
+key 144 modifiers 0x21000 on
+key 145 modifiers 0x21000 on
+key 113 modifiers 0x21a00 on
+key 107 modifiers 0x21a00 on
+key 144 modifiers 0x21a00 on
+key 145 modifiers 0x21a00 on
+key 131 modifiers 0x20000 on
+key 131 modifiers 0x20200 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 53 modifiers 0x800 on
+key 127 modifiers 0x0 on
+key 65535 modifiers 0x0 off
+key 65535 modifiers 0x0 off
+key 22 modifiers 0x300 on
+key 22 modifiers 0x1300 on
+key 23 modifiers 0x300 on
+key 23 modifiers 0x1300 on
+key 176 modifiers 0x20000 on
+key 177 modifiers 0x20000 on
+key 179 modifiers 0x0 on
+key 178 modifiers 0x20000 on
+key 12 modifiers 0x20000 on
+key 65535 modifiers 0x0 on
+key 123 modifiers 0x20000 on
+key 124 modifiers 0x20000 on
+key 125 modifiers 0x20000 on
+key 126 modifiers 0x20000 on
+key 4 modifiers 0x20000 on
+key 3 modifiers 0x20000 on
+key 125 modifiers 0x21000 on
+key 123 modifiers 0x21000 on
+key 124 modifiers 0x21000 on
+key 50 modifiers 0x20000 on
+key 50 modifiers 0x20200 on
+key 42 modifiers 0x20000 on
+key 42 modifiers 0x20800 on
+key 123 modifiers 0x20800 on
+key 124 modifiers 0x20800 on
+key 42 modifiers 0x20100 on
+key 42 modifiers 0x20300 on
+key 1 modifiers 0x20000 on
+key 0 modifiers 0x20000 on
+key 8 modifiers 0x20000 on
+key 45 modifiers 0x20000 on
+key 46 modifiers 0x20000 on
+key 0 modifiers 0x20200 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 50 modifiers 0x300 on
+key 118 modifiers 0x21200 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 46 modifiers 0x100 on
+key 46 modifiers 0x900 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 3 modifiers 0x21000 on
+key 8 modifiers 0x21000 on
+key 15 modifiers 0x21000 on
+key 123 modifiers 0x21000 on
+key 124 modifiers 0x21000 on
+key 126 modifiers 0x21000 on
+key 125 modifiers 0x21000 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 123 modifiers 0x21200 on
+key 124 modifiers 0x21200 on
+key 126 modifiers 0x21200 on
+key 125 modifiers 0x21200 on
+key 123 modifiers 0x21a00 on
+key 124 modifiers 0x21a00 on
+key 126 modifiers 0x21a00 on
+key 125 modifiers 0x21a00 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 on
+key 65535 modifiers 0x0 off
+key 53 modifiers 0x100 on
+
+== for the record: what the layouts' keys type
+      17 /Users/runner/work/arbor/arbor/mac-shell/layouts.jsonl
+
+== a US keyboard, really selected
+enable 0 select 0: selected com.apple.keylayout.US layout com.apple.keylayout.US ascii com.apple.keylayout.US
+as a person starts it: Arbor.app through Launch Services, pid 9249: waiting for Accessibility permission (System Settings → Privacy & Secu
+given the permission while it waited; it knew after .6 s
+session 5: Arbor pid 9249, test windows 73 74 (pid 9180)
+running: 1 display, 0 docked and 2 floating, 0 out of view
+Arbor 0.0.0 (build 0)
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 73 left
+docked w73 at the left edge
+> dock 74 right
+docked w74 at the right edge
+> click 174 368
+2026-10-15T15:45:07.377Z INFO  keyboard layout: U.S.
+2026-10-15T15:45:07.391Z INFO  registered 54 shortcuts in 2990 µs
+  ✔ Arbor read the layout at launch
+> key ctrl+opt+z
+  ✔ the key labelled Z shows the Desktop
+> key ctrl+opt+y
+  ✔ the key labelled Y shows everything
+
+== German, selected while Arbor runs in the background
+enable 0 select 0: selected com.apple.keylayout.German layout com.apple.keylayout.German ascii com.apple.keylayout.German
+  ✔ Arbor hears of it
+> key ctrl+opt+y
+  ✔ the key labelled Z (where a US keyboard has Y) shows the Desktop
+  ✔ the docked windows went out of view
+> key ctrl+opt+z
+  ✔ the key labelled Y (where a US keyboard has Z) shows everything
+> key ctrl+opt+[
+  ✔ the key labelled Ü (where a US keyboard has [) goes back
+> home
+showing everything
+> key ctrl+opt+k
+  ✔ a shortcut written as a position has not moved
+  ✔ bindings shows what is printed on the key
+  ✔ and names the layout
+> bindings
+ctrl+opt+[ (⌃⌥Ü)        → back
+ctrl+opt+d              → desktop
+ctrl+opt+z              → desktop
+ctrl+opt+] (⌃⌥+)        → forward
+ctrl+opt+0              → home
+ctrl+opt+y              → home
+ctrl+opt+us:k           → relayout
+Letters, digits and signs mean the keys that type them on the German keyboard layout.
+
+== K126: with two keyboards in the Input menu, ⌃⌥Space is macOS's as well. Who gets it?
+NOTE: macOS does not list ⌃⌥Space among its ticked shortcuts here, so there is nothing to see
+
+== Dvorak, then Russian: macOS pairs it with a Latin layout, as for ⌘-shortcuts
+enable 0 select 0: selected com.apple.keylayout.Dvorak layout com.apple.keylayout.Dvorak ascii com.apple.keylayout.Dvorak
+  ✔ Arbor hears of it
+> key ctrl+opt+h
+  ✔ the key that types D (where a US keyboard has H) shows the Desktop
+> home
+showing everything
+enable 0 select 0: selected com.apple.keylayout.Russian layout com.apple.keylayout.Russian ascii com.apple.keylayout.Dvorak
+selected com.apple.keylayout.Russian layout com.apple.keylayout.Russian ascii com.apple.keylayout.Dvorak
+2026-10-15T15:45:21.449Z INFO  keyboard layout: German
+2026-10-15T15:45:24.922Z INFO  keyboard layout: Dvorak
+registrations since Russian was selected: 0
+> key ctrl+opt+h
+  ✔ ⌃⌥D still shows the Desktop, on the key that types D in that Latin layout
+> home
+showing everything
+
+== for the record: how soon after the selection Arbor has registered again
+2026-10-15T15:45:07.377Z INFO  keyboard layout: U.S.
+2026-10-15T15:45:07.391Z INFO  registered 54 shortcuts in 2990 µs
+2026-10-15T15:45:21.449Z INFO  keyboard layout: German
+2026-10-15T15:45:21.469Z INFO  registered 54 shortcuts in 1440 µs
+2026-10-15T15:45:24.922Z INFO  keyboard layout: Dvorak
+2026-10-15T15:45:24.945Z INFO  registered 54 shortcuts in 4947 µs
+enable 0 select 0: selected com.apple.keylayout.US layout com.apple.keylayout.US ascii com.apple.keylayout.US
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+shot: mac-shell/02-after-quit.png
+
+53 passed, 0 failed
+exit code 0

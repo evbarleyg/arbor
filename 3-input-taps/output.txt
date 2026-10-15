@@ -1,0 +1,368 @@
+# mac-shell: scripts/mac-shell/input-taps.sh at 6717a94, macOS 26.6.2, 2026-10-15T15:48Z
+built Arbor, the pointer tool and the app bundles in 6s
+witness-ready listen-only
+
+== without Arbor: how long a click takes to reach the end of the taps
+tap 1447267605 pid=19996 point=1 options=1 mask=0x20400046 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 424238335 pid=305 point=1 options=1 mask=0x1c00 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1957747793 pid=305 point=1 options=1 mask=0x80000e0 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1714636915 pid=305 point=1 options=1 mask=0x204000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 846930886 pid=403 point=1 options=1 mask=0x1c00 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+mouse-down: 8 events, delay µs: min 220, median 424, max 717
+mouse-up:   8 events, delay µs: min 228, median 490, max 697
+
+== do posted pinches arrive at all? (no Arbor)
+gesture 500 400 mods=none clicks=0 mark=none delay_us=470 magnify phase=1 value=0.0
+gesture 500 400 mods=none clicks=0 mark=none delay_us=295 magnify phase=4 value=0.10000000149011612
+gesture 500 400 mods=none clicks=0 mark=none delay_us=293 magnify phase=4 value=0.10000000149011612
+gesture 500 400 mods=none clicks=0 mark=none delay_us=149 magnify phase=4 value=0.10000000149011612
+gesture 500 400 mods=none clicks=0 mark=none delay_us=254 magnify phase=8 value=0.0
+posted pinches arrive: yes (posted at the session tap)
+
+== session 1: three windows, taps and shortcuts on
+as a person starts it: Arbor.app through Launch Services, pid 21128: waiting for Accessibility permission (System Settings → Privacy & Secu
+given the permission while it waited; it knew after .6 s
+session 1: Arbor pid 21128, test windows 142 143 144 (pid 20778)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor 0.0.0 (build 0)
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ launched with an earlier build's settings Arbor holds no event tap
+> reload-settings
+settings reloaded
+> dock 142 left
+docked w142 at the left edge
+> dock 143 right
+docked w143 at the right edge
+> dock 144 beside 142 bottom
+docked w144 below w142
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w142 12 43 325 319        docked
+  w143 687 43 325 650       docked
+  w144 12 374 325 319       docked focused
+a bare point of the Desktop: 512 368
+INFO  pinch event tap installed
+INFO  scroll event tap installed
+INFO  rectangle event taps installed
+DEBUG pinch event tap installed
+DEBUG scroll event tap installed
+DEBUG rectangle event tap installed
+DEBUG rectangle drag event tap installed
+Arbor's taps:
+tap 1346811305 pid=21128 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1308044878 pid=21128 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 396473730 pid=21128 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 745425661 pid=21128 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+  ✔ four taps are installed
+  ✔ the one on drags and mouse-ups is paused
+windows on screen (id pid layer x y w h on owner):
+149 21128 0 337 43 12 650 on Arbor
+146 21128 -2147483602 0 31 1024 674 on Arbor
+145 21128 0 12 362 325 12 on Arbor
+142 20778 0 12 43 325 319 on ArborTestWindows
+81 387 25 763 0 36 30 on Control Center
+26 387 25 799 0 31 30 on Control Center
+25 387 25 830 0 42 30 on Control Center
+24 387 25 872 0 152 30 on Control Center
+14 167 24 0 0 1024 30 on Window Server
+13 389 -2147483603 0 0 1024 768 on Finder
+148 21128 0 675 43 12 650 on Arbor
+7 386 -2147483624 0 0 1024 768 on Dock
+147 21128 0 3 365 343 337 on Arbor
+6 386 20 0 0 1024 768 on Dock
+144 20778 0 12 374 325 319 on ArborTestWindows
+143 20778 0 687 43 325 650 on ArborTestWindows
+2 167 -2147483626 0 0 1024 768 on Window Server
+
+== with Arbor: how long a click on a docked window takes
+mouse-down: 8 events, delay µs: min 513, median 619, max 2372
+mouse-up:   8 events, delay µs: min 377, median 1364, max 6298
+  ✔ every plain click arrives: 8 downs
+  ✔ none of them was held back
+  ✔ every plain click arrives: 8 ups
+tap 1346811305 pid=21128 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1308044878 pid=21128 point=1 options=0 mask=0x2 enabled=true latency_us min=349541.2 avg=349541.2 max=349541.2
+tap 396473730 pid=21128 point=1 options=0 mask=0x400000 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 745425661 pid=21128 point=1 options=0 mask=0x20000000 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+
+== a plain drag of a floating window passes untouched
+> float 144
+w144 is floating
+> drag 240 369 280 409 --steps 10
+  ✔ the app saw the mouse-down
+  ✔ the app saw the drag
+  ✔ the app saw the mouse-up
+  ✔ the drag tap stayed paused
+> dock 144 beside 142 bottom
+docked w144 below w142
+
+== ⌃⌥-click: handed back, once, in order
+> click 174 202
+  ✔ a plain click focuses the first window
+> click 849 368 --mods ctrl+opt
+down 849 368 mods=ctrl+opt clicks=1 mark=arbor delay_us=107752
+up 849 368 mods=ctrl+opt clicks=1 mark=none delay_us=1528
+  ✔ one mouse-down reached the app
+  ✔ it is the one Arbor sent on
+  ✔ it still carries ⌃⌥
+  ✔ one mouse-up reached the app
+  ✔ the mouse-down came first
+the ⌃⌥-click focused the second window
+  ✔ the drag tap is paused again
+
+== ⌃⌥ double-click: both clicks handed back with their click counts
+> click 174 202 2 --mods ctrl+opt
+down 174 202 mods=ctrl+opt clicks=1 mark=arbor delay_us=117664
+up 174 202 mods=ctrl+opt clicks=1 mark=none delay_us=1013
+down 174 202 mods=ctrl+opt clicks=2 mark=arbor delay_us=47206
+up 174 202 mods=ctrl+opt clicks=2 mark=none delay_us=623
+  ✔ two mouse-downs
+  ✔ the second says it is the second
+  ✔ two mouse-ups
+
+== ⌃⌥-drag: nothing reaches the app, the band shows, release frames
+> drag 717 103 982 653 --mods ctrl+opt --no-release
+  ✔ the band is on screen while the button is held
+  ✔ the drag tap is on while the button is held
+shot: mac-shell/01-band.png
+> release --mods ctrl+opt
+  ✔ no mouse-down reached an app
+  ✔ no drag reached an app
+  ✔ no mouse-up reached an app
+  ✔ the rectangle framed the window inside it
+  ✔ the band is gone
+  ✔ the drag tap is paused again
+INFO  frame-rect 717 103 265 550: framed ArborTestWindows (n3)
+> show-all
+showing everything
+
+== pinches
+  ✔ the app gets all of it (8 events)
+DEBUG pinch began (NSEvent phase 1): the app's
+DEBUG pinch ended (NSEvent phase 8): the app's
+  ✔ the app gets none of the pinch
+  ✔ the app gets none of the rotation that began during it
+DEBUG pinch began (NSEvent phase 1): Arbor's
+INFO  in: stepped in to ArborTestWindows (n3)
+DEBUG pinch ended (NSEvent phase 8): Arbor's
+  ✔ Arbor stepped in
+> show-all
+showing everything
+  ✔ it is Arbor's
+DEBUG pinch began (NSEvent phase 1): Arbor's
+DEBUG pinch ended (NSEvent phase 8): Arbor's
+  ✔ it is not Arbor's
+DEBUG pinch began (NSEvent phase 1): the app's
+DEBUG pinch ended (NSEvent phase 8): the app's
+> status
+  ✔ Arbor still answers
+> show-all
+showing everything
+
+== ⇧-drag that starts on the bare Desktop: nothing reaches an app, release frames
+> drag 667 47 1014 695 --mods shift --no-release
+  ✔ the band is on screen while the button is held
+shot: mac-shell/02-band-from-the-desktop.png
+> release --mods shift
+  ✔ no mouse-down reached an app
+  ✔ no drag reached an app
+  ✔ no mouse-up reached an app
+  ✔ the rectangle framed the window inside it
+  ✔ the band is gone
+INFO  frame-rect 667 47 347 648: framed ArborTestWindows (n3)
+> show-all
+showing everything
+
+== ⇧-click on the bare Desktop still reaches Finder
+> click 512 368 --mods shift
+down 512 368 mods=shift clicks=1 mark=arbor delay_us=152292
+up 512 368 mods=shift clicks=1 mark=none delay_us=37007
+  ✔ one mouse-down, sent on by Arbor, with ⇧
+  ✔ no other mouse-down
+  ✔ one mouse-up
+  ✔ the mouse-down came first
+
+== ⇧-drag that starts over a window is the app's
+> drag 747 143 847 243 --mods shift --steps 10
+  ✔ the app saw the mouse-down as it was
+  ✔ the app saw the drag
+  ✔ the app saw the mouse-up
+  ✔ no band
+a ⇧ mouse-down waits for the window list: 1 events, delay µs: min 786, median 786, max 786
+
+== ⇧-click on the menu bar is not held back
+> click 600 10 --mods shift
+  ✔ the mouse-down arrived as it was
+> key escape
+
+== ⇧-click beside the Dock is outside Arbor's view: not held back
+> click 20 735 --mods shift
+  ✔ the mouse-down arrived as it was
+
+== with frameRectangleOnDesktop off, ⇧-drag on the Desktop is Finder's
+> reload-settings
+settings reloaded
+> drag 512 368 592 448 --mods shift --steps 10
+  ✔ Finder saw the mouse-down as it was
+  ✔ Finder saw the drag
+  ✔ ⌃⌥-drag is still watched for
+> reload-settings
+settings reloaded
+  ✔ with both off the guard of the Desktop still watches the mouse
+> reload-settings
+settings reloaded
+  ✔ with all three off, only the pinch and scroll taps are left
+> reload-settings
+settings reloaded
+  ✔ and back
+
+== pointerGestures off: no tap is left, whatever the other settings say
+> reload-settings
+settings reloaded
+  ✔ Arbor holds no event tap
+> drag 512 368 592 448 --mods shift --steps 10
+  ✔ a ⇧-drag on the Desktop is Finder's: the mouse-down arrived as it was
+  ✔ and the drag
+> reload-settings
+settings reloaded
+  ✔ switched on again all four are back
+
+== continuousZoom: ⌃⌥-scroll and pinch are streamed, every other scroll is left alone
+  ✔ an ⌥-scroll is the app's (8 events)
+a scroll event with ⌥ held, past Arbor's paused scroll tap: 8 events, delay µs: min 285, median 345, max 836
+  ✔ at rest the scroll tap is installed and paused
+a scroll event past Arbor's paused scroll tap: 8 events, delay µs: min 297, median 330, max 629
+  ✔ while ⌃⌥ is down it is switched on
+  ✔ and paused again when the keys go up
+  ✔ --ctrl alone leaves it paused
+  ✔ --opt alone leaves it paused
+  ✔ pressed a second time it is switched on again
+  ✔ and paused again
+> reload-settings
+settings reloaded
+  ✔ with scrollZoom off as well there is no scroll tap
+a scroll event without Arbor's scroll tap: 8 events, delay µs: min 232, median 461, max 1191
+> reload-settings
+settings reloaded
+  ✔ the scroll tap is installed, and paused
+  ✔ the app gets all of it, momentum too (12 events)
+a scroll event past Arbor's paused scroll tap: 12 events, delay µs: min 175, median 327, max 1229
+  ✔ ⌥ alone is never Arbor's: the app gets all of it, momentum too (12 events)
+  ✔ the app gets none of it, nor of its momentum
+a scroll event through Arbor's scroll tap, which ⌃⌥ switched on: no events
+DEBUG scroll began: Arbor's
+DEBUG scroll ended: Arbor's
+  ✔ the next plain scroll is the app's again (8 events)
+  ✔ the app gets none of the pinch
+  ✔ the view moved in
+> show-all
+showing everything
+> reload-settings
+settings reloaded
+  ✔ with continuousZoom off again the scroll tap stays, for ⌃⌥-scroll
+
+== F55: ⌃⌥ and a scroll zoom; every other scroll is left alone
+> show-all
+showing everything
+  ✔ the app gets all three notches
+  ✔ and Arbor does nothing
+a notch past Arbor's paused scroll tap: 3 events, delay µs: min 354, median 471, max 505
+  ✔ with --opt alone the app gets both notches
+  ✔ with --ctrl alone the app gets both notches
+  ✔ the app gets nothing
+  ✔ the view stepped in once
+  ✔ toward the pointer: window 1 went out of view
+  ✔ the view stepped out once
+  ✔ window 1 is back
+  ✔ the app gets none of it, nor of its momentum
+steps in: 2 (two of 40 points; the second may have nowhere to go)
+  ✔ the momentum made no further steps
+  ✔ with the momentum over the tap is paused again
+> show-all
+showing everything
+  ✔ the next plain scroll is the app's again (8 events)
+
+== F55: with macOS's own zoom on ⌃ + scroll, whose is ⌃⌥ + scroll?
+the app got 3 of 3 notches; macOS's zoom factor went from 1 to 1
+shot: mac-shell/02a-macos-zoom-with-ctrl.png
+NOTE: macOS did not zoom for a posted ⌃-scroll, so the two checks below prove nothing: try it by hand (docs/TESTING.md)
+Arbor stepped in 1 time(s); macOS's zoom factor went from 1 to 1
+shot: mac-shell/02b-ctrl-opt-scroll-with-macos-zoom-on.png
+  ✔ Arbor stepped in once
+  ✔ and macOS did not zoom the screen as well
+> show-all
+showing everything
+
+== the permission check leaves the taps alone while permission is there
+  ✔ the taps are still installed
+  ✔ the log does not say that permission went away
+all taps now (a probe tap would show as a fourth of Arbor's):
+tap 1671294892 pid=27524 point=1 options=1 mask=0x1fc01cfe enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 552910253 pid=27524 point=1 options=1 mask=0x1c00 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 1548348142 pid=21128 point=1 options=0 mask=0x400000 enabled=false latency_us min=80205.45 avg=80205.45 max=80205.45
+tap 1197352298 pid=21128 point=1 options=0 mask=0x44 enabled=false latency_us min=0.0 avg=0.0 max=0.0
+tap 446340713 pid=21128 point=1 options=0 mask=0x2 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 1343606042 pid=21128 point=1 options=0 mask=0x20000000 enabled=true latency_us min=1.922693e+07 avg=1.922693e+07 max=1.922693e+07
+tap 1447267605 pid=19996 point=1 options=1 mask=0x20400046 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+tap 846930886 pid=403 point=1 options=1 mask=0x1c00 enabled=true latency_us min=0.0 avg=0.0 max=0.0
+
+== a shortcut held down
+  ✔ the command ran once: shortcuts do not repeat
+
+== Arbor is killed in the middle of a ⌃⌥-drag
+> drag 717 103 982 653 --mods ctrl+opt --no-release
+> release --mods ctrl+opt
+dragged 982 653 mods=ctrl+opt clicks=1 mark=none delay_us=2768
+up 982 653 mods=ctrl+opt clicks=1 mark=none delay_us=638
+  ✔ the next click arrives whole: a mouse-down
+  ✔ the next click arrives whole: a mouse-up
+mouse-down: 1 events, delay µs: min 670, median 670, max 670
+  ✔ the killed process leaves no tap behind
+
+== session 2: Arbor stops answering, again and again
+as a person starts it: Arbor.app through Launch Services, pid 29091: waiting for Accessibility permission (System Settings → Privacy & Secu
+given the permission while it waited; it knew after .6 s
+session 2: Arbor pid 29091, test windows 170 (pid 28913)
+running: 1 display, 0 docked and 1 floating, 0 out of view
+Arbor 0.0.0 (build 0)
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ round 1: the mouse-down tap is back on
+  ✔ round 2: the mouse-down tap is back on
+round 1, mouse-down: 1 events, delay µs: min 1820220, median 1820220, max 1820220
+round 2, mouse-down: 1 events, delay µs: min 1929704, median 1929704, max 1929704
+round 3, mouse-down: 1 events, delay µs: min 1924824, median 1924824, max 1924824
+INFO  the rectangle event tap was off; switched it back on
+INFO  the rectangle event tap was off; switched it back on
+ERROR the rectangle event tap was off, and that keeps happening; leaving all 4 event taps off for 30 seconds
+  ✔ after three in a row the mouse-down tap is left off
+  ✔ and so is every other tap: they share the thread that was too slow
+mouse-down: 1 events, delay µs: min 634, median 634, max 634
+  ✔ it does not wait for Arbor
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+session 3, the guard of the Desktop, is left out: it ships off and is shelved (input-taps-with-the-guard.sh plays it)
+
+== session 4: Accessibility is taken away while the taps are installed
+as a person starts it: Arbor.app through Launch Services, pid 30631: waiting for Accessibility permission (System Settings → Privacy & Secu
+given the permission while it waited; it knew after .6 s
+session 3: Arbor pid 30631, test windows 171 (pid 30274)
+running: 1 display, 0 docked and 1 floating, 0 out of view
+Arbor 0.0.0 (build 0)
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ the taps are installed
+Successfully reset Accessibility
+  ✔ Arbor removes its taps within three seconds
+  ✔ and says so
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+
+111 passed, 0 failed
+exit code 0

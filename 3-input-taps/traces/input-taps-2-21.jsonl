@@ -1,0 +1,36 @@
+{"arbor":"0.0.0","cursor":[849,368],"displays":[{"frame":[0,0,1024,768],"id":"07230EFA-7A8D-4E37-845C-19CC8737EEF5","main":true,"name":"display-1","visible":[0,31,1024,674]}],"framePlan":2,"mouseDown":false,"name":"input-taps-2-21","onlyPIDs":[28913],"os":"macOS Version 26.6.2 (Build 25G83)","recorded":"2026-10-15T15:51:27Z","settings":{"allowAllURLCommands":false,"animationDuration":0.46,"appColourAmount":0.25,"appColours":true,"arrangeDesktopWeight":0.5,"autoDockMinimumHeight":300,"autoDockMinimumWidth":400,"automaticUpdateChecks":false,"bindings":{},"blurBehindArranged":0,"continuousZoom":false,"desktopEdge":0.05,"dimBehindArranged":0.25,"displays":[],"dropDwell":0.15,"excludedBundleIDs":[],"floatingWindowsMakeWay":false,"focusRing":true,"focusRingColour":"accent","focusRingRadius":0,"focusRingWidth":3,"frameRectangleModifier":"ctrl+opt","frameRectangleOnDesktop":true,"gap":12,"gapHandles":"shown","gesturesEnabled":true,"guardDesktopClicks":false,"historyButtons":true,"holdStillFor":[],"holdStillWhileCameraIsOn":false,"holdStillWhileMicrophoneIsOn":false,"hotkeysEnabled":true,"keepPushed":true,"makeRoom":true,"menuBarControls":true,"menuBarFill":0.25,"messages":"helpful","minimapDuration":0,"minimumUsableHeight":160,"minimumUsableWidth":240,"newWindows":"float","newWindowsWhileFramed":"guest","passThroughApps":[],"pauseForApps":[],"peek":true,"pinchThreshold":0.25,"pointerGestures":true,"previewDrags":true,"reflowWhileDragging":false,"resizeStep":40,"ruleTitleWait":2,"rules":[],"screenEdgeBand":12,"scrollOnDesktopZooms":false,"scrollZoom":true,"scrollZoomThreshold":40,"shareRemovedSpace":true,"shortcuts":"core","shortcutsFollowLayout":true,"shrinkOutOfView":false,"soleFloatTakesDesktop":false,"stepInToward":"auto","summonStays":false,"tabsEnabled":false,"tileFade":0.2,"tileRetryMinutes":10,"tileStyle":"icon","tintBehindArranged":0,"windowEdgeFraction":0.3,"windowPictures":false},"thinning":0.05,"trace":1,"windows":[{"app":"ArborTestWindows","bundle":"dev.arbor.testwindows","frame":[170,220,480,348],"id":170,"pid":28913,"title":"title[1]"}],"workspaces":{"07230EFA-7A8D-4E37-845C-19CC8737EEF5":{"back":[],"camera":0,"floating":{"170":[[170,220],[480,348]]},"forward":[],"names":{},"savedViews":{},"tree":{"desktop":0,"loans":[],"nextRawID":1,"nodes":{"0":{"id":0,"kind":{"desktop":{}},"weight":1}},"root":0,"visits":[]}}}}
+{"t":0.0019,"note":"session 2: Arbor has started"}
+{"t":0.0025,"event":"settingsFileMayHaveChanged"}
+{"t":0.3071,"timer":"settings-file"}
+{"t":0.5000,"timer":"save"}
+{"t":0.5331,"event":"settingsFileMayHaveChanged"}
+{"t":0.5344,"event":"settingsFileMayHaveChanged"}
+{"t":3.0848,"timer":"settings-file"}
+{"t":3.0859,"timer":"accessibility"}
+{"t":3.0864,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":3.0874,"raw":"leftMouseDown 512,60"}
+{"t":3.0890,"event":"pointerPressed"}
+{"t":3.0893,"raw":"leftMouseUp 512,60"}
+{"t":3.6796,"note":"✔ round 1: the mouse-down tap is back on"}
+{"t":6.1389,"timer":"accessibility"}
+{"t":6.1393,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":6.1400,"raw":"leftMouseDown 512,60"}
+{"t":6.1413,"event":"pointerPressed"}
+{"t":6.1414,"raw":"leftMouseUp 512,60"}
+{"t":6.6819,"note":"✔ round 2: the mouse-down tap is back on"}
+{"t":9.2165,"timer":"accessibility"}
+{"t":9.2171,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":9.2175,"raw":"leftMouseDown 512,60"}
+{"t":9.2182,"event":"pointerPressed"}
+{"t":9.2183,"raw":"leftMouseUp 512,60"}
+{"t":10.8176,"note":"✔ after three in a row the mouse-down tap is left off"}
+{"t":10.8376,"note":"✔ and so is every other tap: they share the thread that was too slow"}
+{"t":11.2181,"timer":"accessibility"}
+{"t":11.2187,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":14.0884,"timer":"accessibility"}
+{"t":14.0889,"args":[true],"read":"mayUseAccessibility","result":true}
+{"t":14.0891,"raw":"leftMouseDown 512,60"}
+{"t":14.0904,"event":"pointerPressed"}
+{"t":14.0907,"raw":"leftMouseUp 512,60"}
+{"t":14.0910,"note":"✔ it does not wait for Arbor"}
+{"t":14.1168,"end":"another trace was started","lines":35,"thinned":0}
