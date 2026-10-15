@@ -4,7 +4,7 @@
 - Branch: test/the-real-ax-layer-on-linux, then test/mac-on-linux-round-2 and -round-3
 - What: `make mac-on-linux` (scripts/mac-on-linux/README.md; docs/TESTING.md, section 9)
 
-`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 339 stories (1,357 ✔, 134 ✘ known, on the trunk at f116af2; 181 stories at the end of round 1) and a random walk under four kinds of bad manners, at both storeys, five seconds to run. The run enters 92 % of the lines and 81 % of
+`Sources/ArborKit/AX` ran in no headless test. Now it is compiled as it is, linked with a model of a Mac and run on Linux: 349 stories (1,394 ✔, 143 ✘ known, on the trunk at f116af2; 181 stories at the end of round 1) and a random walk under four kinds of bad manners, at both storeys, five seconds to run. The run enters 92 % of the lines and 81 % of
 the regions of `AXWindowSystem.swift` (`COVERAGE=1`). Twenty-three changes that take known cures out of a copy of the layer all turn their stories red (`make mac-on-linux-selftest`).
 
 This report is what it found. Nothing in the layer was changed. Each finding says what a person would see, the lines concerned, and how sure the model is of the manners that bring it out: SEEN on a Mac, or GUESS. Every red check is listed in
@@ -213,6 +213,10 @@ STORIES: "windows that stand low on the screen: dock 101 left" (w101 at 12,126 4
 WHICH COMMIT: the same model and stories on three commits, each from nothing: 07b2bfc (the parent) 1,378 ✔, both stories green; **98206418 1,353 ✔, both red**; the trunk at f116af2 1,356 ✔, both red. With them 18 checks of older stories at storey two turn red, and the polite walk upstairs breaks "a docked window that Arbor has in view is in its place" in
 10 of 10 seeds (parent: none). All are listed under one heading in `known-failures.txt`, and fall off it when the cure lands.
 WHY: since 98206418 a window is asked for its slot's size where it stands (`Controller+AskFirst.swift`); the answer is the room below the window, not the app's limit; Arbor takes it for a refusal and lays the window out at that size in the middle of its slot. Before, the first size call was clipped as well, and the third, at the new place, made it good.
+WITH AN APP THAT IS LATE ("a window that stands low on the screen is docked left, and its app …"): one that carries out everything 50 or 200 ms late, in order (`carriesOutAfter`), comes to rest at 12,79 494×591 after five rounds 0.6 s apart, each set off by N16: green on the parent. One that is sized at once and moved late (`appliesPlaceAfter`, a GUESS)
+is clipped at the old place whatever the order of the calls, and rests at 494×648: red on the parent too. Both fill their slots after the next layout.
+BETWEEN SIZE AND PLACE ("on its way to a slot a window …", six stories; the model keeps each window's road): with size, position, size the window shows its new size, or as much of it as macOS allows there, at the old place: five of six red. With a change under review (what shrinks is sized first, what grows last) all six are green, and the end is whole from
+low on the screen, from the corner out of view and from hanging over the right edge. That change alone brings back none of the stories above: the controller still asks where the window stands.
 HOW SURE: the rule is SEEN (23 answers of 23 at 704; my own reading of the 182 calls found none against it), for AppKit's plain test windows on one display of 1024×768 with the Dock at the bottom.
 
 ## The flight to the Dock (round 3; `tests/Flight.swift`)

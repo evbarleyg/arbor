@@ -122,6 +122,32 @@ func tellOfArrangements(_ book: Book) {
     }
   }
 
+  // An answer that is short because of where the window stood when the size call reached it says nothing about the app. Two kinds of late app: one carries out everything it is asked so much later, in order, so that what
+  // Arbor reads back at once is the old frame; the other is sized at once and moved late, so that the size call finds it at the old place, whatever the order of the calls.
+  for late in [0.05, 0.2] {
+    for (words, placeAlone) in [("carries out \(Int(late * 1000)) ms late what it is asked", false), ("is sized at once and moved \(Int(late * 1000)) ms late", true)] {
+      book.story("a window that stands low on the screen is docked left, and its app \(words)") { story in
+        var window: FakeMac.Window!, other: FakeMac.Window!
+        let two = StoreyTwo(story) { mac in
+          window = mac.open("a", in: mac.launch("Late"), frame: CGRect(x: 170, y: 220, width: 480, height: 348))
+          other = mac.open("b", in: mac.launch("Notes"), frame: CGRect(x: 560, y: 60, width: 400, height: 300))
+        }
+        if placeAlone { window.app.appliesPlaceAfter = late } else { window.app.carriesOutAfter = late }
+        let slot = CGRect(x: 12, y: 43, width: 494, height: 650)
+        story.check("the command is taken", two.run("dock \(window.number) left", then: 3).ok && two.isDocked(window))
+        story.check("three seconds later it fills its slot", window.frame == slot, "\(two.whereabouts(window)), its slot is \(slot.text)")
+        let asked = window.timesAskedForAFrame
+        two.mac.pass(3)
+        story.check("and Arbor has done with it", window.timesAskedForAFrame == asked, "asked \(window.timesAskedForAFrame - asked) times more")
+        // What was learnt of it, if anything, shows at the next layout.
+        two.run("dock \(other.number) right", then: 3)
+        two.run("zoom \(other.number)", then: 2)
+        two.run("show-all", then: 3)
+        story.check("after the view has been away and come back it fills its slot", window.frame.minY == 43 && window.frame.height == 650, two.whereabouts(window))
+      }
+    }
+  }
+
   book.story("a docked window is minimized and restored") { story in
     let (two, left, right) = twoDocked(story)
     let (leftHome, rightHome) = (left.frame, right.frame)

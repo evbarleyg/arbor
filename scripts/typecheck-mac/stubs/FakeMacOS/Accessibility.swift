@@ -234,7 +234,12 @@ extension FakeMac {
     }
     guard let window = window(for: element), window.isOpen else { return .invalidUIElement }
     switch (attribute, value) {
-    case ("AXPosition", .point(let point)): setPosition(point, of: window)
+    case ("AXPosition", .point(let point)):
+      if app.appliesPlaceAfter > 0 {
+        appDoes(app, after: app.appliesPlaceAfter, "pid \(app.pid) goes where it was sent") { [self] in setPosition(point, of: window) }
+      } else {
+        setPosition(point, of: window)
+      }
     case ("AXSize", .size(let size)):
       if app.appliesSizeAfter > 0 {
         appDoes(app, after: app.appliesSizeAfter, "pid \(app.pid) applies the size it was given") { [self] in setSize(size, of: window) }
@@ -381,6 +386,7 @@ extension FakeMac {
     } else {
       window.bounds = frame
     }
+    if frame != before { window.road.append(frame) }
     if before.size != frame.size { report("AXResized", about: window) }
     if before.origin != frame.origin { report("AXMoved", about: window) }
   }

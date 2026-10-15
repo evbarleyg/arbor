@@ -51,6 +51,32 @@ func tellOfPlacing(_ book: Book) {
     story.check("none of the reports counts as the person's doing", !one.heard.all.contains(where: isByUser), one.heard.texts)
   }
 
+  // Size and place are two askings, and the state between them shows for a frame or more. It should cover nothing that neither the old frame covers nor the new one; and the end should be whole, though macOS lets a window
+  // grow only as far as the Dock and the display's right edge from where it stands. Each target is a slot inside the visible frame.
+  for (how, start, target) in [
+    ("grows, from low on the screen", CGRect(x: 170, y: 220, width: 480, height: 348), CGRect(x: 12, y: 43, width: 494, height: 650)),
+    ("grows, from the corner where it is out of view", CGRect(x: 1023, y: 677, width: 325, height: 524), CGRect(x: 687, y: 43, width: 325, height: 650)),
+    // One edge past its line and the other not: how macOS holds such a window back is a GUESS of the model's (`roomToGrow`).
+    ("grows, from hanging over the right edge of the display", CGRect(x: 800, y: 300, width: 400, height: 300), CGRect(x: 518, y: 43, width: 494, height: 650)),
+    ("shrinks", CGRect(x: 12, y: 43, width: 1000, height: 650), CGRect(x: 518, y: 374, width: 494, height: 319)),
+    ("gets wider and shorter", CGRect(x: 687, y: 43, width: 325, height: 650), CGRect(x: 12, y: 374, width: 1000, height: 319)),
+    ("gets narrower and taller, from low on the screen", CGRect(x: 12, y: 374, width: 1000, height: 319), CGRect(x: 687, y: 43, width: 325, height: 650)),
+  ] {
+    book.story("on its way to a slot a window \(how)") { story in
+      let (one, window) = stage(story, frame: start)
+      window.road.removeAll()
+      let answer = one.layer.setFrame(target, of: WindowID(window.number))
+      one.mac.pass(1)
+      story.check("it ends in its slot, whole", window.frame == target, window.frame.text)
+      story.check("and the layer says so", answer == target, answer?.text ?? "no answer")
+      story.check(
+        "on the way it covers nothing that neither its old frame covers nor its new one", window.road.allSatisfy { start.contains($0) || target.contains($0) },
+        "from \(start.text): " + window.road.map(\.text).joined(separator: ", then "))
+      story.check("it is never larger, either way, than at one of the ends", window.road.allSatisfy { $0.width <= max(start.width, target.width) && $0.height <= max(start.height, target.height) })
+      story.check("none of the reports counts as the person's doing", !one.heard.all.contains(where: isByUser), one.heard.texts)
+    }
+  }
+
   // traces/README.md, rows 3 to 5.
   book.story("a window does not take the frame it is given") { story in
     let (one, window) = stage(story)

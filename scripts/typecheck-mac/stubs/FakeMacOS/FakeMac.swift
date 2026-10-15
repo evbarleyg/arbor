@@ -533,6 +533,9 @@ extension FakeMac {
     public var carriesOutAfter: TimeInterval = 0
     /// A new size is applied so long after the call returned.
     public var appliesSizeAfter: TimeInterval = 0
+    /// It says yes to a new place at once and is there so much later, while a size that follows is applied at once: where the window still stands, and with the room there is to grow THERE (`roomToGrow`). A GUESS that any
+    /// app does so: "the window server applies moves a moment later" (docs/REALITY.md) is all there is.
+    public var appliesPlaceAfter: TimeInterval = 0
     /// Posts no "moved" while a window is dragged, only one at the end.
     public var isSilentDuringDrags = false
     /// Takes no notice of `activate()`: since macOS 14 that is only a request.
@@ -584,6 +587,8 @@ extension FakeMac {
     public var title: String
     /// Where its app has it, which is what Accessibility answers.
     public internal(set) var frame: CGRect
+    /// Every frame its app has given it, in order, for those who ask what showed on the way. Theirs to clear.
+    public var road: [CGRect] = []
     /// Where the window server has it. Ahead of `frame` during a drag.
     public internal(set) var bounds: CGRect
     public var minimumSize = CGSize(width: 120, height: 80)
