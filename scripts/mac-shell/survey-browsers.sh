@@ -4,4 +4,6 @@
 #
 #   scripts/mac-shell/run.sh scripts/mac-shell/survey-browsers.sh          three minutes; Arbor is not built
 SURVEY_ONLY="chrome firefox edge"
+# `open` was seen to wait for 90 s and longer for each of them. A quarter of a minute shows as much.
+SURVEY_OPEN_LIMIT=15
 source "$(dirname "${BASH_SOURCE[0]}")/survey-casts.sh"
