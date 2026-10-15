@@ -13,7 +13,7 @@ second column, *the options*, judged by the same rules and read by no gate. And 
 
 | | |
 |---|---|
-| What Linux proves | that the film scripts play (`scripts/mac-shell/rehearse.sh scripts/mac-shell/films-light.sh scripts/mac-shell/films.sh`) and that the judge catches what it claims to catch (`scripts/polish/judge.py --self-test`: 73 drawn films, each wrong in one known way or right; `scripts/polish/stills.py --self-test`: 30 drawn pictures) |
+| What Linux proves | that the film scripts play (`scripts/mac-shell/rehearse.sh scripts/mac-shell/films-light.sh scripts/mac-shell/films.sh`) and that the judge catches what it claims to catch (`scripts/polish/judge.py --self-test`: 100 drawn films, each wrong in one known way or right; `scripts/polish/stills.py --self-test`: 30 drawn pictures) |
 | What a Mac must run | `scripts/mac-shell/films-light.sh`, what ships: unattended, on a free hosted runner, about ten minutes; for the options `scripts/mac-shell/films.sh`, about a quarter of an hour. They only record |
 | What the sandbox judges afterwards | everything: `scripts/polish/judge.py score <run folder>`, then the sheets, by eye |
 

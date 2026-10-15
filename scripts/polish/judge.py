@@ -272,6 +272,36 @@ def has_moved(film):
     return any(film.was.get(window) != film.how.get(window) for window in film.before) or len(elsewhere) > (1 if film.kind in ("drop", "out") else 0)
 
 
+def stirred(m):
+    """The frames in which a followed window is seen to change after Arbor's account of the windows, noted when the scene begins, and before the cause. There should be none: the scene is at rest then.
+    macOS was seen to hand the camera a stale time for the first frame after a long rest, which puts a frame of the act before the key that caused it: how things "stood before" is then the dirty state itself,
+    and the act looks clean. Not asked of drags, in which the hand moves a window before the button goes up."""
+    film, cause = m["film"], m["cause"]
+    noted = [time for time, mark in film.marks if mark.startswith(("before ", "windows before"))]
+    if not noted or film.kind not in ("instant", "told", "closes"):
+        return []
+    menus, found = apart(film), []
+    for track in m["scan"].tracks:
+        if track.detail:
+            continue
+        clean = [(int(time), index, rect.edges) for time, index, rect in zip(track.times, track.indices, track.rects) if time < cause and not rect.thin and not rect.ragged and not touches_any(rect.edges, menus)]
+        found += [index for (_, _, before), (time, index, edges) in zip(clean, clean[1:]) if time >= noted[-1] and max(abs(p - q) for p, q in zip(before, edges)) > 2 * film.scale]
+    return sorted(set(found))
+
+
+def believed(m, verdict):
+    """What R1, R4 and R5 say, unless the film's own witnesses speak against it."""
+    film = m["film"]
+    early = stirred(m)
+    if early:
+        return Verdict(UNSEEN, f"THE FILM IS NOT BELIEVED: a window changes in frame {early[0]}, after Arbor's account of the windows and before the cause: the frame's time is wrong, or the scene was not at rest", early[:8])
+    # Under a menu that macOS fades out the ruler does not look. Where windows lie there, that it found nothing is no finding: eyes settle it.
+    menus = apart(film)
+    if verdict.status == PASS and menus and any(touches_any(tuple(value * film.scale for value in (x, y, x + w, y + h)), menus) for frames in (film.before, film.after) for x, y, w, h in frames.values()):
+        return not_yet(None, None)
+    return verdict
+
+
 def pieces(m, until=None):
     """An act without motion, by its windows alone (a line of words that fades in afterwards is no part of their arriving): {"frames": those in which a window came, went, or changed its
     place or size, "times": when, "between": the frames in which some window is seen at a place or size that is neither its old nor its new one, "sized": those of them in which it has
@@ -300,7 +330,7 @@ def pieces(m, until=None):
         clean = [entry for entry in after if not entry[3]]
         if not clean:
             # Seen until the cause and in no frame after it: it went in the first frame that followed.
-            gone = track.indices[-1] + 1
+            gone = seen[-1][1] + 1 if seen else len(film)
             if seen and not after and gone < len(film) and cause <= film.times[gone] <= cause + until:
                 changed.add(gone)
                 followed += 1
@@ -425,8 +455,8 @@ def whole(m, allow):
                                                                   ("a window covers what neither its old nor its new frame covers", found["over"])) if frames]
     # An exception that nobody counts grows.
     excused = f"; the exception for what grows where it cannot was used in {len(found['excused'])} frames" if found["excused"] else ""
-    return Verdict(MISS if said else PASS, ("; ".join(said) or "no hole, no empty desk, no window over what neither of its frames covers") + excused,
-                   sorted(set(found["empty"] + found["holes"] + found["over"]))[:8])
+    return believed(m, Verdict(MISS if said else PASS, ("; ".join(said) or "no hole, no empty desk, no window over what neither of its frames covers") + excused,
+                               sorted(set(found["empty"] + found["holes"] + found["over"]))[:8]))
 
 
 def at_once(m, allow):
@@ -438,7 +468,7 @@ def at_once(m, allow):
         return Verdict(UNSEEN, "no window could be followed, or none has another frame after the act than before it")
     took = said["times"][-1] - said["times"][0]
     limit = 100 + allow["gap"]
-    return Verdict(PASS if took <= limit else MISS, f"the windows arrive in {len(said['frames'])} pieces, {ms(took)} from the first to the last (at most {ms(limit)})", said["frames"][:8])
+    return believed(m, Verdict(PASS if took <= limit else MISS, f"the windows arrive in {len(said['frames'])} pieces, {ms(took)} from the first to the last (at most {ms(limit)})", said["frames"][:8]))
 
 
 def old_or_new(m, allow):
@@ -447,7 +477,7 @@ def old_or_new(m, allow):
     said = pieces(m)
     if not said["followed"] or has_moved(m["film"]) is False:
         return Verdict(UNSEEN, "no window could be followed, or none has another frame after the act than before it")
-    return Verdict(MISS if said["between"] else PASS, f"in {len(said['between'])} frames a window is at a place or size that is neither its old nor its new one (none)", said["between"][:8])
+    return believed(m, Verdict(MISS if said["between"] else PASS, f"in {len(said['between'])} frames a window is at a place or size that is neither its old nor its new one (none)", said["between"][:8]))
 
 
 def few_places(m, allow):
@@ -470,14 +500,19 @@ def rests_of(m):
     return [rect for rect in m["scan"].rects[-1] if not rect.detail and not rect.partial]
 
 
+NOTHING_DOCKED = "no window is docked at the end: there are no gaps to ask about"
+
+
 def even_gaps(m, allow):
     """On the last frame, from the edges of the docked windows outwards: how many pixels of wallpaper until the next thing."""
     film, scan = m["film"], m["scan"]
     docked = [frame for window, frame in film.after.items() if film.how.get(window) == "docked"]
     if scan.background is None or max(scan.background) > 60:
         return Verdict(UNSEEN, "on a light wallpaper shadows fill the gaps: for eyes")
+    if not docked and film.after:
+        return Verdict(UNSEEN, NOTHING_DOCKED)
     if not docked:
-        return Verdict(UNSEEN, "the film does not say which windows are docked, or none is")
+        return Verdict(UNSEEN, "the film does not say which windows are docked")
     picture = film.frame(len(film) - 1)
     empty = near(picture, scan.background, 24)
     # The focus ring is drawn in the gap, round the window that has the keyboard: a few pixels of it are gap, not window.
@@ -978,6 +1013,9 @@ def score(folder, eyes_path=None, stills_path=None, out=sys.stdout, without=(), 
                 verdict = results[name][1].get(identifier) if name in results else Verdict(UNSEEN, "not filmed")
                 if verdict is None:
                     verdict = Verdict(UNSEEN, f"filmed as {results[name][0]['film'].kind}, not as {kind}")
+                # A pause, a quit: what cannot be asked is no cell, and so no miss.
+                if verdict.said == NOTHING_DOCKED:
+                    continue
                 # What the ruler cannot measure yet, eyes may settle.
                 by_eye = eyes.get(name, {}).get(identifier)
                 if verdict.said == not_yet(None, None).said and by_eye:
@@ -1151,12 +1189,12 @@ def acts(folder, out=sys.stdout):
     films = os.path.join(folder, "films")
     print("| Scene | Answers | On the display: pieces | first to last | frames with a window neither old nor new | holes, empty desk, over others | By the window server: first to last move | steps of each window that moved | frames in between |\n"
           "|---|---|---|---|---|---|---|---|---|", file=out)
-    used = 0
+    used, aloud = 0, []
     for name in sorted(os.listdir(films)):
         if not os.path.isfile(os.path.join(films, name, "film.log")):
             continue
         film = Film(os.path.join(films, name))
-        if film.kind not in AT_ONCE + ("bare", "closes") or name.startswith("metronome-"):
+        if film.kind not in AT_ONCE + ("bare", "closes") or name.startswith("metronome-") or name.endswith("ground"):
             continue
         m = measure(film)
         cause, seen, worse = m["cause"], pieces(m), in_one_piece(m) or {}
@@ -1167,12 +1205,76 @@ def acts(folder, out=sys.stdout):
               + (", ".join(f"{what} {frames}" for what, frames in worse.items() if frames) or "none") + " | "
               + (f"{said['last'] - said['first']} ms" if said["moves"] else "nothing moved") + f" | {steps or 'none'} | {said['between']} |", file=out)
         used += bool(worse.get("excused"))
+        if stirred(m):
+            aloud.append(f"`{name}`: NOT TO BE BELIEVED: a window changes in frame {stirred(m)[0]}, after Arbor's account of the windows and before the cause: the frame's time is wrong, or the scene was not at rest")
+        if has_moved(film) is False:
+            aloud.append(f"`{name}`: by Arbor's own account no window has another frame or state after the act than before it: whatever is counted above is no window's doing")
+        if apart(film):
+            aloud.append(f"`{name}`: a menu was open when the act began: the ruler does not look under it")
     print(f"\nThe one exception to \"over\", for what grows where it cannot (\"excused\"), was used in {used} acts.", file=out)
+    if aloud:
+        print("\nREAD THIS:\n" + "\n".join(f"- {line}" for line in aloud), file=out)
     return 0
 
 
 def seen_at(seen):
     return seen["times"][0]
+
+
+def more_drawn(words):
+    """What a second review drew to kill the mutants that the self-test let live: name -> (who draws it, how, must miss, may miss)."""
+    import studio
+
+    red, blue, green, orange, grid, framed = studio.RED, studio.BLUE, studio.GREEN, studio.ORANGE, studio.GRID, studio.FRAMED
+    spread = {orange: (40, 70, 300, 200), red: (400, 70, 300, 190), blue: (400, 285, 300, 190), green: (400, 500, 300, 190)}
+    end = {orange: grid[red], blue: grid[blue], red: grid[green], green: grid[orange]}
+    fade = [(50 + 17 * step, 1 - step / 10) for step in range(1, 11)]
+    late = {**end, blue: (40, 300, 300, 190)}
+    own = dict(zip(grid, [(12, 43, 300, 190), (12, 374, 300, 190), (518, 43, 300, 190), (518, 374, 300, 190)]))
+    home = dict(zip(grid, [(40, 70, 300, 200), (400, 70, 300, 190), (400, 285, 300, 190), (400, 500, 300, 190)]))
+    paints = {"blend": (150, 120, 90), "thing": (90, 200, 200), "icon": (250, 250, 250), "hole": (0, 0, 0)}
+    dim = tuple(int(value * 0.8) for value in studio.LIGHT)
+    three, shifted = {blue: (12, 43, 494, 650), red: (518, 43, 494, 319), green: (518, 374, 494, 319)}, {blue: (12, 43, 494, 650), red: (518, 43, 494, 311), green: (518, 366, 494, 327)}
+    move = {**grid, blue: (12, 374, 494, 311), red: (12, 43, 494, 311)}
+    half = {**move, red: grid[red]}
+    nudged = {colour: (x, y + 30, w, h - 30) for colour, (x, y, w, h) in grid.items()}
+    apart_a, apart_b = {red: (30, 60, 300, 250), blue: (30, 380, 300, 250)}, {red: (600, 60, 300, 250), blue: (600, 380, 300, 250)}
+    small = {**grid, red: (12, 43, 300, 190)}
+    without = {colour: rect for place, (colour, rect) in enumerate(grid.items()) if place}
+    menu = {"menu": True, "click": True, "was": "floating"}
+    dark = {"ground": studio.LIGHT, "rim": True}
+    steps = studio.shoot_steps
+    return {
+        "menu-arrange": (steps, {"steps": [(None, spread, 1), (50, end, 1)] + [(at, end, shows) for at, shows in fade] + [(1900, {**end, **words})], **menu}, [], []),
+        "menu-arrange-and-the-left-column-is-late": (steps, {"steps": [(None, {**spread, blue: (40, 300, 300, 190)}, 1), (50, late, 1)] + [(at, late, shows) for at, shows in fade] + [(400, end), (1900, {**end, **words})], **menu},
+                                                     ["R1"], ["R4", "R5"]),
+        "dark-pause-in-two-steps": (steps, {"steps": [(None, grid), (50, own), (300, home), (1900, {**home, **words})], "how": "floating", **dark}, ["R1", "R4"], ["R5"]),
+        "dark-pause": (steps, {"steps": [(None, grid), (50, home), (1900, {**home, **words})], "how": "floating", **dark}, [], []),
+        "dark-a-hole-under-shadows": (steps, {"steps": [(None, framed), (34, without), (51, grid), (1900, {**grid, **words})], **dark}, ["R5"], []),
+        "dark-the-first-dock-and-the-ground-darkens": (steps, {"steps": [(None, home, 0, studio.LIGHT), (50, {**home, red: (12, 43, 380, 650)}, 0, dim), (1900, {**home, red: (12, 43, 380, 650), **words}, 0, dim)],
+                                                               "ground": studio.LIGHT, "was": "floating"}, [], []),
+        "a-blend-for-a-frame": (steps, {"steps": [(None, grid), (34, {**framed, "blend": (300, 200, 260, 220)}), (51, framed), (1900, {**framed, **words})], "paints": paints}, [], ["M9"]),
+        "a-thing-for-five-frames": (steps, {"steps": [(None, grid)] + [(34 + 17 * step, {**framed, "thing": (300, 200, 260, 220)}) for step in range(5)] + [(119, framed), (1900, {**framed, **words})], "paints": paints},
+                                    ["R4"], ["M9", "R1", "R5"]),
+        "told-in-two-steps": (steps, {"steps": [(None, grid), (150, own), (400, home), (1900, {**home, **words})], "kind": "told", "how": "floating"}, ["R1", "R4"], ["R5"]),
+        "told": (steps, {"steps": [(None, grid), (150, home), (1900, {**home, **words})], "kind": "told", "how": "floating"}, [], []),
+        "closes": (steps, {"steps": [(None, grid), (100, {red: grid[red], blue: grid[blue], green: (518, 43, 494, 650)}), (1900, {red: grid[red], blue: grid[blue], green: (518, 43, 494, 650), **words})], "kind": "closes"}, [], []),
+        "a-bystander-a-pixel-larger": (steps, {"steps": [(None, three), (34, {**three, blue: (11, 42, 496, 652), red: shifted[red]}), (51, shifted), (1900, {**shifted, **words})]}, [], []),
+        "a-hole-of-three-hundredths": (steps, {"steps": [(None, move), (34, {**half, "hole": (600, 100, 160, 130)}), (51, grid), (1900, {**grid, **words})], "paints": paints}, ["R5"], ["R4"]),
+        "a-hole-of-a-two-hundredth": (steps, {"steps": [(None, move), (34, {**half, "hole": (600, 100, 60, 55)}), (51, grid), (1900, {**grid, **words})], "paints": paints}, [], ["R4"]),
+        "a-window-creeps": (steps, {"steps": [(None, grid)] + [(34 + 17 * step, {**grid, red: (12, 43, 494 - 2 * step, 319)}) for step in range(1, 21)] + [(1900, {**grid, red: (12, 43, 454, 319), **words})]}, ["R1", "R4"], ["R3", "S8"]),
+        "one-window-goes-and-comes-back": (steps, {"steps": [(None, grid), (34, without), (184, {**grid, blue: (12, 374, 494, 310)}), (1900, {**grid, blue: (12, 374, 494, 310), **words})]}, ["R1"], ["R4", "R5", "M8", "S8"]),
+        "an-icon-wanders-in-a-window": (steps, {"steps": [(None, {**grid, "icon": (100, 120, 100, 100)}), (34, {**framed, "icon": (100, 120, 100, 100)}), (284, {**framed, "icon": (400, 300, 100, 100)}),
+                                                          (1900, {**framed, "icon": (400, 300, 100, 100), **words})], "paints": paints}, [], []),
+        "a-square-icon-grows-on-a-tile": (steps, {"steps": [(None, grid), (34, {**framed, "icon": (400, 250, 140, 140)}), (51, {**framed, "icon": (390, 240, 160, 160)}), (68, {**framed, "icon": (380, 230, 180, 180)}),
+                                                            (1900, {**framed, "icon": (380, 230, 180, 180), **words})], "paints": paints}, [], []),
+        "at-two-pixels-to-the-point-a-hole": (steps, {"steps": [(None, framed), (34, without), (51, grid), (1900, {**grid, **words})], "scale": 2}, ["R5"], []),
+        "at-two-pixels-to-the-point-the-new-size-at-the-old-place": (steps, {"steps": [(None, {red: (500, 300, 200, 150), blue: grid[blue]}), (34, {red: (500, 300, 494, 319), blue: grid[blue]}), (51, {red: (518, 43, 494, 319), blue: grid[blue]}),
+                                                                                       (1900, {red: (518, 43, 494, 319), blue: grid[blue], **words})], "scale": 2}, ["R4", "R5"], []),
+        "windows-nudged-by-thirty": (steps, {"steps": [(None, grid), (34, nudged), (1900, {**nudged, **words})]}, [], ["S8"]),
+        "an-empty-desk-between-two-arrangements-apart": (steps, {"steps": [(None, apart_a), (34, {}), (84, apart_b), (1900, {**apart_b, **words})]}, ["R5"], ["M8", "S8"]),
+        "ground-left-bare-for-good-in-the-first-piece": (steps, {"steps": [(None, grid), (34, small), (51, {**small, blue: (12, 374, 300, 190)}), (1900, {**small, blue: (12, 374, 300, 190), **words})]}, [], ["S8"]),
+    }
 
 
 def self_test():
@@ -1244,7 +1346,10 @@ def self_test():
         "grows-where-it-cannot-and-strays": (studio.shoot_steps, {"steps": [(None, {studio.BLUE: (12, 43, 494, 650), studio.RED: (612, 243, 200, 300)}), (34, {studio.BLUE: (12, 43, 494, 650), studio.RED: (100, 243, 500, 400)}),
                                                                             (51, {studio.BLUE: (12, 43, 494, 650), studio.RED: (700, 100, 500, 400)}),
                                                                             (1900, {studio.BLUE: (12, 43, 494, 650), studio.RED: (700, 100, 500, 400), **words})]}, ["R4", "R5"], []),
+        **more_drawn(words),
         "drop": (studio.shoot_drop, {}, [], []),
+        "dragged-out": (studio.shoot_drop, {"kind": "out", "preview": False}, [], []),
+        "dragged-out-with-the-new-size-first": (studio.shoot_drop, {"kind": "out", "preview": False, "halfway": True}, ["R4", "R5"], []),
         "drop-with-the-new-size-first": (studio.shoot_drop, {"halfway": True}, ["R4", "R5"], []),
         "drop-that-takes-its-time": (studio.shoot_drop, {"late": 300}, ["R1"], ["R5"]),
         "dragged-out-with-a-preview": (studio.shoot_drop, {"kind": "out"}, ["D5"], []),
@@ -1266,6 +1371,19 @@ def self_test():
         "panel-slides": (studio.shoot_panel, {"slide": 60}, ["P2"], []),
     }
     cases = {name: (studio.shoot, *case) for name, case in cases.items()} | others
+    grown = {studio.BLUE: (12, 43, 494, 650), studio.RED: (612, 243, 400, 400)}
+    spread = {studio.ORANGE: (40, 70, 300, 200), studio.RED: (400, 70, 300, 190), studio.BLUE: (400, 285, 300, 190), studio.GREEN: (400, 500, 300, 190)}
+    arranged = {studio.ORANGE: studio.GRID[studio.RED], studio.BLUE: studio.GRID[studio.BLUE], studio.RED: studio.GRID[studio.GREEN], studio.GREEN: studio.GRID[studio.ORANGE]}
+    left = {studio.ORANGE: arranged[studio.ORANGE], studio.BLUE: arranged[studio.BLUE]}
+    # Films that are dirty where the ruler cannot know it: R1, R4 and R5 may say what they like but "passes": name -> (who draws it, how).
+    blind = {
+        # The frame with the new size at the old place carries a time before the key, as macOS was seen to stamp one.
+        "a-frame-stamped-before-its-cause": (studio.shoot_steps, {"steps": [(None, {studio.BLUE: (12, 43, 494, 650), studio.RED: (612, 243, 200, 300)}), (-300, grown), (51, {studio.BLUE: (12, 43, 494, 650), studio.RED: (520, 100, 400, 400)}),
+                                                                            (1900, {studio.BLUE: (12, 43, 494, 650), studio.RED: (520, 100, 400, 400), **words})]}),
+        # The right column, which lies under the menu, comes long after the menu has gone.
+        "menu-arrange-and-the-right-column-is-late": (studio.shoot_steps, {"steps": [(None, spread, 1), (50, left, 1)] + [(50 + 17 * step, left, 1 - step / 10) for step in range(1, 11)] + [(450, arranged), (1900, {**arranged, **words})],
+                                                                           "menu": True, "click": True, "was": "floating", "after": arranged}),
+    }
     # Films in which nothing may be earned: name -> (who draws it, how).
     barren = {
         "nothing-but-words": (studio.shoot, {"end": studio.GRID}),
@@ -1276,11 +1394,14 @@ def self_test():
     }
     failures = 0
     with tempfile.TemporaryDirectory() as folder:
+        # The bare desks that the two kinds of session begin with.
+        studio.bare(folder, "ground", (0, 0, 0))
+        studio.bare(folder, "dark-ground", studio.LIGHT)
         for name, (draw, faults, must, may) in cases.items():
             draw(os.path.join(folder, name), **faults)
             _, verdicts = judge(os.path.join(folder, name))
             missed = [identifier for identifier, verdict in verdicts.items() if verdict.status == MISS]
-            unseen = [identifier for identifier, verdict in verdicts.items() if verdict.status == UNSEEN and verdict.said != not_yet(None, None).said and not verdict.said.endswith("for eyes")]
+            unseen = [identifier for identifier, verdict in verdicts.items() if verdict.status == UNSEEN and verdict.said not in (not_yet(None, None).said, NOTHING_DOCKED) and not verdict.said.endswith("for eyes")]
             wrong = [f"{identifier} did not miss" for identifier in must if identifier not in missed]
             wrong += [f"{identifier} missed: {verdicts[identifier].said}" for identifier in missed if identifier not in must + may]
             wrong += [f"{identifier} saw nothing: {verdicts[identifier].said}" for identifier in unseen]
@@ -1290,6 +1411,12 @@ def self_test():
         counted = "was used in 1 frames" in verdicts["R5"].said
         failures += not counted
         print(f"{'✔' if counted else '✘'} the exception is counted: {verdicts['R5'].said}")
+        for name, (draw, how) in blind.items():
+            draw(os.path.join(folder, name), **how)
+            _, verdicts = judge(os.path.join(folder, name))
+            passed = [identifier for identifier in ("R1", "R4", "R5") if verdicts[identifier].status == PASS]
+            failures += bool(passed)
+            print(f"{'✘' if passed else '✔'} {name}: " + (f"PASSES {', '.join(passed)}" if passed else f"passes none of R1, R4, R5: {verdicts['R5'].said[:90]}"))
         for name, (draw, how) in barren.items():
             draw(os.path.join(folder, name), **how)
             _, verdicts = judge(os.path.join(folder, name))
@@ -1310,7 +1437,7 @@ def self_test():
         right = (not film.after or "AFTER THE STAGE WENT" in told.getvalue()) and "stage +15 to +600" in told.getvalue()
         failures += not right
         print(f"{'✔' if right else '✘'} home: {told.getvalue().splitlines()[0]}")
-    print(f"{len(cases) + len(barren) + 2 - failures} of {len(cases) + len(barren) + 2} drawn films judged as they should be")
+    print(f"{len(cases) + len(barren) + len(blind) + 2 - failures} of {len(cases) + len(barren) + len(blind) + 2} drawn films judged as they should be")
     account = [line.split() for line in ("90 W 7 1 0 0 0 9 9 Oak", "110 W 50 2 4 0 0 100 100 Arbor", "120 W 7 1 0 5 5 9 9 Oak", "130 W 8 1 0 5 5 9 9 Elm",
                                          "140 W 51 2 3 0 0 9 9 Arbor", "300 L 45", "600 G 50", "640 W 8 1 0 6 6 9 9 Elm", "5000 W 7 1 0 1 1 9 9 Oak")]
     said = home_of(account, 100, 4000, {7, 8})

@@ -4,6 +4,8 @@ A net is worth what it catches. Every check of docs/POLISH.md that a script meas
 else, and `judge.py --self-test` fails unless exactly that check says so; the film that breaks nothing must pass them all.
 """
 
+import os
+
 import numpy as np
 
 from film import write_film
@@ -208,28 +210,64 @@ def shoot_drag(folder, pull=0, preview_off=0, drop=(1021, 368), tint=False):
     write_film(folder, frames, times, lines, visible=[0, 31, 1024, 674])
 
 
-def shoot_steps(folder, steps, kind="instant", ground=None, moved=True):
-    """An act at once, frame by frame: steps are (ms after the key, {colour: rectangle}), the first (None) how things stand before. "words" among the colours is the line of words."""
+# Where a menu under one icon at the right of the menu bar would lie, and the light wallpaper of the dark scenes as a hosted Mac's display shows it.
+MENU = (713, 24, 306, 682)
+LIGHT = (197, 202, 209)
+
+
+def bare(folder, name, colour):
+    """The film of the bare desk that a session begins with: one frame."""
+    picture = desk()
+    picture[31:705] = colour
+    write_film(os.path.join(folder, name), [picture], [BEGAN], [(BEGAN + 1, "M kind bare")], visible=[0, 31, 1024, 674])
+
+
+def shoot_steps(folder, steps, kind="instant", ground=None, moved=True, menu=None, click=False, extra=(), before=None, after=None, was="docked", how="docked", scale=1, rim=False, paints=None):
+    """An act at once, frame by frame. Steps are (ms after the cause, {colour: rectangle}[, how much of the menu or panel shows, 0 to 1[, the ground in this frame]]); the first (None) is how things stand
+    before. A colour that is a word is painted flat, without a title bar: "words" is the line of words, the others are looked up in `paints`. `menu`: True for a menu whose frame the script has noted, a
+    rectangle for a panel. `click`: the cause is a button. `rim`: the windows' shadows lie on what is left of the wallpaper. `before`, `after`, `was`, `how`: Arbor's own account, where it is not
+    what the first and the last frame show."""
     frames, times = [], []
-    lines = [(BEGAN + 1, f"M kind {kind}"), (BEGAN + LEAD - 20, "M action"), (BEGAN + LEAD, "K down"), (BEGAN + LEAD + 40, "K up")]
-    for at, places in steps:
+    lines = [(BEGAN + 1, f"M kind {kind}"), (BEGAN + LEAD - 20, "M action")]
+    if kind not in ("told", "closes"):
+        lines += [(BEGAN + LEAD - 40, "B down 800 580"), (BEGAN + LEAD, "B up 800 580")] if click else [(BEGAN + LEAD, "K down"), (BEGAN + LEAD + 40, "K up")]
+    for step in steps:
+        at, places = step[:2]
+        shows, here = step[2] if len(step) > 2 else 0, step[3] if len(step) > 3 else ground
         picture = desk()
-        if ground is not None:
-            picture[31:705] = ground
+        if here is not None:
+            picture[31:705] = here
+        if rim:
+            shade = np.linspace(0.72, 0.98, 1024)[None, :, None]
+            for rows in (slice(31, 43), slice(693, 705)):
+                picture[rows] = (picture[rows] * shade).astype(np.uint8)
+            shade = np.linspace(0.72, 0.98, 674)[:, None, None]
+            for columns in (slice(0, 12), slice(1012, 1024)):
+                picture[31:705, columns] = (picture[31:705, columns] * shade).astype(np.uint8)
         for colour, rect in places.items():
-            if colour == "words":
-                paint(picture, rect, (60, 60, 64))
+            if isinstance(colour, str):
+                paint(picture, rect, (60, 60, 64) if colour == "words" else paints[colour])
             else:
                 window(picture, rect, colour)
+        if shows:
+            covered = picture.copy()
+            paint(covered, MENU if menu is True else menu, (236, 236, 238))
+            picture = (picture * (1 - shows) + covered * shows).round().astype(np.uint8)
+        # Something shimmers, so that no frame is the same as the one before.
+        picture[700:702, 1000 + 2 * (len(frames) % 8):1002 + 2 * (len(frames) % 8)] = 90
+        if scale > 1:
+            picture = picture.repeat(scale, axis=0).repeat(scale, axis=1)
         frames.append(picture)
         times.append(BEGAN + (LEAD + at if at is not None else 0))
-    for when, time, places in (("before", BEGAN + 2, steps[0][1]), ("after", times[-1], steps[-1][1] if moved else steps[0][1])):
+    for when, time, places, state in (("before", BEGAN + 2, before or steps[0][1], was), ("after", times[-1], after or (steps[-1][1] if moved else steps[0][1]), how if moved else was)):
         for number, (colour, rect) in enumerate(places.items()):
-            if colour != "words":
-                lines.append((time, f"M {when} {number} {rect[0]} {rect[1]} {rect[2]} {rect[3]} docked"))
+            if not isinstance(colour, str):
+                lines.append((time, f"M {when} {number} {rect[0]} {rect[1]} {rect[2]} {rect[3]} {state}"))
         lines.append((time, f"M windows {when}"))
+    if menu is True:
+        lines += [(BEGAN + LEAD - 300, "M overlay held 101 {} {} {} {}".format(*MENU)), (BEGAN + LEAD - 299, "M overlays held")]
     lines.append((times[-1], "M overlays after"))
-    write_film(folder, frames, times, lines, visible=[0, 31, 1024, 674])
+    write_film(folder, frames, times, lines + list(extra), visible=[0, 31, 1024, 674], scale=scale)
 
 
 def shoot_drop(folder, kind="drop", halfway=False, preview=True, nothing=False, late=0):

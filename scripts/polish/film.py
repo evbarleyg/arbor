@@ -258,9 +258,10 @@ def apart_by(a, b):
 class Rect:
     """Something flat and rectangular in one frame. Edges in pixels; an edge at the room's own edge may go on beyond it."""
 
-    def __init__(self, box, colour, room, detail=False, ragged=False):
+    def __init__(self, box, colour, room, detail=False, ragged=False, scale=1):
         self.left, self.top, self.right, self.bottom = box
         self.colour = colour
+        self.scale = scale
         # Whether a corner of the box is empty: then it is no rectangle but several that overlap, or one that is partly covered.
         self.ragged = ragged
         # Whether it lies inside another: an icon, a word's ground, or something that has no business there.
@@ -283,7 +284,7 @@ class Rect:
 
     @property
     def thin(self):
-        return self.bottom - self.top <= 60 or self.right - self.left <= 60
+        return self.bottom - self.top <= 60 * self.scale or self.right - self.left <= 60 * self.scale
 
     def distance(self, other):
         """How far apart the two are, by the edges that can be seen of both."""
@@ -350,11 +351,12 @@ def whole(rects, room, scale):
                 used.add(id(bar))
                 titled = True
         used.add(id(body))
-        joined.append(Rect(tuple(box), body.colour, room, ragged=body.ragged))
+        joined.append(Rect(tuple(box), body.colour, room, ragged=body.ragged, scale=scale))
         joined[-1].titled = titled
     for rect in joined:
-        # What has a title bar, or is as large as a window, is a window wherever it lies: a floating one over a docked one.
-        large = rect.right - rect.left > 150 * scale and rect.bottom - rect.top > 150 * scale
+        # What has a title bar, or is as large as a window, is a window wherever it lies: a floating one over a docked one. (A tile's icon grows as large as that, and is square.)
+        wide, high = rect.right - rect.left, rect.bottom - rect.top
+        large = min(wide, high) > 150 * scale and abs(wide - high) > 0.1 * max(wide, high)
         rect.detail = not rect.titled and not large and any(other is not rect and other.area > 4 * rect.area and other.left - slack <= rect.left and other.top - slack <= rect.top
                           and other.right + slack >= rect.right and other.bottom + slack >= rect.bottom for other in joined)
     return joined
@@ -457,7 +459,17 @@ class Scan:
                 ring = np.concatenate([inside[:4].reshape(-1, 3), inside[-4:].reshape(-1, 3), inside[:, :4].reshape(-1, 3),
                                        inside[:, -4:].reshape(-1, 3)])
                 commonest = flat_colours(ring[None], 0.3)
-                self.background = film.ground() or (commonest[0] if commonest else None)
+                self.background = film.ground()
+                # The bare desk's colour is believed only if some of it is to be seen here: a session may have another wallpaper than its film of the desk.
+                if self.background is not None:
+                    some = inside[::2, ::2].reshape(-1, 3).astype(np.int16)
+                    shares = some / np.maximum(np.array(self.background, dtype=np.float64), 1)
+                    plain = (np.abs(some - np.array(self.background)) <= FLAT).all(axis=1)
+                    darker = (shares.min(axis=1) >= 0.6) & (shares.max(axis=1) <= 1.0) & (shares.max(axis=1) - shares.min(axis=1) <= 0.04) if min(self.background) >= 40 else plain
+                    if (plain | darker).mean() < 0.003:
+                        self.background = None
+                if self.background is None:
+                    self.background = commonest[0] if commonest else None
             # Frame by frame, because a fade goes through colours that are nowhere else in the film.
             flat = []
             for colour in flat_colours(inside, self.SHARE, known):
@@ -494,7 +506,7 @@ class Scan:
                     inset = min(36 * self.film.scale, (c - a) // 4, (d - b) // 4)
                     corners = [mask[y - y0, x - x0] for x in (a + inset, c - 1 - inset) for y in (b + inset, d - 1 - inset)]
                     box = out_of_the_shadow((a - RUB, b - RUB, c + RUB, d + RUB), colour, picture, self.room, self.film.scale)
-                    found.append(Rect(box, colour, self.room, ragged=not all(corners)))
+                    found.append(Rect(box, colour, self.room, ragged=not all(corners), scale=self.film.scale))
             # The line of words is no window, and in dark mode it looks like a card.
             found = [rect for rect in found if not any(max(abs(a - b) for a, b in zip(rect.edges, line)) <= 6 * self.film.scale for line in lines)]
             found = whole(found, self.room, self.film.scale)
