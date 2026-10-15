@@ -153,6 +153,12 @@ retitle() {
   sleep 0.4
 }
 
+# in_front <window>: without a column for the Desktop two docked windows cover the display, and a floating one may lie behind them.
+in_front() {
+  echo "front $1" >&9
+  sleep 0.3
+}
+
 session_over() {
   local file
   ctl trace off
@@ -204,7 +210,7 @@ ships() {
   claim "a key that can do nothing is answered  ($p)"
   before=$(ids_on)
   key ctrl+opt+z
-  both "$p-01c-the-line" "$before" 0.3
+  both "$p-01c-the-line" "$before" 0.6
   check "on screen" test -f "$ARBOR_OUT/$p-01c-the-line-alone-1.png"
   sleep 3
 
@@ -230,6 +236,7 @@ ships() {
 
   claim "a plain drag of a floating window over a docked one  ($p)"
   read -r x y w h <<< "$(frame_of "$W1")"
+  in_front "$W5"
   # shellcheck disable=SC2046
   drag $(titlebar_of "$W5") "$((x + w / 2))" "$((y + h - 60))" --no-release
   shot "$p-07-a-plain-drag"
@@ -238,6 +245,7 @@ ships() {
 
   claim "the same with ⌘ held  ($p)"
   is docked "$W5" && ctl float "$W5"
+  in_front "$W5"
   # shellcheck disable=SC2046
   drag $(titlebar_of "$W5") "$((x + w / 2))" "$((y + h - 60))" --mods cmd --no-release
   shot "$p-09-a-drag-with-command"
@@ -309,7 +317,7 @@ tour() {
 
   claim "the drop preview  ($p)"
   read -r x y w h <<< "$(frame_of "$W1")"
-  # The last window is in front of the other floating ones, so its title bar is free.
+  in_front "$W6"
   # shellcheck disable=SC2046
   drag $(titlebar_of "$W6") "$((x + w / 2))" "$((y + h - 40))" --no-release
   shot "$p-03-drop-preview"
@@ -325,10 +333,10 @@ tour() {
   # macOS reports the focus that docking gave a window a moment later, and Arbor may follow it with the view.
   sleep 0.6
   ctl show-all
-  ctl resize "$W1" right "$((110 * sw / 1024))"
-  ctl resize "$W2" left "$((60 * sw / 1024))"
+  # Whatever the layout gives the four at the bottom: too low to be of use, so they are tiles.
   ctl resize "$W6" top "$((-90 * sh / 674))"
   ctl resize "$W3" top "$((-190 * sh / 674))"
+  ctl set minimumUsableHeight "$((sh * 2 / 5))"
   pointer_away
   shot "$p-04-tiles"
   check "a window is a tile" is tile "$W6"
@@ -677,6 +685,7 @@ large() {
   closeup retina-02-ring-top-left "$((x - 16))" "$((y - 16))" 200 120
   closeup retina-03-ring-bottom-right "$((x + w - 184))" "$((y + h - 104))" 200 120
 
+  in_front "$W4"
   # shellcheck disable=SC2046
   drag $(titlebar_of "$W4") "$((x + w / 2))" "$((y + h * 3 / 4))" --steps 90 --no-release
   shot retina-04-drop-preview
