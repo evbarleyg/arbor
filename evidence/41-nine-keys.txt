@@ -1,0 +1,143 @@
+# 41-nine-keys 2026-10-15T14:02Z on macOS 26.6.2, commit e4682b9
+
+▸ as it ships Arbor registers nine shortcuts, each ⌃⌥ and one key
+  ✔ arborctl bindings lists nine
+  ✔ none has a third modifier
+  ✔ all of them were registered with macOS
+
+▸ ⌃⌥← and ⌃⌥→ dock the window in front, and the app hears nothing
+  ✔ the click gave the window the keyboard
+  ✔ ⌃⌥← is Arbor's alone
+  ✔ the window is docked at the left edge
+  ✔ ⌃⌥→ is Arbor's alone
+  ✔ the other window is docked at the right edge
+  ✔ nobody asked for the third
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥↩ frames and goes back, ⌃⌥Space shows everything, ⌃⌥[ goes back
+  ✔ ⌃⌥↩ is Arbor's alone
+  ✔ the window fills the screen
+  ✔ ⌃⌥↩ again
+  ✔ the first window is back in view
+  ✔ ⌃⌥↩ once more
+  ✔ ⌃⌥Space is Arbor's alone
+  ✔ the camera is on everything
+  ✔ ⌃⌥[ is Arbor's alone
+  ✔ the window fills the screen again
+  ✔ ⌃⌥Space
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥F floats, ⌃⌥Z takes it back, ⌃⌥G is Go to…
+  ✔ ⌃⌥F is Arbor's alone
+  ✔ the window floats
+  ✔ ⌃⌥Z is Arbor's alone
+  ✔ the window is docked again
+  ✔ ⌃⌥G is Arbor's alone
+  ✔ windows match Arbor's layout
+
+▸ ⌃⌥⎋ pauses and resumes; in the pause the others are the app's
+  ✔ ⌃⌥⎋ reaches Arbor
+  ✔ Arbor is paused
+  ✔ and not the app
+  ✔ ctrl+opt+left arrives in the app
+  ✔ ctrl+opt+right arrives in the app
+  ✔ ctrl+opt+return arrives in the app
+  ✔ ctrl+opt+[ arrives in the app
+  ✔ ctrl+opt+z arrives in the app
+  ✔ ctrl+opt+f arrives in the app
+  ✔ ctrl+opt+g arrives in the app
+  ✔ ⌃⌥⎋ still reaches Arbor
+  ✔ Arbor runs again
+  ✔ and not the app
+  ✔ the window is docked as before
+  ✔ windows match Arbor's layout
+
+▸ what the whole map took besides is the app's again
+  ✔ ctrl+opt+a arrives in the app
+  ✔ ctrl+opt+d arrives in the app
+  ✔ ctrl+opt+up arrives in the app
+  ✔ ctrl+opt+down arrives in the app
+  ✔ ctrl+opt+] arrives in the app
+  ✔ ctrl+opt+0 arrives in the app
+  ✔ ctrl+opt+1 arrives in the app
+  ✔ ctrl+opt+m arrives in the app
+  ✔ ctrl+opt+n arrives in the app
+  ✔ ctrl+opt+r arrives in the app
+  ✔ ctrl+opt+, arrives in the app
+  ✔ ctrl+opt+shift+1 arrives in the app
+  ✔ ctrl+opt+shift+f arrives in the app
+  ✔ ctrl+opt+shift+z arrives in the app
+  ✔ ctrl+opt+shift+/ arrives in the app
+  ✔ ctrl+opt+shift+left arrives in the app
+  ✔ ctrl+opt+cmd+left arrives in the app
+  ✔ ctrl+opt+cmd+right arrives in the app
+  ✔ ctrl+opt+cmd+0 arrives in the app
+  ✔ nothing moved
+  ✔ windows match Arbor's layout
+
+▸ the panel of shortcuts has the nine, and says where the rest is
+  ✔ nine lines begin with ⌃⌥
+  ✔ none has ⇧ or ⌘
+  ✔ ⌃⌥← docks
+
+▸ held, ⌃⌥Space peeks: all four arrows are Arbor's for as long, dock nothing, and ⌃⌥↑ is the app's again afterwards
+  ✔ ⌃⌥↩ frames the window
+  ✔ it fills the screen
+  ✔ Arbor docked nothing
+  ✔ letting go frames the window two to the left
+  ✔ the app heard none of it
+  ✔ ⌃⌥↑ arrives in the app
+  ✔ ⌃⌥Space
+  ✔ windows match Arbor's layout
+
+▸ with fn down as well each of the nine is Arbor's alone, and one press runs one command
+  ✔ plain ⌃⌥↩: once
+  ✔ plain ⌃⌥↩ back: once
+  ✔ plain ⌃⌥→: once
+  ✔ plain ⌃⌥←: once
+  ✔ a line that comes twice is caught
+  ✔ a shortcut without a twin is bound
+  ✔ plain ⌥⌘J: once
+  ✔ the window fills the screen
+  ✔ fn ⌥⌘J passes Arbor by and arrives in the app: the flag is on the event
+  ✔ the window still fills the screen
+  ✔ plain ⌥⌘J back: once
+  ✔ it is unbound again
+  ✔ fn ⌃⌥↩: once
+  ✔ the window fills the screen
+  ✔ fn ⌃⌥Space: once
+  ✔ the camera is on everything
+  ✔ fn ⌃⌥[: once
+  ✔ the window fills the screen again
+  ✔ ⌃⌥Space
+  ✔ fn ⌃⌥F: once
+  ✔ the window floats
+  ✔ fn ⌃⌥Z: once
+  ✔ the window is docked again
+  ✔ fn ⌃⌥G: once
+  ✔ fn ⌃⌥⎋: once
+  ✔ Arbor is paused
+  ✔ fn ⌃⌥⎋ again: once
+  ✔ Arbor runs again
+  ✔ fn ⌃⌥→: once
+  ✔ fn ⌃⌥←: once
+  ✔ the window is at the left edge again
+  ✔ fn ⌃⌥A arrives in the app
+  ✔ fn ⌃⌥D arrives in the app
+  ✔ windows match Arbor's layout
+
+▸ one setting brings the whole map back, at once, and takes it away again
+  ✔ set shortcuts all succeeds
+  ✔ ⌃⌥D is Arbor's alone
+  ✔ ⌃⌥Space
+  ✔ ⌃⌥A is the app's there too
+  ✔ set shortcuts core succeeds
+  ✔ ⌃⌥D arrives in the app
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+118 passed, 0 failed
