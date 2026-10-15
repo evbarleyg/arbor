@@ -50,6 +50,13 @@ records; its two traces say what was done about that. **B5 came back with #101**
 | `hide-unhide` | The app hides and unhides itself. B1 (fixed), **B4**. |
 | `app-switch-unreported` | Two apps: three docked windows of the first (29, 30, 31) and one of the other (75). 29 is framed, 75 is out of view, and the other app brings itself forward (arbor-e2e's "switch to the other app", cut after the switch). `didActivateApplication` came 5 ms before `frontmostApplication` named the app, so `AXWindowSystem` took it for an app in the background and dropped it: no `focused` line, only "the keyboard focus moved", twice, and the window had the keyboard out of view. One switch in three went like that. Fixed in `AXWindowSystem`, below what a trace records: one line was added by hand, as the trace says, for what it reports since. |
 
+**An app that hangs**: two apps of test windows, one of which stops answering for 20 s (`scripts/mac-shell/check-hang.sh`, 2026-10-15, same kind of runner)
+
+| Trace | What it shows |
+|---|---|
+| `hang-view` | The view moves six times while the app hangs. The first `setFrame` on one of its windows comes back `null` after 1.04 s, on the main thread; every later one `null` at once; the other app's windows take their slots meanwhile. When the app wakes its windows are reported and placed. |
+| `hang-quit` | Quit half a second after the app hangs, with its two windows out of view. Each is asked to where it floated, in its own size (`null`, the first after 1.04 s), and at the end of the quit to "anywhere in view" (`null` again). The trace ends there; on the Mac both were still past the corner after the app woke. |
+
 **Real apps**, one per session (`ARBOR_ONLY_PIDS`)
 
 | Trace | What it shows |
@@ -88,3 +95,4 @@ while real windows misbehave. The trace in brackets shows it; `make replay FILE=
 | 14 | **Closing focuses first.** `windowFocused(the app's next window)` comes 10 ms before `windowDestroyed`, and a `setFrame` on the closing window in between succeeds. [`close`] | `close` sends `windowDestroyed` only |
 | 15 | **A window that cannot be resized** produces no event when its edge is dragged. [`calculator-edge`] | `userResize` reports a resize that changes nothing |
 | 16 | **`setFrame` takes time**: 1 to 20 ms, 44 ms (Finder) and 101 ms (TextEdit) the first time. All of a layout's calls are made before any echo is heard. [`took` in every trace] | Instant |
+| 17 | **An app that hangs makes the caller wait**: the first `setFrame` returns `null` after the whole timeout, 1.04 s. [`hang-view`, `hang-quit`] | `setUnresponsive`: `null` at once |
