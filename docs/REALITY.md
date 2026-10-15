@@ -54,7 +54,7 @@ differed becomes cases of the other kinds, what held is said, and the entry goes
 | [missing-report](#missing-report) | 37 | 6 | 12 | 6 | 3 | 16 | 21 | 1 | 1 | 14 | 7 |
 | [extra-report](#extra-report) | 8 | 0 | 1 | 4 | 1 | 2 | 5 | 0 | 0 | 3 | 0 |
 | [late-or-partial-answer](#late-or-partial-answer) | 37 | 8 | 9 | 12 | 6 | 10 | 26 | 0 | 2 | 9 | 9 |
-| [second-actor](#second-actor) | 39 | 6 | 9 | 17 | 7 | 6 | 25 | 0 | 2 | 12 | 6 |
+| [second-actor](#second-actor) | 39 | 6 | 11 | 16 | 7 | 5 | 26 | 0 | 2 | 11 | 5 |
 | [geometry](#geometry) | 26 | 0 | 7 | 12 | 5 | 2 | 15 | 1 | 2 | 8 | 5 |
 | [identity](#identity) | 26 | 4 | 6 | 5 | 6 | 9 | 11 | 1 | 0 | 14 | 6 |
 | [permissions](#permissions) | 17 | 6 | 5 | 3 | 3 | 6 | 10 | 2 | 2 | 3 | 1 |
@@ -63,13 +63,13 @@ differed becomes cases of the other kinds, what held is said, and the entry goes
 | [looks](#looks) | 16 | 0 | 0 | 0 | 1 | 15 | 1 | 2 | 3 | 10 | 4 |
 | [never-exercised](#never-exercised) | 16 | 7 | 2 | 13 | 0 | 1 | 0 | 0 | 15 | 1 | 16 |
 | [toolchain](#toolchain) | 36 | 1 | 0 | 1 | 3 | 32 | 22 | 1 | 0 | 13 | 4 |
-| **all** | 364 | 52 | 67 | 103 | 59 | 135 | 186 | 19 | 33 | 126 | 72 |
+| **all** | 364 | 52 | 69 | 102 | 59 | 134 | 187 | 19 | 33 | 125 | 71 |
 
 **Where the difference bit**
 
 | Where | That is | Cases | Hurt 1 or 2 | Guarded without a Mac | Guarded only on CI's Macs | Only when somebody starts a script | Not guarded |
 |---|---|---|---|---|---|---|---|
-| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 116 | 73 | 38 | 13 | 19 | 46 |
+| below the seam | in the macOS-only code under the platform protocols (AX, Input, UI, App), which no test on Linux runs | 116 | 73 | 39 | 13 | 19 | 45 |
 | at the seam | in what crosses the platform protocols: a stand-in can play it to the controller | 136 | 82 | 100 | 0 | 7 | 29 |
 | controller | in the controller or the core, given reports that were right | 17 | 9 | 12 | 0 | 1 | 4 |
 | test | in a test, a script or a harness that expected the wrong thing | 63 | 0 | 17 | 5 | 4 | 37 |
@@ -94,7 +94,6 @@ A fault that is known and open.
 | [stage-manager-rearranges-windows-on-its-own](#stage-manager-rearranges-windows-on-its-own) | 1 | at the seam | no | guarded without a mac |
 | [a-click-then-drag-arrives-as-a-double-click](#a-click-then-drag-arrives-as-a-double-click) | 2 | below the seam | cannot | not guarded |
 | [a-dragged-window-may-stand-still-until-the-pointer-is-24-points-away](#a-dragged-window-may-stand-still-until-the-pointer-is-24-points-away) | 2 | controller | no | not guarded |
-| [a-false-drag-when-swept-windows-fly-back](#a-false-drag-when-swept-windows-fly-back) | 2 | below the seam | cannot | not guarded |
 | [a-move-that-timed-out-is-carried-out-when-the-app-wakes](#a-move-that-timed-out-is-carried-out-when-the-app-wakes) | 2 | at the seam | no | not guarded |
 | [a-window-that-closed-in-silence-stays-a-ghost-until-its-app-speaks-again](#a-window-that-closed-in-silence-stays-a-ghost-until-its-app-speaks-again) | 2 | below the seam | cannot | not guarded |
 | [arbor-pulls-at-a-window-on-its-way-into-full-screen](#arbor-pulls-at-a-window-on-its-way-into-full-screen) | 2 | below the seam | cannot | not guarded |
@@ -1504,12 +1503,12 @@ A second actor: macOS, an app or another tool moves things too.
 *hurt 1 · at the seam · K001 · K220 · K823 · K1565*
 
 - **Expected:** Nothing but Arbor, the apps and the person moves a window, and whoever moves one is reported. The Desktop and the gaps between docked windows are safe to click.
-- **Happened:** "Click wallpaper to reveal desktop" (macOS 14 and later; an absent key means on) sweeps every window to the sides of the screen at one click on the wallpaper or in a gap, and the next click only brings them back. Measured on macOS 26.6: frames at 12,43 and 518,176 went to -482,-17 and 1012,82, with 2 to 4% of each window left in view. The window server has them there; Accessibility reports nothing, so Arbor goes on believing them in their slots. With the mouse-down, the mouse-up or both swallowed in a session event tap nothing moves; a click with ⇧ sweeps nothing.
-- **Found by:** Mac shell runs with real clicks on a hosted Mac, and a later experiment with its control. A real-window script that clicked the wallpaper swept every window on the Mac aside and failed two checks.
-- **Stand-ins play it:** partly (`World.isSwept`, `World.swept`, `World.clickWallpaperSetting`)
-- **Guard:** `test: aClickOnBareDesktopReachesNobody`; `test: aDragIsGivenBackToFinderFromItsBeginning`; `test: aShiftClickIsGivenBackWhateverIsThere`; `test: nobodyGetsTheGuardWithoutAskingForIt`; `test: desktopAndDockSettingsCompeteWithArbor`; `test: theWallpaperClickIsOnlyNotedWhileArborGuardsAgainstIt`; `e2e: session 3: a click on the Desktop does not sweep the windows away` (by hand); `e2e: every window is in view after the second click` (by hand)
-- **Arbor copes:** Settings.guardDesktopClicks keeps the click from macOS, but ships off until it has been seen at work on a Mac. As Arbor comes, `doctor` and the welcome window only name the macOS switch (`MacSwitch.clickWallpaper`).
-- **Read in:** `docs/features/F60-guard-the-wallpaper-click.md`, `collab/QUESTIONS.md`, `Sources/ArborCore/SystemFacts.swift`, `Sources/arbor-fakemac/World.swift`, `scripts/mac-shell/lib.sh`
+- **Happened:** "Click wallpaper to reveal desktop" (macOS 14 and later; an absent key means on) sweeps every window to the sides of the screen at one click on the wallpaper or in a gap, and the next click only brings them back. Measured on macOS 26.6: frames at 12,43 and 518,176 went to -482,-17 and 1012,82, with 2 to 4% of each window left in view. It is a picture: the window server lists them there, and goes on listing them with the sizes they had, whatever becomes of them; Accessibility has every window where it is and reports no move. A frame set meanwhile is taken, shows nowhere, does not end the sweep, and is where the window comes back to. They go left, right, up or down, until 12 points show. What brings them back: a click on the wallpaper, a press on a strip, ⌘Tab, an app that comes forward. What does not: a raise, minimizing and restoring, a window that opens (in view), waiting. F11 is the same thing. The Dock announces both ends (AXExposeShowDesktop, AXExposeExit) 0.2 s late. With the mouse-down, the mouse-up or both swallowed in a session event tap nothing moves; a click with ⇧ sweeps nothing.
+- **Found by:** Mac shell runs with real clicks on a hosted Mac, and a later experiment with its control. A real-window script that clicked the wallpaper swept every window on the Mac aside and failed two checks. A probe that wrote down both views of every window sixty times a second through 22 sweeps.
+- **Stand-ins play it:** yes (`World.isSwept`, `World.swept`, `World.clickWallpaperSetting`, `World.sweptFrames`, `FakeWindowSystem.clickOnTheWallpaper`, `FakeWindowSystem.pressShowDesktopKey`, `FakeWindowSystem.whereItWaits`)
+- **Guard:** `test: aClickOnBareDesktopReachesNobody`; `test: aDragIsGivenBackToFinderFromItsBeginning`; `test: aShiftClickIsGivenBackWhateverIsThere`; `test: nobodyGetsTheGuardWithoutAskingForIt`; `test: desktopAndDockSettingsCompeteWithArbor`; `test: theWallpaperClickIsOnlyNotedWhileArborGuardsAgainstIt`; `e2e: session 3: a click on the Desktop does not sweep the windows away` (by hand); `e2e: every window is in view after the second click` (by hand); `test: theStandInSweepsAsAMacDoes`; `test: twoClicksOnTheWallpaperAndArborTouchesNothing`; `test: whatHappensMeanwhileIsLaidOutAtOnceSoThatNothingMovesOnceTheyAreBack`; `test: theSweepAMacRecordedIsOne`; `e2e: every window is where it was, by the window server` (by hand); `e2e: no stage went up over the bare desktop` (by hand)
+- **Arbor copes:** SweptAside.isSwept tells a sweep by the two views disagreeing. Arbor goes by Accessibility and lays out as ever, unseen, without a stage over the bare desktop (`Controller.stageTransition`). Settings.guardDesktopClicks keeps the click from macOS, but ships off until it has been seen at work on a Mac. As Arbor comes, `doctor` and the welcome window only name the macOS switch (`MacSwitch.clickWallpaper`).
+- **Read in:** `docs/features/F60-guard-the-wallpaper-click.md`, `collab/QUESTIONS.md`, `Sources/ArborCore/SystemFacts.swift`, `Sources/arbor-fakemac/World.swift`, `scripts/mac-shell/lib.sh`, `collab/reports/2026-10-14-the-desktop-is-shown.md`, `Sources/ArborTesting/FakeWindowSystem+SweptAside.swift`, `scripts/mac-shell/check-sweep.sh`
 
 ### a-dialog-opens-over-a-window-that-is-out-of-view
 
@@ -1585,15 +1584,15 @@ A second actor: macOS, an app or another tool moves things too.
 
 ### a-false-drag-when-swept-windows-fly-back
 
-*hurt 2 · below the seam · suspected · K2015*
+*hurt 2 · below the seam · K2015*
 
 - **Expected:** A window whose window-server bounds change with the button down is being dragged.
-- **Happened:** A press on a sliver brings swept windows back. If they fly back while the button is down and the pointer stirs, the layer announces a drag and the release is a drop at the screen's edge. Whether macOS brings them back at the press or at the release has not been measured.
-- **Found by:** Reading `WindowGrab.classify`. What follows from a drag announced at three stages of the flight was played on the fakes: the window docked each time.
-- **Stand-ins play it:** cannot: it lies below or beside the seam
-- **Guard:** **none**
-- **Arbor copes:** **not yet**
-- **Read in:** `Sources/ArborCore/WindowGrab.swift`, `collab/BACKLOG.md`
+- **Happened:** A press on the strip of a swept window brings them all back about 27 ms after the button went down, so the window under the pointer leaps across the display in the window server's list. A hand that slipped by three points was enough: the layer announced a drag, a drop preview showed, and the release was a drop at the screen's edge. On the stand-ins the same click docks a floating window.
+- **Found by:** Reading `WindowGrab.classify`; then a probe on a hosted Mac, whose trace has the drag from its beginning to its end.
+- **Stand-ins play it:** yes (`FakeWindowSystem.clickOnTheStrip`, `Held.strip`)
+- **Guard:** `test: aWindowThatComesBackFromTheSideOfTheDisplayUnderAPointerAtRestIsNotInTheHand`; `test: aWindowListedAtTheSideOfTheDisplayIsNotWhereItsAppHasIt`; `test: aClickOnAStripThatSlipsIsNoDrag`; `test: norIsOneOnTheStripOfAWindowThatWasLaidOutMeanwhile`; `e2e: no drop preview shows while the button is down` (by hand)
+- **Arbor copes:** WindowGrab.isListedElsewhere: a press on a window that is listed elsewhere than Accessibility last had it takes hold of nothing. And `WindowGrab.classify`: a window that moved farther than the pointer went is not in the hand.
+- **Read in:** `Sources/ArborCore/WindowGrab.swift`, `collab/BACKLOG.md`, `collab/reports/2026-10-14-the-desktop-is-shown.md`, `scripts/mac-shell/check-sweep.sh`
 
 ### a-new-window-takes-the-keyboard
 
