@@ -1,0 +1,250 @@
+# mac-shell: scripts/mac-shell/check-F53.sh at 92e91f4, macOS 26.6.2, 2026-10-15T02:32Z
+built Arbor and the pointer tool in 5s
+
+== an editor and a browser from one app, a scratch window from another; ⌃⌥` summons it
+session 1: Arbor pid 21928, test windows 264 265 (pid 21911)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+  ✔ Arbor arranges the other app's window too
+Traceback (most recent call last):
+  File "<string>", line 1, in <module>
+    import json, sys; [print("w%d is of app %s (%s)" % (w["id"], w["app"], w["bundleID"])) for w in json.load(sys.stdin)["windows"]]
+                                                                           ~^^^^^^^^^^^^
+KeyError: 'bundleID'
+> dock 264 left
+docked w264 at the left edge
+> dock 265 right
+docked w265 at the right edge
+> click 174 368
+> zoom 264
+framed w264
+  ✔ framed on the editor: the scratch window is out of view with the Desktop
+  ✔ the editor has the keyboard
+shot: mac-shell/01-framed.png
+
+== 1: the shortcut
+> key ctrl+opt+`
+  ✔ summoned: in view
+  ✔ summoned: Arbor says summoned
+  ✔ summoned: it has the keyboard
+  ✔ summoned: nothing covers it
+  ✔ summoned: and it stays
+  ✔ summoned: the view did not move
+  ✔ the editor has not moved
+display 0 0 1024 768, visible 0 31 1024 674, camera n1, back yes
+  w263 272 194 480 348      floating focused
+  w264 12 43 1000 650       docked
+  w265 1023 677 325 650     docked parked
+shot: mac-shell/02-summoned.png
+
+== 2: the shortcut again
+> key ctrl+opt+`
+  ✔ sent away: out of view
+  ✔ sent away: Arbor says stashed
+  ✔ sent away: the keyboard is in 264
+  ✔ sent away: the view did not move
+  ✔ the editor has not moved
+shot: mac-shell/03-sent-away.png
+
+== 4: it remembers where it was put
+> key ctrl+opt+`
+  ✔ summoned again: in view
+  ✔ summoned again: Arbor says summoned
+  ✔ summoned again: it has the keyboard
+  ✔ summoned again: nothing covers it
+  ✔ summoned again: and it stays
+  ✔ summoned again: the view did not move
+> drag 512 206 280 103 --no-release
+  ✔ dragged over the editor's edge: no preview
+> release
+  ✔ dropped, it is still summoned
+put at 40 91 480 348
+
+== 3: a real click on another app's window sends it away
+> click 952 103
+  ✔ after a click on the editor: out of view
+  ✔ after a click on the editor: Arbor says stashed
+  ✔ after a click on the editor: the keyboard is in 264
+  ✔ after a click on the editor: the view did not move
+> key ctrl+opt+`
+  ✔ summoned a third time: in view
+  ✔ summoned a third time: Arbor says summoned
+  ✔ summoned a third time: it has the keyboard
+  ✔ summoned a third time: nothing covers it
+  ✔ summoned a third time: and it stays
+  ✔ summoned a third time: the view did not move
+  ✔ where it was put
+shot: mac-shell/04-where-it-was-put.png
+> key ctrl+opt+`
+  ✔ sent away: out of view
+  ✔ sent away: Arbor says stashed
+  ✔ sent away: the keyboard is in 264
+  ✔ sent away: the view did not move
+
+== where the Desktop is in view it goes out of view all the same
+> show-all
+showing everything
+  ✔ showing everything, it is still out of view
+shot: mac-shell/05-everything-without-it.png
+> key ctrl+opt+`
+  ✔ summoned over everything: in view
+  ✔ summoned over everything: Arbor says summoned
+  ✔ summoned over everything: it has the keyboard
+  ✔ summoned over everything: nothing covers it
+  ✔ summoned over everything: and it stays
+  ✔ summoned over everything: the view did not move
+> key ctrl+opt+`
+  ✔ sent away: out of view
+  ✔ sent away: Arbor says stashed
+  ✔ sent away: the keyboard is in 264
+  ✔ sent away: the view did not move
+
+== framing a window that was sent away summons it; float makes it an ordinary window again
+> zoom 263
+summoned ArborTestWindows2 (w263)
+  ✔ framed: in view
+  ✔ framed: Arbor says summoned
+  ✔ framed: it has the keyboard
+  ✔ framed: nothing covers it
+  ✔ framed: and it stays
+  ✔ framed: the view did not move
+  ✔ where it was put
+> key ctrl+opt+`
+  ✔ sent away: out of view
+  ✔ sent away: Arbor says stashed
+  ✔ sent away: the keyboard is in 264
+  ✔ sent away: the view did not move
+> float 263
+w263 floats on the Desktop again and no longer comes and goes with `summon`
+  ✔ floated: in view, on the Desktop
+  ✔ floated: no longer stashed
+  ✔ floated: nor summoned
+  ✔ floated: the keyboard is still in the editor
+> key ctrl+opt+`
+  ✔ summoned from the Desktop: in view
+  ✔ summoned from the Desktop: Arbor says summoned
+  ✔ summoned from the Desktop: it has the keyboard
+  ✔ summoned from the Desktop: nothing covers it
+  ✔ summoned from the Desktop: and it stays
+  ✔ summoned from the Desktop: the view did not move
+> key ctrl+opt+`
+  ✔ sent away: out of view
+  ✔ sent away: Arbor says stashed
+  ✔ sent away: the keyboard is in 264
+  ✔ sent away: the view did not move
+
+== ⌃⌥0 brings it back to the Desktop as an ordinary window
+> key ctrl+opt+0
+  ✔ in view
+  ✔ no longer stashed
+shot: mac-shell/05b-home.png
+
+== a docked window has a place
+> zoom 264
+framed w264
+  ✔ framed
+> summon ArborTestWindows
+ArborTestWindows is docked: showing it where it is
+> status
+running: 1 display, 2 docked and 1 floating, 2 out of view
+Arbor dev
+display 0 0 1024 768, visible 0 31 1024 674, camera n1, back yes
+  w263 1023 677 326 348     floating parked
+  w264 12 43 1000 650       docked focused
+  w265 1023 677 325 650     docked parked
+
+== summonStays
+> zoom 264
+framed w264
+> click 512 368
+> reload-settings
+settings reloaded
+> key ctrl+opt+`
+  ✔ summoned: in view
+  ✔ summoned: Arbor says summoned
+  ✔ summoned: it has the keyboard
+  ✔ summoned: nothing covers it
+  ✔ summoned: and it stays
+  ✔ summoned: the view did not move
+  ✔ it lies over the editor
+> click 952 103
+  ✔ after a click on the editor the editor has the keyboard
+  ✔ it is still summoned
+  ✔ where it was
+  ✘ and nothing covers it
+shot: mac-shell/06-stays.png
+> click 952 103
+  ✘ after a second click on the editor nothing covers it either
+  ✔ the editor still has the keyboard
+> key ctrl+opt+`
+  ✔ summoned away: out of view
+  ✔ summoned away: Arbor says stashed
+  ✔ summoned away: the keyboard is in 264
+  ✔ summoned away: the view did not move
+> reload-settings
+settings reloaded
+
+== pause and resume
+> key ctrl+opt+`
+  ✔ summoned: in view
+  ✔ summoned: Arbor says summoned
+  ✔ summoned: it has the keyboard
+  ✔ summoned: nothing covers it
+  ✔ summoned: and it stays
+  ✔ summoned: the view did not move
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+  ✔ paused: it has not moved
+> resume
+resumed
+  ✔ running again
+  ✔ resumed with the keyboard still in it: summoned again
+  ✔ where it was
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+> click 952 103
+> resume
+resumed
+  ✔ running again
+  ✔ resumed: out of view
+  ✔ resumed: stashed
+
+== 4: quit and launch again on the same windows
+> quit
+quitting
+  ✔ Arbor exits
+  ✘ quit: the scratch window is back in view
+shot: mac-shell/07-after-quit.png
+  ✔ running again
+  ✔ relaunched: an ordinary window
+  ✘ relaunched: still in view, where the quit put it
+> click 174 368
+> key ctrl+opt+`
+  ✔ relaunched and summoned: in view
+  ✔ relaunched and summoned: Arbor says summoned
+  ✔ relaunched and summoned: it has the keyboard
+  ✔ relaunched and summoned: nothing covers it
+  ✔ relaunched and summoned: and it stays
+  ✔ relaunched and summoned: the view did not move
+  ✔ where it was put before the restart
+shot: mac-shell/08-relaunched.png
+> float-all
+floated 3 windows
+  ✔ float-all: an ordinary window again
+  ✔ float-all: in view
+
+== 5: apps without a window
+> summon No Such App 42
+arborctl: no app called No Such App 42: use its name as the Dock shows it, or its bundle id
+> summon Calculator
+opening Calculator
+  ✔ Calculator was launched by its name
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 264 is back on screen after quitting
+  ✔ window 265 is back on screen after quitting
+shot: mac-shell/09-quit.png
+
+121 passed, 4 failed
+exit code 1

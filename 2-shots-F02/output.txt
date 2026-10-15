@@ -1,0 +1,303 @@
+# mac-shell: scripts/mac-shell/shots-F02.sh at 92e91f4, macOS 26.6.2, 2026-10-15T02:28Z
+built Arbor and the pointer tool in 4s
+Screen Recording for a child process: true
+Reduce motion: 0
+> wallpaper gradient
+/System/Library/Desktop Pictures/Solid Colors/Black.png
+
+== the tour
+session 1: Arbor pid 7427, test windows 101 102 103 104 (pid 7401)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+  ✔ Arbor is still running
+shot: mac-shell/10-start.png
+> dock 101 left
+docked w101 at the left edge
+pictures: mac-shell/11-dock-left-1.png … 11-dock-left-7.png
+  ✔ 11-dock-left: the stage comes down
+> dock 102 right
+docked w102 at the right edge
+> dock 104 beside 101 bottom
+docked w104 below w101
+pictures: mac-shell/13-dock-below-1.png … 13-dock-below-7.png
+  ✔ 13-dock-below: the stage comes down
+shot: mac-shell/14-overview.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  w101 12 43 325 319        docked
+  w102 687 43 325 650       docked
+  w103 162 140 700 500      floating
+  w104 12 374 325 319       docked focused
+> zoom 101
+framed w101
+pictures: mac-shell/15-zoom-in-1.png … 15-zoom-in-7.png
+  ✔ 15-zoom-in: the stage comes down
+shot: mac-shell/16-zoomed.png
+  ✔ the framed window is on screen
+  ✔ the others are parked
+> neighbor down
+moved to ArborTestWindows (n4)
+pictures: mac-shell/17-neighbour-1.png … 17-neighbour-7.png
+  ✔ 17-neighbour: the stage comes down
+> show-all
+showing everything
+pictures: mac-shell/18-zoom-out-1.png … 18-zoom-out-7.png
+  ✔ 18-zoom-out: the stage comes down
+> dock 103 beside 102 bottom
+docked w103 below w102; its space is too small to show it, so it is a tile
+pictures: mac-shell/20-refuses-its-slot-1.png … 20-refuses-its-slot-7.png
+  ✔ 20-refuses-its-slot: the stage comes down
+> show-all
+showing everything
+shot: mac-shell/21-tile.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  Desktop          349 43 326 650
+  tile n6 window   687 374 325 319  holds w103
+  w101 12 43 325 319        docked
+  w102 687 43 325 319       docked
+  w103 1023 677 700 500     docked parked
+  w104 12 374 325 319       docked focused
+> zoom 103
+framed w103
+pictures: mac-shell/22-unfold-the-tile-1.png … 22-unfold-the-tile-7.png
+  ✔ 22-unfold-the-tile: the stage comes down
+> back
+back to everything
+pictures: mac-shell/23-fold-it-again-1.png … 23-fold-it-again-7.png
+  ✔ 23-fold-it-again: the stage comes down
+> desktop
+showing the Desktop
+pictures: mac-shell/24-desktop-1.png … 24-desktop-7.png
+  ✔ 24-desktop: the stage comes down
+> back
+back to everything
+
+== a second command in mid-motion carries on from where things are
+> zoom 102
+framed w102
+> back
+back to everything
+pictures: mac-shell/26-retarget-1.png … 26-retarget-7.png
+  ✔ 26-retarget: the stage comes down
+
+== a click in mid-motion ends it
+> reload-settings
+settings reloaded
+> zoom 101
+framed w101
+  ✔ the stage is up in mid-motion
+> click 512 368
+shot: mac-shell/27-after-the-click.png
+  ✔ the click took the stage down
+> show-all
+showing everything
+  ✔ the stage comes down
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 101 is back on screen after quitting
+  ✔ window 102 is back on screen after quitting
+  ✔ window 103 is back on screen after quitting
+  ✔ window 104 is back on screen after quitting
+shot: mac-shell/29-after-quit.png
+
+== the real thing: 0.46 s
+session 2: Arbor pid 9769, test windows 124 125 126 127 (pid 9654)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+> dock 124 left
+docked w124 at the left edge
+> dock 125 right
+docked w125 at the right edge
+> dock 127 beside 124 bottom
+docked w127 below w124
+shot: mac-shell/30-overview.png
+> zoom 124
+framed w124
+film: 7 pictures in .78 s
+shot: mac-shell/31-zoom-in-1.png
+shot: mac-shell/31-zoom-in-2.png
+shot: mac-shell/31-zoom-in-3.png
+shot: mac-shell/31-zoom-in-4.png
+shot: mac-shell/31-zoom-in-5.png
+shot: mac-shell/31-zoom-in-6.png
+shot: mac-shell/31-zoom-in-7.png
+  ✔ 31-zoom-in: the stage comes down
+> back
+back to everything
+film: 7 pictures in .91 s
+shot: mac-shell/32-zoom-out-1.png
+shot: mac-shell/32-zoom-out-2.png
+shot: mac-shell/32-zoom-out-3.png
+shot: mac-shell/32-zoom-out-4.png
+shot: mac-shell/32-zoom-out-5.png
+shot: mac-shell/32-zoom-out-6.png
+shot: mac-shell/32-zoom-out-7.png
+  ✔ 32-zoom-out: the stage comes down
+
+== four commands in quick succession
+> zoom 125
+framed w125
+> back
+back to everything
+> zoom 127
+framed w127
+> show-all
+showing everything
+film: 7 pictures in 1.04 s
+shot: mac-shell/33-quick-1.png
+shot: mac-shell/33-quick-2.png
+shot: mac-shell/33-quick-3.png
+shot: mac-shell/33-quick-4.png
+shot: mac-shell/33-quick-5.png
+shot: mac-shell/33-quick-6.png
+shot: mac-shell/33-quick-7.png
+  ✔ 33-quick: the stage comes down
+shot: mac-shell/34-settled.png
+133 9769 0 675 43 12 650 on Arbor
+132 9769 0 337 43 12 650 on Arbor
+131 9769 0 3 365 343 337 on Arbor
+130 9769 -2147483602 0 31 1024 674 on Arbor
+129 9769 0 12 362 325 12 on Arbor
+128 9769 4 0 0 1024 768 off Arbor
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 124 is back on screen after quitting
+  ✔ window 125 is back on screen after quitting
+  ✔ window 126 is back on screen after quitting
+  ✔ window 127 is back on screen after quitting
+
+== without pictures of windows
+session 3: Arbor pid 10512, test windows 137 138 139 140 (pid 10487)
+running: 1 display, 0 docked and 4 floating, 0 out of view
+Arbor dev
+> dock 137 left
+docked w137 at the left edge
+> dock 138 right
+docked w138 at the right edge
+shot: mac-shell/40-overview.png
+> zoom 137
+framed w137
+pictures: mac-shell/41-covers-zoom-in-1.png … 41-covers-zoom-in-7.png
+  ✔ 41-covers-zoom-in: the stage comes down
+> back
+back to everything
+pictures: mac-shell/42-covers-zoom-out-1.png … 42-covers-zoom-out-7.png
+  ✔ 42-covers-zoom-out: the stage comes down
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 137 is back on screen after quitting
+  ✔ window 138 is back on screen after quitting
+  ✔ window 139 is back on screen after quitting
+  ✔ window 140 is back on screen after quitting
+
+== switched off by the setting
+session 4: Arbor pid 11028, test windows 149 150 151 (pid 11002)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+> dock 149 left
+docked w149 at the left edge
+> dock 150 right
+docked w150 at the right edge
+> zoom 149
+framed w149
+film: 3 pictures in .31 s
+shot: mac-shell/50-off-1.png
+shot: mac-shell/50-off-2.png
+shot: mac-shell/50-off-3.png
+  ✔ there is no stage
+  ✔ no stage was ever put up
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 149 is back on screen after quitting
+  ✔ window 150 is back on screen after quitting
+  ✔ window 151 is back on screen after quitting
+
+== switched off by Reduce motion
+Reduce motion: 1
+session 5: Arbor pid 11414, test windows 159 160 161 (pid 11399)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 159 left
+docked w159 at the left edge
+> dock 160 right
+docked w160 at the right edge
+> zoom 159
+framed w159
+  ✔ there is no stage
+  ✔ the framed window is on screen all the same
+  ✔ and the others are out of view
+  ✔ no stage was ever put up
+  ✔ the log says why
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 159 is back on screen after quitting
+  ✔ window 160 is back on screen after quitting
+  ✔ window 161 is back on screen after quitting
+Reduce motion: 0
+
+== what the logs say about stages and pictures
+2026-10-15T02:29:13.410Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 0.46 s
+2026-10-15T02:29:13.515Z DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 0.46 s
+2026-10-15T02:29:13.531Z DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 0.46 s
+2026-10-15T02:29:13.676Z DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 0.46 s
+2026-10-15T02:29:14.358Z DEBUG stage down
+2026-10-15T02:29:16.337Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 0.46 s
+2026-10-15T02:29:17.023Z DEBUG stage down
+2026-10-15T02:29:18.462Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 0.46 s
+2026-10-15T02:29:19.149Z DEBUG stage down
+2026-10-15T02:29:19.675Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 0.46 s
+2026-10-15T02:29:19.823Z DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 0.46 s
+2026-10-15T02:29:19.883Z DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 0.46 s
+2026-10-15T02:29:20.047Z DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 0.46 s
+2026-10-15T02:29:20.733Z DEBUG stage down
+2026-10-15T02:29:29.341Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:29:29.462Z DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:29:29.478Z DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:29:30.905Z DEBUG stage down
+2026-10-15T02:29:32.213Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:29:33.635Z DEBUG stage down
+2026-10-15T02:29:34.606Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:29:36.033Z DEBUG stage down
+2026-10-15T02:29:49.039Z DEBUG no stage: Reduce motion is on
+2026-10-15T02:29:49.154Z DEBUG no stage: Reduce motion is on
+2026-10-15T02:29:49.164Z DEBUG no stage: Reduce motion is on
+2026-10-15T02:29:49.236Z DEBUG no stage: Reduce motion is on
+2026-10-15T02:28:22.667Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:28:24.103Z DEBUG stage down
+2026-10-15T02:28:24.438Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:28:24.483Z DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:28:25.910Z DEBUG stage down
+2026-10-15T02:28:26.174Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:28:27.600Z DEBUG stage down
+2026-10-15T02:28:29.384Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:28:30.815Z DEBUG stage down
+2026-10-15T02:28:32.795Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 2 stand-ins, 1.2 s
+2026-10-15T02:28:34.219Z DEBUG stage down
+2026-10-15T02:28:35.221Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:28:36.650Z DEBUG stage down
+2026-10-15T02:28:37.845Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:28:39.275Z DEBUG stage down
+2026-10-15T02:28:44.239Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:28:45.702Z DEBUG stage down
+2026-10-15T02:28:47.128Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:28:48.554Z DEBUG stage down
+2026-10-15T02:28:50.805Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:28:52.239Z DEBUG stage down
+2026-10-15T02:28:54.184Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:28:55.554Z DEBUG stage down
+2026-10-15T02:28:55.879Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:28:56.262Z DEBUG stage retargeted on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 1.2 s
+2026-10-15T02:28:57.749Z DEBUG stage down
+2026-10-15T02:29:00.210Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 2.0 s
+2026-10-15T02:29:01.220Z DEBUG stage down
+2026-10-15T02:29:01.863Z DEBUG stage up on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: 4 stand-ins, 2.0 s
+2026-10-15T02:29:04.085Z DEBUG stage down
+
+51 passed, 0 failed
+exit code 0
