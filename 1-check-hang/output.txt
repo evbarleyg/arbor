@@ -1,0 +1,279 @@
+# mac-shell: scripts/mac-shell/check-hang.sh at 84fdf0c, macOS 26.6.2, 2026-10-15T04:35Z
+
+== the Mac
+macOS 26.6.2 on arm64, 3 cores; commit 84fdf0c
+built Arbor, the pointer tool and the app bundles in 9s
+
+== 1. the view moves while an app hangs
+the app that will hang: pid 4402, windows 30 31
+> the second app: move 30 120 120 420 300
+> the second app: move 31 200 180 420 300
+session 1: Arbor pid 4613, test windows 32 33 34 (pid 4524,4402)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ Arbor arranges the second app's windows too
+> arrange
+arranged 5 windows
+> zoom 32: answered after .18 s
+> back: answered after .08 s
+> zoom 33: answered after .07 s
+> back: answered after .04 s
+with every app awake the slowest answer came after .18 s
+> the second app: hang 20
+> zoom 32: answered after .63 s
+> back: answered after .05 s
+> zoom 33: answered after .05 s
+> back: answered after .04 s
+> zoom 32: answered after .05 s
+> back: answered after .06 s
+while the app hung: the first answer came after .63 s, the slowest of the later ones after .06 s
+  ✔ the first command is held up by 0.6 s at most
+  ✔ the later ones by a tenth at most
+  ✔ window 32 of the other app is in its slot meanwhile
+  ✔ window 33 of the other app is in its slot meanwhile
+  ✔ window 34 of the other app is in its slot meanwhile
+the second app is awake again
+  ✔ window 30 follows into its slot once its app is awake
+  ✔ window 31 follows into its slot once its app is awake
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          876 37 142 662
+  w30 6 37 284 328         docked
+  w31 296 37 284 328       docked
+  w32 6 371 284 328        docked focused
+  w33 296 371 284 328      docked
+  w34 586 37 284 662       docked
+  ✔ Arbor is gone within 5 s of Quit
+Quit took .17 s
+  ✔ window 30 is on screen after quitting
+  ✔ window 31 is on screen after quitting
+
+▸ quitting puts every window back in view
+> quit
+arborctl: Arbor is not running (no control socket at /tmp/arbor-shell.bUtn0L/home/arbor.sock); start it with `open -a Arbor`
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== 2. Quit while an app hangs whose windows are out of view
+the app that will hang: pid 5969, windows 43 44
+> the second app: move 43 120 120 420 300
+> the second app: move 44 200 180 420 300
+session 2: Arbor pid 6028, test windows 45 46 47 (pid 6007,5969)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ Arbor arranges the second app's windows too
+> arrange
+arranged 5 windows
+> zoom 45
+framed w45
+  ✔ the second app's windows are out of view
+> the second app: hang 20
+  ✔ Arbor is gone within 5 s of Quit
+Quit took 1.68 s
+  ✔ window 45 of the other app is on screen at once
+  ✔ window 46 of the other app is on screen at once
+  ✔ window 47 of the other app is on screen at once
+what the log says of the end:
+2026-10-15T04:35:56.535Z INFO  pid 5969 does not answer; leaving its windows alone until it does
+2026-10-15T04:35:56.848Z INFO  w43's app does not answer; left word where the window is to go when it does
+2026-10-15T04:35:57.142Z INFO  w44's app does not answer; left word where the window is to go when it does
+2026-10-15T04:35:57.143Z INFO  trace hang-quit ended: 149 lines, Arbor stopped
+2026-10-15T04:35:57.143Z INFO  stopped; 2 window(s) could not be returned to view, their apps do not answer: w43 w44
+the second app is awake again
+  ✘ window 43 comes back on screen once its app is awake, though Arbor is gone — only 0 % of it is to be seen: 1023 677 284 328
+      picture: mac-shell/fail-check-hang-1.png
+      log | INFO  Arbor dev starting, pid 6028, home /tmp/arbor-shell.JoXl9b/home
+      log | INFO  control socket at /tmp/arbor-shell.JoXl9b/home/arbor.sock
+      log | INFO  keyboard layout: U.S.
+      log | INFO  started: 1 display(s), 5 managed window(s)
+      log | INFO  trace hang-quit: recording to /tmp/arbor-shell.JoXl9b/home/traces/2026-10-15-043552-hang-quit.jsonl
+      log | DEBUG commands follow the pointer: a script, pointer idle 299.6 s, keys 299.6 s, focus for ever
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  arrange: arranged 5 windows
+      log | DEBUG pid 5969 came forward, and macOS still names another app as the one in front
+      log | DEBUG focus is on w43
+      log | DEBUG w43 has the keyboard
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  zoom 45: framed w45
+      log | DEBUG pid 6007 came forward, and macOS still names another app as the one in front
+      log | DEBUG focus is on w45
+      log | DEBUG w45 has the keyboard
+      log | INFO  pid 5969 does not answer; leaving its windows alone until it does
+      log | INFO  w43's app does not answer; left word where the window is to go when it does
+      log | INFO  w44's app does not answer; left word where the window is to go when it does
+      log | INFO  trace hang-quit ended: 149 lines, Arbor stopped
+      log | INFO  stopped; 2 window(s) could not be returned to view, their apps do not answer: w43 w44
+      log | INFO  Arbor quit
+  ✘ window 44 comes back on screen once its app is awake, though Arbor is gone — only 0 % of it is to be seen: 1023 677 284 328
+      picture: mac-shell/fail-check-hang-2.png
+the window server has them at: 1023 677 284 328 and 1023 677 284 328
+
+▸ quitting puts every window back in view
+> quit
+arborctl: Arbor is not running (no control socket at /tmp/arbor-shell.JoXl9b/home/arbor.sock); start it with `open -a Arbor`
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== 3. a pause while an app hangs whose windows are out of view
+the app that will hang: pid 8284, windows 60 61
+> the second app: move 60 120 120 420 300
+> the second app: move 61 200 180 420 300
+session 3: Arbor pid 8337, test windows 62 63 64 (pid 8319,8284)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ Arbor arranges the second app's windows too
+> arrange
+arranged 5 windows
+> zoom 62
+framed w62
+  ✔ the second app's windows are out of view
+> the second app: hang 20
+> pause: answered after 1.63 s
+  ✔ the pause is answered within 5 s
+  ✔ window 62 of the other app is on screen at once
+  ✔ window 63 of the other app is on screen at once
+  ✔ window 64 of the other app is on screen at once
+the second app is awake again
+waited 0 s for them after the app woke
+  ✔ window 60 comes back on screen once its app is awake: a pause promises every window in view
+  ✔ window 61 comes back on screen once its app is awake: a pause promises every window in view
+> resume
+resumed
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== 4. Arbor starts while an app hangs
+the app that will hang: pid 9679, windows 75 76
+> the second app: move 75 120 120 420 300
+> the second app: move 76 200 180 420 300
+> the second app: hang 20
+session 4: Arbor pid 9922, test windows 77 78 79 (pid 9862,9679)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+Arbor had the other app's three windows 1.49 s after it was started
+  ✔ that took 5 s at most
+> status: answered after .03 s
+  ✔ and it answers at once
+the second app is awake again
+  ✔ window 75 is known to Arbor once its app is awake
+  ✔ and has not moved: nobody docked it
+  ✔ window 76 is known to Arbor once its app is awake
+  ✔ and has not moved: nobody docked it
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          6 37 1012 662
+  w75 120 120 420 300      floating
+  w76 200 180 420 300      floating
+  w77 170 220 480 348      floating
+  w78 220 180 480 348      floating
+  w79 270 140 480 348      floating
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== 5. what an arrangement comes to while every app is awake
+the app that will hang: pid 11448, windows 80 81
+> the second app: move 80 120 120 420 300
+> the second app: move 81 200 180 420 300
+session 5: Arbor pid 11734, test windows 82 83 84 (pid 11659,11448)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ Arbor arranges the second app's windows too
+> arrange: answered after .25 s
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          938 37 80 662
+  w80 6 37 500 328         docked focused
+  w81 512 37 207 328       docked
+  w82 6 371 500 328        docked
+  w83 512 371 207 328      docked
+  w84 725 37 207 662       docked
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== 6. the same while the second app is busy: it answers after 0.7 s, later than Arbor waits
+the app that will hang: pid 12392, windows 93 94
+> the second app: move 93 120 120 420 300
+> the second app: move 94 200 180 420 300
+session 6: Arbor pid 12445, test windows 95 96 97 (pid 12427,12392)
+running: 1 display, 0 docked and 5 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ Arbor arranges the second app's windows too
+> the second app: busy 700
+> arrange: answered after 1.64 s
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          938 37 80 662
+  w93 6 37 500 328         docked focused
+  w94 512 37 207 328       docked
+  w95 6 371 500 328        docked
+  w96 512 371 207 328      docked
+  w97 725 37 207 662       docked
+  ✘ arrange is held up by 0.6 s at most
+      picture: mac-shell/fail-check-hang-3.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          938 37 80 662
+      |   w93 6 37 500 328         docked focused
+      |   w94 512 37 207 328       docked
+      |   w95 6 371 500 328        docked
+      |   w96 512 371 207 328      docked
+      |   w97 725 37 207 662       docked
+      log | INFO  Arbor dev starting, pid 12445, home /tmp/arbor-shell.obOq3X/home
+      log | INFO  control socket at /tmp/arbor-shell.obOq3X/home/arbor.sock
+      log | INFO  keyboard layout: U.S.
+      log | INFO  started: 1 display(s), 5 managed window(s)
+      log | INFO  trace busy-arrange: recording to /tmp/arbor-shell.obOq3X/home/traces/2026-10-15-043807-busy-arrange.jsonl
+      log | DEBUG commands follow the pointer: a script, pointer idle 436.8 s, keys 436.8 s, focus for ever
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  made room for w93
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  arrange: arranged 5 windows
+      log | DEBUG pid 12392 came forward, and macOS still names another app as the one in front
+      log | DEBUG focus is on w93
+      log | DEBUG w93 has the keyboard
+awake: it is managed docked at 6 37 500 328;6 37 500 328;it is managed docked at 512 37 207 328;512 37 207 328;it is managed docked at 6 371 500 328;6 371 500 328;it is managed docked at 512 371 207 328;512 371 207 328;it is managed docked at 725 37 207 662;725 37 207 662;
+busy:  it is managed docked at 6 37 500 328;6 37 500 328;it is managed docked at 512 37 207 328;512 37 207 328;it is managed docked at 6 371 500 328;6 371 500 328;it is managed docked at 512 371 207 328;512 371 207 328;it is managed docked at 725 37 207 662;725 37 207 662;
+  ✔ window 93 is in its slot: what the busy app made of the size was learnt late, and room was made
+  ✔ window 94 is in its slot: what the busy app made of the size was learnt late, and room was made
+  ✔ window 95 is in its slot: what the busy app made of the size was learnt late, and room was made
+  ✔ window 96 is in its slot: what the busy app made of the size was learnt late, and room was made
+  ✔ window 97 is in its slot: what the busy app made of the size was learnt late, and room was made
+what the log says of apps that went late:
+0
+  ✘ the overrun is in the log, by bundle id
+      picture: mac-shell/fail-check-hang-4.png
+> the second app: busy 0
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+62 passed, 4 failed
+exit code 1

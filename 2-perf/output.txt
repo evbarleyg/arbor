@@ -1,0 +1,541 @@
+# mac-shell: scripts/mac-shell/perf.sh at 84fdf0c, macOS 26.6.2, 2026-10-15T04:38Z
+
+== the Mac
+macOS 26.6.2 on arm64, 3 cores
+built Arbor, the pointer tool and the app bundles in 7s
+
+== twelve windows of one app
+session 1: Arbor pid 14549, 1 process(es) 14512, windows 109 110 111 112 113 114 115 116 117 118 119 120
+
+-- one app: 10 x (zoom, back)
+the last 0.9 s
+
+accessibility calls                       count   total ms    mean ms   worst ms
+  set AXPosition                            240      56.34       0.23       2.30
+  set AXSize                                 40      51.35       1.28       5.64
+  read 2 attributes                         240      31.12       0.13       7.68
+  read AXWindows                              2       7.62       3.81       7.32
+  read AXFocusedWindow                       78       7.09       0.09       0.65
+  read AXFullScreen                          24       3.20       0.13       2.23
+  set AXMain                                  1       1.17       1.17       1.17
+  perform AXRaise                             1       0.11       0.11       0.11
+  read AXEnhancedUserInterface                1       0.05       0.05       0.05
+
+accessibility calls by app                count   total ms    mean ms   worst ms
+  pid 14512                                 627     158.05       0.25       7.68
+
+accessibility calls by thread             count   total ms    mean ms   worst ms
+  lanes                                     521     138.86       0.27       7.68
+  main thread                               106      19.19       0.18       7.32
+
+commands                                  count   total ms    mean ms   worst ms
+  back                                       10     238.12      23.81      37.26
+  zoom                                       10     191.44      19.14      27.94
+
+controller                                count   total ms    mean ms   worst ms
+  lay out a display                          20     409.71      20.49      36.37
+  update overlays                            20      63.78       3.19      10.28
+
+notifications                             count   total ms    mean ms   worst ms
+  own moves, not read                       270       0.00       0.00       0.00
+
+window system                             count   total ms    mean ms   worst ms
+  wait for the apps to move                  20     149.26       7.46      17.85
+
+-- one app: 20 x resize by 8 points, as a seam drag does
+the last 0.9 s
+
+accessibility calls                       count   total ms    mean ms   worst ms
+  set AXSize                                240     171.13       0.71       8.66
+  set AXPosition                            120      34.48       0.29       3.15
+  read 2 attributes                         126      20.64       0.16       3.08
+  read AXFocusedWindow                       20       1.91       0.10       0.25
+  read AXEnhancedUserInterface                1       0.06       0.06       0.06
+
+accessibility calls by app                count   total ms    mean ms   worst ms
+  pid 14512                                 507     228.21       0.45       8.66
+
+accessibility calls by thread             count   total ms    mean ms   worst ms
+  lanes                                     481     223.86       0.47       8.66
+  main thread                                26       4.36       0.17       1.34
+
+commands                                  count   total ms    mean ms   worst ms
+  resize                                     20     542.67      27.13      63.90
+
+controller                                count   total ms    mean ms   worst ms
+  lay out a display                          20     529.11      26.46      62.21
+  update overlays                            20      59.15       2.96      24.39
+
+notifications                             count   total ms    mean ms   worst ms
+  own moves, not read                       180       0.00       0.00       0.00
+
+window system                             count   total ms    mean ms   worst ms
+  wait for the apps to move                  20     234.17      11.71      26.53
+
+-- one app: 10 x show-all when everything shows already
+the last 0.3 s
+
+accessibility calls                       count   total ms    mean ms   worst ms
+  read AXFocusedWindow                       30       2.74       0.09       0.15
+  read 2 attributes                           6       0.57       0.09       0.15
+
+accessibility calls by app                count   total ms    mean ms   worst ms
+  pid 14512                                  36       3.31       0.09       0.15
+
+accessibility calls by thread             count   total ms    mean ms   worst ms
+  main thread                                36       3.31       0.09       0.15
+
+commands                                  count   total ms    mean ms   worst ms
+  show-all                                   10     141.29      14.13      17.01
+
+controller                                count   total ms    mean ms   worst ms
+  lay out a display                          10     134.15      13.42      16.27
+  update overlays                            10     126.26      12.63      15.61
+
+== panels that were put away and handed out again still work
+  ✔ no handle is on screen while one window is framed
+handles on screen: 12 before, 12 after zoom and back
+  ✔ all the handles are back
+the first window was 220 wide and is 260 wide after dragging the gap on its right by 40
+  ✔ a handle that was handed out again takes a drag
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+  ✔ window 7 is back on screen after quitting
+  ✔ window 8 is back on screen after quitting
+  ✔ window 9 is back on screen after quitting
+  ✔ window 10 is back on screen after quitting
+  ✔ window 11 is back on screen after quitting
+  ✔ window 12 is back on screen after quitting
+
+== twelve windows of four apps
+session 2: Arbor pid 15221, 4 process(es) 15131,15154,15181,15201, windows 135 136 137 138 139 140 141 142 143 144 145 146
+
+-- four apps: 10 x (zoom, back)
+the last 0.9 s
+
+accessibility calls                       count   total ms    mean ms   worst ms
+  set AXPosition                            240     121.62       0.51       3.03
+  read 2 attributes                         240      71.62       0.30       1.91
+  set AXSize                                 40      50.55       1.26       3.79
+  set AXMain                                  2      20.04      10.02      19.65
+  read AXFocusedWindow                       86      11.88       0.14       2.49
+  read AXEnhancedUserInterface                4       2.92       0.73       1.07
+  read AXWindows                              4       0.81       0.20       0.29
+  read AXFullScreen                          12       0.53       0.04       0.05
+  perform AXRaise                             2       0.35       0.17       0.23
+
+accessibility calls by app                count   total ms    mean ms   worst ms
+  pid 15131                                 260     104.97       0.40      19.65
+  pid 15181                                 128      58.86       0.46       2.78
+  pid 15154                                 121      58.60       0.48       1.94
+  pid 15201                                 121      57.91       0.48       3.03
+
+accessibility calls by thread             count   total ms    mean ms   worst ms
+  lanes                                     524     246.72       0.47       3.79
+  main thread                               106      33.61       0.32      19.65
+
+commands                                  count   total ms    mean ms   worst ms
+  back                                       10     216.88      21.69      29.97
+  zoom                                       10     198.87      19.89      40.47
+
+controller                                count   total ms    mean ms   worst ms
+  lay out a display                          20     372.79      18.64      26.95
+  update overlays                            20      52.38       2.62      10.09
+
+notifications                             count   total ms    mean ms   worst ms
+  own moves, not read                       270       0.00       0.00       0.00
+
+window system                             count   total ms    mean ms   worst ms
+  wait for the apps to move                  20      79.49       3.97       6.41
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+  ✔ window 7 is back on screen after quitting
+  ✔ window 8 is back on screen after quitting
+  ✔ window 9 is back on screen after quitting
+  ✔ window 10 is back on screen after quitting
+  ✔ window 11 is back on screen after quitting
+  ✔ window 12 is back on screen after quitting
+
+== twelve windows of four apps, one of them busy 300 ms at a time with 30 ms of attention between
+session 3: Arbor pid 15474, 4 process(es) 15375,15396,15430,15451, windows 161 162 163 164 165 166 167 168 169 170 171 172
+every window was in view .25 s after the last command
+
+-- one app busy (attention 30 ms): 3 x (zoom, back)
+the last 1.2 s
+
+accessibility calls                       count   total ms    mean ms   worst ms
+  set AXPosition                             72     387.62       5.38     279.09
+  read 2 attributes                          89     342.64       3.85     283.43
+  read AXFocusedWindow                       36      42.72       1.19      28.63
+  set AXSize                                 12      29.07       2.42       5.62
+  set AXMain                                  2      16.30       8.15      15.89
+  read AXWindows                              4      10.22       2.55       6.49
+  perform AXRaise                             2       2.13       1.06       1.92
+  read AXFullScreen                          12       2.03       0.17       1.29
+  read AXEnhancedUserInterface                4       0.75       0.19       0.21
+
+accessibility calls by app                count   total ms    mean ms   worst ms
+  pid 15451                                  41     604.94      14.75     283.43
+  pid 15375                                 104     100.94       0.97      15.89
+  pid 15430                                  47      77.31       1.64      28.63
+  pid 15396                                  41      50.28       1.23       6.30
+
+accessibility calls by thread             count   total ms    mean ms   worst ms
+  lanes                                     160     469.94       2.94     279.09
+  main thread                                73     363.52       4.98     283.43
+
+commands                                  count   total ms    mean ms   worst ms
+  back                                        3     346.38     115.46     303.76
+  zoom                                        3     140.23      46.74      83.79
+
+controller                                count   total ms    mean ms   worst ms
+  lay out a display                           6     401.63      66.94     298.03
+  update overlays                             6      17.26       2.88       6.20
+
+notifications                             count   total ms    mean ms   worst ms
+  moves and resizes, read                     9       0.00       0.00       0.00
+  own moves, not read                        72       0.00       0.00       0.00
+
+window system                             count   total ms    mean ms   worst ms
+  wait for the apps to move                   6     337.87      56.31     281.91
+  ✔ the keyboard follows into the busy app's window
+  ✔ window 161 ended up in view (busy app)
+  ✔ window 162 ended up in view (busy app)
+  ✔ window 163 ended up in view (busy app)
+  ✔ window 164 ended up in view (busy app)
+  ✔ window 165 ended up in view (busy app)
+  ✔ window 166 ended up in view (busy app)
+  ✔ window 167 ended up in view (busy app)
+  ✔ window 168 ended up in view (busy app)
+  ✔ window 169 ended up in view (busy app)
+  ✔ window 170 ended up in view (busy app)
+  ✔ window 171 ended up in view (busy app)
+  ✔ window 172 ended up in view (busy app)
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+  ✔ window 7 is back on screen after quitting
+  ✔ window 8 is back on screen after quitting
+  ✔ window 9 is back on screen after quitting
+  ✔ window 10 is back on screen after quitting
+  ✔ window 11 is back on screen after quitting
+  ✔ window 12 is back on screen after quitting
+
+== twelve windows of four apps, one of them busy 300 ms at a time with 2 ms of attention between
+session 4: Arbor pid 16134, 4 process(es) 16025,16057,16087,16111, windows 187 188 189 190 191 192 193 194 195 196 197 198
+every window was in view .24 s after the last command
+
+-- one app busy (attention 2 ms): 3 x (zoom, back)
+the last 0.9 s
+
+accessibility calls                       count   total ms    mean ms   worst ms
+  read AXEnhancedUserInterface                4     311.27      77.82     310.47
+  set AXPosition                             72      69.20       0.96      12.56
+  read 2 attributes                          72      46.91       0.65       9.33
+  set AXSize                                 12      35.06       2.92      17.28
+  set AXMain                                  2      26.72      13.36      26.28
+  read AXWindows                              4      11.89       2.97      11.31
+  read AXFocusedWindow                       36       8.15       0.23       4.78
+  perform AXRaise                             2       0.92       0.46       0.78
+  read AXFullScreen                          12       0.78       0.07       0.19
+
+accessibility calls by app                count   total ms    mean ms   worst ms
+  pid 16111                                  37     341.46       9.23     310.47
+  pid 16025                                  99      92.66       0.94      26.28
+  pid 16087                                  43      41.23       0.96      12.56
+  pid 16057                                  37      35.54       0.96       9.33
+
+accessibility calls by thread             count   total ms    mean ms   worst ms
+  lanes                                     160     462.44       2.89     310.47
+  main thread                                56      48.46       0.87      26.28
+
+commands                                  count   total ms    mean ms   worst ms
+  zoom                                        3     417.14     139.05     361.18
+  back                                        3      58.07      19.36      21.48
+
+controller                                count   total ms    mean ms   worst ms
+  lay out a display                           6     431.26      71.88     320.59
+  update overlays                             6      13.76       2.29       4.65
+
+notifications                             count   total ms    mean ms   worst ms
+  own moves, not read                        81       0.00       0.00       0.00
+
+window system                             count   total ms    mean ms   worst ms
+  wait for the apps to move                   6     355.18      59.20     312.86
+  ✔ the keyboard follows into the busy app's window
+  ✔ window 187 ended up in view (busy app)
+  ✔ window 188 ended up in view (busy app)
+  ✔ window 189 ended up in view (busy app)
+  ✔ window 190 ended up in view (busy app)
+  ✔ window 191 ended up in view (busy app)
+  ✔ window 192 ended up in view (busy app)
+  ✔ window 193 ended up in view (busy app)
+  ✔ window 194 ended up in view (busy app)
+  ✔ window 195 ended up in view (busy app)
+  ✔ window 196 ended up in view (busy app)
+  ✔ window 197 ended up in view (busy app)
+  ✔ window 198 ended up in view (busy app)
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+  ✔ window 7 is back on screen after quitting
+  ✔ window 8 is back on screen after quitting
+  ✔ window 9 is back on screen after quitting
+  ✔ window 10 is back on screen after quitting
+  ✔ window 11 is back on screen after quitting
+  ✔ window 12 is back on screen after quitting
+
+== twelve windows of four apps, one of them hangs for 20 s
+session 5: Arbor pid 16511, 4 process(es) 16416,16436,16464,16487, windows 213 214 215 216 217 218 219 220 221 222 223 224
+zoom 213: the reply took .59 s
+back: the reply took .04 s
+zoom 213: the reply took .08 s
+back: the reply took .03 s
+
+-- one app hung: zoom, back, zoom, back
+the last 1.4 s
+
+accessibility calls                       count   total ms    mean ms   worst ms
+  set AXPosition                             36      19.14       0.53       1.83
+  read AXFocusedWindow                       28      19.08       0.68      12.41
+  set AXMain                                  2      15.54       7.77      14.33
+  read 2 attributes                          36      10.63       0.30       1.98
+  set AXSize                                  8      10.54       1.32       3.78
+  read AXWindows                              4       1.64       0.41       0.75
+  perform AXRaise                             2       1.45       0.72       1.29
+  read AXFullScreen                          12       0.98       0.08       0.24
+  read AXEnhancedUserInterface                3       0.40       0.13       0.15
+
+accessibility calls by app                count   total ms    mean ms   worst ms
+  pid 16416                                  75      43.03       0.57      14.33
+  pid 16464                                  31      24.76       0.80      12.41
+  pid 16436                                  25      11.61       0.46       1.59
+
+accessibility calls by thread             count   total ms    mean ms   worst ms
+  lanes                                      83      40.71       0.49       3.78
+  main thread                                48      38.69       0.81      14.33
+
+commands                                  count   total ms    mean ms   worst ms
+  zoom                                        2     597.80     298.90     563.02
+  back                                        2      21.96      10.98      13.77
+
+controller                                count   total ms    mean ms   worst ms
+  lay out a display                           4     573.50     143.38     519.17
+  update overlays                             4      11.83       2.96       3.64
+
+notifications                             count   total ms    mean ms   worst ms
+  own moves, not read                        42       0.00       0.00       0.00
+
+window system                             count   total ms    mean ms   worst ms
+  wait for the apps to move                   4     524.20     131.05     510.60
+  apps that went late                         1       0.00       0.00       0.00
+every window was in view 1.01 s after the hang began
+  ✔ window 213 ended up in view (after the hang)
+  ✔ window 214 ended up in view (after the hang)
+  ✔ window 215 ended up in view (after the hang)
+  ✔ window 216 ended up in view (after the hang)
+  ✔ window 217 ended up in view (after the hang)
+  ✔ window 218 ended up in view (after the hang)
+  ✔ window 219 ended up in view (after the hang)
+  ✔ window 220 ended up in view (after the hang)
+  ✔ window 221 ended up in view (after the hang)
+  ✔ window 222 ended up in view (after the hang)
+  ✔ window 223 ended up in view (after the hang)
+  ✔ window 224 ended up in view (after the hang)
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          908 37 110 662
+  w213 6 482 220 217        docked focused
+  w214 232 260 219 216      docked
+  w215 457 37 220 217       docked
+  w216 457 482 220 217      docked
+  w217 683 260 219 216      docked
+  w218 6 37 220 217         docked
+  w219 232 37 219 217       docked
+  w220 232 482 219 217      docked
+  w221 457 260 220 216      docked
+  w222 683 37 219 217       docked
+  w223 683 482 219 217      docked
+  w224 6 260 220 216        docked
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+  ✔ window 7 is back on screen after quitting
+  ✔ window 8 is back on screen after quitting
+  ✔ window 9 is back on screen after quitting
+  ✔ window 10 is back on screen after quitting
+  ✔ window 11 is back on screen after quitting
+  ✔ window 12 is back on screen after quitting
+
+== memory: three times 400 commands
+session 6: Arbor pid 17176, 4 process(es) 17082,17108,17132,17156, windows 239 240 241 242 243 244 245 246 247 248 249 250
+at the start:  phys_footprint: 16 MB
+  4 SeamPanel  4 AXObserver
+
+-- 400 commands
+the last 36.2 s
+
+accessibility calls                       count   total ms    mean ms   worst ms
+  set AXSize                                568    3043.14       5.36      55.53
+  read AXWindows                            524    2739.50       5.23      67.06
+  set AXPosition                            858    1265.24       1.47      22.67
+  read AXFocusedWindow                     2969    1095.90       0.37      28.24
+  read 2 attributes                        1078     850.33       0.79      20.59
+  set AXMain                                201     718.23       3.57      27.01
+  perform AXRaise                           201     508.79       2.53     204.21
+  read AXFullScreen                        1579     296.83       0.19      11.81
+  read AXEnhancedUserInterface               98      50.20       0.51       3.01
+
+accessibility calls by app                count   total ms    mean ms   worst ms
+  pid 17082                                4491    5920.01       1.32     204.21
+  pid 17108                                2972    3119.56       1.05      35.84
+  pid 17132                                 613    1528.62       2.49      36.67
+
+accessibility calls by thread             count   total ms    mean ms   worst ms
+  main thread                              5694    5500.14       0.97     204.21
+  lanes                                    2382    5068.04       2.13      55.53
+
+commands                                  count   total ms    mean ms   worst ms
+  zoom                                      100    4849.30      48.49     229.12
+  float                                      50    2239.11      44.78     106.96
+  dock                                       50    2079.49      41.59      96.84
+  show-all                                   51    1357.10      26.61      83.67
+  desktop                                    50    1086.51      21.73      59.36
+  back                                       50     947.77      18.96      39.69
+  resize                                     50     274.95       5.50      62.45
+
+controller                                count   total ms    mean ms   worst ms
+  lay out a display                         361    9451.94      26.18     186.35
+  update overlays                           361    1733.66       4.80      64.86
+
+notifications                             count   total ms    mean ms   worst ms
+  moves and resizes, read                    34       0.00       0.00       0.00
+  own moves, not read                      1099       0.00       0.00       0.00
+
+window system                             count   total ms    mean ms   worst ms
+  wait for the apps to move                 396    2286.71       5.77      67.56
+after 400 commands:  phys_footprint: 20 MB
+  7 SeamPanel  4 AXObserver
+after 800 commands:  phys_footprint: 21 MB
+  7 SeamPanel  4 AXObserver
+after 1200 commands:  phys_footprint: 21 MB
+  7 SeamPanel  4 AXObserver
+Process 17176: 288 leaks for 14400 total leaked bytes.
+   3 ROOT CYCLE: <NSXPCConnection > [160]  Protocol: LNDaemonApplicationInterface  Connection: "com.apple.linkd.autoShortcut" [no process]
+
+== energy
+without shortcuts and event taps: idle wakeups and context switches in each of two spans of 10 s
+PID    COMMAND %CPU IDLEW CSW    #TH POWER
+17176  Arbor   0.0  4     67     -1  0.0  
+17176  Arbor   0.0  2     63     0   0.0  
+nothing recorded
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+  ✔ window 7 is back on screen after quitting
+  ✔ window 8 is back on screen after quitting
+  ✔ window 9 is back on screen after quitting
+  ✔ window 10 is back on screen after quitting
+  ✔ window 11 is back on screen after quitting
+  ✔ window 12 is back on screen after quitting
+session 7: Arbor pid 23679, 4 process(es) 23584,23608,23635,23656, windows 266 267 268 269 270 271 272 273 274 275 276 277
+with shortcuts and event taps (and their permission check once a second): idle wakeups and context switches in each of two spans of 10 s
+PID    COMMAND %CPU IDLEW CSW  #TH POWER
+23679  Arbor   0.5  139   945  -1  1.2  
+23679  Arbor   0.1  10    197  0   0.1  
+nothing recorded
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+  ✔ window 7 is back on screen after quitting
+  ✔ window 8 is back on screen after quitting
+  ✔ window 9 is back on screen after quitting
+  ✔ window 10 is back on screen after quitting
+  ✔ window 11 is back on screen after quitting
+  ✔ window 12 is back on screen after quitting
+
+132 passed, 0 failed
+still running when the script had ended, and stopped now:
+  14512 ArborTestWindows
+  15131 ArborTestWindows
+  15154 ArborTestWindows
+  15181 ArborTestWindows
+  15201 ArborTestWindows
+  15375 ArborTestWindows
+  15396 ArborTestWindows
+  15430 ArborTestWindows
+  15451 ArborTestWindows
+  16025 ArborTestWindows
+  16057 ArborTestWindows
+  16087 ArborTestWindows
+  16111 ArborTestWindows
+  16416 ArborTestWindows
+  16436 ArborTestWindows
+  16464 ArborTestWindows
+  16487 ArborTestWindows
+  17082 ArborTestWindows
+  17108 ArborTestWindows
+  17132 ArborTestWindows
+  17156 ArborTestWindows
+  23584 ArborTestWindows
+  23608 ArborTestWindows
+  23635 ArborTestWindows
+  23656 ArborTestWindows
+exit code 0

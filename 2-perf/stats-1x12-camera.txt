@@ -1,0 +1,33 @@
+the last 0.9 s
+
+accessibility calls                       count   total ms    mean ms   worst ms
+  set AXPosition                            240      56.34       0.23       2.30
+  set AXSize                                 40      51.35       1.28       5.64
+  read 2 attributes                         240      31.12       0.13       7.68
+  read AXWindows                              2       7.62       3.81       7.32
+  read AXFocusedWindow                       78       7.09       0.09       0.65
+  read AXFullScreen                          24       3.20       0.13       2.23
+  set AXMain                                  1       1.17       1.17       1.17
+  perform AXRaise                             1       0.11       0.11       0.11
+  read AXEnhancedUserInterface                1       0.05       0.05       0.05
+
+accessibility calls by app                count   total ms    mean ms   worst ms
+  pid 14512                                 627     158.05       0.25       7.68
+
+accessibility calls by thread             count   total ms    mean ms   worst ms
+  lanes                                     521     138.86       0.27       7.68
+  main thread                               106      19.19       0.18       7.32
+
+commands                                  count   total ms    mean ms   worst ms
+  back                                       10     238.12      23.81      37.26
+  zoom                                       10     191.44      19.14      27.94
+
+controller                                count   total ms    mean ms   worst ms
+  lay out a display                          20     409.71      20.49      36.37
+  update overlays                            20      63.78       3.19      10.28
+
+notifications                             count   total ms    mean ms   worst ms
+  own moves, not read                       270       0.00       0.00       0.00
+
+window system                             count   total ms    mean ms   worst ms
+  wait for the apps to move                  20     149.26       7.46      17.85

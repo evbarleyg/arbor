@@ -1,0 +1,36 @@
+the last 0.9 s
+
+accessibility calls                       count   total ms    mean ms   worst ms
+  read AXEnhancedUserInterface                4     311.27      77.82     310.47
+  set AXPosition                             72      69.20       0.96      12.56
+  read 2 attributes                          72      46.91       0.65       9.33
+  set AXSize                                 12      35.06       2.92      17.28
+  set AXMain                                  2      26.72      13.36      26.28
+  read AXWindows                              4      11.89       2.97      11.31
+  read AXFocusedWindow                       36       8.15       0.23       4.78
+  perform AXRaise                             2       0.92       0.46       0.78
+  read AXFullScreen                          12       0.78       0.07       0.19
+
+accessibility calls by app                count   total ms    mean ms   worst ms
+  pid 16111                                  37     341.46       9.23     310.47
+  pid 16025                                  99      92.66       0.94      26.28
+  pid 16087                                  43      41.23       0.96      12.56
+  pid 16057                                  37      35.54       0.96       9.33
+
+accessibility calls by thread             count   total ms    mean ms   worst ms
+  lanes                                     160     462.44       2.89     310.47
+  main thread                                56      48.46       0.87      26.28
+
+commands                                  count   total ms    mean ms   worst ms
+  zoom                                        3     417.14     139.05     361.18
+  back                                        3      58.07      19.36      21.48
+
+controller                                count   total ms    mean ms   worst ms
+  lay out a display                           6     431.26      71.88     320.59
+  update overlays                             6      13.76       2.29       4.65
+
+notifications                             count   total ms    mean ms   worst ms
+  own moves, not read                        81       0.00       0.00       0.00
+
+window system                             count   total ms    mean ms   worst ms
+  wait for the apps to move                   6     355.18      59.20     312.86

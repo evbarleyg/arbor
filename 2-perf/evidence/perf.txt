@@ -1,0 +1,167 @@
+# perf 2026-10-15T04:38Z on macOS 26.6.2, commit 84fdf0c
+
+== the Mac
+
+== twelve windows of one app
+
+== panels that were put away and handed out again still work
+  ✔ no handle is on screen while one window is framed
+  ✔ all the handles are back
+  ✔ a handle that was handed out again takes a drag
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+  ✔ window 7 is back on screen after quitting
+  ✔ window 8 is back on screen after quitting
+  ✔ window 9 is back on screen after quitting
+  ✔ window 10 is back on screen after quitting
+  ✔ window 11 is back on screen after quitting
+  ✔ window 12 is back on screen after quitting
+
+== twelve windows of four apps
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+  ✔ window 7 is back on screen after quitting
+  ✔ window 8 is back on screen after quitting
+  ✔ window 9 is back on screen after quitting
+  ✔ window 10 is back on screen after quitting
+  ✔ window 11 is back on screen after quitting
+  ✔ window 12 is back on screen after quitting
+
+== twelve windows of four apps, one of them busy 300 ms at a time with 30 ms of attention between
+  ✔ the keyboard follows into the busy app's window
+  ✔ window 161 ended up in view (busy app)
+  ✔ window 162 ended up in view (busy app)
+  ✔ window 163 ended up in view (busy app)
+  ✔ window 164 ended up in view (busy app)
+  ✔ window 165 ended up in view (busy app)
+  ✔ window 166 ended up in view (busy app)
+  ✔ window 167 ended up in view (busy app)
+  ✔ window 168 ended up in view (busy app)
+  ✔ window 169 ended up in view (busy app)
+  ✔ window 170 ended up in view (busy app)
+  ✔ window 171 ended up in view (busy app)
+  ✔ window 172 ended up in view (busy app)
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+  ✔ window 7 is back on screen after quitting
+  ✔ window 8 is back on screen after quitting
+  ✔ window 9 is back on screen after quitting
+  ✔ window 10 is back on screen after quitting
+  ✔ window 11 is back on screen after quitting
+  ✔ window 12 is back on screen after quitting
+
+== twelve windows of four apps, one of them busy 300 ms at a time with 2 ms of attention between
+  ✔ the keyboard follows into the busy app's window
+  ✔ window 187 ended up in view (busy app)
+  ✔ window 188 ended up in view (busy app)
+  ✔ window 189 ended up in view (busy app)
+  ✔ window 190 ended up in view (busy app)
+  ✔ window 191 ended up in view (busy app)
+  ✔ window 192 ended up in view (busy app)
+  ✔ window 193 ended up in view (busy app)
+  ✔ window 194 ended up in view (busy app)
+  ✔ window 195 ended up in view (busy app)
+  ✔ window 196 ended up in view (busy app)
+  ✔ window 197 ended up in view (busy app)
+  ✔ window 198 ended up in view (busy app)
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+  ✔ window 7 is back on screen after quitting
+  ✔ window 8 is back on screen after quitting
+  ✔ window 9 is back on screen after quitting
+  ✔ window 10 is back on screen after quitting
+  ✔ window 11 is back on screen after quitting
+  ✔ window 12 is back on screen after quitting
+
+== twelve windows of four apps, one of them hangs for 20 s
+  ✔ window 213 ended up in view (after the hang)
+  ✔ window 214 ended up in view (after the hang)
+  ✔ window 215 ended up in view (after the hang)
+  ✔ window 216 ended up in view (after the hang)
+  ✔ window 217 ended up in view (after the hang)
+  ✔ window 218 ended up in view (after the hang)
+  ✔ window 219 ended up in view (after the hang)
+  ✔ window 220 ended up in view (after the hang)
+  ✔ window 221 ended up in view (after the hang)
+  ✔ window 222 ended up in view (after the hang)
+  ✔ window 223 ended up in view (after the hang)
+  ✔ window 224 ended up in view (after the hang)
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+  ✔ window 7 is back on screen after quitting
+  ✔ window 8 is back on screen after quitting
+  ✔ window 9 is back on screen after quitting
+  ✔ window 10 is back on screen after quitting
+  ✔ window 11 is back on screen after quitting
+  ✔ window 12 is back on screen after quitting
+
+== memory: three times 400 commands
+
+== energy
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+  ✔ window 7 is back on screen after quitting
+  ✔ window 8 is back on screen after quitting
+  ✔ window 9 is back on screen after quitting
+  ✔ window 10 is back on screen after quitting
+  ✔ window 11 is back on screen after quitting
+  ✔ window 12 is back on screen after quitting
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+  ✔ window 5 is back on screen after quitting
+  ✔ window 6 is back on screen after quitting
+  ✔ window 7 is back on screen after quitting
+  ✔ window 8 is back on screen after quitting
+  ✔ window 9 is back on screen after quitting
+  ✔ window 10 is back on screen after quitting
+  ✔ window 11 is back on screen after quitting
+  ✔ window 12 is back on screen after quitting
+
+132 passed, 0 failed

@@ -1,0 +1,95 @@
+# check-hang 2026-10-15T04:35Z on macOS 26.6.2, commit 84fdf0c
+
+== the Mac
+
+== 1. the view moves while an app hangs
+  ✔ Arbor arranges the second app's windows too
+  ✔ the first command is held up by 0.6 s at most
+  ✔ the later ones by a tenth at most
+  ✔ window 32 of the other app is in its slot meanwhile
+  ✔ window 33 of the other app is in its slot meanwhile
+  ✔ window 34 of the other app is in its slot meanwhile
+  ✔ window 30 follows into its slot once its app is awake
+  ✔ window 31 follows into its slot once its app is awake
+  ✔ Arbor is gone within 5 s of Quit
+  ✔ window 30 is on screen after quitting
+  ✔ window 31 is on screen after quitting
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== 2. Quit while an app hangs whose windows are out of view
+  ✔ Arbor arranges the second app's windows too
+  ✔ the second app's windows are out of view
+  ✔ Arbor is gone within 5 s of Quit
+  ✔ window 45 of the other app is on screen at once
+  ✔ window 46 of the other app is on screen at once
+  ✔ window 47 of the other app is on screen at once
+  ✘ window 43 comes back on screen once its app is awake, though Arbor is gone — only 0 % of it is to be seen: 1023 677 284 328
+  ✘ window 44 comes back on screen once its app is awake, though Arbor is gone — only 0 % of it is to be seen: 1023 677 284 328
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== 3. a pause while an app hangs whose windows are out of view
+  ✔ Arbor arranges the second app's windows too
+  ✔ the second app's windows are out of view
+  ✔ the pause is answered within 5 s
+  ✔ window 62 of the other app is on screen at once
+  ✔ window 63 of the other app is on screen at once
+  ✔ window 64 of the other app is on screen at once
+  ✔ window 60 comes back on screen once its app is awake: a pause promises every window in view
+  ✔ window 61 comes back on screen once its app is awake: a pause promises every window in view
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== 4. Arbor starts while an app hangs
+  ✔ that took 5 s at most
+  ✔ and it answers at once
+  ✔ window 75 is known to Arbor once its app is awake
+  ✔ and has not moved: nobody docked it
+  ✔ window 76 is known to Arbor once its app is awake
+  ✔ and has not moved: nobody docked it
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== 5. what an arrangement comes to while every app is awake
+  ✔ Arbor arranges the second app's windows too
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== 6. the same while the second app is busy: it answers after 0.7 s, later than Arbor waits
+  ✔ Arbor arranges the second app's windows too
+  ✘ arrange is held up by 0.6 s at most
+  ✔ window 93 is in its slot: what the busy app made of the size was learnt late, and room was made
+  ✔ window 94 is in its slot: what the busy app made of the size was learnt late, and room was made
+  ✔ window 95 is in its slot: what the busy app made of the size was learnt late, and room was made
+  ✔ window 96 is in its slot: what the busy app made of the size was learnt late, and room was made
+  ✔ window 97 is in its slot: what the busy app made of the size was learnt late, and room was made
+  ✘ the overrun is in the log, by bundle id
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+62 passed, 4 failed

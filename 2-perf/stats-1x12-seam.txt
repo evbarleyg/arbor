@@ -1,0 +1,28 @@
+the last 0.9 s
+
+accessibility calls                       count   total ms    mean ms   worst ms
+  set AXSize                                240     171.13       0.71       8.66
+  set AXPosition                            120      34.48       0.29       3.15
+  read 2 attributes                         126      20.64       0.16       3.08
+  read AXFocusedWindow                       20       1.91       0.10       0.25
+  read AXEnhancedUserInterface                1       0.06       0.06       0.06
+
+accessibility calls by app                count   total ms    mean ms   worst ms
+  pid 14512                                 507     228.21       0.45       8.66
+
+accessibility calls by thread             count   total ms    mean ms   worst ms
+  lanes                                     481     223.86       0.47       8.66
+  main thread                                26       4.36       0.17       1.34
+
+commands                                  count   total ms    mean ms   worst ms
+  resize                                     20     542.67      27.13      63.90
+
+controller                                count   total ms    mean ms   worst ms
+  lay out a display                          20     529.11      26.46      62.21
+  update overlays                            20      59.15       2.96      24.39
+
+notifications                             count   total ms    mean ms   worst ms
+  own moves, not read                       180       0.00       0.00       0.00
+
+window system                             count   total ms    mean ms   worst ms
+  wait for the apps to move                  20     234.17      11.71      26.53
