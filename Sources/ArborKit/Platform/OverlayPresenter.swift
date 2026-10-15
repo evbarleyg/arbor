@@ -108,6 +108,9 @@ public struct OverlayScene: Equatable, Sendable {
   public var showsSeamHandles = true
   /// Seconds a tile takes to fade in when it appears and out when it goes.
   public var tileFade: Double = 0
+  /// How often the windows have been seen stacked otherwise than before. What lies by another window's place (`Seam.liesBelow`) is put
+  /// there again when this is another number, also where it names the same window: that window may have come forward and left it behind.
+  public var stackingSeen = 0
 
   public init(tiles: [TileModel] = [], seams: [Seam] = []) {
     self.tiles = tiles

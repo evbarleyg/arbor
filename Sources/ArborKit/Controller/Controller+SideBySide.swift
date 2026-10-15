@@ -132,6 +132,7 @@ extension Controller {
   /// From the last to the first, so that the first ends in front, with the keyboard.
   private func bringToTheFront(_ ids: [WindowID]) {
     for id in ids.reversed() where windows[id]?.isPresent == true { system.raise(id) }
+    lookAfterHandles()
     if windows[ids[0]]?.isPresent == true || awaitedBack.contains(ids[0]) { askForTheKeyboard(for: ids[0]) }
   }
 
@@ -184,6 +185,7 @@ extension Controller {
     if !landed {
       // Only who came: the others are in front since the command.
       for id in group.absent.reversed() where windows[id]?.isPresent == true { system.raise(id) }
+      lookAfterHandles()
       if keyboardFocus() != group.windows[0] { askForTheKeyboard(for: group.windows[0]) }
       scheduler.schedule(Self.awaitedLandedKey, after: Self.timeToLand + 0.1) { [weak self] in self?.theAwaitedAreBack(landed: true) }
     } else {

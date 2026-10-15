@@ -5289,7 +5289,7 @@
     "e2e: move the floating window across two gaps",
     "e2e: resize under the floating window"
    ],
-   "copes": "OverlayPanel.orderInBehind puts tiles and gap handles behind every other window of their level.",
+   "copes": "OverlayPanel.orderInBehind puts tiles behind every other window of their level. A gap's handle lies just below the rearmost of the windows beside it (Seam.liesBelow), under whatever is in front of either; behind everything where one side has no window.",
    "hurt": 2,
    "touches": [
     "behind",

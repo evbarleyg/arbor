@@ -154,6 +154,7 @@ extension Controller {
     scene.focusRing = focusRingModel(on: displayID)
     scene.namePrompt = namePromptModel(on: displayID)
     applyAppearance(to: &scene, for: layout, on: displayID)
+    putSeamsInOrder(&scene, for: layout, on: displayID)
     return scene
   }
 

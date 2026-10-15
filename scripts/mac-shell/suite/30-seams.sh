@@ -1,6 +1,6 @@
 #!/bin/bash
 # Resizing: the seams between docked windows, a docked window's own edges and corners, the resize command, and whose a press is where
-# a floating window lies across a gap.
+# a floating window lies across a gap, in front of the windows beside it or behind them.
 # T05 resize at the seams, A09 resize by command, A11 resize docked windows by their own edges.
 source "$(dirname "$0")/../lib.sh"
 arbor_build
@@ -25,6 +25,55 @@ across() {
   take "fx fy fw fh" resting_frame_of "$1"
   [ "$fx" -lt "$(($2 - ARBOR_GAP))" ] && [ "$((fx + fw))" -gt "$(($2 + ARBOR_GAP))" ] \
     || { echo "the window is at $fx $fy $fw $fh, the gap at x $2"; return 1; }
+}
+# astride <id> y: the same for a gap that runs from left to right: all of the gap's height at y is the window's.
+astride() {
+  local fx fy fw fh
+  take "fx fy fw fh" resting_frame_of "$1"
+  [ "$fy" -le "$(($2 - ARBOR_GAP / 2))" ] && [ "$((fy + fh))" -ge "$(($2 + ARBOR_GAP / 2))" ] \
+    || { echo "the window is at $fx $fy $fw $fh, the gap at y $2"; return 1; }
+}
+# behind <id> <other>…: the window server, whose list goes from front to back, has it after each of the others.
+behind() {
+  local id=$1 other order
+  shift
+  order=" $("$ARBOR_POINTER" windows --on-screen | cut -d " " -f 1 | tr "\n" " ")"
+  for other in "$@"; do
+    # What comes after the other, with the blank that parted them: the two may be neighbours in the list.
+    case "$order" in *" $other "*) ;; *) echo "$other is not on screen; front to back:$order"; return 1 ;; esac
+    case " ${order#*" $other "}" in *" $id "*) ;; *) echo "$id is not behind $other; front to back:$order"; return 1 ;; esac
+  done
+}
+# The gap's handle at a point: the panel of Arbor's there that is as thin as a gap. The focus ring's reaches into the gap as well, and is not.
+IS_THE_HANDLE='$2 == arbor && $3 == 0 && x >= $4 && x < $4 + $6 && y >= $5 && y < $5 + $7 && ($6 <= gap + 1 || $7 <= gap + 1)'
+# under_both x y: it lies under both windows beside the gap: it has not stayed in front of them, where it would take the clicks of whatever lies
+# across the gap in front of them.
+under_both() {
+  "$ARBOR_POINTER" windows --on-screen | awk -v a="$W1" -v b="$W3" -v arbor="$ARBOR_PID" -v x="$1" -v y="$2" -v gap="$ARBOR_GAP" '
+    $1 == a || $1 == b { seen++ }
+    '"$IS_THE_HANDLE"' { found = 1; exit }
+    END {
+      if (!found) print "there is no handle at", x, y
+      else if (seen != 2) print "of the two windows", seen + 0, "lie in front of the handle"
+      exit !(found && seen == 2)
+    }'
+}
+# handle_over <id> x y: it lies in front of the window, and gets the press there.
+handle_over() {
+  "$ARBOR_POINTER" windows --on-screen | awk -v id="$1" -v arbor="$ARBOR_PID" -v x="$2" -v y="$3" -v gap="$ARBOR_GAP" '
+    $1 == id { exit }
+    '"$IS_THE_HANDLE"' { found = 1; exit }
+    END { if (!found) print "the window comes before any handle at", x, y; exit !found }'
+}
+# What lies on what at the windows' own level, front first, for whoever reads this afterwards: only a Mac knows.
+stacking() {
+  echo "  front to back, $*:"
+  "$ARBOR_POINTER" windows --on-screen | awk -v arbor="$ARBOR_PID" '$3 == 0 { print "    " ($2 == arbor ? "Arbor " : "      ") $1, "at", $4, $5, $6, $7 }'
+}
+# Points of the two docked windows that the floating one, which lies across the gap between them, does not reach: near the top of the upper
+# one and near the bottom of the lower one.
+clear_of_it() {
+  if [ "$1" = "$W1" ]; then arbor_point_on "$1" "x + w - 20" "y + 60"; else arbor_point_on "$1" "x + w - 20" "y + h - 20"; fi
 }
 
 arbor_start 3
@@ -175,5 +224,71 @@ check "no docked window was resized" stays width_is "$W1" "$width"
 settled
 tw close "$F1"
 forget_window "$F1"
+
+# Behind both windows beside a gap, all that shows of it is what shows through the gap, and nobody who presses there means it: it would come
+# forward over both, and no gap would move. The gap between two docked windows is the arrangement's.
+claim "a floating window lies behind both windows beside a gap: a press in the gap moves the gap, and the window stays behind"
+take "x y" desktop_point
+open_window F2 size=300x200 "at=$((x - 150)),$((y - 100))" title=Behind the gap
+take "x y" seam_below "$W1"
+drag_window "$F2" "$x" "$y"
+check "the window floats" eventually is floating "$F2"
+take "fx fy fw fh" resting_frame_of "$F2"
+x=$((fx + fw / 2))
+check "it lies across the gap" astride "$F2" "$y"
+check "in front of the gap's handle, as long as it is in front of the windows" eventually in_front_at "$F2" "$x" "$y"
+# By clicks, as a person brings a window forward. Of a window that its app brings forward by itself macOS tells nobody.
+# shellcheck disable=SC2046
+click $(clear_of_it "$W1")
+# shellcheck disable=SC2046
+click $(clear_of_it "$W3")
+check "the two windows have come forward over it" eventually behind "$F2" "$W1" "$W3"
+check "and the gap's handle with them" eventually handle_over "$F2" "$x" "$y"
+check "under the two, not over them" under_both "$x" "$y"
+stacking "the handle never pressed"
+upper=$(height_of "$W1")
+lower=$(height_of "$W3")
+downs=$(events_of "$F2" down)
+drag "$x" "$y" "$x" "$((y + 40))"
+check "the upper window is 40 points taller" eventually height_is "$W1" "$((upper + 40))" 6
+check "the lower one 40 points shorter" eventually height_is "$W3" "$((lower - 40))" 6
+check "the floating window got no press" stays received "$F2" down -eq "$downs"
+check "it has stayed where it was" frame_is "$F2" "$fx" "$fy" "$fw" "$fh"
+check "and behind both" behind "$F2" "$W1" "$W3"
+settled
+
+# A press brings forward what it lands on, a panel that takes no keyboard too.
+claim "a handle that was pressed goes back to its place: under the two windows, over what is behind them"
+take "_ y" seam_below "$W1"
+stacking "after the drag"
+check "after the drag it is under the two" eventually under_both "$x" "$y"
+check "and over the floating window" handle_over "$F2" "$x" "$y"
+upper=$(height_of "$W1")
+click "$x" "$y"
+stacking "after a click on the handle"
+check "after a click that drags nothing too" eventually under_both "$x" "$y"
+check "and over the floating window" handle_over "$F2" "$x" "$y"
+check "the floating window got no press" received "$F2" down -eq "$downs"
+check "no docked window was resized" stays height_is "$W1" "$upper"
+
+claim "brought forward, it has its presses back; and loses them again when the two come forward over it"
+tw front "$F2"
+check "it is in front of the gap's handle" eventually in_front_at "$F2" "$x" "$y"
+upper=$(height_of "$W1")
+click "$x" "$y"
+check "it got the press" eventually received "$F2" down -gt "$downs"
+check "no docked window was resized" stays height_is "$W1" "$upper"
+# The other way round this time: whichever of the two is further back, the handle lies below that one.
+# shellcheck disable=SC2046
+click $(clear_of_it "$W3")
+# shellcheck disable=SC2046
+click $(clear_of_it "$W1")
+check "the two windows have come forward over it" eventually behind "$F2" "$W1" "$W3"
+check "and the gap's handle with them" eventually handle_over "$F2" "$x" "$y"
+check "under the two, not over them" under_both "$x" "$y"
+stacking "at the end"
+settled
+tw close "$F2"
+forget_window "$F2"
 
 arbor_stop

@@ -131,6 +131,9 @@ public struct Seam: Equatable, Sendable, Codable {
   public var leadingEnds: [End] = []
   /// The same for `trailing` and first children.
   public var trailingEnds: [End] = []
+  /// The window the gap's handle lies just below; nil puts it behind everything. No part of a layout, which knows nothing of how
+  /// windows are stacked: whoever shows the gap says (`rearmostNeighbour`).
+  public var liesBelow: WindowID? = nil
 
   /// A child at the end of a group, and what converts points into weight units among its siblings.
   public struct End: Equatable, Sendable, Codable {
@@ -151,6 +154,7 @@ extension Seam {
     pointsPerWeight = try c.decode(CGFloat.self, forKey: .pointsPerWeight)
     leadingEnds = try c.decodeIfPresent([End].self, forKey: .leadingEnds) ?? []
     trailingEnds = try c.decodeIfPresent([End].self, forKey: .trailingEnds) ?? []
+    liesBelow = try c.decodeIfPresent(WindowID.self, forKey: .liesBelow)
   }
 }
 

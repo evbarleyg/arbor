@@ -95,6 +95,7 @@ extension Controller {
     noteWhereWindowsStandAtAPress()
     overlays.finishAnimations()
     lookAfterPinnedWindowsAfterAPress()
+    lookAfterHandles()
     // "Any key or click": the panel itself hears only of clicks in other apps and of losing the keyboard. A press on a gap
     // handle or on the Desktop's tile is neither.
     hideCheatSheet()

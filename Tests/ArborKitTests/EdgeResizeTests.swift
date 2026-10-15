@@ -130,9 +130,11 @@ import Testing
     expectWindowsMatchLayout(h)
   }
 
-  /// What is pending, but for the line round the focused window. The press on its edge has given the window the keyboard, and the line
-  /// waits for the button to come up.
-  private func besidesTheRing(_ h: Harness) -> [String] { h.scheduler.pendingKeys.filter { !$0.hasPrefix("focus-ring") } }
+  /// What is pending, but for what follows any press. The one on its edge has given the window the keyboard and brought it forward: the line
+  /// round it waits for the button to come up, and Arbor looks how the windows are stacked now, for the gaps' handles.
+  private func besidesWhatFollowsAPress(_ h: Harness) -> [String] {
+    h.scheduler.pendingKeys.filter { !$0.hasPrefix("focus-ring") && $0 != "order-handles" }
+  }
 
   @Test func outerEdgesArePutBack() {
     let (h, a, _, _) = columns()
@@ -145,7 +147,7 @@ import Testing
     h.system.userResize(a, to: dragging(slotA, .left, by: 50))
     #expect(h.frame(a) == slotA)
     #expect(h.workspace.tree == tree)
-    #expect(besidesTheRing(h).isEmpty, "nothing changed, so nothing to save or put back")
+    #expect(besidesWhatFollowsAPress(h).isEmpty, "nothing changed, so nothing to save or put back")
 
     // A corner with one outer edge: the top goes back, the right edge moves its seam.
     h.system.userResize(a, to: dragging(dragging(slotA, .top, by: -20), .right, by: 100))
@@ -377,7 +379,7 @@ import Testing
     let (h, a, _, _) = columns()
     h.scheduler.advance(by: 1)
     h.system.userResize(a, to: dragging(h.frame(a)!, .right, by: 100))
-    #expect(besidesTheRing(h) == ["save"])
+    #expect(besidesWhatFollowsAPress(h) == ["save"])
     h.scheduler.runPending()
     #expect(h.store.saved?.workspaces[h.display]?.tree == h.workspace.tree)
   }
