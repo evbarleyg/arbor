@@ -272,6 +272,11 @@ extension Controller {
       // Squeezed, not stretched: one that fills the Desktop and is taken in hand stays as it is (Controller+SoleFloat.swift).
       own.width >= frame.width, own.height >= frame.height
     else { return frame }
+    return self.frame(ofSize: own, from: frame)
+  }
+
+  /// A frame of the size `own` from where `frame` is, on the display as far as `frame` is.
+  func frame(ofSize own: CGSize, from frame: CGRect) -> CGRect {
     var remembered = CGRect(origin: frame.origin, size: own)
     guard let visible = displayID(at: frame.center).flatMap({ display($0) })?.visibleFrame else { return remembered }
     // Each way by itself. Let go a point under the Dock's line, it hangs there by its user's hand; its width must not come

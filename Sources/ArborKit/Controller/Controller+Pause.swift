@@ -38,6 +38,9 @@ extension Controller {
       let before = windows.mapValues(\.frame)
       noteWhoIsLetBeAsThePauseBegins()
       shutdown()
+      // An app Arbor pauses for may take the display to a resolution of its own and back. macOS fits every window onto it, and nobody tells Arbor,
+      // which is not listening. So where it left the windows says nothing afterwards (Controller+FoundAtAStart.swift).
+      if forApp { leftAt = nil }
       pausedFrames = windows.mapValues(\.frame).filter { before[$0.key] != $0.value }
       // Arbor is not looking any more, so `state` and `ascii` must not pass off old frames as current.
       layouts.removeAll()

@@ -378,6 +378,30 @@ import Testing
     #expect(try frame(xcode, in: world).size == CGSize(width: 1188, height: 775))
   }
 
+  /// The same of a docked window, by hand during two pauses (`DockedAsFoundTests`).
+  @Test func givenTheFittedSizeByAHandDuringAPauseADockedWindowKeepsIt() throws {
+    let xcode = WindowID(103)
+    let (world, _) = play(
+      Self.twoDisplays + """
+        open 103 Xcode pid 1004 at 1435 753 1188 832 min 1188 685
+        via menu move-to-display next
+        dock 103 left
+        settle
+        pause
+        move 103 -1234 25 1188 700
+        resume
+        settle
+        pause
+        move 103 -1234 25 1188 775
+        resume
+        settle
+        float 103
+        settle
+        via menu move-to-display next
+        """, watching: xcode)
+    #expect(try frame(xcode, in: world).size == CGSize(width: 1188, height: 775))
+  }
+
   /// Carried back by hand it stays as it is: a floating window's frame is its person's. Later trips must not change that.
   /// The second way is a move that is only reported, as a tool's or macOS's own shortcut makes it.
   @Test(arguments: ["grab 103\ncarry 1500 600\nrelease", "move 103 900 500 1188 775"])

@@ -1,0 +1,42 @@
+# Proposed by the swarm (2026-10-15), from the product owner's note of that day on F48 and rule 5 in collab/QUESTIONS.md; the documenter may edit or drop it.
+# Story: a frame a person gives a window while Arbor is paused, or not running, is its own from then on. An editor and a browser are docked.
+# ⌃⌥⎋: both are as they were before Arbor touched them. The person makes the browser smaller and puts it somewhere else. ⌃⌥⎋ again: the arrangement
+# is back, as if nothing had happened. But the next time Arbor lets go, the browser goes to where its person put it, not to where it lay before
+# it was first docked.
+# Reference: F48, F40; issue #3 rule 5.
+open Editor 700x500
+open Browser 900x600
+move 101 100 100 700 500
+move 102 300 150 900 600
+dock 101 left
+dock 102 right
+pause
+expect at 102 300 150
+expect size 102 900x600
+move 102 500 300 700 500
+resume
+expect docked 101
+expect docked 102
+expect left-of 101 102
+pause
+expect at 102 500 300
+expect size 102 700x500
+# Nobody touched the editor.
+expect at 101 100 100
+expect size 101 700x500
+resume
+# A window that floats by itself takes that size, where it is.
+float 102
+expect size 102 700x500
+dock 102 right
+# The same after a quit, and Float All goes by the same frame.
+relaunch quit
+expect size 102 700x500
+move 102 420 200 640 380
+relaunch start
+expect docked 102
+float-all
+expect at 102 420 200
+expect size 102 640x380
+expect at 101 100 100
+expect size 101 700x500

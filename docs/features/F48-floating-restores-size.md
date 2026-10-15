@@ -71,6 +71,9 @@ Beyond the list above:
 - **An app that does not answer** when its window is to be put back: a window that was out of view still counts as out of view and is placed as soon as the app answers. One that was in view stays where it is, at its slot's size.
 - **A move is not a resize.** A floating window that Arbor squeezed to keep it on the Desktop, and that its user then only moves (by the title bar or otherwise), keeps its own size to go back to, from where it is now. Only a resize by its user changes the size that is remembered.
   A move or a resize during a pause, or after a quit, which Arbor does not see, is learnt at the resume or the start: Arbor wrote down where it left the window. After a run that did not quit it cannot tell.
+- **A frame given while Arbor was away.** A docked window that somebody moves or resizes during a pause, or between a quit and the next launch, is docked again, in one move, and has that frame for its own from then on: that is where
+  the next pause, quit and Float All put it, and the size it floats at (the product owner's note of 2026-10-15 in `collab/QUESTIONS.md`; `DockedAsFoundTests`, scenario 95). Whether somebody has is known from where Arbor left it, as for a floating window. Here too a move is
+  not a resize: one left in the shape of its slot, because its app did not answer, and only pushed aside, keeps its own size, from where it is now. Undo and redo take back steps in the arrangement, not this frame.
 - **Exactly** means exactly: a window that hung over a screen edge goes back there. A frame is fitted into its display only when it is no longer a place for a window (larger than the display, less than half
   on it, its title bar under the menu bar).
 - **Other displays**: a window docked on another display than the one it floated on keeps its size and its distance from the display's corner. When a display goes away, its docked windows float on the
@@ -84,5 +87,8 @@ Not shipped:
 
 - **Shrinking when the drag starts**, as macOS's own tiling does. It means setting a frame during a live drag; nobody has tried that on a Mac yet.
 - **Tearing a tab off its strip** (F04) is not on the trunk yet. Dragging a tab's window out and `float` on either tab are covered (`aTabThatFloatsGetsItsOwnSizeBack`); a drop that ends in `finishDrop` with its pointer gets the size back.
-- **What the user did while Arbor was not looking.** A docked window moved or resized between a quit and the next launch, or during a pause, is docked again and still goes back to the frame
-  remembered before. Telling that apart from a crash (where windows are found in their slots) needs a "quit cleanly" mark in `state.json`.
+- **What the user did while Arbor was not looking**, where Arbor cannot tell. (Where it can, that is built: see "A frame given while Arbor was away" above.) A docked window somebody moved or resized still goes back to the frame remembered
+  before: after a run that did not quit; where the displays are not the ones Arbor let go on, since macOS moves windows then; and after a pause for an app (`pauseForApps`), which may have changed the resolution and changed it back. What is not
+  noticed, so that what macOS made of a window is taken for somebody's wish: a display that changed its resolution between a quit and a launch, and displays that changed and changed back during a pause by hand, or while Arbor was not
+  running. (During a pause Arbor could listen for that; it does not.) One taken to another display meanwhile keeps the size it was given, and comes back on the display it is docked on. Undo of a step that took the window from one display
+  to another takes the frame back with it.

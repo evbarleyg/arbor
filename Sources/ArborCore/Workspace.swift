@@ -821,11 +821,16 @@ extension Workspace {
     var places = summonFrames ?? [:]
     for (app, frame) in current.summonFrames ?? [:] where reference.summonFrames?[app] != frame { places[app] = frame }
     result.summonFrames = places.isEmpty ? nil : places
-    // `undockedFrames` (F48) follows from the arrangement: it changes only when a window is docked or undocked, so what was
+    // `undockedFrames` (F48) follows from the arrangement where it changes as a window is docked or undocked: what was
     // remembered then is right again. But a window that floats now, and that the user has moved since, is docked
     // again from where it is now.
     for (window, frame) in current.floating where result.isDocked(window) {
       if let left = reference.floating[window], left != frame { result.setUndockedFrame(frame, of: window) }
+    }
+    // And what is remembered of a docked one has changed since: its user gave it a frame while Arbor was paused or not running, or while it floated
+    // between two steps that have been taken back by now. It has that for its own, docked or floating.
+    for (window, frame) in current.undockedFrames ?? [:] where reference.undockedFrames?[window] != frame {
+      if result.isDocked(window) { result.setUndockedFrame(frame, of: window) } else if result.isFloating(window) { result.floating[window] = frame }
     }
     // `desktopIsOwedRoom` (F61) follows from the arrangement: it says how the gaps of this very tree came about, so it comes
     // back with them. Every layout looks at it afresh.

@@ -740,6 +740,59 @@ private func change(_ before: UInt32, _ after: UInt32) -> UndoHistory.Change {
     #expect(before.restored(over: current, since: after).undockedFrame(of: b) == moved)
   }
 
+  /// Docked before the change and after it. Its person gave it a frame since, while Arbor was paused or not running, which is no step.
+  @Test func aFrameGivenToADockedWindowSinceIsNotTakenBack() {
+    var before = base()
+    before.undock(b, floatingAt: spot)
+    before.dock(b, at: .cameraEdge(.right))
+    var after = before
+    after.dock(c, at: .cameraEdge(.left))
+    let given = CGRect(x: 500, y: 300, width: 640, height: 380)
+    var current = after
+    current.rememberUndockedFrames(ofArrivals: [b: given, a: given])
+    let restored = before.restored(over: current, since: after)
+    #expect(restored.undockedFrame(of: b) == given)
+    #expect(restored.undockedFrame(of: a) == given, "nothing was remembered of this one")
+    #expect(restored.tree == before.tree)
+    // The frame c floated at is what the change remembered, not something that happened since.
+    #expect(restored.floating[c] == before.floating[c])
+  }
+
+  /// With nothing done since, what comes back is exactly what was, whatever the change itself did to what is remembered.
+  @Test func whatTheChangeItselfRememberedIsTakenBackWithIt() {
+    var before = base()
+    before.undock(b, floatingAt: spot)
+    before.dock(b, at: .cameraEdge(.right))
+    var after = before
+    after.dock(c, at: .cameraEdge(.left))
+    after.rememberUndockedFrames(ofArrivals: [b: spot.offsetBy(dx: 70, dy: 30)])
+    #expect(before.restored(over: after, since: after) == before)
+  }
+
+  /// The change docked it, and taking that back makes it float: at the frame it was given since.
+  @Test func takenOutOfItsSlotItFloatsAtTheFrameItWasGivenSince() {
+    let before = base()
+    var after = before
+    after.dock(c, at: .cameraEdge(.right))
+    let given = CGRect(x: 500, y: 300, width: 640, height: 380)
+    var current = after
+    current.rememberUndockedFrames(ofArrivals: [c: given])
+    #expect(before.restored(over: after, since: after) == before)
+    #expect(before.restored(over: current, since: after).floating[c] == given)
+  }
+
+  /// It opened since and was docked. What is put back knows nothing of it, and does not take it in for its frame's sake.
+  @Test func aWindowThatWasNotThereThenIsNotBroughtInByItsFrame() {
+    let before = base()
+    var after = before
+    after.dock(c, at: .cameraEdge(.right))
+    var current = after
+    current.floating[d] = spot
+    current.dock(d, at: .cameraEdge(.left))
+    #expect(current.undockedFrame(of: d) == spot)
+    #expect(!before.restored(over: current, since: after).contains(d))
+  }
+
   // MARK: A window under another number
 
   @Test func aDockedWindowKeepsItsPlaceUnderItsNewNumber() {
