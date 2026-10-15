@@ -286,7 +286,7 @@ private let side = sideDisplay
 
   // MARK: Tiles
 
-  @Test func aWindowTileInTheWayIsEntered() {
+  @Test(.withTiles) func aWindowTileInTheWayIsEntered() {
     let (h, w) = harness(["Safari", "Notes"], ["dock $0 left", "dock $1 right"], settings: noRoomMade)
     let (a, b) = (w[0], w[1])
     let big = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500))
@@ -300,7 +300,7 @@ private let side = sideDisplay
     expectWindowsMatchLayout(h, on: h.display)
   }
 
-  @Test func aGroupTileInTheWayIsEnteredAtTheNearSide() {
+  @Test(.withTiles) func aGroupTileInTheWayIsEnteredAtTheNearSide() {
     // [ a | b / c ], with the column squeezed until it is a tile: 202 points of its 702.
     let (h, w) = harness(["A", "B", "C"], ["dock $0 left", "dock $1 right", "dock $2 beside $1 bottom"])
     let (a, b, c) = (w[0], w[1], w[2])
@@ -315,7 +315,7 @@ private let side = sideDisplay
     #expect(h.system.isVisible(b) && h.system.isVisible(c))
   }
 
-  @Test func aTileInsideATileIsEnteredToo() {
+  @Test(.withTiles) func aTileInsideATileIsEnteredToo() {
     // [ a | x1 / x2 ], the column squeezed into a tile. Framed, the column is still too low for
     // either window, so they are tiles again, and focus goes on into the top one.
     let h = Harness(settings: noRoomMade)
@@ -362,7 +362,7 @@ private let side = sideDisplay
     #expect(h.workspace.camera == camera, "the view has not moved")
   }
 
-  @Test func withOnlyTilesInViewTheOneUnderThePointerIsEntered() {
+  @Test(.withTiles) func withOnlyTilesInViewTheOneUnderThePointerIsEntered() {
     var settings = Settings()
     settings.minimumUsableHeight = 500
     let (h, w) = harness(["A", "B"], ["dock $0 top", "dock $1 bottom"], settings: settings)
@@ -506,7 +506,7 @@ private let side = sideDisplay
     #expect(go(h, "next") == a)
   }
 
-  @Test func aTileOnTheNextDisplayIsEntered() {
+  @Test(.withTiles) func aTileOnTheNextDisplayIsEntered() {
     let (h, _, b, c) = twoDisplays()
     h.system.setMinimumSize(c, CGSize(width: 1000, height: 600))
     expectOK(h, "resize \(c.rawValue) right -40")  // asked to shrink, it refuses and becomes a tile

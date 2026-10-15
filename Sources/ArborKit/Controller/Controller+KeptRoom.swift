@@ -127,7 +127,7 @@ extension Controller {
     guard !late.isEmpty, plain.camera == tree.root else { return (plain, [], false) }
     let open = layout(tree.root, counting: present.union(late)).leavingOpen(late, in: tree)
     // Whoever is there shows.
-    guard open.tiles.allSatisfy({ $0.kind == .desktop }) else { return (plain, [], true) }
+    guard open.tiles.allSatisfy({ $0.kind == .desktop }), open.overhangs.isEmpty else { return (plain, [], true) }
     guard !open.windowFrames.isEmpty else { return (plain, [], false) }
     return (open, late, false)
   }

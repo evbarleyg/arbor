@@ -656,7 +656,7 @@ private final class Listener {
     #expect(state.snapshot.views[0].label == "Safari", "never a number alone")
   }
 
-  @Test func aWindowTooSmallToUseIsATile() throws {
+  @Test(.withTiles) func aWindowTooSmallToUseIsATile() throws {
     let (h, feed, _, b, _) = makeHarness()
     let listener = try Listener(feed, "watch layout window")
     _ = try listener.take()

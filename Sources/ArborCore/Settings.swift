@@ -233,6 +233,10 @@ public struct Settings: Codable, Equatable, Sendable {
   /// docks are two halves and Arrange Windows leaves nothing over (collab/QUESTIONS.md, Q28 and Q29). A key of its own because a
   /// settings.json may hold the old width at its floor as somebody's choice, and would keep the column they wanted to be rid of.
   public var desktopColumn: Bool = false
+  /// What becomes of a docked window whose app will not make it as small as its place, when room has been made and is not
+  /// enough. `overlap`, as it ships: it stays in view at its smallest size, flush with the outer side of its place, and
+  /// hangs over its neighbour. `tile`: it goes out of view and a tile stands in its place (`LayoutOptions.overlaps`).
+  public var windowsThatDoNotFit: String = "overlap"
 
   public init() {}
 
@@ -253,7 +257,7 @@ public struct Settings: Codable, Equatable, Sendable {
     LayoutOptions(
       gap: CGFloat(gap),
       minimumUsableSize: CGSize(width: minimumUsableWidth, height: minimumUsableHeight),
-      shareRemovedSpace: shareRemovedSpace, desktopColumn: desktopColumn)
+      shareRemovedSpace: shareRemovedSpace, desktopColumn: desktopColumn, overlaps: windowsThatDoNotFit != "tile")
   }
 
   /// How wide Arrange Windows, `balance` and a `layout` line that does not mention it leave the Desktop, counted in windows. Nil: it
@@ -314,6 +318,7 @@ public struct Settings: Codable, Equatable, Sendable {
     case pointerGestures
     case floatingWindowsMakeWay
     case desktopColumn
+    case windowsThatDoNotFit
   }
 
   public init(from decoder: any Decoder) throws {
@@ -423,5 +428,6 @@ public struct Settings: Codable, Equatable, Sendable {
     try read(.pointerGestures, into: &pointerGestures)
     try read(.floatingWindowsMakeWay, into: &floatingWindowsMakeWay)
     try read(.desktopColumn, into: &desktopColumn)
+    try read(.windowsThatDoNotFit, into: &windowsThatDoNotFit)
   }
 }

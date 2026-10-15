@@ -242,7 +242,7 @@ private let cameraCommands = [
     #expect(picture(s.h) == before)
   }
 
-  @Test func aClickOnATileDoesNothing() throws {
+  @Test(.withTiles) func aClickOnATileDoesNothing() throws {
     let s = stage { $0.minimumUsableWidth = 750 }
     let h = s.h
     h.run("show-all")
@@ -380,7 +380,7 @@ private let cameraCommands = [
   }
 
   /// F45 asks a window that once refused its slot again, out of view, during some later layout.
-  @Test func aTileDoesNotTurnIntoItsWindowByItself() {
+  @Test(.withTiles) func aTileDoesNotTurnIntoItsWindowByItself() {
     // With F61 its neighbours would make room, and it would be no tile to begin with.
     let s = stage { $0.makeRoom = false }
     let h = s.h

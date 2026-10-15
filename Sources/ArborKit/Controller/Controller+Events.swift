@@ -335,6 +335,7 @@ extension Controller: OverlayActions {
     let undoScope = beginUndoStep(dragging: seam, on: display)
     defer { endUndoStep(undoScope) }
     workspaces[display]!.tree.moveBoundary(at: seam, by: Double(delta), minimumPoints: minimumPointsBesideSeam(on: display))
+    hold(seam, on: display)
     // The windows follow the mouse.
     byHand { relayout(display, reason: .structure, motion: .instant) }
     scheduleSave()

@@ -1106,18 +1106,20 @@ extension ChaosRunner {
   private var undoSteps: Int { controller.workspaces.keys.reduce(0) { $0 + controller.undoHistory.steps(.undo, on: $1).count } }
 
   /// A key that docks takes no window out of view that was in view (Q29, 8): not the one it names, which would have the keyboard, and not one that was docked
-  /// before, which becomes a tile for want of room.
+  /// before, which becomes a tile for want of room. Whoever has asked for tiles (`windowsThatDoNotFit`, F69) has asked for just that. And where the view
+  /// is on a part of the arrangement afterwards, what is outside it is out of view because its person asked: the Desktop framed, and ⌃⌥F docks what
+  /// floats on it; a window floated out of its frame and docked into it again.
   func dockViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
     switch action.parsedCommand {
     case .dock, .dockBeside, .toggleFloat, .arrange, .arrangeAll: break
     default: return
     }
     if case .key(_, .released) = action { return }
-    guard isRunning, wasRunningBefore, controller.holdLevel == nil else { return }
+    guard isRunning, wasRunningBefore, controller.holdLevel == nil, controller.settings.windowsThatDoNotFit != "tile" else { return }
     asked("dock")
     for window in Set(movesSeenInThisStep.map(\.window)).sorted() {
       guard let fake = isFairGame(window), presentBefore.contains(window), let before = framesBefore[window], isInView(before), !parkedBefore.contains(window),
-        !isInView(fake.snapshot.frame), controller.workspaces.values.contains(where: { $0.isDocked(window) })
+        !isInView(fake.snapshot.frame), controller.workspaces.values.contains(where: { $0.isDocked(window) && $0.camera == $0.tree.root })
       else { continue }
       problems.append(.init("dock-took-out-of-view", "`\(action.text)` took \(window), which is docked, out of view: from \(before.brief) to \(fake.snapshot.frame.brief)"))
     }

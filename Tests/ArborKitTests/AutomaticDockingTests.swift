@@ -1190,7 +1190,7 @@ extension Harness {
 
   // MARK: Tiles that are there already
 
-  @Test func aFocusedWindowThatIsATileIsNotANeighbour() throws {
+  @Test(.withTiles) func aFocusedWindowThatIsATileIsNotANeighbour() throws {
     let h = harness(newWindows: "float")
     h.start()
     let a = h.open("Safari")

@@ -8,7 +8,7 @@ import Testing
 /// The window that a launch lets be (`Controller+LetBe.swift`) is docked, is a tile in the layout, and stands in full view. `state` and
 /// `ascii` are what everybody else goes by: whoever holds `arborctl state` against the screen of a real Mac, and the headless nets.
 /// While only the controller knew, they called it hidden, and a window in view that Arbor calls hidden looks like a fault.
-@Suite @MainActor struct StateSaysWhoIsLetBeTests {
+@Suite(.withTiles) @MainActor struct StateSaysWhoIsLetBeTests {
   let launches = LaunchLetsBeTests()
 
   func said(_ h: Harness, of window: WindowID) throws -> StateSnapshot.Window {

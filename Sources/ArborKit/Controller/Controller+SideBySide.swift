@@ -70,7 +70,8 @@ extension Controller {
 
     func short(in layout: Layout?) -> [WindowID] {
       guard let layout else { return [] }
-      return ids.filter { layout.windowFrames[$0] == nil }
+      // Within its place: side by side is what was asked for, and one that would hang over its neighbor is not that (F69).
+      return ids.filter { !layout.fits($0) }
     }
     // From here on whoever is in the Dock or hidden counts as back.
     let absent = ids.filter { windows[$0]?.isPresent == false }
@@ -173,7 +174,7 @@ extension Controller {
       keyboardFocus().map(group.windows.contains) != false
     else { return awaitedGroup = nil }
     // It never said how small it goes, being in the Dock. All or nothing holds for it too.
-    let tiles = Set(layouts[group.display]?.tiles.flatMap(\.windows) ?? [])
+    let tiles = Set(layouts[group.display]?.tiles.flatMap(\.windows) ?? []).union(layouts[group.display]?.tightPlaces.keys.map { $0 } ?? [])
     if !tiles.isDisjoint(with: group.windows) {
       awaitedGroup = nil
       let words = doNotFit(group.windows)

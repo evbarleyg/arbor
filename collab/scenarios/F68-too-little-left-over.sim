@@ -3,6 +3,8 @@
 # the row gives, as with nothing left, and the window that was just docked, with the keyboard in it, is not typed into unseen.
 # Reference: F68, F61.
 quiet
+# As Arbor ships, what cannot fit overlaps (F69). This story is about the tile, which is an option now.
+set windowsThatDoNotFit tile
 # Xcode will not go under 1200 points, which leaves 204 of 1416. Terminal gets a half, and Xcode is the tile.
 open Xcode 1300x800 min 1200x600
 open Terminal 584x366 min 177x100

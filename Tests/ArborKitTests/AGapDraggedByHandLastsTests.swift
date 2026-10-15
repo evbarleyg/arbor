@@ -120,7 +120,7 @@ import Testing
   }
 
   /// Someone who squeezes a window below its smallest size gets the tile they asked for, as wide as they left it.
-  @Test(arguments: everything) func theTileTheHandMadeOfItStaysAsWideAsItWasLeft(_ hand: Hand, _ afterwards: Afterwards) throws {
+  @Test(.withTiles, arguments: everything) func theTileTheHandMadeOfItStaysAsWideAsItWasLeft(_ hand: Hand, _ afterwards: Afterwards) throws {
     let (h, mail, notes) = try docked()
     try hand.move(h, mail: mail, notes: notes, by: 100)
     #expect(h.layout?.tiles.contains { $0.windows.contains(notes) } == true)
@@ -293,7 +293,7 @@ import Testing
   }
 
   /// The hand that squeezed it in height lets it out again, and it is a window again, as wide as it was.
-  @Test func squeezedInHeightAndLetOutAgainItIsAWindowAgain() throws {
+  @Test(.withTiles) func squeezedInHeightAndLetOutAgainItIsAWindowAgain() throws {
     let (h, mail, notes) = makeHarness()
     h.run("dock \(mail.rawValue) bottom")
     h.run("dock \(notes.rawValue) beside \(mail.rawValue) right")
@@ -379,7 +379,7 @@ import Testing
 
   /// The mark that a slot was squeezed outlives the tile. [Top over (Mail | Notes | Desktop)]: the row is squeezed in height, Top closes, and
   /// Notes is a window again. On a larger display it pays back what it can spare, like anybody.
-  @Test func squeezedOnceAndAWindowAgainItPaysBackWhatItCanSpare() throws {
+  @Test(.withTiles) func squeezedOnceAndAWindowAgainItPaysBackWhatItCanSpare() throws {
     let (h, mail, notes) = makeHarness()
     let top = h.system.open(app: "Top", pid: 1004, frame: CGRect(x: 300, y: 100, width: 800, height: 400))
     h.run("dock \(mail.rawValue) left")

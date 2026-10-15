@@ -86,7 +86,7 @@ public enum AutoDock {
       let plain = LayoutEngine.layout(
         workspace.tree, camera: workspace.camera, in: frame, options: options,
         isPresent: { $0 == window || isPresent($0) }, minimumSize: minimumSize)
-      guard makingRoom, let terms, !plain.tiles.isEmpty || workspace.tree.hasLoans else { return plain }
+      guard makingRoom, let terms, plain.placesTooSmall > 0 || workspace.tree.hasLoans else { return plain }
       var tree = workspace.tree
       return MakeRoom.serve(
         &tree, camera: workspace.camera, in: frame, options: options,
@@ -165,14 +165,20 @@ public enum AutoDock {
   }
 
   /// Whether `window` shows in `after`, along with everything that showed in `before`: each window (but
-  /// `covered`, which is now behind `window` as a tab) and, unless `desktopMayGo`, the Desktop.
+  /// `covered`, which is now behind `window` as a tab) and, unless `desktopMayGo`, the Desktop. Each within its place: a
+  /// window that would hang over its neighbour has no room either, and nobody asked for this dock.
   public static func keepsEverythingShowing(
     before: Layout, after: Layout, adding window: WindowID, covering covered: WindowID? = nil,
     desktopMayGo: Bool = false
   ) -> Bool {
-    guard after.windowFrames[window] != nil, desktopMayGo || before.desktopFrame == nil || after.desktopFrame != nil
+    guard after.fits(window), desktopMayGo || before.desktopFrame == nil || after.desktopFrame != nil
     else { return false }
-    return before.windowFrames.keys.allSatisfy { $0 == covered || $0 == window || after.windowFrames[$0] != nil }
+    // Whoever hangs over already may go on doing so, and no further.
+    func hangsOverNoFurther(_ window: WindowID) -> Bool {
+      guard let was = before.overhangs[window], let now = after.overhangs[window] else { return false }
+      return now.width <= was.width + 0.5 && now.height <= was.height + 0.5
+    }
+    return before.windowFrames.keys.allSatisfy { $0 == covered || $0 == window || after.fits($0) || hangsOverNoFurther($0) }
   }
 }
 

@@ -46,14 +46,25 @@ root  split(horizontal)
 - **Tiles**: a node smaller than `minimumUsableWidth × minimumUsableHeight`,
   or a window whose app refused to shrink to its slot, is drawn as a tile (app
   colour and icon, or a miniature of a group) and its windows are parked.
-  Clicking a tile zooms onto it.
+  Clicking a tile zooms onto it. **As Arbor ships that is said of the Desktop alone:**
+- **What cannot fit overlaps** (F69, `windowsThatDoNotFit`, `LayoutOptions.overlaps`): where the layout would make a tile of a window or a group it
+  lets the window stand at its smallest size, and never smaller than the usable size, flush with the outer side of its place
+  (`LayoutEngine`'s `standing`): the last of a row with the right, every other with the left, read from where the place lies in the
+  view. `Layout.nodeFrames` holds the places, which tile the view as ever; `windowFrames` the frames, which then overlap;
+  `tightPlaces` the places of those that hang over. Whoever asks what lies beside what, or whose a point is, goes by `slots`;
+  whoever weighs one arrangement against another by `fits` and `placesTooSmall`, so that the arrangement Arbor makes is the
+  same with either value. A gap has a handle only where no window lies over it (`seamsInReach`). Which window is in front is
+  macOS's business; a `dock` gives its window the keyboard, which brings it forward (`Controller+Overlap.swift`).
 - **Room before tiles** (F61): before a window becomes a tile for its minimum size, `MakeRoom`
   moves weight to its slot from the Desktop and from siblings in view that can spare it, once, as if
   the gaps had been dragged. For the window with the keyboard alone there is more: what was lent to its
   neighbours goes back, and if that is not enough they lend their places, written into the tree's ledger. The weights change, never the layout function: frames stay
   proportional to weights, which is what lets a gap follow the pointer. Not while the person's own
   hand is on a gap (`byHand`). A Desktop squeezed into a tile that way takes a usable size back
-  once a window floats on it (`Workspace.desktopIsOwedRoom`).
+  once a window floats on it (`Workspace.desktopIsOwedRoom`). A window that hangs over its place is short of room as a tile is: served
+  in the same order, on the same terms. Where all fit in the end that is all of it. Where somebody would still hang over, `serve` starts again for
+  the least overlap: when all have been served, whoever is short takes what those who fit can spare, and the Desktop is not topped up. Nothing goes back, and
+  nobody pays with their place, for the window with the keyboard: that is for tiles.
 - **There and back is nothing** (`Controller+ThereAndBack.swift`): a docked window that is hidden, minimized or on another
   Space and comes back, nothing else having changed, gets its place back and its neighbours their exact sizes. A plain
   layout does that by itself, because an absent window keeps its weight. Room before tiles moves weights, from where it

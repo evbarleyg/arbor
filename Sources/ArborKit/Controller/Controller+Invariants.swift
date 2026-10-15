@@ -153,7 +153,9 @@ extension Controller {
       }
       // Rounding each boundary to whole points can push an edge half a point past a fractional frame.
       let bounds = display.visibleFrame.insetBy(dx: -1, dy: -1)
-      var rects: [(window: WindowID?, node: NodeID?, rect: CGRect)] = layout.windowFrames.map { ($0.key, nil, $0.value) }
+      overhangViolations(in: layout, on: id, &problems)
+      // The places tile the view whatever stands in them: of a window that hangs over its place, the place is looked at here.
+      var rects: [(window: WindowID?, node: NodeID?, rect: CGRect)] = layout.slots.map { ($0.key, nil, $0.value) }
       for tile in layout.tiles { rects.append((nil, tile.node, tile.frame)) }
       if let desktop = layout.desktopFrame { rects.append((nil, nil, desktop)) }
       func name(_ index: Int) -> String {
@@ -171,6 +173,40 @@ extension Controller {
           let pair = [name(index) + " at " + rect.brief, name(other) + " at " + rects[other].rect.brief].sorted()
           problems.append(.init("slots-overlap", "\(id): \(pair[0]) overlaps \(pair[1])"))
         }
+      }
+    }
+  }
+
+  /// A window hangs over its place only as Arbor ships, only as far as the layout says, from a side of its place, and not out of
+  /// the view unless it is larger than the view.
+  private func overhangViolations(in layout: Layout, on id: DisplayID, _ problems: inout [InvariantViolation]) {
+    guard !layout.overhangs.isEmpty else { return }
+    let options = options(for: id).layoutOptions
+    let content = LayoutEngine.content(of: layout.frame, options: options)
+    if !options.overlaps { problems.append(.init("overhang", "\(id): \(layout.overhangs.keys.sorted()) hang over their places, with tiles asked for")) }
+    for (window, over) in layout.overhangs.sorted(by: { $0.key < $1.key }) {
+      guard let frame = layout.windowFrames[window], let place = layout.tightPlaces[window],
+        place == workspaces[id]?.tree.leaf(containing: window).flatMap({ layout.nodeFrames[$0] })
+      else {
+        problems.append(.init("overhang", "\(id): \(window) hangs over a place that is not its own, or not in view"))
+        continue
+      }
+      if over.width < 0 || over.height < 0 || (over.width == 0 && over.height == 0) {
+        problems.append(.init("overhang", "\(id): \(window) at \(frame.brief) is said to hang over its place \(place.brief)"))
+      }
+      if !frame.overlaps(place) && place.width > 0 && place.height > 0 {
+        problems.append(.init("overhang", "\(id): \(window) at \(frame.brief) has left its place \(place.brief)"))
+      }
+      if (frame.width <= content.width && (frame.minX < content.minX || frame.maxX > content.maxX))
+        || (frame.height <= content.height && (frame.minY < content.minY || frame.maxY > content.maxY))
+      {
+        problems.append(.init("overhang", "\(id): \(window) at \(frame.brief) leaves the view \(content.brief), in which it would fit"))
+      }
+      let visible = layout.frame
+      if (frame.width <= visible.width && (frame.minX < visible.minX || frame.maxX > visible.maxX))
+        || (frame.height <= visible.height && (frame.minY < visible.minY || frame.maxY > visible.maxY))
+      {
+        problems.append(.init("overhang", "\(id): \(window) at \(frame.brief) leaves \(visible.brief), in which it would fit"))
       }
     }
   }
@@ -360,7 +396,7 @@ extension Controller {
     layouts[display].map { layout in
       var scene = OverlayScene()
       scene.tiles = tileModels(for: layout, on: display)
-      scene.seams = layout.seams
+      scene.seams = seamsWithAHandle(in: layout, on: display)
       // How tiles look, and whether there are gaps to drag at all (F15), follow from the settings and change nothing.
       applyAppearance(to: &scene, for: layout, on: display)
       return scene

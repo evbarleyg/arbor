@@ -807,7 +807,7 @@ private let finder = "com.apple.finder"
   }
 
   /// It became a tile, which parks it in a corner. That corner must not be remembered as its place.
-  @Test func aLateFloatOfAWindowThatBecameATileComesBackIntoView() {
+  @Test(.withTiles) func aLateFloatOfAWindowThatBecameATileComesBackIntoView() {
     let h = harness([
       AppRule(app: mail, title: "Compose", action: .float), AppRule(app: mail, action: .dock(.left)),
     ])
@@ -826,7 +826,7 @@ private let finder = "com.apple.finder"
   }
 
   /// The usual case: the new window is focused, so the view went to it before its title came.
-  @Test func aLateFloatOfAWindowTheViewWentToIsBackWhereItOpened() {
+  @Test(.withTiles) func aLateFloatOfAWindowTheViewWentToIsBackWhereItOpened() {
     let h = harness([
       AppRule(app: mail, title: "Compose", action: .float),
       AppRule(app: mail, action: .dockBeside(bundleID: "com.example.safari", .right)),

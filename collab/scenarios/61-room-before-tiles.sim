@@ -3,6 +3,8 @@
 # third of the screen (709 and 574 points, measured on the real apps). They get halves: nothing is kept for the Desktop. A half is seven
 # points short for Notes, so Arbor moves the gap itself: both are in view.
 # Reference: T03 T20 A05, F61.
+# As Arbor ships, what cannot fit overlaps (F69). This story is about the tile, which is an option now.
+set windowsThatDoNotFit tile
 open Notes 1000x660 min 709x300
 open Safari 1324x800 min 574x240
 dock 101 left

@@ -37,7 +37,7 @@ import Testing
     return found
   }
 
-  @Test(arguments: [
+  @Test(.withTiles, arguments: [
     // A desk anybody has: two windows docked, one framed, a third opens over it. ⌘Tab to the other docked window, and back.
     """
     displays main:0,0,1440,900:25,0,70,0* windows-never
@@ -345,7 +345,7 @@ import Testing
 
   /// As 10,000 walks found it: a false alarm of this net. `way-back pause` lets everything come to rest and then pauses, in one step. The look at
   /// the pin that was due raises it while Arbor runs, which it may. Taken apart, the same story: the raise is at `settle`, and none after `pause`.
-  @Test func aLookAtAPinThatFallsDueOnAWayBackIsNoRaiseByAPausedArbor() {
+  @Test(.withTiles) func aLookAtAPinThatFallsDueOnAWayBackIsNoRaiseByAPausedArbor() {
     let covered = [
       "open 102 Mail pid 1002 at 78 171 1265 623 min 760 400", "open 104 Preview pid 1007 at 222 109 723 553 min 723 400 max 723 2000", "launch",
       "via menu arrange all", "via menu toggle-pin", "focus 102",
@@ -380,7 +380,7 @@ import Testing
   /// Walks a person could take find nothing. A net that never comes to its question catches nothing: counted is how often a floating window
   /// that nothing keeps in view came back into view, which is where the raises were. With either raise put back these forty walks find it;
   /// the next forty do not find the guest's.
-  @Test func ordinaryWalksRaiseNothingUnasked() {
+  @Test(.withTiles) func ordinaryWalksRaiseNothingUnasked() {
     let askedBefore = ChaosRunner.questionsAsked["raised", default: 0]
     for seed in UInt64(1)...40 {
       let runner = ChaosRunner()

@@ -372,7 +372,7 @@ import Testing
   }
 
   /// A tile is on screen too: a window that goes above two tiles it was beside has moved.
-  @Test(arguments: Away.allCases) func pastTilesIsAStep(away: Away) {
+  @Test(.withTiles, arguments: Away.allCases) func pastTilesIsAStep(away: Away) {
     let (h, ids) = grid()
     let e = h.system.open(app: "E", pid: 1004)
     let (a, b, c, d) = (ids[0], ids[1], ids[2], ids[3])

@@ -215,9 +215,11 @@ extension Controller {
     // A docked window leaves the arrangement only where that is plainly meant: over the Desktop (or with ⌘). Over the
     // middle of another window, or a gap, nothing is previewed and nothing happens: it goes back to its slot.
     if target == .float, workspaces.values.contains(where: { $0.isDocked(window) }) {
+      // (A window that hangs over the Desktop lies in front of it: the point is the window's.)
+      let under = seen.layout.leafOrTile(at: point, in: seen.tree)
       let onDesktop =
-        seen.layout.leafOrTile(at: point, in: seen.tree) == seen.tree.desktop
-        || seen.layout.desktopFrame.map { floatingRegion($0, on: display).contains(point) } == true
+        under == seen.tree.desktop
+        || (under == nil && seen.layout.desktopFrame.map { floatingRegion($0, on: display).contains(point) } == true)
       if !onDesktop { return Hover(display: displayID, target: .none, isNowhere: true) }
     }
     // Dropped there it would widen a held view (Controller+Hold.swift). A docked window goes back to its

@@ -80,16 +80,22 @@ public struct LayoutOptions: Equatable, Sendable {
   /// the tree. Whoever rehearses a dock or makes room with these options does (`LayoutTree.dock`, `MakeRoom`).
   public var desktopColumn: Bool
 
+  /// What becomes of a window that is larger than its place. As Arbor ships it stays in view: it stands at its smallest
+  /// size, flush with the outer side of its place, and hangs over its neighbours (`Layout.overhangs`). Then only the
+  /// Desktop can be a tile. Off, it is a tile and its window goes out of view. The places are the same either way.
+  public var overlaps: Bool
+
   public init(
     gap: CGFloat = 12, outerGap: CGFloat? = nil,
     minimumUsableSize: CGSize = CGSize(width: 240, height: 160), shareRemovedSpace: Bool = true,
-    desktopColumn: Bool = false
+    desktopColumn: Bool = false, overlaps: Bool = false
   ) {
     self.gap = gap
     self.outerGap = outerGap ?? gap
     self.minimumUsableSize = minimumUsableSize
     self.shareRemovedSpace = shareRemovedSpace
     self.desktopColumn = desktopColumn
+    self.overlaps = overlaps
   }
 }
 
@@ -175,20 +181,93 @@ public struct Layout: Equatable, Sendable {
   /// Places that have their room and nobody in them (`leavingOpen`), each by the outermost node that holds nothing
   /// else. They are not in `nodeFrames`: there is nothing to point at, to frame or to walk to.
   public var openPlaces: [NodeID: CGRect] = [:]
+  /// The places of the windows in `windowFrames` that are larger than their places (`LayoutOptions.overlaps`). Such a window's
+  /// frame begins at a side of its place and reaches over what lies beside it.
+  public var tightPlaces: [WindowID: CGRect] = [:]
 
   public init(camera: NodeID, frame: CGRect) {
     self.camera = camera
     self.frame = frame
   }
 
-  /// The leaf (stack or desktop) or tile whose rectangle contains `point`.
+  /// The windows that hang over their places, and by how much in width and height.
+  public var overhangs: [WindowID: CGSize] {
+    var result: [WindowID: CGSize] = [:]
+    for (window, place) in tightPlaces {
+      guard let frame = windowFrames[window] else { continue }
+      result[window] = CGSize(width: frame.width - place.width, height: frame.height - place.height)
+    }
+    return result
+  }
+
+  /// Those of them that lie over another window by it. One that hangs over a gap, or over the Desktop, covers nobody.
+  public var overhangsOverWindows: [WindowID: CGSize] {
+    overhangs.filter { window, _ in
+      guard let frame = windowFrames[window] else { return false }
+      return windowFrames.contains { $0.key != window && $0.value.overlaps(frame) }
+    }
+  }
+
+  /// Where each docked window in view has its place in the arrangement. They tile the view, whatever hangs over: whoever asks what
+  /// lies beside what, or whose a point is, goes by these.
+  public var slots: [WindowID: CGRect] { tightPlaces.isEmpty ? windowFrames : windowFrames.merging(tightPlaces) { $1 } }
+
+  /// Whether `window` is in view and within its place: neither a tile nor hanging over.
+  public func fits(_ window: WindowID) -> Bool { windowFrames[window] != nil && tightPlaces[window] == nil }
+
+  /// How many places are too small for what is in them. Whoever weighs one arrangement against another goes by this, so
+  /// that the arrangement Arbor makes does not depend on `LayoutOptions.overlaps`.
+  public var placesTooSmall: Int { tiles.count + tightPlaces.count }
+
+  /// The leaf (stack or desktop) or tile whose rectangle contains `point`. Where a window hangs over its neighbour the point is
+  /// the neighbour's, whose place it is: which of the two lies in front is macOS's business and not known here. Where it hangs over
+  /// a gap, a tile or the Desktop, which lie behind every window, the point is the window's.
   public func leafOrTile(at point: CGPoint, in tree: LayoutTree) -> NodeID? {
-    if let tile = tiles.first(where: { $0.frame.contains(point) }) { return tile.node }
-    for (window, frame) in windowFrames where frame.contains(point) {
+    for (window, frame) in slots where frame.contains(point) {
       return tree.leaf(containing: window)
     }
+    for window in tightPlaces.keys.sorted() where windowFrames[window]?.contains(point) == true {
+      return tree.leaf(containing: window)
+    }
+    if let tile = tiles.first(where: { $0.frame.contains(point) }) { return tile.node }
     if let desktopFrame, desktopFrame.contains(point) { return tree.desktop }
     return nil
+  }
+
+  /// The rectangle of `node` as a person sees it: its place, or for a window that hangs over its place the window's frame.
+  public func reach(of node: NodeID, in tree: LayoutTree) -> CGRect? {
+    for window in tightPlaces.keys where tree.leaf(containing: window) == node { return windowFrames[window] }
+    return nodeFrames[node]
+  }
+
+  /// The gaps as far as a hand can reach them: a stretch that lies under a window that hangs over has no handle, and nothing
+  /// is drawn over a window. Of a gap that shows in several stretches, the longest.
+  public var seamsInReach: [Seam] {
+    guard !tightPlaces.isEmpty else { return seams }
+    let over = tightPlaces.keys.sorted().compactMap { windowFrames[$0] }
+    return seams.compactMap { seam in
+      // A gap between two columns runs down, one between two rows across.
+      let along: Axis = seam.axis == .horizontal ? .vertical : .horizontal
+      func span(_ rect: CGRect) -> (CGFloat, CGFloat) { along == .vertical ? (rect.minY, rect.maxY) : (rect.minX, rect.maxX) }
+      let covered = over.filter { $0.overlaps(seam.frame) }.map(span).sorted { $0.0 < $1.0 }
+      guard !covered.isEmpty else { return seam }
+      let (start, end) = span(seam.frame)
+      var free: [(CGFloat, CGFloat)] = []
+      var at = start
+      for (from, to) in covered {
+        if from > at { free.append((at, min(from, end))) }
+        at = max(at, to)
+      }
+      if at < end { free.append((at, end)) }
+      guard let longest = free.max(by: { $0.1 - $0.0 < $1.1 - $1.0 }), longest.1 - longest.0 >= 1 else { return nil }
+      var seam = seam
+      if along == .vertical {
+        seam.frame = CGRect(x: seam.frame.minX, y: longest.0, width: seam.frame.width, height: longest.1 - longest.0)
+      } else {
+        seam.frame = CGRect(x: longest.0, y: seam.frame.minY, width: longest.1 - longest.0, height: seam.frame.height)
+      }
+      return seam
+    }
   }
 
   /// This layout of `tree` with nobody in the places of `windows`, which were counted as present so that they got
@@ -199,6 +278,7 @@ public struct Layout: Equatable, Sendable {
     guard !windows.isEmpty else { return self }
     var layout = self
     layout.windowFrames = windowFrames.filter { !windows.contains($0.key) }
+    layout.tightPlaces = tightPlaces.filter { !windows.contains($0.key) }
     layout.hiddenWindows.subtract(windows)
     layout.tiles = tiles.compactMap { tile in
       var tile = tile
@@ -225,7 +305,8 @@ public enum LayoutEngine {
   /// Every rectangle in the result is finite and on whole points, whatever the tree, the display
   /// and the options. The children of a split and the gaps between them tile it exactly, so nothing
   /// overlaps and nothing leaves `frame`. Gaps are the same everywhere, except where there is too
-  /// little room for them: see `content(of:options:)` and `placeSplit`.
+  /// little room for them: see `content(of:options:)` and `placeSplit`. That holds for the places. With
+  /// `LayoutOptions.overlaps` a window larger than its place hangs over it: see `Builder.standing`.
   ///
   /// - Parameters:
   ///   - isPresent: whether a window currently takes up space.
@@ -257,10 +338,11 @@ public enum LayoutEngine {
     // points, which keep every frame on whole points. How large it can be depends on the room.
     var options = options
     options.gap = options.gap.isNaN ? 0 : max(options.gap.rounded(), 0)
+    let content = content(of: frame, options: options)
     var builder = Builder(
-      view: view, options: options, minimumSize: minimumSize,
+      view: view, options: options, minimumSize: minimumSize, content: content,
       layout: Layout(camera: camera, frame: frame))
-    builder.place(camera, in: content(of: frame, options: options), isCamera: true)
+    builder.place(camera, in: content, isCamera: true)
     return builder.layout
   }
 
@@ -289,6 +371,8 @@ public enum LayoutEngine {
     let view: TreeView
     let options: LayoutOptions
     let minimumSize: (WindowID) -> CGSize?
+    /// What the view's node fills.
+    let content: CGRect
     var layout: Layout
     /// The splits laid out so far that show two children or more, for `ends`.
     var rows: [NodeID: (axis: Axis, first: NodeID, last: NodeID, pointsPerWeight: CGFloat)] = [:]
@@ -299,7 +383,7 @@ public enum LayoutEngine {
       guard let node = view.tree[id] else { return }
       layout.nodeFrames[id] = rect
 
-      if !isCamera, let kind = tileKind(for: node, in: rect) {
+      if !isCamera, let kind = tileKind(for: node, in: rect), !options.overlaps || kind == .desktop {
         var miniature: [WindowID: CGRect] = [:]
         if kind == .group {
           let inner = LayoutEngine.placement(
@@ -321,7 +405,10 @@ public enum LayoutEngine {
       case .desktop:
         layout.desktopFrame = rect
       case .stack:
-        if let window = view.visibleWindow(of: id) { layout.windowFrames[window] = rect }
+        guard let window = view.visibleWindow(of: id) else { break }
+        let frame = isCamera ? rect : standing(window, in: rect)
+        layout.windowFrames[window] = frame
+        if frame != rect { layout.tightPlaces[window] = rect }
       case .split(let axis, _):
         let children = view.effectiveChildren(of: id)
         guard !children.isEmpty else { return }
@@ -480,6 +567,36 @@ public enum LayoutEngine {
         }
         return nil
       }
+    }
+
+    /// Where `window` stands with `LayoutOptions.overlaps`: in its place, if it goes that small. Along a side that it does not,
+    /// by the very measures that would make it a tile, it is as small as it goes, and never smaller than a window is of
+    /// use. It begins where its place begins, and is pushed in as far as it takes to stay inside the view. So the last of a row is flush
+    /// with the right of its place, every other with the left as long as that goes, and of two the overlap lies in the middle; columns
+    /// likewise. Nothing leaves the view that could be inside it. One that is larger than the view, by less than the gap around it, takes of that
+    /// gap rather than lie behind the Dock or beyond the display's edge.
+    func standing(_ window: WindowID, in place: CGRect) -> CGRect {
+      guard options.overlaps else { return place }
+      let usable = options.minimumUsableSize
+      let learned = minimumSize(window) ?? .zero
+      func stretch(
+        _ start: CGFloat, _ length: CGFloat, learned: CGFloat, usable: CGFloat, within: (CGFloat, CGFloat), atMost: (CGFloat, CGFloat)
+      ) -> (CGFloat, CGFloat) {
+        // A setting can ask for more than the display has. Nobody is made larger than the view for it: only its own app does that.
+        let usable = min(usable, within.1 - within.0)
+        guard length < usable - 0.5 || learned > length + 1 else { return (start, length) }
+        let needed = max(learned, usable).rounded(.up)
+        if needed > within.1 - within.0 { return (needed > atMost.1 - atMost.0 ? within.0 : min(within.0, atMost.1 - needed), needed) }
+        return (min(start, within.1 - needed), needed)
+      }
+      let visible = layout.frame
+      let (x, width) = stretch(
+        place.minX, place.width, learned: learned.width, usable: usable.width, within: (content.minX, content.maxX),
+        atMost: (visible.minX, visible.maxX))
+      let (y, height) = stretch(
+        place.minY, place.height, learned: learned.height, usable: usable.height, within: (content.minY, content.maxY),
+        atMost: (visible.minY, visible.maxY))
+      return CGRect(x: x, y: y, width: width, height: height)
     }
   }
 }

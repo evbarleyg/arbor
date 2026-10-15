@@ -199,6 +199,7 @@ collect "$home"
 
 step "session 2: four test windows that do things by themselves"
 ARBOR_TEST_WINDOWS_ARGS="--min-size 3:700x500"
+arbor_settings "{$ARBOR_TILES_ON}"
 arbor_start 4 "$BUILD"
 ctl dock "$W4" left
 ctl dock "$W2" beside "$W4" right

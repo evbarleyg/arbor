@@ -22,7 +22,7 @@ extension Controller {
     guard let (plain, late, atAWindowsCost) = layoutAndWhoIsLate(of: displayID) else { return nil }
     if atAWindowsCost { giveUpRoom(on: displayID) }
     // Which `MakeRoom.serve` sees to otherwise.
-    if !settings.makeRoom, !plain.tiles.isEmpty, !gapsInHand, drag == nil, edgeResize == nil, var tree = workspaces[displayID]?.tree,
+    if !settings.makeRoom, plain.placesTooSmall > 0, !gapsInHand, drag == nil, edgeResize == nil, var tree = workspaces[displayID]?.tree,
       MakeRoom.shareWhereTooLittleWasLeft(
         &tree, laidOutAs: plain, options: options(for: displayID).layoutOptions, leaving: squeezedByHand[displayID] ?? [])
     {
@@ -38,7 +38,7 @@ extension Controller {
     // No tiles, nobody short, nothing to give back: most of the time. And no gap moves under a window or an edge that is
     // being dragged.
     guard settings.makeRoom, !gapsInHand, drag == nil, edgeResize == nil, var workspace = workspaces[displayID],
-      !plain.tiles.isEmpty || (workspace.tree.hasLoans && reason != .enforce), let display = display(displayID)
+      plain.placesTooSmall > 0 || (workspace.tree.hasLoans && reason != .enforce), let display = display(displayID)
     else { return plain }
     let present = presentWindowIDs().union(late)
     let minimums = minimumSizes
@@ -60,7 +60,7 @@ extension Controller {
     guard !served.isEmpty || gaveBack else { return plain }
     let layout = roomy.leavingOpen(late, in: workspace.tree)
     // Moving the gaps has cost somebody their place beside a hole (Controller+KeptRoom.swift). Once more, without.
-    if !late.isEmpty, !layout.tiles.allSatisfy({ $0.kind == .desktop }) {
+    if !late.isEmpty, !layout.tiles.allSatisfy({ $0.kind == .desktop }) || !layout.overhangs.isEmpty {
       giveUpRoom(on: displayID)
       return roomyLayout(of: displayID, for: reason, startingFrom: before)
     }
@@ -182,16 +182,27 @@ extension Controller {
       return
     }
     var squeezed = (squeezedByHand[displayID] ?? []).filter { view.tree.contains($0) }
+    let overlaps = options(for: displayID).layoutOptions.overlaps
+    // A window that hangs over and has room again, because a neighbor has left for good, is like any other from then on. With everything in view:
+    // framed on its own it has the whole display, which says nothing. And with everybody there: a neighbor in the Dock comes back, and there and
+    // back is nothing. (A tile that is a window again keeps its mark until a hand moves a gap: with tiles nothing changes here.)
+    if overlaps, !gapsInHand, layout.camera == view.tree.root, view.tree.allWindows.allSatisfy(view.isPresent) {
+      for window in layout.windowFrames.keys where layout.fits(window) {
+        if let leaf = view.tree.leaf(containing: window) { squeezed.remove(leaf) }
+      }
+    }
     if gapsInHand {
       let minimums = minimumSizes
       let short = MakeRoom.shortSlots(
         in: layout, view: view, options: options(for: displayID).layoutOptions, minimumSize: { minimums[$0] })
       // Only what the hand has made short, or shorter. A window that was a tile for want of room before, somewhere else
-      // in the view, is still waiting for room.
+      // in the view, is still waiting for room. One that hangs over waits for nothing: it is in view, its person has seen the row
+      // and set it, and room made for it at some later layout would move the gap they have just put somewhere.
       let shown = layouts[displayID]
       let byThisHand = short.filter { slot in
         guard let window = slot.window else { return false }
-        guard let shown, shown.windowFrames[window] == nil, let was = shown.nodeFrames[slot.node],
+        if overlaps { return true }
+        guard let shown, !shown.fits(window), let was = shown.nodeFrames[slot.node],
           let now = layout.nodeFrames[slot.node]
         else { return true }
         return now.width < was.width - 0.5 || now.height < was.height - 0.5
@@ -202,7 +213,7 @@ extension Controller {
       } else {
         squeezedAgainstWindows[displayID, default: []].formUnion(byThisHand)
       }
-      for window in layout.windowFrames.keys {
+      for window in layout.windowFrames.keys where layout.fits(window) {
         if let leaf = view.tree.leaf(containing: window) { squeezed.remove(leaf) }
       }
       // A row or column that the hand has made one tile, or a smaller one, likewise: nothing in it is fetched out of

@@ -172,7 +172,7 @@ import Testing
   }
 
   /// There is no room to be made: it ends as a tile. The others have not shrunk for a layout that never came.
-  @Test func oneThatEndsAsATileCostsNobodyADetour() throws {
+  @Test(.withTiles) func oneThatEndsAsATileCostsNobodyADetour() throws {
     let h = Harness()
     let a = h.system.open(app: "A")
     let b = h.system.open(app: "B")
@@ -334,7 +334,7 @@ import Testing
   }
 
   /// A gap dragged with the pointer: a quick hand takes it far in one step.
-  @Test func aGapDraggedFarCostsNobodyADetour() throws {
+  @Test(.withTiles) func aGapDraggedFarCostsNobodyADetour() throws {
     let h = Harness(settings: Settings())
     let a = h.system.open(app: "A", minimumSize: CGSize(width: 500, height: 300))
     let preview = h.system.open(app: "Preview", frame: CGRect(x: 300, y: 100, width: 600, height: 600))

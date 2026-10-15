@@ -55,3 +55,19 @@ extension Settings {
     return settings
   }
 }
+
+/// For the tests of tiles, which the setting `windowsThatDoNotFit` keeps alive: every harness the test makes has it at `tile`
+/// (`Harness.makesTiles`). At the head of a test or of a suite: `@Test(.withTiles)`, `@Suite(.withTiles)`.
+struct WithTiles: TestTrait, SuiteTrait, TestScoping {
+  var isRecursive: Bool { true }
+
+  func provideScope(
+    for test: Test, testCase: Test.Case?, performing function: @Sendable () async throws -> Void
+  ) async throws {
+    try await TilesForTests.$areAskedFor.withValue(true) { try await function() }
+  }
+}
+
+extension Trait where Self == WithTiles {
+  static var withTiles: Self { Self() }
+}

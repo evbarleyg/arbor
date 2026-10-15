@@ -262,8 +262,8 @@ import Testing
     #expect(HeadsUpHint.zoomedByMacOS.model(facts: two) { _ in nil }.line == "macOS zoomed this window · Show Everything in the menu puts it back")
     for hint in HeadsUpHint.allCases {
       let bare = hint.model(facts: two) { _ in nil }
-      // The two whose second half names a way that is there whatever the keys are.
-      #expect((bare.hint == nil) == (hint != .leftToMacOS && hint != .zoomedByMacOS && hint != .leftAsItIs))
+      // Those whose second half names a way that is there whatever the keys are, and the one whose second half names no way at all.
+      #expect((bare.hint == nil) == (hint != .leftToMacOS && hint != .zoomedByMacOS && hint != .leftAsItIs && hint != .overlap))
       #expect(bare.kind == .hint)
       #expect(!bare.text.isEmpty)
     }

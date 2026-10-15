@@ -589,7 +589,7 @@ public struct Workspace: Codable, Sendable, Equatable {
       copy.tree, camera: copy.camera, in: frame, options: options,
       isPresent: { $0 == window || isPresent($0) }, minimumSize: minimumSize)
     // The drop will make room (F61), so the preview does.
-    if let terms, !layout.tiles.isEmpty || copy.tree.hasLoans {
+    if let terms, layout.placesTooSmall > 0 || copy.tree.hasLoans {
       layout =
         MakeRoom.serve(
           &copy.tree, camera: copy.camera, in: frame, options: options,

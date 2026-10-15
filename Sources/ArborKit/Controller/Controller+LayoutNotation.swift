@@ -191,7 +191,7 @@ extension Controller {
     guard room > needed else { return usual }
     let wider = spec.tree(filling: windows, recent: recent, desktopSize: beside * needed / (room - needed))
     let after = trial(wider)
-    return after.desktopFrame != nil && after.tiles.count < before.tiles.count ? wider : usual
+    return after.desktopFrame != nil && after.placesTooSmall < before.placesTooSmall ? wider : usual
   }
 
   /// Lays out the arrangement a line has made. A change of the arrangement, which never takes a floating window out of view

@@ -80,6 +80,7 @@ extension Controller {
       present: presentWindowIDs().union([dragged])
     ).layout
     layout.windowFrames[dragged] = nil
+    layout.tightPlaces[dragged] = nil
     layout.hiddenWindows.remove(dragged)
     layout.tiles.removeAll { $0.windows == [dragged] }
     return layout

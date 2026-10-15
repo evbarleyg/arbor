@@ -808,7 +808,7 @@ private func withNothingRemembered(_ old: Harness) -> Harness {
     #expect(h.workspace.floating[b]!.size == size)
   }
 
-  @Test func tabsAndTilesParkSmallToo() {
+  @Test(.withTiles) func tabsAndTilesParkSmallToo() {
     // Each of the three is 464 points wide.
     let (h, a, b, c) = makeRow(settings { $0.shrinkOutOfView = true; $0.minimumUsableWidth = 500 })
     for window in [a, b, c] {
@@ -998,8 +998,9 @@ private struct Dice {
           #expect(visible.contains(frame), "step \(step): the slot of \(window)")
           #expect(frame.size.width >= 0 && frame.size.height >= 0, "step \(step)")
         }
+        // The places: a window that its app keeps larger than its place hangs over its neighbour (F69).
         let slots =
-          Array(layout.windowFrames.values) + layout.tiles.map(\.frame) + [layout.desktopFrame].compactMap { $0 }
+          Array(layout.slots.values) + layout.tiles.map(\.frame) + [layout.desktopFrame].compactMap { $0 }
         for (index, slot) in slots.enumerated() {
           for other in slots.dropFirst(index + 1) { #expect(!slot.overlaps(other), "step \(step)") }
         }

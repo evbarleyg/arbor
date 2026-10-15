@@ -62,7 +62,7 @@ import Testing
     #expect(expect("visible \(c.rawValue)", h) == nil)
   }
 
-  @Test func aboveTilesAndMinimizedWindows() {
+  @Test(.withTiles) func aboveTilesAndMinimizedWindows() {
     let h = Harness()
     let a = h.system.open(app: "Safari")
     let b = h.system.open(app: "Notes")

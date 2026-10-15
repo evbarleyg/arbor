@@ -134,11 +134,14 @@ def audit(state, server, pids):
             findings.append(f"ODD {name} is docked and not parked, but has neither a slot nor a tile")
 
     ids = sorted(placed)
+    hanging = {window["id"] for window in state["windows"] if window.get("overItsPlaceBy")}
     for index, first in enumerate(ids):
         for second in ids[index + 1 :]:
             width, height = overlap(placed[first], placed[second])
             if width > 6 and height > 6:
-                findings.append(f"FAIL docked w{first} and w{second} overlap by {round(width)}×{round(height)}")
+                # Arbor knows, and says so: its app will not make it as small as its place, and it stays in view (F69).
+                level = "NOTE" if first in hanging or second in hanging else "FAIL"
+                findings.append(f"{level} docked w{first} and w{second} overlap by {round(width)}×{round(height)}")
 
     for window in state["windows"]:
         floats = window["managed"] and not window["docked"] and not window["parked"]

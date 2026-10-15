@@ -61,6 +61,7 @@ echo "second process $P2 with windows $X1 $X2"
 
 ARBOR_TEST_WINDOWS_ARGS="--min-size 3:700x500"
 ARBOR_EXTRA_PIDS=$P2
+arbor_settings "{$ARBOR_TILES_ON}"
 arbor_start 3
 ARBOR_EXTRA_PIDS=""
 P1=$ARBOR_WINDOWS_PID

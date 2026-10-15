@@ -200,7 +200,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     return (h, music, musicFrame)
   }
 
-  @Test func aTilesWindowFloatedWhileTheDesktopIsATileTooComesIntoViewWithTheDesktop() throws {
+  @Test(.withTiles) func aTilesWindowFloatedWhileTheDesktopIsATileTooComesIntoViewWithTheDesktop() throws {
     for command in ["float", "toggle-float"] {
       let (h, music, musicFrame) = try harnessWithATileAndTheDesktopATile()
       h.system.clearFrameLog()
@@ -221,7 +221,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     }
   }
 
-  @Test func aFramedWindowFloatedWhileTheDesktopIsATileIsInViewToo() throws {
+  @Test(.withTiles) func aFramedWindowFloatedWhileTheDesktopIsATileIsInViewToo() throws {
     let (h, music, musicFrame) = try harnessWithATileAndTheDesktopATile()
     h.run("zoom \(music.rawValue)")
     #expect(h.system.isVisible(music))
@@ -400,7 +400,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     #expect(h.visibleFrame.contains(try #require(h.frame(notes))))
   }
 
-  @Test func floatAllReachesWindowsFramedOutOfViewMinimizedAndInTiles() {
+  @Test(.withTiles) func floatAllReachesWindowsFramedOutOfViewMinimizedAndInTiles() {
     let (h, notes, safari, mail) = makeHarness()
     let wide = h.system.open(
       app: "Xcode", frame: CGRect(x: 100, y: 100, width: 1250, height: 700),
@@ -812,7 +812,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
     #expect(h.workspace.floating[notes] == chosen, "and that is its place from then on")
   }
 
-  @Test func aPauseBringsBackTilesMinimizedWindowsAndFloatingWindowsThatWereOutOfView() {
+  @Test(.withTiles) func aPauseBringsBackTilesMinimizedWindowsAndFloatingWindowsThatWereOutOfView() {
     let (h, notes, safari, mail) = makeHarness()
     let wideFrame = CGRect(x: 100, y: 100, width: 1250, height: 700)
     let wide = h.system.open(app: "Xcode", frame: wideFrame, minimumSize: CGSize(width: 1250, height: 700))
@@ -1332,7 +1332,7 @@ private func relaunch(_ old: Harness, displays: [DisplaySnapshot]? = nil) -> Har
   /// The chaos lab's story: a window out of view is to come back while its app does not answer. It cannot be moved
   /// now, and must not be forgotten in its corner: no longer counted as out of view, nothing would fetch it. On a
   /// display nobody is working on, no layout comes by to find it either.
-  @Test func aWindowOutOfViewWhoseAppHangsWhenItIsLetGoOfComesBackWhenTheAppAnswers() throws {
+  @Test(.withTiles) func aWindowOutOfViewWhoseAppHangsWhenItIsLetGoOfComesBackWhenTheAppAnswers() throws {
     let below = DisplaySnapshot(
       id: DisplayID("below"), frame: CGRect(x: 289, y: 900, width: 1080, height: 1920),
       visibleFrame: CGRect(x: 289, y: 900, width: 1080, height: 1920), isMain: false)

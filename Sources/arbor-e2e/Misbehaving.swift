@@ -308,6 +308,16 @@ extension Runner {
       // Nothing reports this, so give the app time to read the command.
       Thread.sleep(forTimeInterval: 0.5)
     }
+    // As Arbor ships nobody leaves the view for it (F69).
+    try step("dock a window that cannot shrink to its slot: it stays in view and hangs over", "dock \(w3.rawValue) beside \(w1.rawValue) bottom") { state in
+      check("no tile stands in for it", !state.displays[0].tiles.contains { $0.windows.contains(w3) })
+      check("the state says how far it hangs over its place", (state.window(w3)?.overItsPlaceBy?.height ?? 0) > 0)
+      check("it is in view", comesIntoView(w3), whereabouts(w3))
+      check("\(w1) is still in view", comesIntoView(w1), whereabouts(w1))
+      check("it has the keyboard, which brings it to the front", eventually { $0.focused == w3 })
+    }
+    try step("float it again", "float \(w3.rawValue)") { _ in }
+    try step("ask for tiles, as it was", "set windowsThatDoNotFit tile") { _ in }
     try step("dock a window that cannot shrink to its slot", "dock \(w3.rawValue) beside \(w1.rawValue) bottom") { state in
       check("it becomes a tile", state.displays[0].tiles.contains { $0.windows == [w3] })
       check("the window itself is out of view", leavesView(w3), whereabouts(w3))

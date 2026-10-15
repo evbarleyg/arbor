@@ -5,7 +5,7 @@ import CoreGraphics
 import Testing
 
 /// What tiles look like, and that the appearance settings reach them (docs/features/F15-appearance-options.md).
-@Suite @MainActor struct TileArtTests {
+@Suite(.withTiles) @MainActor struct TileArtTests {
   let blue = RGBA(red: 0.1, green: 0.45, blue: 0.95)
   let yellow = RGBA(red: 0.98, green: 0.85, blue: 0.3)
 
@@ -59,7 +59,7 @@ import Testing
     #expect(h.overlays.tiles[h.display]?.count == 3)
     #expect(h.overlays.tiles[h.display]?.allSatisfy { !$0.usesAppColour && $0.colourAmount == 0.7 && $0.style == .name } == true)
 
-    h.controller.loadSettings = { .withDesktopColumn }
+    h.controller.loadSettings = { .withDesktopColumn.withTiles }
     h.run("reload-settings")
     #expect(h.overlays.tiles[h.display] == standard)
   }

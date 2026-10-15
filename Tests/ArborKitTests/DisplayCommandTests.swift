@@ -246,7 +246,7 @@ private let above = DisplaySnapshot(
     expectSound(h)
   }
 
-  @Test func aWindowTooBigForItsNewSlotIsFramedRatherThanLeftAsATile() {
+  @Test(.withTiles) func aWindowTooBigForItsNewSlotIsFramedRatherThanLeftAsATile() {
     let (h, _, _, _, _) = makeHarness()
     // Too wide for the side display beside anything at all, even c as a tile (1244 points less 80; with a column for the Desktop, two
     // tiles: 1232 less 160). With less, the window with the keyboard would be served at its neighbours' cost (F61) and need no frame.

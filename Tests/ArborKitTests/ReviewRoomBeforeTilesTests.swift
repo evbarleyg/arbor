@@ -35,7 +35,7 @@ import Testing
 
   /// Notes is a tile because three wide windows do not fit: Arbor's doing. Moving the gap between the other two is
   /// no wish to keep Notes small.
-  @Test func aGapMovedElsewhereLeavesATileThatWaitsForRoomWaiting() {
+  @Test(.withTiles) func aGapMovedElsewhereLeavesATileThatWaitsForRoomWaiting() {
     let (h, notes, safari, mail) = makeHarness()
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")
@@ -49,7 +49,7 @@ import Testing
   }
 
   /// The same tile made narrower still by hand is as its user wants it.
-  @Test func aTileMadeNarrowerByHandStaysAsItWasLeft() {
+  @Test(.withTiles) func aTileMadeNarrowerByHandStaysAsItWasLeft() {
     let (h, notes, safari, mail) = makeHarness()
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")

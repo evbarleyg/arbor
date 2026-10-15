@@ -24,7 +24,7 @@ extension Controller {
           !workspace.tree.allWindows.isEmpty
         else { return nil }
         // With `gapHandles` off no panel lies in the gaps, so a press there would reach the wallpaper.
-        let handles = settings.appearanceOptions.gapHandles == .off ? [] : layout.seams.map(\.frame)
+        let handles = settings.appearanceOptions.gapHandles == .off ? [] : seamsWithAHandle(in: layout, on: display.id).map(\.frame)
         // Sorted, so that two answers about the same state are equal.
         return DesktopGuardZones.Display(
           view: layout.frame, windows: Self.sorted(inView.filter { $0.overlaps(layout.frame) }),

@@ -15,7 +15,7 @@ private let tenMinutes = 600.0
 
 /// What Arbor learns about a window's size can be unlearned (docs/features/F45-learned-sizes-expire.md).
 /// `TileTests` has the parts that need no clock: evidence from the window itself, and `relayout`.
-@Suite @MainActor struct LearnedSizeTests {
+@Suite(.withTiles) @MainActor struct LearnedSizeTests {
   /// `[a | b / c]`, halves, where c refused its slot and is a tile.
   func makeHarness(
     displays: [DisplaySnapshot] = [FakeWindowSystem.standardDisplay], settings: Settings = Settings()

@@ -10,6 +10,10 @@ import CoreGraphics
 ///
 /// The weights change, not the layout: a layout stays a pure function of the tree, and a gap still follows the
 /// pointer, because frames stay proportional to weights (`Seam.pointsPerWeight`).
+///
+/// With `LayoutOptions.overlaps` a window that is short of room hangs over its place instead of being a tile. Whatever is said
+/// of a window's tile here goes for it too: it is served in the same order, on the same terms, and gives as a tile gives. One thing
+/// is added: see `serve`.
 public enum MakeRoom {
   /// On what terms room is made.
   public struct Terms: Equatable, Sendable {
@@ -73,9 +77,33 @@ public enum MakeRoom {
   /// Nobody in view pays with their place, for a window or for the Desktop: room is what others can spare. But for
   /// the window with the keyboard: for its sake what was lent to the others in view goes back, and if it takes that
   /// they lend what they need themselves.
+  ///
+  /// With `LayoutOptions.overlaps` that exception does not hold: the window with the keyboard is in view, and in front, however short its place, and a
+  /// change of focus moves nothing. It is served first and takes nothing from anybody who fits. For the rest, where this gives everybody what they
+  /// need the gaps are the ones it gives with tiles. Where it leaves somebody hanging over, the room is shared out `forTheLeastOverlap` instead.
   public static func serve(
     _ tree: inout LayoutTree, camera: NodeID, in frame: CGRect, options: LayoutOptions,
     isPresent: @escaping (WindowID) -> Bool, minimumSize: @escaping (WindowID) -> CGSize?, terms: Terms
+  ) -> (served: [Short], layout: Layout, gaveBack: Bool) {
+    var copy = tree
+    let result = serve(
+      &copy, camera: camera, in: frame, options: options, isPresent: isPresent, minimumSize: minimumSize, terms: terms, forTheLeastOverlap: false)
+    if result.layout.tightPlaces.isEmpty {
+      tree = copy
+      return result
+    }
+    return serve(
+      &tree, camera: camera, in: frame, options: options, isPresent: isPresent, minimumSize: minimumSize, terms: terms, forTheLeastOverlap: true)
+  }
+
+  /// - Parameter forTheLeastOverlap: there is not room for all, and whoever is short hangs over its place. For a tile half a solution helps
+  ///   nobody; for a window that hangs over, every point it gets is a point less of its neighbour covered. So:
+  ///   - whoever is still short when all have been served takes what those who fit can spare, the Desktop first, and keeps it;
+  ///   - the Desktop is not served: docked windows come first, and what it got they would take back at once;
+  ///   So the gaps come to rest: another layout, for whatever reason and whoever has the keyboard by then, moves none.
+  private static func serve(
+    _ tree: inout LayoutTree, camera: NodeID, in frame: CGRect, options: LayoutOptions,
+    isPresent: @escaping (WindowID) -> Bool, minimumSize: @escaping (WindowID) -> CGSize?, terms: Terms, forTheLeastOverlap: Bool
   ) -> (served: [Short], layout: Layout, gaveBack: Bool) {
     func layOut(_ tree: LayoutTree) -> Layout {
       LayoutEngine.layout(
@@ -136,10 +164,31 @@ public enum MakeRoom {
         after = layOut(copy)
       }
       if let group { return after.tiles.contains { $0.node == group } ? nil : (copy, after) }
-      guard slot.window.map({ after.windowFrames[$0] != nil }) ?? (after.desktopFrame != nil),
-        whateverItCosts || start.layout.windowFrames.keys.allSatisfy({ after.windowFrames[$0] != nil })
+      guard slot.window.map({ after.fits($0) }) ?? (after.desktopFrame != nil),
+        whateverItCosts || start.layout.windowFrames.keys.allSatisfy({ after.fits($0) || !start.layout.fits($0) })
       else { return nil }
       return (copy, after)
+    }
+
+    /// The tree and its layout with `slot`, which cannot have all it needs, grown by what those who fit can spare, or nil if that
+    /// is less than a point. Those who are short themselves give nothing: they would only take it back in their turn.
+    func grownAsFarAsItGoes(_ slot: Short) -> (tree: LayoutTree, layout: Layout)? {
+      var (copy, after) = (tree, layout)
+      var changed = false
+      for axis in [Axis.horizontal, .vertical] {
+        let giver = Giver(
+          view: TreeView(tree: copy, isPresent: isPresent), layout: after, axis: axis, options: options,
+          minimumSize: minimumSize, tilesKeep: options.minimumUsableSize, strangersGive: true, theShortGive: false)
+        guard let now = giver.length(of: slot.node),
+          let shares = giver.shares(growing: slot.node, to: length(slot.minimum, axis), atLeast: now + 1), !shares.isEmpty
+        else { continue }
+        var trial = copy
+        for share in shares { trial.setShares(giver.ownStretches(for: share), for: slot.node) }
+        let laidOut = layOut(trial)
+        guard after.windowFrames.keys.allSatisfy({ laidOut.fits($0) || !after.fits($0) }) else { continue }
+        (copy, after, changed) = (trial, laidOut, true)
+      }
+      return changed ? (copy, after) : nil
     }
 
     /// `start` with every group that `slot` is in and that is a tile grown, whatever it costs, until it is laid out
@@ -249,7 +298,7 @@ public enum MakeRoom {
         (terms.givesBack || !served.isEmpty)
         && giveBackWhatCanBeSpared(
           &tree, &layout, to: terms.givesBack ? nil : Set(served.map(\.node)), options: options, isPresent: isPresent,
-          minimumSize: minimumSize, leaving: terms.leaving, layOut)
+          minimumSize: minimumSize, leaving: terms.leaving, theShortKeepWhatTheyHave: forTheLeastOverlap, layOut)
       gaveBack = gaveBack || back
       hadDesktop = hadDesktop || layout.desktopFrame != nil
       let servedBefore = served.count
@@ -266,11 +315,11 @@ public enum MakeRoom {
       // Only where it has a share of its own: what is left over is owed nothing.
       let desktopIsOwed = options.desktopColumn && (terms.desktopIsOwed || (hadDesktop && layout.desktopFrame == nil))
       var short = shortSlots(in: layout, view: view, options: options, minimumSize: minimumSize)
-      if let slot = slotOfTheKeyboard(in: view) {
+      if !options.overlaps, let slot = slotOfTheKeyboard(in: view) {
         short.removeAll { $0.node == slot.node }
         short.append(slot)
       }
-      short = short.filter { !tried.contains($0.node) && ($0.window != nil || desktopIsOwed) }
+      short = short.filter { !tried.contains($0.node) && ($0.window != nil || (desktopIsOwed && !forTheLeastOverlap)) }
       func turn(_ slot: Short) -> (Int, Int) {
         if slot.node == keyboard { return (-1, 0) }
         return slot.window == nil ? (desktopIsInUse ? 0 : 2, 0) : (1, -slot.node.rawValue)
@@ -279,7 +328,7 @@ public enum MakeRoom {
       tried.insert(next.node)
 
       var result = grown(next)
-      if result == nil, next.node == keyboard, terms.neighboursPay {
+      if result == nil, next.node == keyboard, terms.neighboursPay, !options.overlaps {
         // The one exception to "nobody pays with their place": whoever types into a window that nobody can see has
         // lost it. What was lent to the others goes back first. If that is not enough they lend what they need
         // themselves: it is written down like any loan, so a gap that a person has put somewhere is back there
@@ -297,6 +346,16 @@ public enum MakeRoom {
       // What was out of reach may be within it now: a column widened for one window is wider for all in it.
       tried = terms.leaving
     }
+    guard forTheLeastOverlap else { return }
+    // All who could have what they need have it. What is left over goes to the others, in the same order.
+    let stillShort = shortSlots(
+      in: layout, view: TreeView(tree: tree, isPresent: isPresent), options: options, minimumSize: minimumSize
+    ).filter { $0.window != nil && !terms.leaving.contains($0.node) }
+    for slot in stillShort.sorted(by: { ($0.node == keyboard ? 0 : 1, -$0.node.rawValue) < ($1.node == keyboard ? 0 : 1, -$1.node.rawValue) }) {
+      guard let result = grownAsFarAsItGoes(slot) else { continue }
+      (tree, layout) = result
+      served.append(slot)
+    }
     }
   }
 
@@ -308,12 +367,16 @@ public enum MakeRoom {
   ) -> Bool {
     guard !options.desktopColumn else { return false }
     var shared = false
-    for tile in layout.tiles where tile.kind == .window && !leaving.contains(tile.node) {
+    // A window's tile, or the place of one that hangs over it (`LayoutOptions.overlaps`): the arrangement is the same either way.
+    let places =
+      layout.tiles.filter { $0.kind == .window }.map { (node: $0.node, frame: $0.frame) }
+      + layout.tightPlaces.sorted { $0.key < $1.key }.compactMap { window, place in tree.leaf(containing: window).map { (node: $0, frame: place) } }
+    for place in places where !leaving.contains(place.node) {
       // Along the row, which is where it took what was left. Across it a share like the others' would be no help.
-      guard let row = tree.parent(of: tile.node), case .split(let axis, _) = tree[row]?.kind,
+      guard let row = tree.parent(of: place.node), case .split(let axis, _) = tree[row]?.kind,
         axis == .horizontal
-          ? tile.frame.width < options.minimumUsableSize.width : tile.frame.height < options.minimumUsableSize.height,
-        tree.shareWithWhoTookWhatWasLeft(tile.node)
+          ? place.frame.width < options.minimumUsableSize.width : place.frame.height < options.minimumUsableSize.height,
+        tree.shareWithWhoTookWhatWasLeft(place.node)
       else { continue }
       shared = true
     }
@@ -327,7 +390,7 @@ public enum MakeRoom {
   private static func giveBackWhatCanBeSpared(
     _ tree: inout LayoutTree, _ layout: inout Layout, to givers: Set<NodeID>?, options: LayoutOptions,
     isPresent: @escaping (WindowID) -> Bool,
-    minimumSize: @escaping (WindowID) -> CGSize?, leaving: Set<NodeID>, _ layOut: (LayoutTree) -> Layout
+    minimumSize: @escaping (WindowID) -> CGSize?, leaving: Set<NodeID>, theShortKeepWhatTheyHave: Bool, _ layOut: (LayoutTree) -> Layout
   ) -> Bool {
     // (With `shareRemovedSpace` off a weight covers a slot and the gap after it, which the sums below do not know. There room
     // goes back when the window leaves, and not before.)
@@ -349,9 +412,10 @@ public enum MakeRoom {
           parent == tree.parent(of: loan.giver), case .split(axis, _) = tree[parent]?.kind, layout.nodeFrames[parent] != nil
         else { continue }
         let view = TreeView(tree: tree, isPresent: isPresent)
+        // A window that hangs over can spare nothing: what it gave back it would take again at once.
         let giver = Giver(
           view: view, layout: layout, axis: axis, options: options, minimumSize: minimumSize,
-          tilesKeep: options.minimumUsableSize, strangersGive: false)
+          tilesKeep: options.minimumUsableSize, strangersGive: false, theShortGive: !theShortKeepWhatTheyHave)
         let row = view.effectiveChildren(of: parent)
         guard row.contains(loan.giver), row.contains(loan.receiver), let length = giver.length(of: loan.receiver) else { continue }
         let points = row.compactMap(giver.length(of:)).reduce(0, +)
@@ -368,7 +432,7 @@ public enum MakeRoom {
         }
         // Nobody pays with their place for this either, nor does the Desktop, which may be in the group that shrinks.
         let after = layOut(copy)
-        guard layout.windowFrames.keys.allSatisfy({ after.windowFrames[$0] != nil }),
+        guard layout.windowFrames.keys.allSatisfy({ after.fits($0) || !layout.fits($0) }),
           layout.desktopFrame == nil || after.desktopFrame != nil
         else { continue }
         (tree, layout) = (copy, after)
@@ -383,19 +447,22 @@ public enum MakeRoom {
   /// The least a tile is left with, the empty Desktop's too: as far as a gap can be dragged (`LayoutTree.moveBoundary`).
   public static let tileFloor = CGSize(width: 80, height: 80)
 
-  /// The windows in view that are tiles although Arbor knows what they need, and the Desktop if it is a tile.
+  /// The windows in view that are tiles, or hang over their places, although Arbor knows what they need, and the Desktop if it
+  /// is a tile.
   public static func shortSlots(
     in layout: Layout, view: TreeView, options: LayoutOptions, minimumSize: (WindowID) -> CGSize?
   ) -> [Short] {
     let usable = options.minimumUsableSize
-    return layout.tiles.compactMap { tile in
-      if tile.kind == .desktop { return Short(node: tile.node, window: nil, minimum: usable) }
-      guard tile.kind == .window, let window = view.visibleWindow(of: tile.node), let minimum = minimumSize(window)
-      else { return nil }
+    func short(_ node: NodeID) -> Short? {
+      guard let window = view.visibleWindow(of: node), let minimum = minimumSize(window) else { return nil }
       return Short(
-        node: tile.node, window: window,
+        node: node, window: window,
         minimum: CGSize(width: max(minimum.width, usable.width), height: max(minimum.height, usable.height)))
     }
+    return layout.tiles.compactMap { tile in
+      if tile.kind == .desktop { return Short(node: tile.node, window: nil, minimum: usable) }
+      return tile.kind == .window ? short(tile.node) : nil
+    } + layout.tightPlaces.keys.sorted().compactMap { view.tree.leaf(containing: $0).flatMap(short) }
   }
 
   static func length(_ size: CGSize, _ axis: Axis) -> CGFloat { axis == .horizontal ? size.width : size.height }
@@ -415,6 +482,8 @@ public enum MakeRoom {
     var windowsGiveLikeTiles = false
     /// Whether the tile of a group gives like a window's. It has no place to lose either.
     var tilesOfGroupsGive = false
+    /// Whether a window that hangs over its place gives of that as a tile does. Otherwise it keeps what it has.
+    var theShortGive = true
 
     func length(of node: NodeID) -> CGFloat? { layout.nodeFrames[node]?.length(along: axis) }
 
@@ -551,6 +620,10 @@ public enum MakeRoom {
         return length
       case .stack:
         if windowsGiveLikeTiles { return min(length, MakeRoom.length(tilesKeep, axis)) }
+        // Nor has one that hangs over, along the side that is too short as it is. Along the other it is a window like any.
+        if let over = view.visibleWindow(of: node).flatMap({ layout.overhangs[$0] }), MakeRoom.length(over, axis) > 0 {
+          return theShortGive ? min(length, MakeRoom.length(tilesKeep, axis)) : length
+        }
         guard let learned = view.visibleWindow(of: node).flatMap(minimumSize).map({ MakeRoom.length($0, axis) }) else {
           return strangersGive ? min(length, MakeRoom.length(options.minimumUsableSize, axis)) : length
         }

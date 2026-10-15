@@ -57,9 +57,11 @@ independent implementation and is not affiliated with it.
 - **Zoom with a mouse**: hold ⌃⌥ and scroll: up steps in toward the pointer, down steps out. One step per notch of a
   wheel.
 - **Nothing gets lost**: windows outside the view are out of view, not closed: they wait past a
-  screen corner and come back when you zoom out or switch to them (⌘Tab). Windows too
-  small to use show as tiles with their app's colour and icon, a group as a miniature of its windows; click one to zoom in.
-  An app that will not shrink to its place first gets room from the Desktop and its neighbours.
+  screen corner and come back when you zoom out or switch to them (⌘Tab).
+  An app that will not shrink to its place first gets room from the Desktop and its neighbours. If that is not enough the
+  window stays in view all the same: at its smallest size, flush with the outer side of its place, partly over its neighbour. A
+  click or ⌘Tab brings either forward, as on any Mac. (`windowsThatDoNotFit: tile`: it goes out of view, and a tile with its app's colour
+  and icon stands in its place; click it to zoom in.)
   Unplug a display and its windows float on the main one; plug it back in and
   they return to their places. Windows on other macOS Spaces and in full screen keep
   their places too, and so do minimized windows and hidden apps.
@@ -614,7 +616,7 @@ version changes one. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete refere
 | Key | Default | Meaning |
 |---|---|---|
 | `gap` | 12 | Points between windows and around the edges |
-| `minimumUsableWidth` / `minimumUsableHeight` | 240 / 160 | Smaller spaces become tiles |
+| `minimumUsableWidth` / `minimumUsableHeight` | 240 / 160 | No window is made smaller than this: in a smaller place it overlaps its neighbours (or is a tile, see `windowsThatDoNotFit`). A smaller Desktop is a tile |
 | `screenEdgeBand` | 12 | How close to a screen edge a drag must come to dock there |
 | `windowEdgeFraction` | 0.3 | The band along a window's edges that docks beside it |
 | `tabsEnabled` | false | Dropping on a window's middle stacks them (no tab strip yet) |
@@ -663,6 +665,7 @@ version changes one. [docs/SETTINGS.md](docs/SETTINGS.md) is the complete refere
 | `historyButtons` | true | Back and forward among those buttons |
 | `menuBarFill` | 0.25 | How strongly the button for where you are is filled in, from 0 to 1 |
 | `makeRoom` | true | Before a window becomes a tile because its app will not shrink that far, move the gaps around it and take the room from the Desktop and from neighbours that can spare it. For the window being typed in the neighbours give more: they become the tiles |
+| `windowsThatDoNotFit` | "overlap" | A docked window whose app will not make it as small as its place stays in view at its smallest size and lies partly over its neighbour. "tile": it goes out of view and a tile stands in its place |
 | `soleFloatTakesDesktop` | false | A window that floats alone beside docked windows takes the whole Desktop, and has its own size back as soon as a second one floats. Only with `floatingWindowsMakeWay` |
 | `floatingWindowsMakeWay` | false | Docked windows push floating windows aside and squeeze them, so that they stay on the Desktop. Off, a floating window stays exactly where you put it |
 | `resizeStep` | 40 | Points `grow` and `shrink` add or take when no amount is given |

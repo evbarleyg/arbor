@@ -199,7 +199,7 @@ import Testing
     #expect(h.workspace.tree == tree)
   }
 
-  @Test func seamsStopAtTheMinimumOf80Points() {
+  @Test(.withTiles) func seamsStopAtTheMinimumOf80Points() {
     let (h, a, m, b, _) = thirds()
     let slotA = h.frame(a)!
     let slotB = h.frame(b)!

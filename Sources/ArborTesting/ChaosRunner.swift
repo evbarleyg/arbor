@@ -697,8 +697,10 @@ public final class ChaosRunner {
   private func settings() -> Settings {
     // As SettingsFile.load does: a file that cannot be read gives the defaults.
     guard let data = try? JSONSerialization.data(withJSONObject: settingsFile),
-      let settings = try? JSONDecoder().decode(Settings.self, from: data)
+      var settings = try? JSONDecoder().decode(Settings.self, from: data)
     else { return Settings() }
+    // A test of tiles has them whatever the walk writes into the file (`Harness.makesTiles`).
+    if Harness.makesTiles { settings.windowsThatDoNotFit = "tile" }
     return settings
   }
 

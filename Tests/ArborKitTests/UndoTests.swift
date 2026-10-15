@@ -1106,7 +1106,7 @@ private func expectConsistent(_ h: Harness, _ note: String = "", sourceLocation:
     expectConsistent(h)
   }
 
-  @Test func aWindowThatBecameATileGoesBackAndForth() {
+  @Test(.withTiles) func aWindowThatBecameATileGoesBackAndForth() {
     var settings = Settings()
     settings.makeRoom = false
     let (h, a, b, _) = makeHarness(settings: settings)

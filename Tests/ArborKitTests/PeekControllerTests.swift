@@ -391,7 +391,7 @@ private let side = DisplaySnapshot(
     desk.h.keyUp(space)
   }
 
-  @Test func landingOnAGroupGivesTheKeyboardToTheWindowUsedLastThere() {
+  @Test(.withTiles) func landingOnAGroupGivesTheKeyboardToTheWindowUsedLastThere() {
     // Too narrow for the column's windows when everything shows: the column [a / c] is one tile.
     var settings = Settings()
     settings.minimumUsableWidth = 750
@@ -488,7 +488,7 @@ private let side = DisplaySnapshot(
     #expect(h.workspace.back == [root, from])
   }
 
-  @Test func aClickedTileAddsOneEntryOnTopOfIt() {
+  @Test(.withTiles) func aClickedTileAddsOneEntryOnTopOfIt() {
     // The move is not the peek's own: `moveCamera` is told to yield first.
     var settings = Settings()
     settings.minimumUsableWidth = 750
@@ -605,7 +605,7 @@ private let side = DisplaySnapshot(
     expectWindowsMatchLayout(h)
   }
 
-  @Test func aClickedTileIsALandingToo() {
+  @Test(.withTiles) func aClickedTileIsALandingToo() {
     var settings = Settings()
     settings.minimumUsableWidth = 750
     let desk = Desk(settings: settings)
@@ -1093,7 +1093,7 @@ private let side = DisplaySnapshot(
     h.scheduler.advance(by: 0.1)
   }
 
-  @Test func landingOnAGroupFromAnotherDisplayGivesTheKeyboardToTheWindowUsedLastThere() {
+  @Test(.withTiles) func landingOnAGroupFromAnotherDisplayGivesTheKeyboardToTheWindowUsedLastThere() {
     let (h, a, x, tile) = peekBesideTheKeyboard(pointer: CGPoint(x: 400, y: 400)) { a, x in [x, a] }
     pointLow(in: tile, h)
     h.keyUp(space)

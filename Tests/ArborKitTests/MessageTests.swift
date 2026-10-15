@@ -81,7 +81,7 @@ import Testing
     #expect(message.contains("dock \(f.rawValue)"), "\(message)")
   }
 
-  @Test func aDockThatEndsAsATileSaysSo() {
+  @Test(.withTiles) func aDockThatEndsAsATileSaysSo() {
     let (h, _, b, _, _) = makeHarness()
     let big = h.system.open(
       app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500),
@@ -102,7 +102,7 @@ import Testing
 
   func tiled(_ h: Harness) -> Set<WindowID> { Set(h.layout!.tiles.flatMap(\.windows)) }
 
-  @Test func aDockThatLeavesOthersTooSmallSaysHowMany() {
+  @Test(.withTiles) func aDockThatLeavesOthersTooSmallSaysHowMany() {
     let (h, w) = floating(6)
     // A half for the first, a quarter each for the two beside it.
     #expect(h.run("dock \(w[0].rawValue) left") == .success("docked \(w[0]) at the left edge"))
@@ -127,7 +127,7 @@ import Testing
     #expect(Set(h.layout!.windowFrames.keys) == [w[0]])
   }
 
-  @Test func oneOtherWindowIsSpokenOfAsOne() {
+  @Test(.withTiles) func oneOtherWindowIsSpokenOfAsOne() {
     let (h, w) = floating(4)
     h.run("dock \(w[0].rawValue) left")
     h.run("resize \(w[0].rawValue) right -400")
@@ -141,7 +141,7 @@ import Testing
     #expect(tiled(h) == [w[0]])
   }
 
-  @Test func dockingBesideAWindowCountsTheNeighbourItSqueezed() {
+  @Test(.withTiles) func dockingBesideAWindowCountsTheNeighbourItSqueezed() {
     let (h, w) = floating(4)
     h.run("dock \(w[0].rawValue) left")
     h.run("dock \(w[1].rawValue) beside \(w[0].rawValue) right")
@@ -155,7 +155,7 @@ import Testing
     #expect(tiled(h) == [w[2], w[3]])
   }
 
-  @Test func movingADockedWindowCountsOnlyTheOthers() {
+  @Test(.withTiles) func movingADockedWindowCountsOnlyTheOthers() {
     let (h, w) = floating(6)
     h.run("arrange")
     // Out of their columns: five columns where there were three.
@@ -171,7 +171,7 @@ import Testing
         == .success("moved \(w[4]) left; its space is too small to show it, so it is a tile, and so is 1 other window now"))
   }
 
-  @Test func tabsBehindTheFrontOneWereNotShownAndAreNotCounted() {
+  @Test(.withTiles) func tabsBehindTheFrontOneWereNotShownAndAreNotCounted() {
     var settings = Settings()
     settings.tabsEnabled = true
     let (h, w) = floating(4, settings: settings)
@@ -206,7 +206,7 @@ import Testing
     #expect(h.run("include com.example.absent") == .failure("Arbor arranges com.example.absent already"))
   }
 
-  @Test func aResizeThatLeavesANeighbourTooSmallSaysSo() {
+  @Test(.withTiles) func aResizeThatLeavesANeighbourTooSmallSaysSo() {
     let (h, w) = floating(2)
     h.run("dock \(w[0].rawValue) left")
     h.run("dock \(w[1].rawValue) beside \(w[0].rawValue) right")

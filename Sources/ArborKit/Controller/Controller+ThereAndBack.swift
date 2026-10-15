@@ -87,8 +87,9 @@ extension Controller {
     if stood != standing.layout || sizesKnownOfDockedWindows(on: displayID) != standing.sizes { stood = nil }
     // The window somebody is typing in does not leave the view for this: it is the last to become a tile (F61). It may have
     // room only because another went. Then the gaps go on from where they are, and that is the arrangement from now on.
+    // (Where windows that do not fit overlap it is in view, and in front, however short its place: there and back is nothing, for it too.)
     if let keyboard = focusHistory.first, present.contains(keyboard), layouts[displayID]?.windowFrames[keyboard] != nil,
-      (stood ?? layoutToCome(on: displayID, for: reason))?.windowFrames[keyboard] == nil
+      let toCome = stood ?? layoutToCome(on: displayID, for: reason), toCome.windowFrames[keyboard] == nil
     {
       workspaces[displayID] = found
       standingGaps[displayID] = nil

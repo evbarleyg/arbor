@@ -74,7 +74,7 @@ import Testing
     #expect(h.system.isVisible(calculator!))
   }
 
-  @Test func withoutTheSettingBothAreTilesAsBefore() {
+  @Test(.withTiles) func withoutTheSettingBothAreTilesAsBefore() {
     var settings = Settings.withDesktopColumn
     settings.makeRoom = false
     let (h, notes, safari) = makeHarness(settings: settings)
@@ -92,7 +92,7 @@ import Testing
     #expect(try JSONDecoder().decode(Settings.self, from: JSONEncoder().encode(settings)).makeRoom == false)
   }
 
-  @Test func nothingToSpareMakesATileAndMovesNoGap() {
+  @Test(.withTiles) func nothingToSpareMakesATileAndMovesNoGap() {
     let (h, notes, safari) = makeHarness()
     let xcode = h.system.open(
       app: "Xcode", frame: CGRect(x: 100, y: 100, width: 1300, height: 700), minimumSize: CGSize(width: 1300, height: 600))
@@ -107,7 +107,7 @@ import Testing
     #expect(column.map { tree.children(of: $0).map { tree[$0]!.weight } } == [1, 1])
   }
 
-  @Test func aGapDraggedByHandCanStillSqueezeAWindowIntoATileAndItStaysOne() throws {
+  @Test(.withTiles) func aGapDraggedByHandCanStillSqueezeAWindowIntoATileAndItStaysOne() throws {
     let (h, notes, safari) = makeHarness()
     let mail = h.system.open(app: "Mail")
     h.run("dock \(safari.rawValue) left")
@@ -142,7 +142,7 @@ import Testing
     #expect(!isTile(h, safari))
   }
 
-  @Test func aSqueezedWindowThatIsGivenAnotherPlaceGetsRoomThere() throws {
+  @Test(.withTiles) func aSqueezedWindowThatIsGivenAnotherPlaceGetsRoomThere() throws {
     let (h, _, safari) = makeHarness()
     let mail = h.system.open(app: "Mail")
     h.run("dock \(safari.rawValue) left")
@@ -154,7 +154,7 @@ import Testing
     expectInView(h, safari, mail)
   }
 
-  @Test func draggingAWindowsOwnEdgeCanSqueezeItsNeighbour() throws {
+  @Test(.withTiles) func draggingAWindowsOwnEdgeCanSqueezeItsNeighbour() throws {
     let (h, _, safari) = makeHarness()
     let mail = h.system.open(app: "Mail")
     h.run("dock \(mail.rawValue) left")
@@ -224,7 +224,7 @@ import Testing
 
   // MARK: Whenever Arbor itself changes who has how much
 
-  @Test func aNeighbourThatWasAskedForTooMuchGetsItsPlaceBack() throws {
+  @Test(.withTiles) func aNeighbourThatWasAskedForTooMuchGetsItsPlaceBack() throws {
     // Arbor has not met Safari's minimum yet when Xcode asks for room, so it takes more from Safari than Safari will give.
     let (h, _, safari) = makeHarness(settings: .withDesktopColumn)
     let mail = h.system.open(app: "Mail")
@@ -244,7 +244,7 @@ import Testing
     #expect(h.system.frameLog.count <= 16, "a few rounds, then an end: \(h.system.frameLog.count)")
   }
 
-  @Test func whoComesFirstDoesNotDependOnWhomArborHasMetBefore() {
+  @Test(.withTiles) func whoComesFirstDoesNotDependOnWhomArborHasMetBefore() {
     // Notes is known, Activity Monitor is not: it is still Activity Monitor, docked last, that gets the room there is.
     let (h, notes, _) = makeHarness()
     let activity = h.system.open(
@@ -427,7 +427,7 @@ import Testing
 
   /// Tiles give down to 80 points only if it takes that. A column of tiles too narrow for any window would swallow what is docked
   /// into it later.
-  @Test func aWindowDockedBesideATileIsInView() {
+  @Test(.withTiles) func aWindowDockedBesideATileIsInView() {
     let (h, notes, safari) = makeHarness(settings: .withDesktopColumn)
     let maps = h.system.open(
       app: "Maps", frame: CGRect(x: 100, y: 60, width: 1024, height: 768), minimumSize: CGSize(width: 660, height: 360))
@@ -445,7 +445,7 @@ import Testing
   // MARK: The window with the keyboard
 
   /// Three that cannot all fit. Whoever types into a window that nobody can see has lost it, so that one is the last to be a tile.
-  @Test func theWindowWithTheKeyboardIsTheLastToBecomeATile() {
+  @Test(.withTiles) func theWindowWithTheKeyboardIsTheLastToBecomeATile() {
     for typingIn in 0...2 {
       let (h, notes, safari) = makeHarness()
       let activity = h.system.open(
@@ -531,7 +531,7 @@ import Testing
   }
 
   /// Notes 709, Safari 574, Mail 500: 1783 of the 1380 there are. Two fit beside two narrow tiles.
-  @Test func ofThreeWideWindowsTheTwoDockedLastAreInView() throws {
+  @Test(.withTiles) func ofThreeWideWindowsTheTwoDockedLastAreInView() throws {
     let (h, notes, safari) = makeHarness()
     let mail = h.system.open(
       app: "Mail", frame: CGRect(x: 100, y: 100, width: 900, height: 600), minimumSize: CGSize(width: 500, height: 300))
@@ -543,7 +543,7 @@ import Testing
   }
 
   /// F45 asks a tile again, out of view, after ten minutes. What it then learns is what room is made for.
-  @Test func aTileThatWillGoSmallerWhenAskedAgainGetsRoom() {
+  @Test(.withTiles) func aTileThatWillGoSmallerWhenAskedAgainGetsRoom() {
     let h = Harness()
     let safari = h.system.open(app: "Safari", minimumSize: safariMinimum)
     let mail = h.system.open(app: "Mail")
@@ -588,7 +588,7 @@ import Testing
     expectInView(h, notes, safari)
   }
 
-  @Test func arrangeStartsAfreshForASlotThatWasSqueezed() {
+  @Test(.withTiles) func arrangeStartsAfreshForASlotThatWasSqueezed() {
     let (h, notes, safari) = makeHarness()
     h.run("dock \(notes.rawValue) left")
     h.run("dock \(safari.rawValue) right")
@@ -601,7 +601,7 @@ import Testing
     expectInView(h, notes, safari)
   }
 
-  @Test func noGapMovesWhileAWindowIsBeingDragged() throws {
+  @Test(.withTiles) func noGapMovesWhileAWindowIsBeingDragged() throws {
     let (h, notes, safari) = makeHarness()
     let mail = h.system.open(app: "Mail")
     let activity = h.system.open(
@@ -659,7 +659,7 @@ import Testing
 
   /// Whatever people do with windows that resist: the tree stays sound, what is in view fits its slot, nothing lies over
   /// anything else, and a layout asked for again changes nothing.
-  @Test func anythingGoes() {
+  @Test(.withTiles) func anythingGoes() {
     var seed: UInt64 = 0xF061_0001
     func random(_ bound: Int) -> Int {
       seed = seed &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407

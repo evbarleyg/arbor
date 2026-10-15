@@ -245,7 +245,7 @@ import Testing
   /// Two windows are tiles, and Arbor has never asked how small they go. With another away they show, and of one it learns. That
   /// is an occasion to make room (F61): when the other is back, that one is not sent back into its tile.
   /// (They are tiles because the Desktop has half of their column: `(104 / ((101 / 103 / Desktop:2) | 102)) | 105`.)
-  @Test func whatArborLearnsMeanwhileIsAnOccasionToMakeRoom() {
+  @Test(.withTiles) func whatArborLearnsMeanwhileIsAnOccasionToMakeRoom() {
     let h = Harness(
       displays: [
         DisplaySnapshot(
@@ -347,7 +347,7 @@ import Testing
 
   /// A has room only because C went, and somebody types in it when C comes back by itself (Show All, a Space that returns). The window
   /// with the keyboard is the last to become a tile (F61): it stays, and the gaps go on from where they are.
-  @Test func theWindowBeingTypedInDoesNotLeaveTheViewForIt() {
+  @Test(.withTiles) func theWindowBeingTypedInDoesNotLeaveTheViewForIt() {
     let h = Harness(displays: [
       DisplaySnapshot(
         id: FakeWindowSystem.standardDisplay.id, frame: CGRect(x: 0, y: 0, width: 1280, height: 900),

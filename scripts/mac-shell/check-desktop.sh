@@ -50,6 +50,7 @@ echo "wallpaper: $(pointer wallpaper)"
 spaces
 
 ARBOR_TEST_WINDOWS_ARGS="--min-size 2:700x500"
+arbor_settings "{$ARBOR_TILES_ON}"
 arbor_start 3 ARBOR_NO_STATUS_ITEM=0
 ctl dock "$W1" left
 ctl dock "$W2" beside "$W1" bottom

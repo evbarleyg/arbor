@@ -282,7 +282,11 @@ extension Controller {
     let floatingAway = workspace.floating.keys.filter { parked.contains($0) && !workspace.isStashed($0) }.count
     // The Desktop with nothing on it is a tile too when room is short, and nobody has a reason to click that one.
     let tiles = layout.tiles.filter { $0.kind != .desktop || !$0.windows.isEmpty }.count
-    return HeadsUpFacts(docked: docked.count, outOfView: outside + floatingAway, tiles: tiles)
+    var facts = HeadsUpFacts(docked: docked.count, outOfView: outside + floatingAway, tiles: tiles)
+    let over = layout.overhangsOverWindows
+    facts.tooWide = over.values.filter { $0.width > 0 }.count
+    facts.tooTall = over.count - facts.tooWide
+    return facts
   }
 
   /// A teaching moment that is an event and no change of the facts. Shown as often as the others.

@@ -4,6 +4,8 @@
 # (Until F61 the story was told with 900x600. Arbor now finds that much room by moving the
 # gaps, see 61-room-before-tiles.sim; 1200 is more than the neighbours can spare.)
 # Reference: T20 T50 T51. Window ids start at 101; node ids are deterministic.
+# As Arbor ships, what cannot fit overlaps (F69). This story is about the tile, which is an option now.
+set windowsThatDoNotFit tile
 open Safari
 open Notes
 open Xcode 700x500 min 1200x600

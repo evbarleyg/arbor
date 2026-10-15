@@ -86,7 +86,7 @@ import Testing
   }
 
   /// Finding out that a window will not shrink costs one move too many, once.
-  @Test func aWindowThatRefusesItsSlotIsAskedOnce() {
+  @Test(.withTiles) func aWindowThatRefusesItsSlotIsAskedOnce() {
     let h = Harness()
     let a = h.system.open(app: "A")
     let b = h.system.open(app: "B")

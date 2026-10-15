@@ -107,7 +107,7 @@ fi
 ARBOR_TEST_WINDOWS_ARGS="--min-size 3:700x500"
 
 step "the tour"
-arbor_settings '{"animationDuration": 1.2}'
+arbor_settings "{\"animationDuration\": 1.2, $ARBOR_TILES_ON}"
 arbor_start 4
 sleep 2 # the first pictures of windows are taken 0.6 s after Arbor starts
 check "Arbor is still running" alive

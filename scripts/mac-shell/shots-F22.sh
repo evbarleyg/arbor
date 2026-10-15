@@ -179,6 +179,7 @@ arbor_stop 11-after-quit
 # The third window refuses to be smaller than 700×500, so half a column turns it into a tile.
 ARBOR_TEST_WINDOWS_ARGS="--min-size 3:700x500"
 step "session 2: a tile in the way is entered"
+arbor_settings "{$ARBOR_TILES_ON}"
 arbor_start 3
 ctl dock "$W1" left
 ctl dock "$W2" right

@@ -270,7 +270,7 @@ private let side = DisplaySnapshot(
     expectNoRing(h)
   }
 
-  @Test func aWindowInsideATileHasNoRing() {
+  @Test(.withTiles) func aWindowInsideATileHasNoRing() {
     let (h, _, _, _) = makeHarness()
     let big = h.system.open(app: "Settings", minimumSize: CGSize(width: 1300, height: 300))
     // It has the keyboard already: docking does not focus a window that ends up as a tile.
@@ -519,7 +519,7 @@ private let side = DisplaySnapshot(
     #expect(ring(h)!.pulse != before)
   }
 
-  @Test func theRingFlashesOnTheWindowOfAClickedTile() {
+  @Test(.withTiles) func theRingFlashesOnTheWindowOfAClickedTile() {
     let (h, _, _, c) = makeHarness()
     let big = h.system.open(app: "Settings", minimumSize: CGSize(width: 1300, height: 300))
     h.run("dock \(big.rawValue) right")

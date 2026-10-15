@@ -12,7 +12,7 @@ private let space = "ctrl+opt+space"
 /// keyboard, and the view goes after it. That is where the key has led. The peek used to begin all the same, took
 /// everything to be showing, and at the release wrote that down without laying anything out: the screen showed one space
 /// and the workspace said another, until the next key (found by the walks, with keys only, as Arbor ships).
-@Suite @MainActor struct PeekThatLeadsOnTests {
+@Suite(.withTiles) @MainActor struct PeekThatLeadsOnTests {
   /// Every story here needs a window that becomes a tile where it does not fit. The one place to say so in settings, the day Arbor
   /// ships without tiles. (The walk below has its own `settings` line.)
   func desk() -> Harness { Harness() }
@@ -190,7 +190,7 @@ private let space = "ctrl+opt+space"
   @Test func theWalkThatFoundItFindsItNoMore() throws {
     let walk = """
       displays main:0,0,1280,800:25,0,70,0* windows-never
-      settings {}
+      settings {"windowsThatDoNotFit":"tile"}
       launch
       open 101 Xcode pid 1004 at 40 40 1188 690 min 1188 685
       settle

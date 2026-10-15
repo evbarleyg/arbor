@@ -26,7 +26,7 @@ extension RoomBeforeTilesTests {
   }
 
   /// Whoever has the keyboard when the view goes out is the one that shows.
-  @Test func whoeverHasTheKeyboardWhenTheViewGoesOutIsServedFirst() {
+  @Test(.withTiles) func whoeverHasTheKeyboardWhenTheViewGoesOutIsServedFirst() {
     let (h, mail, chat) = mailAndChat()
     h.system.userFocus(mail)
     h.run("dock \(mail.rawValue) left")
@@ -54,7 +54,7 @@ extension RoomBeforeTilesTests {
   }
 
   /// Where the windows are depends on the gaps as the person left them, on who is there and on who has the keyboard: not on the road.
-  @Test func theSameGapsWindowsAndKeyboardGiveTheSameFramesByWhateverRoad() throws {
+  @Test(.withTiles) func theSameGapsWindowsAndKeyboardGiveTheSameFramesByWhateverRoad() throws {
     typealias Road = (name: String, walk: (Harness, _ mail: WindowID, _ chat: WindowID) -> Void)
     func showAll(_ h: Harness, typingIn window: WindowID) {
       h.system.userFocus(window)
@@ -119,7 +119,7 @@ extension RoomBeforeTilesTests {
 
   /// The window that had the keyboard last is not the window that has it. Mail is a tile, and was typed in before a note was; the note
   /// closes, and nobody has the keyboard. That is no reason for the chat to leave the view.
-  @Test func aWindowThatOnlyHadTheKeyboardLastCostsNobodyTheirPlace() throws {
+  @Test(.withTiles) func aWindowThatOnlyHadTheKeyboardLastCostsNobodyTheirPlace() throws {
     let (h, mail, chat) = mailAndChat()
     h.system.userFocus(mail)
     h.run("dock \(mail.rawValue) left")
@@ -147,7 +147,7 @@ extension RoomBeforeTilesTests {
 
   /// No resizing at every ⌘Tab: between windows that are in view the keyboard goes to and fro and nothing moves. Who has it counts at
   /// the next layout that the person causes.
-  @Test func aBareChangeOfTheKeyboardMovesNothing() {
+  @Test(.withTiles) func aBareChangeOfTheKeyboardMovesNothing() {
     let (h, mail, chat) = mailAndChat()
     let notes = h.system.open(
       app: "Notes", pid: 1003, frame: CGRect(x: 200, y: 100, width: 500, height: 500), minimumSize: CGSize(width: 300, height: 300))
@@ -174,7 +174,7 @@ extension RoomBeforeTilesTests {
   /// The window being typed in shows all the same, and when the chat is typed in again the gap is where the person put it.
   /// (The gap between the Desktop and the chat. Without the column the only gap is that of Mail's tile, which the same hand makes shorter:
   /// then Mail stays as it was left, T20.)
-  @Test func aGapMovedByHandDoesNotMakeATileOfTheWindowBeingTypedIn() throws {
+  @Test(.withTiles) func aGapMovedByHandDoesNotMakeATileOfTheWindowBeingTypedIn() throws {
     let (h, mail, chat) = mailAndChat(settings: .withDesktopColumn)
     h.system.userFocus(mail)
     h.run("dock \(mail.rawValue) left")
@@ -206,7 +206,7 @@ extension RoomBeforeTilesTests {
 
   /// Mail will not go below 1200 points. Typed in, it leaves the column of the chat and Notes 204 (112 beside a column for the Desktop), too
   /// narrow for anything, so the column is one tile. Whoever is typed in next in there shows again, and everything is where it was.
-  @Test func outOfAColumnThatHasBecomeOneTile() throws {
+  @Test(.withTiles) func outOfAColumnThatHasBecomeOneTile() throws {
     let h = Harness()
     let mail = h.system.open(
       app: "Mail", pid: 1001, frame: CGRect(x: 100, y: 100, width: 1200, height: 700), minimumSize: CGSize(width: 1200, height: 400))
@@ -246,7 +246,7 @@ extension RoomBeforeTilesTests {
   /// Typed in, it shows again where it was. After a restart too, when Arbor has forgotten what it had learned about anybody.
   /// (Mail needs 1200 points, which leave Notes 204, or 112 beside a column for the Desktop. On the 254 that 1150 would leave it without
   /// one it would show.)
-  @Test(arguments: [false, true]) func aNeighbourThatLentItsPlaceComesBackThoughNothingIsKnownAboutIt(restart: Bool) throws {
+  @Test(.withTiles, arguments: [false, true]) func aNeighbourThatLentItsPlaceComesBackThoughNothingIsKnownAboutIt(restart: Bool) throws {
     func open(_ h: Harness) -> (mail: WindowID, notes: WindowID) {
       let mail = h.system.open(
         app: "Mail", pid: 1001, frame: CGRect(x: 100, y: 100, width: 1200, height: 700), minimumSize: CGSize(width: 1200, height: 400))
@@ -285,7 +285,7 @@ extension RoomBeforeTilesTests {
 
   /// The person drags the gap until the column of the chat and Notes is one tile. They get the tile they asked for (T20): nothing in it is
   /// fetched out of it, whoever has the keyboard, and what they made wider stays as wide: the Desktop where it has a column, or else Mail.
-  @Test(arguments: [false, true]) func aColumnSqueezedIntoOneTileByHandStaysAsItWasLeft(desktopColumn: Bool) throws {
+  @Test(.withTiles, arguments: [false, true]) func aColumnSqueezedIntoOneTileByHandStaysAsItWasLeft(desktopColumn: Bool) throws {
     let h = Harness(settings: desktopColumn ? .withDesktopColumn : Settings())
     let mail = h.system.open(
       app: "Mail", pid: 1001, frame: CGRect(x: 100, y: 100, width: 1000, height: 700), minimumSize: CGSize(width: 900, height: 400))
@@ -323,7 +323,7 @@ extension RoomBeforeTilesTests {
 
   /// Three windows are enough: Mail on top; below it the Desktop beside a column of Safari and Notes. What Notes borrowed from Safari inside
   /// that column, when it was typed in, decides how far the column can shrink. For Mail's sake it goes back as well.
-  @Test func whatWasLentInsideTheGroupBesideItGoesBackIfNothingElseHelps() {
+  @Test(.withTiles) func whatWasLentInsideTheGroupBesideItGoesBackIfNothingElseHelps() {
     let h = Harness()
     let mail = h.system.open(
       app: "Mail", pid: 1001, frame: CGRect(x: 100, y: 100, width: 900, height: 650), minimumSize: CGSize(width: 500, height: 600))
@@ -351,7 +351,7 @@ extension RoomBeforeTilesTests {
 
   /// Quit Arbor, click Mail in the Dock, open Arbor again. A start takes nobody out of view, and nobody moves for the window with the
   /// keyboard: it is let be where it stands (Q16). At the first thing the person asks for it is a window like any other, with the keyboard.
-  @Test func atAStartNobodyPaysAndAtTheFirstThingThePersonAsksForTheNeighbourDoes() throws {
+  @Test(.withTiles) func atAStartNobodyPaysAndAtTheFirstThingThePersonAsksForTheNeighbourDoes() throws {
     let (old, mail, chat) = mailAndChat()
     old.system.userFocus(mail)
     old.run("dock \(mail.rawValue) left")
@@ -389,7 +389,7 @@ extension RoomBeforeTilesTests {
 
   /// It lasts as long as the window is let be: what happens by itself afterwards, here a neighbour that closes, lays out the others, and
   /// nobody pays for it then either.
-  @Test func whileItIsLetBeWhatHappensByItselfCostsNobodyTheirPlaceEither() throws {
+  @Test(.withTiles) func whileItIsLetBeWhatHappensByItselfCostsNobodyTheirPlaceEither() throws {
     let (old, mail, chat) = mailAndChat()
     let notes = old.system.open(app: "Notes", pid: 1003)
     old.system.userFocus(mail)
@@ -415,7 +415,7 @@ extension RoomBeforeTilesTests {
 
   /// Pause Arbor, click Mail in the Dock, resume. What was learned of the two is still known, so it is all decided on paper: let be means
   /// that no frame is set, not even a question, and the neighbour goes to its place in one move.
-  @Test func atAResumeTheWindowThatIsLetBeIsSetNoFrameAndItsNeighbourOne() throws {
+  @Test(.withTiles) func atAResumeTheWindowThatIsLetBeIsSetNoFrameAndItsNeighbourOne() throws {
     let (h, mail, chat) = mailAndChat()
     h.system.userFocus(mail)
     h.run("dock \(mail.rawValue) left")
@@ -437,7 +437,7 @@ extension RoomBeforeTilesTests {
 
   /// A rule docks a window that has just opened, which has the keyboard by then. Nobody asked for that layout either: a neighbour does
   /// not pay with its place for a window that opened (decided by the product owner, 2026-10-15). The view goes to it, as it always did.
-  @Test func aWindowThatARuleDocksAsItOpensIsNotServedAtItsNeighboursCost() throws {
+  @Test(.withTiles) func aWindowThatARuleDocksAsItOpensIsNotServedAtItsNeighboursCost() throws {
     var settings = Settings()
     settings.rules = [AppRule(app: "com.example.mail", action: .dock(.left))]
     let h = Harness(settings: settings)
@@ -463,7 +463,7 @@ extension RoomBeforeTilesTests {
 
   /// It is the window that opened that costs nobody their place. The window being typed in, which was there before, does not lose its own
   /// to it: a window of another app opens in the background, and a rule docks it.
-  @Test func aWindowThatARuleDocksAsItOpensDoesNotTakeThePlaceOfTheWindowBeingTypedIn() throws {
+  @Test(.withTiles) func aWindowThatARuleDocksAsItOpensDoesNotTakeThePlaceOfTheWindowBeingTypedIn() throws {
     var settings = Settings()
     settings.rules = [AppRule(app: "com.example.notes", action: .dock(.right))]
     let h = Harness(settings: settings)
@@ -488,7 +488,7 @@ extension RoomBeforeTilesTests {
 
   /// At a login Arbor is up before the apps. Mail opens, with the keyboard, into the place that was kept for it: a window that opened, like
   /// one that a rule docks.
-  @Test func aWindowThatOpensIntoThePlaceKeptForItCostsNobodyTheirPlace() throws {
+  @Test(.withTiles) func aWindowThatOpensIntoThePlaceKeptForItCostsNobodyTheirPlace() throws {
     let (old, mail, chat) = mailAndChat()
     old.system.userFocus(mail)
     old.run("dock \(mail.rawValue) left")
@@ -515,7 +515,7 @@ extension RoomBeforeTilesTests {
 
   /// Arbor is killed with the keyboard in Mail, which is a tile, so in its corner. Nobody sees it, so there is nothing to let be, and a start
   /// sends nothing away all the same: it stays behind its tile, and the keyboard goes to a window in view (Controller+LetBe.swift).
-  @Test func afterACrashTooAStartCostsNobodyTheirPlace() throws {
+  @Test(.withTiles) func afterACrashTooAStartCostsNobodyTheirPlace() throws {
     let (old, mail, chat) = mailAndChat()
     old.system.userFocus(mail)
     old.run("dock \(mail.rawValue) left")
@@ -537,7 +537,7 @@ extension RoomBeforeTilesTests {
 
   /// macOS reports the displays: the Dock has grown, a display has blinked. Nobody asked for that layout, so it sends nothing away, though
   /// Mail, which is a tile, has the keyboard by now (⌘Tab, as macOS reports it when the app's window stays the same).
-  @Test func aReportOfTheDisplaysCostsNobodyTheirPlace() throws {
+  @Test(.withTiles) func aReportOfTheDisplaysCostsNobodyTheirPlace() throws {
     let (h, mail, chat) = mailAndChat()
     h.system.userFocus(mail)
     h.run("dock \(mail.rawValue) left")
@@ -562,7 +562,7 @@ extension RoomBeforeTilesTests {
   }
 
   /// A window that is too wide for the display however much goes back. Nothing goes back then.
-  @Test func aKeyboardWindowThatFitsNowhereCostsNobodyTheirPlace() {
+  @Test(.withTiles) func aKeyboardWindowThatFitsNowhereCostsNobodyTheirPlace() {
     let h = Harness()
     let mail = h.system.open(
       app: "Mail", frame: CGRect(x: 100, y: 100, width: 900, height: 700), minimumSize: CGSize(width: 820, height: 400))
@@ -584,7 +584,7 @@ extension RoomBeforeTilesTests {
 
   /// The window in the hand has the keyboard, and its slot is one that the drop makes. Notes, the Desktop and Mail, which is 600 points
   /// wide on 136 of the Desktop's; the chat is let go on the lower half of Notes, whose column has to be 760 wide for it.
-  @Test func thePreviewOfTheWindowInTheHandIsWhereItLandsThoughANeighbourGivesBackWhatItWasLent() throws {
+  @Test(.withTiles) func thePreviewOfTheWindowInTheHandIsWhereItLandsThoughANeighbourGivesBackWhatItWasLent() throws {
     let h = Harness(settings: .withDesktopColumn)
     let notes = h.system.open(app: "Notes", frame: CGRect(x: 200, y: 100, width: 500, height: 500))
     let mail = h.system.open(
@@ -615,7 +615,7 @@ extension RoomBeforeTilesTests {
 
   /// Notes holds its place beside Safari's tile, which is the newer of the two. A look into the column of Mail and the chat, where
   /// the two trade places twice, is no reason for that to change: zooming never rearranges what is out of view.
-  @Test func aTripIntoAGroupCostsNobodyOutsideItTheirPlace() throws {
+  @Test(.withTiles) func aTripIntoAGroupCostsNobodyOutsideItTheirPlace() throws {
     let (h, notes, safari) = makeHarness()
     let mail = h.system.open(
       app: "Mail", frame: CGRect(x: 100, y: 100, width: 700, height: 600), minimumSize: CGSize(width: 300, height: 500))
@@ -682,7 +682,7 @@ extension RoomBeforeTilesTests {
   }
 
   /// The two no longer fit, and something has to give. The window being typed in is the last that may (decided by the product owner).
-  @Test func theWindowBeingTypedInStaysInViewWhenItsAppMakesItLarger() throws {
+  @Test(.withTiles) func theWindowBeingTypedInStaysInViewWhenItsAppMakesItLarger() throws {
     let (h, mail, chat) = sideBySide { _, chat in chat }
     let width = try #require(h.frame(chat)).width
     h.system.clearFrameLog()
@@ -703,7 +703,7 @@ extension RoomBeforeTilesTests {
   /// Found by a hunt. Notes is docked on the right; the person looks at the Desktop, opens Mail and docks it at the top there. Mail goes
   /// away (⌘H, ⌘M) and is fetched again with a click in the Dock. It comes back beside Notes, into a column 65 points too narrow for
   /// it, lay over Notes for a second, and was then swept into a tile with the keyboard in it: what was typed went to a window nobody saw.
-  @Test(arguments: ["hidden", "minimized"]) func aWindowFetchedBackIntoAPlaceTooSmallForItIsNotSweptIntoATile(trip: String) {
+  @Test(.withTiles, arguments: ["hidden", "minimized"]) func aWindowFetchedBackIntoAPlaceTooSmallForItIsNotSweptIntoATile(trip: String) {
     let h = Harness()
     let notes = h.system.open(
       app: "Notes", pid: 1001, frame: CGRect(x: 150, y: 80, width: 900, height: 600), minimumSize: CGSize(width: 709, height: 300))
@@ -731,7 +731,7 @@ extension RoomBeforeTilesTests {
   }
 
   /// Only the window with the keyboard can do that. An app in the background that makes its window larger is the one that pays.
-  @Test func anAppInTheBackgroundThatMakesItsWindowLargerCostsNobodyTheirPlace() throws {
+  @Test(.withTiles) func anAppInTheBackgroundThatMakesItsWindowLargerCostsNobodyTheirPlace() throws {
     let (h, mail, chat) = sideBySide { mail, _ in mail }
     let place = try #require(h.frame(mail))
     try chatGrows(h, chat)

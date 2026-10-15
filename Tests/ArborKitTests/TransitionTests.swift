@@ -459,7 +459,7 @@ import Testing
 
   // MARK: Tiles
 
-  @Test func aRefusedSlotRetargetsTheMotion() throws {
+  @Test(.withTiles) func aRefusedSlotRetargetsTheMotion() throws {
     let (h, _, b, _) = makeHarness()
     let opened = CGRect(x: 400, y: 200, width: 700, height: 500)
     let big = h.system.open(app: "Xcode", frame: opened)
@@ -514,7 +514,7 @@ import Testing
     #expect(h.overlays.transitions.count == 2)
   }
 
-  @Test func clickingATileUnfoldsIt() throws {
+  @Test(.withTiles) func clickingATileUnfoldsIt() throws {
     var settings = Settings()
     settings.minimumUsableWidth = 750  // more than half the display
     let (h, a, b, c) = makeHarness(settings: settings)

@@ -66,6 +66,7 @@ fetched() {
 
 arbor_build
 ARBOR_SECOND_APP=2
+arbor_settings "{$ARBOR_TILES_ON}"
 arbor_start 5 ARBOR_NO_STATUS_ITEM=0 ARBOR_NO_HOTKEYS=0
 # Titles that occur nowhere else, to look for afterwards in what people pass on.
 tw title "$W1" zqxalpha report

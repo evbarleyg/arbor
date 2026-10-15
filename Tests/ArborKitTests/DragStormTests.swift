@@ -156,7 +156,7 @@ import Testing
       for window in (layout?.hiddenWindows ?? []).sorted() where h.system.isVisible(window) {
         notes.append("\(window) shows and should not")
       }
-      if h.overlays.seams[display] != layout?.seams { notes.append("the gap handles of \(display) are elsewhere") }
+      if h.overlays.seams[display] != layout?.seamsInReach { notes.append("the gap handles of \(display) are elsewhere") }
       if h.overlays.tiles[display]?.map(\.node) != layout?.tiles.map(\.node) { notes.append("the tiles of \(display) differ") }
     }
     for window in h.system.allWindows().sorted(by: { $0.id < $1.id }) {

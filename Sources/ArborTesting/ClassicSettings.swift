@@ -35,11 +35,23 @@ extension Settings {
   /// The same, from what ships.
   public static var withFloatsMakingWay: Settings { Settings().withFloatsMakingWay }
 
+  /// A docked window too large for its place goes out of view and a tile stands there, as until board 0.26 (`windowsThatDoNotFit`, F69). A test says
+  /// `@Test(.withTiles)` or `@Suite(.withTiles)` at its head, which reaches every harness it makes (`Harness.makesTiles`).
+  public var withTiles: Settings {
+    var settings = self
+    settings.windowsThatDoNotFit = "tile"
+    return settings
+  }
+
+  /// The same, from what ships.
+  public static var withTiles: Settings { Settings().withTiles }
+
   /// Arbor as the first build shipped it: all of them.
   public static var classic: Settings {
     Settings()
       .withDesktopColumn
       .withEveryKey
       .withFloatsMakingWay
+      .withTiles
   }
 }

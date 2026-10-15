@@ -77,6 +77,8 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
     /// among `windowFrames`, as a window out of view is, and stands in view all the same (not `parked`). For whoever holds
     /// this against the screen: `frame` is where it is.
     public var letBe = false
+    /// Docked, in view, and larger than its place because its app will not make it smaller: how far it hangs over, in width and height.
+    public var overItsPlaceBy: CGSize?
 
     public init(
       id: WindowID, pid: Int32, app: String, bundleID: String?, title: String?, frame: CGRect,

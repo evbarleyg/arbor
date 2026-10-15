@@ -128,7 +128,7 @@ import Testing
     #expect(!h.system.isVisible(b))
   }
 
-  @Test func windowsThatWillNotShrinkBecomeTilesAndTilesZoomIn() {
+  @Test(.withTiles) func windowsThatWillNotShrinkBecomeTilesAndTilesZoomIn() {
     let (h, a, b, _) = makeHarness()
     let big = h.system.open(app: "Xcode", frame: CGRect(x: 400, y: 200, width: 700, height: 500))
     // More than its neighbours and the Desktop could spare between them (F61).

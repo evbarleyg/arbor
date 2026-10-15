@@ -82,7 +82,7 @@ public enum DropResolver {
     options: DropOptions = .init()
   ) -> DropTarget {
     let ownLeaf = tree.leaf(containing: window)
-    if let ownLeaf, let own = layout.nodeFrames[ownLeaf], own.contains(point) {
+    if let ownLeaf, let own = layout.reach(of: ownLeaf, in: tree), own.contains(point) {
       return .none
     }
 
@@ -97,7 +97,7 @@ public enum DropResolver {
     if let nearest = edgeDistances.min(by: { $0.1 < $1.1 }) { return .cameraEdge(nearest.0) }
 
     guard let node = layout.leafOrTile(at: point, in: tree), node != ownLeaf,
-      node != tree.desktop, let frame = layout.nodeFrames[node], frame.width > 0,
+      node != tree.desktop, let frame = layout.reach(of: node, in: tree), frame.width > 0,
       frame.height > 0
     else { return .float }
 

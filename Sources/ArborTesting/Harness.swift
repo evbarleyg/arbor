@@ -40,6 +40,11 @@ public final class Harness {
     return settings
   }
 
+  /// Every harness made while this is true has `windowsThatDoNotFit` at `tile`, whatever settings it is given: a docked window too large for
+  /// its place goes out of view and a tile stands there, as until board 0.26 (docs/features/F69-what-cannot-fit-overlaps.md). The tests of tiles
+  /// say so at their heads, `@Test(.withTiles)` or `@Suite(.withTiles)`, and need not know through how many helpers their harness is made.
+  public nonisolated static var makesTiles: Bool { TilesForTests.areAskedFor }
+
   /// `interpose` puts a window system between the controller and the fake one; trace replays use it.
   /// - Parameter system: the windows and displays of an earlier harness, for a new run of Arbor
   ///   on the same Mac; `displays` is then ignored.
@@ -49,6 +54,8 @@ public final class Harness {
     saved: PersistedState? = nil, system: FakeWindowSystem? = nil, mac: FakeMacSwitchboard? = nil,
     interpose: ((FakeWindowSystem) -> any WindowSystem)? = nil
   ) {
+    var settings = settings
+    if Self.makesTiles { settings.windowsThatDoNotFit = "tile" }
     self.system = system ?? FakeWindowSystem(displays: displays)
     self.mac = mac ?? FakeMacSwitchboard()
     let mac = self.mac
@@ -239,4 +246,9 @@ public final class Harness {
 
   /// The text of the trace being recorded or last recorded.
   public var lastTrace: String? { (recorder.sink as? MemoryTraceSink)?.text }
+}
+
+/// What `Harness.makesTiles` reads. On its own, outside the main actor's class: Swift 6.2 lets no task-local value be nonisolated inside one.
+public enum TilesForTests {
+  @TaskLocal public static var areAskedFor = false
 }
