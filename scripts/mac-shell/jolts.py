@@ -34,6 +34,7 @@ The script says what it is doing in marks (lib-day.sh writes them):
 
   label <id> <name>        what to call a window in the report (never its title)
   arbor <pid>              Arbor's process, whose own panels are not windows for these rules
+  tiling defaults|off      whether macOS's own tiling is on: then the left, right and top edges of the screen are macOS's
   chapter <title>
   begin <n> <slug>         a step begins: one thing a person does
   text <n> <words…>        what the person does, for the report
@@ -108,6 +109,8 @@ DROPPED = 24
 HELD = 50000
 # Of a hundred events that are not Arbor's own, the latest but one reaches the apps at most this many microseconds later than without Arbor.
 HELD_MORE = 10000
+# With macOS's tiling on, this many points along the left, right and top edges of the screen are macOS's: Arbor offers nothing there.
+EDGE_BAND = 12
 # Less of a window than this on the display is its parking strip; more than that, and it shows.
 STRIP = 0.03
 SHOWS = 0.05
@@ -182,7 +185,7 @@ class Step:
         # During a drag: macOS's tiling preview was up when the button came up; Arbor's and macOS's previews were up together.
         self.macos_answered = False
         self.both_previews = False
-        self.arbor_previewed = False
+        self.preview_at_macos_edge = False
         self.stages_up = {}
         self.staged = []
         self.staged_since = None
@@ -250,11 +253,21 @@ class World:
         self.arbor_previews = set()
         self.macos_preview_left = 0
         self.arbor_preview_last = (0, None)
+        self.tiling = False
+        self.pointer = None
         # Arbor's stage, while it is up: a panel at level 4 over the whole display that shows a picture of the desktop and a stand-in for each window.
         self.stages = set()
         self.stage_seen = False
         self.labels = {}
         self.witnessed = False
+
+    def at_macos_edge(self):
+        """Whether the pointer is in the band along an edge of the main display that is macOS's. On the way there it may rightly cross a docked window's own
+        edge, whose preview is honest."""
+        if not (self.tiling and self.pointer and self.display and self.visible):
+            return False
+        x, y = self.pointer
+        return x <= self.display[0] + EDGE_BAND or x >= self.display[0] + self.display[2] - EDGE_BAND or y <= self.visible[1] + EDGE_BAND
 
     def displays(self):
         return ([self.display] if self.display else []) + [frame for frame, _ in self.others.values()]
@@ -324,10 +337,10 @@ def read(path):
                     # Other panels of Arbor's float at that level too. The preview is the one that comes up while the button is down, as
                     # often as the drag passes a place to drop: it is one panel, put away and brought out again.
                     world.arbor_previews.add(window)
-                    if current:
-                        current.arbor_previewed = True
                 if current and world.button and world.macos_previews and world.arbor_previews:
                     current.both_previews = True
+                if current and world.button and world.arbor_previews and world.at_macos_edge():
+                    current.preview_at_macos_edge = True
                 if current and world.ordinary(window):
                     if window not in current.traces:
                         current.traces[window] = []
@@ -365,6 +378,7 @@ def read(path):
                     current.inputs.append(time)
                     if len(rest) >= 3:
                         current.pointer.append((time, float(rest[1]), float(rest[2])))
+                        world.pointer = (float(rest[1]), float(rest[2]))
                     if not world.button:
                         # It goes with the button, and within one sample its going is written first.
                         current.macos_answered = bool(world.macos_previews) or time - world.macos_preview_left <= 150
@@ -374,8 +388,11 @@ def read(path):
                         elif time - world.arbor_preview_last[0] <= 150:
                             current.preview_at_drop = world.arbor_preview_last[1]
             elif kind == "P" and len(rest) >= 2:
+                world.pointer = (float(rest[0]), float(rest[1]))
                 if current:
                     current.pointer.append((time, float(rest[0]), float(rest[1])))
+                    if world.button and world.arbor_previews and world.at_macos_edge():
+                        current.preview_at_macos_edge = True
             elif kind == "K":
                 if current:
                     current.inputs.append(time)
@@ -400,6 +417,8 @@ def read(path):
                     world.labels[int(rest[0])] = " ".join(rest[1:])
                 elif verb == "arbor" and rest:
                     world.arbors.add(int(rest[0]))
+                elif verb == "tiling" and rest:
+                    world.tiling = rest[0] == "defaults"
                 elif verb == "chapter":
                     chapter = " ".join(rest)
                 elif verb == "begin" and len(rest) >= 2:
@@ -599,22 +618,22 @@ def judge(step, world, by_number, own):
                 ahead, behind = adrift(held, step.pointer)
                 if ahead > PULLED or behind > BEHIND:
                     step.find("3", "FAIL", window, f"was {round(ahead)} points ahead of the pointer's travel and {round(behind)} behind it at the most", road(held), "pulled")
-            # The sampler can miss a preview. A window that ends in a tile of macOS's own was tiled by macOS all the same.
-            final = trace[-1][1] if trace else None
-            area = (end or {}).get("visible") or world.visible
-            if not step.macos_answered and final and area and any(not differs(final, tile, by=4) for tile in macos_tiles(area)):
-                step.macos_answered = True
             if step.both_previews:
                 step.find("1", "FAIL", window, "macOS's tiling preview and Arbor's drop preview were up at the same time")
-            elif step.macos_answered and step.arbor_previewed:
-                step.find("1", "FAIL", window, "macOS answered the drag, and Arbor's drop preview had been up during it: one after the other is both reacting")
-            if step.macos_answered and window in ids(wants.get("docked", "")):
-                step.find("1", "FAIL", window, "macOS's tiling preview was up when it was let go, and Arbor docked it")
-            elif step.macos_answered and measure(trace[max((index for index, entry in enumerate(trace) if entry[2]), default=0):])[0] > 1:
-                step.find("1", "FAIL", window, "macOS's tiling preview was up when it was let go, macOS tiled it, and it was moved again afterwards")
+            elif step.preview_at_macos_edge:
+                step.find("1", "FAIL", window, f"Arbor's drop preview was up with the pointer within {EDGE_BAND} points of an edge of the screen that is macOS's")
             last_held = max((index for index, entry in enumerate(trace) if entry[2]), default=0)
             taken = trace[0][1]
             trace = trace[last_held:]
+            # The sampler can miss a preview. A window that comes to lie in a tile of macOS's own after the drop was tiled by macOS all the same.
+            area = (end or {}).get("visible") or world.visible
+            if not step.macos_answered and area and any(
+                    entry[1] and not differs(entry[1], tile, by=4) for entry in trace[1:] for tile in macos_tiles(area)):
+                step.macos_answered = True
+            if step.macos_answered and window in ids(wants.get("docked", "")):
+                step.find("1", "FAIL", window, "macOS answered the drag, and Arbor docked the window")
+            elif step.macos_answered and measure(trace)[0] > 1:
+                step.find("1", "FAIL", window, "macOS answered the drag and tiled the window, and it was moved again afterwards")
             let_go, ended, drop = trace[0][1], trace[-1][1], step.pointer[-1][1:] if step.pointer else None
             if held and let_go and ended and not step.macos_answered and differs(let_go, ended, by=DROPPED):
                 preview = step.preview_at_drop
@@ -1181,11 +1200,18 @@ def self_test():
         "2300 B up 460 110", "2320 W 1 10 0 360 100 200 150 One", "3400 M end 2 drags=1"], [])
     detectors("what the script hands on keeps its name", start + [
         "2000 M begin 2 idle", "2500 M finding 2 -:busy FAIL Arbor used 4 % of a core", "3000 M end 2"], ["busy"])
-    detectors("Arbor's preview was up earlier in a drag that macOS answered", glide[:len(start) + 4] + [
-        "2120 W 51 99 3 0 30 500 700 Arbor", "2125 G 51"] + glide[len(start) + 4:] + [
-        "2240 W 50 5 0 -15 16 1030 760 WindowManager", "2300 G 50", "2300 B up 460 110", "2320 W 1 10 0 0 30 1000 700 One", "3400 M end 2 drags=1"], ["fought"])
-    detectors("the sampler missed macOS's preview, but the window ends in macOS's own tile", glide + [
-        "2260 W 51 99 3 0 30 500 700 Arbor", "2290 G 51", "2300 B up 460 110", "2320 W 1 10 0 0 30 500 700 One", "3400 M end 2 drags=1"], ["fought"])
+    to_edge = start + ["1250 M tiling defaults", "2000 M begin 2 drag", "2050 B down 300 110"]
+    for i in range(1, 9):
+        to_edge += [f"{2100 + 16 * i} W 1 10 0 {100 - 36 * i} 100 400 300 One", f"{2100 + 16 * i} P {300 - 36 * i} 110"]
+    detectors("on the way to the edge the pointer crosses a docked window's own edge, whose preview is honest", to_edge[:len(start) + 7] + [
+        "2140 W 51 99 3 200 30 300 700 Arbor", "2150 G 51"] + to_edge[len(start) + 7:] + [
+        "2240 W 50 5 0 -15 16 530 760 WindowManager", "2300 G 50", "2300 B up 12 110", "2320 W 1 10 0 0 30 500 700 One", "3400 M end 2 drags=1"], [])
+    detectors("Arbor's preview is up with the pointer in macOS's band", to_edge + [
+        "2230 W 51 99 3 12 42 476 676 Arbor", "2236 P 8 110", "2290 G 51", "2300 B up 8 110", "3400 M end 2 drags=1"], ["fought"])
+    detectors("with macOS's tiling off the edges are Arbor's", [line for line in to_edge if "tiling" not in line] + [
+        "2230 W 51 99 3 12 42 476 676 Arbor", "2236 P 8 110", "2300 B up 8 110", "2310 G 51", "2320 W 1 10 0 12 42 476 676 One", "3400 M end 2 drags=1 docked=1"], [])
+    detectors("the sampler missed macOS's preview, but the window ends in macOS's own tile, and is moved again", glide + [
+        "2300 B up 460 110", "2320 W 1 10 0 0 30 500 700 One", "2900 W 1 10 0 12 42 476 676 One", "4000 M end 2 drags=1"], ["fought", "jolt"])
     slow_glide = start + ["2000 M begin 2 drag", "2050 B down 300 110"]
     for i in range(1, 30):
         slow_glide += [f"{2100 + 50 * i} W 1 10 0 {100 + 10 * i + 3 * i} 100 400 300 One", f"{2100 + 50 * i} P {300 + 10 * i} 110"]
