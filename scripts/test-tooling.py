@@ -2959,19 +2959,19 @@ def check_rehearse_suite():
 
         def played(*arguments, log=held, code=0, mac=False, **environment):
             """The exit code, what rehearse.sh was asked for and with which share, and what was printed."""
-            write(".build/log", log)
-            write("scripts/mac-shell/rehearse.sh", '#!/bin/bash\necho "$* $MAC_SHELL_SHARE" > .build/asked\n'
-                  f'[ {code} -eq 2 ] || {{ mkdir -p .build/rehearsal-1; cp .build/log .build/rehearsal-1/log.txt; }}\nexit {code}\n', 0o755)
+            write("bin/log", log)
+            write("scripts/mac-shell/rehearse.sh", '#!/bin/bash\necho "$* $MAC_SHELL_SHARE" > bin/asked\n'
+                  f'[ {code} -eq 2 ] || {{ mkdir -p .build/rehearsal-1; cp bin/log .build/rehearsal-1/log.txt; }}\nexit {code}\n', 0o755)
             write("bin/nproc", "#!/bin/sh\necho 3\n", 0o755)
             write("bin/uname", f"#!/bin/sh\necho {'Darwin' if mac else 'Linux'}\n", 0o755)
-            if os.path.exists(os.path.join(folder, ".build/asked")):
-                os.remove(os.path.join(folder, ".build/asked"))
+            if os.path.exists(os.path.join(folder, "bin/asked")):
+                os.remove(os.path.join(folder, "bin/asked"))
             kept = {key: value for key, value in os.environ.items() if not key.startswith("GITHUB_") and key not in ("PART", "PARTS", "ARBOR_NO_REHEARSAL", "ARBOR_NO_SUITE_REHEARSAL")}
             done = subprocess.run([BASH, "scripts/rehearse-suite.sh", *arguments], cwd=folder, capture_output=True, text=True, check=False,
                                   env={**kept, "PATH": os.path.join(folder, "bin") + os.pathsep + os.environ["PATH"], **environment})
             asked = None
-            if os.path.exists(os.path.join(folder, ".build/asked")):
-                with open(os.path.join(folder, ".build/asked"), encoding="utf-8") as handle:
+            if os.path.exists(os.path.join(folder, "bin/asked")):
+                with open(os.path.join(folder, "bin/asked"), encoding="utf-8") as handle:
                     asked = handle.read().strip()
             return done.returncode, asked, done.stdout
 
@@ -2983,7 +2983,9 @@ def check_rehearse_suite():
         write("docs/A.md", "a\n")
         git("add", "--all")
         git("commit", "--quiet", "--message", "the trunk")
-        row("rehearse-suite.sh: no trunk to compare with: rehearsed", played()[:2], (0, "--jobs 3 1/1"))
+        # The stand-ins keep what is theirs in bin/: a machine at GitHub has no .build until something is built, and the first run there died of that.
+        row("rehearse-suite.sh: a fresh checkout has no .build", os.path.exists(os.path.join(folder, ".build")), False)
+        row("rehearse-suite.sh: no trunk to compare with, and nothing built yet: rehearsed", played()[:2], (0, "--jobs 3 1/1"))
         git("update-ref", "refs/remotes/origin/swarm/trunk", "HEAD")
         row("rehearse-suite.sh: the trunk itself: nothing is built or played", played()[:2], (0, None))
         write("docs/A.md", "b\n")

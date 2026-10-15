@@ -107,6 +107,8 @@ fi
 began=$SECONDS
 jobs=$(nproc 2> /dev/null || echo 1)
 rm -rf .build/rehearsal-[0-9]*
+# A fresh checkout, which is what a machine at GitHub has, has built nothing yet.
+mkdir -p .build
 # A run on a Mac records itself, for what a Mac has shown once should never need a Mac again. What the fake Mac shows is to be had again for nothing, and
 # recording it takes half as long again (464 s against 302, on four cores).
 export ARBOR_TRACE=${ARBOR_TRACE:-0}
