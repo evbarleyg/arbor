@@ -45,7 +45,9 @@ lists the cases that are played partly, not at all, or never can be, and that th
 kind comes first; within a kind what is not played at all, what never can be, what is played partly, and only then the worst hurt and what crosses the seam: the question is what
 green cannot tell, so what is not played at all is the first answer, whatever it hurts. Last, and marked "read there before", come the cases whose member the change only
 takes out and puts in again within one hunk: a line reworded leans on nothing new, and a list of nothing else is no argument for a Mac. A dozen lines at most; `--all` for the rest. So a case that is about a call does well
-to name it.
+to name it. Silence is no clean bill: the cases about reports name them too (`windowChanged`, `windowAppeared`), and that finds nothing yet. A report is called below the seam and written once, in
+the controller, and what is decided on hearing it stands a function or two further down, where no member is named. To count a hunk inside `func windowChanged` as the member was tried and is
+noise: whatever keeps a table per window adds a line to `windowDestroyed` and `windowReplaced`.
 
 That the list tells what it is for is held against the real ledger at every run, `--check` included. collab/evidence/changes keeps a change that landed green on Linux and was wrong on a
 Mac, cut down; of the cases that would have told (PROOF) one has to be among the first three it is shown, and all have to be printed. They are held as not played, which they were: the
