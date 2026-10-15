@@ -154,7 +154,7 @@ Distances are in points. "Changes" means by more than 2, because apps round and 
 | `fought` | 1 | in a drag that macOS answers (its preview is up at the drop, or the window ends in one of macOS's own tile frames) Arbor's preview was up **at any time** (Q23: one after the other is both reacting), or Arbor docks the window, or the window moves again afterwards; or both previews are up in one sample of any drag; or after a double-click on a title bar that macOS answers Arbor moves that window (Q22); or Arbor moves any window before the first run has shown what it found | samples | `jolts.py`: both at once, docked, moved again. The rest to build |
 | `lost` | the measure of a severity 1 | at the end of an act that did not take it out of view, less than half of a window is on any display; or at a point where everything must be in view (after Show Everything, ⌃⌥0, pause, Float All, Quit) a window shows less than its own frame did, and no tile stands for it where a tile may (below) | samples | `jolts.py`, rule L |
 | `stuck` | 3, 4 | a window is moved by Arbor more than three times in two seconds with nobody acting; or a window a real drag let go of is, within 24 points, in none of five places: where it was let go, where Arbor's preview was, in macOS's own tile where macOS answered the drag, under the pointer by its title bar at its own size (F48), back where it was taken from (a drag called off); or after Quit a click on an app's Dock icon does not bring its window to the front | samples | partly |
-| `behind` | 4 | the window switched to does not end in front of every other ordinary window | samples (order) | `jolts.py`, rule 4 |
+| `behind` | 4 | the window switched to does not end in front of every other ordinary window; or a window kept in view that has its strip (Q25) is overlapped by a window Arbor arranges. One for which there was no room, and of which Arbor says so, may be covered | samples (order) | `jolts.py`, rule 4 |
 | `focus` | 4 | the window switched to does not end wholly in view with its app in front and itself its app's focused window; a key typed into a witness window arrives elsewhere; or the app in front changes during an act that is no switch | samples, `apptool`, the witness | partly |
 | `size-lost` | 5 | after pause, Float All or Quit a window's size differs from its own: the last size it had while nobody but its person and its app decided it. After Float All and Quit its place too | samples | `jolts.py`, rule 5 (place: today `ODD`) |
 | `input-held` | 6 | the button is not up within 50 ms of the posted mouse-up; a click 300 ms after a drop does not arrive in the window that lies there; a key, click or scroll that is not Arbor's does not reach the witness, or reaches it more than 10 ms later (99th percentile) than in the run without Arbor | the witness, samples | to build |
@@ -199,7 +199,7 @@ Each window at most once, straight to where it ends up.
 | A drag | the dragged window goes where the pointer goes. Everything else waits for the button |
 | A move of the view; a switch to a window out of view | the docked windows; floating windows only out of view and back to exactly where they were |
 | A gap or an edge is dragged | the windows on both sides of it |
-| A window is kept in view, let go of again, or dragged or resized while it is kept in view | that window by the hand only; the docked windows, which make room beside it (Q25) |
+| A window is kept in view, let go of again, or dragged or resized while it is kept in view | a docked window that is pinned goes to its own earlier size, once; after that the pinned window moves by the hand only. The docked windows, which make room beside it (Q25) |
 | Pause, resume, Float All, Quit | anything; afterwards `size-lost` and `lost` have their say |
 | macOS's own (full screen, Mission Control, a Space, the wallpaper click) | what the run without Arbor shows macOS moving. When it is over, every window is where it was before |
 | A display comes, goes, moves or changes size | the windows on the displays concerned; afterwards nothing is `lost` |
@@ -210,7 +210,7 @@ A run counts when all of this holds. One that does not counts for nothing either
 
 - It ran on a hosted Mac, unattended, on the commit being judged, started by the workflow in the repository, and the script took under 600 seconds from its first line to its last. The toolchain and the build come before it and have their own target (board, section 2).
 - It brought back its manifest, the samples, `arbor.log`, a trace (`docs/TRACES.md`), the findings as JSON, and a picture and a story for every finding.
-- The sampler saw enough: at most 1 % of its samples came more than 100 ms after the one before. An act during which it was blind for more than 250 ms is not judged. (The first hosted day reached 33 samples a second with blind spells of up to 1.5 s; a cure is being tried. These two numbers are unproven until it has run.)
+- The sampler saw enough: at most 1 % of its samples came more than 100 ms after the one before. An act during which it was blind for more than 250 ms is not judged. (Measured on hosted Macs at about 38 samples a second: 1.6 to 1.9 % before a cure, 0.24 and 0.49 % on long runs after it, 1.13 % on a short one; some 4 to 5 % of acts blind. The number stays: 2 % would admit the sampler as it was before its cure, and a gap between 100 and 250 ms is late without making its act blind. A short run is made longer.)
 - At least 90 % of its acts were judged, and at least six apps of its cast opened a window.
 
 If more than a fifth of a gate's runs do not count, the gate is `INVALID`: too many fell out to believe the rest.
@@ -222,11 +222,12 @@ without the list the verdict is never `VIABLE`. A run that was started again cou
 **The manifest** (`run.json`, written by the script):
 
 ```json
-{"gate": 1, "commit": "<40 hex>", "run": "<GitHub's run id>", "attempt": 1, "script": "day.sh", "kind": "day | walk | sit | control | sabotage", "seed": "<from the commit, for a walk>",
+{"gate": 1, "commit": "<40 hex>", "run": "<GitHub's run id>", "attempt": 1, "part": 1, "parts": 1, "script": "day.sh", "kind": "day | walk | sit | control | sabotage", "seed": "<from the commit, for a walk>",
  "tiling": "defaults", "tiling_seen_to_act": true, "display": "laptop", "cast": "stock", "apps": ["com.apple.Safari", "…"], "settings": "shipped", "reduce_motion": false, "stage_seen": true, "macos": "<version and build>", "seconds": 540}
 ```
 
-It is written when the run begins and completed when it ends. A sabotage run's also has `"offences": [{"detector": "jolt", "id": "idle#3"}, …]`. An act's `id` is its slug and which act of that slug it is in its run, so that it means the same act in the run without Arbor.
+It is written when the run begins and completed when it ends. One run of GitHub's may play several scripts, one after the other on one Mac or spread over several: each is a run of the gate with a manifest of its own. `"part"` and `"parts"` count over the whole run of GitHub's, all its Macs together, and are fixed by whoever starts it, before the first script begins, so that none can be left out afterwards. A script alone in its run is part 1 of 1 and says so: `viable.py` refuses a manifest without them.
+Such scripts share a Mac, and apps remember their windows' frames from the script before. That is as on a person's Mac, which is never fresh: where a window is when Arbor first starts is its own frame. Arbor's own home is empty each time. A sabotage run's also has `"offences": [{"detector": "jolt", "id": "idle#3"}, …]`. An act's `id` is its slug and which act of that slug it is in its run, so that it means the same act in the run without Arbor.
 
 **The findings** are what `jolts.py report --json` writes, with two more keys a step: `"act"`, its kind from section 4, and `"judged"`; and one more a finding: `"detector"`, its id from section 5. The naming is the detector's own business: `viable.py` refuses a finding that names none. That Arbor died is `crash`, whoever noticed.
 
@@ -281,4 +282,5 @@ What the product owner asks of the rubric, whatever else it holds. The first fiv
 | Walks that write a script for a real Mac, seeded from the commit. The first version has `switch`, `open-close`, `dock-key`, `drag`, `view`, `way-out` and `quit-and-start`; display changes, hiding, native tabs and full screen come from the written days | L, after D's vocabulary is on the trunk |
 | The ledger of differences, each row saying which detector it touches | N |
 | `docs/POLISH.md`, the films of the five moves, the stage's log of frames, the judge | Q |
+| `"part"` and `"parts"` handed to every script by whoever starts a run, counted over all its Macs | O |
 | `make viable`; `viable.py --self-test` as part of `make check`; the workflow that starts a gate, lists its runs for `--runs` and keeps to the queue's priorities. (`scripts/mac-shell/viable.py` itself is there) | O, D |

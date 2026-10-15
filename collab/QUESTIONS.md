@@ -447,7 +447,7 @@ product decisions) answers in place. Do not delete answered questions.
   2. Not (d): it takes the keyboard, however briefly (rules 4 and 6).
   3. A call beside the editor, neither covering the other, is what whoever pins a call wants (rule 7).
 - **The rule.** A window kept in view reserves a strip of its display, as the Dock does: from its inner edge to the display's edge, over the whole height or width; of the four strips, the one that costs the least area. Every view, a framed window, a group, everything, is laid out in what is left.
-  The pinned window itself is never moved or sized (Q20). Docked windows move once when the pin is set, when it is taken off, and when the person lets go after dragging or resizing the pinned window.
+  Once pinned, the window itself is never moved or sized (Q20); a docked window gets its own earlier size as it is pinned. Docked windows move once when the pin is set, when it is taken off, and when the person lets go after dragging or resizing the pinned window.
 - **Where there is no room:** if the cheapest strip would cost more than 40 % of the view (a pin in the middle, or a very large one), none is reserved. The window still never goes out of view, and Arbor says so: a line on screen at the pin, and the menu's item and `state` say "covered" when it is.
   Two pins each have their strip while the sum stays under 40 %, in the order pinned.
 - **The raise:** one, when the pin is set. No retries. By Q20 Arbor raises nothing else: the raise of windows left hanging over docked ones goes; a guest that comes back and a summoned window that stays follow the pin's rule.
