@@ -1,0 +1,128 @@
+# mac-shell: scripts/mac-shell/check-off-the-screen-at-an-unplug.sh at edc9273, macOS 26.6.2, 2026-10-15T13:16Z
+built Arbor, the pointer tool and the app bundles in 11s
+
+== two displays, nothing docked: a window of each of two apps floats on the second
+session 1: Arbor pid 5256, test windows 30 31 32 (pid 5120,5215)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> display_add 1280 800: display 2, 5E78F4B7-1FB2-4F98-8488-C3CEE88C20CE
+> display_move right: now at 1920 0 1280 800
+  ✔ Arbor arranges two displays
+> test windows: move 31 2040 140 480 348
+> test windows: move 32 2560 260 480 348
+  ✔ the first app's window is the second display's
+  ✔ the second app's window is the second display's
+  ✔ nothing is docked
+display 1 0 0 1920 1080, visible 0 31 1920 971, camera n0, back no
+  Desktop          12 43 1896 947
+display 2 1920 0 1280 800, visible 1920 31 1280 769, camera n0, back no
+  Desktop          1932 43 1256 745
+  w30 450 372 480 348      display 1, floating
+  w31 2040 140 480 348     display 2, floating
+  w32 2560 260 480 348     display 2, floating
+shot: mac-shell/0-two-displays.png and 0-two-displays-d2.png
+
+▸ hidden when the cable is pulled, a floating window is not taken to the corner, and nothing moves when it shows
+> test windows: hide
+  ✔ it is hidden
+> display_remove
+  ✔ Arbor arranges one display
+measured: hidden, unplugged: it was at 2560 260 480 348; the window server has it at 544 260 480 348, Arbor at 544 260 480 348
+  ✔ it belongs to the display that is left
+  ✔ it floats
+  ✔ it does not count as out of view
+  ✔ most of it lies on the display that is left
+> test windows: unhide
+  ✔ shown, it is in view
+measured: hidden, shown on the main display: the window server has it at 544 260 480 348
+  ✔ it is where it lay while it was away: nothing moved when it showed
+shot: mac-shell/hidden-1-shown-on-the-main-display.png
+
+▸ hidden when the display is plugged in again, a floating window is back where it floated before it shows
+> test windows: hide
+  ✔ it is hidden again
+> display_add 1280 800: display 3, 5E78F4B7-1FB2-4F98-8488-C3CEE88C20CE
+> display_move right: now at 1920 0 1280 800
+  ✔ Arbor arranges two displays
+measured: hidden, plugged in again: the window server has it at 2560 260 480 348, Arbor at 2560 260 480 348
+  ✔ it belongs to the second display again
+  ✔ it does not count as out of view
+  ✔ it is where it floated, while still away
+> test windows: unhide
+  ✔ shown, it is in view
+  ✔ nothing moved when it showed
+shot: mac-shell/hidden-2-shown-on-the-second-display.png and hidden-2-shown-on-the-second-display-d2.png
+
+▸ minimized when the cable is pulled, a floating window is not taken to the corner, and nothing moves when it shows
+> test windows: minimize 31
+  ✔ it is minimized
+> display_remove
+  ✔ Arbor arranges one display
+measured: minimized, unplugged: it was at 2040 140 480 348; the window server has it at 120 140 480 348, Arbor at 120 140 480 348
+  ✔ it belongs to the display that is left
+  ✔ it floats
+  ✔ it does not count as out of view
+  ✔ most of it lies on the display that is left
+> test windows: restore 31
+  ✔ shown, it is in view
+measured: minimized, shown on the main display: the window server has it at 120 140 480 348
+  ✔ it is where it lay while it was away: nothing moved when it showed
+shot: mac-shell/minimized-1-shown-on-the-main-display.png
+
+▸ minimized when the display is plugged in again, a floating window is back where it floated before it shows
+> test windows: minimize 31
+  ✔ it is minimized again
+> display_add 1280 800: display 4, 5E78F4B7-1FB2-4F98-8488-C3CEE88C20CE
+> display_move right: now at 1920 0 1280 800
+  ✔ Arbor arranges two displays
+measured: minimized, plugged in again: the window server has it at 2040 140 480 348, Arbor at 2040 140 480 348
+  ✔ it belongs to the second display again
+  ✔ it does not count as out of view
+  ✔ it is where it floated, while still away
+> test windows: restore 31
+  ✔ shown, it is in view
+  ✔ nothing moved when it showed
+shot: mac-shell/minimized-2-shown-on-the-second-display.png and minimized-2-shown-on-the-second-display-d2.png
+
+== without Arbor: what macOS alone does to a hidden window and to one in the Dock
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+measured: macOS alone, before: hidden-to-be 2560 260 480 348, minimized-to-be 2040 140 480 348
+> test windows: hide
+> test windows: minimize 31
+> display_remove
+measured: macOS alone, unplugged, still away: 2560 -52 480 348, 2040 -172 480 348
+> test windows: unhide
+> test windows: restore 31
+measured: macOS alone, unplugged, shown: 170 220 480 348, 220 180 480 348
+> test windows: hide
+> test windows: minimize 31
+> display_add 1280 800: display 5, 5E78F4B7-1FB2-4F98-8488-C3CEE88C20CE
+> display_move right: now at 1920 0 1280 800
+measured: macOS alone, plugged in again, still away: 170 532 480 348, 220 492 480 348
+> test windows: unhide
+> test windows: restore 31
+measured: macOS alone, plugged in again, shown: 170 220 480 348, 220 180 480 348
+shot: mac-shell/3-macos-alone.png and 3-macos-alone-d2.png
+
+== the end
+session 1: Arbor pid 8755, test windows 30 31 32 (pid 5120,5215)
+running: 2 displays, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> display_remove
+  ✔ Arbor arranges one display
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/4-after-quit.png
+
+40 passed, 0 failed
+exit code 0

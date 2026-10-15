@@ -1,0 +1,59 @@
+# check-off-the-screen-at-an-unplug 2026-10-15T13:16Z on macOS 26.6.2, commit edc9273
+
+== two displays, nothing docked: a window of each of two apps floats on the second
+  ✔ Arbor arranges two displays
+  ✔ the first app's window is the second display's
+  ✔ the second app's window is the second display's
+  ✔ nothing is docked
+
+▸ hidden when the cable is pulled, a floating window is not taken to the corner, and nothing moves when it shows
+  ✔ it is hidden
+  ✔ Arbor arranges one display
+  ✔ it belongs to the display that is left
+  ✔ it floats
+  ✔ it does not count as out of view
+  ✔ most of it lies on the display that is left
+  ✔ shown, it is in view
+  ✔ it is where it lay while it was away: nothing moved when it showed
+
+▸ hidden when the display is plugged in again, a floating window is back where it floated before it shows
+  ✔ it is hidden again
+  ✔ Arbor arranges two displays
+  ✔ it belongs to the second display again
+  ✔ it does not count as out of view
+  ✔ it is where it floated, while still away
+  ✔ shown, it is in view
+  ✔ nothing moved when it showed
+
+▸ minimized when the cable is pulled, a floating window is not taken to the corner, and nothing moves when it shows
+  ✔ it is minimized
+  ✔ Arbor arranges one display
+  ✔ it belongs to the display that is left
+  ✔ it floats
+  ✔ it does not count as out of view
+  ✔ most of it lies on the display that is left
+  ✔ shown, it is in view
+  ✔ it is where it lay while it was away: nothing moved when it showed
+
+▸ minimized when the display is plugged in again, a floating window is back where it floated before it shows
+  ✔ it is minimized again
+  ✔ Arbor arranges two displays
+  ✔ it belongs to the second display again
+  ✔ it does not count as out of view
+  ✔ it is where it floated, while still away
+  ✔ shown, it is in view
+  ✔ nothing moved when it showed
+
+== without Arbor: what macOS alone does to a hidden window and to one in the Dock
+  ✔ Arbor exits within 5 s of quit
+
+== the end
+  ✔ Arbor arranges one display
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+40 passed, 0 failed
