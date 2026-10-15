@@ -144,6 +144,7 @@ check "the view has not moved" camera_on "$W1"
 
 claim "with summonStays a click on another window leaves the summoned window in view, in front, until it is summoned away"
 proves A53
+known "a summoned window of another app stays behind the window that has the keyboard: the Accessibility raise does not lift it over that one; Q25 in collab/QUESTIONS.md decides what is to become of it"
 arbor_settings "{\"bindings\": {\"ctrl+opt+\`\": \"summon $ARBOR_TEST_BUNDLE_2\"}, \"summonStays\": true}"
 ctl reload-settings
 click_window "$W1"

@@ -1014,7 +1014,7 @@ does it (drags to screen edges and onto windows, seams and edges, title-bar butt
 `open arbor://…`, settings.json, quitting, killing and restarting), and checked against the window server.
 
 ```bash
-make suite                                                       # on a Mac: sixteen minutes on a hosted one (SECTIONS="30 60" for some)
+make suite                                                       # on a Mac: twenty-five minutes on a hosted one (SECTIONS="30 60" for some)
 ARBOR_KEEP_EVIDENCE=1 scripts/mac-shell/run.sh --macs 2 scripts/mac-shell/suite.sh   # all of it on two of GitHub's Macs, side by side, from anywhere
 scripts/mac-shell/run.sh scripts/mac-shell/suite/30-seams.sh     # one section, about a minute
 scripts/mac-shell/rehearse.sh                                    # all of it against stand-ins, on Linux, for nothing

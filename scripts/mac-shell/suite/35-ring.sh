@@ -44,6 +44,14 @@ nothing_of() {
   left=$("$ARBOR_POINTER" windows --pid "$1")
   [ -z "$left" ] || { echo "still there: $(echo "$left" | head -n 1)"; return 1; }
 }
+# at_rest <id>…: none of them has moved for a third of a second, by the window server.
+at_rest() {
+  local id before="" after=""
+  for id in "$@"; do before="$before$(real_frame_of "$id");"; done
+  sleep 0.35
+  for id in "$@"; do after="$after$(real_frame_of "$id");"; done
+  [ "$before" = "$after" ] || { echo "they were at $before and are at $after"; return 1; }
+}
 paused() { "$ARBOR_BIN/arborctl" status | grep "^paused" > /dev/null || { echo "Arbor is not paused"; return 1; }; }
 running() { "$ARBOR_BIN/arborctl" status | grep "^running" > /dev/null || { echo "Arbor is not running"; return 1; }; }
 # types_into <id>: a letter typed now arrives in that window.
@@ -254,7 +262,11 @@ proves A15
 key ctrl+opt+escape
 check "Arbor is paused" eventually paused
 check "there is no ring" eventually no_ring
+# A pause gives the windows their own sizes and places back, where they lie over each other: a place to click is looked for once they rest.
+check "the windows have come to rest" eventually at_rest "$W1" "$W2" "$W3"
+downs=$(events_of "$W2" down)
 click_window "$W2"
+check "the click arrives in the second window" eventually received "$W2" down -gt "$downs"
 check "a click on another window brings none" stays no_ring
 key ctrl+opt+escape
 check "Arbor runs again" eventually running

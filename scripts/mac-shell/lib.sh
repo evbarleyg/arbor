@@ -2073,16 +2073,21 @@ open_menu() {
 
 # arbor_in_open_menu x y: the point is in a menu as far as it shows. A menu taller than the display is cut off at its foot, and
 # Accessibility gives the rows below the cut the places they would have.
+# With a third argument: and that many points above its foot.
 arbor_in_open_menu() {
-  overlays | awk -v x="$1" -v y="$2" '
-    $3 == 101 && $8 == "on" && x >= $4 && x < $4 + $6 && y >= $5 && y < $5 + $7 { found = 1 } END { exit !found }'
+  overlays | awk -v x="$1" -v y="$2" -v foot="${3:-0}" '
+    $3 == 101 && $8 == "on" && x >= $4 && x < $4 + $6 && y >= $5 && y < $5 + $7 - foot { found = 1 } END { exit !found }'
 }
 
 # The menu is rebuilt as it opens, so an item's place is asked for only then.
 click_menu() {
-  local point
+  local point last foot=0 from=""
   open_menu || return 1
   sleep 0.4
+  # A menu that is cut off ends in an arrow, and scrolls as soon as the pointer is on it: by the time the button goes down another row
+  # lies there. (Seen on a Mac: a press on Hold This View, 18 points above the foot, opened the settings window.)
+  # shellcheck disable=SC2086
+  if last=$("$ARBOR_POINTER" menu-item "$ARBOR_PID" "Quit Arbor" 2>/dev/null) && ! arbor_in_open_menu $last; then foot=36; fi
   while [ $# -gt 0 ]; do
     if ! point=$(eventually "$ARBOR_POINTER" menu-item "$ARBOR_PID" "$1"); then
       echo "$point"
@@ -2090,7 +2095,7 @@ click_menu() {
       return 1
     fi
     # shellcheck disable=SC2086
-    if ! arbor_in_open_menu $point; then
+    if ! arbor_in_open_menu $point "$foot"; then
       # With no row chosen ↑ goes to the last one, and the menu scrolls to its end.
       key up
       sleep 0.3
@@ -2103,6 +2108,12 @@ click_menu() {
         return 1
       fi
     fi
+    # Into a submenu as a hand goes: across from the row that opened it, then along it. A pointer that leaps from that row to a row far down
+    # the submenu finds it closed, and the press goes to whatever lies behind. (Seen on a Mac, 310 points down Saved Views.)
+    if [ -n "$from" ]; then
+      move "${point%% *}" "$from"
+      sleep 0.2
+    fi
     # A press that was declined chose nothing, and the menu is still open.
     # shellcheck disable=SC2086
     if ! click $point; then
@@ -2110,6 +2121,8 @@ click_menu() {
       return 1
     fi
     sleep 0.3
+    from=${point##* }
+    foot=0
     shift
   done
 }
