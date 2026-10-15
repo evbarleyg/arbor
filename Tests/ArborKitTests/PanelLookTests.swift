@@ -66,8 +66,9 @@ import Testing
     let bare = (Self.measured + Self.overWallpapers).filter {
       contrast(of: .second, on: $0, veiled: false) < 3 * Self.lostToThinStrokes
     }
-    #expect(bare.contains { $0.description == "hudWindow over red" && $0.isDark })
     #expect(bare.contains { $0.description == "hudWindow over white" && $0.isDark })
+    #expect(bare.contains { $0.description == "popover over white" && $0.isDark })
+    #expect(bare.contains { $0.description == "hudWindow over black" && !$0.isDark })
   }
 
   /// And the greys that were there: macOS's secondary label colour came out as (129, 127, 128) in the light look and
