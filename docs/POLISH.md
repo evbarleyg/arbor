@@ -138,7 +138,7 @@ The scenes of the five moves, and `frame`, are filmed twice: in light mode on a 
 | Scene | Kind | What the person does | Move |
 |---|---|---|---|
 | `tab-make`, `tab-change`, `tab-drag-group` | drag, structure, drag | drops a window on the middle of another; ⌃⌥⇥; drags the group to an edge | 1 (not landed: unseen) |
-| `dock-drag-edge` | drag | drags a window to a screen edge, waits, lets go | 2 |
+| `dock-drag-edge` | drag | drags a window to the bottom edge, waits, lets go (with macOS's own tiling on, as a Mac comes, the other three edges are macOS's) | 2 |
 | `dock-drag-beside` | drag | drags a window onto a part of a docked one: a space inside a space | 2 |
 | `rearrange` | drag | drags a docked window to another place | 2 |
 | `tile`, `tile-open`, `tile-back` | structure, camera, camera | docks a window that is too large for its slot; clicks the tile; ⌃⌥[ (light only) | 2 |
