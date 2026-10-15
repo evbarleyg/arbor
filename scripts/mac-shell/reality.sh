@@ -18,7 +18,7 @@
 #   edges      title-bar drags with the real pointer all the way to the left, top and right screen edge, each looked at while held and after. With
 #              macOS's tiling on, as a Mac comes, those edges are macOS's: Arbor stands aside, macOS tiles, and the question is whether the
 #              stand-ins tile as macOS does
-#   pointer    e2e-drag.sh's steps and a few more: to the bottom edge, a window's edge, onto another window, a double-click, a press inside, a
+#   pointer    e2e-drag.sh's steps and a few more: to the bottom edge, a window's edge, onto another window, a double-click and another, a press inside, a
 #              seam, out onto the Desktop, a click on a tile
 #   keys       a click on a window, then shortcuts on the real keyboard
 # REALITY_JOURNEYS="commands keys" plays only those: for a rehearsal while working on one of them. A Mac plays them all.
@@ -278,6 +278,9 @@ if wanted pointer; then
   does "drag W2 onto the right of W3" drag $(title_of "$W2") $(at "$W3" "x + w * 85 / 100" "y + h / 2")
   # shellcheck disable=SC2046
   does "double-click W3's title bar" dblclick $(title_of "$W3")
+  # macOS's zoom of a docked window stays, over everything else. A second double-click is how a person undoes it, and what comes after is about what lies beneath.
+  # shellcheck disable=SC2046
+  does "double-click W3's title bar again" dblclick $(title_of "$W3")
   # shellcheck disable=SC2046
   does "press inside W3 and move, held" drag $(middle_of "$W3") $(at "$W3" "x + w / 2 + 90" "y + h / 2 + 60") --no-release
   does "let go inside W3" release
