@@ -40,12 +40,12 @@ if command == "frontmost" {
 }
 // press <key code> <modifier keys, comma-separated> <road> [repeats]
 // hammer <key code> <modifier keys> <road> <seconds> <presses a second>: the same press over and over, in one process
-//   modifier keys  lctrl rctrl lopt ropt fnkey: the key goes down, with the bit that says which. ctrl opt: the flag alone, no key and no hand, as many tools post.
+//   modifier keys  lctrl rctrl lopt ropt fnkey: the key goes down, with the bit that says which. fnfirst: an fn key that comes up again BEFORE the key does. ctrl opt: the flag alone, no key and no hand, as many tools post.
 //                  caps fn pad: the flag alone (a Caps Lock really pressed would stay on)
 //   road           hid | session | annotated: the point at which the events are put in, from the keyboard inwards; or a process id, for postToPid
 func press(_ code: CGKeyCode, _ modifiers: String, _ road: String, repeats: Int = 0, pause: useconds_t = 8000, hold: useconds_t = 40000) {
   let keys: [String: (code: CGKeyCode?, flags: UInt64)] = [
-    "lctrl": (59, 0x40001), "rctrl": (62, 0x42000), "lopt": (58, 0x80020), "ropt": (61, 0x80040), "fnkey": (63, 0x800000),
+    "lctrl": (59, 0x40001), "rctrl": (62, 0x42000), "lopt": (58, 0x80020), "ropt": (61, 0x80040), "fnkey": (63, 0x800000), "fnfirst": (63, 0x800000),
     "ctrl": (nil, 0x40000), "opt": (nil, 0x80000), "caps": (nil, 0x10000), "fn": (nil, 0x800000), "pad": (nil, 0x200000),
   ]
   let source = CGEventSource(stateID: .hidSystemState)
@@ -79,6 +79,12 @@ func press(_ code: CGKeyCode, _ modifiers: String, _ road: String, repeats: Int 
     post(code, true, flags, repeating: true)
   }
   usleep(hold)
+  if modifiers.split(separator: ",").contains("fnfirst") {
+    flags &= ~0x800000
+    post(63, false, flags)
+    down.removeAll { $0.0 == 63 }
+    usleep(hold)
+  }
   post(code, false, flags)
   for (code, mine) in down.reversed() {
     // Two keys of a pair share the flag that names the pair: it goes with the last of them.
@@ -229,7 +235,7 @@ func rivalHeard(_ next: EventHandlerCallRef?, _ event: EventRef?, _ data: Unsafe
   var id = EventHotKeyID()
   GetEventParameter(
     event, EventParamName(kEventParamDirectObject), EventParamType(typeEventHotKeyID), nil, MemoryLayout<EventHotKeyID>.size, nil, &id)
-  note("rival pressed \(chordOfRival[id.id] ?? "?")")
+  note("rival \(GetEventKind(event) == UInt32(kEventHotKeyReleased) ? "released" : "pressed") \(chordOfRival[id.id] ?? "?")")
   return noErr
 }
 
@@ -266,8 +272,11 @@ case "back":
 case "rival":
   guard arguments.count > 2 else { fail("rival <log> <file of codes>") }
   application.setActivationPolicy(.accessory)
-  var spec = EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed))
-  InstallEventHandler(GetEventDispatcherTarget(), rivalHeard, 1, &spec, nil, nil)
+  var specs = [
+    EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyPressed)),
+    EventTypeSpec(eventClass: OSType(kEventClassKeyboard), eventKind: UInt32(kEventHotKeyReleased)),
+  ]
+  InstallEventHandler(GetEventDispatcherTarget(), rivalHeard, 2, &specs, nil, nil)
   var taken = 0
   var refused: [String] = []
   var refs: [EventHotKeyRef] = []
@@ -418,7 +427,7 @@ for line in open(heard, encoding="utf-8", errors="replace"):
         lines_before = now
         if chord not in (None, "-"):
             rows.append([chord, collections.Counter(), 0])
-    elif chord not in (None, "-") and words[1] in EARS:
+    elif chord not in (None, "-") and words[1] in EARS and words[2] != "released":
         rows[-1][1][words[1]] += 1
 with open(out, "w", encoding="utf-8") as f:
     f.write(f"{'key':22}" + "".join(f"{e:>14}" for e in EARS) + f"{'Arbor log':>11}\n")

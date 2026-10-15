@@ -8,7 +8,7 @@
 # looks for a hot key. On a laptop fn sits beside ⌃.
 #
 # Part 1 needs no Arbor: a process registers hot keys as Arbor does, in three ways: plainly; with kEventKeyModifierFnMask (1 << 17); both. Each key is then pressed plainly, with fn's flag alone, and
-# with an fn key going down before it. Who hears: the plain registration, the one with the bit, the app in front?
+# with an fn key going down before it (and once coming up again before the key does). Who hears, the press and the release: the plain registration, the one with the bit, the app in front?
 # Part 2, with Arbor: ⌃⌥A twenty-five times a second, by one process, through what might make Arbor let go of its keys for a moment. At the first run the hammer made two a second, too
 # few to find a hole of less than half a second. A peek (⌃⌥Space held), whose shortcuts come and go, is among it now.
 #
@@ -37,9 +37,10 @@ for line in open(sys.argv[1], encoding="utf-8", errors="replace"):
         print(words[3].split("=")[1], words[4].split("=")[1], chord)
 PY
 check "every key's code is known" test "$(grep -c . "$CODES")" -eq "$(grep -c . "$CHORDS")"
-# An F key carries fn's flag by nature, as the arrows do. None is Arbor's; it is here for the rule.
-echo "96 ctrl+opt ctrl+opt+f5" >> "$CODES"
-KEYS="$KEYS ctrl+opt+f5"
+# An F key carries fn's flag by nature, as the arrows do, and so do Home, End, Page Up, Page Down and forward delete. None is Arbor's; they are here for the rule.
+printf '%s\n' "96 ctrl+opt ctrl+opt+f5" "115 ctrl+opt ctrl+opt+home" "119 ctrl+opt ctrl+opt+end" "116 ctrl+opt ctrl+opt+pageup" "121 ctrl+opt ctrl+opt+pagedown" \
+  "117 ctrl+opt ctrl+opt+forwarddelete" >> "$CODES"
+KEYS="$KEYS ctrl+opt+f5 ctrl+opt+home ctrl+opt+end ctrl+opt+pageup ctrl+opt+pagedown ctrl+opt+forwarddelete"
 
 # registered <name> <file of codes>: a process that holds those hot keys; then every key by three hands; then it goes.
 registered() {
@@ -49,7 +50,7 @@ registered() {
   started "$RIVAL_PID"
   check "$name: the process is up" eventually says_in_log "rival ready pid=$RIVAL_PID"
   grep "rival ready pid=$RIVAL_PID" "$HEARD" | cut -c 14-
-  for hand in plain:lctrl,lopt fn-flag:fn,lctrl,lopt fn-key:fnkey,lctrl,lopt; do
+  for hand in plain:lctrl,lopt fn-flag:fn,lctrl,lopt fn-key:fnkey,lctrl,lopt fn-up-before-the-key:fnfirst,lctrl,lopt pad-flag:pad,lctrl,lopt; do
     mods=${hand#*:}
     ROUND="$name.${hand%%:*}"
     for chord in $KEYS; do
@@ -87,7 +88,7 @@ registered bit-16 "$ARBOR_OUT/codes-bit16.txt"
 step "who heard what, and how often"
 python3 - "$HEARD" <<'PY'
 import collections, sys
-rows, key = collections.OrderedDict(), None
+rows, ups, key = collections.OrderedDict(), {}, None
 for line in open(sys.argv[1], encoding="utf-8", errors="replace"):
     words = line.split()
     if len(words) < 3:
@@ -97,14 +98,19 @@ for line in open(sys.argv[1], encoding="utf-8", errors="replace"):
         if "." in words[2] and words[3] != "-" and words[2].split(".")[0] in ("plainly", "with-the-bit", "both-ways", "bit-17-exclusive", "bit-23", "bit-16"):
             key = (words[2], words[3])
             rows[key] = collections.Counter()
+            ups[key] = collections.Counter()
     elif key and words[1] == "rival" and words[2] == "pressed":
         rows[key][words[3].rsplit(":", 1)[1]] += 1
+    elif key and words[1] == "rival" and words[2] == "released":
+        ups[key][words[3].rsplit(":", 1)[1]] += 1
     elif key and words[1] == "local":
         rows[key]["THE-APP"] += 1
 sums = collections.OrderedDict()
 for (round_, chord), heard in rows.items():
-    kind = "an arrow" if chord.endswith(("left", "right")) else "an F key" if chord.endswith("f5") else "a letter or sign"
-    sums.setdefault((round_, kind), collections.Counter())[" and ".join(f"{who} x{times}" for who, times in sorted(heard.items())) or "nobody"] += 1
+    kind = "an arrow" if chord.endswith(("left", "right")) else "F5, Home and kin" if chord.endswith(("f5", "home", "end", "pageup", "pagedown", "forwarddelete")) else "a letter or sign"
+    up = ups[(round_, chord)]
+    said = " and ".join(f"{who} x{times}" + (f" (up x{up[who]})" if who != "THE-APP" else "") for who, times in sorted(heard.items())) or "nobody"
+    sums.setdefault((round_, kind), collections.Counter())[said] += 1
 print(f"{'registered . pressed':34}{'key':18}heard by (how many keys)")
 for (round_, kind), counts in sums.items():
     print(f"{round_:34}{kind:18}" + "; ".join(f"{who}: {count}" for who, count in counts.items()))
