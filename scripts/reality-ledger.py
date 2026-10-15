@@ -686,6 +686,15 @@ def read_diff(diff):
     return [hunk for hunk in hunks if hunk[0]], touched
 
 
+def named_in(entry, members):
+    """Which of these members of the seam a case names: by itself in backticks (`setFrame`), as it is called (`system.setFrame(frame, of: window)`) or as `Type.member`, with backticks or
+    without. A word of the prose is no name, nor is one that stands between two names in backticks, nor part of another name (`check-displays.sh`)."""
+    pieces = [entry[key].split("`") for key in ("expected", "happened", "found", "copes")]
+    ticked, plain = [name for piece in pieces for name in piece[1::2]], [words for piece in pieces for words in piece[0::2]]
+    return {member for member in members
+            if any(re.fullmatch(rf"(?:\w+[?!]?\.)?{member}(?:\(.*)?", name) for name in ticked) or any(re.search(rf"\w\.{member}\b", words) for words in plain)}
+
+
 def leans_on(entries, tree, diff):
     """The cases the stand-ins do not play that a change leans on, each with why, and first what green on Linux knows least of.
 
@@ -717,8 +726,7 @@ def leans_on(entries, tree, diff):
     for entry in entries:
         if entry["modelled"] not in UNPLAYED:
             continue
-        words = " ".join(entry[key] for key in ("expected", "happened", "found", "copes"))
-        named = sorted(member for member in called if re.search(rf"`[^`]*\b{member}\b[^`]*`|\w\.{member}\b", words))
+        named = sorted(named_in(entry, called))
         cited = sorted(source for source in entry["sources"] if source.startswith(BELOW) and source.endswith(".swift") and source in touched)
         if anew.intersection(named):
             found.append((entry, ", ".join(named), BY_NAME))
@@ -740,7 +748,7 @@ def reading_list(root, diff, everything=False):
     played = {"no": "not played", "partly": "played partly", "cannot": "cannot be played"}
     old = sum(1 for one in found if one[2] == AS_BEFORE)
     lines = [f"Green on Linux cannot tell you these: {len(found)} case{'s' if len(found) > 1 else ''} in docs/REALITY.md that the stand-ins do not play"
-             + (". This change touches lines that lean on them, as they did before." if old == len(found) else
+             + (f". This change touches lines that lean on {'them' if old > 1 else 'it'}, as they did before." if old == len(found) else
                 " and this change leans on" + (f", {old} of them as the lines it touches did before" if old else "") + ". The argument for a Mac run before it lands.")]
     for entry, why, _ in shown:
         # The first sentence, and the next while that says as little as "It does."
@@ -1123,6 +1131,8 @@ def self_test():
         dict(cut, id="played-by-now", modelled="yes", knobs=["Fake.knob"]),
         dict(cut, id="about-the-keyboard", expected="`focus` moves the keyboard at once.", happened="It moves later."),
         dict(cut, id="the-word-alone", expected="Whoever wants to setFrame may.", happened="A word that is no name."),
+        dict(cut, id="the-word-between-two-names", expected="After `open` whoever wants to setFrame may, until `close`.", happened="A word that is no name."),
+        dict(cut, id="the-word-in-another-name", expected="`check-setFrame.sh` ran, and `setFrame-twice` was seen.", happened="A file and a label."),
         dict(cut, id="worse-and-partly", modelled="partly", knobs=["Fake.knob"], hurt=1, expected="A call returns.", happened="It waits. AXWindowSystem.setFrame waits for the app. For a second."),
         dict(cut, id="by-its-file", expected="Nothing of the kind.", happened="A file knows more.", sources=["Sources/ArborKit/AX/Real.swift"], hurt=1),
         dict(cut, id="by-a-file-that-linux-runs", expected="Nothing of the kind.", happened="The tests have been there.", sources=["Sources/ArborKit/Controller/Controller+AskFirst.swift"], hurt=1),
@@ -1152,7 +1162,7 @@ def self_test():
             failures.append(f"the change that asks a window for a size where it stands is not told of the case that says what a size depends on: {lines}")
         if [line.split()[0] for line in lines[1:]] != ["a-size-set-at-the-old-place-is-cut-to-what-fits-there", "worse-and-partly", "by-its-file"]:
             failures.append(f"what a change leans on: the cases that name a member of the seam it calls, what is not played at all first, then those that cite a file of the macOS-only code it touches; none "
-                            f"that is played, is about another member, has the word without the name, or cites a page or a file that the tests on Linux run: {lines}")
+                            f"that is played, is about another member, has the word without the name, between two names or within another, or cites a page or a file that the tests on Linux run: {lines}")
         # The question is what green cannot tell, so what is not played at all is the first answer, whatever it hurts. With every case about `setFrame` named, the case of 2026-10-15
         # (hurt 3) stood 17th of 27 by hurt, and ten are printed.
         order = [dict(cut, id=f"{played}-{hurt}", modelled=played, knobs=["Fake.knob"] if played == "partly" else [], hurt=hurt) for hurt in (1, 4) for played in ("partly", "cannot", "no")]
@@ -1161,6 +1171,9 @@ def self_test():
             failures.append(f"within one road: what the stand-ins do not play, what they never can, what they play partly; only then the worst hurt: {ranked}")
         if not any("  It waits. AXWindowSystem.setFrame waits for the app.  (" in line for line in lines):
             failures.append(f"one line of what happened: the first sentence, and the next if the first says nothing by itself: {lines}")
+        for words in ["`setFrame`", "`setFrame(_:of:)`", "`system.setFrame(frame, of: window)`", "`events?.setFrame(`", "`Fake.setFrame`", "Fake.setFrame"]:
+            if len(listed(asked, [dict(cut, expected=f"It is {words} that answers.")])) != 2:
+                failures.append(f"a case that says {words} names the member")
         for name, diff in [
             ("a page", elsewhere("docs/A.md")), ("a scenario", elsewhere("collab/scenarios/01.sim")), ("a tool", elsewhere("scripts/t.py")), ("a test", elsewhere("Tests/T/T.swift")),
             ("a stand-in", elsewhere("Sources/ArborTesting/Fake.swift")), ("the ledger itself", elsewhere("collab/reality.json")), ("nothing", ""),
