@@ -1,0 +1,202 @@
+# mac-shell: scripts/mac-shell/check-desktop.sh at 4ff9daa, macOS 26.6.2, 2026-10-15T12:47Z
+built Arbor, the pointer tool and the app bundles in 5s
+com.apple.WindowManager EnableTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+
+== as the Mac comes
+Reduce Motion: true
+appearance: light, AppleInterfaceStyle: Light
+wallpaper: /System/Library/Desktop Pictures/Solid Colors/Black.png
+07230EFA-7A8D-4E37-845C-19CC8737EEF5 2 1
+session 1: Arbor pid 23837, test windows 303 304 305 (pid 23740)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> dock 303 left
+docked w303 at the left edge
+> dock 304 beside 303 bottom
+docked w304 below w303; its space is too small to show it, so it is a tile
+> show-all
+showing everything
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          518 43 494 650
+  tile n3 window   12 374 494 319  holds w304
+  w303 12 43 494 319        docked focused
+  w304 1023 677 700 500     docked parked
+  w305 270 140 480 348      floating
+  ✔ a tile, a docked window and the Desktop are in view
+shot: mac-shell/light-1-tile.png
+> drag 546 152 1021 368 --no-release
+shot: mac-shell/light-2-preview.png
+> release 765 103
+> click 688 15 --right
+shot: mac-shell/light-3-menu.png
+> key escape
+
+== dark mode
+> appearance dark: now dark
+  ✔ the system says dark
+shot: mac-shell/dark-1-tile.png
+> drag 765 43 1021 368 --no-release
+shot: mac-shell/dark-2-preview.png
+> release 765 103
+> click 688 15 --right
+shot: mac-shell/dark-3-menu.png
+> key escape
+
+== a wallpaper: a gradient under a grid, then one colour
+> wallpaper gradient
+/System/Library/Desktop Pictures/Solid Colors/Black.png
+  ✔ the desktop shows the gradient
+shot: mac-shell/dark-gradient-1-tile.png
+> drag 667 43 1021 368 --no-release
+shot: mac-shell/dark-gradient-2-preview.png
+> release 765 103
+> click 688 15 --right
+shot: mac-shell/dark-gradient-3-menu.png
+> key escape
+> appearance light: now light
+  ✔ the system says light
+shot: mac-shell/light-gradient.png
+> wallpaper #2e7d32
+/Users/runner/work/arbor/arbor/.build/mac-shell/wallpaper-gradient.png
+  ✔ the desktop shows the colour
+shot: mac-shell/light-green.png
+
+== Reduce Motion
+Reduce Motion: false
+  ✔ an app launched now is told that motion is fine
+
+== Spaces: a second one, there and back, with a tile and seams on the first
+it is managed at 418 85 480 348
+> dock 305 right
+docked w305 at the right edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  tile n3 window   12 374 325 319  holds w304
+  w303 12 43 325 319        docked
+  w304 1023 677 700 500     docked parked
+  w305 687 43 325 650       docked focused
+> space_add
+07230EFA-7A8D-4E37-845C-19CC8737EEF5 3 1
+  ✘ the main display has two Spaces
+      picture: mac-shell/fail-check-desktop-1.png
+      | display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+      |   Desktop          349 43 326 650
+      |   tile n3 window   12 374 325 319  holds w304
+      |   w303 12 43 325 319        docked
+      |   w304 1023 677 700 500     docked parked
+      |   w305 687 43 325 650       docked focused
+      log | DEBUG no stage: Reduce motion is on
+      log | INFO  dock 305 right: docked w305 at the right edge
+      log | INFO  trace space-added: recording to /tmp/arbor-shell.17acON/home/traces/2026-10-15-124821-space-added.jsonl
+      log | INFO  trace space-added ended: 14 lines, trace off
+> key ctrl+right
+  ✔ ⌃→ shows the second Space
+shot: mac-shell/spaces-1-second.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          12 43 1000 650
+  w303 12 43 325 319        docked
+  w304 1023 677 700 500     docked parked
+  w305 687 43 325 650       docked
+> key ctrl+left
+  ✔ ⌃← shows the first Space again
+shot: mac-shell/spaces-2-first-again.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          349 43 326 650
+  tile n3 window   12 374 325 319  holds w304
+  w303 12 43 325 319        docked
+  w304 1023 677 700 500     docked parked
+  w305 687 43 325 650       docked focused
+  ✔ both docked windows are back in their slots
+  ✔ and the slots are the ones they had
+
+== Spaces: there and back with one window framed
+> zoom 303
+framed w303
+  ✔ the window fills the screen
+  ✔ its neighbour is out of view
+> key ctrl+right
+  ✔ ⌃→ shows the second Space
+> key ctrl+left
+  ✔ ⌃← shows the first Space again
+  ✔ the window is still framed
+  ✔ and stays so
+  ✔ its neighbour is still out of view
+> show-all
+showing everything
+  ✔ with everything in view both are in the slots they had
+
+== Spaces: carry a docked window to the second Space, as a person does: hold its title bar and press ⌃→
+> float 304
+w304 is floating
+> drag 885 55 845 95 --no-release
+> key ctrl+right
+> release
+  ✔ the second Space shows
+shot: mac-shell/spaces-3-carried.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  Desktop          12 43 494 650
+  w303 12 43 325 650        docked
+  w304 0 205 700 500        floating
+  w305 518 43 494 650       docked focused
+the window server has the carried window at 518 43 494 650
+> key ctrl+left
+shot: mac-shell/spaces-4-without-it.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  Desktop          518 43 494 650
+  w303 12 43 494 650        docked focused
+  w304 0 205 700 500        floating
+  w305 518 43 494 650       docked
+  ✔ the window that stayed is in its slot
+> key ctrl+right
+shot: mac-shell/spaces-5-with-it.png
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back yes
+  Desktop          12 43 494 650
+  w303 12 43 494 650        docked
+  w304 0 205 700 500        floating
+  w305 518 43 494 650       docked focused
+> key ctrl+left
+
+== Mission Control with a tile on the screen
+> dock 304 beside 303 bottom
+docked w304 below w303; its space is too small to show it, so it is a tile
+> show-all
+showing everything
+shot: mac-shell/mission-control.png
+> key escape
+   1 INFO  started: 1 display(s), 3 managed window(s)
+   1 INFO  dock 304 beside 303 bottom: docked w304 below w303; its space is too small to show it, so it is a tile
+   3 INFO  dropped w305 on float, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+   1 INFO  trace space-added: recording to /tmp/arbor-shell.17acON/home/traces/2026-10-15-124821-space-added.jsonl
+   1 INFO  trace space-added ended: 14 lines, trace off
+   1 INFO  trace space-to-the-second: recording to /tmp/arbor-shell.17acON/home/traces/2026-10-15-124829-space-to-the-second.jsonl
+   1 INFO  trace space-to-the-second ended: 44 lines, trace off
+   1 INFO  trace space-back-to-the-first: recording to /tmp/arbor-shell.17acON/home/traces/2026-10-15-124835-space-back-to-the-first.jsonl
+   1 INFO  trace space-back-to-the-first ended: 38 lines, trace off
+   1 DEBUG said on 07230EFA-7A8D-4E37-845C-19CC8737EEF5: Your other windows are out of view, not closed · ⌃⌥Space shows everything
+   1 INFO  trace space-window-carried: recording to /tmp/arbor-shell.17acON/home/traces/2026-10-15-124847-space-window-carried.jsonl
+   1 INFO  dropped w305 on none, display 07230EFA-7A8D-4E37-845C-19CC8737EEF5
+   1 INFO  trace space-window-carried ended: 282 lines, trace off
+   1 INFO  trace space-left-without-the-window: recording to /tmp/arbor-shell.17acON/home/traces/2026-10-15-124856-space-left-without-the-window.jsonl
+   1 INFO  trace space-left-without-the-window ended: 30 lines, trace off
+   1 INFO  trace space-right-to-the-window: recording to /tmp/arbor-shell.17acON/home/traces/2026-10-15-124902-space-right-to-the-window.jsonl
+   1 INFO  trace space-right-to-the-window ended: 27 lines, trace off
+   1 INFO  dock 304 beside 303 bottom: docked w304 below w303; its space is too small to show it, so it is a tile
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✘ window 3 is back on screen after quitting — only 0 % of it is to be seen: 418 85 480 348
+      picture: mac-shell/fail-check-desktop-2.png
+      log | INFO  stopped; all windows returned to view
+      log | INFO  Arbor quit
+shot: mac-shell/after-quit.png
+
+23 passed, 2 failed
+exit code 1

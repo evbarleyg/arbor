@@ -1,0 +1,97 @@
+# shots-F22 2026-10-15T12:44Z on macOS 26.6.2, commit 4ff9daa
+
+== session 1: [ 1 / 3 | Desktop with 4 floating | 2 ], shortcuts and the menu bar item on
+  ✔ a click focused window 1
+
+== focus by command
+  ✔ focus right went to the floating window in between
+  ✔ focus right went on to window 2
+  ✔ focus left came back to the floating window
+  ✔ focus left came back to window 1, in focus more recently than 3
+  ✔ focus down went to window 3
+  ✔ focus next follows the tree
+  ✔ and then the floating windows
+  ✔ focus previous goes back
+  ✔ focus by id
+  ✔ the camera has not moved
+
+== focus by the real shortcuts
+  ✔ ⌃⌥⇧↓ went to window 3
+  ✔ ⌃⌥⇧↑ went to window 1
+  ✔ ⌃⌥⇧→ went to the floating window
+  ✔ ⌃⌥⇧← went back
+
+== framed on one window, the same keys walk from space to space
+  ✔ ⌃⌥⇧↓ went to window 3
+  ✔ window 3 is in view
+  ✔ window 1 is tucked away
+  ✔ ⌃⌥⇧→ went to the Desktop and its floating window
+  ✔ ⌃⌥⇧→ went on to window 2
+  ✔ and it stays there once macOS has reported the change
+  ✔ window 2 is in view
+
+== swap: the slots keep their sizes
+  ✔ a click focused window 1
+  ✔ window 1 took the narrow slot
+  ✔ window 2 took the wide slot
+  ✔ focus stayed with window 1
+  ✔ the camera has not moved
+
+== grow, shrink and balance by the real shortcuts
+  ✔ ⌃⌥⌘= made it 40 points wider
+  ✔ and 40 points taller
+  ✔ ⌃⌥⌘- took them back
+  ✔ ⌃⌥⌘0 evened the sizes out
+
+== a window whose app refuses to shrink stays a window
+  ✔ a click focused window 2
+  ✔ window 2 is not a tile
+  ✔ it is in view
+  ✔ it stopped at the 300 points its app insists on
+  ✔ it still has focus
+  ✔ the camera has not moved
+
+== rotate and mirror by the real shortcuts
+  ✔ ⌃⌥R stacked the row: window 1 is above window 2
+  ✔ and the column inside became a row: window 1 is left of window 3
+  ✔ ⌃⌥⇧R mirrored it: window 2 is above window 1
+  ✔ and back: window 1 is left of window 2
+
+== ⌃⌥R on a pair inside the row is its own way back
+  ✔ a click focused window 1
+  ✔ windows 1 and 3 are side by side
+  ✔ window 2 has not moved
+  ✔ the second press put window 1 back
+  ✔ and window 3
+  ✔ and left window 2 alone
+
+== the pointer stays where the hand left it
+  ✔ focus-display did not move the pointer
+  ✔ in either direction
+
+== the menu
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+  ✔ window 4 is back on screen after quitting
+
+== session 2: a tile in the way is entered
+  ✔ window 3 is a tile
+  ✔ a click focused window 2
+  ✔ focus down entered the tile
+  ✔ window 3 is in view
+
+== swapping into a slot too small leaves a tile, and the view where it was
+  ✔ a click focused window 1
+  ✔ the camera has not moved
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+64 passed, 0 failed

@@ -1,0 +1,88 @@
+# check-F44 2026-10-15T12:42Z on macOS 26.6.2, commit 4ff9daa
+
+== going by the German layout: ⌃⌥Z shows the Desktop, ⌃⌥Y everything
+  ✔ Arbor read the layout
+  ✔ the key labelled Z (where a US keyboard has Y) shows the Desktop
+  ✔ the docked windows went out of view
+  ✔ the key labelled Y (where a US keyboard has Z) shows everything
+  ✔ the key labelled Ü (where a US keyboard has [) goes back
+  ✔ a shortcut written as a position has not moved
+  ✔ bindings shows what is printed on the key
+  ✔ and names the layout
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== going by the French layout: letters move, digits stay
+  ✔ Arbor read the layout
+  ✔ the key labelled A (where a US keyboard has Q) arranges
+  ✔ the key labelled Q (where a US keyboard has A) is not Arbor's
+  ✔ the key labelled Z (where a US keyboard has W) shows the Desktop
+  ✔ ⌃⌥⇧1 saves a view from the key that has 1 on it
+  ✔ ⌃⌥1 recalls it
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== going by Dvorak: nothing is where a US keyboard has it
+  ✔ Arbor read the layout
+  ✔ the key that types D (where a US keyboard has H) shows the Desktop
+  ✔ so does the key that types Z (where a US keyboard has /)
+  ✔ the key that types [ (where a US keyboard has -) goes back
+  ✔ the key where a US keyboard has D is not Arbor's
+  ✔ the position shortcut is where a US keyboard has K
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== shortcutsFollowLayout: false gives positions back
+  ✔ where a US keyboard has Z shows the Desktop, whatever is printed there
+  ✔ where a US keyboard has Y shows everything
+  ✔ bindings says so
+  ✔ and shows US labels
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+== K126, for the record: macOS's own shortcuts, raw (which bits come with arrow keys, and with the Globe key?)
+
+== for the record: what the layouts' keys type
+
+== a US keyboard, really selected
+  ✔ Arbor read the layout at launch
+  ✔ the key labelled Z shows the Desktop
+  ✔ the key labelled Y shows everything
+
+== German, selected while Arbor runs in the background
+  ✔ Arbor hears of it
+  ✔ the key labelled Z (where a US keyboard has Y) shows the Desktop
+  ✔ the docked windows went out of view
+  ✔ the key labelled Y (where a US keyboard has Z) shows everything
+  ✔ the key labelled Ü (where a US keyboard has [) goes back
+  ✔ a shortcut written as a position has not moved
+  ✔ bindings shows what is printed on the key
+  ✔ and names the layout
+
+== K126: with two keyboards in the Input menu, ⌃⌥Space is macOS's as well. Who gets it?
+
+== Dvorak, then Russian: macOS pairs it with a Latin layout, as for ⌘-shortcuts
+  ✔ Arbor hears of it
+  ✔ the key that types D (where a US keyboard has H) shows the Desktop
+  ✔ ⌃⌥D still shows the Desktop, on the key that types D in that Latin layout
+
+== for the record: how soon after the selection Arbor has registered again
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+
+53 passed, 0 failed
