@@ -704,9 +704,14 @@ the command acted on (`executeAndSay` in `Controller+HeadsUp.swift`; spec F43). 
 - **The shortcuts on screen** (`show-shortcuts`, `Controller+CheatSheet.swift`): `CheatSheetModel` lists `KeyBindings.effective` by `Command.title` (a command with a default shortcut must have a `listedTitle`, which a test sees to), in the groups and the order of
   `Command.helpText`, which it reads (`Command.group`, `helpOrder`), so a command added to the help is in the right place in the panel. Families (⌃⌥1–9, ⌃⌥⌘ + arrow) fold into
   one row while they are complete, and `pointerRows(settings:)` adds what the pointer and the trackpad do. `showCheatSheet(_:on:)` draws it; a key or a click comes back as `OverlayActions.cheatSheetDismissed()`, and any command but a query puts it away, as does any shortcut's key going down (`Controller.shortcut`), since a peek takes keys without running a command.
-- **The panels** (`UI/HeadsUpPanel.swift`, `UI/CheatSheetPanel.swift`) share `PassingPanel`: a `.hudWindow` effect view with a rounded mask, two levels above `.floating` (the stage is one above),
+- **The panels** (`UI/HeadsUpPanel.swift`, `UI/CheatSheetPanel.swift`) share `PassingPanel`: on a `PanelGround` (below), two levels above `.floating` (the stage is one above),
   on every Space except other apps' full-screen ones, fading in 0.1 s and out in 0.25 s unless "Reduce motion" is on. The line ignores the mouse. The panel of shortcuts becomes the key
   window without activating Arbor, so the key that ends it is not typed into the document behind; it leaves at once, because a fading key window would swallow what is typed next.
+- **What every panel stands on** (`UI/PanelGround.swift`; the line, the panel of shortcuts, the minimap, the field for a name, Go to…): one of macOS's materials cut to rounded corners, a veil
+  over it, a hairline round it. The numbers are in `Platform/PanelLook.swift`, headless: one table of corners (20 for panels, a capsule for the line), the veil, and two inks, black or white at 85 % and 65 %.
+  **The measure:** in the look that ships, over a saturated red, a saturated blue, white and black, on a picture: words a person must read to act at least 4.5 to 1, all others at least 3, nothing below.
+  `PanelLookTests` reckon that anywhere from what the materials were measured to be on a hosted Mac. macOS's secondary and tertiary label colours are not used in what Arbor draws by hand: there they are greys
+  that stay grey whatever the ground has become. With Increase Contrast macOS itself outlines every window that has a shadow, so Arbor draws no line then.
 
 ## What Arbor draws at rest
 

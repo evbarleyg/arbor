@@ -119,7 +119,10 @@ final class NamePanel: OverlayPanel, NSTextFieldDelegate {
     guard let model else { return }
     let answer = model.answer(to: field.stringValue)
     noteLabel.stringValue = problem ?? answer.note
-    noteLabel.textColor = problem != nil || answer.isProblem ? .systemRed : PanelInk.second
+    // What is wrong is said louder, not redder: red stood out by 2 to 1 over a red window, and by 3 at best.
+    let isProblem = problem != nil || answer.isProblem
+    noteLabel.textColor = isProblem ? PanelInk.main : PanelInk.second
+    noteLabel.font = .systemFont(ofSize: 11, weight: isProblem ? .semibold : .regular)
   }
 
   private func submit() {
