@@ -139,10 +139,39 @@ func tellOfLostDrags(_ book: Book) {
     }
   }
 
+  // The hand is quick and then rests; the window comes after it in one leap. No movement of the mouse follows that could prompt a look at the window server.
+  for silent in [false, true] {
+    for goesOn in [false, true] {
+      let words = "a window is dragged 120 points in 80 ms, the hand rests, and the window comes after it in one leap 300 ms after the press"
+        + (silent ? ", its app saying nothing until it is over" : "") + (goesOn ? "; a second later the hand goes on" : "")
+      book.story(words) { story in
+        let (one, window) = stage(story)
+        window.app.isSilentDuringDrags = silent
+        one.mac.serverFollowsPointerAfter = 0.3
+        let pressed = one.mac.now
+        one.mac.drag(from: grip, to: CGPoint(x: grip.x + 120, y: grip.y + 40), steps: 4, interval: 0.02, rest: 0.01)
+        one.mac.pass(1)
+        if goesOn {
+          for part in 1...4 {
+            one.mac.moveMouse(to: CGPoint(x: grip.x + 120 + CGFloat(part) * 20, y: grip.y + 40))
+            one.mac.pass(0.08)
+          }
+        }
+        one.mac.release()
+        one.mac.pass(3)
+        let short = account(one, window, pressedAt: pressed)
+        story.check("the drag is reported to begin", one.heard.all.contains(.dragBegan(window.number)), short)
+        story.check("and to end, so that there is a drop to act on", one.heard.all.contains(.dragEnded(window.number)), short)
+        story.check("Arbor knows where the window is", one.snapshot(window)?.frame == window.bounds, "\(one.snapshot(window)?.frame.text ?? "")")
+        one.mac.note("IN SHORT: \(short)")
+      }
+    }
+  }
+
   // The other side of the same coin: a selection, during which the window does something by itself. Never a drag, never a resize.
   let own: [(words: String, change: (CGRect) -> CGRect)] = [
     ("moves the pointer's way", { $0.offsetBy(dx: 40, dy: 0) }), ("moves the pointer's way, as far as the pointer has gone", { $0.offsetBy(dx: 80, dy: 0) }),
-    ("moves against the pointer", { $0.offsetBy(dx: -40, dy: 0) }), ("moves across the pointer's way", { $0.offsetBy(dx: 0, dy: 40) }),
+    ("jumps to within 24 points of the pointer's own travel", { $0.offsetBy(dx: 100, dy: 0) }), ("moves against the pointer", { $0.offsetBy(dx: -40, dy: 0) }), ("moves across the pointer's way", { $0.offsetBy(dx: 0, dy: 40) }),
     ("moves aslant, half the pointer's way", { $0.offsetBy(dx: 30, dy: 30) }), ("is resized", { CGRect(x: $0.minX, y: $0.minY, width: $0.width + 40, height: $0.height) }),
   ]
   for what in own {
