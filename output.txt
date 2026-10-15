@@ -1,0 +1,295 @@
+# mac-shell: scripts/mac-shell/probe-claimed-keys.sh at d3d5533, macOS 26.6.2, 2026-10-15T04:58Z
+built Arbor, the pointer tool and the app bundles in 4s
+26.6.2
+
+== 0. the control: no Arbor at all
+> click 150 620
+> key ctrl+opt+a
+RESULT | no Arbor | status: no Arbor | item in the menu bar: no | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+  ✔ with nobody to take it, ⌃⌥A reaches the app: the witness works
+
+== 1. waiting for the permission: a first launch
+Arbor pid 17213: waiting for Accessibility permission (System Settings → Privacy & Secu
+  ✔ Arbor waits for the permission
+shot: mac-shell/10-waiting.png
+> click 150 620
+> key ctrl+opt+a
+RESULT | waiting for the permission (first launch) | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+Right now: all off without Accessibility permission.
+arborctl: ✘ Accessibility: not granted, so Arbor cannot move windows (System Settings → Privacy & Security → Accessibility; the `check-setup` command opens a window that explains it)
+– Shortcuts: 52 in the settings, not registered yet
+> click 780 15 --right
+shot: mac-shell/11-waiting-its-menu.png
+> key escape
+> click 150 620
+> key ctrl+opt+a
+RESULT | waiting for the permission, a second time | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+
+== 1b. the permission arrives: the control for 1
+1792040341.00 the bundle has an entry that allows
+  ✔ Arbor starts by itself
+2026-10-15T04:59:01.796Z INFO  registered 52 shortcuts in 1391 µs
+> click 150 620
+> key ctrl+opt+a
+RESULT | running, permission granted while it waited | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+  ✔ ⌃⌥A is Arbor's now
+shot: mac-shell/12-running.png
+
+== 2. with no event tap, as shipped: every default shortcut in turn
+event taps: 0
+false
+> key ctrl+opt+a
+> key ctrl+opt+n
+> key escape
+> key ctrl+opt+[
+> key ctrl+opt+cmd+0
+> key ctrl+opt+d
+> key ctrl+opt+cmd+down
+> key ctrl+opt+cmd+left
+> key ctrl+opt+cmd+right
+> key ctrl+opt+cmd+up
+> key ctrl+opt+g
+> key escape
+> key ctrl+opt+shift+f
+> key ctrl+opt+shift+down
+> key ctrl+opt+shift+left
+> key ctrl+opt+shift+right
+> key ctrl+opt+shift+up
+> key ctrl+opt+]
+> key ctrl+opt+cmd+=
+> key ctrl+opt+0
+> key ctrl+opt+down
+> key ctrl+opt+m
+> key escape
+> key ctrl+opt+shift+r
+> key ctrl+opt+left
+> key ctrl+opt+right
+> key ctrl+opt+up
+> key ctrl+opt+shift+z
+> key ctrl+opt+r
+> key ctrl+opt+shift+1
+> key ctrl+opt+shift+2
+> key ctrl+opt+shift+3
+> key ctrl+opt+shift+4
+> key ctrl+opt+shift+5
+> key ctrl+opt+shift+6
+> key ctrl+opt+shift+7
+> key ctrl+opt+shift+8
+> key ctrl+opt+shift+9
+> key ctrl+opt+space
+> key ctrl+opt+shift+/
+> key escape
+> key ctrl+opt+cmd+-
+> key ctrl+opt+f
+> key ctrl+opt+escape
+> key ctrl+opt+z
+> key ctrl+opt+1
+> key ctrl+opt+2
+> key ctrl+opt+3
+> key ctrl+opt+4
+> key ctrl+opt+5
+> key ctrl+opt+6
+> key ctrl+opt+7
+> key ctrl+opt+8
+> key ctrl+opt+9
+> key ctrl+opt+return
+RESULT | all defaults, no tap | pressed: 51 | reached the app: none
+
+== 2b. the key held down: its repeats and its release
+> click 150 620
+> key ctrl+opt+a --down
+> key ctrl+opt+a --repeat 12
+> key ctrl+opt+a --up
+RESULT | held with 12 repeats | the app got: 0 events
+
+== 5. states a person can be in without knowing
+> pause
+paused until `resume`; windows are back in view, in their own sizes
+shot: mac-shell/50-paused.png
+> click 150 620
+> key ctrl+opt+a
+RESULT | paused | status: paused: windows, shortcuts and gestures are left alone until `resume` | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+Right now: all but 1 off while Arbor is paused.
+> resume
+resumed
+> click 150 620
+> key ctrl+opt+a
+RESULT | resumed: the control | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+  ✔ ⌃⌥A is Arbor's again
+> hold
+holding this view until `release`
+> click 150 620
+> key ctrl+opt+a
+RESULT | the view is held | status: running: 1 display, 1 docked and 0 floating, 0 out of view; the view i | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+> release
+released
+> hold still
+holding still until `release`: the view moves only when you ask
+> click 150 620
+> key ctrl+opt+a
+RESULT | holding still | status: running: 1 display, 1 docked and 0 floating, 0 out of view; holding st | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+> release
+released
+> pass-through dev.arbor.test.keys on
+shortcuts and gestures are off in ArborKeys, except ⌃⌥⎋
+> click 150 620
+> key ctrl+opt+a
+RESULT | the app is on passThroughApps | status: running: 1 display, 1 docked and 0 floating, 0 out of view; shortcuts  | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+> pass-through dev.arbor.test.keys off
+shortcuts and gestures work in ArborKeys again
+> set hotkeysEnabled false
+hotkeysEnabled = false (was true); Settings… in Arbor's menu is the way back
+> click 150 620
+> key ctrl+opt+a
+RESULT | hotkeysEnabled false | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+> set hotkeysEnabled true
+hotkeysEnabled = true (was false)
+> click 150 620
+> key ctrl+opt+a
+RESULT | all of it undone: the control | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+  ✔ ⌃⌥A is Arbor's again
+
+== 6. while the hot keys are registered anew
+> click 150 620
+RESULT | 60 presses during 8 registrations | the app got: 0
+   1 registered 52 shortcuts in 1461 µs
+   1 registered 52 shortcuts in 1391 µs
+   1 registered 52 shortcuts in 1376 µs
+   1 registered 52 shortcuts in 1316 µs
+   1 registered 52 shortcuts in 1155 µs
+
+== 4. the key is Arbor's, and the app has roads of its own
+  05:00:50.716 road menu: an item with ctrl+opt+a
+  05:00:50.719 road monitor: installed
+  05:00:50.720 road tap: installed
+Arbor pid 23605: running: 1 display, 1 docked and 0 floating, 0 out of view
+> click 150 620
+> key ctrl+opt+a
+RESULT | running; the app has a menu item, a global monitor and a listening tap | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 1 down, 0 up | by other roads: 1 | another claimant: 0 | lines in Arbor's log: 2
+  05:00:50.716 road menu: an item with ctrl+opt+a
+  05:00:50.719 road monitor: installed
+  05:00:50.720 road tap: installed
+  05:00:52.172 road tap: down code=0 mods=ctrl+opt
+> click 150 620
+> key ctrl+opt+a
+RESULT | no Arbor; the same app: the control | status: no Arbor | item in the menu bar: no | the app got: 2 down, 1 up | by other roads: 2 | another claimant: 0 | lines in Arbor's log: 0
+  05:00:50.720 road tap: installed
+  05:00:52.172 road tap: down code=0 mods=ctrl+opt
+  05:00:54.453 road tap: down code=0 mods=ctrl+opt
+  05:00:54.462 road menu: the item ran
+  05:00:55.936 road hotkey: RegisterEventHotKey answered 0
+Arbor pid 23993: running: 1 display, 1 docked and 0 floating, 0 out of view
+2026-10-15T05:00:51.024Z INFO  registered 52 shortcuts in 1342 µs
+2026-10-15T05:00:56.219Z INFO  registered 52 shortcuts in 1337 µs
+> click 150 620
+> key ctrl+opt+a
+RESULT | running; the app in front registered ⌃⌥A itself BEFORE Arbor did | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 1 | another claimant: 0 | lines in Arbor's log: 2
+  05:00:55.936 road hotkey: RegisterEventHotKey answered 0
+  05:00:57.281 road hotkey: pressed
+  05:00:57.397 road hotkey: released
+  05:00:58.801 road hotkey: RegisterEventHotKey answered 0
+> click 150 620
+> key ctrl+opt+a
+RESULT | running; the app in front registered ⌃⌥A itself AFTER Arbor did | status: running: 1 display, 0 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 1 | another claimant: 0 | lines in Arbor's log: 2
+  05:00:58.801 road hotkey: RegisterEventHotKey answered 0
+  05:00:59.895 road hotkey: pressed
+  05:01:00.053 road hotkey: released
+  05:01:01.409 road secure: EnableSecureEventInput answered 0, on=true
+> click 150 620
+> key ctrl+opt+a
+RESULT | running; secure input is on | status: running: 1 display, 0 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+
+== 3. another program holds the same chord
+05:01:03.902 claimed pid=24430 exclusive=false answer=0
+> click 150 620
+> key ctrl+opt+a
+RESULT | another program claimed ⌃⌥A AFTER Arbor (plain) | status: running: 1 display, 0 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 1 | lines in Arbor's log: 2
+Arbor pid 24735: running: 1 display, 0 docked and 1 floating, 0 out of view
+2026-10-15T05:00:56.219Z INFO  registered 52 shortcuts in 1337 µs
+2026-10-15T05:01:07.266Z INFO  registered 52 shortcuts in 1210 µs
+✔ Shortcuts: 52 registered
+> click 150 620
+> key ctrl+opt+a
+RESULT | another program claimed ⌃⌥A BEFORE Arbor (plain) | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 1 | lines in Arbor's log: 2
+> click 150 620
+> key ctrl+opt+a
+RESULT | that program has gone: the control | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+05:01:11.912 claimed pid=24966 exclusive=true answer=0
+> click 150 620
+> key ctrl+opt+a
+RESULT | another program claimed ⌃⌥A AFTER Arbor exclusive | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 1 | lines in Arbor's log: 0
+Arbor pid 25058: running: 1 display, 1 docked and 0 floating, 0 out of view
+2026-10-15T05:01:07.266Z INFO  registered 52 shortcuts in 1210 µs
+2026-10-15T05:01:15.197Z INFO  registered 52 shortcuts in 1326 µs
+✔ Shortcuts: 52 registered
+> click 150 620
+> key ctrl+opt+a
+RESULT | another program claimed ⌃⌥A BEFORE Arbor exclusive | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 1 | lines in Arbor's log: 0
+> click 150 620
+> key ctrl+opt+a
+RESULT | that program has gone: the control | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+
+== 1c. the permission is taken away while Arbor runs
+1792040481.89 the bundle's entry says no
+  ✔ Arbor notices
+shot: mac-shell/13-taken-away.png
+> click 150 620
+> key ctrl+opt+a
+RESULT | the permission was taken away | status: Arbor's Accessibility permission was taken away, so it cannot move win | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+Right now: all off without Accessibility permission.
+1792040489.64 the bundle has an entry that allows
+  ✔ Arbor starts again
+> click 150 620
+> key ctrl+opt+a
+RESULT | the permission is back: the control | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+  ✔ ⌃⌥A is Arbor's again
+
+== 1d. a new build over an old grant: the switch in System Settings stays on
+this build's requirement begins: cdhash H"4c07fe27e6f5581
+1792040497.70 the bundle has an entry that allows, for one signature only
+
+Arbor pid 26214: running: 1 display, 1 docked and 0 floating, 0 out of view
+  ✔ the build the grant was made for runs: the control
+> click 150 620
+> key ctrl+opt+a
+RESULT | the build the grant was made for | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+Arbor pid 26775: waiting for Accessibility permission (System Settings → Privacy & Secu
+the entry still says: 2 (2 is allowed)
+shot: mac-shell/14-another-build.png
+> click 150 620
+> key ctrl+opt+a
+RESULT | another ad-hoc build, the old grant still switched on | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+
+== the table
+RESULT | no Arbor | status: no Arbor | item in the menu bar: no | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | waiting for the permission (first launch) | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | waiting for the permission, a second time | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | running, permission granted while it waited | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+RESULT | all defaults, no tap | pressed: 51 | reached the app: none
+RESULT | held with 12 repeats | the app got: 0 events
+RESULT | paused | status: paused: windows, shortcuts and gestures are left alone until `resume` | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | resumed: the control | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | the view is held | status: running: 1 display, 1 docked and 0 floating, 0 out of view; the view i | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | holding still | status: running: 1 display, 1 docked and 0 floating, 0 out of view; holding st | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | the app is on passThroughApps | status: running: 1 display, 1 docked and 0 floating, 0 out of view; shortcuts  | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | hotkeysEnabled false | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | all of it undone: the control | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | 60 presses during 8 registrations | the app got: 0
+RESULT | running; the app has a menu item, a global monitor and a listening tap | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 1 down, 0 up | by other roads: 1 | another claimant: 0 | lines in Arbor's log: 2
+RESULT | no Arbor; the same app: the control | status: no Arbor | item in the menu bar: no | the app got: 2 down, 1 up | by other roads: 2 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | running; the app in front registered ⌃⌥A itself BEFORE Arbor did | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 1 | another claimant: 0 | lines in Arbor's log: 2
+RESULT | running; the app in front registered ⌃⌥A itself AFTER Arbor did | status: running: 1 display, 0 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 1 | another claimant: 0 | lines in Arbor's log: 2
+RESULT | running; secure input is on | status: running: 1 display, 0 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+RESULT | another program claimed ⌃⌥A AFTER Arbor (plain) | status: running: 1 display, 0 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 1 | lines in Arbor's log: 2
+RESULT | another program claimed ⌃⌥A BEFORE Arbor (plain) | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 1 | lines in Arbor's log: 2
+RESULT | that program has gone: the control | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | another program claimed ⌃⌥A AFTER Arbor exclusive | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 1 | lines in Arbor's log: 0
+RESULT | another program claimed ⌃⌥A BEFORE Arbor exclusive | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 1 | lines in Arbor's log: 0
+RESULT | that program has gone: the control | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+RESULT | the permission was taken away | status: Arbor's Accessibility permission was taken away, so it cannot move win | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+RESULT | the permission is back: the control | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 1
+RESULT | the build the grant was made for | status: running: 1 display, 1 docked and 0 floating, 0 out of view | item in the menu bar: yes | the app got: 0 down, 0 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 2
+RESULT | another ad-hoc build, the old grant still switched on | status: waiting for Accessibility permission (System Settings → Privacy & Secu | item in the menu bar: yes | the app got: 1 down, 1 up | by other roads: 0 | another claimant: 0 | lines in Arbor's log: 0
+
+10 passed, 0 failed
+exit code 0
