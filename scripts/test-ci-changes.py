@@ -26,11 +26,13 @@ def pull(ref="feat/x", labels=(), base=rules.INTEGRATION_BRANCH, draft=False):
                                              "labels": [{"name": name} for name in labels]}}
 
 
-def push(before="B"):
-    return "push", {"before": before}
+def push(before="B", ref="refs/heads/main"):
+    return "push", {"before": before, "ref": ref}
 
 
 TRUNK = pull(ref=rules.INTEGRATION_BRANCH, base=rules.MAIN)
+TRAIN = push(NEW_BRANCH, "refs/heads/train/7")
+ON_THE_TRUNK = (rules.INTEGRATION_BRANCH, "H")
 # No Mac at all; its own tests, built upon an earlier build; the same, built from nothing; every test, built from nothing.
 NO, UPON, FRESH, FULL = None, rules.UPON, rules.FRESH, rules.FULL
 
@@ -143,6 +145,14 @@ TABLE = [
     (FRESH, "push: fast-forward to a head that passed upon a cache", push(), dict(between={("B", "H"): [CORE, UI]}, passed={"H"})),
     (FULL, "push: a new branch", push(NEW_BRANCH), dict()),
     (NO, "push: a new branch at a commit that passed, built from nothing", push(NEW_BRANCH), dict(fresh={"H"})),
+    (FRESH, "a merge train: code that builds on Linux, in more commits than are looked back on", TRAIN, dict(between={ON_THE_TRUNK: [CORE, DOC]})),
+    (FRESH, "a merge train: macOS-only code", TRAIN, dict(between={ON_THE_TRUNK: [UI]})),
+    (NO, "a merge train of prose", TRAIN, dict(between={ON_THE_TRUNK: [DOC]})),
+    (NO, "a merge train: only prose since the train before it passed", TRAIN, dict(between={ON_THE_TRUNK: [UI, DOC], ("P2", "H"): [DOC]}, fresh={"P2"})),
+    (FRESH, "a merge train: a pass upon a cache does not count", TRAIN, dict(between={ON_THE_TRUNK: [UI]}, passed={"H"})),
+    (FULL, "a merge train too long to list", TRAIN, dict()),
+    (FRESH, "a merge train pushed again", push("B", "refs/heads/train/7"), dict(between={("B", "H"): [CORE]})),
+    (FULL, "a new branch that only sounds like one", push(NEW_BRANCH, "refs/heads/trains"), dict(between={ON_THE_TRUNK: [DOC]})),
     (FULL, "every night", ("schedule", {}), dict()),
     (FULL, "every night, whatever has passed", ("schedule", {}), dict(fresh={"H"})),
     (FULL, "started by hand, for which there is no rule", ("workflow_dispatch", {}), dict()),

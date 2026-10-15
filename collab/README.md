@@ -265,7 +265,7 @@ Three rules keep the Linux build working and the platforms telling the same stor
    are fifteen Linux runners for everybody: a new job costs all of them, so put a new step into a job that is there if you
    can. A new job is named `linux-…` and gets a place in the `needs` of `linux-verdict`; `scripts/test-ci-linux.py` (part of
    `make lint`) fails if it has none, or if a step of `make check` is run by no job. Where work is integrated (a push to
-   `main`, a pull request into it) the job `tests-whole` runs plain `swift test` once more, in the image, and holds
+   `main`, a merge train, a pull request into `main`) the job `tests-whole` runs plain `swift test` once more, in the image, and holds
    it against what the parts said, test by test.
 
    **A pull request that is still a draft gets `linux / lint` and nothing else**: no tests, no verdict, no Mac (unless `[mac]` or the
@@ -275,6 +275,10 @@ Three rules keep the Linux build working and the platforms telling the same stor
    no verdict: `linux / verdict` ends as skipped, which is no success. Those skipped checks stay with the commit, beside the ones
    of the run that marking it ready starts, so the one to go by is the newest `linux / verdict`, not "all that is called linux".
    A pull request that passed and is made a draft again keeps its checks: whoever lands also asks whether it is a draft.
+
+   **A merge train**: whoever lands pushes the trunk with a batch of pull requests on it as `train/<n>`, without a pull request. All
+   of CI runs there, on the sum, since two that are each green can be red together. Green (`linux / verdict`, and the Mac's
+   checks passed or skipped), and `swarm/trunk` moves forward to that very commit.
 
    A macOS job is slow and runners are few, so a first small job,
    `changes`, leaves it out (it shows as skipped, and the annotation on
@@ -291,7 +295,7 @@ Three rules keep the Linux build working and the platforms telling the same stor
      (the report pushed after the code; a branch moved to a tested head). Passed means the job `macos`
      and the two that speak for it, `real-windows` and `tests-accounted-for`: all three green.
 
-   The second rule does not hold where work is integrated (pushes to `main`, pull requests into it,
+   The second rule does not hold where work is integrated (pushes to `main`, merge trains, pull requests into `main`,
    the pull request from `swarm/trunk`): there every change of code is compiled
    and driven on a Mac. So a change to the controller or a platform protocol can
    pass its own pull request and break the macOS-only code that uses it. The check `linux / typecheck-mac`
@@ -307,7 +311,7 @@ Three rules keep the Linux build working and the platforms telling the same stor
    compile-time condition, a trait that switches a test on or off, an Apple framework, real files, sockets,
    processes, threads and clocks, or a place in that script's `ALWAYS`). The annotation on `changes` says how it runs, and why:
    - **in an ordinary pull request** it builds upon an earlier job's build (`docs/TESTING.md`, "What a run starts with");
-   - **where work is integrated** (pull requests into `main`, the one from `swarm/trunk`, pushes to `main`) it builds from
+   - **where work is integrated** (pull requests into `main`, the one from `swarm/trunk`, pushes to `main`, merge trains) it builds from
      nothing, and only a pass of that kind (the job `macos-from-nothing` marks it) spares a later run there its Mac;
    - **every test, built from nothing**: every night on `main`, when **`[mac-full]` in the subject of the head commit** (or the
      label `mac-full`) asks for it, when the workflow is started by hand, and when anything is unclear.
