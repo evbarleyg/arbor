@@ -165,6 +165,10 @@ public protocol WindowSystem: AnyObject {
   /// they return. The default does nothing.
   func moveTogether(_ frames: [(window: WindowID, frame: CGRect)])
 
+  /// Waits until the window server lists these windows at these frames. After `limit` seconds it looks no more, whatever is listed by
+  /// then. Nothing else happens meanwhile: whoever calls this stands still. What for: Controller+InOnePiece.swift. The default does not wait.
+  func waitUntilListed(_ frames: [(window: WindowID, frame: CGRect)], atMost limit: Double)
+
   /// `setFrame` for one window of the app `pid` while the window system is stopped (a pause), without starting it:
   /// starting asks every running app for its windows, and one that hangs, which is a reason to pause, makes
   /// everybody wait. Nothing is observed or reported because of it. The default starts, moves and stops.
@@ -195,6 +199,8 @@ extension WindowSystem {
 
 
   public func moveTogether(_ frames: [(window: WindowID, frame: CGRect)]) {}
+
+  public func waitUntilListed(_ frames: [(window: WindowID, frame: CGRect)], atMost limit: Double) {}
 
   public func setFrameOnce(_ frame: CGRect, of window: WindowID, pid: Int32) -> CGRect? {
     start()

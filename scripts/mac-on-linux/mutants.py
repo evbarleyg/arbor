@@ -165,6 +165,35 @@ MUTANTS = [
         "red": ["an app hangs in the middle of a move into a frame that hangs over the display's edge: it is sized first, where it is"],
     },
     {
+        "name": "nobody waits to be listed",
+        "old": "      guard !awaited.isEmpty, uptime - began < limit else { break }\n",
+        "new": "      guard false, !awaited.isEmpty, uptime - began < limit else { break }\n",
+        "red": [
+            "Arbor waits for a window to be listed at a frame it gets 20 ms later: it waits until then, and no longer",
+            "Arbor waits for a window to be listed at a frame it never gets: it goes on when the time is up",
+        ],
+    },
+    {
+        "name": "whoever waits to be listed waits out the time",
+        "old": "      awaited.removeAll { window, frame in Self.serverBounds(of: window)?.approximatelyEquals(frame, tolerance: 1) ?? true }\n",
+        "new": "      awaited.removeAll { window, frame in Self.serverBounds(of: window) == nil && frame.isEmpty }\n",
+        "red": [
+            "Arbor waits for a window to be listed where it already is: it does not wait",
+            "Arbor waits for a window to be listed at a frame it gets 20 ms later: it waits until then, and no longer",
+            "Arbor waits for a window that has closed: it does not wait",
+            "a window closes while Arbor waits for it to be listed at a frame it never gets: it waits until the window has gone, and no longer",
+        ],
+    },
+    {
+        "name": "a window the window server does not know is waited for",
+        "old": "Self.serverBounds(of: window)?.approximatelyEquals(frame, tolerance: 1) ?? true }\n",
+        "new": "Self.serverBounds(of: window)?.approximatelyEquals(frame, tolerance: 1) ?? false }\n",
+        "red": [
+            "Arbor waits for a window that has closed: it does not wait",
+            "a window closes while Arbor waits for it to be listed at a frame it never gets: it waits until the window has gone, and no longer",
+        ],
+    },
+    {
         "name": "what claims to be a dialog is one",
         "old": "    let mayBeOutOfSight = subrole == kAXDialogSubrole\n",
         "new": "    let mayBeOutOfSight = false\n",

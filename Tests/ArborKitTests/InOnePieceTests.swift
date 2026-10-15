@@ -278,3 +278,151 @@ private func isHole(_ problem: NotInOnePiece) -> Bool { if case .hole = problem 
     expectInOnePiece(h, "close") { h.system.close(windows[2]) }
   }
 }
+
+/// What leaves waits for what has grown (`Controller.waitForWhatGrew`): a trial, to be judged by a film.
+@MainActor
+@Suite struct WhatLeavesWaitsTests {
+  /// Arranged, and the second window has the keyboard.
+  private func arranged(_ count: Int, _ settings: Settings = light, foretold: Bool = true) -> (Harness, [WindowID]) {
+    let (h, windows) = pile(count, settings, foretold: foretold)
+    h.run("arrange")
+    h.system.userFocus(windows[1])
+    return (h, windows)
+  }
+
+  @Test(arguments: [4, 8], [true, false])
+  func itWaitsOnceForTheOneThatGrewAtTheFrameItTookBeforeAnybodyLeaves(_ count: Int, foretold: Bool) throws {
+    let (h, windows) = arranged(count, foretold: foretold)
+    let mark = h.system.moveLog.count
+    h.run("zoom")
+    let wait = try #require(h.system.waits.first)
+    #expect(h.system.waits.count == 1)
+    #expect(wait.frames == [windows[1]: h.frame(windows[1])])
+    #expect(wait.limit == 0.05)
+    let (sooner, later) = (h.system.moveLog[mark..<wait.afterMoves].map { $0.window }, h.system.moveLog[wait.afterMoves...].map { $0.window })
+    #expect(Set(sooner) == [windows[1]], "the one that grows has been asked")
+    #expect(Set(later) == Set(windows).subtracting([windows[1]]), "and nobody else has")
+  }
+
+  /// Those who come back larger than they left are waited for as well: from one window that fills the screen to the two beside it.
+  @Test func arrivalsThatGrowAreWaitedForToo() throws {
+    let (h, windows) = arranged(4)
+    h.run("zoom")
+    let waits = h.system.waits.count
+    h.run("focus right")
+    #expect(h.system.waits.count == waits + 1)
+    let arrived = try [windows[2]: #require(h.frame(windows[2])), windows[3]: #require(h.frame(windows[3]))]
+    #expect(h.system.waits.last?.frames == arrived)
+    #expect(h.controller.parked.contains(windows[1]), "the story: the one that filled the screen has left")
+  }
+
+  /// One that comes back as large as it left is only moved, which shows at once: from one window that fills the screen to another, and back.
+  @Test func anArrivalThatKeepsItsSizeIsNotWaitedFor() throws {
+    let (h, windows) = arranged(4)
+    h.run("zoom")
+    h.run("zoom \(windows[2].rawValue)")
+    let (waits, size) = (h.system.waits.count, try #require(h.frame(windows[1])).size)
+    h.run("back")
+    #expect(h.frame(windows[1])?.size == size && !h.controller.parked.contains(windows[1]) && h.controller.parked.contains(windows[2]), "the story")
+    #expect(h.system.waits.count == waits)
+  }
+
+  /// Once for a layout is not once for an act. Out of view a window has made up its mind to be higher than its slot. It comes back beside another, refuses
+  /// and becomes a tile, and the view goes on to it: two layouts, in each of which something grows and something leaves. Known, and what it costs.
+  @Test func anActOfTwoLayoutsWaitsTwice() throws {
+    let (h, windows) = arranged(4)
+    h.run("zoom")
+    h.system.setMinimumSize(windows[2], CGSize(width: 300, height: 800))
+    let waits = h.system.waits.count
+    h.run("focus right")
+    #expect(h.controller.parked == [windows[0], windows[1], windows[3]], "the story: it fills the screen in the end")
+    #expect(h.system.waits.dropFirst(waits).map { $0.frames.keys.sorted() } == [[windows[2], windows[3]], [windows[2]]])
+  }
+
+  @Test func whereNobodyLeavesNobodyWaits() {
+    let (h, _) = arranged(4)
+    #expect(h.system.waits.isEmpty, "Arrange Windows: all arrive")
+    h.run("zoom")
+    let waits = h.system.waits.count
+    h.run("show-all")
+    #expect(h.system.waits.count == waits, "everything: three come back, one shrinks")
+  }
+
+  /// Those who have long been out of view leave nothing: one step out from a window that fills the screen, one comes back, one shrinks, two stay away.
+  @Test func whoIsOutOfViewAlreadyDoesNotLeave() {
+    let (h, windows) = arranged(4)
+    h.run("zoom")
+    let waits = h.system.waits.count
+    h.run("out")
+    #expect(h.controller.parked == [windows[2], windows[3]], "the story")
+    #expect(h.system.waits.count == waits)
+  }
+
+  /// Only for what has grown or arrived: a window that cannot change its size is moved, which shows at once.
+  @Test func whatOnlyMovesIsNotWaitedFor() throws {
+    let h = Harness(settings: light)
+    let fixed = h.system.open(app: "Fixed", pid: 1001, frame: CGRect(x: 120, y: 90, width: 300, height: 200), isResizable: false)
+    let others = (2...4).map { h.system.open(app: "App\($0)", pid: Int32(1000 + $0), frame: CGRect(x: 160, y: 120, width: 520, height: 380)) }
+    h.start()
+    h.run("arrange")
+    // The group it is in: itself and one other.
+    let tree = h.workspace.tree
+    let group = try #require(tree.leaf(containing: fixed).flatMap { tree.parent(of: $0) })
+    let size = h.frame(fixed)?.size
+    h.run("zoom-node \(group)")
+    let beside = Set(others).subtracting(h.controller.parked)
+    #expect(beside.count == 1 && h.frame(fixed)?.size == size, "the story: two leave, one grows, and it is as large as it was")
+    #expect(h.system.waits.map { Set($0.frames.keys) } == [beside])
+  }
+
+  @Test func whereNothingGrowsOrArrivesNobodyWaits() {
+    let (h, windows) = arranged(4)
+    h.run("desktop")
+    #expect(h.controller.parked == Set(windows), "the story: all have left")
+    #expect(h.system.waits.isEmpty)
+  }
+
+  /// A stage covers the road, and waits for nobody.
+  @Test func behindAStageNobodyWaits() {
+    var settings = light
+    settings.animationDuration = 0.2
+    let (h, _) = arranged(4, settings)
+    h.run("zoom")
+    #expect(!h.controller.parked.isEmpty, "the story: others have left")
+    #expect(h.system.waits.isEmpty)
+  }
+
+  /// Higher alone is grown as well: from two, one above the other, to the lower one.
+  @Test func whatOnlyGrowsHigherIsWaitedFor() throws {
+    let (h, windows) = arranged(4)
+    h.run("zoom")
+    h.run("out")
+    let (waits, before) = (h.system.waits.count, try #require(h.frame(windows[1])))
+    h.run("zoom")
+    let after = try #require(h.frame(windows[1]))
+    #expect(after.width == before.width && after.height > before.height, "the story")
+    #expect(h.system.waits.dropFirst(waits).map { $0.frames } == [[windows[1]: after]])
+  }
+
+  /// Nor whoever has an edge in the hand.
+  @Test func withAnEdgeInTheHandNobodyWaits() throws {
+    let (h, windows) = arranged(4)
+    var frame = try #require(h.frame(windows[3]))
+    frame.size.width -= 60
+    h.system.userResize(windows[3], to: frame, release: false)
+    #expect(h.controller.edgeResize != nil, "the story")
+    h.run("zoom")
+    #expect(!h.controller.parked.isEmpty, "the story: others have left")
+    #expect(h.system.waits.isEmpty)
+  }
+
+  /// Whoever has a window in the hand is not made to stand still.
+  @Test func withAWindowInTheHandNobodyWaits() {
+    let (h, windows) = arranged(4)
+    h.system.beginDrag(windows[3])
+    h.run("zoom")
+    #expect(h.controller.parked == [windows[0], windows[2]], "the story: the others have left, but for the one in the hand")
+    h.system.endDrag()
+    #expect(h.system.waits.isEmpty)
+  }
+}

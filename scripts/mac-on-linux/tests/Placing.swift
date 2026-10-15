@@ -326,4 +326,60 @@ func tellOfPlacing(_ book: Book) {
     story.check("and where the pointer is", one.layer.cursorLocation() == CGPoint(x: window.frame.midX, y: window.frame.midY))
     story.check("and that the button is up", !one.layer.isMouseButtonDown())
   }
+
+  // `waitUntilListed`. This Mac lists a frame as soon as the app has it; how far behind a real one is nobody has measured.
+  book.story("Arbor waits for a window to be listed where it already is") { story in
+    let (one, window) = stage(story)
+    let waited = one.mac.secondsTheMainThreadWaited
+    one.layer.waitUntilListed([(WindowID(window.number), window.frame)], atMost: 0.05)
+    story.check("it does not wait", one.mac.secondsTheMainThreadWaited == waited, "\(one.mac.secondsTheMainThreadWaited - waited) s")
+  }
+
+  book.story("Arbor waits for a window to be listed at a frame it gets 20 ms later") { story in
+    let (one, window) = stage(story)
+    let target = window.frame.insetBy(dx: -40, dy: -30)
+    one.mac.later(0.02) { one.mac.appMoves(window, to: target) }
+    let waited = one.mac.secondsTheMainThreadWaited
+    one.layer.waitUntilListed([(WindowID(window.number), target)], atMost: 0.05)
+    let took = one.mac.secondsTheMainThreadWaited - waited
+    story.check("it waits until then, and no longer", window.frame == target && took >= 0.02 && took < 0.023, "\(took) s, \(window.frame.text)")
+  }
+
+  book.story("Arbor waits for a window to be listed at a frame it never gets") { story in
+    let (one, window) = stage(story)
+    let waited = one.mac.secondsTheMainThreadWaited
+    one.layer.waitUntilListed([(WindowID(window.number), window.frame.insetBy(dx: -40, dy: -30))], atMost: 0.05)
+    let took = one.mac.secondsTheMainThreadWaited - waited
+    story.check("it goes on when the time is up", took >= 0.05 && took < 0.053, "\(took) s")
+  }
+
+  // Known, and what it costs: the window server lists what was swept aside at the sides, and Accessibility has it where it is.
+  book.story("Arbor waits for a window to be listed where it is while macOS shows its desktop") { story in
+    let (one, window) = stage(story)
+    one.mac.pressShowDesktopKey()
+    let waited = one.mac.secondsTheMainThreadWaited
+    one.layer.waitUntilListed([(WindowID(window.number), window.frame)], atMost: 0.05)
+    let took = one.mac.secondsTheMainThreadWaited - waited
+    story.check("it waits in vain, until the time is up", took >= 0.05 && took < 0.053, "\(took) s")
+  }
+
+  book.story("Arbor waits for a window that has closed") { story in
+    let (one, window) = stage(story)
+    let frame = window.frame.insetBy(dx: -40, dy: -30)
+    one.mac.close(window)
+    one.mac.pass(1)
+    let waited = one.mac.secondsTheMainThreadWaited
+    one.layer.waitUntilListed([(WindowID(window.number), frame)], atMost: 0.05)
+    story.check("it does not wait", one.mac.secondsTheMainThreadWaited == waited, "\(one.mac.secondsTheMainThreadWaited - waited) s")
+  }
+
+  book.story("a window closes while Arbor waits for it to be listed at a frame it never gets") { story in
+    let (one, window) = stage(story)
+    let frame = window.frame.insetBy(dx: -40, dy: -30)
+    one.mac.close(window)
+    let waited = one.mac.secondsTheMainThreadWaited
+    one.layer.waitUntilListed([(WindowID(window.number), frame)], atMost: 0.05)
+    let took = one.mac.secondsTheMainThreadWaited - waited
+    story.check("it waits until the window has gone, and no longer", took > 0 && took < 0.03, "\(took) s")
+  }
 }

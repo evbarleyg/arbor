@@ -1362,5 +1362,7 @@ private final class ReplayWindowSystem: WindowSystem {
   }
   /// A hint that may be ignored: the `setFrame` calls it foretells are answered from the recording one by one.
   func moveTogether(_ frames: [(window: WindowID, frame: CGRect)]) {}
+  /// A recording has no display to wait for.
+  func waitUntilListed(_ frames: [(window: WindowID, frame: CGRect)], atMost limit: Double) {}
   func setFrameOnce(_ frame: CGRect, of window: WindowID, pid: Int32) -> CGRect? { setFrame(frame, of: window) }
 }

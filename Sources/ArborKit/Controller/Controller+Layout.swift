@@ -110,7 +110,9 @@ extension Controller {
     // gets it. A neighbour that gave room may refuse in its turn, and a window can take a size out of view and still
     // refuse it in view, so there is a second round. After that no more gaps move, and after two more there is
     // an end: an app that asks for more every time it is asked is not asked for ever.
-    var again = apply(layout, on: displayID)
+    // With nothing in front of the windows, and nobody's hand on one: whoever drags must not be made to wait. The first round alone, so
+    // that a layout waits once at most (`waitForWhatGrew`).
+    var again = apply(layout, on: displayID, inFullView: staged == nil && drag == nil && edgeResize == nil)
     if askTilesAgain(layout, on: displayID) { again = true }
     var round = 0
     while again, round < 4 {
@@ -158,8 +160,8 @@ extension Controller {
   }
 
   /// Moves docked windows into their slots and parks hidden ones. Returns
-  /// true if a window refused its slot (a new minimum size was learned).
-  func apply(_ layout: Layout, on displayID: DisplayID) -> Bool {
+  /// true if a window refused its slot (a new minimum size was learned). `inFullView`: a person sees every state on the way.
+  func apply(_ layout: Layout, on displayID: DisplayID, inFullView: Bool = false) -> Bool {
     var learnedMinimum = false
     // However this ends, an answer holds for the layout it was given in: next time a sheet may have closed.
     defer { justAnswered.removeAll() }
@@ -168,6 +170,7 @@ extension Controller {
     var unknown: [(window: WindowID, slot: CGRect, question: CGRect)] = []
     // Looked at before anybody moves. One window needs no company, if it is the only one the layout moves.
     let leaves = leavesInSight(for: layout, on: displayID)
+    let sizes = layout.windowFrames.keys.reduce(into: [WindowID: CGSize]()) { $0[$1] = windows[$1]?.frame.size }
     let othersMove = layout.windowFrames.contains { window, slot in
       window != drag?.window && windows[window].map { isStillToBePlaced($0, in: slot) } == true
     }
@@ -196,12 +199,13 @@ extension Controller {
     }
     // What leaves goes last, from behind what has grown (Controller+InOnePiece.swift), and is foretold only now: all that was foretold before has
     // been asked for, so no answer is lost, and those who stay have their frames.
+    let goes = layout.hiddenWindows.sorted().filter {
+      $0 != drag?.window && !isLetBe($0) && (!parked.contains($0) || hasLeftItsCorner($0))
+    }
+    if inFullView, !goes.isEmpty { waitForWhatGrew(in: layout, since: sizes) }
     if leaves.count + (othersMove ? 1 : 0) > 1 { system.moveTogether(leaves) }
     if let display = display(displayID) {
-      for window in layout.hiddenWindows.sorted()
-      where window != drag?.window && !isLetBe(window) && (!parked.contains(window) || hasLeftItsCorner(window)) {
-        park(window, on: display)
-      }
+      for window in goes { park(window, on: display) }
     }
     return learnedMinimum
   }

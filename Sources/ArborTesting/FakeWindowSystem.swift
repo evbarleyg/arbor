@@ -239,6 +239,14 @@ public final class FakeWindowSystem: WindowSystem {
   /// windows and real apps), so a window that only moves is there before any that is resized, whoever was named first. Off, the default:
   /// in the order named, which is what a window system does that asks one window after another.
   public var appsWorkSideBySide = false
+  /// One `waitUntilListed`: for whom, how long at most, and how many moves had been made by then.
+  public struct Wait: Equatable {
+    public var frames: [WindowID: CGRect]
+    public var limit: Double
+    public var afterMoves: Int
+  }
+  /// The fake lists every frame at once, so nobody waits here.
+  public private(set) var waits: [Wait] = []
   /// What came of the moves announced with `moveTogether`, until `setFrame` asks for it.
   public private(set) var answersAhead: [WindowID: (requested: CGRect, answer: CGRect?)] = [:]
 
@@ -293,6 +301,10 @@ public final class FakeWindowSystem: WindowSystem {
     for (window, frame) in appsWorkSideBySide ? sideBySide(frames) : frames {
       answersAhead[window] = (frame, move(window, to: frame, together: true))
     }
+  }
+
+  public func waitUntilListed(_ frames: [(window: WindowID, frame: CGRect)], atMost limit: Double) {
+    waits.append(Wait(frames: Dictionary(frames.map { ($0.window, $0.frame) }) { $1 }, limit: limit, afterMoves: moveLog.count))
   }
 
   /// In the order in which they are done (`appsWorkSideBySide`): a resize counts for ten moves.

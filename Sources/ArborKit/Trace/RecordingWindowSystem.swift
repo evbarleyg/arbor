@@ -142,6 +142,15 @@ public final class RecordingWindowSystem: WindowSystem {
     recorder.record(.note("moveTogether, \(frames.count) windows, took \(took) s"))
   }
 
+  /// It returns nothing, so it is no line a replay has to find again either. A trace says how long Arbor stood still.
+  public func waitUntilListed(_ frames: [(window: WindowID, frame: CGRect)], atMost limit: Double) {
+    guard recorder.isRecording else { return inner.waitUntilListed(frames, atMost: limit) }
+    let before = recorder.clock()
+    inner.waitUntilListed(frames, atMost: limit)
+    let took = ((recorder.clock() - before) * 10_000).rounded() / 10_000
+    recorder.record(.note("waitUntilListed, \(frames.count) windows, took \(took) s"))
+  }
+
   /// In a trace it is a `setFrame` like any other: what was asked of the window, and what came of it.
   public func setFrameOnce(_ frame: CGRect, of window: WindowID, pid: Int32) -> CGRect? {
     let actual = inner.setFrameOnce(frame, of: window, pid: pid)

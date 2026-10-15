@@ -1368,6 +1368,29 @@ public final class AXWindowSystem: WindowSystem {
     return bounds(in: info)
   }
 
+  /// How long it rests between two looks at the window server's list.
+  private static let restBetweenLooksAtTheList = 0.001
+
+  /// A window the window server does not know is not waited for. One question to the window server for each window and look: those who are
+  /// waited for are few. While macOS shows its desktop it lists windows at the sides, where Accessibility does not have them: that wait is in vain.
+  public func waitUntilListed(_ frames: [(window: WindowID, frame: CGRect)], atMost limit: Double) {
+    let began = uptime
+    var awaited = frames
+    var looks = 0
+    // Nobody signals it: a rest, and nothing else.
+    let rest = DispatchSemaphore(value: 0)
+    while true {
+      awaited.removeAll { window, frame in Self.serverBounds(of: window)?.approximatelyEquals(frame, tolerance: 1) ?? true }
+      looks += 1
+      guard !awaited.isEmpty, uptime - began < limit else { break }
+      _ = rest.wait(timeout: .now() + Self.restBetweenLooksAtTheList)
+    }
+    let late = awaited.map { "\($0.window)" }.joined(separator: " ")
+    Log.info(
+      "waited \(Int(((uptime - began) * 1000).rounded())) ms, \(looks) looks, for \(frames.count) windows to be listed as they answered"
+        + (late.isEmpty ? "" : "; not yet: \(late)"))
+  }
+
   // MARK: The two signs
 
   /// The pointer moved with the button down and nothing is decided yet.

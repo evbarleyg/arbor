@@ -62,12 +62,12 @@ and the Mac agree: Arbor did what the specs said, or what had been overruled and
 | [geometry](#geometry) | 36 | 2 | 11 | 15 | 8 | 2 | 25 | 1 | 2 | 8 | 6 |
 | [identity](#identity) | 31 | 4 | 7 | 6 | 7 | 11 | 12 | 1 | 4 | 14 | 9 |
 | [permissions](#permissions) | 23 | 8 | 6 | 3 | 3 | 11 | 12 | 2 | 2 | 7 | 4 |
-| [timing](#timing) | 55 | 7 | 7 | 16 | 10 | 22 | 29 | 4 | 7 | 15 | 11 |
+| [timing](#timing) | 55 | 7 | 7 | 16 | 10 | 22 | 29 | 4 | 7 | 15 | 10 |
 | [input](#input) | 59 | 8 | 7 | 15 | 13 | 24 | 23 | 6 | 8 | 22 | 11 |
 | [looks](#looks) | 21 | 0 | 0 | 0 | 1 | 20 | 2 | 2 | 3 | 14 | 6 |
 | [never-exercised](#never-exercised) | 15 | 7 | 1 | 13 | 0 | 1 | 0 | 0 | 14 | 1 | 15 |
 | [toolchain](#toolchain) | 45 | 1 | 0 | 1 | 4 | 40 | 26 | 1 | 2 | 16 | 7 |
-| **all** | 465 | 62 | 91 | 124 | 73 | 177 | 236 | 19 | 60 | 150 | 111 |
+| **all** | 465 | 62 | 91 | 124 | 73 | 177 | 236 | 19 | 60 | 150 | 110 |
 
 **Where the difference bit**
 
@@ -4035,7 +4035,7 @@ Timing: how long things take, and what can happen meanwhile.
 - **Found by:** Films of a hosted Mac at 60 frames a second, by the judge of polish, read beside the code of the build that was filmed.
 - **Stand-ins play it:** **no**
 - **Guard:** **none**
-- **Arbor copes:** **not yet**
+- **Arbor copes:** Controller.waitForWhatGrew, on trial: before windows are sent away Arbor waits, 50 ms at most, until the window server lists what has grown. Whether what is listed is what is shown a film is to say.
 - **Read in:** `Sources/ArborKit/Controller/Controller+InOnePiece.swift`, `collab/polish/light-1.md`
 
 ### a-hosted-mac-holds-a-release-for-57-ms-by-itself

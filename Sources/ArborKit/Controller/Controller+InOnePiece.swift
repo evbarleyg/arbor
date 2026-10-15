@@ -14,8 +14,26 @@ import CoreGraphics
 /// have their frames, those who leave (`leavesInSight`).
 ///
 /// It is an order of askings, and no more. Those who leave were asked after the one that grows before this order was made, and were filmed
-/// leaving first all the same.
+/// leaving first all the same: hence the wait (`waitForWhatGrew`).
 extension Controller {
+  /// After how long no further look is taken for what has grown: three frames of a display that shows sixty a second.
+  public static let longestWaitForWhatGrew = 0.05
+
+  /// A TRIAL, to be judged by a film. The windows that leave, though asked last, were seen to go first, and the desk showed through until the
+  /// one that fills the screen had grown. A guess at the cause: a new place shows at once, a new size when the app has drawn itself in it, which
+  /// is after it has answered. So before `apply` sends windows away Arbor stands still until the window server lists what has grown at the
+  /// frame it answered with. If nothing has grown it does not. An arrival that keeps its size is a place alone, and is not waited for.
+  /// Whether what is listed is what is shown nobody has measured either.
+  ///
+  /// `sizes`: those of the windows the layout shows, before it was applied.
+  func waitForWhatGrew(in layout: Layout, since sizes: [WindowID: CGSize]) {
+    let grown = layout.windowFrames.keys.sorted().compactMap { window -> (window: WindowID, frame: CGRect)? in
+      guard let now = windows[window]?.frame, let before = sizes[window] else { return nil }
+      return now.width > before.width + 1 || now.height > before.height + 1 ? (window, now) : nil
+    }
+    if !grown.isEmpty { system.waitUntilListed(grown, atMost: Self.longestWaitForWhatGrew) }
+  }
+
   /// The docked windows a layout shows, with their slots, in the order in which they are asked.
   func inOnePiece(_ slots: [WindowID: CGRect]) -> [(window: WindowID, slot: CGRect)] {
     func turn(_ window: WindowID, _ slot: CGRect) -> Int {

@@ -328,6 +328,9 @@ and nothing else is worth optimising.
   `Controller+InOnePiece.swift`). Only docked windows are foretold, and not when they are put back. The hint changes what the calls cost, never
   what they return: `MoveTogetherTests` walks two desks through everything, one taking the hint and one ignoring it, and compares them after every step.
   **Whoever gives `apply` or `park` a new reason to leave a docked window alone gives it to `movesInSight` or `leavesInSight` as well**; the tests fail otherwise.
+- On trial: before the first round of a layout sends windows away, with no stage up and nothing in anybody's hand, Arbor's main thread stands still until the
+  window server lists what has grown at the frame it answered with (`WindowSystem.waitUntilListed`, `Controller.waitForWhatGrew`); after 50 ms it
+  looks no more. Those who leave were filmed going before the one that fills the screen had grown, though they had been asked after it.
 
 ## Holding the view
 
