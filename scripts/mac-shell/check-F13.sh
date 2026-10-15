@@ -80,8 +80,8 @@ security dump-keychain "$keychain" 2>/dev/null | grep -E '^class|0x00000001|"lab
 check "the identity is in the keychain" with "$(security find-identity -p codesigning "$keychain")" "\"$identity\""
 check "nobody trusts the certificate, and nothing was asked to" \
   without "$(security find-identity -v -p codesigning "$keychain")" "\"$identity\""
-# Every build from here on signs with the key. A keychain made with `security create-keychain` gives its keys no partition list, so macOS asks
-# nobody (check-signing.sh). Should it ask all the same, the script has given up after a minute, has taken the identity out again and has said
+# Every build from here on signs with the key. A keychain made with `security create-keychain` that lies in the run's folder, and not in
+# ~/Library/Keychains, gives its keys no partition list, so macOS asks nobody (check-signing.sh). Should it ask all the same, the script has given up after a minute, has taken the identity out again and has said
 # that the dialog stays until it is closed; this run ends here: better than to learn it from a `make install`.
 check "codesign could use the key at once, without a dialog" says "$ARBOR_OUT/identity.txt" "codesign can sign with it" \
   || die "codesign cannot use the key without a dialog; the rest would put dialogs on this Mac's screen"

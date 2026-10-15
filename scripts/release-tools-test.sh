@@ -154,8 +154,9 @@ check "with any other certificate, issued" test "$(signed "Developer ID Applicat
 echo "make-signing-identity.sh"
 # A keychain in a folder: `keys` has "<hash of the public key> <name>" a line, `certificates` "<SHA-1> <that hash> <name>", `allowed` the keys
 # somebody has answered Always Allow for, `listed` the search list. $FAKE_MACOS is 14, 15 or 26: they differ in what the import calls a key
-# and in codesign's words. In the login keychain a key has a partition list that codesign is not on, so macOS asks, in a dialog that calls the
-# key by the name of the file it came in and outlives codesign; in another keychain nothing is asked. `answer` is what somebody does about it.
+# and in codesign's words. In a keychain that lies in ~/Library/Keychains, the login keychain or another, a key has a partition list that
+# codesign is not on, so macOS asks, in a dialog that calls the key by the name of the file it came in and outlives codesign; in a keychain
+# that lies elsewhere nothing is asked. `answer` is what somebody does about it.
 tools="$root/keychain-tools"
 mkdir -p "$tools" "$root/home/Library/Keychains"
 cp scripts/make-signing-identity.sh "$root/scripts/"
@@ -252,7 +253,7 @@ if ! grep -qxF "$(argument_after --keychain "$@")" listed; then
   if [ "$FAKE_MACOS" = 26 ]; then echo "$sha: no identity found" >&2; else echo "error: The specified item could not be found in the keychain." >&2; fi
   exit 1
 fi
-case "$(argument_after --keychain "$@")" in */login.keychain-db) ;; *) exit 0 ;; esac
+case "$(argument_after --keychain "$@")" in */Library/Keychains/*) ;; *) exit 0 ;; esac
 id=$(grep "^$sha " certificates | cut -d ' ' -f 2)
 grep -qxF "$id" allowed && exit 0
 # codesign waits for the answer: Always Allow, Allow, Deny, or none. Only an answer takes the dialog off the screen.
@@ -267,7 +268,8 @@ TOOL
 chmod +x "$tools"/*
 login="$root/home/Library/Keychains/login.keychain-db"
 other="$root/other.keychain-db"
-touch "$login" "$other"
+beside="$root/home/Library/Keychains/another.keychain-db"
+touch "$login" "$other" "$beside"
 said="$root/identity.txt"
 state="$root/keychain"
 # a_mac <14|15|26>: a fresh keychain that holds two keys and a certificate of somebody's, with both files on the search list.
@@ -365,6 +367,20 @@ a_mac 14
 somebody --keychain "$other"
 check "somebody there: the words allow for a dialog and do not promise one" \
   test "$code $(count "If macOS now asks for the keychain's password" "$said") $(count "will now ask" "$said") $(count "codesign can sign with it" "$said")" = "0 1 0 1"
+# As a hosted Mac had it: it is where the file lies, not what it is called.
+a_mac 26
+echo "$beside" >> "$state/listed"
+identity ARBOR_DIALOG_WAIT=1 -- --keychain "$beside"
+check "one that lies beside the login keychain is asked about as that is: nobody there, and it says so and leaves nothing" \
+  test "$code $(count "It had no answer in 1 seconds" "$said") $(count "" "$state/dialogs")" = "1 1 1"
+check "nothing is left" as_before
+a_mac 26
+echo "$beside" >> "$state/listed"
+echo always-allow > "$state/answer"
+somebody --keychain "$beside"
+check "somebody there, who answers Always Allow: the words had allowed for the dialog" \
+  test "$code $(count "If macOS now asks for the keychain's password" "$said") $(count "codesign can sign with it" "$said") $(count "" "$state/dialogs")" = "0 1 1 1"
+rm -f "$state/answer"
 a_mac 26
 identity -- --keychain "$other" --name "Somebody/Else"
 check "a name that no file can have" test "$code $(count "codesign can sign with it" "$said") $(cut -d ' ' -f 2- "$state/came-in")" = "0 1 Somebody-Else"

@@ -12,7 +12,8 @@
 #   5  sign.sh: the stamp agrees with codesign, ad hoc and with the certificate
 #   6  at a terminal, a keychain of its own: no password is asked for, and no dialog is promised
 #   7  the account's own login keychain, whose password nobody here knows: macOS asks; nobody answers; Deny
-#   8  as a person runs it: the login keychain made anew with a known password, the dialog, the password, Always Allow
+#   8  as a person runs it: the login keychain made anew with a known password, the dialog, the password, Always Allow. Where macOS does not
+#      take that password (26), the same in a keychain beside it: macOS asks about a key in any keychain that lies in ~/Library/Keychains
 #
 # Only on one of GitHub's Macs: it puts keychains of its own on the account's search list and takes them off again, answers macOS's dialogs,
 # and in the end REPLACES THE ACCOUNT'S LOGIN KEYCHAIN by an empty one.
@@ -245,12 +246,18 @@ security create-keychain -p "$pw" "$login" && security set-keychain-settings "$l
 security default-keychain -d user -s "$login"
 security list-keychains -d user -s "$login"
 listed_before=$login
+road=$login
+where=()
 if ! security unlock-keychain -p "$pw" "$login"; then
   # macOS 26: for a file of that name it refuses the very password it was made with, here and in its dialog.
-  echo "  THIS macOS DOES NOT TAKE THE PASSWORD THE LOGIN KEYCHAIN WAS MADE WITH: the road cannot be gone to its end here"
-  exit 0
+  echo "  THIS macOS DOES NOT TAKE THE PASSWORD THE LOGIN KEYCHAIN WAS MADE WITH: the same road in a keychain beside it"
+  road="$HOME/Library/Keychains/arbor-road.keychain-db"
+  where=(--keychain "$road")
+  security create-keychain -p "$pw" "$road" && security set-keychain-settings "$road" && security unlock-keychain -p "$pw" "$road" || die "no keychain"
+  at_exit 'security delete-keychain "$road" 2> /dev/null'
+  list "$road"
 fi
-limit 90 "$ARBOR_ROOT/scripts/at-a-terminal.py" 80 "$make_identity" > "$ARBOR_OUT/road.txt" 2>&1 &
+limit 90 "$ARBOR_ROOT/scripts/at-a-terminal.py" 80 "$make_identity" ${where[@]+"${where[@]}"} > "$ARBOR_OUT/road.txt" 2>&1 &
 started $!; asking=$!
 if check "the dialog comes" await_dialog 15; then
   sleep 1
@@ -263,14 +270,14 @@ ended "$asking" 900
 tr -d '\r' < "$ARBOR_OUT/road.txt" | sed 's/^/    /' | head -n 9 | cut -c 1-200
 check "the script ends by saying that codesign can sign" with "$(cat "$ARBOR_OUT/road.txt")" "codesign can sign with it"
 check "no dialog is left" quiet
-echo "  the key's partition list: [$(partitions "$login")]"
-check "Always Allow has put codesign's partition on the key's list" with "$(partitions "$login")" "apple:"
-check "the next signature asks nobody" signs "$login"
+echo "  the key's partition list: [$(partitions "$road")]"
+check "Always Allow has put codesign's partition on the key's list" with "$(partitions "$road")" "apple:"
+check "the next signature asks nobody" signs "$road"
 limit 60 "$ARBOR_ROOT/scripts/sign.sh" "$app" | sed 's/^/    /'
 check "sign.sh, told nothing, finds it and signs twice with it, and nobody is asked" same "$(stamp) $(kind) $(asks && echo asked)" "local Authority=$name "
-made again-login
+made again-login -- ${where[@]+"${where[@]}"}
 check "run again with nobody there: nothing to do, and nobody is asked" same "$code $(echo "$said" | grep -c "Nothing to do") $(asks && echo asked)" "0 1 "
-made login-removed -- --remove
+made login-removed -- --remove ${where[@]+"${where[@]}"}
 check "--remove takes it out again" same "$code $(echo "$said" | grep -c "^Deleted the certificate")" "0 1"
 limit 60 "$ARBOR_ROOT/scripts/sign.sh" "$app" | sed 's/^/    /'
 check "sign.sh is back to ad hoc, and says so in the bundle" same "$(stamp) $(kind)" "adhoc Signature=adhoc"

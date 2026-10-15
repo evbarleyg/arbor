@@ -16,6 +16,7 @@
 # Seven builds, one of them for two architectures: more than lib.sh gives a script.
 ARBOR_TIME_LIMIT=${ARBOR_TIME_LIMIT:-2400}
 source "$(dirname "${BASH_SOURCE[0]}")/lib.sh"
+[ -z "${ARBOR_REHEARSAL:-}" ] || { echo "a rehearsal has no keychains, no codesign, no bundles and no permission database"; exit 77; }
 
 tool=Contents/Helpers/arborctl
 bundle_id=com.evbarleyg.arbor

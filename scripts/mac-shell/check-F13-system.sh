@@ -17,6 +17,13 @@ start an Arbor that arranges every window on the account's own settings, click i
 tcc="/Library/Application Support/com.apple.TCC/TCC.db"
 tcc_sql() { sudo sqlite3 "$tcc" "$1"; }
 tcc_rows() { tcc_sql "SELECT service, client, client_type, auth_value, auth_reason, length(csreq) FROM access WHERE client = '$bundle_id';"; }
+# What macOS's list of login items says of each entry of Arbor's, as "[enabled, allowed, notified] (0xb)". The disposition stands above the
+# identifier ("2.com.evbarleyg.arbor"); the line "Bundle Identifier:" belongs to the same entry.
+login_dispositions() {
+  sudo sfltool dumpbtm 2> /dev/null | awk -v id="$bundle_id" '
+    /^ *Disposition:/ { said = $0; sub(/^ *Disposition: */, "", said) }
+    /^ *Identifier:/ && index($0, id) { print said }'
+}
 system_cleanup() {
   if [ -d "$installed" ]; then (cd "$src" && limit 120 make uninstall) > /dev/null 2>&1; fi
   tcc_sql "DELETE FROM access WHERE client = '$bundle_id';" 2>/dev/null
@@ -28,24 +35,34 @@ f13_describe_the_mac
 mkdir -p "$(dirname "$ARBOR_POINTER")"
 swiftc -O -swift-version 5 "$ARBOR_ROOT/scripts/mac-shell/pointer.swift" -o "$ARBOR_POINTER" > "$ARBOR_OUT/build-pointer.log" 2>&1 &
 pointer_build=$!
+# What System Settings posts when its switch is flipped (first-five-minutes.sh).
+cat > "$sandbox/notice.swift" << 'SWIFT'
+import Foundation
+DistributedNotificationCenter.default().postNotificationName(
+  Notification.Name("com.apple.accessibility.api"), object: nil, userInfo: nil, deliverImmediately: true)
+SWIFT
+swiftc -O -swift-version 5 "$sandbox/notice.swift" -o "$sandbox/notice" > "$ARBOR_OUT/build-notice.log" 2>&1 \
+  || { cat "$ARBOR_OUT/build-notice.log"; die "the tool that posts the notice did not compile"; }
 f13_clone
 
 step "1  the identity, in a keychain on the search list"
-# Not one named login.keychain-db: there macOS asks in a dialog, which check-signing.sh answers (steps 7 and 8). What follows needs an identity
-# that sign.sh finds by itself, through the search list.
-keychain="$HOME/Library/Keychains/arbor-f13.keychain-db"
+# lib-F13.sh's, in the run's folder, and not one in ~/Library/Keychains: about a key in a keychain that lies there macOS asks in a dialog,
+# whatever the file is called and whoever made it (seen here, with arbor-f13.keychain-db under the throwaway HOME), which check-signing.sh
+# answers (steps 7 and 8). What follows needs an identity that sign.sh finds by itself, through the search list.
 f13_make_keychain
 echo "the search list: $(security list-keychains -d user | tr -d '\n')"
 limit 120 ./scripts/make-signing-identity.sh --keychain "$keychain" < /dev/null 2>&1 | tee "$ARBOR_OUT/identity.txt"
 security find-identity -p codesigning
-check "codesign could use the key at once, without a dialog" says "$ARBOR_OUT/identity.txt" "codesign can sign with it"
+# Without the identity every build below is ad hoc, which is not what this script asks about, and the dialog lies over every picture.
+check "codesign could use the key at once, without a dialog" says "$ARBOR_OUT/identity.txt" "codesign can sign with it" \
+  || die "codesign cannot use the key without a dialog; the rest would be about ad-hoc builds"
 check "the identity is found through the search list, as sign.sh looks for it" \
   with "$(security find-identity -p codesigning)" "\"$identity\""
 
 # From here on Arbor is started as a person would start it, and lives in the account's real home whatever this shell's
-# HOME says.
-unset ARBOR_HOME
-export ARBOR_SOCKET="$real_home/Library/Application Support/Arbor/arbor.sock"
+# HOME says. `open` hands none of this shell's variables on. The folder is named and not left out: lib.sh reads Arbor's log from it.
+export ARBOR_HOME="$real_home/Library/Application Support/Arbor"
+export ARBOR_SOCKET="$ARBOR_HOME/arbor.sock"
 
 step "2  make install, as a person runs it"
 tcc_sql "DELETE FROM access WHERE client = '$bundle_id';" 2>/dev/null
@@ -55,7 +72,8 @@ if ! limit 900 make install > "$ARBOR_OUT/install.txt" 2>&1; then
   die "make install failed"
 fi
 grep -E "^Signed|^Installed|^Linked|^Started|^  " "$ARBOR_OUT/install.txt"
-check "it found the identity by itself" says "$ARBOR_OUT/install.txt" "with \"$identity\", this Mac's own certificate"
+by_identity=""
+check "it found the identity by itself" says "$ARBOR_OUT/install.txt" "with \"$identity\", this Mac's own certificate" && by_identity=yes
 check "it starts Arbor and prints its status" says "$ARBOR_OUT/install.txt" "Started Arbor: "
 check "Arbor runs from ~/Applications" runs "$installed"
 check "to this shell, as to a person's, arborctl is the link in ~/.local/bin" same "$(command -v arborctl)" "$home/.local/bin/arborctl"
@@ -67,6 +85,8 @@ echo "  without ARBOR_SOCKET, under this shell's HOME: $(env -u ARBOR_SOCKET arb
 step "3  does the permission survive a rebuild?"
 if ! tcc_sql "SELECT count(*) FROM access;" > /dev/null 2>&1; then
   echo "skipped: the permission database cannot be read here"
+elif [ -z "$by_identity" ]; then
+  echo "skipped: the build is not signed with the identity, which is red above, and this step is about builds that are"
 else
   echo "columns: $(tcc_sql "SELECT group_concat(name, ' ') FROM pragma_table_info('access');")"
   check "started by macOS and never granted anything, Arbor waits for permission" within 5 status_starts "waiting for Accessibility"
@@ -76,12 +96,24 @@ else
   granted_cdhash=$(cdhash "$installed")
   if tcc_sql "INSERT OR REPLACE INTO access (service, client, client_type, auth_value, auth_reason, auth_version, csreq, indirect_object_identifier, flags, last_modified) VALUES ('kTCCServiceAccessibility', '$bundle_id', 0, 2, 3, 1, X'$hex', 'UNUSED', 0, strftime('%s', 'now'));"; then
     echo "granted to this build: $(tcc_rows)"
-    if within 6 status_starts "running"; then
-      echo "  Arbor noticed by itself"
-    else
+    # The switch in System Settings does more than write the row: it posts a notice, and a running process learns of a grant through nothing
+    # else (seen on hosted Macs, here too: neither the row nor a restart of tccd is noticed). In this order: announced before tccd has read
+    # the row, the flag says yes and event taps stay refused in that process. A relaunch is the last resort.
+    took="the row alone"
+    if ! within 6 status_starts "running"; then
+      took="the row, a restart of tccd, and the notice System Settings posts"
       sudo killall -9 tccd 2>/dev/null
-      within 6 status_starts "running" && echo "  Arbor noticed once tccd had been restarted"
+      sleep 3
+      "$sandbox/notice"
+      if ! within 8 status_starts "running"; then
+        took="a relaunch"
+        arborctl quit > /dev/null 2>&1
+        within 10 gone "$installed"
+        open "$installed"
+        within 10 status_starts "running"
+      fi
     fi
+    echo "  what it took for Arbor to see the grant: $took"
     echo "  $(arborctl status | head -n 1)"
     check "with the grant, this build runs" status_starts "running"
 
@@ -96,10 +128,14 @@ else
     ARBOR_SIGN_IDENTITY=- limit 600 make install 2>&1 | tee "$ARBOR_OUT/install-adhoc.txt" | grep -E "error|^Signed|^Installed|^Started|^  |^Asked"
     check "an ad-hoc build does not inherit the grant: the stale-signature case" within 8 status_starts "waiting for Accessibility"
     check "make install explains that case" says "$ARBOR_OUT/install-adhoc.txt" "tccutil reset Accessibility $bundle_id"
-    echo "  the entry is still there, and still says allowed: $(tcc_rows)"
+    echo "  the entry after that (the fourth field: 2 allowed, 0 denied): $(tcc_rows)"
     shot 03-stale-signature
+    # What `make install` advises. It can be tried only from a real ~/Applications.
     tccutil reset Accessibility "$bundle_id"
+    known "tccutil knows no bundle under /tmp, where this copy is installed, lsregister or not; it does know one in ~/Applications \
+(docs/REALITY.md: tccutil-knows-a-bundle-only-from-where-and-by-whom-it-was-opened)"
     check "tccutil reset removes the entry" test -z "$(tcc_rows)"
+    known ""
   else
     echo "skipped: the permission database cannot be written here"
   fi
@@ -113,6 +149,7 @@ echo "  $(arborctl launch-at-login on)"
 check "launch-at-login on, from ~/Applications" same "$(arborctl launch-at-login)" on
 check "the binary agrees, without asking the running app" \
   same "$("$installed/Contents/MacOS/Arbor" --launch-at-login)" on
+check "and macOS's own list of login items has the entry enabled" with "$(login_dispositions)" "[enabled"
 sudo sfltool dumpbtm 2>/dev/null | grep -i -B 4 -A 14 "$bundle_id" | head -n 60 > "$ARBOR_OUT/login-item.txt"
 grep -iE "^ *(name|disposition|identifier|url|bundle id|type|developer)" "$ARBOR_OUT/login-item.txt" | head -n 16
 limit 600 make install 2>&1 | grep -E "error|^Installed|^Started"
@@ -136,7 +173,8 @@ check "make uninstall removed the login item" says "$ARBOR_OUT/uninstall.txt" "A
 check "asked Arbor to quit" says "$ARBOR_OUT/uninstall.txt" "Asked the running Arbor to quit"
 check "removed the app" test ! -e "$installed"
 check "nothing of it is left running" gone "$installed"
-echo "  login items that still mention Arbor: $(sudo sfltool dumpbtm 2>/dev/null | grep -ci "$bundle_id")"
+echo "  what macOS's list of login items says of Arbor's entries now: $(login_dispositions | tr '\n' ';')"
+check "none of them is enabled: Arbor does not open at the next login" without "$(login_dispositions)" "[enabled"
 check "settings are still there" test -f "$real_home/Library/Application Support/Arbor/settings.json"
 
 step "6  a downloaded copy"
