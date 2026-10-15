@@ -1,0 +1,23 @@
+# mac-shell: scripts/mac-shell/probe-idle.sh at 5c40e2e, macOS 26.6.2, 2026-10-15T00:15Z
+ 0:15  up 6 mins, 1 user, load averages: 28.93 36.14 21.50
+ powernap             1
+ sleep                0 (sleep prevented by addonsd, powerd)
+ displaysleep         0 (display sleep prevented by addonsd)
+ 0:24  up 15 mins, 1 user, load averages: 0.41 7.00 12.18
+ %CPU COMM
+  4.7 /var/folders/n6/hn37q6pj7sj_9dmqqc2113800000gn/T/provjobd473271126
+  1.2 /Users/runner/actions-runner/extracted/bin/Runner.Worker
+  0.4 /usr/libexec/configd
+  0.2 /usr/sbin/notifyd
+  0.1 /sbin/launchd
+  0.1 sleep
+  0.1 /usr/libexec/opendirectoryd
+ps: stdout: Broken pipe
+   UserIsActive                   1
+   PreventUserIdleDisplaySleep    1
+   PreventUserIdleSystemSleep     1
+   pid 99(powerd): [0x0000000800018000] 00:14:59 PreventUserIdleSystemSleep named: "Powerd - Prevent sleep while display is on"  
+   pid 99(powerd): [0x0000000800098001] 00:14:59 UserIsActive named: "com.apple.powerd.ws.initialize"  
+1 HIDIdleTime entries
+seconds since the last input: 541.59
+exit code 0
