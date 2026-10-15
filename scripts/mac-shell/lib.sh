@@ -69,7 +69,8 @@
 #                                   ("Which Arbor", below); ARBOR_SWITCHES=shipped above arbor_start: Arbor as a person gets it
 #   arbor_start [count] [NAME=v…]   test windows W1…Wcount (default 4), then Arbor limited to them
 #   arbor_stop [name]               quit Arbor, check that every test window is back on screen (and take the
-#                                     picture <name> of that), close the test windows
+#                                     picture <name> of that), close the test windows. ARBOR_AFTER_QUIT=<function>: called before
+#                                     they close, for a script that wants a look of its own at what quitting left
 #   arbor_quit | arbor_kill [sig]   end Arbor alone, politely or with a signal (default KILL); the windows,
 #   arbor_relaunch [NAME=v…]          the settings and the saved state stay for arbor_relaunch
 #   arbor_ended                     Arbor has ended some other way (its menu, say): there is nothing left to stop
@@ -1347,6 +1348,7 @@ arbor_stop() {
     check "window $number is back on screen after quitting" eventually arbor_in_view "$id"
   done
   [ -n "${1:-}" ] && shot "$1"
+  [ -n "${ARBOR_AFTER_QUIT:-}" ] && "$ARBOR_AFTER_QUIT"
   arbor_log
   arbor_close_windows
   arbor_new_home

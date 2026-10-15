@@ -93,6 +93,8 @@ struct Pointer {
       status-item <pid> [--frame]   x y: the middle of that process's menu bar item (--frame: x y w h)
       menu-item <pid> <title>       x y: the middle of the item of its open menu whose title starts so
       menu-mark <pid> <title>       that item's mark, e.g. ✓, or - when it has none
+      keyboard                      the process id of the app in front, then the number of its window that
+                                    keys go to; - for none
       button <pid> x y <name>       x y: the middle of the close, minimize or zoom button of that process's
                                     window whose top-left corner is nearest the point
       screen-access | ax-access     true or false: Screen Recording, Accessibility
@@ -811,6 +813,30 @@ struct Pointer {
         try MainActor.assumeIsolated { try showOnEveryDesktop(picture) }
       } catch {
         fail("could not set the wallpaper: \(error)")
+      }
+
+    case "keyboard":
+      // Never a failure: that nobody has the keyboard is an answer too. On GitHub's Macs Accessibility names
+      // no focused application, whoever is in front, so there the workspace is asked.
+      var pid: pid_t = 0
+      if let application = attribute(AXUIElementCreateSystemWide(), kAXFocusedApplicationAttribute),
+        CFGetTypeID(application) == AXUIElementGetTypeID()
+      {
+        AXUIElementGetPid(application as! AXUIElement, &pid)
+      }
+      if pid == 0 { pid = NSWorkspace.shared.frontmostApplication?.processIdentifier ?? 0 }
+      guard pid != 0 else {
+        print("- -")
+        break
+      }
+      var number: CGWindowID = 0
+      if let window = attribute(AXUIElementCreateApplication(pid), kAXFocusedWindowAttribute),
+        CFGetTypeID(window) == AXUIElementGetTypeID(),
+        _AXUIElementGetWindow(window as! AXUIElement, &number) == .success
+      {
+        print("\(pid) \(number)")
+      } else {
+        print("\(pid) -")
       }
 
     case "screen-access":

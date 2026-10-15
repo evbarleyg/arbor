@@ -19,6 +19,10 @@ final class Arbor {
   let overlays: WatchedOverlays
   let store: MemoryStateStore
   let scheduler: ManualScheduler
+  /// `trace on` records here as it does in the app (docs/TRACES.md). The lines stay in memory, in the world's
+  /// `traces`: every invocation replays the session from its start, and `Session.publish` writes a trace out
+  /// whole.
+  let recorder = TraceRecorder()
   /// How many of the store's saves have been written to state.json.
   var savesSeen = 0
 
@@ -51,7 +55,7 @@ final class Arbor {
 
   init(
     pid: Int32, bundled: Bool, noHotkeys: Bool, noStatusItem: Bool, onlyPIDs: Set<Int32>?, settings: Settings,
-    world: World
+    home: String, world: World
   ) {
     self.pid = pid
     self.bundled = bundled
@@ -60,9 +64,22 @@ final class Arbor {
     overlays = WatchedOverlays(world: world)
     store = MemoryStateStore()
     scheduler = ManualScheduler()
+    // The world's clock, and no word about where it runs: the same session gives the same bytes every time.
+    recorder.clock = { [scheduler] in scheduler.now }
+    recorder.arborVersion = "rehearsal"
+    recorder.osVersion = "rehearsal"
+    // The clock is the script's, as in arbor-sim: a second passes with every line, however long a Mac takes.
+    recorder.limits.seconds = .infinity
+    recorder.openSink = { [unowned world] name in
+      let sink = MemoryTraceSink(location: "\(home)/traces/\(name)")
+      world.traces[name] = sink
+      return sink
+    }
+    // Through the recording decorators, as `ArborApp` wires them.
     controller = Controller(
-      system: WatchedSystem(world: world), overlays: overlays, store: store, scheduler: scheduler,
-      settings: settings,
+      system: RecordingWindowSystem(wrapping: WatchedSystem(world: world), recorder: recorder),
+      overlays: RecordingOverlays(wrapping: overlays, recorder: recorder), store: store,
+      scheduler: RecordingScheduler(wrapping: scheduler, recorder: recorder), settings: settings,
       filter: WindowFilter(onlyPIDs: onlyPIDs, ownPID: pid))
     // `SystemLoginItem`: only an app in a bundle can be a login item.
     if bundled { controller.loginItem = world.loginItem }
