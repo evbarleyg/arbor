@@ -7,7 +7,7 @@ source "$(dirname "$0")/../lib.sh"
 arbor_build
 arbor_start 3 ARBOR_NO_HOTKEYS=0 ARBOR_NO_STATUS_ITEM=0
 
-# The rows as `arborctl menu` prints them: title, two spaces, shortcut, and "(grey)" on one that cannot be chosen.
+# The rows as `arborctl menu` prints them: title, two spaces, shortcut, and "(gray)" on one that cannot be chosen.
 undo_row() { says "    $1  ⌃⌥Z$2" arborctl menu; }
 redo_row() { says "    $1  ⌃⌥⇧Z$2" arborctl menu; }
 
@@ -16,8 +16,8 @@ proves A31
 click_window "$W1"
 start1=$(real_frame_of "$W1")
 start2=$(real_frame_of "$W2")
-check "Undo names no step and is grey" undo_row "Undo" "  (grey)"
-check "so is Redo" redo_row "Redo" "  (grey)"
+check "Undo names no step and is grey" undo_row "Undo" "  (gray)"
+check "so is Redo" redo_row "Redo" "  (gray)"
 check "the open menu has the row" click_menu "Undo"
 check "the click on it runs nothing" stays fails ran undo
 key escape
@@ -67,7 +67,7 @@ proves A31
 check "the menu offers to redo the resize" redo_row "Redo Resize" ""
 check "⌃⌥⇧Z reaches Arbor" pressed ctrl+opt+shift+z redo
 check "the window is 50 points wider again" eventually width_is "$W1" "$((width + 50))" 6
-check "there is nothing left to redo" eventually redo_row "Redo" "  (grey)"
+check "there is nothing left to redo" eventually redo_row "Redo" "  (gray)"
 settled
 check "⌃⌥Z reaches Arbor" pressed ctrl+opt+z undo
 check "the gap is back" eventually width_is "$W1" "$width"
@@ -182,7 +182,7 @@ proves A31
 check "one step is left, the first dock" undo_row "Undo Dock" ""
 check "⌃⌥Z reaches Arbor" pressed ctrl+opt+z undo
 check "nothing is docked" eventually count docked 0
-check "Undo is grey again" eventually undo_row "Undo" "  (grey)"
+check "Undo is grey again" eventually undo_row "Undo" "  (gray)"
 # shellcheck disable=SC2086
 check "the first window floats where it was before it was docked" eventually frame_is "$W1" $start1
 # shellcheck disable=SC2086
