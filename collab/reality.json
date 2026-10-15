@@ -6150,18 +6150,19 @@
    ]
   },
   {
-   "id": "f13-nothing-has-been-installed-or-updated-and-no-key-has-signed",
+   "id": "f13-no-hand-has-installed-it-and-no-update-has-been-taken",
    "kind": "never-exercised",
    "layer": "machine",
    "expected": "F13: a download opens, `make install` gives Arbor an identity under which its permission survives the next build, an update is offered, and Arbor opens at login.",
-   "happened": "Nobody knows: whether `make install` gives Arbor an identity under which its permission survives the next build, whether a second build has the same requirement, what uninstalling leaves, whether an update is offered, what `make release` makes and what Gatekeeper says to it, whether Arbor opens at login. `check-F13.sh` ran for the first time on a hosted Mac on 2026-10-15 (the trunk at `0951b7f3`, macOS 26.6.2, one display of 1024×768, Reduce Motion on, once, every key and click a posted event; its output is not in the repository) and ended in its second step of ten, 11 passed and 2 failed, of 75 checks. What held: `make app` builds and signs ad hoc, `codesign --verify --deep --strict` passes, `arborctl` has an identifier of its own, version, build number and commit are stamped, the property list is valid; the identity is made, is in the keychain, and nobody is asked to trust it; the account's own keychain settings are as they were. What did not: the-imported-key-is-filed-under-another-label-than-the-tool-looks-for; and codesign-finds-no-identity-in-a-keychain-that-is-on-no-search-list, which is the script's own doing: under its throwaway `HOME` the list is empty. `check-F13-system.sh` and `watchdog-bundle.sh` have never run; none of the three can be rehearsed (no keychain, no `codesign`); `release-tools-test.sh` runs against stand-ins for the macOS tools. The road the guide recommends, a dialog of macOS's own, has never been walked. Everybody installs.",
-   "found": "A census of the tests and specs, then the script's first run.",
+   "happened": "Nobody knows: what a person's own hands get: the dialog answered on their own login keychain, the switch flipped in System Settings, a release downloaded and put in the old one's place, a login after which Arbor is there. What scripts can ask has been asked, on hosted Macs on 2026-10-15 (plain branches of the hour, macOS 26.6.2, one display of 1024×768, Reduce Motion on, each run once, every key and click a posted event; the outputs are not in the repository). `check-F13.sh`: first 11 passed and 2 failed, and an end in its second step of ten (the-imported-key-is-filed-under-another-label-than-the-tool-looks-for; codesign-finds-no-identity-in-a-keychain-that-is-on-no-search-list). Then, the tool written anew and the script cured, all ten steps: 80 passed and 4 failed, all four the script's own (doctor-fails-on-a-mac-as-it-comes; tmp-is-private-tmp): builds signed ad hoc and with the identity, installing, a different build with the same requirement, uninstalling, both windows about updates, the hardened runtime, `make release` for both architectures, `--remove`. `check-F13-system.sh`: first 20 passed and 6 failed, none of them Arbor's: macOS asked in a dialog for a keychain of the script's own under ~/Library/Keychains, nobody answered, the tool took certificate and key out again as it promises, and every build of that run was ad hoc. That run ended with exit code 0 and without its count: the script had unset a variable that `lib.sh`'s last lines read. Then, mended, 27 passed and 1 failed (tccutil-knows-a-bundle-only-from-where-and-by-whom-it-was-opened). A grant made to one build held for the next, which was different code under the same identity and ran without being granted anything: that is what `make install` promises. An ad-hoc build in between did not inherit it, macOS rewrote the entry to denied, and the signed build after it waited too (a-permission-belongs-to-a-signature). Arbor's entry among the login items is enabled when asked for, survives a new build copied over the old one, and is listed as disabled after `make uninstall`. A downloaded copy signed ad hoc is \"Not Opened\", with Move to Trash and Done; a process of it is listed meanwhile, which is no sign that it runs: only an answer on the control socket is. `check-signing.sh` in the same run, 56 of 56, walked the road the guide recommends, in a keychain of its own in the account's ~/Library/Keychains: the dialog, the password, Always Allow, and nobody is asked again. What stands between that and a person: the grant was a row written into the permission database, its daemon restarted and the notice posted that System Settings posts; the password was the script's own; nobody logged out and in; there is no published release, so none has been taken. `watchdog-bundle.sh` has never run. None of these scripts can be rehearsed (no keychain, no `codesign`); `release-tools-test.sh` runs against stand-ins for the macOS tools; nothing automatic starts any of them. Everybody installs.",
+   "found": "A census of the tests and specs; then five runs of three scripts in one night and morning.",
    "modelled": "partly",
    "knobs": [
     "FakeLoginItem",
     "FakeReleaseFeed"
    ],
    "guards": [
+    "e2e: THE NEXT BUILD, SIGNED WITH THE SAME IDENTITY, RUNS WITHOUT BEING GRANTED ANYTHING",
     "e2e: 3  does the permission survive a rebuild?",
     "e2e: 2  make install, as a person runs it",
     "e2e: 4  a different build, the same requirement",
@@ -6174,6 +6175,7 @@
     "docs/features/F13-distribution.md",
     "scripts/mac-shell/check-F13.sh",
     "scripts/mac-shell/check-F13-system.sh",
+    "scripts/mac-shell/check-signing.sh",
     "scripts/mac-shell/watchdog-bundle.sh",
     "scripts/install.sh"
    ]
