@@ -1320,6 +1320,63 @@ lost. `ChaosKnownFailureTests` replays every script and **fails when it no longe
 pull request, and the rule guards your fix from then on. Because a whole rule is excused, a known bug should have a rule name of its own wherever the rule can tell it
 apart (`vanished-strip` beside `vanished`, `leak-<list>` for each list, `parked-stopped-short` beside `parked-in-view`).
 
+## The lid sweep (`arbor-sim sweep`, `LidSweep`)
+
+The walks search a large space at random and judge by rules. The sweep searches one small space completely, and its yardstick is not a rule but **the same Mac without
+Arbor**. A laptop stands beside a big display; the lid closes, opens and closes again, two minutes apart, with one floating window on the desk. That is played for a window in every place
+along the big display and across its edges, every 40 points, 600 and 1400 wide, twice each: with Arbor and without. Whatever differs is Arbor's doing, and has to be one of the few things
+Arbor means to do. So it can be strict where a rule has to be lenient: at a change of displays, when macOS itself moves windows about.
+
+```bash
+swift build --product arbor-sim
+.build/debug/arbor-sim sweep                        # 48 columns, one line each, with an example of each kind; three minutes
+.build/debug/arbor-sim sweep right --examples 5     # one side; also --stride <points>, and --strict
+.build/debug/arbor-sim sweep story right 1728 300 untouched    # one window through the lid, in each order of reports, stage by stage
+```
+
+**A column** is a side for the big display (right, left, above), what Arbor is doing while the displays change (running, paused, quit, crashed), whether a hand put the window there with
+Arbor looking on or it has been there since before Arbor started, how long before the lid first closes the hand let go (five minutes, or 0, 5, 15, 29 s: Arbor believes for half a minute a window that has
+spoken of its place), and the order in which Arbor hears of windows and displays (`first`, `late`, `silent`, `never`, as in a walk's `displays` line). Nobody knows yet in which order a real lid
+reports, so all are played.
+
+**A place is looked at nine times**: after each of the three changes, and after ⌃⌥0 and `relayout` following it, because a window that is right until the next layout is not right. **Each change is
+judged by itself**: both Macs go into it with the window in the same place, so that what differed after the last change, on purpose or not, is not counted again as an echo. One fault
+counts three times at most, in every column alike.
+
+| It counts | |
+|---|---|
+| `hidden` | in view without Arbor, out of view with it |
+| `out of reach` | no hand can take hold of its title bar (the walks' own measure), where without Arbor one can |
+| `jumped` | wholly on a display without Arbor, so macOS saw no reason to move it; elsewhere with Arbor |
+| `fitted` | hangs over an edge without Arbor; elsewhere with Arbor, which may have fitted it onto a display |
+| `home on the laptop` | began on the laptop and is on it again now that the lid is open: on purpose |
+| `where the hand left it` | on the big display where the hand left it, seen from that display, where macOS alone has it elsewhere: on purpose |
+
+After `jumped` and `fitted` stands at which change: `jumped 612 (0 + 468 + 144)` is none when the lid closes, 468 when it opens, 144 when it closes again. A line also says how many places were not
+looked at because Arbor moved the window at its start, which is another story, or because no hand could have put a window there. The exit code is 1 if a window was hidden or out of reach
+anywhere; with `--strict` also if one jumped; 2 if the lab refused a step (`REFUSED:`), so that the sweep was not the one it says it was.
+
+**It is for comparing**: play the same columns before and after a change to what Arbor does at a change of displays, and the difference says what the change cured and what it cost. `story` then
+tells one of the places: where the window is after each stage, which moves were Arbor's own, and on which display Arbor remembers it. Not every `jumped` is a fault; every one is a move of
+Arbor's that somebody should be able to give the reason for.
+
+`LidSweepTests`, part of every `make check`, holds the sweep to its controls (a Mac without Arbor differs from itself nowhere; a window taken out of view, put with its title bar above the screen, or shoved
+aside in Arbor's place is seen, each as what it is; with the lid shut nothing is "home on the laptop"; a place no hand could reach is not passed off as played) and plays every column on a coarse
+grid: nothing refused, no window hidden or out of reach.
+
+**On the trunk that brought it** (right / left / above): hidden 0, out of reach 0 and nothing refused in all 48 columns.
+- **With Arbor running and the windows heard of first, 468 / 594 / 591 jumps when the lid opens** (by hand; untouched 432 / 558 / 516), that is 156 / 198 / 197 of 246 places: a window of the big display is
+  put onto the laptop's screen by a move of Arbor's own and remembered there (`sweep story right 1728 300 untouched`). The walks' rules are silent about it. With the displays heard of first (`late`), or windows that moved and
+  never said so (`silent`): 0 / 0 / 3 there.
+- When the lid closes again, 72 / 0 / 18 under `late` and `silent`: a window astride the border that went home to the laptop is put back where it stood when the lid was last shut, 40 points from where macOS leaves it.
+- How long ago the hand let go changes nothing in these columns.
+- With Arbor away across the change: jumped 0 / 0 / 3; fitted 240, 360 and about 200 (paused, quit, crashed).
+- In the untouched columns 36 / 36 / 49 places are not looked at: windows hanging over an edge, which Arbor moves at its start.
+- `never`, where windows keep their old coordinates, is what no Mac does; its columns are there because Arbor must cope.
+
+**What it does not play:** more than one window; a docked one; displays whose tops or sides are not in line; a display that changes its size or its side; and what macOS really does with
+windows when a lid closes, of which the lab has only its own idea. No hosted Mac has a lid.
+
 ## Launch fuzzing (`make fuzz`, `scripts/fuzz-launch.py`)
 
 Arbor reads two files when it starts, and people edit both, keep them in their dotfiles, and carry them from one version to

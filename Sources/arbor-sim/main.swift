@@ -121,6 +121,7 @@ func runSimulation() {
   // `replay <file>` replays a trace; `replay` alone, a chaos script from standard input.
   if lines.first == "replay", lines.dropFirst().contains(where: { !$0.hasPrefix("--") }) { runReplay(Array(lines.dropFirst())) }
   if let code = runChaosMode(lines) { exit(code) }
+  if lines.first == "sweep" { exit(runSweep(Array(lines.dropFirst()))) }
   let launch = LaunchOptions(taking: &lines)
   if lines.isEmpty, launch?.audit != true {
     while let line = readLine() { lines.append(line) }
