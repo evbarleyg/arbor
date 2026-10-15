@@ -1,0 +1,556 @@
+# mac-shell: scripts/mac-shell/e2e-drag.sh at 8fe9790, macOS 26.6.2, 2026-10-15T18:25Z
+This takes over the real pointer for one to three minutes. Hands off the mouse until it says it is done.
+built Arbor, the pointer tool and the app bundles in 7s
+
+== MACOS'S OWN TILING: on, as a Mac comes
+com.apple.WindowManager EnableTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTopTilingByEdgeDrag: not set
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+> drag 0 12 512 10 --hold 1
+without Arbor, a window let go in the menu bar ends at 170 220 480 348
+> drag 410 232 512 170
+> drag 512 170 512 10 --hold 1
+without Arbor, a window let go in the menu bar ends at 0 31 1024 674
+  ✔ macOS's own tiling is seen to act: yes
+session 1: Arbor pid 5335, test windows 38 39 40 (pid 5281)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w38 170 220 480 348      floating
+  w39 220 180 480 348      floating
+  w40 270 140 480 348      floating
+
+== plain drags to the four screen edges: nothing of Arbor's shows and nothing docks
+> click 412 536
+> drag 446 232 3 368 --hold 0.6 --no-release
+  ✔ the left edge: the window is in the hand
+  ✔ the left edge: no preview
+> release --timed 
+  ✔ the button is up within 100 ms (after 3 ms)
+  ✔ the left edge: it floats
+  ✔ the left edge: where it was let go
+  ✔ the left edge: window 39 has not moved
+  ✔ the left edge: window 40 has not moved
+> drag 25 368 1021 368 --hold 0.6 --no-release
+  ✔ the right edge: the window is in the hand
+  ✔ the right edge: no preview
+> release --timed 
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ the right edge: it floats
+  ✔ the right edge: where it was let go
+  ✔ the right edge: window 39 has not moved
+  ✔ the right edge: window 40 has not moved
+> drag 1017 368 512 34 --hold 0.6 --no-release
+  ✔ the top edge: the window is in the hand
+  ✔ the top edge: no preview
+> release --timed 
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ the top edge: it floats
+  ✔ the top edge: where it was let go
+  ✔ the top edge: window 39 has not moved
+  ✔ the top edge: window 40 has not moved
+> drag 573 43 512 702 --hold 0.6 --no-release
+  ✔ the bottom edge: the window is in the hand
+  ✔ the bottom edge: no preview
+> release --timed 
+  ✔ the button is up within 100 ms (after 7 ms)
+  ✔ the bottom edge: it floats
+  ✔ the bottom edge: where it was let go
+  ✔ the bottom edge: window 39 has not moved
+  ✔ the bottom edge: window 40 has not moved
+> drag 512 689 614 255 --hold 0.6 --no-release
+  ✔ back in the middle: the window is in the hand
+  ✔ back in the middle: no preview
+> release --timed 
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ back in the middle: it floats
+  ✔ back in the middle: where it was let go
+  ✔ back in the middle: window 39 has not moved
+  ✔ back in the middle: window 40 has not moved
+  ✔ nothing is docked
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w38 338 243 480 348      floating focused
+  w39 220 180 480 348      floating
+  w40 270 140 480 348      floating
+
+== drag a window by its title bar to the left screen edge
+> drag 546 152 3 368 --no-release --then-mods cmd
+  ✔ the window follows the pointer
+  ✔ with macOS's tiling on Arbor offers nothing along the edge
+> release --timed --mods cmd
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ let go short of macOS's point, the window floats
+  ✔ where it was let go
+  ✔ Arbor saw the release
+> dock 40 left
+docked w40 at the left edge
+  ✔ a command docks it
+  ✔ it sits at the left edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          518 43 494 650
+  w38 338 243 480 348      floating
+  w39 220 180 480 348      floating
+  w40 12 43 494 650        docked focused
+
+== drag the right edge of the docked window 60 points to the right
+  (the hand holds nothing: 505 368 is not on the title bar of window 40 at 12 43 494 650)
+> drag 505 368 565 368
+  ✔ the window is 60 points wider
+  ✔ the Desktop gave up the space
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w38 338 243 480 348      floating
+  w39 220 180 480 348      floating
+  w40 12 43 554 650        docked focused
+
+== drag another window onto the right part of the docked one
+> drag 574 192 482 368 --no-release --then-mods cmd
+  ✔ the pointer is inside the drop preview
+  ✔ a drop preview shows while the button is held
+> release --timed --then-click 389,476 --mods cmd
+  ✔ the button is up within 100 ms (after 2 ms)
+  ✔ a click where the preview was, 649 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✔ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+  ✔ to the right of the first
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          583 43 429 650
+  w38 338 243 480 348      floating
+  w39 298 43 273 650       docked focused
+  w40 12 43 274 650        docked
+
+== a plain drag onto the edge of a docked window
+> drag 614 255 149 612 --hold 0.6 --no-release
+  ✔ the lower part of a docked window: the window is in the hand
+  ✔ the lower part of a docked window: no preview
+> release --timed 
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ the lower part of a docked window: it floats
+  ✔ the lower part of a docked window: where it was let go
+  ✔ the lower part of a docked window: window 39 has not moved
+  ✔ the lower part of a docked window: window 40 has not moved
+
+== ⌘ goes down with the window held there, and comes up again
+> drag 141 432 614 255
+> drag 614 255 149 612 --hold 0.6 --no-release
+  ✔ the window is in the hand
+  ✔ nothing held: no preview
+> key cmd --down
+  ✔ ⌘ down: the preview comes, with the pointer at rest
+> key cmd --up
+  ✔ ⌘ up: it goes
+> release
+  ✔ let go without the key, the window floats
+  ✔ the docked windows are in their slots
+> drag 276 575 614 255
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          583 43 429 650
+  w38 248 243 480 348      floating focused
+  w39 298 43 273 650       docked
+  w40 12 43 274 650        docked
+
+== a click on a docked window's title bar that slips by a few points
+> drag 180 55 186 59 --steps 3 --duration 0.1 --hold 0
+  ✔ it is still docked
+  ✔ and back in its slot
+  ✔ no seam moved
+
+== double-click the title bar of a docked window (H5)
+> click 180 55 2
+  ✔ no seam moved
+  ✔ the window is still docked
+> show-all
+showing everything
+  ✔ showing everything puts the window into its slot
+
+== press inside a docked window and move the pointer
+  (the hand holds nothing: 149 368 is not on the title bar of window 40 at 12 43 274 650)
+> drag 149 368 239 428 --no-release
+  ✔ that is not a drag: no preview
+> release
+  ✔ the window is in its slot
+
+== drag a docked window out onto the Desktop
+> drag 466 55 797 103 --then-mods cmd
+  ✔ it floats
+  ✔ the first window is still docked
+  ✔ Arbor saw the release
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w38 248 243 480 348      floating
+  w39 524 54 480 348       floating focused
+  w40 12 43 554 650        docked
+
+== a docked window dragged plainly comes out wherever it is let go
+> dock 39 right
+docked w39 at the right edge
+  ✔ docked again
+> drag 885 55 194 368 --hold 0.6 --no-release
+  ✔ no preview
+> release --timed 
+  ✔ the button is up within 100 ms (after 4 ms)
+  ✔ it floats
+  ✔ at the size it had before it was docked
+  ✔ the other is still docked, in its slot
+  ✔ Arbor saw the release
+> drag 276 320 797 103
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w38 248 243 480 348      floating
+  w39 520 91 480 348       floating focused
+  w40 12 43 554 650        docked
+
+== drag a floating window to the bottom edge, which is Arbor's at every setting
+> drag 796 103 682 702 --no-release --then-mods cmd
+  ✔ a drop preview shows while the button is held
+> release --timed --then-click 345,586 --mods cmd
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 730 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✔ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+> float 39
+w39 is floating
+  ✔ it floats again
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w38 248 243 480 348      floating
+  w39 520 91 480 348       floating focused
+  w40 12 43 554 650        docked
+
+== let go of a docked window at the very edge of the screen, where macOS tiles
+> drag 324 55 0 368 --hold 1 --no-release --then-mods cmd
+  ✔ Arbor shows no preview beside macOS's
+> release --timed --mods cmd
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ macOS gives it its tile
+  ✔ where it stays
+  ✔ it floats
+  ✔ and Arbor knows where it is
+  ✔ Arbor saw the release
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w38 248 243 480 348      floating
+  w39 520 91 480 348       floating
+  w40 -1 32 513 674        floating focused
+
+== let go of a floating window in the menu bar, where macOS fills the screen
+> drag 796 103 512 15 --hold 1 --no-release --then-mods cmd
+  ✔ Arbor shows no preview beside macOS's
+> release --timed --mods cmd
+  ✔ the button is up within 100 ms (after 9 ms)
+  ✔ macOS gives it its tile
+  ✔ where it stays
+  ✔ it floats
+  ✔ and Arbor knows where it is
+  ✔ Arbor saw the release
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w38 248 243 480 348      floating
+  w39 0 31 1024 674        floating focused
+  w40 -1 32 513 674        floating
+
+== macOS's tiling is switched off while Arbor runs: from the next drag on the menu bar is Arbor's
+com.apple.WindowManager EnableTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+> drag 546 43 512 231 --then-mods cmd
+> drag 532 224 512 15 --hold 1 --no-release --then-mods cmd
+  ✔ a drop preview shows while the button is held
+> release --timed --then-click 345,255 --mods cmd
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 639 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✔ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+display 0 0 1024 768, visible 0 31 1024 674, camera n8, back no
+  Desktop          12 374 1000 319
+  w38 248 243 480 348      floating
+  w39 12 43 1000 319       docked focused
+  w40 0 31 513 674         floating
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+== MACOS'S OWN TILING: switched off
+com.apple.WindowManager EnableTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTopTilingByEdgeDrag: 0
+com.apple.WindowManager EnableTilingOptionAccelerator: not set
+com.apple.WindowManager EnableTiledWindowMargins: not set
+> drag 410 232 512 10 --hold 1
+without Arbor, a window let go in the menu bar ends at 272 31 480 348
+> drag 512 43 512 170
+> drag 512 170 512 10 --hold 1
+without Arbor, a window let go in the menu bar ends at 272 31 480 348
+  ✔ macOS's own tiling is seen to act: no
+session 2: Arbor pid 12621, test windows 53 54 55 (pid 12588)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+  ✔ Arbor's event taps are in the way of every press and release
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w53 170 220 480 348      floating
+  w54 220 180 480 348      floating
+  w55 270 140 480 348      floating
+
+== plain drags to the four screen edges: nothing of Arbor's shows and nothing docks
+> click 412 536
+> drag 446 232 3 368 --hold 0.6 --no-release
+  ✔ the left edge: the window is in the hand
+  ✔ the left edge: no preview
+> release --timed 
+  ✔ the button is up within 100 ms (after 0 ms)
+  ✔ the left edge: it floats
+  ✔ the left edge: where it was let go
+  ✔ the left edge: window 54 has not moved
+  ✔ the left edge: window 55 has not moved
+> drag 3 368 1021 368 --hold 0.6 --no-release
+  ✔ the right edge: the window is in the hand
+  ✔ the right edge: no preview
+> release --timed 
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ the right edge: it floats
+  ✔ the right edge: where it was let go
+  ✔ the right edge: window 54 has not moved
+  ✔ the right edge: window 55 has not moved
+> drag 1016 368 512 34 --hold 0.6 --no-release
+  ✔ the top edge: the window is in the hand
+  ✔ the top edge: no preview
+> release --timed 
+  ✔ the button is up within 100 ms (after 3 ms)
+  ✔ the top edge: it floats
+  ✔ the top edge: where it was let go
+  ✔ the top edge: window 54 has not moved
+  ✔ the top edge: window 55 has not moved
+> drag 554 43 512 702 --hold 0.6 --no-release
+  ✔ the bottom edge: the window is in the hand
+  ✔ the bottom edge: no preview
+> release --timed 
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ the bottom edge: it floats
+  ✔ the bottom edge: where it was let go
+  ✔ the bottom edge: window 54 has not moved
+  ✔ the bottom edge: window 55 has not moved
+> drag 512 689 614 255 --hold 0.6 --no-release
+  ✔ back in the middle: the window is in the hand
+  ✔ back in the middle: no preview
+> release --timed 
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ back in the middle: it floats
+  ✔ back in the middle: where it was let go
+  ✔ back in the middle: window 54 has not moved
+  ✔ back in the middle: window 55 has not moved
+  ✔ nothing is docked
+display 0 0 1024 768, visible 0 31 1024 674, camera n0, back no
+  Desktop          12 43 1000 650
+  w53 338 240 480 348      floating focused
+  w54 220 180 480 348      floating
+  w55 270 140 480 348      floating
+
+== drag a window by its title bar to the left screen edge
+> drag 546 152 3 368 --no-release --then-mods cmd
+  ✔ the window follows the pointer
+  ✔ a drop preview shows while the button is held
+> release --timed --then-click 176,476 --mods cmd
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 516 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✔ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+  ✔ it sits at the left edge
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          518 43 494 650
+  w53 338 240 480 348      floating
+  w54 220 180 480 348      floating
+  w55 12 43 494 650        docked focused
+
+== drag the right edge of the docked window 60 points to the right
+  (the hand holds nothing: 505 368 is not on the title bar of window 55 at 12 43 494 650)
+> drag 505 368 565 368
+  ✔ the window is 60 points wider
+  ✔ the Desktop gave up the space
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w53 338 240 480 348      floating
+  w54 220 180 480 348      floating
+  w55 12 43 554 650        docked focused
+
+== drag another window onto the right part of the docked one
+> drag 574 192 482 368 --no-release --then-mods cmd
+  ✔ the pointer is inside the drop preview
+  ✔ a drop preview shows while the button is held
+> release --timed --then-click 389,476 --mods cmd
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 630 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✔ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+  ✔ to the right of the first
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          583 43 429 650
+  w53 338 240 480 348      floating
+  w54 298 43 273 650       docked focused
+  w55 12 43 274 650        docked
+
+== a plain drag onto the edge of a docked window
+> drag 614 252 149 612 --hold 0.6 --no-release
+  ✔ the lower part of a docked window: the window is in the hand
+  ✔ the lower part of a docked window: no preview
+> release --timed 
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ the lower part of a docked window: it floats
+  ✔ the lower part of a docked window: where it was let go
+  ✔ the lower part of a docked window: window 54 has not moved
+  ✔ the lower part of a docked window: window 55 has not moved
+
+== ⌘ goes down with the window held there, and comes up again
+> drag 203 432 614 255
+> drag 614 255 149 612 --hold 0.6 --no-release
+  ✔ the window is in the hand
+  ✔ nothing held: no preview
+> key cmd --down
+  ✔ ⌘ down: the preview comes, with the pointer at rest
+> key cmd --up
+  ✔ ⌘ up: it goes
+> release
+  ✔ let go without the key, the window floats
+  ✔ the docked windows are in their slots
+> drag 245 432 614 255
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          583 43 429 650
+  w53 338 243 480 348      floating focused
+  w54 298 43 273 650       docked
+  w55 12 43 274 650        docked
+
+== a click on a docked window's title bar that slips by a few points
+> drag 180 55 186 59 --steps 3 --duration 0.1 --hold 0
+  ✔ it is still docked
+  ✔ and back in its slot
+  ✔ no seam moved
+
+== double-click the title bar of a docked window (H5)
+> click 180 55 2
+  ✔ no seam moved
+  ✔ the window is still docked
+> show-all
+showing everything
+  ✔ showing everything puts the window into its slot
+
+== press inside a docked window and move the pointer
+  (the hand holds nothing: 149 368 is not on the title bar of window 55 at 12 43 274 650)
+> drag 149 368 239 428 --no-release
+  ✔ that is not a drag: no preview
+> release
+  ✔ the window is in its slot
+
+== drag a docked window out onto the Desktop
+> drag 466 55 797 103 --then-mods cmd
+  ✔ it floats
+  ✔ the first window is still docked
+  ✔ Arbor saw the release
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w53 338 243 480 348      floating
+  w54 524 54 480 348       floating focused
+  w55 12 43 554 650        docked
+
+== a docked window dragged plainly comes out wherever it is let go
+> dock 54 right
+docked w54 at the right edge
+  ✔ docked again
+> drag 885 55 194 368 --hold 0.6 --no-release
+  ✔ no preview
+> release --timed 
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ it floats
+  ✔ at the size it had before it was docked
+  ✔ the other is still docked, in its slot
+  ✔ Arbor saw the release
+> drag 276 320 797 103
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w53 338 243 480 348      floating
+  w54 521 91 480 348       floating focused
+  w55 12 43 554 650        docked
+
+== drag a floating window to the bottom edge, which is Arbor's at every setting
+> drag 797 103 682 702 --no-release --then-mods cmd
+  ✔ a drop preview shows while the button is held
+> release --timed --then-click 345,586 --mods cmd
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 520 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✔ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+> float 54
+w54 is floating
+  ✔ it floats again
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w53 338 243 480 348      floating
+  w54 521 91 480 348       floating focused
+  w55 12 43 554 650        docked
+
+== let go of a docked window at the very edge of the screen, where macOS tiles
+> drag 797 103 0 368 --hold 1 --no-release --then-mods cmd
+  ✔ a drop preview shows while the button is held
+> release --timed --then-click 120,476 --mods cmd
+  ✔ the button is up within 100 ms (after 5 ms)
+  ✔ a click where the preview was, 610 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✔ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+> float 54
+w54 is floating
+display 0 0 1024 768, visible 0 31 1024 674, camera n2, back no
+  Desktop          578 43 434 650
+  w53 338 243 480 348      floating
+  w54 467 108 480 348      floating focused
+  w55 12 43 554 650        docked
+
+== let go of a floating window in the menu bar, where macOS fills the screen
+> drag 743 120 512 15 --hold 1 --no-release --then-mods cmd
+  ✔ a drop preview shows while the button is held
+> release --timed --then-click 345,255 --mods cmd
+  ✔ the button is up within 100 ms (after 6 ms)
+  ✔ a click where the preview was, 439 ms after the drop, arrives in the window
+  ✔ the window docks on release
+  ✔ it ends where the preview was
+  ✔ Arbor saw the release
+  ✔ no preview is left behind
+display 0 0 1024 768, visible 0 31 1024 674, camera n9, back no
+  Desktop          578 374 434 319
+  w53 338 243 480 348      floating
+  w54 12 43 1000 319       docked focused
+  w55 12 374 554 319       docked
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+Done: the pointer is yours again.
+
+235 passed, 0 failed
+exit code 0
