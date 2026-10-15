@@ -510,7 +510,11 @@ SINGLE = [
     ("--known: nor is no cache at all", lambda: known(None), ("nothing to go by", [])),
     ("--known: without a cache: exit code 1, not a word, though GitHub would have answered", lambda: ends_with([train()], "--turn", "1", "--for", "mine", "--known"), (1, "")),
     ("--turn without it: GitHub is asked, and the train is seen", lambda: ends_with([train()], "--turn", "1", "--for", "mine"),
-     (4, "CI's macOS job for train/3 is waiting for a Mac, and a train goes first\n")),
+     (5, "CI's macOS job for train/3 is waiting for a Mac, and a train goes first\n")),
+    ("--turn: a train that is on its way ends it with 5 as well: what holds everybody back", lambda: ends_with(
+        [run(branch="train/3", status="queued"), run(*[running("11:50:00", "11:50:10")] * 4, number=2, branch="theirs", status="in_progress")], "--turn", "1", "--for", "mine")[0], 5),
+    ("--turn: a queue that is merely busy ends it with 4, as it did", lambda: ends_with(
+        [run(waiting("11:59:00"), branch="theirs", status="in_progress")], "--turn", "3", "--for", "mine")[0], 4),
     ("whose turn: five of other branches run, none waits", lambda: [turn(n, 0, others=5) for n in (1, 2, 3)], ["", "", ""]),
     ("exit code 4 when it is not its turn, and only the reason", lambda: ends_with([run(waiting("00:00:00"))], "--turn", "3", "--for", "mine"),
      (4, "1 job waiting for a Mac, and this has priority 3\n")),

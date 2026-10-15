@@ -1781,6 +1781,14 @@ def check_mac_shell_batch():
     git("commit", "--quiet", "--message", "scripts")
     git("remote", "add", "origin", origin)
     git("push", "--quiet", "origin", "HEAD:refs/heads/feat/x")
+    # Two more branches: one whose lib.sh is from before the switch for the release build, one whose lib.sh knows it.
+    for branch, text in (("feat/old-lib", "swift build\n"), ("feat/new-lib", 'swift build -c "$ARBOR_CONFIGURATION"\n')):
+        with open(os.path.join(checkout, "scripts", "mac-shell", "lib.sh"), "w", encoding="utf-8") as handle:
+            handle.write(text)
+        git("add", "--all")
+        git("commit", "--quiet", "--message", branch)
+        git("push", "--quiet", "origin", f"HEAD:refs/heads/{branch}")
+        git("reset", "--quiet", "--hard", "HEAD~1")
 
     # The stand-in: $CALLS gets a line for every call. A dispatch is noted in $NOTED and, unless $GOES says otherwise, refused.
     stand_in = r'''#!/bin/bash
@@ -1799,7 +1807,7 @@ esac
 
     def ran(*arguments, **more):
         noted, calls = os.path.join(world.name, "noted"), os.path.join(world.name, "calls")
-        for path in (noted, calls):
+        for path in (noted, calls, noted + ".looks", noted + ".asked-rules"):
             if os.path.exists(path):
                 os.remove(path)
         environment = {**os.environ, "PATH": world.name + os.pathsep + os.environ["PATH"], "NOTED": noted, "CALLS": calls, "MAC_SHELL_WORKFLOW_REF": "home",
@@ -1832,6 +1840,11 @@ esac
     row("run.sh: ARBOR_CONFIGURATION=release says the same", (lambda noted: "inputs[configuration]=release" in open(noted, encoding="utf-8").read())(
         ran("a.sh", "feat/x", ARBOR_CONFIGURATION="release")[1]), True)
     row("run.sh: any other configuration starts nothing", (lambda done, noted, _: (done.returncode, os.path.exists(noted)))(*ran("a.sh", "feat/x", ARBOR_CONFIGURATION="fast")), (97, False))
+    row("run.sh: --release for a branch whose lib.sh is older than the switch, and would drive debug without a word: nothing is started, and it says why",
+        (lambda done, noted, _: (done.returncode, os.path.exists(noted), "would drive debug whatever is asked" in done.stderr))(*ran("--release", "a.sh", "feat/old-lib")), (97, False, True))
+    row("run.sh: for one whose lib.sh knows the switch it starts; so it does without a lib.sh, which nothing there can ignore",
+        [started("--release", "a.sh", branch)[2].get("inputs[configuration]") for branch in ("feat/new-lib", "feat/x")], ["release", "release"])
+    row("run.sh: the debug build of the old branch is nobody's business", started("a.sh", "feat/old-lib")[1][1], "feat/old-lib")
     row("run.sh: --bare builds nothing, so not with --release", started("--bare", "--release", "a.sh", "feat/x")[:2], (97, NOT_STARTED))
     row("run.sh: three scripts go to one Mac", started("a.sh", "./b.sh", "c.sh", "feat/x")[:2], (97, ["home", "feat/x", "a.sh b.sh c.sh", ""]))
     row("run.sh: five are too many for one", started("a.sh", "b.sh", "c.sh", "d.sh", "e.sh", "feat/x")[1][3], '["a.sh c.sh e.sh","b.sh d.sh"]')
@@ -1856,7 +1869,22 @@ esac
     with open(real_queue, encoding="utf-8") as handle:
         kept_queue = handle.read()
     with open(real_queue, "w", encoding="utf-8") as handle:
-        handle.write('import os, sys\nopen(os.environ["NOTED"] + ".asked", "w").write(" ".join(sys.argv[1:]))\nprint("three are waiting")\nsys.exit(int(os.environ["TURN"]))\n')
+        # $TURN: how it ends, look by look; the last goes on for ever. At its first look it writes $WRITES, a line, into the file $INTO.
+        handle.write("""import os, sys
+if "--turn" not in sys.argv:
+    sys.exit(0)
+open(os.environ["NOTED"] + ".asked", "w").write(" ".join(sys.argv[1:]))
+looks, turns = os.environ["NOTED"] + ".looks", os.environ["TURN"].split()
+look = int(open(looks).read()) if os.path.exists(looks) else 0
+open(looks, "w").write(str(look + 1))
+if look == 0 and os.environ.get("HANGS"):
+    import time
+    time.sleep(30)
+if look == 0 and os.environ.get("WRITES"):
+    open(os.environ["INTO"], "a").write(os.environ["WRITES"] + "\\n")
+print("three are waiting")
+sys.exit(int(turns[min(look, len(turns) - 1)]))
+""")
     for what, priority, turn, expected in [
         ("it is its turn", "3", "0", (97, True)),
         ("it is not", "3", "4", (98, False)),
@@ -1870,6 +1898,51 @@ esac
     ]:
         done, noted, _ = ran("a.sh", "feat/x", ARBOR_MAC_PRIORITY=priority, TURN=turn, MAC_SHELL_TIMEOUT="0", MAC_SHELL_POLL="0")
         row(f"run.sh: whose turn: {what}", (done.returncode, os.path.exists(noted)), expected)
+    def looks(priority, turns, **more):
+        """How it ended, whether the run was started, and after how many looks at the queue."""
+        done, noted, _ = ran("a.sh", "feat/x", ARBOR_MAC_PRIORITY=priority, TURN=turns, MAC_SHELL_POLL="0", **more)
+        with open(noted + ".looks", encoding="utf-8") as handle:
+            return done.returncode, os.path.exists(noted), int(handle.read())
+
+    row("run.sh: a train is through: priority 1 goes at the look that says so, 2 a look later, 3 two looks later",
+        [looks(priority, "5 0") for priority in "123"], [(97, True, 2), (97, True, 3), (97, True, 4)])
+    row("run.sh: a queue that was merely busy: nobody waits for anybody", [looks(priority, "4 0") for priority in "23"], [(97, True, 2)] * 2)
+    row("run.sh: at the look it gave way for, something more urgent has come: it holds back again, and has given way already", looks("2", "5 0 4 4 0"), (97, True, 5))
+    row("run.sh: another train comes while it gives way: it gives way again when that one is through", looks("2", "5 0 5 0 0"), (97, True, 5))
+    row("run.sh: it says why it is not off yet", "what held everybody back is over: priority 1 goes first, this has priority 2" in ran(
+        "a.sh", "feat/x", ARBOR_MAC_PRIORITY="2", TURN="5 0", MAC_SHELL_POLL="0")[0].stdout, True)
+
+    began = time.time()
+    hung = looks("2", "0 0", HANGS="yes", MAC_SHELL_LOOK="1")
+    row("run.sh: a look at the queue that hangs is left behind after its time, counts as a queue that cannot be read, and the next look decides", (hung, time.time() - began < 20),
+        ((97, True, 2), True))
+    began = time.time()
+    hung = looks("1", "0", HANGS="yes", MAC_SHELL_LOOK="1")
+    row("run.sh: priority 1 is not held up by it either", (hung[:2], time.time() - began < 20), ((97, True), True))
+
+    # The rules are written to while it holds back.
+    first, second = os.path.join(world.name, "rules.md"), os.path.join(world.name, "more-rules.md")
+
+    def with_rules(turns, writes="", into=first, watched=None, there=True):
+        for path in (first, second):
+            if os.path.exists(path):
+                os.remove(path)
+            if there:
+                with open(path, "w", encoding="utf-8") as handle:
+                    handle.write("what held yesterday\n")
+        done, noted, _ = ran("a.sh", "feat/x", ARBOR_MAC_PRIORITY="2", TURN=turns, MAC_SHELL_POLL="0", WRITES=writes, INTO=into,
+                             ARBOR_MAC_RULES=first + ":" + second if watched is None else watched)
+        return done.returncode, os.path.exists(noted), [line for line in done.stdout.splitlines() if line.startswith(("---", "NOTHING", "what held"))]
+
+    row("run.sh: the rules change while it holds back: it does not start, shows what is new and no more, and ends with 95", with_rules("4 0", "NOTHING STARTS UNTIL NOON"),
+        (95, False, ["--- new in rules.md:", "NOTHING STARTS UNTIL NOON"]))
+    row("run.sh: so with the second of two files", with_rules("4 0", "NOTHING STARTS UNTIL NOON", into=second), (95, False, ["--- new in more-rules.md:", "NOTHING STARTS UNTIL NOON"]))
+    row("run.sh: so with a file that was not there when the waiting began", with_rules("4 0", "NOTHING STARTS UNTIL NOON", there=False)[:2], (95, False))
+    row("run.sh: it held back and nothing was written: it starts", with_rules("4 0"), (97, True, []))
+    row("run.sh: a file nobody watches may change", with_rules("4 0", "NOTHING STARTS UNTIL NOON", into=second, watched=first), (97, True, []))
+    row("run.sh: no rules are named: as it was", with_rules("4 0", "NOTHING STARTS UNTIL NOON", watched=""), (97, True, []))
+    row("run.sh: it never held back: there was no while for anything to change in", with_rules("0", "NOTHING STARTS UNTIL NOON"), (97, True, []))
+
     asked = []
     for priority in "123":
         _, noted, _ = ran("a.sh", "feat/x", ARBOR_MAC_PRIORITY=priority, TURN="0", MAC_SHELL_TAG="t")

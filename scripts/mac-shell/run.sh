@@ -33,8 +33,9 @@
 # current one, which must be pushed: the Mac runs what GitHub has), waits for it, fetches the branch
 # the workflow pushed its output to into .mac-shell/<script>-<run id>/ in this worktree, deletes that branch,
 # and prints the folder, the exit code and the end of the output. Exits with the script's exit code (of several: the first that is
-# not 0), or with 96 (not through the pre-flight), 97 (could not start), 98 (it has waited long enough: THE RUN IS NOT
-# CANCELLED, it goes on without this waiter, and how to watch, fetch and cancel it is printed) or 99 (the run produced no output).
+# not 0), or with 95 (the rules changed while it held back: read them and start it again), 96 (not through the pre-flight), 97 (could not start),
+# 98 (it has waited long enough: THE RUN IS NOT CANCELLED, it goes on without this waiter, and how to watch, fetch and cancel it is printed) or
+# 99 (the run produced no output).
 # With ARBOR_KEEP_EVIDENCE=1 the evidence of the real-window suite's sections (scripts/mac-shell/suite/) is copied to
 # collab/evidence/suite-<section>-latest.txt, where `make parity` reads it; commit it when it should count.
 #
@@ -51,6 +52,9 @@
 # Environment: MAC_SHELL_TIMEOUT  seconds to wait for the run (default 2700), and as many again once it has its Mac. It is this script's patience and nothing
 #                                 else: a run is never cancelled for it. One that waits keeps its place in GitHub's line, one that is half done its minutes.
 #              MAC_SHELL_ASK      seconds until GitHub is first asked whether the run has ended without output (default 180); twice as long each time after
+#              MAC_SHELL_LOOK     seconds a look at the queue may take before it is left behind (default 60)
+#              ARBOR_MAC_RULES    files, with colons between them, in which whoever coordinates writes what holds for everybody. A run that has held back and
+#                                 finds one of them changed does not start: it prints what is new and ends with 95. What was true when it began to wait may not be any more.
 #              MAC_SHELL_TAIL     lines of output.txt to print (default 40)
 #              MAC_SHELL_POLL     seconds between two looks at the queue while it holds back (default 120, and up to a quarter more)
 #              ARBOR_MAC_QUEUE_CACHE   a file in which several checkouts share one look at the queue (scripts/mac-queue.py)
@@ -120,6 +124,12 @@ for each in "${scripts[@]}"; do
   case "$each" in *[!A-Za-z0-9._/-]*) fail "'$each': a script's path may hold letters, digits, dots, dashes, underscores and slashes" ;; esac
   git cat-file -e "$remote:$each" 2>/dev/null || fail "GitHub has no file '$each' at $ref (${remote:0:7}); commit and push it first"
 done
+# The workflow is one branch's for everybody, but lib.sh is <ref>'s own. One from before the switch takes no notice of it: the workflow would build release, and the
+# script then build and drive debug, without a word: a number measured on the wrong program.
+if [ "$configuration" != debug ] && git cat-file -e "$remote:scripts/mac-shell/lib.sh" 2>/dev/null \
+  && ! git show "$remote:scripts/mac-shell/lib.sh" | grep -q 'swift build -c "\$ARBOR_CONFIGURATION"'; then
+  fail "$ref's scripts/mac-shell/lib.sh is older than the switch for the $configuration build, and would drive debug whatever is asked: bring the branch up to date first"
+fi
 if [ "$ref" = "$(git rev-parse --abbrev-ref HEAD)" ]; then
   [ "$remote" = "$(git rev-parse HEAD)" ] || fail "$ref is at ${remote:0:7} on GitHub but $(git rev-parse --short HEAD) here; push first"
   [ -z "$(git status --porcelain -- scripts Sources Package.swift)" ] \
@@ -165,21 +175,63 @@ fi
 # if that meant "go", everybody who was holding back would start at once, at the worst moment. Priority 1 alone is not held up by what cannot be
 # found out, and does not pay for finding out: it reads what somebody else saw of late, and goes if there is nothing to read.
 start=$(date +%s)
-told=""
+told="" together="" yielded=0
+# What the rules said when the waiting began.
+rules=$(mktemp -d) || fail "no room for a temporary folder"
+trap 'rm -rf "$rules"' EXIT
+number=0
+while IFS= read -r -d : file; do
+  number=$((number + 1))
+  [ -z "$file" ] || cp "$file" "$rules/$number" 2>/dev/null || : > "$rules/$number"
+done <<< "${ARBOR_MAC_RULES:-}:"
+# changed_rules: prints what has been added to them since, if anything has.
+changed_rules() {
+  local number=0 file
+  while IFS= read -r -d : file; do
+    number=$((number + 1))
+    [ -n "$file" ] && ! cmp -s "$file" "$rules/$number" || continue
+    echo "--- new in $(basename "$file"):"
+    diff "$rules/$number" "$file" 2>/dev/null | sed -n 's/^> //p' | tail -n 20 | cut -c 1-400
+  done <<< "${ARBOR_MAC_RULES:-}:"
+}
+# look <seconds> <command…>: what it says goes to $why, how it ends is how this ends; 124 if it has not ended by then. Not `$(…)`, and nobody waits for it: the
+# look reads a file that several machines share, and a read that falls on the moment somebody else rewrites it has been seen to hang for good, in a state in
+# which no signal reaches it. Whoever waited for that, or held the other end of its pipe, hung with it, silently, with no limit anywhere around. It is left behind.
+look() {
+  local patience=$(($1 * 10)) answer="$rules/look.$RANDOM"
+  shift
+  ( "$@" > "$answer.said" 2>/dev/null; echo $? > "$answer.ended" ) > /dev/null 2>&1 &
+  while [ ! -s "$answer.ended" ] && [ "$patience" -gt 0 ]; do
+    sleep 0.1
+    patience=$((patience - 1))
+  done
+  [ -s "$answer.ended" ] || { why=""; return 124; }
+  why=$(cat "$answer.said")
+  return "$(cat "$answer.ended")"
+}
 while :; do
   # While work goes to main, its checks come first (hold.txt, docs/PUBLIC.md). Only the answer "held" holds: where nobody can tell, the queue decides.
   # Priority 1 does not ask that; the queue it does ask, for a train that is waiting for a Mac or on its way to one.
   held=""
   if [ "$priority" != 1 ]; then
     why=$(python3 scripts/public-check.py --rules 2>/dev/null | sed -n '1s/^[^A-Za-z]*//p'; exit "${PIPESTATUS[0]}")
-    [ $? -ne 1 ] || held=yes
+    [ $? -ne 1 ] || held=yes together=yes
   fi
   if [ -z "$held" ]; then
     # shellcheck disable=SC2046
-    why=$(python3 scripts/mac-queue.py --repo "$repo" --turn "$priority" --for "$ref" --tag "$tag" $([ "$priority" != 1 ] || echo --known) 2>/dev/null)
+    look "${MAC_SHELL_LOOK:-60}" python3 scripts/mac-queue.py --repo "$repo" --turn "$priority" --for "$ref" --tag "$tag" $([ "$priority" != 1 ] || echo --known)
     case $? in
-      0) break ;;
+      0)
+        # When what held everybody back is over, all who waited would let go in the same minute, in the order their timers fire, and take the Macs from
+        # under whatever is more urgent and about to be started. So priority 1 goes at once, 2 a look later, 3 two looks later, and each asks again then.
+        if [ -n "$together" ] && [ "$yielded" -lt $((priority - 1)) ]; then
+          yielded=$((yielded + 1))
+          why="what held everybody back is over: priority 1 goes first, this has priority $priority"
+        else
+          break
+        fi ;;
       4) ;;
+      5) together=yes yielded=0 ;;
       *) [ "$priority" != 1 ] || break
         why="the queue for the Macs cannot be read (are GitHub's calls for this hour used up? gh api rate_limit says, and costs none)" ;;
     esac
@@ -190,6 +242,14 @@ while :; do
   # Seldom, and not all copies at the same moment: every look costs calls.
   sleep "$((${MAC_SHELL_POLL:-120} + RANDOM % (${MAC_SHELL_POLL:-120} / 4 + 1)))"
 done
+# Whoever has waited acts on what was true when the waiting began. If the rules have been written to since, that is for a reader to weigh, not for a timer.
+if [ -n "$told" ]; then
+  new=$(changed_rules)
+  if [ -n "$new" ]; then
+    echo "$new"
+    fail "not started: the rules have changed while this run held back. Read what is new, then start it again" 95
+  fi
+fi
 
 # What the output branches hold now, which may be an earlier run's: a change is the sign that a Mac has finished.
 outputs() { git ls-remote origin "refs/heads/mac-shell-out/$tag" "refs/heads/mac-shell-out/$tag.*" 2>/dev/null | sort; }
@@ -209,7 +269,7 @@ api -X POST "repos/$repo/actions/workflows/mac-shell.yml/dispatches" \
   || fail "could not start the workflow of $home for $ref"
 echo "started ${scripts[*]} at $ref (${remote:0:7}), tag $tag$([ "$macs" -eq 1 ] || echo ", on $macs Macs")$([ "$configuration" = debug ] || echo ", the $configuration build")"
 # For whoever shares a look at the queue: there is one more waiting now. Costs no call.
-python3 scripts/mac-queue.py --repo "$repo" --started "$macs" --for "$ref" >/dev/null 2>&1
+look 20 python3 scripts/mac-queue.py --repo "$repo" --started "$macs" --for "$ref"
 
 start=$(date +%s)
 run=""

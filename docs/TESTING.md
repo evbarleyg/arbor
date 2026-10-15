@@ -606,6 +606,21 @@ took the Macs. So from the moment its run is queued one of the five is kept free
 from what somebody else saw of late (`ARBOR_MAC_QUEUE_CACHE`), asks GitHub nothing, and goes if there is nothing to read.
 It says what it is holding back for, and the wait counts towards `MAC_SHELL_TIMEOUT`.
 
+**When what held everybody back is over** (a train, a declared hold), all who waited would let go in the same minute, in the order their timers fire: five runs of priority 2 have
+taken all five Macs in the minute before three of priority 1 were started. So priority 1 goes at the look that says it is over, `2` a look later, `3` two looks later, and each asks
+again then. A queue that was merely busy is nobody's signal, and nobody gives way after it.
+
+**Whoever has waited acts on what was true when the waiting began.** With `ARBOR_MAC_RULES` naming the files (colons between them) in which whoever coordinates writes what holds for
+everybody, a run that has held back and finds one of them changed does not start: it prints what is new and ends with 95. That is for a reader to weigh, not for a timer. Read it,
+then start the run again.
+
+**The time limit never costs a Mac's minutes, nor a place in the line.** `MAC_SHELL_TIMEOUT` is `run.sh`'s patience and nothing else: for the wait for a Mac, and anew for the run once
+it has one. No run is cancelled for it. At its end `run.sh` lets go, ends with 98, and prints how to see whether the run has ended, how to fetch what it brought and how to cancel it by hand.
+
+**A look at the queue that hangs is left behind.** The look reads a file that several machines share, and a read that falls on the moment somebody else rewrites it has been seen to hang
+for good, in a state in which no signal reaches it, though both who write that file write beside it and rename. So the look runs beside `run.sh`, is given a minute (`MAC_SHELL_LOOK`), and
+then counts as a queue that cannot be read: priorities 2 and 3 look again, priority 1 goes.
+
 **GitHub's API is shared too.** An account may make 5,000 REST calls an hour, for everything everybody does under it, and when they are used up nobody
 under that account can start a run, open a pull request or read a check until the hour is over. It has happened: a dozen copies of `run.sh` asking every ten
 seconds whether their run had ended, and every thirty what the queue looked like. So `run.sh` asks Git whatever Git can answer, which does not count (what GitHub has at
