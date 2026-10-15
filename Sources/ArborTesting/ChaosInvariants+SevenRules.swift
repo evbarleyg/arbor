@@ -582,13 +582,13 @@ extension ChaosRunner {
       let whatHappened = "Arbor moved \(window) from \(before.brief) to \(fake.snapshot.frame.brief)"
       let showedBefore = Self.area(of: before, showingOn: system.displayList)
       if untouched {
-        if !isReachable(before, by: 24) { continue }
+        if !titleBarIsWithinReach(before) { continue }
         // A command that names a window is somebody asking, and so is one that asks for everything.
         // Timers finish what it began.
         // But with nothing arranged there is nothing to lay out or to give back.
         // Undo, redo and a resume take back what was done, which is another matter.
         // And what is found counts as left: only what nobody could get hold of is fetched.
-        if action.isACommand || seven.timeOnly, named || (seven.askedForEverything && (!seven.tookAWayHome || !isReachable(before, by: 24))) { continue }
+        if action.isACommand || seven.timeOnly, named || (seven.askedForEverything && (!seven.tookAWayHome || !titleBarIsWithinReach(before))) { continue }
         if seven.displaysChangedLast { continue }
         // What is found counts as left. The one thing Arbor may fetch is what nobody could get hold of: no 24 points of its title bar
         // are on any display (docs/VIABLE.md, section 6).
