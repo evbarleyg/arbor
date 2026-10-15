@@ -617,7 +617,9 @@ final class Runner {
     try Data(typo.utf8).write(to: settingsFile)
     let reload = try send("reload-settings")
     check("the reload is refused", !reload.ok, reload.message)
-    check("the reply says where the typo is", reload.message.contains("line 3, column 3"), reload.message)
+    // Where the next member begins, which is where the missing comma is noticed. Counted, so that a line more in the file above does not move it.
+    let noticed = typo.components(separatedBy: "\n").firstIndex { $0.contains("myNote") }.map { $0 + 1 } ?? 0
+    check("the reply says where the typo is", reload.message.contains("line \(noticed), column 3"), reload.message)
     let unsaved = try send("exclude com.example.second")
     check("a change is refused meanwhile", !unsaved.ok, unsaved.message)
     check("the file with the typo is left alone", settingsText() == typo, settingsText())
