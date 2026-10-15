@@ -77,6 +77,7 @@ userSwitchesApp appsSettle setUnresponsive openTab selectTab closeTab dragAndLos
 settleFocus click userClick userClickBringsAppForward beginDrag moveDrag holdDrag holdModifierKeys endDrag loseTheReleaseOfTheDrag appsReact grab
 carry letGo loseTheRelease moveSilently report renumber finishRestoring openStrayDialog forgetSession type keyDown keyUp
 hold clickOnTheWallpaper pressShowDesktopKey clickOnTheStrip letMacOSTile doubleClick doubleClickTitleBar zoomAsMacOSDoes bringForward
+changeDisplaysAsAMacDoes press sayWhereItIs
 """.split()
 # The test tells the fake what macOS or an app will answer when Arbor asks or acts. Methods, then properties that are set.
 SYSTEM_ANSWERS = "setMinimumSize setMaximumSize setSizeStep setBehaviour setTitleBar".split()
@@ -102,7 +103,7 @@ changedItsWays window requested before after together wasFocused focus frames ke
 titleBarStaysReachable growsNoFurtherThanTheScreen movesLate flightFromTheDock flightFromFullScreen none jolts titleBar usualTitleBar
 measuredTitleBars reports
 sightings clearSightings macTiling macTile takeSizeBeforeTile isSweptAside
-whereItWaits movesWhenTheFrameLogWasCleared road roadTolerance changesOfPlace detour giveToTheAppInFront keysTheAppInFrontGot doubleClicks idealSize sizeMargin framePlan process
+whereItWaits movesWhenTheFrameLogWasCleared road roadTolerance changesOfPlace detour giveToTheAppInFront keysTheAppInFrontGot doubleClicks idealSize sizeMargin framePlan process whereItOpens displaysLastTold
 """.split()
 
 # A hand on one of Arbor's own panels: the fake calls the action the real panel would call.
@@ -121,7 +122,7 @@ HARNESS_REPORTS = "keyDown keyUp keyRepeat revokeAccessibility grantAccessibilit
 HARNESS_NEUTRAL = """
 system overlays store scheduler controller releases loginItem recorder start run press registeredShortcuts key display
 workspace layout visibleFrame frame ascii lastTrace layoutProblems staleLayouts measure beginStep stepMark movesInStep jolts
-newProcess launch launchForTheFirstTime mac welcome settingsWhenNoneAreGiven
+newProcess launch launchForTheFirstTime mac welcome settingsWhenNoneAreGiven saidToBeLetBeInATile
 """.split()
 
 # What the stand-ins for GitHub's releases and macOS's login items are told to answer.
@@ -1322,12 +1323,12 @@ EVIDENCE = {
     "system.moveSilently": (["changed by somebody else, another frame, no drag"], ""),
     "system.report": (["changed by somebody else, another frame, no drag"], ""),
     "system.setTitle": (["changed, another title"], ""),
-    "system.userFocus": (["focused, within a second of a press"],
-                         "the fake also announces the app (`applicationActivated`), which no recording holds; and where the focus crosses apps "
-                         "a Mac reports `keyboardFocusMoved` before and after it (`day-02-dock-icons-and-cmd-tab`), the fake not at all"),
+    # It differed until the fake said twice that the keyboard has moved where the focus crosses apps, and a recording held the app's word.
+    "system.userFocus": (["focused, within a second of a press"], ""),
     "system.userClick": (["event pointerPressed"], ""),
     "system.userClickBringsAppForward": (["event applicationActivated"], ""),
     "system.click": (["event pointerPressed"], ""),
+    "system.press": (["event pointerPressed"], ""),
     "system.comesForward": (["read secondsSinceClickOrModifierKey"], ""),
     "system.bringForward": (["event applicationActivated"], ""),
     "system.settleFocus": (["focused, answering Arbor's focus"], ""),
@@ -1340,26 +1341,29 @@ EVIDENCE = {
     "system.sheetTakesTheKeyboard": (["event keyboardFocusMoved"], ""),
     "system.activate": (["event applicationActivated"], ""),
     "system.activateApp": (["event applicationActivated"], ""),
-    "system.drag": (["event dragBegan"], "rows 6 and 7: on a Mac `dragBegan` comes 0.3 s late with the window already moved, frames lag "
-                    "the pointer, and a press on a window that is not focused focuses it first; the fake does none of it"),
-    "system.beginDrag": (["event dragBegan"], "rows 6 and 7, as for `drag`"),
-    "system.grab": (["event dragBegan"], "rows 6 and 7, as for `drag`"),
+    "system.drag": (["event dragBegan"], "row 6: on a Mac `dragBegan` comes 0.3 s late with the window already moved, and frames lag "
+                    "the pointer; the fake does neither"),
+    "system.beginDrag": (["event dragBegan"], "row 6, as for `drag`"),
+    "system.grab": (["event dragBegan"], "row 6, as for `drag`"),
     "system.moveDrag": (["event dragMoved"], "row 6: on a Mac `dragMoved` and `changed` are not in step; the fake sends them in pairs"),
     "system.carry": (["event dragMoved"], "row 6, as for `moveDrag`"),
     "system.holdDrag": (["event dragMoved"], ""),
     "system.endDrag": (["event dragEnded"], ""),
     "system.letGo": (["event dragEnded"], ""),
+    # The last word before either end of a drag.
+    "system.sayWhereItIs": (["event dragEnded", "event dragCancelled"], ""),
     "system.holdModifierKeys": (["modifierKeysDown, a key is down"], ""),
     "system.heldModifiers=": (["modifierKeysDown, a key is down"], ""),
     "system.loseTheReleaseOfTheDrag": (["event dragCancelled"], ""),
     "system.loseTheRelease": (["event dragCancelled"], ""),
     "system.dragAndLoseTheRelease": (["event dragCancelled"], ""),
-    "system.userResize": (["event resizeBegan"], "rows 7, 9 and 15: a Mac focuses first, stalls in mid-drag, and reports nothing for a "
+    "system.userResize": (["event resizeBegan"], "rows 9 and 15: a Mac stalls in mid-drag, and reports nothing for a "
                           "window that cannot be resized"),
     "system.releaseMouse": (["event resizeEnded"], ""),
     # A test hands these any list: a display comes, goes, moves. They count as recorded with the kind that came last, not with the first.
     "system.setDisplays": (["displaysChanged, a display went"], ""),
     "system.displayList=": (["displaysChanged, a display went"], ""),
+    "system.changeDisplaysAsAMacDoes": (["displaysChanged, a display went"], ""),
     "system.setListed": (["event windowFound"], ""),
     "system.openUnlisted": (["event windowFound"], ""),
     "system.openTab": (["event windowReplaced"], ""),
@@ -1682,7 +1686,8 @@ ANCHORS = [
     (".github/workflows/ci.yml", r"\./scripts/e2e\.sh --full-screen"),
     (".github/workflows/ci.yml", r"\./scripts/mac-shell/e2e-drag\.sh"),
     (".github/workflows/ci.yml", r"test\s+\./scripts/ci-tests\.py run --mode \"\$TESTS\""),
-    (".github/workflows/ci.yml", r"test \./scripts/ci-tests\.py run --mode full"),
+    (".github/workflows/linux.yml", r"test \./scripts/fast-tests\.py run --no-build"),
+    (".github/workflows/linux.yml", r"join \./scripts/fast-tests\.py join --record linux\.tsv"),
     ("scripts/ci-tests.py", r'command = \["swift", "test",'),
     ("scripts/ci-tests.py", r'\("a compile-time condition", re\.compile\('),
     (".github/workflows/ci.yml", r"\./scripts/sim-smoke\.sh"),
