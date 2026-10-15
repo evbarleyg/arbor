@@ -48,6 +48,7 @@ private func sample() -> Workspace {
   workspace.receive(f1, asGuestOf: workspace.tree.leaf(containing: b)!)
   workspace.floating[pinnedWindow] = CGRect(x: 900, y: 100, width: 300, height: 200)
   workspace.pin(pinnedWindow)
+  workspace.fill(pinnedWindow, at: CGRect(x: 12, y: 37, width: 1416, height: 851))
   // The first is stashed when the second is summoned.
   workspace.summon(WindowID(78), app: "A", at: CGRect(x: 100, y: 100, width: 300, height: 200))
   workspace.summon(WindowID(79), app: "B", at: CGRect(x: 200, y: 200, width: 300, height: 200))

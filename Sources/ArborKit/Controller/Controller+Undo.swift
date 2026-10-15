@@ -67,6 +67,18 @@ extension Controller {
     case .toggleFloat(let window):
       let docked = (window ?? system.focusedWindow()).map { id in workspaces.values.contains { $0.isDocked(id) } }
       scope?.title = docked == true ? "Float" : "Dock"
+    case .zoom(let window):
+      // Framing a docked window moves the view, which is no step. With a floating one it is the window that changes (Controller+Fill.swift).
+      if let id = window ?? system.focusedWindow(), workspaces.values.contains(where: { $0.isFloating(id) }) {
+        scope?.label = isFilled(id) ? "put \(id) back in its own size" : "fill the screen with \(id)"
+        scope?.title = isFilled(id) ? "Own Size" : "Fill the Screen"
+      }
+    case .showAll, .home:
+      // Nor is showing everything a step, but for what it takes out of the way to do so.
+      if workspaces.values.contains(where: { $0.filled != nil }) {
+        scope?.label = "put what filled the screen back in its own size"
+        scope?.title = "Own Size"
+      }
     case .exclude(let bundleID):
       // It cannot be undone, being a setting. `undo` says so, and then it should say what can be done.
       if let bundle = bundleID ?? system.focusedWindow().flatMap({ windows[$0]?.bundleID }) {
@@ -217,7 +229,8 @@ extension Controller {
       // All of the Desktop is not a place anybody chose for the window that has it to itself (F18).
       let filling = windowThatTakesDesktop(of: display)
       var frames: [WindowID: CGRect] = [:]
-      for window in workspace.floating.keys where !parked.contains(window) && window != filling {
+      // Nor is all of the view: whether a window fills it is in the workspace, and a layout sees to it (Controller+Fill.swift).
+      for window in workspace.floating.keys where !parked.contains(window) && window != filling && !workspace.isFilled(window) {
         if let snapshot = windows[window], snapshot.isPresent { frames[window] = snapshot.frame }
       }
       result[display] = frames
@@ -284,6 +297,7 @@ extension Controller {
     }
     undoHistory.finishContinuation()
     while true {
+      let (historyAsItWas, arrangedAsItWas) = (undoHistory, workspaces)
       let steps = undoHistory.take(direction, on: display)
       guard let step = steps[display] else { return .failure("nothing to \(verb)" + onPointerDisplay) }
       if step.isIrreversible {
@@ -304,6 +318,12 @@ extension Controller {
           to: direction.opposite, on: id)
       }
       install(plan)
+      // Nothing has come of it: it was to take a window out of the view it fills, and the window's app does not answer
+      // (Controller+Fill.swift). The step stays where it was.
+      if plan.keys.allSatisfy({ id in arrangedAsItWas[id].map { workspaces[id]?.hasSameArrangement(as: $0) == true } == true }) {
+        undoHistory = historyAsItWas
+        return .failure("cannot \(verb) \(step.label) now: the window's app does not answer")
+      }
       titleOfTheStepJustTaken = step.title
       return .success("\(done) \(step.label)")
     }
@@ -454,6 +474,10 @@ extension Controller {
           puttingBack: moving.sorted { $0.key < $1.key }.map { (window: $0.key, frame: $0.value) })
       }
       workspaces[display]?.desktopIsOwedRoom = restoration.workspace.desktopIsOwedRoom
+      // One that filled the view and whose app does not answer is as large as it was, and the key goes on knowing why.
+      for (window, fillsAt) in previous[display]?.filled ?? [:] where unplaced.contains(window) {
+        workspaces[display]?.fill(window, at: fillsAt)
+      }
       placedOnPurpose = []
       leavingView = []
       // Layouts take a floating window that is where Arbor put it for one on the Desktop, which these are.
@@ -496,7 +520,15 @@ extension Controller {
     var plan = FloatingPlan()
     for (window, preferred) in workspace.floating.sorted(by: { $0.key < $1.key }) {
       // A stashed window is out of view whatever the camera shows, and every layout sees to that (Controller+Summon.swift).
-      guard let current = windows[window], current.isPresent, !workspace.isStashed(window) else { continue }
+      // So is one that fills the view in it (Controller+Fill.swift).
+      guard let current = windows[window], current.isPresent, !workspace.isStashed(window), !workspace.isFilled(window) else {
+        continue
+      }
+      // It filled the view till now, and that is what is taken back: to its own frame, whatever the view shows.
+      if previous?.isFilled(window) == true {
+        plan.places[window] = ownFrame(of: window, on: display) ?? preferred
+        continue
+      }
       let isOutOfView = parked.contains(window)
       let floatsInView = previous?.isFloating(window) == true && !isOutOfView
       // The display may have shrunk or moved since: a place that is no longer on it does not count. Half of the

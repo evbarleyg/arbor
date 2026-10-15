@@ -201,7 +201,7 @@ extension Controller {
     var workspace: Workspace
     /// Its place in the arrangement. Nil while it floats.
     var leaf: NodeID?
-    var isFramed: Bool { leaf != nil && workspace.camera == leaf }
+    var isFramed: Bool { leaf != nil ? workspace.camera == leaf : workspace.isFilled(window.id) }
   }
 
   /// The focused window, if commands that name no window would take it (`target(_:)`).
@@ -217,12 +217,13 @@ extension Controller {
     let (id, workspace) = (focused.window.id, focused.workspace)
     let (tree, camera) = (workspace.tree, workspace.camera)
     if workspace.isStashed(id) { return true }
-    // Kept in view or summoned, it has no place to frame. The key un-frames what lies beneath it, if that is framed.
-    if workspace.staysInView(id) {
+    // Summoned, it has no place to frame. The key un-frames what lies beneath it, if that is framed.
+    if workspace.isSummoned(id) {
       return camera != tree.root && (tree.isStack(camera) || camera == tree.desktop) && canUnframe(camera, on: focused.display)
     }
+    // A floating window fills the view, and goes back (Controller+Fill.swift).
+    guard let space = focused.leaf else { return true }
     // Framed already, the key goes back.
-    let space = focused.leaf ?? workspace.guests?[id] ?? tree.desktop
     return camera != space || space == tree.root || canUnframe(space, on: focused.display)
   }
 

@@ -334,22 +334,30 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
     }
   }
 
-  @Test func theFrameShortcutInAPinnedWindowUnframesWhatIsBeneath() {
+  /// It used to un-frame what was beneath, or to say "kept in view; dock it to give it a place". Since QUESTIONS Q29 the key does the
+  /// same for every window a person can have in front: a pinned one fills the view too, and stays pinned.
+  @Test func theFrameShortcutInAPinnedWindowFillsTheViewWithItAndNeverMovesTheView() {
     let (h, editor, _, call) = makeHarness()
     h.run("zoom \(editor.rawValue)")
     h.system.userFocus(call)
     #expect(h.run("zoom").ok)
-    #expect(h.workspace.camera == h.workspace.tree.root, "not the Desktop, where it does not live")
-    #expect(h.frame(call) == corner)
-
-    // With nothing framed there is nothing to undo, and a pinned window has no place to frame.
-    h.system.userFocus(call)
-    #expect(h.run("zoom").message == "\(call) is kept in view; dock it to give it a place")
-    #expect(h.run("zoom \(call.rawValue)").message == "\(call) is kept in view; dock it to give it a place")
-    #expect(h.workspace.camera == h.workspace.tree.root)
-    h.run("zoom \(editor.rawValue)")
-    #expect(!h.run("zoom \(call.rawValue)").ok, "named, it never moves the view")
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: editor), "not the Desktop, where it does not live, nor anywhere else")
+    #expect(h.frame(call) == h.frame(editor) && h.controller.isPinned(call))
+    #expect(h.run("zoom").ok)
+    #expect(h.frame(call) == corner && h.controller.isPinned(call))
     #expect(h.workspace.camera == h.workspace.tree.leaf(containing: editor))
+
+    // With nothing framed as well, and by name.
+    h.run("home")
+    #expect(h.run("zoom \(call.rawValue)").message == "filled the screen with \(call)")
+    #expect(h.run("zoom \(call.rawValue)").message == "\(call) fills the screen already")
+    #expect(h.workspace.camera == h.workspace.tree.root, "named, it never moves the view")
+    h.system.userFocus(call)
+    h.run("zoom")
+    #expect(h.frame(call) == corner)
+    h.run("zoom \(editor.rawValue)")
+    #expect(h.run("zoom \(call.rawValue)").ok)
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: editor), "nor from a framed view")
   }
 
   @Test func pinnedWhereDockedWindowsHadPushedItThatIsItsPlaceFromNowOn() {

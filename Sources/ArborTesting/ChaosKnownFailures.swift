@@ -532,7 +532,7 @@ extension ChaosRunner {
         open 104 Music pid 1006 at 246 836 745 558 min 680 480
         advance 5
         react
-        key down zoom
+        key down desktop
         key down back
         react
         """,
@@ -573,7 +573,7 @@ extension ChaosRunner {
         open 103 Mail pid 1002 at 375 103 869 693 min 760 400
         key down dock top
         open 104 Mail pid 1002 at 200 28 1177 819 min 760 400
-        key down zoom
+        key down desktop
         close 104
         """,
       """
@@ -815,7 +815,7 @@ extension ChaosRunner {
         focus 103
         key down dock left
         open 105 Preview pid 1007 at 412 67 723 644 min 723 400 max 723 2000
-        key down zoom
+        key down desktop
         displays main:0,0,1280,800:25,0,0,59* windows-late
         key down dock top
         focus 103
@@ -898,6 +898,23 @@ extension ChaosRunner {
         grab 102
         carry 700 896
         release
+        """),
+    ChaosKnownFailure(
+      rule: "plain-drag-moved-another-making-way", owner: "F18, with floating windows making way: both are options", severity: 4,
+      story: "Two windows float beside a docked one. One is dragged to the other display with no key held: the one that is left, alone on its Desktop now, is stretched over it.",
+      script: """
+        displays main:0,0,1440,900:25,0,0,0* side:1440,0,1280,800:0,0,0,0 windows-never
+        launch
+        settings {"floatingWindowsMakeWay":true,"soleFloatTakesDesktop":true}
+        open 101 Safari pid 1000 at 100 100 600 400
+        dock 101 left
+        open 105 Terminal pid 1003 at 800 300 462 440
+        open 106 Notes pid 1001 at 900 200 315 286
+        settle
+        grab 106
+        carry 1800 300
+        release
+        settle
         """),
     ChaosKnownFailure(
       rule: "moved-before-any-dock", owner: "rule 2: the displays change during a pause", severity: 3,

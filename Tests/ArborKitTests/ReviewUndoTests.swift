@@ -42,7 +42,8 @@ private func expectSound(_ h: Harness, _ note: String, sourceLocation: SourceLoc
         "\(window) is at \(String(describing: h.frame(window))), its slot is \(frame) \(note)", sourceLocation: sourceLocation)
       #expect(!h.controller.parked.contains(window), "\(window) shows and counts as out of view \(note)", sourceLocation: sourceLocation)
     }
-    for window in layout.hiddenWindows {
+    // The one that had the keyboard when a pause ended is let be where it stands, tile or not (Controller+LetBe.swift).
+    for window in layout.hiddenWindows where window != h.controller.windowLetBe {
       #expect(!h.system.isVisible(window), "\(window) should be out of view \(note)", sourceLocation: sourceLocation)
     }
     for window in workspace.floating.keys where h.controller.windows[window]?.isPresent == true {

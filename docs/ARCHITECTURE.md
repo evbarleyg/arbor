@@ -130,6 +130,15 @@ A `dock` command keeps a Desktop that has windows on it wide and tall enough to 
 A window that opens over a view the Desktop is not part of is a **guest** of that space
 (`Workspace.guests`, `Controller+Guests.swift`): it is also in view whenever its host is.
 
+**A floating window that fills the view** (`Workspace.filled`, `Controller+Fill.swift`): `zoom` frames a docked window by moving the
+view; a floating one has no place to look at, so it is the window that takes the frame a framed one has. The view stays, no layout
+runs, nothing else gets a frame. `floating` goes on holding the window's own frame, so every way of letting go gives that back, and
+so does the key: there is one frame to go back to. `filled` holds where the fill has left the window, which a start compares with where
+it finds it. `floatingMoves` neither parks it nor pushes it aside, and moves it only when the view has changed its shape. The
+fill's size never becomes the window's own: whoever writes a frame on screen into `floating` asks `isFilled` first. The mark goes
+when the window is really back, not when it was asked to be. In a hand it ends: a new size is the window's own; moved, it comes
+out in its own size. Moved at its size with no button down it is let be, and keeps the mark.
+
 **Pinned windows** (`Workspace.pinned`, `Controller+Pin.swift`) are floating windows that none of this applies to:
 the plan for floating windows (`floatingMoves`) asks `frameBringingIntoView`, which moves one only if it is out of view (it
 was until it was pinned, or its display went away or changed shape) or smaller than its own size (a small Desktop had
@@ -741,7 +750,7 @@ Ask of it: **can it change while the tree and the set of floating windows stay t
 
 | The field | Examples | `hasSameArrangement` | `restored(over:since:)` |
 |---|---|---|---|
-| **is arrangement**: what is docked where and how large, and who floats. Changing it is what `undo` is for | `tree`, the keys of `floating` | compares it | the old value |
+| **is arrangement**: what is docked where and how large, who floats, and who of those fills the view. Changing it is what `undo` is for | `tree`, the keys of `floating`, the keys of `filled` (which can change by itself, so it is carried over like the third kind) | compares it | the old value |
 | **follows from the arrangement**: no, it changes only in the same breath as the tree or the set of floating windows | the frame a docked window floated at before (`undockedFrames`, F48); whether Arbor took the Desktop's room (`desktopIsOwedRoom`, F61) | leaves it out | the old value, and a comment that names the field and says so (and `undockedFrames` takes the frame of a floating window moved since; the one way it changes by itself, a frame given while Arbor was paused or not running, is carried over) |
 | **is about the arrangement**: yes. Changing it alone is not a step, like `save-view` | `camera`, `back`, `forward`, `savedViews`, the frames in `floating`, the showing tab, `guests`, `pinned`, `summoned`, `stashed`, `summonFrames`, `names` | leaves it out | carried over |
 

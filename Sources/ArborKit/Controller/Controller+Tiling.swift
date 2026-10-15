@@ -408,6 +408,8 @@ extension Controller {
     // No relayout follows, which would have moved the ring along.
     refreshFocusRing(.geometry)
     guard !actual.approximatelyEquals(current) else { return .failure("\(id) cannot \(verb) any further") }
+    // A size its person asked for is its own, also if it filled the view till now (Controller+Fill.swift).
+    unmarkFill(of: id, on: displayID)
     workspaces[displayID]?.floating[id] = actual
     // Its user has taken it in hand: alone on the Desktop, it is not stretched over it again (F18).
     floatingWindowMoved(id, from: displayID)

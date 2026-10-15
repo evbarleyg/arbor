@@ -177,6 +177,8 @@ extension Controller {
         frames[window] = frameWhenFilling(desktop, with: window, on: display)
       case .putBack(let frame):
         frames[window] = frame
+      case .fillTheView(let view):
+        if let current = windows[window] { frames[window] = expectedFrame(of: current, in: view) }
       }
     }
     for (window, frame) in puttingBack {

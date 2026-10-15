@@ -20,7 +20,7 @@ Printing something:
   state.py display <window>     the number of the display whose workspace holds the window
 
 Yes or no: exit code 0 or 1, and on 1 a line that says why.
-  state.py is <window> <what>   docked floating parked managed minimized hidden fullScreen pinned letBe tile focused known
+  state.py is <window> <what>   docked floating parked managed minimized hidden fullScreen pinned letBe filled tile focused known
   state.py at_edge <window> <edge>          it reaches that edge of the screen, a gap away
   state.py fills <window>                   it fills the screen, a gap away from every edge
   state.py in_slot <window>                 it is where the layout puts it
@@ -237,7 +237,7 @@ def summary(world):
             inside = " ".join(f"w{window}" for window in tile["windows"]) or "-"
             lines.append(f"  tile n{tile['node']} {tile['kind']:<8} {words(rect(tile['frame']))}  holds {inside}")
     for window in state["windows"]:
-        traits = [name for name in ("docked", "parked", "minimized", "hidden", "fullScreen", "pinned", "letBe") if window.get(name)]
+        traits = [name for name in ("docked", "parked", "minimized", "hidden", "fullScreen", "pinned", "letBe", "filled") if window.get(name)]
         if not window["docked"]:
             traits.insert(0, "floating" if window["managed"] else "not managed")
         if state.get("focused") == window["id"]:
@@ -262,7 +262,7 @@ def is_what(world, wanted, what):
         answer = world.tile(wanted) is not None
     elif what == "focused":
         return world.state.get("focused") == wanted, f"the focused window is {world.state.get('focused')}"
-    elif what in ("docked", "parked", "managed", "minimized", "hidden", "fullScreen", "pinned", "letBe"):
+    elif what in ("docked", "parked", "managed", "minimized", "hidden", "fullScreen", "pinned", "letBe", "filled"):
         answer = window.get(what, False)
     else:
         fail(f"cannot tell whether a window is `{what}`")

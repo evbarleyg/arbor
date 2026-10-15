@@ -143,13 +143,17 @@ private let side = DisplaySnapshot(
     #expect(h.workspace.camera == h.workspace.tree.leaf(containing: c))
   }
 
-  @Test func framingAFloatingWindowAgainLeavesTheDesktop() {
+  /// There and back, as for a docked window. For a floating one it is the window that goes, and the view stays (QUESTIONS Q29).
+  @Test func framingAFloatingWindowAgainTakesItBack() {
     let (h, _, _, _) = nested()
     let note = h.system.open(app: "Stickies")
     h.system.userFocus(note)
+    let had = h.frame(note)
     h.run("zoom")
-    #expect(h.workspace.camera == h.workspace.tree.desktop)
+    #expect(h.controller.isFilled(note) && h.frame(note) != had)
+    #expect(h.workspace.camera == h.workspace.tree.root)
     h.run("zoom")
+    #expect(h.frame(note) == had)
     #expect(h.workspace.camera == h.workspace.tree.root)
   }
 

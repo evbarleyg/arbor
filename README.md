@@ -36,7 +36,8 @@ independent implementation and is not affiliated with it.
 - **The Desktop stays**: windows you have not docked float exactly as they always have. Arbor never
   moves or resizes one: it stays where you put it, over docked windows too, goes out of view when you
   zoom in on something else, and comes back to the same place. Show the Desktop in the menu shows all that floats.
-- **Zoom**: ⌃⌥↩ frames the focused window (again to return), ⌃⌥Space shows everything, ⌃⌥[ goes back. In the menu, Step Out
+- **Zoom**: ⌃⌥↩ fills the screen with the focused window (again to return): a docked one is framed, a floating one
+  grows to the same size, stays floating and has its own frame back afterwards, and nothing else moves. ⌃⌥Space shows everything, ⌃⌥[ goes back. In the menu, Step Out
   goes out a level, Step In goes in toward the window you are typing in (or pointing at), and Forward goes where Back came from.
 - **Peek**: hold ⌃⌥Space instead of tapping it. Everything shows while the keys are down; point at a window, or walk to it with
   the arrow keys, and let go: it is framed. One gesture from any window to any other, by where it is.
@@ -227,7 +228,7 @@ Arbor takes nine keys, each ⌃⌥ and one key. Nothing else is bound: no third 
 | Keys | Action | Command |
 |---|---|---|
 | ⌃⌥← / ⌃⌥→ | Dock the window in front at that side, or move it one place | `dock left` / `dock right` |
-| ⌃⌥↩ | Frame the focused window; again to return | `zoom` |
+| ⌃⌥↩ | Fill the screen with the focused window, docked or floating; again to return | `zoom` |
 | ⌃⌥Space | Show everything; held, peek (below) | `show-all` |
 | ⌃⌥[ | Back to where the view was | `back` |
 | ⌃⌥Z | Undo the last change to the arrangement | `undo` |
@@ -410,7 +411,7 @@ wrong for the few that accompany whatever you are doing. Pin those: focus the wi
 - Arbor brings it to the front again when the view changes or a click on another window covers it. It never gives
   it the keyboard, and a command that moves the view takes the keyboard along to the window that arrives, also out of
   a pinned window you had clicked in: keys meant for your editor do not end up in a call.
-- ⌃⌥↩ in a pinned window un-frames what is beneath it. A pinned window has no place of its own to frame.
+- ⌃⌥↩ in a pinned window fills the screen with it, as with any floating window, and again takes it back. It stays pinned.
 - Dragging moves it and never docks it. `dock` (⌃⌥← and ⌃⌥→) and ⌃⌥F dock it, which ends the pin, and the reply
   says so. Pinning a docked window floats it first.
 - Arrange Windows leaves it out. Float All Windows, pausing and quitting leave it exactly where it is.

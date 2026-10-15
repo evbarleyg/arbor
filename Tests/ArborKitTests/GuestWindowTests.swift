@@ -279,15 +279,20 @@ import Testing
     #expect(h.system.focusedWindow() == a)
   }
 
-  @Test func theShortcutForFramingPressedOnAGuestLeavesTheFramedView() {
+  /// It used to leave the framed view. Since QUESTIONS Q29 the key does the same for every floating window (Controller+Fill.swift).
+  @Test func theShortcutForFramingPressedOnAGuestFillsTheViewWithItAndTheViewStays() {
     let (h, a, _) = framed()
     let new = openGuest(h)
     #expect(h.system.focusedWindow() == new)
+    let (had, host) = (h.frame(new), h.frame(a))
     let result = h.run("zoom")
     #expect(result.ok)
-    #expect(h.workspace.camera == h.workspace.tree.root, "\(result.message)")
-    h.run("zoom \(new.rawValue)")
-    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: a), "a guest's place is the view it opened over")
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: a), "\(result.message)")
+    #expect(h.frame(new) == host && h.frame(a) == host, "as large as its host, which is behind it and has not moved")
+    #expect(h.workspace.guests?[new] != nil, "it is still a guest of the view it opened over")
+    h.run("zoom")
+    #expect(h.frame(new) == had)
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: a))
     #expect(h.system.focusedWindow() == new)
   }
 

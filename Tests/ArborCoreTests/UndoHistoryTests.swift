@@ -908,7 +908,7 @@ private func change(_ before: UInt32, _ after: UInt32) -> UndoHistory.Change {
   /// inside something, teach `Workspace.renumber(_:as:)` to move them, give `everyTraceOfAWindowFollowsItsNewNumber` a sample that fills
   /// the field, and put its name on the first list. If it holds none, put it on the second.
   @Test func everyStoredPropertyThatHoldsWindowNumbersIsKnownToRenumber() {
-    let holdsWindows: Set = ["tree", "floating", "pinned", "guests", "undockedFrames", "summoned", "stashed"]
+    let holdsWindows: Set = ["tree", "floating", "pinned", "guests", "undockedFrames", "summoned", "stashed", "filled"]
     let holdsNone: Set = ["camera", "back", "forward", "lookingFrom", "savedViews", "summonFrames", "names", "desktopIsOwedRoom"]
     let stored = Set(Mirror(reflecting: Workspace()).children.compactMap(\.label))
     #expect(stored.subtracting(holdsWindows).subtracting(holdsNone) == [], "on neither list")
@@ -932,7 +932,7 @@ private func change(_ before: UInt32, _ after: UInt32) -> UndoHistory.Change {
       return workspace
     }
     let samples = [
-      docked, floating { _ in }, floating { $0.pin(old) },
+      docked, floating { _ in }, floating { $0.pin(old) }, floating { $0.fill(old, at: spot) },
       floating { $0.receive(old, asGuestOf: $0.tree.leaf(containing: other)!) },
       floating { $0.summon(old, app: "Mail", at: spot) },
       floating {

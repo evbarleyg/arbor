@@ -778,6 +778,18 @@ private let b = WindowID(102)
     #expect(plainDrag(inHand, then: "carry 710 450") { $0.harness.overlays.showDropPreview(self.rect(0, 25, 720, 875)) }.contains("plain-drag-showed-a-preview"))
   }
 
+  /// It has Arbor's size, as a docked window has: the one resize at the release and Undo's step for it are decided (board 0.16).
+  @Test func aWindowThatFillsTheViewComesOutOfThatLikeADockedOne() {
+    let inHand = twoFloating + ["focus 102", "zoom 102", "settle", "grab 102", "carry 700 450"]
+    #expect(plainDrag(inHand, then: "release").isEmpty)
+    // The controls: nobody else is moved for it, and it does not keep the size that was Arbor's.
+    #expect(plainDrag(inHand, then: "release") { _ = $0.system.setFrame(self.rect(120, 100, 500, 400), of: a) } == ["plain-drag-moved-another"])
+    #expect(plainDrag(inHand, then: "release") { _ = $0.system.setFrame(self.rect(100, 300, 1416, 851), of: b) }.contains("plain-drag-not-its-own-size"))
+    // And without the fill the same resize is still a fault.
+    let plain = twoFloating + ["focus 102", "settle", "grab 102", "carry 700 450"]
+    #expect(plainDrag(plain, then: "release") { _ = $0.system.setFrame(self.rect(300, 300, 500, 400), of: b) } == ["plain-drag-moved-it"])
+  }
+
   @Test func aDockedWindowDraggedOutMovesWhatIsDockedAndNothingElse() {
     let both = oneDocked + ["open 103 Safari pid 1000 at 300 200 600 400", "dock 103 right", "settle", "grab 101", "carry 700 450"]
     // Its place closes: the other docked window may move.

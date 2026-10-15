@@ -668,7 +668,8 @@ public enum Command: Equatable, Sendable, Codable {
                                    whichever you touched last (also zoom-out, zoom-in)
       neighbor <edge>              move to the neighboring space
       back | forward               where the view has been
-      zoom [window]                frame one window on its own; without a window, again to return
+      zoom [window]                fill the view with one window; without a window, again to return. A docked one
+                                   is framed; a floating one grows, goes on floating, and gets its own frame back
       zoom-node <node>             frame a space by its node number from `state`
       desktop                      show the Desktop, where floating windows live
       save-view <1-9> | view <1-9> save where you are looking | go back there

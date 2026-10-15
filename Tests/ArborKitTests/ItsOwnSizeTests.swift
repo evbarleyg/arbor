@@ -193,7 +193,7 @@ import Testing
       open 101 Finder pid 1005 at 226 535 957 384 min 501 300
       key down dock left
       open 105 Safari pid 1000 at 142 37 1164 945 min 574 240
-      key down zoom
+      key down desktop
       grab 105
       carry 465 931
       release

@@ -274,7 +274,7 @@ extension Controller {
 
   func showAll() -> CommandResult {
     guard let (display, workspace) = cameraDisplay() else { return .failure("no display") }
-    moveCamera(on: display, to: workspace.tree.root)
+    endingFills(on: display) { moveCamera(on: display, to: workspace.tree.root) }
     return .success("showing everything")
   }
 
@@ -286,7 +286,7 @@ extension Controller {
       // "A window is gone: ⌃⌥0" may have no exception, so windows that `summon` sent away are back on the Desktop.
       // The summoned one too: the keyboard goes along with the view, which would send it away the next moment.
       workspaces[display]!.forgetSummons()
-      moveCamera(on: display, to: workspaces[display]!.tree.root)
+      endingFills(on: display) { moveCamera(on: display, to: workspaces[display]!.tree.root) }
     }
     return .success(workspaces.count == 1 ? "showing everything" : "showing everything on every display")
   }
@@ -379,18 +379,17 @@ extension Controller {
     }
     let tree = workspaces[display]!.tree
     if workspaces[display]!.isStashed(id) { return summonStashed(id) }
-    if workspaces[display]!.staysInView(id) {
-      // It has no place to frame, and it does not live on the Desktop. The shortcut does what it would for the
-      // window beneath, which is framed: it un-frames.
+    if workspaces[display]!.isSummoned(id) {
+      // It is here for a moment and has no place to frame. The shortcut does what it would for the window beneath, which is
+      // framed: it un-frames.
       let camera = workspaces[display]!.camera
       guard window == nil, camera != tree.root, tree.isStack(camera) || camera == tree.desktop else {
-        let state = workspaces[display]!.isPinned(id) ? "kept in view" : "summoned"
-        return .failure("\(id) is \(state); dock it to give it a place")
+        return .failure("\(id) is summoned; dock it to give it a place")
       }
       return unframe(camera, on: display)
     }
-    // A guest's place is the space it opened over (Controller+Guests.swift).
-    let space = tree.leaf(containing: id) ?? workspaces[display]!.guests?[id] ?? tree.desktop
+    // A floating window has no place to frame either: it is the window that fills the view (Controller+Fill.swift).
+    guard let space = tree.leaf(containing: id) else { return fillTheView(with: id, on: display, again: window == nil) }
     // The shortcut pressed again undoes itself, like the green button, a second double-click
     // (F14) and the zoom key of every tiling window manager. With a window named the command
     // stays idempotent, for scripts.
@@ -404,8 +403,7 @@ extension Controller {
     }
     moveCamera(on: display, to: space)
     askForTheKeyboard(for: inFront(of: id, on: display))
-    if space == tree.desktop { return .success("showing the Desktop, where \(id) floats") }
-    return .success(tree.leaf(containing: id) == nil ? "framed \(name(of: space, on: display))" : "framed \(id)")
+    return .success("framed \(id)")
   }
 
   /// Leaves a framed space for a wider view: the one the camera came from if that was wider (framing
@@ -658,7 +656,10 @@ extension Controller {
     var updated = workspace
     // "Back to a normal Mac": windows that come and go with `summon` are ordinary floating windows again.
     let released = updated.forgetSummons()
-    guard !docked.isEmpty || !released.isEmpty else {
+    // And what fills the view has its own frame again, below, like every floating window that Arbor has moved.
+    let filled = updated.filledWindows
+    for window in filled { updated.endFill(of: window) }
+    guard !docked.isEmpty || !released.isEmpty || !filled.isEmpty else {
       if forgot { relayout(display, reason: .structure) }
       return 0
     }
@@ -681,14 +682,17 @@ extension Controller {
     where parked.contains(window) || wasPushedAside(window, from: preferred) {
       if let screen = self.display(display) { toPutBack.append((window, whereItWasLeft(window, preferred, on: screen))) }
     }
+    for window in filled { misfits[window] = nil }
     workspaces[display] = updated
     // "As it was" is exact: the layout does not go on to tidy them onto the Desktop, which is a gap
     // smaller than the display all round.
     placedOnPurpose = Set(updated.floating.keys)
     defer { placedOnPurpose = [] }
     relayout(display, reason: .camera, puttingBack: toPutBack)
+    // One whose app does not answer is as large as it was, and the key goes on knowing why.
+    for window in filled where unplaced.contains(window) { workspaces[display]?.fill(window, at: windows[window]?.frame ?? .zero) }
     notifyOfReset(display)
-    return docked.count + released.count
+    return docked.count + released.count + filled.count
   }
 
   /// Moves one edge of a docked window by `amount` points (negative shrinks).

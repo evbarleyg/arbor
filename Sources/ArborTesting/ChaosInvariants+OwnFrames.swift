@@ -50,7 +50,9 @@ extension ChaosRunner {
       }
     }
     func floatsOrdinarily(_ window: WindowID, in workspaces: [DisplayID: Workspace]) -> Bool {
-      workspaces.values.contains { $0.isFloating(window) && $0.role(of: window) == nil }
+      // (Nor does one that fills the view: it has Arbor's frame because its person asked, and goes back when they say so. The rules
+      // `fill` and `fill-became-its-own` judge that.)
+      workspaces.values.contains { $0.isFloating(window) && $0.role(of: window) == nil && !$0.isFilled(window) }
     }
     let moved = system.frameLog.count > frameLogMark ? system.frameLog[frameLogMark...].map(\.window) : []
     for (window, fake) in system.windows.sorted(by: { $0.key < $1.key }) {

@@ -56,6 +56,8 @@ extension Controller: WindowSystemEvents {
     spokeOfItsPlace[id] = nil
     shrunk[id] = nil
     fittedToADisplay[id] = nil
+    fills.inHand.remove(id)
+    fills.saidToGoNoLarger.remove(id)
     hints[id] = nil
     let hadKeyboard = hadKeyboard(id)
     keyboardHandOver.newcomers[id] = nil
@@ -198,6 +200,7 @@ extension Controller: WindowSystemEvents {
       // A new title arrives the same way as a move. Taking it for one would replace the frame
       // the user chose with wherever docked windows have pushed the window to since.
       guard previous?.frame != window.frame, !isOnlySettlingOnDesktop(window, on: display) else { return }
+      if filledWindowChanged(window, on: display) { return }
       // Remember where the user put it, following it to another display.
       let destination = displayID(at: window.frame.center) ?? display
       let role = workspaces[display]!.role(of: window.id)

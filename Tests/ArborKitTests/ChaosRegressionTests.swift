@@ -1127,4 +1127,36 @@ private let c = WindowID(103)
   ]) func whateverTheViewWasWhatIsSavedWhileAPeekIsHeldReadsBack(before: String) {
     expectEveryInvariantHolds(before + "\nkey down show-all\nsettle")
   }
+
+  /// The rule `fill-became-its-own` (Controller+Fill.swift). A window let be after a double-click was still given up on when it floated, so
+  /// the key marked it and moved nothing. And one whose own frame is the view's, squeezed by Arbor: there is nothing to go back to.
+  @Test(arguments: [
+    "open 102 Notes pid 1001 at 300 200 720 420 min 709 300\nlaunch\ndock 102 right\ndouble-click 102\nfloat\nzoom\nreact",
+    "launch\nopen 107 Notes pid 1001 at -443 1133 835 404\narrange\ndouble-click 107\npin 107\nzoom\nreact",
+    """
+    displays main:174,600,800,600:0,0,0,78 side:0,0,800,600:25,0,0,58* windows-never
+    launch
+    settings {"soleFloatTakesDesktop":true,"makeRoom":false,"newWindows":"dock","newWindowsWhileFramed":"float"}
+    open 105 Notes pid 1001 at -198 415 899 464 max 731 1132
+    displays main:0,0,800,600:25,0,0,0* windows-silent
+    dock 105 right
+    seam main 0 296
+    open 110 Xcode pid 1004 at 340 262 697 678
+    edge 110 12 37 538 551
+    flush
+    focus 110
+    crash
+    launch
+    toggle-float
+    zoom 110
+    react
+    """,
+  ]) func whatFillsTheViewHasAFrameOfItsOwnToGoBackTo(script: String) {
+    expectEveryInvariantHolds(script)
+  }
+
+  /// The rule `undo-redo`: an undo of which nothing comes, because the window's app hangs, says so and keeps its step.
+  @Test func anUndoOfAFillWhoseAppHangsIsNoUndo() {
+    expectEveryInvariantHolds("open 109 Mail pid 1002 at 416 658 481 204\nlaunch\nzoom 109\nhang 1002\nundo\nredo")
+  }
 }

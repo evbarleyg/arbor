@@ -64,6 +64,8 @@ public struct StateSnapshot: Codable, Sendable, Equatable {
     public var fullScreen: Bool
     /// Floating, and kept in view wherever the camera goes.
     public var pinned = false
+    /// Floating, and as large as the view because its person asked for that. Its own frame is kept for it.
+    public var filled = false
     /// Floating, and brought over the view by `summon` until the keyboard goes elsewhere.
     public var summoned = false
     /// Floating, and out of view until it is summoned again.

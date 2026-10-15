@@ -425,6 +425,7 @@ extension Controller {
     letGoOfWindowsNoLongerInHand(on: displayID)
     // Paid with this layout, or owed again because the app has stopped answering again (`unplaced`).
     defer { owedMoves = owedMoves.filter { !workspace.contains($0) } }
+    defer { noteWhereFillsHaveGotTo(on: displayID) }
     for (window, move) in floatingMoves(on: displayID, layout: layout, reason: reason) {
       if case .fill(let desktop) = move {
         fill(desktop, with: window, on: display)
@@ -432,6 +433,10 @@ extension Controller {
       }
       if case .putBack(let frame) = move {
         putBackWhereItWas(window, at: frame, on: display)
+        continue
+      }
+      if case .fillTheView = move {
+        moveIntoTheView(window, on: display)
         continue
       }
       guard case .place(var target, let room) = move else {
@@ -507,6 +512,8 @@ extension Controller {
     case fill(CGRect)
     /// In view again, at the frame it had when it left (Controller+OwnFrames.swift).
     case putBack(CGRect)
+    /// All over the view, which is this rectangle, because its person asked for that (Controller+Fill.swift).
+    case fillTheView(CGRect)
   }
 
   /// The floating windows `placeFloatingWindows` sees to, and what it does to each. Deciding is kept
@@ -529,6 +536,11 @@ extension Controller {
       guard let current = windows[window], current.isPresent, isManaged(window), !holdKeepsOut(window) else { continue }
       if leavingView.contains(window) {
         if !parked.contains(window) { moves.append((window, .park)) }
+        continue
+      }
+      if workspace.isFilled(window) {
+        // Nearly always nothing. Whatever the view shows, it is neither sent away nor pushed aside (Controller+Fill.swift).
+        if isStillToFillTheView(current, on: display) { moves.append((window, .fillTheView(viewToFill(on: display)))) }
         continue
       }
       if workspace.staysInView(window) {
@@ -627,6 +639,11 @@ extension Controller {
       } else if hasLeftItsCorner(window) {
         moves.append((window, .park))
       }
+    }
+    // What filled the view until this layout, and would be left as it is, goes to its own frame (Controller+Fill.swift).
+    for (window, own) in fills.goingBack.sorted(by: { $0.key < $1.key })
+    where workspace.isFloating(window) && windows[window]?.isPresent == true && !moves.contains(where: { $0.window == window }) {
+      moves.append((window, .putBack(own)))
     }
     return moves
   }
@@ -776,21 +793,29 @@ extension Controller {
     let nobody =
       system.focusedWindow().map {
         parked.contains($0) || (alsoFromNothing && windows[$0]?.isMinimized == true)
-          || (alsoFromAPinnedWindow && staysInView($0))
+          // And out of a window that fills the view, behind which the view would move unseen (Controller+Fill.swift).
+          || (alsoFromAPinnedWindow && (staysInView($0) || isFilled($0)))
       } ?? alsoFromNothing
-    return nobody && giveTheKeyboardToTheView(on: displayID, asAnHeir: asAnHeir)
+    return nobody && giveTheKeyboardToTheView(on: displayID, asAnHeir: asAnHeir, whichHasMoved: alsoFromAPinnedWindow)
   }
 
   /// The windows in view on a display that can be given the keyboard, and where they are. `asHeirs`: only those that `canBeAnHeir`.
-  func windowsInView(on displayID: DisplayID, asHeirs: Bool) -> [WindowID: CGRect] {
+  /// `afterAMoveOfTheView`: what has arrived.
+  func windowsInView(on displayID: DisplayID, asHeirs: Bool, afterAMoveOfTheView: Bool = false) -> [WindowID: CGRect] {
     guard let layout = layouts[displayID], let workspace = workspaces[displayID] else { return [:] }
     // The layout can be a moment behind the windows (an app being hidden is laid out once all are reported).
     var candidates = layout.windowFrames.filter { windows[$0.key]?.isPresent == true }
-    // Not a pinned window: it did not just arrive, and keys typed into a call by surprise do harm.
-    for window in workspace.floating.keys where !parked.contains(window) && !workspace.staysInView(window) {
+    // Not a pinned window: it did not just arrive, and keys typed into a call by surprise do harm. Nor, where the view has
+    // moved, one that fills it: it was there before.
+    for window in workspace.floating.keys
+    where !parked.contains(window) && !workspace.staysInView(window) && !(afterAMoveOfTheView && workspace.isFilled(window)) {
       if let frame = windows[window]?.frame, windows[window]?.isPresent == true {
         candidates[window] = frame
       }
+    }
+    // But where nothing has arrived it is what there is to type into.
+    if candidates.isEmpty {
+      for window in workspace.filledWindows where windows[window]?.isPresent == true { candidates[window] = windows[window]?.frame }
     }
     if let letBe = whereTheWindowLetBeStands, letBe.home == displayID { candidates[letBe.window] = letBe.frame }
     return asHeirs ? candidates.filter { canBeAnHeir($0.key) } : candidates
@@ -799,9 +824,9 @@ extension Controller {
   /// The choice itself, for a caller that knows the keyboard has to come (a peek that landed beside it).
   /// `asAnHeir`: nobody moved the view or asked for anything, the window with the keyboard went (`canBeAnHeir`).
   @discardableResult
-  func giveTheKeyboardToTheView(on displayID: DisplayID, asAnHeir: Bool = false) -> Bool {
+  func giveTheKeyboardToTheView(on displayID: DisplayID, asAnHeir: Bool = false, whichHasMoved: Bool = true) -> Bool {
     guard let workspace = workspaces[displayID] else { return false }
-    let candidates = windowsInView(on: displayID, asHeirs: asAnHeir)
+    let candidates = windowsInView(on: displayID, asHeirs: asAnHeir, afterAMoveOfTheView: whichHasMoved)
     // In a fixed order: windows overlap and frames tie, and the choice must not depend on a dictionary's.
     let ordered = candidates.sorted {
       ($0.value.minY, $0.value.minX, $0.key.rawValue) < ($1.value.minY, $1.value.minX, $1.key.rawValue)

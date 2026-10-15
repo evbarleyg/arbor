@@ -208,7 +208,7 @@ import Testing
       // Only replays call it.
       "restoreDisplayNames",
       "admit", "asciiDrawing", "display", "manages", "observe", "restore", "saveNow", "snapshot", "workspaceID", "start", "shutdown",
-      "isPinned", "desktopGuardZones", "role", "displayForCommands", "options",
+      "isPinned", "isFilled", "desktopGuardZones", "role", "displayForCommands", "options",
       "freshLayout", "eventSummary", "nextStepLabel", "nextStepTitle",
       // F20. `askingForTheNamesDoesNotChangeWhatTheNextShortcutFollows` holds them to it.
       "spaceName", "namedSpaces", "namedSpacesMenu",

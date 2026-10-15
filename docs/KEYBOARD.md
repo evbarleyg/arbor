@@ -65,7 +65,7 @@ use exactly this key. **reserved**: keep free for that purpose, bound to nothing
 | ⌃⌥- / ⌃⌥= | zoom out / in, as ⌘- and ⌘= do in apps | reserved (F16) |
 | ⌃⌥← / ⌃⌥→ | `neighbor left` / `right` | T |
 | ⌃⌥⇧ + arrow | `focus <direction>`: the nearest window in view that way; when there is none, what `neighbor` does, then the next display. These keys ran `neighbor` before; framed on one window they still do the same, so nothing is unlearned | shipped (F22) |
-| ⌃⌥↩ | `zoom` | T |
+| ⌃⌥↩ | `zoom`. With a floating window in front, which TrellisWM's key does nothing for, it is the window that fills the view, and goes back (QUESTIONS Q29) | T |
 | ⌃⌥[ / ⌃⌥] | `back` / `forward` | T |
 | ⌃⌥1–9 / ⌃⌥⇧1–9 | `view n` / `save-view n` | T |
 | ⌃⌥D | `desktop` | shipped |

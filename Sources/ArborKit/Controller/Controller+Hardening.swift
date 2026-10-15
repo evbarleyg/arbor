@@ -158,10 +158,12 @@ extension Controller {
     } else {
       let role = workspaces[display]!.role(of: old)
       let host = workspaces[display]!.guests?[old]
+      let fillsAt = workspaces[display]!.filled?[old]
       let frame = workspaces[display]!.floating.removeValue(forKey: old)
       workspaces[display]!.floating[window.id] = frame
       workspaces[display]!.setRole(role, of: window.id)
       if let host { workspaces[display]!.receive(window.id, asGuestOf: host) }
+      if let fillsAt { workspaces[display]!.fill(window.id, at: fillsAt) }
     }
     renumber(old, as: window.id)
     // Tabs of a group share their frame, so what is known about the one holds for the other.

@@ -23,6 +23,7 @@ extension ChaosRunner {
     "left-to-macos",
     "rehearsal",
     "meet-",
+    "fill-in-hand-",
   ]
 
   /// How far a docked window may sit from its slot: 4 points of the app rounding its size
@@ -76,6 +77,7 @@ extension ChaosRunner {
     if !isTryingOutADrop, !wasTryingOutADrop, action != .wayBack(.startAgain) { vanishedViolations(&problems) }
     ownFrameViolations(after: action, &problems)
     pinViolations(&problems)
+    fillViolations(&problems)
     nameViolations(&problems)
     undoViolations(after: action, &problems)
     holdViolations(&problems)
@@ -583,6 +585,26 @@ extension ChaosRunner {
     }
   }
 
+  /// A floating window that fills the view (Controller+Fill.swift) is in view, where the fill left it. The fill's size is Arbor's: it is never
+  /// what is remembered as the window's own, and no window is left in it without the mark, which is what the key goes by.
+  func fillViolations(_ problems: inout [InvariantViolation]) {
+    guard isRunning, system.dragging == nil, system.resizing == nil, !system.mouseDown, !system.hasHeldEchoes else { return }
+    for (display, workspace) in controller.workspaces where !isDueForLayout(display) {
+      guard !harness.scheduler.pendingKeys.contains(where: { $0.hasPrefix("fill-in-hand-") || $0.hasPrefix("enforce-") }) else { continue }
+      for (window, fillsAt) in (workspace.filled ?? [:]).sorted(by: { $0.key < $1.key }) {
+        guard let fake = system.windows[window], fake.snapshot.isPresent, cooperates(fake), fake.placeIsArborsDoing else { continue }
+        if controller.parked.contains(window) {
+          problems.append(.init("fill", "\(window) fills the view of \(display) and counts as out of view"))
+        } else if !fake.snapshot.frame.approximatelyEquals(fillsAt, tolerance: Self.slotTolerance) {
+          problems.append(.init("fill", "\(window) fills the view of \(display) at \(fillsAt.brief), it says, and is at \(fake.snapshot.frame.brief)"))
+        }
+        if let own = workspace.floating[window], own.approximatelyEquals(fillsAt, tolerance: 1), fake.maximumSize == nil {
+          problems.append(.init("fill-became-its-own", "\(window) fills the view of \(display), and \(own.brief) is remembered as its own frame"))
+        }
+      }
+    }
+  }
+
   /// Go to… is open only where it can be used, and the window chosen in it is in view with the keyboard.
   func paletteViolations(after action: ChaosAction, _ problems: inout [InvariantViolation]) {
     if let palette = harness.overlays.finder {
@@ -726,6 +748,7 @@ extension ChaosRunner {
       if a.desktopIsOwedRoom != b.desktopIsOwedRoom {
         return "the room owed to the Desktop of \(name): \(String(describing: a.desktopIsOwedRoom)) became \(String(describing: b.desktopIsOwedRoom))"
       }
+      if a.filled != b.filled { return "who fills the view of \(name): \(a.filled ?? [:]) became \(b.filled ?? [:])" }
       if a.back != b.back || a.forward != b.forward {
         historyOnly = historyOnly ?? "the history of \(name): \(a.back) \(a.forward) became \(b.back) \(b.forward)"
         return nil

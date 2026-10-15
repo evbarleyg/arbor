@@ -412,6 +412,8 @@ public final class Controller {
   public var loginItem: (any LoginItem)?
   /// Windows that float alone and have been taken in hand (Controller+SoleFloat.swift).
   var soleFloats = SoleFloats()
+  /// Controller+Fill.swift.
+  var fills = Fills()
 
   /// The app in front, as last reported (Controller+PassThrough.swift). Nil until the first report.
   public internal(set) var frontmostApp: FrontmostApp?
@@ -606,6 +608,7 @@ public final class Controller {
     focusHistory.removeAll { windows[$0] == nil }
     let savedHints = hints
     reconcile()
+    keepOnlyFillsThatStillHold()
     noteWindowsLeftParked()
     resumeDormantWorkspaces(from: saved, hints: savedHints)
     keepRoomForWhoIsLate(saved: saved?.roomKept)
@@ -733,6 +736,8 @@ public final class Controller {
         noteThatItWasFetched(window)
       }
     }
+    // Each is back in its own frame. Where nothing could be moved they are as large as they were, and still marked.
+    if movingWindows { forgetFills() }
     // Whatever the bookkeeping says, nothing Arbor arranges is left out of view: a window can be in the
     // corner without being in `parked`, for one when it was minimized there and its display changed.
     // Arbor gives back what it took and touches nothing else: a window its person keeps three quarters over an edge is theirs.
@@ -1197,6 +1202,7 @@ public final class Controller {
     for index in snapshot.windows.indices {
       let role = role(of: snapshot.windows[index].id)
       snapshot.windows[index].pinned = role == .pinned
+      snapshot.windows[index].filled = isFilled(snapshot.windows[index].id)
       snapshot.windows[index].stashed = role == .stashed
       if case .summoned = role { snapshot.windows[index].summoned = true }
       snapshot.windows[index].letBe = isSaidToBeLetBe(snapshot.windows[index].id, docked: snapshot.windows[index].docked)

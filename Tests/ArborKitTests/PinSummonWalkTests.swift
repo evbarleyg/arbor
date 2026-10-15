@@ -74,7 +74,8 @@ private let side = DisplaySnapshot(
           else { continue }
           // As much of its own size as its display has room for.
           let room = h.system.displayList.first { $0.id == display }?.visibleFrame.size ?? .zero
-          if workspace.role(of: window) != nil,
+          // Unless its person has filled the view with it (QUESTIONS Q29): then that is where it is, and `own` is checked when that ends.
+          if workspace.role(of: window) != nil, !workspace.isFilled(window),
             let size = own[window].map({ CGSize(width: min($0.width, room.width), height: min($0.height, room.height)) }),
             snapshot.frame.size != size
           {

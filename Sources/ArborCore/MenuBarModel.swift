@@ -130,7 +130,8 @@ public struct MenuBarModel: Equatable, Sendable {
         shortcut: shortcut(.desktop)))
     buttons.append(
       Button(
-        id: .everything, command: .showAll, glyph: .arbor, isCurrent: camera == tree.root,
+        // Not over a window that fills the view, which hides everything: the command has something to do then.
+        id: .everything, command: .showAll, glyph: .arbor, isCurrent: camera == tree.root && workspace.filled == nil,
         title: "Show Everything", shortcut: shortcut(.showAll)))
     for slot in 1...9 {
       // A slot that was never saved, or whose node is gone, gets no button: `view` would fail.

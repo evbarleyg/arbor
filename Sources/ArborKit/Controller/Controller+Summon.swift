@@ -145,11 +145,11 @@ extension Controller {
     let visible = display.visibleFrame
     let home = workspaceID(containing: window)
     let livedOnADesktop = home.map { workspaces[$0]!.role(of: window) == nil } ?? false
-    // On the Desktop it is as large as there was room: squeezed by docked windows, or, alone there, all over it (F18).
+    // On the Desktop it is as large as there was room: squeezed by docked windows, or, alone there, all over it (F18). Or it fills the view.
     // What is remembered is its own frame, and a window that comes over any view should be its own size.
     let own = home.flatMap { workspaces[$0]!.floating[window] } ?? snapshot.frame
     let whereItIs =
-      home.map { windowThatTakesDesktop(of: $0) == window } == true
+      home.map { windowThatTakesDesktop(of: $0) == window || workspaces[$0]!.isFilled(window) } == true
       ? own : frameWithoutSqueeze(of: window, on: display) ?? snapshot.frame
     let size = own.size
     // In view with the keyboard in it already: someone is using it there, and it must not jump.

@@ -1,0 +1,30 @@
+# IDEAS I24's third task; QUESTIONS Q29; board 0.16. It was a complaint without an answer (collab/scenarios/wanted) until 2026-10-15.
+# Story: a newcomer who has docked nothing presses the key that fills the screen. The window in front fills it, and is still a floating window.
+# Nothing else is touched. The same key again, and it is exactly where and as large as it was.
+open Safari
+open Notes
+move 101 200 150 640 420
+focus 101
+press zoom
+expect fills 101
+expect floating 101
+expect still 102
+press zoom
+expect at 101 200 150
+expect size 101 640x420
+expect still 102
+# The fill's size is Arbor's, never the window's own: dragged by its title bar it comes out, in its own size.
+press zoom
+expect fills 101
+drag 101 500 300
+expect floating 101
+expect size 101 640x420
+expect still 102
+# Show Everything means everything: what fills the screen has its own frame back, in the same act.
+move 101 200 150 640 420
+press zoom
+expect fills 101
+press show-all
+expect at 101 200 150
+expect size 101 640x420
+expect still 102

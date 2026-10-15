@@ -31,6 +31,8 @@ extension Controller {
     var sourceDisplay: DisplayID?
     /// Where the pointer was last seen.
     var point: CGPoint
+    /// Where the pointer was, and where Arbor knew the window to be, when word of the drag came.
+    var taken: (at: CGPoint, frame: CGRect?)
     /// What the pointer is over. Nil whenever the arrangement has changed under the drag, so that
     /// the next move looks afresh.
     var hover: Hover?
@@ -60,6 +62,8 @@ extension Controller {
   static func suppressesDocking(_ held: KeyChord.Modifiers) -> Bool {
     held.contains(dragSuppressModifier) && !held.isSuperset(of: [.control, .option])
   }
+  /// Let go nearer than this to where it was taken hold of, a window has not been carried anywhere: the hand slipped.
+  static let slip: CGFloat = 24
   /// The timer that activates the target under the pointer.
   static let dragDwellKey = "drag-dwell"
   /// The timer that looks at what macOS made of a window that was left to it.
@@ -79,10 +83,11 @@ extension Controller {
     // Out of view a floating window may have been made small (`shrinkOutOfView`). It takes its own size when it is let go. (A docked
     // one that is let go over the Desktop takes the size it floated at, as ever.)
     let wasMadeSmall = parked.contains(id) && sizeInView(of: id) != windows[id]?.frame.size
-    let own = wasMadeSmall ? workspaceID(containing: id).flatMap { workspaces[$0]?.floating[id]?.size } : nil
+    // So does one that fills the view: it comes out of that as a docked window comes out of its slot (Controller+Fill.swift).
+    let own = wasMadeSmall ? workspaceID(containing: id).flatMap { workspaces[$0]?.floating[id]?.size } : ownSizeOfFilledWindow(id)
     // Whatever Arbor did with it before, it is in the user's hand and in view now.
     parked.remove(id)
-    drag = DragSession(window: id, sourceDisplay: workspaceID(containing: id), point: point)
+    drag = DragSession(window: id, sourceDisplay: workspaceID(containing: id), point: point, taken: (point, windows[id]?.frame))
     // Asked at every drag: people change it while Arbor runs, in the window that Check Setup sent them to.
     drag?.macTiling = system.macTiling()
     drag?.edgesNeverLeft = screenEdges(near: point)
@@ -287,13 +292,25 @@ extension Controller {
 
   // MARK: The end
 
+  /// Whether neither the pointer nor the window has gone anywhere to speak of. Both are asked: a frame can be stale (no report since the
+  /// drag began), and word of a drag can come late, with the pointer nearly there.
+  func isASlip(_ session: DragSession) -> Bool {
+    func near(_ a: CGPoint, _ b: CGPoint) -> Bool { hypot(a.x - b.x, a.y - b.y) < Self.slip }
+    guard near(session.point, session.taken.at) else { return false }
+    guard let then = session.taken.frame, let now = windows[session.window]?.frame else { return true }
+    return near(now.origin, then.origin)
+  }
+
   /// Ends the drag in progress with the window dropped on `hover`.
   func endDrag(on hover: Hover) {
     guard let session = drag else { return }
     scheduler.cancel(Self.dragDwellKey)
     drag = nil
     overlays.showDropPreview(nil)
+    // The hand slipped on a window that fills the view: it has been carried nowhere, and goes on filling it.
+    let hover = isFilled(session.window) && isASlip(session) ? Hover(display: session.sourceDisplay, target: .none) : hover
     finishDrop(session.window, on: hover, at: session.point, sizeOwed: session.sizeOwed, after: session.reflow)
+    filledWindowDropped(session.window)
     soleFloatDropped(session.window, from: session.sourceDisplay, leftToMacOS: hover.leftToMacOS != nil)
     noteWhereItsUserLeftIt(session.window)
     // Whoever meant Arbor's edge and got macOS's tile is told where that can be changed. Whoever held ⌥ asked macOS. Said once macOS
@@ -338,10 +355,17 @@ extension Controller {
       let home = workspaceID(containing: window)
       summonedWindowIsCarried(window, to: display)
       // A drag by the title bar moves and never resizes (Controller+UndockedFrames.swift). Asked while it still floats there.
-      let remembered = frameToRemember(of: window, movedFrom: current.frame, to: current.frame)
+      // The size of a fill is Arbor's: where it lies, its own size is what is remembered (Controller+Fill.swift).
+      let remembered =
+        ownSizeOfFilledWindow(window).map { CGRect(origin: current.frame.origin, size: $0) }
+        ?? frameToRemember(of: window, movedFrom: current.frame, to: current.frame)
       // Asked while the display it leaves still remembers it, and noted if it is docked on the other, which may be refused.
       let own = home.flatMap { $0 == display ? nil : frameToTakeAlong(of: window, from: $0)?.size }
       changed = drop.apply(to: &workspaces)
+      // Let go to float, a window that filled the view is out of that, in its own size (`sizeOwed`).
+      if hover.target == .float, unmarkFill(of: window, on: display), hover.leftToMacOS != nil {
+        lookAtWhatMacOSMadeOfAFilledWindow(window, letGoAt: current.frame)
+      }
       if let own, let arrived = workspaces[display]?.undockedFrame(of: window) {
         noteFit(of: window, own: own, into: arrived.size, on: display)
       }
@@ -387,6 +411,10 @@ extension Controller {
       // A hand on its title bar keeps some of a window on a display, unless the display has gone meanwhile.
       if isOutOfView(drop.frame), let visible = self.display(display)?.visibleFrame {
         drop.frame = drop.frame.fitted(into: visible)
+      }
+      // One that filled the view shrinks at the drop, which is Arbor's doing: not to where less than half of it shows.
+      if isFilled(window), let screen = self.display(display), drop.frame.fractionInside(screen.frame) < 0.5 {
+        drop.frame = drop.frame.fitted(into: screen.visibleFrame)
       }
     case .cameraEdge, .beside, .stack:
       if let home, home != display { drop.arrivingFrame = frameAfterTransfer(of: window, from: home, to: display) }

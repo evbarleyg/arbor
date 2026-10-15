@@ -63,8 +63,8 @@ a key: `neighbor`, `focus <direction>` and `home` (`NineKeysTests.whatHasNoKeyIs
 | | *state lines, if any, and a separator* | | | | see [States](#states) |
 | 1 | Arrange Windows | | `arrange` | shipped | the first command (Q29, point 2): it has no key in either map, ⌃⌥A is never bound again (`docs/KEYBOARD.md`), so it is run from here; and arranging is what a newcomer came for |
 | 2 | Windows ▸ | | | shipped | every open window; a click brings it to the front and into view |
-| 3 | Show Everything | ⌃⌥Space | `show-all` | shipped | ✓ when that is the view. |
-| 4 | Frame Focused Window | ⌃⌥↩ | `zoom` | shipped | ✓ when it is framed; choosing it again un-frames, as the key does |
+| 3 | Show Everything | ⌃⌥Space | `show-all` | shipped | ✓ when that is the view and no window fills it. |
+| 4 | Frame Focused Window | ⌃⌥↩ | `zoom` | shipped | ✓ when it is framed, or floats and fills the view; choosing it again takes that back, as the key does |
 | 5 | Go to… | ⌃⌥G | `find` | F27 | |
 | 6 | Saved Views ▸ | | | shipped, F10 | |
 | 7 | View ▸ | | | | the rest of what moves the view, and what holds it |

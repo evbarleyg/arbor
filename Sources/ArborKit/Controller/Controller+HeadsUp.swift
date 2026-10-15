@@ -82,12 +82,20 @@ extension Controller {
     // Looked at whoever asked, so that what a script changed is not taken for the next event's doing.
     let moment = noteFacts(on: ([display].compactMap { $0 } + workspaces.keys.sorted()))
     let level = settings.messageLevel
+    // Taken whoever asked, so that what a script met is not told to whoever presses the next key.
+    let stoppedShort = fills.stoppedShort
+    fills.stoppedShort = nil
     guard source.isAnsweredOnScreen, level != .off else { return }
     // What was lost comes before what a newcomer might like to know. The hint keeps its showing for the next time.
     let loss = result.ok && HeadsUpText.namesALoss(result.message)
     // Whoever went back or forth is told what was taken back or put back, not taught what a dock is (F19).
     if result.ok, let moment, !loss, command != .undo, command != .redo {
       teach(moment)
+      return
+    }
+    // The window has moved, and not to where the key promised. Why is not to be seen (Controller+Fill.swift).
+    if let line = stoppedShort.flatMap(lineAboutAFill(thatStoppedShortFor:)), let display = display ?? cameraDisplay()?.0 ?? pointerDisplayID {
+      showHeadsUp(line, on: display)
       return
     }
     guard
@@ -178,14 +186,6 @@ extension Controller {
     }
     if !ok, let bundle = window.bundleID, filter.excludedBundleIDs.contains(bundle) {
       return HeadsUpModel(kind: .problem, text: "Arbor does not arrange \(window.appName)", hint: "Arrangement → Arrange Again in the menu")
-    }
-    // The headline key, pressed before anything is docked: the Desktop, where the window floats, is in view already.
-    if ok, changedNothing, command == .zoom(nil), workspaceID(containing: id).map({ workspaces[$0]?.isFloating(id) == true }) == true {
-      var hint: String?
-      if let dock = shortcutLabel(for: .dock(nil, .left)), let frame = shortcutLabel(for: .zoom(nil)) {
-        hint = "\(dock) docks it, then \(frame) frames it"
-      }
-      return HeadsUpModel(kind: .change, text: "\(window.appName) floats", hint: hint)
     }
     return nil
   }

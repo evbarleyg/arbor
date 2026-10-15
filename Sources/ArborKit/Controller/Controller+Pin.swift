@@ -49,7 +49,8 @@ extension Controller {
 
   private func rememberWhereItIs(_ id: WindowID, on display: DisplayID) {
     // One whose app did not answer is not where it belongs yet, nor the size: what is remembered says where it is to go.
-    guard let snapshot = windows[id], snapshot.isPresent, !unplaced.contains(id),
+    // Nor is all of the view, where it is because it fills it, its own (Controller+Fill.swift).
+    guard let snapshot = windows[id], snapshot.isPresent, !unplaced.contains(id), !workspaces[display]!.isFilled(id),
       let remembered = workspaces[display]!.floating[id]
     else { return }
     let own = sizeToTakeAlong(of: id, from: display, remembered: remembered.size)
@@ -261,7 +262,8 @@ extension Controller {
   func raisePinnedWindows() {
     let pins = workspaces.keys.sorted()
       .flatMap { workspaces[$0]!.pinnedWindows + [workspaces[$0]!.summoned?.window].compactMap { $0 } }
-      .filter { windows[$0]?.isPresent == true && isManaged($0) && !parked.contains($0) }
+      // Not one that fills the view: raised, it would cover whatever its person has just switched to (Controller+Fill.swift).
+      .filter { windows[$0]?.isPresent == true && isManaged($0) && !parked.contains($0) && !isFilled($0) }
     let frontToBack = system.windowsFrontToBack()
     let covered = pins.filter { isCovered($0, by: frontToBack, apartFrom: pins) }
     // Nearly every look ends here. Who has the keyboard is a question to the app in front, which is being worked in.

@@ -295,7 +295,8 @@ import Testing
     let f = h.system.open(app: "Safari", pid: 11, frame: CGRect(x: 800, y: 300, width: 400, height: 300))
     h.start()
     h.run("dock \(a.rawValue) left")
-    h.run("zoom \(f.rawValue)")
+    h.run("desktop")
+    h.system.userFocus(f)
     h.scheduler.advance(by: 2)
     #expect(!h.system.isVisible(a))
     let mark = h.system.moveLog.count

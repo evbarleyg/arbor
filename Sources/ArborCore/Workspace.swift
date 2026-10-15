@@ -21,6 +21,7 @@ public struct Workspace: Codable, Sendable, Equatable {
       if pinned != nil { setPins(pinned?.filter { floating[$0] != nil }) }
       if guests != nil { dropGuestsThatLeft() }
       followSummonedWindows()
+      if filled != nil { setFills(filled?.filter { floating[$0.key] != nil }) }
     }
   }
   /// Floating windows that stay in view wherever the camera goes (see "Pins" below). Nil when there
@@ -48,6 +49,10 @@ public struct Workspace: Codable, Sendable, Equatable {
   /// True while the Desktop is a tile because Arbor took room from it for a docked window (F61), not because
   /// somebody wanted it narrow. Nil otherwise, and in files written before this existed.
   public var desktopIsOwedRoom: Bool?
+  /// Floating windows that fill the view because their person asked for it (see "Filling the view" below), and where the fill has
+  /// left each: the view, or as near to that as its app lets it come. `floating` goes on holding the frame that is the window's
+  /// own, and the only one it ever goes back to. Nil when there are none, and in files written before this existed.
+  public private(set) var filled: [WindowID: CGRect]?
 
   public static let historyLimit = 50
 
@@ -435,6 +440,7 @@ public struct Workspace: Codable, Sendable, Equatable {
     case tree, camera, back, forward, savedViews, floating, guests, pinned, undockedFrames
     case summoned, stashed, summonFrames, names
     case desktopIsOwedRoom
+    case filled
   }
 
   /// A floating frame further out or larger than this is not believed. It is far beyond any
@@ -546,6 +552,14 @@ public struct Workspace: Codable, Sendable, Equatable {
     if believed.count < places.count { tidied.append("dropped places of summoned windows that are not rectangles on any display") }
     summonFrames = believed.isEmpty ? nil : believed
     desktopIsOwedRoom = read(.desktopIsOwedRoom, or: false) ? true : nil
+    let fills = read(.filled, or: LossyDictionary<WindowID, CGRect>()).entries
+    let stillFilled = fills.filter { window, frame in
+      floating[window] != nil && stashed?.contains(window) != true && summoned?.window != window
+        && [frame.origin.x, frame.origin.y, frame.size.width, frame.size.height].allSatisfy { abs($0) <= limit }
+        && frame.size.width >= 1 && frame.size.height >= 1
+    }
+    if stillFilled.count < fills.count { tidied.append("dropped fills of windows that do not float here, or at no place on any display") }
+    filled = stillFilled.isEmpty ? nil : stillFilled
     // The table decides which groups are kept for a name, so that it and the tree cannot disagree.
     apply(self.tree.keep(exactly: Set(names.values), for: .name))
     (decoder.userInfo[DecodingNotes.key] as? DecodingNotes)?.add(notes, tidied: tidied, at: decoder.codingPath)
@@ -643,6 +657,7 @@ extension Workspace {
     unpin(window)
     endVisit(of: window)
     setStash(stashed?.subtracting([window]))
+    endFill(of: window)
     summoned = Summon(window: window, app: app)
     floating[window] = frame
     return previous
@@ -690,6 +705,7 @@ extension Workspace {
     case .summoned(let app) where summoned == nil: summon(window, app: app, at: frame)
     case .summoned, .stashed:
       endVisit(of: window)
+      endFill(of: window)
       setStash((stashed ?? []).union([window]))
     case nil: break
     }
@@ -704,6 +720,7 @@ extension Workspace {
     summonFrames = summonFrames?.mapValues(moved)
     floating = floating.mapValues(moved)
     undockedFrames = undockedFrames?.mapValues(moved)
+    filled = filled?.mapValues(moved)
   }
 
   /// Called whenever `floating` changes: a window that stops floating here is neither summoned nor
@@ -721,16 +738,45 @@ extension Workspace {
   private mutating func setStash(_ windows: Set<WindowID>?) { stashed = windows?.isEmpty == false ? windows : nil }
 }
 
+// MARK: Filling the view
+
+extension Workspace {
+  /// Whether `window` floats here and fills the view: it is as large as a framed window, and still floats.
+  public func isFilled(_ window: WindowID) -> Bool { filled?[window] != nil && isFloating(window) }
+
+  public var filledWindows: [WindowID] { (filled ?? [:]).keys.filter(isFloating).sorted() }
+
+  /// Marks a window that floats here as filling the view, at `frame`, or writes down where one that does so has got to. Returns
+  /// false, changing nothing, for any other window, and for one that comes and goes with `summon`.
+  @discardableResult
+  public mutating func fill(_ window: WindowID, at frame: CGRect) -> Bool {
+    guard isFloating(window), !isSummoned(window), !isStashed(window) else { return false }
+    setFills((filled ?? [:]).merging([window: frame]) { $1 })
+    return true
+  }
+
+  /// Ends the fill. Returns whether the window filled the view.
+  @discardableResult
+  public mutating func endFill(of window: WindowID) -> Bool {
+    guard filled?[window] != nil else { return false }
+    setFills(filled?.filter { $0.key != window })
+    return true
+  }
+
+  /// No fills is always nil, so that filling and going back leaves a workspace equal to what it was.
+  fileprivate mutating func setFills(_ fills: [WindowID: CGRect]?) { filled = fills?.isEmpty == false ? fills : nil }
+}
+
 // MARK: Undo
 
 extension Workspace {
   /// Whether both arrange the same windows the same way: the same tree (whichever tabs are
-  /// showing) and the same windows floating (wherever they float). Where the camera is, its
+  /// showing), the same windows floating (wherever they float) and the same of them filling the view. Where the camera is, its
   /// history, the saved views, the names of spaces, who is a guest of what and who is pinned, summoned or stashed do not count.
   /// Only a change to the arrangement is an undo step.
   public func hasSameArrangement(as other: Workspace) -> Bool {
     tree.hasSameArrangement(as: other.tree) && floating.count == other.floating.count
-      && floating.keys.allSatisfy { other.floating[$0] != nil }
+      && floating.keys.allSatisfy { other.floating[$0] != nil } && filledWindows == other.filledWindows
   }
 
   /// This workspace, saved before a change, made ready to replace `current` when the change is
@@ -832,6 +878,12 @@ extension Workspace {
     for (window, frame) in current.undockedFrames ?? [:] where reference.undockedFrames?[window] != frame {
       if result.isDocked(window) { result.setUndockedFrame(frame, of: window) } else if result.isFloating(window) { result.floating[window] = frame }
     }
+    // `filled`: a fill is a change like a dock, and comes back or goes with the step. One begun since stays, one ended since (by
+    // the key, or by a hand, which has given the window another frame of its own) stays ended.
+    var fills = filled ?? [:]
+    for (window, frame) in current.filled ?? [:] where reference.filled?[window] == nil { fills[window] = frame }
+    for window in (reference.filled ?? [:]).keys where current.filled?[window] == nil { fills[window] = nil }
+    result.setFills(fills.filter { floats[$0.key] != nil && !result.isStashed($0.key) && result.summoned?.window != $0.key })
     // `desktopIsOwedRoom` (F61) follows from the arrangement: it says how the gaps of this very tree came about, so it comes
     // back with them. Every layout looks at it afresh.
     for leaf in tree.preorder() {
@@ -855,10 +907,11 @@ extension Workspace {
     if isDocked(old) {
       replaceWindow(old, with: new)
     } else {
-      let (role, host) = (role(of: old), guests?[old])
+      let (role, host, fillsAt) = (role(of: old), guests?[old], filled?[old])
       floating[new] = floating.removeValue(forKey: old)
       if let host { receive(new, asGuestOf: host) }
       if role != nil { setRole(role, of: new) }
+      if let fillsAt { fill(new, at: fillsAt) }
     }
   }
 }

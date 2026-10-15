@@ -95,7 +95,9 @@ extension Controller {
     // As before a command: a peek must not pretend either (Controller+Permission.swift).
     askAboutAccessibility(beyondDoubt: true, inPassing: true)
     guard settings.peek, isRunning, holdLevel != .view, drag == nil, edgeResize == nil,
-      let (display, workspace) = deciding(true, { from(.shortcut) { cameraDisplay() } })
+      let (display, workspace) = deciding(true, { from(.shortcut) { cameraDisplay() } }),
+      // Behind a window that fills the view there is nothing to look at. The command takes it out of the way first (Controller+Fill.swift).
+      workspace.filled == nil
     else { return false }
     watchLifecycleForPeek()
     // As `perform` would before `show-all`, whose place this takes.

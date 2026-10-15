@@ -195,6 +195,8 @@ extension Controller {
     guard isRunning, settings.floatingWindowsMakeWay else { return [] }
     return workspaces.sorted { $0.key < $1.key }.flatMap { display, workspace in
       workspace.floating.sorted { $0.key < $1.key }
+        // (Not one that fills the view: that is its person's asking, whatever floating windows do for docked ones.)
+        .filter { !workspace.isFilled($0.key) }
         .filter { !parked.contains($0.key) && windows[$0.key]?.isPresent == true && wasPushedAside($0.key, from: $0.value) }
         .map { ($0.key, display) }
     }

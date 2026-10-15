@@ -87,6 +87,7 @@ extension ChaosRunner {
     var focusLogMark = 0
     var somebodyAskedArbor = false
     /// The window in a plain drag, from the moment it is taken until somebody does something else, and whether it floated when it was taken.
+    /// (As floating windows do: one that fills the view has Arbor's size, and comes out of that like a docked window out of its slot.)
     var dragged: WindowID?
     var draggedWasFloating = false
     var frameAtTheGrab: CGRect?
@@ -163,7 +164,7 @@ extension ChaosRunner {
     }
     switch action {
     case .grab(let window):
-      (seven.dragged, seven.draggedWasFloating) = (isRunning && system.windows[window] != nil ? window : nil, controller.workspaces.values.contains { $0.isFloating(window) })
+      (seven.dragged, seven.draggedWasFloating) = (isRunning && system.windows[window] != nil ? window : nil, controller.workspaces.values.contains { $0.isFloating(window) && !$0.isFilled(window) })
       seven.frameAtTheGrab = system.windows[window]?.snapshot.frame
       seven.undoStepsAtTheGrab = undoSteps
     case .carry, .release, .cursor, .settle: break
@@ -370,7 +371,7 @@ extension ChaosRunner {
       || harness.scheduler.pendingKeys.contains { key in
         // Not the focus ring's own timers, which are pending after most acts and lay nothing out.
         if key.hasPrefix("focus-ring") { return false }
-        return ["space-", "enforce-", "landed-", "displays-blinked", "focus", "back-from-full-screen", "summon-wait", "pending-slots", "sole-float-after-launch", "meet-"]
+        return ["space-", "enforce-", "landed-", "displays-blinked", "focus", "back-from-full-screen", "summon-wait", "pending-slots", "sole-float-after-launch", "meet-", "fill-in-hand-"]
           .contains { key.hasPrefix($0) }
       }
   }
@@ -573,7 +574,7 @@ extension ChaosRunner {
   private static func nothingIsArranged(_ workspaces: [DisplayID: Workspace], _ parked: Set<WindowID>) -> Bool {
     parked.isEmpty
       && workspaces.values.allSatisfy {
-        $0.tree.allWindows.isEmpty && $0.stashedWindows.isEmpty && $0.pinnedWindows.isEmpty && $0.summoned == nil
+        $0.tree.allWindows.isEmpty && $0.stashedWindows.isEmpty && $0.pinnedWindows.isEmpty && $0.summoned == nil && $0.filled == nil
       }
   }
 
@@ -642,7 +643,7 @@ extension ChaosRunner {
         problems.append(
           .init(
             isFetched ? "fetched-before-any-dock" : "moved-before-any-dock",
-            "\(whatHappened), and nothing has been docked, pinned or summoned"))
+            "\(whatHappened), and nothing has been docked, pinned, summoned or made to fill the screen"))
         continue
       }
       guard let display = controller.workspaceID(containing: window), let workspace = controller.workspaces[display] else { continue }

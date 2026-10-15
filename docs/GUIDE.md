@@ -56,7 +56,7 @@ That is all of it: **dock**, **float**, **zoom**. Everything else is a faster wa
 |---|---|---|
 | Dock | drag to a screen edge, or hold over another docked window's edge until the preview shows | ⌃⌥←, ⌃⌥→ |
 | Float | drag onto the Desktop, or anywhere with ⌘ held (in a view without the Desktop, only ⌘ takes a window out: let go without it, the window goes back to its place) | ⌃⌥F |
-| Frame one window | | ⌃⌥↩ (again to return) |
+| Fill the screen with one window, docked or floating | | ⌃⌥↩ (again to return) |
 | Step out, step in | with [the gestures switched on](#6-on-its-way): ⌥ + pinch, or pinch on the Desktop; with a mouse, ⌃⌥ + scroll down or up: a notch is one step, a flick goes all the way | no key: menu → Step Out, Step In |
 | Show everything | | ⌃⌥Space |
 | Peek: from one window to another | point while holding ⌃⌥Space | hold ⌃⌥Space, arrows, let go |
@@ -127,6 +127,8 @@ Nothing moves when permission arrives. Arbor arranges nothing until you ask.
 2. **Dock a second.** Click another and press **⌃⌥⌘→**. No other window moves: what floated where the docked ones now sit is still there, behind them, exactly as you left it.
 3. **Frame.** Click one of the docked windows and press **⌃⌥↩**. It fills the screen. **Your other windows are out of view, not closed.**
 4. **And back.** Press **⌃⌥↩** again (or ⌃⌥Space). The arrangement is back.
+
+⌃⌥↩ works on a window you never docked, too. It grows to fill the screen and stays there, whatever else opens or closes; it is still a floating window, and nothing else moves. ⌃⌥↩ again, and it is exactly where and as large as it was. So it is after ⌃⌥Z, a pause or Quit. Drag it away by its title bar and it comes out in its own size; give it another size by hand and that is its size from then on. An app that will not grow that far goes as far as it can, in the middle. ⌃⌥Space shows everything, so it gives that window its own size back too. Any other move of the view (⌃⌥[, Go to…) brings what arrives to the front; the filled window waits behind it, still filled.
 
 Now try: ⌃⌥← and ⌃⌥→ in a docked window, to move it one place. ⌃⌥[ to go back to where the view was, like a browser. Drag the gap between two docked windows to resize both. Drag a third window onto the **bottom edge of a docked window** to put it underneath: that makes a group, and Step Out (in the menu) from either
 of its windows, framed, shows the group.

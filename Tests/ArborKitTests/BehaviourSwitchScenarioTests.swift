@@ -1002,7 +1002,8 @@ private struct Dice {
         for (index, slot) in slots.enumerated() {
           for other in slots.dropFirst(index + 1) { #expect(!slot.overlaps(other), "step \(step)") }
         }
-        for window in layout.hiddenWindows {
+        // The one that had the keyboard at a start is let be where it stands, tile or not (Controller+LetBe.swift).
+        for window in layout.hiddenWindows where window != h.controller.windowLetBe {
           #expect(!h.system.isVisible(window), "step \(step): \(window) should be out of view")
         }
       }

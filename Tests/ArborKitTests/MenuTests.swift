@@ -517,7 +517,7 @@ import Testing
     #expect(h.controller.menuModel().item("Frame Focused Window")?.isTicked == false)
     h.system.userFocus(c)
     h.run("desktop")
-    #expect(h.controller.menuModel().item("Frame Focused Window")?.isTicked == false, "a floating window is never framed")
+    #expect(h.controller.menuModel().item("Frame Focused Window")?.isTicked == false, "a floating window is not framed by the Desktop being shown")
   }
 
   @Test func aWindowKeptInViewIsTicked() {
@@ -690,22 +690,29 @@ import Testing
         == ["Arbor is paused · Resume", news])
   }
 
-  /// Found by `MenuChaosTests`. A window kept in view has no place to frame: the key un-frames what lies beneath it, if that is framed.
-  @Test func frameIsGreyForAWindowKeptInViewUnlessSomethingBeneathItIsFramed() {
+  /// Found by `MenuChaosTests`: the row is grey exactly when the command would fail. It was for a window kept in view with nothing framed
+  /// beneath it. Since QUESTIONS Q29 every floating window fills the view, so the row is there for it, and for a summoned one as before.
+  @Test func frameIsThereForAWindowKeptInViewAndGreyForASummonedOneUnlessSomethingBeneathItIsFramed() {
     let (h, a, _, c) = makeHarness()
     func frame() -> MenuModel.Item? { h.controller.menuModel().item("Frame Focused Window") }
     h.run("pin \(c.rawValue)")
     h.system.userFocus(c)
+    #expect(frame()?.isEnabled == true && frame()?.isTicked == false)
+    #expect(h.run("zoom", from: .menu).ok, "as the command says")
+    #expect(frame()?.isEnabled == true && frame()?.isTicked == true)
+    #expect(h.run("zoom", from: .menu).ok)
+    h.run("unpin \(c.rawValue)")
+    #expect(frame()?.isEnabled == true)
+
+    #expect(h.run("summon \(h.controller.windows[c]!.appName)").ok)
+    #expect(h.controller.role(of: c) != nil && h.system.focusedWindow() == c)
     #expect(frame()?.isEnabled == false)
     #expect(!h.run("zoom", from: .menu).ok, "as the command says")
     h.run("zoom \(a.rawValue)")
-    h.system.userFocus(c)
+    #expect(h.run("summon \(h.controller.windows[c]!.appName)").ok)
     #expect(frame()?.isEnabled == true)
     #expect(h.run("zoom", from: .menu).ok)
     #expect(h.workspace.camera == h.workspace.tree.root)
-    // An ordinary floating window lives on the Desktop, which can be shown.
-    h.run("unpin \(c.rawValue)")
-    #expect(frame()?.isEnabled == true)
   }
 
   /// Found by `MenuChaosTests`. Windows kept in view accompany the arrangement; `arrange` does not take them.

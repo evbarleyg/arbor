@@ -234,7 +234,7 @@ private let side = DisplaySnapshot(
 
   @Test func routineSuccessesStaySilent() {
     let (h, a, b, _) = makeHarness()
-    for text in ["dock left", "zoom", "out", "desktop", "show-all", "zoom", "home", "back", "forward", "toggle-float", "arrange"] {
+    for text in ["dock left", "zoom", "out", "desktop", "show-all", "zoom", "zoom", "desktop", "home", "back", "forward", "toggle-float", "arrange"] {
       #expect(h.run(text, from: .shortcut).ok, "\(text)")
       #expect(lines(h) == [], "\(text)")
     }
@@ -251,14 +251,16 @@ private let side = DisplaySnapshot(
     #expect(h.overlays.messages.count == 3, "a script reads its reply")
   }
 
-  @Test func theFrameShortcutOnAFloatingWindowSaysWhatToDoFirst() {
-    let (h, _, _, _) = makeHarness()
+  /// It used to say "Safari floats · ⌃⌥⌘← docks it, then ⌃⌥↩ frames it", because nothing happened. Now the window fills the screen
+  /// (QUESTIONS Q29), which says it.
+  @Test func theFrameShortcutOnAFloatingWindowDoesWhatItSaysAndSaysNothing() {
+    let (h, a, _, _) = makeHarness()
     #expect(h.run("zoom", from: .shortcut).ok)
-    #expect(lines(h) == ["Safari floats · ⌃⌥← docks it, then ⌃⌥↩ frames it"])
-
-    let (bare, _, _, _) = makeHarness(settings: settings { $0.bindings = ["ctrl+opt+left": nil] })
-    bare.run("zoom", from: .menu)
-    #expect(lines(bare) == ["Safari floats"])
+    #expect(h.controller.isFilled(a))
+    #expect(lines(h) == [])
+    #expect(h.run("zoom", from: .menu).ok)
+    #expect(!h.controller.isFilled(a))
+    #expect(lines(h) == [])
   }
 
   @Test func anAppArborDoesNotArrangeIsCalledThatAndByItsName() {

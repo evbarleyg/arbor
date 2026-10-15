@@ -394,10 +394,11 @@ private let corner = CGRect(x: 1090, y: 50, width: 320, height: 240)
   @Test func framingWithThePinnedWindowFocusedNeverParksIt() {
     let (h, _, _, call) = makeHarness()
     h.system.userFocus(call)
-    for command in ["zoom", "zoom", "in", "out", "neighbor left", "neighbor right", "desktop", "home", "back", "forward"] {
+    // The first fills the view with it (QUESTIONS Q29), the second takes it back to its corner.
+    for (step, command) in ["zoom", "zoom", "in", "out", "neighbor left", "neighbor right", "desktop", "home", "back", "forward"].enumerated() {
       h.run(command)
       h.scheduler.advance(by: 1)
-      #expect(h.frame(call) == corner, "after \(command)")
+      #expect(h.frame(call) == (step == 0 ? h.visibleFrame.insetBy(dx: 12, dy: 12) : corner), "after \(command)")
       #expect(!h.controller.parked.contains(call), "after \(command)")
     }
   }

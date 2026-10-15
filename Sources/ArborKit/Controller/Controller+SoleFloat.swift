@@ -124,7 +124,8 @@ extension Controller {
   /// is the size it took when Arbor last placed it, or, when that has been forgotten (a crash leaves it stretched, and the
   /// launch that follows knows nothing of it), the Desktop's.
   private func ownFrameOfStretchedWindow(on displayID: DisplayID) -> (window: WindowID, frame: CGRect)? {
-    guard soleFloatIsOn, let window = windowAloneOnDesktop(of: displayID),
+    // One that fills the view is as large as that because its person asked, and has its own ways back (Controller+Fill.swift).
+    guard soleFloatIsOn, let window = windowAloneOnDesktop(of: displayID), !isFilled(window),
       window != soleFloats.inHand[displayID], !parked.contains(window), let current = windows[window]?.frame,
       let own = workspaces[displayID]?.floating[window], !current.approximatelyEquals(own, tolerance: 1)
     else { return nil }
@@ -213,7 +214,8 @@ extension Controller {
   /// say so late. So with no button down, a window that stays in its corner and only shrinks, by a cell at most, is
   /// settling too; it is then as near to filling the Desktop as its app lets it come, and is not asked again.
   func isOnlySettlingOnDesktop(_ window: WindowSnapshot, on display: DisplayID) -> Bool {
-    guard windowThatTakesDesktop(of: display) == window.id, !parked.contains(window.id), let given = settled[window.id],
+    guard windowThatTakesDesktop(of: display) == window.id || workspaces[display]?.isFilled(window.id) == true,
+      !parked.contains(window.id), let given = settled[window.id],
       workspaces[display]?.floating[window.id].map({ !given.approximatelyEquals($0, tolerance: 1) }) == true
     else { return false }
     if given.approximatelyEquals(window.frame, tolerance: Self.roundingByApps) { return true }
@@ -229,7 +231,7 @@ extension Controller {
   }
 
   /// No text cell is larger than this (as in Controller+SizeSteps.swift).
-  private static let largestCell: CGFloat = 36
+  static let largestCell: CGFloat = 36
 
   /// The user moved or resized a floating window, which was on `source`, without dragging it by its title bar. Its
   /// new frame has been recorded as its own.

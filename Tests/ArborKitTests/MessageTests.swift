@@ -65,7 +65,7 @@ import Testing
     let (h, _, _, _, f) = makeHarness()
     let result = h.run("zoom \(f.rawValue)")
     #expect(result.ok)
-    #expect(result.message.contains("Desktop"), "\(result.message)")
+    #expect(result.message == "filled the screen with \(f)")
   }
 
   @Test func aResizeThatMovesNothingIsNotASuccess() {

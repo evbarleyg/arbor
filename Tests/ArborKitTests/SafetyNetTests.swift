@@ -133,15 +133,19 @@ import Testing
     #expect(!h.run("back").ok && !h.run("forward").ok && !h.run("view 1").ok)
   }
 
-  @Test func framingAFloatingWindowShowsTheDesktopItLivesOn() {
+  /// It used to show the Desktop. Since QUESTIONS Q29 it is the window that comes, and the view stays.
+  @Test func framingAFloatingWindowThatIsOutOfViewBringsItInToFillTheView() {
     let (h, a, _, c) = makeHarness()
     h.run("dock \(a.rawValue) left")
     h.run("zoom \(a.rawValue)")
     #expect(!h.system.isVisible(c))
+    let own = h.workspace.floating[c]
     #expect(h.run("zoom \(c.rawValue)").ok)
-    #expect(h.workspace.camera == h.workspace.tree.desktop)
-    #expect(h.system.isVisible(c) && !h.system.isVisible(a))
+    #expect(h.workspace.camera == h.workspace.tree.leaf(containing: a))
+    #expect(h.system.isVisible(c) && h.frame(c) == h.frame(a))
     #expect(h.system.focused == c)
+    h.run("zoom")
+    #expect(h.frame(c) == own && h.system.isVisible(c), "back to where its person left it, not to the corner")
   }
 
   @Test func revealingAWindowZoomsOutJustFarEnough() {
