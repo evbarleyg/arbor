@@ -34,7 +34,11 @@ extension Controller {
     if edgeResize?.window == id { edgeResize = nil }
     floatingEdgeInHand = nil
     guard isRunning, isManaged(id) else { return }
-    if workspaces.values.contains(where: { $0.isFloating(id) }) { aHandHasPlaced(id) }
+    if workspaces.values.contains(where: { $0.isFloating(id) }) {
+      aHandHasPlaced(id)
+      // What a hand makes of a floating window is its own size from then on, whatever macOS still remembers of it.
+      if let size = windows[id]?.frame.size { leftAsLargeAsTheirSlots[id]?.own = size }
+    }
     recordingUndo("resize \(id) by its edges", title: "Resize") { applyEdgeResize(of: id) }
   }
 

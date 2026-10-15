@@ -281,7 +281,7 @@ import Testing
   /// A docked window has its slot's size in the hand. Arbor leaves it so where macOS is about to size it. Where macOS then does not, nobody has
   /// given it its own size. Decided: a plain drag means out wherever it ends, so macOS takes the window or it floats at its own size where it
   /// lies; and Arbor never takes a slot's size for a window's own, so the ways out give it back whatever else happens (rule 5).
-  /// `thrownIntoTheMenuBarAndLetGoAtOnceTheWindowStaysAsItIs` holds the same window to its slot's size, and changes with the cure.
+  /// LeftAloneByMacOSTests and ASlotsSizeIsNoWindowsOwnTests have the rest.
   @Test func letGoWithOptionAloneADockedWindowIsNotLeftWithItsSlotsSize() {
     let s = scene()
     let own = CGSize(width: 600, height: 400)
@@ -296,18 +296,12 @@ import Testing
     s.h.scheduler.advance(by: 3)
     #expect(s.h.system.takeSizeBeforeTile(of: s.a) == nil, "macOS has tiled nothing")
     #expect(s.h.workspace.isFloating(s.a))
-    withKnownIssue("board 1.67: left to macOS and left alone by it, a docked window keeps its slot's size for good") {
-      #expect(s.frame(s.a).size == own, "it floats at \(s.frame(s.a)); its slot was \(slot)")
-    }
-    withKnownIssue("board 1.67") {
-      #expect(s.h.workspace.floating[s.a]?.size == own, "what is remembered: \(String(describing: s.h.workspace.floating[s.a]))")
-    }
+    #expect(s.frame(s.a).size == own, "it floats at \(s.frame(s.a)); its slot was \(slot)")
+    #expect(s.h.workspace.floating[s.a]?.size == own, "what is remembered: \(String(describing: s.h.workspace.floating[s.a]))")
     s.expectNothingLeftBehind()
     s.h.run("float-all")
     s.h.scheduler.advance(by: 3)
-    withKnownIssue("board 1.67") {
-      #expect(s.frame(s.a).size == own, "after Float All: \(s.frame(s.a))")
-    }
+    #expect(s.frame(s.a).size == own, "after Float All: \(s.frame(s.a))")
   }
 
   /// Another tool's event tap can swallow the release. macOS has seen it all the same and has tiled the window by the time Arbor
@@ -327,22 +321,20 @@ import Testing
 
   /// macOS fills the screen only for a pointer that has rested in the menu bar. Arbor stands aside all the same: it cannot tell to a
   /// tenth of a second what macOS will do, and nothing was promised. So the window floats where it was let go, and nothing is said.
+  /// (One that came out of a slot does not stay as large as the slot: LeftAloneByMacOSTests.)
   @Test func thrownIntoTheMenuBarAndLetGoAtOnceTheWindowStaysAsItIs() {
-    for docked in [false, true] {
-      let s = scene()
-      let window = docked ? s.a : s.c
-      s.h.system.beginDrag(window)
-      s.h.system.moveDrag(to: s.onDesktop)
-      s.h.system.moveDrag(to: CGPoint(x: 700, y: 10), holding: 0.05)
-      let letGo = s.frame(window)
-      s.h.system.endDrag()
-      s.h.scheduler.advance(by: 3)
-      #expect(s.frame(window) == letGo, "docked: \(docked)")
-      #expect(s.h.workspace.isFloating(window))
-      #expect(!s.h.system.frameLog.contains { $0.window == window }, "\(s.h.system.frameLog)")
-      #expect(s.h.overlays.messages.isEmpty, "macOS took nothing, so there is nothing to say: \(s.h.overlays.messages.map(\.model.line))")
-      s.expectNothingLeftBehind()
-    }
+    let s = scene()
+    s.h.system.beginDrag(s.c)
+    s.h.system.moveDrag(to: s.onDesktop)
+    s.h.system.moveDrag(to: CGPoint(x: 700, y: 10), holding: 0.05)
+    let letGo = s.frame(s.c)
+    s.h.system.endDrag()
+    s.h.scheduler.advance(by: 3)
+    #expect(s.frame(s.c) == letGo)
+    #expect(s.h.workspace.isFloating(s.c))
+    #expect(!s.h.system.frameLog.contains { $0.window == s.c }, "\(s.h.system.frameLog)")
+    #expect(s.h.overlays.messages.isEmpty, "macOS took nothing, so there is nothing to say: \(s.h.overlays.messages.map(\.model.line))")
+    s.expectNothingLeftBehind()
   }
 
   /// At the sides macOS waits for nothing.
@@ -517,14 +509,12 @@ import Testing
 
   /// macOS's last steps are a point apart, which is how far a report may differ in size from the one before and still be taken
   /// for a move. The size the window ends with is its own all the same, and Float All leaves it as it is. A window as high as
-  /// the display is remembered two points wider than it ends, and Float All makes it so. One whose height grows meanwhile is
-  /// spared by that alone: what is remembered is never less high than the window. On a Mac a window of 513×674 was given 514 at
-  /// the next layout.
+  /// the display was remembered two points wider than it ended, and Float All made it so. On a Mac a window of 513×674 was given
+  /// 514 at the next layout. Half a second after the release Arbor now writes down where the window server has the window
+  /// (Controller+LeftToMacOS.swift).
   @Test(arguments: [CGSize(width: 1000, height: 500), CGSize(width: 1000, height: 875)])
   func aWindowThatShrankIntoItsTileIsRememberedAsLargeAsItIs(size: CGSize) {
     let s = scene()
-    // "A move is not a resize" is about windows that Arbor squeezed. As it ships it squeezes none (F64), and takes a report at its word.
-    let makesWay = s.h.controller.settings.floatingWindowsMakeWay
     s.h.system.userMove(s.c, to: CGRect(origin: CGPoint(x: 200, y: 25), size: size))
     s.h.scheduler.advance(by: 3)
     s.h.system.clearFrameLog()
@@ -532,23 +522,11 @@ import Testing
     s.h.scheduler.advance(by: 3)
     let tile = s.frame(s.c)
     #expect(tile.size == CGSize(width: 721, height: 875))
-    withKnownIssue("board 1.68: the last steps of macOS's tiling are taken for moves") {
-      #expect(s.h.workspace.floating[s.c] == tile, "what is remembered: \(String(describing: s.h.workspace.floating[s.c]))")
-    } when: {
-      size.height == 875 && makesWay
-    }
+    #expect(s.h.workspace.floating[s.c] == tile, "what is remembered: \(String(describing: s.h.workspace.floating[s.c]))")
     s.h.run("float-all")
     s.h.scheduler.advance(by: 3)
-    withKnownIssue("board 1.68") {
-      #expect(s.frame(s.c) == tile)
-    } when: {
-      size.height == 875 && makesWay
-    }
-    withKnownIssue("board 1.68") {
-      #expect(!s.h.system.frameLog.contains { $0.window == s.c }, "\(s.h.system.frameLog)")
-    } when: {
-      size.height == 875 && makesWay
-    }
+    #expect(s.frame(s.c) == tile)
+    #expect(!s.h.system.frameLog.contains { $0.window == s.c }, "\(s.h.system.frameLog)")
   }
 
   /// macOS was seen to take a window that cannot change its size as well, and to move it into the tile as it is: that one

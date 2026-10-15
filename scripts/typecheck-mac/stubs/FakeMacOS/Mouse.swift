@@ -7,6 +7,8 @@ extension FakeMac {
     public internal(set) var location = CGPoint(x: 10, y: 10)
     /// Since when it has been in the menu bar.
     var inTheMenuBarSince: TimeInterval?
+    /// macOS does nothing about the next window that is let go, once (`FakeMac.macOSOverlooksTheNextDrop`).
+    var overlooksTheNextDrop = false
     /// Where it was one movement ago.
     var previousLocation = CGPoint(x: 10, y: 10)
     /// What `NSEvent.mouseLocation` says.
@@ -260,6 +262,12 @@ extension FakeMac {
 
   // MARK: macOS's own tiling
 
+  /// Seen on a Mac: a window that had rested in the menu bar for 1.7 s was left where it was let go, in one of three such drags (macos-tiling-does-not-answer-every-drag-to-the-menu-bar).
+  public var macOSOverlooksTheNextDrop: Bool {
+    get { mouse.overlooksTheNextDrop }
+    set { mouse.overlooksTheNextDrop = newValue }
+  }
+
   /// Where macOS puts a window that is let go with the pointer where it is now, or nil if it leaves it alone. Measured on macOS 26.6 on a display of 1024×768, by probes of real drags on hosted Macs
   /// (`Sources/ArborCore/MacTiling.swift`; docs/REALITY.md, macos-tiles-only-from-the-outermost-point, macos-half-tile-is-a-point-off):
   /// - the sides: at x 0 and at x 1023, not a point further in, and without waiting. A half from y 60 to y 740, a quarter at y 0, 31 and 767; that the quarters begin at 60 and 740 is a GUESS;
@@ -267,6 +275,9 @@ extension FakeMac {
   /// - the left half is (-1,31 512×674), a point off the display; the whole screen exactly (0,31 1024×674). The right half and the quarters, by symmetry: a GUESS.
   /// With ⌥ held it has been seen both ways (with-option-held-macos-shows-its-preview-and-does-not-tile): NOT MODELLED.
   private func macOSsTile(for window: Window) -> CGRect? {
+    let overlooks = mouse.overlooksTheNextDrop
+    mouse.overlooksTheNextDrop = false
+    guard !overlooks else { return nil }
     let point = mouse.location
     guard let screen = screens.first(where: { $0.frame.contains(point) }) else { return nil }
     let settings = preferences["com.apple.WindowManager"] ?? [:]

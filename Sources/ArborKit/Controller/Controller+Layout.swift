@@ -535,7 +535,7 @@ extension Controller {
     let slack = max(CGFloat(options(for: displayID).gap) * 2, 8)
     let alone = windowThatTakesDesktop(of: displayID)
     let desktopIsPartOfTheView = workspace.tree.subtree(layout.camera, contains: workspace.tree.desktop)
-    for (window, preferred) in workspace.floating.sorted(by: { $0.key < $1.key }) where window != drag?.window {
+    for (window, preferred) in workspace.floating.sorted(by: { $0.key < $1.key }) where !isInOtherHands(window) {
       guard let current = windows[window], current.isPresent, isManaged(window), !holdKeepsOut(window) else { continue }
       if leavingView.contains(window) {
         if !parked.contains(window) { moves.append((window, .park)) }

@@ -25,7 +25,22 @@ expect count docked 0
 focus 103
 press dock left
 expect docked 103
-# So does the bottom edge, and the edges of a docked window.
+# A docked window carried to the left edge is macOS's like any other: out of the arrangement, and Arbor sets no frame on it.
+drag 103 0 450
+wait 1
+expect floating 103
+expect size 103 720x875
+expect count docked 0
+press dock left
+expect docked 103
+# Let go a few points short of an edge, where macOS never acts and Arbor offers nothing, it goes home: at the left, the right and the top alike.
+drag 103 1435 450
+expect docked 103
+expect moved-once
+drag 103 900 30
+expect docked 103
+expect moved-once
+# The bottom edge is Arbor's at every setting, and so are the edges of a docked window.
 drag 101 900 897
 expect docked 101
 # With the switches off, every edge is Arbor's.

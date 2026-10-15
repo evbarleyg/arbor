@@ -51,7 +51,9 @@ extension Controller {
       !leavingView.contains(window), workspaces[displayID]?.role(of: window) == nil, let frame = windows[window]?.frame,
       let own = workspaces[displayID]?.floating[window], let display = display(displayID),
       // (macOS puts windows on whole points, whatever was asked for. A whole point off is another place.)
-      !own.approximatelyEquals(frame, tolerance: 0.99)
+      !own.approximatelyEquals(frame, tolerance: 0.99),
+      // Nor is the size of a slot it left where macOS might have tiled it, and did not, anything to come back to (Controller+LeftToMacOS.swift).
+      ownSize(of: window, ifItIsAsLargeAsTheSlotItLeft: frame.size) == nil
     else { return }
     // Where Arbor fitted it, it is for the displays' sake, and its own frame is still its own, as long as it will be fitted
     // to the same place again.

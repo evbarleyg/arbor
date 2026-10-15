@@ -697,6 +697,28 @@ private let b = WindowID(102)
     #expect(!nets(after: tiled, then: "quit").contains("size-not-given-back"))
   }
 
+  /// Dragged off that tile macOS gives it the size it took it at, which was the slot's and nobody's choice. Its own is what it had before it was docked.
+  @Test func theSlotsSizeThatMacOSGivesBackIsNotItsOwn() {
+    let off = oneDocked + ["grab 101", "carry 1439 400", "advance 0.5", "release", "react", "settle", "grab 101", "carry 700 400", "release", "react", "settle"]
+    #expect(!nets(after: off, then: "quit").contains("size-not-given-back"))
+    #expect(nets(after: off, then: "quit") { _ = $0.setFrame(self.rect(100, 100, 702, 851), of: a) }.contains("size-not-given-back"))
+  }
+
+  /// A window is let go where macOS tiles, and a key moves the view on before macOS is done. No layout touches the window meanwhile; it follows the other floating
+  /// windows once Arbor has looked, like one whose app hung as the view moved. That is no window that `vanished`. (Found by an ordinary walk.)
+  @Test func whatWasLeftToMacOSAsTheViewMovedOnFollowsAfterTheLook() {
+    let walk = [
+      "launch", "open 103 Music pid 1006 at 391 268 980 600 min 980 600", "open 105 Music pid 1006 at 311 339 1068 600 min 980 600", "key down dock right",
+      "key down dock top", "key down undo", "key down desktop", "grab 103", "carry 0 558.5", "release", "key down neighbor right", "advance 1",
+    ]
+    #expect(ChaosRunner.replay(ChaosAction.script(walk.joined(separator: "\n")), excusing: ChaosRunner.knownRules)?.violations.map(\.rule) == nil)
+    // One that goes out of view a good while after the look, with nobody looking elsewhere, still has.
+    let later = nets(after: oneDocked + ["grab 102", "carry 0 450", "advance 0.5", "release", "react", "settle"], then: "cursor 10 10") {
+      _ = $0.setFrame(self.rect(1439, 868, 720, 875), of: b)
+    }
+    #expect(!later.isEmpty, "\(later)")
+  }
+
   @Test func afterAWayHomeEveryWindowIsWhollyInView() {
     let framed = oneDocked + ["zoom 101", "settle"]
     #expect(nets(after: framed, then: "home").isEmpty)

@@ -529,14 +529,21 @@ when a drag begins and kept in the session. `MacTiling.claim(onWindowLetGoAt:…
 whether the pointer is where macOS acts, and why: the first and the last point of the display's width, the menu bar, anywhere
 with ⌥ held. `hover(of:)` asks that before anything else and answers `.float` with `leftToMacOS` set: no preview, no
 docking, and neither `drop(of:…)` nor `soleFloatDropped` gives the window a frame, so that a docked window leaves the
-arrangement without the size Arbor would otherwise give it back. From then on it is a floating window that something else
-moves, which `windowChanged` follows as always. Half a second later, if macOS has moved it, a hint says who took it
-(`HeadsUpHint.leftToMacOS`); macOS does not always: thrown into the menu bar and let go at once, the window stays as it is.
+arrangement without the size Arbor would otherwise give it back. That size stays in the books all the same: a slot's size is never a
+window's own (`LeftAsLargeAsItsSlot`, Controller+UndockedFrames.swift). From then on it is a floating window that something else
+moves, which `windowChanged` follows as always, and which no layout touches until it is known what became of it (`isInOtherHands`). macOS does not take every window: it fills the screen only for a pointer that has rested in the
+menu bar, and was seen to overlook one that had. So half a second after the release, when macOS's own move of 0.3 to 0.4 s would be over, Arbor looks at
+where the window server has the window (Controller+LeftToMacOS.swift; not at what its app says, whose last word about the drag comes late). If it has moved,
+a hint says who took it (`HeadsUpHint.leftToMacOS`), Arbor never touches it, and what macOS made of it is what is remembered. If it is where it was let
+go, a window that came out of a slot takes its own size there, in one move (`takesItsOwnSizeWhereItLies`); a floating one stays as it is. Either way the
+books say again what is on the screen. The look waits while a button is down. A window that is out of reach when it comes (minimized, hidden, on another Space, in full screen, its app does not
+answer) loses its shield and its timer and is looked at when it is next heard of (`lookAgainIfItIsBackInReach`). A native tab that takes the window's place takes the look over, a change of displays ends the shield and puts the look off, and a window
+that missed a move of the view goes after the others once it has been looked at.
 A pointer travels, and on its way to macOS's point it crosses Arbor's own band along the screen's edge, where a preview would come up only to go
 again as macOS's comes. So while the switch for an edge is on, the whole band is silent (`MacTiling.edges`, `DropOptions.silentEdges`;
 `collab/QUESTIONS.md`, Q23): `DropResolver` answers `.float` there, in the corners too, before it looks at anything else that lies in the
 band. Let go there, short of macOS's point, a floating window stays where it is and a docked one goes back to its slot, as wherever nothing
-was promised. The bottom edge, docked windows' own edges further in and the keys stay Arbor's.
+was promised, at the top too, where the Desktop reaches up to the edge (`dropTarget`). The bottom edge, docked windows' own edges further in and the keys stay Arbor's.
 An edge is silent in the same way, at every setting, while the pointer has not left the band in which it took hold (`DragSession.edgesNeverLeft`): a window that
 lies under the menu bar has its title bar in the top band, and slid sideways it has not been carried to the top.
 A release that Arbor never saw ends the same way at an edge or in the menu bar (`dragCancelled`), because macOS saw it; a drag

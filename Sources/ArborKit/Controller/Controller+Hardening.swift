@@ -182,6 +182,8 @@ extension Controller {
     shrunk[window.id] = shrunk.removeValue(forKey: old)
     fittedToADisplay[window.id] = fittedToADisplay.removeValue(forKey: old)
     fittedFrames[window.id] = fittedFrames.removeValue(forKey: old)
+    leftAsLargeAsTheirSlots[window.id] = leftAsLargeAsTheirSlots.removeValue(forKey: old)
+    lookAtTheTabInstead(of: old, window.id)
     hints[window.id] = WindowHint(bundleID: window.bundleID, title: window.title)
     focusHistory.removeAll { $0 == window.id }
     if let index = focusHistory.firstIndex(of: old) { focusHistory[index] = window.id }

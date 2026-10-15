@@ -507,6 +507,11 @@ public final class Controller {
   /// The group they belong to, until all of them have landed.
   var awaitedGroup: AwaitedGroup?
 
+  /// Windows that left their slots as large as the slots, and the sizes that are their own (Controller+UndockedFrames.swift).
+  var leftAsLargeAsTheirSlots: [WindowID: LeftAsLargeAsItsSlot] = [:]
+  /// Windows let go where macOS may tile them, until Arbor has looked at what macOS made of them (Controller+LeftToMacOS.swift).
+  var leftToMacOS: [WindowID: LeftToMacOS] = [:]
+
   public init(
     system: any WindowSystem, overlays: any OverlayPresenter, store: any StateStore,
     scheduler: any Scheduler, settings: Settings = Settings(), filter: WindowFilter = WindowFilter()
@@ -613,6 +618,8 @@ public final class Controller {
     chosenOnShape = chosenOnShape.filter { windows[$0.key] != nil }
     fittedToADisplay = fittedToADisplay.filter { windows[$0.key] != nil }
     fittedFrames = fittedFrames.filter { windows[$0.key] != nil }
+    leftAsLargeAsTheirSlots = leftAsLargeAsTheirSlots.filter { windows[$0.key] != nil }
+    leftToMacOS = leftToMacOS.filter { windows[$0.key] != nil }
     keepOnlyWhatIsStillOwedAfterAStart()
     parkedAgain.removeAll()
     unplaced.removeAll()

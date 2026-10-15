@@ -54,8 +54,8 @@ public struct MacTiling: Equatable, Sendable, Codable {
   }
 
   /// How long the pointer has to rest in the menu bar before macOS fills the screen, in seconds: somewhere between 0.1 and 0.2. Arbor does
-  /// not go by it. Taking a window back that macOS then takes after all is the fight again, and leaving one alone that macOS
-  /// leaves alone too costs nothing: it floats where it was let go.
+  /// not go by it. Taking a window back that macOS then takes after all is the fight again. It looks at what macOS has made of the window
+  /// once macOS would be done (Controller+LeftToMacOS.swift).
   public static let menuBarRest = 0.15
 
   /// Why a window is macOS's.

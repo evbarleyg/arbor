@@ -58,6 +58,8 @@ extension Controller: WindowSystemEvents {
     fittedToADisplay[id] = nil
     fills.inHand.remove(id)
     fills.saidToGoNoLarger.remove(id)
+    leftAsLargeAsTheirSlots[id] = nil
+    leftToMacOS[id] = nil
     hints[id] = nil
     let hadKeyboard = hadKeyboard(id)
     keyboardHandOver.newcomers[id] = nil
@@ -97,6 +99,7 @@ extension Controller: WindowSystemEvents {
     let previous = windows[window.id]
     // Every window Arbor moves reports back what Arbor knows already. Storing that would count as a change of `windows`.
     if previous != window { windows[window.id] = window }
+    lookAgainIfItIsBackInReach(window)
     lettingBeNotes(window, movedByItsUser: userInitiated && previous?.frame != window.frame)
     if owedTheWayBack[window.id] != nil { payTheWayBack(to: window.id) }
     noteWhetherItCameBack(window, was: previous)
@@ -184,7 +187,8 @@ extension Controller: WindowSystemEvents {
     // A drag by the title bar changes no size, with one exception: macOS gives a window that is dragged off a tile of its own the
     // size it had before. That is the window's own size again. Left as it was, what is remembered would be the tile's,
     // and the smaller window would pass for one that Arbor had squeezed (`frameToRemember`). Only the size: where it is on its way
-    // through is no place to come back to, should it be docked at the end of this drag.
+    // through is no place to come back to, should it be docked at the end of this drag. (What macOS took out of a slot it gives the
+    // slot's size, which is nobody's: `finishDrop` sees to that.)
     if userInitiated, drag?.window == window.id, let previous, workspaces[display]!.isFloating(window.id),
       abs(previous.frame.width - window.frame.width) > 1 || abs(previous.frame.height - window.frame.height) > 1
     {
@@ -209,6 +213,7 @@ extension Controller: WindowSystemEvents {
       let role = workspaces[display]!.role(of: window.id)
       summonedWindowIsCarried(window.id, to: destination)
       let remembered = frameToRemember(of: window.id, movedFrom: previous?.frame, to: window.frame)
+      noteSizeGivenSinceItLeftItsSlot(window, was: previous)
       if destination != display { workspaces[display]!.floating[window.id] = nil }
       workspaces[destination]?.floating[window.id] = remembered
       spokeOfItsPlace[window.id] = now()
@@ -297,7 +302,8 @@ extension Controller: WindowSystemEvents {
     guard isRunning else { return }
     closeFinderBecauseTheUserLeft()
     // Displays that go away keep their arrangement and get it back when they
-    // return: see Controller+Displays.swift.
+    // return: see Controller+Displays.swift. Everything is laid out afresh, what was left to macOS a moment ago too.
+    endTheShieldsBecauseTheDisplaysChanged()
     updateDisplays()
   }
 }

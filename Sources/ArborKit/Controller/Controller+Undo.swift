@@ -234,7 +234,9 @@ extension Controller {
       let filling = windowThatTakesDesktop(of: display)
       var frames: [WindowID: CGRect] = [:]
       // Nor is all of the view: whether a window fills it is in the workspace, and a layout sees to it (Controller+Fill.swift).
-      for window in workspace.floating.keys where !parked.contains(window) && window != filling && !workspace.isFilled(window) {
+      // Nor is the size of the slot it left, for one that is still owed its own (Controller+LeftToMacOS.swift).
+      for window in workspace.floating.keys
+      where !parked.contains(window) && window != filling && !workspace.isFilled(window) && leftToMacOS[window] == nil {
         if let snapshot = windows[window], snapshot.isPresent { frames[window] = snapshot.frame }
       }
       result[display] = frames
