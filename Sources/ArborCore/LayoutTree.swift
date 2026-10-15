@@ -312,15 +312,20 @@ public struct LayoutTree: Codable, Sendable, Equatable {
   /// The least `moveBoundary` leaves on either side unless told otherwise.
   public static let minimumPointsBesideBoundary: Double = 80
 
+  /// In points. Less than this is what is left over when weights are added up, not a move.
+  static let leastMoveOfABoundary = 0.01
+
   /// Moves the boundary between two adjacent children of a split by
   /// `deltaPoints` (positive moves it right/down). `pointsPerWeight` converts
   /// points to weight units for this split; layouts report it on each seam.
   /// Neither child shrinks below `minimumPoints`. Nothing moves if the two are not children of
   /// the same split (a seam from a layout the tree has since left behind), if they are already too
   /// small to give anything up, or if a number is not one.
+  /// `byHand`: a person has moved it, by whatever means, and what Arbor has lent around it is forgotten
+  /// (`forgetLoans`). False where Arbor moves it for ends of its own.
   public mutating func moveBoundary(
     leading: NodeID, trailing: NodeID, by deltaPoints: Double, pointsPerWeight: Double,
-    minimumPoints: Double = LayoutTree.minimumPointsBesideBoundary
+    minimumPoints: Double = LayoutTree.minimumPointsBesideBoundary, byHand: Bool = true
   ) {
     // A distance that is not a number would make both weights not a number, for good.
     guard !deltaPoints.isNaN, pointsPerWeight > 0, let a = nodes[leading]?.weight,
@@ -335,7 +340,10 @@ public struct LayoutTree: Codable, Sendable, Equatable {
     let newA = min(max(a + deltaPoints / pointsPerWeight, minimumWeight), total - minimumWeight)
     nodes[leading]!.weight = newA
     nodes[trailing]!.weight = total - newA
-    forgetLoans(across: leading, trailing)
+    // At its limit a gap stays where it is, however far the hand goes: then nothing has been decided.
+    if hasLoans, abs(newA - a) * pointsPerWeight > Self.leastMoveOfABoundary {
+      forgetLoans(across: leading, trailing, resized: byHand ? preorder(from: leading) + preorder(from: trailing) : nil)
+    }
     steadyWeights(of: parent)
   }
 
@@ -356,12 +364,12 @@ public struct LayoutTree: Codable, Sendable, Equatable {
   /// on either side of the gap. That is `seam.leading` and `seam.trailing`, except where one of them is a group on
   /// the same axis (F62), which looks like part of the row: then it is the window at that end of the group, the
   /// others in the group stay as they are, and `minimumPoints` is the least for that window.
-  public mutating func moveBoundary(at seam: Seam, by deltaPoints: Double, minimumPoints: Double = 80) {
+  public mutating func moveBoundary(at seam: Seam, by deltaPoints: Double, minimumPoints: Double = 80, byHand: Bool = true) {
     let outer = Double(seam.pointsPerWeight)
     guard !(seam.leadingEnds.isEmpty && seam.trailingEnds.isEmpty) else {
       return moveBoundary(
         leading: seam.leading, trailing: seam.trailing, by: deltaPoints, pointsPerWeight: outer,
-        minimumPoints: minimumPoints)
+        minimumPoints: minimumPoints, byHand: byHand)
     }
     /// Each node that grows (or shrinks) by the same number of points, with its own rate, outermost first.
     func side(_ node: NodeID, _ ends: [Seam.End]) -> [(node: NodeID, rate: Double)]? {
@@ -379,7 +387,13 @@ public struct LayoutTree: Codable, Sendable, Equatable {
     let applied = min(max(a + deltaPoints, minimumPoints), a + b - minimumPoints) - a
     for (node, rate) in leading { nodes[node]!.weight += applied / rate }
     for (node, rate) in trailing { nodes[node]!.weight -= applied / rate }
-    forgetLoans(across: seam.leading, seam.trailing)
+    // Of a group that runs along the row only what is at its end has changed, and with it each group it is the end of.
+    if hasLoans, abs(applied) > Self.leastMoveOfABoundary {
+      forgetLoans(
+        across: seam.leading, seam.trailing,
+        resized: byHand
+          ? (leading + trailing).map(\.node) + preorder(from: leading.last!.node) + preorder(from: trailing.last!.node) : nil)
+    }
     for (node, _) in leading + trailing { steadyWeights(of: nodes[node]!.parent!) }
   }
 

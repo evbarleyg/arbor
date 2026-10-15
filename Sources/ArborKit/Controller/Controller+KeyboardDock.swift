@@ -198,7 +198,7 @@ extension Controller {
         return trial.nodeFrames[giver]?.length(along: axis) ?? 0
       }
       guard lacking > 0, let seam = beside.max(by: { room($0) < room($1) }) else { continue }
-      result.tree.moveBoundary(at: seam, by: Double(seam.leading == desktop ? lacking + 1 : -(lacking + 1)))
+      result.tree.moveBoundary(at: seam, by: Double(seam.leading == desktop ? lacking + 1 : -(lacking + 1)), byHand: false)
     }
     // Not at the price of another tile.
     guard let better = trialLayout(of: result, on: display), better.desktopFrame != nil,

@@ -14,6 +14,7 @@ and 33 scenario tests, two of them seeded fuzzes. Where building it taught somet
 
 Not shipped: the reply and the F43 line "Made room for Notes" (F43 has not landed; `arbor.log` has `made room for w101`); neighbours making room under a drag (with `reflowWhileDragging`, F09, a trial is laid out plainly, so it can show a tile where the drop then makes room); undo in one step (I3 has not landed; the
 weights change inside the layout that follows the command, so a snapshot taken before the command covers them). Criterion 12, real apps, waits for a Mac: `scripts/mac-shell/compat.sh` still has its own `make_room`.
+Of the fourth round (2026-10-15): a slot squeezed by hand still gives to a window that waits for room, as does a Desktop made narrow by hand; that a slot was squeezed is not saved; the mark outlives its reason. See the end of that section.
 
 ## Second round (2026-10-14, decided by the product owner between 12:21 and 13:27; it overrules the text below wherever they differ)
 
@@ -55,6 +56,23 @@ Shipped: `Controller+ThereAndBack.swift`, `LayoutTree.takeGaps(from:)`, scenario
 Not shipped: kept across a restart (`state.json` has the gaps as they stand). A change that Arbor tries, lays out and takes back (a `rotate` that is refused) counts as somebody's. A drop that changes nothing lays nothing out, so for whoever went during the drag the neighbours close up at the next layout. While somebody is
 away a move of the view goes on from the gaps as they are. A window that comes back as a tile with the keyboard in it is framed after the layout that gave it its tile, so its neighbours move twice. `reveal` and Go to… pick the view for a window on its way back by the gaps as they are, not as they will be. Frame and Show
 Everything, and floating windows, are not this fix's.
+
+## Fourth round (2026-10-15, decided by the product owner; it overrules the text above and below wherever they differ)
+
+Found by reading replays of random walks: **a gap dragged by hand did not last** beside a window that stood at its smallest size on borrowed room. The principle: the arrangement is the person's as of their last change to it, and what a hand set outranks every debt Arbor remembers.
+
+1. **What a hand has made longer or shorter owes nothing and is owed nothing.** A gap moved by hand settles where that gap is and how long the slots on either side of it are, with all that is in them. So not only what was lent across the gap is forgotten (second round, 2), but every loan along that row that could not be paid back
+   without changing those lengths again: to or from such a slot, from whichever side, and to or from a group that such a slot is in. Before, the points a hand gave to a window at its smallest size counted as points it could spare: ⌃⌥0, Show Everything, a window closing, the end of a pause paid them to the lender on its far
+   side, over a gap nobody had touched. All or nothing for each borrower: of a debt that is half forgotten, one lender would be paid when the borrower leaves and the next one not. What a column owes from top to bottom is not touched by a gap moved sideways; in a kept group that runs along its row only the window at the end
+   has changed; what another borrower owes to lenders the hand has not resized, on one side of the gap, stands. A gap that is at its limit and does not move settles nothing, and neither does a gap that Arbor moves for ends of its own (a Desktop kept usable at a dock).
+   The price, accepted: when such a window closes later, its room is shared out as any window's is.
+2. **A slot squeezed by hand pays nothing back while it is a tile**, nor does the group around it pay what it was lent for that slot's sake. Squeezed in height, say, it could spare as a tile nearly all the width it was lent, and would not fit when the same hand lets it out again.
+3. **A gap moved by hand in the Desktop's own row, any gap of it, cancels what the Desktop is owed** (the second round, 5, said: only the Desktop's own gaps), and so does one that runs the same way inside what is in that row. They have seen the row and set it, and the points they gave to a window are not for the Desktop to take.
+
+Decided as well, **not built yet**: a slot squeezed by hand gives nothing either, to anybody, until a hand or a command changes who is where. Today a window that waits for room is still served from such a tile, and from a Desktop made narrow by hand, so a gap that made or met a tile can still move afterwards; that a slot was squeezed is still
+not saved, so after a restart such a window is served from what its neighbours can spare; and the mark outlives its reason where the slot has grown because a neighbour left.
+
+Scenario `68-a-gap-dragged-by-hand-lasts`; `AGapDraggedByHandLastsTests`, `LoanTests`.
 
 ## Summary
 

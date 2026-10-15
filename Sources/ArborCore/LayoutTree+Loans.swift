@@ -6,7 +6,8 @@
 // Notes closes. So the tree keeps a ledger: who gave how much to whom, and for whose sake.
 //
 // In amounts, not in pictures of the row (compare LayoutTree+Room.swift): several windows borrow in one row, and they
-// leave in any order. A gap that a person has moved since is theirs: what was lent across it is forgotten.
+// leave in any order. A gap that a person has moved since is theirs: what was lent across it is forgotten, and what the slots
+// beside it were lent from elsewhere.
 
 extension LayoutTree {
   /// `weight` went from `giver` to `receiver`, two children of one row or column, so that the window in `borrower` has
@@ -91,16 +92,36 @@ extension LayoutTree {
 
   mutating func dropSettledLoans() { tidyLoans() }
 
-  /// A person has moved the gap between these two neighbours: where it is now is their decision. What was lent across it,
-  /// from one side of the gap to the other, is forgotten.
-  mutating func forgetLoans(across leading: NodeID, _ trailing: NodeID) {
-    guard let parent = nodes[leading]?.parent, parent == nodes[trailing]?.parent else { return }
+  /// The gap between these two neighbours has been moved. What was lent across it, from one side of the gap to the other, is forgotten.
+  ///
+  /// By a person's hand, where it is now is their decision, and so is how long everything is that the hand has made longer or
+  /// shorter: `resized`. A loan along the row that could not be paid back without changing that again is forgotten too: one to
+  /// or from such a slot, from whichever side, and one to or from a group that such a slot is in, which shrinks and grows in
+  /// proportion. Otherwise the points the hand gave to a window at its smallest size would count as points the window can
+  /// spare, and go to the lender on its far side at the next layout, over a gap that nobody has touched.
+  ///
+  /// `resized` is nil where Arbor has moved the gap for ends of its own: nobody has settled anything.
+  mutating func forgetLoans(across leading: NodeID, _ trailing: NodeID, resized: [NodeID]?) {
+    guard let parent = nodes[leading]?.parent, parent == nodes[trailing]?.parent, case .split(let axis, _) = nodes[parent]?.kind
+    else { return }
     let row = children(of: parent)
     guard let first = row.firstIndex(of: leading), let second = row.firstIndex(of: trailing) else { return }
     let gap = min(first, second)
-    loans.removeAll { loan in
+    func crossesTheGap(_ loan: Loan) -> Bool {
       guard let giver = row.firstIndex(of: loan.giver), let receiver = row.firstIndex(of: loan.receiver) else { return false }
       return min(giver, receiver) <= gap && max(giver, receiver) > gap
     }
+    guard let resized else { return loans = loans.filter { !crossesTheGap($0) } }
+    // Across the row nothing has changed its length: what a column in it owes from top to bottom it goes on owing.
+    func runsAlongTheRow(_ loan: Loan) -> Bool {
+      guard let lentIn = nodes[loan.receiver]?.parent, case .split(axis, _) = nodes[lentIn]?.kind else { return false }
+      return true
+    }
+    let settled = Set(resized + [parent] + ancestors(of: parent))
+    // All or nothing: of a debt that is half forgotten, one lender would be paid when the borrower leaves and the next one not.
+    let freed = Set(
+      loans.filter { crossesTheGap($0) || (runsAlongTheRow($0) && (settled.contains($0.giver) || settled.contains($0.receiver))) }
+        .map(\.borrower))
+    loans = loans.filter { !(freed.contains($0.borrower) && runsAlongTheRow($0)) }
   }
 }

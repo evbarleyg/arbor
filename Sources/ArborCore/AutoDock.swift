@@ -42,7 +42,7 @@ public enum AutoDock {
         let desktopLeads = tree.parent(of: leaf).map { tree.children(of: $0).first == tree.desktop } ?? true
         workspace.tree.moveBoundary(
           leading: desktopLeads ? tree.desktop : leaf, trailing: desktopLeads ? leaf : tree.desktop,
-          by: desktopLeads ? share - a : a - share, pointsPerWeight: 1, minimumPoints: 0)
+          by: desktopLeads ? share - a : a - share, pointsPerWeight: 1, minimumPoints: 0, byHand: false)
       }
       return true
     }
