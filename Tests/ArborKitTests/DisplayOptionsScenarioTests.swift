@@ -294,6 +294,69 @@ private let studio = DisplaySnapshot(
         """)
   }
 
+  @Test func theDisplaysQuerySaysWhichEntriesChangeNothingAndWhichKeysAreNotRead() throws {
+    let json = """
+      {"displays": [{"match": "builtin", "gap": 6, "gapp": 7, "note": "the laptop"}, {"match": ">=wide"}, {"match": "Studoi", "gap": 20},
+                    {"match": "main", "gap": 8}, {"match": "main", "gap": 9}]}
+      """
+    let h = Harness(displays: [laptop], settings: try JSONDecoder().decode(Settings.self, from: Data(json.utf8)))
+    h.start()
+    #expect(
+      h.run("displays").text == """
+        1. Built-in Retina Display, 1440×900, main, built-in
+           id main
+           gap 6, from the entry "builtin"
+           minimumUsableWidth 240
+           minimumUsableHeight 160
+           screenEdgeBand 12
+        Skipped entries of "displays" in settings.json:
+          entry 2 (>=wide): `>=wide` compares the display's width with something that is not a number; expected e.g. >=2500
+        Keys that are not read (the entries count without them):
+          entry 1 (builtin): `gapp`, `note` are not read
+        Entries that change nothing at the moment:
+          entry 3 (Studoi): matches no display that is connected
+          entry 4 (main): entries before it set the same keys
+          entry 5 (main): entries before it set the same keys
+        """)
+  }
+
+  /// A note, a later Arbor's key, an entry for the display at the office: none of them is something to put right, and whoever is told of
+  /// a problem at every reload stops reading. `displays` is where someone looks whose `gapp` does nothing.
+  @Test func neitherIsAProblem() throws {
+    let json = #"{"displays": [{"match": "builtin", "gap": 6, "note": "the laptop"}, {"match": "Studio", "gap": 20}]}"#
+    let read = try JSONDecoder().decode(Settings.self, from: Data(json.utf8))
+    let h = Harness(displays: [laptop], settings: read)
+    h.start()
+    h.controller.loadSettings = { read }
+    #expect(h.run("reload-settings").message == "settings reloaded")
+  }
+
+  /// `displays` is answered before Arbor has started, when it has not looked at any display yet.
+  @Test func beforeArborHasLookedNoEntryIsSaidToMatchNothing() throws {
+    let json = #"{"displays": [{"match": "builtin", "gap": 6, "gapp": 7}, {"match": "main", "screenEdgeBand": 8}]}"#
+    let h = Harness(displays: [laptop], settings: try JSONDecoder().decode(Settings.self, from: Data(json.utf8)))
+    h.controller.accessibilityGranted = false
+    let text = try #require(h.run("displays").text)
+    #expect(text.hasPrefix("No displays yet"))
+    #expect(!text.contains("change nothing"))
+    #expect(text.contains("entry 1 (builtin): `gapp` is not read"), "that much is known from the file alone")
+  }
+
+  @Test func keysThatAreNotReadAreLoggedAsANumberOnly() throws {
+    let secret = "Ouagadougou\(UInt32.random(in: 0...UInt32.max))"
+    let file = FileManager.default.temporaryDirectory.appendingPathComponent("arbor-\(secret).json")
+    // The log outlives a run of the tests, and a number is all this line has to tell it from an earlier run's.
+    let count = Int.random(in: 100...4000)
+    let entries = Array(repeating: #"{"match": "\#(secret)", "gap": 20, "\#(secret)gapp": 1}"#, count: count).joined(separator: ",")
+    try Data(#"{"displays": [\#(entries)]}"#.utf8).write(to: file)
+    defer { try? FileManager.default.removeItem(at: file) }
+    #expect(SettingsFile.load(from: file).displayKeysNotRead.count == count)
+    let log = ((try? String(contentsOf: ArborPaths.logFile.appendingPathExtension("1"), encoding: .utf8)) ?? "")
+      + (try String(contentsOf: ArborPaths.logFile, encoding: .utf8))
+    #expect(log.contains("settings.json: \(count) of the entries of displays have keys that are not read; `displays` names them"))
+    #expect(!log.contains(secret))
+  }
+
   @Test func theDisplaysQuerySaysWhenNothingIsSet() {
     let h = Harness()
     h.start()

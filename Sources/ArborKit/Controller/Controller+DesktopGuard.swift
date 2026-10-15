@@ -69,7 +69,7 @@ extension Controller.Change {
   /// asks this, and so do the tests that every change of the zones announces itself.
   public var mayChangeDesktopGuardZones: Bool {
     switch self {
-    case .focus, .savedViews: false
+    case .focus, .savedViews, .holdReason: false
     default: true
     }
   }

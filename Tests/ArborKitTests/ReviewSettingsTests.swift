@@ -166,7 +166,9 @@ import Testing
   /// A stored property of `Settings` that is in no `CodingKeys` is never saved, never read and in no list, and no other
   /// test would notice: they all start from the keys that are encoded.
   @Test func everyStoredPropertyIsSavedReadAndDescribed() throws {
-    let reports: Set = ["unreadableBindings", "skippedRules", "valueProblems", "skippedDisplays", "skippedDisplayNumbers"]
+    let reports: Set = [
+      "unreadableBindings", "skippedRules", "valueProblems", "skippedDisplays", "skippedDisplayNumbers", "displayKeysNotRead",
+    ]
     let stored = Set(Mirror(reflecting: Settings()).children.compactMap(\.label)).subtracting(reports)
     let described = Set(SettingsSchema.entries.map(\.key))
     #expect(stored.subtracting(described).isEmpty, "not in the schema")

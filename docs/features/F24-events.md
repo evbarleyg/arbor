@@ -18,7 +18,7 @@ must hold.
 ## Behaviour
 
 - `watch [events…] [--titles]`, over the control socket. `arborctl watch` prints each line as it arrives.
-- Events: `hello`, `displays`, `window`, `layout`, `view`, `focus`, `settings`, `started`, `quitting`, `paused`, `resumed`. One JSON
+- Events: `hello`, `displays`, `window`, `layout`, `view`, `focus`, `settings`, `started`, `quitting`, `paused`, `resumed`, `hold`. One JSON
   object per line, `event` first, the other keys sorted, fields with nothing to say left out, rectangles as
   `{"x", "y", "width", "height"}`. The names are the glossary's, not the code's.
 - The first line is `hello`: Arbor's version, the protocol number (1), and the whole state in the events' own words.
@@ -29,6 +29,7 @@ must hold.
 - `window` is one line per window and change: `opened`, `closed`, `adopted`, `released`, `docked`, `floated`, `state`, `title`. Every window has a `state`:
   `in-view`, `out-of-view`, `tile`, `minimized`, `hidden`, `full-screen`, `other-space`.
 - `settings` names the keys that changed.
+- `hold` says how the view is held (F58): `level` is `view` or `still`, left out when it is released; `reason` says why Arbor holds still by itself. An event of its own, never a `change` of a window, so that `released` keeps one meaning. A hold that ends because Arbor pauses or stops is taken back before `paused`.
 - Event names after `watch` are a filter. `hello`, `paused`, `resumed` and `quitting` are always sent.
 - Window titles are sent only to a client that asked with `--titles`. They are never logged.
 - `name` in `view` is the name a person gave the space (F20); `label` stays Arbor's own words for it. The name goes to every client (it was typed to be shown, and the socket is its owner's alone) and is never logged.

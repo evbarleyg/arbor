@@ -36,6 +36,8 @@ private struct Mirror {
       state.views.append(view)
     case .focus(let focus):
       state.focus = focus
+    case .hold(let hold):
+      state.hold = hold
     case .paused:
       state = ArborEvent.Summary(running: false, accessibility: state.accessibility)
       state.paused = true
@@ -60,131 +62,14 @@ private struct Mirror {
   }
 }
 
-private struct Dice {
-  var state: UInt64
-
-  mutating func next() -> UInt64 {
-    state &+= 0x9E37_79B9_7F4A_7C15
-    var z = state
-    z = (z ^ (z >> 30)) &* 0xBF58_476D_1CE4_E5B9
-    z = (z ^ (z >> 27)) &* 0x94D0_49BB_1331_11EB
-    return z ^ (z >> 31)
-  }
-
-  mutating func roll(_ sides: Int) -> Int { Int(next() % UInt64(max(sides, 1))) }
-  mutating func pick<Element>(_ list: [Element]) -> Element? { list.isEmpty ? nil : list[roll(list.count)] }
-}
-
 /// The promise behind `arborctl watch`: whoever follows the events knows what a newcomer is told.
 @Suite @MainActor struct EventMirrorTests {
-  static let side = DisplaySnapshot(
-    id: DisplayID("side"), frame: CGRect(x: 1440, y: 0, width: 1920, height: 1080),
-    visibleFrame: CGRect(x: 1440, y: 0, width: 1920, height: 1080), isMain: false, name: "Side Display")
-
-  /// One thing a person, an app or a script does. Returns what it was, for the message of a failure.
-  fileprivate func act(_ h: Harness, _ dice: inout Dice) -> String {
-    let windows = h.system.allWindows().map(\.id).sorted()
-    let window = dice.pick(windows)?.rawValue ?? 0
-    let other = dice.pick(windows)?.rawValue ?? 0
-    let edge = dice.pick(["left", "right", "top", "bottom"])!
-    let apps = ["Safari", "Mail", "Notes", "Terminal", "Xcode"]
-    func run(_ text: String) -> String {
-      h.run(text)
-      return text
-    }
-    switch dice.roll(44) {
-    case 0, 1:
-      guard windows.count < 9 else { return run("show-all") }
-      let app = dice.pick(apps)!
-      let x = CGFloat(dice.roll(h.system.displays().count > 1 ? 2800 : 900))
-      h.system.open(app: app, frame: CGRect(x: x, y: CGFloat(60 + dice.roll(300)), width: 500, height: 400))
-      return "open \(app) at \(x)"
-    case 2:
-      guard let id = dice.pick(windows) else { return "nothing" }
-      h.system.close(id)
-      return "close \(id)"
-    case 3, 4, 5: return run("dock \(window) \(edge)")
-    case 6: return run("dock \(window) beside \(other) \(edge)")
-    case 7: return run("float \(window)")
-    case 8, 9: return run("zoom \(window)")
-    case 10: return run("out")
-    case 11: return run("in")
-    case 12: return run("show-all")
-    case 13: return run("back")
-    case 14: return run("forward")
-    case 15: return run("desktop")
-    case 16: return run("neighbor \(edge == "top" ? "up" : edge == "bottom" ? "down" : edge)")
-    case 17: return run("arrange")
-    case 18: return run("float-all")
-    case 19: return run("toggle-pin \(window)")
-    case 20: return run("summon \(dice.pick(apps)!)")
-    case 21: return run("name Space\(dice.roll(3))")
-    case 22: return run("unname")
-    case 23: return run("save-view \(1 + dice.roll(3))")
-    case 24: return run("view \(1 + dice.roll(3))")
-    case 25: return run("home")
-    case 26: return run(h.controller.isPaused ? "resume" : "pause")
-    case 27: return run("exclude com.example.\(dice.pick(apps)!.lowercased())")
-    case 28: return run("include com.example.\(dice.pick(apps)!.lowercased())")
-    case 29: return run("set gap \(4 + dice.roll(30))")
-    case 30: return run("resize \(window) \(edge) \(dice.roll(200) - 100)")
-    case 31:
-      guard let id = dice.pick(windows), let snapshot = h.system.allWindows().first(where: { $0.id == id }) else { return "nothing" }
-      h.system.setMinimized(id, !snapshot.isMinimized)
-      return "minimize or restore \(id)"
-    case 32:
-      guard let snapshot = dice.pick(h.system.allWindows()) else { return "nothing" }
-      h.system.setHidden(pid: snapshot.pid, !snapshot.isHidden)
-      return "hide or show pid \(snapshot.pid)"
-    case 33:
-      guard let snapshot = dice.pick(h.system.allWindows()) else { return "nothing" }
-      h.system.setFullScreen(snapshot.id, !snapshot.isFullScreen)
-      return "full screen on or off \(snapshot.id)"
-    case 34:
-      guard let snapshot = dice.pick(h.system.allWindows()) else { return "nothing" }
-      h.system.setOnActiveSpace(snapshot.id, !snapshot.isOnActiveSpace)
-      return "another Space, or back \(snapshot.id)"
-    case 35, 36:
-      guard let id = dice.pick(windows) else { return "nothing" }
-      h.system.userFocus(id)
-      return "click \(id)"
-    case 37:
-      h.system.userFocusesNothing()
-      return "click the wallpaper"
-    case 38:
-      guard let id = dice.pick(windows) else { return "nothing" }
-      h.system.setTitle(id, "Title \(dice.roll(5))")
-      return "a new title for \(id)"
-    case 39:
-      let two = h.system.displays().count > 1
-      h.system.setDisplays(two ? [FakeWindowSystem.standardDisplay] : [FakeWindowSystem.standardDisplay, Self.side])
-      return two ? "unplug" : "plug in"
-    case 40:
-      guard let id = dice.pick(windows), let frame = h.frame(id) else { return "nothing" }
-      let wide = h.system.displays().count > 1 ? 3300 : 1400
-      let point = CGPoint(x: CGFloat(20 + dice.roll(wide)), y: CGFloat(40 + dice.roll(800)))
-      h.system.drag(id, through: [CGPoint(x: frame.midX, y: frame.minY + 10), frame.center, point])
-      return "drag \(id) to \(point)"
-    case 41:
-      guard let snapshot = dice.pick(h.system.allWindows()) else { return "nothing" }
-      h.system.quit(pid: snapshot.pid)
-      return "quit pid \(snapshot.pid)"
-    case 42:
-      guard let id = dice.pick(windows) else { return "nothing" }
-      h.system.backgroundFocus(id)
-      return "a report from the background, \(id)"
-    default:
-      h.scheduler.advance(by: Double(dice.roll(30)) / 10)
-      return "time passes"
-    }
-  }
-
   @Test(arguments: 1...40)
   func whoeverFollowsTheEventsKnowsWhatANewcomerIsTold(seed: Int) throws {
-    var dice = Dice(state: UInt64(seed))
-    let h = Harness()
+    var dice = RandomJourney.Dice(state: UInt64(seed))
+    let h = Harness(settings: RandomJourney.settings)
     for app in ["Safari", "Mail", "Notes"] {
-      h.system.open(app: app, frame: CGRect(x: 100 + CGFloat(dice.roll(600)), y: 100, width: 500, height: 400))
+      h.system.open(app: app, pid: RandomJourney.pid(of: app), frame: CGRect(x: 100 + CGFloat(dice.roll(600)), y: 100, width: 500, height: 400))
     }
     h.start()
     let feed = EventFeed(controller: h.controller)
@@ -196,7 +81,7 @@ private struct Dice {
     var history: [String] = []
 
     for step in 1...150 {
-      history.append(act(h, &dice))
+      history.append(RandomJourney.step(h, &dice))
       // Long enough for whatever the controller puts off, and for the feed's second look at the keyboard.
       h.scheduler.advance(by: 3)
       for line in lines { mirror.take(try ArborEvent(line: line)) }
@@ -207,8 +92,13 @@ private struct Dice {
         if case .hello(let hello)? = try? ArborEvent(line: line) { told = hello.snapshot }
       }
       if let newcomer { feed.unsubscribe(newcomer) }
-      // The newcomer's arrival makes the feed look again; what it saw then is news for the old hand as well.
-      for line in lines { mirror.take(try ArborEvent(line: line)) }
+      // The newcomer's arrival makes the feed look again; what it saw then is news for the old hand as well. Not about a hold:
+      // the controller says when that changes, so it has been said.
+      for line in lines {
+        let event = try ArborEvent(line: line)
+        if event.kind == .hold { Issue.record("seed \(seed), step \(step): after \(history.suffix(6).joined(separator: "; ")), late: \(line)") }
+        mirror.take(event)
+      }
       lines.removeAll()
       var expected = try #require(told)
       expected.notArranged = []
@@ -242,7 +132,9 @@ private struct Dice {
       if view.label.isEmpty || view.label.wholeMatch(of: /n[0-9]+/) != nil { return "the label of \(view.display) is \"\(view.label)\"" }
       // Not the other way round: with every docked window minimized or hidden, the Desktop is all there is to see.
       if view.kind == .everything, view.depth != 0 { return "\(view.display): everything at depth \(view.depth)" }
-      if view.depth == 0, view.outOfView > 0, !here.contains(where: { $0.state == .outOfView && !$0.docked }) {
+      // A held view does not widen by itself: when its last window goes, the display shows the wallpaper until `release`.
+      let heldEmpty = state.hold.level == .view && view.windows.isEmpty
+      if !heldEmpty, view.depth == 0, view.outOfView > 0, !here.contains(where: { $0.state == .outOfView && !$0.docked }) {
         return "\(view.display): \(view.outOfView) docked out of view, and no step out"
       }
     }
@@ -268,10 +160,10 @@ private struct Dice {
   /// The same journeys, looked at whenever the main loop comes round and at every tenth of a second after it.
   @Test(arguments: 1...40)
   func whatHasBeenSaidSoFarNeverContradictsItself(seed: Int) throws {
-    var dice = Dice(state: UInt64(seed) &* 7919)
-    let h = Harness()
+    var dice = RandomJourney.Dice(state: UInt64(seed) &* 7919)
+    let h = Harness(settings: RandomJourney.settings)
     for app in ["Safari", "Mail", "Notes"] {
-      h.system.open(app: app, frame: CGRect(x: 100 + CGFloat(dice.roll(600)), y: 100, width: 500, height: 400))
+      h.system.open(app: app, pid: RandomJourney.pid(of: app), frame: CGRect(x: 100 + CGFloat(dice.roll(600)), y: 100, width: 500, height: 400))
     }
     h.start()
     let feed = EventFeed(controller: h.controller)
@@ -280,7 +172,7 @@ private struct Dice {
     var mirror = Mirror(state: ArborEvent.Summary(running: false, accessibility: true))
     var history: [String] = []
     for step in 1...150 {
-      history.append(act(h, &dice))
+      history.append(RandomJourney.step(h, &dice))
       for tick in 0..<8 {
         h.scheduler.advance(by: tick == 0 ? 0 : 0.1)
         guard !lines.isEmpty else { continue }

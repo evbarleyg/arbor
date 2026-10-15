@@ -74,10 +74,43 @@ public struct DisplayOptions: Codable, Equatable, Sendable {
     }
   }
 
+  /// Why an entry changes nothing on any of `displays`, by its place in `entries`; entries that do change something are not
+  /// listed. Nothing need be wrong: the display may be at the office. But a name that is misspelt looks the same
+  /// from the outside as one that is right, so `displays` says it.
+  public static func idle(among entries: [DisplayOptions], on displays: [DisplayTraits]) -> [(index: Int, why: String)] {
+    entries.indices.compactMap { index in
+      let entry = entries[index]
+      let set = keys.filter { entry[keyPath: $0.value] != nil }
+      if set.isEmpty { return (index, "sets nothing") }
+      let matched = displays.filter { entry.match.matches($0) }
+      if matched.isEmpty { return (index, "matches no display that is connected") }
+      let isFirst = matched.contains { display in
+        set.contains { key in
+          !entries[..<index].contains { $0.match.matches(display) && $0[keyPath: key.value] != nil }
+        }
+      }
+      return isFirst ? nil : (index, "entries before it set the same keys")
+    }
+  }
+
   // MARK: Codable
 
-  private enum CodingKeys: String, CodingKey {
+  private enum CodingKeys: String, CodingKey, CaseIterable {
     case match, gap, minimumUsableWidth, minimumUsableHeight, screenEdgeBand
+  }
+
+  /// The keys of an entry in the file that this version does not read, sorted: a slip of the finger (`gapp`), a setting that
+  /// no display can have of its own, or a later Arbor's. The entry counts without them.
+  static func keysNotRead(in decoder: any Decoder) -> [String] {
+    struct AnyKey: CodingKey {
+      var stringValue: String
+      var intValue: Int? { nil }
+      init?(stringValue: String) { self.stringValue = stringValue }
+      init?(intValue: Int) { nil }
+    }
+    let known = Set(CodingKeys.allCases.map(\.rawValue))
+    let found = (try? decoder.container(keyedBy: AnyKey.self))?.allKeys.map(\.stringValue) ?? []
+    return found.filter { !known.contains($0) }.sorted()
   }
 
   public init(from decoder: any Decoder) throws {
@@ -85,11 +118,20 @@ public struct DisplayOptions: Codable, Equatable, Sendable {
     /// A number within the bounds a layout can live with. A gap of a million points would leave no room
     /// for any window, and nothing good comes of laying out rectangles of negative size.
     func number(_ key: CodingKeys, upTo maximum: Double) throws -> Double? {
-      guard let value = try c.decodeIfPresent(Double.self, forKey: key) else { return nil }
-      guard value.isFinite, (0...maximum).contains(value) else {
-        throw DecodingError.dataCorruptedError(
-          forKey: key, in: c, debugDescription: "`\(key.rawValue)` must be between 0 and \(Int(maximum))")
+      let outOfBounds = DecodingError.dataCorruptedError(
+        forKey: key, in: c, debugDescription: "`\(key.rawValue)` must be between 0 and \(Int(maximum))")
+      let value: Double?
+      do {
+        value = try c.decodeIfPresent(Double.self, forKey: key)
+      } catch let error as DecodingError {
+        guard case .dataCorrupted = error else { throw error }
+        throw outOfBounds
+      } catch {
+        // A number that no `Double` can hold (`1e400`). What is thrown for it differs from one system to the next.
+        throw outOfBounds
       }
+      guard let value else { return nil }
+      guard value.isFinite, (0...maximum).contains(value) else { throw outOfBounds }
       return value
     }
     self.init(
@@ -101,7 +143,8 @@ public struct DisplayOptions: Codable, Equatable, Sendable {
 
   /// A short, readable reason why an entry in settings.json could not be read.
   static func reason(for error: any Error) -> String {
-    guard let error = error as? DecodingError else { return "\(error)" }
+    // What else a decoder throws is written for programmers (`numberIsNotRepresentableInSwift(parsed: "1e400")`).
+    guard let error = error as? DecodingError else { return "cannot be read" }
     switch error {
     case .keyNotFound(let key, _):
       return "`\(key.stringValue)` is missing"
@@ -112,9 +155,11 @@ public struct DisplayOptions: Codable, Equatable, Sendable {
       }
       return #"expected an object such as {"match": "builtin", "gap": 8}"#
     case .dataCorrupted(let context):
-      return context.debugDescription
+      // Arbor's own reasons begin with what they are about. Foundation's differ from one system to the next.
+      if context.debugDescription.hasPrefix("`") { return context.debugDescription }
+      return context.codingPath.last { $0.intValue == nil }.map { "`\($0.stringValue)` cannot be read" } ?? "cannot be read"
     @unknown default:
-      return "\(error)"
+      return "cannot be read"
     }
   }
 }
@@ -244,6 +289,8 @@ struct DisplayOptionsList: Decodable {
   /// One line per skipped entry, numbered by its place in the file: "entry 2 (>=wide): …".
   var skipped: [String] = []
   var skippedNumbers: [Int] = []
+  /// One line per entry that was read without some of its keys: "entry 3 (builtin): `gapp` is not read".
+  var notRead: [String] = []
 
   init() {}
 
@@ -255,7 +302,12 @@ struct DisplayOptionsList: Decodable {
     while !list.isAtEnd {
       let number = list.currentIndex + 1
       do {
-        entries.append(try list.decode(DisplayOptions.self))
+        let entry = try list.decode(Entry.self)
+        entries.append(entry.options)
+        if !entry.keysNotRead.isEmpty {
+          let keys = entry.keysNotRead.map { "`\($0)`" }.joined(separator: ", ")
+          notRead.append("entry \(number) (\(entry.options.match)): \(keys) \(entry.keysNotRead.count == 1 ? "is" : "are") not read")
+        }
       } catch {
         // A failed decode leaves the container on the same entry. Step over it, keeping its `match`
         // (if it has one) so the message says which it is.
@@ -266,6 +318,17 @@ struct DisplayOptionsList: Decodable {
         // Stop rather than loop forever if the container could not move on.
         if list.currentIndex < number { break }
       }
+    }
+  }
+
+  /// An entry, and what else was in it.
+  private struct Entry: Decodable {
+    var options: DisplayOptions
+    var keysNotRead: [String]
+
+    init(from decoder: any Decoder) throws {
+      options = try DisplayOptions(from: decoder)
+      keysNotRead = DisplayOptions.keysNotRead(in: decoder)
     }
   }
 

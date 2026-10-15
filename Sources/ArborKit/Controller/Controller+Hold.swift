@@ -110,6 +110,12 @@ extension Controller {
   /// Whether Arbor may move the view or a window only when asked.
   public var isHeld: Bool { holdLevel != nil }
 
+  /// Why Arbor holds still by itself, in words that follow "while": an app's name or a fixed phrase, never a title. Nil when the
+  /// person asked for the hold, and when there is none.
+  var holdReason: String? { isHeld && hold.chosen == nil ? hold.caller : nil }
+
+  private var holdAsSaid: (level: HoldLevel?, reason: String?) { (holdLevel, holdReason) }
+
   /// Whether a panel or window of Arbor's that the person **asked for** may be shown (Go to…, the minimap on demand, the
   /// shortcuts, a welcome or update window). Not on a held view: what the audience sees stays as it is. Commands
   /// are refused anyway until `Command.isAllowedWhileHeld` lists them; this is for whatever is not a command.
@@ -128,7 +134,7 @@ extension Controller {
     if level == .view, holdLevel != .view, workspaces.keys.allSatisfy({ heldWindows(on: $0).isEmpty }) {
       return .failure("there is nothing in view to hold")
     }
-    let before = holdLevel
+    let before = holdAsSaid
     hold.chosen = level
     holdChanged(from: before)
     // A second `hold` replaces the first one's end.
@@ -146,7 +152,7 @@ extension Controller {
 
   func release() -> CommandResult {
     guard isHeld else { return .failure("the view is not held") }
-    let before = holdLevel
+    let before = holdAsSaid
     scheduler.cancel("release")
     if hold.chosen != nil { hold.chosen = nil } else { hold.callerDismissed = true }
     hold.until = nil
@@ -218,7 +224,7 @@ extension Controller {
     case .floatAll, .floatAllHere:
       // "Back to a normal Mac" is a way out. What rules were waiting to dock stays floating too.
       if hold.chosen != nil {
-        let before = holdLevel
+        let before = holdAsSaid
         scheduler.cancel("release")
         hold.chosen = nil
         hold.until = nil
@@ -270,9 +276,13 @@ extension Controller {
 
   /// Returns the windows whose rule waited for the end of the hold and was not applied after all.
   @discardableResult
-  private func holdChanged(from before: HoldLevel?) -> [WindowID] {
-    let level = holdLevel
-    guard level != before else { return [] }
+  private func holdChanged(from said: (level: HoldLevel?, reason: String?)) -> [WindowID] {
+    let (level, before) = (holdLevel, said.level)
+    guard level != before else {
+      // Only why has changed, if anything, and `watch` says the reason.
+      if holdReason != said.reason { notify(.holdReason) }
+      return []
+    }
     if before == nil {
       hold.home = system.focusedWindow().flatMap { isOutOfView($0) ? nil : $0 }
       hold.since = now()
@@ -383,7 +393,7 @@ extension Controller {
     if caller == nil, settings.holdStillWhileCameraIsOn, callSignals.cameraIsOn { caller = "the camera is on" }
     if caller == nil, settings.holdStillWhileMicrophoneIsOn, callSignals.microphoneIsOn { caller = "the microphone is on" }
     guard caller != hold.caller else { return }
-    let before = holdLevel
+    let before = holdAsSaid
     hold.caller = caller
     if caller == nil { hold.callerDismissed = false }
     holdChanged(from: before)

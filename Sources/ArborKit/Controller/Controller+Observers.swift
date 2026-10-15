@@ -31,6 +31,9 @@ extension Controller {
     /// The keyboard may be with another window now, or with none Arbor knows: an app was switched to or away from, a
     /// sheet or a panel took it, the wallpaper was clicked. Ask `system.focusedWindow()`.
     case keyboard
+    /// Why Arbor holds still has changed and how firmly has not (`holdReason`): `hold still` during a call or its end, or
+    /// another sign of the same call. Not `hold`, which whoever holds keys and taps follows: nothing changes for them.
+    case holdReason
   }
 
   /// Calls `observer` after every change, on the main actor, for as long as the controller lives.

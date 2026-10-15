@@ -53,6 +53,8 @@ extension Controller {
     let arranged = Set(summary.windows.map(\.id))
     summary.notArranged = windows.keys.filter { !arranged.contains($0) }.sorted()
 
+    summary.hold = ArborEvent.Hold(level: holdLevel, reason: holdReason)
+
     if let focused, let snapshot = windows[focused] {
       summary.focus = ArborEvent.Focus(
         window: focused, app: snapshot.appName, bundleID: snapshot.bundleID,

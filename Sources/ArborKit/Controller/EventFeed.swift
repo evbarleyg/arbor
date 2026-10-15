@@ -54,8 +54,13 @@ public final class EventFeed {
     guard hasRoom else { return nil }
     // Worth asking once per client, as `state` does: `hello` is then right even if a change of focus was missed.
     focusMayHaveMoved = true
-    // Afterwards `known` is the state now, and what everyone else has been told as well.
-    flush()
+    // Afterwards `known` is the state now, and what everyone else has been told as well. While a layout is put off the others are
+    // told nothing, so the newcomer hears what they know, and the rest together with them.
+    if subscribers.isEmpty || controller.postponedRelayouts.isEmpty {
+      flush()
+    } else if !flushIsScheduled {
+      scheduleFlush(after: Self.waitForLayout)
+    }
     let id = nextSubscriberID
     nextSubscriberID += 1
     subscribers[id] = Subscriber(options: options, sink: sink)
@@ -88,7 +93,7 @@ public final class EventFeed {
       if !subscribers.isEmpty {
         controller.scheduler.schedule("events-focus", after: Self.secondLookAtFocus) { [weak self] in
           self?.focusMayHaveMoved = true
-          self?.flush()
+          self?.flushWhenSettled()
         }
       }
     case .lifecycle:
@@ -111,17 +116,16 @@ public final class EventFeed {
 
   private func scheduleFlush(after seconds: Double) {
     flushIsScheduled = true
-    controller.scheduler.schedule("events", after: seconds) { [weak self] in
-      guard let self else { return }
-      // macOS reports a switch of its Spaces window by window, and the controller lays out once it has heard them all.
-      // Until then the layout is of windows that have left, so look again in a moment. (Not at once: the layout waits
-      // for as long as a window is being dragged, and this must not keep the main loop busy meanwhile.)
-      guard self.controller.postponedRelayouts.isEmpty else {
-        self.scheduleFlush(after: Self.waitForLayout)
-        return
-      }
-      self.flush()
-    }
+    controller.scheduler.schedule("events", after: seconds) { [weak self] in self?.flushWhenSettled() }
+  }
+
+  /// macOS reports a switch of its Spaces window by window, and the controller lays out once it has heard them all.
+  /// Until then the layout is of windows that have left, so look again in a moment. (Not at once: the layout waits
+  /// for as long as a window is being dragged, and this must not keep the main loop busy meanwhile.)
+  private func flushWhenSettled() {
+    // With nobody left to tell there is nothing to wait for. Whoever comes next makes the feed look.
+    guard controller.postponedRelayouts.isEmpty || subscribers.isEmpty else { return scheduleFlush(after: Self.waitForLayout) }
+    flush()
   }
 
   /// Sends whatever has changed since the last time.

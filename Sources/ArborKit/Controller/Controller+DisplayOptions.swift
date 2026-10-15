@@ -61,6 +61,17 @@ extension Controller {
       lines.append("Skipped entries of \"displays\" in settings.json:")
       lines += settings.skippedDisplays.map { "  \($0)" }
     }
+    if !settings.displayKeysNotRead.isEmpty {
+      lines.append("Keys that are not read (the entries count without them):")
+      lines += settings.displayKeysNotRead.map { "  \($0)" }
+    }
+    // Before Arbor has looked there is no telling what an entry matches.
+    let idle = displays.isEmpty ? [] : DisplayOptions.idle(among: settings.displays, on: displays.map(\.traits))
+    if !idle.isEmpty {
+      let numbers = settings.displayNumbers
+      lines.append("Entries that change nothing at the moment:")
+      lines += idle.map { "  entry \(numbers[$0.index]) (\(settings.displays[$0.index].match)): \($0.why)" }
+    }
     return CommandResult(ok: true, message: "\(displays.count) display(s)", text: lines.joined(separator: "\n"))
   }
 

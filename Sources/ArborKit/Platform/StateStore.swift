@@ -419,6 +419,10 @@ public enum SettingsFile {
     for number in settings.skippedDisplayNumbers {
       Log.error("settings.json: skipped entry \(number) of displays; `reload-settings` says where the reason is")
     }
+    // Nothing need be wrong (a note, a later Arbor's key), but a slip of the finger looks the same. A number only, as above.
+    if !settings.displayKeysNotRead.isEmpty {
+      Log.info("settings.json: \(settings.displayKeysNotRead.count) of the entries of displays have keys that are not read; `displays` names them")
+    }
   }
 
   /// Writes a whole file where there is none, or only a blank one. Leaves any other file alone.

@@ -67,6 +67,7 @@ private let samples: [ArborEvent] = [
   .quitting,
   .paused,
   .resumed,
+  .hold(ArborEvent.Hold(level: .still, reason: "the camera is on")),
 ]
 
 @Suite struct ArborEventLineTests {
@@ -84,12 +85,13 @@ private let samples: [ArborEvent] = [
         #"{"event":"quitting"}"#,
         #"{"event":"paused"}"#,
         #"{"event":"resumed"}"#,
+        #"{"event":"hold","level":"still","reason":"the camera is on"}"#,
       ])
     #expect(
       samples[0].line
         == #"{"event":"hello","protocol":1,"snapshot":{"accessibility":true,"#
         + #""displays":[{"builtIn":true,"displayID":"main","frame":{"height":900,"width":1440,"x":0,"y":0},"main":true,"name":"Built-in Display"}],"#
-        + #""focus":{"app":"Safari","bundleID":"com.example.safari","displayID":"main","title":"Apple","window":101},"#
+        + #""focus":{"app":"Safari","bundleID":"com.example.safari","displayID":"main","title":"Apple","window":101},"hold":{},"#
         + #""layouts":[{"displayID":"main","dockedCount":1,"floatingCount":0,"frames":{"101":{"height":851,"width":702,"x":12,"y":37}},"tileCount":0}],"#
         + #""notArranged":[7],"paused":false,"running":true,"#
         + #""views":[{"apps":[],"canGoBack":false,"canGoForward":false,"depth":0,"displayID":"main","kind":"everything","label":"everything","node":2,"outOfView":0,"windows":[]}],"#
@@ -99,7 +101,7 @@ private let samples: [ArborEvent] = [
 
   @Test func theWordsAreTheGlossarys() {
     #expect(ArborEvent.Kind.allCases.map(\.rawValue) == [
-      "hello", "displays", "window", "layout", "view", "focus", "settings", "started", "quitting", "paused", "resumed",
+      "hello", "displays", "window", "layout", "view", "focus", "settings", "started", "quitting", "paused", "resumed", "hold",
     ])
     #expect([ArborEvent.View.Kind.everything, .desktop, .window, .group].map(\.rawValue) == ["everything", "desktop", "window", "group"])
     #expect(
@@ -167,6 +169,23 @@ private let samples: [ArborEvent] = [
         change(.closed, window(103, "Mail")), change(.docked, window(101, docked: true)),
         change(.floated, window(102, "Notes")), change(.opened, window(104, "Xcode")),
       ])
+  }
+
+  @Test func aHoldIsAnEventOfItsOwn() {
+    var held = full
+    held.hold = ArborEvent.Hold(level: .view)
+    #expect(ArborEvent.changes(from: full, to: held) == [.hold(ArborEvent.Hold(level: .view))])
+    #expect(ArborEvent.hold(held.hold).line == #"{"event":"hold","level":"view"}"#)
+    var still = full
+    still.hold = ArborEvent.Hold(level: .still, reason: "Zoom is open")
+    #expect(ArborEvent.changes(from: held, to: still) == [.hold(still.hold)])
+    #expect(ArborEvent.changes(from: still, to: full) == [.hold(ArborEvent.Hold())])
+    #expect(ArborEvent.hold(ArborEvent.Hold()).line == #"{"event":"hold"}"#, "released")
+    // It ends with the arranging, and nothing that follows `resumed` or `started` would say so.
+    var paused = ArborEvent.Summary(running: false, accessibility: true)
+    paused.paused = true
+    #expect(ArborEvent.changes(from: held, to: paused) == [.hold(ArborEvent.Hold()), .paused])
+    #expect(ArborEvent.changes(from: held, to: ArborEvent.Summary(running: false, accessibility: false)) == [.hold(ArborEvent.Hold())])
   }
 
   @Test func aWindowThatOpensDockedIsReportedAsBoth() {

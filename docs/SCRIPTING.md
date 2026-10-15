@@ -134,7 +134,7 @@ arborctl watch focus --titles       # with window titles
   per display; something that changed and changed back in the same breath is never mentioned.
 - **No repeats.** A line is sent only if something in it differs from the last line of its kind (for that display, or window).
 - **One order**, when several things change together: `settings`, `started` or `resumed`, `displays`, `window`, `layout`,
-  `view`, `focus`. A window is announced before anything mentions its number.
+  `view`, `focus`, `hold`. A window is announced before anything mentions its number.
 - **A filter** names the kinds you want. `hello`, `paused`, `resumed` and `quitting` come whatever the filter: whether Arbor is
   there at all is news for everyone.
 - **Titles are private.** They are sent only to a client that asked with `--titles`, and are never logged. The name you gave a space (`name` in `view`) goes to
@@ -170,12 +170,12 @@ done
 #### hello
 
 Always first. `version` is Arbor's ("dev" for a build outside the app bundle); `protocol` is 1. In `snapshot`, each entry of `displays`,
-`windows`, `layouts` and `views` has the fields of the event `displays`, `window`, `layout` or `view` below, and `focus` those of `focus`. Displays, and with them
+`windows`, `layouts` and `views` has the fields of the event `displays`, `window`, `layout` or `view` below, and `focus` and `hold` those of `focus` and `hold`. Displays, and with them
 `layouts` and `views`, come with the main display first. `notArranged` lists the windows Arbor sees and leaves alone (Don't Arrange, an
 `ignore` rule). While Arbor is not `running` (it is waiting for Accessibility permission, or `paused`) the lists are empty.
 
 ```json
-{"event":"hello","protocol":1,"snapshot":{"accessibility":true,"displays":[{"builtIn":true,"displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","frame":{"height":982,"width":1512,"x":0,"y":0},"main":true,"name":"Built-in Retina Display"}],"focus":{"app":"Notes","bundleID":"com.apple.Notes","displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","window":388},"layouts":[{"displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","dockedCount":2,"floatingCount":1,"frames":{"388":{"height":925,"width":488,"x":1012,"y":45},"412":{"height":925,"width":488,"x":12,"y":45}},"tileCount":0}],"notArranged":[207],"paused":false,"running":true,"views":[{"apps":["Safari","Notes"],"canGoBack":false,"canGoForward":false,"depth":0,"displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","kind":"everything","label":"everything","node":2,"outOfView":0,"windows":[412,388]}],"windows":[{"app":"Notes","bundleID":"com.apple.Notes","displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","docked":true,"state":"in-view","window":388},{"app":"Safari","bundleID":"com.apple.Safari","displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","docked":true,"state":"in-view","window":412},{"app":"Mail","bundleID":"com.apple.mail","displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","docked":false,"state":"in-view","window":431}]},"version":"0.1.0"}
+{"event":"hello","protocol":1,"snapshot":{"accessibility":true,"displays":[{"builtIn":true,"displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","frame":{"height":982,"width":1512,"x":0,"y":0},"main":true,"name":"Built-in Retina Display"}],"focus":{"app":"Notes","bundleID":"com.apple.Notes","displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","window":388},"hold":{},"layouts":[{"displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","dockedCount":2,"floatingCount":1,"frames":{"388":{"height":925,"width":488,"x":1012,"y":45},"412":{"height":925,"width":488,"x":12,"y":45}},"tileCount":0}],"notArranged":[207],"paused":false,"running":true,"views":[{"apps":["Safari","Notes"],"canGoBack":false,"canGoForward":false,"depth":0,"displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","kind":"everything","label":"everything","node":2,"outOfView":0,"windows":[412,388]}],"windows":[{"app":"Notes","bundleID":"com.apple.Notes","displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","docked":true,"state":"in-view","window":388},{"app":"Safari","bundleID":"com.apple.Safari","displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","docked":true,"state":"in-view","window":412},{"app":"Mail","bundleID":"com.apple.mail","displayID":"9B2F6C1E-4A7D-4F03-8E15-6D0A3C5B7E21","docked":false,"state":"in-view","window":431}]},"version":"0.1.0"}
 ```
 
 #### view
@@ -278,6 +278,26 @@ The settings changed (Reload Settings with an edited file, Don't Arrange…): `c
 {"event":"settings","changed":["gap","rules"]}
 ```
 
+#### hold
+
+The view is held, held otherwise, or no longer held (Hold This View and Hold Still, for shared screens and calls). While `level` is `view` nothing
+moves the view, and it does not widen by itself either: when the last window in it closes, is minimized or hidden, a `view` event comes with no `windows`
+and `outOfView` counts the rest. Its other fields then say where the view is, not what is on the screen, which is the wallpaper: `node`, `kind` and `label`
+are those of the window that is away (of the space around it, if it has closed), and `depth` is how often `out` could be run once the view is released.
+
+A hold ends when Arbor pauses or stops arranging windows for any other reason: `{"event":"hold"}` comes then, before `paused`.
+
+```json
+{"event":"hold","level":"view"}
+{"event":"hold","level":"still","reason":"the camera is on"}
+{"event":"hold"}
+```
+
+| Field | |
+|---|---|
+| `level` | `view`: nothing moves the view until it is released. `still`: only you do. Left out when the view is no longer held |
+| `reason` | Why Arbor holds still by itself, in words that follow "while": "the camera is on", "Zoom is open". Left out when you asked for the hold |
+
 #### started, paused, resumed, quitting
 
 ```json
@@ -356,10 +376,10 @@ arborctl watch | grep --line-buffered '^{"event":"focus"'
 ### jq one-liners
 
 ```bash
-arborctl watch | head -n 1 | jq .state                                                   # the state now, in the events' words
+arborctl watch | head -n 1 | jq .snapshot                                                # the state now, in the events' words
 arborctl watch view    | jq -r 'select(.event == "view") | .label'                       # where the view is, in words
 arborctl watch focus   | jq --unbuffered -r 'select(.event == "focus") | .app // "–"'    # the focused app, for a status bar
-arborctl watch layout  | jq -r 'select(.event == "layout") | "\(.docked) docked, \(.floating) floating, \(.tiles) tiles"'
+arborctl watch layout  | jq -r 'select(.event == "layout") | "\(.dockedCount) docked, \(.floatingCount) floating, \(.tileCount) tiles"'
 arborctl watch window | jq -r 'select(.change == "opened") | "\(.app) opened window \(.window)"'
 arborctl watch window | jq -r 'select(.state == "out-of-view") | "\(.app) is out of view"'
 arborctl watch window | jq -r --unbuffered 'select(.change == "opened" and .bundleID == "com.apple.Terminal") | .window' |
