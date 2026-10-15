@@ -30,11 +30,17 @@ struct SettingsSidebar: View {
 
   var body: some View {
     VStack(spacing: 0) {
-      TextField("Search", text: search)
-        .textFieldStyle(.roundedBorder)
-        .accessibilityIdentifier("search")
-        .accessibilityLabel("Search the settings")
-        .padding(10)
+      // The glass says what the field is for. The word in it does not: macOS draws that too faint to count as a label.
+      HStack(spacing: 6) {
+        Image(systemName: "magnifyingglass")
+          .foregroundStyle(.secondary)
+          .accessibilityHidden(true)
+        TextField("Search", text: search)
+          .textFieldStyle(.roundedBorder)
+          .accessibilityIdentifier("search")
+          .accessibilityLabel("Search the settings")
+      }
+      .padding(10)
       List(selection: selection) {
         ForEach(store.model.panes) { pane in
           Label(pane.title, systemImage: pane.symbol)
@@ -92,15 +98,15 @@ struct SettingsDetail: View {
   }
 }
 
-/// What is wrong with settings.json, above everything else.
+/// What is wrong with settings.json, above everything else. On the window's own ground, with a line under it: macOS's buttons let
+/// through what they lie on, and over a tint of Arbor's their words could not be read in the dark look.
 struct SettingsFileBanner: View {
   @ObservedObject var store: SettingsPanelStore
 
   var body: some View {
     if let problem = store.model.fileProblem {
       VStack(alignment: .leading, spacing: 6) {
-        Text("settings.json cannot be read")
-          .font(.headline)
+        SettingsNotice(mark: .refusal, text: "settings.json cannot be read", font: .headline)
         Text("\(problem). Arbor keeps the settings it had, and changes nothing until the file is mended.")
           .fixedSize(horizontal: false, vertical: true)
         if store.model.question == .replaceFile {
@@ -115,11 +121,10 @@ struct SettingsFileBanner: View {
       }
       .padding(12)
       .frame(maxWidth: .infinity, alignment: .leading)
-      .background(Color.orange.opacity(0.2))
+      Divider()
     } else if !store.model.valueProblems.isEmpty {
       VStack(alignment: .leading, spacing: 4) {
-        Text("Some values in settings.json could not be used as written")
-          .font(.headline)
+        SettingsNotice(mark: .caution, text: "Some values in settings.json could not be used as written", font: .headline)
         // By their place: two lines can say the same.
         ForEach(Array(store.model.valueProblems.enumerated()), id: \.offset) { _, line in
           Text(line)
@@ -129,7 +134,7 @@ struct SettingsFileBanner: View {
       }
       .padding(12)
       .frame(maxWidth: .infinity, alignment: .leading)
-      .background(Color.yellow.opacity(0.15))
+      Divider()
     }
   }
 }
@@ -159,12 +164,30 @@ struct SettingsErrorText: View {
 
   var body: some View {
     if let text {
-      Text(text)
-        .font(.caption)
-        .foregroundStyle(.red)
-        .fixedSize(horizontal: false, vertical: true)
+      SettingsNotice(mark: .refusal, text: text)
     }
   }
+}
+
+/// A mark in colour, and the words in the ink everything else is in (`SettingsLook`).
+struct SettingsNotice: View {
+  let mark: SettingsLook.Mark
+  let text: String
+  var font: Font = .caption
+  @Environment(\.colorScheme) private var scheme: ColorScheme
+
+  var body: some View {
+    HStack(alignment: .firstTextBaseline, spacing: 4) {
+      Image(systemName: mark.symbol)
+        .foregroundStyle(colour)
+        .accessibilityHidden(true)
+      Text(text)
+        .fixedSize(horizontal: false, vertical: true)
+    }
+    .font(font)
+  }
+
+  private var colour: Color { Color(nsColor: SettingsLook.colour(of: mark, isDark: scheme == .dark).nsColor) }
 }
 
 /// A list of things in settings.json that could not be used, under a pane's own content.
@@ -226,13 +249,14 @@ struct SettingsSectionPane: View {
         Section {
           DisclosureGroup(isExpanded: advanced) {
             // What is behind a group is no row of the form. Left to itself it has neither the lines between rows nor their
-            // room, and what is narrower than the form, a list of apps, stands in the middle.
-            VStack(alignment: .leading, spacing: 0) {
+            // room, and what is narrower than the form, a list of apps, stands in the middle. The room is between things and
+            // not round each row: under the last one the card has its own, and the two together made this card's foot
+            // nine points deeper than the one's above.
+            VStack(alignment: .leading, spacing: 9) {
               ForEach(store.model.advancedRows(in: section)) { row in
                 Divider()
-                SettingRowView(store: store, row: row)
+                SettingRowView(store: store, row: row, saysWhyItWaits: true)
                   .frame(maxWidth: .infinity, alignment: .leading)
-                  .padding(.vertical, 9)
               }
             }
             .padding(.top, 8)
@@ -270,7 +294,7 @@ struct SettingsSearchResults: View {
       ForEach(store.model.found.sections) { found in
         Section(found.section.title) {
           ForEach(found.rows) { row in
-            SettingRowView(store: store, row: row)
+            SettingRowView(store: store, row: row, saysWhyItWaits: true)
           }
         }
       }
@@ -324,16 +348,20 @@ struct LoginItemRow: View {
 
 // MARK: One setting
 
+/// Dims by itself where its control takes no clicks: macOS sees to the labels of its switches and menus, and not to words that merely
+/// stand beside a slider or a field.
 struct SettingLabel: View {
   let label: String
   let help: String
+  @Environment(\.isEnabled) private var isEnabled: Bool
 
   var body: some View {
     VStack(alignment: .leading, spacing: 2) {
       Text(label)
+        .foregroundStyle(isEnabled ? .primary : .tertiary)
       Text(help)
         .font(.caption)
-        .foregroundStyle(.secondary)
+        .foregroundStyle(isEnabled ? .secondary : .tertiary)
         .fixedSize(horizontal: false, vertical: true)
     }
   }
@@ -342,10 +370,18 @@ struct SettingLabel: View {
 struct SettingRowView: View {
   @ObservedObject var store: SettingsPanelStore
   let row: SettingsPanelModel.Row
+  /// Behind Advanced and among what a search has found, where the switch a dimmed row waits for may be out of sight.
+  var saysWhyItWaits = false
 
   var body: some View {
     VStack(alignment: .leading, spacing: 4) {
       control
+        .disabled(row.waitsFor != nil)
+      if saysWhyItWaits, let why = row.whyItWaits {
+        Text(why)
+          .font(.caption)
+          .fixedSize(horizontal: false, vertical: true)
+      }
       SettingsErrorText(text: row.error)
     }
   }
