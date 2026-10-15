@@ -1,0 +1,302 @@
+# mac-shell: scripts/mac-shell/probe-fn-bit.sh at 09f486c, macOS 15.7.9, 2026-10-15T07:19Z
+built Arbor, the pointer tool and the app bundles in 6s
+
+== the app in front and the listener in the background
+  ✔ the app is up
+  ✔ the listener is up
+  back global monitor in
+  back tap-hid in
+  back tap-session in
+  back tap-annotated in
+  back ready pid=7590
+
+== 0  nobody has registered anything: the control, and what each key is called
+round control: 10 keys
+   10 heard by [local equiv menu global tap-hid tap-session tap-annotated]; Arbor's log did not grow: ctrl+opt+a ctrl+opt+return ctrl+opt+space ctrl+opt+[ ctrl+opt+z ctrl+opt+f ctrl+opt+g ctrl+opt+escape ctrl+opt+left ctrl+opt+right
+  REACHED AN APP: 10 of 10
+  ✔ every key's code is known
+
+== 1  registered plainly, as Arbor does
+  ✔ plainly: the process is up
+rival ready pid=7973: registered 16, refused 0 
+
+== 2  registered with the fn bit only
+  ✔ with-the-bit: the process is up
+rival ready pid=11810: registered 16, refused 0 
+
+== 3  registered both ways
+  ✔ both-ways: the process is up
+rival ready pid=15519: registered 32, refused 0 
+
+== 3b  other words for it, in case that bit is not heard: the same bit and exclusive; bit 23, which is the flag's own place; bit 16, Carbon's for Num Lock
+  ✔ bit-17-exclusive: the process is up
+rival ready pid=19353: registered 16, refused 0 
+  ✔ bit-23: the process is up
+rival ready pid=22986: registered 16, refused 0 
+  ✔ bit-16: the process is up
+rival ready pid=26752: registered 16, refused 0 
+
+== who heard what, and how often
+registered . pressed                    key               heard by (how many keys)
+plainly.plain                           a letter or sign  plain x1 (up x1): 8
+plainly.plain                           an arrow          THE-APP x1: 2
+plainly.plain                           F5, Home and kin  THE-APP x1: 6
+plainly.fn-flag                         a letter or sign  THE-APP x1: 8
+plainly.fn-flag                         an arrow          plain x1 (up x1): 2
+plainly.fn-flag                         F5, Home and kin  plain x1 (up x1): 6
+plainly.fn-key                          a letter or sign  THE-APP x1: 8
+plainly.fn-key                          an arrow          plain x1 (up x1): 2
+plainly.fn-key                          F5, Home and kin  plain x1 (up x1): 6
+plainly.fn-up-before-the-key            a letter or sign  THE-APP x1: 8
+plainly.fn-up-before-the-key            an arrow          plain x1 (up x1): 2
+plainly.fn-up-before-the-key            F5, Home and kin  plain x1 (up x1): 6
+plainly.pad-flag                        a letter or sign  plain x1 (up x1): 8
+plainly.pad-flag                        an arrow          THE-APP x1: 2
+plainly.pad-flag                        F5, Home and kin  THE-APP x1: 6
+plainly.fn-down-after-the-key           a letter or sign  plain x1 (up x1): 8
+plainly.fn-down-after-the-key           an arrow          THE-APP x1: 2
+plainly.fn-down-after-the-key           F5, Home and kin  THE-APP x1: 6
+plainly.fn-down-then-a-repeat           a letter or sign  plain x1 (up x1): 8
+plainly.fn-down-then-a-repeat           an arrow          THE-APP x2: 2
+plainly.fn-down-then-a-repeat           F5, Home and kin  THE-APP x2: 6
+with-the-bit.plain                      a letter or sign  THE-APP x1: 8
+with-the-bit.plain                      an arrow          THE-APP x1: 2
+with-the-bit.plain                      F5, Home and kin  THE-APP x1: 6
+with-the-bit.fn-flag                    a letter or sign  with-the-bit x1 (up x1): 8
+with-the-bit.fn-flag                    an arrow          with-the-bit x1 (up x1): 2
+with-the-bit.fn-flag                    F5, Home and kin  with-the-bit x1 (up x1): 6
+with-the-bit.fn-key                     a letter or sign  with-the-bit x1 (up x1): 8
+with-the-bit.fn-key                     an arrow          with-the-bit x1 (up x1): 2
+with-the-bit.fn-key                     F5, Home and kin  with-the-bit x1 (up x1): 6
+with-the-bit.fn-up-before-the-key       a letter or sign  with-the-bit x1 (up x1): 8
+with-the-bit.fn-up-before-the-key       an arrow          with-the-bit x1 (up x1): 2
+with-the-bit.fn-up-before-the-key       F5, Home and kin  with-the-bit x1 (up x1): 6
+with-the-bit.pad-flag                   a letter or sign  THE-APP x1: 8
+with-the-bit.pad-flag                   an arrow          THE-APP x1: 2
+with-the-bit.pad-flag                   F5, Home and kin  THE-APP x1: 6
+with-the-bit.fn-down-after-the-key      a letter or sign  THE-APP x1: 8
+with-the-bit.fn-down-after-the-key      an arrow          THE-APP x1: 2
+with-the-bit.fn-down-after-the-key      F5, Home and kin  THE-APP x1: 6
+with-the-bit.fn-down-then-a-repeat      a letter or sign  THE-APP x2: 8
+with-the-bit.fn-down-then-a-repeat      an arrow          THE-APP x2: 2
+with-the-bit.fn-down-then-a-repeat      F5, Home and kin  THE-APP x2: 6
+both-ways.plain                         a letter or sign  plain x1 (up x1): 8
+both-ways.plain                         an arrow          THE-APP x1: 2
+both-ways.plain                         F5, Home and kin  THE-APP x1: 6
+both-ways.fn-flag                       a letter or sign  with-the-bit x1 (up x1): 8
+both-ways.fn-flag                       an arrow          plain x1 (up x1) and with-the-bit x1 (up x1): 2
+both-ways.fn-flag                       F5, Home and kin  plain x1 (up x1) and with-the-bit x1 (up x1): 6
+both-ways.fn-key                        a letter or sign  with-the-bit x1 (up x1): 8
+both-ways.fn-key                        an arrow          plain x1 (up x1) and with-the-bit x1 (up x1): 2
+both-ways.fn-key                        F5, Home and kin  plain x1 (up x1) and with-the-bit x1 (up x1): 6
+both-ways.fn-up-before-the-key          a letter or sign  with-the-bit x1 (up x1): 8
+both-ways.fn-up-before-the-key          an arrow          plain x1 (up x1) and with-the-bit x1 (up x1): 2
+both-ways.fn-up-before-the-key          F5, Home and kin  plain x1 (up x1) and with-the-bit x1 (up x1): 6
+both-ways.pad-flag                      a letter or sign  plain x1 (up x1): 8
+both-ways.pad-flag                      an arrow          THE-APP x1: 2
+both-ways.pad-flag                      F5, Home and kin  THE-APP x1: 6
+both-ways.fn-down-after-the-key         a letter or sign  plain x1 (up x1): 8
+both-ways.fn-down-after-the-key         an arrow          THE-APP x1: 2
+both-ways.fn-down-after-the-key         F5, Home and kin  THE-APP x1: 6
+both-ways.fn-down-then-a-repeat         a letter or sign  plain x1 (up x1): 8
+both-ways.fn-down-then-a-repeat         an arrow          THE-APP x2: 2
+both-ways.fn-down-then-a-repeat         F5, Home and kin  THE-APP x2: 6
+bit-17-exclusive.plain                  a letter or sign  THE-APP x1: 8
+bit-17-exclusive.plain                  an arrow          THE-APP x1: 2
+bit-17-exclusive.plain                  F5, Home and kin  THE-APP x1: 6
+bit-17-exclusive.fn-flag                a letter or sign  with-the-bit x1 (up x1): 8
+bit-17-exclusive.fn-flag                an arrow          with-the-bit x1 (up x1): 2
+bit-17-exclusive.fn-flag                F5, Home and kin  with-the-bit x1 (up x1): 6
+bit-17-exclusive.fn-key                 a letter or sign  with-the-bit x1 (up x1): 8
+bit-17-exclusive.fn-key                 an arrow          with-the-bit x1 (up x1): 2
+bit-17-exclusive.fn-key                 F5, Home and kin  with-the-bit x1 (up x1): 6
+bit-17-exclusive.fn-up-before-the-key   a letter or sign  with-the-bit x1 (up x1): 8
+bit-17-exclusive.fn-up-before-the-key   an arrow          with-the-bit x1 (up x1): 2
+bit-17-exclusive.fn-up-before-the-key   F5, Home and kin  with-the-bit x1 (up x1): 6
+bit-17-exclusive.pad-flag               a letter or sign  THE-APP x1: 8
+bit-17-exclusive.pad-flag               an arrow          THE-APP x1: 2
+bit-17-exclusive.pad-flag               F5, Home and kin  THE-APP x1: 6
+bit-17-exclusive.fn-down-after-the-key  a letter or sign  THE-APP x1: 8
+bit-17-exclusive.fn-down-after-the-key  an arrow          THE-APP x1: 2
+bit-17-exclusive.fn-down-after-the-key  F5, Home and kin  THE-APP x1: 6
+bit-17-exclusive.fn-down-then-a-repeat  a letter or sign  THE-APP x2: 8
+bit-17-exclusive.fn-down-then-a-repeat  an arrow          THE-APP x2: 2
+bit-17-exclusive.fn-down-then-a-repeat  F5, Home and kin  THE-APP x2: 6
+bit-23.plain                            a letter or sign  with-the-bit x1 (up x1): 8
+bit-23.plain                            an arrow          THE-APP x1: 2
+bit-23.plain                            F5, Home and kin  THE-APP x1: 6
+bit-23.fn-flag                          a letter or sign  THE-APP x1: 8
+bit-23.fn-flag                          an arrow          with-the-bit x1 (up x1): 2
+bit-23.fn-flag                          F5, Home and kin  with-the-bit x1 (up x1): 6
+bit-23.fn-key                           a letter or sign  THE-APP x1: 8
+bit-23.fn-key                           an arrow          with-the-bit x1 (up x1): 2
+bit-23.fn-key                           F5, Home and kin  with-the-bit x1 (up x1): 6
+bit-23.fn-up-before-the-key             a letter or sign  THE-APP x1: 8
+bit-23.fn-up-before-the-key             an arrow          with-the-bit x1 (up x1): 2
+bit-23.fn-up-before-the-key             F5, Home and kin  with-the-bit x1 (up x1): 6
+bit-23.pad-flag                         a letter or sign  with-the-bit x1 (up x1): 8
+bit-23.pad-flag                         an arrow          THE-APP x1: 2
+bit-23.pad-flag                         F5, Home and kin  THE-APP x1: 6
+bit-23.fn-down-after-the-key            a letter or sign  with-the-bit x1 (up x1): 8
+bit-23.fn-down-after-the-key            an arrow          THE-APP x1: 2
+bit-23.fn-down-after-the-key            F5, Home and kin  THE-APP x1: 6
+bit-23.fn-down-then-a-repeat            a letter or sign  with-the-bit x1 (up x1): 8
+bit-23.fn-down-then-a-repeat            an arrow          THE-APP x2: 2
+bit-23.fn-down-then-a-repeat            F5, Home and kin  THE-APP x2: 6
+bit-16.plain                            a letter or sign  with-the-bit x1 (up x1): 8
+bit-16.plain                            an arrow          THE-APP x1: 2
+bit-16.plain                            F5, Home and kin  THE-APP x1: 6
+bit-16.fn-flag                          a letter or sign  THE-APP x1: 8
+bit-16.fn-flag                          an arrow          with-the-bit x1 (up x1): 2
+bit-16.fn-flag                          F5, Home and kin  with-the-bit x1 (up x1): 6
+bit-16.fn-key                           a letter or sign  THE-APP x1: 8
+bit-16.fn-key                           an arrow          with-the-bit x1 (up x1): 2
+bit-16.fn-key                           F5, Home and kin  with-the-bit x1 (up x1): 6
+bit-16.fn-up-before-the-key             a letter or sign  THE-APP x1: 8
+bit-16.fn-up-before-the-key             an arrow          with-the-bit x1 (up x1): 2
+bit-16.fn-up-before-the-key             F5, Home and kin  with-the-bit x1 (up x1): 6
+bit-16.pad-flag                         a letter or sign  with-the-bit x1 (up x1): 8
+bit-16.pad-flag                         an arrow          THE-APP x1: 2
+bit-16.pad-flag                         F5, Home and kin  THE-APP x1: 6
+bit-16.fn-down-after-the-key            a letter or sign  with-the-bit x1 (up x1): 8
+bit-16.fn-down-after-the-key            an arrow          THE-APP x1: 2
+bit-16.fn-down-after-the-key            F5, Home and kin  THE-APP x1: 6
+bit-16.fn-down-then-a-repeat            a letter or sign  with-the-bit x1 (up x1): 8
+bit-16.fn-down-then-a-repeat            an arrow          THE-APP x2: 2
+bit-16.fn-down-then-a-repeat            F5, Home and kin  THE-APP x2: 6
+heard by none, by more than one, or more than once:
+  plainly.fn-down-then-a-repeat ctrl+opt+left: THE-APP x2
+  plainly.fn-down-then-a-repeat ctrl+opt+right: THE-APP x2
+  plainly.fn-down-then-a-repeat ctrl+opt+f5: THE-APP x2
+  plainly.fn-down-then-a-repeat ctrl+opt+home: THE-APP x2
+  plainly.fn-down-then-a-repeat ctrl+opt+end: THE-APP x2
+  plainly.fn-down-then-a-repeat ctrl+opt+pageup: THE-APP x2
+  plainly.fn-down-then-a-repeat ctrl+opt+pagedown: THE-APP x2
+  plainly.fn-down-then-a-repeat ctrl+opt+forwarddelete: THE-APP x2
+  with-the-bit.fn-down-then-a-repeat ctrl+opt+a: THE-APP x2
+  with-the-bit.fn-down-then-a-repeat ctrl+opt+return: THE-APP x2
+  with-the-bit.fn-down-then-a-repeat ctrl+opt+space: THE-APP x2
+  with-the-bit.fn-down-then-a-repeat ctrl+opt+[: THE-APP x2
+  with-the-bit.fn-down-then-a-repeat ctrl+opt+z: THE-APP x2
+  with-the-bit.fn-down-then-a-repeat ctrl+opt+f: THE-APP x2
+  with-the-bit.fn-down-then-a-repeat ctrl+opt+g: THE-APP x2
+  with-the-bit.fn-down-then-a-repeat ctrl+opt+escape: THE-APP x2
+  with-the-bit.fn-down-then-a-repeat ctrl+opt+left: THE-APP x2
+  with-the-bit.fn-down-then-a-repeat ctrl+opt+right: THE-APP x2
+  with-the-bit.fn-down-then-a-repeat ctrl+opt+f5: THE-APP x2
+  with-the-bit.fn-down-then-a-repeat ctrl+opt+home: THE-APP x2
+  with-the-bit.fn-down-then-a-repeat ctrl+opt+end: THE-APP x2
+  with-the-bit.fn-down-then-a-repeat ctrl+opt+pageup: THE-APP x2
+  with-the-bit.fn-down-then-a-repeat ctrl+opt+pagedown: THE-APP x2
+  with-the-bit.fn-down-then-a-repeat ctrl+opt+forwarddelete: THE-APP x2
+  both-ways.fn-flag ctrl+opt+left: plain x1 and with-the-bit x1
+  both-ways.fn-flag ctrl+opt+right: plain x1 and with-the-bit x1
+  both-ways.fn-flag ctrl+opt+f5: plain x1 and with-the-bit x1
+  both-ways.fn-flag ctrl+opt+home: plain x1 and with-the-bit x1
+  both-ways.fn-flag ctrl+opt+end: plain x1 and with-the-bit x1
+  both-ways.fn-flag ctrl+opt+pageup: plain x1 and with-the-bit x1
+  both-ways.fn-flag ctrl+opt+pagedown: plain x1 and with-the-bit x1
+  both-ways.fn-flag ctrl+opt+forwarddelete: plain x1 and with-the-bit x1
+  both-ways.fn-key ctrl+opt+left: plain x1 and with-the-bit x1
+  both-ways.fn-key ctrl+opt+right: plain x1 and with-the-bit x1
+  both-ways.fn-key ctrl+opt+f5: plain x1 and with-the-bit x1
+  both-ways.fn-key ctrl+opt+home: plain x1 and with-the-bit x1
+  both-ways.fn-key ctrl+opt+end: plain x1 and with-the-bit x1
+  both-ways.fn-key ctrl+opt+pageup: plain x1 and with-the-bit x1
+  both-ways.fn-key ctrl+opt+pagedown: plain x1 and with-the-bit x1
+  both-ways.fn-key ctrl+opt+forwarddelete: plain x1 and with-the-bit x1
+  both-ways.fn-up-before-the-key ctrl+opt+left: plain x1 and with-the-bit x1
+  both-ways.fn-up-before-the-key ctrl+opt+right: plain x1 and with-the-bit x1
+  both-ways.fn-up-before-the-key ctrl+opt+f5: plain x1 and with-the-bit x1
+  both-ways.fn-up-before-the-key ctrl+opt+home: plain x1 and with-the-bit x1
+  both-ways.fn-up-before-the-key ctrl+opt+end: plain x1 and with-the-bit x1
+  both-ways.fn-up-before-the-key ctrl+opt+pageup: plain x1 and with-the-bit x1
+  both-ways.fn-up-before-the-key ctrl+opt+pagedown: plain x1 and with-the-bit x1
+  both-ways.fn-up-before-the-key ctrl+opt+forwarddelete: plain x1 and with-the-bit x1
+  both-ways.fn-down-then-a-repeat ctrl+opt+left: THE-APP x2
+  both-ways.fn-down-then-a-repeat ctrl+opt+right: THE-APP x2
+  both-ways.fn-down-then-a-repeat ctrl+opt+f5: THE-APP x2
+  both-ways.fn-down-then-a-repeat ctrl+opt+home: THE-APP x2
+  both-ways.fn-down-then-a-repeat ctrl+opt+end: THE-APP x2
+  both-ways.fn-down-then-a-repeat ctrl+opt+pageup: THE-APP x2
+  both-ways.fn-down-then-a-repeat ctrl+opt+pagedown: THE-APP x2
+  both-ways.fn-down-then-a-repeat ctrl+opt+forwarddelete: THE-APP x2
+  bit-17-exclusive.fn-down-then-a-repeat ctrl+opt+a: THE-APP x2
+  bit-17-exclusive.fn-down-then-a-repeat ctrl+opt+return: THE-APP x2
+  bit-17-exclusive.fn-down-then-a-repeat ctrl+opt+space: THE-APP x2
+  bit-17-exclusive.fn-down-then-a-repeat ctrl+opt+[: THE-APP x2
+  bit-17-exclusive.fn-down-then-a-repeat ctrl+opt+z: THE-APP x2
+  bit-17-exclusive.fn-down-then-a-repeat ctrl+opt+f: THE-APP x2
+  bit-17-exclusive.fn-down-then-a-repeat ctrl+opt+g: THE-APP x2
+  bit-17-exclusive.fn-down-then-a-repeat ctrl+opt+escape: THE-APP x2
+  bit-17-exclusive.fn-down-then-a-repeat ctrl+opt+left: THE-APP x2
+  bit-17-exclusive.fn-down-then-a-repeat ctrl+opt+right: THE-APP x2
+  bit-17-exclusive.fn-down-then-a-repeat ctrl+opt+f5: THE-APP x2
+  bit-17-exclusive.fn-down-then-a-repeat ctrl+opt+home: THE-APP x2
+  bit-17-exclusive.fn-down-then-a-repeat ctrl+opt+end: THE-APP x2
+  bit-17-exclusive.fn-down-then-a-repeat ctrl+opt+pageup: THE-APP x2
+  bit-17-exclusive.fn-down-then-a-repeat ctrl+opt+pagedown: THE-APP x2
+  bit-17-exclusive.fn-down-then-a-repeat ctrl+opt+forwarddelete: THE-APP x2
+  bit-23.fn-down-then-a-repeat ctrl+opt+left: THE-APP x2
+  bit-23.fn-down-then-a-repeat ctrl+opt+right: THE-APP x2
+  bit-23.fn-down-then-a-repeat ctrl+opt+f5: THE-APP x2
+  bit-23.fn-down-then-a-repeat ctrl+opt+home: THE-APP x2
+  bit-23.fn-down-then-a-repeat ctrl+opt+end: THE-APP x2
+  bit-23.fn-down-then-a-repeat ctrl+opt+pageup: THE-APP x2
+  bit-23.fn-down-then-a-repeat ctrl+opt+pagedown: THE-APP x2
+  bit-23.fn-down-then-a-repeat ctrl+opt+forwarddelete: THE-APP x2
+  bit-16.fn-down-then-a-repeat ctrl+opt+left: THE-APP x2
+  bit-16.fn-down-then-a-repeat ctrl+opt+right: THE-APP x2
+  bit-16.fn-down-then-a-repeat ctrl+opt+f5: THE-APP x2
+  bit-16.fn-down-then-a-repeat ctrl+opt+home: THE-APP x2
+  bit-16.fn-down-then-a-repeat ctrl+opt+end: THE-APP x2
+  bit-16.fn-down-then-a-repeat ctrl+opt+pageup: THE-APP x2
+  bit-16.fn-down-then-a-repeat ctrl+opt+pagedown: THE-APP x2
+  bit-16.fn-down-then-a-repeat ctrl+opt+forwarddelete: THE-APP x2
+
+== 4  with Arbor: ⌃⌥A twenty-five times a second through whatever might make it let go
+session 1: Arbor pid 30490, test windows 30 31 32 (pid 30466)
+running: 1 display, 0 docked and 3 floating, 0 out of view
+Arbor dev
+Reduce Motion is on, so Arbor shows no motion (macos_reduce_motion off, before arbor_start, changes that)
+> arrange
+arranged 3 windows
+313 presses in 24.0 s
+  ✔ the hammer came to an end
+313 presses of ⌃⌥A were seen at the keyboard's end, through 15 acts; 19 were given to an app
+  07:27:40.210 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:40.304 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:40.354 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:40.420 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:40.464 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:40.533 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:40.592 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:40.673 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:40.719 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:40.804 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:40.853 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:40.895 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:40.937 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:40.981 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:41.056 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:41.149 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:41.223 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:41.316 global after: 07:27:40.140 /Users/runner/work/arbor/arbor/.build/debug/arborctl pause
+  07:27:41.395 global after: 07:27:41.387 /Users/runner/work/arbor/arbor/.build/debug/arborctl resume
+how often Arbor registered its shortcuts meanwhile:
+  07:27:36.129Z DEBUG peek: the key came up
+  07:27:40.163Z INFO  registered 1 shortcuts in 861 µs
+  07:27:41.421Z INFO  registered 52 shortcuts in 1373 µs
+how often Arbor ran arrange meanwhile: 280
+
+▸ quitting puts every window back in view
+> quit
+quitting
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+shot: mac-shell/01-quit.png
+
+14 passed, 0 failed
+exit code 0

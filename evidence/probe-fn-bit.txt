@@ -1,0 +1,35 @@
+# probe-fn-bit 2026-10-15T07:19Z on macOS 15.7.9, commit 09f486c
+
+== the app in front and the listener in the background
+  ✔ the app is up
+  ✔ the listener is up
+
+== 0  nobody has registered anything: the control, and what each key is called
+  ✔ every key's code is known
+
+== 1  registered plainly, as Arbor does
+  ✔ plainly: the process is up
+
+== 2  registered with the fn bit only
+  ✔ with-the-bit: the process is up
+
+== 3  registered both ways
+  ✔ both-ways: the process is up
+
+== 3b  other words for it, in case that bit is not heard: the same bit and exclusive; bit 23, which is the flag's own place; bit 16, Carbon's for Num Lock
+  ✔ bit-17-exclusive: the process is up
+  ✔ bit-23: the process is up
+  ✔ bit-16: the process is up
+
+== who heard what, and how often
+
+== 4  with Arbor: ⌃⌥A twenty-five times a second through whatever might make it let go
+  ✔ the hammer came to an end
+
+▸ quitting puts every window back in view
+  ✔ Arbor exits within 5 s of quit
+  ✔ window 1 is back on screen after quitting
+  ✔ window 2 is back on screen after quitting
+  ✔ window 3 is back on screen after quitting
+
+14 passed, 0 failed
