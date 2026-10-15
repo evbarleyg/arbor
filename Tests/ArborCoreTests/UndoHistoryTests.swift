@@ -894,6 +894,57 @@ private func change(_ before: UInt32, _ after: UInt32) -> UndoHistory.Change {
     #expect(Command.helpText.contains("undo | redo"))
   }
 
+  /// The pair lies in a row of the same direction, so it exists only because it is named (F62). With the old name taken off
+  /// first it dissolved, and the new name went to a node that was gone, which `setName` takes for the root.
+  @Test func aGroupRenamedSinceAStepKeepsItselfAndItsNewName() throws {
+    let (a, b, c, d) = (WindowID(1), WindowID(2), WindowID(3), WindowID(4))
+    var workspace = Workspace()
+    workspace.dock(a, at: .cameraEdge(.left))
+    workspace.dock(b, at: .cameraEdge(.right))
+    let (leafA, leafB) = (try #require(workspace.tree.leaf(containing: a)), try #require(workspace.tree.leaf(containing: b)))
+    workspace.moveCamera(to: leafB)
+    workspace.dock(c, at: .cameraEdge(.right))
+    let pair = workspace.camera
+    #expect(Set(workspace.tree.windows(under: pair)) == [b, c] && pair != workspace.tree.root)
+    try workspace.setName("Code", of: pair)
+    workspace.moveCamera(to: workspace.tree.root)
+    let before = workspace
+    workspace.dock(d, at: .beside(leafA, .bottom))
+    let after = workspace
+    try workspace.setName("Work", of: pair)
+
+    let restored = before.restored(over: workspace, since: after)
+    #expect(restored.names == ["Work": pair])
+    #expect(restored.tree.contains(pair) && pair != restored.tree.root)
+    #expect(Set(restored.tree.windows(under: pair)) == [b, c])
+    #expect(!restored.contains(d) && restored.tree.invariantViolations().isEmpty)
+  }
+
+  /// In whichever order the names come. Here the alphabet puts the old name, which another space has got since, before the new one.
+  @Test(arguments: [("Code", "Work"), ("Work", "Code"), ("b", "A"), ("A", "b")])
+  func aGroupRenamedSinceAStepWhoseOldNameWentToAnotherSpace(old: String, new: String) throws {
+    let (a, b, c, d) = (WindowID(1), WindowID(2), WindowID(3), WindowID(4))
+    var workspace = Workspace()
+    workspace.dock(a, at: .cameraEdge(.left))
+    workspace.dock(b, at: .cameraEdge(.right))
+    let (leafA, leafB) = (try #require(workspace.tree.leaf(containing: a)), try #require(workspace.tree.leaf(containing: b)))
+    workspace.moveCamera(to: leafB)
+    workspace.dock(c, at: .cameraEdge(.right))
+    let pair = workspace.camera
+    try workspace.setName(old, of: pair)
+    workspace.moveCamera(to: workspace.tree.root)
+    let before = workspace
+    workspace.dock(d, at: .beside(leafA, .bottom))
+    let after = workspace
+    try workspace.setName(new, of: pair)
+    try workspace.setName(old, of: leafA)
+
+    let restored = before.restored(over: workspace, since: after)
+    #expect(restored.names == [new: pair, old: leafA], "\(restored.names), and the root is \(restored.tree.root)")
+    #expect(restored.tree.contains(pair) && Set(restored.tree.windows(under: pair)) == [b, c])
+    #expect(restored.tree.invariantViolations().isEmpty)
+  }
+
   @Test func labelsNameTheWindowTheCommandActedOn() {
     let focused = WindowID(101)
     #expect(Command.dock(nil, .left).label(focused: focused) == "dock w101 left")

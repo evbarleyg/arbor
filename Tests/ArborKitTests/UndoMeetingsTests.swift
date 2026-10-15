@@ -557,6 +557,37 @@ private final class Listener {
     #expect(undoLabels(h).count == 3)
   }
 
+  // MARK: F20, names
+
+  /// The pair exists only because it is named. Taking "Code" off first let it dissolve, and
+  /// "Work" was then given to a node that was gone, which `setName` took for the root.
+  @Test func aGroupRenamedSinceAStepKeepsItselfAndItsNewName() throws {
+    let h = Harness()
+    let a = h.system.open(app: "Safari", pid: 1000, frame: CGRect(x: 100, y: 100, width: 500, height: 400))
+    let b = h.system.open(app: "Notes", pid: 1001, frame: CGRect(x: 200, y: 150, width: 500, height: 400))
+    let c = h.system.open(app: "Mail", pid: 1002, frame: CGRect(x: 300, y: 200, width: 500, height: 400))
+    let d = h.system.open(app: "Terminal", pid: 1003, frame: CGRect(x: 400, y: 250, width: 500, height: 400))
+    h.start()
+    h.run("dock \(a.rawValue) left")
+    h.run("dock \(b.rawValue) right")
+    h.run("zoom \(b.rawValue)")
+    h.run("dock \(c.rawValue) right")  // the view is on the pair Notes | Mail
+    let pair = h.workspace.camera
+    #expect(Set(h.workspace.tree.windows(under: pair)) == [b, c])
+    #expect(h.run("name Code").ok)
+    h.run("show-all")
+    #expect(h.run("dock \(d.rawValue) beside \(a.rawValue) bottom").ok)  // the step
+    h.run("go Code")
+    #expect(h.run("name Work").ok)
+    h.run("show-all")
+
+    #expect(h.run("undo").message == "undid dock \(d) beside \(a) bottom")
+    #expect(h.workspace.names == ["Work": pair], "\(h.workspace.names)")
+    #expect(h.workspace.tree.contains(pair) && pair != h.workspace.tree.root)
+    #expect(Set(h.workspace.tree.windows(under: pair)) == [b, c])
+    expectWindowsMatchLayout(h)
+  }
+
   // MARK: F22, the keyboard's tiling tools
 
   /// [Safari / Mail | Desktop | Notes] on the laptop with Safari focused and made wider, and a second display.
@@ -788,6 +819,61 @@ private final class Listener {
     #expect(h.system.isVisible(a), "fetched as soon as its app answers")
     #expect(!h.controller.parked.contains(a))
     expectWindowsMatchLayout(h)
+  }
+
+  // MARK: What was left hanging by hand
+
+  /// Where Safari's user left it, by hand: over an edge of the screen, across the two displays, or well inside. And where the
+  /// pointer is: on the display the window belongs to, which is where a scripted `undo` acts.
+  nonisolated static let hangs: [(name: String, frame: CGRect, pointer: CGPoint)] = [
+    ("across the two, mostly on the big one", CGRect(x: 1300, y: 300, width: 600, height: 400), CGPoint(x: 2600, y: 400)),
+    ("over the big one's far edge", CGRect(x: 3700, y: 300, width: 600, height: 400), CGPoint(x: 2600, y: 400)),
+    ("over the big one's bottom", CGRect(x: 1800, y: 1300, width: 600, height: 400), CGPoint(x: 2600, y: 400)),
+    ("a strip at the laptop's left", CGRect(x: -560, y: 300, width: 600, height: 400), CGPoint(x: 700, y: 450)),
+    ("over the laptop's bottom", CGRect(x: 400, y: 780, width: 600, height: 400), CGPoint(x: 700, y: 450)),
+    ("across the two, mostly on the laptop", CGRect(x: 1000, y: 300, width: 600, height: 400), CGPoint(x: 700, y: 450)),
+    ("well inside", CGRect(x: 1700, y: 200, width: 500, height: 350), CGPoint(x: 2600, y: 400)),
+  ]
+
+  /// Each takes back everything it did.
+  nonisolated static let waysThereAndBack: [[String]] = [
+    ["dock 101 left", "undo"], ["dock 101 left", "undo", "redo", "undo"], ["dock 101 left", "float 101", "undo", "undo"],
+    ["dock 101 top", "resize 101 bottom 60", "undo", "undo"], ["arrange", "undo"], ["arrange all", "undo"],
+    ["dock 101 left", "float-all", "undo", "undo"], ["toggle-float 101", "toggle-float 101", "undo", "undo"],
+    ["dock 101 left", "move-to-display next 101", "undo", "undo"],
+    ["dock 101 right", "undo", "redo", "undo", "redo", "undo"], ["layout Safari | Notes", "undo"],
+  ]
+
+  /// It comes back where it hung. Whatever fits the frames Arbor gives back to the display must leave
+  /// alone what its user left there, by whichever road undo gives it back; and no layout afterwards may think otherwise.
+  @Test(arguments: hangs.indices, waysThereAndBack) func whatWasLeftHangingByHandComesBackWhereItHung(hang: Int, way: [String]) {
+    let (name, place, pointer) = Self.hangs[hang]
+    let h = Harness(displays: [laptop, studio])
+    h.start()
+    // It opens on the display it is then left hanging on. A move that arrives across a border without a drag is not taken for
+    // a hand's (an app, a tool or macOS does that), and such a place is fitted like any other that nobody chose.
+    let opensAt = studio.frame.contains(pointer) ? CGPoint(x: 2400, y: 500) : CGPoint(x: 300, y: 200)
+    let safari = h.system.open(app: "Safari", pid: 1000, frame: CGRect(origin: opensAt, size: CGSize(width: 600, height: 400)))
+    h.system.open(app: "Notes", pid: 1001, frame: CGRect(x: 500, y: 300, width: 500, height: 350))
+    h.system.open(app: "Mail", pid: 1002, frame: CGRect(x: 1800, y: 250, width: 500, height: 350))
+    h.scheduler.advance(by: 2)
+    h.system.userMove(safari, to: place)
+    h.scheduler.advance(by: 2)
+    h.system.userFocus(safari)
+    h.system.cursor = pointer
+    h.run("relayout")
+    let before = (h.controller.workspaces, frames(h), h.controller.parked)
+    #expect(h.frame(safari) == place, "\(name): no layout touches it to begin with")
+
+    for command in way {
+      #expect(h.run(command).ok, "\(name), \(way): \(command)")
+      h.scheduler.advance(by: 2)
+    }
+    #expect(frames(h) == before.1, "\(name), \(way): Safari is at \(h.frame(safari)!)")
+    #expect(h.controller.workspaces == before.0 && h.controller.parked == before.2, "\(name), \(way)")
+    h.run("relayout")
+    h.scheduler.advance(by: 2)
+    #expect(frames(h) == before.1, "\(name), \(way): nor does the next layout move it: Safari is at \(h.frame(safari)!)")
   }
 
   // MARK: A long way back and forth

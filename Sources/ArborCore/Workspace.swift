@@ -720,14 +720,22 @@ extension Workspace {
     for (slot, node) in current.savedViews where reference.savedViews[slot] != node && survives(node) {
       result.savedViews[slot] = node
     }
-    // Names (F20) taken off since stay off; names given, moved or changed since are kept if their space survives.
-    for name in SpaceName.sorted(reference.names.keys) where current.node(named: name) == nil {
-      if let node = result.node(named: name) { result.removeName(of: node) }
+    // Names (F20) taken off since stay off; names given, moved or changed since are kept if their space survives. All of it on
+    // paper first, and the tree is told once: a group can exist only because it is named (F62). One that is between two names,
+    // be it for a moment, dissolves, and the name meant for it would go to a node that is gone, which `setName` takes for the root.
+    var named = result.names
+    for name in reference.names.keys where current.node(named: name) == nil {
+      if let held = SpaceName.exact(name, among: named.keys) { named[held] = nil }
     }
     for name in SpaceName.sorted(current.names.keys) {
       guard let node = current.names[name], reference.names[name] != node, survives(node) else { continue }
-      _ = try? result.setName(name, of: node)
+      // As `setName` has it: a space has one name, and a name one space.
+      named = named.filter { $0.value != node }
+      if let taken = SpaceName.exact(name, among: named.keys) { named[taken] = nil }
+      named[name] = node
     }
+    result.names = named
+    result.keepWhatIsNamed()
     for (window, frame) in current.floating where result.floating[window] != nil {
       if let left = reference.floating[window], left != frame { result.floating[window] = frame }
     }
